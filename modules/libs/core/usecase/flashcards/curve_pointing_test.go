@@ -80,7 +80,7 @@ func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces
 		t.Fatal(err)
 	}
 	for _, deck := range held {
-		p, err := s.presets.Of(t.Context(), s.vault, deck)
+		p, err := s.presets.GetForDeck(t.Context(), s.vault, deck)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -88,7 +88,7 @@ func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces
 			decks = append(decks, deck)
 		}
 	}
-	return decks, len(s.standings.Of(t.Context(), s.vault, decks))
+	return decks, len(s.standings.GetFaces(t.Context(), s.vault, decks))
 }
 
 // A curve reads the decks pointing at its preset and leaves the rest of the

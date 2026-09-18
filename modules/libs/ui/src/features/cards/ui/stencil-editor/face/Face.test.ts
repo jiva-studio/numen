@@ -198,12 +198,12 @@ describe('Face, the fields it is written with', () => {
 
   it('aims the row of fields at the part last typed in, and at one part only', async () => {
     const held = mountFace()
-    expect(held.findAll('[data-aimed]').map((each) => each.attributes('data-pane'))).toEqual([
+    expect(held.findAll('[data-focused]').map((each) => each.attributes('data-pane'))).toEqual([
       'front-written',
     ])
 
     await boxIn(held, 'back').trigger('focus')
-    expect(held.findAll('[data-aimed]').map((each) => each.attributes('data-pane'))).toEqual([
+    expect(held.findAll('[data-focused]').map((each) => each.attributes('data-pane'))).toEqual([
       'back-written',
     ])
   })

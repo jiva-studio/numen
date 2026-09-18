@@ -81,7 +81,7 @@ export interface CountsDeps {
 
 export function useReviewCounter(deps: CountsDeps) {
   const vaults = shallowRef<readonly VaultCardsDue[]>([])
-  const counting = ref(true)
+  const isCounting = ref(true)
 
   /**
    * The day the counts stand in, and the day a goal is weighed against. A day of
@@ -141,14 +141,14 @@ export function useReviewCounter(deps: CountsDeps) {
     vault: one.id,
     name: one.name,
     path: one.path,
-    counted: false,
+    isCounted: false,
     faces: 0,
     due: 0,
     new: 0,
     decks: [],
     presets: [],
     unread: one.unread,
-    reading: one.isReading,
+    isReading: one.isReading,
   })
 
   /** A vault as its own count leaves it. */
@@ -156,7 +156,7 @@ export function useReviewCounter(deps: CountsDeps) {
     vault: one.id,
     name: one.name,
     path: one.path,
-    counted: true,
+    isCounted: true,
     faces: one.faces,
     due: one.due,
     new: one.new,
@@ -189,7 +189,7 @@ export function useReviewCounter(deps: CountsDeps) {
       stopsOn: preset.stopsOn,
     })),
     unread: one.unread,
-    reading: false,
+    isReading: false,
   })
 
   /**
@@ -201,7 +201,7 @@ export function useReviewCounter(deps: CountsDeps) {
     const held = new Map(vaults.value.map((one) => [one.vault, one]))
     vaults.value = all.map((one) => {
       const was = held.get(one.id)
-      return was?.counted ? { ...was, name: one.name, path: one.path } : createUncountedVault(one)
+      return was?.isCounted ? { ...was, name: one.name, path: one.path } : createUncountedVault(one)
     })
   }
 
@@ -216,7 +216,7 @@ export function useReviewCounter(deps: CountsDeps) {
 
   /** One count, answering whether it ran to the end. */
   const ask = async (): Promise<boolean> => {
-    counting.value = true
+    isCounting.value = true
     sampled = false
     const ends = new AbortController()
     taking = ends
@@ -234,10 +234,10 @@ export function useReviewCounter(deps: CountsDeps) {
       if (!ends.signal.aborted) deps.reportError(why)
     } finally {
       if (taking === ends) taking = null
-      counting.value = false
+      isCounting.value = false
     }
     return !ends.signal.aborted
   }
 
-  return { vaults, counting, day, count, stop }
+  return { vaults, isCounting, day, count, stop }
 }

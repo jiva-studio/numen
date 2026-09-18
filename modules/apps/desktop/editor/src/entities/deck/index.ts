@@ -28,11 +28,14 @@ export {
   NO_BOUNDS,
   NOWHERE,
   RULES,
+  STOP_REASONS,
   setLoadOn,
   WHOLE_LOAD,
 } from './lib/presets'
 export type {
   Bounds,
+  BudgetName,
+  StopReason,
   BudgetUnit,
   Curve,
   Goal,

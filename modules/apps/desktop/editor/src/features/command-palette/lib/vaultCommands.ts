@@ -7,14 +7,14 @@ import type { Command } from '../types'
 import type { Words } from '../words'
 
 export const vaultCommandsOf = (words: Words, agent: string): readonly Command[] => [
-  { id: 'first', text: words.first, group: 'vault', isOffered: (at) => at.ready },
+  { id: 'first', text: words.first, group: 'vault', isOffered: (at) => at.isReady },
   {
     id: 'goto',
     text: words.goto,
     ...keysOf('goto', agent),
     group: 'vault',
     needs: 'picking',
-    isOffered: (at) => at.ready,
+    isOffered: (at) => at.isReady,
   },
   {
     id: 'openVault',

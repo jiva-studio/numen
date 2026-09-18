@@ -11,30 +11,30 @@ import (
 func TestWhatARenameBringsIntoLine(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
-		sync   note.SyncTitleAndFilename
-		by     note.NameSource
-		moves  bool
-		writes bool
+		sync      note.SyncTitleAndFilename
+		by        note.NameSource
+		isMoving  bool
+		isWriting bool
 	}{
 		"one name, a title in the frontmatter": {
-			sync: true, by: note.ByFrontmatter, moves: true, writes: true,
+			sync: true, by: note.ByFrontmatter, isMoving: true, isWriting: true,
 		},
 		"one name, and the filename says it": {
-			sync: true, by: note.ByFilename, moves: true, writes: false,
+			sync: true, by: note.ByFilename, isMoving: true, isWriting: false,
 		},
 		"told apart, a title in the frontmatter": {
-			sync: false, by: note.ByFrontmatter, moves: false, writes: false,
+			sync: false, by: note.ByFrontmatter, isMoving: false, isWriting: false,
 		},
 		"told apart, and the filename says it": {
-			sync: false, by: note.ByFilename, moves: true, writes: false,
+			sync: false, by: note.ByFilename, isMoving: true, isWriting: false,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			moves, writes := c.sync.GetRenameEffects(c.by)
-			if moves != c.moves {
+			if moves != c.isMoving {
 				t.Errorf("the file moves: %v", moves)
 			}
-			if writes != c.writes {
+			if writes != c.isWriting {
 				t.Errorf("the note is written: %v", writes)
 			}
 		})

@@ -17,18 +17,18 @@ const card: CardFace = {
   heading: 'Leaf mould',
   front: '<p>Leaf mould</p>',
   back: '<p>Compost made of fallen leaves alone. <a href="notes/Leaf mould.md">more</a></p>',
-  seen: true,
+  isSeen: true,
   ahead: null,
 }
 
 /** The session on the screen, with something of its own standing in the panel. */
-const session = (more: { at?: PanelPlace; shown?: boolean } = {}) =>
+const session = (more: { at?: PanelPlace; isShown?: boolean } = {}) =>
   mount(Session, {
     props: {
       card,
-      shown: more.shown ?? true,
+      isShown: more.isShown ?? true,
       left: 3,
-      takenBack: false,
+      canTakeBack: false,
       at: more.at ?? 'here',
     },
     slots: { panel: '<p>the panel</p>', reading: '<p>the reading</p>' },
@@ -44,13 +44,13 @@ const wayBack = (one: VueWrapper) =>
 describe('the way into the panel', () => {
   // A person asks about the card they are on, turned or not.
   it('is to be pressed on either side of the card', () => {
-    expect(wayIn(session({ shown: false }))[0]?.attributes('disabled')).toBeUndefined()
-    expect(wayIn(session({ shown: true }))[0]?.attributes('disabled')).toBeUndefined()
+    expect(wayIn(session({ isShown: false }))[0]?.attributes('disabled')).toBeUndefined()
+    expect(wayIn(session({ isShown: true }))[0]?.attributes('disabled')).toBeUndefined()
   })
 
   // The two panels stand in the order they stand in the strip.
   it('stands beside the way into the reading, which is offered the same way', async () => {
-    const one = session({ shown: false })
+    const one = session({ isShown: false })
     expect(wayBack(one)[0]?.attributes('disabled')).toBeUndefined()
 
     await wayBack(one)[0]?.trigger('click')
@@ -67,13 +67,13 @@ describe('the way into the panel', () => {
 
   // A link inside a card is the other way in, and what it names goes with it.
   it('carries a link pressed in the card out to the window', async () => {
-    const one = session({ shown: true })
+    const one = session({ isShown: true })
     await one.find('.card a').trigger('click')
     expect(one.emitted('read')).toEqual([['notes/Leaf mould.md']])
   })
 
   it('asks about the card when it is pressed', async () => {
-    const one = session({ shown: true })
+    const one = session({ isShown: true })
     await wayIn(one)[0]?.trigger('click')
     expect(one.emitted('ask')).toHaveLength(1)
   })

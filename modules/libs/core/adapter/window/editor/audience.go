@@ -10,9 +10,9 @@ import "sync"
 type audience[T any] struct {
 	// fallback makes the message for a listener that has not read the last one.
 	fallback func(latest T) T
-	// latest hands a listener what has just happened in place of what it has
+	// isLatest hands a listener what has just happened in place of what it has
 	// not read yet about the same thing.
-	latest bool
+	isLatest bool
 	// about says what a message is about. Two messages about one thing are that
 	// thing said twice, and only the newer is worth reading; messages about
 	// different things each wait their turn. Nil makes every message about the
@@ -32,8 +32,8 @@ type audience[T any] struct {
 // listener is one of the audience, and whether it is owed a message it never
 // received.
 type listener[T any] struct {
-	ch     chan T
-	behind bool
+	ch       chan T
+	isBehind bool
 }
 
 // getRoom is how many messages one listener may have waiting.
@@ -67,10 +67,10 @@ func (a *audience[T]) tell(what T) {
 
 	for _, l := range a.listeners {
 		message := what
-		if l.behind && a.fallback != nil {
+		if l.isBehind && a.fallback != nil {
 			message = a.fallback(what)
 		}
-		l.behind = !a.queue(l, message)
+		l.isBehind = !a.queue(l, message)
 	}
 }
 
@@ -102,7 +102,7 @@ func (a *audience[T]) queue(l *listener[T], message T) bool {
 // findReplaced is where in the line a message stands that this one says again, or
 // -1 when this message replaces nothing.
 func (a *audience[T]) findReplaced(waiting []T, message T) int {
-	if !a.latest {
+	if !a.isLatest {
 		return -1
 	}
 	for at, held := range waiting {

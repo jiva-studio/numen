@@ -42,9 +42,9 @@ type Artifact struct {
 	Format   string `json:"format" jsonschema:"what artifact_read gives back, as a media type: text/vtt for a transcript, application/json for a reading off a scan, text/plain for a page.s prose. A copy is not read, and says what it is played as"`
 }
 
-// Readable says whether artifact_read hands this back. A copy is bytes to play
+// IsReadable says whether artifact_read hands this back. A copy is bytes to play
 // and not words to read.
-func (a Artifact) Readable() bool { return a.Kind != kindCopy }
+func (a Artifact) IsReadable() bool { return a.Kind != kindCopy }
 
 // formatOf is what a producer's artifact is written as, which is what a caller
 // reading it parses. A transcript is a subtitle file, a reading off a scan is
@@ -138,7 +138,7 @@ func addArtifactTools(server *sdk.Server, core Core) {
 			return nil, out{}, err
 		}
 		for _, one := range held {
-			if one.Kind != in.Kind || !one.Readable() {
+			if one.Kind != in.Kind || !one.IsReadable() {
 				continue
 			}
 			words, err := wordsOf(ctx, core, in.Path, one.Producer)

@@ -90,7 +90,7 @@ export const createNotice = (task: Task): Notice => {
  *
  * A notice with no words is one nobody could read.
  */
-export const readable = (notices: readonly Notice[]): readonly Notice[] =>
+export const getReadable = (notices: readonly Notice[]): readonly Notice[] =>
   notices.filter((notice) => notice.text !== '')
 
 /** What a notice counts against, for the ones that count anything. */
@@ -107,6 +107,6 @@ export const getStillAway = (
   away: ReadonlySet<string>,
   notices: readonly Notice[],
 ): ReadonlySet<string> => {
-  const here = new Set(readable(notices).map((notice) => notice.id))
+  const here = new Set(getReadable(notices).map((notice) => notice.id))
   return new Set([...away].filter((id) => here.has(id)))
 }

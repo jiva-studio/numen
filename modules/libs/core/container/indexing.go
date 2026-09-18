@@ -95,9 +95,9 @@ func (i Indexing) CanTranscribe() bool {
 // larger number names no limit any recording could pass.
 const MostTranscribeUnderMB = math.MaxInt64 >> 20
 
-// TranscribesUnder is how many bytes a recording may run to and still be
+// GetTranscribeLimit is how many bytes a recording may run to and still be
 // listened to unasked. A negative setting is no limit.
-func (i Indexing) TranscribesUnder() int64 {
+func (i Indexing) GetTranscribeLimit() int64 {
 	switch {
 	case i.TranscribeUnderMB < 0:
 		return 0

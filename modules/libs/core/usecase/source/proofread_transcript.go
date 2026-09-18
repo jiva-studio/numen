@@ -26,9 +26,9 @@ import (
 // A correction changes words. The proofreader is given line numbers and text,
 // and every cue keeps the moments it was spoken between.
 type ProofreadTranscript struct {
-	Readers port.VaultReaders
-	Derived port.DerivedStores
-	By      port.Proofreader
+	readers port.VaultReaders
+	derived port.DerivedStores
+	by      port.Proofreader
 
 	// Area is the store the transcript is kept in. Empty means the default.
 	Area string
@@ -59,11 +59,24 @@ type ProofreadTranscript struct {
 // the recording is read out of, the store the transcript and the words as they
 // now stand are kept in, and the proofreader that answers about a batch of
 // lines.
+//
+// An installation that configured no proofreader is refused here.
 func NewProofreadTranscript(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
-) ProofreadTranscript {
-	return ProofreadTranscript{Readers: readers, Derived: derived, By: by}
+) (ProofreadTranscript, error) {
+	switch {
+	case readers == nil:
+		return ProofreadTranscript{}, errNoVaultToProofread
+	case derived == nil:
+		return ProofreadTranscript{}, errNoStoreToProofread
+	case by == nil:
+		return ProofreadTranscript{}, errNothingProofreads
+	}
+	return ProofreadTranscript{readers: readers, derived: derived, by: by}, nil
 }
+
+// GetProofreaderName is what puts the words right, by the name it goes under.
+func (u ProofreadTranscript) GetProofreaderName() string { return u.by.GetName() }
 
 // ProofreadTranscriptResult reports what proofreading a transcript did.
 type ProofreadTranscriptResult struct {
@@ -74,10 +87,10 @@ type ProofreadTranscriptResult struct {
 	Fixed              int    // lines put right
 	Left               int    // lines asked about that stand as they were heard
 	UncorrectedBatches int    // batches replied to without a correction, left as heard
-	None               bool   // there is no transcript to put right, and nothing was done
-	Edited             bool   // somebody else wrote what stands, and it is left as they left it
-	Busy               bool   // the recording is held by another run
-	Already            bool   // this proofreader has been over every line, and nothing was asked
+	IsNone             bool   // there is no transcript to put right, and nothing was done
+	IsEdited           bool   // somebody else wrote what stands, and it is left as they left it
+	IsBusy             bool   // the recording is held by another run
+	IsAlready          bool   // this proofreader has been over every line, and nothing was asked
 }
 
 // How a transcript is cut up where nothing says otherwise: the lines to a
@@ -103,10 +116,7 @@ type putting struct {
 // Execute puts one recording's transcript right.
 func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadTranscriptResult, error) {
 	res := ProofreadTranscriptResult{Path: path}
-	if u.By == nil {
-		return res, errNothingProofreads
-	}
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -114,7 +124,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	if err != nil {
 		return res, fmt.Errorf("read %s: %w", path, err)
 	}
-	store, err := u.Derived.Open(v)
+	store, err := u.derived.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -128,7 +138,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	// right are never under way at once.
 	release, err := store.Claim(ctx, text.Partial(area, hash))
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
+		res.IsBusy = true
 		return res, nil
 	}
 	if err != nil {
@@ -142,7 +152,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	}
 	_, cues := transcript.Parse(whole)
 	if len(cues) == 0 {
-		res.None = true
+		res.IsNone = true
 		return res, nil
 	}
 
@@ -150,11 +160,11 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	if err != nil {
 		return res, err
 	}
-	if beside && (transcript.IsWrittenByHand(whole) || stood.By != u.By.GetName()) {
+	if beside && (transcript.IsWrittenByHand(whole) || stood.By != u.by.GetName()) {
 		// The words as they stand are somebody's own, and a model does not
 		// correct them. Deleting the file beside the artifact gives back what
 		// was heard.
-		res.Edited = true
+		res.IsEdited = true
 		return res, nil
 	}
 	if !beside {
@@ -187,7 +197,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	}
 	if at >= len(batches) {
 		// This proofreader has been over every line and every seam.
-		res.Already = true
+		res.IsAlready = true
 		return res, nil
 	}
 	// Progress is reported once there is a batch to ask about, so a transcript
@@ -214,7 +224,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		end := min(at+u.inFlight(), len(batches))
 		group := batches[at:end]
 
-		replies, err := u.By.Proofread(ctx, group)
+		replies, err := u.by.Proofread(ctx, group)
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}
@@ -330,7 +340,7 @@ func (u ProofreadTranscript) readCheckpoint(ctx context.Context, store port.Deri
 // writeCheckpoint writes down who is putting this transcript right and how far
 // they have got.
 func (u ProofreadTranscript) writeCheckpoint(ctx context.Context, store port.DerivedStore, far string, stood putting) error {
-	stood.By = u.By.GetName()
+	stood.By = u.by.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err

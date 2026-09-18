@@ -48,7 +48,7 @@ export function asPlex(
     seat: Seat
     label: string
     through: string
-    mutual: boolean
+    isMutual: boolean
   }[] = []
   /** The path of every note this picture draws, the note in focus included. */
   const shown = new Set<string>([neighbourhood.focus.path])
@@ -64,16 +64,16 @@ export function asPlex(
       // one they had written themselves.
       label: related.label,
       through: related.through,
-      mutual: related.isMutual,
+      isMutual: related.isMutual,
     })
   }
 
-  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, mutual }) => {
+  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, isMutual }) => {
     const line = label ? { label } : {}
     // A mutual line carries an arrow at the end away from the note in focus,
     // whichever end of the line that is. A relationship named at one end only
     // has one wording, and nothing for an arrow to choose between.
-    const head = (end: EdgeArrow) => (mutual ? { arrow: end } : {})
+    const head = (end: EdgeArrow) => (isMutual ? { arrow: end } : {})
     if (seat === 'parent' || seat === 'jump') {
       return [{ from: id, to: focus.id, ...line, ...head('from') }]
     }

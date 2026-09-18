@@ -71,7 +71,7 @@ func TestAnInstallationNamingNoProviderEmbedsWithNothing(t *testing.T) {
 		t.Error("got something to close")
 	}
 
-	one, letGoOfOne := embedders.One(t.Context(), embedders.Provider{})
+	one, letGoOfOne := embedders.OpenOne(t.Context(), embedders.Provider{})
 	if one != nil {
 		t.Errorf("got an embedder: %v", one.Model())
 	}
@@ -225,7 +225,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 	defer func() { _ = letGo() }()
 
 	// Nothing is known yet: the line is in the list from the moment it starts.
-	at := only(t, tasks)
+	at := getOnlyTask(t, tasks)
 	if at.Doing != "Preparing the model" || at.About != "a/model" {
 		t.Errorf("the line is shown as %q about %q", at.Doing, at.About)
 	}
@@ -237,12 +237,12 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 
 	// The cache is read before the first bytes land, and the size is known.
 	tell(0, 90_000_000)
-	if at := only(t, tasks); at.Total != 0 || at.Count != 0 {
+	if at := getOnlyTask(t, tasks); at.Total != 0 || at.Count != 0 {
 		t.Errorf("a model with none of it here is drawn as %d of %d", at.Count, at.Total)
 	}
 
 	tell(30_000_000, 90_000_000)
-	at = only(t, tasks)
+	at = getOnlyTask(t, tasks)
 	if at.Count != 30_000_000 || at.Total != 90_000_000 {
 		t.Errorf("the model is drawn as %d of %d", at.Count, at.Total)
 	}
@@ -281,7 +281,7 @@ func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 // A run with no list to tell asks for a model like any other, and waits for it.
 // A model that never arrives says why.
 func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
-	one, letGo := embedders.One(t.Context(),
+	one, letGo := embedders.OpenOne(t.Context(),
 		embedders.NewFetched(is("never-arrives"), "never-arrives", refuseFetch))
 	if one == nil {
 		t.Fatal("no embedder")
@@ -317,8 +317,8 @@ func waitFor(t *testing.T, done func() bool, why string) {
 	t.Fatal(why)
 }
 
-// only is the one piece of work in the list.
-func only(t *testing.T, tasks *task.Tasks) task.Task {
+// getOnlyTask is the one piece of work in the list.
+func getOnlyTask(t *testing.T, tasks *task.Tasks) task.Task {
 	t.Helper()
 	held := tasks.List()
 	if len(held) != 1 {

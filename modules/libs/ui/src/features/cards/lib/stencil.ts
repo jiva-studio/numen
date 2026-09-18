@@ -105,9 +105,9 @@ export interface FieldRow {
   /** How many fields stand with it. */
   readonly of: number
   /** It stands first, so it is what a card cut by this stencil is named by. */
-  readonly names: boolean
+  readonly hasNames: boolean
   /** It is on its way somewhere else in the order. */
-  readonly dragged: boolean
+  readonly isDragged: boolean
 }
 
 /** The rows a stencil's fields are drawn as, one to a field. */
@@ -120,8 +120,8 @@ export function fieldRows(
     field,
     at: index + 1,
     of: stood.length,
-    names: index === 0,
-    dragged: field === dragField,
+    hasNames: index === 0,
+    isDragged: field === dragField,
   }))
 }
 
@@ -190,7 +190,7 @@ export interface Pane {
   /** The markup as it is written, or the sample standing in its braces. */
   readonly text: string
   /** Nothing but space stands in it. */
-  readonly blank: boolean
+  readonly isBlank: boolean
   /** The slots the half names that the fields do not, said under the markup. */
   readonly stray: readonly string[]
 }
@@ -212,7 +212,7 @@ export function getPanes(face: FaceRow, words: StencilWords = STENCIL_WORDS): re
         said,
         named: said,
         text: written,
-        blank: written.trim() === '',
+        isBlank: written.trim() === '',
         stray: half === 'front' ? face.frontStray : face.backStray,
       },
       {
@@ -221,7 +221,7 @@ export function getPanes(face: FaceRow, words: StencilWords = STENCIL_WORDS): re
         said: words.preview,
         named: `${words.preview}: ${face.name} ${said}`,
         text: shown,
-        blank: shown.trim() === '',
+        isBlank: shown.trim() === '',
         stray: [],
       },
     ]

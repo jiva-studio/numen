@@ -49,7 +49,7 @@ const skeletonStyle = computed(() => ({
 }
 
 .skeleton--pill {
-  border-radius: var(--numen-radius-pill);
+  border-radius: var(--numen-radius-isPill);
 }
 
 /* Between a fill and half of one, and no faster than a person reading the row

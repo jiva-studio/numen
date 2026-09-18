@@ -29,7 +29,7 @@ interface Knobs {
   /** Which item is the one in force, if the menu names one. */
   current: string | null
   /** Whether the name of a group is drawn over it. */
-  groups: boolean
+  hasGroups: boolean
   margin: number
   name: string
   onChoose: (id: string) => void
@@ -86,7 +86,7 @@ const renderMenu = (args: Knobs) => ({
         :from="from"
         :opening="args.opening"
         :current="args.current"
-        :has-groups="args.groups"
+        :has-groups="args.hasGroups"
         :margin="args.margin"
         :name="args.name"
         @choose="args.onChoose"
@@ -136,7 +136,7 @@ const meta = {
     at: { x: 480, y: 300 },
     opening: 'pointer',
     current: null,
-    groups: false,
+    hasGroups: false,
     margin: 8,
     name: 'Menu',
     onChoose: fn(),
@@ -216,7 +216,7 @@ export const GivingItBack: Story = {
 }
 
 /**
- * Asked for inside a box that clips everything in it, at the corner furthest
+ * Asked for inside a box that clips everything in it, at the corner getFurthest
  * from where a menu would like to open.
  *
  * This is the whole reason the menu is drawn where it is drawn. In jsdom
@@ -472,7 +472,7 @@ export const GroupsNamed: Story = {
       { id: 'sea', text: 'sea', group: 'Yours' },
     ],
     current: 'paper',
-    groups: true,
+    hasGroups: true,
   },
   play: async () => {
     const menu = menuElement()!

@@ -115,7 +115,7 @@ func TestHereAnswersWhileTheRuntimeIsBeingOpened(t *testing.T) {
 	defer halfOpen(t)()
 
 	said := make(chan bool, 1)
-	go func() { said <- Here(getSettings()) }()
+	go func() { said <- IsHere(getSettings()) }()
 
 	select {
 	case <-said:

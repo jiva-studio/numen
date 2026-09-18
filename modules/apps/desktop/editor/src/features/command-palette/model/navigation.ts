@@ -74,7 +74,7 @@ export function createPaletteSteps(
     const step = here.value
     if (step?.step !== 'choosing') return ''
     const rows = lists.getStepGroups(step.command.id, text.value).flatMap((group) => group.items)
-    return rows.find((one) => one.inForce)?.id ?? ''
+    return rows.find((one) => one.isCurrent)?.id ?? ''
   })
 
   const startStep = (step: PendingStep | null) => {

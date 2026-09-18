@@ -13,7 +13,7 @@ export interface Stop {
   /** Whether the browser draws it where a person could see it. */
   readonly shown: boolean
   /** Whether the page says it is still on its way in or out. */
-  readonly moving: boolean
+  readonly isMoving: boolean
 }
 
 /** What a story turned out to be, walked from the top of its tab order. */
@@ -37,7 +37,7 @@ export function faults({ stops, trapped }: Walk, keeps = false): string[] {
   if (trapped && !keeps) wrong.push(`${trapped} answers Tab by keeping it`)
   for (const stop of stops) {
     const at = `${stop.where}${stop.name ? ` (${stop.name})` : ''}`
-    if (!stop.shown && !stop.moving) wrong.push(`${at} is a stop a person cannot see`)
+    if (!stop.shown && !stop.isMoving) wrong.push(`${at} is a stop a person cannot see`)
     if (!stop.name) wrong.push(`${stop.where} is a stop with no name to read out`)
   }
   return wrong

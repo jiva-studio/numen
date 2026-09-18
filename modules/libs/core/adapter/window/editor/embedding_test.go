@@ -187,16 +187,16 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 		"Note.md": noteWith(before, 200),
 	}, watcher, readers, model, 20*time.Millisecond)
 
-	eventually(t, "the note was never embedded at all", func() bool {
+	waitFor(t, "the note was never embedded at all", func() bool {
 		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded
 	})
 	walks := readers.walks.Load()
 
 	write(t, f.vault, "Note.md", noteWith(after, 200))
-	tells(t, watcher, "Note.md")
+	sendChange(t, watcher, "Note.md")
 
-	eventually(t, "the note stayed out of search by meaning", func() bool {
+	waitFor(t, "the note stayed out of search by meaning", func() bool {
 		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded && model.saw(after[0])
 	})
@@ -219,7 +219,7 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 		"Note.md": noteWith(before, 200),
 	}, watcher, readers, model, time.Second)
 
-	eventually(t, "the note was never embedded at all", func() bool {
+	waitFor(t, "the note was never embedded at all", func() bool {
 		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded
 	})
@@ -229,10 +229,10 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	// one before it did not.
 	for i := range saves {
 		write(t, f.vault, "Note.md", noteWith(after, 200+i))
-		tells(t, watcher, "Note.md")
+		sendChange(t, watcher, "Note.md")
 	}
 
-	eventually(t, "the saves were never embedded", func() bool {
+	waitFor(t, "the saves were never embedded", func() bool {
 		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded && model.saw(after[0])
 	})
@@ -257,7 +257,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 		"Note.md": noteWith(before, 200),
 	}, unwatchable{}, newWalking(), model, 20*time.Millisecond)
 
-	eventually(t, "the model was never asked at all", func() bool { return model.getTurnedDown() > 0 })
+	waitFor(t, "the model was never asked at all", func() bool { return model.getTurnedDown() > 0 })
 	if why := f.api.Unwatched.Why(); why == "" {
 		t.Fatal("a vault whose watch never started is shown as followed")
 	}
@@ -270,7 +270,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	// note the person saved.
 	save(t, f, "Note.md", prose(after, 240))
 
-	eventually(t, "what was saved stayed out of search by meaning", func() bool {
+	waitFor(t, "what was saved stayed out of search by meaning", func() bool {
 		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded && model.saw(after[0])
 	})
@@ -286,14 +286,14 @@ func TestANoteWrittenAfterTheScanFailedIsEmbedded(t *testing.T) {
 		"Note.md": noteWith(before, 200),
 	}, watcher, unwalkable{VaultReaders: filesystem.VaultReaders{}}, model, 20*time.Millisecond)
 
-	eventually(t, "the scan was not reported as failed", func() bool {
+	waitFor(t, "the scan was not reported as failed", func() bool {
 		return f.api.Error.Why() != ""
 	})
 
 	write(t, f.vault, "Note.md", noteWith(after, 200))
-	tells(t, watcher, "Note.md")
+	sendChange(t, watcher, "Note.md")
 
-	eventually(t, "what was written stayed out of search by meaning", func() bool {
+	waitFor(t, "what was written stayed out of search by meaning", func() bool {
 		held, embedded := getVectorProgress(t, f, model)
 		return held > 0 && held == embedded && model.saw(after[0])
 	})

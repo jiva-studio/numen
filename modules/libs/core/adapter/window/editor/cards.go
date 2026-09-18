@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/cardwire"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
@@ -33,7 +34,7 @@ func (a *API) ListStencils(
 	out := &v1.ListStencilsResponse{Total: int32(count)}
 	out.Stencils = make([]*v1.StencilSummary, 0, len(held))
 	for _, stencil := range held {
-		out.Stencils = append(out.Stencils, summaryOf(stencil))
+		out.Stencils = append(out.Stencils, cardwire.NewWireSummary(stencil))
 	}
 	return connect.NewResponse(out), nil
 }
@@ -41,8 +42,8 @@ func (a *API) ListStencils(
 // getStencilLimit is how many stencils one answer carries. Nothing asked for takes the
 // ceiling, and so does more than the ceiling.
 func getStencilLimit(limit int32) int {
-	if limit <= 0 || limit > maxStencils {
-		return maxStencils
+	if limit <= 0 || limit > cardwire.MaxStencils {
+		return cardwire.MaxStencils
 	}
 	return int(limit)
 }
@@ -137,7 +138,7 @@ func (a *API) RenameStencilField(
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		out := newRenameResponse(renamed)
+		out := cardwire.NewRenameResponse(renamed, fingerprintOf(renamed.Stencil))
 		out.IsUnlevelled = a.isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
@@ -172,7 +173,7 @@ func (a *API) ReadStencil(
 		return connect.NewResponse(out), nil
 	}
 	title := wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path)
-	out.Stencil = stencilOf(found.Path, title, found.Body)
+	out.Stencil = cardwire.NewWireStencil(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
 	out.At = fingerprintOf(found.Fingerprint)
@@ -203,7 +204,7 @@ func (a *API) ReadDeck(
 		return connect.NewResponse(out), nil
 	}
 	title := wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path)
-	out.Deck = deckOf(found.Path, title, found.Body, found.Stencils)
+	out.Deck = cardwire.NewWireDeck(found.Path, title, found.Body, found.Stencils)
 	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
@@ -218,7 +219,7 @@ func (a *API) WriteDeck(
 	if err != nil {
 		return nil, err
 	}
-	body, err := format.DeckBody(newDeck(r.Msg))
+	body, err := format.DeckBody(cardwire.NewDeck(r.Msg))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -264,7 +265,7 @@ func (a *API) WriteStencil(
 		return nil, err
 	}
 	body, err := format.StencilBody(
-		r.Msg.GetPreamble(), facesOf(r.Msg.GetFaces()), r.Msg.GetTail())
+		r.Msg.GetPreamble(), cardwire.NewFaces(r.Msg.GetFaces()), r.Msg.GetTail())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}

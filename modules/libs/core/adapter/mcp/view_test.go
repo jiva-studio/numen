@@ -131,13 +131,13 @@ func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
 	session, looking := newSessionWithWindow(t, library)
 
 	out := call[struct {
-		Shown   bool   `json:"shown"`
+		IsShown bool   `json:"shown"`
 		Looking string `json:"looking"`
 	}](t, session, "source_focus", map[string]any{
 		"path": "library/A Book.epub", "start": 1200, "length": 80,
 	})
 
-	if !out.Shown {
+	if !out.IsShown {
 		t.Errorf("answered with %+v", out)
 	}
 	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}}

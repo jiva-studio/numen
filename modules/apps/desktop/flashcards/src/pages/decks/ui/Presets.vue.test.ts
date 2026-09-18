@@ -358,7 +358,7 @@ describe('what pressing a preset would ask', () => {
 
 describe('starting a session on a preset', () => {
   /** Which tiles can be pressed, in the order they stand. */
-  const pressable = (one: ReturnType<typeof mountPresets>): readonly boolean[] =>
+  const getPressable = (one: ReturnType<typeof mountPresets>): readonly boolean[] =>
     one.findAll('.presets__preset').map((tile) => tile.attributes('disabled') === undefined)
 
   it('is offered by a preset with cards to ask, and names the preset pressed', async () => {
@@ -368,7 +368,7 @@ describe('starting a session on a preset', () => {
     ])
     const tiles = one.findAll('.presets__preset')
 
-    expect(pressable(one)).toStrictEqual([true, true])
+    expect(getPressable(one)).toStrictEqual([true, true])
 
     await tiles[1]?.trigger('click')
 
@@ -389,7 +389,7 @@ describe('starting a session on a preset', () => {
   it('offers no session where the day under it is already done', async () => {
     const one = mountPresets([preset({ cards: 0 })])
 
-    expect(pressable(one)).toStrictEqual([false])
+    expect(getPressable(one)).toStrictEqual([false])
 
     await one.find('.presets__preset').trigger('click')
 
@@ -397,8 +397,8 @@ describe('starting a session on a preset', () => {
   })
 
   it('offers no session where the preset schedules nothing today', () => {
-    expect(pressable(mountPresets([preset({ cards: 0, paused: 'no cards a day' })]))).toStrictEqual(
-      [false],
-    )
+    expect(
+      getPressable(mountPresets([preset({ cards: 0, paused: 'no cards a day' })])),
+    ).toStrictEqual([false])
   })
 })

@@ -48,7 +48,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 		db.Maintenance(),
 	)
 	scan.Walks = db.Walks()
-	scan.RebuildIndex = c.RebuildIndex
+	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return scan
 }
 
@@ -70,7 +70,7 @@ func (c Config) ReadWholeVault(
 		// Building the index again is where the vectors of a recipe nobody asks
 		// for any more go. Every other run keeps them, so a model set back is a
 		// model whose vectors are all still here.
-		if c.RebuildIndex {
+		if c.ShouldRebuildIndex {
 			if _, err := db.ForgetOtherRecipes(ctx, model.Recipe()); err != nil {
 				return vault.ReadWholeVault{}, err
 			}
@@ -117,6 +117,6 @@ func (c Config) Extract(sources port.SourceRepository, known port.SourceQueries,
 	extract.Documents = c.TextExtractor()
 	extract.Sizes = c.GetChunkSizes()
 	extract.Legibility = c.Legibility()
-	extract.RebuildIndex = c.RebuildIndex
+	extract.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return extract, nil
 }

@@ -89,7 +89,7 @@ describe('how many columns the text of a document fills', () => {
   const flow = { along: 2 * NARROW + GAP, width: NARROW, gap: GAP, columns: 1 }
   const second = NARROW + GAP
 
-  it('is counted off the run standing furthest along them', () => {
+  it('is counted off the run standing getFurthest along them', () => {
     expect(countFilledColumns([{ at: 0, x: 0 }], flow)).toBe(1)
     expect(
       countFilledColumns(
@@ -216,14 +216,14 @@ describe('which spread a place falls in', () => {
 
 describe('which run of the text is in front', () => {
   /** Runs an offset apart, each one column further along. */
-  const runs = (flow: Flow, count: number): Mark[] => {
+  const createRuns = (flow: Flow, count: number): Mark[] => {
     const step = columnWidth(flow) + GAP
     return Array.from({ length: count }, (_, index) => ({ at: index * 100, x: index * step }))
   }
 
   it('is the first run standing in the spread', () => {
     const flow = createFlow(WIDE, 2, 10)
-    const marks = runs(flow, 10)
+    const marks = createRuns(flow, 10)
 
     expect(inFront(marks, flow, 0)).toBe(0)
     expect(inFront(marks, flow, 1)).toBe(200)

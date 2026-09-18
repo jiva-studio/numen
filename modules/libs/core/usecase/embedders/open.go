@@ -60,7 +60,7 @@ const (
 // nothing to close.
 func Open(
 	ctx context.Context, tasks *task.Tasks, indexing, query Provider,
-) (filling, asking port.Embedder, close func() error) {
+) (filling, asking port.Embedder, closer func() error) {
 	if !indexing.isPlaced() {
 		return nil, nil, nil
 	}
@@ -77,13 +77,13 @@ func Open(
 			reportError(tasks, at, err)
 		}
 	}()
-	return first.GetWaitingEmbedder(), second.GetImpatientEmbedder(), both(first.Close, second.Close)
+	return first.GetWaitingEmbedder(), second.GetImpatientEmbedder(), closeBoth(first.Close, second.Close)
 }
 
-// One is a single provider opened for a run with nowhere to show that a model
+// OpenOne is a single provider opened for a run with nowhere to show that a model
 // is arriving, which waits for it instead. It answers under the identity the
 // index is filled with, whichever half of the work it was named for.
-func One(ctx context.Context, from Provider) (port.Embedder, func() error) {
+func OpenOne(ctx context.Context, from Provider) (port.Embedder, func() error) {
 	if !from.isPlaced() {
 		return nil, nil
 	}
@@ -204,8 +204,8 @@ func reportError(tasks *task.Tasks, at arrival, why error) {
 	}
 }
 
-// both is one closer for two, letting go of the second whatever the first says.
-func both(first, second func() error) func() error {
+// closeBoth is one closer for two, letting go of the second whatever the first says.
+func closeBoth(first, second func() error) func() error {
 	return func() error {
 		var why error
 		if second != nil {

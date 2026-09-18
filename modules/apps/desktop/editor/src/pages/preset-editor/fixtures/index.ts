@@ -4,10 +4,10 @@
  * The window is not here: what the tab holds is made up, and everything it was
  * asked to do is written down in the order it was asked.
  */
+import { StopReason } from '@numen/protocol'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
-import { StopReason } from '@numen/protocol'
 
 import PresetTab from '../ui/PresetTab.vue'
 import {
@@ -71,7 +71,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   retained: 0,
   owed: 0,
   through: 0,
-  enough: true,
+  canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
@@ -96,13 +96,13 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   cards: 400,
   overdue: 0,
   unbegun: 0,
-  honest: true,
+  isHonest: true,
   ...over,
 })
 
 /** What an answer counted the material at, and nothing where none has landed. */
 const getCounts = (one: Curve): PresetCounts | null =>
-  one.honest
+  one.isHonest
     ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun }
     : null
 
@@ -121,7 +121,7 @@ const tabAt = (
     curve: shallowRef(curve(over)),
     material: shallowRef(counts === undefined ? getCounts(curve(over)) : counts),
     place,
-    waiting: ref(isWaiting),
+    isWaiting: ref(isWaiting),
     bounds: shallowRef(BOUNDS),
     problems: shallowRef([]),
     stopped: ref(StopReason.NOTHING),

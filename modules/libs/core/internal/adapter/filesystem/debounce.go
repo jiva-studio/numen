@@ -82,7 +82,7 @@ func debounce(
 			queued = queued[1:]
 
 		case one := <-walked:
-			if one.whole {
+			if one.isWholeVault {
 				rescan()
 				continue
 			}
@@ -101,7 +101,7 @@ func debounce(
 				// and the shape with it: an event that made a folder is among
 				// what went.
 				rescan()
-				shape.again()
+				shape.rereadShape()
 			}
 			for _, event := range events {
 				paths, whole, folder := shape.getConcernedPaths(event.Path())
@@ -143,8 +143,8 @@ func debounce(
 
 // found is what a walk of one folder new to the watch came to.
 type found struct {
-	paths []string
-	whole bool
+	paths        []string
+	isWholeVault bool
 }
 
 // walks walks the folders handed to it, one after another, and answers with
@@ -170,7 +170,7 @@ func walks(
 				return
 			case <-going:
 				return
-			case walked <- found{paths: paths, whole: whole}:
+			case walked <- found{paths: paths, isWholeVault: whole}:
 			}
 		}
 	}

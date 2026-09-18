@@ -245,9 +245,9 @@ func answer(t *testing.T, record flashcards.Record, card string, took time.Durat
 	return answerWith(t, record, card, review.Good, took)
 }
 
-// again writes down one card the person could not recall, which comes round
-// again in the same session.
-func again(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
+// answerAgain writes down one card the person could not recall, which comes round
+// answerAgain in the same session.
+func answerAgain(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
 	t.Helper()
 	return answerWith(t, record, card, review.Again, took)
 }

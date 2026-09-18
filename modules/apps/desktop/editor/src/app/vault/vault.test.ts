@@ -66,7 +66,10 @@ describe('the file a save presents', () => {
 
     const read = await core.read(at.path)
     if (!read.ok) throw new Error('the read was refused')
-    await core.write(at.path, 'prose and more', { prose: read.value.body, at: read.value.at ?? '' })
+    await core.write(at.path, 'prose and more', {
+      prose: read.value.body,
+      fingerprint: read.value.at ?? '',
+    })
 
     expect(asked.writeNote.mock.calls[0]?.[0]).toEqual({
       path: at.path,
@@ -188,7 +191,7 @@ describe('settings domain', () => {
     const file = await core.getSettingsFile()
     expect(file.written).toBe('raw')
     const saved = await core.saveSettingsFile('raw2', null)
-    expect(saved.changed).toBe(false)
+    expect(saved.isChanged).toBe(false)
 
     const rev = await core.getReviewSettings()
     expect(rev.starts).toBe('04:00')
@@ -237,8 +240,8 @@ describe('session domain', () => {
       id: 'v1',
       name: 'V1',
       path: '/vault',
-      scan: { ready: true, error: '', unwatched: '' },
-      coverage: { chunkCount: 10n, embeddedCount: 10n, embedding: false },
+      scan: { isReady: true, error: '', unwatched: '' },
+      coverage: { chunkCount: 10n, embeddedCount: 10n, isEmbedding: false },
     })
     const st = await core.state()
     expect(st.name).toBe('V1')

@@ -30,8 +30,8 @@ const LeastAnswers = 10
 // not answer stands at the default, and a caller putting the number in front of
 // a person says which of the two it is showing.
 type AnswerCost struct {
-	New, Review         time.Duration
-	ReadNew, ReadReview bool
+	New, Review                     time.Duration
+	ShouldReadNew, ShouldReadReview bool
 }
 
 // DefaultCost is what a vault holding no answer times is projected at.
@@ -47,7 +47,7 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 func GetCost(by Scheduler, answers []Answer) AnswerCost {
 	var took answerTimes
 	walkAnswers(by, answers, func(before Schedule, a Answer) {
-		took.holds(by.IsSpaced(before), a.GetCountedTime())
+		took.addAnswer(by.IsSpaced(before), a.GetCountedTime())
 	})
 	return took.cost()
 }
@@ -71,7 +71,7 @@ func GetCostUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) m
 			one = &answerTimes{}
 			held[path] = one
 		}
-		one.holds(by.IsSpaced(before), a.GetCountedTime())
+		one.addAnswer(by.IsSpaced(before), a.GetCountedTime())
 	})
 
 	out := make(map[string]AnswerCost, len(held))
@@ -84,9 +84,9 @@ func GetCostUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) m
 // answerTimes is how long the answers of each kind took, one entry an answer.
 type answerTimes struct{ begun, spaced []time.Duration }
 
-// holds counts one answer. An answer carrying no time at all says nothing about
-// how long its kind takes.
-func (t *answerTimes) holds(spaced bool, took time.Duration) {
+// addAnswer counts one answer. An answer carrying no time at all says nothing
+// about how long its kind takes.
+func (t *answerTimes) addAnswer(spaced bool, took time.Duration) {
 	if took <= 0 {
 		return
 	}
@@ -102,10 +102,10 @@ func (t *answerTimes) holds(spaced bool, took time.Duration) {
 func (t *answerTimes) cost() AnswerCost {
 	out := DefaultCost
 	if middle, read := getMedian(t.begun); read {
-		out.New, out.ReadNew = middle, true
+		out.New, out.ShouldReadNew = middle, true
 	}
 	if middle, read := getMedian(t.spaced); read {
-		out.Review, out.ReadReview = middle, true
+		out.Review, out.ShouldReadReview = middle, true
 	}
 	return out
 }

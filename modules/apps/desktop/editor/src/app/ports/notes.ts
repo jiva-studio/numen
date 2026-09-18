@@ -40,7 +40,7 @@ export interface NotePort {
   write(
     path: string,
     body: string,
-    seen: { prose: string; at: string } | null,
+    seen: { prose: string; fingerprint: string } | null,
   ): Promise<WriteResult>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>
@@ -60,5 +60,5 @@ export interface NotePort {
    * back from. Destroying takes the file off the disk and brings nothing back,
    * and is asked of a note only.
    */
-  remove(path: string, destroy?: boolean): Promise<RemoveResult>
+  remove(path: string, isPermanent?: boolean): Promise<RemoveResult>
 }

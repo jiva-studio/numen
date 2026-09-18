@@ -5,13 +5,13 @@ import (
 	"unicode"
 )
 
-// legible says whether a chunk reads as text. Recognition that went wrong reads
+// isLegible says whether a chunk reads as text. Recognition that went wrong reads
 // as punctuation with letters in it, and it is caught by two fractions: how much
 // of the chunk is letters, and how many of its words carry a mark inside them.
 //
 // Both thresholds are configuration, because where they sit depends on the
 // scripts a corpus is written in.
-func legible(chunk string, reads Legibility) bool {
+func isLegible(chunk string, reads Legibility) bool {
 	letters, characters := 0, 0
 	for _, r := range chunk {
 		if unicode.IsSpace(r) {

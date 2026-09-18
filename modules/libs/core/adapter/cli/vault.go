@@ -92,11 +92,11 @@ func vaultList(out io.Writer, deps Deps) error {
 	}
 	for _, one := range known {
 		last := " "
-		if one.Current {
+		if one.IsCurrent {
 			last = "*"
 		}
 		there := " "
-		if one.Missing {
+		if one.IsMissing {
 			there = "?"
 		}
 		fmt.Fprintf(out, "%s%s %-20s %s\n  %s\n",
@@ -199,7 +199,7 @@ func vaultErase(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	}
 
 	went := fmt.Sprintf("nothing was at %s", v.Path)
-	if res.Trashed {
+	if res.IsTrashed {
 		went = fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
 	}
 	fmt.Fprintf(out, "erased %s\n  %s\n", v.Name, went)

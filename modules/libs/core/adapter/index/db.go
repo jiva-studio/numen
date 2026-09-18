@@ -13,6 +13,8 @@ import (
 	"slices"
 	"strings"
 
+	// The driver and the vector extension register themselves under the names
+	// a DSN opens them by, and nothing here names either package.
 	_ "modernc.org/sqlite"
 	_ "modernc.org/sqlite/vec"
 

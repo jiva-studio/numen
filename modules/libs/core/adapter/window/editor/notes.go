@@ -207,7 +207,7 @@ func (a *API) GetNeighbourhood(
 			Seat:     seatOf(related.Seat),
 			Label:    related.Label,
 			Through:  related.Parent,
-			IsMutual: related.Mutual,
+			IsMutual: related.IsMutual,
 			Type:     typeOf(types[related.Path]),
 		})
 	}
@@ -244,7 +244,7 @@ func (a *API) ResolveAddresses(
 			Path:        one.To,
 			Vault:       string(vault),
 			IsCrossed:   crossed,
-			IsAmbiguous: one.Ambiguous,
+			IsAmbiguous: one.IsAmbiguous,
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -267,7 +267,7 @@ func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, er
 	return out, nil
 }
 
-// writes is one link as the note it is written in declares it.
+// newDomainLink is one link as the note it is written in declares it.
 //
 // The window names the note at the other end by the path it is filed under.
 // How much of that path the link carries is `note.GetAddress`: a name where it

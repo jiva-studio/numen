@@ -22,11 +22,11 @@ describe('fieldRows', () => {
 
   it('marks the one row on its way and no other', () => {
     const rows = fieldRows(FIELDS, 'Weight')
-    expect(rows.map((row) => row.dragged)).toEqual([false, true])
+    expect(rows.map((row) => row.isDragged)).toEqual([false, true])
   })
 
   it('marks the first row as the one naming the cards, and no other', () => {
-    expect(fieldRows(FIELDS, null).map((row) => row.names)).toEqual([true, false])
+    expect(fieldRows(FIELDS, null).map((row) => row.hasNames)).toEqual([true, false])
   })
 
   it('marks nothing as naming where a stencil names no field', () => {
@@ -159,14 +159,14 @@ describe('panes', () => {
 
   it('calls a part blank while nothing but space stands in it', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: ' \n ', back: '{{Height}}' }
-    expect(getFacePanes(face).map((pane) => pane.blank)).toEqual([true, true, false, false])
+    expect(getFacePanes(face).map((pane) => pane.isBlank)).toEqual([true, true, false, false])
   })
 
   it('calls a part blank where what is written fills out to nothing', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: '{{Blank}}', back: '' }
     const drawn = getPanes(faceOf(face, ['Blank'], [{ field: 'Blank', text: '' }]))
-    expect(drawn[0]?.blank).toBe(false)
-    expect(drawn[1]?.blank).toBe(true)
+    expect(drawn[0]?.isBlank).toBe(false)
+    expect(drawn[1]?.isBlank).toBe(true)
   })
 
   it('says a stray slot under the markup naming it, and not under the preview', () => {

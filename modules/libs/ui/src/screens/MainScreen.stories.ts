@@ -62,21 +62,21 @@ const meta: Meta<Knobs> = {
       const held = ref<State>(opening())
       const turns = ref<Turn[]>([...OPENING])
       const text = ref('')
-      const working = ref(false)
+      const isWorking = ref(false)
       let next = OPENING.length
       let tick: ReturnType<typeof setInterval> | undefined
 
       const settle = () => {
         clearInterval(tick)
         tick = undefined
-        working.value = false
+        isWorking.value = false
       }
 
       /** An answer that arrives a few characters at a time. */
       const onSubmit = (message: string) => {
         turns.value.push(createAsked(`${++next}`, message))
         text.value = ''
-        working.value = true
+        isWorking.value = true
 
         const id = `${++next}`
         turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
@@ -98,7 +98,7 @@ const meta: Meta<Knobs> = {
 
       onScopeDispose(settle)
 
-      return { held, args, turns, text, working, onSubmit, TABS, PLEX, AGENT }
+      return { held, args, turns, text, isWorking, onSubmit, TABS, PLEX, AGENT }
     },
     template: `
       <div style="height: 100vh">

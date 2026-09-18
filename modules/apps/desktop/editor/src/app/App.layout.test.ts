@@ -107,8 +107,8 @@ describe('a letter pressed on the welcome screen', () => {
   /** The screen with two vaults on it, and no tab over them. */
   const two = async () => {
     listed.vaults = [
-      { id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false },
-      { id: 'heat', name: 'Heat', path: '/vaults/Heat', missing: false },
+      { id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false },
+      { id: 'heat', name: 'Heat', path: '/vaults/Heat', isMissing: false },
     ]
     listed.showing = ''
     return mountWindow()

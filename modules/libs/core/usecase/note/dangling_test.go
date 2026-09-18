@@ -16,7 +16,7 @@ import (
 // longer parses. Its link is left as it stands, and it is named.
 func TestAMoveNamesTheLinksItCouldNotRepair(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
 		"physics/Cold.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Cold\n",

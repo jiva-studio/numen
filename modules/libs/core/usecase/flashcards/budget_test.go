@@ -227,7 +227,7 @@ func TestACardAnsweredAgainSpendsOneCardOrEveryShow(t *testing.T) {
 		// The first card is put to the person nine times in one session.
 		morning := s.run(t, saturday)
 		for range 9 {
-			again(t, morning, mark(0), 4*time.Second)
+			answerAgain(t, morning, mark(0), 4*time.Second)
 		}
 
 		got := byDeck(s.sessionAt(t, today, saturday.Add(2*time.Hour)))["decks/Two.md"]
@@ -258,7 +258,7 @@ func TestAFaceTheDayHasChargedIsFreeInALaterSession(t *testing.T) {
 		answer(t, before, mark(0), 6*time.Second)
 		answer(t, before, mark(1), 6*time.Second)
 
-		again(t, s.run(t, saturday), mark(0), 4*time.Second)
+		answerAgain(t, s.run(t, saturday), mark(0), 4*time.Second)
 
 		got := byDeck(s.sessionAt(t, today, saturday.Add(2*time.Hour)))["decks/One.md"]
 		if got != one.cards {
@@ -284,7 +284,7 @@ func TestADaysCardsAreCountedInCardsAndNotShows(t *testing.T) {
 	morning := s.run(t, saturday)
 	for i := range 3 {
 		for range 3 {
-			again(t, morning, mark(i), 4*time.Second)
+			answerAgain(t, morning, mark(i), 4*time.Second)
 		}
 	}
 
@@ -705,7 +705,7 @@ func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
 	// showings.
 	morning := s.run(t, saturday)
 	for range 3 {
-		again(t, morning, mark(0), 4*time.Second)
+		answerAgain(t, morning, mark(0), 4*time.Second)
 	}
 
 	evening := saturday.Add(2 * time.Hour)
@@ -733,7 +733,7 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 	// Two cards the person could not recall, which come round again in the day.
 	morning := s.run(t, saturday)
 	for i := range 2 {
-		again(t, morning, mark(i), 6*time.Second)
+		answerAgain(t, morning, mark(i), 6*time.Second)
 	}
 	evening := saturday.Add(time.Hour)
 	if got := countQueue(s.sessionAt(t, today, evening)); got == 0 {
@@ -1048,7 +1048,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 				one.gave(t, s)
 			}
 
-			read, err := s.presets.Of(t.Context(), s.vault, "decks/On.md")
+			read, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/On.md")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1103,7 +1103,7 @@ func newSpentToday(cards int) func(*testing.T, vaulted) {
 		answersAt(cards, -30, review.Good)(t, s)
 		this := s.run(t, saturday.Add(-time.Hour))
 		for i := range 4 {
-			again(t, this, mark(i), 5*time.Second)
+			answerAgain(t, this, mark(i), 5*time.Second)
 			answer(t, this, mark(i), 5*time.Second)
 		}
 	}
@@ -1288,7 +1288,7 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 			}
 			given := s.run(t, saturday.Add(spent))
 			for _, one := range sat.Queue {
-				again(t, given, one.ID.Card, 6*time.Second)
+				answerAgain(t, given, one.ID.Card, 6*time.Second)
 				spent += 6 * time.Second
 				asked++
 			}

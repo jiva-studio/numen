@@ -31,7 +31,7 @@ const emit = defineEmits<{
   seek: [ms: number]
 }>()
 
-/** A sound is at least as long as the furthest anything has stood in it. */
+/** A sound is at least as long as the getFurthest anything has stood in it. */
 const runs = computed(() => Math.max(props.length, props.at, 0))
 
 const onSeek = (event: Event) => emit('seek', Number((event.target as HTMLInputElement).value))

@@ -12,14 +12,14 @@ import (
 // A container nobody configured builds no embedder, and the machine's own
 // settings are not read here.
 func TestAContainerNobodyGaveSettingsEmbedsWithNothing(t *testing.T) {
-	embedder, close, why := container.Config{}.Embedder(t.Context())
+	embedder, closer, why := container.Config{}.Embedder(t.Context())
 	if why != nil {
 		t.Fatalf("want no reason, got %v", why)
 	}
 	if embedder != nil {
 		t.Errorf("got an embedder: %v", embedder.Model())
 	}
-	if close != nil {
+	if closer != nil {
 		t.Error("got something to close")
 	}
 }
@@ -51,12 +51,12 @@ func newServiceProvider(where embed.Provider, name, baseURL string) embed.Provid
 func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	embedder, close, why := container.Config{Embedding: makeEmbedConfig("bge-m3")}.Embedder(t.Context())
+	embedder, closer, why := container.Config{Embedding: makeEmbedConfig("bge-m3")}.Embedder(t.Context())
 	if why != nil {
 		t.Fatal(why)
 	}
-	if close != nil {
-		defer func() { _ = close() }()
+	if closer != nil {
+		defer func() { _ = closer() }()
 	}
 	if embedder == nil {
 		t.Fatal("no embedder")
@@ -70,12 +70,12 @@ func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	indexing, asking, close, why := container.Config{Embedding: makeEmbedConfig("bge-m3")}.Embedders(t.Context(), nil)
+	indexing, asking, closer, why := container.Config{Embedding: makeEmbedConfig("bge-m3")}.Embedders(t.Context(), nil)
 	if why != nil {
 		t.Fatal(why)
 	}
-	if close != nil {
-		defer func() { _ = close() }()
+	if closer != nil {
+		defer func() { _ = closer() }()
 	}
 	if indexing == nil || asking == nil {
 		t.Fatalf("got %v and %v", indexing, asking)
@@ -90,12 +90,12 @@ func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 	cfg := makeEmbedConfig("bge-m3")
 	cfg.Query = newServiceProvider(cfg.Query, "reached-another-way", nowhere)
 
-	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
+	indexing, asking, closer, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why != nil {
 		t.Fatal(why)
 	}
-	if close != nil {
-		defer func() { _ = close() }()
+	if closer != nil {
+		defer func() { _ = closer() }()
 	}
 	if indexing == asking {
 		t.Fatal("one embedder for two providers")
@@ -109,12 +109,12 @@ func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 // recipe is what an installation keeps its vectors under.
 func recipe(t *testing.T, cfg embed.Config) string {
 	t.Helper()
-	embedder, close, why := container.Config{Embedding: cfg}.Embedder(t.Context())
+	embedder, closer, why := container.Config{Embedding: cfg}.Embedder(t.Context())
 	if why != nil {
 		t.Fatal(why)
 	}
-	if close != nil {
-		t.Cleanup(func() { _ = close() })
+	if closer != nil {
+		t.Cleanup(func() { _ = closer() })
 	}
 	if embedder == nil {
 		t.Fatal("no embedder")
@@ -149,7 +149,7 @@ func TestAModelRunHereAndOneServedKeepTheirOwnVectors(t *testing.T) {
 	here := embed.Defaults()
 	local, _ := here.Indexing.Local()
 	// The repository is named and not fetched, so nothing reaches a network.
-	local.Download = false
+	local.ShouldDownload = false
 	here.Indexing = here.Indexing.SetLocal(local)
 	served := makeEmbedConfig(here.Model.Name)
 	served.Indexing = newServiceProvider(served.Indexing, local.Name, nowhere)
@@ -169,12 +169,12 @@ func TestARunThatOnlyAsksClaimsWhatTheIndexWasFilledWith(t *testing.T) {
 	cfg := makeEmbedConfig("bge-m3")
 	cfg.Query = newServiceProvider(cfg.Query, "bge-m3", elsewhere)
 
-	asking, close, why := container.Config{Embedding: cfg}.OpenQuestionEmbedder(t.Context())
+	asking, closer, why := container.Config{Embedding: cfg}.OpenQuestionEmbedder(t.Context())
 	if why != nil {
 		t.Fatal(why)
 	}
-	if close != nil {
-		defer func() { _ = close() }()
+	if closer != nil {
+		defer func() { _ = closer() }()
 	}
 	if asking == nil {
 		t.Fatal("no embedder")
@@ -193,12 +193,12 @@ func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 	cfg.Indexing = makeMissingProvider(t)
 	held := container.Config{Embedding: cfg}
 
-	embedder, close, why := held.Embedder(t.Context())
+	embedder, closer, why := held.Embedder(t.Context())
 	if why != nil {
 		t.Fatal(why)
 	}
-	if close != nil {
-		defer func() { _ = close() }()
+	if closer != nil {
+		defer func() { _ = closer() }()
 	}
 	if embedder == nil {
 		t.Fatal("no embedder")
@@ -244,7 +244,7 @@ func makeMissingProvider(t *testing.T) embed.Provider {
 	t.Helper()
 	where := embed.Defaults().Indexing
 	local, _ := where.Local()
-	local.Dir, local.Download = t.TempDir(), false
+	local.Dir, local.ShouldDownload = t.TempDir(), false
 	return where.SetLocal(local)
 }
 
@@ -276,12 +276,12 @@ func makeUncomparedTasks(t *testing.T) *task.Tasks {
 		embed.ServiceModel{Name: "reached-another-way", BaseURL: nowhere})
 
 	tasks := task.New()
-	_, _, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
+	_, _, closer, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
 	if why != nil {
 		t.Fatal(why)
 	}
-	if close != nil {
-		t.Cleanup(func() { _ = close() })
+	if closer != nil {
+		t.Cleanup(func() { _ = closer() })
 	}
 	return tasks
 }
@@ -324,14 +324,14 @@ func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {
 	service.BaseURL = ""
 	cfg.Query = cfg.Query.SetService(service)
 
-	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
+	indexing, asking, closer, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why == nil {
 		t.Fatal("want a reason")
 	}
 	if indexing != nil || asking != nil {
 		t.Errorf("got %v and %v", indexing, asking)
 	}
-	if close != nil {
+	if closer != nil {
 		t.Error("got something to close")
 	}
 }
@@ -346,12 +346,12 @@ func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
 	cfg.Query.Use = ""
 
 	tasks := task.New()
-	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
+	indexing, asking, closer, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
 	if why != nil {
 		t.Fatal(why)
 	}
-	if close != nil {
-		defer func() { _ = close() }()
+	if closer != nil {
+		defer func() { _ = closer() }()
 	}
 	if indexing == nil || asking == nil {
 		t.Fatalf("got %v and %v", indexing, asking)

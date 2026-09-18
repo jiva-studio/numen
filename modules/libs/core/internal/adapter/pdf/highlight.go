@@ -106,7 +106,7 @@ func (d *document) words(index, offset int) []highlight.Box {
 			at += len(text)
 			continue
 		}
-		if length > 0 && !joins(word, mark) {
+		if length > 0 && !isWordContinued(word, mark) {
 			done()
 		}
 		if length == 0 {
@@ -121,9 +121,9 @@ func (d *document) words(index, offset int) []highlight.Box {
 	return boxes
 }
 
-// joins says whether a character carries the word on: it stands on the same
-// line, within a space of where the word has got to.
-func joins(word, mark responses.CharPosition) bool {
+// isWordContinued says whether a character carries the word on: it stands on
+// the same line, within a space of where the word has got to.
+func isWordContinued(word, mark responses.CharPosition) bool {
 	high := min(word.Top-word.Bottom, mark.Top-mark.Bottom)
 	shared := min(word.Top, mark.Top) - max(word.Bottom, mark.Bottom)
 	if high <= 0 || shared < sameLine*high {

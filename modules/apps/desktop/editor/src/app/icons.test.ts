@@ -52,7 +52,7 @@ describe('the icon a command is drawn with', () => {
   })
 
   it('is there for every way into a vault the welcome screen offers', () => {
-    const ways = waysIn({ vault: 'physics', ready: true }, words, 'Linux')
+    const ways = waysIn({ vault: 'physics', isReady: true }, words, 'Linux')
     for (const one of ways) expect(iconFor(one.id), one.id).not.toBeNull()
   })
 

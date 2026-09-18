@@ -25,7 +25,7 @@ const installation = computed(() => props.state.installation)
       :name="words.syncing"
       :detail="words.syncingDetail"
     >
-      <Switch v-model="installation.syncing.value" :aria-labelledby="labelledBy" />
+      <Switch v-model="installation.isSyncing.value" :aria-labelledby="labelledBy" />
     </SettingRow>
   </section>
 </template>

@@ -21,7 +21,7 @@ const vault = (answers: Partial<TextEditorTabDeps> = {}) => {
     saveSettingsFile: (written, seen) => {
       wrote.push(written)
       presented.push(seen)
-      return Promise.resolve({ changed: false })
+      return Promise.resolve({ isChanged: false })
     },
     ...answers,
   }
@@ -168,10 +168,10 @@ describe('a file that moved past what the tab read', () => {
     const core: TextEditorTabDeps = {
       getSettingsFile: () => Promise.resolve({ written: stands, path: '/numen.json' }),
       saveSettingsFile: (written, seen) => {
-        if (seen !== null && seen !== stands) return Promise.resolve({ changed: true })
+        if (seen !== null && seen !== stands) return Promise.resolve({ isChanged: true })
         stands = written
         wrote.push(written)
-        return Promise.resolve({ changed: false })
+        return Promise.resolve({ isChanged: false })
       },
     }
     const held = useTextEditor(core, reads)

@@ -74,7 +74,7 @@ func (e EditorAssembly) ReadSettingsFile() (string, string, error) { return e.cf
 func (e EditorAssembly) GetModels() []port.Model                   { return e.cfg.Models()() }
 
 func (e EditorAssembly) WriteSettingsFile(written string, seen *string) error {
-	return e.cfg.WritesConfiguredFile()(written, seen)
+	return e.cfg.WriteConfiguredFile()(written, seen)
 }
 
 func (e EditorAssembly) TurnSettings(written []port.Setting) error {
@@ -86,14 +86,14 @@ func (e EditorAssembly) GetPartsUnderANodeBounds() (least, most float64) {
 	return held.Least, held.Most
 }
 
-func (e EditorAssembly) GetLatestDayStarts() string { return e.cfg.LatestDayStarts() }
+func (e EditorAssembly) GetLatestDayStarts() string { return e.cfg.GetLatestDayStart() }
 
-func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.RebuildIndex }
-func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.Transcribes }
+func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }
+func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTranscribe }
 
 func (e EditorAssembly) OpenEmbedders(
 	ctx context.Context, tasks *task.Tasks,
-) (indexing, asking port.Embedder, close func() error, why error) {
+) (indexing, asking port.Embedder, closer func() error, why error) {
 	return e.cfg.Embedders(ctx, tasks)
 }
 
@@ -152,7 +152,7 @@ func (e EditorAssembly) ReadWholeVault(
 	ctx context.Context, embedder port.Embedder, v domain.Vault, rebuild bool,
 ) (vault.ReadWholeVault, error) {
 	asked := e.cfg
-	asked.RebuildIndex = rebuild
+	asked.ShouldRebuildIndex = rebuild
 	return asked.ReadWholeVault(ctx, e.db, embedder, v)
 }
 
@@ -169,13 +169,13 @@ func (e EditorAssembly) StartVault(
 	unwatched error,
 ) {
 	asked := e.cfg
-	asked.RebuildIndex = rebuild
+	asked.ShouldRebuildIndex = rebuild
 
 	opening := asked.VaultOpener(e.db)
-	opening.Rebuild = rebuild
+	opening.ShouldRebuild = rebuild
 	opening.ErrorHandler = handleError
 	if told != nil {
-		opening.Told = func(m VaultChanges) { told(m.Paths, m.Assets, m.Reload) }
+		opening.Told = func(m VaultChanges) { told(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
 	open := opening.Begin(ctx, v)

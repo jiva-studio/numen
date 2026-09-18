@@ -34,7 +34,7 @@ func isGone(t *testing.T, root, path string) bool {
 // already on disk into the index and the links they carry with them.
 func waitForScan(t *testing.T, f *going) {
 	t.Helper()
-	testsupport.WaitFor(t, f.opened.API.Ready.Load)
+	testsupport.WaitFor(t, f.installation.API.Ready.Load)
 }
 
 // TestRenamingWritesTheNoteAndMovesTheFile. A note is shown by its title, so
@@ -440,11 +440,11 @@ func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
 // what would reach the vault after the writes already taken have landed.
 func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
-	t.Cleanup(func() { f.opened.Close() })
+	t.Cleanup(func() { f.installation.Close() })
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if !f.opened.Settle(ctx) {
+	if !f.installation.Settle(ctx) {
 		t.Fatal("the vault did not settle with nobody holding anything")
 	}
 
@@ -590,9 +590,9 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 	waitForScan(t, f)
-	f.opened.API.Notes.Rename.Writers = staleWriters{VaultWriters: f.opened.API.Notes.Rename.Writers}
+	f.installation.API.Notes.Rename.Writers = staleWriters{VaultWriters: f.installation.API.Notes.Rename.Writers}
 
-	out, err := f.opened.API.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
+	out, err := f.installation.API.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Old.md",
 		Title: "New",
 	}))
@@ -602,7 +602,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a note that changed was answered %v", code)
 	}
-	if isGone(t, f.opened.API.GetShownVault().Path, "Old.md") {
+	if isGone(t, f.installation.API.GetShownVault().Path, "Old.md") {
 		t.Error("the file moved for a rename that wrote nothing")
 	}
 }

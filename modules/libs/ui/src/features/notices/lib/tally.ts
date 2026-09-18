@@ -45,7 +45,7 @@ export interface ActivityDescriptor {
   /** Whether a bar is drawn, and how full. Absent when the share is unknown. */
   readonly share?: number
   /** Whether the count is worth showing beside the words. */
-  readonly counts: boolean
+  readonly hasCounts: boolean
 }
 
 /**
@@ -78,17 +78,17 @@ export const activity = (input: {
   readonly isWorking?: boolean
   readonly tally?: Tally
 }): ActivityDescriptor => {
-  if (!input.text) return { state: 'quiet', counts: false }
-  if (input.hasFailed) return { state: 'failed', counts: false }
+  if (!input.text) return { state: 'quiet', hasCounts: false }
+  if (input.hasFailed) return { state: 'failed', hasCounts: false }
 
   // Work is claimed, not assumed. Words alone say something is so, and a caller
   // that means "this is happening now" says that too.
   const share = input.tally ? shareOf(input.tally) : undefined
-  if (!input.isWorking && share === undefined) return { state: 'resting', counts: false }
+  if (!input.isWorking && share === undefined) return { state: 'resting', hasCounts: false }
 
   return share === undefined
-    ? { state: 'working', counts: false }
-    : { state: 'working', share, counts: true }
+    ? { state: 'working', hasCounts: false }
+    : { state: 'working', share, hasCounts: true }
 }
 
 /**

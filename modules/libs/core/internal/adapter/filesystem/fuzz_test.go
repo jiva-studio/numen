@@ -19,14 +19,14 @@ import (
 func vault(tb testing.TB) string {
 	tb.Helper()
 	root := tb.TempDir()
-	real, err := filepath.EvalSymlinks(root)
+	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		tb.Fatal(err)
 	}
-	away := filepath.Join(filepath.Dir(real), "away")
+	away := filepath.Join(filepath.Dir(resolved), "away")
 	for _, dir := range []string{
-		filepath.Join(real, "notes"),
-		filepath.Join(real, DefaultServiceDir, "ocr"),
+		filepath.Join(resolved, "notes"),
+		filepath.Join(resolved, DefaultServiceDir, "ocr"),
 		away,
 	} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -34,16 +34,16 @@ func vault(tb testing.TB) string {
 		}
 	}
 	for _, link := range [][2]string{
-		{filepath.Join(real, "notes"), filepath.Join(real, "inward")},
-		{away, filepath.Join(real, "outward")},
-		{away, filepath.Join(real, "notes", "outward")},
-		{filepath.Join(real, DefaultServiceDir), filepath.Join(real, "held")},
+		{filepath.Join(resolved, "notes"), filepath.Join(resolved, "inward")},
+		{away, filepath.Join(resolved, "outward")},
+		{away, filepath.Join(resolved, "notes", "outward")},
+		{filepath.Join(resolved, DefaultServiceDir), filepath.Join(resolved, "held")},
 	} {
 		if err := os.Symlink(link[0], link[1]); err != nil {
 			tb.Fatal(err)
 		}
 	}
-	return real
+	return resolved
 }
 
 // Everything that reaches a vault from outside the application comes through
@@ -116,25 +116,25 @@ func FuzzInside(f *testing.F) {
 // two divide between them, so a path spelled as the vault's that lands in the
 // application's folder is the application's and resolveVaultPath may not take
 // it.
-func checkRule(t *testing.T, root, path, rule string, application bool, target, real string, err error) {
+func checkRule(t *testing.T, root, path, rule string, application bool, target, resolved string, err error) {
 	t.Helper()
 	if err != nil {
-		if target != "" || real != "" {
-			t.Fatalf("%s refused %q and answered with %q, %q", rule, path, target, real)
+		if target != "" || resolved != "" {
+			t.Fatalf("%s refused %q and answered with %q, %q", rule, path, target, resolved)
 		}
 		return
 	}
-	for what, got := range map[string]string{"lands at": target, "resolves to": real} {
+	for what, got := range map[string]string{"lands at": target, "resolves to": resolved} {
 		if !isUnderRoot(got, root) {
 			t.Fatalf("%s took %q, which %s %q, outside %q", rule, path, what, got, root)
 		}
 	}
-	if got := ours(landing(real, root), DefaultServiceDir); got != application {
+	if got := isOurs(landing(resolved, root), DefaultServiceDir); got != application {
 		where := "outside the application's folder"
 		if got {
 			where = "into the application's folder"
 		}
-		t.Fatalf("%s took %q, which resolves %s: %q", rule, path, where, real)
+		t.Fatalf("%s took %q, which resolves %s: %q", rule, path, where, resolved)
 	}
 }
 

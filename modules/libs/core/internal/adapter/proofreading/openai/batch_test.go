@@ -41,8 +41,9 @@ type left struct {
 	} `json:"requests"`
 }
 
-// takes answers a run with a batch id, keeping the raw body it was given.
-func takes(t *testing.T, id string, raw *[]byte) *httptest.Server {
+// newRunServer answers a run with a batch id, keeping the raw body it was
+// given.
+func newRunServer(t *testing.T, id string, raw *[]byte) *httptest.Server {
 	t.Helper()
 	var mu sync.Mutex
 	return server(t, func(w http.ResponseWriter, r *http.Request) {
@@ -59,9 +60,9 @@ func takes(t *testing.T, id string, raw *[]byte) *httptest.Server {
 	})
 }
 
-// holds answers with a batch in one status, carrying whatever results are given
-// for it.
-func holds(t *testing.T, status string, results []map[string]any) *httptest.Server {
+// newBatchServer answers with a batch in one status, carrying whatever results
+// are given for it.
+func newBatchServer(t *testing.T, status string, results []map[string]any) *httptest.Server {
 	t.Helper()
 	return server(t, func(w http.ResponseWriter, r *http.Request) {
 		out := map[string]any{"id": strings.TrimPrefix(r.URL.Path, "/"), "status": status}
@@ -91,7 +92,7 @@ func newResult(customID, text string) map[string]any {
 // them.
 func TestTheRunIsLeftWithItsFieldsInTheOrderTheServiceReadsThem(t *testing.T) {
 	var raw []byte
-	s := takes(t, "batch_1", &raw)
+	s := newRunServer(t, "batch_1", &raw)
 
 	if _, err := newBatchClient(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
@@ -114,7 +115,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 	pages := []proofread.Batch{page(7, "the frst line", "the second"), page(8, "another page")}
 
 	var raw []byte
-	s := takes(t, "batch_1", &raw)
+	s := newRunServer(t, "batch_1", &raw)
 
 	if _, err := newBatchClient(t, s.URL).Leave(t.Context(), pages); err != nil {
 		t.Fatal(err)
@@ -159,7 +160,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 
 func TestLeaveAnswersWithTheNameTheServiceGave(t *testing.T) {
 	var raw []byte
-	s := takes(t, "batch_1e9f", &raw)
+	s := newRunServer(t, "batch_1e9f", &raw)
 
 	name, err := newBatchClient(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")})
 	if err != nil {
@@ -173,7 +174,7 @@ func TestLeaveAnswersWithTheNameTheServiceGave(t *testing.T) {
 func TestABatchStillWorkingIsNotThereYet(t *testing.T) {
 	for _, status := range []string{"validating", "in_progress", "finalizing"} {
 		t.Run(status, func(t *testing.T) {
-			s := holds(t, status, nil)
+			s := newBatchServer(t, status, nil)
 
 			replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 			if err != nil {
@@ -190,7 +191,7 @@ func TestABatchStillWorkingIsNotThereYet(t *testing.T) {
 }
 
 func TestACompletedBatchAnswersAboutEveryPageUnderItsOwnNumber(t *testing.T) {
-	s := holds(t, "completed", []map[string]any{
+	s := newBatchServer(t, "completed", []map[string]any{
 		newResult("7", "700|the first line"),
 		newResult("8", "800|the second line"),
 	})
@@ -216,7 +217,7 @@ func TestACompletedBatchAnswersAboutEveryPageUnderItsOwnNumber(t *testing.T) {
 func TestABatchThatEndedNamesTheStatus(t *testing.T) {
 	for _, status := range []string{"failed", "expired", "cancelled"} {
 		t.Run(status, func(t *testing.T) {
-			s := holds(t, status, nil)
+			s := newBatchServer(t, status, nil)
 
 			replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 			if err == nil {
@@ -236,7 +237,7 @@ func TestABatchThatEndedNamesTheStatus(t *testing.T) {
 }
 
 func TestAResultNotAboutAPageOrSayingNothingIsLeftOut(t *testing.T) {
-	s := holds(t, "completed", []map[string]any{
+	s := newBatchServer(t, "completed", []map[string]any{
 		newResult("7", "700|the first line"),
 		newResult("the third one", "800|a line under no number"),
 		newResult("9", "   "),
@@ -259,7 +260,7 @@ func TestAResultNotAboutAPageOrSayingNothingIsLeftOut(t *testing.T) {
 }
 
 func TestACompletedBatchWithNoResultsAnswersAboutNothing(t *testing.T) {
-	s := holds(t, "completed", nil)
+	s := newBatchServer(t, "completed", nil)
 
 	replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 	if err != nil {

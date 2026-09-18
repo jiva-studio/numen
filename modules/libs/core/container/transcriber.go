@@ -19,7 +19,7 @@ func (c Config) TranscriberReady() bool { return transcription.Ready(c.Transcrip
 //
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Transcribing instead.
-func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, close func() error, why error) {
+func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, closer func() error, why error) {
 	models, err := transcription.Open(ctx, c.Transcription)
 	if err != nil {
 		return nil, nil, err

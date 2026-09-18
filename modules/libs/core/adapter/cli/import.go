@@ -42,7 +42,7 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	defer closeIfOpen(open.Close)
 
 	importing := open.ImportURL
-	importing.Again = again
+	importing.IsRepeat = again
 	if copying {
 		return copyURL(ctx, out, importing, v, args[1])
 	}
@@ -56,7 +56,7 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	if err != nil {
 		return err
 	}
-	if res.Nothing {
+	if res.IsNothing {
 		fmt.Fprintf(out, "%s publishes none of what was asked for, and that is what was written\n",
 			res.Path)
 		return nil
@@ -86,7 +86,7 @@ func copyURL(
 	case res.IsTooLarge():
 		fmt.Fprintf(out, "%s would take %s, over the %s a copy may be\n",
 			res.Path, describeSize(res.Bytes), describeSize(res.Limit))
-	case res.Existed:
+	case res.IsExisted:
 		fmt.Fprintf(out, "a copy of %s is already here\n", describeSize(res.Bytes))
 	default:
 		fmt.Fprintf(out, "a copy of %s is here\n", describeSize(res.Bytes))

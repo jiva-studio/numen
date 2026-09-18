@@ -86,7 +86,7 @@ const vault = (
   vault: '01A',
   name: 'Vault',
   path: '/vaults/01A',
-  counted: true,
+  isCounted: true,
   faces: 0,
   due: 0,
   new: 0,
@@ -100,7 +100,7 @@ const vault = (
   })),
   presets,
   unread: '',
-  reading: false,
+  isReading: false,
 })
 
 /** An application answering one preset for each deck named here. */

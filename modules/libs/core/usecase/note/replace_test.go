@@ -21,7 +21,7 @@ func (c changing) replace() note.Replace {
 // What is asked for is replaced, and what is not asked for is the bytes it was.
 func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
 	})
 
@@ -41,7 +41,7 @@ func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 	if done.Matched != "A hedgehog" {
 		t.Errorf("what stood there is reported as %q", done.Matched)
 	}
-	if done.Plainly {
+	if done.IsPlain {
 		t.Error("a stretch that stood exactly is reported as read plainly")
 	}
 }
@@ -50,7 +50,7 @@ func TestOnlyTheSpanAskedForIsReplaced(t *testing.T) {
 // without being told anything else.
 func TestAReplacementSaysWhereItLanded(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Aggressor.md": "one two three\n"})
+	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four", domain.Fingerprint{})
 	if err != nil {
@@ -66,7 +66,7 @@ func TestAReplacementSaysWhereItLanded(t *testing.T) {
 func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 	t.Parallel()
 	front := "---\nkeep: 'this'   # and this\nid: 01J8XYZ\n---\n"
-	c := changeable(t, map[string]string{"Aggressor.md": front + "\nA hedgehog.\n"})
+	c := openChanging(t, map[string]string{"Aggressor.md": front + "\nA hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"A hedgehog", "An axe", domain.Fingerprint{}); err != nil {
@@ -82,7 +82,7 @@ func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 func TestASpanStandingTwiceIsRefused(t *testing.T) {
 	t.Parallel()
 	was := "A foe advances.\n\nAnother foe advances.\n"
-	c := changeable(t, map[string]string{"Aggressor.md": was})
+	c := openChanging(t, map[string]string{"Aggressor.md": was})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"foe advances", "foe retreats", domain.Fingerprint{})
@@ -102,7 +102,7 @@ func TestASpanStandingTwiceIsRefused(t *testing.T) {
 // agreeing, which is what tells a caller its copy is one character out.
 func TestASpanThatIsNotThereSaysWhereItDiverged(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
+	c := openChanging(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"the wrath of the retreating foe", "nothing", domain.Fingerprint{})
@@ -122,7 +122,7 @@ func TestASpanThatIsNotThereSaysWhereItDiverged(t *testing.T) {
 // that landed. Saying so is what stops it landing twice.
 func TestAReplacementAlreadyInTheNoteIsSaidSo(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Aggressor.md": "An axe is named.\n"})
+	c := openChanging(t, map[string]string{"Aggressor.md": "An axe is named.\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"A hedgehog", "An axe", domain.Fingerprint{})
@@ -135,7 +135,7 @@ func TestAReplacementAlreadyInTheNoteIsSaidSo(t *testing.T) {
 // prose rarely reproduces them. The stretch is found, and the reading is said.
 func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"Aggressor.md": "Он сказал «да» — и ушёл.\n",
 	})
 
@@ -144,7 +144,7 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !done.Plainly {
+	if !done.IsPlain {
 		t.Error("the reading was not reported")
 	}
 	if done.Matched != "сказал «да» — и ушёл" {
@@ -158,7 +158,7 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 // A file written with CRLF is a file the application is a guest in.
 func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"Aggressor.md": "# The aggressor\r\n\r\nA hedgehog.\r\n",
 	})
 
@@ -179,7 +179,7 @@ func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 // takes an identifier if it has none.
 func TestAReplacedNoteTakesAnIdentifier(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
+	c := openChanging(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"A hedgehog", "An axe", domain.Fingerprint{}); err != nil {
@@ -194,7 +194,7 @@ func TestAReplacedNoteTakesAnIdentifier(t *testing.T) {
 // a caller changing a note twice does not read it back in between.
 func TestAReplacementFollowsAReplacementWithNoReadBetween(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Aggressor.md": "one two three\n"})
+	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 	replacing := c.replace()
 
 	first, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.Fingerprint{})

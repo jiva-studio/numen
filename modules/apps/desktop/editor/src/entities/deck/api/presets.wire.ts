@@ -1,8 +1,6 @@
 /** The presets of a vault, as the window asks for them and as the schema writes them. */
 import { asFailure, asValue } from '@numen/wire'
 import {
-  BudgetUnit as BudgetUnits,
-  Rule as Rules,
   type Bounds as BoundsMessage,
   type Curve as CurveMessage,
   type ErrorCode as ProtoErrorCode,
@@ -12,23 +10,22 @@ import {
   type Settings as SettingsMessage,
   type SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
-import { goalNames, goalOf, namesOf } from '@numen/wire'
+import { goalNames, goalOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
 import { presetsService } from '@/shared/clients'
 import { DEFAULTS, NOWHERE } from '../lib/presets'
 import type {
   Bounds,
-  BudgetUnit,
   Curve,
   Place,
   Point,
   Preset,
   Presets,
   PresetReadResult,
-  Rule,
   Settings,
   SettingsBounds,
 } from '../lib/presets'
+import { COUNTED, COUNTING, LEARNED, RULING } from './presets.names'
 
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {
@@ -161,7 +158,7 @@ const parsePoint = (one: PointMessage): Point => ({
   retained: one.retained,
   owed: one.owed,
   through: one.through,
-  enough: one.isEnough,
+  canLearnEveryCard: one.isEnough,
   closed: one.closed,
   clears: one.clears,
   learned: one.learned,
@@ -183,7 +180,7 @@ const NO_CURVE: Curve = {
   overdue: 0,
   unbegun: 0,
   isValid: true,
-  honest: true,
+  isHonest: true,
 }
 
 /** A curve as the window carries it. An answer holding none is an empty one. */
@@ -202,30 +199,8 @@ const parseCurve = (curve: CurveMessage | undefined): Curve =>
         overdue: curve.overdue,
         unbegun: curve.unbegun,
         isValid: true,
-        honest: true,
+        isHonest: true,
       }
 
 const parsePlace = (place: PlaceMessage | undefined): Place =>
   place === undefined ? NOWHERE : { at: place.at, value: place.value, day: place.day }
-
-/**
- * What counts as learned, in the window's own words.
- */
-const LEARNED: Record<Rules, Rule | null> = {
-  [Rules.UNSPECIFIED]: null,
-  [Rules.INTERVAL]: 'interval',
-  [Rules.RETENTION]: 'retention',
-}
-
-const RULING = namesOf<Rule, Rules>(LEARNED)
-
-/**
- * The unit a budget is spent in, in the window's own words.
- */
-const COUNTED: Record<BudgetUnits, BudgetUnit | null> = {
-  [BudgetUnits.UNSPECIFIED]: null,
-  [BudgetUnits.CARDS]: 'cards',
-  [BudgetUnits.SHOWS]: 'shows',
-}
-
-const COUNTING = namesOf<BudgetUnit, BudgetUnits>(COUNTED)

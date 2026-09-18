@@ -103,7 +103,7 @@ const add = (): void => {
         :naming="naming"
         :objections-id="objectionsId(row.field)"
         :wrong="wrongWith(row.field)"
-        :before="row.field === at"
+        :is-drop-above="row.field === at"
         :words="words"
         @drag-over="hover"
         @drop="drop"

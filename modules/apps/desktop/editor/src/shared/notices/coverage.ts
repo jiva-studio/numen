@@ -13,8 +13,8 @@ export interface IndexCoverage {
   /** How many of those spans carry a vector. */
   readonly embedded: number
   /** Whether anything is going to turn the spans into vectors. */
-  readonly embedding: boolean
+  readonly isEmbedding: boolean
 }
 
 /** Whether the vault is searched by its words alone. */
-export const wordsOnly = (read: IndexCoverage): boolean => read.chunks > 0 && !read.embedding
+export const wordsOnly = (read: IndexCoverage): boolean => read.chunks > 0 && !read.isEmbedding

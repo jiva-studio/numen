@@ -31,7 +31,7 @@ export interface PlexEditor {
 /** Dependencies for plex tab state. */
 export interface PlexTabDeps {
   readonly editor: PlexEditor
-  readonly ready: Readonly<Ref<boolean>>
+  readonly isReady: Readonly<Ref<boolean>>
   readonly isHanging: Readonly<Ref<boolean>>
   readonly parts: Readonly<Ref<number>>
   openNote(path: string, title: string, showing: PlexDestination, line?: number): void

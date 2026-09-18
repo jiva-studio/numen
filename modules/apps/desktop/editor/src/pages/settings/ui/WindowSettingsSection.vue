@@ -89,12 +89,12 @@ function onPartsChange(count: number | null) {
       v-slot="{ labelledBy }"
       at="mode"
       :name="words.mode"
-      :detail="installation.pinned.value ? words.pinned : words.modeDetail"
+      :detail="installation.isPinned.value ? words.pinned : words.modeDetail"
     >
       <SegmentedControl
         :model-value="installation.mode.value"
         :choices="modes"
-        :disabled="installation.pinned.value"
+        :disabled="installation.isPinned.value"
         :aria-labelledby="labelledBy"
         @update:model-value="onModeChange"
       />

@@ -25,7 +25,7 @@ var morning = time.Date(2026, 9, 5, 1, 0, 0, 0, time.Local)
 // needs to name the day its counts stand in.
 type none struct{}
 
-func (none) All() ([]domain.Vault, error)            { return nil, nil }
+func (none) List() ([]domain.Vault, error)           { return nil, nil }
 func (none) Save(domain.Vault) error                 { return nil }
 func (none) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
 func (none) Remove(domain.VaultID) error             { return nil }

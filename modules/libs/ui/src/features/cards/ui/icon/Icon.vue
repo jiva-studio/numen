@@ -9,7 +9,7 @@ defineProps<{ name: Icon }>()
   <svg
     class="icon"
     viewBox="0 0 12 12"
-    :data-filled="ICONS[name].filled || undefined"
+    :data-filled="ICONS[name].isFilled || undefined"
     aria-hidden="true"
     focusable="false"
   >

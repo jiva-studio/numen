@@ -11,7 +11,7 @@ import type { FieldRenameResult } from '@/entities/deck'
 
 /** What the mocked vault answers about itself, set before the window draws. */
 export const said = {
-  ready: true,
+  isReady: true,
   error: '',
   opening: 'Root.md' as string | null,
   names: [] as {
@@ -81,7 +81,7 @@ export const said = {
 
 /** The vaults this installation holds, and the one the window is showing. */
 export const listed = {
-  vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }],
+  vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }],
   showing: 'physics',
 }
 
@@ -220,7 +220,7 @@ export const sourceAnswer = (path: string, kind: 'book' | 'recording') => ({
 
 /** Everything answered back where it opens, which is where every test begins. */
 export const forgetAnswers = () => {
-  said.ready = true
+  said.isReady = true
   said.opening = 'Root.md'
   said.names = []
   said.passages = []
@@ -243,6 +243,6 @@ export const forgetAnswers = () => {
   said.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })
   maker.forget()
   outside.forget()
-  listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
+  listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }]
   listed.showing = 'physics'
 }

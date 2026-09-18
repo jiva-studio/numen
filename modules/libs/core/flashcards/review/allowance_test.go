@@ -17,8 +17,8 @@ import (
 func TestWhichSettingsAGoalReads(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts}
 	for _, one := range []struct {
-		goal  review.Goal
-		reads bool
+		goal       review.Goal
+		shouldRead bool
 	}{
 		{review.GoalMinutes, true},
 		{review.GoalRetention, false},
@@ -28,11 +28,11 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
 		admits := p.GetAllowance(day, time.Now(), review.Spent{}, 0, 0)
 
-		if got := admits.Limits.Backlog != ""; got != one.reads {
-			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.reads)
+		if got := admits.Limits.Backlog != ""; got != one.shouldRead {
+			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.shouldRead)
 		}
 		want := 40
-		if !one.reads {
+		if !one.shouldRead {
 			want = review.AllBacklog
 		}
 		if admits.Backlog != want {
@@ -64,9 +64,9 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	}
 }
 
-// keeps is what a preset keeps for a day of the week, read off the day that
-// admits it.
-func keeps(p review.Preset, day time.Weekday) review.Budget {
+// getBudget is what a preset keeps for a day of the week, read off the day
+// that admits it.
+func getBudget(p review.Preset, day time.Weekday) review.Budget {
 	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
 	for at.Weekday() != day {
 		at = at.AddDate(0, 0, 1)
@@ -83,15 +83,15 @@ func TestTheBudgetOfOneDayIsItsShareOfTheLoad(t *testing.T) {
 		Load: map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 0},
 	}
 
-	half := keeps(p, time.Wednesday)
+	half := getBudget(p, time.Wednesday)
 	if want := (review.Budget{New: 5, Reviews: 20, Minutes: 10}); half != want {
 		t.Errorf("a day at half the load holds %+v, want %+v", half, want)
 	}
-	whole := keeps(p, time.Tuesday)
+	whole := getBudget(p, time.Tuesday)
 	if want := (review.Budget{New: 10, Reviews: 40, Minutes: 20}); whole != want {
 		t.Errorf("a day the preset does not name holds %+v, want %+v", whole, want)
 	}
-	if none := keeps(p, time.Sunday); none != (review.Budget{}) {
+	if none := getBudget(p, time.Sunday); none != (review.Budget{}) {
 		t.Errorf("a day at none of the load holds %+v", none)
 	}
 }

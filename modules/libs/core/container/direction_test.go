@@ -61,11 +61,11 @@ func getRefusedImports(path string) (refuses []string, named bool) {
 // isEdgeRefused says whether a package would be failed for the edge it has,
 // which is what inward does with what getRefusedImports and isBaselined say.
 func isEdgeRefused(pkg, dep string) bool {
-	refuses, _ := getRefusedImports(module + pkg)
+	isRefused, _ := getRefusedImports(module + pkg)
 	if isBaselined(pkg, dep) {
 		return false
 	}
-	for _, refused := range refuses {
+	for _, refused := range isRefused {
 		if strings.HasPrefix(dep, refused) {
 			return true
 		}
@@ -79,8 +79,8 @@ func isEdgeRefused(pkg, dep string) bool {
 // would pass with it: these are the edges that have to come back refused.
 func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
-		pkg, dep string
-		refuses  bool
+		pkg, dep  string
+		isRefused bool
 	}{
 		// The core is compiled from none of the three, at any remove.
 		{"usecase/note", module + "adapter/window/editor", true},
@@ -107,8 +107,8 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		{"internal/adapter/theme", wire + "/gen/numen/v1", false},
 		{"internal/testsupport", module + "adapter/index", false},
 	} {
-		if got := isEdgeRefused(one.pkg, one.dep); got != one.refuses {
-			if one.refuses {
+		if got := isEdgeRefused(one.pkg, one.dep); got != one.isRefused {
+			if one.isRefused {
 				t.Errorf("%s reaches %s and is not refused", one.pkg, one.dep)
 			} else {
 				t.Errorf("%s reaches %s and is refused", one.pkg, one.dep)

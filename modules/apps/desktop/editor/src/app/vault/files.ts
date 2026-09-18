@@ -15,8 +15,8 @@ export type FilesCore = Pick<
   Pick<NotePort, 'remove'>
 
 export const filesCore: FilesCore = {
-  remove: async (path, destroy) => {
-    const answer = await files.removeFile({ path, destroy: destroy ?? false })
+  remove: async (path, isPermanent) => {
+    const answer = await files.removeFile({ path, destroy: isPermanent ?? false })
     const error = errorIn(answer)
     if (error) return asFailure(error)
     return asValue({ trashed: answer.trashed, dangling: answer.dangling })

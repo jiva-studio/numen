@@ -40,8 +40,9 @@ func newYtDLP(ctx context.Context, c Config) *ytDLP {
 	}
 }
 
-// Supports is a video, on a machine holding the tool that gets at one.
-func (v *ytDLP) Supports(at domain.URL) bool { return isVideoSite(at) && v.command.isPresent() }
+// CanHandle answers for a video, on a machine holding the tool that gets at
+// one.
+func (v *ytDLP) CanHandle(at domain.URL) bool { return isVideoSite(at) && v.command.isPresent() }
 
 func (v *ytDLP) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
@@ -79,12 +80,12 @@ func (v *ytDLP) Metadata(ctx context.Context, at domain.URL) (port.Metadata, err
 		return port.Metadata{}, fmt.Errorf("what yt-dlp said about %s: %w", string(at), err)
 	}
 	return port.Metadata{
-		Title:     strings.TrimSpace(held.Title),
-		Length:    int(held.Duration * 1000),
-		Language:  held.Language,
-		Bytes:     max(held.Filesize, held.Approximate),
-		Captions:  languages(held.Subtitles),
-		Automatic: languages(held.AutomaticCaptions),
+		Title:       strings.TrimSpace(held.Title),
+		Length:      int(held.Duration * 1000),
+		Language:    held.Language,
+		Bytes:       max(held.Filesize, held.Approximate),
+		Captions:    languages(held.Subtitles),
+		IsAutomatic: languages(held.AutomaticCaptions),
 	}, nil
 }
 
@@ -112,7 +113,7 @@ func (v *ytDLP) Text(
 	if err != nil {
 		return port.Text{}, err
 	}
-	cues, err := v.subtitles(ctx, at, language(meta, want.Languages, want.Automatic))
+	cues, err := v.subtitles(ctx, at, language(meta, want.Languages, want.IsAutomatic))
 	if err != nil {
 		return port.Text{}, err
 	}
@@ -235,7 +236,7 @@ const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 func language(meta port.Metadata, languages []string, automatic bool) string {
 	tracks := meta.Captions
 	if len(tracks) == 0 && automatic {
-		tracks = meta.Automatic
+		tracks = meta.IsAutomatic
 	}
 	if len(tracks) == 0 {
 		return ""

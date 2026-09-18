@@ -23,7 +23,7 @@ const well = (over: Partial<State> = {}): State => ({
   unwatched: '',
   unread: '',
   lost: '',
-  reading: false,
+  isReading: false,
   hasNote: true,
   ...over,
 })
@@ -31,7 +31,7 @@ const well = (over: Partial<State> = {}): State => ({
 const vault = (over: Partial<IndexCoverage> = {}): IndexCoverage => ({
   chunks: 0,
   embedded: 0,
-  embedding: true,
+  isEmbedding: true,
   ...over,
 })
 
@@ -203,7 +203,11 @@ describe('what is so about the window', () => {
   })
 
   it('says nothing was read only once the reading is over', () => {
-    const drawn = corner([], [], well({ reading: true, hasNote: false, unread: 'no such folder' }))
+    const drawn = corner(
+      [],
+      [],
+      well({ isReading: true, hasNote: false, unread: 'no such folder' }),
+    )
 
     expect(drawn.map((one) => one.text)).toStrictEqual([words.unread, words.reading])
   })
@@ -221,7 +225,7 @@ describe('what is so about the window', () => {
   })
 
   it('says the vault is still being read for the first time', () => {
-    const drawn = corner([], [], well({ reading: true }))
+    const drawn = corner([], [], well({ isReading: true }))
 
     expect(drawn.map((one) => one.text)).toStrictEqual([words.reading])
   })
@@ -292,7 +296,7 @@ describe('the order the corner draws in', () => {
 
 describe('chunks with nothing to embed them', () => {
   it('says the search is by words alone, since nothing is going to bring the rest', () => {
-    const drawn = corner([], [], well(), vault({ chunks: 4823, embedding: false }))
+    const drawn = corner([], [], well(), vault({ chunks: 4823, isEmbedding: false }))
 
     expect(drawn).toHaveLength(1)
     expect(drawn[0]?.text).toBe(words.wordsOnly)
@@ -300,10 +304,10 @@ describe('chunks with nothing to embed them', () => {
   })
 
   it('says nothing where a model is going to embed them', () => {
-    expect(corner([], [], well(), vault({ chunks: 4823, embedding: true }))).toEqual([])
+    expect(corner([], [], well(), vault({ chunks: 4823, isEmbedding: true }))).toEqual([])
   })
 
   it('says nothing about a vault that holds nothing', () => {
-    expect(corner([], [], well(), vault({ embedding: false }))).toEqual([])
+    expect(corner([], [], well(), vault({ isEmbedding: false }))).toEqual([])
   })
 })

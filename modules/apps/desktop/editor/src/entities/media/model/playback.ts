@@ -64,7 +64,7 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
   const hasTime = computed(() => !(frame.value && framed.value < 0))
 
   /** Whether this recording is the one playing. */
-  const playing = computed(() => held.value && through.playing.value)
+  const isPlaying = computed(() => held.value && through.isPlaying.value)
 
   /** What the player could not do, while this is the recording it holds. */
   const broken = computed(() => (held.value ? through.error.value : ''))
@@ -104,7 +104,7 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
 
   /** Stop it, while it is this recording that is playing. */
   const pause = () => {
-    if (playing.value) through.pause()
+    if (isPlaying.value) through.pause()
   }
 
   /** What the recording is, as the application answers it. */
@@ -135,7 +135,7 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
     runs,
     now,
     hasTime,
-    playing,
+    isPlaying,
     broken,
     playable,
     framing,

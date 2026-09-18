@@ -146,7 +146,7 @@ const countsFrom = (a: Knobs) => ({
  * The neighbourhood is computed: a fresh object on every render tells the plex
  * it has somewhere new to go, and it re-aims once a frame.
  */
-const navigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) => ({
+const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) => ({
   components: { Plex },
   setup() {
     const type = useTypeSize()
@@ -422,7 +422,7 @@ const meta = {
     title: 'A node',
   },
 
-  render: navigable((args) => args.neighbourhood),
+  render: createNavigable((args) => args.neighbourhood),
 } satisfies Meta<Knobs>
 
 export default meta
@@ -434,7 +434,7 @@ type Story = StoryObj<typeof meta>
  */
 const invented = {
   args: { neighbourhood: neighbourhoods.typical, maxPerLine: 9 },
-  render: navigable((args: Knobs) => build(args.title, countsFrom(args))),
+  render: createNavigable((args: Knobs) => build(args.title, countsFrom(args))),
 }
 
 export const Playground: Story = invented

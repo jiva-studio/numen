@@ -1,5 +1,5 @@
-/** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { StopReason } from '@numen/protocol'
+/** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { many, percent, plural } from '@numen/ui'
 import type { ErrorCode } from '@/shared/errors'
 import type { BudgetUnit, Goal, Rule } from './types'

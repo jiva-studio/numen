@@ -59,9 +59,9 @@ type parser struct {
 	// record is told which session this run is on, so that the next question of
 	// the same conversation is asked in it.
 	record func(string)
-	// streaming is set once words have arrived a piece at a time. The whole
+	// isStreaming is set once words have arrived a piece at a time. The whole
 	// message follows every piece of it.
-	streaming bool
+	isStreaming bool
 	// callID is what the agent named the call being written. Every step of that
 	// call carries it.
 	callID string
@@ -78,7 +78,7 @@ type parser struct {
 	// the stretch it replaces. Set once that stretch has been found.
 	path     string
 	from, to int
-	drawn    bool
+	isDrawn  bool
 	// last is when a frame was last sent. A long call is drawn at a pace a
 	// screen can keep.
 	last time.Time
@@ -109,7 +109,7 @@ func (rd *parser) line(ctx context.Context, line string) {
 			if said.Session != "" && rd.record != nil {
 				rd.record(said.Session)
 			}
-			rd.stop(unreachable(said))
+			rd.stop(getUnreachableReason(said))
 		case "status":
 			// `requesting` is written when a request to the model begins. It is
 			// the start of the wait, reported by the agent itself.
@@ -131,12 +131,12 @@ func (rd *parser) piece(ctx context.Context, event streamEvent) {
 	switch event.Type {
 	case "content_block_start":
 		if event.Block.Type == "tool_use" {
-			rd.streaming = true
+			rd.isStreaming = true
 			rd.callID = event.Block.ID
 			rd.tool = event.Block.Name
 			rd.arguments.Reset()
 			rd.offset = 0
-			rd.path, rd.from, rd.to, rd.drawn = "", 0, 0, false
+			rd.path, rd.from, rd.to, rd.isDrawn = "", 0, 0, false
 			rd.last = time.Time{}
 			rd.tell(ctx, rd.calls(rd.callID, rd.tool, ""))
 		}
@@ -146,7 +146,7 @@ func (rd *parser) piece(ctx context.Context, event streamEvent) {
 			if event.Delta.Text == "" {
 				return
 			}
-			rd.streaming = true
+			rd.isStreaming = true
 			rd.tell(ctx, port.Step{Kind: port.StepSaying, Text: event.Delta.Text})
 		case "input_json_delta":
 			rd.arguments.WriteString(event.Delta.Partial)
@@ -166,14 +166,14 @@ func (rd *parser) piece(ctx context.Context, event streamEvent) {
 		rd.callID = ""
 		rd.tool = ""
 		rd.arguments.Reset()
-		rd.drawn = false
+		rd.isDrawn = false
 	}
 }
 
 // whole reports a message that arrived in one piece, for a version that does
 // not write them as they are made.
 func (rd *parser) whole(ctx context.Context, said event) {
-	if rd.streaming {
+	if rd.isStreaming {
 		return
 	}
 	for _, block := range said.blocks() {
@@ -203,9 +203,9 @@ func (rd *parser) tell(ctx context.Context, s port.Step) {
 	}
 }
 
-// unreachable is why this vault's tools did not arrive, empty when they did
+// getUnreachableReason is why this vault's tools did not arrive, empty when they did
 // and empty when the line says nothing about servers at all.
-func unreachable(said event) string {
+func getUnreachableReason(said event) string {
 	for _, skipped := range said.ServerErrors {
 		if skipped.Name == Name {
 			return fmt.Sprintf("the agent was not given this vault: %s", skipped.Message)
@@ -418,7 +418,7 @@ func (rd *parser) draw(ctx context.Context) {
 	if !strings.Contains(arguments, `"`+names.Text+`"`) {
 		return
 	}
-	if !rd.drawn {
+	if !rd.isDrawn {
 		path, stood := getGlimpse(arguments, names.About), getGlimpse(arguments, names.Match)
 		if path == "" || stood == "" {
 			return
@@ -427,7 +427,7 @@ func (rd *parser) draw(ctx context.Context) {
 		if !one {
 			return
 		}
-		rd.path, rd.from, rd.to, rd.drawn = path, from, to, true
+		rd.path, rd.from, rd.to, rd.isDrawn = path, from, to, true
 	}
 
 	now := rd.draft.now()

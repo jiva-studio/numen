@@ -39,12 +39,12 @@ func openInstallation(t *testing.T) *editor.Installation {
 		t.Fatal(err)
 	}
 
-	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "one", io.Discard)
+	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = opened.Close() })
-	return opened
+	t.Cleanup(func() { _ = installation.Close() })
+	return installation
 }
 
 // A note saved through the window is in the index when the save is answered.
@@ -55,10 +55,10 @@ func openInstallation(t *testing.T) *editor.Installation {
 // The writer the window saves through is made with what levels it, and this
 // fails where it is not.
 func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
-	opened := openInstallation(t)
+	installation := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
-	written, err := opened.API.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	written, err := installation.API.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Kept.md",
 		Body: body,
 	}))
@@ -69,8 +69,8 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save was refused: %v", refused)
 	}
 
-	found, err := opened.Passages().Lexical(
-		t.Context(), opened.GetShownVault().ID, "tetragrammaton",
+	found, err := installation.Passages().Lexical(
+		t.Context(), installation.GetShownVault().ID, "tetragrammaton",
 		[]domain.SourceKind{domain.KindNote}, 10, false,
 	)
 	if err != nil {

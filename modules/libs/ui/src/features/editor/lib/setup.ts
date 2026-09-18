@@ -41,7 +41,7 @@ export const written = new Compartment()
 
 export interface Settings {
   /** Marks are drawn as what they mean, away from the caret. */
-  readonly live?: boolean
+  readonly isLivePreview?: boolean
   readonly readonly?: boolean
   readonly placeholder?: string
   /**
@@ -57,13 +57,13 @@ export interface Settings {
   readonly extensions?: Extension
 }
 
-export const preview = (on: boolean): Extension => (on ? [wholeLines, live, follow] : [])
+export const preview = (isOn: boolean): Extension => (isOn ? [wholeLines, live, follow] : [])
 
 export const showChange = (change: EditorChange | null): Extension => changing.of(change)
 
-export const editable = (on: boolean): Extension => [
-  EditorView.editable.of(on),
-  EditorState.readOnly.of(!on),
+export const createEditable = (isOn: boolean): Extension => [
+  EditorView.editable.of(isOn),
+  EditorState.readOnly.of(!isOn),
 ]
 
 /**
@@ -143,8 +143,8 @@ export const setup = (settings: Settings = {}): Extension => [
   }),
   marked,
   createPacePlugin(),
-  drawing.of(preview(settings.live ?? true)),
-  editing.of(editable(!settings.readonly)),
+  drawing.of(preview(settings.isLivePreview ?? true)),
+  editing.of(createEditable(!settings.readonly)),
   showing.of(showChange(settings.change ?? null)),
   adding.of(settings.extensions ?? []),
 ]

@@ -154,7 +154,7 @@ func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	}
 	// A schema this build does not carry, written by one that does.
 	if _, err := db.write.ExecContext(ctx,
-		fmt.Sprintf("PRAGMA user_version = %d", newest(t)+3)); err != nil {
+		fmt.Sprintf("PRAGMA user_version = %d", getNewestVersion(t)+3)); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {
@@ -181,8 +181,8 @@ func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	if err := raw.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&at); err != nil {
 		t.Fatal(err)
 	}
-	if at != newest(t) {
-		t.Errorf("the index is at schema %d, want %d", at, newest(t))
+	if at != getNewestVersion(t) {
+		t.Errorf("the index is at schema %d, want %d", at, getNewestVersion(t))
 	}
 	var vaults int
 	if err := raw.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
@@ -274,8 +274,8 @@ func TestAnIndexOfItsOwnIsNotBuiltAgain(t *testing.T) {
 	}
 }
 
-// newest is the version the migrations this binary holds reach.
-func newest(t *testing.T) int {
+// getNewestVersion is the version the migrations this binary holds reach.
+func getNewestVersion(t *testing.T) int {
 	t.Helper()
 	available, err := loadMigrations()
 	if err != nil {

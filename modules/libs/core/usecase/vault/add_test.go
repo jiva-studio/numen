@@ -57,7 +57,7 @@ func TestANameAnotherVaultHasGetsANumber(t *testing.T) {
 		}
 	}
 
-	known, err := registry.All()
+	known, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 	if _, err := add.Execute(inner, ""); !errors.Is(err, domain.ErrOverlaps) {
 		t.Errorf("a folder inside a vault was answered %v", err)
 	}
-	if _, carriesOne, err := (filesystem.VaultIdentity{}).Of(inner); err != nil || carriesOne {
+	if _, carriesOne, err := (filesystem.VaultIdentity{}).GetVaultID(inner); err != nil || carriesOne {
 		t.Errorf("the refused folder was given an identity: %v %v", carriesOne, err)
 	}
 }
@@ -146,7 +146,7 @@ func TestAFolderReachedThroughASymlinkIsTheFolderItself(t *testing.T) {
 		t.Errorf("one folder carries two identities: %s and %s", first.ID, second.ID)
 	}
 
-	known, err := registry.All()
+	known, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}

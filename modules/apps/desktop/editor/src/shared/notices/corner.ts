@@ -34,7 +34,7 @@ export interface State {
   /** What the window lost touch with. */
   readonly lost: string
   /** The vault is still being read for the first time. */
-  readonly reading: boolean
+  readonly isReading: boolean
   /** Whether the vault holds a note to show at all. */
   readonly hasNote: boolean
 }
@@ -82,7 +82,7 @@ const isSameReason = (outer: string, inner: string): boolean =>
  * sentence. The one that says it and nothing more is the card, and of two
  * saying the same thing it is the one that said it first.
  */
-const alone = (tasks: readonly Task[]): readonly Task[] =>
+const keepDistinct = (tasks: readonly Task[]): readonly Task[] =>
   tasks.filter((at, index) => {
     if (at.error === '') return true
     return !tasks.some(
@@ -108,7 +108,7 @@ export const cornerOf = (
   vault: IndexCoverage,
   words: Words,
 ): readonly Notice[] => {
-  const isWorking: readonly Notice[] = alone(tasks).map(createNotice)
+  const isWorking: readonly Notice[] = keepDistinct(tasks).map(createNotice)
 
   const so: Notice[] = [
     ...soThat('unwatched', state.unwatched && words.unwatched, {
@@ -120,11 +120,11 @@ export const cornerOf = (
       tone: 'caution',
     }),
     ...soThat('lost', state.lost, { tone: 'caution' }),
-    ...soThat('reading', state.reading ? words.reading : ''),
+    ...soThat('reading', state.isReading ? words.reading : ''),
     // One at a time: a vault still being read has not finished reading nothing.
     ...soThat(
       'nothingRead',
-      !state.reading && !state.hasNote && state.unread ? words.nothingRead : '',
+      !state.isReading && !state.hasNote && state.unread ? words.nothingRead : '',
     ),
     // Said once and quietly, and it is so whether or not anything is running.
     ...soThat('wordsOnly', wordsOnly(vault) ? words.wordsOnly : '', { isAsked: false }),

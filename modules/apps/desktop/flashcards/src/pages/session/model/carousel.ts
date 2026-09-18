@@ -56,7 +56,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
    * off the layout rather than worked out, so the space the three stand apart by
    * is in them already.
    */
-  const stops = (): Record<PanelPlace, number> => {
+  const getStops = (): Record<PanelPlace, number> => {
     const at = window_.value
     const card = middle.value
     if (!at || !card) return { before: 0, here: 0, after: 0 }
@@ -64,8 +64,8 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   }
 
   /** Which of the three the strip is closest to standing on. */
-  const nearest = (left: number): PanelPlace => {
-    const all = stops()
+  const findNearest = (left: number): PanelPlace => {
+    const all = getStops()
     let best: PanelPlace = 'before'
     for (const where of PLACES) {
       if (Math.abs(all[where] - left) < Math.abs(all[best] - left)) best = where
@@ -79,14 +79,14 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     if (!at) return
     // A strip already standing where it is being sent is left alone: a move
     // that moves nothing never arrives.
-    if (Math.abs(at.scrollLeft - stops()[where]) <= 1) return
+    if (Math.abs(at.scrollLeft - getStops()[where]) <= 1) return
     window.clearTimeout(sending)
     sending = window.setTimeout(() => {
       sending = 0
       aim = null
     }, TAKES)
     aim = where
-    at.scrollLeft = stops()[where]
+    at.scrollLeft = getStops()[where]
   }
 
   /**
@@ -102,7 +102,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     sending = 0
     aim = null
     at.style.scrollBehavior = 'auto'
-    at.scrollLeft = stops()[where]
+    at.scrollLeft = getStops()[where]
     at.style.scrollBehavior = ''
   }
 
@@ -123,12 +123,12 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     const at = window_.value
     if (!at) return
     // A move in flight is over when it arrives, whatever time it took.
-    if (aim && Math.abs(at.scrollLeft - stops()[aim]) <= 1) {
+    if (aim && Math.abs(at.scrollLeft - getStops()[aim]) <= 1) {
       aim = null
       window.clearTimeout(sending)
       sending = 0
     }
-    const where = nearest(at.scrollLeft)
+    const where = findNearest(at.scrollLeft)
     if (!aim && where !== shown.value) shown.value = where
 
     // A wheel or a trackpad leaves the strip wherever it ran out, and it is taken
@@ -167,7 +167,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const letGo = async () => {
     if (!taking.value) return
     const at = window_.value
-    const where = at ? nearest(at.scrollLeft) : shown.value
+    const where = at ? findNearest(at.scrollLeft) : shown.value
     taking.value = false
     // A hand moves the strip with the smoothing off, and it is taken the rest of
     // the way with it on, so the letting go is waited for.

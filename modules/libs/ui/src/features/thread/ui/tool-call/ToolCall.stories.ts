@@ -48,7 +48,7 @@ export const InAThread: Story = {
         <ToolCall tool="note_search" about="entropy" />
         <ToolCall tool="note_read" about="Entropy" />
         <ToolCall tool="link_add" about="Entropy → Thermodynamics" />
-        <ToolCall tool="note_rewrite" about="Simple pendulum" working />
+        <ToolCall tool="note_rewrite" about="Simple pendulum" is-working />
       </div>
     `,
   }),

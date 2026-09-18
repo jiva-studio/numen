@@ -147,7 +147,7 @@ export function useNoteTab(
     has: (id) => notes.has(id),
     getPath: (id) => notes.getPath(id),
     getTitle: (id) => names.getTitle(id),
-    isAsking: (id) => notes.stale(id) !== null,
+    asking: (id) => notes.stale(id) !== null,
     settle: (id) => notes.settle(id),
     close: closeTab,
     getTabAt: (path) => tabbed.value.get(path) ?? null,

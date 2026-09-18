@@ -58,7 +58,7 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
   const coverage = (): IndexCoverage => ({
     chunks: chunks.value,
     embedded: embedded.value,
-    embedding: isEmbedding.value,
+    isEmbedding: isEmbedding.value,
   })
 
   const makes = shallowRef<ReadonlyMap<string, ArtifactStates>>(new Map())

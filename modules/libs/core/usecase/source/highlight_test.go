@@ -52,9 +52,10 @@ func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *shelf, do
 	}, index, store, book, shelved
 }
 
-// holds records a source the way the index holds one: the file as it stood
-// when it was read, and the producer of the text its chunks are places in.
-func holds(t *testing.T, index *store, shelved *library, from, hash string) {
+// recordSource records a source the way the index holds one: the file as it
+// stood when it was read, and the producer of the text its chunks are places
+// in.
+func recordSource(t *testing.T, index *store, shelved *library, from, hash string) {
 	t.Helper()
 	ref, err := shelved.Stat(t.Context(), documentPath)
 	if err != nil {
@@ -105,7 +106,7 @@ func pages(boxes []highlight.Box) []int {
 // model produced, and the layer's words are elsewhere in the book.
 func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	u, index, store, _, shelved := newHighlight(t, tiny)
-	holds(t, index, shelved, "ocr", "abc123")
+	recordSource(t, index, shelved, "ocr", "abc123")
 	u = setPlacer(u, func([]byte, []int) ([]highlight.Box, error) {
 		t.Error("the document's own layer was read for a source standing on a reading")
 		return nil, nil
@@ -136,7 +137,7 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 // layer, over the page the word is printed on.
 func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, tiny)
-	holds(t, index, shelved, "", "abc123")
+	recordSource(t, index, shelved, "", "abc123")
 
 	start, length := run(t, book, "gamma")
 	found := litOn(t, u, documentPath, start, length)
@@ -161,7 +162,7 @@ func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 // that are printed there.
 func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, tiny)
-	holds(t, index, shelved, "", "abc123")
+	recordSource(t, index, shelved, "", "abc123")
 
 	from, _ := run(t, book, "gamma")
 	to, length := run(t, book, "Delta")
@@ -176,7 +177,7 @@ func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
 // is printed.
 func TestAWordIsLitOnThePageItIsPrintedOn(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, outline)
-	holds(t, index, shelved, "", "abc123")
+	recordSource(t, index, shelved, "", "abc123")
 
 	start, length := run(t, book, "Afterword")
 	found := litOn(t, u, documentPath, start, length)
@@ -189,7 +190,7 @@ func TestAWordIsLitOnThePageItIsPrintedOn(t *testing.T) {
 // a paragraph is not a reason to read a book.
 func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, outline)
-	holds(t, index, shelved, "", "abc123")
+	recordSource(t, index, shelved, "", "abc123")
 
 	var asked []int
 	u = setPlacer(u, func(_ []byte, pages []int) ([]highlight.Box, error) {
@@ -212,7 +213,7 @@ func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 // are read once, however many of the places stand on one page.
 func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, outline)
-	holds(t, index, shelved, "", "abc123")
+	recordSource(t, index, shelved, "", "abc123")
 
 	var asked [][]int
 	u = setPlacer(u, func(_ []byte, pages []int) ([]highlight.Box, error) {
@@ -250,7 +251,7 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 // is read and nothing is lit.
 func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 	u, index, _, _, shelved := newHighlight(t, tiny)
-	holds(t, index, shelved, "", "abc123")
+	recordSource(t, index, shelved, "", "abc123")
 
 	for _, path := range []string{"library/nothing.pdf", "../outside.pdf"} {
 		t.Run(path, func(t *testing.T) {
@@ -283,7 +284,7 @@ func TestASourceTheIndexDoesNotHoldIsLitNowhere(t *testing.T) {
 func TestNothingIsLitWhereThereIsNothingToLight(t *testing.T) {
 	t.Run("past the end", func(t *testing.T) {
 		u, index, _, book, shelved := newHighlight(t, tiny)
-		holds(t, index, shelved, "", "abc123")
+		recordSource(t, index, shelved, "", "abc123")
 
 		if found := litOn(t, u, documentPath, len(book.Text)+100, 10); len(found) != 0 {
 			t.Errorf("a run past the end was lit at %+v", found)
@@ -292,7 +293,7 @@ func TestNothingIsLitWhereThereIsNothingToLight(t *testing.T) {
 
 	t.Run("a reading that is gone", func(t *testing.T) {
 		u, index, _, _, shelved := newHighlight(t, tiny)
-		holds(t, index, shelved, "ocr", "abc123")
+		recordSource(t, index, shelved, "ocr", "abc123")
 
 		if found := litOn(t, u, documentPath, 0, 10); len(found) != 0 {
 			t.Errorf("a reading nothing kept was lit at %+v", found)
@@ -306,7 +307,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	// where those words no longer are, and nothing on the page says so.
 	ctx := t.Context()
 	u, index, store, book, shelved := newHighlight(t, outline)
-	holds(t, index, shelved, "ocr", "abc123")
+	recordSource(t, index, shelved, "ocr", "abc123")
 
 	// A reading whose words sit at the top of the first page.
 	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), highlight.Pack([]highlight.Box{
@@ -335,7 +336,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 // answer about the text the chunks are places in.
 func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	u, index, store, _, shelved := newHighlight(t, tiny)
-	holds(t, index, shelved, "ocr", "abc123")
+	recordSource(t, index, shelved, "ocr", "abc123")
 
 	written := []highlight.Box{
 		testsupport.Box(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),

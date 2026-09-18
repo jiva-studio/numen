@@ -26,7 +26,7 @@ func TestMarkup(t *testing.T) {
 	})
 
 	t.Run("every run stands where it says", func(t *testing.T) {
-		for _, run := range runs(drawn.Nodes) {
+		for _, run := range getTextNodes(drawn.Nodes) {
 			if !strings.HasPrefix(book.Text[run.Offset:], run.Text) {
 				t.Errorf("%q says it begins at %d, where the text is %q",
 					run.Text, run.Offset, excerpt(book.Text, run.Offset))
@@ -41,7 +41,7 @@ func TestMarkup(t *testing.T) {
 	})
 
 	t.Run("the book's own styling does not survive", func(t *testing.T) {
-		for _, node := range every(drawn.Nodes) {
+		for _, node := range getEveryNode(drawn.Nodes) {
 			for _, a := range node.Attributes {
 				if a.Name == "class" || a.Name == "style" {
 					t.Errorf("%s carries %s=%q", node.Name, a.Name, a.Value)
@@ -243,7 +243,7 @@ func find(nodes []epub.Node, name string) *epub.Node {
 
 func findAll(nodes []epub.Node, name string) []*epub.Node {
 	var out []*epub.Node
-	for _, node := range every(nodes) {
+	for _, node := range getEveryNode(nodes) {
 		if node.Name == name {
 			out = append(out, node)
 		}
@@ -251,20 +251,20 @@ func findAll(nodes []epub.Node, name string) []*epub.Node {
 	return out
 }
 
-// every node of a document, in reading order.
-func every(nodes []epub.Node) []*epub.Node {
+// getEveryNode node of a document, in reading order.
+func getEveryNode(nodes []epub.Node) []*epub.Node {
 	var out []*epub.Node
 	for i := range nodes {
 		out = append(out, &nodes[i])
-		out = append(out, every(nodes[i].Children)...)
+		out = append(out, getEveryNode(nodes[i].Children)...)
 	}
 	return out
 }
 
-// runs are the nodes that are text.
-func runs(nodes []epub.Node) []*epub.Node {
+// getTextNodes answers the nodes that are text.
+func getTextNodes(nodes []epub.Node) []*epub.Node {
 	var out []*epub.Node
-	for _, node := range every(nodes) {
+	for _, node := range getEveryNode(nodes) {
 		if node.Name == "" {
 			out = append(out, node)
 		}

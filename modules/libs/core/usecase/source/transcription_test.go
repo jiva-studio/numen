@@ -411,7 +411,7 @@ func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
 		return by, func() error { given++; return by.Close() }, nil
 	}
 
-	if err := held.one(t.Context(), v, "talk.mp3", true); err != nil {
+	if err := held.transcribeOne(t.Context(), v, "talk.mp3", true); err != nil {
 		t.Fatalf("the recording was not transcribed: %v", err)
 	}
 	if opened != 1 {

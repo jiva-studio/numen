@@ -133,7 +133,7 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 	if res.Heard != getSpan(2).To {
 		t.Errorf("heard %d ms of it", res.Heard)
 	}
-	if res.Silent || res.Unopened || res.Busy {
+	if res.IsSilent || res.IsUnopened || res.IsBusy {
 		t.Errorf("a recording that was written down came back as %+v", res)
 	}
 
@@ -208,7 +208,7 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	u, v, _, shelf, model, hash := listener(t, "one", "two", "three")
 
 	torn := transcript.Marshal([]transcript.Cue{{Text: "one", From: 0, To: 800}})
-	torn = append(torn, transcript.Reaches(800)...)
+	torn = append(torn, transcript.GetReachMarker(800)...)
 	loose := transcript.Marshal([]transcript.Cue{{Text: "half a thought", From: 1000, To: 1800}})
 	torn = append(torn, bytes.TrimPrefix(loose, []byte(transcript.Head+"\n"))...)
 	if err := shelf.Write(t.Context(), text.Partial("asr", hash), torn); err != nil {
@@ -243,7 +243,7 @@ func TestOneRunToARecording(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Busy {
+	if !res.IsBusy {
 		t.Error("a recording another run holds was listened to")
 	}
 	if len(model.heard) != 0 {
@@ -266,7 +266,7 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Silent {
+	if !res.IsSilent {
 		t.Error("a recording carrying no speech was not reported as silent")
 	}
 	for _, name := range []string{text.Artifact("asr", hash), text.Partial("asr", hash)} {
@@ -283,7 +283,7 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !again.Silent {
+	if !again.IsSilent {
 		t.Error("the answer was not read back")
 	}
 	if len(model.heard) != heard {
@@ -302,7 +302,7 @@ func TestARecordingNothingCanOpenIsAnsweredOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Unopened {
+	if !res.IsUnopened {
 		t.Error("a recording nothing can open was not reported as such")
 	}
 	if src := index.sources[v.ID][recordingPath]; src.Producer != "" {
@@ -321,7 +321,7 @@ func TestARecordingNothingCanOpenIsAnsweredOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !again.Unopened || again.Silent {
+	if !again.IsUnopened || again.IsSilent {
 		t.Errorf("the answer came back as %+v", again)
 	}
 	if model.opens != 0 {
@@ -393,7 +393,7 @@ func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
 		t.Errorf("the model was handed %d more stretches", len(model.heard)-first)
 	}
 
-	u.Again = true
+	u.IsRepeat = true
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
@@ -425,7 +425,7 @@ func TestAskingAgainAfterAnAnswer(t *testing.T) {
 	}
 	first := len(model.heard)
 
-	u.Again = true
+	u.IsRepeat = true
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
@@ -433,7 +433,7 @@ func TestAskingAgainAfterAnAnswer(t *testing.T) {
 	if len(model.heard) <= first {
 		t.Error("the answer stood, and the recording was not heard again")
 	}
-	if !res.Silent {
+	if !res.IsSilent {
 		t.Error("a recording still carrying no speech was not answered")
 	}
 }

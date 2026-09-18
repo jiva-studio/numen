@@ -4,10 +4,10 @@
  * browser can answer: where the columns, the readout under the knob, the bubble
  * over it and the numbers along the axis are put.
  */
+import { StopReason } from '@numen/protocol'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'
-import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
 import {
   DEFAULTS,
@@ -27,7 +27,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   retained: 0,
   owed: 0,
   through: 0,
-  enough: true,
+  canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
@@ -56,7 +56,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   cards: 400,
   overdue: 120,
   unbegun: 40,
-  honest: true,
+  isHonest: true,
   ...over,
 })
 
@@ -68,9 +68,9 @@ interface Knobs {
   /** The goal the tab is steered by. */
   goal: Settings['goal']
   /** An answer to the picture is on its way, so nothing is drawn in its room. */
-  waiting: boolean
+  isWaiting: boolean
   /** Whether the curve on screen is the application's answer. */
-  honest: boolean
+  isHonest: boolean
 }
 
 /** How far each setting goes, as the application answers a read. */
@@ -86,14 +86,14 @@ const BOUNDS: SettingsBounds = {
 /** A tab standing at those settings, holding the place the knob was moved to. */
 const createPresetTab = (args: Knobs): PresetTabState => {
   const place = ref(args.place)
-  const drawn = curve({ goal: args.goal, honest: args.honest })
+  const drawn = curve({ goal: args.goal, isHonest: args.isHonest })
   return {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, goal: args.goal }),
     curve: shallowRef(drawn),
-    material: shallowRef(args.honest ? MATERIAL : null),
+    material: shallowRef(args.isHonest ? MATERIAL : null),
     place,
-    waiting: ref(args.waiting),
+    isWaiting: ref(args.isWaiting),
     bounds: shallowRef(BOUNDS),
     problems: shallowRef([]),
     stopped: ref(StopReason.NOTHING),
@@ -117,8 +117,8 @@ const createPresetTab = (args: Knobs): PresetTabState => {
 const bothWays = (args: Knobs) => ({
   components: { PresetTab },
   setup: () => ({
-    answered: createPresetTab({ ...args, honest: true, waiting: false }),
-    waiting: createPresetTab({ ...args, honest: false, waiting: true }),
+    answered: createPresetTab({ ...args, isHonest: true, isWaiting: false }),
+    waiting: createPresetTab({ ...args, isHonest: false, isWaiting: true }),
   }),
   template: `
     <div class="numen" style="height:100vh;overflow:auto;background:var(--numen-surface)">
@@ -154,10 +154,10 @@ const meta: Meta<Knobs> = {
   argTypes: {
     place: { control: { type: 'range', min: 0, max: 3, step: 1 } },
     goal: { control: 'inline-radio', options: ['minutes', 'retention', 'date'] },
-    waiting: { control: 'boolean' },
-    honest: { control: 'boolean' },
+    isWaiting: { control: 'boolean' },
+    isHonest: { control: 'boolean' },
   },
-  args: { place: 2, goal: 'minutes', waiting: false, honest: true },
+  args: { place: 2, goal: 'minutes', isWaiting: false, isHonest: true },
   render: room,
 }
 
@@ -357,7 +357,7 @@ export const TheBacklogKeepsItsRoom: Story = {
  * so the rows under it do not jump when the line lands.
  */
 export const WaitingForAnAnswer: Story = {
-  args: { honest: false, waiting: true },
+  args: { isHonest: false, isWaiting: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     canvas.getByText(words.waiting)

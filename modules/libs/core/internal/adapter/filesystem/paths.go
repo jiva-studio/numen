@@ -34,8 +34,8 @@ func getContainedPath(root, path, serviceDir string) (string, error) {
 // way to it resolved. A write renames over this one, and a note kept as a link
 // to another file in the vault is a link afterwards.
 func resolveLinks(root, path, serviceDir string) (string, error) {
-	_, real, err := resolveVaultPath(root, path, serviceDir)
-	return real, err
+	_, resolved, err := resolveVaultPath(root, path, serviceDir)
+	return resolved, err
 }
 
 // resolveVaultPath is the vault as the person's: a path that stays inside it,
@@ -45,22 +45,22 @@ func resolveLinks(root, path, serviceDir string) (string, error) {
 // A link is a second spelling for a place, so the folder is asked about both.
 // `link/ocr/abc.txt`, where `link` is a link to the service folder, reads as the
 // vault's and is the application's, and it is the second that decides.
-func resolveVaultPath(root, path, serviceDir string) (target, real string, err error) {
+func resolveVaultPath(root, path, serviceDir string) (target, resolved string, err error) {
 	clean, err := cleanPath(path)
 	if err != nil {
 		return "", "", err
 	}
-	if ours(clean, serviceDir) {
+	if isOurs(clean, serviceDir) {
 		return "", "", fmt.Errorf("%s belongs to the application, not to the vault", path)
 	}
-	target, real, landed, err := resolveContained(root, clean)
+	target, resolved, landed, err := resolveContained(root, clean)
 	if err != nil {
 		return "", "", err
 	}
-	if ours(landed, serviceDir) {
+	if isOurs(landed, serviceDir) {
 		return "", "", fmt.Errorf("%s belongs to the application, not to the vault", path)
 	}
-	return target, real, nil
+	return target, resolved, nil
 }
 
 // service is the complement of resolveVaultPath: a path that stays inside the
@@ -71,29 +71,29 @@ func resolveVaultPath(root, path, serviceDir string) (target, real string, err e
 // where no writer of notes can reach, without making any note's refusal weaker.
 // That property is the subject of a test. A path whose spelling and whose
 // landing disagree is neither's, and both refuse it.
-func service(root, path, serviceDir string) (target, real string, err error) {
+func service(root, path, serviceDir string) (target, resolved string, err error) {
 	clean, err := cleanPath(path)
 	if err != nil {
 		return "", "", err
 	}
-	if !ours(clean, serviceDir) {
+	if !isOurs(clean, serviceDir) {
 		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
-	target, real, landed, err := resolveContained(root, clean)
+	target, resolved, landed, err := resolveContained(root, clean)
 	if err != nil {
 		return "", "", err
 	}
-	if !ours(landed, serviceDir) {
+	if !isOurs(landed, serviceDir) {
 		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
-	return target, real, nil
+	return target, resolved, nil
 }
 
-// ours says whether a path is in the folder the application keeps for itself.
+// isOurs says whether a path is in the folder the application keeps for itself.
 //
 // The name is compared without regard to case, which is how macOS and Windows
 // open it.
-func ours(clean, serviceDir string) bool {
+func isOurs(clean, serviceDir string) bool {
 	if len(clean) < len(serviceDir) || !strings.EqualFold(clean[:len(serviceDir)], serviceDir) {
 		return false
 	}
@@ -124,14 +124,14 @@ func cleanPath(path string) (string, error) {
 // lands on this machine, where it lands once every link on the way to it is
 // resolved, and that landing named from the root, all three of them under the
 // root or none of them anything.
-func resolveContained(root, clean string) (target, real, landed string, err error) {
+func resolveContained(root, clean string) (target, resolved, landed string, err error) {
 	target = filepath.Join(root, filepath.FromSlash(clean))
 
 	// A folder inside the vault may be a link to somewhere else — a synced
 	// folder, a shared one — and a rename or a write through it lands outside.
 	// The text says nothing about that; only the filesystem knows, so it is
 	// asked about the deepest part of the path that exists.
-	real, err = deepest(target)
+	resolved, err = getDeepestExisting(target)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -139,29 +139,29 @@ func resolveContained(root, clean string) (target, real, landed string, err erro
 	if err != nil {
 		return "", "", "", err
 	}
-	if !isUnderRoot(real, root) {
+	if !isUnderRoot(resolved, root) {
 		return "", "", "", fmt.Errorf("%s: %w", clean, ErrOutside)
 	}
-	return target, real, landing(real, root), nil
+	return target, resolved, landing(resolved, root), nil
 }
 
 // landing is a resolved path as a name under the root, in the form the rules
 // are written against. The root itself lands nowhere and is named by nothing.
-func landing(real, root string) string {
-	if len(real) <= len(root) {
+func landing(resolved, root string) string {
+	if len(resolved) <= len(root) {
 		return ""
 	}
-	return filepath.ToSlash(real[len(root)+1:])
+	return filepath.ToSlash(resolved[len(root)+1:])
 }
 
 // isUnderRoot says whether a resolved path is a root or lies inside it.
-func isUnderRoot(real, root string) bool {
-	return real == root || strings.HasPrefix(real, root+string(filepath.Separator))
+func isUnderRoot(resolved, root string) bool {
+	return resolved == root || strings.HasPrefix(resolved, root+string(filepath.Separator))
 }
 
-// deepest resolves as much of a path as exists, so that a file about to be
+// getDeepestExisting resolves as much of a path as exists, so that a file about to be
 // created is judged by the folder it would land in.
-func deepest(target string) (string, error) {
+func getDeepestExisting(target string) (string, error) {
 	at := target
 	var missing []string
 	for {

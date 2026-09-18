@@ -74,10 +74,10 @@ export function createWindowAppearance(
     dressed.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
     try {
       const css = await fileOf(theme)
-      if (mine.current) dressed.theme.textContent = css
+      if (mine.isCurrent) dressed.theme.textContent = css
     } catch {
       // The window says what it could not do; what the call carried back adds nothing a person can act on.
-      if (mine.current) write(words.unworn, 'error')
+      if (mine.isCurrent) write(words.unworn, 'error')
     }
   }
 

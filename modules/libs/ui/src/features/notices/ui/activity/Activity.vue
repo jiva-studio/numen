@@ -56,7 +56,7 @@ const percent = computed(() =>
 )
 
 /** Read off the count, so it is shown only where there is one. */
-const left = computed(() => (shown.value.counts ? props.left : ''))
+const left = computed(() => (shown.value.hasCounts ? props.left : ''))
 
 /**
  * How the words give way.
@@ -65,8 +65,10 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
  * A count keeps what it is about to one line too, and without one a path or a
  * reason is read over two.
  */
-const givesSays = computed(() => (shown.value.counts || props.about ? 'truncate' : 'line-clamp-3'))
-const givesAbout = computed(() => (shown.value.counts ? 'truncate' : 'line-clamp-2'))
+const givesSays = computed(() =>
+  shown.value.hasCounts || props.about ? 'truncate' : 'line-clamp-3',
+)
+const givesAbout = computed(() => (shown.value.hasCounts ? 'truncate' : 'line-clamp-2'))
 
 /**
  * A line about work is hushed. A line with a tone is drawn in it, and takes the

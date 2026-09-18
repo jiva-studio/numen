@@ -3,6 +3,7 @@ package editor
 import (
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -92,8 +93,8 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 // asked of it is the next.
 func assetOf(path string) string { return assetsRoute + url.PathEscape(path) }
 
-func pageOf(path string, at, wide int, print fingerprint) string {
-	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesName, at, wide, formatFingerprint(print))
+func pageOf(path string, at, wide int, mark pool.Fingerprint) string {
+	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesName, at, wide, formatFingerprint(mark))
 }
 
 // An address that names which bytes it is about answers those bytes or nothing,
@@ -107,20 +108,20 @@ var errChanged = errors.New("the file changed since this address was given out")
 // formatFingerprint is a fingerprint as an address carries it, and parseFingerprint is it read
 // back. The path is a segment of the address already, so what is written here
 // is the rest of what says which bytes the file is.
-func formatFingerprint(print fingerprint) string {
-	return fmt.Sprintf("size=%d&mtime=%d", print.size, print.mtime)
+func formatFingerprint(mark pool.Fingerprint) string {
+	return fmt.Sprintf("size=%d&mtime=%d", mark.Size, mark.Mtime)
 }
 
-func parseFingerprint(query url.Values) (fingerprint, error) {
+func parseFingerprint(query url.Values) (pool.Fingerprint, error) {
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
 	if err != nil {
-		return fingerprint{}, fmt.Errorf("size: %q is not a size", query.Get("size"))
+		return pool.Fingerprint{}, fmt.Errorf("size: %q is not a size", query.Get("size"))
 	}
 	mtime, err := strconv.ParseInt(query.Get("mtime"), 10, 64)
 	if err != nil {
-		return fingerprint{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
+		return pool.Fingerprint{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
 	}
-	return fingerprint{size: size, mtime: mtime}, nil
+	return pool.Fingerprint{Size: size, Mtime: mtime}, nil
 }
 
 // stamp and instant are a modification time as this adapter carries it — an

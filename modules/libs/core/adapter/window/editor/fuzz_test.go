@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http/httptest"
 	"strconv"
 	"testing"
@@ -48,8 +49,8 @@ func FuzzAssetAddress(f *testing.F) {
 		if path == "" || page < 0 {
 			return
 		}
-		print := fingerprint{size: size, mtime: mtime}
-		url := pageOf(path, page, 800, print)
+		mark := pool.Fingerprint{Size: size, Mtime: mtime}
+		url := pageOf(path, page, 800, mark)
 
 		at, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil))
 		if !ok {
@@ -66,10 +67,10 @@ func FuzzAssetAddress(f *testing.F) {
 		// thing on the way back.
 		got, err := parseFingerprint(httptest.NewRequest("GET", url, nil).URL.Query())
 		if err != nil {
-			t.Fatalf("%q carries %+v and came back: %v", url, print, err)
+			t.Fatalf("%q carries %+v and came back: %v", url, mark, err)
 		}
-		if got != print {
-			t.Fatalf("%q carries %+v and came back as %+v", url, print, got)
+		if got != mark {
+			t.Fatalf("%q carries %+v and came back as %+v", url, mark, got)
 		}
 	})
 }

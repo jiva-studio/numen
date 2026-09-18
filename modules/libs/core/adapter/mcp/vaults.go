@@ -18,10 +18,10 @@ type Vault struct {
 	ID     string `json:"id" jsonschema:"the identity this vault keeps wherever its folder moves to"`
 	Name   string `json:"name" jsonschema:"what the person calls it"`
 	Folder string `json:"folder" jsonschema:"where the vault is on this machine"`
-	// Missing is a folder that is not there to be read. The vault stays on the
+	// IsMissing is a folder that is not there to be read. The vault stays on the
 	// list until somebody forgets it.
-	Missing bool `json:"missing,omitempty" jsonschema:"there is nothing at that folder now"`
-	Showing bool `json:"showing,omitempty" jsonschema:"the vault the person is looking at, and the one every other tool works"`
+	IsMissing bool `json:"missing,omitempty" jsonschema:"there is nothing at that folder now"`
+	IsShowing bool `json:"showing,omitempty" jsonschema:"the vault the person is looking at, and the one every other tool works"`
 }
 
 // addVaultsTools gives an agent the list of vaults this installation holds and
@@ -107,18 +107,18 @@ func addVaultAdd(server *sdk.Server, core Core) {
 		Path string `json:"path,omitempty" jsonschema:"the folder to add, as an absolute path on this machine; left out, the person picks one"`
 		Name string `json:"name,omitempty" jsonschema:"what to call it; the folder's own name by default, numbered when another vault has that name"`
 	}) (*sdk.CallToolResult, struct {
-		Added  bool   `json:"added"`
-		ID     string `json:"id,omitempty"`
-		Name   string `json:"name,omitempty"`
-		Folder string `json:"folder,omitempty"`
-		Why    string `json:"why,omitempty" jsonschema:"why nothing was added, for an answer that added nothing"`
+		IsAdded bool   `json:"added"`
+		ID      string `json:"id,omitempty"`
+		Name    string `json:"name,omitempty"`
+		Folder  string `json:"folder,omitempty"`
+		Why     string `json:"why,omitempty" jsonschema:"why nothing was added, for an answer that added nothing"`
 	}, error) {
 		type out = struct {
-			Added  bool   `json:"added"`
-			ID     string `json:"id,omitempty"`
-			Name   string `json:"name,omitempty"`
-			Folder string `json:"folder,omitempty"`
-			Why    string `json:"why,omitempty" jsonschema:"why nothing was added, for an answer that added nothing"`
+			IsAdded bool   `json:"added"`
+			ID      string `json:"id,omitempty"`
+			Name    string `json:"name,omitempty"`
+			Folder  string `json:"folder,omitempty"`
+			Why     string `json:"why,omitempty" jsonschema:"why nothing was added, for an answer that added nothing"`
 		}
 		root := in.Path
 		if root == "" {
@@ -146,7 +146,7 @@ func addVaultAdd(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Added: true, ID: string(added.ID), Name: added.Name, Folder: added.Path}, nil
+		return nil, out{IsAdded: true, ID: string(added.ID), Name: added.Name, Folder: added.Path}, nil
 	})
 }
 
@@ -203,12 +203,12 @@ func addVaultForget(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Vault string `json:"vault" jsonschema:"the vault to forget, addressed by its name, its folder, or the identity vault_list gives it"`
 	}) (*sdk.CallToolResult, struct {
-		Forgotten bool   `json:"forgotten"`
-		Folder    string `json:"folder" jsonschema:"where the folder still is; vault_add on it brings the vault back"`
+		IsForgotten bool   `json:"forgotten"`
+		Folder      string `json:"folder" jsonschema:"where the folder still is; vault_add on it brings the vault back"`
 	}, error) {
 		type out = struct {
-			Forgotten bool   `json:"forgotten"`
-			Folder    string `json:"folder" jsonschema:"where the folder still is; vault_add on it brings the vault back"`
+			IsForgotten bool   `json:"forgotten"`
+			Folder      string `json:"folder" jsonschema:"where the folder still is; vault_add on it brings the vault back"`
 		}
 		v, err := core.Vaults.found(in.Vault)
 		if err != nil {
@@ -222,7 +222,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 		if err := core.Vaults.Forget.Execute(ctx, v); err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Forgotten: true, Folder: v.Path}, nil
+		return nil, out{IsForgotten: true, Folder: v.Path}, nil
 	})
 }
 
@@ -247,12 +247,12 @@ func addVaultOpen(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Vault string `json:"vault" jsonschema:"the vault to show, addressed by its name, its folder, or the identity vault_list gives it"`
 	}) (*sdk.CallToolResult, struct {
-		Opening bool   `json:"opening"`
-		Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+		IsOpening bool   `json:"opening"`
+		Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 	}, error) {
 		type out = struct {
-			Opening bool   `json:"opening"`
-			Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+			IsOpening bool   `json:"opening"`
+			Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 		}
 		v, err := core.Vaults.found(in.Vault)
 		if err != nil {
@@ -270,7 +270,7 @@ func addVaultOpen(server *sdk.Server, core Core) {
 		// nothing to carry back through an answer that has already gone.
 		go func() { _ = core.Vaults.Opens(context.WithoutCancel(ctx), v) }()
 		return nil, out{
-			Opening: true,
+			IsOpening: true,
 			Doing: fmt.Sprintf(
 				"the window is moving to %s, and this session ends with the vault it was serving",
 				v.Name),
@@ -289,11 +289,11 @@ func (v Vaults) found(nameOrPath string) (domain.Vault, error) {
 // newVault is one vault as an agent is told about it.
 func newVault(one vaults.KnownVault) Vault {
 	return Vault{
-		ID:      string(one.Vault.ID),
-		Name:    one.Vault.Name,
-		Folder:  one.Vault.Path,
-		Missing: one.Missing,
-		Showing: one.Current,
+		ID:        string(one.Vault.ID),
+		Name:      one.Vault.Name,
+		Folder:    one.Vault.Path,
+		IsMissing: one.IsMissing,
+		IsShowing: one.IsCurrent,
 	}
 }
 
@@ -315,8 +315,8 @@ func checkVaultRoot(root string) error {
 // oneName is one name for a folder, whichever route reached it.
 func oneName(path string) string {
 	clean := filepath.Clean(path)
-	if real, err := filepath.EvalSymlinks(clean); err == nil {
-		return real
+	if resolved, err := filepath.EvalSymlinks(clean); err == nil {
+		return resolved
 	}
 	return clean
 }

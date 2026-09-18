@@ -375,7 +375,7 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 		t.Errorf("the fingerprint is the path, the size and the time: %+v", res)
 	}
 
-	extract.RebuildIndex = true
+	extract.ShouldRebuildIndex = true
 	if res, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	} else if res.Extracted != 1 {
@@ -412,7 +412,7 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 	}
 
 	of := text.Reader{Vault: shelf, Derived: made}
-	doc, err := of.Of(ctx, bookPath, src.Producer, src.Hash)
+	doc, err := of.GetDocument(ctx, bookPath, src.Producer, src.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -423,7 +423,7 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 	if err := made.Write(ctx, text.Artifact("ocr", hash), []byte(whole)); err != nil {
 		t.Fatal(err)
 	}
-	doc, err = of.Of(ctx, bookPath, src.Producer, src.Hash)
+	doc, err = of.GetDocument(ctx, bookPath, src.Producer, src.Hash)
 	if err != nil {
 		t.Fatal(err)
 	}

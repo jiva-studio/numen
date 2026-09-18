@@ -47,7 +47,7 @@ const slots = useSlots()
 
 const { room, options, measures, widen, hung } = useRoom(frameElement, props, () => !!slots.icon)
 
-const { frame, moving } = usePlexTransition(
+const { frame, isMoving } = usePlexTransition(
   () => props.neighbourhood,
   () => ({
     options: { ...props.options, viewport: room.value },
@@ -65,7 +65,7 @@ const { frame, moving } = usePlexTransition(
  * that can come to nothing is a lie. Where a pointer happens to be is the
  * node's own affair, and never reaches this far.
  */
-const mayReach = computed(() => props.creatable.length > 0)
+const canReach = computed(() => props.creatable.length > 0)
 
 /**
  * Reaching out from a node.
@@ -127,21 +127,26 @@ const frameStyle = computed(() => ({
 }))
 
 defineExpose({
-  moving: toRef(moving),
+  isMoving: toRef(isMoving),
   /** The keyboard put back on a node by whoever took it away. */
   focusNode: (id: string) => view.value?.focusNode(id),
 })
 </script>
 
 <template>
-  <div ref="frame" class="plex-frame numen" :data-moving="moving || undefined" :style="frameStyle">
+  <div
+    ref="frame"
+    class="plex-frame numen"
+    :data-moving="isMoving || undefined"
+    :style="frameStyle"
+  >
     <PlexView
       ref="view"
       :frame="frame"
       :viewport="room"
       :node-size="options.nodeSize"
       :show-edge-labels="showEdgeLabels"
-      :may-reach="mayReach"
+      :can-reach="canReach"
       :seat-name="seatName"
       :widen="widen"
       :hung="hung"

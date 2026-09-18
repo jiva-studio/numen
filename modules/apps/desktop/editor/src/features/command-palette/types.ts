@@ -75,7 +75,7 @@ export interface CommandTarget {
    * can: the walk runs behind the window, and what it has reached already
    * answers.
    */
-  readonly ready: boolean
+  readonly isReady: boolean
 }
 
 /** One thing a person can ask for. */
@@ -138,7 +138,7 @@ export interface StepRow {
   /** Drawn, said, and not chosen. */
   readonly disabled?: boolean
   /** The value the setting this list is of holds now, which is where it opens. */
-  readonly inForce?: boolean
+  readonly isCurrent?: boolean
 }
 
 /** One group of such a list, named by whatever holds it. */
@@ -199,7 +199,7 @@ export interface Notes {
   /** The file a note stands at now, under the identity it opened under. */
   getPath(id: string): string
   /** Whether the note owes the person an answer about what its file now holds. */
-  isAsking(id: string): boolean
+  asking(id: string): boolean
   /** Answers once nothing of that note is on its way to the file. */
   settle(id: string): Promise<void>
   /** The tab holding a note lets go of it. */
@@ -225,7 +225,7 @@ export interface Store {
   /** What it is called, under the identity it opened under. */
   getTitle(id: string): string
   /** Whether it owes the person an answer about what its file now holds. */
-  isAsking(id: string): boolean
+  asking(id: string): boolean
   /** Answers once nothing of it is on its way to the file. */
   settle(id: string): Promise<void>
   /** The tab holding it lets go of it. */

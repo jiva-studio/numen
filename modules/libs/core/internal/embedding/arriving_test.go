@@ -31,11 +31,11 @@ func (landed) Close() error { return nil }
 // shut is a model that says when it was let go of.
 type shut struct {
 	landed
-	closed bool
+	isClosed bool
 }
 
 func (s *shut) Close() error {
-	s.closed = true
+	s.isClosed = true
 	return nil
 }
 
@@ -98,7 +98,7 @@ func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	if err := arriving.Disown(wrong); err != nil {
 		t.Fatal(err)
 	}
-	if !held.closed {
+	if !held.isClosed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
 	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
@@ -131,7 +131,7 @@ func TestAModelThatLandsAfterItWasDisownedIsLetGoOf(t *testing.T) {
 
 	held := &shut{}
 	arriving.ReportArrival(held, nil)
-	if !held.closed {
+	if !held.isClosed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
 }
@@ -144,7 +144,7 @@ func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
 
 	held := &shut{}
 	arriving.ReportArrival(held, nil)
-	if !held.closed {
+	if !held.isClosed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
 }

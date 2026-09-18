@@ -260,10 +260,10 @@ func packVector(q []int8) []byte {
 // again. The source now open is kept, because the chunks of one source are asked
 // about together.
 type extracted struct {
-	of   text.Reader
-	path string
-	text string
-	held bool
+	of     text.Reader
+	path   string
+	text   string
+	isHeld bool
 }
 
 // text is the extracted text of one source, and false where the vault no longer
@@ -273,11 +273,11 @@ type extracted struct {
 // chunk is re-sliced out of the text it was cut from.
 func (e *extracted) textOf(ctx context.Context, path, from, hash string) (string, bool, error) {
 	if e.path == path {
-		return e.text, e.held, nil
+		return e.text, e.isHeld, nil
 	}
-	e.path, e.text, e.held = path, "", false
+	e.path, e.text, e.isHeld = path, "", false
 
-	doc, err := e.of.Of(ctx, path, from, hash)
+	doc, err := e.of.GetDocument(ctx, path, from, hash)
 	switch {
 	case port.IsNoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, text.ErrUnreadable):
 		return "", false, nil
@@ -285,6 +285,6 @@ func (e *extracted) textOf(ctx context.Context, path, from, hash string) (string
 		return "", false, fmt.Errorf("read %s: %w", path, err)
 	}
 	e.text = doc.Text
-	e.held = true
+	e.isHeld = true
 	return e.text, true, nil
 }

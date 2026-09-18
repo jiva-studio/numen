@@ -222,7 +222,7 @@ func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
 
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	session, _ := newSession(t, nil)
-	exactly(t, serves(t, session), []string{
+	checkToolNames(t, serves(t, session), []string{
 		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
 		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"file_read",
@@ -250,7 +250,7 @@ func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 	core.View = &window{}
 	core.Attending = func() domain.OpenTabs { return domain.OpenTabs{} }
 
-	exactly(t, serves(t, newSessionOver(t, core)), []string{
+	checkToolNames(t, serves(t, newSessionOver(t, core)), []string{
 		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
 		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"note_focus",
@@ -307,12 +307,12 @@ func serves(t *testing.T, session *sdk.ClientSession) []string {
 	return named
 }
 
-// exactly holds a server to the tools it is for, naming what is missing and
-// what is served beside them.
-func exactly(t *testing.T, served, want []string) {
+// checkToolNames holds a server to the tools it is for, naming what is missing
+// and what stands beside them.
+func checkToolNames(t *testing.T, names, want []string) {
 	t.Helper()
-	beside := make(map[string]bool, len(served))
-	for _, name := range served {
+	beside := make(map[string]bool, len(names))
+	for _, name := range names {
 		beside[name] = true
 	}
 	for _, name := range want {
@@ -783,7 +783,7 @@ func TestALinkToASharedNameSaysItIsAmbiguous(t *testing.T) {
 	if len(joined.Links) != 1 {
 		t.Fatalf("want the one link, got %+v", joined.Links)
 	}
-	if !joined.Links[0].Ambiguous {
+	if !joined.Links[0].IsAmbiguous {
 		t.Errorf("two notes answer to this name: %+v", joined.Links[0])
 	}
 }

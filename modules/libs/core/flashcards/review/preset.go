@@ -55,8 +55,8 @@ type Preset struct {
 	// cent. A day the preset does not name carries the whole of it, and a day
 	// at nothing schedules nothing.
 	Load map[time.Weekday]int
-	// EvenLoad is whether days are made to resemble each other.
-	EvenLoad bool
+	// IsEvenLoad is whether days are made to resemble each other.
+	IsEvenLoad bool
 }
 
 // FullLoad is a whole day's load, which is what a day the preset does not name
@@ -78,7 +78,7 @@ func (p Preset) GetShare(day time.Weekday) float64 {
 //
 // A preset aiming at a day does not. The pace is what spreads a date's material
 // over its days, and the days it has are the days it needs.
-func (p Preset) CanEvenLoad() bool { return p.EvenLoad && p.Goal != GoalDate }
+func (p Preset) CanEvenLoad() bool { return p.IsEvenLoad && p.Goal != GoalDate }
 
 // GetPlacing is how this preset puts a card on a day, as a short name: whether
 // it evens the days out, and the share each day of the week carries. A schedule
@@ -230,7 +230,7 @@ func Defaults() Preset {
 		Interval:    21,
 		Counts:      BudgetUnitCards,
 		Backlog:     AllBacklog,
-		EvenLoad:    true,
+		IsEvenLoad:  true,
 	}
 }
 

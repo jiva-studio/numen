@@ -10,11 +10,11 @@ import (
 
 // tabbed is one tab of the window, as an agent is told about it.
 type tabbed struct {
-	Kind  string `json:"kind"`
-	Path  string `json:"path"`
-	Title string `json:"title"`
-	Where string `json:"where"`
-	Front bool   `json:"front"`
+	Kind    string `json:"kind"`
+	Path    string `json:"path"`
+	Title   string `json:"title"`
+	Where   string `json:"where"`
+	IsFront bool   `json:"front"`
 }
 
 // newSessionWithTabs is the tools as an agent meets them, with a window saying
@@ -51,7 +51,7 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 
 	out := tabs(t, session)
 
-	if len(out.Tabs) != 2 || out.Tabs[0].Front || !out.Tabs[1].Front {
+	if len(out.Tabs) != 2 || out.Tabs[0].IsFront || !out.Tabs[1].IsFront {
 		t.Fatalf("answered with %+v", out.Tabs)
 	}
 	if out.Tabs[1].Where != "12:34 of its 58:14 written down" {

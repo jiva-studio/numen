@@ -19,9 +19,9 @@ export interface Neighbour {
   /** What the person called the relationship, where they called it anything. */
   readonly label: string
   /** The deck points at it; otherwise it points at the deck. */
-  readonly points: boolean
+  readonly hasPoints: boolean
   /** Several notes answer to the name, and this is the nearest. */
-  readonly ambiguous: boolean
+  readonly isAmbiguous: boolean
   /** Why there is no text, empty where the text is here. */
   readonly error: string
 }
@@ -46,8 +46,8 @@ export const getDeckNeighbourhood = async (
       title: one.title,
       body: one.body,
       label: one.label,
-      points: one.isPointedAt,
-      ambiguous: one.isAmbiguous,
+      hasPoints: one.isPointedAt,
+      isAmbiguous: one.isAmbiguous,
       error: formatErrorCodeMessage(one.error),
     })),
     unread: answer.unread,

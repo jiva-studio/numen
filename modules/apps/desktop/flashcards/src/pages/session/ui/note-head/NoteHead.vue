@@ -19,7 +19,7 @@ const getNoteName = (one: Neighbour) => one.title || one.written
     <!-- The path is here because two notes can be called the same thing. -->
     <p class="reading__quiet">
       <span v-if="props.note.path">{{ props.note.path }}</span>
-      <span v-if="!props.note.points">{{ words.pointsHere }}</span>
+      <span v-if="!props.note.hasPoints">{{ words.pointsHere }}</span>
       <span v-if="props.note.label">{{ props.note.label }}</span>
     </p>
   </header>

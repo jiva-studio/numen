@@ -24,7 +24,7 @@ type SchemaEnum interface {
 // way in. Reading answers whether the value was acted on.
 func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 	t.Helper()
-	each(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
+	checkEachValue(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
 		if !reading(one) {
 			t.Errorf("%s reaches nothing on the way in", value.Name())
 		}
@@ -37,7 +37,7 @@ func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {
 // fail.
 func CheckProduced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func(C) E) {
 	t.Helper()
-	each(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
+	checkEachValue(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
 		was, named := from[one]
 		if !named {
 			t.Errorf("%s is written from nothing", value.Name())
@@ -54,16 +54,16 @@ func CheckProduced[E SchemaEnum, C any](t *testing.T, from map[E]C, writing func
 // writing sends that default back in its place.
 func RoundTrip[E SchemaEnum, C any](t *testing.T, reading func(E) C, writing func(C) E) {
 	t.Helper()
-	each(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
+	checkEachValue(t, func(t *testing.T, value protoreflect.EnumValueDescriptor, one E) {
 		if got := writing(reading(one)); got != one {
 			t.Errorf("%s comes back as %v", value.Name(), got)
 		}
 	})
 }
 
-// each runs check over every value of the enum but the unspecified zero, which
+// checkEachValue runs check over every value of the enum but the unspecified zero, which
 // is what a field carries when nothing was said and is nobody's to act on.
-func each[E SchemaEnum](t *testing.T, check func(*testing.T, protoreflect.EnumValueDescriptor, E)) {
+func checkEachValue[E SchemaEnum](t *testing.T, check func(*testing.T, protoreflect.EnumValueDescriptor, E)) {
 	t.Helper()
 	var zero E
 	values := zero.Descriptor().Values()

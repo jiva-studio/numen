@@ -50,10 +50,10 @@ type Agent struct {
 	// Model is which model answers, by the name the command line knows it as.
 	// Empty leaves the choice to the installation the agent belongs to.
 	Model string
-	// ReadsHooksAndSkills lets the agent read what this machine holds for it:
+	// ShouldReadHooksAndSkills lets the agent read what this machine holds for it:
 	// hooks, skills, standing instructions, plugins. What a vault carries is
 	// refused whether this is set or not.
-	ReadsHooksAndSkills bool
+	ShouldReadHooksAndSkills bool
 	// Turns is how many times the agent may go to the model before it is stopped.
 	Turns int
 	// ErrorHandler is told what the agent wrote to its error output when
@@ -74,7 +74,7 @@ type Agent struct {
 	taken struct {
 		sync.Mutex
 		running map[*work]bool
-		shut    bool
+		isShut  bool
 	}
 }
 
@@ -83,7 +83,7 @@ func (a *Agent) hold(w *work) bool {
 	a.taken.Lock()
 	defer a.taken.Unlock()
 
-	if a.taken.shut {
+	if a.taken.isShut {
 		return false
 	}
 	if a.taken.running == nil {
@@ -106,7 +106,7 @@ func (a *Agent) letGo(w *work) {
 // writing to the vault with nobody watching.
 func (a *Agent) Close() error {
 	a.taken.Lock()
-	a.taken.shut = true
+	a.taken.isShut = true
 	running := make([]*work, 0, len(a.taken.running))
 	for w := range a.taken.running {
 		running = append(running, w)
@@ -325,7 +325,7 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 	// The sources are named one by one because this vault's own tools arrive on
 	// a command line and are read as a customisation like any other.
 	sources := ""
-	if a.ReadsHooksAndSkills {
+	if a.ShouldReadHooksAndSkills {
 		sources = "user"
 	}
 	args = append(args, "--setting-sources", sources)

@@ -88,7 +88,7 @@ func Fetch(ctx context.Context, s Settings, address string) (string, error) {
 	if _, err := os.Stat(at); err == nil {
 		return at, nil
 	}
-	if !s.Download {
+	if !s.ShouldDownload {
 		return "", fmt.Errorf("%s is not on this machine: set %s.dir to where it is, or %s.download to fetch it",
 			address, s.Section, s.Section)
 	}

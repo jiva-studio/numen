@@ -14,12 +14,12 @@ export function getVaultRows(
   words: VaultsWords,
 ): readonly VaultRow[] {
   return vaults.map((one) => {
-    const said = one.reading ? words.reading : one.unread
+    const said = one.isReading ? words.reading : one.unread
     return {
       id: one.vault,
       name: one.name,
       path: one.path,
-      isWorking: !one.counted,
+      isWorking: !one.isCounted,
       ...(said ? { detail: said } : {}),
     }
   })
@@ -37,7 +37,7 @@ export function getDueByVault(
 ): ReadonlyMap<string, number | null> {
   return new Map(
     vaults
-      .filter((one) => !one.unread && !one.reading)
-      .map((one) => [one.vault, one.counted ? one.due + one.new : null]),
+      .filter((one) => !one.unread && !one.isReading)
+      .map((one) => [one.vault, one.isCounted ? one.due + one.new : null]),
   )
 }

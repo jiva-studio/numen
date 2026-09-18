@@ -6,11 +6,11 @@
  * views of it. Every other field is a person's to take out of the goal's hands.
  */
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '@numen/protocol'
 
 import { usePresetTab } from './kind'
 import type { SettingValue } from './types'
-import { goalValue, nearest } from './lib/curve'
+import { StopReason } from '@numen/protocol'
+import { goalValue, findNearest } from './lib/curve'
 import { asFailure, asValue } from '@numen/wire'
 import type { CardsFailure } from '@/entities/deck'
 import { fieldsUnder, steer, type Field } from './lib/fields'
@@ -38,7 +38,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   retained: 0,
   owed: 0,
   through: 0,
-  enough: true,
+  canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
@@ -63,7 +63,7 @@ const curve: Curve = {
   cards: 400,
   overdue: 0,
   unbegun: 0,
-  honest: true,
+  isHonest: true,
 }
 
 /** The review day every test here is told, so a goal of a date counts from one place. */
@@ -321,8 +321,8 @@ describe('the curve behind the knob', () => {
     expect(state.material.value).toStrictEqual({ decks: 1, cards: 400, overdue: 0, unbegun: 0 })
 
     state.updateSetting('newADay', 4)
-    expect(state.waiting.value).toBe(true)
-    expect(state.curve.value.honest).toBe(false)
+    expect(state.isWaiting.value).toBe(true)
+    expect(state.curve.value.isHonest).toBe(false)
     expect(state.material.value).toStrictEqual({ decks: 1, cards: 400, overdue: 0, unbegun: 0 })
   })
 
@@ -347,10 +347,10 @@ describe('the curve behind the knob', () => {
 
     state.chooseGoal('minutes')
     await settle()
-    expect(state.curve.value.honest).toBe(true)
+    expect(state.curve.value.isHonest).toBe(true)
     state.chooseGoal('retention')
     await settle()
-    expect(state.curve.value.honest).toBe(true)
+    expect(state.curve.value.isHonest).toBe(true)
     expect(asked).toStrictEqual(['minutes', 'retention', 'date'])
   })
 
@@ -399,12 +399,12 @@ describe('the curve behind the knob', () => {
   // screen, so the run of a settled question is nobody's answer to a new one.
   it('is nobody’s answer while the answer to the settings now standing is out', async () => {
     const { state } = await openPresetTab()
-    expect(state.curve.value.honest).toBe(true)
+    expect(state.curve.value.isHonest).toBe(true)
 
     state.updateSetting('newADay', 4)
-    expect(state.curve.value.honest).toBe(false)
+    expect(state.curve.value.isHonest).toBe(false)
     await flushPromises()
-    expect(state.curve.value.honest).toBe(true)
+    expect(state.curve.value.isHonest).toBe(true)
   })
 })
 
@@ -516,13 +516,13 @@ describe('what the tab says it encountered as an error', () => {
 describe('a curve nobody answers', () => {
   it('leaves the tab saying why, and not saying it is reading', async () => {
     const { state } = await openPresetTab({}, () => Promise.reject(new Error('the vault is gone')))
-    expect(state.waiting.value).toBe(false)
+    expect(state.isWaiting.value).toBe(false)
     expect(state.errorMessage.value).not.toBe('')
   })
 
   it('is what a file refused leaves, so no answer is waited on', async () => {
     const { state } = await openPresetTab({}, curve, () => ({ error: 'notAPreset' }))
-    expect(state.waiting.value).toBe(false)
+    expect(state.isWaiting.value).toBe(false)
     expect(state.errorMessage.value).not.toBe('')
   })
 
@@ -530,7 +530,7 @@ describe('a curve nobody answers', () => {
     const { state } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
     state.chooseGoal('retention')
     await flushPromises()
-    expect(state.waiting.value).toBe(true)
+    expect(state.isWaiting.value).toBe(true)
   })
 })
 
@@ -769,7 +769,7 @@ const createRangedCurve = (settings: Settings): Curve => {
     goal: settings.goal,
     grid,
     at: grid.map((minutes) => point({ minutes, reviews: minutes * 4 })),
-    now: { at: nearest(grid, value), value, day: '' },
+    now: { at: findNearest(grid, value), value, day: '' },
     suggested: { at: grid.length - 1, value: grid[grid.length - 1] ?? 0, day: '' },
   }
 }

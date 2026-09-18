@@ -82,7 +82,7 @@ describe('what is drawn', () => {
   })
 
   it('marks the last of the rows its holder holds', () => {
-    expect(getShownRows('work').map((row) => row.last)).toStrictEqual([
+    expect(getShownRows('work').map((row) => row.isLast)).toStrictEqual([
       false,
       false,
       true,
@@ -94,7 +94,7 @@ describe('what is drawn', () => {
   it('tells a row that can hold from one that is holding', () => {
     const [, , , empty] = getShownRows('work')
     expect(empty?.hasChildren).toBe(true)
-    expect(empty?.holding).toBe(false)
+    expect(empty?.hasRows).toBe(false)
   })
 
   it('draws nothing from nothing', () => {
@@ -310,8 +310,8 @@ describe('the rows between two rows', () => {
 
 describe('what a press makes the selection', () => {
   const shown = getShownRows('work')
-  const JOINING: Press = { joining: true, reaching: false }
-  const REACHING: Press = { joining: false, reaching: true }
+  const JOINING: Press = { isJoining: true, isExtending: false }
+  const REACHING: Press = { isJoining: false, isExtending: true }
 
   it('is the row alone, pressed plainly', () => {
     expect(resolveSelection(shown, ['plans', 'notes'], 'plans', 'loose', PLAIN)).toStrictEqual({

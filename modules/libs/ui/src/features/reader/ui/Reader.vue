@@ -75,7 +75,7 @@ const { viewport, measure } = useViewport(area)
 /** Where the row stands, and what a hand or a wheel does to it. */
 const {
   along,
-  dragging,
+  isDragging,
   getScrollOffset,
   send,
   isStill,
@@ -115,8 +115,8 @@ const stand = (page: number, how: ScrollBehavior) => {
 
   // As far as the row goes: the last page cannot be brought any further left
   // than the end of it.
-  const furthest = Math.max(laid.value.length - viewport.value.width, 0)
-  send(Math.min(Math.max(begins, 0), furthest), how)
+  const getFurthest = Math.max(laid.value.length - viewport.value.width, 0)
+  send(Math.min(Math.max(begins, 0), getFurthest), how)
 }
 
 // A page asked for from outside is scrolled to. One reached by the hand is
@@ -183,7 +183,7 @@ defineExpose({
     <div
       ref="area"
       class="reader__viewport h-full overflow-auto overscroll-x-contain"
-      :class="dragging ? 'reader__viewport--held' : 'reader__viewport--takeable'"
+      :class="isDragging ? 'reader__viewport--held' : 'reader__viewport--takeable'"
       tabindex="0"
       role="region"
       :aria-label="words.pages"

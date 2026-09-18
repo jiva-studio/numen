@@ -105,7 +105,7 @@ describe('writing a stencil', () => {
 
     const read = await wire.read('Word.md')
     const body = read.ok ? read.value.body : ''
-    const answer = await wire.write('Word.md', body, { prose: body, at: '12 34 Word.md' })
+    const answer = await wire.write('Word.md', body, { prose: body, fingerprint: '12 34 Word.md' })
 
     expect(cards.writeStencil).toHaveBeenCalledWith(
       'Word.md',

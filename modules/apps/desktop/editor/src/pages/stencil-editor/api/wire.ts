@@ -48,7 +48,7 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       path,
       stencil.fields,
       { preamble: stencil.preamble, faces: facesOf(stencil), tail: stencil.tail },
-      baseline?.at ?? null,
+      baseline?.fingerprint ?? null,
     )
     const said = told.get(path) ?? NOTHING
     told.set(path, {

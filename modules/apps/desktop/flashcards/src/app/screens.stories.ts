@@ -181,13 +181,13 @@ const VAULT: VaultCardsDue = {
   vault: 'v1',
   name: 'Studies',
   path: '/home/you/Studies',
-  counted: true,
+  isCounted: true,
   faces: 3_478,
   due: 161,
   new: 29,
   decks: DECKS,
   presets: [],
-  reading: false,
+  isReading: false,
   unread: '',
 }
 
@@ -213,7 +213,7 @@ const CARD: CardFace = {
     '<p><strong>Aorist:</strong> <em>agamat</em></p>\n' +
     '<p>The root is written up in <a href="Sanskrit/Roots.md">Roots</a>, ' +
     'beside the other verbs of going.</p>',
-  seen: true,
+  isSeen: true,
   ahead: { again: 60, hard: 4 * 86_400, good: 11 * 86_400, easy: 26 * 86_400 },
 }
 
@@ -256,7 +256,7 @@ export const CardsDue: Story = {
         due: DUE,
         presets: PRESETS,
         byDeck: BY_DECK,
-        scheduled: true,
+        hasPresets: true,
         today: TODAY,
       }),
     ),
@@ -268,9 +268,9 @@ export const Reviewing: Story = {
     frame(
       h(Session, {
         card: CARD,
-        shown: true,
+        isShown: true,
         left: 161,
-        takenBack: true,
+        canTakeBack: true,
         at: 'here',
       }),
     ),

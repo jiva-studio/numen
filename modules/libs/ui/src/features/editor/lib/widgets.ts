@@ -26,13 +26,13 @@ export class Bullet extends WidgetType {
 export class Box extends WidgetType {
   constructor(
     readonly isTicked: boolean,
-    readonly writable: boolean,
+    readonly isWritable: boolean,
   ) {
     super()
   }
 
   override eq(other: Box) {
-    return other.isTicked === this.isTicked && other.writable === this.writable
+    return other.isTicked === this.isTicked && other.isWritable === this.isWritable
   }
 
   toDOM(view: EditorView) {
@@ -40,10 +40,10 @@ export class Box extends WidgetType {
     box.type = 'checkbox'
     box.className = 'cm-box'
     box.checked = this.isTicked
-    box.disabled = !this.writable
+    box.disabled = !this.isWritable
     box.addEventListener('mousedown', (event) => event.preventDefault())
     box.addEventListener('click', () => {
-      if (!this.writable) return
+      if (!this.isWritable) return
       const at = view.posAtDOM(box)
       const marker = view.state.doc.sliceString(at, at + 3)
       if (marker.length !== 3) return

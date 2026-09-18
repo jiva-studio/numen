@@ -63,9 +63,9 @@ export const mapLink = (link: Link) => ({
   label: link.label ?? '',
 })
 
-export const mapBaseline = (baseline: { prose: string; at: string }) => ({
+export const mapBaseline = (baseline: { prose: string; fingerprint: string }) => ({
   prose: baseline.prose,
-  at: fingerprint(baseline.at),
+  at: fingerprint(baseline.fingerprint),
 })
 
 export const mapNoteResult = (from: {

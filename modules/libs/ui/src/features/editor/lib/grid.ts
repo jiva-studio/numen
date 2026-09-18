@@ -14,7 +14,7 @@ class Grid extends WidgetType {
   constructor(
     readonly table: Table,
     /** Whether the editor takes typing at all. A read-only table is read. */
-    readonly writable: boolean,
+    readonly isWritable: boolean,
   ) {
     super()
   }
@@ -23,7 +23,7 @@ class Grid extends WidgetType {
     return (
       other.table.from === this.table.from &&
       other.table.source === this.table.source &&
-      other.writable === this.writable
+      other.isWritable === this.isWritable
     )
   }
 
@@ -49,7 +49,7 @@ class Grid extends WidgetType {
 
     drawn.forEach((element, index) => {
       const cell = cells[index]
-      place(element, cell ?? null, this.writable)
+      place(element, cell ?? null, this.isWritable)
       if (cell && element !== document.activeElement) element.textContent = readCell(cell.text)
     })
     return true
@@ -68,7 +68,7 @@ class Grid extends WidgetType {
         element.dataset['column'] = String(column)
         const align = this.table.align[column] ?? 'none'
         if (align !== 'none') element.style.textAlign = align === 'centre' ? 'center' : align
-        place(element, cell, this.writable)
+        place(element, cell, this.isWritable)
         if (cell) element.textContent = readCell(cell.text)
         line.appendChild(element)
       })
@@ -81,7 +81,7 @@ class Grid extends WidgetType {
     body.forEach((row, index) => rest.appendChild(draw(row, index + 1, 'td')))
     table.append(top, rest)
 
-    const grown = this.writable
+    const grown = this.isWritable
       ? [createAddButton('cm-add-column'), createAddButton('cm-add-row')]
       : []
     frame.replaceChildren(table, ...grown)
@@ -103,8 +103,8 @@ const createAddButton = (name: string) => {
 }
 
 /** A cell that is written somewhere can be typed into; one that is not cannot. */
-const place = (element: HTMLElement, cell: Cell | null, writable: boolean) => {
-  if (!cell || !writable) {
+const place = (element: HTMLElement, cell: Cell | null, isWritable: boolean) => {
+  if (!cell || !isWritable) {
     element.removeAttribute('contenteditable')
     delete element.dataset['from']
     delete element.dataset['to']
@@ -116,8 +116,9 @@ const place = (element: HTMLElement, cell: Cell | null, writable: boolean) => {
 }
 
 /** Whether this editor takes typing at all. */
-export const writable = (state: EditorState) => !state.readOnly && state.facet(EditorView.editable)
+export const isWritable = (state: EditorState) =>
+  !state.readOnly && state.facet(EditorView.editable)
 
 /** The widget drawn where a table is written. */
 export const gridOf = (state: EditorState, node: SyntaxNode) =>
-  new Grid(readTable(state, node), writable(state))
+  new Grid(readTable(state, node), isWritable(state))

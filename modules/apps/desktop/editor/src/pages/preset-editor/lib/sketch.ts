@@ -5,7 +5,7 @@
 import { dayAfter, daysBetween } from '@numen/ui'
 import { DEFAULTS, NOWHERE } from '../types'
 import type { Curve, Place, Point, Settings, SettingsBounds } from '../types'
-import { goalValue, nearest } from './curve'
+import { goalValue, findNearest } from './curve'
 
 /** How many places the line drawn in the answer's place is worked out at. */
 const PLACES = 25
@@ -42,7 +42,7 @@ export const approximate = (settings: Settings, today: string, within: SettingsB
   const at = grid.map((value) => estimatePoint(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = goalValue(settings, today)
-  const place = nearest(grid, value)
+  const place = findNearest(grid, value)
   const now: Place = { at: place, value, day: days[place] ?? '' }
   return {
     goal: settings.goal,
@@ -55,7 +55,7 @@ export const approximate = (settings: Settings, today: string, within: SettingsB
     cards: 0,
     overdue: 0,
     unbegun: 0,
-    honest: false,
+    isHonest: false,
   }
 }
 
@@ -92,7 +92,7 @@ const estimatePoint = (settings: Settings, value: number, grid: readonly number[
     retained: 0,
     owed: 0,
     through: 0,
-    enough: true,
+    canLearnEveryCard: true,
     closed: [],
     clears: 0,
     learned: 0,
@@ -106,9 +106,9 @@ const estimatePoint = (settings: Settings, value: number, grid: readonly number[
   if (settings.goal === 'date') {
     const span = Math.max(grid[grid.length - 1] ?? 1, 1)
     const minutes = ((settings.minutesADay || DEFAULTS.minutesADay) * span) / Math.max(value, 1)
-    const enough = minutes <= (settings.minutesADay || DEFAULTS.minutesADay)
+    const canLearnEveryCard = minutes <= (settings.minutesADay || DEFAULTS.minutesADay)
     const through = Math.min(value / span, 1)
-    return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, through, enough }
+    return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, through, canLearnEveryCard }
   }
   const retained = (CEILING * value) / (value + HALF)
   return { ...flat, minutes: value, reviews: (value * 60) / ANSWER, retained }

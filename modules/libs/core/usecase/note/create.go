@@ -67,7 +67,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 
 	// Before anything is made: a link the note cannot carry leaves no file.
 	for _, link := range in.Links {
-		if err := Writable(link); err != nil {
+		if err := CheckWritable(link); err != nil {
 			return CreateResult{}, err
 		}
 	}

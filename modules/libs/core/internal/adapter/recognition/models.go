@@ -25,13 +25,13 @@ var ModelAt = []string{"recognise", "name"}
 func GetModels(held Config, isFetched func(Config, RecogniserModel) bool) []port.Model {
 	offered := Defaults()
 	models := []port.Model{{
-		Path:     ModelAt,
-		Name:     offered.Recognise.Name,
-		Title:    "PP-OCRv6, small",
-		Shelf:    shelfMachine,
-		Default:  true,
-		Presence: getPresence(isFetched(held, offered.Recognise)),
-		Writes:   []port.Setting{newSetting(ModelAt, offered.Recognise.Name)},
+		Path:      ModelAt,
+		Name:      offered.Recognise.Name,
+		Title:     "PP-OCRv6, small",
+		Shelf:     shelfMachine,
+		IsDefault: true,
+		Presence:  getPresence(isFetched(held, offered.Recognise)),
+		Writes:    []port.Setting{newSetting(ModelAt, offered.Recognise.Name)},
 	}}
 	name := held.Recognise.Name
 	if name == "" || name == offered.Recognise.Name {

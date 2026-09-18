@@ -31,7 +31,7 @@ func TestAFolderTheWalkCouldNotEnterIsTheWholeVault(t *testing.T) {
 	if _, whole := shape.getPathsUnder(t.Context(), at); !whole {
 		t.Fatal("a folder the walk could not enter was not answered as the whole vault")
 	}
-	if shape.knows("library/shut/deep") {
+	if shape.isKnownFolder("library/shut/deep") {
 		t.Error("a folder behind one that could not be entered is in the shape")
 	}
 }

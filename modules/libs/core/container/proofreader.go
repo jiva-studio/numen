@@ -94,8 +94,8 @@ func (c Config) GetSpeechProofreading() source.ProofreadingConfig {
 func (c Config) getProofreading(said proofreading.Proofread) source.ProofreadingConfig {
 	profile := c.Proofreading.Profiles[said.Profile]
 	return source.ProofreadingConfig{
-		Named:           said.Profile != "",
-		Automatically:   said.Automatically,
+		IsNamed:         said.Profile != "",
+		IsAutomatic:     said.IsAutomatic,
 		By:              func(what string) (port.Proofreader, error) { return c.Proofreader(said.Profile, what) },
 		Queue:           func(what string) (port.ProofreadQueue, error) { return c.ProofreadQueue(said.Profile, what) },
 		Batch:           profile.BatchSize,

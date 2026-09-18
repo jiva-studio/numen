@@ -87,7 +87,7 @@ func (s *Service) ListThemes(
 			Name:     one.Name,
 			Title:    one.Title,
 			Shelf:    encodeShelf(one.Shelf),
-			IsPinned: one.Pinned,
+			IsPinned: one.IsPinned,
 		})
 	}
 	return connect.NewResponse(&v1.ListThemesResponse{

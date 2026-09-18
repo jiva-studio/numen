@@ -20,7 +20,7 @@ import (
 // the whole file stands as its body, links in the block included — so this is
 // ErrUnterminated and the file is left as it is.
 func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
-	if d.unterminated {
+	if d.isUnterminated {
 		return 0, ErrUnterminated
 	}
 	if !domain.IsNameable(to) {

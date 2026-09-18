@@ -13,18 +13,18 @@ import (
 // theList is the vaults an installation holds, held in memory: the rows, which
 // of them was opened last, and how often that was asked.
 type theList struct {
-	rows  []domain.Vault
-	last  domain.Vault
-	kept  bool
-	asked int
-	fails error
+	rows   []domain.Vault
+	last   domain.Vault
+	isKept bool
+	asked  int
+	fails  error
 }
 
-func (l *theList) All() ([]domain.Vault, error) { return l.rows, l.fails }
+func (l *theList) List() ([]domain.Vault, error) { return l.rows, l.fails }
 
 func (l *theList) Last() (domain.Vault, bool, error) {
 	l.asked++
-	return l.last, l.kept, l.fails
+	return l.last, l.isKept, l.fails
 }
 
 func (l *theList) Save(domain.Vault) error                 { return nil }
@@ -67,7 +67,7 @@ func TestEveryVaultOnTheListIsKnown(t *testing.T) {
 		t.Errorf("the list came back as %s then %s", known[0].Vault.ID, known[1].Vault.ID)
 	}
 	for _, one := range known {
-		if one.Missing {
+		if one.IsMissing {
 			t.Errorf("%s is where the list says it is and was called missing", one.Vault.ID)
 		}
 	}
@@ -78,16 +78,16 @@ func TestEveryVaultOnTheListIsKnown(t *testing.T) {
 func TestTheVaultOpenedLastIsTheCurrentOne(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
-	list.last, list.kept = list.rows[1], true
+	list.last, list.isKept = list.rows[1], true
 
 	known, err := vaults.NewKnownVaults(list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if known[0].Current {
+	if known[0].IsCurrent {
 		t.Error("a vault that was not opened last was called the current one")
 	}
-	if !known[1].Current {
+	if !known[1].IsCurrent {
 		t.Error("the vault opened last is not the current one")
 	}
 }
@@ -97,13 +97,13 @@ func TestTheVaultOpenedLastIsTheCurrentOne(t *testing.T) {
 func TestTheVaultBeingWorkedStandsOverWhatTheListRemembers(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
-	list.last, list.kept = list.rows[1], true
+	list.last, list.isKept = list.rows[1], true
 
 	known, err := vaults.NewKnownVaults(list, there).Execute("wren")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !known[0].Current || known[1].Current {
+	if !known[0].IsCurrent || known[1].IsCurrent {
 		t.Error("the vault being worked is not the current one")
 	}
 	if list.asked != 0 {
@@ -122,7 +122,7 @@ func TestAListNobodyHasOpenedHasNoCurrentVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range known {
-		if one.Current {
+		if one.IsCurrent {
 			t.Errorf("%s is current on a list nobody has opened", one.Vault.ID)
 		}
 	}
@@ -141,10 +141,10 @@ func TestAVaultWhoseFolderHasGoneIsMarkedAndStays(t *testing.T) {
 	if len(known) != 2 {
 		t.Fatalf("%d vaults after one folder went", len(known))
 	}
-	if known[0].Missing {
+	if known[0].IsMissing {
 		t.Error("a folder that is there was called missing")
 	}
-	if !known[1].Missing {
+	if !known[1].IsMissing {
 		t.Error("a folder that has gone was not called missing")
 	}
 }
@@ -161,7 +161,7 @@ func TestABuildThatCannotOpenAVaultMarksNoFolderMissing(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range known {
-		if one.Missing {
+		if one.IsMissing {
 			t.Errorf("%s was called missing by a build that cannot open a vault", one.Vault.ID)
 		}
 	}

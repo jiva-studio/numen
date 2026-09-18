@@ -11,8 +11,8 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   title: 'Leaf mould',
   body: 'Compost made of fallen leaves alone.',
   label: '',
-  points: true,
-  ambiguous: false,
+  hasPoints: true,
+  isAmbiguous: false,
   error: '',
   ...more,
 })

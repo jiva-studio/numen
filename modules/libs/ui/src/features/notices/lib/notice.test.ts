@@ -12,9 +12,9 @@ import {
 } from './dwell'
 import { foldNotices } from './fold'
 import { measureMovement, type Movement } from './movement'
-import { getStillAway, readable, tallyOf, type Notice } from './notice'
+import { getStillAway, getReadable, tallyOf, type Notice } from './notice'
 
-const one = (over: Partial<Notice> = {}): Notice => ({
+const createNotice = (over: Partial<Notice> = {}): Notice => ({
   id: 'embedding',
   text: 'Preparing search by meaning',
   ...over,
@@ -22,43 +22,45 @@ const one = (over: Partial<Notice> = {}): Notice => ({
 
 describe('which notices stand in the corner', () => {
   it('draws the notices that have something to say, in the order given', () => {
-    const first = one({ id: 'one' })
-    const second = one({ id: 'two', text: 'Reading the vault' })
-    expect(readable([first, second]).map((each) => each.id)).toEqual(['one', 'two'])
+    const first = createNotice({ id: 'one' })
+    const second = createNotice({ id: 'two', text: 'Reading the vault' })
+    expect(getReadable([first, second]).map((each) => each.id)).toEqual(['one', 'two'])
   })
 
   it('leaves out a notice nobody could read', () => {
-    expect(readable([one({ id: 'silent', text: '' }), one()]).map((each) => each.id)).toEqual([
-      'embedding',
-    ])
+    expect(
+      getReadable([createNotice({ id: 'silent', text: '' }), createNotice()]).map(
+        (each) => each.id,
+      ),
+    ).toEqual(['embedding'])
   })
 
   it('draws nothing where nothing is running', () => {
-    expect(readable([])).toEqual([])
+    expect(getReadable([])).toEqual([])
   })
 })
 
 describe('what a notice counts against', () => {
   it('counts where both halves of the count are known', () => {
-    expect(tallyOf(one({ done: 3, total: 8 }))).toEqual({ done: 3, total: 8 })
+    expect(tallyOf(createNotice({ done: 3, total: 8 }))).toEqual({ done: 3, total: 8 })
   })
 
   it('counts nothing where either half is missing', () => {
     // A pass that has not said what it found has no total to draw against, and
     // a bar drawn against a total nobody gave means nothing.
-    expect(tallyOf(one({ done: 3 }))).toBeUndefined()
-    expect(tallyOf(one({ total: 8 }))).toBeUndefined()
-    expect(tallyOf(one())).toBeUndefined()
+    expect(tallyOf(createNotice({ done: 3 }))).toBeUndefined()
+    expect(tallyOf(createNotice({ total: 8 }))).toBeUndefined()
+    expect(tallyOf(createNotice())).toBeUndefined()
   })
 
   it('counts a total of nothing, and leaves the share to whoever draws it', () => {
-    expect(tallyOf(one({ done: 0, total: 0 }))).toEqual({ done: 0, total: 0 })
+    expect(tallyOf(createNotice({ done: 0, total: 0 }))).toEqual({ done: 0, total: 0 })
   })
 })
 
 describe('a notice put away', () => {
   it('is not drawn, and the rest are', () => {
-    const notices = [one({ id: 'reading' }), one({ id: 'embedding' })]
+    const notices = [createNotice({ id: 'reading' }), createNotice({ id: 'embedding' })]
     const arrived = getArrivalTimes(new Map(), notices, 0)
     expect(
       getShownNotices(notices, arrived, new Set(['reading']), 20_000).map((each) => each.id),
@@ -66,7 +68,7 @@ describe('a notice put away', () => {
   })
 
   it('stays away while the work it was about is still running', () => {
-    const notices = [one({ id: 'embedding' })]
+    const notices = [createNotice({ id: 'embedding' })]
     expect([...getStillAway(new Set(['embedding']), notices)]).toEqual(['embedding'])
   })
 
@@ -76,7 +78,7 @@ describe('a notice put away', () => {
 })
 
 describe('how long work runs before it is worth a card', () => {
-  const embedding = [one({ id: 'embedding' })]
+  const embedding = [createNotice({ id: 'embedding' })]
 
   it('keeps the moment a notice arrived, and forgets one that has gone', () => {
     const first = getArrivalTimes(new Map(), embedding, 1000)
@@ -115,9 +117,11 @@ describe('a notice somebody asked for', () => {
     // not hear them.
     const arrived = getArrivalTimes(new Map(), [asked, behind], 0)
 
-    expect(getShownNotices([asked, behind], arrived, new Set(), 0).map((one) => one.id)).toEqual([
-      'reading',
-    ])
+    expect(
+      getShownNotices([asked, behind], arrived, new Set(), 0).map(
+        (createNotice) => createNotice.id,
+      ),
+    ).toEqual(['reading'])
   })
 
   it('is put away like any other', () => {

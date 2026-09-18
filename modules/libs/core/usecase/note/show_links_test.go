@@ -59,7 +59,7 @@ func TestANameResolvesToTheNoteThatAnswersToIt(t *testing.T) {
 	if c.Links[0].To != "notes/Entropy.md" {
 		t.Errorf("resolved to %q", c.Links[0].To)
 	}
-	if c.Links[0].Ambiguous {
+	if c.Links[0].IsAmbiguous {
 		t.Error("a single match was called ambiguous")
 	}
 }
@@ -93,7 +93,7 @@ func TestTheFolderTheLinkWasWrittenInDecidesIt(t *testing.T) {
 	if c.Links[0].To != "projects/Entropy.md" {
 		t.Errorf("resolved to %q", c.Links[0].To)
 	}
-	if c.Links[0].Ambiguous {
+	if c.Links[0].IsAmbiguous {
 		t.Error("a rule decided it, so nothing should be called ambiguous")
 	}
 }
@@ -110,7 +110,7 @@ func TestSeveralNotesByOneNameAreAmbiguousAndStillResolve(t *testing.T) {
 	})
 
 	c := links(t, db, v, "projects/source.md")
-	if !c.Links[0].Ambiguous {
+	if !c.Links[0].IsAmbiguous {
 		t.Error("two notes answer to that name and nothing said so")
 	}
 	if c.Links[0].To == "" {
@@ -266,7 +266,7 @@ func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *tes
 	if c.Links[0].To != "" || c.Links[0].ToVault != "" {
 		t.Errorf("something resolved: %+v", c.Links[0])
 	}
-	if c.Links[0].Ambiguous {
+	if c.Links[0].IsAmbiguous {
 		t.Error("an unreachable note is not an ambiguity")
 	}
 }

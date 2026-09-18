@@ -1212,8 +1212,17 @@ func (*TakeBackAnswerResponse) Descriptor() ([]byte, []int) {
 }
 
 type ListReviewDaysRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Vault         string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	// The stretch of time wanted, each written as the year, the month and the
+	// day, and both ends inside it. An empty end is unbounded at that end, so a
+	// request naming neither asks for every day there is.
+	//
+	// A vault grows a day for every day it is reviewed, and a caller draws a
+	// fixed stretch of them. Streak and answered are over the whole of it
+	// whatever is asked for here.
+	From          string `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`
+	To            string `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1251,6 +1260,20 @@ func (*ListReviewDaysRequest) Descriptor() ([]byte, []int) {
 func (x *ListReviewDaysRequest) GetVault() string {
 	if x != nil {
 		return x.Vault
+	}
+	return ""
+}
+
+func (x *ListReviewDaysRequest) GetFrom() string {
+	if x != nil {
+		return x.From
+	}
+	return ""
+}
+
+func (x *ListReviewDaysRequest) GetTo() string {
+	if x != nil {
+		return x.To
 	}
 	return ""
 }
@@ -1948,9 +1971,11 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x10\n" +
 	"\x03run\x18\x02 \x01(\tR\x03run\x12\x16\n" +
 	"\x06answer\x18\x03 \x01(\tR\x06answer\"\x18\n" +
-	"\x16TakeBackAnswerResponse\"-\n" +
+	"\x16TakeBackAnswerResponse\"Q\n" +
 	"\x15ListReviewDaysRequest\x12\x14\n" +
-	"\x05vault\x18\x01 \x01(\tR\x05vault\"\x9c\x01\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
+	"\x04from\x18\x02 \x01(\tR\x04from\x12\x0e\n" +
+	"\x02to\x18\x03 \x01(\tR\x02to\"\x9c\x01\n" +
 	"\x16ListReviewDaysResponse\x12'\n" +
 	"\x04days\x18\x01 \x03(\v2\x13.numen.v1.ReviewDayR\x04days\x12%\n" +
 	"\x03due\x18\x02 \x03(\v2\x13.numen.v1.ReviewDayR\x03due\x12\x16\n" +

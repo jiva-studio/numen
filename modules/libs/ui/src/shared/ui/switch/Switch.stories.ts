@@ -15,7 +15,7 @@ import { DARK, expectDark } from '@/shared/fixtures/theme'
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 interface Knobs {
-  on: boolean
+  isOn: boolean
   disabled: boolean
   /** What the switch is called, said beside it. */
   said: string
@@ -26,22 +26,22 @@ const meta: Meta<Knobs> = {
   component: Switch,
   parameters: { layout: 'centered' },
   argTypes: {
-    on: { control: 'boolean' },
+    isOn: { control: 'boolean' },
     disabled: { control: 'boolean' },
     said: { control: 'text' },
   },
-  args: { on: true, disabled: false, said: 'Show the grid' },
+  args: { isOn: true, disabled: false, said: 'Show the grid' },
   render: (args) => ({
     components: { Switch },
     setup: () => {
-      const on = ref(args.on)
-      return { args, on }
+      const isOn = ref(args.isOn)
+      return { args, isOn }
     },
     // A switch is not a form control, so a label around it names nothing: the
     // words beside it are pointed at instead, which is how a window does it.
     template: `
       <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem; inline-size: 20rem">
-        <Switch v-model="on" :disabled="args.disabled" aria-labelledby="switch-said" />
+        <Switch v-model="isOn" :disabled="args.disabled" aria-labelledby="switch-said" />
         <span id="switch-said" style="min-inline-size: 0; overflow-wrap: anywhere">{{ args.said }}</span>
       </div>
     `,
@@ -61,7 +61,7 @@ const getSwitch = (canvas: HTMLElement): HTMLElement => {
 export const ASwitch: Story = {}
 
 /** A switch that is off. */
-export const Off: Story = { args: { on: false } }
+export const Off: Story = { args: { isOn: false } }
 
 /** A switch nobody may turn. */
 export const Disabled: Story = { args: { disabled: true } }
@@ -89,7 +89,7 @@ export const NoTextAtAll: Story = { args: { said: '' }, parameters: { reach: fal
  */
 export const Dark: Story = {
   globals: DARK,
-  args: { on: false },
+  args: { isOn: false },
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
     const control = getSwitch(canvasElement)
@@ -124,7 +124,7 @@ export const AnnouncedAsASwitch: Story = {
  * both are measured where they are drawn.
  */
 export const TheThumbSlidesAndTheTrackFills: Story = {
-  args: { on: false },
+  args: { isOn: false },
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     const thumb = control.firstElementChild as HTMLElement
@@ -156,7 +156,7 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
 
 /** The space bar turns it, and the ring says the keyboard is on it. */
 export const TheSpaceBarTurnsIt: Story = {
-  args: { on: false },
+  args: { isOn: false },
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
 

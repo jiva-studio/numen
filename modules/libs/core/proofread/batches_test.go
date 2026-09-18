@@ -340,7 +340,7 @@ func TestASeamHoldsTheLinesOnBothSidesOfACut(t *testing.T) {
 		if seam.Number != len(batches)+i {
 			t.Errorf("seam %d is numbered %d, want its place after the batches", i, seam.Number)
 		}
-		if !seam.Joinable {
+		if !seam.IsJoinable {
 			t.Errorf("seam %d does not put lines together", i)
 		}
 	}

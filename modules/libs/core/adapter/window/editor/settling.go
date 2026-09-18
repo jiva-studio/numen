@@ -15,23 +15,23 @@ import (
 // A swap and a window closing both settle, and the second to arrive is
 // refused. A window that settled to go shows no other vault.
 type shutting struct {
-	mu    sync.Mutex
-	busy  bool
-	going bool
+	mu        sync.Mutex
+	isBusy    bool
+	isClosing bool
 }
 
-// alone takes the window for one settling, and says why it cannot be had.
-func (s *shutting) alone() error {
+// tryTake takes the window for one settling, and says why it cannot be had.
+func (s *shutting) tryTake() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	switch {
-	case s.going:
-		return errGoing
-	case s.busy:
+	case s.isClosing:
+		return errWindowClosing
+	case s.isBusy:
 		return errSettling
 	}
-	s.busy = true
+	s.isBusy = true
 	return nil
 }
 
@@ -39,7 +39,7 @@ func (s *shutting) alone() error {
 func (s *shutting) free() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.busy = false
+	s.isBusy = false
 }
 
 // finish gives the window back from the settling that ends it. gone is what
@@ -47,13 +47,13 @@ func (s *shutting) free() {
 func (s *shutting) finish(gone bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.busy = false
-	s.going = gone
+	s.isBusy = false
+	s.isClosing = gone
 }
 
-// errGoing is a vault asked for in a window that has settled to go, and which
-// shows no other vault.
-var errGoing = errors.New("this window is going")
+// errWindowClosing is a vault asked for in a window that has settled to close,
+// and which shows no other vault.
+var errWindowClosing = errors.New("this window is closing")
 
 // errSettling is a vault asked for while the window is already settling what it
 // owes.
@@ -67,8 +67,8 @@ var errSettling = errors.New("the window is settling what it owes")
 // A vault being opened settles too, and the close that arrives while it is
 // running is answered false: the window stays, and the next ask settles again.
 func (o *Installation) Settle(ctx context.Context) bool {
-	switch err := o.shutting.alone(); {
-	case errors.Is(err, errGoing):
+	switch err := o.shutting.tryTake(); {
+	case errors.Is(err, errWindowClosing):
 		return true
 	case err != nil:
 		return false

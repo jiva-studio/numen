@@ -16,7 +16,7 @@ import (
 // that the second does not move what the first was built through.
 func TestATensorKeepsItsEngineWhenAReadingIsOpened(t *testing.T) {
 	cfg := Defaults()
-	cfg.Download = false
+	cfg.ShouldDownload = false
 	_, at, err := onnxruntime.Open(t.Context(), cfg.settings())
 	if err != nil {
 		t.Skipf("no onnx runtime on this machine: %v", err)

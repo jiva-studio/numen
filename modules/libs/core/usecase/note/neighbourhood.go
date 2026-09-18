@@ -46,7 +46,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	// is. Asked of each parent in turn, because the question is about them, and
 	// the parent it came through is kept with it: that is the note the
 	// relationship runs from.
-	for _, parent := range around.all() {
+	for _, parent := range around.getAll() {
 		if parent.Seat != domain.SeatParent {
 			continue
 		}
@@ -54,11 +54,11 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 		if err != nil {
 			return out, err
 		}
-		for _, sibling := range theirs.all() {
+		for _, sibling := range theirs.getAll() {
 			if sibling.Seat != domain.SeatChild {
 				continue
 			}
-			around.take(domain.Neighbour{
+			around.add(domain.Neighbour{
 				NoteRef: domain.NoteRef{Path: sibling.Path},
 				Seat:    domain.SeatSibling,
 				Label:   sibling.Label,
@@ -66,12 +66,12 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 			})
 		}
 	}
-	around.drop(path)
+	around.remove(path)
 
-	seated := around.all()
-	paths := make([]string, 0, len(seated)+1)
+	neighbour := around.getAll()
+	paths := make([]string, 0, len(neighbour)+1)
 	paths = append(paths, path)
-	for _, s := range seated {
+	for _, s := range neighbour {
 		paths = append(paths, s.Path)
 	}
 	notes, err := u.Notes.Notes(ctx, v.ID, paths)
@@ -84,9 +84,9 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 		return out, nil
 	}
 	out.Focus = focus
-	for _, s := range seated {
+	for _, s := range neighbour {
 		if note, known := notes[s.Path]; known {
-			out.Take(note, s)
+			out.AddNeighbour(note, s)
 		}
 	}
 	return out, nil
@@ -115,7 +115,7 @@ func (u ShowNeighbourhood) getSeats(ctx context.Context, v domain.Vault, path st
 		}
 		if seat, navigable := seatFor(l.Role); navigable {
 			named[l.To] = true
-			seats.take(domain.Neighbour{
+			seats.add(domain.Neighbour{
 				NoteRef: domain.NoteRef{Path: l.To},
 				Seat:    seat,
 				Label:   l.Label,
@@ -130,20 +130,20 @@ func (u ShowNeighbourhood) getSeats(ctx context.Context, v domain.Vault, path st
 	for _, l := range backlinks {
 		// The role is read from the other end, so it means the opposite: a note
 		// that calls this one its parent is its child.
-		seat, navigable := seatFor(mirror(l.Role))
+		seat, navigable := seatFor(getOppositeRole(l.Role))
 		if !navigable {
 			continue
 		}
-		seated := domain.Neighbour{
+		neighbour := domain.Neighbour{
 			NoteRef: domain.NoteRef{Path: l.From},
 			Seat:    seat,
 			Label:   l.Label,
 		}
 		if named[l.From] {
-			seats.mutually(seated)
+			seats.addMutual(neighbour)
 			continue
 		}
-		seats.take(seated)
+		seats.add(neighbour)
 	}
 	return seats, nil
 }
@@ -163,7 +163,7 @@ func seatFor(role domain.LinkRole) (domain.Relation, bool) {
 	}
 }
 
-func mirror(role domain.LinkRole) domain.LinkRole {
+func getOppositeRole(role domain.LinkRole) domain.LinkRole {
 	switch role {
 	case domain.RoleParent:
 		return domain.RoleChild
@@ -184,48 +184,48 @@ type seats struct {
 	at    map[string]int
 }
 
-// take keeps the highest-ranked seat a note qualifies for, replacing a lesser
-// one it was given earlier: a pair who are each other's parent is drawn once,
-// and always the same way round.
-func (s *seats) take(seated domain.Neighbour) {
+// add records a neighbour under the highest-ranked relation it qualifies for,
+// replacing a lesser one recorded earlier: a pair who are each other's parent
+// is drawn once, and always the same way round.
+func (s *seats) add(neighbour domain.Neighbour) {
 	if s.at == nil {
 		s.at = map[string]int{}
 	}
-	i, taken := s.at[seated.Path]
-	if !taken {
-		s.at[seated.Path] = len(s.order)
-		s.order = append(s.order, seated)
+	i, exists := s.at[neighbour.Path]
+	if !exists {
+		s.at[neighbour.Path] = len(s.order)
+		s.order = append(s.order, neighbour)
 		return
 	}
-	if domain.SeatRank(seated.Seat) < domain.SeatRank(s.order[i].Seat) {
-		s.order[i] = seated
+	if domain.SeatRank(neighbour.Seat) < domain.SeatRank(s.order[i].Seat) {
+		s.order[i] = neighbour
 	}
 }
 
-// mutually seats a note that the one in focus names too. Both ends naming the
-// same seat is one relationship named twice, and the word for it is the
-// focus's own where it wrote one.
-func (s *seats) mutually(seated domain.Neighbour) {
-	i, taken := s.at[seated.Path]
-	if !taken {
-		s.take(seated)
+// addMutual records a neighbour that the note in focus names too. Both ends
+// naming the same relation is one relationship named twice, and the word for it
+// is the focus's own where it wrote one.
+func (s *seats) addMutual(neighbour domain.Neighbour) {
+	i, exists := s.at[neighbour.Path]
+	if !exists {
+		s.add(neighbour)
 		return
 	}
-	held := s.order[i]
-	if held.Seat != seated.Seat {
-		s.take(seated)
+	current := s.order[i]
+	if current.Seat != neighbour.Seat {
+		s.add(neighbour)
 		return
 	}
-	held.Mutual = true
-	if held.Label == "" {
-		held.Label = seated.Label
+	current.IsMutual = true
+	if current.Label == "" {
+		current.Label = neighbour.Label
 	}
-	s.order[i] = held
+	s.order[i] = current
 }
 
-func (s *seats) drop(path string) {
-	i, taken := s.at[path]
-	if !taken {
+func (s *seats) remove(path string) {
+	i, exists := s.at[path]
+	if !exists {
 		return
 	}
 	delete(s.at, path)
@@ -237,4 +237,4 @@ func (s *seats) drop(path string) {
 	}
 }
 
-func (s *seats) all() []domain.Neighbour { return s.order }
+func (s *seats) getAll() []domain.Neighbour { return s.order }

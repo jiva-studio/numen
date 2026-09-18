@@ -16,5 +16,5 @@ func NewList(registry port.VaultRegistry) List {
 }
 
 func (u List) Execute() ([]domain.Vault, error) {
-	return u.Registry.All()
+	return u.Registry.List()
 }

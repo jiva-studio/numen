@@ -56,7 +56,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	// A chunk is written before its vector, so every vector the interrupted run
 	// left names a chunk that is there.
 	for chunk := range index.vectors {
-		if !index.holds(chunk) {
+		if !index.hasChunk(chunk) {
 			t.Fatalf("a vector was written for chunk %s, which the index does not hold", chunk)
 		}
 	}
@@ -204,7 +204,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			replace: func(t *testing.T, shelf *library) {
 				shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 20)), 2)
 			},
-			want: func(t *testing.T, res EmbedResult, owed int) {
+			want: func(t *testing.T, res EmbedResult, _ int) {
 				if res.Displaced == 0 {
 					t.Errorf("the run reports %+v, want the places past the end of the text left alone", res)
 				}

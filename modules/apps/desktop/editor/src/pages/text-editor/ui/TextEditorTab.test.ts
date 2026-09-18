@@ -19,7 +19,7 @@ const mountTextEditor = async (answers: Partial<TextEditorTabDeps> = {}) => {
     getSettingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
     saveSettingsFile: (written) => {
       wrote.push(written)
-      return Promise.resolve({ changed: false })
+      return Promise.resolve({ isChanged: false })
     },
     ...answers,
   }
@@ -79,9 +79,9 @@ describe('the file drawn', () => {
     const wrote: string[] = []
     const { tab, state } = await mountTextEditor({
       saveSettingsFile: (written, seen) => {
-        if (seen !== null) return Promise.resolve({ changed: true })
+        if (seen !== null) return Promise.resolve({ isChanged: true })
         wrote.push(written)
-        return Promise.resolve({ changed: false })
+        return Promise.resolve({ isChanged: false })
       },
     })
     state.type('{}\n')

@@ -248,7 +248,7 @@ func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
 	if err := os.WriteFile(path, []byte(arranged), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	testsupport.Unwritable(t, path)
+	testsupport.MakeUnwritable(t, path)
 
 	for launch := range 2 {
 		cfg, err := openAt(path)
@@ -449,7 +449,7 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 			back.Indexing.Embedding.Model, cfg.Indexing.Embedding.Model)
 	}
 	local, ok := back.Indexing.Embedding.Indexing.Local()
-	if !ok || !local.Download {
+	if !ok || !local.ShouldDownload {
 		t.Error("a machine with no model would fetch none")
 	}
 	// A key nobody set is not a field of the file.
@@ -673,7 +673,7 @@ func TestAnUntouchedInstallationCarriesAStepCount(t *testing.T) {
 	if cfg.Agent.Claude.MaxSteps <= 0 {
 		t.Errorf("max steps is %d", cfg.Agent.Claude.MaxSteps)
 	}
-	if cfg.Agent.Claude.ReadsHooksAndSkills {
+	if cfg.Agent.Claude.ShouldReadHooksAndSkills {
 		t.Error("reads what this machine holds for it")
 	}
 }
@@ -697,7 +697,7 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cfg.Agent.Claude.ReadsHooksAndSkills {
+	if !cfg.Agent.Claude.ShouldReadHooksAndSkills {
 		t.Error("what the file said was not read")
 	}
 	if cfg.Agent.Claude.MaxSteps != was {
@@ -809,10 +809,10 @@ func TestEachReadingNamesTheProfileThatPutsItRight(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Recognition.Proofread; got.Profile != "openrouter" || !got.Automatically {
+	if got := cfg.Indexing.Recognition.Proofread; got.Profile != "openrouter" || !got.IsAutomatic {
 		t.Errorf("a scan is put right by %+v", got)
 	}
-	if got := cfg.Indexing.Transcription.Proofread; got.Profile != "agent" || got.Automatically {
+	if got := cfg.Indexing.Transcription.Proofread; got.Profile != "agent" || got.IsAutomatic {
 		t.Errorf("a transcript is put right by %+v", got)
 	}
 }
@@ -846,35 +846,35 @@ func TestTheProofreadersKeyStaysOutOfWhatIsWrittenBack(t *testing.T) {
 // that turns it off.
 func TestATitleAndAFilenameAreOneNameUntilTheFileSaysOtherwise(t *testing.T) {
 	for name, c := range map[string]struct {
-		file  string
-		sync  bool
-		wrote bool
+		file       string
+		shouldSync bool
+		wasWritten bool
 	}{
-		"a file nobody wrote":     {sync: true},
-		"a file naming no naming": {file: `{"appearance":{"text_scale":1.5}}`, sync: true, wrote: true},
+		"a file nobody wrote":     {shouldSync: true},
+		"a file naming no naming": {file: `{"appearance":{"text_scale":1.5}}`, shouldSync: true, wasWritten: true},
 		"a section naming no field": {
-			file: `{"naming":{}}`, sync: true, wrote: true,
+			file: `{"naming":{}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field naming one name": {
-			file: `{"naming":{"sync_title_and_filename":true}}`, sync: true, wrote: true,
+			file: `{"naming":{"sync_title_and_filename":true}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field naming nothing": {
-			file: `{"naming":{"sync_title_and_filename":null}}`, sync: true, wrote: true,
+			file: `{"naming":{"sync_title_and_filename":null}}`, shouldSync: true, wasWritten: true,
 		},
 		"a field telling the two apart": {
-			file: `{"naming":{"sync_title_and_filename":false}}`, sync: false, wrote: true,
+			file: `{"naming":{"sync_title_and_filename":false}}`, shouldSync: false, wasWritten: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "numen.json")
-			if c.wrote {
+			if c.wasWritten {
 				path = write(t, c.file)
 			}
 			cfg, err := openAt(path)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if cfg.Sync() != c.sync {
+			if cfg.Sync() != c.shouldSync {
 				t.Errorf("a title and a filename are one name: %v", cfg.Sync())
 			}
 		})
@@ -903,35 +903,35 @@ func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 // and the last of them is the only one that turns it off.
 func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
 	for name, c := range map[string]struct {
-		file  string
-		hangs bool
-		wrote bool
+		file       string
+		isHanging  bool
+		wasWritten bool
 	}{
-		"a file nobody wrote":         {hangs: true},
-		"a file naming no appearance": {file: `{"naming":{}}`, hangs: true, wrote: true},
+		"a file nobody wrote":         {isHanging: true},
+		"a file naming no appearance": {file: `{"naming":{}}`, isHanging: true, wasWritten: true},
 		"a section naming no field": {
-			file: `{"appearance":{"text_scale":1.5}}`, hangs: true, wrote: true,
+			file: `{"appearance":{"text_scale":1.5}}`, isHanging: true, wasWritten: true,
 		},
 		"a field hanging them": {
-			file: `{"appearance":{"hang_parts_under_a_node":true}}`, hangs: true, wrote: true,
+			file: `{"appearance":{"hang_parts_under_a_node":true}}`, isHanging: true, wasWritten: true,
 		},
 		"a field naming nothing": {
-			file: `{"appearance":{"hang_parts_under_a_node":null}}`, hangs: true, wrote: true,
+			file: `{"appearance":{"hang_parts_under_a_node":null}}`, isHanging: true, wasWritten: true,
 		},
 		"a field leaving the box alone": {
-			file: `{"appearance":{"hang_parts_under_a_node":false}}`, hangs: false, wrote: true,
+			file: `{"appearance":{"hang_parts_under_a_node":false}}`, isHanging: false, wasWritten: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "numen.json")
-			if c.wrote {
+			if c.wasWritten {
 				path = write(t, c.file)
 			}
 			cfg, err := openAt(path)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if cfg.HasPartsUnderNode() != c.hangs {
+			if cfg.HasPartsUnderNode() != c.isHanging {
 				t.Errorf("a node hangs the parts of its note: %v", cfg.HasPartsUnderNode())
 			}
 		})
@@ -961,25 +961,25 @@ func TestAnUntouchedInstallationWritesTheHangingDown(t *testing.T) {
 // default of them, and a number the setting takes is the number that stands.
 func TestANodeStandsAsManyPartsAsTheFileNames(t *testing.T) {
 	for name, c := range map[string]struct {
-		file  string
-		parts int
-		wrote bool
+		file       string
+		parts      int
+		wasWritten bool
 	}{
 		"a file nobody wrote":         {parts: settings.DefaultParts},
-		"a file naming no appearance": {file: `{"naming":{}}`, parts: 6, wrote: true},
+		"a file naming no appearance": {file: `{"naming":{}}`, parts: 6, wasWritten: true},
 		"a section naming no field": {
-			file: `{"appearance":{"text_scale":1.5}}`, parts: 6, wrote: true,
+			file: `{"appearance":{"text_scale":1.5}}`, parts: 6, wasWritten: true,
 		},
 		"a field naming a number": {
-			file: `{"appearance":{"parts_under_a_node":3}}`, parts: 3, wrote: true,
+			file: `{"appearance":{"parts_under_a_node":3}}`, parts: 3, wasWritten: true,
 		},
 		"a field at either end": {
-			file: `{"appearance":{"parts_under_a_node":12}}`, parts: 12, wrote: true,
+			file: `{"appearance":{"parts_under_a_node":12}}`, parts: 12, wasWritten: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "numen.json")
-			if c.wrote {
+			if c.wasWritten {
 				path = write(t, c.file)
 			}
 			cfg, err := openAt(path)

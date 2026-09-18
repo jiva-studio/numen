@@ -10,7 +10,7 @@ import { NOTE } from '@/entities/tab'
 /** A tab asked to settle: which one it was, and whether it is still waiting. */
 export interface SettleResult {
   readonly held: string | null
-  readonly waiting: boolean
+  readonly isWaiting: boolean
 }
 
 /**
@@ -26,10 +26,10 @@ export const atItsFile = (invocation: CommandInvocation, on: TabContext): Comman
  */
 export const settleTab = async (path: string, on: TabContext): Promise<SettleResult> => {
   const held = on.notes.getTabAt(path)
-  if (held === null) return { held, waiting: false }
-  if (on.notes.isAsking(held)) return { held, waiting: true }
+  if (held === null) return { held, isWaiting: false }
+  if (on.notes.asking(held)) return { held, isWaiting: true }
   await on.notes.settle(held)
-  return { held, waiting: false }
+  return { held, isWaiting: false }
 }
 
 /** A note travelled to, and a vault with none to travel to said. */
@@ -70,7 +70,7 @@ export const renameNoteCommand = async (
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.title) return
   const tab = await settleTab(invocation.path, on)
-  if (tab.waiting) return on.writeMessage(words.unanswered, 'caution')
+  if (tab.isWaiting) return on.writeMessage(words.unanswered, 'caution')
   const answer = await on.files.rename(invocation.path, invocation.name)
   if (answer.ok) return
   if (answer.error === 'changed') return on.writeMessage(words.stale, 'caution')
@@ -88,7 +88,7 @@ export const moveFileCommand = async (
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.path) return
   const tab = await settleTab(invocation.path, on)
-  if (tab.waiting) return on.writeMessage(words.unanswered, 'caution')
+  if (tab.isWaiting) return on.writeMessage(words.unanswered, 'caution')
   const answer = await on.files.move(invocation.path, invocation.name)
   if (answer.ok) return
   if (answer.error === 'occupied') return on.writeMessage(words.occupied, 'error')

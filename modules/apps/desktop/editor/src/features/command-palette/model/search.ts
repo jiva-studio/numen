@@ -91,15 +91,15 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   ) => {
     try {
       const found = await question()
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       into(found)
     } catch {
       // The window says what it could not do; what the call carried back adds nothing a person can act on.
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       into([])
       failureMessages.value = { ...failureMessages.value, [group]: words.notAsked }
     } finally {
-      if (mine.current) isWorking.value = { ...isWorking.value, [group]: false }
+      if (mine.isCurrent) isWorking.value = { ...isWorking.value, [group]: false }
     }
   }
 
@@ -137,7 +137,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       return
     }
     await wait(HOLD)
-    if (!mine.current) return
+    if (!mine.isCurrent) return
     await ask(mine, query)
   }
 

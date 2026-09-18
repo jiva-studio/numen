@@ -35,10 +35,10 @@ type Task struct {
 	// badly stays in the list until whoever put it there takes it out.
 	Error string
 
-	// Asked is set for work a person started and is waiting to be told about.
+	// IsAsked is set for work a person started and is waiting to be told about.
 	// Work nobody asked for is shown once it has lasted, and most of it ends
 	// before that.
-	Asked bool
+	IsAsked bool
 
 	// Unit is what Count and Total are counted in.
 	Unit Unit

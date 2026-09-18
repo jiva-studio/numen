@@ -127,7 +127,7 @@ export function createStepGroups(state: ViewState) {
    * is marked with nothing.
    */
   const getVaultAside = (one: Vault): string =>
-    one.missing ? words.gone : one.id === showing.value ? words.current : ''
+    one.isMissing ? words.gone : one.id === showing.value ? words.current : ''
 
   /**
    * The vaults the installation holds. The two it will not take are marked

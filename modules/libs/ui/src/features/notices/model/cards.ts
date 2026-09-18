@@ -21,7 +21,7 @@ import {
 import { getArrivalTimes, dwellOf, getFinishedNotices, getShownNotices } from '../lib/dwell'
 import { foldNotices } from '../lib/fold'
 import { measureMovement, type Movement } from '../lib/movement'
-import { getStillAway, readable, tallyOf, type Notice } from '../lib/notice'
+import { getStillAway, getReadable, tallyOf, type Notice } from '../lib/notice'
 import { getRemainingWord } from '../lib/tally'
 import { useNoticeStack } from './stack'
 
@@ -53,7 +53,7 @@ export interface NoticeCardsState {
   /** What is drawn, and how many stand behind it. */
   readonly folds: ComputedRef<{ shown: readonly Notice[]; over: number }>
   /** Whether a person has asked to see what is folded away behind the rest. */
-  readonly opened: Ref<boolean>
+  readonly isOpened: Ref<boolean>
   /** What a counting notice has left to run, in words. */
   readonly leftOn: (one: Notice) => string
   /** A card as it is drawn, held under the notice it stands for. */
@@ -101,7 +101,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
       sample()
       arrived.value = getArrivalTimes(arrived.value, all, read.value)
       away.value = getStillAway(away.value, all)
-      const here = new Set(readable(all).map((one) => one.id))
+      const here = new Set(getReadable(all).map((one) => one.id))
       for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
     },
     { immediate: true },
@@ -117,21 +117,21 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     getShownNotices(options.getNotices(), arrived.value, away.value, read.value, options.getWait()),
   )
 
-  const opened = ref(false)
+  const isOpened = ref(false)
   const folds = computed(() =>
-    foldNotices(drawn.value, opened.value ? drawn.value.length : options.getRoom()),
+    foldNotices(drawn.value, isOpened.value ? drawn.value.length : options.getRoom()),
   )
 
   // Asking to see what is behind the rest is asked about what stands then. Once
   // it all fits again, the next stack over the room folds as any other would.
   watch(drawn, (all) => {
-    if (all.length <= options.getRoom()) opened.value = false
+    if (all.length <= options.getRoom()) isOpened.value = false
   })
 
-  /** Whether anything readable has not yet lasted long enough to be drawn. */
+  /** Whether anything getReadable has not yet lasted long enough to be drawn. */
   const coming = computed(() => {
     const shown = new Set(drawn.value.map((one) => one.id))
-    return readable(options.getNotices()).some(
+    return getReadable(options.getNotices()).some(
       (one) => one.stay !== 'read' && !away.value.has(one.id) && !shown.has(one.id),
     )
   })
@@ -188,7 +188,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   return {
     drawn,
     folds,
-    opened,
+    isOpened,
     leftOn,
     holdCard,
     dismissByHand,

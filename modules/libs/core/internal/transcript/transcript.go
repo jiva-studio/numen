@@ -202,9 +202,9 @@ func GetCuesAt(cues []Cue, start, length int) []Cue {
 // written down.
 const reaches = "NOTE heard "
 
-// Reaches is that note. It stands after the cues it claims, so a batch that did
-// not land whole is one no note claims.
-func Reaches(ms int) []byte {
+// GetReachMarker is that note. It stands after the cues it claims, so a batch
+// that did not land whole is one no note claims.
+func GetReachMarker(ms int) []byte {
 	return []byte(fmt.Sprintf("\n%s%d\n", reaches, ms))
 }
 

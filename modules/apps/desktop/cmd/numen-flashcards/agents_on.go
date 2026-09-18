@@ -100,12 +100,12 @@ func serveAgents(
 				return nil, err
 			}
 			served, err := agents.Serve(ctx, agents.Options{
-				Config:  cfg,
-				Core:    makeReviewCore(cfg, db, notes, cutting, api, v, root, out),
-				Reviews: true,
-				Token:   secret,
-				Root:    root,
-				Out:     out,
+				Config:       cfg,
+				Core:         makeReviewCore(cfg, db, notes, cutting, api, v, root, out),
+				ShouldReview: true,
+				Token:        secret,
+				Root:         root,
+				Out:          out,
 			})
 			if err != nil {
 				return nil, err

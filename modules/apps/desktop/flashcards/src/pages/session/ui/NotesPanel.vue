@@ -83,7 +83,7 @@ function scrollPage(back = false) {
         <NoteHead :note="one" />
 
         <p v-if="!one.path" class="reading__quiet">{{ words.dangling }}</p>
-        <p v-else-if="one.ambiguous" class="reading__quiet">{{ words.ambiguous }}</p>
+        <p v-else-if="one.isAmbiguous" class="reading__quiet">{{ words.ambiguous }}</p>
         <p v-if="one.error" class="reading__quiet">{{ one.error }}</p>
 
         <!-- A link in what is read leads nowhere: this window has one page. -->

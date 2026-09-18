@@ -8,12 +8,12 @@ import type { RowId, ShownRow } from './row'
  * row the whole selection.
  */
 export interface Press {
-  readonly joining: boolean
-  readonly reaching: boolean
+  readonly isJoining: boolean
+  readonly isExtending: boolean
 }
 
 /** A press with nothing held down. */
-export const PLAIN: Press = { joining: false, reaching: false }
+export const PLAIN: Press = { isJoining: false, isExtending: false }
 
 /** What a press comes to: the selection, and the row a reach is measured from. */
 export interface RowSelection {
@@ -60,11 +60,11 @@ export function resolveSelection(
   row: RowId,
   press: Press,
 ): RowSelection {
-  if (press.reaching) {
+  if (press.isExtending) {
     return { rows: getRowsBetween(visibleRows, anchor ?? row, row), anchor: anchor ?? row }
   }
 
-  if (press.joining) {
+  if (press.isJoining) {
     const held = new Set(selection)
     if (held.has(row)) held.delete(row)
     else held.add(row)

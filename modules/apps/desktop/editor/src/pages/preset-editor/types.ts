@@ -2,9 +2,16 @@
  * Type declarations and domain models for the flashcards preset tab.
  */
 import type { Ref } from 'vue'
-import type { StopReason } from '@numen/protocol'
 import type { Field } from './lib/fields'
-import type { Curve, Goal, Load, PresetCounts, Settings, SettingsBounds } from '@/entities/deck'
+import type {
+  Curve,
+  Goal,
+  Load,
+  PresetCounts,
+  Settings,
+  SettingsBounds,
+  StopReason,
+} from '@/entities/deck'
 
 export type {
   Goal,
@@ -24,12 +31,14 @@ export type {
   PresetCounts,
   Curve,
   PresetChoice,
+  StopReason,
   Presets,
 } from '@/entities/deck'
 export {
   GOALS,
   BUDGET_UNITS,
   RULES,
+  STOP_REASONS,
   WHOLE_LOAD,
   LOADS,
   loadOn,
@@ -58,7 +67,7 @@ export interface PresetSettingsData {
 export interface PresetCurveData {
   readonly curve: Readonly<Ref<Curve>>
   readonly place: Readonly<Ref<number>>
-  readonly waiting: Readonly<Ref<boolean>>
+  readonly isWaiting: Readonly<Ref<boolean>>
 }
 
 export interface PresetTabActions {

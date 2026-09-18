@@ -11,14 +11,14 @@ const vault = (over: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',
   name: 'Roots',
   path: '/vaults/Roots',
-  counted: true,
+  isCounted: true,
   faces: 0,
   due: 2,
   new: 3,
   decks: [],
   presets: [],
   unread: '',
-  reading: false,
+  isReading: false,
   ...over,
 })
 
@@ -33,7 +33,7 @@ describe('a vault as a row', () => {
   })
 
   it('says it is being read, in the screen own words', () => {
-    const row = getVaultRows([vault({ counted: false, reading: true })], VAULTS_WORDS)[0]
+    const row = getVaultRows([vault({ isCounted: false, isReading: true })], VAULTS_WORDS)[0]
 
     expect(row?.detail).toBe(VAULTS_WORDS.reading)
     expect(row?.isWorking).toBe(true)
@@ -41,7 +41,7 @@ describe('a vault as a row', () => {
 
   it('says why it could not be read, in the core words', () => {
     const row = getVaultRows(
-      [vault({ counted: false, unread: 'the folder has gone' })],
+      [vault({ isCounted: false, unread: 'the folder has gone' })],
       VAULTS_WORDS,
     )[0]
 
@@ -55,11 +55,11 @@ describe('how many cards a vault has waiting', () => {
   })
 
   it('is nothing for a vault counted to nothing', () => {
-    expect(getDueByVault([vault({ counted: false })]).get('01A')).toBeNull()
+    expect(getDueByVault([vault({ isCounted: false })]).get('01A')).toBeNull()
   })
 
   it('is absent for a vault being read, which says why in its row instead', () => {
-    expect(getDueByVault([vault({ reading: true })]).has('01A')).toBe(false)
+    expect(getDueByVault([vault({ isReading: true })]).has('01A')).toBe(false)
   })
 
   it('is absent for a vault that could not be read', () => {

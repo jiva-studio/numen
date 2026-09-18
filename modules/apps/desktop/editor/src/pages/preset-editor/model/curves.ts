@@ -11,7 +11,7 @@ import {
   type Settings,
   type SettingsBounds,
 } from '../types'
-import { goalValue, nearest } from '../lib/curve'
+import { goalValue, findNearest } from '../lib/curve'
 import { shapeOf } from '../lib/fields'
 import { approximate } from '../lib/sketch'
 import { WORDS as words } from '../words'
@@ -21,7 +21,7 @@ export interface CurveState {
   readonly curve: Ref<Curve>
   readonly material: Ref<PresetCounts | null>
   readonly place: Ref<number>
-  readonly waiting: Ref<boolean>
+  readonly isWaiting: Ref<boolean>
   isDrawing: boolean
   shouldDrawAgain: boolean
   shape: string
@@ -39,7 +39,7 @@ export function createCurveState(
     curve: shallowRef<Curve>(approximate(initialSettings, today, bounds)),
     material: shallowRef<PresetCounts | null>(null),
     place: ref(0),
-    waiting: ref(true),
+    isWaiting: ref(true),
     isDrawing: false,
     shouldDrawAgain: false,
     shape: '',
@@ -55,7 +55,9 @@ export const isSameGrid = (one: readonly number[], two: readonly number[]): bool
 
 /** Where the knob stands on a curve: the preset's own place, or the nearest. */
 export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
-  curve.now.at >= 0 ? curve.now.at : Math.max(nearest(curve.grid, goalValue(settings, today)), 0)
+  curve.now.at >= 0
+    ? curve.now.at
+    : Math.max(findNearest(curve.grid, goalValue(settings, today)), 0)
 
 /** Applies a landed curve and updates the material counts. */
 export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {
@@ -67,7 +69,7 @@ export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {
     unbegun: curve.unbegun,
   }
   state.isReal = true
-  state.waiting.value = false
+  state.isWaiting.value = false
 }
 
 /** One curve, asked for and landed. */
@@ -88,26 +90,26 @@ const fetchCurve = async (
 
   const standsAlready = state.isReal && state.curve.value.goal === settings.goal
   if (standsAlready) {
-    state.curve.value = { ...state.curve.value, honest: false }
+    state.curve.value = { ...state.curve.value, isHonest: false }
   } else {
     const meanwhile = approximate(settings, today, bounds)
     state.curve.value = meanwhile
     state.place.value = Math.max(meanwhile.now.at, 0)
   }
   state.isReal = false
-  state.waiting.value = true
+  state.isWaiting.value = true
 
   let answer: Curve
   try {
     answer = await core.curve(path, settings)
   } catch {
     // The window says what it could not do; what the call carried back adds nothing a person can act on.
-    if (!mine.current) return
+    if (!mine.isCurrent) return
     setErrorMessage(words.noCurve)
-    state.waiting.value = false
+    state.isWaiting.value = false
     return
   }
-  if (!mine.current) return
+  if (!mine.isCurrent) return
   state.answers.set(shape, answer)
   applyCurveAnswer(state, answer)
   if (standsAlready && isSameGrid(riding, answer.grid)) return

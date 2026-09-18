@@ -50,9 +50,9 @@ type Neighbour struct {
 	// Label is what the person wrote on the link.
 	Label string
 
-	// Mutual is set when both notes name this relationship, each in its own
+	// IsMutual is set when both notes name this relationship, each in its own
 	// words. Label is then the word the note in focus wrote for it.
-	Mutual bool
+	IsMutual bool
 
 	// Parent is the note the relationship runs from, when that is not the one
 	// in focus. A sibling is another child of a shared parent, and which parent
@@ -66,8 +66,8 @@ type Neighbourhood struct {
 	Related []Neighbour
 }
 
-// Take seats a note. The focus is not related to itself.
-func (n *Neighbourhood) Take(note NoteRef, seated Neighbour) {
+// AddNeighbour seats a note. The focus is not related to itself.
+func (n *Neighbourhood) AddNeighbour(note NoteRef, seated Neighbour) {
 	if note.Path == n.Focus.Path {
 		return
 	}

@@ -14,7 +14,7 @@ export interface HandScroll {
   /** How far the row has been scrolled, in CSS pixels. */
   readonly along: Ref<number>
   /** Whether the hand is dragging, which is what the room is drawn as. */
-  readonly dragging: Ref<boolean>
+  readonly isDragging: Ref<boolean>
   /**
    * How far along the row is, or will be: where it was sent, and otherwise
    * where the room says it stands. A scroll moves the room before an event
@@ -37,7 +37,7 @@ export interface HandScroll {
 
 export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): HandScroll {
   const along = ref(0)
-  const dragging = ref(false)
+  const isDragging = ref(false)
 
   /** Where the row was told to stand, while it is on its way there. */
   let heading: number | undefined
@@ -82,7 +82,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
     if (!area.value || !hand.holding) return
     const stood = hand.to({ x: event.clientX, y: event.clientY })
     if (!stood) return
-    dragging.value = true
+    isDragging.value = true
     // The hand has the row now, wherever it was being taken.
     heading = undefined
     area.value.scrollLeft = stood.x
@@ -107,7 +107,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
 
   const letGo = (event: PointerEvent): void => {
     hand.release()
-    dragging.value = false
+    isDragging.value = false
     if (area.value?.hasPointerCapture(event.pointerId)) {
       area.value.releasePointerCapture(event.pointerId)
     }
@@ -131,7 +131,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
 
   return {
     along,
-    dragging,
+    isDragging,
     getScrollOffset,
     send,
     isStill,

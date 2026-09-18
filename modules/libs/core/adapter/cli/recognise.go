@@ -46,7 +46,7 @@ func recogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []stri
 	// line of its own.
 	shown := false
 	recognise.Cut = func(ctx context.Context, v domain.Vault, path string) error {
-		_, err := cut.One(ctx, v, path)
+		_, err := cut.ExtractOne(ctx, v, path)
 		return err
 	}
 	// A terminal that prints nothing for an hour looks broken, and this takes
@@ -66,9 +66,9 @@ func recogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []stri
 	}
 
 	switch {
-	case res.Busy:
+	case res.IsBusy:
 		fmt.Fprintf(out, "%s is already being read, and nothing was done\n", res.Path)
-	case res.Empty:
+	case res.IsEmpty:
 		fmt.Fprintf(out, "%s says nothing that could be read, and nothing was written\n", res.Path)
 	default:
 		fmt.Fprintf(out, "read %d pages of %s in %s\n",

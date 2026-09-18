@@ -74,8 +74,8 @@ type RecogniseResult struct {
 	Pages   int    // how many it has
 	Read    int    // how many have been read, this run and before it
 	Resumed int    // how many a run before this one had already read
-	Empty   bool   // it says nothing, and nothing was written
-	Busy    bool   // somebody else is reading these bytes, and nothing was done
+	IsEmpty bool   // it says nothing, and nothing was written
+	IsBusy  bool   // somebody else is reading these bytes, and nothing was done
 }
 
 // DefaultBatch is how many pages are read before they are written down.
@@ -110,7 +110,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	// as long as the reading takes.
 	release, err := store.Claim(ctx, partial)
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
+		res.IsBusy = true
 		return res, nil
 	}
 	if err != nil {
@@ -221,7 +221,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 
 	whole, err := store.Read(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
-		res.Empty = true
+		res.IsEmpty = true
 		return res, nil
 	}
 	if err != nil {
@@ -231,7 +231,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		// A document that says nothing writes nothing. An empty artifact would
 		// stand in for a text layer that worked, and there is no falling back
 		// from one.
-		res.Empty = true
+		res.IsEmpty = true
 		return res, u.forget(ctx, v, ref, hash, store, partial, boxes, parts)
 	}
 

@@ -209,7 +209,7 @@ describe('what a preset comes to over the range of its goal', () => {
       decks: 2,
       cards: 400,
       overdue: 12,
-      honest: true,
+      isHonest: true,
     })
   })
 

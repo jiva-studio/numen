@@ -33,7 +33,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 	}
 	testsupport.WaitFor(t, func() bool {
 		for _, at := range api.Window.Tasking.List() {
-			if at.Doing == "Reading the vault" && at.About == "Sanskrit" && at.Asked {
+			if at.Doing == "Reading the vault" && at.About == "Sanskrit" && at.IsAsked {
 				return true
 			}
 		}
@@ -59,7 +59,7 @@ func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	api.countVault(t.Context(), held[0])
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
 
-	if at := api.Window.Tasking.List()[0]; at.Asked {
+	if at := api.Window.Tasking.List()[0]; at.IsAsked {
 		t.Errorf("reading a vault the index carries came back as work asked for: %+v", at)
 	}
 	close(holding)

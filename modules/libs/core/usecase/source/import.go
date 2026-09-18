@@ -32,17 +32,17 @@ type ImportURL struct {
 	// CopyMaxSize is how many bytes a copy may run to. Zero is no limit.
 	CopyMaxSize int64
 
-	// ToVault keeps a copy beside the url as a file of the person's own, and
+	// IsToVault keeps a copy beside the url as a file of the person's own, and
 	// Writers is what puts it there. It is `importing.copies_to_vault`, and a
 	// run without a writer keeps every copy in the application's own folder.
-	ToVault bool
-	Writers port.VaultWriters
+	IsToVault bool
+	Writers   port.VaultWriters
 
 	// Languages are the languages published words are preferred in, best
 	// first, and Automatic is whether words a machine wrote count where a
 	// person published none.
-	Languages []string
-	Automatic bool
+	Languages   []string
+	IsAutomatic bool
 
 	// Cut brings the url level in the index, so what was downloaded is searched
 	// with it as soon as it is written.
@@ -53,10 +53,10 @@ type ImportURL struct {
 	// what it was called.
 	Names func(ctx context.Context, v domain.Vault, path, title string) (string, error)
 
-	// Again throws away what a run before this one downloaded and asks the address
+	// IsRepeat throws away what a run before this one downloaded and asks the address
 	// afresh. It is how a person asks for a site's words again, and nothing
 	// sets it on its own.
-	Again bool
+	IsRepeat bool
 
 	// Progress is told how much of a copy has arrived out of how much the site
 	// declared. A run given none is not followed.
@@ -76,9 +76,9 @@ type ImportURLResult struct {
 	Producer string
 	// Bytes is how much text came back.
 	Bytes int
-	// Nothing is the address publishing none of what was asked for, which is an
+	// IsNothing is the address publishing none of what was asked for, which is an
 	// answer and not a failure.
-	Nothing bool
+	IsNothing bool
 }
 
 // Execute downloads what is at one url's address.
@@ -101,7 +101,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	}
 	defer release()
 
-	if u.Again {
+	if u.IsRepeat {
 		if err := dropDownloads(ctx, store, hash); err != nil {
 			return res, err
 		}
@@ -117,20 +117,20 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	}
 
 	said, err := u.By.Text(ctx, at, port.PreferredCaptions{
-		Languages: u.Languages, Automatic: u.Automatic,
+		Languages: u.Languages, IsAutomatic: u.IsAutomatic,
 	})
 	switch {
 	case errors.Is(err, port.ErrNothingDownloaded):
 		// The address publishes none of what was asked for. That is an answer,
 		// and it is written down so the address is not asked again every time
 		// the vault is scanned.
-		res.Nothing = true
+		res.IsNothing = true
 		return res, u.silent(ctx, at, store, hash)
 	case err != nil:
 		return res, err
 	}
 
-	res.Producer, res.Bytes, err = u.keeps(ctx, store, hash, at, said)
+	res.Producer, res.Bytes, err = u.writeDownload(ctx, store, hash, at, said)
 	if err != nil {
 		return res, err
 	}
@@ -140,9 +140,9 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 	return u.renameURL(ctx, v, ref, at, said.Title, res)
 }
 
-// keeps writes down what came back, under the name of whatever downloaded it,
-// and answers how much of it there was.
-func (u ImportURL) keeps(
+// writeDownload writes down what came back, under the name of whatever
+// downloaded it, and answers how much of it there was.
+func (u ImportURL) writeDownload(
 	ctx context.Context,
 	store port.DerivedStore,
 	hash string,

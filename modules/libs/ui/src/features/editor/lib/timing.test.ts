@@ -13,7 +13,7 @@ const drawn: EditorView[] = []
 
 const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting change.'
 
-const TIMED: TimingState = { times: ['0:01', '0:03', '0:06'], current: -1, following: false }
+const TIMED: TimingState = { times: ['0:01', '0:03', '0:06'], current: -1, isFollowing: false }
 
 const editor = (goToLine: (line: number) => void = () => {}) => {
   const times = timing(goToLine)
@@ -110,10 +110,10 @@ describe('the line being read', () => {
   it('is drawn whether or not the view follows it', () => {
     const { times, view } = editor()
 
-    times.show({ ...TIMED, current: 2, following: true })
+    times.show({ ...TIMED, current: 2, isFollowing: true })
     expect(current(view)).toStrictEqual(['Someone counting change.'])
 
-    times.show({ ...TIMED, current: 2, following: false })
+    times.show({ ...TIMED, current: 2, isFollowing: false })
     expect(current(view)).toStrictEqual(['Someone counting change.'])
   })
 
@@ -222,12 +222,12 @@ describe('the view going after the line being said', () => {
   it('does not move for words arriving while nothing is being said', async () => {
     const { times, view } = editor()
     await waitTick()
-    times.show({ ...TIMED, current: 1, following: true })
+    times.show({ ...TIMED, current: 1, isFollowing: true })
 
     const scrolls = watchView(view)
     // The transcript grows: another line arrives, and the line being said is
     // the one it was.
-    times.show({ times: [...TIMED.times, '0:09'], current: 1, following: true })
+    times.show({ times: [...TIMED.times, '0:09'], current: 1, isFollowing: true })
 
     expect(scrolls()).toBe(0)
   })
@@ -235,10 +235,10 @@ describe('the view going after the line being said', () => {
   it('moves where the line being said becomes another', async () => {
     const { times, view } = editor()
     await waitTick()
-    times.show({ ...TIMED, current: 0, following: true })
+    times.show({ ...TIMED, current: 0, isFollowing: true })
 
     const scrolls = watchView(view)
-    times.show({ ...TIMED, current: 2, following: true })
+    times.show({ ...TIMED, current: 2, isFollowing: true })
 
     expect(scrolls()).toBe(1)
   })
@@ -248,7 +248,7 @@ describe('an editor drawn a second time', () => {
   it('is shown the times without the view being moved', async () => {
     const { times, view } = editor()
     await waitTick()
-    times.show({ ...TIMED, current: 2, following: true })
+    times.show({ ...TIMED, current: 2, isFollowing: true })
     view.destroy()
 
     // A tab moved between panes is drawn again while the recording stands
@@ -274,7 +274,7 @@ describe('an editor drawn again while the recording stands still', () => {
   it('is not moved by the words being asked for again', async () => {
     const times = timing(() => {})
     const first = drawing(times)
-    times.show({ ...TIMED, current: 2, following: true })
+    times.show({ ...TIMED, current: 2, isFollowing: true })
     first.destroy()
 
     const again = drawing(times)
@@ -292,7 +292,7 @@ describe('an editor drawn again while the recording stands still', () => {
 
     // The transcript is asked for again while nothing is being said: the words
     // grow and the line being said is the one it was.
-    times.show({ times: [...TIMED.times, '0:09'], current: 2, following: true })
+    times.show({ times: [...TIMED.times, '0:09'], current: 2, isFollowing: true })
 
     expect(effects).toBe(0)
   })

@@ -6,7 +6,7 @@
  * the times it works out.
  */
 import { describe, expect, it } from 'vitest'
-import { applyCues, findCueAt, same, spanCues, getText, type Cue } from './cues'
+import { applyCues, findCueAt, isSame, spanCues, getText, type Cue } from './cues'
 
 const CUES: readonly Cue[] = [
   { text: 'A bell over the door.', from: 1_000, to: 3_000 },
@@ -15,7 +15,7 @@ const CUES: readonly Cue[] = [
 ]
 
 /** Cues run forward, none begins before the one before it ends. */
-const orderly = (cues: readonly Cue[]) => {
+const isOrdered = (cues: readonly Cue[]) => {
   for (let at = 0; at < cues.length; at++) {
     const one = cues[at]!
     expect(one.from).toBeLessThanOrEqual(one.to)
@@ -27,7 +27,7 @@ const orderly = (cues: readonly Cue[]) => {
 }
 
 /** The words as they now read, held to what the application will take. */
-const applyText = (was: readonly Cue[], text: string) => orderly(applyCues(was, text))
+const applyText = (was: readonly Cue[], text: string) => isOrdered(applyCues(was, text))
 
 describe('the words as they were left', () => {
   it('are the cues they came from', () => {
@@ -273,29 +273,29 @@ describe('lines that read areNeighbourhoodsEqual', () => {
 
 describe('the words as the application gave them', () => {
   it('are given back unchanged, so a transcript nobody edited is not written', () => {
-    expect(same(applyCues(CUES, getText(CUES)), CUES)).toBe(true)
+    expect(isSame(applyCues(CUES, getText(CUES)), CUES)).toBe(true)
   })
 
   it('are given back unchanged where the editor added a newline of its own', () => {
-    expect(same(applyCues(CUES, `${getText(CUES)}\n`), CUES)).toBe(true)
+    expect(isSame(applyCues(CUES, `${getText(CUES)}\n`), CUES)).toBe(true)
   })
 
   it('are not what a changed word gives back, however small the change', () => {
     const text = getText(CUES).replace('awning', 'awnings')
 
-    expect(same(applyCues(CUES, text), CUES)).toBe(false)
+    expect(isSame(applyCues(CUES, text), CUES)).toBe(false)
   })
 
   it('are not what a line moved past another gives back', () => {
     const text = [CUES[1]!.text, CUES[0]!.text, CUES[2]!.text].join('\n')
 
-    expect(same(applyCues(CUES, text), CUES)).toBe(false)
+    expect(isSame(applyCues(CUES, text), CUES)).toBe(false)
   })
 
   it('are not what the same words at another moment give back', () => {
     const moved = CUES.map((cue) => ({ ...cue, from: cue.from + 1 }))
 
-    expect(same(moved, CUES)).toBe(false)
+    expect(isSame(moved, CUES)).toBe(false)
   })
 })
 

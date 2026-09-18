@@ -34,7 +34,7 @@ export const seatWithoutDirection = (seats: readonly PlexRelatedSeat[]): PlexRel
 /**
  * Which way a point lies from another.
  *
- * Not simply the axis it lies furthest along: rows are wide and columns are
+ * Not simply the axis it lies getFurthest along: rows are wide and columns are
  * narrow, so the wedge meaning up or down is wider than a quarter turn. At a
  * bias of one, the outermost child of a wide row is further sideways than it
  * is down, and dragging towards where the children plainly are would name

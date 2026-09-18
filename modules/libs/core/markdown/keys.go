@@ -99,10 +99,10 @@ func (d *Document) SetList(key string, names []string) error {
 type Entry struct {
 	Key   string
 	Value any
-	// Verbatim keeps what the entry holds as it was written, which is what an
+	// IsVerbatim keeps what the entry holds as it was written, which is what an
 	// entry the application could not read gets. Such an entry under a key
 	// that is not there is written nowhere.
-	Verbatim bool
+	IsVerbatim bool
 }
 
 // EntryNames is the keys of the mapping under one top-level frontmatter key, in
@@ -162,7 +162,7 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 	for _, one := range entries {
 		was := pair(existing, one.Key)
 		held := was.value
-		if !one.Verbatim {
+		if !one.IsVerbatim {
 			held = &yaml.Node{}
 			if err := held.Encode(one.Value); err != nil {
 				return err

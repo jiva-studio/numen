@@ -158,14 +158,14 @@ export function useConversation(
       const error = await readSteps()
 
       work.clear()
-      const said = answer.isSaid()
+      const wasSaid = answer.isSaid()
       answer.settle()
 
       // Given up on is not gone wrong: what was asked for stops, and the
       // conversation keeps whatever had arrived by then.
       if (!flight.signal.aborted) {
         if (error) put({ id: `${next++}`, voice: 'answered', text: error, state: 'failed' })
-        else if (!said) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
+        else if (!wasSaid) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
       }
     } catch {
       // The turn ends however it went wrong, and the person is told it could

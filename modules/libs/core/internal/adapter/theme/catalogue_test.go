@@ -35,7 +35,7 @@ func getNames(themes []theme.Theme) []string {
 	return names
 }
 
-func holds(themes []theme.Theme, name string) bool {
+func hasTheme(themes []theme.Theme, name string) bool {
 	for _, one := range themes {
 		if one.Name == name {
 			return true
@@ -77,7 +77,7 @@ func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
 		"preset:one-dark", "preset:monokai", "preset:tokyo-night", "preset:ayu",
 		"preset:cobalt2",
 	} {
-		if !holds(themes, name) {
+		if !hasTheme(themes, name) {
 			t.Errorf("no %s among %v", name, getNames(themes))
 		}
 	}
@@ -95,7 +95,7 @@ func TestThisProductsOwnPaletteLeavesTheModeSomethingToChoose(t *testing.T) {
 		t.Error("this product's own palette pins the mode")
 	}
 	for _, one := range catalogue.Themes() {
-		if one.Name == theme.Default && one.Pinned {
+		if one.Name == theme.Default && one.IsPinned {
 			t.Error("this product's own palette is offered as pinned")
 		}
 	}
@@ -107,8 +107,8 @@ func TestAThemeSaysWhetherItIsAPair(t *testing.T) {
 	pinned := map[string]bool{"preset:dracula": true, "preset:solarized": false}
 	for _, one := range folder(t).Themes() {
 		want, asked := pinned[one.Name]
-		if asked && one.Pinned != want {
-			t.Errorf("%s is pinned: %v", one.Name, one.Pinned)
+		if asked && one.IsPinned != want {
+			t.Errorf("%s is pinned: %v", one.Name, one.IsPinned)
 		}
 	}
 }
@@ -118,7 +118,7 @@ func TestAPersonsThemeStandsBesideThePresetItsNameIsShared(t *testing.T) {
 	put(t, catalogue, "dracula.css", ":root { --numen-surface: #000000 }")
 
 	themes := catalogue.Themes()
-	if !holds(themes, "preset:dracula") || !holds(themes, "mine:dracula") {
+	if !hasTheme(themes, "preset:dracula") || !hasTheme(themes, "mine:dracula") {
 		t.Fatalf("one hides the other: %v", getNames(themes))
 	}
 	text, err := catalogue.Text("mine:dracula")
@@ -180,10 +180,10 @@ func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
 	put(t, catalogue, "small.css", strings.Repeat("a", theme.MaxSize))
 
 	themes := catalogue.Themes()
-	if holds(themes, "mine:vast") {
+	if hasTheme(themes, "mine:vast") {
 		t.Error("a file past the bound is offered")
 	}
-	if !holds(themes, "mine:small") {
+	if !hasTheme(themes, "mine:small") {
 		t.Errorf("a file at the bound is not offered: %v", getNames(themes))
 	}
 	if _, err := catalogue.Text("mine:vast"); err == nil {
@@ -222,7 +222,7 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 	t.Cleanup(func() { os.Chmod(catalogue.Dir(), 0o755) })
 
 	themes := catalogue.Themes()
-	if !holds(themes, theme.Default) {
+	if !hasTheme(themes, theme.Default) {
 		t.Errorf("nothing to wear: %v", getNames(themes))
 	}
 	for _, one := range themes {
@@ -239,7 +239,7 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 func TestACatalogueWithNoFolderOffersWhatShips(t *testing.T) {
 	var catalogue theme.Catalogue
 	themes := catalogue.Themes()
-	if !holds(themes, theme.Default) {
+	if !hasTheme(themes, theme.Default) {
 		t.Errorf("nothing to wear: %v", getNames(themes))
 	}
 	if _, err := catalogue.Text("mine:dracula"); err == nil {

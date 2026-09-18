@@ -59,7 +59,7 @@ export function settleTitles(
   const titles: Box[] = []
   const settled = [...edges]
 
-  for (const { edge, at, metrics } of tightestFirst(edges, width)) {
+  for (const { edge, at, metrics } of sortTightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
     const ends = (edge.arrow ? routing.arrowRoom : 0) / metrics.arc
     const clear = clearSpans(boxAt, [...boxes, ...titles], ends, STEP / metrics.arc)
@@ -92,7 +92,7 @@ export function settleTitles(
  * place it holds in the picture. A line as long as its words comes before one
  * with room to spare, and edges alike in that keep the order they arrived in.
  */
-function tightestFirst(
+function sortTightestFirst(
   edges: readonly PlacedEdge[],
   width: (label: string) => number,
 ): { edge: PlacedEdge; at: number; metrics: TitleMetrics }[] {
@@ -125,7 +125,7 @@ function settle(
   metrics: TitleMetrics,
   width: (label: string) => number,
 ): { words: string; at: number; extent: number } | null {
-  const whole = nearestPlace(clear, metrics.extent / 2 / metrics.arc)
+  const whole = findNearestPlace(clear, metrics.extent / 2 / metrics.arc)
   if (whole !== null) return { words, at: whole, extent: metrics.extent }
 
   const longest = clear.reduce<Span | null>(
@@ -178,7 +178,7 @@ function clearSpans(
  * the line that leaves the whole of the words inside one clear span.
  * Nothing where no span is long enough to hold them.
  */
-function nearestPlace(clear: readonly Span[], half: number): number | null {
+function findNearestPlace(clear: readonly Span[], half: number): number | null {
   let nearest: number | null = null
 
   for (const span of clear) {

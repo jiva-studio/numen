@@ -21,7 +21,7 @@ export interface Run {
 }
 
 /** Every run of a drawn document, in the order the markup sets them. */
-export function runsIn(paper: HTMLElement): Run[] {
+export function getRunsIn(paper: HTMLElement): Run[] {
   const found: Run[] = []
   for (const element of paper.querySelectorAll<HTMLElement>('[data-offset]')) {
     const said = Number(element.dataset['offset'])

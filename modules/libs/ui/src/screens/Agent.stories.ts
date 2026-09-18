@@ -53,7 +53,7 @@ const conversation =
     setup() {
       const turns = ref<Turn[]>([...start])
       const text = ref('')
-      const working = ref(false)
+      const isWorking = ref(false)
       let next = start.length
       let tick: ReturnType<typeof setInterval> | undefined
 
@@ -69,13 +69,13 @@ const conversation =
       const settle = () => {
         clearInterval(tick)
         tick = undefined
-        working.value = false
+        isWorking.value = false
       }
 
       const onSubmit = (message: string) => {
         turns.value.push(createAsked(`${next++}`, message))
         text.value = ''
-        working.value = true
+        isWorking.value = true
 
         const id = `${next++}`
         turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
@@ -99,7 +99,7 @@ const conversation =
 
       onScopeDispose(settle)
 
-      return { turns, text, working, onSubmit, onStop }
+      return { turns, text, isWorking, onSubmit, onStop }
     },
     template: TEMPLATE,
   })

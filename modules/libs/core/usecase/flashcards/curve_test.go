@@ -311,7 +311,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, one := range got.Points {
-		if !one.Enough {
+		if !one.IsEnough {
 			t.Errorf("%s is out of reach at %+v, and a date paces what it holds",
 				got.Days[i], one)
 		}
@@ -320,7 +320,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 		t.Fatalf("the preset stands nowhere on its own curve: %+v", got.Now)
 	}
 	stands := got.Points[got.Now.Index]
-	if stands.Share < 1 || !stands.Enough || stands.Short != 0 {
+	if stands.Share < 1 || !stands.IsEnough || stands.Short != 0 {
 		t.Errorf("the day it aims at gets through %v of the material, and %d of it stands short",
 			stands.Share, stands.Short)
 	}
@@ -364,7 +364,7 @@ func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 	}
 	light, even := p, p
 	light.Load = map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 0}
-	even.EvenLoad = true
+	even.IsEvenLoad = true
 
 	for name, one := range map[string]review.Preset{"a light week": light, "an even load": even} {
 		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one)
@@ -643,7 +643,7 @@ func TestACurveOfADateSaysWhatNoPaceReaches(t *testing.T) {
 	}
 	// A day nothing can be learned by is met by the pace all the same: every
 	// card face that can be learned by it is, and there are none.
-	if !got.Points[0].Enough {
+	if !got.Points[0].IsEnough {
 		t.Error("a day no card face can be learned by is not met by the pace that reaches every one that can")
 	}
 }
@@ -701,7 +701,7 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 			p.Counts = review.BudgetUnitShows
 		}},
 		{"a day spent on new cards first", func(p *review.Preset) { p.Backlog = 0 }},
-		{"an even load off", func(p *review.Preset) { p.EvenLoad = false }},
+		{"an even load off", func(p *review.Preset) { p.IsEvenLoad = false }},
 		{"a Saturday at nothing", func(p *review.Preset) {
 			p.Load = map[time.Weekday]int{time.Saturday: 0}
 		}},
@@ -885,7 +885,7 @@ func TestAPlaceOfADateIsOneRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, one := range got.Points {
-		if i > 0 && got.Points[i-1].Enough && !one.Enough {
+		if i > 0 && got.Points[i-1].IsEnough && !one.IsEnough {
 			t.Errorf("%s is got through and %s, a day later, is not",
 				got.Days[i-1], got.Days[i])
 		}
@@ -940,13 +940,13 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 		t.Fatal("no day is suggested, and the range holds days the material is through by")
 	}
 	stands := got.Points[got.Suggested.Index]
-	if stands.Short != 0 || !stands.Enough || stands.Share < 1 {
+	if stands.Short != 0 || !stands.IsEnough || stands.Share < 1 {
 		t.Errorf("%s is suggested, and it leaves %d card faces out of reach and gets "+
 			"through %v of the material", got.Suggested.Day, stands.Short, stands.Share)
 	}
 	// And it is the soonest such day.
 	for i, one := range got.Points {
-		if i < got.Suggested.Index && one.Short == 0 && one.Enough &&
+		if i < got.Suggested.Index && one.Short == 0 && one.IsEnough &&
 			one.Minutes <= float64(p.MinutesADay) {
 			t.Errorf("%s is suggested and %s, earlier, is through the material too",
 				got.Suggested.Day, got.Days[i])
@@ -1149,7 +1149,7 @@ func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 			t.Fatal(err)
 		}
 		for i, one := range got.Points {
-			if !one.Enough {
+			if !one.IsEnough {
 				t.Errorf("%s draws place %d as one the budget does not get through", goal, i)
 				break
 			}

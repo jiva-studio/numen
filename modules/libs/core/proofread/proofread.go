@@ -32,9 +32,9 @@ type Batch struct {
 	Number int
 	Lines  []Line
 
-	// Joinable is whether a reply may answer for a run of these lines as one.
+	// IsJoinable is whether a reply may answer for a run of these lines as one.
 	// Where it does not, a run refuses the batch.
-	Joinable bool
+	IsJoinable bool
 
 	// Context is what the whole text holds, said in its own words. It stands
 	// before the lines in the question and is answered for by nothing.

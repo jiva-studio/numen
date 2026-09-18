@@ -32,22 +32,22 @@ type Options struct {
 	Config container.Config
 	// Core is everything the tools work through.
 	Core mcp.Core
-	// Reads serves the surface every tool of which reads. An agent answering
+	// ShouldRead serves the surface every tool of which reads. An agent answering
 	// from it changes nothing.
-	Reads bool
-	// Reviews serves the surface the window a person runs their cards in has:
+	ShouldRead bool
+	// ShouldReview serves the surface the window a person runs their cards in has:
 	// everything that reads, and the cards of a deck.
-	Reviews bool
+	ShouldReview bool
 	// Addr is where the tools are served. Empty takes a loopback port this
 	// machine picks.
 	Addr string
 	// Token is what an agent presents. Empty mints one and keeps it beside the
 	// vault list.
 	Token string
-	// Announcing writes down where the tools are and what to present, which is
+	// IsAnnouncing writes down where the tools are and what to present, which is
 	// what an agent a person runs themselves is configured from. The file names
 	// one vault, and one window writes it.
-	Announcing bool
+	IsAnnouncing bool
 	// Root is the folder the agent is started in.
 	Root string
 	// Drafting is how a change the agent is making is drawn before it lands.
@@ -94,9 +94,9 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	errorHandler := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
 	serving := mcp.ServeHTTP
 	switch {
-	case opts.Reads:
+	case opts.ShouldRead:
 		serving = mcp.ServeReadingHTTP
-	case opts.Reviews:
+	case opts.ShouldReview:
 		serving = mcp.ServeReviewingHTTP
 	}
 	endpoint, err := serving(ctx, addr, secret, opts.Core, errorHandler)
@@ -104,7 +104,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		return nil, err
 	}
 	forget := func() {}
-	if opts.Announcing {
+	if opts.IsAnnouncing {
 		gone, err := Announce(opts.Config, endpoint.URL, secret)
 		if err != nil {
 			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
@@ -125,9 +125,9 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		// itself, asked for over the protocol an agent is answered by.
 		vocabulary := mcp.Vocabulary
 		switch {
-		case opts.Reads:
+		case opts.ShouldRead:
 			vocabulary = mcp.ReadingVocabulary
-		case opts.Reviews:
+		case opts.ShouldReview:
 			vocabulary = mcp.GetReviewVocabulary
 		}
 		words, err := vocabulary(ctx, opts.Core)
@@ -187,15 +187,15 @@ func Claude(
 	}
 	slices.Sort(allowed)
 	return &claudecode.Agent{
-		Command:             cfg.Agent.Claude.Command,
-		Root:                root,
-		Tools:               claudecode.Endpoint{URL: url, Token: secret},
-		Allowed:             allowed,
-		Words:               words,
-		Drafting:            drafting,
-		Model:               cfg.Agent.Claude.Model,
-		Turns:               cfg.Agent.Claude.MaxSteps,
-		ReadsHooksAndSkills: cfg.Agent.Claude.ReadsHooksAndSkills,
-		ErrorHandler:        func(err error) { fmt.Fprintln(out, "agent:", err) },
+		Command:                  cfg.Agent.Claude.Command,
+		Root:                     root,
+		Tools:                    claudecode.Endpoint{URL: url, Token: secret},
+		Allowed:                  allowed,
+		Words:                    words,
+		Drafting:                 drafting,
+		Model:                    cfg.Agent.Claude.Model,
+		Turns:                    cfg.Agent.Claude.MaxSteps,
+		ShouldReadHooksAndSkills: cfg.Agent.Claude.ShouldReadHooksAndSkills,
+		ErrorHandler:             func(err error) { fmt.Fprintln(out, "agent:", err) },
 	}
 }

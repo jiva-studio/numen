@@ -9,7 +9,7 @@ import { onBeforeUnmount, shallowRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
 import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
-import { marksIn, offsetAt, rangesOver, runsIn, type Run } from '../lib/runs'
+import { marksIn, offsetAt, rangesOver, getRunsIn, type Run } from '../lib/runs'
 import type { Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
 
@@ -36,7 +36,7 @@ export function useBookMarks(
     // Where a run stands is read against the columns it stands in and not against
     // the area they are carried across: a turn under way carries both, and the
     // one measured against the other is where the run will come to rest.
-    runs = runsIn(text)
+    runs = getRunsIn(text)
     marks.value = marksIn(runs, edgeOf(text))
   }
 

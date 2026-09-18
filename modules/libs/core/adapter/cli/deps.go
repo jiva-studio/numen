@@ -166,24 +166,24 @@ type ImportURL struct {
 type ProofreadReading struct {
 	Proofread source.ProofreadReading
 	Cut       source.Extract
-	// Held says whether anything is configured to proofread with. Nothing else
+	// IsHeld says whether anything is configured to proofread with. Nothing else
 	// here is opened where nothing is.
-	Held  bool
-	Close func() error
+	IsHeld bool
+	Close  func() error
 }
 
 // ProofreadTranscript is one recording's transcript put right with a model.
 type ProofreadTranscript struct {
 	Proofread source.ProofreadTranscript
 	Cut       source.Extract
-	Held      bool
+	IsHeld    bool
 	Close     func() error
 }
 
 // closeIfOpen gives back what an opener opened, and does nothing where it
 // opened nothing.
-func closeIfOpen(close func() error) {
-	if close != nil {
-		_ = close()
+func closeIfOpen(closer func() error) {
+	if closer != nil {
+		_ = closer()
 	}
 }

@@ -105,8 +105,8 @@ func newWireModels(held []port.Model) []*v1.Model {
 			Name:      one.Name,
 			Title:     one.Title,
 			Shelf:     one.Shelf,
-			IsDefault: one.Default,
-			Writes:    writes(one.Writes),
+			IsDefault: one.IsDefault,
+			Writes:    newWireSettings(one.Writes),
 			Presence:  presences[one.Presence],
 		})
 	}
@@ -121,8 +121,8 @@ var presences = map[port.Presence]v1.Presence{
 	port.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
 }
 
-// writes is what choosing a model writes, as the wire carries it.
-func writes(held []port.Setting) []*v1.Setting {
+// newWireSettings is what choosing a model writes, as the wire carries it.
+func newWireSettings(held []port.Setting) []*v1.Setting {
 	written := make([]*v1.Setting, 0, len(held))
 	for _, one := range held {
 		written = append(written, &v1.Setting{At: one.Path, Value: one.JSON})

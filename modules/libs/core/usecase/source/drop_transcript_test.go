@@ -31,7 +31,7 @@ func newDropTranscript(t *testing.T, words ...string) (Transcribe, DropTranscrip
 		By:      model,
 		Batch:   1,
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
-			_, err := cutting.One(ctx, v, path)
+			_, err := cutting.ExtractOne(ctx, v, path)
 			return err
 		},
 	}
@@ -74,7 +74,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.None || res.Busy {
+	if res.IsNone || res.IsBusy {
 		t.Errorf("a transcript that was there came back as %+v", res)
 	}
 	if left := kept.names(); len(left) != 0 {
@@ -152,7 +152,7 @@ func TestTheAnswerOfARecordingWithNoSpeechIsDropped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.None {
+	if res.IsNone {
 		t.Error("an answer that was there came back as nothing to drop")
 	}
 	if left := kept.names(); len(left) != 0 {
@@ -170,7 +170,7 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.None {
+	if !res.IsNone {
 		t.Errorf("a recording nothing has listened to came back as %+v", res)
 	}
 	if _, held := index.sources[v.ID][recordingPath]; held {
@@ -235,7 +235,7 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.None {
+	if res.IsNone {
 		t.Error("a recording the index stands on came back as nothing to drop")
 	}
 	if src := index.sources[v.ID][recordingPath]; src.Producer != "" || src.Hash != "" {
@@ -277,7 +277,7 @@ func TestATranscriptBeingWrittenIsNotDropped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Busy {
+	if !res.IsBusy {
 		t.Errorf("a recording a run holds came back as %+v", res)
 	}
 	if _, err := kept.Read(t.Context(), text.Artifact(text.ASR, hash)); err != nil {

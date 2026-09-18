@@ -27,7 +27,7 @@ const props = defineProps<{
   /** The preset each deck is scheduled by, by the path the deck is filed under. */
   byDeck: ReadonlyMap<string, Preset>
   /** Whether those presets have been read, which a deck missing from them needs. */
-  scheduled: boolean
+  hasPresets: boolean
   /** The day this is being read on, as the year, the month and the day. */
   today: string
 }>()
@@ -61,8 +61,8 @@ const allDue = computed(() => props.vault.due + props.vault.new)
           :deck="deck"
           :at="at"
           :by="byDeck.get(deck.deck)"
-          :scheduled="scheduled"
-          :counted="vault.counted"
+          :has-presets="hasPresets"
+          :is-counted="vault.isCounted"
           :can-open="canStart(deck, byDeck)"
           @start="$emit('start', deck.deck)"
         />
@@ -79,7 +79,7 @@ const allDue = computed(() => props.vault.due + props.vault.new)
       <Button class="decks__all" :disabled="allDue === 0" @click="$emit('start', '')">
         <KeyCap :keys="{ icons: [], letter: 'enter' }" />
         Review
-        <DueCount :due="allDue" bare over />
+        <DueCount :due="allDue" is-bare is-on-button />
       </Button>
     </footer>
   </section>

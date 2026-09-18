@@ -60,8 +60,8 @@ func TestALineIsEveryBreakYAMLReads(t *testing.T) {
 			},
 		},
 		"a next line between keys": {
-			raw:  "---\ntags:\n  - mosslinks:\n  - to: Ferns\n    role: ref\n---\nbody\n",
-			want: "---\ntags:\n  - mosslinks:\n  - to: Ferns\n    role: jump\n---\nbody\n",
+			raw:  "---\ntags:\n  - moss\u0085links:\n  - to: Ferns\n    role: ref\n---\nbody\n",
+			want: "---\ntags:\n  - moss\u0085links:\n  - to: Ferns\n    role: jump\n---\nbody\n",
 			change: func(d *Document) error {
 				_, err := d.UpdateLink(domain.ParseAddress("Ferns"), domain.Link{Role: domain.RoleJump})
 				return err

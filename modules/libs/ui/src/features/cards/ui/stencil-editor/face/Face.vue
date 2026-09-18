@@ -48,13 +48,13 @@ const emit = defineEmits<{
 
 /**
  * The half last typed in, and nothing while neither has been. A box nothing has
- * been typed in holds no caret, so what half it is aimed at is one thing and
+ * been typed in holds no caret, so what half the caret is in is one thing and
  * where the caret stands in it is another.
  */
 const aim = shallowRef<Half | null>(null)
 
 /** The half a field is written into, which is the front until one is typed in. */
-const aimed = computed<Half>(() => aim.value ?? 'front')
+const focusedHalf = computed<Half>(() => aim.value ?? 'front')
 
 /** The two boxes this face is written in, each held by the part drawing it. */
 const front = shallowRef<InstanceType<typeof FacePane> | null>(null)
@@ -75,15 +75,16 @@ const setBox = (pane: Pane, element: Element | ComponentPublicInstance | null): 
 const divided = computed<readonly Pane[]>(() => getPanes(props.face, props.words))
 
 /** The part a field would be written into. */
-const isAimed = (pane: Pane): boolean => pane.mode === 'written' && aimed.value === pane.half
+const isFocused = (pane: Pane): boolean =>
+  pane.mode === 'written' && focusedHalf.value === pane.half
 
 /**
- * A field written into the half aimed at, where the caret stands, the caret
+ * A field written into the half the caret is in, where the caret stands, the caret
  * following it. A box nothing has been typed in holds no caret, so the field
  * goes after what is written there.
  */
 const put = async (field: string): Promise<void> => {
-  const half = aimed.value
+  const half = focusedHalf.value
   const target = boxOf(half)
   if (!target) return
 
@@ -126,7 +127,7 @@ const put = async (field: string): Promise<void> => {
         :key="`${pane.half}-${pane.mode}`"
         :ref="(held) => setBox(pane, held)"
         :pane="pane"
-        :aimed="isAimed(pane)"
+        :is-focused="isFocused(pane)"
         :words="words"
         @aim="aim = pane.half"
         @write="(text: string) => emit('write', pane.half, text)"

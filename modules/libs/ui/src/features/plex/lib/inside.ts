@@ -140,7 +140,7 @@ function getPartsWidth(
     deps.viewport.width - 2 * deps.margin,
   )
 
-  const furthest = deps.viewport.width / 2 - deps.margin - width / 2
-  const middle = Math.min(Math.max(node.x, -furthest), furthest)
+  const getFurthest = deps.viewport.width / 2 - deps.margin - width / 2
+  const middle = Math.min(Math.max(node.x, -getFurthest), getFurthest)
   return { width, offset: middle - node.x }
 }

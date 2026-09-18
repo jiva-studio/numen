@@ -61,7 +61,7 @@ const { isGhost, canStop, isAnnounced, listening } = press
  */
 const isOffering = computed(
   () =>
-    props.reaching.handle &&
+    props.reaching.hasHandle &&
     props.node.opacity >= 1 &&
     (props.gestureRole === 'source' || (props.gestureRole === 'open' && hoverFocus.isOn.value)),
 )
@@ -128,7 +128,7 @@ const hue = computed(() => ({
     @focusin="hoverFocus.onFocusIn"
     @focusout="hoverFocus.onFocusOut"
   >
-    <PlexNodeBox :node="node" :box="box" :ghost="isGhost">
+    <PlexNodeBox :node="node" :box="box" :is-ghost="isGhost">
       <template v-if="$slots.icon" #icon="{ node: drawn }">
         <slot name="icon" :node="drawn" />
       </template>

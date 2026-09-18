@@ -48,11 +48,11 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	// One folder has one name here, whichever route reached it, and which
 	// routes lead to it is the machine's to say.
 	root = u.Identity.GetName(root)
-	if err := u.Identity.Readable(root); err != nil {
+	if err := u.Identity.CheckReadable(root); err != nil {
 		return domain.Vault{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 
-	held, err := u.Registry.All()
+	held, err := u.Registry.List()
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -78,7 +78,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	if found && existing.Path != root {
-		stillThere, carriesIt, err := u.Identity.Of(existing.Path)
+		stillThere, carriesIt, err := u.Identity.GetVaultID(existing.Path)
 		if err != nil {
 			return domain.Vault{}, err
 		}

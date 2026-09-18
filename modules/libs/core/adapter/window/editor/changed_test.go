@@ -24,9 +24,9 @@ import (
 // schema carries, and there is no index behind them to find it in.
 func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 
-// editable is a vault with a read and a save on it and nothing behind them.
+// openEditor is a vault with a read and a save on it and nothing behind them.
 // What is asked here is what the schema carries.
-func editable(t *testing.T, notes map[string]string) *API {
+func openEditor(t *testing.T, notes map[string]string) *API {
 	t.Helper()
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
@@ -56,7 +56,7 @@ func readNote(t *testing.T, api *API, path string) *v1.LastRead {
 // something a tab can do nothing about, and this one is a question for the
 // person.
 func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
-	api := editable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	seen := readNote(t, api, "Entropy.md")
 
 	theirs := "# Entropy\n\nTheirs.\n"
@@ -92,7 +92,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 // The fingerprint a write answers with is what the client presents at its next
 // write, and it is what lets a session hold more than one save.
 func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
-	api := editable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	seen := readNote(t, api, "Entropy.md")
 
 	first, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
@@ -162,7 +162,7 @@ func (b beatenReader) Stat(ctx context.Context, path string) (domain.Fingerprint
 // can move between the two. What the person meets is an answer and not a
 // transport error.
 func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
-	api := editable(t, map[string]string{
+	api := openEditor(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 	})

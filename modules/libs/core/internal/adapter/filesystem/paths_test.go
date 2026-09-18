@@ -40,19 +40,19 @@ var paths = []string{
 // only for the call sites that happen to exist today.
 func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 	root := t.TempDir()
-	real, err := filepath.EvalSymlinks(root)
+	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, path := range paths {
 		t.Run(path, func(t *testing.T) {
-			vault, _, vaultErr := resolveVaultPath(real, path, DefaultServiceDir)
-			ours, _, oursErr := service(real, path, DefaultServiceDir)
+			isVault, _, vaultErr := resolveVaultPath(resolved, path, DefaultServiceDir)
+			isOurs, _, oursErr := service(resolved, path, DefaultServiceDir)
 
 			switch {
 			case vaultErr == nil && oursErr == nil:
-				t.Errorf("%q is both the vault's (%s) and the application's (%s)", path, vault, ours)
+				t.Errorf("%q is both the vault's (%s) and the application's (%s)", path, isVault, isOurs)
 			case vaultErr != nil && oursErr != nil:
 				// A path that is neither is an ordinary outcome: it leaves the
 				// vault, or it names nothing.
@@ -69,24 +69,24 @@ func TestALinkIsJudgedByWhereItLeads(t *testing.T) {
 	root := vault(t)
 
 	tests := []struct {
-		name  string
-		path  string
-		vault bool
-		ours  bool
+		name    string
+		path    string
+		isVault bool
+		isOurs  bool
 	}{
-		{name: "a link to notes", path: "inward/Entropy.md", vault: true},
+		{name: "a link to notes", path: "inward/Entropy.md", isVault: true},
 		{name: "into the application's folder", path: "held/ocr/abc.txt"},
 		{name: "the link to it", path: "held"},
-		{name: "the application's folder itself", path: ".numen/ocr/abc.txt", ours: true},
+		{name: "the application's folder itself", path: ".numen/ocr/abc.txt", isOurs: true},
 		{name: "out of the vault", path: "outward/Entropy.md"},
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			if _, _, err := resolveVaultPath(root, c.path, DefaultServiceDir); (err == nil) != c.vault {
-				t.Errorf("resolveVaultPath(%q) gave %v, want accepted=%v", c.path, err, c.vault)
+			if _, _, err := resolveVaultPath(root, c.path, DefaultServiceDir); (err == nil) != c.isVault {
+				t.Errorf("resolveVaultPath(%q) gave %v, want accepted=%v", c.path, err, c.isVault)
 			}
-			if _, _, err := service(root, c.path, DefaultServiceDir); (err == nil) != c.ours {
-				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.ours)
+			if _, _, err := service(root, c.path, DefaultServiceDir); (err == nil) != c.isOurs {
+				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.isOurs)
 			}
 		})
 	}
@@ -96,13 +96,13 @@ func TestALinkIsJudgedByWhereItLeads(t *testing.T) {
 // nothing a vault holds. On the other systems they are ordinary names.
 func TestAWindowsDeviceNameIsNotAPathInTheVault(t *testing.T) {
 	root := t.TempDir()
-	real, err := filepath.EvalSymlinks(root)
+	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, path := range []string{"NUL", "notes/con.md", "c:notes.md"} {
-		_, _, err := resolveVaultPath(real, path, DefaultServiceDir)
+		_, _, err := resolveVaultPath(resolved, path, DefaultServiceDir)
 		if held := err == nil; held == (runtime.GOOS == "windows") {
 			t.Errorf("resolveVaultPath(%q) gave %v on %s", path, err, runtime.GOOS)
 		}
@@ -111,38 +111,38 @@ func TestAWindowsDeviceNameIsNotAPathInTheVault(t *testing.T) {
 
 func TestWhatEachRuleAnswersFor(t *testing.T) {
 	root := t.TempDir()
-	real, err := filepath.EvalSymlinks(root)
+	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	tests := []struct {
-		name  string
-		path  string
-		vault bool // resolveVaultPath accepts it
-		ours  bool // service accepts it
+		name    string
+		path    string
+		isVault bool // resolveVaultPath accepts it
+		isOurs  bool // service accepts it
 	}{
-		{name: "a note", path: "notes/Entropy.md", vault: true},
-		{name: "a document", path: "assets/paper.pdf", vault: true},
-		{name: "another tool's folder", path: ".obsidian/note.md", vault: true},
-		{name: "the service folder itself", path: ".numen", ours: true},
-		{name: "the vault's identity", path: ".numen/config.json", ours: true},
-		{name: "a derived file", path: ".numen/ocr/abc.txt", ours: true},
-		{name: "the service folder in capitals", path: ".NUMEN/config.json", ours: true},
-		{name: "the service folder in either case", path: ".Numen/ocr/abc.txt", ours: true},
-		{name: "into the service folder the long way", path: "notes/../.numen/config.json", ours: true},
-		{name: "out of the service folder the long way", path: ".numen/../notes/a.md", vault: true},
+		{name: "a note", path: "notes/Entropy.md", isVault: true},
+		{name: "a document", path: "assets/paper.pdf", isVault: true},
+		{name: "another tool's folder", path: ".obsidian/note.md", isVault: true},
+		{name: "the service folder itself", path: ".numen", isOurs: true},
+		{name: "the vault's identity", path: ".numen/config.json", isOurs: true},
+		{name: "a derived file", path: ".numen/ocr/abc.txt", isOurs: true},
+		{name: "the service folder in capitals", path: ".NUMEN/config.json", isOurs: true},
+		{name: "the service folder in either case", path: ".Numen/ocr/abc.txt", isOurs: true},
+		{name: "into the service folder the long way", path: "notes/../.numen/config.json", isOurs: true},
+		{name: "out of the service folder the long way", path: ".numen/../notes/a.md", isVault: true},
 		{name: "out of the vault", path: "notes/../../etc/passwd"},
 		{name: "absolute", path: "/etc/passwd"},
 		{name: "empty", path: ""},
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			if _, _, err := resolveVaultPath(real, c.path, DefaultServiceDir); (err == nil) != c.vault {
-				t.Errorf("resolveVaultPath(%q) gave %v, want accepted=%v", c.path, err, c.vault)
+			if _, _, err := resolveVaultPath(resolved, c.path, DefaultServiceDir); (err == nil) != c.isVault {
+				t.Errorf("resolveVaultPath(%q) gave %v, want accepted=%v", c.path, err, c.isVault)
 			}
-			if _, _, err := service(real, c.path, DefaultServiceDir); (err == nil) != c.ours {
-				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.ours)
+			if _, _, err := service(resolved, c.path, DefaultServiceDir); (err == nil) != c.isOurs {
+				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.isOurs)
 			}
 		})
 	}

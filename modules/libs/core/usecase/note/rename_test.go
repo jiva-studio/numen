@@ -85,7 +85,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := changeable(t, map[string]string{"Old.md": c.raw})
+			v := openChanging(t, map[string]string{"Old.md": c.raw})
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
@@ -157,7 +157,7 @@ func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := changeable(t, map[string]string{"Old.md": c.raw})
+			v := openChanging(t, map[string]string{"Old.md": c.raw})
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
@@ -183,7 +183,7 @@ func TestATitleOnlyTheKeyCanCarryIsWrittenThere(t *testing.T) {
 		"a note named by its filename": "A measure.\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := changeable(t, map[string]string{"Old.md": raw})
+			v := openChanging(t, map[string]string{"Old.md": raw})
 
 			renamed, err := v.rename().Execute(t.Context(), v.vault, "Old.md", "C#")
 			if err != nil {
@@ -209,7 +209,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 		"a title with nothing awkward": "Thermodynamics",
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := changeable(t, map[string]string{
+			c := openChanging(t, map[string]string{
 				"Entropy.md": "# Entropy\n",
 				"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 			})
@@ -237,7 +237,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 // it comes out of a rename with the bytes it went in with.
 func TestRenamingByTheFilenameAloneLeavesTheBytesAlone(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Old.md": "A measure.\n"})
+	c := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if err != nil {
@@ -252,7 +252,7 @@ func TestRenamingByTheFilenameAloneLeavesTheBytesAlone(t *testing.T) {
 // the file to do and nothing to report about it.
 func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Entropy.md", "Entropy")
 	if err != nil {
@@ -280,7 +280,7 @@ func TestAFileRenamedUnderFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T
 		"a block carrying an anchor":  "---\ntitle: &t Old\nalias: *t\n---\nA measure.\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := changeable(t, map[string]string{"Entropy.md": raw})
+			c := openChanging(t, map[string]string{"Entropy.md": raw})
 
 			if err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Entropy.md"); err != nil {
 				t.Fatalf("the file had already landed: %v", err)
@@ -294,7 +294,7 @@ func TestAFileRenamedUnderFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T
 
 func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"Old.md":     "---\ntitle: Old\n---\nA measure.\n",
 		"Entropy.md": "# Entropy\n",
 	})
@@ -331,7 +331,7 @@ func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) er
 // rest of the work goes.
 func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 	sulk := errors.New("the index would not have it")
 	rename := c.rename()
@@ -363,7 +363,7 @@ func TestRenamingRefusesATitleNoNoteCanBeGiven(t *testing.T) {
 		"a line break making a heading": "one\n# two",
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+			c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 			renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title)
 			if !errors.Is(err, note.ErrUnnameable) {
@@ -383,7 +383,7 @@ func TestRenamingRefusesATitleNoNoteCanBeGiven(t *testing.T) {
 // same thing.
 func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "  Entropy  ")
 	if err != nil {
@@ -404,7 +404,7 @@ func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
 // whole of it goes into the note, where the order of resolution finds it.
 func TestALongTitleIsCutFromTheNameAndKeptWhole(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Old.md": "A measure.\n"})
+	c := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
 	title := strings.TrimSpace(strings.Repeat("disorder ", 20))
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title)
@@ -429,7 +429,7 @@ func TestALongTitleIsCutFromTheNameAndKeptWhole(t *testing.T) {
 // repaired by the machinery a move already has.
 func TestRenamingRepairsALinkThatStoppedResolving(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
 	})
@@ -456,7 +456,7 @@ func TestRenamingRepairsALinkThatStoppedResolving(t *testing.T) {
 // reached is not.
 func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 	if _, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy"); !errors.Is(err, note.ErrNoNote) {
 		t.Errorf("want ErrNoNote for a note that is not there, got %v", err)
@@ -477,7 +477,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 // there is said to be missing rather than reported as the vault failing.
 func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
+	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.Remove{
 		Writers: filesystem.VaultWriters{},
 		Links:   c.db.Links(), Queries: c.db.SourcesKnown(), Index: c.index,
@@ -498,7 +498,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 		"neither, so the filename":   "A measure.\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := changeable(t, map[string]string{"physics/Old.md": raw})
+			c := openChanging(t, map[string]string{"physics/Old.md": raw})
 
 			renamed, err := c.rename().Execute(t.Context(), c.vault, "physics/Old.md", "Entropy")
 			if err != nil {
@@ -546,7 +546,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := changeable(t, map[string]string{"Old.md": c.raw})
+			v := openChanging(t, map[string]string{"Old.md": c.raw})
 
 			renamed, err := v.renameApart().Execute(t.Context(), v.vault, "Old.md", c.title)
 			if err != nil {
@@ -583,7 +583,7 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 		"told apart": changing.renameApart,
 	} {
 		t.Run(name, func(t *testing.T) {
-			v := changeable(t, map[string]string{"Old.md": "A measure.\n"})
+			v := openChanging(t, map[string]string{"Old.md": "A measure.\n"})
 
 			renamed, err := renaming(v).Execute(t.Context(), v.vault, "Old.md", "Entropy")
 			if err != nil {

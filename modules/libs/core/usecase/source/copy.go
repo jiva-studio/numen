@@ -21,8 +21,8 @@ type CopyResult struct {
 	// may be. Over the limit nothing is downloaded.
 	Bytes int64
 	Limit int64
-	// Existed is a copy that already stood, and nothing was downloaded.
-	Existed bool
+	// IsExisted is a copy that already stood, and nothing was downloaded.
+	IsExisted bool
 	// At is where in the vault the copy landed, and nothing where it landed in
 	// the application's own folder.
 	At string
@@ -59,10 +59,10 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	}
 	defer release()
 
-	if size, held, err := u.stands(ctx, v, store, hash, beside); err != nil {
+	if size, held, err := u.getExistingCopy(ctx, v, store, hash, beside); err != nil {
 		return res, err
 	} else if held {
-		res.Existed, res.Bytes, res.At = true, size, u.landing(beside)
+		res.IsExisted, res.Bytes, res.At = true, size, u.landing(beside)
 		return res, nil
 	}
 
@@ -89,7 +89,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 		u.Progress(0, meta.Bytes)
 		arriving = &passing{from: arriving, total: meta.Bytes, report: u.Progress}
 	}
-	size, err := u.takes(ctx, v, store, text.Copy(hash), beside, arriving)
+	size, err := u.writeCopy(ctx, v, store, text.Copy(hash), beside, arriving)
 	// The read end is closed before the download is waited for: whoever stopped
 	// reading unblocks whoever is writing into it.
 	_ = read.CloseWithError(err)
@@ -120,17 +120,17 @@ func CopyBeside(path string) string {
 // landing is where the copy is, as the vault names it, and nothing where it is
 // in the application's own folder.
 func (u ImportURL) landing(beside string) string {
-	if !u.ToVault {
+	if !u.IsToVault {
 		return ""
 	}
 	return beside
 }
 
-// stands says whether a copy is already here, and how large.
-func (u ImportURL) stands(
+// getExistingCopy says whether a copy is already here, and how large.
+func (u ImportURL) getExistingCopy(
 	ctx context.Context, v domain.Vault, store port.DerivedStore, hash, beside string,
 ) (int64, bool, error) {
-	if u.ToVault {
+	if u.IsToVault {
 		reader, err := u.Readers.Open(v)
 		if err != nil {
 			return 0, false, err
@@ -154,15 +154,15 @@ func (u ImportURL) stands(
 	return size, true, nil
 }
 
-// takes writes the copy where the settings say it lands, and answers how large
-// it came to.
+// writeCopy writes the copy where the settings say it lands, and answers how
+// large it came to.
 //
 // A copy in the vault is the person's file: the application does not replace
 // one that is there, and putting the folders above it right is the writer's.
-func (u ImportURL) takes(
+func (u ImportURL) writeCopy(
 	ctx context.Context, v domain.Vault, store port.DerivedStore, name, beside string, from io.Reader,
 ) (int64, error) {
-	if !u.ToVault {
+	if !u.IsToVault {
 		return store.Take(ctx, name, from)
 	}
 	writer, err := u.Writers.Open(v)

@@ -108,7 +108,7 @@ func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
 	if !strings.Contains(one.Body, "Birds go south") {
 		t.Errorf("body is %q", one.Body)
 	}
-	if one.Backlink {
+	if one.IsBacklink {
 		t.Error("the deck points at it, and the answer says otherwise")
 	}
 	if one.Outcome != note.Ok {
@@ -184,7 +184,7 @@ func TestANotePointingAtTheDeckIsNotOneTheDeckPointsAt(t *testing.T) {
 	if j.Notes[0].Path != "Migration.md" {
 		t.Fatalf("got %q", j.Notes[0].Path)
 	}
-	if !j.Notes[0].Backlink {
+	if !j.Notes[0].IsBacklink {
 		t.Error("a backlink was reported as something the deck points at")
 	}
 	if !strings.Contains(j.Notes[0].Body, "Worked at with") {
@@ -202,7 +202,7 @@ func TestANoteOnBothSidesIsNamedOnce(t *testing.T) {
 	if len(j.Notes) != 1 {
 		t.Fatalf("joined to %v", paths(j))
 	}
-	if j.Notes[0].Backlink {
+	if j.Notes[0].IsBacklink {
 		t.Error("a note on both sides is one the deck points at")
 	}
 }
@@ -266,7 +266,7 @@ func TestANameSeveralNotesAnswerToIsSaidToBeAmbiguous(t *testing.T) {
 	if len(j.Notes) != 1 {
 		t.Fatalf("joined to %v", paths(j))
 	}
-	if !j.Notes[0].Ambiguous {
+	if !j.Notes[0].IsAmbiguous {
 		t.Errorf("%q answers to a name two notes answer to and is not said to be ambiguous",
 			j.Notes[0].Path)
 	}

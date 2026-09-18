@@ -14,9 +14,9 @@ import (
 // NewURL is one address a caller wants a file made for: where it goes, and
 // whether the video at that address is wanted on this disk.
 type NewURL struct {
-	URL    string `json:"url" jsonschema:"the address to import, as a browser would go to it"`
-	Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
-	Copy   bool   `json:"copy,omitempty" jsonschema:"fetch the video itself onto this disk as well; a copy is large, so ask only when it is wanted"`
+	URL        string `json:"url" jsonschema:"the address to import, as a browser would go to it"`
+	Folder     string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
+	ShouldCopy bool   `json:"copy,omitempty" jsonschema:"fetch the video itself onto this disk as well; a copy is large, so ask only when it is wanted"`
 }
 
 // ImportOutcome is the file that now exists and what was fetched for it.
@@ -24,9 +24,9 @@ type ImportOutcome struct {
 	Path string `json:"path" jsonschema:"where the file stands in the vault; what it is called is what is at the address, once that is known"`
 	// Producer is what brought the text back, and Bytes how much of it there
 	// is. Both are empty where the address published none of what was asked for.
-	Producer string `json:"producer,omitempty" jsonschema:"what fetched the text: captions for a video's words, article for a page's prose"`
-	Bytes    int    `json:"bytes,omitempty" jsonschema:"how much text came back, in bytes"`
-	Nothing  bool   `json:"nothing,omitempty" jsonschema:"the address publishes none of what was asked for, which is an answer and not a failure"`
+	Producer  string `json:"producer,omitempty" jsonschema:"what fetched the text: captions for a video's words, article for a page's prose"`
+	Bytes     int    `json:"bytes,omitempty" jsonschema:"how much text came back, in bytes"`
+	IsNothing bool   `json:"nothing,omitempty" jsonschema:"the address publishes none of what was asked for, which is an answer and not a failure"`
 	// CopiedBytes is how large the copy is, and is nothing where none was asked
 	// for or the video was over the size the settings allow.
 	CopiedBytes int64  `json:"copied_bytes,omitempty" jsonschema:"how large the copy on this disk is"`
@@ -75,8 +75,8 @@ func addImportTool(server *sdk.Server, core Core) {
 			return nil, out, nil
 		}
 		out.Path, out.Producer = fetched.Path, fetched.Producer
-		out.Bytes, out.Nothing = fetched.Bytes, fetched.Nothing
-		if in.Copy {
+		out.Bytes, out.IsNothing = fetched.Bytes, fetched.IsNothing
+		if in.ShouldCopy {
 			out.CopiedBytes, out.CopyRefused = copyFiles(ctx, core, v, out.Path)
 		}
 		return nil, out, nil

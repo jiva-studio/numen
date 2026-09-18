@@ -95,7 +95,7 @@ const DELETE_TEXT: MenuItem = { id: 'deleteText', text: own.deleteText, group: G
 const DELETE_COPY: MenuItem = { id: 'deleteCopy', text: own.deleteCopy, group: GROUP.run }
 
 /** The run offered where this build can do it, and the file's own items alone where it cannot. */
-const runnable = (run: MenuItem, canRun: RunGuard): readonly MenuItem[] =>
+const getRunnable = (run: MenuItem, canRun: RunGuard): readonly MenuItem[] =>
   canRun(run.id) ? getFileMenu(run) : FILED
 
 /**
@@ -130,16 +130,16 @@ export type RunGuard = (run: string) => boolean
  */
 export const itemsFor = (
   on: MenuRow | null,
-  several: boolean,
+  hasSeveral: boolean,
   canRun: RunGuard,
 ): readonly MenuItem[] => {
   if (!on) return MADE
-  if (several) return SEVERAL
+  if (hasSeveral) return SEVERAL
   if (on.isFolder) return FILED
   if (on.source === 'note') return NOTE
   if (on.source === 'url') return urls(canRun)
-  if (on.source === 'recording') return runnable(TRANSCRIBE, canRun)
-  return on.source === 'book' ? runnable(RECOGNISE, canRun) : FILED
+  if (on.source === 'recording') return getRunnable(TRANSCRIBE, canRun)
+  return on.source === 'book' ? getRunnable(RECOGNISE, canRun) : FILED
 }
 
 /** What the menu offers anywhere. A choice outside this is not the menu's. */

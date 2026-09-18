@@ -154,7 +154,7 @@ export function standAt(row: Row, page: number): number | undefined {
 
 /**
  * How close a page may be drawn. One is a whole page in the viewport it is read
- * in, which is the furthest there is: a page smaller than the viewport it
+ * in, which is the getFurthest there is: a page smaller than the viewport it
  * stands in is room going to waste.
  */
 export const FURTHEST = 1

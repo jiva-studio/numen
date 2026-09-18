@@ -30,8 +30,8 @@ type folders struct {
 	known map[string]bool
 }
 
-// knows is whether this path was a folder when it was last there.
-func (f *folders) knows(path string) bool {
+// isKnownFolder is whether this path was a folder when it was last there.
+func (f *folders) isKnownFolder(path string) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.known[path]
@@ -79,11 +79,11 @@ func readShape(reader *VaultReader) (*folders, error) {
 	return f, why
 }
 
-// again reads the shape from the vault as it stands now. It answers for events
+// rereadShape reads the shape from the vault as it stands now. It answers for events
 // that were dropped, some of which may have made folders or taken them away.
 // A folder the walk could not enter is missing from the shape it returns; the
 // rescan that goes with this call already answers for it.
-func (f *folders) again() {
+func (f *folders) rereadShape() {
 	fresh, _ := readShape(f.reader)
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -128,7 +128,7 @@ func (f *folders) getConcernedPaths(absolute string) (paths []string, whole bool
 		if path != "." && f.reader.isSkipped(path, filepath.Base(absolute)) {
 			return nil, false, ""
 		}
-		if f.knows(path) {
+		if f.isKnownFolder(path) {
 			return nil, false, ""
 		}
 		// Remembered before the walk, so a second event about the same folder
@@ -136,12 +136,12 @@ func (f *folders) getConcernedPaths(absolute string) (paths []string, whole bool
 		f.learn(path)
 		return nil, false, absolute
 
-	case err != nil && f.knows(path):
+	case err != nil && f.isKnownFolder(path):
 		f.forget(path)
 		return nil, true, ""
 	}
 
-	if _, holds := f.reader.holds(path); !holds {
+	if _, holds := f.reader.getKind(path); !holds {
 		return nil, false, ""
 	}
 	return []string{path}, false, ""
@@ -184,7 +184,7 @@ func (f *folders) getPathsUnder(ctx context.Context, absolute string) (paths []s
 			f.learn(path)
 			return nil
 		}
-		if _, holds := f.reader.holds(path); holds {
+		if _, holds := f.reader.getKind(path); holds {
 			held = append(held, path)
 		}
 		return nil

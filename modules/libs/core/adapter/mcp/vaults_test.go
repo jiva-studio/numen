@@ -46,24 +46,24 @@ func (r *rows) getForgotten() []domain.VaultID {
 // folders is the person choosing a folder, as a test answers for them. The real
 // dialog is this machine's own and needs a window.
 type folders struct {
-	mu    sync.Mutex
-	pick  string
-	chose bool
-	title string
+	mu       sync.Mutex
+	pick     string
+	isChosen bool
+	title    string
 }
 
 func (f *folders) Choose(_ context.Context, title, _ string) (string, bool, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.title = title
-	return f.pick, f.chose, nil
+	return f.pick, f.isChosen, nil
 }
 
 // answers is what the dialog hands back to the call that put it up.
 func (f *folders) answers(path string, chose bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.pick, f.chose = path, chose
+	f.pick, f.isChosen = path, chose
 }
 
 // getTitle is what the person was told the dialog was for.
@@ -148,21 +148,21 @@ func folderNamed(t *testing.T, name string) string {
 // answered is the list as an agent is answered with it.
 type answered struct {
 	Vaults []struct {
-		ID      string `json:"id"`
-		Name    string `json:"name"`
-		Folder  string `json:"folder"`
-		Missing bool   `json:"missing"`
-		Showing bool   `json:"showing"`
+		ID        string `json:"id"`
+		Name      string `json:"name"`
+		Folder    string `json:"folder"`
+		IsMissing bool   `json:"missing"`
+		IsShowing bool   `json:"showing"`
 	} `json:"vaults"`
 }
 
 // joining is what an agent is answered with by vault_add.
 type joining struct {
-	Added  bool   `json:"added"`
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Folder string `json:"folder"`
-	Why    string `json:"why"`
+	IsAdded bool   `json:"added"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Folder  string `json:"folder"`
+	Why     string `json:"why"`
 }
 
 // getToolDescription is what a tool tells an agent about itself, which is as
@@ -213,11 +213,11 @@ func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
 	for _, one := range list.Vaults {
 		switch one.ID {
 		case string(f.first.ID):
-			if !one.Showing || one.Missing || one.Folder != f.first.Path {
+			if !one.IsShowing || one.IsMissing || one.Folder != f.first.Path {
 				t.Errorf("the vault in front is answered as %+v", one)
 			}
 		case string(f.second.ID):
-			if one.Showing || !one.Missing || one.Name != f.second.Name {
+			if one.IsShowing || !one.IsMissing || one.Name != f.second.Name {
 				t.Errorf("the vault whose folder is gone is answered as %+v", one)
 			}
 		default:
@@ -234,7 +234,7 @@ func TestAddingWithNoPathAsksThePersonAndAddsWhatTheyChose(t *testing.T) {
 	session := newSessionOver(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})
-	if !out.Added || out.Folder != chosen || out.Name != "three" {
+	if !out.IsAdded || out.Folder != chosen || out.Name != "three" {
 		t.Fatalf("the vault added is %+v", out)
 	}
 	if f.dialog.getTitle() == "" {
@@ -271,13 +271,13 @@ func TestAFolderDialogThePersonClosedAddsNothingAndSaysSo(t *testing.T) {
 	session := newSessionOver(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})
-	if out.Added || out.ID != "" {
+	if out.IsAdded || out.ID != "" {
 		t.Fatalf("something was added: %+v", out)
 	}
 	if !strings.Contains(out.Why, "picker") {
 		t.Errorf("the answer says %q", out.Why)
 	}
-	held, err := f.registry.All()
+	held, err := f.registry.List()
 	if err != nil || len(held) != 2 {
 		t.Errorf("the list holds %v: %v", held, err)
 	}
@@ -309,7 +309,7 @@ func TestAFilesystemRootAndAHomeDirectoryAreRefused(t *testing.T) {
 			t.Errorf("%s was made into a vault before it was refused", root)
 		}
 	}
-	held, err := f.registry.All()
+	held, err := f.registry.List()
 	if err != nil || len(held) != 2 {
 		t.Errorf("the list holds %v: %v", held, err)
 	}
@@ -373,10 +373,10 @@ func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
 	session := newSessionOver(t, f.core)
 
 	out := call[struct {
-		Forgotten bool   `json:"forgotten"`
-		Folder    string `json:"folder"`
+		IsForgotten bool   `json:"forgotten"`
+		Folder      string `json:"folder"`
 	}](t, session, "vault_forget", map[string]any{"vault": f.second.ID})
-	if !out.Forgotten || out.Folder != f.second.Path {
+	if !out.IsForgotten || out.Folder != f.second.Path {
 		t.Fatalf("the vault forgotten is %+v", out)
 	}
 	if _, err := os.Stat(f.second.Path); err != nil {
@@ -399,14 +399,14 @@ func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 	session := newSessionOver(t, f.core)
 
 	call[struct {
-		Forgotten bool `json:"forgotten"`
+		IsForgotten bool `json:"forgotten"`
 	}](t, session, "vault_forget", map[string]any{"vault": f.second.ID})
 
 	why := getRefusal(t, session, "vault_forget", map[string]any{"vault": f.first.ID})
 	if !strings.Contains(why, "only vault") {
 		t.Errorf("the last vault was refused with %q", why)
 	}
-	held, err := f.registry.All()
+	held, err := f.registry.List()
 	if err != nil || len(held) != 1 {
 		t.Errorf("the list holds %v: %v", held, err)
 	}
@@ -427,10 +427,10 @@ func TestOpeningAVaultMovesTheWindowToIt(t *testing.T) {
 	session := newSessionOver(t, f.core)
 
 	out := call[struct {
-		Opening bool   `json:"opening"`
-		Doing   string `json:"doing"`
+		IsOpening bool   `json:"opening"`
+		Doing     string `json:"doing"`
 	}](t, session, "vault_open", map[string]any{"vault": f.second.Name})
-	if !out.Opening || !strings.Contains(out.Doing, f.second.Name) {
+	if !out.IsOpening || !strings.Contains(out.Doing, f.second.Name) {
 		t.Fatalf("the answer is %+v", out)
 	}
 

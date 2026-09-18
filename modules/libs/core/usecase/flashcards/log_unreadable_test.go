@@ -28,7 +28,7 @@ func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a file nobody may open refused the whole history: %v", err)
 	}
-	if !ran.Shut || ran.Skipped != 1 || len(ran.Answers) != 0 {
+	if !ran.IsUnreadable || ran.Skipped != 1 || len(ran.Answers) != 0 {
 		t.Errorf("the run came back as %+v", ran)
 	}
 }
@@ -42,7 +42,7 @@ func TestARunTakenAwayBeforeItWasReadIsNoRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a file that was gone refused the whole history: %v", err)
 	}
-	if !ran.Gone || ran.Skipped != 0 {
+	if !ran.IsGone || ran.Skipped != 0 {
 		t.Errorf("the run came back as %+v", ran)
 	}
 }
@@ -66,7 +66,7 @@ func TestARunHeldByAnotherProgramIsOneSkippedRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a file another program holds refused the whole history: %v", err)
 	}
-	if !ran.Shut || ran.Skipped != 1 || len(ran.Answers) != 0 {
+	if !ran.IsUnreadable || ran.Skipped != 1 || len(ran.Answers) != 0 {
 		t.Errorf("the run came back as %+v", ran)
 	}
 }

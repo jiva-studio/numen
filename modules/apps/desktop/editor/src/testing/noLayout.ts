@@ -10,7 +10,7 @@
  * takes up no room.
  */
 
-const nowhere = (): DOMRect => new DOMRect(0, 0, 0, 0)
+const createEmptyRect = (): DOMRect => new DOMRect(0, 0, 0, 0)
 
 /** An empty list of boxes, in the shape the DOM hands one over in. */
 const noBoxes = (): DOMRectList => {
@@ -19,5 +19,5 @@ const noBoxes = (): DOMRectList => {
   return Object.assign(list, { item }) as unknown as DOMRectList
 }
 
-Range.prototype.getBoundingClientRect = nowhere
+Range.prototype.getBoundingClientRect = createEmptyRect
 Range.prototype.getClientRects = noBoxes

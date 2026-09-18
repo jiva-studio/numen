@@ -52,9 +52,9 @@ type Parameters struct {
 	// Floor is how near the query a passage stands to be an answer at all. It
 	// is read only by the meaning half; the words half has no distance.
 	Floor float64
-	// Growing says the last word typed may still be being typed, so the index
+	// IsGrowing says the last word typed may still be being typed, so the index
 	// matches it by its opening. A question that is finished is asked exactly.
-	Growing bool
+	IsGrowing bool
 	// Kinds are the kinds of source the question is about. None is every kind,
 	// which is what a question that says nothing about the sort of file it
 	// wants asks for.
@@ -94,7 +94,7 @@ type Search struct {
 	derived      port.DerivedStores
 	documents    port.TextExtractor
 	floor        float64
-	errorHandler func(error)
+	errorHandler port.ErrorHandler
 }
 
 // New is a search over one vault's index.
@@ -109,7 +109,7 @@ type Search struct {
 //
 // `errorHandler` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, errorHandler func(error)) Search {
+func New(passages port.PassageQueries, readers port.VaultReaders, derived port.DerivedStores, documents port.TextExtractor, embedder port.Embedder, floor float64, errorHandler port.ErrorHandler) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
@@ -141,7 +141,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 
 	var rankings [][]domain.Passage
 	if p.Lexical > 0 {
-		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.Growing)
+		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	var named []domain.Passage
 	if p.Named > 0 {
-		found, err := u.passages.GetNamedPassages(ctx, v.ID, query, p.Kinds, p.Named, p.Growing)
+		found, err := u.passages.GetNamedPassages(ctx, v.ID, query, p.Kinds, p.Named, p.IsGrowing)
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +157,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 		rankings = append(rankings, named)
 	}
 	if p.Dense > 0 && u.embedder != nil {
-		dense, err := u.nearest(ctx, v, query, p)
+		dense, err := u.findNearest(ctx, v, query, p)
 		switch {
 		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 			return nil, err
@@ -179,8 +179,8 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 // meaning having nothing to ask with.
 var errNoVector = errors.New("the query was not turned into a vector")
 
-// nearest is the search asked by meaning, over a vector of the query itself.
-func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
+// findNearest is the search asked by meaning, over a vector of the query itself.
+func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
 	vectors, err := u.embedder.Embed(ctx, []string{query})
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errNoVector, err)
@@ -191,7 +191,7 @@ func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Par
 	// A vector is kept under the recipe it was made by, which is everything
 	// about the model that decides what a vector is. Asked under anything else,
 	// no vector is found and this half answers nothing at all.
-	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Kinds, p.Dense, p.Floor)
+	return u.passages.FindNearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Kinds, p.Dense, p.Floor)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a
@@ -261,7 +261,7 @@ var errUnreadable = errors.New("nothing could be read from the source")
 // Which reader produces it is decided in one place, so that what a search slices
 // and what an extractor cut are the same text.
 func extractText(ctx context.Context, reader text.Reader, path, from, hash string) (string, error) {
-	doc, err := reader.Of(ctx, path, from, hash)
+	doc, err := reader.GetDocument(ctx, path, from, hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		return "", errUnreadable
 	}
@@ -329,7 +329,7 @@ const (
 // to run. Every mode but the one named is silenced, so a caller drawing them
 // apart is shown one of them and not one and a half.
 func GetTypingParameters(mode Mode, limit int) Parameters {
-	p := Parameters{Limit: limit, Growing: true}.fill()
+	p := Parameters{Limit: limit, IsGrowing: true}.fill()
 	switch mode {
 	case Lexical:
 		p.Dense, p.Named = 0, 0

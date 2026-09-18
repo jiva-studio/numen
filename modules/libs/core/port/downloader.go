@@ -50,8 +50,8 @@ type Metadata struct {
 	// Automatic those a machine wrote, both as the site names them. They are
 	// two lists because they are worth different amounts: a person's words are
 	// what was said, and a machine's are what a machine heard.
-	Captions  []string
-	Automatic []string
+	Captions    []string
+	IsAutomatic []string
 }
 
 // Downloader is the conversation: what is at this address, and what of it can
@@ -87,8 +87,8 @@ type Downloader interface {
 // answers by refusing. Which one that is, the provider picks by these. A site
 // publishing prose has one text and ignores them.
 type PreferredCaptions struct {
-	Languages []string
-	Automatic bool
+	Languages   []string
+	IsAutomatic bool
 }
 
 // Text is what an address publishes as words.

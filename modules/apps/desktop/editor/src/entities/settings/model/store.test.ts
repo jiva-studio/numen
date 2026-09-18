@@ -20,7 +20,7 @@ const MODELS: readonly Model[] = [
     name: 'opus',
     title: 'opus',
     shelf: '',
-    byDefault: false,
+    isDefault: false,
     writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
     presence: 'nothing to fetch',
   },

@@ -190,7 +190,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	near := func(vault domain.Vault, seed byte) []domain.Passage {
-		matches, err := queries.Nearest(ctx, vault.ID, "model", direction(seed), nil, 10, search.DefaultFloor)
+		matches, err := queries.FindNearest(ctx, vault.ID, "model", direction(seed), nil, 10, search.DefaultFloor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -257,7 +257,7 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
-	dense, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	dense, err := queries.FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -315,7 +315,7 @@ func TestAPassageSaysWhatItWasReadOutOf(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dense, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	dense, err := queries.FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -497,7 +497,7 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkQueries().Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	matches, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -734,14 +734,14 @@ func TestTheChildKeyOfAChunkIsIndexed(t *testing.T) {
 	db := openDB(t)
 
 	for column, want := range map[string]string{"parent_id": "chunks_by_parent", "source_id": "chunks_by_source"} {
-		if !leads(ctx, t, db, "chunks", column) {
+		if !hasLeadingColumn(ctx, t, db, "chunks", column) {
 			t.Errorf("no index of chunks leads with %s, so %s is missing", column, want)
 		}
 	}
 }
 
-// leads says some index of a table has the column first.
-func leads(ctx context.Context, t *testing.T, db *DB, table, column string) bool {
+// hasLeadingColumn says some index of a table has the column first.
+func hasLeadingColumn(ctx context.Context, t *testing.T, db *DB, table, column string) bool {
 	t.Helper()
 	rows, err := db.read.QueryContext(ctx,
 		`SELECT i.name FROM pragma_index_list(?) i
@@ -916,7 +916,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 	queries := db.ChunkQueries()
 
-	far, err := queries.Nearest(ctx, first.ID, "model", direction(0xff), nil, 10, search.DefaultFloor)
+	far, err := queries.FindNearest(ctx, first.ID, "model", direction(0xff), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -925,7 +925,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	}
 
 	// The same vault, asked what it does hold.
-	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	near, err := queries.FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -961,7 +961,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	near, err := db.ChunkQueries().Nearest(ctx, first.ID, "model", direction(0xff), nil, 1, search.DefaultFloor)
+	near, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", direction(0xff), nil, 1, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1063,7 +1063,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 	// The coarse pass answers, because the bits are there. What is asked of it
 	// afterwards is the model's own, and this vector is another model's.
-	near, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, 0.5)
+	near, err := queries.FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1072,7 +1072,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	}
 
 	// Asked of the model that made them, the same rows answer.
-	its, err := queries.Nearest(ctx, first.ID, "another-model", direction(0x00), nil, 10, 0.5)
+	its, err := queries.FindNearest(ctx, first.ID, "another-model", direction(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}

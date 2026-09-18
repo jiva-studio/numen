@@ -27,7 +27,7 @@ interface Knobs {
   /** What the node is to a gesture. One setting, because it is one of these. */
   gestureRole: GestureRole
   /** Fill the icon slot. What goes in it is the application's, not the plex's. */
-  icon: boolean
+  hasIcon: boolean
 
   onActivate: () => void
   onShow: (showing: PlexDestination) => void
@@ -91,7 +91,7 @@ const renderScene =
             @reach="args.onReach"
             @ask="args.onAsk"
           >
-            <template v-if="args.icon" #icon><span v-html="glyph" /></template>
+            <template v-if="args.hasIcon" #icon><span v-html="glyph" /></template>
           </PlexNodeView>
         </svg>
       </div>
@@ -134,7 +134,7 @@ const meta: Meta<Knobs> = {
     width: range(64, 320, 4),
     height: range(20, 96, 2),
     opacity: range(0, 1, 0.05),
-    icon: { control: 'boolean' },
+    hasIcon: { control: 'boolean' },
     gestureRole: { control: 'select', options: ROLES },
 
     onActivate: { table: { disable: true } },
@@ -149,7 +149,7 @@ const meta: Meta<Knobs> = {
     width: 144,
     height: 36,
     opacity: 1,
-    icon: false,
+    hasIcon: false,
     gestureRole: 'open',
     onActivate: fn(),
     onShow: fn(),
@@ -190,7 +190,7 @@ export const EverySeat: Story = {
     ],
     { width: 560, height: 240 },
   ),
-  args: { icon: true },
+  args: { hasIcon: true },
   play: async ({ canvasElement }) => {
     const ink = (name: string) => {
       const node = canvasElement.querySelector(`[aria-label^="${name}"]`)

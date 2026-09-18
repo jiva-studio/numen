@@ -96,8 +96,8 @@ func (r RetentionByDay) GetShare(day int) (float64, bool) {
 // Days is every day this answers for, in order.
 func (r RetentionByDay) Days() []int { return slices.Sorted(maps.Keys(r.on)) }
 
-// holds the share one day came to.
-func (r *RetentionByDay) holds(day int, share float64) {
+// add records the share one day came to.
+func (r *RetentionByDay) add(day int, share float64) {
 	if r.on == nil {
 		r.on = make(map[int]float64)
 	}
@@ -252,7 +252,7 @@ func (s Simulation) Run(
 			falls[day] = append(falls[day], i)
 		}
 	}
-	reckoned := reckons(p, cards, open)
+	reckoned := newLearnedCount(p, cards, open)
 	out.Learned = reckoned.count
 	// A run opening with the whole material learned has nothing left to learn.
 	if out.Learns == NeverLearns && out.Learned == out.Faces {
@@ -297,7 +297,7 @@ func (s Simulation) Run(
 		// standing: what the day before did not reach, and what falls due in
 		// this one.
 		slices.SortFunc(falls[today], func(a, b int) int { return older(cards[a], cards[b]) })
-		spare = merges(spare[:0], due[take:], falls[today], cards)
+		spare = merge(spare[:0], due[take:], falls[today], cards)
 		due, spare = spare, due
 		take = 0
 		clear(shown)
@@ -446,7 +446,7 @@ func (s Simulation) Run(
 			out.Clears = len(out.Load)
 		}
 		if answers[today] {
-			out.Retained.holds(today, back)
+			out.Retained.add(today, back)
 		}
 		open = ends
 	}
@@ -467,12 +467,12 @@ func (s Simulation) Run(
 	return out, nil
 }
 
-// merges puts what a day before did not reach and what falls due in this one
+// merge puts what a day before did not reach and what falls due in this one
 // into one run, the card face owed longest first.
 //
 // Both are in that order already, so a day sees the whole of what it owes for
 // the cost of what it owes.
-func merges(into, carried, fell []int, cards []Schedule) []int {
+func merge(into, carried, fell []int, cards []Schedule) []int {
 	a, b := 0, 0
 	for a < len(carried) && b < len(fell) {
 		if older(cards[carried[a]], cards[fell[b]]) <= 0 {
@@ -495,19 +495,19 @@ func merges(into, carried, fell []int, cards []Schedule) []int {
 // face the day answered. Under a rule of a chance of recall it is a fact about
 // the instant, and is read off the same number as the share that comes back.
 type learnedCount struct {
-	preset  Preset
-	carried bool
-	target  float64
-	learned []bool
-	count   int
+	preset    Preset
+	isCarried bool
+	target    float64
+	learned   []bool
+	count     int
 }
 
-// reckons opens the count over the card faces a run begins with, at the instant
-// it opens on.
-func reckons(p Preset, cards []Schedule, at time.Time) *learnedCount {
+// newLearnedCount opens the count over the card faces a run begins with, at the
+// instant it opens on.
+func newLearnedCount(p Preset, cards []Schedule, at time.Time) *learnedCount {
 	rule, _, retention := p.getLearnedRule()
-	out := &learnedCount{preset: p, carried: rule == RuleInterval, target: retention}
-	if out.carried {
+	out := &learnedCount{preset: p, isCarried: rule == RuleInterval, target: retention}
+	if out.isCarried {
 		out.learned = make([]bool, len(cards))
 	}
 	for i, c := range cards {
@@ -515,7 +515,7 @@ func reckons(p Preset, cards []Schedule, at time.Time) *learnedCount {
 			continue
 		}
 		out.count++
-		if out.carried {
+		if out.isCarried {
 			out.learned[i] = true
 		}
 	}
@@ -524,7 +524,7 @@ func reckons(p Preset, cards []Schedule, at time.Time) *learnedCount {
 
 // countAnswer carries one card face the day has answered.
 func (r *learnedCount) countAnswer(card int, c Schedule, at time.Time) {
-	if !r.carried {
+	if !r.isCarried {
 		return
 	}
 	stands := r.preset.IsLearned(c, at)
@@ -541,7 +541,7 @@ func (r *learnedCount) countAnswer(card int, c Schedule, at time.Time) {
 
 // countBegun carries one card face the day has begun.
 func (r *learnedCount) countBegun(c Schedule, at time.Time) {
-	if !r.carried {
+	if !r.isCarried {
 		return
 	}
 	stands := r.preset.IsLearned(c, at)
@@ -551,9 +551,9 @@ func (r *learnedCount) countBegun(c Schedule, at time.Time) {
 	}
 }
 
-// closes is how many card faces stand learned at this instant, and what share of
-// the material comes back at it where the day is one the run answers for. A card
-// face nobody has begun comes back to nobody, and counts in the material.
+// finish is how many card faces stand learned at this instant, and what share
+// of the material comes back at it where the day is one the run answers for. A
+// card face nobody has begun comes back to nobody, and counts in the material.
 //
 // A carried count is a fact about a card face's schedule, so the walk over the
 // whole material is made on the days the share is wanted. A count read off the
@@ -561,7 +561,7 @@ func (r *learnedCount) countBegun(c Schedule, at time.Time) {
 func (r *learnedCount) countLearned(
 	cards []Schedule, at time.Time, faces int, wanted bool,
 ) (int, float64) {
-	if r.carried {
+	if r.isCarried {
 		if !wanted || faces == 0 {
 			return r.count, 0
 		}

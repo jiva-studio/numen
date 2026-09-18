@@ -10,8 +10,8 @@ import (
 // machine. It opens nothing and fetches nothing, so it is answered while a
 // transcription is fetching what it needs.
 func Ready(cfg Config) bool {
-	cfg.Download = false
-	if !onnxruntime.Here(cfg.settings()) {
+	cfg.ShouldDownload = false
+	if !onnxruntime.IsHere(cfg.settings()) {
 		return false
 	}
 	var found paths

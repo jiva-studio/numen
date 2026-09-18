@@ -41,7 +41,7 @@ func (c changing) openNote(t *testing.T, path string) *note.LastRead {
 // no identifier, so such a note is saveable.
 func TestSavingANoteWhoseFrontmatterIsWrittenOnOneLine(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"Ideas.md": "---\ntags: [draft, idea]\n---\n# Ideas\n",
 	})
 
@@ -70,7 +70,7 @@ func TestSavingANoteWhoseFrontmatterIsWrittenOnOneLine(t *testing.T) {
 func TestASaveOverANoteWhoseFrontmatterNeverClosesIsRefused(t *testing.T) {
 	t.Parallel()
 	half := "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\ntitle: Heat death\n"
-	c := changeable(t, map[string]string{"Heat.md": half})
+	c := openChanging(t, map[string]string{"Heat.md": half})
 
 	_, err := c.newWrite().Save(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", nil)
 	if !errors.Is(err, note.ErrUnterminated) {
@@ -84,7 +84,7 @@ func TestASaveOverANoteWhoseFrontmatterNeverClosesIsRefused(t *testing.T) {
 // A note renamed or removed under an open tab is put back where it was opened.
 func TestSavingANoteThatIsNotThereMakesIt(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	if _, err := c.newWrite().Save(t.Context(), c.vault, "physics/Heat.md", "# Heat\n", nil); err != nil {
 		t.Fatal(err)
@@ -99,7 +99,7 @@ func TestSavingANoteThatIsNotThereMakesIt(t *testing.T) {
 // tab that was reading it puts it back where it opened it.
 func TestASaveRemakesANoteDeletedUnderIt(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	seen := c.openNote(t, "Entropy.md")
 	if err := os.Remove(filepath.Join(c.vault.Path, "Entropy.md")); err != nil {
 		t.Fatal(err)
@@ -117,7 +117,7 @@ func TestASaveRemakesANoteDeletedUnderIt(t *testing.T) {
 // person is asked. Nothing is written.
 func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	seen := c.openNote(t, "Entropy.md")
 
 	// Somebody else gets there first, between the tab's read and its save.
@@ -139,7 +139,7 @@ func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {
 // against nothing.
 func TestASaveThatComparesNothingLands(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	if err := os.WriteFile(
 		filepath.Join(c.vault.Path, "Entropy.md"), []byte("# Entropy\n\nTheirs.\n"), 0o644,
 	); err != nil {
@@ -158,7 +158,7 @@ func TestASaveThatComparesNothingLands(t *testing.T) {
 // given a new level-one heading at the keyboard stays in the file it is in.
 func TestSavingANewHeadingLeavesTheFileWhereItIs(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	seen := c.openNote(t, "Entropy.md")
 
 	if _, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "# Disorder\n", seen); err != nil {
@@ -182,7 +182,7 @@ func TestSavingANewHeadingLeavesTheFileWhereItIs(t *testing.T) {
 // person whose vault is in a synchronised folder.
 func TestTheSameBytesWrittenAgainAreNotAChange(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	seen := c.openNote(t, "Entropy.md")
 	on := filepath.Join(c.vault.Path, "Entropy.md")
 
@@ -211,7 +211,7 @@ func TestTheSameBytesWrittenAgainAreNotAChange(t *testing.T) {
 // it.
 func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	saving := c.newWrite()
 	seen := c.openNote(t, "Entropy.md")
 
@@ -237,7 +237,7 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 // follows it.
 func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 	})
@@ -275,8 +275,8 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 // the vault it was given and reaches no other.
 func TestTwoVaultsHoldTheirOwnSaves(t *testing.T) {
 	t.Parallel()
-	first := changeable(t, map[string]string{"Note.md": "# Note\n\nthermodynamics\n"})
-	second := changeable(t, map[string]string{"Note.md": "# Note\n\nredshift\n"})
+	first := openChanging(t, map[string]string{"Note.md": "# Note\n\nthermodynamics\n"})
+	second := openChanging(t, map[string]string{"Note.md": "# Note\n\nredshift\n"})
 
 	if _, err := first.newWrite().Save(
 		t.Context(), first.vault, "Note.md", "# Note\n\nentropy\n", first.openNote(t, "Note.md"),
@@ -309,7 +309,7 @@ func TestTwoVaultsHoldTheirOwnSaves(t *testing.T) {
 // written while the save is reading, and it is in the file afterwards.
 func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n\nWhat was there.\n",
 	})
@@ -396,7 +396,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	t.Parallel()
 	// A note its filename names is called by the one it lands under, so the link
 	// written as the path it had is the link the move mends.
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Heat.md": "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n" +
 			"# Heat\n\nWhat was there.\n",
@@ -480,7 +480,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 // and the file at the other end is what changed.
 func TestSavingThroughALinkLeavesTheLink(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"notes/Real.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"notes/Real.md": "# Entropy\n"})
 	link := filepath.Join(c.vault.Path, "Entropy.md")
 	if err := os.Symlink(filepath.Join("notes", "Real.md"), link); err != nil {
 		t.Fatal(err)
@@ -506,7 +506,7 @@ func TestSavingThroughALinkLeavesTheLink(t *testing.T) {
 // saveable from a tab that holds none of that growth.
 func TestSavingMoreTextThanANoteHolds(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), nil)
 	if !errors.Is(err, note.ErrTooLarge) {
@@ -521,7 +521,7 @@ func TestSavingMoreTextThanANoteHolds(t *testing.T) {
 // accepted is a note the read opens. The frontmatter is part of the file.
 func TestANoteIsWrittenNoLargerThanItCanBeRead(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{
+	c := openChanging(t, map[string]string{
 		"Entropy.md": "---\ntags: [physics, thermodynamics]\n---\n# Entropy\n",
 	})
 
@@ -545,7 +545,7 @@ func TestANoteIsWrittenNoLargerThanItCanBeRead(t *testing.T) {
 // disk through carries that bound. One that carries none is held to MaxBytes.
 func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Mammals.md": "# Mammals\n"})
+	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
 
 	body := strings.Repeat("x", note.MaxBytes+1)
 
@@ -569,7 +569,7 @@ func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 // save is held to.
 func TestWritingMoreTextThanANoteHolds(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.newWrite().Execute(
 		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.Fingerprint{})
@@ -584,7 +584,7 @@ func TestWritingMoreTextThanANoteHolds(t *testing.T) {
 // Create writes a whole note in one go, and is held to the same bound.
 func TestCreatingMoreTextThanANoteHolds(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, nil)
+	c := openChanging(t, nil)
 
 	made, err := c.create().Execute(t.Context(), c.vault, note.NewNote{
 		Title: "Entropy", Body: strings.Repeat("x", note.MaxBytes+1),
@@ -605,7 +605,7 @@ func TestCreatingMoreTextThanANoteHolds(t *testing.T) {
 // index; only the second is a note somebody may be looking at.
 func TestARefreshTellsAFileTheVaultLeavesAloneFromANoteThatVanished(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	if err := os.WriteFile(filepath.Join(c.vault.Path, "photo.png"), []byte("not a note"), 0o644); err != nil {
 		t.Fatal(err)
 	}

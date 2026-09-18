@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
 	"strconv"
 
@@ -53,11 +54,11 @@ func (a *API) GetBook(
 	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
 	defer cancel()
 
-	reader, print, err := a.stat(ctx, r.Msg.GetPath())
+	reader, mark, err := a.stat(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	read, err := a.book(ctx, reader, print)
+	read, err := a.book(ctx, reader, mark)
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
@@ -67,7 +68,7 @@ func (a *API) GetBook(
 		PageCount:   int32(read.PageCount()),
 		TextBytes:   int32(len(read.Text)),
 		PageBytes:   int32(read.PageBytes()),
-		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
+		Fingerprint: &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime},
 	}
 	for _, doc := range read.Documents[:min(len(read.Documents), mostListed)] {
 		out.Documents = append(out.Documents, &v1.SpineDocument{
@@ -101,14 +102,14 @@ func (a *API) ReadBookMarkup(
 	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
 	defer cancel()
 
-	reader, print, err := a.stat(ctx, r.Msg.GetPath())
+	reader, mark, err := a.stat(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	if seen := r.Msg.GetSeen(); seen != nil && (seen.GetSize() != print.size || seen.GetMtime() != print.mtime) {
+	if seen := r.Msg.GetSeen(); seen != nil && (seen.GetSize() != mark.Size || seen.GetMtime() != mark.Mtime) {
 		return nil, connect.NewError(connect.CodeNotFound, errChanged)
 	}
-	read, err := a.book(ctx, reader, print)
+	read, err := a.book(ctx, reader, mark)
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
@@ -135,16 +136,16 @@ func (a *API) Entry(w http.ResponseWriter, r *http.Request, path, entry string) 
 	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
 	defer cancel()
 
-	reader, print, err := a.stat(ctx, path)
+	reader, mark, err := a.stat(ctx, path)
 	if err != nil {
 		refuse(w, err)
 		return
 	}
-	if named.size != print.size || named.mtime != print.mtime {
+	if named.Size != mark.Size || named.Mtime != mark.Mtime {
 		refuse(w, errChanged)
 		return
 	}
-	read, err := a.book(ctx, reader, print)
+	read, err := a.book(ctx, reader, mark)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -175,10 +176,10 @@ func (a *API) Entry(w http.ResponseWriter, r *http.Request, path, entry string) 
 func (a *API) book(
 	ctx context.Context,
 	reader port.VaultReader,
-	print fingerprint,
+	mark pool.Fingerprint,
 ) (*epub.Book, error) {
-	return a.Viewer.read.Load().take(ctx, print, func() (*epub.Book, error) {
-		raw, err := reader.Read(context.WithoutCancel(ctx), print.path)
+	return a.Viewer.read.Load().Take(ctx, mark, func() (*epub.Book, error) {
+		raw, err := reader.Read(context.WithoutCancel(ctx), mark.Path)
 		if err != nil {
 			return nil, err
 		}

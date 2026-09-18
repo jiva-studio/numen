@@ -28,11 +28,11 @@ const vault = (
   answers: {
     error?: ErrorCode
     problems?: readonly DeckProblem[]
-    changed?: boolean
+    isChanged?: boolean
     /** What renaming a field comes back with, where a test wants another answer. */
     renaming?: FieldRenameResult
     /** The vault is out of reach, and a read of the stencil reaches nothing. */
-    unreachable?: boolean
+    isUnreachable?: boolean
     /** What a write of the stencil is refused for. */
     wrote?: ErrorCode
   } = {},
@@ -64,7 +64,7 @@ const vault = (
     readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
     writeDeck: async () => asValue({ at: '' }),
     readStencil: async (path) => {
-      if (answers.unreachable) throw new Error('out of reach')
+      if (answers.isUnreachable) throw new Error('out of reach')
       if (answers.error) return asFailure(answers.error)
       return asValue({
         stencil: {
@@ -84,7 +84,7 @@ const vault = (
         `${path} ${wrote.join(', ') || '—'} | ${drew.faces.map((one) => one.back).join(' ')}`,
       )
       if (answers.wrote) return asFailure(answers.wrote)
-      if (answers.changed) return asFailure('changed' as const)
+      if (answers.isChanged) return asFailure('changed' as const)
       fields = wrote
       faces = drew.faces
       return asValue({ at: 'written' })
@@ -271,7 +271,7 @@ describe('a field carried in a stencil', () => {
 
 describe('a stencil whose file moved past what was read', () => {
   it('is stale once the write comes back saying the file changed', async () => {
-    const { stencils, tab } = await open({ changed: true })
+    const { stencils, tab } = await open({ isChanged: true })
 
     tab.addField('Weight')
     await stencils.flush()
@@ -280,7 +280,7 @@ describe('a stencil whose file moved past what was read', () => {
   })
 
   it('keeps what the person wrote when they say so', async () => {
-    const { stencils, tab, written } = await open({ changed: true })
+    const { stencils, tab, written } = await open({ isChanged: true })
 
     tab.addField('Weight')
     await stencils.flush()
@@ -306,7 +306,7 @@ describe('a stencil the vault refused', () => {
   })
 
   it('says the vault could not be reached, where the read reached nothing', async () => {
-    const { tab } = await open({ unreachable: true })
+    const { tab } = await open({ isUnreachable: true })
 
     expect(tab.errorMessage.value).toBe(words.unreachable)
   })

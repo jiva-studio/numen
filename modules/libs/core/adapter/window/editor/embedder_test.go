@@ -54,32 +54,32 @@ func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
 	embedding.Indexing = embedding.Indexing.SetService(service)
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
-	opened, err := editor.Open(
+	installation, err := editor.Open(
 		t.Context(), editor.NewAssembly(t, vault(t, embedding)), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = opened.Close() })
+	t.Cleanup(func() { _ = installation.Close() })
 
-	if opened.Embedder == nil {
+	if installation.Embedder == nil {
 		t.Fatal("the vault opened with no embedder on hand")
 	}
-	if got := opened.Embedder.Model().Name; got != "asked-for" {
+	if got := installation.Embedder.Model().Name; got != "asked-for" {
 		t.Errorf("got %q", got)
 	}
 }
 
 // An installation with no model opens, and says so by having none.
 func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
-	opened, err := editor.Open(
+	installation, err := editor.Open(
 		t.Context(), editor.NewAssembly(t, vault(t, embed.Config{})), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = opened.Close() })
+	t.Cleanup(func() { _ = installation.Close() })
 
-	if opened.Embedder != nil {
-		t.Errorf("got an embedder: %v", opened.Embedder.Model())
+	if installation.Embedder != nil {
+		t.Errorf("got an embedder: %v", installation.Embedder.Model())
 	}
 }
 
@@ -89,26 +89,26 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 func TestAVaultSaysWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	cfg := vault(t, embed.Config{})
 
-	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
+	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = opened.Close() })
+	t.Cleanup(func() { _ = installation.Close() })
 
 	// Said before the reading goroutine starts, so a window that opens on a
 	// fresh vault is shown the walk from its first moment.
-	list := opened.API.Window.Tasking.List()
+	list := installation.API.Window.Tasking.List()
 	if len(list) != 1 {
 		t.Errorf("a vault just opened is doing %+v, want the walk of its notes", list)
 	}
 	// Nobody asked for it, so it is drawn once it has lasted.
 	for _, at := range list {
-		if at.Asked {
+		if at.IsAsked {
 			t.Errorf("%q says a person asked for it", at.Doing)
 		}
 	}
 
 	// Each pass takes itself out when it ends, so a vault that has been read
 	// says it is doing nothing.
-	testsupport.WaitFor(t, func() bool { return len(opened.API.Window.Tasking.List()) == 0 })
+	testsupport.WaitFor(t, func() bool { return len(installation.API.Window.Tasking.List()) == 0 })
 }

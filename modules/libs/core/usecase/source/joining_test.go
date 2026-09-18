@@ -12,14 +12,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 )
 
-// joins is a reply putting a run of lines together as one. A run stands within
-// one batch, so a transcript put right this way is asked in whole batches.
-func joins(at, through int, said string) string {
+// newJoinReply is a reply putting a run of lines together as one. A run stands
+// within one batch, so a transcript put right this way is asked in whole
+// batches.
+func newJoinReply(at, through int, said string) string {
 	return fmt.Sprintf("%d-%d|%s", at, through, said)
 }
 
-// wholly is a run over a transcript asked about in one batch.
-func wholly(t *testing.T, says map[int]string, words ...string) (ProofreadTranscript, domain.Vault, *shelf, string) {
+// newWholeRun is a run over a transcript asked about in one batch.
+func newWholeRun(t *testing.T, says map[int]string, words ...string) (ProofreadTranscript, domain.Vault, *shelf, string) {
 	t.Helper()
 	u, v, kept, _, hash := newProofreadTranscript(t, says, words...)
 	u.BatchSize = len(words)
@@ -30,8 +31,8 @@ func wholly(t *testing.T, says map[int]string, words ...string) (ProofreadTransc
 // running from the first moment to the last.
 func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure."}
-	u, v, shelved, hash := wholly(t,
-		map[int]string{0: joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")},
+	u, v, shelved, hash := newWholeRun(t,
+		map[int]string{0: newJoinReply(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")},
 		words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -58,8 +59,8 @@ func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 // What was heard is not written over by putting its lines together.
 func TestJoiningLeavesWhatWasHeardWhereItIs(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila."}
-	u, v, shelved, hash := wholly(t,
-		map[int]string{0: joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")},
+	u, v, shelved, hash := newWholeRun(t,
+		map[int]string{0: newJoinReply(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")},
 		words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -98,7 +99,7 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 	for _, batches := range []int{1, 2} {
 		t.Run(fmt.Sprintf("%d to a request", batches), func(t *testing.T) {
 			u, v, shelved, hash := newOverlappingRun(t, batches, map[int]string{
-				0: joins(0, 1, putTogether),
+				0: newJoinReply(0, 1, putTogether),
 				1: corrects(1, onItsOwn),
 			})
 
@@ -124,8 +125,8 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 // puts them together, and the one reaching into it is dropped.
 func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 	u, v, shelved, hash := newOverlappingRun(t, 1, map[int]string{
-		0: joins(0, 1, putTogether),
-		1: joins(1, 2, "Connected with Radhika. Sure."),
+		0: newJoinReply(0, 1, putTogether),
+		1: newJoinReply(1, 2, "Connected with Radhika. Sure."),
 	})
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -151,7 +152,7 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 // the lines are known by are not the same ones the run before it saw.
 func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
-	u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{0: joins(0, 1, putTogether)}, words...)
+	u, v, shelved, by, hash := newProofreadTranscript(t, map[int]string{0: newJoinReply(0, 1, putTogether)}, words...)
 	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
 
 	ctx, stop := context.WithCancel(t.Context())
@@ -164,9 +165,9 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := &corrector{says: map[int]string{}}
-	u.By = again
-	res, err := u.Execute(t.Context(), v, recordingPath)
+	again := newTranscriptProofreading(t, u.readers, u.derived, &corrector{says: map[int]string{}})
+	again.BatchSize, again.Overlap, again.InFlight = 2, 0, 1
+	res, err := again.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,8 +214,8 @@ func newCrossingRun(t *testing.T, says map[int]string) (ProofreadTranscript, dom
 // holds it whole, and it is put back together there.
 func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
 	u, v, shelved, by, hash := newCrossingRun(t, map[int]string{
-		0: joins(2, 4, crossed),
-		3: joins(2, 4, crossed),
+		0: newJoinReply(2, 4, crossed),
+		3: newJoinReply(2, 4, crossed),
 	})
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -246,7 +247,7 @@ func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
 func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
 	u, v, _, by, _ := newCrossingRun(t, map[int]string{
 		0: corrects(0, "Welcome, everybody."),
-		1: joins(3, 4, "Today we will read a verse that the teacher"),
+		1: newJoinReply(3, 4, "Today we will read a verse that the teacher"),
 	})
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -258,20 +259,21 @@ func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
 
 	// The transcript is answered whole, seams and all, and a run over it again
 	// asks nothing.
-	again := &corrector{}
-	u.By = again
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+	said := &corrector{}
+	again := newTranscriptProofreading(t, u.readers, u.derived, said)
+	again.BatchSize, again.Overlap, again.InFlight = u.BatchSize, u.Overlap, u.InFlight
+	if _, err := again.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if len(again.asked) != 0 {
-		t.Errorf("it asked %v again", again.asked)
+	if len(said.asked) != 0 {
+		t.Errorf("it asked %v again", said.asked)
 	}
 }
 
 // One batch answered for a sentence running on past its end. The seam over that
 // cut is asked about, and the other cut costs nothing.
 func TestOnlyTheCutASentenceRanPastIsAskedAbout(t *testing.T) {
-	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: joins(2, 4, crossed)})
+	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: newJoinReply(2, 4, crossed)})
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
@@ -298,8 +300,8 @@ func TestATranscriptOfOneBatchAsksNothingMore(t *testing.T) {
 // pass before it asked about is not asked about again.
 func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 	u, v, shelved, by, hash := newCrossingRun(t, map[int]string{
-		0: joins(2, 4, crossed),
-		1: joins(5, 7, "The point of it is very simple. Let us begin."),
+		0: newJoinReply(2, 4, crossed),
+		1: newJoinReply(5, 7, "The point of it is very simple. Let us begin."),
 		2: corrects(7, "Let us begin!"),
 	})
 
@@ -313,13 +315,14 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 		t.Fatalf("stopped with %v", err)
 	}
 
-	again := &corrector{says: map[int]string{4: joins(5, 6, "The point of it is very simple.")}}
-	u.By = again
-	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+	said := &corrector{says: map[int]string{4: newJoinReply(5, 6, "The point of it is very simple.")}}
+	again := newTranscriptProofreading(t, u.readers, u.derived, said)
+	again.BatchSize, again.Overlap, again.InFlight = u.BatchSize, u.Overlap, u.InFlight
+	if _, err := again.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(again.asked, [][]int{{4}}) {
-		t.Errorf("it asked %v, want the seam it stopped on", again.asked)
+	if !reflect.DeepEqual(said.asked, [][]int{{4}}) {
+		t.Errorf("it asked %v, want the seam it stopped on", said.asked)
 	}
 
 	cues := readCues(t, shelved, text.Corrections(text.ASR, hash))
@@ -338,9 +341,9 @@ func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
 // line again is answered too late.
 func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
 	u, v, shelved, _, hash := newCrossingRun(t, map[int]string{
-		0: joins(1, 2, "Today we will read a verse that the teacher") + "\n" +
-			joins(3, 5, "Explained at some length in the morning class."),
-		3: joins(2, 3, "A verse that the teacher explained at some length"),
+		0: newJoinReply(1, 2, "Today we will read a verse that the teacher") + "\n" +
+			newJoinReply(3, 5, "Explained at some length in the morning class."),
+		3: newJoinReply(2, 3, "A verse that the teacher explained at some length"),
 	})
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -361,7 +364,7 @@ func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
 
 // A seam carries what the recording holds, as a batch of the first pass does.
 func TestASeamCarriesWhatTheRecordingHolds(t *testing.T) {
-	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: joins(2, 4, crossed)})
+	u, v, _, by, _ := newCrossingRun(t, map[int]string{0: newJoinReply(2, 4, crossed)})
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)

@@ -12,11 +12,11 @@ import (
 
 // A Tab is one tab of the person's window, as an agent is told about it.
 type Tab struct {
-	Kind  string `json:"kind" jsonschema:"what sort of tab it is, in the window's own word for it"`
-	Path  string `json:"path,omitempty" jsonschema:"the file it holds, by the path the vault files it under"`
-	Title string `json:"title,omitempty" jsonschema:"what the tab is called, as the person reads it"`
-	Where string `json:"where,omitempty" jsonschema:"where in that file the person stands"`
-	Front bool   `json:"front,omitempty" jsonschema:"set on the one tab the person is looking at"`
+	Kind    string `json:"kind" jsonschema:"what sort of tab it is, in the window's own word for it"`
+	Path    string `json:"path,omitempty" jsonschema:"the file it holds, by the path the vault files it under"`
+	Title   string `json:"title,omitempty" jsonschema:"what the tab is called, as the person reads it"`
+	Where   string `json:"where,omitempty" jsonschema:"where in that file the person stands"`
+	IsFront bool   `json:"front,omitempty" jsonschema:"set on the one tab the person is looking at"`
 }
 
 // addWindowTools tells an agent what the person has open.
@@ -51,11 +51,11 @@ func addWindowTools(server *sdk.Server, core Core) {
 		for _, one := range open.Tabs {
 			front := one.ID != "" && one.ID == open.FrontID
 			res.Tabs = append(res.Tabs, Tab{
-				Kind:  one.Kind,
-				Path:  one.Path,
-				Title: one.Title,
-				Where: tabPosition(one),
-				Front: front,
+				Kind:    one.Kind,
+				Path:    one.Path,
+				Title:   one.Title,
+				Where:   tabPosition(one),
+				IsFront: front,
 			})
 			if front {
 				res.Looking = describeTab(one)

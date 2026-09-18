@@ -17,27 +17,27 @@ describe('shareOf', () => {
 
 describe('activity', () => {
   it('says nothing when there is nothing to say', () => {
-    expect(activity({ text: '' })).toEqual({ state: 'quiet', counts: false })
+    expect(activity({ text: '' })).toEqual({ state: 'quiet', hasCounts: false })
   })
 
   it('is quiet even with a tally, when it has no words', () => {
     expect(activity({ text: '', tally: { done: 1, total: 2 } })).toEqual({
       state: 'quiet',
-      counts: false,
+      hasCounts: false,
     })
   })
 
   it('rests when it has words and no work', () => {
     expect(activity({ text: 'searched by words alone' })).toEqual({
       state: 'resting',
-      counts: false,
+      hasCounts: false,
     })
   })
 
   it('works without a count when the work is claimed', () => {
     expect(activity({ text: 'reading the vault', isWorking: true })).toEqual({
       state: 'working',
-      counts: false,
+      hasCounts: false,
     })
   })
 
@@ -45,7 +45,7 @@ describe('activity', () => {
     expect(activity({ text: 'reading', tally: { done: 1, total: 4 } })).toEqual({
       state: 'working',
       share: 0.25,
-      counts: true,
+      hasCounts: true,
     })
   })
 
@@ -53,21 +53,21 @@ describe('activity', () => {
     expect(activity({ text: 'reading', tally: { done: 2, total: 8 } })).toEqual({
       state: 'working',
       share: 0.25,
-      counts: true,
+      hasCounts: true,
     })
   })
 
   it('rests when a tally has no total to draw', () => {
     expect(activity({ text: 'reading', tally: { done: 0, total: 0 } })).toEqual({
       state: 'resting',
-      counts: false,
+      hasCounts: false,
     })
   })
 
   it('lets a failure outrank a count', () => {
     expect(activity({ text: 'reading', hasFailed: true, tally: { done: 2, total: 8 } })).toEqual({
       state: 'failed',
-      counts: false,
+      hasCounts: false,
     })
   })
 })

@@ -60,7 +60,7 @@ export const rowsAndColumns: Placement = {
       0,
       ...columns.map(([seat, nodes]) => reachOf(nodes.length, options, limits[seat])),
     )
-    const clearance = widestWithin(rowsPlaced, reach)
+    const clearance = measureWidestWithin(rowsPlaced, reach)
 
     for (const [seat, nodes] of columns) {
       placed.push(...line(nodes, options.direction[seat], options, limits[seat], width, clearance))
@@ -198,7 +198,7 @@ function reachOf(count: number, options: PlexOptions, limits: RoleLimits): numbe
 }
 
 /** How far the placed nodes within `reach` of the axis extend sideways. */
-function widestWithin(nodes: readonly PlacedNode[], reach: number): number {
+function measureWidestWithin(nodes: readonly PlacedNode[], reach: number): number {
   let half = 0
   for (const node of nodes) {
     if (Math.abs(node.y) - node.height / 2 >= reach) continue

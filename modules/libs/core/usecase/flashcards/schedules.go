@@ -156,7 +156,7 @@ func (u Schedules) getAssignmentFrom(
 	for _, one := range faces {
 		path, known := asked[one.Deck]
 		if !known {
-			p, err := reading.Of(ctx, v, one.Deck)
+			p, err := reading.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
 				return assignment{}, err
 			}

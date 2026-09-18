@@ -84,7 +84,7 @@ const boxAround = (node: PlacedNode): Box => ({
 })
 
 /** One line, with room along it for whatever words it is given. */
-const alone = (label: string): PlexNeighbourhood => ({
+const createOneLine = (label: string): PlexNeighbourhood => ({
   nodes: [
     { id: 'focus', title: 'Here', seat: 'focus' },
     { id: 'aside', title: 'Aside', seat: 'jump' },
@@ -94,7 +94,7 @@ const alone = (label: string): PlexNeighbourhood => ({
 
 describe('a title finds room on its line', () => {
   it('keeps the middle of a line with nothing near it', () => {
-    const frame = arrangePlex(alone('see'), measured)
+    const frame = arrangePlex(createOneLine('see'), measured)
 
     expect(frame.edges[0]!.wordsAt).toBe(0.5)
   })
@@ -102,7 +102,7 @@ describe('a title finds room on its line', () => {
   it('gives up the middle to stay clear of the boxes its own line joins', () => {
     // Words nearly as long as the line they are set on: the middle would put
     // them against a box at either end.
-    const frame = arrangePlex(alone('see also'), measured)
+    const frame = arrangePlex(createOneLine('see also'), measured)
 
     expect(frame.edges[0]!.words).toBe('see also')
     expect(frame.edges[0]!.wordsAt).not.toBe(MIDDLE)
@@ -135,7 +135,7 @@ describe('a title finds room on its line', () => {
   })
 
   it('writes nothing at all on a line with nowhere clear along it', () => {
-    const pair = alone('see also')
+    const pair = createOneLine('see also')
     const placed = arrangePlex(pair, measured)
     const byId = new Map(placed.nodes.map((node) => [node.id, node]))
     const routing = routingFor(DEFAULT_OPTIONS, measureLabel, labelDepth)

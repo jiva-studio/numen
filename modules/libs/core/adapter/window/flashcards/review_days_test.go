@@ -154,3 +154,71 @@ func TestAVaultNobodyHoldsIsRefused(t *testing.T) {
 		t.Errorf("refused with %v", connect.CodeOf(err))
 	}
 }
+
+// A caller draws a fixed stretch of time, so it asks for one. Both ends are
+// inside it, and an end left empty is unbounded at that end.
+func TestOnlyTheDaysInsideTheStretchComeBack(t *testing.T) {
+	for name, one := range map[string]struct {
+		from, to string
+		want     []string
+	}{
+		"both ends":     {"2026-08-09", "2026-08-30", []string{"2026-08-09", "2026-08-30"}},
+		"from alone":    {"2026-08-30", "", []string{"2026-08-30", "2027-01-02"}},
+		"to alone":      {"", "2026-08-09", []string{"2026-07-01", "2026-08-09"}},
+		"neither end":   {"", "", []string{"2026-07-01", "2026-08-09", "2026-08-30", "2027-01-02"}},
+		"one day":       {"2026-08-09", "2026-08-09", []string{"2026-08-09"}},
+		"nothing in it": {"2026-09-01", "2026-12-31", nil},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var said []string
+			for _, day := range []string{"2026-07-01", "2026-08-09", "2026-08-30", "2027-01-02"} {
+				if isWithin(day, one.from, one.to) {
+					said = append(said, day)
+				}
+			}
+			if len(said) != len(one.want) {
+				t.Fatalf("%v came back, want %v", said, one.want)
+			}
+			for at := range said {
+				if said[at] != one.want[at] {
+					t.Errorf("the day at %d is %s, want %s", at, said[at], one.want[at])
+				}
+			}
+		})
+	}
+}
+
+// The stretch reaches the answer itself, and not only the helper: a day outside
+// what was asked for is in neither list.
+func TestAStretchNothingFallsInComesBackEmpty(t *testing.T) {
+	api, held := newAPI(t, deck)
+	v := held[0]
+
+	session := startSession(t, api, v)
+	for _, card := range session.GetAsked() {
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+			Vault: string(v.ID), Run: session.GetRun(),
+			Mark: card.GetMark(), Face: card.GetFace(),
+			Rating: v1.Rating_RATING_GOOD,
+		})); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	out, err := api.ListReviewDays(t.Context(), connect.NewRequest(&v1.ListReviewDaysRequest{
+		Vault: string(v.ID), From: "1970-01-01", To: "1970-12-31",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(out.Msg.GetDays()) != 0 || len(out.Msg.GetDue()) != 0 {
+		t.Errorf("a stretch in 1970 came back with %d days and %d ahead",
+			len(out.Msg.GetDays()), len(out.Msg.GetDue()))
+	}
+	// The streak and the count are over the whole of the vault whatever stretch
+	// was asked for.
+	if out.Msg.GetAnswered() != int32(len(session.GetAsked())) {
+		t.Errorf("the vault holds %d answers, want %d",
+			out.Msg.GetAnswered(), len(session.GetAsked()))
+	}
+}

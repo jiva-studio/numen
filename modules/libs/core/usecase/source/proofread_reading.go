@@ -16,10 +16,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
-// errNothingProofreads is a proofreading with nothing to proofread with. An
-// installation that named no profile has no proofreader at all, so nil is a
-// value the settings produce and not a caller's slip.
-var errNothingProofreads = errors.New("nothing to proofread with: none is configured")
+// What a proofreading cannot be made without. An installation that named no
+// profile has no proofreader at all, so nothing to proofread with is a value
+// the settings produce and not a caller's slip; the other two are.
+var (
+	errNothingProofreads  = errors.New("nothing to proofread with: none is configured")
+	errNoVaultToProofread = errors.New("no vault to proofread out of")
+	errNoStoreToProofread = errors.New("no store to keep a proofreading in")
+)
 
 // ProofreadReading puts a document's reading right, where a person configured
 // something to proofread it with.
@@ -28,9 +32,9 @@ var errNothingProofreads = errors.New("nothing to proofread with: none is config
 // corrections go beside it, so a proofreading that went wrong is a file that can
 // be deleted and a person can always ask what the machine read.
 type ProofreadReading struct {
-	Readers port.VaultReaders
-	Derived port.DerivedStores
-	By      port.Proofreader
+	readers port.VaultReaders
+	derived port.DerivedStores
+	by      port.Proofreader
 
 	// Queue is where the pages are left for the proofreader to answer about
 	// later. Where there is one, a run leaves a batch and comes back for it,
@@ -59,11 +63,24 @@ type ProofreadReading struct {
 // NewProofreadReading is what a reading is put right through: the vault it is
 // read out of, the store the reading and its corrections are kept in, and the
 // proofreader that answers about a page.
+//
+// An installation that configured no proofreader is refused here.
 func NewProofreadReading(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
-) ProofreadReading {
-	return ProofreadReading{Readers: readers, Derived: derived, By: by}
+) (ProofreadReading, error) {
+	switch {
+	case readers == nil:
+		return ProofreadReading{}, errNoVaultToProofread
+	case derived == nil:
+		return ProofreadReading{}, errNoStoreToProofread
+	case by == nil:
+		return ProofreadReading{}, errNothingProofreads
+	}
+	return ProofreadReading{readers: readers, derived: derived, by: by}, nil
 }
+
+// GetProofreaderName is what puts the words right, by the name it goes under.
+func (u ProofreadReading) GetProofreaderName() string { return u.by.GetName() }
 
 // ProofreadReadingResult reports what proofreading a reading did.
 type ProofreadReadingResult struct {
@@ -73,9 +90,9 @@ type ProofreadReadingResult struct {
 	Resumed          int    // how many a run before this one had already asked about
 	Fixed            int    // lines put right
 	UncorrectedPages int    // pages replied to without a correction, left as they were read
-	None             bool   // there is no reading to proofread, and nothing was done
-	Waiting          bool   // a batch is out and what comes back is not there yet
-	Busy             bool   // somebody else is proofreading this reading
+	IsNone           bool   // there is no reading to proofread, and nothing was done
+	IsWaiting        bool   // a batch is out and what comes back is not there yet
+	IsBusy           bool   // somebody else is proofreading this reading
 }
 
 // DefaultPages is how many pages one request carries.
@@ -95,10 +112,7 @@ type checkpoint struct {
 // Execute proofreads one document's reading.
 func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadReadingResult, error) {
 	res := ProofreadReadingResult{Path: path}
-	if u.By == nil {
-		return res, errNothingProofreads
-	}
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -106,7 +120,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 	if err != nil {
 		return res, fmt.Errorf("read %s: %w", path, err)
 	}
-	store, err := u.Derived.Open(v)
+	store, err := u.derived.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -119,7 +133,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 	// and it is held for as long as the proofreading takes.
 	release, err := store.Claim(ctx, corrections)
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
+		res.IsBusy = true
 		return res, nil
 	}
 	if err != nil {
@@ -132,7 +146,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		return res, err
 	}
 	if len(pages) == 0 {
-		res.None = true
+		res.IsNone = true
 		return res, nil
 	}
 	res.Pages = len(pages)
@@ -166,7 +180,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		end := min(at+u.batch(), len(pages))
 		asked := pages[at:end]
 
-		replies, err := u.By.Proofread(ctx, asked)
+		replies, err := u.by.Proofread(ctx, asked)
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}
@@ -265,7 +279,7 @@ func (u ProofreadReading) readCheckpoint(
 		return checkpoint{}, err
 	}
 	var stood checkpoint
-	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.By.GetName() {
+	if err := json.Unmarshal(raw, &stood); err != nil || stood.By != u.by.GetName() {
 		if err := store.Remove(ctx, corrections); err != nil {
 			return checkpoint{}, err
 		}
@@ -299,7 +313,7 @@ func (u ProofreadReading) await(
 			return res, fmt.Errorf("collect the proofreading of %s: %w", path, err)
 		}
 		if !ready {
-			res.Waiting = true
+			res.IsWaiting = true
 			return res, nil
 		}
 		end := min(stood.Pages+stood.Left, len(pages))
@@ -330,7 +344,7 @@ func (u ProofreadReading) await(
 	if err != nil {
 		return res, fmt.Errorf("leave the pages of %s: %w", path, err)
 	}
-	res.Waiting = true
+	res.IsWaiting = true
 	return res, u.writeCheckpoint(
 		ctx, store, far, checkpoint{Pages: stood.Pages, Batch: name, Left: end - stood.Pages})
 }
@@ -385,7 +399,7 @@ func opening(pages []proofread.Batch, done int) (int, bool) {
 // writeCheckpoint writes down who put this reading right and how far they got.
 // It stands last and is what makes the batch before it count.
 func (u ProofreadReading) writeCheckpoint(ctx context.Context, store port.DerivedStore, far string, stood checkpoint) error {
-	stood.By = u.By.GetName()
+	stood.By = u.by.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err

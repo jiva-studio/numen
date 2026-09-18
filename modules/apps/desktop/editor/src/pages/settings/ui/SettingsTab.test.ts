@@ -27,7 +27,7 @@ const MODELS: readonly Model[] = [
     name: '',
     title: 'Whatever this machine answers with',
     shelf: '',
-    byDefault: true,
+    isDefault: true,
     writes: [{ at: ['agent', 'claude', 'model'], value: '""' }],
     presence: 'nothing to fetch',
   },
@@ -36,7 +36,7 @@ const MODELS: readonly Model[] = [
     name: 'opus',
     title: 'opus',
     shelf: 'By how large it is',
-    byDefault: false,
+    isDefault: false,
     writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
     presence: 'nothing to fetch',
   },
@@ -45,7 +45,7 @@ const MODELS: readonly Model[] = [
     name: 'https://models.example/held/Tiny_rec.onnx',
     title: 'Tiny, small',
     shelf: '',
-    byDefault: true,
+    isDefault: true,
     writes: [
       { at: ['indexing', 'recognition', 'recognise', 'name'], value: '"held/Tiny_rec.onnx"' },
     ],
@@ -58,7 +58,7 @@ const MODELS: readonly Model[] = [
     name: OWN,
     title: OWN,
     shelf: 'Named in the settings',
-    byDefault: false,
+    isDefault: false,
     writes: [{ at: ['indexing', 'recognition', 'recognise', 'name'], value: `"${OWN}"` }],
     presence: 'not fetched',
   },
@@ -68,7 +68,7 @@ const MODELS: readonly Model[] = [
 const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
   const done: string[] = []
   const written: SettingEdit[] = []
-  const syncing = ref(true)
+  const isSyncing = ref(true)
   const isHanging = ref(true)
   const installation: Installation = {
     getSetting: (path) => at(file, path),
@@ -82,17 +82,17 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     ]),
     applied: ref('preset:numen'),
     mode: ref('system'),
-    pinned: ref(isPinned),
+    isPinned: ref(isPinned),
     sizes: ref({ interfaceScale: 1, textScale: 1 }),
     bounds: ref({
       interfaceScale: { least: 0.8, most: 2 },
       textScale: { least: 0.8, most: 1.75 },
     }),
     choose: (item) => void done.push(`choose ${item}`),
-    syncing: computed({
-      get: () => syncing.value,
+    isSyncing: computed({
+      get: () => isSyncing.value,
       set: (on) => {
-        syncing.value = on
+        isSyncing.value = on
         done.push(`syncing ${on}`)
       },
     }),

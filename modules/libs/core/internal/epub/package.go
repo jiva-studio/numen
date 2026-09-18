@@ -48,7 +48,7 @@ type packageDoc struct {
 type spineItem struct {
 	path      string
 	mediaType string
-	linear    bool
+	isLinear  bool
 	layout    Layout
 }
 
@@ -227,7 +227,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 		read.spine = append(read.spine, spineItem{
 			path:      named.path,
 			mediaType: named.mediaType,
-			linear:    !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
+			isLinear:  !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
 			layout:    itemLayout(ref.Properties, read.layout),
 		})
 	}

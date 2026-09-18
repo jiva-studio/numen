@@ -236,8 +236,8 @@ async function measureAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<rea
 /** What a handle that catches its whole reach, and no further, draws at those places. */
 const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
 
-/** The furthest out along that line the splitter still had the pointer. */
-function furthest(places: readonly Caught[]): Position {
+/** The getFurthest out along that line the splitter still had the pointer. */
+function getFurthest(places: readonly Caught[]): Position {
   const held = places.filter((place) => place.cursor)
   const edge = held[held.length - 1]?.at
   if (!edge) throw new Error('the handle caught nothing')
@@ -548,7 +548,7 @@ export const DragsFromItsWholeReach: Story = {
     )
     await expect(getComputedStyle(handle).cursor).toBe('ew-resize')
 
-    const edge = furthest(caught)
+    const edge = getFurthest(caught)
     const before = paneBox(canvasElement, 'main').width
 
     await sweep(edge, { x: edge.x + 40, y: edge.y })
@@ -575,7 +575,7 @@ export const DragsFromItsWholeReachDownwards: Story = {
     )
     await expect(getComputedStyle(handle).cursor).toBe('ns-resize')
 
-    const edge = furthest(caught)
+    const edge = getFurthest(caught)
     const before = paneBox(canvasElement, 'b').height
 
     await sweep(edge, { x: edge.x, y: edge.y + 30 })

@@ -28,12 +28,12 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 	}
 
 	for name, c := range map[string]struct {
-		change func(*testing.T, *Config)
-		ready  bool
+		change  func(*testing.T, *Config)
+		isReady bool
 	}{
 		"every model is here": {func(*testing.T, *Config) {}, true},
 		"the download switch changes nothing": {
-			func(_ *testing.T, cfg *Config) { cfg.Download = true }, true,
+			func(_ *testing.T, cfg *Config) { cfg.ShouldDownload = true }, true,
 		},
 		"a path written down names nothing": {
 			func(_ *testing.T, cfg *Config) { cfg.Segmenter.Path = filepath.Join(dir, "gone.onnx") }, false,
@@ -64,7 +64,7 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 				Segmenter: SegmenterModel{Path: segmenter},
 			}
 			c.change(t, &cfg)
-			if got := Ready(cfg); got != c.ready {
+			if got := Ready(cfg); got != c.isReady {
 				t.Errorf("ready: %v", got)
 			}
 		})

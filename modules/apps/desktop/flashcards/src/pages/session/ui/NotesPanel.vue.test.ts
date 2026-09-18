@@ -16,8 +16,8 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
   title: 'Leaf mould',
   body: 'Compost made of fallen leaves alone.',
   label: '',
-  points: true,
-  ambiguous: false,
+  hasPoints: true,
+  isAmbiguous: false,
   error: '',
   ...more,
 })
@@ -59,7 +59,7 @@ describe('the panel the deck is read in', () => {
     const one = await mountPanel({
       notes: [
         createNeighbour(),
-        createNeighbour({ title: 'Humus', path: 'notes/Humus.md', points: false }),
+        createNeighbour({ title: 'Humus', path: 'notes/Humus.md', hasPoints: false }),
       ],
       unread: 0,
     })
@@ -79,7 +79,7 @@ describe('the panel the deck is read in', () => {
   })
 
   it('says where a name several notes answer to was read as the nearest', async () => {
-    const one = await mountPanel({ notes: [createNeighbour({ ambiguous: true })], unread: 0 })
+    const one = await mountPanel({ notes: [createNeighbour({ isAmbiguous: true })], unread: 0 })
     expect(one.text()).toContain(words.ambiguous)
     expect(one.text()).not.toContain(words.dangling)
   })

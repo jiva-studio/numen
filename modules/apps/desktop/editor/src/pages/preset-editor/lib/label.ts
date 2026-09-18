@@ -101,7 +101,7 @@ export const getAxisNumberBox = (y: number, lift: string): Box => ({
 
 /** The bubble over the knob: the side it hangs on, the room it takes, and where. */
 export interface Callout {
-  readonly under: boolean
+  readonly isUnder: boolean
   readonly box: Box
   readonly at: CSSProperties
   readonly tail: CSSProperties
@@ -114,22 +114,22 @@ export interface Callout {
  * bubble, so what the numbers belong to is never in doubt.
  */
 export const calloutOf = (knob: Position): Callout => {
-  const under = knob.y - CALLOUT_GAP - CALLOUT_HIGH < TOP
+  const isUnder = knob.y - CALLOUT_GAP - CALLOUT_HIGH < TOP
   const half = CALLOUT_WIDE / 2
   const back = knob.x < LEFT + half ? 0 : knob.x > RIGHT - half ? CALLOUT_WIDE : half
-  const edge = under ? knob.y + CALLOUT_GAP : knob.y - CALLOUT_GAP
+  const edge = isUnder ? knob.y + CALLOUT_GAP : knob.y - CALLOUT_GAP
   return {
-    under,
+    isUnder,
     box: {
       x: knob.x - back,
-      y: under ? edge : edge - CALLOUT_HIGH,
+      y: isUnder ? edge : edge - CALLOUT_HIGH,
       wide: CALLOUT_WIDE,
       high: CALLOUT_HIGH,
     },
     at: {
       insetInlineStart: `${(knob.x / WIDE) * 100}%`,
       insetBlockStart: `${(edge / HIGH) * 100}%`,
-      translate: `${(-back / CALLOUT_WIDE) * 100}% ${under ? '0' : '-100%'}`,
+      translate: `${(-back / CALLOUT_WIDE) * 100}% ${isUnder ? '0' : '-100%'}`,
     },
     tail: {
       insetInlineStart: `${(knob.x / WIDE) * 100}%`,

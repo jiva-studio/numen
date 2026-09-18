@@ -30,11 +30,11 @@ const props = withDefaults(
     /** What the caller found wrong with this field. */
     wrong?: readonly string[]
     /** A field let go here would land before it. */
-    before?: boolean
+    isDropAbove?: boolean
     /** The words it is drawn with. */
     words?: StencilWords
   }>(),
-  { wrong: () => [], before: false, words: () => STENCIL_WORDS },
+  { wrong: () => [], isDropAbove: false, words: () => STENCIL_WORDS },
 )
 
 const emit = defineEmits<{
@@ -69,10 +69,10 @@ const onGripKey = (event: KeyboardEvent): void => {
   <li
     class="stencil__field caret-above"
     :data-field="row.field"
-    :data-names="row.names || undefined"
-    :data-dragged="row.dragged || undefined"
-    :data-before="before || undefined"
-    @dragover.stop="emit('drag-over', row.names ? undefined : row.field, $event)"
+    :data-names="row.hasNames || undefined"
+    :data-dragged="row.isDragged || undefined"
+    :data-before="isDropAbove || undefined"
+    @dragover.stop="emit('drag-over', row.hasNames ? undefined : row.field, $event)"
     @drop.stop="emit('drop')"
   >
     <CardRow class="stencil__row" :data-objections="objections ?? undefined">
@@ -84,13 +84,13 @@ const onGripKey = (event: KeyboardEvent): void => {
         class="stencil__grip text-hushed flex shrink-0 items-center"
         data-grip
         role="button"
-        :tabindex="row.names ? -1 : 0"
-        :draggable="!row.names"
-        :data-disabled="row.names || undefined"
-        :aria-disabled="row.names || undefined"
-        :aria-label="row.names ? words.pinned : `${words.drag}: ${row.field}`"
-        :aria-keyshortcuts="row.names ? undefined : STEP_KEYS"
-        :title="row.names ? words.pinned : `${words.drag}: ${row.field}`"
+        :tabindex="row.hasNames ? -1 : 0"
+        :draggable="!row.hasNames"
+        :data-disabled="row.hasNames || undefined"
+        :aria-disabled="row.hasNames || undefined"
+        :aria-label="row.hasNames ? words.pinned : `${words.drag}: ${row.field}`"
+        :aria-keyshortcuts="row.hasNames ? undefined : STEP_KEYS"
+        :title="row.hasNames ? words.pinned : `${words.drag}: ${row.field}`"
         @dragstart="emit('lift', $event)"
         @dragend="emit('release')"
         @keydown="onGripKey"
@@ -110,8 +110,8 @@ const onGripKey = (event: KeyboardEvent): void => {
         variant="ghost"
         size="icon-small"
         class="stencil__away size-6"
-        :disabled="row.names"
-        :title="row.names ? words.pinned : undefined"
+        :disabled="row.hasNames"
+        :title="row.hasNames ? words.pinned : undefined"
         :aria-label="`${words.remove}: ${row.field}`"
         @click="emit('remove')"
       >

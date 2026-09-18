@@ -560,9 +560,9 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 
 	// Neither vault answers for the other.
 	for _, ask := range []struct {
-		vault domain.Vault
-		word  string
-		want  bool
+		vault    domain.Vault
+		word     string
+		isWanted bool
 	}{
 		{first, "wordzz", true},
 		{second, "wordzz", false},
@@ -573,8 +573,8 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if (len(found) > 0) != ask.want {
-			t.Errorf("%s answered %d passages for %q, want %v", ask.vault.Name, len(found), ask.word, ask.want)
+		if (len(found) > 0) != ask.isWanted {
+			t.Errorf("%s answered %d passages for %q, want %v", ask.vault.Name, len(found), ask.word, ask.isWanted)
 		}
 	}
 }
@@ -704,9 +704,9 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 
 	// Neither vault answers for the other.
 	for _, ask := range []struct {
-		vault domain.Vault
-		word  string
-		want  bool
+		vault    domain.Vault
+		word     string
+		isWanted bool
 	}{
 		{first, "wordzz", true},
 		{second, "wordzz", false},
@@ -717,8 +717,8 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if (len(found) > 0) != ask.want {
-			t.Errorf("%s answered %d passages for %q, want %v", ask.vault.Name, len(found), ask.word, ask.want)
+		if (len(found) > 0) != ask.isWanted {
+			t.Errorf("%s answered %d passages for %q, want %v", ask.vault.Name, len(found), ask.word, ask.isWanted)
 		}
 	}
 }

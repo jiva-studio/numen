@@ -19,7 +19,7 @@ import { VAULTS_WORDS } from './words'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   vaults: readonly VaultCardsDue[]
-  counting: boolean
+  isCounting: boolean
   version: string
 }>()
 
@@ -43,12 +43,12 @@ const waiting = computed(() => getDueByVault(props.vaults))
   >
     <!-- The list is where the room is shortest, so the number stands alone. -->
     <template #vault="{ vault }">
-      <DueCount v-if="waiting.has(vault.id)" :due="waiting.get(vault.id) ?? null" bare />
+      <DueCount v-if="waiting.has(vault.id)" :due="waiting.get(vault.id) ?? null" is-bare />
     </template>
 
     <!-- Nothing is known about the installation yet, not even which vaults it
          holds, which is the one thing the screen has to say until it is. -->
-    <template v-if="counting" #waiting>
+    <template v-if="isCounting" #waiting>
       <p class="vaults__counting" role="status">
         <Spinner />
         {{ VAULTS_WORDS.counting }}

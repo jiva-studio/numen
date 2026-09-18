@@ -140,7 +140,7 @@ func (a *API) getArtifactAddress(ctx context.Context, v domain.Vault, ref domain
 // text that is follows from the address: a video is a transcript, and every
 // other page is an article.
 func (a *API) getLinkedArtifact(
-	ctx context.Context, v domain.Vault, path string, at domain.URL,
+	ctx context.Context, v domain.Vault, at domain.URL,
 ) (*v1.Artifact, error) {
 	out := &v1.Artifact{
 		Kind:  textOf(a.getProducer(at)),
@@ -231,7 +231,7 @@ func (a *API) fetchCopy(
 	asked.Progress = func(done, total int64) {
 		a.say(task.Task{
 			ID: copying + ref.Path, Doing: "Downloading a copy", About: ref.Path,
-			Count: done, Total: total, Unit: task.Bytes, Asked: true,
+			Count: done, Total: total, Unit: task.Bytes, IsAsked: true,
 		})
 	}
 	got, err := asked.Copy(ctx, v, ref.Path)
@@ -386,15 +386,15 @@ func (a *API) DeleteArtifact(
 	// The queue told about it is the one behind the vault the recording was
 	// found in.
 	drops := *a.Drops
-	drops.Forgets = a.forgets()
+	drops.Forgets = a.getForgetter()
 
 	res, err := drops.Execute(ctx, showing, ref.Path)
 	switch {
 	case err != nil:
 		return nil, connect.NewError(getReachCode(err), err)
-	case res.Busy:
+	case res.IsBusy:
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errBeingHeard)
-	case res.None:
+	case res.IsNone:
 		return nil, connect.NewError(connect.CodeNotFound, errNotHeard)
 	}
 	return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
@@ -412,7 +412,7 @@ func (a *API) run(
 	if by == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	got, err := a.far(ctx, v, ref.Path, ref.Kind)
+	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
@@ -445,9 +445,9 @@ func getStartState(started port.StartOutcome) v1.State {
 // behind the vault the window is showing are still coming up.
 func (a *API) runner(of v1.ArtifactKind) Runner {
 	if of == v1.ArtifactKind_ARTIFACT_KIND_OCR {
-		return a.recognises()
+		return a.getRecogniser()
 	}
-	return a.transcribes()
+	return a.getTranscriber()
 }
 
 // errComingUp is a run asked for over a vault whose passes are not up yet. The
@@ -476,14 +476,14 @@ func (a *API) fetchArtifact(
 	// A person who asks for this asks for the address afresh: what was fetched
 	// before goes, and the site is read again.
 	asked := *a.Imports
-	asked.Again = true
+	asked.IsRepeat = true
 	a.say(task.Task{ID: fetching + ref.Path, Doing: "Downloading an address", About: ref.Path})
 	_, err := asked.Execute(ctx, v, ref.Path)
 	a.finishTask(fetching + ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getDownloadCode(err), err)
 	}
-	return a.getLinkedArtifact(ctx, v, ref.Path, at)
+	return a.getLinkedArtifact(ctx, v, at)
 }
 
 // proofreadTranscript begins putting the transcript of a recording right, and
@@ -495,7 +495,7 @@ func (a *API) proofreadTranscript(
 ) (*v1.Artifact, error) {
 	// Taken once, so the whole answer is the work of the vault the window was
 	// showing when it was asked.
-	puts := a.proofreads()
+	puts := a.getProofreader()
 	if puts == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
@@ -533,11 +533,11 @@ func (a *API) proofreadTranscript(
 // does a proofreading of it.
 func getProofreadState(res source.ProofreadTranscriptResult) v1.State {
 	switch {
-	case res.Busy:
+	case res.IsBusy:
 		return v1.State_STATE_RUNNING
-	case res.None:
+	case res.IsNone:
 		return v1.State_STATE_NONE
-	case res.Edited, res.Already:
+	case res.IsEdited, res.IsAlready:
 		return v1.State_STATE_DONE
 	}
 	return v1.State_STATE_RUNNING
@@ -559,12 +559,12 @@ func (a *API) artifact(
 	if ref.Kind == domain.KindURL &&
 		(of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ||
 			of == v1.ArtifactKind_ARTIFACT_KIND_ARTICLE) {
-		return a.getLinkedArtifact(ctx, v, ref.Path, at)
+		return a.getLinkedArtifact(ctx, v, at)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
 		return a.copyOf(ctx, v, ref.Path, at), nil
 	}
-	got, err := a.far(ctx, v, ref.Path, ref.Kind)
+	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, err
 	}

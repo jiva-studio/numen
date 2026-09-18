@@ -22,11 +22,11 @@ func TestASeatIsTakenInOneOrder(t *testing.T) {
 
 func TestTheFocusIsNotRelatedToItself(t *testing.T) {
 	held := domain.Neighbourhood{Focus: domain.NoteRef{Path: "notes/Entropy.md"}}
-	held.Take(domain.NoteRef{Path: "notes/Entropy.md"}, domain.Neighbour{Seat: domain.SeatParent})
+	held.AddNeighbour(domain.NoteRef{Path: "notes/Entropy.md"}, domain.Neighbour{Seat: domain.SeatParent})
 	if len(held.Related) != 0 {
 		t.Fatalf("the focus was seated beside itself: %v", held.Related)
 	}
-	held.Take(domain.NoteRef{Path: "notes/Order.md", Title: "Order"}, domain.Neighbour{Seat: domain.SeatChild})
+	held.AddNeighbour(domain.NoteRef{Path: "notes/Order.md", Title: "Order"}, domain.Neighbour{Seat: domain.SeatChild})
 	if len(held.Related) != 1 {
 		t.Fatalf("got %v", held.Related)
 	}

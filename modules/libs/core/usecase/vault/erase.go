@@ -30,9 +30,9 @@ func NewErase(identity port.VaultIdentity, trash port.Trash, forget Forget) Eras
 // owed the answer, and only this knows it: a folder that was already gone is
 // looked for here and nowhere else.
 type EraseResult struct {
-	// Trashed is whether the folder went to the trash. A vault whose folder had
+	// IsTrashed is whether the folder went to the trash. A vault whose folder had
 	// already gone leaves nothing to move, and only its entry and its rows go.
-	Trashed bool
+	IsTrashed bool
 }
 
 func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error) {
@@ -41,7 +41,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 		return EraseResult{}, err
 	}
 
-	err := u.Identity.Readable(v.Path)
+	err := u.Identity.CheckReadable(v.Path)
 	if errors.Is(err, fs.ErrNotExist) {
 		// Nothing is at the path any more. What is left of the vault is its
 		// entry and its rows.
@@ -51,7 +51,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 		return EraseResult{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 
-	carried, carriesOne, err := u.Identity.Of(v.Path)
+	carried, carriesOne, err := u.Identity.GetVaultID(v.Path)
 	if err != nil {
 		return EraseResult{}, err
 	}
@@ -64,5 +64,5 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 	if err := u.Trash.Trash(v.Path); err != nil {
 		return EraseResult{}, fmt.Errorf("move %s to the trash: %w", v.Path, err)
 	}
-	return EraseResult{Trashed: true}, u.Forget.Execute(ctx, v)
+	return EraseResult{IsTrashed: true}, u.Forget.Execute(ctx, v)
 }

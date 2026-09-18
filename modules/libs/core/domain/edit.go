@@ -18,7 +18,7 @@ type Edit struct {
 	To   int
 	// Text is what is going in where that stretch stands.
 	Text string
-	// Done is the last report of this change. It arrives whether the change
+	// IsDone is the last report of this change. It arrives whether the change
 	// landed or was refused, and it is what ends the drawing.
-	Done bool
+	IsDone bool
 }

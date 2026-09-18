@@ -146,7 +146,7 @@ function onAddSection(): void {
       :of="shown.of"
       :wrong="wrong"
       :at="at"
-      :asking="asking === run.id"
+      :is-asking="asking === run.id"
       :words="words"
       @drag-over="onDragOver"
       @drop="onDrop"

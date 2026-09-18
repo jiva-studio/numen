@@ -112,7 +112,7 @@ func begin(
 	told := func(paths, assets []string, reload bool) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.
-		api.Listeners.tell(change{paths: slices.Concat(paths, assets), reload: reload})
+		api.Listeners.tell(change{paths: slices.Concat(paths, assets), shouldReload: reload})
 		if reload || len(assets) > 0 {
 			// A book dropped into an open vault is read without anybody asking.
 			raise(wake.sources)

@@ -48,7 +48,7 @@ even_load: true
 		p.GetShare(time.Monday) != 1 {
 		t.Errorf("load = %v", p.Load)
 	}
-	if !p.EvenLoad {
+	if !p.IsEvenLoad {
 		t.Error("even load was asked for")
 	}
 }

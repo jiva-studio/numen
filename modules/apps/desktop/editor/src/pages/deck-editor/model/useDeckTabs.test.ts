@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
-import type { Cards, VaultCard, DeckProblem } from '@/entities/deck'
+import type { Cards, VaultCard, DeckProblem, Preset } from '@/entities/deck'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
 import { fileOpeners } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
@@ -15,7 +15,10 @@ import { useDeckTabs, type DeckTabState } from './useDeckTabs'
 import { WORDS as words } from '@/entities/deck'
 
 /** A preset that schedules, which is what every preset here is. */
-const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
+const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } satisfies Pick<
+  Preset,
+  'stops' | 'stopsOn'
+>
 
 /** The one place a file is opened from. Nothing here opens one. */
 const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
@@ -60,13 +63,13 @@ const vault = (
     problems?: readonly DeckProblem[]
     bound?: number
     /** The write answers that the file moved past what the tab read. */
-    changed?: boolean
+    isChanged?: boolean
     /** The cards the file holds, where a test wants other ones. */
     cards?: readonly VaultCard[]
     /** The sections the file holds, where a test wants some. */
     sections?: readonly { name: string; preamble: string }[]
     /** The vault is out of reach, and a read of the deck reaches nothing. */
-    unreachable?: boolean
+    isUnreachable?: boolean
     /** What a write of the deck is refused for. */
     wrote?: ErrorCode
     /** How many listings of the stencils go unanswered before one answers. */
@@ -80,7 +83,7 @@ const vault = (
     /** What putting the deck on a preset is refused for. */
     notScheduled?: ErrorCode
     /** Putting the deck on a preset answers that the file moved past it. */
-    schedulingChanged?: boolean
+    hasSchedulingChanged?: boolean
   } = {},
 ) => {
   const written: string[] = []
@@ -106,7 +109,7 @@ const vault = (
     renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
     readDeck: async (path) => {
       reads += 1
-      if (answers.unreachable) throw new Error('out of reach')
+      if (answers.isUnreachable) throw new Error('out of reach')
       if (answers.error) {
         return asFailure({ code: answers.error, bound: answers.bound ?? 0 })
       }
@@ -128,7 +131,7 @@ const vault = (
       wrote.push(deck)
       seen.push(presented)
       if (answers.wrote) return asFailure({ code: answers.wrote, bound: 0 })
-      if (answers.changed) return asFailure({ code: 'changed' as const, bound: 0 })
+      if (answers.isChanged) return asFailure({ code: 'changed' as const, bound: 0 })
       cards = deck.cards
       return asValue({ at: 'written' })
     },
@@ -169,7 +172,7 @@ const vault = (
     scheduleDeck: async (deck, preset, seen) => {
       put.push({ deck, preset, seen })
       if (answers.notScheduled) return asFailure(answers.notScheduled)
-      if (answers.schedulingChanged) return asFailure('changed' as const)
+      if (answers.hasSchedulingChanged) return asFailure('changed' as const)
       by = preset
       return asValue({ at: 'scheduled' })
     },
@@ -185,7 +188,7 @@ const vault = (
       cards: 0,
       overdue: 0,
       unbegun: 0,
-      honest: true,
+      isHonest: true,
     }),
   }
 
@@ -339,7 +342,7 @@ describe('a card written in a deck', () => {
 
 describe('a deck whose file moved past what was read', () => {
   it('is stale once the write comes back saying the file changed', async () => {
-    const { decks, tab } = await open({ changed: true })
+    const { decks, tab } = await open({ isChanged: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
@@ -348,7 +351,7 @@ describe('a deck whose file moved past what was read', () => {
   })
 
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {
-    const { decks, tab, written, seen } = await open({ changed: true })
+    const { decks, tab, written, seen } = await open({ isChanged: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
@@ -360,7 +363,7 @@ describe('a deck whose file moved past what was read', () => {
   })
 
   it('reads the file again when the person takes what it holds', async () => {
-    const { decks, tab, getReadCount } = await open({ changed: true })
+    const { decks, tab, getReadCount } = await open({ isChanged: true })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
@@ -432,7 +435,7 @@ describe('a value written over', () => {
   const WRITTEN = ['cards/Animal', 'Animal|животное', 'note://01J3ZQ8W0T7K9V2M4N6P8R0S1T']
 
   /** A deck of one card, under the wikilink it wrote for its stencil. */
-  const only = (stencil: string, stencilPath = 'Animal.md'): readonly VaultCard[] => [
+  const createOneCard = (stencil: string, stencilPath = 'Animal.md'): readonly VaultCard[] => [
     {
       mark: 'k7m2xq9fzp',
       sectionIndex: null,
@@ -462,7 +465,7 @@ describe('a value written over', () => {
 
   it('stands under the first field, whatever the card wrote in its brackets', async () => {
     for (const one of WRITTEN) {
-      const { tab } = await open({ cards: only(one) })
+      const { tab } = await open({ cards: createOneCard(one) })
 
       tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
@@ -471,7 +474,7 @@ describe('a value written over', () => {
   })
 
   it('is written after the rest where the field is another one the stencil declares', async () => {
-    const { tab } = await open({ cards: only('cards/Animal') })
+    const { tab } = await open({ cards: createOneCard('cards/Animal') })
 
     tab.writeCardField('k7m2xq9fzp', 'Height', 1, 'about 45"')
 
@@ -493,7 +496,7 @@ describe('a value written over', () => {
   })
 
   it('is written for a card whose link reached no stencil', async () => {
-    const { tab } = await open({ cards: only('Gone', '') })
+    const { tab } = await open({ cards: createOneCard('Gone', '') })
 
     tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
@@ -501,7 +504,7 @@ describe('a value written over', () => {
   })
 
   it('leaves the heading the file gave the card exactly as it stands', async () => {
-    const { tab } = await open({ cards: only('Gone', '') })
+    const { tab } = await open({ cards: createOneCard('Gone', '') })
 
     tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
 
@@ -823,7 +826,7 @@ describe('a deck whose tab has gone', () => {
 
 describe('a deck the vault could not be reached for', () => {
   it('says the vault could not be reached, where the read reached nothing', async () => {
-    const { tab } = await open({ unreachable: true })
+    const { tab } = await open({ isUnreachable: true })
 
     expect(tab.errorMessage.value).toBe(words.unreachable)
   })
@@ -922,7 +925,7 @@ describe('the preset a deck is scheduled by', () => {
   })
 
   it('says a deck the file moved past since the window read it', async () => {
-    const { tab } = await open({ schedulingChanged: true })
+    const { tab } = await open({ hasSchedulingChanged: true })
 
     tab.setSchedule('Sanskrit.md')
     await settle()

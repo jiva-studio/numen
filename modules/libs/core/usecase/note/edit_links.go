@@ -56,7 +56,7 @@ func (u EditLinks) Add(
 ) (domain.Fingerprint, error) {
 	links := append([]domain.Link{add}, more...)
 	for _, link := range links {
-		if err := Writable(link); err != nil {
+		if err := CheckWritable(link); err != nil {
 			return domain.Fingerprint{}, err
 		}
 	}
@@ -148,8 +148,8 @@ func (u EditLinks) Remove(
 	})
 }
 
-// Writable is what a link must carry before anything will write it.
-func Writable(link domain.Link) error {
+// CheckWritable is what a link must carry before anything will write it.
+func CheckWritable(link domain.Link) error {
 	if !domain.IsKnownRole(link.Role) {
 		return fmt.Errorf("%q is not a role a link can carry", link.Role)
 	}

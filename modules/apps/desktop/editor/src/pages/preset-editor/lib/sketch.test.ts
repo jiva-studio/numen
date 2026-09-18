@@ -21,7 +21,7 @@ const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...
 
 describe('the line the window draws in the answer’s place', () => {
   it('says it is not the application’s', () => {
-    expect(approximate(settings(), today, BOUNDS).honest).toBe(false)
+    expect(approximate(settings(), today, BOUNDS).isHonest).toBe(false)
   })
 
   it('runs over the whole range of minutes, and marks where the preset stands', () => {

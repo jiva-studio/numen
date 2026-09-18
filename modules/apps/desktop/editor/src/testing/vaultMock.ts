@@ -35,7 +35,7 @@ vi.mock('@/app/vault', () => ({
       name: 'Vault',
       path: '/vaults/Physics',
       scan: {
-        isReady: said.ready,
+        isReady: said.isReady,
         error: said.error,
         unwatchedPath: '',
       },

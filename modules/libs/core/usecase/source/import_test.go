@@ -157,7 +157,7 @@ func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Nothing || res.Producer != "" {
+	if !res.IsNothing || res.Producer != "" {
 		t.Errorf("it came back with %+v", res)
 	}
 	hash := text.Fingerprint([]byte(address))
@@ -280,7 +280,7 @@ func TestACopyKeptBesideTheNote(t *testing.T) {
 	held := newLibrary()
 	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
 	u.Readers = vaults{first.ID: held}
-	u.ToVault, u.Writers = true, writers{first.ID: held}
+	u.IsToVault, u.Writers = true, writers{first.ID: held}
 
 	got, err := u.Copy(t.Context(), first, videoNote)
 	if err != nil {
@@ -311,7 +311,7 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 	held := newLibrary()
 	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
 	u.Readers = vaults{first.ID: held}
-	u.ToVault, u.Writers = true, writers{first.ID: held}
+	u.IsToVault, u.Writers = true, writers{first.ID: held}
 
 	if _, err := u.Copy(t.Context(), first, videoNote); err != nil {
 		t.Fatal(err)
@@ -320,7 +320,7 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !got.Existed {
+	if !got.IsExisted {
 		t.Error("the video was downloaded again over a copy already standing")
 	}
 	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {

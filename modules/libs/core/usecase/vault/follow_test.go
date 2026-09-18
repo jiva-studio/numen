@@ -157,7 +157,7 @@ func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
 
 	watcher.lost <- struct{}{}
 
-	if got := next(t, f.moved); !got.Reload || !got.Reading() {
+	if got := next(t, f.moved); !got.ShouldReload || !got.Reading() {
 		t.Errorf("reported %+v", got)
 	}
 }
@@ -179,7 +179,7 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	watcher.lost <- struct{}{}
 
 	got := next(t, f.moved)
-	if !got.Reload {
+	if !got.ShouldReload {
 		t.Fatalf("reported %+v, want the whole picture asked for again", got)
 	}
 	if len(got.Paths) != 0 || len(got.Assets) != 0 {

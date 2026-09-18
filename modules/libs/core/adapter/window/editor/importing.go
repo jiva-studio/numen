@@ -44,7 +44,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	api.say(at)
 
 	brought, err := api.Files.Import.Execute(ctx, showing, into, paths)
-	if landed := directlyIn(into, brought.Landed); len(landed) > 0 {
+	if landed := getDirectChildren(into, brought.Landed); len(landed) > 0 {
 		api.Listeners.tell(change{paths: landed})
 	}
 	if err != nil {
@@ -60,10 +60,10 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	api.finishTask(at.ID)
 }
 
-// directlyIn is what of a drop sits in the folder it was let go over. What
+// getDirectChildren is what of a drop sits in the folder it was let go over. What
 // arrived deeper sits in folders that arrived with it, and those are read when
 // a person opens them.
-func directlyIn(into string, landed []string) []string {
+func getDirectChildren(into string, landed []string) []string {
 	shown := make([]string, 0, len(landed))
 	for _, path := range landed {
 		if pathpkg.Dir(path) == into || (into == "" && !strings.Contains(path, "/")) {

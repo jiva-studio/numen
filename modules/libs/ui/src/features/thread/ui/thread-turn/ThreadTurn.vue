@@ -53,7 +53,7 @@ const call = computed(() => ({
     <div
       class="thread__body min-w-0"
       :class="
-        entry.voice.bubble
+        entry.voice.isBubble
           ? 'rounded-bubble bg-bubble text-bubble-ink max-w-(--measure) px-3 py-2'
           : 'text-answer-ink'
       "
@@ -68,7 +68,7 @@ const call = computed(() => ({
         <ToolCall v-bind="call" />
       </button>
       <ToolCall v-else-if="isDoing" v-bind="call" />
-      <span v-else-if="entry.voice.bubble" class="thread__text">{{ entry.turn.text }}</span>
+      <span v-else-if="entry.voice.isBubble" class="thread__text">{{ entry.turn.text }}</span>
       <Prose
         v-else
         :text="entry.turn.text"

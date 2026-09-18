@@ -103,12 +103,12 @@ describe('every keystroke the table holds', () => {
   })
 
   it('is the only chord holding that letter with that half of the pair', () => {
-    const held = CHORDS.map((one) => `${one.letter}${one.shift ? '+shift' : ''}`)
+    const held = CHORDS.map((one) => `${one.letter}${one.hasShift ? '+shift' : ''}`)
     expect(new Set(held).size).toBe(held.length)
   })
 
   it('leaves alone the two letters that put the palette up', () => {
-    const alone = CHORDS.filter((one) => !one.shift).map((one) => one.letter)
+    const alone = CHORDS.filter((one) => !one.hasShift).map((one) => one.letter)
     expect(alone).not.toContain('k')
     expect(alone).not.toContain('p')
   })
@@ -128,7 +128,7 @@ describe('every keystroke the table holds', () => {
     const editor = ['k', '\\', 'u', 'z']
     // Redo and force reload, the whole of what the default menu holds with Shift.
     const menu = ['z', 'r']
-    for (const held of CHORDS.filter((one) => one.shift)) {
+    for (const held of CHORDS.filter((one) => one.hasShift)) {
       expect(editor).not.toContain(held.letter)
       expect(menu).not.toContain(held.letter)
     }

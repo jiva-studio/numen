@@ -41,7 +41,7 @@ const window = (opening = 'Opening.md') => {
   const held = useWindowTabs()
   const plexes = createPlexKind(held.handle, createView, {
     editor: createVault().editor,
-    ready: ref(true),
+    isReady: ref(true),
     isHanging,
     parts: ref(6),
     openNote: () => {},

@@ -91,8 +91,8 @@ type RecognitionWorker struct {
 	// recognised.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	mu      sync.Mutex
-	running bool
+	mu        sync.Mutex
+	isRunning bool
 	// runs counts the runs that have begun. A run stops the running only while
 	// it is still the one running.
 	runs uint64
@@ -132,7 +132,7 @@ func (r *RecognitionWorker) Wait() { r.going.Wait() }
 func (r *RecognitionWorker) IsRunning() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.running
+	return r.isRunning
 }
 
 // Start recognises one document a person named, and says whether it began now
@@ -147,11 +147,11 @@ func (r *RecognitionWorker) IsRunning() bool {
 func (r *RecognitionWorker) Start(v domain.Vault, path string) port.StartOutcome {
 	r.mu.Lock()
 	r.queue.add(v, path)
-	if r.running {
+	if r.isRunning {
 		r.mu.Unlock()
 		return port.Queued
 	}
-	r.running = true
+	r.isRunning = true
 	r.runs++
 	mine := r.runs
 	r.mu.Unlock()
@@ -195,17 +195,17 @@ func (r *RecognitionWorker) drain(ctx context.Context) {
 			if r.idle != nil {
 				r.idle()
 			}
-			r.running = false
+			r.isRunning = false
 			r.mu.Unlock()
 			return
 		}
 		r.mu.Unlock()
-		r.one(ctx, one.vault, one.path)
+		r.recogniseOne(ctx, one.vault, one.path)
 	}
 }
 
-// one is a single document recognised, put right, and reported.
-func (r *RecognitionWorker) one(ctx context.Context, v domain.Vault, path string) {
+// recogniseOne is a single document recognised, put right, and reported.
+func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, path string) {
 	r.mu.Lock()
 	before := r.last
 	r.named++
@@ -239,7 +239,7 @@ func (r *RecognitionWorker) stopRun(run uint64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.runs == run {
-		r.running = false
+		r.isRunning = false
 	}
 }
 
@@ -310,7 +310,7 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 	if err != nil {
 		return err
 	}
-	if res.Busy {
+	if res.IsBusy {
 		// Another run holds these bytes — a terminal, or a second window. What
 		// it recognises is what this recognises.
 		return fmt.Errorf("%s is already being read", path)
@@ -326,7 +326,7 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 // failed is the reading as it was read.
 func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path string) {
 	said := r.with.Proofreading
-	if !said.Automatically {
+	if !said.IsAutomatic {
 		return
 	}
 
@@ -364,12 +364,12 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 
 // say puts this recognition in the list of what is being done. A person asked
 // for it and is waiting to be told it began.
-func (r *RecognitionWorker) say(at task.Task) { r.says(at, true) }
+func (r *RecognitionWorker) say(at task.Task) { r.report(at, true) }
 
-// says puts one piece of work in the list. Work a person started is shown at
+// report puts one piece of work in the list. Work a person started is shown at
 // once, and work nobody asked for is shown once it has lasted.
-func (r *RecognitionWorker) says(at task.Task, asked bool) {
-	at.Asked = asked
+func (r *RecognitionWorker) report(at task.Task, asked bool) {
+	at.IsAsked = asked
 	if r.with.Tasks != nil {
 		r.with.Tasks.Set(at)
 	}
@@ -381,9 +381,9 @@ func (r *RecognitionWorker) finishTask(id string) {
 	}
 }
 
-// Collecting asks after the batches left with a proofreader, until the context
-// is done, behind the caller. A batch outlives the run that left it, so one
-// left before the application closed is collected when it opens.
+// CollectBatches asks after the batches left with a proofreader, until the
+// context is done, behind the caller. A batch outlives the run that left it, so
+// one left before the application closed is collected when it opens.
 //
 // Nothing here is done unless a person configured a proofreader with a queue.
 //
@@ -439,7 +439,7 @@ func (r *RecognitionWorker) TakeUp(
 	vaults ...domain.Vault,
 ) {
 	said := r.with.Proofreading
-	if !said.Automatically {
+	if !said.IsAutomatic {
 		return
 	}
 	r.going.Add(1)
@@ -478,37 +478,41 @@ func (r *RecognitionWorker) collect(
 			return
 		}
 		id := proofreadID(one.Path)
-		res, err := ProofreadReading{
-			Readers:         r.with.Readers,
-			Derived:         r.with.Derived,
-			By:              by,
-			Queue:           queue,
-			Pages:           said.Batch,
-			MaxEditDistance: said.MaxEditDistance,
-			Cut:             r.Cut,
-			OnProgress: func(res ProofreadReadingResult) {
-				r.says(task.Task{
-					ID: id, Doing: "Proofreading a reading", About: one.Path,
-					Count: int64(res.Read), Total: int64(res.Pages),
-				}, false)
-			},
-		}.Execute(ctx, v, one.Path)
+		right, err := NewProofreadReading(r.with.Readers, r.with.Derived, by)
+		if err != nil {
+			r.report(task.Task{
+				ID: id, Doing: "Proofreading a reading",
+				About: one.Path, Error: err.Error(),
+			}, true)
+			continue
+		}
+		right.Queue = queue
+		right.Pages = said.Batch
+		right.MaxEditDistance = said.MaxEditDistance
+		right.Cut = r.Cut
+		right.OnProgress = func(res ProofreadReadingResult) {
+			r.report(task.Task{
+				ID: id, Doing: "Proofreading a reading", About: one.Path,
+				Count: int64(res.Read), Total: int64(res.Pages),
+			}, false)
+		}
+		res, err := right.Execute(ctx, v, one.Path)
 
 		switch {
 		case err != nil:
-			r.says(task.Task{
+			r.report(task.Task{
 				ID: id, Doing: "Proofreading a reading",
 				About: one.Path, Error: err.Error(),
 			}, false)
-		case res.Busy:
+		case res.IsBusy:
 			// The reading is held by another run, and that run is the one
 			// whose progress the list carries.
-		case res.None, res.Read >= res.Pages:
+		case res.IsNone, res.Read >= res.Pages:
 			// A reading with nothing left to put right is a run nobody is
 			// waiting on.
 			r.finishTask(id)
 		default:
-			r.says(task.Task{
+			r.report(task.Task{
 				ID: id, Doing: "Proofreading a reading", About: one.Path,
 				Count: int64(res.Read), Total: int64(res.Pages),
 			}, false)

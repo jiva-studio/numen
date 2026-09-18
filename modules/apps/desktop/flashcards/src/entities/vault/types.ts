@@ -83,7 +83,7 @@ export interface VaultCardsDue {
    * Whether this vault has been counted. Everything below stands at nothing
    * until it has, and nothing under it is read as a vault owing nothing.
    */
-  readonly counted: boolean
+  readonly isCounted: boolean
   readonly faces: number
   readonly due: number
   readonly new: number
@@ -95,5 +95,5 @@ export interface VaultCardsDue {
    * Whether the vault is being read into the index now. Its counts follow when
    * the reading is done.
    */
-  readonly reading: boolean
+  readonly isReading: boolean
 }

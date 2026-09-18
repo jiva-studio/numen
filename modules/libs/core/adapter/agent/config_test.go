@@ -28,13 +28,13 @@ func TestNamingNoAgentIsKept(t *testing.T) {
 // What puts the tools on a port: an agent named for the panel, or a person
 // asking for the port itself. An installation asking for neither opens none.
 func TestWhatOpensThePort(t *testing.T) {
-	if agent.Defaults().ServeTools {
+	if agent.Defaults().ShouldServeTools {
 		t.Error("the defaults serve the tools to an agent nobody has configured")
 	}
 
 	for name, said := range map[string]struct {
-		file    string
-		serving bool
+		file      string
+		isServing bool
 	}{
 		"the defaults":              {`{}`, true},
 		"no agent named":            {`{"use": ""}`, false},
@@ -46,7 +46,7 @@ func TestWhatOpensThePort(t *testing.T) {
 			if err := json.Unmarshal([]byte(said.file), &held); err != nil {
 				t.Fatal(err)
 			}
-			if got := held.IsServingTools(); got != said.serving {
+			if got := held.IsServingTools(); got != said.isServing {
 				t.Errorf("the tools are served: %v", got)
 			}
 		})

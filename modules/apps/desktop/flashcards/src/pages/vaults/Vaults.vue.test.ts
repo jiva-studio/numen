@@ -13,23 +13,23 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
-  counted: true,
+  isCounted: true,
   faces: 40,
   due: 8,
   new: 2,
   decks: [],
   presets: [],
   unread: '',
-  reading: false,
+  isReading: false,
   ...fields,
 })
 
 /** A vault on the list whose count has not arrived. */
 const createUncountedVault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue =>
-  vault({ counted: false, faces: 0, due: 0, new: 0, ...fields })
+  vault({ isCounted: false, faces: 0, due: 0, new: 0, ...fields })
 
 const mountVaults = (isCounting: boolean, vaults: readonly VaultCardsDue[] = []) =>
-  mount(Vaults, { props: { vaults, counting: isCounting, version: '0.1.0' } })
+  mount(Vaults, { props: { vaults, isCounting, version: '0.1.0' } })
 
 describe('the front door before it knows which vaults there are', () => {
   it('says what it is doing, with the mark that says it is working', () => {
@@ -140,7 +140,7 @@ describe('the front door once the counts are in', () => {
   // A vault the index does not carry is being read into it, which is what its
   // row says while that runs.
   it('says a vault is being read, and prints no shape for it', () => {
-    const one = mountVaults(false, [vault({ counted: false, reading: true })])
+    const one = mountVaults(false, [vault({ isCounted: false, isReading: true })])
 
     expect(one.find('.welcome-page__row--vault').text()).toContain('Reading the vault')
     expect(one.findComponent(Skeleton).exists()).toBe(false)

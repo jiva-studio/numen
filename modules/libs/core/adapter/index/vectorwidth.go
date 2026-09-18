@@ -22,11 +22,11 @@ var declaredWidth = regexp.MustCompile(`bit\[(\d+)]`)
 // The coarse index is built for one width, and a model of another width cannot
 // be written to it. What a model made is kept by the text it read, in a table of
 // its own, and the coarse form is read out of that.
-func (db *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
+func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	if dims <= 0 {
 		return fmt.Errorf("a vector of %d dimensions is not a vector", dims)
 	}
-	held, err := vectorWidth(ctx, db.write)
+	held, err := vectorWidth(ctx, d.write)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (db *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 		return nil
 	}
 
-	tx, err := writing.Begin(ctx, db.write)
+	tx, err := writing.Begin(ctx, d.write)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}

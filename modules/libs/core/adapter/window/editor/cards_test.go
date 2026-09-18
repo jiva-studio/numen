@@ -30,7 +30,7 @@ func newCutting(t *testing.T, notes map[string]string) *cutting {
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
 
-	route, handler := numenv1connect.NewCardsServiceHandler(f.opened.API)
+	route, handler := numenv1connect.NewCardsServiceHandler(f.installation.API)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewUnstartedServer(mux)

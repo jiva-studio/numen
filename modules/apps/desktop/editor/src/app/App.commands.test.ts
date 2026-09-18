@@ -631,7 +631,7 @@ describe('a command asked for while the vault is being read', () => {
   }
 
   it('carries the command out, and goes on saying the vault is being read', async () => {
-    said.ready = false
+    said.isReady = false
     said.opening = null
     const window = await mountWindowWithPalette()
 

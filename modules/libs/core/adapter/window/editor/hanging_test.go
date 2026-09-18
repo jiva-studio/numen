@@ -15,9 +15,9 @@ import (
 // The window asks whether a node hangs the headings of its note, and turns the
 // setting from the palette.
 
-// hangs is whether a node hangs the headings of its note under it, and parts
-// how many of them stand there at once, as the settings hold the two.
-func hangs(t *testing.T, f *going) bool {
+// isHanging is whether a node hangs the headings of its note under it, and
+// parts how many of them stand there at once, as the settings hold the two.
+func isHanging(t *testing.T, f *going) bool {
 	t.Helper()
 	held, is := getSetting(t, f, "appearance", "hang_parts_under_a_node").(bool)
 	if !is {
@@ -58,7 +58,7 @@ func turnsHanging(t *testing.T, f *going, hangs bool, count *int) error {
 func TestTurningTheHangingIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	if !hangs(t, f) {
+	if !isHanging(t, f) {
 		t.Fatal("an installation nobody has configured hangs nothing")
 	}
 
@@ -66,7 +66,7 @@ func TestTurningTheHangingIsAnsweredByTheNextQuestion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if hangs(t, f) {
+	if isHanging(t, f) {
 		t.Error("the setting was turned and the window still hangs the parts")
 	}
 }
@@ -92,7 +92,7 @@ func TestTurningTheCountOfPartsIsAnsweredByTheNextQuestion(t *testing.T) {
 	if said := parts(t, f); said != 3 {
 		t.Errorf("a node stands %d parts", said)
 	}
-	if hangs(t, f) {
+	if isHanging(t, f) {
 		t.Error("the setting was turned and the window still hangs the parts")
 	}
 }

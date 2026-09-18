@@ -43,8 +43,8 @@ type Document struct {
 	shut  []byte // the closing `---` line, with its ending
 	body  []byte
 	eol   string
-	// unterminated is a file that opens with the delimiter and never closes it.
-	unterminated bool
+	// isUnterminated is a file that opens with the delimiter and never closes it.
+	isUnterminated bool
 }
 
 // OpenBody holds prose alone open for changing. There is no frontmatter to
@@ -92,7 +92,7 @@ func Open(raw []byte) (*Document, error) {
 	// nothing written to the body is written: what a write would replace is the
 	// half-written block as well as the prose.
 	d.body = rest
-	d.unterminated = true
+	d.isUnterminated = true
 	return d, nil
 }
 
@@ -130,7 +130,7 @@ func (d *Document) Body() string { return string(d.body) }
 // the whole file stands as its body — so this is ErrUnterminated and the file
 // is left as it is.
 func (d *Document) SetBody(body string) error {
-	if d.unterminated {
+	if d.isUnterminated {
 		return ErrUnterminated
 	}
 	text := Normalise(body)
@@ -148,7 +148,7 @@ func (d *Document) SetBody(body string) error {
 // Body hands it over. Every byte outside the run is left as it arrived, and
 // what is written in its place takes the file's own line ending.
 func (d *Document) SpliceBody(start, end int, text string) error {
-	if d.unterminated {
+	if d.isUnterminated {
 		return ErrUnterminated
 	}
 	if start < 0 || end < start || end > len(d.body) {

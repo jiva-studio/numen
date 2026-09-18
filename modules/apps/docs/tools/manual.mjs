@@ -108,7 +108,7 @@ const chords = (source) => {
   const table = declaring(source, 'CHORDS', 'chords.ts no longer lists its chords')
   const found = [
     ...table.text.matchAll(
-      /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+      /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
     ),
   ].map(([, command, letter, shift]) => ({ command, letter, shift: shift === 'true' }))
   if (found.length === 0) die('no chords are declared in chords.ts')
@@ -681,8 +681,8 @@ const pictured = async () => {
 const REFUSES = [
   {
     what: 'a list every entry of which the pattern reads',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', shift: false },\n]\n",
-    pattern: /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', hasShift: false },\n]\n",
+    pattern: /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
     refused: false,
   },
   {

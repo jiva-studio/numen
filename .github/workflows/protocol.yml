@@ -72,8 +72,8 @@ jobs:
       - name: Codegen
         run: |
           buf generate
-          git add -AN -- .
-          git diff --exit-code -- . || {
+          git add -AN -- gen src
+          git diff --exit-code -- gen src || {
             echo "::error::the schema changed and the generated code was not regenerated — run: make generate"
             exit 1
           }

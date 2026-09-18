@@ -140,7 +140,7 @@ func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
 // unreadable is an installation whose list of vaults cannot be read.
 type unreadable struct{ registry }
 
-func (unreadable) All() ([]domain.Vault, error) {
+func (unreadable) List() ([]domain.Vault, error) {
 	return nil, errors.New("the list of vaults cannot be read")
 }
 

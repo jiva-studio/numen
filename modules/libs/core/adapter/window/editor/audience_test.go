@@ -24,7 +24,7 @@ func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
 	}
 	following.tell(change{paths: []string{"notes/two.md"}})
 
-	if last := <-line; !last.reload {
+	if last := <-line; !last.shouldReload {
 		t.Errorf("a listener that missed one was handed %+v", last)
 	}
 }

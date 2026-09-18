@@ -11,7 +11,7 @@ import (
 
 // A sentence a recording broke across three stretches of speech.
 func makeBrokenBatch() proofread.Batch {
-	return proofread.Batch{Number: 1, Joinable: true, Lines: []proofread.Line{
+	return proofread.Batch{Number: 1, IsJoinable: true, Lines: []proofread.Line{
 		{Number: 4, Last: 4, Text: "Krishna is Raj. Krishna is"},
 		{Number: 5, Last: 5, Text: "connected with Raj Dila."},
 		{Number: 6, Last: 6, Text: "Sure."},
@@ -100,7 +100,7 @@ func TestARunRefusesABatchThatDoesNotPutLinesTogether(t *testing.T) {
 	page := proofread.GetScanBatches("one two three ", []highlight.Box{
 		box(4, 0, 4), box(4, 4, 4), box(4, 8, 6),
 	})[0]
-	if page.Joinable {
+	if page.IsJoinable {
 		t.Fatal("a page of a scan puts its lines together")
 	}
 	if _, _, ok := proofread.GetFixedLines(page, "0-1|one two", 0.30); ok {
@@ -123,7 +123,7 @@ func TestABatchOfSpeechPutsLinesTogether(t *testing.T) {
 		{Text: "Krishna is Raj. Krishna is", From: 0, To: 800},
 		{Text: "connected with Raj Dila.", From: 1000, To: 1800},
 	}, 2, 0)
-	if len(batches) != 1 || !batches[0].Joinable {
+	if len(batches) != 1 || !batches[0].IsJoinable {
 		t.Fatalf("the batches are %+v", batches)
 	}
 }
@@ -160,7 +160,7 @@ func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 // A line where one sentence ends and the next begins stands in the run of
 // both, and the run is answered with every sentence it covers.
 func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
-	batch := proofread.Batch{Number: 1, Joinable: true, Lines: []proofread.Line{
+	batch := proofread.Batch{Number: 1, IsJoinable: true, Lines: []proofread.Line{
 		{Number: 4, Last: 4, Text: "we should go. And then"},
 		{Number: 5, Last: 5, Text: "the next day he left."},
 	}}

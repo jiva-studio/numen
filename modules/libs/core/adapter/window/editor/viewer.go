@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"image"
 	"image/jpeg"
 	"net/http"
@@ -31,10 +33,6 @@ import (
 // than a screen is memory spent on pixels nobody sees.
 const widestPage = 4096
 
-// pointsDPI is one of the page's own units to the pixel, which is what a page's
-// size is measured in.
-const pointsDPI = 72
-
 // quality is what a drawn page is encoded at. A page of a scan is a photograph
 // of paper — continuous tone, no flat colour and nothing behind it — which is
 // what JPEG carries, and at this quality what it loses is under the grain of
@@ -52,15 +50,15 @@ var errNoPage = errors.New("no such page in this document")
 type viewer struct {
 	// open holds a document open for drawing. It is pdf.Open in the
 	// application, and a test puts its own in.
-	open  func(raw []byte) (scan, error)
-	docs  atomic.Pointer[documents]
-	drawn atomic.Pointer[pictures]
+	open  func(raw []byte) (pool.Scan, error)
+	docs  atomic.Pointer[pool.Documents]
+	drawn atomic.Pointer[pagecache.Memory]
 	// read holds the books open. A book is an archive unpacked and parsed, and
 	// what it costs is memory.
-	read atomic.Pointer[books]
-	// kept is the same pages on disk, so a document opened again is not drawn
+	read atomic.Pointer[pool.Books]
+	// onDisk is the same pages on disk, so a document opened again is not drawn
 	// again. It is nothing where this machine names no cache folder.
-	kept *cache
+	onDisk *pagecache.Disk
 
 	// patience is how long a request waits for the document before it answers
 	// that the document is busy. The library's own wait is minutes, which is
@@ -99,8 +97,8 @@ const (
 )
 
 // newDocumentOpener holds a document open with what the application draws with.
-func newDocumentOpener(docs port.PageRenderer) func([]byte) (scan, error) {
-	return func(raw []byte) (scan, error) {
+func newDocumentOpener(docs port.PageRenderer) func([]byte) (pool.Scan, error) {
+	return func(raw []byte) (pool.Scan, error) {
 		return docs.Draw(context.Background(), raw)
 	}
 }
@@ -114,26 +112,26 @@ func newViewer(docs port.PageRenderer) *viewer {
 		patience: patience,
 		ahead:    ahead{reading: make(chan struct{}, 1), within: drawnAhead},
 	}
-	v.docs.Store(newDocuments())
-	v.drawn.Store(drawings())
-	v.read.Store(newBooks(mostRead, readIdleFor))
+	v.docs.Store(pool.NewDocuments(pool.MostOpen, pool.OpenIdleFor))
+	v.drawn.Store(pagecache.NewMemory(pagecache.MostDrawn))
+	v.read.Store(pool.NewBooks(pool.MostRead, pool.ReadIdleFor))
 	return v
 }
 
 // close is the documents the window holds open let go, and the sweep of the
 // folder they were kept in ended and waited for.
 func (v *viewer) close() {
-	v.docs.Load().close()
-	v.read.Load().close()
-	v.kept.close()
+	v.docs.Load().Close()
+	v.read.Load().Close()
+	v.onDisk.Close()
 }
 
 // empty closes the documents the window has open, lets go of the books, and
 // drops the pages drawn. It goes on looking, at whatever it is given next.
 func (v *viewer) empty() {
-	v.docs.Swap(newDocuments()).close()
-	v.read.Swap(newBooks(mostRead, readIdleFor)).close()
-	v.drawn.Store(drawings())
+	v.docs.Swap(pool.NewDocuments(pool.MostOpen, pool.OpenIdleFor)).Close()
+	v.read.Swap(pool.NewBooks(pool.MostRead, pool.ReadIdleFor)).Close()
+	v.drawn.Store(pagecache.NewMemory(pagecache.MostDrawn))
 }
 
 // GetDocument answers what the document at a path in the vault is: how many
@@ -149,27 +147,27 @@ func (a *API) GetDocument(
 	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
 	defer cancel()
 
-	reader, print, err := a.stat(ctx, r.Msg.GetPath())
+	reader, mark, err := a.stat(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	doc, give, err := a.opening(ctx, reader, print)
+	doc, give, err := a.opening(ctx, reader, mark)
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
 	defer give()
 
-	if !doc.hold(ctx) {
-		return nil, connect.NewError(connect.CodeUnavailable, errBusy)
+	if !doc.Hold(ctx) {
+		return nil, connect.NewError(connect.CodeUnavailable, pool.ErrBusy)
 	}
-	defer doc.release()
+	defer doc.Release()
 
 	out := &v1.GetDocumentResponse{
-		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
+		Fingerprint: &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime},
 	}
-	out.Pages = make([]*v1.Page, doc.scan.Pages())
+	out.Pages = make([]*v1.Page, doc.Scan.Pages())
 	for i := range out.Pages {
-		width, height, err := doc.scan.Size(i)
+		width, height, err := doc.Scan.Size(i)
 		if err != nil {
 			// A page whose size could not be read stands at nothing, and the
 			// pages after it are still where they were.
@@ -199,17 +197,17 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
 	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
 	defer cancel()
 
-	reader, print, err := a.stat(ctx, path)
+	reader, mark, err := a.stat(ctx, path)
 	if err != nil {
 		refuse(w, err)
 		return
 	}
-	if named.size != print.size || named.mtime != print.mtime {
+	if named.Size != mark.Size || named.Mtime != mark.Mtime {
 		refuse(w, errChanged)
 		return
 	}
 
-	key := pictureID{document: print, page: at, width: wide}
+	key := pagecache.ID{Document: mark, Page: at, Width: wide}
 	body, err := a.picture(ctx, reader, key)
 	if err != nil {
 		refuse(w, err)
@@ -232,20 +230,20 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
 // The path goes through the vault's readers the way everything from outside
 // does, so a path leaving the vault is refused there. A window standing on
 // nothing holds no file to say anything about.
-func (a *API) stat(ctx context.Context, path string) (port.VaultReader, fingerprint, error) {
+func (a *API) stat(ctx context.Context, path string) (port.VaultReader, pool.Fingerprint, error) {
 	showing := a.GetShownVault()
 	if showing.ID == "" {
-		return nil, fingerprint{}, errNoVault
+		return nil, pool.Fingerprint{}, errNoVault
 	}
 	reader, err := a.Readers.Open(showing)
 	if err != nil {
-		return nil, fingerprint{}, err
+		return nil, pool.Fingerprint{}, err
 	}
 	ref, err := reader.Stat(ctx, path)
 	if err != nil {
-		return nil, fingerprint{}, err
+		return nil, pool.Fingerprint{}, err
 	}
-	return reader, fingerprint{path: ref.Path, size: ref.Size, mtime: stamp(ref.ModTime)}, nil
+	return reader, pool.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}, nil
 }
 
 // opening hands over the document at a fingerprint, held open.
@@ -256,10 +254,10 @@ func (a *API) stat(ctx context.Context, path string) (port.VaultReader, fingerpr
 func (a *API) opening(
 	ctx context.Context,
 	reader port.VaultReader,
-	print fingerprint,
-) (*document, func(), error) {
-	return a.Viewer.docs.Load().take(ctx, print, func() (scan, error) {
-		raw, err := reader.Read(context.WithoutCancel(ctx), print.path)
+	mark pool.Fingerprint,
+) (*pool.Document, func(), error) {
+	return a.Viewer.docs.Load().Take(ctx, mark, func() (pool.Scan, error) {
+		raw, err := reader.Read(context.WithoutCancel(ctx), mark.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -271,37 +269,37 @@ func (a *API) opening(
 // memory, or the one on disk, or the page drawn.
 //
 // Several asks for one page draw it once and are answered with the one drawing.
-func (a *API) picture(ctx context.Context, reader port.VaultReader, key pictureID) ([]byte, error) {
-	return a.Viewer.drawn.Load().draw(ctx, key, func() ([]byte, error) {
-		if body := a.Viewer.kept.get(key); body != nil {
+func (a *API) picture(ctx context.Context, reader port.VaultReader, key pagecache.ID) ([]byte, error) {
+	return a.Viewer.drawn.Load().Draw(ctx, key, func() ([]byte, error) {
+		if body := a.Viewer.onDisk.Get(key); body != nil {
 			return body, nil
 		}
 		body, err := a.drawing(ctx, reader, key)
 		if err != nil {
 			return nil, err
 		}
-		a.Viewer.kept.put(key, body)
+		a.Viewer.onDisk.Put(key, body)
 		return body, nil
 	})
 }
 
 // drawing is one page of a document, drawn and encoded.
-func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pictureID) ([]byte, error) {
-	doc, give, err := a.opening(ctx, reader, key.document)
+func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pagecache.ID) ([]byte, error) {
+	doc, give, err := a.opening(ctx, reader, key.Document)
 	if err != nil {
 		return nil, err
 	}
 	defer give()
 
-	if !doc.hold(ctx) {
-		return nil, errBusy
+	if !doc.Hold(ctx) {
+		return nil, pool.ErrBusy
 	}
-	defer doc.release()
+	defer doc.Release()
 
-	if key.page >= doc.scan.Pages() {
-		return nil, fmt.Errorf("%w: page %d of %d", errNoPage, key.page, doc.scan.Pages())
+	if key.Page >= doc.Scan.Pages() {
+		return nil, fmt.Errorf("%w: page %d of %d", errNoPage, key.Page, doc.Scan.Pages())
 	}
-	drawn, err := doc.picture(key.page, key.width)
+	drawn, err := doc.Draw(key.Page, key.Width)
 	if err != nil {
 		return nil, err
 	}
@@ -311,9 +309,9 @@ func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pictureI
 // readAhead draws the page after this one, so that turning to it finds it
 // drawn. One page is drawn ahead at a time, and an ask being answered now comes
 // first.
-func (a *API) readAhead(reader port.VaultReader, key pictureID) {
-	next := pictureID{document: key.document, page: key.page + 1, width: key.width}
-	if a.Viewer.drawn.Load().has(next) {
+func (a *API) readAhead(reader port.VaultReader, key pagecache.ID) {
+	next := pagecache.ID{Document: key.Document, Page: key.Page + 1, Width: key.Width}
+	if a.Viewer.drawn.Load().Has(next) {
 		return
 	}
 	if !a.Viewer.ahead.take() {
@@ -340,38 +338,6 @@ func (a *API) getBackgroundContext() context.Context {
 	return context.Background()
 }
 
-// picture is one page drawn as wide as was asked for. It is called with the
-// document held.
-//
-// The library draws at a resolution, so the resolution is worked back from the
-// width asked for and the page's own size, rounded up. The size is the
-// document's own answer, and is asked once.
-//
-// It comes back a pixel or two wider than was asked for, and goes as it is. The
-// window lays the page out at the width it asked for, so the browser takes those
-// pixels off; resampling them off here is a pass over every pixel of the page to
-// change nothing anybody sees.
-func (d *document) picture(at, width int) (image.Image, error) {
-	points, measured := d.points[at]
-	if !measured {
-		across, _, err := d.scan.Size(at)
-		if err != nil {
-			return nil, err
-		}
-		points = int(across)
-		if points < 1 {
-			return nil, fmt.Errorf("page %d has no width", at)
-		}
-		d.points[at] = points
-	}
-	dpi := (width*pointsDPI + points - 1) / points
-	drawn, err := d.scan.Image(at, max(dpi, 1))
-	if err != nil {
-		return nil, err
-	}
-	return drawn, nil
-}
-
 // encodePage is a drawn page as the bytes that cross to the window.
 func encodePage(drawn image.Image) ([]byte, error) {
 	var out bytes.Buffer
@@ -384,22 +350,22 @@ func encodePage(drawn image.Image) ([]byte, error) {
 // parsePageQuery is which page the window asks for and how wide, in the pixels of the
 // device it draws on. A document is asked for a page of it and no other place
 // in it.
-func parsePageQuery(where string, query url.Values) (at, width int, named fingerprint, err error) {
+func parsePageQuery(where string, query url.Values) (at, width int, named pool.Fingerprint, err error) {
 	asked, found := strings.CutPrefix(where, pagesName+"/")
 	if !found {
-		return 0, 0, fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
+		return 0, 0, pool.Fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
 	}
 	at, err = strconv.Atoi(asked)
 	if err != nil || at < 0 {
-		return 0, 0, fingerprint{}, fmt.Errorf("%q is not a page", asked)
+		return 0, 0, pool.Fingerprint{}, fmt.Errorf("%q is not a page", asked)
 	}
 	width, err = strconv.Atoi(query.Get("wide"))
 	if err != nil || width < 1 || width > widestPage {
-		return 0, 0, fingerprint{}, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
+		return 0, 0, pool.Fingerprint{}, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
 	}
 	named, err = parseFingerprint(query)
 	if err != nil {
-		return 0, 0, fingerprint{}, err
+		return 0, 0, pool.Fingerprint{}, err
 	}
 	return at, width, named, nil
 }
@@ -412,7 +378,7 @@ func parsePageQuery(where string, query url.Values) (at, width int, named finger
 // it was.
 func getDrawCode(err error) connect.Code {
 	switch {
-	case errors.Is(err, errBusy):
+	case errors.Is(err, pool.ErrBusy):
 		return connect.CodeUnavailable
 	case errors.Is(err, errNoPage), errors.Is(err, errChanged),
 		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
@@ -427,7 +393,7 @@ func getDrawCode(err error) connect.Code {
 // refuse says why a page is not coming.
 func refuse(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, errBusy):
+	case errors.Is(err, pool.ErrBusy):
 		// The window is told when to ask again.
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -449,6 +415,6 @@ func refuse(w http.ResponseWriter, err error) {
 // keeps what it can make again.
 func newCachingViewer(docs port.PageRenderer) *viewer {
 	v := newViewer(docs)
-	v.kept = newDiskCache()
+	v.onDisk = pagecache.NewDisk()
 	return v
 }

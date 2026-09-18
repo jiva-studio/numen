@@ -117,8 +117,8 @@ func TestAToolNamedAsACommand(t *testing.T) {
 	if len(meta.Captions) != 1 || meta.Captions[0] != "en" {
 		t.Errorf("a person published words in %v", meta.Captions)
 	}
-	if len(meta.Automatic) != 1 || meta.Automatic[0] != "ru" {
-		t.Errorf("a machine wrote words in %v", meta.Automatic)
+	if len(meta.IsAutomatic) != 1 || meta.IsAutomatic[0] != "ru" {
+		t.Errorf("a machine wrote words in %v", meta.IsAutomatic)
 	}
 }
 

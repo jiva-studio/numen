@@ -35,7 +35,7 @@ export const clamp = (value: number, within: Bounds | undefined): number =>
   within === undefined ? value : Math.min(Math.max(value, within.least), within.most)
 
 /** The place of the grid nearest a value, and the last one for an empty grid. */
-export const nearest = (grid: readonly number[], value: number): number => {
+export const findNearest = (grid: readonly number[], value: number): number => {
   if (grid.length === 0) return -1
   let at = 0
   for (let i = 1; i < grid.length; i += 1) {
@@ -66,7 +66,7 @@ export type IdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
  * It is a fact about the material, and not a reason the preset is stopped.
  */
 export const idle = (curve: Curve): IdleReason => {
-  if (!curve.honest) return ''
+  if (!curve.isHonest) return ''
   if (curve.decks === 0) return 'unpointed'
   if (curve.cards === 0) return 'noCards'
   if (curve.unbegun === curve.cards && hasNoReviews(curve)) return 'beginsNothing'

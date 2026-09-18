@@ -106,7 +106,7 @@ func (s Simulation) getRipeningDays(p Preset, open time.Time) int {
 			open = ends
 			continue
 		}
-		c = s.settleDay(c, open, ends, p)
+		c = s.settleDay(c, open, p)
 		if p.IsLearned(c, ends) {
 			return days
 		}
@@ -131,7 +131,7 @@ func (s Simulation) getAfterShowing(c Schedule, open, ends time.Time, p Preset, 
 //
 // It is the day with no budget over it, which is the day the ripening of a card
 // face is counted in.
-func (s Simulation) settleDay(c Schedule, open, ends time.Time, p Preset) Schedule {
+func (s Simulation) settleDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {
 		if c.IsSeen() && !s.Day.IsOwed(c, open) {
 			break
@@ -160,7 +160,7 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool 
 		// A day of the week at none of the load asks it nothing, and the next
 		// day of review picks it up.
 		if p.GetShare(open.Weekday()) != 0 {
-			c = s.settleDay(c, open, ends, p)
+			c = s.settleDay(c, open, p)
 		}
 		open = ends
 	}

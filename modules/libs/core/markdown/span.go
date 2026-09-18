@@ -80,7 +80,7 @@ func plain(text string) reading {
 	at := make([]int, 0, len(text)+1)
 	for from, r := range text {
 		before := out.Len()
-		out.WriteRune(plainly(r))
+		out.WriteRune(getPlainRune(r))
 		for range out.Len() - before {
 			at = append(at, from)
 		}
@@ -95,7 +95,7 @@ func loose(text string) reading {
 	at := make([]int, 0, len(text)+1)
 	spacing := false
 	for from, r := range text {
-		mark := plainly(r)
+		mark := getPlainRune(r)
 		switch {
 		case mark == '\n':
 			spacing = false
@@ -116,10 +116,10 @@ func loose(text string) reading {
 	return reading{text: out.String(), at: append(at, len(text))}
 }
 
-// plainly is the mark a rune stands for, or the rune itself. Dashes, quotes and
+// getPlainRune is the mark a rune stands for, or the rune itself. Dashes, quotes and
 // the spaces that are not the space bar are what a person's editor puts in
 // their prose and a program writing about that prose rarely reproduces.
-func plainly(r rune) rune {
+func getPlainRune(r rune) rune {
 	switch {
 	// Hyphens and dashes, U+2010 to U+2015, and the minus sign U+2212.
 	case r >= '‐' && r <= '―', r == '−':

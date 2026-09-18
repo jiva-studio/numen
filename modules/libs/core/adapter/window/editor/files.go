@@ -148,7 +148,7 @@ func (a *API) MoveFile(
 
 	moved, err := a.Files.Move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
 	out := &v1.MoveFileResponse{}
-	if moved.Landed {
+	if moved.IsLanded {
 		out.Moved = newMoveResult(moved)
 	}
 	out.IsUnlevelled = a.isUnlevelled(err)
@@ -157,7 +157,7 @@ func (a *API) MoveFile(
 		switch {
 		case refused:
 			out.Error = &reason
-		case !moved.Landed:
+		case !moved.IsLanded:
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		// The file is where it was sent, so where it went and which links were

@@ -29,7 +29,7 @@ export function createPlexKind({
 }: PlexKindDeps) {
   return buildPlexKind(held.handle, () => usePlexView(core), {
     editor: editing.making,
-    ready: computed(() => !window.failure.value),
+    isReady: computed(() => !window.failure.value),
     isHanging: settings.hungParts.isHanging,
     parts: settings.hungParts.parts,
     openNote: (path, title, showing, line) => void tabOpeners.openFile(path, title, showing, line),

@@ -84,7 +84,7 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 
 	// The run is left where it stands and its content is replaced with a line
 	// nothing can read. A count that read it again would lose the day it holds.
-	held := runsOf(t, s)
+	held := getRunFiles(t, s)
 	if len(held) != 1 {
 		t.Fatalf("the vault holds %v", held)
 	}
@@ -171,7 +171,7 @@ func TestARunCopiedUnderAnotherNameIsCountedOnce(t *testing.T) {
 func writeConflictedCopies(t *testing.T, s vaulted) {
 	t.Helper()
 	at := filepath.Join(s.vault.Path, ".numen", "flashcards")
-	for _, name := range runsOf(t, s) {
+	for _, name := range getRunFiles(t, s) {
 		raw, err := os.ReadFile(filepath.Join(at, name))
 		if err != nil {
 			t.Fatal(err)
@@ -184,8 +184,8 @@ func writeConflictedCopies(t *testing.T, s vaulted) {
 	}
 }
 
-// runsOf is the files the vault's answers folder holds.
-func runsOf(t *testing.T, s vaulted) []string {
+// getRunFiles is the files the vault's answers folder holds.
+func getRunFiles(t *testing.T, s vaulted) []string {
 	t.Helper()
 	entries, err := os.ReadDir(filepath.Join(s.vault.Path, ".numen", "flashcards"))
 	if err != nil {

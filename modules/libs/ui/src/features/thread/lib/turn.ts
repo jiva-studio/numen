@@ -6,7 +6,7 @@ import { groupDigits } from '@/shared/lib/digits'
 
 export interface VoiceDescriptor {
   /** Drawn in a bubble of its own, or as text on the surface. */
-  readonly bubble: boolean
+  readonly isBubble: boolean
   /** Which edge the turn sits against. */
   readonly against: 'start' | 'end'
 }
@@ -16,9 +16,9 @@ export interface VoiceDescriptor {
  * colours all read from here.
  */
 export const VOICES = {
-  asked: { bubble: true, against: 'end' },
-  answered: { bubble: false, against: 'start' },
-  doing: { bubble: false, against: 'start' },
+  asked: { isBubble: true, against: 'end' },
+  answered: { isBubble: false, against: 'start' },
+  doing: { isBubble: false, against: 'start' },
 } as const satisfies Record<string, VoiceDescriptor>
 
 export type Voice = keyof typeof VOICES

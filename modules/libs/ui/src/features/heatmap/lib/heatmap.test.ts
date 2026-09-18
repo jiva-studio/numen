@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { getCells, getDays, getGridHeight, getWeight, measureGrid, NOTHING, ROWS } from './heatmap'
+import { measureGrid, ROWS } from './grid'
+import { getCells, getDays, getGridHeight, getWeight, NOTHING } from './heatmap'
 import { getDayName } from '@/shared/lib/day'
 import type { Tally } from './heatmap'
 

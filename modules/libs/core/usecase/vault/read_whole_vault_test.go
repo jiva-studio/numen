@@ -21,7 +21,7 @@ func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	made, err := searchable(readers, db).Execute(t.Context(), v)
+	made, err := newWholeVaultRead(readers, db).Execute(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	}
 
 	var order []string
-	making := searchable(readers, db)
+	making := newWholeVaultRead(readers, db)
 	making.Vectors.Embedder = pointing{}
 	making.Notes.OnProgress = func(vaults.ScanResult) { order = append(order, "notes") }
 	making.Books.OnProgress = func(source.ExtractResult) { order = append(order, "books") }
@@ -81,7 +81,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	making := searchable(readers, db)
+	making := newWholeVaultRead(readers, db)
 	making.Notes.Readers = refusing{}
 	counted := &counting{VaultReaders: readers}
 	making.Books.Readers = counted
@@ -106,7 +106,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	making := searchable(readers, db)
+	making := newWholeVaultRead(readers, db)
 	making.Books.Readers = refusing{}
 	making.Vectors.Embedder = unwilling{}
 
@@ -135,7 +135,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	}
 
 	over := limit(t.Context())
-	making := searchable(readers, db)
+	making := newWholeVaultRead(readers, db)
 	making.Books.Readers = timedOut{limit: over}
 	counted := &counting{VaultReaders: readers}
 	making.Vectors.Readers = counted
@@ -243,7 +243,7 @@ func (c *counting) Open(v domain.Vault) (port.VaultReader, error) {
 	return c.VaultReaders.Open(v)
 }
 
-func searchable(readers port.VaultReaders, db *container.Index) vaults.ReadWholeVault {
+func newWholeVaultRead(readers port.VaultReaders, db *container.Index) vaults.ReadWholeVault {
 	return vaults.ReadWholeVault{
 		Notes: scanner(readers, db),
 		Books: source.Extract{

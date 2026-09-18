@@ -82,7 +82,7 @@ export function useStencilTabs(
     has: (id) => store.getOpenIds().includes(id),
     getPath: (id) => store.getPath(id),
     getTitle: (id) => getTitle(store.getPath(id)),
-    isAsking: (id) => store.stale(id) !== null,
+    asking: (id) => store.stale(id) !== null,
     settle: (id) => store.settle(id),
     close: closeTab,
     getTabAt: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,

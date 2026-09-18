@@ -53,12 +53,12 @@ type Embedder struct {
 	pad       int
 	net       onnxgomlx.Model
 	exec      *model.Exec
-	typed     bool
-	// pooled says the model's output is already one vector per text.
-	pooled bool
-	// headPooled says the vector is the token that opens a text rather than the
+	isTyped   bool
+	// isPooled says the model's output is already one vector per text.
+	isPooled bool
+	// isHeadPooled says the vector is the token that opens a text rather than the
 	// average of them.
-	headPooled bool
+	isHeadPooled bool
 
 	// One compiled graph, one execution at a time.
 	mu sync.Mutex
@@ -97,15 +97,15 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	}
 
 	e := &Embedder{
-		name:       identity.Name,
-		origin:     identity.From,
-		dimensions: identity.Dimensions,
-		maxTokens:  identity.MaxTokens,
-		pooling:    identity.Pooling,
-		batchTexts: max(cfg.BatchTexts, 1),
-		tokenizer:  tokenizer,
-		net:        net,
-		headPooled: identity.Pooling == embed.PoolHead,
+		name:         identity.Name,
+		origin:       identity.From,
+		dimensions:   identity.Dimensions,
+		maxTokens:    identity.MaxTokens,
+		pooling:      identity.Pooling,
+		batchTexts:   max(cfg.BatchTexts, 1),
+		tokenizer:    tokenizer,
+		net:          net,
+		isHeadPooled: identity.Pooling == embed.PoolHead,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
@@ -116,7 +116,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		switch name {
 		case inputIDs, attentionMask:
 		case tokenTypeIDs:
-			e.typed = true
+			e.isTyped = true
 		default:
 			return nil, fmt.Errorf("%s asks for an input this adapter does not have: %s", cfg.Name, name)
 		}
@@ -129,7 +129,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	if err != nil {
 		return nil, err
 	}
-	e.pooled = pooled
+	e.isPooled = pooled
 
 	backend, err := compute.NewWithConfig(backendName)
 	if err != nil {
@@ -141,7 +141,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	}
 	exec, err := model.NewExec(backend, store, func(scope *model.Scope, inputs []*graph.Node) []*graph.Node {
 		in := map[string]*graph.Node{inputIDs: inputs[0], attentionMask: inputs[1]}
-		if e.typed {
+		if e.isTyped {
 			in[tokenTypeIDs] = inputs[2]
 		}
 		return net.CallGraph(scope, inputs[0].Graph(), in, output)
@@ -227,7 +227,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	ids, mask, types := padBatch(batch, rows, seq, e.pad)
 
 	args := []any{ids, mask}
-	if e.typed {
+	if e.isTyped {
 		args = append(args, types)
 	}
 
@@ -250,7 +250,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	if err != nil {
 		return nil, err
 	}
-	if e.pooled {
+	if e.isPooled {
 		vectors, err := split(flat, rows, e.dimensions)
 		if err != nil {
 			return nil, err
@@ -260,7 +260,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	if want := rows * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %s", e.name, len(flat), outputs[0].Shape())
 	}
-	if e.headPooled {
+	if e.isHeadPooled {
 		return headPool(flat, rows, seq, e.dimensions)[:len(batch)], nil
 	}
 	return meanPool(flat, mask, e.dimensions)[:len(batch)], nil

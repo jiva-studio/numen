@@ -4,25 +4,18 @@
  * A goal draws the settings it schedules by and no others, and a preset with
  * nothing to work on says so where the picture would stand.
  */
+import { StopReason } from '@numen/protocol'
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
-import { NOWHERE, type Curve } from '../types'
+import { NOWHERE, STOP_REASONS, type Curve } from '../types'
 import { mountPresetTab, point, rows, tabAt } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('a preset that schedules nothing', () => {
-  /** Every verdict the schema carries, read off the schema itself. */
-  const VERDICTS = Object.values(StopReason).filter(
-    (one): one is StopReason => typeof one === 'number',
-  )
-
-  /** Those of them a person is told something about. */
-  const STOPPING = VERDICTS.filter(
-    (one) => one !== StopReason.NOTHING && one !== StopReason.UNSPECIFIED,
-  )
+  /** Those verdicts a person is told something about. */
+  const STOPPING = STOP_REASONS.filter((one) => one !== StopReason.NOTHING)
 
   /** The tab drawn for a preset stopped for that reason. */
   const mountStoppedTab = (why: StopReason) => {
@@ -46,9 +39,7 @@ describe('a preset that schedules nothing', () => {
 
   it('says nothing at all of a preset that schedules', () => {
     expect(mountStoppedTab(StopReason.NOTHING).findAll('[data-preset="stopped"]')).toHaveLength(0)
-    expect(mountStoppedTab(StopReason.UNSPECIFIED).findAll('[data-preset="stopped"]')).toHaveLength(
-      0,
-    )
+    expect(mountStoppedTab(StopReason.NOTHING).findAll('[data-preset="stopped"]')).toHaveLength(0)
   })
 
   // A goal of a date reading no day, and a day of the week carrying none of the

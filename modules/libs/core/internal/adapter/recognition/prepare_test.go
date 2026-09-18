@@ -11,7 +11,7 @@ import (
 // held open by a model being read.
 func TestPreparingMakesTheRuntimeWithoutAModel(t *testing.T) {
 	cfg := Defaults()
-	cfg.Download = false
+	cfg.ShouldDownload = false
 	cfg.Layout.Name, cfg.Layout.Path = "", ""
 	cfg.Detect.Name, cfg.Detect.Path = "", ""
 	cfg.Recognise.Name, cfg.Recognise.Path = "", ""

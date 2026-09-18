@@ -110,7 +110,7 @@ func (a *API) WatchEdits(
 				Path:    said.Path,
 				Span:    &v1.Span{From: int32(said.From), To: int32(said.To)},
 				Text:    said.Text,
-				IsFinal: said.Done,
+				IsFinal: said.IsDone,
 			}); err != nil {
 				return err
 			}

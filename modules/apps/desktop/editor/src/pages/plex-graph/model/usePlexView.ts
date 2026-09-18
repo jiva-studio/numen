@@ -41,7 +41,7 @@ export function usePlexView(core: Neighbours) {
     const mine = asks.ask()
     try {
       const answer = await core.neighbourhood(path)
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       if (!answer.focus.path) {
         error.value = `${path} is not in the vault`
         return
@@ -50,10 +50,10 @@ export function usePlexView(core: Neighbours) {
       here.value = path
       if (!areNeighbourhoodsEqual(neighbourhood.value, answer)) neighbourhood.value = answer
     } catch (thrown) {
-      if (!mine.current) return
+      if (!mine.isCurrent) return
       error.value = formatErrorMessage(thrown)
     } finally {
-      if (mine.current) isLoading.value = false
+      if (mine.isCurrent) isLoading.value = false
     }
   }
 

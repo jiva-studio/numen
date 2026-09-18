@@ -167,7 +167,7 @@ const wear = (interfaceScale: string, textScale: string) => {
  * at. A box is laid out in fractions of a pixel, so each is read to within a
  * twentieth of one.
  */
-const each = async (tokens: readonly Token[], times: number) => {
+const showEach = async (tokens: readonly Token[], times: number) => {
   for (const token of tokens) {
     await expect(measureToken(token), token).toBeCloseTo(AS_DESIGNED[token] * times, 1)
   }
@@ -191,27 +191,27 @@ export const Playground: Story = {
       for (const [interfaceScale, textScale] of asDesigned) {
         wear(interfaceScale, textScale)
         await expect(root()).toBe(ROOT_AS_DESIGNED)
-        await each(CHROME, 1)
-        await each(READING, 1)
-        await each(NEITHER, 1)
+        await showEach(CHROME, 1)
+        await showEach(READING, 1)
+        await showEach(NEITHER, 1)
       }
 
       // The interface magnifies the window, and what is read is in the window.
       for (const times of [0.8, 1.25, 1.5, 2]) {
         wear(String(times), '')
         await expect(root()).toBeCloseTo(ROOT_AS_DESIGNED * times, 1)
-        await each(CHROME, times)
-        await each(READING, times)
-        await each(NEITHER, 1)
+        await showEach(CHROME, times)
+        await showEach(READING, times)
+        await showEach(NEITHER, 1)
       }
 
       // The text multiplier moves what is read and leaves the chrome.
       for (const times of [0.8, 1.25, 1.5, 1.75]) {
         wear('', String(times))
         await expect(root()).toBe(ROOT_AS_DESIGNED)
-        await each(READING, times)
-        await each(CHROME, 1)
-        await each(NEITHER, 1)
+        await showEach(READING, times)
+        await showEach(CHROME, 1)
+        await showEach(NEITHER, 1)
       }
 
       // Both at once, at either end: they compose, and every line is the line
@@ -223,9 +223,9 @@ export const Playground: Story = {
       ]
       for (const [interfaceScale, textScale] of ends) {
         wear(String(interfaceScale), String(textScale))
-        await each(NEITHER, 1)
-        await each(CHROME, interfaceScale)
-        await each(READING, interfaceScale * textScale)
+        await showEach(NEITHER, 1)
+        await showEach(CHROME, interfaceScale)
+        await showEach(READING, interfaceScale * textScale)
       }
     } finally {
       wear(held.interfaceScale, held.textScale)

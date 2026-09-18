@@ -16,14 +16,14 @@ import (
 )
 
 // reads nothing, and says it was closed.
-type blank struct{ closed bool }
+type blank struct{ isClosed bool }
 
 func (blank) Recognition() port.RecognitionModel { return port.RecognitionModel{Recogniser: "blank"} }
 
 func (blank) Recognise(context.Context, image.Image) ([]ocr.Block, error) { return nil, nil }
 
 func (b *blank) Close() error {
-	b.closed = true
+	b.isClosed = true
 	return nil
 }
 
@@ -288,7 +288,7 @@ func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	if w.countOpens() != 1 {
 		t.Errorf("what was missing was fetched %d times", w.countOpens())
 	}
-	if !w.held.closed {
+	if !w.held.isClosed {
 		t.Error("what was opened was not given back")
 	}
 }
@@ -329,7 +329,7 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 	w := newWatched(t, nil)
 	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
-		Named: true, Automatically: true,
+		IsNamed: true, IsAutomatic: true,
 		By: func(string) (port.Proofreader, error) { return &puts{}, nil },
 		Queue: func(string) (port.ProofreadQueue, error) {
 			return nil, errors.New("no queue for the proofreading service")

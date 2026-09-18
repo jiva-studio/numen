@@ -20,11 +20,11 @@ import type { CardFace, Grade } from '@/entities/card'
 defineProps<{
   card: CardFace
   /** Whether the answer is showing. */
-  shown: boolean
+  isShown: boolean
   /** How many cards are left to ask, this one among them. */
   left: number
   /** Whether there is an answer to take back. */
-  takenBack: boolean
+  canTakeBack: boolean
 }>()
 
 /** Which of the card and the panels either side of it is in the window. */
@@ -51,13 +51,13 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
       <span class="session__deck">{{ deckName(card.deck) }}</span>
       <span v-if="card.section">{{ card.section }}</span>
       <span>{{ card.face }}</span>
-      <span v-if="!card.seen" class="session__new">new</span>
+      <span v-if="!card.isSeen" class="session__new">new</span>
       <span class="session__left">{{ left }} left</span>
 
       <!-- What a person does beside answering, each one carrying the key it is
            done with. They stand at the end of the line that says where the card
            is from. -->
-      <Button variant="ghost" size="small" :disabled="!takenBack" @click="$emit('take-back')">
+      <Button variant="ghost" size="small" :disabled="!canTakeBack" @click="$emit('take-back')">
         <KeyCap :keys="{ icons: [], letter: 'u' }" />
         Undo
       </Button>
@@ -85,7 +85,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
         <Card
           :front="card.front"
           :back="card.back"
-          :shown="shown"
+          :is-shown="isShown"
           @show="$emit('show')"
           @read="(note: string) => $emit('read', note)"
         />
@@ -97,7 +97,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
       <!-- The key first and the word after it: a person answering with the
            keyboard reads down the row of keys, and one answering with the mouse
            reads the words either way. -->
-      <template v-if="shown">
+      <template v-if="isShown">
         <AnswerButton
           v-for="(how, i) in grades"
           :key="how"

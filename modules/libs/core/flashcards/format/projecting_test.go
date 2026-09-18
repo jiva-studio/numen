@@ -45,8 +45,8 @@ func TestAProjectedHeadingIsOneLineOfCharactersTheFieldOpensWith(t *testing.T) {
 // atom is one piece of a field's first line, and unbroken says whether the cut
 // may fall inside it.
 type atom struct {
-	text     string
-	unbroken bool
+	text       string
+	isUnbroken bool
 }
 
 // drawAtoms generates a first line as a run of pieces the test knows the bounds
@@ -86,13 +86,13 @@ func drawAtoms(t *rapid.T) []atom {
 	piece := rapid.Custom(func(t *rapid.T) atom {
 		switch rapid.IntRange(0, 4).Draw(t, "kind") {
 		case 0:
-			return atom{text: link.Draw(t, "link"), unbroken: true}
+			return atom{text: link.Draw(t, "link"), isUnbroken: true}
 		case 1:
-			return atom{text: run.Draw(t, "run"), unbroken: true}
+			return atom{text: run.Draw(t, "run"), isUnbroken: true}
 		case 2:
-			return atom{text: nested.Draw(t, "nested"), unbroken: true}
+			return atom{text: nested.Draw(t, "nested"), isUnbroken: true}
 		case 3:
-			return atom{text: held.Draw(t, "held"), unbroken: true}
+			return atom{text: held.Draw(t, "held"), isUnbroken: true}
 		}
 		return atom{text: prose.Draw(t, "prose")}
 	})
@@ -114,7 +114,7 @@ func TestTheCutNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 		at := 0
 		for _, one := range atoms {
 			n := len([]rune(one.text))
-			if one.unbroken {
+			if one.isUnbroken {
 				runs = append(runs, span{at, at + n})
 			}
 			at += n

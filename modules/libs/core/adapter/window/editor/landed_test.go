@@ -30,7 +30,7 @@ func TestAMoveThatCameApartAfterTheFileLandedSaysWhereItWent(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 	waitForScan(t, f)
-	f.opened.API.Files.Move.Sources = stuck{f.opened.API.Files.Move.Sources}
+	f.installation.API.Files.Move.Sources = stuck{f.installation.API.Files.Move.Sources}
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Entropy.md",
@@ -52,7 +52,7 @@ func TestARenameThatCameApartAfterTheFileLandedSaysWhatTheNoteIsCalled(t *testin
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 	waitForScan(t, f)
-	f.opened.API.Notes.Rename.Sources = stuck{f.opened.API.Notes.Rename.Sources}
+	f.installation.API.Notes.Rename.Sources = stuck{f.installation.API.Notes.Rename.Sources}
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Entropy.md",

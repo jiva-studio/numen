@@ -167,9 +167,9 @@ func (u Write) Save(
 	}
 	e := Edit{
 		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
-		Overwrite: true,
-		Seen:      seen,
-		Bound:     u.bound(),
+		ShouldOverwrite: true,
+		Seen:            seen,
+		Bound:           u.bound(),
 	}
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		return doc.SetBody(body)

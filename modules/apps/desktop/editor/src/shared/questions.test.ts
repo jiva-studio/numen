@@ -5,7 +5,7 @@ import { createAnswerGuard } from './questions'
 describe('the question whose answer is drawn', () => {
   it('is the one asked, where nothing was asked after it', () => {
     const asks = createAnswerGuard()
-    expect(asks.ask().current).toBe(true)
+    expect(asks.ask().isCurrent).toBe(true)
   })
 
   it('is the last of several, and none of the ones before it', () => {
@@ -13,34 +13,34 @@ describe('the question whose answer is drawn', () => {
     const first = asks.ask()
     const second = asks.ask()
     const third = asks.ask()
-    expect([first.current, second.current, third.current]).toStrictEqual([false, false, true])
+    expect([first.isCurrent, second.isCurrent, third.isCurrent]).toStrictEqual([false, false, true])
   })
 
   it('is none, where what was on its way was let go of', () => {
     const asks = createAnswerGuard()
     const one = asks.ask()
     asks.drop()
-    expect(one.current).toBe(false)
+    expect(one.isCurrent).toBe(false)
   })
 
   it('is the one asked after the drop', () => {
     const asks = createAnswerGuard()
     asks.ask()
     asks.drop()
-    expect(asks.ask().current).toBe(true)
+    expect(asks.ask().isCurrent).toBe(true)
   })
 
   it('is none once it has closed, whenever an answer lands', () => {
     const asks = createAnswerGuard()
     const one = asks.ask()
     asks.close()
-    expect(one.current).toBe(false)
+    expect(one.isCurrent).toBe(false)
   })
 
   it('is none for a question asked after it closed', () => {
     const asks = createAnswerGuard()
     asks.close()
-    expect(asks.ask().current).toBe(false)
+    expect(asks.ask().isCurrent).toBe(false)
   })
 })
 

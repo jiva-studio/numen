@@ -124,7 +124,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 	}
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe), nullable(s.Producer)).Scan(&row); err != nil {
+		vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&row); err != nil {
 		return fmt.Errorf("record the source %s: %w", s.Path, err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -151,7 +151,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 	}
 	var source int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, s.Path, s.Kind, s.Size, s.MTime, nullable(s.Hash), nullable(s.Recipe), nullable(s.Producer)).Scan(&source); err != nil {
+		vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&source); err != nil {
 		return fmt.Errorf("record the source %s: %w", s.Path, err)
 	}
 	if err := Replace(ctx, tx, source, vault, chunks); err != nil {
@@ -460,10 +460,10 @@ func put(
 	ctx context.Context, tx *writing.Transaction, held *rows,
 	source, vault int64, c Chunk, parent any,
 ) (int64, error) {
-	key := textID{hash: hashOf(c.Text), small: parent != nil}
+	key := textID{hash: hashOf(c.Text), isSmall: parent != nil}
 	if row, kept := held.claim(key); kept {
 		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
-			c.Start, c.Length, parent, nullable(c.Location), row); err != nil {
+			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
 		}
 		if err := writeSectionNames(ctx, tx, row, c); err != nil {
@@ -474,7 +474,7 @@ func put(
 
 	var row int64
 	err := tx.QueryRowContext(ctx, stmt.Get("insert_chunk"),
-		source, vault, c.Start, c.Length, parent, nullable(c.Location), key.hash).Scan(&row)
+		source, vault, c.Start, c.Length, parent, newNullable(c.Location), key.hash).Scan(&row)
 	if err != nil {
 		return 0, fmt.Errorf("store a chunk of this source: %w", err)
 	}
@@ -503,8 +503,8 @@ func writeSectionNames(ctx context.Context, tx *writing.Transaction, row int64, 
 // the same size. A vector belongs to a chunk that sits inside another, so the
 // two sizes are separate populations.
 type textID struct {
-	hash  string
-	small bool
+	hash    string
+	isSmall bool
 }
 
 // rows is what a source's rows hold, in the shape a fresh cut asks about them.
@@ -527,7 +527,7 @@ func chunksOf(ctx context.Context, tx *writing.Transaction, source int64) (*rows
 	for cursor.Next() {
 		var row int64
 		var key textID
-		if err := cursor.Scan(&row, &key.hash, &key.small); err != nil {
+		if err := cursor.Scan(&row, &key.hash, &key.isSmall); err != nil {
 			return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
 		}
 		h.candidates[key] = append(h.candidates[key], row)
@@ -618,9 +618,9 @@ func identify(ctx context.Context, db querier, vault int64, kind, path string) (
 	return row, err
 }
 
-// nullable keeps an empty string out of the database, so that "nothing was
+// newNullable keeps an empty string out of the database, so that "nothing was
 // written" and "an empty value was written" stay different questions.
-func nullable(s string) any {
+func newNullable(s string) any {
 	if s == "" {
 		return nil
 	}

@@ -78,10 +78,10 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			notes := vaults.NewScan(readers, db.Vaults(),
 				db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}),
 				db.NoteQueries(), db.Maintenance())
-			notes.RebuildIndex = rebuild
+			notes.ShouldRebuildIndex = rebuild
 
 			books := source.NewExtract(readers, db.Sources(), db.Sources())
-			books.Derived, books.Documents, books.RebuildIndex = store, pdf.Documents{}, rebuild
+			books.Derived, books.Documents, books.ShouldRebuildIndex = store, pdf.Documents{}, rebuild
 
 			// No vectors: a test reaches no model, and a vault answers by its
 			// words alone.
@@ -124,7 +124,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 // oneVault is a list holding a single vault, answering nothing about any other.
 type oneVault struct{ held domain.Vault }
 
-func (o oneVault) All() ([]domain.Vault, error)    { return []domain.Vault{o.held}, nil }
+func (o oneVault) List() ([]domain.Vault, error)   { return []domain.Vault{o.held}, nil }
 func (oneVault) Save(domain.Vault) error           { return nil }
 func (oneVault) Remove(domain.VaultID) error       { return nil }
 func (oneVault) RecordOpened(domain.VaultID) error { return nil }

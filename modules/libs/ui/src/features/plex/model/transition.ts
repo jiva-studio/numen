@@ -10,7 +10,7 @@ export { browserClock, type Clock }
 
 export interface PlexTransition {
   readonly frame: Ref<PlexFrame>
-  readonly moving: Ref<boolean>
+  readonly isMoving: Ref<boolean>
 }
 
 /**
@@ -26,14 +26,14 @@ export function usePlexTransition(
   const target = () => arrangePlex(neighbourhood(), input())
 
   const frame = shallowRef<PlexFrame>(target())
-  const moving = ref(false)
+  const isMoving = ref(false)
 
   let handle: number | null = null
 
   const stop = () => {
     if (handle !== null) clock.cancel(handle)
     handle = null
-    moving.value = false
+    isMoving.value = false
   }
 
   const run = (to: PlexFrame) => {
@@ -50,7 +50,7 @@ export function usePlexTransition(
     // backgrounded tab hands the first callback a stale timestamp and the
     // movement would arrive already finished.
     let started: number | null = null
-    moving.value = true
+    isMoving.value = true
 
     const step = (now: number) => {
       started ??= now
@@ -60,7 +60,7 @@ export function usePlexTransition(
         handle = clock.schedule(step)
       } else {
         handle = null
-        moving.value = false
+        isMoving.value = false
       }
     }
 
@@ -82,5 +82,5 @@ export function usePlexTransition(
 
   onScopeDispose(stop)
 
-  return { frame, moving }
+  return { frame, isMoving }
 }

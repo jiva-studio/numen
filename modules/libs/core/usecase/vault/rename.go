@@ -37,7 +37,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 		return v, nil
 	}
 
-	known, err := u.Registry.All()
+	known, err := u.Registry.List()
 	if err != nil {
 		return domain.Vault{}, err
 	}

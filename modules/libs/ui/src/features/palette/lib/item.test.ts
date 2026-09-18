@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest'
 import { findKeptAction, placeActions } from './actions'
 import {
-  choosable,
+  canChoose,
   findKeptPlace,
   flatten,
   orderGroups,
@@ -95,16 +95,16 @@ describe('one list drawn in groups', () => {
 
 describe('what may be landed on', () => {
   it('passes over an item that is turned off', () => {
-    expect(choosable(item('one', { disabled: true }))).toBe(false)
+    expect(canChoose(item('one', { disabled: true }))).toBe(false)
   })
 
   it('passes over an item with nothing that can be done to it', () => {
-    expect(choosable({ id: 'one', title: 'one' })).toBe(false)
-    expect(choosable({ id: 'one', title: 'one', actions: [] })).toBe(false)
+    expect(canChoose({ id: 'one', title: 'one' })).toBe(false)
+    expect(canChoose({ id: 'one', title: 'one', actions: [] })).toBe(false)
   })
 
   it('lands on an item that offers something', () => {
-    expect(choosable(item('one'))).toBe(true)
+    expect(canChoose(item('one'))).toBe(true)
   })
 })
 

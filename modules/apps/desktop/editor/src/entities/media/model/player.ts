@@ -32,7 +32,7 @@ export interface Player {
   readonly at: Readonly<Ref<number>>
   /** How long it runs, in milliseconds, and zero until the recording says. */
   readonly duration: Readonly<Ref<number>>
-  readonly playing: Readonly<Ref<boolean>>
+  readonly isPlaying: Readonly<Ref<boolean>>
   /** What it could not do, in words a person reads. */
   readonly error: Readonly<Ref<string>>
 
@@ -57,7 +57,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
   const url = ref('')
   const at = ref(0)
   const duration = ref(0)
-  const playing = ref(false)
+  const isPlaying = ref(false)
   const error = ref('')
 
   let element: HTMLAudioElement | null = null
@@ -82,9 +82,9 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
       const runs = element?.duration ?? 0
       duration.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
     })
-    element.addEventListener('play', () => void (playing.value = true))
-    element.addEventListener('pause', () => void (playing.value = false))
-    element.addEventListener('ended', () => void (playing.value = false))
+    element.addEventListener('play', () => void (isPlaying.value = true))
+    element.addEventListener('pause', () => void (isPlaying.value = false))
+    element.addEventListener('ended', () => void (isPlaying.value = false))
     element.addEventListener('error', () => {
       error.value = FAILED[element?.error?.code ?? 0] ?? WORDS.unreadable
     })
@@ -100,7 +100,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     url.value = next
     at.value = 0
     duration.value = 0
-    playing.value = false
+    isPlaying.value = false
     error.value = ''
     return true
   }
@@ -109,7 +109,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     url: readonly(url),
     at: readonly(at),
     duration: readonly(duration),
-    playing: readonly(playing),
+    isPlaying: readonly(isPlaying),
     error: readonly(error),
 
     load: (url) => void load(url),
@@ -117,7 +117,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     play: (url) => {
       if (!load(url)) return
       void element?.play().catch((thrown: unknown) => {
-        playing.value = false
+        isPlaying.value = false
         // A play the window itself cut short is not a failure. Anything else is
         // a press that did nothing, and no `error` event fires on it, so this
         // is the only place it can be said.
@@ -144,7 +144,7 @@ export const player: Player = createAudioPlayer()
 export type MediaTypeProbe = (type: string) => boolean
 
 /** What the window itself says about a kind of sound. */
-const itself: MediaTypeProbe = (type) => {
+const probeWindow: MediaTypeProbe = (type) => {
   try {
     return document.createElement('audio').canPlayType(type) !== ''
   } catch {
@@ -158,7 +158,7 @@ const itself: MediaTypeProbe = (type) => {
  * What this window can play. The answer is the window's own, and it is asked
  * once for each kind of sound however many recordings are open.
  */
-export function createMediaTypeProbe(answers: MediaTypeProbe = itself): MediaTypeProbe {
+export function createMediaTypeProbe(answers: MediaTypeProbe = probeWindow): MediaTypeProbe {
   const asked = new Map<string, boolean>()
   return (type) => {
     if (!type) return false

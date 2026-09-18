@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 )
 
-// readable is a vault on disk and the read that works on it.
-func readable(t *testing.T, files map[string]string) (file.Read, domain.Vault) {
+// openFileRead is a vault on disk and the read that works on it.
+func openFileRead(t *testing.T, files map[string]string) (file.Read, domain.Vault) {
 	t.Helper()
 	return file.Read{Readers: filesystem.VaultReaders{}}, testsupport.NewVault(t, files)
 }
@@ -32,7 +32,7 @@ func read(t *testing.T, u file.Read, v domain.Vault, path string, start, length 
 // The tools that read a note read a note. A lecture somebody transcribed into a
 // file of another kind is reached by its path and by nothing else.
 func TestAFileTheVaultDoesNotHoldAsANoteIsRead(t *testing.T) {
-	u, v := readable(t, map[string]string{
+	u, v := openFileRead(t, map[string]string{
 		"lectures/kinetics.txt": "The first law, as spoken.\n",
 	})
 
@@ -52,7 +52,7 @@ func TestAFileTheVaultDoesNotHoldAsANoteIsRead(t *testing.T) {
 // frontmatter is there, because that is what the file holds.
 func TestANoteIsReadAsTheFileItIs(t *testing.T) {
 	raw := "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n"
-	u, v := readable(t, map[string]string{"Entropy.md": raw})
+	u, v := openFileRead(t, map[string]string{"Entropy.md": raw})
 
 	if got := read(t, u, v, "Entropy.md", 0, 0); got.Text != raw {
 		t.Errorf("the note came back as %q", got.Text)
@@ -63,7 +63,7 @@ func TestANoteIsReadAsTheFileItIs(t *testing.T) {
 // says about the range is what the next call is asked with.
 func TestALongFileIsReadARangeAtATime(t *testing.T) {
 	whole := strings.Repeat("one line of what was said\n", 400)
-	u, v := readable(t, map[string]string{"lecture.txt": whole})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": whole})
 
 	first := read(t, u, v, "lecture.txt", 0, 100)
 	if first.Text != whole[:100] || first.Start != 0 || first.Length != 100 {
@@ -83,7 +83,7 @@ func TestALongFileIsReadARangeAtATime(t *testing.T) {
 // much more there is.
 func TestAFileLongerThanOneCallCarriesComesBackCut(t *testing.T) {
 	whole := strings.Repeat("a", file.MostRead+500)
-	u, v := readable(t, map[string]string{"lecture.txt": whole})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": whole})
 
 	got := read(t, u, v, "lecture.txt", 0, 0)
 	if got.Length != file.MostRead {
@@ -97,7 +97,7 @@ func TestAFileLongerThanOneCallCarriesComesBackCut(t *testing.T) {
 // A range is held within the file, so an offset past the end is an empty range and
 // not an error.
 func TestARangePastTheEndOfTheFileIsEmpty(t *testing.T) {
-	u, v := readable(t, map[string]string{"lecture.txt": "short"})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "short"})
 
 	got := read(t, u, v, "lecture.txt", 900, 100)
 	if got.Outcome != file.Ok || got.Text != "" || got.Length != 0 {
@@ -114,7 +114,7 @@ func TestARangeIsCutAtWholeCharacters(t *testing.T) {
 	// "śāstra" is two two-byte characters and four one-byte ones, and the
 	// emoji that follows is four bytes.
 	whole := "śāstra 🪔 and śloka"
-	u, v := readable(t, map[string]string{"lecture.txt": whole})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": whole})
 
 	// Opening one byte into the first character.
 	opened := read(t, u, v, "lecture.txt", 1, 3)
@@ -144,7 +144,7 @@ func TestARangeIsCutAtWholeCharacters(t *testing.T) {
 // A range reaching the end of the file is not cut, so a file whose last character
 // is cut short is named for what it is.
 func TestARangeReachingTheEndOfTheFileIsNotCut(t *testing.T) {
-	u, v := readable(t, map[string]string{"lecture.txt": "said \xc5"})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "said \xc5"})
 
 	got := read(t, u, v, "lecture.txt", 0, 0)
 	if got.Outcome != file.NotText {
@@ -155,7 +155,7 @@ func TestARangeReachingTheEndOfTheFileIsNotCut(t *testing.T) {
 // A range goes out in a string field, so bytes that are not text are named as
 // such and not carried.
 func TestAFileThatIsNotTextIsSaidToBeNotText(t *testing.T) {
-	u, v := readable(t, map[string]string{"scan.txt": "words \xff\xfe more"})
+	u, v := openFileRead(t, map[string]string{"scan.txt": "words \xff\xfe more"})
 
 	got := read(t, u, v, "scan.txt", 0, 0)
 	if got.Outcome != file.NotText {
@@ -167,7 +167,7 @@ func TestAFileThatIsNotTextIsSaidToBeNotText(t *testing.T) {
 }
 
 func TestAPathWithNoFileIsMissing(t *testing.T) {
-	u, v := readable(t, map[string]string{"lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
 
 	got := read(t, u, v, "gone.txt", 0, 0)
 	if got.Outcome != file.Missing {
@@ -183,7 +183,7 @@ func TestAPathThatDoesNotStayInTheVaultIsRefused(t *testing.T) {
 	if err := os.WriteFile(secret, []byte("not yours"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	u, v := readable(t, map[string]string{"notes/lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
 
 	for _, path := range []string{
 		"",
@@ -206,7 +206,7 @@ func TestAReadDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(outside, "secret.txt"), []byte("not yours"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	u, v := readable(t, map[string]string{"notes/lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
 	if err := os.Symlink(outside, filepath.Join(v.Path, "linked")); err != nil {
 		t.Skipf("this filesystem does not do symlinks: %v", err)
 	}
@@ -224,7 +224,7 @@ func TestAReadDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 // A name beginning with a dot belongs to a tool, and nothing that walks or
 // lists a vault reports one. A read of a file goes by the same rule.
 func TestWhatTheVaultPassesOverIsNotRead(t *testing.T) {
-	u, v := readable(t, map[string]string{
+	u, v := openFileRead(t, map[string]string{
 		".env":              "SECRET=1\n",
 		".git/config":       "[core]\n",
 		"notes/.hidden.md":  "# hidden\n",
@@ -248,7 +248,7 @@ func TestWhatTheVaultPassesOverIsNotRead(t *testing.T) {
 // A folder is not a file, and a path holding one is answered rather than being
 // opened and read.
 func TestAPathHoldingAFolderIsSaidToBeOne(t *testing.T) {
-	u, v := readable(t, map[string]string{"lectures/kinetics.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"lectures/kinetics.txt": "said"})
 
 	if got := read(t, u, v, "lectures", 0, 0); got.Outcome != file.AFolder {
 		t.Errorf("want a folder, got %+v", got)
@@ -258,7 +258,7 @@ func TestAPathHoldingAFolderIsSaidToBeOne(t *testing.T) {
 // The application's own folder inside the vault is not the person's, and a read
 // of a file does not reach into it.
 func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
-	u, v := readable(t, map[string]string{"notes/lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
 	kept := filepath.Join(v.Path, filesystem.DefaultServiceDir, "kept.txt")
 	if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
 		t.Fatal(err)
@@ -276,7 +276,7 @@ func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 // A range beginning before the file, or longer than one call carries, is a
 // mistake in the asking.
 func TestARangeNamedOutsideWhatOneCallCarriesIsRefused(t *testing.T) {
-	u, v := readable(t, map[string]string{"lecture.txt": "said"})
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
 
 	for _, asked := range []struct{ start, length int }{
 		{-1, 10},

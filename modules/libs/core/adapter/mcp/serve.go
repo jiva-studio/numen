@@ -56,11 +56,11 @@ func (e *Endpoint) countCalls(next sdk.MethodHandler) sdk.MethodHandler {
 // What is counted is the call itself, and not the answer travelling back to
 // the agent.
 type calls struct {
-	mu     sync.Mutex
-	count  int
-	sealed bool
-	idle   chan struct{}
-	over   bool
+	mu       sync.Mutex
+	count    int
+	isSealed bool
+	idle     chan struct{}
+	isOver   bool
 }
 
 // begin takes a call, and refuses one that arrives after the door is shut.
@@ -68,7 +68,7 @@ func (c *calls) begin() bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.sealed {
+	if c.isSealed {
 		return false
 	}
 	c.count++
@@ -90,7 +90,7 @@ func (c *calls) seal() <-chan struct{} {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.sealed = true
+	c.isSealed = true
 	if c.idle == nil {
 		c.idle = make(chan struct{})
 	}
@@ -100,10 +100,10 @@ func (c *calls) seal() <-chan struct{} {
 
 // reckon ends the wait once nothing is running. The lock is held.
 func (c *calls) reckon() {
-	if !c.sealed || c.over || c.count > 0 {
+	if !c.isSealed || c.isOver || c.count > 0 {
 		return
 	}
-	c.over = true
+	c.isOver = true
 	close(c.idle)
 }
 

@@ -50,7 +50,7 @@ func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Trashed {
+	if !res.IsTrashed {
 		t.Error("the folder went to the trash and the erasure says it did not")
 	}
 
@@ -105,7 +105,7 @@ func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Trashed {
+	if res.IsTrashed {
 		t.Error("nothing was there to trash and the erasure says the folder went")
 	}
 	if len(trash.moved) != 0 {

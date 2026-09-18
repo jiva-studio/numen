@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
-import type { Cards, VaultCard, DeckProblem } from '@/entities/deck'
+import type { Cards, VaultCard, DeckProblem, Preset } from '@/entities/deck'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
 import { fileOpeners } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
@@ -20,7 +20,10 @@ import { useDeckTabs, type DeckTabState } from '../model/useDeckTabs'
 import { WORDS as words } from '@/entities/deck'
 
 /** A preset that schedules, which is what every preset here is. */
-const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
+const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } satisfies Pick<
+  Preset,
+  'stops' | 'stopsOn'
+>
 
 /** The one place a file is opened from. Nothing here opens one. */
 const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
@@ -153,7 +156,7 @@ const mountDeck = async (
       cards: 0,
       overdue: 0,
       unbegun: 0,
-      honest: true,
+      isHonest: true,
     }),
   }
 

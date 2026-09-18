@@ -15,13 +15,13 @@ type VaultIdentity interface {
 	// paths those are is the machine's to say: a folder addressed by anything
 	// but a path is named by the handle it was given.
 	GetName(root string) string
-	// Readable reports whether the folder can be read as a vault, writing
+	// CheckReadable reports whether the folder can be read as a vault, writing
 	// nothing. Looking and adding are different acts.
-	Readable(root string) error
-	// Of returns the identity a folder already carries, and whether it carries
+	CheckReadable(root string) error
+	// GetVaultID returns the identity a folder already carries, and whether it carries
 	// one. It never creates an identity, which is what makes it usable for
 	// asking whether a folder is still the vault it used to be.
-	Of(root string) (domain.VaultID, bool, error)
+	GetVaultID(root string) (domain.VaultID, bool, error)
 	// Ensure returns the identity the folder carries, creating one if it has
 	// none. An existing identity is never replaced: it is what every row in the
 	// index points at.

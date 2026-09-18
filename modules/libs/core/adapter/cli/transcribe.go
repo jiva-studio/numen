@@ -55,9 +55,9 @@ func transcribeCommand(ctx context.Context, out io.Writer, deps Deps, args []str
 	// The line of minutes is closed once it stops, so what follows it stands on
 	// a line of its own.
 	shown := false
-	transcribe.Again = again
+	transcribe.IsRepeat = again
 	transcribe.Cut = func(ctx context.Context, v domain.Vault, path string) error {
-		_, err := cut.One(ctx, v, path)
+		_, err := cut.ExtractOne(ctx, v, path)
 		return err
 	}
 	// A terminal that prints nothing for an hour looks broken, and this takes
@@ -78,11 +78,11 @@ func transcribeCommand(ctx context.Context, out io.Writer, deps Deps, args []str
 	}
 
 	switch {
-	case res.Busy:
+	case res.IsBusy:
 		fmt.Fprintf(out, "%s is already being listened to, and nothing was done\n", res.Path)
-	case res.Unopened:
+	case res.IsUnopened:
 		fmt.Fprintf(out, "%s is not a recording anything here can open, and that is what was written\n", res.Path)
-	case res.Silent:
+	case res.IsSilent:
 		fmt.Fprintf(out, "%s carries no speech, and that is what was written\n", res.Path)
 	default:
 		fmt.Fprintf(out, "transcribed %s of %s in %s\n",

@@ -15,7 +15,7 @@ import {
   adding,
   code,
   drawing,
-  editable,
+  createEditable,
   editing,
   preview,
   prose,
@@ -24,7 +24,7 @@ import {
   showing,
   written,
 } from '../lib/setup'
-import { wholly } from '../config/languages'
+import { loadLanguage } from '../config/languages'
 import { opening, resolving, saving } from '../lib/outside'
 import { replace } from '../lib/replace'
 
@@ -89,7 +89,7 @@ onMounted(() => {
       doc: text.value,
       extensions: [
         setup({
-          live: props.isLive,
+          isLivePreview: props.isLive,
           readonly: props.readonly,
           placeholder: props.placeholder,
           name: props.name,
@@ -133,7 +133,7 @@ watch(
  * changed while one was loading keeps the one it asked for last.
  */
 const applyLanguage = async (name: string) => {
-  const support = name ? await wholly(name) : null
+  const support = name ? await loadLanguage(name) : null
   if (!view || name !== props.language) return
   view.dispatch({ effects: written.reconfigure(support ? code(support) : prose()) })
 }
@@ -142,7 +142,7 @@ watch(() => props.language, applyLanguage)
 
 watch(
   () => props.readonly,
-  (off) => view?.dispatch({ effects: editing.reconfigure(editable(!off)) }),
+  (off) => view?.dispatch({ effects: editing.reconfigure(createEditable(!off)) }),
 )
 
 watch(

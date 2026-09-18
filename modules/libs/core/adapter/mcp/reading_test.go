@@ -36,7 +36,7 @@ func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
 	cfg, db := openIndex(t)
 	v := testsupport.NewVault(t, kinetics())
 	session := sessionOf(t, mcp.NewReading(reader(t, cfg, db, v)))
-	exactly(t, serves(t, session), reads)
+	checkToolNames(t, serves(t, session), reads)
 }
 
 // An agent is told that everything it can call reads, and how to say where an
@@ -83,7 +83,7 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 			call[json.RawMessage](t, session, one.name, one.args)
 		})
 	}
-	exactly(t, called, serves(t, session))
+	checkToolNames(t, called, serves(t, session))
 }
 
 // One installation holds every vault in one index, so a query that forgets its
@@ -113,7 +113,7 @@ func TestTheReadingToolsAnswerAboutOneVaultOnly(t *testing.T) {
 	for _, pair := range []struct{ own, other side }{{physics, garden}, {garden, physics}} {
 		t.Run(pair.own.what, func(t *testing.T) {
 			pair.own.answers(t)
-			pair.own.holdsNothingOf(t, pair.other)
+			pair.own.checkHoldsNothingOf(t, pair.other)
 		})
 	}
 }
@@ -188,9 +188,9 @@ func (s side) answers(t *testing.T) {
 	}
 }
 
-// holdsNothingOf asks this vault's session about the other vault's notes, and
-// about the other vault's words, and reads every answer whole.
-func (s side) holdsNothingOf(t *testing.T, other side) {
+// checkHoldsNothingOf asks this vault's session about the other vault's notes,
+// and about the other vault's words, and reads every answer whole.
+func (s side) checkHoldsNothingOf(t *testing.T, other side) {
 	t.Helper()
 
 	for _, asked := range []struct {
@@ -205,7 +205,7 @@ func (s side) holdsNothingOf(t *testing.T, other side) {
 		{"source_read", map[string]any{"path": other.note, "start": 0, "length": 400}},
 		{"card_read", map[string]any{"path": other.deck}},
 	} {
-		said := says(t, s.session, asked.name, asked.args)
+		said := getAnswer(t, s.session, asked.name, asked.args)
 		for _, word := range other.hers {
 			if strings.Contains(said, word) {
 				t.Errorf("%s answered %s with %q, which is %s's:\n%s",
@@ -215,9 +215,9 @@ func (s side) holdsNothingOf(t *testing.T, other side) {
 	}
 }
 
-// says is one call as it came back, whether it answered or refused. A vault
-// leaks into any field of an answer, so the whole of it is read.
-func says(t *testing.T, session *sdk.ClientSession, name string, args any) string {
+// getAnswer is one call as it came back, whether it answered or refused. A
+// vault leaks into any field of an answer, so the whole of it is read.
+func getAnswer(t *testing.T, session *sdk.ClientSession, name string, args any) string {
 	t.Helper()
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{Name: name, Arguments: args})
 	if err != nil {

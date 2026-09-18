@@ -17,7 +17,7 @@ const props = defineProps<{
   material: PresetCounts | null
   place: number
   valueText: string
-  waiting: boolean
+  isWaiting: boolean
 }>()
 
 const emit = defineEmits<{
@@ -42,13 +42,13 @@ const { isHonest, counts, learning } = state
       <CurvePlot
         :state="state"
         :goal="props.curve.goal"
-        :waiting="props.waiting"
+        :is-waiting="props.isWaiting"
         :value-text="props.valueText"
       />
 
       <CurveFoot :state="state" :goal="props.curve.goal" />
 
-      <BacklogPlot :curve="props.curve" :place="props.place" :honest="isHonest" />
+      <BacklogPlot :curve="props.curve" :place="props.place" :is-honest="isHonest" />
     </div>
 
     <CurveTiles control="learned" :tiles="isHonest ? learning : []" />

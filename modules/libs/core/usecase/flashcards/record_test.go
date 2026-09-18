@@ -63,7 +63,7 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	if !strings.HasSuffix(name, ".jsonl") {
 		t.Errorf("the run is known as %q", name)
 	}
-	held := runsOf(t, s)
+	held := getRunFiles(t, s)
 	if len(held) != 1 || !strings.HasSuffix(name, held[0]) {
 		t.Errorf("the run is known as %q and the vault holds %v", name, held)
 	}

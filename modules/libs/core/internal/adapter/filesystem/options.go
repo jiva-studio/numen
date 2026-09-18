@@ -153,10 +153,10 @@ func (o Options) isNote(name string) bool {
 	return ok && kind == domain.KindNote
 }
 
-// writable says whether the application writes a file of this name into the
+// isWritable says whether the application writes a file of this name into the
 // person's folder. It writes notes and it writes the file an address is kept
 // in; every other file there is somebody else's.
-func (o Options) writable(name string) bool {
+func (o Options) isWritable(name string) bool {
 	kind, ok := o.kind(name)
 	return ok && (kind == domain.KindNote || kind == domain.KindURL)
 }

@@ -434,7 +434,7 @@ describe('what the control stands at', () => {
   // the first answer lands the picture says it is reading the vault, and no
   // tile, no axis number and no readout is drawn.
   it('draws no figure at all until the answer lands', () => {
-    const { tab } = mountPresetTab({ honest: false })
+    const { tab } = mountPresetTab({ isHonest: false })
     expect(tab.get('[data-control="waiting"]').text()).toContain(words.waiting)
     expect(tab.findAll('[data-control="tile"]')).toHaveLength(0)
     expect(tab.findAll('[data-control="number"]')).toHaveLength(0)
@@ -445,7 +445,7 @@ describe('what the control stands at', () => {
   // one of those figures. They stand at what the window was last told while
   // the curve of the settings a person is moving is worked out.
   it('keeps the figures the material stands at while a curve is on its way', () => {
-    const { tab } = mountPresetTab({ honest: false }, {}, true, {
+    const { tab } = mountPresetTab({ isHonest: false }, {}, true, {
       decks: 4,
       cards: 160,
       overdue: 45,
@@ -469,7 +469,7 @@ describe('what the control stands at', () => {
   // A line drawn before the answer has to move when it lands, and a picture
   // that moves reads as a glitch. Nothing is drawn until there is an answer.
   it('draws no line and no control while the curve is being worked out', () => {
-    const { tab } = mountPresetTab({ honest: false })
+    const { tab } = mountPresetTab({ isHonest: false })
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(1)
     expect(tab.text()).toContain(words.waiting)
     expect(tab.findAll('[data-control="picture"], [data-backlog="picture"]')).toHaveLength(0)
@@ -481,7 +481,7 @@ describe('what the control stands at', () => {
   // A caption promising work in progress is a promise, and there is nothing
   // behind it once the vault has refused the picture.
   it('says nothing of reading the vault where no answer is coming', () => {
-    const { tab } = mountPresetTab({ honest: false }, {}, false)
+    const { tab } = mountPresetTab({ isHonest: false }, {}, false)
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(0)
     expect(tab.text()).not.toContain(words.waiting)
     expect(tab.findAll('[data-control="picture"][role="slider"]')).toHaveLength(0)
@@ -497,7 +497,7 @@ describe('what the control stands at', () => {
   // The rows under the picture keep their room, so the answer landing moves
   // nothing below the plot.
   it('keeps the rows under the picture whether or not the answer has landed', () => {
-    for (const one of [mountPresetTab({ honest: false }), mountPresetTab()]) {
+    for (const one of [mountPresetTab({ isHonest: false }), mountPresetTab()]) {
       expect(one.tab.findAll('[data-control="under"]')).toHaveLength(1)
       // The picture's own row of ends, and the backlog's under it.
       expect(one.tab.findAll('[data-control="ends"]')).toHaveLength(2)

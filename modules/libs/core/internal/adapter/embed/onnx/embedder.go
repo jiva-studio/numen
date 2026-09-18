@@ -47,10 +47,10 @@ type Embedder struct {
 	pad       int
 	session   *ort.Session
 	output    string
-	typed     bool
-	// headPooled says the vector is the token that opens a text rather than the
+	isTyped   bool
+	// isHeadPooled says the vector is the token that opens a text rather than the
 	// average of them.
-	headPooled bool
+	isHeadPooled bool
 
 	// One session, one batch at a time.
 	mu sync.Mutex
@@ -87,10 +87,10 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	// The runtime's own cache is where it is looked for. What the settings call
 	// a directory here holds the weights, which is another folder.
 	engine, _, err := onnxruntime.Open(ctx, onnxruntime.Settings{
-		Section:  "indexing.embedding",
-		Runtime:  cfg.Runtime,
-		Download: cfg.Download,
-		Fetching: createFetchListener(progress),
+		Section:        "indexing.embedding",
+		Runtime:        cfg.Runtime,
+		ShouldDownload: cfg.ShouldDownload,
+		Fetching:       createFetchListener(progress),
 	})
 	if err != nil {
 		return nil, err
@@ -109,15 +109,15 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	}
 
 	e := &Embedder{
-		name:       identity.Name,
-		origin:     identity.From,
-		dimensions: identity.Dimensions,
-		maxTokens:  identity.MaxTokens,
-		pooling:    identity.Pooling,
-		batchTexts: max(cfg.BatchTexts, 1),
-		tokenizer:  tokenizer,
-		session:    session,
-		headPooled: identity.Pooling == embed.PoolHead,
+		name:         identity.Name,
+		origin:       identity.From,
+		dimensions:   identity.Dimensions,
+		maxTokens:    identity.MaxTokens,
+		pooling:      identity.Pooling,
+		batchTexts:   max(cfg.BatchTexts, 1),
+		tokenizer:    tokenizer,
+		session:      session,
+		isHeadPooled: identity.Pooling == embed.PoolHead,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
@@ -127,7 +127,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		switch name {
 		case inputIDs, attentionMask:
 		case tokenTypeIDs:
-			e.typed = true
+			e.isTyped = true
 		default:
 			session.Destroy()
 			return nil, fmt.Errorf("%s asks for an input this adapter does not have: %s", cfg.Name, name)
@@ -222,7 +222,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 		{attentionMask, mask},
 		{tokenTypeIDs, types},
 	} {
-		if one.name == tokenTypeIDs && !e.typed {
+		if one.name == tokenTypeIDs && !e.isTyped {
 			continue
 		}
 		value, err := ort.NewTensor(shape, one.flat)
@@ -269,7 +269,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	if want := rows * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %v", e.name, len(flat), out)
 	}
-	if e.headPooled {
+	if e.isHeadPooled {
 		return headPool(flat, rows, seq, e.dimensions), nil
 	}
 	return meanPool(flat, mask, rows, seq, e.dimensions), nil

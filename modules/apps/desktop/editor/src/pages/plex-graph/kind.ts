@@ -21,7 +21,7 @@ export function createPlexKind(
   createView: () => PlexView,
   deps: PlexTabDeps,
 ) {
-  const all = () => handle.each<PlexTabState>(PLEX)
+  const getAll = () => handle.each<PlexTabState>(PLEX)
   const front = (): PlexTabState | null => handle.last<PlexTabState>(PLEX)?.state ?? null
 
   const kind: TabKind<PlexTabState, typeof PLEX> = {
@@ -61,15 +61,15 @@ export function createPlexKind(
 
   const leavePath = async (from: string, to: string) => {
     await Promise.all(
-      all()
+      getAll()
         .filter(({ state }) => state.view.here.value === from)
         .map(({ state }) => state.view.go(to)),
     )
   }
 
   const refresh = async (renames: readonly PathRename[] = []) => {
-    if (renames.length) for (const { state } of all()) state.followMoves(renames)
-    if (all().some(({ state }) => !state.view.here.value)) {
+    if (renames.length) for (const { state } of getAll()) state.followMoves(renames)
+    if (getAll().some(({ state }) => !state.view.here.value)) {
       try {
         await deps.readOpeningPath()
       } catch {
@@ -77,7 +77,7 @@ export function createPlexKind(
       }
     }
     await Promise.all(
-      all().map(async ({ state }) => {
+      getAll().map(async ({ state }) => {
         const path = state.view.here.value || deps.openingPath.value
         if (path) await state.view.go(path)
         await state.readParts()

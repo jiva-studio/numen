@@ -16,7 +16,7 @@ func buildScores(count int, sure ...int) []float32 {
 // and does not cut the sentence in half.
 func TestAPauseInsideASentenceDoesNotCloseIt(t *testing.T) {
 	scores := buildScores(12, 2, 3, 6, 7)
-	got := runs(scores, 0.5, 3, 0, 100, 1)
+	got := getSpans(scores, 0.5, 3, 0, 100, 1)
 	if len(got) != 1 || got[0].From != 2 || got[0].To != 8 {
 		t.Errorf("a sentence with a pause in it came out as %v", got)
 	}
@@ -25,7 +25,7 @@ func TestAPauseInsideASentenceDoesNotCloseIt(t *testing.T) {
 // Quiet enough closes a span, and what comes after it is another.
 func TestQuietClosesASpan(t *testing.T) {
 	scores := buildScores(16, 1, 2, 10, 11)
-	got := runs(scores, 0.5, 3, 0, 100, 1)
+	got := getSpans(scores, 0.5, 3, 0, 100, 1)
 	if len(got) != 2 || got[0].To != 3 || got[1].From != 10 {
 		t.Errorf("two sentences came out as %v", got)
 	}
@@ -34,7 +34,7 @@ func TestQuietClosesASpan(t *testing.T) {
 // A span is widened at both ends, and two that then meet are one.
 func TestWideningJoinsTwoSpansThatMeet(t *testing.T) {
 	scores := buildScores(20, 4, 10)
-	got := runs(scores, 0.5, 2, 3, 100, 1)
+	got := getSpans(scores, 0.5, 2, 3, 100, 1)
 	if len(got) != 1 || got[0].From != 1 || got[0].To != 14 {
 		t.Errorf("two spans widened into %v", got)
 	}
@@ -42,7 +42,7 @@ func TestWideningJoinsTwoSpansThatMeet(t *testing.T) {
 
 // A span shorter than the shortest is not a span.
 func TestASpanTooShortIsNotOne(t *testing.T) {
-	if got := runs(buildScores(10, 4), 0.5, 2, 0, 100, 3); len(got) != 0 {
+	if got := getSpans(buildScores(10, 4), 0.5, 2, 0, 100, 3); len(got) != 0 {
 		t.Errorf("one window came out as %v", got)
 	}
 }
@@ -56,7 +56,7 @@ func TestSpeechThatRunsOnIsCutWhereItIsQuietest(t *testing.T) {
 	}
 	scores[7] = 0.6
 
-	got := runs(scores, 0.5, 2, 0, 10, 1)
+	got := getSpans(scores, 0.5, 2, 0, 10, 1)
 	if len(got) != 2 || got[0].To != 7 || got[1].From != 7 {
 		t.Errorf("a span of sixteen windows came out as %v", got)
 	}

@@ -27,7 +27,7 @@ describe('whether a title and a filename are one name', () => {
     expect(groups.map((group) => group.id)).toStrictEqual([SYNCING])
     const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual([ON, OFF])
-    expect(items.find((one) => one.inForce)?.id).toBe(OFF)
+    expect(items.find((one) => one.isCurrent)?.id).toBe(OFF)
   })
 
   it('keeps the two one name where the vault cannot be asked', async () => {

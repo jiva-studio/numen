@@ -35,7 +35,7 @@ export interface Move {
 /** What a tab last saw of its note: the prose a read gave it, and which file that read came out of. */
 export interface NoteBaseline {
   readonly prose: string
-  readonly at: string
+  readonly fingerprint: string
 }
 
 /** What a tab holds. */

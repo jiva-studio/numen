@@ -377,8 +377,12 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 		child.Wait()
 	}()
 
+	// The child says other things first, and the claim is the line waited for.
 	said := bufio.NewScanner(stdout)
-	for said.Scan() && said.Text() != claimHeld {
+	for said.Scan() {
+		if said.Text() == claimHeld {
+			break
+		}
 	}
 	if said.Text() != claimHeld {
 		t.Fatalf("the child never took the claim: %v", said.Err())

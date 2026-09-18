@@ -197,7 +197,7 @@ func settle(doc *markdown.Document, p, was review.Preset) error {
 		{backlogKey, p.Backlog, was.Backlog},
 		{retentionKey, p.Retention, was.Retention},
 		{intervalKey, p.Interval, was.Interval},
-		{evenLoadKey, p.EvenLoad, was.EvenLoad},
+		{evenLoadKey, p.IsEvenLoad, was.IsEvenLoad},
 	} {
 		if one.value == one.was {
 			continue
@@ -214,18 +214,18 @@ func settle(doc *markdown.Document, p, was review.Preset) error {
 	if !mapping {
 		return nil
 	}
-	return doc.SetMapping(loadKey, shares(entries, p.Load, was.Load))
+	return doc.SetMapping(loadKey, readShares(entries, p.Load, was.Load))
 }
 
-// shares is the `load` block a save puts down: a day the read made out carries
-// what the settings say or is taken out, and every other entry stands where it
-// was, in the order it was written in. A day the block does not name is written
-// after the ones it does.
+// readShares is the `load` block a save puts down: a day the read made out
+// carries what the settings say or is taken out, and every other entry stands
+// where it was, in the order it was written in. A day the block does not name
+// is written after the ones it does.
 //
 // A day named more than once, under names that differ only in how they are
 // written, is one day to the read. The entry the read took carries the share
 // and the rest are taken out.
-func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry {
+func readShares(entries []string, load, read map[time.Weekday]int) []markdown.Entry {
 	out := make([]markdown.Entry, 0, len(entries)+len(load))
 	taken := reading(entries, read)
 	written := make(map[time.Weekday]bool, len(load))
@@ -233,7 +233,7 @@ func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry 
 		weekday, isDay := review.Weekday(name)
 		_, could := read[weekday]
 		if !isDay || !could {
-			out = append(out, markdown.Entry{Key: name, Verbatim: true})
+			out = append(out, markdown.Entry{Key: name, IsVerbatim: true})
 			continue
 		}
 		share, named := load[weekday]

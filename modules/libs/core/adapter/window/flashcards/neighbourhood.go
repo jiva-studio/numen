@@ -36,8 +36,8 @@ func (a *API) GetDeckNeighbourhood(
 			Title:       one.Title,
 			Body:        one.Body,
 			Label:       one.Label,
-			IsPointedAt: !one.Backlink,
-			IsAmbiguous: one.Ambiguous,
+			IsPointedAt: !one.IsBacklink,
+			IsAmbiguous: one.IsAmbiguous,
 		}
 		if reason, refused := wire.ErrorCodeOf(one.Outcome); refused {
 			next.Error = &reason

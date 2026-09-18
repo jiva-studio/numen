@@ -5,9 +5,9 @@ import { nextTick } from 'vue'
 
 import Card from './Card.vue'
 
-const mountCard = (front: string, over: { back?: string; shown?: boolean } = {}) =>
+const mountCard = (front: string, over: { back?: string; isShown?: boolean } = {}) =>
   mount(Card, {
-    props: { front, back: over.back ?? '<p>the back</p>', shown: over.shown ?? false },
+    props: { front, back: over.back ?? '<p>the back</p>', isShown: over.isShown ?? false },
   })
 
 /** A hand going down on the card, across by so much, and up again. */
@@ -24,14 +24,14 @@ describe('a card', () => {
     expect(face.text()).toContain('Leaf mould')
     expect(face.text()).not.toContain('Compost')
 
-    const over = mountCard('<p>Leaf mould</p>', { back: '<p>Compost</p>', shown: true })
+    const over = mountCard('<p>Leaf mould</p>', { back: '<p>Compost</p>', isShown: true })
     expect(over.text()).toContain('Compost')
   })
 
   // A card is HTML, so the marks of another format are the characters somebody
   // typed and nothing more.
   it('draws the marks a card carries as the text they are', () => {
-    const face = mountCard('**bold** and *italic*', { back: '- a list', shown: true })
+    const face = mountCard('**bold** and *italic*', { back: '- a list', isShown: true })
     expect(face.find('strong').exists()).toBe(false)
     expect(face.find('em').exists()).toBe(false)
     expect(face.find('li').exists()).toBe(false)
@@ -75,7 +75,7 @@ describe('a card', () => {
     await face.find('.card').trigger('click')
     expect(face.emitted('show')).toHaveLength(1)
 
-    const over = mountCard('<p>Leaf mould</p>', { shown: true })
+    const over = mountCard('<p>Leaf mould</p>', { isShown: true })
     await over.find('.card').trigger('click')
     expect(over.emitted('show')).toBeUndefined()
   })

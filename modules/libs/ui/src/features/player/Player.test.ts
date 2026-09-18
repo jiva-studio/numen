@@ -68,7 +68,7 @@ describe('what a person did', () => {
 describe('a sound longer than it was said to be', () => {
   // What plays says how far in it is, and it can be further in than whatever
   // said how long it was. The bar runs that far rather than stopping short.
-  it('runs as far as the furthest anything has stood in it', () => {
+  it('runs as far as the getFurthest anything has stood in it', () => {
     const player = mountPlayer({ at: 200_000, length: 125_000 })
     expect(bar(player).attributes('max')).toBe('200000')
     expect((bar(player).element as HTMLInputElement).value).toBe('200000')

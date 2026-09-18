@@ -1,11 +1,30 @@
 /** How the decks pointing at one preset are scheduled, and what that comes to. */
 import type { Result } from '@numen/wire'
-import type { BudgetName, StopReason } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
+import type { BudgetName } from '@numen/protocol'
 import type { Goal } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { CardsFailure } from '../types'
 
 export type { Goal }
+
+export type { StopReason }
+
+/**
+ * Every reason there is, `none` last. A verdict the schema gains and this does
+ * not is caught where the two are mapped onto each other.
+ */
+export const STOP_REASONS: readonly StopReason[] = [
+  StopReason.NO_MINUTES,
+  StopReason.NO_CARDS,
+  StopReason.NO_DAY,
+  StopReason.PAST_DAY,
+  StopReason.NO_LOAD,
+  StopReason.NO_WEEK,
+  StopReason.NOTHING,
+]
+
+export type { BudgetName }
 
 /** The three, in the order they are offered. */
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
@@ -139,7 +158,8 @@ export interface Point {
   readonly retained: number
   readonly owed: number
   readonly through: number
-  readonly enough: boolean
+  /** Whether the pace this place sets learns every card face it can. */
+  readonly canLearnEveryCard: boolean
   readonly closed: readonly BudgetName[]
   readonly clears: number
   readonly learned: number
@@ -176,7 +196,7 @@ export interface Curve extends PresetCounts {
   readonly now: Place
   readonly suggested: Place
   readonly isValid?: boolean
-  readonly honest: boolean
+  readonly isHonest: boolean
 }
 
 /** One preset as a person choosing between them sees it. */

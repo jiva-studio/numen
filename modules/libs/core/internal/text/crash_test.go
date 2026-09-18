@@ -16,7 +16,7 @@ import (
 // compiled from C and reads bytes whoever synced the vault put there.
 type wild struct{}
 
-func (wild) Read(context.Context, []byte) (port.TextLayer, error) {
+func (wild) Read(context.Context, []byte) (domain.TextLayer, error) {
 	panic("page 3 of 2")
 }
 

@@ -75,7 +75,7 @@ export function useDeckTabs(
           sections: serializeBufferSectionsToVaultSections(deck),
           tail: deck.tail,
         },
-        seen?.at ?? null,
+        seen?.fingerprint ?? null,
       )
       vaultAnswers.recordWrite(path, {
         error: answer.ok ? null : getFailureCode(answer.error.code),
@@ -149,7 +149,7 @@ export function useDeckTabs(
     has: (id) => store.getOpenIds().includes(id),
     getPath: (id) => store.getPath(id),
     getTitle: (id) => vaultAnswers.getTitle(store.getPath(id)),
-    isAsking: (id) => store.stale(id) !== null,
+    asking: (id) => store.stale(id) !== null,
     settle: (id) => store.settle(id),
     close: closeTabById,
     getTabAt: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,

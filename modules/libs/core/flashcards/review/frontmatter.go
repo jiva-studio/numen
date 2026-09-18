@@ -97,7 +97,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		if !isBool {
 			problems = append(problems, "even_load is neither true nor false")
 		} else {
-			p.EvenLoad = value
+			p.IsEvenLoad = value
 		}
 	}
 

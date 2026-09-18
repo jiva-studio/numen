@@ -27,15 +27,16 @@ export const useWindow = () => {
   const vault = ref('')
 
   const { notices, showNotice, reportError, setTasks, dismissNotice } = useNotices()
-  const {
-    vaults,
-    counting: busy,
-    day: today,
-    count,
-    stop,
-  } = useReviewCounter({ cards, reportError })
+  const { vaults, isCounting, day: today, count, stop } = useReviewCounter({ cards, reportError })
   const state = useReviewSession({ cards, reportError })
-  const done = useReviewDays({ cards, reportError })
+  const done = useReviewDays({
+    cards,
+    reportError,
+    // The grid stands inside the page, so the page is what bounds it. A page
+    // zoomed out is wider in the pixels a layout is measured in than the
+    // screen is, and the screen alone would leave the widest grids short.
+    widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
+  })
   const schedules = useVaultPresets({ presets: cards })
 
   /** Why nothing can be asked here, empty while something can. */
@@ -182,7 +183,7 @@ export const useWindow = () => {
     dismissNotice,
 
     /** The list of vaults, and the way into one. */
-    vaults: { list: vaults, counting: busy, choose },
+    vaults: { list: vaults, isCounting, choose },
 
     /** One vault's decks and presets, and the ways to sit down to them. */
     decks: { chosen, today, done, schedules, start, startPreset, goToVaults },

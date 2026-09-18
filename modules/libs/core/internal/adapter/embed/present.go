@@ -19,8 +19,8 @@ func IsFetched(cfg LocalModel) bool {
 		file = ModelFile
 	}
 	if cfg.Dir != "" {
-		return here(filepath.Join(cfg.Dir, file)) &&
-			here(filepath.Join(cfg.Dir, TokenizerFile))
+		return fileExists(filepath.Join(cfg.Dir, file)) &&
+			fileExists(filepath.Join(cfg.Dir, TokenizerFile))
 	}
 	if cfg.Name == "" {
 		return false
@@ -40,7 +40,7 @@ func folder(name string) string {
 	return strings.Join(parts, hub.RepoIdSeparator)
 }
 
-func here(at string) bool {
+func fileExists(at string) bool {
 	_, err := os.Stat(at)
 	return err == nil
 }

@@ -17,7 +17,7 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   source: null,
   made: {},
   vault: { id: 'physics', name: 'Physics' },
-  ready: true,
+  isReady: true,
   ...over,
 })
 

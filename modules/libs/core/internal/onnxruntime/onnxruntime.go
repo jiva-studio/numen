@@ -18,10 +18,10 @@ import (
 // Settings are what the runtime and a model are found by. Section is the
 // settings block they were read from, and is what a person is told to change.
 type Settings struct {
-	Section  string
-	Runtime  string
-	Dir      string
-	Download bool
+	Section        string
+	Runtime        string
+	Dir            string
+	ShouldDownload bool
 
 	// Fetching is told how far a download has got, when anything is listening.
 	Fetching func(what string, done, total int64)
@@ -157,11 +157,11 @@ func keep(engine *ort.Engine, at string) {
 	here.Store(true)
 }
 
-// Here says whether this process has its runtime, or this machine holds a file
+// IsHere says whether this process has its runtime, or this machine holds a file
 // to make one from. It opens nothing, so it is answered while another caller is
 // opening one. A name the loader would search for on its own is not a file
 // anything here can find.
-func Here(s Settings) bool {
+func IsHere(s Settings) bool {
 	if here.Load() {
 		return true
 	}

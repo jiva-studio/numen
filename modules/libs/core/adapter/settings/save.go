@@ -62,40 +62,41 @@ func Save(path string, into Document, settings ...Setting) error {
 			raw = patched
 		}
 
-		if err := takes(raw, settings, into); err != nil {
+		if err := writeSettings(raw, settings, into); err != nil {
 			return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
 		}
 		return replace(path, raw)
 	})
 }
 
-// holds says what is wrong with the settings these bytes make, and nothing
-// where they read out as settings this build can work with.
-func holds(raw []byte, into Document) error {
+// checkSettings says what is wrong with the settings these bytes make, and
+// nothing where they read out as settings this build can work with.
+func checkSettings(raw []byte, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
 	return into.GetAppearance().Check()
 }
 
-// takes says what is wrong with the settings this call wrote, and nothing where
-// each is a number its setting takes and an hour its setting begins at.
+// writeSettings says what is wrong with the settings this call wrote, and
+// nothing where each is a number its setting writeSettings and an hour its
+// setting begins at.
 //
 // A value outside its setting that the file already held is one the person
 // typed and one they can still reach: what is refused is what was handed in.
-func takes(raw []byte, wrote []Setting, into Document) error {
+func writeSettings(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
 	for _, outside := range into.GetAppearance().Outsides() {
 		for _, setting := range wrote {
-			if covers(setting.At, outside.At) {
+			if isFieldCovered(setting.At, outside.At) {
 				return outside
 			}
 		}
 	}
 	for _, setting := range wrote {
-		if !covers(setting.At, dayStartsAt) {
+		if !isFieldCovered(setting.At, dayStartsAt) {
 			continue
 		}
 		if _, err := ReadDayStart(into.GetReview().DayStarts); err != nil {
@@ -108,9 +109,9 @@ func takes(raw []byte, wrote []Setting, into Document) error {
 // dayStartsAt is where the hour a day of review begins at sits in the file.
 const dayStartsAt = "review.day_starts"
 
-// covers is whether a setting handed in at one name wrote the field at another:
-// the field itself, or a field inside the section named.
-func covers(at []string, field string) bool {
+// isFieldCovered is whether a setting handed in at one name wrote the field at
+// another: the field itself, or a field inside the section named.
+func isFieldCovered(at []string, field string) bool {
 	name := strings.Join(at, ".")
 	return field == name || strings.HasPrefix(field, name+".")
 }
@@ -165,7 +166,7 @@ func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 			}
 			return splice(object, one.from, one.to, section), true
 		}
-		if one.nameTo == 0 || held.holds(to) {
+		if one.nameTo == 0 || held.hasKey(to) {
 			return object, false
 		}
 		name, err := json.Marshal(to)
@@ -291,7 +292,7 @@ func members(object []byte) (shape, error) {
 		// A name is read up to its closing quote, so the quoted name ends where
 		// the decoder now stands. It is the file's own bytes only where they are
 		// the plain quoting of it.
-		if held.holds(key) {
+		if held.hasKey(key) {
 			return shape{}, fmt.Errorf("%s: %w", key, errRepeated)
 		}
 		one := member{key: key}
@@ -323,8 +324,8 @@ func members(object []byte) (shape, error) {
 	return held, nil
 }
 
-// holds is whether the object has a member of this name.
-func (s shape) holds(key string) bool {
+// hasKey is whether the object has a member of this name.
+func (s shape) hasKey(key string) bool {
 	for _, one := range s.pairs {
 		if one.key == key {
 			return true
@@ -392,8 +393,8 @@ func resolvePath(path string) string {
 	// links is as many hops as a settings file is ever kept behind.
 	const links = 32
 	for range links {
-		if real, err := filepath.EvalSymlinks(abs); err == nil {
-			return real
+		if resolved, err := filepath.EvalSymlinks(abs); err == nil {
+			return resolved
 		}
 		target, err := os.Readlink(abs)
 		if err != nil {
@@ -415,11 +416,11 @@ func resolvePath(path string) string {
 // file sits in made. Everything that writes the settings goes through it, so a
 // link is followed once and the rest of the way is the file itself.
 func runOnFile(path string, work func(path string) error) error {
-	real := resolvePath(path)
-	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil {
+	resolved := resolvePath(path)
+	if err := os.MkdirAll(filepath.Dir(resolved), 0o755); err != nil {
 		return err
 	}
-	return work(real)
+	return work(resolved)
 }
 
 func splice(raw []byte, from, to int, with []byte) []byte {

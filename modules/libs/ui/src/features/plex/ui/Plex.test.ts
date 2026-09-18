@@ -248,7 +248,7 @@ describe('how wide a box is drawn', () => {
 
     await nextTick()
     expect(boxes(plex)).toStrictEqual(painted)
-    expect(plex.vm.moving).toBe(false)
+    expect(plex.vm.isMoving).toBe(false)
   })
 
   it('stands still while the type it was measured in stands', async () => {
@@ -265,7 +265,7 @@ describe('how wide a box is drawn', () => {
     await nextTick()
 
     expect(boxes(plex)).toStrictEqual(painted)
-    expect(plex.vm.moving).toBe(false)
+    expect(plex.vm.isMoving).toBe(false)
   })
 
   it('measures again when a theme changes the type under it', async () => {
@@ -306,13 +306,13 @@ describe('being given the next neighbourhood', () => {
 
     // Still showing the old picture: on its way, not replaced.
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(true)
-    expect(plex.vm.moving).toBe(true)
+    expect(plex.vm.isMoving).toBe(true)
   })
 
   it('stands still when it has nowhere left to go', async () => {
     const plex = mountPlex()
     await plex.setProps({ neighbourhood: neighbourhoods.leaf })
-    expect(plex.vm.moving).toBe(false)
+    expect(plex.vm.isMoving).toBe(false)
   })
 
   it('re-aims at the newest neighbourhood instead of queueing them', async () => {
@@ -323,7 +323,7 @@ describe('being given the next neighbourhood', () => {
 
     // Four clicks in a second end at the fourth, not at a queue of three.
     expect(plex.find('[aria-label^="Recursive CTE"]').exists()).toBe(true)
-    expect(plex.vm.moving).toBe(false)
+    expect(plex.vm.isMoving).toBe(false)
   })
 })
 

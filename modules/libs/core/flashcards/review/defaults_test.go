@@ -26,7 +26,7 @@ type defaultPreset struct {
 	Counts      string         `json:"counts"`
 	Backlog     int            `json:"backlog"`
 	Load        map[string]int `json:"load"`
-	EvenLoad    bool           `json:"evenLoad"`
+	IsEvenLoad  bool           `json:"evenLoad"`
 	Learned     string         `json:"learned"`
 	Interval    int            `json:"interval"`
 }
@@ -79,7 +79,7 @@ func TestAPresetNamingNothingIsScheduledByWhatTheCorpusSays(t *testing.T) {
 		Counts:      string(d.Counts),
 		Backlog:     d.Backlog,
 		Load:        load,
-		EvenLoad:    d.EvenLoad,
+		IsEvenLoad:  d.IsEvenLoad,
 		Learned:     string(d.Rule),
 		Interval:    d.Interval,
 	}

@@ -24,7 +24,7 @@ type Follow struct {
 	// ErrorHandler, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds. Both, so what is reported is the state of things
 	// now.
-	ErrorHandler func(error)
+	ErrorHandler port.ErrorHandler
 }
 
 // NewFollow is what keeps the index level with a vault being edited: what says
@@ -39,8 +39,8 @@ func NewFollow(watcher port.VaultWatcher, refresh Refresh, scan Scan) Follow {
 // VaultChanges is what a caller is told: the notes that are different now, or that the
 // whole vault has to be looked at again.
 type VaultChanges struct {
-	Paths  []string
-	Reload bool
+	Paths        []string
+	ShouldReload bool
 	// Assets is the paths of the files that changed and are not notes. Reading
 	// one is its own work and takes minutes. A reload carries none, and stands
 	// for every asset in the vault.
@@ -49,7 +49,7 @@ type VaultChanges struct {
 
 // Reading says whether an asset owes a read: one changed, or the whole vault is
 // being looked at again and every asset with it.
-func (m VaultChanges) Reading() bool { return m.Reload || len(m.Assets) > 0 }
+func (m VaultChanges) Reading() bool { return m.ShouldReload || len(m.Assets) > 0 }
 
 // Begin starts watching. Acting on what it collects is Run, and the two are
 // separate because they belong at different moments.
@@ -104,7 +104,7 @@ func (f *Watch) Run(ctx context.Context) {
 			f.handleError(nil)
 			// Read again from the top, so whatever changed is among what the
 			// walk finds.
-			f.reportChanges(VaultChanges{Reload: true})
+			f.reportChanges(VaultChanges{ShouldReload: true})
 		}
 	}
 }

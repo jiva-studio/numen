@@ -51,7 +51,7 @@ func Locate(ctx context.Context, cfg LocalModel, progress FetchProgress) (Paths,
 	if cfg.Name == "" {
 		return Paths{}, errors.New("no model to run: name a repository or a directory")
 	}
-	if !cfg.Download {
+	if !cfg.ShouldDownload {
 		return Paths{}, fmt.Errorf("%s is not on this machine: set local.dir to where it is, or local.download to fetch it", cfg.Name)
 	}
 
@@ -194,7 +194,7 @@ func selectModelFiles(folder []string, named string) []string {
 	}
 	out := []string{named}
 	for _, name := range folder {
-		if name == named || theirs(name, others) {
+		if name == named || isTheirs(name, others) {
 			continue
 		}
 		out = append(out, name)
@@ -202,9 +202,9 @@ func selectModelFiles(folder []string, named string) []string {
 	return out
 }
 
-// theirs says a file belongs to one of the models given: it is that model, or
+// isTheirs says a file belongs to one of the models given: it is that model, or
 // it stands beside it under that model's name.
-func theirs(name string, models []string) bool {
+func isTheirs(name string, models []string) bool {
 	for _, model := range models {
 		if strings.HasPrefix(name, model) {
 			return true

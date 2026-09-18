@@ -130,9 +130,9 @@ func TestAProfileIsReadBackAsWhatItWas(t *testing.T) {
 // it knows a model under.
 func TestAProfileWithNoModelNamesNone(t *testing.T) {
 	for _, one := range []struct {
-		what  string
-		raw   string
-		named bool
+		what    string
+		raw     string
+		isNamed bool
 	}{
 		{"a profile the file leaves empty", `{}`, false},
 		{"a service naming no model", `{"use":"service"}`, false},
@@ -146,7 +146,7 @@ func TestAProfileWithNoModelNamesNone(t *testing.T) {
 			if err := json.Unmarshal([]byte(one.raw), &held); err != nil {
 				t.Fatal(err)
 			}
-			if held.HasModel() != one.named {
+			if held.HasModel() != one.isNamed {
 				t.Errorf("%s names a model: %v", one.raw, held.HasModel())
 			}
 		})

@@ -9,13 +9,13 @@ import (
 type KnownVault struct {
 	Vault domain.Vault
 
-	// Missing is a folder that is not there to be read. The vault stays on the
+	// IsMissing is a folder that is not there to be read. The vault stays on the
 	// list until somebody forgets it.
-	Missing bool
+	IsMissing bool
 
-	// Current is the one vault the rest of a screen is about: the one a window
+	// IsCurrent is the one vault the rest of a screen is about: the one a window
 	// is showing, or the one the next window opens.
-	Current bool
+	IsCurrent bool
 }
 
 // KnownVaults is every vault this installation holds, each with what is true of
@@ -40,7 +40,7 @@ func NewKnownVaults(registry port.VaultRegistry, readers port.VaultReaders) Know
 // asks the list which vault the next window opens, which is the answer where
 // nobody is sitting in front of one.
 func (u KnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
-	held, err := u.Registry.All()
+	held, err := u.Registry.List()
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +60,9 @@ func (u KnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 	known := make([]KnownVault, 0, len(held))
 	for _, v := range held {
 		known = append(known, KnownVault{
-			Vault:   v,
-			Missing: u.Folders.Execute(v),
-			Current: showing != "" && v.ID == showing,
+			Vault:     v,
+			IsMissing: u.Folders.Execute(v),
+			IsCurrent: showing != "" && v.ID == showing,
 		})
 	}
 	return known, nil

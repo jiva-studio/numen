@@ -7,7 +7,7 @@
  */
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
 import {
-  choosable,
+  canChoose,
   flatten,
   orderGroups,
   stepTo,
@@ -123,7 +123,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     stood = { x: event.clientX, y: event.clientY }
     // An item the keyboard steps over is one the pointer passes over.
     const item = places.value[at]?.item
-    if (item && choosable(item)) goTo(at)
+    if (item && canChoose(item)) goTo(at)
   }
 
   const chooseAt = (at: number, second: boolean): void => {

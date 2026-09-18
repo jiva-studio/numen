@@ -85,7 +85,7 @@ func FuzzWriteArtifact(f *testing.F) {
 					Rect: image.Rect(0, 0, 10, 10),
 					Span: domain.ByteSpan{From: 0, To: len(first)},
 				}}},
-				{Text: heading, Heading: marked, Depth: depth},
+				{Text: heading, IsHeading: marked, Depth: depth},
 			},
 		}, {
 			Index:  1,

@@ -34,7 +34,7 @@ const words: Words = {
 /** A window showing a vault it has read. */
 const createShownVault = (over: Partial<ShownVault> = {}): ShownVault => ({
   vault: 'physics',
-  ready: true,
+  isReady: true,
   ...over,
 })
 
@@ -42,7 +42,7 @@ const vault = (id: string, name: string, isMissing = false): Vault => ({
   id,
   name,
   path: `/vaults/${name}`,
-  missing: isMissing,
+  isMissing: isMissing,
 })
 
 const createVaultList = (vaults: readonly Vault[], current: string): VaultList => ({
@@ -56,7 +56,7 @@ const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
 describe('the ways into the vault', () => {
   it('are the settings alone where the window is showing no vault', () => {
     expect(
-      waysIn(createShownVault({ vault: '', ready: false }), words, APPLE).map((one) => one.id),
+      waysIn(createShownVault({ vault: '', isReady: false }), words, APPLE).map((one) => one.id),
     ).toStrictEqual([SETTINGS])
   })
 
@@ -92,7 +92,7 @@ describe('the ways into the vault', () => {
 
   /** A note cannot be made in a vault that never opened. The rest stand. */
   it('leave out the new note where the vault could not be opened', () => {
-    const ways = waysIn(createShownVault({ ready: false }), words, APPLE)
+    const ways = waysIn(createShownVault({ isReady: false }), words, APPLE)
     expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'agent', SETTINGS])
   })
 

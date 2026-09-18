@@ -60,7 +60,7 @@ func formatGolden(book *epub.Book) string {
 		book.Title, book.Tier, book.Layout, book.Direction, len(book.Text), book.PageBytes(), book.PageCount())
 	out.WriteString("\ndocuments\n")
 	for _, doc := range book.Documents {
-		fmt.Fprintf(&out, "\t%d\t%d\t%v\t%s\n", doc.Offset, doc.Length, doc.Linear, doc.Path)
+		fmt.Fprintf(&out, "\t%d\t%d\t%v\t%s\n", doc.Offset, doc.Length, doc.IsLinear, doc.Path)
 	}
 	out.WriteString("\nparts\n")
 	for _, part := range book.Parts {

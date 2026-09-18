@@ -8,6 +8,12 @@ import {
   goBaseline,
   goDeclares,
   goTravels,
+  degreeBaseline,
+  describes,
+  standInBaseline,
+  standsFor,
+  narratorBaseline,
+  narrates,
   nouns,
   refused,
   takes,
@@ -77,6 +83,85 @@ test('no function of the Go modules is named by a gerund, a participle or a prep
     found.some(({ at }) => at.startsWith('modules/libs/core/domain/')),
     'the walk did not read the core domain, so the rule stops at the core border',
   )
+})
+
+/**
+ * A third-person verb describes somebody else's code. `holds` and `recognises`
+ * are a narrator; `hold` and `recognise` are the caller asking. The words carry
+ * no ending a machine can read, so they are written down in `narrators`.
+ *
+ * Both modules are read by one test, because one list stands behind both.
+ */
+test('no function of the repository is named by a third-person verb', () => {
+  const found = [...declared(), ...goDeclared()]
+  const wrong = found
+    .filter(({ name }) => narrates(name) && !narratorBaseline.includes(name))
+    .map(({ at, name }) => `${at} declares ${name}`)
+  assert.deepEqual(wrong, [])
+
+  // A walk that read no declaration is a rule checked against nothing, and it
+  // passes. The two modules furthest apart are named, so a rule that stopped at
+  // either border is a rule that fails here.
+  assert.ok(found.length > 4000, `${found.length} functions read: the walk is not reading the modules`)
+  assert.ok(
+    found.some(({ at }) => at.startsWith('modules/libs/core/domain/')),
+    'the walk did not read the core domain, so the rule stops at the core border',
+  )
+  assert.ok(
+    found.some(({ at }) => at.endsWith('apps/mobile/src/core.ts')),
+    "the walk did not read the phone's core.ts, so the rule stops at the mobile border",
+  )
+
+  const names = new Set(found.map((one) => one.name))
+  assert.deepEqual(
+    narratorBaseline.filter((one) => !names.has(one)),
+    [],
+  )
+})
+
+/**
+ * An adverb says how something is done and a superlative says which of several
+ * it is. Neither is an operation a caller asks for, and both carry an ending a
+ * machine can read.
+ */
+test('no function of the repository is named by an adverb or a superlative', () => {
+  const found = [...declared(), ...goDeclared()]
+  const wrong = found
+    .filter(({ name }) => describes(name) && !degreeBaseline.includes(name))
+    .map(({ at, name }) => `${at} declares ${name}`)
+  assert.deepEqual(wrong, [])
+})
+
+/**
+ * A pronoun or a determiner points at a thing without naming it. A caller
+ * reading `one(vaults)` has to open the declaration to learn what comes back.
+ */
+test('no function of the repository is named by a word that stands for a thing', () => {
+  const found = [...declared(), ...goDeclared()]
+  const wrong = found
+    .filter(({ name }) => standsFor(name) && !standInBaseline.includes(name))
+    .map(({ at, name }) => `${at} declares ${name}`)
+  assert.deepEqual(wrong, [])
+})
+
+/** What the narrator rule refuses, read against names written to be refused. */
+test('what the narrator rule refuses', () => {
+  const cases = [
+    { says: 'a third-person verb alone', allowed: false, name: 'holds' },
+    { says: 'a third-person verb with what it acts on after it', allowed: false, name: 'keepsNotes' },
+    // The word is refused whichever way it is read: a function named by a
+    // plain noun says no more than the narrator does.
+    { says: 'a plural noun that is also a third-person verb', allowed: false, name: 'covers' },
+    { says: 'the imperative the listed word is built from', allowed: true, name: 'holdCursor' },
+    { says: 'a verb form later in the name', allowed: true, name: 'getRuns' },
+    // A word the standard library named first is read as that library's, and a
+    // caller asking `strings.Contains` reads the same word here.
+    { says: "a word the standard library's own API is named by", allowed: true, name: 'contains' },
+    { says: 'a plural noun no verb is spelled the same way', allowed: true, name: 'settings' },
+  ]
+
+  const wrong = cases.filter((one) => narrates(one.name)).map((one) => one.says)
+  assert.deepEqual(wrong, cases.filter((one) => !one.allowed).map((one) => one.says))
 })
 
 /**
@@ -162,9 +247,9 @@ test('what the verb rule refuses', () => {
     // A past form that doubles as the base is a caller asking.
     { says: 'a past form that is also the base form', allowed: true, name: 'readTable' },
     { says: 'a side, not a verb', allowed: true, name: 'leftInDocument' },
-    // A third person verb reads exactly as a plural noun, and a factory here
-    // may take a plain noun. A person reads those.
-    { says: 'a third-person verb, which no machine can see', allowed: true, name: 'carries' },
+    // A third-person verb carries no ending to read. The narrator rule below
+    // is what reads those, and this one leaves them alone.
+    { says: 'a third-person verb, which this rule does not read', allowed: true, name: 'carries' },
     // A preposition alone says where a thing is and not what a caller asks for.
     { says: 'a preposition alone', allowed: false, name: 'beside' },
     { says: 'a preposition with a word behind it', allowed: true, name: 'inOrder' },

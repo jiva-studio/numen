@@ -42,7 +42,7 @@ const shelf = (
   const getThemeRow = (one: Theme): StepRow => ({
     id: one.name,
     title: one.title,
-    ...(one.name === themeName ? { detail: words.current, inForce: true } : {}),
+    ...(one.name === themeName ? { detail: words.current, isCurrent: true } : {}),
   })
   return [
     ...off.filter((one) => one.name === themeName).map(getThemeRow),
@@ -100,7 +100,7 @@ export const getModeGroups = (
       id: getModeId(one),
       title: words[one],
       ...(detail ? { detail } : {}),
-      ...(one === mode ? { inForce: true } : {}),
+      ...(one === mode ? { isCurrent: true } : {}),
       ...(isPinned ? { disabled: true } : {}),
     }
   }
@@ -130,7 +130,7 @@ export const getSizeGroups = (
   const row = (size: number): StepRow => ({
     id: getSizeId(which, size),
     title: percent(size),
-    ...(size === now ? { detail: words.current, inForce: true } : {}),
+    ...(size === now ? { detail: words.current, isCurrent: true } : {}),
   })
   const held = [...ladder(range), now, ...(asked === null ? [] : [asked])]
     .filter((size) => isInBounds(range, size))

@@ -44,10 +44,10 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
 
   /** The two, in one group named for the setting they are of. */
   const getSyncingGroups = (): readonly StepGroup[] => {
-    const row = (id: string, title: string, inForce: boolean) => ({
+    const row = (id: string, title: string, current: boolean) => ({
       id,
       title,
-      ...(inForce ? { detail: words.current, inForce: true } : {}),
+      ...(current ? { detail: words.current, isCurrent: true } : {}),
     })
     return [
       {

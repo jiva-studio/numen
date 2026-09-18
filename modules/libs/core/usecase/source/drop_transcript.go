@@ -34,9 +34,9 @@ type DropTranscript struct {
 
 // DropTranscriptResult reports what dropping a transcript did.
 type DropTranscriptResult struct {
-	Path string // the recording whose transcript was dropped
-	None bool   // nothing has listened to it, and nothing was done
-	Busy bool   // somebody is listening to it, and nothing was done
+	Path   string // the recording whose transcript was dropped
+	IsNone bool   // nothing has listened to it, and nothing was done
+	IsBusy bool   // somebody is listening to it, and nothing was done
 }
 
 // Execute drops the transcript of one recording.
@@ -66,7 +66,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	partial := text.Partial(from, hash)
 	release, err := store.Claim(ctx, partial)
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
+		res.IsBusy = true
 		return res, nil
 	}
 	if err != nil {
@@ -82,7 +82,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 		return res, err
 	}
 	if !held && !stood {
-		res.None = true
+		res.IsNone = true
 		return res, nil
 	}
 

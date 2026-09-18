@@ -99,8 +99,8 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     for (const effect of next.effects) applyEffect(id, effect)
 
     const held = next.effects.some((effect) => effect.kind === 'hold')
-    const writing = next.effects.some((effect) => effect.kind === 'write')
-    if (held && !writing) closing.get(id)?.(false)
+    const isWriting = next.effects.some((effect) => effect.kind === 'write')
+    if (held && !isWriting) closing.get(id)?.(false)
 
     if (next.tab.pendingWrite === null) queue.finishSettle(id)
   }

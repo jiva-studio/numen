@@ -333,7 +333,7 @@ describe('a recording put in front', () => {
     const window = await openRecording()
 
     expect(requests.carried).toStrictEqual([RECORDING])
-    expect(await runsOffered(window)).toStrictEqual(['transcribe'])
+    expect(await getRunsOffered(window)).toStrictEqual(['transcribe'])
   })
 
   it('is offered putting the words right once a run has written them', async () => {
@@ -342,12 +342,12 @@ describe('a recording put in front', () => {
     const window = await openRecording()
 
     expect(requests.carried).toStrictEqual([RECORDING])
-    expect(await runsOffered(window)).toStrictEqual(['proofread', 'deleteText'])
+    expect(await getRunsOffered(window)).toStrictEqual(['proofread', 'deleteText'])
   })
 })
 
 /** The runs the palette offers over the file in front, in the order it draws them. */
-const runsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
+const getRunsOffered = async (window: VueWrapper): Promise<readonly string[]> => {
   globalThis.dispatchEvent(
     new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }),
   )

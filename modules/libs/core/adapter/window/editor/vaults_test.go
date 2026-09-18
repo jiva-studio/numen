@@ -84,19 +84,19 @@ func (b *bin) getTrashed() []string {
 // folders is the person choosing a folder, as a test answers for them. The real
 // dialog is this machine's own and needs a window.
 type folders struct {
-	mu    sync.Mutex
-	pick  string
-	chose bool
-	fails error
-	title string
-	from  string
+	mu       sync.Mutex
+	pick     string
+	isChosen bool
+	fails    error
+	title    string
+	from     string
 }
 
 func (f *folders) Choose(_ context.Context, title, startingAt string) (string, bool, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.title, f.from = title, startingAt
-	return f.pick, f.chose, f.fails
+	return f.pick, f.isChosen, f.fails
 }
 
 // getAsked is what the dialog was told to say and where to open.
@@ -550,7 +550,7 @@ func TestAWindowThatIsGoingIsNotACodeAboutTheVault(t *testing.T) {
 		name string
 		why  error
 	}{
-		{"the window is going", errGoing},
+		{"the window is closing", errWindowClosing},
 		{"the window is settling", errSettling},
 	} {
 		t.Run(one.name, func(t *testing.T) {
@@ -588,7 +588,7 @@ func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 // TestTheFolderThePersonChoseIsAnswered.
 func TestTheFolderThePersonChoseIsAnswered(t *testing.T) {
 	f := onAList(t)
-	f.dialog.pick, f.dialog.chose = f.second.Path, true
+	f.dialog.pick, f.dialog.isChosen = f.second.Path, true
 
 	out, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 	if err != nil {

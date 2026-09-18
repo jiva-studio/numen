@@ -161,11 +161,11 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 		if text, boxes := ocr.Assemble(lines); text != "" {
 			depth, head := r.head[region.Label]
 			out = append(out, ocr.Block{
-				Label:   region.Label,
-				Text:    text,
-				Heading: head,
-				Depth:   depth,
-				Boxes:   boxes,
+				Label:     region.Label,
+				Text:      text,
+				IsHeading: head,
+				Depth:     depth,
+				Boxes:     boxes,
 			})
 		}
 	}

@@ -60,7 +60,7 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 	if cost.Review != 9*time.Second {
 		t.Errorf("a review costs %v, want 9s", cost.Review)
 	}
-	if !cost.ReadNew || !cost.ReadReview {
+	if !cost.ShouldReadNew || !cost.ShouldReadReview {
 		t.Errorf("cost = %+v, want both halves read from the answers", cost)
 	}
 }
@@ -78,7 +78,7 @@ func TestAHistoryTooShortToSayStandsAtTheDefault(t *testing.T) {
 	if cost != review.DefaultCost {
 		t.Errorf("cost = %+v, want the default %+v", cost, review.DefaultCost)
 	}
-	if cost.ReadNew || cost.ReadReview {
+	if cost.ShouldReadNew || cost.ShouldReadReview {
 		t.Errorf("cost = %+v, want neither half read from the answers", cost)
 	}
 }
@@ -94,12 +94,12 @@ func TestACostOfOneKindLeavesTheOtherAtTheDefault(t *testing.T) {
 	answers := makeAnswers(at, 12, 2, func(int, int) time.Duration { return 30 * time.Second })
 
 	cost := review.GetCost(by, answers)
-	if cost.New != 30*time.Second || !cost.ReadNew {
-		t.Errorf("a card being learned costs %v, read %t, want 30s read", cost.New, cost.ReadNew)
+	if cost.New != 30*time.Second || !cost.ShouldReadNew {
+		t.Errorf("a card being learned costs %v, read %t, want 30s read", cost.New, cost.ShouldReadNew)
 	}
-	if cost.Review != review.DefaultCost.Review || cost.ReadReview {
+	if cost.Review != review.DefaultCost.Review || cost.ShouldReadReview {
 		t.Errorf("a review costs %v, read %t, want the default %v unread",
-			cost.Review, cost.ReadReview, review.DefaultCost.Review)
+			cost.Review, cost.ShouldReadReview, review.DefaultCost.Review)
 	}
 }
 

@@ -44,15 +44,15 @@ func spans(text, query string) []domain.UnitSpan {
 	return mergeSpans(at)
 }
 
-// wordly is what a word is made of, so that what stands either side of one is
+// isWordRune is what a word is made of, so that what stands either side of one is
 // what tells a word from a run of letters inside one.
-func wordly(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
+func isWordRune(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
 
 // isWordStart and isWordEnd say whether a span beginning or ending here is a whole
 // word's beginning or end. The ends of the text are both.
-func isWordStart(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
+func isWordStart(runes []rune, at int) bool { return at == 0 || !isWordRune(runes[at-1]) }
 
-func isWordEnd(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
+func isWordEnd(runes []rune, at int) bool { return at == len(runes) || !isWordRune(runes[at]) }
 
 // mergeSpans is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.

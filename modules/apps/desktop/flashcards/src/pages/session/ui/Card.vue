@@ -14,7 +14,7 @@ const props = defineProps<{
   front: string
   back: string
   /** Whether the answer is being shown. */
-  shown: boolean
+  isShown: boolean
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -67,15 +67,15 @@ const onClick = (press: MouseEvent) => {
   // press that went nowhere is a person asking for the answer.
   const went = from.value === null ? 0 : Math.abs(press.clientX - from.value)
   from.value = null
-  if (went <= STILL && !props.shown) emit('show')
+  if (went <= STILL && !props.isShown) emit('show')
 }
 </script>
 
 <template>
   <article class="card" @click="onClick" @pointerdown="onPointerDown">
     <CardProse :text="front" @follow="onFollow" />
-    <div v-if="shown" class="card__rule" />
-    <CardProse v-if="shown" :text="back" @follow="onFollow" />
+    <div v-if="isShown" class="card__rule" />
+    <CardProse v-if="isShown" :text="back" @follow="onFollow" />
   </article>
 </template>
 

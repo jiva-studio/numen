@@ -53,7 +53,7 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, 
 		if !named {
 			return nil, false, false
 		}
-		if through > at && !batch.Joinable {
+		if through > at && !batch.IsJoinable {
 			return nil, false, false
 		}
 		// A sentence runs on past the last line a batch was given, and a model

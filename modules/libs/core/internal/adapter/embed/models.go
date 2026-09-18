@@ -31,12 +31,12 @@ func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
 	provider := held.Indexing
 	offeredLocal, _ := offered.Indexing.Local()
 	models := []port.Model{{
-		Path:     ModelAt,
-		Name:     offered.Model.Name,
-		Title:    offered.Model.Name,
-		Shelf:    shelfMachine,
-		Default:  true,
-		Presence: getPresence(provider, offered.Model.Name, isFetched),
+		Path:      ModelAt,
+		Name:      offered.Model.Name,
+		Title:     offered.Model.Name,
+		Shelf:     shelfMachine,
+		IsDefault: true,
+		Presence:  getPresence(provider, offered.Model.Name, isFetched),
 		Writes: []port.Setting{
 			newSetting([]string{"model"}, offered.Model),
 			newSetting([]string{"indexing", "use"}, UseLocal),

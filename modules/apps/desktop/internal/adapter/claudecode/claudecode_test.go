@@ -682,7 +682,7 @@ func TestTheAgentReadsNothingThisMachineHoldsForIt(t *testing.T) {
 // knows, and says the vault was missing after the answer.
 func TestThisVaultsToolsSurviveWhatIsRefused(t *testing.T) {
 	for _, own := range []bool{false, true} {
-		argv := getArgvWith(t, func(a *claudecode.Agent) { a.ReadsHooksAndSkills = own })
+		argv := getArgvWith(t, func(a *claudecode.Agent) { a.ShouldReadHooksAndSkills = own })
 
 		if slices.Contains(argv, "--safe-mode") {
 			t.Errorf("own=%v: safe mode disables MCP servers, this vault's included", own)
@@ -697,7 +697,7 @@ func TestThisVaultsToolsSurviveWhatIsRefused(t *testing.T) {
 // from elsewhere, and a settings file inside one is a vault naming commands for
 // this machine to run.
 func TestAVaultsOwnConfigurationIsNeverRead(t *testing.T) {
-	argv := getArgvWith(t, func(a *claudecode.Agent) { a.ReadsHooksAndSkills = true })
+	argv := getArgvWith(t, func(a *claudecode.Agent) { a.ShouldReadHooksAndSkills = true })
 
 	if slices.Contains(argv, "--safe-mode") {
 		t.Error("the person asked for their own configuration and got none")

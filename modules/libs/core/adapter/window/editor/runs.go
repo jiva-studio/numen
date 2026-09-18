@@ -55,11 +55,11 @@ const (
 	unopened
 )
 
-// far says how far a run over the source at a path has got.
+// getReached says how getReached a run over the source at a path has got.
 //
 // A build that cannot say which model produced a text answers nothing, and the
 // run itself then decides what is left to do.
-func (a *API) far(
+func (a *API) getReached(
 	ctx context.Context,
 	v domain.Vault,
 	path string,

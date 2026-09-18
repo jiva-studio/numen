@@ -5,6 +5,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 )
 
@@ -46,13 +47,13 @@ func FuzzCut(f *testing.F) {
 		// A part begins where its title was found in the text, so it stands at a
 		// character. A part offset inside one is not a text a caller can hand
 		// over, and the chunks cut from it begin inside a character too.
-		var parts []chunking.PartStart
+		var parts []domain.PartStart
 		if len(text) > 0 {
 			at := part % len(text)
 			for at > 0 && !utf8.RuneStart(text[at]) {
 				at--
 			}
-			parts = []chunking.PartStart{
+			parts = []domain.PartStart{
 				{Title: "one", Offset: 0},
 				{Title: "two", Offset: at},
 			}

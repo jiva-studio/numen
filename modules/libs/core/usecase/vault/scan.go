@@ -25,14 +25,14 @@ type Scan struct {
 	// its turn from nobody and waits for nobody.
 	Walks *Walks
 
-	// RebuildIndex reads every file and puts it in the index again, whatever the
+	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it.
 	//
 	// What it remembers is a path, a size and a modification time, so a file whose
 	// content changed while those did not is skipped — an archive restored by
 	// `unzip`, a tree brought over by `rsync -tc`. Rebuilding is the way out of
 	// that, and the only one.
-	RebuildIndex bool
+	ShouldRebuildIndex bool
 
 	// OnProgress, if set, is called each time a group of notes is written. A
 	// scan of a large vault takes a minute, and something has to be able to say
@@ -95,7 +95,7 @@ type FingerprintQueries interface {
 func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	var res ScanResult
 
-	over, err := u.Walks.one(ctx, v.ID)
+	over, err := u.Walks.startOne(ctx, v.ID)
 	if err != nil {
 		return res, err
 	}
@@ -155,7 +155,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		res.Notes++
 		seen[ref.Path] = true
 
-		if previous, ok := known[ref.Path]; ok && !u.RebuildIndex && previous.IsUnchanged(ref) {
+		if previous, ok := known[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			continue
 		}

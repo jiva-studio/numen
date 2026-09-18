@@ -126,9 +126,9 @@ func whole(cues []transcript.Cue) stored {
 	return stored{derived.Artifact(asr, hashed): transcript.Marshal(cues)}
 }
 
-func partly(cues []transcript.Cue, reached int) stored {
+func newPartialStore(cues []transcript.Cue, reached int) stored {
 	return stored{
-		derived.Partial(asr, hashed): append(transcript.Marshal(cues), transcript.Reaches(reached)...),
+		derived.Partial(asr, hashed): append(transcript.Marshal(cues), transcript.GetReachMarker(reached)...),
 	}
 }
 
@@ -190,7 +190,7 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 		held stored
 	}{
 		{"a run that finished", whole(newCues())},
-		{"a run still going", partly(newCues(), 9100)},
+		{"a run still going", newPartialStore(newCues(), 9100)},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			api, _ := openRecordingWindow(t, one.held)
@@ -232,7 +232,7 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 	}{
 		{"nothing heard", nil, 0, 0},
 		{"a run that finished", whole(newCues()), 9100, 0},
-		{"a run still going", partly(newCues()[:1], 4200), 4200, 4200},
+		{"a run still going", newPartialStore(newCues()[:1], 4200), 4200, 4200},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			api, _ := openRecordingWindow(t, one.held)
@@ -515,7 +515,7 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 // A run appends to the transcript, and what is being appended to is not edited
 // underneath.
 func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: partly(newCues(), 9100), name: derived.Partial(asr, hashed)}
+	held := heldBy{stored: newPartialStore(newCues(), 9100), name: derived.Partial(asr, hashed)}
 	api, _ := windowOn(t, held)
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))

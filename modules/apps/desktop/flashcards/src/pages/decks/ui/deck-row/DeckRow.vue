@@ -21,9 +21,9 @@ const props = defineProps<{
   /** The preset scheduling it, and nothing where none was read. */
   by: Preset | undefined
   /** Whether the vault's presets have been read, which a deck missing from them needs. */
-  scheduled: boolean
+  hasPresets: boolean
   /** Whether the vault has been counted. */
-  counted: boolean
+  isCounted: boolean
   /** Whether it can be sat down to. */
   canOpen: boolean
 }>()
@@ -60,7 +60,7 @@ const stopped = computed(() => {
  * preset was not read has no rule to be counted by.
  */
 const share = computed(() => {
-  if (props.scheduled && !props.by) return LEARNED.unruled
+  if (props.hasPresets && !props.by) return LEARNED.unruled
   const of = getLearnedShare(props.deck)
   return of === null ? '' : LEARNED.share(of)
 })
@@ -79,7 +79,7 @@ const share = computed(() => {
     <!-- How much of the deck stands learned, under the rule its own
          preset counts by. The word is said with the figure: a bare share
          on this screen is how far through its day a preset stands. -->
-    <Skeleton v-if="!counted" class="decks__learned" wide="3.5rem" high="0.7em" />
+    <Skeleton v-if="!isCounted" class="decks__learned" wide="3.5rem" high="0.7em" />
     <span v-else-if="share" class="decks__learned">{{ share }}</span>
 
     <!-- What is left of this deck today, or why nothing is. Having

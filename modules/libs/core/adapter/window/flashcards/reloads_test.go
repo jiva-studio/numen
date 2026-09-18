@@ -57,7 +57,7 @@ func TestAListenerThatStoppedIsNotSpokenTo(t *testing.T) {
 func TestSomethingMovingReachesThePage(t *testing.T) {
 	api := &API{Registry: registry{}, Now: time.Now}
 	moved := make(chan struct{}, 1)
-	api.Follows(t.Context(), moved)
+	api.Follow(t.Context(), moved)
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)

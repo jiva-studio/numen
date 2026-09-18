@@ -181,7 +181,7 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, er
 	said := fmt.Sprintf("%s %d", s.says, s.pages)
 	var out []ocr.Block
 	if s.heads != "" {
-		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), Heading: true, Depth: 1})
+		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
 	}
 	return append(out, ocr.Block{
 		Label: "text",
@@ -273,7 +273,7 @@ func TestADocumentSayingNothingWritesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Empty {
+	if !res.IsEmpty {
 		t.Error("a document that says nothing was not reported as saying nothing")
 	}
 	if names := shelf.names(); len(names) != 0 {
@@ -438,7 +438,7 @@ func TestADocumentAnotherRunHoldsIsLeftAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Busy {
+	if !res.IsBusy {
 		t.Error("a document another run is reading was read again")
 	}
 	if model.pages != 0 {

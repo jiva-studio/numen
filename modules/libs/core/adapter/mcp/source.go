@@ -15,13 +15,13 @@ import (
 // about it.
 type Source struct {
 	Path string `json:"path"`
-	// Read says whether this document stands on what a model read in it. A
+	// ShouldRead says whether this document stands on what a model read in it. A
 	// reading still running stands on the pages it has reached, so this is true
 	// from the first of them.
 	//
 	// A scan that carries its own text says nothing about whether that text is
 	// any good, so this is the only thing that can be said for certain.
-	Read bool `json:"read"`
+	ShouldRead bool `json:"read"`
 }
 
 // addSourceTools adds the tools for the sources a vault holds beside its notes.
@@ -68,7 +68,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		}
 		documents := make([]Source, 0, len(known))
 		for path := range known {
-			documents = append(documents, Source{Path: path, Read: stands[path]})
+			documents = append(documents, Source{Path: path, ShouldRead: stands[path]})
 		}
 		reading := ""
 		if core.Sources.Recognise != nil {
@@ -150,12 +150,12 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the document, as source_list gives it"`
 	}) (*sdk.CallToolResult, struct {
-		Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-		Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+		IsStarted bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
+		Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 	}, error) {
 		type out = struct {
-			Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-			Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+			IsStarted bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
+			Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 		}
 		if core.Sources.Recognise == nil {
 			return nil, out{}, fmt.Errorf("this installation cannot read scans")
@@ -175,7 +175,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 				doing = "started; what is needed to read scans is being fetched first, about 160 MB"
 			}
 		}
-		return nil, out{Started: true, Doing: doing}, nil
+		return nil, out{IsStarted: true, Doing: doing}, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
@@ -195,12 +195,12 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the recording, as a path inside the vault"`
 	}) (*sdk.CallToolResult, struct {
-		Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-		Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+		IsStarted bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
+		Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 	}, error) {
 		type out = struct {
-			Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-			Doing   string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+			IsStarted bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
+			Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
 		}
 		if core.Sources.Transcribe == nil {
 			return nil, out{}, fmt.Errorf("this installation cannot hear recordings")
@@ -220,7 +220,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 				doing = "started; what is needed to transcribe recordings is being fetched first"
 			}
 		}
-		return nil, out{Started: true, Doing: doing}, nil
+		return nil, out{IsStarted: true, Doing: doing}, nil
 	})
 }
 

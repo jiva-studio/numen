@@ -60,7 +60,7 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 
 			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 				reading := cfg
-				reading.RebuildIndex = rebuild
+				reading.ShouldRebuildIndex = rebuild
 				db, err := reading.OpenIndex(ctx)
 				if err != nil {
 					return cli.Scan{}, err
@@ -185,7 +185,7 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 					return cli.ProofreadReading{}, err
 				}
 				return cli.ProofreadReading{
-					Proofread: proofread, Cut: cut, Held: true, Close: db.Close,
+					Proofread: proofread, Cut: cut, IsHeld: true, Close: db.Close,
 				}, nil
 			},
 
@@ -207,7 +207,7 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 					return cli.ProofreadTranscript{}, err
 				}
 				return cli.ProofreadTranscript{
-					Proofread: proofread, Cut: cut, Held: true, Close: db.Close,
+					Proofread: proofread, Cut: cut, IsHeld: true, Close: db.Close,
 				}, nil
 			},
 

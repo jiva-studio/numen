@@ -148,9 +148,9 @@ func TestEveryWordOfTheDictionaryNamesAType(t *testing.T) {
 // irregular one has no ending to test for. A person catches those.
 func TestWhatTheNounRuleRefuses(t *testing.T) {
 	cases := []struct {
-		says    string
-		name    string
-		allowed bool
+		says      string
+		name      string
+		isAllowed bool
 	}{
 		{"a gerund", "Plexing", false},
 		{"a participle", "Configured", false},
@@ -168,7 +168,7 @@ func TestWhatTheNounRuleRefuses(t *testing.T) {
 		if gerund(one.name) {
 			refused = append(refused, one.says)
 		}
-		if !one.allowed {
+		if !one.isAllowed {
 			wanted = append(wanted, one.says)
 		}
 	}

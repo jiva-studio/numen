@@ -97,7 +97,7 @@ func TestEditLoad(t *testing.T) {
 					return
 				}
 			}
-			if what.reload {
+			if what.shouldReload {
 				told <- time.Since(saving)
 				return
 			}

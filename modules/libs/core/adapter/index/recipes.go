@@ -14,11 +14,11 @@ import (
 // under, so a recipe that moved leaves the vectors of the old one on disk beside
 // the new. They stay there for a person who sets the old model back, and this is
 // asked only where a person has said to build the index again.
-func (db *DB) ForgetOtherRecipes(ctx context.Context, recipe string) (int64, error) {
+func (d *DB) ForgetOtherRecipes(ctx context.Context, recipe string) (int64, error) {
 	if recipe == "" {
 		return 0, nil
 	}
-	res, err := writing.Exec(ctx, db.write, `DELETE FROM vectors WHERE recipe <> ?`, recipe)
+	res, err := writing.Exec(ctx, d.write, `DELETE FROM vectors WHERE recipe <> ?`, recipe)
 	if err != nil {
 		return 0, fmt.Errorf("forget the vectors of every other recipe: %w", err)
 	}
@@ -31,8 +31,8 @@ func (db *DB) ForgetOtherRecipes(ctx context.Context, recipe string) (int64, err
 // held twice the vectors goes on being that size until it is written out again.
 // VACUUM is that writing out, and it is the whole file: it is asked where a
 // person has already asked for the index to be built again.
-func (db *DB) Compact(ctx context.Context) error {
-	if _, err := writing.Exec(ctx, db.write, `VACUUM`); err != nil {
+func (d *DB) Compact(ctx context.Context) error {
+	if _, err := writing.Exec(ctx, d.write, `VACUUM`); err != nil {
 		return fmt.Errorf("give back the space the index no longer holds: %w", err)
 	}
 	return nil

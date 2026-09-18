@@ -28,9 +28,9 @@ func getTask(held *TranscriptionWorker, path string) (doing, failed string) {
 	return "", ""
 }
 
-// nowhere is a profile that cannot be opened, as a person naming one no
+// openNoProofreader is a profile that cannot be opened, as a person naming one no
 // settings name is told.
-func nowhere(string) (port.Proofreader, error) {
+func openNoProofreader(string) (port.Proofreader, error) {
 	return nil, errors.New(`no proofreading profile named "nowhere"`)
 }
 
@@ -38,7 +38,7 @@ func nowhere(string) (port.Proofreader, error) {
 // nothing and says nothing.
 func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
 	held, v := listens(t, &deaf{}, "talks/one.mp3")
-	held.with.Proofreading = ProofreadingConfig{Named: true, By: nowhere}
+	held.with.Proofreading = ProofreadingConfig{IsNamed: true, By: openNoProofreader}
 
 	held.proofread(t.Context(), v, "talks/one.mp3", false)
 
@@ -50,7 +50,7 @@ func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
 // A profile no settings name is a person's mistake, and they are shown it.
 func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 	held, v := listens(t, &deaf{}, "talks/one.mp3")
-	held.with.Proofreading = ProofreadingConfig{Named: true, Automatically: true, By: nowhere}
+	held.with.Proofreading = ProofreadingConfig{IsNamed: true, IsAutomatic: true, By: openNoProofreader}
 
 	held.proofread(t.Context(), v, "talks/one.mp3", false)
 
@@ -67,7 +67,7 @@ func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 func TestSilenceIsNotPutRight(t *testing.T) {
 	by := &deaf{}
 	held, v := listens(t, by, "talks/one.mp3")
-	held.with.Proofreading = ProofreadingConfig{Named: true, Automatically: true, By: nowhere}
+	held.with.Proofreading = ProofreadingConfig{IsNamed: true, IsAutomatic: true, By: openNoProofreader}
 
 	held.Start(v, "talks/one.mp3")
 	held.Wait()
@@ -134,7 +134,7 @@ func newStoppedWorker(
 	t.Helper()
 	held, v := listens(t, &deaf{}, recording)
 	held.with.Proofreading = ProofreadingConfig{
-		Named: true, Automatically: true, Batch: 1, InFlight: 1,
+		IsNamed: true, IsAutomatic: true, Batch: 1, InFlight: 1,
 		By: func(string) (port.Proofreader, error) { return by, nil },
 	}
 
@@ -240,7 +240,7 @@ func TestATranscriptAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 	by := &puts{says: map[int]string{1: "1|SECOND THING"}}
 	held, v, _, _ := newStoppedWorker(t, by, 1, "first thing", "second thing")
-	held.with.Proofreading.Automatically = false
+	held.with.Proofreading.IsAutomatic = false
 
 	held.TakeUp(t.Context(), recognised{recording}, v)
 	held.Wait()
@@ -297,7 +297,7 @@ func TestATranscriptAlreadyPutRightSaysThatNothingWasLeft(t *testing.T) {
 	if err != nil {
 		t.Fatalf("putting a transcript right again failed: %v", err)
 	}
-	if !res.Already {
+	if !res.IsAlready {
 		t.Errorf("a transcript nothing was left of answered %+v", res)
 	}
 	if got := by.lines(); len(got) != 0 {
@@ -317,7 +317,7 @@ func TestAProofreadingWithWorkToDoAnswersBeforeItIsOver(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a run that began answered %v", err)
 	}
-	if res.Already || res.None || res.Edited || res.Busy {
+	if res.IsAlready || res.IsNone || res.IsEdited || res.IsBusy {
 		t.Errorf("a run with work to do answered %+v", res)
 	}
 	<-by.asked

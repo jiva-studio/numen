@@ -36,7 +36,7 @@ type openVaults struct {
 	running sync.WaitGroup
 
 	mu       sync.Mutex
-	going    bool
+	isGoing  bool
 	openings map[domain.VaultID]*vaultOpening
 }
 
@@ -51,7 +51,7 @@ type vaultOpening struct {
 // index.
 func (o *openVaults) wait() {
 	o.mu.Lock()
-	o.going = true
+	o.isGoing = true
 	o.mu.Unlock()
 
 	o.running.Wait()
@@ -63,7 +63,7 @@ func (o *openVaults) startWork() bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	if o.going {
+	if o.isGoing {
 		return false
 	}
 	o.running.Add(1)

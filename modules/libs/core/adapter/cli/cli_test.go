@@ -64,9 +64,9 @@ func (s *session) mustRun(args ...string) string {
 	return out
 }
 
-// another is a second vault of this installation, with an identity of its own.
+// addVault is a second vault of this installation, with an identity of its own.
 // An installation keeps a vault, so a test that forgets or erases one has two.
-func (s *session) another(name string) string {
+func (s *session) addVault(name string) string {
 	s.t.Helper()
 	dir := testsupport.TempDir(s.t)
 	s.mustRun("vault", "add", dir, "--name", name)
@@ -373,7 +373,7 @@ func TestRenamingLeavesTheFolderWhereItIs(t *testing.T) {
 func TestForgettingKeepsTheFolderAndSaysSo(t *testing.T) {
 	s := newSession(t)
 	added := s.mustRun("vault", "add", s.vault, "--name", "leaving")
-	s.another("staying")
+	s.addVault("staying")
 
 	out := s.mustRun("vault", "forget", "leaving")
 	if !strings.Contains(out, s.vault) || !strings.Contains(out, "the folder is still") {
@@ -397,7 +397,7 @@ func TestForgettingKeepsTheFolderAndSaysSo(t *testing.T) {
 func TestErasingAsksBeforeItActs(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "asked")
-	s.another("other")
+	s.addVault("other")
 	b := s.trash(nil)
 	s.types("\n")
 
@@ -425,7 +425,7 @@ func TestErasingAsksBeforeItActs(t *testing.T) {
 func TestErasingWithYesTrashesTheFolderAndForgetsTheVault(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "erased")
-	s.another("other")
+	s.addVault("other")
 	b := s.trash(nil)
 
 	out := s.mustRun("vault", "erase", "erased", "--yes")
@@ -446,7 +446,7 @@ func TestErasingWithYesTrashesTheFolderAndForgetsTheVault(t *testing.T) {
 func TestAMachineWithNowhereToPutItDeletesNothing(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "kept")
-	s.another("other")
+	s.addVault("other")
 	s.trash(port.ErrNoTrash)
 
 	out, err := s.run("vault", "erase", "kept", "--yes")
@@ -464,7 +464,7 @@ func TestAMachineWithNowhereToPutItDeletesNothing(t *testing.T) {
 func TestOpenRecordsTheVaultTheNextWindowOpens(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "first")
-	s.another("second")
+	s.addVault("second")
 
 	if mark := marks(s.mustRun("vault", "list"), "second"); mark != "  " {
 		t.Errorf("a vault is marked %q before any was opened", mark)

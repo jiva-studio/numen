@@ -152,7 +152,7 @@ describe('the plot of what stands overdue', () => {
       mountPresetTab(over)
         .tab.findAll('[data-control="room"]')
         .map((one) => one.attributes('style'))
-    expect(room({ honest: false })).toStrictEqual(room())
+    expect(room({ isHonest: false })).toStrictEqual(room())
     expect(room({ at: [point(), point(), point(), point()] })).toStrictEqual(room())
   })
 

@@ -19,7 +19,7 @@ export interface CurveSliderProps {
   material: PresetCounts | null
   place: number
   valueText: string
-  waiting: boolean
+  isWaiting: boolean
 }
 
 /** Everything the slider draws itself from, as its parts read it. */
@@ -40,7 +40,7 @@ export function useCurveSlider(
     () => props.curve,
     (curve) => {
       if (scale.value?.goal === curve.goal) return
-      scale.value = curve.honest ? { goal: curve.goal, extent: extentOf(curve) } : null
+      scale.value = curve.isHonest ? { goal: curve.goal, extent: extentOf(curve) } : null
     },
     { immediate: true },
   )
@@ -56,7 +56,7 @@ export function useCurveSlider(
 
   const held = computed(() => valueAt(props.curve, props.place))
   const isDated = computed(() => props.curve.goal === 'date')
-  const isHonest = computed(() => props.curve.honest)
+  const isHonest = computed(() => props.curve.isHonest)
 
   const marks = computed(() => {
     if (!isHonest.value) return []

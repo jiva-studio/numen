@@ -66,7 +66,7 @@ func (u Log) Files(ctx context.Context, v domain.Vault) ([]port.Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return runs(ctx, store)
+	return getLogFiles(ctx, store)
 }
 
 // Read is every answer a vault holds.
@@ -78,7 +78,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 	if err != nil {
 		return ReviewLog{}, err
 	}
-	files, err := runs(ctx, store)
+	files, err := getLogFiles(ctx, store)
 	if err != nil {
 		return ReviewLog{}, err
 	}
@@ -90,7 +90,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 			return ReviewLog{}, err
 		}
 		out.Skipped += ran.Skipped
-		if ran.Gone || ran.Shut {
+		if ran.IsGone || ran.IsUnreadable {
 			continue
 		}
 		out.Answers = append(out.Answers, ran.Answers...)
@@ -109,14 +109,14 @@ type LogFile struct {
 	Size int
 	// Skipped is how many of its lines could not be acted on.
 	Skipped int
-	// Gone is a file listed and then taken away by another machine's
+	// IsGone is a file listed and then taken away by another machine's
 	// synchroniser before it could be read.
-	Gone bool
-	// Shut is a file that could not be opened: the permissions on it keep it
-	// closed, or another program holds it. It is counted among the lines that
-	// could not be acted on and left out of the files the history was read
-	// from, so a schedule worked out without it says so.
-	Shut bool
+	IsGone bool
+	// IsUnreadable is a file that would not open: the permissions refuse it, or
+	// another program holds it. It is counted among the lines that could not be
+	// acted on and left out of the files the history was read from, so a
+	// schedule worked out without it says so.
+	IsUnreadable bool
 }
 
 // ReadFile reads one file of a vault's log.
@@ -125,10 +125,10 @@ func (u Log) ReadFile(
 ) (LogFile, error) {
 	raw, err := store.Read(ctx, file.Name)
 	if errors.Is(err, fs.ErrNotExist) {
-		return LogFile{Gone: true}, nil
+		return LogFile{IsGone: true}, nil
 	}
 	if errors.Is(err, fs.ErrPermission) || errors.Is(err, port.ErrHeldByAnother) {
-		return LogFile{Shut: true, Skipped: 1}, nil
+		return LogFile{IsUnreadable: true, Skipped: 1}, nil
 	}
 	if err != nil {
 		return LogFile{}, err
@@ -137,8 +137,8 @@ func (u Log) ReadFile(
 	return LogFile{Answers: answers, Size: len(raw), Skipped: skipped}, nil
 }
 
-// runs is the files of the log, sorted by name.
-func runs(ctx context.Context, store port.DerivedStore) ([]port.Entry, error) {
+// getLogFiles is the files of the log, sorted by name.
+func getLogFiles(ctx context.Context, store port.DerivedStore) ([]port.Entry, error) {
 	held, err := store.List(ctx, Area)
 	if err != nil {
 		return nil, err

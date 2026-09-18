@@ -60,7 +60,7 @@ type waiting struct {
 	once  sync.Once
 }
 
-func slowly() *waiting {
+func newSlowWait() *waiting {
 	return &waiting{
 		VaultReaders: filesystem.VaultReaders{},
 		begun:        make(chan string, 1),
@@ -232,8 +232,9 @@ func save(t *testing.T, f *behind, path, body string) {
 	}
 }
 
-// tells hands the watch a change, which takes somebody acting on the watch.
-func tells(t *testing.T, watcher *hand, paths ...string) {
+// sendChange hands the watch a change, which takes somebody acting on the
+// watch.
+func sendChange(t *testing.T, watcher *hand, paths ...string) {
 	t.Helper()
 	select {
 	case watcher.changes <- paths:
@@ -254,9 +255,9 @@ func next[T any](t *testing.T, from <-chan T) T {
 	}
 }
 
-// eventually waits for something the work behind the window does in its own
+// waitFor waits for something the work behind the window does in its own
 // time.
-func eventually(t *testing.T, what string, is func() bool) {
+func waitFor(t *testing.T, what string, is func() bool) {
 	t.Helper()
 	for range 500 {
 		if is() {
@@ -281,7 +282,7 @@ func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) str
 // first time with the person already working in it.
 func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	watcher := byHand()
-	readers := slowly()
+	readers := newSlowWait()
 	defer readers.release()
 
 	f := opening(t, map[string]string{
@@ -297,7 +298,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	}
 
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
-	tells(t, watcher, "Note.md")
+	sendChange(t, watcher, "Note.md")
 
 	if got := next(t, f.heard); len(got.paths) != 1 || got.paths[0] != "Note.md" {
 		t.Errorf("the window was told %+v", got)
@@ -314,7 +315,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 // it read, so its copy of a note lands last however early the note was read.
 func TestANoteChangedUnderTheScanIsReadAgain(t *testing.T) {
 	watcher := byHand()
-	readers := slowly()
+	readers := newSlowWait()
 	defer readers.release()
 
 	f := opening(t, map[string]string{
@@ -325,12 +326,12 @@ func TestANoteChangedUnderTheScanIsReadAgain(t *testing.T) {
 	next(t, readers.begun)
 
 	write(t, f.vault, "Note.md", "---\ntitle: Two\n---\n\n# Two\n")
-	tells(t, watcher, "Note.md")
+	sendChange(t, watcher, "Note.md")
 	next(t, f.heard)
 
 	// Now the scan writes what it read, and finishes.
 	readers.release()
-	eventually(t, "the scan did not finish", f.api.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.Ready.Load)
 
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Two" {
 		t.Errorf("the index says %q", title)
@@ -341,7 +342,7 @@ func TestANoteChangedUnderTheScanIsReadAgain(t *testing.T) {
 // read, and the note went while it held it.
 func TestANoteDeletedUnderTheScanStaysDeleted(t *testing.T) {
 	watcher := byHand()
-	readers := slowly()
+	readers := newSlowWait()
 	defer readers.release()
 
 	f := opening(t, map[string]string{
@@ -353,11 +354,11 @@ func TestANoteDeletedUnderTheScanStaysDeleted(t *testing.T) {
 	if err := os.Remove(filepath.Join(f.vault.Path, "Note.md")); err != nil {
 		t.Fatal(err)
 	}
-	tells(t, watcher, "Note.md")
+	sendChange(t, watcher, "Note.md")
 	next(t, f.heard)
 
 	readers.release()
-	eventually(t, "the scan did not finish", f.api.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.Ready.Load)
 
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "" {
 		t.Errorf("the index still holds %q", title)
@@ -369,7 +370,7 @@ func TestANoteDeletedUnderTheScanStaysDeleted(t *testing.T) {
 // alone.
 func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
 	watcher := byHand()
-	readers := slowly()
+	readers := newSlowWait()
 	defer readers.release()
 
 	f := opening(t, map[string]string{
@@ -381,11 +382,11 @@ func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
 	next(t, readers.begun)
 
 	write(t, f.vault, "Later.md", "---\ntitle: Later\n---\n\n# Later\n")
-	tells(t, watcher, "Later.md")
+	sendChange(t, watcher, "Later.md")
 	next(t, f.heard)
 
 	readers.release()
-	eventually(t, "the scan did not finish", f.api.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.Ready.Load)
 
 	if title := titleOf(t, f.index, f.vault, "Later.md"); title != "Later" {
 		t.Errorf("the index says %q of a note made while it was being read", title)
@@ -400,12 +401,12 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, watcher, unreadable{VaultReaders: filesystem.VaultReaders{}})
 
-	eventually(t, "the scan was not reported as failed", func() bool {
+	waitFor(t, "the scan was not reported as failed", func() bool {
 		return f.api.Error.Why() != ""
 	})
 
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
-	tells(t, watcher, "Note.md")
+	sendChange(t, watcher, "Note.md")
 
 	if got := next(t, f.heard); len(got.paths) != 1 || got.paths[0] != "Note.md" {
 		t.Errorf("the window was told %+v", got)
@@ -434,7 +435,7 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 
 	close(watcher.changes)
 
-	eventually(t, "a vault whose watch stopped is shown as followed", func() bool {
+	waitFor(t, "a vault whose watch stopped is shown as followed", func() bool {
 		return f.api.Unwatched.Why() != ""
 	})
 }
@@ -447,7 +448,7 @@ func setPasses(api *API, change func(*passes)) {
 		on = *held
 	}
 	change(&on)
-	api.runs(&on)
+	api.setPasses(&on)
 }
 
 // saying is where the reading behind the window writes what it did, kept for a
@@ -464,7 +465,7 @@ func (s *saying) Write(p []byte) (int, error) {
 }
 
 // books is what each pass said it took apart, one number to a pass.
-func (s *saying) books(t *testing.T) []int {
+func (s *saying) getBooks(t *testing.T) []int {
 	t.Helper()
 
 	s.mu.Lock()
@@ -503,8 +504,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	testsupport.WriteBook(t, v.Path, held)
 
 	cfg := container.Config{
-		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
-		RebuildIndex: true,
+		IndexPath:          filepath.Join(t.TempDir(), "index.db"),
+		ShouldRebuildIndex: true,
 	}
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
@@ -531,20 +532,20 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		wait()
 	})
 
-	eventually(t, "the book the vault held was never taken apart", func() bool {
-		return len(out.books(t)) == 1
+	waitFor(t, "the book the vault held was never taken apart", func() bool {
+		return len(out.getBooks(t)) == 1
 	})
 
 	// A second book is dropped into the vault and the watch says so, which is
 	// the pass running again over a library it has already read.
 	testsupport.WriteBook(t, v.Path, dropped)
-	tells(t, watcher, dropped)
+	sendChange(t, watcher, dropped)
 
-	eventually(t, "the book dropped into the vault was never taken apart", func() bool {
-		return len(out.books(t)) == 2
+	waitFor(t, "the book dropped into the vault was never taken apart", func() bool {
+		return len(out.getBooks(t)) == 2
 	})
 
-	if took := out.books(t); took[1] != 1 {
+	if took := out.getBooks(t); took[1] != 1 {
 		t.Errorf("the second pass took %d books apart for the one file dropped in", took[1])
 	}
 }

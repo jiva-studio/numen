@@ -95,10 +95,10 @@ func TestWhatThePlacingRuleRefuses(t *testing.T) {
 		calls: []string{"Simulation.step"},
 	}, {
 		why: "the declaration of ScheduleDay is not a call of it",
-		src: "package review\nfunc (p Preset) ScheduleDay(s *DueByDay) { p.lands(s) }\n",
+		src: "package review\nfunc (p Preset) ScheduleDay(s *DueByDay) { p.computeLandingDay(s) }\n",
 	}, {
 		why: "a comment naming it is not a call",
-		src: "package review\n// ScheduleDay is where the day is chosen.\nfunc drawn() { p.lands(on) }\n",
+		src: "package review\n// ScheduleDay is where the day is chosen.\nfunc drawn() { p.computeLandingDay(on) }\n",
 	}, {
 		why: "another name is another function",
 		src: "package review\nfunc drawn() { p.Placed(on, at, due) }\n",

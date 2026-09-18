@@ -48,10 +48,14 @@ install: ## fetch every module's dependencies
 generate: ## compile the schema into Go and TypeScript
 	cd $(PROTOCOL) && buf generate
 
+# What buf writes, and nothing else under the module: the schema's own folders
+# and the two the plugins write into.
+GENERATED := $(PROTOCOL)/gen $(PROTOCOL)/src
+
 .PHONY: generate-check
 generate-check: generate ## fail if what is committed is out of date
-	git add -AN -- $(PROTOCOL)
-	git diff --exit-code -- $(PROTOCOL)
+	git add -AN -- $(GENERATED)
+	git diff --exit-code -- $(GENERATED)
 
 .PHONY: build
 build: interface ## build everything
@@ -118,6 +122,27 @@ test: ## run every test
 	cd $(DESKTOP)/editor && npm test
 	cd $(DESKTOP)/flashcards && npm test
 	cd $(MOBILE) && npm test
+
+# What the repository compiles to, with nothing run. Every commit of a pull
+# request is held to this, so a bisect over a branch lands on a tree that
+# builds and the commit it names is the commit that broke something.
+#
+# A window reaches the components through their build, so the library is built
+# before the windows are read.
+.PHONY: compile
+compile: ## build every Go module and typecheck every window
+	cd $(CORE) && go build ./...
+	cd $(PROTOCOL) && go build ./...
+	cd $(DESKTOP) && go build ./...
+	cd $(MOBILE) && go build ./...
+	cd $(UI) && npm run typecheck
+	cd $(UI) && npm run build
+	cd $(WIRE) && npm run typecheck
+	cd $(DESKTOP)/editor && npm run typecheck
+	cd $(DESKTOP)/flashcards && npm run typecheck
+	cd $(MOBILE) && npm run typecheck
+	cd $(DOCS) && npm run typecheck
+	cd $(LANDING) && npm run typecheck
 
 # gofmt -l names the files it would change and exits 0 all the same, so the
 # list it prints is turned into a failure here. The CI workflows do the same

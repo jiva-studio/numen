@@ -24,9 +24,9 @@ const canRunAnything: RunGuard = () => true
 /** What a row of that kind offers, by the identity of each item. */
 const getItemIds = (
   source: Source,
-  folder = false,
+  isFolder = false,
   canRun: RunGuard = canRunAnything,
-): readonly string[] => itemsFor({ source, isFolder: folder }, false, canRun).map((one) => one.id)
+): readonly string[] => itemsFor({ source, isFolder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const getGroupedIds = (source: Source): readonly string[] =>

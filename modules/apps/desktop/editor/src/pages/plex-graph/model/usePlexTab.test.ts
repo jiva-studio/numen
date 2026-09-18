@@ -39,7 +39,7 @@ const tab = (at: string, neighbours: readonly string[] = [], takes = true, types
   const headingsAsked: (readonly string[])[] = []
   const deps: PlexTabDeps = {
     editor: vault.editor,
-    ready: ref(true),
+    isReady: ref(true),
     isHanging,
     parts: ref(6),
     openNote: (path, title, showing, line) => {
@@ -201,7 +201,7 @@ describe('a plex drawing nothing', () => {
     }
     return usePlexTab(view as unknown as PlexView, {
       editor: createVault().editor,
-      ready: ref(true),
+      isReady: ref(true),
       isHanging: ref(true),
       parts: ref(6),
       openNote: () => {},
@@ -223,7 +223,7 @@ describe('a plex drawing nothing', () => {
   })
 
   it('is not an empty vault where the vault could not be opened', () => {
-    expect(plex({ ready: ref(false) }).empty.value).toBe(false)
+    expect(plex({ isReady: ref(false) }).empty.value).toBe(false)
   })
 
   it('is not an empty vault while the first answer is on its way', () => {
@@ -292,7 +292,7 @@ describe('the picture', () => {
     const plex = viewOn('Root.md')
     const state = usePlexTab(plex.view, {
       editor: createVault().editor,
-      ready: ref(false),
+      isReady: ref(false),
       isHanging: ref(true),
       parts: ref(6),
       openNote: () => {},
@@ -464,7 +464,7 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md')
     const plex = usePlexTab(one.state.view, {
       editor: createVault().editor,
-      ready: ref(true),
+      isReady: ref(true),
       isHanging: ref(true),
       parts: ref(6),
       openNote: () => {},
@@ -659,7 +659,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   })
   const state = usePlexTab(view, {
     editor: vault.editor,
-    ready: ref(true),
+    isReady: ref(true),
     isHanging: ref(true),
     parts: ref(6),
     openNote: (path, title, showing) => opened.push([path, title, showing]),

@@ -23,7 +23,7 @@ export interface PlexViewProps {
   showEdgeLabels?: boolean
   /** Whether reaching out is allowed at all, and so whether any node may
    *  offer a handle. */
-  mayReach?: boolean
+  canReach?: boolean
   /**
    * What to call a seat, for the one place a seat has to be written into the
    * picture: the outline a gesture draws says which one it would take.

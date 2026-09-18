@@ -73,10 +73,10 @@ type Document struct {
 	Offset int
 	// Length is how many bytes of Text the document contributed.
 	Length int
-	// Linear is false for a document the spine sets apart from the reading
+	// IsLinear is false for a document the spine sets apart from the reading
 	// order: a note, an appendix, the back of a plate. Its text is in Text all
 	// the same.
-	Linear bool
+	IsLinear bool
 	// Layout is whether this document can be reflowed.
 	Layout Layout
 
@@ -196,7 +196,7 @@ func Read(raw []byte) (*Book, error) {
 		}
 		left -= int64(len(markup))
 		doc := text.document(item.path, markup)
-		doc.Linear, doc.Layout, doc.mediaType = item.linear, item.layout, item.mediaType
+		doc.IsLinear, doc.Layout, doc.mediaType = item.isLinear, item.layout, item.mediaType
 		book.Documents = append(book.Documents, doc)
 		if _, twice := book.held[doc.Path]; !twice {
 			// A spine may read one document twice, and the first standing is the

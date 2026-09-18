@@ -1,6 +1,8 @@
 package editor
 
 import (
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -8,19 +10,19 @@ import (
 	"time"
 )
 
-// onDisk gives a window a folder of its own to keep its drawings in.
-func onDisk(t *testing.T, api *API) *cache {
+// newDiskCache gives a window a folder of its own to keep its drawings in.
+func newDiskCache(t *testing.T, api *API) *pagecache.Disk {
 	t.Helper()
-	kept := newCacheIn(t.TempDir())
-	t.Cleanup(kept.close)
-	api.Viewer.kept = kept
-	return kept
+	cache := pagecache.NewDiskIn(t.TempDir())
+	t.Cleanup(cache.Close)
+	api.Viewer.onDisk = cache
+	return cache
 }
 
-// drawingsIn is how many drawings the folder holds.
-func drawingsIn(t *testing.T, kept *cache) int {
+// countDrawings is how many drawings the folder holds.
+func countDrawings(t *testing.T, cache *pagecache.Disk) int {
 	t.Helper()
-	found, err := os.ReadDir(kept.dir)
+	found, err := os.ReadDir(cache.GetDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,19 +35,19 @@ func drawingsIn(t *testing.T, kept *cache) int {
 func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
-	alone(api)
-	kept := onDisk(t, api)
+	stopReadAhead(api)
+	cache := newDiskCache(t, api)
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
 	_, drawn, _ := from.getCounts()
-	if n := drawingsIn(t, kept); n != 1 {
+	if n := countDrawings(t, cache); n != 1 {
 		t.Fatalf("the folder holds %d drawings after one page", n)
 	}
 
 	// Nothing in memory, the way a window opened again begins.
-	api.Viewer.drawn.Store(drawings())
+	api.Viewer.drawn.Store(pagecache.NewMemory(pagecache.MostDrawn))
 
 	out := ask(handler, getPageAddress(t, api, book, 0, 400))
 	if out.Code != http.StatusOK {
@@ -64,15 +66,15 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
-	alone(api)
-	kept := onDisk(t, api)
+	stopReadAhead(api)
+	cache := newDiskCache(t, api)
 
 	for _, wide := range []int{400, 800} {
 		if out := ask(handler, getPageAddress(t, api, book, 0, wide)); out.Code != http.StatusOK {
 			t.Fatalf("asked for a page %d wide and got %d", wide, out.Code)
 		}
 	}
-	if n := drawingsIn(t, kept); n != 2 {
+	if n := countDrawings(t, cache); n != 2 {
 		t.Errorf("one page at two widths is %d drawings, want 2", n)
 	}
 }
@@ -82,8 +84,8 @@ func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
-	alone(api)
-	kept := onDisk(t, api)
+	stopReadAhead(api)
+	cache := newDiskCache(t, api)
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
@@ -98,7 +100,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	if err := os.Chtimes(at, later, later); err != nil {
 		t.Fatal(err)
 	}
-	api.Viewer.drawn.Store(drawings())
+	api.Viewer.drawn.Store(pagecache.NewMemory(pagecache.MostDrawn))
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
@@ -106,7 +108,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	if _, again, _ := from.getCounts(); again <= drawn {
 		t.Errorf("the rewritten document was not drawn again: %d drawings both times", drawn)
 	}
-	if n := drawingsIn(t, kept); n != 2 {
+	if n := countDrawings(t, cache); n != 2 {
 		t.Errorf("the folder holds %d drawings, want 2 — one for each of the two documents", n)
 	}
 }
@@ -116,83 +118,50 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	from := sheets(8)
 	api, handler := openViewerWindow(t, from)
-	alone(api)
-	kept := onDisk(t, api)
+	stopReadAhead(api)
+	cache := newDiskCache(t, api)
 
 	for at := 0; at < 4; at++ {
 		if out := ask(handler, getPageAddress(t, api, book, at, 400)); out.Code != http.StatusOK {
 			t.Fatalf("asked for page %d and got %d", at, out.Code)
 		}
 	}
-	if n := drawingsIn(t, kept); n != 4 {
+	if n := countDrawings(t, cache); n != 4 {
 		t.Fatalf("the folder holds %d drawings, want 4", n)
 	}
 
 	// Older than the rest, the way a page nobody has turned back to is.
-	first := filepath.Join(kept.dir, kept.getFileName(pictureID{document: print(t, api), page: 0, width: 400}))
+	first := cache.GetPath(pagecache.ID{Document: getFingerprint(t, api), Page: 0, Width: 400})
 	old := time.Now().Add(-time.Hour)
 	if err := os.Chtimes(first, old, old); err != nil {
 		t.Fatal(err)
 	}
 
-	kept.limit = totalOf(t, kept) - 1
-	kept.sweep()
+	cache.SweepTo(countBytes(t, cache) - 1)
 
 	if _, err := os.Stat(first); !os.IsNotExist(err) {
 		t.Errorf("the oldest drawing is still there: %v", err)
 	}
-	if n := drawingsIn(t, kept); n != 3 {
+	if n := countDrawings(t, cache); n != 3 {
 		t.Errorf("the folder holds %d drawings after the sweep, want 3", n)
 	}
 }
 
-// A sweep runs behind the page whose writing triggered it. The window owns it:
-// closing ends it and waits for it, so nothing is still deleting files in a
-// folder after the process that started it has said it is done.
-func TestTheWindowWaitsForTheSweepItStarted(t *testing.T) {
-	kept := newCacheIn(t.TempDir())
-	page := make([]byte, 1000)
-	kept.limit = 2 * int64(len(page))
-	kept.every = int64(len(page))
-
-	for at := range 6 {
-		kept.put(drawingOf(at), page)
-	}
-	kept.close()
-
-	if total := totalOf(t, kept); total > kept.limit {
-		t.Errorf("the folder holds %d bytes after the window closed, over its bound of %d", total, kept.limit)
-	}
-}
-
-// A page kept after the window has closed starts no sweep: it would be one
-// nobody is left to wait for.
-func TestNoSweepIsStartedAfterTheWindowCloses(t *testing.T) {
-	kept := newCacheIn(t.TempDir())
-	page := make([]byte, 1000)
-	kept.limit = 1
-	kept.every = int64(len(page))
-
-	kept.close()
-	for at := range 4 {
-		kept.put(drawingOf(at), page)
-	}
-	kept.going.Wait()
-
-	if n := drawingsIn(t, kept); n != 4 {
-		t.Errorf("a sweep nobody was left to wait for deleted %d of 4 drawings", 4-n)
-	}
-}
-
-// drawingOf is one page of the one book these tests keep drawings of.
-func drawingOf(at int) pictureID {
-	return pictureID{document: fingerprint{path: "book.pdf", size: 1, mtime: 1}, page: at, width: 400}
-}
-
-// totalOf is what the folder's drawings come to.
-func totalOf(t *testing.T, kept *cache) int64 {
+// getFingerprint is what the vault says the book is, which is what a drawing is named
+// from.
+func getFingerprint(t *testing.T, api *API) pool.Fingerprint {
 	t.Helper()
-	found, err := os.ReadDir(kept.dir)
+	_, said, err := api.stat(t.Context(), book)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return said
+}
+
+// countBytes is what the folder's drawings come to, in bytes.
+func countBytes(t *testing.T, cache *pagecache.Disk) int64 {
+	t.Helper()
+	found, err := os.ReadDir(cache.GetDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,15 +174,4 @@ func totalOf(t *testing.T, kept *cache) int64 {
 		total += info.Size()
 	}
 	return total
-}
-
-// print is what the vault says the book is, which is what a drawing is named
-// from.
-func print(t *testing.T, api *API) fingerprint {
-	t.Helper()
-	_, said, err := api.stat(t.Context(), book)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return said
 }

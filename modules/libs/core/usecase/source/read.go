@@ -83,7 +83,7 @@ func (u Read) Execute(
 		}
 	}
 
-	doc, err := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}.Of(ctx, path, from, hash)
+	doc, err := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}.GetDocument(ctx, path, from, hash)
 	if err != nil {
 		return res, err
 	}

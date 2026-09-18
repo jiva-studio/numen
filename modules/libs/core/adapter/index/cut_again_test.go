@@ -49,8 +49,8 @@ func drawChunks(t *rapid.T, name string) []chunk.Chunk {
 // textOf is what a chunk has to hold to be held on a row: the same text, cut at
 // the same size.
 type textOf struct {
-	hash  string
-	small bool
+	hash    string
+	isSmall bool
 }
 
 // countChunks is what a cut asks the index to hold, as many times as it asks.
@@ -59,7 +59,7 @@ func countChunks(chunks []chunk.Chunk) map[textOf]int {
 	for _, large := range chunks {
 		out[textOf{hash: hashText(large.Text)}]++
 		for _, small := range large.Small {
-			out[textOf{hash: hashText(small.Text), small: true}]++
+			out[textOf{hash: hashText(small.Text), isSmall: true}]++
 		}
 	}
 	return out
@@ -85,7 +85,7 @@ func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	for cursor.Next() {
 		var row int64
 		var key textOf
-		if err := cursor.Scan(&row, &key.hash, &key.small); err != nil {
+		if err := cursor.Scan(&row, &key.hash, &key.isSmall); err != nil {
 			t.Fatal(err)
 		}
 		out[key] = append(out[key], row)

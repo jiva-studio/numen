@@ -129,9 +129,9 @@ type ResolvedLink struct {
 	// every ordinary link.
 	ToVault VaultID
 
-	// Ambiguous is set when several notes answer to the name. The link still
+	// IsAmbiguous is set when several notes answer to the name. The link still
 	// resolves — to the nearest one — but the vault has a question in it.
-	Ambiguous bool
+	IsAmbiguous bool
 }
 
 // InVault is the vault the link resolved into, which is not always the vault it

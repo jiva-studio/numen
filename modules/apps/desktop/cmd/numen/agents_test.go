@@ -93,7 +93,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 // endpoint on its own, and the panel is told there is no agent to ask.
 func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	opened, cfg := windowOn(t)
-	cfg.Agent = agent.Config{ServeTools: true}
+	cfg.Agent = agent.Config{ShouldServeTools: true}
 	addr := free(t)
 
 	shut, err := serveAgents(t.Context(), cfg, opened, agentOptions{addr: addr}, io.Discard)

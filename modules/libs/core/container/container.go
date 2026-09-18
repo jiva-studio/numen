@@ -64,10 +64,10 @@ type Config struct {
 	// downloader, and what asks for one is told this build cannot do it.
 	Importing download.Config
 
-	// Transcribes is whether a recording the vault holds no transcript for is
+	// ShouldTranscribe is whether a recording the vault holds no transcript for is
 	// listened to without anybody asking. A configuration naming nothing leaves
 	// it to the hand.
-	Transcribes bool
+	ShouldTranscribe bool
 
 	// TranscribesUnder is how many bytes a recording may run to and still be
 	// listened to unasked. A larger one is left for somebody to ask for by
@@ -99,11 +99,11 @@ type Config struct {
 	// does.
 	Agent adapteragent.Config
 
-	// RebuildIndex reads every file and puts it in the index again, whatever the
+	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it. Both entry points offer it under one name: a
 	// person with a vault restored from an archive is not asked which binary they
 	// are holding.
-	RebuildIndex bool
+	ShouldRebuildIndex bool
 
 	// ErrorHandler is where what is assembled here says what went wrong in work
 	// it carries on past. An installation that sets none is told nothing.
@@ -176,13 +176,13 @@ func (c Config) ReadSettingsFile() func() (string, string, error) {
 	}
 }
 
-// WritesConfiguredFile replaces the settings file whole, with the bytes as they
+// WriteConfiguredFile replaces the settings file whole, with the bytes as they
 // were typed. A file the settings could not be read out of is refused and the
 // file is left as it was.
 //
 // Seen is the file as the window last read it. A file standing at anything else
 // is left alone with port.ErrStale.
-func (c Config) WritesConfiguredFile() func(written string, seen *string) error {
+func (c Config) WriteConfiguredFile() func(written string, seen *string) error {
 	return func(written string, seen *string) error {
 		path, err := c.settingsFile()
 		if err != nil {
@@ -200,9 +200,9 @@ func (Config) PartsUnderANodeBounds() settings.Bounds {
 	return settings.PartsUnderANodeBounds
 }
 
-// LatestDayStarts is how late in the day a day of review may be made to begin,
+// GetLatestDayStart is how late in the day a day of review may be made to begin,
 // on the clock on the wall. An hour past it is refused.
-func (Config) LatestDayStarts() string {
+func (Config) GetLatestDayStart() string {
 	return review.Clock(settings.LatestDayStarts)
 }
 
@@ -318,11 +318,11 @@ func (c Config) GetDerivedStores() port.DerivedStores {
 	}
 }
 
-// indexPath defaults to the platform cache directory. The index is a cache in
-// the strict sense — losing it costs a rebuild and nothing else — so it belongs
-// where the system keeps disposable data.
-// IndexPathOrDefault is where the index is, whether or not one was named. It is
-// what a person is told when the index is what stopped the application.
+// IndexPathOrDefault defaults to the platform cache directory. The index is a
+// cache in the strict sense — losing it costs a rebuild and nothing else — so
+// it belongs where the system keeps disposable data. IndexPathOrDefault is
+// where the index is, whether or not one was named. It is what a person is told
+// when the index is what stopped the application.
 func (c Config) IndexPathOrDefault() (string, error) { return c.indexPath() }
 
 func (c Config) indexPath() (string, error) {

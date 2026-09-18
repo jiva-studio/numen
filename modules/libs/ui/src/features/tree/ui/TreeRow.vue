@@ -68,7 +68,7 @@ watch(
     :data-tree-row="row.id"
     :data-selected="isSelected || undefined"
     :data-dragged="isLifted || undefined"
-    :data-last="row.last || undefined"
+    :data-last="row.isLast || undefined"
     :data-into="isDropInside || undefined"
     :data-before="isDropAbove || undefined"
     v-bind="mark"

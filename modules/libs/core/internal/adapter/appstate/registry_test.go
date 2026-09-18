@@ -21,7 +21,7 @@ func newRegistry(t *testing.T) *appstate.VaultRegistry {
 
 func TestMissingFileIsAnEmptyList(t *testing.T) {
 	// A first run has no registry yet, and that is not an error.
-	got, err := newRegistry(t).All()
+	got, err := newRegistry(t).List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func TestSaveThenAll(t *testing.T) {
 	if err := r.Save(v); err != nil {
 		t.Fatal(err)
 	}
-	got, err := r.All()
+	got, err := r.List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestSavingTheSameIdentityMovesTheVault(t *testing.T) {
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/new"}); err != nil {
 		t.Fatal(err)
 	}
-	got, err := r.All()
+	got, err := r.List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestRemoveTakesAVaultOffTheList(t *testing.T) {
 	if err := r.Remove("01BBB"); err != nil {
 		t.Fatal(err)
 	}
-	got, err := r.All()
+	got, err := r.List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestRemovingAVaultThatIsNotOnTheListIsNotAnError(t *testing.T) {
 	if err := r.Remove("01NEVERADDED"); err != nil {
 		t.Errorf("removing what is not there: %v", err)
 	}
-	got, err := r.All()
+	got, err := r.List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,7 +325,7 @@ func TestConcurrentWritesLoseNothing(t *testing.T) {
 		}
 	}
 
-	got, err := r.All()
+	got, err := r.List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -372,7 +372,7 @@ func TestTheRegistryTakesATemporaryNameOfItsOwn(t *testing.T) {
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
 		t.Fatal(err)
 	}
-	got, err := r.All()
+	got, err := r.List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -410,7 +410,7 @@ func TestAFailedSaveLeavesTheOldRegistryIntact(t *testing.T) {
 		t.Fatal("a save that could not write reported success")
 	}
 
-	after, err := r.All()
+	after, err := r.List()
 	if err != nil {
 		t.Fatalf("the registry is unreadable after a failed save: %v", err)
 	}

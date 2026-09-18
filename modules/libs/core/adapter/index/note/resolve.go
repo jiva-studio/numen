@@ -142,7 +142,7 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.Vault
 		if err != nil {
 			return err
 		}
-		r.To, r.Ambiguous = pick(from, r.Target.Value, candidates)
+		r.To, r.IsAmbiguous = pick(from, r.Target.Value, candidates)
 		if r.To != "" {
 			// A name means something only inside the vault it was written in.
 			r.ToVault = vaultID

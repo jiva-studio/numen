@@ -165,10 +165,10 @@ func firstRequired(schema any) string {
 	return first
 }
 
-// holds reports whether a declared type is the one named. A field that may be
-// left out is declared as several types at once, so the declaration is a name or
-// a list of them.
-func holds(declared any, kind string) bool {
+// isDeclaredAs reports whether a declared type is the one named. A field that
+// may be left out is declared as several types at once, so the declaration is a
+// name or a list of them.
+func isDeclaredAs(declared any, kind string) bool {
 	switch value := declared.(type) {
 	case string:
 		return value == kind
@@ -198,7 +198,7 @@ func firstRequiredInside(schema any, field string) string {
 	if !ok {
 		return ""
 	}
-	if !holds(argument["type"], "array") {
+	if !isDeclaredAs(argument["type"], "array") {
 		return ""
 	}
 	return firstRequired(argument["items"])

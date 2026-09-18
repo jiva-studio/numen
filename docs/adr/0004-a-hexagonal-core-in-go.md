@@ -68,6 +68,8 @@ An application serves the generated handler and the tool endpoint itself; both a
 
 The domain holds notes, vaults, the index model and the rules over them. It may not know that files exist, that SQLite exists, or what time it is. A filesystem, a database, a clock and an agent are each a port the core declares and an adapter that implements it.
 
+A rule that holds of one value is a method on it: whether an address points out of the vault, what a title comes to as a filename. A rule that is arithmetic over many of them stands in the subject package named after what the arithmetic is about, and `domain/` carries the value it is done to. That is why the domain is a few hundred lines beside several thousand in `flashcards/review` and `markdown`: the scheduling and the parsing are subjects, and a card and a note are what they are done to.
+
 A port an adapter is bound to at the composition root is declared with the ports, because that is where the composition root looks for it. A one-method interface a single use case needs is declared beside that use case, where its only consumer can see it whole. Adapters never name the interface they satisfy. Ports are named after the need, adapters after the technology: the core asks to read a vault, and that the answer is a filesystem is knowledge confined to the adapters and the composition root.
 
 Entry points are adapters. The command line, the window and the tool endpoint are three of them, and the core knows about none.

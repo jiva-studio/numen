@@ -7,8 +7,7 @@
  */
 import { dayOf, getDayName } from '@/shared/lib/day'
 
-/** How many days stand in one column. A column is a week. */
-export const ROWS = 7
+import { AHEAD, ROWS } from './grid'
 
 /** What one day behind came to. */
 export interface Tally {
@@ -51,57 +50,6 @@ export interface Day extends Tally {
   readonly isAhead: boolean
 }
 
-/** How many weeks of what is still to come the grid keeps room for. */
-export const AHEAD = 4
-
-/** What a grid is laid out to. */
-export interface HeatmapMetrics {
-  /** How wide the grid may be, in pixels. */
-  width: number
-  /** How large one cell is drawn. */
-  cell: number
-  /** How much room is left between two cells. */
-  gap: number
-}
-
-/**
- * How many columns fit the room there is, and how large a cell is drawn in it.
- *
- * The cell has a size of its own and the grid takes as many columns as fit, so
- * a wide window shows more weeks rather than the same weeks drawn larger, and a
- * narrow one shows fewer rather than the grid standing in the middle of empty
- * room. What is left over is spread between the cells, which keeps the grid
- * flush to both edges.
- */
-export function measureGrid(metrics: HeatmapMetrics): {
-  columns: number
-  cell: number
-  gap: number
-} {
-  const cell = Math.max(1, metrics.cell)
-  const gap = Math.max(0, metrics.gap)
-  const step = cell + gap
-  if (metrics.width <= 0) return { columns: 1, cell, gap }
-
-  const columns = Math.max(1, Math.floor((metrics.width + gap) / step))
-  if (columns < 2) return { columns, cell, gap }
-
-  // The room the cells do not take is the room between them.
-  const between = Math.max(gap, (metrics.width - columns * cell) / (columns - 1))
-  return { columns, cell, gap: between }
-}
-
-/**
- * The days a grid of this many columns draws, oldest first.
- *
- * The weeks behind a person run up to the one they are in, and a few weeks of
- * what is still to come stand after it, so the grid says what is coming as well
- * as what was done. Every column is a whole week.
- *
- * A day still to come holds what falls on it; a day behind holds what was
- * answered on it. Today holds what was answered, because that is the number a
- * person is adding to.
- */
 export function getDays(
   columns: number,
   now: Date,

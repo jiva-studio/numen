@@ -76,22 +76,22 @@ const quitBound = editor.HandedOverIn
 type going struct {
 	settle func(context.Context) bool
 
-	mu   sync.Mutex
-	turn *turn
-	done bool
+	mu     sync.Mutex
+	turn   *turn
+	isDone bool
 }
 
 // turn is one settling, and what it answered.
 type turn struct {
-	done    chan struct{}
-	settled bool
+	done      chan struct{}
+	isSettled bool
 }
 
 // wait settles the vault and answers with whether it did. A settling already
 // running is joined and its answer shared.
 func (g *going) wait() bool {
 	g.mu.Lock()
-	if g.done {
+	if g.isDone {
 		g.mu.Unlock()
 		return true
 	}
@@ -104,14 +104,14 @@ func (g *going) wait() bool {
 	g.mu.Unlock()
 
 	<-this.done
-	return this.settled
+	return this.isSettled
 }
 
 // isSettled reports whether there is nothing left owed.
 func (g *going) isSettled() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return g.done
+	return g.isDone
 }
 
 func (g *going) begin(this *turn) {
@@ -123,7 +123,7 @@ func (g *going) begin(this *turn) {
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	this.settled = settled
-	g.done = settled
+	this.isSettled = settled
+	g.isDone = settled
 	g.turn = nil
 }

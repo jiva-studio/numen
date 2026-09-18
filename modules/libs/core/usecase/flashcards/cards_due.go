@@ -226,7 +226,7 @@ func (u CountCardsDue) presets(
 	}
 	naming := make(map[string]int, len(decks))
 	for _, deck := range decks {
-		p, err := reading.Of(ctx, v, deck)
+		p, err := reading.GetForDeck(ctx, v, deck)
 		if err != nil {
 			return nil, err
 		}

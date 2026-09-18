@@ -24,7 +24,7 @@ export interface WorkLine {
   /** The line comes down. */
   readonly takeDown: () => void
   /** The wait under it, up whenever nothing more particular is known. */
-  readonly setWaiting: (on: boolean) => void
+  readonly setWaiting: (isOn: boolean) => void
   /** Both lines come down. */
   readonly clear: () => void
 }
