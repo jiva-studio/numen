@@ -46,6 +46,8 @@ export type { Words as HeatmapWords } from './features/heatmap'
 /** A day of the calendar, written down, read back and counted against another. */
 export { dayAfter, dayOf, daysBetween, getDayName, isDay } from './shared/lib/day'
 export type { Tally as HeatmapTally } from './features/heatmap'
+export type { HeatmapMetrics } from './features/heatmap'
+export { getStretch as getHeatmapStretch } from './features/heatmap'
 export { WelcomePage } from './features/welcome'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
 export { getVaultForKey, isTyping } from './features/welcome'

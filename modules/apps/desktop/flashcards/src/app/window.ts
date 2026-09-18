@@ -35,7 +35,7 @@ export const useWindow = () => {
     stop,
   } = useReviewCounter({ cards, reportError })
   const state = useReviewSession({ cards, reportError })
-  const done = useReviewDays({ cards, reportError })
+  const done = useReviewDays({ cards, reportError, widest: () => window.screen.width })
   const schedules = useVaultPresets({ presets: cards })
 
   /** Why nothing can be asked here, empty while something can. */

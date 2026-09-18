@@ -2,4 +2,5 @@
 export { default as Heatmap } from './ui/Heatmap.vue'
 export { dayName } from './lib/dates'
 export type { Words } from './lib/words'
-export type { Tally } from './lib/heatmap'
+export type { Tally, HeatmapMetrics } from './lib/heatmap'
+export { getStretch } from './lib/heatmap'

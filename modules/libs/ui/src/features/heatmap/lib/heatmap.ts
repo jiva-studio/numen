@@ -102,6 +102,38 @@ export function measureGrid(metrics: HeatmapMetrics): {
  * answered on it. Today holds what was answered, because that is the number a
  * person is adding to.
  */
+/**
+ * The stretch of time a grid this wide draws, oldest day first, as the names a
+ * day is written under.
+ *
+ * A caller asks the application for the days before it knows the room it will
+ * have, so it asks about the widest grid the room could hold. Every day any
+ * narrower grid draws stands inside the answer.
+ */
+export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; to: string } {
+  const { columns } = measureGrid(metrics)
+  const weeks = Math.min(AHEAD, Math.max(0, columns - 1))
+
+  // The grid running back from now: the Sunday ending the last week kept for
+  // what is still to come, and the columns before it.
+  const last = new Date(now)
+  last.setHours(12, 0, 0, 0)
+  last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
+  const behind = new Date(last)
+  behind.setDate(behind.getDate() - (columns * ROWS - 1))
+
+  // The grid opening on the week a person began in, which for a vault with
+  // nothing behind it is this week, and then all of it stands ahead.
+  const opens = monday(now)
+  const ahead = new Date(opens)
+  ahead.setDate(ahead.getDate() + columns * ROWS - 1)
+
+  return {
+    from: getDayName(behind < opens ? behind : opens),
+    to: getDayName(last > ahead ? last : ahead),
+  }
+}
+
 export function getDays(
   columns: number,
   now: Date,

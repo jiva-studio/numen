@@ -5,11 +5,12 @@
  * again whenever that vault moves, and what is held between the two is a rule.
  */
 import { ref } from 'vue'
+import { getHeatmapStretch } from '@numen/ui'
 import type { HeatmapTally } from '@numen/ui'
 
 /** What the application answers about a vault's days. */
 export interface ReviewDaysClient {
-  listReviewDays(request: { vault: string }): Promise<ReviewDays>
+  listReviewDays(request: { vault: string; from: string; to: string }): Promise<ReviewDays>
 }
 
 export interface ReviewDays {
@@ -18,6 +19,10 @@ export interface ReviewDays {
   streak: number
   answered: number
 }
+
+/** What the grid draws a day at, which is what Heatmap is left to by default. */
+const CELL = 11
+const GAP = 3
 
 /** One day, and what was answered on it. */
 export interface Day {
@@ -35,9 +40,18 @@ export interface Day {
 export interface ReviewDaysDeps {
   cards: ReviewDaysClient
   reportError(why: unknown): void
+  /**
+   * The widest the grid of days could be drawn, in pixels. The days asked
+   * about are the days a grid that wide would draw, and a vault holds one for
+   * every day it has ever been reviewed.
+   */
+  widest(): number
+  /** What day it is. The machine's own, where a caller names none. */
+  now?(): Date
 }
 
 export function useReviewDays(deps: ReviewDaysDeps) {
+  const now = deps.now ?? (() => new Date())
   /** How much was answered on each day, by the day it was answered on. */
   const days = ref<ReadonlyMap<string, HeatmapTally>>(new Map())
   /** How much falls on each day still to come, by the day it falls on. */
@@ -63,7 +77,8 @@ export function useReviewDays(deps: ReviewDaysDeps) {
     }
     of.value = vault
     try {
-      const said = await deps.cards.listReviewDays({ vault })
+      const { from, to } = getHeatmapStretch({ width: deps.widest(), cell: CELL, gap: GAP }, now())
+      const said = await deps.cards.listReviewDays({ vault, from, to })
       // A person who moved to another vault while this was on its way is
       // looking at that one, and these days are not its days.
       if (of.value !== vault) return
