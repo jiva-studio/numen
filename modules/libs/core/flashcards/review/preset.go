@@ -332,24 +332,24 @@ func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int
 	if days <= 0 {
 		return 0
 	}
-	if daysToLearn == NeverRipens {
+	if daysToLearn == NeverLearns {
 		return unbegunCards
 	}
-	in := p.getRoomToBegin(d, now, daysToLearn)
+	in := p.getCapacityToBegin(d, now, daysToLearn)
 	if in <= 0 {
 		return unbegunCards
 	}
 	return int(math.Ceil(float64(unbegunCards) / in))
 }
 
-// getRoomToBegin is how much room a date leaves for beginning cards: the days
+// getCapacityToBegin is how much room a date leaves for beginning cards: the days
 // of review from the day holding now up to the last one on which a card begun
-// still has its ripening before the day the preset aims at.
+// still has its learning before the day the preset aims at.
 //
 // Each day counts for the share of the load its day of the week carries, and
-// the ripening is counted in days of review, so the days it takes are dropped
+// the learning is counted in days of review, so the days it takes are dropped
 // at the shares they carry.
-func (p Preset) getRoomToBegin(d Day, now time.Time, ripens int) float64 {
+func (p Preset) getCapacityToBegin(d Day, now time.Time, daysToLearn int) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
@@ -360,10 +360,10 @@ func (p Preset) getRoomToBegin(d Day, now time.Time, ripens int) float64 {
 	y, m, day := p.By.Date()
 	to := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
 	span := int(to.Sub(from).Hours()/24) + 1
-	for span > 0 && ripens > 0 {
+	for span > 0 && daysToLearn > 0 {
 		span--
 		if p.GetShare(from.AddDate(0, 0, span).Weekday()) > 0 {
-			ripens--
+			daysToLearn--
 		}
 	}
 	return p.getDaysOfReview(from, span)

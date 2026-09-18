@@ -984,12 +984,12 @@ func TestTheDayTheMaterialIsLearnedIsAskedWhereItIsADay(t *testing.T) {
 	}
 }
 
-// The day a card face ripens is the day the projection learns it.
+// The day a card face daysToLearn is the day the projection learns it.
 //
 // The pace of a date is worked out from the first and the picture beside it
 // from the second, so a day is one day in both: a card face begun today is
 // learned on the day the pace was told it would be.
-func TestRipeningAndTheProjectionAreOneDay(t *testing.T) {
+func TestLearningAndTheProjectionAreOneDay(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	by := review.NewFSRS()
 	// A day long enough and a budget large enough that nothing but the rule
@@ -1010,8 +1010,8 @@ func TestRipeningAndTheProjectionAreOneDay(t *testing.T) {
 				break
 			}
 		}
-		if got := review.GetRipeningDays(by, ahead, one, now); got != learns {
-			t.Errorf("an interval of %d days ripens in %d days of review, and the "+
+		if got := review.GetDaysToLearn(by, ahead, one, now); got != learns {
+			t.Errorf("an interval of %d days daysToLearn in %d days of review, and the "+
 				"projection learns the card face on day %d", interval, got, learns)
 		}
 	}
@@ -1272,8 +1272,8 @@ func TestAPaceUnderALightWeekDividesByTheRoomThatIsLeft(t *testing.T) {
 	for _, out := range []int{29, 45, 60} {
 		p.By = now.AddDate(0, 0, out).Truncate(24 * time.Hour)
 		full.By = p.By
-		light := review.GetRipeningDays(by, ahead, p, now)
-		whole := review.GetRipeningDays(by, ahead, full, now)
+		light := review.GetDaysToLearn(by, ahead, p, now)
+		whole := review.GetDaysToLearn(by, ahead, full, now)
 
 		at := p.GetAllowance(ahead, now, review.Spent{}, 500, light).Keeps.New
 		was := full.GetAllowance(ahead, now, review.Spent{}, 500, whole).Keeps.New
@@ -1506,20 +1506,20 @@ func TestADaysShowingsAndItsCardFacesAreTwoCounts(t *testing.T) {
 }
 
 // A card face begun on any day of the week is learned in the days of review the
-// preset is paced by, so a week carrying a quiet day ripens as slowly as its
+// preset is paced by, so a week carrying a quiet day daysToLearn as slowly as its
 // slowest day and answers the same figure whichever day it is asked on.
-func TestAWeekRipensAsSlowlyAsItsSlowestDay(t *testing.T) {
+func TestAWeekLearnsAsSlowlyAsItsSlowestDay(t *testing.T) {
 	by := review.NewFSRS()
 	p := review.Defaults()
 	p.Rule, p.Interval = review.RuleInterval, 21
 	p.Load = map[time.Weekday]int{time.Saturday: 0, time.Sunday: 0}
 
 	from := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	want := review.GetRipeningDays(by, ahead, p, from)
+	want := review.GetDaysToLearn(by, ahead, p, from)
 	for i := 1; i < 7; i++ {
 		on := from.AddDate(0, 0, i)
-		if got := review.GetRipeningDays(by, ahead, p, on); got != want {
-			t.Errorf("a week ripens in %d days of review asked on a %s and %d asked on a %s",
+		if got := review.GetDaysToLearn(by, ahead, p, on); got != want {
+			t.Errorf("a week daysToLearn in %d days of review asked on a %s and %d asked on a %s",
 				got, on.Weekday(), want, from.Weekday())
 		}
 	}

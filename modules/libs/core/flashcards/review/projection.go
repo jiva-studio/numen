@@ -107,9 +107,9 @@ func (r *RetentionByDay) add(day int, share float64) {
 // NeverClears is a pace that leaves something overdue on every day projected.
 const NeverClears = -1
 
-// NeverLearns is a horizon that ends with a card face still to learn. The day
-// the last of them is learned is further off than the projection ran, and it is
-// not worked out from what the run saw.
+// NeverLearns is a day further off than what was looked at: a projection whose
+// horizon ends with a card face still to learn, and a rule a card face begun
+// now does not reach in the years GetDaysToLearn looks over.
 const NeverLearns = -1
 
 // LearnsUnasked is a projection with no day on which the whole material stands
@@ -262,9 +262,9 @@ func (s Simulation) Run(
 	// learned. No goal but a date reads either, and neither is asked for under
 	// another.
 	out.Short = s.short(p, cards, unseen, open)
-	ripens := 0
+	daysToLearn := 0
 	if p.Goal == GoalDate {
-		ripens = GetRipeningDays(s.By, s.Day, p, now)
+		daysToLearn = GetDaysToLearn(s.By, s.Day, p, now)
 	}
 	// The card faces the day may answer, and how many of them it reached. Both
 	// are carried from one day to the next: what a day did not reach is the
@@ -290,7 +290,7 @@ func (s Simulation) Run(
 		if today == 0 {
 			gone = s.Spent
 		}
-		admits := p.GetAllowance(s.Day, open, gone, left, ripens)
+		admits := p.GetAllowance(s.Day, open, gone, left, daysToLearn)
 
 		// What has fallen due by the close of the day, the oldest debt first, so
 		// a day that cannot pay all of it leaves the cards least overdue

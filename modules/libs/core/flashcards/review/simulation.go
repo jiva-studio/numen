@@ -57,38 +57,34 @@ func (s Simulation) GetDurationDays() int {
 	return s.Days
 }
 
-// NeverRipens is a rule a card face begun now does not reach in the years
-// GetRipeningDays looks over.
-const NeverRipens = -1
-
-// LongestRipening is how far ahead GetRipeningDays looks for the day a card face begun
+// LongestLearning is how far ahead GetDaysToLearn looks for the day a card face begun
 // now is learned.
-const LongestRipening = 10 * 365
+const LongestLearning = 10 * 365
 
 // mostAnswers is how many answers a walk of one card face gives it before
 // giving it up.
 const mostAnswers = 1000
 
-// GetRipeningDays is how many days of review a card face begun now needs before this
+// GetDaysToLearn is how many days of review a card face begun now needs before this
 // preset counts it learned, when every day that card face falls due in answers
 // it.
 //
 // It is one number for the whole material nobody has begun: those card faces
 // all stand at the same nothing. A rule no such card face reaches is
-// NeverRipens.
+// NeverLearns.
 //
 // A day of the week at none of the load schedules nothing, so it asks the card
 // face nothing and counts for none of the days the pace divides by. A week
 // carrying such a day needs as many days of review as its slowest day of the
 // week does, so the pace holds for a card face begun on any of them.
-func GetRipeningDays(by Scheduler, d Day, p Preset, now time.Time) int {
+func GetDaysToLearn(by Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{By: by, Day: d}
 	from := d.GetStart(now)
 	out := 0
 	for range 7 {
-		one := s.getRipeningDays(p, from)
-		if one == NeverRipens {
-			return NeverRipens
+		one := s.getDaysToLearn(p, from)
+		if one == NeverLearns {
+			return NeverLearns
 		}
 		out = max(out, one)
 		from = d.GetEnd(from)
@@ -96,11 +92,11 @@ func GetRipeningDays(by Scheduler, d Day, p Preset, now time.Time) int {
 	return out
 }
 
-// getRipeningDays is how many days of review a card face begun on this day needs.
-func (s Simulation) getRipeningDays(p Preset, open time.Time) int {
+// getDaysToLearn is how many days of review a card face begun on this day needs.
+func (s Simulation) getDaysToLearn(p Preset, open time.Time) int {
 	var c Schedule
 	days := 0
-	for range LongestRipening {
+	for range LongestLearning {
 		ends := s.Day.GetEnd(open)
 		if p.GetShare(open.Weekday()) == 0 {
 			open = ends
@@ -113,7 +109,7 @@ func (s Simulation) getRipeningDays(p Preset, open time.Time) int {
 		days++
 		open = ends
 	}
-	return NeverRipens
+	return NeverLearns
 }
 
 // getAfterShowing is where one showing leaves a card face, at the hour the day
@@ -129,7 +125,7 @@ func (s Simulation) getAfterShowing(c Schedule, open, ends time.Time, p Preset, 
 // every showing it asks for: an answer that leaves the card falling due before
 // the day closes is a card the day asks again, up to MostShowings.
 //
-// It is the day with no budget over it, which is the day the ripening of a card
+// It is the day with no budget over it, which is the day the learning of a card
 // face is counted in.
 func (s Simulation) settleDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {

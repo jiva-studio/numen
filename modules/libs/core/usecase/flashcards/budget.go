@@ -117,7 +117,7 @@ func getBudgets(
 		// spaced by. No other goal reads it, and it is asked for under no other.
 		learn := 0
 		if p.Goal == review.GoalDate {
-			learn = review.GetRipeningDays(at(p.Retention), day, p, now)
+			learn = review.GetDaysToLearn(at(p.Retention), day, p, now)
 		}
 		out.left[path] = &allowance{
 			admits: p.GetAllowance(day, now, spent[path], unseen[path], learn),
