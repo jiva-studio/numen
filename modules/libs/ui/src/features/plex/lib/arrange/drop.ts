@@ -9,7 +9,7 @@ import type { Direction, PlexOptions, Size } from './options'
  * The plex works out the shape of the gesture and nothing else: which node it
  * started from, which way it went, and whether it landed on something. What a
  * parent or a jump then *means* — what gets written, and whether it is allowed
- * — is the application's, which is why this reports rather than acts.
+ * — is the application's. This reports.
  */
 export type Drop =
   | { readonly kind: 'create'; readonly from: string; readonly seat: PlexRelatedSeat }
@@ -34,7 +34,7 @@ export const seatWithoutDirection = (seats: readonly PlexRelatedSeat[]): PlexRel
 /**
  * Which way a point lies from another.
  *
- * Not simply the axis it lies furthest along: rows are wide and columns are
+ * Not simply the axis it lies getFurthest along: rows are wide and columns are
  * narrow, so the wedge meaning up or down is wider than a quarter turn. At a
  * bias of one, the outermost child of a wide row is further sideways than it
  * is down, and dragging towards where the children plainly are would name
@@ -48,9 +48,8 @@ function getDropDirection(dx: number, dy: number, bias: number): Direction | nul
 /**
  * The seat a direction stands for — the inverse of the arrangement's own map.
  *
- * Read off `direction` rather than assumed, because that is what put the seats
- * where they are: with parents sent down, dragging down means a parent, and a
- * rule written the other way would quietly contradict the drawing.
+ * It is read off `direction`, which is what put the seats where they are: with
+ * parents sent down, dragging down means a parent.
  */
 export function seatTowards(
   from: Position,

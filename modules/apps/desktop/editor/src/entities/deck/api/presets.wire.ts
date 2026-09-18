@@ -1,13 +1,14 @@
 /** The presets of a vault, as the window asks for them and as the schema writes them. */
-import type {
-  Bounds as BoundsMessage,
-  Curve as CurveMessage,
-  ErrorCode as ProtoErrorCode,
-  Place as PlaceMessage,
-  Point as PointMessage,
-  Preset as PresetMessage,
-  Settings as SettingsMessage,
-  SettingsBounds as SettingsBoundsMessage,
+import { asFailure, asValue } from '@numen/wire'
+import {
+  type Bounds as BoundsMessage,
+  type Curve as CurveMessage,
+  type ErrorCode as ProtoErrorCode,
+  type Place as PlaceMessage,
+  type Point as PointMessage,
+  type Preset as PresetMessage,
+  type Settings as SettingsMessage,
+  type SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
 import { goalNames, goalOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
@@ -20,11 +21,11 @@ import type {
   Point,
   Preset,
   Presets,
-  ReadResult,
+  PresetReadResult,
   Settings,
   SettingsBounds,
 } from '../lib/presets'
-import { CLOSED, COUNTED, COUNTING, LEARNED, RULING, STOPPED } from './presets.names'
+import { COUNTED, COUNTING, LEARNED, RULING } from './presets.names'
 
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {
@@ -37,7 +38,8 @@ export const presets: Presets = {
     })),
   createPreset: async (title, folder) => {
     const answer = await presetsService.createPreset({ title, path: folder })
-    return { path: answer.path, error: errorIn(answer) }
+    const error = errorIn(answer)
+    return error ? asFailure(error) : asValue({ path: answer.path })
   },
   scheduleDeck: async (deck, preset, seen) => {
     const answer = await presetsService.scheduleDeck({
@@ -45,7 +47,9 @@ export const presets: Presets = {
       preset,
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: errorIn(answer), isChanged: staleIn(answer), fingerprint: stamp(answer.at) ?? '' }
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code) return asFailure(code)
+    return asValue({ at: stamp(answer.at) ?? '' })
   },
   write: async (path, settings, seen) => {
     const answer = await presetsService.writePreset({
@@ -53,7 +57,9 @@ export const presets: Presets = {
       settings: toSettingsMessage(settings),
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { error: errorIn(answer), isChanged: staleIn(answer), fingerprint: stamp(answer.at) ?? '' }
+    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    if (code) return asFailure(code)
+    return asValue({ at: stamp(answer.at) ?? '' })
   },
   curve: async (path, settings) => {
     const answer = await presetsService.computeCurve({
@@ -70,12 +76,15 @@ const parseRead = (answer: {
   error?: ProtoErrorCode | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   bounds?: SettingsBoundsMessage | undefined
-}): ReadResult => ({
-  preset: answer.preset ? parsePreset(answer.preset) : null,
-  error: errorIn(answer),
-  fingerprint: stamp(answer.at) ?? '',
-  bounds: parseSettingsBounds(answer.bounds),
-})
+}): PresetReadResult => {
+  const error = errorIn(answer)
+  if (error) return asFailure(error)
+  return asValue({
+    preset: answer.preset ? parsePreset(answer.preset) : null,
+    at: stamp(answer.at) ?? '',
+    bounds: parseSettingsBounds(answer.bounds),
+  })
+}
 
 /** How far each setting goes, as the read answered it. */
 const parseSettingsBounds = (all: SettingsBoundsMessage | undefined): SettingsBounds => {
@@ -103,8 +112,8 @@ const parsePreset = (one: PresetMessage): Preset => ({
   title: one.title,
   settings: settingsOf(one.settings),
   problems: one.problems,
-  stops: STOPPED[one.stops],
-  stopsOn: STOPPED[one.stopsOn],
+  stops: one.stops,
+  stopsOn: one.stopsOn,
 })
 
 /** The settings in the window's own words. A preset carrying none is the defaults. */
@@ -121,7 +130,7 @@ const settingsOf = (settings: SettingsMessage | undefined): Settings =>
         counts: COUNTED[settings.counts] ?? DEFAULTS.counts,
         backlog: settings.backlog,
         load: settings.load,
-        evenLoad: settings.evenLoad,
+        evenLoad: settings.hasEvenLoad,
         learned: LEARNED[settings.learned] ?? DEFAULTS.learned,
         interval: settings.interval,
       }
@@ -149,8 +158,8 @@ const parsePoint = (one: PointMessage): Point => ({
   retained: one.retained,
   owed: one.owed,
   through: one.through,
-  canLearnEveryCard: one.enough,
-  closed: one.closed.flatMap((name) => CLOSED[name] ?? []),
+  canLearnEveryCard: one.isEnough,
+  closed: one.closed,
   clears: one.clears,
   learned: one.learned,
   ...(one.learns === undefined ? {} : { learns: one.learns }),
@@ -195,4 +204,3 @@ const parseCurve = (curve: CurveMessage | undefined): Curve =>
 
 const parsePlace = (place: PlaceMessage | undefined): Place =>
   place === undefined ? NOWHERE : { at: place.at, value: place.value, day: place.day }
-

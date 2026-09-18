@@ -3,7 +3,9 @@ export { cards } from './api/cards'
 export type {
   Cards,
   DeckProblem,
+  CardsFailure,
   FieldRenameResult,
+  RenamedField,
   StencilSummary,
   Value,
   VaultCard,
@@ -12,6 +14,7 @@ export type {
   VaultSection,
   VaultStencil,
 } from './api/cards'
+export { getFailureCode } from './lib/failures'
 export { generateId } from './lib/identity'
 export type { IdMaker } from './lib/identity'
 export { areMarksEqual, createMarks } from './lib/marks'
@@ -32,6 +35,7 @@ export {
 export type {
   Bounds,
   BudgetName,
+  StopReason,
   BudgetUnit,
   Curve,
   Goal,
@@ -43,12 +47,12 @@ export type {
   PresetChoice,
   PresetCounts,
   Presets,
-  ReadResult,
+  PresetReadResult,
+  PresetWriteResult,
+  ReadPreset,
   Rule,
   Settings,
   SettingsBounds,
-  StopReason,
-  WriteResult,
 } from './lib/presets'
 export { presets } from './api/presets.wire'
 export type { Surrounds } from './lib/surrounds'

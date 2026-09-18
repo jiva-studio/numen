@@ -51,7 +51,8 @@ describe('one face, two windows', () => {
   // comparing something.
   it('draws what it was given', () => {
     expect(inTheReviewWindow('<p>plain prose</p>')).toContain('plain prose')
-    expect(inTheReviewWindow('<p>a <script>alert(1)</script> that must not survive</p>'))
-      .not.toContain('alert(1)')
+    expect(
+      inTheReviewWindow('<p>a <script>alert(1)</script> that must not survive</p>'),
+    ).not.toContain('alert(1)')
   })
 })

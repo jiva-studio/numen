@@ -35,6 +35,10 @@ const (
 
 // Goal is which value the one control steers. The value itself stands in the
 // field the goal names.
+//
+// A window spells each of these as the control it steers, so the names that
+// change on the way across are these: MINUTES_A_DAY is `minutes`, RETENTION is
+// `retention`, BY_DATE is `date`, and UNSPECIFIED is no goal at all.
 type Goal int32
 
 const (
@@ -365,7 +369,7 @@ type Settings struct {
 	// The share of cards recalled when they come round again.
 	Retention float64 `protobuf:"fixed64,6,opt,name=retention,proto3" json:"retention,omitempty"`
 	// Whether days are made to resemble each other.
-	EvenLoad bool `protobuf:"varint,7,opt,name=even_load,json=evenLoad,proto3" json:"even_load,omitempty"`
+	HasEvenLoad bool `protobuf:"varint,7,opt,name=has_even_load,json=hasEvenLoad,proto3" json:"has_even_load,omitempty"`
 	// What a day's budget is counted in. Unspecified is the default, which
 	// charges a card face once a review day.
 	Counts BudgetUnit `protobuf:"varint,8,opt,name=counts,proto3,enum=numen.v1.BudgetUnit" json:"counts,omitempty"`
@@ -463,9 +467,9 @@ func (x *Settings) GetRetention() float64 {
 	return 0
 }
 
-func (x *Settings) GetEvenLoad() bool {
+func (x *Settings) GetHasEvenLoad() bool {
 	if x != nil {
-		return x.EvenLoad
+		return x.HasEvenLoad
 	}
 	return false
 }
@@ -760,8 +764,8 @@ type Point struct {
 	// The share of the material learned by this day under the rule the settings
 	// name, and whether the pace this place sets learns every card face that can
 	// be learned by it.
-	Through float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
-	Enough  bool    `protobuf:"varint,6,opt,name=enough,proto3" json:"enough,omitempty"`
+	Through  float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
+	IsEnough bool    `protobuf:"varint,6,opt,name=is_enough,json=isEnough,proto3" json:"is_enough,omitempty"`
 	// Every budget that closed the day here. An empty list is a day that asked
 	// for every card there was, so the material itself ran out, and a budget the
 	// goal does not name is never here.
@@ -867,9 +871,9 @@ func (x *Point) GetThrough() float64 {
 	return 0
 }
 
-func (x *Point) GetEnough() bool {
+func (x *Point) GetIsEnough() bool {
 	if x != nil {
-		return x.Enough
+		return x.IsEnough
 	}
 	return false
 }
@@ -1299,7 +1303,7 @@ type CreatePresetResponse struct {
 	// Set when the preset is on disk and the index would not come level with it.
 	// The preset was made and `path` stands; search does not answer about it
 	// until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1348,9 +1352,9 @@ func (x *CreatePresetResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreatePresetResponse) GetUnlevelled() bool {
+func (x *CreatePresetResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1432,7 +1436,7 @@ type ScheduleDeckResponse struct {
 	// Set when the deck is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1481,9 +1485,9 @@ func (x *ScheduleDeckResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-func (x *ScheduleDeckResponse) GetUnlevelled() bool {
+func (x *ScheduleDeckResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1780,7 +1784,7 @@ type WritePresetResponse struct {
 	// Set when the preset is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1829,9 +1833,9 @@ func (x *WritePresetResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-func (x *WritePresetResponse) GetUnlevelled() bool {
+func (x *WritePresetResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1940,15 +1944,15 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xdf\x03\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\xe6\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
 	"\rminutes_a_day\x18\x03 \x01(\x05R\vminutesADay\x12\x1a\n" +
 	"\tnew_a_day\x18\x04 \x01(\x05R\anewADay\x12\"\n" +
 	"\rreviews_a_day\x18\x05 \x01(\x05R\vreviewsADay\x12\x1c\n" +
-	"\tretention\x18\x06 \x01(\x01R\tretention\x12\x1b\n" +
-	"\teven_load\x18\a \x01(\bR\bevenLoad\x12,\n" +
+	"\tretention\x18\x06 \x01(\x01R\tretention\x12\"\n" +
+	"\rhas_even_load\x18\a \x01(\bR\vhasEvenLoad\x12,\n" +
 	"\x06counts\x18\b \x01(\x0e2\x14.numen.v1.BudgetUnitR\x06counts\x12\x18\n" +
 	"\abacklog\x18\t \x01(\x05R\abacklog\x120\n" +
 	"\x04load\x18\n" +
@@ -1976,14 +1980,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
 	"\aunbegun\x18\n" +
-	" \x01(\x05R\aunbegun\"\xd5\x02\n" +
+	" \x01(\x05R\aunbegun\"\xda\x02\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
 	"\bretained\x18\x03 \x01(\x01R\bretained\x12\x12\n" +
 	"\x04owed\x18\x04 \x01(\x05R\x04owed\x12\x18\n" +
-	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x16\n" +
-	"\x06enough\x18\x06 \x01(\bR\x06enough\x12,\n" +
+	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x1b\n" +
+	"\tis_enough\x18\x06 \x01(\bR\bisEnough\x12,\n" +
 	"\x06closed\x18\a \x03(\x0e2\x14.numen.v1.BudgetNameR\x06closed\x12\x16\n" +
 	"\x06clears\x18\b \x01(\x05R\x06clears\x12\x18\n" +
 	"\abacklog\x18\t \x03(\x05R\abacklog\x12\x18\n" +
@@ -2014,25 +2018,21 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\"?\n" +
 	"\x13CreatePresetRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"\x84\x01\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\x89\x01\n" +
 	"\x14CreatePresetResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\"z\n" +
 	"\x13ScheduleDeckRequest\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x16\n" +
 	"\x06preset\x18\x02 \x01(\tR\x06preset\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa3\x01\n" +
+	"\x05_seen\"\xa8\x01\n" +
 	"\x14ScheduleDeckResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"'\n" +
 	"\x11ReadPresetRequest\x12\x12\n" +
@@ -2057,13 +2057,11 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa2\x01\n" +
+	"\x05_seen\"\xa7\x01\n" +
 	"\x13WritePresetResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"Y\n" +
 	"\x13ComputeCurveRequest\x12\x12\n" +
@@ -2226,7 +2224,6 @@ func file_numen_v1_presets_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
-	file_numen_v1_theme_proto_init()
 	file_numen_v1_presets_proto_msgTypes[3].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[6].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[11].OneofWrappers = []any{}

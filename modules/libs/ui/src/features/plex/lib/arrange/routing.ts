@@ -79,7 +79,7 @@ export function cutToFit(label: string, room: number, width: (label: string) => 
 }
 
 /** A fixed place on a border, so a row of edges reads as a fan. */
-function gate(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Position {
+function getEdgeAnchor(node: PlacedNode, side: 'top' | 'bottom' | 'left' | 'right'): Position {
   switch (side) {
     case 'top':
       return { x: node.x, y: node.y - node.height / 2 }
@@ -111,9 +111,9 @@ function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): bool
   return isSeparated(from, to, wanted) || !isSeparated(from, to, !wanted) ? wanted : !wanted
 }
 
-/** The control point standing out from a gate along the run. */
-function controlFrom(at: Position, isVertical: boolean, reach: number): Position {
-  return isVertical ? { x: at.x, y: at.y + reach } : { x: at.x + reach, y: at.y }
+/** The control point standing out from a getEdgeAnchor along the run. */
+function controlFrom(at: Position, vertical: boolean, reach: number): Position {
+  return vertical ? { x: at.x, y: at.y + reach } : { x: at.x + reach, y: at.y }
 }
 
 /** The same curve read from its other end. */
@@ -136,8 +136,8 @@ function curveBetween(
   const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
   const [first, second] = fromFirst ? [from, to] : [to, from]
 
-  const firstGate = gate(first, isVertical ? 'bottom' : 'right')
-  const secondGate = gate(second, isVertical ? 'top' : 'left')
+  const firstGate = getEdgeAnchor(first, isVertical ? 'bottom' : 'right')
+  const secondGate = getEdgeAnchor(second, isVertical ? 'top' : 'left')
 
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
   const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)

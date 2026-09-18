@@ -159,7 +159,7 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore
 	if _, err := os.Stat(abs); err != nil {
 		return nil, err
 	}
-	id, was, err := carried(abs, opts.serviceDir())
+	id, was, err := readIdentity(abs, opts.serviceDir())
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", abs, err)
 	}
@@ -191,7 +191,11 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 		return nil, err
 	}
 	defer root.Close()
-	return root.ReadFile(at)
+	raw, err := root.ReadFile(at)
+	if err != nil {
+		return nil, asHeld(err)
+	}
+	return raw, nil
 }
 
 // Open is one file of the store to read a part of, and how many bytes it holds.
@@ -222,12 +226,12 @@ func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, 
 // Take puts what a reader gives under a name, through the same rename every
 // other write here lands by: what a fetch was still writing when a machine
 // stopped is not a file anything reads afterwards.
-func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+func (d *DerivedStore) Take(ctx context.Context, name string, from io.Reader) (int64, error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return 0, err
 	}
-	root, at, err := d.making(target)
+	root, at, err := d.createRoot(target)
 	if err != nil {
 		return 0, err
 	}
@@ -235,19 +239,19 @@ func (d *DerivedStore) Take(_ context.Context, name string, from io.Reader) (int
 	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return 0, err
 	}
-	written, err := replace(root, at, from, 0o644)
+	written, err := replace(ctx, root, at, from, 0o644)
 	if err != nil {
 		return 0, err
 	}
 	return written.Size, settle(root, filepath.Dir(at))
 }
 
-func (d *DerivedStore) Write(_ context.Context, name string, content []byte) error {
+func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) error {
 	target, err := d.getPath(name)
 	if err != nil {
 		return err
 	}
-	root, at, err := d.making(target)
+	root, at, err := d.createRoot(target)
 	if err != nil {
 		return err
 	}
@@ -255,7 +259,7 @@ func (d *DerivedStore) Write(_ context.Context, name string, content []byte) err
 	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return err
 	}
-	if _, err := replace(root, at, bytes.NewReader(content), 0o644); err != nil {
+	if _, err := replace(ctx, root, at, bytes.NewReader(content), 0o644); err != nil {
 		return err
 	}
 	return settle(root, filepath.Dir(at))
@@ -275,7 +279,7 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 	if err != nil {
 		return err
 	}
-	root, at, err := d.making(target)
+	root, at, err := d.createRoot(target)
 	if err != nil {
 		return err
 	}
@@ -426,7 +430,7 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 	return nil
 }
 
-// still confirms the folder is the vault this store was opened on. A vault
+// checkVaultIdentity confirms the folder is the vault this store was opened on. A vault
 // carries its identity inside itself, and a folder that has lost the identity
 // it had is somewhere else: an unmounted disk, a synchroniser's stub, an empty
 // folder this store made on its way to a name.
@@ -434,11 +438,11 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 // Every name is checked, so the check is a stat of the file the identity is
 // written in: the same file, of the same length and the same age, carries the
 // identity already read out of it. Anything else is read again.
-func (d *DerivedStore) still() error {
+func (d *DerivedStore) checkVaultIdentity() error {
 	if now, err := os.Stat(configAt(d.vault, d.service)); err == nil && d.last.Load().isSameFile(now) {
 		return nil
 	}
-	id, was, err := carried(d.vault, d.service)
+	id, was, err := readIdentity(d.vault, d.service)
 	if err != nil {
 		return fmt.Errorf("%s: %w", d.vault, err)
 	}
@@ -461,10 +465,11 @@ func (d *DerivedStore) still() error {
 	return nil
 }
 
-// carried is the identity a folder holds, and nothing where it holds none. The
-// file it was read from comes back with it, stamped before the reading, so a
-// file that changed under the reading is read again at the next asking.
-func carried(root, serviceDir string) (string, *fileInfo, error) {
+// readIdentity is the identity a folder holds, and nothing where it holds
+// none. The file it was read from comes back with it, stamped before the
+// reading, so a file that changed under the reading is read again at the next
+// asking.
+func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 	if serviceDir == "" {
 		serviceDir = DefaultServiceDir
 	}
@@ -498,9 +503,9 @@ func (d *DerivedStore) openRoot(target string) (*os.Root, string, error) {
 	return root, name, nil
 }
 
-// making is the same, with the store's own folder put there if it is not. It is
-// what a write does that a read does not.
-func (d *DerivedStore) making(target string) (*os.Root, string, error) {
+// createRoot is the same, with the store's own folder put there if it is not.
+// It is what a write does that a read does not.
+func (d *DerivedStore) createRoot(target string) (*os.Root, string, error) {
 	if err := os.MkdirAll(d.root, 0o755); err != nil {
 		return nil, "", err
 	}
@@ -534,7 +539,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := d.still(); err != nil {
+	if err := d.checkVaultIdentity(); err != nil {
 		return "", err
 	}
 	// A name says which area it belongs to, and a store answers for its own
@@ -549,7 +554,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	enclosed, err := d.encloses(resolved, area)
+	enclosed, err := d.isEnclosedBy(resolved, area)
 	if err != nil {
 		return "", err
 	}
@@ -559,14 +564,14 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	return target, nil
 }
 
-// encloses says whether the store's area holds a name where it lands. A link
+// isEnclosedBy says whether the store's area holds a name where it lands. A link
 // stays inside the area it was written into, so what no name expresses no link
 // expresses either.
 //
 // The folder it is judged against is the one resolved last, and an answer
 // stands only while the store's folder is still that one. A name it refuses,
 // and a folder that has moved, are judged against where the folder is now.
-func (d *DerivedStore) encloses(resolved, area string) (bool, error) {
+func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
 	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.current(where) {
 		return true, nil
 	}

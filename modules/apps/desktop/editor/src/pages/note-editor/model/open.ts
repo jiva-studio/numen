@@ -5,16 +5,16 @@ import { computed } from 'vue'
 import { isNoteAddress } from '@numen/ui'
 import type { WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
-import type { noteChanges } from './changes'
-import type { noteKeyboard } from './keyboard'
+import type { createNoteChanges } from './changes'
+import type { createNoteKeyboard } from './keyboard'
 import type { openNotes } from '@/entities/note'
-import type { noteTitles } from './titles'
+import type { createNoteTitles } from './titles'
 import type { NoteTabDeps, NoteTabState } from '../types'
 
 type Notes = ReturnType<typeof openNotes>
-type NoteChanges = ReturnType<typeof noteChanges>
-type NoteKeyboard = ReturnType<typeof noteKeyboard>
-type NoteTitles = ReturnType<typeof noteTitles>
+type NoteChanges = ReturnType<typeof createNoteChanges>
+type NoteKeyboard = ReturnType<typeof createNoteKeyboard>
+type NoteTitles = ReturnType<typeof createNoteTitles>
 
 /** Creates the reactive state for an open note tab. */
 export function createNoteTab(

@@ -104,7 +104,7 @@ func debounce(
 				shape.rereadShape()
 			}
 			for _, event := range events {
-				paths, whole, folder := shape.concerns(event.Path())
+				paths, whole, folder := shape.getConcernedPaths(event.Path())
 				if whole {
 					// A folder that is gone takes sources with it, and their
 					// paths are known only to the index.

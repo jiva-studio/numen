@@ -113,7 +113,7 @@ const meta: Meta<Knobs> = {
               v-else
               v-model="text"
               :turns="turns"
-              :is-working="isWorking"
+              :is-working="working"
               placeholder="Ask about the vault"
               @submit="onSubmit"
             />

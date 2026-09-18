@@ -87,7 +87,7 @@ func TestTheListSaysWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
 		t.Errorf("the person's theme came off %v", shelves["mine:mine"])
 	}
 	for _, one := range answer.GetThemes() {
-		if one.GetName() == "preset:dracula" && !one.GetPinned() {
+		if one.GetName() == "preset:dracula" && !one.GetIsPinned() {
 			t.Error("a palette published in one half is not offered as pinned")
 		}
 	}

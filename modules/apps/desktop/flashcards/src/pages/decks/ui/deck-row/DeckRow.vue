@@ -13,6 +13,7 @@ import { LEARNED, STOPPED } from '../../words'
 import type { DeckCardsDue } from '@/entities/vault'
 import type { Preset } from '../../types'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   deck: DeckCardsDue
   /** Where it stands in the list, which is the letter it is picked by. */
@@ -23,14 +24,16 @@ const props = defineProps<{
   hasPresets: boolean
   /** Whether the vault has been counted. */
   isCounted: boolean
-  /** Whether a session can be started on it. */
-  canStart: boolean
+  /** Whether it can be sat down to. */
+  canOpen: boolean
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   (event: 'start'): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 /** Why the deck is not studied today, and empty while its preset schedules it. */
 const paused = computed(() => props.by?.paused ?? '')
 
@@ -64,7 +67,7 @@ const share = computed(() => {
 </script>
 
 <template>
-  <Button variant="outline" class="decks__deck" :disabled="!canStart" @click="$emit('start')">
+  <Button variant="outline" class="decks__deck" :disabled="!canOpen" @click="$emit('start')">
     <!-- The letter it is picked by, where the alphabet reaches it: a
          person reads down the list and presses what they see. -->
     <KeyCap v-if="letterOf(at)" :keys="{ icons: [], letter: letterOf(at) }" />

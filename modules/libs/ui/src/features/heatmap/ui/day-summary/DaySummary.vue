@@ -33,7 +33,7 @@ const came = computed(() => {
   <div class="day-summary" data-day-summary="account">
     <p class="day-summary__day" data-day-summary="day">{{ words.names(day.day) }}</p>
 
-    <p v-if="day.isFuture" class="day-summary__count" data-day-summary="count">
+    <p v-if="day.isAhead" class="day-summary__count" data-day-summary="count">
       {{ day.did > 0 ? `${day.did} ${words.toCome}` : words.nothing }}
     </p>
     <template v-else>

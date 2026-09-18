@@ -21,7 +21,7 @@ const createSettings = (day: string): SettingsMessage => ({
   reviewsADay: 200,
   retention: 0.9,
   load: {},
-  evenLoad: true,
+  hasEvenLoad: true,
 })
 
 const vault: VaultCardsDue = {

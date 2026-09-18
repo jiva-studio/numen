@@ -16,19 +16,19 @@ const ROWS: readonly Row[] = [
   {
     id: 'work',
     name: 'Work',
-    isHolding: true,
+    hasChildren: true,
     rows: [
       {
         id: 'plans',
         name: 'Plans',
-        isHolding: true,
-        rows: [{ id: 'friday', name: 'Friday', isHolding: false }],
+        hasChildren: true,
+        rows: [{ id: 'friday', name: 'Friday', hasChildren: false }],
       },
-      { id: 'notes', name: 'Notes', isHolding: false },
+      { id: 'notes', name: 'Notes', hasChildren: false },
     ],
   },
-  { id: 'empty', name: 'Empty', isHolding: true },
-  { id: 'loose', name: 'Loose', isHolding: false },
+  { id: 'empty', name: 'Empty', hasChildren: true },
+  { id: 'loose', name: 'Loose', hasChildren: false },
 ]
 
 /** One row every 24 down the page: work, plans, notes, empty, loose. */

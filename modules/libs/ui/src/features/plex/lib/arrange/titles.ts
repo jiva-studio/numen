@@ -9,7 +9,7 @@
  */
 import { headingOf, lengthOf, type PlacedEdge } from '../edge'
 import type { PlacedNode } from '../node'
-import { boxOf, isOverlapping, ribbonOf, runBoxes, type Box } from './boxes'
+import { boxOf, isOverlapping, getTitleBoxes, runBoxes, type Box } from './boxes'
 import { cutToFit, MIDDLE, type Routing } from './routing'
 
 /** A run of one line, as fractions of its length. */
@@ -71,7 +71,7 @@ export function settleTitles(
     }
 
     const half = found.extent / 2 / metrics.arc
-    titles.push(...ribbonOf(boxAt, found.at - half, found.at + half, STEP / metrics.arc))
+    titles.push(...getTitleBoxes(boxAt, found.at - half, found.at + half, STEP / metrics.arc))
 
     // The reading direction is the tangent where the words end up, and the
     // words of a curve taken the other way round are read from its far end.

@@ -84,7 +84,7 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** What is drawn between a row's disclosure and its name. */
-  icon(props: { id: RowId; holds: boolean; open: boolean }): unknown
+  icon(props: { id: RowId; hasChildren: boolean; open: boolean }): unknown
   /** What is said when there is nothing to draw. */
   silence(): unknown
 }>()
@@ -176,8 +176,8 @@ const {
         :key="row.id"
         :row="row"
         :name="name"
-        :selected="picked.has(row.id)"
-        :is-dragged="lifted.has(row.id)"
+        :is-selected="picked.has(row.id)"
+        :is-lifted="lifted.has(row.id)"
         :is-drop-inside="row.id === into"
         :is-drop-above="row.id === before"
         :is-tab-stop="row.id === tabbed"
@@ -192,7 +192,7 @@ const {
         @abandon="onAbandon(row.id)"
         @blur="onFieldBlur"
       >
-        <slot name="icon" :id="row.id" :holds="row.isHolding" :open="row.open" />
+        <slot name="icon" :id="row.id" :has-children="row.hasChildren" :open="row.open" />
       </TreeRow>
     </div>
 
@@ -200,7 +200,7 @@ const {
       <slot name="silence">Nothing here</slot>
     </p>
 
-    <DragPreview v-if="label" class="tree__dragged" :at="label.at" :says="label.says" />
+    <DragPreview v-if="label" class="tree__dragged" :at="label.at" :label="label.label" />
   </div>
 </template>
 

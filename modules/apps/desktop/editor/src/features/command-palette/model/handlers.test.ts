@@ -10,12 +10,14 @@ import { commandsOf } from '../lib/commands'
 import { runSupport } from './runs'
 import { invocationOf } from '../lib/invocation'
 import { createNotes } from '../lib/notes'
+import type { VaultRef } from '../types'
 import type { CommandDeps } from './deps'
 import type { CommandInvocation, CommandTarget, Store } from '../types'
 import { runInvocation } from './handlers'
 import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/entities/artifact'
+import { asFailure, asValue } from '@numen/wire'
 import type { Movement } from '@/entities/file'
-import type { RemoveResult, RenameResult } from '@/entities/note'
+import type { RemovedNote, RemoveResult, RenamedNote, RenameResult } from '@/entities/note'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
 import { WORDS } from '@/shared/words'
@@ -43,15 +45,14 @@ const createVault = (id: string, name: string): Vault => ({
   isMissing: false,
 })
 
-const createRenameResult = (over: Partial<RenameResult> = {}): RenameResult => ({
-  path: 'physics/Entropy.md',
-  title: 'Entropy',
-  hasFrontmatter: false,
-  moved: null,
-  error: null,
-  hasChanged: false,
-  ...over,
-})
+const createRenameResult = (over: Partial<RenamedNote> = {}): RenameResult =>
+  asValue({
+    path: 'physics/Entropy.md',
+    title: 'Entropy',
+    hasFrontmatter: false,
+    moved: null,
+    ...over,
+  })
 
 /** What an artifact now stands at, as the application answers it. */
 const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
@@ -61,12 +62,12 @@ const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
   error,
 })
 
-const createRemoveResult = (over: Partial<RemoveResult> = {}): RemoveResult => ({
-  trashed: '.trash/Ontology.md',
-  dangling: [],
-  error: null,
-  ...over,
-})
+const createRemoveResult = (over: Partial<RemovedNote> = {}): RemoveResult =>
+  asValue({
+    trashed: '.trash/Ontology.md',
+    dangling: [],
+    ...over,
+  })
 
 /**
  * A window that writes down everything a command asked of it, in order.
@@ -127,7 +128,7 @@ const window = (
       },
       move: async (from, to) => {
         done.push(`move ${from} ${to}`)
-        return answers.movement ?? { moved: null, error: null }
+        return answers.movement ?? { ok: true, value: null }
       },
       createFolder: async (path) => {
         done.push(`createFolder ${path}`)
@@ -198,11 +199,11 @@ const window = (
       },
       add: async (path, name) => {
         done.push(`add ${path} ${name || '—'}`)
-        return answers.added ?? { vault: createVault('heat', 'Heat'), error: null }
+        return answers.added ?? asValue(createVault('heat', 'Heat'))
       },
       rename: async (id, name) => {
         done.push(`renames vault ${id} ${name}`)
-        return answers.added ?? { vault: createVault(id, name), error: null }
+        return answers.added ?? asValue(createVault(id, name))
       },
       remove: async (id, trash) => {
         done.push(trash ? `erases ${id}` : `forgets ${id}`)
@@ -212,7 +213,7 @@ const window = (
         done.push(`opens vault ${id}`)
         return turnedDown
       },
-      showVault: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
+      setVaultName: (vault: VaultRef) => void done.push(`calls ${vault.id} ${vault.name}`),
       reload: () => void done.push('reloads'),
     },
     goes: {
@@ -538,7 +539,7 @@ describe('a note renamed', () => {
   })
 
   it('says the note was written elsewhere while this was asked', async () => {
-    const one = window({ renamed: createRenameResult({ hasChanged: true }) })
+    const one = window({ renamed: asFailure('changed' as const) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -586,7 +587,7 @@ describe('a note renamed', () => {
   })
 
   it('says the name was taken, and that the note carries the new one', async () => {
-    const one = window({ renamed: createRenameResult({ error: 'occupied' }) })
+    const one = window({ renamed: asFailure('occupied' as const) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -594,7 +595,7 @@ describe('a note renamed', () => {
   })
 
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
-    const one = window({ renamed: createRenameResult({ error: 'unreadable' }) })
+    const one = window({ renamed: asFailure('unreadable' as const) })
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
@@ -602,7 +603,7 @@ describe('a note renamed', () => {
   })
 
   it('says a name no file can be named', async () => {
-    const one = window({ renamed: createRenameResult({ error: 'unnameable' }) })
+    const one = window({ renamed: asFailure('unnameable' as const) })
 
     await carry(invocationOf('title', front(), '...'), one.on)
 
@@ -670,7 +671,7 @@ describe('a note removed', () => {
   })
 
   it('keeps the tab of a note the vault would not remove', async () => {
-    const one = window({ removed: createRemoveResult({ error: 'missing' }) })
+    const one = window({ removed: asFailure('missing' as const) })
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
@@ -678,7 +679,7 @@ describe('a note removed', () => {
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
-    const one = window({ removed: createRemoveResult({ error: 'missing' }) })
+    const one = window({ removed: asFailure('missing' as const) })
 
     await carry(invocationOf('remove', front()), one.on)
 
@@ -735,9 +736,11 @@ describe('several files removed at once', () => {
       ...one.on,
       files: {
         ...one.on.files,
-        remove: async (path, isPermanent) => {
-          one.done.push(`remove ${path} ${isPermanent}`)
-          return createRemoveResult(path === 'physics/Ontology.md' ? { error: 'missing' } : {})
+        remove: async (path, destroy) => {
+          one.done.push(`remove ${path} ${destroy}`)
+          return path === 'physics/Ontology.md'
+            ? asFailure('missing' as const)
+            : createRemoveResult()
         },
       },
     }
@@ -784,7 +787,7 @@ describe('a file filed somewhere else', () => {
   })
 
   it('stays where it is where something of that name is filed there', async () => {
-    const one = window({ movement: { moved: null, error: 'occupied' } })
+    const one = window({ movement: { ok: false, error: 'occupied' } })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
@@ -792,7 +795,7 @@ describe('a file filed somewhere else', () => {
   })
 
   it('says nothing of a note renamed, which is what a move is not', async () => {
-    const one = window({ movement: { moved: null, error: 'occupied' } })
+    const one = window({ movement: { ok: false, error: 'occupied' } })
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
@@ -968,7 +971,7 @@ describe('a vault made', () => {
   })
 
   it('says a folder that lies inside a vault already added', async () => {
-    const one = window({ added: { vault: null, error: 'overlaps' } })
+    const one = window({ added: asFailure('overlaps') })
 
     await carry(invocationOf('newVault', front()), one.on)
 
@@ -994,7 +997,7 @@ describe('a vault renamed', () => {
   })
 
   it('says a name another vault is already called', async () => {
-    const one = window({ added: { vault: null, error: 'nameTaken' } })
+    const one = window({ added: asFailure('nameTaken') })
 
     await carry(invocationOf('renameVault', front(), 'Heat'), one.on)
 

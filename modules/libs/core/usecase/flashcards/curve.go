@@ -151,7 +151,7 @@ func (u ProjectCurve) Execute(
 	out.Stops = p.GetOverallStopReason(u.Day, now)
 	out.Decks = mine
 	out.Cards = len(under)
-	out.Overdue = review.Overdue(u.Day, at, now)
+	out.Overdue = review.CountOverdue(u.Day, at, now)
 	out.Unbegun = unseen
 	return out, nil
 }

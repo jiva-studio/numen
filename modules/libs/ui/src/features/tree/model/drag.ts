@@ -59,7 +59,7 @@ export interface RowDragState {
   /** What follows the pointer, and nothing until a press has become a drag. */
   readonly label: ComputedRef<DragLabel | null>
   /** Whether the press being made has travelled far enough to be a drag. */
-  readonly moved: ComputedRef<boolean>
+  readonly hasMoved: ComputedRef<boolean>
   /** Where a drop would land, for the tree to mark itself with. */
   readonly at: Readonly<Ref<RowLanding | null>>
   /** A press on a row, which a move turns into a drag. */
@@ -83,12 +83,12 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
 
   const lifted = computed(() => new Set(position.value ? (dragging.value?.item ?? []) : []))
 
-  const moved = computed(() => dragging.value?.isMoved === true)
+  const hasMoved = computed(() => dragging.value?.hasMoved === true)
 
   const label = computed<DragLabel | null>(() => {
     const held = dragging.value
     const where = position.value
-    if (!held?.isMoved || !where) return null
+    if (!held?.hasMoved || !where) return null
     return dragLabel(options.getShownRows(), held.item, where, options.getCountWords())
   })
 
@@ -110,5 +110,5 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     return isRefused(options.getRows(), rows, holderOf(shown, found)) ? null : found
   }
 
-  return { into, before, lifted, label, moved, at, lift }
+  return { into, before, lifted, label, hasMoved, at, lift }
 }

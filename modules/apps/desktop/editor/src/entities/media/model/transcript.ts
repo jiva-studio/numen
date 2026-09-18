@@ -6,7 +6,7 @@
 import type { Span } from '@/shared/span'
 import { computed, ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import { answerGuard as latest } from '@/shared/questions'
+import { createAnswerGuard as latest } from '@/shared/questions'
 import { findCueAt, getText, type Cue } from '../lib/cues'
 import { useTranscriptDraft } from './draft'
 import { useTranscriptLines } from './lines'

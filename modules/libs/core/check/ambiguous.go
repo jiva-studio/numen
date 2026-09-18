@@ -22,7 +22,7 @@ import (
 type ambiguousCheck struct{ queries port.ProblemQueries }
 
 func (ambiguousCheck) Name() domain.Check { return domain.CheckAmbiguous }
-func (ambiguousCheck) Quiet() bool        { return false }
+func (ambiguousCheck) IsQuiet() bool      { return false }
 
 func (c ambiguousCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
 	found, err := c.queries.Ambiguous(ctx, v.ID)

@@ -31,7 +31,7 @@ import { replace } from '../lib/replace'
 const props = withDefaults(
   defineProps<{
     /** Marks are drawn as what they mean. Off, the text is shown as written. */
-    isLivePreview?: boolean
+    isLive?: boolean
     /**
      * What the whole document is written in, by the name a fence would use. A
      * document naming none is markdown, and one naming a language is set in the
@@ -55,7 +55,7 @@ const props = withDefaults(
     extensions?: Extension
   }>(),
   {
-    isLivePreview: true,
+    isLive: true,
     language: '',
     readonly: false,
     placeholder: 'Write',
@@ -89,7 +89,7 @@ onMounted(() => {
       doc: text.value,
       extensions: [
         setup({
-          isLivePreview: props.isLivePreview,
+          isLivePreview: props.isLive,
           readonly: props.readonly,
           placeholder: props.placeholder,
           name: props.name,
@@ -123,7 +123,7 @@ watch(text, (fresh) => {
 })
 
 watch(
-  () => props.isLivePreview,
+  () => props.isLive,
   (on) => view?.dispatch({ effects: drawing.reconfigure(preview(on)) }),
 )
 

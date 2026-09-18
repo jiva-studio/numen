@@ -21,7 +21,11 @@ const LAYERS = ['halo', 'letters'] as const
 </script>
 
 <template>
-  <g v-if="line.titlePath" class="plex__edge-title" :class="{ 'plex__edge-title--lifted': isRaised }">
+  <g
+    v-if="line.titlePath"
+    class="plex__edge-title"
+    :class="{ 'plex__edge-title--lifted': isRaised }"
+  >
     <text
       v-for="layer in LAYERS"
       :key="layer"

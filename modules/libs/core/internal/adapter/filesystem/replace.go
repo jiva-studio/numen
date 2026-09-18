@@ -5,6 +5,7 @@
 package filesystem
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -75,7 +76,7 @@ func temporary(root *os.Root, dir, pattern string) (*os.File, string, error) {
 // The fingerprint comes from the temporary file's own descriptor. The rename
 // carries the file across whole, so its size and its modification time are the
 // ones at the target from the moment the rename lands.
-func replace(root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.Fingerprint, error) {
+func replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.Fingerprint, error) {
 	dir := filepath.Dir(target)
 	tmp, at, err := temporary(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
@@ -105,7 +106,7 @@ func replace(root *os.Root, target string, from io.Reader, mode fs.FileMode) (do
 	if err := tmp.Close(); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	if err := rename(root, at, target); err != nil {
+	if err := rename(ctx, root, at, target); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	written := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}

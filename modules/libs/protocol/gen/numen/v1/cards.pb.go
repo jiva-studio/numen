@@ -961,7 +961,7 @@ type CreateStencilResponse struct {
 	// Set when the stencil is on disk and the index would not come level with it.
 	// The stencil was made and `path` stands; search does not answer about it
 	// until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1010,9 +1010,9 @@ func (x *CreateStencilResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreateStencilResponse) GetUnlevelled() bool {
+func (x *CreateStencilResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1228,7 +1228,7 @@ type WriteStencilResponse struct {
 	// Set when the stencil is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1277,9 +1277,9 @@ func (x *WriteStencilResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-func (x *WriteStencilResponse) GetUnlevelled() bool {
+func (x *WriteStencilResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1375,7 +1375,7 @@ type RenameStencilFieldResponse struct {
 	// Set when the rename reached the vault and the index would not come level
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
-	Unlevelled    bool `protobuf:"varint,6,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,6,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1445,9 +1445,9 @@ func (x *RenameStencilFieldResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-func (x *RenameStencilFieldResponse) GetUnlevelled() bool {
+func (x *RenameStencilFieldResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1570,7 +1570,7 @@ type CreateDeckResponse struct {
 	// Set when the deck is on disk and the index would not come level with it.
 	// The deck was made and `path` stands; search does not answer about it until
 	// a walk goes past.
-	Unlevelled    bool `protobuf:"varint,3,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1619,9 +1619,9 @@ func (x *CreateDeckResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreateDeckResponse) GetUnlevelled() bool {
+func (x *CreateDeckResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1854,7 +1854,7 @@ type WriteDeckResponse struct {
 	// Set when the deck is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
-	Unlevelled    bool `protobuf:"varint,4,opt,name=unlevelled,proto3" json:"unlevelled,omitempty"`
+	IsUnlevelled  bool `protobuf:"varint,4,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1910,9 +1910,9 @@ func (x *WriteDeckResponse) GetBound() int64 {
 	return 0
 }
 
-func (x *WriteDeckResponse) GetUnlevelled() bool {
+func (x *WriteDeckResponse) GetIsUnlevelled() bool {
 	if x != nil {
-		return x.Unlevelled
+		return x.IsUnlevelled
 	}
 	return false
 }
@@ -1978,13 +1978,11 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x14CreateStencilRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x16\n" +
-	"\x06fields\x18\x03 \x03(\tR\x06fields\"\x85\x01\n" +
+	"\x06fields\x18\x03 \x03(\tR\x06fields\"\x8a\x01\n" +
 	"\x15CreateStencilResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\"(\n" +
 	"\x12ReadStencilRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\xc0\x01\n" +
@@ -2003,13 +2001,11 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x1a\n" +
 	"\bpreamble\x18\x05 \x01(\tR\bpreamble\x12\x12\n" +
 	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xa3\x01\n" +
+	"\x05_seen\"\xa8\x01\n" +
 	"\x14WriteStencilResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"\x8c\x01\n" +
 	"\x19RenameStencilFieldRequest\x12\x12\n" +
@@ -2017,17 +2013,15 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04from\x18\x02 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x03 \x01(\tR\x02to\x12.\n" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\x8f\x02\n" +
+	"\x05_seen\"\x94\x02\n" +
 	"\x1aRenameStencilFieldResponse\x12\x14\n" +
 	"\x05decks\x18\x01 \x03(\tR\x05decks\x12\x14\n" +
 	"\x05cards\x18\x02 \x01(\x05R\x05cards\x128\n" +
 	"\vnot_written\x18\x03 \x03(\v2\x17.numen.v1.UnwrittenDeckR\n" +
 	"notWritten\x12.\n" +
 	"\x05error\x18\x04 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x05 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x06 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x02at\x18\x05 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x06 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"P\n" +
 	"\rUnwrittenDeck\x12\x12\n" +
@@ -2035,13 +2029,11 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\aproblem\x18\x02 \x01(\v2\x11.numen.v1.ProblemR\aproblem\"=\n" +
 	"\x11CreateDeckRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"\x82\x01\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"\x87\x01\n" +
 	"\x12CreateDeckResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x03 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
+	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\"%\n" +
 	"\x0fReadDeckRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\xc7\x01\n" +
@@ -2060,14 +2052,12 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\bsections\x18\x04 \x03(\v2\x11.numen.v1.SectionR\bsections\x12.\n" +
 	"\x04seen\x18\x05 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x12\n" +
 	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xb6\x01\n" +
+	"\x05_seen\"\xbb\x01\n" +
 	"\x11WriteDeckResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x14\n" +
-	"\x05bound\x18\x03 \x01(\x03R\x05bound\x12\x1e\n" +
-	"\n" +
-	"unlevelled\x18\x04 \x01(\bR\n" +
-	"unlevelledB\b\n" +
+	"\x05bound\x18\x03 \x01(\x03R\x05bound\x12#\n" +
+	"\ris_unlevelled\x18\x04 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at*\xbb\x02\n" +
 	"\x05Fault\x12\x15\n" +

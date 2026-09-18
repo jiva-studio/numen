@@ -66,7 +66,7 @@ func (a *API) WriteNote(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: fingerprintOf(at), Unlevelled: behind,
+			At: fingerprintOf(at), IsUnlevelled: behind,
 		}), nil
 	}
 	reason, refused := wire.ErrorCodeBy(err)
@@ -108,7 +108,7 @@ func (a *API) CreateNote(
 		// after the write is the index catching up, and the watcher does it
 		// again.
 		return connect.NewResponse(&v1.CreateNoteResponse{
-			Path: made.Path, Unlevelled: behind,
+			Path: made.Path, IsUnlevelled: behind,
 		}), nil
 	}
 	if err == nil {
@@ -130,7 +130,7 @@ func (a *API) WriteLink(
 	if err != nil {
 		return nil, err
 	}
-	link, err := a.newDomainLink(ctx, r.Msg.GetLink())
+	link, err := a.toDomainLink(ctx, r.Msg.GetLink())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -203,12 +203,12 @@ func (a *API) GetNeighbourhood(
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
-			Note:    noteOf(related.NoteRef),
-			Seat:    seatOf(related.Seat),
-			Label:   related.Label,
-			Through: related.Parent,
-			Mutual:  related.IsMutual,
-			Type:    typeOf(types[related.Path]),
+			Note:     noteOf(related.NoteRef),
+			Seat:     seatOf(related.Seat),
+			Label:    related.Label,
+			Through:  related.Parent,
+			IsMutual: related.IsMutual,
+			Type:     typeOf(types[related.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -240,11 +240,11 @@ func (a *API) ResolveAddresses(
 		said[written] = true
 		vault, crossed := one.InVault(showing.ID)
 		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
-			Written:   written,
-			Path:      one.To,
-			Vault:     string(vault),
-			Crossed:   crossed,
-			Ambiguous: one.IsAmbiguous,
+			Written:     written,
+			Path:        one.To,
+			Vault:       string(vault),
+			IsCrossed:   crossed,
+			IsAmbiguous: one.IsAmbiguous,
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -258,7 +258,7 @@ func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, er
 	}
 	out := make([]domain.Link, 0, len(links))
 	for _, l := range links {
-		link, err := a.newDomainLink(ctx, l)
+		link, err := a.toDomainLink(ctx, l)
 		if err != nil {
 			return nil, err
 		}
@@ -272,7 +272,7 @@ func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, er
 // The window names the note at the other end by the path it is filed under.
 // How much of that path the link carries is `note.GetAddress`: a name where it
 // means one note, and the path where it would mean another.
-func (a *API) newDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
+func (a *API) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := roleOf(l.GetRole())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())

@@ -71,7 +71,7 @@ func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
 	if answer.Msg.GetAt() == nil {
 		t.Error("the save landed and the client was handed no fingerprint")
 	}
-	if !answer.Msg.GetUnlevelled() {
+	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the save is answered as findable and search does not hold it")
 	}
 	if held := onDisk(t, f.root, "Note.md"); !strings.Contains(held, "what the person typed") {
@@ -103,7 +103,7 @@ func TestADeckWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	if answer.Msg.GetAt() == nil {
 		t.Error("the deck was written and the client was handed no fingerprint")
 	}
-	if !answer.Msg.GetUnlevelled() {
+	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the deck is answered as findable and search does not hold it")
 	}
 	if held := onDisk(t, f.root, "Animals.md"); strings.Contains(held, "Alpaca") {
@@ -135,7 +135,7 @@ func TestAStencilWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	if answer.Msg.GetAt() == nil {
 		t.Error("the stencil was written and the client was handed no fingerprint")
 	}
-	if !answer.Msg.GetUnlevelled() {
+	if !answer.Msg.GetIsUnlevelled() {
 		t.Error("the stencil is answered as findable and search does not hold it")
 	}
 	if held := onDisk(t, f.root, "cards/Animal.md"); !strings.Contains(held, "at the shoulder") {
@@ -157,7 +157,7 @@ func TestASaveTheIndexCameLevelWithSaysNothingIsBehind(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetUnlevelled() {
+	if answer.Msg.GetIsUnlevelled() {
 		t.Error("a save the index came level with is answered as behind")
 	}
 	if at := findLevellingTask(t, f); at != nil {

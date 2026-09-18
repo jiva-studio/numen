@@ -39,6 +39,12 @@ export default tseslint.config(
       },
     },
     rules: {
+      // Nothing here logs. What a person can act on is said in the window, on
+      // the task list, or on the stream whoever started the process reads. A
+      // message that exists only on the console is one the window decided not
+      // to say.
+      'no-console': 'error',
+
       // A promise nobody waits for finishes somewhere nobody is looking.
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
@@ -166,10 +172,9 @@ export default tseslint.config(
           patterns: [
             {
               group: [
-                '@numen/protocol',
-                '@numen/protocol/*',
-                '@numen/editor',
-                '@numen/wire',
+                '@numen/*',
+                '@numen/*/**',
+                '!@numen/ui',
                 // The same packages named by the path the install put them at.
                 '**/node_modules/@numen/**',
               ],
@@ -278,6 +283,8 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/await-thenable': 'off',
+      // A story standing alone may print what it measured.
+      'no-console': 'off',
       // A test double for a stream that fails before it yields anything.
       'require-yield': 'off',
     },

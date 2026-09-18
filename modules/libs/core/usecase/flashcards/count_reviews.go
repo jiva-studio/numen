@@ -125,7 +125,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 			}
 		}
 		now.Runs = append(now.Runs, one)
-		if opened && !ran.IsGone && !ran.IsShut {
+		if opened && !ran.IsGone && !ran.IsUnreadable {
 			held.Answers = append(held.Answers, ran.Answers...)
 			held.Files = append(held.Files, port.Entry{Name: file.Name, Size: ran.Size})
 		}

@@ -41,7 +41,7 @@ export interface SessionStart {
     heading: string
     front: string
     back: string
-    seen: boolean
+    isSeen: boolean
     ahead?: { again: bigint; hard: bigint; good: bigint; easy: bigint } | undefined
   }[]
   unwritten: readonly string[]
@@ -219,7 +219,7 @@ const createCardFace = (one: SessionStart['asked'][number]): CardFace => ({
   heading: one.heading,
   front: one.front,
   back: one.back,
-  isSeen: one.seen,
+  isSeen: one.isSeen,
   ahead: one.ahead
     ? ({
         again: Number(one.ahead.again),

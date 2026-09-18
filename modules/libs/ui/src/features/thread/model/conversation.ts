@@ -8,8 +8,8 @@
  * them all as one.
  */
 import { ref, type Ref } from 'vue'
-import { onNextFrame } from '@/shared/lib/clock'
-import { createAnswer, type Paint } from './answer'
+import { onNextFrame, type Paint } from '@/shared/lib/clock'
+import { createAnswer } from './answer'
 import { createWorkLine } from './work'
 import type { Turn } from '../lib/turn'
 import type { AgentPort, AgentStep, SourceLocation } from '../lib/agent'
@@ -29,7 +29,7 @@ export interface Conversation {
   /** An answer is being written; the composer shows it. */
   readonly isWorking: Ref<boolean>
   readonly ask: (question: string, focus: string) => Promise<void>
-  /** Where in a source one line was working, for a line that says it opens one. */
+  /** Where in a source one line was isWorking, for a line that says it opens one. */
   readonly getSourceLocation: (turn: string) => SourceLocation | null
   /** The answer on its way is let go of, and the conversation keeps what arrived. */
   readonly stop: () => void
@@ -50,7 +50,7 @@ export function useConversation(
   const turns = ref<Turn[]>([])
   const isWorking = ref(false)
 
-  /** Where in a source each line about work was working, under the line's name. */
+  /** Where in a source each line about work was isWorking, under the line's name. */
   const locations = new Map<string, SourceLocation>()
 
   let next = 0
@@ -115,8 +115,8 @@ export function useConversation(
           case 'toolCall':
             answer.settle()
             work.setWaiting(false)
-            calls.add(`${step.tool}\u0000${step.about}`)
-            work.reach(step.tool, step.about, step.place, step.written)
+            calls.add(`${step.tool}\u0000${step.subject}`)
+            work.reach(step.tool, step.subject, step.place, step.written)
             break
 
           // A tool answered. Which one is not said, so with one call in hand the

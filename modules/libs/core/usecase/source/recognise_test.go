@@ -186,7 +186,7 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, er
 	return append(out, ocr.Block{
 		Label: "text",
 		Text:  said,
-		Boxes: []ocr.Box{{Rect: image.Rect(10, 20, 30, 40), Span: domain.Span{To: len(said)}}},
+		Boxes: []ocr.Box{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(said)}}},
 	}), nil
 }
 
@@ -500,7 +500,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := highlight.Pack([]highlight.Box{{Page: 2, Span: domain.Span{From: 9000, To: 9007}}})
+	stray := highlight.Pack([]highlight.Box{{Page: 2, ByteSpan: domain.ByteSpan{From: 9000, To: 9007}}})
 	if err := shelf.Append(t.Context(), text.Boxes("ocr", documentHash()), stray); err != nil {
 		t.Fatal(err)
 	}

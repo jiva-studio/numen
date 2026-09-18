@@ -216,7 +216,7 @@ export const GivingItBack: Story = {
 }
 
 /**
- * Asked for inside a box that clips everything in it, at the corner furthest
+ * Asked for inside a box that clips everything in it, at the corner getFurthest
  * from where a menu would like to open.
  *
  * This is the whole reason the menu is drawn where it is drawn. In jsdom

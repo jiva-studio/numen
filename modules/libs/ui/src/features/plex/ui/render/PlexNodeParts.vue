@@ -7,12 +7,12 @@
  */
 import { computed, ref, watch } from 'vue'
 import { PlexPart } from './plex-part'
-import type { HungParts } from '../../lib/inside'
+import type { NodeParts } from '../../lib/inside'
 import { getOpenParts, scrollBy, type Arrow } from '../../lib/open'
 
 const props = defineProps<{
   /** The parts and the room they are given. */
-  hung: HungParts
+  hung: NodeParts
   /** How far the box they hang from has opened, from nothing to the whole way. */
   open: number
 }>()

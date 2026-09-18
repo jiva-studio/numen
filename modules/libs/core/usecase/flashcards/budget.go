@@ -409,9 +409,9 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 			time.Duration(len(q.fresh))*one.cost.New + spent.Took)
 	}
 	keeps := one.admits.Keeps
-	reviews = review.GetShares(keeps.Reviews, reviews)
-	begun = review.GetShares(keeps.New, begun)
-	minutes = review.GetShares(int(keeps.Minutes*float64(time.Minute)), minutes)
+	reviews = review.DivideBudget(keeps.Reviews, reviews)
+	begun = review.DivideBudget(keeps.New, begun)
+	minutes = review.DivideBudget(int(keeps.Minutes*float64(time.Minute)), minutes)
 
 	out := make([]allowance, len(decks))
 	for at, q := range decks {

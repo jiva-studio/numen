@@ -13,7 +13,7 @@ A vault holds notes and books together, and the index answers over both at once.
 
 ### One table holds everything with text, and `kind` says which
 
-A note, a book, a document, a recording, and a url are kinds of source. Every indexable file or address is a `sources` row, and `kind` says which sort it is (`note`, `book`, `document`, `recording`, `url`).
+A note, a book, a recording, and a url are kinds of source. Every indexable file or address is a `sources` row, and `kind` says which sort it is (`note`, `book`, `recording`, `url`).
 
 What only a note has — its title, its identifier, its frontmatter and the basename a link reaches it by — sits beside the source in a table of its own, under the same row number. Chunks and vectors hang on the source.
 

@@ -279,7 +279,7 @@ func (e *extracted) textOf(ctx context.Context, path, from, hash string) (string
 
 	doc, err := e.of.GetDocument(ctx, path, from, hash)
 	switch {
-	case port.NoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, text.ErrUnreadable):
+	case port.IsNoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, text.ErrUnreadable):
 		return "", false, nil
 	case err != nil:
 		return "", false, fmt.Errorf("read %s: %w", path, err)

@@ -14,12 +14,12 @@ defineProps<{
   /** What this row is addressed by. */
   id: string
   /** Whether the keyboard stands on it. */
-  isHighlighted: boolean
+  isCurrent: boolean
 }>()
 
 const emit = defineEmits<{
   /** The pointer crossed the row, and the move that took it there. */
-  (event: 'point-at', moved: PointerEvent): void
+  (event: 'point-at', hasMoved: PointerEvent): void
   /** The row was pressed, and whether the second action was asked for. */
   (event: 'choose', second: boolean): void
 }>()
@@ -34,9 +34,9 @@ defineSlots<{
     :id="id"
     class="palette__item rounded-node flex items-center gap-2 px-2 py-1.5"
     role="option"
-    :aria-selected="isHighlighted"
+    :aria-selected="isCurrent"
     :aria-disabled="row.item.disabled || undefined"
-    :data-here="isHighlighted || undefined"
+    :data-here="isCurrent || undefined"
     :data-disabled="row.item.disabled || undefined"
     @pointermove="emit('point-at', $event)"
     @pointerdown.prevent

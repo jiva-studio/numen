@@ -53,10 +53,8 @@ export const rowsAndColumns: Placement = {
     // One clearance for every column, measured against the rows alone.
     //
     // Against the rows, because a column on one side is not something the
-    // column on the other side has to clear. One clearance, because a short
-    // column worked out on its own reach would sit nearer the focus than a
-    // tall one, and the plex would be lopsided for a reason no reader could
-    // see — the two sides are read as a pair.
+    // column on the other side has to clear. One clearance for both: the two
+    // sides are read as a pair.
     const rowsPlaced = [...placed]
     const reach = Math.max(
       0,

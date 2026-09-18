@@ -14,9 +14,9 @@ const props = withDefaults(
   defineProps<{
     pane: Pane
     /** The pane a tab would open into. */
-    focused?: boolean
+    isFocused?: boolean
   }>(),
-  { focused: false },
+  { isFocused: false },
 )
 
 const emit = defineEmits<{
@@ -70,7 +70,7 @@ watch(
   <section
     class="pane numen bg-surface text-ink flex min-h-0 min-w-0 flex-col"
     :data-workspace-pane="pane.id"
-    :data-focused="focused || undefined"
+    :data-focused="isFocused || undefined"
     @pointerdown="claim"
   >
     <!-- The strip is the list of tabs. A pane holding no tabs has none. -->
@@ -78,7 +78,7 @@ watch(
       v-if="pane.tabs.length > 0"
       ref="strip"
       :pane="pane"
-      :focused="focused"
+      :is-focused="isFocused"
       @choose="emit('choose', $event)"
       @close="emit('close', $event)"
       @lift="(tab, at) => emit('lift', tab, at)"

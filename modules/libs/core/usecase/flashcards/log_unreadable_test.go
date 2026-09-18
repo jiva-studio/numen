@@ -28,7 +28,7 @@ func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a file nobody may open refused the whole history: %v", err)
 	}
-	if !ran.IsShut || ran.Skipped != 1 || len(ran.Answers) != 0 {
+	if !ran.IsUnreadable || ran.Skipped != 1 || len(ran.Answers) != 0 {
 		t.Errorf("the run came back as %+v", ran)
 	}
 }
@@ -53,5 +53,20 @@ func TestARunThatWouldNotBeReadForAnyOtherReasonIsTrouble(t *testing.T) {
 
 	if _, err := (Log{}).ReadFile(t.Context(), store, port.Entry{Name: "run.jsonl"}); err == nil {
 		t.Error("a store that could not answer was taken as a run that was read")
+	}
+}
+
+// A run file another program holds open is one run of the log that could not be
+// acted on. A synchroniser and a backup reader each hold a file for moments at a
+// time, and the store says so in one word whatever the system underneath it is.
+func TestARunHeldByAnotherProgramIsOneSkippedRun(t *testing.T) {
+	store := answering{why: fmt.Errorf("run.jsonl: %w", port.ErrHeldByAnother)}
+
+	ran, err := Log{}.ReadFile(t.Context(), store, port.Entry{Name: "run.jsonl"})
+	if err != nil {
+		t.Fatalf("a file another program holds refused the whole history: %v", err)
+	}
+	if !ran.IsUnreadable || ran.Skipped != 1 || len(ran.Answers) != 0 {
+		t.Errorf("the run came back as %+v", ran)
 	}
 }

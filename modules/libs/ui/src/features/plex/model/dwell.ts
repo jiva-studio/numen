@@ -43,8 +43,8 @@ export function getWideBox(
   const width = Math.min(room, viewport.width - 2 * margin)
   if (width <= node.width) return null
 
-  const furthest = viewport.width / 2 - margin - width / 2
-  const middle = Math.min(Math.max(node.x, -furthest), furthest)
+  const getFurthest = viewport.width / 2 - margin - width / 2
+  const middle = Math.min(Math.max(node.x, -getFurthest), getFurthest)
   return { width, offset: middle - node.x }
 }
 

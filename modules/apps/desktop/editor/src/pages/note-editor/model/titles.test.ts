@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { noteTitles, type NoteTitlesDeps } from './titles'
+import { createNoteTitles, type NoteTitlesDeps } from './titles'
 import type { openNotes, State } from '@/entities/note'
 
 /** A vault that answers with the heading written into each note. */
@@ -42,13 +42,13 @@ const notes = () => {
 
 describe('what a note is called', () => {
   it('is the path it is filed at while nothing has named it', () => {
-    const names = noteTitles(vault(), notes().store)
+    const names = createNoteTitles(vault(), notes().store)
 
     expect(names.getTitle('Deep/Note.md')).toBe('Deep/Note.md')
   })
 
   it('is what the window called it', () => {
-    const names = noteTitles(vault(), notes().store)
+    const names = createNoteTitles(vault(), notes().store)
 
     names.setTitle('Deep/Note.md', 'A note')
 
@@ -57,7 +57,7 @@ describe('what a note is called', () => {
 
   it('is the heading the vault reads out of it once what was typed has landed', async () => {
     const store = notes()
-    const names = noteTitles(vault({ 'Note.md': 'What it is about' }), store.store)
+    const names = createNoteTitles(vault({ 'Note.md': 'What it is about' }), store.store)
     names.setTitle('Note.md', 'Untitled note')
 
     store.setState('Note.md', 'clean')
@@ -68,7 +68,7 @@ describe('what a note is called', () => {
 
   it('is not asked for again while the note is still being written', async () => {
     const store = notes()
-    const names = noteTitles(vault({ 'Note.md': 'What it is about' }), store.store)
+    const names = createNoteTitles(vault({ 'Note.md': 'What it is about' }), store.store)
     names.setTitle('Note.md', 'Untitled note')
 
     store.setState('Note.md', 'unsaved')
@@ -80,7 +80,7 @@ describe('what a note is called', () => {
 
   it('is the name it had when the vault cannot answer', async () => {
     const store = notes()
-    const names = noteTitles(vault(), store.store)
+    const names = createNoteTitles(vault(), store.store)
     names.setTitle('Note.md', 'Untitled note')
 
     store.setState('Note.md', 'clean')
@@ -93,7 +93,7 @@ describe('what a note is called', () => {
   it('is asked for again at the file a note moved to, and follows the rename', async () => {
     const store = notes()
     const said = vault({ 'Note.md': 'What it is about', 'Renamed.md': 'Renamed' })
-    const names = noteTitles(said, store.store)
+    const names = createNoteTitles(said, store.store)
     store.setState('Note.md', 'clean')
     await nextTick()
     await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('What it is about'))
@@ -106,7 +106,7 @@ describe('what a note is called', () => {
 
   it('is asked for at the file a note moved to once it settles there', async () => {
     const store = notes()
-    const names = noteTitles(vault({ 'Renamed.md': 'Renamed' }), store.store)
+    const names = createNoteTitles(vault({ 'Renamed.md': 'Renamed' }), store.store)
     names.setTitle('Note.md', 'Untitled note')
     store.setState('Note.md', 'unsaved')
     store.moveNote('Note.md', 'Renamed.md')
@@ -120,7 +120,7 @@ describe('what a note is called', () => {
   })
 
   it('is forgotten with the note, so a name is not left behind it', () => {
-    const names = noteTitles(vault(), notes().store)
+    const names = createNoteTitles(vault(), notes().store)
     names.setTitle('Note.md', 'A note')
 
     names.forgetTab('Note.md')

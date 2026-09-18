@@ -52,9 +52,10 @@ export function useOpenTabs({ core, held }: OpenTabsDeps) {
   watch(
     open,
     (now) => {
-      void core.writeOpenTabs(now).catch((error) => {
-        console.error('what the window has open was not told:', error)
-      })
+      // A list that did not reach the core is written again by the next tab
+      // opened, closed or moved, and the window draws from its own state
+      // meanwhile. There is nothing here for a person to do.
+      void core.writeOpenTabs(now).catch(() => {})
     },
     { immediate: true },
   )

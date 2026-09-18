@@ -466,7 +466,7 @@ func put(
 			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
 		}
-		if err := writeOpenings(ctx, tx, row, c); err != nil {
+		if err := writeSectionNames(ctx, tx, row, c); err != nil {
 			return 0, err
 		}
 		return row, nil
@@ -481,15 +481,15 @@ func put(
 	if _, err := tx.ExecContext(ctx, stmt.Get("insert_fts"), row, c.Text); err != nil {
 		return 0, fmt.Errorf("index a chunk for the words in it: %w", err)
 	}
-	if err := writeOpenings(ctx, tx, row, c); err != nil {
+	if err := writeSectionNames(ctx, tx, row, c); err != nil {
 		return 0, err
 	}
 	return row, nil
 }
 
-// writeOpenings keeps the names of the sections one chunk begins, so a section
-// can be found by its name and answer with the chunk it writeOpenings.
-func writeOpenings(ctx context.Context, tx *writing.Transaction, row int64, c Chunk) error {
+// writeSectionNames keeps the names of the sections one chunk begins, so a section can be
+// found by its name and answer with the chunk it opens.
+func writeSectionNames(ctx context.Context, tx *writing.Transaction, row int64, c Chunk) error {
 	if len(c.Opens) == 0 {
 		return nil
 	}

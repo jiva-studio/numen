@@ -72,9 +72,9 @@ export const renameNoteCommand = async (
   const tab = await settleTab(invocation.path, on)
   if (tab.isWaiting) return on.writeMessage(words.unanswered, 'caution')
   const answer = await on.files.rename(invocation.path, invocation.name)
-  if (answer.hasChanged) return on.writeMessage(words.stale, 'caution')
-  const error = answer.error
-  if (error) on.writeMessage(words.errors[error], 'error')
+  if (answer.ok) return
+  if (answer.error === 'changed') return on.writeMessage(words.stale, 'caution')
+  on.writeMessage(words.errors[answer.error], 'error')
 }
 
 /**
@@ -90,9 +90,9 @@ export const moveFileCommand = async (
   const tab = await settleTab(invocation.path, on)
   if (tab.isWaiting) return on.writeMessage(words.unanswered, 'caution')
   const answer = await on.files.move(invocation.path, invocation.name)
-  const error = answer.error
-  if (error === 'occupied') return on.writeMessage(words.occupied, 'error')
-  if (error) on.writeMessage(words.errors[error], 'error')
+  if (answer.ok) return
+  if (answer.error === 'occupied') return on.writeMessage(words.occupied, 'error')
+  on.writeMessage(words.errors[answer.error], 'error')
 }
 
 /** An empty folder, made under the path that was typed. */

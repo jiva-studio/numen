@@ -18,7 +18,7 @@ const DOTS = 3
   --rise: 0.1875rem;
   /* Each dot rises a third of a cycle behind the one before it, so they read
      left to right. */
-  --cycle: 1200ms;
+  --cycle: var(--numen-wait-dots);
 
   display: inline-flex;
   align-items: center;

@@ -237,8 +237,7 @@ type Recogniser interface {
 	IsRunning() bool
 	// Start reads one document behind whoever asked, and says whether it began
 	// now or waits behind the reading already going. A document is never
-	// refused, and it runs under the application rather than under the call
-	// that asked for it.
+	// refused, and what it starts runs under the application.
 	Start(v domain.Vault, path string) port.StartOutcome
 }
 
@@ -253,7 +252,6 @@ type Transcriber interface {
 	Ready() bool
 	// Start listens to one recording behind whoever asked, and says whether it
 	// began now or waits behind the listening already going. A recording is
-	// never refused, and it runs under the application rather than under the
-	// call that asked for it.
+	// never refused, and what it starts runs under the application.
 	Start(v domain.Vault, path string) port.StartOutcome
 }

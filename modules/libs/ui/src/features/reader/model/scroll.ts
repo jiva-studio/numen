@@ -1,5 +1,5 @@
 /**
- * The row moved: by a hand on it, by a wheel, and by being sent somewhere.
+ * The row hasMoved: by a hand on it, by a wheel, and by being sent somewhere.
  *
  * Which way a wheel moves the row and where a hand leaves it are `hand.ts`;
  * this is the element those answers are applied to.
@@ -20,11 +20,11 @@ export interface HandScroll {
    * where the room says it stands. A scroll moves the room before an event
    * reports it.
    */
-  readonly whereabouts: () => number
+  readonly getScrollOffset: () => number
   /** The row sent to a place along itself, travelling or at once. */
   readonly send: (to: number, how: ScrollBehavior) => void
   /**
-   * The row moved: how far along it is now, and whether it is standing still.
+   * The row hasMoved: how far along it is now, and whether it is standing still.
    * A row travelling to where it was sent passes over pages nobody turned to.
    */
   readonly isStill: () => boolean
@@ -42,7 +42,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
   /** Where the row was told to stand, while it is on its way there. */
   let heading: number | undefined
 
-  const whereabouts = (): number => heading ?? area.value?.scrollLeft ?? along.value
+  const getScrollOffset = (): number => heading ?? area.value?.scrollLeft ?? along.value
 
   const send = (to: number, how: ScrollBehavior): void => {
     if (!area.value) return
@@ -132,7 +132,7 @@ export function useHandScroll(area: Readonly<ShallowRef<HTMLElement | null>>): H
   return {
     along,
     isDragging,
-    whereabouts,
+    getScrollOffset,
     send,
     isStill,
     onPointerDown,

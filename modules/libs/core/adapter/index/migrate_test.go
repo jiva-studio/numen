@@ -2,10 +2,8 @@ package index
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -138,13 +136,12 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	}
 }
 
-// An index a later build wrote is reported and left where it stands.
+// An index a later build wrote is emptied and built again from the first file.
 //
-// Its schema holds what this build cannot read. A version only goes up, so this
-// is an index some newer build migrated, and what is in it is that build's to
-// read. Nothing is repaired and nothing is emptied: what this build owes the
-// person is the two numbers and their own index, untouched.
-func TestAnIndexAtAnUnknownSchemaIsRefused(t *testing.T) {
+// Its schema holds what this build cannot read. The index is a cache — what it
+// holds is a reading of the vault, and the next scan reads the vault again — so
+// it costs the person that reading and stops nothing.
+func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
@@ -165,33 +162,34 @@ func TestAnIndexAtAnUnknownSchemaIsRefused(t *testing.T) {
 	}
 
 	again, err := Open(ctx, path)
-	if err == nil {
-		again.Close()
-		t.Fatal("an index at a schema this build does not carry was opened")
+	if err != nil {
+		t.Fatalf("an index a later build wrote stopped this one: %v", err)
 	}
-	if !errors.Is(err, ErrIndexAhead) {
-		t.Errorf("it was refused with %v", err)
-	}
-	// Both numbers are in what the person is shown: what they do next is
-	// decided by them, and by which build wrote it.
-	said := err.Error()
-	if !strings.Contains(said, fmt.Sprint(getNewestVersion(t)+3)) || !strings.Contains(said, fmt.Sprint(getNewestVersion(t))) {
-		t.Errorf("the refusal reads %q", said)
+	if err := again.Close(); err != nil {
+		t.Fatal(err)
 	}
 
-	// The index stands as it was. What it holds took hours to read, and a build
-	// that cannot read its schema cannot say what emptying it would cost.
-	raw, err := sql.Open("sqlite", dsn(path))
+	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer raw.Close()
+
+	// It stands at the schema this build carries, and nothing of the reading
+	// the later build left is in it.
+	var at int
+	if err := raw.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&at); err != nil {
+		t.Fatal(err)
+	}
+	if at != getNewestVersion(t) {
+		t.Errorf("the index is at schema %d, want %d", at, getNewestVersion(t))
+	}
 	var vaults int
 	if err := raw.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
 		t.Fatal(err)
 	}
-	if vaults != 1 {
-		t.Errorf("the index holds %d vaults, want the one it held", vaults)
+	if vaults != 0 {
+		t.Errorf("the index holds %d vaults, want none: it was not emptied", vaults)
 	}
 }
 
@@ -203,7 +201,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
-	raw, err := sql.Open("sqlite", dsn(path))
+	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +228,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	t.Logf("refused with: %v", err)
 
 	// What it held, it still holds.
-	back, err := sql.Open("sqlite", dsn(path))
+	back, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}

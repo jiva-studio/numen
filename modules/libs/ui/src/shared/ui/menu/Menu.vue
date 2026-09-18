@@ -49,6 +49,8 @@ const props = withDefaults(
     margin?: number
     /** Where it is drawn. The end of the document by default. */
     to?: string | HTMLElement
+    /** What the moment is. The window's clock by default. */
+    clock?: () => number
     /** What it is announced as. */
     name?: string
   }>(),
@@ -63,6 +65,7 @@ const props = withDefaults(
     margin: 8,
     to: 'body',
     name: 'Menu',
+    clock: () => Date.now(),
   },
 )
 
@@ -103,11 +106,7 @@ const measure = () => {
 
 const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
 
-const { here, holdRow, goTo, onKey } = useMenuKeys(
-  () => props.items,
-  menu,
-  () => Date.now(),
-)
+const { here, holdRow, goTo, onKey } = useMenuKeys(() => props.items, menu, props.clock)
 
 const choose = (item: MenuItem) => {
   if (item.disabled) return
@@ -184,7 +183,7 @@ onBeforeUnmount(leave)
         :key="item.id"
         :item="item"
         :current="current"
-        :has-group-name="hasGroups && Boolean(item.group) && (item.isRule || index === 0)"
+        :has-name="hasGroups && Boolean(item.group) && (item.isRule || index === 0)"
         :has-icons="Boolean($slots.icon)"
         @focus="here = index"
         @choose="choose(item)"

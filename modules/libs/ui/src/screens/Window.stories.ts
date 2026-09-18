@@ -80,34 +80,34 @@ const ROWS: readonly Row[] = [
   {
     id: 'physics',
     name: 'Physics',
-    isHolding: true,
+    hasChildren: true,
     rows: [
-      { id: 'entropy', name: 'Entropy.md', isHolding: false },
-      { id: 'mixing', name: 'Entropy of mixing.md', isHolding: false },
-      { id: 'second-law', name: 'The second law.md', isHolding: false },
-      { id: 'free-energy', name: 'Free energy.md', isHolding: false },
+      { id: 'entropy', name: 'Entropy.md', hasChildren: false },
+      { id: 'mixing', name: 'Entropy of mixing.md', hasChildren: false },
+      { id: 'second-law', name: 'The second law.md', hasChildren: false },
+      { id: 'free-energy', name: 'Free energy.md', hasChildren: false },
     ],
   },
   {
     id: 'computation',
     name: 'Computation',
-    isHolding: true,
+    hasChildren: true,
     rows: [
-      { id: 'shannon-entropy', name: 'Shannon entropy.md', isHolding: false },
-      { id: 'landauer', name: "Landauer's principle.md", isHolding: false },
+      { id: 'shannon-entropy', name: 'Shannon entropy.md', hasChildren: false },
+      { id: 'landauer', name: "Landauer's principle.md", hasChildren: false },
     ],
   },
   {
     id: 'reading',
     name: 'Reading',
-    isHolding: true,
+    hasChildren: true,
     rows: [
-      { id: 'boltzmann-pdf', name: 'Boltzmann 1877.pdf', isHolding: false },
-      { id: 'shannon-pdf', name: 'Shannon 1948.pdf', isHolding: false },
+      { id: 'boltzmann-pdf', name: 'Boltzmann 1877.pdf', hasChildren: false },
+      { id: 'shannon-pdf', name: 'Shannon 1948.pdf', hasChildren: false },
     ],
   },
-  { id: 'inbox', name: 'Inbox.md', isHolding: false },
-  { id: 'reading-list', name: 'Reading list.md', isHolding: false },
+  { id: 'inbox', name: 'Inbox.md', hasChildren: false },
+  { id: 'reading-list', name: 'Reading list.md', hasChildren: false },
 ]
 
 const OPEN = ['physics', 'computation', 'reading']
@@ -117,7 +117,7 @@ const iconFor = (id: string, open: boolean) => {
   const row =
     ROWS.find((one) => one.id === id) ??
     ROWS.flatMap((one) => one.rows ?? []).find((one) => one.id === id)
-  if (row?.isHolding) return open ? FolderOpen : Folder
+  if (row?.hasChildren) return open ? FolderOpen : Folder
   if (row?.name.endsWith('.pdf')) return Book
   return FileText
 }
@@ -342,13 +342,13 @@ const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
 const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
 
-const did = (id: string, text: string, about: string, aside: string): Turn => ({
+const did = (id: string, text: string, subject: string, aside: string): Turn => ({
   id,
   voice: 'doing',
   text,
-  about,
+  subject,
   aside,
-  isOpening: true,
+  canOpen: true,
 })
 
 const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })

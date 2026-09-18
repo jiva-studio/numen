@@ -147,7 +147,7 @@ func TestWhatStandsOverdue(t *testing.T) {
 	at := map[review.CardFaceID]review.Schedule{
 		late: lateAt, soon: soonAt, unbegun: {},
 	}
-	if got := review.Overdue(day, at, now); got != 1 {
+	if got := review.CountOverdue(day, at, now); got != 1 {
 		t.Errorf("%d card faces stand overdue, want the one due yesterday", got)
 	}
 
@@ -543,7 +543,7 @@ func TestHowLongABacklogTakesToClear(t *testing.T) {
 	at := makeLearnedFaces(by, now, 200)
 	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost}
 
-	if got := review.Overdue(ahead, at, now); got == 0 {
+	if got := review.CountOverdue(ahead, at, now); got == 0 {
 		t.Fatal("nothing stands overdue, and there is no backlog to clear")
 	}
 
@@ -581,7 +581,7 @@ func TestNothingOverdueClearsInNoDays(t *testing.T) {
 
 	// A vault of cards nobody has answered: none of them has had a day.
 	at := map[review.CardFaceID]review.Schedule{}
-	if got := review.Overdue(ahead, at, now); got != 0 {
+	if got := review.CountOverdue(ahead, at, now); got != 0 {
 		t.Errorf("%d card faces stand overdue in a vault nobody has answered", got)
 	}
 	got := runProjection(t, run, now, review.Preset{
@@ -608,7 +608,7 @@ func TestBeginningNewCardsDoesNotHoldTheBacklogOpen(t *testing.T) {
 		Goal: review.GoalRetention, NewADay: 5, ReviewsADay: 9999,
 	}
 
-	if got := review.Overdue(ahead, at, now); got == 0 {
+	if got := review.CountOverdue(ahead, at, now); got == 0 {
 		t.Fatal("nothing stands overdue, and there is no backlog to clear")
 	}
 	got := runProjection(t, run, now, p, at, 500)
@@ -1184,7 +1184,7 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 
 	// A run told what the model says is the run told nothing.
 	said := run
-	said.Recalls = review.AsModelled
+	said.Recalls = review.GetModelledRecall
 	if got, _ := runProjection(t, said, now, p, at, 0).Retained.GetShare(0); got != middle {
 		t.Errorf("told what the model says the run retained %v, and told nothing %v",
 			got, middle)

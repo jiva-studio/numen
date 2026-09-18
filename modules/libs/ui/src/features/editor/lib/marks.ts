@@ -3,7 +3,7 @@
  *
  * A construct is shown as it reads until the person stands in it, and then it
  * is shown as it is written. Standing in it means a selection touches it, so
- * the marks come back under the caret and nowhere else. Nothing here changes
+ * the getMarks come back under the caret and nowhere else. Nothing here changes
  * the text: the file is what was typed, mark for mark.
  */
 import { syntaxTree } from '@codemirror/language'
@@ -26,7 +26,7 @@ const build = (
   state: EditorState,
   from: number,
   to: number,
-  pass: 'blocks' | 'marks',
+  pass: 'blocks' | 'getMarks',
 ): DecorationSet => {
   const found: Range<Decoration>[] = []
   const doc = state.doc
@@ -160,7 +160,7 @@ const build = (
   }
 
   /** A mark taken out with the space that separates it from its content. */
-  const takeSpaced = (node: SyntaxNodeRef): boolean | null => {
+  const isSpacedMark = (node: SyntaxNodeRef): boolean | null => {
     if (node.name === 'HeaderMark') {
       const parent = node.node.parent
       if (!parent || parent.name.startsWith('Setext')) return false
@@ -198,7 +198,7 @@ const build = (
         takeWidget(node) ??
         takeImage(node) ??
         takeShy(node) ??
-        takeSpaced(node) ??
+        isSpacedMark(node) ??
         takeInline(node) ??
         true
       )
@@ -208,9 +208,9 @@ const build = (
   return Decoration.set(found, true)
 }
 
-/** What is drawn inside the lines: the marks, and what stands for them. */
-export const marks = (state: EditorState, from: number, to: number) =>
-  build(state, from, to, 'marks')
+/** What is drawn inside the lines: the getMarks, and what stands for them. */
+export const getMarks = (state: EditorState, from: number, to: number) =>
+  build(state, from, to, 'getMarks')
 
 /** What is drawn in place of whole lines: a rule, a table. */
 export const blockMarks = (state: EditorState) => build(state, 0, state.doc.length, 'blocks')

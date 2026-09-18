@@ -8,6 +8,7 @@ import { Button, KeyCap } from '@numen/ui'
 import { called, getTimeAhead } from '@/entities/card'
 import type { Grade, Intervals } from '@/entities/card'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{
   how: Grade
   /** The number the answer is pressed with. */
@@ -16,6 +17,7 @@ defineProps<{
   ahead: Intervals | null
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   (event: 'answer'): void
 }>()

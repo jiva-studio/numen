@@ -7,8 +7,10 @@ import { Button } from '@numen/ui'
 
 import type { Tile } from '../../lib/tiles'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{ tile: Tile }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   /** Sit down to every deck this preset schedules. */
   (event: 'start'): void
@@ -23,7 +25,7 @@ defineEmits<{
     variant="outline"
     class="presets__preset"
     :class="{ 'presets__preset--paused': tile.one.paused }"
-    :disabled="!tile.canStart"
+    :disabled="!tile.canOpen"
     @click="$emit('start')"
   >
     <span class="presets__said">

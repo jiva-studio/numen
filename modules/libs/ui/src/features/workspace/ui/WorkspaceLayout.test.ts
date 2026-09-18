@@ -91,7 +91,11 @@ describe('the last tab in the workspace', () => {
   // anything the workspace kept to itself: a caller holding the tab open sees
   // none of this.
   it('leaves the silence in its place', async () => {
-    const held = mountWorkspace(createLoneTab(), {}, { silence: '<p class="quiet">Nothing here</p>' })
+    const held = mountWorkspace(
+      createLoneTab(),
+      {},
+      { silence: '<p class="quiet">Nothing here</p>' },
+    )
     await closeOf(held, 'plex').trigger('click')
 
     const after = held.emitted('update:modelValue')?.[0]?.[0] as State

@@ -18,7 +18,7 @@ const settings = (fields: Partial<Settings> = {}): Settings => ({
   reviewsADay: 200,
   retention: 0.9,
   load: {},
-  evenLoad: true,
+  hasEvenLoad: true,
   ...fields,
 })
 

@@ -14,6 +14,12 @@ export const browserClock: Clock = {
 }
 
 /**
+ * When work is put on the screen. A component takes one as a default and a
+ * test hands in its own, so what is drawn is drawn when the test says.
+ */
+export type Paint = (draw: () => void) => void
+
+/**
  * The next frame where there is one, and now where there is none, for work
  * that has nothing to cancel. A component takes this as a default and a test
  * hands in its own.

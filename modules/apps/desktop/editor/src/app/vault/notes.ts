@@ -1,6 +1,7 @@
 /**
  * Note domain methods for the window core.
  */
+import { asFailure, asValue } from '@numen/wire'
 import { notes } from '@/shared/clients'
 import {
   mapBaseline,
@@ -8,6 +9,7 @@ import {
   mapMoveResult,
   mapNeighbourhood,
   mapNoteResult,
+  mapWriteResult,
   run,
   writes,
 } from './words'
@@ -39,13 +41,13 @@ export const notesCore: NoteOperations = {
         path: said.path,
         span: run(said.span ?? { from: 0, to: 0 }),
         text: said.text,
-        isComplete: said.done,
+        isComplete: said.isFinal,
       }
     }
   },
   read: async (path) => mapNoteResult(await notes.readNote({ path })),
   write: async (path, body, seen) =>
-    mapNoteResult(
+    mapWriteResult(
       await notes.writeNote({ path, body, ...(seen ? { seen: mapBaseline(seen) } : {}) }),
     ),
   create: async (note) => {
@@ -55,20 +57,20 @@ export const notesCore: NoteOperations = {
       links: note.links.map(mapLink),
     })
     const error = errorIn(answer)
-    return { path: answer.path, error }
+    return error ? asFailure(error) : asValue({ path: answer.path })
   },
   join: async (path, link) => errorIn(await notes.writeLink({ path, link: mapLink(link) })),
   rename: async (path, title) => {
     const answer = await notes.renameNote({ path, title })
+    if (staleIn(answer)) return asFailure('changed')
     const error = errorIn(answer)
-    return {
+    if (error) return asFailure(error)
+    return asValue({
       path: answer.path,
       title: answer.title,
       hasFrontmatter: writes[answer.by],
       moved: answer.moved ? mapMoveResult(answer.moved) : null,
-      error,
-      hasChanged: staleIn(answer),
-    }
+    })
   },
   headings: async (paths) => {
     const answer = await notes.listHeadings({ paths: [...paths] })
@@ -86,7 +88,7 @@ export const notesCore: NoteOperations = {
   resolve: async (from, writtenAddresses) => {
     const answer = await notes.resolveAddresses({ from, written: [...writtenAddresses] })
     return new Map(
-      answer.resolved.filter((one) => !one.crossed).map((one) => [one.written, one.path]),
+      answer.resolved.filter((one) => !one.isCrossed).map((one) => [one.written, one.path]),
     )
   },
 }

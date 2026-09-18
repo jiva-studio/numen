@@ -80,7 +80,7 @@ message Task {
   // Asked is set for work a person started and is waiting to be told about.
   // Work nobody asked for is drawn once it has lasted, and most of it is over
   // before that.
-  bool asked = 7;
+  bool is_asked = 7;
 
   // Unit is what done and total are counted in.
   Unit unit = 8;

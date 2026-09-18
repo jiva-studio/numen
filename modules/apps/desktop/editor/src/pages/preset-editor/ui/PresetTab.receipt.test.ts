@@ -17,7 +17,7 @@ describe('a row of the receipt', () => {
       const rows = tab.findAll('[data-preset-row]')
       expect(rows.length).toBeGreaterThan(0)
       // A mark on the row that shows who put the value there would be one row
-      // drawn unlike the others; every row is drawn alike.
+      // drawn unlike the others; every row is drawn areNeighbourhoodsEqual.
       expect(new Set(rows.map((one) => one.attributes('class'))).size).toBe(1)
       // A way back under the goal stood in what the row says. What it says is
       // its name and what it means, and nothing beside them.

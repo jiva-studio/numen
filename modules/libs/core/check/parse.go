@@ -16,7 +16,7 @@ import (
 type parseCheck struct{ queries port.ProblemQueries }
 
 func (parseCheck) Name() domain.Check { return domain.CheckParse }
-func (parseCheck) Quiet() bool        { return false }
+func (parseCheck) IsQuiet() bool      { return false }
 
 func (c parseCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
 	noted, err := c.queries.GetParseProblems(ctx, v.ID)

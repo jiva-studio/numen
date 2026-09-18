@@ -83,7 +83,7 @@ func FuzzWriteArtifact(f *testing.F) {
 			Blocks: []ocr.Block{
 				{Text: first, Boxes: []ocr.Box{{
 					Rect: image.Rect(0, 0, 10, 10),
-					Span: domain.Span{From: 0, To: len(first)},
+					Span: domain.ByteSpan{From: 0, To: len(first)},
 				}}},
 				{Text: heading, IsHeading: marked, Depth: depth},
 			},

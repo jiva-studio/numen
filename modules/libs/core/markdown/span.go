@@ -7,8 +7,8 @@ import (
 
 // Span is a run of prose, by where it begins and where it ends, as byte offsets
 // into the text it was found in. Where a client is told about a run it is told
-// in the units a client counts in, which is domain.Span; nothing crosses that
-// boundary unconverted.
+// in the units a client counts in, which is domain.UnitSpan, and CountUTF16 is
+// the way across; nothing crosses that boundary unconverted.
 type Span struct {
 	From int
 	To   int
@@ -154,7 +154,7 @@ func Diff(was, now string) (Span, string) {
 	for head < len(was) && head < len(now) && was[head] == now[head] {
 		head++
 	}
-	for head > 0 && !canBeginAt(was, head) {
+	for head > 0 && !canSpanBeginAt(was, head) {
 		head--
 	}
 
@@ -163,16 +163,16 @@ func Diff(was, now string) (Span, string) {
 	for tail < most && was[len(was)-tail-1] == now[len(now)-tail-1] {
 		tail++
 	}
-	for tail > 0 && !canEndAt(was, len(was)-tail) {
+	for tail > 0 && !canSpanEndAt(was, len(was)-tail) {
 		tail--
 	}
 
 	return Span{From: head, To: len(was) - tail}, now[head : len(now)-tail]
 }
 
-// canBeginAt reports whether a span may begin at `at`: at the start of the
-// text, or where a rune begins and spacing stands before it.
-func canBeginAt(text string, at int) bool {
+// canSpanBeginAt reports whether a span may begin at `at`: at the start of the text,
+// or where a rune begins and spacing stands before it.
+func canSpanBeginAt(text string, at int) bool {
 	if at <= 0 {
 		return true
 	}
@@ -182,9 +182,9 @@ func canBeginAt(text string, at int) bool {
 	return spacing(text[at-1])
 }
 
-// canEndAt reports whether a span may end at `at`: at the end of the text, or
+// canSpanEndAt reports whether a span may end at `at`: at the end of the text, or
 // where spacing stands.
-func canEndAt(text string, at int) bool {
+func canSpanEndAt(text string, at int) bool {
 	if at >= len(text) {
 		return true
 	}

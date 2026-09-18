@@ -225,7 +225,7 @@ func (a *API) serveCopy(
 	if !ready {
 		return false
 	}
-	points := a.points(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
+	points := a.getArtifactAddress(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
 	if getPlayerURL(points) == "" {
 		return false
 	}

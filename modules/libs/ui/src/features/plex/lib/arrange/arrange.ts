@@ -1,5 +1,5 @@
 /**
- * Turn a neighbourhood into a frame: admit, place, route.
+ * Turn a neighbourhood into a frame: canPlace, place, route.
  *
  * Pure — the same inputs give the same numbers on any machine. Nothing here
  * reads the clock, measures text or touches the DOM: how wide a title is
@@ -65,7 +65,7 @@ export function arrangePlex(
 
   const limits = limitsFor(resolved, counts)
 
-  const { seating, overflow } = admit(neighbourhood.nodes, limits)
+  const { seating, overflow } = canPlace(neighbourhood.nodes, limits)
 
   // How much is admitted is settled at that packing, and the gaps then open
   // into the room that is left. The opening is measured against the
@@ -128,7 +128,7 @@ function countSeats(nodes: readonly PlexNode[]): Record<PlexRelatedSeat, number>
  * How much of each seat the picture holds. Settled before a strategy is
  * called, so the overflow count means the same thing whichever one draws it.
  */
-function admit(
+function canPlace(
   nodes: readonly PlexNode[],
   limits: Limits,
 ): { seating: Seating; overflow: Partial<Record<PlexRelatedSeat, number>> } {

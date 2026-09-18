@@ -1,10 +1,11 @@
 /**
  * Tab state and coordinator for an open flashcard preset.
  */
+import { StopReason } from '@numen/protocol'
 import { ref, shallowRef, type Ref } from 'vue'
 import type { WindowHandle } from '@/entities/tab'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { DEFAULTS, type StopReason } from '../types'
+import { DEFAULTS } from '../types'
 import { produceSchedule } from '../lib/curve'
 import { shapeOf, steer } from '../lib/fields'
 import { WORDS as words } from '../words'
@@ -36,7 +37,7 @@ export function createOpenPreset(path: string, today: string, bounds: SettingsBo
     path: ref(path),
     settings: shallowRef<Settings>(DEFAULTS),
     problems: shallowRef<readonly string[]>([]),
-    stopped: ref<StopReason>('none'),
+    stopped: ref<StopReason>(StopReason.NOTHING),
     curves: createCurveState(DEFAULTS, today, bounds),
     flight: createWriteFlight(),
   }
@@ -53,32 +54,30 @@ export const readPreset = async (
   let answer
   try {
     answer = await core.read(one.path.value)
-  } catch (error) {
-    console.error(error)
+  } catch {
+    // The window says what it could not do; what the call carried back adds nothing a person can act on.
     one.flight.errorMessage.value = words.unreachable
     one.curves.isWaiting.value = false
     return
   }
-  const readError = answer.error
-  one.flight.errorMessage.value = readError === null ? '' : words.notRead(readError)
+  one.flight.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
   one.flight.hasChanged.value = false
-  one.flight.at = answer.fingerprint
-  bounds.value = answer.bounds
   one.curves.answers.clear()
-  if (!answer.preset) {
+  const read = answer.ok ? answer.value.preset : null
+  if (answer.ok) {
+    one.flight.at = answer.value.at
+    bounds.value = answer.value.bounds
+  }
+  if (!read) {
     one.problems.value = []
-    one.stopped.value = 'none'
+    one.stopped.value = StopReason.NOTHING
     one.curves.isWaiting.value = false
     return
   }
-  if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
-  one.problems.value = answer.preset.problems
-  one.stopped.value = answer.preset.stopsOn
-  one.settings.value = reconcileSettings(
-    answer.preset.settings,
-    one.settings.value,
-    one.flight.theirs,
-  )
+  if (read.title) titles.set(one.path.value, read.title)
+  one.problems.value = read.problems
+  one.stopped.value = read.stopsOn
+  one.settings.value = reconcileSettings(read.settings, one.settings.value, one.flight.theirs)
   await updateCurves(
     one.curves,
     one.path.value,

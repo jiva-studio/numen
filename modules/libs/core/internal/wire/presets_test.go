@@ -24,7 +24,7 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 		ReviewsADay: 5,
 		Retention:   0.8,
 		Backlog:     68,
-		EvenLoad:    true,
+		HasEvenLoad: true,
 	}
 	p, err := SettingsIn(old)
 	if err != nil {

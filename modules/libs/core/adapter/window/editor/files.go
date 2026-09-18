@@ -44,11 +44,11 @@ func (a *API) ListFiles(
 	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(held))}
 	for _, entry := range held {
 		out.Entries = append(out.Entries, &v1.Entry{
-			Path:   entry.Path,
-			Name:   entry.Name,
-			Folder: entry.IsFolder,
-			Kind:   kindOf(entry.Kind),
-			Type:   typeOf(types[entry.Path]),
+			Path:     entry.Path,
+			Name:     entry.Name,
+			IsFolder: entry.IsFolder,
+			Kind:     kindOf(entry.Kind),
+			Type:     typeOf(types[entry.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -151,8 +151,8 @@ func (a *API) MoveFile(
 	if moved.IsLanded {
 		out.Moved = newMoveResult(moved)
 	}
-	out.Unlevelled = a.isUnlevelled(err)
-	if err != nil && !out.GetUnlevelled() {
+	out.IsUnlevelled = a.isUnlevelled(err)
+	if err != nil && !out.GetIsUnlevelled() {
 		reason, refused := wire.ErrorCodeBy(err)
 		switch {
 		case refused:

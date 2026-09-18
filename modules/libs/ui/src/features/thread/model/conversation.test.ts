@@ -38,13 +38,13 @@ const now = (draw: () => void) => draw()
 const createSaidStep = (text: string): AgentStep => ({ kind: 'said', text })
 const createToolStep = (
   tool: string,
-  about = '',
+  subject = '',
   count = 0,
   place?: SourceLocation,
 ): AgentStep => ({
   kind: 'toolCall',
   tool,
-  about,
+  subject,
   written: count,
   ...(place ? { place } : {}),
 })
@@ -216,7 +216,7 @@ describe('a wait that explains itself', () => {
     expect(line?.text).toBe('Create a note')
     // Which note, before the note exists: the name is read out of a call that
     // has not finished being written.
-    expect(line?.about).toBe("Bram Doyle's warning")
+    expect(line?.subject).toBe("Bram Doyle's warning")
     // The only thing that moves while twelve thousand characters are typed.
     expect(line?.aside).toBe('12 015 characters')
 
@@ -274,7 +274,7 @@ describe('a wait that explains itself', () => {
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
     expect(line?.text).toBe(words.thinking)
-    expect(line?.about).toBe('')
+    expect(line?.subject).toBe('')
     expect(line?.state).toBe('arriving')
 
     release()
@@ -353,7 +353,7 @@ describe('a call that was working on a place', () => {
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
-    expect(line?.isOpening).toBe(true)
+    expect(line?.canOpen).toBe(true)
     expect(conversation.getSourceLocation(line?.id ?? '')).toEqual(place)
 
     release()
@@ -376,7 +376,7 @@ describe('a call that was working on a place', () => {
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
-    expect(line?.isOpening).toBeUndefined()
+    expect(line?.canOpen).toBeUndefined()
     expect(conversation.getSourceLocation(line?.id ?? '')).toBeNull()
 
     release()
@@ -398,7 +398,7 @@ describe('a call that was working on a place', () => {
     await nap()
 
     const line = conversation.turns.value.find((turn) => turn.voice === 'doing')
-    expect(line?.isOpening).toBeUndefined()
+    expect(line?.canOpen).toBeUndefined()
     expect(conversation.getSourceLocation(line?.id ?? '')).toBeNull()
 
     release()

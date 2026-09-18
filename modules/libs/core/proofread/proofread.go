@@ -23,8 +23,8 @@ type Line struct {
 	Text   string
 }
 
-// IsJoining says whether this correction puts more than one line together.
-func (l Line) IsJoining() bool { return l.Last > l.Number }
+// IsJoined says whether this correction puts more than one line together.
+func (l Line) IsJoined() bool { return l.Last > l.Number }
 
 // A Batch is the lines one reply is accepted or refused as a whole: the number
 // it is known by, and its lines in the order they are read.

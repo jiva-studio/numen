@@ -62,12 +62,11 @@ export function createFileCreators(
   ): Promise<string> => {
     try {
       const answer = await createByKind[what](vault, folder, name, fields)
-      const error = answer.error
-      if (error) {
-        write(words.errors[error], 'error')
+      if (!answer.ok) {
+        write(words.errors[answer.error], 'error')
         return ''
       }
-      return answer.path
+      return answer.value.path
     } catch (error) {
       write(formatErrorMessage(error), 'error')
       return ''

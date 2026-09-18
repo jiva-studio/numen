@@ -6,7 +6,7 @@
  * asked leaves it standing at the hour an installation begins at.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { reviewSetting, DEFAULT_STARTS, type ReviewDeps } from './review'
+import { createReviewSetting, DEFAULT_STARTS, type ReviewDeps } from './review'
 
 const words = { unturned: 'That setting could not be written:' }
 
@@ -39,7 +39,7 @@ const vault = (starts: string, refuses: string | null = null, latest = '12:00') 
     },
   }
   const said = vi.fn()
-  return { written, said, hours: reviewSetting(core, words, said) }
+  return { written, said, hours: createReviewSetting(core, words, said) }
 }
 
 describe('the hour the window stands at', () => {
@@ -55,7 +55,7 @@ describe('the hour the window stands at', () => {
 
   it('is left where it stands where the vault cannot be asked', async () => {
     const said = vi.fn()
-    const hours = reviewSetting(
+    const hours = createReviewSetting(
       {
         getReviewSettings: () => Promise.reject(new Error('gone')),
         setReviewSettings: () => Promise.resolve(null),
@@ -132,7 +132,7 @@ describe('an hour chosen', () => {
 
   it('says what a person can read where the vault threw instead of answering', async () => {
     const said = vi.fn()
-    const hours = reviewSetting(
+    const hours = createReviewSetting(
       {
         getReviewSettings: () =>
           Promise.resolve({ starts: '04:00', latest: '12:00', day: '2026-09-04' }),

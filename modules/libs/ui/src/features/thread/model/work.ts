@@ -15,7 +15,7 @@ export interface WorkLine {
   /** The agent reached for a tool, and how much of it has been written. */
   readonly reach: (
     tool: string,
-    about: string,
+    subject: string,
     location: SourceLocation | null | undefined,
     written: number,
   ) => void
@@ -45,7 +45,7 @@ export function createWorkLine(
   // the text of a source is reported again every time more of it is written, so
   // the count is what moves while it is being written.
   let says = waitWords
-  let about = ''
+  let subject = ''
 
   // Whether the line is up. It comes down when the answer begins, and a tool
   // answering does not put it back: what a tool did belongs above the answer it
@@ -57,10 +57,10 @@ export function createWorkLine(
       id: workId,
       voice: 'doing',
       text: says,
-      about,
+      subject,
       aside: writeCharCount(count),
       state,
-      ...(locations.has(workId) ? { isOpening: true } : {}),
+      ...(locations.has(workId) ? { canOpen: true } : {}),
     })
     up = true
   }
@@ -71,15 +71,15 @@ export function createWorkLine(
     up = false
   }
 
-  const setWaiting = (isOn: boolean) => {
-    if (isOn) put({ id: wait, voice: 'doing', text: waitWords, about: '', state: 'arriving' })
+  const setWaiting = (on: boolean) => {
+    if (on) put({ id: wait, voice: 'doing', text: waitWords, subject: '', state: 'arriving' })
     else drop(wait)
   }
 
   return {
     reach: (tool, named, location, written) => {
       says = getSpokenTool(tool)
-      about = named
+      subject = named
       // A call naming a run of a source's text names somewhere the line can be
       // pressed to open.
       if (location && location.span.to > location.span.from) locations.set(workId, location)

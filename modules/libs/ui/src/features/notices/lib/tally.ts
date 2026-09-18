@@ -73,12 +73,12 @@ export const shareOf = (tally: Tally): number | undefined => {
  * what makes the difference visible.
  */
 export const activity = (input: {
-  readonly says: string
+  readonly text: string
   readonly hasFailed?: boolean
   readonly isWorking?: boolean
   readonly tally?: Tally
 }): ActivityDescriptor => {
-  if (!input.says) return { state: 'quiet', hasCounts: false }
+  if (!input.text) return { state: 'quiet', hasCounts: false }
   if (input.hasFailed) return { state: 'failed', hasCounts: false }
 
   // Work is claimed, not assumed. Words alone say something is so, and a caller
@@ -121,9 +121,8 @@ export const SMOOTHING = 10
 /**
  * The rate a count is moving at, from two readings and the time between them.
  *
- * `seconds` is the time since the count last moved, so a count written in groups
- * is measured over the stretch a group took rather than over the moment it
- * landed in.
+ * `seconds` is the time since the count last moved, so a count written in
+ * groups is measured over the stretch a group took.
  *
  * Movement is smoothed towards what was known over that stretch, so a reading
  * taken a moment after the last counts for a moment and one taken a minute later

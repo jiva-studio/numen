@@ -65,7 +65,11 @@ describe('the file a save presents', () => {
     asked.writeNote.mockResolvedValue({})
 
     const read = await core.read(at.path)
-    await core.write(at.path, 'prose and more', { prose: read.body, fingerprint: read.fingerprint ?? '' })
+    if (!read.ok) throw new Error('the read was refused')
+    await core.write(at.path, 'prose and more', {
+      prose: read.value.body,
+      fingerprint: read.value.at ?? '',
+    })
 
     expect(asked.writeNote.mock.calls[0]?.[0]).toEqual({
       path: at.path,
@@ -126,7 +130,7 @@ describe('files domain', () => {
   it('handles remove, list, move, createFolder, createUrl, and fileKinds', async () => {
     asked.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
     const removed = await core.remove('test.md')
-    expect(removed.trashed).toBe(true)
+    expect(removed.ok && removed.value.trashed).toBe(true)
 
     asked.listFiles.mockResolvedValue({
       entries: [{ path: 'test.md', name: 'test.md', isFolder: false, kind: 1, type: 1 }],
@@ -136,14 +140,14 @@ describe('files domain', () => {
 
     asked.moveFile.mockResolvedValue({ moved: { from: 'a.md', to: 'b.md', repaired: [] } })
     const moved = await core.move('a.md', 'b.md')
-    expect(moved.moved?.to).toBe('b.md')
+    expect(moved.ok ? moved.value?.to : null).toBe('b.md')
 
     asked.createFolder.mockResolvedValue({})
     expect(await core.createFolder('folder')).toBeNull()
 
     asked.createURL.mockResolvedValue({ path: 'url.md' })
     const url = await core.createUrl('https://example.com', '')
-    expect(url.path).toBe('url.md')
+    expect(url.ok ? url.value.path : null).toBe('url.md')
 
     asked.listFileKinds.mockResolvedValue({
       kinds: [{ path: 'book.epub', kind: 2, type: 1, format: 2 }],
@@ -214,7 +218,7 @@ describe('notes domain', () => {
       moved: { path: 'b.md' },
     })
     const renamed = await core.rename('a.md', 'B')
-    expect(renamed.path).toBe('b.md')
+    expect(renamed.ok && renamed.value.path).toBe('b.md')
 
     asked.listHeadings.mockResolvedValue({
       headings: [{ path: 'a.md', headings: [{ text: 'H1', level: 1, line: 1 }] }],
@@ -267,16 +271,16 @@ describe('vaults domain', () => {
     const fromCore = await core.vaults()
     expect(fromCore.showing).toBe('v1')
 
-    asked.chooseFolder.mockResolvedValue({ chose: true, path: '/v2' })
+    asked.chooseFolder.mockResolvedValue({ isChosen: true, path: '/v2' })
     expect(await vaults.choose('Pick')).toBe('/v2')
 
     asked.addVault.mockResolvedValue({ vault: { id: 'v2', name: 'V2' } })
     const added = await vaults.add('/v2', 'V2')
-    expect(added.vault?.id).toBe('v2')
+    expect(added.ok ? added.value?.id : null).toBe('v2')
 
     asked.renameVault.mockResolvedValue({ vault: { id: 'v2', name: 'V2 renamed' } })
     const renamed = await vaults.rename('v2', 'V2 renamed')
-    expect(renamed.vault?.name).toBe('V2 renamed')
+    expect(renamed.ok ? renamed.value?.name : null).toBe('V2 renamed')
 
     asked.removeVault.mockResolvedValue({})
     expect(await vaults.remove('v2', false)).toBeNull()

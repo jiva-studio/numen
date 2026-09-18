@@ -1,7 +1,7 @@
 /**
  * Command execution dependencies assembly for palette and shortcut actions.
  */
-import type { Ref } from 'vue'
+
 import { vaults, type VaultCore } from './vault'
 import { running } from '@/entities/artifact'
 import { WORDS as cardWords } from '@/entities/deck'
@@ -16,7 +16,7 @@ export interface CommandDepsOptions {
   held: ReturnType<typeof useWindowTabs>
   making: NoteCreator
   made: ReturnType<typeof createFileCreators>
-  shown: Ref<VaultRef>
+  setVaultName: (vault: VaultRef) => void
   reload: () => void
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
@@ -47,7 +47,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     held,
     making,
     made,
-    shown,
+    setVaultName,
     reload,
     loadArtifactStates,
     reached,
@@ -113,7 +113,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     },
     vaults: {
       ...vaults,
-      showVault: (vault) => (shown.value = vault),
+      setVaultName,
       reload,
     },
     goes: {

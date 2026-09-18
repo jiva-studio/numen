@@ -92,7 +92,4 @@ export function goDeclaresBooleans(source) {
  */
 export const baseline = [
   'modules/apps/desktop/editor/src/entities/deck/lib/presets.ts declares evenLoad',
-  'modules/apps/desktop/flashcards/src/entities/vault/model/counts.ts declares reading',
-  'modules/apps/desktop/flashcards/src/pages/decks/types.ts declares evenLoad',
-  'modules/apps/desktop/flashcards/src/pages/session/model/session.ts declares seen',
 ]

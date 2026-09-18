@@ -14,12 +14,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
-// Nothing a test binary writes outlives the run, so no index it opens waits for
-// the disk.
-func init() { index.SetUnsynchronised(testonly.NewGrant()) }
+// SkipFlush is what a test opens an index with. Nothing a test binary writes
+// outlives the run, so no index it opens waits for the disk.
+func SkipFlush() index.Option { return index.SkipFlush(testonly.NewGrant()) }
 
 var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) error {
-	db, err := index.Open(ctx, path)
+	db, err := index.Open(ctx, path, SkipFlush())
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,3 @@ var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) er
 
 // Path is a migrated index of the test's own, at a path nothing else uses.
 func Path(t testing.TB) string { return migrated.Path(t) }
-
-// AsShipped makes every index this binary opens from here on flush the way a
-// person's does. A benchmark and the load test pay what the application pays.
-func AsShipped() { index.AsShipped(testonly.NewGrant()) }

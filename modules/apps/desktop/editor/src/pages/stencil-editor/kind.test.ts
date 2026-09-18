@@ -3,6 +3,7 @@
  * writes back, and where what is wrong with it stands.
  */
 import { describe, expect, it } from 'vitest'
+import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultFace, DeckProblem, FieldRenameResult } from '@/entities/deck'
 import { fileOpeners } from '@/entities/tab'
@@ -44,8 +45,8 @@ const vault = (
 
   const core: Cards = {
     stencils: async () => ({ stencils: [], held: 0 }),
-    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
+    createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     // The vault writes the name wherever it stands: in the fields, and in the
     // braces of every face.
     renameField: async (path, from, to, seen) => {
@@ -58,14 +59,14 @@ const vault = (
         front: rewriteBraces(face.front),
         back: rewriteBraces(face.back),
       }))
-      return { decks: [], cards: 0, notWritten: [], error: null, isChanged: false, fingerprint: 'renamed' }
+      return asValue({ decks: [], cards: 0, notWritten: [], at: 'renamed' })
     },
-    readDeck: async () => ({ deck: null, error: 'missing', fingerprint: '', bound: 0 }),
-    writeDeck: async () => ({ error: null, isChanged: false, fingerprint: '', bound: 0 }),
+    readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
+    writeDeck: async () => asValue({ at: '' }),
     readStencil: async (path) => {
       if (answers.isUnreachable) throw new Error('out of reach')
-      if (answers.error) return { stencil: null, error: answers.error, fingerprint: '' }
-      return {
+      if (answers.error) return asFailure(answers.error)
+      return asValue({
         stencil: {
           path,
           title: 'Animal',
@@ -75,19 +76,18 @@ const vault = (
           tail: '',
           problems: answers.problems ?? [],
         },
-        error: null,
-        fingerprint: 'read',
-      }
+        at: 'read',
+      })
     },
     writeStencil: async (path, wrote, drew) => {
       written.push(
         `${path} ${wrote.join(', ') || '—'} | ${drew.faces.map((one) => one.back).join(' ')}`,
       )
-      if (answers.wrote) return { error: answers.wrote, isChanged: false, fingerprint: '' }
-      if (answers.isChanged) return { error: null, isChanged: true, fingerprint: '' }
+      if (answers.wrote) return asFailure(answers.wrote)
+      if (answers.isChanged) return asFailure('changed' as const)
       fields = wrote
       faces = drew.faces
-      return { error: null, isChanged: false, fingerprint: 'written' }
+      return asValue({ at: 'written' })
     },
   }
 
@@ -181,14 +181,12 @@ describe('a field renamed in a stencil', () => {
 
   it('says how far the new name reached', async () => {
     const { tab, said } = await open({
-      renaming: {
+      renaming: asValue({
         decks: ['Animals.md', 'More.md'],
         cards: 3,
         notWritten: [],
-        error: null,
-        isChanged: false,
-        fingerprint: 'renamed',
-      },
+        at: 'renamed',
+      }),
     })
 
     tab.renameField('Height', 'Shoulder')
@@ -199,14 +197,12 @@ describe('a field renamed in a stencil', () => {
 
   it('says which decks keep the old heading, which nothing else would tell', async () => {
     const { tab, said } = await open({
-      renaming: {
+      renaming: asValue({
         decks: ['Animals.md'],
         cards: 1,
         notWritten: [{ path: 'Broken.md', text: 'the frontmatter cannot be read' }],
-        error: null,
-        isChanged: false,
-        fingerprint: 'renamed',
-      },
+        at: 'renamed',
+      }),
     })
 
     tab.renameField('Height', 'Shoulder')
@@ -217,14 +213,7 @@ describe('a field renamed in a stencil', () => {
 
   it('says the error, and says nothing of decks reached, where none was', async () => {
     const { tab, said } = await open({
-      renaming: {
-        decks: [],
-        cards: 0,
-        notWritten: [],
-        error: 'notAStencil',
-        isChanged: false,
-        fingerprint: '',
-      },
+      renaming: asFailure('notAStencil' as const),
     })
 
     tab.renameField('Height', 'Shoulder')
@@ -235,14 +224,7 @@ describe('a field renamed in a stencil', () => {
 
   it('says nothing was renamed where the file moved past the stencil that was read', async () => {
     const { tab, said } = await open({
-      renaming: {
-        decks: ['Animals.md'],
-        cards: 3,
-        notWritten: [],
-        error: null,
-        isChanged: true,
-        fingerprint: '',
-      },
+      renaming: asFailure('changed' as const),
     })
 
     tab.renameField('Height', 'Shoulder')

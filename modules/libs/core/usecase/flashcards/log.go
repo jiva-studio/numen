@@ -90,7 +90,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 			return ReviewLog{}, err
 		}
 		out.Skipped += ran.Skipped
-		if ran.IsGone || ran.IsShut {
+		if ran.IsGone || ran.IsUnreadable {
 			continue
 		}
 		out.Answers = append(out.Answers, ran.Answers...)
@@ -112,11 +112,11 @@ type LogFile struct {
 	// IsGone is a file listed and then taken away by another machine's
 	// synchroniser before it could be read.
 	IsGone bool
-	// IsShut is a file that could not be opened: the permissions on it keep it
-	// closed, or another program holds it. It is counted among the lines that
-	// could not be acted on and left out of the files the history was read
-	// from, so a schedule worked out without it says so.
-	IsShut bool
+	// IsUnreadable is a file that would not open: the permissions refuse it, or
+	// another program holds it. It is counted among the lines that could not be
+	// acted on and left out of the files the history was read from, so a
+	// schedule worked out without it says so.
+	IsUnreadable bool
 }
 
 // ReadFile reads one file of a vault's log.
@@ -127,8 +127,8 @@ func (u Log) ReadFile(
 	if errors.Is(err, fs.ErrNotExist) {
 		return LogFile{IsGone: true}, nil
 	}
-	if errors.Is(err, fs.ErrPermission) || isLocked(err) {
-		return LogFile{IsShut: true, Skipped: 1}, nil
+	if errors.Is(err, fs.ErrPermission) || errors.Is(err, port.ErrHeldByAnother) {
+		return LogFile{IsUnreadable: true, Skipped: 1}, nil
 	}
 	if err != nil {
 		return LogFile{}, err

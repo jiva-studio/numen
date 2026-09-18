@@ -48,7 +48,8 @@ export const isChord = (event: {
 
 /** What a letter asks for, and nothing where no command answers to it. */
 export const commandFor = (letter: string, hasShift: boolean): string =>
-  CHORDS.find((one) => one.letter === letter.toLowerCase() && one.hasShift === hasShift)?.command ?? ''
+  CHORDS.find((one) => one.letter === letter.toLowerCase() && one.hasShift === hasShift)?.command ??
+  ''
 
 /**
  * How a command's keystroke is drawn on the keyboard in hand, and nothing for

@@ -19,9 +19,9 @@ withDefaults(
     /** The one its pane is showing. */
     showing?: boolean
     /** Showing, in the pane a tab would open into. */
-    focused?: boolean
+    isFocused?: boolean
   }>(),
-  { mark: undefined, showing: false, focused: false },
+  { mark: undefined, showing: false, isFocused: false },
 )
 
 const emit = defineEmits<{
@@ -62,7 +62,7 @@ const onPointerDown = (event: PointerEvent) => {
     :tabindex="showing ? 0 : -1"
     :data-workspace-tab="tab"
     :data-showing="showing || undefined"
-    :data-focused="focused || undefined"
+    :data-focused="isFocused || undefined"
     @pointerdown="onPointerDown"
   >
     <span v-if="$slots.icon" class="tab__icon flex shrink-0 items-center">

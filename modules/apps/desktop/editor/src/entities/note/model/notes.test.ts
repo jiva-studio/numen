@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { asFailure, asValue } from '@numen/wire'
 
 import { openNotes, type Notes } from './notes'
 
@@ -12,18 +13,23 @@ function fake(over: Partial<Notes> = {}) {
   const core: Notes = {
     read: async (path) =>
       files.has(path)
-        ? { body: files.get(path) ?? '', error: null, fingerprint: getFingerprint(files.get(path) ?? '') }
-        : { body: '', error: 'missing' },
+        ? asValue({ body: files.get(path) ?? '', at: getFingerprint(files.get(path) ?? '') })
+        : asFailure('missing'),
     write: async (path, body, seen) => {
       wrote.push({ path, body })
       const held = files.get(path)
       // A note still holding either the prose or the file that prose came out of
       // is the note this caller read.
-      if (seen && held !== undefined && held !== seen.prose && getFingerprint(held) !== seen.fingerprint) {
-        return { body: '', error: null, isChanged: true }
+      if (
+        seen &&
+        held !== undefined &&
+        held !== seen.prose &&
+        getFingerprint(held) !== seen.fingerprint
+      ) {
+        return asFailure('changed' as const)
       }
       files.set(path, body)
-      return { body: '', error: null, fingerprint: getFingerprint(body) }
+      return asValue({ body: '', at: getFingerprint(body) })
     },
     ...over,
   }
@@ -79,7 +85,7 @@ describe('opening a note', () => {
   })
 
   it('sticks on an error, and says why in words a person reads', async () => {
-    const { core } = fake({ read: async () => ({ body: '', error: 'notText' }) })
+    const { core } = fake({ read: async () => asFailure('notText' as const) })
     const notes = openNotes(core, { limits: quick })
 
     notes.open('photo.md')
@@ -479,7 +485,7 @@ describe('a core that cannot be reached', () => {
 describe('a save that was refused', () => {
   it('says why in the tab it was refused on, for as long as that tab is open', async () => {
     const { core, files } = fake({
-      write: async () => ({ body: '', error: 'bodyUnwritable' }),
+      write: async () => asFailure('bodyUnwritable' as const),
     })
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: quick })
@@ -540,7 +546,7 @@ describe('closing a note that could not be written', () => {
   })
 
   it('lets a note it could never read go the first time', async () => {
-    const { core } = fake({ read: async () => ({ body: '', error: 'notText' }) })
+    const { core } = fake({ read: async () => asFailure('notText' as const) })
     const notes = openNotes(core, { limits: quick })
     notes.open('photo.md')
     await settle()
@@ -554,7 +560,6 @@ describe('closing a note that could not be written', () => {
 describe('a note that points somewhere', () => {
   const linked = {
     body: 'What I made of it.',
-    error: null,
     at: getFingerprint('What I made of it.'),
     link: {
       url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
@@ -563,7 +568,7 @@ describe('a note that points somewhere', () => {
   }
 
   it('carries the link, beside the prose it was read with', async () => {
-    const { core } = fake({ read: async () => linked })
+    const { core } = fake({ read: async () => asValue(linked) })
     const notes = openNotes(core, { limits: quick })
 
     notes.open('Entropy.md')
@@ -576,12 +581,12 @@ describe('a note that points somewhere', () => {
   it('points nowhere once a read says it points nowhere', async () => {
     let link: (typeof linked)['link'] | undefined = linked.link
     const { core } = fake({
-      read: async () => ({
-        body: '',
-        error: null,
-        fingerprint: getFingerprint(''),
-        ...(link ? { link } : {}),
-      }),
+      read: async () =>
+        asValue({
+          body: '',
+          at: getFingerprint(''),
+          ...(link ? { link } : {}),
+        }),
     })
     const notes = openNotes(core, { limits: quick })
 

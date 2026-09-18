@@ -27,8 +27,8 @@ func reading(lines []string) (string, []ocr.PageStart, []highlight.Box, []ocr.Pa
 			marks = append(marks, ocr.PageStart{Offset: at})
 		}
 		boxes = append(boxes, highlight.Box{
-			Page: i / perPage,
-			Span: domain.Span{From: at, To: at + len(line)},
+			Page:     i / perPage,
+			ByteSpan: domain.ByteSpan{From: at, To: at + len(line)},
 			Rect: highlight.Rect{
 				MinX: 0.1, MinY: float32(i) / 100, MaxX: 0.9, MaxY: float32(i+1) / 100,
 			},
@@ -179,7 +179,7 @@ func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
 	// A .corrected file kept beside a reading it was not made from: the boxes reach
 	// past the prose, and one of them reaches backwards.
 	prose, marks, boxes, parts := reading(read)
-	boxes[2].Span = domain.Span{From: len(prose) + 100, To: len(prose) + 140}
+	boxes[2].ByteSpan = domain.ByteSpan{From: len(prose) + 100, To: len(prose) + 140}
 	boxes[4].From = 0
 
 	lines := []correction.Line{{Number: 2, Text: "far past the end"}, {Number: 4, Text: "back at the start"}}

@@ -17,7 +17,7 @@ export interface WindowStreamsDeps {
   /** What is being done behind the window, as cards to draw. */
   readonly setTasks: (said: readonly Task[]) => void
   /** A key pressed anywhere in the window. */
-  readonly handleKey: (press: KeyboardEvent) => void
+  readonly onKeyDown: (press: KeyboardEvent) => void
   /** Everything the window shows, counted again. */
   readonly count: () => Promise<void>
   /** The counting ended where it stands. */
@@ -32,6 +32,9 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   /** Whether the window is still open, which is how long anything is followed. */
   let open = true
 
+  /** What ends every call this window has in flight when it closes. */
+  const listening = new AbortController()
+
   const follows = createFollower({
     isOpen: () => open,
     setLost: deps.reportError,
@@ -39,12 +42,12 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   })
 
   onMounted(() => {
-    window.addEventListener('keydown', deps.handleKey)
+    window.addEventListener('keydown', deps.onKeyDown)
     void deps.count()
     // Whether a card can be asked about is the window's to know before a person
     // reaches for it, so it is asked once and the way in is drawn from it.
     void agentService
-      .getAgentState({})
+      .getAgentState({}, { signal: listening.signal })
       .then((said) => {
         deps.unreachable.value = said.unreachable
       })
@@ -55,7 +58,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // without a person asking. A session is left alone: its cards were laid out
     // when it opened, and what a deck says now is read at the next one.
     void follows(
-      () => cards.watchReloads({}),
+      () => cards.watchReloads({}, { signal: listening.signal }),
       async (said) => {
         // A message carrying no reload keeps the stream open and moves nothing.
         if (!said.reload) return
@@ -65,15 +68,15 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // What is being done behind the window, which is a vault read into the index.
     // It is a stream because a reading begins without the page asking for one.
     void follows(
-      () => itself.watchTasks({ window: WINDOW }),
+      () => itself.watchTasks({ window: WINDOW }, { signal: listening.signal }),
       (said) => {
         deps.setTasks(
           said.tasks.map((at) => ({
             id: at.id,
-            doing: at.doing,
+            label: at.doing,
             about: at.about,
             error: at.error,
-            isAsked: at.asked,
+            isAsked: at.isAsked,
           })),
         )
       },
@@ -81,7 +84,8 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
   })
   onUnmounted(() => {
     open = false
+    listening.abort()
     deps.stop()
-    window.removeEventListener('keydown', deps.handleKey)
+    window.removeEventListener('keydown', deps.onKeyDown)
   })
 }

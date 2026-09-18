@@ -16,7 +16,7 @@ import type { ViewState } from './viewState'
 export type { ViewState } from './viewState'
 
 /** The view one palette draws, over the state that palette holds. */
-export function view(state: ViewState) {
+export function getPaletteView(state: ViewState) {
   const { words, commands, byId, runs } = state
   const steps = createStepGroups(state)
 

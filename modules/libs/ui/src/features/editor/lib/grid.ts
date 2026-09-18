@@ -116,7 +116,8 @@ const place = (element: HTMLElement, cell: Cell | null, isWritable: boolean) => 
 }
 
 /** Whether this editor takes typing at all. */
-export const isWritable = (state: EditorState) => !state.readOnly && state.facet(EditorView.editable)
+export const isWritable = (state: EditorState) =>
+  !state.readOnly && state.facet(EditorView.editable)
 
 /** The widget drawn where a table is written. */
 export const gridOf = (state: EditorState, node: SyntaxNode) =>

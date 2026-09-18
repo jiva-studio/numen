@@ -7,6 +7,8 @@
  * another, and a date typed or written out is a day off the day the core reads.
  */
 import { describe, expect, it } from 'vitest'
+import { StopReason } from '@numen/protocol'
+import { asValue } from '@numen/wire'
 import { dayAfter } from '@numen/ui'
 
 import { usePresetTab } from '../kind'
@@ -63,26 +65,26 @@ const createHonestCurve = (): Curve => {
 const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
   const written: Settings[] = []
   const core: Presets = {
-    read: async (path) => ({
-      preset: {
-        path,
-        title: 'Sanskrit',
-        settings: { ...DEFAULTS, ...settings },
-        problems: [],
-        stops: 'none',
-        stopsOn: 'none',
-      },
-      error: null,
-      fingerprint: 'one',
-      bounds: BOUNDS,
-    }),
-    getDeckPreset: async () => ({ preset: null, error: null, fingerprint: '', bounds: NO_BOUNDS }),
+    read: async (path) =>
+      asValue({
+        preset: {
+          path,
+          title: 'Sanskrit',
+          settings: { ...DEFAULTS, ...settings },
+          problems: [],
+          stops: StopReason.NOTHING,
+          stopsOn: StopReason.NOTHING,
+        },
+        at: 'one',
+        bounds: BOUNDS,
+      }),
+    getDeckPreset: async () => asValue({ preset: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    createPreset: async () => ({ path: '', error: null }),
-    scheduleDeck: async () => ({ error: null, isChanged: false, fingerprint: '' }),
+    createPreset: async () => asValue({ path: '' }),
+    scheduleDeck: async () => asValue({ at: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return { error: null, isChanged: false, fingerprint: 'two' }
+      return asValue({ at: 'two' })
     },
     // A curve nobody answers leaves the sketch standing, which is what the
     // arithmetic here is read off.

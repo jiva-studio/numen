@@ -120,7 +120,7 @@ message Neighbour {
   // Set when both notes name this relationship, each in its own words. The
   // label is then the one the note in focus wrote, and the arrow drawn on the
   // line points at the note it was written about.
-  bool mutual = 5;
+  bool is_mutual = 5;
 
   // Which of three the note is, so a client draws a deck and a stencil as what
   // they are.
@@ -157,11 +157,11 @@ message ResolvedAddress {
   string vault = 3;
 
   // Set where that vault is not the one this call was answered about.
-  bool crossed = 4;
+  bool is_crossed = 4;
 
   // Set where several notes answer to the name. It reaches the nearest of them,
   // which is a fact about where the notes currently sit.
-  bool ambiguous = 5;
+  bool is_ambiguous = 5;
 }
 
 message ListHeadingsRequest {
@@ -245,7 +245,7 @@ message WriteNoteResponse {
   // Set when the prose is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this note as it
   // read it last, until a walk goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 // Role is what kind of relationship a link is. The list is closed: navigation
@@ -291,7 +291,7 @@ message CreateNoteResponse {
   // Set when the note is on disk and the index would not come level with it.
   // The note was made and `path` stands; search does not answer about it until
   // a walk goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 message WriteLinkRequest {
@@ -352,7 +352,7 @@ message RenameNoteResponse {
   // Set when the rename reached the vault and the index would not come level
   // with it. Search answers about these files as it read them last, until a
   // walk goes past.
-  bool unlevelled = 6;
+  bool is_unlevelled = 6;
 }
 
 message WatchEditsRequest {}
@@ -370,5 +370,5 @@ message WatchEditsResponse {
   string text = 4;
   // The last report of this change, which arrives whether the change landed or
   // was refused.
-  bool done = 5;
+  bool is_final = 5;
 }

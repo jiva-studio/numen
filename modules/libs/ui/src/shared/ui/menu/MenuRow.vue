@@ -14,7 +14,7 @@ defineProps<{
   /** Which item is the one in force, by the caller's identifier. */
   current: string | null
   /** Whether the name of the group it begins is drawn over it. */
-  hasGroupName: boolean
+  hasName: boolean
   /** Whether the menu draws icons, whose room is kept on every row. */
   hasIcons: boolean
 }>()
@@ -40,7 +40,7 @@ defineExpose({ focus })
 </script>
 
 <template>
-  <p v-if="hasGroupName" class="menu__group-name text-hushed px-2 py-1" aria-hidden="true">
+  <p v-if="hasName" class="menu__group-name text-hushed px-2 py-1" aria-hidden="true">
     {{ item.group }}
   </p>
   <hr v-else-if="item.isRule" class="menu__rule" role="separator" />

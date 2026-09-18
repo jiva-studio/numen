@@ -77,7 +77,7 @@ const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: str
     <WorkspacePane
       v-else
       :pane="node"
-      :focused="node.id === workspace.focus"
+      :is-focused="node.id === workspace.focus"
       @choose="workspace.choose"
       @close="workspace.close"
       @lift="workspace.lift"

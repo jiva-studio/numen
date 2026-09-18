@@ -10,7 +10,7 @@ import {
 } from '@numen/protocol'
 import type { Vault as VaultMessage } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
-import { namesOf } from '@numen/wire'
+import { asFailure, asValue, namesOf } from '@numen/wire'
 import type { SearchMode } from '@/features/command-palette'
 import type { Presence } from '@/entities/settings'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
@@ -82,7 +82,7 @@ export const mapVault = (one: VaultMessage): Vault => ({
   id: one.id,
   name: one.name,
   path: one.path,
-  isMissing: one.missing,
+  isMissing: one.isMissing,
 })
 
 export const mapVaultResult = (from: {
@@ -90,8 +90,5 @@ export const mapVaultResult = (from: {
   error?: VaultsErrorCode | undefined
 }): VaultResult => {
   const error = getVaultError(from)
-  return {
-    vault: from.vault ? mapVault(from.vault) : null,
-    error,
-  }
+  return error ? asFailure(error) : asValue(from.vault ? mapVault(from.vault) : null)
 }

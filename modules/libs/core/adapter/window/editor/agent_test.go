@@ -161,7 +161,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 		{
 			Kind: port.StepRead, Tool: "Show the person a passage of a document",
 			About: "library/A Book.epub",
-			Place: domain.Place{Path: "library/A Book.epub", Spans: []domain.Span{{From: 1200, To: 1280}}},
+			Place: domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}},
 		},
 		{Kind: port.StepStopped},
 	}}

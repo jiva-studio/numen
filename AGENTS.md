@@ -238,8 +238,6 @@ Specific term rules:
 | `make` (frontend) | `create` | factory functions in TS/Vue |
 
 Domain distinctions:
-- **`stretch`** is a run of a source's text where it stands, in bytes. **`span`**
-  is that same run as a client counts it, `from` and `to` in UTF-16 code units.
 - **`address`** is scheme and value, the only thing that says where a link goes (`domain.Address`).
   **`link`** is the relationship as written in a file.
 - **`overtaken`** is the tab state where a file no longer holds
@@ -247,16 +245,28 @@ Domain distinctions:
 
 ---
 
-## 10. File placement — a file stands where its subject does
+## 10. File placement — a file stands on a layer
 
-A file serving one subject stands with that subject and nowhere else. What two
-subjects both need stands below them, and a type only one of them reads never
-moves down.
+A file of a window stands on one of six layers, and a layer reaches only what
+stands below it. The table is in
+[A file of the windows stands on a layer](docs/adr/0042-a-file-of-the-windows-stands-on-a-layer.md),
+and it is the one place the order is written:
 
-Which layers there are, and what may reach what, is written per module: the
-windows in [`modules/apps/desktop/AGENTS.md`](modules/apps/desktop/AGENTS.md),
-the core in [`modules/libs/core/AGENTS.md`](modules/libs/core/AGENTS.md). Each
-names the test that refuses it, and every push runs them.
+| Layer | Holds |
+|---|---|
+| `shared` | system types, paths, transport, base components |
+| `entities` | a business thing: note, deck, media, settings, tab |
+| `features` | one user scenario, whole |
+| `widgets` | a composite block a page puts together |
+| `pages` | one tab, whole |
+| `app` | mounting, wiring, providers |
+
+`shared` holds what has no domain in it. A thing two slices need goes down a
+layer, or the slice that owns it says so through `@x`.
+
+A slice holding more than one kind of file is cut into segments: `ui`, `model`,
+`lib`, `api`. A component beside a wire mapper, or a store beside a pure
+reducer, is a slice to cut.
 
 ---
 
@@ -285,7 +295,7 @@ five.
 
 Directories and files follow strict casing rules:
 
-1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `tabs/`).
+1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `preset-editor/`).
 2. **Vue components**: always `PascalCase` (`App.vue`, `NoteTab.vue`, `Field.vue`).
 3. **TypeScript / JavaScript files**: always `camelCase` (`useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts`, `words.ts`, `answers.ts`).
 

@@ -101,7 +101,7 @@ func (f *folders) forget(path string) {
 	}
 }
 
-// concerns turns an absolute path from the operating system into the sources of
+// getConcernedPaths turns an absolute path from the operating system into the sources of
 // this vault that it names. What the vault holds is asked of the reader, so the
 // watcher and the walk answer alike.
 //
@@ -116,7 +116,7 @@ func (f *folders) forget(path string) {
 //
 // `walk` is a folder new to the watch, handed back as a name. This runs where
 // nothing may take time.
-func (f *folders) concerns(absolute string) (paths []string, whole bool, walk string) {
+func (f *folders) getConcernedPaths(absolute string) (paths []string, whole bool, walk string) {
 	path, inside := f.reader.relative(absolute)
 	if !inside {
 		return nil, true, ""

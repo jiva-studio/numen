@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { Model } from '../lib/configuration'
-import { settingsStore, getSettingAt, type SettingsStoreDeps } from './store'
+import { createSettingsStore, getSettingAt, type SettingsStoreDeps } from './store'
 
 const words = {
   unturned: 'That setting could not be written:',
@@ -37,7 +37,7 @@ const createStore = (text: string, refuses: string | null = null) => {
     },
   }
   const said = vi.fn()
-  return { asked, said, kept: settingsStore(core, words, said) }
+  return { asked, said, kept: createSettingsStore(core, words, said) }
 }
 
 describe('what stands at a setting', () => {
@@ -56,7 +56,7 @@ describe('what stands at a setting', () => {
 
   it('is nothing where the vault cannot be asked', async () => {
     const said = vi.fn()
-    const kept = settingsStore(
+    const kept = createSettingsStore(
       {
         getSettings: () => Promise.reject(new Error('gone')),
         updateSettings: () => Promise.resolve(),

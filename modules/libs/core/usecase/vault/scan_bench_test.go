@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -25,7 +24,6 @@ import (
 
 func openIndexFor(b *testing.B) *container.Index {
 	b.Helper()
-	indexfile.AsShipped()
 	db, err := container.Config{
 		IndexPath: filepath.Join(b.TempDir(), "index.db"),
 	}.OpenIndex(b.Context())

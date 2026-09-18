@@ -6,9 +6,9 @@ import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
 } from '@numen/protocol'
-import { namesOf } from '@numen/wire'
+import { asFailure, asValue, namesOf } from '@numen/wire'
 import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
-import type { Link, Neighbourhood, NoteWriteResult, Role, Seat } from '@/entities/note'
+import type { Link, Neighbourhood, NoteResult, Role, Seat, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 
 /**
@@ -74,18 +74,26 @@ export const mapNoteResult = (from: {
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   url?: string | undefined
   embed?: string | undefined
-}): NoteWriteResult => {
-  const at = stamp(from.at)
+}): NoteResult => {
   const error = errorIn(from)
+  if (error) return asFailure(error)
+  const at = stamp(from.at)
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
-  return {
+  return asValue({
     body: from.body ?? '',
-    error,
-    isChanged: staleIn(from),
-    ...(at === undefined ? {} : { fingerprint: at }),
+    ...(at === undefined ? {} : { at }),
     ...(link === undefined ? {} : { link }),
-  }
+  })
 }
+
+/** What a write came back with. A file that moved past the caller has changed. */
+export const mapWriteResult = (from: {
+  body?: string | undefined
+  error?: ProtoErrorCode | undefined
+  at?: { path: string; size: bigint; mtime: bigint } | undefined
+  url?: string | undefined
+  embed?: string | undefined
+}): WriteResult => (staleIn(from) ? asFailure('changed') : mapNoteResult(from))
 
 /**
  * A neighbourhood in the words the window uses.
@@ -104,7 +112,7 @@ export const mapNeighbourhood = (answer: NeighbourhoodMessage): Neighbourhood =>
         seat,
         label: one.label,
         through: one.through,
-        isMutual: one.mutual,
+        isMutual: one.isMutual,
       },
     ]
   }),

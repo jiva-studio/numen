@@ -150,7 +150,8 @@ A["error.ts"]
 B["goal.ts"]
 C["index.ts"]
 D["naming.ts"]
-E["transport.ts"]
+E["result.ts"]
+F["transport.ts"]
 9-->7
 9-->8
 A-->4
@@ -162,7 +163,8 @@ C-->A
 C-->B
 C-->D
 C-->E
-E-->5
+C-->F
+F-->5
 ```
 
 ## @numen/editor
@@ -272,6 +274,7 @@ U-->G
 U-->M
 U-->N
 V-->F
+V-->G
 V-->K
 V-->M
 V-->N

@@ -1,7 +1,7 @@
 /**
  * Domain types for open notes and their storage.
  */
-import type { NoteReadResult, NoteWriteResult } from './note'
+import type { NoteResult, WriteResult } from './note'
 import type { ErrorCode } from '@/shared/errors'
 import type { NoteBaseline, State, waiting } from './tabState'
 
@@ -17,12 +17,8 @@ export interface OpenNote {
  * The core as a tab reads and writes through it.
  */
 export interface Notes {
-  read(path: string): Promise<NoteReadResult>
-  write(
-    path: string,
-    body: string,
-    seen: NoteBaseline | null,
-  ): Promise<NoteWriteResult>
+  read(path: string): Promise<NoteResult>
+  write(path: string, body: string, seen: NoteBaseline | null): Promise<WriteResult>
 }
 
 /** What a person is told and answers with when their tab is in conflict. */

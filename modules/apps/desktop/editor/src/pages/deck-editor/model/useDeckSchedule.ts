@@ -2,7 +2,7 @@
  * Which preset schedules a deck, and putting one on another.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { PresetChoice, Presets, ReadResult } from '@/entities/deck'
+import type { PresetChoice, Presets, PresetReadResult } from '@/entities/deck'
 import { WORDS as words } from '@/entities/deck'
 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */
@@ -63,20 +63,17 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
   }
 
   /** The preset a deck names, as the line at the top of it draws it. */
-  const readDeckPreset = (read: ReadResult): DeckPreset => {
-    if (read.preset === null) return BY_DEFAULT
-    const errorMessage = read.preset.problems[0] ?? ''
-    if (read.preset.path === '') return { ...BY_DEFAULT, errorMessage }
-    return {
-      path: read.preset.path,
-      name: read.preset.title || words.unnamed(read.preset.path),
-      errorMessage,
-    }
+  const readDeckPreset = (answer: PresetReadResult): DeckPreset => {
+    const read = answer.ok ? answer.value.preset : null
+    if (read === null) return BY_DEFAULT
+    const errorMessage = read.problems[0] ?? ''
+    if (read.path === '') return { ...BY_DEFAULT, errorMessage }
+    return { path: read.path, name: read.title || words.unnamed(read.path), errorMessage }
   }
 
   /** Which preset schedules the deck at a path, asked of the vault. */
   const refreshDeckPreset = async (path: string): Promise<void> => {
-    let read: ReadResult
+    let read: PresetReadResult
     try {
       read = await presets.getDeckPreset(path)
     } catch {
@@ -99,9 +96,9 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     await store.settle(id)
     try {
       const answer = await presets.scheduleDeck(path, preset, store.getFilePath(id))
-      if (answer.isChanged) setChoiceMessage(id, words.notScheduledChanged)
-      else if (answer.error !== null) setChoiceMessage(id, words.notScheduled)
-      else setChoiceMessage(id, '')
+      if (answer.ok) setChoiceMessage(id, '')
+      else if (answer.error === 'changed') setChoiceMessage(id, words.notScheduledChanged)
+      else setChoiceMessage(id, words.notScheduled)
     } catch {
       // Scheduling preset failed.
       setChoiceMessage(id, words.unreachable)

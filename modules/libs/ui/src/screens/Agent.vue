@@ -7,6 +7,7 @@
  * sent. It fills whatever it is put in, and says nothing about where that is.
  */
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { browserViewport } from '@/shared/lib/viewport'
 import { Thread } from '@/features/thread'
 import { MessageComposer } from './message-composer'
 import type { Turn } from '@/features/thread'
@@ -59,22 +60,22 @@ const onSubmit = (text: string) => {
 // A field grown taller carries the foot of the conversation up with it.
 watch(room, () => thread.value?.toFoot(), { flush: 'post' })
 
-let watching: ResizeObserver | undefined
+/** What stops the watching, held from the moment it begins. */
+let stopWatching: (() => void) | null = null
 
 onMounted(() => {
   const element = composer.value?.$el as HTMLElement | undefined
-  if (!element || typeof ResizeObserver === 'undefined') return
-  // The border box: what the conversation has to clear is the whole field,
-  // its padding and its edge included.
-  watching = new ResizeObserver(([seen]) => {
-    if (seen) room.value = `${seen.borderBoxSize?.[0]?.blockSize ?? element.offsetHeight}px`
+  if (!element) return
+  // What the conversation has to clear is the whole field, its padding and its
+  // edge included.
+  stopWatching = browserViewport.watchWhole(element, (size) => {
+    room.value = `${size.height}px`
   })
-  watching.observe(element)
 })
 
 const agentStyle = computed(() => ({ '--agent-room': room.value }))
 
-onBeforeUnmount(() => watching?.disconnect())
+onBeforeUnmount(() => stopWatching?.())
 </script>
 
 <template>
@@ -135,9 +136,11 @@ onBeforeUnmount(() => watching?.disconnect())
   min-height: 0;
   padding-block-start: var(--fade);
   padding-block-end: var(--clear);
+  /* A mask reads the alpha and nothing else, so this is opacity and not a
+     colour a theme reaches. */
   mask-image: linear-gradient(
     to bottom,
-    #000 calc(100% - var(--behind)),
+    black calc(100% - var(--behind)),
     transparent calc(100% - var(--behind) + var(--fade))
   );
 }

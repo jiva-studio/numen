@@ -73,7 +73,7 @@ class Time extends GutterMarker {
   }
 }
 
-const times = (goToLine: (line: number) => void): Extension =>
+const createTimingExtension = (goToLine: (line: number) => void): Extension =>
   gutter({
     class: 'cm-times',
     lineMarker: (view, line) => {
@@ -186,5 +186,5 @@ export function timing(goToLine: (line: number) => void): Timing {
 
   const show = (state: TimingState) => put(state, true)
 
-  return { extension: [held, marked, times(goToLine), painted, holding], show }
+  return { extension: [held, marked, createTimingExtension(goToLine), painted, holding], show }
 }

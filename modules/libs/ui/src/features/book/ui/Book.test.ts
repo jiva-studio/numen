@@ -13,7 +13,7 @@ const BOOK = { from: 0, to: CHAPTER.span.to + 500 }
 
 /**
  * A book reader in a room nothing has laid out. jsdom measures nothing, so the
- * text comes to no spreads at all and what is asked here is what the reader
+ * text comes to no countSpreads at all and what is asked here is what the reader
  * does when it has none.
  */
 const reader = async (book = BOOK) => {
@@ -41,7 +41,7 @@ const pressKey = (wrapper: Awaited<ReturnType<typeof reader>>, key: string): boo
   )
 
 describe('a document nothing has laid out', () => {
-  it('draws no controls, because it has come to no spreads', async () => {
+  it('draws no controls, because it has come to no countSpreads', async () => {
     const held = await reader()
 
     expect(held.find('input[type="number"]').exists()).toBe(false)
@@ -150,8 +150,8 @@ const mountPointing = async () => {
 }
 
 /** One link of the document pressed, and the press as the page left it. */
-const press = async (wrapper: Awaited<ReturnType<typeof mountPointing>>, says: string) => {
-  const link = wrapper.findAll('a').find((one) => one.text() === says)!
+const press = async (wrapper: Awaited<ReturnType<typeof mountPointing>>, label: string) => {
+  const link = wrapper.findAll('a').find((one) => one.text() === label)!
   const event = new MouseEvent('click', { bubbles: true, cancelable: true })
   link.element.dispatchEvent(event)
   await wrapper.vm.$nextTick()
@@ -229,7 +229,7 @@ const setLayout = (paper: HTMLElement, along: number, lefts: readonly number[]):
   })
 }
 
-/** A reader the browser has measured: an area of two columns, three spreads of text. */
+/** A reader the browser has measured: an area of two columns, three countSpreads of text. */
 const mountBook = async () => {
   const held = mount(Book, {
     props: {
@@ -259,7 +259,7 @@ const getTranslate = (wrapper: Awaited<ReturnType<typeof mountBook>>): string =>
   (wrapper.find('.book__paper').element as HTMLElement).style.translate
 
 describe('a document the browser has laid out', () => {
-  it('is drawn, and says how many spreads it is read in', async () => {
+  it('is drawn, and says how many countSpreads it is read in', async () => {
     const held = await mountBook()
 
     expect((held.find('.book__paper').element as HTMLElement).style.display).not.toBe('none')
@@ -279,7 +279,7 @@ describe('a document the browser has laid out', () => {
     held.unmount()
   })
 
-  it('turns a spread at a time while spreads are left', async () => {
+  it('turns a spread at a time while countSpreads are left', async () => {
     const held = await mountBook()
 
     expect(pressKey(held, 'ArrowRight')).toBe(true)

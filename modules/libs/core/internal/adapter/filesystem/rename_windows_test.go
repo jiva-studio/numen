@@ -40,7 +40,7 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 		windows.CloseHandle(handle)
 	}()
 
-	if err := rename(root, ".Entropy.md.new", "Entropy.md"); err != nil {
+	if err := rename(t.Context(), root, ".Entropy.md.new", "Entropy.md"); err != nil {
 		<-closed
 		t.Fatalf("the save was refused while the file was held: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
 	handle := openHandle(t, target)
 	defer windows.CloseHandle(handle)
 
-	if err := rename(root, ".Entropy.md.new", "Entropy.md"); err == nil {
+	if err := rename(t.Context(), root, ".Entropy.md.new", "Entropy.md"); err == nil {
 		t.Error("the save was reported as landed over a file nothing let go of")
 	}
 }

@@ -1,9 +1,9 @@
 /**
  * One frame between two arrangements. Pure, so a moment partway through a
- * movement is a value with a test rather than something to be caught.
+ * movement is a value with a test.
  *
- * Nodes are matched by identifier alone, which is why this needs no knowledge
- * of what a node stands for.
+ * Nodes are matched by identifier alone, and nothing here knows what a node
+ * stands for.
  */
 import { edgeKey, type PlacedEdge, type PlexEdge } from '../edge'
 import type { PlexFrame } from '../frame'

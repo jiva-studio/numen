@@ -28,16 +28,16 @@ defineSlots<{
   failure?(props: { turn: Turn }): unknown
 }>()
 
-/** Whether the turn is a line about work rather than something said. */
+/** Whether the turn is a line about work. */
 const isDoing = computed(() => props.entry.turn.voice === 'doing')
 
 /** A line about work the person can press, which opens what it was working on. */
-const opens = computed(() => isDoing.value && props.entry.turn.isOpening === true)
+const opens = computed(() => isDoing.value && props.entry.turn.canOpen === true)
 
 /** What the line about a tool in hand is drawn from. */
 const call = computed(() => ({
   tool: props.entry.turn.text,
-  about: props.entry.turn.about ?? '',
+  subject: props.entry.turn.subject ?? '',
   aside: props.entry.turn.aside ?? '',
   working: props.entry.state === 'arriving',
 }))
@@ -72,7 +72,7 @@ const call = computed(() => ({
       <Prose
         v-else
         :text="entry.turn.text"
-        :is-streaming="entry.state === 'arriving'"
+        :is-arriving="entry.state === 'arriving'"
         :unresolved="entry.turn.unresolved ?? []"
         @follow="(href: string, press: MouseEvent) => emit('follow', entry.turn, href, press)"
       />

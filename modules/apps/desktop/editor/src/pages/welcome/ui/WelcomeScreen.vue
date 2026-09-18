@@ -54,10 +54,12 @@ const adding = computed(() => {
 
 const ways = computed(() => {
   const at = props.getTarget()
-  return waysIn({ vault: at.vault.id, isReady: at.isReady }, words, navigator.userAgent).map((one) => {
-    const icon = iconFor(one.id)
-    return { ...one, ...(icon ? { icon } : {}) }
-  })
+  return waysIn({ vault: at.vault.id, isReady: at.isReady }, words, navigator.userAgent).map(
+    (one) => {
+      const icon = iconFor(one.id)
+      return { ...one, ...(icon ? { icon } : {}) }
+    },
+  )
 })
 
 const onList = computed(() => vaultsOn(props.listed, words))

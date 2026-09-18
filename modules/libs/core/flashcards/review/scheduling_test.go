@@ -42,7 +42,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	// the half day on the Friday, the three already on the Sunday and the one
 	// on the Monday.
 	on := makeDueByDay(day, at, map[int]int{5: 0, 6: 0, 7: 3, 8: 1, 9: 0})
-	if got, want := p.Places(on, at, due), at.AddDate(0, 0, 9); !got.Equal(want) {
+	if got, want := p.ScheduleDay(on, at, due), at.AddDate(0, 0, 9); !got.Equal(want) {
 		t.Errorf("the card was put on %s, want %s",
 			got.Format(time.RFC3339), want.Format(time.RFC3339))
 	}
@@ -54,7 +54,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	// The day the scheduler named weighs as much as the Monday beside it, and
 	// keeps the card.
 	tied := makeDueByDay(day, at, map[int]int{5: 3, 6: 0, 7: 0, 8: 0, 9: 1})
-	if got := p.Places(tied, at, due); !got.Equal(due) {
+	if got := p.ScheduleDay(tied, at, due); !got.Equal(due) {
 		t.Errorf("a card tied between its own day and the next was put on %s, want %s",
 			got.Format(time.RFC3339), due.Format(time.RFC3339))
 	}
@@ -165,7 +165,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	}
 
 	button := p.GetLandingDay(loaded(due), local, due)
-	replayed := p.Places(loaded(due.UTC()), stamp, by.Next(stood, stamp, review.Good).Due)
+	replayed := p.ScheduleDay(loaded(due.UTC()), stamp, by.Next(stood, stamp, review.Good).Due)
 	if button.Equal(due) {
 		t.Fatalf("the placement left the card on %v, where the scheduler put it", due.In(in))
 	}

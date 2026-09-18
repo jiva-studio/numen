@@ -7,6 +7,7 @@
  * Nothing here reaches a vault. Each tab is handed what it would hold, so every
  * piece is drawn in the state it settles in and a picture can be taken of it.
  */
+import { StopReason } from '@numen/protocol'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { WorkspaceLayout, branch, pane } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
@@ -223,7 +224,7 @@ const PRESET_STATE: PresetTabState = {
   isWaiting: ref(false),
   bounds: shallowRef(BOUNDS),
   problems: shallowRef([]),
-  stopped: ref('none'),
+  stopped: ref(StopReason.NOTHING),
   errorMessage: ref(''),
   hasChanged: ref(false),
   reload: () => {},
@@ -553,7 +554,8 @@ const entry = (path: string, over: Partial<Entry> = {}): Entry => ({
   ...over,
 })
 
-const createOtherEntry = (path: string, kind: Entry['kind']): Entry => entry(path, { kind, type: 'note' })
+const createOtherEntry = (path: string, kind: Entry['kind']): Entry =>
+  entry(path, { kind, type: 'note' })
 
 /** The folders of the vault the pictures in this file are taken of. */
 const VAULT: Record<string, readonly Entry[]> = {

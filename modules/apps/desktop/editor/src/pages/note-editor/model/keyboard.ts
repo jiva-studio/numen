@@ -21,7 +21,7 @@ export interface EditorHandle {
  */
 export const ITSELF = -1
 
-export function noteKeyboard() {
+export function createNoteKeyboard() {
   /**
    * The notes owed their keyboard, and the line each was asked to open on,
    * until there is an editor to hand it to. Each is under the identity its tab

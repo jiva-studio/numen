@@ -82,7 +82,7 @@ const settings = (over: Partial<Settings> = {}): Settings => ({
   reviewsADay: 140,
   retention: 0.9,
   load: {},
-  evenLoad: true,
+  hasEvenLoad: true,
   ...over,
 })
 

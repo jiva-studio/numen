@@ -75,7 +75,8 @@ const setBox = (pane: Pane, element: Element | ComponentPublicInstance | null): 
 const divided = computed<readonly Pane[]>(() => getPanes(props.face, props.words))
 
 /** The part a field would be written into. */
-const isFocused = (pane: Pane): boolean => pane.mode === 'written' && focusedHalf.value === pane.half
+const isFocused = (pane: Pane): boolean =>
+  pane.mode === 'written' && focusedHalf.value === pane.half
 
 /**
  * A field written into the half the caret is in, where the caret stands, the caret

@@ -30,7 +30,7 @@ export function limitsFor(
   const asked: RoleLimits = { perLine: options.maxPerLine, lines: options.maxLines }
   const { viewport } = options
   if (!viewport)
-    return everySeat(
+    return getSeatLimits(
       options,
       () => asked,
       () => asked,
@@ -75,7 +75,7 @@ export function limitsFor(
 
   // What a column has to clear: the row where the two meet, the focus alone
   // where they do not.
-  const columnClears = (perLine: number) =>
+  const getColumnClearance = (perLine: number) =>
     columnsMeetRows ? rowHalf(perLine) : options.focusSize.width / 2
 
   // Whether the window has any row width at all that seats a column beside it.
@@ -85,12 +85,12 @@ export function limitsFor(
   // The widest row that still leaves the window able to hold it — and, where a
   // column can be seated, room for one beyond it. It is measured from what the
   // window holds at the settings, which are the closest the gaps ever pack.
-  const row = findWidestRow(countAlong(2 * halfWidth, width, options.gap), (perLine) => {
+  const row = getWidestRow(countAlong(2 * halfWidth, width, options.gap), (perLine) => {
     if (rowHalf(perLine) > halfWidth) return false
     return !seatsColumn || columnsBeside(perLine) >= 1
   })
 
-  return everySeat(
+  return getSeatLimits(
     options,
     () => ({
       perLine: row,
@@ -110,21 +110,21 @@ export function limitsFor(
       // drawn is reported as overflow, which is what the reader can act on;
       // drawing it off the edge of the window is not.
       lines: hasColumns
-        ? Math.min(columnsBeyond(columnClears(row)), Math.ceil(longestColumn / perColumn))
+        ? Math.min(columnsBeyond(getColumnClearance(row)), Math.ceil(longestColumn / perColumn))
         : 1,
     }),
   )
 }
 
 /** The widest line that fits, or one when none of them do. */
-function findWidestRow(most: number, fits: (perLine: number) => boolean): number {
+function getWidestRow(most: number, fits: (perLine: number) => boolean): number {
   for (let perLine = most; perLine >= 1; perLine--) {
     if (fits(perLine)) return perLine
   }
   return 1
 }
 
-function everySeat(
+function getSeatLimits(
   options: PlexOptions,
   forRows: () => RoleLimits,
   forColumns: () => RoleLimits,

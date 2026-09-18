@@ -64,7 +64,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
    * it, which is the letter drawn on that row. A vault whose count has not
    * arrived carries no letter, and the letter standing at it opens nothing.
    */
-  const handleVaultKey = (press: KeyboardEvent) => {
+  const onVaultKey = (press: KeyboardEvent) => {
     const vaults = deps.getVaults()
     const at = getVaultForKey(press, vaults.length)
     const one = at === null ? undefined : vaults[at]
@@ -74,7 +74,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
   }
 
   /** The keys a person picks what to sit down to with. */
-  const handleDeckKey = (press: KeyboardEvent, vault: VaultCardsDue) => {
+  const onDeckKey = (press: KeyboardEvent, vault: VaultCardsDue) => {
     const asked = getPickerKeyIntent(press, vault.decks.length)
     if (!asked) return
     press.preventDefault()
@@ -101,7 +101,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
   }
 
   /** What the key asked of the session, done. */
-  const handleSessionIntent = (intent: SessionKeyIntent) => {
+  const onSessionIntent = (intent: SessionKeyIntent) => {
     switch (intent.does) {
       case 'show':
         deps.show()
@@ -130,7 +130,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
     }
   }
 
-  const handleSessionKey = (press: KeyboardEvent) => {
+  const onSessionKey = (press: KeyboardEvent) => {
     const asked = getSessionKeyIntent(press, {
       isShown: deps.isShown(),
       isAsking: deps.getShowing() === 'asking',
@@ -138,18 +138,18 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
     })
     if (!asked) return
     if (isSwallowed(asked)) press.preventDefault()
-    handleSessionIntent(asked)
+    onSessionIntent(asked)
   }
 
-  const handleKey = (press: KeyboardEvent) => {
+  const onKeyDown = (press: KeyboardEvent) => {
     const on = deps.getScreen()
-    if (on === 'vaults') return handleVaultKey(press)
+    if (on === 'vaults') return onVaultKey(press)
     if (on === 'decks') {
       const vault = deps.getChosenVault()
-      return vault ? handleDeckKey(press, vault) : undefined
+      return vault ? onDeckKey(press, vault) : undefined
     }
-    if (on === 'session') handleSessionKey(press)
+    if (on === 'session') onSessionKey(press)
   }
 
-  return { handleKey }
+  return { onKeyDown }
 }

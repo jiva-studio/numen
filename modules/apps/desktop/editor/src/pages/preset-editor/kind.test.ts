@@ -9,7 +9,10 @@ import { describe, expect, it } from 'vitest'
 
 import { usePresetTab } from './kind'
 import type { SettingValue } from './types'
+import { StopReason } from '@numen/protocol'
 import { goalValue, findNearest } from './lib/curve'
+import { asFailure, asValue } from '@numen/wire'
+import type { CardsFailure } from '@/entities/deck'
 import { fieldsUnder, steer, type Field } from './lib/fields'
 import {
   DEFAULTS,
@@ -18,9 +21,10 @@ import {
   type Goal,
   type Point,
   type Presets,
-  type ReadResult,
+  type PresetReadResult,
+  type PresetWriteResult,
+  type ReadPreset,
   type Settings,
-  type WriteResult,
 } from './types'
 import { BOUNDS } from './fixtures'
 import type { ErrorCode } from '@/shared/errors'
@@ -78,11 +82,25 @@ const dated: Curve = {
 /** The file every test here opens, which stands where the curve's marks stand. */
 const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retention: 0.88 }
 
+/** What a test says a read answered: parts of the preset, or the refusal instead. */
+type ReadOver = Partial<ReadPreset> & { readonly error?: ErrorCode }
+
+/** What a test says a write answered: the file it left, or the refusal instead. */
+type WriteOver = { readonly error?: CardsFailure; readonly at?: string }
+
+/** A read built from what the test said of it. */
+const readAs = (base: ReadPreset, over: ReadOver): PresetReadResult =>
+  over.error ? asFailure(over.error) : asValue({ ...base, ...over })
+
+/** A write built from what the test said of it. */
+const writeAs = (over: WriteOver): PresetWriteResult =>
+  over.error ? asFailure(over.error) : asValue({ at: over.at ?? 'two' })
+
 const openPresetTab = async (
   settings: Partial<Settings> = {},
   answers: Curve | ((asked: Settings) => Curve | Promise<Curve>) = curve,
-  reading: (time: number) => Partial<ReadResult> = () => ({}),
-  writing: (time: number) => Partial<WriteResult> | Promise<Partial<WriteResult>> = () => ({}),
+  reading: (time: number) => ReadOver = () => ({}),
+  writing: (time: number) => WriteOver | Promise<WriteOver> = () => ({}),
 ) => {
   const written: Settings[] = []
   const asked: Goal[] = []
@@ -90,27 +108,29 @@ const openPresetTab = async (
   let times = 0
   let writes = 0
   const core: Presets = {
-    read: async (path) => ({
-      preset: {
-        path,
-        title: 'Steady',
-        settings: { ...STEADY, ...settings },
-        problems: [],
-        stops: 'none',
-        stopsOn: 'none',
-      },
-      error: null,
-      fingerprint: 'one',
-      bounds: BOUNDS,
-      ...reading(times++),
-    }),
-    getDeckPreset: async () => ({ preset: null, error: null, fingerprint: '', bounds: NO_BOUNDS }),
+    read: async (path) =>
+      readAs(
+        {
+          preset: {
+            path,
+            title: 'Steady',
+            settings: { ...STEADY, ...settings },
+            problems: [],
+            stops: StopReason.NOTHING,
+            stopsOn: StopReason.NOTHING,
+          },
+          at: 'one',
+          bounds: BOUNDS,
+        },
+        reading(times++),
+      ),
+    getDeckPreset: async () => asValue({ preset: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    createPreset: async () => ({ path: '', error: null }),
-    scheduleDeck: async () => ({ error: null, isChanged: false, fingerprint: '' }),
+    createPreset: async () => asValue({ path: '' }),
+    scheduleDeck: async () => asValue({ at: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return { error: null, isChanged: false, fingerprint: 'two', ...(await writing(writes++)) }
+      return writeAs(await writing(writes++))
     },
     curve: async (_path, put) => {
       asked.push(put.goal)
@@ -160,27 +180,26 @@ const opening = async (file: Partial<Settings>) => {
   const core: Presets = {
     read: async (path) => {
       await held
-      return {
+      return asValue({
         preset: {
           path,
           title: 'Steady',
           settings: { ...STEADY, ...file },
           problems: [],
-          stops: 'none',
-          stopsOn: 'none',
+          stops: StopReason.NOTHING,
+          stopsOn: StopReason.NOTHING,
         },
-        error: null,
-        fingerprint: 'one',
+        at: 'one',
         bounds: BOUNDS,
-      }
+      })
     },
-    getDeckPreset: async () => ({ preset: null, error: null, fingerprint: '', bounds: NO_BOUNDS }),
+    getDeckPreset: async () => asValue({ preset: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
-    createPreset: async () => ({ path: '', error: null }),
-    scheduleDeck: async () => ({ error: null, isChanged: false, fingerprint: '' }),
+    createPreset: async () => asValue({ path: '' }),
+    scheduleDeck: async () => asValue({ at: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return { error: null, isChanged: false, fingerprint: 'two' }
+      return asValue({ at: 'two' })
     },
     curve: async () => curve,
   }
@@ -452,7 +471,7 @@ describe('what the tab says it encountered as an error', () => {
   it('is a sentence of its own for each error a read answers', async () => {
     const said: string[] = []
     for (const error of errors) {
-      const { state } = await openPresetTab({}, curve, () => ({ preset: null, error }))
+      const { state } = await openPresetTab({}, curve, () => ({ error }))
       said.push(state.errorMessage.value)
     }
     expect(said.every((one) => one !== '')).toBe(true)
@@ -502,7 +521,7 @@ describe('a curve nobody answers', () => {
   })
 
   it('is what a file refused leaves, so no answer is waited on', async () => {
-    const { state } = await openPresetTab({}, curve, () => ({ preset: null, error: 'notAPreset' }))
+    const { state } = await openPresetTab({}, curve, () => ({ error: 'notAPreset' }))
     expect(state.isWaiting.value).toBe(false)
     expect(state.errorMessage.value).not.toBe('')
   })
@@ -562,7 +581,7 @@ describe('what a tab still owes the file', () => {
       {},
       curve,
       () => ({}),
-      () => ({ isChanged: true }),
+      () => ({ error: 'changed' }),
     )
     state.updateSetting('newADay', 4)
     state.close('Steady.md')
@@ -586,7 +605,7 @@ describe('what a tab still owes the file', () => {
       () => ({}),
       (time) =>
         time === 0
-          ? new Promise<Partial<WriteResult>>((done) => {
+          ? new Promise<WriteOver>((done) => {
               resolveWrite = () => done({})
             })
           : {},
@@ -635,8 +654,8 @@ describe('a file read again', () => {
               title: 'Steady',
               settings: { ...STEADY, newADay: 7, reviewsADay: 33, interval: 40 },
               problems: [],
-              stops: 'none',
-              stopsOn: 'none',
+              stops: StopReason.NOTHING,
+              stopsOn: StopReason.NOTHING,
             },
           },
     )
@@ -658,11 +677,11 @@ describe('a file read again', () => {
               title: 'Steady',
               settings: STEADY,
               problems: ['a line nobody could read'],
-              stops: 'none',
-              stopsOn: 'none',
+              stops: StopReason.NOTHING,
+              stopsOn: StopReason.NOTHING,
             },
           }
-        : { preset: null, error: 'notAPreset' },
+        : { error: 'notAPreset' },
     )
     expect(state.problems.value).toHaveLength(1)
 

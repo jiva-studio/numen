@@ -53,7 +53,7 @@ const createAudioElement: AudioFactory = () => new Audio()
  * One sound, played through one element made when it is first wanted. The
  * element is never put in the page, so nothing that is drawn can take it away.
  */
-export function audio(create: AudioFactory = createAudioElement): Player {
+export function createAudioPlayer(create: AudioFactory = createAudioElement): Player {
   const url = ref('')
   const at = ref(0)
   const duration = ref(0)
@@ -138,7 +138,7 @@ export function audio(create: AudioFactory = createAudioElement): Player {
 }
 
 /** The one player this window has. Every recording is played through it. */
-export const player: Player = audio()
+export const player: Player = createAudioPlayer()
 
 /** What is asked whether a kind of sound can be played. */
 export type MediaTypeProbe = (type: string) => boolean

@@ -4,6 +4,7 @@
  * The window is not here: what the tab holds is made up, and everything it was
  * asked to do is written down in the order it was asked.
  */
+import { StopReason } from '@numen/protocol'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
@@ -123,7 +124,7 @@ const tabAt = (
     isWaiting: ref(isWaiting),
     bounds: shallowRef(BOUNDS),
     problems: shallowRef([]),
-    stopped: ref('none'),
+    stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
     hasChanged: ref(false),
     reload: () => void done.push('reload'),

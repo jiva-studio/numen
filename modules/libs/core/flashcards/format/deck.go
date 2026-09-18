@@ -37,9 +37,9 @@ func sectionHeads(body []byte) []headSpan {
 	return out
 }
 
-// isDeckHeading reports whether a heading of this level begins something of the
-// deck's own, which is what a section's text and a card's values stop at.
-func isDeckHeading(level int) bool { return level == SectionLevel || level == CardLevel }
+// isDeckHeadingLevel reports whether a heading of this level begins something of the deck's
+// own, which is what a section's text and a card's values stop at.
+func isDeckHeadingLevel(level int) bool { return level == SectionLevel || level == CardLevel }
 
 // cardSpan is where one card and each of its values stand in the body.
 type cardSpan struct {
@@ -73,7 +73,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 
 	first := len(body)
 	for _, s := range secs {
-		if isDeckHeading(s.level) {
+		if isDeckHeadingLevel(s.level) {
 			first = s.head
 			break
 		}
@@ -84,13 +84,13 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 	under := NoSection
 	var spans []cardSpan
 	for i, s := range secs {
-		if !isDeckHeading(s.level) {
+		if !isDeckHeadingLevel(s.level) {
 			continue
 		}
 
 		end := len(body)
 		for _, later := range secs[i+1:] {
-			if isDeckHeading(later.level) {
+			if isDeckHeadingLevel(later.level) {
 				end = later.head
 				break
 			}

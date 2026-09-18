@@ -42,7 +42,7 @@ export const getSettingAt = (settings: unknown, at: readonly string[]): unknown 
   return value
 }
 
-export function settingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
+export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
   /** Every setting as it stands. It holds nothing until the vault has answered. */
   const held = shallowRef<unknown>({})
 

@@ -33,7 +33,7 @@ export const agentPort = (agent: AgentClient): AgentPort => ({
           yield {
             kind: 'toolCall',
             tool: said.tool,
-            about: said.about,
+            subject: said.about,
             written: said.written,
             ...(said.path ? { place: { path: said.path, span: spanOf(said.span) } } : {}),
           }

@@ -3,6 +3,8 @@
  * back, and what it does when the file moved past what it read.
  */
 import { describe, expect, it } from 'vitest'
+import { StopReason } from '@numen/protocol'
+import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultCard, DeckProblem, Preset } from '@/entities/deck'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
@@ -13,7 +15,10 @@ import { useDeckTabs, type DeckTabState } from './useDeckTabs'
 import { WORDS as words } from '@/entities/deck'
 
 /** A preset that schedules, which is what every preset here is. */
-const SCHEDULING = { stops: 'none', stopsOn: 'none' } satisfies Pick<Preset, 'stops' | 'stopsOn'>
+const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } satisfies Pick<
+  Preset,
+  'stops' | 'stopsOn'
+>
 
 /** The one place a file is opened from. Nothing here opens one. */
 const tabOpeners = () => fileOpeners({ fileKinds: async () => new Map() })
@@ -99,23 +104,16 @@ const vault = (
         held: 1,
       }
     },
-    createDeck: async (title) => ({ path: `${title}.md`, error: null }),
-    createStencil: async (title) => ({ path: `${title}.md`, error: null }),
-    renameField: async () => ({
-      decks: [],
-      cards: 0,
-      notWritten: [],
-      error: null,
-      isChanged: false,
-      fingerprint: '',
-    }),
+    createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
     readDeck: async (path) => {
       reads += 1
       if (answers.isUnreachable) throw new Error('out of reach')
       if (answers.error) {
-        return { deck: null, error: answers.error, fingerprint: '', bound: answers.bound ?? 0 }
+        return asFailure({ code: answers.error, bound: answers.bound ?? 0 })
       }
-      return {
+      return asValue({
         deck: {
           path,
           title: 'Animals',
@@ -125,22 +123,20 @@ const vault = (
           tail: '',
           problems: answers.problems ?? [],
         },
-        error: null,
-        fingerprint: `read ${reads}`,
-        bound: 0,
-      }
+        at: `read ${reads}`,
+      })
     },
     writeDeck: async (path, deck, presented) => {
       written.push(`${path} ${deck.cards.map(getCardName).join(', ') || '—'}`)
       wrote.push(deck)
       seen.push(presented)
-      if (answers.wrote) return { error: answers.wrote, isChanged: false, fingerprint: '', bound: 0 }
-      if (answers.isChanged) return { error: null, isChanged: true, fingerprint: '', bound: 0 }
+      if (answers.wrote) return asFailure({ code: answers.wrote, bound: 0 })
+      if (answers.isChanged) return asFailure({ code: 'changed' as const, bound: 0 })
       cards = deck.cards
-      return { error: null, isChanged: false, fingerprint: 'written', bound: 0 }
+      return asValue({ at: 'written' })
     },
-    readStencil: async () => ({ stencil: null, error: 'missing', fingerprint: '' }),
-    writeStencil: async () => ({ error: null, isChanged: false, fingerprint: '' }),
+    readStencil: async () => asFailure('missing' as const),
+    writeStencil: async () => asValue({ at: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */
@@ -149,40 +145,38 @@ const vault = (
   const put: { deck: string; preset: string; seen: string }[] = []
 
   const presets: Presets = {
-    read: async (path) => ({
-      preset: { path, title: 'Sanskrit', settings: DEFAULTS, problems: [], ...SCHEDULING },
-      error: null,
-      fingerprint: '',
-      bounds: NO_BOUNDS,
-    }),
+    read: async (path) =>
+      asValue({
+        preset: { path, title: 'Sanskrit', settings: DEFAULTS, problems: [], ...SCHEDULING },
+        at: '',
+        bounds: NO_BOUNDS,
+      }),
     list: async () =>
       answers.presets ?? [
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
-    createPreset: async () => ({ path: '', error: null }),
-    getDeckPreset: async () => ({
-      preset: {
-        path: by,
-        title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
-        settings: DEFAULTS,
-        problems: answers.saying ? [answers.saying] : [],
-        ...SCHEDULING,
-      },
-      error: null,
-      fingerprint: '',
-      bounds: NO_BOUNDS,
-    }),
+    createPreset: async () => asValue({ path: '' }),
+    getDeckPreset: async () =>
+      asValue({
+        preset: {
+          path: by,
+          title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+          settings: DEFAULTS,
+          problems: answers.saying ? [answers.saying] : [],
+          ...SCHEDULING,
+        },
+        at: '',
+        bounds: NO_BOUNDS,
+      }),
     scheduleDeck: async (deck, preset, seen) => {
       put.push({ deck, preset, seen })
-      if (answers.notScheduled) {
-        return { error: answers.notScheduled, isChanged: false, fingerprint: '' }
-      }
-      if (answers.hasSchedulingChanged) return { error: null, isChanged: true, fingerprint: '' }
+      if (answers.notScheduled) return asFailure(answers.notScheduled)
+      if (answers.hasSchedulingChanged) return asFailure('changed' as const)
       by = preset
-      return { error: null, isChanged: false, fingerprint: 'scheduled' }
+      return asValue({ at: 'scheduled' })
     },
-    write: async () => ({ error: null, isChanged: false, fingerprint: '' }),
+    write: async () => asValue({ at: '' }),
     curve: async () => ({
       goal: 'minutes',
       grid: [],

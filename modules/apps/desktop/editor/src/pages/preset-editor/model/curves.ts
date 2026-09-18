@@ -2,7 +2,7 @@
  * Curve calculation, caching, and throttling for preset tabs.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { answerGuard, type AnswerGuard } from '@/shared/questions'
+import { createAnswerGuard, type AnswerGuard } from '@/shared/questions'
 import {
   DEFAULTS,
   type Curve,
@@ -44,7 +44,7 @@ export function createCurveState(
     shouldDrawAgain: false,
     shape: '',
     isReal: false,
-    asks: answerGuard(),
+    asks: createAnswerGuard(),
     answers: new Map<string, Curve>(),
   }
 }
@@ -55,7 +55,9 @@ export const isSameGrid = (one: readonly number[], two: readonly number[]): bool
 
 /** Where the knob stands on a curve: the preset's own place, or the nearest. */
 export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
-  curve.now.at >= 0 ? curve.now.at : Math.max(findNearest(curve.grid, goalValue(settings, today)), 0)
+  curve.now.at >= 0
+    ? curve.now.at
+    : Math.max(findNearest(curve.grid, goalValue(settings, today)), 0)
 
 /** Applies a landed curve and updates the material counts. */
 export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {
@@ -100,8 +102,8 @@ const fetchCurve = async (
   let answer: Curve
   try {
     answer = await core.curve(path, settings)
-  } catch (error) {
-    console.error(error)
+  } catch {
+    // The window says what it could not do; what the call carried back adds nothing a person can act on.
     if (!mine.isCurrent) return
     setErrorMessage(words.noCurve)
     state.isWaiting.value = false

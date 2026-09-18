@@ -181,7 +181,7 @@ const onOver = (at: number, event: PointerEvent) => {
       v-model="typed"
       :uid="uid"
       :here="isPanelOpen ? -1 : here"
-      :expanded="placed.length !== 0"
+      :is-expanded="placed.length !== 0"
       :placeholder="placeholder"
       :name="name"
       :crumb="crumb"

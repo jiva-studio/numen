@@ -18,7 +18,7 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import { arrivals, dwellOf, getFinishedNotices, getShownNotices } from '../lib/dwell'
+import { getArrivalTimes, dwellOf, getFinishedNotices, getShownNotices } from '../lib/dwell'
 import { foldNotices } from '../lib/fold'
 import { measureMovement, type Movement } from '../lib/movement'
 import { getStillAway, getReadable, tallyOf, type Notice } from '../lib/notice'
@@ -87,9 +87,8 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   /**
    * The clock forward, and every count read against it.
    *
-   * A count is read on the clock rather than as it arrives, so how fast it is
-   * moving is measured over stretches of time and not over however often the
-   * work behind it happens to speak.
+   * A count is read on the clock, so how fast it is moving is measured over
+   * stretches of time and not over however often the work behind it speaks.
    */
   const sample = (): void => {
     beat()
@@ -100,7 +99,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     options.getNotices,
     (all) => {
       sample()
-      arrived.value = arrivals(arrived.value, all, read.value)
+      arrived.value = getArrivalTimes(arrived.value, all, read.value)
       away.value = getStillAway(away.value, all)
       const here = new Set(getReadable(all).map((one) => one.id))
       for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
@@ -129,7 +128,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
     if (all.length <= options.getRoom()) isOpened.value = false
   })
 
-  /** Whether anything readable has not yet lasted long enough to be drawn. */
+  /** Whether anything getReadable has not yet lasted long enough to be drawn. */
   const coming = computed(() => {
     const shown = new Set(drawn.value.map((one) => one.id))
     return getReadable(options.getNotices()).some(
@@ -139,7 +138,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   /** Whether anything drawn is going to go by itself. */
   const dwelling = computed(() =>
-    drawn.value.some((one) => one.stay === 'read' && dwellOf(one.says, one.about) !== Infinity),
+    drawn.value.some((one) => one.stay === 'read' && dwellOf(one.text, one.about) !== Infinity),
   )
 
   /** Whether anything drawn is counting, and so has a rate to be read. */

@@ -333,7 +333,7 @@ message CreateStencilResponse {
   // Set when the stencil is on disk and the index would not come level with it.
   // The stencil was made and `path` stands; search does not answer about it
   // until a walk goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 message ReadStencilRequest {
@@ -386,7 +386,7 @@ message WriteStencilResponse {
   // Set when the stencil is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
   // read it last, until a walk goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 message RenameStencilFieldRequest {
@@ -425,7 +425,7 @@ message RenameStencilFieldResponse {
   // Set when the rename reached the vault and the index would not come level
   // with it. Search answers about these files as it read them last, until a
   // walk goes past.
-  bool unlevelled = 6;
+  bool is_unlevelled = 6;
 }
 
 // UnwrittenDeck is one deck a rename did not reach.
@@ -455,7 +455,7 @@ message CreateDeckResponse {
   // Set when the deck is on disk and the index would not come level with it.
   // The deck was made and `path` stands; search does not answer about it until
   // a walk goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 message ReadDeckRequest {
@@ -520,5 +520,5 @@ message WriteDeckResponse {
   // Set when the deck is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
   // read it last, until a walk goes past.
-  bool unlevelled = 4;
+  bool is_unlevelled = 4;
 }

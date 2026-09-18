@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { getDays, getStretch, getWeight, measureGrid, NOTHING, ROWS } from './heatmap'
+import { measureGrid, ROWS } from './grid'
+import { getCells, getDays, getGridHeight, getWeight, NOTHING } from './heatmap'
 import { getDayName } from '@/shared/lib/day'
 import type { Tally } from './heatmap'
 
@@ -22,7 +23,7 @@ describe('how much of a year fits', () => {
     }
   })
 
-  it('spreads what is left over between the cells, so the grid meets both edges', () => {
+  it('countSpreads what is left over between the cells, so the grid meets both edges', () => {
     const room = measureGrid({ width: 200, cell: 10, gap: 2 })
     const drawn = room.columns * 10 + (room.columns - 1) * room.gap
     expect(drawn).toBeCloseTo(200, 5)
@@ -66,10 +67,10 @@ describe('the days a grid draws', () => {
     const after = shown.slice(shown.indexOf(today[0]!) + 1)
     expect(after.length).toBeGreaterThan(ROWS * 3)
     for (const one of after) {
-      expect(one.isFuture).toBe(true)
+      expect(one.isAhead).toBe(true)
     }
     for (const one of shown.slice(0, shown.indexOf(today[0]!) + 1)) {
-      expect(one.isFuture).toBe(false)
+      expect(one.isAhead).toBe(false)
     }
   })
 
@@ -91,7 +92,7 @@ describe('the days a grid draws', () => {
 
     // The Monday of that week.
     expect(shown[0]!.day).toBe('2026-08-24')
-    expect(shown[shown.length - 1]!.isFuture).toBe(true)
+    expect(shown[shown.length - 1]!.isAhead).toBe(true)
   })
 
   // Once they have been here longer than the width holds, the oldest weeks
@@ -106,7 +107,7 @@ describe('the days a grid draws', () => {
 
     expect(shown[0]!.day > '2024-01-01').toBe(true)
     expect(shown.some((one) => one.isToday)).toBe(true)
-    expect(shown[shown.length - 1]!.isFuture).toBe(true)
+    expect(shown[shown.length - 1]!.isAhead).toBe(true)
   })
 
   // A vault whose cards are all still ahead has a beginning too.
@@ -141,7 +142,7 @@ describe('the days a grid draws', () => {
     expect(shown.find((one) => one.isToday)?.did).toBe(4)
     const later = shown.find((one) => one.day === '2026-09-02')
     expect(later?.did).toBe(7)
-    expect(later?.isFuture).toBe(true)
+    expect(later?.isAhead).toBe(true)
   })
 
   it('reads what was done on each day it draws', () => {
@@ -178,47 +179,26 @@ describe('how dark a day is drawn', () => {
   })
 })
 
-describe('the stretch a grid asks about', () => {
-  const now = new Date('2026-09-18T12:00:00Z')
+describe('where the days are drawn', () => {
+  const grid = { cell: 10, gap: 2 }
 
-  // Whatever room a grid ends up with, the days it draws stand inside what was
-  // asked about for the widest room it could have had.
-  it('holds every day a narrower grid would draw', () => {
-    const widest = { width: 1600, cell: 11, gap: 3 }
-    const stretch = getStretch(widest, now)
-
-    for (const width of [120, 320, 640, 900, 1600]) {
-      const { columns } = measureGrid({ ...widest, width })
-      for (const one of getDays(columns, now, new Map(), new Map())) {
-        expect(one.day >= stretch.from && one.day <= stretch.to).toBe(true)
-      }
-    }
+  it('stands seven rows tall, with no gap past the last', () => {
+    expect(getGridHeight(grid)).toBe(7 * 12 - 2)
   })
 
-  // It opens on a Monday and ends on a Sunday, because a column is a whole week.
-  it('runs from a Monday to a Sunday', () => {
-    const { from, to } = getStretch({ width: 640, cell: 11, gap: 3 }, now)
-    expect(new Date(`${from}T12:00:00Z`).getUTCDay()).toBe(1)
-    expect(new Date(`${to}T12:00:00Z`).getUTCDay()).toBe(0)
+  it('fills a column before it begins the next', () => {
+    const days = getDays(2, new Date('2026-01-31T12:00:00Z'), new Map(), new Map())
+    const cells = getCells(grid, days)
+
+    expect(cells.slice(0, 7).map((one) => one.x)).toStrictEqual([0, 0, 0, 0, 0, 0, 0])
+    expect(cells.slice(0, 7).map((one) => one.y)).toStrictEqual([0, 12, 24, 36, 48, 60, 72])
+    expect(cells[7]?.x).toBe(12)
+    expect(cells[7]?.y).toBe(0)
   })
 
-  // A grid drawn wider than the room the stretch was asked for draws days
-  // nobody asked about, and they come back empty. The caller passes the room
-  // the page has, which is what bounds the grid.
-  it('leaves days out where the grid is drawn wider than it was asked for', () => {
-    const asked = getStretch({ width: 640, cell: 11, gap: 3 }, now)
-    const { columns } = measureGrid({ width: 1600, cell: 11, gap: 3 })
-    const outside = getDays(columns, now, new Map(), new Map()).filter(
-      (one) => one.day < asked.from || one.day > asked.to,
-    )
-    expect(outside.length).toBeGreaterThan(0)
-  })
+  it('draws every cell the size the grid measured', () => {
+    const days = getDays(1, new Date('2026-01-31T12:00:00Z'), new Map(), new Map())
 
-  // A wider grid asks about more time, and never about less.
-  it('grows with the room there is', () => {
-    const narrow = getStretch({ width: 200, cell: 11, gap: 3 }, now)
-    const wide = getStretch({ width: 1600, cell: 11, gap: 3 }, now)
-    expect(wide.from < narrow.from).toBe(true)
-    expect(wide.to >= narrow.to).toBe(true)
+    for (const cell of getCells(grid, days)) expect(cell.size).toBe(10)
   })
 })

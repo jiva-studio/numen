@@ -15,12 +15,12 @@ import { onScopeDispose, ref } from 'vue'
  */
 export interface DestinationDescriptor {
   /** Whether the modifier is held while asking for this one. */
-  readonly isModified: boolean
+  readonly hasModifier: boolean
 }
 
 export const DESTINATIONS = {
-  here: { isModified: false },
-  beside: { isModified: true },
+  here: { hasModifier: false },
+  beside: { hasModifier: true },
 } as const satisfies Record<string, DestinationDescriptor>
 
 /** Where a node asked for is to be drawn: where the reader is, or beside it. */
@@ -30,7 +30,7 @@ export const DESTINATIONS_ALL = Object.keys(DESTINATIONS) as readonly PlexDestin
 
 /** One name per modifier, taken from the table. */
 const BY_MODIFIER = Object.fromEntries(
-  DESTINATIONS_ALL.map((one) => [DESTINATIONS[one].isModified, one]),
+  DESTINATIONS_ALL.map((one) => [DESTINATIONS[one].hasModifier, one]),
 ) as Readonly<Record<`${boolean}`, PlexDestination>>
 
 /**
@@ -51,7 +51,7 @@ export interface ShowSite {
   /** Whether this node answers being asked for at all. */
   readonly ready: () => boolean
   /** It was asked for. The modifier says where it is to be drawn. */
-  readonly show: (isModified: boolean) => void
+  readonly show: (hasModifier: boolean) => void
 }
 
 export interface ShowStrategy {

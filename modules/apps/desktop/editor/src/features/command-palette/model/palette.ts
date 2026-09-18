@@ -8,10 +8,10 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { answerGuard as latest } from '@/shared/questions'
+import { createAnswerGuard as latest } from '@/shared/questions'
 import type { Vault } from '@/entities/vault'
 import { commandsOf } from '../lib/commands'
-import { view } from './view'
+import { getPaletteView } from './view'
 import { invocationOf } from '../lib/invocation'
 import type {
   CommandsDeps,
@@ -92,10 +92,10 @@ export function useCommandPalette(
       if (!mine.isCurrent) return
       known.value = listed.vaults
       showing.value = listed.showing
-    } catch (error) {
+    } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (!mine.isCurrent) return
       known.value = []
-      console.error(error)
       failureMessage.value = words.notAsked
     } finally {
       if (mine.isCurrent) isWorking.value = false
@@ -130,10 +130,10 @@ export function useCommandPalette(
       const names = await core.names(query, EACH)
       if (!mine.isCurrent) return
       found.value = names
-    } catch (error) {
+    } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (!mine.isCurrent) return
       found.value = []
-      console.error(error)
       failureMessage.value = words.notAsked
     } finally {
       if (mine.isCurrent) isWorking.value = false
@@ -145,7 +145,7 @@ export function useCommandPalette(
     if (steps.here.value?.step === 'picking') await searchNames(text.trim())
   }
 
-  const draws = view({
+  const draws = getPaletteView({
     words,
     commands,
     byId,

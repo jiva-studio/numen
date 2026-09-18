@@ -163,6 +163,9 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(MOBILE) && go vet ./...
 	$(MAKE) lint-go
 	$(MAKE) vulncheck
+	# What Prettier says of the TypeScript, the Vue and the CSS, as gofmt says it
+	# of the Go. A formatter nothing runs is a formatter the tree drifts past.
+	cd $(MODULES) && npm run format:check
 	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run lint
 	cd $(UI) && npm run typecheck

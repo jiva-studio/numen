@@ -59,7 +59,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
   }
 
   function activateRow(row: ShownRow): void {
-    if (row.isHolding) toggleRow(row)
+    if (row.hasChildren) toggleRow(row)
     tell('activate', row.id)
   }
 
@@ -96,7 +96,7 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
   function onRowClick(row: ShownRow): void {
     const spoken = selection.wasSaid.value
     selection.wasSaid.value = false
-    if (drag.moved.value || spoken) return
+    if (drag.hasMoved.value || spoken) return
     selection.selectRow(row.id, PLAIN)
   }
 

@@ -67,13 +67,13 @@ const longestRun = 100_000
 
 // places is which parts of the source's text a caller is asking about, in the
 // order they were asked about.
-func places(at []*v1.Span) ([]domain.Span, error) {
+func places(at []*v1.Span) ([]domain.ByteSpan, error) {
 	if len(at) == 0 || len(at) > domain.MostHighlights {
 		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostHighlights, len(at))
 	}
-	runs := make([]domain.Span, 0, len(at))
+	runs := make([]domain.ByteSpan, 0, len(at))
 	for _, one := range at {
-		span := domain.Span{From: int(one.GetFrom()), To: int(one.GetTo())}
+		span := domain.ByteSpan{From: int(one.GetFrom()), To: int(one.GetTo())}
 		if span.From < 0 {
 			return nil, fmt.Errorf("from: %d is not a place in the text", span.From)
 		}

@@ -204,12 +204,12 @@ const flat = [
   {
     says: 'the shell mounting a screen',
     by: null,
-    edge: 'src/window/mounting.ts → src/note-tab/tab.ts',
+    edge: 'src/app/mounting.ts → src/note-tab/tab.ts',
   },
   {
     says: 'the shell mounting a second screen',
     by: null,
-    edge: 'src/window/mounting.ts → src/cards-tab/deck.ts',
+    edge: 'src/app/mounting.ts → src/cards-tab/deck.ts',
   },
 ]
 
@@ -222,7 +222,7 @@ test('a window laid out flat, where every folder is a screen', () => {
       'src/shared/core.ts',
       'src/shared/notices/telling.ts',
       'src/shared/tabs/putting.ts',
-      'src/window/mounting.ts',
+      'src/app/mounting.ts',
       'src/note-tab/tab.ts',
       'src/note-tab/inner/deep.ts',
       'src/cards-tab/deck.ts',

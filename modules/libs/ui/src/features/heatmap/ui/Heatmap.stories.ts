@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import Heatmap from './Heatmap.vue'
-import { ROWS } from '../lib/heatmap'
+import { ROWS } from '../lib/grid'
 import { getDayName } from '@/shared/lib/day'
 import type { Tally } from '../lib/heatmap'
 import type { Words } from '../lib/words'
@@ -190,7 +190,15 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
  */
 export const ADayReviewed: Story = {
   args: {
-    did: createOneDay({ answered: 26, again: 2, hard: 3, good: 18, easy: 3, asked: 24, recalled: 20 }),
+    did: createOneDay({
+      answered: 26,
+      again: 2,
+      hard: 3,
+      good: 18,
+      easy: 3,
+      asked: 24,
+      recalled: 20,
+    }),
     now,
     words,
   },

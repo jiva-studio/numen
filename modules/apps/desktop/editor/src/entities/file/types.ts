@@ -2,6 +2,7 @@
  * The files of the vault: which of them a file is, what a listing of one folder
  * reports, and what making one or moving one comes back with.
  */
+import type { Result } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 
 /**
@@ -39,12 +40,8 @@ export interface Entry {
   readonly type: NoteType
 }
 
-/** What creating a note, a deck or a stencil came back with. */
-export interface CreateResult {
-  /** Where the file is filed. Empty when nothing was made. */
-  path: string
-  error?: ErrorCode | null
-}
+/** Where a note, a deck or a stencil was filed, or why none was made. */
+export type CreateResult = Result<{ readonly path: string }, ErrorCode>
 
 /**
  * A file under a different name, and what that did to the links written by the
@@ -57,9 +54,8 @@ export interface MoveResult {
   readonly repaired: readonly string[]
 }
 
-/** What moving a file or a folder came back with. */
-export interface Movement {
-  /** What the file did. Null when it stayed where it was. */
-  moved: MoveResult | null
-  error?: ErrorCode | null
-}
+/**
+ * What moving a file or a folder did, or why nothing was moved. A value of
+ * null is a move that was asked for and changed nothing.
+ */
+export type Movement = Result<MoveResult | null, ErrorCode>

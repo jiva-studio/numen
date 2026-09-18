@@ -15,14 +15,14 @@ const props = withDefaults(
     /** Markdown, whole or as far as it has arrived. */
     text: string
     /** Still being written: a word that has just arrived is shown arriving. */
-    isStreaming?: boolean
+    isArriving?: boolean
     /**
      * The addresses this text points at that reach nothing. A link carrying
      * one is drawn as not resolving.
      */
     unresolved?: readonly string[]
   }>(),
-  { isStreaming: false, unresolved: () => [] },
+  { isArriving: false, unresolved: () => [] },
 )
 
 const emit = defineEmits<{
@@ -50,7 +50,7 @@ const onClick = (press: MouseEvent) => {
 <template>
   <div
     class="prose prose-sm prose-numen numen max-w-none break-words"
-    :class="{ 'prose--arriving': isStreaming }"
+    :class="{ 'prose--arriving': isArriving }"
     @click="onClick"
   >
     <Drawn />

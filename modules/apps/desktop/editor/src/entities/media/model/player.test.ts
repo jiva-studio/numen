@@ -5,7 +5,7 @@
  * what it does is asked of it here through a stand-in element.
  */
 import { describe, expect, it } from 'vitest'
-import { audio, createMediaTypeProbe, type AudioFactory } from './player'
+import { createAudioPlayer, createMediaTypeProbe, type AudioFactory } from './player'
 import { WORDS } from '../words'
 
 const TALK = 'http://127.0.0.1:1/files/w/v/talk.mp3'
@@ -99,7 +99,7 @@ function createElement() {
 const player = () => {
   const stood = createElement()
   const getElement: AudioFactory = () => stood.element as unknown as HTMLAudioElement
-  return { plays: audio(getElement), ...stood }
+  return { plays: createAudioPlayer(getElement), ...stood }
 }
 
 describe('a recording loaded', () => {
@@ -301,7 +301,7 @@ describe('the element a window plays through', () => {
   it('is made once, and listened to once, however many recordings are opened', () => {
     let made = 0
     const stood = createElement()
-    const plays = audio(() => {
+    const plays = createAudioPlayer(() => {
       made++
       return stood.element as unknown as HTMLAudioElement
     })
@@ -314,7 +314,7 @@ describe('the element a window plays through', () => {
   })
 
   it('plays nothing and says so where the window has no element to give', () => {
-    const plays = audio(() => {
+    const plays = createAudioPlayer(() => {
       throw new Error('this window plays no sound')
     })
 

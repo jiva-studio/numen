@@ -29,7 +29,7 @@ export interface VaultAnswer {
 const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound: 0 }
 
 /** The answers one window has, about the decks that window holds. */
-export function answers() {
+export function createDeckAnswers() {
   /** What the vault last said about each file, under the path it is filed at. */
   const told = new Map<string, VaultAnswer>()
   /** What each file is called, as the vault last read it. */

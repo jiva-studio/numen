@@ -15,7 +15,7 @@ const settings: Settings = {
   reviewsADay: 45,
   retention: 0.9,
   load: {},
-  evenLoad: true,
+  hasEvenLoad: true,
 }
 
 /** What closes the day of the fixture, which is steered by its minutes. */

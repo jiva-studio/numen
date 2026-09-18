@@ -4,7 +4,7 @@ import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
 import { routeEdges, routingFor } from './routing'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
-import { ARROW_LENGTH, arrowOf, lengthOf, rulerOf, type EdgeArrow } from '../edge'
+import { ARROW_LENGTH, arrowOf, lengthOf, createPointOnCurve, type EdgeArrow } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode } from '../node'
 import type { PlexSeat } from '../seat'
@@ -301,7 +301,7 @@ describe('the arrowhead a line carries', () => {
     }).edges.find((edge) => edge.to === 'wide')!
 
     const covered = ARROW_LENGTH / lengthOf(aside)
-    const behind = rulerOf(aside)(1 - covered)
+    const behind = createPointOnCurve(aside)(1 - covered)
     const chord =
       (Math.atan2(aside.toPoint.y - behind.y, aside.toPoint.x - behind.x) * 180) / Math.PI
 
@@ -311,7 +311,7 @@ describe('the arrowhead a line carries', () => {
 
     // The end a line leaves from is read the same way, backwards.
     const leaving = arrowOf(aside, 'from')
-    const along = rulerOf(aside)(ARROW_LENGTH / lengthOf(aside))
+    const along = createPointOnCurve(aside)(ARROW_LENGTH / lengthOf(aside))
     const back =
       (Math.atan2(aside.fromPoint.y - along.y, aside.fromPoint.x - along.x) * 180) / Math.PI
     expect(leaving.angle).toBeCloseTo(back, 1)

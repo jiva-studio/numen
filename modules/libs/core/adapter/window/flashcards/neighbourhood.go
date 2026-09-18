@@ -31,13 +31,13 @@ func (a *API) GetDeckNeighbourhood(
 	}
 	for _, one := range joined.Notes {
 		next := &v1.DeckNeighbour{
-			Written:   one.Written,
-			Path:      one.Path,
-			Title:     one.Title,
-			Body:      one.Body,
-			Label:     one.Label,
-			Points:    !one.IsBacklink,
-			Ambiguous: one.IsAmbiguous,
+			Written:     one.Written,
+			Path:        one.Path,
+			Title:       one.Title,
+			Body:        one.Body,
+			Label:       one.Label,
+			IsPointedAt: !one.IsBacklink,
+			IsAmbiguous: one.IsAmbiguous,
 		}
 		if reason, refused := wire.ErrorCodeOf(one.Outcome); refused {
 			next.Error = &reason

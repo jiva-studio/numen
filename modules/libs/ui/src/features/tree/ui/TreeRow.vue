@@ -13,9 +13,9 @@ const props = defineProps<{
   /** What the tree is announced as. */
   name: string
   /** The selection stands on it. */
-  selected: boolean
+  isSelected: boolean
   /** It is among the rows being dragged. */
-  isDragged: boolean
+  isLifted: boolean
   /** A drop would land inside it. */
   isDropInside: boolean
   /** A drop would land above it. */
@@ -62,12 +62,12 @@ watch(
     class="tree__row flex min-w-0 items-center"
     role="treeitem"
     :aria-level="row.level"
-    :aria-expanded="row.isHolding ? row.open : undefined"
-    :aria-selected="selected"
+    :aria-expanded="row.hasChildren ? row.open : undefined"
+    :aria-selected="isSelected"
     :tabindex="isTabStop ? 0 : -1"
     :data-tree-row="row.id"
-    :data-selected="selected || undefined"
-    :data-dragged="isDragged || undefined"
+    :data-selected="isSelected || undefined"
+    :data-dragged="isLifted || undefined"
     :data-last="row.isLast || undefined"
     :data-into="isDropInside || undefined"
     :data-before="isDropAbove || undefined"

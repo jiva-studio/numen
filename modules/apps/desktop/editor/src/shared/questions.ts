@@ -17,9 +17,9 @@ export interface Question {
   claim(): boolean
 }
 
-export type AnswerGuard = ReturnType<typeof answerGuard>
+export type AnswerGuard = ReturnType<typeof createAnswerGuard>
 
-export function answerGuard() {
+export function createAnswerGuard() {
   let asked = 0
   let drawn = 0
   let listening = true

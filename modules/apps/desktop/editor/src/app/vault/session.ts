@@ -9,7 +9,7 @@ import type { VaultPort } from '@/app/ports/vault'
 
 /** How far the scan of the vault has got. */
 const parseScan = (scan: Scan | undefined) => ({
-  isReady: scan?.ready ?? false,
+  isReady: scan?.isReady ?? false,
   error: scan?.error ?? '',
   unwatchedPath: scan?.unwatched ?? '',
 })
@@ -18,7 +18,7 @@ const parseScan = (scan: Scan | undefined) => ({
 const parseCoverage = (coverage: IndexCoverage | undefined) => ({
   chunkCount: coverage?.chunkCount ?? 0n,
   embeddedCount: coverage?.embeddedCount ?? 0n,
-  isEmbedding: coverage?.embedding ?? false,
+  isEmbedding: coverage?.isEmbedding ?? false,
 })
 
 export type SessionCore = Pick<
@@ -62,13 +62,13 @@ export const sessionCore: SessionCore = {
     for await (const said of windowService.watchTasks({ window: WINDOW }, { signal })) {
       yield said.tasks.map((at) => ({
         id: at.id,
-        doing: at.doing,
+        label: at.doing,
         about: at.about,
         done: Number(at.done),
         total: Number(at.total),
         counting: counted[at.unit] ?? 'things',
         error: at.error,
-        isAsked: at.asked,
+        isAsked: at.isAsked,
       }))
     }
   },

@@ -69,9 +69,8 @@ export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
 /**
  * What a node is to a gesture, beyond a box with a title.
  *
- * One value rather than a flag each, because a node is only ever one of these:
- * a hand cannot be reaching out of a node and aiming at it at once, and a node
- * that is not there yet is none of them.
+ * A node is only ever one of these: a hand cannot be reaching out of a node and
+ * aiming at it at once, and a node that is not there yet is none of them.
  *
  * - `open` — nothing is under way, and a hand over it may reach out from it
  * - `closed` — reaching out from here is not on offer
@@ -87,7 +86,7 @@ export const nameOf = (node: PlexNode): string => `${node.title || 'Untitled'}, 
 /**
  * Where the handle sits within a node: on its trailing edge, halfway down.
  *
- * Here rather than in either drawing because both need the same answer — the
- * node draws the handle there, and the plex starts the gesture's thread there.
+ * Both drawings read it from here: the node draws the handle there, and the
+ * plex starts the gesture's thread there.
  */
 export const handleIn = (node: PlacedNode): Position => ({ x: node.width / 2, y: 0 })

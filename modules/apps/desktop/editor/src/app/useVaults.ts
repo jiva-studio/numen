@@ -1,7 +1,7 @@
 /**
  * Vaults listing, active vault tracking, and coverage monitoring.
  */
-import { ref, shallowRef, type Ref } from 'vue'
+import { computed, ref, shallowRef, type Ref } from 'vue'
 import { running } from '@/entities/artifact'
 import type { ArtifactStates } from '@/entities/artifact'
 import type { VaultList } from '@/entities/vault'
@@ -24,16 +24,31 @@ export interface VaultsDeps {
 
 export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: VaultsDeps) {
   const reload = () => globalThis.location.reload()
-  const shown = ref<VaultRef>({ id: '', name: '' })
   const listed = ref<VaultList>({ vaults: [], showing: '' })
+
+  /**
+   * The vault in front, which is the one the list says it is showing. It is read
+   * off the list so that the two cannot disagree about which vault is open.
+   */
+  const shown = computed<VaultRef>(() => {
+    const one = listed.value.vaults.find((v) => v.id === listed.value.showing)
+    return one ? { id: one.id, name: one.name } : { id: '', name: '' }
+  })
+
+  /** One vault of the list under the name it was just given. */
+  const setVaultName = (vault: VaultRef) => {
+    listed.value = {
+      ...listed.value,
+      vaults: listed.value.vaults.map((one) =>
+        one.id === vault.id ? { ...one, name: vault.name } : one,
+      ),
+    }
+  }
   const unlisted = log.getWriter('listed')
 
   const loadVaults = async () => {
     try {
-      const answer = await core.vaults()
-      listed.value = answer
-      const one = answer.vaults.find((v) => v.id === answer.showing)
-      shown.value = one ? { id: one.id, name: one.name } : { id: '', name: '' }
+      listed.value = await core.vaults()
     } catch {
       // The layout the window opens with is the one the list's answer decides.
       unlisted(words.unlistedVaults, 'error')
@@ -63,6 +78,7 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
   return {
     reload,
     shown,
+    setVaultName,
     listed,
     loadVaults,
     coverage,

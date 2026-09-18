@@ -8,13 +8,14 @@ export type {
   NewNote,
   NoteEdit,
   NoteHeading,
-  NoteReadResult,
   NoteResult,
-  NoteWriteResult,
+  RemovedNote,
   RemoveResult,
+  RenamedNote,
   RenameResult,
   Role,
   Seat,
+  WriteResult,
 } from './lib/note'
 export { openNotes } from './model/notes'
 export type { Notes, OpenNote } from './lib/noteTypes'

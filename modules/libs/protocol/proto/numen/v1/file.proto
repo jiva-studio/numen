@@ -67,7 +67,7 @@ message Entry {
 
   // Whether the entry holds other entries. A folder carries no source and
   // nothing is made from it.
-  bool folder = 3;
+  bool is_folder = 3;
 
   // What the vault holds here.
   SourceKind kind = 4;
@@ -144,7 +144,7 @@ message MoveFileResponse {
   // Set when the move reached the vault and the index would not come level with
   // it. Search answers about these files as it read them last, until a walk
   // goes past.
-  bool unlevelled = 3;
+  bool is_unlevelled = 3;
 }
 
 // MoveResult is a file under a different name, and what that did to the links
@@ -188,7 +188,7 @@ message RemoveFileResponse {
 
   // Set when the file has gone and the index would not come level with it.
   // Search answers about it as it read it last, until a walk goes past.
-  bool unlevelled = 4;
+  bool is_unlevelled = 4;
 }
 
 message CreateFolderRequest {

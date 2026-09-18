@@ -239,12 +239,12 @@ func TestTheListMarksAFolderThatIsGone(t *testing.T) {
 	}
 
 	list := f.getList(t)
-	if here := onList(t, list, string(f.first.ID)); here.GetMissing() {
+	if here := onList(t, list, string(f.first.ID)); here.GetIsMissing() {
 		t.Errorf("%s is marked missing, and its folder is at %s",
 			here.GetName(), here.GetPath())
 	}
 	gone := onList(t, list, string(f.second.ID))
-	if !gone.GetMissing() {
+	if !gone.GetIsMissing() {
 		t.Errorf("%s is not marked missing, and there is nothing at %s",
 			gone.GetName(), gone.GetPath())
 	}
@@ -577,7 +577,7 @@ func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a dialog that was closed answered %v", err)
 	}
-	if out.Msg.GetChose() || out.Msg.GetPath() != "" {
+	if out.Msg.GetIsChosen() || out.Msg.GetPath() != "" {
 		t.Errorf("the answer is %v", out.Msg)
 	}
 	if title, from := f.dialog.getAsked(); title != "Where are your notes?" || from != f.first.Path {
@@ -594,7 +594,7 @@ func TestTheFolderThePersonChoseIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !out.Msg.GetChose() || out.Msg.GetPath() != f.second.Path {
+	if !out.Msg.GetIsChosen() || out.Msg.GetPath() != f.second.Path {
 		t.Errorf("the answer is %v", out.Msg)
 	}
 }

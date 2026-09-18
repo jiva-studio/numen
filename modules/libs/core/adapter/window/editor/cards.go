@@ -53,7 +53,7 @@ func getStencilLimit(limit int32) int {
 func (a *API) CreateStencil(
 	ctx context.Context, r *connect.Request[v1.CreateStencilRequest],
 ) (*connect.Response[v1.CreateStencilResponse], error) {
-	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
 		return a.Cards.Create.Stencil(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
@@ -61,7 +61,7 @@ func (a *API) CreateStencil(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.CreateStencilResponse{
-		Path: made.Path, Error: code, Unlevelled: unlevelled,
+		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
 
@@ -69,21 +69,21 @@ func (a *API) CreateStencil(
 func (a *API) CreateDeck(
 	ctx context.Context, r *connect.Request[v1.CreateDeckRequest],
 ) (*connect.Response[v1.CreateDeckResponse], error) {
-	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}
 	return connect.NewResponse(&v1.CreateDeckResponse{
-		Path: made.Path, Error: code, Unlevelled: unlevelled,
+		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
 
-// makes is what making a deck and making a stencil have in common: the vault
+// createCardNote is what making a deck and making a stencil have in common: the vault
 // being shown, the window's hold on writing, and the error codes a file that
 // could not be made comes back as.
-func (a *API) makes(
+func (a *API) createCardNote(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
 	showing, err := a.getShownVault()
@@ -139,7 +139,7 @@ func (a *API) RenameStencilField(
 			a.Wrote()
 		}
 		out := cardwire.NewRenameResponse(renamed, fingerprintOf(renamed.Stencil))
-		out.Unlevelled = a.isUnlevelled(err)
+		out.IsUnlevelled = a.isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
 	// The name a rename is given is the client's: one the stencil does not
@@ -238,7 +238,7 @@ func (a *API) WriteDeck(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WriteDeckResponse{
-			At: fingerprintOf(wrote.Fingerprint), Unlevelled: behind,
+			At: fingerprintOf(wrote.Fingerprint), IsUnlevelled: behind,
 		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
@@ -285,7 +285,7 @@ func (a *API) WriteStencil(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WriteStencilResponse{
-			At: fingerprintOf(at), Unlevelled: behind,
+			At: fingerprintOf(at), IsUnlevelled: behind,
 		}), nil
 	}
 	reason, refused := wire.ErrorCodeBy(err)

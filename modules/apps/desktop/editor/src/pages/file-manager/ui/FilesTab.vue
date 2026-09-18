@@ -4,12 +4,13 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
-import type { Position, Row, RowMarker } from '@numen/ui'
+import type { Position, RowMarker } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 
 import { iconFor } from '@/shared/icons'
 import { iconOfEntry } from '../lib/icons'
-import type { DropPosition, FilesTabState, ListingRow } from '../types'
+import type { DropPosition, FilesTabState } from '../types'
+import { getRows } from '../lib/rows'
 import { getDroppedUrl, hasUrl } from '../lib/drag'
 import { itemsFor } from '../lib/menu'
 import { WORDS as words } from '../words'
@@ -27,7 +28,7 @@ const dropTarget = computed<RowMarker>(() => ({
   valueFor: (row: string | null) => props.state.getFolderFor(row),
 }))
 
-const rows = computed(() => rowsOf(props.state.list.rows.value))
+const rows = computed(() => getRows(props.state.list.rows.value))
 
 /** The row whose name is in a field, which the tree opens and closes itself. */
 const renamingPath = computed({
@@ -109,15 +110,6 @@ function onDismissMenu() {
 }
 
 // --- Helpers ---
-function rowsOf(entries: readonly ListingRow[]): Row[] {
-  return entries.map((one) => ({
-    id: one.entry.path,
-    name: one.entry.name,
-    isHolding: one.entry.isFolder,
-    rows: rowsOf(one.rows),
-  }))
-}
-
 function entryIcon(id: string, open: boolean): LucideIcon {
   return iconOfEntry(props.state.list.getEntryAt(id), open)
 }

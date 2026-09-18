@@ -404,9 +404,9 @@ func (d document) boxes(pages []int) []highlight.Box {
 		for i, word := range d.pages[index] {
 			down := 0.05 + 0.1*float32(i)
 			out = append(out, highlight.Box{
-				Page: index,
-				Span: domain.Span{From: at, To: at + len(word)},
-				Rect: highlight.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
+				Page:     index,
+				ByteSpan: domain.ByteSpan{From: at, To: at + len(word)},
+				Rect:     highlight.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
 			})
 			at += len(word) + 1
 		}

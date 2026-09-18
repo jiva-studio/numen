@@ -118,7 +118,7 @@ type VaultCardsDue struct {
 	Unread string `protobuf:"bytes,9,opt,name=unread,proto3" json:"unread,omitempty"`
 	// Set while the vault is being read into the index. The three numbers are not
 	// in yet, and a further count follows when the reading is done.
-	Reading       bool `protobuf:"varint,10,opt,name=reading,proto3" json:"reading,omitempty"`
+	IsReading     bool `protobuf:"varint,10,opt,name=is_reading,json=isReading,proto3" json:"is_reading,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -216,9 +216,9 @@ func (x *VaultCardsDue) GetUnread() string {
 	return ""
 }
 
-func (x *VaultCardsDue) GetReading() bool {
+func (x *VaultCardsDue) GetIsReading() bool {
 	if x != nil {
-		return x.Reading
+		return x.IsReading
 	}
 	return false
 }
@@ -624,8 +624,8 @@ type Asked struct {
 	// Seen is false for a card nobody has answered, which is what a person means
 	// by a new card. Due is when it comes round, and stands only where it has
 	// been answered.
-	Seen bool   `protobuf:"varint,8,opt,name=seen,proto3" json:"seen,omitempty"`
-	Due  string `protobuf:"bytes,9,opt,name=due,proto3" json:"due,omitempty"`
+	IsSeen bool   `protobuf:"varint,8,opt,name=is_seen,json=isSeen,proto3" json:"is_seen,omitempty"`
+	Due    string `protobuf:"bytes,9,opt,name=due,proto3" json:"due,omitempty"`
 	// Where each of the four would leave it.
 	Ahead         *Ahead `protobuf:"bytes,10,opt,name=ahead,proto3" json:"ahead,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -711,9 +711,9 @@ func (x *Asked) GetBack() string {
 	return ""
 }
 
-func (x *Asked) GetSeen() bool {
+func (x *Asked) GetIsSeen() bool {
 	if x != nil {
-		return x.Seen
+		return x.IsSeen
 	}
 	return false
 }
@@ -1591,13 +1591,13 @@ type DeckNeighbour struct {
 	// Label is what the link was shown as, where the person gave it words of
 	// their own instead of the note's name.
 	Label string `protobuf:"bytes,5,opt,name=label,proto3" json:"label,omitempty"`
-	// Points says the deck points at this note; otherwise this note points at the
+	// IsPointedAt says the deck points at this note; otherwise this note points at the
 	// deck. A person reads the two differently: one is what the deck was made
 	// from, the other is what has since been hung off it.
-	Points bool `protobuf:"varint,6,opt,name=points,proto3" json:"points,omitempty"`
-	// Ambiguous says more than one note answers to the name written, and the one
+	IsPointedAt bool `protobuf:"varint,6,opt,name=is_pointed_at,json=isPointedAt,proto3" json:"is_pointed_at,omitempty"`
+	// IsAmbiguous says more than one note answers to the name written, and the one
 	// here is only the first of them.
-	Ambiguous bool `protobuf:"varint,7,opt,name=ambiguous,proto3" json:"ambiguous,omitempty"`
+	IsAmbiguous bool `protobuf:"varint,7,opt,name=is_ambiguous,json=isAmbiguous,proto3" json:"is_ambiguous,omitempty"`
 	// Set when the note is there and its text could not be had, and says why.
 	Error         *ErrorCode `protobuf:"varint,8,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1669,16 +1669,16 @@ func (x *DeckNeighbour) GetLabel() string {
 	return ""
 }
 
-func (x *DeckNeighbour) GetPoints() bool {
+func (x *DeckNeighbour) GetIsPointedAt() bool {
 	if x != nil {
-		return x.Points
+		return x.IsPointedAt
 	}
 	return false
 }
 
-func (x *DeckNeighbour) GetAmbiguous() bool {
+func (x *DeckNeighbour) GetIsAmbiguous() bool {
 	if x != nil {
-		return x.Ambiguous
+		return x.IsAmbiguous
 	}
 	return false
 }
@@ -1883,7 +1883,7 @@ var File_numen_v1_flashcards_proto protoreflect.FileDescriptor
 
 const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\x95\x02\n" +
+	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\x9a\x02\n" +
 	"\rVaultCardsDue\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1893,9 +1893,10 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03new\x18\x06 \x01(\x05R\x03new\x12,\n" +
 	"\x05decks\x18\a \x03(\v2\x16.numen.v1.DeckCardsDueR\x05decks\x122\n" +
 	"\apresets\x18\b \x03(\v2\x18.numen.v1.PresetCardsDueR\apresets\x12\x16\n" +
-	"\x06unread\x18\t \x01(\tR\x06unread\x12\x18\n" +
-	"\areading\x18\n" +
-	" \x01(\bR\areading\"\xac\x01\n" +
+	"\x06unread\x18\t \x01(\tR\x06unread\x12\x1d\n" +
+	"\n" +
+	"is_reading\x18\n" +
+	" \x01(\bR\tisReading\"\xac\x01\n" +
 	"\fDeckCardsDue\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x14\n" +
 	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +
@@ -1929,7 +1930,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
 	"\x04good\x18\x03 \x01(\x03R\x04good\x12\x12\n" +
-	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\xee\x01\n" +
+	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\xf3\x01\n" +
 	"\x05Asked\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x18\n" +
 	"\asection\x18\x02 \x01(\tR\asection\x12\x12\n" +
@@ -1937,8 +1938,8 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x04face\x18\x04 \x01(\tR\x04face\x12\x18\n" +
 	"\aheading\x18\x05 \x01(\tR\aheading\x12\x14\n" +
 	"\x05front\x18\x06 \x01(\tR\x05front\x12\x12\n" +
-	"\x04back\x18\a \x01(\tR\x04back\x12\x12\n" +
-	"\x04seen\x18\b \x01(\bR\x04seen\x12\x10\n" +
+	"\x04back\x18\a \x01(\tR\x04back\x12\x17\n" +
+	"\ais_seen\x18\b \x01(\bR\x06isSeen\x12\x10\n" +
 	"\x03due\x18\t \x01(\tR\x03due\x12%\n" +
 	"\x05ahead\x18\n" +
 	" \x01(\v2\x0f.numen.v1.AheadR\x05ahead\"\x16\n" +
@@ -1994,15 +1995,15 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\"e\n" +
 	"\x1cGetDeckNeighbourhoodResponse\x12-\n" +
 	"\x05notes\x18\x01 \x03(\v2\x17.numen.v1.DeckNeighbourR\x05notes\x12\x16\n" +
-	"\x06unread\x18\x02 \x01(\x05R\x06unread\"\xed\x01\n" +
+	"\x06unread\x18\x02 \x01(\x05R\x06unread\"\xfe\x01\n" +
 	"\rDeckNeighbour\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\tR\x04body\x12\x14\n" +
-	"\x05label\x18\x05 \x01(\tR\x05label\x12\x16\n" +
-	"\x06points\x18\x06 \x01(\bR\x06points\x12\x1c\n" +
-	"\tambiguous\x18\a \x01(\bR\tambiguous\x12.\n" +
+	"\x05label\x18\x05 \x01(\tR\x05label\x12\"\n" +
+	"\ris_pointed_at\x18\x06 \x01(\bR\visPointedAt\x12!\n" +
+	"\fis_ambiguous\x18\a \x01(\bR\visAmbiguous\x12.\n" +
 	"\x05error\x18\b \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
 	"\x06_error\"\x15\n" +
 	"\x13WatchReloadsRequest\".\n" +

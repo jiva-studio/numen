@@ -8,7 +8,7 @@
  */
 import { ref, shallowRef, watch } from 'vue'
 import { createFollower } from '@numen/ui'
-import { answerGuard } from '@/shared/questions'
+import { createAnswerGuard } from '@/shared/questions'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { DESIGNED, NOWHERE, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
@@ -17,7 +17,7 @@ import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
 import { getModeGroups, getSizeGroups, getThemeGroups } from '../lib/offers'
 import { useAppearanceChoice } from './choice'
 
-export function windowAppearance(
+export function createWindowAppearance(
   core: Themes,
   words: AppearanceWords,
   write: MessageWriter,
@@ -54,7 +54,7 @@ export function windowAppearance(
   let arrived = true
 
   /** A file arriving for a row the keyboard has already left is dropped. */
-  const asks = answerGuard()
+  const asks = createAnswerGuard()
 
   /** One theme's file, read once and kept. */
   const fileOf = async (name: string): Promise<string> => {
@@ -75,10 +75,8 @@ export function windowAppearance(
     try {
       const css = await fileOf(theme)
       if (mine.isCurrent) dressed.theme.textContent = css
-    } catch (error) {
-      // The reason goes to the console; the person is told in the window's
-      // own voice.
-      console.error(error)
+    } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       if (mine.isCurrent) write(words.unworn, 'error')
     }
   }
@@ -127,8 +125,8 @@ export function windowAppearance(
     let answer: Appearance
     try {
       answer = await core.getAppearance()
-    } catch (error) {
-      console.error(error)
+    } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
       write(words.unlisted, 'error')
       return
     }

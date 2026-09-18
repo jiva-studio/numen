@@ -47,7 +47,7 @@ func (s vaultsService) ChooseFolder(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	// A person who closed the dialog chose nothing, and that is an answer.
-	return connect.NewResponse(&v1.ChooseFolderResponse{Path: path, Chose: chose}), nil
+	return connect.NewResponse(&v1.ChooseFolderResponse{Path: path, IsChosen: chose}), nil
 }
 
 // AddVault turns a folder into a vault on the list. A name another vault has
@@ -167,7 +167,7 @@ func (s vaultsService) found(id string) (domain.Vault, error) {
 func vaultOf(v domain.Vault, readers port.VaultReaders) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
-		Missing: vaults.NewFolderCheck(readers).Execute(v),
+		IsMissing: vaults.NewFolderCheck(readers).Execute(v),
 	}
 }
 

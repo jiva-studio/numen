@@ -5,8 +5,10 @@
 import { WORDS as words } from '../../lib/notesWords'
 import type { Neighbour } from '../../api/notes'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ note: Neighbour }>()
 
+/* -------------------------------- Helpers --------------------------------- */
 /** A note is named by its title, and by how it was written where it has none. */
 const getNoteName = (one: Neighbour) => one.title || one.written
 </script>

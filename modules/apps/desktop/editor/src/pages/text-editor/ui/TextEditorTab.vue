@@ -54,7 +54,7 @@ function onSave() {
     <Editor
       v-if="isRead"
       :model-value="text"
-      :is-live-preview="false"
+      :is-live="false"
       language="json"
       class="settings-file__editor"
       :aria-label="words.called"

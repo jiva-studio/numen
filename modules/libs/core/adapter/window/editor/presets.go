@@ -67,14 +67,14 @@ func (a *API) ListPresets(
 func (a *API) CreatePreset(
 	ctx context.Context, r *connect.Request[v1.CreatePresetRequest],
 ) (*connect.Response[v1.CreatePresetResponse], error) {
-	made, code, unlevelled, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, unlevelled, err := a.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Preset(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}
 	return connect.NewResponse(&v1.CreatePresetResponse{
-		Path: made.Path, Error: code, Unlevelled: unlevelled,
+		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
 
@@ -104,7 +104,7 @@ func (a *API) ScheduleDeck(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.ScheduleDeckResponse{
-			At: fingerprintOf(at), Unlevelled: behind,
+			At: fingerprintOf(at), IsUnlevelled: behind,
 		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
@@ -170,7 +170,7 @@ func (a *API) WritePreset(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WritePresetResponse{
-			At: fingerprintOf(at), Unlevelled: behind,
+			At: fingerprintOf(at), IsUnlevelled: behind,
 		}), nil
 	}
 	// A value outside what a preset may hold is the client's to correct.

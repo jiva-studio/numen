@@ -236,7 +236,7 @@ async function measureAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<rea
 /** What a handle that catches its whole reach, and no further, draws at those places. */
 const getReach = (cursor: string) => AWAY.map((away) => [away, Math.abs(away) <= 6 ? cursor : null])
 
-/** The furthest out along that line the splitter still had the pointer. */
+/** The getFurthest out along that line the splitter still had the pointer. */
 function getFurthest(places: readonly Caught[]): Position {
   const held = places.filter((place) => place.cursor)
   const edge = held[held.length - 1]?.at

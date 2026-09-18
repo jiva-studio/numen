@@ -42,7 +42,7 @@ export const layered = new Map([
  * level up.
  */
 export const unlayered = {
-  '@numen/wire': 'one file, with no folders to divide',
+  '@numen/wire': 'flat — every file at the package root, and no layer folders to judge',
   '@numen/mobile':
     'one screen — App.vue mounts PlexPage alone, and note/ is the sheet that page draws over itself',
 }

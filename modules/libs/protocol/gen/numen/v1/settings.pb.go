@@ -9,6 +9,11 @@
 //
 // The settings belong to the installation and not to a vault: the same file
 // answers whichever vault a window is showing, and every window reads it.
+//
+// They travel as the file's own text. Their sections belong to whichever
+// adapters an installation is composed of, so the core does not know the whole
+// shape and does not describe it, and a setting is written by naming the path
+// through the file. It is the only tree here that goes undescribed.
 
 package numenv1
 
@@ -230,7 +235,7 @@ type Model struct {
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Shelf string `protobuf:"bytes,4,opt,name=shelf,proto3" json:"shelf,omitempty"`
 	// Set on the model an installation nobody has configured runs on.
-	ByDefault bool `protobuf:"varint,5,opt,name=by_default,json=byDefault,proto3" json:"by_default,omitempty"`
+	IsDefault bool `protobuf:"varint,5,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
 	// What choosing it writes. One model is several keys where the model decides
 	// more than its own name.
 	Writes []*Setting `protobuf:"bytes,6,rep,name=writes,proto3" json:"writes,omitempty"`
@@ -298,9 +303,9 @@ func (x *Model) GetShelf() string {
 	return ""
 }
 
-func (x *Model) GetByDefault() bool {
+func (x *Model) GetIsDefault() bool {
 	if x != nil {
-		return x.ByDefault
+		return x.IsDefault
 	}
 	return false
 }
@@ -653,7 +658,7 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\x14\n" +
+	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x14\n" +
 	"\x12GetSettingsRequest\"\xf6\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
@@ -668,7 +673,7 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x14\n" +
 	"\x05shelf\x18\x04 \x01(\tR\x05shelf\x12\x1d\n" +
 	"\n" +
-	"by_default\x18\x05 \x01(\bR\tbyDefault\x12)\n" +
+	"is_default\x18\x05 \x01(\bR\tisDefault\x12)\n" +
 	"\x06writes\x18\x06 \x03(\v2\x11.numen.v1.SettingR\x06writes\x12.\n" +
 	"\bpresence\x18\a \x01(\x0e2\x12.numen.v1.PresenceR\bpresence\"/\n" +
 	"\aSetting\x12\x0e\n" +
@@ -756,7 +761,6 @@ func file_numen_v1_settings_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
-	file_numen_v1_theme_proto_init()
 	file_numen_v1_settings_proto_msgTypes[8].OneofWrappers = []any{}
 	file_numen_v1_settings_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}

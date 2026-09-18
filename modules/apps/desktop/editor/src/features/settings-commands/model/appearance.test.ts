@@ -11,7 +11,7 @@ import type { StepGroup } from '@/features/command-palette/@x/settings-commands'
 import type { Appearance, Themes } from '@/entities/settings'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '../lib/head'
 import { INTERFACE_SCALE, TEXT_SCALE } from '../lib/appearanceValues'
-import { windowAppearance } from './appearance'
+import { createWindowAppearance } from './appearance'
 import { WORDS as words } from '@/shared/words'
 
 /** What the page was served wearing. */
@@ -135,7 +135,7 @@ const window = (over: Partial<Appearance> = {}, css = SERVED) => {
   /** What the window was told, in the order it was told. */
   const told: { text: string; kind: string }[] = []
   return {
-    worn: windowAppearance(
+    worn: createWindowAppearance(
       core,
       words,
       (text, kind = 'report') => void told.push({ text, kind }),
@@ -203,7 +203,7 @@ describe('the page as it was served', () => {
 
   it('makes the pair itself, mode first, for a page served in nothing', async () => {
     const sheet = document.implementation.createHTMLDocument('numen')
-    const bare = windowAppearance(
+    const bare = createWindowAppearance(
       {
         getAppearance: async () => APPEARANCE,
         readTheme: async (name) => `:root { --numen-surface: ${name} }`,

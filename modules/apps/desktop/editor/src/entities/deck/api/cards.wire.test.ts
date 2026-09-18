@@ -7,6 +7,7 @@
  * parts the schema holds it in.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { asFailure, asValue } from '@numen/wire'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -59,15 +60,16 @@ describe('making a deck', () => {
     replyWith({ path: 'Decks/Words.md' })
 
     expect(await cards.createDeck('Words', 'Decks')).toEqual({
-      path: 'Decks/Words.md',
-      error: null,
+      ok: true,
+      value: { path: 'Decks/Words.md' },
     })
   })
 
   it('carries the error in the words the window uses', async () => {
-    replyWith({ path: '', error: 'ERROR_CODE_OCCUPIED' })
+    replyWith({ ok: false, error: 'ERROR_CODE_OCCUPIED' })
 
-    expect((await cards.createDeck('Words', 'Decks')).error).toBe('occupied')
+    const made = await cards.createDeck('Words', 'Decks')
+    expect(made.ok ? null : made.error).toBe('occupied')
   })
 })
 
@@ -76,8 +78,8 @@ describe('making a stencil', () => {
     replyWith({ path: 'Word.md' })
 
     expect(await cards.createStencil('Word', '', ['Front', 'Back'])).toEqual({
-      path: 'Word.md',
-      error: null,
+      ok: true,
+      value: { path: 'Word.md' },
     })
     expect(asked[0]).toEqual({ title: 'Word', fields: ['Front', 'Back'] })
   })
@@ -112,10 +114,10 @@ describe('reading a deck', () => {
 
     const answer = await cards.readDeck('Deck.md')
 
-    expect(answer.deck?.cards.map((one) => one.sectionIndex)).toEqual([0, null])
-    expect(answer.deck?.cards[0]?.values).toEqual([{ field: 'Front', text: '<p>Entropy</p>' }])
-    expect(answer.fingerprint).toBe(read)
-    expect(answer.bound).toBe(400)
+    if (!answer.ok) throw new Error('the deck was refused')
+    expect(answer.value.deck.cards.map((one) => one.sectionIndex)).toEqual([0, null])
+    expect(answer.value.deck.cards[0]?.values).toEqual([{ field: 'Front', text: '<p>Entropy</p>' }])
+    expect(answer.value.at).toBe(read)
   })
 
   it('is no deck where the answer carries none', async () => {
@@ -123,9 +125,8 @@ describe('reading a deck', () => {
 
     const answer = await cards.readDeck('Notes.md')
 
-    expect(answer.deck).toBeNull()
-    expect(answer.error).toBe('notADeck')
-    expect(answer.fingerprint).toBe('')
+    expect(answer.ok).toBe(false)
+    expect(answer.ok ? null : answer.error.code).toBe('notADeck')
   })
 
   it('names what is wrong with it in the words the window uses', async () => {
@@ -144,7 +145,8 @@ describe('reading a deck', () => {
       },
     })
 
-    expect((await cards.readDeck('Deck.md')).deck?.problems).toEqual([
+    const read = await cards.readDeck('Deck.md')
+    expect(read.ok ? read.value.deck.problems : null).toEqual([
       { fault: 'markCarriedTwice', card: 2, face: null, field: '', text: 'a1' },
       { fault: 'cardWithoutAStencil', card: null, face: null, field: 'Front', text: '' },
     ])
@@ -197,8 +199,7 @@ describe('writing a deck', () => {
       read,
     )
 
-    expect(answer.isChanged).toBe(true)
-    expect(answer.error).toBeNull()
+    expect(answer.ok ? null : answer.error.code).toBe('changed')
   })
 })
 
@@ -217,7 +218,8 @@ describe('a stencil', () => {
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 
-    expect((await cards.readStencil('Word.md')).stencil?.faces).toEqual([
+    const answer = await cards.readStencil('Word.md')
+    expect(answer.ok ? answer.value.stencil.faces : null).toEqual([
       { name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' },
     ])
   })
@@ -225,7 +227,7 @@ describe('a stencil', () => {
   it('is no stencil where the answer carries none', async () => {
     replyWith({ error: 'ERROR_CODE_NOT_A_STENCIL' })
 
-    expect((await cards.readStencil('Notes.md')).stencil).toBeNull()
+    expect(await cards.readStencil('Notes.md')).toEqual(asFailure('notAStencil'))
   })
 
   it('is written with its fields and its faces', async () => {
@@ -243,7 +245,7 @@ describe('a stencil', () => {
     )
 
     expect(asked[0]?.fields).toEqual(['Front', 'Back'])
-    expect(answer.fingerprint).toBe('12 34 Word.md')
+    expect(answer.ok && answer.value.at).toBe('12 34 Word.md')
   })
 })
 
@@ -258,21 +260,20 @@ describe('renaming a field', () => {
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 
-    expect(await cards.renameField('Word.md', 'Front', 'Face', read)).toEqual({
-      decks: ['Words.md', 'Roots.md'],
-      cards: 12,
-      notWritten: [{ path: 'Old.md', text: 'Front' }],
-      error: null,
-      isChanged: false,
-      fingerprint: '12 34 Word.md',
-    })
+    expect(await cards.renameField('Word.md', 'Front', 'Face', read)).toEqual(
+      asValue({
+        decks: ['Words.md', 'Roots.md'],
+        cards: 12,
+        notWritten: [{ path: 'Old.md', text: 'Front' }],
+        at: '12 34 Word.md',
+      }),
+    )
   })
 
   it('leaves a deck it could not read carrying nothing to say', async () => {
     replyWith({ decks: [], cards: 0, notWritten: [{ path: 'Old.md' }] })
 
-    expect((await cards.renameField('Word.md', 'Front', 'Face', null)).notWritten).toEqual([
-      { path: 'Old.md', text: '' },
-    ])
+    const answer = await cards.renameField('Word.md', 'Front', 'Face', null)
+    expect(answer.ok ? answer.value.notWritten : null).toEqual([{ path: 'Old.md', text: '' }])
   })
 })

@@ -6,7 +6,13 @@
  */
 import { computed, shallowRef, type ComputedRef, type Ref } from 'vue'
 import type { RowId, ShownRow } from '../lib/row'
-import { everyRow, resolveSelection, sameRows, type Press, type RowSelection } from '../lib/select'
+import {
+  everyRow,
+  resolveSelection,
+  isSameSelection,
+  type Press,
+  type RowSelection,
+} from '../lib/select'
 
 export interface RowSelectionState {
   /** The rows selected, for asking one row at a time. */
@@ -35,7 +41,7 @@ export function useRowSelection(
   /** A selection a press came to, said, and the anchor put where it names. */
   const apply = (selection: RowSelection): readonly RowId[] => {
     anchor.value = selection.anchor
-    if (!sameRows(selection.rows, getSelection())) select(selection.rows)
+    if (!isSameSelection(selection.rows, getSelection())) select(selection.rows)
     return selection.rows
   }
 

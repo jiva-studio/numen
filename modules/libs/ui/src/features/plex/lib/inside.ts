@@ -36,7 +36,7 @@ export interface HungPart {
 }
 
 /** What a node hangs, settled. */
-export interface HungParts {
+export interface NodeParts {
   /** The edge they come out from, from the middle of the node. */
   readonly top: number
   readonly partHeight: number
@@ -81,12 +81,12 @@ function getIndents(parts: readonly PlexPart[], step: number): Map<number, numbe
  *
  * Nothing for a node with no parts.
  */
-export function hangParts(
+export function getNodeParts(
   node: PlacedNode,
   parts: readonly PlexPart[],
   options: Pick<PlexOptions, 'partHeight' | 'partIndent' | 'maxParts'>,
   deps: PartsDeps,
-): HungParts | null {
+): NodeParts | null {
   if (parts.length === 0) return null
 
   const { partHeight, partIndent, maxParts } = options
@@ -140,7 +140,7 @@ function getPartsWidth(
     deps.viewport.width - 2 * deps.margin,
   )
 
-  const furthest = deps.viewport.width / 2 - deps.margin - width / 2
-  const middle = Math.min(Math.max(node.x, -furthest), furthest)
+  const getFurthest = deps.viewport.width / 2 - deps.margin - width / 2
+  const middle = Math.min(Math.max(node.x, -getFurthest), getFurthest)
   return { width, offset: middle - node.x }
 }

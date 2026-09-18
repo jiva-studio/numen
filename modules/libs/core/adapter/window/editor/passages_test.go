@@ -13,7 +13,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 		name  string
 		text  string
 		query string
-		want  []domain.Span
+		want  []domain.UnitSpan
 	}{
 		{name: "nothing typed", text: "no engine is more efficient", query: "  "},
 		{name: "nothing to read", text: "", query: "engine"},
@@ -21,19 +21,19 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "one word, wherever it stands",
 			text:  "no engine beats a reversible engine",
 			query: "engine",
-			want:  []domain.Span{{From: 3, To: 9}, {From: 29, To: 35}},
+			want:  []domain.UnitSpan{{From: 3, To: 9}, {From: 29, To: 35}},
 		},
 		{
 			name:  "each word typed, in the order the spans stand",
 			text:  "heat and work",
 			query: "work heat",
-			want:  []domain.Span{{From: 0, To: 4}, {From: 9, To: 13}},
+			want:  []domain.UnitSpan{{From: 0, To: 4}, {From: 9, To: 13}},
 		},
 		{
 			name:  "case is folded and nothing else is",
 			text:  "Entropy is not entropy",
 			query: "ENTROPY",
-			want:  []domain.Span{{From: 0, To: 7}, {From: 15, To: 22}},
+			want:  []domain.UnitSpan{{From: 0, To: 7}, {From: 15, To: 22}},
 		},
 		{
 			// The index matched a word. A run of the same letters inside another
@@ -49,25 +49,25 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "the last word typed matches a word by its opening",
 			text:  "a reversible engine",
 			query: "revers",
-			want:  []domain.Span{{From: 2, To: 8}},
+			want:  []domain.UnitSpan{{From: 2, To: 8}},
 		},
 		{
 			name:  "a word before the last one is matched whole",
 			text:  "a reversible engine",
 			query: "revers engine",
-			want:  []domain.Span{{From: 13, To: 19}},
+			want:  []domain.UnitSpan{{From: 13, To: 19}},
 		},
 		{
 			name:  "two words naming the same characters come back as one span",
 			text:  "entropy again",
 			query: "ent entropy",
-			want:  []domain.Span{{From: 0, To: 7}},
+			want:  []domain.UnitSpan{{From: 0, To: 7}},
 		},
 		{
 			name:  "the spans come back in the order they stand",
 			text:  "engine and entropy",
 			query: "entropy engine",
-			want:  []domain.Span{{From: 0, To: 6}, {From: 11, To: 18}},
+			want:  []domain.UnitSpan{{From: 0, To: 6}, {From: 11, To: 18}},
 		},
 		{
 			name:  "a word the person did not type is not marked",
@@ -80,7 +80,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "past a character of two code units",
 			text:  "👋 engine",
 			query: "engine",
-			want:  []domain.Span{{From: 3, To: 9}},
+			want:  []domain.UnitSpan{{From: 3, To: 9}},
 		},
 		{
 			// Folding a whole string can change how many characters it holds;
@@ -88,7 +88,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			name:  "a letter whose lower case is longer",
 			text:  "İstanbul and engine",
 			query: "engine",
-			want:  []domain.Span{{From: 13, To: 19}},
+			want:  []domain.UnitSpan{{From: 13, To: 19}},
 		},
 	} {
 		t.Run(c.name, func(t *testing.T) {

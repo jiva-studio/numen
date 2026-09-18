@@ -12,10 +12,11 @@ import type { PanelPlace } from '../model/carousel'
 /** A hand moves this as much as the owner does, so it is a model and not a prop. */
 const shown = defineModel<PanelPlace>('at', { required: true })
 
+/* --------------------------------- State ---------------------------------- */
 const window_ = useTemplateRef<HTMLElement>('window')
 const middle = useTemplateRef<HTMLElement>('middle')
 
-const { taking, handleScroll, handlePointerDown, handlePointerMove, letGo } = useCarouselStrip({
+const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStrip({
   window: window_,
   middle,
   shown,
@@ -27,9 +28,9 @@ const { taking, handleScroll, handlePointerDown, handlePointerMove, letGo } = us
     ref="window"
     class="carousel"
     :class="{ 'carousel--taking': taking }"
-    @scroll="handleScroll"
-    @pointerdown="handlePointerDown"
-    @pointermove="handlePointerMove"
+    @scroll="onScroll"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
     @pointerup="letGo"
     @pointercancel="letGo"
   >

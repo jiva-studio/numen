@@ -38,9 +38,9 @@ func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 
 	focusing.tell(domain.Place{Path: "notes/one.md"})
 	focusing.tell(domain.Place{Path: "notes/two.md"})
-	focusing.tell(domain.Place{Path: "library/A Book.epub", Spans: []domain.Span{{From: 1200, To: 1280}}})
+	focusing.tell(domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}})
 
-	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.Span{{From: 1200, To: 1280}}}
+	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}}
 	if waiting := <-line; !reflect.DeepEqual(waiting, want) {
 		t.Errorf("the listener was handed %+v", waiting)
 	}

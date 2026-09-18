@@ -229,9 +229,9 @@ func read(path string) (string, error) {
 
 // pins says whether a theme declares `color-scheme` itself. The comments are
 // cut away first: a preset that pins says so in one of them.
-func pins(css string) bool { return declares(uncommented(css), "color-scheme") }
+func pins(css string) bool { return hasDeclared(stripComments(css), "color-scheme") }
 
-func uncommented(css string) string {
+func stripComments(css string) string {
 	var text strings.Builder
 	for {
 		start := strings.Index(css, "/*")
@@ -248,8 +248,8 @@ func uncommented(css string) string {
 	}
 }
 
-// declares looks for a property being set: the name, and a colon after it.
-func declares(css, property string) bool {
+// hasDeclared looks for a property being set: the name, and a colon after it.
+func hasDeclared(css, property string) bool {
 	for at := 0; ; {
 		found := strings.Index(css[at:], property)
 		if found < 0 {

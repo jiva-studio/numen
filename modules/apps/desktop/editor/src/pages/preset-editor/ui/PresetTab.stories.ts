@@ -4,6 +4,7 @@
  * browser can answer: where the columns, the readout under the knob, the bubble
  * over it and the numbers along the axis are put.
  */
+import { StopReason } from '@numen/protocol'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'
@@ -95,7 +96,7 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     isWaiting: ref(args.isWaiting),
     bounds: shallowRef(BOUNDS),
     problems: shallowRef([]),
-    stopped: ref('none'),
+    stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
     hasChanged: ref(false),
     reload: fn(),

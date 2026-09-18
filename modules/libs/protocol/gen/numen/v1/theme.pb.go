@@ -152,7 +152,7 @@ type Theme struct {
 	Shelf Shelf `protobuf:"varint,3,opt,name=shelf,proto3,enum=numen.v1.Shelf" json:"shelf,omitempty"`
 	// Set for a theme that declares `color-scheme` itself. Light and dark are
 	// the theme's own, and the mode has nothing left to choose.
-	Pinned        bool `protobuf:"varint,4,opt,name=pinned,proto3" json:"pinned,omitempty"`
+	IsPinned      bool `protobuf:"varint,4,opt,name=is_pinned,json=isPinned,proto3" json:"is_pinned,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -208,65 +208,11 @@ func (x *Theme) GetShelf() Shelf {
 	return Shelf_SHELF_UNSPECIFIED
 }
 
-func (x *Theme) GetPinned() bool {
+func (x *Theme) GetIsPinned() bool {
 	if x != nil {
-		return x.Pinned
+		return x.IsPinned
 	}
 	return false
-}
-
-// Bounds is how far a size goes, at each end. A number outside them is
-// refused.
-type Bounds struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Least         float64                `protobuf:"fixed64,1,opt,name=least,proto3" json:"least,omitempty"`
-	Most          float64                `protobuf:"fixed64,2,opt,name=most,proto3" json:"most,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Bounds) Reset() {
-	*x = Bounds{}
-	mi := &file_numen_v1_theme_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Bounds) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Bounds) ProtoMessage() {}
-
-func (x *Bounds) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Bounds.ProtoReflect.Descriptor instead.
-func (*Bounds) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Bounds) GetLeast() float64 {
-	if x != nil {
-		return x.Least
-	}
-	return 0
-}
-
-func (x *Bounds) GetMost() float64 {
-	if x != nil {
-		return x.Most
-	}
-	return 0
 }
 
 type ListThemesRequest struct {
@@ -277,7 +223,7 @@ type ListThemesRequest struct {
 
 func (x *ListThemesRequest) Reset() {
 	*x = ListThemesRequest{}
-	mi := &file_numen_v1_theme_proto_msgTypes[2]
+	mi := &file_numen_v1_theme_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -289,7 +235,7 @@ func (x *ListThemesRequest) String() string {
 func (*ListThemesRequest) ProtoMessage() {}
 
 func (x *ListThemesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[2]
+	mi := &file_numen_v1_theme_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -302,7 +248,7 @@ func (x *ListThemesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListThemesRequest.ProtoReflect.Descriptor instead.
 func (*ListThemesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{1}
 }
 
 type ListThemesResponse struct {
@@ -327,7 +273,7 @@ type ListThemesResponse struct {
 
 func (x *ListThemesResponse) Reset() {
 	*x = ListThemesResponse{}
-	mi := &file_numen_v1_theme_proto_msgTypes[3]
+	mi := &file_numen_v1_theme_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -339,7 +285,7 @@ func (x *ListThemesResponse) String() string {
 func (*ListThemesResponse) ProtoMessage() {}
 
 func (x *ListThemesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[3]
+	mi := &file_numen_v1_theme_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +298,7 @@ func (x *ListThemesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListThemesResponse.ProtoReflect.Descriptor instead.
 func (*ListThemesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ListThemesResponse) GetThemes() []*Theme {
@@ -414,7 +360,7 @@ type ReadThemeRequest struct {
 
 func (x *ReadThemeRequest) Reset() {
 	*x = ReadThemeRequest{}
-	mi := &file_numen_v1_theme_proto_msgTypes[4]
+	mi := &file_numen_v1_theme_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -426,7 +372,7 @@ func (x *ReadThemeRequest) String() string {
 func (*ReadThemeRequest) ProtoMessage() {}
 
 func (x *ReadThemeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[4]
+	mi := &file_numen_v1_theme_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -439,7 +385,7 @@ func (x *ReadThemeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadThemeRequest.ProtoReflect.Descriptor instead.
 func (*ReadThemeRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ReadThemeRequest) GetName() string {
@@ -460,7 +406,7 @@ type ReadThemeResponse struct {
 
 func (x *ReadThemeResponse) Reset() {
 	*x = ReadThemeResponse{}
-	mi := &file_numen_v1_theme_proto_msgTypes[5]
+	mi := &file_numen_v1_theme_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +418,7 @@ func (x *ReadThemeResponse) String() string {
 func (*ReadThemeResponse) ProtoMessage() {}
 
 func (x *ReadThemeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[5]
+	mi := &file_numen_v1_theme_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -485,7 +431,7 @@ func (x *ReadThemeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadThemeResponse.ProtoReflect.Descriptor instead.
 func (*ReadThemeResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReadThemeResponse) GetCss() string {
@@ -513,7 +459,7 @@ type WriteAppearanceRequest struct {
 
 func (x *WriteAppearanceRequest) Reset() {
 	*x = WriteAppearanceRequest{}
-	mi := &file_numen_v1_theme_proto_msgTypes[6]
+	mi := &file_numen_v1_theme_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -525,7 +471,7 @@ func (x *WriteAppearanceRequest) String() string {
 func (*WriteAppearanceRequest) ProtoMessage() {}
 
 func (x *WriteAppearanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[6]
+	mi := &file_numen_v1_theme_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -538,7 +484,7 @@ func (x *WriteAppearanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteAppearanceRequest.ProtoReflect.Descriptor instead.
 func (*WriteAppearanceRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *WriteAppearanceRequest) GetName() string {
@@ -579,7 +525,7 @@ type WriteAppearanceResponse struct {
 
 func (x *WriteAppearanceResponse) Reset() {
 	*x = WriteAppearanceResponse{}
-	mi := &file_numen_v1_theme_proto_msgTypes[7]
+	mi := &file_numen_v1_theme_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -591,7 +537,7 @@ func (x *WriteAppearanceResponse) String() string {
 func (*WriteAppearanceResponse) ProtoMessage() {}
 
 func (x *WriteAppearanceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[7]
+	mi := &file_numen_v1_theme_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -604,7 +550,7 @@ func (x *WriteAppearanceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteAppearanceResponse.ProtoReflect.Descriptor instead.
 func (*WriteAppearanceResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *WriteAppearanceResponse) GetError() string {
@@ -622,7 +568,7 @@ type WatchThemesRequest struct {
 
 func (x *WatchThemesRequest) Reset() {
 	*x = WatchThemesRequest{}
-	mi := &file_numen_v1_theme_proto_msgTypes[8]
+	mi := &file_numen_v1_theme_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -634,7 +580,7 @@ func (x *WatchThemesRequest) String() string {
 func (*WatchThemesRequest) ProtoMessage() {}
 
 func (x *WatchThemesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[8]
+	mi := &file_numen_v1_theme_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -647,7 +593,7 @@ func (x *WatchThemesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchThemesRequest.ProtoReflect.Descriptor instead.
 func (*WatchThemesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{7}
 }
 
 type WatchThemesResponse struct {
@@ -661,7 +607,7 @@ type WatchThemesResponse struct {
 
 func (x *WatchThemesResponse) Reset() {
 	*x = WatchThemesResponse{}
-	mi := &file_numen_v1_theme_proto_msgTypes[9]
+	mi := &file_numen_v1_theme_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -673,7 +619,7 @@ func (x *WatchThemesResponse) String() string {
 func (*WatchThemesResponse) ProtoMessage() {}
 
 func (x *WatchThemesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_theme_proto_msgTypes[9]
+	mi := &file_numen_v1_theme_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -686,7 +632,7 @@ func (x *WatchThemesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchThemesResponse.ProtoReflect.Descriptor instead.
 func (*WatchThemesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_theme_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_theme_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *WatchThemesResponse) GetNames() []string {
@@ -700,15 +646,12 @@ var File_numen_v1_theme_proto protoreflect.FileDescriptor
 
 const file_numen_v1_theme_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/theme.proto\x12\bnumen.v1\"p\n" +
+	"\x14numen/v1/theme.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"u\n" +
 	"\x05Theme\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12%\n" +
-	"\x05shelf\x18\x03 \x01(\x0e2\x0f.numen.v1.ShelfR\x05shelf\x12\x16\n" +
-	"\x06pinned\x18\x04 \x01(\bR\x06pinned\"2\n" +
-	"\x06Bounds\x12\x14\n" +
-	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
-	"\x04most\x18\x02 \x01(\x01R\x04most\"\x13\n" +
+	"\x05shelf\x18\x03 \x01(\x0e2\x0f.numen.v1.ShelfR\x05shelf\x12\x1b\n" +
+	"\tis_pinned\x18\x04 \x01(\bR\bisPinned\"\x13\n" +
 	"\x11ListThemesRequest\"\xc9\x02\n" +
 	"\x12ListThemesResponse\x12'\n" +
 	"\x06themes\x18\x01 \x03(\v2\x0f.numen.v1.ThemeR\x06themes\x12\x18\n" +
@@ -767,36 +710,36 @@ func file_numen_v1_theme_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_theme_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_theme_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_v1_theme_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_theme_proto_goTypes = []any{
 	(Shelf)(0),                      // 0: numen.v1.Shelf
 	(Mode)(0),                       // 1: numen.v1.Mode
 	(*Theme)(nil),                   // 2: numen.v1.Theme
-	(*Bounds)(nil),                  // 3: numen.v1.Bounds
-	(*ListThemesRequest)(nil),       // 4: numen.v1.ListThemesRequest
-	(*ListThemesResponse)(nil),      // 5: numen.v1.ListThemesResponse
-	(*ReadThemeRequest)(nil),        // 6: numen.v1.ReadThemeRequest
-	(*ReadThemeResponse)(nil),       // 7: numen.v1.ReadThemeResponse
-	(*WriteAppearanceRequest)(nil),  // 8: numen.v1.WriteAppearanceRequest
-	(*WriteAppearanceResponse)(nil), // 9: numen.v1.WriteAppearanceResponse
-	(*WatchThemesRequest)(nil),      // 10: numen.v1.WatchThemesRequest
-	(*WatchThemesResponse)(nil),     // 11: numen.v1.WatchThemesResponse
+	(*ListThemesRequest)(nil),       // 3: numen.v1.ListThemesRequest
+	(*ListThemesResponse)(nil),      // 4: numen.v1.ListThemesResponse
+	(*ReadThemeRequest)(nil),        // 5: numen.v1.ReadThemeRequest
+	(*ReadThemeResponse)(nil),       // 6: numen.v1.ReadThemeResponse
+	(*WriteAppearanceRequest)(nil),  // 7: numen.v1.WriteAppearanceRequest
+	(*WriteAppearanceResponse)(nil), // 8: numen.v1.WriteAppearanceResponse
+	(*WatchThemesRequest)(nil),      // 9: numen.v1.WatchThemesRequest
+	(*WatchThemesResponse)(nil),     // 10: numen.v1.WatchThemesResponse
+	(*Bounds)(nil),                  // 11: numen.v1.Bounds
 }
 var file_numen_v1_theme_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Theme.shelf:type_name -> numen.v1.Shelf
 	2,  // 1: numen.v1.ListThemesResponse.themes:type_name -> numen.v1.Theme
 	1,  // 2: numen.v1.ListThemesResponse.mode:type_name -> numen.v1.Mode
-	3,  // 3: numen.v1.ListThemesResponse.interface_scale_bounds:type_name -> numen.v1.Bounds
-	3,  // 4: numen.v1.ListThemesResponse.text_scale_bounds:type_name -> numen.v1.Bounds
+	11, // 3: numen.v1.ListThemesResponse.interface_scale_bounds:type_name -> numen.v1.Bounds
+	11, // 4: numen.v1.ListThemesResponse.text_scale_bounds:type_name -> numen.v1.Bounds
 	1,  // 5: numen.v1.WriteAppearanceRequest.mode:type_name -> numen.v1.Mode
-	4,  // 6: numen.v1.ThemeService.ListThemes:input_type -> numen.v1.ListThemesRequest
-	6,  // 7: numen.v1.ThemeService.ReadTheme:input_type -> numen.v1.ReadThemeRequest
-	8,  // 8: numen.v1.ThemeService.WriteAppearance:input_type -> numen.v1.WriteAppearanceRequest
-	10, // 9: numen.v1.ThemeService.WatchThemes:input_type -> numen.v1.WatchThemesRequest
-	5,  // 10: numen.v1.ThemeService.ListThemes:output_type -> numen.v1.ListThemesResponse
-	7,  // 11: numen.v1.ThemeService.ReadTheme:output_type -> numen.v1.ReadThemeResponse
-	9,  // 12: numen.v1.ThemeService.WriteAppearance:output_type -> numen.v1.WriteAppearanceResponse
-	11, // 13: numen.v1.ThemeService.WatchThemes:output_type -> numen.v1.WatchThemesResponse
+	3,  // 6: numen.v1.ThemeService.ListThemes:input_type -> numen.v1.ListThemesRequest
+	5,  // 7: numen.v1.ThemeService.ReadTheme:input_type -> numen.v1.ReadThemeRequest
+	7,  // 8: numen.v1.ThemeService.WriteAppearance:input_type -> numen.v1.WriteAppearanceRequest
+	9,  // 9: numen.v1.ThemeService.WatchThemes:input_type -> numen.v1.WatchThemesRequest
+	4,  // 10: numen.v1.ThemeService.ListThemes:output_type -> numen.v1.ListThemesResponse
+	6,  // 11: numen.v1.ThemeService.ReadTheme:output_type -> numen.v1.ReadThemeResponse
+	8,  // 12: numen.v1.ThemeService.WriteAppearance:output_type -> numen.v1.WriteAppearanceResponse
+	10, // 13: numen.v1.ThemeService.WatchThemes:output_type -> numen.v1.WatchThemesResponse
 	10, // [10:14] is the sub-list for method output_type
 	6,  // [6:10] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
@@ -809,14 +752,15 @@ func file_numen_v1_theme_proto_init() {
 	if File_numen_v1_theme_proto != nil {
 		return
 	}
-	file_numen_v1_theme_proto_msgTypes[6].OneofWrappers = []any{}
+	file_numen_v1_shared_proto_init()
+	file_numen_v1_theme_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_theme_proto_rawDesc), len(file_numen_v1_theme_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   10,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

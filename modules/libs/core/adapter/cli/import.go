@@ -83,7 +83,7 @@ func copyURL(
 		return err
 	}
 	switch {
-	case res.TooLarge():
+	case res.IsTooLarge():
 		fmt.Fprintf(out, "%s would take %s, over the %s a copy may be\n",
 			res.Path, describeSize(res.Bytes), describeSize(res.Limit))
 	case res.IsExisted:

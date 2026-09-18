@@ -1,7 +1,7 @@
 /**
  * Save timers, settling coordination, and read/write execution for open notes.
  */
-import type { LinkAddress, NoteReadResult, NoteWriteResult } from '../lib/note'
+import type { LinkAddress, NoteResult, WriteResult } from '../lib/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { Notes } from '../lib/noteTypes'
 import type { Event, NoteBaseline, NoteErrorCode } from '../lib/tab'
@@ -51,7 +51,7 @@ export function createNoteQueue(
     })
 
   const read = async (id: string, path: string, generation: number): Promise<void> => {
-    let answered: NoteReadResult
+    let answered: NoteResult
     try {
       answered = await core.read(path)
     } catch {
@@ -59,14 +59,12 @@ export function createNoteQueue(
       turn(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
     }
-    const link = answered.link
-    if (link) setAddress(id, link)
-    else setAddress(id, null)
+    setAddress(id, answered.ok ? (answered.value.link ?? null) : null)
     turn(id, {
       kind: 'read',
       generation,
-      answer: !answered.error
-        ? { kind: 'body', body: answered.body, at: answered.fingerprint ?? '' }
+      answer: answered.ok
+        ? { kind: 'body', body: answered.value.body, at: answered.value.at ?? '' }
         : answered.error === 'missing'
           ? { kind: 'missing' }
           : { kind: 'error', error: errorOf(answered.error) },
@@ -79,7 +77,7 @@ export function createNoteQueue(
     body: string,
     baseline: NoteBaseline | null,
   ): Promise<void> => {
-    let answered: NoteWriteResult
+    let answered: WriteResult
     try {
       answered = await core.write(path, body, baseline)
     } catch {
@@ -89,10 +87,10 @@ export function createNoteQueue(
     }
     turn(id, {
       kind: 'written',
-      answer: answered.isChanged
-        ? { kind: 'changed' }
-        : !answered.error
-          ? { kind: 'ok', at: answered.fingerprint ?? '' }
+      answer: answered.ok
+        ? { kind: 'ok', at: answered.value.at ?? '' }
+        : answered.error === 'changed'
+          ? { kind: 'changed' }
           : { kind: 'error', error: errorOf(answered.error) },
     })
     resumeClosing(id)

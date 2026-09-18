@@ -1,35 +1,30 @@
 /** How the decks pointing at one preset are scheduled, and what that comes to. */
+import type { Result } from '@numen/wire'
+import { StopReason } from '@numen/protocol'
+import type { BudgetName } from '@numen/protocol'
 import type { Goal } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
+import type { CardsFailure } from '../types'
 
 export type { Goal }
 
-/** Why a preset schedules nothing. `none` is a preset that schedules. */
-export type StopReason =
-  | 'none'
-  | 'noMinutes'
-  | 'noCards'
-  | 'noDay'
-  | 'pastDay'
-  | 'noLoad'
-  | 'noWeek'
+export type { StopReason }
 
 /**
  * Every reason there is, `none` last. A verdict the schema gains and this does
  * not is caught where the two are mapped onto each other.
  */
 export const STOP_REASONS: readonly StopReason[] = [
-  'noMinutes',
-  'noCards',
-  'noDay',
-  'pastDay',
-  'noLoad',
-  'noWeek',
-  'none',
+  StopReason.NO_MINUTES,
+  StopReason.NO_CARDS,
+  StopReason.NO_DAY,
+  StopReason.PAST_DAY,
+  StopReason.NO_LOAD,
+  StopReason.NO_WEEK,
+  StopReason.NOTHING,
 ]
 
-/** A budget a day can run out of, named as the settings name it. */
-export type BudgetName = 'minutesADay' | 'newADay' | 'reviewsADay' | 'byDate' | 'backlog' | 'paused'
+export type { BudgetName }
 
 /** The three, in the order they are offered. */
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
@@ -139,26 +134,22 @@ export interface Preset {
   readonly stopsOn: StopReason
 }
 
-/** What reading a preset came back with. */
-export interface ReadResult {
+/** A preset as a read found it, and how far each of its settings goes. */
+export interface ReadPreset {
+  /** Null where nothing names a preset, which a read answers as readily. */
   readonly preset: Preset | null
-  readonly error: ErrorCode | null
-  readonly fingerprint: string
+  readonly at: string
   readonly bounds: SettingsBounds
 }
 
-/** What writing a preset came back with. */
-export interface WriteResult {
-  readonly error: ErrorCode | null
-  readonly isChanged: boolean
-  readonly fingerprint: string
-}
+/** What reading a preset came back with. */
+export type PresetReadResult = Result<ReadPreset, ErrorCode>
 
-/** What making a preset came back with. */
-export interface MakeResult {
-  readonly path: string
-  readonly error: ErrorCode | null
-}
+/** What writing a preset came back with. */
+export type PresetWriteResult = Result<{ readonly at: string }, CardsFailure>
+
+/** Where a preset was filed, or why none was made. */
+export type MakeResult = Result<{ readonly path: string }, ErrorCode>
 
 /** What a preset comes to at one place of the grid. */
 export interface Point {
@@ -216,11 +207,11 @@ export interface PresetChoice {
 
 /** What the window asks about the presets of a vault. */
 export interface Presets {
-  read(path: string): Promise<ReadResult>
+  read(path: string): Promise<PresetReadResult>
   list(): Promise<readonly PresetChoice[]>
   createPreset(title: string, folder: string): Promise<MakeResult>
-  scheduleDeck(deck: string, preset: string, seen: string): Promise<WriteResult>
-  getDeckPreset(deck: string): Promise<ReadResult>
-  write(path: string, settings: Settings, seen: string): Promise<WriteResult>
+  scheduleDeck(deck: string, preset: string, seen: string): Promise<PresetWriteResult>
+  getDeckPreset(deck: string): Promise<PresetReadResult>
+  write(path: string, settings: Settings, seen: string): Promise<PresetWriteResult>
   curve(path: string, settings: Settings): Promise<Curve>
 }

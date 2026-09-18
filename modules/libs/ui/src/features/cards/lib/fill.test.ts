@@ -10,7 +10,7 @@ import {
   renameField,
   sampleValues,
   slotsIn,
-  strayIn,
+  getUndeclaredSlots,
 } from './fill'
 
 /**
@@ -160,25 +160,25 @@ describe('renderPreview', () => {
   })
 })
 
-describe('strayIn', () => {
+describe('getUndeclaredSlots', () => {
   it('says the slots the fields do not name', () => {
-    expect(strayIn('{{Height}} {{Colour}}', ['Height'])).toEqual(['Colour'])
+    expect(getUndeclaredSlots('{{Height}} {{Colour}}', ['Height'])).toEqual(['Colour'])
   })
 
   it('says each of them once', () => {
-    expect(strayIn('{{Colour}} {{Colour}}', [])).toEqual(['Colour'])
+    expect(getUndeclaredSlots('{{Colour}} {{Colour}}', [])).toEqual(['Colour'])
   })
 
   it('says nothing of the naming field, which is named like any other', () => {
-    expect(strayIn('{{Name}}', ['Name'])).toEqual([])
+    expect(getUndeclaredSlots('{{Name}}', ['Name'])).toEqual([])
   })
 
   it('says a slot with no name, which no field is called', () => {
-    expect(strayIn('{{}}', [])).toEqual([''])
+    expect(getUndeclaredSlots('{{}}', [])).toEqual([''])
   })
 
   it('says a slot whose name is written with space around it', () => {
-    expect(strayIn('{{ Height }}', ['Height'])).toEqual([' Height '])
+    expect(getUndeclaredSlots('{{ Height }}', ['Height'])).toEqual([' Height '])
   })
 })
 

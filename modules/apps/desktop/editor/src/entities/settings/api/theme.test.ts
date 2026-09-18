@@ -38,8 +38,8 @@ describe('every theme there is', () => {
     asked.listThemes.mockResolvedValue(
       createAnswer({
         themes: [
-          { name: 'preset/Numen.css', title: 'Numen', shelf: Shelf.PRESET, pinned: false },
-          { name: 'own/Dusk.css', title: 'Dusk', shelf: Shelf.MINE, pinned: true },
+          { name: 'preset/Numen.css', title: 'Numen', shelf: Shelf.PRESET, isPinned: false },
+          { name: 'own/Dusk.css', title: 'Dusk', shelf: Shelf.MINE, isPinned: true },
         ],
       }),
     )

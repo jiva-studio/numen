@@ -7,8 +7,7 @@
  */
 import { dayOf, getDayName } from '@/shared/lib/day'
 
-/** How many days stand in one column. A column is a week. */
-export const ROWS = 7
+import { AHEAD, ROWS } from './grid'
 
 /** What one day behind came to. */
 export interface Tally {
@@ -48,90 +47,7 @@ export interface Day extends Tally {
   /** Whether it is the day holding now. */
   readonly isToday: boolean
   /** Whether it is still to come, and what it holds is what is coming. */
-  readonly isFuture: boolean
-}
-
-/** How many weeks of what is still to come the grid keeps room for. */
-export const AHEAD = 4
-
-/** What a grid is laid out to. */
-export interface HeatmapMetrics {
-  /** How wide the grid may be, in pixels. */
-  width: number
-  /** How large one cell is drawn. */
-  cell: number
-  /** How much room is left between two cells. */
-  gap: number
-}
-
-/**
- * How many columns fit the room there is, and how large a cell is drawn in it.
- *
- * The cell has a size of its own and the grid takes as many columns as fit, so
- * a wide window shows more weeks rather than the same weeks drawn larger, and a
- * narrow one shows fewer rather than the grid standing in the middle of empty
- * room. What is left over is spread between the cells, which keeps the grid
- * flush to both edges.
- */
-export function measureGrid(metrics: HeatmapMetrics): {
-  columns: number
-  cell: number
-  gap: number
-} {
-  const cell = Math.max(1, metrics.cell)
-  const gap = Math.max(0, metrics.gap)
-  const step = cell + gap
-  if (metrics.width <= 0) return { columns: 1, cell, gap }
-
-  const columns = Math.max(1, Math.floor((metrics.width + gap) / step))
-  if (columns < 2) return { columns, cell, gap }
-
-  // The room the cells do not take is the room between them.
-  const between = Math.max(gap, (metrics.width - columns * cell) / (columns - 1))
-  return { columns, cell, gap: between }
-}
-
-/**
- * The days a grid of this many columns draws, oldest first.
- *
- * The weeks behind a person run up to the one they are in, and a few weeks of
- * what is still to come stand after it, so the grid says what is coming as well
- * as what was done. Every column is a whole week.
- *
- * A day still to come holds what falls on it; a day behind holds what was
- * answered on it. Today holds what was answered, because that is the number a
- * person is adding to.
- */
-/**
- * The stretch of time a grid this wide draws, oldest day first, as the names a
- * day is written under.
- *
- * A caller asks the application for the days before it knows the room it will
- * have, so it asks about the widest grid the room could hold. Every day any
- * narrower grid draws stands inside the answer.
- */
-export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; to: string } {
-  const { columns } = measureGrid(metrics)
-  const weeks = Math.min(AHEAD, Math.max(0, columns - 1))
-
-  // The grid running back from now: the Sunday ending the last week kept for
-  // what is still to come, and the columns before it.
-  const last = new Date(now)
-  last.setHours(12, 0, 0, 0)
-  last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
-  const behind = new Date(last)
-  behind.setDate(behind.getDate() - (columns * ROWS - 1))
-
-  // The grid opening on the week a person began in, which for a vault with
-  // nothing behind it is this week, and then all of it stands ahead.
-  const opens = monday(now)
-  const ahead = new Date(opens)
-  ahead.setDate(ahead.getDate() + columns * ROWS - 1)
-
-  return {
-    from: getDayName(behind < opens ? behind : opens),
-    to: getDayName(last > ahead ? last : ahead),
-  }
+  readonly isAhead: boolean
 }
 
 export function getDays(
@@ -166,16 +82,16 @@ export function getDays(
     const on = new Date(first)
     on.setDate(on.getDate() + at)
     const day = getDayName(on)
-    const isFuture = day > today
+    const isAhead = day > today
     const tally = did.get(day) ?? NOTHING
-    const count = isFuture ? (due.get(day) ?? 0) : tally.answered
+    const count = isAhead ? (due.get(day) ?? 0) : tally.answered
     out.push({
-      ...(isFuture ? NOTHING : tally),
+      ...(isAhead ? NOTHING : tally),
       day,
       did: count,
       weight: getWeight(count),
       isToday: day === today,
-      isFuture,
+      isAhead,
     })
   }
   return out
@@ -224,4 +140,42 @@ export function getWeight(did: number): Day['weight'] {
   if (did < 20) return 2
   if (did < 50) return 3
   return 4
+}
+
+/** How round the corner of a cell is drawn, in the grid's own units. */
+const RADIUS = 2
+
+/** Where one day stands in the grid, and how it is drawn there. */
+export interface Cell {
+  readonly day: Day
+  readonly x: number
+  readonly y: number
+  readonly size: number
+  readonly radius: number
+}
+
+/** How far apart two cells begin. */
+const stepOf = (grid: { cell: number; gap: number }): number => grid.cell + grid.gap
+
+/** How tall the grid stands: seven rows, with no gap past the last of them. */
+export function getGridHeight(grid: { cell: number; gap: number }): number {
+  return ROWS * stepOf(grid) - grid.gap
+}
+
+/**
+ * Where every day is drawn. A column is a week, so a day's place is its own
+ * number over the rows and the remainder down them.
+ */
+export function getCells(
+  grid: { cell: number; gap: number },
+  days: readonly Day[],
+): readonly Cell[] {
+  const step = stepOf(grid)
+  return days.map((day, at) => ({
+    day,
+    x: Math.floor(at / ROWS) * step,
+    y: (at % ROWS) * step,
+    size: grid.cell,
+    radius: RADIUS,
+  }))
 }

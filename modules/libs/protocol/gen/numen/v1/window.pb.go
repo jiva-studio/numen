@@ -258,7 +258,7 @@ type Task struct {
 	// Asked is set for work a person started and is waiting to be told about.
 	// Work nobody asked for is drawn once it has lasted, and most of it is over
 	// before that.
-	Asked bool `protobuf:"varint,7,opt,name=asked,proto3" json:"asked,omitempty"`
+	IsAsked bool `protobuf:"varint,7,opt,name=is_asked,json=isAsked,proto3" json:"is_asked,omitempty"`
 	// Unit is what done and total are counted in.
 	Unit          Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -337,9 +337,9 @@ func (x *Task) GetError() string {
 	return ""
 }
 
-func (x *Task) GetAsked() bool {
+func (x *Task) GetIsAsked() bool {
 	if x != nil {
-		return x.Asked
+		return x.IsAsked
 	}
 	return false
 }
@@ -654,15 +654,15 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11WatchTasksRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xbc\x01\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xc1\x01\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05doing\x18\x02 \x01(\tR\x05doing\x12\x14\n" +
 	"\x05about\x18\x03 \x01(\tR\x05about\x12\x12\n" +
 	"\x04done\x18\x04 \x01(\x03R\x04done\x12\x14\n" +
 	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x14\n" +
-	"\x05error\x18\x06 \x01(\tR\x05error\x12\x14\n" +
-	"\x05asked\x18\a \x01(\bR\x05asked\x12\"\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\x12\x19\n" +
+	"\bis_asked\x18\a \x01(\bR\aisAsked\x12\"\n" +
 	"\x04unit\x18\b \x01(\x0e2\x0e.numen.v1.UnitR\x04unit\"*\n" +
 	"\x10WatchQuitRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +

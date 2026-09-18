@@ -22,7 +22,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** The pointer crossed a row: its number, and the move that took it there. */
-  (event: 'point-at', at: number, moved: PointerEvent): void
+  (event: 'point-at', at: number, hasMoved: PointerEvent): void
   /** A row was pressed: its number, and whether the second action was asked for. */
   (event: 'choose', at: number, second: boolean): void
 }>()
@@ -77,7 +77,7 @@ const rowId = (at: number): string => optionId(props.uid, at)
       :key="row.item.id"
       :row="row"
       :id="rowId(row.at)"
-      :is-highlighted="row.at === here"
+      :is-current="row.at === here"
       @point-at="(moved) => emit('point-at', row.at, moved)"
       @choose="(second) => emit('choose', row.at, second)"
     >

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { EditorState } from '@codemirror/state'
-import { blockMarks, marks } from './marks'
+import { blockMarks, getMarks } from './marks'
 import { Box, Bullet, Picture, Rule } from './widgets'
 import { createState } from '../fixtures/state'
 
@@ -17,14 +17,14 @@ const getDrawn = (doc: string, caret?: number): Drawn[] => {
   const text = caret === undefined ? doc + ELSEWHERE : doc
   const state: EditorState = createState(text, caret ?? text.length)
   const found: Drawn[] = []
-  const collect = (set: ReturnType<typeof marks>) =>
+  const collect = (set: ReturnType<typeof getMarks>) =>
     set.between(
       0,
       state.doc.length,
       (from, to, deco) => void found.push({ from, to, spec: deco.spec ?? {} }),
     )
 
-  collect(marks(state, 0, state.doc.length))
+  collect(getMarks(state, 0, state.doc.length))
   collect(blockMarks(state))
   return found
 }
@@ -108,8 +108,8 @@ describe('a list', () => {
 
   it('draws a box for something to do, ticked or not', () => {
     const [waiting, done] = widgets('- [ ] a\n- [x] b\n').filter((it) => it instanceof Box)
-    expect((waiting as Box).isDone).toBe(false)
-    expect((done as Box).isDone).toBe(true)
+    expect((waiting as Box).isTicked).toBe(false)
+    expect((done as Box).isTicked).toBe(true)
   })
 })
 

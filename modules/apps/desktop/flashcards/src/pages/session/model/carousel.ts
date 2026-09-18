@@ -77,9 +77,8 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     window.clearTimeout(settling)
     const at = window_.value
     if (!at) return
-    // A strip already standing where it is being sent moves nothing, and a move
-    // that moves nothing never arrives: it would hold the strip deaf to the next
-    // hand for as long as a move takes.
+    // A strip already standing where it is being sent is left alone: a move
+    // that moves nothing never arrives.
     if (Math.abs(at.scrollLeft - getStops()[where]) <= 1) return
     window.clearTimeout(sending)
     sending = window.setTimeout(() => {
@@ -107,7 +106,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     at.style.scrollBehavior = ''
   }
 
-  const handleResize = () => placeAt(shown.value)
+  const onResize = () => placeAt(shown.value)
 
   watch(
     () => shown.value,
@@ -120,7 +119,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
    * Where a hand has taken the strip. Past the halfway mark between two of the
    * stops it has asked for the nearer one, and the window is told as it crosses.
    */
-  const handleScroll = () => {
+  const onScroll = () => {
     const at = window_.value
     if (!at) return
     // A move in flight is over when it arrives, whatever time it took.
@@ -136,8 +135,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     // the rest of the way once it has stopped. A hand still on it is not done.
     //
     // It is armed while a move is in flight too, and aims where that move was
-    // going: a wheel turned during one would otherwise leave the strip standing
-    // between two of the three, with nothing left to pull it to either.
+    // going, so a wheel turned during one still lands on a card.
     //
     // Where it settles is the window's answer and not the strip's: a panel the
     // window refused to open is a panel the strip must not be left standing on.
@@ -151,7 +149,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   let from = 0
   let was = 0
 
-  const handlePointerDown = (press: PointerEvent) => {
+  const onPointerDown = (press: PointerEvent) => {
     const at = window_.value
     if (!at || press.button !== 0) return
     taking.value = true
@@ -160,7 +158,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     at.setPointerCapture(press.pointerId)
   }
 
-  const handlePointerMove = (press: PointerEvent) => {
+  const onPointerMove = (press: PointerEvent) => {
     const at = window_.value
     if (!at || !taking.value) return
     at.scrollLeft = was - (press.clientX - from)
@@ -183,14 +181,14 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
 
   onMounted(() => {
     placeAt(shown.value)
-    window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', onResize)
   })
 
   onBeforeUnmount(() => {
-    window.removeEventListener('resize', handleResize)
+    window.removeEventListener('resize', onResize)
     window.clearTimeout(sending)
     window.clearTimeout(settling)
   })
 
-  return { taking, handleScroll, handlePointerDown, handlePointerMove, letGo }
+  return { taking, onScroll, onPointerDown, onPointerMove, letGo }
 }

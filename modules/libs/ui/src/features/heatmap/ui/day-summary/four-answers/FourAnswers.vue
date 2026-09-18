@@ -16,10 +16,10 @@ const props = defineProps<{
 
 const four = computed(() =>
   [
-    { says: props.words.again, count: props.day.again, tone: 'again' },
-    { says: props.words.hard, count: props.day.hard, tone: 'hard' },
-    { says: props.words.good, count: props.day.good, tone: 'good' },
-    { says: props.words.easy, count: props.day.easy, tone: 'easy' },
+    { label: props.words.again, count: props.day.again, tone: 'again' },
+    { label: props.words.hard, count: props.day.hard, tone: 'hard' },
+    { label: props.words.good, count: props.day.good, tone: 'good' },
+    { label: props.words.easy, count: props.day.easy, tone: 'easy' },
   ].filter((one) => one.count > 0),
 )
 </script>
@@ -27,7 +27,7 @@ const four = computed(() =>
 <template>
   <ul v-if="four.length" class="day-summary__four" data-day-summary="four">
     <li v-for="one in four" :key="one.tone" :data-tone="one.tone">
-      <span class="day-summary__said" data-day-summary="said">{{ one.says }}</span>
+      <span class="day-summary__said" data-day-summary="said">{{ one.label }}</span>
       <span class="day-summary__how-many" data-day-summary="how-many">{{ one.count }}</span>
     </li>
   </ul>

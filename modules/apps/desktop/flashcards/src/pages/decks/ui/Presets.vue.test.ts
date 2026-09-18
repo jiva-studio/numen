@@ -14,7 +14,7 @@ const settings = (fields: Partial<Settings> = {}): Settings => ({
   reviewsADay: 45,
   retention: 0.9,
   load: {},
-  evenLoad: true,
+  hasEvenLoad: true,
   ...fields,
 })
 
@@ -397,8 +397,8 @@ describe('starting a session on a preset', () => {
   })
 
   it('offers no session where the preset schedules nothing today', () => {
-    expect(getPressable(mountPresets([preset({ cards: 0, paused: 'no cards a day' })]))).toStrictEqual(
-      [false],
-    )
+    expect(
+      getPressable(mountPresets([preset({ cards: 0, paused: 'no cards a day' })])),
+    ).toStrictEqual([false])
   })
 })

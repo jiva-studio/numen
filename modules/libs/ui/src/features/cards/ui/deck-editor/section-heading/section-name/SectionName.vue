@@ -5,12 +5,12 @@
  */
 import { NameBox } from '../../../name-box'
 import { RemoveButton } from '../../../remove-button'
-import type { NamingState } from '../../../../model/naming'
+import type { NameEntryState } from '../../../../model/naming'
 import type { Objection } from '../../../../lib/order'
 
 defineProps<{
   /** The naming this box types into. */
-  naming: NamingState<Objection>
+  naming: NameEntryState<Objection>
   /** What is being typed over, as the naming addresses it. */
   over: string
   /** What the section is announced by while it carries no name. */

@@ -2,8 +2,8 @@
 // when each comes round again.
 //
 // An answer is written down once and never changed. A schedule is a pure
-// function of the answers, so changing how cards are spaced replays the history
-// rather than converting a state that has no honest conversion.
+// function of the answers, so changing how cards are spaced replays the
+// history.
 //
 // It is pure: no filesystem, no clock, no database. What a run is written to
 // and where a schedule is kept is the flashcards use case.

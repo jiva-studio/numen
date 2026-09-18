@@ -11,7 +11,7 @@ import { DUE_WORDS, type DueWords } from './due'
 
 const props = withDefaults(
   defineProps<{
-    /** Cards due today: owed, and never asked. Nothing until it is counted. */
+    /** Cards due isToday: owed, and never asked. Nothing until it is counted. */
     due: number | null
     /**
      * The number alone. Where a list is long and the room is short, the word is
@@ -36,7 +36,12 @@ const label = computed(() => {
 <template>
   <!-- A generic element carries no name, so the pill takes a role and is read
        out while the figure is still coming. -->
-  <span class="due-count" role="status" :class="{ 'due-count--over': isOnButton }" :aria-label="label">
+  <span
+    class="due-count"
+    role="status"
+    :class="{ 'due-count--over': isOnButton }"
+    :aria-label="label"
+  >
     <!-- Narrower than the pill's own least width, so the box is the same width
          whether the figure has landed or not. -->
     <Skeleton v-if="due === null" wide="0.8rem" high="0.7em" is-pill />

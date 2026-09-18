@@ -154,7 +154,9 @@ describe('the keys a session is done with', () => {
   it('asks for nothing while a question is being written', () => {
     for (const tag of ['INPUT', 'TEXTAREA']) {
       for (const key of ['1', '2', '3', '4', 'u', 'a', ' ']) {
-        expect(getSessionKeyIntent(createPress(key, createTarget(tag)), { isShown: true })).toBeNull()
+        expect(
+          getSessionKeyIntent(createPress(key, createTarget(tag)), { isShown: true }),
+        ).toBeNull()
       }
     }
     expect(
@@ -171,9 +173,9 @@ describe('the keys a session is done with', () => {
   it('swallows only the keys the page would act on itself', () => {
     expect(isSwallowed(getSessionKeyIntent(createPress(' '), { isShown: false }))).toBe(true)
     // The page scrolls itself on space, and the reading is what is scrolled.
-    expect(isSwallowed(getSessionKeyIntent(createPress(' '), { isShown: true, isReading: true }))).toBe(
-      true,
-    )
+    expect(
+      isSwallowed(getSessionKeyIntent(createPress(' '), { isShown: true, isReading: true })),
+    ).toBe(true)
     expect(isSwallowed(getSessionKeyIntent(createPress('3'), { isShown: true }))).toBe(false)
     expect(isSwallowed(null)).toBe(false)
   })

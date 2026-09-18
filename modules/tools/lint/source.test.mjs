@@ -65,3 +65,24 @@ test('what is code, and what only a comment or a string says', () => {
   for (const one of ['A', 'D', 'G', 'M', 'k.value']) assert.ok(kept.includes(one), one)
   for (const one of ['B', 'C', 'E', 'F', 'H', 'J', 'L', 'a "', "'c'"]) assert.ok(!kept.includes(one), one)
 })
+
+/**
+ * Go's backtick string is raw: it runs to the next backtick and a backslash in
+ * it is a backslash. Read as a template literal, a file holding `/\` loses
+ * everything after it, and every declaration below is invisible to every rule.
+ */
+test('a raw string with a backslash closes where it closes', () => {
+  const text = [
+    'func one() {',
+    '\tif strings.ContainsAny(area, `/\\`) {',
+    '\t\treturn nil',
+    '\t}',
+    '}',
+    'func two() {}',
+  ].join('\n')
+  const kept = code(text, true)
+  assert.equal(kept.split('\n').length, text.split('\n').length)
+  assert.ok(kept.includes('func one'), 'one')
+  assert.ok(kept.includes('func two'), 'two')
+  assert.ok(!kept.includes('ContainsAny(area, `/'), 'the string itself is blanked')
+})

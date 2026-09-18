@@ -327,7 +327,7 @@ func getPlace(path, arguments string) domain.Place {
 	start, _ := made[spanStart].(float64)
 	length, _ := made[spanLength].(float64)
 	if length > 0 {
-		at.Spans = []domain.Span{{From: int(start), To: int(start + length)}}
+		at.Spans = []domain.ByteSpan{{From: int(start), To: int(start + length)}}
 	}
 	return at
 }

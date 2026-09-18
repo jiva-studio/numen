@@ -14,7 +14,7 @@ describe('what the window has to say', () => {
     one.dismissNotice(first.id)
     one.showNotice('the third', 'caution')
 
-    expect(one.notices.value.map((said) => said.says)).toEqual(['the second', 'the third'])
+    expect(one.notices.value.map((said) => said.text)).toEqual(['the second', 'the third'])
     const names = one.notices.value.map((said) => said.id)
     expect(new Set(names).size).toBe(names.length)
   })
@@ -24,7 +24,7 @@ describe('what the window has to say', () => {
     one.reportError(new ConnectError('the vault could not be read', Code.Unavailable))
 
     const said = one.notices.value[0]!
-    expect(said.says).toBe('The vault could not be read.')
+    expect(said.text).toBe('The vault could not be read.')
     expect(said.tone).toBe('alarm')
     expect(said.stay).toBe('kept')
   })
@@ -40,14 +40,14 @@ describe('what the window has to say', () => {
       ),
     )
 
-    expect(one.notices.value[0]!.says).toBe('This preset schedules nothing today: it is paused.')
+    expect(one.notices.value[0]!.text).toBe('This preset schedules nothing today: it is paused.')
   })
 
   it('leaves a sentence that already ends where it ends', () => {
     const one = useNotices()
     one.reportError(new ConnectError('The deck could not be written.', Code.Unavailable))
 
-    expect(one.notices.value[0]!.says).toBe('The deck could not be written.')
+    expect(one.notices.value[0]!.text).toBe('The deck could not be written.')
   })
 
   it('puts away nothing when the name is not one it holds', () => {
@@ -66,7 +66,7 @@ describe('what the window has to say', () => {
 
     expect(one.notices.value[0]).toMatchObject({
       id: 'reading\t01A',
-      says: 'Reading the vault',
+      text: 'Reading the vault',
       about: 'Sanskrit',
       isWorking: true,
       isAsked: true,
@@ -78,7 +78,7 @@ describe('what the window has to say', () => {
     one.setTasks([reads({ error: 'no such folder' })])
 
     expect(one.notices.value[0]).toMatchObject({
-      says: 'no such folder',
+      text: 'no such folder',
       isWorking: false,
       tone: 'alarm',
       stay: 'kept',
@@ -93,14 +93,14 @@ describe('what the window has to say', () => {
     one.showNotice('the first', 'caution')
     one.setTasks([])
 
-    expect(one.notices.value.map((said) => said.says)).toEqual(['the first'])
+    expect(one.notices.value.map((said) => said.text)).toEqual(['the first'])
   })
 })
 
 /** One vault being read, as the answer holds it. */
 const reads = (fields: Partial<Task> = {}): Task => ({
   id: 'reading\t01A',
-  doing: 'Reading the vault',
+  label: 'Reading the vault',
   about: 'Sanskrit',
   error: '',
   isAsked: true,

@@ -9,7 +9,7 @@ import { Icon } from '../../icon'
 import { NameBox } from '../../name-box'
 import { CardRow } from '../../card-row'
 import { Button } from '@/shared/ui/button'
-import type { NamingState } from '../../../model/naming'
+import type { NameEntryState } from '../../../model/naming'
 import {
   directionOf,
   STEP_KEYS,
@@ -24,7 +24,7 @@ const props = withDefaults(
     /** The field, laid out against the order it stands in. */
     row: FieldRow
     /** The name typed over the one it carries, held by the list it stands in. */
-    naming: NamingState<Objection>
+    naming: NameEntryState<Objection>
     /** What is wrong with its name is named by this, which is this field's alone. */
     objectionsId: string
     /** What the caller found wrong with this field. */

@@ -108,7 +108,7 @@ func openCountedDB(t *testing.T) (*DB, *note.Queries) {
 		}
 	}
 
-	pool, err := sql.Open("sqlite-tallying", dsn(path))
+	pool, err := sql.Open("sqlite-tallying", dsn(path, settings{synchronous: shipped}))
 	if err != nil {
 		t.Fatal(err)
 	}

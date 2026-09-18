@@ -88,7 +88,7 @@ func (a *API) getArtifactFile(
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(getReachCode(err), err)
 	}
-	at := a.points(ctx, showing, ref)
+	at := a.getArtifactAddress(ctx, showing, ref)
 	if !slices.Contains(getArtifactKinds(ref.Kind, a.getProducer(at)), of) {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(
 			connect.CodeInvalidArgument, errNotCarried)
@@ -127,9 +127,9 @@ func getArtifactID(of v1.ArtifactKind) (string, bool) {
 	}
 }
 
-// points is the address the file at a path holds, and nothing for every other
+// getArtifactAddress is the address the file at a path holds, and nothing for every other
 // file. What is made from it follows from that.
-func (a *API) points(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.URL {
+func (a *API) getArtifactAddress(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.URL {
 	if ref.Kind != domain.KindURL {
 		return domain.URL("")
 	}
@@ -167,9 +167,9 @@ func (a *API) getLinkedArtifact(
 	return out, nil
 }
 
-// drops takes the copy of a video off this disk. The note stands as it did,
+// removeCopy takes the copy of a video off this disk. The note stands as it did,
 // pointing at the address, and the tab frames it again.
-func (a *API) drops(
+func (a *API) removeCopy(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
 	_, stores, held := a.getSourceStores()
@@ -216,10 +216,10 @@ func (a *API) copyOf(
 	return out
 }
 
-// copies fetches a copy of what is at an address and answers with what stands
+// fetchCopy fetches a copy of what is at an address and answers with what stands
 // once it has. A copy over the size the settings name is not fetched, and the
 // size it was refused at is said.
-func (a *API) copies(
+func (a *API) fetchCopy(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*v1.Artifact, error) {
 	if a.Imports == nil {
@@ -244,7 +244,7 @@ func (a *API) copies(
 	if err != nil {
 		return nil, connect.NewError(getDownloadCode(err), err)
 	}
-	if got.TooLarge() {
+	if got.IsTooLarge() {
 		out.State = v1.State_STATE_FAILED
 		out.Error = fmt.Sprintf(
 			"This is %d MB, and a copy may be up to %d MB. "+
@@ -285,7 +285,7 @@ func (a *API) ListArtifacts(
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	at := a.points(ctx, showing, ref)
+	at := a.getArtifactAddress(ctx, showing, ref)
 	out := &v1.ListArtifactsResponse{}
 	for _, of := range getArtifactKinds(ref.Kind, a.getProducer(at)) {
 		one, err := a.artifact(ctx, showing, ref, at, of)
@@ -317,7 +317,7 @@ func (a *API) CreateArtifact(
 	}
 	// What a url carries is what fetches it, so a build that reaches no address
 	// says it cannot rather than that the file carries nothing.
-	at := a.points(ctx, showing, ref)
+	at := a.getArtifactAddress(ctx, showing, ref)
 	if ref.Kind == domain.KindURL && a.getProducer(at) == "" {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
 	}
@@ -335,12 +335,12 @@ func (a *API) CreateArtifact(
 		// A recording's transcript is heard by a model here; a note's is
 		// fetched from the address it points at.
 		if ref.Kind == domain.KindURL {
-			made, err = a.downloads(ctx, showing, ref, at)
+			made, err = a.fetchArtifact(ctx, showing, ref, at)
 			break
 		}
 		made, err = a.run(ctx, showing, ref, of)
 	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
-		made, err = a.copies(ctx, showing, ref, at)
+		made, err = a.fetchCopy(ctx, showing, ref, at)
 	default:
 		made, err = a.run(ctx, showing, ref, of)
 	}
@@ -368,7 +368,7 @@ func (a *API) DeleteArtifact(
 	// A copy is bytes and no words: taking it away leaves the url as it was,
 	// pointing at the address it points at.
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
-		return a.drops(ctx, showing, ref, a.points(ctx, showing, ref))
+		return a.removeCopy(ctx, showing, ref, a.getArtifactAddress(ctx, showing, ref))
 	}
 	if ref.Kind == domain.KindURL {
 		if a.Imports == nil {
@@ -459,12 +459,12 @@ var errComingUp = errors.New("the vault is still coming up")
 // address is reached with. The settings name where each of them is.
 var errNoDownloader = errors.New("this build cannot download what an address holds")
 
-// downloads reaches the address a link note points at and answers with what
+// fetchArtifact reaches the address a link note points at and answers with what
 // stands once it has.
 //
 // It is waited for: a video's words are one request and a page is one page, and
 // both are over in the time a person waits for a window to answer.
-func (a *API) downloads(
+func (a *API) fetchArtifact(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
@@ -637,7 +637,7 @@ func getReachCode(err error) connect.Code {
 	switch {
 	case errors.Is(err, port.ErrOutside):
 		return connect.CodeInvalidArgument
-	case errors.Is(err, fs.ErrNotExist), port.NoNote(err):
+	case errors.Is(err, fs.ErrNotExist), port.IsNoNote(err):
 		return connect.CodeNotFound
 	case errors.Is(err, errNoVault):
 		return connect.CodeFailedPrecondition
