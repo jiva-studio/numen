@@ -28,7 +28,9 @@ import (
 type ProofreadTranscript struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
-	By      port.Proofreader
+	// By is what puts the words right. A run given none answers that nothing
+	// proofreads, and the transcript is left as it was read.
+	By port.Proofreader
 
 	// Area is the store the transcript is kept in. Empty means the default.
 	Area string

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -15,18 +15,18 @@ type Documents struct{}
 
 // Read is what one document says, with the parts it names and where each of
 // its pages begins.
-func (Documents) Read(ctx context.Context, raw []byte) (out port.TextLayer, err error) {
+func (Documents) Read(ctx context.Context, raw []byte) (out domain.TextLayer, err error) {
 	defer recoverPanic("reading a document", &out, &err)
 	if err := ctx.Err(); err != nil {
-		return port.TextLayer{}, err
+		return domain.TextLayer{}, err
 	}
 	book, err := Read(raw)
 	if err != nil {
-		return port.TextLayer{}, wrapError(err)
+		return domain.TextLayer{}, wrapError(err)
 	}
-	out = port.TextLayer{Text: book.Text}
+	out = domain.TextLayer{Text: book.Text}
 	for _, p := range book.Parts {
-		out.Parts = append(out.Parts, chunking.PartStart{Title: p.Title, Offset: p.Offset})
+		out.Parts = append(out.Parts, domain.PartStart{Title: p.Title, Offset: p.Offset})
 	}
 	for _, p := range book.Pages {
 		out.Pages = append(out.Pages, p.Offset)

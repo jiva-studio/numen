@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // line builds n words on one line, so that a test about words is not a test
@@ -29,7 +31,7 @@ func TestCut(t *testing.T) {
 	tests := []struct {
 		name      string
 		text      string
-		parts     []PartStart
+		parts     []domain.PartStart
 		sizes     Sizes
 		wantLarge int
 		wantSmall int
@@ -52,7 +54,7 @@ func TestCut(t *testing.T) {
 		{
 			name:      "a part at offset zero",
 			text:      "Beginning\n" + line(60),
-			parts:     []PartStart{{Title: "Beginning", Offset: 0}},
+			parts:     []domain.PartStart{{Title: "Beginning", Offset: 0}},
 			wantLarge: 1,
 			wantSmall: 2,
 			locations: []string{"Beginning"},
@@ -60,7 +62,7 @@ func TestCut(t *testing.T) {
 		{
 			name:      "text before the first part",
 			text:      line(20) + "\nSecond\n" + line(20),
-			parts:     []PartStart{{Title: "Second", Offset: len(line(20)) + 1}},
+			parts:     []domain.PartStart{{Title: "Second", Offset: len(line(20)) + 1}},
 			wantLarge: 2,
 			wantSmall: 2,
 			locations: []string{"", "Second"},
@@ -68,7 +70,7 @@ func TestCut(t *testing.T) {
 		{
 			name: "parts out of order",
 			text: line(20) + "\n" + line(20) + "\n" + line(20),
-			parts: []PartStart{
+			parts: []domain.PartStart{
 				{Title: "Third", Offset: 2*len(line(20)) + 2},
 				{Title: "Second", Offset: len(line(20)) + 1},
 			},
@@ -87,7 +89,7 @@ func TestCut(t *testing.T) {
 		{
 			name:      "the whole text is the large chunk",
 			text:      "Note\n" + line(30) + "\nHeading\n" + line(30),
-			parts:     []PartStart{{Title: "Note", Offset: 0}, {Title: "Heading", Offset: len("Note\n") + len(line(30)) + 1}},
+			parts:     []domain.PartStart{{Title: "Note", Offset: 0}, {Title: "Heading", Offset: len("Note\n") + len(line(30)) + 1}},
 			sizes:     Sizes{Large: Whole},
 			wantLarge: 1,
 			wantSmall: 2,
@@ -96,7 +98,7 @@ func TestCut(t *testing.T) {
 		{
 			name:      "a division of noise is not produced",
 			text:      latin + "\n" + noise,
-			parts:     []PartStart{{Title: "Prose", Offset: 0}, {Title: "Epigraph", Offset: len(latin) + 1}},
+			parts:     []domain.PartStart{{Title: "Prose", Offset: 0}, {Title: "Epigraph", Offset: len(latin) + 1}},
 			wantLarge: 1,
 			wantSmall: 1,
 			locations: []string{"Prose"},
@@ -149,7 +151,7 @@ func TestCutOneLongLine(t *testing.T) {
 // both of them slice back to the words they share.
 func TestCutOverlaps(t *testing.T) {
 	text := "Opening\n" + line(70) + "\nSecond part\n" + latin + " " + sanskrit + "\n" + line(90)
-	parts := []PartStart{
+	parts := []domain.PartStart{
 		{Title: "Opening", Offset: 0},
 		{Title: "Second part", Offset: len("Opening\n") + len(line(70)) + 1},
 	}
@@ -218,11 +220,11 @@ func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
 // found them.
 func TestCutIsPure(t *testing.T) {
 	text := line(40) + "\nSecond\n" + line(40) + "\nThird\n" + line(40)
-	parts := []PartStart{
+	parts := []domain.PartStart{
 		{Title: "Third", Offset: 2*len(line(40)) + len("\nSecond\n") + 1},
 		{Title: "Second", Offset: len(line(40)) + 1},
 	}
-	given := append([]PartStart(nil), parts...)
+	given := append([]domain.PartStart(nil), parts...)
 	sizes := Sizes{Large: 12, Small: 5}
 
 	first := Cut(text, given, sizes, Legibility{})
@@ -253,7 +255,7 @@ func TestCutNothing(t *testing.T) {
 // assertCutRules asserts what holds of every cut, whatever the sizes: a chunk names its
 // own words, sits under the chunk enclosing it, carries the name of the part it
 // is in, and never crosses one.
-func assertCutRules(t *testing.T, text string, parts []PartStart, sizes Sizes, out []Chunk) {
+func assertCutRules(t *testing.T, text string, parts []domain.PartStart, sizes Sizes, out []Chunk) {
 	t.Helper()
 	s := sizes.Resolve()
 	bounds := boundaries(text, parts)
@@ -311,9 +313,9 @@ func assertWithinParts(t *testing.T, bounds []int, c Chunk) {
 }
 
 // assertPartName asserts a chunk carries the name of the last part at or before it.
-func assertPartName(t *testing.T, parts []PartStart, c Chunk) {
+func assertPartName(t *testing.T, parts []domain.PartStart, c Chunk) {
 	t.Helper()
-	ordered := append([]PartStart(nil), parts...)
+	ordered := append([]domain.PartStart(nil), parts...)
 	sort.SliceStable(ordered, func(i, j int) bool { return ordered[i].Offset < ordered[j].Offset })
 	want := ""
 	for _, p := range ordered {
@@ -327,7 +329,7 @@ func assertPartName(t *testing.T, parts []PartStart, c Chunk) {
 }
 
 // boundaries are the offsets that separate one division from the next.
-func boundaries(text string, parts []PartStart) []int {
+func boundaries(text string, parts []domain.PartStart) []int {
 	var out []int
 	for _, p := range parts {
 		if p.Offset > 0 && p.Offset < len(text) {

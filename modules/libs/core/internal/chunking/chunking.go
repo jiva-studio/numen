@@ -21,6 +21,8 @@ import (
 	"sort"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // Whole, as Sizes.Large, cuts one large chunk over the whole text: the chunk
@@ -89,13 +91,6 @@ type Legibility struct {
 	Dirty float64
 }
 
-// A PartStart is somewhere in the text that carries a name. Parts bound the
-// divisions chunks are cut inside, and need not arrive in order.
-type PartStart struct {
-	Title  string
-	Offset int
-}
-
 // A Chunk is one cut of the text. Location is where the chunk sits in the terms
 // the source's own numbering uses, and is empty where the text named none.
 //
@@ -117,7 +112,7 @@ func (c Chunk) middle() int { return c.Start + c.Length/2 }
 
 // Cut returns the large chunks of the text, each carrying the small chunks
 // inside it.
-func Cut(text string, parts []PartStart, sizes Sizes, reads Legibility) []Chunk {
+func Cut(text string, parts []domain.PartStart, sizes Sizes, reads Legibility) []Chunk {
 	s, l := sizes.Resolve(), reads.resolve()
 	divisions := divisionsOf(text, parts)
 
@@ -140,8 +135,8 @@ type division struct {
 // divisionsOf divides the text at the parts it names. The parts are copied
 // before they are ordered, so that Cut leaves its arguments as it found them.
 // Where two parts share an offset, the last of them names the text after it.
-func divisionsOf(text string, parts []PartStart) []division {
-	named := make([]PartStart, 0, len(parts))
+func divisionsOf(text string, parts []domain.PartStart) []division {
+	named := make([]domain.PartStart, 0, len(parts))
 	for _, p := range parts {
 		if p.Offset >= 0 && p.Offset < len(text) {
 			named = append(named, p)

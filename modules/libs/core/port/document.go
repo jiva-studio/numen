@@ -5,7 +5,7 @@ import (
 	"errors"
 	"image"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 )
 
@@ -17,7 +17,7 @@ import (
 type TextExtractor interface {
 	// Read is the whole of what a document says, the parts it names, and where
 	// each of its pages begins in that text.
-	Read(ctx context.Context, raw []byte) (TextLayer, error)
+	Read(ctx context.Context, raw []byte) (domain.TextLayer, error)
 
 	// Highlights is where the words of the pages named sit, as fractions of the
 	// page, one box a word. Starts is where each page begins, as Read answered,
@@ -32,19 +32,6 @@ type PageRenderer interface {
 	// until it is closed, and there are as many workers as this machine has
 	// cores.
 	Draw(ctx context.Context, raw []byte) (OpenDocument, error)
-}
-
-// A TextLayer is the text a document carries of its own, taken out. It is
-// deterministic and stored nowhere, and what a model reads off the same pages
-// is a reading and an artifact instead.
-type TextLayer struct {
-	// Text is every page's text in the order the document is paginated, as one
-	// stream. Every offset below is an offset into it.
-	Text string
-	// Parts are the names the document gives divisions of itself.
-	Parts []chunking.PartStart
-	// Pages is where each page begins.
-	Pages []int
 }
 
 // OpenDocument is a document held open, drawn a page at a time. Closing it gives back

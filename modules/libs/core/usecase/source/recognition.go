@@ -478,21 +478,18 @@ func (r *RecognitionWorker) collect(
 			return
 		}
 		id := proofreadID(one.Path)
-		res, err := ProofreadReading{
-			Readers:         r.with.Readers,
-			Derived:         r.with.Derived,
-			By:              by,
-			Queue:           queue,
-			Pages:           said.Batch,
-			MaxEditDistance: said.MaxEditDistance,
-			Cut:             r.Cut,
-			OnProgress: func(res ProofreadReadingResult) {
-				r.report(task.Task{
-					ID: id, Doing: "Proofreading a reading", About: one.Path,
-					Count: int64(res.Read), Total: int64(res.Pages),
-				}, false)
-			},
-		}.Execute(ctx, v, one.Path)
+		right := NewProofreadReading(r.with.Readers, r.with.Derived, by)
+		right.Queue = queue
+		right.Pages = said.Batch
+		right.MaxEditDistance = said.MaxEditDistance
+		right.Cut = r.Cut
+		right.OnProgress = func(res ProofreadReadingResult) {
+			r.report(task.Task{
+				ID: id, Doing: "Proofreading a reading", About: one.Path,
+				Count: int64(res.Read), Total: int64(res.Pages),
+			}, false)
+		}
+		res, err := right.Execute(ctx, v, one.Path)
 
 		switch {
 		case err != nil:

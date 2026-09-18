@@ -215,7 +215,7 @@ func (u Highlight) layer(
 
 // getPagesOfRuns is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
-func getPagesOfRuns(book port.TextLayer, runs []domain.Span) []int {
+func getPagesOfRuns(book domain.TextLayer, runs []domain.Span) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {
@@ -234,7 +234,7 @@ func getPagesOfRuns(book port.TextLayer, runs []domain.Span) []int {
 // getPages is the pages a run of the document's text falls on. A page holds the
 // text from where it begins up to where the next page does, and the last page
 // holds the rest.
-func getPages(book port.TextLayer, start, end int) []int {
+func getPages(book domain.TextLayer, start, end int) []int {
 	if end > len(book.Text) {
 		end = len(book.Text)
 	}

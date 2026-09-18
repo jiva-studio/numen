@@ -30,7 +30,9 @@ var errNothingProofreads = errors.New("nothing to proofread with: none is config
 type ProofreadReading struct {
 	Readers port.VaultReaders
 	Derived port.DerivedStores
-	By      port.Proofreader
+	// By is what puts the words right. A run given none answers that nothing
+	// proofreads, and the reading is left as it was read.
+	By port.Proofreader
 
 	// Queue is where the pages are left for the proofreader to answer about
 	// later. Where there is one, a run leaves a batch and comes back for it,

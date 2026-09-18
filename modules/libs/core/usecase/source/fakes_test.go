@@ -417,9 +417,9 @@ func (d document) boxes(pages []int) []highlight.Box {
 // documents reads and draws the documents a test prints.
 type documents struct{}
 
-func (documents) Read(_ context.Context, raw []byte) (port.TextLayer, error) {
+func (documents) Read(_ context.Context, raw []byte) (domain.TextLayer, error) {
 	read := documentOf(raw)
-	return port.TextLayer{Text: read.Text, Pages: read.Pages}, nil
+	return domain.TextLayer{Text: read.Text, Pages: read.Pages}, nil
 }
 
 func (documents) Highlights(

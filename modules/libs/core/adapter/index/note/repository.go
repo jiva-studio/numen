@@ -232,13 +232,13 @@ func cut(
 //
 // They are the headings the index keeps, so a passage is announced under a name
 // somebody wrote.
-func parts(headings []domain.Heading) []chunking.PartStart {
+func parts(headings []domain.Heading) []domain.PartStart {
 	if len(headings) == 0 {
 		return nil
 	}
-	out := make([]chunking.PartStart, 0, len(headings))
+	out := make([]domain.PartStart, 0, len(headings))
 	for _, h := range headings {
-		out = append(out, chunking.PartStart{Title: h.Text, Offset: h.Offset})
+		out = append(out, domain.PartStart{Title: h.Text, Offset: h.Offset})
 	}
 	return out
 }

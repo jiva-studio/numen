@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
@@ -320,15 +319,15 @@ func ReadTranscript(raw []byte) *Document {
 // The parts of one artifact begin in the order the prose is read and end within
 // it. A sidecar that says otherwise was written for other bytes, and none of it
 // is used.
-func getPartStarts(prose string, parts []ocr.Part) []chunking.PartStart {
-	out := make([]chunking.PartStart, 0, len(parts))
+func getPartStarts(prose string, parts []ocr.Part) []domain.PartStart {
+	out := make([]domain.PartStart, 0, len(parts))
 	at := 0
 	for _, p := range parts {
 		if p.Start < at || p.Length <= 0 || p.Start+p.Length > len(prose) {
 			return nil
 		}
 		at = p.Start
-		out = append(out, chunking.PartStart{
+		out = append(out, domain.PartStart{
 			Title:  prose[p.Start : p.Start+p.Length],
 			Offset: p.Start,
 		})
