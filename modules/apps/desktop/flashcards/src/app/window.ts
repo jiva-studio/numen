@@ -35,7 +35,14 @@ export const useWindow = () => {
     stop,
   } = useReviewCounter({ cards, reportError })
   const state = useReviewSession({ cards, reportError })
-  const done = useReviewDays({ cards, reportError, widest: () => window.screen.width })
+  const done = useReviewDays({
+    cards,
+    reportError,
+    // The grid stands inside the page, so the page is what bounds it. A page
+    // zoomed out is wider in the pixels a layout is measured in than the
+    // screen is, and the screen alone would leave the widest grids short.
+    widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
+  })
   const schedules = useVaultPresets({ presets: cards })
 
   /** Why nothing can be asked here, empty while something can. */

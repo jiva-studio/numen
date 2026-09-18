@@ -202,6 +202,18 @@ describe('the stretch a grid asks about', () => {
     expect(new Date(`${to}T12:00:00Z`).getUTCDay()).toBe(0)
   })
 
+  // A grid drawn wider than the room the stretch was asked for draws days
+  // nobody asked about, and they come back empty. The caller passes the room
+  // the page has, which is what bounds the grid.
+  it('leaves days out where the grid is drawn wider than it was asked for', () => {
+    const asked = getStretch({ width: 640, cell: 11, gap: 3 }, now)
+    const { columns } = measureGrid({ width: 1600, cell: 11, gap: 3 })
+    const outside = getDays(columns, now, new Map(), new Map()).filter(
+      (one) => one.day < asked.from || one.day > asked.to,
+    )
+    expect(outside.length).toBeGreaterThan(0)
+  })
+
   // A wider grid asks about more time, and never about less.
   it('grows with the room there is', () => {
     const narrow = getStretch({ width: 200, cell: 11, gap: 3 }, now)
