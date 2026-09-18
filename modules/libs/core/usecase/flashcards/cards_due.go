@@ -168,7 +168,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	for _, one := range faces {
 		row := at(one.Deck)
 		row.Faces++
-		if !schedules[one.ID].IsSeen() {
+		if schedules[one.ID].IsNew() {
 			row.Unbegun++
 		}
 		if asks.under(one.ID).Preset.IsLearned(schedules[one.ID], now) {

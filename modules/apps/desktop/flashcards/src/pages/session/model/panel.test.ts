@@ -14,7 +14,7 @@ const card = (more: Partial<CardFace> = {}): CardFace => ({
   heading: 'Leaf mould',
   front: 'Leaf mould',
   back: 'Compost made of fallen leaves alone',
-  isSeen: true,
+  isNew: false,
   ahead: null,
   ...more,
 })

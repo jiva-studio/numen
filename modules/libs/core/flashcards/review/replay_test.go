@@ -141,7 +141,7 @@ func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
 	if len(left) != 0 {
 		t.Errorf("no answers left %d schedules", len(left))
 	}
-	if (review.Schedule{}).IsSeen() {
-		t.Error("a schedule nobody has answered says it has been seen")
+	if !(review.Schedule{}).IsNew() {
+		t.Error("a schedule nobody has answered says it is not new")
 	}
 }

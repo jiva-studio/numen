@@ -70,7 +70,7 @@ func (s vaulted) sitDeck(t *testing.T, now time.Time, deck string) int {
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
 			took := review.DefaultCost.Review
-			if !one.Schedule.IsSeen() {
+			if one.Schedule.IsNew() {
 				took = review.DefaultCost.New
 			}
 			faces[one.ID] = true

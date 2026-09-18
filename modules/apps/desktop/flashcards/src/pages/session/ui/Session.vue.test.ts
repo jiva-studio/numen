@@ -17,7 +17,7 @@ const card: CardFace = {
   heading: 'Leaf mould',
   front: '<p>Leaf mould</p>',
   back: '<p>Compost made of fallen leaves alone. <a href="notes/Leaf mould.md">more</a></p>',
-  isSeen: true,
+  isNew: false,
   ahead: null,
 }
 

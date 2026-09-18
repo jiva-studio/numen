@@ -139,7 +139,7 @@ func IsKnownRule(r LearnedRule) bool {
 //
 // It is the one place the rule is read.
 func (p Preset) IsLearned(s Schedule, at time.Time) bool {
-	if !s.IsSeen() {
+	if s.IsNew() {
 		return false
 	}
 	rule, interval, retention := p.getLearnedRule()

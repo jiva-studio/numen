@@ -246,7 +246,7 @@ func newAsked(one flashcards.QueuedCardFace) *v1.Asked {
 		Heading: one.Heading,
 		Front:   front,
 		Back:    back,
-		IsSeen:  one.Schedule.IsSeen(),
+		IsNew:   one.Schedule.IsNew(),
 		Due:     stamp(one.Schedule.Due),
 		Ahead:   newAhead(one.Ahead),
 	}

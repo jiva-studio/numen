@@ -59,7 +59,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
 			cost := review.DefaultCost.Review
-			if !one.Schedule.IsSeen() {
+			if one.Schedule.IsNew() {
 				cost = review.DefaultCost.New
 			}
 			out += cost
@@ -104,7 +104,7 @@ func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 			record := s.run(t, now)
 			for _, one := range sat.Queue {
 				cost := review.DefaultCost.Review
-				if !one.Schedule.IsSeen() {
+				if one.Schedule.IsNew() {
 					cost = review.DefaultCost.New
 				}
 				out += cost

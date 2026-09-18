@@ -12,7 +12,7 @@ const createCard = (mark: string) => ({
   heading: mark,
   front: `<p>${mark}</p>`,
   back: '<p>and back</p>',
-  isSeen: false,
+  isNew: true,
   ahead: undefined,
 })
 

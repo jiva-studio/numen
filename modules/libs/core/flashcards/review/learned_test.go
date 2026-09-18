@@ -128,7 +128,7 @@ func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		s := whereItStands(t)
-		if !s.IsSeen() {
+		if s.IsNew() {
 			return
 		}
 		p := review.Preset{

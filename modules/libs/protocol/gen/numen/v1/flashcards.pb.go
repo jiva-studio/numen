@@ -621,11 +621,10 @@ type Asked struct {
 	// Front and back are the face laid out with this card's values, as HTML.
 	Front string `protobuf:"bytes,6,opt,name=front,proto3" json:"front,omitempty"`
 	Back  string `protobuf:"bytes,7,opt,name=back,proto3" json:"back,omitempty"`
-	// Seen is false for a card nobody has answered, which is what a person means
-	// by a new card. Due is when it comes round, and stands only where it has
-	// been answered.
-	IsSeen bool   `protobuf:"varint,8,opt,name=is_seen,json=isSeen,proto3" json:"is_seen,omitempty"`
-	Due    string `protobuf:"bytes,9,opt,name=due,proto3" json:"due,omitempty"`
+	// New is a card nobody has answered. Due is when it comes round, and stands
+	// only where it has been answered.
+	IsNew bool   `protobuf:"varint,8,opt,name=is_new,json=isNew,proto3" json:"is_new,omitempty"`
+	Due   string `protobuf:"bytes,9,opt,name=due,proto3" json:"due,omitempty"`
 	// Where each of the four would leave it.
 	Ahead         *Ahead `protobuf:"bytes,10,opt,name=ahead,proto3" json:"ahead,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -711,9 +710,9 @@ func (x *Asked) GetBack() string {
 	return ""
 }
 
-func (x *Asked) GetIsSeen() bool {
+func (x *Asked) GetIsNew() bool {
 	if x != nil {
-		return x.IsSeen
+		return x.IsNew
 	}
 	return false
 }
@@ -1930,7 +1929,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
 	"\x04good\x18\x03 \x01(\x03R\x04good\x12\x12\n" +
-	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\xf3\x01\n" +
+	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\xf1\x01\n" +
 	"\x05Asked\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x18\n" +
 	"\asection\x18\x02 \x01(\tR\asection\x12\x12\n" +
@@ -1938,8 +1937,8 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x04face\x18\x04 \x01(\tR\x04face\x12\x18\n" +
 	"\aheading\x18\x05 \x01(\tR\aheading\x12\x14\n" +
 	"\x05front\x18\x06 \x01(\tR\x05front\x12\x12\n" +
-	"\x04back\x18\a \x01(\tR\x04back\x12\x17\n" +
-	"\ais_seen\x18\b \x01(\bR\x06isSeen\x12\x10\n" +
+	"\x04back\x18\a \x01(\tR\x04back\x12\x15\n" +
+	"\x06is_new\x18\b \x01(\bR\x05isNew\x12\x10\n" +
 	"\x03due\x18\t \x01(\tR\x03due\x12%\n" +
 	"\x05ahead\x18\n" +
 	" \x01(\v2\x0f.numen.v1.AheadR\x05ahead\"\x16\n" +

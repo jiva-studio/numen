@@ -183,7 +183,7 @@ func CountOverdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 	opened := d.GetStart(now)
 	out := 0
 	for _, s := range at {
-		if s.IsSeen() && s.Due.Before(opened) {
+		if !s.IsNew() && s.Due.Before(opened) {
 			out++
 		}
 	}
@@ -575,7 +575,7 @@ func (r *learnedCount) countLearned(
 	for _, c := range cards {
 		one := Recall(at.Sub(c.Last), c.Stability)
 		back += one
-		if c.IsSeen() && one >= r.target {
+		if !c.IsNew() && one >= r.target {
 			stands++
 		}
 	}

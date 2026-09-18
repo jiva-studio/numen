@@ -236,7 +236,7 @@ func (u CountReviews) getDueAndRetained(
 	now := u.Now()
 	ends := u.Day.GetEnd(now)
 	for _, s := range schedules {
-		if !s.IsSeen() || s.Due.Before(ends) {
+		if s.IsNew() || s.Due.Before(ends) {
 			continue
 		}
 		falls[u.Day.GetName(s.Due)]++

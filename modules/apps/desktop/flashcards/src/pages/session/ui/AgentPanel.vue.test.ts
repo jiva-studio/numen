@@ -19,7 +19,7 @@ const card: CardFace = {
   heading: 'Leaf mould',
   front: 'Leaf mould',
   back: 'Compost made of fallen leaves alone',
-  isSeen: true,
+  isNew: false,
   ahead: null,
 }
 

@@ -1289,7 +1289,7 @@ func session(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	}
 	held := sat{asked: len(out.Msg.GetAsked())}
 	for _, one := range out.Msg.GetAsked() {
-		if !one.GetIsSeen() {
+		if one.GetIsNew() {
 			held.fresh++
 			continue
 		}

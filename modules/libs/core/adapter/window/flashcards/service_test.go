@@ -40,8 +40,8 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 
 	first := startSession(t, api, v)
 	for _, card := range first.GetAsked() {
-		if card.GetIsSeen() {
-			t.Errorf("a card nobody answered says it was seen: %+v", card)
+		if !card.GetIsNew() {
+			t.Errorf("a card nobody answered says it is not new: %+v", card)
 		}
 		if card.GetDue() != "" {
 			t.Errorf("a card nobody answered is due at %q", card.GetDue())
@@ -56,7 +56,7 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 		t.Fatal("the card answered a moment ago is not asked again")
 	}
 	card := next.GetAsked()[0]
-	if !card.GetIsSeen() {
+	if card.GetIsNew() {
 		t.Error("a card already answered says it was not seen")
 	}
 	if _, err := time.Parse(review.Stamp, card.GetDue()); err != nil {

@@ -115,5 +115,5 @@ func (d Day) GetEndOfDate(named time.Time) time.Time {
 // holding now. A card face that has never been answered is owed the first time
 // it is asked about.
 func (d Day) IsOwed(s Schedule, now time.Time) bool {
-	return !s.IsSeen() || s.Due.Before(d.GetEnd(now))
+	return s.IsNew() || s.Due.Before(d.GetEnd(now))
 }

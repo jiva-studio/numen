@@ -213,7 +213,7 @@ const CARD: CardFace = {
     '<p><strong>Aorist:</strong> <em>agamat</em></p>\n' +
     '<p>The root is written up in <a href="Sanskrit/Roots.md">Roots</a>, ' +
     'beside the other verbs of going.</p>',
-  isSeen: true,
+  isNew: false,
   ahead: { again: 60, hard: 4 * 86_400, good: 11 * 86_400, easy: 26 * 86_400 },
 }
 

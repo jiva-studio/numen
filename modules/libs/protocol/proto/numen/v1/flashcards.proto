@@ -231,10 +231,9 @@ message Asked {
   string front = 6;
   string back = 7;
 
-  // Seen is false for a card nobody has answered, which is what a person means
-  // by a new card. Due is when it comes round, and stands only where it has
-  // been answered.
-  bool is_seen = 8;
+  // New is a card nobody has answered. Due is when it comes round, and stands
+  // only where it has been answered.
+  bool is_new = 8;
   string due = 9;
 
   // Where each of the four would leave it.

@@ -81,7 +81,7 @@ func byDeck(sat flashcards.SessionResult) map[string]int {
 func unseen(sat flashcards.SessionResult) int {
 	out := 0
 	for _, one := range sat.Queue {
-		if !one.Schedule.IsSeen() {
+		if one.Schedule.IsNew() {
 			out++
 		}
 	}
@@ -1318,7 +1318,7 @@ func (s vaulted) countDayFaces(t *testing.T, day review.Day, now time.Time) int 
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
 			took := review.DefaultCost.Review
-			if !one.Schedule.IsSeen() {
+			if one.Schedule.IsNew() {
 				took = review.DefaultCost.New
 			}
 			faces[one.ID] = true

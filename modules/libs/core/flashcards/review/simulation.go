@@ -115,7 +115,7 @@ func (s Simulation) getDaysToLearn(p Preset, open time.Time) int {
 // getAfterShowing is where one showing leaves a card face, at the hour the day
 // opens. A card face the day is not asking for stands where it is.
 func (s Simulation) getAfterShowing(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
-	if c.IsSeen() && !c.Due.Before(ends) {
+	if !c.IsNew() && !c.Due.Before(ends) {
 		return c
 	}
 	return s.step(c, open, p, on)
@@ -129,7 +129,7 @@ func (s Simulation) getAfterShowing(c Schedule, open, ends time.Time, p Preset, 
 // face is counted in.
 func (s Simulation) settleDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {
-		if c.IsSeen() && !s.Day.IsOwed(c, open) {
+		if !c.IsNew() && !s.Day.IsOwed(c, open) {
 			break
 		}
 		c = s.step(c, open, p, nil)
@@ -145,10 +145,10 @@ func (s Simulation) settleDay(c Schedule, open time.Time, p Preset) Schedule {
 // there, because no pace can give it more days than there are.
 func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool {
 	for range mostAnswers {
-		if c.IsSeen() && !c.Due.Before(by) {
+		if !c.IsNew() && !c.Due.Before(by) {
 			break
 		}
-		if c.IsSeen() && !c.Due.Before(s.Day.GetEnd(open)) {
+		if !c.IsNew() && !c.Due.Before(s.Day.GetEnd(open)) {
 			// Nothing is asked of it until the day its schedule falls in.
 			open = s.Day.GetStart(c.Due)
 		}
@@ -189,10 +189,10 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 // down the middle of what it may do. The phase is the one a card that came back
 // is left in.
 func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Schedule {
-	if c.IsSeen() {
+	if !c.IsNew() {
 		c.Stability = math.Max(c.Stability, LeastStability)
 	}
-	if !c.IsSeen() {
+	if c.IsNew() {
 		good := s.By.Next(c, at, Good)
 		good.Due = p.ScheduleDay(on, at, good.Due)
 		return good

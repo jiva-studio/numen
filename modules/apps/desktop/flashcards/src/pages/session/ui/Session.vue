@@ -51,7 +51,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
       <span class="session__deck">{{ deckName(card.deck) }}</span>
       <span v-if="card.section">{{ card.section }}</span>
       <span>{{ card.face }}</span>
-      <span v-if="!card.isSeen" class="session__new">new</span>
+      <span v-if="card.isNew" class="session__new">new</span>
       <span class="session__left">{{ left }} left</span>
 
       <!-- What a person does beside answering, each one carrying the key it is

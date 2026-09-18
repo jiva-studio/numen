@@ -24,9 +24,9 @@ type Schedule struct {
 	Phase uint8
 }
 
-// IsSeen reports whether this card face has ever been answered. One that has
-// not is what a person means by a new card.
-func (s Schedule) IsSeen() bool { return !s.Last.IsZero() }
+// IsNew reports whether this card face has never been answered, which is what
+// a person means by a new card.
+func (s Schedule) IsNew() bool { return s.Last.IsZero() }
 
 // Scheduler works out where an answer leaves a card face.
 //

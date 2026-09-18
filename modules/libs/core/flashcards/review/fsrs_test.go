@@ -57,8 +57,8 @@ func TestAnAnsweredCardIsSeen(t *testing.T) {
 	by := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
 
-	if by.Next(review.Schedule{}, when, review.Good).IsSeen() != true {
-		t.Error("a card answered once is not seen")
+	if by.Next(review.Schedule{}, when, review.Good).IsNew() {
+		t.Error("a card answered once is still new")
 	}
 	if got := by.Next(review.Schedule{}, when, review.Good).Last; !got.Equal(when) {
 		t.Errorf("answered at %v, recorded at %v", when, got)

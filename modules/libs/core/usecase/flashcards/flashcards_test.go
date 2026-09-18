@@ -562,7 +562,7 @@ func TestAnAnswerIsWrittenDownAndReadBack(t *testing.T) {
 	if !held {
 		t.Fatalf("the answer left no schedule: %+v", schedules)
 	}
-	if !got.IsSeen() || got.Reps != 1 {
+	if got.IsNew() || got.Reps != 1 {
 		t.Errorf("schedule = %+v, want one answer behind it", got)
 	}
 	if !got.Due.After(when) {
@@ -639,11 +639,11 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 		t.Errorf("asked %+v first, want the one waiting longest", asked[0].ID)
 	}
 	for i, one := range asked {
-		if one.Schedule.IsSeen() {
+		if !one.Schedule.IsNew() {
 			continue
 		}
 		for _, after := range asked[i:] {
-			if after.Schedule.IsSeen() {
+			if !after.Schedule.IsNew() {
 				t.Errorf("a card nobody reached stands at %d, in front of one that was", i)
 				break
 			}
