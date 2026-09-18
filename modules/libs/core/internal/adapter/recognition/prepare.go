@@ -34,7 +34,7 @@ func IsPrepared() bool { return prepared.Load() }
 // Nothing is fetched: a machine that holds no runtime says so, and reading is
 // what fetches one.
 func Prepare(ctx context.Context, cfg Config) error {
-	cfg.Download = false
+	cfg.ShouldDownload = false
 	if _, _, err := onnxruntime.Open(ctx, cfg.settings()); err != nil {
 		return err
 	}

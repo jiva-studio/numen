@@ -117,7 +117,7 @@ func settle(dir string) error {
 	return nil
 }
 
-func (r *VaultRegistry) All() ([]domain.Vault, error) {
+func (r *VaultRegistry) List() ([]domain.Vault, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()
@@ -164,8 +164,8 @@ func (r *VaultRegistry) Remove(id domain.VaultID) error {
 	return r.save(f)
 }
 
-// Opened records the vault a window is showing. Recording the vault already
-// recorded writes nothing.
+// RecordOpened records the vault a window is showing. Recording the vault
+// already recorded writes nothing.
 func (r *VaultRegistry) RecordOpened(id domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

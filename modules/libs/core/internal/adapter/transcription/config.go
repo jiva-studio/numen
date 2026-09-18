@@ -21,8 +21,8 @@ type Config struct {
 	// application, and then the download cache.
 	Dir string `json:"dir"`
 
-	// Download allows fetching what is not on this machine.
-	Download bool `json:"download"`
+	// ShouldDownload allows fetching what is not on this machine.
+	ShouldDownload bool `json:"download"`
 
 	// Threads is how many threads one model may use.
 	Threads int `json:"threads"`
@@ -39,11 +39,11 @@ type Config struct {
 // settings are what the runtime and the models are found by.
 func (c Config) settings() onnxruntime.Settings {
 	return onnxruntime.Settings{
-		Section:  "indexing.transcription",
-		Runtime:  c.Runtime,
-		Dir:      c.Dir,
-		Download: c.Download,
-		Fetching: c.Progress,
+		Section:        "indexing.transcription",
+		Runtime:        c.Runtime,
+		Dir:            c.Dir,
+		ShouldDownload: c.ShouldDownload,
+		Fetching:       c.Progress,
 	}
 }
 
@@ -116,7 +116,7 @@ func Defaults() Config {
 		Threads: 4,
 
 		// What a transcription needs is fetched when it is wanted.
-		Download: true,
+		ShouldDownload: true,
 	}
 }
 
@@ -152,14 +152,14 @@ func (s SegmenterModel) pad() int {
 }
 
 // One segment is one run of the encoder, and its cost grows with its length.
-func (s SegmenterModel) longest() int {
+func (s SegmenterModel) getLongestSegment() int {
 	if s.Longest <= 0 {
 		return 30000
 	}
 	return s.Longest
 }
 
-func (s SegmenterModel) shortest() int {
+func (s SegmenterModel) getShortestSegment() int {
 	if s.Shortest <= 0 {
 		return 100
 	}
@@ -168,7 +168,7 @@ func (s SegmenterModel) shortest() int {
 
 // A line of a transcript is read, so it holds a phrase and not a breath. A
 // speaker hesitating in the middle of a sentence stops for about this long.
-func (s SegmenterModel) least() int {
+func (s SegmenterModel) getShortestPause() int {
 	if s.Least <= 0 {
 		return 2500
 	}
@@ -180,5 +180,5 @@ func (s SegmenterModel) least() int {
 // as other words.
 func (s SegmenterModel) describeCutting() string {
 	return fmt.Sprintf("%.2f/%d/%d/%d/%d/%d",
-		s.threshold(), s.silence(), s.pad(), s.longest(), s.shortest(), s.least())
+		s.threshold(), s.silence(), s.pad(), s.getLongestSegment(), s.getShortestSegment(), s.getShortestPause())
 }

@@ -43,8 +43,8 @@ func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	return held
 }
 
-// presses is how many card faces pressing one deck hands over.
-func (s vaulted) presses(t *testing.T, now time.Time, deck string) int {
+// pressDeck is how many card faces pressing one deck hands over.
+func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	sat, err := s.openSession(t, today, now, flashcards.OverDeck(deck))
 	if err != nil {
@@ -53,10 +53,10 @@ func (s vaulted) presses(t *testing.T, now time.Time, deck string) int {
 	return len(sat.Queue)
 }
 
-// sits answers everything one deck hands over, session again until it hands
+// sitDeck answers everything one deck hands over, session again until it hands
 // over nothing, and says how many card faces went through. A card the day comes
 // back to is the one card.
-func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
+func (s vaulted) sitDeck(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	faces := make(map[review.CardFaceID]bool)
 	for range 100 {
@@ -194,7 +194,7 @@ func TestTheDeckRowIsWhatPressingTheDeckHandsOver(t *testing.T) {
 			got := s.rows(t, when)
 			for at := range shape.decks {
 				deck := deckAt(at)
-				if pressed := s.presses(t, when, deck); pressed != got[deck] {
+				if pressed := s.pressDeck(t, when, deck); pressed != got[deck] {
 					t.Errorf("%s stands at %d on the front door and hands over %d when pressed",
 						deck, got[deck], pressed)
 				}
@@ -212,7 +212,7 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 			s := newDeckVault(t, counts, 40, 40, 40)
 			whole, each := 0, make(map[string]int)
 			for _, at := range order {
-				took := s.sits(t, when, deckAt(at))
+				took := s.sitDeck(t, when, deckAt(at))
 				each[deckAt(at)] = took
 				whole += took
 			}

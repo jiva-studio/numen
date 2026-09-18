@@ -30,9 +30,9 @@ type Embedder struct {
 	mu     sync.RWMutex
 	held   port.Embedder
 	reason error
-	// settled is the wait being over: something answered for it, it was let go
+	// isSettled is the wait being over: something answered for it, it was let go
 	// of, or it was closed.
-	settled bool
+	isSettled bool
 }
 
 // WaitingEmbedder is an embedder whose model may still be on its way. Fetching
@@ -55,9 +55,9 @@ func NewArriving(is port.EmbeddingModel) *Embedder {
 // let go of where it stands.
 func (e *Embedder) ReportArrival(held port.Embedder, why error) {
 	e.mu.Lock()
-	late := e.settled
+	late := e.isSettled
 	if !late {
-		e.settled = true
+		e.isSettled = true
 		e.held, e.reason = held, why
 	}
 	e.mu.Unlock()
@@ -75,7 +75,7 @@ func (e *Embedder) ReportArrival(held port.Embedder, why error) {
 func (e *Embedder) Disown(why error) error {
 	e.mu.Lock()
 	held := e.held
-	e.held, e.reason, e.settled = nil, why, true
+	e.held, e.reason, e.isSettled = nil, why, true
 	e.mu.Unlock()
 
 	e.once.Do(func() { close(e.ready) })
@@ -117,7 +117,7 @@ func (e *Embedder) Wait(ctx context.Context) error {
 func (e *Embedder) Close() error {
 	e.mu.Lock()
 	held := e.held
-	e.held, e.settled = nil, true
+	e.held, e.isSettled = nil, true
 	e.mu.Unlock()
 	return letGo(held)
 }

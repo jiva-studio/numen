@@ -58,7 +58,7 @@ func names(said []string) []string {
 	opens := true
 	for _, word := range said {
 		here := opens
-		opens = closes(word)
+		opens = isSentenceEnd(word)
 
 		bare := strings.TrimFunc(word, func(r rune) bool {
 			return !unicode.IsLetter(r) && !unicode.IsMark(r)
@@ -102,9 +102,10 @@ func isName(bare string) bool {
 	return utf8.RuneCountInString(head) > 1 || utf8.RuneCountInString(tail) > 2
 }
 
-// closes says whether a word ends the sentence it stands in. A closing bracket
-// or quotation mark after the stop belongs to the sentence it closes.
-func closes(word string) bool {
+// isSentenceEnd says whether a word ends the sentence it stands in. A closing
+// bracket or quotation mark after the stop belongs to the sentence it
+// isSentenceEnd.
+func isSentenceEnd(word string) bool {
 	word = strings.TrimRightFunc(word, func(r rune) bool {
 		return unicode.In(r, unicode.Pe, unicode.Pf) || r == '"' || r == '\''
 	})

@@ -119,7 +119,7 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if !holds(pure, pkg) {
+		if !isAmong(pure, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
@@ -314,7 +314,7 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || holds(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isAmong(machinery, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -453,7 +453,7 @@ func TestNothingOfTheCoreReadsTheMachinesClock(t *testing.T) {
 			return err
 		}
 		pkg := getPackage("..", path)
-		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || holds(machinery, pkg) {
+		if strings.HasSuffix(path, "_test.go") || isAdapter(pkg) || isAmong(machinery, pkg) {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
@@ -1115,20 +1115,20 @@ func getRefusal(from, to string) string {
 			return "the composition root assembles the core and does none of its work"
 		}
 	// Fixtures build the real adapters, and only a test is compiled from them.
-	case holds([]string{"internal/testsupport", "internal/testonly"}, from):
+	case isAmong([]string{"internal/testsupport", "internal/testonly"}, from):
 	default:
 		if isAdapter(to) || to == "container" {
 			return "the core reaches no adapter and nothing that assembles one"
 		}
-		if holds(pure, from) && !holds(pure, to) {
+		if isAmong(pure, from) && !isAmong(pure, to) {
 			return "what is true of a note or a card is worked out from what is too"
 		}
 	}
 	return ""
 }
 
-// holds says whether a package is one of these, or stands under one.
-func holds(these []string, pkg string) bool {
+// isAmong says whether a package is one of these, or stands under one.
+func isAmong(these []string, pkg string) bool {
 	for _, one := range these {
 		if pkg == one || strings.HasPrefix(pkg, one+"/") {
 			return true
@@ -1216,7 +1216,7 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 	there := make(map[string]bool, len(found))
 	for _, one := range found {
 		there[one] = true
-		if !holds(public, one) {
+		if !isAmong(public, one) {
 			t.Errorf("adapter/%s is public and nothing outside composes it", one)
 		}
 	}
@@ -1243,7 +1243,7 @@ func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
 	there := make(map[string]bool, len(found))
 	for _, one := range found {
 		there[one] = true
-		if !holds(held, one) {
+		if !isAmong(held, one) {
 			t.Errorf("internal/adapter/%s stands here and is named nowhere", one)
 		}
 	}
@@ -1261,8 +1261,8 @@ func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
 // work.
 func TestWhatTheRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
-		from, to string
-		refuses  bool
+		from, to  string
+		isRefused bool
 	}{
 		// An adapter under internal/ is not the adapter it is named after.
 		{"internal/adapter/mcp", "usecase/note", true},
@@ -1309,10 +1309,10 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"container", "task", false},
 	} {
 		why := getRefusal(one.from, one.to)
-		if one.refuses && why == "" {
+		if one.isRefused && why == "" {
 			t.Errorf("%s reaches %s and is not refused", one.from, one.to)
 		}
-		if !one.refuses && why != "" {
+		if !one.isRefused && why != "" {
 			t.Errorf("%s reaches %s and is refused: %s", one.from, one.to, why)
 		}
 	}

@@ -81,7 +81,7 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 		}
 	}
 
-	took := day.spends(owed, fresh)
+	took := day.spend(owed, fresh)
 	out := make(map[review.CardFaceID]bool)
 	for at, one := range owed {
 		if took.owed[at] {

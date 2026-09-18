@@ -1,4 +1,7 @@
-package editor
+// Package cardwire carries a stencil, a deck and a card between the words the
+// flashcards speak and the words the schema does. It is the mapping alone: what
+// a window asks and what answers it stands in the package above.
+package cardwire
 
 import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -8,13 +11,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
-// maxStencils is how many stencils one answer carries. A vault holding more is
+// MaxStencils is how many stencils one answer carries. A vault holding more is
 // answered with this many and told how many it holds, so a list that stops
 // short says so.
-const maxStencils = 200
+const MaxStencils = 200
 
-// stencilOf is one stencil as the schema carries it.
-func stencilOf(path, title string, s format.Stencil) *v1.Stencil {
+// NewWireStencil is one stencil as the schema carries it.
+func NewWireStencil(path, title string, s format.Stencil) *v1.Stencil {
 	out := &v1.Stencil{
 		Path:     path,
 		Title:    title,
@@ -22,43 +25,43 @@ func stencilOf(path, title string, s format.Stencil) *v1.Stencil {
 		Preamble: s.Preamble,
 		Tail:     s.Tail,
 		Faces:    make([]*v1.Face, 0, len(s.Faces)),
-		Problems: problemsOf(s.Problems),
+		Problems: newWireProblems(s.Problems),
 	}
 	for _, face := range s.Faces {
-		out.Faces = append(out.Faces, faceOf(face))
+		out.Faces = append(out.Faces, newWireFace(face))
 	}
 	return out
 }
 
-// summaryOf is one stencil as the list of them names it.
-func summaryOf(s cards.StencilSummary) *v1.StencilSummary {
+// NewWireSummary is one stencil as the list of them names it.
+func NewWireSummary(s cards.StencilSummary) *v1.StencilSummary {
 	return &v1.StencilSummary{Path: s.Path, Title: s.Title, Fields: s.Fields}
 }
 
-// newRenameResponse is what a rename reached and what it did not, as the schema carries
+// NewRenameResponse is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func newRenameResponse(r cards.RenameResult) *v1.RenameStencilFieldResponse {
+func NewRenameResponse(r cards.RenameResult, at *v1.Fingerprint) *v1.RenameStencilFieldResponse {
 	out := &v1.RenameStencilFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),
-		At:    fingerprintOf(r.Stencil),
+		At:    at,
 	}
 	for _, deck := range r.NotWritten {
 		out.NotWritten = append(out.NotWritten, &v1.UnwrittenDeck{
-			Path: deck.Path, Problem: problemOf(deck.Problem),
+			Path: deck.Path, Problem: newWireProblem(deck.Problem),
 		})
 	}
 	return out
 }
 
-func faceOf(f format.FaceTemplate) *v1.Face {
+func newWireFace(f format.FaceTemplate) *v1.Face {
 	return &v1.Face{Name: f.Name, Preamble: f.Preamble, Front: f.Front, Back: f.Back}
 }
 
-// deckOf is one deck as the schema carries it. The cards go out in the order
+// NewWireDeck is one deck as the schema carries it. The cards go out in the order
 // they stand in the file, and a problem's position is an index into that list.
-func deckOf(path, title string, d format.Deck, cutting map[string]string) *v1.Deck {
+func NewWireDeck(path, title string, d format.Deck, cutting map[string]string) *v1.Deck {
 	out := &v1.Deck{
 		Path:     path,
 		Title:    title,
@@ -66,18 +69,18 @@ func deckOf(path, title string, d format.Deck, cutting map[string]string) *v1.De
 		Tail:     d.Tail,
 		Sections: make([]*v1.Section, 0, len(d.Sections)),
 		Cards:    make([]*v1.Card, 0, len(d.Cards)),
-		Problems: problemsOf(d.Problems),
+		Problems: newWireProblems(d.Problems),
 	}
 	for _, s := range d.Sections {
 		out.Sections = append(out.Sections, &v1.Section{Name: s.Name, Preamble: s.Preamble})
 	}
 	for _, card := range d.Cards {
-		out.Cards = append(out.Cards, cardOf(card, cutting[card.StencilLink]))
+		out.Cards = append(out.Cards, newWireCard(card, cutting[card.StencilLink]))
 	}
 	return out
 }
 
-func cardOf(c format.Card, at string) *v1.Card {
+func newWireCard(c format.Card, at string) *v1.Card {
 	out := &v1.Card{
 		Heading:      c.Heading,
 		Mark:         string(c.Mark),
@@ -113,26 +116,26 @@ func sectionOf(under *int32) int {
 	return int(*under)
 }
 
-// problemsOf is what was wrong with a file, in the order it was found. A check
+// newWireProblems is what was wrong with a file, in the order it was found. A check
 // the schema names no fault for is drawn nowhere, and is left out.
-func problemsOf(problems []format.Problem) []*v1.Problem {
+func newWireProblems(problems []format.Problem) []*v1.Problem {
 	if len(problems) == 0 {
 		return nil
 	}
 	out := make([]*v1.Problem, 0, len(problems))
 	for _, p := range problems {
-		if one := problemOf(p); one != nil {
+		if one := newWireProblem(p); one != nil {
 			out = append(out, one)
 		}
 	}
 	return out
 }
 
-// problemOf is one problem as the schema carries it, and nothing for a fault
+// newWireProblem is one problem as the schema carries it, and nothing for a fault
 // the schema does not name.
-func problemOf(p format.Problem) *v1.Problem {
-	fault, named := faultOf(p.Fault)
-	if !named {
+func newWireProblem(p format.Problem) *v1.Problem {
+	fault, isNamed := newWireFault(p.Fault)
+	if !isNamed {
 		return nil
 	}
 	return &v1.Problem{
@@ -154,9 +157,9 @@ func position(at int) *int32 {
 	return &stands
 }
 
-// faultOf is what a problem is, as the schema names it, and whether the schema
+// newWireFault is what a problem is, as the schema names it, and whether the schema
 // names it at all.
-func faultOf(fault format.Fault) (v1.Fault, bool) {
+func newWireFault(fault format.Fault) (v1.Fault, bool) {
 	switch fault {
 	case format.FaultTwoFields:
 		return v1.Fault_FAULT_FIELD_DECLARED_TWICE, true
@@ -181,12 +184,12 @@ func faultOf(fault format.Fault) (v1.Fault, bool) {
 	}
 }
 
-// newDeck is the deck a client is putting in the vault, in the words the
+// NewDeck is the deck a client is putting in the vault, in the words the
 // core holds one in.
-func newDeck(w *v1.WriteDeckRequest) format.Deck {
+func NewDeck(w *v1.WriteDeckRequest) format.Deck {
 	out := format.Deck{
 		Preamble: w.GetPreamble(),
-		Cards:    cardsOf(w.GetCards()),
+		Cards:    newCards(w.GetCards()),
 		Tail:     w.GetTail(),
 	}
 	for _, s := range w.GetSections() {
@@ -196,9 +199,9 @@ func newDeck(w *v1.WriteDeckRequest) format.Deck {
 	return out
 }
 
-// cardsOf is the cards a client is putting into a deck, in the words the core
+// newCards is the cards a client is putting into a deck, in the words the core
 // holds them in.
-func cardsOf(cs []*v1.Card) []format.Card {
+func newCards(cs []*v1.Card) []format.Card {
 	if len(cs) == 0 {
 		return nil
 	}
@@ -219,8 +222,8 @@ func cardsOf(cs []*v1.Card) []format.Card {
 	return out
 }
 
-// facesOf is the faces a client is putting into a stencil.
-func facesOf(fs []*v1.Face) []format.FaceTemplate {
+// NewFaces is the faces a client is putting into a stencil.
+func NewFaces(fs []*v1.Face) []format.FaceTemplate {
 	if len(fs) == 0 {
 		return nil
 	}

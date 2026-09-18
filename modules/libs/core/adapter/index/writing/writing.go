@@ -35,7 +35,7 @@ const (
 // the whole of the retry.
 func Begin(ctx context.Context, db *sql.DB) (*Transaction, error) {
 	var tx *sql.Tx
-	err := again(ctx, func() error {
+	err := retry(ctx, func() error {
 		var err error
 		tx, err = db.BeginTx(ctx, nil)
 		return err
@@ -110,7 +110,7 @@ func (t *Transaction) prepare(ctx context.Context, query string) (*sql.Stmt, err
 // refused the lock wrote nothing.
 func Exec(ctx context.Context, db *sql.DB, query string, args ...any) (sql.Result, error) {
 	var out sql.Result
-	err := again(ctx, func() error {
+	err := retry(ctx, func() error {
 		var err error
 		out, err = db.ExecContext(ctx, query, args...)
 		return err
@@ -118,9 +118,9 @@ func Exec(ctx context.Context, db *sql.DB, query string, args ...any) (sql.Resul
 	return out, err
 }
 
-// again runs a write, and runs it again where the answer was that the database
+// retry runs a write, and runs it retry where the answer was that the database
 // is locked. It is only for a write that has done nothing when it says so.
-func again(ctx context.Context, write func() error) error {
+func retry(ctx context.Context, write func() error) error {
 	var err error
 	for ask := range asks {
 		if ask > 0 {

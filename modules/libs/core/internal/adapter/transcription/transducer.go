@@ -44,8 +44,8 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		if len(scores) <= d.blank+1 {
 			return nil, fmt.Errorf("the joiner answered with %d scores and the blank is %d", len(scores), d.blank)
 		}
-		token := largest(scores[:d.blank+1])
-		step := largest(scores[d.blank+1:])
+		token := findLargest(scores[:d.blank+1])
+		step := findLargest(scores[d.blank+1:])
 		if token != d.blank {
 			said = append(said, token)
 			if upto, err = d.predictor(token); err != nil {
@@ -71,8 +71,8 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 // from standing on one frame for ever.
 const mostPerFrame = 10
 
-// largest is where the highest of a run of scores stands.
-func largest(scores []float32) int {
+// findLargest is where the highest of a run of scores stands.
+func findLargest(scores []float32) int {
 	at := 0
 	for i, v := range scores {
 		if v > scores[at] {

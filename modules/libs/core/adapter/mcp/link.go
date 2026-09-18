@@ -82,8 +82,8 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		at := map[string][]int{}
 		for i, add := range in.Links {
 			res.Added = append(res.Added, AddOutcome{From: add.From, To: add.To})
-			link := writes(add.Link)
-			if err := note.Writable(link); err != nil {
+			link := newDomainLink(add.Link)
+			if err := note.CheckWritable(link); err != nil {
 				res.Added[i].Refused = sayError(err)
 				continue
 			}
@@ -196,26 +196,26 @@ type ResolvedLink struct {
 	From string `json:"from" jsonschema:"the note the link is written in"`
 	To   string `json:"to,omitempty" jsonschema:"the note it reaches now, absent when it reaches nothing"`
 	// Address is what the file actually says, which is not the same question.
-	Address   string `json:"address"`
-	Role      string `json:"role"`
-	Type      string `json:"type,omitempty"`
-	Label     string `json:"label,omitempty"`
-	Why       string `json:"note,omitempty"`
-	Ambiguous bool   `json:"ambiguous,omitempty" jsonschema:"more than one note answers to this name, and it reached the nearest"`
+	Address     string `json:"address"`
+	Role        string `json:"role"`
+	Type        string `json:"type,omitempty"`
+	Label       string `json:"label,omitempty"`
+	Why         string `json:"note,omitempty"`
+	IsAmbiguous bool   `json:"ambiguous,omitempty" jsonschema:"more than one note answers to this name, and it reached the nearest"`
 }
 
 func linksOf(links []domain.ResolvedLink) []ResolvedLink {
 	out := make([]ResolvedLink, 0, len(links))
 	for _, l := range links {
 		out = append(out, ResolvedLink{
-			From:      l.From,
-			To:        l.To,
-			Address:   l.Target.String(),
-			Role:      string(l.Role),
-			Type:      l.Type,
-			Label:     l.Label,
-			Why:       l.Why,
-			Ambiguous: l.Ambiguous,
+			From:        l.From,
+			To:          l.To,
+			Address:     l.Target.String(),
+			Role:        string(l.Role),
+			Type:        l.Type,
+			Label:       l.Label,
+			Why:         l.Why,
+			IsAmbiguous: l.IsAmbiguous,
 		})
 	}
 	return out
@@ -231,8 +231,8 @@ type Link struct {
 	Why   string `json:"note,omitempty" jsonschema:"why the link exists, in the person's words"`
 }
 
-// writes turns what was asked for into what the core writes.
-func writes(l Link) domain.Link {
+// newDomainLink turns what was asked for into what the core writes.
+func newDomainLink(l Link) domain.Link {
 	return domain.Link{
 		Target: domain.ParseAddress(l.To),
 		Role:   domain.LinkRole(l.Role),
@@ -248,7 +248,7 @@ func newLinks(links []Link) []domain.Link {
 	}
 	out := make([]domain.Link, 0, len(links))
 	for _, l := range links {
-		out = append(out, writes(l))
+		out = append(out, newDomainLink(l))
 	}
 	return out
 }

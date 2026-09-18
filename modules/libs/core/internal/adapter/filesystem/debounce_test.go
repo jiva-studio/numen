@@ -88,7 +88,7 @@ func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 	waiting := newQueue(4)
 	go drain(ctx, raw, waiting)
 	feed(t, raw, root, 0, 5)
-	settles(t, waiting, func() bool { return waiting.over })
+	settles(t, waiting, func() bool { return waiting.isOver })
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)

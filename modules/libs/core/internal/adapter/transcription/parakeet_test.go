@@ -19,7 +19,7 @@ func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 	}
 
 	cfg := Defaults()
-	cfg.Dir, cfg.Download = dir, false
+	cfg.Dir, cfg.ShouldDownload = dir, false
 	by, err := Open(t.Context(), cfg)
 	if err != nil {
 		t.Skipf("the models in %s: %v", dir, err)

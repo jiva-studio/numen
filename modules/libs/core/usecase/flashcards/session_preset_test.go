@@ -127,7 +127,7 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 	})
 
 	_, err := s.openSession(t, today, saturday, flashcards.Scope{
-		Deck: "decks/Birds.md", Preset: "Steady.md", Named: true,
+		Deck: "decks/Birds.md", Preset: "Steady.md", IsNamed: true,
 	})
 	if !errors.Is(err, flashcards.ErrBothNamed) {
 		t.Fatalf("a deck and a preset together were answered with %v", err)

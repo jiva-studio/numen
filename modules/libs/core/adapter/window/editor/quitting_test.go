@@ -35,9 +35,9 @@ type going struct {
 	configuring numenv1connect.SettingsServiceClient
 	// drawn is the window itself: what is being done behind it, and the drain
 	// that holds it back when it goes.
-	drawn  numenv1connect.WindowServiceClient
-	opened *editor.Installation
-	root   string
+	drawn        numenv1connect.WindowServiceClient
+	installation *editor.Installation
+	root         string
 	// settings is the vault list this window keeps, which is the folder its
 	// settings file sits in.
 	settings string
@@ -120,13 +120,13 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		t.Fatal(err)
 	}
 
-	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
+	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Closing joins the passes still running and lets go of the index, and the
 	// folder the index is in is taken away after this.
-	t.Cleanup(func() { _ = opened.Close() })
+	t.Cleanup(func() { _ = installation.Close() })
 
 	recorded := &order{}
 	// What this watches is the order the writes and the closing land in, so
@@ -138,12 +138,12 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		unlevelled,
 		time.Now,
 	)
-	opened.API.Notes.Write = &writing
+	installation.API.Notes.Write = &writing
 
-	turning, settings := numenv1connect.NewSettingsServiceHandler(opened.API)
-	drawn, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)
+	turning, settings := numenv1connect.NewSettingsServiceHandler(installation.API)
+	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.API.Window)
 	mux := http.NewServeMux()
-	answers(mux, opened.API)
+	answers(mux, installation.API)
 	mux.Handle(turning, settings)
 	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -153,13 +153,13 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	t.Cleanup(server.Close)
 
 	return &going{
-		client:      asks(server.Client(), server.URL),
-		configuring: numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
-		drawn:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
-		opened:      opened,
-		root:        root,
-		settings:    cfg.RegistryPath,
-		order:       recorded,
+		client:       asks(server.Client(), server.URL),
+		configuring:  numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
+		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
+		installation: installation,
+		root:         root,
+		settings:     cfg.RegistryPath,
+		order:        recorded,
 	}
 }
 
@@ -169,10 +169,10 @@ func (f *going) read(t *testing.T) {
 	t.Helper()
 
 	for range 500 {
-		if f.opened.API.Ready.Load() {
+		if f.installation.API.Ready.Load() {
 			return
 		}
-		if why := f.opened.API.Error.Why(); why != "" {
+		if why := f.installation.API.Error.Why(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -264,8 +264,8 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 		defer close(shut)
 		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 		defer cancel()
-		f.opened.Settle(ctx)
-		if err := f.opened.Close(); err != nil {
+		f.installation.Settle(ctx)
+		if err := f.installation.Close(); err != nil {
 			t.Error(err)
 		}
 		f.order.record("closed")
@@ -352,7 +352,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-	f.opened.Settle(ctx)
+	f.installation.Settle(ctx)
 	f.order.record("settled")
 
 	select {
@@ -365,7 +365,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 		t.Errorf("the quit went %v", got)
 	}
 
-	if err := f.opened.Close(); err != nil {
+	if err := f.installation.Close(); err != nil {
 		t.Fatal(err)
 	}
 	body, err := os.ReadFile(filepath.Join(f.root, "Note.md"))
@@ -382,7 +382,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 // go gets it.
 func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.opened.Close() })
+	t.Cleanup(func() { f.installation.Close() })
 
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
@@ -403,7 +403,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	defer cancel()
 
 	began := time.Now()
-	if !f.opened.Settle(ctx) {
+	if !f.installation.Settle(ctx) {
 		t.Fatal("the vault never settled")
 	}
 	took := time.Since(began)
@@ -468,13 +468,13 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 func (p *speaking) answerFlushes(doing func(token string) v1.FlushResult) {
 	go func() {
 		for token := range p.asked {
-			p.says(token, doing(token))
+			p.sendFlush(token, doing(token))
 		}
 	}()
 }
 
-// says is the page telling the application what it has left.
-func (p *speaking) says(token string, said v1.FlushResult) {
+// sendFlush is the page telling the application what it has left.
+func (p *speaking) sendFlush(token string, said v1.FlushResult) {
 	_, _ = p.f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: wire.Editor,
 		Token:  token,
@@ -502,7 +502,7 @@ func (p *speaking) endStream(t *testing.T) {
 // buffer and nowhere else, and only the person says where it ends up.
 func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.opened.Close() })
+	t.Cleanup(func() { f.installation.Close() })
 
 	page := openQuitStream(t, f)
 	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
@@ -511,7 +511,7 @@ func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 	defer cancel()
 
 	began := time.Now()
-	if f.opened.Settle(ctx) {
+	if f.installation.Settle(ctx) {
 		t.Fatal("the vault settled with a question standing")
 	}
 	if took := time.Since(began); took > 5*time.Second {
@@ -538,21 +538,21 @@ func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 // TestTheWindowGoesOnceTheQuestionsAreAnswered.
 func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.opened.Close() })
+	t.Cleanup(func() { f.installation.Close() })
 
 	page := openQuitStream(t, f)
 	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if f.opened.Settle(asking) {
+	if f.installation.Settle(asking) {
 		t.Fatal("the vault settled with a question standing")
 	}
 
 	// What the window does with a close it called off: it waits on a person,
 	// and that wait is not measured.
 	answered := make(chan bool, 1)
-	go func() { answered <- f.opened.WaitForAnswers(t.Context()) }()
+	go func() { answered <- f.installation.WaitForAnswers(t.Context()) }()
 
 	select {
 	case <-answered:
@@ -561,7 +561,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	}
 
 	// The person answered every question, and the page has nothing left.
-	page.says(page.token, v1.FlushResult_FLUSH_RESULT_WRITTEN)
+	page.sendFlush(page.token, v1.FlushResult_FLUSH_RESULT_WRITTEN)
 
 	select {
 	case let := <-answered:
@@ -577,11 +577,11 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 // the page holds is written for it.
 func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.opened.Close() })
+	t.Cleanup(func() { f.installation.Close() })
 
 	page := openQuitStream(t, f)
 	asks := 0
-	page.answerFlushes(func(token string) v1.FlushResult {
+	page.answerFlushes(func(_ string) v1.FlushResult {
 		asks++
 		if asks == 1 {
 			return v1.FlushResult_FLUSH_RESULT_ASKING
@@ -598,13 +598,13 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 
 	first, cancelFirst := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelFirst()
-	if f.opened.Settle(first) {
+	if f.installation.Settle(first) {
 		t.Fatal("the vault settled with a question standing")
 	}
 
 	second, cancelSecond := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelSecond()
-	if !f.opened.Settle(second) {
+	if !f.installation.Settle(second) {
 		t.Fatal("the second quit did not settle the vault")
 	}
 
@@ -625,14 +625,14 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 // waited for as silence is, which is the bound and no longer.
 func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.opened.Close() })
+	t.Cleanup(func() { f.installation.Close() })
 
 	page := openQuitStream(t, f)
 	page.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if f.opened.Settle(asking) {
+	if f.installation.Settle(asking) {
 		t.Fatal("the vault settled with a question standing")
 	}
 	page.endStream(t)
@@ -642,7 +642,7 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 	defer endsAt()
 
 	began := time.Now()
-	if !f.opened.Settle(ctx) {
+	if !f.installation.Settle(ctx) {
 		t.Fatal("the vault never settled after the page went")
 	}
 	took := time.Since(began)
@@ -659,14 +659,14 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 // second under a token of its own, and the text it holds is still its own.
 func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	t.Cleanup(func() { f.opened.Close() })
+	t.Cleanup(func() { f.installation.Close() })
 
 	first := openQuitStream(t, f)
 	first.answerFlushes(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if f.opened.Settle(asking) {
+	if f.installation.Settle(asking) {
 		t.Fatal("the vault settled with a question standing")
 	}
 	first.endStream(t)
@@ -679,7 +679,7 @@ func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
 
 	again, cancelAgain := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelAgain()
-	if f.opened.Settle(again) {
+	if f.installation.Settle(again) {
 		t.Fatal("the vault settled with the question raised again")
 	}
 }

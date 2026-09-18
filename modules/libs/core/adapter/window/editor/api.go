@@ -283,30 +283,30 @@ func (a *API) GetShownVault() domain.Vault {
 // show puts a vault in front of whoever asks from now on.
 func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
 
-// runs is the passes a run, a cut and a drop are taken through from now on.
-// They arrive together, after the vault they belong to.
-func (a *API) runs(on *passes) { a.showing.Store(on) }
+// setPasses is the passes a run, a cut and a drop are taken through from now
+// on. They arrive together, after the vault they belong to.
+func (a *API) setPasses(on *passes) { a.showing.Store(on) }
 
-// recognises reads a scanned document and transcribes hears a recording, each
-// for whoever asks. They are the jobs an agent asks through too, so what a
+// getRecogniser reads a scanned document and getTranscriber hears a recording,
+// each for whoever asks. They are the jobs an agent asks through too, so what a
 // person started in the window is shown to both. Nothing where the window has
 // no vault, and where this build does no such run.
-func (a *API) recognises() Runner {
+func (a *API) getRecogniser() Runner {
 	if on := a.showing.Load(); on != nil {
 		return on.recognises
 	}
 	return nil
 }
 
-func (a *API) transcribes() Runner {
+func (a *API) getTranscriber() Runner {
 	if on := a.showing.Load(); on != nil {
 		return on.transcribes
 	}
 	return nil
 }
 
-// proofreads puts a recording's transcript right, for whoever asks.
-func (a *API) proofreads() Proofreader {
+// getProofreader puts a recording's transcript right, for whoever asks.
+func (a *API) getProofreader() Proofreader {
 	if on := a.showing.Load(); on != nil {
 		return on.proofreads
 	}
@@ -324,9 +324,9 @@ func (a *API) cuts() func(context.Context, domain.Vault, string) error {
 	return nil
 }
 
-// forgets takes a recording out of what the queue behind the vault has already
-// had an answer about, so one that gave no words is offered again.
-func (a *API) forgets() func(domain.Vault, string) {
+// getForgetter takes a recording out of what the queue behind the vault has
+// already had an answer about, so one that gave no words is offered again.
+func (a *API) getForgetter() func(domain.Vault, string) {
 	if on := a.showing.Load(); on != nil {
 		return on.forgets
 	}
@@ -464,7 +464,7 @@ func (a *API) WatchVaultChanges(
 				renamed = append(renamed, &v1.Move{From: went.From, To: went.To})
 			}
 			if err := out.Send(&v1.WatchVaultChangesResponse{
-				Paths: what.paths, Reload: what.reload, Renamed: renamed,
+				Paths: what.paths, Reload: what.shouldReload, Renamed: renamed,
 			}); err != nil {
 				return err
 			}

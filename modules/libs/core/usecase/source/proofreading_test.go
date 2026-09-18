@@ -33,7 +33,7 @@ func (q *queued) Collect(context.Context, string) (map[int]string, bool, error) 
 // text, at the sizes it proofreads at.
 func newProofreadingConfig(by *replying, queue *queued) ProofreadingConfig {
 	return ProofreadingConfig{
-		Named:           true,
+		IsNamed:         true,
 		By:              func(told string) (port.Proofreader, error) { by.told = told; return by, nil },
 		Queue:           func(told string) (port.ProofreadQueue, error) { queue.told = told; return queue, nil },
 		Batch:           12,
@@ -133,8 +133,8 @@ func TestAProofreaderThatCannotBeOpenedSaysWhatCouldNotBeDone(t *testing.T) {
 	t.Parallel()
 	keyless := errors.New("no key is configured")
 	said := ProofreadingConfig{
-		Named: true,
-		By:    func(string) (port.Proofreader, error) { return nil, keyless },
+		IsNamed: true,
+		By:      func(string) (port.Proofreader, error) { return nil, keyless },
 	}
 
 	_, held, err := said.Reading(nil, nil)
@@ -157,9 +157,9 @@ func TestAQueueThatCannotBeOpenedSaysThePagesCannotBeLeft(t *testing.T) {
 	shut := errors.New("the batch address is not reachable")
 	by := &replying{}
 	said := ProofreadingConfig{
-		Named: true,
-		By:    func(string) (port.Proofreader, error) { return by, nil },
-		Queue: func(string) (port.ProofreadQueue, error) { return nil, shut },
+		IsNamed: true,
+		By:      func(string) (port.Proofreader, error) { return by, nil },
+		Queue:   func(string) (port.ProofreadQueue, error) { return nil, shut },
 	}
 
 	_, held, err := said.Reading(nil, nil)

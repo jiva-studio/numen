@@ -23,7 +23,7 @@ func (a *API) GetDeckPreset(
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Presets.Of(ctx, showing, r.Msg.GetDeck())
+	found, err := a.Presets.GetForDeck(ctx, showing, r.Msg.GetDeck())
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}

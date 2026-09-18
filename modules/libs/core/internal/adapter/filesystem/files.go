@@ -23,10 +23,10 @@ func (ImportedFiles) Stat(_ context.Context, handle string) (port.ImportedFile, 
 		return port.ImportedFile{}, err
 	}
 	return port.ImportedFile{
-		Name:   filepath.Base(handle),
-		Handle: handle,
-		Folder: info.IsDir(),
-		File:   info.Mode().IsRegular(),
+		Name:     filepath.Base(handle),
+		Handle:   handle,
+		IsFolder: info.IsDir(),
+		IsFile:   info.Mode().IsRegular(),
 	}, nil
 }
 

@@ -86,8 +86,8 @@ func FuzzAt(f *testing.F) {
 		if _, hour := held.Review.Starts(); !hour && len(held.Said) == 0 {
 			t.Fatalf("%s names no hour a day begins at and nothing was said about it", raw)
 		}
-		if mb > 0 && held.Indexing.TranscribesUnder() < int64(mb) {
-			t.Fatalf("%d megabytes was read as %d bytes", mb, held.Indexing.TranscribesUnder())
+		if mb > 0 && held.Indexing.GetTranscribeLimit() < int64(mb) {
+			t.Fatalf("%d megabytes was read as %d bytes", mb, held.Indexing.GetTranscribeLimit())
 		}
 	})
 }

@@ -77,9 +77,9 @@ func ceiling(load, keeping float64) float64 {
 	return math.Min(math.Max(top, LeastCeiling), MinutesADayBounds.Most)
 }
 
-// nearest is the place of the grid a value falls at, and -1 for a value outside
+// findNearest is the place of the grid a value falls at, and -1 for a value outside
 // it.
-func nearest(grid []float64, value float64) int {
+func findNearest(grid []float64, value float64) int {
 	if len(grid) == 0 || value < grid[0] || value > grid[len(grid)-1] {
 		return -1
 	}

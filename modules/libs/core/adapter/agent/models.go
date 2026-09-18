@@ -29,9 +29,9 @@ var (
 // file says where the section is.
 func GetModels(held Config) []port.Model {
 	models := []port.Model{{
-		Path:    ModelAt,
-		Title:   "Whatever this machine answers with",
-		Default: true,
+		Path:      ModelAt,
+		Title:     "Whatever this machine answers with",
+		IsDefault: true,
 	}}
 	for _, one := range []string{"opus", "sonnet", "haiku"} {
 		models = append(models, port.Model{
@@ -59,11 +59,11 @@ func GetModels(held Config) []port.Model {
 func GetPrograms() []port.Model {
 	return []port.Model{
 		{
-			Path:    UseAt,
-			Name:    UseClaude,
-			Title:   "Claude Code",
-			Default: true,
-			Writes:  []port.Setting{newSetting(UseAt, UseClaude)},
+			Path:      UseAt,
+			Name:      UseClaude,
+			Title:     "Claude Code",
+			IsDefault: true,
+			Writes:    []port.Setting{newSetting(UseAt, UseClaude)},
 		},
 		{
 			Path:   UseAt,

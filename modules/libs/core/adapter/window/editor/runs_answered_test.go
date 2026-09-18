@@ -176,7 +176,7 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the run failed: %v", err)
 	}
-	if !res.Unopened {
+	if !res.IsUnopened {
 		t.Fatal("the run opened a recording nothing decodes")
 	}
 

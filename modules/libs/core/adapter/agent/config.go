@@ -17,10 +17,10 @@ type Config struct {
 	// Use names the agent. Empty answers with none, and the panel says so.
 	Use string `json:"use"`
 
-	// ServeTools puts the tools on a port, which is how an agent a person runs
+	// ShouldServeTools puts the tools on a port, which is how an agent a person runs
 	// themselves reaches this vault. It is off; the agent Use names is served
 	// on the port either way.
-	ServeTools bool `json:"serve_tools"`
+	ShouldServeTools bool `json:"serve_tools"`
 
 	// Claude is Claude Code, reached by starting it and reading what it prints.
 	Claude Claude `json:"claude"`
@@ -28,7 +28,7 @@ type Config struct {
 
 // IsServingTools reports whether the tools go on a port: an installation naming
 // an agent for the panel is one, and so is one asking for the port itself.
-func (c Config) IsServingTools() bool { return c.Use == UseClaude || c.ServeTools }
+func (c Config) IsServingTools() bool { return c.Use == UseClaude || c.ShouldServeTools }
 
 // Claude is how Claude Code is run.
 type Claude struct {
@@ -49,14 +49,14 @@ type Claude struct {
 	// MaxSteps is how many times it may go to the model before it is stopped.
 	MaxSteps int `json:"max_steps"`
 
-	// ReadsHooksAndSkills lets it read what is configured for it on this
+	// ShouldReadHooksAndSkills lets it read what is configured for it on this
 	// machine: hooks, skills, standing instructions in CLAUDE.md, plugins.
 	//
 	// Off by default. A hook is a shell command Claude Code runs itself, and a
 	// question typed into a panel is not asking for one. On, only what is
 	// configured for this person is read; what a vault carries is refused either
 	// way, since a vault arrives from elsewhere.
-	ReadsHooksAndSkills bool `json:"reads_hooks_and_skills"`
+	ShouldReadHooksAndSkills bool `json:"reads_hooks_and_skills"`
 }
 
 // Defaults answer with Claude Code, reading nothing this machine holds for it.
@@ -81,7 +81,7 @@ func (c *Claude) UnmarshalJSON(raw []byte) error {
 	assign(&c.Command, f.Command)
 	assign(&c.Model, f.Model)
 	assign(&c.MaxSteps, f.MaxSteps)
-	assign(&c.ReadsHooksAndSkills, f.ReadsHooksAndSkills)
+	assign(&c.ShouldReadHooksAndSkills, f.ReadsHooksAndSkills)
 	return nil
 }
 

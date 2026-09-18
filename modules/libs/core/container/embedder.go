@@ -24,7 +24,7 @@ import (
 // An embedder is optional: an installation naming no provider answers with
 // nothing. A provider that cannot be built — no key, no base URL — is a
 // reason, and nothing is built at all.
-func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, close func() error, why error) {
+func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
 	first, why := c.provider(c.Embedding.Indexing)
 	if why != nil {
 		return nil, nil, nil, why
@@ -33,8 +33,8 @@ func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, ask
 	if why != nil {
 		return nil, nil, nil, why
 	}
-	indexing, asking, close = embedders.Open(ctx, tasks, first, second)
-	return indexing, asking, close, nil
+	indexing, asking, closer = embedders.Open(ctx, tasks, first, second)
+	return indexing, asking, closer, nil
 }
 
 // Embedder is what makes the vectors a vault is searched by, waited for. A run
@@ -44,8 +44,8 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 	if err != nil {
 		return nil, nil, err
 	}
-	embedder, close := embedders.One(ctx, held)
-	return embedder, close, nil
+	embedder, closer := embedders.OpenOne(ctx, held)
+	return embedder, closer, nil
 }
 
 // OpenQuestionEmbedder is what embeds a question, for a run that fills no
@@ -56,8 +56,8 @@ func (c Config) OpenQuestionEmbedder(ctx context.Context) (port.Embedder, func()
 	if err != nil {
 		return nil, nil, err
 	}
-	embedder, close := embedders.One(ctx, held)
-	return embedder, close, nil
+	embedder, closer := embedders.OpenOne(ctx, held)
+	return embedder, closer, nil
 }
 
 // NewSearch is the search a question is answered by, put together the one way:

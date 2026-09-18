@@ -43,22 +43,23 @@ func Write(path string, raw []byte, seen *string, into Document) error {
 	if err := distinct(raw); err != nil {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
 	}
-	if err := holds(raw, into); err != nil {
+	if err := checkSettings(raw, into); err != nil {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
 	}
 
 	return runOnFile(path, func(path string) error {
-		if err := stands(path, seen); err != nil {
+		if err := checkUnchanged(path, seen); err != nil {
 			return err
 		}
 		return replace(path, raw)
 	})
 }
 
-// stands says whether the file holds what its caller last read, and nothing
-// where the caller presents nothing. It is read the way Read reads it, so a
-// file that is not there stands at the empty object a caller was given.
-func stands(path string, seen *string) error {
+// checkUnchanged says whether the file holds what its caller last read, and
+// nothing where the caller presents nothing. It is read the way Read reads it,
+// so a file that is not there checkUnchanged at the empty object a caller was
+// given.
+func checkUnchanged(path string, seen *string) error {
 	if seen == nil {
 		return nil
 	}

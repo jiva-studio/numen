@@ -94,7 +94,7 @@ func TestAPathReachesItsNoteWhateverCaseItIsWrittenIn(t *testing.T) {
 	if c.Links[0].To != "Заметки/Энтропия.md" {
 		t.Errorf("resolved to %q, want the path that was written", c.Links[0].To)
 	}
-	if c.Links[0].Ambiguous {
+	if c.Links[0].IsAmbiguous {
 		t.Error("a path that was written out was called ambiguous")
 	}
 }

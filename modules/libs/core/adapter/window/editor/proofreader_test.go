@@ -19,16 +19,16 @@ import (
 // installation names anything to put a transcript right with, what it was asked
 // to put right, and what it says came of the ask.
 type proofreads struct {
-	ready bool
-	came  source.ProofreadTranscriptResult
-	why   error
+	isReady bool
+	came    source.ProofreadTranscriptResult
+	why     error
 
 	vault string
 	path  string
 	times int
 }
 
-func (p *proofreads) ProofreaderReady() bool { return p.ready }
+func (p *proofreads) ProofreaderReady() bool { return p.isReady }
 
 func (p *proofreads) Proofread(
 	_ context.Context,
@@ -45,7 +45,7 @@ func (p *proofreads) Proofread(
 func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*API, http.Handler, *proofreads) {
 	t.Helper()
 	api, handler := openRunWindow(t, held, read, willRun(), willRun())
-	by := &proofreads{ready: true}
+	by := &proofreads{isReady: true}
 	setPasses(api, func(on *passes) { on.proofreads = by })
 	return api, handler, by
 }
@@ -80,10 +80,10 @@ func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 		came  source.ProofreadTranscriptResult
 		state v1.State
 	}{
-		{"a recording another run holds", source.ProofreadTranscriptResult{Busy: true}, v1.State_STATE_RUNNING},
-		{"a transcript already put right", source.ProofreadTranscriptResult{Already: true}, v1.State_STATE_DONE},
-		{"words a person wrote themselves", source.ProofreadTranscriptResult{Edited: true}, v1.State_STATE_DONE},
-		{"a transcript holding no words", source.ProofreadTranscriptResult{None: true}, v1.State_STATE_NONE},
+		{"a recording another run holds", source.ProofreadTranscriptResult{IsBusy: true}, v1.State_STATE_RUNNING},
+		{"a transcript already put right", source.ProofreadTranscriptResult{IsAlready: true}, v1.State_STATE_DONE},
+		{"words a person wrote themselves", source.ProofreadTranscriptResult{IsEdited: true}, v1.State_STATE_DONE},
+		{"a transcript holding no words", source.ProofreadTranscriptResult{IsNone: true}, v1.State_STATE_NONE},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())

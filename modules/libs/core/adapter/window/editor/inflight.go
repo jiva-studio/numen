@@ -14,11 +14,11 @@ var errClosing = errors.New("this vault is closing")
 // What is counted is the writing itself, and not the answer travelling back to
 // the client. The database closes once nothing is being written.
 type inflight struct {
-	mu     sync.Mutex
-	count  int
-	sealed bool
-	idle   chan struct{}
-	over   bool
+	mu       sync.Mutex
+	count    int
+	isSealed bool
+	idle     chan struct{}
+	isOver   bool
 }
 
 // begin takes a write, and refuses one that arrives after the door is shut.
@@ -26,7 +26,7 @@ func (w *inflight) begin() bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.sealed {
+	if w.isSealed {
 		return false
 	}
 	w.count++
@@ -48,7 +48,7 @@ func (w *inflight) seal() <-chan struct{} {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	w.sealed = true
+	w.isSealed = true
 	if w.idle == nil {
 		w.idle = make(chan struct{})
 	}
@@ -62,14 +62,14 @@ func (w *inflight) open() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	w.sealed, w.over, w.idle = false, false, nil
+	w.isSealed, w.isOver, w.idle = false, false, nil
 }
 
 // reckon ends the wait once nothing is being written. The lock is held.
 func (w *inflight) reckon() {
-	if !w.sealed || w.over || w.count > 0 {
+	if !w.isSealed || w.isOver || w.count > 0 {
 		return
 	}
-	w.over = true
+	w.isOver = true
 	close(w.idle)
 }

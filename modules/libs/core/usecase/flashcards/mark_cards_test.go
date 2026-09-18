@@ -27,7 +27,7 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 
 	// The deck cannot be replaced. What a person meets is the editor holding
 	// the file; this is the same refusal from the same place.
-	testsupport.Unwritable(t, filepath.Join(s.vault.Path, "decks", "Own.md"))
+	testsupport.MakeUnwritable(t, filepath.Join(s.vault.Path, "decks", "Own.md"))
 
 	marked, err := s.marking.Execute(t.Context(), s.vault)
 	if err != nil {

@@ -16,8 +16,8 @@ import (
 type folderDialog struct {
 	window application.Window
 
-	mu sync.Mutex
-	up bool
+	mu     sync.Mutex
+	isOpen bool
 }
 
 // Choose answers with the folder the person chose, and with false where they
@@ -34,7 +34,7 @@ func (d *folderDialog) Choose(_ context.Context, title, startingAt string) (stri
 	if !hasSchemas() {
 		return "", false, port.ErrNoFolderDialog
 	}
-	if !d.alone() {
+	if !d.tryTake() {
 		return "", false, port.ErrChoosing
 	}
 	defer d.release()
@@ -58,20 +58,20 @@ func (d *folderDialog) Choose(_ context.Context, title, startingAt string) (stri
 	return chosen, chosen != "", nil
 }
 
-// alone takes the dialog, and answers false where it is already up.
-func (d *folderDialog) alone() bool {
+// tryTake takes the dialog, and answers false where it is already up.
+func (d *folderDialog) tryTake() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	if d.up {
+	if d.isOpen {
 		return false
 	}
-	d.up = true
+	d.isOpen = true
 	return true
 }
 
 func (d *folderDialog) release() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.up = false
+	d.isOpen = false
 }

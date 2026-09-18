@@ -155,7 +155,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	})
 	api.Finds = &finds
 
-	opened := &Installation{
+	pool := &Installation{
 		API:          api,
 		Embedder:     embedder,
 		Asking:       asking,
@@ -176,11 +176,11 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	//
 	// A note the person saves is level before the save is answered, so the vault
 	// finds what it now holds without waiting on the watch.
-	opened.notes = made.OpenNotes(opened.level).FollowMoves(api.GetWindow())
-	opened.cards = made.OpenCards(opened.level)
-	opened.vaults = made.OpenVaults(opened.notes.Move)
+	pool.notes = made.OpenNotes(pool.level).FollowMoves(api.GetWindow())
+	pool.cards = made.OpenCards(pool.level)
+	pool.vaults = made.OpenVaults(pool.notes.Move)
 
-	notes := &opened.notes
+	notes := &pool.notes
 	api.Notes.Read = &notes.Read
 	api.Notes.Write = &notes.Write
 	api.Notes.Create = &notes.Create
@@ -188,7 +188,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	api.Notes.Rename = &notes.Rename
 	api.Notes.Remove = &notes.Remove
 
-	cutting := &opened.cards
+	cutting := &pool.cards
 	api.Cards = Cards{
 		Read:        &cutting.Read,
 		List:        &cutting.List,
@@ -198,7 +198,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	}
 	// A preset is a note the editor writes key by key, and the curve beside its
 	// one control is the same simulator the flashcards window runs on.
-	running := made.OpenFlashcards(opened.level)
+	running := made.OpenFlashcards(pool.level)
 	api.Presets = &running.Presets
 	api.Curves = &running.Curves
 	least, most := made.GetPartsUnderANodeBounds()
@@ -214,10 +214,10 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		Now:             made.GetClock(),
 	}
 
-	held := &opened.vaults
+	held := &pool.vaults
 	api.Files.Move = &held.Move
 	api.Files.Import = &held.Import
-	api.Files.URLs = &source.CreateURL{Writers: made.GetVaultWriters(), Index: opened.level}
+	api.Files.URLs = &source.CreateURL{Writers: made.GetVaultWriters(), Index: pool.level}
 	api.Vaults = Vaults{
 		Registry: held.Registry,
 		Add:      &held.Add,
@@ -243,7 +243,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// Reading every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
 	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands
-	if err := opened.arrive(first, made.IsRebuildingIndex()); err != nil {
+	if err := pool.arrive(first, made.IsRebuildingIndex()); err != nil {
 		_ = closeEmbedder()
 		_ = made.CloseIndex()
 		return nil, err
@@ -258,7 +258,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	} else {
 		api.Playing = playing
 	}
-	return opened, nil
+	return pool, nil
 }
 
 // Close shuts the door on every question, stops the passes behind the vault,
@@ -370,9 +370,9 @@ func (o *Installation) SayTheme(said string) {
 	o.API.say(task.Task{ID: wearingATheme, Doing: "Wearing a theme", Error: said})
 }
 
-// Says puts what reading the settings had to tell a person in the list of what
-// is being done, which is where a person is.
-func (o *Installation) Says(said []string) {
+// Report puts what reading the settings had to tell a person in the list of
+// what is being done, which is where a person is.
+func (o *Installation) Report(said []string) {
 	for at, one := range said {
 		o.API.say(task.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, at),

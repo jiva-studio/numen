@@ -28,6 +28,6 @@ func (tell TellEdit) beginChange(ctx context.Context, now port.Clock, said domai
 	said.Change = name
 	tell(ctx, said)
 	return func() {
-		tell(ctx, domain.Edit{Change: name, Path: said.Path, Done: true})
+		tell(ctx, domain.Edit{Change: name, Path: said.Path, IsDone: true})
 	}
 }

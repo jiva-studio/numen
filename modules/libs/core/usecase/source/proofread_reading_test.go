@@ -253,7 +253,7 @@ func TestOneRunToAReading(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Busy {
+	if !res.IsBusy {
 		t.Error("two runs to one reading")
 	}
 	if len(by.asked) != 0 {
@@ -272,7 +272,7 @@ func TestAReadingThatIsNotThereIsNothingToProofread(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.None {
+	if !res.IsNone {
 		t.Errorf("got %+v", res)
 	}
 }
@@ -368,8 +368,8 @@ type proofreadQueue struct {
 	*corrector
 	left  map[string][]int
 	ready map[string]bool
-	// gone is a batch the proofreader will never answer about.
-	gone bool
+	// isGone is a batch the proofreader will never answer about.
+	isGone bool
 }
 
 func newProofreadQueue(says map[int]string) *proofreadQueue {
@@ -391,7 +391,7 @@ func (q *proofreadQueue) Leave(_ context.Context, pages []proofread.Batch) (stri
 }
 
 func (q *proofreadQueue) Collect(_ context.Context, name string) (map[int]string, bool, error) {
-	if q.gone {
+	if q.isGone {
 		return nil, false, errors.New("the proofreader has forgotten this batch")
 	}
 	if !q.ready[name] {
@@ -406,8 +406,9 @@ func (q *proofreadQueue) Collect(_ context.Context, name string) (map[int]string
 	return out, true, nil
 }
 
-// stands is what the reading says about who put it right and how far they got.
-func stands(t *testing.T, shelved *shelf) checkpoint {
+// getCheckpoint is what the reading says about who put it right and how far
+// they got.
+func getCheckpoint(t *testing.T, shelved *shelf) checkpoint {
 	t.Helper()
 	var stood checkpoint
 	if err := json.Unmarshal(readShelf(t, shelved, textNames(t, shelved).far), &stood); err != nil {
@@ -426,10 +427,10 @@ func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Waiting || res.Fixed != 0 {
+	if !res.IsWaiting || res.Fixed != 0 {
 		t.Errorf("got %+v", res)
 	}
-	stood := stands(t, shelved)
+	stood := getCheckpoint(t, shelved)
 	if stood.Batch != "batch-1" || stood.Left != 2 || stood.Pages != 0 {
 		t.Fatalf("the reading stands at %+v", stood)
 	}
@@ -439,7 +440,7 @@ func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Waiting || res.Fixed != 0 {
+	if !res.IsWaiting || res.Fixed != 0 {
 		t.Errorf("got %+v", res)
 	}
 
@@ -448,10 +449,10 @@ func TestPagesAreLeftForTheProofreaderAndCollectedByAnotherRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Fixed != 1 || res.Read != 2 || !res.Waiting {
+	if res.Fixed != 1 || res.Read != 2 || !res.IsWaiting {
 		t.Errorf("got %+v", res)
 	}
-	if stood := stands(t, shelved); stood.Pages != 2 || stood.Batch != "batch-2" {
+	if stood := getCheckpoint(t, shelved); stood.Pages != 2 || stood.Batch != "batch-2" {
 		t.Errorf("the reading stands at %+v", stood)
 	}
 
@@ -474,15 +475,15 @@ func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	left.gone = true
+	left.isGone = true
 	if _, err := put.Execute(t.Context(), v, documentPath); err == nil {
 		t.Fatal("a batch nobody will answer about was waited for")
 	}
-	if stood := stands(t, shelved); stood.Batch != "" {
+	if stood := getCheckpoint(t, shelved); stood.Batch != "" {
 		t.Errorf("the reading still waits on %+v", stood)
 	}
 
-	left.gone = false
+	left.isGone = false
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}

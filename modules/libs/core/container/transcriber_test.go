@@ -22,7 +22,7 @@ func TestATranscriptIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
 		"scans":  {Use: proofreading.UseAgent, Model: "another model", BatchSize: 1, InFlight: 1},
 	}
 	cfg.TranscriptProofreading = proofreading.Proofread{Profile: "speech"}
-	cfg.ScanProofreading = proofreading.Proofread{Profile: "scans", Automatically: true}
+	cfg.ScanProofreading = proofreading.Proofread{Profile: "scans", IsAutomatic: true}
 
 	var opened ProofreaderSpec
 	cfg.AgentProofreader = func(said ProofreaderSpec) (port.Proofreader, error) {

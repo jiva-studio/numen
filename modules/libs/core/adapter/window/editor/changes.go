@@ -5,8 +5,8 @@ import "github.com/jiva-studio/numen/modules/libs/core/domain"
 // change is what a client is told: the files that are different now, notes
 // and assets alike, or that the vault has to be read again.
 type change struct {
-	paths  []string
-	reload bool
+	paths        []string
+	shouldReload bool
 	// renamed is the notes that are no longer where they were, each by where it
 	// was and where it now is.
 	renamed []domain.Move
@@ -20,7 +20,7 @@ type change struct {
 // certain it is current.
 func newChangeAudience() audience[change] {
 	return audience[change]{
-		fallback: func(change) change { return change{reload: true} },
+		fallback: func(change) change { return change{shouldReload: true} },
 		room:     8,
 	}
 }
@@ -29,7 +29,7 @@ func newChangeAudience() audience[change] {
 // put in front of the person. A place asked for while a listener is busy
 // replaces the one it has not read: what matters is the last place asked for.
 func newPlaceAudience() audience[domain.Place] {
-	return audience[domain.Place]{latest: true, room: 1}
+	return audience[domain.Place]{isLatest: true, room: 1}
 }
 
 // drawing is everyone drawing the vault, for a change to a note being made
@@ -42,9 +42,9 @@ func newPlaceAudience() audience[domain.Place] {
 // doing.
 func drawing() audience[domain.Edit] {
 	return audience[domain.Edit]{
-		latest: true,
-		about:  func(said domain.Edit) string { return said.Change },
-		keep:   func(said domain.Edit) bool { return said.Done },
-		room:   8,
+		isLatest: true,
+		about:    func(said domain.Edit) string { return said.Change },
+		keep:     func(said domain.Edit) bool { return said.IsDone },
+		room:     8,
 	}
 }

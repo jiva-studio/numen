@@ -49,14 +49,14 @@ type Extract struct {
 	// recipe: a chunk dropped as unreadable is not a different cut of the text.
 	Legibility chunking.Legibility
 
-	// RebuildIndex reads every file and puts it in the index again, whatever the
+	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it.
 	//
 	// What it remembers is a path, a size and a modification time, so a file whose
 	// content changed while those did not is skipped — an archive restored by
 	// `unzip`, a tree brought over by `rsync -tc`. Rebuilding is the way out of
 	// that, and the only one.
-	RebuildIndex bool
+	ShouldRebuildIndex bool
 
 	// OnProgress, if set, is called as each source is opened and as each one is
 	// written. A library takes minutes, and something has to be able to say how
@@ -140,7 +140,7 @@ func (u Extract) discover(
 		}
 		res.Seen++
 		found[ref.Path] = true
-		if previous, ok := held[ref.Path]; ok && !u.RebuildIndex && previous.IsUnchanged(ref) {
+		if previous, ok := held[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			return nil
 		}
@@ -276,7 +276,7 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			if u.holds(ctx, text.Artifact(r.Producer, r.Hash), text.Partial(r.Producer, r.Hash)) {
+			if u.hasAny(ctx, text.Artifact(r.Producer, r.Hash), text.Partial(r.Producer, r.Hash)) {
 				continue
 			}
 			ref, err := reader.Stat(ctx, r.Path)
@@ -295,9 +295,9 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 	return nil
 }
 
-// holds says the store has something under one of these names. A reading
+// hasAny says the store has something under one of these names. A reading
 // still being written is the text of the pages read so far.
-func (u Extract) holds(ctx context.Context, names ...string) bool {
+func (u Extract) hasAny(ctx context.Context, names ...string) bool {
 	for _, name := range names {
 		if _, err := u.Derived.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
 			return true
@@ -357,11 +357,11 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	return nil
 }
 
-// One brings a single source's chunks up to date with its text.
+// ExtractOne brings a single source's chunks up to date with its text.
 //
 // It is what a recognition calls as it writes: the pages already read are cut
 // and can be embedded while the rest of the document is still being read.
-func (u Extract) One(ctx context.Context, v domain.Vault, path string) (ExtractResult, error) {
+func (u Extract) ExtractOne(ctx context.Context, v domain.Vault, path string) (ExtractResult, error) {
 	var res ExtractResult
 	reader, err := u.Readers.Open(v)
 	if err != nil {

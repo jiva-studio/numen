@@ -50,9 +50,9 @@ type ReplaceResult struct {
 	// Matched is the span as the note held it, which is not always the text the
 	// caller asked for.
 	Matched string
-	// Plainly says the span was found only once punctuation or spacing were
+	// IsPlain says the span was found only once punctuation or spacing were
 	// allowed to differ.
-	Plainly bool
+	IsPlain bool
 }
 
 // MissingSpan is a span that is not in the note, and where a copy of it stopped
@@ -117,7 +117,7 @@ func (u Replace) Execute(
 		case becomes != "" && strings.Contains(body, becomes):
 			return ErrAlreadyWritten
 		default:
-			return nowhere(body, stood)
+			return newMissingSpan(body, stood)
 		}
 
 		span := where[0]
@@ -137,7 +137,7 @@ func (u Replace) Execute(
 
 		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
 		done.Matched = body[span.From:span.To]
-		done.Plainly = plainly
+		done.IsPlain = plainly
 		return nil
 	})
 	if err != nil {
@@ -147,12 +147,12 @@ func (u Replace) Execute(
 	return done, nil
 }
 
-// nowhere is what to say about a span that is not in the note: how much of
+// newMissingSpan is what to say about a span that is not in the note: how much of
 // its opening does stand there, and what stands in its place.
 //
 // The opening is found by halving, which the text being present for every
 // shorter opening allows.
-func nowhere(body, stood string) MissingSpan {
+func newMissingSpan(body, stood string) MissingSpan {
 	low, high := 0, len(stood)
 	for low < high {
 		middle := low + (high-low+1)/2

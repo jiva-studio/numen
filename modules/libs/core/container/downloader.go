@@ -34,10 +34,10 @@ func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) so
 		Derived:     c.GetDerivedStores(),
 		By:          by,
 		CopyMaxSize: c.Importing.CopyBytes(),
-		ToVault:     c.Importing.HasCopiesInVault(),
+		IsToVault:   c.Importing.HasCopiesInVault(),
 		Writers:     c.VaultWriters(),
 		Languages:   c.Importing.Captions,
-		Automatic:   c.Importing.CanUseAutomaticCaptions(),
+		IsAutomatic: c.Importing.CanUseAutomaticCaptions(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			return level(ctx, v, []string{path})
 		},

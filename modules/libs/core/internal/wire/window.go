@@ -263,7 +263,7 @@ func describeTasks(list []task.Task) []*v1.Task {
 			Done:  at.Count,
 			Total: at.Total,
 			Error: at.Error,
-			Asked: at.Asked,
+			Asked: at.IsAsked,
 			Unit:  unitOf(at.Unit),
 		})
 	}
@@ -329,9 +329,9 @@ type leaving struct {
 type client struct {
 	told chan string
 	said owed
-	// gone is a page whose stream ended with a question standing. It is told
+	// isGone is a page whose stream ended with a question standing. It is told
 	// nothing and answers nothing; a page that listens takes it over.
-	gone bool
+	isGone bool
 }
 
 // round is one asking of every page, and how far it has got.
@@ -344,9 +344,9 @@ type round struct {
 	over chan struct{}
 
 	// The lock of the leaving that made this round is held for these.
-	settled bool
-	raised  bool
-	past    bool
+	isSettled bool
+	isRaised  bool
+	isPast    bool
 }
 
 // isPending reports whether a question a person has to answer is outstanding.
@@ -371,7 +371,7 @@ func (l *leaving) listen() (string, <-chan string, func()) {
 	// One window draws one vault, so a page that listens is the page that went,
 	// and it takes over what that one was holding.
 	for token, p := range l.pages {
-		if p.gone {
+		if p.isGone {
 			delete(l.pages, token)
 		}
 	}
@@ -389,7 +389,7 @@ func (l *leaving) listen() (string, <-chan string, func()) {
 
 // isAsking reports whether a round is running. The lock is held.
 func (l *leaving) isAsking() bool {
-	return l.round != nil && !l.round.past
+	return l.round != nil && !l.round.isPast
 }
 
 // left is one client no longer listening.
@@ -397,7 +397,7 @@ func (l *leaving) left(token string, p *client) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if l.pages[token] != p || p.gone {
+	if l.pages[token] != p || p.isGone {
 		return
 	}
 	close(p.told)
@@ -406,7 +406,7 @@ func (l *leaving) left(token string, p *client) {
 	// a round waits its bound for.
 	if p.said == asks {
 		p.said = silent
-		p.gone = true
+		p.isGone = true
 	} else {
 		delete(l.pages, token)
 	}
@@ -421,7 +421,7 @@ func (l *leaving) ask() *round {
 	defer l.mu.Unlock()
 
 	if l.isAsking() {
-		l.round.past = true
+		l.round.isPast = true
 		close(l.round.over)
 	}
 	l.round = &round{
@@ -431,7 +431,7 @@ func (l *leaving) ask() *round {
 	}
 	for token, p := range l.pages {
 		p.said = silent
-		if p.gone {
+		if p.isGone {
 			continue
 		}
 		select {
@@ -452,7 +452,7 @@ func (l *leaving) endRound() {
 	if !l.isAsking() {
 		return
 	}
-	l.round.past = true
+	l.round.isPast = true
 	close(l.round.over)
 	l.round = nil
 }
@@ -473,7 +473,7 @@ func (l *leaving) recordFlush(token string, said owed) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if p, listening := l.pages[token]; listening && !p.gone {
+	if p, listening := l.pages[token]; listening && !p.isGone {
 		p.said = said
 	}
 	l.reckon()
@@ -483,16 +483,16 @@ func (l *leaving) recordFlush(token string, said owed) {
 // a person has to answer is outstanding. The lock is held.
 func (l *leaving) reckon() {
 	r := l.round
-	if r == nil || r.past {
+	if r == nil || r.isPast {
 		return
 	}
 	for _, p := range l.pages {
-		if p.said == asks && !r.raised {
-			r.raised = true
+		if p.said == asks && !r.isRaised {
+			r.isRaised = true
 			close(r.questions)
 		}
 	}
-	if r.settled {
+	if r.isSettled {
 		return
 	}
 	for _, p := range l.pages {
@@ -500,6 +500,6 @@ func (l *leaving) reckon() {
 			return
 		}
 	}
-	r.settled = true
+	r.isSettled = true
 	close(r.written)
 }

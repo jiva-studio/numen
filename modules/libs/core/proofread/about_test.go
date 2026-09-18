@@ -112,7 +112,7 @@ func TestATranscriptSayingNothingIsDescribedAsNothing(t *testing.T) {
 // The digest stands before the first line of the question, and the lines are
 // asked about as they always were.
 func TestTheDigestStandsBeforeTheFirstLine(t *testing.T) {
-	batch := proofread.Batch{Number: 0, Joinable: true, Context: "The speech opens: Ganaka spoke.", Lines: []proofread.Line{
+	batch := proofread.Batch{Number: 0, IsJoinable: true, Context: "The speech opens: Ganaka spoke.", Lines: []proofread.Line{
 		{Number: 0, Text: "Ganaka spoke"},
 		{Number: 1, Text: "to the assembly."},
 	}}

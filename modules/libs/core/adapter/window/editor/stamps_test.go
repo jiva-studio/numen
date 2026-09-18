@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"reflect"
 	"strings"
 	"testing"
@@ -41,7 +42,7 @@ func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
 // a map key compares by zone and by monotonic reading as well as by instant, so
 // one picture would be two keys and the cache would never answer.
 func TestTheWindowsFingerprintIsAKeyOfPlainNumbers(t *testing.T) {
-	held := reflect.TypeOf(fingerprint{})
+	held := reflect.TypeOf(pool.Fingerprint{})
 	if !held.Comparable() {
 		t.Fatal("the window's fingerprint cannot be a map key at all")
 	}

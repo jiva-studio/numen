@@ -60,7 +60,7 @@ func describeLink(from domain.Vault, l domain.ResolvedLink) string {
 		where = l.Target.String() + "  (no connected vault holds this note)"
 	case where == "":
 		where = l.Target.String()
-	case l.Ambiguous:
+	case l.IsAmbiguous:
 		where += "  (several notes answer to that name)"
 	}
 	if vault, crossed := l.InVault(from.ID); crossed {

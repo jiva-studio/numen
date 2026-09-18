@@ -52,16 +52,6 @@ const (
 	Copies     = "copy"
 )
 
-// kind is the folder a producer's files stand in, which is what they are. A
-// kind one producer writes is that producer's own name: there is nothing to
-// tell its files apart from.
-func kind(producer string) string {
-	if isTimed(producer) {
-		return Transcript
-	}
-	return producer
-}
-
 // getName is the name one of a producer's files stands under inside its kind:
 // the hash, then the producer where the kind has more than one, then what the
 // file is.
@@ -104,12 +94,12 @@ type Reader struct {
 	Documents port.TextExtractor
 }
 
-// Of is the text a source's chunks are places in.
+// GetDocument is the text a source's chunks are places in.
 //
 // A source naming a producer reads what that producer wrote or reads nothing.
 // Falling back to the document would slice one text at another text's offsets,
 // which is a wrong answer given confidently and is worse than no answer.
-func (r Reader) Of(ctx context.Context, path, producer, hash string) (*Document, error) {
+func (r Reader) GetDocument(ctx context.Context, path, producer, hash string) (*Document, error) {
 	if producer != "" {
 		// A note naming a producer is a link: what a person wrote and what was
 		// fetched for the address they wrote it about are one text, and an

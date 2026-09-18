@@ -89,16 +89,16 @@ func getImports(t *testing.T, pkg string) []string {
 // the walk is passing on an empty read.
 func TestWhatTheBaselineShrinkRuleRefuses(t *testing.T) {
 	for _, one := range []struct {
-		from, to string
-		admits   bool
+		from, to   string
+		isAdmitted bool
 	}{
 		{"container", "internal/chunking", true},
 		{"container", "task", true},
 		{"adapter/cli", "internal/adapter/trash", false},
 		{"adapter/settings", "port", false},
 	} {
-		if got := isAdmitting(t, one.from, one.to); got != one.admits {
-			if one.admits {
+		if got := isAdmitting(t, one.from, one.to); got != one.isAdmitted {
+			if one.isAdmitted {
 				t.Errorf("the baseline entry %s → %s admits nothing", one.from, one.to)
 			} else {
 				t.Errorf("%s → %s needs no baseline entry and the rule admits one", one.from, one.to)

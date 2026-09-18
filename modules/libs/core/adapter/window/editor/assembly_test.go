@@ -59,13 +59,13 @@ func (w watched) StartVault(
 	unwatched error,
 ) {
 	asked := w.cfg
-	asked.RebuildIndex = rebuild
+	asked.ShouldRebuildIndex = rebuild
 
 	opening := asked.VaultOpenerWith(w.db, w.readers, w.watcher)
-	opening.Rebuild = rebuild
+	opening.ShouldRebuild = rebuild
 	opening.ErrorHandler = handleError
 	if told != nil {
-		opening.Told = func(m container.VaultChanges) { told(m.Paths, m.Assets, m.Reload) }
+		opening.Told = func(m container.VaultChanges) { told(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
 	open := opening.Begin(ctx, v)

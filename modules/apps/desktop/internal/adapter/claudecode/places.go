@@ -69,7 +69,7 @@ func found(home string, places []string) string {
 			continue
 		}
 		for _, match := range matches {
-			if runnable(match) {
+			if isRunnable(match) {
 				return match
 			}
 		}
@@ -77,12 +77,12 @@ func found(home string, places []string) string {
 	return ""
 }
 
-// runnable is a file with an execute bit on it, held under the name it was
+// isRunnable is a file with an execute bit on it, held under the name it was
 // looked for by.
 //
 // A mac filesystem answers to a name in any case, so the folder is asked which
 // name it keeps.
-func runnable(path string) bool {
+func isRunnable(path string) bool {
 	about, err := os.Stat(path)
 	if err != nil || !about.Mode().IsRegular() || about.Mode().Perm()&0o111 == 0 {
 		return false

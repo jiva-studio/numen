@@ -204,11 +204,11 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 			if err != nil {
 				return nil, out{}, err
 			}
-			res.Cards = append(res.Cards, only(newCard(read.Body.Cards[at]), in.Fields))
+			res.Cards = append(res.Cards, keepFields(newCard(read.Body.Cards[at]), in.Fields))
 			return nil, res, nil
 		}
 		for _, card := range read.Body.Cards[from:min(from+limit, len(read.Body.Cards))] {
-			res.Cards = append(res.Cards, only(newCard(card), in.Fields))
+			res.Cards = append(res.Cards, keepFields(newCard(card), in.Fields))
 		}
 		return nil, res, nil
 	})
@@ -657,11 +657,11 @@ func newCard(card format.Card) Card {
 	return out
 }
 
-// only is the card holding the named fields alone, matched by the name the card
+// keepFields is the card holding the named fields alone, matched by the name the card
 // writes over the value, which is not always the name its stencil declares: a
 // deck a rename did not reach writes the old one. A call naming no field asks
 // for the whole card.
-func only(card Card, fields []string) Card {
+func keepFields(card Card, fields []string) Card {
 	if len(fields) == 0 {
 		return card
 	}

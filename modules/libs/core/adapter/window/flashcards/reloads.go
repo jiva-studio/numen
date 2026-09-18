@@ -60,9 +60,9 @@ func (f *following) say() {
 // is the command's: this holds the listeners and nothing else.
 func (a *API) ReportChange() { a.listeners.say() }
 
-// Follows says ReportChange for everything one channel reports, until it closes
+// Follow says ReportChange for everything one channel reports, until it closes
 // or ctx is done.
-func (a *API) Follows(ctx context.Context, moved <-chan struct{}) {
+func (a *API) Follow(ctx context.Context, moved <-chan struct{}) {
 	go func() {
 		for {
 			select {

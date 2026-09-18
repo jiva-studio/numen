@@ -68,7 +68,7 @@ func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 	for _, one := range []struct {
 		was, put    string
 		least, most float64
-		kept        bool
+		isKept      bool
 	}{
 		// A misread word, and diacritics the page prints.
 		{"the Sodërby gardin hcdge.", "the Södërby garden hedge.", 0.05, 0.15, true},
@@ -83,8 +83,8 @@ func TestTheLettersOfACorrectionMayOnlyMoveSoFar(t *testing.T) {
 		if apart < one.least || apart > one.most {
 			t.Errorf("%q -> %q stands %.4f apart, want between %v and %v", one.was, one.put, apart, one.least, one.most)
 		}
-		if kept := apart <= proofread.MaxEditDistance; kept != one.kept {
-			t.Errorf("%q -> %q stands %.4f apart, kept %v, want kept %v", one.was, one.put, apart, kept, one.kept)
+		if kept := apart <= proofread.MaxEditDistance; kept != one.isKept {
+			t.Errorf("%q -> %q stands %.4f apart, kept %v, want kept %v", one.was, one.put, apart, kept, one.isKept)
 		}
 	}
 }

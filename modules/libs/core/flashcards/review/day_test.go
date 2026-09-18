@@ -54,8 +54,8 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	now := time.Date(2026, 3, 10, 9, 0, 0, 0, in)
 
 	for name, one := range map[string]struct {
-		due  time.Time
-		owed bool
+		due    time.Time
+		isOwed bool
 	}{
 		"days ago":             {now.Add(-72 * time.Hour), true},
 		"this morning":         {now.Add(-time.Hour), true},
@@ -65,8 +65,8 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := review.Schedule{Due: one.due, Last: now.Add(-24 * time.Hour)}
-			if got := day.IsOwed(s, now); got != one.owed {
-				t.Errorf("a card due %v is owed = %v, want %v", one.due, got, one.owed)
+			if got := day.IsOwed(s, now); got != one.isOwed {
+				t.Errorf("a card due %v is owed = %v, want %v", one.due, got, one.isOwed)
 			}
 		})
 	}

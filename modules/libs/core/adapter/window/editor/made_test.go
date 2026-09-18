@@ -24,9 +24,9 @@ func unmade(t *testing.T, notes map[string]string) *cutting {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	f.opened.API.Cards.Create.Index = refuseToLevel
+	f.installation.API.Cards.Create.Index = refuseToLevel
 
-	route, handler := numenv1connect.NewCardsServiceHandler(f.opened.API)
+	route, handler := numenv1connect.NewCardsServiceHandler(f.installation.API)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewUnstartedServer(mux)
@@ -91,7 +91,7 @@ func TestADeckTheIndexWouldNotComeLevelWithIsAnsweredWithItsPath(t *testing.T) {
 func TestANoteMadeWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
-	f.opened.API.Notes.Create.Index = refuseToLevel
+	f.installation.API.Notes.Create.Index = refuseToLevel
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -117,7 +117,7 @@ func TestAFileRemovedWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 			"# Entropy\n",
 	})
 	waitForScan(t, f)
-	f.opened.API.Notes.Remove.Index = refuseToLevel
+	f.installation.API.Notes.Remove.Index = refuseToLevel
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",

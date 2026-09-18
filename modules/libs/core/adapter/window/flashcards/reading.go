@@ -130,10 +130,10 @@ func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
 // has lasted.
 func (a *API) walk(ctx context.Context, read ReadVault, v domain.Vault, held bool) {
 	at := task.Task{
-		ID:    "reading\t" + string(v.ID),
-		Doing: "Reading the vault",
-		About: v.Name,
-		Asked: !held,
+		ID:      "reading\t" + string(v.ID),
+		Doing:   "Reading the vault",
+		About:   v.Name,
+		IsAsked: !held,
 	}
 	a.say(at)
 

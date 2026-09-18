@@ -48,7 +48,7 @@ func FuzzReadLog(f *testing.F) {
 			if a.ID == "" {
 				t.Fatalf("%q was read as an answer of no identifier", raw)
 			}
-			if a.TakesBack() {
+			if a.IsUndo() {
 				continue
 			}
 			if a.CardFace.Card == "" || a.CardFace.Face == "" || !a.Rating.Valid() {
@@ -127,7 +127,7 @@ func FuzzWriteAnswer(f *testing.F) {
 		// A line the reader refuses is one it could not have written: it carries
 		// no identifier, or it answers with a rating that is not one of the four.
 		refused := want.ID == "" ||
-			(!want.TakesBack() && (want.CardFace.Card == "" ||
+			(!want.IsUndo() && (want.CardFace.Card == "" ||
 				want.CardFace.Face == "" || !want.Rating.Valid()))
 		if refused {
 			if len(answers) != 0 || skipped != 1 {

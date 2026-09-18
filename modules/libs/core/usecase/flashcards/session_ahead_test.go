@@ -76,13 +76,13 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct {
-		what string
-		even bool
+		what   string
+		isEven bool
 	}{{"an even load", true}, {"no even load", false}} {
 		s := openVault(t, map[string]string{
 			"Term.md": term,
 			"On.md": preset(fmt.Sprintf("goal: minutes_a_day\nminutes_a_day: 1440\n"+
-				"new_a_day: 0\nreviews_a_day: 9999\neven_load: %t\n", one.even)),
+				"new_a_day: 0\nreviews_a_day: 9999\neven_load: %t\n", one.isEven)),
 			"decks/On.md": deckOf("On", 60, 0),
 		})
 		// Every card face put into review long ago, so each comes back in days

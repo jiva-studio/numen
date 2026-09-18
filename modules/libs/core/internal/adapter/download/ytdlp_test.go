@@ -11,20 +11,20 @@ import (
 // refusing it.
 func TestWhichLanguageTheWordsAreAskedFor(t *testing.T) {
 	for _, one := range []struct {
-		found     port.Metadata
-		languages []string
-		automatic bool
-		want      string
+		found       port.Metadata
+		languages   []string
+		isAutomatic bool
+		want        string
 	}{
 		{port.Metadata{Captions: []string{"de", "en", "ru"}}, []string{"ru", "en"}, true, "ru"},
 		{port.Metadata{Captions: []string{"de", "en"}}, []string{"ru"}, true, "de"},
-		{port.Metadata{Automatic: []string{"ab", "en-orig", "zu"}}, nil, true, "en-orig"},
-		{port.Metadata{Automatic: []string{"ab", "en-orig"}}, []string{"en"}, true, "en-orig"},
-		{port.Metadata{Automatic: []string{"ab", "en-orig"}}, nil, false, ""},
-		{port.Metadata{Captions: []string{"en"}, Automatic: []string{"ru-orig"}}, nil, true, "en"},
+		{port.Metadata{IsAutomatic: []string{"ab", "en-orig", "zu"}}, nil, true, "en-orig"},
+		{port.Metadata{IsAutomatic: []string{"ab", "en-orig"}}, []string{"en"}, true, "en-orig"},
+		{port.Metadata{IsAutomatic: []string{"ab", "en-orig"}}, nil, false, ""},
+		{port.Metadata{Captions: []string{"en"}, IsAutomatic: []string{"ru-orig"}}, nil, true, "en"},
 		{port.Metadata{}, []string{"en"}, true, ""},
 	} {
-		if got := language(one.found, one.languages, one.automatic); got != one.want {
+		if got := language(one.found, one.languages, one.isAutomatic); got != one.want {
 			t.Errorf("%+v with %v: asked for %q, want %q",
 				one.found, one.languages, got, one.want)
 		}

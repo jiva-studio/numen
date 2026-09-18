@@ -723,7 +723,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 		t.Fatal(err)
 	}
 	rewrite(t, s, func(was *plantedCache) {
-		was.V += 1
+		was.V++
 		was.Faces = append(was.Faces, plantedFace{
 			Card: invented.Card, Face: invented.Face,
 			Due: formatTime(time.Now()), Last: formatTime(time.Now()), Reps: 7,

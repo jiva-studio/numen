@@ -10,7 +10,7 @@ import (
 // every class but the blank, and the last of them is the space.
 func TestTheDictionaryHoldsAnEntryForEveryClassButTheBlank(t *testing.T) {
 	cfg := Defaults()
-	cfg.Download = false
+	cfg.ShouldDownload = false
 	_, found, err := locate(t.Context(), cfg)
 	if err != nil {
 		t.Skipf("no models on this machine: %v", err)

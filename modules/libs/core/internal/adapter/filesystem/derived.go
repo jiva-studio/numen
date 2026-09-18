@@ -74,12 +74,12 @@ type places struct {
 	areas map[string]string
 }
 
-// holds says a resolved name is inside the area it claims. An area is one
+// isInside says a resolved name is inside the area it claims. An area is one
 // folder of the store's own, so a link standing where an area should be holds
 // nothing.
-func (p *places) holds(real, area string) bool {
+func (p *places) isInside(resolved, area string) bool {
 	bound, named := p.areas[area]
-	return named && isUnderRoot(real, bound)
+	return named && isUnderRoot(resolved, bound)
 }
 
 // current says the store's folder still resolves to the place found.
@@ -94,7 +94,7 @@ func (d *DerivedStore) current(p *places) bool {
 
 // locate resolves the store's folder and places each area inside it.
 func (d *DerivedStore) locate() (*places, error) {
-	root, err := deepest(d.root)
+	root, err := getDeepestExisting(d.root)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +108,8 @@ func (d *DerivedStore) locate() (*places, error) {
 // fileInfo is a file as it stood: what says whether it is still the one read.
 type fileInfo struct{ stat os.FileInfo }
 
-// holds reports whether a file is the one a fileInfo was taken of.
-func (s *fileInfo) holds(now os.FileInfo) bool {
+// isSameFile reports whether a file is the one a fileInfo was taken of.
+func (s *fileInfo) isSameFile(now os.FileInfo) bool {
 	return s != nil && os.SameFile(s.stat, now) &&
 		s.stat.Size() == now.Size() && s.stat.ModTime().Equal(now.ModTime())
 }
@@ -435,7 +435,7 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 // written in: the same file, of the same length and the same age, carries the
 // identity already read out of it. Anything else is read again.
 func (d *DerivedStore) still() error {
-	if now, err := os.Stat(configAt(d.vault, d.service)); err == nil && d.last.Load().holds(now) {
+	if now, err := os.Stat(configAt(d.vault, d.service)); err == nil && d.last.Load().isSameFile(now) {
 		return nil
 	}
 	id, was, err := carried(d.vault, d.service)
@@ -545,11 +545,11 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	}
 	target := filepath.Join(d.root, filepath.FromSlash(clean))
 
-	real, err := deepest(target)
+	resolved, err := getDeepestExisting(target)
 	if err != nil {
 		return "", err
 	}
-	enclosed, err := d.encloses(real, area)
+	enclosed, err := d.encloses(resolved, area)
 	if err != nil {
 		return "", err
 	}
@@ -566,8 +566,8 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 // The folder it is judged against is the one resolved last, and an answer
 // stands only while the store's folder is still that one. A name it refuses,
 // and a folder that has moved, are judged against where the folder is now.
-func (d *DerivedStore) encloses(real, area string) (bool, error) {
-	if where := d.where.Load(); where != nil && where.holds(real, area) && d.current(where) {
+func (d *DerivedStore) encloses(resolved, area string) (bool, error) {
+	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.current(where) {
 		return true, nil
 	}
 	where, err := d.locate()
@@ -575,5 +575,5 @@ func (d *DerivedStore) encloses(real, area string) (bool, error) {
 		return false, err
 	}
 	d.where.Store(where)
-	return where.holds(real, area), nil
+	return where.isInside(resolved, area), nil
 }

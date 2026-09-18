@@ -151,8 +151,8 @@ func (c Config) SetSettings(said Settings) Config {
 	c.ScanProofreading = said.Indexing.Recognition.Proofread
 	c.TranscriptProofreading = said.Indexing.Transcription.Proofread
 	c.Transcription = said.Indexing.Transcription.Config
-	c.Transcribes = said.Indexing.CanTranscribe()
-	c.TranscribesUnder = said.Indexing.TranscribesUnder()
+	c.ShouldTranscribe = said.Indexing.CanTranscribe()
+	c.TranscribesUnder = said.Indexing.GetTranscribeLimit()
 	c.Agent = said.Agent
 	c.Importing = said.Importing
 	return c

@@ -228,7 +228,7 @@ func TestCutIsPure(t *testing.T) {
 	first := Cut(text, given, sizes, Legibility{})
 	second := Cut(text, given, sizes, Legibility{})
 
-	if !same(first, second) {
+	if !isSame(first, second) {
 		t.Error("two cuts of the same text disagree")
 	}
 	for i := range given {
@@ -368,7 +368,7 @@ func equal(got, want []string) bool {
 	return true
 }
 
-func same(a, b []Chunk) bool {
+func isSame(a, b []Chunk) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -376,7 +376,7 @@ func same(a, b []Chunk) bool {
 		if a[i].Start != b[i].Start || a[i].Length != b[i].Length || a[i].Location != b[i].Location {
 			return false
 		}
-		if !same(a[i].Small, b[i].Small) {
+		if !isSame(a[i].Small, b[i].Small) {
 			return false
 		}
 	}

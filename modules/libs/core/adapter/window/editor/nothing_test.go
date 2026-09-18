@@ -25,13 +25,13 @@ import (
 // nothing is an installation holding no vault, the window it opens, and a
 // client asking about it the way the window does.
 type nothing struct {
-	opened    *editor.Installation
-	vault     questions
-	drawn     numenv1connect.WindowServiceClient
-	holds     numenv1connect.VaultsServiceClient
-	server    *httptest.Server
-	cfg       container.Config
-	elsewhere string
+	installation *editor.Installation
+	vault        questions
+	drawn        numenv1connect.WindowServiceClient
+	holds        numenv1connect.VaultsServiceClient
+	server       *httptest.Server
+	cfg          container.Config
+	elsewhere    string
 }
 
 // openEmptyWindow opens a window on an installation that has added nothing.
@@ -50,29 +50,29 @@ func openEmptyWindow(t *testing.T) *nothing {
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 	}
-	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
+	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
 	}
-	t.Cleanup(func() { opened.Close() })
+	t.Cleanup(func() { installation.Close() })
 
 	// The welcome screen's way into a vault: the list opens one in this window.
-	opened.API.Opens = opened.Show
+	installation.API.Opens = installation.Show
 
-	server := httptest.NewUnstartedServer(opened.API.NewHandler(http.NotFoundHandler()))
+	server := httptest.NewUnstartedServer(installation.API.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)
 	t.Cleanup(server.Close)
 
 	return &nothing{
-		opened:    opened,
-		vault:     asks(server.Client(), server.URL),
-		drawn:     numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
-		holds:     numenv1connect.NewVaultsServiceClient(server.Client(), server.URL),
-		server:    server,
-		cfg:       cfg,
-		elsewhere: elsewhere,
+		installation: installation,
+		vault:        asks(server.Client(), server.URL),
+		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
+		holds:        numenv1connect.NewVaultsServiceClient(server.Client(), server.URL),
+		server:       server,
+		cfg:          cfg,
+		elsewhere:    elsewhere,
 	}
 }
 
@@ -82,7 +82,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T) {
 	f := openEmptyWindow(t)
 
-	if got := f.opened.GetShownVault(); got != (domain.Vault{}) {
+	if got := f.installation.GetShownVault(); got != (domain.Vault{}) {
 		t.Errorf("the window opened on %+v, want no vault", got)
 	}
 
@@ -209,7 +209,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				_ = f.opened.API.GetWindow().Focus(asking, domain.Place{Path: "Somewhere.md"})
+				_ = f.installation.API.GetWindow().Focus(asking, domain.Place{Path: "Somewhere.md"})
 			}
 		}
 	}()
@@ -415,7 +415,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.opened.GetShownVault().ID); got != added.Msg.GetVault().GetId() {
+	if got := string(f.installation.GetShownVault().ID); got != added.Msg.GetVault().GetId() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 

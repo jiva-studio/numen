@@ -212,7 +212,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 20, search.DefaultFloor)
+	near, err := dense.FindNearest(ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -523,7 +523,7 @@ func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	c := newCorpus(t)
 	c.vectorise(t, c.first, newVector(+1))
 
-	under, err := c.db.ChunkQueries().Nearest(
+	under, err := c.db.ChunkQueries().FindNearest(
 		ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
@@ -532,7 +532,7 @@ func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 		t.Fatal("nothing came back under the recipe the vectors were written with")
 	}
 
-	astray, err := c.db.ChunkQueries().Nearest(
+	astray, err := c.db.ChunkQueries().FindNearest(
 		ctx, c.first.ID, model.String(), newVector(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
@@ -608,7 +608,7 @@ func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by name answered %d sections of books in a vault of notes", len(named))
 	}
 
-	dense, err := queries.Nearest(ctx, c.first.ID, model.Recipe(), newVector(+1), books, 20, -1)
+	dense, err := queries.FindNearest(ctx, c.first.ID, model.Recipe(), newVector(+1), books, 20, -1)
 	if err != nil {
 		t.Fatal(err)
 	}

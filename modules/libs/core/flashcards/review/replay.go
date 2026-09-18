@@ -138,7 +138,7 @@ func (h History) walkAnswers(
 func getGivenAnswers(answers []Answer) []Answer {
 	taken := make(map[string]bool)
 	for _, a := range answers {
-		if a.TakesBack() {
+		if a.IsUndo() {
 			taken[a.Undoes] = true
 		}
 	}
@@ -146,7 +146,7 @@ func getGivenAnswers(answers []Answer) []Answer {
 	seen := make(map[string]bool, len(answers))
 	out := make([]Answer, 0, len(answers))
 	for _, a := range answers {
-		if a.TakesBack() || taken[a.ID] || seen[a.ID] {
+		if a.IsUndo() || taken[a.ID] || seen[a.ID] {
 			continue
 		}
 		seen[a.ID] = true

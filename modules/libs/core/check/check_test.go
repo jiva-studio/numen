@@ -42,7 +42,7 @@ func run(t *testing.T, l check.Checks, v domain.Vault, named ...domain.Check) []
 	return found
 }
 
-func only(found []domain.VaultProblem, check domain.Check) []domain.VaultProblem {
+func filterByCheck(found []domain.VaultProblem, check domain.Check) []domain.VaultProblem {
 	var out []domain.VaultProblem
 	for _, p := range found {
 		if p.Kind == check {
@@ -61,7 +61,7 @@ func TestAnAmbiguousLinkIsTheProblemOfTheNoteThatWroteIt(t *testing.T) {
 		"Heat.md":              "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})
 
-	found := only(run(t, l, v), domain.CheckAmbiguous)
+	found := filterByCheck(run(t, l, v), domain.CheckAmbiguous)
 	if len(found) != 1 {
 		t.Fatalf("want one ambiguous link, got %+v", found)
 	}
@@ -85,7 +85,7 @@ func TestANameThatResolvesExactlyIsNotAmbiguous(t *testing.T) {
 		"Heat.md":            "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})
 
-	if found := only(run(t, l, v), domain.CheckAmbiguous); len(found) != 0 {
+	if found := filterByCheck(run(t, l, v), domain.CheckAmbiguous); len(found) != 0 {
 		t.Errorf("the link reaches one note exactly: %+v", found)
 	}
 }
@@ -97,7 +97,7 @@ func TestADanglingLinkArrivesOnlyWhenAskedFor(t *testing.T) {
 		"Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})
 
-	if found := only(run(t, l, v), domain.CheckDangling); len(found) != 0 {
+	if found := filterByCheck(run(t, l, v), domain.CheckDangling); len(found) != 0 {
 		t.Errorf("dangling should be quiet by default: %+v", found)
 	}
 
@@ -131,11 +131,11 @@ func TestWhatOneFileGotWrongIsReportedAgainstThatFile(t *testing.T) {
 	})
 	found := run(t, l, v)
 
-	parsed := only(found, domain.CheckParse)
+	parsed := filterByCheck(found, domain.CheckParse)
 	if len(parsed) != 1 || parsed[0].Path != "Heat.md" {
 		t.Errorf("want the link with no role against Heat.md, got %+v", parsed)
 	}
-	unreadable := only(found, domain.CheckFrontmatter)
+	unreadable := filterByCheck(found, domain.CheckFrontmatter)
 	if len(unreadable) != 1 || unreadable[0].Path != "Broken.md" {
 		t.Fatalf("want the unreadable block against Broken.md, got %+v", unreadable)
 	}

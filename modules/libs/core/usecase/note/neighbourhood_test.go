@@ -66,7 +66,7 @@ func describeEdge(t *testing.T, files map[string]string, from, to string) string
 		if r.Label != "" {
 			drawn = append(drawn, r.Label)
 		}
-		if r.Mutual {
+		if r.IsMutual {
 			drawn = append(drawn, "mutual")
 		}
 		return strings.Join(drawn, " ")

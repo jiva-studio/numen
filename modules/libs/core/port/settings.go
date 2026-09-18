@@ -30,8 +30,8 @@ type Model struct {
 	Title string
 	Shelf string
 
-	// Default marks the model an installation nobody has configured runs on.
-	Default bool
+	// IsDefault marks the model an installation nobody has configured runs on.
+	IsDefault bool
 
 	// Writes is what choosing it writes. A model that decides more than its own
 	// name writes more than one setting.

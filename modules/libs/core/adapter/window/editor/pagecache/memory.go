@@ -1,19 +1,23 @@
-package editor
+// Package pagecache holds the pages a document has been drawn into, in memory
+// and on the disk beside it. A drawing is made from the document alone, so
+// either half may be emptied at any moment and the page is drawn again.
+package pagecache
 
 import (
 	"container/list"
 	"context"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"sync"
 )
 
-// pictureID is one drawn page: which document it belongs to, which page it is, and
+// ID is one drawn page: which document it belongs to, which page it is, and
 // how wide it was drawn. The width is part of the key because the window asks
 // for the width its screen has, and a page drawn for one width is not the page
 // another width asks for.
-type pictureID struct {
-	document fingerprint
-	page     int
-	width    int
+type ID struct {
+	Document pool.Fingerprint
+	Page     int
+	Width    int
 }
 
 // picture is one page drawn and encoded, or the drawing of it under way.
@@ -29,24 +33,24 @@ func (p *picture) wait(ctx context.Context) ([]byte, error) {
 	case <-p.ready:
 		return p.body, p.why
 	case <-ctx.Done():
-		return nil, errBusy
+		return nil, pool.ErrBusy
 	}
 }
 
 // entry is one picture in the order it was last asked for.
 type entry struct {
-	key pictureID
+	key ID
 	pic *picture
 }
 
-// pictures are the pages already drawn, the least recently asked for dropped
+// Memory are the pages already drawn, the least recently asked for dropped
 // once what is held reaches the bound.
 //
 // They are held in memory alone: a page is drawn again in a fraction of a
 // second, and what is here goes when the window does.
-type pictures struct {
+type Memory struct {
 	mu    sync.Mutex
-	index map[pictureID]*list.Element
+	index map[ID]*list.Element
 	order *list.List
 	// bytes is what the drawings held come to, and limit is what they may come
 	// to.
@@ -54,17 +58,17 @@ type pictures struct {
 	limit int
 }
 
-// mostDrawn is how many bytes of drawn pages are held.
-const mostDrawn = 64 << 20
+// MostDrawn is how many bytes of drawn pages are held.
+const MostDrawn = 64 << 20
 
-// drawings is a window with nothing drawn yet.
-func drawings() *pictures {
-	return &pictures{index: map[pictureID]*list.Element{}, order: list.New(), limit: mostDrawn}
+// NewMemory is a window with nothing drawn yet, holding up to this many bytes.
+func NewMemory(limit int) *Memory {
+	return &Memory{index: map[ID]*list.Element{}, order: list.New(), limit: limit}
 }
 
-// draw hands over one drawn page, drawing it where it is not held. Several asks
+// Draw hands over one drawn page, drawing it where it is not held. Several asks
 // for the same page draw it once and are answered with the one drawing.
-func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte, error)) ([]byte, error) {
+func (p *Memory) Draw(ctx context.Context, key ID, drawn func() ([]byte, error)) ([]byte, error) {
 	p.mu.Lock()
 	if el, held := p.index[key]; held {
 		p.order.MoveToFront(el)
@@ -87,7 +91,7 @@ func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte
 		return pic.body, pic.why
 	}
 	if pic.why != nil {
-		p.drop(key)
+		p.Drop(key)
 		return nil, pic.why
 	}
 	p.bytes += len(pic.body)
@@ -95,17 +99,17 @@ func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte
 	return pic.body, nil
 }
 
-// has says whether a page is drawn already, which is what deciding to draw one
+// Has says whether a page is drawn already, which is what deciding to draw one
 // ahead turns on.
-func (p *pictures) has(key pictureID) bool {
+func (p *Memory) Has(key ID) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	_, held := p.index[key]
 	return held
 }
 
-// drop takes one drawing out.
-func (p *pictures) drop(key pictureID) {
+// Drop takes one drawing out.
+func (p *Memory) Drop(key ID) {
 	el, held := p.index[key]
 	if !held {
 		return
@@ -120,13 +124,13 @@ func (p *pictures) drop(key pictureID) {
 // trim drops the least recently asked for until what is held is inside the
 // bound. A drawing still being made is left alone: it is nobody's to count
 // until it is done.
-func (p *pictures) trim() {
+func (p *Memory) trim() {
 	for el := p.order.Back(); el != nil && p.bytes > p.limit; {
 		before := el.Prev()
 		oldest := el.Value.(*entry)
 		select {
 		case <-oldest.pic.ready:
-			p.drop(oldest.key)
+			p.Drop(oldest.key)
 		default:
 		}
 		el = before

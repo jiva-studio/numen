@@ -27,7 +27,7 @@ func proofreadTranscriptCommand(
 		return err
 	}
 	defer closeIfOpen(open.Close)
-	if !open.Held {
+	if !open.IsHeld {
 		return errors.New("nothing to proofread with: none is configured")
 	}
 
@@ -38,7 +38,7 @@ func proofreadTranscriptCommand(
 	// The line of lines rewrites itself, and is closed once it stops.
 	shown := false
 	proofread.Cut = func(ctx context.Context, v domain.Vault, path string) error {
-		_, err := cut.One(ctx, v, path)
+		_, err := cut.ExtractOne(ctx, v, path)
 		return err
 	}
 	proofread.OnProgress = func(res source.ProofreadTranscriptResult) {
@@ -56,11 +56,11 @@ func proofreadTranscriptCommand(
 	}
 
 	switch {
-	case res.Busy:
+	case res.IsBusy:
 		fmt.Fprintf(out, "%s is being listened to, and nothing was done\n", res.Path)
-	case res.Edited:
+	case res.IsEdited:
 		fmt.Fprintf(out, "the transcript of %s is somebody's own, and was left as it is\n", res.Path)
-	case res.None:
+	case res.IsNone:
 		fmt.Fprintf(out, "%s has no transcript to proofread\n", res.Path)
 	default:
 		fmt.Fprintf(out, "put %d lines of %s right over %d lines, %d batches left as transcribed, in %s\n",

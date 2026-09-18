@@ -157,7 +157,7 @@ func TestAnIndexAtAnUnknownSchemaIsRefused(t *testing.T) {
 	}
 	// A schema this build does not carry, written by one that does.
 	if _, err := db.write.ExecContext(ctx,
-		fmt.Sprintf("PRAGMA user_version = %d", newest(t)+3)); err != nil {
+		fmt.Sprintf("PRAGMA user_version = %d", getNewestVersion(t)+3)); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {
@@ -175,7 +175,7 @@ func TestAnIndexAtAnUnknownSchemaIsRefused(t *testing.T) {
 	// Both numbers are in what the person is shown: what they do next is
 	// decided by them, and by which build wrote it.
 	said := err.Error()
-	if !strings.Contains(said, fmt.Sprint(newest(t)+3)) || !strings.Contains(said, fmt.Sprint(newest(t))) {
+	if !strings.Contains(said, fmt.Sprint(getNewestVersion(t)+3)) || !strings.Contains(said, fmt.Sprint(getNewestVersion(t))) {
 		t.Errorf("the refusal reads %q", said)
 	}
 
@@ -276,8 +276,8 @@ func TestAnIndexOfItsOwnIsNotBuiltAgain(t *testing.T) {
 	}
 }
 
-// newest is the version the migrations this binary holds reach.
-func newest(t *testing.T) int {
+// getNewestVersion is the version the migrations this binary holds reach.
+func getNewestVersion(t *testing.T) int {
 	t.Helper()
 	available, err := loadMigrations()
 	if err != nil {

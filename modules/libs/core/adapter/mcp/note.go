@@ -187,11 +187,11 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		res := out{Focus: noteOf(found.Focus)}
 		for _, related := range found.Related {
 			res.Related = append(res.Related, Neighbour{
-				Note:    noteOf(related.NoteRef),
-				Seat:    string(related.Seat),
-				Label:   related.Label,
-				Through: related.Parent,
-				Mutual:  related.Mutual,
+				Note:     noteOf(related.NoteRef),
+				Seat:     string(related.Seat),
+				Label:    related.Label,
+				Through:  related.Parent,
+				IsMutual: related.IsMutual,
 			})
 		}
 		return nil, res, nil
@@ -305,13 +305,13 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
 		Match       string `json:"match" jsonschema:"the text that was replaced, as the note had it"`
-		Loose       bool   `json:"loose,omitempty" jsonschema:"the span was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
+		IsLoose     bool   `json:"loose,omitempty" jsonschema:"the span was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
 	}, error) {
 		type out = struct {
 			Path        string `json:"path"`
 			Fingerprint string `json:"fingerprint"`
 			Match       string `json:"match" jsonschema:"the text that was replaced, as the note had it"`
-			Loose       bool   `json:"loose,omitempty" jsonschema:"the span was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
+			IsLoose     bool   `json:"loose,omitempty" jsonschema:"the span was found only once punctuation and spacing were flattened, so what the note held is not what you asked for"`
 		}
 		seen, err := parseFingerprint(in.Fingerprint)
 		if err != nil {
@@ -327,7 +327,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			Path:        in.Path,
 			Fingerprint: fingerprintOf(done.Fingerprint),
 			Match:       done.Matched,
-			Loose:       done.Plainly,
+			IsLoose:     done.IsPlain,
 		}, nil
 	})
 
@@ -392,8 +392,8 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			"This removes notes: a path naming a folder is refused, and the notes under " +
 			"one are removed by naming each of them.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Paths   []string `json:"paths" jsonschema:"the notes to remove"`
-		Destroy bool     `json:"destroy,omitempty" jsonschema:"delete outright instead of moving to the trash; nothing brings these back"`
+		Paths         []string `json:"paths" jsonschema:"the notes to remove"`
+		ShouldDestroy bool     `json:"destroy,omitempty" jsonschema:"delete outright instead of moving to the trash; nothing brings these back"`
 	}) (*sdk.CallToolResult, struct {
 		Removed []RemoveOutcome `json:"removed"`
 	}, error) {
@@ -421,7 +421,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			}
 			var removed note.RemoveResult
 			var err error
-			if in.Destroy {
+			if in.ShouldDestroy {
 				removed, err = core.Notes.Remove.Destroy(ctx, core.getShownVault().Vault, path)
 			} else {
 				removed, err = core.Notes.Remove.Execute(ctx, core.getShownVault().Vault, path)
@@ -464,11 +464,11 @@ type ReadFailure struct {
 
 // Neighbour is a note in the picture around another one.
 type Neighbour struct {
-	Note    Note   `json:"note"`
-	Seat    string `json:"seat" jsonschema:"parent, child, sibling or jump"`
-	Label   string `json:"label,omitempty" jsonschema:"what the person calls this relationship"`
-	Through string `json:"through,omitempty" jsonschema:"the note they share, when they are siblings"`
-	Mutual  bool   `json:"mutual,omitempty" jsonschema:"set when both notes name this relationship, the label being then the word the note in focus wrote"`
+	Note     Note   `json:"note"`
+	Seat     string `json:"seat" jsonschema:"parent, child, sibling or jump"`
+	Label    string `json:"label,omitempty" jsonschema:"what the person calls this relationship"`
+	Through  string `json:"through,omitempty" jsonschema:"the note they share, when they are siblings"`
+	IsMutual bool   `json:"mutual,omitempty" jsonschema:"set when both notes name this relationship, the label being then the word the note in focus wrote"`
 }
 
 // The filesystem offers no transaction over many files: the twenty-ninth can

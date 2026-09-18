@@ -1,4 +1,4 @@
-package editor
+package pool
 
 import (
 	"errors"
@@ -14,7 +14,7 @@ type held struct {
 	mu      sync.Mutex
 	drawing chan struct{}
 	let     chan struct{}
-	shut    bool
+	isShut  bool
 }
 
 func (h *held) Pages() int       { return 1 }
@@ -28,7 +28,7 @@ func (h *held) Image(int, int) (image.Image, error) {
 	<-h.let
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	if h.shut {
+	if h.isShut {
 		return nil, errors.New("the document was closed underneath the drawing")
 	}
 	return image.NewRGBA(image.Rect(0, 0, 8, 8)), nil
@@ -37,7 +37,7 @@ func (h *held) Image(int, int) (image.Image, error) {
 func (h *held) Close() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.shut = true
+	h.isShut = true
 }
 
 // A window that goes waits for what is being drawn.
@@ -46,33 +46,33 @@ func (h *held) Close() {
 // drawn on it, it is taken from under the drawing.
 func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 	one := &held{drawing: make(chan struct{}), let: make(chan struct{})}
-	docs := newDocuments()
-	print := fingerprint{path: "library/a.pdf", size: 1, mtime: 1}
+	docs := NewDocuments(MostOpen, OpenIdleFor)
+	mark := Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
 
 	drawn := make(chan error, 1)
 	go func() {
-		doc, give, err := docs.take(t.Context(), print, func() (scan, error) { return one, nil })
+		doc, give, err := docs.Take(t.Context(), mark, func() (Scan, error) { return one, nil })
 		if err != nil {
 			drawn <- err
 			return
 		}
 		defer give()
-		_, err = doc.scan.Image(0, 72)
+		_, err = doc.Scan.Image(0, 72)
 		drawn <- err
 	}()
 
 	<-one.drawing
 
-	closed := make(chan struct{})
+	isShut := make(chan struct{})
 	go func() {
-		docs.close()
-		close(closed)
+		docs.Close()
+		close(isShut)
 	}()
 
 	// The close is waiting on the drawing, and the drawing has not been cut
 	// from under.
 	select {
-	case <-closed:
+	case <-isShut:
 		t.Fatal("the window went while a page was being drawn")
 	case <-time.After(50 * time.Millisecond):
 	}
@@ -82,7 +82,7 @@ func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 		t.Errorf("the drawing was answered %v", err)
 	}
 	select {
-	case <-closed:
+	case <-isShut:
 	case <-time.After(2 * time.Second):
 		t.Fatal("the window never went")
 	}
@@ -90,9 +90,9 @@ func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 
 // A window with nothing open goes at once.
 func TestGoingWithNothingOpenIsNotAWait(t *testing.T) {
-	docs := newDocuments()
+	docs := NewDocuments(MostOpen, OpenIdleFor)
 	done := make(chan struct{})
-	go func() { docs.close(); close(done) }()
+	go func() { docs.Close(); close(done) }()
 	select {
 	case <-done:
 	case <-time.After(time.Second):
@@ -105,19 +105,19 @@ func TestGoingWithNothingOpenIsNotAWait(t *testing.T) {
 // A document taken after the last one was given back would be a document
 // nobody is left to close, and the going would wait on it for ever.
 func TestAWindowGoingOpensNothingMore(t *testing.T) {
-	docs := newDocuments()
-	docs.close()
+	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs.Close()
 
-	print := fingerprint{path: "library/a.pdf", size: 1, mtime: 1}
-	opened := 0
-	_, _, err := docs.take(t.Context(), print, func() (scan, error) {
-		opened++
+	mark := Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
+	opens := 0
+	_, _, err := docs.Take(t.Context(), mark, func() (Scan, error) {
+		opens++
 		return &held{drawing: make(chan struct{}), let: make(chan struct{})}, nil
 	})
-	if !errors.Is(err, errBusy) {
+	if !errors.Is(err, ErrBusy) {
 		t.Errorf("a document taken while the window goes was answered %v", err)
 	}
-	if opened != 0 {
-		t.Errorf("it opened %d documents", opened)
+	if opens != 0 {
+		t.Errorf("it opened %d documents", opens)
 	}
 }

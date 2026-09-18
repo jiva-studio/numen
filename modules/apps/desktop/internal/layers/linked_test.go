@@ -99,10 +99,10 @@ func TestWhatTheToolsRuleRefuses(t *testing.T) {
 		core + "usecase/note",
 	}
 	for _, one := range []struct {
-		name    string
-		deps    []string
-		pkg     string
-		refused bool
+		name      string
+		deps      []string
+		pkg       string
+		isRefused bool
 	}{
 		{"the tools outright", append(slices.Clone(deps), tools), tools, true},
 		{"the tools through a subpackage", append(slices.Clone(deps), tools+"/serve"), tools, true},
@@ -110,8 +110,8 @@ func TestWhatTheToolsRuleRefuses(t *testing.T) {
 		{"a listing of nothing", nil, tools, false},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			if isLinked(one.deps, one.pkg) != one.refused {
-				t.Errorf("linking said %v, want %v", !one.refused, one.refused)
+			if isLinked(one.deps, one.pkg) != one.isRefused {
+				t.Errorf("linking said %v, want %v", !one.isRefused, one.isRefused)
 			}
 		})
 	}

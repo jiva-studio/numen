@@ -306,8 +306,8 @@ func (s *store) cut(vaultID domain.VaultID, path string) bool {
 	return false
 }
 
-// holds says whether the index holds the chunk named.
-func (s *store) holds(chunk domain.ChunkID) bool {
+// hasChunk says whether the index hasChunk the chunk named.
+func (s *store) hasChunk(chunk domain.ChunkID) bool {
 	for _, c := range s.chunks {
 		if chunkID(c.id) == chunk {
 			return true

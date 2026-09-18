@@ -53,18 +53,18 @@ func atOnceGoals() []struct {
 		{"minutes", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.87, Rule: review.RuleInterval, Interval: 21,
-			Counts: review.BudgetUnitCards, Backlog: 100, EvenLoad: true,
+			Counts: review.BudgetUnitCards, Backlog: 100, IsEvenLoad: true,
 		}},
 		{"retention", review.Preset{
 			Goal: review.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 21,
-			Counts: review.BudgetUnitCards, Backlog: 60, EvenLoad: true,
+			Counts: review.BudgetUnitCards, Backlog: 60, IsEvenLoad: true,
 		}},
 		{"a date", review.Preset{
 			Goal: review.GoalDate, By: noon.AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
-			Counts: review.BudgetUnitCards, EvenLoad: true,
+			Counts: review.BudgetUnitCards, IsEvenLoad: true,
 		}},
 	}
 }

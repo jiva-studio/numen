@@ -29,8 +29,8 @@ type Scope struct {
 	Deck string
 	// Preset is the note one preset stands in. The preset scheduling the decks
 	// naming none stands in no note, so Named says a preset was named at all.
-	Preset string
-	Named  bool
+	Preset  string
+	IsNamed bool
 }
 
 // OverDeck is a session over one deck.
@@ -38,7 +38,7 @@ func OverDeck(path string) Scope { return Scope{Deck: path} }
 
 // ByPreset is a session over the cards of every deck pointing at one preset,
 // held to that preset's budget.
-func ByPreset(preset string) Scope { return Scope{Preset: preset, Named: true} }
+func ByPreset(preset string) Scope { return Scope{Preset: preset, IsNamed: true} }
 
 // QueuedCardFace is one card face as the session queues it: where it stands,
 // how it is laid out, and where the answers so far have left it.
@@ -110,7 +110,7 @@ func NewSession(
 func (u Session) Execute(
 	ctx context.Context, v domain.Vault, over Scope,
 ) (SessionResult, error) {
-	if over.Named && over.Deck != "" {
+	if over.IsNamed && over.Deck != "" {
 		return SessionResult{}, ErrBothNamed
 	}
 	marked, err := u.Marks.Execute(ctx, v)
@@ -147,8 +147,8 @@ func (u Session) Execute(
 		return SessionResult{}, err
 	}
 	holds := day.getAsking(faces, schedules, u.Day, now, over)
-	if over.Named && len(holds.seen)+len(holds.fresh) == 0 {
-		return SessionResult{}, day.refuses(over.Preset)
+	if over.IsNamed && len(holds.seen)+len(holds.fresh) == 0 {
+		return SessionResult{}, day.getStopError(over.Preset)
 	}
 
 	// How loaded each day of review already is, which is what a card put on one
@@ -196,7 +196,7 @@ func getIntervals(
 	out := make(map[review.Rating]time.Duration, 4)
 	for _, r := range []review.Rating{review.Again, review.Hard, review.Good, review.Easy} {
 		due := one.By.Next(s, now, r).Due
-		out[r] = one.Preset.Lands(on, now, due).Sub(now)
+		out[r] = one.Preset.GetLandingDay(on, now, due).Sub(now)
 	}
 	return out
 }

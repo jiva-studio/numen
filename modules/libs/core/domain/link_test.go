@@ -67,7 +67,7 @@ func TestAnAddressSaysItselfBackTheWayItIsWritten(t *testing.T) {
 // not at all.
 func TestANameIsReachableOrItIsNot(t *testing.T) {
 	for _, name := range []string{"Entropy", "Lecture 3: entropy", "Zoë Brontë", "Холм"} {
-		if !domain.Nameable(name) {
+		if !domain.IsNameable(name) {
 			t.Errorf("%q cannot be reached", name)
 		}
 	}
@@ -84,7 +84,7 @@ func TestANameIsReachableOrItIsNot(t *testing.T) {
 		"a]]b",
 		"note://01ABC",
 	} {
-		if domain.Nameable(name) {
+		if domain.IsNameable(name) {
 			t.Errorf("%q is said to be reachable", name)
 		}
 	}

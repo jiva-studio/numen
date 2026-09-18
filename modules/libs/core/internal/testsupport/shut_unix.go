@@ -21,10 +21,10 @@ func Shut(tb testing.TB, path string) {
 	tb.Cleanup(func() { os.Chmod(path, 0o644) })
 }
 
-// Unwritable makes a file nothing may save over, and lets it be saved again
+// MakeUnwritable makes a file nothing may save over, and lets it be saved again
 // when the test ends. A save lands by renaming over the name, so what refuses
 // it is the folder the name is in.
-func Unwritable(tb testing.TB, path string) {
+func MakeUnwritable(tb testing.TB, path string) {
 	tb.Helper()
 	if os.Geteuid() == 0 {
 		tb.Skip("root writes a folder whatever its permissions say")

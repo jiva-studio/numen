@@ -164,7 +164,7 @@ func run(cfg container.Config, noAgent bool) error {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards: the index is not being followed:", err)
 	} else {
-		api.Follows(ctx, moves)
+		api.Follow(ctx, moves)
 	}
 
 	// The themes are the installation's, and a folder that could not be made

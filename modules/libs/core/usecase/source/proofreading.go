@@ -13,11 +13,11 @@ import (
 //
 // Naming no proofreader is a text used exactly as it was made.
 type ProofreadingConfig struct {
-	// Named says whether a profile is named for this kind of text. A person is
+	// IsNamed says whether a profile is named for this kind of text. A person is
 	// offered the run where one is.
-	Named bool
-	// Automatically says whether a text is put right without anybody asking.
-	Automatically bool
+	IsNamed bool
+	// IsAutomatic says whether a text is put right without anybody asking.
+	IsAutomatic bool
 	// By opens what answers about a batch, and Queue where batches are left for
 	// it to answer about later. Each is told what it is proofreading. Both
 	// answer nothing where no profile is named, and the reason where one cannot

@@ -32,7 +32,7 @@ func render(node *yaml.Node) (string, error) {
 // on the key's own line. That comment is the person's, on a key the application
 // owns as much as on any other.
 func (d *Document) put(key string, value *yaml.Node) error {
-	node, err := d.writable()
+	node, err := d.getWritableNode()
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (h held) carry(name, value *yaml.Node) {
 // set replaces the lines one top-level key occupies, or appends them when the
 // key is not there yet. Empty replacement removes the key.
 func (d *Document) set(key string, rendered []byte) error {
-	node, err := d.writable()
+	node, err := d.getWritableNode()
 	if err != nil {
 		return err
 	}
@@ -289,11 +289,11 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 	return node, nil
 }
 
-// writable is the frontmatter when it is laid out so that one key can be
+// getWritableNode is the frontmatter when it is laid out so that one key can be
 // changed without touching another. Reading one that is not is fine; writing to
 // it is what has to be refused.
-func (d *Document) writable() (*yaml.Node, error) {
-	if d.unterminated {
+func (d *Document) getWritableNode() (*yaml.Node, error) {
+	if d.isUnterminated {
 		return nil, ErrUnterminated
 	}
 	node, err := d.readMapping()

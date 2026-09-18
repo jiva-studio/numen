@@ -19,7 +19,7 @@ func (a *API) GetVaultDeckPreset(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	found, err := a.Presets.Of(ctx, v, r.Msg.GetDeck())
+	found, err := a.Presets.GetForDeck(ctx, v, r.Msg.GetDeck())
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}

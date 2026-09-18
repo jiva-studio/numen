@@ -74,7 +74,7 @@ func TestADocumentInLineOutlivesTheContext(t *testing.T) {
 
 	w.mu.Lock()
 	w.queue.add(somewhere, "a.pdf")
-	w.running = true
+	w.isRunning = true
 	w.mu.Unlock()
 	w.drain(over)
 

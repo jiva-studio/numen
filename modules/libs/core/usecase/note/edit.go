@@ -53,10 +53,10 @@ type Edit struct {
 	Index       Levels
 	Now         port.Clock
 	Fingerprint domain.Fingerprint
-	// Overwrite is a caller writing what is in front of the person: the note
+	// ShouldOverwrite is a caller writing what is in front of the person: the note
 	// on disk is replaced without being held to a fingerprint, a note that is
 	// not there is made, and no identifier is stamped.
-	Overwrite bool
+	ShouldOverwrite bool
 	// Bound is the most the file may be. Zero holds it to nothing.
 	Bound int
 	// Seen is what the caller last saw of the note, and is what a file that is
@@ -107,14 +107,14 @@ func (e Edit) splice(
 	// read hands its fingerprint over in.
 	var on domain.Fingerprint
 	var looked error
-	if e.Seen != nil || (e.Fingerprint.IsZero() && !e.Overwrite) {
+	if e.Seen != nil || (e.Fingerprint.IsZero() && !e.ShouldOverwrite) {
 		on, looked = reader.Stat(ctx, path)
 	}
 
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case err == nil:
-	case e.Overwrite && errors.Is(err, fs.ErrNotExist):
+	case e.ShouldOverwrite && errors.Is(err, fs.ErrNotExist):
 		// The note is made by this write, out of the person's own text and
 		// nothing else: no frontmatter, and no identifier. An identifier
 		// arrives when the application changes a note's contents.
@@ -128,7 +128,7 @@ func (e Edit) splice(
 	// the note was is held to that; one that said nothing is held to what was
 	// read just now. A caller writing over what is there is held to neither.
 	against := e.Fingerprint
-	if against.IsZero() && !e.Overwrite {
+	if against.IsZero() && !e.ShouldOverwrite {
 		if looked != nil {
 			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(looked))
 		}
@@ -154,7 +154,7 @@ func (e Edit) splice(
 	// past it does not: nothing backfills an identifier into a note it only read.
 	// A caller writing over what is there is the person editing their own note,
 	// and leaves the frontmatter as they wrote it.
-	if _, carried := doc.Identifier(); !carried && !e.Overwrite {
+	if _, carried := doc.Identifier(); !carried && !e.ShouldOverwrite {
 		identifier, err := ulid.New(e.Now())
 		if err != nil {
 			return domain.Fingerprint{}, err

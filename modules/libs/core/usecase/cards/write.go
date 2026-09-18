@@ -116,7 +116,7 @@ func (u Write) stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if markdown.OpensFrontmatter(body) {
+	if markdown.IsFrontmatterStart(body) {
 		return domain.Fingerprint{}, note.ErrBodyUnwritable
 	}
 

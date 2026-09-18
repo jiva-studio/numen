@@ -21,7 +21,7 @@ func TestEditingANoteChangesOnlyTheSpanNamed(t *testing.T) {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
 		Match       string `json:"match"`
-		Loose       bool   `json:"loose"`
+		IsLoose     bool   `json:"loose"`
 	}](t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "A hedgehog", "text": "An axe",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
@@ -85,14 +85,14 @@ func TestEditingFindsASpanWhosePunctuationDiffers(t *testing.T) {
 	s := newSessionOver(t, core)
 
 	answer := call[struct {
-		Match string `json:"match"`
-		Loose bool   `json:"loose"`
+		Match   string `json:"match"`
+		IsLoose bool   `json:"loose"`
 	}](t, s, "note_edit", map[string]any{
 		"path": "Aggressor.md", "match": "сказал \"да\" - и ушёл", "text": "промолчал",
 		"fingerprint": fingerprint(t, s, "Aggressor.md"),
 	})
 
-	if !answer.Loose {
+	if !answer.IsLoose {
 		t.Error("the reading was not reported")
 	}
 	if answer.Match != "сказал «да» — и ушёл" {
@@ -155,10 +155,10 @@ func TestEditingTellsTheWindowWhereItIsChangingTheNote(t *testing.T) {
 	if began.Text != "An axe" {
 		t.Errorf("what goes in is %q", began.Text)
 	}
-	if began.Done {
+	if began.IsDone {
 		t.Error("the first report ends the change")
 	}
-	if !ended.Done || ended.Change != began.Change {
+	if !ended.IsDone || ended.Change != began.Change {
 		t.Errorf("the change ends as %+v", ended)
 	}
 }
@@ -176,7 +176,7 @@ func TestARefusedEditIsStillEnded(t *testing.T) {
 	})
 
 	for _, said := range looking.drawn {
-		if !said.Done {
+		if !said.IsDone {
 			t.Fatalf("a change was begun and not ended: %+v", said)
 		}
 	}

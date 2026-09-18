@@ -83,7 +83,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	faces := u.CardFaces.Of(ctx, v, scheduled)
+	faces := u.CardFaces.GetFaces(ctx, v, scheduled)
 	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
 	if err != nil {
 		return review.Curve{}, err
@@ -105,7 +105,7 @@ func (u ProjectCurve) Execute(
 	for _, one := range faces {
 		mine, asked := decks[one.Deck]
 		if !asked {
-			held, err := reading.Of(ctx, v, one.Deck)
+			held, err := reading.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
 				return review.Curve{}, err
 			}
@@ -203,7 +203,7 @@ func (u ProjectCurve) countPointingDecks(
 	for _, deck := range decks {
 		points, held := asked[deck]
 		if !held {
-			p, err := reading.Of(ctx, v, deck)
+			p, err := reading.GetForDeck(ctx, v, deck)
 			if err != nil {
 				return 0, err
 			}

@@ -22,15 +22,15 @@ func TestTheCommandLineIsFoundWhereAnInstallerPutIt(t *testing.T) {
 // found there is a name standing for the file it points at.
 func TestTheCommandLineIsFoundInsideAnApplicationBundle(t *testing.T) {
 	home := t.TempDir()
-	real := filepath.Join(home, ".local", "share", "claude", "versions", "2.1.241")
-	program(t, real)
+	resolved := filepath.Join(home, ".local", "share", "claude", "versions", "2.1.241")
+	program(t, resolved)
 
 	bundle := filepath.Join(home, "Applications", "Claude Code URL Handler.app", "Contents", "MacOS")
 	if err := os.MkdirAll(bundle, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	want := filepath.Join(bundle, "claude")
-	if err := os.Symlink(real, want); err != nil {
+	if err := os.Symlink(resolved, want); err != nil {
 		t.Fatal(err)
 	}
 

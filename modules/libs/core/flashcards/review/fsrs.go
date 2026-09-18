@@ -185,7 +185,7 @@ func (f FSRS) getNextFromNew(one atAnswer, at time.Time, r fsrs.Rating) Schedule
 func (f FSRS) getNextFromLearning(one atAnswer, at time.Time, r fsrs.Rating) Schedule {
 	out := one.out
 	out.Difficulty = f.harder(one.last.Difficulty, r)
-	out.Stability = f.shortly(one.last.Stability, r)
+	out.Stability = f.getLearningStability(one.last.Stability, r)
 	switch r {
 	case fsrs.Again:
 		out.Due = at.Add(5 * time.Minute)
@@ -195,7 +195,7 @@ func (f FSRS) getNextFromLearning(one atAnswer, at time.Time, r fsrs.Rating) Sch
 		out.Due = at.Add(days(f.getInterval(out.Stability)))
 		out.Phase = uint8(fsrs.Review)
 	case fsrs.Easy:
-		good := f.getInterval(f.shortly(one.last.Stability, fsrs.Good))
+		good := f.getInterval(f.getLearningStability(one.last.Stability, fsrs.Good))
 		out.Due = at.Add(days(math.Max(f.getInterval(out.Stability), good+1)))
 		out.Phase = uint8(fsrs.Review)
 	}
@@ -269,9 +269,9 @@ func (f FSRS) harder(d float64, r fsrs.Rating) float64 {
 	return clampDifficulty(f.p.W[7]*f.first(fsrs.Easy) + (1-f.p.W[7])*next)
 }
 
-// shortly is where an answer leaves the stability of a card face the scheduler
-// is still putting into memory.
-func (f FSRS) shortly(s float64, r fsrs.Rating) float64 {
+// getLearningStability is where an answer leaves the stability of a card face
+// the scheduler is still putting into memory.
+func (f FSRS) getLearningStability(s float64, r fsrs.Rating) float64 {
 	return s * math.Exp(f.p.W[17]*(float64(r-3)+f.p.W[18]))
 }
 

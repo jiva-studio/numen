@@ -30,7 +30,7 @@ const defaultAgentAddr = mcp.DefaultAddr
 const unnamed = "no agent is named in the settings"
 
 func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Installation, opts agentOptions, out io.Writer) (func() error, error) {
-	if opts.off {
+	if opts.isOff {
 		return func() error { return nil }, nil
 	}
 
@@ -60,13 +60,13 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	// not what a person configured it for. What the panel's own child may call
 	// is that child's allowance and is narrowed there.
 	served, err := agents.Serve(ctx, agents.Options{
-		Config:     cfg,
-		Core:       agentCore(cfg, opened, root, out),
-		Addr:       addr,
-		Announcing: true,
-		Root:       root,
-		Drafting:   makeDrafting(opened),
-		Out:        out,
+		Config:       cfg,
+		Core:         agentCore(cfg, opened, root, out),
+		Addr:         addr,
+		IsAnnouncing: true,
+		Root:         root,
+		Drafting:     makeDrafting(opened),
+		Out:          out,
 	})
 	if err != nil {
 		return nil, err

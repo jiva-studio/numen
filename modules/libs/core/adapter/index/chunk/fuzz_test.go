@@ -74,10 +74,11 @@ func FuzzExpression(f *testing.F) {
 		if len(typed) <= mostAsked && !strings.ContainsRune(expression, 0) {
 			var count int
 			row := db.QueryRow(`SELECT count(*) FROM said WHERE text MATCH ?`, expression)
-			if expression == "" {
-				// An empty expression is not a query, and no search is made.
-			} else if err := row.Scan(&count); err != nil {
-				t.Fatalf("%q was asked as %q, which FTS5 refused: %v", typed, expression, err)
+			// An empty expression is not a query, and no search is made.
+			if expression != "" {
+				if err := row.Scan(&count); err != nil {
+					t.Fatalf("%q was asked as %q, which FTS5 refused: %v", typed, expression, err)
+				}
 			}
 		}
 

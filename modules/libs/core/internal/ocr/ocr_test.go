@@ -37,7 +37,7 @@ func TestALineBrokenByAHyphenContinues(t *testing.T) {
 		want string
 	}{
 		{name: "a hyphen joins", ends: "under-", next: "standing follows", want: "understanding follows"},
-		{name: "a soft hyphen joins", ends: "under­", next: "standing follows", want: "understanding follows"},
+		{name: "a soft hyphen joins", ends: "under\u00ad", next: "standing follows", want: "understanding follows"},
 		{name: "a dash between words does not", ends: "a word -", next: "and another", want: "a word - and another"},
 		{name: "nothing to join", ends: "a line", next: "another line", want: "a line another line"},
 	}
@@ -313,7 +313,7 @@ func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 	// A hyphen is one byte, or two, or three. What the box covers is what it
 	// wrote less the mark that was taken out of it.
-	for _, hyphen := range []string{"-", "‐", "‑", "­"} {
+	for _, hyphen := range []string{"-", "‐", "‑", "\u00ad"} {
 		t.Run(hyphen, func(t *testing.T) {
 			text, spans := ocr.Assemble([]ocr.Line{
 				line(0, 0, 100, 20, "Viśvakoṣa"+hyphen),
@@ -341,13 +341,13 @@ func TestAJoinedWordLeavesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 func TestAHeadingSaysWhereAPartOfTheDocumentBegins(t *testing.T) {
 	raw, _, parts := ocr.Write([]ocr.Page{
 		{Index: 0, Blocks: []ocr.Block{
-			{Label: "doc_title", Text: "IAYADEVA GOSVAMI", Heading: true, Depth: 0},
+			{Label: "doc_title", Text: "IAYADEVA GOSVAMI", IsHeading: true, Depth: 0},
 			{Label: "text", Text: "He was born in Kenduli."},
-			{Label: "paragraph_title", Text: "His Youth", Heading: true, Depth: 1},
+			{Label: "paragraph_title", Text: "His Youth", IsHeading: true, Depth: 1},
 		}},
 		{Index: 1, Blocks: []ocr.Block{
 			{Label: "text", Text: "The village stands there still."},
-			{Label: "paragraph_title", Text: "The Journey", Heading: true, Depth: 1},
+			{Label: "paragraph_title", Text: "The Journey", IsHeading: true, Depth: 1},
 		}},
 	})
 	text, _ := ocr.Read(raw)

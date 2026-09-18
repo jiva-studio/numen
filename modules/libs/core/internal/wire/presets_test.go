@@ -125,7 +125,7 @@ func TestEverySettingComesBackAsItWentOut(t *testing.T) {
 		Counts:      review.BudgetUnitShows,
 		Backlog:     40,
 		Load:        map[time.Weekday]int{time.Monday: 80, time.Saturday: 50, time.Sunday: 0},
-		EvenLoad:    true,
+		IsEvenLoad:  true,
 	}
 
 	got, err := SettingsIn(SettingsOf(was))
@@ -163,8 +163,8 @@ func TestEverySettingComesBackAsItWentOut(t *testing.T) {
 	if got.Backlog != was.Backlog {
 		t.Errorf("backlog came back as %d", got.Backlog)
 	}
-	if got.EvenLoad != was.EvenLoad {
-		t.Errorf("even_load came back as %t", got.EvenLoad)
+	if got.IsEvenLoad != was.IsEvenLoad {
+		t.Errorf("even_load came back as %t", got.IsEvenLoad)
 	}
 	if !reflect.DeepEqual(got.Load, was.Load) {
 		t.Errorf("load came back as %v", got.Load)

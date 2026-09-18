@@ -56,7 +56,7 @@ func Write(pages []Page) ([]byte, []highlight.Box, []Part) {
 				prose += len(blockGap)
 			}
 			boxes = append(boxes, getBoxesWithin(page, block, prose)...)
-			if block.Heading && block.Text != "" {
+			if block.IsHeading && block.Text != "" {
 				parts = append(parts, Part{Start: prose, Length: len(block.Text), Depth: block.Depth})
 			}
 			out.WriteString(block.Text)

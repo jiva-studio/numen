@@ -199,7 +199,7 @@ func FuzzRead(f *testing.F) {
 		// asked about, and what it answers with is what a reader is shown.
 		for _, offset := range []int{0, len(book.Text) / 2, len(book.Text)} {
 			where := book.Locate(offset)
-			if where.Document != "" && !holds(book.Documents, where.Document, offset) {
+			if where.Document != "" && !isAtOrBefore(book.Documents, where.Document, offset) {
 				t.Fatalf("offset %d was put in %q, which is not a document standing over it",
 					offset, where.Document)
 			}
@@ -222,8 +222,9 @@ func oneLine(name string) bool {
 	return name != "" && strings.Join(strings.Fields(name), " ") == name
 }
 
-// holds is whether the document of this name begins at or before the offset.
-func holds(documents []epub.Document, at string, offset int) bool {
+// isAtOrBefore is whether the document of this name begins at or before the
+// offset.
+func isAtOrBefore(documents []epub.Document, at string, offset int) bool {
 	for _, doc := range documents {
 		if doc.Path == at && doc.Offset <= offset {
 			return true

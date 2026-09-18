@@ -71,15 +71,15 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		t.Fatal(err)
 	}
 
-	opened, err := editor.Open(t.Context(), editor.NewAssembly(t, settings), "", os.Stderr)
+	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, settings), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { opened.Close() })
+	t.Cleanup(func() { installation.Close() })
 
-	drawn, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)
+	drawn, itself := numenv1connect.NewWindowServiceHandler(installation.API.Window)
 	mux := http.NewServeMux()
-	answers(mux, opened.API)
+	answers(mux, installation.API)
 	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -98,7 +98,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 			t.Fatal(err)
 		}
 		if state.Msg.GetScan().GetReady() {
-			return client, watching, root, opened
+			return client, watching, root, installation
 		}
 		if reason := state.Msg.GetScan().GetError(); reason != "" {
 			t.Fatalf("the first scan failed: %s", reason)

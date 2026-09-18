@@ -36,8 +36,8 @@ func OpenForWriting(root string, opts Options) (*VaultWriter, error) {
 	}
 	// The vault is where the links lead. A write lands at the resolved path, and
 	// the rules about what the vault holds are asked of a name relative to it.
-	if real, err := filepath.EvalSymlinks(abs); err == nil {
-		abs = real
+	if resolved, err := filepath.EvalSymlinks(abs); err == nil {
+		abs = resolved
 	}
 	info, err := os.Stat(abs)
 	if err != nil {
@@ -213,7 +213,7 @@ func (w *VaultWriter) note(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if !w.holds(path) {
+	if !w.isReported(path) {
 		return "", fmt.Errorf("%s: %w", path, ErrNotANote)
 	}
 	return target, nil
@@ -226,7 +226,7 @@ func (w *VaultWriter) reach(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if !w.reachable(path) {
+	if !w.isReachable(path) {
 		return "", fmt.Errorf("%s: %w", path, ErrNotANote)
 	}
 	return target, nil
@@ -236,24 +236,24 @@ func (w *VaultWriter) reach(path string) (string, error) {
 // kept as a link to another file in the vault has its bytes at the other end,
 // and that is what a rename replaces.
 func (w *VaultWriter) file(path string) (string, error) {
-	real, err := resolveLinks(w.root, path, w.opts.serviceDir())
+	resolved, err := resolveLinks(w.root, path, w.opts.serviceDir())
 	if err != nil {
 		return "", err
 	}
-	if !w.holds(path) {
+	if !w.isReported(path) {
 		return "", fmt.Errorf("%s: %w", path, ErrNotANote)
 	}
 	// The rule is asked of where the bytes land as well as of the name they were
 	// asked for by. A link is a name for another place, and the place is what a
 	// rename replaces.
-	inside, err := filepath.Rel(w.root, real)
+	inside, err := filepath.Rel(w.root, resolved)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
-	if !w.holds(inside) {
+	if !w.isReported(inside) {
 		return "", fmt.Errorf("%s: %w", inside, ErrNotANote)
 	}
-	return real, nil
+	return resolved, nil
 }
 
 // getContainedPath is only that: somewhere in this vault. Where a note goes when
@@ -293,10 +293,10 @@ func (w *VaultWriter) getRelativeName(target string) (string, error) {
 // what writes there.
 const TrashDir = ".trash"
 
-// ours is a folder this application keeps for itself inside the vault: the one
+// isOurs is a folder this application keeps for itself inside the vault: the one
 // it writes its own state into, and the one a note goes to when it is taken out
 // of the vault's sight.
-func (w *VaultWriter) ours(path string) bool {
+func (w *VaultWriter) isOurs(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	for dir := pathpkg.Dir(clean); dir != "." && dir != "/"; dir = pathpkg.Dir(dir) {
 		if name := pathpkg.Base(dir); w.opts.isService(name) || strings.EqualFold(name, TrashDir) {
@@ -306,13 +306,13 @@ func (w *VaultWriter) ours(path string) bool {
 	return false
 }
 
-// reachable answers whether a path in this vault is one the writer may put a
+// isReachable answers whether a path in this vault is one the writer may put a
 // file at or take one away from, whatever the file is and whether it is a
 // folder. What the vault says to leave alone is left alone, and the folders
 // this application keeps for itself are its own.
-func (w *VaultWriter) reachable(path string) bool {
+func (w *VaultWriter) isReachable(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if w.ours(clean) {
+	if w.isOurs(clean) {
 		return true
 	}
 	if w.ignored.MatchesPath(clean) {
@@ -326,11 +326,11 @@ func (w *VaultWriter) reachable(path string) bool {
 	return true
 }
 
-// holds answers the same question about a path that a walk answers about the
-// files it reports, and by the same rules.
-func (w *VaultWriter) holds(path string) bool {
+// isReported answers the same question about a path that a walk answers about
+// the files it reports, and by the same rules.
+func (w *VaultWriter) isReported(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if !w.opts.writable(pathpkg.Base(clean)) {
+	if !w.opts.isWritable(pathpkg.Base(clean)) {
 		return false
 	}
 	if w.ignored.MatchesPath(clean) {

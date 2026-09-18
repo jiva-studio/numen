@@ -50,13 +50,13 @@ func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			f := fileable(t, map[string]string{"Entropy.md": c.raw})
+			f := openFiling(t, map[string]string{"Entropy.md": c.raw})
 
 			moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md")
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !moved.Landed {
+			if !moved.IsLanded {
 				t.Fatal("the file did not move")
 			}
 			body := f.read(t, "Disorder.md")
@@ -97,7 +97,7 @@ func TestARenamedFileLeavesTheNoteAloneWhereTheTwoAreToldApart(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			f := fileable(t, map[string]string{"Entropy.md": c.raw})
+			f := openFiling(t, map[string]string{"Entropy.md": c.raw})
 
 			if _, err := f.moveApart().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md"); err != nil {
 				t.Fatal(err)
@@ -121,7 +121,7 @@ func TestAFileFiledUnderAnotherFolderKeepsTheNameItHad(t *testing.T) {
 		"told apart": filing.moveApart,
 	} {
 		t.Run(name, func(t *testing.T) {
-			f := fileable(t, map[string]string{
+			f := openFiling(t, map[string]string{
 				"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n",
 			})
 
@@ -152,7 +152,7 @@ func TestARenamedFolderWritesToNothingUnderIt(t *testing.T) {
 				"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n",
 				"physics/Heat.md":    "# Heat\n",
 			}
-			f := fileable(t, notes)
+			f := openFiling(t, notes)
 
 			if _, err := moving(f).Execute(t.Context(), f.vault, "physics", "chemistry"); err != nil {
 				t.Fatal(err)
@@ -172,13 +172,13 @@ func TestARenamedFolderWritesToNothingUnderIt(t *testing.T) {
 func TestARenamedFileLeavesANoteCarryingNoTitleAlone(t *testing.T) {
 	t.Parallel()
 	raw := "# Entropy\n\nA measure.\n"
-	f := fileable(t, map[string]string{"Entropy.md": raw})
+	f := openFiling(t, map[string]string{"Entropy.md": raw})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Note #.md")
 	if err != nil {
 		t.Fatalf("the rename was refused: %v", err)
 	}
-	if !moved.Landed {
+	if !moved.IsLanded {
 		t.Error("the file is at Note #.md and the answer says it did not move")
 	}
 	if got := f.read(t, "Note #.md"); got != raw {
@@ -190,7 +190,7 @@ func TestARenamedFileLeavesANoteCarryingNoTitleAlone(t *testing.T) {
 // drawing the note at the name it had is reading a name with no file behind it.
 func TestAMoveThatLandedIsSettled(t *testing.T) {
 	t.Parallel()
-	f := fileable(t, map[string]string{"Entropy.md": "# Entropy\n\nA measure.\n"})
+	f := openFiling(t, map[string]string{"Entropy.md": "# Entropy\n\nA measure.\n"})
 
 	if _, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Note #.md"); err != nil {
 		t.Fatal(err)
@@ -205,13 +205,13 @@ func TestAMoveThatLandedIsSettled(t *testing.T) {
 func TestARenamedFileLeavesANoteWhoseFrontmatterCannotBeReadAlone(t *testing.T) {
 	t.Parallel()
 	raw := "---\nid: [unterminated\n---\n# Entropy\n"
-	f := fileable(t, map[string]string{"Entropy.md": raw})
+	f := openFiling(t, map[string]string{"Entropy.md": raw})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md")
 	if err != nil {
 		t.Fatalf("the rename was refused: %v", err)
 	}
-	if !moved.Landed {
+	if !moved.IsLanded {
 		t.Fatal("the file did not move")
 	}
 	if got := f.read(t, "Disorder.md"); got != raw {
@@ -223,7 +223,7 @@ func TestARenamedFileLeavesANoteWhoseFrontmatterCannotBeReadAlone(t *testing.T) 
 // opened only where the setting writes into it.
 func TestARenamedFileIsNotReadWhereTheTwoAreToldApart(t *testing.T) {
 	t.Parallel()
-	f := fileable(t, map[string]string{"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n"})
+	f := openFiling(t, map[string]string{"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n"})
 	before := f.readers.reads
 
 	if _, err := f.moveApart().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md"); err != nil {
@@ -239,7 +239,7 @@ func TestARenamedFileIsNotReadWhereTheTwoAreToldApart(t *testing.T) {
 func TestAFileGivenAnotherExtensionIsNotANoteRenamed(t *testing.T) {
 	t.Parallel()
 	raw := "---\ntitle: Entropy\n---\nA measure.\n"
-	f := fileable(t, map[string]string{"Entropy.md": raw})
+	f := openFiling(t, map[string]string{"Entropy.md": raw})
 
 	if _, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Notes.txt"); err != nil {
 		t.Fatal(err)
@@ -253,7 +253,7 @@ func TestAFileGivenAnotherExtensionIsNotANoteRenamed(t *testing.T) {
 // no note in it to call anything.
 func TestRenamingAFileTheIndexHoldsNothingAbout(t *testing.T) {
 	t.Parallel()
-	f := fileable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	f := openFiling(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	loose := filepath.Join(f.vault.Path, "notes.txt")
 	if err := os.WriteFile(loose, []byte("A measure.\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -263,7 +263,7 @@ func TestRenamingAFileTheIndexHoldsNothingAbout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !moved.Landed {
+	if !moved.IsLanded {
 		t.Fatal("the file did not move")
 	}
 	if got := f.read(t, "other.txt"); got != "A measure.\n" {
@@ -276,13 +276,13 @@ func TestRenamingAFileTheIndexHoldsNothingAbout(t *testing.T) {
 func TestARenameOntoATakenNameLeavesTheNoteCalledWhatItWas(t *testing.T) {
 	t.Parallel()
 	raw := "---\ntitle: Entropy\n---\nA measure.\n"
-	f := fileable(t, map[string]string{"Entropy.md": raw, "Disorder.md": "# Disorder\n"})
+	f := openFiling(t, map[string]string{"Entropy.md": raw, "Disorder.md": "# Disorder\n"})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Disorder.md")
 	if !errors.Is(err, port.ErrOccupied) {
 		t.Fatalf("want ErrOccupied, got %v", err)
 	}
-	if moved.Landed {
+	if moved.IsLanded {
 		t.Error("the move says it landed")
 	}
 	if got := f.read(t, "Entropy.md"); got != raw {

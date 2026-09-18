@@ -74,7 +74,7 @@ func (m Model) GetStoredModel(from string) port.EmbeddingModel {
 // fetched the first time it is wanted.
 func Defaults() Config {
 	here := Provider{
-		local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, Download: true},
+		local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, ShouldDownload: true},
 		service: ServiceModel{
 			BaseURL:         "https://api.openai.com/v1",
 			Name:            "text-embedding-3-small",
@@ -140,7 +140,7 @@ func assign[T any](dst *T, src *T) {
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
-func (i *Model) UnmarshalJSON(raw []byte) error {
+func (m *Model) UnmarshalJSON(raw []byte) error {
 	var f struct {
 		Name       *string `json:"name"`
 		Dimensions *int    `json:"dimensions"`
@@ -150,9 +150,9 @@ func (i *Model) UnmarshalJSON(raw []byte) error {
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return err
 	}
-	assign(&i.Name, f.Name)
-	assign(&i.Dimensions, f.Dimensions)
-	assign(&i.MaxTokens, f.MaxTokens)
-	assign(&i.Pooling, f.Pooling)
+	assign(&m.Name, f.Name)
+	assign(&m.Dimensions, f.Dimensions)
+	assign(&m.MaxTokens, f.MaxTokens)
+	assign(&m.Pooling, f.Pooling)
 	return nil
 }

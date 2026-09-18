@@ -26,11 +26,11 @@ func (h handedOver) GetName(handle string) string { return h.names[handle] }
 func (h handedOver) Stat(_ context.Context, handle string) (port.ImportedFile, error) {
 	one := port.ImportedFile{Name: h.names[handle], Handle: handle}
 	if _, held := h.holding[handle]; held {
-		one.Folder = true
+		one.IsFolder = true
 		return one, nil
 	}
 	if _, held := h.bodies[handle]; held {
-		one.File = true
+		one.IsFile = true
 		return one, nil
 	}
 	return port.ImportedFile{}, io.ErrUnexpectedEOF

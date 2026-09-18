@@ -129,9 +129,9 @@ type ResolvedLink struct {
 	// every ordinary link.
 	ToVault VaultID
 
-	// Ambiguous is set when several notes answer to the name. The link still
+	// IsAmbiguous is set when several notes answer to the name. The link still
 	// resolves — to the nearest one — but the vault has a question in it.
-	Ambiguous bool
+	IsAmbiguous bool
 }
 
 // InVault is the vault the link resolved into, which is not always the vault it
@@ -153,7 +153,7 @@ type AmbiguousLink struct {
 	Candidates []string
 }
 
-// Nameable reports whether a filename can be written as an address that reaches
+// IsNameable reports whether a filename can be written as an address that reaches
 // it back.
 //
 // A file may be called almost anything, and an address may not. `#` starts a
@@ -161,7 +161,7 @@ type AmbiguousLink struct {
 // wikilink, so a note named with any of them cannot be reached by its name:
 // the character is read as punctuation of the link. Such a note is addressed
 // by its identifier or not at all.
-func Nameable(name string) bool {
+func IsNameable(name string) bool {
 	if strings.TrimSpace(name) != name || name == "" || strings.ContainsAny(name, "\n\r") {
 		return false
 	}

@@ -25,7 +25,7 @@ func TestANumberTheArithmeticReadsIsAnotherName(t *testing.T) {
 		change func(p *fsrs.Parameters)
 	}{
 		{"the retention asked for", func(p *fsrs.Parameters) { p.RequestRetention += 0.01 }},
-		{"how far ahead a card may go", func(p *fsrs.Parameters) { p.MaximumInterval += 1 }},
+		{"how far ahead a card may go", func(p *fsrs.Parameters) { p.MaximumInterval++ }},
 		{"the forgetting curve's decay", func(p *fsrs.Parameters) { p.Decay -= 0.01 }},
 		{"the forgetting curve's factor", func(p *fsrs.Parameters) { p.Factor += 0.01 }},
 	} {

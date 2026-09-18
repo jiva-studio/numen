@@ -115,7 +115,7 @@ func saveNote(
 		return fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
-		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
+		n.Title, string(noteType(n)), newNullable(n.ID), frontmatter, newNullable(problem)); err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func saveNote(
 	for i, l := range n.Links {
 		if _, err := tx.ExecContext(ctx, stmt.Get("insert_link"), row, i,
 			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
-			string(l.Role), nullable(l.Type), nullable(l.Why), nullable(l.Label),
+			string(l.Role), newNullable(l.Type), newNullable(l.Why), newNullable(l.Label),
 		); err != nil {
 			return fmt.Errorf("store what this note points at: %w", err)
 		}
@@ -350,9 +350,9 @@ func noteType(n domain.Note) domain.NoteType {
 	return n.Type
 }
 
-// nullable keeps an empty string out of the database, so that "nothing was
+// newNullable keeps an empty string out of the database, so that "nothing was
 // written" and "an empty value was written" stay different questions.
-func nullable(s string) any {
+func newNullable(s string) any {
 	if s == "" {
 		return nil
 	}

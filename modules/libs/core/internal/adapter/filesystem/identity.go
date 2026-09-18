@@ -18,14 +18,14 @@ type VaultIdentity struct{ Options Options }
 // nothing — there is no such folder, or a link along it is broken — is named as
 // it was given, and what is wrong with it is said by whoever opens it.
 func (i VaultIdentity) GetName(root string) string {
-	real, err := filepath.EvalSymlinks(root)
+	resolved, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		return root
 	}
-	return real
+	return resolved
 }
 
-func (i VaultIdentity) Readable(root string) error {
+func (i VaultIdentity) CheckReadable(root string) error {
 	_, err := Open(root, i.Options)
 	return err
 }
@@ -38,10 +38,10 @@ func (i VaultIdentity) Ensure(root string, at time.Time) (domain.VaultID, error)
 	return domain.VaultID(cfg.ID), nil
 }
 
-// Of reads the identity a folder carries without creating one. A folder that is
+// GetVaultID reads the identity a folder carries without creating one. A folder that is
 // gone, or was never a vault, simply carries none — that is an answer rather
 // than a failure.
-func (i VaultIdentity) Of(root string) (domain.VaultID, bool, error) {
+func (i VaultIdentity) GetVaultID(root string) (domain.VaultID, bool, error) {
 	cfg, err := ReadConfig(root, i.Options.ServiceDir)
 	if errors.Is(err, ErrNotAVault) {
 		return "", false, nil

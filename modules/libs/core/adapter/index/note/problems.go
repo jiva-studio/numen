@@ -14,8 +14,8 @@ func (q *Queries) GetParseProblems(ctx context.Context, vaultID domain.VaultID) 
 	return q.getProblems(ctx, vaultID, "problems")
 }
 
-// Unreadable is the notes whose frontmatter is not YAML.
-func (q *Queries) Unreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
+// GetUnreadable is the notes whose frontmatter is not YAML.
+func (q *Queries) GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
 	return q.getProblems(ctx, vaultID, "frontmatter_errors")
 }
 
@@ -125,8 +125,8 @@ func (q *Queries) Ambiguous(ctx context.Context, vaultID domain.VaultID) ([]doma
 			}
 			answers[l.Target.Value] = answering
 		}
-		l.To, l.Ambiguous = pick(l.From, l.Target.Value, answering)
-		if !l.Ambiguous {
+		l.To, l.IsAmbiguous = pick(l.From, l.Target.Value, answering)
+		if !l.IsAmbiguous {
 			continue
 		}
 		l.ToVault = vaultID

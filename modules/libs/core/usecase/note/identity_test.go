@@ -73,7 +73,7 @@ func getIdentifier(t *rapid.T, root, path string) (string, bool) {
 // note, and a move is not a change to what is in one.
 func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"other.md": "# Other\n"})
+	c := openChanging(t, map[string]string{"other.md": "# Other\n"})
 	runs := 0
 	rapid.Check(t, func(rt *rapid.T) {
 		runs++
@@ -96,7 +96,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 				if err != nil {
 					rt.Fatalf("move %s to %s: %v", path, to, err)
 				}
-				if out.Landed {
+				if out.IsLanded {
 					path = out.To
 				}
 			case "rename", "rename apart":
@@ -144,7 +144,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 // does not.
 func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 	t.Parallel()
-	c := changeable(t, map[string]string{"other.md": "# Other\n"})
+	c := openChanging(t, map[string]string{"other.md": "# Other\n"})
 	runs := 0
 	rapid.Check(t, func(rt *rapid.T) {
 		runs++

@@ -71,7 +71,7 @@ func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
 func TestOneModelToASettingIsTheDefault(t *testing.T) {
 	byDefault := map[string]int{}
 	for _, one := range getModels(DefaultSettings()) {
-		if one.Default {
+		if one.IsDefault {
 			byDefault[formatPath(one.Path)]++
 		}
 	}
@@ -111,7 +111,7 @@ func TestTheIndexingModelIsWrittenWithItsProvider(t *testing.T) {
 // otherwise, and the sizes and the names in full stand on shelves of their own.
 func TestTheAgentAnswersWithWhateverTheMachineAnswersWith(t *testing.T) {
 	held := modelsAt(t, DefaultSettings(), agentModelAt)
-	if held[0].Name != "" || !held[0].Default {
+	if held[0].Name != "" || !held[0].IsDefault {
 		t.Errorf("the agent opens on %+v", held[0])
 	}
 	shelves := map[string]bool{}
@@ -128,7 +128,7 @@ func TestTheAgentAnswersWithWhateverTheMachineAnswersWith(t *testing.T) {
 
 // A model whose weights stand in the folder the settings name is present.
 func TestAModelWhoseFilesAreHereIsPresent(t *testing.T) {
-	held := alone(t)
+	held := newIsolatedSettings(t)
 	dir := t.TempDir()
 	writeEmptyFile(t, filepath.Join(dir, embed.ModelFile))
 	writeEmptyFile(t, filepath.Join(dir, embed.TokenizerFile))
@@ -142,7 +142,7 @@ func TestAModelWhoseFilesAreHereIsPresent(t *testing.T) {
 // A repository fetched into the cache stands under the snapshot it was fetched
 // at, and that is where the row reads it.
 func TestAModelInTheCacheIsPresent(t *testing.T) {
-	held := alone(t)
+	held := newIsolatedSettings(t)
 	held = setModelDir(t, held, "")
 	snapshot := filepath.Join(
 		os.Getenv("XDG_CACHE_HOME"), "huggingface", "hub",
@@ -161,7 +161,7 @@ func TestAModelInTheCacheIsPresent(t *testing.T) {
 
 // A model this machine runs and has not fetched is a wait, and the row says so.
 func TestAModelWhoseFilesAreNotHereIsNotFetched(t *testing.T) {
-	held := setModelDir(t, alone(t), t.TempDir())
+	held := setModelDir(t, newIsolatedSettings(t), t.TempDir())
 
 	if got := modelsAt(t, held, embeddingModelAt)[0].Presence; got != port.NotFetched {
 		t.Errorf("a model nothing has fetched stands at %v", got)
@@ -171,7 +171,7 @@ func TestAModelWhoseFilesAreNotHereIsNotFetched(t *testing.T) {
 // A model reached over the network is fetched nowhere, and where files stand
 // says nothing about it.
 func TestAModelReachedOverTheNetworkHasNothingToFetch(t *testing.T) {
-	held := alone(t)
+	held := newIsolatedSettings(t)
 	held.Indexing.Embedding.Model.Name = "text-embedding-3-small"
 	held.Indexing.Embedding.Indexing.Use = embed.UseService
 
@@ -188,7 +188,7 @@ func TestAModelReachedOverTheNetworkHasNothingToFetch(t *testing.T) {
 // A cache nothing has been fetched into is a model not fetched, and asking
 // leaves the folder as absent as it was.
 func TestACacheThatIsNotThereIsAModelNotFetched(t *testing.T) {
-	held := alone(t)
+	held := newIsolatedSettings(t)
 	dir := filepath.Join(t.TempDir(), "cache")
 	held.Indexing.Recognition.Dir = dir
 
@@ -203,7 +203,7 @@ func TestACacheThatIsNotThereIsAModelNotFetched(t *testing.T) {
 // The model the settings name is answered for whether it is one of those
 // offered or not.
 func TestTheModelTheSettingsNameIsOfferedToo(t *testing.T) {
-	held := alone(t)
+	held := newIsolatedSettings(t)
 	dir := t.TempDir()
 	held.Indexing.Recognition.Dir = dir
 	held.Indexing.Recognition.Recognise.Name = "https://example.invalid/reads-tamil.onnx"
@@ -223,7 +223,7 @@ func TestTheModelTheSettingsNameIsOfferedToo(t *testing.T) {
 // The files of a model this machine once ran stay in the cache, and they say
 // nothing about a vault indexed over the network.
 func TestEveryRowOfAProviderReachingAServiceHasNothingToFetch(t *testing.T) {
-	held := alone(t)
+	held := newIsolatedSettings(t)
 	// The model the preset offers, fetched, and left where a fetch put it.
 	dir := getModelDir(t, held)
 	held.Indexing.Embedding.Indexing.Use = embed.UseService
@@ -242,7 +242,7 @@ func TestEveryRowOfAProviderReachingAServiceHasNothingToFetch(t *testing.T) {
 // Which of the two a provider is is `use`. A provider running a model here says
 // where its files are, whatever the model is called.
 func TestAProviderRunningAModelHereSaysWhereItsFilesAre(t *testing.T) {
-	held := alone(t)
+	held := newIsolatedSettings(t)
 	held.Indexing.Embedding.Indexing.Use = embed.UseLocal
 	held.Indexing.Embedding.Model.Name = "somewhere/of-my-own"
 
@@ -255,7 +255,7 @@ func TestAProviderRunningAModelHereSaysWhereItsFilesAre(t *testing.T) {
 // Each row is asked about its own files. A path written down is the file the
 // settings read, and it is not the file the row beside it names.
 func TestARowIsAskedAboutItsOwnFilesAndNotItsNeighbours(t *testing.T) {
-	held := alone(t)
+	held := newIsolatedSettings(t)
 	mine := filepath.Join(t.TempDir(), "of-my-own.onnx")
 	writeEmptyFile(t, mine)
 	held.Indexing.Recognition.Recognise.Name = "https://models.example/of-my-own.onnx"
@@ -275,9 +275,9 @@ func TestARowIsAskedAboutItsOwnFilesAndNotItsNeighbours(t *testing.T) {
 	}
 }
 
-// alone is the defaults with the caches of this machine out of reach, so what a
+// newIsolatedSettings is the defaults with the caches of this machine out of reach, so what a
 // test reads is what the test wrote.
-func alone(t *testing.T) Settings {
+func newIsolatedSettings(t *testing.T) Settings {
 	t.Helper()
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	held := DefaultSettings()

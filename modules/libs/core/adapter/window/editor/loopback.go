@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net"
 	"net/http"
 	"net/url"
@@ -140,7 +141,7 @@ func (l *Loopback) Address(vault domain.Vault, ref domain.Fingerprint) string {
 	}
 	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) +
 		"/" + url.PathEscape(ref.Path) +
-		"?" + formatFingerprint(fingerprint{size: ref.Size, mtime: stamp(ref.ModTime)})
+		"?" + formatFingerprint(pool.Fingerprint{Size: ref.Size, Mtime: stamp(ref.ModTime)})
 }
 
 // Close stops answering.
@@ -193,7 +194,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		refuse(w, err)
 		return
 	}
-	if named.size != ref.Size || named.mtime != stamp(ref.ModTime) {
+	if named.Size != ref.Size || named.Mtime != stamp(ref.ModTime) {
 		refuse(w, errChanged)
 		return
 	}
@@ -218,7 +219,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 // The size the address carries is the copy's own: a copy fetched again under
 // the same name is a different address.
 func (a *API) serveCopy(
-	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named fingerprint,
+	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named pool.Fingerprint,
 ) bool {
 	_, stores, ready := a.getSourceStores()
 	if !ready {
@@ -238,7 +239,7 @@ func (a *API) serveCopy(
 		return false
 	}
 	defer file.Close()
-	if named.size != size {
+	if named.Size != size {
 		refuse(w, errChanged)
 		return true
 	}

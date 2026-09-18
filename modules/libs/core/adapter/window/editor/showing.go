@@ -60,10 +60,10 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if v.ID == o.API.GetShownVault().ID {
 		return nil
 	}
-	if err := readable(o.made.GetVaultIdentity(), v); err != nil {
+	if err := checkReadable(o.made.GetVaultIdentity(), v); err != nil {
 		return err
 	}
-	if err := o.shutting.alone(); err != nil {
+	if err := o.shutting.tryTake(); err != nil {
 		return err
 	}
 	defer o.shutting.free()
@@ -98,7 +98,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	o.API.Window.EndRound()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
-	o.API.Listeners.tell(change{reload: true})
+	o.API.Listeners.tell(change{shouldReload: true})
 	return err
 }
 
@@ -124,7 +124,7 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 	}
 	// Last, so a request that reads a run reads the one belonging to the vault
 	// in front of it.
-	o.API.runs(on)
+	o.API.setPasses(on)
 	return nil
 }
 
@@ -267,13 +267,13 @@ func chooseVault(registry port.VaultRegistry, asked string) (domain.Vault, error
 	return domain.Vault{}, nil
 }
 
-// readable is the vault being one this window can show: the folder reads as a
+// checkReadable is the vault being one this window can show: the folder reads as a
 // vault, and it carries the identity the list has for it.
-func readable(identity port.VaultIdentity, v domain.Vault) error {
-	if err := identity.Readable(v.Path); err != nil {
+func checkReadable(identity port.VaultIdentity, v domain.Vault) error {
+	if err := identity.CheckReadable(v.Path); err != nil {
 		return fmt.Errorf("%w: %w", vaults.ErrUnreadable, err)
 	}
-	carried, found, err := identity.Of(v.Path)
+	carried, found, err := identity.GetVaultID(v.Path)
 	if err != nil {
 		return err
 	}

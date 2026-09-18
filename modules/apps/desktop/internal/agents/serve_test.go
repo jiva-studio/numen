@@ -110,7 +110,7 @@ func TestATokenCreatedForAWindowIsKeptNowhere(t *testing.T) {
 // told to reach.
 func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 	cfg := makeInstallation(t)
-	cfg.Agent = agent.Config{ServeTools: true}
+	cfg.Agent = agent.Config{ShouldServeTools: true}
 
 	served, err := Serve(t.Context(), Options{
 		Config: cfg, Core: vault(t), Token: "secret", Out: io.Discard,
@@ -134,7 +134,7 @@ func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 // at whichever started last.
 func TestAWindowThatDoesNotAnnounceWritesNothing(t *testing.T) {
 	cfg := makeInstallation(t)
-	cfg.Agent = agent.Config{ServeTools: true}
+	cfg.Agent = agent.Config{ShouldServeTools: true}
 	state := filepath.Dir(cfg.RegistryPath)
 
 	served, err := Serve(t.Context(), Options{

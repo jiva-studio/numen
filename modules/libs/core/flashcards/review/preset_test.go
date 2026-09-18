@@ -17,8 +17,8 @@ func TestADateIsABudget(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 
 	for _, one := range []struct {
-		hour time.Time
-		past bool
+		hour   time.Time
+		isPast bool
 	}{
 		{time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC), false},
 		// The small hours of the 30th are still the day before it.
@@ -28,11 +28,11 @@ func TestADateIsABudget(t *testing.T) {
 		{time.Date(2026, 10, 1, 2, 0, 0, 0, time.UTC), false},
 		{time.Date(2026, 10, 1, 10, 0, 0, 0, time.UTC), true},
 	} {
-		if got := p.IsPast(day, one.hour); got != one.past {
-			t.Errorf("at %v the day it aims at is past = %v, want %v", one.hour, got, one.past)
+		if got := p.IsPast(day, one.hour); got != one.isPast {
+			t.Errorf("at %v the day it aims at is past = %v, want %v", one.hour, got, one.isPast)
 		}
-		if got := p.IsPaused(day, one.hour); got != one.past {
-			t.Errorf("at %v the preset is paused = %v, want %v", one.hour, got, one.past)
+		if got := p.IsPaused(day, one.hour); got != one.isPast {
+			t.Errorf("at %v the preset is paused = %v, want %v", one.hour, got, one.isPast)
 		}
 	}
 }
@@ -41,8 +41,8 @@ func TestADateIsABudget(t *testing.T) {
 // pointing at the preset stops. A budget the goal does not name is not read.
 func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
 	for _, one := range []struct {
-		front  string
-		paused bool
+		front    string
+		isPaused bool
 	}{
 		{"goal: retention\nnew_a_day: 0\nreviews_a_day: 0\n", true},
 		{"goal: retention\nminutes_a_day: 0\n", false},
@@ -55,8 +55,8 @@ func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
 			t.Fatalf("problems = %v", problems)
 		}
 		got := p.IsPaused(review.Day{Starts: review.DayStarts}, time.Now())
-		if got != one.paused {
-			t.Errorf("%q is paused %v, want %v", one.front, got, one.paused)
+		if got != one.isPaused {
+			t.Errorf("%q is paused %v, want %v", one.front, got, one.isPaused)
 		}
 	}
 }
@@ -165,7 +165,7 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 	was := stands.GetPlacing()
 
 	for what, alter := range map[string]func(p *review.Preset){
-		"an even load off":   func(p *review.Preset) { p.EvenLoad = false },
+		"an even load off":   func(p *review.Preset) { p.IsEvenLoad = false },
 		"a goal of a date":   func(p *review.Preset) { p.Goal = review.GoalDate },
 		"a Saturday freed":   func(p *review.Preset) { p.Load = nil },
 		"a lighter Saturday": func(p *review.Preset) { p.Load[time.Saturday] = 20 },

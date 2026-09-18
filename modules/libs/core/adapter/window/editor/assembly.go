@@ -85,7 +85,7 @@ type Assembly interface {
 	// object where the settings name one provider.
 	OpenEmbedders(
 		ctx context.Context, tasks *task.Tasks,
-	) (indexing, asking port.Embedder, close func() error, why error)
+	) (indexing, asking port.Embedder, closer func() error, why error)
 
 	// NewSearch is how the window answers a question about the text the vault
 	// holds. handleError is where a half that could not run is said.

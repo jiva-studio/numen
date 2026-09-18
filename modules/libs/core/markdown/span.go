@@ -80,7 +80,7 @@ func plain(text string) reading {
 	at := make([]int, 0, len(text)+1)
 	for from, r := range text {
 		before := out.Len()
-		out.WriteRune(plainly(r))
+		out.WriteRune(getPlainRune(r))
 		for range out.Len() - before {
 			at = append(at, from)
 		}
@@ -95,7 +95,7 @@ func loose(text string) reading {
 	at := make([]int, 0, len(text)+1)
 	spacing := false
 	for from, r := range text {
-		mark := plainly(r)
+		mark := getPlainRune(r)
 		switch {
 		case mark == '\n':
 			spacing = false
@@ -116,10 +116,10 @@ func loose(text string) reading {
 	return reading{text: out.String(), at: append(at, len(text))}
 }
 
-// plainly is the mark a rune stands for, or the rune itself. Dashes, quotes and
+// getPlainRune is the mark a rune stands for, or the rune itself. Dashes, quotes and
 // the spaces that are not the space bar are what a person's editor puts in
 // their prose and a program writing about that prose rarely reproduces.
-func plainly(r rune) rune {
+func getPlainRune(r rune) rune {
 	switch {
 	// Hyphens and dashes, U+2010 to U+2015, and the minus sign U+2212.
 	case r >= '‐' && r <= '―', r == '−':
@@ -154,7 +154,7 @@ func Diff(was, now string) (Span, string) {
 	for head < len(was) && head < len(now) && was[head] == now[head] {
 		head++
 	}
-	for head > 0 && !opens(was, head) {
+	for head > 0 && !canBeginAt(was, head) {
 		head--
 	}
 
@@ -163,16 +163,16 @@ func Diff(was, now string) (Span, string) {
 	for tail < most && was[len(was)-tail-1] == now[len(now)-tail-1] {
 		tail++
 	}
-	for tail > 0 && !closes(was, len(was)-tail) {
+	for tail > 0 && !canEndAt(was, len(was)-tail) {
 		tail--
 	}
 
 	return Span{From: head, To: len(was) - tail}, now[head : len(now)-tail]
 }
 
-// opens reports whether a span may begin at `at`: at the start of the text,
-// or where a rune begins and spacing stands before it.
-func opens(text string, at int) bool {
+// canBeginAt reports whether a span may begin at `at`: at the start of the
+// text, or where a rune begins and spacing stands before it.
+func canBeginAt(text string, at int) bool {
 	if at <= 0 {
 		return true
 	}
@@ -182,9 +182,9 @@ func opens(text string, at int) bool {
 	return spacing(text[at-1])
 }
 
-// closes reports whether a span may end at `at`: at the end of the text, or
+// canEndAt reports whether a span may end at `at`: at the end of the text, or
 // where spacing stands.
-func closes(text string, at int) bool {
+func canEndAt(text string, at int) bool {
 	if at >= len(text) {
 		return true
 	}

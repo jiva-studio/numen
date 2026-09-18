@@ -40,10 +40,10 @@ func (t *Transcriber) segments(ctx context.Context, sound []float32) ([]port.Aud
 
 	windows := func(ms int) int { return ms * sampleRate / (1000 * speechWindow) }
 	found := joinShortSpans(
-		runs(scores, t.cutting.threshold(),
+		getSpans(scores, t.cutting.threshold(),
 			windows(t.cutting.silence()), windows(t.cutting.pad()),
-			windows(t.cutting.longest()), windows(t.cutting.shortest())),
-		windows(t.cutting.least()), windows(t.cutting.longest()),
+			windows(t.cutting.getLongestSegment()), windows(t.cutting.getShortestSegment())),
+		windows(t.cutting.getShortestPause()), windows(t.cutting.getLongestSegment()),
 	)
 
 	var out []port.Audio
@@ -174,13 +174,13 @@ type span struct {
 	From, To int
 }
 
-// runs are the spans of speech a run of scores holds.
+// getSpans are the spans of speech a run of scores holds.
 //
 // A span is opened by a window the model is sure enough about and closed by
 // quiet windows enough after it, so that the pause between two words does not
 // cut a sentence in half. Each is then widened by pad at both ends, and two
 // that now meet are one.
-func runs(scores []float32, threshold float32, silence, pad, longest, shortest int) []span {
+func getSpans(scores []float32, threshold float32, silence, pad, longest, shortest int) []span {
 	var out []span
 	open, last := -1, -1
 	for i, score := range scores {
@@ -234,15 +234,15 @@ func splitLongSpan(one span, scores []float32, longest int) []span {
 	}
 	var out []span
 	for one.To-one.From > longest {
-		at := quietest(scores, one.From+longest/2, one.From+longest)
+		at := findQuietest(scores, one.From+longest/2, one.From+longest)
 		out = append(out, span{one.From, at})
 		one.From = at
 	}
 	return append(out, one)
 }
 
-// quietest is where the lowest score between two windows stands.
-func quietest(scores []float32, from, to int) int {
+// findQuietest is where the lowest score between two windows stands.
+func findQuietest(scores []float32, from, to int) int {
 	from, to = max(from, 0), min(to, len(scores))
 	at := from
 	for i := from; i < to; i++ {

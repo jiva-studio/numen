@@ -2,6 +2,7 @@ package editor
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -392,14 +393,14 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	// A page is the one thing left under this route, and drawing one looks the
 	// file up before anything else. That look is where the door stands.
 	api := &API{Readers: readers, Viewer: newViewer(nil)}
-	api.Viewer.open = func([]byte) (scan, error) { return nil, errNoPage }
+	api.Viewer.open = func([]byte) (pool.Scan, error) { return nil, errNoPage }
 	api.show(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
 	handler := api.NewHandler(http.NotFoundHandler())
 
 	answered := make(chan struct{})
 	go func() {
 		defer close(answered)
-		at := pageOf("Note.pdf", 0, 800, fingerprint{})
+		at := pageOf("Note.pdf", 0, 800, pool.Fingerprint{})
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
 	}()
 	<-readers.begun

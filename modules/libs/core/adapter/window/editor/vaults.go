@@ -130,7 +130,7 @@ func (s vaultsService) OpenVault(
 	}
 	// A window that is closing, or already settling what it owes, is what
 	// stopped this, and the vault asked for is as it was.
-	if errors.Is(err, errGoing) || errors.Is(err, errSettling) {
+	if errors.Is(err, errWindowClosing) || errors.Is(err, errSettling) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	reason, refused := vaultsErrorCodeBy(err)

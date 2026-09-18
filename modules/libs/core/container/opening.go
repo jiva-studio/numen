@@ -21,8 +21,8 @@ type VaultOpener struct {
 	// ErrorHandler, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds.
 	ErrorHandler port.ErrorHandler
-	// Rebuild reads every note again, whatever its fingerprint says.
-	Rebuild bool
+	// ShouldRebuild reads every note again, whatever its fingerprint says.
+	ShouldRebuild bool
 
 	watcher port.VaultWatcher
 	scan    vault.Scan
@@ -38,14 +38,14 @@ type VaultOpener struct {
 // the whole of what a caller is given, and a caller that had to name the
 // scenario behind it to read one of these would be assembling the core itself.
 type VaultChanges struct {
-	Paths  []string
-	Assets []string
-	Reload bool
+	Paths        []string
+	Assets       []string
+	ShouldReload bool
 }
 
 // Reading says whether an asset owes a read: one changed, or the whole vault is
 // being looked at again and every asset with it.
-func (m VaultChanges) Reading() bool { return m.Reload || len(m.Assets) > 0 }
+func (m VaultChanges) Reading() bool { return m.ShouldReload || len(m.Assets) > 0 }
 
 // VaultOpener is how this installation opens a vault, the way the settings say
 // one is read and watched.
@@ -88,7 +88,7 @@ func (o *VaultOpener) GetRefresh() vault.Refresh { return o.refresh }
 // again.
 func (o *VaultOpener) GetScan() vault.Scan {
 	scan := o.scan
-	scan.RebuildIndex = o.Rebuild
+	scan.ShouldRebuildIndex = o.ShouldRebuild
 	return scan
 }
 
@@ -108,7 +108,7 @@ func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 	follow := vault.NewFollow(o.watcher, o.refresh, scan)
 	if told := o.Told; told != nil {
 		follow.Changed = func(m vault.VaultChanges) {
-			told(VaultChanges{Paths: m.Paths, Assets: m.Assets, Reload: m.Reload})
+			told(VaultChanges{Paths: m.Paths, Assets: m.Assets, ShouldReload: m.ShouldReload})
 		}
 	}
 	follow.ErrorHandler = o.ErrorHandler
@@ -193,10 +193,10 @@ type holding struct {
 // writes is every path written through the index while a walk is reading the
 // vault: each path once, in the order it was first written.
 type writes struct {
-	mu    sync.Mutex
-	paths []string
-	kept  map[string]bool
-	over  bool
+	mu     sync.Mutex
+	paths  []string
+	kept   map[string]bool
+	isOver bool
 }
 
 func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
@@ -220,7 +220,7 @@ func (w *writes) begin() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	w.over = false
+	w.isOver = false
 	w.paths, w.kept = nil, nil
 }
 
@@ -230,7 +230,7 @@ func (w *writes) hold(path string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.over || w.kept[path] {
+	if w.isOver || w.kept[path] {
 		return
 	}
 	if w.kept == nil {
@@ -246,7 +246,7 @@ func (w *writes) takePaths() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	w.over = true
+	w.isOver = true
 	paths := w.paths
 	w.paths, w.kept = nil, nil
 	return paths

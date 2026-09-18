@@ -117,9 +117,9 @@ type LocalModel struct {
 	Runtime string `json:"runtime"`
 	// Threads is how many of this machine one forward pass may use.
 	Threads int `json:"threads"`
-	// Download allows fetching the model when it is not on this machine. Turned
+	// ShouldDownload allows fetching the model when it is not on this machine. Turned
 	// off, and with no directory named, a vault is searched by its words.
-	Download bool `json:"download"`
+	ShouldDownload bool `json:"download"`
 }
 
 // GetEngine is what runs this model here. A platform ONNX Runtime is published
@@ -267,7 +267,7 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 	assign(&m.Engine, f.Engine)
 	assign(&m.Runtime, f.Runtime)
 	assign(&m.Threads, f.Threads)
-	assign(&m.Download, f.Download)
+	assign(&m.ShouldDownload, f.Download)
 	return nil
 }
 

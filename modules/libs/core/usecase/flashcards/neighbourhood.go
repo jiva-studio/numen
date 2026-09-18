@@ -34,13 +34,13 @@ type Neighbour struct {
 	Body  string
 	// Label is what the person called the relationship, where they did.
 	Label string
-	// Backlink is this note pointing at the deck. False is the deck pointing
+	// IsBacklink is this note pointing at the deck. False is the deck pointing
 	// at it.
-	Backlink bool
-	// Ambiguous is several notes answering to the name that was written. The
+	IsBacklink bool
+	// IsAmbiguous is several notes answering to the name that was written. The
 	// link resolves to the nearest, and a person reading the wrong note has no
 	// other way to find out.
-	Ambiguous bool
+	IsAmbiguous bool
 	// Outcome is how the reading of the text ended. Empty for a note whose text
 	// was never asked for.
 	Outcome note.ReadOutcome
@@ -96,10 +96,10 @@ func (u ShowNeighbourhood) Execute(
 			continue
 		}
 		one := Neighbour{
-			Written:   l.Target.GetWritten(),
-			Path:      l.To,
-			Label:     l.Label,
-			Ambiguous: l.Ambiguous,
+			Written:     l.Target.GetWritten(),
+			Path:        l.To,
+			Label:       l.Label,
+			IsAmbiguous: l.IsAmbiguous,
 		}
 		if l.To == "" {
 			// Dangling: named by how it is written, and there is nothing to read.
@@ -120,7 +120,7 @@ func (u ShowNeighbourhood) Execute(
 		seen[l.From] = true
 		// Nothing is ambiguous on this side: the note shown is the one that
 		// wrote the link, whatever its own name resolved through.
-		found = append(found, Neighbour{Path: l.From, Label: l.Label, Backlink: true})
+		found = append(found, Neighbour{Path: l.From, Label: l.Label, IsBacklink: true})
 	}
 
 	paths := make([]string, 0, len(found))

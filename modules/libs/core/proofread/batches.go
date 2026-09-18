@@ -60,7 +60,7 @@ func GetSpeechBatches(cues []transcript.Cue, size, overlap int) []Batch {
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
 		end := min(start+size, len(lines))
-		out = append(out, Batch{Number: len(out), Lines: lines[start:end:end], Joinable: true})
+		out = append(out, Batch{Number: len(out), Lines: lines[start:end:end], IsJoinable: true})
 		if end == len(lines) {
 			break
 		}
@@ -102,9 +102,9 @@ func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 		reach = end
 		start := max(end-size, 0)
 		out = append(out, Batch{
-			Number:   len(batches) + len(out),
-			Lines:    lines[start:end:end],
-			Joinable: true,
+			Number:     len(batches) + len(out),
+			Lines:      lines[start:end:end],
+			IsJoinable: true,
 		})
 	}
 	return out

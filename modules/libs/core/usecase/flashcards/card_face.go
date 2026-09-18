@@ -36,7 +36,7 @@ type CardFace struct {
 
 // Lay is the face filled with this card's values: what stands before the answer
 // and what stands after it, as HTML.
-func (s CardFace) Lay() (front, back string) { return format.Lay(s.stencil, s.face, s.card) }
+func (s CardFace) Lay() (front, back string) { return format.Lay(s.face, s.card) }
 
 // ListCardFaces is every card face a vault holds, read out of its files.
 //
@@ -72,7 +72,7 @@ func (u ListCardFaces) Execute(ctx context.Context, v domain.Vault) ([]CardFace,
 	if err != nil {
 		return nil, err
 	}
-	return u.Of(ctx, v, paths), nil
+	return u.GetFaces(ctx, v, paths), nil
 }
 
 // Decks is the path of every deck the vault holds.
@@ -93,14 +93,14 @@ func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, err
 	return u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 }
 
-// Of reads the decks named and says what stands in them. A caller after the
+// GetFaces reads the decks named and says what stands in them. A caller after the
 // cards of one preset hands it the decks pointing there, and the rest of the
 // vault is left unread.
 //
 // A deck that cannot be read contributes no card face and is not an error. What
 // was wrong with it is the deck's own problem, and the editor is where it is
 // settled.
-func (u ListCardFaces) Of(ctx context.Context, v domain.Vault, paths []string) []CardFace {
+func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []string) []CardFace {
 	read := cards.NewRead(u.Readers, u.Links)
 	stencils := make(map[string]format.Stencil)
 	var out []CardFace

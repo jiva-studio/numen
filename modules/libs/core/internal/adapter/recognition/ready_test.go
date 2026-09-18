@@ -27,12 +27,12 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 	writeFile(t, dir, "inference.onnx")
 
 	for name, c := range map[string]struct {
-		change func(*Config)
-		ready  bool
+		change  func(*Config)
+		isReady bool
 	}{
 		"every model is here": {func(*Config) {}, true},
 		"the download switch changes nothing": {
-			func(cfg *Config) { cfg.Download = true }, true,
+			func(cfg *Config) { cfg.ShouldDownload = true }, true,
 		},
 		"a path written down names nothing": {
 			func(cfg *Config) { cfg.Layout.Path = filepath.Join(dir, "gone.onnx") }, false,
@@ -56,7 +56,7 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 				Recognise: RecogniserModel{Name: "https://example.invalid/models/inference.onnx"},
 			}
 			c.change(&cfg)
-			if got := Ready(cfg); got != c.ready {
+			if got := Ready(cfg); got != c.isReady {
 				t.Errorf("ready: %v", got)
 			}
 		})

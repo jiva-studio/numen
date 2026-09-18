@@ -79,8 +79,8 @@ type Point struct {
 	// Share is the share of the material learned by this day, and Enough is
 	// whether the pace this place sets learns every card face that can be
 	// learned by it. A goal keeping no such account stands at true.
-	Share  float64
-	Enough bool
+	Share    float64
+	IsEnough bool
 	// Short is how many card faces cannot be learned by this day whatever the
 	// pace, which is the rule wanting more days than the day leaves them.
 	Short int
@@ -211,7 +211,7 @@ func (d drawing) minutes(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	out.Now = Place{Index: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
+	out.Now = Place{Index: findNearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
 	// What is suggested is the shortest day that asks everything the day holds:
 	// the minutes stop closing it, and the material is what runs out. A load
 	// nothing on the grid carries is suggested at the longest day on it.
@@ -268,7 +268,7 @@ func (d drawing) retention(ctx context.Context) (Curve, error) {
 		return Curve{}, err
 	}
 
-	out.Now = Place{Index: nearest(out.Grid, p.Retention), Value: p.Retention}
+	out.Now = Place{Index: findNearest(out.Grid, p.Retention), Value: p.Retention}
 	// A goal of retention suggests nothing, and its place stands at Nowhere.
 	return out, nil
 }
@@ -348,7 +348,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 			Owed:     ran.Backlog[day],
 			Retained: back,
 			Share:    ran.Through[day],
-			Enough:   ran.hasReached(day),
+			IsEnough: ran.hasReached(day),
 			Short:    ran.Short,
 			Closed:   BudgetNames{ClosedPaused},
 			Clears:   ran.Clears,
@@ -369,7 +369,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 	// place is worked out for that day.
 	if named >= 0 {
 		out.Now = Place{
-			Index: nearest(out.Grid, float64(named)),
+			Index: findNearest(out.Grid, float64(named)),
 			Value: float64(named),
 			Day:   run.Day.GetName(open.AddDate(0, 0, named)),
 		}
@@ -379,7 +379,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 	// preset keeps minutes, it is the soonest such day whose cost fits them.
 	if p.MinutesADay > 0 {
 		for i, one := range out.Points {
-			if learns(one) && one.Minutes <= float64(p.MinutesADay) {
+			if isLearned(one) && one.Minutes <= float64(p.MinutesADay) {
 				out.Suggested = Place{Index: i, Value: out.Grid[i], Day: out.Days[i]}
 				return out, nil
 			}
@@ -389,7 +389,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 	// suggested the soonest day that gets there at whatever it costs. A range no
 	// day of which gets there points at none.
 	for i, one := range out.Points {
-		if learns(one) {
+		if isLearned(one) {
 			out.Suggested = Place{Index: i, Value: out.Grid[i], Day: out.Days[i]}
 			return out, nil
 		}
@@ -417,9 +417,9 @@ func learnt(
 	return ran.Learns, nil
 }
 
-// learns reports whether the whole material stands learned on this day: no card
-// face out of reach of it, and the pace it sets through every one of them.
-func learns(one Point) bool { return one.Short == 0 && one.Enough }
+// isLearned reports whether the whole material stands learned on this day: no
+// card face out of reach of it, and the pace it sets through every one of them.
+func isLearned(one Point) bool { return one.Short == 0 && one.IsEnough }
 
 // point is a projection as one place of a curve, at the load it carries over
 // the days the preset admits.
@@ -432,7 +432,7 @@ func point(p Projection) Point {
 		Minutes: p.MinutesADay,
 		// A goal of minutes and a goal of retention set no pace at a day, so no
 		// place of theirs falls short of one.
-		Enough:   true,
+		IsEnough: true,
 		Retained: back,
 		Owed:     p.Owed,
 		Share:    p.Through[len(p.Through)-1],
@@ -448,8 +448,8 @@ func point(p Projection) Point {
 // getSessionClosed is what closed the first day the preset admits. A preset
 // admitting no day is closed by the pause.
 func getSessionClosed(p Projection) BudgetNames {
-	day, any := p.Session()
-	if !any {
+	day, isAdmitted := p.Session()
+	if !isAdmitted {
 		return BudgetNames{ClosedPaused}
 	}
 	return p.Closed[day]
@@ -463,8 +463,8 @@ func getSessionClosed(p Projection) BudgetNames {
 // admitting no day at all holds no session, and stands at nothing.
 func session(p Projection) Point {
 	out := point(p)
-	day, any := p.Session()
-	if !any {
+	day, isAdmitted := p.Session()
+	if !isAdmitted {
 		return out
 	}
 	out.Reviews, out.Minutes = float64(p.Faced[day]), p.Spent[day].Minutes()
@@ -474,8 +474,8 @@ func session(p Projection) Point {
 // getSessionMinutes is how long the first day the preset admits took, which is
 // what carrying the whole load costs on the next session.
 func getSessionMinutes(p Projection) float64 {
-	day, any := p.Session()
-	if !any {
+	day, isAdmitted := p.Session()
+	if !isAdmitted {
 		return 0
 	}
 	return p.Spent[day].Minutes()

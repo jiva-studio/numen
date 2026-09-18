@@ -93,12 +93,12 @@ func (a *API) WatchCardsDue(
 func orderVaults(known []vaults.KnownVault) []domain.Vault {
 	order := make([]domain.Vault, 0, len(known))
 	for _, one := range known {
-		if one.Current {
+		if one.IsCurrent {
 			order = append(order, one.Vault)
 		}
 	}
 	for _, one := range known {
-		if !one.Current {
+		if !one.IsCurrent {
 			order = append(order, one.Vault)
 		}
 	}
@@ -204,9 +204,9 @@ func (a *API) StartSession(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	over := flashcards.Scope{
-		Deck:   r.Msg.GetDeck(),
-		Preset: r.Msg.GetPreset(),
-		Named:  r.Msg.Preset != nil,
+		Deck:    r.Msg.GetDeck(),
+		Preset:  r.Msg.GetPreset(),
+		IsNamed: r.Msg.Preset != nil,
 	}
 	session, err := a.Session.Execute(ctx, v, over)
 	if err != nil {

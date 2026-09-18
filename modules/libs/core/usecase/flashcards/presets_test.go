@@ -32,7 +32,7 @@ func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestADeckNamingNoPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Terms.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	}
 	s := openVault(t, notes)
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 
 	remove(t, s, "Sanskrit.md")
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func TestADeckNamingNoPresetHasNothingSaidAgainstIt(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Terms.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +229,7 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Mantras.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Mantras.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 	}
 	s := openVault(t, notes)
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -730,7 +730,7 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 		t.Fatal(err)
 	}
 	settings := held.Settings
-	settings.EvenLoad = false
+	settings.IsEvenLoad = false
 	if _, err := s.presets.Save(
 		t.Context(), s.vault, "Sanskrit.md", settings, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)

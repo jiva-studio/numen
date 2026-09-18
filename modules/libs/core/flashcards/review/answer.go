@@ -71,6 +71,6 @@ type Answer struct {
 	Undoes string
 }
 
-// TakesBack reports whether this line takes an answer back rather than giving
+// IsUndo reports whether this line takes an answer back rather than giving
 // one.
-func (a Answer) TakesBack() bool { return a.Undoes != "" }
+func (a Answer) IsUndo() bool { return a.Undoes != "" }

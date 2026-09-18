@@ -184,7 +184,7 @@ func TestAFaceMissingASideLaysOutNothing(t *testing.T) {
 			if got := getProblem(t, s.Problems, format.FaultFaceSide).Face; got != 0 {
 				t.Errorf("face = %d, want the broken one", got)
 			}
-			front, back := format.Lay(s, s.Faces[0], format.Card{Heading: "Llama"})
+			front, back := format.Lay(s.Faces[0], format.Card{Heading: "Llama"})
 			if front != "" || back != "" {
 				t.Errorf("the face laid out %q and %q, want nothing", front, back)
 			}

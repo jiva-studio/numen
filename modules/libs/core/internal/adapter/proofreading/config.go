@@ -104,9 +104,9 @@ type Proofread struct {
 	// Profile is the profile, by the name the profiles carry it under. Empty
 	// names none, and nothing is put right.
 	Profile string `json:"with"`
-	// Automatically is whether a reading already written down is put right
+	// IsAutomatic is whether a reading already written down is put right
 	// without anybody asking for it.
-	Automatically bool `json:"automatically"`
+	IsAutomatic bool `json:"automatically"`
 }
 
 // Defaults proofread nothing. The models are there and a person asks, which is

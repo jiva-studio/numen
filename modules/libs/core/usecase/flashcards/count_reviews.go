@@ -125,7 +125,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 			}
 		}
 		now.Runs = append(now.Runs, one)
-		if opened && !ran.Gone && !ran.Shut {
+		if opened && !ran.IsGone && !ran.IsShut {
 			held.Answers = append(held.Answers, ran.Answers...)
 			held.Files = append(held.Files, port.Entry{Name: file.Name, Size: ran.Size})
 		}
@@ -133,7 +133,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 		// What a run came to on its own is what is kept, and what the run adds
 		// to the counting is what no other run has been counted for.
 		days := one.Days
-		if repeats(one.IDs, seen) {
+		if isRepeated(one.IDs, seen) {
 			if !opened {
 				ran, err = log.ReadFile(ctx, store, file)
 				if err != nil {
@@ -189,8 +189,8 @@ func identifiers(answers []review.Answer) []string {
 	return out
 }
 
-// repeats reports whether a run carries a line another run was counted for.
-func repeats(ids []string, seen map[string]bool) bool {
+// isRepeated reports whether a run carries a line another run was counted for.
+func isRepeated(ids []string, seen map[string]bool) bool {
 	for _, id := range ids {
 		if seen[id] {
 			return true

@@ -31,11 +31,11 @@ var owned = map[string]bool{
 type entry struct {
 	link       domain.Link
 	start, end int
-	// readable is whether the application could act on this entry at all. One
+	// isReadable is whether the application could act on this entry at all. One
 	// it could not is still somebody's writing and is never rewritten.
-	readable bool
-	// ours is whether every key in it is one the application owns.
-	ours bool
+	isReadable bool
+	// isOurs is whether every key in it is one the application owns.
+	isOurs bool
 	// address is the node holding where the link goes, so changing it is a
 	// change to that scalar.
 	address *yaml.Node
@@ -47,11 +47,11 @@ type block struct {
 	start, end int
 	entries    []entry
 	indent     string
-	found      bool
+	isFound    bool
 }
 
 func (d *Document) block() (block, error) {
-	node, err := d.writable()
+	node, err := d.getWritableNode()
 	if err != nil {
 		return block{}, err
 	}
@@ -59,7 +59,7 @@ func (d *Document) block() (block, error) {
 	if !found {
 		return block{indent: "  "}, nil
 	}
-	b := block{start: start, end: end, indent: "  ", found: true}
+	b := block{start: start, end: end, indent: "  ", isFound: true}
 
 	var items *yaml.Node
 	for i := 0; i+1 < len(node.Content); i += 2 {
@@ -100,12 +100,12 @@ func (d *Document) block() (block, error) {
 			last = at
 		}
 		b.entries = append(b.entries, entry{
-			link:     linkOf(item),
-			start:    lines[at-1],
-			end:      lines[last],
-			readable: readable(item),
-			ours:     ours(item),
-			address:  valueOf(item, "to"),
+			link:       linkOf(item),
+			start:      lines[at-1],
+			end:        lines[last],
+			isReadable: isReadable(item),
+			isOurs:     isOurs(item),
+			address:    valueOf(item, "to"),
 		})
 		if i == 0 {
 			b.indent = getIndent(string(d.front[lines[at-1]:lines[at]]))
@@ -139,7 +139,7 @@ func (d *Document) AddLink(add domain.Link) error {
 	if err != nil {
 		return err
 	}
-	if !b.found {
+	if !b.isFound {
 		return d.set("links", append([]byte("links:"+d.eol), rendered...))
 	}
 	d.splice(b.end, b.end, rendered)
@@ -190,11 +190,11 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 	var carrying []int
 	kept := 0
 	for i, e := range b.entries {
-		if e.link.Type != kind || !e.readable {
+		if e.link.Type != kind || !e.isReadable {
 			kept++
 			continue
 		}
-		if !e.ours {
+		if !e.isOurs {
 			return fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		carrying = append(carrying, i)
@@ -229,7 +229,7 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 	if err != nil {
 		return err
 	}
-	if !b.found {
+	if !b.isFound {
 		return d.set("links", append([]byte("links:"+d.eol), rendered...))
 	}
 	d.splice(b.end, b.end, rendered)
@@ -255,7 +255,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 		if e.link.Target != to {
 			continue
 		}
-		if !e.ours {
+		if !e.isOurs {
 			return 0, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		// What was not sent is kept, and every field here behaves the same way.
@@ -291,7 +291,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 // or one carrying a key it does not own, is left alone: its link stays as it
 // was written and is visible as a problem.
 func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
-	if !domain.Nameable(to) {
+	if !domain.IsNameable(to) {
 		// Nothing a link could say reaches it. The link stays as it was
 		// written, and shows as a problem.
 		return 0, nil
@@ -304,7 +304,7 @@ func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
 	moved := 0
 	for i := len(b.entries) - 1; i >= 0; i-- {
 		e := b.entries[i]
-		if e.link.Target != from || !e.readable || !e.ours {
+		if e.link.Target != from || !e.isReadable || !e.isOurs {
 			continue
 		}
 		if e.address == nil {
@@ -375,15 +375,15 @@ func linkOf(item *yaml.Node) domain.Link {
 	return l
 }
 
-// readable is whether the application can act on an entry at all: somewhere to
+// isReadable is whether the application can act on an entry at all: somewhere to
 // go, and a role it has decided on.
-func readable(item *yaml.Node) bool {
+func isReadable(item *yaml.Node) bool {
 	l := linkOf(item)
 	return item.Kind == yaml.MappingNode && l.Target.Value != "" && domain.IsKnownRole(l.Role)
 }
 
-// ours is whether every key in an entry is one the application owns.
-func ours(item *yaml.Node) bool {
+// isOurs is whether every key in an entry is one the application owns.
+func isOurs(item *yaml.Node) bool {
 	if item.Kind != yaml.MappingNode {
 		return false
 	}

@@ -400,8 +400,9 @@ func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
 	}
 }
 
-// stands is what the vault says it holds at each of those paths, by path.
-func stands(t *testing.T, f *going, paths ...string) map[string]*v1.FileKind {
+// getKindsByPath is what the vault says it holds at each of those paths, by
+// path.
+func getKindsByPath(t *testing.T, f *going, paths ...string) map[string]*v1.FileKind {
 	t.Helper()
 	answer, err := f.client.ListFileKinds(t.Context(),
 		connect.NewRequest(&v1.ListFileKindsRequest{Paths: paths}))
@@ -430,7 +431,7 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 	})
 	f.read(t)
 
-	held := stands(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
+	held := getKindsByPath(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
 		"Entropy.md", "Physics.epub", "Scan.pdf", "Notes.txt", "Gone.md")
 
 	// One book reflows and the other is drawn as pictures, and a window opens
@@ -480,7 +481,7 @@ func TestABookStandsThereBeforeAnythingHasReadIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stood := stands(t, f, "Physics.epub")["Physics.epub"]
+	stood := getKindsByPath(t, f, "Physics.epub")["Physics.epub"]
 	if stood.GetKind() != v1.SourceKind_SOURCE_KIND_BOOK {
 		t.Errorf("a book nothing has read stands as %v", stood.GetKind())
 	}

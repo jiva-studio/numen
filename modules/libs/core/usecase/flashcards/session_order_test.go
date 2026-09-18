@@ -18,8 +18,8 @@ func faces(sat flashcards.SessionResult) []review.CardFaceID {
 	return out
 }
 
-// says is a card face of the one stencil these vaults are cut by.
-func says(at int) review.CardFaceID {
+// getCardFace is a card face of the one stencil these vaults are cut by.
+func getCardFace(at int) review.CardFaceID {
 	return review.CardFaceID{Card: mark(at), Face: "Say it"}
 }
 
@@ -41,12 +41,12 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	}
 
 	got := faces(s.openSessionByPreset(t, today, saturday, "Two.md"))
-	want := []review.CardFaceID{says(4), says(3)}
+	want := []review.CardFaceID{getCardFace(4), getCardFace(3)}
 	if !slices.Equal(got, want) {
 		t.Errorf("a day of two reviews asked %v, want %v", got, want)
 	}
 	for _, one := range []int{2, 1, 0} {
-		if slices.Contains(got, says(one)) {
+		if slices.Contains(got, getCardFace(one)) {
 			t.Errorf("%s was asked, and the day had room for the two older", mark(one))
 		}
 	}

@@ -27,7 +27,7 @@ type recording struct {
 	// through the segmenter. A recording carrying no speech is cut and holds
 	// none.
 	segments []port.Audio
-	cut      bool
+	isCut    bool
 	mu       sync.Mutex
 }
 
@@ -53,7 +53,7 @@ func (r *recording) Segments(ctx context.Context, from, count int) ([]port.Audio
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if !r.cut {
+	if !r.isCut {
 		sound, rate, err := samples(r.raw)
 		if err != nil {
 			return nil, err
@@ -65,7 +65,7 @@ func (r *recording) Segments(ctx context.Context, from, count int) ([]port.Audio
 		if r.segments, err = r.owner.segments(ctx, at); err != nil {
 			return nil, err
 		}
-		r.raw, r.cut = nil, true
+		r.raw, r.isCut = nil, true
 	}
 
 	var out []port.Audio

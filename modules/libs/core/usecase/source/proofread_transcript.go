@@ -74,10 +74,10 @@ type ProofreadTranscriptResult struct {
 	Fixed              int    // lines put right
 	Left               int    // lines asked about that stand as they were heard
 	UncorrectedBatches int    // batches replied to without a correction, left as heard
-	None               bool   // there is no transcript to put right, and nothing was done
-	Edited             bool   // somebody else wrote what stands, and it is left as they left it
-	Busy               bool   // the recording is held by another run
-	Already            bool   // this proofreader has been over every line, and nothing was asked
+	IsNone             bool   // there is no transcript to put right, and nothing was done
+	IsEdited           bool   // somebody else wrote what stands, and it is left as they left it
+	IsBusy             bool   // the recording is held by another run
+	IsAlready          bool   // this proofreader has been over every line, and nothing was asked
 }
 
 // How a transcript is cut up where nothing says otherwise: the lines to a
@@ -128,7 +128,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	// right are never under way at once.
 	release, err := store.Claim(ctx, text.Partial(area, hash))
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
+		res.IsBusy = true
 		return res, nil
 	}
 	if err != nil {
@@ -142,7 +142,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	}
 	_, cues := transcript.Parse(whole)
 	if len(cues) == 0 {
-		res.None = true
+		res.IsNone = true
 		return res, nil
 	}
 
@@ -154,7 +154,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		// The words as they stand are somebody's own, and a model does not
 		// correct them. Deleting the file beside the artifact gives back what
 		// was heard.
-		res.Edited = true
+		res.IsEdited = true
 		return res, nil
 	}
 	if !beside {
@@ -187,7 +187,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	}
 	if at >= len(batches) {
 		// This proofreader has been over every line and every seam.
-		res.Already = true
+		res.IsAlready = true
 		return res, nil
 	}
 	// Progress is reported once there is a batch to ask about, so a transcript
@@ -246,7 +246,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 			cues[line].Text = said.Text
 			wrote = true
 			fixed[line] = true
-			if !said.Joins() {
+			if !said.IsJoining() {
 				continue
 			}
 			// A sentence put back together is one cue, from the first moment of

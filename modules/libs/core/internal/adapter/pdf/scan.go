@@ -85,8 +85,13 @@ func (s *Scan) Image(index, dpi int) (drawing image.Image, err error) {
 	}
 	// The library hands back an image over memory it owns and a way to give that
 	// memory back. The pixels are copied out, because what is drawn outlives the
-	// call that drew it.
-	page := drawn.Result.Image
+	// call that drew it. A page is drawn in colour unless a format was asked
+	// for, and none is.
+	page, isColour := drawn.Result.RenderedImage.(*image.RGBA)
+	if !isColour {
+		drawn.Cleanup()
+		return nil, fmt.Errorf("pdf: page %d was drawn as %T", index, drawn.Result.RenderedImage)
+	}
 	out := image.NewRGBA(page.Bounds())
 	copy(out.Pix, page.Pix)
 	drawn.Cleanup()

@@ -12,8 +12,8 @@ import (
 //
 // The corpus is not in the repository, and these stand aside without it.
 
-// largest is the corpus book with the most bytes on disk.
-func largest(b *testing.B) string {
+// getLargestBook is the corpus book with the most bytes on disk.
+func getLargestBook(b *testing.B) string {
 	b.Helper()
 	root := os.Getenv(corpusEnv)
 	if root == "" {
@@ -44,7 +44,7 @@ func largest(b *testing.B) string {
 }
 
 func BenchmarkReadingABook(b *testing.B) {
-	raw, err := os.ReadFile(largest(b))
+	raw, err := os.ReadFile(getLargestBook(b))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func BenchmarkReadingABook(b *testing.B) {
 }
 
 func BenchmarkDrawingOneDocument(b *testing.B) {
-	raw, err := os.ReadFile(largest(b))
+	raw, err := os.ReadFile(getLargestBook(b))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func BenchmarkDrawingOneDocument(b *testing.B) {
 }
 
 func BenchmarkCountingThePages(b *testing.B) {
-	raw, err := os.ReadFile(largest(b))
+	raw, err := os.ReadFile(getLargestBook(b))
 	if err != nil {
 		b.Fatal(err)
 	}

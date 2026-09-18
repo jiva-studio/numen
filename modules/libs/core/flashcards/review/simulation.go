@@ -69,9 +69,9 @@ const LongestRipening = 10 * 365
 // giving it up.
 const mostAnswers = 1000
 
-// Ripens is how many days of review a card face begun now needs before this
-// preset counts it learned, when every day that card face falls due in answers
-// it.
+// GetRipeningDays is how many days of review a card face begun now needs before
+// this preset counts it learned, when every day that card face falls due in
+// answers it.
 //
 // It is one number for the whole material nobody has begun: those card faces
 // all stand at the same nothing. A rule no such card face reaches is
@@ -81,7 +81,7 @@ const mostAnswers = 1000
 // face nothing and counts for none of the days the pace divides by. A week
 // carrying such a day needs as many days of review as its slowest day of the
 // week does, so the pace holds for a card face begun on any of them.
-func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
+func GetRipeningDays(by Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{By: by, Day: d}
 	from := d.GetStart(now)
 	out := 0
@@ -106,7 +106,7 @@ func (s Simulation) getRipeningDays(p Preset, open time.Time) int {
 			open = ends
 			continue
 		}
-		c = s.settleDay(c, open, ends, p)
+		c = s.settleDay(c, open, p)
 		if p.IsLearned(c, ends) {
 			return days
 		}
@@ -131,7 +131,7 @@ func (s Simulation) getAfterShowing(c Schedule, open, ends time.Time, p Preset, 
 //
 // It is the day with no budget over it, which is the day the ripening of a card
 // face is counted in.
-func (s Simulation) settleDay(c Schedule, open, ends time.Time, p Preset) Schedule {
+func (s Simulation) settleDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {
 		if c.IsSeen() && !s.Day.IsOwed(c, open) {
 			break
@@ -160,7 +160,7 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool 
 		// A day of the week at none of the load asks it nothing, and the next
 		// day of review picks it up.
 		if p.GetShare(open.Weekday()) != 0 {
-			c = s.settleDay(c, open, ends, p)
+			c = s.settleDay(c, open, p)
 		}
 		open = ends
 	}

@@ -19,7 +19,7 @@ const (
 // in the order it arrived there.
 type Lock struct {
 	mu      sync.Mutex
-	held    bool
+	isHeld  bool
 	waiting [priorities][]chan struct{}
 }
 
@@ -33,8 +33,8 @@ func (g *Lock) acquire(ctx context.Context, asked bool, waiting func()) (func(),
 	}
 
 	g.mu.Lock()
-	if !g.held {
-		g.held = true
+	if !g.isHeld {
+		g.isHeld = true
 		g.mu.Unlock()
 		return g.release, nil
 	}
@@ -67,7 +67,7 @@ func (g *Lock) release() {
 			return
 		}
 	}
-	g.held = false
+	g.isHeld = false
 }
 
 // leave takes a run out of the line it stands in. One already handed the lock

@@ -32,6 +32,9 @@ linters:
     - usetesting
     - gocritic
     - nolintlint
+    - staticcheck
+    - unused
+    - revive
 
   settings:
     errcheck:
@@ -146,6 +149,49 @@ linters:
       require-specific: true
       require-explanation: true
 
+    staticcheck:
+      # The SA checks are defects and the ST checks are the language's own
+      # conventions. The QF checks are a refactoring assistant offering to
+      # rewrite code that is already right — De Morgan's law over a condition
+      # somebody wrote the way they meant it — and what a line of this
+      # repository is written like is settled in `AGENTS.md`.
+      #
+      # ST1020, ST1021 and ST1022 ask that a comment open with the name of the
+      # one thing it is about. A comment here may stand over three declarations
+      # and name all three, or say what the group of them is for, and that is
+      # how this repository writes them.
+      checks:
+        - all
+        - -QF*
+        - -ST1020
+        - -ST1021
+        - -ST1022
+
+    revive:
+      # The rules are named one by one, so the set is what this repository
+      # decided rather than what the linter shipped with. Its `exported` rule is
+      # left out: it asks for a doc comment on every exported name, and a
+      # comment that restates the name is the narration `AGENTS.md` refuses.
+      rules:
+        # A name the language already has means one thing everywhere it is read.
+        - name: redefines-builtin-id
+        # A parameter nothing reads is a signature saying more than it does.
+        #
+        # A handler, a callback and a method carrying a context are each written
+        # to a signature somebody else settled, and the names below are what
+        # that signature calls them. Standing there unread says the shape is
+        # being met, and `_` in their place would say less.
+        - name: unused-parameter
+          arguments:
+            - allowRegex: '^(_|ctx|t|w|r)$'
+        - name: empty-block
+        - name: increment-decrement
+        # `unexported-return` is not here. An adapter hands back its own
+        # concrete type and the composition root binds it to a port, which is
+        # the one place that names either. A caller holds the port.
+        - name: receiver-naming
+        - name: blank-imports
+
   exclusions:
     generated: lax
     # golangci-lint's own list for the calls whose error says nothing anybody
@@ -155,6 +201,20 @@ linters:
     presets:
       - std-error-handling
     rules:
+      # Draining a channel to its close is a loop with nothing to do in its
+      # body. What is being waited for is the close, and the range says it.
+      - source: ^\s*for range \w+(\.\w+\(\))? \{$
+        text: empty-block
+        linters: [revive]
+
+      # A driver that stands between the index and SQLite implements the
+      # interfaces database/sql asks a driver for, and `Query` is one of them.
+      # The deprecation is the standard library telling a driver to implement
+      # `QueryContext` as well, which this one does.
+      - path: (^|/)adapter/index/questions_test\.go$
+        text: SA1019.*StmtQueryContext
+        linters: [staticcheck]
+
       # A test builds the world it needs, names its own clock, and fails by
       # panicking as readily as by returning. What it opens is closed when the
       # process it opened for ends, it switches over the cases it is about, and
@@ -172,7 +232,7 @@ linters:
       # A page held in the window's cache is drawn by this file and read by it,
       # and `container/list` carries it as `any` because the standard library
       # has no list of one type. The assertion is over what this file put there.
-      - path: (^|/)adapter/window/editor/pictures\.go$
+      - path: (^|/)adapter/window/editor/pagecache/memory\.go$
         text: Error return value is not checked
         linters: [errcheck]
 

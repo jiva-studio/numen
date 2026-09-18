@@ -18,7 +18,7 @@ func (frontmatterCheck) Name() domain.Check { return domain.CheckFrontmatter }
 func (frontmatterCheck) Quiet() bool        { return false }
 
 func (c frontmatterCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
-	unreadable, err := c.queries.Unreadable(ctx, v.ID)
+	unreadable, err := c.queries.GetUnreadable(ctx, v.ID)
 	if err != nil {
 		return nil, err
 	}

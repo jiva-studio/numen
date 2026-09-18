@@ -42,7 +42,7 @@ func (u Forget) Execute(ctx context.Context, v domain.Vault) error {
 
 // keepTheLastVault refuses a vault that is all the installation has left.
 func keepTheLastVault(registry port.VaultRegistry, v domain.Vault) error {
-	known, err := registry.All()
+	known, err := registry.List()
 	if err != nil {
 		return err
 	}

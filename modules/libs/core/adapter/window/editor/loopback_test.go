@@ -19,7 +19,7 @@ import (
 // window is not showing.
 type heldVaults []domain.Vault
 
-func (l heldVaults) All() ([]domain.Vault, error) { return l, nil }
+func (l heldVaults) List() ([]domain.Vault, error) { return l, nil }
 
 func (l heldVaults) Find(id string) (domain.Vault, bool, error) {
 	for _, v := range l {

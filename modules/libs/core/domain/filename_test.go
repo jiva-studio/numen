@@ -101,7 +101,7 @@ func TestATitleThatNamesAWindowsDeviceIsFiledBeside(t *testing.T) {
 		if !strings.HasPrefix(name, title) {
 			t.Errorf("%q was filed as %q, which is not the title with a suffix", title, name)
 		}
-		if !domain.Nameable(name) {
+		if !domain.IsNameable(name) {
 			t.Errorf("%q is filed as %q, and no link can be written by that", title, name)
 		}
 	}
@@ -134,7 +134,7 @@ func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
 		if name == "" {
 			continue
 		}
-		if !domain.Nameable(name) {
+		if !domain.IsNameable(name) {
 			t.Errorf("%q is filed as %q, and no link can be written by that", title, name)
 		}
 		if domain.Basename(name+".md") != name {

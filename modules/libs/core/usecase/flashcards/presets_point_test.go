@@ -93,7 +93,7 @@ func TestADeckIsPutOnAPreset(t *testing.T) {
 		t.Errorf("the card was not left alone:\n%s", got)
 	}
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Terms.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 		t.Errorf("the deck names more than one preset:\n%s", got)
 	}
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 		t.Errorf("the deck still names a preset:\n%s", got)
 	}
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -284,7 +284,7 @@ func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Terms.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -404,7 +404,7 @@ func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 	if got := read(t, s.vault, "decks/Roots.md"); strings.Count(got, "type: preset") != 1 {
 		t.Errorf("the deck still names more than one preset:\n%s", got)
 	}
-	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	held, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -35,10 +35,10 @@ func unwritten(t *testing.T, notes map[string]string) (*going, *cutting) {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	f.opened.API.Notes.Write.Index = refuseToLevel
-	f.opened.API.Cards.Write.Index = refuseToLevel
+	f.installation.API.Notes.Write.Index = refuseToLevel
+	f.installation.API.Cards.Write.Index = refuseToLevel
 
-	route, handler := numenv1connect.NewCardsServiceHandler(f.opened.API)
+	route, handler := numenv1connect.NewCardsServiceHandler(f.installation.API)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewUnstartedServer(mux)
@@ -189,7 +189,7 @@ func TestASaveTheIndexWouldNotComeLevelWithStandsInTheList(t *testing.T) {
 
 	// The index is behind until something puts it right, and the save that does
 	// is what says so. A list nothing leaves is a list nobody reads.
-	f.opened.API.Notes.Write.Index = func(context.Context, domain.Vault, []string) error { return nil }
+	f.installation.API.Notes.Write.Index = func(context.Context, domain.Vault, []string) error { return nil }
 	save()
 	if at := findLevellingTask(t, f); at != nil {
 		t.Errorf("the index came level and a person is still shown %+v", at)

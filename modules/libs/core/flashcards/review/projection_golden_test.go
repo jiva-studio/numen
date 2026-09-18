@@ -126,8 +126,8 @@ func writeProjection(out *strings.Builder, p review.Projection) {
 	fmt.Fprintf(out, "spent %s\n", formatSpent(p.Spent))
 	fmt.Fprintf(out, "admitted %s\n", formatAdmitted(p.Admitted))
 	fmt.Fprintf(out, "closed %s\n", formatClosed(p.Closed))
-	fmt.Fprintf(out, "through %s\n", shares(p.Through))
-	fmt.Fprintf(out, "retained %s\n", shares(getRetainedShares(p.Retained)))
+	fmt.Fprintf(out, "through %s\n", formatShares(p.Through))
+	fmt.Fprintf(out, "retained %s\n", formatShares(getRetainedShares(p.Retained)))
 }
 
 // getRetainedShares is the share that came back on each day the run answers
@@ -185,7 +185,7 @@ func formatClosed(one []review.BudgetNames) string {
 	return strings.Join(out, ",")
 }
 
-func shares(one []float64) string {
+func formatShares(one []float64) string {
 	out := make([]string, len(one))
 	for i, each := range one {
 		out[i] = fmt.Sprintf("%.9f", each)
@@ -265,7 +265,7 @@ func goldenPresets() []goldenPreset {
 		{"minutes, a light week", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 21,
-			Counts: review.BudgetUnitCards, Backlog: 100, Load: light, EvenLoad: true,
+			Counts: review.BudgetUnitCards, Backlog: 100, Load: light, IsEvenLoad: true,
 		}},
 		{"minutes, no even load, new material first", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 35, NewADay: 12, ReviewsADay: 60,
@@ -275,33 +275,33 @@ func goldenPresets() []goldenPreset {
 		{"minutes, learned by a chance of recall", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.87, Rule: review.RuleRetention,
-			Counts: review.BudgetUnitCards, Backlog: 100, EvenLoad: true,
+			Counts: review.BudgetUnitCards, Backlog: 100, IsEvenLoad: true,
 		}},
 		{"minutes, a pause", review.Preset{
 			Goal: review.GoalMinutes, MinutesADay: 0, NewADay: 8, ReviewsADay: 45,
-			Retention: 0.9, Rule: review.RuleInterval, Interval: 21, EvenLoad: true,
+			Retention: 0.9, Rule: review.RuleInterval, Interval: 21, IsEvenLoad: true,
 		}},
 		{"retention, asking much of memory", review.Preset{
 			Goal: review.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
 			Retention: 0.97, Rule: review.RuleInterval, Interval: 21,
-			Counts: review.BudgetUnitCards, Backlog: 60, Load: light, EvenLoad: true,
+			Counts: review.BudgetUnitCards, Backlog: 60, Load: light, IsEvenLoad: true,
 		}},
 		{"retention, counting showings", review.Preset{
 			Goal: review.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
 			Retention: 0.97, Rule: review.RuleInterval, Interval: 21,
-			Counts: review.BudgetUnitShows, Backlog: 60, Load: light, EvenLoad: true,
+			Counts: review.BudgetUnitShows, Backlog: 60, Load: light, IsEvenLoad: true,
 		}},
 		{"a date, forty-five days off", review.Preset{
 			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
-			Counts: review.BudgetUnitCards, EvenLoad: true,
+			Counts: review.BudgetUnitCards, IsEvenLoad: true,
 		}},
 		{"a date, counting showings", review.Preset{
 			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
-			Counts: review.BudgetUnitShows, EvenLoad: true,
+			Counts: review.BudgetUnitShows, IsEvenLoad: true,
 		}},
 		{"a date, learned by a chance of recall", review.Preset{
 			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 20),

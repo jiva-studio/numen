@@ -70,8 +70,8 @@ func (d Day) GetDate(at time.Time) time.Time {
 	local := at.In(d.zone())
 	y, m, day := local.Date()
 	date := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
-	h, min := d.boundary()
-	if local.Hour() < h || (local.Hour() == h && local.Minute() < min) {
+	h, minute := d.boundary()
+	if local.Hour() < h || (local.Hour() == h && local.Minute() < minute) {
 		return date.AddDate(0, 0, -1)
 	}
 	return date
@@ -81,11 +81,11 @@ func (d Day) GetDate(at time.Time) time.Time {
 // the clock on the wall, so the day an hour was put into or taken out of begins
 // and ends at the hour a person reads.
 func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
-	h, min := d.boundary()
-	open := time.Date(y, m, day, h, min, 0, 0, d.zone())
+	h, minute := d.boundary()
+	open := time.Date(y, m, day, h, minute, 0, 0, d.zone())
 	// An hour the clock skips over is read by no instant, and the day begins
 	// where the clock jumped to.
-	if late := time.Date(y, m, day, h, min, 0, 0, time.UTC).Sub(wall(open)); late > 0 {
+	if late := time.Date(y, m, day, h, minute, 0, 0, time.UTC).Sub(wall(open)); late > 0 {
 		return open.Add(late)
 	}
 	return open

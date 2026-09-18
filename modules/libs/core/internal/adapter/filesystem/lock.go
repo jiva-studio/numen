@@ -57,9 +57,9 @@ func canonical(root string) string {
 	if err != nil {
 		return root
 	}
-	real, err := filepath.EvalSymlinks(abs)
+	resolved, err := filepath.EvalSymlinks(abs)
 	if err != nil {
 		return abs
 	}
-	return real
+	return resolved
 }

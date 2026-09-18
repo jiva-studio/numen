@@ -19,8 +19,8 @@ type Config struct {
 	// application, and then the download cache.
 	Dir string `json:"dir"`
 
-	// Download allows fetching what is not on this machine.
-	Download bool `json:"download"`
+	// ShouldDownload allows fetching what is not on this machine.
+	ShouldDownload bool `json:"download"`
 
 	Layout    LayoutModel     `json:"layout"`
 	Detect    DetectModel     `json:"detect"`
@@ -36,11 +36,11 @@ type Config struct {
 // settings are what the runtime and the models are found by.
 func (c Config) settings() onnxruntime.Settings {
 	return onnxruntime.Settings{
-		Section:  "indexing.recognition",
-		Runtime:  c.Runtime,
-		Dir:      c.Dir,
-		Download: c.Download,
-		Fetching: c.Progress,
+		Section:        "indexing.recognition",
+		Runtime:        c.Runtime,
+		Dir:            c.Dir,
+		ShouldDownload: c.ShouldDownload,
+		Fetching:       c.Progress,
 	}
 }
 
@@ -138,7 +138,7 @@ func Defaults() Config {
 		},
 
 		// What a reading needs is fetched when it is wanted.
-		Download: true,
+		ShouldDownload: true,
 	}
 }
 

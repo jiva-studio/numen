@@ -239,7 +239,7 @@ func TestOneRunToARecordingBeingPutRight(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Busy {
+	if !res.IsBusy {
 		t.Error("a recording another run holds was put right")
 	}
 	if len(by.asked) != 0 {
@@ -279,7 +279,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !res.Edited || res.Fixed != 0 {
+			if !res.IsEdited || res.Fixed != 0 {
 				t.Errorf("got %+v", res)
 			}
 			if len(by.asked) != 0 {
@@ -302,7 +302,7 @@ func TestATranscriptThatIsNotThereIsNothingToPutRight(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.None {
+	if !res.IsNone {
 		t.Errorf("got %+v", res)
 	}
 }

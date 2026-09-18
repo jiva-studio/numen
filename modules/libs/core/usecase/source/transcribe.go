@@ -39,10 +39,10 @@ type Transcribe struct {
 	// stopped keeps what it had. Zero takes the default.
 	Batch int
 
-	// Again throws away what a run before this one heard and listens from the
+	// IsRepeat throws away what a run before this one heard and listens from the
 	// start. It is how a person asks for a recording to be heard by whatever
 	// model is configured now, and nothing sets it on its own.
-	Again bool
+	IsRepeat bool
 
 	// Cut is optional. It makes a source's chunks, and is called as speech is
 	// written down, so what has been heard is searchable before the rest of it
@@ -67,13 +67,13 @@ func NewTranscribe(
 
 // TranscribeResult reports what transcribing did.
 type TranscribeResult struct {
-	Path     string // the recording being transcribed
-	Length   int    // how long it is, in milliseconds
-	Heard    int    // how much of it has been written down, this run and before it
-	Resumed  int    // how much a run before this one had already written down
-	Silent   bool   // it carries no speech, and that is what was written
-	Unopened bool   // nothing here can open it, and that is what was written
-	Busy     bool   // somebody else is transcribing these bytes, and nothing was done
+	Path       string // the recording being transcribed
+	Length     int    // how long it is, in milliseconds
+	Heard      int    // how much of it has been written down, this run and before it
+	Resumed    int    // how much a run before this one had already written down
+	IsSilent   bool   // it carries no speech, and that is what was written
+	IsUnopened bool   // nothing here can open it, and that is what was written
+	IsBusy     bool   // somebody else is transcribing these bytes, and nothing was done
 }
 
 // DefaultHeard is how many stretches of speech are heard before they are
@@ -108,7 +108,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// for as long as the listening takes.
 	release, err := store.Claim(ctx, partial)
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
+		res.IsBusy = true
 		return res, nil
 	}
 	if err != nil {
@@ -116,7 +116,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	}
 	defer release()
 
-	if u.Again {
+	if u.IsRepeat {
 		// Somebody asked for this recording to be heard afresh. What a run
 		// before this one made goes, and the listening starts from the top.
 		for _, name := range []string{final, partial, text.Answer(area, hash)} {
@@ -140,14 +140,14 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// recorded. Taking the record away is how a person asks for it again.
 	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
 		gave, _ := text.ReadAnswer(held)
-		res.Silent = gave == text.Silent
-		res.Unopened = gave == text.Unopened
+		res.IsSilent = gave == text.Silent
+		res.IsUnopened = gave == text.Unopened
 		return res, u.stand(ctx, v, ref, hash, "")
 	}
 
 	recording, err := u.By.Open(ctx, raw)
 	if err != nil {
-		res.Unopened = true
+		res.IsUnopened = true
 		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+describeFailure(err.Error()))
 	}
 	defer recording.Close()
@@ -169,7 +169,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	opened := size > 0
 	write := func(cues []transcript.Cue, transcribed int) error {
 		body := trimHeader(transcript.Marshal(cues), opened)
-		if err := store.Append(ctx, partial, append(body, transcript.Reaches(transcribed)...)); err != nil {
+		if err := store.Append(ctx, partial, append(body, transcript.GetReachMarker(transcribed)...)); err != nil {
 			return err
 		}
 		opened = true
@@ -223,7 +223,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	if words, _ := transcript.Parse(whole); strings.TrimSpace(words) == "" {
 		// A recording carrying no speech says so, and nothing stands as its
 		// text. An artifact with no cues in it is a transcription that worked.
-		res.Silent = true
+		res.IsSilent = true
 		return res, u.answer(ctx, v, ref, hash, area, store, text.Silent)
 	}
 

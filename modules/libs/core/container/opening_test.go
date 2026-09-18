@@ -147,7 +147,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	if err := receiveFrom(t, walked, "the first walk did not finish"); err != nil {
 		t.Fatal(err)
 	}
-	if m := receiveFrom(t, told, "the vault was never read again"); !m.Reload {
+	if m := receiveFrom(t, told, "the vault was never read again"); !m.ShouldReload {
 		t.Fatalf("reported %+v", m)
 	}
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Renamed" {
@@ -210,18 +210,18 @@ func (s *staged) Open(v domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return stagedRead{VaultReader: reader, at: s, holds: s.walks.Add(1) == 1}, nil
+	return stagedRead{VaultReader: reader, at: s, isHolding: s.walks.Add(1) == 1}, nil
 }
 
 type stagedRead struct {
 	port.VaultReader
-	at    *staged
-	holds bool
+	at        *staged
+	isHolding bool
 }
 
 func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
 	raw, err := r.VaultReader.Read(ctx, path)
-	if !r.holds {
+	if !r.isHolding {
 		return raw, err
 	}
 	select {

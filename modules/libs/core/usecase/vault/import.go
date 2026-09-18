@@ -96,7 +96,7 @@ func (u Import) bring(
 	}
 
 	switch {
-	case info.Folder:
+	case info.IsFolder:
 		// A folder the vault sits inside does not come in: the vault is where it
 		// would be copied to.
 		if u.Files.Contains(from, v.Path) {
@@ -117,7 +117,7 @@ func (u Import) bring(
 		}
 		return nil
 
-	case info.File:
+	case info.IsFile:
 		file, err := u.Files.Open(ctx, from)
 		if err != nil {
 			return err

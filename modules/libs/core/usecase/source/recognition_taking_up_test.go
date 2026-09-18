@@ -57,7 +57,7 @@ func newHaltedWorker(
 	w := newWatched(t, nil)
 	w.RecognitionWorker.with.Readers = vaults{v.ID: shelved}
 	w.RecognitionWorker.with.Proofreading = ProofreadingConfig{
-		Named: true, Automatically: true, Batch: 1,
+		IsNamed: true, IsAutomatic: true, Batch: 1,
 		By:    func(string) (port.Proofreader, error) { return by, nil },
 		Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
 	}

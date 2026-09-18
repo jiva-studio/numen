@@ -123,7 +123,7 @@ func (u Highlight) prose(
 	said port.SourceText,
 ) (string, error) {
 	of := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}
-	doc, err := of.Of(ctx, path, said.Producer, said.Hash)
+	doc, err := of.GetDocument(ctx, path, said.Producer, said.Hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		return "", nil
 	}
@@ -206,16 +206,16 @@ func (u Highlight) layer(
 	if err != nil {
 		return nil, err
 	}
-	pages := every(book, runs)
+	pages := getPagesOfRuns(book, runs)
 	if len(pages) == 0 {
 		return nil, nil
 	}
 	return u.Documents.Highlights(ctx, raw, book.Pages, pages)
 }
 
-// every is the pages all the runs fall on, in order and each of them once. Two
+// getPagesOfRuns is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
-func every(book port.TextLayer, runs []domain.Span) []int {
+func getPagesOfRuns(book port.TextLayer, runs []domain.Span) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {

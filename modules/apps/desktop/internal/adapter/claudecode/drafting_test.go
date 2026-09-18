@@ -15,18 +15,18 @@ import (
 // drawn is a window that keeps what it was told about a change being made, and
 // a vault that says one stretch stands in one place.
 type drawn struct {
-	said  []domain.Edit
-	at    time.Time
-	found bool
-	asked []string
+	said    []domain.Edit
+	at      time.Time
+	isFound bool
+	asked   []string
 }
 
 func (d *drawn) makeDrafting() claudecode.Drafting {
 	return claudecode.Drafting{
 		Report: func(_ context.Context, said domain.Edit) { d.said = append(d.said, said) },
-		Location: func(_ context.Context, path, stood string) (int, int, bool) {
+		Location: func(_ context.Context, _, stood string) (int, int, bool) {
 			d.asked = append(d.asked, stood)
-			return 3, 9, d.found
+			return 3, 9, d.isFound
 		},
 		// Every frame is a moment later, so the pace never holds one back.
 		Now: func() time.Time { d.at = d.at.Add(time.Second); return d.at },
@@ -93,7 +93,7 @@ const opens = `{"type":"stream_event","event":{"type":"content_block_start",` +
 // nothing in its place reads as having been deleted, so nothing is drawn until
 // the replacement has begun.
 func TestNothingIsDrawnBeforeTheReplacementHasBegun(t *testing.T) {
-	window := &drawn{found: true}
+	window := &drawn{isFound: true}
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md",`)+"\n"+
 		piece(`"stood":"A hedgehog`)+"\n"+
@@ -112,7 +112,7 @@ func TestNothingIsDrawnBeforeTheReplacementHasBegun(t *testing.T) {
 // Once the replacement has begun the stretch it replaces is whole, and every
 // piece of the replacement is drawn where that stretch stands.
 func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
-	window := &drawn{found: true}
+	window := &drawn{isFound: true}
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md","stood":"A hedgehog",`)+"\n"+
 		piece(`"becomes":"An axe`)+"\n"+
@@ -134,7 +134,7 @@ func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
 	if last.Text != "An axe, two-bladed" {
 		t.Errorf("what goes in was drawn as %q", last.Text)
 	}
-	if last.Done {
+	if last.IsDone {
 		t.Error("the adapter ended a change the vault ends")
 	}
 	if want := []string{"A hedgehog"}; len(window.asked) != 1 || window.asked[0] != want[0] {
@@ -145,8 +145,8 @@ func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
 // A stretch that stands nowhere or twice is not a place, and drawing over a
 // guess is worse than drawing nothing.
 func TestASpanThatIsNotOnePlaceIsNotDrawn(t *testing.T) {
-	window := &drawn{found: true}
-	window.found = false
+	window := &drawn{isFound: true}
+	window.isFound = false
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md","stood":"foe",`)+"\n"+
 		piece(`"becomes":"friend"}`))

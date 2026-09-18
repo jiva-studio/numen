@@ -23,14 +23,14 @@ func candidates(s Settings) []string {
 	}
 	var out []string
 	for _, at := range GetPaths(s.Dir, runtimeNames...) {
-		if stands(dir, at) {
+		if isUsableLibrary(dir, at) {
 			out = append(out, at)
 		}
 	}
 	if dir != "" {
 		for _, name := range runtimeNames {
 			at := filepath.Join(dir, name)
-			if stands(dir, at) {
+			if isUsableLibrary(dir, at) {
 				out = append(out, at)
 			}
 		}
@@ -39,10 +39,10 @@ func candidates(s Settings) []string {
 	return append(out, runtimeName())
 }
 
-// stands says whether one file is a library this machine may open. A library in
-// the fetch directory carries the sum pinned for this platform, and one from
-// anywhere else is the machine's own.
-func stands(dir, at string) bool {
+// isUsableLibrary says whether one file is a library this machine may open. A
+// library in the fetch directory carries the sum pinned for this platform, and
+// one from anywhere else is the machine's own.
+func isUsableLibrary(dir, at string) bool {
 	if _, err := os.Stat(at); err != nil {
 		return false
 	}

@@ -34,7 +34,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	// Tuesday.
 	due := at.AddDate(0, 0, 7)
 	p := review.Preset{
-		Goal: review.GoalMinutes, MinutesADay: 20, EvenLoad: true,
+		Goal: review.GoalMinutes, MinutesADay: 20, IsEvenLoad: true,
 		Load: map[time.Weekday]int{time.Friday: 50, time.Saturday: 0},
 	}
 
@@ -84,7 +84,7 @@ func TestHowLoadedADayOfReviewIs(t *testing.T) {
 // day of a week stands nearer its quietest.
 func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	by := review.NewFSRS()
-	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	at := makeLearnedFaces(by, now, 600)
 	// No budget binds, so a day carries what falls on it and what is compared is
 	// where the reviews fall.
@@ -92,22 +92,22 @@ func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	p := review.Preset{Goal: review.GoalRetention, ReviewsADay: 9999}
 
 	lumpy := runProjection(t, run, now, p, at, 0)
-	p.EvenLoad = true
+	p.IsEvenLoad = true
 	even := runProjection(t, run, now, p, at, 0)
 
 	// The first week pays the backlog, which stands where the answers already
 	// given left it.
-	if got := widest(lumpy.Load[7:]); got != 120 {
+	if got := getWidestWeek(lumpy.Load[7:]); got != 120 {
 		t.Errorf("a load left alone spread its widest week over %d answers, want 120", got)
 	}
-	if got := widest(even.Load[7:]); got != 30 {
+	if got := getWidestWeek(even.Load[7:]); got != 30 {
 		t.Errorf("an even load spread its widest week over %d answers, want 30", got)
 	}
 }
 
-// widest is the most a week's busiest day stands above its quietest, over every
+// getWidestWeek is the most a week's busiest day stands above its quietest, over every
 // week of a projection.
-func widest(load []int) int {
+func getWidestWeek(load []int) int {
 	out := 0
 	for i := 0; i+7 <= len(load); i++ {
 		week := load[i : i+7]
@@ -164,7 +164,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 		return s
 	}
 
-	button := p.Lands(loaded(due), local, due)
+	button := p.GetLandingDay(loaded(due), local, due)
 	replayed := p.Places(loaded(due.UTC()), stamp, by.Next(stood, stamp, review.Good).Due)
 	if button.Equal(due) {
 		t.Fatalf("the placement left the card on %v, where the scheduler put it", due.In(in))

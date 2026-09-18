@@ -10,7 +10,7 @@ import (
 // finds it.
 func TestLocatingLetsGoOfNoRuntime(t *testing.T) {
 	cfg := Defaults()
-	cfg.Download = false
+	cfg.ShouldDownload = false
 
 	held, _, err := onnxruntime.Open(t.Context(), cfg.settings())
 	if err != nil {
@@ -18,7 +18,7 @@ func TestLocatingLetsGoOfNoRuntime(t *testing.T) {
 	}
 	// A recogniser that could not be built gives back what it opened and
 	// reaches for nothing else.
-	if _, err := Open(t.Context(), Config{Runtime: cfg.Runtime, Download: false}); err == nil {
+	if _, err := Open(t.Context(), Config{Runtime: cfg.Runtime, ShouldDownload: false}); err == nil {
 		t.Fatal("a recogniser was built with no models named")
 	}
 

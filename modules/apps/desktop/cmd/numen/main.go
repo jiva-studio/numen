@@ -42,12 +42,12 @@ func main() {
 		"the vault to open: a name, a path or an identity; the one opened last by default")
 	flag.StringVar(&letting.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
-	flag.BoolVar(&letting.off, "no-mcp", false, "do not let agents reach this vault")
+	flag.BoolVar(&letting.isOff, "no-mcp", false, "do not let agents reach this vault")
 	flag.Float64Var(&said.interfaceScale, "interface-scale", 0,
 		"how large the interface is drawn, 1 being as designed; this launch alone")
 	flag.Float64Var(&said.textScale, "text-scale", 0,
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
-	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
+	flag.BoolVar(&cfg.ShouldRebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
 	flag.BoolVar(&telling, "version", false, "say what this build is and stop")
 	flag.Parse()
@@ -141,7 +141,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.
-	opened.Says(chosen.Said)
+	opened.Report(chosen.Said)
 
 	// The agents' endpoint on the vault in the window, let in once the window is
 	// built.
@@ -291,6 +291,6 @@ func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
 
 // agentOptions is what the person said about letting agents in.
 type agentOptions struct {
-	addr string
-	off  bool
+	addr  string
+	isOff bool
 }

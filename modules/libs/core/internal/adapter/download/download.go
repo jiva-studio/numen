@@ -37,9 +37,9 @@ var ErrNoTool = errors.New("nothing on this machine downloads that address")
 // What every provider does is here: say which addresses are its own, say what
 // it downloads by, and hand back what the address publishes as words.
 type provider interface {
-	// Supports says whether this provider answers for an address. Each is asked
+	// CanHandle says whether this provider answers for an address. Each is asked
 	// in turn, and the first that says so is the one that answers.
-	Supports(at domain.URL) bool
+	CanHandle(at domain.URL) bool
 
 	GetDownloadModel(at domain.URL) port.DownloadModel
 	Metadata(ctx context.Context, at domain.URL) (port.Metadata, error)
@@ -70,7 +70,7 @@ func New(ctx context.Context, c Config) (*Downloader, error) {
 // this machine holds none.
 func (f *Downloader) providerFor(at domain.URL) (provider, error) {
 	for _, one := range f.providers {
-		if one.Supports(at) {
+		if one.CanHandle(at) {
 			return one, nil
 		}
 	}

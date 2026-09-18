@@ -53,11 +53,11 @@ func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 	line, done := drawing.listen()
 	t.Cleanup(done)
 
-	drawing.tell(domain.Edit{Change: "one", Done: true})
+	drawing.tell(domain.Edit{Change: "one", IsDone: true})
 	drawing.tell(domain.Edit{Change: "one", Text: "more of it"})
 
 	got := <-line
-	if got.Change != "one" || !got.Done {
+	if got.Change != "one" || !got.IsDone {
 		t.Errorf("what waited is %+v, want the report that ended change one", got)
 	}
 	// What could not replace it waits behind it.

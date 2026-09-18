@@ -224,14 +224,14 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 	return out, rows.Err()
 }
 
-// Nearest is a search asked by meaning: the chunks of one vault nearest a
+// FindNearest is a search asked by meaning: the chunks of one vault nearest a
 // query vector, nearest first, at most `limit` of them.
 //
 // The coarse pass over the bit vectors keeps several times that many, and the
 // full-precision vectors order what it kept. A chunk that does not reach the
 // similarity floor is not an answer, so a vault with nothing to say answers
 // with nothing.
-func (q *Queries) Nearest(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
+func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", limit)
 	}

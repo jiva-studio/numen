@@ -170,7 +170,7 @@ func cutDivision(text string, d division, s Sizes, l Legibility) []Chunk {
 	var large []Chunk
 	for _, at := range tile(len(words), s.Large, s.LargeOverlap) {
 		c := extent(words, at, d.location)
-		if !legible(c.Slice(text), l) {
+		if !isLegible(c.Slice(text), l) {
 			continue
 		}
 		large = append(large, c)
@@ -186,7 +186,7 @@ func whole(text string, divisions []division, s Sizes, l Legibility) []Chunk {
 		return nil
 	}
 	large := extent(words, [2]int{0, len(words)}, "")
-	if !legible(large.Slice(text), l) {
+	if !isLegible(large.Slice(text), l) {
 		return nil
 	}
 	var small []Chunk
@@ -205,7 +205,7 @@ func smallChunks(text string, words []word, location string, s Sizes, l Legibili
 		for _, piece := range cutToLimit(text, words, at, s.Limit) {
 			c := extent(words, piece, location)
 			body := c.Slice(text)
-			if utf8.RuneCountInString(body) > s.Limit || !legible(body, l) {
+			if utf8.RuneCountInString(body) > s.Limit || !isLegible(body, l) {
 				continue
 			}
 			out = append(out, c)

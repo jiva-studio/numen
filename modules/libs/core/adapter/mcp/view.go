@@ -75,11 +75,11 @@ func addViewTools(server *sdk.Server, core Core) {
 			Length int `json:"length"`
 		} `json:"also,omitempty" jsonschema:"the other passages of the same document to light, as a search gives them"`
 	}) (*sdk.CallToolResult, struct {
-		Shown   bool   `json:"shown"`
+		IsShown bool   `json:"shown"`
 		Looking string `json:"looking" jsonschema:"what the person is now looking at, in words to say back to them"`
 	}, error) {
 		type out = struct {
-			Shown   bool   `json:"shown"`
+			IsShown bool   `json:"shown"`
 			Looking string `json:"looking" jsonschema:"what the person is now looking at, in words to say back to them"`
 		}
 		if in.Path == "" {
@@ -111,7 +111,7 @@ func addViewTools(server *sdk.Server, core Core) {
 		if err := core.View.Focus(ctx, at); err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Shown: true, Looking: describeLooking(ref.Kind, in.Length)}, nil
+		return nil, out{IsShown: true, Looking: describeLooking(ref.Kind, in.Length)}, nil
 	})
 }
 

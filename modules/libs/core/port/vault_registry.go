@@ -5,7 +5,7 @@ import "github.com/jiva-studio/numen/modules/libs/core/domain"
 // VaultRegistry is the list of vaults the user has added. It is application
 // state: not derivable from any vault, and not stored in one.
 type VaultRegistry interface {
-	All() ([]domain.Vault, error)
+	List() ([]domain.Vault, error)
 	Save(v domain.Vault) error
 	Find(nameOrPath string) (domain.Vault, bool, error)
 	// Remove takes a vault off the list. The folder and the identity inside it

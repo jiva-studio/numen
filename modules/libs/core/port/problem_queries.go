@@ -15,9 +15,9 @@ type ProblemQueries interface {
 	// GetParseProblems is what parsing each file turned up, as the parser said
 	// it.
 	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
-	// Unreadable is the notes whose frontmatter is not YAML, with what the
+	// GetUnreadable is the notes whose frontmatter is not YAML, with what the
 	// parser said about it.
-	Unreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
+	GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 
 	// Ambiguous is every link that more than one note answers to, resolved the
 	// same way a link is resolved anywhere else.

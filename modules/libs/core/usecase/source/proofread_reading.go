@@ -73,9 +73,9 @@ type ProofreadReadingResult struct {
 	Resumed          int    // how many a run before this one had already asked about
 	Fixed            int    // lines put right
 	UncorrectedPages int    // pages replied to without a correction, left as they were read
-	None             bool   // there is no reading to proofread, and nothing was done
-	Waiting          bool   // a batch is out and what comes back is not there yet
-	Busy             bool   // somebody else is proofreading this reading
+	IsNone           bool   // there is no reading to proofread, and nothing was done
+	IsWaiting        bool   // a batch is out and what comes back is not there yet
+	IsBusy           bool   // somebody else is proofreading this reading
 }
 
 // DefaultPages is how many pages one request carries.
@@ -119,7 +119,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 	// and it is held for as long as the proofreading takes.
 	release, err := store.Claim(ctx, corrections)
 	if errors.Is(err, port.ErrClaimed) {
-		res.Busy = true
+		res.IsBusy = true
 		return res, nil
 	}
 	if err != nil {
@@ -132,7 +132,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		return res, err
 	}
 	if len(pages) == 0 {
-		res.None = true
+		res.IsNone = true
 		return res, nil
 	}
 	res.Pages = len(pages)
@@ -299,7 +299,7 @@ func (u ProofreadReading) await(
 			return res, fmt.Errorf("collect the proofreading of %s: %w", path, err)
 		}
 		if !ready {
-			res.Waiting = true
+			res.IsWaiting = true
 			return res, nil
 		}
 		end := min(stood.Pages+stood.Left, len(pages))
@@ -330,7 +330,7 @@ func (u ProofreadReading) await(
 	if err != nil {
 		return res, fmt.Errorf("leave the pages of %s: %w", path, err)
 	}
-	res.Waiting = true
+	res.IsWaiting = true
 	return res, u.writeCheckpoint(
 		ctx, store, far, checkpoint{Pages: stood.Pages, Batch: name, Left: end - stood.Pages})
 }

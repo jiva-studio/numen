@@ -22,8 +22,8 @@ type queue struct {
 	woke   chan struct{}
 	mu     sync.Mutex
 	events []notify.EventInfo
-	over   bool
-	done   bool
+	isOver bool
+	isDone bool
 }
 
 func newQueue(bound int) *queue {
@@ -36,7 +36,7 @@ func newQueue(bound int) *queue {
 func (q *queue) put(event notify.EventInfo) {
 	q.mu.Lock()
 	if len(q.events) >= q.bound {
-		q.events, q.over = nil, true
+		q.events, q.isOver = nil, true
 	} else {
 		q.events = append(q.events, event)
 	}
@@ -47,7 +47,7 @@ func (q *queue) put(event notify.EventInfo) {
 // stop says the watcher's channel is closed and nothing more is coming.
 func (q *queue) stop() {
 	q.mu.Lock()
-	q.done = true
+	q.isDone = true
 	q.mu.Unlock()
 	q.wake()
 }
@@ -65,8 +65,8 @@ func (q *queue) wake() {
 func (q *queue) take() (events []notify.EventInfo, over, done bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	events, over, done = q.events, q.over, q.done
-	q.events, q.over = nil, false
+	events, over, done = q.events, q.isOver, q.isDone
+	q.events, q.isOver = nil, false
 	return events, over, done
 }
 

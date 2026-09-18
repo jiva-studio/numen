@@ -34,7 +34,7 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a run that is no longer there was trouble: %v", err)
 	}
-	if !ran.Gone {
+	if !ran.IsGone {
 		t.Error("a run that is no longer there did not say so")
 	}
 	if len(ran.Answers) != 0 {

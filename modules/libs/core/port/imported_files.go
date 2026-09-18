@@ -13,12 +13,12 @@ type ImportedFile struct {
 	// Handle is what it is opened by. A path on a desktop and a content URI on
 	// a phone: whatever produced it is what can read it.
 	Handle string
-	// Folder is whether everything under it comes in with it, and File whether
+	// IsFolder is whether everything under it comes in with it, and File whether
 	// bytes can be read from it. A device, a socket or a link is neither, and
 	// stays where it is. A listing names what it holds and says neither; what
 	// one of them is comes from Stat.
-	Folder bool
-	File   bool
+	IsFolder bool
+	IsFile   bool
 }
 
 // ImportedFiles reads what a person handed this application from outside every

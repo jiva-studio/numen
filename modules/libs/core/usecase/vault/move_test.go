@@ -33,7 +33,7 @@ type filing struct {
 	went *[]domain.Move
 }
 
-func fileable(t *testing.T, notes map[string]string) filing {
+func openFiling(t *testing.T, notes map[string]string) filing {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
@@ -103,7 +103,7 @@ func (f filing) read(t *testing.T, path string) string {
 // follow them.
 func TestAFolderMovesWithTheNotesUnderIt(t *testing.T) {
 	t.Parallel()
-	f := fileable(t, map[string]string{
+	f := openFiling(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n",
 		"physics/Heat.md":    "# Heat\n",
 		"ByName.md":          "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# By name\n",
@@ -116,7 +116,7 @@ func TestAFolderMovesWithTheNotesUnderIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !moved.Landed {
+	if !moved.IsLanded {
 		t.Fatal("the folder did not land")
 	}
 
@@ -159,7 +159,7 @@ func (f filing) sources(t *testing.T, path string) []string {
 // answer walking the folder gives.
 func TestWhatIsUnderAPathIsWhatAWalkFinds(t *testing.T) {
 	t.Parallel()
-	f := fileable(t, map[string]string{
+	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":      "# Entropy\n",
 		"physics/heat/Heat.md":    "# Heat\n",
 		"physics/heat/Carnot.md":  "# Carnot\n",
@@ -209,7 +209,7 @@ func walkSources(t *testing.T, f filing, path string) []string {
 // them is opened.
 func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 	t.Parallel()
-	f := fileable(t, map[string]string{
+	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n\nA measure of disorder.\n",
 		"physics/heat/Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 		"physics-old/Stray.md": "# Stray\n",
@@ -254,7 +254,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 // is told.
 func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 	t.Parallel()
-	f := fileable(t, map[string]string{
+	f := openFiling(t, map[string]string{
 		"physics/Entropy.md":     "# Entropy\n",
 		"archive/physics/Old.md": "# Old\n",
 	})
@@ -263,7 +263,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 	if !errors.Is(err, port.ErrOccupied) {
 		t.Fatalf("want ErrOccupied, got %v", err)
 	}
-	if moved.Landed {
+	if moved.IsLanded {
 		t.Error("the move says it landed")
 	}
 	if _, err := os.Stat(filepath.Join(f.vault.Path, "physics", "Entropy.md")); err != nil {
@@ -277,7 +277,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 // One file moves by the same use case, and a book is a file like any other.
 func TestABookMovesOnItsOwn(t *testing.T) {
 	t.Parallel()
-	f := fileable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	f := openFiling(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	testsupport.WriteBook(t, f.vault.Path, "A Book.epub")
 
 	if _, err := f.move().Execute(t.Context(), f.vault, "A Book.epub", "library/A Book.epub"); err != nil {

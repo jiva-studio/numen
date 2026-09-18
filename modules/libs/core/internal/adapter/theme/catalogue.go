@@ -56,9 +56,9 @@ type Theme struct {
 
 	Shelf Shelf
 
-	// Pinned is set for a theme declaring `color-scheme` itself. Light and dark
+	// IsPinned is set for a theme declaring `color-scheme` itself. Light and dark
 	// are that theme's own, and the mode has nothing left to choose.
-	Pinned bool
+	IsPinned bool
 }
 
 // Catalogue is every theme this installation offers: the ones inside the
@@ -83,8 +83,8 @@ func OpenAt(dir string) (Catalogue, error) {
 	made := os.MkdirAll(dir, 0o755)
 	// The folder is where the links lead. The paths the operating system
 	// reports changes at are resolved, and they are named against this.
-	if real, err := filepath.EvalSymlinks(dir); err == nil {
-		dir = real
+	if resolved, err := filepath.EvalSymlinks(dir); err == nil {
+		dir = resolved
 	}
 	return Catalogue{dir: dir}, made
 }
@@ -107,12 +107,12 @@ func (c Catalogue) Themes() []Theme {
 			themes = append(themes, describeTheme(Preset, entry.Name(), string(text)))
 		}
 	}
-	return append(themes, c.mine()...)
+	return append(themes, c.getOwnThemes()...)
 }
 
-// mine is the person's themes, read flat: one level, names ending `.css`. A
+// getOwnThemes is the person's themes, read flat: one level, names ending `.css`. A
 // folder is not a theme and neither is `dracula.css.bak`.
-func (c Catalogue) mine() []Theme {
+func (c Catalogue) getOwnThemes() []Theme {
 	if c.dir == "" {
 		return nil
 	}
@@ -140,10 +140,10 @@ func (c Catalogue) mine() []Theme {
 func describeTheme(shelf Shelf, filename, text string) Theme {
 	title := strings.TrimSuffix(filename, Extension)
 	return Theme{
-		Name:   string(shelf) + ":" + title,
-		Title:  title,
-		Shelf:  shelf,
-		Pinned: pins(text),
+		Name:     string(shelf) + ":" + title,
+		Title:    title,
+		Shelf:    shelf,
+		IsPinned: pins(text),
 	}
 }
 

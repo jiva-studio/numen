@@ -92,13 +92,13 @@ func setNow(api *API, now time.Time) {
 	api.Counted.Day, api.Counted.Now = reviewDay, at
 }
 
-// lives sits down to the vault on each of as many days running.
+// runDays sits down to the vault on each of as many days running.
 //
 // It is the history a person leaves behind: days finished and days given up on
 // part way, days missed altogether, card faces at every stage of being learned,
 // and answer times the projections are costed from. A day nobody sat to leaves
 // its cards owed, which is the backlog the budgets then have to carry.
-func lives(t *testing.T, api *API, v domain.Vault, days int) {
+func runDays(t *testing.T, api *API, v domain.Vault, days int) {
 	t.Helper()
 	for day := range days {
 		morning := firstMorning.AddDate(0, 0, day)
@@ -236,7 +236,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, held := newAPI(t, lived)
 			v := held[0]
-			lives(t, api, v, 14)
+			runDays(t, api, v, 14)
 			setNow(api, firstMorning.AddDate(0, 0, 14))
 
 			p := asWritten(t, api, v, "Sanskrit.md")
@@ -291,7 +291,7 @@ var sole = map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
 func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	api, held := newAPI(t, lived)
 	v := held[0]
-	lives(t, api, v, 14)
+	runDays(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	said := getVaultCount(t, api, v)
@@ -341,7 +341,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 	api, held := newAPI(t, lived)
 	v := held[0]
-	lives(t, api, v, 14)
+	runDays(t, api, v, 14)
 
 	// A new day, with nothing answered in it yet.
 	setNow(api, firstMorning.AddDate(0, 0, 14))
@@ -431,7 +431,7 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 func TestATargetMovedIsNotAnsweredFromTheWorkingOutUnderTheOldOne(t *testing.T) {
 	api, held := newAPI(t, lived)
 	v := held[0]
-	lives(t, api, v, 14)
+	runDays(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Grammar.md")

@@ -74,7 +74,7 @@ func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	known, err := registry.All()
+	known, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ func TestForgetRefusesTheOnlyVault(t *testing.T) {
 	if !errors.Is(err, vaults.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)
 	}
-	known, err := registry.All()
+	known, err := registry.List()
 	if err != nil {
 		t.Fatal(err)
 	}

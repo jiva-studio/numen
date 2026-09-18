@@ -65,10 +65,10 @@ func NewMove(
 type MoveResult struct {
 	From string
 	To   string
-	// Landed is whether the file is at To. It is false for a move that was
+	// IsLanded is whether the file is at To. It is false for a move that was
 	// refused and for one that was not needed, and it stays true once the file
 	// is there however the rest of the work goes.
-	Landed bool
+	IsLanded bool
 	// Repaired is the notes whose link stopped resolving and was written
 	// again, by name.
 	Repaired []string
@@ -97,7 +97,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 	if err := writer.Move(ctx, from, to); err != nil {
 		return res, mapMissingNote(err)
 	}
-	res.Landed = true
+	res.IsLanded = true
 	if err := u.moveInIndex(ctx, v, from, to); err != nil {
 		return res, err
 	}
@@ -117,7 +117,7 @@ func (u Move) moveInIndex(ctx context.Context, v domain.Vault, from, to string) 
 // Pointing is what pointed at the note before it went, read while there was
 // still something to read.
 func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (MoveResult, error) {
-	res := MoveResult{From: from, To: to, Landed: true}
+	res := MoveResult{From: from, To: to, IsLanded: true}
 
 	// The file is where it now is and the index is level with it. Whoever is
 	// reading this note at the name it had is reading a name with no file.
@@ -135,7 +135,7 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 		}
 	}
 	for _, was := range pointing {
-		lands, still, err := u.landsOn(ctx, v, was)
+		lands, still, err := u.getLanding(ctx, v, was)
 		if err != nil {
 			return res, err
 		}
@@ -184,13 +184,13 @@ func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (stri
 	return to.Value, nil
 }
 
-// landsOn is where one link goes now, asked of the note it is written in. A
+// getLanding is where one link goes now, asked of the note it is written in. A
 // link resolves as of this moment and never as of when it was read.
 //
 // It reports whether the link is still written there at all. One that is not
 // has been taken out since the backlinks were read, and saying where it used to
 // go would report a move that nobody made.
-func (u Move) landsOn(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, still bool, err error) {
+func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, still bool, err error) {
 	links, err := u.Links.Links(ctx, v.ID, was.From)
 	if err != nil {
 		return "", false, err

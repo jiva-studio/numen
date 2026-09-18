@@ -34,7 +34,7 @@ type declaration struct {
 // A preset sets tokens, and says which half the palette is published in. There
 // is nothing else in one.
 func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
-	sets := themeable(t)
+	sets := getThemeFields(t)
 	for name, css := range readPresets(t) {
 		for _, one := range setBy(css) {
 			if !strings.HasPrefix(one.property, "--") {
@@ -55,14 +55,14 @@ func TestAPresetSetsTokensAndTheHalfItIsPublishedIn(t *testing.T) {
 // A token takes a colour, a length, or a shadow, which is lengths and a colour
 // in one value. A preset that sets a token writes the shape that token takes.
 func TestAPresetGivesEachTokenTheShapeItTakes(t *testing.T) {
-	sets := themeable(t)
+	sets := getThemeFields(t)
 	for name, css := range readPresets(t) {
 		for _, one := range setBy(css) {
 			want, is := sets[one.property]
 			if !is {
 				continue
 			}
-			if !holdsShape(one.value, want) {
+			if !hasShape(one.value, want) {
 				t.Errorf("%s gives %s %q, and it takes %s", name, one.property, one.value, want)
 			}
 		}
@@ -90,8 +90,8 @@ func readPresets(t *testing.T) map[string]string {
 	return texts
 }
 
-// themeable is what a theme sets, and the shape each of them takes.
-func themeable(t *testing.T) map[string]takes {
+// getThemeFields is what a theme sets, and the shape each of them takes.
+func getThemeFields(t *testing.T) map[string]takes {
 	t.Helper()
 	css, err := os.ReadFile(contract)
 	if err != nil {
@@ -152,7 +152,7 @@ func shapeOf(value string) takes {
 	}
 }
 
-func holdsShape(value string, want takes) bool {
+func hasShape(value string, want takes) bool {
 	switch want {
 	case colour:
 		return isColour(value)

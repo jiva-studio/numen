@@ -504,8 +504,8 @@ func TestHowABookIsLaidOut(t *testing.T) {
 			t.Errorf("direction = %q, want none", book.Direction)
 		}
 		for _, doc := range book.Documents {
-			if !doc.Linear || doc.Layout != epub.Reflowable {
-				t.Errorf("%s is linear=%v layout=%q", doc.Path, doc.Linear, doc.Layout)
+			if !doc.IsLinear || doc.Layout != epub.Reflowable {
+				t.Errorf("%s is linear=%v layout=%q", doc.Path, doc.IsLinear, doc.Layout)
 			}
 		}
 	})
@@ -525,13 +525,13 @@ func TestHowABookIsLaidOut(t *testing.T) {
 		if len(book.Documents) != 2 {
 			t.Fatalf("documents = %d, want the two the spine names", len(book.Documents))
 		}
-		if got := book.Documents[0]; !got.Linear || got.Layout != epub.PrePaginated {
-			t.Errorf("the first document is linear=%v layout=%q", got.Linear, got.Layout)
+		if got := book.Documents[0]; !got.IsLinear || got.Layout != epub.PrePaginated {
+			t.Errorf("the first document is linear=%v layout=%q", got.IsLinear, got.Layout)
 		}
 		// The itemref overrides the book, and says this document is not read in
 		// its turn.
-		if got := book.Documents[1]; got.Linear || got.Layout != epub.Reflowable {
-			t.Errorf("the second document is linear=%v layout=%q", got.Linear, got.Layout)
+		if got := book.Documents[1]; got.IsLinear || got.Layout != epub.Reflowable {
+			t.Errorf("the second document is linear=%v layout=%q", got.IsLinear, got.Layout)
 		}
 		// A document set apart from the reading order is text of the book all
 		// the same: a chunk of it keeps its offset, and where it is drawn is the

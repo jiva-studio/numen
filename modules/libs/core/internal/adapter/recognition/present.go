@@ -15,13 +15,13 @@ import (
 // nothing.
 func IsFetched(cfg Config, held RecogniserModel) bool {
 	if held.Path != "" {
-		return stands(held.Path)
+		return isPresent(held.Path)
 	}
 	if held.Name == "" {
 		return false
 	}
 	for _, at := range onnxruntime.GetPaths(cfg.Dir, filepath.Base(held.Name)) {
-		if stands(at) {
+		if isPresent(at) {
 			return true
 		}
 	}
@@ -32,10 +32,10 @@ func IsFetched(cfg Config, held RecogniserModel) bool {
 	if err != nil {
 		return false
 	}
-	return stands(filepath.Join(dir, onnxruntime.GetCacheName(held.Name)))
+	return isPresent(filepath.Join(dir, onnxruntime.GetCacheName(held.Name)))
 }
 
-func stands(at string) bool {
+func isPresent(at string) bool {
 	_, err := os.Stat(at)
 	return err == nil
 }

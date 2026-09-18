@@ -33,10 +33,10 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if !reflect.DeepEqual(cfg.TranscriptProofreading, said.Transcription.Proofread) {
 		t.Error("what puts a transcript right did not arrive")
 	}
-	if cfg.Transcribes != said.CanTranscribe() {
+	if cfg.ShouldTranscribe != said.CanTranscribe() {
 		t.Error("whether a recording is heard without being asked did not arrive")
 	}
-	if cfg.TranscribesUnder != said.TranscribesUnder() {
+	if cfg.TranscribesUnder != said.GetTranscribeLimit() {
 		t.Error("how large a recording heard unasked may be did not arrive")
 	}
 	if cfg.IndexPath != "/somewhere/index.db" {

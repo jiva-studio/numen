@@ -20,10 +20,10 @@ import (
 // the whole file stands as its body, links in the block included — so this is
 // ErrUnterminated and the file is left as it is.
 func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
-	if d.unterminated {
+	if d.isUnterminated {
 		return 0, ErrUnterminated
 	}
-	if !domain.Nameable(to) {
+	if !domain.IsNameable(to) {
 		return 0, nil
 	}
 	var out strings.Builder
@@ -37,7 +37,7 @@ func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
 			end = at + next
 		}
 		line := strings.TrimRight(body[at:end], "\r")
-		if f.Crosses(line) || f.IsInside() {
+		if f.Cross(line) || f.IsInside() {
 			at = end + 1
 			continue
 		}

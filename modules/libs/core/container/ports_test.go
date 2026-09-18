@@ -46,7 +46,7 @@ func getHeldAdapters(name, src string) []string {
 	var said []string
 	for _, decl := range f.Decls {
 		fn, ok := decl.(*ast.FuncDecl)
-		if !ok || !fn.Name.IsExported() || fn.Type.Results == nil || !reachable(fn) {
+		if !ok || !fn.Name.IsExported() || fn.Type.Results == nil || !isReachable(fn) {
 			continue
 		}
 		for _, result := range fn.Type.Results.List {
@@ -72,9 +72,9 @@ func getHeldAdapters(name, src string) []string {
 	return said
 }
 
-// reachable is whether a declaration is one something outside the package can
+// isReachable is whether a declaration is one something outside the package can
 // reach: a plain function, or a method on a type it can name.
-func reachable(fn *ast.FuncDecl) bool {
+func isReachable(fn *ast.FuncDecl) bool {
 	if fn.Recv == nil || len(fn.Recv.List) == 0 {
 		return true
 	}
@@ -130,44 +130,44 @@ func (c Config) Trash() port.Trash { return nil }
 // this package, so a refusal here is the whole of the rule and not a sample.
 func TestWhatThePortRuleRefusesTheRoot(t *testing.T) {
 	for _, one := range []struct {
-		what    string
-		src     string
-		refuses bool
+		what      string
+		src       string
+		isRefused bool
 	}{
 		{
 			what: "an adapter the compiler holds, answered under its own name",
 			src: `package container
 import "` + module + `internal/adapter/filesystem"
 func (c Config) Vaults() filesystem.VaultReaders { return filesystem.VaultReaders{} }`,
-			refuses: true,
+			isRefused: true,
 		},
 		{
 			what: "the same, behind a pointer and inside a slice",
 			src: `package container
 import "` + module + `internal/adapter/embed"
 func (c Config) Embedders() ([]*embed.Model, error) { return nil, nil }`,
-			refuses: true,
+			isRefused: true,
 		},
 		{
 			what: "a driving adapter the compiler holds: an application mounts it",
 			src: `package container
 import "` + module + `internal/adapter/theme"
 func (c Config) Themes() *theme.Service { return nil }`,
-			refuses: false,
+			isRefused: false,
 		},
 		{
 			what: "an adapter an application may name itself",
 			src: `package container
 import "` + module + `adapter/settings"
 func (c Config) Settings() (settings.Config, error) { return settings.Config{}, nil }`,
-			refuses: false,
+			isRefused: false,
 		},
 		{
 			what: "the port the adapter satisfies",
 			src: `package container
 import "` + module + `port"
 func (c Config) Trash() port.Trash { return nil }`,
-			refuses: false,
+			isRefused: false,
 		},
 		{
 			what: "an adapter the compiler holds, kept to this package",
@@ -176,7 +176,7 @@ import "` + module + `internal/adapter/proofreading"
 func (c Config) profile(name string) (proofreading.Profile, error) {
 	return proofreading.Profile{}, nil
 }`,
-			refuses: false,
+			isRefused: false,
 		},
 		{
 			what: "the same, on a receiver nothing outside can name",
@@ -184,21 +184,21 @@ func (c Config) profile(name string) (proofreading.Profile, error) {
 import "` + module + `internal/adapter/theme"
 type appearances struct{}
 func (a appearances) Read() (theme.Appearance, error) { return theme.Appearance{}, nil }`,
-			refuses: false,
+			isRefused: false,
 		},
 		{
 			what: "an adapter named only in what the root is given",
 			src: `package container
 import "` + module + `internal/adapter/filesystem"
 func (c Config) Options(held filesystem.Options) error { return nil }`,
-			refuses: false,
+			isRefused: false,
 		},
 	} {
 		said := getHeldAdapters("probe.go", one.src)
-		if one.refuses && len(said) == 0 {
+		if one.isRefused && len(said) == 0 {
 			t.Errorf("%s is not refused", one.what)
 		}
-		if !one.refuses && len(said) != 0 {
+		if !one.isRefused && len(said) != 0 {
 			t.Errorf("%s is refused: %s", one.what, strings.Join(said, "; "))
 		}
 	}

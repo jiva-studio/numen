@@ -31,10 +31,10 @@ func (w *Walks) turn(vaultID domain.VaultID) chan struct{} {
 	return held
 }
 
-// one takes the vault's turn and answers with the release of it. Walks of
+// startOne takes the vault's turn and answers with the release of it. Walks of
 // different vaults do not wait on each other, and neither do walks that share
 // no turns.
-func (w *Walks) one(ctx context.Context, vaultID domain.VaultID) (func(), error) {
+func (w *Walks) startOne(ctx context.Context, vaultID domain.VaultID) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

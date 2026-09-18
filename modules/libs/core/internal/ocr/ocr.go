@@ -47,10 +47,10 @@ type Box struct {
 type Block struct {
 	Label string
 	Text  string
-	// Heading says the region is a heading, and Depth is how far in the part it
+	// IsHeading says the region is a heading, and Depth is how far in the part it
 	// opens sits. A document title stands above the section titles within it.
-	Heading bool
-	Depth   int
+	IsHeading bool
+	Depth     int
 	// Boxes are where on the page each run of Text was read. A recogniser that
 	// reports no rectangles leaves them empty.
 	Boxes []Box

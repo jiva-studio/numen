@@ -34,8 +34,8 @@ func Open(root string, opts Options) (*VaultReader, error) {
 	}
 	// The vault is where the links lead. The paths the operating system reports
 	// changes at are resolved, and they are named against this.
-	if real, err := filepath.EvalSymlinks(abs); err == nil {
-		abs = real
+	if resolved, err := filepath.EvalSymlinks(abs); err == nil {
+		abs = resolved
 	}
 	info, err := os.Stat(abs)
 	if err != nil {
@@ -215,7 +215,7 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := readable(path, info); err != nil {
+	if err := checkReadable(path, info); err != nil {
 		return nil, err
 	}
 	if err := s.checkSize(path, info); err != nil {
@@ -250,16 +250,16 @@ func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 	if err != nil {
 		return nil, err
 	}
-	if err := readable(path, info); err != nil {
+	if err := checkReadable(path, info); err != nil {
 		return nil, err
 	}
 	return os.Open(target)
 }
 
-// readable holds a path to something the operating system hands bytes over for
+// checkReadable holds a path to something the operating system hands bytes over for
 // without waiting: a device, a socket or a FIFO is not a note. A folder is
 // answered by whichever call was going to open it.
-func readable(path string, info fs.FileInfo) error {
+func checkReadable(path string, info fs.FileInfo) error {
 	if info.Mode().IsRegular() || info.IsDir() {
 		return nil
 	}
@@ -274,7 +274,7 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.Fingerprint
 	if ctx.Err() != nil {
 		return domain.Fingerprint{}, ctx.Err()
 	}
-	kind, held := s.holds(path)
+	kind, held := s.getKind(path)
 	if !held {
 		return domain.Fingerprint{}, s.leftAlone(path)
 	}
@@ -326,10 +326,10 @@ func (s *VaultReader) relative(absolute string) (path string, inside bool) {
 	return filepath.ToSlash(rel), true
 }
 
-// holds reports which kind of source a path inside this vault is, and whether a
-// walk would report it at all. The walk and the watcher both ask it, so the two
-// agree about what the vault holds.
-func (s *VaultReader) holds(path string) (domain.SourceKind, bool) {
+// getKind reports which kind of source a path inside this vault is, and whether
+// a walk would report it at all. The walk and the watcher both ask it, so the
+// two agree about what the vault getKind.
+func (s *VaultReader) getKind(path string) (domain.SourceKind, bool) {
 	if _, err := getContainedPath(s.root, path, s.opts.serviceDir()); err != nil {
 		return "", false
 	}

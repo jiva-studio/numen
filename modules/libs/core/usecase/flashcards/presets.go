@@ -90,8 +90,9 @@ func NewPresets(
 	}
 }
 
-// stops is why a preset schedules nothing, and why it schedules nothing today.
-func (u Presets) stops(p review.Preset) (review.StopReason, review.StopReason) {
+// getStopReasons is why a preset schedules nothing, and why it schedules
+// nothing today.
+func (u Presets) getStopReasons(p review.Preset) (review.StopReason, review.StopReason) {
 	at := u.Now()
 	return p.GetOverallStopReason(u.Day, at), p.GetStopReason(u.Day, at)
 }
@@ -139,14 +140,14 @@ func Default() PresetContents {
 	return PresetContents{Outcome: note.Ok, Settings: review.Defaults()}
 }
 
-// Of is the preset the deck at path is scheduled by.
+// GetForDeck is the preset the deck at path is scheduled by.
 //
 // A link reaching nothing, a link reaching a note that is not a preset, and a
 // `links:` entry written with no role all leave the deck on the defaults and say
 // so against it. A deck naming two presets is scheduled by the first and carries
 // a problem: two presets are two answers to one question.
-func (u Presets) Of(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
-	return u.Reading().Of(ctx, v, deck)
+func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
+	return u.Reading().GetForDeck(ctx, v, deck)
 }
 
 // PresetReads is a run of reads over one vault, holding each preset note it
@@ -174,8 +175,8 @@ func (u Presets) Reading() *PresetReads {
 	}
 }
 
-// Of is the preset the deck at path is scheduled by.
-func (r *PresetReads) Of(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
+// GetForDeck is the preset the deck at path is scheduled by.
+func (r *PresetReads) GetForDeck(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
 	if held, ok := r.scheduling[deck]; ok {
 		return held, nil
 	}
@@ -183,7 +184,7 @@ func (r *PresetReads) Of(ctx context.Context, v domain.Vault, deck string) (Pres
 	if err != nil {
 		return PresetContents{}, err
 	}
-	out.Stops, out.StopsToday = r.stops(out.Settings)
+	out.Stops, out.StopsToday = r.getStopReasons(out.Settings)
 	r.scheduling[deck] = out
 	return out, nil
 }
@@ -287,7 +288,7 @@ func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetC
 	if err != nil {
 		return PresetContents{}, err
 	}
-	out.Stops, out.StopsToday = u.stops(out.Settings)
+	out.Stops, out.StopsToday = u.getStopReasons(out.Settings)
 	return out, nil
 }
 
