@@ -102,6 +102,18 @@ jobs:
           cache: npm
           cache-dependency-path: modules/package-lock.json
 
+      # The window is drawn by the machine's own browser, so the package that
+      # embeds it compiles only where that browser's headers are.
+      - name: Webview
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            -o Dpkg::Options::=--force-unsafe-io \
+            libgtk-4-dev libwebkitgtk-6.0-dev
+
       - run: npm ci --prefix modules
 
       - name: Build every commit
