@@ -1,0 +1,15 @@
+# The boundary, house and window rules, before the branch leaves the machine.
+#
+# All three walk every module. The first two take a couple of seconds; the
+# window rules are type-aware and take about a minute and a half. What they
+# refuse is what CI refuses, so a push that passes here is one the workflow
+# has nothing new to say about.
+#
+# Set NUMEN_SKIP_CHECKS=1 to push without them.
+[ -n "$NUMEN_SKIP_CHECKS" ] && exit 0
+
+root=$(git rev-parse --show-toplevel)
+
+node --test "$root"/modules/tools/lint/*.test.mjs || exit 1
+node "$root/modules/tools/depgraph/check.mjs" || exit 1
+npm run lint --workspaces --if-present --prefix "$root/modules" || exit 1

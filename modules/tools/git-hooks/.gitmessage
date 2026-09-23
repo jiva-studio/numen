@@ -1,0 +1,34 @@
+# <type>(<scope>): <subject>          <- max 72 chars, imperative, no trailing dot
+#
+# <body>                              <- what and why, not how. wrap at 100.
+#
+# <footer>                            <- Closes #12 / BREAKING CHANGE: ...
+#
+# --- types --------------------------------------------------------------
+#   feat      new capability
+#   fix       bug fix
+#   docs      documentation only (ADRs live here)
+#   refactor  neither fixes a bug nor adds a feature
+#   perf      performance
+#   test      tests only
+#   build     build system, dependencies
+#   ci        CI configuration
+#   chore     anything else that touches no source
+#   revert    reverts a previous commit
+#
+# --- scopes -------------------------------------------------------------
+#   desktop   modules/apps/desktop      core    modules/libs/core
+#   mobile    modules/apps/mobile       domain  modules/libs/core/domain
+#   landing   modules/apps/landing      ui      modules/libs/ui
+#   protocol  modules/libs/protocol     wire    modules/libs/wire
+#   adr       docs/adr                  docs    everything else in docs/
+#   vault     vault format / parser     ci  deps  repo
+#
+# --- examples -----------------------------------------------------------
+#   docs(adr): add a record on two levels of addressing
+#   feat(domain): resolve wikilinks by name with priority rules
+#   fix(protocol): keep note:// links untouched on rename
+#   feat(domain)!: drop path-based note identity
+#
+# A breaking change is marked either with ! after the scope or with a
+# BREAKING CHANGE: footer.

@@ -1,0 +1,40 @@
+node_modules/
+.DS_Store
+*.log
+
+# local env
+.env
+.env.local
+.direnv/
+
+# a checkout of this repository inside itself: where Claude Code puts the
+# worktrees it makes, which is the one place it can put them
+.claude/worktrees/
+.claude/*.local.json
+.claude/settings.local.json
+
+# the drawing a windows build links into a command, written beside it
+*.syso
+
+# what a build leaves at the root
+/numen
+/numen-cli
+/numen-flashcards
+/numen-desktop
+/Numen.app/
+/Numen Flashcards.app/
+
+# where a nix build puts what it made
+/result
+/result-*
+
+# The case a property test failed on, written where it ran so the next run
+# replays it. It is one machine's, and the fix is the commit.
+testdata/rapid/
+
+# A spike-only workspace pointing outside the tree.
+go.work
+go.work.sum
+
+review.md
+refactoring-plan.md

@@ -1,0 +1,10 @@
+# Generated protobuf files
+libs/protocol/src/numen/v1/**
+
+# Build outputs and dependencies
+**/dist/**
+**/node_modules/**
+
+# What Astro writes about the content it read. Git ignores it, and so does the
+# formatter: a gate that reads generated files goes red on a build nobody made.
+**/.astro/**

@@ -1,0 +1,10 @@
+{
+  "name": "@numen/lint",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The house rules of the interface modules, read off their own source. Depends on nothing, so any machine with node runs it.",
+  "scripts": {
+    "check": "node --test ./*.test.mjs"
+  }
+}

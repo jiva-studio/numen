@@ -1,0 +1,43 @@
+# What a release says it holds. Every commit on the default branch is a squashed
+# pull request whose title the commitlint check has already held to Conventional
+# Commits, so the type in front of the colon is what groups these.
+
+[changelog]
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }}
+{%- endfor %}
+{% endfor %}
+"""
+trim = true
+footer = ""
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+protect_breaking_commits = true
+split_commits = false
+commit_parsers = [
+  # What was done to the checks, the tooling or the dependencies is nothing a
+  # person downloading this reads about.
+  { message = "^\\w+\\(ci\\)", skip = true },
+  { message = "^\\w+\\(repo\\)", skip = true },
+  { message = "^\\w+\\(deps", skip = true },
+  { message = "^feat", group = "Added" },
+  { message = "^fix", group = "Fixed" },
+  { message = "^perf", group = "Faster" },
+  { message = "^refactor", group = "Changed" },
+  { message = "^docs", group = "Documented" },
+  { message = "^style", skip = true },
+  { message = "^test", skip = true },
+  { message = "^chore", skip = true },
+  { message = "^build\\(deps", skip = true },
+  { message = "^build", skip = true },
+  { message = "^ci", skip = true },
+]
+filter_commits = true
+topo_order = false
+sort_commits = "oldest"
