@@ -1,0 +1,116 @@
+package editor
+
+import (
+	"context"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+)
+
+// RenameNote gives a note a different name.
+func (a *API) RenameNote(
+	ctx context.Context, r *connect.Request[v1.RenameNoteRequest],
+) (*connect.Response[v1.RenameNoteResponse], error) {
+	showing, err := a.getShownVault()
+	if err != nil {
+		return nil, err
+	}
+	if !a.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.finish()
+
+	renamed, err := a.Notes.Rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
+	out := &v1.RenameNoteResponse{
+		Path:  renamed.Path,
+		Title: renamed.Title,
+		By:    newNamedBy(renamed.By),
+	}
+	if renamed.Moved != nil {
+		out.Moved = newMoveResult(*renamed.Moved)
+	}
+	out.IsUnlevelled = a.isUnlevelled(err)
+	if err != nil && !out.GetIsUnlevelled() {
+		reason, refused := wire.ErrorCodeBy(err)
+		switch {
+		case refused:
+			out.Error = &reason
+		case out.GetPath() == "":
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		// The note was opened and its name was written, so what stands is the
+		// answer. A rename that came apart afterwards is a rename that happened.
+	}
+	return connect.NewResponse(out), nil
+}
+
+// RemoveFile takes a file or a folder out of the vault. It goes to the trash,
+// and a request that says so destroys a note.
+func (a *API) RemoveFile(
+	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
+) (*connect.Response[v1.RemoveFileResponse], error) {
+	showing, err := a.getShownVault()
+	if err != nil {
+		return nil, err
+	}
+	if !a.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.finish()
+
+	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
+	behind := a.isUnlevelled(err)
+	if err != nil && !behind {
+		reason, refused := wire.ErrorCodeBy(err)
+		if !refused {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil
+	}
+	// The watcher reports only the paths the vault holds a source for. What
+	// went is said here, so the tree drops the row whatever stood on it.
+	a.Listeners.tell(change{paths: []string{removed.Path}})
+	return connect.NewResponse(&v1.RemoveFileResponse{
+		Trashed:      removed.Trashed,
+		Dangling:     removed.Dangling,
+		IsUnlevelled: behind,
+	}), nil
+}
+
+// removal is the two ways something leaves the vault.
+func (a *API) removal(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+	destroy bool,
+) (note.RemoveResult, error) {
+	if destroy {
+		return a.Notes.Remove.Destroy(ctx, v, path)
+	}
+	return a.Notes.Remove.Execute(ctx, v, path)
+}
+
+// newNamedBy is which of the two a rename wrote, as the schema carries it.
+func newNamedBy(by note.NameSource) v1.NamedBy {
+	switch by {
+	case note.ByFrontmatter:
+		return v1.NamedBy_NAMED_BY_FRONTMATTER
+	case note.ByFilename:
+		return v1.NamedBy_NAMED_BY_FILENAME
+	default:
+		return v1.NamedBy_NAMED_BY_UNSPECIFIED
+	}
+}
+
+// newMoveResult is what the file did, as the schema carries it.
+func newMoveResult(moved note.MoveResult) *v1.MoveResult {
+	return &v1.MoveResult{
+		From: moved.From, To: moved.To,
+		Repaired: moved.Repaired, Dangling: moved.Dangling,
+	}
+}
