@@ -1,0 +1,293 @@
+// Package bind is the core as a phone reaches it.
+//
+// One call starts a server on the loopback and answers with the port it
+// listens on; everything asked of it after that is the schema in
+// modules/libs/protocol, which is what the window asks too.
+package bind
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"sync/atomic"
+
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+)
+
+// running is the one server this process holds. Starting again while it stands
+// answers with the port it already has.
+var (
+	mu      sync.Mutex
+	running *held
+)
+
+type held struct {
+	port int
+	// gone says the server stopped on its own, so the port answers nothing.
+	gone   atomic.Bool
+	stop   context.CancelFunc
+	opened *editor.Installation
+	server *http.Server
+}
+
+// Start opens the vault under dir and serves it. The port is the answer: the
+// caller asked for no particular one.
+//
+// dir is the folder the platform gave the application to write in. Everything
+// this installation keeps — the vault, the index, the settings — sits under it.
+func Start(dir string) (int, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if running != nil {
+		return running.port, nil
+	}
+
+	// The libraries that look for a person's own folders are told where this
+	// application's are, so nothing is looked for outside the sandbox.
+	for _, named := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"} {
+		if err := os.Setenv(named, dir); err != nil {
+			return 0, err
+		}
+	}
+
+	root := filepath.Join(dir, "vault")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return 0, err
+	}
+
+	cfg := makeConfig(dir, os.Stderr)
+
+	if err := seed(root); err != nil {
+		return 0, err
+	}
+	// The list holds a folder under the name it resolves to, and that is the
+	// name the vault is opened by.
+	filed, err := registerVault(cfg, root)
+	if err != nil {
+		return 0, err
+	}
+
+	ctx, stop := context.WithCancel(context.Background())
+	made, err := cfg.GetEditorAssembly(ctx)
+	if err != nil {
+		stop()
+		return 0, err
+	}
+	opened, err := editor.Open(ctx, made, filed, os.Stderr)
+	if err != nil {
+		stop()
+		return 0, err
+	}
+
+	// The themes are the installation's, and a folder that could not be made
+	// leaves the ones this binary ships. A theme the settings name that the
+	// catalogue has not is said where the person is.
+	themes, wrong := cfg.Themes(opened.SayTheme)
+	if wrong != nil {
+		fmt.Fprintln(os.Stderr, "themes:", wrong)
+	}
+	opened.API.Themes = themes
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		stop()
+		_ = opened.Close()
+		return 0, err
+	}
+	// The port is the whole of what Start answers, so a listener holding no TCP
+	// address leaves the caller nothing to reach and this ends here.
+	addr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		stop()
+		_ = listener.Close()
+		_ = opened.Close()
+		return 0, fmt.Errorf("listening on %s, which is no TCP address", listener.Addr())
+	}
+
+	// The phone draws the vault it is showing, the notes in it and the tree they
+	// are filed in, and asks the core nothing else. What is served here is
+	// served on a socket every process on the phone reaches, so it mounts those three
+	// and no other service: not the settings file, which holds the keys this
+	// installation reaches models with, and not the files of the person's disk
+	// beside the notes, which is a book read off the disk and a model set
+	// running over one.
+	server := &http.Server{
+		Handler: allowOrigin(opened.API.NewHandler(
+			http.NotFoundHandler(),
+			numenv1connect.VaultServiceName,
+			numenv1connect.NoteServiceName,
+			numenv1connect.FileServiceName,
+		)),
+	}
+	running = &held{
+		port:   addr.Port,
+		stop:   stop,
+		opened: opened,
+		server: server,
+	}
+	standing := running
+	// Start has already answered with the port, so a serve that ends on its own
+	// leaves the caller holding a number nothing listens on. It is said where
+	// the platform collects it, and the port stops being answered.
+	go func() {
+		err := server.Serve(listener)
+		if errors.Is(err, http.ErrServerClosed) {
+			return
+		}
+		standing.gone.Store(true)
+		cfg.ErrorHandler(err)
+	}()
+	return running.port, nil
+}
+
+// Stop closes the server and the vault behind it. Stopping what is not running
+// does nothing.
+func Stop() error {
+	mu.Lock()
+	defer mu.Unlock()
+	if running == nil {
+		return nil
+	}
+	standing := running
+	running = nil
+	err := standing.server.Close()
+	standing.stop()
+	if closed := standing.opened.Close(); err == nil {
+		err = closed
+	}
+	return err
+}
+
+// Port is what the server listens on, and zero while none does.
+func Port() int {
+	mu.Lock()
+	defer mu.Unlock()
+	if running == nil || running.gone.Load() {
+		return 0
+	}
+	return running.port
+}
+
+// makeConfig is what this installation starts from: everything it keeps sits
+// under the folder the platform gave it, and what the core carried on past is
+// said on the stream the platform collects.
+func makeConfig(dir string, out io.Writer) container.Config {
+	return container.Config{
+		IndexPath:    filepath.Join(dir, "index.db"),
+		RegistryPath: filepath.Join(dir, "vaults.json"),
+		ThemesPath:   filepath.Join(dir, "themes"),
+		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen:", err) },
+	}
+}
+
+// registerVault puts the vault on this installation's list, and answers with
+// the path the list files it under. A vault already on it stays where it is.
+func registerVault(cfg container.Config, root string) (string, error) {
+	registry, err := cfg.Registry()
+	if err != nil {
+		return "", err
+	}
+	if resolved, err := filepath.EvalSymlinks(root); err == nil {
+		root = resolved
+	}
+	if held, found, err := registry.Find(root); err != nil {
+		return "", err
+	} else if found {
+		return held.Path, nil
+	}
+	added, err := vaults.Add{
+		Identity: cfg.VaultIdentity(),
+		Registry: registry,
+		Now:      cfg.Clock(),
+	}.Execute(root, "numen")
+	if err != nil {
+		return "", err
+	}
+	return added.Path, nil
+}
+
+// Seeded is the note a vault this package filled opens on. It stands in every
+// seat at once: a parent above it, two children below, a sibling beside and a
+// jump across.
+const Seeded = "Physics.md"
+
+// seed writes a small graph into a vault that holds none, so that a picture has
+// something to draw.
+func seed(root string) error {
+	held, err := os.ReadDir(root)
+	if err != nil {
+		return err
+	}
+	for _, entry := range held {
+		if strings.HasSuffix(entry.Name(), ".md") {
+			return nil
+		}
+	}
+	written := map[string]string{
+		"Sciences.md": "---\ntitle: Sciences\nlinks:\n" +
+			"  - to: \"[[Physics]]\"\n    role: child\n" +
+			"  - to: \"[[Optics]]\"\n    role: child\n---\n\n" +
+			"# Sciences\n\nWhat is asked of the world, sorted by the asking.\n",
+		"Physics.md": "---\ntitle: Physics\nlinks:\n" +
+			"  - to: \"[[Sciences]]\"\n    role: parent\n" +
+			"  - to: \"[[Entropy]]\"\n    role: child\n" +
+			"  - to: \"[[Tides]]\"\n    role: child\n    type: measures\n" +
+			"  - to: \"[[Vellum]]\"\n    role: jump\n---\n\n" +
+			"# Physics\n\nMatter, and what it does when nobody is looking.\n",
+		"Optics.md":  "# Optics\n\nLight, bent and counted.\n",
+		"Entropy.md": "# Entropy\n\nWhat a measure counts is the ways a thing can be arranged.\n",
+		"Tides.md":   "# Tides\n\nTwo bulges, one turning planet, and a day with four of them in it.\n",
+		"Vellum.md":  "# Vellum\n\nA skin scraped thin enough to write on and thick enough to fold.\n",
+	}
+	for name, text := range written {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o644); err != nil {
+			return fmt.Errorf("seeding %s: %w", name, err)
+		}
+	}
+	return nil
+}
+
+// Page is the origin the platform serves this application's own page from:
+// `androidScheme` in capacitor.config.ts, and no port. The core listens on the
+// loopback, so the page is asking across origins and says so.
+const Page = "http://localhost"
+
+// allowOrigin lets the page the platform serves ask this server, which sits on
+// another origin than the one the webview loaded.
+//
+// It names that one origin. The socket is on the loopback and every process on
+// the phone reaches it, so a page in the person's own browser could ask it as
+// well; naming the origin is what makes a browser refuse to send that ask and
+// refuse to hand back what came of it. Nothing here is authentication: a
+// program that speaks for itself sends no origin and is not held to one.
+func allowOrigin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		head := w.Header()
+		head.Set("Access-Control-Allow-Origin", Page)
+		head.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+		head.Set("Access-Control-Allow-Headers", strings.Join([]string{
+			"Content-Type", "Connect-Protocol-Version", "Connect-Timeout-Ms",
+			"Connect-Accept-Encoding", "Connect-Content-Encoding", "X-User-Agent",
+		}, ", "))
+		head.Set("Access-Control-Expose-Headers", strings.Join([]string{
+			"Connect-Content-Encoding", "Connect-Accept-Encoding",
+			"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin",
+		}, ", "))
+		head.Set("Access-Control-Max-Age", "86400")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
