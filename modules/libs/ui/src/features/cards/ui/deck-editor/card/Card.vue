@@ -1,0 +1,183 @@
+<script setup lang="ts">
+/**
+ * One card of a deck, as a tile: a strip it is dragged by and removed from, and
+ * under it the card's values, each in a box that is always open to typing.
+ *
+ * Every field of the stencil stands under its own name and holds as many lines
+ * as a person writes. What is wrong with the card is said under its strip, and
+ * what is wrong with one value is said under that value.
+ */
+import { computed, useId } from 'vue'
+import { ErrorMessage } from '../../error-message'
+import { CardHeader } from '../../card-header'
+import { RemoveButton } from '../../remove-button'
+import { CardValue } from './card-value'
+import { DECK_WORDS, type CardWords } from '../../../lib/deck'
+import type { PlacedFieldValue, Tile } from '../../../lib/grid'
+import { createSealedMap, type StepDirection } from '../../../lib/order'
+
+const props = withDefaults(
+  defineProps<{
+    /** The card, laid out against the stencil that cuts it. */
+    tile: Tile
+    /** What is wrong with this card, said under its heading. */
+    wrong?: readonly string[]
+    /** What is wrong with each of its values, under the field the value is in. */
+    wrongUnder?: ReadonlyMap<string, readonly string[]>
+    /** The words it is drawn with. */
+    words?: CardWords
+  }>(),
+  { wrong: () => [], wrongUnder: () => createSealedMap(), words: () => DECK_WORDS },
+)
+
+const emit = defineEmits<{
+  (event: 'remove'): void
+  /** The card taken up by the pointer, and let go again. */
+  (event: 'lift', press: DragEvent): void
+  (event: 'release'): void
+  /** The card asked to go one place along the order. */
+  (event: 'step', direction: StepDirection, press: KeyboardEvent): void
+  /**
+   * One value as it now reads. A card writing a field twice is writing two
+   * values, of which `nth` says which was typed in.
+   */
+  (event: 'write', field: string, nth: number, text: string): void
+}>()
+
+/** What this card's boxes are named by, which is this card's alone. */
+const uid = useId()
+
+/**
+ * What the card is announced as. A card holds no name of its own: what it is
+ * called is the line its first field comes to, and the file writes that.
+ */
+const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
+
+/** What the strip says cut the card, and where nothing cut it, that nothing did. */
+const cut = computed(() => props.tile.stencil ?? props.words.unknown(null))
+
+const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
+
+/** What is wrong with one value, said once, under the last box standing for its field. */
+const wrongIn = (value: PlacedFieldValue): readonly string[] =>
+  value.isLast ? (props.wrongUnder.get(value.field) ?? []) : []
+</script>
+
+<template>
+  <article
+    class="card rounded-node bg-raised flex flex-col"
+    :aria-label="called"
+    :aria-posinset="tile.at"
+    :aria-setsize="tile.of"
+    :data-card="tile.id"
+    :data-section="tile.section ?? undefined"
+    :data-dragged="tile.isDragged || undefined"
+  >
+    <CardHeader
+      :drag="`${words.drag}: ${called}`"
+      @dragstart="emit('lift', $event)"
+      @dragend="emit('release')"
+      @step="(direction, press) => emit('step', direction, press)"
+    >
+      <!-- A deck holds cards cut by more than one stencil, so the strip says
+           which cut this one, and where nothing did, that nothing did. A name
+           is exposed by nothing standing on a paragraph, so the text takes a
+           role that carries one. -->
+      <p
+        class="card__cut text-small text-hushed truncate"
+        role="group"
+        :aria-label="words.cut"
+        data-cut-of
+      >
+        {{ cut }}
+      </p>
+
+      <template #actions>
+        <RemoveButton :label="`${words.remove}: ${called}`" @press="emit('remove')" />
+      </template>
+    </CardHeader>
+
+    <div class="card__body flex flex-col">
+      <!-- A card is waiting for a stencil only where it names one. -->
+      <ErrorMessage
+        v-if="!tile.isKnown && tile.stencil !== null"
+        class="card__objections"
+        role="alert"
+        :said="words.unknown(tile.stencil)"
+      />
+
+      <ErrorMessage
+        v-if="wrong.length"
+        class="card__objections"
+        data-wrong
+        :said="wrong"
+        :label="words.wrong"
+      />
+
+      <CardValue
+        v-for="value in tile.filled"
+        :key="value.key"
+        :value="value"
+        :box-id="boxId(value)"
+        :wrong="wrongIn(value)"
+        :words="words"
+        @write="(text: string) => emit('write', value.field, value.nth, text)"
+      />
+
+      <p v-if="!tile.filled.length" class="card__silence caps-numen text-small text-hushed">
+        {{ words.nothing }}
+      </p>
+    </div>
+  </article>
+</template>
+
+<style scoped>
+.card {
+  /* The name of a value, the box it is typed in and what is said to be wrong
+     with it all stand over one edge. */
+  --box-pad-inline: var(--numen-box-air);
+
+  position: relative;
+  min-inline-size: 0;
+  border: var(--numen-stroke) solid var(--numen-rule);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* The strip runs the whole width, and the body keeps the clearance. The body
+   takes the rest of the tile, so what stands in place of values has the room. */
+.card__body {
+  flex: 1;
+  gap: var(--numen-inset);
+  padding: var(--numen-box-air);
+}
+
+.card[data-dragged] {
+  opacity: 0.5;
+}
+
+/* What cut the card stands in the middle of the strip itself, and keeps clear
+   of the button at its end. */
+.card__cut {
+  position: absolute;
+  inset-inline: 2rem;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  margin: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* What is wrong with the card stands over the same edge as its values. */
+.card__objections {
+  margin: 0;
+  padding-inline: var(--box-pad-inline);
+}
+
+/* A card holding nothing says so in the middle of the room it is given. */
+.card__silence {
+  margin: auto;
+  padding-inline: var(--box-pad-inline);
+  text-align: center;
+}
+</style>

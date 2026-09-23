@@ -1,0 +1,37 @@
+/*
+ * The line saying where what is dragged would land.
+ *
+ * It stands `--caret-out` from the edge it marks, in the room its host keeps,
+ * and takes no room of its own. The host is what stands relative. A host that
+ * keeps no room lays it on the edge itself.
+ */
+
+.caret-above[data-before]::before,
+.caret-below[data-before]::before,
+.caret-beside[data-before]::before {
+  content: '';
+  position: absolute;
+  background: var(--numen-ring);
+}
+
+/* Across the way in: at the head of what it marks, or under it. */
+.caret-above[data-before]::before,
+.caret-below[data-before]::before {
+  inset-inline: 0;
+  block-size: var(--numen-caret);
+}
+
+.caret-above[data-before]::before {
+  inset-block-start: var(--caret-out, 0px);
+}
+
+.caret-below[data-before]::before {
+  inset-block-end: var(--caret-out, 0px);
+}
+
+/* Along it, at the near side. */
+.caret-beside[data-before]::before {
+  inset-block: 0;
+  inset-inline-start: var(--caret-out, 0px);
+  inline-size: var(--numen-caret);
+}

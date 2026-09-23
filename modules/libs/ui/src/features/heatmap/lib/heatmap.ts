@@ -1,0 +1,181 @@
+/**
+ * A year of days as a grid of weeks, laid out to the width there is for it.
+ *
+ * Apart from the drawing because how many days fit, which day each cell is and
+ * how dark it is drawn are arithmetic, and arithmetic inside a component is
+ * arithmetic nobody can check without a screen.
+ */
+import { dayOf, getDayName } from '@/shared/lib/day'
+
+import { AHEAD, ROWS } from './grid'
+
+/** What one day behind came to. */
+export interface Tally {
+  readonly answered: number
+  /** How each of the four was said. */
+  readonly again: number
+  readonly hard: number
+  readonly good: number
+  readonly easy: number
+  /**
+   * The answers given to cards the person is already reviewing, and how many of
+   * those came back. A card still coming round in minutes is in neither.
+   */
+  readonly asked: number
+  readonly recalled: number
+}
+
+/** A day nobody answered on, which is what an empty cell holds. */
+export const NOTHING: Tally = {
+  answered: 0,
+  again: 0,
+  hard: 0,
+  good: 0,
+  easy: 0,
+  asked: 0,
+  recalled: 0,
+}
+
+/** One day of the grid. */
+export interface Day extends Tally {
+  /** The day it is, as the year, the month and the day it began on. */
+  readonly day: string
+  /** How much was done on it, or how much falls on it where it is still ahead. */
+  readonly did: number
+  /** How dark it is drawn: nothing at 0, most at 4. */
+  readonly weight: 0 | 1 | 2 | 3 | 4
+  /** Whether it is the day holding now. */
+  readonly isToday: boolean
+  /** Whether it is still to come, and what it holds is what is coming. */
+  readonly isAhead: boolean
+}
+
+export function getDays(
+  columns: number,
+  now: Date,
+  did: ReadonlyMap<string, Tally>,
+  due: ReadonlyMap<string, number> = new Map(),
+): Day[] {
+  const out: Day[] = []
+  if (columns < 1) return out
+
+  const today = getDayName(now)
+
+  // The last day the grid would draw if it ran back from now: the Sunday ending
+  // the last week kept for what is still to come.
+  const weeks = Math.min(AHEAD, Math.max(0, columns - 1))
+  const last = new Date(now)
+  last.setHours(12, 0, 0, 0)
+  last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
+
+  // The grid takes the width it is given, and it opens on the week a person
+  // began in: their days are read from the left, and the room past what they
+  // have yet done stretches out to the right. Once they have been here longer
+  // than the width holds, the oldest weeks fall off the left instead.
+  const behind = new Date(last)
+  behind.setDate(behind.getDate() - (columns * ROWS - 1))
+
+  const opens = monday(getFirstDay(did, due, now))
+  const first = opens > behind ? opens : behind
+
+  for (let at = 0; at < columns * ROWS; at += 1) {
+    const on = new Date(first)
+    on.setDate(on.getDate() + at)
+    const day = getDayName(on)
+    const isAhead = day > today
+    const tally = did.get(day) ?? NOTHING
+    const count = isAhead ? (due.get(day) ?? 0) : tally.answered
+    out.push({
+      ...(isAhead ? NOTHING : tally),
+      day,
+      did: count,
+      weight: getWeight(count),
+      isToday: day === today,
+      isAhead,
+    })
+  }
+  return out
+}
+
+/**
+ * The day a person's history begins, or today where they have none. A day still
+ * to come counts: a vault whose cards are all ahead has a beginning too.
+ */
+function getFirstDay(
+  did: ReadonlyMap<string, unknown>,
+  due: ReadonlyMap<string, unknown>,
+  now: Date,
+): Date {
+  let first = ''
+  for (const day of [...did.keys(), ...due.keys()]) {
+    if (first === '' || day < first) first = day
+  }
+  if (first === '') return now
+  const at = dayOf(first)
+  return at > now ? now : at
+}
+
+/** The Monday of the week a day stands in, which is the column it opens. */
+function monday(at: Date): Date {
+  const out = new Date(at)
+  out.setHours(12, 0, 0, 0)
+  out.setDate(out.getDate() - (weekday(out) - 1))
+  return out
+}
+
+/** Monday is the first day of a week, and Sunday the seventh. */
+function weekday(at: Date): number {
+  const day = at.getDay()
+  return day === 0 ? 7 : day
+}
+
+/**
+ * How dark a day is drawn. The steps are small on purpose: a person who
+ * answered five cards did sit down, and the grid says so as plainly as it says
+ * a day of fifty.
+ */
+export function getWeight(did: number): Day['weight'] {
+  if (did <= 0) return 0
+  if (did < 5) return 1
+  if (did < 20) return 2
+  if (did < 50) return 3
+  return 4
+}
+
+/** How round the corner of a cell is drawn, in the grid's own units. */
+const RADIUS = 2
+
+/** Where one day stands in the grid, and how it is drawn there. */
+export interface Cell {
+  readonly day: Day
+  readonly x: number
+  readonly y: number
+  readonly size: number
+  readonly radius: number
+}
+
+/** How far apart two cells begin. */
+const stepOf = (grid: { cell: number; gap: number }): number => grid.cell + grid.gap
+
+/** How tall the grid stands: seven rows, with no gap past the last of them. */
+export function getGridHeight(grid: { cell: number; gap: number }): number {
+  return ROWS * stepOf(grid) - grid.gap
+}
+
+/**
+ * Where every day is drawn. A column is a week, so a day's place is its own
+ * number over the rows and the remainder down them.
+ */
+export function getCells(
+  grid: { cell: number; gap: number },
+  days: readonly Day[],
+): readonly Cell[] {
+  const step = stepOf(grid)
+  return days.map((day, at) => ({
+    day,
+    x: Math.floor(at / ROWS) * step,
+    y: (at % ROWS) * step,
+    size: grid.cell,
+    radius: RADIUS,
+  }))
+}

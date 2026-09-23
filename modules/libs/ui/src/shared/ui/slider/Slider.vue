@@ -1,0 +1,144 @@
+<script setup lang="ts">
+/**
+ * One value along a track, moved by a handle, with the track filled behind it.
+ * It draws no number of its own.
+ *
+ * It stands inside the ends: a value past one of them, or one the ends move
+ * under, is brought in and handed on. Moving the handle and letting it go are
+ * two things said, and a walk with the keys is over when the key is.
+ */
+import { computed, watch, type HTMLAttributes } from 'vue'
+import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
+import { cn } from '@/shared/lib/classes'
+import { clamp, isWalkingKey, stepForKey, type Bounds } from './track'
+
+const props = withDefaults(
+  defineProps<{
+    /** How far the track runs, and what one step of it moves. */
+    min?: number
+    max?: number
+    step?: number
+    disabled?: boolean
+    class?: HTMLAttributes['class']
+  }>(),
+  { min: 0, max: 100, step: 1, disabled: false },
+)
+
+/** Where the handle stands. */
+const model = defineModel<number>({ default: 0 })
+
+const emit = defineEmits<{
+  /** The handle let go of, at the end of a drag or of a walk with the keys. */
+  settle: [value: number]
+}>()
+
+defineOptions({ inheritAttrs: false })
+
+/**
+ * The last value handed on, so a value that arrives twice — once as the handle
+ * moving and once as it coming to rest — is handed on once.
+ */
+let handed = model.value
+
+watch(model, (now) => {
+  handed = now
+})
+
+const setValue = (value: number) => {
+  if (value === handed) return
+  handed = value
+  model.value = value
+}
+
+const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))
+
+/** Where the handle stands, which is inside the ends whatever it was given. */
+const inForce = computed(() => clamp(model.value, bounds.value))
+
+watch(inForce, setValue, { immediate: true })
+
+const onMove = (value: number[] | undefined) => {
+  const said = value?.[0]
+  if (typeof said === 'number') setValue(said)
+}
+
+/** Whether a key is down, and where the handle stood when it went down. */
+let walking = false
+let began = 0
+
+/**
+ * The handle taken hold of by the keys, and moved to where the key leaves it. A
+ * key held down and a key struck again are one walk, which is over when the key
+ * is let go of.
+ */
+const onKeyDown = (event: KeyboardEvent) => {
+  if (!isWalkingKey(event.key)) return
+  event.preventDefault()
+  event.stopPropagation()
+  if (props.disabled) return
+  if (!walking) {
+    walking = true
+    began = handed
+  }
+  const said = stepForKey(event.key, inForce.value, bounds.value, event.shiftKey)
+  if (said !== null) setValue(said)
+}
+
+/** The handle let go of, at what the walk left it standing at. */
+const onRelease = () => {
+  if (!walking) return
+  walking = false
+  if (handed !== began) emit('settle', handed)
+}
+
+/**
+ * The handle come to rest under the pointer. What it came to rest at is handed
+ * on before it is said to have settled, so a caller acting on the second has
+ * the first.
+ */
+const onCommit = (value: number[]) => {
+  const said = value[0]
+  if (typeof said !== 'number') return
+  setValue(said)
+  emit('settle', said)
+}
+</script>
+
+<template>
+  <SliderRoot
+    data-slot="slider"
+    orientation="horizontal"
+    :model-value="[inForce]"
+    :min="min"
+    :max="max"
+    :step="step"
+    :disabled="disabled"
+    :class="
+      cn(
+        'relative flex w-full touch-none items-center select-none',
+        'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
+        props.class,
+      )
+    "
+    @update:model-value="onMove"
+    @value-commit="onCommit"
+  >
+    <SliderTrack class="rounded-pill bg-hushed relative h-1 w-full grow">
+      <SliderRange class="rounded-pill bg-accent absolute h-full" />
+    </SliderTrack>
+    <SliderThumb
+      v-bind="$attrs"
+      :class="
+        cn(
+          'rounded-pill border-rule bg-raised block size-4 shrink-0 border',
+          'duration-hover ease-numen cursor-pointer transition-colors',
+          'ring-numen outline-none',
+          'data-[disabled]:cursor-not-allowed',
+        )
+      "
+      @keydown="onKeyDown"
+      @keyup="onRelease"
+      @blur="onRelease"
+    />
+  </SliderRoot>
+</template>

@@ -1,0 +1,13 @@
+{
+  "name": "@numen/icon",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The product's icon, and everything cut from it.",
+  "scripts": {
+    "build": "node make.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.35.3"
+  }
+}

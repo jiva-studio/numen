@@ -1,0 +1,129 @@
+/**
+ * Something dragged over the plex from outside it. Everything that knows about
+ * events and screen pixels is here; which seat a place comes to is worked out
+ * in `arrange/drop.ts`, as a value.
+ */
+import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
+import { getDropSeat, type PlexOptions, type Size } from '../lib/arrange'
+import { positionIn } from './gesture'
+import type { PlexFrame } from '../lib/frame'
+import type { Position } from '../lib/node'
+import type { PlexRelatedSeat } from '../lib/seat'
+
+const CAPTURE = { capture: true } as const
+
+export interface PlexDragState {
+  /** Where the pointer is, in the plex's own coordinates. */
+  readonly at: Ref<Position | null>
+  /** The seat letting go here comes to, so it can be shown before it does. */
+  readonly seat: Ref<PlexRelatedSeat | null>
+}
+
+/** What following a drag takes: the drawing, the picture, and the rules. */
+export interface PlexDragDeps {
+  /** The drawing, which turns screen pixels into the plex's own coordinates. */
+  readonly getSurface: () => SVGSVGElement | null
+  /** What is being dragged, each of them opaque. Empty while nothing is. */
+  readonly getDragged: () => readonly string[]
+  readonly getFrame: () => PlexFrame
+  readonly getOptions: () => PlexOptions
+  readonly getViewport: () => Size
+  /** Seats a gesture is allowed to produce. */
+  readonly getAllowedSeats: () => readonly PlexRelatedSeat[]
+  /** How far from the focus the pointer stands before it names a direction. */
+  readonly getThreshold: () => number
+  readonly settle: (dragged: readonly string[], seat: PlexRelatedSeat) => void
+}
+
+/**
+ * Follow a pointer dragging something across the plex until it is let go or
+ * given up on.
+ *
+ * The gesture began somewhere the plex cannot see, so it is followed on the
+ * window for as long as there is something to drag, and it is over the
+ * instant the pointer comes up wherever that is.
+ */
+export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
+  /** Where the pointer is, and nothing at all while nothing is being dragged. */
+  const at = ref<Position | null>(null)
+
+  const seat = computed<PlexRelatedSeat | null>(() => {
+    const now = at.value
+    if (!now) return null
+    return getDropSeat({
+      frame: drag.getFrame(),
+      options: drag.getOptions(),
+      viewport: drag.getViewport(),
+      at: now,
+      seats: drag.getAllowedSeats(),
+      threshold: drag.getThreshold(),
+    })
+  })
+
+  /** What the drag under way installed on the window, if anything. */
+  let detach: (() => void) | null = null
+
+  /**
+   * What the drag was handed, held for the life of the gesture. Whoever is
+   * dragging them may put them down on the same release this settles on.
+   */
+  let holding: readonly string[] = []
+
+  const stop = () => {
+    detach?.()
+    detach = null
+    at.value = null
+    holding = []
+  }
+
+  const move = (event: PointerEvent) => {
+    const element = drag.getSurface()
+    at.value = element ? positionIn(element, event) : null
+  }
+
+  const finish = (event: PointerEvent) => {
+    move(event)
+    const dragged = holding
+    const settled = seat.value
+    stop()
+    if (dragged.length > 0 && settled) drag.settle(dragged, settled)
+  }
+
+  const follow = () => {
+    if (detach) return
+    holding = drag.getDragged()
+
+    const onMove = (event: PointerEvent) => move(event)
+    const onUp = (up: PointerEvent) => finish(up)
+    // The browser takes the pointer away, and no `pointerup` follows.
+    const onLost = () => stop()
+    const onKey = (key: KeyboardEvent) => {
+      if (key.key === 'Escape') stop()
+    }
+
+    detach = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp, CAPTURE)
+      window.removeEventListener('pointercancel', onLost)
+      window.removeEventListener('keydown', onKey)
+    }
+
+    window.addEventListener('pointermove', onMove)
+    // The release is answered on its way down the page, ahead of whoever is
+    // dragging them and puts them down on the way back up.
+    window.addEventListener('pointerup', onUp, CAPTURE)
+    window.addEventListener('pointercancel', onLost)
+    window.addEventListener('keydown', onKey)
+  }
+
+  watch(
+    () => drag.getDragged().length > 0,
+    (isDragging) => (isDragging ? follow() : stop()),
+    { immediate: true },
+  )
+
+  // A plex can go while something is still being dragged over it.
+  onScopeDispose(stop)
+
+  return { at, seat }
+}

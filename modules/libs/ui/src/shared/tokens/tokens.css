@@ -1,0 +1,249 @@
+/*
+ * The whole styling contract. Everything a component paints with is named
+ * here, and no component reaches past a token for a value.
+ *
+ * Every token stands on the root alone, so a component inherits what it paints
+ * with and a stylesheet redeclaring one at the root reaches every component. A
+ * theme is such a stylesheet: what it sets is the first part below, and every
+ * token it does not name keeps the value here.
+ */
+
+/* Which half of every pair below is taken. On the root alone, so everything
+   the page contains inherits the page's answer; a theme published in one half
+   pins it and writes flat colours. */
+:where(:root) {
+  color-scheme: light dark;
+}
+
+/*
+ * What a theme sets.
+ *
+ * Each pair is one colour in light and in dark. Where a token carries a length
+ * as well, it says so where it stands.
+ */
+:where(:root) {
+  --numen-surface: light-dark(#faf4e8, #1e1916);
+  --numen-raised: light-dark(#fffbf2, #27221d);
+  --numen-ink: light-dark(#3a322a, #ece0cd);
+  --numen-rule: light-dark(#e0d6c4, #373029);
+  /* What a video is letterboxed against. It is the same in either scheme: the
+     black a film is cut against is not the interface's. */
+  --numen-media-backdrop: light-dark(#000, #000);
+
+  /* The accent: what the node in focus is filled with, and what the ring and
+     the selection are drawn in as well. */
+  --numen-accent: light-dark(#b45f16, #e9a23b);
+  --numen-accent-ink: light-dark(#faf4e8, #2a1d0c);
+
+  /* One hue per seat, carrying the meaning the position already carries: the
+     arrangement is what a reader learns, the colour is what they use first. */
+  --numen-seat-parent: light-dark(#2f6a94, #7ab4d8);
+  --numen-seat-child: light-dark(#5a7a2e, #a6c46b);
+  --numen-seat-jump: light-dark(#b5522f, #e8836b);
+  --numen-seat-sibling: light-dark(#8a5a86, #c99bd4);
+
+  --numen-edge: light-dark(#d8ccb8, #423a31);
+
+  /* Text said quietly beside what it is about: a caption, a count, a month over
+     a grid. It is read second, after the thing it belongs to. */
+  --numen-hushed: light-dark(#8a7f70, #a1968a);
+  /* The name written along an edge of a plex is said in that voice. */
+  --numen-edge-label: var(--numen-hushed);
+  --numen-ring: light-dark(#b45f16, #e9a23b);
+  /* The ground under selected text. The second is the same selection where the
+     keyboard is somewhere else, the third every other place that text stands. */
+  --numen-selection: light-dark(#b45f1638, #e9a23b42);
+  --numen-selection-away: light-dark(#b45f161f, #e9a23b24);
+  --numen-selection-match: light-dark(#b45f161a, #e9a23b1f);
+  --numen-alarm: light-dark(#a8382c, #e5776a);
+  /* The ground a card carrying an alarm stands on. */
+  --numen-alarm-bg: light-dark(#f9e6e0, #422821);
+  /* The band something is said in that a person should read but need not act
+     on at once. */
+  --numen-caution-bg: light-dark(#f7e9c8, #42321c);
+  --numen-caution-fg: light-dark(#8a5410, #eec26a);
+  /* The ground under a stretch of text something is about to change. It sits
+     under words that are still being read, so it is a tint and not a colour. */
+  --numen-highlight: light-dark(#e9a23b33, #e9a23b3d);
+
+  /* Text with marks in it: the marks themselves, the ground under code, and
+     the ground under the head row of a table. */
+  --numen-syntax-mark: light-dark(#b0a496, #7d7266);
+  --numen-code-bg: light-dark(#f2e9d8, #221d19);
+  --numen-table-head-bg: light-dark(#f2e9d8, #2b2520);
+  /* One hue per kind of word in a highlighted language. */
+  --numen-syntax-keyword: light-dark(#a83b2a, #e8836b);
+  --numen-syntax-name: light-dark(#2f6a94, #7ab4d8);
+  --numen-syntax-type: light-dark(#8a5410, #eec26a);
+  --numen-syntax-string: light-dark(#5a7a2e, #a6c46b);
+  --numen-syntax-number: light-dark(#8a5a86, #c99bd4);
+  --numen-syntax-comment: light-dark(#8a7f70, #8a7f72);
+  --numen-syntax-punctuation: light-dark(#5a5148, #c4b8a8);
+
+  /* What a panel is tinted with, and what shows through it. The blur goes with
+     the alpha the tint carries: an opaque tint leaves nothing to blur, so a
+     theme setting one sets the other. */
+  --numen-panel-bg: light-dark(#fffbf2cc, #27221dcc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+  --numen-panel-blur: 24px;
+  /* What a card is lifted off the window by, and what a panel is lifted by.
+     Each carries its offsets and its spread beside its colour, so a theme
+     setting one writes those lengths again. */
+  --numen-shadow-card: 0 0.5rem 1.5rem light-dark(#00000026, #00000059);
+  --numen-panel-shadow:
+    0 1px 2px light-dark(#0000001a, #00000047), 0 12px 32px light-dark(#00000024, #00000059);
+  /* The wash a panel lays over what it covers. */
+  --numen-scrim: light-dark(#00000014, #0000005c);
+
+  --numen-field-bg: light-dark(#fffbf2, #221d19);
+  /* A field is ruled in the line every other box is ruled in. A theme wanting
+     the two apart names this one as well. */
+  --numen-field-border: var(--numen-rule);
+
+  /* What was said is a bubble; what came back is text on the surface. */
+  --numen-bubble-bg: light-dark(#f0e6d4, #2e2822);
+  --numen-bubble-fg: light-dark(#3a322a, #ece0cd);
+  --numen-answer-fg: light-dark(#3a322a, #ece0cd);
+}
+
+/*
+ * What a theme leaves alone: the type, the measures and the timings. They are
+ * the same under every palette, and each stands under what it follows.
+ */
+
+/*
+ * What follows the interface: the chrome, the type it is set in, and every
+ * length that surrounds that type. Each is in `rem`, and the root's font size
+ * carries them all.
+ */
+
+/* How large the interface is drawn. A page carrying no multiplier is drawn as
+   it is designed. */
+:where(:root) {
+  font-size: calc(16px * var(--numen-interface-scale, 1));
+}
+
+:where(:root) {
+  --numen-font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
+    'Noto Sans Devanagari', 'Noto Sans Arabic', sans-serif;
+  /* The type scale. Every size drawn in the interface is one of these four
+     steps and nothing between them, so a screen has one ladder and not a size
+     invented wherever one was wanted.
+
+     1 is said quietly beside something else; 2 is the interface's own text; 3
+     names a screen or a list; 4 is the one line a screen is built around. */
+  --numen-text-1: 0.625rem;
+  --numen-text-2: 0.8125rem;
+  --numen-text-3: 1.125rem;
+  --numen-text-4: 1.375rem;
+
+  --numen-font-size: var(--numen-text-2);
+  --numen-title-size: var(--numen-text-3);
+  --numen-display-size: var(--numen-text-4);
+  --numen-line-height: 1.35;
+  /* Set wider than a sentence, for the few words that are set in capitals. */
+  --numen-caps-tracking: 0.08em;
+
+  /* Inside a node: the clearance around its label, and between an icon and it. */
+  --numen-node-padding: 0.625rem;
+  --numen-node-gap: 0.375rem;
+
+  --numen-edge-label-size: var(--numen-text-1);
+
+  /* The clearance reading keeps from the edge of the pane it fills. A note and
+     a conversation are read at the same measure, so they keep the same one. */
+  --numen-gutter: 1.25rem;
+
+  /* The clearance a line of small print keeps from the corner it sits in. */
+  --numen-inset: 0.5rem;
+  --numen-inset-wide: 0.75rem;
+
+  /* The air at the edge of a box, between what it holds and the line round it. */
+  --numen-box-air: 0.625rem;
+
+  /* The corner of a box drawn in the page: a button, an item in a list, a
+     block of code, the tab a gesture would drop where it is held. */
+  --numen-radius: 0.375rem;
+  /* The corner of a control a row is filled with: half the curve of a box. */
+  --numen-radius-tight: calc(var(--numen-radius) / 2);
+
+  /* The halo that keeps an edge label legible where it crosses its own line. */
+  --numen-edge-label-halo: 0.1875rem;
+
+  /* A panel floats: rounded on every side, with what it holds clear of the
+     curve. */
+  --numen-radius-panel: 0.75rem;
+  --numen-panel-padding: 0.75rem;
+  --numen-panel-gap: 0.625rem;
+
+  /* What floats over the window, in the order it stands. Everything that
+     floats takes one of these, and nothing takes a number of its own. */
+  /* A sheet fills the window and is worked in; everything below speaks over it. */
+  --numen-lift-sheet: 20;
+  --numen-lift-notice: 40;
+  --numen-lift-menu: 60;
+  --numen-lift-palette: 70;
+  /* Said beside the pointer, so it stands over whatever the pointer is over. */
+  --numen-lift-tooltip: 75;
+  --numen-lift-unsaved: 80;
+
+  /* Wider than any box it rounds. */
+  --numen-radius-pill: 999px;
+  /* A field at rest is one row tall. The row is what the button is drawn at
+     and what one line of typing is set to fill, so the two share a middle
+     without either being measured. */
+  --numen-action-size: 2rem;
+  --numen-field-padding: 0.375rem;
+  --numen-field-min: calc(var(--numen-action-size) + 2 * var(--numen-field-padding));
+  /* Half the height at rest: a lozenge while the field holds one line, a
+     rounded box once it grows. */
+  --numen-radius-field: calc(var(--numen-field-min) / 2);
+  /* The clearance the typing keeps from the ends, which is around the curve. */
+  --numen-field-text-inset: 0.875rem;
+
+  /* The gap between three dots saying something is being written, and between
+     the rows a small reading is stacked in. */
+  --numen-dot-gap: 0.1875rem;
+
+  --numen-radius-bubble: 0.75rem;
+  --numen-turn-gap: 1rem;
+}
+
+/*
+ * What the text multiplier reaches as well: the size the text a person reads
+ * is set at. The interface carries it as it carries every `rem`, and this is
+ * a second multiplier over that.
+ */
+
+/* A page carrying no multiplier sets it as it is designed. */
+:where(:root) {
+  --numen-reading-size: calc(0.8125rem * var(--numen-text-scale, 1));
+  /* Marked-up text is set a shade above a plain line of it. An answer and a
+     card are read at this. */
+  --numen-prose-size: calc(0.875rem * var(--numen-text-scale, 1));
+}
+
+/*
+ * What follows neither. A line is one line whatever it separates, and a time
+ * is not a length.
+ */
+:where(:root) {
+  --numen-stroke: 1px;
+  --numen-ring-width: 2px;
+  /* The line a carried thing lands on. */
+  --numen-caret: 2px;
+  --numen-edge-width: 1.25px;
+  /* The dash the thread a gesture drags behind it is drawn in. */
+  --numen-thread-dash: 4 4;
+
+  --numen-motion: 220ms;
+  /* How long one turn of a thing that is waiting takes. A shimmer reads slowly,
+     a spinner turns, and three dots rise one behind the other. */
+  --numen-wait-shimmer: 1600ms;
+  --numen-wait-spin: 800ms;
+  --numen-wait-dots: 1200ms;
+  /* A pointer answers now; it is not waiting on a navigation. */
+  --numen-motion-hover: 110ms;
+  --numen-easing: cubic-bezier(0.32, 0.72, 0, 1);
+}

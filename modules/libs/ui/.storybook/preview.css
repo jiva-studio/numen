@@ -1,0 +1,13 @@
+/* Storybook's own frame, not the library's. Nothing here ships. */
+html,
+body,
+#storybook-root {
+  block-size: 100%;
+  margin: 0;
+}
+
+/* On the page itself, so it covers the canvas whatever layout a story asks
+   for. */
+html {
+  background: var(--numen-surface);
+}
