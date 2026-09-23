@@ -1,0 +1,99 @@
+package mcp
+
+import (
+	"fmt"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+)
+
+// What a tool says about an error. Which error code a thing is comes from the
+// wire, the same as it does for a window; the sentence is this one's own,
+// because an agent is told which tool to reach for next and a person is not.
+
+// why is a read's outcome in words an agent can act on.
+func why(c note.Contents) string {
+	reason, refused := wire.ErrorCodeOf(c.Outcome)
+	if !refused {
+		return string(c.Outcome)
+	}
+	// A note past the bound is answered with the size it came to: that is what
+	// an agent asks the file tools for a span of.
+	if reason == v1.ErrorCode_ERROR_CODE_TOO_LARGE {
+		return fmt.Sprintf("it is %d bytes, larger than the %d this reads; open the file instead",
+			c.Fingerprint.Size, note.MaxBytes)
+	}
+	return describeCode(reason)
+}
+
+// whyNotADeck says why a path is no deck to write cards into, and nothing where
+// it is one.
+func whyNotADeck(read cards.DeckContents) string {
+	if read.Outcome == note.Ok && read.Type != domain.TypeDeck {
+		return "this note is not a deck"
+	}
+	switch read.Outcome {
+	case note.Ok:
+		return ""
+	case note.TooLarge:
+		return fmt.Sprintf("it is %d bytes, larger than the %d a deck is read at; open the file instead",
+			read.Fingerprint.Size, cards.MaxBytes)
+	case note.Missing:
+		return "there is no note at this path"
+	case note.NotANote:
+		return "this is not a note the vault holds"
+	case note.NotText:
+		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
+	case note.Unreadable:
+		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
+	}
+	return string(read.Outcome)
+}
+
+// sayError is a write's error in words an agent can act on. An error the schema
+// carries no code for is handed over as it stands.
+func sayError(err error) string {
+	if reason, refused := wire.ErrorCodeBy(err); refused {
+		return describeCode(reason)
+	}
+	return err.Error()
+}
+
+// describeCode is one error code in the words a tool answers with.
+func describeCode(reason v1.ErrorCode) string {
+	switch reason {
+	case v1.ErrorCode_ERROR_CODE_MISSING:
+		return "the vault holds no note at this path"
+	case v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
+		return "this is not a note the vault holds"
+	case v1.ErrorCode_ERROR_CODE_NOT_TEXT:
+		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
+	case v1.ErrorCode_ERROR_CODE_TOO_LARGE:
+		return fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead",
+			note.MaxBytes)
+	case v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE:
+		return "this text opens with a frontmatter delimiter, so it cannot be written into a note"
+	case v1.ErrorCode_ERROR_CODE_UNREADABLE:
+		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
+	case v1.ErrorCode_ERROR_CODE_OCCUPIED:
+		return "a file is already where this note would go"
+	case v1.ErrorCode_ERROR_CODE_UNNAMEABLE:
+		return "a note cannot be called this"
+	case v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL:
+		return "this note is not a stencil"
+	case v1.ErrorCode_ERROR_CODE_NOT_A_DECK:
+		return "this note is not a deck"
+	case v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE:
+		return "this deck is larger than a deck is read at"
+	case v1.ErrorCode_ERROR_CODE_NOT_A_PRESET:
+		return "this note is not a preset"
+	case v1.ErrorCode_ERROR_CODE_STALE:
+		return "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now"
+	default:
+		return reason.String()
+	}
+}

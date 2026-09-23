@@ -1,0 +1,121 @@
+package mcp_test
+
+import (
+	"net/http"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+)
+
+// The port is open on this machine, so what stands in front of it is the whole
+// of who may reach somebody's notes.
+func TestNothingReachesTheVaultWithoutTheToken(t *testing.T) {
+	_, core := newCore(t)
+	endpoint, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { endpoint.Close(t.Context()) })
+
+	for name, header := range map[string]string{
+		"nothing":       "",
+		"another":       "Bearer someone-elses",
+		"a prefix":      "Bearer the-toke",
+		"the wrong way": "the-token",
+	} {
+		t.Run(name, func(t *testing.T) {
+			res := ask(t, endpoint.URL, header, "")
+			if res.StatusCode != http.StatusUnauthorized {
+				t.Errorf("want 401, got %s", res.Status)
+			}
+		})
+	}
+}
+
+// An agent that presents the token is answered, on the loopback port and
+// nowhere else. A path outside the endpoint's own is not served.
+func TestAnAgentPresentingTheTokenIsAnswered(t *testing.T) {
+	_, core := newCore(t)
+	endpoint, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { endpoint.Close(t.Context()) })
+
+	if !mcp.Local(strings.TrimSuffix(strings.TrimPrefix(endpoint.URL, "http://"), "/mcp")) {
+		t.Errorf("%s can be reached from off this machine", endpoint.URL)
+	}
+
+	res := ask(t, endpoint.URL, "Bearer the-token", "")
+	if res.StatusCode != http.StatusOK {
+		t.Errorf("want 200, got %s", res.Status)
+	}
+
+	elsewhere := ask(t, "http://"+res.Request.URL.Host+"/elsewhere", "Bearer the-token", "")
+	if elsewhere.StatusCode != http.StatusNotFound {
+		t.Errorf("want 404, got %s", elsewhere.Status)
+	}
+}
+
+// A page open in a browser can reach a port on this machine, and is the one
+// caller that arrives without being invited.
+func TestAPageInABrowserIsTurnedAway(t *testing.T) {
+	_, core := newCore(t)
+	endpoint, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { endpoint.Close(t.Context()) })
+
+	res := ask(t, endpoint.URL, "Bearer the-token", "https://example.com")
+	if res.StatusCode == http.StatusOK {
+		t.Errorf("a cross-origin request was answered: %s", res.Status)
+	}
+}
+
+func TestLocalKnowsWhichAddressesLeaveTheMachine(t *testing.T) {
+	for addr, want := range map[string]bool{
+		"127.0.0.1:7717": true,
+		"localhost:7717": true,
+		"[::1]:7717":     true,
+		"0.0.0.0:7717":   false,
+		"192.168.1.4:80": false,
+		"nonsense":       false,
+	} {
+		if got := mcp.Local(addr); got != want {
+			t.Errorf("%s: want %v, got %v", addr, want, got)
+		}
+	}
+}
+
+func TestAServerNeedsSomethingToAskFor(t *testing.T) {
+	_, core := newCore(t)
+	if _, err := mcp.ServeHTTP(t.Context(), "127.0.0.1:0", "", core, nil); err == nil {
+		t.Fatal("a server with no token is open to everything on the machine")
+	}
+}
+
+// ask sends the smallest thing the endpoint will look at.
+func ask(t *testing.T, url, authorization, origin string) *http.Response {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url,
+		strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	if authorization != "" {
+		req.Header.Set("Authorization", authorization)
+	}
+	if origin != "" {
+		req.Header.Set("Origin", origin)
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { res.Body.Close() })
+	return res
+}
