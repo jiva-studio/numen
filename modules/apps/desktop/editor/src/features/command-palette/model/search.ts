@@ -1,0 +1,205 @@
+/**
+ * Palette search coordination, debouncing, and group management.
+ */
+import { computed, ref, shallowRef } from 'vue'
+import type { PaletteGroup } from '@numen/ui'
+import { createAnswerGuard, type Question } from '@/shared/questions'
+import type { NoteType, Source } from '@/entities/file'
+import type { IndexCoverage } from '@/shared/notices/coverage'
+import {
+  createNameItem,
+  createPassageItem,
+  resolveDestination,
+  type NameMatch,
+  type Passage,
+  type SearchDestination,
+  type SearchHit,
+  type SearchRow,
+} from './lookup'
+import type { Span } from '@/shared/span'
+import { evaluateSilence, EACH, HOLD, type SearchGroup } from './score'
+
+export type { Span, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
+
+/**
+ * How a search over the text is asked. Each mode is an order of its own, and
+ * `hybrid` is all of them in one ranking.
+ */
+export type SearchMode = 'hybrid' | 'words' | 'meaning' | 'names'
+
+/** The two questions the palette asks of the vault. */
+export interface SearchDeps {
+  names(query: string, limit: number): Promise<readonly NameMatch[]>
+  search(query: string, mode: SearchMode, limit: number): Promise<readonly Passage[]>
+}
+
+/** What a group of a palette says when it holds nothing. */
+export interface EmptyWords {
+  readonly noneFound: string
+  readonly notAsked: string
+}
+
+/** Everything the palette says in the window's voice. */
+export interface Words extends EmptyWords {
+  names: string
+  text: string
+  meaning: string
+  travel: string
+  read: string
+  readAt: string
+  readDocument: string
+  wordsOnly: string
+  notEmbedded: string
+}
+
+const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
+
+/** What the window hands the palette, beside the vault and its own words. */
+export interface SearchOptions {
+  wait?(ms: number): Promise<unknown>
+  coverage?(): IndexCoverage
+}
+
+export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {}) {
+  const wait = how.wait ?? sleep
+  const coverage = how.coverage
+  const open = ref(false)
+  const typed = ref('')
+
+  const names = shallowRef<readonly NameMatch[]>([])
+  const texts = shallowRef<readonly Passage[]>([])
+  const meanings = shallowRef<readonly Passage[]>([])
+
+  const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
+  const failureMessages = ref<Record<SearchGroup, string>>({ names: '', text: '', meaning: '' })
+
+  const asks = createAnswerGuard()
+
+  const drop = () => {
+    names.value = []
+    texts.value = []
+    meanings.value = []
+    isWorking.value = { names: false, text: false, meaning: false }
+    failureMessages.value = { names: '', text: '', meaning: '' }
+  }
+
+  const fill = async <T>(
+    mine: Question,
+    group: SearchGroup,
+    question: () => Promise<readonly T[]>,
+    into: (found: readonly T[]) => void,
+  ) => {
+    try {
+      const found = await question()
+      if (!mine.isCurrent) return
+      into(found)
+    } catch {
+      // The window says what it could not do; what the call carried back adds nothing a person can act on.
+      if (!mine.isCurrent) return
+      into([])
+      failureMessages.value = { ...failureMessages.value, [group]: words.notAsked }
+    } finally {
+      if (mine.isCurrent) isWorking.value = { ...isWorking.value, [group]: false }
+    }
+  }
+
+  const ask = async (mine: Question, query: string) => {
+    isWorking.value = { names: true, text: true, meaning: true }
+    failureMessages.value = { names: '', text: '', meaning: '' }
+    await Promise.all([
+      fill(
+        mine,
+        'names',
+        () => core.names(query, EACH),
+        (found) => (names.value = found),
+      ),
+      fill(
+        mine,
+        'text',
+        () => core.search(query, 'words', EACH),
+        (found) => (texts.value = found),
+      ),
+      fill(
+        mine,
+        'meaning',
+        () => core.search(query, 'meaning', EACH),
+        (found) => (meanings.value = found),
+      ),
+    ])
+  }
+
+  const setTyped = async (text: string) => {
+    typed.value = text
+    const mine = asks.ask()
+    const query = text.trim()
+    if (!query) {
+      drop()
+      return
+    }
+    await wait(HOLD)
+    if (!mine.isCurrent) return
+    await ask(mine, query)
+  }
+
+  const setOpen = (now: boolean) => {
+    open.value = now
+    if (now) return
+    asks.drop()
+    typed.value = ''
+    drop()
+  }
+
+  const nameItem = (one: NameMatch): SearchRow => createNameItem(one, words)
+  const passageItem = (group: SearchGroup, one: Passage): SearchRow =>
+    createPassageItem(group, one, words)
+
+  const silenceOf = (id: SearchGroup): string =>
+    evaluateSilence(id, failureMessages.value[id], words, coverage)
+
+  const built = computed(() => {
+    const held = new Map<string, SearchHit>()
+    if (!typed.value.trim()) return { groups: [] as readonly PaletteGroup[], held }
+
+    const group = (id: SearchGroup, title: string, rows: readonly SearchRow[]): PaletteGroup => {
+      for (const one of rows) held.set(one.item.id, one.hit)
+      return {
+        id,
+        title,
+        items: rows.map((one) => one.item),
+        isWorking: isWorking.value[id],
+        silence: silenceOf(id),
+      }
+    }
+
+    return {
+      groups: [
+        group('names', words.names, names.value.map(nameItem)),
+        group(
+          'text',
+          words.text,
+          texts.value.map((one) => passageItem('text', one)),
+        ),
+        group(
+          'meaning',
+          words.meaning,
+          meanings.value.map((one) => passageItem('meaning', one)),
+        ),
+      ] as readonly PaletteGroup[],
+      held,
+    }
+  })
+
+  const groups = computed(() => built.value.groups)
+
+  const typeOf = (item: string): NoteType | null => built.value.held.get(item)?.type ?? null
+
+  const kindOf = (item: string): Source | null => built.value.held.get(item)?.kind ?? null
+
+  const chooseItem = (item: string, action: string): SearchDestination | null => {
+    return resolveDestination(built.value.held.get(item), action)
+  }
+
+  return { open, typed, groups, setTyped, setOpen, chooseItem, typeOf, kindOf }
+}
+
+export type SearchState = ReturnType<typeof useSearch>

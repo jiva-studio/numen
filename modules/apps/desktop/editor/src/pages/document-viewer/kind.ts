@@ -1,0 +1,50 @@
+/**
+ * Window registration for document tabs.
+ */
+import type { Span } from '@/shared/span'
+import type { FileOpeners } from '@/entities/tab'
+import type { TabKind, WindowHandle } from '@/entities/tab'
+import { DOCUMENT } from '@/entities/tab'
+import DocumentTab from './ui/DocumentTab.vue'
+import { fileOf } from '@/shared/paths'
+import type { DocumentTabState } from './model/useDocumentTab'
+
+/**
+ * The document tabs of a window. A document is its own tab, so the same one
+ * opened again is the tab it is already read in.
+ */
+export function createDocumentKind(
+  handle: WindowHandle,
+  open: (path: string) => DocumentTabState,
+  tabOpeners: FileOpeners,
+) {
+  const kind: TabKind<DocumentTabState, typeof DOCUMENT> = {
+    kind: DOCUMENT,
+    open,
+    getTitle: (state) => fileOf(state.path),
+    pane: DocumentTab,
+    identity: (path) => path,
+    onShow: (state) => {
+      state.measure()
+      state.focusTab()
+    },
+    onKeyPress: (state, event) => state.handleKeyPress(event),
+    onClose: (state) => {
+      state.close()
+      return true
+    },
+    getTarget: (state) => ({ file: state.path, source: 'book' }),
+    getOpenTab: (state) => ({
+      path: state.path,
+      document: { page: state.pageNumber.value + 1, pageCount: state.pages.value.length },
+    }),
+  }
+
+  const openDocument = async (path: string, spans: readonly Span[]) => {
+    const id = await handle.openTab(DOCUMENT, path)
+    void handle.getTabState<DocumentTabState>(DOCUMENT, id)?.focusSpans(...spans)
+  }
+  tabOpeners.registerReader({ kind: 'book' }, (path, spans) => void openDocument(path, spans))
+
+  return { kind }
+}

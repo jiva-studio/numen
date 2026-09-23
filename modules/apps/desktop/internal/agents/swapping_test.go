@@ -1,0 +1,78 @@
+package agents
+
+import (
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// isServing says whether the tools are in front of the agents.
+func (s *Endpoint) isServing() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.close != nil
+}
+
+// newEndpoint is a window on a vault, serving tools that do nothing.
+func newEndpoint() *Endpoint {
+	return &Endpoint{
+		Serve:        func() (func() error, error) { return func() error { return nil }, nil },
+		Showing:      func() domain.Vault { return domain.Vault{ID: "one"} },
+		Handler:      func(port.Agent) {},
+		Unreachable:  func(string) {},
+		ErrorHandler: func(error) {},
+	}
+}
+
+// TestOneSwapHoldsTheAgentsUntilItIsOver. The tools are served for the vault in
+// the window, so a second swap arriving while one runs does not put them back
+// in front of the agents on the vault that is going.
+func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
+	s := newEndpoint()
+	s.Start()
+	if !s.isServing() {
+		t.Fatal("the tools were never served")
+	}
+
+	running := make(chan struct{})
+	release := make(chan struct{})
+
+	var swaps sync.WaitGroup
+	swaps.Add(1)
+	go func() {
+		defer swaps.Done()
+		_ = s.RunSwap(func() error {
+			close(running)
+			<-release
+			return nil
+		})
+	}()
+	<-running
+
+	second := make(chan struct{})
+	swaps.Add(1)
+	go func() {
+		defer swaps.Done()
+		defer close(second)
+		_ = s.RunSwap(func() error { return nil })
+	}()
+	// The second swap has this long to reach the endpoint the first is holding.
+	select {
+	case <-second:
+	case <-time.After(time.Second):
+	}
+	served := s.isServing()
+
+	close(release)
+	swaps.Wait()
+
+	if served {
+		t.Error("the tools were served again while a swap was running")
+	}
+	if !s.isServing() {
+		t.Error("the tools were not served again once the swap was over")
+	}
+}

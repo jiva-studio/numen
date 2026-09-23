@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- The hardened runtime is on. The page runs in WebKit's own processes, and
+     the agent this application starts is a program of its own with a signature
+     of its own. -->
+<dict>
+    <!-- A model runs through the ONNX Runtime, which is fetched from the people
+         who publish it and carries their signature. The hardened runtime loads
+         a library signed by this application's team or by Apple, and this is
+         what lets the other one in. -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+</dict>
+</plist>

@@ -1,0 +1,70 @@
+# What an Ubuntu machine installs from the store. The toolkit, the theme and
+# the portals come from the desktop platform the gnome extension puts behind
+# this; the browser the window draws through is carried here, so that a machine
+# whose platform holds another one still runs this build.
+#
+# The packaging workflow gathers the two binaries and the marks beside them
+# into `staged/`, already under the names they keep inside the snap, and writes
+# the version into `staged/version`. The desktop entries beside this file are
+# the ones that go in: a snap finds an icon by the path it holds it at.
+name: numen
+base: core24
+adopt-info: numen
+
+summary: Notes linked into a graph, with the sources under them
+description: |
+  A knowledge tool: markdown notes in a folder of your own, linked into a
+  graph, a typed hierarchy with several parents, spaced repetition, and a
+  source layer over PDF and audio.
+
+website: https://numen.md
+contact: https://forum.numen.md
+issues: https://forum.numen.md
+
+grade: stable
+confinement: strict
+
+platforms:
+  amd64:
+
+parts:
+  numen:
+    plugin: dump
+    source: staged
+    override-pull: |
+      craftctl default
+      craftctl set version="$(cat version)"
+    stage:
+      - -version
+    stage-packages:
+      - libwebkitgtk-6.0-4
+      - gstreamer1.0-plugins-base
+      - gstreamer1.0-plugins-good
+      - gstreamer1.0-libav
+
+apps:
+  numen:
+    command: bin/numen
+    extensions: [gnome]
+    desktop: share/applications/numen.desktop
+    common-id: md.numen.Numen
+    environment: &surroundings
+      # The browser runs its pages in processes of its own, and it looks for
+      # them where it was built to. Inside a snap they stand under $SNAP.
+      WEBKIT_EXEC_PATH: $SNAP/usr/lib/x86_64-linux-gnu/webkitgtk-6.0
+      # Sound and video are played by plugins the browser opens by name.
+      GST_PLUGIN_SYSTEM_PATH: $SNAP/usr/lib/x86_64-linux-gnu/gstreamer-1.0
+      GST_PLUGIN_SCANNER: $SNAP/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
+    plugs: &reach
+      - home
+      - removable-media
+      - network
+      - audio-playback
+      - opengl
+
+  numen-flashcards:
+    command: bin/numen-flashcards
+    extensions: [gnome]
+    desktop: share/applications/numen-flashcards.desktop
+    environment: *surroundings
+    plugs: *reach

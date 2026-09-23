@@ -1,0 +1,243 @@
+package main
+
+import (
+	"context"
+	"errors"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// errNoTools is a machine holding neither of the programs an address is
+// downloaded with. The settings name where each of them is.
+var errNoTools = errors.New("neither yt-dlp nor ffmpeg is on this machine")
+
+// deps is what the terminal works through, built for the places one run was
+// pointed at. An installation is assembled by the application, so the openers
+// are made here and the terminal is handed them.
+//
+// Each one opens when its command asks and not before: a person listing vaults
+// waits for no index, and one asking about a scan waits for no transcriber.
+func deps(cfg container.Config) func(cli.Locations) cli.Deps {
+	return func(where cli.Locations) cli.Deps {
+		cfg.IndexPath = where.Index
+		cfg.RegistryPath = where.Registry
+		cfg.ServiceDir = where.ServiceDir
+
+		return cli.Deps{
+			Vaults: func() (cli.Vaults, error) {
+				registry, err := cfg.Registry()
+				if err != nil {
+					return cli.Vaults{}, err
+				}
+				return cli.Vaults{
+					Registry: registry,
+					Readers:  cfg.VaultReaders(),
+					Identity: cfg.VaultIdentity(),
+					Trash:    cfg.Trash(),
+					Now:      cfg.Clock(),
+					Rows: func(ctx context.Context) (cli.VaultRows, error) {
+						db, err := cfg.OpenIndex(ctx)
+						if err != nil {
+							return cli.VaultRows{}, err
+						}
+						return cli.VaultRows{Vaults: db.Vaults(), Close: db.Close}, nil
+					},
+				}, nil
+			},
+
+			Links: func(ctx context.Context) (cli.Links, error) {
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.Links{}, err
+				}
+				notes := cfg.Notes(
+					db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), cfg.Level(db))
+				return cli.Links{Show: notes.Links, Close: db.Close}, nil
+			},
+
+			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+				reading := cfg
+				reading.ShouldRebuildIndex = rebuild
+				db, err := reading.OpenIndex(ctx)
+				if err != nil {
+					return cli.Scan{}, err
+				}
+				// A terminal waits for the model, and a vault is read whether
+				// or not one arrives.
+				embedder, closeEmbedder, why := reading.Embedder(ctx)
+				read, err := reading.ReadWholeVault(ctx, db, embedder, v)
+				if err != nil {
+					if closeEmbedder != nil {
+						_ = closeEmbedder()
+					}
+					_ = db.Close()
+					return cli.Scan{}, err
+				}
+				return cli.Scan{
+					Read: read,
+					Summary: func(ctx context.Context) (domain.VaultSummary, error) {
+						return db.Queries().Summary(ctx, v.ID)
+					},
+					Unembedded: why,
+					Close: func() error {
+						if closeEmbedder != nil {
+							_ = closeEmbedder()
+						}
+						return db.Close()
+					},
+				}, nil
+			},
+
+			Recognise: func(
+				ctx context.Context, v domain.Vault, fetching func(),
+			) (cli.Recognise, error) {
+				//nolint:contextcheck // whether a model is on this machine is asked of the disk, and waits for nothing
+				if !cfg.RecogniserReady() {
+					fetching()
+				}
+				models, closeModels, why := cfg.Recogniser(ctx)
+				if why != nil {
+					return cli.Recognise{}, why
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					_ = closeModels()
+					return cli.Recognise{}, err
+				}
+				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+				if err != nil {
+					_ = closeModels()
+					_ = db.Close()
+					return cli.Recognise{}, err
+				}
+				return cli.Recognise{
+					Recognise: cfg.Recognise(db.Sources(), models),
+					Cut:       cut,
+					Close: func() error {
+						_ = closeModels()
+						return db.Close()
+					},
+				}, nil
+			},
+
+			Transcribe: func(
+				ctx context.Context, v domain.Vault, fetching func(),
+			) (cli.Transcribe, error) {
+				//nolint:contextcheck // whether a model is on this machine is asked of the disk, and waits for nothing
+				if !cfg.TranscriberReady() {
+					fetching()
+				}
+				models, closeModels, why := cfg.Transcriber(ctx)
+				if why != nil {
+					return cli.Transcribe{}, why
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					_ = closeModels()
+					return cli.Transcribe{}, err
+				}
+				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+				if err != nil {
+					_ = closeModels()
+					_ = db.Close()
+					return cli.Transcribe{}, err
+				}
+				return cli.Transcribe{
+					Transcribe: cfg.Transcribe(db.Sources(), models),
+					Cut:        cut,
+					Close: func() error {
+						_ = closeModels()
+						return db.Close()
+					},
+				}, nil
+			},
+
+			ImportURL: func(ctx context.Context, _ domain.Vault) (cli.ImportURL, error) {
+				by := cfg.Downloader(ctx)
+				if by == nil {
+					return cli.ImportURL{}, errNoTools
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.ImportURL{}, err
+				}
+				return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, by), Close: db.Close}, nil
+			},
+
+			ProofreadReading: func(
+				ctx context.Context, v domain.Vault,
+			) (cli.ProofreadReading, error) {
+				proofread, held, err := cfg.GetScanProofreading().
+					Reading(cfg.VaultReaders(), cfg.GetDerivedStores())
+				if err != nil || !held {
+					return cli.ProofreadReading{}, err
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.ProofreadReading{}, err
+				}
+				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+				if err != nil {
+					_ = db.Close()
+					return cli.ProofreadReading{}, err
+				}
+				return cli.ProofreadReading{
+					Proofread: proofread, Cut: cut, IsHeld: true, Close: db.Close,
+				}, nil
+			},
+
+			ProofreadTranscript: func(
+				ctx context.Context, v domain.Vault,
+			) (cli.ProofreadTranscript, error) {
+				proofread, held, err := cfg.GetSpeechProofreading().
+					Transcript(cfg.VaultReaders(), cfg.GetDerivedStores())
+				if err != nil || !held {
+					return cli.ProofreadTranscript{}, err
+				}
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.ProofreadTranscript{}, err
+				}
+				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+				if err != nil {
+					_ = db.Close()
+					return cli.ProofreadTranscript{}, err
+				}
+				return cli.ProofreadTranscript{
+					Proofread: proofread, Cut: cut, IsHeld: true, Close: db.Close,
+				}, nil
+			},
+
+			Search: func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.Search{}, err
+				}
+				// Only the provider that embeds questions is opened. Nothing a
+				// search does fills an index.
+				asking, closeAsking, why := cfg.OpenQuestionEmbedder(ctx)
+				return cli.Search{
+					Search: cfg.NewSearch(db, asking, errorHandler),
+					Words:  why,
+					Close: func() error {
+						if closeAsking != nil {
+							_ = closeAsking()
+						}
+						return db.Close()
+					},
+				}, nil
+			},
+
+			Problems: func(ctx context.Context) (cli.Problems, error) {
+				db, err := cfg.OpenIndex(ctx)
+				if err != nil {
+					return cli.Problems{}, err
+				}
+				return cli.Problems{Problems: db.Problems(), Close: db.Close}, nil
+			},
+		}
+	}
+}

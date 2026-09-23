@@ -1,0 +1,140 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"sync"
+
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+)
+
+// errGoing is work asked for once the window has begun closing.
+var errGoing = errors.New("the window is closing")
+
+// openVaults is every vault this window has open.
+//
+// A vault is opened once, for the life of the window: its watch is started and
+// left running, its walk is asked for from here, and what this window writes
+// into it is levelled through the same opening.
+type openVaults struct {
+	cfg container.Config
+	db  *container.Index
+	// under is the life a vault stays open for. It outlives the question that
+	// first asked after the vault.
+	under context.Context
+	// recordVault is called with the vault the index has just been brought
+	// level with.
+	recordVault func(domain.Vault)
+	out         io.Writer
+
+	// running is every walk, every watch and every levelling this window has
+	// over a vault. They write to the index, so they are waited for before it
+	// closes.
+	running sync.WaitGroup
+
+	mu       sync.Mutex
+	isGoing  bool
+	openings map[domain.VaultID]*vaultOpening
+}
+
+// vaultOpening is one vault's opening, made once however many ask for it.
+type vaultOpening struct {
+	once    sync.Once
+	opening *container.VaultOpener
+	open    *container.OpenVault
+}
+
+// wait lets go of every vault and holds until nothing is still writing to the
+// index.
+func (o *openVaults) wait() {
+	o.mu.Lock()
+	o.isGoing = true
+	o.mu.Unlock()
+
+	o.running.Wait()
+}
+
+// startWork takes a piece of work on and says whether it may run. A window that
+// is going takes none, so nothing begins writing after the index is waited for.
+func (o *openVaults) startWork() bool {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	if o.isGoing {
+		return false
+	}
+	o.running.Add(1)
+	return true
+}
+
+// getOpening is the vault opened, and opens it the first time it is asked for.
+// Opening one registers a watch over its whole tree, which is done outside the
+// lock.
+func (o *openVaults) getOpening(v domain.Vault) *vaultOpening {
+	o.mu.Lock()
+	one, there := o.openings[v.ID]
+	if !there {
+		one = &vaultOpening{}
+		if o.openings == nil {
+			o.openings = map[domain.VaultID]*vaultOpening{}
+		}
+		o.openings[v.ID] = one
+	}
+	o.mu.Unlock()
+
+	one.once.Do(func() { o.openVault(v, one) })
+	return one
+}
+
+// openVault starts one vault's watch and leaves it running.
+func (o *openVaults) openVault(v domain.Vault, one *vaultOpening) {
+	opening := o.cfg.VaultOpener(o.db)
+	opening.Told = func(container.VaultChanges) { o.recordVault(v) }
+	opening.ErrorHandler = func(err error) {
+		if err != nil {
+			fmt.Fprintf(o.out, "numen-flashcards: %s: %v\n", v.Name, err)
+		}
+	}
+
+	open := opening.Begin(o.under, v)
+	if why := open.GetUnwatchedReason(); why != nil {
+		fmt.Fprintf(o.out, "numen-flashcards: %s is not being followed: %v\n", v.Name, why)
+	}
+	one.opening, one.open = opening, open
+
+	if o.startWork() {
+		go func() {
+			defer o.running.Done()
+			open.Run(o.under)
+		}()
+	}
+}
+
+// readVault walks a vault into the index.
+func (o *openVaults) readVault(ctx context.Context, v domain.Vault) error {
+	if !o.startWork() {
+		return errGoing
+	}
+	defer o.running.Done()
+
+	_, err := o.getOpening(v).open.Read(ctx, nil)
+	return err
+}
+
+// level brings the paths a write touched up to date, through the opening of the
+// vault they are in.
+//
+// A levelling writes to the index, so a window that is closing refuses one: the
+// prose is on disk either way, and a write into a database being closed is
+// worse than a search that has to be caught up on next time.
+func (o *openVaults) level(ctx context.Context, v domain.Vault, paths []string) error {
+	if !o.startWork() {
+		return errGoing
+	}
+	defer o.running.Done()
+
+	return o.getOpening(v).opening.Level(ctx, v, paths)
+}

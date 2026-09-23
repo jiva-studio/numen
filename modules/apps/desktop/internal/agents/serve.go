@@ -1,0 +1,201 @@
+//go:build !nomcp
+
+package agents
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"slices"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+)
+
+// ephemeral is a loopback port this machine picks, for a window that is not the
+// one an agent is configured against.
+const ephemeral = "127.0.0.1:0"
+
+// bound is how long the agents' transport has to be cut off. A session an agent
+// left open holds its connection until it is closed under it, and this is how
+// long that costs. The calls already running are waited for afterwards, without
+// a bound.
+const bound = 2 * time.Second
+
+// Options is what a window says about letting agents in.
+type Options struct {
+	// Config is this installation's settings: which agent answers, and where
+	// the application keeps its own state.
+	Config container.Config
+	// Core is everything the tools work through.
+	Core mcp.Core
+	// ShouldRead serves the surface every tool of which reads. An agent answering
+	// from it changes nothing.
+	ShouldRead bool
+	// ShouldReview serves the surface the window a person runs their cards in has:
+	// everything that reads, and the cards of a deck.
+	ShouldReview bool
+	// Addr is where the tools are served. Empty takes a loopback port this
+	// machine picks.
+	Addr string
+	// Token is what an agent presents. Empty mints one and keeps it beside the
+	// vault list.
+	Token string
+	// IsAnnouncing writes down where the tools are and what to present, which is
+	// what an agent a person runs themselves is configured from. The file names
+	// one vault, and one window writes it.
+	IsAnnouncing bool
+	// Root is the folder the agent is started in.
+	Root string
+	// Drafting is how a change the agent is making is drawn before it lands.
+	Drafting claudecode.Drafting
+	// Out is where what happened is said.
+	Out io.Writer
+}
+
+// Server is the tools on a port, and the agent the settings name reaching them.
+type Server struct {
+	// Agent is the agent this window asks on the person's behalf, and nothing
+	// where the settings name none.
+	Agent *claudecode.Agent
+	// URL is where an agent reaches the tools, naming the port that was bound.
+	URL string
+
+	close func() error
+}
+
+// Close takes the agents away and then the endpoint.
+func (s *Server) Close() error {
+	if s == nil || s.close == nil {
+		return nil
+	}
+	return s.close()
+}
+
+// Serve puts the tools on a port and starts the agent the settings name
+// against them.
+func Serve(ctx context.Context, opts Options) (*Server, error) {
+	secret := opts.Token
+	if secret == "" {
+		token, err := GetToken(opts.Config)
+		if err != nil {
+			return nil, err
+		}
+		secret = token
+	}
+	addr := opts.Addr
+	if addr == "" {
+		addr = ephemeral
+	}
+
+	errorHandler := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
+	serving := mcp.ServeHTTP
+	switch {
+	case opts.ShouldRead:
+		serving = mcp.ServeReadingHTTP
+	case opts.ShouldReview:
+		serving = mcp.ServeReviewingHTTP
+	}
+	endpoint, err := serving(ctx, addr, secret, opts.Core, errorHandler)
+	if err != nil {
+		return nil, err
+	}
+	forget := func() {}
+	if opts.IsAnnouncing {
+		gone, err := Announce(opts.Config, endpoint.URL, secret)
+		if err != nil {
+			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
+			endpoint.Close(context.Background())
+			return nil, err
+		}
+		forget = gone
+	}
+
+	fmt.Fprintf(opts.Out, "agents: %s\n", endpoint.URL)
+	if !mcp.Local(addr) {
+		fmt.Fprintf(opts.Out, "agents: %s is reachable from the network, not only from this machine\n", addr)
+	}
+
+	served := &Server{URL: endpoint.URL}
+	if opts.Config.Agent.Use == agent.UseClaude {
+		// What the window says about a call is what the tool declared about
+		// itself, asked for over the protocol an agent is answered by.
+		vocabulary := mcp.Vocabulary
+		switch {
+		case opts.ShouldRead:
+			vocabulary = mcp.ReadingVocabulary
+		case opts.ShouldReview:
+			vocabulary = mcp.GetReviewVocabulary
+		}
+		words, err := vocabulary(ctx, opts.Core)
+		if err != nil {
+			fmt.Fprintln(opts.Out, "agents:", err)
+		}
+		served.Agent = Claude(opts.Config, opts.Root, endpoint.URL, secret, words, opts.Drafting, opts.Out)
+	}
+
+	started := served.Agent
+	//nolint:contextcheck // a close runs when the context is already over, so it carries one of its own with a bound
+	served.close = func() error {
+		forget()
+		// The agents this window started go first: each is in a process group
+		// of its own, so nothing else reaches them, and one still answering
+		// would go on writing to the vault after the window is gone.
+		var stopped error
+		if started != nil {
+			stopped = started.Close()
+		}
+		shutdown, cancel := context.WithTimeout(context.Background(), bound)
+		defer cancel()
+		if err := endpoint.Close(shutdown); err != nil {
+			return err
+		}
+		return stopped
+	}
+	return served, nil
+}
+
+// Claude is what the window asks on the person's behalf.
+//
+// It reaches the same tools over the same port as an agent somebody configured
+// themselves, and is allowed each tool of the vocabulary by name: what it
+// changes appears in the window as it happens.
+func Claude(
+	cfg container.Config,
+	root, url, secret string,
+	vocabulary map[string]mcp.Tool,
+	drafting claudecode.Drafting,
+	out io.Writer,
+) *claudecode.Agent {
+	words := make(map[string]claudecode.ToolDeclaration, len(vocabulary))
+	allowed := make([]string, 0, len(vocabulary))
+	for name, said := range vocabulary {
+		allowed = append(allowed, claudecode.Tool(name))
+		words[claudecode.Tool(name)] = claudecode.ToolDeclaration{
+			Title: said.Title,
+			Kind:  said.Kind,
+			Arguments: claudecode.Arguments{
+				About:   said.About,
+				Element: said.Inside,
+				Match:   said.Match,
+				Text:    said.Text,
+			},
+		}
+	}
+	slices.Sort(allowed)
+	return &claudecode.Agent{
+		Command:                  cfg.Agent.Claude.Command,
+		Root:                     root,
+		Tools:                    claudecode.Endpoint{URL: url, Token: secret},
+		Allowed:                  allowed,
+		Words:                    words,
+		Drafting:                 drafting,
+		Model:                    cfg.Agent.Claude.Model,
+		Turns:                    cfg.Agent.Claude.MaxSteps,
+		ShouldReadHooksAndSkills: cfg.Agent.Claude.ShouldReadHooksAndSkills,
+		ErrorHandler:             func(err error) { fmt.Fprintln(out, "agent:", err) },
+	}
+}

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Numen Flashcards
+Comment=Run the cards a vault holds
+Exec=numen-flashcards
+Icon=md.numen.Numen.Flashcards
+Terminal=false
+Categories=Office;Education;
+Keywords=flashcards;spaced repetition;review;
+StartupWMClass=numen-flashcards

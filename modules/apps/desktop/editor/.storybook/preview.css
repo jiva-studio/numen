@@ -1,0 +1,16 @@
+/* Storybook's own frame, not the window's. Nothing here ships. */
+html,
+body,
+#storybook-root {
+  block-size: 100%;
+  margin: 0;
+}
+
+/* On the page itself, so it covers the canvas whatever layout a story asks
+   for. */
+html {
+  background: var(--numen-surface);
+  color: var(--numen-ink);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-font-size);
+}
