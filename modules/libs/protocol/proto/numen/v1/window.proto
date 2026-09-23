@@ -1,0 +1,157 @@
+syntax = "proto3";
+
+// What a client may ask about the window it is drawn in.
+//
+// A window is not a vault: the editor and the window a person runs their cards
+// in are open at once, and which vault each has in front of the person, what
+// each is doing behind itself, and what has to land before it goes, are its
+// own. Every question here names the window it is about.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// WindowService answers about one window: what it has in front of the person,
+// what is being done behind it, and what a caller has left when it goes.
+service WindowService {
+  // WatchTasks reports everything being done behind the window, for as long as
+  // the caller listens: what it is, what it is on, and how far it has got.
+  //
+  // The whole list arrives every time any of it changes, and the first arrives
+  // at once, so a window that opened while work was running is told about it.
+  // It is a stream rather than a question asked over and over, because what is
+  // being done is known here the moment it changes and work can begin without
+  // the window asking for it — an agent is told to read a document, and this is
+  // where the person watching sees it happen.
+  rpc WatchTasks(WatchTasksRequest) returns (stream WatchTasksResponse);
+
+  // WatchQuit says the window is going, for as long as the caller listens. A
+  // caller holding work that is only in its own memory writes it now and
+  // answers with ReportFlush.
+  rpc WatchQuit(WatchQuitRequest) returns (stream WatchQuitResponse);
+
+  // ReportFlush says what a caller has left. Nothing left lets the window go;
+  // work a person is being asked about keeps it open. A caller that never says
+  // it is waited for and then left behind.
+  rpc ReportFlush(ReportFlushRequest) returns (ReportFlushResponse);
+
+  // GetShownVault is which vault this window has in front of the person. Two
+  // windows are open on one installation and each shows what it shows, so it is
+  // the window that is asked and not the list of vaults.
+  rpc GetShownVault(GetShownVaultRequest) returns (GetShownVaultResponse);
+}
+
+message WatchTasksRequest {
+  // The window this is asked of. A question naming another window than the one
+  // answering it is not answered.
+  string window = 1;
+}
+
+message WatchTasksResponse {
+  // Everything being done now, in the order the work began. The list arrives
+  // whole, because what is being done is a list and not a set of differences to
+  // apply.
+  repeated Task tasks = 1;
+}
+
+// A Task is one piece of work the application is doing behind the window.
+//
+// Every kind of work is one of these. That is the point: the next kind is an
+// entry in a list rather than another field on the state, another thing for the
+// window to poll, and another branch in what draws it.
+message Task {
+  // Id is what this work is called, so that the same work reported again
+  // replaces itself rather than appearing twice.
+  string id = 1;
+
+  // Doing is the work, in the words to show. About is what it is on, and is
+  // empty for work that is on nothing in particular.
+  string doing = 2;
+  string about = 3;
+
+  // Done and total are how far it has got, when there is a total to count
+  // against. Both zero is work running with nothing to count, which is an
+  // ordinary state and not an unknown one.
+  int64 done = 4;
+  int64 total = 5;
+
+  // Error is why the work stopped, when it stopped badly.
+  string error = 6;
+
+  // Asked is set for work a person started and is waiting to be told about.
+  // Work nobody asked for is drawn once it has lasted, and most of it is over
+  // before that.
+  bool is_asked = 7;
+
+  // Unit is what done and total are counted in.
+  Unit unit = 8;
+}
+
+// Unit is what a piece of work counts. Bytes are read out in the sizes a
+// person reads them in, seconds as a length of time, and everything else is
+// counted one by one.
+enum Unit {
+  UNIT_UNSPECIFIED = 0;
+  UNIT_THINGS = 1;
+  UNIT_BYTES = 2;
+
+  // A stretch of a recording, read out as a length of time.
+  UNIT_SECONDS = 3;
+}
+
+message WatchQuitRequest {
+  // The window this is asked of. A question naming another window than the one
+  // answering it is not answered.
+  string window = 1;
+}
+
+message WatchQuitResponse {
+  // What this caller answers ReportFlush with. The stream opens by saying it, so
+  // a caller knows it is listening before anything is asked of it.
+  string token = 1;
+
+  // Set when the window is going and this caller's unwritten work has to land.
+  bool flush = 2;
+}
+
+// FlushResult is what a caller has left when it answers.
+enum FlushResult {
+  FLUSH_RESULT_UNSPECIFIED = 0;
+
+  // Nothing is left. The caller held nothing of its own.
+  FLUSH_RESULT_NOTHING = 1;
+
+  // Everything this caller held is written.
+  FLUSH_RESULT_WRITTEN = 2;
+
+  // Something this caller holds could not be written, and a person is being
+  // asked what to do with it. The window stays until they answer.
+  FLUSH_RESULT_ASKING = 3;
+}
+
+message ReportFlushRequest {
+  // The window this is asked of. A question naming another window than the one
+  // answering it is not answered.
+  string window = 1;
+
+  // The token this caller was given when it began listening.
+  string token = 2;
+
+  // What this caller has left. A request naming none has said nothing, and is
+  // waited for the way one that never answered is waited for.
+  FlushResult result = 3;
+}
+
+message ReportFlushResponse {}
+
+message GetShownVaultRequest {
+  // The window this is asked of. A question naming another window than the one
+  // answering it is not answered.
+  string window = 1;
+}
+
+message GetShownVaultResponse {
+  // The identity the list of vaults holds that vault under. Empty in a window
+  // showing none, and in one that is open on the installation rather than on
+  // any one vault.
+  string vault = 1;
+}

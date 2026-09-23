@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+// What a client may ask about the vault a window is showing, taken whole.
+//
+// What the vault is and what has changed in it: the questions that are about
+// the vault itself and not about anything filed in it. Its files are
+// file.proto, its notes note.proto and its text search.proto, and where the
+// person stands in it is workspace.proto.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// VaultService answers what the one vault a client is looking at is, and what
+// has changed in it.
+service VaultService {
+  // GetVaultState is what the vault is and how far reading it has got.
+  rpc GetVaultState(GetVaultStateRequest) returns (GetVaultStateResponse);
+
+  // WatchVaultChanges reports the notes that changed on disk, for as long as
+  // the caller listens. It says which notes, and nothing about them: the caller
+  // knows what it is showing and asks for what it needs.
+  rpc WatchVaultChanges(WatchVaultChangesRequest) returns (stream WatchVaultChangesResponse);
+}
+
+message GetVaultStateRequest {}
+
+// GetVaultStateResponse is what the vault the window is showing IS. What is
+// being done behind that window is Tasks.
+message GetVaultStateResponse {
+  // Id is the identity the folder carries, and how this vault is asked for
+  // again. Name is what the person calls it, which is what a window titles
+  // itself with. The list says both of a vault the same way.
+  string id = 1;
+  string name = 2;
+
+  // Where the vault stands on this disk.
+  string path = 3;
+
+  // How far reading the vault has got.
+  Scan scan = 4;
+
+  // How far searching it by meaning has got.
+  IndexCoverage coverage = 5;
+}
+
+// Scan is how far reading a vault has got, and what stopped it.
+message Scan {
+  // IsReady is set when the scan has finished.
+  bool is_ready = 1;
+
+  // Error is why the scan stopped, when it stopped for a reason.
+  string error = 2;
+
+  // Why the vault is not being followed, when it is not. Changes will only
+  // appear when something asks for them again.
+  string unwatched = 3;
+}
+
+// IndexCoverage is how far searching a vault by meaning has got.
+//
+// A search by meaning is asked of the vectors, and a vault holding none answers
+// nothing however it is asked. Which of three states it stands in is what the
+// person is told, so all three travel: no model at all, a model with nothing
+// embedded yet, and a vault that answers.
+message IndexCoverage {
+  // ChunkCount is how many spans of text the index holds, and EmbeddedCount how
+  // many of those carry a vector. Cutting finishes long before embedding does.
+  // Both are zero for a vault nothing has cut yet.
+  int64 chunk_count = 1;
+  int64 embedded_count = 2;
+
+  // Embedding says whether anything is going to turn the spans into vectors.
+  // False for an installation with no model, where the vault is searched by its
+  // words alone.
+  bool is_embedding = 3;
+}
+
+message WatchVaultChangesRequest {}
+
+message WatchVaultChangesResponse {
+  // Paths of the files that changed, notes and assets alike. One that was
+  // removed is named here too: what changed about it is that it is gone.
+  repeated string paths = 1;
+
+  // Set when the vault has to be read again rather than followed — more
+  // changed at once than could be reported.
+  bool reload = 2;
+
+  // The notes that were renamed by this application, each by where it was and
+  // where it now is. A client showing one of them follows it there.
+  repeated Move renamed = 3;
+}
+
+// Move is a note that is no longer where it was. The bytes do not change on the
+// way, so this says nothing about what the note holds.
+message Move {
+  // Where the note was filed.
+  string from = 1;
+
+  // Where it is filed now.
+  string to = 2;
+}

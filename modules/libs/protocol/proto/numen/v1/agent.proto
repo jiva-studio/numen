@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+// What a client asks an agent, and what it hears back while the agent works.
+//
+// The window hands over a person's task and draws what arrives, a step at a
+// time. What the agent is and how it reaches the vault is the application's
+// business and is said nowhere here.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// AgentService gives a task to the agent working this vault.
+service AgentService {
+  // AskAgent hands over a task and reports what the agent does, in the order it
+  // does it, until it is done. Letting go of the stream stops the agent.
+  rpc AskAgent(AskAgentRequest) returns (stream AskAgentResponse);
+
+  // FinishConversation says a conversation is over. What the agent kept of it
+  // is let go of, and whatever is still being answered in it stops.
+  rpc FinishConversation(FinishConversationRequest) returns (FinishConversationResponse);
+
+  // GetAgentState is whether an agent can be reached at all. Which agent
+  // answers is the installation's, not the vault's, so every window asks the
+  // same question here and none of them carries the answer in its own state.
+  rpc GetAgentState(GetAgentStateRequest) returns (GetAgentStateResponse);
+}
+
+message GetAgentStateRequest {}
+
+message GetAgentStateResponse {
+  // Set when no agent can be reached, and then nothing can be asked of one. It
+  // says why, in the person's own words.
+  string unreachable = 1;
+}
+
+message AskAgentRequest {
+  // What the person wrote.
+  string asked = 1;
+  // The note in focus, for a task that says "this note". Empty when nothing
+  // is in focus.
+  string focus = 2;
+  // Which thread of talk this question belongs to. Questions carrying one name
+  // are answered in one conversation with the agent, so the name has to be the
+  // client's alone: unique among the conversations it has open, and never
+  // given to a second one for as long as the application is running. Empty is
+  // no conversation, and a question asked under it is answered on its own.
+  string conversation = 3;
+  // The card in focus, for a window that asks about one: the mark its deck
+  // writes it under, and the face it is being shown through. The deck is the
+  // note in focus. Both empty in a window that asks about notes.
+  string mark = 4;
+  string face = 5;
+}
+
+message FinishConversationRequest {
+  // Which thread of talk is over, by the name its questions carried. Empty is
+  // no conversation, and there is nothing to finish.
+  string conversation = 1;
+}
+
+message FinishConversationResponse {}
+
+// AskAgentResponse is one step of the work: one thing the agent said, did, or
+// stopped for.
+message AskAgentResponse {
+  oneof step {
+    // A piece of what the agent is saying, appended in the order it arrives.
+    string said = 1;
+    // A tool the agent is using.
+    ToolCall tool_call = 2;
+    // The agent has finished, and this is why it stopped. Empty when it
+    // stopped because it was done.
+    string stopped = 3;
+    // The tool the agent was using has answered. Nothing of this application's
+    // is running from here until the next step arrives.
+    Answered answered = 4;
+    // A request to the model has begun. This is where a wait starts, and the
+    // agent says so itself.
+    Thinking thinking = 5;
+  }
+}
+
+// Answered and Thinking carry nothing: each is a moment, and what it means is
+// its name. A client that does not know one ignores the step it names.
+message Answered {}
+
+message Thinking {}
+
+
+// ToolCall is a tool in the agent's hands.
+//
+// It arrives more than once for one call: a call carrying the text of a note is
+// written for minutes, and each report says how much has arrived.
+message ToolCall {
+  // The tool, by the name it is called by whoever serves it.
+  string tool = 1;
+  // What it was called about — a note, a query — empty when the call says
+  // nothing worth showing. Read out of arguments that have not finished
+  // arriving, so it appears before the call is made.
+  string about = 2;
+  // How much of the call has been written, in characters. The only thing that
+  // moves while a long call is being written.
+  int32 written = 3;
+
+  // Where the call is working: the source it names, by the path the vault
+  // files it under. Empty for a call that is working on no one file.
+  string path = 4;
+
+  // The run of that source's text the call names, counted in bytes. An empty
+  // span is a call that named the source and no place inside it.
+  Span span = 5;
+}

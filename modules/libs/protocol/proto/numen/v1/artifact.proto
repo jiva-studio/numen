@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+// What a client may ask about the artifacts made from a vault's files.
+//
+// An artifact is what a model wrote about one file: the text read out of a
+// scan, the words heard in a recording, and those words put right. The file
+// itself is the person's and is never touched; an artifact stands beside it,
+// under a name of the application's own.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// ArtifactService answers what has been made from a file of the vault, makes
+// one, and takes one away.
+service ArtifactService {
+  // ListArtifacts is every artifact a file can carry and what has become of
+  // each. A file whose kind carries none is answered with none.
+  //
+  // It is asked before anything is offered over a file: whether a book has been
+  // read is a question about the book, and the only other way to ask it is to
+  // ask for the book to be read again and be refused.
+  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse);
+
+  // CreateArtifact asks for one to be made, and answers at once with what
+  // became of the ask. The work carries on behind the answer, and how far it
+  // gets is in the list of what is being done.
+  //
+  // A file already carrying the artifact is left alone and answered with what
+  // stands. A file a person named is never turned away for want of a turn: it
+  // waits in line and is taken up before anything the vault set itself.
+  rpc CreateArtifact(CreateArtifactRequest) returns (CreateArtifactResponse);
+
+  // DeleteArtifact takes one away, with everything cut from it. The file stands
+  // as it did before anything was made from it, and it is offered again.
+  rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
+}
+
+// An Artifact is one thing a model wrote about one file of the vault.
+//
+// Where it stands on disk is the application's own and is never said: a request
+// names the file and the kind of it, and the vault is the one the window is
+// showing.
+message Artifact {
+  // Which of them this is.
+  ArtifactKind kind = 1;
+
+  // State is what has become of it.
+  State state = 2;
+
+  // Error is why it stopped.
+  string error = 3;
+
+  // How many bytes stand under it. A caller reading a long text in windows
+  // knows from this where the end is.
+  int64 bytes = 4;
+}
+
+// ArtifactKind is what a thing made from a file is. The list is closed: a
+// client draws one row per kind, and a kind nobody decided on has no row.
+//
+// A kind says what a thing is; what made it is its producer, and the two are
+// not the same question. Words with times are a transcript whether a model
+// heard them or a site published them.
+enum ArtifactKind {
+  ARTIFACT_KIND_UNSPECIFIED = 0;
+
+  // Text with the place on the page each word stands at, read off a scan and
+  // kept under `ocr`.
+  ARTIFACT_KIND_OCR = 1;
+
+  // That reading put right by a person, under `.corrected` beside it.
+  ARTIFACT_KIND_OCR_CORRECTED = 2;
+
+  // Text with the times each stretch of it was said at, under the name of what
+  // made it: `asr` where a model heard it, `captions` where a site published
+  // it with a video.
+  ARTIFACT_KIND_TRANSCRIPT = 3;
+
+  // A transcript put right by a person, under `.corrected` beside the one it
+  // corrects. It says which it is: a reading put right is another kind, and a
+  // caller editing one has to know which of them it holds.
+  ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 4;
+
+  // The prose a page is written around, under `article`. It carries no times
+  // and no places on pages: it is what the page says, and nothing about where
+  // it stood.
+  ARTIFACT_KIND_ARTICLE = 5;
+
+  // The bytes of a video, kept under `copy` and played from this disk. It is
+  // asked for by hand: an hour of video is not what pasting an address asks
+  // for.
+  ARTIFACT_KIND_COPY = 6;
+}
+
+// State is what has become of one artifact.
+enum State {
+  STATE_UNSPECIFIED = 0;
+
+  // Nothing has been made. The file carries this artifact and none of it
+  // stands.
+  STATE_NONE = 1;
+
+  // A run over this file is waiting behind the one going now.
+  STATE_QUEUED = 2;
+
+  // A run is writing it now.
+  STATE_RUNNING = 3;
+
+  // A run wrote part of it and is not holding it: it stopped, and what it
+  // reached is on disk. Asking again begins afresh.
+  STATE_STOPPED = 4;
+
+  // The whole of it stands.
+  STATE_DONE = 5;
+
+  // A run read the file and found nothing to write down — a recording holding
+  // no speech. Asking again reads the same file and finds the same, so what it
+  // found is kept and answered instead.
+  STATE_EMPTY = 6;
+
+  // A run could not read the file at all, and error says what it said about it.
+  // Taking the artifact away is how a person asks for the file to be tried
+  // afresh.
+  STATE_FAILED = 7;
+}
+
+message ListArtifactsRequest {
+  // The file of the vault, as the vault holds it.
+  string path = 1;
+}
+
+message ListArtifactsResponse {
+  // Every artifact this file can carry, whether or not any of it stands. A row
+  // is how a client is told that nothing has been made, which is an answer and
+  // not an absence.
+  repeated Artifact artifacts = 1;
+}
+
+message CreateArtifactRequest {
+  // The file of the vault, as the vault holds it.
+  string path = 1;
+
+  // Which artifact of it to make. Which model does the work follows from the
+  // file, and is not asked for here.
+  ArtifactKind kind = 2;
+}
+
+message CreateArtifactResponse {
+  Artifact artifact = 1;
+}
+
+message DeleteArtifactRequest {
+  // The file of the vault, as the vault holds it.
+  string path = 1;
+
+  // Which of what the file carries to take away, which a caller names: a url
+  // carries the text fetched from its address and a copy of what is there, and
+  // they go one without the other. Naming a text takes everything one run
+  // produced — the words a model heard and the words a person put right go
+  // together — and naming none is not a request.
+  ArtifactKind kind = 2;
+}
+
+message DeleteArtifactResponse {}

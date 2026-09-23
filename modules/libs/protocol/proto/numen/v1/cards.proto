@@ -1,0 +1,524 @@
+syntax = "proto3";
+
+// What a client may ask about the stencils and the decks a vault holds.
+//
+// A stencil declares the fields a card has and the faces it is shown by; a
+// deck holds the cards. Both are notes, so both are addressed by the path they
+// are filed under, and both are refused for the reasons any note is.
+//
+// Nothing here is laid out. A face travels as the markdown it was written as,
+// with its `{{Field}}` where they stand, and putting a card's values into it is
+// the client's.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// CardsService answers about the stencils and the decks of the one vault a
+// client is looking at.
+service CardsService {
+  // ListStencils is what a person choosing what kind of card to write next is
+  // shown: every stencil in the vault, by what it is called and what it asks
+  // for. The faces are read one stencil at a time.
+  //
+  // A stencil that could not be read is absent from the answer.
+  rpc ListStencils(ListStencilsRequest) returns (ListStencilsResponse);
+
+  // CreateStencil puts a stencil in the vault, declaring the fields it is given
+  // and showing no face. The file says it is a stencil from the moment it
+  // exists, so it is one to everything that reads the vault before a card is
+  // cut by it.
+  //
+  // The first field is what a card's heading is read from, so a stencil is
+  // made with at least one.
+  rpc CreateStencil(CreateStencilRequest) returns (CreateStencilResponse);
+
+  // ReadStencil is the fields and the faces of one stencil.
+  rpc ReadStencil(ReadStencilRequest) returns (ReadStencilResponse);
+
+  // WriteStencil puts fields and faces into a stencil. A path the vault holds
+  // no note at is refused `missing`; CreateStencil is what puts a stencil in
+  // the vault. Every frontmatter key but `fields` stays as the person wrote it,
+  // and a stencil that no longer holds what the caller read is left alone and
+  // refused `stale`.
+  //
+  // The preamble, the tail and each face's own preamble are written back as they
+  // arrive, so the parts of the file a client did not touch come out as the
+  // bytes they went in as.
+  rpc WriteStencil(WriteStencilRequest) returns (WriteStencilResponse);
+
+  // RenameStencilField gives one of a stencil's fields a different name,
+  // everywhere it is written: where the stencil declares it, in the braces of
+  // every face that places it, and as a heading in every card of every deck
+  // that stencil cuts. What stands under each heading is left as it was.
+  //
+  // Every field a stencil declares stands under its own heading in every card,
+  // the first included, so renaming any of them reaches every deck that
+  // stencil cuts. A deck the rename could not be written to keeps the old
+  // heading and comes back under `not_written`.
+  //
+  // A stencil that no longer holds what the caller read is left alone and
+  // refused `stale`, and then no deck is written either.
+  rpc RenameStencilField(RenameStencilFieldRequest) returns (RenameStencilFieldResponse);
+
+  // CreateDeck puts a deck of no cards in the vault. The file says it is a deck
+  // from the moment it exists, so it is one to everything that reads the vault
+  // before a card is written into it.
+  rpc CreateDeck(CreateDeckRequest) returns (CreateDeckResponse);
+
+  // ReadDeck is the sections and the cards of one deck, in the order they
+  // stand in the file. Each card says which section it stands under.
+  rpc ReadDeck(ReadDeckRequest) returns (ReadDeckResponse);
+
+  // WriteDeck puts sections and cards into a deck, in the order they are
+  // given. A path the vault holds no note at is refused `missing`; CreateDeck
+  // is what puts a deck in the vault. The frontmatter stays as the person wrote
+  // it, and a deck that no longer holds what the caller read is left alone and
+  // refused `stale`.
+  //
+  // A card carrying no section stands before the first one, and a section no
+  // card stands under is written where the cards around it put it.
+  //
+  // The preamble, the tail and each card's own preamble are written back as they
+  // arrive, so the parts of the file a client did not touch come out as the
+  // bytes they went in as.
+  rpc WriteDeck(WriteDeckRequest) returns (WriteDeckResponse);
+}
+
+// Stencil is what a card is cut by: the fields it is asked for, and the faces
+// it is shown through.
+message Stencil {
+  // Path is what the vault calls the note, and how it is asked for again.
+  string path = 1;
+  string title = 2;
+
+  // The names of the fields, in the order a person is asked for them. A name is
+  // text and nothing else.
+  repeated string fields = 3;
+
+  // The faces, in the order they stand in the note. One card is shown once
+  // through each.
+  repeated Face faces = 4;
+
+  // What was wrong with the note and was not guessed at, in the order it was
+  // found. The stencil is read either way.
+  repeated Problem problems = 5;
+
+  // The prose below the frontmatter and above the first face, with line endings
+  // as LF. A stencil carrying no face is all preamble.
+  string preamble = 6;
+
+  // What the file ends with once the last side has been read, with line endings
+  // as LF. It is no face's, and it is written back as it arrives.
+  string tail = 7;
+}
+
+// StencilSummary is one stencil as the list of them names it: where it is
+// filed, what it is called, and what it asks a person for.
+message StencilSummary {
+  string path = 1;
+  string title = 2;
+
+  // The names of the fields, in the order a person is asked for them.
+  repeated string fields = 3;
+}
+
+// Face is one way a stencil shows a card.
+message Face {
+  // What the face is called.
+  string name = 1;
+
+  // What is shown before the answer and after it, each markdown with `{{Field}}`
+  // standing where a value goes.
+  string front = 2;
+  string back = 3;
+
+  // The prose between the face's heading and its first side, with line endings
+  // as LF. It is written back as it arrives.
+  string preamble = 4;
+}
+
+// Deck is a note whose body is cards.
+message Deck {
+  // Path is what the vault calls the note, and how it is asked for again.
+  string path = 1;
+  string title = 2;
+
+  // The prose below the frontmatter and above the first section or card, with
+  // line endings as LF. A deck carrying neither is all preamble.
+  string preamble = 3;
+
+  // The cards, in the order they stand in the note.
+  repeated Card cards = 4;
+
+  // The sections, in the order they stand in the note. A card says which of
+  // them it stands under.
+  repeated Section sections = 5;
+
+  // What was wrong with the note and was not guessed at, in the order it was
+  // found. The deck is read either way, and every card a person wrote is here.
+  repeated Problem problems = 6;
+
+  // What the file ends with once the last value has been read, with line
+  // endings as LF. It is no card's, and it is written back as it arrives.
+  string tail = 7;
+}
+
+// Section is a run of a deck a person has given a name. It is a name and
+// nothing else: no fields, no stencil, no schedule, no mark.
+message Section {
+  // What the section is called, as its heading spells it. Two sections may
+  // carry one name.
+  string name = 1;
+
+  // The prose between the section's heading and its first card, with line
+  // endings as LF. Nothing lays it out, and it is written back as it arrives.
+  string preamble = 2;
+}
+
+// Problem is something in a file that could not be acted on and was not guessed
+// at. The file is read either way, and each one carries where it stands so that
+// the interface marks the card or the face it is against.
+message Problem {
+  Fault fault = 1;
+
+  // The card it stands against, counted from the first card the deck answers
+  // with. Absent for a problem against no card, and for every problem of a
+  // stencil.
+  optional int32 card = 2;
+
+  // The face it stands against, counted from the first face the stencil answers
+  // with. Absent for a problem against no face.
+  optional int32 face = 3;
+
+  // The field's name, as the file spells it. Empty for a problem against no
+  // field.
+  string field = 4;
+
+  // What is wrong, in the words to show.
+  string text = 5;
+}
+
+// Fault is what a problem is. The list is closed: an interface marks a card and
+// a face by what is wrong with them, so a fault nobody decided on is drawn
+// nowhere.
+enum Fault {
+  FAULT_UNSPECIFIED = 0;
+
+  // `fields` declares a name twice. The first stands.
+  FAULT_FIELD_DECLARED_TWICE = 1;
+
+  // `fields` is absent or empty, so a card cut by this stencil has no field to
+  // fill in.
+  FAULT_STENCIL_WITHOUT_FIELDS = 2;
+
+  // A face carries no front or no back. It lays out nothing.
+  FAULT_FACE_MISSING_A_SIDE = 3;
+
+  // A `{{Field}}` names a field outside `fields`. The rest of the face is read
+  // as usual.
+  FAULT_PLACEHOLDER_UNDECLARED = 4;
+
+  // The first paragraph under a card's heading is not a lone wikilink. The
+  // values are read.
+  FAULT_CARD_WITHOUT_A_STENCIL = 5;
+
+  // A card's wikilink reaches a note that is not a stencil. The values are
+  // read.
+  FAULT_STENCIL_IS_NOT_ONE = 6;
+
+  // One card writes a field's heading twice. The first stands, and the second
+  // is kept in the file.
+  FAULT_FIELD_WRITTEN_TWICE = 7;
+
+  // A field renamed in a stencil did not reach this deck, so a card holds a
+  // heading the stencil no longer declares.
+  FAULT_FIELD_NOT_RENAMED = 8;
+
+  // Two cards of one deck carry the same mark. Both are read and both are
+  // shown marked, and neither is given another.
+  FAULT_MARK_CARRIED_TWICE = 9;
+}
+
+// Card is one filled-in set of a stencil's fields.
+message Card {
+  // What the card is, for as long as it exists, and how it is addressed. It is
+  // the ten characters alone, without the caret a heading writes them behind,
+  // and it is empty for a card the application has not written yet.
+  string mark = 1;
+
+  // Where the section this card stands under stands in the deck's own, counted
+  // from the first. Absent for a card standing before the first section.
+  //
+  // A write naming a section the deck does not hold is refused. Nothing is
+  // written, and the card is not quietly stood somewhere else.
+  optional int32 section_index = 2;
+
+  // The line the card's heading says, with the mark taken off. It is not what
+  // the card is called: it holds nothing of its own, and a write throws it away
+  // and reads it again from the first field.
+  //
+  // It travels for the one card that cannot be read again — a card whose
+  // stencil is missing or unreadable, where nothing can say which of its fields
+  // is first. That heading is left exactly as it stands, so a write hands back
+  // what it was given. A write carrying nothing here leaves such a card headed
+  // by its mark alone.
+  string heading = 3;
+
+  // The stencil this card is cut by, as the wikilink beneath its heading names
+  // it, without the brackets. A name where one picks the stencil, and
+  // `note://<identifier>` where none does. Empty for a card written under no
+  // wikilink.
+  string stencil_link = 4;
+
+  // The prose between that wikilink and the first field, with line endings as
+  // LF. It is written back as it arrives.
+  string preamble = 5;
+
+  // The values, in the order they stand under the card. A field the stencil
+  // declares and the card leaves out is absent here.
+  repeated Value values = 6;
+
+  // Where the stencil that wikilink names is filed, resolved the way any link
+  // is. Empty for a card naming none and for a name that reaches no note, and a
+  // write carries nothing here.
+  string stencil_path = 7;
+}
+
+// Value is what a person wrote under one of a card's fields.
+message Value {
+  // The field's name, as the heading spells it.
+  string field = 1;
+
+  // The markdown below that heading, with line endings as LF.
+  string text = 2;
+}
+
+message ListStencilsRequest {
+  // How many stencils to answer with. Zero takes the number the vault chooses,
+  // and a number above the ceiling the vault sets takes that ceiling.
+  int32 limit = 1;
+}
+
+message ListStencilsResponse {
+  // The stencils, by path, with case ignored.
+  repeated StencilSummary stencils = 1;
+
+  // How many stencils the vault holds. It stands above the length of the list
+  // when the ceiling was reached, and the interface says so.
+  int32 total = 2;
+}
+
+message CreateStencilRequest {
+  // What the stencil is called. The file is named after it, and that name is
+  // what a card's wikilink writes.
+  string title = 1;
+
+  // The folder it goes in, as a path relative to the root. Empty is the root.
+  string path = 2;
+
+  // The names of the fields, in the order a person is asked for them. A card's
+  // heading is read from the first, and a stencil is made with at least one.
+  repeated string fields = 3;
+}
+
+message CreateStencilResponse {
+  // Where the stencil is filed. Empty when nothing was made.
+  string path = 1;
+
+  // Set when nothing was made, and why.
+  optional ErrorCode error = 2;
+
+  // Set when the stencil is on disk and the index would not come level with it.
+  // The stencil was made and `path` stands; search does not answer about it
+  // until a walk goes past.
+  bool is_unlevelled = 3;
+}
+
+message ReadStencilRequest {
+  string path = 1;
+}
+
+message ReadStencilResponse {
+  // Absent when the stencil was refused.
+  optional Stencil stencil = 1;
+
+  // Set when the stencil was not read, and why.
+  optional ErrorCode error = 2;
+
+  // The file this stencil came out of, for the caller to present at its next
+  // write. Absent when the stencil was refused.
+  optional Fingerprint at = 3;
+}
+
+message WriteStencilRequest {
+  string path = 1;
+
+  // The names of the fields, in the order a person is asked for them.
+  repeated string fields = 2;
+
+  // The faces, in the order they are to stand in the note.
+  repeated Face faces = 3;
+
+  // The file this caller last read. Absent for a write that lands on whatever
+  // the stencil now holds.
+  optional Fingerprint seen = 4;
+
+  // The prose to stand below the frontmatter and above the first face, with
+  // line endings as LF.
+  string preamble = 5;
+
+  // What the file is to end with, below the last side, with line endings as LF.
+  string tail = 6;
+}
+
+message WriteStencilResponse {
+  // Set when nothing was written, and why. A file that is no longer the one
+  // this caller read is ERROR_CODE_STALE, and the person chooses what happens to
+  // their text.
+  optional ErrorCode error = 1;
+
+  // The file the write produced, for the caller to present at its next write.
+  // Absent when nothing was written.
+  optional Fingerprint at = 2;
+
+  // Set when the stencil is on disk and the index would not come level with it.
+  // The write happened and `at` stands; search answers about this file as it
+  // read it last, until a walk goes past.
+  bool is_unlevelled = 3;
+}
+
+message RenameStencilFieldRequest {
+  // The stencil that declares the field.
+  string path = 1;
+
+  // The field's name now, and what it is called from now on.
+  string from = 2;
+  string to = 3;
+
+  // The stencil this caller last read. Absent for a rename that lands on
+  // whatever the stencil now holds.
+  optional Fingerprint seen = 4;
+}
+
+message RenameStencilFieldResponse {
+  // The decks a heading was rewritten in, by path.
+  repeated string decks = 1;
+
+  // How many headings were rewritten, over all those decks.
+  int32 cards = 2;
+
+  // One entry per deck the rename could not be written to. Each of them keeps
+  // the old heading.
+  repeated UnwrittenDeck not_written = 3;
+
+  // Set when the field was not renamed at all, and why. No deck is written
+  // where the stencil refused the rename, and a stencil that is no longer the
+  // one this caller read is ERROR_CODE_STALE.
+  optional ErrorCode error = 4;
+
+  // The stencil the rename produced, for the caller to present at its next
+  // write. Absent when nothing was renamed.
+  optional Fingerprint at = 5;
+
+  // Set when the rename reached the vault and the index would not come level
+  // with it. Search answers about these files as it read them last, until a
+  // walk goes past.
+  bool is_unlevelled = 6;
+}
+
+// UnwrittenDeck is one deck a rename did not reach.
+message UnwrittenDeck {
+  string path = 1;
+
+  // Why it was not reached, in the words to show. It stands against the deck
+  // and against no card of it.
+  Problem problem = 2;
+}
+
+message CreateDeckRequest {
+  // What the deck is called. The file is named after it.
+  string title = 1;
+
+  // The folder it goes in, as a path relative to the root. Empty is the root.
+  string path = 2;
+}
+
+message CreateDeckResponse {
+  // Where the deck is filed. Empty when nothing was made.
+  string path = 1;
+
+  // Set when nothing was made, and why.
+  optional ErrorCode error = 2;
+
+  // Set when the deck is on disk and the index would not come level with it.
+  // The deck was made and `path` stands; search does not answer about it until
+  // a walk goes past.
+  bool is_unlevelled = 3;
+}
+
+message ReadDeckRequest {
+  string path = 1;
+}
+
+message ReadDeckResponse {
+  // Absent when the deck was refused.
+  optional Deck deck = 1;
+
+  // Set when the deck was not read, and why.
+  optional ErrorCode error = 2;
+
+  // The file this deck came out of, for the caller to present at its next
+  // write. Absent when the deck was refused.
+  optional Fingerprint at = 3;
+
+  // The size a deck is read up to, in bytes. Set with
+  // ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding
+  // a number of its own.
+  int64 bound = 4;
+}
+
+message WriteDeckRequest {
+  string path = 1;
+
+  // The prose to stand below the frontmatter and above the first section or
+  // card, with line endings as LF.
+  string preamble = 2;
+
+  // The cards, in the order they are to stand in the note.
+  repeated Card cards = 3;
+
+  // The sections, in the order they are to stand in the note. A card says
+  // which of them it stands under.
+  repeated Section sections = 4;
+
+  // The file this caller last read. Absent for a write that lands on whatever
+  // the deck now holds.
+  optional Fingerprint seen = 5;
+
+  // What the file is to end with, below the last value, with line endings as
+  // LF.
+  string tail = 6;
+}
+
+message WriteDeckResponse {
+  // Set when nothing was written, and why. A file that is no longer the one
+  // this caller read is ERROR_CODE_STALE, and the person chooses what happens to
+  // their text.
+  optional ErrorCode error = 1;
+
+  // The file the write produced, for the caller to present at its next write.
+  // Absent when nothing was written.
+  optional Fingerprint at = 2;
+
+  // The size a deck is written up to, in bytes. Set with
+  // ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding
+  // a number of its own.
+  int64 bound = 3;
+
+  // Set when the deck is on disk and the index would not come level with it.
+  // The write happened and `at` stands; search answers about this file as it
+  // read it last, until a walk goes past.
+  bool is_unlevelled = 4;
+}

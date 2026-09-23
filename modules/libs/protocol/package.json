@@ -1,0 +1,21 @@
+{
+  "name": "@numen/protocol",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "What a client may ask about a vault. Generated from proto/.",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "generate": "buf generate"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.14.0"
+  },
+  "//": "buf itself is on PATH, put there by the machine or by the workflow's action. Only the plugin that writes the TypeScript is installed, because buf runs it out of the install by path.",
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^2.10.0"
+  }
+}

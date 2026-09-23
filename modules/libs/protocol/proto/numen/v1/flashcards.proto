@@ -1,0 +1,451 @@
+syntax = "proto3";
+
+// What a client running a person's cards may ask.
+//
+// Flashcards is an application of its own, beside the editor and over the same
+// core, so this service stands beside the editor's and shares nothing with it.
+// It reaches every vault the installation knows, because what a person owes
+// today is owed across all of them.
+//
+// A card is laid out here, unlike the cards service, which hands a face over as
+// it was written: what a person is shown is the face filled with one card's
+// values, and nothing above this has the two halves to fill it with.
+package numen.v1;
+
+import "numen/v1/presets.proto";
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// FlashcardsService is the front door, a session, and the answers given in it.
+service FlashcardsService {
+  // WatchCardsDue is what every vault the installation knows comes to today:
+  // how much it holds, how much is due, and how much has never been asked. It
+  // is what the application opens on.
+  //
+  // The first message is every vault as the registry holds it, with nothing
+  // counted, and one message follows for each vault as it is worked out.
+  // Counting a vault reads every deck in it and replays its whole answer log,
+  // so the list stands while that runs.
+  //
+  // A vault the index does not carry is read into it here, and its counts
+  // follow when the reading is done. What that reading is doing is the window's
+  // own WatchTasks.
+  rpc WatchCardsDue(WatchCardsDueRequest) returns (stream WatchCardsDueResponse);
+
+  // StartSession opens a run and hands over what to ask, in order. A run writes
+  // one file of its own in the vault and nothing else ever appends to it.
+  //
+  // Naming a deck asks that deck alone. Naming a preset asks the cards of every
+  // deck pointing at it, held to that preset's own budget. Naming neither asks
+  // the whole vault, which is the ordinary way to sit down to this.
+  //
+  // Naming both is refused. A preset with nothing to ask today is refused with
+  // the reason, so a person pressing it is told why and not shown an empty
+  // session.
+  rpc StartSession(StartSessionRequest) returns (StartSessionResponse);
+
+  // AnswerCard writes down how a card came back. What comes back is the
+  // identifier of the line, which is what taking that answer back names.
+  rpc AnswerCard(AnswerCardRequest) returns (AnswerCardResponse);
+
+  // TakeBackAnswer writes down that an answer was taken back. Both lines stay
+  // in the file: nothing in a log is ever rewritten or removed.
+  rpc TakeBackAnswer(TakeBackAnswerRequest) returns (TakeBackAnswerResponse);
+
+  // WatchReloads says a vault moved underneath the window, for as long as the
+  // caller listens. Which files moved is not carried: what this application
+  // shows is counts, and they are asked for again whatever changed.
+  rpc WatchReloads(WatchReloadsRequest) returns (stream WatchReloadsResponse);
+
+  // ListReviewDays is how much of a vault was answered on each day it was
+  // reviewed, and how many days up to now were reviewed without a gap.
+  rpc ListReviewDays(ListReviewDaysRequest) returns (ListReviewDaysResponse);
+
+  // GetDeckNeighbourhood is what the deck of a person's session is joined to:
+  // the notes it points at and the notes that point at it, with the text of
+  // each. A card is a line out of something longer, and what it was cut from is
+  // what a person reaches for when it will not come back to them.
+  rpc GetDeckNeighbourhood(GetDeckNeighbourhoodRequest) returns (GetDeckNeighbourhoodResponse);
+
+  // GetVaultDeckPreset is the preset a deck of the named vault is scheduled by.
+  // A deck naming none is answered with the defaults under no path, and a deck
+  // whose link reaches something that is not a preset is answered with the
+  // defaults and told so.
+  rpc GetVaultDeckPreset(GetVaultDeckPresetRequest) returns (GetVaultDeckPresetResponse);
+}
+
+// Rating is how well a card came back. A person says which of the four, and
+// nothing decides it for them.
+enum Rating {
+  RATING_UNSPECIFIED = 0;
+  // RATING_AGAIN is a card that did not come back at all.
+  RATING_AGAIN = 1;
+  // RATING_HARD is a card that came back, slowly and with effort.
+  RATING_HARD = 2;
+  // RATING_GOOD is a card that came back.
+  RATING_GOOD = 3;
+  // RATING_EASY is a card that came back with none.
+  RATING_EASY = 4;
+}
+
+// VaultCardsDue is one vault, and what its cards come to today.
+message VaultCardsDue {
+  // Id is the identity the folder carries, and how this vault is asked for
+  // again. Name is what the person calls the collection.
+  string id = 1;
+  string name = 2;
+  string path = 3;
+
+  // Faces is every card the vault holds, counted once for each face it is shown
+  // through. Due is what was answered before and is owed today; New is what
+  // nobody has answered.
+  int32 faces = 4;
+  int32 due = 5;
+  int32 new = 6;
+
+  // Decks is the same three numbers for each deck, by the path of its file.
+  repeated DeckCardsDue decks = 7;
+
+  // Presets is what the day comes to under each preset the vault's decks are
+  // scheduled by.
+  repeated PresetCardsDue presets = 8;
+
+  // Set when the vault could not be counted: its files could not be reached, or
+  // reading it into the index failed. The three numbers are then zero and this
+  // says why, in the person's own words.
+  string unread = 9;
+
+  // Set while the vault is being read into the index. The three numbers are not
+  // in yet, and a further count follows when the reading is done.
+  bool is_reading = 10;
+}
+
+message DeckCardsDue {
+  string deck = 1;
+  int32 faces = 2;
+  int32 due = 3;
+  int32 new = 4;
+
+  // How many of this deck's cards were answered since the day opened, counted
+  // the way its preset counts. A deck holding nothing more today and answered
+  // nothing today was not studied.
+  int32 answered = 5;
+
+  // How many of the deck's card faces stand learned now, under the rule the
+  // preset scheduling the deck counts by. It is a count of faces, and says
+  // nothing about what a preset has got through of its day.
+  int32 learned = 6;
+
+  // How many of the deck's card faces nobody has answered at all. A deck every
+  // face of which is one of these has nothing that can come round until
+  // something begins them.
+  int32 unbegun = 7;
+}
+
+// PresetCardsDue is one preset of a vault, and what the day comes to under it.
+message PresetCardsDue {
+  // The note the settings were read from, and empty for the decks naming no
+  // preset.
+  string preset = 1;
+
+  // What the preset is called. Empty where nothing names the note.
+  string title = 2;
+
+  // How many decks point at it. Nothing points at a preset of no decks, and
+  // the day stands at nothing under it.
+  int32 decks = 3;
+
+  // How many card faces stand in those decks. A deck holding none points at
+  // its preset all the same, so a preset of decks and no cards is its own
+  // state.
+  int32 cards = 4;
+
+  // What the day leaves under it: the card faces owed and the ones nobody has
+  // answered, held to its budget. Their sum is what a session over this preset
+  // asks, because a preset is the whole scope of its own budget.
+  int32 owed_due = 5;
+  int32 owed_new = 6;
+
+  // How many of its cards were answered since the day opened, and how long
+  // those answers took. The two beside the total divide it the way a budget
+  // does, so each is weighed against the budget of its own kind.
+  int32 answered = 7;
+  int64 took_ms = 8;
+  int32 answered_new = 9;
+  int32 answered_reviews = 10;
+
+  // What the preset keeps for this day of the week: how many cards of each
+  // kind, and how long the day runs, at the share of the load that day of the
+  // week carries.
+  //
+  // A budget the preset's goal does not name stands here as the person left it
+  // and closes nothing. `owed_due` and `owed_new` are already held to the ones
+  // that do, so holding them to these again is capping a number twice.
+  int32 new = 11;
+  int32 reviews = 12;
+  double minutes = 13;
+
+  // Which of the three closes the day, each written as the preset writes the
+  // key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
+  // that budget takes no part.
+  string closes_new = 14;
+  string closes_reviews = 15;
+  string closes_minutes = 16;
+  string closes_backlog = 17;
+
+  // Why the preset schedules nothing on this day: whatever stops it at all, and
+  // a day of the week carrying none of the load. It is the core's own verdict,
+  // so a window says of a preset what the session hands its cards out by.
+  StopReason stops_on = 18;
+}
+
+// Ahead is how long each of the four answers would leave this card, in seconds
+// from the moment it was asked. A person choosing between them is choosing
+// between these.
+message Ahead {
+  int64 again = 1;
+  int64 hard = 2;
+  int64 good = 3;
+  int64 easy = 4;
+}
+
+// Asked is one card face as it is put to a person.
+message Asked {
+  // Deck is the path of the file the card stands in, and section the name of
+  // the section it stands under. A card standing before the first section
+  // carries none.
+  string deck = 1;
+  string section = 2;
+
+  // Mark is what the card is known by, and face the name of the face it is
+  // shown through. The two together are what an answer is recorded against.
+  string mark = 3;
+  string face = 4;
+
+  // Heading is what the card's heading shows, which is the first line of its
+  // first field.
+  string heading = 5;
+
+  // Front and back are the face laid out with this card's values, as HTML.
+  string front = 6;
+  string back = 7;
+
+  // New is a card nobody has answered. Due is when it comes round, and stands
+  // only where it has been answered.
+  bool is_new = 8;
+  string due = 9;
+
+  // Where each of the four would leave it.
+  Ahead ahead = 10;
+}
+
+message WatchCardsDueRequest {}
+
+message WatchCardsDueResponse {
+  // Vaults is every vault the installation holds, by name and by where it is,
+  // with nothing counted. It is what the list is drawn from.
+  //
+  // It stands in the first message, and again wherever counting one vault takes
+  // long enough that the stream would otherwise say nothing: a client is told
+  // what it already knows, and a page that has gone is found by the write that
+  // fails. So the list is laid over what a client already shows, and a vault it
+  // has a count for keeps it.
+  repeated VaultCardsDue vaults = 1;
+
+  // Day is the review day these counts stand in, written as the year, the month
+  // and the day. A day of review begins at the hour the settings name, so an
+  // hour past midnight is still the day before. It stands beside the vaults.
+  string day = 2;
+
+  // Counted is one vault worked out. Until one arrives for a vault, nothing is
+  // known about what that vault owes.
+  VaultCardsDue counted = 3;
+}
+
+message StartSessionRequest {
+  string vault = 1;
+  // Deck is the path of one deck, or empty for every deck the vault holds.
+  string deck = 2;
+
+  // Preset is the note one preset stands in, and the empty path is the preset
+  // that schedules the decks naming none. Set it to sit to the cards of every
+  // deck pointing at that preset, held to its budget. Naming a deck and a
+  // preset at once is refused.
+  optional string preset = 3;
+}
+
+message StartSessionResponse {
+  // Run is what an answer given in this session is written to, and it is what
+  // an AnswerCard names.
+  string run = 1;
+  repeated Asked asked = 2;
+
+  // Unwritten are the decks holding a card with no mark that could not be given
+  // one. Their cards are not in this session and are asked for at the next.
+  repeated string unwritten = 3;
+
+  // Skipped is how many lines of the vault's answers could not be read: a run
+  // that stopped partway, or a line of a version this build does not know.
+  int32 skipped = 4;
+}
+
+message AnswerCardRequest {
+  string vault = 1;
+  string run = 2;
+  // The mark the card is known by, and the name of the face it was shown
+  // through.
+  string mark = 3;
+  string face = 4;
+  Rating rating = 5;
+  // Took is how long the card stood on the screen, in milliseconds. It is the
+  // one thing about an answer that cannot be measured later.
+  int64 took_ms = 6;
+}
+
+message AnswerCardResponse {
+  // Answer is the identifier of the line written, which is what taking it back
+  // names.
+  string answer = 1;
+}
+
+message TakeBackAnswerRequest {
+  string vault = 1;
+  string run = 2;
+  // Answer is the identifier a previous AnswerCard came back with.
+  string answer = 3;
+}
+
+message TakeBackAnswerResponse {}
+
+message ListReviewDaysRequest {
+  string vault = 1;
+
+  // The stretch of time wanted, each written as the year, the month and the
+  // day, and both ends inside it. An empty end is unbounded at that end, so a
+  // request naming neither asks for every day there is.
+  //
+  // A vault grows a day for every day it is reviewed, and a caller draws a
+  // fixed stretch of them. Streak and answered are over the whole of it
+  // whatever is asked for here.
+  string from = 2;
+  string to = 3;
+}
+
+message ListReviewDaysResponse {
+  // Days is what each day a person answered on came to. A day nobody answered
+  // on is not in it.
+  repeated ReviewDay days = 1;
+
+  // Due is how many card faces fall on each day still to come. A card owed
+  // today, or owed and late, is not in it: what a person owes now is what the
+  // front door counts, and this is what is after it.
+  repeated ReviewDay due = 2;
+
+  // Streak is how many days up to now were reviewed without a gap. A day
+  // nobody has answered on yet does not end one.
+  int32 streak = 3;
+
+  // Answered is how many answers the vault holds altogether.
+  int32 answered = 4;
+}
+
+// ReviewDay is one day, and what was answered on it.
+message ReviewDay {
+  // Day is the day it began on, as the year, the month and the day: an answer
+  // given in the small hours belongs to the day before, and is named for it.
+  string day = 1;
+  int32 answered = 2;
+
+  // How each of the four was said, for a day that is behind. A day of fifty
+  // cards a person could not recall is a different day from fifty they could,
+  // and the two are the same number without these.
+  int32 again = 3;
+  int32 hard = 4;
+  int32 good = 5;
+  int32 easy = 6;
+
+  // How much of what came round in days came back: `asked` is the answers
+  // given to card faces the scheduler sends days away, `recalled` the ones
+  // among them that were not Again. A card face still coming round in minutes
+  // is in neither — what is asked of one is whether it comes back after ten
+  // minutes, which says nothing about memory.
+  int32 asked = 7;
+  int32 recalled = 8;
+}
+
+message GetDeckNeighbourhoodRequest {
+  string vault = 1;
+  // Deck is the path of the deck being sat to. One deck is asked about at a
+  // time, because what a person is reading around is the deck in front of them.
+  string deck = 2;
+}
+
+message GetDeckNeighbourhoodResponse {
+  repeated DeckNeighbour notes = 1;
+
+  // Unread is how many at the end of the list came without their text. Reading
+  // stops once a session's worth has been gathered, so a deck at the centre of
+  // a vault is still answered promptly and says how much it left.
+  int32 unread = 2;
+}
+
+// DeckNeighbour is one note the deck stands next to.
+message DeckNeighbour {
+  // Written is the address as the deck wrote it, and all a link resolving to
+  // nothing ever has. It is empty for a note that points at the deck, which
+  // wrote the deck's name and not its own. Path is where the link landed, and
+  // is empty where it landed nowhere.
+  string written = 1;
+  string path = 2;
+
+  // Title is what the note is called and body its prose, as it was written.
+  // Both are empty for a link that reached no note, and for one whose note
+  // could not be read.
+  string title = 3;
+  string body = 4;
+
+  // Label is what the link was shown as, where the person gave it words of
+  // their own instead of the note's name.
+  string label = 5;
+
+  // IsPointedAt says the deck points at this note; otherwise this note points at the
+  // deck. A person reads the two differently: one is what the deck was made
+  // from, the other is what has since been hung off it.
+  bool is_pointed_at = 6;
+
+  // IsAmbiguous says more than one note answers to the name written, and the one
+  // here is only the first of them.
+  bool is_ambiguous = 7;
+
+  // Set when the note is there and its text could not be had, and says why.
+  optional ErrorCode error = 8;
+}
+
+message WatchReloadsRequest {}
+
+message WatchReloadsResponse {
+  // Reload says the vaults are to be counted again. It is false in the first
+  // message, which says the window is listening and nothing has moved yet.
+  bool reload = 1;
+}
+
+// The presets a window over many vaults asks about. Each request names the
+// vault it is about, the same way an answer names the vault it is written to.
+// The settings themselves, the curve and the error codes are presets.proto,
+// which the editor asks over the one vault its window shows.
+
+message GetVaultDeckPresetRequest {
+  string vault = 1;
+
+  // The deck whose preset this is, by the path it is filed under.
+  string deck = 2;
+}
+
+message GetVaultDeckPresetResponse {
+  // Absent when the preset was refused.
+  optional Preset preset = 1;
+
+  // Set when the preset was not read, and why.
+  optional ErrorCode error = 2;
+}
