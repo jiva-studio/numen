@@ -1,0 +1,97 @@
+version: 2
+
+# Every module the product ships, and the two that gate it. Each manifest is
+# its own project — there is no module at the repository root — so
+# the list has to be written out; nothing here discovers a directory it was not
+# told about.
+#
+# Grouped, because a dependency raised one pull request at a time is a
+# dependency nobody reads. What arrives is one branch per ecosystem per month,
+# with the majors kept apart: a major is a change to think about, and it should
+# not travel with fourteen patches.
+
+updates:
+  # The Go modules: the core, the two applications that carry it, and the
+  # schema's generated Go.
+  - package-ecosystem: gomod
+    directories:
+      - /modules/libs/core
+      - /modules/libs/protocol
+      - /modules/apps/desktop
+      - /modules/apps/mobile
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      go:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      go-major:
+        patterns: ["*"]
+        update-types: ["major"]
+
+  # The interface: the shared components, the wire, the two windows, and the
+  # schema's generated TypeScript.
+  - package-ecosystem: npm
+    directories:
+      - /modules/libs/ui
+      - /modules/libs/wire
+      - /modules/libs/protocol
+      - /modules/apps/desktop/editor
+      - /modules/apps/desktop/flashcards
+      - /modules/apps/mobile
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      interface:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      interface-major:
+        patterns: ["*"]
+        update-types: ["major"]
+
+  # The two sites, which ship to a reader.
+  - package-ecosystem: npm
+    directories:
+      - /modules/apps/docs
+      - /modules/apps/landing
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      sites:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      sites-major:
+        patterns: ["*"]
+        update-types: ["major"]
+
+  # What nothing ships but everything is checked by: the thing that gates every
+  # commit, the drawing of what depends on what, and the icon cutter. A broken
+  # version of any of them surfaces here as a pull request.
+  - package-ecosystem: npm
+    directories:
+      - /modules/tools/git-hooks
+      - /modules/tools/depgraph
+      - /modules/tools/icon
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      tools:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns: ["*"]

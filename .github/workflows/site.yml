@@ -1,0 +1,190 @@
+name: Site
+
+# A run answers for the page and for nothing else, so what starts it is a change
+# to the page, on a branch and on main alike. The two lists are written out
+# twice: a workflow file takes no anchor.
+on:
+  pull_request:
+    paths:
+      - "modules/apps/landing/**"
+      - ".github/workflows/site.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/apps/landing/**"
+      - ".github/workflows/site.yml"
+
+# One run at a time per branch, and the newest is the one that matters. Two
+# deploys share one storage zone, and the second takes down what the first has
+# not finished putting up. A deploy that is overtaken is stopped: every deploy
+# writes the whole site and then removes what it did not write, so the one that
+# follows leaves the zone whole.
+concurrency:
+  group: landing-${{ github.ref }}
+  cancel-in-progress: true
+
+# The deploy goes to storage with a key of its own; nothing here writes to the
+# repository.
+permissions:
+  contents: read
+
+jobs:
+  # The page is static and carries no framework, so what there is to check is
+  # that its markup typechecks and that the site builds — pictures included,
+  # which is where a missing asset turns up.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install
+        run: npm ci --prefix modules
+
+      - name: Typecheck
+        run: npm run typecheck --prefix modules/apps/landing
+
+      - name: Lint
+        run: npm run lint --prefix modules/apps/landing
+
+      - name: Build
+        env:
+          PUBLIC_NUMEN_DOWNLOADS_BASE: ${{ vars.PUBLIC_NUMEN_DOWNLOADS_BASE }}
+        run: npm run build --prefix modules/apps/landing
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: landing
+          path: modules/apps/landing/dist
+          if-no-files-found: error
+
+  # What is on the default branch is what is on the web. Storage is never
+  # readable without its password: the pull zone in front of it is what serves
+  # the page, and the page has a storage zone of its own.
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: What this needs
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
+          PULL_ZONE: ${{ vars.BUNNY_SITE_PULL_ZONE_ID }}
+          SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
+          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          missing=
+          for name in ENDPOINT ZONE PULL_ZONE SERVED_FROM KEY API_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::nothing is set up to deploy to:$missing"
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: landing
+          path: dist
+
+      - name: Up
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          # The key is handed over in a file. A command line is read by anything
+          # on the machine and is what an error prints.
+          umask 077
+          printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
+          cd dist
+          find . -type f | sed 's|^\./||' | while read -r path; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X PUT "https://$ENDPOINT/$ZONE/$path" \
+              -H @"$RUNNER_TEMP/storage.header" \
+              -H 'Content-Type: application/octet-stream' \
+              --data-binary "@$path")
+            echo "$code  $path"
+            case "$code" in 20*) ;; *) echo "::error::$path was refused with $code"; exit 1 ;; esac
+          done
+
+      # A page removed from the site is still on the disk it was put on. What
+      # this build did not write is taken down, so what is served is what was
+      # built and nothing else.
+      - name: Prune storage
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_SITE_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_SITE_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
+          built=$(cd dist && find . -type f | sed 's|^\./||' | sort)
+
+          # Storage lists one folder at a time, so the walk is done here.
+          walk() {
+            local under="$1"
+            curl -fsS "https://$ENDPOINT/$ZONE/$under" \
+              -H @"$RUNNER_TEMP/storage.header" \
+              | jq -r '.[] | [.IsDirectory, .ObjectName] | @tsv' \
+              | while IFS=$'\t' read -r directory name; do
+                  if [ "$directory" = true ]; then
+                    walk "$under$name/"
+                  else
+                    echo "$under$name"
+                  fi
+                done
+          }
+
+          walk "" | sort > /tmp/there
+          comm -23 /tmp/there <(printf '%s\n' "$built") | while read -r stale; do
+            [ -n "$stale" ] || continue
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X DELETE "https://$ENDPOINT/$ZONE/$stale" \
+              -H @"$RUNNER_TEMP/storage.header")
+            echo "removed $code  $stale"
+          done
+
+      - name: Forget the old copies
+        env:
+          PULL_ZONE: ${{ vars.BUNNY_SITE_PULL_ZONE_ID }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf 'AccessKey: %s\n' "$API_KEY" > "$RUNNER_TEMP/api.header"
+
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
+            -H @"$RUNNER_TEMP/api.header" -H 'Content-Length: 0')
+          echo "purge $code"
+          case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
+
+      - name: Fetch published
+        env:
+          SERVED_FROM: ${{ vars.BUNNY_SITE_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          # A purge is answered before it has reached every edge.
+          code=$(curl -sS -o /dev/null -L -f \
+            --retry 6 --retry-delay 5 --retry-all-errors \
+            -w '%{http_code}' "$SERVED_FROM/" || true)
+          echo "${code:-—}  $SERVED_FROM/"
+          [ "$code" = 200 ] || { echo "::error::the page did not come back"; exit 1; }

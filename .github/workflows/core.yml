@@ -1,0 +1,283 @@
+name: Core
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/core/**"
+      - "modules/libs/protocol/**"
+      - "tests/**"
+      - ".github/workflows/core.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
+  push:
+    branches: [main]
+    paths:
+      - "modules/libs/core/**"
+      - "modules/libs/protocol/**"
+      - "tests/**"
+      - ".github/workflows/core.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
+  # A platform can be asked for after the checks have already run, without
+  # rewriting a commit to carry the trailer.
+  workflow_dispatch:
+    inputs:
+      windows:
+        description: Windows
+        type: boolean
+        default: false
+      macos:
+        description: macOS
+        type: boolean
+        default: false
+
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters. A run on main is left to finish: it fills the cache the branches read.
+concurrency:
+  group: core-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Which machines this run is for. Linux always; a Windows or a mac runner
+  # costs two and ten times a Linux one, and is asked for by name.
+  asked:
+    name: Platforms
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.said.outputs.matrix }}
+    steps:
+      # The trailer is looked for in every commit the branch adds, so the whole
+      # range has to be here to be read.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: said
+        env:
+          EVENT: ${{ github.event_name }}
+          ASKED_WINDOWS: ${{ inputs.windows }}
+          ASKED_MACOS: ${{ inputs.macos }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+
+          windows=false
+          macos=false
+
+          if [ "$EVENT" = workflow_dispatch ]; then
+            windows=$ASKED_WINDOWS
+            macos=$ASKED_MACOS
+          elif [ -n "$BASE" ] && [ "$BASE" != 0000000000000000000000000000000000000000 ]; then
+            # Every commit the range adds, not the last of it: the trailer goes
+            # on the commit that needed the platform.
+            asked=$(git log --format=%B "$BASE..$HEAD" \
+              | grep -i '^Run-On:' \
+              | cut -d: -f2- \
+              | tr 'A-Z' 'a-z' | tr -d ' \t\r' | tr '\n' ',' || true)
+            echo "asked: ${asked:-nothing}"
+            case ",$asked," in *,all,*) windows=true; macos=true ;; esac
+            case ",$asked," in *,windows,*) windows=true ;; esac
+            case ",$asked," in *,macos,*) macos=true ;; esac
+          fi
+
+          # A platform whose failures are not yet settled is run and reported,
+          # and does not hold the pull request. What stands open on macOS:
+          # adapter/cli and adapter/mcp compare a vault's folder against the
+          # path a test made it at, and a mac resolves /tmp to /private/tmp;
+          # flashcards parts from the library on a card face a day ahead of its
+          # own last answer, which the test names as the machine's arithmetic.
+          #
+          # race is the detector, and a race is the program's and not the
+          # machine's: Linux runs it on every push, and Windows runs the same
+          # tests without paying for it a second time on the slowest runner.
+          #
+          # minutes is what the suite is given. Every machine runs every test,
+          # so a machine that no longer fits says so instead of passing slowly.
+          entries='{"name":"Linux","runner":"ubuntu-latest","optional":false,"race":true,"minutes":45}'
+          if [ "$windows" = true ]; then
+            entries="$entries,"'{"name":"Windows","runner":"windows-latest","optional":true,"race":false,"minutes":15}'
+          fi
+          if [ "$macos" = true ]; then
+            entries="$entries,"'{"name":"macOS","runner":"macos-latest","optional":true,"race":true,"minutes":45}'
+          fi
+          echo "matrix=[$entries]" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+  # What .golangci.yml asks for, beyond the gofmt and go vet the test job runs.
+  # Once, on the cheapest machine: a rule about the shape of the code answers
+  # the same on all three.
+  #
+  # The core fails on what is found, as the window and the protocol do. The
+  # check arrived after the code did, and the backlog it named is empty.
+  lint:
+    name: "Lint :: Go"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/libs/core/go.mod
+          cache-dependency-path: modules/libs/core/go.sum
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: modules/libs/core
+          args: --timeout 15m
+
+      # The schema's Go is generated and holds the set clean, so here the
+      # linter is allowed to say no.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: modules/libs/protocol
+          args: --timeout 10m
+
+      # The vulnerability list is kept elsewhere and read at the time of the
+      # run, so this step can find something on a branch that changed nothing.
+      # It answers for the standard library of the Go above as well as for what
+      # is required.
+      - name: Vulnerabilities
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        working-directory: modules/libs/core
+
+      - name: Vulnerabilities
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        working-directory: modules/libs/protocol
+
+  # A numbered file a released build has run is a step somebody's index was
+  # brought through, and rewriting or deleting it moves a database this build
+  # can no longer reach. The schema goes forward by another number.
+  #
+  # Only a pull request has a base to compare against, and the base commit has
+  # to be in the clone to be read.
+  migration:
+    name: "Check :: Migrations"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # A rule nothing has been seen to refuse is an assumption, so the rule is
+      # put through a repository built to be refused before it is trusted with
+      # this one. It needs no base and runs on every event.
+      - name: What the rule refuses
+        run: modules/libs/core/adapter/index/migration-forward-only.sh --self-test
+
+      # Git holds the hashes, so nothing here is written down twice: a file the
+      # base already carries has to still be what it was there.
+      - name: Forward only
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: modules/libs/core/adapter/index/migration-forward-only.sh "$BASE"
+
+  go:
+    name: "Test :: Go :: ${{ matrix.name }}"
+    needs: [asked]
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.asked.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.optional }}
+    # A suite that stops answering is billed for six hours by default, and on
+    # these machines at twice and ten times the rate.
+    timeout-minutes: ${{ matrix.minutes }}
+    defaults:
+      run:
+        # One shell on all three, so a step is read the same wherever it runs.
+        shell: bash
+        working-directory: modules/libs/core
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The two caches are keyed apart: the modules answer to go.sum, the build
+      # answers to the commit. Both carry the machine, because what a compiler
+      # leaves behind is that machine's.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/libs/core/go.mod
+          cache: false
+
+      # Where the compiler keeps what it built is the machine's own answer.
+      - id: paths
+        run: |
+          echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+          echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.paths.outputs.modules }}
+          key: go-mod-core-${{ matrix.runner }}-${{ hashFiles('modules/libs/core/go.sum') }}
+          restore-keys: go-mod-core-${{ matrix.runner }}-
+
+      # What the last compile and test run left behind: a run compiles what
+      # changed and re-runs the tests that changed. The key carries the commit,
+      # so the newest cache the branch can see is the one restored.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.paths.outputs.build }}
+          key: go-build-core-${{ matrix.runner }}-${{ github.sha }}
+          restore-keys: go-build-core-${{ matrix.runner }}-
+
+      - name: Formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
+          fi
+
+      - run: go vet ./...
+
+      # A test builds its vault in a temporary folder, and there is memory here
+      # to hold every one of them.
+      - name: Temporary folder
+        if: matrix.runner == 'ubuntu-latest'
+        run: echo "TMPDIR=/dev/shm" >> "$GITHUB_ENV"
+
+      # A Windows runner hands out a temporary folder on the system drive and
+      # checks the repository out on another. The folder a test builds its vault
+      # in moves to the drive the runner keeps for its own work, and what this
+      # machine offers is written into the log beside the timings it produces.
+      - name: Temporary folder
+        if: matrix.runner == 'windows-latest'
+        run: |
+          powershell -NoProfile -Command "Get-PSDrive -PSProvider FileSystem | Format-Table -AutoSize Name,Used,Free" || true
+          powershell -NoProfile -Command "Get-MpComputerStatus | Format-List RealTimeProtectionEnabled,AntivirusEnabled" || true
+          echo "RUNNER_TEMP=$RUNNER_TEMP  TEMP=${TEMP:-unset}  TMP=${TMP:-unset}"
+          echo "TMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+          echo "TEMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      # -race because a scan will grow concurrent, and the cheapest time to find
+      # that out is before it does. Every machine runs every test.
+      - run: go test ${{ matrix.race && '-race' || '' }} ./...
+
+      # Every run writes what it built. A branch reads its own back on the next
+      # push to it and main's before that.
+      # A run that found something still built most of it, and the next one is
+      # the one that reads this back.
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: ${{ !cancelled() }}
+        with:
+          path: ${{ steps.paths.outputs.build }}
+          key: go-build-core-${{ matrix.runner }}-${{ github.sha }}

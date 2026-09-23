@@ -1,0 +1,99 @@
+name: Boundaries
+
+# Which way the modules are allowed to point, and the house rules read off
+# their own source. Both tools walk every module there is, so this runs on any
+# change under modules/: a rule that covers a module from a workflow that
+# module's own change never triggers covers nothing.
+on:
+  pull_request:
+    paths:
+      - "modules/**"
+      - ".github/workflows/boundaries.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/**"
+      - ".github/workflows/boundaries.yml"
+
+concurrency:
+  group: boundaries-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  boundaries:
+    name: "Check :: Boundaries"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      # A cruise resolves what a module imports, so every module the cruise
+      # walks is installed. One that is not would read as a module importing
+      # nothing.
+      - name: Install
+        run: npm ci --prefix modules
+
+      # A window reaches the components through their build.
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      # Which way the modules point, and inside the two windows which way their
+      # folders point: a screen reaches the shared folders and never another
+      # screen. The run starts with the fixture the screen rule is read against,
+      # so a rule that stopped refusing anything fails before the tree is
+      # walked with it.
+      - name: Module boundaries
+        run: npm run check --prefix modules/tools/depgraph
+
+      # The drawing is committed, so a change that moves an edge has to redraw
+      # it: a map that is out of date is worse than none.
+      - name: The drawing
+        run: |
+          npm run graph --prefix modules/tools/depgraph
+          git diff --exit-code -- docs/dependencies.md
+
+      # The house rules of the interface modules and the names on the files of
+      # every module, Go included. It installs nothing.
+      - name: The house rules
+        run: npm run check --prefix modules/tools/lint
+
+      # Every story the tree declares, under the name a page names it by. It
+      # installs nothing.
+      - name: The story names
+        run: npm run check --prefix modules/tools/stories
+
+      # What each window and each library is read against: the globals a pure
+      # core may not reach for, the promises nobody waits for, and the names a
+      # file declares and never uses. The rules are type-aware, so this stands
+      # after the components are built.
+      - name: The window rules
+        run: npm run lint --workspaces --if-present --prefix modules
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
+
+      # The rule the applications are read against walks every one of them, the
+      # phone included, and it stands in the desktop module. Run here it answers
+      # for a change to any application; run only from the desktop's own
+      # workflow it answered for a change to the desktop.
+      #
+      # The package imports nothing of the window, so this machine needs none of
+      # the webview's headers.
+      - name: Application boundaries
+        run: go test ./internal/layers/...
+        working-directory: modules/apps/desktop

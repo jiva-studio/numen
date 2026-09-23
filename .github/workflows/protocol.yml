@@ -1,0 +1,79 @@
+name: Protocol
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/protocol/**"
+      - ".github/workflows/protocol.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
+  push:
+    branches: [main]
+    paths:
+      - "modules/libs/protocol/**"
+      - ".github/workflows/protocol.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
+
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters.
+concurrency:
+  group: protocol-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: modules/libs/protocol
+
+jobs:
+  schema:
+    name: "Check :: Schema"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # The breaking-change check reads the schema as it stands on the base
+      # branch, so that commit has to be in the clone.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/libs/protocol/go.mod
+          cache-dependency-path: modules/libs/protocol/go.sum
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - uses: bufbuild/buf-action@8c6a16e16f12ba20b6470afa9c2ba9b5ba8c97c3 # v1.5.0
+        with:
+          setup_only: true
+
+      - name: Plugins
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.20.0
+          npm ci --prefix ../..
+
+      - name: Lint
+        run: buf lint
+
+      # The generated code is committed so that an ordinary build needs none of
+      # the tools above. This is what proves it is still what the schema says.
+      - name: Codegen
+        run: |
+          buf generate
+          git add -AN -- gen src
+          git diff --exit-code -- gen src || {
+            echo "::error::the schema changed and the generated code was not regenerated — run: make generate"
+            exit 1
+          }

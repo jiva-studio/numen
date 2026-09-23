@@ -1,0 +1,147 @@
+name: Commits
+
+on:
+  pull_request:
+    # `edited` is not a default type. Without it, renaming a pull request after
+    # the check has passed slips a bad title past the gate — and the title is
+    # what the squash merge writes into main.
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters.
+concurrency:
+  group: commits-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: modules/tools/git-hooks
+
+jobs:
+  commitlint:
+    name: "Check :: Commits"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      # The install is the source root's; what it fetched is found from here.
+      - run: npm ci
+        working-directory: modules
+
+      # PR: validate every commit in the range. Push: validate the last one.
+      - name: Validate commit messages
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            npx commitlint --from "$BASE" --to "$HEAD" --verbose
+          else
+            npx commitlint --last --verbose
+          fi
+
+      # Merges are squash-only and take their subject from the pull request
+      # title, so the title is what actually lands in main's history — it has to
+      # pass the same check as any commit message.
+      #
+      # The title goes through an environment variable rather than straight into
+      # the script: it is attacker-controlled text on a fork pull request, and
+      # inlining it would splice it into the shell.
+      - name: Validate pull request title
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | npx commitlint --verbose
+
+  # Every commit the branch adds is checked out and built. A branch whose every
+  # commit compiles is a branch `git bisect run` can walk, and a bisect is the
+  # only instrument that finds a fix reverted silently by an integration.
+  #
+  # The range is walked oldest first, so a failure is reported at the commit
+  # that introduced it. Go's build cache carries across the walk; each window
+  # typechecks from nothing, its script being `--force`.
+  compile:
+    name: "Check :: Every commit compiles"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/libs/core/go.mod
+          cache-dependency-path: modules/libs/core/go.sum
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      # The window is drawn by the machine's own browser, so the package that
+      # embeds it compiles only where that browser's headers are.
+      - name: Webview
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            -o Dpkg::Options::=--force-unsafe-io \
+            libgtk-4-dev libwebkitgtk-6.0-dev
+
+      - run: npm ci --prefix modules
+
+      - name: Build every commit
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          walk=$(git rev-list --reverse "$BASE..$HEAD")
+          echo "commits to build: $(git rev-list --count "$BASE..$HEAD")"
+
+          # What `npm ci` above installed. A commit that moves the lockfile
+          # installs again; the rest reuse what is already there.
+          lock=$(git rev-parse "$HEAD:modules/package-lock.json")
+
+          for one in $walk; do
+            echo "::group::$(git log -1 --format='%h %s' "$one")"
+            git checkout --quiet --force --detach "$one"
+            # What compiling means is the branch's own definition, applied to
+            # every commit of it.
+            git checkout --quiet "$HEAD" -- Makefile
+
+            now=$(git rev-parse "$one:modules/package-lock.json")
+            if [ "$now" != "$lock" ]; then
+              npm ci --prefix modules
+              lock=$now
+            fi
+
+            make compile
+            echo "::endgroup::"
+          done

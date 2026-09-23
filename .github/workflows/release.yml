@@ -1,0 +1,1196 @@
+name: Release
+run-name: Release on the ${{ inputs.channel }} channel
+
+# Files to hand to somebody, and the tag, the notes and the release that say
+# what they are. A run is asked for by hand and answers for one channel: what
+# the page hands to everybody, or what it hands to somebody who asked.
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Channel
+        type: choice
+        default: beta
+        options: [stable, beta]
+      linux:
+        description: Linux
+        type: boolean
+        default: true
+      windows:
+        description: Windows
+        type: boolean
+        default: true
+      macos:
+        description: macOS
+        type: boolean
+        default: true
+      # Signing is not this. A mac build is signed either way; notarizing is
+      # Apple checking it and answering with a ticket the image carries, and
+      # that answer takes minutes.
+      notarize:
+        description: Notarize the mac build
+        type: boolean
+        default: true
+      publish:
+        description: Put the builds up and make the release
+        type: boolean
+        default: true
+
+# Two runs at once would count the same version, push the same tag and write
+# over each other on the shelf. The second waits; neither is stopped, because a
+# run that has begun putting files up leaves the shelf half written if it is.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+# Building and putting the files on the shelf needs nothing of the repository
+# but the clone. The tag and the release are made by one job, and that job says
+# so for itself.
+permissions:
+  contents: read
+
+jobs:
+  # What this run is called and where it goes. A stable release is named for
+  # the month it is made in and goes where the page looks; a beta is named for
+  # the stable release it precedes and goes on a shelf of its own.
+  naming:
+    name: Version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.said.outputs.version }}
+      build: ${{ steps.said.outputs.build }}
+      commit: ${{ steps.said.outputs.commit }}
+      stamp: ${{ steps.said.outputs.stamp }}
+      numeric: ${{ steps.said.outputs.numeric }}
+      channel: ${{ steps.said.outputs.channel }}
+      shelf: ${{ steps.said.outputs.shelf }}
+      linux: ${{ steps.said.outputs.linux }}
+      windows: ${{ steps.said.outputs.windows }}
+      macos: ${{ steps.said.outputs.macos }}
+      notarize: ${{ steps.said.outputs.notarize }}
+      publish: ${{ steps.said.outputs.publish }}
+    steps:
+      # The build number is how many commits stand behind this one, so the whole
+      # history has to be here for it to be counted.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: said
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          ASKED_LINUX: ${{ inputs.linux }}
+          ASKED_WINDOWS: ${{ inputs.windows }}
+          ASKED_MACOS: ${{ inputs.macos }}
+          ASKED_NOTARIZE: ${{ inputs.notarize }}
+          ASKED_PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+
+          channel=$CHANNEL
+          linux=$ASKED_LINUX
+          windows=$ASKED_WINDOWS
+          macos=$ASKED_MACOS
+          notarize=$ASKED_NOTARIZE
+          publish=$ASKED_PUBLISH
+
+          build=$(git rev-list --count HEAD)
+          commit=$(git rev-parse --short=7 HEAD)
+
+          # A release is named for the month it is made in and for how many
+          # stable releases that month already holds, so nobody has a number to
+          # invent. A beta is named for the stable release it precedes, and the
+          # build number is what tells two betas of it apart.
+          year=$(date -u +%Y)
+          month=$(date -u +%-m)
+          made=$(git tag -l "v$year.$month.*" | grep -vc -- '-' || true)
+
+          if [ "$channel" = stable ]; then
+            version="$year.$month.$made"
+            shelf=latest
+          else
+            version="$year.$month.$made-beta.$build"
+            shelf=beta
+          fi
+
+          # What every file this run puts up carries in its name, and what the
+          # three of them together name is one build and no other.
+          stamp="$version-$build-$commit"
+
+          # Windows takes four numbers and nothing else, and the last of them is
+          # what tells two builds of one version apart.
+          IFS=. read -r major minor patch _ <<< "${version%%-*}"
+          numeric="${major:-0}.${minor:-0}.${patch:-0}.$build"
+
+          for name in version build commit stamp numeric channel shelf linux windows macos notarize publish; do
+            echo "$name=${!name}" >> "$GITHUB_OUTPUT"
+          done
+          cat "$GITHUB_OUTPUT"
+
+  # What has landed since the last release everybody was handed. A beta is
+  # measured from there too, so it says everything the stable release it
+  # precedes will say.
+  notes:
+    name: Notes
+    needs: [naming]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Git-cliff
+        env:
+          CLIFF: 2.14.1
+          SHA256: dfe9bef0c7a00d05fafe78e6e591a1a280d39dd495b8066764db0a559acde67f
+        run: |
+          set -euo pipefail
+          at="git-cliff-$CLIFF-x86_64-unknown-linux-gnu.tar.gz"
+          curl -sfSL -o "$RUNNER_TEMP/$at" \
+            "https://github.com/orhun/git-cliff/releases/download/v$CLIFF/$at"
+          echo "$SHA256  $RUNNER_TEMP/$at" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$at" -C "$RUNNER_TEMP"
+          sudo install "$RUNNER_TEMP/git-cliff-$CLIFF/git-cliff" /usr/local/bin/
+
+      - name: What is in it
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          since=$(git tag -l 'v*' | grep -v -- '-' | sort -V | tail -1)
+          echo "since ${since:-the first commit}"
+          if [ -n "$since" ]; then
+            git cliff --tag "v$VERSION" "$since..HEAD" -o "$RUNNER_TEMP/notes.md"
+          else
+            git cliff --tag "v$VERSION" -o "$RUNNER_TEMP/notes.md"
+          fi
+          cat "$RUNNER_TEMP/notes.md"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: notes
+          path: ${{ runner.temp }}/notes.md
+          if-no-files-found: error
+
+  linux:
+    name: "Package :: Linux"
+    needs: [naming]
+    if: needs.naming.outputs.linux == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
+          # The window is built from both modules.
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      # The window links against the system's own browser, so the machine that
+      # compiles it needs that browser's headers.
+      - name: Webview
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+
+      # The number the window draws in its corner is written into the page here.
+      - name: Interface
+        env:
+          VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          make install INSTALL="npm ci"
+          make interface
+
+      # What the binary answers `--version` with is written in at the link.
+      - name: Window
+        working-directory: modules/apps/desktop
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
+          COMMIT: ${{ needs.naming.outputs.commit }}
+        run: |
+          # Both binaries say what they are out of the one package the linker
+          # writes the numbers into.
+          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+
+          CGO_ENABLED=1 go build -trimpath -ldflags "$stamp" \
+            -o "$RUNNER_TEMP/numen" ./cmd/numen
+
+          # The two windows are always the same build: they ship together, one
+          # version, one package.
+          CGO_ENABLED=1 go build -trimpath -ldflags "$stamp" \
+            -o "$RUNNER_TEMP/numen-flashcards" ./cmd/numen-flashcards
+
+          # A name the linker does not find is one it passes over in silence.
+          # What the binary answers with is what says the three went in.
+          said=$("$RUNNER_TEMP/numen" --version)
+          echo "$said"
+          case "$said" in
+            *"$VERSION"*"$BUILD"*"$COMMIT"*) ;;
+            *) echo "::error::the binary calls itself $said"; exit 1 ;;
+          esac
+
+      # The two binaries and the marks a desktop shows them under, in the
+      # places a machine keeps such things. What the other packages are built
+      # from is gathered here once.
+      - name: Gather
+        run: |
+          set -euo pipefail
+          tree="$RUNNER_TEMP/tree"
+          at=modules/apps/desktop/build/linux
+
+          install -Dm755 "$RUNNER_TEMP/numen" "$tree/numen"
+          install -Dm755 "$RUNNER_TEMP/numen-flashcards" "$tree/numen-flashcards"
+
+          install -Dm644 "$at/numen.desktop" -t "$tree/share/applications"
+          install -Dm644 "$at/numen-flashcards.desktop" -t "$tree/share/applications"
+
+          install -Dm644 "$at/numen.svg" \
+            "$tree/share/icons/hicolor/scalable/apps/numen.svg"
+          install -Dm644 "$at/numen-flashcards.svg" \
+            "$tree/share/icons/hicolor/scalable/apps/numen-flashcards.svg"
+
+          for size in 16 24 32 48 64 128 256 512; do
+            install -Dm644 "$at/icons/$size.png" \
+              "$tree/share/icons/hicolor/${size}x${size}/apps/numen.png"
+            install -Dm644 "$at/icons/flashcards/$size.png" \
+              "$tree/share/icons/hicolor/${size}x${size}/apps/numen-flashcards.png"
+          done
+
+      - name: Archive
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          tar czf "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz" \
+            -C "$RUNNER_TEMP/tree" numen numen-flashcards share
+
+      # One description, both package managers. What goes into a package is
+      # gathered beside it first, because the paths in it are read from
+      # wherever nfpm is run. A dash before a prerelease becomes a tilde in the
+      # package's own version, which is where both managers sort it earliest.
+      - name: Packages
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+
+          staged="$RUNNER_TEMP/staged"
+          mkdir -p "$staged"
+          cp "$RUNNER_TEMP/numen" "$staged/numen"
+          cp "$RUNNER_TEMP/numen-flashcards" "$staged/numen-flashcards"
+          cp modules/apps/desktop/build/linux/numen.desktop "$staged/"
+          cp modules/apps/desktop/build/linux/numen-flashcards.desktop "$staged/"
+          cp modules/apps/desktop/build/linux/nfpm.yaml "$staged/"
+          cp modules/apps/desktop/build/linux/numen.svg "$staged/"
+          cp modules/apps/desktop/build/linux/numen-flashcards.svg "$staged/"
+          # The rasters come across whole: the flashcards ones stand in a folder
+          # of their own inside it.
+          cp -r modules/apps/desktop/build/linux/icons "$staged/"
+
+          cd "$staged"
+          for kind in deb rpm; do
+            nfpm package -f nfpm.yaml -p "$kind" -t "$RUNNER_TEMP"
+          done
+          ls -la "$RUNNER_TEMP"/*.deb "$RUNNER_TEMP"/*.rpm
+
+      # What an Arch machine builds from. It names the archive at the address
+      # this run is about to put it at, and the sum of the file itself, so the
+      # recipe is finished before the file it names is up.
+      - name: The Arch recipe
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          recipe="$RUNNER_TEMP/arch"
+          mkdir -p "$recipe"
+
+          archive="$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz"
+          sum=$(sha256sum "$archive" | cut -d' ' -f1)
+
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+          url="$SERVED_FROM/$kept/numen-$STAMP-linux-amd64.tar.gz"
+
+          # A pkgver holds no dash.
+          pkgver=${VERSION//-/_}
+
+          sed -e "s|@PKGVER@|$pkgver|" -e "s|@URL@|$url|" -e "s|@SHA256@|$sum|" \
+            modules/apps/desktop/build/linux/arch/PKGBUILD.in > "$recipe/PKGBUILD"
+
+          # What the AUR reads instead of running the recipe. Every line under
+          # the first is indented with a tab.
+          {
+            printf 'pkgbase = numen-bin\n'
+            printf '\tpkgdesc = %s\n' "Notes, a hierarchy with several parents, and the sources under them"
+            printf '\tpkgver = %s\n' "$pkgver"
+            printf '\tpkgrel = 1\n'
+            printf '\turl = https://numen.md\n'
+            printf '\tarch = x86_64\n'
+            printf '\tlicense = LicenseRef-proprietary\n'
+            for one in gtk4 webkitgtk-6.0 libsoup3 graphene pango cairo harfbuzz gdk-pixbuf2 libx11 vulkan-icd-loader; do
+              printf '\tdepends = %s\n' "$one"
+            done
+            printf '\tprovides = numen\n'
+            printf '\tconflicts = numen\n'
+            printf '\toptions = !strip\n'
+            printf '\tsource = numen-bin-%s.tar.gz::%s\n' "$pkgver" "$url"
+            printf '\tsha256sums = %s\n' "$sum"
+            printf '\npkgname = numen-bin\n'
+          } > "$recipe/.SRCINFO"
+
+          cat "$recipe/PKGBUILD"
+
+      # What a Nix machine reads. The repository is closed, so the flake is
+      # handed out as a file of its own, carrying the address and the hash of
+      # the archive this run is about to put up.
+      - name: The flake
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          flake="$RUNNER_TEMP/flake"
+          mkdir -p "$flake/nix" "$flake/modules/apps/desktop/build"
+
+          archive="$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz"
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+          url="$SERVED_FROM/$kept/numen-$STAMP-linux-amd64.tar.gz"
+
+          # Nix says a hash in base64, under the name of what made it.
+          hash="sha256-$(sha256sum "$archive" | cut -d' ' -f1 | xxd -r -p | base64)"
+
+          # A flake handed over as a file cannot write itself a lock, so it
+          # carries the one this tree holds.
+          cp flake.nix flake.lock "$flake/"
+          cp nix/numen.nix "$flake/nix/"
+          # The desktop entries and the icons are read from the tree the flake
+          # stands in, so they come along at the path it reads them from.
+          cp -r modules/apps/desktop/build/linux "$flake/modules/apps/desktop/build/"
+
+          printf '{\n  "version": "%s",\n  "url": "%s",\n  "hash": "%s"\n}\n' \
+            "$VERSION" "$url" "$hash" > "$flake/nix/release.json"
+          cat "$flake/nix/release.json"
+
+          tar czf "$RUNNER_TEMP/numen-nix.tar.gz" -C "$flake" .
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-linux-amd64
+          path: |
+            ${{ runner.temp }}/numen_*_linux_amd64.tar.gz
+            ${{ runner.temp }}/*.deb
+            ${{ runner.temp }}/*.rpm
+          if-no-files-found: error
+
+      # The two recipes stand on their own: they are read rather than run, and
+      # they go on the shelf under names with no version in them.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-linux-recipes
+          path: |
+            ${{ runner.temp }}/arch/PKGBUILD
+            ${{ runner.temp }}/arch/.SRCINFO
+            ${{ runner.temp }}/numen-nix.tar.gz
+          include-hidden-files: true
+          if-no-files-found: error
+
+  # One file for every machine that has flatpak on it, whatever its own
+  # packages hold. The toolkit and the browser come from the GNOME runtime, so
+  # what is put inside is the two binaries and the marks beside them.
+  flatpak:
+    name: "Package :: Flatpak"
+    needs: [naming, linux]
+    if: needs.naming.outputs.linux == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: numen-linux-amd64
+          path: ${{ runner.temp }}/built
+
+      - name: Flatpak
+        run: |
+          sudo apt-get update
+          # The builder hands what the desktop shows the window as to
+          # appstream, which reads the drawing through a loader of its own.
+          sudo apt-get install -y flatpak flatpak-builder appstream librsvg2-common
+          flatpak remote-add --user --if-not-exists \
+            flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      # What goes in stands beside the manifest, which is what its own sources
+      # are read from.
+      - name: Gather
+        run: |
+          set -euo pipefail
+          staged="$RUNNER_TEMP/staged"
+          at=modules/apps/desktop/build/linux
+          mkdir -p "$staged"
+
+          tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz \
+            -C "$staged" numen numen-flashcards
+          cp -r "$at/icons" "$staged/"
+          cp "$at"/flatpak/* "$staged/"
+
+      - name: Bundle
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          flatpak-builder --user --install-deps-from=flathub --force-clean \
+            --repo="$RUNNER_TEMP/repo" \
+            "$RUNNER_TEMP/build" "$RUNNER_TEMP/staged/md.numen.Numen.yml"
+
+          flatpak build-bundle "$RUNNER_TEMP/repo" \
+            "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.flatpak" md.numen.Numen
+
+      # The runtime has to hold the browser the window is linked against. A
+      # name the loader cannot find stops the binary here, where it is asked
+      # for its version and nothing draws.
+      - name: Sandbox
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          # A sandbox is built out of a namespace this machine hands out only
+          # after it is told to.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+
+          flatpak install --user --noninteractive --bundle \
+            "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.flatpak"
+          said=$(flatpak run --command=numen md.numen.Numen --version)
+          echo "$said"
+          case "$said" in
+            *"$VERSION"*) ;;
+            *) echo "::error::the sandboxed window calls itself $said"; exit 1 ;;
+          esac
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-linux-amd64-flatpak
+          path: ${{ runner.temp }}/numen_*_linux_amd64.flatpak
+          if-no-files-found: error
+
+  # What the Ubuntu store hands out. The desktop platform behind it carries the
+  # toolkit; the browser is carried here, so a machine whose platform holds
+  # another one runs this build all the same.
+  snap:
+    name: "Package :: Snap"
+    needs: [naming, linux]
+    if: needs.naming.outputs.linux == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: numen-linux-amd64
+          path: ${{ runner.temp }}/built
+
+      # A snap holds what it runs under `bin` and `share`, and it is told its
+      # version by a file the recipe reads.
+      - name: Gather
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/work"
+          staged="$work/staged"
+          mkdir -p "$staged/bin" "$work/snap"
+
+          at=modules/apps/desktop/build/linux/snap
+
+          tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz -C "$staged"
+          mv "$staged/numen" "$staged/numen-flashcards" "$staged/bin/"
+          printf '%s' "$VERSION" > "$staged/version"
+
+          cp "$at/numen.desktop" "$at/numen-flashcards.desktop" \
+            "$staged/share/applications/"
+          cp "$at/snapcraft.yaml" "$work/snap/"
+          find "$staged" -type f -printf '%P\n' | sort
+
+      - uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1.3.0
+        with:
+          path: ${{ runner.temp }}/work
+
+      - name: Name it
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          built=$(find "$RUNNER_TEMP/work" -maxdepth 1 -name '*.snap' -print -quit)
+          if [ -z "$built" ]; then
+            echo "::error::the run made no snap"
+            exit 1
+          fi
+          mv "$built" "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.snap"
+          ls -la "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.snap"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-linux-amd64-snap
+          path: ${{ runner.temp }}/numen_*_linux_amd64.snap
+          if-no-files-found: error
+
+  # Windows reaches the system's browser through a component written in Go, so
+  # this one is built on the same machine as Linux.
+  windows:
+    name: "Package :: Windows"
+    needs: [naming]
+    if: needs.naming.outputs.windows == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
+          # The window is built from both modules.
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      # The number the window draws in its corner is written into the page here.
+      - name: Interface
+        env:
+          VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          make install INSTALL="npm ci"
+          make interface
+
+      # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
+      # into it.
+      - name: Window
+        working-directory: modules/apps/desktop
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
+          COMMIT: ${{ needs.naming.outputs.commit }}
+        run: |
+          go install github.com/akavel/rsrc@v0.10.2
+
+          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+
+          # The two windows are always the same build: they ship together, one
+          # version, one installer. A resource is linked into the command it is
+          # written beside, and its name holds the system and the machine the
+          # builds that take it are for.
+          for window in numen numen-flashcards; do
+            rsrc -arch amd64 -ico "build/windows/$window.ico" \
+              -o "cmd/$window/rsrc_windows_amd64.syso"
+            GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "$stamp" \
+              -o "$RUNNER_TEMP/$window.exe" "./cmd/$window"
+          done
+
+      - name: Archive
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: cd "$RUNNER_TEMP" && zip -q "numen_${VERSION}_windows_amd64.zip" numen.exe numen-flashcards.exe
+
+      # The installer carries Microsoft's own bootstrapper and runs it on a
+      # machine whose Windows does not already have the engine the window draws
+      # through.
+      #
+      # It is not signed, and no step here can sign it. A publicly trusted
+      # code-signing key may not leave hardware, so the shape the mac job uses —
+      # a .p12 in a secret, imported into a keychain — is not issued for Windows
+      # at all: what it takes is a key a service holds, either Azure Artifact
+      # Signing or a cloud-HSM certificate from a certificate authority. Both
+      # sign from a Linux runner, so what is missing is an identity and not a
+      # toolchain. Until there is one, SmartScreen warns on first run and the
+      # sha256 the manifest carries is what a person has to check.
+      - name: Installer
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          NUMERIC: ${{ needs.naming.outputs.numeric }}
+          # Microsoft's short link hands out whatever is current and publishes
+          # no digest, so what is fetched is the address that link resolved to
+          # and the bytes are checked against it. What the bootstrapper then
+          # installs is the engine current on the person's machine, so holding
+          # this file still holds no engine still. A link Microsoft retires
+          # fails this job, which is how it is noticed.
+          WEBVIEW2: https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/474c9f1d-0fd5-49da-b3b0-df536d328170/MicrosoftEdgeWebview2Setup.exe
+          SHA256: 17debf797a6c737959bc588236e897936ffac1af5f7e515e674ab32f9edfe719
+        run: |
+          set -euo pipefail
+          sudo apt-get update && sudo apt-get install -y nsis
+          curl -sfSL "$WEBVIEW2" -o "$RUNNER_TEMP/webview2.exe"
+          echo "$SHA256  $RUNNER_TEMP/webview2.exe" | sha256sum -c -
+
+          makensis -V2 \
+            "-DVERSION=$VERSION" \
+            "-DNUMERIC_VERSION=$NUMERIC" \
+            "-DBINARY=$RUNNER_TEMP/numen.exe" \
+            "-DNUMEN_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen.ico" \
+            "-DFLASHCARDS=$RUNNER_TEMP/numen-flashcards.exe" \
+            "-DFLASHCARDS_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen-flashcards.ico" \
+            "-DWEBVIEW2=$RUNNER_TEMP/webview2.exe" \
+            "-DOUTFILE=$RUNNER_TEMP/Numen-${VERSION}.exe" \
+            modules/apps/desktop/build/windows/installer.nsi
+          ls -la "$RUNNER_TEMP"/Numen-*.exe
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-windows-amd64
+          path: |
+            ${{ runner.temp }}/numen_*_windows_amd64.zip
+            ${{ runner.temp }}/Numen-*.exe
+          if-no-files-found: error
+
+  macos:
+    name: "Package :: macOS"
+    needs: [naming]
+    if: needs.naming.outputs.macos == 'true'
+    runs-on: macos-15
+    # Notarizing gives itself half an hour and fails on its own; the rest is
+    # what two universal builds, an image and a mac runner cost.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/desktop/go.mod
+          # The window is built from both modules.
+          cache-dependency-path: |
+            modules/apps/desktop/go.sum
+            modules/libs/core/go.sum
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      # The number the window draws in its corner is written into the page here.
+      - name: Interface
+        env:
+          VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          make install INSTALL="npm ci"
+          make interface
+
+      # Both architectures come off this one machine: the window links against
+      # frameworks the SDK carries for each.
+      - name: Window
+        working-directory: modules/apps/desktop
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
+          COMMIT: ${{ needs.naming.outputs.commit }}
+        run: |
+          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
+          # -s -w drop the debugging tables, which are a quarter of the binary
+          # and reach nobody: a panic is symbolised from the pcln table, which
+          # neither flag touches.
+          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          # The two windows are always the same build: they ship together, one
+          # version, one image.
+          for window in numen numen-flashcards; do
+            CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/$window-arm64" "./cmd/$window"
+            CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/$window-amd64" "./cmd/$window"
+            lipo -create "$RUNNER_TEMP/$window-arm64" "$RUNNER_TEMP/$window-amd64" -output "$RUNNER_TEMP/$window"
+            lipo -info "$RUNNER_TEMP/$window"
+            rm "$RUNNER_TEMP/$window-arm64" "$RUNNER_TEMP/$window-amd64"
+          done
+
+      # The version a person reads stands in one key, and the number that rises
+      # with every build in the other, which is the only thing macOS orders two
+      # builds of one version by.
+      - name: Bundle
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
+        run: |
+          # Each window is a bundle of its own and wears its own icon. The name
+          # the icon goes into Resources under is the one its plist declares in
+          # CFBundleIconFile.
+          # bundle <application> <binary> <plist> <icon>
+          bundle() {
+            APP="$RUNNER_TEMP/$1.app"
+            mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+            mv "$RUNNER_TEMP/$2" "$APP/Contents/MacOS/$2"
+            cp "modules/apps/desktop/build/darwin/$3" "$APP/Contents/Info.plist"
+            cp "modules/apps/desktop/build/darwin/$4" "$APP/Contents/Resources/$4"
+            printf 'APPL????' > "$APP/Contents/PkgInfo"
+            plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
+            plutil -replace CFBundleVersion -string "$BUILD" "$APP/Contents/Info.plist"
+            plutil -lint "$APP/Contents/Info.plist"
+          }
+
+          bundle Numen numen Info.plist numen.icns
+          bundle "Numen Flashcards" numen-flashcards numen-flashcards-Info.plist numen-flashcards.icns
+
+      # The identity lives in a keychain of this run's own, which the last step
+      # deletes.
+      - name: Signing identity
+        env:
+          CERTIFICATE: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
+          echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          read -r -a searched <<< "$(security list-keychains -d user | tr -d '"')"
+          security list-keychains -d user -s "$KEYCHAIN" "${searched[@]}"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" \
+            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          rm "$RUNNER_TEMP/certificate.p12"
+
+          identity=$(security find-identity -v -p codesigning "$KEYCHAIN" \
+            | awk '/Developer ID Application/ { print $2; exit }')
+          if [ -z "$identity" ]; then
+            echo "::error::no Developer ID Application identity in the keychain"
+            security find-identity -p codesigning "$KEYCHAIN"
+            exit 1
+          fi
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          echo "IDENTITY=$identity" >> "$GITHUB_ENV"
+
+      - name: Sign
+        run: |
+          # A signature covers one bundle, so each is signed and read back on
+          # its own.
+          for app in "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app"; do
+            codesign --force --timestamp --options runtime \
+              --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
+              --keychain "$KEYCHAIN" --sign "$IDENTITY" \
+              "$app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+          done
+
+      - name: Disk image
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          # A compressed image is written twice over before it is one, and the
+          # machine this runs on has room for the application about three times.
+          go clean -cache
+
+          mkdir -p "$RUNNER_TEMP/image"
+          mv "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app" "$RUNNER_TEMP/image/"
+          ln -s /Applications "$RUNNER_TEMP/image/Applications"
+
+          # The volume is sized here. Asked to size it itself, hdiutil measures
+          # the folder and comes up short of what the filesystem then needs.
+          megabytes=$(du -sm "$RUNNER_TEMP/image" | cut -f1)
+          hdiutil create -volname Numen -srcfolder "$RUNNER_TEMP/image" \
+            -fs HFS+ -size "$(( megabytes + 200 ))m" \
+            -ov -format UDZO "$RUNNER_TEMP/Numen-${VERSION}.dmg"
+          codesign --force --timestamp --keychain "$KEYCHAIN" --sign "$IDENTITY" \
+            "$RUNNER_TEMP/Numen-${VERSION}.dmg"
+
+      # Apple looks inside and answers; the ticket is then attached to the image
+      # so that a machine offline can still be told the answer.
+      - name: Notarize
+        if: needs.naming.outputs.notarize == 'true'
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          API_KEY: ${{ secrets.APPLE_NOTARY_API_KEY }}
+          API_KEY_ID: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ID }}
+          API_KEY_ISSUER: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ISSUER }}
+        run: |
+          # The key is held encoded, so that what Apple is handed is the file
+          # byte for byte.
+          printf '%s' "$API_KEY" | base64 --decode > "$RUNNER_TEMP/api-key.p8"
+          openssl pkey -in "$RUNNER_TEMP/api-key.p8" -noout
+          xcrun notarytool submit "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
+            --key "$RUNNER_TEMP/api-key.p8" --key-id "$API_KEY_ID" \
+            --issuer "$API_KEY_ISSUER" --wait --timeout 30m
+          rm "$RUNNER_TEMP/api-key.p8"
+          xcrun stapler staple "$RUNNER_TEMP/Numen-${VERSION}.dmg"
+
+      # What a person's machine will say when they open it.
+      - name: Gatekeeper
+        if: needs.naming.outputs.notarize == 'true'
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          hdiutil attach "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
+            -mountpoint "$RUNNER_TEMP/mounted" -nobrowse -quiet
+          spctl --assess --type execute -vv "$RUNNER_TEMP/mounted/Numen.app"
+          spctl --assess --type execute -vv "$RUNNER_TEMP/mounted/Numen Flashcards.app"
+          hdiutil detach "$RUNNER_TEMP/mounted" -quiet
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-macos-universal
+          path: ${{ runner.temp }}/Numen-*.dmg
+          if-no-files-found: error
+
+      - name: Forget the identity
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
+
+  # Where the builds go. A release is put up twice: under the name the page
+  # links to, which carries no version and holds the newest build, and under a
+  # name carrying its version, in a folder that is written once and kept.
+  publish:
+    name: Publish
+    # A platform left out by input is not a platform that failed. Every one of
+    # them has to have been built or left out; a failed one would put the
+    # release up with a file missing from it and nothing saying so.
+    if: >-
+      ${{ needs.naming.outputs.publish == 'true'
+      && needs.notes.result == 'success'
+      && (needs.linux.result == 'success' || needs.linux.result == 'skipped')
+      && (needs.flatpak.result == 'success' || needs.flatpak.result == 'skipped')
+      && (needs.snap.result == 'success' || needs.snap.result == 'skipped')
+      && (needs.windows.result == 'success' || needs.windows.result == 'skipped')
+      && (needs.macos.result == 'success' || needs.macos.result == 'skipped') }}
+    needs: [naming, notes, linux, flatpak, snap, windows, macos]
+    runs-on: ubuntu-24.04
+    # Fetching every path back can wait eight times ten seconds on each of
+    # them, which after a purge is twenty minutes of sleeping alone.
+    timeout-minutes: 60
+    steps:
+      # Every one of these has to be set before a build can go anywhere, and a
+      # missing one is worth saying by name rather than as a 401 further down.
+      - name: What this needs
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          PULL_ZONE: ${{ vars.BUNNY_PULL_ZONE_ID }}
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+          KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          missing=
+          for name in ENDPOINT ZONE PULL_ZONE SERVED_FROM KEY API_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::nothing is set up to publish to:$missing"
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: ${{ runner.temp }}/built
+          pattern: numen-*
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: notes
+          path: ${{ runner.temp }}
+
+      # Whatever was built this run is renamed to the name the page asks for,
+      # and copied a second time under a name carrying its version, its build
+      # number and the commit it was made from. A platform that was not built
+      # leaves both alone.
+      - name: Name them
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+        run: |
+          set -euo pipefail
+          built="$RUNNER_TEMP/built"
+          upload="$RUNNER_TEMP/upload"
+          made="$RUNNER_TEMP/made"
+
+          # A release is kept under its version, and a build asked for by hand
+          # under the stamp, which is what tells two of them apart.
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+
+          mkdir -p "$upload/$SHELF" "$upload/$kept"
+          : > "$made"
+
+          # What was built, the name it goes up under, and what a machine has to
+          # know to pick its own out of the manifest.
+          builds=(
+            "Numen-*.dmg|numen-macos.dmg|macos|universal|dmg"
+            "Numen-*.exe|numen-windows-setup.exe|windows|amd64|exe"
+            "numen_*_windows_amd64.zip|numen-windows-amd64.zip|windows|amd64|zip"
+            "numen_*_linux_amd64.tar.gz|numen-linux-amd64.tar.gz|linux|amd64|tar.gz"
+            "*.deb|numen-linux-amd64.deb|linux|amd64|deb"
+            "*.rpm|numen-linux-amd64.rpm|linux|amd64|rpm"
+            "*.flatpak|numen-linux-amd64.flatpak|linux|amd64|flatpak"
+            "*.snap|numen-linux-amd64.snap|linux|amd64|snap"
+          )
+
+          for row in "${builds[@]}"; do
+            IFS='|' read -r glob stable platform arch kind <<< "$row"
+            found=$(find "$built" -name "$glob" -print -quit)
+            if [ -z "$found" ]; then
+              echo "  —  $stable"
+              continue
+            fi
+
+            cp "$found" "$upload/$SHELF/$stable"
+            stamped=${stable/numen-/numen-$STAMP-}
+            cp "$found" "$upload/$kept/$stamped"
+            at="$kept/$stamped"
+
+            echo "  $at <- $(basename "$found")"
+            printf '%s|%s|%s|%s|%s\n' "$stable" "$platform" "$arch" "$kind" "$at" >> "$made"
+          done
+
+          # A recipe is read rather than fetched by a machine, so it stands on
+          # the shelf under its own name and is not in the manifest.
+          for name in PKGBUILD numen-nix.tar.gz; do
+            found=$(find "$built" -name "$name" -print -quit)
+            [ -n "$found" ] || continue
+            cp "$found" "$upload/$SHELF/$name"
+            cp "$found" "$upload/$kept/$name"
+            echo "  $kept/$name"
+          done
+
+          # What the release holds goes up beside it. The repository is closed,
+          # so this is the copy anybody reading the page can reach.
+          cp "$RUNNER_TEMP/notes.md" "$upload/$SHELF/notes.md"
+          cp "$RUNNER_TEMP/notes.md" "$upload/$kept/notes.md"
+
+          find "$upload" -type f -printf '%P\n' | sort
+
+      # What the shelf holds, for anything that wants to know before it fetches.
+      # Each file is given the address of the copy that keeps this build, so
+      # what a machine is sent to fetch stays the file it was told the size of.
+      - name: Say what is on it
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          BUILD: ${{ needs.naming.outputs.build }}
+          COMMIT: ${{ needs.naming.outputs.commit }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          CHANNEL: ${{ needs.naming.outputs.channel }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          shelf="$RUNNER_TEMP/upload/$SHELF"
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+          {
+            printf '{\n'
+            printf '  "version": "%s",\n' "$VERSION"
+            printf '  "build": %s,\n' "$BUILD"
+            printf '  "commit": "%s",\n' "$COMMIT"
+            printf '  "stamp": "%s",\n' "$STAMP"
+            printf '  "channel": "%s",\n' "$CHANNEL"
+            printf '  "notes": "%s",\n' "$SERVED_FROM/$kept/notes.md"
+            printf '  "released": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            printf '  "files": [\n'
+            first=1
+            while IFS='|' read -r name platform arch kind at; do
+              [ $first -eq 1 ] || printf ',\n'
+              first=0
+              file="$shelf/$name"
+              printf '    { "name": "%s", "platform": "%s", "arch": "%s", "kind": "%s",\n' \
+                "$name" "$platform" "$arch" "$kind"
+              printf '      "url": "%s/%s", "size": %s, "sha256": "%s" }' \
+                "$SERVED_FROM" "$at" "$(stat -c%s "$file")" "$(sha256sum "$file" | cut -d' ' -f1)"
+            done < "$RUNNER_TEMP/made"
+            printf '\n  ]\n}\n'
+          } > "$shelf/latest.json"
+          cat "$shelf/latest.json"
+
+      # Bunny takes a file by PUT at the path it is stored under. Storage is
+      # never readable without its password: the pull zone in front of it is
+      # what serves these to the world, and it has a zone of its own so that
+      # nothing else the product keeps is reachable through it.
+      - name: Onto the shelf
+        env:
+          ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
+          ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
+          KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
+        run: |
+          set -euo pipefail
+          # The key is handed over in a file. A command line is read by anything
+          # on the machine and is what an error prints.
+          umask 077
+          printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
+          cd "$RUNNER_TEMP/upload"
+          mapfile -t paths < <(find . -type f -printf '%P\n' | sort)
+          for at in "${paths[@]}"; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X PUT "https://$ENDPOINT/$ZONE/$at" \
+              -H @"$RUNNER_TEMP/storage.header" \
+              -H 'Content-Type: application/octet-stream' \
+              --data-binary "@$at")
+            echo "$code  $at"
+            case "$code" in 20*) ;; *) echo "::error::$at was refused with $code"; exit 1 ;; esac
+          done
+
+      # The edge holds what it was given until it is told otherwise, and every
+      # name here is one it has served before.
+      - name: Forget the old copies
+        env:
+          PULL_ZONE: ${{ vars.BUNNY_PULL_ZONE_ID }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf 'AccessKey: %s\n' "$API_KEY" > "$RUNNER_TEMP/api.header"
+
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
+            -H @"$RUNNER_TEMP/api.header" -H 'Content-Length: 0')
+          echo "purge $code"
+          case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
+
+      # The one thing worth proving: that a stranger with no key can fetch what
+      # was just put up, at the address the page sends them to, and that what
+      # comes back is the file that went up.
+      - name: Fetch published
+        env:
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/upload"
+          mapfile -t paths < <(find . -type f -printf '%P\n' | sort)
+          for at in "${paths[@]}"; do
+            want=$(stat -c%s "$at")
+            sum=$(sha256sum "$at" | cut -d' ' -f1)
+
+            # A purge is answered before it has reached every edge, so a name
+            # asked for straight after one comes back as nothing yet, or as the
+            # part of it that has arrived. A part carries 200, which curl reads
+            # as an answer, so the asking is counted here.
+            code= length= got=
+            for try in 1 2 3 4 5 6 7 8; do
+              [ "$try" = 1 ] || sleep 10
+              # -w ends no line of its own, and read wants one.
+              read -r code length < <(curl -sS -o "$RUNNER_TEMP/fetched" -L \
+                -w '%{http_code} %{size_download}\n' "$SERVED_FROM/$at" || true)
+              [ "${code:-0}" = 200 ] && [ "${length:-0}" = "$want" ] || continue
+              got=$(sha256sum "$RUNNER_TEMP/fetched" | cut -d' ' -f1)
+              [ "$got" = "$sum" ] && break
+            done
+
+            echo "${code:-—}  $at  ${length:-0} of $want"
+            if [ "${code:-0}" != 200 ] || [ "${length:-0}" != "$want" ]; then
+              echo "::error::$at did not come back whole from $SERVED_FROM"
+              exit 1
+            fi
+            # A name can come back whole and be other bytes: an edge holding
+            # what stood there before the purge answers the same length.
+            if [ "$got" != "$sum" ]; then
+              echo "::error::$at came back as other bytes from $SERVED_FROM"
+              exit 1
+            fi
+          done
+
+  # What the release is called and what it says it holds. The tag is made when
+  # the builds are up and not before, so nothing names a build that failed.
+  announce:
+    name: Announce
+    if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' && needs.publish.result == 'success' }}
+    needs: [naming, notes, publish]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # The tag is pushed and the release is made from here, and nowhere else.
+    permissions:
+      contents: write
+    steps:
+      # The one clone that keeps the token: the tag is pushed through it.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: ${{ runner.temp }}/built
+          pattern: numen-*
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: notes
+          path: ${{ runner.temp }}
+
+      - name: The tag
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin "v$VERSION"
+
+      # The builds are on the release as well as on the shelf: the shelf is what
+      # the page hands out, and this is what the version is kept under.
+      - name: The release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.naming.outputs.version }}
+          CHANNEL: ${{ needs.naming.outputs.channel }}
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find "$RUNNER_TEMP/built" -type f | sort)
+          printf '%s\n' "${files[@]}"
+
+          prerelease=
+          [ "$CHANNEL" = stable ] || prerelease=--prerelease
+
+          gh release create "v$VERSION" \
+            --title "$VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            $prerelease \
+            "${files[@]}"
+

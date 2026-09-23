@@ -1,0 +1,138 @@
+name: Numen Mobile
+
+on:
+  pull_request:
+    paths:
+      - "modules/apps/mobile/**"
+      - "modules/libs/core/**"
+      - "modules/libs/ui/**"
+      - "modules/libs/protocol/**"
+      - ".github/workflows/numen-mobile.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
+  push:
+    branches: [main]
+    paths:
+      - "modules/apps/mobile/**"
+      - "modules/libs/core/**"
+      - "modules/libs/ui/**"
+      - "modules/libs/protocol/**"
+      - ".github/workflows/numen-mobile.yml"
+      # The rules the linter is held to, and the ones written here in Go.
+      - ".golangci.yml"
+      - "**/gorules/**"
+
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters. A run on main is left to finish: it fills the cache the branches read.
+concurrency:
+  group: numen-mobile-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: "Test :: Go"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: modules/apps/mobile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The two caches are keyed apart: the modules answer to go.sum, the build
+      # answers to the commit.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/apps/mobile/go.mod
+          cache: false
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-modules/apps/mobile-${{ hashFiles('modules/apps/mobile/go.sum') }}
+          restore-keys: go-mod-modules/apps/mobile-
+
+      # What the last compile and test run left behind: a run compiles what
+      # changed and re-runs the tests that changed. The key carries the commit,
+      # so the newest cache the branch can see is the one restored.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/go-build
+          key: go-build-modules/apps/mobile-${{ github.sha }}
+          restore-keys: go-build-modules/apps/mobile-
+
+      - name: Formatting
+        run: |
+          unformatted=$(gofmt -l ./bind tools.go)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
+          fi
+
+      - run: go vet ./...
+
+      # What .golangci.yml asks for, beyond the gofmt and go vet above. The
+      # phone is a binding layer over the core and answers to the same rules as
+      # the core, the window and the schema: it fails on what it finds.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.12.2
+          working-directory: modules/apps/mobile
+          args: --timeout 15m
+
+      # The vulnerability list is kept elsewhere and read at the time of the
+      # run, so this step can find something on a branch that changed nothing.
+      # It answers for the standard library of the Go above as well as for what
+      # is required.
+      - name: Vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+      # A test builds its vault in a temporary folder, and there is memory here
+      # to hold every one of them.
+      - run: go test -race ./...
+        env:
+          TMPDIR: /dev/shm
+
+      # Every run writes what it built. A branch reads its own back on the next
+      # push to it and main's before that.
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/go-build
+          key: go-build-modules/apps/mobile-${{ github.sha }}
+
+  # The screens the phone draws, typed against the schema and the components.
+  screens:
+    name: "Test :: Screens"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      # A screen reaches the components through their build.
+      - name: Install
+        run: npm ci --prefix modules
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Typecheck
+        run: npm run typecheck --prefix modules/apps/mobile
+
+      - name: Lint
+        run: npm run lint --prefix modules/apps/mobile
+
+      - name: Test
+        run: npm test --prefix modules/apps/mobile

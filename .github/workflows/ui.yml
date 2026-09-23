@@ -1,0 +1,88 @@
+name: UI
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/ui/**"
+      - ".github/workflows/ui.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/libs/ui/**"
+      - ".github/workflows/ui.yml"
+
+# One run at a time per branch, and the newest is the one that matters.
+concurrency:
+  group: ui-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # The shared components on their own: built into the shape a consumer sees,
+  # and asked what they draw in a document.
+  components:
+    name: "Test :: Components"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install
+        run: npm ci --prefix modules
+
+      # Correctness and the boundaries between the modules. It runs before the
+      # build, because what it refuses is cheaper to read than a type error.
+      - name: Lint
+        run: npm run lint --prefix modules/libs/ui
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Test
+        run: npm run test:unit --prefix modules/libs/ui -- --coverage
+
+  # A story runs in a real browser, and several of them are the only test of a
+  # thing a browser decides: what is clipped by an overflow, where a scroll
+  # lands, whether a key reaches an SVG group. The window is WebKit on a mac and
+  # on Linux and Chromium on Windows, so both are fetched.
+  stories:
+    name: "Test :: Stories"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install
+        run: npm ci --prefix modules
+
+      # The engines are a download of their own and answer to the version in
+      # the lockfile. Whatever the cache does not hold is fetched below.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('modules/package-lock.json') }}
+          restore-keys: playwright-
+
+      - name: Install browsers
+        run: npx --prefix modules playwright install chromium webkit --with-deps
+
+      - name: Test
+        run: npm run test:stories --prefix modules/libs/ui
