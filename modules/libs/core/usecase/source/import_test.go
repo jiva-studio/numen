@@ -1,0 +1,329 @@
+package source
+
+import (
+	"context"
+	"io"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// A site that answers with what a test puts in it, and counts what it was asked
+// for: nothing here reaches a network.
+type site struct {
+	title    string
+	length   int
+	cues     []transcript.Cue
+	prose    string
+	bytes    []byte
+	asked    []string
+	refusing error
+}
+
+func (s *site) GetDownloadModel(_ domain.URL) port.DownloadModel {
+	producer := text.Captions
+	if len(s.cues) == 0 && s.prose != "" {
+		producer = text.Article
+	}
+	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}
+}
+
+func (s *site) Metadata(_ context.Context, at domain.URL) (port.Metadata, error) {
+	s.asked = append(s.asked, "metadata "+string(at))
+	if s.refusing != nil {
+		return port.Metadata{}, s.refusing
+	}
+	return port.Metadata{Title: s.title, Length: s.length}, nil
+}
+
+func (s *site) Text(
+	_ context.Context, at domain.URL, _ port.PreferredCaptions,
+) (port.Text, error) {
+	s.asked = append(s.asked, "text "+string(at))
+	if len(s.cues) > 0 {
+		return port.Text{
+			Producer: text.Captions, Cues: s.cues, Title: s.title, Length: s.length,
+		}, nil
+	}
+	if s.prose != "" {
+		return port.Text{Producer: text.Article, Prose: s.prose, Title: s.title}, nil
+	}
+	return port.Text{}, port.ErrNothingDownloaded
+}
+
+func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
+	s.asked = append(s.asked, "download "+string(at))
+	if len(s.bytes) == 0 {
+		return port.Copy{}, port.ErrNothingDownloaded
+	}
+	if _, err := into.Write(s.bytes); err != nil {
+		return port.Copy{}, err
+	}
+	return port.Copy{MediaType: text.CopyType, Extension: text.CopyExtension}, nil
+}
+
+const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"
+
+// newImportURL is a vault holding one link note, and the store what is
+// downloaded for it is kept in.
+func newImportURL(t *testing.T, written string, from *site) (ImportURL, *shelf, string) {
+	t.Helper()
+	shelved := newLibrary()
+	shelved.hold(videoNote, domain.KindURL, []byte(written), 1)
+	kept := newShelf()
+	cut := []string{}
+	return ImportURL{
+		Readers: vaults{first.ID: shelved},
+		Derived: shelves{kept},
+		By:      from,
+		Cut: func(_ context.Context, _ domain.Vault, path string) error {
+			cut = append(cut, path)
+			return nil
+		},
+	}, kept, pasted
+}
+
+// A file the palette made is named by the address: an address is no filename,
+// so the name is what a download replaces once it knows what is there.
+const (
+	pasted         = "https://youtu.be/dQw4w9WgXcQ"
+	aPastedAddress = "[InternetShortcut]\nURL=" + pasted + "\n"
+)
+
+const pointsAtAVideo = aPastedAddress
+
+// The words published with a video are written down as the format a player
+// opens, under the address they were published at.
+func TestTheWordsPublishedWithAVideo(t *testing.T) {
+	from := &site{title: "Entropy explained", length: 83_500, cues: []transcript.Cue{
+		{Text: "what was said", From: 1500, To: 4200},
+		{Text: "what was said next", From: 4200, To: 9100},
+	}}
+	u, kept, address := newImportURL(t, pointsAtAVideo, from)
+
+	res, err := u.Execute(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Producer != text.Captions {
+		t.Errorf("the words were downloaded by %q", res.Producer)
+	}
+	if res.Bytes == 0 {
+		t.Error("no words came back")
+	}
+
+	hash := text.Fingerprint([]byte(address))
+	raw, err := kept.Read(t.Context(), text.Artifact(text.Captions, hash))
+	if err != nil {
+		t.Fatalf("nothing stands under the address: %v", err)
+	}
+	if got := getWords(t, raw); len(got) != 2 || got[0] != "what was said" {
+		t.Errorf("the words read %v", got)
+	}
+	if _, err := kept.Read(t.Context(), text.GetProducerFile(text.Captions, hash)); err != nil {
+		t.Errorf("what downloaded the words is not recorded: %v", err)
+	}
+}
+
+// An address already downloaded is not downloaded again: what a person asked
+// for is what stands until they ask for it afresh.
+func TestAnAddressAlreadyDownloaded(t *testing.T) {
+	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
+	u, _, _ := newImportURL(t, aPastedAddress, from)
+
+	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
+		t.Fatal(err)
+	}
+	asked := len(from.asked)
+	if _, err := u.Execute(t.Context(), first, videoNote); err != nil {
+		t.Fatal(err)
+	}
+	if len(from.asked) != asked {
+		t.Errorf("the address was asked again: %v", from.asked)
+	}
+}
+
+// A video nobody published words for says so, and the address is not asked
+// again every time the vault is scanned.
+func TestAVideoNobodyPublishedWordsFor(t *testing.T) {
+	from := &site{title: "Entropy explained"}
+	u, kept, address := newImportURL(t, pointsAtAVideo, from)
+
+	res, err := u.Execute(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.IsNothing || res.Producer != "" {
+		t.Errorf("it came back with %+v", res)
+	}
+	hash := text.Fingerprint([]byte(address))
+	if _, err := kept.Read(t.Context(), text.Answer(text.Captions, hash)); err != nil {
+		t.Errorf("nothing was written down about it: %v", err)
+	}
+}
+
+// A page is its prose, without the furniture around it, and it is kept as prose.
+func TestThePagePointedAt(t *testing.T) {
+	from := &site{title: "Entropy — a page", prose: "A measure of disorder."}
+	u, kept, _ := newImportURL(t,
+		"[InternetShortcut]\nURL=https://example.com/entropy\n", from)
+
+	res, err := u.Execute(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Producer != text.Article {
+		t.Errorf("the prose was downloaded by %q", res.Producer)
+	}
+	hash := text.Fingerprint([]byte("https://example.com/entropy"))
+	raw, err := kept.Read(t.Context(), text.Artifact(text.Article, hash))
+	if err != nil {
+		t.Fatalf("nothing stands under the address: %v", err)
+	}
+	if string(raw) != "A measure of disorder." {
+		t.Errorf("the prose reads %q", raw)
+	}
+	if asked := strings.Count(strings.Join(from.asked, " "), "text "); asked != 1 {
+		t.Errorf("the address was asked for its text %d times: %v", asked, from.asked)
+	}
+}
+
+// Nothing is downloaded for a note that points nowhere.
+func TestANoteThatPointsNowhere(t *testing.T) {
+	for _, written := range []string{
+		"# Entropy\n",
+		"[InternetShortcut]\n",
+		"[InternetShortcut]\nURL=file:///etc/passwd\n",
+	} {
+		u, _, _ := newImportURL(t, written, &site{})
+		if _, err := u.Execute(t.Context(), first, videoNote); err == nil {
+			t.Errorf("%q was downloaded for: %v", written, err)
+		}
+	}
+}
+
+// A note still called by the address it points at was named by the paste and by
+// nobody. What is there has a name, and the note takes it.
+func TestANoteStillCalledByItsAddressTakesTheTitle(t *testing.T) {
+	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
+	u, _, _ := newImportURL(t, aPastedAddress, from)
+	named := []string{}
+	u.Names = func(_ context.Context, _ domain.Vault, path, title string) (string, error) {
+		named = append(named, path+" → "+title)
+		return "notes/Entropy explained.url", nil
+	}
+
+	res, err := u.Execute(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) != 1 || named[0] != videoNote+" → Entropy explained" {
+		t.Errorf("the note was named %v", named)
+	}
+	if res.Path != "notes/Entropy explained.url" {
+		t.Errorf("the note is filed at %q", res.Path)
+	}
+}
+
+// A file the person named themselves keeps the name they gave it.
+func TestAFilePersonNamedKeepsItsName(t *testing.T) {
+	const theirs = "notes/Entropy.url"
+	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "said", To: 1000}}}
+	u, _, _ := newImportURL(t,
+		"[InternetShortcut]\nURL=https://youtu.be/dQw4w9WgXcQ\n", from)
+	u.Readers.(vaults)[first.ID].hold(theirs, domain.KindURL, []byte(pointsAtAVideo), 1)
+	named := 0
+	u.Names = func(context.Context, domain.Vault, string, string) (string, error) {
+		named++
+		return "", nil
+	}
+
+	if _, err := u.Execute(t.Context(), first, theirs); err != nil {
+		t.Fatal(err)
+	}
+	if named != 0 {
+		t.Errorf("a file the person named was renamed %d times", named)
+	}
+}
+
+// A copy is kept in the application's own folder, where losing it costs another
+// download and the vault stays the person's own writing.
+func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
+	from := &site{bytes: []byte("the bytes of a video")}
+	u, kept, address := newImportURL(t, pointsAtAVideo, from)
+
+	got, err := u.Copy(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.At != "" {
+		t.Errorf("the copy landed at %q in the vault, and nothing asked for that", got.At)
+	}
+	if got.Bytes != int64(len(from.bytes)) {
+		t.Errorf("the copy is %d bytes", got.Bytes)
+	}
+	name := text.Copy(text.Fingerprint([]byte(address)))
+	if _, _, err := kept.Open(t.Context(), name); err != nil {
+		t.Errorf("nothing in the folder the copy was kept in: %v", err)
+	}
+}
+
+// `importing.copies_to_vault` keeps a copy beside the note, as a file the
+// person sees in their own folder and plays from where it lies.
+func TestACopyKeptBesideTheNote(t *testing.T) {
+	from := &site{bytes: []byte("the bytes of a video")}
+	u, kept, address := newImportURL(t, pointsAtAVideo, from)
+	held := newLibrary()
+	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
+	u.Readers = vaults{first.ID: held}
+	u.IsToVault, u.Writers = true, writers{first.ID: held}
+
+	got, err := u.Copy(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beside := CopyBeside(videoNote)
+	if got.At != beside {
+		t.Errorf("the copy landed at %q, want it beside the note", got.At)
+	}
+	if got.Bytes != int64(len(from.bytes)) {
+		t.Errorf("the copy is %d bytes", got.Bytes)
+	}
+	if held.files[beside] == nil {
+		t.Fatal("nothing stands beside the note")
+	}
+	if string(held.files[beside].raw) != string(from.bytes) {
+		t.Errorf("the copy reads %q", held.files[beside].raw)
+	}
+	if _, _, err := kept.Open(t.Context(), text.Copy(text.Fingerprint([]byte(address)))); err == nil {
+		t.Error("the copy is in the application's folder too, and the vault is where it was asked for")
+	}
+}
+
+// A copy already beside the note is not downloaded a second time.
+func TestACopyAlreadyBesideTheNote(t *testing.T) {
+	from := &site{bytes: []byte("the bytes of a video")}
+	u, _, _ := newImportURL(t, pointsAtAVideo, from)
+	held := newLibrary()
+	held.hold(videoNote, domain.KindURL, []byte(pointsAtAVideo), 1)
+	u.Readers = vaults{first.ID: held}
+	u.IsToVault, u.Writers = true, writers{first.ID: held}
+
+	if _, err := u.Copy(t.Context(), first, videoNote); err != nil {
+		t.Fatal(err)
+	}
+	got, err := u.Copy(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.IsExisted {
+		t.Error("the video was downloaded again over a copy already standing")
+	}
+	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {
+		t.Errorf("the site was asked %v", from.asked)
+	}
+}

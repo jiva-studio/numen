@@ -1,0 +1,187 @@
+package note
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/markdown"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// Replace puts one stretch of a note's prose in place of another, and leaves
+// every byte around it as it was.
+//
+// What is replaced is named by the text standing there, not by where it stands,
+// and the caller presents the fingerprint of the note it read.
+type Replace struct {
+	Readers port.VaultReaders
+	Writers port.VaultWriters
+	Index   Levels
+	// Drawing is told what this change is doing while it is being made. Nothing
+	// is told where nobody is drawing the note.
+	Drawing TellEdit
+	Now     port.Clock
+}
+
+// NewReplace is what one stretch of a note is put right through: the vault it
+// is read and written through, what brings it level in the index, and what time
+// it is.
+//
+// All four are named here for the reason NewWrite names them: a replacement
+// short of the levelling changes the file and leaves the vault unable to find
+// what it now says, and one short of the clock stamps the note off the
+// machine's.
+func NewReplace(
+	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
+) Replace {
+	return Replace{Readers: readers, Writers: writers, Index: index, Now: now}
+}
+
+// ReplaceResult is what a replacement did.
+type ReplaceResult struct {
+	// Fingerprint is of the file this write produced.
+	Fingerprint domain.Fingerprint
+	// Span is where the span stood, as byte offsets into the prose a read hands
+	// out.
+	Span markdown.Span
+	// Matched is the span as the note held it, which is not always the text the
+	// caller asked for.
+	Matched string
+	// IsPlain says the span was found only once punctuation or spacing were
+	// allowed to differ.
+	IsPlain bool
+}
+
+// MissingSpan is a span that is not in the note, and where a copy of it stopped
+// agreeing with what is there.
+type MissingSpan struct {
+	// Matched is the longest opening of what was asked for that does stand in
+	// the note, and Instead is what stands in the note from there.
+	Matched string
+	Instead string
+}
+
+func (e MissingSpan) Error() string {
+	if e.Matched == "" {
+		return "no part of this span is in the note"
+	}
+	return fmt.Sprintf("this span is not in the note; it holds %q where the span has %q",
+		e.Instead, e.Matched+"…")
+}
+
+// AmbiguousSpan is a span standing in more than one place, which is a
+// span that does not say which of them was meant.
+type AmbiguousSpan struct {
+	Places int
+}
+
+func (e AmbiguousSpan) Error() string {
+	return fmt.Sprintf("this span stands in %d places; take in enough of what is around "+
+		"one of them to tell it from the others", e.Places)
+}
+
+// ErrAlreadyWritten is a replacement that is already in the note and an
+// original that is gone, which is the write having landed already.
+var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
+
+// Execute puts `becomes` where `stood` stands in the note at path.
+//
+// Fingerprint is what the caller believes is on disk. A note that has changed
+// since it was read is left alone and port.ErrStale comes back.
+func (u Replace) Execute(
+	ctx context.Context, v domain.Vault, path, stood, becomes string, fingerprint domain.Fingerprint,
+) (ReplaceResult, error) {
+	if stood == "" {
+		return ReplaceResult{}, fmt.Errorf("name the text to replace")
+	}
+
+	done := ReplaceResult{}
+	ends := func() {}
+	defer func() { ends() }()
+
+	e := Edit{
+		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
+		Fingerprint: fingerprint, Bound: MaxBytes,
+	}
+	at, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
+		body := markdown.Normalise(doc.Body())
+
+		where, plainly := markdown.Where(body, stood)
+		switch {
+		case len(where) == 1:
+		case len(where) > 1:
+			return AmbiguousSpan{Places: len(where)}
+		case becomes != "" && strings.Contains(body, becomes):
+			return ErrAlreadyWritten
+		default:
+			return newMissingSpan(body, stood)
+		}
+
+		span := where[0]
+		written := body[:span.From] + becomes + body[span.To:]
+		if err := doc.SetBody(written); err != nil {
+			return err
+		}
+
+		// A client counts text its own way, and a span named in bytes lands
+		// somewhere else in prose that is not ASCII.
+		ends = u.Drawing.beginChange(ctx, u.Now, domain.Edit{
+			Path: path,
+			From: markdown.CountUTF16(body, span.From),
+			To:   markdown.CountUTF16(body, span.To),
+			Text: becomes,
+		})
+
+		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
+		done.Matched = body[span.From:span.To]
+		done.IsPlain = plainly
+		return nil
+	})
+	if err != nil {
+		return ReplaceResult{}, err
+	}
+	done.Fingerprint = at
+	return done, nil
+}
+
+// newMissingSpan is what to say about a span that is not in the note: how much of
+// its opening does stand there, and what stands in its place.
+//
+// The opening is found by halving, which the text being present for every
+// shorter opening allows.
+func newMissingSpan(body, stood string) MissingSpan {
+	low, high := 0, len(stood)
+	for low < high {
+		middle := low + (high-low+1)/2
+		for middle < high && !utf8.RuneStart(stood[middle]) {
+			middle++
+		}
+		if middle > high {
+			break
+		}
+		if at, _ := markdown.Where(body, stood[:middle]); len(at) > 0 {
+			low = middle
+			continue
+		}
+		high = middle - 1
+		for high > low && !utf8.RuneStart(stood[high]) {
+			high--
+		}
+	}
+	if low == 0 {
+		return MissingSpan{}
+	}
+	matched := stood[:low]
+	at, _ := markdown.Where(body, matched)
+	if len(at) == 0 {
+		return MissingSpan{}
+	}
+	end := min(at[0].From+len(stood), len(body))
+	for end < len(body) && !utf8.RuneStart(body[end]) {
+		end++
+	}
+	return MissingSpan{Matched: matched, Instead: body[at[0].From:end]}
+}

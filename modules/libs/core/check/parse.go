@@ -1,0 +1,33 @@
+package check
+
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// parseCheck is what reading one file turned up, and the scan already knows it:
+// a link with no role, a role nobody decided on, an identifier that is not one.
+//
+// Nothing is worked out here. The rule that decided these ran when the note was
+// parsed, which is the only place that can see what the file says without
+// reading it again.
+type parseCheck struct{ queries port.ProblemQueries }
+
+func (parseCheck) Name() domain.Check { return domain.CheckParse }
+func (parseCheck) IsQuiet() bool      { return false }
+
+func (c parseCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
+	noted, err := c.queries.GetParseProblems(ctx, v.ID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]domain.VaultProblem, 0, len(noted))
+	for _, n := range noted {
+		out = append(out, domain.VaultProblem{
+			Path: n.Path, Kind: domain.CheckParse, Detail: n.Detail,
+		})
+	}
+	return out, nil
+}

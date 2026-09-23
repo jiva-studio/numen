@@ -1,0 +1,211 @@
+package vault
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io/fs"
+	"slices"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/markdown"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// Scan brings the index up to date with one vault. The vault is
+// authoritative: whatever the scan finds is what the index says afterwards.
+type Scan struct {
+	Readers     port.VaultReaders
+	Vaults      port.VaultRepository
+	Notes       port.NoteRepository
+	Known       FingerprintQueries
+	Maintenance port.IndexMaintenance
+
+	// Walks is the turns the vaults being walked take. A scan given none takes
+	// its turn from nobody and waits for nobody.
+	Walks *Walks
+
+	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
+	// index remembers about it.
+	//
+	// What it remembers is a path, a size and a modification time, so a file whose
+	// content changed while those did not is skipped — an archive restored by
+	// `unzip`, a tree brought over by `rsync -tc`. Rebuilding is the way out of
+	// that, and the only one.
+	ShouldRebuildIndex bool
+
+	// OnProgress, if set, is called each time a group of notes is written. A
+	// scan of a large vault takes a minute, and something has to be able to say
+	// so while it happens. What is done with that is the caller's business.
+	OnProgress func(ScanResult)
+}
+
+// NewScan is what a walk of a vault reads and writes through: the vault it is
+// read out of, the row every note of it points at, where a note is filed, what
+// the index already believes about each file, and the upkeep a changed index
+// owes.
+//
+// The upkeep is reached only where the walk found something.
+func NewScan(
+	readers port.VaultReaders,
+	vaults port.VaultRepository,
+	notes port.NoteRepository,
+	known FingerprintQueries,
+	maintenance port.IndexMaintenance,
+) Scan {
+	return Scan{
+		Readers: readers, Vaults: vaults, Notes: notes,
+		Known: known, Maintenance: maintenance,
+	}
+}
+
+// ScanResult reports what a scan did, in the terms the user cares about.
+//
+// `Notes` counts notes, and every number below it is about those notes. What
+// the walk found that is a source of another kind is `Assets`, which is how a
+// format nothing extracts is told from one that is seen and left alone.
+type ScanResult struct {
+	Notes      int // notes found in the vault
+	Assets     int // sources of another kind found in the vault
+	Indexed    int // parsed and written, because they were new or had changed
+	Unchanged  int // skipped on size and modification time alone
+	Removed    int // in the index, no longer on disk
+	Vanished   int // walked, but gone by the time it was read
+	Unreadable int // walked, still there, and the read refused
+}
+
+// FingerprintQueries is the one question a scan asks of the index, so that a
+// scan is handed what says which files have changed and nothing that answers
+// about a note.
+type FingerprintQueries interface {
+	// Fingerprints is what the index believes about each file, keyed by path,
+	// so a scan can decide what to reparse without reading anything.
+	Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
+}
+
+// Execute walks the vault once.
+//
+// Only files whose size or modification time differ from what the index holds
+// are read and parsed; the rest are not opened at all. That is what keeps a scan
+// of an unchanged vault cheap enough to run at startup.
+//
+// One walk of a vault runs at a time among the scans sharing its turns. A walk
+// writes in groups from what it read, so its copy of a note lands last however
+// early the note was read.
+func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
+	var res ScanResult
+
+	over, err := u.Walks.startOne(ctx, v.ID)
+	if err != nil {
+		return res, err
+	}
+	defer over()
+
+	reader, err := u.Readers.Open(v)
+	if err != nil {
+		return res, err
+	}
+	// The rows the walk writes point at the vault's own row. What the vault is
+	// called and where it is stay as the list has them.
+	if err := u.Vaults.Register(ctx, v.ID); err != nil {
+		return res, fmt.Errorf("register vault: %w", err)
+	}
+
+	known, err := u.Known.Fingerprints(ctx, v.ID)
+	if err != nil {
+		return res, fmt.Errorf("read index: %w", err)
+	}
+	// The walk is collected before anything is read, so that the order can be
+	// chosen. A vault has a working set and an archive, and they are not the
+	// same size: notes touched recently are what the person is looking for while
+	// the scan runs, so they are indexed first.
+	var found []domain.Fingerprint
+	if err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
+		found = append(found, ref)
+		return nil
+	}); err != nil {
+		return res, err
+	}
+	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return b.ModTime.Compare(a.ModTime) })
+
+	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
+		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
+			// The failure is somewhere in a group, so say which one.
+			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
+				len(notes), v.Name, notes[0].Fingerprint.Path, notes[len(notes)-1].Fingerprint.Path, err)
+		}
+		res.Indexed += len(notes)
+		if u.OnProgress != nil {
+			u.OnProgress(res)
+		}
+		return nil
+	}}
+
+	seen := make(map[string]bool, len(known))
+	for _, ref := range found {
+		if err := ctx.Err(); err != nil {
+			return res, err
+		}
+		if ref.Kind != domain.KindNote {
+			// Taking the text out of a source of another kind is its own step,
+			// on its own schedule.
+			res.Assets++
+			continue
+		}
+		res.Notes++
+		seen[ref.Path] = true
+
+		if previous, ok := known[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
+			res.Unchanged++
+			continue
+		}
+
+		raw, err := reader.Read(ctx, ref.Path)
+		if errors.Is(err, fs.ErrNotExist) {
+			// The vault is edited while it is read — that is what it means for
+			// files to be the source of truth. A note saved, moved or deleted
+			// during a scan must not end the scan; the next one will see
+			// whatever it became.
+			// The path stays in `seen`: a file that was there a moment ago and
+			// is briefly absent is what every editor that saves through a
+			// temporary file looks like. Removing its row would take the note
+			// out of search until the next scan.
+			res.Vanished++
+			continue
+		}
+		if err != nil {
+			// One file nobody can read — a permission, a broken link, a device
+			// that went away — must not cost the others. The path stays in
+			// `seen`: the file is there and its row is still about it.
+			res.Unreadable++
+			continue
+		}
+		if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
+			return res, err
+		}
+	}
+	if err := group.flush(ctx); err != nil {
+		return res, err
+	}
+
+	var gone []string
+	for path := range known {
+		if !seen[path] {
+			gone = append(gone, path)
+		}
+	}
+	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
+		return res, fmt.Errorf("remove deleted notes: %w", err)
+	}
+	res.Removed = len(gone)
+
+	// A scan that stored nothing changed nothing, and a scan of an unchanged
+	// vault has to stay cheap enough to run at startup.
+	if res.Indexed > 0 || res.Removed > 0 {
+		if err := u.Maintenance.ReportChanges(ctx); err != nil {
+			return res, fmt.Errorf("index upkeep for %s: %w", v.Name, err)
+		}
+	}
+
+	return res, nil
+}
