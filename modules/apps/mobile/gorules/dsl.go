@@ -2,8 +2,8 @@
 
 // Package gorules holds this module's require on the ruleguard DSL.
 //
-// The rules gocritic runs live in `gorules/timeeq.go` at the top of the
-// repository, outside every module, and they are written against this package.
+// The rules gocritic runs live in `modules/tools/gorules/timeeq.go`,
+// outside every module, and they are written against this package.
 // ruleguard typechecks them against the module it is linting, so each module
 // has to carry the require. The tag keeps the file out of every build; a plain
 // `//go:build ignore` would be dropped by `go mod tidy` and the linter would

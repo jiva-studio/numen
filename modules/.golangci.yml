@@ -66,7 +66,7 @@ linters:
           # A rules file that will not typecheck is a rule that silently
           # refuses nothing.
           failOn: dsl
-          rules: ${base-path}/gorules/timeeq.go
+          rules: ${base-path}/tools/gorules/timeeq.go
 
     exhaustive:
       # A switch that names a default has answered for the cases it did not

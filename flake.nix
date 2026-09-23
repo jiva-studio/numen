@@ -31,12 +31,12 @@
     in
     {
       packages = on (pkgs: rec {
-        numen = pkgs.callPackage ./nix/numen.nix { inherit assets; };
+        numen = pkgs.callPackage ./modules/tools/nix/numen.nix { inherit assets; };
         default = numen;
       });
 
       overlays.default = final: _prev: {
-        numen = final.callPackage ./nix/numen.nix { inherit assets; };
+        numen = final.callPackage ./modules/tools/nix/numen.nix { inherit assets; };
       };
 
       formatter = on (pkgs: pkgs.nixfmt-rfc-style);

@@ -164,9 +164,9 @@ jobs:
           since=$(git tag -l 'v*' | grep -v -- '-' | sort -V | tail -1)
           echo "since ${since:-the first commit}"
           if [ -n "$since" ]; then
-            git cliff --tag "v$VERSION" "$since..HEAD" -o "$RUNNER_TEMP/notes.md"
+            git cliff --config .github/cliff.toml --tag "v$VERSION" "$since..HEAD" -o "$RUNNER_TEMP/notes.md"
           else
-            git cliff --tag "v$VERSION" -o "$RUNNER_TEMP/notes.md"
+            git cliff --config .github/cliff.toml --tag "v$VERSION" -o "$RUNNER_TEMP/notes.md"
           fi
           cat "$RUNNER_TEMP/notes.md"
 
