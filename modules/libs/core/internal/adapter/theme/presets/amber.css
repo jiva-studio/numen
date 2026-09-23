@@ -1,0 +1,69 @@
+/*
+ * The four colours off the screenshot: cream text, grey ground, amber accent,
+ * brighter amber for a heading. Everything else is derived from those four.
+ *
+ * The name is provisional, and the four are read by eye off a compressed
+ * image, so every value here is approximate.
+ *
+ * The greys are the ground lightened and darkened; the muted text is the cream
+ * carried down towards the grey. The four seats and the alarm keep the
+ * accent's chroma with its hue turned, so they tell four relations apart and
+ * still read as this palette. Their hues stay clear of the amber, which the
+ * focused node is painted in.
+ *
+ * A highlighted language takes those same turned hues, with a sixth for types.
+ * Its comments, its punctuation and its marks are the cream carried down three
+ * distances, so the three stand in that order at a glance.
+ *
+ * `color-scheme` is pinned: four colours off a dark panel are one half, and
+ * there is no light half for the setting to choose.
+ */
+:root {
+  color-scheme: dark;
+
+  --numen-surface: #2b2b2b;
+  --numen-raised: #363636;
+  --numen-ink: #e8dcc0;
+  --numen-rule: #4a4a4a;
+
+  --numen-accent: #d6870f;
+  --numen-accent-ink: #2b2b2b;
+
+  --numen-seat-parent: #649bc4;
+  --numen-seat-child: #77ac53;
+  --numen-seat-jump: #cc6688;
+  --numen-seat-sibling: #b877c5;
+
+  --numen-edge: #4a4a4a;
+  --numen-edge-label: #948d7a;
+  --numen-ring: #e89a12;
+  --numen-selection: #d6870f45;
+  --numen-selection-away: #d6870f24;
+  --numen-selection-match: #d6870f1f;
+  --numen-alarm: #da5c4e;
+  --numen-caution-bg: #3a3222;
+  --numen-caution-fg: #e8c37a;
+  --numen-highlight: #d6870f33;
+
+  /* Code and a table's head row take the ground the card is raised off. */
+  --numen-syntax-mark: #777166;
+  --numen-code-bg: #2b2b2b;
+  --numen-table-head-bg: #2b2b2b;
+  --numen-syntax-keyword: #b877c5;
+  --numen-syntax-name: #649bc4;
+  --numen-syntax-type: #53ac9b;
+  --numen-syntax-string: #77ac53;
+  --numen-syntax-number: #cc6688;
+  --numen-syntax-comment: #948d7a;
+  --numen-syntax-punctuation: #afa793;
+
+  --numen-panel-bg: #363636cc;
+  --numen-panel-border: #ffffff1f;
+
+  --numen-field-bg: #242424;
+  --numen-field-border: #4a4a4a;
+
+  --numen-bubble-bg: #3f3f3f;
+  --numen-bubble-fg: #e8dcc0;
+  --numen-answer-fg: #e8dcc0;
+}

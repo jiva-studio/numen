@@ -1,0 +1,64 @@
+/*
+ * Tokyo Night, from the two theme files enkia publishes: Tokyo Night in the
+ * dark, Tokyo Night Light in the light.
+ *
+ * The syntax colours are those files' own assignments: purple keywords, blue
+ * names, teal types, green strings, orange numbers, and operators in the
+ * colour each half writes them in.
+ *
+ * Blue is the accent a focused node is painted in, so a parent takes the
+ * palette's teal and the four seats stand apart from it.
+ *
+ * Mixed here, because the palette does not name them: the caution band and the
+ * highlight, which are the colour each half warns in laid on the ground it
+ * covers.
+ */
+:root {
+  --numen-surface: light-dark(#d6d8df, #16161e);
+  --numen-raised: light-dark(#e6e7ed, #1a1b26);
+  --numen-ink: light-dark(#343b59, #a9b1d6);
+  --numen-rule: light-dark(#c1c2c7, #101014);
+
+  --numen-accent: light-dark(#2959aa, #3d59a1);
+  --numen-accent-ink: light-dark(#ffffff, #ffffff);
+
+  --numen-seat-parent: light-dark(#006c86, #0db9d7);
+  --numen-seat-child: light-dark(#385f0d, #9ece6a);
+  --numen-seat-jump: light-dark(#965027, #ff9e64);
+  --numen-seat-sibling: light-dark(#65359d, #bb9af7);
+
+  /* An edge takes the guide the palette draws down a line of code. */
+  --numen-edge: light-dark(#bdc1cf, #363b54);
+  --numen-edge-label: light-dark(#9da0ab, #787c99);
+  --numen-ring: light-dark(#2959aa, #3d59a1);
+  --numen-selection: light-dark(#acb0bf40, #515c7e4d);
+  --numen-selection-away: light-dark(#acb0bf33, #515c7e25);
+  --numen-selection-match: light-dark(#9aa5ce55, #515c7e44);
+  --numen-alarm: light-dark(#bd4040, #db4b4b);
+  --numen-caution-bg: light-dark(#d5ccc2, #383130);
+  --numen-caution-fg: light-dark(#8f5e15, #e0af68);
+  --numen-highlight: light-dark(#8f5e1526, #e0af6833);
+
+  /* Code takes the ground the window is drawn on, and a table's head row the
+     band a line is picked out with. The marks take the comment tone. */
+  --numen-syntax-mark: light-dark(#888b94, #51597d);
+  --numen-code-bg: light-dark(#d6d8df, #16161e);
+  --numen-table-head-bg: light-dark(#dcdee3, #1e202e);
+  --numen-syntax-keyword: light-dark(#65359d, #bb9af7);
+  --numen-syntax-name: light-dark(#2959aa, #7aa2f7);
+  --numen-syntax-type: light-dark(#006c86, #0db9d7);
+  --numen-syntax-string: light-dark(#385f0d, #9ece6a);
+  --numen-syntax-number: light-dark(#965027, #ff9e64);
+  --numen-syntax-comment: light-dark(#888b94, #51597d);
+  --numen-syntax-punctuation: light-dark(#006c86, #89ddff);
+
+  --numen-panel-bg: light-dark(#d6d8dfcc, #16161ecc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+
+  --numen-field-bg: light-dark(#e6e7ed, #14141b);
+  --numen-field-border: light-dark(#c1c2c7, #0f0f14);
+
+  --numen-bubble-bg: light-dark(#dcdee3, #202330);
+  --numen-bubble-fg: light-dark(#343b59, #a9b1d6);
+  --numen-answer-fg: light-dark(#343b59, #a9b1d6);
+}

@@ -1,0 +1,68 @@
+/*
+ * ayu, from the named palette its author publishes in the `ayu` package. Light
+ * is ayu light, dark is ayu dark.
+ *
+ * The syntax colours are that palette's own roles, each painting what its name
+ * says: keyword, tag, entity, string, constant, comment and operator. The
+ * comment tone is the flat one ayu's editor theme writes, which is that role
+ * carried onto the ground it is read on.
+ *
+ * Yellow is the accent a focused node is painted in, so a jump takes the
+ * markup hue and the four seats stand apart from it.
+ *
+ * Mixed here, because the palette does not name it: the alpha the highlight is
+ * laid on at.
+ */
+:root {
+  --numen-surface: light-dark(#f8f9fa, #0d1017);
+  --numen-raised: light-dark(#fcfcfc, #10141c);
+  --numen-ink: light-dark(#5c6166, #bfbdb6);
+  --numen-rule: light-dark(#6b7d8f1f, #1b1f29);
+
+  /* The accent, with the tone ayu names for content standing on it. */
+  --numen-accent: light-dark(#f29718, #e6b450);
+  --numen-accent-ink: light-dark(#804b00, #805600);
+
+  --numen-seat-parent: light-dark(#399ee6, #59c2ff);
+  --numen-seat-child: light-dark(#86b300, #aad94c);
+  --numen-seat-jump: light-dark(#f07171, #f07178);
+  --numen-seat-sibling: light-dark(#a37acc, #d2a6ff);
+
+  --numen-edge: light-dark(#6b7d8f1f, #1b1f29);
+  --numen-edge-label: light-dark(#828e9f, #555e73);
+  --numen-ring: light-dark(#f29718, #e6b450);
+  --numen-selection: light-dark(#035bd626, #3388ff40);
+  --numen-selection-away: light-dark(#035bd612, #80b5ff26);
+  --numen-selection-match: light-dark(#ffe29480, #4c412680);
+  --numen-alarm: light-dark(#e65050, #d95757);
+  /* The band takes the ground ayu marks a match with, with the words in the
+     colour it warns in. */
+  --numen-caution-bg: light-dark(#ffe294, #4c4126);
+  --numen-caution-fg: light-dark(#f29718, #e6b450);
+  --numen-highlight: light-dark(#f2971833, #e6b4503d);
+
+  /* Code takes the ground the window is drawn on, and a table's head row the
+     ground a panel sits on. The marks take the tone the interface's own words
+     are set in. */
+  --numen-syntax-mark: light-dark(#828e9f, #555e73);
+  --numen-code-bg: light-dark(#f8f9fa, #0d1017);
+  --numen-table-head-bg: light-dark(#fafafa, #141821);
+  --numen-syntax-keyword: light-dark(#ff7e33, #ff8f40);
+  --numen-syntax-name: light-dark(#55b4d4, #39bae6);
+  --numen-syntax-type: light-dark(#399ee6, #59c2ff);
+  --numen-syntax-string: light-dark(#86b300, #aad94c);
+  --numen-syntax-number: light-dark(#a37acc, #d2a6ff);
+  --numen-syntax-comment: light-dark(#adaeb1, #5a6673);
+  --numen-syntax-punctuation: light-dark(#ed9366, #f29668);
+
+  --numen-panel-bg: light-dark(#fafafacc, #141821cc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+
+  --numen-field-bg: light-dark(#fcfcfc, #10141c);
+  --numen-field-border: light-dark(#828e9f33, #5a637833);
+
+  /* A bubble takes the tone a chosen row in the interface is filled with. */
+  --numen-bubble-bg: light-dark(#6b7d8f1f, #47526633);
+  --numen-bubble-fg: light-dark(#5c6166, #bfbdb6);
+  --numen-answer-fg: light-dark(#5c6166, #bfbdb6);
+}

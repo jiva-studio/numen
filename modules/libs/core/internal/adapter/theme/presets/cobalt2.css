@@ -1,0 +1,65 @@
+/*
+ * Cobalt2, from Wes Bos's own theme file.
+ *
+ * `color-scheme` is pinned: the palette is published dark, and there is no
+ * light half for the setting to choose.
+ *
+ * The syntax colours are that file's own assignments: orange keywords and
+ * storage, cyan properties, pink types, green strings, pink constants, blue
+ * comments, and punctuation in the text colour.
+ *
+ * Yellow is the accent a focused node is painted in, so a jump takes the
+ * palette's pink and the four seats stand apart from it.
+ */
+:root {
+  color-scheme: dark;
+
+  --numen-surface: #122738;
+  --numen-raised: #193549;
+  --numen-ink: #ffffff;
+  --numen-rule: #15232d;
+
+  --numen-accent: #ffc600;
+  --numen-accent-ink: #000000;
+
+  --numen-seat-parent: #0088ff;
+  --numen-seat-child: #3ad900;
+  --numen-seat-jump: #ff628c;
+  --numen-seat-sibling: #fb94ff;
+
+  --numen-edge: #3b5364;
+  --numen-edge-label: #aaaaaa;
+  --numen-ring: #ffc600;
+  --numen-selection: #0050a4;
+  --numen-selection-away: #003b8b;
+  --numen-selection-match: #0050a480;
+  --numen-alarm: #a22929;
+  /* The band takes the ground a line is picked out with, with the words in the
+     colour the palette warns in. */
+  --numen-caution-bg: #1f4662;
+  --numen-caution-fg: #ffc600;
+  --numen-highlight: #cad40f66;
+
+  /* Code takes the ground the window is drawn on, and a table's head row the
+     band a chosen row is filled with. */
+  --numen-syntax-mark: #aaaaaa;
+  --numen-code-bg: #15232d;
+  --numen-table-head-bg: #0d3a58;
+  --numen-syntax-keyword: #ff9d00;
+  --numen-syntax-name: #9effff;
+  --numen-syntax-type: #ff68b8;
+  --numen-syntax-string: #a5ff90;
+  --numen-syntax-number: #ff628c;
+  --numen-syntax-comment: #0088ff;
+  --numen-syntax-punctuation: #ffffff;
+
+  --numen-panel-bg: #193549cc;
+  --numen-panel-border: #ffffff1f;
+
+  --numen-field-bg: #193549;
+  --numen-field-border: #0d3a58;
+
+  --numen-bubble-bg: #15232d;
+  --numen-bubble-fg: #ffffff;
+  --numen-answer-fg: #ffffff;
+}

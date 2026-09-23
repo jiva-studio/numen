@@ -1,0 +1,310 @@
+package epub
+
+import (
+	"archive/zip"
+	"bytes"
+	"encoding/xml"
+	"fmt"
+	"io"
+	"net/url"
+	"path"
+	"strings"
+)
+
+const (
+	containerPath = "META-INF/container.xml"
+	mediaPackage  = "application/oebps-package+xml"
+	mediaNCX      = "application/x-dtbncx+xml"
+	mediaSVG      = "image/svg+xml"
+)
+
+// A prefix is the writer's choice, so a name that carries one is matched by its
+// namespace. These are the namespaces a title is written in; the empty one is a
+// book that declares none.
+var titleNamespaces = map[string]bool{
+	"":                                 true,
+	"http://purl.org/dc/elements/1.1/": true,
+	"http://purl.org/dc/terms/":        true,
+}
+
+// A packageDoc is the package document, read down to what a reader needs.
+type packageDoc struct {
+	title string
+	// base is the directory the package document sits in. Every href in it is
+	// relative to that.
+	base string
+	// spine is the documents of the spine, in reading order.
+	spine []spineItem
+	// ncx and nav are the archive paths of the two kinds of navigation
+	// document, empty when the book has neither.
+	ncx string
+	nav string
+
+	layout    Layout
+	direction Direction
+}
+
+// A spineItem is one itemref of the spine and the manifest item it names.
+type spineItem struct {
+	path      string
+	mediaType string
+	isLinear  bool
+	layout    Layout
+}
+
+// archiveIndex maps each archive entry to its cleaned name.
+func archiveIndex(archive *zip.Reader) map[string]*zip.File {
+	files := make(map[string]*zip.File, len(archive.File))
+	for _, f := range archive.File {
+		if f == nil {
+			continue
+		}
+		files[path.Clean(f.Name)] = f
+	}
+	return files
+}
+
+// contents reads one archive entry. A missing or unreadable entry is not there.
+func contents(f *zip.File) ([]byte, bool) {
+	return readBounded(f, mostPerDocument)
+}
+
+// mostPerDocument is how much of one document inside an archive is read, and
+// mostPerBook how much of all of them together.
+//
+// An archive says how large its entries are and is believed about nothing: a few
+// hundred kilobytes of zeros expand to as much as the format allows, and reading
+// that is how opening a book ends the process. What is over the bound is left
+// unread, which is what a document the archive does not hold amounts to.
+const (
+	mostPerDocument = 16 << 20
+	mostPerBook     = 256 << 20
+)
+
+// readBounded is the contents of one entry, up to the bound given.
+func readBounded(f *zip.File, most int64) ([]byte, bool) {
+	if f == nil {
+		return nil, false
+	}
+	if f.UncompressedSize64 > uint64(most) {
+		return nil, false
+	}
+	r, err := f.Open()
+	if err != nil {
+		return nil, false
+	}
+	defer r.Close()
+	// The header is a claim. This is the answer to it being false.
+	raw, err := io.ReadAll(io.LimitReader(r, most+1))
+	if err != nil {
+		return nil, false
+	}
+	if int64(len(raw)) > most {
+		return nil, false
+	}
+	return raw, true
+}
+
+// packagePath reads the container for the name of the package document.
+func packagePath(files map[string]*zip.File) (string, error) {
+	raw, ok := contents(files[containerPath])
+	if !ok {
+		return "", ErrNoContainer
+	}
+	var container struct {
+		Rootfiles []struct {
+			Path      string `xml:"full-path,attr"`
+			MediaType string `xml:"media-type,attr"`
+		} `xml:"rootfiles>rootfile"`
+	}
+	if err := decodeXML(raw, &container); err != nil {
+		return "", fmt.Errorf("%w: %w", ErrNoContainer, err)
+	}
+
+	first := ""
+	for _, root := range container.Rootfiles {
+		if root.Path == "" {
+			continue
+		}
+		at := resolve("", root.Path)
+		if root.MediaType == mediaPackage {
+			return at, nil
+		}
+		if first == "" {
+			first = at
+		}
+	}
+	if first == "" {
+		return "", fmt.Errorf("%w: it names no rootfile", ErrNoContainer)
+	}
+	return first, nil
+}
+
+// readPackage reads the manifest and the spine. The order is the spine's: file
+// order inside the archive says nothing about the order of a book.
+func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error) {
+	raw, ok := contents(files[opfPath])
+	if !ok {
+		return packageDoc{}, fmt.Errorf("%w: %s is not in the archive", ErrNoPackage, opfPath)
+	}
+
+	var document struct {
+		Metadata struct {
+			Entries []struct {
+				XMLName  xml.Name
+				Property string `xml:"property,attr"`
+				Refines  string `xml:"refines,attr"`
+				Value    string `xml:",chardata"`
+			} `xml:",any"`
+		} `xml:"metadata"`
+		Items []struct {
+			ID         string `xml:"id,attr"`
+			Href       string `xml:"href,attr"`
+			MediaType  string `xml:"media-type,attr"`
+			Properties string `xml:"properties,attr"`
+		} `xml:"manifest>item"`
+		Spine struct {
+			TOC       string `xml:"toc,attr"`
+			Direction string `xml:"page-progression-direction,attr"`
+			ItemRefs  []struct {
+				IDRef      string `xml:"idref,attr"`
+				Linear     string `xml:"linear,attr"`
+				Properties string `xml:"properties,attr"`
+			} `xml:"itemref"`
+		} `xml:"spine"`
+	}
+	if err := decodeXML(raw, &document); err != nil {
+		return packageDoc{}, fmt.Errorf("%w: %w", ErrNoPackage, err)
+	}
+
+	read := packageDoc{
+		base:      path.Dir(opfPath),
+		layout:    Reflowable,
+		direction: direction(document.Spine.Direction),
+	}
+	for _, entry := range document.Metadata.Entries {
+		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] &&
+			read.title == "" {
+			read.title = tidy(entry.Value)
+		}
+		// A meta refining another element speaks for that element alone, and
+		// `rendition` is a reserved prefix, read as it is written.
+		if entry.XMLName.Local == "meta" && entry.Refines == "" &&
+			entry.Property == "rendition:layout" {
+			read.layout = layout(entry.Value, read.layout)
+		}
+	}
+
+	type item struct {
+		path      string
+		mediaType string
+	}
+	manifest := make(map[string]item, len(document.Items))
+	for _, entry := range document.Items {
+		if entry.ID == "" || entry.Href == "" {
+			continue
+		}
+		at := resolve(read.base, entry.Href)
+		manifest[entry.ID] = item{path: at, mediaType: entry.MediaType}
+
+		switch {
+		case entry.MediaType == mediaNCX:
+			read.ncx = at
+		case hasToken(entry.Properties, "nav"):
+			read.nav = at
+		}
+	}
+	if named, ok := manifest[document.Spine.TOC]; ok && named.mediaType == mediaNCX {
+		read.ncx = named.path
+	}
+
+	for _, ref := range document.Spine.ItemRefs {
+		named, ok := manifest[ref.IDRef]
+		if !ok {
+			// A spine may name an item the manifest does not describe.
+			continue
+		}
+		read.spine = append(read.spine, spineItem{
+			path:      named.path,
+			mediaType: named.mediaType,
+			isLinear:  !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
+			layout:    itemLayout(ref.Properties, read.layout),
+		})
+	}
+	return read, nil
+}
+
+// layout is the layout a rendition:layout value names, and the one already in
+// force for a value that names neither.
+func layout(said string, inForce Layout) Layout {
+	switch Layout(strings.ToLower(strings.TrimSpace(said))) {
+	case PrePaginated:
+		return PrePaginated
+	case Reflowable:
+		return Reflowable
+	}
+	return inForce
+}
+
+// itemLayout is the layout one spine document is laid out under: the book's,
+// unless the itemref overrides it.
+func itemLayout(properties string, book Layout) Layout {
+	switch {
+	case hasToken(properties, "rendition:layout-pre-paginated"):
+		return PrePaginated
+	case hasToken(properties, "rendition:layout-reflowable"):
+		return Reflowable
+	}
+	return book
+}
+
+// direction is the direction a page-progression-direction attribute names.
+func direction(said string) Direction {
+	named := Direction(strings.ToLower(strings.TrimSpace(said)))
+	if named == LeftToRight || named == RightToLeft {
+		return named
+	}
+	return DefaultDirection
+}
+
+// decodeXML reads one of the documents that are XML: the container, the package
+// and the navigation control file.
+func decodeXML(raw []byte, into any) error {
+	d := xml.NewDecoder(bytes.NewReader(raw))
+	d.Strict = false
+	// A declared encoding is taken as the bytes are. A label with no decoder
+	// still leaves the names and the hrefs readable.
+	d.CharsetReader = func(_ string, in io.Reader) (io.Reader, error) { return in, nil }
+	return d.Decode(into)
+}
+
+// resolve turns an href into an archive path, relative to the directory the
+// document holding it sits in.
+func resolve(base, href string) string {
+	if href == "" {
+		return ""
+	}
+	if unescaped, err := url.PathUnescape(href); err == nil {
+		href = unescaped
+	}
+	if strings.HasPrefix(href, "/") {
+		return path.Clean(strings.TrimPrefix(href, "/"))
+	}
+	return path.Join(base, href)
+}
+
+// splitHref separates the document an href names from the place inside it.
+func splitHref(href string) (target, fragment string) {
+	target, fragment, _ = strings.Cut(href, "#")
+	return target, fragment
+}
+
+// hasToken reports whether a space-separated attribute carries a value.
+func hasToken(attribute, token string) bool {
+	for _, field := range strings.Fields(attribute) {
+		if strings.EqualFold(field, token) {
+			return true
+		}
+	}
+	return false
+}

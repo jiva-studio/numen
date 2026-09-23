@@ -1,0 +1,148 @@
+package container
+
+import (
+	"sync"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/theme"
+)
+
+// Themes is what a person may dress the window in: the catalogue of themes, and
+// the settings file a choice out of it is written into.
+//
+// An error here is the themes folder — a machine that names no configuration
+// folder, a folder that could not be made — and what the binary ships is
+// offered either way. Whatever a person is told is told through say.
+func (c Config) Themes(say func(string)) (*theme.Service, error) {
+	catalogue, err := c.catalogue()
+	return &theme.Service{
+		Catalogue: catalogue,
+		Settings: appearances{
+			cfg:  c,
+			said: &scales{drawn: c.InterfaceScale, set: c.TextScale},
+			say:  say,
+		},
+		InterfaceScaleBounds: theme.Bounds{
+			Least: settings.InterfaceScaleBounds.Least, Most: settings.InterfaceScaleBounds.Most,
+		},
+		TextScaleBounds: theme.Bounds{
+			Least: settings.TextScaleBounds.Least, Most: settings.TextScaleBounds.Most,
+		},
+	}, err
+}
+
+// appearances is the settings file as the themes reach it, with what the
+// command line said about size standing over what the file holds.
+type appearances struct {
+	cfg  Config
+	said *scales
+	say  func(string)
+}
+
+func (a appearances) Read() (theme.Appearance, error) { return a.cfg.readAppearance(a.said) }
+
+func (a appearances) Write(chosen theme.Appearance) error { return a.cfg.wear(chosen, a.said) }
+
+func (a appearances) Warn(why string) {
+	if a.say != nil {
+		a.say(why)
+	}
+}
+
+// scales is what the command line said about size. Each stands over the file
+// until a person chooses that size themselves, and zero is not said.
+type scales struct {
+	mu         sync.Mutex
+	drawn, set float64
+}
+
+// apply puts what was said this launch over what the file holds.
+func (l *scales) apply(worn *theme.Appearance) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.drawn > 0 {
+		worn.InterfaceScale = l.drawn
+	}
+	if l.set > 0 {
+		worn.TextScale = l.set
+	}
+}
+
+// clearSizes lets go of what was said this launch about a size a person has now
+// chosen for themselves.
+func (l *scales) clearSizes(chosen theme.Appearance) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if chosen.InterfaceScale > 0 {
+		l.drawn = 0
+	}
+	if chosen.TextScale > 0 {
+		l.set = 0
+	}
+}
+
+func (c Config) catalogue() (theme.Catalogue, error) {
+	if c.ThemesPath != "" {
+		return theme.OpenAt(c.ThemesPath)
+	}
+	if folder, chosen := c.getPathBeside("themes"); chosen {
+		return theme.OpenAt(folder)
+	}
+	return theme.Open()
+}
+
+// readAppearance and wear are the settings file as the themes need it: one
+// section of it read, and up to four fields of it written.
+func (c Config) readAppearance(said *scales) (theme.Appearance, error) {
+	path, err := c.settingsFile()
+	if err != nil {
+		return theme.Appearance{}, err
+	}
+	held, err := c.getSettingsAt(path)
+	if err != nil {
+		return theme.Appearance{}, err
+	}
+	worn := theme.Appearance{
+		ThemeName:      held.Appearance.Theme,
+		Mode:           settings.Mode(held.Appearance.Mode),
+		InterfaceScale: held.Appearance.InterfaceScale,
+		TextScale:      held.Appearance.TextScale,
+	}
+	said.apply(&worn)
+	return worn, nil
+}
+
+// wear writes a choice into the file. Both sizes are checked before any of it
+// is written, so a number outside what its setting goes to leaves the file as
+// it stands.
+func (c Config) wear(chosen theme.Appearance, said *scales) error {
+	path, err := c.settingsFile()
+	if err != nil {
+		return err
+	}
+	writing := []settings.Setting{
+		{At: []string{"appearance", "theme"}, Written: chosen.ThemeName},
+		{At: []string{"appearance", "mode"}, Written: settings.Word(chosen.Mode)},
+	}
+	if chosen.InterfaceScale > 0 {
+		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)
+		if err != nil {
+			return err
+		}
+		writing = append(writing,
+			settings.Setting{At: []string{"appearance", "interface_scale"}, Written: chosen.InterfaceScale})
+	}
+	if chosen.TextScale > 0 {
+		if err := settings.TextScaleBounds.Check("appearance.text_scale", chosen.TextScale); err != nil {
+			return err
+		}
+		writing = append(writing,
+			settings.Setting{At: []string{"appearance", "text_scale"}, Written: chosen.TextScale})
+	}
+	into := DefaultSettings()
+	if err := settings.Save(path, &into, writing...); err != nil {
+		return err
+	}
+	said.clearSizes(chosen)
+	return nil
+}

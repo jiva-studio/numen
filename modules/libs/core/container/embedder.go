@@ -1,0 +1,128 @@
+package container
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/gomlx"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/onnx"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedders"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+)
+
+// Embedders are what makes the vectors a vault is searched by and what makes
+// the vector a question is asked with.
+//
+// They are one model where the settings name one provider. Naming a provider
+// for questions is what puts a vault indexed over a network within reach of a
+// machine that has none, and the two are held to being one model behind this.
+//
+// An embedder is optional: an installation naming no provider answers with
+// nothing. A provider that cannot be built — no key, no base URL — is a
+// reason, and nothing is built at all.
+func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
+	first, why := c.provider(c.Embedding.Indexing)
+	if why != nil {
+		return nil, nil, nil, why
+	}
+	second, why := c.provider(c.Embedding.Query)
+	if why != nil {
+		return nil, nil, nil, why
+	}
+	indexing, asking, closer = embedders.Open(ctx, tasks, first, second)
+	return indexing, asking, closer, nil
+}
+
+// Embedder is what makes the vectors a vault is searched by, waited for. A run
+// with nowhere to show that a model is arriving waits for it instead.
+func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, error) {
+	held, err := c.provider(c.Embedding.Indexing)
+	if err != nil {
+		return nil, nil, err
+	}
+	embedder, closer := embedders.OpenOne(ctx, held)
+	return embedder, closer, nil
+}
+
+// OpenQuestionEmbedder is what embeds a question, for a run that fills no
+// index. Only the provider that answers questions is opened, and it answers
+// under the identity the index is filled with.
+func (c Config) OpenQuestionEmbedder(ctx context.Context) (port.Embedder, func() error, error) {
+	held, err := c.provider(c.Embedding.GetQueryProvider())
+	if err != nil {
+		return nil, nil, err
+	}
+	embedder, closer := embedders.OpenOne(ctx, held)
+	return embedder, closer, nil
+}
+
+// NewSearch is the search a question is answered by, put together the one way:
+// the passages, the vault's files, the text read out of books, and the model a
+// question is embedded by.
+//
+// errorHandler is where a half that could not run is said. A search short of
+// the half that asks by meaning is a search the words answer.
+func (c Config) NewSearch(db *Index, asking port.Embedder, errorHandler func(error)) search.Search {
+	return c.NewSearchOver(db.Passages(), asking, errorHandler)
+}
+
+// NewSearchOver is that search over the passages given, for a run that holds
+// the index open for asking alone.
+func (c Config) NewSearchOver(passages port.PassageQueries, asking port.Embedder, errorHandler func(error)) search.Search {
+	return search.New(passages, c.VaultReaders(), c.GetDerivedStores(), c.TextExtractor(),
+		asking, c.Embedding.Floor, errorHandler)
+}
+
+// provider is which adapter answers for one half of the work, under the
+// identity the index is filled with and the name that half is reached by.
+//
+// Nothing for a provider that names neither kind. A word that is neither is a
+// word nobody implements: left to mean nothing, it is a vault searched by its
+// words and no reason given.
+func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
+	is := c.Embedding.GetStoredModel()
+	switch where.Use {
+	case embed.UseService:
+		service, _ := where.Service()
+		client, err := openai.New(is, service)
+		if err != nil {
+			return embedders.Provider{}, err
+		}
+		return embedders.NewReached(is, service.Name, client), nil
+
+	case embed.UseLocal:
+		local, _ := where.Local()
+		open, err := openLocal(is, local)
+		if err != nil {
+			return embedders.Provider{}, err
+		}
+		return embedders.NewFetched(is, local.Name, open), nil
+
+	case "":
+		return embedders.Provider{}, nil
+	}
+	return embedders.Provider{}, fmt.Errorf("vectors are made %q, and they are made %q or %q",
+		where.Use, embed.UseLocal, embed.UseService)
+}
+
+// openLocal is the engine that runs the model on this machine. A desktop runs
+// it through ONNX Runtime; a platform the runtime is not published for runs it
+// on the backend written in Go, which the settings may also ask for by name.
+func openLocal(is port.EmbeddingModel, cfg embed.LocalModel) (embedders.OpenModel, error) {
+	switch cfg.GetEngine() {
+	case embed.EngineRuntime:
+		return func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {
+			return onnx.Open(ctx, is, cfg, tell)
+		}, nil
+	case embed.EnginePureGo:
+		return func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error) {
+			return gomlx.Open(ctx, is, cfg, tell)
+		}, nil
+	}
+	return nil, fmt.Errorf("a model is run on %q, and it is run on %q or %q",
+		cfg.GetEngine(), embed.EngineRuntime, embed.EnginePureGo)
+}
