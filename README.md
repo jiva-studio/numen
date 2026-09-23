@@ -8,19 +8,11 @@
 
 <br>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/window-writing-dark.webp">
-  <source media="(prefers-color-scheme: light)" srcset="docs/assets/window-writing-light.webp">
-  <img alt="Numen desktop workspace" src="docs/assets/window-writing-dark.webp" width="920">
-</picture>
+<img alt="Numen desktop workspace" src="modules/apps/landing/src/assets/window-filing-light.webp" width="920">
 
 </div>
 
----
-
 Numen brings your writing, reference library, and spaced repetition into a single desktop application that runs entirely offline.
-
----
 
 ## Features
 
@@ -39,8 +31,6 @@ Create flashcard decks using Markdown headings directly inside your notes. Revie
 ### Local AI assistant
 Query your vault, discover connections, and draft flashcards using an optional assistant that operates through local tools without transmitting data over the network.
 
----
-
 ## Downloads
 
 Numen is available as a native desktop application for macOS, Windows, and Linux.
@@ -55,15 +45,11 @@ Numen is available as a native desktop application for macOS, Windows, and Linux
 | **Linux** | Flatpak | [numen-linux-amd64.flatpak](https://numen-dl.b-cdn.net/latest/numen-linux-amd64.flatpak) |
 | **Linux** | Standalone Tarball (`.tar.gz`) | [numen-linux-amd64.tar.gz](https://numen-dl.b-cdn.net/latest/numen-linux-amd64.tar.gz) |
 
----
-
 ## Resources
 
 - [User Manual](https://docs.numen.md) — Guides on vault setup, syntax, and card scheduling.
 - [Community Forum](https://forum.numen.md) — Workflows, discussions, and feature requests.
 - [GitHub Repository](https://github.com/jiva-studio/numen) — Source code, issue reports, and roadmap.
-
----
 
 ## License
 
