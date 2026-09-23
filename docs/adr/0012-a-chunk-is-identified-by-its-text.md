@@ -1,0 +1,41 @@
+# A chunk is identified by its text
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Applies to:** `modules/libs/core`
+- **Related:** [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [A source is text in one table](0010-a-source-is-text-in-one-table.md), [Text is cut twice](0011-text-is-cut-twice.md), [The vector index stays inside SQLite](0013-the-vector-index-stays-inside-sqlite.md), [One search, three rankings, merged by rank](0014-one-search-three-rankings.md), [A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
+
+## Context
+
+A source is cut again whenever its file changes, and a note changes at every keystroke. What hangs on a chunk — its full-text row, its vector — is worth more than the chunk, so what makes two cuts of one text the same chunk has to be settled before either is written.
+
+## Decision
+
+### A chunk carries the SHA-256 of its text
+
+Cutting a source again is a comparison against that column.
+
+A chunk whose hash is on a row of this source **keeps that row**, its vector and its full-text row. A chunk whose hash is on no row is a new chunk. A row whose hash is in no chunk is a chunk that is gone.
+
+**A row is claimed once**, so text occurring twice in one source is two rows and stays two. **A large chunk and a chunk inside one are two populations**, so the same text cut at both sizes is a row at each.
+
+The text is hashed and indexed. No table holds a copy of it.
+
+### `start` and `length` are where a chunk is
+
+They are what a passage is read back through, and they move. On a row that kept its identity they are updated to where its text now stands, along with the large chunk it now sits inside.
+
+## Consequences
+
+- Which of two identical passages keeps which row is whichever order the rows come back in, so a cut can move both and embed neither.
+- A note edited at the top keeps every row below it and pays a hash of each.
+- An offset into text that has changed reads out the wrong place, and the next scan is what mends it.
+- A source whose text is unchanged is cut into the rows it already had, and the comparison is what says so.
+
+## Alternatives considered
+
+**Keep `start` and `length` as a chunk's key.** Rejected: an offset moves when anything above it changes, so a keystroke at the top of a note asks the model for every chunk below it, and the note being typed into is the one that costs most.
+
+**Delete a source's chunks and write the cut again.** Rejected: every chunk loses its row and its full-text row, and a chunk that is word for word what it was comes back as a new one.
+
+**Hash both cuts into one population.** Rejected: a large chunk whose text is also a small chunk would collapse to one row, and the chunk a result shows would have no row of its own.

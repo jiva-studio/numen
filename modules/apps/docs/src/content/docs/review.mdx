@@ -1,0 +1,124 @@
+---
+title: Review
+description: The flashcards window — what is due today, one card at a time, and the preset that decides how much a day holds.
+---
+
+import Shot from '../../components/Shot.astro'
+
+Cards are written occasionally and run daily, so running them is a window of its own. **Flashcards** ships beside the editor, over the same vaults and the same folder, and it opens on what you owe today. A person who only ever answers cards need not know an editor exists.
+
+## What is due
+
+<Shot
+  name="decks"
+  alt="The flashcards window: a year of answering as a grid of weeks, the goals of the vault, and the decks with what each owes today."
+  caption="The year behind you, the goals of the vault, and what each deck owes today."
+/>
+
+It opens on the vaults it knows and what is due in each; pick one and you get its decks. The whole vault is the ordinary way to sit down, and it is the one button filled in; a deck below it is for the day you came for that deck.
+
+The grid at the top is what you answered on each day, with the weeks still to come after it, so what is landing on you next month is visible before it lands.
+
+A tile stands for each [preset](#a-preset) that schedules something: what it is aiming at, how far through today it is, and what starting a session on it would ask. A deck says how much of it stands learned, what it owes, or why it owes nothing — its preset's day is spent, or the day held none of its cards.
+
+## A session
+
+<Shot
+  name="session"
+  alt="The flashcards window: one card with its answer showing and the four ways of answering it under it."
+  caption="One card, four answers, and how long each of them buys you."
+/>
+
+One card at a time, and four ways of answering it. Under each answer is how long it sends the card away for, so choosing between the four is choosing between those.
+
+| | |
+| --- | --- |
+| <kbd>Space</kbd> | show the answer |
+| <kbd>1</kbd> – <kbd>4</kbd> | Again, Hard, Good, Easy |
+| <kbd>U</kbd> | take the last answer back |
+| <kbd>Esc</kbd> | leave the session |
+
+The card can be taken sideways: **Read** brings the note the deck is joined to in beside it, and **Ask** puts the agent there — both without leaving the session. A link inside a card opens the reading at the note it names.
+
+A card is read here and answered here, and nothing else is done to it. A card written badly is fixed in the editor.
+
+## A preset
+
+<Shot
+  name="preset"
+  alt="The numen window: a preset, with the curve of its goal and the settings it schedules by under it."
+  caption="Move the one knob and the curve says what that pace costs and what it buys."
+/>
+
+How much a day holds is a note in the vault, not a setting on the machine: two vaults are two appetites, and one vault holds subjects that want different daily loads. A preset is a note of `type: preset`, and its settings are frontmatter keys.
+
+```markdown
+---
+type: preset
+goal: minutes_a_day
+minutes_a_day: 20
+new_a_day: 8
+reviews_a_day: 45
+retention: 0.87
+load:
+  sat: 50
+  sun: 0
+even_load: true
+---
+
+# Sanskrit
+
+Grammar and vocabulary. Three decks point here.
+```
+
+A [deck](/cards/) names its preset with a link, and several decks may point at one. A deck naming no preset is scheduled by the defaults.
+
+Open a preset in the editor and it has a tab of its own: one control at the top — the curve of its goal — and the settings it schedules by under it. Move the knob and the curve says what that pace asks of you, what it buys, and when the backlog clears. Nothing is written while it moves.
+
+### The goal
+
+`goal` names which of three steers the preset, and that budget is the only one that closes a day.
+
+| | |
+| --- | --- |
+| `minutes_a_day` | the day is spent against the time each answer took. |
+| `retention` | the target sets the intervals, and the two card counts close the day. |
+| `by_date` | the day holds what has to be got through to have the material learned by that day. Neither the minutes nor the counts cut it short. |
+
+A setting the goal does not name keeps its value and takes no part. Set a card limit last month, choose a goal that does not read it, and you find it where you left it.
+
+A governing budget of zero is a pause: the preset schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own.
+
+### What counts as learned
+
+`learned` names the rule the preset counts by. Under `interval` a card is learned once it is being asked for at long range — the interval reaches `interval` days. Under `retention` it is learned while the chance of recalling it today stands at or above the target.
+
+Learned is a state, not a milestone: a lapse takes a card back out of it.
+
+A goal of a date aims at this rule, tested on the day it names. The pace follows from the rule, so the same material and the same date are two paces. What no pace can reach — a card added a fortnight before a day it must stand three weeks away from — is counted and said, and the day is not moved for it.
+
+### What a day is spent on
+
+`counts: cards` is the default: a card counts against the day the first time it is answered that day, and every further showing is free. `counts: shows` spends a slot on every showing, which is the setting for a subject whose cards take four steps to settle. Minutes are spent on every showing either way.
+
+`backlog` is how much of a day goes to the overdue pile before anything new is offered, in per cent. 100 is the debt first, 0 is new cards first. A side that runs short leaves the rest of the day to the other, so a day is never left unspent.
+
+### The days of the week
+
+`load` is how much of a day's load each day of the week carries, in per cent, under the first three letters of its name. A day the preset does not name carries the whole of it, and a day at nothing is a pause of that one day.
+
+`even_load` says whether a card may be moved off the day it fell on. With it on, the day inside the tolerance around the interval is chosen by weight — a lighter day pulls harder. With it off the card lands where the scheduler put it, and a day that will not admit it picks it up the next morning.
+
+### Several decks, one day
+
+A preset's day is handed out over the decks it schedules before any of it is spent, in proportion to what each owes. Adding a deck does not add to the day's work; it spreads the same work over more decks. Raising the work is raising the budget.
+
+So the row on the front door and the session over one deck are the same number, and taking your decks in any order spends the one day.
+
+## When a day begins
+
+The hour a day of review begins at is `review.day_starts` in [the settings file](/settings/) — a fact about your clock rather than about a subject. An answer given before it is written into the day before.
+
+## What it never touches
+
+Flashcards reads the vault list and never writes it, so what the editor last recorded stands. It writes into your decks in one case only: a deck holding a card with no mark is written once when you sit down to that vault, which gives every card in it a [mark](/cards/#a-deck) to record answers against.

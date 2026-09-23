@@ -1,0 +1,116 @@
+# One process, one lifetime
+
+- **Status:** Accepted
+- **Date:** 2026-08-25
+- **Applies to:** `modules/apps/desktop`
+- **Related:** [A hexagonal core in Go](0004-a-hexagonal-core-in-go.md), [A vault is scanned in the background](0008-a-vault-is-scanned-in-the-background.md), [The application writes to the vault](0017-the-application-writes-to-the-vault.md), [An agent reaches the vault through tools](0021-an-agent-reaches-the-vault-through-tools.md), [The agent this application starts is a port](0022-the-agent-this-application-starts-is-a-port.md)
+
+## Context
+
+Every change to a note is a read, a think and a write. An agent's edit is that shape, so is the link repair a move leaves in another note, and so is the save that carries what a person is typing. Each is correct only where its read and its rename are one act against the others.
+
+The window is one operating-system process. That process is the boundary all of this is held inside, and it is also what ends: a quit has to leave the vault and the index in a state the next opening can read.
+
+What a person is asked when the window goes — a tab whose save stopped, calling the quit off, a tab put off — is in [editing](../editing.md).
+
+## Decision
+
+### One vault has one write lock
+
+A vault has one write lock, kept per vault root and keyed by the folder resolved through its symlinks, so every writer and every reader opened on one folder takes the same lock. A path that cannot be resolved is its own key: what is asked for is what is locked.
+
+The index's single write connection is a different lock over a different thing. This one is the vault's.
+
+### It is taken before the read and held past the rename
+
+Every operation that reads a note and puts it back holds it across both: an agent's edit, the save of typed text, and the repair of a link a move left pointing at nothing.
+
+**A create, a removal and the rename a move is take nothing.** Each is one filesystem call over one name. Renaming a note is not one of them: it writes the title inside the file, so it takes the lock like any other write, and so does each backlink a move repairs.
+
+**The lock lives in this process.** Two windows on one vault hold a lock each, and that is the limit of what it serialises. A file synchroniser takes no part in it at all.
+
+### The window goes in one order
+
+```mermaid
+sequenceDiagram
+    participant W as window
+    participant P as page
+    participant A as agents
+    participant S as scan and follower
+    participant D as database
+
+    W->>W: out of sight
+    Note over W: at once
+    W->>P: write what only you hold
+    P-->>W: written
+    Note over W,P: 3 s
+    W->>W: the writes already taken
+    Note over W: no bound
+    W->>A: end each process group
+    W->>A: close the transport
+    A-->>W: cut off
+    Note over W,A: 2 s
+    W->>A: the calls already running
+    Note over W,A: no bound
+    W->>S: stop
+    S-->>W: stopped
+    W->>D: close
+```
+
+The order is what each part needs from the next: the page holds text nothing else has, an agent writes through the core, the scan and the follower write to the index, and the database is what they write into.
+
+**The window leaves the screen the moment it is asked to go, and the order runs behind it.** A hidden window is a page still drawing and still answered, so it hands over what only it holds with nothing in front of a person. The window is destroyed once the settling is over.
+
+**A settling that ends with a question standing puts the window back.** The question is asked on the screen the person is looking at, and the close is asked for again once they have answered.
+
+**A page has three seconds to hand over what it holds.** A page whose script has stopped answers never, and this is what that costs.
+
+**The agents' transport has two seconds to be cut off.** A session an agent left open holds its connection until it is closed under it. The calls already running are waited for afterwards with no bound.
+
+**The writes already taken are waited for with no bound.** The door is shut first, so what is left is a fixed set of filesystem operations.
+
+A quit that does not arrive through the window is answered on the thread the page is served on, so the window is taken out of sight off that thread and the quit is asked for again once the settling is over. It happens once, whichever way the window is asked to go.
+
+### One ONNX Runtime, made before the window
+
+A model is run through an ONNX Runtime engine made once and kept for the life of the process. Reading a page and listening to a recording ask one package for it: the first to ask makes it, and every caller after is handed that one. Which of them asks first settles nothing.
+
+**It is made before the window**, and a reading is refused where it was not: the binding stamps onto a tensor the engine that stood when the tensor was built, so a page read through an engine made after the window is read as nothing. A transcription refuses nothing on that account.
+
+**The reading library makes an engine of its own**, and it takes none: it is not written here and offers no way to be handed one. So it is made where this process settles its runtime, not on the first page. The binding gives every tensor to the engine made last, and one made on the first page would move what a transcription already running had been building its tensors through. Both engines load the same file, and which of the two a tensor carries is settled once, before there is a tensor to lose.
+
+A machine holding no runtime at all is left as it is, and a reading is what fetches one. The reading that fetched it says so, and the document is the next opening's to read.
+
+### What is loaded is what was published
+
+The runtime is published as one archive for each platform, and this build carries the sum of that archive and the sum of the library inside it. The archive is checked before it is opened, the library before it is left in the fetch directory, and a library already sitting there is checked again before it is offered: one carrying another sum is written over. A library the machine holds anywhere else is the machine's own, and is loaded as it stands.
+
+A runtime and a model alike are fetched over `https`, and a redirect to any other scheme is refused. A model carries no published sum: a model is what the address naming it served, and a changed address is a different file.
+
+### An agent does not outlive the window
+
+Each agent runs in a process group of its own, and the group is ended with the window. A task in flight stops where it is, and what it had already written to the vault stays written.
+
+A grandchild holding the child's error output keeps a wait from returning, so the pipes are let go of two seconds after the group is ended. This is the fourth bound on the machine.
+
+## Consequences
+
+- There is no lock between two processes on one vault: two windows, or a window and the command line, interleave their reads and renames.
+- A create, a move and a removal are not serialised against a save, so a note renamed while a save is in the air leaves the tab at the name it was read from.
+- A page that says nothing inside its bound loses what only it held.
+- The process outlives the window on the screen, and on macOS the dock tile stays lit until it ends.
+- A close a page calls off is a window that went and came back.
+- A machine that fetched its runtime during a reading reads that document at the next opening, and is told so where the reading was asked for.
+- A file dropped into the fetch directory under the library's name is written over by the published one.
+- A process that reads pages holds two ONNX Runtime engines, this one and the reading library's, and nothing can bring that to one until the library will take an engine it is given.
+- Moving to another runtime version is new sums in the build, and every machine fetches again.
+- A note an agent was part of the way through writing is whatever its last complete write left.
+- Every bound here is a constant, and nothing measures what any of them is a bound on. A subprocess arriving with a feature of its own brings another, and nothing counts them.
+
+## Alternatives considered
+
+**A lock file in the vault**, so that two processes serialise. Rejected for now: a lock a crashed process leaves behind is a vault nothing can write to, and the recovery is a person deleting a file they were never told about. The gap it would close is written above as a cost.
+
+**One lock for the whole installation.** Rejected: one database holds every vault, and the writes here are to files, so two vaults have nothing to queue behind each other for.
+
+**Let an agent finish, and keep the process alive until it does.** Rejected: the window is gone, nothing is drawing what the agent says, and the tools it writes through are served by the process that is leaving.

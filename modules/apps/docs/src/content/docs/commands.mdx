@@ -1,0 +1,104 @@
+---
+title: Commands
+description: Everything the window can do, as the palette offers it — over the note in front of you, over the file, over the window, and over the vault.
+---
+
+import Shot from '../../components/Shot.astro'
+
+<kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> opens the commands. Type to narrow the list, <kbd>↑</kbd>
+<kbd>↓</kbd> to walk it, <kbd>Enter</kbd> to run what is highlighted.
+
+<Shot
+  name="commands"
+  alt="The commands panel listing commands, each with the keystroke that reaches it drawn on its row."
+  caption="A command that has a key of its own says so on its row, so the keyboard is learned by using the list."
+/>
+
+The same list is on a node in the [plex](/plex/): right-click one, or press <kbd>⇧</kbd>
+<kbd>F10</kbd> on it, and what you get is the commands over that note.
+
+## What a command asks for
+
+A command that needs something asks for it in the same panel, one step at a time — a name to
+call a note, a note to go to, a vault to open, a value to choose. <kbd>Backspace</kbd> in the
+empty field steps back, <kbd>Escape</kbd> leaves.
+
+Some ask you to confirm rather than to type: forgetting a vault says the folder stays, deleting
+the transcript of a recording says the words go and it can be transcribed again. Destroying a
+note and erasing a vault make you type the name first.
+
+The bands say what a command acts on: **this note**, **this file** — the runs a recording or a
+scan carries — **this window**, and **this vault**.
+
+A command that cannot act on what is in front of you stays on the list and says why —
+*nothing in front of you is a note*, *the vault is still being read* — rather than quietly
+disappearing.
+
+## Every command
+
+{/* BEGIN AUTOGEN */}
+### This note
+
+| | |
+| --- | --- |
+| Open the note |  |
+| Open beside |  |
+| Show in plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> |
+| New child note | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>C</kbd> |
+| New parent note |  |
+| New jump note |  |
+| Change title |  |
+| Remove note |  |
+| Destroy note |  |
+| Ask the agent |  |
+| Copy path |  |
+| Show this note in the files |  |
+| Open the preset |  |
+
+### This file
+
+| | |
+| --- | --- |
+| Transcribe this recording |  |
+| Download the text again |  |
+| Download a copy |  |
+| Proofread the transcript of this recording |  |
+| Delete the transcript of this recording |  |
+| Delete the copy on this disk |  |
+| Recognise the text of this document |  |
+
+### This window
+
+| | |
+| --- | --- |
+| New note | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>N</kbd> |
+| New deck |  |
+| New stencil |  |
+| New preset |  |
+| Import an address |  |
+| New plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> |
+| Show the files of the vault |  |
+| New agent | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> |
+| Close this tab | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> |
+| Search the vault | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> |
+| Change the theme |  |
+| Light or dark |  |
+| Interface size |  |
+| Reading font size |  |
+| Sync title and filename |  |
+| Hang the parts of a note under its node |  |
+| How many parts a node hangs |  |
+| Settings |  |
+
+### This vault
+
+| | |
+| --- | --- |
+| Go to the note the vault opens with |  |
+| Go to a note | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>G</kbd> |
+| Open vault |  |
+| New vault | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>N</kbd> |
+| Rename vault |  |
+| Forget vault |  |
+| Erase vault |  |
+{/* END AUTOGEN */}
