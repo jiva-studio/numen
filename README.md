@@ -37,13 +37,13 @@ Numen is available as a native desktop application for macOS, Windows, and Linux
 
 | Platform | Format | Direct Download |
 |:---|:---|:---|
-| **macOS** | Universal (`Apple Silicon` & `Intel`) | [numen-macos.dmg](https://numen-dl.b-cdn.net/latest/numen-macos.dmg) |
-| **Windows** | Installer (`x64`) | [numen-windows-setup.exe](https://numen-dl.b-cdn.net/latest/numen-windows-setup.exe) |
-| **Windows** | Portable (`x64 · zip`) | [numen-windows-amd64.zip](https://numen-dl.b-cdn.net/latest/numen-windows-amd64.zip) |
-| **Linux** | Debian / Ubuntu (`.deb`) | [numen-linux-amd64.deb](https://numen-dl.b-cdn.net/latest/numen-linux-amd64.deb) |
-| **Linux** | Fedora / RHEL (`.rpm`) | [numen-linux-amd64.rpm](https://numen-dl.b-cdn.net/latest/numen-linux-amd64.rpm) |
-| **Linux** | Flatpak | [numen-linux-amd64.flatpak](https://numen-dl.b-cdn.net/latest/numen-linux-amd64.flatpak) |
-| **Linux** | Standalone Tarball (`.tar.gz`) | [numen-linux-amd64.tar.gz](https://numen-dl.b-cdn.net/latest/numen-linux-amd64.tar.gz) |
+| **macOS** | Universal (`Apple Silicon` & `Intel`) | [numen-macos.dmg](https://dl.numen.md/latest/numen-macos.dmg) |
+| **Windows** | Installer (`x64`) | [numen-windows-setup.exe](https://dl.numen.md/latest/numen-windows-setup.exe) |
+| **Windows** | Portable (`x64 · zip`) | [numen-windows-amd64.zip](https://dl.numen.md/latest/numen-windows-amd64.zip) |
+| **Linux** | Debian / Ubuntu (`.deb`) | [numen-linux-amd64.deb](https://dl.numen.md/latest/numen-linux-amd64.deb) |
+| **Linux** | Fedora / RHEL (`.rpm`) | [numen-linux-amd64.rpm](https://dl.numen.md/latest/numen-linux-amd64.rpm) |
+| **Linux** | Flatpak | [numen-linux-amd64.flatpak](https://dl.numen.md/latest/numen-linux-amd64.flatpak) |
+| **Linux** | Standalone Tarball (`.tar.gz`) | [numen-linux-amd64.tar.gz](https://dl.numen.md/latest/numen-linux-amd64.tar.gz) |
 
 ## Resources
 
