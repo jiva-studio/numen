@@ -35,8 +35,87 @@ linters:
     - staticcheck
     - unused
     - revive
+    - depguard
+    - cyclop
+    - gocognit
+    - nestif
+    - funlen
+    - nakedret
 
   settings:
+    cyclop:
+      max-complexity: 15
+
+    gocognit:
+      min-complexity: 15
+
+    nestif:
+      min-complexity: 4
+
+    funlen:
+      lines: 80
+      statements: 50
+
+    nakedret:
+      max-func-lines: 5
+
+    depguard:
+      rules:
+        domain:
+          list-mode: lax
+          files:
+            - "**/domain/**"
+            - "**/domain.go"
+          allow:
+            - "net/url"
+            - "net/netip"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/adapter"
+              desc: "the domain does not reach adapters"
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/internal/adapter"
+              desc: "the domain does not reach adapters"
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/usecase"
+              desc: "the domain does not reach use cases"
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/container"
+              desc: "the domain does not reach the composition root"
+            - pkg: "os"
+              desc: "the domain performs no I/O"
+            - pkg: "net"
+              desc: "the domain performs no I/O"
+
+        usecase:
+          list-mode: lax
+          files:
+            - "**/usecase/**"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/adapter"
+              desc: "a use case does not reach concrete adapters"
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/internal/adapter"
+              desc: "a use case does not reach concrete adapters"
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/container"
+              desc: "a use case does not reach the composition root"
+
+        driven-adapter:
+          list-mode: lax
+          files:
+            - "**/adapter/index/**"
+            - "**/adapter/settings/**"
+            - "**/adapter/agent/**"
+            - "**/internal/adapter/appstate/**"
+            - "**/internal/adapter/download/**"
+            - "**/internal/adapter/embed/**"
+            - "**/internal/adapter/filesystem/**"
+            - "**/internal/adapter/pdf/**"
+            - "**/internal/adapter/proofreading/**"
+            - "**/internal/adapter/recognition/**"
+            - "**/internal/adapter/transcription/**"
+            - "**/internal/adapter/trash/**"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/usecase"
+              desc: "a driven adapter stands behind a port and runs no scenario"
+            - pkg: "github.com/jiva-studio/numen/modules/libs/core/container"
+              desc: "an adapter is given what it needs and assembles nothing"
+
     errcheck:
       # A type assertion that fails is a panic, and the core does not panic.
       check-type-assertions: true
@@ -220,7 +299,7 @@ linters:
       # it names the fields it is about: a model given a name and no width is a
       # test of what a name does, and the width would say nothing in it.
       - path: (_test\.go|(^|/)internal/testsupport/)
-        linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose, exhaustive, exhaustruct]
+        linters: [forbidigo, errcheck, noctx, contextcheck, bodyclose, exhaustive, exhaustruct, depguard, cyclop, gocognit, nestif, funlen, nakedret]
 
       # What was taken is let go, and the kernel drops a lock and a model's
       # memory however the process ends. What letting go could not do is nobody's
@@ -274,3 +353,34 @@ linters:
       - path: (^|/)(adapter/cli|cmd)/
         text: writes to no stream of its own
         linters: [forbidigo]
+
+      # Filename normalization maps reserved characters and runes.
+      - path: (^|/)domain/filename\.go$
+        linters: [cyclop]
+
+      # Tool definitions declare MCP schemas and dispatch handlers inline.
+      - path: (^|/)adapter/mcp/
+        linters: [cyclop, gocognit, funlen]
+
+      # Document format decoders, markdown parsers, and debounce workers
+      # traverse token streams and event queues.
+      - path: (^|/)(internal/epub/|markdown/|flashcards/format/|internal/adapter/filesystem/debounce\.go)
+        linters: [cyclop, gocognit, nestif, funlen]
+
+      # Spaced repetition simulation tracks card queues and review buckets.
+      - path: (^|/)flashcards/review/
+        linters: [cyclop, gocognit, nestif, funlen]
+
+      # Text alignment computes distance and similarity across transcript batches.
+      - path: (^|/)proofread/
+        linters: [cyclop, gocognit, nestif]
+
+      # Business use cases coordinate multi-step workflows, port calls,
+      # and error recovery for a scenario.
+      - path: (^|/)usecase/
+        linters: [cyclop, gocognit, nestif, funlen]
+
+      # Adapters and application entry points wire external technologies,
+      # drivers, CLI flags, and window lifecycles.
+      - path: (^|/)(adapter/|internal/adapter/|cmd/|bind/|container/|internal/agents/|internal/wire/)
+        linters: [cyclop, gocognit, nestif, funlen]
