@@ -44,6 +44,21 @@ INSTALL ?= npm install
 install: ## fetch every module's dependencies
 	cd $(MODULES) && $(INSTALL)
 
+# Narrows the per-package targets. Examples:
+#   make check-package PKG=core
+#   make check-package PKG=editor
+#   make test-package PKG=core ARGS='-run TestVault'
+PKG ?= core
+ARGS ?=
+
+.PHONY: check-package
+check-package: ## verify a single package (compile, lint, test)
+	./scripts/numen-package-check $(PKG) $(ARGS)
+
+.PHONY: test-package
+test-package: ## run tests for a single package
+	./scripts/numen-package-check --test-only $(PKG) $(ARGS)
+
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript
 	cd $(PROTOCOL) && buf generate
