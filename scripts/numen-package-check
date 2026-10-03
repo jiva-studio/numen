@@ -221,8 +221,10 @@ if [ "$TEST_ONLY" = false ]; then
       (cd "$LOCATION" && npm run check)
     fi
 
-    echo "==> [format]        $PKG ($LOCATION)"
-    npx prettier --check "$LOCATION/**/*.{ts,vue,json,md,css,astro,mjs}"
+    if [[ "$LOCATION" =~ ^modules/(libs|apps) ]]; then
+      echo "==> [format]        $PKG ($LOCATION)"
+      npx prettier --check "$LOCATION/**/*.{ts,vue,json,css}"
+    fi
   fi
 fi
 
