@@ -172,7 +172,7 @@ func (f FSRS) getNextFromNew(one atAnswer, at time.Time, r fsrs.Rating) Schedule
 	case fsrs.Good:
 		out.Due = at.Add(10 * time.Minute)
 	case fsrs.Easy:
-		out.Due = at.Add(days(f.getInterval(out.Stability)))
+		out.Due = at.Add(daysToDuration(f.getInterval(out.Stability)))
 		out.Phase = uint8(fsrs.Review)
 	}
 	return out
@@ -192,11 +192,11 @@ func (f FSRS) getNextFromLearning(one atAnswer, at time.Time, r fsrs.Rating) Sch
 	case fsrs.Hard:
 		out.Due = at.Add(10 * time.Minute)
 	case fsrs.Good:
-		out.Due = at.Add(days(f.getInterval(out.Stability)))
+		out.Due = at.Add(daysToDuration(f.getInterval(out.Stability)))
 		out.Phase = uint8(fsrs.Review)
 	case fsrs.Easy:
 		good := f.getInterval(f.getLearningStability(one.last.Stability, fsrs.Good))
-		out.Due = at.Add(days(math.Max(f.getInterval(out.Stability), good+1)))
+		out.Due = at.Add(daysToDuration(math.Max(f.getInterval(out.Stability), good+1)))
 		out.Phase = uint8(fsrs.Review)
 	}
 	return out
@@ -229,11 +229,11 @@ func (f FSRS) getNextFromReview(one atAnswer, at time.Time, back float64, r fsrs
 	good := math.Max(f.getInterval(f.getStabilityOnRecall(d, s, back, fsrs.Good)), hard+1)
 	switch r {
 	case fsrs.Hard:
-		out.Due = at.Add(days(hard))
+		out.Due = at.Add(daysToDuration(hard))
 	case fsrs.Easy:
-		out.Due = at.Add(days(math.Max(f.getInterval(out.Stability), good+1)))
+		out.Due = at.Add(daysToDuration(math.Max(f.getInterval(out.Stability), good+1)))
 	default:
-		out.Due = at.Add(days(good))
+		out.Due = at.Add(daysToDuration(good))
 	}
 	return out
 }
@@ -306,7 +306,7 @@ func (f FSRS) getStabilityOnLapse(d, s, back float64) float64 {
 // clampDifficulty keeps a difficulty inside the scale it is read on.
 func clampDifficulty(d float64) float64 { return math.Min(math.Max(d, 1), 10) }
 
-// days is a whole number of days as a length of time.
-func days(one float64) time.Duration {
+// daysToDuration converts a number of days into a time.Duration.
+func daysToDuration(one float64) time.Duration {
 	return time.Duration(one) * 24 * time.Hour
 }

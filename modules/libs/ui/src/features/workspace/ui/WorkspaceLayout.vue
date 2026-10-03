@@ -18,6 +18,7 @@ import { createNodeIdFactory } from '../lib/identity'
 import { activateTab, closeTab, focusPane, resizeBranch, type NodeIdFactory } from '../lib/edit'
 import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     tabs: readonly Tab[]
@@ -37,6 +38,7 @@ const props = withDefaults(
 
 const workspace = defineModel<Workspace>({ required: true })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /**
    * A close asked for, before anything is applied. A caller that calls `hold`
@@ -62,6 +64,7 @@ const slots = defineSlots<{
   silence(): unknown
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 /** Every slot the caller gave, handed down under the name it was given. */
 const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 
@@ -85,13 +88,14 @@ const { hasMoved, overlay, label, position, landing, press } = useTabDrag({
   getClock: () => props.clock,
 })
 
-function choose(tab: TabId): void {
+/* -------------------------------- Handlers -------------------------------- */
+function onChooseTab(tab: TabId): void {
   if (hasMoved.value) return
   workspace.value = activateTab(workspace.value, tab)
   emit('activate', tab)
 }
 
-function close(tab: TabId): void {
+function onCloseTab(tab: TabId): void {
   let held = false
   emit('close', tab, () => {
     held = true
@@ -101,11 +105,11 @@ function close(tab: TabId): void {
   workspace.value = closeTab(workspace.value, tab)
 }
 
-function claim(pane: NodeId): void {
+function onClaimPane(pane: NodeId): void {
   workspace.value = focusPane(workspace.value, pane)
 }
 
-function resize(branch: NodeId, sizes: readonly number[]): void {
+function onResizeBranch(branch: NodeId, sizes: readonly number[]): void {
   workspace.value = resizeBranch(workspace.value, branch, sizes)
 }
 
@@ -115,11 +119,11 @@ provide(
     tabOf,
     focus: workspace.value.focus,
     minimum: props.minimum,
-    choose,
-    close,
+    choose: onChooseTab,
+    close: onCloseTab,
     lift: press,
-    claim,
-    resize,
+    claim: onClaimPane,
+    resize: onResizeBranch,
     show: (tab: TabId) => emit('show', tab),
   })),
 )
@@ -142,11 +146,11 @@ provide(
       v-else
       :pane="workspace.root"
       :is-focused="workspace.root.id === workspace.focus"
-      @choose="choose"
-      @close="close"
+      @choose="onChooseTab"
+      @close="onCloseTab"
       @lift="press"
       @show="emit('show', $event)"
-      @claim="claim(workspace.root.id)"
+      @claim="onClaimPane(workspace.root.id)"
     >
       <template v-for="name in passed" #[name]="bound">
         <slot :name="name" v-bind="getSlotProps(bound)" />

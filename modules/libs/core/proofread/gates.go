@@ -92,7 +92,7 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, 
 		}
 		// An answer of nothing, or of marks that are not words, over a line that
 		// said something empties it.
-		if len(letters(text)) == 0 && len(letters(was)) > 0 {
+		if len(extractLetters(text)) == 0 && len(extractLetters(was)) > 0 {
 			return nil, false, false
 		}
 		// A run answered with what its lines already say is still a change:
@@ -244,7 +244,7 @@ func stripFence(reply string) string {
 // EditDistance is the Levenshtein distance between two lines' letters, as a
 // share of the longer of them. Two lines of no letters stand nowhere apart.
 func EditDistance(a, b string) float64 {
-	x, y := letters(a), letters(b)
+	x, y := extractLetters(a), extractLetters(b)
 	long := len(x)
 	if len(y) > long {
 		long = len(y)
@@ -252,12 +252,12 @@ func EditDistance(a, b string) float64 {
 	if long == 0 {
 		return 0
 	}
-	return float64(edits(x, y)) / float64(long)
+	return float64(countEdits(x, y)) / float64(long)
 }
 
-// letters is what a line says with its spaces, punctuation, symbols, diacritics
+// extractLetters returns what a line says with its spaces, punctuation, symbols, diacritics
 // and case taken off it.
-func letters(line string) []rune {
+func extractLetters(line string) []rune {
 	var out []rune
 	for _, r := range norm.NFD.String(line) {
 		if unicode.Is(unicode.Mn, r) || unicode.IsSpace(r) || unicode.IsPunct(r) || unicode.IsSymbol(r) {
@@ -268,9 +268,9 @@ func letters(line string) []rune {
 	return out
 }
 
-// edits is the Levenshtein distance between two runs of letters, carrying one
+// countEdits returns the Levenshtein distance between two runs of letters, carrying one
 // row of the table at a time.
-func edits(x, y []rune) int {
+func countEdits(x, y []rune) int {
 	row := make([]int, len(y)+1)
 	for j := range row {
 		row[j] = j

@@ -82,7 +82,7 @@ func DefaultAppearance() Appearance {
 
 func DefaultTitles() Titles { return Titles{SyncTitleAndFilename: turnOn()} }
 
-func DefaultReview() Review { return Review{DayStarts: review.Clock(DefaultStarts())} }
+func DefaultReview() Review { return Review{DayStarts: review.Clock(DefaultDayStart())} }
 
 // Path is where the settings live.
 func Path() (string, error) {
@@ -126,9 +126,9 @@ func OpenAt(path string, into Document) error {
 		return err
 	}
 	checkMode(into)
-	if _, hour := into.GetReview().Starts(); !hour {
+	if _, hour := into.GetReview().DayStart(); !hour {
 		say(into, "review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
-			review.Clock(LatestDayStarts), review.Clock(DefaultStarts()))
+			review.Clock(LatestDayStarts), review.Clock(DefaultDayStart()))
 	}
 	return nil
 }

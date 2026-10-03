@@ -239,26 +239,26 @@ describe('a press', () => {
 })
 
 describe('the keyboard', () => {
-  const types = (wrapper: Tree, row: string, key: string, over: Record<string, unknown> = {}) =>
+  const pressKey = (wrapper: Tree, row: string, key: string, over: Record<string, unknown> = {}) =>
     rowIn(wrapper, row).trigger('keydown', { key, ...over })
 
   it('moves the selection a row at a time', async () => {
     const held = mountTree({ selected: ['work'] })
-    await types(held, 'work', 'ArrowDown')
+    await pressKey(held, 'work', 'ArrowDown')
     expect(held.emitted('select')).toStrictEqual([[['plans']]])
   })
 
   it('extends the selection from the anchor with an arrow held down', async () => {
     const held = mountTree({ selected: ['work'] })
     await press(held, 'work')
-    await types(held, 'work', 'ArrowDown', { shiftKey: true })
+    await pressKey(held, 'work', 'ArrowDown', { shiftKey: true })
 
     expect(held.emitted('select')?.at(-1)).toStrictEqual([['work', 'plans']])
   })
 
   it('opens a shut row with the right arrow, and moves the selection nowhere', async () => {
     const held = mountTree({ selected: ['plans'] })
-    await types(held, 'plans', 'ArrowRight')
+    await pressKey(held, 'plans', 'ArrowRight')
 
     expect(held.emitted('open')).toStrictEqual([['plans']])
     expect(held.emitted('select')).toBeUndefined()
@@ -266,13 +266,13 @@ describe('the keyboard', () => {
 
   it('shuts an open row with the left arrow', async () => {
     const held = mountTree({ selected: ['work'] })
-    await types(held, 'work', 'ArrowLeft')
+    await pressKey(held, 'work', 'ArrowLeft')
     expect(held.emitted('close')).toStrictEqual([['work']])
   })
 
   it('climbs to the holder from a row that is shut', async () => {
     const held = mountTree({ selected: ['notes'] })
-    await types(held, 'notes', 'ArrowLeft')
+    await pressKey(held, 'notes', 'ArrowLeft')
 
     expect(held.emitted('select')).toStrictEqual([[['work']]])
     expect(held.emitted('close')).toBeUndefined()
@@ -280,29 +280,29 @@ describe('the keyboard', () => {
 
   it('selects every row that is drawn', async () => {
     const held = mountTree()
-    await types(held, 'notes', 'a', { ctrlKey: true })
+    await pressKey(held, 'notes', 'a', { ctrlKey: true })
 
     expect(held.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
   })
 
   it('asks for the whole selection to go', async () => {
     const held = mountTree({ selected: ['work', 'notes'] })
-    await types(held, 'notes', 'Delete')
-    await types(held, 'notes', 'Backspace')
+    await pressKey(held, 'notes', 'Delete')
+    await pressKey(held, 'notes', 'Backspace')
 
     expect(held.emitted('remove')).toStrictEqual([[['work', 'notes']], [['work', 'notes']]])
   })
 
   it('asks for nothing to go while nothing is selected', async () => {
     const held = mountTree()
-    await types(held, 'notes', 'Delete')
+    await pressKey(held, 'notes', 'Delete')
     expect(held.emitted('remove')).toBeUndefined()
   })
 
   it('puts the row the keyboard stands on into the selection', async () => {
     const held = mountTree({ selected: ['work'] })
     await rowIn(held, 'notes').trigger('focus')
-    await types(held, 'notes', ' ')
+    await pressKey(held, 'notes', ' ')
 
     expect(held.emitted('select')).toStrictEqual([[['work', 'notes']]])
   })
@@ -310,7 +310,7 @@ describe('the keyboard', () => {
   it('takes that row out again where it already stood in it', async () => {
     const held = mountTree({ selected: ['work', 'notes'] })
     await rowIn(held, 'notes').trigger('focus')
-    await types(held, 'notes', ' ')
+    await pressKey(held, 'notes', ' ')
 
     expect(held.emitted('select')).toStrictEqual([[['work']]])
   })
@@ -326,7 +326,7 @@ describe('the keyboard', () => {
 
   it('acts on a row that cannot hold, and opens nothing', async () => {
     const held = mountTree({ selected: ['notes'] })
-    await types(held, 'notes', 'Enter')
+    await pressKey(held, 'notes', 'Enter')
 
     expect(held.emitted('activate')).toStrictEqual([['notes']])
     expect(held.emitted('open')).toBeUndefined()
@@ -334,7 +334,7 @@ describe('the keyboard', () => {
 
   it('turns a row that holds as it acts on it', async () => {
     const held = mountTree({ selected: ['plans'] })
-    await types(held, 'plans', 'Enter')
+    await pressKey(held, 'plans', 'Enter')
 
     expect(held.emitted('activate')).toStrictEqual([['plans']])
     expect(held.emitted('open')).toStrictEqual([['plans']])
@@ -342,7 +342,7 @@ describe('the keyboard', () => {
 
   it('reaches the menu the pointer reaches', async () => {
     const held = mountTree({ selected: ['notes'] })
-    await types(held, 'notes', 'F10', { shiftKey: true })
+    await pressKey(held, 'notes', 'F10', { shiftKey: true })
 
     expect(held.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
   })

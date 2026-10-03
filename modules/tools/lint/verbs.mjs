@@ -101,12 +101,12 @@ export const verbal = (word) => /^.{2,}(ing|ed)$/.test(word) || past.has(word)
  * caller reads them as that library's word rather than as a narrator's.
  */
 const narrators = new Set([
-  'admits', 'allows', 'closes', 'covers', 'crosses', 'deals', 'declares',
+  'admits', 'allows', 'carries', 'closes', 'covers', 'crosses', 'deals', 'declares',
   'divides', 'encloses', 'follows', 'forgets', 'hangs', 'holds', 'joins',
-  'keeps', 'knows', 'lands', 'leads', 'learns', 'lives', 'merges', 'opens',
-  'presses', 'proofreads', 'reaches', 'reckons', 'recognises', 'refuses',
-  'repeats', 'ripens', 'runs', 'says', 'shares', 'sits', 'spends', 'spreads',
-  'stands', 'stops', 'supports', 'takes', 'tells', 'transcribes', 'writes',
+  'keeps', 'knows', 'lands', 'leads', 'learns', 'listens', 'lives', 'merges', 'offers', 'opens',
+  'places', 'presses', 'proofreads', 'reaches', 'reckons', 'recognises', 'refuses',
+  'repeats', 'ripens', 'runs', 'says', 'serves', 'settles', 'shares', 'sits', 'spends', 'spreads',
+  'stands', 'starts', 'stops', 'supports', 'takes', 'tells', 'transcribes', 'writes',
 ])
 
 /**

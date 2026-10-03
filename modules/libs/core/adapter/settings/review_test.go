@@ -29,7 +29,7 @@ func TestAFileNamingNoHour(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.DayStarts() != settings.DefaultStarts() {
+	if cfg.DayStarts() != settings.DefaultDayStart() {
 		t.Errorf("the day begins %v past midnight", cfg.DayStarts())
 	}
 }
@@ -46,7 +46,7 @@ func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if cfg.DayStarts() != settings.DefaultStarts() {
+		if cfg.DayStarts() != settings.DefaultDayStart() {
 			t.Errorf("%s: the day begins %v past midnight", written, cfg.DayStarts())
 		}
 		if len(cfg.Said) != 1 || !strings.Contains(cfg.Said[0], "review.day_starts") {

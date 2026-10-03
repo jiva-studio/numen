@@ -130,8 +130,8 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []proofread.Batch) 
 
 // ask sends one batch and returns what the command line said about it.
 func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch) (string, error) {
-	name, rest := p.starts()
-	cmd := exec.CommandContext(ctx, name, append(rest, p.arguments()...)...)
+	name, rest := p.getCommand()
+	cmd := exec.CommandContext(ctx, name, append(rest, p.buildArguments()...)...)
 	cmd.Dir = dir
 	cmd.Env = environment(os.Environ())
 	detach(cmd)
@@ -154,18 +154,18 @@ func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch
 	return strings.TrimSpace(said.String()), nil
 }
 
-// starts is the command line to run and what stands before its own arguments.
-func (p *Proofreader) starts() (string, []string) {
+// getCommand returns the command line to run and what stands before its own arguments.
+func (p *Proofreader) getCommand() (string, []string) {
 	if len(p.Command) == 0 {
 		return findCommand(), nil
 	}
 	return p.Command[0], p.Command[1:]
 }
 
-// arguments are what the command line is started with: one question, no
+// buildArguments returns what the command line is started with: one question, no
 // servers, no tools, and the caller's instruction appended to what the command
 // line says of itself.
-func (p *Proofreader) arguments() []string {
+func (p *Proofreader) buildArguments() []string {
 	args := []string{"-p", "--strict-mcp-config"}
 	if p.Model != "" {
 		args = append(args, "--model", p.Model)

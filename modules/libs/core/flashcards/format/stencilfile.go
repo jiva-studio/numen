@@ -84,12 +84,12 @@ func (f *StencilFile) RenameField(from, to string) error {
 	if err := f.SetFields(names); err != nil {
 		return err
 	}
-	return f.places(from, to)
+	return f.replacePlaceholders(from, to)
 }
 
-// places writes the new name into every `{{Field}}` that named the old one. The
+// replacePlaceholders writes the new name into every `{{Field}}` that named the old one. The
 // markdown around the braces is the person's and is left as it was.
-func (f *StencilFile) places(from, to string) error {
+func (f *StencilFile) replacePlaceholders(from, to string) error {
 	body := f.doc.Body()
 	written := "{{" + to + "}}"
 

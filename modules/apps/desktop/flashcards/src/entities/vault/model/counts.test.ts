@@ -87,7 +87,7 @@ const createFeed = () => {
 }
 
 /** What is on its way settles. */
-const settles = () => new Promise((then) => setTimeout(then, 0))
+const flushPromises = () => new Promise((then) => setTimeout(then, 0))
 
 describe('counting what every vault owes', () => {
   it('holds the vaults before any of them is counted', async () => {
@@ -96,7 +96,7 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.sendCount(createVaultList(vault('01A'), vault('01B')))
-    await settles()
+    await flushPromises()
 
     expect(one.day.value).toBe('2026-09-05')
     expect(one.vaults.value.map((held) => held.vault)).toStrictEqual(['01A', '01B'])
@@ -114,15 +114,15 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.sendCount(createVaultList(vault('01A'), vault('01B')))
-    await settles()
+    await flushPromises()
     front.sendCount(count(vault('01B', { due: 4, new: 1 })))
-    await settles()
+    await flushPromises()
 
     expect(one.vaults.value[0]).toMatchObject({ vault: '01A', isCounted: false, due: 0, new: 0 })
     expect(one.vaults.value[1]).toMatchObject({ vault: '01B', isCounted: true, due: 4, new: 1 })
 
     front.sendCount(count(vault('01A')))
-    await settles()
+    await flushPromises()
     expect(one.vaults.value[0]).toMatchObject({ vault: '01A', isCounted: true, due: 1, new: 2 })
     // What a day took arrives in milliseconds and is held in minutes.
     expect(one.vaults.value[0]?.presets[0]).toEqual({
@@ -153,7 +153,7 @@ describe('counting what every vault owes', () => {
     front.sendCount(count(vault('01A', { unread: 'this folder cannot be read as a vault' })))
     front.sendCount(count(vault('01B', { due: 6, new: 0 })))
     front.endCounts()
-    await settles()
+    await flushPromises()
 
     expect(one.vaults.value[0]?.unread).toBe('this folder cannot be read as a vault')
     expect(one.vaults.value[1]).toMatchObject({ isCounted: true, due: 6 })
@@ -170,7 +170,7 @@ describe('counting what every vault owes', () => {
     front.sendCount(createVaultList(vault('01A')))
     front.sendCount(count(vault('01A', { isReading: true, faces: 0, due: 0, new: 0 })))
     front.endCounts()
-    await settles()
+    await flushPromises()
 
     expect(one.vaults.value[0]).toMatchObject({ isCounted: false, isReading: true, unread: '' })
   })
@@ -181,12 +181,12 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.sendCount(createVaultList(vault('01A')))
-    await settles()
+    await flushPromises()
     expect(one.isCounting.value).toBe(true)
 
     front.sendCount(count(vault('01A')))
     front.endCounts()
-    await settles()
+    await flushPromises()
     expect(one.isCounting.value).toBe(false)
   })
 
@@ -233,12 +233,12 @@ describe('counting what every vault owes', () => {
     const first = one.count()
     front.sendCount(createVaultList(vault('01A')))
     front.sendCount(count(vault('01A', { isReading: true })))
-    await settles()
+    await flushPromises()
 
     // The reading finished and woke the counting while the first was still on.
     void one.count()
     front.endCounts()
-    await settles()
+    await flushPromises()
 
     // Which is a count of its own, and it is the one that ends the asking.
     front.endCounts()
@@ -257,11 +257,11 @@ describe('counting what every vault owes', () => {
     front.sendCount(createVaultList(vault('01A')))
     front.sendCount(count(vault('01A', { due: 9, new: 0 })))
     front.endCounts()
-    await settles()
+    await flushPromises()
 
     void one.count()
     front.sendCount(createVaultList(vault('01A')))
-    await settles()
+    await flushPromises()
 
     expect(one.vaults.value[0]).toMatchObject({ isCounted: true, due: 9 })
   })
@@ -291,7 +291,7 @@ describe('counting what every vault owes', () => {
 
     const asked = one.count()
     front.sendCount(createVaultList(vault('01A'), vault('01B')))
-    await settles()
+    await flushPromises()
     one.stop()
     await asked
 

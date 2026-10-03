@@ -55,7 +55,7 @@ func GetSpeechBatches(cues []transcript.Cue, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
 	}
-	lines := getSpokenLines(cues)
+	lines := getTranscriptLines(cues)
 	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
@@ -85,7 +85,7 @@ func CutIntoBatches(cues []transcript.Cue, size, overlap int, cuts []int) []Batc
 		return nil
 	}
 
-	lines := getSpokenLines(cues)
+	lines := getTranscriptLines(cues)
 	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	reach := -1
@@ -110,9 +110,9 @@ func CutIntoBatches(cues []transcript.Cue, size, overlap int, cuts []int) []Batc
 	return out
 }
 
-// getSpokenLines is every cue that says something, as a line known by the index
+// getTranscriptLines returns every cue that says something, as a line known by the index
 // of its cue in the transcript.
-func getSpokenLines(cues []transcript.Cue) []Line {
+func getTranscriptLines(cues []transcript.Cue) []Line {
 	var out []Line
 	for at, cue := range cues {
 		if cue.Text == "" {

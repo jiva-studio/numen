@@ -222,7 +222,7 @@ func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
 
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	session, _ := newSession(t, nil)
-	checkToolNames(t, serves(t, session), []string{
+	checkToolNames(t, getServedTools(t, session), []string{
 		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
 		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"file_read",
@@ -250,7 +250,7 @@ func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 	core.View = &window{}
 	core.Attending = func() domain.OpenTabs { return domain.OpenTabs{} }
 
-	checkToolNames(t, serves(t, newSessionOver(t, core)), []string{
+	checkToolNames(t, getServedTools(t, newSessionOver(t, core)), []string{
 		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
 		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
 		"note_focus",
@@ -289,9 +289,8 @@ func TestReadingAndListeningSayWhatTheyWriteIntoTheVault(t *testing.T) {
 	}
 }
 
-// serves is every tool a session is offered, and each of them says what it is
-// for.
-func serves(t *testing.T, session *sdk.ClientSession) []string {
+// getServedTools returns every tool a session is offered, and verifies each of them says what it is for.
+func getServedTools(t *testing.T, session *sdk.ClientSession) []string {
 	t.Helper()
 	tools, err := session.ListTools(t.Context(), nil)
 	if err != nil {

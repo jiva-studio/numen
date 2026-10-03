@@ -23,7 +23,7 @@ func (t *TranscriptionWorker) whenIdle(idle func()) {
 // never reported, on a count that fell as though it had been.
 func TestARecordingInLineOutlivesTheContext(t *testing.T) {
 	by := &deaf{why: errors.New("not a container anything here decodes")}
-	listening, v := listens(t, by, "talks/a.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/a.mp3")
 
 	over, stop := context.WithCancel(t.Context())
 	stop()
@@ -51,7 +51,7 @@ func TestARecordingInLineOutlivesTheContext(t *testing.T) {
 // a third recording named then is told it waits its turn.
 func TestARecordingNamedAsDrainAndReleaseEndsIsTranscribed(t *testing.T) {
 	by := &deaf{why: errors.New("not a container anything here decodes")}
-	listening, v := listens(t, by, "talks/a.mp3", "talks/b.mp3", "talks/c.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/a.mp3", "talks/b.mp3", "talks/c.mp3")
 
 	// The first transcription is held until this test lets it end, and every
 	// one after it until this test is over.

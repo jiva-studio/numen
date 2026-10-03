@@ -21,7 +21,7 @@ func TestHowManyPlacesRunAtOnce(t *testing.T) {
 		var mu sync.Mutex
 		running, most := 0, 0
 
-		err := (ProjectCurve{Cores: cores}).places(2*review.Points, func(int) error {
+		err := (ProjectCurve{Cores: cores}).computePlaces(2*review.Points, func(int) error {
 			mu.Lock()
 			running++
 			if running > most {

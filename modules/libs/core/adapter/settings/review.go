@@ -22,34 +22,34 @@ const LatestDayStarts = 12 * time.Hour
 // ClockFormat is how an hour of the day is written.
 const ClockFormat = "15:04"
 
-// Starts is how long past midnight a day of review begins, and whether the file
+// DayStart returns how long past midnight a day of review begins, and whether the file
 // said something that is not an hour of the day.
-func (r Review) Starts() (time.Duration, bool) {
+func (r Review) DayStart() (time.Duration, bool) {
 	written := strings.TrimSpace(r.DayStarts)
 	if written == "" {
-		return DefaultStarts(), true
+		return DefaultDayStart(), true
 	}
 	at, err := time.Parse(ClockFormat, written)
 	if err != nil {
-		return DefaultStarts(), false
+		return DefaultDayStart(), false
 	}
 	starts := time.Duration(at.Hour())*time.Hour + time.Duration(at.Minute())*time.Minute
 	if starts > LatestDayStarts {
-		return DefaultStarts(), false
+		return DefaultDayStart(), false
 	}
 	return starts, true
 }
 
-// DefaultStarts is when a day of review begins where the file says nothing. An
+// DefaultDayStart returns when a day of review begins where the file says nothing. An
 // answer given before it finishes the evening it belongs to.
-func DefaultStarts() time.Duration { return review.DayStarts }
+func DefaultDayStart() time.Duration { return review.DayStarts }
 
 // ReadDayStart is the hour a day of review is to begin at, as it goes into the
 // file. An hour past LatestDayStarts, anything that is not an hour of the
 // clock, and no hour at all, are review.ErrNotAnHour. It reads and writes
 // no file.
 func ReadDayStart(written string) (string, error) {
-	starts, hour := Review{DayStarts: written}.Starts()
+	starts, hour := Review{DayStarts: written}.DayStart()
 	if !hour || strings.TrimSpace(written) == "" {
 		return "", fmt.Errorf("%w, 00:00 to %s: %q",
 			review.ErrNotAnHour, review.Clock(LatestDayStarts), written)

@@ -46,8 +46,8 @@ func authority(t *testing.T, endpoint string) string {
 	return said.Host
 }
 
-// listens is whether anything takes a connection at this address.
-func listens(addr string) bool {
+// isListening reports whether anything takes a connection at this address.
+func isListening(addr string) bool {
 	conn, err := net.DialTimeout("tcp", addr, time.Second)
 	if err != nil {
 		return false
@@ -124,7 +124,7 @@ func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 	if _, port, _ := net.SplitHostPort(at); port == "0" || port == "" {
 		t.Fatalf("the endpoint is announced at %q", served.URL)
 	}
-	if !listens(at) {
+	if !isListening(at) {
 		t.Errorf("nothing answers at %q", served.URL)
 	}
 }
@@ -188,7 +188,7 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 	// The endpoint stops taking connections as it begins closing, which is
 	// where the agents are already gone.
 	waiting := time.Now()
-	for listens(authority(t, served.URL)) {
+	for isListening(authority(t, served.URL)) {
 		if time.Since(waiting) > 5*time.Second {
 			t.Fatal("the endpoint never began closing")
 		}

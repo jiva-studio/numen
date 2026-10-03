@@ -55,9 +55,9 @@ func (quiet) Segments(context.Context, int, int) ([]port.Audio, error) { return 
 
 func (quiet) Close() error { return nil }
 
-// listens is a TranscriptionWorker hearing through one transcriber, in a vault holding
+// newTranscriptionWorker creates a TranscriptionWorker hearing through one transcriber, in a vault holding
 // the recordings named.
-func listens(t *testing.T, by *deaf, recordings ...string) (*TranscriptionWorker, domain.Vault) {
+func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*TranscriptionWorker, domain.Vault) {
 	t.Helper()
 	shelved := newLibrary()
 	for _, path := range recordings {
@@ -108,7 +108,7 @@ func (h unheard) GetRecognisedSources(
 // long as the application ran.
 func TestARecordingThatWillNotOpenIsHandedOverOnce(t *testing.T) {
 	by := &deaf{why: errors.New("not a container anything here decodes")}
-	listening, v := listens(t, by, "talks/one.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 	known := unheard{recordings: []string{"talks/one.mp3"}}
 
 	for range 3 {
@@ -124,7 +124,7 @@ func TestARecordingThatWillNotOpenIsHandedOverOnce(t *testing.T) {
 // watching a recording nothing has listened to yet.
 func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 	by := &deaf{}
-	listening, v := listens(t, by, "talks/one.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 	known := unheard{recordings: []string{"talks/one.mp3"}}
 
 	var while []task.Task
@@ -154,7 +154,7 @@ func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 // Silence is an answer too.
 func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 	by := &deaf{}
-	listening, v := listens(t, by, "talks/one.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 	known := unheard{recordings: []string{"talks/one.mp3"}}
 
 	for range 3 {
@@ -169,7 +169,7 @@ func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 // on a text a producer made.
 func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
 	by := &deaf{}
-	listening, v := listens(t, by)
+	listening, v := newTranscriptionWorker(t, by)
 	owed := listening.getUntranscribed(t.Context(), recognised{"talks/one.mp3"}, v)
 	if len(owed) != 0 {
 		t.Errorf("the queue owes %v", owed)
@@ -216,7 +216,7 @@ func (h recognised) Reading(context.Context, domain.VaultID, string) (port.Sourc
 // twice waits once.
 func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 	by := &deaf{}
-	listening, v := listens(t, by, "talks/one.mp3", "talks/two.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3", "talks/two.mp3")
 
 	hearing, going := make(chan struct{}, 1), make(chan struct{})
 	first := true
@@ -262,7 +262,7 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 // person naming a file has said that this file is worth the machine's time.
 func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
 	by := &deaf{}
-	listening, v := listens(t, by, "album.flac")
+	listening, v := newTranscriptionWorker(t, by, "album.flac")
 	listening.with.Unasked = 10 << 20
 
 	known := sized{recordings: map[string]int64{"album.flac": 400 << 20}}
@@ -284,7 +284,7 @@ func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
 // asked for: nothing here calls Queue.
 func TestAnInstallationListeningToNothingStillHearsWhatIsAsked(t *testing.T) {
 	by := &deaf{}
-	listening, v := listens(t, by, "talks/one.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 
 	if got := listening.Start(v, "talks/one.mp3"); got != port.Began {
 		t.Fatalf("the recording was not heard: %v", got)
@@ -299,7 +299,7 @@ func TestAnInstallationListeningToNothingStillHearsWhatIsAsked(t *testing.T) {
 // A round hands over what a person named before what the vault owes on its own.
 func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
 	by := &deaf{}
-	listening, v := listens(t, by, "talks/owed.mp3", "talks/named.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/owed.mp3", "talks/named.mp3")
 
 	var mu sync.Mutex
 	var order []string
@@ -324,7 +324,7 @@ func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
 // transcription waits for them and says so.
 func TestARecordingWaitsForTheModelsAScanHolds(t *testing.T) {
 	by := &deaf{}
-	listening, v := listens(t, by, "talks/one.mp3")
+	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 
 	held, err := listening.with.Models.acquire(t.Context(), true, nil)
 	if err != nil {
@@ -380,7 +380,7 @@ func (sized) GetRecognisedSources(
 // What the queue takes on its own stops at a size; the hand still asks for
 // anything.
 func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
-	held, v := listens(t, &deaf{}, "talk.mp3", "album.flac")
+	held, v := newTranscriptionWorker(t, &deaf{}, "talk.mp3", "album.flac")
 	held.with.Unasked = 10 << 20
 
 	known := sized{recordings: map[string]int64{
@@ -403,7 +403,7 @@ func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
 // when there is a recording to transcribe.
 func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
 	by := &deaf{}
-	held, v := listens(t, by, "talk.mp3")
+	held, v := newTranscriptionWorker(t, by, "talk.mp3")
 
 	var opened, given int
 	held.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {

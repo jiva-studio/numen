@@ -56,9 +56,9 @@ func feed(t *testing.T, raw chan notify.EventInfo, root string, from, notes int)
 	}
 }
 
-// settles waits for the queue to be what the burst made it, so that what the
+// waitForQueue waits for the queue to be what the burst made it, so that what the
 // debouncing is started on is decided by the burst and not by when it started.
-func settles(t *testing.T, q *queue, is func() bool) {
+func waitForQueue(t *testing.T, q *queue, is func() bool) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
 	for {
@@ -88,7 +88,7 @@ func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 	waiting := newQueue(4)
 	go drain(ctx, raw, waiting)
 	feed(t, raw, root, 0, 5)
-	settles(t, waiting, func() bool { return waiting.isOver })
+	waitForQueue(t, waiting, func() bool { return waiting.isOver })
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)
@@ -114,7 +114,7 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 	waiting := newQueue(4)
 	go drain(ctx, raw, waiting)
 	feed(t, raw, root, 0, 4)
-	settles(t, waiting, func() bool { return len(waiting.events) == 4 })
+	waitForQueue(t, waiting, func() bool { return len(waiting.events) == 4 })
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)

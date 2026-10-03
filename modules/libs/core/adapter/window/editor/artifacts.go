@@ -504,14 +504,14 @@ func (a *API) proofreadTranscript(
 	if !puts.ProofreaderReady() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
 	}
-	_, _, listened, err := a.getSourceText(ctx, v, ref.Path)
+	_, _, hasTranscript, err := a.getSourceText(ctx, v, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// Words a model heard are what a proofreader is given, so a recording
 	// nothing listened to has nothing to put right. A client that listed what
 	// the recording carries never asks.
-	if !listened {
+	if !hasTranscript {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNotHeard)
 	}
 
@@ -585,8 +585,8 @@ func (a *API) corrections(
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
 		State: v1.State_STATE_NONE,
 	}
-	said, store, listened, err := a.getSourceText(ctx, v, ref.Path)
-	if err != nil || !listened {
+	said, store, hasTranscript, err := a.getSourceText(ctx, v, ref.Path)
+	if err != nil || !hasTranscript {
 		return out, err
 	}
 	switch _, err := store.Read(ctx, derived.Corrections(said.Producer, said.Hash)); {
@@ -654,7 +654,7 @@ func getReachCode(err error) connect.Code {
 // places are looked in, and the vault's own file is the one a person can see.
 func (a *API) getCopyLocation(
 	ctx context.Context, v domain.Vault, path string, at domain.URL,
-) (beside string, size int64, held bool) {
+) (beside string, size int64, isHeld bool) {
 	if at == "" {
 		return "", 0, false
 	}

@@ -22,7 +22,7 @@ func (a *API) ReadOcr(
 	if err != nil {
 		return nil, err
 	}
-	runs, err := places(r.Msg.GetSpans())
+	runs, err := parseSpans(r.Msg.GetSpans())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -65,9 +65,9 @@ func newBoxes(boxes []highlight.Box) []*v1.Box {
 // one page at a time.
 const longestRun = 100_000
 
-// places is which parts of the source's text a caller is asking about, in the
+// parseSpans returns which parts of the source's text a caller is asking about, in the
 // order they were asked about.
-func places(at []*v1.Span) ([]domain.ByteSpan, error) {
+func parseSpans(at []*v1.Span) ([]domain.ByteSpan, error) {
 	if len(at) == 0 || len(at) > domain.MostHighlights {
 		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostHighlights, len(at))
 	}

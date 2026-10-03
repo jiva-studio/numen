@@ -36,7 +36,7 @@ func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
 	cfg, db := openIndex(t)
 	v := testsupport.NewVault(t, kinetics())
 	session := sessionOf(t, mcp.NewReading(reader(t, cfg, db, v)))
-	checkToolNames(t, serves(t, session), reads)
+	checkToolNames(t, getServedTools(t, session), reads)
 }
 
 // An agent is told that everything it can call reads, and how to say where an
@@ -83,7 +83,7 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 			call[json.RawMessage](t, session, one.name, one.args)
 		})
 	}
-	checkToolNames(t, called, serves(t, session))
+	checkToolNames(t, called, getServedTools(t, session))
 }
 
 // One installation holds every vault in one index, so a query that forgets its

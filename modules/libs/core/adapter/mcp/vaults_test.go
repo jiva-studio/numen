@@ -183,8 +183,8 @@ func getToolDescription(t *testing.T, s *sdk.ClientSession, name string) string 
 	return ""
 }
 
-// offers reports whether a session is served a tool of that name.
-func offers(t *testing.T, s *sdk.ClientSession, name string) bool {
+// hasTool reports whether a session is served a tool of that name.
+func hasTool(t *testing.T, s *sdk.ClientSession, name string) bool {
 	t.Helper()
 
 	listed, err := s.ListTools(t.Context(), nil)
@@ -489,13 +489,13 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 	} {
 		t.Run(one.tool, func(t *testing.T) {
 			f := onTheList(t)
-			if !offers(t, newSessionOver(t, f.core), one.tool) {
+			if !hasTool(t, newSessionOver(t, f.core), one.tool) {
 				t.Fatalf("%s is missing from an installation that holds a list", one.tool)
 			}
 
 			core := f.core
 			one.without(&core)
-			if offers(t, newSessionOver(t, core), one.tool) {
+			if hasTool(t, newSessionOver(t, core), one.tool) {
 				t.Errorf("%s is served with nothing behind it", one.tool)
 			}
 		})
@@ -510,7 +510,7 @@ func TestAddingWithNoPathAndNoFolderDialogSaysSo(t *testing.T) {
 	core.Vaults.FolderDialog = nil
 	session := newSessionOver(t, core)
 
-	if !offers(t, session, "vault_add") {
+	if !hasTool(t, session, "vault_add") {
 		t.Fatal("vault_add is missing, and a folder can be named")
 	}
 	why := getRefusal(t, session, "vault_add", struct{}{})

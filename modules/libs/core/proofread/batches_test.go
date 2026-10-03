@@ -376,8 +376,8 @@ func TestABatchOfOneLineHasNoSeams(t *testing.T) {
 	}
 }
 
-// carries is whether a batch holds every line of a run, first to last.
-func carries(batch proofread.Batch, at, through int) bool {
+// hasLines reports whether a batch holds every line of a run, first to last.
+func hasLines(batch proofread.Batch, at, through int) bool {
 	held := make(map[int]bool, len(batch.Lines))
 	for _, line := range batch.Lines {
 		held[line.Number] = true
@@ -403,12 +403,12 @@ func TestASentenceCrossingACutStandsWholeInASeam(t *testing.T) {
 				for at := 0; at < count; at++ {
 					for through := at; through <= min(at+size/2-1, count-1); through++ {
 						if slices.ContainsFunc(batches, func(b proofread.Batch) bool {
-							return carries(b, at, through)
+							return hasLines(b, at, through)
 						}) {
 							continue
 						}
 						if !slices.ContainsFunc(batchesAcrossCuts, func(b proofread.Batch) bool {
-							return carries(b, at, through)
+							return hasLines(b, at, through)
 						}) {
 							t.Errorf("%d lines by %d sharing %d: the run %d-%d is in no batch and no batch over a cut",
 								count, size, overlap, at, through)
