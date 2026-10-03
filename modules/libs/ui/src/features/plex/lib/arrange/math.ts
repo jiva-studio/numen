@@ -8,8 +8,10 @@ export const lerp = (from: number, to: number, t: number): number => from + (to 
  * Not a number is caught here. It reaches a transform as `opacity="NaN"` and
  * the node is simply not drawn, with nothing to say why.
  */
-export const clamp01 = (value: number): number =>
-  Number.isNaN(value) ? 1 : value < 0 ? 0 : value > 1 ? 1 : value
+export const clamp01 = (value: number): number => {
+  if (Number.isNaN(value)) return 1
+  return Math.min(Math.max(value, 0), 1)
+}
 
 export function lerpExtent(from: Extent, to: Extent, t: number): Extent {
   return {

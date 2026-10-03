@@ -43,8 +43,11 @@ export function landing(fields: readonly string[], dragEntry: string, at: Insert
 export type StepDirection = 'up' | 'down'
 
 /** The direction along the order an arrow drags what is held, and nothing for any other key. */
-export const directionOf = (key: string): StepDirection | null =>
-  key === 'ArrowUp' ? 'up' : key === 'ArrowDown' ? 'down' : null
+export const directionOf = (key: string): StepDirection | null => {
+  if (key === 'ArrowUp') return 'up'
+  if (key === 'ArrowDown') return 'down'
+  return null
+}
 
 /** The keys that drag what is held one place, as a reader is told them. */
 export const STEP_KEYS = 'ArrowUp ArrowDown'

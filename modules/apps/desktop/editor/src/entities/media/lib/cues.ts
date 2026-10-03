@@ -101,11 +101,12 @@ const spread = (texts: readonly string[], start: number, end: number): Cue[] => 
     const text = texts[at]!
     seen += text.length
     const last = at === texts.length - 1
-    const to = last
-      ? end
-      : all === 0
+    let to = end
+    if (!last) {
+      to = all === 0
         ? from
         : Math.min(end, Math.max(from, start + Math.round(((end - start) * seen) / all)))
+    }
     cues.push({ text, from, to })
     from = to
   }

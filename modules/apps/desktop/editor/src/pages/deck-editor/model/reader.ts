@@ -41,11 +41,10 @@ export function createDeckReader(
     // file has named a card of since keeps that card's identity, so the card a
     // person is typing into is not drawn again.
     const read = deserializeBufferDeckFromString(body)
-    const deck = held
-      ? sameDeck(held.deck, read)
-        ? applyHead(held.deck, read)
-        : applyName(held.deck, read)
-      : read
+    let deck = read
+    if (held) {
+      deck = sameDeck(held.deck, read) ? applyHead(held.deck, read) : applyName(held.deck, read)
+    }
     parsed.set(id, { body, deck })
     return deck
   }

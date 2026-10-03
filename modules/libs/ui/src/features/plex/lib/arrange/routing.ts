@@ -42,12 +42,10 @@ export function routingFor(
     ...options.routing,
     labelWidth: measureLabel,
     labelDepth,
-    axisOf: (node) =>
-      node.seat === 'focus'
-        ? 'auto'
-        : isVertical(options.direction[node.seat])
-          ? 'vertical'
-          : 'horizontal',
+    axisOf: (node) => {
+      if (node.seat === 'focus') return 'auto'
+      return isVertical(options.direction[node.seat]) ? 'vertical' : 'horizontal'
+    },
   }
 }
 

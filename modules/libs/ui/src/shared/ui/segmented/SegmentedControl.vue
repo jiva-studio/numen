@@ -32,12 +32,12 @@ const onChoose = (value: unknown) => {
 /** Home and End go to the ends of the row, and the choice follows the keyboard. */
 const onKey = (event: KeyboardEvent) => {
   if (props.disabled) return
-  const choice =
-    event.key === 'Home'
-      ? props.choices[0]
-      : event.key === 'End'
-        ? props.choices[props.choices.length - 1]
-        : undefined
+  let choice = undefined
+  if (event.key === 'Home') {
+    choice = props.choices[0]
+  } else if (event.key === 'End') {
+    choice = props.choices[props.choices.length - 1]
+  }
   if (choice) model.value = choice.id
 }
 </script>

@@ -37,9 +37,11 @@ export function getPaletteView(state: ViewState) {
     }
   }
 
-  /** Why nothing over the note in front is offered. */
-  const getSilenceMessage = (over: CommandTarget): string =>
-    !over.isReady ? words.noVault : over.path ? words.noneFound : words.noNote
+  const getSilenceMessage = (over: CommandTarget): string => {
+    if (!over.isReady) return words.noVault
+    if (over.path) return words.noneFound
+    return words.noNote
+  }
 
   /** Every command offered over what is in front, in the groups it holds. */
   const getCommandGroups = (over: CommandTarget, text: string): readonly PaletteGroup[] => {

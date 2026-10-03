@@ -159,7 +159,14 @@ const handleKey = (event: KeyboardEvent): boolean => {
   if (!way || props.pages.length === 0) return false
 
   const last = props.pages.length - 1
-  const to = way === 'first' ? 0 : way === 'last' ? last : props.at + (way === 'next' ? 1 : -1)
+  let to: number
+  if (way === 'first') {
+    to = 0
+  } else if (way === 'last') {
+    to = last
+  } else {
+    to = props.at + (way === 'next' ? 1 : -1)
+  }
 
   if (to < 0 || to > last) return false
   emit('go', to)
