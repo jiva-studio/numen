@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math"
+	"math/rand"
 	"testing"
 )
 
@@ -87,6 +88,44 @@ func TestSignedSamplesOfAnyWidth(t *testing.T) {
 	} {
 		if got := readSigned(one.raw); got != one.want {
 			t.Errorf("%v is %d and should be %d", one.raw, got, one.want)
+		}
+	}
+}
+
+func BenchmarkWavDecode16Bit(b *testing.B) {
+	pcm := make([]int16, 44100*60)
+	rng := rand.New(rand.NewSource(1))
+	for i := range pcm {
+		pcm[i] = int16(rng.Intn(65536) - 32768)
+	}
+	w, err := wav(encodeWav(44100, 1, pcm))
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(w.samples)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := w.sound(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// The 16-bit decoder agrees bit for bit with the per-sample decoder on random
+// samples of every length remainder.
+func TestInt16DecoderMatchesPerSampleDecoder(t *testing.T) {
+	rng := rand.New(rand.NewSource(7))
+	for _, count := range []int{0, 1, 2, 3, 4, 5, 7, 8, 1001, 65536} {
+		raw := make([]byte, count*2)
+		rng.Read(raw)
+		got := make([]float32, count)
+		readInt16(got, raw)
+		for i := range got {
+			want := float32(readSigned(raw[i*2:(i+1)*2])) / float32(int64(1)<<15)
+			if math.Float32bits(got[i]) != math.Float32bits(want) {
+				t.Fatalf("count %d sample %d is %v and should be %v", count, i, got[i], want)
+			}
 		}
 	}
 }

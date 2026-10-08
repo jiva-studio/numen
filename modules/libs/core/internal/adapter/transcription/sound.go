@@ -250,6 +250,10 @@ func (w riffWave) sound() ([]float32, error) {
 	}
 	count := len(w.samples) / width
 	out := make([]float32, count)
+	if w.format == wavInteger && w.bits == 16 {
+		readInt16(out, w.samples[:count*2])
+		return out, nil
+	}
 	for i := 0; i < count; i++ {
 		raw := w.samples[i*width : (i+1)*width]
 		switch {
@@ -268,6 +272,23 @@ func (w riffWave) sound() ([]float32, error) {
 		}
 	}
 	return out, nil
+}
+
+// readInt16 fills out with little-endian 16-bit samples scaled to [-1, 1), four
+// to a step. raw holds exactly 2*len(out) bytes.
+func readInt16(out []float32, raw []byte) {
+	const scale = 1.0 / 32768
+	i := 0
+	for ; i+4 <= len(out); i += 4 {
+		b := raw[i*2 : i*2+8 : i*2+8]
+		out[i] = float32(int16(uint16(b[0])|uint16(b[1])<<8)) * scale
+		out[i+1] = float32(int16(uint16(b[2])|uint16(b[3])<<8)) * scale
+		out[i+2] = float32(int16(uint16(b[4])|uint16(b[5])<<8)) * scale
+		out[i+3] = float32(int16(uint16(b[6])|uint16(b[7])<<8)) * scale
+	}
+	for ; i < len(out); i++ {
+		out[i] = float32(int16(binary.LittleEndian.Uint16(raw[i*2:]))) * scale
+	}
 }
 
 // readSigned is one little-endian sample of any width, as a number.
