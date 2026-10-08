@@ -11,7 +11,8 @@ import (
 type transducer struct {
 	frames    int
 	blank     int
-	encoder   func(at int) []float32
+	encoded   int
+	encoder   func(at int, frame []float32) []float32
 	predictor func(token int) ([]float32, error)
 	joint     func(frame, said []float32) ([]float32, error)
 }
@@ -29,6 +30,7 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		return nil, err
 	}
 
+	frame := make([]float32, d.encoded)
 	var said []int
 	// How many words one frame has given. A frame may give several: the model
 	// answers with a duration of nothing to say it has more to say here.
@@ -37,7 +39,7 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		scores, err := d.joint(d.encoder(at), upto)
+		scores, err := d.joint(d.encoder(at, frame), upto)
 		if err != nil {
 			return nil, err
 		}
