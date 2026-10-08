@@ -48,6 +48,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefix modules
 
+      - name: Build UI components
+        run: npm run build --prefix modules/libs/ui
+
       # Which way the modules point, and inside the two windows which way their
       # folders point: a screen reaches the shared folders and never another
       # screen. The run starts with the fixture the screen rule is read against,
