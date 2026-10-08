@@ -139,7 +139,7 @@ func (l *Layout) Regions(page image.Image) ([]ocr.Region, error) {
 // fraction of one. The only scaling it wants is a byte into that fraction.
 func planes(page image.Image) []float32 {
 	small := image.NewRGBA(image.Rect(0, 0, layoutSide, layoutSide))
-	draw.CatmullRom.Scale(small, small.Bounds(), page, page.Bounds(), draw.Src, nil)
+	draw.BiLinear.Scale(small, small.Bounds(), page, page.Bounds(), draw.Src, nil)
 
 	plane := layoutSide * layoutSide
 	out := make([]float32, 3*plane)
