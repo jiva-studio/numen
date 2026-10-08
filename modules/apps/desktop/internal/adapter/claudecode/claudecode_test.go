@@ -175,6 +175,28 @@ func TestSaysWhyItStopped(t *testing.T) {
 	}
 }
 
+func TestTranslatesMaxTurnsErrorSubtype(t *testing.T) {
+	work := startAgent(t, connected+"\n"+
+		`{"type":"result","subtype":"error_max_turns","is_error":true}`)
+
+	steps := getSteps(t, work)
+	last := steps[len(steps)-1]
+	if last.Kind != port.StepStopped || last.Detail != "the agent reached the limit of steps without finishing" {
+		t.Errorf("last step is %+v, want 'the agent reached the limit of steps without finishing'", last)
+	}
+}
+
+func TestTranslatesContextLengthErrorSubtype(t *testing.T) {
+	work := startAgent(t, connected+"\n"+
+		`{"type":"result","subtype":"error_context_length_exceeded","is_error":true}`)
+
+	steps := getSteps(t, work)
+	last := steps[len(steps)-1]
+	if last.Kind != port.StepStopped || last.Detail != "the conversation is too long for the model" {
+		t.Errorf("last step is %+v, want 'the conversation is too long for the model'", last)
+	}
+}
+
 func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
 	work := startAgent(t, `{"type":"system","subtype":"init","session_id":"s1","mcp_servers":[]}`+"\n"+
 		`{"type":"result","subtype":"success","is_error":false}`)
@@ -316,6 +338,18 @@ func TestTheQuestionGoesOnTheInputAndNotOnTheCommandLine(t *testing.T) {
 	}
 	if slices.Contains(said.argv, "what is here?") {
 		t.Errorf("the question stands on the command line: %q", said.argv)
+	}
+}
+
+func TestTheMaxTurnsCommandLineArgument(t *testing.T) {
+	defaultArgv := getArgv(t)
+	if got := getFlagValue(t, defaultArgv, "--max-turns"); got != "100" {
+		t.Errorf("default --max-turns is %q, want %q", got, "100")
+	}
+
+	customArgv := getArgvWith(t, func(a *claudecode.Agent) { a.Turns = 50 })
+	if got := getFlagValue(t, customArgv, "--max-turns"); got != "50" {
+		t.Errorf("custom --max-turns is %q, want %q", got, "50")
 	}
 }
 

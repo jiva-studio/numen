@@ -180,7 +180,7 @@ func (a *Agent) makeSessionKeeper(conversation string) func(string) {
 }
 
 // DefaultTurns is how many times an agent may go round on one task.
-const DefaultTurns = 30
+const DefaultTurns = 100
 
 // Take starts the agent on a task.
 func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {

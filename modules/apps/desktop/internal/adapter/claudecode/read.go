@@ -226,13 +226,36 @@ func getUnreachableReason(said event) string {
 	return "the agent was started without this vault"
 }
 
+// formatSubtype translates machine error subtypes into domain sentences.
+func formatSubtype(subtype string) string {
+	switch subtype {
+	case "error_max_turns", "max_turns":
+		return "the agent reached the limit of steps without finishing"
+	case "error_context_length_exceeded", "error_context_length", "context_length_exceeded":
+		return "the conversation is too long for the model"
+	case "error_rate_limit", "rate_limit":
+		return "the rate limit was reached"
+	case "error_authentication", "error_auth", "authentication_error":
+		return "authentication with the model failed"
+	case "error_overloaded", "overloaded":
+		return "the model is overloaded"
+	case "error_interrupted", "error_cancelled", "interrupted":
+		return "the agent was interrupted"
+	default:
+		if strings.HasPrefix(subtype, "error_") {
+			return strings.ReplaceAll(strings.TrimPrefix(subtype, "error_"), "_", " ")
+		}
+		return subtype
+	}
+}
+
 // result is what the last line says went wrong.
 func result(said event) string {
-	if text := strings.TrimSpace(said.Result); text != "" {
+	if text := strings.TrimSpace(said.Result); text != "" && text != said.Subtype {
 		return text
 	}
 	if said.Subtype != "" {
-		return said.Subtype
+		return formatSubtype(said.Subtype)
 	}
 	return "the agent stopped without finishing"
 }

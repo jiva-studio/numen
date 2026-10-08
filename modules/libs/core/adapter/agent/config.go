@@ -63,7 +63,7 @@ type Claude struct {
 func Defaults() Config {
 	return Config{
 		Use:    UseClaude,
-		Claude: Claude{MaxSteps: 30},
+		Claude: Claude{MaxSteps: 100},
 	}
 }
 
