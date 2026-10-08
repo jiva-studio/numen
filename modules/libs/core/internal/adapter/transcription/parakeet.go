@@ -213,9 +213,63 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 		}
 	}
 
+	target := []int32{0}
+	count := []int32{1}
 	state := make([]float32, layers*hidden)
 	cell := make([]float32, layers*hidden)
-	return transducer{
+	said := make([]float32, hidden)
+	frame := make([]float32, encoded)
+	var scores []float32
+
+	targetTensor, err := ort.NewTensor([]int64{1, 1}, target)
+	if err != nil {
+		return nil, err
+	}
+	defer targetTensor.Destroy()
+
+	countTensor, err := ort.NewTensor([]int64{1}, count)
+	if err != nil {
+		return nil, err
+	}
+	defer countTensor.Destroy()
+
+	stateTensor, err := ort.NewTensor([]int64{layers, 1, hidden}, state)
+	if err != nil {
+		return nil, err
+	}
+	defer stateTensor.Destroy()
+
+	cellTensor, err := ort.NewTensor([]int64{layers, 1, hidden}, cell)
+	if err != nil {
+		return nil, err
+	}
+	defer cellTensor.Destroy()
+
+	frameTensor, err := ort.NewTensor([]int64{1, encoded, 1}, frame)
+	if err != nil {
+		return nil, err
+	}
+	defer frameTensor.Destroy()
+
+	saidTensor, err := ort.NewTensor([]int64{1, hidden, 1}, said)
+	if err != nil {
+		return nil, err
+	}
+	defer saidTensor.Destroy()
+
+	decoderInputs := map[string]*ort.Value{
+		inputTargets: targetTensor,
+		inputTargetN: countTensor,
+		inputState:   stateTensor,
+		inputCell:    cellTensor,
+	}
+
+	joinerInputs := map[string]*ort.Value{
+		inputEncoded: frameTensor,
+		inputDecoded: saidTensor,
+	}
+
+	result, err := transducer{
 		frames:  width,
 		blank:   t.blank,
 		encoded: encoded,
@@ -227,116 +281,96 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 			return dst
 		},
 		predictor: func(token int) ([]float32, error) {
-			said, next, cells, err := t.predict(token, state, cell)
-			if err != nil {
-				return nil, err
-			}
-			state, cell = next, cells
-			return said, nil
+			target[0] = int32(token)
+			return t.predict(decoderInputs, said, state, cell)
 		},
-		joint: t.joint,
+		joint: func(encodedFrame, _ []float32) ([]float32, error) {
+			var err error
+			scores, err = t.joint(joinerInputs, frame, encodedFrame, scores)
+			return scores, err
+		},
 	}.decode(ctx)
-}
 
-// predict is one position of the predictor: the token that was said and the
-// state it leaves behind.
-func (t *Transcriber) predict(token int, state, cell []float32) (said, next, cells []float32, err error) {
-	target := []int32{int32(token)}
-	count := []int32{1}
-	var held []*ort.Value
-	defer func() {
-		for _, v := range held {
-			v.Destroy()
-		}
-	}()
-
-	in := map[string]*ort.Value{}
-	for _, one := range []struct {
-		name  string
-		shape []int64
-		data  any
-	}{
-		{inputTargets, []int64{1, 1}, target},
-		{inputTargetN, []int64{1}, count},
-		{inputState, []int64{layers, 1, hidden}, state},
-		{inputCell, []int64{layers, 1, hidden}, cell},
-	} {
-		value, err := ort.NewTensor(one.shape, one.data)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		held = append(held, value)
-		in[one.name] = value
-	}
-
-	out, err := t.decoder.Run(in)
 	runtime.KeepAlive(target)
 	runtime.KeepAlive(count)
 	runtime.KeepAlive(state)
 	runtime.KeepAlive(cell)
+	runtime.KeepAlive(said)
+	runtime.KeepAlive(frame)
+
+	return result, err
+}
+
+// predict is one position of the predictor: the token that was said and the
+// state it leaves behind.
+func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []float32) ([]float32, error) {
+	out, err := t.decoder.Run(inputs)
 	if err != nil {
-		return nil, nil, nil, err
-	}
-	for _, v := range out {
-		defer v.Destroy()
+		return nil, err
 	}
 
-	// What the graphs answer with lives in the library's own memory, and is
-	// copied out before the answer is let go of.
-	for _, one := range []struct {
-		into *[]float32
+	for _, one := range [...]struct {
+		into []float32
 		name string
 	}{
-		{&said, outputFrames},
-		{&next, outputState},
-		{&cells, outputCell},
+		{said, outputFrames},
+		{state, outputState},
+		{cell, outputCell},
 	} {
 		value, ok := out[one.name]
 		if !ok {
-			return nil, nil, nil, fmt.Errorf("the predictor answered with %v and not %s", names(out), one.name)
+			for _, v := range out {
+				v.Destroy()
+			}
+			return nil, fmt.Errorf("the predictor answered with %v and not %s", names(out), one.name)
 		}
 		raw, err := ort.GetTensorData[float32](value)
 		if err != nil {
-			return nil, nil, nil, err
+			for _, v := range out {
+				v.Destroy()
+			}
+			return nil, err
 		}
-		*one.into = append([]float32(nil), raw...)
+		copy(one.into, raw)
 	}
-	return said, next, cells, nil
+	for _, v := range out {
+		v.Destroy()
+	}
+	return said, nil
 }
 
 // joint is what one frame of the encoder and one position of the predictor say
 // together: a score for every token, and after them a score for every number of
 // frames to step on by.
-func (t *Transcriber) joint(frame, said []float32) ([]float32, error) {
-	from, err := ort.NewTensor([]int64{1, encoded, 1}, frame)
+func (t *Transcriber) joint(inputs map[string]*ort.Value, frameDst, frame, scoresDst []float32) ([]float32, error) {
+	copy(frameDst, frame)
+	out, err := t.joiner.Run(inputs)
 	if err != nil {
 		return nil, err
 	}
-	defer from.Destroy()
-	upto, err := ort.NewTensor([]int64{1, hidden, 1}, said)
-	if err != nil {
-		return nil, err
-	}
-	defer upto.Destroy()
 
-	out, err := t.joiner.Run(map[string]*ort.Value{inputEncoded: from, inputDecoded: upto})
-	runtime.KeepAlive(frame)
-	runtime.KeepAlive(said)
-	if err != nil {
-		return nil, err
-	}
-	for _, v := range out {
-		defer v.Destroy()
-	}
 	value, ok := out[outputFrames]
 	if !ok {
+		for _, v := range out {
+			v.Destroy()
+		}
 		return nil, fmt.Errorf("the joiner answered with %v and not %s", names(out), outputFrames)
 	}
 	raw, err := ort.GetTensorData[float32](value)
 	if err != nil {
+		for _, v := range out {
+			v.Destroy()
+		}
 		return nil, err
 	}
-	return append([]float32(nil), raw...), nil
+	if len(scoresDst) != len(raw) {
+		scoresDst = make([]float32, len(raw))
+	}
+	copy(scoresDst, raw)
+	for _, v := range out {
+		v.Destroy()
+	}
+	return scoresDst, nil
 }
 
 func names(m map[string]*ort.Value) []string {
