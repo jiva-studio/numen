@@ -2,8 +2,38 @@
  * The commands offered over the file in front, on what has been made from it.
  */
 import { getOfferOnEvidence, isUnmade } from './offered'
-import type { Command } from '../types'
+import type { Command, CommandTarget, RunSupport } from '../types'
 import type { Words } from '../words'
+
+const isRecordingProofreadOffered = getOfferOnEvidence(
+  'proofread',
+  'recording',
+  (made) => made.transcript === 'done' && isUnmade(made['transcript.corrected']),
+)
+
+const isBookProofreadOffered = getOfferOnEvidence(
+  'proofread',
+  'book',
+  (made) => made.ocr === 'done' && isUnmade(made['ocr.corrected']),
+)
+
+const isProofreadOffered = (at: CommandTarget, runs: RunSupport): boolean =>
+  isRecordingProofreadOffered(at, runs) || isBookProofreadOffered(at, runs)
+
+const isRecordingDeleteTextOffered = getOfferOnEvidence(
+  'deleteText',
+  'recording',
+  (made) => made.transcript !== 'none',
+)
+
+const isUrlDeleteTextOffered = getOfferOnEvidence(
+  'deleteText',
+  'url',
+  (made) => made.transcript !== 'none',
+)
+
+const isDeleteTextOffered = (at: CommandTarget, runs: RunSupport): boolean =>
+  isRecordingDeleteTextOffered(at, runs) || isUrlDeleteTextOffered(at, runs)
 
 export const fileCommandsOf = (words: Words): readonly Command[] => [
   {
@@ -47,17 +77,7 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
     group: 'file',
     // There is nothing to put right until a model has produced text, and
     // nothing to put right again once it has been put right.
-    isOffered: (at, runs) =>
-      getOfferOnEvidence(
-        'proofread',
-        'recording',
-        (made) => made.transcript === 'done' && isUnmade(made['transcript.corrected']),
-      )(at, runs) ||
-      getOfferOnEvidence(
-        'proofread',
-        'book',
-        (made) => made.ocr === 'done' && isUnmade(made['ocr.corrected']),
-      )(at, runs),
+    isOffered: isProofreadOffered,
   },
   {
     id: 'deleteText',
@@ -67,13 +87,7 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
     // Everything one run of listening left goes, so a run that stopped part way
     // and a recording that gave no words are both taken away here. A url
     // carries a transcript the same way, and deletes it here.
-    isOffered: (at, runs) =>
-      getOfferOnEvidence(
-        'deleteText',
-        'recording',
-        (made) => made.transcript !== 'none',
-      )(at, runs) ||
-      getOfferOnEvidence('deleteText', 'url', (made) => made.transcript !== 'none')(at, runs),
+    isOffered: isDeleteTextOffered,
     answers: {
       keeps: words.keepsTranscript,
       kept: words.kept,
