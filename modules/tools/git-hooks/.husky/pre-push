@@ -10,6 +10,5 @@
 
 root=$(git rev-parse --show-toplevel)
 
-node --test "$root"/modules/tools/lint/*.test.mjs || exit 1
 node "$root/modules/tools/depgraph/check.mjs" || exit 1
 npm run lint --workspaces --if-present --prefix "$root/modules" || exit 1

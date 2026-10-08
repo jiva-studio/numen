@@ -14,7 +14,7 @@ usage() {
   echo "Packages:" >&2
   echo "  Go:         core, desktop, mobile, protocol" >&2
   echo "  TypeScript: ui, wire, editor, flashcards, mobile, docs, landing" >&2
-  echo "  Tools:      depgraph, lint, stories, icon, git-hooks" >&2
+  echo "  Tools:      depgraph, stories, icon, git-hooks" >&2
   echo "" >&2
   echo "Examples:" >&2
   echo "  $(basename "$0") core" >&2
@@ -102,7 +102,6 @@ resolve_package_dir() {
     docs) echo "modules/apps/docs" ;;
     landing) echo "modules/apps/landing" ;;
     depgraph) echo "modules/tools/depgraph" ;;
-    lint|linter) echo "modules/tools/lint" ;;
     stories) echo "modules/tools/stories" ;;
     icon|icons) echo "modules/tools/icon" ;;
     git-hooks) echo "modules/tools/git-hooks" ;;
