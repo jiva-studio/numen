@@ -3,6 +3,7 @@ package transcription
 import (
 	"math"
 	"math/cmplx"
+	"runtime"
 	"sync"
 )
 
@@ -39,19 +40,38 @@ func logMel(samples []float32) ([]float32, int) {
 	bins := fftSize/2 + 1
 	bank := filters()
 	out := make([]float32, melBands*frames)
-	for band := 0; band < melBands; band++ {
-		weights := bank[band]
-		row := out[band*frames : (band+1)*frames]
-		for t := 0; t < frames; t++ {
-			var sum float64
-			offset := t * bins
-			for bin, w := range weights {
-				sum += w * power[offset+bin]
-			}
-			row[t] = float32(math.Log(sum + logGuard))
-		}
-		normalise(row)
+
+	workers := runtime.GOMAXPROCS(0)
+	if workers > melBands {
+		workers = melBands
 	}
+	if workers < 1 {
+		workers = 1
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for worker := range workers {
+		start := worker * melBands / workers
+		end := (worker + 1) * melBands / workers
+		go func(start, end int) {
+			defer wg.Done()
+			for band := start; band < end; band++ {
+				filter := bank[band]
+				row := out[band*frames : (band+1)*frames]
+				for t := 0; t < frames; t++ {
+					var sum float64
+					offset := t*bins + filter.firstBin
+					for bin, w := range filter.weights {
+						sum += w * power[offset+bin]
+					}
+					row[t] = float32(math.Log(sum + logGuard))
+				}
+				normalise(row)
+			}
+		}(start, end)
+	}
+	wg.Wait()
 	return out, frames
 }
 
@@ -104,19 +124,37 @@ func spectrogram(x []float64) ([]float64, int) {
 	bins := fftSize/2 + 1
 
 	out := make([]float64, frames*bins)
-	buf := make([]complex128, fftSize)
-	for t := 0; t < frames; t++ {
-		at := t * hopSize
-		for i := 0; i < fftSize; i++ {
-			buf[i] = complex(padded[at+i]*window[i], 0)
-		}
-		fft(buf)
-		offset := t * bins
-		for i := 0; i < bins; i++ {
-			re, im := real(buf[i]), imag(buf[i])
-			out[offset+i] = re*re + im*im
-		}
+	workers := runtime.GOMAXPROCS(0)
+	if workers > frames {
+		workers = frames
 	}
+	if workers < 1 {
+		workers = 1
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for worker := range workers {
+		start := worker * frames / workers
+		end := (worker + 1) * frames / workers
+		go func(start, end int) {
+			defer wg.Done()
+			buf := make([]complex128, fftSize)
+			for t := start; t < end; t++ {
+				at := t * hopSize
+				for i := 0; i < fftSize; i++ {
+					buf[i] = complex(padded[at+i]*window[i], 0)
+				}
+				fft(buf)
+				offset := t * bins
+				for i := 0; i < bins; i++ {
+					re, im := real(buf[i]), imag(buf[i])
+					out[offset+i] = re*re + im*im
+				}
+			}
+		}(start, end)
+	}
+	wg.Wait()
 	return out, frames
 }
 
@@ -159,10 +197,17 @@ var hann = sync.OnceValue(func() []float64 {
 	return out
 })
 
+// melFilter is one triangular frequency filter in the mel bank, holding its
+// non-zero weights from firstBin upward.
+type melFilter struct {
+	firstBin int
+	weights  []float64
+}
+
 // filters is the mel bank: for each band, what share of each frequency bin it
 // carries. The triangles are laid out on the Slaney mel scale and each is
 // scaled by the width of the frequencies it spans.
-var filters = sync.OnceValue(func() [][]float64 {
+var filters = sync.OnceValue(func() []melFilter {
 	bins := fftSize/2 + 1
 	edges := make([]float64, melBands+2)
 	low, high := hzToMel(melFloor), hzToMel(melCeiling)
@@ -175,20 +220,30 @@ var filters = sync.OnceValue(func() [][]float64 {
 		freq[i] = float64(i) * sampleRate / fftSize
 	}
 
-	out := make([][]float64, melBands)
+	out := make([]melFilter, melBands)
 	for band := 0; band < melBands; band++ {
-		row := make([]float64, bins)
 		lower, centre, upper := edges[band], edges[band+1], edges[band+2]
 		scale := 2.0 / (upper - lower)
+		first := -1
+		var weights []float64
 		for i, f := range freq {
 			rising := (f - lower) / (centre - lower)
 			falling := (upper - f) / (upper - centre)
 			w := math.Min(rising, falling)
 			if w > 0 {
-				row[i] = w * scale
+				if first == -1 {
+					first = i
+				}
+				weights = append(weights, w*scale)
 			}
 		}
-		out[band] = row
+		if first == -1 {
+			first = 0
+		}
+		out[band] = melFilter{
+			firstBin: first,
+			weights:  weights,
+		}
 	}
 	return out
 })

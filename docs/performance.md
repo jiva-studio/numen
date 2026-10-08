@@ -508,6 +508,17 @@ Recorded 2026-10-08 on AMD Ryzen 7 6800U (16 threads) and Apple M4 (10 cores), f
 
 Each output sample is computed independently, so the samples are chunked across available worker goroutines.
 
+### Extracting log-mel spectrogram features
+
+Recorded 2026-10-08 on AMD Ryzen 7 6800U (16 threads) and Apple M4 (10 cores), from `BenchmarkLogMel` in `internal/adapter/transcription`. Computing 128-band log-mel features for 10 seconds of 16 kHz audio:
+
+| Platform | Sequential STFT & dense bank | Parallel STFT & sparse bank | Speedup |
+| --- | --- | --- | --- |
+| Linux (x86_64) | 42.8 ms | 5.3 ms | 8.0× |
+| macOS (Apple Silicon M4 arm64) | 24.3 ms | 1.4 ms | 17.2× |
+
+Spectrogram FFTs and mel filter bands are chunked across available worker goroutines, and triangular filters evaluate only non-zero frequency bins.
+
 ### Why the markup is not parsed as XML
 
 Four books hold documents that `encoding/xml` refuses — 125 documents in all, failing with `element <p> closed by </html>`. `golang.org/x/net/html` reads every one of them. That is the whole case for the dependency: a strict parser drops a tenth of this corpus, and extraction is not allowed to refuse.
