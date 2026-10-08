@@ -14,6 +14,7 @@ import (
 	"image"
 	"image/draw"
 	"strings"
+	"sync"
 
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
@@ -124,16 +125,13 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 		return nil, err
 	}
 
-	var out []ocr.Block
-	// What could not be read, and the last of it. A page whose every part was
-	// refused says nothing, and a page that says nothing is a blank page to
-	// everything downstream.
-	var refused int
-	var failed error
+	type target struct {
+		region ocr.Region
+		crop   image.Image
+		corner image.Point
+	}
+	var targets []target
 	for _, region := range regions {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
 		if !r.body[region.Label] {
 			continue
 		}
@@ -141,28 +139,78 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 		if crop == nil {
 			continue
 		}
-		found, err := r.read(crop)
-		if err != nil {
+		targets = append(targets, target{
+			region: region,
+			crop:   crop,
+			corner: corner,
+		})
+	}
+	if len(targets) == 0 {
+		return nil, nil
+	}
+
+	type outcome struct {
+		found []read.RecResult
+		err   error
+	}
+	results := make([]outcome, len(targets))
+
+	if len(targets) == 1 {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		found, err := r.read(targets[0].crop)
+		results[0] = outcome{found: found, err: err}
+	} else {
+		var running sync.WaitGroup
+		running.Add(len(targets))
+		for i := range targets {
+			go func(at int) {
+				defer running.Done()
+				if err := ctx.Err(); err != nil {
+					results[at] = outcome{err: err}
+					return
+				}
+				found, err := r.read(targets[at].crop)
+				results[at] = outcome{found: found, err: err}
+			}(i)
+		}
+		running.Wait()
+	}
+
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	var out []ocr.Block
+	// What could not be read, and the last of it. A page whose every part was
+	// refused says nothing, and a page that says nothing is a blank page to
+	// everything downstream.
+	var refused int
+	var failed error
+	for i, res := range results {
+		if res.err != nil {
 			// One part of a page that could not be read is one part. A page is
 			// hundreds of words, and the rest of them are still what it says.
-			refused, failed = refused+1, err
+			refused, failed = refused+1, res.err
 			continue
 		}
-		lines := make([]ocr.Line, 0, len(found))
-		for _, line := range found {
+		t := targets[i]
+		lines := make([]ocr.Line, 0, len(res.found))
+		for _, line := range res.found {
 			lines = append(lines, ocr.Line{
 				Box: image.Rect(
-					line.Box[0]+corner.X, line.Box[1]+corner.Y,
-					line.Box[2]+corner.X, line.Box[3]+corner.Y,
+					line.Box[0]+t.corner.X, line.Box[1]+t.corner.Y,
+					line.Box[2]+t.corner.X, line.Box[3]+t.corner.Y,
 				),
 				Text:  collapseSpaces(line.Text),
 				Score: line.Score,
 			})
 		}
 		if text, boxes := ocr.Assemble(lines); text != "" {
-			depth, head := r.head[region.Label]
+			depth, head := r.head[t.region.Label]
 			out = append(out, ocr.Block{
-				Label:     region.Label,
+				Label:     t.region.Label,
 				Text:      text,
 				IsHeading: head,
 				Depth:     depth,
