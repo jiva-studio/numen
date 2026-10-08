@@ -3,9 +3,8 @@
 The conventions every language in this repository shares are in `AGENTS.md` at
 the root. This file is the core's own, and it holds over `modules/libs/core`.
 
-The architecture is in [`docs/adr/0004-a-hexagonal-core-in-go.md`](../../../docs/adr/0004-a-hexagonal-core-in-go.md)
-and [`docs/adr/0035-where-a-port-is-declared-and-where-an-adapter-stands.md`](../../../docs/adr/0035-where-a-port-is-declared-and-where-an-adapter-stands.md).
-Read those for the shape. What follows is the rules a test refuses, and the
+The architecture rules are documented in [`.agents/rules/architecture.md`](../../../.agents/rules/architecture.md).
+What follows is the rules a test refuses, and the
 test that refuses each — none of them is carried in anybody's memory.
 
 ## The layers, and what a package may reach
@@ -32,7 +31,7 @@ more. A baseline only shrinks.
 |---|---|
 | Nothing reaches the machine: no `os`, no filesystem, no network | `TestNothingOfTheCoreReachesTheMachine` |
 | Nothing reads the machine's clock — an instant arrives as an argument | `TestNothingOfTheCoreReadsTheMachinesClock` |
-| Nothing logs ([ADR 0037](../../../docs/adr/0037-nothing-is-logged.md)) | `TestNothingOfTheCoreLogs` |
+| Nothing logs | `TestNothingOfTheCoreLogs` |
 
 ## Ports
 
