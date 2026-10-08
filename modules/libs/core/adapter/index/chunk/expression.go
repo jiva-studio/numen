@@ -1,6 +1,9 @@
 package chunk
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 // Expression turns what a person typed into an FTS5 query.
 //
@@ -19,17 +22,44 @@ import "strings"
 // `growing` says the last word may still be being typed, and it then carries a
 // prefix mark. A question that is finished is asked exactly.
 func Expression(typed string, growing bool) string {
-	fields := strings.Fields(typed)
-	if len(fields) == 0 {
+	var out strings.Builder
+	out.Grow(2*len(typed) + 4)
+	start := -1
+	for i, r := range typed {
+		if unicode.IsSpace(r) {
+			if start >= 0 {
+				writeQuoted(&out, typed[start:i])
+				start = -1
+			}
+		} else if start < 0 {
+			start = i
+		}
+	}
+	if start >= 0 {
+		writeQuoted(&out, typed[start:])
+	}
+	if out.Len() == 0 {
 		return ""
 	}
-	quoted := make([]string, 0, len(fields))
-	for _, field := range fields {
-		// Doubling is how a quote is escaped inside an FTS5 string.
-		quoted = append(quoted, `"`+strings.ReplaceAll(field, `"`, `""`)+`"`)
-	}
 	if growing {
-		quoted[len(quoted)-1] += "*"
+		out.WriteByte('*')
 	}
-	return strings.Join(quoted, " ")
+	return out.String()
+}
+
+// writeQuoted appends word as an FTS5 string literal, separated from the
+// previous word by a space. Doubling is how a quote is escaped inside an FTS5
+// string.
+func writeQuoted(out *strings.Builder, word string) {
+	if out.Len() > 0 {
+		out.WriteByte(' ')
+	}
+	out.WriteByte('"')
+	for i := 0; i < len(word); i++ {
+		if word[i] == '"' {
+			out.WriteByte('"')
+		}
+		out.WriteByte(word[i])
+	}
+	out.WriteByte('"')
 }
