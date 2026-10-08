@@ -38,3 +38,6 @@ go.work.sum
 
 review.md
 refactoring-plan.md
+
+# Agent local task scratchpad
+.agents/tasks/
