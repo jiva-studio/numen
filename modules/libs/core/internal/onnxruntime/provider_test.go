@@ -93,5 +93,3 @@ func TestNewSessionOptionsExplicitUnsupportedProvider(t *testing.T) {
 		}
 	}
 }
-
-

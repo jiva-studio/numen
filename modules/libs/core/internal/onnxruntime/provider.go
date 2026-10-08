@@ -17,16 +17,16 @@ func init() {
 }
 
 var (
-	optLevelMu                        sync.Mutex
+	optLevelMu                       sync.Mutex
 	setSessionGraphOptimizationLevel func(options uintptr, level uint32) uintptr
 )
 
-type ortApiBase struct {
+type ortAPIBase struct {
 	GetAPI           uintptr
 	GetVersionString uintptr
 }
 
-type ortApi struct {
+type ortAPI struct {
 	_                                [23]uintptr
 	SetSessionGraphOptimizationLevel uintptr
 }
@@ -46,18 +46,18 @@ func initGraphOptimization(at string) error {
 		return err
 	}
 
-	var ortGetApiBase func() *ortApiBase
-	purego.RegisterLibFunc(&ortGetApiBase, handle, "OrtGetApiBase")
-	if ortGetApiBase == nil {
+	var ortGetAPIBase func() *ortAPIBase
+	purego.RegisterLibFunc(&ortGetAPIBase, handle, "OrtGetApiBase")
+	if ortGetAPIBase == nil {
 		return fmt.Errorf("symbol OrtGetApiBase not found")
 	}
 
-	apiBase := ortGetApiBase()
+	apiBase := ortGetAPIBase()
 	if apiBase == nil {
 		return fmt.Errorf("OrtGetApiBase returned nil")
 	}
 
-	var getAPI func(uint32) *ortApi
+	var getAPI func(uint32) *ortAPI
 	purego.RegisterFunc(&getAPI, apiBase.GetAPI)
 	api := getAPI(23)
 	if api == nil || api.SetSessionGraphOptimizationLevel == 0 {
@@ -192,4 +192,3 @@ func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptio
 
 	return opts, used, nil
 }
-
