@@ -27,7 +27,6 @@ written in that module, beside the code it holds:
 | [`modules/libs/core`](modules/libs/core/AGENTS.md) | the layers, the ports, what the core may not do, and the test that refuses each |
 | [`modules/libs/protocol`](modules/libs/protocol/AGENTS.md) | one service to a subject, generated code, totality |
 | [`modules/apps/desktop`](modules/apps/desktop/AGENTS.md) | where a file of a window stands, and what a `.vue` may not do |
-| [`modules/tools/lint`](modules/tools/lint/AGENTS.md) | what a rule must carry before it is landed |
 
 ---
 
