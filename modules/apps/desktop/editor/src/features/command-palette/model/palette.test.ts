@@ -568,10 +568,10 @@ describe('the runs over the file in front', () => {
     ])
   })
 
-  it('offers a scan to be recognised, and nothing to transcribe', () => {
+  it('offers a scan to be recognised and proofread, and nothing to transcribe', () => {
     const { commands } = createPalette(scanned)
 
-    expect(getItemIds(commands.groups).file).toStrictEqual(['recognise'])
+    expect(getItemIds(commands.groups).file).toStrictEqual(['recognise', 'proofread'])
   })
 
   // The group stands where there is something in it, so a note is offered no
@@ -624,9 +624,26 @@ describe('the runs over the file in front', () => {
       const { commands } = createPalette({ ...scanned, made: { ocr: made } })
 
       expect(getItemIds(commands.groups).file, made).toStrictEqual(
-        offered ? ['recognise'] : undefined,
+        offered ? ['recognise'] : made === 'done' ? ['proofread'] : undefined,
       )
     }
+  })
+
+  it('offers a scan reading to be put right once one stands, and not before', () => {
+    expect(
+      getItemIds(createPalette({ ...scanned, made: { ocr: 'none' } }).commands.groups).file,
+    ).toStrictEqual(['recognise'])
+    expect(
+      getItemIds(createPalette({ ...scanned, made: { ocr: 'done' } }).commands.groups).file,
+    ).toStrictEqual(['proofread'])
+    expect(
+      getItemIds(
+        createPalette({
+          ...scanned,
+          made: { ocr: 'done', 'ocr.corrected': 'done' },
+        }).commands.groups,
+      ).file,
+    ).toBeUndefined()
   })
 
   it('offers a recording to be transcribed only where nothing has transcribed it', () => {

@@ -24,11 +24,13 @@ type passes struct {
 	recognising  *source.RecognitionWorker
 	transcribing *source.TranscriptionWorker
 
-	// recognises reads a scanned document, transcribes hears a recording, and
-	// proofreads puts a transcript right, each for whoever asks.
-	recognises  Runner
-	transcribes Runner
-	proofreads  Proofreader
+	// recognises reads a scanned document, transcribes hears a recording,
+	// proofreads puts a transcript right, and proofreadsReading puts a reading
+	// right, each for whoever asks.
+	recognises        Runner
+	transcribes       Runner
+	proofreads        Proofreader
+	proofreadsReading ReadingProofreader
 	// cut asks for a source to be cut again from what its text now says, and
 	// forgets takes a recording out of what the queue has had an answer about.
 	cut     func(context.Context, domain.Vault, string) error
@@ -189,7 +191,8 @@ func (o *Installation) beginVault(v domain.Vault, rebuild bool) (*passes, error)
 		// A transcript is put right by the same proofreading that runs on its
 		// own, so a person asking for one is shown the run everything else is
 		// shown in.
-		proofreads: transcribing,
+		proofreads:        transcribing,
+		proofreadsReading: recognising,
 		// A transcript the window put right is cut where every other cut
 		// happens.
 		cut: recognising.Cut,

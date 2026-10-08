@@ -297,31 +297,73 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 	return nil
 }
 
+// ProofreaderReady says whether this installation has anything to put a
+// reading right with. A person is offered the run where it has.
+func (r *RecognitionWorker) ProofreaderReady() bool { return r.with.Proofreading.IsNamed }
+
+// Proofread puts one reading right for a person who asked for it and says
+// what came of asking: the run began, or the reading needed nothing of it.
+func (r *RecognitionWorker) Proofread(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+) (ProofreadReadingResult, error) {
+	said := make(chan readingOutcome, 2)
+	r.going.Add(1)
+	//nolint:contextcheck // the run outlives the caller and carries r.context()
+	go func() {
+		defer r.going.Done()
+		res, err := r.proofreadReading(r.context(), v, path, func(began ProofreadReadingResult) {
+			said <- readingOutcome{res: began}
+		})
+		said <- readingOutcome{res: res, err: err}
+	}()
+
+	select {
+	case one := <-said:
+		return one.res, one.err
+	case <-ctx.Done():
+		return ProofreadReadingResult{Path: path}, ctx.Err()
+	}
+}
+
+type readingOutcome struct {
+	res ProofreadReadingResult
+	err error
+}
+
 // proofread puts a reading right, where a person configured something to
 // proofread it with. An installation that named no profile, or asked for a
 // reading to be put right by hand, does nothing here.
-//
-// It reports itself under its own name, and a reading whose proofreading
-// failed is the reading as it was read.
 func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path string) {
-	said := r.with.Proofreading
-	if !said.IsAutomatic {
+	if !r.with.Proofreading.IsAutomatic {
 		return
 	}
+	_, _ = r.proofreadReading(ctx, v, path, nil)
+}
 
+func (r *RecognitionWorker) proofreadReading(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+	onBegan func(ProofreadReadingResult),
+) (ProofreadReadingResult, error) {
+	said := r.with.Proofreading
 	right, held, err := said.Reading(r.with.Readers, r.with.Derived)
 	if err != nil {
 		r.say(task.Task{ID: proofreadID(path), Doing: "Proofreading a reading", About: path, Error: err.Error()})
-		return
+		return ProofreadReadingResult{Path: path}, err
 	}
 	if !held {
-		return
+		return ProofreadReadingResult{Path: path, IsNone: true}, nil
 	}
 
 	id := proofreadID(path)
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
 	right.Cut = r.Cut
+	right.Pages = said.Batch
+	right.MaxEditDistance = said.MaxEditDistance
 	right.OnProgress = func(res ProofreadReadingResult) {
 		r.say(task.Task{
 			ID:    id,
@@ -330,8 +372,12 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 			Count: int64(res.Read),
 			Total: int64(res.Pages),
 		})
+		if onBegan != nil {
+			onBegan(res)
+			onBegan = nil
+		}
 	}
-	_, err = right.Execute(ctx, v, path)
+	res, err := right.Execute(ctx, v, path)
 
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):
@@ -339,6 +385,7 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 	default:
 		r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path, Error: err.Error()})
 	}
+	return res, err
 }
 
 // say puts this recognition in the list of what is being done. A person asked

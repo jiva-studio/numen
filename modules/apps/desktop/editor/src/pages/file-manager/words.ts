@@ -15,6 +15,7 @@ export const WORDS = {
   /** The runs a row can be put through: a recording transcribed, a scan recognised. */
   transcribe: 'Transcribe',
   recognise: 'Recognise',
+  proofread: 'Proofread',
   /** The runs over a url: the text at its address, and a copy of what is there. */
   downloadText: 'Download the text again',
   downloadCopy: 'Download a copy',

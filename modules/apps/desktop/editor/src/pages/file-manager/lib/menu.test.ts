@@ -114,6 +114,7 @@ describe('where a run stands in the menu', () => {
       'rename',
       'copy',
       '— transcribe',
+      'proofread',
       '— remove',
     ])
   })
@@ -132,11 +133,81 @@ describe('where a run stands in the menu', () => {
   })
 })
 
+describe('disabling of runs based on artifact states', () => {
+  it('disables transcribe and enables proofread when transcript is done', () => {
+    const items = itemsFor(
+      { source: 'recording', isFolder: false, made: { transcript: 'done' } },
+      false,
+      canRunAnything,
+    )
+    const transcribe = items.find((one) => one.id === 'transcribe')
+    const proofread = items.find((one) => one.id === 'proofread')
+    expect(transcribe?.disabled).toBe(true)
+    expect(proofread?.disabled).toBe(false)
+  })
+
+  it('disables both when transcript and proofread are done', () => {
+    const items = itemsFor(
+      {
+        source: 'recording',
+        isFolder: false,
+        made: { transcript: 'done', 'transcript.corrected': 'done' },
+      },
+      false,
+      canRunAnything,
+    )
+    const transcribe = items.find((one) => one.id === 'transcribe')
+    const proofread = items.find((one) => one.id === 'proofread')
+    expect(transcribe?.disabled).toBe(true)
+    expect(proofread?.disabled).toBe(true)
+  })
+
+  it('disables recognise and enables proofread when OCR is done on a PDF', () => {
+    const items = itemsFor(
+      { source: 'book', isFolder: false, format: 'pdf', made: { ocr: 'done' } },
+      false,
+      canRunAnything,
+    )
+    const recognise = items.find((one) => one.id === 'recognise')
+    const proofread = items.find((one) => one.id === 'proofread')
+    expect(recognise?.disabled).toBe(true)
+    expect(proofread?.disabled).toBe(false)
+  })
+
+  it('disables both when OCR and reading proofread are done on a PDF', () => {
+    const items = itemsFor(
+      {
+        source: 'book',
+        isFolder: false,
+        format: 'pdf',
+        made: { ocr: 'done', 'ocr.corrected': 'done' },
+      },
+      false,
+      canRunAnything,
+    )
+    const recognise = items.find((one) => one.id === 'recognise')
+    const proofread = items.find((one) => one.id === 'proofread')
+    expect(recognise?.disabled).toBe(true)
+    expect(proofread?.disabled).toBe(true)
+  })
+
+  it('offers no scan runs on an EPUB book', () => {
+    const items = itemsFor(
+      { source: 'book', isFolder: false, format: 'epub' },
+      false,
+      canRunAnything,
+    )
+    expect(items.some((one) => one.id === 'recognise')).toBe(false)
+    expect(items.some((one) => one.id === 'proofread')).toBe(false)
+  })
+})
+
 describe('the menu where this build cannot do a run at all', () => {
   it('offers the recording nothing, and leaves the scan its own run', () => {
-    const but: RunGuard = (run) => run !== 'transcribe'
+    const but: RunGuard = (run) => run !== 'transcribe' && run !== 'proofread'
 
     expect(getItemIds('recording', false, but)).not.toContain('transcribe')
+    expect(getItemIds('recording', false, but)).not.toContain('proofread')
     expect(getItemIds('book', false, but)).toContain('recognise')
   })
 })
@@ -168,6 +239,7 @@ describe('what the menu offers anywhere', () => {
   it('holds both runs, so choosing one is the menu’s own', () => {
     expect(OFFERED.has('transcribe')).toBe(true)
     expect(OFFERED.has('recognise')).toBe(true)
+    expect(OFFERED.has('proofread')).toBe(true)
   })
 
   it('holds the preset, so choosing it is the menu’s own', () => {

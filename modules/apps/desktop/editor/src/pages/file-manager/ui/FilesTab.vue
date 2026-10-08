@@ -15,10 +15,10 @@ import { getDroppedUrl, hasUrl } from '../lib/drag'
 import { itemsFor } from '../lib/menu'
 import { WORDS as words } from '../words'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: FilesTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 /**
  * The mark the window's drag and drop reads: the attribute it looks a target
  * up by, carrying the folder a file let go there is filed in.
@@ -45,11 +45,18 @@ const items = computed(() => {
   const on = {
     source: entry?.kind ?? 'other',
     isFolder: entry?.isFolder ?? false,
+    format: entry?.path.endsWith('.epub') ? ('epub' as const) : ('pdf' as const),
+    made: props.state.getArtifactStates?.(asked.path),
   }
   return itemsFor(on, props.state.getOverPaths(asked.path).length > 1, props.state.canRun)
 })
 
-// --- Handlers ---
+/* --------------------------------- Hooks ---------------------------------- */
+const refreshTree = () => void props.state.list.refresh()
+onMounted(() => globalThis.addEventListener('focus', refreshTree))
+onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
+
+/* -------------------------------- Handlers -------------------------------- */
 function onDrop(event: DragEvent) {
   const url = getDroppedUrl(event.dataTransfer)
   if (!url) return
@@ -109,14 +116,10 @@ function onDismissMenu() {
   props.state.dismissMenu()
 }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 function entryIcon(id: string, open: boolean): LucideIcon {
   return iconOfEntry(props.state.list.getEntryAt(id), open)
 }
-
-const refreshTree = () => void props.state.list.refresh()
-onMounted(() => globalThis.addEventListener('focus', refreshTree))
-onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
 </script>
 
 <template>

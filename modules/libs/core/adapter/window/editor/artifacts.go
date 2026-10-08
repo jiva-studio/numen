@@ -331,6 +331,8 @@ func (a *API) CreateArtifact(
 	switch of {
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
 		made, err = a.proofreadTranscript(ctx, showing, ref)
+	case v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED:
+		made, err = a.proofreadReading(ctx, showing, ref)
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
 		// A recording's transcript is heard by a model here; a note's is
 		// fetched from the address it points at.
@@ -543,6 +545,50 @@ func getProofreadState(res source.ProofreadTranscriptResult) v1.State {
 	return v1.State_STATE_RUNNING
 }
 
+// proofreadReading begins putting the reading of a scanned document right, and
+// answers with what the corrections now are.
+func (a *API) proofreadReading(
+	ctx context.Context,
+	v domain.Vault,
+	ref domain.Fingerprint,
+) (*v1.Artifact, error) {
+	puts := a.getReadingProofreader()
+	if puts == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
+	}
+	if !puts.ProofreaderReady() {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
+	}
+	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
+	if err != nil {
+		return nil, connect.NewError(getReachCode(err), err)
+	}
+	if got.stands != done {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errNotRead)
+	}
+
+	res, err := puts.Proofread(ctx, v, ref.Path)
+	if err != nil {
+		return nil, connect.NewError(getReachCode(err), err)
+	}
+	return &v1.Artifact{
+		Kind:  v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED,
+		State: getReadingProofreadState(res),
+	}, nil
+}
+
+func getReadingProofreadState(res source.ProofreadReadingResult) v1.State {
+	switch {
+	case res.IsBusy, res.IsWaiting:
+		return v1.State_STATE_RUNNING
+	case res.IsNone:
+		return v1.State_STATE_NONE
+	case res.Read >= res.Pages && res.Pages > 0:
+		return v1.State_STATE_DONE
+	}
+	return v1.State_STATE_RUNNING
+}
+
 // artifact is one artifact of one file, as it now stands.
 func (a *API) artifact(
 	ctx context.Context,
@@ -553,6 +599,9 @@ func (a *API) artifact(
 ) (*v1.Artifact, error) {
 	if of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 		return a.corrections(ctx, v, ref)
+	}
+	if of == v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED {
+		return a.readingCorrections(ctx, v, ref)
 	}
 	// A url's transcript is the text at the address it holds, and a
 	// recording's is what a model heard: the same kind, made two ways.
@@ -569,6 +618,37 @@ func (a *API) artifact(
 		return nil, err
 	}
 	return newArtifact(of, got), nil
+}
+
+// readingCorrections is what putting a document's reading right has come to.
+func (a *API) readingCorrections(
+	ctx context.Context,
+	v domain.Vault,
+	ref domain.Fingerprint,
+) (*v1.Artifact, error) {
+	out := &v1.Artifact{
+		Kind:  v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED,
+		State: v1.State_STATE_NONE,
+	}
+	said, store, hasReading, err := a.getSourceText(ctx, v, ref.Path)
+	if err != nil || !hasReading {
+		return out, err
+	}
+	switch _, err := store.Read(ctx, derived.Proofread(derived.Reading, said.Hash)); {
+	case err == nil:
+		out.State = v1.State_STATE_DONE
+		return out, nil
+	case !errors.Is(err, fs.ErrNotExist):
+		return nil, err
+	}
+	switch _, err := store.Read(ctx, derived.Corrections(derived.Reading, said.Hash)); {
+	case err == nil:
+		out.State = v1.State_STATE_RUNNING
+		return out, nil
+	case !errors.Is(err, fs.ErrNotExist):
+		return nil, err
+	}
+	return out, nil
 }
 
 // corrections is what putting a recording's transcript right has come to.

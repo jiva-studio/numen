@@ -2,6 +2,7 @@
  * Type declarations for the files tab domain.
  */
 import type { Ref } from 'vue'
+import type { ArtifactStates } from '@/entities/artifact'
 import type { Entry, Source } from '@/entities/file'
 import type { PathRename } from '@/shared/paths'
 import type { SearchDestination } from '@/features/command-palette'
@@ -45,6 +46,7 @@ export interface FilesTabDeps {
   importUrl(folder: string, url: string): Promise<string>
   showError(text: string): void
   canRun?: RunGuard
+  getArtifactStates?(path: string): ArtifactStates
 }
 
 /** One of the custom files the vault makes, made in a folder. */
@@ -96,4 +98,5 @@ export interface FilesTabState {
   chooseMenuItem(id: string): void
   getNameOf(path: string): string
   canRun: RunGuard
+  getArtifactStates?: ((path: string) => ArtifactStates) | undefined
 }
