@@ -115,10 +115,10 @@ func BenchmarkTransducerDecode(b *testing.B) {
 				}
 				return dst
 			},
-			predictor: func(token int) ([]float32, error) {
+			predictor: func(_ int) ([]float32, error) {
 				return nil, nil
 			},
-			joint: func(frame, said []float32) ([]float32, error) {
+			joint: func(_, _ []float32) ([]float32, error) {
 				return scores, nil
 			},
 		}.decode(ctx)
