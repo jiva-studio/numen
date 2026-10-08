@@ -27,7 +27,11 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 	said, err := transducer{
 		frames:  4,
 		blank:   blank,
-		encoder: func(at int) []float32 { return []float32{float32(at)} },
+		encoded: 1,
+		encoder: func(at int, dst []float32) []float32 {
+			dst[0] = float32(at)
+			return dst
+		},
 		predictor: func(token int) ([]float32, error) {
 			asked = append(asked, token)
 			return []float32{float32(token)}, nil
@@ -56,7 +60,7 @@ func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	said, err := transducer{
 		frames:    4,
 		blank:     blank,
-		encoder:   func(int) []float32 { return nil },
+		encoder:   func(int, []float32) []float32 { return nil },
 		predictor: func(int) ([]float32, error) { return nil, nil },
 		joint: func([]float32, []float32) ([]float32, error) {
 			return answer(blank, blank, 0, steps), nil
@@ -76,7 +80,7 @@ func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	_, err := transducer{
 		frames:    1,
 		blank:     8192,
-		encoder:   func(int) []float32 { return nil },
+		encoder:   func(int, []float32) []float32 { return nil },
 		predictor: func(int) ([]float32, error) { return nil, nil },
 		joint: func([]float32, []float32) ([]float32, error) {
 			return make([]float32, 16), nil
@@ -84,5 +88,39 @@ func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	}.decode(t.Context())
 	if err == nil {
 		t.Error("a joiner too narrow for the tokens was read")
+	}
+}
+
+func BenchmarkTransducerDecode(b *testing.B) {
+	const (
+		frames  = 500
+		encoded = 1024
+		blank   = 1024
+		steps   = 3
+	)
+	data := make([]float32, encoded*frames)
+	scores := answer(blank, blank, 1, steps)
+	ctx := b.Context()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for b.Loop() {
+		_, _ = transducer{
+			frames:  frames,
+			blank:   blank,
+			encoded: encoded,
+			encoder: func(at int, dst []float32) []float32 {
+				for c := range dst {
+					dst[c] = data[c*frames+at]
+				}
+				return dst
+			},
+			predictor: func(_ int) ([]float32, error) {
+				return nil, nil
+			},
+			joint: func(_, _ []float32) ([]float32, error) {
+				return scores, nil
+			},
+		}.decode(ctx)
 	}
 }

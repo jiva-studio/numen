@@ -216,15 +216,15 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 	state := make([]float32, layers*hidden)
 	cell := make([]float32, layers*hidden)
 	return transducer{
-		frames: width,
-		blank:  t.blank,
-		encoder: func(at int) []float32 {
+		frames:  width,
+		blank:   t.blank,
+		encoded: encoded,
+		encoder: func(at int, dst []float32) []float32 {
 			// The frames are channel after channel, each holding every frame.
-			one := make([]float32, encoded)
-			for c := range one {
-				one[c] = data[c*int(shape[2])+at]
+			for c := range dst {
+				dst[c] = data[c*int(shape[2])+at]
 			}
-			return one
+			return dst
 		},
 		predictor: func(token int) ([]float32, error) {
 			said, next, cells, err := t.predict(token, state, cell)
