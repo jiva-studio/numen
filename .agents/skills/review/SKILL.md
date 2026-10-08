@@ -66,7 +66,7 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 ### Stage 1: Gatekeeper & architectural audit
 *Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)*
 
-1. **Automated gate** — `make lint` and `make test` from `REPO_ROOT`, with the library built before the windows' suites and the `modules/libs/ui` suites taken one at a time (the guide has the exact sequence; `make test` as written runs both story instances at once and dies before a test executes).
+1. **Automated gate** — Run the modular target for each touched module from `REPO_ROOT` (e.g. `make lib_core_lint lib_core_test` for core backend, `make lib_ui_lint lib_ui_test` for UI, etc.). Never run blanket monorepo suites over untouched domains.
 2. **Fail-fast** — a type error, a lint failure, a broken existing test, or a `-race` run that did not happen marks the gate **FAIL**. Stop and reject with the exact error output, unless told to continue.
 3. **Architecture checklist** — dependency direction, ports and adapters, the `@numen/ui` domain boundary, the core/view split, tokens, naming, and one name per concept.
 
