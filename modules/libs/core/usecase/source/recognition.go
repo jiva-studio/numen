@@ -310,6 +310,7 @@ func (r *RecognitionWorker) Proofread(
 ) (ProofreadReadingResult, error) {
 	said := make(chan readingOutcome, 2)
 	r.going.Add(1)
+	//nolint:contextcheck // the run outlives the caller and carries r.context()
 	go func() {
 		defer r.going.Done()
 		res, err := r.proofreadReading(r.context(), v, path, func(began ProofreadReadingResult) {
