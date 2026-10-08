@@ -360,7 +360,7 @@ linters:
 
       # Tool definitions declare MCP schemas and dispatch handlers inline.
       - path: (^|/)adapter/mcp/
-        linters: [cyclop, gocognit, funlen]
+        linters: [cyclop, gocognit, funlen, staticcheck]
 
       # Document format decoders, markdown parsers, and debounce workers
       # traverse token streams and event queues.
