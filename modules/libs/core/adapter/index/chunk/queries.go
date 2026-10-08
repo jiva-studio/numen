@@ -121,15 +121,7 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 // kinds is what a caller's chosen kinds are on the wire: a JSON array, empty
 // for a question that says nothing about what sort of file it wants.
 func kinds(chosen []domain.SourceKind) (string, error) {
-	out := make([]string, 0, len(chosen))
-	for _, k := range chosen {
-		out = append(out, string(k))
-	}
-	raw, err := json.Marshal(out)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return formatKinds(chosen), nil
 }
 
 // Lexical is a search asked by words: the chunks of one vault whose text

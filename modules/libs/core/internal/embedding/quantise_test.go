@@ -141,6 +141,14 @@ func TestSimilarityIsTheAngleBetweenTwoVectors(t *testing.T) {
 			if math.Abs(got-c.want) > 1e-9 {
 				t.Errorf("got %v, want %v", got, c.want)
 			}
+			bytes := make([]byte, len(c.stored))
+			for i, v := range c.stored {
+				bytes[i] = byte(v)
+			}
+			gotBytes := embedding.SimilarityBytes(c.query, bytes)
+			if math.Abs(gotBytes-c.want) > 1e-9 {
+				t.Errorf("gotBytes %v, want %v", gotBytes, c.want)
+			}
 		})
 	}
 }
