@@ -149,14 +149,13 @@ export function fileOpeners(vault: FileOpenerDeps) {
 }
 
 /** The kind of tab a file opens in. */
-const targetKindOf = (kind: FileKind): string =>
-  kind.kind === 'note'
-    ? kind.type
-    : kind.kind === 'book'
-      ? kind.format === 'epub'
-        ? 'book'
-        : 'document'
-      : kind.kind
+const targetKindOf = (kind: FileKind): string => {
+  if (kind.kind === 'note') return kind.type
+  if (kind.kind === 'book') {
+    return kind.format === 'epub' ? 'book' : 'document'
+  }
+  return kind.kind
+}
 
 /** What the window puts files in front of the person with. */
 export type FileOpeners = ReturnType<typeof fileOpeners>
