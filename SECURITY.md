@@ -1,15 +1,20 @@
 # Security Policy
 
-Numen is a local-first workspace for notes, sources, and memory. Because it interacts with local files, system processes, and OCR/transcription pipelines, security and privacy are fundamental.
+Numen is a local-first workspace for notes, sources, and memory. Because it
+interacts with local files, system processes, and OCR/transcription pipelines,
+security and privacy are fundamental.
 
 ## Reporting a vulnerability
 
 Please report security vulnerabilities privately.
 
-- **GitHub Private Vulnerability Reporting** (preferred): Use **Security → Report a vulnerability** on this repository to submit a private report.
-- **Email**: If private reporting is unavailable, email **contact@jiva.studio** with `[SECURITY] Numen:` in the subject line.
+- **GitHub Private Vulnerability Reporting** (preferred): Use **Security →
+  Report a vulnerability** on this repository to submit a private report.
+- **Email**: If private reporting is unavailable, email **contact@jiva.studio**
+  with `[SECURITY] Numen:` in the subject line.
 
-Please do not open a public issue, and please do not post details publicly before a fix is released.
+Please do not open a public issue, and please do not post details publicly
+before a fix is released.
 
 A useful report includes:
 - A clear description of the vulnerability and its potential impact.
@@ -19,8 +24,10 @@ A useful report includes:
 ## What to expect
 
 - **Acknowledgement**: Within **3 working days**.
-- **Assessment & resolution**: A fix or status update within **30 days** for confirmed vulnerabilities.
-- **Disclosure**: Coordinated public disclosure via a GitHub Security Advisory once a fix is released.
+- **Assessment & resolution**: A fix or status update within **30 days** for
+  confirmed vulnerabilities.
+- **Disclosure**: Coordinated public disclosure via a GitHub Security Advisory
+  once a fix is released.
 
 ## Supported versions
 
