@@ -1,10 +1,10 @@
 /**
  * Save timers, settling coordination, and read/write execution for open notes.
  */
-import type { LinkAddress, NoteResult, WriteResult } from '../lib/note'
+import type { LinkAddress, NoteResult, WriteResult as CoreWriteResult } from '../lib/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { Notes } from '../lib/noteTypes'
-import type { Event, NoteBaseline, NoteErrorCode } from '../lib/tab'
+import type { Event, NoteBaseline, NoteErrorCode, ReadResult, WriteResult } from '../lib/tab'
 
 export const errorOf = (from: ErrorCode): NoteErrorCode => {
   if (from === 'deckTooLarge') return 'tooLarge'
@@ -60,15 +60,15 @@ export function createNoteQueue(
       return
     }
     setAddress(id, answered.ok ? (answered.value.link ?? null) : null)
-    turn(id, {
-      kind: 'read',
-      generation,
-      answer: answered.ok
-        ? { kind: 'body', body: answered.value.body, at: answered.value.at ?? '' }
-        : answered.error === 'missing'
-          ? { kind: 'missing' }
-          : { kind: 'error', error: errorOf(answered.error) },
-    })
+    let answer: ReadResult
+    if (answered.ok) {
+      answer = { kind: 'body', body: answered.value.body, at: answered.value.at ?? '' }
+    } else if (answered.error === 'missing') {
+      answer = { kind: 'missing' }
+    } else {
+      answer = { kind: 'error', error: errorOf(answered.error) }
+    }
+    turn(id, { kind: 'read', generation, answer })
   }
 
   const write = async (
@@ -77,7 +77,7 @@ export function createNoteQueue(
     body: string,
     baseline: NoteBaseline | null,
   ): Promise<void> => {
-    let answered: WriteResult
+    let answered: CoreWriteResult
     try {
       answered = await core.write(path, body, baseline)
     } catch {
@@ -85,14 +85,15 @@ export function createNoteQueue(
       turn(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
       return
     }
-    turn(id, {
-      kind: 'written',
-      answer: answered.ok
-        ? { kind: 'ok', at: answered.value.at ?? '' }
-        : answered.error === 'changed'
-          ? { kind: 'changed' }
-          : { kind: 'error', error: errorOf(answered.error) },
-    })
+    let writeAnswer: WriteResult
+    if (answered.ok) {
+      writeAnswer = { kind: 'ok', at: answered.value.at ?? '' }
+    } else if (answered.error === 'changed') {
+      writeAnswer = { kind: 'changed' }
+    } else {
+      writeAnswer = { kind: 'error', error: errorOf(answered.error) }
+    }
+    turn(id, { kind: 'written', answer: writeAnswer })
     resumeClosing(id)
   }
 

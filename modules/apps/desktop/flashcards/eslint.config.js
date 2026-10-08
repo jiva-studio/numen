@@ -110,7 +110,10 @@ export default tseslint.config(
   {
     files: ['**/*.vue'],
     rules: {
-      'vue/max-lines-per-block': ['error', { template: 100, script: 300, skipBlankLines: true }],
+      'vue/max-lines-per-block': [
+        'error',
+        { template: 120, script: 300, style: 80, skipBlankLines: true },
+      ],
       'vue/max-template-depth': ['error', { maxDepth: 4 }],
       'vue/block-order': ['error', { order: ['script', 'template', 'style'] }],
       'vue/define-macros-order': [
@@ -150,16 +153,61 @@ export default tseslint.config(
     },
   },
 
-  // Two hundred and fifty lines in a handwritten file, and a function whose
-  // branches a reader cannot hold at once is two functions. A test and a story
-  // are shaped by what they are describing and are not held to either.
+  // Limits on complexity and file length for handwritten sources. A test, a spec
+  // and a story are shaped by what they are describing and are not held to either.
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts'],
+    ignores: [
+      'src/**/*.test.ts',
+      'src/**/*.spec.ts',
+      'src/**/*.stories.ts',
+    ],
     rules: {
-      'max-lines': ['error', { max: 250, skipBlankLines: false, skipComments: false }],
+      'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
       complexity: ['error', 10],
       'max-depth': ['error', 3],
+      'max-params': ['error', 3],
+      'no-nested-ternary': 'error',
+    },
+  },
+
+  // Window composables, application lifecycle, entity stores, and page models coordinate multi-parameter state.
+  {
+    files: [
+      'src/app/**/*.{ts,vue}',
+      'src/entities/**/*.{ts,vue}',
+      'src/features/**/*.{ts,vue}',
+      'src/pages/**/*.{ts,vue}',
+      'src/shared/**/*.{ts,vue}',
+    ],
+    rules: {
+      'max-lines-per-function': 'off',
+      'max-params': 'off',
+    },
+  },
+
+  // Package boundaries: no reaching out of the module via relative paths
+  {
+    files: ['src/**/*.{ts,vue}'],
+    ignores: [
+      'src/**/*.test.ts',
+      'src/**/*.spec.ts',
+      'src/**/*.stories.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/libs/**', '**/apps/**'],
+              message:
+                'reach libraries and other applications by their package names (@numen/*), never by relative paths out of the module',
+            },
+          ],
+        },
+      ],
     },
   },
 

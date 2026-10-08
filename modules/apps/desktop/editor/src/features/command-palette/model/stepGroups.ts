@@ -126,8 +126,11 @@ export function createStepGroups(state: ViewState) {
    * there, or it is the one the window is showing. A vault that can be chosen
    * is marked with nothing.
    */
-  const getVaultAside = (one: Vault): string =>
-    one.isMissing ? words.gone : one.id === showing.value ? words.current : ''
+  const getVaultAside = (one: Vault): string => {
+    if (one.isMissing) return words.gone
+    if (one.id === showing.value) return words.current
+    return ''
+  }
 
   /**
    * The vaults the installation holds. The two it will not take are marked

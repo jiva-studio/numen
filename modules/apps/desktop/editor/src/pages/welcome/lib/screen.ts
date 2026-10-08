@@ -75,7 +75,12 @@ export const waysIn = (at: ShownVault, words: Words, agent: string): readonly We
  */
 export const vaultsOn = (list: VaultList, words: Words): readonly VaultRow[] =>
   list.vaults.map((one) => {
-    const aside = one.isMissing ? words.gone : one.id === list.showing ? words.current : ''
+    let aside = ''
+    if (one.isMissing) {
+      aside = words.gone
+    } else if (one.id === list.showing) {
+      aside = words.current
+    }
     return {
       id: one.id,
       name: one.name,
