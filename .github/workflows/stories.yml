@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   named:
-    name: "Check :: Shots"
+    name: "Check :: Story Names"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -56,8 +56,8 @@ jobs:
 
       # The manual writes its pages from the window's own source as well, so
       # this answers for every name it holds and not for the pictures alone.
-      - name: The manual
+      - name: Verify documentation story references
         run: node modules/apps/docs/tools/manual.mjs --check
 
-      - name: The page
+      - name: Verify landing page story references
         run: node modules/apps/landing/tools/stories.mjs

@@ -54,22 +54,22 @@ jobs:
   # the month it is made in and goes where the page looks; a beta is named for
   # the stable release it precedes and goes on a shelf of its own.
   naming:
-    name: Version
+    name: "Prepare :: Version"
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
-      version: ${{ steps.said.outputs.version }}
-      build: ${{ steps.said.outputs.build }}
-      commit: ${{ steps.said.outputs.commit }}
-      stamp: ${{ steps.said.outputs.stamp }}
-      numeric: ${{ steps.said.outputs.numeric }}
-      channel: ${{ steps.said.outputs.channel }}
-      shelf: ${{ steps.said.outputs.shelf }}
-      linux: ${{ steps.said.outputs.linux }}
-      windows: ${{ steps.said.outputs.windows }}
-      macos: ${{ steps.said.outputs.macos }}
-      notarize: ${{ steps.said.outputs.notarize }}
-      publish: ${{ steps.said.outputs.publish }}
+      version: ${{ steps.resolve-version.outputs.version }}
+      build: ${{ steps.resolve-version.outputs.build }}
+      commit: ${{ steps.resolve-version.outputs.commit }}
+      stamp: ${{ steps.resolve-version.outputs.stamp }}
+      numeric: ${{ steps.resolve-version.outputs.numeric }}
+      channel: ${{ steps.resolve-version.outputs.channel }}
+      shelf: ${{ steps.resolve-version.outputs.shelf }}
+      linux: ${{ steps.resolve-version.outputs.linux }}
+      windows: ${{ steps.resolve-version.outputs.windows }}
+      macos: ${{ steps.resolve-version.outputs.macos }}
+      notarize: ${{ steps.resolve-version.outputs.notarize }}
+      publish: ${{ steps.resolve-version.outputs.publish }}
     steps:
       # The build number is how many commits stand behind this one, so the whole
       # history has to be here for it to be counted.
@@ -78,7 +78,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - id: said
+      - id: resolve-version
         env:
           CHANNEL: ${{ inputs.channel }}
           ASKED_LINUX: ${{ inputs.linux }}
@@ -133,7 +133,7 @@ jobs:
   # measured from there too, so it says everything the stable release it
   # precedes will say.
   notes:
-    name: Notes
+    name: "Prepare :: Release Notes"
     needs: [naming]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -143,7 +143,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Git-cliff
+      - name: Install git-cliff
         env:
           CLIFF: 2.14.1
           SHA256: dfe9bef0c7a00d05fafe78e6e591a1a280d39dd495b8066764db0a559acde67f
@@ -156,7 +156,7 @@ jobs:
           tar -xzf "$RUNNER_TEMP/$at" -C "$RUNNER_TEMP"
           sudo install "$RUNNER_TEMP/git-cliff-$CLIFF/git-cliff" /usr/local/bin/
 
-      - name: What is in it
+      - name: Generate release notes
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -203,11 +203,11 @@ jobs:
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers.
-      - name: Webview
+      - name: Install WebKit & GTK dependencies
         run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
 
       # The number the window draws in its corner is written into the page here.
-      - name: Interface
+      - name: Build frontend interfaces
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -215,7 +215,7 @@ jobs:
           make interface
 
       # What the binary answers `--version` with is written in at the link.
-      - name: Window
+      - name: Build desktop binaries
         working-directory: modules/apps/desktop
         env:
           VERSION: ${{ needs.naming.outputs.version }}
@@ -1139,7 +1139,7 @@ jobs:
   # What the release is called and what it says it holds. The tag is made when
   # the builds are up and not before, so nothing names a build that failed.
   announce:
-    name: Announce
+    name: "Release :: Publish"
     if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' && needs.publish.result == 'success' }}
     needs: [naming, notes, publish]
     runs-on: ubuntu-24.04
@@ -1163,7 +1163,7 @@ jobs:
           name: notes
           path: ${{ runner.temp }}
 
-      - name: The tag
+      - name: Create and push git tag
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -1175,7 +1175,7 @@ jobs:
 
       # The builds are on the release as well as on the shelf: the shelf is what
       # the page hands out, and this is what the version is kept under.
-      - name: The release
+      - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.naming.outputs.version }}

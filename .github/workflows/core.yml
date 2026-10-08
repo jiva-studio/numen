@@ -46,11 +46,11 @@ jobs:
   # Which machines this run is for. Linux always; a Windows or a mac runner
   # costs two and ten times a Linux one, and is asked for by name.
   asked:
-    name: Platforms
+    name: "Matrix :: Platforms"
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      matrix: ${{ steps.said.outputs.matrix }}
+      matrix: ${{ steps.resolve-matrix.outputs.matrix }}
     steps:
       # The trailer is looked for in every commit the branch adds, so the whole
       # range has to be here to be read.
@@ -59,7 +59,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - id: said
+      - id: resolve-matrix
         env:
           EVENT: ${{ github.event_name }}
           ASKED_WINDOWS: ${{ inputs.windows }}
@@ -149,12 +149,12 @@ jobs:
       # run, so this step can find something on a branch that changed nothing.
       # It answers for the standard library of the Go above as well as for what
       # is required.
-      - name: Vulnerabilities
+      - name: Check core vulnerabilities
         run: |
           go run golang.org/x/vuln/cmd/govulncheck@latest ./...
         working-directory: modules/libs/core
 
-      - name: Vulnerabilities
+      - name: Check protocol vulnerabilities
         run: |
           go run golang.org/x/vuln/cmd/govulncheck@latest ./...
         working-directory: modules/libs/protocol
@@ -178,12 +178,12 @@ jobs:
       # A rule nothing has been seen to refuse is an assumption, so the rule is
       # put through a repository built to be refused before it is trusted with
       # this one. It needs no base and runs on every event.
-      - name: What the rule refuses
+      - name: Self-test migration rule
         run: modules/libs/core/adapter/index/migration-forward-only.sh --self-test
 
       # Git holds the hashes, so nothing here is written down twice: a file the
       # base already carries has to still be what it was there.
-      - name: Forward only
+      - name: Verify migrations are forward-only
         if: github.event_name == 'pull_request'
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
@@ -220,14 +220,14 @@ jobs:
           cache: false
 
       # Where the compiler keeps what it built is the machine's own answer.
-      - id: paths
+      - id: go-cache-paths
         run: |
           echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
           echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ steps.paths.outputs.modules }}
+          path: ${{ steps.go-cache-paths.outputs.modules }}
           key: go-mod-core-${{ matrix.runner }}-${{ hashFiles('modules/libs/core/go.sum') }}
           restore-keys: go-mod-core-${{ matrix.runner }}-
 
@@ -236,22 +236,23 @@ jobs:
       # so the newest cache the branch can see is the one restored.
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ steps.paths.outputs.build }}
+          path: ${{ steps.go-cache-paths.outputs.build }}
           key: go-build-core-${{ matrix.runner }}-${{ github.sha }}
           restore-keys: go-build-core-${{ matrix.runner }}-
 
-      - name: Formatting
+      - name: Verify Go formatting
         run: |
           unformatted=$(gofmt -l .)
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
 
-      - run: go vet ./...
+      - name: Run go vet
+        run: go vet ./...
 
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
-      - name: Temporary folder
+      - name: Configure Linux temporary directory
         if: matrix.runner == 'ubuntu-latest'
         run: echo "TMPDIR=/dev/shm" >> "$GITHUB_ENV"
 
@@ -259,7 +260,7 @@ jobs:
       # checks the repository out on another. The folder a test builds its vault
       # in moves to the drive the runner keeps for its own work, and what this
       # machine offers is written into the log beside the timings it produces.
-      - name: Temporary folder
+      - name: Configure Windows temporary directory
         if: matrix.runner == 'windows-latest'
         run: |
           powershell -NoProfile -Command "Get-PSDrive -PSProvider FileSystem | Format-Table -AutoSize Name,Used,Free" || true
@@ -270,7 +271,8 @@ jobs:
 
       # -race because a scan will grow concurrent, and the cheapest time to find
       # that out is before it does. Every machine runs every test.
-      - run: go test ${{ matrix.race && '-race' || '' }} ./...
+      - name: Run Go tests
+        run: go test ${{ matrix.race && '-race' || '' }} ./...
 
       # Every run writes what it built. A branch reads its own back on the next
       # push to it and main's before that.
@@ -279,5 +281,5 @@ jobs:
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: ${{ !cancelled() }}
         with:
-          path: ${{ steps.paths.outputs.build }}
+          path: ${{ steps.go-cache-paths.outputs.build }}
           key: go-build-core-${{ matrix.runner }}-${{ github.sha }}
