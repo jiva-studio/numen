@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"image"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -88,15 +89,14 @@ func TestAPageNothingCouldBeReadOnIsAFailure(t *testing.T) {
 // what it says.
 func TestOnePartThatCouldNotBeReadLeavesTheRest(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
-	asked := 0
+	var asked atomic.Int32
 
 	r := &Recogniser{
 		layout: partsOf(image.Rect(10, 10, 590, 400), image.Rect(10, 410, 590, 790)),
 		body:   map[string]bool{"text": true},
 		head:   map[string]int{},
 		read: func(image.Image) ([]read.RecResult, error) {
-			asked++
-			if asked == 1 {
+			if asked.Add(1) == 1 {
 				return nil, errors.New("the first part")
 			}
 			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
