@@ -114,13 +114,7 @@ func (a *Agent) Close() error {
 	a.taken.running = nil
 	a.taken.Unlock()
 
-	var failed error
-	for _, w := range running {
-		if err := w.Stop(); err != nil && failed == nil {
-			failed = err
-		}
-	}
-	return failed
+	return stopWorks(running)
 }
 
 // Finish ends a conversation: everything still being answered in it stops, and
@@ -139,17 +133,23 @@ func (a *Agent) Finish(_ context.Context, conversation string) error {
 	}
 	a.taken.Unlock()
 
-	var failed error
-	for _, w := range answering {
-		if err := w.Stop(); err != nil && failed == nil {
-			failed = err
-		}
-	}
+	err := stopWorks(answering)
 
 	a.carried.Lock()
 	defer a.carried.Unlock()
 	delete(a.carried.sessions, conversation)
-	return failed
+	return err
+}
+
+// stopWorks cancels each running task and waits for its reader to finish.
+func stopWorks(works []*work) error {
+	for _, w := range works {
+		w.once.Do(w.stop)
+	}
+	for _, w := range works {
+		w.reader.Wait()
+	}
+	return nil
 }
 
 // getSession is the session the next question of this conversation is asked in,
@@ -438,9 +438,7 @@ func (w *work) Steps() <-chan port.Step { return w.steps }
 // Cancelling is the one way the child is ended, here and wherever the context
 // this work was taken with is cancelled.
 func (w *work) Stop() error {
-	w.once.Do(w.stop)
-	w.reader.Wait()
-	return nil
+	return stopWorks([]*work{w})
 }
 
 // reason is what to tell the person when the agent stopped.
