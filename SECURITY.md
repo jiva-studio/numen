@@ -21,13 +21,8 @@ A useful report includes:
 - Steps to reproduce or a minimal proof of concept.
 - The affected operating system, architecture, and version or commit.
 
-## What to expect
-
-- **Acknowledgement**: Within **3 working days**.
-- **Assessment & resolution**: A fix or status update within **30 days** for
-  confirmed vulnerabilities.
-- **Disclosure**: Coordinated public disclosure via a GitHub Security Advisory
-  once a fix is released.
+Reports are handled on a best-effort basis. There is no guaranteed response
+timeline, resolution SLA, or bug bounty program.
 
 ## Supported versions
 
