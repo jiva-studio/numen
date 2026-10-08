@@ -1,7 +1,10 @@
 package ocr_test
 
 import (
+	"fmt"
 	"image"
+	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -379,5 +382,88 @@ func TestAHeadingSaysWhereAPartOfTheDocumentBegins(t *testing.T) {
 		if part.Depth != want[i].depth {
 			t.Errorf("%q sits at depth %d, want %d", want[i].title, part.Depth, want[i].depth)
 		}
+	}
+}
+
+// createDocument is a page of rows lines, every third of which breaks a word
+// with a hyphen.
+func createDocument(rows int) []ocr.Line {
+	lines := make([]ocr.Line, 0, rows)
+	for i := range rows {
+		text := "the quick brown fox jumps over the lazy dog and keeps running far"
+		switch i % 3 {
+		case 0:
+			text += " under-"
+		case 1:
+			text = "standing " + text
+		}
+		lines = append(lines, line(0, i*40, 600, i*40+20, text))
+	}
+	return lines
+}
+
+func BenchmarkAssemble(b *testing.B) {
+	for _, rows := range []int{50, 200} {
+		lines := createDocument(rows)
+		b.Run(fmt.Sprintf("%d lines", rows), func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				ocr.Assemble(lines)
+			}
+		})
+	}
+}
+
+var oldHyphen = regexp.MustCompile(`(\pL)[-‐‑\x{00ad}]$`)
+
+// assembleByRegexp joins one-box lines that are already in reading order, by
+// matching the whole text written so far.
+func assembleByRegexp(lines []ocr.Line) (string, []ocr.Box) {
+	var out strings.Builder
+	var kept []ocr.Box
+	for _, l := range lines {
+		text := strings.TrimSpace(l.Text)
+		if text == "" {
+			continue
+		}
+		joined := out.String()
+		if oldHyphen.MatchString(joined) {
+			out.Reset()
+			out.WriteString(oldHyphen.ReplaceAllString(joined, "$1"))
+			if n := len(kept); n > 0 {
+				kept[n-1].Span.To -= len(joined) - out.Len()
+			}
+		} else if joined != "" {
+			out.WriteString(" ")
+		}
+		at := out.Len()
+		kept = append(kept, ocr.Box{Rect: l.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
+		out.WriteString(text)
+	}
+	return out.String(), kept
+}
+
+func TestAssembleMatchesTheRegexpJoin(t *testing.T) {
+	documents := map[string][]ocr.Line{"50 lines": createDocument(50), "200 lines": createDocument(200)}
+	var edge []ocr.Line
+	for i, text := range []string{
+		"under-", "-", "-", "a-", "  ", "- x", "Viśvakoṣa\u00ad", "‐", "word -", "x‑", "1-", "-", "ṇ‐", "end",
+		"bad\xff-", "\xff-", "tail-",
+	} {
+		edge = append(edge, line(0, i*40, 600, i*40+20, text))
+	}
+	documents["edge cases"] = edge
+
+	for name, lines := range documents {
+		t.Run(name, func(t *testing.T) {
+			gotText, gotBoxes := ocr.Assemble(lines)
+			wantText, wantBoxes := assembleByRegexp(lines)
+			if gotText != wantText {
+				t.Errorf("assembled %q, want %q", gotText, wantText)
+			}
+			if !reflect.DeepEqual(gotBoxes, wantBoxes) {
+				t.Errorf("boxes %v, want %v", gotBoxes, wantBoxes)
+			}
+		})
 	}
 }

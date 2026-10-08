@@ -11,9 +11,10 @@ package ocr
 
 import (
 	"image"
-	"regexp"
 	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
@@ -126,34 +127,55 @@ func isInside(a, b image.Rectangle) bool {
 // Assemble writes one region out as running prose, and says where on the page
 // each run of it was read.
 func Assemble(lines []Line) (string, []Box) {
-	var out strings.Builder
+	var out []byte
 	var kept []Box
 	for _, line := range group(lines) {
 		text, boxes := writeLine(line)
 		if text == "" {
 			continue
 		}
-		joined := out.String()
-		if hyphen.MatchString(joined) {
-			out.Reset()
-			out.WriteString(hyphen.ReplaceAllString(joined, "$1"))
+		if n := getHyphenLength(out); n > 0 {
+			out = out[:len(out)-n]
 			// The hyphen is gone from the end of the box that carried it, so
-			// that box covers one byte fewer than it wrote.
-			if n := len(kept); n > 0 {
-				kept[n-1].Span.To -= len(joined) - out.Len()
+			// that box covers fewer bytes than it wrote.
+			if k := len(kept); k > 0 {
+				kept[k-1].Span.To -= n
 			}
-		} else if joined != "" {
-			out.WriteString(" ")
+		} else if len(out) > 0 {
+			out = append(out, ' ')
 		}
-		at := out.Len()
+		at := len(out)
 		for _, box := range boxes {
 			box.Span.From += at
 			box.Span.To += at
 			kept = append(kept, box)
 		}
-		out.WriteString(text)
+		out = append(out, text...)
 	}
-	return out.String(), kept
+	return string(out), kept
+}
+
+// getHyphenLength is the byte length of the hyphen that ends text when a letter
+// stands before it, and zero otherwise. A line broken by a hyphen continues in
+// the next one.
+func getHyphenLength(text []byte) int {
+	mark, width := utf8.DecodeLastRune(text)
+	if !isHyphen(mark) {
+		return 0
+	}
+	letter, _ := utf8.DecodeLastRune(text[:len(text)-width])
+	if !unicode.IsLetter(letter) {
+		return 0
+	}
+	return width
+}
+
+func isHyphen(r rune) bool {
+	switch r {
+	case '-', '\u2010', '\u2011', '\u00ad':
+		return true
+	}
+	return false
 }
 
 // group divides a region's lines into the lines the page prints.
@@ -226,6 +248,3 @@ func writeLine(line []Line) (string, []Box) {
 	}
 	return out.String(), kept
 }
-
-// A line broken by a hyphen continues in the next one.
-var hyphen = regexp.MustCompile(`(\pL)[-‐‑\x{00ad}]$`)
