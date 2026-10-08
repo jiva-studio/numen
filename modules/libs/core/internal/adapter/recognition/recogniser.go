@@ -224,17 +224,19 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 	return out, nil
 }
 
-// cropRegion is the part of the page a region covers, widened, and drawn into an
-// image of its own.
+// cropRegion is the part of the page a region covers, widened.
 //
 // Where it was cut from comes back with it: a box the recogniser returns is
-// addressed from the crop, and has to be read as a box of the page. The
-// widening is because the first letter of a line sits on the boundary the
-// layout model drew.
+// addressed from the crop, and has to be read as a box of the page.
 func cropRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
 	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
 		return nil, image.Point{}
+	}
+	if sub, ok := page.(interface {
+		SubImage(image.Rectangle) image.Image
+	}); ok {
+		return sub.SubImage(wider), wider.Min
 	}
 	out := image.NewRGBA(image.Rect(0, 0, wider.Dx(), wider.Dy()))
 	draw.Draw(out, out.Bounds(), page, wider.Min, draw.Src)

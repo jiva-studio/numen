@@ -13,6 +13,20 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
+// BenchmarkCropRegion measures cropping a region from a page.
+func BenchmarkCropRegion(b *testing.B) {
+	page := image.NewRGBA(image.Rect(0, 0, 1200, 1600))
+	rect := image.Rect(100, 200, 1100, 800)
+	margin := 10
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for b.Loop() {
+		crop, _ := cropRegion(page, rect, margin)
+		_ = crop
+	}
+}
+
 // BenchmarkRecognisePage measures multi-region recognition on a single page.
 func BenchmarkRecognisePage(b *testing.B) {
 	page := image.NewRGBA(image.Rect(0, 0, 1200, 1600))
@@ -182,5 +196,55 @@ func partsOf(rects ...image.Rectangle) func(image.Image) ([]ocr.Region, error) {
 			out = append(out, ocr.Region{Label: "text", Rect: rect})
 		}
 		return out, nil
+	}
+}
+
+// A sub-image capable page uses view cropping.
+func TestCropRegionWithSubImage(t *testing.T) {
+	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
+	rect := image.Rect(50, 60, 200, 300)
+	margin := 10
+
+	crop, corner := cropRegion(page, rect, margin)
+	if crop == nil {
+		t.Fatal("crop returned nil")
+	}
+	wantRect := image.Rect(40, 50, 210, 310)
+	if crop.Bounds() != wantRect {
+		t.Errorf("crop bounds = %v, want %v", crop.Bounds(), wantRect)
+	}
+	if corner != wantRect.Min {
+		t.Errorf("corner = %v, want %v", corner, wantRect.Min)
+	}
+}
+
+// An image without SubImage falls back to copying.
+func TestCropRegionFallback(t *testing.T) {
+	type wrapper struct{ image.Image }
+	page := wrapper{image.NewRGBA(image.Rect(0, 0, 600, 800))}
+	rect := image.Rect(50, 60, 200, 300)
+	margin := 10
+
+	crop, corner := cropRegion(page, rect, margin)
+	if crop == nil {
+		t.Fatal("crop returned nil")
+	}
+	wantBounds := image.Rect(0, 0, 170, 260)
+	if crop.Bounds() != wantBounds {
+		t.Errorf("fallback crop bounds = %v, want %v", crop.Bounds(), wantBounds)
+	}
+	if corner != image.Pt(40, 50) {
+		t.Errorf("corner = %v, want (40, 50)", corner)
+	}
+}
+
+// An empty region intersection returns nil.
+func TestCropRegionEmpty(t *testing.T) {
+	page := image.NewRGBA(image.Rect(0, 0, 100, 100))
+	rect := image.Rect(200, 200, 300, 300)
+
+	crop, corner := cropRegion(page, rect, 0)
+	if crop != nil || corner != (image.Point{}) {
+		t.Errorf("empty crop returned %v, %v; want nil, (0,0)", crop, corner)
 	}
 }
