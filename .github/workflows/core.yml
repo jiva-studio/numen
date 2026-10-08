@@ -81,7 +81,7 @@ jobs:
             asked=$(git log --format=%B "$BASE..$HEAD" \
               | grep -i '^Run-On:' \
               | cut -d: -f2- \
-              | tr 'A-Z' 'a-z' | tr -d ' \t\r' | tr '\n' ',' || true)
+              | tr '[:upper:]' '[:lower:]' | tr -d ' \t\r' | tr '\n' ',' || true)
             echo "asked: ${asked:-nothing}"
             case ",$asked," in *,all,*) windows=true; macos=true ;; esac
             case ",$asked," in *,windows,*) windows=true ;; esac

@@ -87,15 +87,7 @@ jobs:
           ASKED_NOTARIZE: ${{ inputs.notarize }}
           ASKED_PUBLISH: ${{ inputs.publish }}
         run: |
-          # shellcheck disable=SC2034
           set -euo pipefail
-
-          channel=$CHANNEL
-          linux=$ASKED_LINUX
-          windows=$ASKED_WINDOWS
-          macos=$ASKED_MACOS
-          notarize=$ASKED_NOTARIZE
-          publish=$ASKED_PUBLISH
 
           build=$(git rev-list --count HEAD)
           commit=$(git rev-parse --short=7 HEAD)
@@ -108,7 +100,7 @@ jobs:
           month=$(date -u +%-m)
           made=$(git tag -l "v$year.$month.*" | grep -vc -- '-' || true)
 
-          if [ "$channel" = stable ]; then
+          if [ "$CHANNEL" = stable ]; then
             version="$year.$month.$made"
             shelf=latest
           else
@@ -125,9 +117,20 @@ jobs:
           IFS=. read -r major minor patch _ <<< "${version%%-*}"
           numeric="${major:-0}.${minor:-0}.${patch:-0}.$build"
 
-          for name in version build commit stamp numeric channel shelf linux windows macos notarize publish; do
-            echo "$name=${!name}" >> "$GITHUB_OUTPUT"
-          done
+          {
+            echo "version=$version"
+            echo "build=$build"
+            echo "commit=$commit"
+            echo "stamp=$stamp"
+            echo "numeric=$numeric"
+            echo "channel=$CHANNEL"
+            echo "shelf=$shelf"
+            echo "linux=$ASKED_LINUX"
+            echo "windows=$ASKED_WINDOWS"
+            echo "macos=$ASKED_MACOS"
+            echo "notarize=$ASKED_NOTARIZE"
+            echo "publish=$ASKED_PUBLISH"
+          } >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
   # What has landed since the last release everybody was handed. A beta is
