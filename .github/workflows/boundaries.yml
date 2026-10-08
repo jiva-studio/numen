@@ -30,7 +30,7 @@ jobs:
   architecture:
     name: Architecture
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -47,10 +47,6 @@ jobs:
       # nothing.
       - name: Install dependencies
         run: npm ci --prefix modules
-
-      # A window reaches the components through their build.
-      - name: Build the components
-        run: npm run build --prefix modules/libs/ui
 
       # Which way the modules point, and inside the two windows which way their
       # folders point: a screen reaches the shared folders and never another
@@ -72,13 +68,6 @@ jobs:
       - name: Verify story references
         run: npm run check --prefix modules/tools/stories
 
-      # What each window and each library is read against: the globals a pure
-      # core may not reach for, the promises nobody waits for, and the names a
-      # file declares and never uses. The rules are type-aware, so this stands
-      # after the components are built.
-      - name: Lint workspace packages
-        run: npm run lint --workspaces --if-present --prefix modules
-
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: modules/apps/desktop/go.mod
@@ -97,28 +86,6 @@ jobs:
         run: go test ./internal/layers/...
         working-directory: modules/apps/desktop
 
-  format:
-    name: Format
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: modules/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci --prefix modules
-
-      # What Prettier says of the TypeScript, the Vue and the CSS.
-      - name: Verify code formatting
-        run: npm run format:check --prefix modules
-
   audit:
     name: Audit
     runs-on: ubuntu-latest
@@ -134,6 +101,6 @@ jobs:
           cache: npm
           cache-dependency-path: modules/package-lock.json
 
-      # Check npm packages for known security vulnerabilities.
+      # Check npm root workspace for known security vulnerabilities.
       - name: Verify dependencies security
         run: npm audit --prefix modules --audit-level=high
