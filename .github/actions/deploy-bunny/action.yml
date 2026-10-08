@@ -1,0 +1,139 @@
+name: "Deploy to Bunny CDN"
+description: "Uploads build artifacts to Bunny Storage, prunes removed files, purges CDN cache, and verifies propagation"
+inputs:
+  endpoint:
+    description: "Bunny Storage Endpoint"
+    required: true
+  storage-zone:
+    description: "Bunny Storage Zone Name"
+    required: true
+  storage-key:
+    description: "Bunny Storage Access Key"
+    required: true
+  pull-zone-id:
+    description: "Bunny Pull Zone ID"
+    required: true
+  api-key:
+    description: "Bunny Account API Key"
+    required: true
+  served-from:
+    description: "Base URL where content is served"
+    required: true
+  dist-path:
+    description: "Path to local directory with files to upload"
+    required: false
+    default: "dist"
+  prune:
+    description: "Whether to remove files on CDN not present in dist"
+    required: false
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - name: Validate environment variables
+      shell: bash
+      env:
+        ENDPOINT: ${{ inputs.endpoint }}
+        ZONE: ${{ inputs.storage-zone }}
+        PULL_ZONE: ${{ inputs.pull-zone-id }}
+        SERVED_FROM: ${{ inputs.served-from }}
+        KEY: ${{ inputs.storage-key }}
+        API_KEY: ${{ inputs.api-key }}
+      run: |
+        missing=
+        for name in ENDPOINT ZONE PULL_ZONE SERVED_FROM KEY API_KEY; do
+          [ -n "${!name}" ] || missing="$missing $name"
+        done
+        if [ -n "$missing" ]; then
+          echo "::error::missing required deployment variables:$missing"
+          exit 1
+        fi
+
+    - name: Upload files to Bunny CDN
+      shell: bash
+      env:
+        ENDPOINT: ${{ inputs.endpoint }}
+        ZONE: ${{ inputs.storage-zone }}
+        KEY: ${{ inputs.storage-key }}
+        DIST: ${{ inputs.dist-path }}
+      run: |
+        set -euo pipefail
+        umask 077
+        printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
+        cd "$DIST"
+        find . -type f | sed 's|^\./||' | while read -r path; do
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X PUT "https://$ENDPOINT/$ZONE/$path" \
+            -H @"$RUNNER_TEMP/storage.header" \
+            -H 'Content-Type: application/octet-stream' \
+            --data-binary "@$path")
+          echo "$code  $path"
+          case "$code" in 20*) ;; *) echo "::error::$path was refused with $code"; exit 1 ;; esac
+        done
+
+    - name: Remove stale files from Bunny CDN
+      if: inputs.prune == 'true'
+      shell: bash
+      env:
+        ENDPOINT: ${{ inputs.endpoint }}
+        ZONE: ${{ inputs.storage-zone }}
+        KEY: ${{ inputs.storage-key }}
+        DIST: ${{ inputs.dist-path }}
+      run: |
+        set -euo pipefail
+        umask 077
+        printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
+        built=$(cd "$DIST" && find . -type f | sed 's|^\./||' | sort)
+
+        walk() {
+          local under="$1"
+          curl -fsS "https://$ENDPOINT/$ZONE/$under" \
+            -H @"$RUNNER_TEMP/storage.header" \
+            | jq -r '.[] | [.IsDirectory, .ObjectName] | @tsv' \
+            | while IFS=$'\t' read -r directory name; do
+                if [ "$directory" = true ]; then
+                  walk "$under$name/"
+                else
+                  echo "$under$name"
+                fi
+              done
+        }
+
+        walk "" | sort > /tmp/there
+        comm -23 /tmp/there <(printf '%s\n' "$built") | while read -r stale; do
+          [ -n "$stale" ] || continue
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -X DELETE "https://$ENDPOINT/$ZONE/$stale" \
+            -H @"$RUNNER_TEMP/storage.header")
+          echo "removed $code  $stale"
+        done
+
+    - name: Purge Bunny CDN cache
+      shell: bash
+      env:
+        PULL_ZONE: ${{ inputs.pull-zone-id }}
+        API_KEY: ${{ inputs.api-key }}
+      run: |
+        set -euo pipefail
+        umask 077
+        printf 'AccessKey: %s\n' "$API_KEY" > "$RUNNER_TEMP/api.header"
+
+        code=$(curl -sS -o /dev/null -w '%{http_code}' \
+          -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
+          -H @"$RUNNER_TEMP/api.header" -H 'Content-Length: 0')
+        echo "purge $code"
+        case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
+
+    - name: Verify CDN deployment
+      shell: bash
+      env:
+        SERVED_FROM: ${{ inputs.served-from }}
+      run: |
+        set -euo pipefail
+        code=$(curl -sS -o /dev/null -L -f \
+          --retry 6 --retry-delay 5 --retry-all-errors \
+          -w '%{http_code}' "$SERVED_FROM/" || true)
+        echo "${code:-—}  $SERVED_FROM/"
+        [ "$code" = 200 ] || { echo "::error::the deployment endpoint did not respond with 200"; exit 1; }
