@@ -20,7 +20,9 @@ func applyProvider(opts *ort.SessionOptions, requested Provider) (Provider, erro
 	case ProviderCoreML:
 		return ProviderCPU, fmt.Errorf("coreml execution provider is only available on darwin/arm64")
 	case ProviderAuto:
-		_ = opts.EnableCUDA()
+		if err := opts.EnableCUDA(); err == nil {
+			return ProviderCUDA, nil
+		}
 		return ProviderCPU, nil
 	default:
 		return ProviderCPU, nil

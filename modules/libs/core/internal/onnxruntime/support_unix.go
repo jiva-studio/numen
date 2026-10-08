@@ -16,3 +16,7 @@ func support() {
 		}
 	}
 }
+
+func loadLibrary(name string) (uintptr, error) {
+	return purego.Dlopen(name, purego.RTLD_NOW|purego.RTLD_GLOBAL)
+}
