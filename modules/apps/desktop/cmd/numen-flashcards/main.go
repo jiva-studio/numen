@@ -26,8 +26,6 @@ import (
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/task"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
 func main() {
@@ -111,10 +109,10 @@ func run(cfg container.Config, noAgent bool) error {
 		Schedules:     running.Schedules,
 		Log:           running.Log,
 		Counted:       running.Counted,
-		Neighbourhood: flashcards.NewShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
+		Neighbourhood: cfg.ShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
 		Presets:       running.Presets,
 		Notes:         db.Queries(),
-		Window:        window.NewWindow(task.New()),
+		Window:        window.NewWindow(nil),
 		Day:           running.Day,
 		Now:           time.Now,
 	}

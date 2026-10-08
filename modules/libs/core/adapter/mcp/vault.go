@@ -5,7 +5,9 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // ShownVault is the vault a call is answered about: the vault itself, and where
@@ -97,7 +99,13 @@ func addVaultProblems(server *sdk.Server, core Core) {
 		for _, name := range in.Checks {
 			named = append(named, domain.Check(name))
 		}
-		found, err := core.Notes.Problems.Run(ctx, core.getShownVault().Vault, named...)
+		problems := core.Notes.Problems
+		if len(problems.List) == 0 {
+			if pq, ok := core.Notes.Queries.(port.ProblemQueries); ok && pq != nil {
+				problems = check.Standard(pq)
+			}
+		}
+		found, err := problems.Run(ctx, core.getShownVault().Vault, named...)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -106,7 +114,7 @@ func addVaultProblems(server *sdk.Server, core Core) {
 		if len(res.Ran) == 0 {
 			// Saying which checks an empty answer covers is the difference
 			// between "nothing is wrong" and "nothing I looked at is wrong".
-			for _, name := range core.Notes.Problems.Loud() {
+			for _, name := range problems.Loud() {
 				res.Ran = append(res.Ran, string(name))
 			}
 		}

@@ -3,10 +3,14 @@ package container
 import (
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
+
+// Vaults is what everything that acts on the vault list and vaults is called.
+type Vaults = vault.Scenarios
 
 // Vaults builds the list of vaults an installation holds, and the vault's own
 // tree, against this installation's list and index.
@@ -27,4 +31,9 @@ func (c Config) Vaults(registry port.VaultRegistry, db *Index, notes note.Move) 
 			c.VaultWriters(), db.Links(), db.SourcesKnown(), db.Sources(), notes),
 		Import: vault.NewImport(c.VaultWriters(), c.GetImportedFiles()),
 	}
+}
+
+// AddVault registers a new vault in the registry with the given root path and name.
+func (c Config) AddVault(registry port.VaultRegistry, root, name string) (domain.Vault, error) {
+	return vault.NewAdd(c.VaultIdentity(), registry, c.Clock()).Execute(root, name)
 }

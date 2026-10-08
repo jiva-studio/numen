@@ -12,12 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
-	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // This file is the only one that knows an agent can reach the vault. Built with
@@ -85,23 +81,11 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 // makeDrafting is how a change the agent is making reaches the window before it
 // lands. Where a stretch stands is the vault's to say.
 func makeDrafting(opened *editor.Installation) claudecode.Drafting {
-	reading := opened.Notes().Read
 	return claudecode.Drafting{
 		Report: func(ctx context.Context, said domain.Edit) {
 			_ = opened.API.GetWindow().ShowEdit(ctx, said)
 		},
-		Location: func(ctx context.Context, path, stood string) (int, int, bool) {
-			contents, err := reading.Execute(ctx, opened.GetShownVault(), path)
-			if err != nil || contents.Outcome != note.Ok {
-				return 0, 0, false
-			}
-			at, _ := markdown.Where(contents.Body, stood)
-			if len(at) != 1 {
-				return 0, 0, false
-			}
-			return markdown.CountUTF16(contents.Body, at[0].From),
-				markdown.CountUTF16(contents.Body, at[0].To), true
-		},
+		Location: opened.DraftingLocation,
 	}
 }
 
@@ -152,8 +136,6 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 			Write:       cutting.Write,
 			Create:      cutting.Create,
 			RenameField: cutting.Rename,
-			DeckEdit:    format.OpenDeckBody,
-			StencilBody: format.StencilBody,
 		},
 
 		Notes: mcp.Notes{
@@ -163,7 +145,6 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 			Search:        *opened.API.Finds,
 			Neighbourhood: notes.Neighbourhood,
 			Links:         notes.Links,
-			Problems:      check.Standard(opened.Problems()),
 
 			Create:  notes.Create,
 			Write:   notes.Write,

@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
@@ -306,6 +307,20 @@ func (o *Installation) GetShownVault() domain.Vault { return o.API.GetShownVault
 // is Notes.Drawing and is asked for there.
 func (o *Installation) Notes() note.Scenarios  { return o.notes }
 func (o *Installation) Cards() cards.Scenarios { return o.cards }
+
+// DraftingLocation locates where a stretch stands in a note as UTF-16 count offsets.
+func (o *Installation) DraftingLocation(ctx context.Context, path, stood string) (int, int, bool) {
+	contents, err := o.notes.Read.Execute(ctx, o.GetShownVault(), path)
+	if err != nil || contents.Outcome != note.Ok {
+		return 0, 0, false
+	}
+	at, _ := markdown.Where(contents.Body, stood)
+	if len(at) != 1 {
+		return 0, 0, false
+	}
+	return markdown.CountUTF16(contents.Body, at[0].From),
+		markdown.CountUTF16(contents.Body, at[0].To), true
+}
 
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.

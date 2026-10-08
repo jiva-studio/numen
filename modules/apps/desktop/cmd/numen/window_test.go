@@ -4,12 +4,10 @@ import (
 	"io"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // windowOn is a window open on a vault of this test's own.
@@ -25,8 +23,7 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
-	add := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now)
-	if _, err := add.Execute(root, "one"); err != nil {
+	if _, err := cfg.AddVault(registry, root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
