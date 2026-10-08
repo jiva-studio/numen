@@ -465,6 +465,7 @@ func (r *RecognitionWorker) collect(
 			}, true)
 			continue
 		}
+		right.Hash = one.Hash
 		right.Queue = queue
 		right.Pages = said.Batch
 		right.MaxEditDistance = said.MaxEditDistance

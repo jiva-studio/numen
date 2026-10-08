@@ -40,7 +40,7 @@ func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
 	held, v := newTranscriptionWorker(t, &deaf{}, "talks/one.mp3")
 	held.with.Proofreading = ProofreadingConfig{IsNamed: true, By: openNoProofreader}
 
-	held.proofread(t.Context(), v, "talks/one.mp3", false)
+	held.proofread(t.Context(), v, "talks/one.mp3", "", false)
 
 	if doing, _ := getTask(held, "talks/one.mp3"); doing != "" {
 		t.Errorf("a transcript nobody asked about is %q", doing)
@@ -52,7 +52,7 @@ func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 	held, v := newTranscriptionWorker(t, &deaf{}, "talks/one.mp3")
 	held.with.Proofreading = ProofreadingConfig{IsNamed: true, IsAutomatic: true, By: openNoProofreader}
 
-	held.proofread(t.Context(), v, "talks/one.mp3", false)
+	held.proofread(t.Context(), v, "talks/one.mp3", "", false)
 
 	doing, failed := getTask(held, "talks/one.mp3")
 	if doing != "Proofreading a transcript" {

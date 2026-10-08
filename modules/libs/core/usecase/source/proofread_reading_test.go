@@ -552,3 +552,20 @@ func TestAReadingAtItsLastPageReportsNoProgress(t *testing.T) {
 		t.Errorf("a reading with nothing left to put right was told about %d times", told)
 	}
 }
+
+// A proofreading given a known hash skips reading the source file from disk.
+func TestAProofreadingGivenAKnownHashDoesNotReadTheSourceFile(t *testing.T) {
+	put, v, _, _ := newProofreadReading(t, map[int]string{
+		0: corrects(0, "the WORDS 1"),
+	})
+	put.readers = brokenReaders{}
+	put.Hash = text.Fingerprint(printPages(outline))
+
+	res, err := put.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatalf("expected execute with known hash to succeed: %v", err)
+	}
+	if res.Fixed != 1 {
+		t.Errorf("expected 1 fixed line, got %+v", res)
+	}
+}
