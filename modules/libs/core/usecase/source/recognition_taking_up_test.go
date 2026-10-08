@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"slices"
@@ -98,13 +99,20 @@ func newHaltedWorker(
 }
 
 // books is the document one vault holds, as the index answers for it.
-type books struct{ port.SourceQueries }
+type books struct {
+	port.SourceQueries
+	hash string
+}
 
-func (books) GetRecognisedSources(
+func (b books) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
+	h := b.hash
+	if h == "" {
+		h = text.Fingerprint([]byte("not a document: " + scan))
+	}
 	return []port.SourceText{{
-		Fingerprint: domain.Fingerprint{Path: scan}, Producer: "ocr", Hash: "x",
+		Fingerprint: domain.Fingerprint{Path: scan}, Producer: "ocr", Hash: h,
 	}}, nil
 }
 
@@ -229,4 +237,33 @@ func TestAReadingAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	if got := by.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
+}
+
+// Taking up a proofreading uses the known hash from the index and avoids reading
+// the source file from disk.
+func TestTakingUpProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t *testing.T) {
+	lines := []string{"the words one", "the words two", "the words three"}
+	by := &puts{says: map[int]string{
+		1: newReply(1, lines[1]),
+		2: newReply(2, lines[2]),
+	}}
+	w, v, store, hash := newHaltedWorker(t, by, 1, lines...)
+	w.RecognitionWorker.with.Readers = brokenReaders{}
+
+	w.TakeUp(t.Context(), books{hash: hash}, v)
+	w.Wait()
+
+	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
+		t.Errorf("the proofreader was asked about lines %v", got)
+	}
+	if got := corrections(t, store, text.Corrections("ocr", hash)); !slices.Equal(got, []int{0, 1, 2}) {
+		t.Errorf("the corrections stand for lines %v", got)
+	}
+}
+
+// brokenReaders fails any attempt to open a vault reader.
+type brokenReaders struct{}
+
+func (brokenReaders) Open(domain.Vault) (port.VaultReader, error) {
+	return nil, errors.New("broken reader: must not be opened")
 }

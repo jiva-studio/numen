@@ -424,3 +424,19 @@ func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
 		t.Error("a run over the batchesAcrossCuts was told about no times")
 	}
 }
+
+// A transcript proofreading given a known hash skips reading the source file from disk.
+func TestATranscriptProofreadingGivenAKnownHashDoesNotReadTheSourceFile(t *testing.T) {
+	words := []string{"first thing", "secnd thing", "third thing"}
+	u, v, _, _, hash := newProofreadTranscript(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	u.readers = brokenReaders{}
+	u.Hash = hash
+
+	res, err := u.Execute(t.Context(), v, recordingPath)
+	if err != nil {
+		t.Fatalf("expected execute with known hash to succeed: %v", err)
+	}
+	if res.Fixed != 1 {
+		t.Errorf("expected 1 fixed line, got %+v", res)
+	}
+}

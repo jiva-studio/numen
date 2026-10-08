@@ -358,7 +358,7 @@ func (t *TranscriptionWorker) transcribeOne(ctx context.Context, v domain.Vault,
 		t.finishTask(id)
 		t.recordAnswer(v, path)
 		if !res.IsSilent && !res.IsUnopened {
-			t.proofread(ctx, v, path, asked)
+			t.proofread(ctx, v, path, "", asked)
 		}
 	}
 	return err
@@ -388,7 +388,7 @@ func (t *TranscriptionWorker) Proofread(
 	//nolint:contextcheck // the run outlives the caller and carries t.context()
 	go func() {
 		defer t.going.Done()
-		res, err := t.proofreadTranscript(t.context(), v, path, true, func(began ProofreadTranscriptResult) {
+		res, err := t.proofreadTranscript(t.context(), v, path, "", true, func(began ProofreadTranscriptResult) {
 			said <- outcome{res: began}
 		})
 		said <- outcome{res: res, err: err}
@@ -411,11 +411,11 @@ type outcome struct {
 
 // proofread puts a transcript right, where an installation asked for its
 // transcripts to be put right on their own.
-func (t *TranscriptionWorker) proofread(ctx context.Context, v domain.Vault, path string, asked bool) {
+func (t *TranscriptionWorker) proofread(ctx context.Context, v domain.Vault, path, hash string, asked bool) {
 	if !t.with.Proofreading.IsAutomatic {
 		return
 	}
-	_, _ = t.proofreadTranscript(ctx, v, path, asked, nil)
+	_, _ = t.proofreadTranscript(ctx, v, path, hash, asked, nil)
 }
 
 // proofreadTranscript puts one transcript right with the profile named for
@@ -428,7 +428,7 @@ func (t *TranscriptionWorker) proofread(ctx context.Context, v domain.Vault, pat
 func (t *TranscriptionWorker) proofreadTranscript(
 	ctx context.Context,
 	v domain.Vault,
-	path string,
+	path, hash string,
 	asked bool,
 	began func(ProofreadTranscriptResult),
 ) (ProofreadTranscriptResult, error) {
@@ -454,6 +454,7 @@ func (t *TranscriptionWorker) proofreadTranscript(
 		return ProofreadTranscriptResult{Path: path}, nil
 	}
 
+	right.Hash = hash
 	var once sync.Once
 	right.Cut = t.Cut
 	right.OnProgress = func(res ProofreadTranscriptResult) {
@@ -513,7 +514,7 @@ func (t *TranscriptionWorker) TakeUp(
 				if ctx.Err() != nil {
 					return
 				}
-				t.proofread(ctx, v, said.Path, false)
+				t.proofread(ctx, v, said.Path, said.Hash, false)
 			}
 		}
 	}()

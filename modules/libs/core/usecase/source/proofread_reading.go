@@ -44,6 +44,10 @@ type ProofreadReading struct {
 	// Area is the store the reading is kept in. Empty means the default.
 	Area string
 
+	// Hash is the known fingerprint of the reading's source file. When set,
+	// Execute reuses it without reading the source file from disk.
+	Hash string
+
 	// Pages is how many pages are asked about at once. Zero takes the default.
 	Pages int
 
@@ -112,20 +116,23 @@ type checkpoint struct {
 // Execute proofreads one document's reading.
 func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadReadingResult, error) {
 	res := ProofreadReadingResult{Path: path}
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return res, err
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return res, fmt.Errorf("read %s: %w", path, err)
+	hash := u.Hash
+	if hash == "" {
+		reader, err := u.readers.Open(v)
+		if err != nil {
+			return res, err
+		}
+		raw, err := reader.Read(ctx, path)
+		if err != nil {
+			return res, fmt.Errorf("read %s: %w", path, err)
+		}
+		hash = text.Fingerprint(raw)
 	}
 	store, err := u.derived.Open(v)
 	if err != nil {
 		return res, err
 	}
 
-	hash := text.Fingerprint(raw)
 	area := u.area()
 	corrections, far := text.Corrections(area, hash), text.Proofread(area, hash)
 

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
@@ -189,8 +191,45 @@ func (h recognised) GetRecognisedSources(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return []port.SourceText{{
-		Fingerprint: domain.Fingerprint{Path: h.path}, Producer: "asr", Hash: "x",
+		Fingerprint: domain.Fingerprint{Path: h.path}, Producer: "asr", Hash: text.Fingerprint([]byte("not a recording: " + h.path)),
 	}}, nil
+}
+
+type heard struct {
+	path string
+	hash string
+}
+
+func (h heard) Fingerprints(
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
+) (map[string]domain.Fingerprint, error) {
+	return map[string]domain.Fingerprint{h.path: {Path: h.path}}, nil
+}
+
+func (h heard) GetRecognisedSources(
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
+) ([]port.SourceText, error) {
+	return []port.SourceText{{
+		Fingerprint: domain.Fingerprint{Path: h.path}, Producer: "asr", Hash: h.hash,
+	}}, nil
+}
+
+func (h heard) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
+	return nil, nil
+}
+
+func (h heard) GetUnchunkedSources(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
+	return nil, nil
+}
+
+func (h heard) ByOtherRecipe(
+	context.Context, domain.VaultID, domain.SourceKind, []string, int,
+) ([]string, error) {
+	return nil, nil
+}
+
+func (h heard) Reading(context.Context, domain.VaultID, string) (port.SourceText, bool, error) {
+	return port.SourceText{}, false, nil
 }
 
 func (h recognised) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
@@ -422,5 +461,39 @@ func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
 	}
 	if by.times() != 1 {
 		t.Errorf("the recording was handed over %d times", by.times())
+	}
+}
+
+// Taking up a transcript proofreading uses the known hash from the index and
+// avoids reading the source file from disk.
+func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t *testing.T) {
+	by := &deaf{}
+	held, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	hash := text.Fingerprint([]byte("not a recording: talks/one.mp3"))
+
+	store, err := held.with.Derived.Open(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw := transcript.Marshal([]transcript.Cue{
+		{Text: "first thing", From: 0, To: 1000},
+	})
+	if err := store.Write(t.Context(), text.Artifact(text.ASR, hash), raw); err != nil {
+		t.Fatal(err)
+	}
+
+	corr := &corrector{says: map[int]string{0: "0|FIRST THING"}}
+	held.with.Proofreading = ProofreadingConfig{
+		IsNamed: true, IsAutomatic: true, Batch: 1,
+		By: func(string) (port.Proofreader, error) { return corr, nil },
+	}
+	held.with.Readers = brokenReaders{}
+
+	known := heard{path: "talks/one.mp3", hash: hash}
+	held.TakeUp(t.Context(), known, v)
+	held.Wait()
+
+	if len(corr.asked) != 1 {
+		t.Errorf("expected proofreader to be asked, got %v", corr.asked)
 	}
 }
