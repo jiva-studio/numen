@@ -16,7 +16,7 @@ import (
 // person has put it there.
 const ModelDirEnvVar = "NUMEN_TEST_MODEL_DIR"
 
-func modelDir(t *testing.T) string {
+func modelDir(t testing.TB) string {
 	t.Helper()
 	dir := os.Getenv(ModelDirEnvVar)
 	if dir == "" {
@@ -27,7 +27,7 @@ func modelDir(t *testing.T) string {
 
 // setLocalModel is the settings with the model this machine runs read out of
 // dir, and that model: the two a run here is opened with.
-func setLocalModel(t *testing.T, cfg embed.Config, dir string) (embed.Config, embed.LocalModel) {
+func setLocalModel(t testing.TB, cfg embed.Config, dir string) (embed.Config, embed.LocalModel) {
 	t.Helper()
 	local, ok := cfg.Indexing.Local()
 	if !ok {
@@ -38,7 +38,7 @@ func setLocalModel(t *testing.T, cfg embed.Config, dir string) (embed.Config, em
 	return cfg, local
 }
 
-func open(t *testing.T, dir string) *onnx.Embedder {
+func open(t testing.TB, dir string) *onnx.Embedder {
 	t.Helper()
 	cfg, local := setLocalModel(t, embed.Defaults(), dir)
 	e, err := onnx.Open(t.Context(), cfg.GetStoredModel(), local, nil)
