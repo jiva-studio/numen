@@ -328,8 +328,8 @@ func (p Preset) IsPaused(d Day, now time.Time) bool {
 // pace that gets there every card face that can, and how many cannot is
 // Projection.Short.
 func (p Preset) getPace(d Day, now time.Time, unbegunCards, daysToLearn int) int {
-	days := p.days(d, now)
-	if days <= 0 {
+	reviewDays := p.getReviewDays(d, now)
+	if reviewDays <= 0 {
 		return 0
 	}
 	if daysToLearn == NeverLearns {
@@ -369,13 +369,13 @@ func (p Preset) getCapacityToBegin(d Day, now time.Time, daysToLearn int) float6
 	return p.getDaysOfReview(from, span)
 }
 
-// days is how many days of review there are from the day holding now through to
+// getReviewDays returns how many days of review there are from the day holding now through to
 // the day this preset aims at, counting both. A preset aiming at no day, or at
 // one behind us, has none.
 //
 // Each day counts for the share of the load its day of the week carries, so a
 // day at nothing is no day of review at all and a day at half is half of one.
-func (p Preset) days(d Day, now time.Time) float64 {
+func (p Preset) getReviewDays(d Day, now time.Time) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}

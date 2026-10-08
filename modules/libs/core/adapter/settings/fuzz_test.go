@@ -83,7 +83,7 @@ func FuzzAt(f *testing.F) {
 			t.Fatalf("%s was read as wearing %q, which is no half of a colour pair",
 				raw, held.Appearance.Mode)
 		}
-		if _, hour := held.Review.Starts(); !hour && len(held.Said) == 0 {
+		if _, hour := held.Review.DayStart(); !hour && len(held.Said) == 0 {
 			t.Fatalf("%s names no hour a day begins at and nothing was said about it", raw)
 		}
 		if mb > 0 && held.Indexing.GetTranscribeLimit() < int64(mb) {

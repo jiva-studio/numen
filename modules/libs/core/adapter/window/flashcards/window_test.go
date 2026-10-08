@@ -148,9 +148,9 @@ func getVaultCount(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
 	return nil
 }
 
-// offers is how many card faces the deck screen puts in front of a person under
+// countOfferedCards returns how many card faces the deck screen puts in front of a person under
 // one preset: the cards of every deck that preset schedules, owed and new.
-func offers(said *v1.VaultCardsDue, decks []string) int {
+func countOfferedCards(said *v1.VaultCardsDue, decks []string) int {
 	out := 0
 	for _, one := range said.GetDecks() {
 		for _, deck := range decks {
@@ -258,7 +258,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 						value, drawn.GetGrid()[at])
 				}
 				draws := int(drawn.GetAt()[at].GetReviews())
-				if got := offers(getVaultCount(t, api, v), underSanskrit); got != draws {
+				if got := countOfferedCards(getVaultCount(t, api, v), underSanskrit); got != draws {
 					t.Errorf("at %v the curve draws %d cards for the day and the deck "+
 						"screen offers %d", value, draws, got)
 				}
@@ -439,11 +439,11 @@ func TestATargetMovedIsNotAnsweredFromTheWorkingOutUnderTheOldOne(t *testing.T) 
 	writePreset(t, api, v, "Grammar.md", p)
 	// The first count is what writes the working out down, so the second is the
 	// one that could be answered from it.
-	least := offers(getVaultCount(t, api, v), underGrammar)
+	least := countOfferedCards(getVaultCount(t, api, v), underGrammar)
 
 	p.Retention = review.RetentionBounds.Most
 	writePreset(t, api, v, "Grammar.md", p)
-	most := offers(getVaultCount(t, api, v), underGrammar)
+	most := countOfferedCards(getVaultCount(t, api, v), underGrammar)
 
 	if most <= least {
 		t.Errorf("asking for %v of the cards back offers %d, and %v offers %d",
@@ -451,7 +451,7 @@ func TestATargetMovedIsNotAnsweredFromTheWorkingOutUnderTheOldOne(t *testing.T) 
 	}
 
 	// And the preset beside it, whose target nobody moved, is where it was.
-	if got := offers(getVaultCount(t, api, v), underSanskrit); got == 0 {
+	if got := countOfferedCards(getVaultCount(t, api, v), underSanskrit); got == 0 {
 		t.Error("the preset nobody touched offers nothing")
 	}
 }

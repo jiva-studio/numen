@@ -37,7 +37,7 @@ func openNoProofreader(string) (port.Proofreader, error) {
 // An installation that did not ask for its transcripts to be put right asks
 // nothing and says nothing.
 func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
-	held, v := listens(t, &deaf{}, "talks/one.mp3")
+	held, v := newTranscriptionWorker(t, &deaf{}, "talks/one.mp3")
 	held.with.Proofreading = ProofreadingConfig{IsNamed: true, By: openNoProofreader}
 
 	held.proofread(t.Context(), v, "talks/one.mp3", false)
@@ -49,7 +49,7 @@ func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
 
 // A profile no settings name is a person's mistake, and they are shown it.
 func TestAProfileNoSettingsNameIsShown(t *testing.T) {
-	held, v := listens(t, &deaf{}, "talks/one.mp3")
+	held, v := newTranscriptionWorker(t, &deaf{}, "talks/one.mp3")
 	held.with.Proofreading = ProofreadingConfig{IsNamed: true, IsAutomatic: true, By: openNoProofreader}
 
 	held.proofread(t.Context(), v, "talks/one.mp3", false)
@@ -66,7 +66,7 @@ func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 // Silence carries no words, so nothing is asked about it.
 func TestSilenceIsNotPutRight(t *testing.T) {
 	by := &deaf{}
-	held, v := listens(t, by, "talks/one.mp3")
+	held, v := newTranscriptionWorker(t, by, "talks/one.mp3")
 	held.with.Proofreading = ProofreadingConfig{IsNamed: true, IsAutomatic: true, By: openNoProofreader}
 
 	held.Start(v, "talks/one.mp3")
@@ -132,7 +132,7 @@ func newStoppedWorker(
 	words ...string,
 ) (*TranscriptionWorker, domain.Vault, port.DerivedStore, string) {
 	t.Helper()
-	held, v := listens(t, &deaf{}, recording)
+	held, v := newTranscriptionWorker(t, &deaf{}, recording)
 	held.with.Proofreading = ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true, Batch: 1, InFlight: 1,
 		By: func(string) (port.Proofreader, error) { return by, nil },

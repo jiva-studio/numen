@@ -70,7 +70,7 @@ type stopping struct {
 	why  error
 }
 
-func stoppings(t *testing.T) []stopping {
+func getStoppings(t *testing.T) []stopping {
 	t.Helper()
 
 	corrupt := filepath.Join(t.TempDir(), "index.db")
@@ -156,7 +156,7 @@ func TestEveryRefusalSaysWhatToDoAboutIt(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}
-	for _, one := range stoppings(t) {
+	for _, one := range getStoppings(t) {
 		t.Run(one.name, func(t *testing.T) {
 			said := getRefusal(one.cfg, one.why)
 			if said.Heading == "" {
@@ -195,7 +195,7 @@ func TestARefusalNamesWhatCouldNotBeOpened(t *testing.T) {
 		"a size the settings file does not take": readingTheSettings,
 		"a size the command line does not take":  startingAtAll,
 	}
-	for _, one := range stoppings(t) {
+	for _, one := range getStoppings(t) {
 		said := getRefusal(one.cfg, one.why)
 		if said.Heading != want[one.name] {
 			t.Errorf("%s is drawn under %q, want %q", one.name, said.Heading, want[one.name])
@@ -213,7 +213,7 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}
 	by := map[string]refusal{}
-	for _, one := range stoppings(t) {
+	for _, one := range getStoppings(t) {
 		by[one.name] = getRefusal(one.cfg, one.why)
 	}
 

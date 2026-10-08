@@ -31,7 +31,7 @@ func TestAnInstallationNamingNoAgentOpensNoPort(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = shut() })
 
-	if listens(addr) {
+	if isListening(addr) {
 		t.Error("the tools are on a port")
 	}
 	if hasToken(t, cfg) {
@@ -58,7 +58,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !listens(addr) {
+	if !isListening(addr) {
 		t.Error("nothing answers where the agents are told to look")
 	}
 	if !hasToken(t, cfg) {
@@ -81,7 +81,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	if err := shut(); err != nil {
 		t.Fatal(err)
 	}
-	if listens(addr) {
+	if isListening(addr) {
 		t.Error("the port is still open")
 	}
 	if _, left := readAnnouncement(t, cfg); left {
@@ -101,7 +101,7 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !listens(addr) {
+	if !isListening(addr) {
 		t.Error("nothing answers where the agents are told to look")
 	}
 	said, written := readAnnouncement(t, cfg)
@@ -118,7 +118,7 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	if err := shut(); err != nil {
 		t.Fatal(err)
 	}
-	if listens(addr) {
+	if isListening(addr) {
 		t.Error("the port is still open")
 	}
 	if _, left := readAnnouncement(t, cfg); left {
@@ -142,8 +142,8 @@ func free(t *testing.T) string {
 	return addr
 }
 
-// listens is whether anything takes a connection at this address.
-func listens(addr string) bool {
+// isListening reports whether anything takes a connection at this address.
+func isListening(addr string) bool {
 	conn, err := net.DialTimeout("tcp", addr, time.Second)
 	if err != nil {
 		return false

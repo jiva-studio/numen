@@ -188,7 +188,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 		return nil, errors.New("no tools to give an agent")
 	}
 
-	configuration, err := a.configuration()
+	configuration, err := a.writeConfigFile()
 	if err != nil {
 		return nil, fmt.Errorf("write the tools an agent is given: %w", err)
 	}
@@ -203,7 +203,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 
 	running, stop := context.WithCancel(ctx)
 	name, rest := a.command()
-	cmd := exec.CommandContext(running, name, append(rest, a.arguments(task, configuration)...)...)
+	cmd := exec.CommandContext(running, name, append(rest, a.buildArguments(task, configuration)...)...)
 	cmd.Dir = a.Root
 	cmd.Env = environment(os.Environ())
 	detach(cmd)
@@ -300,7 +300,8 @@ const brought = "WebSearch"
 // agent works this vault through the tools this vault serves, and
 // every one of those goes through a use case that says what a note is and keeps
 // the index level with the file.
-func (a *Agent) arguments(task port.Task, configuration string) []string {
+// buildArguments returns what the command line is started with.
+func (a *Agent) buildArguments(task port.Task, configuration string) []string {
 	turns := a.Turns
 	if turns <= 0 {
 		turns = DefaultTurns
@@ -316,7 +317,7 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 		"--tools", brought,
 		"--permission-mode", "dontAsk",
 		"--max-turns", fmt.Sprint(turns),
-		"--append-system-prompt", manners(task),
+		"--append-system-prompt", getSystemPrompt(task),
 	}
 	// A hook is a shell command, and a settings file inside a vault is a vault
 	// telling this machine what to run. Naming the sources read is what refuses
@@ -342,12 +343,12 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 	return args
 }
 
-// manners is what the agent is told about the person it is answering.
+// getSystemPrompt returns what the agent is told about the person it is answering.
 //
 // A path is how a tool names a note. The person named it by writing a title on
 // it, and that is the name they know it by: a note is "Harmonic oscillator",
 // never `physics/classical/Harmonic oscillator.md`.
-func manners(task port.Task) string {
+func getSystemPrompt(task port.Task) string {
 	var b strings.Builder
 	b.WriteString("You are answering inside the application the person keeps these notes in, ")
 	b.WriteString("beside the note they are looking at.\n\n")
@@ -365,9 +366,9 @@ func manners(task port.Task) string {
 	return b.String()
 }
 
-// servers is the one server this agent is given, written the way the command
+// getServersConfig returns the one server this agent is given, written the way the command
 // line reads it.
-func (a *Agent) servers() ([]byte, error) {
+func (a *Agent) getServersConfig() ([]byte, error) {
 	type server struct {
 		Type    string            `json:"type"`
 		URL     string            `json:"url"`
@@ -384,14 +385,14 @@ func (a *Agent) servers() ([]byte, error) {
 	return json.Marshal(config)
 }
 
-// configuration writes the server this agent is given to a file of its own and
+// writeConfigFile writes the server this agent is given to a file of its own and
 // answers with its path.
 //
 // The configuration carries the bearer token for this vault's tools. The file
 // is this user's to read and nobody else's, and a command line is not, so the
 // path is what the child is given. Whoever makes it removes it.
-func (a *Agent) configuration() (string, error) {
-	written, err := a.servers()
+func (a *Agent) writeConfigFile() (string, error) {
+	written, err := a.getServersConfig()
 	if err != nil {
 		return "", err
 	}

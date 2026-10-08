@@ -412,9 +412,9 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 	}
 }
 
-// listens opens a stream saying the window is going, and answers with the token
+// watchQuit opens a stream saying the window is going, and answers with the token
 // this page will flush under.
-func (f *showing) listens(t *testing.T) (*connect.ServerStreamForClient[v1.WatchQuitResponse], func()) {
+func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.WatchQuitResponse], func()) {
 	t.Helper()
 
 	listening, hangUp := context.WithCancel(t.Context())
@@ -442,7 +442,7 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 	f := openTwoVaults(t)
 
 	// A page that listens and answers nothing.
-	_, done := f.listens(t)
+	_, done := f.watchQuit(t)
 	defer done()
 
 	swapped := make(chan error, 1)
@@ -467,7 +467,7 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, done := f.listens(t)
+	stream, done := f.watchQuit(t)
 	defer done()
 
 	asked := make(chan struct{})
@@ -512,7 +512,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, done := f.listens(t)
+	stream, done := f.watchQuit(t)
 	defer done()
 
 	told := make(chan struct{})

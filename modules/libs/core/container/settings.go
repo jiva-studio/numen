@@ -81,7 +81,7 @@ func (s Settings) Parts() int              { return s.Appearance.PartsUnderANode
 
 // DayStarts is how long past midnight a day of review begins.
 func (s Settings) DayStarts() time.Duration {
-	starts, _ := s.Review.Starts()
+	starts, _ := s.Review.DayStart()
 	return starts
 }
 

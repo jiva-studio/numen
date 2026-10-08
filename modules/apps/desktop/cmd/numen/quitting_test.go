@@ -45,7 +45,7 @@ type settler struct {
 	until chan struct{}
 }
 
-func settles(answers ...bool) *settler {
+func newSettler(answers ...bool) *settler {
 	return &settler{answers: answers, begun: make(chan struct{}, len(answers)+1)}
 }
 
@@ -69,7 +69,7 @@ func (s *settler) settle(context.Context) bool {
 	return answer
 }
 
-func (s *settler) times() int {
+func (s *settler) getSettledCount() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.asked
@@ -79,7 +79,7 @@ func (s *settler) times() int {
 // standing leaves the window where it is, and every later ask settles the vault
 // again.
 func TestACloseCalledOffCanBeAskedForAgain(t *testing.T) {
-	vault := settles(false, false, true)
+	vault := newSettler(false, false, true)
 	g := &going{settle: vault.settle}
 
 	if g.wait() {
@@ -97,38 +97,38 @@ func TestACloseCalledOffCanBeAskedForAgain(t *testing.T) {
 	if !g.isSettled() {
 		t.Error("the vault settled and does not say so")
 	}
-	if vault.times() != 3 {
-		t.Errorf("the vault was settled %d times", vault.times())
+	if vault.getSettledCount() != 3 {
+		t.Errorf("the vault was settled %d times", vault.getSettledCount())
 	}
 }
 
 // TestASecondQuitStillFlushes. A vault that settled is not settled again; one
 // that did not is, and that is what writes what a page holds.
 func TestASecondQuitStillFlushes(t *testing.T) {
-	vault := settles(false, true)
+	vault := newSettler(false, true)
 	g := &going{settle: vault.settle}
 
 	g.wait()
 	if !g.wait() {
 		t.Fatal("the second quit did not settle the vault")
 	}
-	if vault.times() != 2 {
-		t.Fatalf("the vault was settled %d times", vault.times())
+	if vault.getSettledCount() != 2 {
+		t.Fatalf("the vault was settled %d times", vault.getSettledCount())
 	}
 
 	// Settled, and asking again costs nothing.
 	if !g.wait() {
 		t.Error("a settled vault answered that it had not")
 	}
-	if vault.times() != 2 {
-		t.Errorf("a settled vault was settled again, %d times in all", vault.times())
+	if vault.getSettledCount() != 2 {
+		t.Errorf("a settled vault was settled again, %d times in all", vault.getSettledCount())
 	}
 }
 
 // TestOneSettlingIsSharedByEveryoneWaitingOnIt. The window's hook and a quit
 // asked for elsewhere both wait, and the vault settles once for the two.
 func TestOneSettlingIsSharedByEveryoneWaitingOnIt(t *testing.T) {
-	vault := settles(true)
+	vault := newSettler(true)
 	vault.until = make(chan struct{})
 	g := &going{settle: vault.settle}
 
@@ -154,8 +154,8 @@ func TestOneSettlingIsSharedByEveryoneWaitingOnIt(t *testing.T) {
 			t.Fatal("a waiter was never answered")
 		}
 	}
-	if vault.times() != 1 {
-		t.Errorf("the vault was settled %d times", vault.times())
+	if vault.getSettledCount() != 1 {
+		t.Errorf("the vault was settled %d times", vault.getSettledCount())
 	}
 }
 
@@ -163,7 +163,7 @@ func TestOneSettlingIsSharedByEveryoneWaitingOnIt(t *testing.T) {
 // behind may refuse the quit and nothing else: a person is answering, and the
 // application is not to go out from under them.
 func TestAQuitAskedForElsewhereDoesNotGoOnAQuestion(t *testing.T) {
-	vault := settles(false)
+	vault := newSettler(false)
 	g := &going{settle: vault.settle}
 
 	quit := make(chan struct{}, 1)
@@ -180,7 +180,7 @@ func TestAQuitAskedForElsewhereDoesNotGoOnAQuestion(t *testing.T) {
 
 // TestAQuitAskedForElsewhereGoesOnceTheVaultSettles.
 func TestAQuitAskedForElsewhereGoesOnceTheVaultSettles(t *testing.T) {
-	vault := settles(true)
+	vault := newSettler(true)
 	g := &going{settle: vault.settle}
 
 	quit := make(chan struct{}, 1)
@@ -202,7 +202,7 @@ func TestAQuitAskedForElsewhereGoesOnceTheVaultSettles(t *testing.T) {
 // the page says it has nothing left, and the close the person asked for
 // happens.
 func TestAQuestionCallsTheCloseOffAndTheWindowIsAskedForAgain(t *testing.T) {
-	vault := settles(false)
+	vault := newSettler(false)
 	g := &going{settle: vault.settle}
 
 	person := make(chan struct{})
@@ -234,7 +234,7 @@ func TestAQuestionCallsTheCloseOffAndTheWindowIsAskedForAgain(t *testing.T) {
 // and then went says nothing more, and the window stays where the person left
 // it.
 func TestAWindowNobodyAnswersForIsNotAskedForAgain(t *testing.T) {
-	vault := settles(false)
+	vault := newSettler(false)
 	g := &going{settle: vault.settle}
 
 	again := make(chan struct{}, 1)
@@ -253,7 +253,7 @@ func TestAWindowNobodyAnswersForIsNotAskedForAgain(t *testing.T) {
 
 // TestAWindowWithNothingOwedIsDestroyed.
 func TestAWindowWithNothingOwedIsDestroyed(t *testing.T) {
-	g := &going{settle: settles(true).settle}
+	g := &going{settle: newSettler(true).settle}
 
 	if !closeWindow(t.Context(), g, makeScreen().sight(), func(context.Context) bool {
 		t.Error("a settled vault was waited on for an answer")
@@ -298,7 +298,7 @@ func TestTheWindowIsOutOfSightBeforeTheSettlingBegins(t *testing.T) {
 // application that has not gone.
 func TestAQuestionPutsTheWindowBackAndHoldsTheQuitOff(t *testing.T) {
 	seen := makeScreen()
-	g := &going{settle: settles(false).settle}
+	g := &going{settle: newSettler(false).settle}
 
 	quit := make(chan struct{}, 1)
 	if requestQuit(g, seen.sight(), func() { quit <- struct{}{} }) {

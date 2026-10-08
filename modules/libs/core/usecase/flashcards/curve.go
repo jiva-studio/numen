@@ -144,7 +144,7 @@ func (u ProjectCurve) Execute(
 		Spent: review.GetSpentUnder(u.Day, u.Day.GetName(now), held.Answers, under,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
-	out, err := run.Curve(ctx, now, p, at, unseen, u.getScheduler, u.places)
+	out, err := run.Curve(ctx, now, p, at, unseen, u.getScheduler, u.computePlaces)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -216,7 +216,7 @@ func (u ProjectCurve) countPointingDecks(
 	return out, nil
 }
 
-// places works out every place of a grid, each of them alongside the others.
+// computePlaces works out every place of a grid, each of them alongside the others.
 //
 // No place reads another's answer: a run is given the schedules the answers
 // have already produced, reads them and nothing else, and writes only what it
@@ -225,7 +225,7 @@ func (u ProjectCurve) countPointingDecks(
 // A place that fails is left to the places beside it, and the error handed back
 // is the earliest place's. A request nobody is waiting for is ended by the run
 // of each place reading the context it was given.
-func (u ProjectCurve) places(count int, each func(at int) error) error {
+func (u ProjectCurve) computePlaces(count int, each func(at int) error) error {
 	failed := make([]error, count)
 	room := make(chan struct{}, max(1, u.Cores))
 	var running sync.WaitGroup

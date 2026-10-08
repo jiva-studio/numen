@@ -29,7 +29,7 @@ func (c Config) Answers() port.DerivedStores {
 func (c Config) DayStarts() time.Duration {
 	held, err := c.Settings()
 	if err != nil {
-		return settings.DefaultStarts()
+		return settings.DefaultDayStart()
 	}
 	return held.DayStarts()
 }

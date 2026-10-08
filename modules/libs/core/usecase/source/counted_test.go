@@ -58,7 +58,7 @@ func TestAQueueRunsBehindTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 
-	held, v := listens(t, &deaf{})
+	held, v := newTranscriptionWorker(t, &deaf{})
 	known := &holding{asked: make(chan struct{}, 1), let: make(chan struct{})}
 
 	// A call that does not come back is a window that never opens.
