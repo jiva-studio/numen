@@ -4,8 +4,12 @@ on:
   pull_request:
     paths:
       - "modules/libs/core/**"
+      - "!modules/libs/core/**/*.md"
       - "modules/libs/protocol/**"
+      - "!modules/libs/protocol/**/*.md"
       - "tests/**"
+      - "!tests/**/*.md"
+      - "!docs/**"
       - ".github/workflows/core.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - ".golangci.yml"
@@ -14,8 +18,12 @@ on:
     branches: [main]
     paths:
       - "modules/libs/core/**"
+      - "!modules/libs/core/**/*.md"
       - "modules/libs/protocol/**"
+      - "!modules/libs/protocol/**/*.md"
       - "tests/**"
+      - "!tests/**/*.md"
+      - "!docs/**"
       - ".github/workflows/core.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - ".golangci.yml"
@@ -46,7 +54,7 @@ jobs:
   # Which machines this run is for. Linux always; a Windows or a mac runner
   # costs two and ten times a Linux one, and is asked for by name.
   asked:
-    name: "Matrix :: Platforms"
+    name: Platforms
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -118,7 +126,7 @@ jobs:
   # The core fails on what is found, as the window and the protocol do. The
   # check arrived after the code did, and the backlog it named is empty.
   lint:
-    name: "Lint :: Go"
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -164,7 +172,7 @@ jobs:
   # Only a pull request has a base to compare against, and the base commit has
   # to be in the clone to be read.
   migration:
-    name: "Check :: Migrations"
+    name: Migrations
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -188,7 +196,7 @@ jobs:
         run: modules/libs/core/adapter/index/migration-forward-only.sh "$BASE"
 
   go:
-    name: "Test :: Go :: ${{ matrix.name }}"
+    name: Tests (${{ matrix.name }})
     needs: [asked]
     strategy:
       fail-fast: false

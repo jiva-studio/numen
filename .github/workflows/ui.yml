@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - "modules/libs/ui/**"
+      - "!modules/libs/ui/**/*.md"
+      - "!docs/**"
       - ".github/workflows/ui.yml"
   push:
     branches: [main]
     paths:
       - "modules/libs/ui/**"
+      - "!modules/libs/ui/**/*.md"
+      - "!docs/**"
       - ".github/workflows/ui.yml"
 
 # One run at a time per branch, and the newest is the one that matters.
@@ -23,7 +27,7 @@ jobs:
   # The shared components on their own: built into the shape a consumer sees,
   # and asked what they draw in a document.
   components:
-    name: "Test :: Components"
+    name: Components
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -45,6 +49,7 @@ jobs:
       - name: Lint components
         run: npm run lint --prefix modules/libs/ui
 
+      # Build the component library.
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
@@ -56,7 +61,7 @@ jobs:
   # lands, whether a key reaches an SVG group. The window is WebKit on a mac and
   # on Linux and Chromium on Windows, so both are fetched.
   stories:
-    name: "Test :: Stories"
+    name: Stories
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

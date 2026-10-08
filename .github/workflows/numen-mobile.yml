@@ -4,9 +4,14 @@ on:
   pull_request:
     paths:
       - "modules/apps/mobile/**"
+      - "!modules/apps/mobile/**/*.md"
       - "modules/libs/core/**"
+      - "!modules/libs/core/**/*.md"
       - "modules/libs/ui/**"
+      - "!modules/libs/ui/**/*.md"
       - "modules/libs/protocol/**"
+      - "!modules/libs/protocol/**/*.md"
+      - "!docs/**"
       - ".github/workflows/numen-mobile.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - ".golangci.yml"
@@ -15,9 +20,14 @@ on:
     branches: [main]
     paths:
       - "modules/apps/mobile/**"
+      - "!modules/apps/mobile/**/*.md"
       - "modules/libs/core/**"
+      - "!modules/libs/core/**/*.md"
       - "modules/libs/ui/**"
+      - "!modules/libs/ui/**/*.md"
       - "modules/libs/protocol/**"
+      - "!modules/libs/protocol/**/*.md"
+      - "!docs/**"
       - ".github/workflows/numen-mobile.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - ".golangci.yml"
@@ -34,7 +44,7 @@ permissions:
 
 jobs:
   go:
-    name: "Test :: Go"
+    name: Plugin
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -110,7 +120,7 @@ jobs:
 
   # The screens the phone draws, typed against the schema and the components.
   screens:
-    name: "Test :: Screens"
+    name: Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -128,6 +138,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefix modules
 
+      # A screen reaches the components through their build.
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 

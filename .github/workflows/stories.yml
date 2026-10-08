@@ -16,8 +16,11 @@ on:
   pull_request:
     paths:
       - "modules/libs/ui/src/**"
+      - "!modules/libs/ui/src/**/*.md"
       - "modules/apps/desktop/editor/src/**"
+      - "!modules/apps/desktop/editor/src/**/*.md"
       - "modules/apps/desktop/flashcards/src/**"
+      - "!modules/apps/desktop/flashcards/src/**/*.md"
       - "modules/apps/docs/tools/**"
       - "modules/apps/landing/tools/**"
       - "modules/libs/core/internal/adapter/theme/presets/**"
@@ -26,8 +29,11 @@ on:
     branches: [main]
     paths:
       - "modules/libs/ui/src/**"
+      - "!modules/libs/ui/src/**/*.md"
       - "modules/apps/desktop/editor/src/**"
+      - "!modules/apps/desktop/editor/src/**/*.md"
       - "modules/apps/desktop/flashcards/src/**"
+      - "!modules/apps/desktop/flashcards/src/**/*.md"
       - "modules/apps/docs/tools/**"
       - "modules/apps/landing/tools/**"
       - "modules/libs/core/internal/adapter/theme/presets/**"
@@ -42,7 +48,7 @@ permissions:
 
 jobs:
   named:
-    name: "Check :: Story Names"
+    name: References
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

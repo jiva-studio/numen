@@ -78,6 +78,7 @@ rule() {
 # What the rule refuses, and what it lets through. A repository is built for
 # each case, because a rule nothing has been seen to refuse is an assumption.
 self_test() {
+	unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
 	local failed=0
 	# The trap outlives the call, so the folder it names is not a local, and it
 	# hands back the status it was reached with rather than the removal's.
