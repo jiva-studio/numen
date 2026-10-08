@@ -93,6 +93,30 @@ func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float
 	rate := []int64{sampleRate}
 	window := make([]float32, speechWindow)
 
+	inputTensor, err := ort.NewTensor([]int64{1, speechWindow}, window)
+	if err != nil {
+		return nil, err
+	}
+	defer inputTensor.Destroy()
+
+	stateTensor, err := ort.NewTensor([]int64{2, 1, speechMemory / 2}, state)
+	if err != nil {
+		return nil, err
+	}
+	defer stateTensor.Destroy()
+
+	rateTensor, err := ort.NewTensor(nil, rate)
+	if err != nil {
+		return nil, err
+	}
+	defer rateTensor.Destroy()
+
+	inputs := map[string]*ort.Value{
+		speechInput: inputTensor,
+		speechState: stateTensor,
+		speechRate:  rateTensor,
+	}
+
 	count := (len(sound) + speechWindow - 1) / speechWindow
 	out := make([]float32, 0, count)
 	for i := 0; i < count; i++ {
@@ -102,70 +126,51 @@ func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float
 		clear(window)
 		copy(window, sound[i*speechWindow:min((i+1)*speechWindow, len(sound))])
 
-		score, next, err := t.listen(window, state, rate)
+		score, err := t.listen(inputs, state)
 		if err != nil {
 			return nil, err
 		}
 		out = append(out, score)
-		state = next
 	}
+	runtime.KeepAlive(window)
+	runtime.KeepAlive(state)
+	runtime.KeepAlive(rate)
 	return out, nil
 }
 
 // listen is one window: how sure the model is, and the state it leaves behind.
-func (t *Transcriber) listen(window, state []float32, rate []int64) (float32, []float32, error) {
-	sound, err := ort.NewTensor([]int64{1, speechWindow}, window)
+func (t *Transcriber) listen(inputs map[string]*ort.Value, dst []float32) (float32, error) {
+	out, err := t.segmenter.Run(inputs)
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
-	defer sound.Destroy()
-	carried, err := ort.NewTensor([]int64{2, 1, speechMemory / 2}, state)
-	if err != nil {
-		return 0, nil, err
-	}
-	defer carried.Destroy()
-	// The rate is asked for as one number and not as a tensor holding one.
-	hertz, err := ort.NewTensor(nil, rate)
-	if err != nil {
-		return 0, nil, err
-	}
-	defer hertz.Destroy()
-
-	out, err := t.segmenter.Run(map[string]*ort.Value{
-		speechInput: sound, speechState: carried, speechRate: hertz,
-	})
-	runtime.KeepAlive(window)
-	runtime.KeepAlive(state)
-	runtime.KeepAlive(rate)
-	if err != nil {
-		return 0, nil, err
-	}
-	for _, v := range out {
-		defer v.Destroy()
-	}
+	defer func() {
+		for _, v := range out {
+			v.Destroy()
+		}
+	}()
 
 	said, ok := out[speechScore]
 	if !ok {
-		return 0, nil, fmt.Errorf("the speech model answered with %v and not %s", names(out), speechScore)
+		return 0, fmt.Errorf("the speech model answered with %v and not %s", names(out), speechScore)
 	}
 	score, err := ort.GetTensorData[float32](said)
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
 	if len(score) == 0 {
-		return 0, nil, fmt.Errorf("the speech model answered with no score")
+		return 0, fmt.Errorf("the speech model answered with no score")
 	}
 	after, ok := out[speechAfter]
 	if !ok {
-		return 0, nil, fmt.Errorf("the speech model answered with %v and not %s", names(out), speechAfter)
+		return 0, fmt.Errorf("the speech model answered with %v and not %s", names(out), speechAfter)
 	}
 	raw, err := ort.GetTensorData[float32](after)
 	if err != nil {
-		return 0, nil, err
+		return 0, err
 	}
-	// What the graph answers with lives in the library's own memory, and is
-	// copied out before the answer is let go of.
-	return score[0], append([]float32(nil), raw...), nil
+	copy(dst, raw)
+	return score[0], nil
 }
 
 // A span is a run of the recording, counted in windows: from the first, up
