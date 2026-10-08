@@ -30,7 +30,7 @@ export const useWindow = () => {
   const writeMessage = log.getWriter('command')
   const held = useWindowTabs()
   const { layout } = held
-  const tabOpeners = fileOpeners(core)
+  const tabOpeners = fileOpeners({ ...core, reconcileTab: held.reconcileTab })
   const runs = runSupport()
   const plays = createMediaTypeProbe()
 

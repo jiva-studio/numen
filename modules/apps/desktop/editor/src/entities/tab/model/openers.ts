@@ -36,6 +36,7 @@ export type SourceReader = (path: string, spans: readonly Span[]) => void
 /** What the window asks the vault about the file it is opening. */
 export interface FileOpenerDeps {
   fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
+  reconcileTab?(path: string, newKind: string): void
 }
 
 /** A source a reader is asked for, by kind and, where one format is read its own way, by format. */
@@ -108,6 +109,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     where: PlexDestination = 'here',
     line?: number,
   ): void => {
+    vault.reconcileTab?.(path, type)
     editors.get(type)?.(path, title, where, line)
   }
 
@@ -125,6 +127,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
     const kind = await fileKindAt(path)
     if (!kind) return
     if (kind.kind === 'note') return void openNewFile(path, title, kind.type, where, line)
+    vault.reconcileTab?.(path, targetKindOf(kind))
     readerOf(kind)?.(path, [])
   }
 
@@ -138,11 +141,22 @@ export function fileOpeners(vault: FileOpenerDeps) {
     const kind = await fileKindAt(path)
     if (!kind) return
     if (kind.kind === 'note') return void openNewFile(path, '', kind.type)
+    vault.reconcileTab?.(path, targetKindOf(kind))
     readerOf(kind)?.(path, spans)
   }
 
   return { registerEditor, registerReader, openFile, openFileAt, openNewFile }
 }
+
+/** The kind of tab a file opens in. */
+const targetKindOf = (kind: FileKind): string =>
+  kind.kind === 'note'
+    ? kind.type
+    : kind.kind === 'book'
+      ? kind.format === 'epub'
+        ? 'book'
+        : 'document'
+      : kind.kind
 
 /** What the window puts files in front of the person with. */
 export type FileOpeners = ReturnType<typeof fileOpeners>

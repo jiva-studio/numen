@@ -204,6 +204,15 @@ export function useWindowTabs() {
     if (releaseTab(id)) layout.value = closeTab(layout.value, id)
   }
 
+  /** Closes open tabs for a file path that are not of the specified kind. */
+  const reconcileTab = (path: string, newKind: string) => {
+    if (!path) return
+    for (const [id, one] of open.value) {
+      if (one.kind.kind === newKind || TOOL_KINDS.has(one.kind.kind)) continue
+      if (getTabPath(one) === path) requestClose(id)
+    }
+  }
+
   /** The window is going, and nothing a tab holds outlives it. */
   const close = () => {
     for (const [id, one] of open.value) {
@@ -229,8 +238,20 @@ export function useWindowTabs() {
     onKeyPress,
     releaseTab,
     requestClose,
+    reconcileTab,
     close,
   }
+}
+
+/** Non-file tool tabs that are preserved across file tab reconciliations. */
+const TOOL_KINDS = new Set(['agent', 'files', 'plex', 'settings'])
+
+/** The file path a tab stands on. */
+const getTabPath = (tab: WindowTab): string => {
+  const openTab = tab.kind.getOpenTab?.(tab.state)
+  if (openTab?.path) return openTab.path
+  const target = tab.kind.getTarget?.(tab.state)
+  return target?.path || target?.file || ''
 }
 
 /** One tab let go of, and the rest kept. */

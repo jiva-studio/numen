@@ -66,6 +66,11 @@ export function usePresetTab(
     getTitle: (one) => getTitle(one.id),
     pane: PresetTab,
     identity: (path) => path,
+    getTarget: (one) => ({
+      path: one.id,
+      title: getTitle(one.id),
+    }),
+    getOpenTab: (one) => ({ path: one.id }),
     onClose: (one, id) => {
       one.close(id)
       return false

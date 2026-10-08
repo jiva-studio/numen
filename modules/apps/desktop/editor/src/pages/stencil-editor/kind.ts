@@ -117,6 +117,11 @@ export function useStencilTabs(
     getMark: (one) => getMarkOf(one.note.value.state),
     pane: StencilTab,
     identity: (id) => id,
+    getTarget: (one) => ({
+      path: store.getPath(one.id),
+      title: getTitle(store.getPath(one.id)),
+    }),
+    getOpenTab: (one) => ({ path: store.getPath(one.id) }),
     onClose: (one, id) => {
       one.close(id)
       return false
