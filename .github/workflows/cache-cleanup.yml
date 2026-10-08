@@ -1,0 +1,20 @@
+name: Cache Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    name: "Clean :: Pull Request Cache"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete pull request caches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh cache delete --ref "refs/pull/${{ github.event.pull_request.number }}/merge" || true
+          gh cache delete --ref "refs/heads/${{ github.event.pull_request.head.ref }}" || true
