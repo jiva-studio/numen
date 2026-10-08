@@ -65,7 +65,9 @@ export const clearAt = (
  * either end so the whole word stands over it.
  */
 export const positionLabel = (at: Position): CSSProperties => {
-  const back = at.x < LEFT + LABEL ? '0' : at.x > RIGHT - LABEL ? '-100%' : '-50%'
+  let back = '-50%'
+  if (at.x < LEFT + LABEL) back = '0'
+  else if (at.x > RIGHT - LABEL) back = '-100%'
   return {
     insetInlineStart: `${(at.x / WIDE) * 100}%`,
     insetBlockStart: `${(Math.max(at.y - LIFT, TOP) / HIGH) * 100}%`,
@@ -75,7 +77,9 @@ export const positionLabel = (at: Position): CSSProperties => {
 
 /** The room that name takes, which the knob's own figures stand clear of. */
 export const getNameBox = (at: Position): Box => {
-  const back = at.x < LEFT + LABEL ? 0 : at.x > RIGHT - LABEL ? LABEL * 2 : LABEL
+  let back = LABEL
+  if (at.x < LEFT + LABEL) back = 0
+  else if (at.x > RIGHT - LABEL) back = LABEL * 2
   return {
     x: at.x - back,
     y: Math.max(at.y - LIFT, TOP) - AXIS_HIGH,
@@ -116,7 +120,9 @@ export interface Callout {
 export const calloutOf = (knob: Position): Callout => {
   const isUnder = knob.y - CALLOUT_GAP - CALLOUT_HIGH < TOP
   const half = CALLOUT_WIDE / 2
-  const back = knob.x < LEFT + half ? 0 : knob.x > RIGHT - half ? CALLOUT_WIDE : half
+  let back = half
+  if (knob.x < LEFT + half) back = 0
+  else if (knob.x > RIGHT - half) back = CALLOUT_WIDE
   const edge = isUnder ? knob.y + CALLOUT_GAP : knob.y - CALLOUT_GAP
   return {
     isUnder,
@@ -214,6 +220,8 @@ export const heightsOf = (
  */
 export const readingAt = (knob: Position | null): CSSProperties => {
   if (!knob) return {}
-  const back = knob.x < LEFT + LABEL ? '0' : knob.x > RIGHT - LABEL ? '-100%' : '-50%'
+  let back = '-50%'
+  if (knob.x < LEFT + LABEL) back = '0'
+  else if (knob.x > RIGHT - LABEL) back = '-100%'
   return { insetInlineStart: `${(knob.x / WIDE) * 100}%`, translate: `${back} 0` }
 }

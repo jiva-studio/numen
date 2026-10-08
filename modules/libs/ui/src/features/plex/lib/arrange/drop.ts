@@ -42,7 +42,10 @@ export const seatWithoutDirection = (seats: readonly PlexRelatedSeat[]): PlexRel
  */
 function getDropDirection(dx: number, dy: number, bias: number): Direction | null {
   if (dx === 0 && dy === 0) return null
-  return Math.abs(dy) * bias >= Math.abs(dx) ? (dy < 0 ? 'up' : 'down') : dx < 0 ? 'left' : 'right'
+  if (Math.abs(dy) * bias >= Math.abs(dx)) {
+    return dy < 0 ? 'up' : 'down'
+  }
+  return dx < 0 ? 'left' : 'right'
 }
 
 /**

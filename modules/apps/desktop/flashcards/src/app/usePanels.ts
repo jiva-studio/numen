@@ -37,9 +37,11 @@ export const usePanels = (deps: PanelsDeps) => {
   const showing = ref<'reading' | 'here' | 'asking'>('here')
 
   /** The same thing in the words the strip stands the three in. */
-  const at = computed<PanelPlace>(() =>
-    showing.value === 'reading' ? 'before' : showing.value === 'asking' ? 'after' : 'here',
-  )
+  const at = computed<PanelPlace>(() => {
+    if (showing.value === 'reading') return 'before'
+    if (showing.value === 'asking') return 'after'
+    return 'here'
+  })
 
   /**
    * The strip taken somewhere by a hand. A panel reached this way is opened, not

@@ -69,12 +69,11 @@ export const STENCIL_WORDS: StencilWords = {
   faceStem: 'Face',
   pinned: 'The first field names every card, and stays first',
   stray: (fields) => `Not a field: ${fields.join(', ')}`,
-  objection: (objection) =>
-    objection === 'blank'
-      ? 'A field needs a name'
-      : objection === 'taken'
-        ? 'That name is taken'
-        : 'A name cannot hold a brace',
+  objection: (objection) => {
+    if (objection === 'blank') return 'A field needs a name'
+    if (objection === 'taken') return 'That name is taken'
+    return 'A name cannot hold a brace'
+  },
   faceObjection: (objection) =>
     objection === 'blank' ? 'A face needs a name' : 'That name is taken',
   wrong: 'What is wrong',
