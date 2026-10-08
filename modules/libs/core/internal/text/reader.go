@@ -49,6 +49,7 @@ func isTimed(producer string) bool { return producer == ASR || producer == Capti
 const (
 	Transcript = "transcript"
 	Copies     = "copy"
+	IndexClaim = "index/indexing"
 )
 
 // getName is the name one of a producer's files stands under inside its kind:

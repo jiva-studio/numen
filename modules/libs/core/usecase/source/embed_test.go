@@ -320,3 +320,45 @@ func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
 		t.Errorf("%d of %d chunks carry a vector", len(index.vectors), len(small))
 	}
 }
+
+func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
+	ctx := t.Context()
+	index, shelf, made := newStore(), newLibrary(), newShelf()
+	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
+	small := cutBooks(t, index, shelf, first)
+
+	made.hold(text.IndexClaim)
+
+	model := &embedder{dims: dimensions}
+	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed.Derived = made
+	embed.Embedder = model
+	embed.BatchCharacters = 4000
+
+	res, err := embed.Execute(ctx, first)
+	if err != nil {
+		t.Fatalf("a claimed vault is not an error: %v", err)
+	}
+	if !res.IsBusy {
+		t.Errorf("res.IsBusy = false, want true")
+	}
+	if res.Embedded != 0 || len(index.vectors) != 0 {
+		t.Errorf("embedded %d chunks while vault was claimed", res.Embedded)
+	}
+	if model.calls != 0 {
+		t.Errorf("model was called %d times while vault was claimed", model.calls)
+	}
+
+	// Once released, embedding proceeds and completes.
+	_ = made.Remove(ctx, text.IndexClaim)
+	secondRes, err := embed.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if secondRes.IsBusy {
+		t.Errorf("secondRes.IsBusy = true, want false")
+	}
+	if secondRes.Embedded != len(small) {
+		t.Errorf("secondRes.Embedded = %d, want %d", secondRes.Embedded, len(small))
+	}
+}
