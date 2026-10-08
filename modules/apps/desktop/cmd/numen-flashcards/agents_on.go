@@ -15,7 +15,6 @@ import (
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
 
 // This file is the only one that knows a card can be asked about. Built with
@@ -172,10 +171,9 @@ func makeReviewCore(
 		},
 
 		Cards: mcp.Cards{
-			Read:     cutting.Read,
-			List:     cutting.List,
-			Write:    cutting.Write,
-			DeckEdit: format.OpenDeckBody,
+			Read:  cutting.Read,
+			List:  cutting.List,
+			Write: cutting.Write,
 		},
 	}
 }

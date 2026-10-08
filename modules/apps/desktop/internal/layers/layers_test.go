@@ -26,28 +26,14 @@ const apps = "github.com/jiva-studio/numen/modules/apps/"
 // named in. Everything else the core holds is the core's own work.
 func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || pkg == "port" ||
-		strings.HasPrefix(pkg, "adapter/")
+		pkg == "proofread" || strings.HasPrefix(pkg, "adapter/")
 }
 
 // baseline are the edges the applications still have. Each is a binary doing a
 // piece of the core's work where it should be handed the whole, and the list
 // only shrinks: an edge missing from the tree is not an error here, so the
 // composition root taking one back needs no line changed.
-var baseline = map[string][]string{
-	// The window builds the agent's tool surface itself, so it reads a note,
-	// a card and the rules over both in place.
-	"desktop/cmd/numen": {
-		"check", "flashcards/format", "markdown", "usecase/note",
-	},
-	// The review window builds its own surface and its own queue.
-	"desktop/cmd/numen-flashcards": {
-		"flashcards/format", "task", "usecase/flashcards",
-	},
-	// The proofreading adapter speaks the port's own language.
-	"desktop/internal/adapter/claudecode": {"proofread"},
-	// The binding registers the vault it seeded.
-	"mobile/bind": {"usecase/vault"},
-}
+var baseline = map[string][]string{}
 
 // standing is a file of the applications, under the package it belongs to.
 type standing struct {

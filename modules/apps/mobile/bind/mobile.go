@@ -22,7 +22,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // running is the one server this process holds. Starting again while it stands
@@ -205,7 +204,7 @@ func registerVault(cfg container.Config, root string) (string, error) {
 	} else if found {
 		return held.Path, nil
 	}
-	added, err := vaults.NewAdd(cfg.VaultIdentity(), registry, cfg.Clock()).Execute(root, "numen")
+	added, err := cfg.AddVault(registry, root, "numen")
 	if err != nil {
 		return "", err
 	}

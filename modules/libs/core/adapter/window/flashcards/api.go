@@ -186,6 +186,9 @@ func (a *API) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWrite
 // build keeps of what it is doing. It is what the API's Window is built from,
 // which is the whole of how a window outside this module names itself.
 func NewWindow(tasks *task.Tasks) *wire.Window {
+	if tasks == nil {
+		tasks = task.New()
+	}
 	return &wire.Window{Named: wire.Review, Tasking: tasks}
 }
 

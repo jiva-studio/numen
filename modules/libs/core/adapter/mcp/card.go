@@ -472,7 +472,11 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Faces  []Face   `json:"faces" jsonschema:"the ways a card cut by this stencil is shown"`
 		Folder string   `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
-		body, err := core.Cards.StencilBody("", newFaceTemplates(in.Faces), "")
+		stencilBody := core.Cards.StencilBody
+		if stencilBody == nil {
+			stencilBody = format.StencilBody
+		}
+		body, err := stencilBody("", newFaceTemplates(in.Faces), "")
 		if err != nil {
 			return nil, cards.CreateNoteResult{}, err
 		}
@@ -580,7 +584,11 @@ func changeDeck(
 		return WriteOutcome{}, nil, fmt.Errorf("%s: %s", path, why)
 	}
 
-	file := core.Cards.DeckEdit(read.Raw)
+	deckEdit := core.Cards.DeckEdit
+	if deckEdit == nil {
+		deckEdit = format.OpenDeckBody
+	}
+	file := deckEdit(read.Raw)
 	if err := change(read, file); err != nil {
 		return WriteOutcome{}, nil, err
 	}

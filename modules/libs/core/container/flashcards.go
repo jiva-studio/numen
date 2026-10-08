@@ -14,7 +14,20 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
+
+// Flashcards is what everything that runs a vault's cards is called.
+type Flashcards = flashcards.Scenarios
+
+// ShowNeighbourhood builds the show neighbourhood usecase for flashcards.
+func (c Config) ShowNeighbourhood(
+	linked note.ShowLinks,
+	notes port.NoteQueries,
+	read note.Read,
+) flashcards.ShowNeighbourhood {
+	return flashcards.NewShowNeighbourhood(linked, notes, read)
+}
 
 // Answers opens the shelf a vault's answers are kept on. It is the same folder
 // the application keeps everything else of its own in, under an area of its
