@@ -72,15 +72,7 @@ jobs:
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers. The command line tool needs
       # none of this, which is why it is a separate binary.
-      - name: Install WebKit & GTK dependencies
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo rm -f /var/lib/man-db/auto-update
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            -o Dpkg::Options::=--force-unsafe-io \
-            libgtk-4-dev libwebkitgtk-6.0-dev
+      - uses: ./.github/actions/setup-webkit
 
       - name: Verify Go formatting
         run: |
@@ -109,8 +101,9 @@ jobs:
       # run, so this step can find something on a branch that changed nothing.
       # It answers for the standard library of the Go above as well as for what
       # is required.
-      - name: Check vulnerabilities
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - uses: ./.github/actions/govulncheck
+        with:
+          working-directory: modules/apps/desktop
 
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
@@ -174,16 +167,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefix modules
 
-      # The engines are a download of their own and answer to the version in
-      # the lockfile. Whatever the cache does not hold is fetched below.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('modules/package-lock.json') }}
-          restore-keys: playwright-
-
-      - name: Install Playwright browsers
-        run: npx --prefix modules playwright install chromium webkit --with-deps
+      - uses: ./.github/actions/setup-playwright
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
