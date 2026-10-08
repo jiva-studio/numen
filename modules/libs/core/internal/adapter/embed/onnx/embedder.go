@@ -166,10 +166,7 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	if len(texts) == 0 {
 		return nil, nil
 	}
-	tokens := make([][]int, len(texts))
-	for i, text := range texts {
-		tokens[i] = e.encode(text)
-	}
+	tokens := e.tokenize(texts)
 	out := make([][]float32, 0, len(texts))
 	for start := 0; start < len(tokens); start += e.batchTexts {
 		if err := ctx.Err(); err != nil {
@@ -182,6 +179,25 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 		out = append(out, vectors...)
 	}
 	return out, nil
+}
+
+// tokenize turns each text into tokens.
+func (e *Embedder) tokenize(texts []string) [][]int {
+	tokens := make([][]int, len(texts))
+	if len(texts) == 1 {
+		tokens[0] = e.encode(texts[0])
+		return tokens
+	}
+	var wg sync.WaitGroup
+	wg.Add(len(texts))
+	for i, text := range texts {
+		go func(i int, text string) {
+			defer wg.Done()
+			tokens[i] = e.encode(text)
+		}(i, text)
+	}
+	wg.Wait()
+	return tokens
 }
 
 // encode tokenises one text and truncates it, keeping the token that marks the
