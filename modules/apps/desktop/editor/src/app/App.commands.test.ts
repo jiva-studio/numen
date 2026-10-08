@@ -88,7 +88,7 @@ describe('the palette', () => {
   const marks = () =>
     [...document.body.querySelectorAll('[data-palette="list"] [role="option"]')].map(
       (row) =>
-        /lucide-([a-z-]+)-icon/.exec(row.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ??
+        /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(row.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ??
         '',
     )
 

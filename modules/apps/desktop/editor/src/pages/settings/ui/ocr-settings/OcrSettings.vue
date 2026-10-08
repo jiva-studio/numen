@@ -7,7 +7,7 @@ import { Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../../types'
-import AT from '../../paths.json'
+import paths from '../../paths.json'
 import { choicesFor } from '../../lib/models'
 import { write } from '@/entities/settings'
 import { WORDS as words } from '../../words'
@@ -29,8 +29,16 @@ function onModelChange(at: readonly string[], name: string) {
   else setSetting(at, name)
 }
 
-function onSettingChange(at: readonly string[], value: unknown) {
-  setSetting(at, value)
+function onOcrModelChange(name: string) {
+  onModelChange(paths.ocrModel, name)
+}
+
+function onOcrProofreadChange(name: string) {
+  setSetting(paths.ocrProofread, name)
+}
+
+function onOcrProofreadAlwaysChange(value: boolean) {
+  setSetting(paths.ocrProofreadAlways, value)
 }
 
 // --- Helpers ---
@@ -66,12 +74,12 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrModelDetail"
     >
       <Select
-        :model-value="said(AT.ocrModel)"
-        :choices="models(AT.ocrModel)"
+        :model-value="said(paths.ocrModel)"
+        :choices="models(paths.ocrModel)"
         :name="words.ocrModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
-        @update:model-value="(name: string) => onModelChange(AT.ocrModel, name)"
+        @update:model-value="onOcrModelChange"
       />
     </SettingRow>
 
@@ -82,12 +90,12 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrProofreadDetail"
     >
       <Select
-        :model-value="said(AT.ocrProofread)"
+        :model-value="said(paths.ocrProofread)"
         :choices="props.profiles"
         :name="words.ocrProofread"
         :aria-labelledby="labelledBy"
         class="settings__choice"
-        @update:model-value="(name: string) => onSettingChange(AT.ocrProofread, name)"
+        @update:model-value="onOcrProofreadChange"
       />
     </SettingRow>
 
@@ -98,9 +106,9 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrProofreadAlwaysDetail"
     >
       <Switch
-        :model-value="on(AT.ocrProofreadAlways)"
+        :model-value="on(paths.ocrProofreadAlways)"
         :aria-labelledby="labelledBy"
-        @update:model-value="(kept: boolean) => onSettingChange(AT.ocrProofreadAlways, kept)"
+        @update:model-value="onOcrProofreadAlwaysChange"
       />
     </SettingRow>
   </section>

@@ -8,7 +8,7 @@ import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import { OcrSettings } from './ocr-settings'
 import type { SettingsTabState } from '../types'
-import AT from '../paths.json'
+import paths from '../paths.json'
 import { write } from '@/entities/settings'
 import { WORDS as words } from '../words'
 
@@ -22,14 +22,26 @@ const WHOLE = Number.MAX_SAFE_INTEGER
 const UNDER = { least: -1, most: WHOLE }
 
 const profiles = computed<readonly SelectChoice[]>(() => {
-  const kept = installation.value.getSetting(AT.profiles)
+  const kept = installation.value.getSetting(paths.profiles)
   const names = kept && typeof kept === 'object' ? Object.keys(kept) : []
   return [{ id: '', text: words.proofreadingNone }, ...names.map((one) => ({ id: one, text: one }))]
 })
 
 // --- Handlers ---
-function onSettingChange(at: readonly string[], value: unknown) {
-  setSetting(at, value)
+function onTranscribingChange(value: boolean) {
+  setSetting(paths.transcribing, value)
+}
+
+function onTranscribeUnderChange(size: number | null) {
+  if (size !== null) setSetting(paths.transcribeUnder, size)
+}
+
+function onTranscriptProofreadChange(name: string) {
+  setSetting(paths.transcriptProofread, name)
+}
+
+function onTranscriptProofreadAlwaysChange(value: boolean) {
+  setSetting(paths.transcriptProofreadAlways, value)
 }
 
 // --- Helpers ---
@@ -66,9 +78,9 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcribingDetail"
     >
       <Switch
-        :model-value="on(AT.transcribing)"
+        :model-value="on(paths.transcribing)"
         :aria-labelledby="labelledBy"
-        @update:model-value="(kept: boolean) => onSettingChange(AT.transcribing, kept)"
+        @update:model-value="onTranscribingChange"
       />
     </SettingRow>
 
@@ -79,15 +91,13 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcribeUnderDetail"
     >
       <NumberField
-        :model-value="counted(AT.transcribeUnder)"
+        :model-value="counted(paths.transcribeUnder)"
         :min="UNDER.least"
         :max="UNDER.most"
         :step="1"
         :aria-labelledby="labelledBy"
         class="settings__number"
-        @settle="
-          (size: number | null) => size !== null && onSettingChange(AT.transcribeUnder, size)
-        "
+        @settle="onTranscribeUnderChange"
       />
     </SettingRow>
 
@@ -98,12 +108,12 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcriptProofreadDetail"
     >
       <Select
-        :model-value="said(AT.transcriptProofread)"
+        :model-value="said(paths.transcriptProofread)"
         :choices="profiles"
         :name="words.transcriptProofread"
         :aria-labelledby="labelledBy"
         class="settings__choice"
-        @update:model-value="(name: string) => onSettingChange(AT.transcriptProofread, name)"
+        @update:model-value="onTranscriptProofreadChange"
       />
     </SettingRow>
 
@@ -114,9 +124,9 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcriptProofreadAlwaysDetail"
     >
       <Switch
-        :model-value="on(AT.transcriptProofreadAlways)"
+        :model-value="on(paths.transcriptProofreadAlways)"
         :aria-labelledby="labelledBy"
-        @update:model-value="(kept: boolean) => onSettingChange(AT.transcriptProofreadAlways, kept)"
+        @update:model-value="onTranscriptProofreadAlwaysChange"
       />
     </SettingRow>
   </section>
