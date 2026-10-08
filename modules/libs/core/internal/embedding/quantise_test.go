@@ -161,3 +161,32 @@ func TestSimilarityIsOneForAVectorWithItself(t *testing.T) {
 		t.Errorf("a vector against its own quantisation stands at %v", got)
 	}
 }
+
+func BenchmarkSimilarity(b *testing.B) {
+	const count = 10_000
+	const dim = 1024
+	rnd := rand.New(rand.NewPCG(42, 99))
+
+	query := make([]float32, dim)
+	for i := range query {
+		query[i] = rnd.Float32()*2 - 1
+	}
+	embedding.Normalise(query)
+
+	vectors := make([][]int8, count)
+	for i := range vectors {
+		v := make([]float32, dim)
+		for j := range v {
+			v[j] = rnd.Float32()*2 - 1
+		}
+		vectors[i] = embedding.Bytes(embedding.Normalise(v))
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		for _, stored := range vectors {
+			_ = embedding.Similarity(query, stored)
+		}
+	}
+}
