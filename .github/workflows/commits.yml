@@ -104,15 +104,7 @@ jobs:
 
       # The window is drawn by the machine's own browser, so the package that
       # embeds it compiles only where that browser's headers are.
-      - name: Install WebKit & GTK dependencies
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo rm -f /var/lib/man-db/auto-update
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            -o Dpkg::Options::=--force-unsafe-io \
-            libgtk-4-dev libwebkitgtk-6.0-dev
+      - uses: ./.github/actions/setup-webkit
 
       - name: Install dependencies
         run: npm ci --prefix modules

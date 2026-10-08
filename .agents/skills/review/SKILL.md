@@ -29,8 +29,10 @@ If a change is right and the ADR is wrong, say so. The finding is then "this con
 `AGENTS.md` at the root and in the touched module carries the naming and placement conventions. They bind as the ADRs do. The distilled form lives in [`../../rules/`](../../rules/):
 
 - [`rules/architecture.md`](../../rules/architecture.md) — the layout, the dependency arrows, determinism, one name per concept.
-- [`rules/coding-style-backend.md`](../../rules/coding-style-backend.md) — Go.
-- [`rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md) — Vue and TypeScript.
+- [`rules/coding-style-backend.md`](../../rules/coding-style-backend.md) — Go style, idioms, and naming.
+- [`rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md) — Vue and TypeScript style and naming.
+- [`rules/comments.md`](../../rules/comments.md) — docblocks, why-not-what, zero LLM markers.
+- [`rules/process.md`](../../rules/process.md) — TDD red-first, role boundaries, human gates.
 
 **Length is never a finding.** A file is split when it holds a second responsibility. Do not report a line count, an import count, or a block size.
 
@@ -68,12 +70,13 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 2. **Fail-fast** — a type error, a lint failure, a broken existing test, or a `-race` run that did not happen marks the gate **FAIL**. Stop and reject with the exact error output, unless told to continue.
 3. **Architecture checklist** — dependency direction, ports and adapters, the `@numen/ui` domain boundary, the core/view split, tokens, naming, and one name per concept.
 
-### Stage 2: Semantic logic & blast radius audit
+### Stage 2: Semantic logic, blast radius & spec audit
 *Guide: [`stages/2-bughunter.md`](./stages/2-bughunter.md)*
 
-1. **Blast radius** — callers of every changed function, upstream sources of the state it reads, downstream watchers, renderers and subscribers.
-2. **Defect matrix** — Go concurrency, context and cancellation, error paths, SQL and resources; Vue reactivity, lifecycle leaks, out-of-order responses; boundary and index errors; wire contracts across *A client is generated from the protocol*.
-3. **Proof** — every defect carries a concrete scenario: *Given → When → Then*. No vague warnings.
+1. **Intent & Spec conformance** — if `.agents/tasks/<slug>/intent.md` exists, verify that no Non-Goals were violated. If `spec.md` exists, verify that all acceptance criteria are covered and the diff does not exceed the blast radius.
+2. **Blast radius** — callers of every changed function, upstream sources of the state it reads, downstream watchers, renderers and subscribers.
+3. **Defect matrix** — Go concurrency, context and cancellation, error paths, SQL and resources; Vue reactivity, lifecycle leaks, out-of-order responses; boundary and index errors; wire contracts across *A client is generated from the protocol*.
+4. **Proof** — every defect carries a concrete scenario: *Given → When → Then*. No vague warnings.
 
 ### Stage 3: Dynamic stress verification
 *Guide: [`stages/3-adversary.md`](./stages/3-adversary.md)*

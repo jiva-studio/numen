@@ -5,8 +5,19 @@ Gemini, or any other) must follow them.
 
 ## Canonical guides
 
-- **Architecture decisions**: [`docs/adr/README.md`](docs/adr/README.md) — the rules live here, not in this file's memory.
-- **The vocabulary**: [`docs/glossary.md`](docs/glossary.md) — its preamble is what a rename is judged against.
+- **Architecture decisions**: [`docs/adr/README.md`](docs/adr/README.md) — the decisions live here.
+- **The vocabulary**: [`docs/glossary.md`](docs/glossary.md) — domain terms.
+- **Rules (`.agents/rules/`)**:
+  - [Architecture guidelines](.agents/rules/architecture.md)
+  - [Backend coding style (Go)](.agents/rules/coding-style-backend.md)
+  - [Frontend coding style (Vue / TypeScript)](.agents/rules/coding-style-frontend.md)
+  - [Comments & docblocks](.agents/rules/comments.md)
+  - [Development process & roles](.agents/rules/process.md)
+- **Skills (`.agents/skills/`)**:
+  - `/intent`: [Problem clarification & Non-Goals](.agents/skills/intent/SKILL.md)
+  - `/spec`: [Technical architecture & Acceptance Criteria](.agents/skills/spec/SKILL.md)
+  - `/coder`: [TDD implementation methodology](.agents/skills/coder/SKILL.md)
+  - `/review`: [3-stage unified code review pipeline](.agents/skills/review/SKILL.md)
 
 This file holds what every language here shares. What is one module's own is
 written in that module, beside the code it holds:
