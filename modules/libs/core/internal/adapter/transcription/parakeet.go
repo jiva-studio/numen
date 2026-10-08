@@ -19,6 +19,7 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -80,13 +81,13 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	options, err := opened.engine.NewSessionOptions()
+	options, _, err := onnxruntime.NewSessionOptions(opened.engine, onnxruntime.SessionSettings{
+		Threads: cfg.threads(),
+	})
 	if err != nil {
 		return nil, err
 	}
-	if err := options.SetIntraOpNumThreads(int32(cfg.threads())); err != nil {
-		return nil, err
-	}
+	defer options.Destroy()
 
 	said, err := tokens(found.tokens)
 	if err != nil {
