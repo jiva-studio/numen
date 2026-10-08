@@ -30,9 +30,10 @@ func openEditor(t *testing.T, notes map[string]string) *API {
 	t.Helper()
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
+	read := note.NewRead(filesystem.VaultReaders{})
 	api := &API{
 		Notes: Notes{
-			Read:  &note.Read{Readers: filesystem.VaultReaders{}},
+			Read:  &read,
 			Write: &writing,
 		},
 	}

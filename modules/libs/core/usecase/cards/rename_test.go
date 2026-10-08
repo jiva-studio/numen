@@ -182,8 +182,7 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Birds.md")
 
-	u := newRenameField(t, vs)
-	u.Writers = refusing{VaultWriters: filesystem.VaultWriters{}, path: "decks/Birds.md"}
+	u := newRenameField(t, vs).WithWriters(refusing{VaultWriters: filesystem.VaultWriters{}, path: "decks/Birds.md"})
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
@@ -299,8 +298,7 @@ func (q byType) Types(
 // every other write in the application waiting behind a vault-sized loop.
 func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	vs := newVaults(t)
-	u := newRenameField(t, vs)
-	u.Notes = byType{NoteQueries: vs.db.NoteQueries(), t: t}
+	u := newRenameField(t, vs).WithNotes(byType{NoteQueries: vs.db.NoteQueries(), t: t})
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",

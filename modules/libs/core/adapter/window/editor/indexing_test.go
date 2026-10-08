@@ -250,13 +250,13 @@ func reading(t *testing.T) (Assembly, *container.Index) {
 func cut(t *testing.T, db *container.Index, api *API) {
 	t.Helper()
 
-	scan := vaults.Scan{
-		Readers:     filesystem.VaultReaders{},
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		db.Notes(),
+		db.Queries(),
+		db.Maintenance(),
+	)
 	if _, err := scan.Execute(t.Context(), api.GetShownVault()); err != nil {
 		t.Fatal(err)
 	}

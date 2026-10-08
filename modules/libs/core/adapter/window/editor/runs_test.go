@@ -82,9 +82,10 @@ func openRunWindow(
 		idea:    "# an idea\n",
 		pointed: "[InternetShortcut]\nURL=" + pointsAt + "\n",
 	})
+	hl := source.NewHighlight(filesystem.VaultReaders{}, read, storing{held})
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
-		Highlight: &source.Highlight{Sources: read, Derived: storing{held}},
+		Highlight: &hl,
 	}
 	// A note is read to find out where it points, which is what says whether
 	// anything is made from it.

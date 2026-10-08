@@ -26,21 +26,21 @@ type KnownVault struct {
 // showing the vaults asks both, and asking them together is what keeps one
 // screen from marking a vault another leaves unmarked.
 type KnownVaults struct {
-	Registry port.VaultRegistry
-	Folders  FolderCheck
+	registry port.VaultRegistry
+	folders  FolderCheck
 }
 
 // NewKnownVaults is what the list is read out of and what a vault's folder is
 // opened through.
 func NewKnownVaults(registry port.VaultRegistry, readers port.VaultReaders) KnownVaults {
-	return KnownVaults{Registry: registry, Folders: NewFolderCheck(readers)}
+	return KnownVaults{registry: registry, folders: NewFolderCheck(readers)}
 }
 
 // Execute is the list. showing is the vault being worked; the empty identity
 // asks the list which vault the next window opens, which is the answer where
 // nobody is sitting in front of one.
 func (u KnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
-	held, err := u.Registry.List()
+	held, err := u.registry.List()
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (u KnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 		return nil, nil
 	}
 	if showing == "" {
-		last, recorded, err := u.Registry.Last()
+		last, recorded, err := u.registry.Last()
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func (u KnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 	for _, v := range held {
 		known = append(known, KnownVault{
 			Vault:     v,
-			IsMissing: u.Folders.Execute(v),
+			IsMissing: u.folders.Execute(v),
 			IsCurrent: showing != "" && v.ID == showing,
 		})
 	}

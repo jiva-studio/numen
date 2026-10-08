@@ -31,11 +31,7 @@ func vault(t *testing.T, embedding embed.Config) container.Config {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := (vaults.Add{
-		Registry: registry,
-		Identity: cfg.VaultIdentity(),
-		Now:      time.Now,
-	}).Execute(root, "asked"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, "asked"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg

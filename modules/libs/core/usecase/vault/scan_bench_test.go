@@ -35,13 +35,13 @@ func openIndexFor(b *testing.B) *container.Index {
 }
 
 func scanFor(db *container.Index) vaults.Scan {
-	return vaults.Scan{
-		Readers:     filesystem.VaultReaders{},
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-	}
+	return vaults.NewScan(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		db.Notes(),
+		db.Queries(),
+		db.Maintenance(),
+	)
 }
 
 // BenchmarkColdScan is the full rebuild: an empty index and every note read,

@@ -59,10 +59,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}
 
 	readers, writers := filesystem.VaultReaders{}, filesystem.VaultWriters{}
-	scan := vaults.Scan{
-		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.Queries(), Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.Queries(), db.Maintenance())
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -96,8 +93,8 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
-			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
-			Links:         note.ShowLinks{Links: db.Links()},
+			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
+			Links:         note.NewShowLinks(db.Links()),
 			Problems:      check.Standard(db.Problems()),
 			Create:        note.NewCreate(writers, queries, index, time.Now),
 			Write:         note.NewWrite(readers, writers, index, time.Now),

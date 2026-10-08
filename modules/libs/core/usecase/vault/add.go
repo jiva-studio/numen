@@ -26,16 +26,16 @@ var ErrCopy = errors.New("one vault cannot be in two places")
 // A name another vault has gets a number appended, and the person renames it
 // afterwards.
 type Add struct {
-	Identity port.VaultIdentity
-	Registry port.VaultRegistry
-	Now      port.Clock
+	identity port.VaultIdentity
+	registry port.VaultRegistry
+	now      port.Clock
 }
 
 // NewAdd is what turns a folder into a vault: what writes and reads the
 // identity the folder carries, the list this installation keeps, and when this
 // is happening, which the identity carries.
 func NewAdd(identity port.VaultIdentity, registry port.VaultRegistry, now port.Clock) Add {
-	return Add{Identity: identity, Registry: registry, Now: now}
+	return Add{identity: identity, registry: registry, now: now}
 }
 
 // Execute takes a path that is already absolute: resolving one against the
@@ -47,12 +47,12 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	}
 	// One folder has one name here, whichever route reached it, and which
 	// routes lead to it is the machine's to say.
-	root = u.Identity.GetName(root)
-	if err := u.Identity.CheckReadable(root); err != nil {
+	root = u.identity.GetName(root)
+	if err := u.identity.CheckReadable(root); err != nil {
 		return domain.Vault{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 
-	held, err := u.Registry.List()
+	held, err := u.registry.List()
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -61,7 +61,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 
-	id, err := u.Identity.Ensure(root, u.Now())
+	id, err := u.identity.Ensure(root, u.now())
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("give %s an identity: %w", root, err)
 	}
@@ -73,12 +73,12 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	//
 	// They are told apart by looking: if the old location still carries this
 	// identity, both exist and it is a copy.
-	existing, found, err := u.Registry.Find(string(id))
+	existing, found, err := u.registry.Find(string(id))
 	if err != nil {
 		return domain.Vault{}, err
 	}
 	if found && existing.Path != root {
-		stillThere, carriesIt, err := u.Identity.GetVaultID(existing.Path)
+		stillThere, carriesIt, err := u.identity.GetVaultID(existing.Path)
 		if err != nil {
 			return domain.Vault{}, err
 		}
@@ -99,7 +99,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		v.Name = filepath.Base(root)
 	}
 	v.Name = known.FreeName(v.Name, v.ID)
-	if err := u.Registry.Save(v); err != nil {
+	if err := u.registry.Save(v); err != nil {
 		return domain.Vault{}, err
 	}
 	return v, nil

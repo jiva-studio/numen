@@ -8,7 +8,10 @@ the repository. This file is the two windows' own, and it holds over
 ## Where a file stands
 
 A file of a window stands on one of six layers, and reaches only what stands
-below it, as documented in [`.agents/rules/architecture.md`](../../../.agents/rules/architecture.md).
+below it. The decision is
+[`docs/adr/0042-a-file-of-the-windows-stands-on-a-layer.md`](../../../docs/adr/0042-a-file-of-the-windows-stands-on-a-layer.md)
+and the import form is
+[`docs/adr/0043-an-import-says-which-layer-it-reaches.md`](../../../docs/adr/0043-an-import-says-which-layer-it-reaches.md).
 
 | Layer | Holds |
 |---|---|

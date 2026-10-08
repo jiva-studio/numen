@@ -44,12 +44,12 @@ func (s CardFace) Lay() (front, back string) { return format.Lay(s.face, s.card)
 // out; giving it one is Marking, which a person's own vault has done to it
 // before they are asked anything.
 type ListCardFaces struct {
-	Readers port.VaultReaders
-	// Notes says which notes of the vault are decks. A build holding none
+	readers port.VaultReaders
+	// notes says which notes of the vault are decks. A build holding none
 	// answers ErrNotCarried for every vault, the same as an index that has not
 	// read this one yet.
-	Notes port.NoteQueries
-	Links port.LinkQueries
+	notes port.NoteQueries
+	links port.LinkQueries
 }
 
 // NewListCardFaces is what a vault's card faces are read through: the vault the
@@ -58,7 +58,13 @@ type ListCardFaces struct {
 func NewListCardFaces(
 	readers port.VaultReaders, notes port.NoteQueries, links port.LinkQueries,
 ) ListCardFaces {
-	return ListCardFaces{Readers: readers, Notes: notes, Links: links}
+	return ListCardFaces{readers: readers, notes: notes, links: links}
+}
+
+// WithReaders returns a copy of ListCardFaces with the given VaultReaders.
+func (u ListCardFaces) WithReaders(readers port.VaultReaders) ListCardFaces {
+	u.readers = readers
+	return u
 }
 
 // ErrNotCarried is what a vault the index does not carry gets. It is the signal
@@ -80,17 +86,17 @@ func (u ListCardFaces) Execute(ctx context.Context, v domain.Vault) ([]CardFace,
 // A vault the index does not carry gets ErrNotCarried. The list of decks is the
 // index's answer, and a vault absent from it is not a vault holding no cards.
 func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, error) {
-	if u.Notes == nil {
+	if u.notes == nil {
 		return nil, ErrNotCarried
 	}
-	held, err := u.Notes.Has(ctx, v.ID)
+	held, err := u.notes.Has(ctx, v.ID)
 	if err != nil {
 		return nil, err
 	}
 	if !held {
 		return nil, ErrNotCarried
 	}
-	return u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	return u.notes.OfType(ctx, v.ID, domain.TypeDeck)
 }
 
 // GetFaces reads the decks named and says what stands in them. A caller after the
@@ -101,7 +107,7 @@ func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, err
 // was wrong with it is the deck's own problem, and the editor is where it is
 // settled.
 func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []string) []CardFace {
-	read := cards.NewRead(u.Readers, u.Links)
+	read := cards.NewRead(u.readers, u.links)
 	stencils := make(map[string]format.Stencil)
 	var out []CardFace
 	for _, path := range paths {

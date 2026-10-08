@@ -17,13 +17,13 @@ import (
 // is shown by its `title`, else by its filename. A title the filename cannot
 // carry whole is written into the frontmatter, and nothing else writes that key.
 type Create struct {
-	Writers port.VaultWriters
-	Names   NameQueries
-	// Index brings the named notes up to date, so that a caller which creates
+	writers port.VaultWriters
+	names   NameQueries
+	// index brings the named notes up to date, so that a caller which creates
 	// a note and searches for it in the next breath finds it.
-	Index Levels
-	// Now is when this is happening. An identifier carries it.
-	Now port.Clock
+	index Levels
+	// now is when this is happening. An identifier carries it.
+	now port.Clock
 }
 
 // NewCreate is what a note is made through: the vault it is written into, what
@@ -32,7 +32,13 @@ type Create struct {
 func NewCreate(
 	writers port.VaultWriters, names NameQueries, index Levels, now port.Clock,
 ) Create {
-	return Create{Writers: writers, Names: names, Index: index, Now: now}
+	return Create{writers: writers, names: names, index: index, now: now}
+}
+
+// WithIndex replaces the index function.
+func (u Create) WithIndex(index Levels) Create {
+	u.index = index
+	return u
 }
 
 // NewNote is what to make.
@@ -72,7 +78,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		}
 	}
 
-	identifier, err := ulid.New(u.Now())
+	identifier, err := ulid.New(u.now())
 	if err != nil {
 		return CreateResult{}, err
 	}
@@ -90,7 +96,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return CreateResult{}, err
 	}
 
-	writer, err := u.Writers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return CreateResult{}, err
 	}
@@ -103,10 +109,10 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	// The note is on disk from here on, so everything after it answers with
 	// where it is, whether or not it succeeds.
 	made := CreateResult{Path: path, ID: identifier, Title: title}
-	if err := u.index(ctx, v, path); err != nil {
+	if err := u.level(ctx, v, path); err != nil {
 		return made, err
 	}
-	shares, err := u.Names.GetNamedPaths(ctx, v.ID, domain.Basename(path))
+	shares, err := u.names.GetNamedPaths(ctx, v.ID, domain.Basename(path))
 	if err != nil {
 		return made, err
 	}
@@ -149,8 +155,11 @@ func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
 	return doc.Bytes(), nil
 }
 
-func (u Create) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
+func (u Create) level(ctx context.Context, v domain.Vault, paths ...string) error {
+	if u.index == nil {
+		return nil
+	}
+	return WrapUnlevelled(u.index(ctx, v, paths), paths...)
 }
 
 func removePath(paths []string, path string) []string {

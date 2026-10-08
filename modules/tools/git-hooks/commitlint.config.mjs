@@ -28,7 +28,8 @@ export default {
         'protocol',  // modules/libs/protocol
         'ui',        // modules/libs/ui
         'wire',      // modules/libs/wire
-        'docs',      // everything under docs/
+        'adr',       // docs/adr
+        'docs',      // everything else under docs/
         'vault',     // vault format spec and parser-facing changes
         'ci',
         'deps',

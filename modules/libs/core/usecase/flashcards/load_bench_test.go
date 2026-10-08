@@ -46,9 +46,7 @@ func BenchmarkVault(b *testing.B) {
 		}
 	})
 
-	uncounted := flashcards.CountReviews{
-		Logs: l.review.Logs, Schedules: l.review.Schedules, Day: today, Now: time.Now,
-	}
+	uncounted := flashcards.NewCountReviews(l.logs, l.schedules, today, time.Now)
 	b.Run("HistoryUncounted", func(b *testing.B) {
 		for b.Loop() {
 			if _, err := uncounted.Execute(ctx, l.vault); err != nil {

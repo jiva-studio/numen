@@ -44,12 +44,9 @@ func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *shelf, do
 	shelved.hold(documentPath, domain.KindBook, raw, 1)
 	index := newStore()
 	store := newShelf()
-	return Highlight{
-		Readers:   vaults{first.ID: shelved},
-		Sources:   index,
-		Derived:   shelves{store},
-		Documents: documents{},
-	}, index, store, book, shelved
+	hl := NewHighlight(vaults{first.ID: shelved}, index, shelves{store})
+	hl.Documents = documents{}
+	return hl, index, store, book, shelved
 }
 
 // recordSource records a source the way the index holds one: the file as it

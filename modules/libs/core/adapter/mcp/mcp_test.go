@@ -75,10 +75,7 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 	t.Cleanup(func() { db.Close() })
 
 	readers, writers := filesystem.VaultReaders{}, filesystem.VaultWriters{}
-	scan := vaults.Scan{
-		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.Queries(), Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.Queries(), db.Maintenance())
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -106,8 +103,8 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
-			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
-			Links:         note.ShowLinks{Links: db.Links()},
+			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
+			Links:         note.NewShowLinks(db.Links()),
 			Problems:      check.Standard(db.Problems()),
 			Create:        note.NewCreate(writers, queries, index, time.Now),
 			Write:         note.NewWrite(readers, writers, index, time.Now),
@@ -566,9 +563,9 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 // is refused the name it already holds.
 func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
 	v, core := newCoreWithNotes(t, nil)
-	core.Notes.Create.Index = func(context.Context, domain.Vault, []string) error {
+	core.Notes.Create = core.Notes.Create.WithIndex(func(context.Context, domain.Vault, []string) error {
 		return errors.New("the index is not level")
-	}
+	})
 	session := newSessionOver(t, core)
 
 	made := createNotes(t, session, map[string]any{"title": "Entropy"})

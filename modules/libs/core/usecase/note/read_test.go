@@ -17,7 +17,7 @@ import (
 // openNoteRead is a vault on disk and the read that works on it.
 func openNoteRead(t *testing.T, notes map[string]string) (note.Read, domain.Vault) {
 	t.Helper()
-	return note.Read{Readers: filesystem.VaultReaders{}}, testsupport.NewVault(t, notes)
+	return note.NewRead(filesystem.VaultReaders{}), testsupport.NewVault(t, notes)
 }
 
 func read(t *testing.T, u note.Read, v domain.Vault, path string) note.Contents {

@@ -20,10 +20,10 @@ import (
 // including ones the application could not read — and come out of a write as
 // the bytes they went in as.
 type EditLinks struct {
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	Index   Levels
-	Now     port.Clock
+	readers port.VaultReaders
+	writers port.VaultWriters
+	index   Levels
+	now     port.Clock
 }
 
 // NewEditLinks is what a note's relationships are written through: the vault it
@@ -36,7 +36,19 @@ type EditLinks struct {
 func NewEditLinks(
 	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
 ) EditLinks {
-	return EditLinks{Readers: readers, Writers: writers, Index: index, Now: now}
+	return EditLinks{readers: readers, writers: writers, index: index, now: now}
+}
+
+// WithReaders replaces the vault readers.
+func (u EditLinks) WithReaders(readers port.VaultReaders) EditLinks {
+	u.readers = readers
+	return u
+}
+
+// WithWriters replaces the vault writers.
+func (u EditLinks) WithWriters(writers port.VaultWriters) EditLinks {
+	u.writers = writers
+	return u
 }
 
 // Add writes relationships into a note, in one read and one write. A link to
@@ -160,5 +172,5 @@ func CheckWritable(link domain.Link) error {
 }
 
 func (u EditLinks) newEdit() Edit {
-	return Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+	return NewEdit(u.readers, u.writers, u.index, u.now)
 }

@@ -53,15 +53,15 @@ type RenameResult struct {
 //
 // Every field a stencil declares is written this way, the first included.
 type RenameField struct {
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	Notes   TypeQueries
-	// Links answers where the wikilink a card names its stencil by lands, which
+	readers port.VaultReaders
+	writers port.VaultWriters
+	notes   TypeQueries
+	// links answers where the wikilink a card names its stencil by lands, which
 	// is what says the card is cut by this stencil.
-	Links port.LinkQueries
-	Index note.Levels
-	// Now is when this is happening. An identifier written here carries it.
-	Now port.Clock
+	links port.LinkQueries
+	index note.Levels
+	// now is when this is happening. An identifier written here carries it.
+	now port.Clock
 }
 
 // TypeQueries is the one question a rename asks of the index. The whole of the
@@ -88,14 +88,26 @@ func NewRenameField(
 	now port.Clock,
 ) RenameField {
 	return RenameField{
-		Readers: readers, Writers: writers, Notes: notes, Links: links,
-		Index: index, Now: now,
+		readers: readers, writers: writers, notes: notes, links: links,
+		index: index, now: now,
 	}
+}
+
+// WithWriters returns a copy of RenameField with the given VaultWriters.
+func (u RenameField) WithWriters(writers port.VaultWriters) RenameField {
+	u.writers = writers
+	return u
+}
+
+// WithNotes returns a copy of RenameField with the given TypeQueries.
+func (u RenameField) WithNotes(notes TypeQueries) RenameField {
+	u.notes = notes
+	return u
 }
 
 // createIdentifier is the identifier a file this rename writes is to carry
 // where it carries none.
-func (u RenameField) createIdentifier() (string, error) { return ulid.New(u.Now()) }
+func (u RenameField) createIdentifier() (string, error) { return ulid.New(u.now()) }
 
 // Execute renames the field, in the stencil first and then in the vault.
 //
@@ -108,27 +120,27 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 	}
 
 	out, err := u.rename(ctx, v, in)
-	if err != nil || u.Index == nil {
+	if err != nil || u.index == nil {
 		return out, err
 	}
 	written := append([]string{in.Stencil}, out.Decks...)
-	return out, note.WrapUnlevelled(u.Index(ctx, v, written), written...)
+	return out, note.WrapUnlevelled(u.index(ctx, v, written), written...)
 }
 
 // rename is the whole of the writing, under this vault's write lock from before
 // the stencil is read until after the last deck is replaced.
 func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
-	release, err := u.Writers.Hold(ctx, v)
+	release, err := u.writers.Hold(ctx, v)
 	if err != nil {
 		return RenameResult{}, err
 	}
 	defer release()
 
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return RenameResult{}, err
 	}
-	writer, err := u.Writers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return RenameResult{}, err
 	}
@@ -146,8 +158,8 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 	// The name the cards write is the name the stencil is linked by.
 	named := domain.Basename(in.Stencil)
 	one := deckWriter{
-		reader: reader, writer: writer, links: u.Links, vault: v,
-		read: Read{Readers: u.Readers, Links: u.Links}, writeIdentifier: u.writeIdentifier,
+		reader: reader, writer: writer, links: u.links, vault: v,
+		read: NewRead(u.readers, u.links), writeIdentifier: u.writeIdentifier,
 	}
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
@@ -216,7 +228,7 @@ func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 // This runs under the vault's write lock, so a question per note in the vault
 // is every other write in the application waiting behind it.
 func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error) {
-	return u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	return u.notes.OfType(ctx, v.ID, domain.TypeDeck)
 }
 
 // deckWriter is one deck's read and write, so that what could not be done to it

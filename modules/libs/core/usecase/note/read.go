@@ -61,12 +61,12 @@ type Contents struct {
 // The window and an agent read through here, so what is refused to one is
 // refused to the other, and the rules for it are written once.
 type Read struct {
-	Readers port.VaultReaders
+	readers port.VaultReaders
 }
 
 // NewRead is what a note is read out of: the vault it stands in.
 func NewRead(readers port.VaultReaders) Read {
-	return Read{Readers: readers}
+	return Read{readers: readers}
 }
 
 // Execute reads the note at path.
@@ -74,7 +74,7 @@ func NewRead(readers port.VaultReaders) Read {
 // An error is the vault being out of reach. What is wrong with the note itself
 // is an outcome, and the caller is told which one.
 func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Contents, error) {
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return Contents{}, err
 	}

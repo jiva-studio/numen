@@ -52,9 +52,9 @@ type Neighbour struct {
 // A card's links are written in the deck's file, so a deck already points at
 // everything its cards name: this is the reading beside the review.
 type ShowNeighbourhood struct {
-	Linked note.ShowLinks
-	Notes  port.NoteQueries
-	Reads  note.Read
+	linked note.ShowLinks
+	notes  port.NoteQueries
+	reads  note.Read
 }
 
 // NewShowNeighbourhood is what the reading beside a review is made of: what the
@@ -65,7 +65,7 @@ type ShowNeighbourhood struct {
 func NewShowNeighbourhood(
 	linked note.ShowLinks, notes port.NoteQueries, reads note.Read,
 ) ShowNeighbourhood {
-	return ShowNeighbourhood{Linked: linked, Notes: notes, Reads: reads}
+	return ShowNeighbourhood{linked: linked, notes: notes, reads: reads}
 }
 
 // Execute gathers what the deck is joined to: what it points at first, then
@@ -77,7 +77,7 @@ func NewShowNeighbourhood(
 func (u ShowNeighbourhood) Execute(
 	ctx context.Context, v domain.Vault, deck string,
 ) (Neighbourhood, error) {
-	linked, err := u.Linked.Execute(ctx, v, deck)
+	linked, err := u.linked.Execute(ctx, v, deck)
 	if err != nil {
 		return Neighbourhood{}, err
 	}
@@ -129,11 +129,11 @@ func (u ShowNeighbourhood) Execute(
 			paths = append(paths, one.Path)
 		}
 	}
-	notes, err := u.Notes.Notes(ctx, v.ID, paths)
+	notes, err := u.notes.Notes(ctx, v.ID, paths)
 	if err != nil {
 		return Neighbourhood{}, err
 	}
-	kinds, err := u.Notes.Types(ctx, v.ID, paths)
+	kinds, err := u.notes.Types(ctx, v.ID, paths)
 	if err != nil {
 		return Neighbourhood{}, err
 	}
@@ -180,7 +180,7 @@ func (u ShowNeighbourhood) Execute(
 		if out.Notes[i].Path == "" {
 			continue
 		}
-		contents, err := u.Reads.Execute(ctx, v, out.Notes[i].Path)
+		contents, err := u.reads.Execute(ctx, v, out.Notes[i].Path)
 		if err != nil {
 			// A read fails when the vault itself is out of reach, and a panel
 			// of titles with no prose under any of them would say nothing about

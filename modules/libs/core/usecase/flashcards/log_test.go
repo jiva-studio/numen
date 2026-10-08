@@ -170,8 +170,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 		t.Errorf("a folder that cannot be read came back with %v", err)
 	}
 
-	counting := s.counted
-	counting.Logs = refusing{DerivedStores: s.logs}
+	counting := flashcards.NewCountReviews(refusing{DerivedStores: s.logs}, s.kept, today, time.Now)
 	if _, err := counting.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
 		t.Errorf("the counting came back with %v", err)
 	}
@@ -255,7 +254,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writing := flashcards.Record{Run: run, Now: time.Now}
+	writing := flashcards.NewRecord(run, time.Now)
 
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -289,7 +288,12 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
-	shut := s.run(t, time.Now().AddDate(0, 0, -1))
+	yesterday := time.Now().AddDate(0, 0, -1)
+	yesterdayRun, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, yesterday)
+	if err != nil {
+		t.Fatal(err)
+	}
+	shut := flashcards.NewRecord(yesterdayRun, func() time.Time { return yesterday })
 	if _, err := shut.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +301,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	closed := filepath.Join(s.vault.Path, filesystem.DefaultServiceDir,
-		filepath.FromSlash(shut.Run.GetName()))
+		filepath.FromSlash(yesterdayRun.GetName()))
 	testsupport.Shut(t, closed)
 
 	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)

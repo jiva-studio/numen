@@ -4,7 +4,10 @@ The conventions every language in this repository shares are in `AGENTS.md` at
 the root. This file is the protocol's own, and it holds over
 `modules/libs/protocol`.
 
-The architecture rules are documented in [`.agents/rules/architecture.md`](../../../.agents/rules/architecture.md).
+The decision behind the shape is
+[`docs/adr/0034-one-service-to-a-subject.md`](../../../docs/adr/0034-one-service-to-a-subject.md),
+and how a client comes from it is
+[`docs/adr/0005-a-client-is-generated-from-the-protocol.md`](../../../docs/adr/0005-a-client-is-generated-from-the-protocol.md).
 
 ## Generated code is never edited
 

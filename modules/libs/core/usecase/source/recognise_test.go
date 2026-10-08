@@ -215,14 +215,9 @@ func reading(t *testing.T, says string, pages [][]string) (Recognise, domain.Vau
 	index := newStore()
 	shelf := newShelf()
 	model := &speaker{says: says}
-	return Recognise{
-		Readers:   readers,
-		Sources:   index,
-		Derived:   shelves{shelf},
-		Documents: documents{},
-		By:        model,
-		Batch:     1,
-	}, v, index, shelf, model
+	r := NewRecognise(readers, index, shelves{shelf}, documents{}, model)
+	r.Batch = 1
+	return r, v, index, shelf, model
 }
 
 func TestWhatIsReadIsWrittenDownAndClaimed(t *testing.T) {
@@ -379,7 +374,8 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 	}
 
 	// Cut it once, so it is a source that owes nothing.
-	extract := Extract{Readers: u.Readers, Sources: index, Queries: index, Derived: shelf}
+	extract := NewExtract(u.readers, index, index)
+	extract.Derived = shelf
 	if _, err := extract.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

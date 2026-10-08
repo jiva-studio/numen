@@ -23,10 +23,10 @@ func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vaul
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := vaults.Scan{
-		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.Queries(), Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(),
+		db.Queries(), db.Maintenance(),
+	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

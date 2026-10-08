@@ -14,17 +14,17 @@ var ErrUnknown = errors.New("this installation holds no such vault")
 // Find resolves what the user typed — a name, a path or an identity — into
 // a vault. It is shared by every use case that works on one.
 type Find struct {
-	Registry port.VaultRegistry
+	registry port.VaultRegistry
 }
 
 // NewFind is what a name, a path or an identity is resolved against: the list
 // this installation keeps.
 func NewFind(registry port.VaultRegistry) Find {
-	return Find{Registry: registry}
+	return Find{registry: registry}
 }
 
 func (u Find) Execute(nameOrPath string) (domain.Vault, error) {
-	v, found, err := u.Registry.Find(nameOrPath)
+	v, found, err := u.registry.Find(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, err
 	}

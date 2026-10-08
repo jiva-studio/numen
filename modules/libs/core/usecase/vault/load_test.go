@@ -55,13 +55,13 @@ func TestLoad(t *testing.T) {
 	}
 	defer db.Close()
 
-	scan := vaults.Scan{
-		Readers:     filesystem.VaultReaders{},
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		db.Notes(),
+		db.Queries(),
+		db.Maintenance(),
+	)
 
 	cold := time.Now()
 	res, err := scan.Execute(ctx, v)

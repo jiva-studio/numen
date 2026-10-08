@@ -34,7 +34,7 @@ func openInstallation(t *testing.T) *editor.Installation {
 	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	add := vaults.Add{Identity: cfg.VaultIdentity(), Registry: registry, Now: time.Now}
+	add := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now)
 	if _, err := add.Execute(root, "one"); err != nil {
 		t.Fatal(err)
 	}

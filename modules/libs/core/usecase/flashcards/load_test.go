@@ -127,11 +127,13 @@ func (b countingBy) IsSpaced(s review.Schedule) bool { return b.inner.IsSpaced(s
 // asks of the store, the cache and the scheduler counted.
 type loaded struct {
 	vaulted
-	on     *loadCounts
-	owed   flashcards.CountCardsDue
-	sat    flashcards.Session
-	review flashcards.CountReviews
-	faces  int
+	on        *loadCounts
+	schedules flashcards.Schedules
+	logs      port.DerivedStores
+	owed      flashcards.CountCardsDue
+	sat       flashcards.Session
+	review    flashcards.CountReviews
+	faces     int
 }
 
 // load builds a vault of cards cards, answered on days days, perDay answers to
@@ -142,34 +144,32 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 	s := openVault(tb, loadDeck(cards))
 	on := &loadCounts{}
 	logs := countingStores{inner: s.logs, on: on}
-	schedules := flashcards.Schedules{
-		Logs:      logs,
-		Cache:     countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "faces")), on: on},
-		By:        countingBy{inner: review.NewFSRS(), on: on},
-		Day:       today,
-		CardFaces: s.standings,
-		Presets:   s.presets,
-	}
+	schedules := flashcards.NewSchedules(
+		logs,
+		countingBy{inner: review.NewFSRS(), on: on},
+		today,
+		s.standings,
+		s.presets,
+	)
+	schedules.Cache = countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "faces")), on: on}
 	loadAnswers(tb, s, cards, days, perDay)
+	reviewUseCase := flashcards.NewCountReviews(logs, schedules, today, time.Now)
+	reviewUseCase.Cache = countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "days")), on: on}
 	return loaded{
-		vaulted: s,
-		on:      on,
-		owed: flashcards.CountCardsDue{
-			CardFaces: s.standings, Schedules: schedules, Presets: s.presets,
-			Day: today, Now: time.Now,
-		},
-		sat: flashcards.Session{
-			Marks: s.marking, CardFaces: s.standings, Schedules: schedules,
-			Presets: s.presets, Day: today, Now: time.Now,
-		},
-		review: flashcards.CountReviews{
-			Logs:      logs,
-			Cache:     countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "days")), on: on},
-			Schedules: schedules,
-			Day:       today,
-			Now:       time.Now,
-		},
-		faces: cards,
+		vaulted:   s,
+		on:        on,
+		schedules: schedules,
+		logs:      logs,
+		owed: flashcards.NewCountCardsDue(
+			s.standings, schedules, s.presets,
+			today, time.Now,
+		),
+		sat: flashcards.NewSession(
+			s.marking, s.standings, schedules,
+			s.presets, today, time.Now,
+		),
+		review: reviewUseCase,
+		faces:  cards,
 	}
 }
 

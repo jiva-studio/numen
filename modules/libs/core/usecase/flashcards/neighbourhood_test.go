@@ -32,10 +32,10 @@ func reading(
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := vaults.Scan{
-		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(),
+		db.NoteQueries(), db.Maintenance(),
+	)
 	add := func(notes map[string]string) domain.Vault {
 		t.Helper()
 		v := testsupport.NewVault(t, notes)
@@ -45,11 +45,11 @@ func reading(
 		return v
 	}
 
-	return flashcards.ShowNeighbourhood{
-		Linked: note.ShowLinks{Links: db.NoteQueries()},
-		Notes:  db.NoteQueries(),
-		Reads:  note.Read{Readers: filesystem.VaultReaders{}},
-	}, add
+	return flashcards.NewShowNeighbourhood(
+		note.NewShowLinks(db.NoteQueries()),
+		db.NoteQueries(),
+		note.NewRead(filesystem.VaultReaders{}),
+	), add
 }
 
 // readNeighbourhood is one vault of notes, and what its deck turns out to be

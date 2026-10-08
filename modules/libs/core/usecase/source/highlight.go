@@ -24,9 +24,9 @@ import (
 //
 // A source with no reading and no layer is lit nowhere, and that is an answer.
 type Highlight struct {
-	Readers port.VaultReaders
-	Sources port.SourceQueries
-	Derived port.DerivedStores
+	readers port.VaultReaders
+	sources port.SourceQueries
+	derived port.DerivedStores
 
 	// Documents is optional. It reads a document that carries its own text
 	// layer; without one such a document is lit nowhere. A vault whose
@@ -48,8 +48,14 @@ type Run struct {
 func NewHighlight(
 	readers port.VaultReaders, sources port.SourceQueries, derived port.DerivedStores,
 ) Highlight {
-	return Highlight{Readers: readers, Sources: sources, Derived: derived}
+	return Highlight{readers: readers, sources: sources, derived: derived}
 }
+
+// Sources is what says which producer made a source's text.
+func (u Highlight) Sources() port.SourceQueries { return u.sources }
+
+// Derived is the store the producer's text and coordinates are kept in.
+func (u Highlight) Derived() port.DerivedStores { return u.derived }
 
 // Execute is what the runs of one source's text say and where each of them
 // sits: the boxes covering it, each on the page it was read from.
@@ -63,7 +69,7 @@ func (u Highlight) Execute(
 	path string,
 	runs []domain.ByteSpan,
 ) ([]Run, error) {
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +82,7 @@ func (u Highlight) Execute(
 	if len(runs) == 0 {
 		return nil, nil
 	}
-	said, stands, err := u.Sources.Reading(ctx, v.ID, path)
+	said, stands, err := u.sources.Reading(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +92,8 @@ func (u Highlight) Execute(
 		return getRuns("", nil, runs), nil
 	}
 	var store port.DerivedStore
-	if u.Derived != nil {
-		if store, err = u.Derived.Open(v); err != nil {
+	if u.derived != nil {
+		if store, err = u.derived.Open(v); err != nil {
 			return nil, err
 		}
 	}

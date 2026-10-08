@@ -57,19 +57,19 @@ type cachedSchedule struct {
 // already counted, and a schedule depends on the order of the answers, so
 // nothing can be added to what the later ones produced.
 type Schedules struct {
-	Logs port.DerivedStores
+	logs port.DerivedStores
 	// Cache is where the working out is remembered. A build holding none works
 	// it out at every launch.
 	Cache port.ScheduleStore
-	By    review.Scheduler
-	// Day is where one day of review gives way to the next, which is what says
+	by    review.Scheduler
+	// day is where one day of review gives way to the next, which is what says
 	// on which day a card placed by its preset lands.
-	Day review.Day
-	// CardFaces and Presets say which preset schedules each card face, so a
+	day review.Day
+	// cardFaces and presets say which preset schedules each card face, so a
 	// card is worked out at the share of the cards its own preset asks for. A
 	// build holding neither works every card out by By.
-	CardFaces ListCardFaces
-	Presets   Presets
+	cardFaces ListCardFaces
+	presets   Presets
 	// At is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
 	At func(retention float64) review.Scheduler
@@ -86,7 +86,17 @@ func NewSchedules(
 	faces ListCardFaces,
 	presets Presets,
 ) Schedules {
-	return Schedules{Logs: logs, By: by, Day: day, CardFaces: faces, Presets: presets}
+	return Schedules{logs: logs, by: by, day: day, cardFaces: faces, presets: presets}
+}
+
+// CardFaces returns the ListCardFaces Schedules reads through.
+func (u Schedules) CardFaces() ListCardFaces {
+	return u.cardFaces
+}
+
+// Presets returns the Presets Schedules resolves presets through.
+func (u Schedules) Presets() Presets {
+	return u.presets
 }
 
 // assignment is which scheduler each card face is worked out by, and what that
@@ -106,8 +116,8 @@ type assignment struct {
 // none is scheduled by.
 func (u Schedules) plain() assignment {
 	return assignment{
-		under: review.ScheduleBy(u.By),
-		mark:  getMark([]string{u.By.GetName(), u.opening(), review.Defaults().GetPlacing()}),
+		under: review.ScheduleBy(u.by),
+		mark:  getMark([]string{u.by.GetName(), u.opening(), review.Defaults().GetPlacing()}),
 	}
 }
 
@@ -115,10 +125,10 @@ func (u Schedules) plain() assignment {
 // under. A day beginning elsewhere puts a card on another day.
 func (u Schedules) opening() string {
 	in := "local"
-	if u.Day.In != nil {
-		in = u.Day.In.String()
+	if u.day.In != nil {
+		in = u.day.In.String()
 	}
-	return "day\t" + review.Clock(u.Day.Starts) + "\t" + in
+	return "day\t" + review.Clock(u.day.Starts) + "\t" + in
 }
 
 // getAssignment is the scheduler each card face is worked out by, over a
@@ -127,17 +137,17 @@ func (u Schedules) opening() string {
 // A card face whose deck names no preset is worked out at the defaults, and so
 // is every card of a vault nothing has read yet.
 func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignment, error) {
-	if u.Presets.Links == nil || u.CardFaces.Notes == nil {
+	if u.presets.links == nil || u.cardFaces.notes == nil {
 		return u.plain(), nil
 	}
-	faces, err := u.CardFaces.Execute(ctx, v)
+	faces, err := u.cardFaces.Execute(ctx, v)
 	if errors.Is(err, ErrNotCarried) {
 		return u.plain(), nil
 	}
 	if err != nil {
 		return assignment{}, err
 	}
-	return u.getAssignmentFrom(ctx, v, u.Presets.Reading(), faces)
+	return u.getAssignmentFrom(ctx, v, u.presets.Reading(), faces)
 }
 
 // getAssignmentFrom is the same, from the cards and the reading of the presets a
@@ -146,7 +156,7 @@ func (u Schedules) getAssignmentFrom(
 	ctx context.Context, v domain.Vault, reading *PresetReads, faces []CardFace,
 ) (assignment, error) {
 	out := u.plain()
-	if reading == nil || reading.Links == nil {
+	if reading == nil || reading.links == nil {
 		return out, nil
 	}
 
@@ -170,7 +180,7 @@ func (u Schedules) getAssignmentFrom(
 	}
 
 	marks := make([]string, 0, len(under)+2)
-	marks = append(marks, u.By.GetName(), u.opening())
+	marks = append(marks, u.by.GetName(), u.opening())
 	for face, one := range under {
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.GetName()+"\t"+one.Preset.GetPlacing())
 	}
@@ -179,7 +189,7 @@ func (u Schedules) getAssignmentFrom(
 		if one, held := under[face]; held {
 			return one
 		}
-		return review.SchedulingPolicy{By: u.By, Preset: review.Defaults()}
+		return review.SchedulingPolicy{By: u.by, Preset: review.Defaults()}
 	}
 	return out, nil
 }
@@ -209,7 +219,7 @@ func (u Schedules) getScheduler(retention float64) review.Scheduler {
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
 ) (map[review.CardFaceID]review.Schedule, error) {
-	log := Log{Stores: u.Logs}
+	log := Log{Stores: u.logs}
 
 	// The listing comes first, and the files are read only when the cache does
 	// not answer: reading the folder is what a launch does anyway, and reading
@@ -253,7 +263,7 @@ func (u Schedules) GetFromLog(
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.
 func (u Schedules) getSchedules(held ReviewLog, asks assignment) map[review.CardFaceID]review.Schedule {
-	return replaySchedules(u.Day, held, asks)
+	return replaySchedules(u.day, held, asks)
 }
 
 // getSchedulesCached is the same, with what a replay came to kept for the next
@@ -276,7 +286,7 @@ func (u Schedules) getSchedulesCached(
 func (u Schedules) replayAndRemember(
 	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
-	out := replaySchedules(u.Day, held, asks)
+	out := replaySchedules(u.day, held, asks)
 	u.remember(ctx, v, held.Files, asks.mark, out)
 	return out
 }

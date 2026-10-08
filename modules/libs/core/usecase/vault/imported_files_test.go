@@ -74,7 +74,7 @@ func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 			"content://held/1": {"content://held/2", "content://held/3"},
 		},
 	}
-	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: handed}
+	bring := vaults.NewImport(filesystem.VaultWriters{}, handed)
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
 	if err != nil {

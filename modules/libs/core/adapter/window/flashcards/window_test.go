@@ -87,9 +87,9 @@ func setNow(api *API, now time.Time) {
 	at := func() time.Time { return now }
 	api.Now = at
 	api.Day = reviewDay
-	api.CardsDue.Day, api.CardsDue.Now = reviewDay, at
-	api.Session.Day, api.Session.Now = reviewDay, at
-	api.Counted.Day, api.Counted.Now = reviewDay, at
+	api.CardsDue = api.CardsDue.WithDay(reviewDay).WithNow(at)
+	api.Session = api.Session.WithDay(reviewDay).WithNow(at)
+	api.Counted = api.Counted.WithDay(reviewDay).WithNow(at)
 }
 
 // runDays sits down to the vault on each of as many days running.
@@ -195,14 +195,15 @@ func getCurve(t *testing.T, api *API, v domain.Vault, path string, p review.Pres
 // curves is the simulator behind the one control of a preset, standing on the
 // day the window stands on.
 func curves(api *API) flashcards.ProjectCurve {
-	return flashcards.ProjectCurve{
-		CardFaces: api.Schedules.CardFaces,
-		Schedules: api.Schedules,
-		Presets:   api.Presets,
-		Day:       api.Day,
-		Now:       api.Now,
-		Cores:     runtime.GOMAXPROCS(0),
-	}
+	c := flashcards.NewProjectCurve(
+		api.Schedules.CardFaces(),
+		api.Schedules,
+		api.Presets,
+		api.Day,
+		api.Now,
+	)
+	c.Cores = runtime.GOMAXPROCS(0)
+	return c
 }
 
 // The picture over a preset's range and the day its decks offer are one

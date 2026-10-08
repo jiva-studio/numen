@@ -48,10 +48,11 @@ func mapMissingNote(err error) error {
 // identifier because this is an edit, change the one thing, put it back, and
 // bring the index level.
 type Edit struct {
-	Readers     port.VaultReaders
-	Writers     port.VaultWriters
-	Index       Levels
-	Now         port.Clock
+	readers port.VaultReaders
+	writers port.VaultWriters
+	index   Levels
+	now     port.Clock
+
 	Fingerprint domain.Fingerprint
 	// ShouldOverwrite is a caller writing what is in front of the person: the note
 	// on disk is replaced without being held to a fingerprint, a note that is
@@ -73,7 +74,7 @@ type Edit struct {
 func NewEdit(
 	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
 ) Edit {
-	return Edit{Readers: readers, Writers: writers, Index: index, Now: now}
+	return Edit{readers: readers, writers: writers, index: index, now: now}
 }
 
 // Apply makes one change to the note at path and puts it back.
@@ -84,7 +85,10 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	}
 	// The file is on disk, so the fingerprint stands beside whatever the
 	// levelling came to and a caller can tell the two apart.
-	return written, WrapUnlevelled(e.Index(ctx, v, []string{path}), path)
+	if e.index == nil {
+		return written, nil
+	}
+	return written, WrapUnlevelled(e.index(ctx, v, []string{path}), path)
 }
 
 // splice is the read, the change and the write, under this vault's write lock
@@ -92,13 +96,13 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 func (e Edit) splice(
 	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
 ) (domain.Fingerprint, error) {
-	release, err := e.Writers.Hold(ctx, v)
+	release, err := e.writers.Hold(ctx, v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
 	defer release()
 
-	reader, err := e.Readers.Open(v)
+	reader, err := e.readers.Open(v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -155,7 +159,7 @@ func (e Edit) splice(
 	// A caller writing over what is there is the person editing their own note,
 	// and leaves the frontmatter as they wrote it.
 	if _, carried := doc.Identifier(); !carried && !e.ShouldOverwrite {
-		identifier, err := ulid.New(e.Now())
+		identifier, err := ulid.New(e.now())
 		if err != nil {
 			return domain.Fingerprint{}, err
 		}
@@ -171,7 +175,7 @@ func (e Edit) splice(
 		return domain.Fingerprint{}, err
 	}
 
-	writer, err := e.Writers.Open(v)
+	writer, err := e.writers.Open(v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}

@@ -109,12 +109,14 @@ func openRecordingWindow(t *testing.T, held stored) (*API, http.Handler) {
 func windowOn(t *testing.T, held port.DerivedStore) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound, book: "the bytes of a scan"})
+	hl := source.NewHighlight(
+		filesystem.VaultReaders{},
+		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
+		storing{held},
+	)
 	api := &API{
-		Readers: filesystem.VaultReaders{},
-		Highlight: &source.Highlight{
-			Sources: indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
-			Derived: storing{held},
-		},
+		Readers:   filesystem.VaultReaders{},
+		Highlight: &hl,
 	}
 	api.show(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
@@ -544,7 +546,8 @@ func TestTheWindowIsToldATranscriptMayBePutRight(t *testing.T) {
 func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
 	held := stored{}
 	api, _ := openRecordingWindow(t, held)
-	api.Highlight.Sources = indexed{}
+	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, storing{held})
+	api.Highlight = &hl
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeNotFound {

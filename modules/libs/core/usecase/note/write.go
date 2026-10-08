@@ -49,10 +49,10 @@ var (
 // application does not own survive because nothing here rewrites them. How
 // somebody's YAML is formatted stays theirs.
 type Write struct {
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	Index   Levels
-	Now     port.Clock
+	readers port.VaultReaders
+	writers port.VaultWriters
+	index   Levels
+	now     port.Clock
 	// Bound is the most the file may be, measured as it goes to disk. Zero is
 	// MaxBytes. A caller whose files are read at a bound of their own sets it.
 	Bound int
@@ -71,7 +71,25 @@ type Levels func(ctx context.Context, v domain.Vault, paths []string) error
 func NewWrite(
 	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
 ) Write {
-	return Write{Readers: readers, Writers: writers, Index: index, Now: now}
+	return Write{readers: readers, writers: writers, index: index, now: now}
+}
+
+// WithReaders replaces the vault readers.
+func (u Write) WithReaders(readers port.VaultReaders) Write {
+	u.readers = readers
+	return u
+}
+
+// WithWriters replaces the vault writers.
+func (u Write) WithWriters(writers port.VaultWriters) Write {
+	u.writers = writers
+	return u
+}
+
+// WithIndex replaces the index function.
+func (u Write) WithIndex(index Levels) Write {
+	u.index = index
+	return u
 }
 
 // Execute puts body in the note at path.
@@ -90,10 +108,9 @@ func (u Write) Execute(
 		return domain.Fingerprint{}, ErrBodyUnwritable
 	}
 
-	e := Edit{
-		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
-		Fingerprint: fingerprint, Bound: u.bound(),
-	}
+	e := NewEdit(u.readers, u.writers, u.index, u.now)
+	e.Fingerprint = fingerprint
+	e.Bound = u.bound()
 	ends := func() {}
 	defer func() { ends() }()
 
@@ -108,7 +125,7 @@ func (u Write) Execute(
 			return err
 		}
 		if at.From != at.To || insert != "" {
-			ends = u.Drawing.beginChange(ctx, u.Now, domain.Edit{
+			ends = u.Drawing.beginChange(ctx, u.now, domain.Edit{
 				Path: path,
 				From: markdown.CountUTF16(was, at.From),
 				To:   markdown.CountUTF16(was, at.To),
@@ -165,12 +182,10 @@ func (u Write) Save(
 	if markdown.IsFrontmatterStart(body) {
 		return domain.Fingerprint{}, ErrBodyUnwritable
 	}
-	e := Edit{
-		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
-		ShouldOverwrite: true,
-		Seen:            seen,
-		Bound:           u.bound(),
-	}
+	e := NewEdit(u.readers, u.writers, u.index, u.now)
+	e.ShouldOverwrite = true
+	e.Seen = seen
+	e.Bound = u.bound()
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		return doc.SetBody(body)
 	})

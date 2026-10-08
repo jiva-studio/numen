@@ -74,12 +74,12 @@ func newFollowed(t *testing.T, notes map[string]string, watcher *hand) followed 
 	}
 
 	moved := make(chan vaults.VaultChanges, 8)
-	follow := vaults.Follow{
-		Watcher: watcher,
-		Refresh: vaults.Refresh{Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes()},
-		Scan:    scanner(filesystem.VaultReaders{}, db),
-		Changed: func(m vaults.VaultChanges) { moved <- m },
-	}
+	follow := vaults.NewFollow(
+		watcher,
+		vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources()),
+		scanner(filesystem.VaultReaders{}, db),
+	)
+	follow.Changed = func(m vaults.VaultChanges) { moved <- m }
 
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
@@ -206,12 +206,12 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 
 	reported := make(chan error, 8)
 	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
-	follow := vaults.Follow{
-		Watcher:      watcher,
-		Refresh:      vaults.Refresh{Readers: readers, Vaults: db.Vaults(), Notes: db.Notes()},
-		Scan:         scanner(filesystem.VaultReaders{}, db),
-		ErrorHandler: func(err error) { reported <- err },
-	}
+	follow := vaults.NewFollow(
+		watcher,
+		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources()),
+		scanner(filesystem.VaultReaders{}, db),
+	)
+	follow.ErrorHandler = func(err error) { reported <- err }
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)

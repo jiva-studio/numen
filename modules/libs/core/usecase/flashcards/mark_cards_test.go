@@ -44,8 +44,7 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
-	marking := s.marking
-	marking.Index = busy
+	marking := s.marking.WithIndex(busy)
 
 	marked, err := marking.Execute(t.Context(), s.vault)
 	if err != nil {

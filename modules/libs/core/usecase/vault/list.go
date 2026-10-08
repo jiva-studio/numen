@@ -7,14 +7,14 @@ import (
 
 // List reports the vaults this installation knows.
 type List struct {
-	Registry port.VaultRegistry
+	registry port.VaultRegistry
 }
 
 // NewList is what the vaults are read out of: the list this installation keeps.
 func NewList(registry port.VaultRegistry) List {
-	return List{Registry: registry}
+	return List{registry: registry}
 }
 
 func (u List) Execute() ([]domain.Vault, error) {
-	return u.Registry.List()
+	return u.registry.List()
 }

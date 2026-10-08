@@ -82,10 +82,10 @@ func newVaults(t *testing.T) vaulted {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := vaults.Scan{
-		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(),
+		db.NoteQueries(), db.Maintenance(),
+	)
 	out := vaulted{db: db}
 	for i, notes := range []map[string]string{animals, minerals} {
 		v := testsupport.NewVault(t, notes)
@@ -103,10 +103,10 @@ func newVaults(t *testing.T) vaulted {
 
 func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
 	t.Helper()
-	scan := vaults.Scan{
-		Readers: filesystem.VaultReaders{}, Vaults: vs.db.Vaults(), Notes: vs.db.Notes(),
-		Known: vs.db.NoteQueries(), Maintenance: vs.db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{}, vs.db.Vaults(), vs.db.Notes(),
+		vs.db.NoteQueries(), vs.db.Maintenance(),
+	)
 	return func(ctx context.Context, v domain.Vault, _ []string) error {
 		_, err := scan.Execute(ctx, v)
 		return err
@@ -144,7 +144,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Mammals.md")
 
-	got, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Mammals.md")
+	got, err := cards.NewRead(filesystem.VaultReaders{}, nil).Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}
+	u := cards.NewRead(filesystem.VaultReaders{}, vs.db.NoteQueries())
 	got, err := u.Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -224,7 +224,7 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}
+	u := cards.NewRead(filesystem.VaultReaders{}, vs.db.NoteQueries())
 	got, err := u.Deck(t.Context(), vs.first, "decks/Loose.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -275,7 +275,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	}
 
 	counted := &counting{VaultReaders: filesystem.VaultReaders{}}
-	got, err := cards.Read{Readers: counted}.Deck(t.Context(), vs.first, "decks/Mammals.md")
+	got, err := cards.NewRead(counted, nil).Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -303,7 +303,7 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := cards.Read{Readers: filesystem.VaultReaders{}}.Stencil(t.Context(), vs.first, "Animal.md")
+	got, err := cards.NewRead(filesystem.VaultReaders{}, nil).Stencil(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -320,7 +320,7 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), indexNothing,
 		time.Now)
 
-	first, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Birds.md")
+	first, err := cards.NewRead(filesystem.VaultReaders{}, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -436,7 +436,7 @@ func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 // stencils, and from no other vault's.
 func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 	vs := newVaults(t)
-	u := cards.List{Readers: filesystem.VaultReaders{}, Notes: vs.db.NoteQueries()}
+	u := cards.NewList(filesystem.VaultReaders{}, vs.db.NoteQueries())
 
 	got, held, err := u.Execute(t.Context(), vs.first, 0)
 	if err != nil {
@@ -474,7 +474,7 @@ func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 	vs := newVaults(t)
 	counted := &counting{VaultReaders: filesystem.VaultReaders{}}
 
-	got, held, err := (cards.List{Readers: counted, Notes: vs.db.NoteQueries()}).
+	got, held, err := (cards.NewList(counted, vs.db.NoteQueries())).
 		Execute(t.Context(), vs.first, 1)
 	if err != nil {
 		t.Fatalf("list: %v", err)

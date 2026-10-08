@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -46,6 +47,8 @@ type vaulted struct {
 	kept      flashcards.Schedules
 	counted   flashcards.CountReviews
 	logs      filesystem.DerivedStores
+	notes     port.NoteQueries
+	links     port.LinkQueries
 	// scan brings the index level with what the vault now holds.
 	scan func(ctx context.Context, v domain.Vault, paths []string) error
 }
@@ -60,10 +63,10 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := vaults.Scan{
-		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(),
+		db.NoteQueries(), db.Maintenance(),
+	)
 	v := testsupport.NewVault(t, notes)
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
@@ -98,6 +101,8 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 		kept:    schedules,
 		counted: counted,
 		logs:    logs,
+		notes:   db.NoteQueries(),
+		links:   db.NoteQueries(),
 		scan:    scanned,
 	}
 }
@@ -143,7 +148,7 @@ func (s vaulted) run(t *testing.T, at time.Time) flashcards.Record {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return flashcards.Record{Run: run, Now: func() time.Time { return at }}
+	return flashcards.NewRecord(run, func() time.Time { return at })
 }
 
 // runNamed is a run whose file is named for one instant and whose answers were
@@ -155,7 +160,7 @@ func (s vaulted) runNamed(t *testing.T, named, given time.Time) flashcards.Recor
 	if err != nil {
 		t.Fatal(err)
 	}
-	return flashcards.Record{Run: run, Now: func() time.Time { return given }}
+	return flashcards.NewRecord(run, func() time.Time { return given })
 }
 
 func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
@@ -163,9 +168,9 @@ func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
 }
 
 func (s vaulted) newCountCardsDueAt(day review.Day, now func() time.Time) flashcards.CountCardsDue {
-	return flashcards.CountCardsDue{
-		CardFaces: s.standings, Schedules: s.kept, Presets: s.presets, Day: day, Now: now,
-	}
+	return flashcards.NewCountCardsDue(
+		s.standings, s.kept, s.presets, day, now,
+	)
 }
 
 // session is a session whose presets read nothing, so every deck of the vault
@@ -521,8 +526,7 @@ func TestACardComesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	}
 
 	// The window is opened on the day the card falls on, and it is owed.
-	owed := s.newCountCardsDue(today)
-	owed.Now = func() time.Time { return due }
+	owed := s.newCountCardsDueAt(today, func() time.Time { return due })
 	owing, err := owed.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -532,8 +536,8 @@ func TestACardComesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	}
 
 	// And the day before it, it is not.
-	owed.Now = func() time.Time { return due.AddDate(0, 0, -1) }
-	before, err := owed.Execute(t.Context(), s.vault)
+	owedBefore := s.newCountCardsDueAt(today, func() time.Time { return due.AddDate(0, 0, -1) })
+	before, err := owedBefore.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -852,8 +856,8 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	// A cache another scheduler left, current in every other way and saying
 	// what no reading of the answers could: the card answered seven times, and
 	// a card face the vault has never held.
-	other := s.kept
-	other.By = named{Scheduler: review.NewFSRS(), name: "another-one"}
+	other := flashcards.NewSchedules(s.logs, named{Scheduler: review.NewFSRS(), name: "another-one"}, today, s.standings, s.presets)
+	other.Cache = s.kept.Cache
 	if _, err := other.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}

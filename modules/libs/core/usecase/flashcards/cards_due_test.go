@@ -332,7 +332,11 @@ func TestACountIsDroppedOnceTheWindowHasGone(t *testing.T) {
 	gone, went := context.WithCancel(t.Context())
 	went()
 
-	_, err := flashcards.CountCardsDue{}.Execute(gone, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
+	u := flashcards.NewCountCardsDue(
+		flashcards.ListCardFaces{}, flashcards.Schedules{}, flashcards.Presets{},
+		review.Day{}, time.Now,
+	)
+	_, err := u.Execute(gone, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("the count came back with %v", err)
 	}

@@ -112,11 +112,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := (vaults.Add{
-		Registry: registry,
-		Identity: cfg.VaultIdentity(),
-		Now:      time.Now,
-	}).Execute(root, "quitting"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, "quitting"); err != nil {
 		t.Fatal(err)
 	}
 

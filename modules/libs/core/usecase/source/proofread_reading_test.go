@@ -97,7 +97,7 @@ func newProofreadable(t *testing.T) proofreadable {
 	if _, err := read.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	return proofreadable{readers: read.Readers, derived: shelves{shelved}, vault: v, shelved: shelved}
+	return proofreadable{readers: read.readers, derived: shelves{shelved}, vault: v, shelved: shelved}
 }
 
 // corrects is a reply putting one line right.

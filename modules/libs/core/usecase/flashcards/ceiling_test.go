@@ -49,10 +49,10 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 	t.Helper()
 	var out time.Duration
 	for range 200 {
-		sat, err := flashcards.Session{
-			Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
-			Presets: s.presets, Day: day, Now: func() time.Time { return now },
-		}.Execute(t.Context(), s.vault, flashcards.Scope{})
+		sat, err := flashcards.NewSession(
+			s.marking, s.standings, s.kept,
+			s.presets, day, func() time.Time { return now },
+		).Execute(t.Context(), s.vault, flashcards.Scope{})
 		if err != nil || len(sat.Queue) == 0 {
 			return out
 		}
@@ -94,10 +94,10 @@ func TestSessionDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 	for d := range 3 {
 		over := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
 		for range 200 {
-			sat, err := flashcards.Session{
-				Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
-				Presets: s.presets, Day: today, Now: func() time.Time { return now },
-			}.Execute(t.Context(), s.vault, over)
+			sat, err := flashcards.NewSession(
+				s.marking, s.standings, s.kept,
+				s.presets, today, func() time.Time { return now },
+			).Execute(t.Context(), s.vault, over)
 			if err != nil || len(sat.Queue) == 0 {
 				break
 			}
@@ -145,10 +145,10 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 	s := openVault(t, files)
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 	sits := func(over flashcards.Scope) flashcards.SessionResult {
-		sat, err := flashcards.Session{
-			Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
-			Presets: s.presets, Day: today, Now: func() time.Time { return now },
-		}.Execute(t.Context(), s.vault, over)
+		sat, err := flashcards.NewSession(
+			s.marking, s.standings, s.kept,
+			s.presets, today, func() time.Time { return now },
+		).Execute(t.Context(), s.vault, over)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -24,7 +24,7 @@ func seatsOf(n domain.Neighbourhood) []string {
 func neighbourhoodOf(t *testing.T, files map[string]string, path string) domain.Neighbourhood {
 	t.Helper()
 	db, v := newIndexedVault(t, files)
-	n, err := note.ShowNeighbourhood{Links: db.Links(), Notes: db.Queries()}.
+	n, err := note.NewShowNeighbourhood(db.Links(), db.Queries()).
 		Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
@@ -237,7 +237,7 @@ func TestANeighbourhoodStaysInsideItsVault(t *testing.T) {
 		shared: "---\ntitle: Entropy elsewhere\nid: 01M02ACGM0FYMSXNDP29C90JN2\n---\n\n# Entropy elsewhere\n",
 	}))
 
-	n, err := note.ShowNeighbourhood{Links: db.Links(), Notes: db.Queries()}.
+	n, err := note.NewShowNeighbourhood(db.Links(), db.Queries()).
 		Execute(t.Context(), here, "Area.md")
 	if err != nil {
 		t.Fatal(err)

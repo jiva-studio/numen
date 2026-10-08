@@ -14,16 +14,16 @@ import (
 // person deleted. The folder is taken away only while it still carries this
 // vault's identity.
 type Erase struct {
-	Identity port.VaultIdentity
-	Trash    port.Trash
-	Forget   Forget
+	identity port.VaultIdentity
+	trash    port.Trash
+	forget   Forget
 }
 
 // NewErase is what takes a vault away: what reads the identity the folder
 // carries, where this machine keeps what a person deleted, and the Forget it is
 // taken off the list through — the same one everything else forgets a vault by.
 func NewErase(identity port.VaultIdentity, trash port.Trash, forget Forget) Erase {
-	return Erase{Identity: identity, Trash: trash, Forget: forget}
+	return Erase{identity: identity, trash: trash, forget: forget}
 }
 
 // EraseResult says what became of the folder. Whoever asked for the erasure is
@@ -37,21 +37,21 @@ type EraseResult struct {
 
 func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error) {
 	// Asked before the folder is moved.
-	if err := keepTheLastVault(u.Forget.Registry, v); err != nil {
+	if err := keepTheLastVault(u.forget.registry, v); err != nil {
 		return EraseResult{}, err
 	}
 
-	err := u.Identity.CheckReadable(v.Path)
+	err := u.identity.CheckReadable(v.Path)
 	if errors.Is(err, fs.ErrNotExist) {
 		// Nothing is at the path any more. What is left of the vault is its
 		// entry and its rows.
-		return EraseResult{}, u.Forget.Execute(ctx, v)
+		return EraseResult{}, u.forget.Execute(ctx, v)
 	}
 	if err != nil {
 		return EraseResult{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
 	}
 
-	carried, carriesOne, err := u.Identity.GetVaultID(v.Path)
+	carried, carriesOne, err := u.identity.GetVaultID(v.Path)
 	if err != nil {
 		return EraseResult{}, err
 	}
@@ -61,8 +61,8 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 			ErrUnreadable, v.Path, v.Name)
 	}
 
-	if err := u.Trash.Trash(v.Path); err != nil {
+	if err := u.trash.Trash(v.Path); err != nil {
 		return EraseResult{}, fmt.Errorf("move %s to the trash: %w", v.Path, err)
 	}
-	return EraseResult{IsTrashed: true}, u.Forget.Execute(ctx, v)
+	return EraseResult{IsTrashed: true}, u.forget.Execute(ctx, v)
 }

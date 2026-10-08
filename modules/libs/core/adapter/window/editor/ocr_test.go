@@ -65,13 +65,15 @@ func openHighlightWindow(t *testing.T) (*API, http.Handler, *pdf.Book) {
 		book:   string(raw),
 		beside: "a file the vault leaves alone",
 	})
+	hl := source.NewHighlight(
+		filesystem.VaultReaders{},
+		indexed{book: {Fingerprint: domain.Fingerprint{Path: book}}},
+		nil,
+	)
+	hl.Documents = pdf.Documents{}
 	api := &API{
-		Readers: filesystem.VaultReaders{},
-		Highlight: &source.Highlight{
-			Readers:   filesystem.VaultReaders{},
-			Sources:   indexed{book: {Fingerprint: domain.Fingerprint{Path: book}}},
-			Documents: pdf.Documents{},
-		},
+		Readers:   filesystem.VaultReaders{},
+		Highlight: &hl,
 	}
 	api.show(vault)
 	return api, api.NewHandler(http.NotFoundHandler()), doc
@@ -136,7 +138,9 @@ func TestARunOfTheProseComesBackAsTextAndBoxes(t *testing.T) {
 // about.
 func TestASourceNothingIsKnownAboutComesBackEmpty(t *testing.T) {
 	api, _, doc := openHighlightWindow(t)
-	api.Highlight.Sources = indexed{}
+	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, nil)
+	hl.Documents = pdf.Documents{}
+	api.Highlight = &hl
 
 	runs, err := reads(api, book, where(t, doc, "Delta"))
 	if err != nil {

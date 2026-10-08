@@ -21,14 +21,14 @@ var ErrNoRating = errors.New("not one of the four ratings")
 // whatever happens next — including a person taking an answer back, which is a
 // line of its own naming the one it takes back.
 type Record struct {
-	Run *LogWriter
-	Now port.Clock
+	run *LogWriter
+	now port.Clock
 }
 
 // NewRecord is what an answer is written down through: the run its line is
 // appended to, and what time it is.
 func NewRecord(run *LogWriter, now port.Clock) Record {
-	return Record{Run: run, Now: now}
+	return Record{run: run, now: now}
 }
 
 // Answer writes down one card answered once, and hands back the line as it was
@@ -43,13 +43,13 @@ func (u Record) Answer(
 		return review.Answer{}, errors.New("an answer says which card, and through which face")
 	}
 
-	at := u.Now()
+	at := u.now()
 	id, err := ulid.New(at)
 	if err != nil {
 		return review.Answer{}, err
 	}
 	a := review.Answer{ID: id, CardFace: on, At: at, Rating: r, Took: took}
-	if err := u.Run.Append(ctx, a); err != nil {
+	if err := u.run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
 	}
 	return a, nil
@@ -61,13 +61,13 @@ func (u Record) TakeBack(ctx context.Context, id string) (review.Answer, error) 
 	if id == "" {
 		return review.Answer{}, errors.New("an answer taken back names the one it takes back")
 	}
-	at := u.Now()
+	at := u.now()
 	own, err := ulid.New(at)
 	if err != nil {
 		return review.Answer{}, err
 	}
 	a := review.Answer{ID: own, At: at, Undoes: id}
-	if err := u.Run.Append(ctx, a); err != nil {
+	if err := u.run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
 	}
 	return a, nil

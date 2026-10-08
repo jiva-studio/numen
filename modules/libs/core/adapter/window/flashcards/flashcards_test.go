@@ -120,11 +120,11 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 		Schedules: running.Schedules,
 		Log:       running.Log,
 		Counted:   running.Counted,
-		Neighbourhood: flashcards.ShowNeighbourhood{
-			Linked: note.ShowLinks{Links: db.Links()},
-			Notes:  db.Queries(),
-			Reads:  note.Read{Readers: filesystem.VaultReaders{}},
-		},
+		Neighbourhood: flashcards.NewShowNeighbourhood(
+			note.NewShowLinks(db.Links()),
+			db.Queries(),
+			note.NewRead(filesystem.VaultReaders{}),
+		),
 		Presets: running.Presets,
 		Notes:   db.Queries(),
 		Window:  NewWindow(task.New()),

@@ -28,13 +28,13 @@ import (
 // again, so it is written into the vault and the source is cut from it
 // afterwards.
 type Recognise struct {
-	Readers port.VaultReaders
-	Sources port.SourceRepository
-	Derived port.DerivedStores
-	By      port.Recogniser
+	readers port.VaultReaders
+	sources port.SourceRepository
+	derived port.DerivedStores
+	by      port.Recogniser
 
-	// Documents draws the pages a model is given.
-	Documents port.PageRenderer
+	// documents draws the pages a model is given.
+	documents port.PageRenderer
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -64,9 +64,12 @@ func NewRecognise(
 	by port.Recogniser,
 ) Recognise {
 	return Recognise{
-		Readers: readers, Sources: sources, Derived: derived, Documents: documents, By: by,
+		readers: readers, sources: sources, derived: derived, documents: documents, by: by,
 	}
 }
+
+// By returns the recogniser.
+func (u Recognise) By() port.Recogniser { return u.by }
 
 // RecogniseResult reports what recognition did.
 type RecogniseResult struct {
@@ -84,7 +87,7 @@ const DefaultBatch = 16
 // Execute reads one document.
 func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (RecogniseResult, error) {
 	res := RecogniseResult{Path: path}
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -96,7 +99,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, fmt.Errorf("read %s: %w", path, err)
 	}
-	store, err := u.Derived.Open(v)
+	store, err := u.derived.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -125,7 +128,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		return res, u.stand(ctx, v, ref, hash, area)
 	}
 
-	scan, err := u.Documents.Draw(ctx, raw)
+	scan, err := u.documents.Draw(ctx, raw)
 	if err != nil {
 		return res, fmt.Errorf("%s: %w", path, err)
 	}
@@ -190,11 +193,11 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 			// person did, and the next run begins where this one stopped.
 			return res, err
 		}
-		drawn, err := scan.Image(index, u.By.Recognition().DPI)
+		drawn, err := scan.Image(index, u.by.Recognition().DPI)
 		if err != nil {
 			return res, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 		}
-		blocks, err := u.By.Recognise(ctx, drawn)
+		blocks, err := u.by.Recognise(ctx, drawn)
 		if err != nil {
 			return res, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 		}
@@ -334,7 +337,7 @@ func dropParts(ctx context.Context, store port.DerivedStore, name string, prose 
 // No recipe is written, so the source owes its text: what cuts it into chunks
 // is extraction, which knows the sizes and is the one place that does.
 func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
-	return u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
+	return u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
 }
 
 // record keeps what read the document beside what it read. Nothing on any path
@@ -342,7 +345,7 @@ func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.Fingerp
 // produced a text, and so that everything a recogniser now known to be bad
 // produced can be found again.
 func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
-	named := u.By.Recognition()
+	named := u.by.Recognition()
 	raw, err := json.MarshalIndent(struct {
 		Layout     string `json:"layout"`
 		Recogniser string `json:"recogniser"`

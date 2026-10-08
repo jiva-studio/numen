@@ -17,15 +17,25 @@ import (
 // carries its own progress, so what a person is shown is set on the pass it
 // belongs to.
 type ReadWholeVault struct {
-	Notes   Scan
-	Books   source.Extract
-	Vectors source.Embed
+	notes   Scan
+	books   source.Extract
+	vectors source.Embed
+
+	// OnNotesProgress, if set, is called as notes are scanned.
+	OnNotesProgress func(ScanResult)
+
+	// OnBooksProgress, if set, is called as each book is opened and as each one is
+	// written.
+	OnBooksProgress func(source.ExtractResult)
+
+	// OnVectorsProgress, if set, is called as each source is embedded.
+	OnVectorsProgress func(source.EmbedResult)
 }
 
 // NewReadWholeVault is the three passes, in the order they stand in: the notes
 // walked, the books read, and the vectors made.
 func NewReadWholeVault(notes Scan, books source.Extract, vectors source.Embed) ReadWholeVault {
-	return ReadWholeVault{Notes: notes, Books: books, Vectors: vectors}
+	return ReadWholeVault{notes: notes, books: books, vectors: vectors}
 }
 
 // ReadWholeVaultResult is what each pass did. A pass that did not run is a zero
@@ -45,7 +55,10 @@ type ReadWholeVaultResult struct {
 func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault) (ReadWholeVaultResult, error) {
 	var out ReadWholeVaultResult
 
-	notes, err := u.Notes.Execute(ctx, v)
+	if u.OnNotesProgress != nil {
+		u.notes.OnProgress = u.OnNotesProgress
+	}
+	notes, err := u.notes.Execute(ctx, v)
 	out.Notes = notes
 	if err != nil {
 		return out, fmt.Errorf("reading the notes of %s: %w", v.Name, err)
@@ -66,7 +79,10 @@ func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault) (ReadWholeV
 
 // ReadBooks takes the text out of every book the vault holds and cuts it.
 func (u ReadWholeVault) ReadBooks(ctx context.Context, v domain.Vault) (source.ExtractResult, error) {
-	res, err := u.Books.Execute(ctx, v)
+	if u.OnBooksProgress != nil {
+		u.books.OnProgress = u.OnBooksProgress
+	}
+	res, err := u.books.Execute(ctx, v)
 	if err != nil {
 		return res, fmt.Errorf("reading the books of %s: %w", v.Name, err)
 	}
@@ -75,7 +91,10 @@ func (u ReadWholeVault) ReadBooks(ctx context.Context, v domain.Vault) (source.E
 
 // MakeVectors gives every chunk that owes a vector one.
 func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (source.EmbedResult, error) {
-	res, err := u.Vectors.Execute(ctx, v)
+	if u.OnVectorsProgress != nil {
+		u.vectors.OnProgress = u.OnVectorsProgress
+	}
+	res, err := u.vectors.Execute(ctx, v)
 	if err != nil {
 		return res, fmt.Errorf("embedding %s: %w", v.Name, err)
 	}
@@ -86,7 +105,7 @@ func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (source
 // writes a batch of pages and asks for this, so a book being read answers about
 // the pages that have been read.
 func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) error {
-	if _, err := u.Books.ExtractOne(ctx, v, path); err != nil {
+	if _, err := u.books.ExtractOne(ctx, v, path); err != nil {
 		return fmt.Errorf("cutting %s: %w", path, err)
 	}
 	return nil

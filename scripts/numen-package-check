@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Runs typecheck, lint, format check, and tests against a single package instead
+# of all of them.
+#
+# This is the inner loop. A change confined to one package is verified here in
+# seconds; a change is ready to merge once the full suite and lint have run over
+# every package.
+
+usage() {
+  echo "usage: $(basename "$0") [--test-only] <package> [args...]" >&2
+  echo "" >&2
+  echo "Packages:" >&2
+  echo "  Go:         core, desktop, mobile, protocol" >&2
+  echo "  TypeScript: ui, wire, editor, flashcards, mobile, docs, landing" >&2
+  echo "  Tools:      depgraph, stories, icon, git-hooks" >&2
+  echo "" >&2
+  echo "Examples:" >&2
+  echo "  $(basename "$0") core" >&2
+  echo "  $(basename "$0") editor" >&2
+  echo "  $(basename "$0") --test-only core -run TestVault" >&2
+  exit 2
+}
+
+TEST_ONLY=false
+PKG=""
+ARGS=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --test-only|-t)
+      TEST_ONLY=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      if [ -z "$PKG" ]; then
+        PKG="$1"
+      else
+        ARGS+=("$1")
+      fi
+      shift
+      ;;
+  esac
+done
+
+[ -n "$PKG" ] || usage
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+resolve_package_dir() {
+  local target="$1"
+  target="${target#./}"
+  target="${target%/}"
+
+  if [[ "$target" =~ ^@numen/(.*) ]]; then
+    target="${BASH_REMATCH[1]}"
+  fi
+
+  if [[ "$target" =~ ^github\.com/jiva-studio/numen/(.*) ]]; then
+    target="${BASH_REMATCH[1]}"
+  fi
+
+  if [ -d "$REPO_ROOT/$target" ] && [ "$target" != "." ] && [ "$target" != "modules" ]; then
+    echo "$target"
+    return 0
+  fi
+  if [ -d "$REPO_ROOT/modules/$target" ]; then
+    echo "modules/$target"
+    return 0
+  fi
+  if [ -d "$REPO_ROOT/modules/libs/$target" ]; then
+    echo "modules/libs/$target"
+    return 0
+  fi
+  if [ -d "$REPO_ROOT/modules/apps/$target" ]; then
+    echo "modules/apps/$target"
+    return 0
+  fi
+  if [ -d "$REPO_ROOT/modules/apps/desktop/$target" ]; then
+    echo "modules/apps/desktop/$target"
+    return 0
+  fi
+  if [ -d "$REPO_ROOT/modules/tools/$target" ]; then
+    echo "modules/tools/$target"
+    return 0
+  fi
+
+  case "$target" in
+    core) echo "modules/libs/core" ;;
+    desktop) echo "modules/apps/desktop" ;;
+    mobile) echo "modules/apps/mobile" ;;
+    protocol) echo "modules/libs/protocol" ;;
+    ui) echo "modules/libs/ui" ;;
+    wire) echo "modules/libs/wire" ;;
+    editor) echo "modules/apps/desktop/editor" ;;
+    flashcards) echo "modules/apps/desktop/flashcards" ;;
+    docs) echo "modules/apps/docs" ;;
+    landing) echo "modules/apps/landing" ;;
+    depgraph) echo "modules/tools/depgraph" ;;
+    stories) echo "modules/tools/stories" ;;
+    icon|icons) echo "modules/tools/icon" ;;
+    git-hooks) echo "modules/tools/git-hooks" ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+LOCATION="$(resolve_package_dir "$PKG" || true)"
+
+if [ -z "$LOCATION" ] || [ ! -d "$LOCATION" ]; then
+  echo "unknown package: $PKG" >&2
+  echo "run '$(basename "$0") --help' to see available packages" >&2
+  exit 1
+fi
+
+HAS_GO=false
+HAS_NPM=false
+HAS_BUF=false
+
+if [ -f "$LOCATION/go.mod" ]; then
+  HAS_GO=true
+fi
+
+if [ -f "$LOCATION/package.json" ]; then
+  HAS_NPM=true
+fi
+
+if [ -f "$LOCATION/buf.yaml" ]; then
+  HAS_BUF=true
+fi
+
+has_npm_script() {
+  local script="$1"
+  node -e "
+    const pkg = require('./$LOCATION/package.json');
+    if (pkg.scripts && pkg.scripts['$script']) {
+      process.exit(0);
+    }
+    process.exit(1);
+  " 2>/dev/null
+}
+
+run_gofmt_check() {
+  local dir="$1"
+  local unformatted
+  unformatted="$(cd "$dir" && gofmt -l .)"
+  if [ -n "$unformatted" ]; then
+    echo "not gofmt-ed in $dir:" >&2
+    echo "$unformatted" >&2
+    return 1
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Stage 1: Typecheck / Compile
+# ---------------------------------------------------------------------------
+if [ "$TEST_ONLY" = false ]; then
+  if [ "$HAS_GO" = true ]; then
+    echo "==> [go build]      $PKG ($LOCATION)"
+    (cd "$LOCATION" && go build ./...)
+  fi
+
+  if [ "$HAS_NPM" = true ]; then
+    if has_npm_script "typecheck"; then
+      echo "==> [typecheck]     $PKG ($LOCATION)"
+      (cd "$LOCATION" && npm run typecheck)
+    fi
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Stage 2: Lint & Format
+# ---------------------------------------------------------------------------
+if [ "$TEST_ONLY" = false ]; then
+  if [ "$HAS_GO" = true ]; then
+    echo "==> [gofmt]         $PKG ($LOCATION)"
+    run_gofmt_check "$LOCATION"
+
+    echo "==> [go vet]        $PKG ($LOCATION)"
+    (cd "$LOCATION" && go vet ./...)
+
+    echo "==> [golangci-lint] $PKG ($LOCATION)"
+    (cd "$LOCATION" && golangci-lint run ./...)
+
+    if [ -f "$LOCATION/adapter/index/migration-forward-only.sh" ]; then
+      echo "==> [migrations]    $PKG ($LOCATION)"
+      (cd "$LOCATION" && ./adapter/index/migration-forward-only.sh --self-test)
+    fi
+  fi
+
+  if [ "$HAS_BUF" = true ]; then
+    echo "==> [buf lint]      $PKG ($LOCATION)"
+    (cd "$LOCATION" && buf lint)
+  fi
+
+  if [ "$HAS_NPM" = true ]; then
+    if has_npm_script "lint"; then
+      echo "==> [lint]          $PKG ($LOCATION)"
+      (cd "$LOCATION" && npm run lint)
+    fi
+
+    if has_npm_script "manual:check"; then
+      echo "==> [manual:check]  $PKG ($LOCATION)"
+      (cd "$LOCATION" && npm run manual:check)
+    fi
+
+    if has_npm_script "stories:check"; then
+      echo "==> [stories:check] $PKG ($LOCATION)"
+      (cd "$LOCATION" && npm run stories:check)
+    fi
+
+    if has_npm_script "check"; then
+      echo "==> [check]         $PKG ($LOCATION)"
+      (cd "$LOCATION" && npm run check)
+    fi
+
+    if [[ "$LOCATION" =~ ^modules/(libs|apps) ]]; then
+      echo "==> [format]        $PKG ($LOCATION)"
+      npx prettier --check "$LOCATION/**/*.{ts,vue,json,css}"
+    fi
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Stage 3: Test
+# ---------------------------------------------------------------------------
+if [ "$HAS_GO" = true ]; then
+  echo "==> [go test]       $PKG ($LOCATION)"
+  if [ ${#ARGS[@]} -gt 0 ]; then
+    (cd "$LOCATION" && go test ./... "${ARGS[@]}")
+  else
+    (cd "$LOCATION" && go test ./...)
+  fi
+fi
+
+if [ "$HAS_NPM" = true ]; then
+  if has_npm_script "test:unit"; then
+    echo "==> [test:unit]     $PKG ($LOCATION)"
+    if [ ${#ARGS[@]} -gt 0 ]; then
+      (cd "$LOCATION" && npm run test:unit -- "${ARGS[@]}")
+    else
+      (cd "$LOCATION" && npm run test:unit)
+    fi
+  elif has_npm_script "test"; then
+    echo "==> [test]          $PKG ($LOCATION)"
+    if [ ${#ARGS[@]} -gt 0 ]; then
+      (cd "$LOCATION" && npm run test -- "${ARGS[@]}")
+    else
+      (cd "$LOCATION" && npm run test)
+    fi
+  fi
+fi
+
+if [ "$TEST_ONLY" = true ]; then
+  echo "==> $PKG tests passed."
+else
+  echo "==> $PKG is clean."
+fi

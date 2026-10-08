@@ -13,8 +13,8 @@ import (
 // found partly in what it points at and partly in what points at it. Siblings
 // are written nowhere: they are the other children of a shared parent.
 type ShowNeighbourhood struct {
-	Links port.LinkQueries
-	Notes RefQueries
+	links port.LinkQueries
+	notes RefQueries
 }
 
 // RefQueries is the one question a neighbourhood asks about the notes it has
@@ -31,7 +31,7 @@ type RefQueries interface {
 //
 // The notes are asked for once, after every link has been followed.
 func NewShowNeighbourhood(links port.LinkQueries, notes RefQueries) ShowNeighbourhood {
-	return ShowNeighbourhood{Links: links, Notes: notes}
+	return ShowNeighbourhood{links: links, notes: notes}
 }
 
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
@@ -74,7 +74,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	for _, s := range neighbour {
 		paths = append(paths, s.Path)
 	}
-	notes, err := u.Notes.Notes(ctx, v.ID, paths)
+	notes, err := u.notes.Notes(ctx, v.ID, paths)
 	if err != nil {
 		return out, err
 	}
@@ -100,7 +100,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 func (u ShowNeighbourhood) getSeats(ctx context.Context, v domain.Vault, path string) (*seats, error) {
 	seats := &seats{}
 
-	links, err := u.Links.Links(ctx, v.ID, path)
+	links, err := u.links.Links(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (u ShowNeighbourhood) getSeats(ctx context.Context, v domain.Vault, path st
 		}
 	}
 
-	backlinks, err := u.Links.Backlinks(ctx, v.ID, path)
+	backlinks, err := u.links.Backlinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}

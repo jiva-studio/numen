@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
 // closing is the vault's files with the request cancelled at the first one
@@ -43,8 +46,8 @@ func TestACurveRefusesARequestThatIsGone(t *testing.T) {
 	s := newAnsweredVault(t, 30)
 	ctx, cancel := context.WithCancel(t.Context())
 
-	curves := s.curves(noon)
-	curves.CardFaces.Readers = closing{inner: curves.CardFaces.Readers, at: cancel}
+	customFaces := flashcards.NewListCardFaces(closing{inner: filesystem.VaultReaders{}, at: cancel}, s.notes, s.links)
+	curves := flashcards.NewProjectCurve(customFaces, s.kept, s.presets, today, func() time.Time { return noon })
 
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)

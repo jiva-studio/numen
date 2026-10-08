@@ -82,11 +82,11 @@ func TestTheCacheAnswersWhatAReplayAnswers(t *testing.T) {
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
-	replayed, err := l.owed.Schedules.Execute(ctx, l.vault)
+	replayed, err := l.schedules.Execute(ctx, l.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	remembered, err := l.owed.Schedules.Execute(ctx, l.vault)
+	remembered, err := l.schedules.Execute(ctx, l.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

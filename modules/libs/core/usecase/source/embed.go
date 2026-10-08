@@ -23,9 +23,9 @@ const chunksPerQuery = 200
 // continued by starting another, and a chunk that has one is never asked about
 // again.
 type Embed struct {
-	Readers port.VaultReaders
-	Chunks  port.VectorQueries
-	Vectors port.VectorRepository
+	readers port.VaultReaders
+	chunks  port.VectorQueries
+	vectors port.VectorRepository
 
 	// Derived is optional. It holds what a recogniser wrote, and a chunk of a
 	// recognised document is re-sliced out of that and not out of the document;
@@ -54,7 +54,7 @@ type Embed struct {
 func NewEmbed(
 	readers port.VaultReaders, chunks port.VectorQueries, vectors port.VectorRepository,
 ) Embed {
-	return Embed{Readers: readers, Chunks: chunks, Vectors: vectors}
+	return Embed{readers: readers, chunks: chunks, vectors: vectors}
 }
 
 // EmbedResult reports what embedding did.
@@ -77,7 +77,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	}
 
 	model := u.Embedder.Model()
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -92,7 +92,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		owing, next, err := u.Chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
+		owing, next, err := u.chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
 		if err != nil {
 			return res, fmt.Errorf("what owes a vector from %s: %w", model, err)
 		}
@@ -177,7 +177,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 		}
 		hashes[i] = raw
 	}
-	kept, err := u.Vectors.GetKeptVectors(ctx, recipe, hashes)
+	kept, err := u.vectors.GetKeptVectors(ctx, recipe, hashes)
 	if err != nil {
 		return fmt.Errorf("what is already made: %w", err)
 	}
@@ -232,7 +232,7 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 		}
 	}
 
-	if err := u.Vectors.SaveVectors(ctx, out); err != nil {
+	if err := u.vectors.SaveVectors(ctx, out); err != nil {
 		return fmt.Errorf("write %d vectors: %w", len(out), err)
 	}
 	res.Embedded += len(out)

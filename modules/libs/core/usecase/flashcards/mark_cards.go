@@ -21,15 +21,15 @@ import (
 // person sits down to that vault — not to every vault the installation holds,
 // and not for the counting of what is owed.
 type MarkCards struct {
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	Notes   port.NoteQueries
-	Links   port.LinkQueries
-	// Index brings what a write touched up to date. A build holding none leaves
+	readers port.VaultReaders
+	writers port.VaultWriters
+	notes   port.NoteQueries
+	links   port.LinkQueries
+	// index brings what a write touched up to date. A build holding none leaves
 	// the index to the next scan.
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
-	// Now is when this is happening. A mark written here carries it.
-	Now port.Clock
+	index func(ctx context.Context, v domain.Vault, paths []string) error
+	// now is when this is happening. A mark written here carries it.
+	now port.Clock
 }
 
 // NewMarkCards is what a vault's cards are given marks through: the vault the
@@ -45,9 +45,15 @@ func NewMarkCards(
 	now port.Clock,
 ) MarkCards {
 	return MarkCards{
-		Readers: readers, Writers: writers, Notes: notes, Links: links,
-		Index: index, Now: now,
+		readers: readers, writers: writers, notes: notes, links: links,
+		index: index, now: now,
 	}
+}
+
+// WithIndex returns a copy of MarkCards with the given index function.
+func (u MarkCards) WithIndex(index func(ctx context.Context, v domain.Vault, paths []string) error) MarkCards {
+	u.index = index
+	return u
 }
 
 // MarkCardsResult is what the marking came to: the decks it could not write.
@@ -64,13 +70,16 @@ type MarkCardsResult struct {
 // cards are left out of this session and marked at the next, and it is named in
 // what comes back so that a person is told which deck that was.
 func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult, error) {
-	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	if u.notes == nil {
+		return MarkCardsResult{}, nil
+	}
+	paths, err := u.notes.OfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
 		return MarkCardsResult{}, err
 	}
 
-	read := cards.NewRead(u.Readers, u.Links)
-	write := cards.NewWrite(u.Readers, u.Writers, u.Links, u.Index, u.Now)
+	read := cards.NewRead(u.readers, u.links)
+	write := cards.NewWrite(u.readers, u.writers, u.links, u.index, u.now)
 	var out MarkCardsResult
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)

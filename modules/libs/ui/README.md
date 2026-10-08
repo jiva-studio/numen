@@ -2,7 +2,7 @@
 
 Interface components shared by the desktop and mobile clients.
 
-**The rules are in [Frontend Coding Style](../../../.agents/rules/coding-style-frontend.md).** What follows is where they live in this tree.
+**The rules are [How an interface component is built](../../../docs/adr/0023-how-an-interface-component-is-built.md).** What follows is where they live in this tree.
 
 ## The one rule
 

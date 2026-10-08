@@ -32,17 +32,17 @@ type ImportResult struct {
 // file that arrives comes through here. The bytes are copied: what the person
 // dropped stays where it was.
 type Import struct {
-	Writers port.VaultWriters
-	// Files is what the person handed over, read where it stands. Nothing here
+	writers port.VaultWriters
+	// files is what the person handed over, read where it stands. Nothing here
 	// reaches the machine itself: what arrives is a path on a desktop and a
 	// content URI on a phone, and this is what tells them apart.
-	Files port.ImportedFiles
+	files port.ImportedFiles
 }
 
 // NewImport is what a file a person handed over arrives through: the vault it
 // is copied into, and what reads it where it stands.
 func NewImport(writers port.VaultWriters, files port.ImportedFiles) Import {
-	return Import{Writers: writers, Files: files}
+	return Import{writers: writers, files: files}
 }
 
 // Execute brings each handle into the folder, under the name it already
@@ -62,7 +62,7 @@ func (u Import) Execute(
 	if len(handles) == 0 {
 		return brought, nil
 	}
-	writer, err := u.Writers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return brought, err
 	}
@@ -71,7 +71,7 @@ func (u Import) Execute(
 		if err := ctx.Err(); err != nil {
 			return brought, err
 		}
-		name := u.Files.GetName(handle)
+		name := u.files.GetName(handle)
 		if err := u.bring(ctx, writer, v, handle, joinPath(into, name), &brought); err != nil {
 			brought.Errors = append(brought.Errors, ImportFailure{Name: name, Why: err})
 		}
@@ -90,7 +90,7 @@ func (u Import) bring(
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	info, err := u.Files.Stat(ctx, from)
+	info, err := u.files.Stat(ctx, from)
 	if err != nil {
 		return err
 	}
@@ -99,14 +99,14 @@ func (u Import) bring(
 	case info.IsFolder:
 		// A folder the vault sits inside does not come in: the vault is where it
 		// would be copied to.
-		if u.Files.Contains(from, v.Path) {
+		if u.files.Contains(from, v.Path) {
 			return errHoldsTheVault
 		}
 		if err := writer.MakeFolder(ctx, to); err != nil {
 			return err
 		}
 		brought.Landed = append(brought.Landed, to)
-		held, err := u.Files.List(ctx, from)
+		held, err := u.files.List(ctx, from)
 		if err != nil {
 			return err
 		}
@@ -118,7 +118,7 @@ func (u Import) bring(
 		return nil
 
 	case info.IsFile:
-		file, err := u.Files.Open(ctx, from)
+		file, err := u.files.Open(ctx, from)
 		if err != nil {
 			return err
 		}

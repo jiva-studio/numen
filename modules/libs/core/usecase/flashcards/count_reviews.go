@@ -61,15 +61,15 @@ type ReviewCounts struct {
 // the order of every answer before it, so a schedule arriving late is the whole
 // history read again.
 type CountReviews struct {
-	Logs port.DerivedStores
+	logs port.DerivedStores
 	// Cache is where the counting is remembered. A build holding none counts the
 	// whole log at every launch.
 	Cache port.ScheduleStore
-	// Schedules is where the answers have left every card face, which is what
+	// schedules is where the answers have left every card face, which is what
 	// says how much falls on each day still to come.
-	Schedules Schedules
-	Day       review.Day
-	Now       port.Clock
+	schedules Schedules
+	day       review.Day
+	now       port.Clock
 }
 
 // NewCountReviews is what a vault's days are counted through: where its answers
@@ -78,12 +78,24 @@ type CountReviews struct {
 func NewCountReviews(
 	logs port.DerivedStores, schedules Schedules, day review.Day, now port.Clock,
 ) CountReviews {
-	return CountReviews{Logs: logs, Schedules: schedules, Day: day, Now: now}
+	return CountReviews{logs: logs, schedules: schedules, day: day, now: now}
+}
+
+// WithDay returns a copy of CountReviews with the given Day.
+func (u CountReviews) WithDay(day review.Day) CountReviews {
+	u.day = day
+	return u
+}
+
+// WithNow returns a copy of CountReviews with the given Clock.
+func (u CountReviews) WithNow(now port.Clock) CountReviews {
+	u.now = now
+	return u
 }
 
 // Execute counts one vault.
 func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
-	log := Log{Stores: u.Logs}
+	log := Log{Stores: u.logs}
 	files, err := log.Files(ctx, v)
 	if err != nil {
 		return ReviewCounts{}, err
@@ -93,7 +105,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	now := countCache{V: countedVersion}
 	out := ReviewCounts{Days: make(map[string]review.Tally)}
 
-	store, err := u.Logs.Open(v)
+	store, err := u.logs.Open(v)
 	if err != nil {
 		return ReviewCounts{}, err
 	}
@@ -102,7 +114,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	seen := make(map[string]bool)
 	// What is still to come is worked out from the whole history, so every run
 	// is read here and the reading is handed on.
-	coming := u.Schedules.By != nil
+	coming := u.schedules.by != nil
 	var held ReviewLog
 	for _, file := range files {
 		var ran LogFile
@@ -120,7 +132,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 			one = cachedRun{
 				Name: file.Name,
 				Size: ran.Size,
-				Days: review.GetDayTallies(u.Day, ran.Answers),
+				Days: review.GetDayTallies(u.day, ran.Answers),
 				IDs:  identifiers(ran.Answers),
 			}
 		}
@@ -140,7 +152,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 					return ReviewCounts{}, err
 				}
 			}
-			days = review.GetDayTallies(u.Day, getUncounted(ran.Answers, seen))
+			days = review.GetDayTallies(u.day, getUncounted(ran.Answers, seen))
 		}
 		for _, id := range one.IDs {
 			seen[id] = true
@@ -153,7 +165,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 	held.order = newHistory(held.Answers)
 	u.remember(ctx, v, now)
-	out.Streak = review.Streak(u.Day, out.Days, u.Now())
+	out.Streak = review.Streak(u.day, out.Days, u.now())
 
 	// What is still to come, and how much came back, are both worked out from
 	// the answers in the order they were given, so they are asked for together.
@@ -224,24 +236,24 @@ func (u CountReviews) getDueAndRetained(
 	ctx context.Context, v domain.Vault, held ReviewLog,
 ) (map[string]int, map[string]review.RecallTally, error) {
 	falls := make(map[string]int)
-	if u.Schedules.By == nil {
+	if u.schedules.by == nil {
 		return falls, nil, nil
 	}
 
-	schedules, err := u.Schedules.GetFromLog(ctx, v, held)
+	schedules, err := u.schedules.GetFromLog(ctx, v, held)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	now := u.Now()
-	ends := u.Day.GetEnd(now)
+	now := u.now()
+	ends := u.day.GetEnd(now)
 	for _, s := range schedules {
 		if s.IsNew() || s.Due.Before(ends) {
 			continue
 		}
-		falls[u.Day.GetName(s.Due)]++
+		falls[u.day.GetName(s.Due)]++
 	}
-	return falls, held.History().GetRetained(u.Schedules.By, u.Day), nil
+	return falls, held.History().GetRetained(u.schedules.by, u.day), nil
 }
 
 // readRemembered is what was counted last time, by the name of the run it was

@@ -23,13 +23,13 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := vaults.Scan{
-		Readers:     filesystem.VaultReaders{},
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		db.Notes(),
+		db.Queries(),
+		db.Maintenance(),
+	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 
 func links(t *testing.T, db *container.Index, v domain.Vault, path string) note.NoteLinks {
 	t.Helper()
-	c, err := note.ShowLinks{Links: db.Links()}.Execute(t.Context(), v, path)
+	c, err := note.NewShowLinks(db.Links()).Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,13 +275,13 @@ func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *tes
 // a link across vaults possible at all.
 func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 	t.Helper()
-	scan := vaults.Scan{
-		Readers:     filesystem.VaultReaders{},
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		db.Notes(),
+		db.Queries(),
+		db.Maintenance(),
+	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}

@@ -5,6 +5,7 @@ Gemini, or any other) must follow them.
 
 ## Canonical guides
 
+- **Architecture decisions**: [`docs/adr/README.md`](docs/adr/README.md) — the decisions live here.
 - **The vocabulary**: [`docs/glossary.md`](docs/glossary.md) — domain terms.
 - **Rules (`.agents/rules/`)**:
   - [Architecture guidelines](.agents/rules/architecture.md)
@@ -257,7 +258,9 @@ Domain distinctions:
 ## 10. File placement — a file stands on a layer
 
 A file of a window stands on one of six layers, and a layer reaches only what
-stands below it. The guidelines are in [Architecture Guidelines](.agents/rules/architecture.md):
+stands below it. The table is in
+[A file of the windows stands on a layer](docs/adr/0042-a-file-of-the-windows-stands-on-a-layer.md),
+and it is the one place the order is written:
 
 | Layer | Holds |
 |---|---|

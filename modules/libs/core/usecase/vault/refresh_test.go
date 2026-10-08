@@ -27,13 +27,13 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return vaults.Refresh{
-		Readers: filesystem.VaultReaders{},
-		Vaults:  db.Vaults(),
-		Notes:   db.Notes(),
-		Queries: db.SourcesKnown(),
-		Sources: db.Sources(),
-	}, db, v
+	return vaults.NewRefresh(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		db.Notes(),
+		db.SourcesKnown(),
+		db.Sources(),
+	), db, v
 }
 
 // passages is what the index itself answers with, before anything opens the
@@ -258,7 +258,7 @@ func (u unreadableReader) Read(ctx context.Context, path string) ([]byte, error)
 // anything dropped alongside a failure is dropped until the next full scan.
 func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 	t.Parallel()
-	refresh, db, v := newRefresh(t, map[string]string{
+	_, db, v := newRefresh(t, map[string]string{
 		"Locked.md": "---\ntitle: Locked\n---\n\n# Locked\n\nentropy\n",
 		"Note.md":   "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
@@ -270,7 +270,13 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 		}
 	}
 
-	refresh.Readers = unreadableReaders{VaultReaders: filesystem.VaultReaders{}, refuses: "Locked.md"}
+	refresh := vaults.NewRefresh(
+		unreadableReaders{VaultReaders: filesystem.VaultReaders{}, refuses: "Locked.md"},
+		db.Vaults(),
+		db.Notes(),
+		db.SourcesKnown(),
+		db.Sources(),
+	)
 	res, err := refresh.Execute(t.Context(), v, []string{"Locked.md", "Note.md"})
 	if err != nil {
 		t.Fatalf("one unreadable file ended the refresh: %v", err)
@@ -300,10 +306,11 @@ func TestARefreshWritesInGroups(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, notes)
+	db := openIndex(t)
 	written := &countingNotes{}
-	refresh := vaults.Refresh{
-		Readers: filesystem.VaultReaders{}, Vaults: &indexRows{}, Notes: written,
-	}
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, &indexRows{}, written, db.SourcesKnown(), db.Sources(),
+	)
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
@@ -343,11 +350,17 @@ func (c *countingNotes) Remove(context.Context, domain.VaultID, []string) error 
 // follows arrives as its own event.
 func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 	t.Parallel()
-	refresh, db, v := newRefresh(t, map[string]string{
+	_, db, v := newRefresh(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 
-	refresh.Readers = vanishingReaders{VaultReaders: filesystem.VaultReaders{}, gone: "Note.md"}
+	refresh := vaults.NewRefresh(
+		vanishingReaders{VaultReaders: filesystem.VaultReaders{}, gone: "Note.md"},
+		db.Vaults(),
+		db.Notes(),
+		db.SourcesKnown(),
+		db.Sources(),
+	)
 	res, err := refresh.Execute(t.Context(), v, []string{"Note.md"})
 	if err != nil {
 		t.Fatal(err)

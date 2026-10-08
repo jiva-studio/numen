@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Rename gives a note a different name.
@@ -22,6 +23,27 @@ type Rename struct{ Move }
 // renamed and one that travelled because it was filed elsewhere settle the same
 // way, so both go through the one Move.
 func NewRename(moving Move) Rename { return Rename{Move: moving} }
+
+// WithSources replaces the source repository.
+func (u Rename) WithSources(sources port.SourceRepository) Rename {
+	u.Move = u.Move.WithSources(sources)
+	return u
+}
+
+// WithWriters replaces the vault writers.
+func (u Rename) WithWriters(writers port.VaultWriters) Rename {
+	u.Move = u.Move.WithWriters(writers)
+	return u
+}
+
+// Sources returns the source repository.
+func (u Rename) Sources() port.SourceRepository { return u.Move.Sources() }
+
+// Writers returns the vault writers.
+func (u Rename) Writers() port.VaultWriters { return u.Move.Writers() }
+
+// Readers returns the vault readers.
+func (u Rename) Readers() port.VaultReaders { return u.Move.Readers() }
 
 // RenameResult says what the note is called now and what the file did.
 type RenameResult struct {
@@ -43,7 +65,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	}
 
 	var by NameSource
-	e := Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			by = ByFrontmatter
@@ -85,7 +107,7 @@ func (u Move) WriteFilenameAsTitle(ctx context.Context, v domain.Vault, path str
 	}
 
 	name := domain.Basename(path)
-	e := Edit{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	_, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			return doc.SetTitle(name)

@@ -115,11 +115,7 @@ func newListedVault(
 	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	v, err := vaults.Add{
-		Registry: registry,
-		Identity: cfg.VaultIdentity(),
-		Now:      time.Now,
-	}.Execute(root, name)
+	v, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, name)
 	if err != nil {
 		t.Fatal(err)
 	}

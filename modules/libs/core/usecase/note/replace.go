@@ -17,13 +17,13 @@ import (
 // What is replaced is named by the text standing there, not by where it stands,
 // and the caller presents the fingerprint of the note it read.
 type Replace struct {
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	Index   Levels
+	readers port.VaultReaders
+	writers port.VaultWriters
+	index   Levels
 	// Drawing is told what this change is doing while it is being made. Nothing
 	// is told where nobody is drawing the note.
 	Drawing TellEdit
-	Now     port.Clock
+	now     port.Clock
 }
 
 // NewReplace is what one stretch of a note is put right through: the vault it
@@ -37,7 +37,7 @@ type Replace struct {
 func NewReplace(
 	readers port.VaultReaders, writers port.VaultWriters, index Levels, now port.Clock,
 ) Replace {
-	return Replace{Readers: readers, Writers: writers, Index: index, Now: now}
+	return Replace{readers: readers, writers: writers, index: index, now: now}
 }
 
 // ReplaceResult is what a replacement did.
@@ -102,10 +102,9 @@ func (u Replace) Execute(
 	ends := func() {}
 	defer func() { ends() }()
 
-	e := Edit{
-		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
-		Fingerprint: fingerprint, Bound: MaxBytes,
-	}
+	e := NewEdit(u.readers, u.writers, u.index, u.now)
+	e.Fingerprint = fingerprint
+	e.Bound = MaxBytes
 	at, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalise(doc.Body())
 
@@ -128,7 +127,7 @@ func (u Replace) Execute(
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		ends = u.Drawing.beginChange(ctx, u.Now, domain.Edit{
+		ends = u.Drawing.beginChange(ctx, u.now, domain.Edit{
 			Path: path,
 			From: markdown.CountUTF16(body, span.From),
 			To:   markdown.CountUTF16(body, span.To),
