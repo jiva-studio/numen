@@ -203,8 +203,7 @@ jobs:
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers.
-      - name: Install WebKit & GTK dependencies
-        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+      - uses: ./.github/actions/setup-webkit
 
       # The number the window draws in its corner is written into the page here.
       - name: Build frontend interfaces

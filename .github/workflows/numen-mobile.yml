@@ -90,8 +90,9 @@ jobs:
       # run, so this step can find something on a branch that changed nothing.
       # It answers for the standard library of the Go above as well as for what
       # is required.
-      - name: Check vulnerabilities
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - uses: ./.github/actions/govulncheck
+        with:
+          working-directory: modules/apps/mobile
 
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.

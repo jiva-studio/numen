@@ -1,0 +1,15 @@
+name: "Setup WebKit & GTK"
+description: "Installs GTK4 and WebKitGTK dev packages for webview compilation"
+runs:
+  using: "composite"
+  steps:
+    - name: Install WebKit & GTK dependencies
+      shell: bash
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo rm -f /var/lib/man-db/auto-update
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+          -o Dpkg::Options::=--force-unsafe-io \
+          libgtk-4-dev libwebkitgtk-6.0-dev
