@@ -13,7 +13,8 @@ import (
 // as a space is the whole of turning what it said into text.
 const wordMark = "▁"
 
-// pieces are what a model can say, at the place its own numbers put them.
+// pieces are what a model can say, at the place its own numbers put them, with
+// the mark already read as a space.
 type pieces []string
 
 // tokens reads a model's pieces out of the file published beside it. Each line
@@ -40,7 +41,7 @@ func tokens(path string) (pieces, error) {
 		for len(out) <= at {
 			out = append(out, "")
 		}
-		out[at] = field[0]
+		out[at] = strings.ReplaceAll(field[0], wordMark, " ")
 	}
 	if err := lines.Err(); err != nil {
 		return nil, err
@@ -65,12 +66,18 @@ func (p pieces) getIndex(piece string) int {
 // text is what a run of tokens says. A token the model knows and this file does
 // not is left out.
 func (p pieces) text(said []int) string {
-	var out strings.Builder
+	size := 0
 	for _, token := range said {
-		if token < 0 || token >= len(p) {
-			continue
+		if token >= 0 && token < len(p) {
+			size += len(p[token])
 		}
-		out.WriteString(p[token])
 	}
-	return strings.TrimSpace(strings.ReplaceAll(out.String(), wordMark, " "))
+	var out strings.Builder
+	out.Grow(size)
+	for _, token := range said {
+		if token >= 0 && token < len(p) {
+			out.WriteString(p[token])
+		}
+	}
+	return strings.TrimSpace(out.String())
 }
