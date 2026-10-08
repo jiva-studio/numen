@@ -91,7 +91,9 @@ const getSpokenKey = (cap: Element | null | undefined): string =>
 /** The marks a cap draws, by the name Lucide files each under. */
 const marksOf = (cap: Element | null | undefined): readonly string[] =>
   Array.from(cap?.querySelectorAll('svg') ?? []).map(
-    (mark) => /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(mark.getAttribute('class') ?? '')?.[1] ?? '',
+    (mark) =>
+      /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(mark.getAttribute('class') ?? '')?.[1] ??
+      '',
   )
 
 const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
