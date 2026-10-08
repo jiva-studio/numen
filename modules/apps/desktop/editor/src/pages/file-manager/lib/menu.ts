@@ -8,7 +8,8 @@
  */
 import type { MenuItem } from '@numen/ui'
 import { commandsOf, overNote } from '@/features/command-palette'
-import type { Source } from '@/entities/file'
+import type { ArtifactState, ArtifactStates } from '@/entities/artifact'
+import type { BookFormat, DocumentFormat, Source } from '@/entities/file'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as own } from '../words'
 
@@ -19,6 +20,7 @@ export const NEW_STENCIL = 'newStencil'
 export const NEW_PRESET = 'newPreset'
 export const NEW_FOLDER = 'newFolder'
 export const RENAME = 'rename'
+export const PROOFREAD = 'proofread'
 
 /** The groups the items stand in, in the order they are drawn. */
 const GROUP = {
@@ -80,9 +82,10 @@ const getFileMenu = (...runs: readonly MenuItem[]): readonly MenuItem[] => [
 
 const FILED = getFileMenu()
 
-/** The run a recording can be put through, and the one a scan can. */
+/** The runs a recording or a scan can be put through. */
 const TRANSCRIBE: MenuItem = { id: 'transcribe', text: own.transcribe, group: GROUP.run }
 const RECOGNISE: MenuItem = { id: 'recognise', text: own.recognise, group: GROUP.run }
+const PROOFREAD_ITEM: MenuItem = { id: PROOFREAD, text: own.proofread, group: GROUP.run }
 
 /**
  * The runs a url can be put through. It carries two things — the text at its
@@ -94,9 +97,51 @@ const DOWNLOAD_COPY: MenuItem = { id: 'downloadCopy', text: own.downloadCopy, gr
 const DELETE_TEXT: MenuItem = { id: 'deleteText', text: own.deleteText, group: GROUP.run }
 const DELETE_COPY: MenuItem = { id: 'deleteCopy', text: own.deleteCopy, group: GROUP.run }
 
-/** The run offered where this build can do it, and the file's own items alone where it cannot. */
-const getRunnable = (run: MenuItem, canRun: RunGuard): readonly MenuItem[] =>
-  canRun(run.id) ? getFileMenu(run) : FILED
+const isBusyOrDone = (state: ArtifactState | undefined): boolean =>
+  state === 'done' || state === 'running' || state === 'queued'
+
+const isProofreadDisabled = (
+  sourceState: ArtifactState | undefined,
+  proofreadState: ArtifactState | undefined,
+): boolean => sourceState !== 'done' || proofreadState === 'done' || proofreadState === 'running'
+
+/** What a recording offers: transcribe and proofread, disabled once done. */
+const getRecordingRuns = (
+  made: ArtifactStates | undefined,
+  canRun: RunGuard,
+): readonly MenuItem[] => {
+  const runs: MenuItem[] = []
+  if (canRun(TRANSCRIBE.id)) {
+    runs.push({ ...TRANSCRIBE, disabled: isBusyOrDone(made?.transcript) })
+  }
+  if (canRun(PROOFREAD_ITEM.id)) {
+    runs.push({
+      ...PROOFREAD_ITEM,
+      disabled: isProofreadDisabled(made?.transcript, made?.['transcript.corrected']),
+    })
+  }
+  return runs
+}
+
+/** What a book offers: recognise and proofread, disabled once done. */
+const getBookRuns = (
+  format: DocumentFormat | BookFormat | undefined,
+  made: ArtifactStates | undefined,
+  canRun: RunGuard,
+): readonly MenuItem[] => {
+  if (format === 'epub') return []
+  const runs: MenuItem[] = []
+  if (canRun(RECOGNISE.id)) {
+    runs.push({ ...RECOGNISE, disabled: isBusyOrDone(made?.ocr) })
+  }
+  if (canRun(PROOFREAD_ITEM.id)) {
+    runs.push({
+      ...PROOFREAD_ITEM,
+      disabled: isProofreadDisabled(made?.ocr, made?.['ocr.corrected']),
+    })
+  }
+  return runs
+}
 
 /**
  * What a url offers: everything a file offers, and the runs over what is at the
@@ -118,6 +163,8 @@ const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, group: G
 export interface MenuRow {
   readonly source: Source
   readonly isFolder: boolean
+  readonly format?: DocumentFormat | BookFormat | undefined
+  readonly made?: ArtifactStates | undefined
 }
 
 /** Whether the window the menu is drawn in can do a run at all. */
@@ -138,15 +185,16 @@ export const itemsFor = (
   if (on.isFolder) return FILED
   if (on.source === 'note') return NOTE
   if (on.source === 'url') return urls(canRun)
-  if (on.source === 'recording') return getRunnable(TRANSCRIBE, canRun)
-  return on.source === 'book' ? getRunnable(RECOGNISE, canRun) : FILED
+  if (on.source === 'recording') return getFileMenu(...getRecordingRuns(on.made, canRun))
+  if (on.source === 'book') return getFileMenu(...getBookRuns(on.format, on.made, canRun))
+  return FILED
 }
 
 /** What the menu offers anywhere. A choice outside this is not the menu's. */
 export const OFFERED: ReadonlySet<string> = new Set(
   [
     ...NOTE,
-    ...getFileMenu(TRANSCRIBE, RECOGNISE),
+    ...getFileMenu(TRANSCRIBE, RECOGNISE, PROOFREAD_ITEM),
     ...MADE,
     DOWNLOAD_TEXT,
     DOWNLOAD_COPY,

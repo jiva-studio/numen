@@ -181,5 +181,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     chooseMenuItem,
     getNameOf,
     canRun,
+    getArtifactStates: deps.getArtifactStates,
   }
 }

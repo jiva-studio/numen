@@ -105,6 +105,7 @@ export function createFilesKind({
     importUrl: (folder, url) => made.createUrl(folder, url),
     showError: (text) => writeMessage(text, 'error'),
     canRun: (run) => runs.canRun(run),
+    getArtifactStates: (path) => vaults.makes.value.get(path) ?? {},
   })
 
   return { files, made }

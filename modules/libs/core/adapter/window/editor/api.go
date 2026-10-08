@@ -313,6 +313,14 @@ func (a *API) getProofreader() Proofreader {
 	return nil
 }
 
+// getReadingProofreader puts a document's reading right, for whoever asks.
+func (a *API) getReadingProofreader() ReadingProofreader {
+	if on := a.showing.Load(); on != nil {
+		return on.proofreadsReading
+	}
+	return nil
+}
+
 // cuts asks for a source to be cut again from whatever its text now says. A
 // window that put a transcript right calls it, so search answers with the words
 // as they now read. Nothing while the window has no vault, and then a

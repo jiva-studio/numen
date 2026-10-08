@@ -13,6 +13,12 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
     isOffered: getOfferOnEvidence('transcribe', 'recording', (made) => isUnmade(made.transcript)),
   },
   {
+    id: 'recognise',
+    text: words.recognise,
+    group: 'file',
+    isOffered: getOfferOnEvidence('recognise', 'book', (made) => isUnmade(made.ocr)),
+  },
+  {
     id: 'downloadText',
     text: words.downloadText,
     group: 'file',
@@ -39,13 +45,19 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
     id: 'proofread',
     text: words.proofread,
     group: 'file',
-    // There is nothing to put right until a model has heard something, and
+    // There is nothing to put right until a model has produced text, and
     // nothing to put right again once it has been put right.
-    isOffered: getOfferOnEvidence(
-      'proofread',
-      'recording',
-      (made) => made.transcript === 'done' && isUnmade(made['transcript.corrected']),
-    ),
+    isOffered: (at, runs) =>
+      getOfferOnEvidence(
+        'proofread',
+        'recording',
+        (made) => made.transcript === 'done' && isUnmade(made['transcript.corrected']),
+      )(at, runs) ||
+      getOfferOnEvidence(
+        'proofread',
+        'book',
+        (made) => made.ocr === 'done' && isUnmade(made['ocr.corrected']),
+      )(at, runs),
   },
   {
     id: 'deleteText',
@@ -82,11 +94,5 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
       action: words.deletes,
       then: words.deletedCopy,
     },
-  },
-  {
-    id: 'recognise',
-    text: words.recognise,
-    group: 'file',
-    isOffered: getOfferOnEvidence('recognise', 'book', (made) => isUnmade(made.ocr)),
   },
 ]
