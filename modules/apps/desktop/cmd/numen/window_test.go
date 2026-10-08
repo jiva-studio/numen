@@ -25,7 +25,7 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
-	add := vaults.Add{Identity: cfg.VaultIdentity(), Registry: registry, Now: time.Now}
+	add := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now)
 	if _, err := add.Execute(root, "one"); err != nil {
 		t.Fatal(err)
 	}

@@ -17,11 +17,9 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 900)), 1)
 
-	embed := Embed{
-		Readers: vaults{first.ID: shelf, second.ID: shelf},
-		Chunks:  index, Vectors: index,
-		Embedder: &faint{dims: dimensions}, BatchCharacters: 4000,
-	}
+	embed := NewEmbed(vaults{first.ID: shelf, second.ID: shelf}, index, index)
+	embed.Embedder = &faint{dims: dimensions}
+	embed.BatchCharacters = 4000
 
 	cutBooks(t, index, shelf, first)
 	if _, err := embed.Execute(t.Context(), first); err != nil {

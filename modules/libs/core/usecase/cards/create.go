@@ -27,19 +27,25 @@ const (
 // exists: a deck made here is a deck to everything that reads the vault, before
 // anybody has written a card into it.
 type Create struct {
-	Writers port.VaultWriters
-	// Index brings the new file up to date, so that a caller which makes a deck
+	writers port.VaultWriters
+	// index brings the new file up to date, so that a caller which makes a deck
 	// and lists the vault's decks in the next breath finds it.
-	Index note.Levels
-	// Now is when this is happening. An identifier carries it.
-	Now port.Clock
+	index note.Levels
+	// now is when this is happening. An identifier carries it.
+	now port.Clock
 }
 
 // NewCreate is what a deck, a stencil or a preset is made through: the vault it
 // is written into, what brings the new file level in the index, and what time
 // it is.
 func NewCreate(writers port.VaultWriters, index note.Levels, now port.Clock) Create {
-	return Create{Writers: writers, Index: index, Now: now}
+	return Create{writers: writers, index: index, now: now}
+}
+
+// WithIndex replaces the index function.
+func (u Create) WithIndex(index note.Levels) Create {
+	u.index = index
+	return u
 }
 
 // New is what to make.
@@ -95,7 +101,7 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	}
 	path := pathpkg.Join(in.Path, name+domain.NoteExtension)
 
-	identifier, err := ulid.New(u.Now())
+	identifier, err := ulid.New(u.now())
 	if err != nil {
 		return CreateNoteResult{}, err
 	}
@@ -119,7 +125,7 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 		}
 	}
 
-	writer, err := u.Writers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return CreateNoteResult{}, err
 	}
@@ -132,5 +138,8 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	// The file is on disk from here on, so what comes back says where it is
 	// whether or not the index caught up.
 	made := CreateNoteResult{Path: path, ID: identifier, Title: title}
-	return made, note.WrapUnlevelled(u.Index(ctx, v, []string{path}), path)
+	if u.index == nil {
+		return made, nil
+	}
+	return made, note.WrapUnlevelled(u.index(ctx, v, []string{path}), path)
 }

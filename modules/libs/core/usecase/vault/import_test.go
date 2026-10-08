@@ -46,7 +46,7 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	from := createOutsideFolder(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
-	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
+	bring := vaults.NewImport(filesystem.VaultWriters{}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "physics", []string{
 		filepath.Join(from, "Cover.png"),
@@ -84,7 +84,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(from, "scans", "empty"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
+	bring := vaults.NewImport(filesystem.VaultWriters{}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{filepath.Join(from, "scans")})
 	if err != nil {
@@ -113,7 +113,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})
 	from := createOutsideFolder(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
-	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
+	bring := vaults.NewImport(filesystem.VaultWriters{}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{
 		filepath.Join(from, "Cover.png"),
@@ -142,7 +142,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 func TestAFolderHoldingTheVaultIsRefused(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, nil)
-	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
+	bring := vaults.NewImport(filesystem.VaultWriters{}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{filepath.Dir(v.Path)})
 	if err != nil {

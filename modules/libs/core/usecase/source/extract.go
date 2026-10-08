@@ -24,9 +24,9 @@ const sourcesPerQuery = 100
 // The second takes the text out of every source that owes it and cuts it into
 // chunks, one write per source.
 type Extract struct {
-	Readers port.VaultReaders
-	Sources port.SourceRepository
-	Queries port.SourceQueries
+	readers port.VaultReaders
+	sources port.SourceRepository
+	queries port.SourceQueries
 
 	// Derived is optional. It holds what a recogniser wrote; without one, a
 	// source is read from its own bytes and a reading is not looked for.
@@ -70,7 +70,7 @@ type Extract struct {
 func NewExtract(
 	readers port.VaultReaders, sources port.SourceRepository, queries port.SourceQueries,
 ) Extract {
-	return Extract{Readers: readers, Sources: sources, Queries: queries}
+	return Extract{readers: readers, sources: sources, queries: queries}
 }
 
 // ExtractResult reports what extraction did.
@@ -96,7 +96,7 @@ type ExtractResult struct {
 func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, error) {
 	var res ExtractResult
 
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -125,7 +125,7 @@ func (u Extract) discover(
 ) error {
 	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
-		held, err := u.Queries.Fingerprints(ctx, v.ID, kind)
+		held, err := u.queries.Fingerprints(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -144,7 +144,7 @@ func (u Extract) discover(
 			res.Unchanged++
 			return nil
 		}
-		if err := u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
+		if err := u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
 			return fmt.Errorf("record %s: %w", ref.Path, err)
 		}
 		res.Recorded++
@@ -175,7 +175,7 @@ func (u Extract) discover(
 			return err
 		}
 		*swept = append(*swept, went...)
-		if err := u.Sources.RemoveSources(ctx, v.ID, kind, gone); err != nil {
+		if err := u.sources.RemoveSources(ctx, v.ID, kind, gone); err != nil {
 			return fmt.Errorf("remove: %w", err)
 		}
 		res.Removed += len(gone)
@@ -194,7 +194,7 @@ func (u Extract) readSourceTexts(
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
+	held, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -227,7 +227,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	stood := make(map[port.SourceText]bool)
 	named := make(map[string]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
+		held, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -267,7 +267,7 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		recognised, err := u.Queries.GetRecognisedSources(ctx, v.ID, kind)
+		recognised, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -285,7 +285,7 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 			if err != nil {
 				return fmt.Errorf("stat %s: %w", r.Path, err)
 			}
-			if err := u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
+			if err := u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
 				return fmt.Errorf("record %s: %w", r.Path, err)
 			}
 			res.Forgotten++
@@ -321,10 +321,10 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	for _, kind := range u.kinds() {
 		questions = append(questions,
 			func(ctx context.Context) ([]string, error) {
-				return u.Queries.GetUnchunkedSources(ctx, v.ID, kind, sourcesPerQuery)
+				return u.queries.GetUnchunkedSources(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
-				return u.Queries.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
+				return u.queries.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
 			},
 		)
 	}
@@ -362,7 +362,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 // and can be embedded while the rest of the document is still being read.
 func (u Extract) ExtractOne(ctx context.Context, v domain.Vault, path string) (ExtractResult, error) {
 	var res ExtractResult
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -454,7 +454,7 @@ func (u Extract) source(
 		},
 		Chunks: chunks,
 	}
-	if err := u.Sources.SaveExtraction(ctx, v.ID, extraction); err != nil {
+	if err := u.sources.SaveExtraction(ctx, v.ID, extraction); err != nil {
 		return fmt.Errorf("write the chunks of %s: %w", path, err)
 	}
 	res.Extracted++

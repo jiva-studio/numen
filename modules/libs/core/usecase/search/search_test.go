@@ -58,10 +58,10 @@ func newCorpus(t *testing.T) corpus {
 	t.Cleanup(func() { db.Close() })
 
 	readers := filesystem.VaultReaders{}
-	scan := vaults.Scan{
-		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		readers, db.Vaults(), db.Notes(),
+		db.NoteQueries(), db.Maintenance(),
+	)
 
 	c := corpus{db: db}
 	for i, notes := range []map[string]string{firstNotes, secondNotes} {
@@ -438,10 +438,10 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 	const path = "notes/Isotherm.md"
 	const held = "The curve holds throughout."
 	v := testsupport.NewVault(t, map[string]string{path: isotherm})
-	scan := vaults.Scan{
-		Readers: filesystem.VaultReaders{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
-		Known: c.db.NoteQueries(), Maintenance: c.db.Maintenance(),
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{}, c.db.Vaults(), c.db.Notes(),
+		c.db.NoteQueries(), c.db.Maintenance(),
+	)
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}

@@ -60,16 +60,16 @@ type StencilContents struct {
 // A file is asked about before it is opened, so what is refused for its size is
 // refused without being read.
 type Read struct {
-	Readers port.VaultReaders
-	// Links answers where the wikilink a card names its stencil by lands. A
+	readers port.VaultReaders
+	// links answers where the wikilink a card names its stencil by lands. A
 	// stencil holds no cards, so reading one asks nothing of it.
-	Links port.LinkQueries
+	links port.LinkQueries
 }
 
 // NewRead is what a deck or a stencil is read through: the vault its file is
 // read out of, and where the wikilink each card names its stencil by lands.
 func NewRead(readers port.VaultReaders, links port.LinkQueries) Read {
-	return Read{Readers: readers, Links: links}
+	return Read{readers: readers, links: links}
 }
 
 // Deck reads the deck at path.
@@ -89,7 +89,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	switch outcome {
 	case note.Ok:
 		out.Body, out.Raw = format.ReadDeck(n), n.Body
-		out.Stencils, err = getStencilPaths(ctx, u.Links, v.ID, path, out.Body)
+		out.Stencils, err = getStencilPaths(ctx, u.links, v.ID, path, out.Body)
 		if err != nil {
 			return DeckContents{}, err
 		}
@@ -118,7 +118,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 func (u Read) GetCardStencils(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
 ) (map[string]format.Stencil, error) {
-	at, err := getStencilPaths(ctx, u.Links, v.ID, path, d)
+	at, err := getStencilPaths(ctx, u.links, v.ID, path, d)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 func (u Read) readNote(
 	ctx context.Context, v domain.Vault, path string, bound int64,
 ) (domain.Note, domain.Fingerprint, note.ReadOutcome, error) {
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return domain.Note{}, domain.Fingerprint{}, "", err
 	}

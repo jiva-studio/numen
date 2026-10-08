@@ -50,24 +50,24 @@ type PresetContents struct {
 // `type: preset`. A deck naming none is scheduled by the defaults, which is
 // what a vault holding no preset at all gets.
 type Presets struct {
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	// Links answers where a deck's link to its preset lands.
-	Links port.LinkQueries
-	// Notes says which notes of the vault are presets and what each is called,
+	readers port.VaultReaders
+	writers port.VaultWriters
+	// links answers where a deck's link to its preset lands.
+	links port.LinkQueries
+	// notes says which notes of the vault are presets and what each is called,
 	// and answers what name a link written to one reaches. A build holding none
 	// lists no preset and points no deck at one.
-	Notes port.NoteQueries
+	notes port.NoteQueries
 	// Problems is what parsing each file of the vault turned up. A build holding
 	// none says nothing against a deck whose link the parser could not read.
 	Problems port.ProblemQueries
-	// Index brings what a write touched up to date. Every write here calls it,
+	// index brings what a write touched up to date. Every write here calls it,
 	// and a preset short of it cannot point a deck at anything.
-	Index note.Levels
-	// Day is where one day of review gives way to the next, and Now what time
+	index note.Levels
+	// day is where one day of review gives way to the next, and now what time
 	// it is. They answer whether a preset schedules anything today.
-	Day review.Day
-	Now port.Clock
+	day review.Day
+	now port.Clock
 }
 
 // NewPresets is what a vault's presets are read and written through: the vault
@@ -85,16 +85,16 @@ func NewPresets(
 	now port.Clock,
 ) Presets {
 	return Presets{
-		Readers: readers, Writers: writers, Links: links, Notes: notes,
-		Index: index, Day: day, Now: now,
+		readers: readers, writers: writers, links: links, notes: notes,
+		index: index, day: day, now: now,
 	}
 }
 
 // getStopReasons is why a preset schedules nothing, and why it schedules
 // nothing today.
 func (u Presets) getStopReasons(p review.Preset) (review.StopReason, review.StopReason) {
-	at := u.Now()
-	return p.GetOverallStopReason(u.Day, at), p.GetStopReason(u.Day, at)
+	at := u.now()
+	return p.GetOverallStopReason(u.day, at), p.GetStopReason(u.day, at)
 }
 
 // PresetSummary is one preset as a person choosing between them sees it: where
@@ -113,17 +113,17 @@ type PresetSummary struct {
 // cannot ask it gets ErrNoPresets: a vault holding none is an answer, and a
 // build that cannot tell is not entitled to give it.
 func (u Presets) List(ctx context.Context, v domain.Vault) ([]PresetSummary, error) {
-	if u.Notes == nil {
+	if u.notes == nil {
 		return nil, ErrNoPresets
 	}
-	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypePreset)
+	paths, err := u.notes.OfType(ctx, v.ID, domain.TypePreset)
 	if err != nil {
 		return nil, fmt.Errorf("the presets of %s: %w", v.ID, err)
 	}
 	if len(paths) == 0 {
 		return nil, nil
 	}
-	titles, err := u.Notes.Notes(ctx, v.ID, paths)
+	titles, err := u.notes.Notes(ctx, v.ID, paths)
 	if err != nil {
 		return nil, fmt.Errorf("what the presets of %s are called: %w", v.ID, err)
 	}
@@ -193,10 +193,10 @@ func (r *PresetReads) GetForDeck(ctx context.Context, v domain.Vault, deck strin
 func (r *PresetReads) getSchedulingPreset(
 	ctx context.Context, v domain.Vault, deck string,
 ) (PresetContents, error) {
-	if r.Links == nil {
+	if r.links == nil {
 		return Default(), nil
 	}
-	links, err := r.Links.Links(ctx, v.ID, deck)
+	links, err := r.links.Links(ctx, v.ID, deck)
 	if err != nil {
 		return PresetContents{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
@@ -297,7 +297,7 @@ func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetC
 func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
 	out := PresetContents{Path: path, Settings: review.Defaults()}
 
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return PresetContents{}, err
 	}

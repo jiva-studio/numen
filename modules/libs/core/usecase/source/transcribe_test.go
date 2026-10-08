@@ -100,13 +100,9 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	index := newStore()
 	kept := newShelf()
 	model := &voice{words: words}
-	return Transcribe{
-		Readers: vaults{first.ID: shelved},
-		Sources: index,
-		Derived: shelves{kept},
-		By:      model,
-		Batch:   1,
-	}, first, index, kept, model, text.Fingerprint(raw)
+	tr := NewTranscribe(vaults{first.ID: shelved}, index, shelves{kept}, model)
+	tr.Batch = 1
+	return tr, first, index, kept, model, text.Fingerprint(raw)
 }
 
 // getWords is the words of an artifact, in the order they were said.

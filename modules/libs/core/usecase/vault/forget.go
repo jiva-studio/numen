@@ -16,28 +16,28 @@ var ErrLastVault = errors.New("an installation keeps a vault")
 // index. The folder stays where it is, with the identity it carries, and adding
 // it again brings back the same vault.
 type Forget struct {
-	Registry port.VaultRegistry
-	Index    port.VaultRepository
+	registry port.VaultRegistry
+	index    port.VaultRepository
 }
 
 // NewForget is what takes a vault off the list: the list this installation
 // keeps, and the index its rows are taken out of.
 func NewForget(registry port.VaultRegistry, index port.VaultRepository) Forget {
-	return Forget{Registry: registry, Index: index}
+	return Forget{registry: registry, index: index}
 }
 
 func (u Forget) Execute(ctx context.Context, v domain.Vault) error {
-	if err := keepTheLastVault(u.Registry, v); err != nil {
+	if err := keepTheLastVault(u.registry, v); err != nil {
 		return err
 	}
 
 	// The index goes first: no entry on the list points at rows that are gone.
 	// Rows a failure here leaves behind belong to a vault the next scan writes
 	// again.
-	if err := u.Index.Forget(ctx, v.ID); err != nil {
+	if err := u.index.Forget(ctx, v.ID); err != nil {
 		return fmt.Errorf("take %s out of the index: %w", v.Name, err)
 	}
-	return u.Registry.Remove(v.ID)
+	return u.registry.Remove(v.ID)
 }
 
 // keepTheLastVault refuses a vault that is all the installation has left.

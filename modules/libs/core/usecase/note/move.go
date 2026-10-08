@@ -18,20 +18,20 @@ import (
 // The bytes do not change. A note that carried no identifier still carries
 // none afterwards, because moving is not editing.
 type Move struct {
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	Links   port.LinkQueries
-	// Names is asked how many notes are filed under a name, which is what says
+	readers port.VaultReaders
+	writers port.VaultWriters
+	links   port.LinkQueries
+	// names is asked how many notes are filed under a name, which is what says
 	// whether a link repaired to that name reaches this note or another one.
-	Names NameQueries
-	// Sources is where the index files each file. A move tells it that what was
+	names NameQueries
+	// sources is where the index files each file. A move tells it that what was
 	// at one path is at another.
-	Sources port.SourceRepository
-	Index   Levels
-	// Now is when this is happening. Bringing a note's title into line with its
+	sources port.SourceRepository
+	index   Levels
+	// now is when this is happening. Bringing a note's title into line with its
 	// filename is an edit, and an edit stamps the identifier a note arrived
 	// without.
-	Now port.Clock
+	now port.Clock
 	// Drawing is told where the note went, so that whoever is showing it at the
 	// name it had follows it. Nothing is told where nobody is drawing.
 	Drawing TellMove
@@ -55,10 +55,37 @@ func NewMove(
 	now port.Clock,
 ) Move {
 	return Move{
-		Readers: readers, Writers: writers, Links: links,
-		Names: names, Sources: sources, Index: index, Now: now,
+		readers: readers, writers: writers, links: links,
+		names: names, sources: sources, index: index, now: now,
 	}
 }
+
+// WithSources replaces the source repository.
+func (u Move) WithSources(sources port.SourceRepository) Move {
+	u.sources = sources
+	return u
+}
+
+// WithReaders replaces the vault readers.
+func (u Move) WithReaders(readers port.VaultReaders) Move {
+	u.readers = readers
+	return u
+}
+
+// WithWriters replaces the vault writers.
+func (u Move) WithWriters(writers port.VaultWriters) Move {
+	u.writers = writers
+	return u
+}
+
+// Sources returns the source repository.
+func (u Move) Sources() port.SourceRepository { return u.sources }
+
+// Writers returns the vault writers.
+func (u Move) Writers() port.VaultWriters { return u.writers }
+
+// Readers returns the vault readers.
+func (u Move) Readers() port.VaultReaders { return u.readers }
 
 // MoveResult says where the note went and what it did to the links that
 // pointed at it.
@@ -85,12 +112,12 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 
 	// Asked before the move, because afterwards nothing points at the old path
 	// and there is nothing left to ask about.
-	pointing, err := u.Links.Backlinks(ctx, v.ID, from)
+	pointing, err := u.links.Backlinks(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}
 
-	writer, err := u.Writers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -107,7 +134,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 // moveInIndex tells the index that what was at one path is at another. The
 // bytes do not change, so nothing is read.
 func (u Move) moveInIndex(ctx context.Context, v domain.Vault, from, to string) error {
-	return u.Sources.MoveSources(ctx, v.ID, from, to)
+	return u.sources.MoveSources(ctx, v.ID, from, to)
 }
 
 // Settle is the work a move leaves once the file is where it was sent and the
@@ -163,7 +190,7 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 		}
 	}
 	if len(res.Repaired) > 0 {
-		if err := u.index(ctx, v, res.Repaired...); err != nil {
+		if err := u.level(ctx, v, res.Repaired...); err != nil {
 			return res, err
 		}
 	}
@@ -174,7 +201,7 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 // now that the file is there. A name no link reaches comes back as it stands,
 // and the repair that writes it changes nothing.
 func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (string, error) {
-	to, err := GetAddress(ctx, u.Names, v.ID, path)
+	to, err := GetAddress(ctx, u.names, v.ID, path)
 	if errors.Is(err, ErrUnaddressable) {
 		return domain.Basename(path), nil
 	}
@@ -191,7 +218,7 @@ func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (stri
 // has been taken out since the backlinks were read, and saying where it used to
 // go would report a move that nobody made.
 func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, still bool, err error) {
-	links, err := u.Links.Links(ctx, v.ID, was.From)
+	links, err := u.links.Links(ctx, v.ID, was.From)
 	if err != nil {
 		return "", false, err
 	}
@@ -215,13 +242,13 @@ func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.Resolve
 func (u Move) repair(
 	ctx context.Context, v domain.Vault, in string, address domain.Address, reaches string,
 ) (repaired, dangling bool, err error) {
-	release, err := u.Writers.Hold(ctx, v)
+	release, err := u.writers.Hold(ctx, v)
 	if err != nil {
 		return false, false, err
 	}
 	defer release()
 
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return false, false, err
 	}
@@ -253,7 +280,7 @@ func (u Move) repair(
 		return false, false, nil
 	}
 
-	writer, err := u.Writers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return false, false, err
 	}
@@ -261,8 +288,11 @@ func (u Move) repair(
 	return true, false, err
 }
 
-func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	return WrapUnlevelled(u.Index(ctx, v, paths), paths...)
+func (u Move) level(ctx context.Context, v domain.Vault, paths ...string) error {
+	if u.index == nil {
+		return nil
+	}
+	return WrapUnlevelled(u.index(ctx, v, paths), paths...)
 }
 
 // GetPathUnder is where a note lands when it is filed under a folder, keeping

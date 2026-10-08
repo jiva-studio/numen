@@ -21,8 +21,8 @@ type StencilSummary struct {
 // The index says which notes are stencils and the files say what each declares,
 // so a stencil that cannot be read is on the list with no fields on it.
 type List struct {
-	Readers port.VaultReaders
-	Notes   StencilQueries
+	readers port.VaultReaders
+	notes   StencilQueries
 }
 
 // StencilQueries is the one question listing them asks of the index.
@@ -35,7 +35,7 @@ type StencilQueries interface {
 // NewList is what the vault's stencils are listed through: what says which
 // notes are stencils, and the vault each is read out of for its fields.
 func NewList(readers port.VaultReaders, notes StencilQueries) List {
-	return List{Readers: readers, Notes: notes}
+	return List{readers: readers, notes: notes}
 }
 
 // Execute lists the stencils of one vault, by path, and says how many the vault
@@ -47,7 +47,7 @@ func NewList(readers port.VaultReaders, notes StencilQueries) List {
 func (u List) Execute(
 	ctx context.Context, v domain.Vault, limit int,
 ) ([]StencilSummary, int, error) {
-	all, err := u.Notes.Stencils(ctx, v.ID)
+	all, err := u.notes.Stencils(ctx, v.ID)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -57,7 +57,7 @@ func (u List) Execute(
 	}
 
 	// A stencil holds no cards, so nothing here asks where a wikilink lands.
-	read := Read{Readers: u.Readers}
+	read := NewRead(u.readers, nil)
 	out := make([]StencilSummary, 0, len(held))
 	for _, s := range held {
 		listed := StencilSummary{Path: s.Path, Title: s.Title}

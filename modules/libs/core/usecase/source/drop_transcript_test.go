@@ -23,17 +23,13 @@ func newDropTranscript(t *testing.T, words ...string) (Transcribe, DropTranscrip
 	kept := newShelf()
 	model := &voice{words: words}
 
-	cutting := Extract{Readers: vaults{first.ID: shelved}, Sources: index, Queries: index, Derived: kept}
-	listen := Transcribe{
-		Readers: vaults{first.ID: shelved},
-		Sources: index,
-		Derived: shelves{kept},
-		By:      model,
-		Batch:   1,
-		Cut: func(ctx context.Context, v domain.Vault, path string) error {
-			_, err := cutting.ExtractOne(ctx, v, path)
-			return err
-		},
+	cutting := NewExtract(vaults{first.ID: shelved}, index, index)
+	cutting.Derived = kept
+	listen := NewTranscribe(vaults{first.ID: shelved}, index, shelves{kept}, model)
+	listen.Batch = 1
+	listen.Cut = func(ctx context.Context, v domain.Vault, path string) error {
+		_, err := cutting.ExtractOne(ctx, v, path)
+		return err
 	}
 	drop := DropTranscript{
 		Readers: vaults{first.ID: shelved},

@@ -75,17 +75,17 @@ type SessionResult struct {
 // Each deck is held to the budget its preset keeps today, and what was already
 // answered today is off that budget.
 type Session struct {
-	// Marks gives a mark to the cards of this vault that carry none, so that
+	// marks gives a mark to the cards of this vault that carry none, so that
 	// what is asked can be answered. It is the one write flashcards makes, and it
 	// is made when a person sits down to a vault.
-	Marks     MarkCards
-	CardFaces ListCardFaces
-	Schedules Schedules
-	// Presets says which preset each deck is scheduled by. A build holding no
+	marks     MarkCards
+	cardFaces ListCardFaces
+	schedules Schedules
+	// presets says which preset each deck is scheduled by. A build holding no
 	// links schedules every deck by the defaults.
-	Presets Presets
-	Day     review.Day
-	Now     port.Clock
+	presets Presets
+	day     review.Day
+	now     port.Clock
 }
 
 // NewSession is what a person sits down to their cards through: what gives the
@@ -97,9 +97,21 @@ func NewSession(
 	day review.Day, now port.Clock,
 ) Session {
 	return Session{
-		Marks: marks, CardFaces: faces, Schedules: schedules, Presets: presets,
-		Day: day, Now: now,
+		marks: marks, cardFaces: faces, schedules: schedules, presets: presets,
+		day: day, now: now,
 	}
+}
+
+// WithDay returns a copy of Session with the given Day.
+func (u Session) WithDay(day review.Day) Session {
+	u.day = day
+	return u
+}
+
+// WithNow returns a copy of Session with the given Clock.
+func (u Session) WithNow(now port.Clock) Session {
+	u.now = now
+	return u
 }
 
 // Execute is what to ask, in order.
@@ -113,11 +125,11 @@ func (u Session) Execute(
 	if over.IsNamed && over.Deck != "" {
 		return SessionResult{}, ErrBothNamed
 	}
-	marked, err := u.Marks.Execute(ctx, v)
+	marked, err := u.marks.Execute(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}
-	faces, err := u.CardFaces.Execute(ctx, v)
+	faces, err := u.cardFaces.Execute(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}
@@ -125,35 +137,35 @@ func (u Session) Execute(
 	// The log is read once here and the schedules worked out from it, so that
 	// what a person is told about lines that could not be read is the reading
 	// their own cards were laid out from.
-	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
+	held, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}
 	// One reading of this vault's presets answers both the schedulers the cards
 	// are worked out by and the budgets they are held to.
-	reading := u.Presets.Reading()
-	asks, err := u.Schedules.getAssignmentFrom(ctx, v, reading, faces)
+	reading := u.presets.Reading()
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reading, faces)
 	if err != nil {
 		return SessionResult{}, err
 	}
-	schedules := u.Schedules.getSchedulesCached(ctx, v, held, asks)
+	schedules := u.schedules.getSchedulesCached(ctx, v, held, asks)
 
-	now := u.Now()
+	now := u.now()
 	day, err := getBudgets(
-		ctx, v, reading, u.Day, faces, schedules, held,
-		u.Schedules.By, u.Schedules.getScheduler, now,
+		ctx, v, reading, u.day, faces, schedules, held,
+		u.schedules.by, u.schedules.getScheduler, now,
 	)
 	if err != nil {
 		return SessionResult{}, err
 	}
-	holds := day.getAsking(faces, schedules, u.Day, now, over)
+	holds := day.getAsking(faces, schedules, u.day, now, over)
 	if over.IsNamed && len(holds.seen)+len(holds.fresh) == 0 {
 		return SessionResult{}, day.getStopError(over.Preset)
 	}
 
 	// How loaded each day of review already is, which is what a card put on one
 	// of them is weighed against.
-	on := review.NewDueByDay(u.Day)
+	on := review.NewDueByDay(u.day)
 	for _, s := range schedules {
 		on.Add(s.Due)
 	}

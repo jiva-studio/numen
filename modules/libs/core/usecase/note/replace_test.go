@@ -12,10 +12,7 @@ import (
 )
 
 func (c changing) replace() note.Replace {
-	return note.Replace{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
-		Now: time.Now,
-	}
+	return note.NewReplace(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 }
 
 // What is asked for is replaced, and what is not asked for is the bytes it was.

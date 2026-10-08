@@ -20,17 +20,17 @@ import (
 // inside its own folder is called by that name, where a title and a filename
 // are kept as one name.
 type Move struct {
-	Writers port.VaultWriters
-	Links   port.LinkQueries
-	// Queries is what the index holds about each file, and is what says which
+	writers port.VaultWriters
+	links   port.LinkQueries
+	// queries is what the index holds about each file, and is what says which
 	// sources sit under the path being moved.
-	Queries port.SourceQueries
-	// Sources is where the index files each file. A folder and everything under
+	queries port.SourceQueries
+	// sources is where the index files each file. A folder and everything under
 	// it are filed at their new paths in one write.
-	Sources port.SourceRepository
-	// Notes is what settles each note that travelled: whoever is drawing it, and
+	sources port.SourceRepository
+	// notes is what settles each note that travelled: whoever is drawing it, and
 	// the links written by its old name.
-	Notes note.Move
+	notes note.Move
 }
 
 // NewMove is what files anything the vault holds somewhere else: the vault it
@@ -44,7 +44,18 @@ func NewMove(
 	sources port.SourceRepository,
 	notes note.Move,
 ) Move {
-	return Move{Writers: writers, Links: links, Queries: queries, Sources: sources, Notes: notes}
+	return Move{writers: writers, links: links, queries: queries, sources: sources, notes: notes}
+}
+
+// WithSources returns a copy of Move with the given SourceRepository.
+func (u Move) WithSources(sources port.SourceRepository) Move {
+	u.sources = sources
+	return u
+}
+
+// Sources returns the SourceRepository Move files through.
+func (u Move) Sources() port.SourceRepository {
+	return u.sources
 }
 
 // Execute moves the path and repairs what pointed at the notes under it.
@@ -58,7 +69,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		return res, nil
 	}
 
-	travelling, err := u.Queries.GetSourcesUnder(ctx, v.ID, from)
+	travelling, err := u.queries.GetSourcesUnder(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}
@@ -70,14 +81,14 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.Links.Backlinks(ctx, v.ID, source.Path)
+		links, err := u.links.Backlinks(ctx, v.ID, source.Path)
 		if err != nil {
 			return res, err
 		}
 		pointing[source.Path] = links
 	}
 
-	writer, err := u.Writers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -92,7 +103,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 
 	// Notes and books alike are filed under their new paths in one write, and
 	// what was derived from each of them travels with it.
-	if err := u.Sources.MoveSources(ctx, v.ID, from, to); err != nil {
+	if err := u.sources.MoveSources(ctx, v.ID, from, to); err != nil {
 		return res, err
 	}
 
@@ -101,14 +112,14 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 	// own name ended up.
 	var called error
 	if isRename(travelling, from, to) {
-		called = u.Notes.WriteFilenameAsTitle(ctx, v, to)
+		called = u.notes.WriteFilenameAsTitle(ctx, v, to)
 	}
 
 	for _, source := range travelling {
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		settled, err := u.Notes.Settle(ctx, v, source.Path, getMovedPath(from, to, source.Path), pointing[source.Path])
+		settled, err := u.notes.Settle(ctx, v, source.Path, getMovedPath(from, to, source.Path), pointing[source.Path])
 		res.Repaired = append(res.Repaired, settled.Repaired...)
 		res.Dangling = append(res.Dangling, settled.Dangling...)
 		if err != nil {

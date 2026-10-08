@@ -84,13 +84,13 @@ type PresetCardsDue struct {
 
 // CountCardsDue is what a vault owes, which is what its front door shows.
 type CountCardsDue struct {
-	CardFaces ListCardFaces
-	Schedules Schedules
-	// Presets says which preset each deck is scheduled by. A build holding no
+	cardFaces ListCardFaces
+	schedules Schedules
+	// presets says which preset each deck is scheduled by. A build holding no
 	// links schedules every deck by the defaults.
-	Presets Presets
-	Day     review.Day
-	Now     port.Clock
+	presets Presets
+	day     review.Day
+	now     port.Clock
 }
 
 // NewCountCardsDue is what a vault's front door is counted through: what stands
@@ -102,8 +102,31 @@ func NewCountCardsDue(
 	day review.Day, now port.Clock,
 ) CountCardsDue {
 	return CountCardsDue{
-		CardFaces: faces, Schedules: schedules, Presets: presets, Day: day, Now: now,
+		cardFaces: faces, schedules: schedules, presets: presets, day: day, now: now,
 	}
+}
+
+// WithCardFaces returns a copy of CountCardsDue with the given ListCardFaces.
+func (u CountCardsDue) WithCardFaces(faces ListCardFaces) CountCardsDue {
+	u.cardFaces = faces
+	return u
+}
+
+// CardFaces returns the ListCardFaces CountCardsDue counts through.
+func (u CountCardsDue) CardFaces() ListCardFaces {
+	return u.cardFaces
+}
+
+// WithDay returns a copy of CountCardsDue with the given Day.
+func (u CountCardsDue) WithDay(day review.Day) CountCardsDue {
+	u.day = day
+	return u
+}
+
+// WithNow returns a copy of CountCardsDue with the given Clock.
+func (u CountCardsDue) WithNow(now port.Clock) CountCardsDue {
+	u.now = now
+	return u
 }
 
 // Execute counts one vault.
@@ -120,38 +143,38 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	if err := ctx.Err(); err != nil {
 		return CardsDue{}, err
 	}
-	faces, err := u.CardFaces.Execute(ctx, v)
+	faces, err := u.cardFaces.Execute(ctx, v)
 	if err != nil {
 		return CardsDue{}, err
 	}
 	if err := ctx.Err(); err != nil {
 		return CardsDue{}, err
 	}
-	log, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
+	log, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
 	if err != nil {
 		return CardsDue{}, err
 	}
 	// One reading of this vault's presets answers the schedulers, the budgets
 	// and how many decks name each preset.
-	reading := u.Presets.Reading()
-	asks, err := u.Schedules.getAssignmentFrom(ctx, v, reading, faces)
+	reading := u.presets.Reading()
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reading, faces)
 	if err != nil {
 		return CardsDue{}, err
 	}
-	schedules := u.Schedules.getSchedulesCached(ctx, v, log, asks)
+	schedules := u.schedules.getSchedulesCached(ctx, v, log, asks)
 	if err := ctx.Err(); err != nil {
 		return CardsDue{}, err
 	}
 
-	now := u.Now()
+	now := u.now()
 	day, err := getBudgets(
-		ctx, v, reading, u.Day, faces, schedules, log,
-		u.Schedules.By, u.Schedules.getScheduler, now,
+		ctx, v, reading, u.day, faces, schedules, log,
+		u.schedules.by, u.schedules.getScheduler, now,
 	)
 	if err != nil {
 		return CardsDue{}, err
 	}
-	holds := day.getAsking(faces, schedules, u.Day, now, Scope{})
+	holds := day.getAsking(faces, schedules, u.day, now, Scope{})
 
 	out := CardsDue{Faces: len(faces)}
 	decks := make(map[string]*DeckCardsDue)
@@ -198,29 +221,29 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	slices.SortFunc(out.Decks, func(a, b DeckCardsDue) int {
 		return strings.Compare(a.Deck, b.Deck)
 	})
-	out.Presets, err = u.presets(ctx, v, reading, day, due, fresh)
+	out.Presets, err = u.getPresets(ctx, v, reading, day, due, fresh)
 	if err != nil {
 		return CardsDue{}, err
 	}
 	return out, nil
 }
 
-// presets is every preset the vault holds: the ones its decks point at, and
+// getPresets is every preset the vault holds: the ones its decks point at, and
 // then the ones nothing points at.
 //
 // How many decks name a preset is counted over every deck the vault holds, so a
 // deck of no cards points at its preset like any other. A preset no deck names
 // stands at nothing.
-func (u CountCardsDue) presets(
+func (u CountCardsDue) getPresets(
 	ctx context.Context, v domain.Vault, reading *PresetReads, day *budgets,
 	due, fresh map[string]int,
 ) ([]PresetCardsDue, error) {
 	out := day.getCardsDue(due, fresh)
-	if u.CardFaces.Notes == nil {
+	if u.cardFaces.notes == nil {
 		return out, nil
 	}
 
-	decks, err := u.CardFaces.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	decks, err := u.cardFaces.notes.OfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +262,7 @@ func (u CountCardsDue) presets(
 		pointed[out[at].Preset] = true
 	}
 
-	paths, err := u.CardFaces.Notes.OfType(ctx, v.ID, domain.TypePreset)
+	paths, err := u.cardFaces.notes.OfType(ctx, v.ID, domain.TypePreset)
 	if err != nil {
 		return nil, err
 	}

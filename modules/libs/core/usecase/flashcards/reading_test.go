@@ -9,7 +9,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
 // counting is a vault's files with a tally of what was opened, by path.
@@ -85,16 +87,20 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	})
 
 	reads := map[string]int{}
-	standings := s.standings
-	standings.Readers = counting{VaultReaders: standings.Readers, reads: reads}
+	standings := flashcards.NewListCardFaces(
+		counting{VaultReaders: filesystem.VaultReaders{}, reads: reads},
+		s.notes, s.links,
+	)
 
 	looks := map[string]int{}
-	presets := s.presets
-	presets.Links = lookups{LinkQueries: presets.Links, looks: looks}
+	presets := flashcards.NewPresets(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		lookups{LinkQueries: s.links, looks: looks},
+		s.notes, s.scan, review.Day{}, time.Now,
+	)
 
-	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday })
-	owed.CardFaces = standings
-	owed.Presets = presets
+	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), today, standings, presets)
+	owed := flashcards.NewCountCardsDue(standings, schedules, presets, today, func() time.Time { return saturday })
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -122,10 +128,12 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	})
 
 	reads := map[string]int{}
-	presets := s.presets
-	presets.Readers = counting{VaultReaders: presets.Readers, reads: reads}
-	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday })
-	owed.Presets = presets
+	presets := flashcards.NewPresets(
+		counting{VaultReaders: filesystem.VaultReaders{}, reads: reads},
+		filesystem.VaultWriters{}, s.links, s.notes, s.scan, review.Day{}, time.Now,
+	)
+	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), today, s.standings, presets)
+	owed := flashcards.NewCountCardsDue(s.standings, schedules, presets, today, func() time.Time { return saturday })
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -146,10 +154,11 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 	answer(t, s.run(t, saturday.AddDate(0, 0, -1)), "card000000", 6*time.Second)
 
 	reads := map[string]int{}
-	kept := s.kept
-	kept.Logs = tallied{DerivedStores: kept.Logs, reads: reads}
-	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday })
-	owed.Schedules = kept
+	kept := flashcards.NewSchedules(
+		tallied{DerivedStores: s.logs, reads: reads},
+		review.NewFSRS(), today, s.standings, s.presets,
+	)
+	owed := flashcards.NewCountCardsDue(s.standings, kept, s.presets, today, func() time.Time { return saturday })
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)

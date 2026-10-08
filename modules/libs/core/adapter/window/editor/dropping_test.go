@@ -35,9 +35,10 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	index := &noting{}
+	hl := source.NewHighlight(filesystem.VaultReaders{}, known, storing{held})
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
-		Highlight: &source.Highlight{Sources: known, Derived: storing{held}},
+		Highlight: &hl,
 		Drops: &source.DropTranscript{
 			Readers: filesystem.VaultReaders{},
 			Sources: index,

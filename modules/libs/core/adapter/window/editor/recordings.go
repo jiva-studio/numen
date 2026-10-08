@@ -353,10 +353,10 @@ func (a *API) getShownFile(ctx context.Context, path string) (domain.Vault, doma
 // it wrote is kept. They are the index and the store a passage is placed from,
 // which read the same artifacts.
 func (a *API) getSourceStores() (port.SourceQueries, port.DerivedStores, bool) {
-	if a.Highlight == nil || a.Highlight.Sources == nil || a.Highlight.Derived == nil {
+	if a.Highlight == nil || a.Highlight.Sources() == nil || a.Highlight.Derived() == nil {
 		return nil, nil, false
 	}
-	return a.Highlight.Sources, a.Highlight.Derived, true
+	return a.Highlight.Sources(), a.Highlight.Derived(), true
 }
 
 // getSourceText is what was made from the file at a path, and the store holding it. It

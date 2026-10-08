@@ -22,14 +22,14 @@ import (
 // person's, apart from the key a stencil declares its fields in and the
 // identifier an edit stamps on a note carrying none.
 type Write struct {
-	Readers port.VaultReaders
-	Writers port.VaultWriters
-	// Links answers where the wikilink a card names its stencil by lands, which
+	readers port.VaultReaders
+	writers port.VaultWriters
+	// links answers where the wikilink a card names its stencil by lands, which
 	// is what says which of the card's fields is first.
-	Links port.LinkQueries
-	Index note.Levels
-	// Now is when this is happening. An identifier written here carries it.
-	Now port.Clock
+	links port.LinkQueries
+	index note.Levels
+	// now is when this is happening. An identifier written here carries it.
+	now port.Clock
 }
 
 // NewWrite is what a deck or a stencil goes back through: the vault it is read
@@ -42,7 +42,13 @@ func NewWrite(
 	index note.Levels,
 	now port.Clock,
 ) Write {
-	return Write{Readers: readers, Writers: writers, Links: links, Index: index, Now: now}
+	return Write{readers: readers, writers: writers, links: links, index: index, now: now}
+}
+
+// WithIndex replaces the index function.
+func (u Write) WithIndex(index note.Levels) Write {
+	u.index = index
+	return u
 }
 
 // WriteResult is what a write of a deck left behind: what the file now stands at,
@@ -83,7 +89,7 @@ func (u Write) Deck(
 func (u Write) whole(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardMark, error) {
-	read := Read{Readers: u.Readers, Links: u.Links}
+	read := NewRead(u.readers, u.links)
 	by, err := read.GetCardStencils(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
 	if err != nil {
 		return "", nil, err
@@ -120,7 +126,7 @@ func (u Write) stencil(
 		return domain.Fingerprint{}, note.ErrBodyUnwritable
 	}
 
-	e := note.NewEdit(u.Readers, u.Writers, u.Index, u.Now)
+	e := note.NewEdit(u.readers, u.writers, u.index, u.now)
 	e.Fingerprint, e.Bound = fingerprint, note.MaxBytes
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if err := doc.SetBody(body); err != nil {
@@ -138,7 +144,7 @@ func (u Write) stencil(
 // note is the writer a deck goes to disk through, held to the size a deck is
 // read at.
 func (u Write) note() note.Write {
-	writing := note.NewWrite(u.Readers, u.Writers, u.Index, u.Now)
+	writing := note.NewWrite(u.readers, u.writers, u.index, u.now)
 	writing.Bound = MaxBytes
 	return writing
 }

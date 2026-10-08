@@ -45,15 +45,15 @@ func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) e
 
 	// A terminal that prints nothing for a minute looks broken. One group is
 	// about half a second, and the line rewrites itself.
-	making.Notes.OnProgress = func(res vaults.ScanResult) {
+	making.OnNotesProgress = func(res vaults.ScanResult) {
 		fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
 	}
-	making.Books.OnProgress = func(res source.ExtractResult) {
+	making.OnBooksProgress = func(res source.ExtractResult) {
 		if res.Reading != "" {
 			fmt.Fprintf(out, "  reading %s\r", res.Reading)
 		}
 	}
-	making.Vectors.OnProgress = func(res source.EmbedResult) {
+	making.OnVectorsProgress = func(res source.EmbedResult) {
 		fmt.Fprintf(out, "  %d embedded\r", res.Embedded)
 	}
 

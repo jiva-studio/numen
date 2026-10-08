@@ -18,21 +18,21 @@ type NoteLinks struct {
 
 // ShowLinks gathers them for one note.
 type ShowLinks struct {
-	Links port.LinkQueries
+	links port.LinkQueries
 }
 
 // NewShowLinks is what both halves are asked of: the index that answers what a
 // note points at and what points at it.
 func NewShowLinks(links port.LinkQueries) ShowLinks {
-	return ShowLinks{Links: links}
+	return ShowLinks{links: links}
 }
 
 func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (NoteLinks, error) {
-	links, err := u.Links.Links(ctx, v.ID, path)
+	links, err := u.links.Links(ctx, v.ID, path)
 	if err != nil {
 		return NoteLinks{}, err
 	}
-	backlinks, err := u.Links.Backlinks(ctx, v.ID, path)
+	backlinks, err := u.links.Backlinks(ctx, v.ID, path)
 	if err != nil {
 		return NoteLinks{}, err
 	}

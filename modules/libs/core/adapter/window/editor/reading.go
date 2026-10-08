@@ -252,7 +252,7 @@ func readSources(
 		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Error: err.Error()})
 		return
 	}
-	making.Books.OnProgress = func(res source.ExtractResult) {
+	making.OnBooksProgress = func(res source.ExtractResult) {
 		api.say(task.Task{
 			ID: readingBooks, Doing: "Reading books", About: res.Reading,
 			// Every book the walk found leaves this pass one of several ways, and
@@ -393,7 +393,7 @@ func embedSources(
 	// The pass enters the list when it opens the first of them, so the row is
 	// never a word with nothing under it. A share is drawn once a vector has
 	// been made, counted over the work in hand and not the size of the vault.
-	making.Vectors.OnProgress = func(res source.EmbedResult) {
+	making.OnVectorsProgress = func(res source.EmbedResult) {
 		at := task.Task{ID: makingVectors, Doing: "Indexing", About: res.Reading}
 		if res.Embedded > 0 {
 			at.Count, at.Total = int64(res.Embedded), owing

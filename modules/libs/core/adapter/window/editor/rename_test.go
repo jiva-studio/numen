@@ -590,7 +590,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 	waitForScan(t, f)
-	f.installation.API.Notes.Rename.Writers = staleWriters{VaultWriters: f.installation.API.Notes.Rename.Writers}
+	*f.installation.API.Notes.Rename = f.installation.API.Notes.Rename.WithWriters(staleWriters{VaultWriters: f.installation.API.Notes.Rename.Writers()})
 
 	out, err := f.installation.API.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Old.md",

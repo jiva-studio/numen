@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -150,8 +151,10 @@ func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
 func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, pointing)
-	presets := s.presets
-	presets.Index = busy
+	presets := flashcards.NewPresets(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		s.links, s.notes, busy, review.Day{}, time.Now,
+	)
 
 	held, err := presets.Read(t.Context(), s.vault, "Sanskrit.md")
 	if err != nil {

@@ -15,13 +15,13 @@ import (
 // It reads the vault's answers once and projects them forward at every place of
 // the goal's range. Nothing here writes.
 type ProjectCurve struct {
-	CardFaces ListCardFaces
-	Schedules Schedules
-	// Presets says which preset each deck is scheduled by. A build holding no
+	cardFaces ListCardFaces
+	schedules Schedules
+	// presets says which preset each deck is scheduled by. A build holding no
 	// links projects every deck of the vault.
-	Presets Presets
-	Day     review.Day
-	Now     port.Clock
+	presets Presets
+	day     review.Day
+	now     port.Clock
 	// By is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
 	By func(retention float64) review.Scheduler
@@ -39,7 +39,7 @@ func NewProjectCurve(
 	day review.Day, now port.Clock,
 ) ProjectCurve {
 	return ProjectCurve{
-		CardFaces: faces, Schedules: schedules, Presets: presets, Day: day, Now: now,
+		cardFaces: faces, schedules: schedules, presets: presets, day: day, now: now,
 	}
 }
 
@@ -83,19 +83,19 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	faces := u.CardFaces.GetFaces(ctx, v, scheduled)
-	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
+	faces := u.cardFaces.GetFaces(ctx, v, scheduled)
+	held, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
 	if err != nil {
 		return review.Curve{}, err
 	}
 	// A deck is asked once which preset schedules it, however many card faces
 	// it holds, and a preset note is opened once however many decks name it.
-	reading := u.Presets.Reading()
-	asks, err := u.Schedules.getAssignmentFrom(ctx, v, reading, faces)
+	reading := u.presets.Reading()
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reading, faces)
 	if err != nil {
 		return review.Curve{}, err
 	}
-	schedules := u.Schedules.getSchedules(held, asks)
+	schedules := u.schedules.getSchedules(held, asks)
 
 	decks := make(map[string]bool)
 	at := make(map[review.CardFaceID]review.Schedule)
@@ -131,27 +131,27 @@ func (u ProjectCurve) Execute(
 		return review.Curve{}, err
 	}
 
-	cost, costed := review.GetCostUnder(u.Schedules.By, held.Answers, under)[path]
+	cost, costed := review.GetCostUnder(u.schedules.by, held.Answers, under)[path]
 	if !costed {
 		cost = review.DefaultCost
 	}
-	now := u.Now()
+	now := u.now()
 	// The projection is run by the scheduler this preset asks for, which is the
 	// one its cards are scheduled by, and it opens on the day a person is
 	// already partway through.
 	run := review.Simulation{
-		By: u.getScheduler(p.Retention), Day: u.Day, Cost: cost,
-		Spent: review.GetSpentUnder(u.Day, u.Day.GetName(now), held.Answers, under,
+		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
+		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), held.Answers, under,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
 	out, err := run.Curve(ctx, now, p, at, unseen, u.getScheduler, u.computePlaces)
 	if err != nil {
 		return review.Curve{}, err
 	}
-	out.Stops = p.GetOverallStopReason(u.Day, now)
+	out.Stops = p.GetOverallStopReason(u.day, now)
 	out.Decks = mine
 	out.Cards = len(under)
-	out.Overdue = review.CountOverdue(u.Day, at, now)
+	out.Overdue = review.CountOverdue(u.day, at, now)
 	out.Unbegun = unseen
 	return out, nil
 }
@@ -168,12 +168,12 @@ func (u ProjectCurve) Execute(
 // only the decks answer: every one of them is read, and the curve of the
 // defaults pays for the whole vault.
 func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, path string) ([]string, error) {
-	decks, err := u.CardFaces.Decks(ctx, v)
-	if err != nil || path == "" || u.Presets.Links == nil {
+	decks, err := u.cardFaces.Decks(ctx, v)
+	if err != nil || path == "" || u.presets.links == nil {
 		return decks, err
 	}
 
-	at, err := u.Presets.Links.Backlinks(ctx, v.ID, path)
+	at, err := u.presets.links.Backlinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, fmt.Errorf("what points at %s: %w", path, err)
 	}

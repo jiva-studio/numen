@@ -49,7 +49,7 @@ func transcribeCommand(ctx context.Context, out io.Writer, deps Deps, args []str
 	defer closeIfOpen(open.Close)
 
 	transcribe, cut := open.Transcribe, open.Cut
-	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By.Transcription())
+	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By().Transcription())
 	started := time.Now()
 
 	// The line of minutes is closed once it stops, so what follows it stands on

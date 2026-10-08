@@ -16,10 +16,10 @@ func (s vaulted) openSession(
 	t *testing.T, day review.Day, now time.Time, at flashcards.Scope,
 ) (flashcards.SessionResult, error) {
 	t.Helper()
-	return flashcards.Session{
-		Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
-		Presets: s.presets, Day: day, Now: func() time.Time { return now },
-	}.Execute(t.Context(), s.vault, at)
+	return flashcards.NewSession(
+		s.marking, s.standings, s.kept,
+		s.presets, day, func() time.Time { return now },
+	).Execute(t.Context(), s.vault, at)
 }
 
 // openSessionByPreset is the session over one preset, and a fatal error where

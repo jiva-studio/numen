@@ -101,7 +101,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 
 	held := make(chan struct{})
 	defer close(held)
-	api.CardsDue.CardFaces.Readers = waiting{until: held}
+	api.CardsDue = api.CardsDue.WithCardFaces(api.CardsDue.CardFaces().WithReaders(waiting{until: held}))
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
 		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))

@@ -21,11 +21,17 @@ import (
 // The sizes are part of what a chunk is kept under, and the one thing that
 // assembles a cut carries them.
 func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
+	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 512
 	held := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 
-	cut, err := held.Extract(nil, nil, domain.Vault{ID: "v", Path: t.TempDir()})
+	cut, err := held.Extract(db.Sources(), db.SourcesKnown(), domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +71,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 	held := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	searchable, err := held.ReadWholeVault(t.Context(), db, wide{384}, v)
+	_, err = held.ReadWholeVault(t.Context(), db, wide{384}, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +85,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		Title:       "Cut",
 		Body:        body,
 	}
-	if err := searchable.Notes.Notes.Save(t.Context(), v.ID, []domain.Note{n}); err != nil {
+	if err := db.NotesCutAt(held.GetChunkSizes(), held.Legibility()).Save(t.Context(), v.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 

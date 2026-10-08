@@ -20,14 +20,14 @@ import (
 // The names it is handed come from a watcher, which reports every kind of
 // source. A path that is not a note is said back and left alone.
 type Refresh struct {
-	Readers port.VaultReaders
-	// Vaults is where the vault gets the row every note of it points at.
-	Vaults port.VaultRepository
-	Notes  port.NoteRepository
-	// Queries says which kind of source the index holds at a path, and Sources
+	readers port.VaultReaders
+	// vaults is where the vault gets the row every note of it points at.
+	vaults port.VaultRepository
+	notes  port.NoteRepository
+	// queries says which kind of source the index holds at a path, and sources
 	// takes those rows out.
-	Queries port.SourceQueries
-	Sources port.SourceRepository
+	queries port.SourceQueries
+	sources port.SourceRepository
 
 	// Derived is where what was downloaded for a link note is kept. A run given
 	// none indexes every note as the prose in its file.
@@ -44,7 +44,7 @@ func NewRefresh(
 	queries port.SourceQueries,
 	sources port.SourceRepository,
 ) Refresh {
-	return Refresh{Readers: readers, Vaults: vaults, Notes: notes, Queries: queries, Sources: sources}
+	return Refresh{readers: readers, vaults: vaults, notes: notes, queries: queries, sources: sources}
 }
 
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
@@ -72,21 +72,21 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 		return res, nil
 	}
 
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
 	// A note is filed under the vault's row, and a vault nothing has walked yet
 	// has none: a note written into a vault the moment it opens is levelled
 	// here or nowhere.
-	if err := u.Vaults.Register(ctx, v.ID); err != nil {
+	if err := u.vaults.Register(ctx, v.ID); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 	// The same bounds a scan writes in. One event can name a whole folder — a
 	// checkout, a restore, a sync client unpacking an archive — so the number of
 	// paths handed here is not small because they were named individually.
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
-		return u.Notes.Save(ctx, v.ID, notes)
+		return u.notes.Save(ctx, v.ID, notes)
 	}}
 
 	for _, path := range paths {
@@ -145,7 +145,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	// Both leave the index, and they leave it for different reasons: one path
 	// has nothing at it, the other has something that is not a note.
 	gone := append(append([]string(nil), res.Removed...), res.LeftAlone...)
-	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
+	if err := u.notes.Remove(ctx, v.ID, gone); err != nil {
 		return res, fmt.Errorf("remove: %w", err)
 	}
 	if err := u.dropSources(ctx, v, gone); err != nil {
@@ -164,7 +164,7 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 	// A path names one file, and a folder names everything under it.
 	held := make(map[domain.SourceKind][]string)
 	for _, path := range paths {
-		under, err := u.Queries.GetSourcesUnder(ctx, v.ID, path)
+		under, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
 		if err != nil {
 			return err
 		}
@@ -176,7 +176,7 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 		}
 	}
 	for _, kind := range slices.Sorted(maps.Keys(held)) {
-		if err := u.Sources.RemoveSources(ctx, v.ID, kind, held[kind]); err != nil {
+		if err := u.sources.RemoveSources(ctx, v.ID, kind, held[kind]); err != nil {
 			return err
 		}
 	}

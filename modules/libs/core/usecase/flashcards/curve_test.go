@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -59,11 +60,12 @@ func newAnsweredVault(t *testing.T, cards int) vaulted {
 
 // curves is the simulator over one vault, on a named day.
 func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
-	return flashcards.ProjectCurve{
-		CardFaces: s.standings, Schedules: s.kept, Presets: s.presets,
-		Day: today, Now: func() time.Time { return now },
-		Cores: runtime.GOMAXPROCS(0),
-	}
+	u := flashcards.NewProjectCurve(
+		s.standings, s.kept, s.presets,
+		today, func() time.Time { return now },
+	)
+	u.Cores = runtime.GOMAXPROCS(0)
+	return u
 }
 
 // noon is a fixed hour, so that a curve is the same curve whenever the tests
@@ -1190,8 +1192,8 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 4)
-	u := s.curves(noon)
-	u.CardFaces.Notes = nil
+	noIndex := flashcards.NewListCardFaces(filesystem.VaultReaders{}, nil, nil)
+	u := flashcards.NewProjectCurve(noIndex, s.kept, s.presets, today, func() time.Time { return noon })
 
 	p := review.Preset{
 		Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,

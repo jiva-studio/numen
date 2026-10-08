@@ -15,11 +15,11 @@ import (
 // Scan brings the index up to date with one vault. The vault is
 // authoritative: whatever the scan finds is what the index says afterwards.
 type Scan struct {
-	Readers     port.VaultReaders
-	Vaults      port.VaultRepository
-	Notes       port.NoteRepository
-	Known       FingerprintQueries
-	Maintenance port.IndexMaintenance
+	readers     port.VaultReaders
+	vaults      port.VaultRepository
+	notes       port.NoteRepository
+	known       FingerprintQueries
+	maintenance port.IndexMaintenance
 
 	// Walks is the turns the vaults being walked take. A scan given none takes
 	// its turn from nobody and waits for nobody.
@@ -54,8 +54,8 @@ func NewScan(
 	maintenance port.IndexMaintenance,
 ) Scan {
 	return Scan{
-		Readers: readers, Vaults: vaults, Notes: notes,
-		Known: known, Maintenance: maintenance,
+		readers: readers, vaults: vaults, notes: notes,
+		known: known, maintenance: maintenance,
 	}
 }
 
@@ -101,17 +101,17 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 	defer over()
 
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
 	// The rows the walk writes point at the vault's own row. What the vault is
 	// called and where it is stay as the list has them.
-	if err := u.Vaults.Register(ctx, v.ID); err != nil {
+	if err := u.vaults.Register(ctx, v.ID); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 
-	known, err := u.Known.Fingerprints(ctx, v.ID)
+	known, err := u.known.Fingerprints(ctx, v.ID)
 	if err != nil {
 		return res, fmt.Errorf("read index: %w", err)
 	}
@@ -129,7 +129,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return b.ModTime.Compare(a.ModTime) })
 
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
-		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
+		if err := u.notes.Save(ctx, v.ID, notes); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
 				len(notes), v.Name, notes[0].Fingerprint.Path, notes[len(notes)-1].Fingerprint.Path, err)
@@ -194,7 +194,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			gone = append(gone, path)
 		}
 	}
-	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
+	if err := u.notes.Remove(ctx, v.ID, gone); err != nil {
 		return res, fmt.Errorf("remove deleted notes: %w", err)
 	}
 	res.Removed = len(gone)
@@ -202,7 +202,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	// A scan that stored nothing changed nothing, and a scan of an unchanged
 	// vault has to stay cheap enough to run at startup.
 	if res.Indexed > 0 || res.Removed > 0 {
-		if err := u.Maintenance.ReportChanges(ctx); err != nil {
+		if err := u.maintenance.ReportChanges(ctx); err != nil {
 			return res, fmt.Errorf("index upkeep for %s: %w", v.Name, err)
 		}
 	}

@@ -19,17 +19,14 @@ import (
 )
 
 func (c changing) newWrite() note.Write {
-	return note.Write{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
-		Now: time.Now,
-	}
+	return note.NewWrite(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
 }
 
 // openNote is a tab that has just read a note: the prose it was given, and the
 // file it came out of.
 func (c changing) openNote(t *testing.T, path string) *note.LastRead {
 	t.Helper()
-	found, err := (note.Read{Readers: filesystem.VaultReaders{}}).Execute(t.Context(), c.vault, path)
+	found, err := note.NewRead(filesystem.VaultReaders{}).Execute(t.Context(), c.vault, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,32 +313,32 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	agentRead := make(chan struct{})
 	agentMayWrite := make(chan struct{})
-	agent := note.EditLinks{
-		Readers: watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
+	agent := note.NewEditLinks(
+		watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path == "Heat.md" {
 				close(agentRead)
 				<-agentMayWrite
 			}
 		}},
-		Writers: filesystem.VaultWriters{},
-		Index:   c.index,
-		Now:     time.Now,
-	}
+		filesystem.VaultWriters{},
+		c.index,
+		time.Now,
+	)
 
 	saveAsking := make(chan struct{})
 	saveRead := make(chan struct{})
 	saveMayWrite := make(chan struct{})
-	saving := note.Write{
-		Readers: watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
+	saving := note.NewWrite(
+		watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path == "Heat.md" {
 				close(saveRead)
 				<-saveMayWrite
 			}
 		}},
-		Writers: watchedWriters{inner: filesystem.VaultWriters{}, hold: func() { close(saveAsking) }},
-		Index:   c.index,
-		Now:     time.Now,
-	}
+		watchedWriters{inner: filesystem.VaultWriters{}, hold: func() { close(saveAsking) }},
+		c.index,
+		time.Now,
+	)
 
 	added := make(chan error, 1)
 	go func() {
@@ -405,36 +402,36 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	var reading sync.Once
 	mendRead := make(chan struct{})
 	mendMayWrite := make(chan struct{})
-	moving := note.Move{
-		Readers: watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
+	moving := note.NewMove(
+		watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path != "physics/Heat.md" {
 				return
 			}
 			reading.Do(func() { close(mendRead) })
 			<-mendMayWrite
 		}},
-		Writers: filesystem.VaultWriters{},
-		Links:   c.db.Links(),
-		Names:   c.db.Queries(),
-		Sources: c.db.Sources(),
-		Index:   c.index,
-		Now:     time.Now,
-	}
+		filesystem.VaultWriters{},
+		c.db.Links(),
+		c.db.Queries(),
+		c.db.Sources(),
+		c.index,
+		time.Now,
+	)
 
 	saveAsking := make(chan struct{})
 	saveRead := make(chan struct{})
 	saveMayWrite := make(chan struct{})
-	saving := note.Write{
-		Readers: watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
+	saving := note.NewWrite(
+		watchedReaders{inner: filesystem.VaultReaders{}, read: func(path string) {
 			if path == "physics/Heat.md" {
 				close(saveRead)
 				<-saveMayWrite
 			}
 		}},
-		Writers: watchedWriters{inner: filesystem.VaultWriters{}, hold: func() { close(saveAsking) }},
-		Index:   c.index,
-		Now:     time.Now,
-	}
+		watchedWriters{inner: filesystem.VaultWriters{}, hold: func() { close(saveAsking) }},
+		c.index,
+		time.Now,
+	)
 
 	moved := make(chan error, 1)
 	go func() {
@@ -532,7 +529,7 @@ func TestANoteIsWrittenNoLargerThanItCanBeRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := (note.Read{Readers: filesystem.VaultReaders{}}).Execute(t.Context(), c.vault, "Entropy.md")
+	found, err := note.NewRead(filesystem.VaultReaders{}).Execute(t.Context(), c.vault, "Entropy.md")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,9 +14,9 @@ import (
 // changed is reindexed, and when what changed cannot be worked out the vault is
 // read again. A window and a command line want the same thing to happen.
 type Follow struct {
-	Watcher port.VaultWatcher
-	Refresh Refresh
-	Scan    Scan
+	watcher port.VaultWatcher
+	refresh Refresh
+	scan    Scan
 
 	// Changed, if set, is called each time the index and the vault are level
 	// again. What is done with that is the caller's business.
@@ -33,7 +33,7 @@ type Follow struct {
 //
 // The last two are reached from Run, which a caller starts and does not wait on.
 func NewFollow(watcher port.VaultWatcher, refresh Refresh, scan Scan) Follow {
-	return Follow{Watcher: watcher, Refresh: refresh, Scan: scan}
+	return Follow{watcher: watcher, refresh: refresh, scan: scan}
 }
 
 // VaultChanges is what a caller is told: the notes that are different now, or that the
@@ -58,7 +58,7 @@ func (m VaultChanges) Reading() bool { return m.ShouldReload || len(m.Assets) > 
 // being read is then held. Reading the vault again waits its turn behind a walk
 // already running.
 func (u Follow) Begin(ctx context.Context, v domain.Vault) (*Watch, error) {
-	changes, lost, err := u.Watcher.Watch(ctx, v)
+	changes, lost, err := u.watcher.Watch(ctx, v)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (f *Watch) Run(ctx context.Context) {
 			if !watching {
 				return
 			}
-			res, err := f.follow.Refresh.Execute(ctx, f.vault, paths)
+			res, err := f.follow.refresh.Execute(ctx, f.vault, paths)
 			if err != nil {
 				f.handleError(err)
 				continue
@@ -97,7 +97,7 @@ func (f *Watch) Run(ctx context.Context) {
 			// More changed at once than could be followed, or something went
 			// that cannot be asked what it held. Reading the vault again is the
 			// answer, and whoever is listening is told to ask again.
-			if _, err := f.follow.Scan.Execute(ctx, f.vault); err != nil {
+			if _, err := f.follow.scan.Execute(ctx, f.vault); err != nil {
 				f.handleError(err)
 				continue
 			}

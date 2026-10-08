@@ -61,7 +61,7 @@ func (u Presets) Point(
 ) (domain.Fingerprint, error) {
 	var to domain.Address
 	if preset != "" {
-		if u.Notes == nil {
+		if u.notes == nil {
 			return domain.Fingerprint{}, ErrNoPresets
 		}
 		at, err := u.Read(ctx, v, preset)
@@ -74,11 +74,11 @@ func (u Presets) Point(
 		case at.Outcome != note.Ok || at.Type != domain.TypePreset:
 			return domain.Fingerprint{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 		}
-		if to, err = note.GetAddress(ctx, u.Notes, v.ID, preset); err != nil {
+		if to, err = note.GetAddress(ctx, u.notes, v.ID, preset); err != nil {
 			return domain.Fingerprint{}, err
 		}
 	}
-	linking := note.NewEditLinks(u.Readers, u.Writers, u.Index, u.Now)
+	linking := note.NewEditLinks(u.readers, u.writers, u.index, u.now)
 	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef, fingerprint)
 }
 
@@ -104,7 +104,7 @@ func (u Presets) Save(
 	if err != nil {
 		return at, err
 	}
-	return at, note.WrapUnlevelled(u.Index(ctx, v, []string{path}), path)
+	return at, note.WrapUnlevelled(u.index(ctx, v, []string{path}), path)
 }
 
 // save is the read, the change and the write, under this vault's write lock
@@ -113,13 +113,13 @@ func (u Presets) save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	release, err := u.Writers.Hold(ctx, v)
+	release, err := u.writers.Hold(ctx, v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
 	defer release()
 
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -158,7 +158,7 @@ func (u Presets) save(
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 
-	writer, err := u.Writers.Open(v)
+	writer, err := u.writers.Open(v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}

@@ -123,7 +123,7 @@ func newWriteForDeck(t *testing.T, vs vaulted, path, body string) cards.Write {
 // readDeck is the deck as the vault now holds it.
 func readDeck(t *testing.T, vs vaulted, path string) format.Deck {
 	t.Helper()
-	got, err := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}.
+	got, err := cards.NewRead(filesystem.VaultReaders{}, vs.db.NoteQueries()).
 		Deck(t.Context(), vs.first, path)
 	if err != nil {
 		t.Fatalf("read: %v", err)

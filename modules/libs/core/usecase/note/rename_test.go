@@ -334,8 +334,7 @@ func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 	sulk := errors.New("the index would not have it")
-	rename := c.rename()
-	rename.Sources = sulking{SourceRepository: c.db.Sources(), moveError: sulk}
+	rename := c.rename().WithSources(sulking{SourceRepository: c.db.Sources(), moveError: sulk})
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if !errors.Is(err, sulk) {
@@ -478,10 +477,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
-	remove := note.Remove{
-		Writers: filesystem.VaultWriters{},
-		Links:   c.db.Links(), Queries: c.db.SourcesKnown(), Index: c.index,
-	}
+	remove := note.NewRemove(filesystem.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
 
 	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, note.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)

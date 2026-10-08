@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -283,10 +284,11 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	}
 
 	// The same answers, worked out by the one scheduler and nothing else.
-	plain := s.kept
-	plain.Cache = nil
-	plain.CardFaces = flashcards.NewListCardFaces(nil, nil, nil)
-	plain.Presets = flashcards.NewPresets(nil, nil, nil, nil, nil, today, time.Now)
+	plain := flashcards.NewSchedules(
+		s.logs, review.NewFSRS(), today,
+		flashcards.NewListCardFaces(filesystem.VaultReaders{}, nil, nil),
+		flashcards.NewPresets(nil, nil, nil, nil, nil, today, time.Now),
+	)
 	want, err := plain.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)

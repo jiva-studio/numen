@@ -130,10 +130,10 @@ func onAList(t *testing.T) *onTheList {
 
 	registry := appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
 	identity := filesystem.VaultIdentity{}
-	adding := vaults.Add{Identity: identity, Registry: registry, Now: time.Now}
+	adding := vaults.NewAdd(identity, registry, time.Now)
 
 	rows := &vaultRows{}
-	forget := vaults.Forget{Registry: registry, Index: rows}
+	forget := vaults.NewForget(registry, rows)
 	f := &onTheList{
 		registry: registry,
 		rows:     rows,
@@ -142,15 +142,17 @@ func onAList(t *testing.T) *onTheList {
 		first:    addVault(t, adding, "one"),
 		second:   addVault(t, adding, "two"),
 	}
+	rename := vaults.NewRename(registry, rows)
+	erase := vaults.NewErase(identity, f.bin, forget)
 	f.api = &API{
 		Readers: filesystem.VaultReaders{},
 		Vaults: Vaults{
 			Registry:     registry,
 			FolderDialog: f.dialog,
 			Add:          &adding,
-			Rename:       &vaults.Rename{Registry: registry, Index: rows},
+			Rename:       &rename,
 			Forget:       &forget,
-			Erase:        &vaults.Erase{Identity: identity, Trash: f.bin, Forget: forget},
+			Erase:        &erase,
 		},
 	}
 	f.api.Opens = func(_ context.Context, v domain.Vault) error {

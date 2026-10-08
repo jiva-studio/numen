@@ -54,12 +54,17 @@ func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
-	record := s.run(t, time.Now())
+	now := time.Now()
+	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := flashcards.NewRecord(run, func() time.Time { return now })
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
-	name := record.Run.GetName()
+	name := run.GetName()
 	if !strings.HasSuffix(name, ".jsonl") {
 		t.Errorf("the run is known as %q", name)
 	}

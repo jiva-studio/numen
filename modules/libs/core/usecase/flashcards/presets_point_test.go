@@ -5,8 +5,11 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -68,8 +71,10 @@ func TestABuildThatCannotReachThePresetsRefusesToListThem(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
 
-	blind := s.presets
-	blind.Notes = nil
+	blind := flashcards.NewPresets(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		s.links, nil, s.scan, review.Day{}, time.Now,
+	)
 	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, flashcards.ErrNoPresets) {
 		t.Errorf("listing the presets of a vault it cannot reach answered %v", err)
 	}
@@ -452,7 +457,7 @@ func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
 // the order they are filed under.
 func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	t.Helper()
-	found, err := s.presets.Links.Backlinks(t.Context(), s.vault.ID, path)
+	found, err := s.links.Backlinks(t.Context(), s.vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
 	}

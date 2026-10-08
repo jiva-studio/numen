@@ -13,7 +13,7 @@ func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
 	_, renamed, registry := twoVaults(t)
 	index := &indexRows{}
 
-	got, err := (vaults.Rename{Registry: registry, Index: index}).Execute(t.Context(), renamed, "journal")
+	got, err := vaults.NewRename(registry, index).Execute(t.Context(), renamed, "journal")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 
 	// The comparison is the one the list is searched by: without case, over
 	// normalised text.
-	_, err := (vaults.Rename{Registry: registry, Index: index}).Execute(t.Context(), renamed, "PERSONAL")
+	_, err := vaults.NewRename(registry, index).Execute(t.Context(), renamed, "PERSONAL")
 	if !errors.Is(err, vaults.ErrNameTaken) {
 		t.Fatalf("a name %s already has was answered %v", taken.Name, err)
 	}
@@ -64,7 +64,7 @@ func TestTheNameAVaultAlreadyHasChangesNothing(t *testing.T) {
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}
 
-	got, err := (vaults.Rename{Registry: registry, Index: index}).Execute(t.Context(), v, v.Name)
+	got, err := vaults.NewRename(registry, index).Execute(t.Context(), v, v.Name)
 	if err != nil {
 		t.Fatalf("renaming a vault to what it is called: %v", err)
 	}

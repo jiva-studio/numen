@@ -26,10 +26,10 @@ import (
 // another, and a file nothing here can open is a third. All three are written
 // down, and a recording that has answered is not listened to again.
 type Transcribe struct {
-	Readers port.VaultReaders
-	Sources port.SourceRepository
-	Derived port.DerivedStores
-	By      port.Transcriber
+	readers port.VaultReaders
+	sources port.SourceRepository
+	derived port.DerivedStores
+	by      port.Transcriber
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -62,8 +62,11 @@ func NewTranscribe(
 	derived port.DerivedStores,
 	by port.Transcriber,
 ) Transcribe {
-	return Transcribe{Readers: readers, Sources: sources, Derived: derived, By: by}
+	return Transcribe{readers: readers, sources: sources, derived: derived, by: by}
 }
+
+// By returns the transcriber.
+func (u Transcribe) By() port.Transcriber { return u.by }
 
 // TranscribeResult reports what transcribing did.
 type TranscribeResult struct {
@@ -83,7 +86,7 @@ const DefaultHeard = 16
 // Execute listens to one recording.
 func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (TranscribeResult, error) {
 	res := TranscribeResult{Path: path}
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -95,7 +98,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	if err != nil {
 		return res, fmt.Errorf("read %s: %w", path, err)
 	}
-	store, err := u.Derived.Open(v)
+	store, err := u.derived.Open(v)
 	if err != nil {
 		return res, err
 	}
@@ -145,7 +148,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		return res, u.stand(ctx, v, ref, hash, "")
 	}
 
-	recording, err := u.By.Open(ctx, raw)
+	recording, err := u.by.Open(ctx, raw)
 	if err != nil {
 		res.IsUnopened = true
 		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+describeFailure(err.Error()))
@@ -193,7 +196,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		reached := from
 		cues := make([]transcript.Cue, 0, len(segments))
 		for _, audio := range segments {
-			words, err := u.By.Transcribe(ctx, audio)
+			words, err := u.by.Transcribe(ctx, audio)
 			if err != nil {
 				return res, fmt.Errorf("hear %s at %s: %w", path, transcript.Stamp(audio.From), err)
 			}
@@ -272,7 +275,7 @@ func (u Transcribe) stand(ctx context.Context, v domain.Vault, ref domain.Finger
 	if u.Cut != nil {
 		return u.Cut(ctx, v, ref.Path)
 	}
-	return u.Sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
+	return u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
 }
 
 // cut makes this source's chunks from what has been heard so far.
@@ -288,7 +291,7 @@ func (u Transcribe) cut(ctx context.Context, v domain.Vault, path string) error 
 // ask what produced a text, and so that everything a transcriber now known to
 // be bad produced can be found again.
 func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
-	named := u.By.Transcription()
+	named := u.by.Transcription()
 	raw, err := json.MarshalIndent(struct {
 		Model     string `json:"model"`
 		Segmenter string `json:"segmenter"`

@@ -63,11 +63,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := (vaults.Add{
-		Registry: registry,
-		Identity: settings.VaultIdentity(),
-		Now:      time.Now,
-	}).Execute(root, "watched"); err != nil {
+	if _, err := vaults.NewAdd(settings.VaultIdentity(), registry, time.Now).Execute(root, "watched"); err != nil {
 		t.Fatal(err)
 	}
 

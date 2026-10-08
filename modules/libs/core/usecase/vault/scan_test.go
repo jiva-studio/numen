@@ -63,14 +63,15 @@ func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string
 }
 
 func scanner(readers port.VaultReaders, db *container.Index) vaults.Scan {
-	return vaults.Scan{
-		Readers:     readers,
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-		Walks:       db.Walks(),
-	}
+	scan := vaults.NewScan(
+		readers,
+		db.Vaults(),
+		db.Notes(),
+		db.Queries(),
+		db.Maintenance(),
+	)
+	scan.Walks = db.Walks()
+	return scan
 }
 
 func TestScanIndexesEveryNoteOnce(t *testing.T) {
@@ -609,8 +610,8 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// Asked of the order the notes reach the index in: what the index holds
 	// part-way through is whole groups, which says nothing about order.
 	written := &groupedWrites{}
-	scan := scanner(readers, db)
-	scan.Notes = written
+	scan := vaults.NewScan(readers, db.Vaults(), written, db.Queries(), db.Maintenance())
+	scan.Walks = db.Walks()
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}

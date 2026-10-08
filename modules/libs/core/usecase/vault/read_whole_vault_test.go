@@ -50,11 +50,14 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	}
 
 	var order []string
-	making := newWholeVaultRead(readers, db)
-	making.Vectors.Embedder = pointing{}
-	making.Notes.OnProgress = func(vaults.ScanResult) { order = append(order, "notes") }
-	making.Books.OnProgress = func(source.ExtractResult) { order = append(order, "books") }
-	making.Vectors.OnProgress = func(source.EmbedResult) { order = append(order, "vectors") }
+	notes := scanner(readers, db)
+	notes.OnProgress = func(vaults.ScanResult) { order = append(order, "notes") }
+	books := source.NewExtract(readers, db.Sources(), db.SourcesKnown())
+	books.OnProgress = func(source.ExtractResult) { order = append(order, "books") }
+	vectors := source.NewEmbed(readers, db.VectorsOwing(), db.Vectors())
+	vectors.Embedder = pointing{}
+	vectors.OnProgress = func(source.EmbedResult) { order = append(order, "vectors") }
+	making := vaults.NewReadWholeVault(notes, books, vectors)
 
 	if _, err := making.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -81,10 +84,11 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	making := newWholeVaultRead(readers, db)
-	making.Notes.Readers = refusing{}
+	notes := scanner(refusing{}, db)
 	counted := &counting{VaultReaders: readers}
-	making.Books.Readers = counted
+	books := source.NewExtract(counted, db.Sources(), db.SourcesKnown())
+	vectors := source.NewEmbed(readers, db.VectorsOwing(), db.Vectors())
+	making := vaults.NewReadWholeVault(notes, books, vectors)
 
 	_, err := making.Execute(t.Context(), v)
 	if err == nil || !strings.Contains(err.Error(), "not here") {
@@ -106,9 +110,11 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	making := newWholeVaultRead(readers, db)
-	making.Books.Readers = refusing{}
-	making.Vectors.Embedder = unwilling{}
+	notes := scanner(readers, db)
+	books := source.NewExtract(refusing{}, db.Sources(), db.SourcesKnown())
+	vectors := source.NewEmbed(readers, db.VectorsOwing(), db.Vectors())
+	vectors.Embedder = unwilling{}
+	making := vaults.NewReadWholeVault(notes, books, vectors)
 
 	_, err := making.Execute(t.Context(), v)
 	if err == nil {
@@ -135,11 +141,12 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	}
 
 	over := limit(t.Context())
-	making := newWholeVaultRead(readers, db)
-	making.Books.Readers = timedOut{limit: over}
+	notes := scanner(readers, db)
+	books := source.NewExtract(timedOut{limit: over}, db.Sources(), db.SourcesKnown())
 	counted := &counting{VaultReaders: readers}
-	making.Vectors.Readers = counted
-	making.Vectors.Embedder = unwilling{}
+	vectors := source.NewEmbed(counted, db.VectorsOwing(), db.Vectors())
+	vectors.Embedder = unwilling{}
+	making := vaults.NewReadWholeVault(notes, books, vectors)
 
 	_, err := making.Execute(over, v)
 	if !errors.Is(err, context.DeadlineExceeded) {
@@ -244,17 +251,9 @@ func (c *counting) Open(v domain.Vault) (port.VaultReader, error) {
 }
 
 func newWholeVaultRead(readers port.VaultReaders, db *container.Index) vaults.ReadWholeVault {
-	return vaults.ReadWholeVault{
-		Notes: scanner(readers, db),
-		Books: source.Extract{
-			Readers: readers,
-			Sources: db.Sources(),
-			Queries: db.SourcesKnown(),
-		},
-		Vectors: source.Embed{
-			Readers: readers,
-			Chunks:  db.VectorsOwing(),
-			Vectors: db.Vectors(),
-		},
-	}
+	return vaults.NewReadWholeVault(
+		scanner(readers, db),
+		source.NewExtract(readers, db.Sources(), db.SourcesKnown()),
+		source.NewEmbed(readers, db.VectorsOwing(), db.Vectors()),
+	)
 }

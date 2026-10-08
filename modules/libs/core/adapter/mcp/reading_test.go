@@ -248,10 +248,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 	t.Helper()
 
 	readers := filesystem.VaultReaders{}
-	scan := vaults.Scan{
-		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.Queries(), Maintenance: db.Maintenance(),
-	}
+	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.Queries(), db.Maintenance())
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -266,8 +263,8 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
-			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
-			Links:         note.ShowLinks{Links: db.Links()},
+			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
+			Links:         note.NewShowLinks(db.Links()),
 		},
 		Cards:   mcp.Cards{Read: cutting.Read, List: cutting.List},
 		Sources: mcp.Sources{Queries: db.SourcesKnown()},

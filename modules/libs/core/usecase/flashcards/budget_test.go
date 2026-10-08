@@ -58,10 +58,10 @@ func deckNaming(at []string, cards int, from int) string {
 // sessionAt is what the vault asks at this instant, held to the day's budgets.
 func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcards.SessionResult {
 	t.Helper()
-	sat, err := flashcards.Session{
-		Marks: s.marking, CardFaces: s.standings, Schedules: s.kept,
-		Presets: s.presets, Day: day, Now: func() time.Time { return now },
-	}.Execute(t.Context(), s.vault, flashcards.Scope{})
+	sat, err := flashcards.NewSession(
+		s.marking, s.standings, s.kept,
+		s.presets, day, func() time.Time { return now },
+	).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}

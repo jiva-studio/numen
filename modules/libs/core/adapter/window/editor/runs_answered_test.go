@@ -166,12 +166,12 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	stores := filesystem.DerivedStores{Area: filesystem.TranscriptDir}
 
-	run := source.Transcribe{
-		Readers: filesystem.VaultReaders{},
-		Sources: unrecorded{},
-		Derived: stores,
-		By:      deaf{},
-	}
+	run := source.NewTranscribe(
+		filesystem.VaultReaders{},
+		unrecorded{},
+		stores,
+		deaf{},
+	)
 	res, err := run.Execute(t.Context(), vault, talk)
 	if err != nil {
 		t.Fatalf("the run failed: %v", err)
@@ -181,9 +181,10 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	}
 
 	talks := willRun()
+	hl := source.NewHighlight(filesystem.VaultReaders{}, newEmptyIndex(), stores)
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
-		Highlight: &source.Highlight{Sources: newEmptyIndex(), Derived: stores},
+		Highlight: &hl,
 	}
 	api.show(vault)
 	setPasses(api, func(on *passes) { on.transcribes = talks })

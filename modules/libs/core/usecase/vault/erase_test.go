@@ -34,11 +34,11 @@ func newErase(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows,
 	steps := &[]string{}
 	trash := &bin{steps: steps}
 	index := &indexRows{steps: steps}
-	return vaults.Erase{
-		Identity: filesystem.VaultIdentity{},
-		Trash:    trash,
-		Forget:   vaults.Forget{Registry: registry, Index: index},
-	}, trash, index, steps
+	return vaults.NewErase(
+		filesystem.VaultIdentity{},
+		trash,
+		vaults.NewForget(registry, index),
+	), trash, index, steps
 }
 
 func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {

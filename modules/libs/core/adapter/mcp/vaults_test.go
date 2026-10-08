@@ -93,8 +93,10 @@ func onTheList(t *testing.T) *installation {
 	t.Helper()
 
 	registry := appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
-	adding := vaults.Add{Identity: filesystem.VaultIdentity{}, Registry: registry, Now: time.Now}
+	adding := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now)
 	held := &rows{}
+	renaming := vaults.NewRename(registry, held)
+	forgetting := vaults.NewForget(registry, held)
 
 	f := &installation{
 		registry: registry,
@@ -111,8 +113,8 @@ func onTheList(t *testing.T) *installation {
 			Registry:     registry,
 			FolderDialog: f.dialog,
 			Add:          &adding,
-			Rename:       &vaults.Rename{Registry: registry, Index: held},
-			Forget:       &vaults.Forget{Registry: registry, Index: held},
+			Rename:       &renaming,
+			Forget:       &forgetting,
 			Opens: func(_ context.Context, v domain.Vault) error {
 				f.swapped <- v
 				return nil

@@ -205,11 +205,7 @@ func registerVault(cfg container.Config, root string) (string, error) {
 	} else if found {
 		return held.Path, nil
 	}
-	added, err := vaults.Add{
-		Identity: cfg.VaultIdentity(),
-		Registry: registry,
-		Now:      cfg.Clock(),
-	}.Execute(root, "numen")
+	added, err := vaults.NewAdd(cfg.VaultIdentity(), registry, cfg.Clock()).Execute(root, "numen")
 	if err != nil {
 		return "", err
 	}

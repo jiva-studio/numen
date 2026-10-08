@@ -59,8 +59,15 @@ func (c Config) VaultOpener(db *Index) *VaultOpener {
 func (c Config) VaultOpenerWith(
 	db *Index, walking port.VaultReaders, watcher port.VaultWatcher,
 ) *VaultOpener {
-	scan := c.Scan(db)
-	scan.Readers = walking
+	scan := vault.NewScan(
+		walking,
+		db.Vaults(),
+		db.NotesCutAt(c.GetChunkSizes(), c.Legibility()),
+		db.Queries(),
+		db.Maintenance(),
+	)
+	scan.Walks = db.Walks()
+	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 
 	held := &holding{NoteRepository: db.NotesCutAt(c.GetChunkSizes(), c.Legibility())}
 	return &VaultOpener{

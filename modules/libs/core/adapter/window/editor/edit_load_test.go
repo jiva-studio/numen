@@ -49,13 +49,14 @@ func TestEditLoad(t *testing.T) {
 
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
+	read := note.NewRead(filesystem.VaultReaders{})
 	api := &API{
 		Listeners: newChangeAudience(),
 		Places:    newPlaceAudience(),
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),
-			Read:    &note.Read{Readers: filesystem.VaultReaders{}},
+			Read:    &read,
 			Write:   &writing,
 		},
 	}

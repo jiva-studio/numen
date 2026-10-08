@@ -50,13 +50,13 @@ func TestNotesAreWrittenInGroups(t *testing.T) {
 	written := &groupedWrites{}
 	db := openIndex(t)
 
-	scan := vaults.Scan{
-		Readers:     filesystem.VaultReaders{},
-		Vaults:      db.Vaults(),
-		Notes:       written,
-		Known:       db.Queries(),
-		Maintenance: &countedMeasurements{},
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		written,
+		db.Queries(),
+		&countedMeasurements{},
+	)
 	res, err := scan.Execute(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
@@ -102,13 +102,13 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 
 	written := &groupedWrites{}
 	db := openIndex(t)
-	scan := vaults.Scan{
-		Readers:     filesystem.VaultReaders{},
-		Vaults:      db.Vaults(),
-		Notes:       written,
-		Known:       db.Queries(),
-		Maintenance: &countedMeasurements{},
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		written,
+		db.Queries(),
+		&countedMeasurements{},
+	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
@@ -130,13 +130,13 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 	refused := errors.New("disk full")
 	db := openIndex(t)
 
-	scan := vaults.Scan{
-		Readers:     filesystem.VaultReaders{},
-		Vaults:      db.Vaults(),
-		Notes:       &groupedWrites{fail: refused},
-		Known:       db.Queries(),
-		Maintenance: &countedMeasurements{},
-	}
+	scan := vaults.NewScan(
+		filesystem.VaultReaders{},
+		db.Vaults(),
+		&groupedWrites{fail: refused},
+		db.Queries(),
+		&countedMeasurements{},
+	)
 	res, err := scan.Execute(t.Context(), v)
 	if !errors.Is(err, refused) {
 		t.Fatalf("error = %v, want the one the index gave", err)
@@ -154,13 +154,13 @@ func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 	db := openIndex(t)
 	measured := &countedMeasurements{}
 
-	scan := vaults.Scan{
-		Readers:     readers,
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: measured,
-	}
+	scan := vaults.NewScan(
+		readers,
+		db.Vaults(),
+		db.Notes(),
+		db.Queries(),
+		measured,
+	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
