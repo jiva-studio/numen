@@ -1,0 +1,20 @@
+#!/bin/sh
+# The pre-commit hook runs fast architectural gate checks before a commit is created.
+#
+# Set NUMEN_SKIP_CHECKS=1 to commit without them.
+[ -n "$NUMEN_SKIP_CHECKS" ] && exit 0
+
+root=$(git rev-parse --show-toplevel)
+
+# 1. Feature-Sliced Design (FSD) and module boundary checks
+node "$root/modules/tools/depgraph/check.mjs" || exit 1
+
+# 2. Go Hexagonal Architecture and Clean Architecture layer checks
+(cd "$root/modules/libs/core" && go test ./container/...) || exit 1
+(cd "$root/modules/apps/desktop" && go test ./internal/layers/...) || exit 1
+
+# 3. Database migration forward-only integrity check
+"$root/modules/libs/core/adapter/index/migration-forward-only.sh" --self-test || exit 1
+
+# 4. Formatting validation (Prettier)
+npm run format:check --prefix "$root/modules" || exit 1
