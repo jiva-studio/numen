@@ -54,7 +54,7 @@ jobs:
   # the month it is made in and goes where the page looks; a beta is named for
   # the stable release it precedes and goes on a shelf of its own.
   naming:
-    name: "Prepare :: Version"
+    name: Version
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
@@ -137,7 +137,7 @@ jobs:
   # measured from there too, so it says everything the stable release it
   # precedes will say.
   notes:
-    name: "Prepare :: Release Notes"
+    name: Release Notes
     needs: [naming]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -181,7 +181,7 @@ jobs:
           if-no-files-found: error
 
   linux:
-    name: "Package :: Linux"
+    name: Linux
     needs: [naming]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
@@ -253,7 +253,7 @@ jobs:
       # The two binaries and the marks a desktop shows them under, in the
       # places a machine keeps such things. What the other packages are built
       # from is gathered here once.
-      - name: Gather
+      - name: Stage Linux artifacts
         run: |
           set -euo pipefail
           tree="$RUNNER_TEMP/tree"
@@ -277,7 +277,7 @@ jobs:
               "$tree/share/icons/hicolor/${size}x${size}/apps/numen-flashcards.png"
           done
 
-      - name: Archive
+      - name: Create Linux tarball
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -288,7 +288,7 @@ jobs:
       # gathered beside it first, because the paths in it are read from
       # wherever nfpm is run. A dash before a prerelease becomes a tilde in the
       # package's own version, which is where both managers sort it earliest.
-      - name: Packages
+      - name: Build Debian and RPM packages
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -316,7 +316,7 @@ jobs:
       # What an Arch machine builds from. It names the archive at the address
       # this run is about to put it at, and the sum of the file itself, so the
       # recipe is finished before the file it names is up.
-      - name: The Arch recipe
+      - name: Build Arch package
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           STAMP: ${{ needs.naming.outputs.stamp }}
@@ -369,7 +369,7 @@ jobs:
       # What a Nix machine reads. The repository is closed, so the flake is
       # handed out as a file of its own, carrying the address and the hash of
       # the archive this run is about to put up.
-      - name: The flake
+      - name: Build Nix flake
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           STAMP: ${{ needs.naming.outputs.stamp }}
@@ -430,7 +430,7 @@ jobs:
   # packages hold. The toolkit and the browser come from the GNOME runtime, so
   # what is put inside is the two binaries and the marks beside them.
   flatpak:
-    name: "Package :: Flatpak"
+    name: Flatpak
     needs: [naming, linux]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
@@ -445,7 +445,7 @@ jobs:
           name: numen-linux-amd64
           path: ${{ runner.temp }}/built
 
-      - name: Flatpak
+      - name: Install Flatpak dependencies
         run: |
           sudo apt-get update
           # The builder hands what the desktop shows the window as to
@@ -456,7 +456,7 @@ jobs:
 
       # What goes in stands beside the manifest, which is what its own sources
       # are read from.
-      - name: Gather
+      - name: Stage Flatpak artifacts
         run: |
           set -euo pipefail
           staged="$RUNNER_TEMP/staged"
@@ -468,7 +468,7 @@ jobs:
           cp -r "$at/icons" "$staged/"
           cp "$at"/flatpak/* "$staged/"
 
-      - name: Bundle
+      - name: Build Flatpak package
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -483,7 +483,7 @@ jobs:
       # The runtime has to hold the browser the window is linked against. A
       # name the loader cannot find stops the binary here, where it is asked
       # for its version and nothing draws.
-      - name: Sandbox
+      - name: Verify Flatpak sandbox
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -511,7 +511,7 @@ jobs:
   # toolkit; the browser is carried here, so a machine whose platform holds
   # another one runs this build all the same.
   snap:
-    name: "Package :: Snap"
+    name: Snap
     needs: [naming, linux]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
@@ -528,7 +528,7 @@ jobs:
 
       # A snap holds what it runs under `bin` and `share`, and it is told its
       # version by a file the recipe reads.
-      - name: Gather
+      - name: Stage Snap artifacts
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -552,7 +552,7 @@ jobs:
         with:
           path: ${{ runner.temp }}/work
 
-      - name: Name it
+      - name: Rename Snap package
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -574,7 +574,7 @@ jobs:
   # Windows reaches the system's browser through a component written in Go, so
   # this one is built on the same machine as Linux.
   windows:
-    name: "Package :: Windows"
+    name: Windows
     needs: [naming]
     if: needs.naming.outputs.windows == 'true'
     runs-on: ubuntu-24.04
@@ -599,7 +599,7 @@ jobs:
           cache-dependency-path: modules/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
-      - name: Interface
+      - name: Build frontend interfaces
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -608,7 +608,7 @@ jobs:
 
       # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
       # into it.
-      - name: Window
+      - name: Build Windows binaries
         working-directory: modules/apps/desktop
         env:
           VERSION: ${{ needs.naming.outputs.version }}
@@ -634,7 +634,7 @@ jobs:
               -o "$RUNNER_TEMP/$window.exe" "./cmd/$window"
           done
 
-      - name: Archive
+      - name: Create Windows zip archive
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: cd "$RUNNER_TEMP" && zip -q "numen_${VERSION}_windows_amd64.zip" numen.exe numen-flashcards.exe
@@ -642,25 +642,10 @@ jobs:
       # The installer carries Microsoft's own bootstrapper and runs it on a
       # machine whose Windows does not already have the engine the window draws
       # through.
-      #
-      # It is not signed, and no step here can sign it. A publicly trusted
-      # code-signing key may not leave hardware, so the shape the mac job uses —
-      # a .p12 in a secret, imported into a keychain — is not issued for Windows
-      # at all: what it takes is a key a service holds, either Azure Artifact
-      # Signing or a cloud-HSM certificate from a certificate authority. Both
-      # sign from a Linux runner, so what is missing is an identity and not a
-      # toolchain. Until there is one, SmartScreen warns on first run and the
-      # sha256 the manifest carries is what a person has to check.
-      - name: Installer
+      - name: Build Windows installer
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           NUMERIC: ${{ needs.naming.outputs.numeric }}
-          # Microsoft's short link hands out whatever is current and publishes
-          # no digest, so what is fetched is the address that link resolved to
-          # and the bytes are checked against it. What the bootstrapper then
-          # installs is the engine current on the person's machine, so holding
-          # this file still holds no engine still. A link Microsoft retires
-          # fails this job, which is how it is noticed.
           WEBVIEW2: https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/474c9f1d-0fd5-49da-b3b0-df536d328170/MicrosoftEdgeWebview2Setup.exe
           SHA256: 17debf797a6c737959bc588236e897936ffac1af5f7e515e674ab32f9edfe719
         run: |
@@ -690,12 +675,10 @@ jobs:
           if-no-files-found: error
 
   macos:
-    name: "Package :: macOS"
+    name: macOS
     needs: [naming]
     if: needs.naming.outputs.macos == 'true'
     runs-on: macos-15
-    # Notarizing gives itself half an hour and fails on its own; the rest is
-    # what two universal builds, an image and a mac runner cost.
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -717,7 +700,7 @@ jobs:
           cache-dependency-path: modules/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
-      - name: Interface
+      - name: Build frontend interfaces
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -726,7 +709,7 @@ jobs:
 
       # Both architectures come off this one machine: the window links against
       # frameworks the SDK carries for each.
-      - name: Window
+      - name: Build macOS binaries
         working-directory: modules/apps/desktop
         env:
           MACOSX_DEPLOYMENT_TARGET: "11.0"
@@ -749,18 +732,11 @@ jobs:
             rm "$RUNNER_TEMP/$window-arm64" "$RUNNER_TEMP/$window-amd64"
           done
 
-      # The version a person reads stands in one key, and the number that rises
-      # with every build in the other, which is the only thing macOS orders two
-      # builds of one version by.
-      - name: Bundle
+      - name: Assemble macOS application bundle
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
         run: |
-          # Each window is a bundle of its own and wears its own icon. The name
-          # the icon goes into Resources under is the one its plist declares in
-          # CFBundleIconFile.
-          # bundle <application> <binary> <plist> <icon>
           bundle() {
             APP="$RUNNER_TEMP/$1.app"
             mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
@@ -778,7 +754,7 @@ jobs:
 
       # The identity lives in a keychain of this run's own, which the last step
       # deletes.
-      - name: Signing identity
+      - name: Import Apple signing certificate
         env:
           CERTIFICATE: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE }}
           CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
@@ -808,10 +784,8 @@ jobs:
           echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
           echo "IDENTITY=$identity" >> "$GITHUB_ENV"
 
-      - name: Sign
+      - name: Sign application bundle
         run: |
-          # A signature covers one bundle, so each is signed and read back on
-          # its own.
           for app in "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app"; do
             codesign --force --timestamp --options runtime \
               --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
@@ -820,20 +794,16 @@ jobs:
             codesign --verify --deep --strict --verbose=2 "$app"
           done
 
-      - name: Disk image
+      - name: Create macOS DMG disk image
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          # A compressed image is written twice over before it is one, and the
-          # machine this runs on has room for the application about three times.
           go clean -cache
 
           mkdir -p "$RUNNER_TEMP/image"
           mv "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app" "$RUNNER_TEMP/image/"
           ln -s /Applications "$RUNNER_TEMP/image/Applications"
 
-          # The volume is sized here. Asked to size it itself, hdiutil measures
-          # the folder and comes up short of what the filesystem then needs.
           megabytes=$(du -sm "$RUNNER_TEMP/image" | cut -f1)
           hdiutil create -volname Numen -srcfolder "$RUNNER_TEMP/image" \
             -fs HFS+ -size "$(( megabytes + 200 ))m" \
@@ -843,7 +813,7 @@ jobs:
 
       # Apple looks inside and answers; the ticket is then attached to the image
       # so that a machine offline can still be told the answer.
-      - name: Notarize
+      - name: Submit for Apple notarization
         if: needs.naming.outputs.notarize == 'true'
         env:
           VERSION: ${{ needs.naming.outputs.version }}
@@ -851,8 +821,6 @@ jobs:
           API_KEY_ID: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ID }}
           API_KEY_ISSUER: ${{ secrets.APPLE_STORE_CONNECT_API_KEY_ISSUER }}
         run: |
-          # The key is held encoded, so that what Apple is handed is the file
-          # byte for byte.
           printf '%s' "$API_KEY" | base64 --decode > "$RUNNER_TEMP/api-key.p8"
           openssl pkey -in "$RUNNER_TEMP/api-key.p8" -noout
           xcrun notarytool submit "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
@@ -862,7 +830,7 @@ jobs:
           xcrun stapler staple "$RUNNER_TEMP/Numen-${VERSION}.dmg"
 
       # What a person's machine will say when they open it.
-      - name: Gatekeeper
+      - name: Staple notarization ticket
         if: needs.naming.outputs.notarize == 'true'
         env:
           VERSION: ${{ needs.naming.outputs.version }}
@@ -879,7 +847,7 @@ jobs:
           path: ${{ runner.temp }}/Numen-*.dmg
           if-no-files-found: error
 
-      - name: Forget the identity
+      - name: Clean up Apple signing certificate
         if: always()
         run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
 
@@ -887,11 +855,8 @@ jobs:
   # links to, which carries no version and holds the newest build, and under a
   # name carrying its version, in a folder that is written once and kept.
   publish:
-    name: "Package :: CDN Upload"
+    name: CDN Upload
     environment: production
-    # A platform left out by input is not a platform that failed. Every one of
-    # them has to have been built or left out; a failed one would put the
-    # release up with a file missing from it and nothing saying so.
     if: >-
       ${{ needs.naming.outputs.publish == 'true'
       && needs.notes.result == 'success'
@@ -902,13 +867,9 @@ jobs:
       && (needs.macos.result == 'success' || needs.macos.result == 'skipped') }}
     needs: [naming, notes, linux, flatpak, snap, windows, macos]
     runs-on: ubuntu-24.04
-    # Fetching every path back can wait eight times ten seconds on each of
-    # them, which after a purge is twenty minutes of sleeping alone.
     timeout-minutes: 60
     steps:
-      # Every one of these has to be set before a build can go anywhere, and a
-      # missing one is worth saying by name rather than as a 401 further down.
-      - name: What this needs
+      - name: Validate CDN environment secrets
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
@@ -940,7 +901,7 @@ jobs:
       # and copied a second time under a name carrying its version, its build
       # number and the commit it was made from. A platform that was not built
       # leaves both alone.
-      - name: Name them
+      - name: Stage CDN release files
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           STAMP: ${{ needs.naming.outputs.stamp }}
@@ -1012,7 +973,7 @@ jobs:
       # What the shelf holds, for anything that wants to know before it fetches.
       # Each file is given the address of the copy that keeps this build, so
       # what a machine is sent to fetch stays the file it was told the size of.
-      - name: Say what is on it
+      - name: Generate SHA256 checksums
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
@@ -1057,7 +1018,7 @@ jobs:
       # never readable without its password: the pull zone in front of it is
       # what serves these to the world, and it has a zone of its own so that
       # nothing else the product keeps is reachable through it.
-      - name: Onto the shelf
+      - name: Upload release files to Bunny CDN
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           ZONE: ${{ vars.BUNNY_STORAGE_ZONE }}
@@ -1083,7 +1044,7 @@ jobs:
 
       # The edge holds what it was given until it is told otherwise, and every
       # name here is one it has served before.
-      - name: Forget the old copies
+      - name: Purge outdated CDN release files
         env:
           PULL_ZONE: ${{ vars.BUNNY_PULL_ZONE_ID }}
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
@@ -1101,7 +1062,7 @@ jobs:
       # The one thing worth proving: that a stranger with no key can fetch what
       # was just put up, at the address the page sends them to, and that what
       # comes back is the file that went up.
-      - name: Fetch published
+      - name: Verify CDN release downloads
         env:
           SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
         run: |
@@ -1147,7 +1108,7 @@ jobs:
   # What the release is called and what it says it holds. The tag is made when
   # the builds are up and not before, so nothing names a build that failed.
   announce:
-    name: "Release :: Publish"
+    name: Publish
     environment: production
     if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' && needs.publish.result == 'success' }}
     needs: [naming, notes, publish]
@@ -1172,7 +1133,7 @@ jobs:
           name: notes
           path: ${{ runner.temp }}
 
-      - name: Create and push git tag
+      - name: Create and push Git tag
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
@@ -1202,4 +1163,3 @@ jobs:
             --notes-file "$RUNNER_TEMP/notes.md" \
             $prerelease \
             "${files[@]}"
-

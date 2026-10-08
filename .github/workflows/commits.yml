@@ -24,7 +24,7 @@ defaults:
 
 jobs:
   commitlint:
-    name: "Check :: Commits"
+    name: Messages
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -78,7 +78,7 @@ jobs:
   # that introduced it. Go's build cache carries across the walk; each window
   # typechecks from nothing, its script being `--force`.
   compile:
-    name: "Check :: Every commit compiles"
+    name: Compile Range
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -116,6 +116,13 @@ jobs:
         run: |
           set -euo pipefail
 
+          diff_files=$(git diff --name-only "$BASE...$HEAD")
+          non_doc_files=$(echo "$diff_files" | grep -v -E '\.md$|^docs/|^\.agents/' || true)
+          if [ -z "$non_doc_files" ]; then
+            echo "Only documentation modified in pull request range. Skipping compilation walk."
+            exit 0
+          fi
+
           walk=$(git rev-list --reverse "$BASE..$HEAD")
           echo "commits to build: $(git rev-list --count "$BASE..$HEAD")"
 
@@ -141,7 +148,7 @@ jobs:
           done
 
   actionlint:
-    name: "Check :: Workflows"
+    name: Workflows
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -158,4 +165,4 @@ jobs:
           cache: false
 
       - name: Verify GitHub Actions workflows
-        run: go run github.com/rhysd/actionlint/cmd/actionlint@latest
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12

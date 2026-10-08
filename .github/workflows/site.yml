@@ -33,7 +33,7 @@ jobs:
   # that its markup typechecks and that the site builds — pictures included,
   # which is where a missing asset turns up.
   build:
-    name: "Build :: Landing Page"
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -71,7 +71,7 @@ jobs:
   # readable without its password: the pull zone in front of it is what serves
   # the page, and the page has a storage zone of its own.
   deploy:
-    name: "Deploy :: Landing Page"
+    name: Deploy
     environment: production
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build

@@ -8,11 +8,15 @@ on:
   pull_request:
     paths:
       - "modules/**"
+      - "!modules/**/*.md"
+      - "!docs/**"
       - ".github/workflows/boundaries.yml"
   push:
     branches: [main]
     paths:
       - "modules/**"
+      - "!modules/**/*.md"
+      - "!docs/**"
       - ".github/workflows/boundaries.yml"
 
 concurrency:
@@ -23,8 +27,8 @@ permissions:
   contents: read
 
 jobs:
-  boundaries:
-    name: "Check :: Boundaries"
+  architecture:
+    name: Architecture
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -75,14 +79,6 @@ jobs:
       - name: Lint workspace packages
         run: npm run lint --workspaces --if-present --prefix modules
 
-      # What Prettier says of the TypeScript, the Vue and the CSS.
-      - name: Verify code formatting
-        run: npm run format:check --prefix modules
-
-      # Check npm packages for known security vulnerabilities.
-      - name: Verify dependencies security
-        run: npm audit --prefix modules --audit-level=high
-
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: modules/apps/desktop/go.mod
@@ -100,3 +96,44 @@ jobs:
       - name: Verify application boundaries
         run: go test ./internal/layers/...
         working-directory: modules/apps/desktop
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix modules
+
+      # What Prettier says of the TypeScript, the Vue and the CSS.
+      - name: Verify code formatting
+        run: npm run format:check --prefix modules
+
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      # Check npm packages for known security vulnerabilities.
+      - name: Verify dependencies security
+        run: npm audit --prefix modules --audit-level=high

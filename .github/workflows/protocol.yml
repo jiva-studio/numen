@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "modules/libs/protocol/**"
+      - "!modules/libs/protocol/**/*.md"
+      - "!docs/**"
       - ".github/workflows/protocol.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - ".golangci.yml"
@@ -12,6 +14,8 @@ on:
     branches: [main]
     paths:
       - "modules/libs/protocol/**"
+      - "!modules/libs/protocol/**/*.md"
+      - "!docs/**"
       - ".github/workflows/protocol.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - ".golangci.yml"
@@ -32,7 +36,7 @@ defaults:
 
 jobs:
   schema:
-    name: "Check :: Schema"
+    name: Schema
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
