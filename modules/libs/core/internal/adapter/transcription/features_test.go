@@ -148,3 +148,15 @@ func getRelativeError(got, want float64) float64 {
 	scale := math.Max(math.Abs(want), 1)
 	return math.Abs(got-want) / scale
 }
+
+func BenchmarkLogMel(b *testing.B) {
+	audio := make([]float32, 10*sampleRate)
+	for i := range audio {
+		audio[i] = float32(math.Sin(float64(i) * 0.05))
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_, _ = logMel(audio)
+	}
+}
