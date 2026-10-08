@@ -53,6 +53,11 @@ export function createDeckKind({
       listStencilsAgain()
       listPresetsAgain()
     },
+    getTarget: (one) => ({
+      path: store.getPath(one.id),
+      title: vaultAnswers.getTitle(store.getPath(one.id)),
+    }),
+    getOpenTab: (one) => ({ path: store.getPath(one.id) }),
     onClose: (one, id) => {
       one.close(id)
       return false

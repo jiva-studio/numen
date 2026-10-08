@@ -7,7 +7,9 @@
 import { describe, expect, it } from 'vitest'
 import { panesOf } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
+import type { FileKind } from '@/entities/file/@x/tab'
 import type { AnyTabKind, WindowHandle } from '../lib/kinds'
+import { fileOpeners } from './openers'
 import { useWindowTabs } from './windowTabs'
 
 /**
@@ -350,5 +352,94 @@ describe('the window going', () => {
 
     expect(going).toEqual(['One.md'])
     expect(thing.shut).toEqual([])
+  })
+})
+
+describe('reconciling tabs for a path', () => {
+  it('closes existing tabs of a different kind for the same path', async () => {
+    const noteKind = kind({
+      kind: 'note',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    const deckKind = kind({
+      kind: 'deck',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    const window = told([noteKind.declared, deckKind.declared])
+
+    const noteTabId = await window.openTabOfKind('note', 'Cards.md')
+    expect(window.tabs.value.map((t) => t.id)).toContain(noteTabId)
+
+    window.reconcileTab('Cards.md', 'deck')
+
+    expect(noteKind.shut).toEqual(['Cards.md'])
+    expect(window.getTab(noteTabId)).toBeNull()
+  })
+
+  it('keeps existing tabs when the kind matches', async () => {
+    const noteKind = kind({
+      kind: 'note',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    const window = told([noteKind.declared])
+
+    const noteTabId = await window.openTabOfKind('note', 'Note.md')
+    window.reconcileTab('Note.md', 'note')
+
+    expect(noteKind.shut).toEqual([])
+    expect(window.getTab(noteTabId)).not.toBeNull()
+  })
+
+  it('preserves tool tabs like plex when reconciling file tabs', async () => {
+    const plexKind = kind({
+      kind: 'plex',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    const noteKind = kind({
+      kind: 'note',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    const window = told([plexKind.declared, noteKind.declared])
+
+    const plexTabId = await window.openTabOfKind('plex', 'Graph.md')
+    const noteTabId = await window.openTabOfKind('note', 'Graph.md')
+
+    window.reconcileTab('Graph.md', 'deck')
+
+    expect(noteKind.shut).toEqual(['Graph.md'])
+    expect(plexKind.shut).toEqual([])
+    expect(window.getTab(plexTabId)).not.toBeNull()
+    expect(window.getTab(noteTabId)).toBeNull()
+  })
+
+  it('reconciles and opens the new tab when a file kind changes on reopen', async () => {
+    const noteKind = kind({
+      kind: 'note',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    const deckKind = kind({
+      kind: 'deck',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    const window = told([noteKind.declared, deckKind.declared])
+
+    let fileKind: FileKind = { kind: 'note', type: 'note' }
+    const openers = fileOpeners({
+      fileKinds: async (paths) => new Map(paths.map((p) => [p, fileKind])),
+      reconcileTab: window.reconcileTab,
+    })
+    openers.registerEditor('note', (path) => void window.openTabOfKind('note', path))
+    openers.registerEditor('deck', (path) => void window.openTabOfKind('deck', path))
+
+    await openers.openFile('Animals.md')
+    expect(window.tabs.value).toHaveLength(1)
+    expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('note')
+
+    fileKind = { kind: 'note' as const, type: 'deck' as const }
+    await openers.openFile('Animals.md')
+
+    expect(window.tabs.value).toHaveLength(1)
+    expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('deck')
+    expect(noteKind.shut).toEqual(['Animals.md'])
   })
 })

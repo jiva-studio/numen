@@ -272,3 +272,50 @@ describe('a file just made here', () => {
     expect(one.asked).toStrictEqual([])
   })
 })
+
+describe('reconciling open tabs when a file is opened', () => {
+  it('reconciles open tabs for a deck file', async () => {
+    const reconciled: { path: string; newKind: string }[] = []
+    const one = vault({ 'Animals.md': note('deck') })
+    const core: FileOpenerDeps = {
+      ...one.core,
+      reconcileTab: (path, newKind) => reconciled.push({ path, newKind }),
+    }
+    const tabOpeners = fileOpeners(core)
+    editors(tabOpeners)
+
+    await tabOpeners.openFile('Animals.md', 'Animals')
+
+    expect(reconciled).toStrictEqual([{ path: 'Animals.md', newKind: 'deck' }])
+  })
+
+  it('reconciles open tabs for an epub book', async () => {
+    const reconciled: { path: string; newKind: string }[] = []
+    const one = vault({ 'Gita.epub': BOOK })
+    const core: FileOpenerDeps = {
+      ...one.core,
+      reconcileTab: (path, newKind) => reconciled.push({ path, newKind }),
+    }
+    const tabOpeners = fileOpeners(core)
+    editors(tabOpeners)
+
+    await tabOpeners.openFile('Gita.epub')
+
+    expect(reconciled).toStrictEqual([{ path: 'Gita.epub', newKind: 'book' }])
+  })
+
+  it('reconciles open tabs for a pdf document', async () => {
+    const reconciled: { path: string; newKind: string }[] = []
+    const one = vault({ 'Physics.pdf': DOCUMENT })
+    const core: FileOpenerDeps = {
+      ...one.core,
+      reconcileTab: (path, newKind) => reconciled.push({ path, newKind }),
+    }
+    const tabOpeners = fileOpeners(core)
+    editors(tabOpeners)
+
+    await tabOpeners.openFile('Physics.pdf')
+
+    expect(reconciled).toStrictEqual([{ path: 'Physics.pdf', newKind: 'document' }])
+  })
+})
