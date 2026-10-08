@@ -55,7 +55,7 @@ jobs:
   # is that the site builds and that the keyboard page still says what the
   # window does.
   build:
-    name: Build
+    name: "Build :: Documentation"
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -69,19 +69,19 @@ jobs:
           cache: npm
           cache-dependency-path: modules/package-lock.json
 
-      - name: Install
+      - name: Install dependencies
         run: npm ci --prefix modules
 
-      - name: Manual
+      - name: Verify manual references
         run: npm run manual:check --prefix modules/apps/docs
 
-      - name: Typecheck
+      - name: Typecheck documentation site
         run: npm run typecheck --prefix modules/apps/docs
 
-      - name: Lint
+      - name: Lint documentation site
         run: npm run lint --prefix modules/apps/docs
 
-      - name: Build
+      - name: Build documentation site
         run: npm run build --prefix modules/apps/docs
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -94,13 +94,13 @@ jobs:
   # readable without its password: the pull zone in front of it is what serves
   # the manual, and the manual has a storage zone of its own.
   deploy:
-    name: Deploy
+    name: "Deploy :: Documentation"
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: What this needs
+      - name: Validate environment variables
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
@@ -123,7 +123,7 @@ jobs:
           name: docs
           path: dist
 
-      - name: Up
+      - name: Upload files to Bunny CDN
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
@@ -149,7 +149,7 @@ jobs:
       # A page removed from the manual is still on the disk it was put on. What
       # this build did not write is taken down, so what is served is what was
       # built and nothing else.
-      - name: Prune storage
+      - name: Remove stale files from Bunny CDN
         env:
           ENDPOINT: ${{ vars.BUNNY_STORAGE_ENDPOINT }}
           ZONE: ${{ vars.BUNNY_DOCS_STORAGE_ZONE }}
@@ -185,7 +185,7 @@ jobs:
             echo "removed $code  $stale"
           done
 
-      - name: Forget the old copies
+      - name: Purge Bunny CDN cache
         env:
           PULL_ZONE: ${{ vars.BUNNY_DOCS_PULL_ZONE_ID }}
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
@@ -200,7 +200,7 @@ jobs:
           echo "purge $code"
           case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
 
-      - name: Fetch published
+      - name: Verify CDN deployment
         env:
           SERVED_FROM: ${{ vars.BUNNY_DOCS_SERVED_FROM }}
         run: |

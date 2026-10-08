@@ -37,18 +37,18 @@ jobs:
           cache: npm
           cache-dependency-path: modules/package-lock.json
 
-      - name: Install
+      - name: Install dependencies
         run: npm ci --prefix modules
 
       # Correctness and the boundaries between the modules. It runs before the
       # build, because what it refuses is cheaper to read than a type error.
-      - name: Lint
+      - name: Lint components
         run: npm run lint --prefix modules/libs/ui
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
-      - name: Test
+      - name: Run unit tests
         run: npm run test:unit --prefix modules/libs/ui -- --coverage
 
   # A story runs in a real browser, and several of them are the only test of a
@@ -70,7 +70,7 @@ jobs:
           cache: npm
           cache-dependency-path: modules/package-lock.json
 
-      - name: Install
+      - name: Install dependencies
         run: npm ci --prefix modules
 
       # The engines are a download of their own and answer to the version in
@@ -81,8 +81,8 @@ jobs:
           key: playwright-${{ hashFiles('modules/package-lock.json') }}
           restore-keys: playwright-
 
-      - name: Install browsers
+      - name: Install Playwright browsers
         run: npx --prefix modules playwright install chromium webkit --with-deps
 
-      - name: Test
+      - name: Run story tests
         run: npm run test:stories --prefix modules/libs/ui

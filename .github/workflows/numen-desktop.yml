@@ -72,7 +72,7 @@ jobs:
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers. The command line tool needs
       # none of this, which is why it is a separate binary.
-      - name: Webview
+      - name: Install WebKit & GTK dependencies
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
@@ -82,14 +82,15 @@ jobs:
             -o Dpkg::Options::=--force-unsafe-io \
             libgtk-4-dev libwebkitgtk-6.0-dev
 
-      - name: Formatting
+      - name: Verify Go formatting
         run: |
           unformatted=$(gofmt -l ./cmd ./internal)
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
 
-      - run: go vet ./...
+      - name: Run go vet
+        run: go vet ./...
 
       # What .golangci.yml asks for, beyond gofmt and go vet. It runs inside
       # this job because the window's packages only compile on a machine that
@@ -108,12 +109,13 @@ jobs:
       # run, so this step can find something on a branch that changed nothing.
       # It answers for the standard library of the Go above as well as for what
       # is required.
-      - name: Vulnerabilities
+      - name: Check vulnerabilities
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
-      - run: go test -race ./...
+      - name: Run Go tests
+        run: go test -race ./...
         env:
           TMPDIR: /dev/shm
 
@@ -143,7 +145,7 @@ jobs:
           cache-dependency-path: |
             modules/apps/desktop/go.sum
             modules/libs/core/go.sum
-      - name: Cross-compile
+      - name: Cross-compile CLI binaries
         run: |
           for target in darwin/arm64 windows/amd64 linux/arm64; do
             GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen-cli
@@ -169,7 +171,7 @@ jobs:
 
       # A window reaches the components through their build; everything else it
       # names is linked or fetched by the one install at the source root.
-      - name: Install
+      - name: Install dependencies
         run: npm ci --prefix modules
 
       # The engines are a download of their own and answer to the version in
@@ -180,24 +182,24 @@ jobs:
           key: playwright-${{ hashFiles('modules/package-lock.json') }}
           restore-keys: playwright-
 
-      - name: Install browsers
+      - name: Install Playwright browsers
         run: npx --prefix modules playwright install chromium webkit --with-deps
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
-      - name: Lint
+      - name: Lint editor and flashcards
         run: |
           npm run lint --prefix modules/apps/desktop/editor
           npm run lint --prefix modules/apps/desktop/flashcards
 
-      - name: Typecheck
+      - name: Typecheck screens and wire
         run: |
           npm run typecheck --prefix modules/libs/wire
           npm run typecheck --prefix modules/apps/desktop/editor
           npm run typecheck --prefix modules/apps/desktop/flashcards
 
-      - name: Test
+      - name: Run frontend tests
         run: |
           npm test --prefix modules/libs/wire
           npm run test:unit --prefix modules/apps/desktop/editor -- --coverage

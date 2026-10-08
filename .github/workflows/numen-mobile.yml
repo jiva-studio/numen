@@ -67,14 +67,15 @@ jobs:
           key: go-build-modules/apps/mobile-${{ github.sha }}
           restore-keys: go-build-modules/apps/mobile-
 
-      - name: Formatting
+      - name: Verify Go formatting
         run: |
           unformatted=$(gofmt -l ./bind tools.go)
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
 
-      - run: go vet ./...
+      - name: Run go vet
+        run: go vet ./...
 
       # What .golangci.yml asks for, beyond the gofmt and go vet above. The
       # phone is a binding layer over the core and answers to the same rules as
@@ -89,12 +90,13 @@ jobs:
       # run, so this step can find something on a branch that changed nothing.
       # It answers for the standard library of the Go above as well as for what
       # is required.
-      - name: Vulnerabilities
+      - name: Check vulnerabilities
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
-      - run: go test -race ./...
+      - name: Run Go tests
+        run: go test -race ./...
         env:
           TMPDIR: /dev/shm
 
@@ -122,17 +124,17 @@ jobs:
           cache-dependency-path: modules/package-lock.json
 
       # A screen reaches the components through their build.
-      - name: Install
+      - name: Install dependencies
         run: npm ci --prefix modules
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
-      - name: Typecheck
+      - name: Typecheck screens
         run: npm run typecheck --prefix modules/apps/mobile
 
-      - name: Lint
+      - name: Lint screens
         run: npm run lint --prefix modules/apps/mobile
 
-      - name: Test
+      - name: Run screen tests
         run: npm test --prefix modules/apps/mobile

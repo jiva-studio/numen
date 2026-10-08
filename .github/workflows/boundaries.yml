@@ -41,7 +41,7 @@ jobs:
       # A cruise resolves what a module imports, so every module the cruise
       # walks is installed. One that is not would read as a module importing
       # nothing.
-      - name: Install
+      - name: Install dependencies
         run: npm ci --prefix modules
 
       # A window reaches the components through their build.
@@ -53,31 +53,31 @@ jobs:
       # screen. The run starts with the fixture the screen rule is read against,
       # so a rule that stopped refusing anything fails before the tree is
       # walked with it.
-      - name: Module boundaries
+      - name: Verify module boundaries
         run: npm run check --prefix modules/tools/depgraph
 
       # The drawing is committed, so a change that moves an edge has to redraw
       # it: a map that is out of date is worse than none.
-      - name: The drawing
+      - name: Verify dependency graph
         run: |
           npm run graph --prefix modules/tools/depgraph
           git diff --exit-code -- docs/dependencies.md
 
       # The house rules of the interface modules and the names on the files of
       # every module, Go included. It installs nothing.
-      - name: The house rules
+      - name: Verify coding style rules
         run: npm run check --prefix modules/tools/lint
 
       # Every story the tree declares, under the name a page names it by. It
       # installs nothing.
-      - name: The story names
+      - name: Verify story references
         run: npm run check --prefix modules/tools/stories
 
       # What each window and each library is read against: the globals a pure
       # core may not reach for, the promises nobody waits for, and the names a
       # file declares and never uses. The rules are type-aware, so this stands
       # after the components are built.
-      - name: The window rules
+      - name: Lint workspace packages
         run: npm run lint --workspaces --if-present --prefix modules
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -94,6 +94,6 @@ jobs:
       #
       # The package imports nothing of the window, so this machine needs none of
       # the webview's headers.
-      - name: Application boundaries
+      - name: Verify application boundaries
         run: go test ./internal/layers/...
         working-directory: modules/apps/desktop

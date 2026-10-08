@@ -35,12 +35,13 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
+          node-version: "22"
           cache: npm
           cache-dependency-path: modules/package-lock.json
 
       # The install is the source root's; what it fetched is found from here.
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
         working-directory: modules
 
       # PR: validate every commit in the range. Push: validate the last one.
@@ -97,13 +98,13 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
+          node-version: "22"
           cache: npm
           cache-dependency-path: modules/package-lock.json
 
       # The window is drawn by the machine's own browser, so the package that
       # embeds it compiles only where that browser's headers are.
-      - name: Webview
+      - name: Install WebKit & GTK dependencies
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
@@ -113,7 +114,8 @@ jobs:
             -o Dpkg::Options::=--force-unsafe-io \
             libgtk-4-dev libwebkitgtk-6.0-dev
 
-      - run: npm ci --prefix modules
+      - name: Install dependencies
+        run: npm ci --prefix modules
 
       - name: Build every commit
         env:
