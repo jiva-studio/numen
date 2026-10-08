@@ -3,6 +3,8 @@ package transcription
 import (
 	"context"
 	"math"
+	"runtime"
+	"sync"
 )
 
 // The resampler reads through a windowed sinc reaching this many of its own
@@ -23,27 +25,53 @@ func resample(ctx context.Context, in []float32, from, to int) ([]float32, error
 	kernel := buildKernel(cutoff, reach)
 
 	out := make([]float32, int(float64(len(in))*ratio))
-	for i := range out {
-		// An hour of sound is tens of millions of these, and a person closing
-		// the window waits for whichever one it is on.
-		if i%(1<<16) == 0 {
-			if err := ctx.Err(); err != nil {
-				return nil, err
-			}
-		}
-		centre := float64(i) / ratio
-		first := max(int(math.Ceil(centre-reach)), 0)
-		last := min(int(math.Floor(centre+reach)), len(in)-1)
+	if len(out) == 0 {
+		return out, nil
+	}
 
-		var sum, weight float64
-		for j := first; j <= last; j++ {
-			w := kernel.getValueAt(centre - float64(j))
-			sum += w * float64(in[j])
-			weight += w
-		}
-		if weight != 0 {
-			out[i] = float32(sum / weight)
-		}
+	workers := runtime.GOMAXPROCS(0)
+	if workers > len(out) {
+		workers = len(out)
+	}
+	if workers < 1 {
+		workers = 1
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for worker := range workers {
+		start := worker * len(out) / workers
+		end := (worker + 1) * len(out) / workers
+		go func(start, end int) {
+			defer wg.Done()
+			for i := start; i < end; i++ {
+				// An hour of sound is tens of millions of these, and a person closing
+				// the window waits for whichever one it is on.
+				if (i-start)%(1<<16) == 0 {
+					if ctx.Err() != nil {
+						return
+					}
+				}
+				centre := float64(i) / ratio
+				first := max(int(math.Ceil(centre-reach)), 0)
+				last := min(int(math.Floor(centre+reach)), len(in)-1)
+
+				var sum, weight float64
+				for j := first; j <= last; j++ {
+					w := kernel.getValueAt(centre - float64(j))
+					sum += w * float64(in[j])
+					weight += w
+				}
+				if weight != 0 {
+					out[i] = float32(sum / weight)
+				}
+			}
+		}(start, end)
+	}
+	wg.Wait()
+
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 	return out, nil
 }
