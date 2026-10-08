@@ -31,12 +31,12 @@ const (
 // logMel is one stretch of 16 kHz mono audio as the encoder takes it: the bands
 // one after another, each holding every frame, and how many frames there are.
 func logMel(samples []float32) ([]float32, int) {
-	power := spectrogram(applyPreemphasis(samples))
-	frames := len(power)
+	power, frames := spectrogram(applyPreemphasis(samples))
 	if frames == 0 {
 		return nil, 0
 	}
 
+	bins := fftSize/2 + 1
 	bank := filters()
 	out := make([]float32, melBands*frames)
 	for band := 0; band < melBands; band++ {
@@ -44,8 +44,9 @@ func logMel(samples []float32) ([]float32, int) {
 		row := out[band*frames : (band+1)*frames]
 		for t := 0; t < frames; t++ {
 			var sum float64
+			offset := t * bins
 			for bin, w := range weights {
-				sum += w * power[t][bin]
+				sum += w * power[offset+bin]
 			}
 			row[t] = float32(math.Log(sum + logGuard))
 		}
@@ -93,16 +94,16 @@ func applyPreemphasis(samples []float32) []float64 {
 //
 // The signal is reflected outward by half a window at each end, so that a frame
 // is centred on every hop from the first sample to the last.
-func spectrogram(x []float64) [][]float64 {
+func spectrogram(x []float64) ([]float64, int) {
 	if len(x) == 0 {
-		return nil
+		return nil, 0
 	}
 	padded := padReflect(x, fftSize/2)
 	frames := len(x)/hopSize + 1
 	window := hann()
 	bins := fftSize/2 + 1
 
-	out := make([][]float64, frames)
+	out := make([]float64, frames*bins)
 	buf := make([]complex128, fftSize)
 	for t := 0; t < frames; t++ {
 		at := t * hopSize
@@ -110,14 +111,13 @@ func spectrogram(x []float64) [][]float64 {
 			buf[i] = complex(padded[at+i]*window[i], 0)
 		}
 		fft(buf)
-		row := make([]float64, bins)
+		offset := t * bins
 		for i := 0; i < bins; i++ {
 			re, im := real(buf[i]), imag(buf[i])
-			row[i] = re*re + im*im
+			out[offset+i] = re*re + im*im
 		}
-		out[t] = row
 	}
-	return out
+	return out, frames
 }
 
 // padReflect is one signal with by samples of itself mirrored onto each end, the
