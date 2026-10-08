@@ -6,6 +6,12 @@
  */
 export default {
   extends: ['@commitlint/config-conventional'],
+  ignores: [
+    (message) =>
+      message.startsWith('build(deps):') ||
+      message.startsWith('chore(deps):') ||
+      message.startsWith('ci(deps):'),
+  ],
   rules: {
     // Scopes follow the module layout. Warning, not error: adding a module
     // should not be blocked by a forgotten entry in this list — but a typo
