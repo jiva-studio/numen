@@ -93,44 +93,44 @@ func Similarity(query []float32, stored []int8) float64 {
 	if len(query) != len(stored) || len(query) == 0 {
 		return 0
 	}
-	var dot0, dot1, dot2, dot3 float64
-	var left0, left1, left2, left3 float64
-	var right0, right1, right2, right3 float64
+	var dot0, dot1, dot2, dot3 float32
+	var left0, left1, left2, left3 float32
+	var right0, right1, right2, right3 int32
 
 	n := len(stored)
 	i := 0
 	for ; i+3 < n; i += 4 {
-		q0, s0 := float64(query[i]), float64(stored[i])
-		q1, s1 := float64(query[i+1]), float64(stored[i+1])
-		q2, s2 := float64(query[i+2]), float64(stored[i+2])
-		q3, s3 := float64(query[i+3]), float64(stored[i+3])
+		q0, s0 := query[i], int32(stored[i])
+		q1, s1 := query[i+1], int32(stored[i+1])
+		q2, s2 := query[i+2], int32(stored[i+2])
+		q3, s3 := query[i+3], int32(stored[i+3])
 
-		dot0 += q0 * s0
+		dot0 += q0 * float32(s0)
 		left0 += q0 * q0
 		right0 += s0 * s0
 
-		dot1 += q1 * s1
+		dot1 += q1 * float32(s1)
 		left1 += q1 * q1
 		right1 += s1 * s1
 
-		dot2 += q2 * s2
+		dot2 += q2 * float32(s2)
 		left2 += q2 * q2
 		right2 += s2 * s2
 
-		dot3 += q3 * s3
+		dot3 += q3 * float32(s3)
 		left3 += q3 * q3
 		right3 += s3 * s3
 	}
 
-	dot := (dot0 + dot1) + (dot2 + dot3)
-	left := (left0 + left1) + (left2 + left3)
-	right := (right0 + right1) + (right2 + right3)
+	dot := float64((dot0 + dot1) + (dot2 + dot3))
+	left := float64((left0 + left1) + (left2 + left3))
+	right := float64((right0 + right1) + (right2 + right3))
 
 	for ; i < n; i++ {
-		q, s := float64(query[i]), float64(stored[i])
-		dot += q * s
-		left += q * q
-		right += s * s
+		q, s := query[i], int32(stored[i])
+		dot += float64(q * float32(s))
+		left += float64(q * q)
+		right += float64(s * s)
 	}
 
 	if left == 0 || right == 0 {
