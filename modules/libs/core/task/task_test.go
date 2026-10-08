@@ -54,6 +54,21 @@ func TestFinishingWhatIsNotThereIsTheOutcomeAskedFor(t *testing.T) {
 	}
 }
 
+func TestClearTakesAllTasksOut(t *testing.T) {
+	tasks := task.New()
+	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan"})
+	tasks.Set(task.Task{ID: "indexing", Doing: "Indexing"})
+
+	if len(tasks.List()) != 2 {
+		t.Fatalf("listed %d, want 2", len(tasks.List()))
+	}
+
+	tasks.Clear()
+	if list := tasks.List(); len(list) != 0 {
+		t.Errorf("after clear: %+v", list)
+	}
+}
+
 func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 	tasks := task.New()
 	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan"})
