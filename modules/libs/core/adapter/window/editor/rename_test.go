@@ -381,6 +381,45 @@ func TestADestroyedNoteLeavesNothingBehind(t *testing.T) {
 	}
 }
 
+// TestRemovingARemadeNote. A note removed, made again under the same name, and
+// removed a second time is put into the trash with a suffix.
+func TestRemovingARemadeNote(t *testing.T) {
+	f := openWindow(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
+
+	answer1, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
+		Path: "Entropy.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code := answer1.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("first removal refused: %v", code)
+	}
+
+	created, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
+		Title: "Entropy",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code := created.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("create note refused: %v", code)
+	}
+
+	answer2, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
+		Path: "Entropy.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code := answer2.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("second removal refused: %v", code)
+	}
+	if trashed := answer2.Msg.GetTrashed(); trashed != ".trash/Entropy-2.md" {
+		t.Errorf("second removal trashed: %q, want .trash/Entropy-2.md", trashed)
+	}
+}
+
 // TestARemovedFileIsReportedTheFirstTimeItIsAskedFor. The watcher reports only
 // the paths the vault holds a source for, and a picture is not one of them.
 func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {

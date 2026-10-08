@@ -382,6 +382,39 @@ func TestRemovingPutsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 	}
 }
 
+func TestRemovingRemadeNotePutsItInTrashWithSuffix(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, map[string]string{
+		"Entropy.md": "# Entropy\n\nA measure of disorder.\n",
+	})
+
+	removed1, err := c.remove().Execute(t.Context(), c.vault, "Entropy.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed1.Trashed != ".trash/Entropy.md" {
+		t.Fatalf("want .trash/Entropy.md, got %q", removed1.Trashed)
+	}
+
+	_, err = c.create().Execute(t.Context(), c.vault, note.NewNote{
+		Title: "Entropy", Body: "New Entropy content\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	removed2, err := c.remove().Execute(t.Context(), c.vault, "Entropy.md")
+	if err != nil {
+		t.Fatalf("remove remade note failed: %v", err)
+	}
+	if removed2.Trashed != ".trash/Entropy-2.md" {
+		t.Fatalf("want .trash/Entropy-2.md, got %q", removed2.Trashed)
+	}
+	if _, err := os.Stat(filepath.Join(c.vault.Path, ".trash", "Entropy-2.md")); err != nil {
+		t.Errorf("the second note is not in the trash: %v", err)
+	}
+}
+
 // A folder goes to the trash whole, in one move, and the notes that pointed
 // into it are named. A note that went with the folder points at nothing from
 // the trash, so it is not among them.
