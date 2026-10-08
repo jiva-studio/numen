@@ -217,7 +217,8 @@ func (e *Embedder) encode(text string) []int {
 // A batch is laid out at the length of its longest text. The runtime takes a
 // shape as it comes.
 func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
-	rows, seq, ids, mask, types := padBatch(batch, e.pad)
+	rows, seq, padded := padBatch(batch, e.pad)
+	defer releasePadding(padded)
 
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -233,9 +234,9 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 		name string
 		flat []int64
 	}{
-		{inputIDs, ids},
-		{attentionMask, mask},
-		{tokenTypeIDs, types},
+		{inputIDs, padded.ids},
+		{attentionMask, padded.mask},
+		{tokenTypeIDs, padded.types},
 	} {
 		if one.name == tokenTypeIDs && !e.isTyped {
 			continue
@@ -249,9 +250,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	}
 
 	answered, err := e.session.Run(in)
-	runtime.KeepAlive(ids)
-	runtime.KeepAlive(mask)
-	runtime.KeepAlive(types)
+	runtime.KeepAlive(padded)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +286,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	if e.isHeadPooled {
 		return headPool(flat, rows, seq, e.dimensions), nil
 	}
-	return meanPool(flat, mask, rows, seq, e.dimensions), nil
+	return meanPool(flat, padded.mask, rows, seq, e.dimensions), nil
 }
 
 func split(flat []float32, rows, dimensions int) ([][]float32, error) {

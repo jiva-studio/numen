@@ -1,6 +1,10 @@
 package onnx
 
-import "github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+import (
+	"sync"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+)
 
 // meanPool turns a model's per-token output into one vector per text: the
 // average of the tokens the mask keeps, at unit length.
@@ -18,9 +22,7 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 			}
 			kept++
 			at := (row*seq + token) * dimensions
-			for d := 0; d < dimensions; d++ {
-				vector[d] += flat[at+d]
-			}
+			addRow(vector, flat[at:at+dimensions])
 		}
 		if kept > 0 {
 			for d := range vector {
@@ -30,6 +32,22 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 		out[row] = embedding.Normalise(vector)
 	}
 	return out
+}
+
+// addRow adds src to dst element by element, four elements a step. Each
+// element sums its tokens in order.
+func addRow(dst, src []float32) {
+	src = src[:len(dst)]
+	d := 0
+	for ; d+4 <= len(dst); d += 4 {
+		dst[d] += src[d]
+		dst[d+1] += src[d+1]
+		dst[d+2] += src[d+2]
+		dst[d+3] += src[d+3]
+	}
+	for ; d < len(dst); d++ {
+		dst[d] += src[d]
+	}
 }
 
 // headPool turns a model's per-token output into one vector per text: the
@@ -48,11 +66,25 @@ func headPool(flat []float32, rows, seq, dimensions int) [][]float32 {
 	return out
 }
 
+// padding holds the three input tensors of a batch.
+type padding struct {
+	ids, mask, types []int64
+}
+
+var paddings = sync.Pool{New: func() any { return &padding{} }}
+
+// releasePadding hands a padding back for the next batch. Nothing reads its
+// slices afterwards.
+func releasePadding(p *padding) {
+	paddings.Put(p)
+}
+
 // padBatch lays a batch out as the model takes it: one row per text, every row
 // as long as the longest of them, the rest of a row the padding token.
 //
-// The three come back as the model reads them, row after row.
-func padBatch(batch [][]int, pad int) (rows, seq int, ids, mask, types []int64) {
+// The three come back as the model reads them, row after row, in a padding the
+// caller releases once the batch is done with.
+func padBatch(batch [][]int, pad int) (rows, seq int, in *padding) {
 	rows = len(batch)
 	for _, one := range batch {
 		seq = max(seq, len(one))
@@ -61,23 +93,38 @@ func padBatch(batch [][]int, pad int) (rows, seq int, ids, mask, types []int64) 
 	// no tokens.
 	seq = max(seq, 1)
 
-	ids = make([]int64, rows*seq)
-	mask = make([]int64, rows*seq)
-	types = make([]int64, rows*seq)
+	in, _ = paddings.Get().(*padding)
+	if in == nil {
+		in = &padding{}
+	}
+	size := rows * seq
+	in.ids = resize(in.ids, size)
+	in.mask = resize(in.mask, size)
+	in.types = resize(in.types, size)
+	clear(in.mask)
+	clear(in.types)
 	for row, one := range batch {
 		at := row * seq
-		for i := range seq {
-			ids[at+i] = int64(pad)
+		ids := in.ids[at : at+seq]
+		for i := range ids {
+			ids[i] = int64(pad)
 		}
 		for i, id := range one {
-			ids[at+i] = int64(id)
-			mask[at+i] = 1
+			ids[i] = int64(id)
+			in.mask[at+i] = 1
 		}
 		// A row the mask keeps nothing of is a row whose average divides by
 		// nothing, and the padding is what the text amounts to.
 		if len(one) == 0 {
-			mask[at] = 1
+			in.mask[at] = 1
 		}
 	}
-	return rows, seq, ids, mask, types
+	return rows, seq, in
+}
+
+func resize(s []int64, size int) []int64 {
+	if cap(s) < size {
+		return make([]int64, size)
+	}
+	return s[:size]
 }

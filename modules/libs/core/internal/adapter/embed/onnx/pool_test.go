@@ -55,7 +55,8 @@ func TestAllPaddingIsAZeroVector(t *testing.T) {
 // A batch carries what its texts hold and no more: a short batch is not laid out
 // at the length of a long one.
 func TestABatchIsAsLongAsItsLongestText(t *testing.T) {
-	rows, seq, ids, mask, types := padBatch([][]int{{7, 8, 9}, {4}}, 1)
+	rows, seq, in := padBatch([][]int{{7, 8, 9}, {4}}, 1)
+	ids, mask, types := in.ids, in.mask, in.types
 	if rows != 2 || seq != 3 {
 		t.Fatalf("two texts of three and one tokens were laid out %dx%d", rows, seq)
 	}
@@ -75,7 +76,8 @@ func TestABatchIsAsLongAsItsLongestText(t *testing.T) {
 // A text the tokenizer gave nothing for is still a text, and what pools its row
 // divides by something.
 func TestAnEmptyTextIsMarkedAtOneToken(t *testing.T) {
-	rows, seq, _, mask, _ := padBatch([][]int{{}}, 1)
+	rows, seq, in := padBatch([][]int{{}}, 1)
+	mask := in.mask
 	if rows != 1 || seq != 1 {
 		t.Fatalf("one empty text was laid out %dx%d", rows, seq)
 	}
@@ -105,5 +107,40 @@ func TestAnOutputIsChosenByName(t *testing.T) {
 	}
 	if _, err := chooseOutput([]string{"one", "another"}); err == nil {
 		t.Error("a model naming neither and answering twice was taken at a guess")
+	}
+}
+
+func BenchmarkMeanPool(b *testing.B) {
+	const rows, seq, dimensions = 8, 512, 1024
+	flat := make([]float32, rows*seq*dimensions)
+	for i := range flat {
+		flat[i] = float32(i%97) * 0.01
+	}
+	mask := make([]int64, rows*seq)
+	for row := range rows {
+		for token := 0; token < seq-row*16; token++ {
+			mask[row*seq+token] = 1
+		}
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		meanPool(flat, mask, rows, seq, dimensions)
+	}
+}
+
+func BenchmarkPadBatch(b *testing.B) {
+	batch := make([][]int, 32)
+	for row := range batch {
+		batch[row] = make([]int, 512-row*8)
+		for i := range batch[row] {
+			batch[row][i] = i + 1
+		}
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		_, _, in := padBatch(batch, 0)
+		releasePadding(in)
 	}
 }
