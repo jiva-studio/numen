@@ -98,6 +98,18 @@ func (t *Tasks) Remove(id string) {
 	t.tell()
 }
 
+// Clear takes all tasks out.
+func (t *Tasks) Clear() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if len(t.held) == 0 {
+		return
+	}
+	t.held = map[string]Task{}
+	t.order = nil
+	t.tell()
+}
+
 // List is what is being done now.
 func (t *Tasks) List() []Task {
 	t.mu.Lock()

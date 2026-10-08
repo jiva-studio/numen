@@ -17,15 +17,10 @@ import (
 // it was fetched after the window was made.
 var errLateRuntime = errors.New("what reads a scan arrived just now; open numen again to read it")
 
-// recognitionID is what the nth recognition of this launch is called, wherever
-// it is shown. It stands for the whole of that recognition, so what it reports
-// again replaces itself, and one recognition dismissed is one recognition
-// dismissed.
-//
-// The list it names into lives as long as the process, so counting is the whole
-// of what makes one name distinct. Two recognitions can begin inside one tick
-// of a clock and share the name it would give them.
-func recognitionID(nth uint64) string { return fmt.Sprintf("recognition-%d", nth) }
+// recognitionID is what one document's recognition is called, wherever it is
+// shown. One document is one line, and it replaces itself as the pages are
+// read.
+func recognitionID(path string) string { return "recognition-" + path }
 
 // proofreadID is what putting one file's text right is called, wherever it is
 // shown. One file is one line, and it replaces itself as the text is put right.
@@ -102,13 +97,6 @@ type RecognitionWorker struct {
 	// the running, under the lock both it and the running are held by. A test
 	// names a document there, at the one instant the two could cross.
 	idle func()
-	// last is what the recognition before this one was called. A recognition
-	// that failed is left in the list under that name, and the next recognition
-	// takes it out.
-	last string
-	// named counts the recognitions that have been named, which is what one of
-	// them is called by.
-	named uint64
 }
 
 // NewRecognitionWorker is the recogniser an installation offers, reporting
@@ -206,14 +194,7 @@ func (r *RecognitionWorker) drain(ctx context.Context) {
 
 // recogniseOne is a single document recognised, put right, and reported.
 func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, path string) {
-	r.mu.Lock()
-	before := r.last
-	r.named++
-	id := recognitionID(r.named)
-	r.last = id
-	r.mu.Unlock()
-
-	r.finishTask(before)
+	id := recognitionID(path)
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 
 	err := r.recognise(ctx, v, id, path)
@@ -226,9 +207,7 @@ func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, pa
 		// A recognition somebody stopped is a recognition that is over.
 		r.finishTask(id)
 	default:
-		// A failure nobody was shown is a failure nobody can act on, so it
-		// stays in the list until it is dismissed or the next recognition
-		// begins.
+		// A failure stands in the list until whoever is shown it takes it out.
 		r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Error: err.Error()})
 	}
 }

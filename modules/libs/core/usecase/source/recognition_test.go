@@ -45,9 +45,11 @@ func newWatched(t *testing.T, why error) *watched {
 	tasks := task.New()
 	w := &watched{tasks: tasks, held: &blank{}}
 	w.RecognitionWorker = NewRecognitionWorker(t.Context(), Recognitions{
-		Readers: vaults{},
-		Derived: shelves{newShelf()},
-		Tasks:   tasks,
+		Readers:   vaults{},
+		Derived:   shelves{newShelf()},
+		Sources:   newStore(),
+		Documents: documents{},
+		Tasks:     tasks,
 		Proofreading: ProofreadingConfig{
 			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
 		},
@@ -168,7 +170,7 @@ func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 	if !held {
 		t.Fatal("the failure was not said")
 	}
-	if at.Error == "" || at.About != "a.pdf" {
+	if at.ID != "recognition-a.pdf" || at.Error == "" || at.About != "a.pdf" {
 		t.Errorf("got %+v", at)
 	}
 }
@@ -194,33 +196,60 @@ func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
 	}
 }
 
-// The next reading takes the one before it out of the list: one reading is one
-// line, however many have failed.
-func TestTheNextReadingClearsTheOneBeforeIt(t *testing.T) {
+// Retrying a failed reading replaces the failure with progress and removes the
+// task upon success.
+func TestRetryingAFailedReadingClearsTheTaskOnSuccess(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
 		t.Fatal("the document was not read")
 	}
 	w.waitUntilDone(t)
-	if _, held := w.getTask(t); !held {
-		t.Fatal("the first failure was not said")
+
+	at, held := w.getTask(t)
+	if !held || at.ID != "recognition-a.pdf" || at.Error == "" {
+		t.Fatalf("first failure not recorded properly: %+v", at)
 	}
+
+	// Now runtime and reader succeed.
+	lib := newLibrary()
+	lib.hold("a.pdf", domain.KindBook, []byte("pdf"), 1)
+	w.RecognitionWorker.with.Readers = vaults{somewhere.ID: lib}
+	w.RecognitionWorker.with.Documents = documents{}
+	w.RecognitionWorker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+		return w.held, w.held.Close, nil
+	}
+
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the retry was not started")
+	}
+	w.waitUntilDone(t)
+
+	if at, held := w.getTask(t); held {
+		t.Errorf("task remained in list after successful retry: %+v", at)
+	}
+}
+
+// Each document's failure is tracked under its own name.
+func TestMultipleFailedReadingsAreTrackedIndependently(t *testing.T) {
+	w := newWatched(t, errors.New("no models on this machine"))
+
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the first document was not read")
+	}
+	w.waitUntilDone(t)
 
 	if w.Start(somewhere, "b.pdf") != port.Began {
 		t.Fatal("the second document was not read")
 	}
 	w.waitUntilDone(t)
 
-	at, held := w.getTask(t)
-	if !held {
-		t.Fatal("the second failure was not said")
+	list := w.tasks.List()
+	if len(list) != 2 {
+		t.Fatalf("expected 2 tasks, got %d: %+v", len(list), list)
 	}
-	if at.About != "b.pdf" {
-		t.Errorf("the list holds %+v", at)
-	}
-	if w.countOpens() != 2 {
-		t.Errorf("a recogniser was opened %d times", w.countOpens())
+	if list[0].ID != "recognition-a.pdf" || list[1].ID != "recognition-b.pdf" {
+		t.Errorf("unexpected task list: %+v", list)
 	}
 }
 
