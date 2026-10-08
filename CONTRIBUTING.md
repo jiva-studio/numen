@@ -67,9 +67,9 @@ Run-On: macos
 
 The values are `windows`, `macos`, the two of them separated by a comma, or `all`. What Windows and macOS say is reported and does not hold the pull request.
 
-## Architecture decisions
+## Architecture guidelines
 
-Decisions and technical constraints live in [`docs/adr/`](docs/adr/README.md), which documents the rationale, architectural boundaries, and design trade-offs. Before proposing significant architectural changes, review existing ADRs or propose a new one.
+Architecture rules and technical constraints live in [`.agents/rules/architecture.md`](.agents/rules/architecture.md), which documents architectural boundaries and design standards. Before proposing significant architectural changes, review the guidelines and ensure automated architecture tests pass.
 
 ## Development workflow
 
