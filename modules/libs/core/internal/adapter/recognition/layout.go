@@ -41,6 +41,9 @@ type Layout struct {
 	// goroutines, but a page is read start to finish and there is nothing to
 	// gain from interleaving two.
 	mu sync.Mutex
+
+	small *image.RGBA
+	flat  []float32
 }
 
 // OpenLayout loads the model that divides a page.
@@ -52,7 +55,14 @@ func OpenLayout(engine *ort.Engine, path string, options *ort.SessionOptions, la
 	if err != nil {
 		return nil, fmt.Errorf("layout model %s: %w", path, err)
 	}
-	return &Layout{session: session, labels: labels, minimum: minimum, overlap: overlap}, nil
+	return &Layout{
+		session: session,
+		labels:  labels,
+		minimum: minimum,
+		overlap: overlap,
+		small:   image.NewRGBA(image.Rect(0, 0, layoutSide, layoutSide)),
+		flat:    make([]float32, 3*layoutSide*layoutSide),
+	}, nil
 }
 
 func (l *Layout) Close() error {
@@ -85,7 +95,7 @@ func (l *Layout) Regions(page image.Image) ([]ocr.Region, error) {
 	defer scale.Destroy()
 	// The library keeps a pointer into this and nothing else does, so it is held
 	// in a variable until the run is over.
-	flat := planes(page)
+	flat := l.planes(page)
 	pixels, err := ort.NewTensor([]int64{1, 3, layoutSide, layoutSide}, flat)
 	if err != nil {
 		return nil, err
@@ -137,22 +147,31 @@ func (l *Layout) Regions(page image.Image) ([]ocr.Region, error) {
 
 // planes is the page as the model asks for it: one plane a colour, each pixel a
 // fraction of one. The only scaling it wants is a byte into that fraction.
-func planes(page image.Image) []float32 {
-	small := image.NewRGBA(image.Rect(0, 0, layoutSide, layoutSide))
-	draw.BiLinear.Scale(small, small.Bounds(), page, page.Bounds(), draw.Src, nil)
+func (l *Layout) planes(page image.Image) []float32 {
+	if l.small == nil {
+		l.small = image.NewRGBA(image.Rect(0, 0, layoutSide, layoutSide))
+	}
+	if len(l.flat) != 3*layoutSide*layoutSide {
+		l.flat = make([]float32, 3*layoutSide*layoutSide)
+	}
+
+	draw.BiLinear.Scale(l.small, l.small.Bounds(), page, page.Bounds(), draw.Src, nil)
 
 	plane := layoutSide * layoutSide
-	out := make([]float32, 3*plane)
-	for y := 0; y < layoutSide; y++ {
-		for x := 0; x < layoutSide; x++ {
-			i := small.PixOffset(x, y)
-			at := y*layoutSide + x
-			out[at] = float32(small.Pix[i]) / 255
-			out[plane+at] = float32(small.Pix[i+1]) / 255
-			out[2*plane+at] = float32(small.Pix[i+2]) / 255
-		}
+	pix := l.small.Pix
+	flat := l.flat
+	for at := 0; at < plane; at++ {
+		i := at * 4
+		flat[at] = float32(pix[i]) / 255
+		flat[plane+at] = float32(pix[i+1]) / 255
+		flat[2*plane+at] = float32(pix[i+2]) / 255
 	}
-	return out
+	return flat
+}
+
+func planes(page image.Image) []float32 {
+	l := &Layout{}
+	return l.planes(page)
 }
 
 func names(m map[string]*ort.Value) []string {
