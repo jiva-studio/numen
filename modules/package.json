@@ -17,5 +17,14 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1"
+  },
+  "overrides": {
+    "postcss-selector-parser": "^7.1.6",
+    "postcss-nested": {
+      "postcss-selector-parser": "^7.1.6"
+    },
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "^7.1.6"
+    }
   }
 }
