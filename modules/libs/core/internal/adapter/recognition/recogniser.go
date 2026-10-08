@@ -19,6 +19,7 @@ import (
 	"github.com/getcharzp/go-ocr/paddle"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -45,13 +46,13 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	if err != nil {
 		return nil, err
 	}
-	options, err := opened.engine.NewSessionOptions()
+	options, _, err := onnxruntime.NewSessionOptions(opened.engine, onnxruntime.SessionSettings{
+		Threads: cfg.Recognise.threads(),
+	})
 	if err != nil {
 		return nil, err
 	}
-	if err := options.SetIntraOpNumThreads(int32(cfg.Recognise.threads())); err != nil {
-		return nil, err
-	}
+	defer options.Destroy()
 
 	layout, err := OpenLayout(opened.engine, found.layout, options,
 		cfg.Layout.labels(), cfg.Layout.minimum(), cfg.Layout.overlap())

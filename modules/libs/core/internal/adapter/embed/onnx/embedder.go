@@ -95,14 +95,13 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	if err != nil {
 		return nil, err
 	}
-	options, err := engine.NewSessionOptions()
+	options, _, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+		Threads: cfg.GetThreads(),
+	})
 	if err != nil {
 		return nil, err
 	}
 	defer options.Destroy()
-	if err := options.SetIntraOpNumThreads(int32(cfg.GetThreads())); err != nil {
-		return nil, err
-	}
 	session, err := engine.NewSession(paths.Model, options)
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
