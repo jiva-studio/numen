@@ -13,6 +13,8 @@ on:
       - "!modules/libs/wire/**/*.md"
       - "modules/libs/protocol/**"
       - "!modules/libs/protocol/**/*.md"
+      - "modules/tools/depgraph/**"
+      - "modules/tools/stories/**"
       - "!docs/**"
       - ".github/workflows/desktop-frontend.yml"
   push:
@@ -28,6 +30,8 @@ on:
       - "!modules/libs/wire/**/*.md"
       - "modules/libs/protocol/**"
       - "!modules/libs/protocol/**/*.md"
+      - "modules/tools/depgraph/**"
+      - "modules/tools/stories/**"
       - "!docs/**"
       - ".github/workflows/desktop-frontend.yml"
 
@@ -65,6 +69,18 @@ jobs:
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
+
+      # Verify FSD layer boundaries, dependency graph, and story references
+      - name: Verify module boundaries
+        run: npm run check --prefix modules/tools/depgraph
+
+      - name: Verify dependency graph
+        run: |
+          npm run graph --prefix modules/tools/depgraph
+          git diff --exit-code -- docs/dependencies.md
+
+      - name: Verify story references
+        run: npm run check --prefix modules/tools/stories
 
       - name: Lint editor and flashcards
         run: |
