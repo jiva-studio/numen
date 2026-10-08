@@ -123,7 +123,7 @@ function formatValue(val: string) { ... }
 - **A composable has one coherent responsibility.** A composable that takes an entire component's script — every piece of state, every handler, a long list of exports — is that component undecomposed. Split the component instead.
 - **Factories are `create…`.** The word `make` is not used for a factory in frontend code.
 - **Files**: directories `kebab-case`, components `PascalCase`, other TypeScript `camelCase`.
-- **Domain code stays in its domain.** Code serving one domain lives in that domain's folder — `note/`, `files/`, `cards/`, `recording/`. There is no `tabs/` folder and no `shared/`: what two or more domains genuinely use sits at the top of `src/` under the word for what it is (`transport.ts`, `theme.ts`, `words.ts`).
+- **Domain code stays in its domain and layer.** A file of a window stands on one of six layers (`shared` → `entities` → `features` → `widgets` → `pages` → `app`), per ADR 0042. Slices reach lower layers or sibling slices through explicit `@x` public interfaces. Imports use the `@/` alias per ADR 0043.
 
 ---
 
@@ -153,19 +153,15 @@ function formatValue(val: string) { ... }
 
 ---
 
-## 10. Nothing formats TypeScript, Vue or Markdown
+## 10. Code formatting (Prettier & gofmt)
 
-*TypeScript and Vue are formatted by hand.* Prettier is not installed, no package depends on it, and none declares a `format` script. **A pull request that adds one is a change to that record**, taken before the code and not alongside it.
+*TypeScript, Vue, JSON and CSS are formatted with Prettier* (ADR 0044). Prettier is configured in `modules/prettier.config.mjs` and enforced in CI via `make lint` (`npm run format:check`). Format with `npm run format`.
 
-What holds a file to a shape instead:
+Go code is formatted with `gofmt` (`gofmt -l .`).
 
-- `.editorconfig` — encoding, line endings, the final newline, trailing whitespace, the indent. It settles what nobody has an opinion about.
-- **ESLint, with the house rules in `modules/tools/lint`** — what is wrong, never what is pretty. A rule there refuses something a reader would trip over: a gerund where a verb belongs, a composable in the wrong shape, an empty catch, a style rule nothing can reach, a dead export, a `ref` mishandled, a module reaching where it may not. Each carries its own test.
-- The reviewer. Layout is read like the rest of the code.
-
-`gofmt` is not an exception to any of this: it is part of Go rather than a choice made about it.
-
-**A generated file is whatever generated it.** Nothing under the protocol's generated output is hand-formatted, linted for layout, or read for style, and a formatter that has touched it is a defect in the formatter's configuration.
+- `.editorconfig` — encoding, line endings, the final newline, trailing whitespace, the indent.
+- **ESLint, with the boundary and code rules in `eslint.config.js`** — what is semantically wrong: a gerund where a verb belongs, a composable in the wrong shape, an empty catch, a dead export, a `ref` mishandled, a module reaching where it may not.
+- **A generated file is whatever generated it.** Nothing under the protocol's generated output is hand-formatted or edited.
 
 ---
 

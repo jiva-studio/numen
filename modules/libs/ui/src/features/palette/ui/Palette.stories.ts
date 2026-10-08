@@ -619,7 +619,9 @@ const renderWithIcons = (args: Knobs) => ({
 
 /** What an icon stands in, and what it draws, as the drawn rows report it. */
 const iconOf = (row: Element | null | undefined): string =>
-  /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(row?.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ?? ''
+  /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(
+    row?.querySelector('svg')?.getAttribute('class') ?? '',
+  )?.[1] ?? ''
 
 /**
  * An icon before every row, drawn by whoever offered the row: here a note, a

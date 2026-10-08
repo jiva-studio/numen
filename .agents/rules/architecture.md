@@ -51,11 +51,19 @@ There is no `go.work`. Each Go module — `libs/core`, `libs/protocol`, `apps/de
 - **A repository is a collection**: put an aggregate in, take one out, remove one. Searches and counts are queries beside it, not methods on it.
 - **Entities hold rules, not the world.** No I/O, no clock, no framework tags, no knowledge of how they are stored.
 
-## 4. The interface hexagon
+## 4. The interface hexagon & Feature-Sliced Design (FSD)
 
-**How an interface component is built*, *The component library is shadcn-vue*.*
+**How an interface component is built*, *The component library is shadcn-vue*, *A file of the windows stands on a layer*.*
 
-The same split runs through the component library:
+The frontend is structured into **six FSD layers**, enforced by `dependency-cruiser` (`modules/tools/depgraph/layers.cjs`):
+
+$$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{features (2)} \longrightarrow \text{widgets (3)} \longrightarrow \text{pages / screens (4)} \longrightarrow \text{app (5)}$$
+
+- **Directionality**: A file reaches only what stands below it and never what stands above.
+- **Slice isolation**: A slice reaches no sibling slice of its own layer. What two slices need stands on a lower layer, or is accessed through an explicit public `@x` interface.
+- **Import aliasing**: Imports crossing slice boundaries use the `@/` alias (e.g. `@/entities/note`), while intra-slice imports remain relative (`./model`, `./types`).
+
+Beside the layer structure, the pure split runs through every component:
 
 - **The core is pure.** Given the props it computes what is to be drawn — every coordinate, state and derived flag — as plain values, with no DOM, no Vue, no clock, no randomness and no measurement of text.
 - **The view is humble.** It turns those values into elements and works nothing out. A number in a template that the pure core did not produce is a broken split.

@@ -88,8 +88,9 @@ describe('the palette', () => {
   const marks = () =>
     [...document.body.querySelectorAll('[data-palette="list"] [role="option"]')].map(
       (row) =>
-        /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(row.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ??
-        '',
+        /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(
+          row.querySelector('svg')?.getAttribute('class') ?? '',
+        )?.[1] ?? '',
     )
 
   it('draws every kind of note a name turned up as what it is', async () => {

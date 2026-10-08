@@ -157,6 +157,41 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	}
 }
 
+// A list that only shrinks has to be made to shrink. An entry naming an edge
+// the tree no longer has is a rule written down for nothing.
+func TestNothingIsBaselinedThatIsNoLongerReached(t *testing.T) {
+	sources := readSources(t)
+	for from, entries := range baseline {
+		for _, to := range entries {
+			var reached bool
+			for _, held := range sources {
+				if held.in != from {
+					continue
+				}
+				for _, one := range held.file.Imports {
+					dep, err := strconv.Unquote(one.Path.Value)
+					if err != nil {
+						continue
+					}
+					if strings.HasPrefix(dep, core) {
+						target := strings.TrimPrefix(dep, core)
+						if target == to || strings.HasPrefix(target, to+"/") {
+							reached = true
+							break
+						}
+					}
+				}
+				if reached {
+					break
+				}
+			}
+			if !reached {
+				t.Errorf("baseline entry %s → %s is no longer reached by any file", from, to)
+			}
+		}
+	}
+}
+
 // logging are the words a package that keeps a record is named by, read off the
 // last element of an import path. The standard library holds two of them, and
 // the rest are the libraries reached for when one of those will not do.
