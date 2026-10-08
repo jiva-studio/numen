@@ -10,6 +10,7 @@ import (
 	"golang.org/x/image/draw"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // The side the layout model reads a page at. Everything it answers is in the
@@ -51,7 +52,7 @@ func OpenLayout(engine *ort.Engine, path string, options *ort.SessionOptions, la
 	if len(labels) == 0 {
 		return nil, fmt.Errorf("the layout model's regions have no names")
 	}
-	session, err := engine.NewSession(path, options)
+	session, err := onnxruntime.NewSession(engine, path, options)
 	if err != nil {
 		return nil, fmt.Errorf("layout model %s: %w", path, err)
 	}

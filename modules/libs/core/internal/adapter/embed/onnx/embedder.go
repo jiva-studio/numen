@@ -102,7 +102,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		return nil, err
 	}
 	defer options.Destroy()
-	session, err := engine.NewSession(paths.Model, options)
+	session, err := onnxruntime.NewSession(engine, paths.Model, options)
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
 	}
