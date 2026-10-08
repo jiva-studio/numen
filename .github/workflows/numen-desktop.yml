@@ -48,7 +48,7 @@ permissions:
 
 jobs:
   go:
-    name: Go
+    name: Backend
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -160,7 +160,7 @@ jobs:
   # through. All three are typed against the schema and against the components,
   # so a change to either fails here.
   screens:
-    name: Screens
+    name: Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
