@@ -809,6 +809,110 @@ sleep 120
 	}
 }
 
+func TestClosingStopsAgentsConcurrently(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	body := `#!/bin/sh
+asked=$(cat)
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+echo $$ > "` + dir + `/pid-$asked"
+setsid sleep 10 &
+sleep 120
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	conversations := []string{"one", "two", "three"}
+	for _, conv := range conversations {
+		if _, err := claude.Take(t.Context(), port.Task{Question: conv, Conversation: conv}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, conv := range conversations {
+		pid := 0
+		for range 200 {
+			raw, err := os.ReadFile(filepath.Join(dir, "pid-"+conv))
+			if err == nil {
+				if pid, err = strconv.Atoi(strings.TrimSpace(string(raw))); err == nil && pid > 0 {
+					break
+				}
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		if pid == 0 {
+			t.Fatalf("the agent of conversation %q never started", conv)
+		}
+	}
+
+	start := time.Now()
+	if err := claude.Close(); err != nil {
+		t.Fatal(err)
+	}
+	elapsed := time.Since(start)
+	if elapsed > 4*time.Second {
+		t.Fatalf("Close() took %v for 3 processes, want bounded under 3.5s", elapsed)
+	}
+}
+
+func TestFinishingConversationStopsAgentsConcurrently(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	body := `#!/bin/sh
+asked=$(cat)
+printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
+echo $$ > "` + dir + `/pid-$asked"
+setsid sleep 10 &
+sleep 120
+`
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	questions := []string{"q1", "q2", "q3"}
+	for _, q := range questions {
+		if _, err := claude.Take(t.Context(), port.Task{Question: q, Conversation: "thread-1"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, q := range questions {
+		pid := 0
+		for range 200 {
+			raw, err := os.ReadFile(filepath.Join(dir, "pid-"+q))
+			if err == nil {
+				if pid, err = strconv.Atoi(strings.TrimSpace(string(raw))); err == nil && pid > 0 {
+					break
+				}
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		if pid == 0 {
+			t.Fatalf("the agent of question %q never started", q)
+		}
+	}
+
+	start := time.Now()
+	if err := claude.Finish(t.Context(), "thread-1"); err != nil {
+		t.Fatal(err)
+	}
+	elapsed := time.Since(start)
+	if elapsed > 4*time.Second {
+		t.Fatalf("Finish() took %v for 3 processes, want bounded under 3.5s", elapsed)
+	}
+}
+
 // A person keeps several conversations open at once, and each goes on in the
 // one it was in.
 //
