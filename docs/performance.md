@@ -497,6 +497,17 @@ One more thing decides it on real recordings, and no table above shows it. Whisp
 
 The weights are 641 MB, fetched when the first recording is transcribed.
 
+### Resampling audio to the model rate
+
+Recorded 2026-10-08 on AMD Ryzen 7 6800U (16 threads) and Apple M4 (10 cores), from `BenchmarkResampledAMinute` in `internal/adapter/transcription`. Resampling one minute of 44.1 kHz audio to 16 kHz:
+
+| Platform | Sequential | Parallel (`GOMAXPROCS`) | Speedup |
+| --- | --- | --- | --- |
+| Linux (x86_64) | 328 ms | 98 ms | 3.3× |
+| macOS (Apple Silicon M4 arm64) | 83.4 ms | 18.5 ms | 4.5× |
+
+Each output sample is computed independently, so the samples are chunked across available worker goroutines.
+
 ### Why the markup is not parsed as XML
 
 Four books hold documents that `encoding/xml` refuses — 125 documents in all, failing with `element <p> closed by </html>`. `golang.org/x/net/html` reads every one of them. That is the whole case for the dependency: a strict parser drops a tenth of this corpus, and extraction is not allowed to refuse.
