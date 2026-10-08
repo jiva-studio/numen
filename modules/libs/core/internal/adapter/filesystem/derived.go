@@ -34,6 +34,8 @@ const (
 	ArticleDir = text.Article
 	// CopyDir is the bytes of a video, kept to be played from this disk.
 	CopyDir = text.Copies
+	// IndexDir is where claims and coordination for vault indexing live.
+	IndexDir = "index"
 )
 
 // FlashcardsDir is where the answers a person gave their cards are kept. They

@@ -70,7 +70,10 @@ func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	if made.Books.Seen > 0 {
 		fmt.Fprintln(out, describeSources(made.Books))
 	}
-	if made.Vectors.Embedded > 0 {
+	switch {
+	case made.Vectors.IsBusy:
+		fmt.Fprintf(out, "indexing %s is already running\n", v.Name)
+	case made.Vectors.Embedded > 0:
 		fmt.Fprintf(out, "%d vectors made\n", made.Vectors.Embedded)
 	}
 	fmt.Fprintf(out, "index now holds %d notes and %d headings, in %s\n",

@@ -313,7 +313,7 @@ func (c Config) GetDerivedStores() port.DerivedStores {
 		Options: c.vaultOptions(),
 		Area:    filesystem.OCRDir,
 		Areas: []string{
-			filesystem.TranscriptDir, filesystem.ArticleDir, filesystem.CopyDir,
+			filesystem.TranscriptDir, filesystem.ArticleDir, filesystem.CopyDir, filesystem.IndexDir,
 		},
 	}
 }

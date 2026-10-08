@@ -67,6 +67,7 @@ type EmbedResult struct {
 	Vanished  int    // whose source the vault no longer holds
 	Displaced int    // whose place is not in the text their source holds now
 	Reading   string // the source open now
+	IsBusy    bool   // somebody else is embedding this vault, and nothing was done
 }
 
 // Execute embeds what one vault owes, in groups, until nothing owes anything.
@@ -74,6 +75,18 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	var res EmbedResult
 	if u.Embedder == nil {
 		return res, nil
+	}
+
+	if u.Derived != nil {
+		release, err := u.Derived.Claim(ctx, text.IndexClaim)
+		if errors.Is(err, port.ErrClaimed) {
+			res.IsBusy = true
+			return res, nil
+		}
+		if err != nil {
+			return res, err
+		}
+		defer release()
 	}
 
 	model := u.Embedder.Model()
