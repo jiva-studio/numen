@@ -31,60 +31,20 @@ updates:
         patterns: ["*"]
         update-types: ["major"]
 
-  # The interface: the shared components, the wire, the two windows, and the
-  # schema's generated TypeScript.
+  # The interface, sites and tools packages managed by npm workspaces at /modules
   - package-ecosystem: npm
-    directories:
-      - /modules/libs/ui
-      - /modules/libs/wire
-      - /modules/libs/protocol
-      - /modules/apps/desktop/editor
-      - /modules/apps/desktop/flashcards
-      - /modules/apps/mobile
+    directory: /modules
     schedule:
       interval: monthly
     commit-message:
-      prefix: "build(deps)"
+      prefix: "chore(deps)"
     groups:
-      interface:
+      npm:
         patterns: ["*"]
         update-types: ["minor", "patch"]
-      interface-major:
+      npm-major:
         patterns: ["*"]
         update-types: ["major"]
-
-  # The two sites, which ship to a reader.
-  - package-ecosystem: npm
-    directories:
-      - /modules/apps/docs
-      - /modules/apps/landing
-    schedule:
-      interval: monthly
-    commit-message:
-      prefix: "build(deps)"
-    groups:
-      sites:
-        patterns: ["*"]
-        update-types: ["minor", "patch"]
-      sites-major:
-        patterns: ["*"]
-        update-types: ["major"]
-
-  # What nothing ships but everything is checked by: the thing that gates every
-  # commit, the drawing of what depends on what, and the icon cutter. A broken
-  # version of any of them surfaces here as a pull request.
-  - package-ecosystem: npm
-    directories:
-      - /modules/tools/git-hooks
-      - /modules/tools/depgraph
-      - /modules/tools/icon
-    schedule:
-      interval: monthly
-    commit-message:
-      prefix: "build(deps)"
-    groups:
-      tools:
-        patterns: ["*"]
 
   - package-ecosystem: github-actions
     directory: /

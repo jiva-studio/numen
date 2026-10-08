@@ -7,7 +7,7 @@ import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../types'
-import AT from '../paths.json'
+import paths from '../paths.json'
 import { choicesFor } from '../lib/models'
 import { write } from '@/entities/settings'
 import { WORDS as words } from '../words'
@@ -28,8 +28,28 @@ function onModelChange(at: readonly string[], name: string) {
   else setSetting(at, name)
 }
 
-function onSettingChange(at: readonly string[], value: unknown) {
-  setSetting(at, value)
+function onIndexingModelChange(name: string) {
+  onModelChange(paths.indexingModel, name)
+}
+
+function onAgentUseChange(name: string) {
+  onModelChange(paths.agent, name)
+}
+
+function onAgentModelChange(name: string) {
+  onModelChange(paths.agentModel, name)
+}
+
+function onAgentStepsChange(count: number | null) {
+  if (count !== null) setSetting(paths.agentSteps, count)
+}
+
+function onAgentToolsChange(value: boolean) {
+  setSetting(paths.agentTools, value)
+}
+
+function onAgentHooksChange(value: boolean) {
+  setSetting(paths.agentHooks, value)
 }
 
 // --- Helpers ---
@@ -71,12 +91,12 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.indexingModelDetail"
     >
       <Select
-        :model-value="said(AT.indexingModel)"
-        :choices="models(AT.indexingModel)"
+        :model-value="said(paths.indexingModel)"
+        :choices="models(paths.indexingModel)"
         :name="words.indexingModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
-        @update:model-value="(name: string) => onModelChange(AT.indexingModel, name)"
+        @update:model-value="onIndexingModelChange"
       />
     </SettingRow>
   </section>
@@ -91,12 +111,12 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentUseDetail"
     >
       <Select
-        :model-value="said(AT.agent)"
-        :choices="models(AT.agent)"
+        :model-value="said(paths.agent)"
+        :choices="models(paths.agent)"
         :name="words.agentUse"
         :aria-labelledby="labelledBy"
         class="settings__choice"
-        @update:model-value="(name: string) => onModelChange(AT.agent, name)"
+        @update:model-value="onAgentUseChange"
       />
     </SettingRow>
 
@@ -107,12 +127,12 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentModelDetail"
     >
       <Select
-        :model-value="said(AT.agentModel)"
-        :choices="models(AT.agentModel)"
+        :model-value="said(paths.agentModel)"
+        :choices="models(paths.agentModel)"
         :name="words.agentModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
-        @update:model-value="(name: string) => onModelChange(AT.agentModel, name)"
+        @update:model-value="onAgentModelChange"
       />
     </SettingRow>
 
@@ -123,13 +143,13 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentStepsDetail"
     >
       <NumberField
-        :model-value="counted(AT.agentSteps)"
+        :model-value="counted(paths.agentSteps)"
         :min="STEPS.least"
         :max="STEPS.most"
         :step="1"
         :aria-labelledby="labelledBy"
         class="settings__number"
-        @settle="(count: number | null) => count !== null && onSettingChange(AT.agentSteps, count)"
+        @settle="onAgentStepsChange"
       />
     </SettingRow>
 
@@ -140,9 +160,9 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentToolsDetail"
     >
       <Switch
-        :model-value="on(AT.agentTools)"
+        :model-value="on(paths.agentTools)"
         :aria-labelledby="labelledBy"
-        @update:model-value="(kept: boolean) => onSettingChange(AT.agentTools, kept)"
+        @update:model-value="onAgentToolsChange"
       />
     </SettingRow>
 
@@ -153,9 +173,9 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentHooksDetail"
     >
       <Switch
-        :model-value="on(AT.agentHooks)"
+        :model-value="on(paths.agentHooks)"
         :aria-labelledby="labelledBy"
-        @update:model-value="(kept: boolean) => onSettingChange(AT.agentHooks, kept)"
+        @update:model-value="onAgentHooksChange"
       />
     </SettingRow>
   </section>
