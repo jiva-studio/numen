@@ -5,28 +5,34 @@ Gemini, or any other) must follow them.
 
 ## Canonical guides
 
-- **Architecture decisions**: [`docs/adr/README.md`](docs/adr/README.md) — the decisions live here.
-- **The vocabulary**: [`docs/glossary.md`](docs/glossary.md) — domain terms.
-- **Rules (`.agents/rules/`)**:
-  - [Architecture guidelines](.agents/rules/architecture.md)
-  - [Backend coding style (Go)](.agents/rules/coding-style-backend.md)
-  - [Frontend coding style (Vue / TypeScript)](.agents/rules/coding-style-frontend.md)
-  - [Comments & docblocks](.agents/rules/comments.md)
-  - [Development process & roles](.agents/rules/process.md)
-- **Skills (`.agents/skills/`)**:
-  - `/intent`: [Problem clarification & Non-Goals](.agents/skills/intent/SKILL.md)
-  - `/spec`: [Technical architecture & Acceptance Criteria](.agents/skills/spec/SKILL.md)
-  - `/coder`: [TDD implementation methodology](.agents/skills/coder/SKILL.md)
-  - `/review`: [3-stage unified code review pipeline](.agents/skills/review/SKILL.md)
+- **Architecture decisions**: [`docs/adr/README.md`](../source/numen/docs/adr/README.md) — the rules live here, not in this file's memory.
+- **Architecture guidelines**: [`.agents/rules/architecture.md`](.agents/rules/architecture.md)
+- **Backend coding style (Go)**: [`.agents/rules/coding-style-backend.md`](.agents/rules/coding-style-backend.md)
+- **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
+- **Unified review skill (`/review`)**: [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md)
+- **Per-module conventions**: `AGENTS.md` inside `modules/libs/core`, `modules/libs/ui`, `modules/libs/protocol`, `modules/apps/desktop`.
 
-This file holds what every language here shares. What is one module's own is
-written in that module, beside the code it holds:
+## Code review protocol: the 3-stage pipeline (`/review`)
 
-| Module | Holds |
-|---|---|
-| [`modules/libs/core`](modules/libs/core/AGENTS.md) | the layers, the ports, what the core may not do, and the test that refuses each |
-| [`modules/libs/protocol`](modules/libs/protocol/AGENTS.md) | one service to a subject, generated code, totality |
-| [`modules/apps/desktop`](modules/apps/desktop/AGENTS.md) | where a file of a window stands, and what a `.vue` may not do |
+When asked to review code or a pull request, run the pipeline in
+[`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md):
+
+```mermaid
+flowchart LR
+    Request["Review request"] --> Stage1["1. gatekeeper"]
+    Stage1 -->|"Fail"| Stop["STOP (fail-fast)"]
+    Stage1 -->|"Pass"| Stage2["2. bug-hunter"]
+    Stage2 --> Stage3["3. adversary"]
+    Stage3 --> Report["Unified report"]
+```
+
+1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against the ADRs. A failing gate stops the pipeline.
+2. **Semantic logic audit** — [`stages/2-bughunter.md`](.agents/skills/review/stages/2-bughunter.md): the blast radius, and every defect proven with *Given → When → Then*.
+3. **Dynamic stress verification** — [`stages/3-adversary.md`](.agents/skills/review/stages/3-adversary.md): a test that forces the failure, and the mutation check on the change's own tests.
+4. **Synthesis** — the Unified Review Report exactly as templated in the skill.
+
+One pipeline covers Go and Vue. A reviewer reports findings and does not fix
+them.
 
 ---
 
@@ -65,7 +71,6 @@ Forbidden patterns:
 | Third-person singular | `carries`, `attends`, `reads` | `carry`, `attend`, `read` |
 | Past participle | `listened`, `spoken`, `cued` | `getTranscript`, `transcribe` |
 | Bare noun / adjective | `highlight`, `book` | `getHighlight`, `createBook` |
-| Bare preposition | `At`, `Under`, `Beside` | `OpenAt`, `GetSourcesUnder`, `GetPlaceBeside` |
 | Literary metaphor | `minting`, `held`, `cold` | `getTitle`, `getActiveTab`, `getTitle` |
 
 A method states **what operation is performed** using standard engineering
@@ -128,6 +133,10 @@ Rules:
 3. The banner is the 80-character form: `/* --------------------------------- <Name> ---------------------------------- */`.
 4. A section with independent state, or a part rendered on its own elsewhere, is extracted into its own component.
 5. Business logic does not live in a `.vue` file — it is a composable or a domain model.
+
+The components in the tree still carry the short `// --- <Name> ---` form. They
+are migrated to the banner above; until that lands, the banner is what new and
+touched components take.
 
 ---
 
@@ -235,7 +244,8 @@ Pick **one** word for the failure discriminant: **`error`** (never `refusal`, `r
 
 ## 9. Domain terminology
 
-Follow standard domain terms consistently across models, storage entities, and protocols.
+Use the **project glossary** (`docs/glossary.md`) as the single source of
+truth for domain terms. When the glossary and code disagree, fix the code.
 
 Specific term rules:
 
@@ -247,36 +257,39 @@ Specific term rules:
 | `reflow` for EPUB | `book` | EPUB = book; PDF = document |
 | `make` (frontend) | `create` | factory functions in TS/Vue |
 
-Domain distinctions:
-- **`address`** is scheme and value, the only thing that says where a link goes (`domain.Address`).
-  **`link`** is the relationship as written in a file.
-- **`overtaken`** is the tab state where a file no longer holds
-  the prose the tab read. `stale` is the backend write conflict state (`port.ErrStale`).
+Three words this table used to call wrong are the glossary's own, and renaming
+them breaks ADR-0026 rather than serving it:
+
+- **`stretch`** is a run of a source's text where it stands, in bytes. **`span`**
+  is that same run as a client counts it, `from` and `to` in UTF-16 code units.
+  Both are correct, on their own side of the boundary, and ADR-0026 lists the
+  pair as a rename the boundary requires. A third name for either is the defect.
+- **`address`** is scheme and value, the only thing that says where a link goes.
+  **`link`** is the relationship as written in a file. Collapsing the two makes
+  the homonym ADR-0026 forbids.
+- **`overtaken`** is the glossary's word for a tab whose file no longer holds
+  the prose the tab read. `stale` appears nowhere in the glossary.
+
+The glossary itself must contain **only project-specific terms** — terms that
+have a meaning in this project different from or more specific than their
+general meaning. Obvious industry terms (tree, drag, chunk, window, theme) do not belong.
 
 ---
 
-## 10. File placement — a file stands on a layer
+## 10. File placement — domain code stays in its domain
 
-A file of a window stands on one of six layers, and a layer reaches only what
-stands below it. The table is in
-[A file of the windows stands on a layer](docs/adr/0042-a-file-of-the-windows-stands-on-a-layer.md),
-and it is the one place the order is written:
+Code that serves one domain lives inside that domain's folder under
+`modules/apps/desktop/ui/src/`:
 
-| Layer | Holds |
+| File | Belongs in |
 |---|---|
-| `shared` | system types, paths, transport, base components |
-| `entities` | a business thing: note, deck, media, settings, tab |
-| `features` | one user scenario, whole |
-| `widgets` | a composite block a page puts together |
-| `pages` | one tab, whole |
-| `app` | mounting, wiring, providers |
+| Note-specific types (`Move`, `Focus`, `Enabler`) | `note/` |
+| File-manager entries (`FileEntry`, `MoveResult`) | `files/` |
+| Flashcard review settings | `cards/` |
 
-`shared` holds what has no domain in it. A thing two slices need goes down a
-layer, or the slice that owns it says so through `@x`.
-
-A slice holding more than one kind of file is cut into segments: `ui`, `model`,
-`lib`, `api`. A component beside a wire mapper, or a store beside a pure
-reducer, is a slice to cut.
+There is no `tabs/` folder and no `shared/`. What two or more domains genuinely
+use sits at the top of `src/` under the word for what it is — `transport.ts`,
+`theme.ts`, `words.ts` — and a type only one domain reads never moves there.
 
 ---
 
@@ -299,13 +312,11 @@ is the thing, not the kind of thing: a folder collecting every type, every
 handler or every use case is a heap at fifty entries and was already one at
 five.
 
----
-
 ## 12. File and directory naming (frontend — TypeScript / Vue)
 
 Directories and files follow strict casing rules:
 
-1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `preset-editor/`).
+1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `tabs/`).
 2. **Vue components**: always `PascalCase` (`App.vue`, `NoteTab.vue`, `Field.vue`).
 3. **TypeScript / JavaScript files**: always `camelCase` (`useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts`, `words.ts`, `answers.ts`).
 
@@ -318,7 +329,7 @@ Directories and files follow strict casing rules:
   tree, commit first and `git checkout HEAD~1 -- <path>`, or copy the file
   aside.
 - **The windows reach `@numen/ui` through its build.** Run `npm run build` in
-  `modules/libs/ui` before the suites in `modules/apps/desktop/editor` and
+  `modules/libs/ui` before the suites in `modules/apps/desktop/ui` and
   `flashcards`, or they fail on `Cannot find module '@numen/ui'`.
 - **`node_modules` symlinked from the primary checkout resolves
   `@numen/protocol` to whatever branch that checkout is parked on.** A

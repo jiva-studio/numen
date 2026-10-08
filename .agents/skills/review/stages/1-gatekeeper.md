@@ -11,32 +11,27 @@ You report findings. You do not edit files, and you do not fix what you find —
 
 ## Level 1: The automated gate
 
-From `REPO_ROOT`:
+From `REPO_ROOT`, run **only the modular targets matching the touched modules**:
 
 ```bash
-make lint    # the migration self-test, gofmt, go vet, golangci-lint, govulncheck,
-             # buf lint, and `npm run lint` + `npm run typecheck` in every module
-make test    # go test -race in core, desktop and mobile, then the interface suites
+# For Go core changes:
+make lib_core_lint lib_core_test
+
+# For protocol changes:
+make lib_protocol_lint lib_protocol_test lib_protocol_generate_check
+
+# For UI changes (@numen/ui):
+make lib_ui_lint lib_ui_test
+
+# For desktop changes:
+make app_desktop_lint app_desktop_test
+
+# For mobile changes:
+make app_mobile_lint app_mobile_test
 ```
 
-`npm run lint` is ESLint carrying the house rules in `modules/tools/lint` — the
-gerund, narrator and verb ratchets, the composable and filename rules, empty catches,
-unreachable style rules, `ref` handling, cross-module reach, dead exports. Those
-rules have their own tests (`node --test modules/tools/lint/*.test.mjs`), and so
-do the story rules in `modules/tools/stories`; `modules/tools/depgraph/check.mjs`
-refuses a dependency that points the wrong way.
+Never run blanket checks over untouched parts of the monorepo.
 
-`make test` runs `npm test` in `modules/libs/ui`, which starts both story instances at once and dies before any test executes. Run that module's suites one at a time instead:
-
-```bash
-cd modules/libs/ui
-npm run test:unit
-npm run build                                   # the windows reach @numen/ui through its build
-vitest run --project 'stories (chromium)'
-vitest run --project 'stories (webkit)'
-```
-
-Then the rest: `modules/libs/wire`, `modules/apps/desktop/editor`, `modules/apps/desktop/flashcards`, `modules/apps/mobile`.
 
 **Auto-rejection criteria**
 
