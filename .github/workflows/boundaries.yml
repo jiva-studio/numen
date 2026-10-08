@@ -75,6 +75,14 @@ jobs:
       - name: Lint workspace packages
         run: npm run lint --workspaces --if-present --prefix modules
 
+      # What Prettier says of the TypeScript, the Vue and the CSS.
+      - name: Verify code formatting
+        run: npm run format:check --prefix modules
+
+      # Check npm packages for known security vulnerabilities.
+      - name: Verify dependencies security
+        run: npm audit --prefix modules --audit-level=high
+
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: modules/apps/desktop/go.mod
