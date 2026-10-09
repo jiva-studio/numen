@@ -1,7 +1,10 @@
 package onnxruntime_test
 
 import (
+	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
@@ -113,5 +116,74 @@ func BenchmarkParseProvider(b *testing.B) {
 		for _, input := range inputs {
 			_, _ = onnxruntime.ParseProvider(input)
 		}
+	}
+}
+
+func TestNewSessionOptionsCoreML(t *testing.T) {
+	if runtime.GOOS != "darwin" || runtime.GOARCH != "arm64" {
+		t.Skip("CoreML provider is supported on darwin/arm64")
+	}
+
+	engine, _, err := onnxruntime.Open(t.Context(), onnxruntime.Settings{Section: "indexing.recognition"})
+	if err != nil {
+		t.Skipf("onnx runtime not available: %v", err)
+	}
+
+	opts, used, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+		Provider: onnxruntime.ProviderCoreML,
+		Threads:  0,
+	})
+	if err != nil {
+		t.Fatalf("NewSessionOptions(CoreML) failed: %v", err)
+	}
+	defer opts.Destroy()
+
+	if used != onnxruntime.ProviderCoreML {
+		t.Errorf("expected ProviderCoreML, got %v", used)
+	}
+}
+
+func BenchmarkNewSession(b *testing.B) {
+	engine, _, err := onnxruntime.Open(b.Context(), onnxruntime.Settings{Section: "indexing.recognition"})
+	if err != nil {
+		b.Skipf("onnx runtime not available: %v", err)
+	}
+
+	opts, _, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+		Provider: onnxruntime.ProviderAuto,
+	})
+	if err != nil {
+		b.Fatalf("NewSessionOptions failed: %v", err)
+	}
+	defer opts.Destroy()
+
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		b.Skipf("user cache dir not found: %v", err)
+	}
+	modelDir := filepath.Join(cacheDir, "numen", "models")
+	entries, err := os.ReadDir(modelDir)
+	if err != nil {
+		b.Skip("no models found in cache")
+	}
+	var modelPath string
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".onnx") {
+			modelPath = filepath.Join(modelDir, e.Name())
+			break
+		}
+	}
+	if modelPath == "" {
+		b.Skip("no onnx model found")
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for b.Loop() {
+		session, err := onnxruntime.NewSession(engine, modelPath, opts)
+		if err != nil {
+			b.Fatal(err)
+		}
+		session.Destroy()
 	}
 }

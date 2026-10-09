@@ -12,7 +12,10 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-const coreMLFlagEnableOnSubgraph uint32 = 0x002
+const (
+	coreMLFlagEnableOnSubgraph uint32 = 0x002
+	coreMLFlagCreateMLProgram  uint32 = 0x010
+)
 
 func applyProvider(opts *ort.SessionOptions, requested Provider) (Provider, error) {
 	switch requested {
@@ -69,7 +72,7 @@ func enableCoreML(opts *ort.SessionOptions) error {
 		return fmt.Errorf("symbol OrtSessionOptionsAppendExecutionProvider_CoreML not found")
 	}
 
-	status := appendCoreML(optHandle, coreMLFlagEnableOnSubgraph)
+	status := appendCoreML(optHandle, coreMLFlagEnableOnSubgraph|coreMLFlagCreateMLProgram)
 	if status != 0 {
 		return fmt.Errorf("OrtSessionOptionsAppendExecutionProvider_CoreML returned status %d", status)
 	}
@@ -117,6 +120,7 @@ func appendCoreMLCached(handle, optHandle uintptr) bool {
 	pairs := [][2]string{
 		{"ModelCacheDirectory", dir},
 		{"EnableOnSubgraphs", "1"},
+		{"CreateMLProgram", "1"},
 	}
 	keys := make([]*byte, len(pairs))
 	values := make([]*byte, len(pairs))
