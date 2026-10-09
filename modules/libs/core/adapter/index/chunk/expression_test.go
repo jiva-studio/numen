@@ -1,6 +1,9 @@
 package chunk
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestOrdinaryWordsAreNotFTSSyntax(t *testing.T) {
 	// Each of these is a real thing to search for, and each of them is a syntax
@@ -59,5 +62,56 @@ func TestAFinishedQuestionIsAskedExactly(t *testing.T) {
 	}
 	if got, want := Expression("entro mixing", false), `"entro" "mixing"`; got != want {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func expressionReference(typed string, growing bool) string {
+	fields := strings.Fields(typed)
+	if len(fields) == 0 {
+		return ""
+	}
+	quoted := make([]string, 0, len(fields))
+	for _, field := range fields {
+		quoted = append(quoted, `"`+strings.ReplaceAll(field, `"`, `""`)+`"`)
+	}
+	if growing {
+		quoted[len(quoted)-1] += "*"
+	}
+	return strings.Join(quoted, " ")
+}
+
+var expressionInputs = []string{
+	"", " ", "\t\n ", "a", "entropy", "entropy shannon", "  entropy   shannon  ",
+	"state-function", "C++", `"entropy`, `say"hello`, `""`, `"`, `a "b" c`,
+	"наставник", "энтропия Шеннона", "日本語 検索", "a\u00a0b", "a\u2003b\u3000c",
+	"a\x85b", "bad\xffbyte x\xc3", "emoji 😀 test", "one (two)", "a:b",
+	"\u200bzero", "tab\tsep\nnl\rcr\vvt\ffeed",
+}
+
+func TestExpressionMatchesReference(t *testing.T) {
+	for _, typed := range expressionInputs {
+		for _, growing := range []bool{false, true} {
+			if got, want := Expression(typed, growing), expressionReference(typed, growing); got != want {
+				t.Errorf("Expression(%q, %v) = %q, want %q", typed, growing, got, want)
+			}
+		}
+	}
+}
+
+func BenchmarkExpression(b *testing.B) {
+	cases := []struct{ name, typed string }{
+		{"one-word", "entropy"},
+		{"three-words", "entropy shannon mixing"},
+		{"quotes", `say "hello" to "world"`},
+		{"unicode", "энтропия Шеннона наставник"},
+		{"long", strings.Repeat("thermodynamic state-function ", 8)},
+	}
+	for _, c := range cases {
+		b.Run(c.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				_ = Expression(c.typed, true)
+			}
+		})
 	}
 }
