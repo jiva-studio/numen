@@ -1,8 +1,5 @@
 <script setup lang="ts">
-/**
- * The disc at the end of the field. One disc either way; the glyph on it is
- * what changes, and one gives way to the other.
- */
+/* --------------------------------- Props ---------------------------------- */
 import { computed } from 'vue'
 import { Button } from '@/shared/ui/button'
 import { Glyph } from './glyph'
@@ -18,11 +15,12 @@ const props = defineProps<{
   stopLabel: string
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'press'): void
 }>()
 
-/** What the disc is called. */
+/* --------------------------------- State ---------------------------------- */
 const named = computed(() => (props.action === 'stop' ? props.stopLabel : props.sendLabel))
 </script>
 
@@ -31,7 +29,7 @@ const named = computed(() => (props.action === 'stop' ? props.stopLabel : props.
     <Transition name="disc__swap" mode="out-in">
       <Button
         :key="action"
-        size="icon"
+        size="icon-small"
         :disabled="disabled"
         :aria-label="named"
         @click="emit('press')"
@@ -46,13 +44,12 @@ const named = computed(() => (props.action === 'stop' ? props.stopLabel : props.
 <style scoped>
 .disc {
   display: flex;
-  block-size: var(--numen-action-size);
+  block-size: 1.75rem;
+  inline-size: 1.75rem;
   align-items: center;
   justify-content: center;
 }
 
-/* One disc gives way to the other, both halves together taking as long as a
-   hover. */
 .disc__swap-enter-active,
 .disc__swap-leave-active {
   transition:

@@ -9,6 +9,8 @@ export interface AgentTabDeps {
   openFileBeside(path: string): void
   resolve(written: readonly string[]): Promise<ReadonlyMap<string, string>>
   unreachable(): string
+  writeSetting?(path: readonly string[], value: unknown): Promise<void>
+  getSetting?(path: readonly string[]): unknown
 }
 
 /** Reference to a note the conversation relates to. */

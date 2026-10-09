@@ -6,7 +6,9 @@ package agent
 // Which agent an installation answers with. One name per program, since a
 // program is reached one way and read one way, and neither is shared.
 const (
-	UseClaude = "claude"
+	UseClaude      = "claude"
+	UseAntigravity = "antigravity"
+	UseCodex       = "codex"
 )
 
 // Config is which agent answers, and a section for each that could.
@@ -24,26 +26,36 @@ type Config struct {
 
 	// Claude is Claude Code, reached by starting it and reading what it prints.
 	Claude Claude `json:"claude"`
+
+	// Antigravity is Google Antigravity, reached over ACP protocol.
+	Antigravity AgentProgram `json:"antigravity"`
+
+	// Codex is OpenAI Codex, reached over ACP protocol.
+	Codex AgentProgram `json:"codex"`
 }
 
 // IsServingTools reports whether the tools go on a port: an installation naming
 // an agent for the panel is one, and so is one asking for the port itself.
-func (c Config) IsServingTools() bool { return c.Use == UseClaude || c.ShouldServeTools }
+func (c Config) IsServingTools() bool {
+	return c.Use == UseClaude || c.Use == UseAntigravity || c.Use == UseCodex || c.ShouldServeTools
+}
+
+// AgentProgram is how an external CLI or ACP agent is run.
+type AgentProgram struct {
+	Command                  []string `json:"command"`
+	Model                    string   `json:"model"`
+	MaxSteps                 int      `json:"max_steps"`
+	ShouldReadHooksAndSkills bool     `json:"reads_hooks_and_skills"`
+}
 
 // Claude is how Claude Code is run.
 type Claude struct {
 	// Command starts it: the command line's path, and anything it is started
 	// through. Empty asks the path, then the folders its installers write to.
-	//
-	// Worth naming: an installation the folders do not cover, and one machine
-	// carrying several.
 	Command []string `json:"command"`
 
 	// Model is which of its models answers — `opus`, `sonnet`, `haiku`, or a
 	// full name.
-	// Empty takes whatever that installation answers with.
-	//
-	// Worth naming: a panel is read while somebody waits.
 	Model string `json:"model"`
 
 	// MaxSteps is how many times it may go to the model before it is stopped.
@@ -51,24 +63,39 @@ type Claude struct {
 
 	// ShouldReadHooksAndSkills lets it read what is configured for it on this
 	// machine: hooks, skills, standing instructions in CLAUDE.md, plugins.
-	//
-	// Off by default. A hook is a shell command Claude Code runs itself, and a
-	// question typed into a panel is not asking for one. On, only what is
-	// configured for this person is read; what a vault carries is refused either
-	// way, since a vault arrives from elsewhere.
 	ShouldReadHooksAndSkills bool `json:"reads_hooks_and_skills"`
 }
 
 // Defaults answer with Claude Code, reading nothing this machine holds for it.
 func Defaults() Config {
 	return Config{
-		Use:    UseClaude,
-		Claude: Claude{MaxSteps: 100},
+		Use:         UseClaude,
+		Claude:      Claude{MaxSteps: 100},
+		Antigravity: AgentProgram{MaxSteps: 100},
+		Codex:       AgentProgram{MaxSteps: 100},
 	}
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
 func (c *Claude) UnmarshalJSON(raw []byte) error {
+	var f struct {
+		Command             *[]string `json:"command"`
+		Model               *string   `json:"model"`
+		MaxSteps            *int      `json:"max_steps"`
+		ReadsHooksAndSkills *bool     `json:"reads_hooks_and_skills"`
+	}
+	if err := unmarshal(raw, &f); err != nil {
+		return err
+	}
+	assign(&c.Command, f.Command)
+	assign(&c.Model, f.Model)
+	assign(&c.MaxSteps, f.MaxSteps)
+	assign(&c.ShouldReadHooksAndSkills, f.ReadsHooksAndSkills)
+	return nil
+}
+
+// UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
+func (c *AgentProgram) UnmarshalJSON(raw []byte) error {
 	var f struct {
 		Command             *[]string `json:"command"`
 		Model               *string   `json:"model"`

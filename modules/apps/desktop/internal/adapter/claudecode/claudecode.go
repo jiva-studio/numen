@@ -319,8 +319,12 @@ func (a *Agent) buildArguments(task port.Task, configuration string) []string {
 		sources = "user"
 	}
 	args = append(args, "--setting-sources", sources)
-	if a.Model != "" {
-		args = append(args, "--model", a.Model)
+	model := a.Model
+	if task.Model != "" {
+		model = task.Model
+	}
+	if model != "" {
+		args = append(args, "--model", model)
 	}
 	// The search is allowed alongside this vault's tools. Naming a tool on
 	// --tools offers it; the allowance is what lets it be called, and nothing

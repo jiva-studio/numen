@@ -24,7 +24,7 @@ type Announcement struct {
 
 // Announce writes the file, and hands back what removes it. A file left behind
 // points the next agent at a dead port with a live-looking token.
-func Announce(cfg container.Config, url, token string) (func(), error) {
+func Announce(cfg container.Config, _ string, url, token string) (func(), error) {
 	path, err := AnnouncementPath(cfg)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,10 @@ func Announce(cfg container.Config, url, token string) (func(), error) {
 	if err := replace(path, append(raw, '\n')); err != nil {
 		return nil, err
 	}
-	return func() { os.Remove(path) }, nil
+
+	return func() {
+		os.Remove(path)
+	}, nil
 }
 
 // GetToken is what an agent presents, kept between launches. The one already

@@ -212,10 +212,10 @@ onBeforeUnmount(leave)
   /* A menu is as long as what it offers, and it scrolls only where the screen
      itself cannot hold it. */
   --tallest: calc(100vh - 1rem);
-  --lift: var(--numen-lift-menu);
+  --lift: var(--numen-lift-menu, 99999);
 
   position: fixed;
-  z-index: var(--lift);
+  z-index: var(--lift, 99999);
   /* As wide as the longest thing it offers, within these two widths — or as
      wide as what asked for it, where that is wider than either. */
   inline-size: max-content;
@@ -224,6 +224,10 @@ onBeforeUnmount(leave)
   max-block-size: var(--tallest);
   overflow-y: auto;
   overscroll-behavior: contain;
+  background-color: var(--numen-raised, #27221d);
+  border: 1px solid var(--numen-panel-border, var(--numen-rule, rgba(255, 255, 255, 0.15)));
+  border-radius: var(--numen-radius-panel, 0.75rem);
+  box-shadow: var(--numen-panel-shadow, 0 12px 32px rgba(0, 0, 0, 0.5));
 }
 
 .menu:focus-visible {

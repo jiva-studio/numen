@@ -79,4 +79,40 @@ const onClick = (press: MouseEvent) => {
   display: block;
   overflow-x: auto;
 }
+
+/* Inline code is drawn in a rounded pill with code background. */
+.prose :deep(:not(pre) > code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875em;
+  font-weight: 500;
+  background-color: var(--numen-code-bg);
+  color: var(--numen-answer-fg);
+  padding: 0.15em 0.375em;
+  border-radius: 0.25rem;
+  white-space: break-spaces;
+}
+
+.prose :deep(:not(pre) > code::before),
+.prose :deep(:not(pre) > code::after) {
+  content: none;
+}
+
+/* A fenced code block is framed with code background. */
+.prose :deep(pre) {
+  background-color: var(--numen-code-bg);
+  color: var(--numen-answer-fg);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  margin-block: 0.75em;
+}
+
+.prose :deep(pre code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  line-height: 1.5;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
 </style>

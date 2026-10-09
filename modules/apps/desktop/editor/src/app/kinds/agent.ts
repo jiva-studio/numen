@@ -11,12 +11,19 @@ import type { WindowKindsDeps } from './deps'
 
 export interface AgentKindDeps extends Pick<
   WindowKindsDeps,
-  'core' | 'tabOpeners' | 'held' | 'window'
+  'core' | 'tabOpeners' | 'held' | 'window' | 'settings'
 > {
   about: () => { readonly path: string; readonly title: string }
 }
 
-export function createAgentKind({ core, tabOpeners, held, window, about }: AgentKindDeps) {
+export function createAgentKind({
+  core,
+  tabOpeners,
+  held,
+  window,
+  settings,
+  about,
+}: AgentKindDeps) {
   return buildAgentKind(
     held.handle,
     () =>
@@ -25,6 +32,8 @@ export function createAgentKind({ core, tabOpeners, held, window, about }: Agent
         openFileBeside: (path) => void tabOpeners.openFile(path, '', 'beside'),
         resolve: (written) => core.resolve('', written),
         unreachable: () => window.unreachable.value,
+        writeSetting: (path, value) => settings.rest.writeSetting(path, value),
+        getSetting: (path) => settings.rest.getSetting(path),
       }),
     about,
   )

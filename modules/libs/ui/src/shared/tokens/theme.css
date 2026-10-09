@@ -99,12 +99,12 @@
   --tw-prose-captions: var(--numen-edge-label);
   --tw-prose-code: var(--numen-answer-fg);
   --tw-prose-pre-code: var(--numen-answer-fg);
-  --tw-prose-pre-bg: var(--numen-field-bg);
+  --tw-prose-pre-bg: var(--numen-code-bg);
   --tw-prose-th-borders: var(--numen-panel-border);
   --tw-prose-td-borders: var(--numen-panel-border);
 }
 
-/* A word that has just arrived fades up where it lands. */
+/* A word that has just arrived fades up where it lands in the editor. */
 @keyframes numen-word {
   from {
     opacity: 0;
@@ -114,13 +114,11 @@
   }
 }
 
-.prose--arriving .prose__word,
 .cm-arriving {
   animation: numen-word var(--numen-motion) ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .prose--arriving .prose__word,
   .cm-arriving {
     animation: none;
   }

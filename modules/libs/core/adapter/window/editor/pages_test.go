@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -282,7 +283,7 @@ func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 		if strings.Contains(string(text), ":root{color-scheme") {
 			t.Errorf("%s declares the colour scheme at the root", name)
 		}
-		if !strings.Contains(string(text), ":where(:root){color-scheme") {
+		if !regexp.MustCompile(`:where\(:root\)\s*\{[^}]*color-scheme`).Match(text) {
 			t.Errorf("%s declares no colour scheme at all", name)
 		}
 	}

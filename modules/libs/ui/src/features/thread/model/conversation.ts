@@ -9,7 +9,7 @@
  */
 import { ref, type Ref } from 'vue'
 import { onNextFrame, type Paint } from '@/shared/lib/clock'
-import { createAnswer } from './answer'
+import { createAnswer, type Answer } from './answer'
 import { createWorkLine } from './work'
 import type { Turn } from '../lib/turn'
 import type { AgentPort, AgentStep, SourceLocation } from '../lib/agent'
@@ -28,7 +28,12 @@ export interface Conversation {
   readonly turns: Ref<Turn[]>
   /** An answer is being written; the composer shows it. */
   readonly isWorking: Ref<boolean>
-  readonly ask: (question: string, focus: string) => Promise<void>
+  readonly ask: (
+    question: string,
+    focus: string,
+    agentId?: string,
+    modelId?: string,
+  ) => Promise<void>
   /** Where in a source one line was isWorking, for a line that says it opens one. */
   readonly getSourceLocation: (turn: string) => SourceLocation | null
   /** The answer on its way is let go of, and the conversation keeps what arrived. */
@@ -38,6 +43,32 @@ export interface Conversation {
    * is told so it can let go of what it kept of the talk.
    */
   readonly finish: () => void
+}
+
+function settleTurn(
+  answer: Answer,
+  error: string,
+  words: ConversationStrings,
+  put: (turn: Turn) => void,
+  nextId: () => string,
+) {
+  if (error) {
+    const trimmed = error.trim()
+    const text = answer.getText().trim()
+    if (answer.hasContent() && (text === trimmed || text.endsWith(trimmed))) {
+      answer.fail()
+      return
+    }
+    answer.settle()
+    put({ id: nextId(), voice: 'answered', text: error, state: 'failed' })
+    return
+  }
+
+  const hasContent = answer.hasContent()
+  answer.settle()
+  if (!hasContent) {
+    put({ id: nextId(), voice: 'answered', text: words.nothing })
+  }
 }
 
 export function useConversation(
@@ -71,7 +102,7 @@ export function useConversation(
     turns.value = turns.value.filter((turn) => turn.id !== id)
   }
 
-  const ask = async (question: string, focus: string) => {
+  const ask = async (question: string, focus: string, agentId?: string, modelId?: string) => {
     if (!question || isWorking.value) return
 
     turns.value.push({ id: `${next++}`, voice: 'asked', text: question })
@@ -146,7 +177,14 @@ export function useConversation(
         }
       }
 
-      for await (const step of agent.ask(question, focus, conversation, flight.signal)) {
+      for await (const step of agent.ask(
+        question,
+        focus,
+        conversation,
+        flight.signal,
+        agentId,
+        modelId,
+      )) {
         if (flight.signal.aborted) break
         takeStep(step)
       }
@@ -156,16 +194,11 @@ export function useConversation(
 
     try {
       const error = await readSteps()
-
       work.clear()
-      const hasContent = answer.hasContent()
-      answer.settle()
-
-      // Given up on is not gone wrong: what was asked for stops, and the
-      // conversation keeps whatever had arrived by then.
       if (!flight.signal.aborted) {
-        if (error) put({ id: `${next++}`, voice: 'answered', text: error, state: 'failed' })
-        else if (!hasContent) put({ id: `${next++}`, voice: 'answered', text: words.nothing })
+        settleTurn(answer, error, words, put, () => `${next++}`)
+      } else {
+        answer.settle()
       }
     } catch {
       // The turn ends however it went wrong, and the person is told it could
