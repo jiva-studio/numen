@@ -33,7 +33,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 100)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}

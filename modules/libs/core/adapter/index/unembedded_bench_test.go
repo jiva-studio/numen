@@ -29,19 +29,19 @@ var benchModel = port.EmbeddingModel{
 
 // openUnembeddedDB is an index holding one vault of `sources` sources, each cut
 // into a large chunk with `per` small ones inside it, and no vectors at all.
-func openUnembeddedDB(b *testing.B, sources, per int) *DB {
-	b.Helper()
-	ctx := b.Context()
+func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
+	tb.Helper()
+	ctx := tb.Context()
 
-	path := filepath.Join(b.TempDir(), "index.db")
-	migrated.CopyTo(b, path)
+	path := filepath.Join(tb.TempDir(), "index.db")
+	migrated.CopyTo(tb, path)
 	db, err := Open(ctx, path)
 	if err != nil {
-		b.Fatal(err)
+		tb.Fatal(err)
 	}
-	b.Cleanup(func() { db.Close() })
+	tb.Cleanup(func() { db.Close() })
 	if err := db.Vaults().Register(ctx, benchVault.ID); err != nil {
-		b.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	chunks := db.Chunks()
@@ -50,7 +50,7 @@ func openUnembeddedDB(b *testing.B, sources, per int) *DB {
 		if err := chunks.SaveSource(ctx, benchVault.ID, chunk.Source{
 			Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
 		}); err != nil {
-			b.Fatal(err)
+			tb.Fatal(err)
 		}
 		small := make([]chunk.Chunk, 0, per)
 		for i := range per {
@@ -65,7 +65,7 @@ func openUnembeddedDB(b *testing.B, sources, per int) *DB {
 			Text:  fmt.Sprintf("book %d whole", s),
 			Small: small,
 		}}); err != nil {
-			b.Fatal(err)
+			tb.Fatal(err)
 		}
 	}
 	return db
@@ -84,7 +84,7 @@ func BenchmarkUnembedded(b *testing.B) {
 
 	b.Run("Rows", func(b *testing.B) {
 		for b.Loop() {
-			if _, err := rows.GetUnembeddedChunks(ctx, benchVault.ID, recipe, 0, chunksPerPage); err != nil {
+			if _, err := rows.GetUnembeddedChunks(ctx, benchVault.ID, recipe, 0, 0, 0, chunksPerPage); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -105,7 +105,7 @@ func BenchmarkSaveVectors(b *testing.B) {
 	db := openUnembeddedDB(b, 2, 100)
 	ctx := b.Context()
 
-	found, err := db.ChunkQueries().GetUnembeddedChunks(ctx, benchVault.ID, benchModel.Recipe(), 0, chunksPerPage)
+	found, err := db.ChunkQueries().GetUnembeddedChunks(ctx, benchVault.ID, benchModel.Recipe(), 0, 0, 0, chunksPerPage)
 	if err != nil {
 		b.Fatal(err)
 	}

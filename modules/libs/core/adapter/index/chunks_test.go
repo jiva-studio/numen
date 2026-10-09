@@ -132,7 +132,7 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	t.Helper()
 	ctx := t.Context()
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -470,7 +470,7 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 100)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -679,7 +679,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 	}
 
 	// The model: chunks whose vectors were made by a different one.
-	owing, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 10)
+	owing, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -691,7 +691,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 			t.Errorf("the first vault answered with %s", p.Path)
 		}
 	}
-	if done, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 10); err != nil {
+	if done, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10); err != nil {
 		t.Fatal(err)
 	} else if len(done) != 0 {
 		t.Errorf("%d chunks owe a vector from the model that made theirs", len(done))
@@ -709,14 +709,14 @@ func TestAnAnswerAboutWhatOwesWorkResumes(t *testing.T) {
 	}
 
 	queries := db.ChunkQueries()
-	firstBatch, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 1)
+	firstBatch, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(firstBatch) != 1 {
 		t.Fatalf("a batch of one gave %d", len(firstBatch))
 	}
-	next, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", firstBatch[0].Chunk, 10)
+	next, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", firstBatch[0].MTime, firstBatch[0].Source, firstBatch[0].Chunk, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -793,7 +793,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -812,7 +812,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	owing, err = db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 1000)
+	owing, err = db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -862,7 +862,7 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	cutInto(t, db, first, "library/recut.epub", "the passage as it was")
 
 	// What a pass is given, before anything moves under it.
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -944,21 +944,29 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	cutInto(t, db, first, "library/coarse.epub", "the passage the bits prefer")
 	cutInto(t, db, first, "library/true.epub", "the passage the vectors prefer")
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(owing) != 2 {
 		t.Fatalf("%d chunks owe a vector, want the two small chunks", len(owing))
 	}
-	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
-		Chunk: owing[0].Chunk, Hash: hashOf(t, db, owing[0].Chunk), Recipe: "model",
-		Coarse: bits(0xff), Value: precise(direction(0xfe)),
-	}, {
-		Chunk: owing[1].Chunk, Hash: hashOf(t, db, owing[1].Chunk), Recipe: "model",
-		Coarse: bits(0xfe), Value: precise(direction(0xff)),
-	}}); err != nil {
-		t.Fatal(err)
+	for _, p := range owing {
+		var vec chunk.Vector
+		if p.Path == "library/coarse.epub" {
+			vec = chunk.Vector{
+				Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
+				Coarse: bits(0xff), Value: precise(direction(0xfe)),
+			}
+		} else {
+			vec = chunk.Vector{
+				Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
+				Coarse: bits(0xfe), Value: precise(direction(0xff)),
+			}
+		}
+		if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{vec}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	near, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", direction(0xff), nil, 1, search.DefaultFloor)
@@ -983,7 +991,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 	db := openDB(t)
 	cutInto(t, db, first, "library/kept.epub", "the passage that was paid for")
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1043,7 +1051,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	cutInto(t, db, first, "library/first.epub", "a passage two models read")
 	queries := db.ChunkQueries()
 
-	owing, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 10)
+	owing, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1094,7 +1102,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	cutInto(t, db, first, "library/edited.epub", "a passage that will be rewritten")
 	cutInto(t, db, first, "library/gone.epub", "a passage in a book that goes")
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1150,7 +1158,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 	cutInto(t, db, first, "library/one.epub", shared)
 	cutInto(t, db, first, "library/two.epub", shared)
 
-	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 10)
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1465,5 +1473,72 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 	}
 	if named[0].Start != 0 {
 		t.Errorf("the section came back at %d, and it begins at 0", named[0].Start)
+	}
+}
+
+// Chunks of recently modified sources are returned ahead of older sources.
+func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
+	ctx := t.Context()
+	db := openDB(t)
+
+	chunks := db.Chunks()
+	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
+		Path: "library/old.epub", Kind: "book", Size: 1000, MTime: 100, Hash: "hash-old", Recipe: "epub",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := chunks.ReplaceChunks(ctx, first.ID, "book", "library/old.epub", []chunk.Chunk{{
+		Start: 0, Length: 100, Text: "old book whole",
+		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: "old passage 1"}, {Start: 50, Length: 50, Text: "old passage 2"}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
+		Path: "notes/recent.md", Kind: "note", Size: 500, MTime: 200, Hash: "hash-recent",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := chunks.ReplaceChunks(ctx, first.ID, "note", "notes/recent.md", []chunk.Chunk{{
+		Start: 0, Length: 100, Text: "recent note whole",
+		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: "recent passage 1"}, {Start: 50, Length: 50, Text: "recent passage 2"}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	owing, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(owing) != 4 {
+		t.Fatalf("expected 4 chunks owing, got %d", len(owing))
+	}
+	if owing[0].Path != "notes/recent.md" || owing[1].Path != "notes/recent.md" {
+		t.Errorf("expected recent note chunks first, got: %s, %s", owing[0].Path, owing[1].Path)
+	}
+	if owing[2].Path != "library/old.epub" || owing[3].Path != "library/old.epub" {
+		t.Errorf("expected old book chunks last, got: %s, %s", owing[2].Path, owing[3].Path)
+	}
+	if owing[0].Chunk >= owing[1].Chunk {
+		t.Errorf("expected ascending chunk IDs within source, got %d and %d", owing[0].Chunk, owing[1].Chunk)
+	}
+	if owing[2].Chunk >= owing[3].Chunk {
+		t.Errorf("expected ascending chunk IDs within source, got %d and %d", owing[2].Chunk, owing[3].Chunk)
+	}
+
+	firstPage, cursor1, err := db.Sources().GetUnembeddedChunks(ctx, first.ID, benchModel, "", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(firstPage) != 2 || firstPage[0].Source != "notes/recent.md" || firstPage[1].Source != "notes/recent.md" {
+		t.Fatalf("page 1 unexpected: %+v", firstPage)
+	}
+
+	secondPage, _, err := db.Sources().GetUnembeddedChunks(ctx, first.ID, benchModel, cursor1, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(secondPage) != 2 || secondPage[0].Source != "library/old.epub" || secondPage[1].Source != "library/old.epub" {
+		t.Fatalf("page 2 unexpected: %+v", secondPage)
 	}
 }
