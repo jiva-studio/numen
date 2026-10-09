@@ -108,8 +108,8 @@ type Provider string
 
 const (
 	// ProviderAuto selects the best hardware accelerator available on the
-	// machine (CoreML on Apple Silicon, CUDA on supported Linux/Windows GPUs)
-	// and falls back to CPU if unavailable.
+	// machine (CoreML on Apple Silicon, CUDA on supported Linux/Windows GPUs,
+	// DirectML on Windows DirectX 12 GPUs) and falls back to CPU if unavailable.
 	ProviderAuto Provider = "auto"
 
 	// ProviderCPU runs inference on CPU using the configured intra-op threads.
