@@ -1,7 +1,8 @@
 package correction
 
 import (
-	"sort"
+	"cmp"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
@@ -33,31 +34,33 @@ type walk struct {
 // number no box answers to is dropped, a line named twice keeps what came last,
 // and a box reaching back into the one before it is left as it was.
 func plan(boxes []highlight.Box, lines []Line) walk {
-	w := walk{grown: []int{0}}
-	said := make(map[int]string, len(lines))
+	named := make([]Line, 0, len(lines))
 	for _, line := range lines {
 		if line.Number < 0 || line.Number >= len(boxes) {
 			continue
 		}
-		said[line.Number] = line.Text
+		named = append(named, line)
 	}
-	if len(said) == 0 {
-		return w
+	if len(named) == 0 {
+		return walk{grown: []int{0}}
 	}
 
-	at := make([]int, 0, len(said))
-	for i := range said {
-		at = append(at, i)
+	byNumber := func(a, b Line) int { return cmp.Compare(a.Number, b.Number) }
+	if !slices.IsSortedFunc(named, byNumber) {
+		slices.SortStableFunc(named, byNumber)
 	}
-	sort.Ints(at)
 
+	w := walk{changes: make([]change, 0, len(named)), grown: make([]int, 1, len(named)+1)}
 	end := 0
-	for _, i := range at {
-		box := boxes[i]
+	for k, line := range named {
+		if k+1 < len(named) && named[k+1].Number == line.Number {
+			continue
+		}
+		box := boxes[line.Number]
 		if box.From < end || box.To < box.From {
 			continue
 		}
-		one := change{index: i, start: box.From, length: box.Len(), text: said[i]}
+		one := change{index: line.Number, start: box.From, length: box.Len(), text: line.Text}
 		w.changes = append(w.changes, one)
 		w.grown = append(w.grown, w.grown[len(w.grown)-1]+one.delta())
 		end = box.To
@@ -65,18 +68,40 @@ func plan(boxes []highlight.Box, lines []Line) walk {
 	return w
 }
 
+// getStartFrom is the position of the first correction whose box begins at or
+// after offset o.
+func (w walk) getStartFrom(o int) int {
+	low, high := 0, len(w.changes)
+	for low < high {
+		mid := int(uint(low+high) >> 1)
+		if w.changes[mid].start < o {
+			low = mid + 1
+		} else {
+			high = mid
+		}
+	}
+	return low
+}
+
 // getGrowthBefore is the growth of the prose before offset o: the corrections
 // whose box begins earlier.
 func (w walk) getGrowthBefore(o int) int {
-	n := sort.Search(len(w.changes), func(i int) bool { return w.changes[i].start >= o })
-	return w.grown[n]
+	return w.grown[w.getStartFrom(o)]
 }
 
 // getGrowthInside is the growth of the corrections lying wholly within the run.
 func (w walk) getGrowthInside(start, length int) int {
 	end := start + length
-	from := sort.Search(len(w.changes), func(i int) bool { return w.changes[i].start >= start })
-	to := sort.Search(len(w.changes), func(i int) bool { return w.changes[i].start+w.changes[i].length > end })
+	from := w.getStartFrom(start)
+	to, high := 0, len(w.changes)
+	for to < high {
+		mid := int(uint(to+high) >> 1)
+		if w.changes[mid].start+w.changes[mid].length > end {
+			high = mid
+		} else {
+			to = mid + 1
+		}
+	}
 	if to < from {
 		to = from
 	}

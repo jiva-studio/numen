@@ -196,3 +196,19 @@ func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
 		t.Errorf("%d marks and %d parts, want %d and %d", len(pages), len(named), len(marks), len(parts))
 	}
 }
+
+func TestLinesNamedOutOfOrderAndTwiceReadAsIfInOrder(t *testing.T) {
+	prose, marks, boxes, parts := reading(read)
+	shuffled := []correction.Line{put[3], {Number: 1, Text: "first"}, put[1], put[0], put[2], {Number: 3, Text: "A Second Heading"}}
+	ordered := []correction.Line{put[0], {Number: 3, Text: "A Second Heading"}, put[2], put[3]}
+	ordered[0] = correction.Line{Number: 1, Text: right[1]}
+
+	gotProse, gotMarks, gotParts := correction.Prose(prose, marks, boxes, parts, shuffled)
+	wantProse, wantMarks, wantParts := correction.Prose(prose, marks, boxes, parts, ordered)
+	if gotProse != wantProse || !reflect.DeepEqual(gotMarks, wantMarks) || !reflect.DeepEqual(gotParts, wantParts) {
+		t.Errorf("shuffled lines read differently from ordered ones")
+	}
+	if got, want := correction.Boxes(boxes, shuffled), correction.Boxes(boxes, ordered); !reflect.DeepEqual(got, want) {
+		t.Errorf("Boxes = %v, want %v", got, want)
+	}
+}
