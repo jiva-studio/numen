@@ -16,7 +16,7 @@ import (
 )
 
 // server is the service, faked. No test reaches a network.
-func server(t *testing.T, handler http.HandlerFunc) *httptest.Server {
+func server(t testing.TB, handler http.HandlerFunc) *httptest.Server {
 	t.Helper()
 	s := httptest.NewServer(handler)
 	t.Cleanup(s.Close)
@@ -25,7 +25,7 @@ func server(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 
 // setServiceModel is the settings with the vault indexed at the service the
 // changes describe, and that service: the two a client is opened with.
-func setServiceModel(t *testing.T, cfg embed.Config, change func(*embed.ServiceModel)) (embed.Config, embed.ServiceModel) {
+func setServiceModel(t testing.TB, cfg embed.Config, change func(*embed.ServiceModel)) (embed.Config, embed.ServiceModel) {
 	t.Helper()
 	cfg.Indexing.Use = embed.UseService
 	service, ok := cfg.Indexing.Service()
@@ -37,7 +37,7 @@ func setServiceModel(t *testing.T, cfg embed.Config, change func(*embed.ServiceM
 	return cfg, service
 }
 
-func client(t *testing.T, baseURL string, dimensions int) *openai.Client {
+func client(t testing.TB, baseURL string, dimensions int) *openai.Client {
 	t.Helper()
 	t.Setenv(embed.KeyEnvVar, "test-key")
 	cfg := embed.Defaults()
@@ -77,7 +77,7 @@ func answer(w http.ResponseWriter, in sent, dimensions int) {
 	_ = json.NewEncoder(w).Encode(out)
 }
 
-func read(t *testing.T, r *http.Request) sent {
+func read(t testing.TB, r *http.Request) sent {
 	t.Helper()
 	var in sent
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
