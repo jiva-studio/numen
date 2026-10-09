@@ -22,6 +22,16 @@ const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 // collision about once in two hundred thousand vaults.
 const Length = 10
 
+// isAlphabet holds, for each byte, whether it is a character of the alphabet.
+var isAlphabet = createTable(alphabet)
+
+func createTable(characters string) (table [256]bool) {
+	for i := range len(characters) {
+		table[characters[i]] = true
+	}
+	return table
+}
+
 // New mints an identifier.
 func New() (domain.CardID, error) {
 	var b [Length]byte
@@ -45,14 +55,7 @@ func Valid(s domain.CardID) bool {
 		return false
 	}
 	for i := range len(s) {
-		found := false
-		for j := range len(alphabet) {
-			if s[i] == alphabet[j] {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !isAlphabet[s[i]] {
 			return false
 		}
 	}
