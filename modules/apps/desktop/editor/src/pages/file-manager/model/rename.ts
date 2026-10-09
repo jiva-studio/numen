@@ -28,9 +28,9 @@ export const resolveRenamePath = (path: string, name: string, isFolder = false):
   if (!typed || typed.includes('/')) return ''
 
   const hasExtension = findExtensionStart(typed) >= 0
-  const called = isFolder || hasExtension ? typed : `${typed}${getExtension(fileOf(path))}`
-  if (called === fileOf(path)) return ''
+  const targetName = isFolder || hasExtension ? typed : `${typed}${getExtension(fileOf(path))}`
+  if (targetName === fileOf(path)) return ''
 
   const under = getFolderPath(path)
-  return under === ROOT ? called : `${under}/${called}`
+  return under === ROOT ? targetName : `${under}/${targetName}`
 }

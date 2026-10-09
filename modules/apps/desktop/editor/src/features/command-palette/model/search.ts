@@ -157,11 +157,11 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     evaluateSilence(id, failureMessages.value[id], words, coverage)
 
   const built = computed(() => {
-    const held = new Map<string, SearchHit>()
-    if (!typed.value.trim()) return { groups: [] as readonly PaletteGroup[], held }
+    const hitsById = new Map<string, SearchHit>()
+    if (!typed.value.trim()) return { groups: [] as readonly PaletteGroup[], hitsById }
 
     const group = (id: SearchGroup, title: string, rows: readonly SearchRow[]): PaletteGroup => {
-      for (const one of rows) held.set(one.item.id, one.hit)
+      for (const one of rows) hitsById.set(one.item.id, one.hit)
       return {
         id,
         title,
@@ -185,18 +185,18 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
           meanings.value.map((one) => passageItem('meaning', one)),
         ),
       ] as readonly PaletteGroup[],
-      held,
+      hitsById,
     }
   })
 
   const groups = computed(() => built.value.groups)
 
-  const typeOf = (item: string): NoteType | null => built.value.held.get(item)?.type ?? null
+  const typeOf = (item: string): NoteType | null => built.value.hitsById.get(item)?.type ?? null
 
-  const kindOf = (item: string): Source | null => built.value.held.get(item)?.kind ?? null
+  const kindOf = (item: string): Source | null => built.value.hitsById.get(item)?.kind ?? null
 
   const chooseItem = (item: string, action: string): SearchDestination | null => {
-    return resolveDestination(built.value.held.get(item), action)
+    return resolveDestination(built.value.hitsById.get(item), action)
   }
 
   return { open, typed, groups, setTyped, setOpen, chooseItem, typeOf, kindOf }

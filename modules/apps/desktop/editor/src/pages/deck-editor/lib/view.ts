@@ -32,11 +32,11 @@ export const cardsOf = (
  * The stencils a card may be cut by, under the word a card names one by.
  */
 export const stencilsOf = (offers: readonly StencilSummary[]): readonly Stencil[] => {
-  const taken = new Set<string>()
+  const seenTitles = new Set<string>()
   const stencils: Stencil[] = []
   for (const offer of offers) {
-    if (!offer.title || taken.has(offer.title)) continue
-    taken.add(offer.title)
+    if (!offer.title || seenTitles.has(offer.title)) continue
+    seenTitles.add(offer.title)
     stencils.push({ name: offer.title, fields: offer.fields })
   }
   return stencils

@@ -64,22 +64,22 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
 
     const into = resolveDropFolder(at)
     await list.loadFolder(into)
-    const taken = new Set(list.getEntriesInFolder(into).map((one) => one.name))
-    const refused: string[] = []
+    const existingNames = new Set(list.getEntriesInFolder(into).map((one) => one.name))
+    const conflictedNames: string[] = []
 
     for (const path of paths) {
       const name = fileOf(path)
       const to = into === ROOT ? name : `${into}/${name}`
       if (to === path) continue
-      if (taken.has(name)) {
-        refused.push(name)
+      if (existingNames.has(name)) {
+        conflictedNames.push(name)
         continue
       }
-      taken.add(name)
+      existingNames.add(name)
       await deps.movePath(path, to)
     }
 
-    if (refused.length > 0) deps.showError(`${words.taken} ${refused.join(', ')}`)
+    if (conflictedNames.length > 0) deps.showError(`${words.taken} ${conflictedNames.join(', ')}`)
     await list.refresh()
   }
 

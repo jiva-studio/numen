@@ -278,7 +278,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 				fixed[gone] = true
 			}
 		}
-		res.Fixed, res.Left = len(fixed), left(asked, fixed)
+		res.Fixed, res.Left = len(fixed), countUnchanged(asked, fixed)
 
 		// The words are written, the source is cut, and the count stands after
 		// both: a batch no count claims is one the next run asks about again.
@@ -449,8 +449,8 @@ func everyCut(batches int) []int {
 	return out
 }
 
-// left is how many of the lines a run asked about stand as they were heard.
-func left(asked, fixed map[int]bool) int {
+// countUnchanged reports how many of the asked lines remain unmodified.
+func countUnchanged(asked, fixed map[int]bool) int {
 	out := 0
 	for line := range asked {
 		if !fixed[line] {

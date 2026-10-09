@@ -18,11 +18,11 @@ import type { ScaleKind } from './appearanceValues'
  * the first of a pair is the one that stands.
  */
 const once = (rows: readonly StepRow[]): readonly StepRow[] => {
-  const seen = new Set<string>()
+  const seenTitles = new Set<string>()
   const only: StepRow[] = []
   for (const one of rows) {
-    if (seen.has(one.title)) continue
-    seen.add(one.title)
+    if (seenTitles.has(one.title)) continue
+    seenTitles.add(one.title)
     only.push(one)
   }
   return only
@@ -126,15 +126,15 @@ export const getSizeGroups = (
   const which: ScaleKind = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
   const range = its(bounds, which)
   const now = its(sizes, which)
-  const asked = parseSize(text)
+  const parsedSize = parseSize(text)
   const row = (size: number): StepRow => ({
     id: getSizeId(which, size),
     title: percent(size),
     ...(size === now ? { detail: words.current, isCurrent: true } : {}),
   })
-  const held = [...ladder(range), now, ...(asked === null ? [] : [asked])]
+  const scaleValues = [...ladder(range), now, ...(parsedSize === null ? [] : [parsedSize])]
     .filter((size) => isInBounds(range, size))
     .sort((first, second) => first - second)
   const title = which === INTERFACE_SCALE ? words.drawing : words.setting
-  return [{ id: which, title, items: once(held.map(row)) }]
+  return [{ id: which, title, items: once(scaleValues.map(row)) }]
 }

@@ -61,23 +61,23 @@ const getLastSection = (deck: BufferDeck): string | null => deck.sections.at(-1)
  * A card let go somewhere in the deck.
  */
 export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): BufferDeck => {
-  const held = deck.cards.find((card) => card.id === id)
-  if (!held) return deck
-  const left = deck.cards.filter((card) => card.id !== id)
+  const targetCard = deck.cards.find((card) => card.id === id)
+  if (!targetCard) return deck
+  const otherCards = deck.cards.filter((card) => card.id !== id)
 
-  if (at === CARD_HEAD) return { ...deck, cards: [{ ...held, section: null }, ...left] }
+  if (at === CARD_HEAD) return { ...deck, cards: [{ ...targetCard, section: null }, ...otherCards] }
 
-  const before = at === null ? -1 : left.findIndex((card) => card.id === at)
+  const before = at === null ? -1 : otherCards.findIndex((card) => card.id === at)
   if (before !== -1) {
-    const under = { ...held, section: left[before]?.section ?? null }
-    return { ...deck, cards: [...left.slice(0, before), under, ...left.slice(before)] }
+    const under = { ...targetCard, section: otherCards[before]?.section ?? null }
+    return { ...deck, cards: [...otherCards.slice(0, before), under, ...otherCards.slice(before)] }
   }
 
   if (at === null) {
-    return { ...deck, cards: [...left, { ...held, section: getLastSection(deck) }] }
+    return { ...deck, cards: [...otherCards, { ...targetCard, section: getLastSection(deck) }] }
   }
 
-  return dropOnSection(deck, held, left, at)
+  return dropOnSection(deck, targetCard, otherCards, at)
 }
 
 /**

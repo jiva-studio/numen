@@ -37,11 +37,11 @@ export function buildAround(
   from: TitledNode | null,
   counts: SeatCounts,
 ): PlexNeighbourhood {
-  let taken = 0
+  let nameIndex = 0
   const invented: PlexNode[] = RELATED_SEATS.flatMap((seat) =>
     Array.from({ length: counts[seat] ?? 0 }, (_, index) => ({
       id: `${focus.id}/${seat}-${index}`,
-      title: nameFor(focus.id, taken++),
+      title: nameFor(focus.id, nameIndex++),
       seat,
     })),
   )

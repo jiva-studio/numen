@@ -45,14 +45,14 @@ export function measureCrowding(options: PlexOptions, counts: SeatCounts): PlexO
   if (!options.viewport || options.squeeze >= 1) return options
   if (canSeatAll(options, counts)) return options
 
-  let held = 0
+  let tight = 0
   let loose = 1
   for (let halving = 0; halving < HALVINGS; halving++) {
-    const middle = (held + loose) / 2
-    if (canSeatAll(packOptions(options, middle), counts)) held = middle
+    const middle = (tight + loose) / 2
+    if (canSeatAll(packOptions(options, middle), counts)) tight = middle
     else loose = middle
   }
-  return packOptions(options, held)
+  return packOptions(options, tight)
 }
 
 /** Whether the window holds every node of every seat. */

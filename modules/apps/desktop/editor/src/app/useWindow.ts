@@ -62,7 +62,7 @@ export const useWindow = () => {
     core,
     words,
     log,
-    held,
+    windowTabs: held,
     onSizeChanged: () => editing.noted.measureAll(),
   })
 
@@ -143,7 +143,7 @@ export const useWindow = () => {
     getTabAt: (path) => editing.reached.getTabAt(path),
   }
 
-  const openTabs = useOpenTabs({ core, held })
+  const openTabs = useOpenTabs({ core, windowTabs: held })
 
   const openPreset = async (path: string): Promise<void> => {
     const kind = (await core.fileKinds([path])).get(path)

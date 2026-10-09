@@ -14,7 +14,7 @@ type transducer struct {
 	encoded   int
 	encoder   func(at int, frame []float32) []float32
 	predictor func(token int) ([]float32, error)
-	joint     func(frame, said []float32) ([]float32, error)
+	joint     func(frame, predicted []float32) ([]float32, error)
 }
 
 // decode reads the frames from the first to the last and answers with the
@@ -31,10 +31,10 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 	}
 
 	frame := make([]float32, d.encoded)
-	var said []int
+	var tokens []int
 	// How many words one frame has given. A frame may give several: the model
 	// answers with a duration of nothing to say it has more to say here.
-	spoken := 0
+	tokensInFrame := 0
 	for at := 0; at < d.frames; {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -49,23 +49,23 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		token := findLargest(scores[:d.blank+1])
 		step := findLargest(scores[d.blank+1:])
 		if token != d.blank {
-			said = append(said, token)
+			tokens = append(tokens, token)
 			if upto, err = d.predictor(token); err != nil {
 				return nil, err
 			}
-			spoken++
+			tokensInFrame++
 		}
 		// The blank moves on whatever it says, and a frame that has given all
 		// the words one frame may give moves on too.
-		if step < 1 && (token == d.blank || spoken >= mostPerFrame) {
+		if step < 1 && (token == d.blank || tokensInFrame >= mostPerFrame) {
 			step = 1
 		}
 		if step > 0 {
-			spoken = 0
+			tokensInFrame = 0
 		}
 		at += step
 	}
-	return said, nil
+	return tokens, nil
 }
 
 // mostPerFrame is how many words one frame may give before the decoding moves

@@ -45,21 +45,21 @@ func (d *Document) put(key string, value *yaml.Node) error {
 	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
 }
 
-// held is the two nodes one key of a mapping stands as, and is empty where the
+// nodePair is the two nodes one key of a mapping stands as, and is empty where the
 // mapping has no such key.
-type held struct{ name, value *yaml.Node }
+type nodePair struct{ name, value *yaml.Node }
 
 // pair is the two nodes one key of a mapping stands as.
-func pair(node *yaml.Node, key string) held {
+func pair(node *yaml.Node, key string) nodePair {
 	if node == nil || node.Kind != yaml.MappingNode {
-		return held{}
+		return nodePair{}
 	}
 	for i := 0; i+1 < len(node.Content); i += 2 {
 		if node.Content[i].Value == key {
-			return held{name: node.Content[i], value: node.Content[i+1]}
+			return nodePair{name: node.Content[i], value: node.Content[i+1]}
 		}
 	}
-	return held{}
+	return nodePair{}
 }
 
 // valueOf is the node one key of an entry holds, or nil when it has no such key.
@@ -78,13 +78,13 @@ func valueOf(item *yaml.Node, key string) *yaml.Node {
 // carry puts the comment written on a key's own line onto the nodes replacing
 // it. A mapping or a list carries it on the key and a scalar on the value, so
 // both are read off both.
-func (h held) carry(name, value *yaml.Node) {
-	if h.name == nil {
+func (p nodePair) carry(name, value *yaml.Node) {
+	if p.name == nil {
 		return
 	}
-	name.LineComment = h.name.LineComment
-	if value != h.value {
-		value.LineComment = h.value.LineComment
+	name.LineComment = p.name.LineComment
+	if value != p.value {
+		value.LineComment = p.value.LineComment
 	}
 }
 

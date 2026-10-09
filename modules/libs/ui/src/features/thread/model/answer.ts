@@ -13,7 +13,7 @@ export interface Answer {
   /** Whether a turn is open for the words still arriving. */
   readonly isOpen: () => boolean
   /** Whether the last answer carried any words. */
-  readonly isSaid: () => boolean
+  readonly hasContent: () => boolean
 }
 
 /** One growing answer, under names taken from `nextId` as each turn begins. */
@@ -61,6 +61,6 @@ export function createAnswer(
       id = ''
     },
     isOpen: () => id !== '',
-    isSaid: () => text !== '',
+    hasContent: () => text !== '',
   }
 }

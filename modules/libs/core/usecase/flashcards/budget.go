@@ -247,23 +247,23 @@ func (b *budgets) getAsking(
 		return schedules[a.ID].Due.Compare(schedules[b.ID].Due)
 	})
 
-	took := b.spend(owed, fresh)
+	allocations := b.spend(owed, fresh)
 	var out asking
 	for at, one := range owed {
-		if took.owed[at] && b.isAllowed(one, over) {
+		if allocations.owed[at] && b.isAllowed(one, over) {
 			out.seen = append(out.seen, one)
 		}
 	}
 	for at, one := range fresh {
-		if took.fresh[at] && b.isAllowed(one, over) {
+		if allocations.fresh[at] && b.isAllowed(one, over) {
 			out.fresh = append(out.fresh, one)
 		}
 	}
 	return out
 }
 
-// taken is which of the cards put to a preset its day took.
-type taken struct{ owed, fresh []bool }
+// budgetAllocation is which of the cards put to a preset its day took.
+type budgetAllocation struct{ owed, fresh []bool }
 
 // deckShare is one deck's cards under one preset, in the order they stand, and
 // how far its share of the day has been walked through them.
@@ -278,7 +278,7 @@ type deckShare struct {
 
 // countRemaining is how many of a deck's cards no share has taken, which is
 // what the deck still owes of the day.
-func (q *deckShare) countRemaining(out taken) int {
+func (q *deckShare) countRemaining(out budgetAllocation) int {
 	held := 0
 	for _, at := range q.owed {
 		if !out.owed[at] {
@@ -311,8 +311,8 @@ func (b *budgets) getTimeSpent(q *deckShare, cost review.AnswerCost) time.Durati
 // goes to the debt, so a share holding one card spend it on what is already
 // begun. What no deck could use out of its own share is offered round again, so
 // the day spend what it holds.
-func (b *budgets) spend(owed, fresh []CardFace) taken {
-	out := taken{owed: make([]bool, len(owed)), fresh: make([]bool, len(fresh))}
+func (b *budgets) spend(owed, fresh []CardFace) budgetAllocation {
+	out := budgetAllocation{owed: make([]bool, len(owed)), fresh: make([]bool, len(fresh))}
 
 	at := make(map[string]map[string]*deckShare)
 	var order []string
@@ -427,7 +427,7 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 // deal is what one deck's share of the day takes of the debt before it and the
 // material it has not begun. A card another share has already taken is passed
 // over, and the deck picks up where its share left off.
-func (b *budgets) deal(share *allowance, q *deckShare, owed, fresh []CardFace, out *taken) {
+func (b *budgets) deal(share *allowance, q *deckShare, owed, fresh []CardFace, out *budgetAllocation) {
 	for {
 		for q.seen < len(q.owed) && out.owed[q.owed[q.seen]] {
 			q.seen++

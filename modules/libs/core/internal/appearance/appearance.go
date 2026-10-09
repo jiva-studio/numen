@@ -83,17 +83,17 @@ func AddStyles(text []byte, styles string) []byte {
 // interface is drawn, which is the root's font size, and how large the text a
 // person reads is set.
 func buildSizeElement(drawn, set float64) string {
-	var held []string
+	var vars []string
 	if drawn > 0 {
-		held = append(held, "--numen-interface-scale: "+number(drawn))
+		vars = append(vars, "--numen-interface-scale: "+number(drawn))
 	}
 	if set > 0 {
-		held = append(held, "--numen-text-scale: "+number(set))
+		vars = append(vars, "--numen-text-scale: "+number(set))
 	}
-	if len(held) == 0 {
+	if len(vars) == 0 {
 		return ""
 	}
-	return buildStyleElement(IsSizes, ":root { "+strings.Join(held, "; ")+"; }")
+	return buildStyleElement(IsSizes, ":root { "+strings.Join(vars, "; ")+"; }")
 }
 
 // number is a multiplier as CSS takes it, at the shortest that reads back as

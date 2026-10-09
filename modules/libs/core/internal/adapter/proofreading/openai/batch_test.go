@@ -31,8 +31,8 @@ func newBatchClient(t *testing.T, batchURL string) *openai.Client {
 	return c
 }
 
-// left is the run of pages the service receives.
-type left struct {
+// batchRequest is the run of pages the service receives.
+type batchRequest struct {
 	Endpoint string `json:"endpoint"`
 	Model    string `json:"model"`
 	Requests []struct {
@@ -121,7 +121,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var run left
+	var run batchRequest
 	if err := json.Unmarshal(raw, &run); err != nil {
 		t.Fatal(err)
 	}

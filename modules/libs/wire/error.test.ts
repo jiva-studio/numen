@@ -16,10 +16,10 @@ describe('an error code', () => {
   )
 
   it('says none of them the same way as another', () => {
-    const said = ErrorCodeSchema.values.map((value) =>
+    const formatted = ErrorCodeSchema.values.map((value) =>
       formatErrorCodeMessage(value.number as ProtoErrorCode),
     )
-    expect(new Set(said).size).toBe(said.length)
+    expect(new Set(formatted).size).toBe(formatted.length)
   })
 
   it('says nothing where there was no error', () => {
@@ -35,15 +35,15 @@ describe('a fault', () => {
   })
 
   it('carries no word of what was thrown, where the code wraps a Go error', () => {
-    const said = formatErrorMessage(new ConnectError('sql: no rows in result set', Code.Internal))
-    expect(said).not.toContain('sql')
+    const message = formatErrorMessage(new ConnectError('sql: no rows in result set', Code.Internal))
+    expect(message).not.toContain('sql')
   })
 
   it('says the sentence the application wrote, where it wrote one', () => {
-    const said = formatErrorMessage(
+    const message = formatErrorMessage(
       new ConnectError('this recording is being listened to', Code.FailedPrecondition),
     )
-    expect(said).toBe('this recording is being listened to')
+    expect(message).toBe('this recording is being listened to')
   })
 
   it('falls back on the code where the application sent no sentence', () => {
@@ -53,10 +53,10 @@ describe('a fault', () => {
   })
 
   it('says nothing the file it could not find is called', () => {
-    const said = formatErrorMessage(
+    const message = formatErrorMessage(
       new ConnectError('stat notes/Leaf mould.md: no such file', Code.NotFound),
     )
-    expect(said).toBe('what was asked for is not there')
+    expect(message).toBe('what was asked for is not there')
   })
 
   it('says nothing at all about a call the window itself stopped', () => {

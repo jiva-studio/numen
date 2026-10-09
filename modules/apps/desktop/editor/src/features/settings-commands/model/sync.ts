@@ -23,7 +23,7 @@ export interface SyncDeps {
   /** Whether the two are one name, as the settings hold it. */
   getSyncEnabled(): Promise<boolean>
   /** The setting written. What could not be written, and nothing where it was. */
-  setSyncEnabled(kept: boolean): Promise<string | null>
+  setSyncEnabled(isEnabled: boolean): Promise<string | null>
 }
 
 export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWriter) {
@@ -31,12 +31,12 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
    * Whether the two are one name. It opens on what an installation nobody has
    * configured does, and is asked of the vault as the window opens.
    */
-  const kept = ref(true)
+  const isEnabled = ref(true)
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
     try {
-      kept.value = await core.getSyncEnabled()
+      isEnabled.value = await core.getSyncEnabled()
     } catch {
       // A vault that cannot be asked leaves the setting where it stands.
     }
@@ -53,7 +53,7 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
       {
         id: SYNCING,
         title: words.syncingGroup,
-        items: [row(ON, words.on, kept.value), row(OFF, words.off, !kept.value)],
+        items: [row(ON, words.on, isEnabled.value), row(OFF, words.off, !isEnabled.value)],
       },
     ]
   }
@@ -64,17 +64,17 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
    */
   const choose = async (item: string): Promise<void> => {
     if (item !== ON && item !== OFF) return
-    const was = kept.value
+    const was = isEnabled.value
     const now = item === ON
     if (now === was) return
     write('')
-    kept.value = now
+    isEnabled.value = now
 
     const failed = await core.setSyncEnabled(now)
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
-    kept.value = was
+    isEnabled.value = was
   }
 
-  return { kept, start, getSyncingGroups, choose }
+  return { isEnabled, kept: isEnabled, start, getSyncingGroups, choose }
 }

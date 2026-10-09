@@ -9,7 +9,7 @@ import { NOTE } from '@/entities/tab'
 
 /** A tab asked to settle: which one it was, and whether it is still waiting. */
 export interface SettleResult {
-  readonly held: string | null
+  readonly tabId: string | null
   readonly isWaiting: boolean
 }
 
@@ -25,11 +25,11 @@ export const atItsFile = (invocation: CommandInvocation, on: TabContext): Comman
  * A tab waiting on the person to answer for it settles nothing and says so.
  */
 export const settleTab = async (path: string, on: TabContext): Promise<SettleResult> => {
-  const held = on.notes.getTabAt(path)
-  if (held === null) return { held, isWaiting: false }
-  if (on.notes.asking(held)) return { held, isWaiting: true }
-  await on.notes.settle(held)
-  return { held, isWaiting: false }
+  const tabId = on.notes.getTabAt(path)
+  if (tabId === null) return { tabId, isWaiting: false }
+  if (on.notes.asking(tabId)) return { tabId, isWaiting: true }
+  await on.notes.settle(tabId)
+  return { tabId, isWaiting: false }
 }
 
 /** A note travelled to, and a vault with none to travel to said. */
