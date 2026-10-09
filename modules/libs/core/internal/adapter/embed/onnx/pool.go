@@ -97,7 +97,7 @@ func releasePadding(p *padding) {
 }
 
 // padBatch lays a batch out as the model takes it: one row per text, every row
-// as long as the longest of them, the rest of a row the padding token.
+// rounded up to a discrete bucket boundary, the rest of a row the padding token.
 //
 // The three come back as the model reads them, row after row, in a padding the
 // caller releases once the batch is done with.
@@ -106,9 +106,7 @@ func padBatch(batch [][]int, pad int) (rows, seq int, in *padding) {
 	for _, one := range batch {
 		seq = max(seq, len(one))
 	}
-	// A batch of empty texts is still a batch, and a model takes no sequence of
-	// no tokens.
-	seq = max(seq, 1)
+	seq = bucket(seq)
 
 	in, _ = paddings.Get().(*padding)
 	if in == nil {
@@ -126,7 +124,7 @@ func padBatch(batch [][]int, pad int) (rows, seq int, in *padding) {
 		for i := range ids {
 			ids[i] = int64(pad)
 		}
-		for i, id := range one {
+		for i, id := range one[:min(len(one), seq)] {
 			ids[i] = int64(id)
 			in.mask[at+i] = 1
 		}
@@ -137,6 +135,20 @@ func padBatch(batch [][]int, pad int) (rows, seq int, in *padding) {
 		}
 	}
 	return rows, seq, in
+}
+
+// bucket rounds a sequence length up to the next discrete boundary.
+func bucket(seq int) int {
+	switch {
+	case seq <= 64:
+		return 64
+	case seq <= 128:
+		return 128
+	case seq <= 256:
+		return 256
+	default:
+		return 512
+	}
 }
 
 func resize(s []int64, size int) []int64 {
