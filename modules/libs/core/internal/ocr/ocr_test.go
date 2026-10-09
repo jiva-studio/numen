@@ -417,6 +417,34 @@ func BenchmarkAssemble(b *testing.B) {
 	}
 }
 
+// createWordPage is a page of rows lines, each cut into one box per word, every
+// third of which ends in a hyphen.
+func createWordPage(rows int) []ocr.Line {
+	words := strings.Fields("the quick brown fox jumps over the lazy dog and keeps running far")
+	lines := make([]ocr.Line, 0, rows*len(words))
+	for i := range rows {
+		for j, word := range words {
+			if i%3 == 0 && j == len(words)-1 {
+				word += "-"
+			}
+			lines = append(lines, line(j*50, i*40, j*50+45, i*40+20, word))
+		}
+	}
+	return lines
+}
+
+func BenchmarkAssembleWords(b *testing.B) {
+	for _, rows := range []int{40, 120} {
+		lines := createWordPage(rows)
+		b.Run(fmt.Sprintf("%d lines", rows), func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				ocr.Assemble(lines)
+			}
+		})
+	}
+}
+
 var oldHyphen = regexp.MustCompile(`(\pL)[-‐‑\x{00ad}]$`)
 
 // assembleByRegexp joins one-box lines that are already in reading order, by
