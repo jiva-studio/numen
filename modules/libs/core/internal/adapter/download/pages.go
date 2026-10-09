@@ -98,11 +98,7 @@ func (p *pages) Text(ctx context.Context, at domain.URL, _ port.PreferredCaption
 		return port.Text{}, fmt.Errorf("%s answered %s", string(at), answer.Status)
 	}
 
-	raw, err := io.ReadAll(io.LimitReader(answer.Body, mostBytes))
-	if err != nil {
-		return port.Text{}, err
-	}
-	read, err := readability.FromReader(strings.NewReader(string(raw)), address)
+	read, err := readability.FromReader(io.LimitReader(answer.Body, mostBytes), address)
 	if err != nil {
 		return port.Text{}, port.ErrNothingDownloaded
 	}
