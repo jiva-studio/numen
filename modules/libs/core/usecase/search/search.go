@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -268,6 +267,11 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, p.Floor)
 }
 
+type passageSource struct {
+	prose string
+	opens int
+}
+
 // read fills in the text of each passage from the vault. A chunk is a place in a
 // file, and the file is what holds the words.
 //
@@ -294,19 +298,17 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 
 	// Several passages of one file are read once. A source is one text however
 	// many passages name it, so its path is the whole of the key.
-	read := map[string]string{}
-	gone := map[string]bool{}
-	// Where each of those texts turns into prose, found once for the same reason.
-	opens := map[string]int{}
+	read := make(map[string]passageSource, len(found))
+	gone := make(map[string]bool)
 
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		prose, held := read[p.Source]
+		cached, held := read[p.Source]
 		if !held && !gone[p.Source] {
-			prose, err = extractText(ctx, of, p.Source, p.Producer, p.SourceHash)
+			prose, err := extractText(ctx, of, p.Source, p.Producer, p.SourceHash)
 			if port.IsNoNote(err) || errors.Is(err, errUnreadable) {
 				gone[p.Source] = true
 				continue
@@ -314,14 +316,17 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 			if err != nil {
 				return nil, fmt.Errorf("read %s: %w", p.Source, err)
 			}
-			read[p.Source] = prose
-			opens[p.Source] = proseOpens(prose)
+			cached = passageSource{
+				prose: prose,
+				opens: proseOpens(prose),
+			}
+			read[p.Source] = cached
 		}
 		if gone[p.Source] {
 			continue
 		}
-		p.Text = span(prose, p.Start, p.Length)
-		p.Line = lineOf(prose, opens[p.Source], p.Start+p.HitAt)
+		p.Text = span(cached.prose, p.Start, p.Length)
+		p.Line = lineOf(cached.prose, cached.opens, p.Start+p.HitAt)
 		out = append(out, p)
 	}
 	return out, nil
@@ -380,11 +385,28 @@ func lineOf(raw string, opens, start int) int {
 // stands before its prose; a text that opens with none is prose from its first
 // byte.
 func proseOpens(raw string) int {
-	doc, err := markdown.Open([]byte(raw))
-	if err != nil {
+	rest := strings.TrimPrefix(raw, "\ufeff")
+	first, after, found := strings.Cut(rest, "\n")
+	if !found || strings.TrimRight(first, "\r") != "---" {
 		return 0
 	}
-	return len(raw) - len(doc.Body())
+	for at := 0; at < len(after); {
+		lineEnd := strings.IndexByte(after[at:], '\n')
+		var line string
+		var next int
+		if lineEnd >= 0 {
+			line = after[at : at+lineEnd]
+			next = at + lineEnd + 1
+		} else {
+			line = after[at:]
+			next = len(after)
+		}
+		if strings.TrimRight(line, "\r") == "---" {
+			return (len(raw) - len(after)) + next
+		}
+		at = next
+	}
+	return 0
 }
 
 // Mode is how a search is asked. Each mode is an order of its own, and a
