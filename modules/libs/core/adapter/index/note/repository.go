@@ -108,10 +108,11 @@ func saveNote(
 	}
 
 	var row int64
+	var updated bool
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
 		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.Stamp(n.Fingerprint.ModTime),
 		nil, nil, nil,
-	).Scan(&row); err != nil {
+	).Scan(&row, &updated); err != nil {
 		return fmt.Errorf("record the source this note is: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
@@ -119,13 +120,15 @@ func saveNote(
 		return err
 	}
 
-	// The source row survives a re-save, so nothing cascades and each kind of
-	// derived row is cleared by hand.
-	for _, name := range []string{
-		"clear_heading_names", "clear_headings", "clear_links", "clear_problems",
-	} {
-		if err := exec(ctx, tx, name, row); err != nil {
-			return err
+	if updated {
+		// The source row survives a re-save, so nothing cascades and each kind of
+		// derived row is cleared by hand.
+		for _, name := range []string{
+			"clear_heading_names", "clear_headings", "clear_links", "clear_problems",
+		} {
+			if err := exec(ctx, tx, name, row); err != nil {
+				return err
+			}
 		}
 	}
 	kept := outline(n)
