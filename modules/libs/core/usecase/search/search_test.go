@@ -103,7 +103,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 // given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	owing, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, model.Recipe(), 0, 1000)
+	owing, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, model.Recipe(), 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

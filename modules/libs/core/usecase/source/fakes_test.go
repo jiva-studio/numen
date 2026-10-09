@@ -13,6 +13,7 @@ import (
 	"io"
 	"io/fs"
 	"maps"
+	"math"
 	"math/rand/v2"
 	"slices"
 	"strconv"
@@ -151,32 +152,39 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	if limit <= 0 {
 		return nil, "", fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
-	from, err := parseCursor(after)
+	afterMTime, afterChunk, err := parseCursor(after)
 	if err != nil {
 		return nil, "", err
 	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	var out []domain.Passage
-	var last int64
+	var lastChunk storedChunk
 	for _, c := range s.getOrderedChunks() {
-		if c.vault != vaultID || c.parent == 0 || c.id <= from || s.hasVector(c.id, model) {
+		if c.vault != vaultID || c.parent == 0 || s.hasVector(c.id, model) {
+			continue
+		}
+		src := s.sources[c.vault][c.path]
+		mtime := src.Fingerprint.ModTime.UnixNano()
+		if mtime > afterMTime || (mtime == afterMTime && c.id <= afterChunk) {
 			continue
 		}
 		// The source says which text its chunks are places in, as the query
 		// does: a chunk of a source standing on a reading is read from that
 		// reading and not from the file.
-		src := s.sources[c.vault][c.path]
 		out = append(out, domain.Passage{
 			ChunkID: chunkID(c.id), Source: c.path, Start: c.start, Length: c.length, Location: c.location,
 			Producer: src.Producer, SourceHash: src.Hash, ChunkHash: hashOf(c.text),
 		})
-		last = c.id
+		lastChunk = c
 		if len(out) == limit {
 			break
 		}
 	}
 	next := after
 	if len(out) > 0 {
-		next = port.ChunkCursor(chunkID(last))
+		src := s.sources[lastChunk.vault][lastChunk.path]
+		next = port.ChunkCursor(strconv.FormatInt(src.Fingerprint.ModTime.UnixNano(), 10) + ":" + strconv.FormatInt(lastChunk.id, 10))
 	}
 	return out, next, nil
 }
@@ -186,16 +194,29 @@ func chunkID(row int64) domain.ChunkID {
 	return domain.ChunkID(strconv.FormatInt(row, 10))
 }
 
-// parseCursor is the chunk a walk carries on after, and zero for the beginning.
-func parseCursor(after port.ChunkCursor) (int64, error) {
+// parseCursor is the point in the ordering a walk carries on after. The empty
+// cursor starts from the beginning.
+func parseCursor(after port.ChunkCursor) (int64, int64, error) {
 	if after == "" {
-		return 0, nil
+		return math.MaxInt64, 0, nil
 	}
-	row, err := strconv.ParseInt(string(after), 10, 64)
+	mtimeStr, chunkStr, ok := strings.Cut(string(after), ":")
+	if !ok {
+		row, err := strconv.ParseInt(string(after), 10, 64)
+		if err != nil {
+			return 0, 0, fmt.Errorf("%q is no chunk of this store", after)
+		}
+		return math.MaxInt64, row, nil
+	}
+	mtime, err := strconv.ParseInt(mtimeStr, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("%q is no chunk of this store", after)
+		return 0, 0, fmt.Errorf("%q is no cursor of this store", after)
 	}
-	return row, nil
+	chunkRow, err := strconv.ParseInt(chunkStr, 10, 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("%q is no cursor of this store", after)
+	}
+	return mtime, chunkRow, nil
 }
 
 // hashOf is the address an index gives a chunk's text, and what a vector
@@ -314,6 +335,8 @@ func (s *store) cut(vaultID domain.VaultID, path string) bool {
 
 // hasChunk says whether the index hasChunk the chunk named.
 func (s *store) hasChunk(chunk domain.ChunkID) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	for _, c := range s.chunks {
 		if chunkID(c.id) == chunk {
 			return true
@@ -330,8 +353,6 @@ func (s *store) getVectors(c storedChunk) []port.Vector {
 }
 
 func (s *store) hasVector(chunk int64, model port.EmbeddingModel) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	for _, v := range s.vectors[chunkID(chunk)] {
 		if v.Model == model {
 			return true
@@ -340,11 +361,20 @@ func (s *store) hasVector(chunk int64, model port.EmbeddingModel) bool {
 	return false
 }
 
-// getOrderedChunks is the chunks by their own number, which is the order every
-// answer about them is given in.
+// getOrderedChunks is the chunks ordered by source modification time descending,
+// then chunk id ascending.
 func (s *store) getOrderedChunks() []storedChunk {
 	out := slices.Clone(s.chunks)
-	slices.SortFunc(out, func(a, b storedChunk) int { return cmp.Compare(a.id, b.id) })
+	slices.SortFunc(out, func(a, b storedChunk) int {
+		srcA := s.sources[a.vault][a.path]
+		srcB := s.sources[b.vault][b.path]
+		timeA := srcA.Fingerprint.ModTime.UnixNano()
+		timeB := srcB.Fingerprint.ModTime.UnixNano()
+		if timeA != timeB {
+			return cmp.Compare(timeB, timeA)
+		}
+		return cmp.Compare(a.id, b.id)
+	})
 	return out
 }
 

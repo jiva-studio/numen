@@ -1,6 +1,7 @@
 package source
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -438,6 +439,42 @@ func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 	for _, chunk := range small {
 		if len(index.getVectors(chunk)) != 1 {
 			t.Fatalf("chunk %d carries %d vectors, want 1", chunk.id, len(index.getVectors(chunk)))
+		}
+	}
+}
+
+// Chunks of recently modified sources are embedded before older sources.
+func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+	shelf.hold("library/old.epub", domain.KindBook, bookOf(t, "Old Book", words(sanskrit, 400)), 100)
+	shelf.hold("library/recent.epub", domain.KindBook, bookOf(t, "Recent Book", words(latin, 400)), 200)
+
+	extract := NewExtract(vaults{first.ID: shelf}, index, index)
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+
+	model := &embedder{dims: dimensions}
+	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed.Embedder = model
+	embed.BatchCharacters = 4000
+	if _, err := embed.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(model.seen) == 0 {
+		t.Fatal("no texts were embedded")
+	}
+	sawSanskrit := false
+	for _, text := range model.seen {
+		isLatin := strings.Contains(text, "aqua") || strings.Contains(text, "terra")
+		isSanskrit := strings.Contains(text, "udyana") || strings.Contains(text, "vrksa")
+		if isSanskrit {
+			sawSanskrit = true
+		}
+		if isLatin && sawSanskrit {
+			t.Errorf("recent source (latin) was embedded after older source (sanskrit): %q", text)
 		}
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -39,6 +40,10 @@ type Passage struct {
 	Hash string
 	// ChunkHash addresses the text this chunk held when the index cut it.
 	ChunkHash string
+	// MTime is when the source was last modified.
+	MTime int64
+	// Source is the source row id.
+	Source int64
 }
 
 // ID is how the core addresses the chunk on a row. This is the one place a
@@ -350,9 +355,8 @@ func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kin
 }
 
 // GetUnembeddedChunks is the small chunks of a vault with no vector from the
-// model in use, from `after` onwards. Asked with the last id of the previous
-// answer, it resumes.
-func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after int64, limit int) ([]Passage, error) {
+// model in use, ordered so recently modified sources are embedded first.
+func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, afterMTime, afterSource, afterChunk int64, limit int) ([]Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -364,7 +368,11 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("unembedded"), recipe, vault, after, limit)
+	if afterMTime <= 0 && afterSource <= 0 && afterChunk <= 0 {
+		afterMTime = math.MaxInt64
+		afterSource = math.MaxInt64
+	}
+	rows, err := q.db.QueryContext(ctx, stmt.Get("unembedded"), recipe, vault, afterMTime, afterMTime, afterSource, afterSource, afterChunk, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +381,7 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 	var out []Passage
 	for rows.Next() {
 		var p Passage
-		if err := rows.Scan(&p.Chunk, &p.Path, &p.Producer, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Path, &p.Producer, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash, &p.MTime, &p.Source); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

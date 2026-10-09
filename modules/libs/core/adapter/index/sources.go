@@ -2,6 +2,10 @@ package index
 
 import (
 	"context"
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -89,11 +93,11 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 }
 
 func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
-	from, err := getCursorRow(after)
+	fromMTime, fromSource, fromChunk, err := parseCursor(after)
 	if err != nil {
 		return nil, "", err
 	}
-	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from, limit)
+	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), fromMTime, fromSource, fromChunk, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -112,18 +116,53 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	}
 	next := after
 	if len(found) > 0 {
-		next = port.ChunkCursor(chunk.ID(found[len(found)-1].Chunk))
+		last := found[len(found)-1]
+		next = port.ChunkCursor(strconv.FormatInt(last.MTime, 10) + ":" + strconv.FormatInt(last.Source, 10) + ":" + strconv.FormatInt(last.Chunk, 10))
 	}
 	return out, next, nil
 }
 
-// getCursorRow is the chunk a walk carries on after. A cursor is a chunk's own
-// address, so it is read the same way, and the empty one is the beginning.
-func getCursorRow(after port.ChunkCursor) (int64, error) {
+// parseCursor is the point in the ordering a walk carries on after. The empty
+// cursor starts from the beginning.
+func parseCursor(after port.ChunkCursor) (int64, int64, int64, error) {
 	if after == "" {
-		return 0, nil
+		return math.MaxInt64, math.MaxInt64, 0, nil
 	}
-	return chunk.Row(domain.ChunkID(after))
+	parts := strings.Split(string(after), ":")
+	if len(parts) == 1 {
+		row, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("%q is no chunk of this index", after)
+		}
+		return math.MaxInt64, math.MaxInt64, row, nil
+	}
+	if len(parts) == 2 {
+		mtime, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
+		}
+		chunkRow, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
+		}
+		return mtime, math.MaxInt64, chunkRow, nil
+	}
+	if len(parts) == 3 {
+		mtime, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
+		}
+		sourceRow, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
+		}
+		chunkRow, err := strconv.ParseInt(parts[2], 10, 64)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
+		}
+		return mtime, sourceRow, chunkRow, nil
+	}
+	return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
 }
 
 func newChunkSource(s domain.Source) chunk.Source {
