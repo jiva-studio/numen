@@ -8,7 +8,6 @@ package markdown
 import (
 	"bytes"
 	"path"
-	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -16,8 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 )
-
-var headingRe = regexp.MustCompile(`^(#{1,6})\s+(.+?)\s*#*\s*$`)
 
 // Parse reads one note. It never fails: a file that cannot be understood is
 // still readable text, and refusing to index it would hide it from the user.
@@ -84,26 +81,45 @@ func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 	// because the body is what gets indexed and searched, not what gets parsed.
 	rest := bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
 
-	first, after, found := bytes.Cut(rest, []byte("\n"))
-	if !found || strings.TrimRight(string(first), "\r") != "---" {
+	idx := bytes.IndexByte(rest, '\n')
+	if idx < 0 {
+		return nil, raw, false
+	}
+	if !isFrontmatterDelimiter(rest[:idx]) {
 		return nil, raw, false
 	}
 
+	after := rest[idx+1:]
+	fmStart := len(rest) - len(after)
 	scan := after
-	var collected []byte
 	for {
-		line, remainder, more := bytes.Cut(scan, []byte("\n"))
-		if strings.TrimRight(string(line), "\r") == "---" {
-			return collected, remainder, true
+		lineEnd := bytes.IndexByte(scan, '\n')
+		var line, remainder []byte
+		var more bool
+		if lineEnd >= 0 {
+			line = scan[:lineEnd]
+			remainder = scan[lineEnd+1:]
+			more = true
+		} else {
+			line = scan
+			remainder = nil
+			more = false
+		}
+		if isFrontmatterDelimiter(line) {
+			fmEnd := len(rest) - len(scan)
+			return rest[fmStart:fmEnd], remainder, true
 		}
 		if !more {
 			// Unterminated block: not frontmatter at all.
 			return nil, raw, false
 		}
-		collected = append(collected, line...)
-		collected = append(collected, '\n')
 		scan = remainder
 	}
+}
+
+func isFrontmatterDelimiter(line []byte) bool {
+	line = bytes.TrimRight(line, "\r")
+	return len(line) == 3 && line[0] == '-' && line[1] == '-' && line[2] == '-'
 }
 
 // Body is the prose below the frontmatter, as the bytes it stands as in the
@@ -127,13 +143,42 @@ func headings(body []byte) []domain.Heading {
 		}
 		text := strings.TrimRight(string(body[at:end]), "\r")
 		if !f.IsCrossedBy(text) && !f.IsInside() {
-			if m := headingRe.FindStringSubmatch(text); m != nil {
-				out = append(out, domain.Heading{Level: len(m[1]), Text: m[2], Line: line, Offset: at})
+			if level, headingText, ok := parseHeading(text); ok {
+				out = append(out, domain.Heading{Level: level, Text: headingText, Line: line, Offset: at})
 			}
 		}
 		at = end + 1
 	}
 	return out
+}
+
+func parseHeading(text string) (level int, heading string, ok bool) {
+	n := 0
+	for n < len(text) && text[n] == '#' {
+		n++
+	}
+	if n < 1 || n > 6 {
+		return 0, "", false
+	}
+	rest := text[n:]
+	if len(rest) == 0 || (rest[0] != ' ' && rest[0] != '\t') {
+		return 0, "", false
+	}
+	i := 0
+	for i < len(rest) && (rest[i] == ' ' || rest[i] == '\t') {
+		i++
+	}
+	content := rest[i:]
+	if len(content) == 0 {
+		return 0, "", false
+	}
+	trimmed := strings.TrimRight(content, " \t")
+	trimmed = strings.TrimRight(trimmed, "#")
+	trimmed = strings.TrimRight(trimmed, " \t")
+	if trimmed == "" {
+		trimmed = content[:1]
+	}
+	return n, trimmed, true
 }
 
 // title prefers an explicit frontmatter title and falls back to the filename —

@@ -1,14 +1,10 @@
 package markdown
 
 import (
-	"regexp"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
-
-// A wikilink is the ordinary link people write. Anything inside the brackets is
-// the target, an alias, or a fragment; the address parser sorts that out.
-var wikilinkRe = regexp.MustCompile(`\[\[([^\]\[]+)\]\]`)
 
 // Wikilink is one `[[…]]` where it stands in a line.
 type Wikilink struct {
@@ -28,13 +24,32 @@ type Wikilink struct {
 // come through here, so the brackets answer one question and not three.
 func WikilinksIn(line string) []Wikilink {
 	var out []Wikilink
-	for _, found := range wikilinkRe.FindAllStringSubmatchIndex(line, -1) {
-		inside := line[found[2]:found[3]]
-		target := domain.ParseAddress(inside)
-		if target.Value == "" {
+	pos := 0
+	for pos < len(line) {
+		start := strings.Index(line[pos:], "[[")
+		if start < 0 {
+			break
+		}
+		start += pos
+		closeIdx := strings.Index(line[start+2:], "]]")
+		if closeIdx < 0 {
+			break
+		}
+		end := start + 2 + closeIdx
+		inside := line[start+2 : end]
+		if strings.ContainsAny(inside, "[]") {
+			pos = start + 1
 			continue
 		}
-		out = append(out, Wikilink{At: found[0], To: found[1], Inside: inside, Target: target})
+		if len(inside) == 0 {
+			pos = end + 2
+			continue
+		}
+		target := domain.ParseAddress(inside)
+		if target.Value != "" {
+			out = append(out, Wikilink{At: start, To: end + 2, Inside: inside, Target: target})
+		}
+		pos = end + 2
 	}
 	return out
 }
