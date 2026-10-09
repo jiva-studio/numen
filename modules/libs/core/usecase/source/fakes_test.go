@@ -17,6 +17,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -41,6 +42,7 @@ var (
 // store is the index, in memory, answering every question the way the index
 // answers it. What the two passes do next is read from those answers.
 type store struct {
+	mu      sync.RWMutex
 	sources map[domain.VaultID]map[string]domain.Source // vault, then path
 	chunks  []storedChunk
 	vectors map[domain.ChunkID][]port.Vector // by chunk, appended, so a second write shows
@@ -95,6 +97,8 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 	if len(vectors) == 0 {
 		return nil
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.groups = append(s.groups, slices.Clone(vectors))
 	for _, v := range vectors {
 		s.vectors[v.ChunkID] = append(s.vectors[v.ChunkID], v)
@@ -105,6 +109,8 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 // GetKeptVectors is the vectors this store already holds for the texts given,
 // which is what a real index answers out of what it was paid for.
 func (s *store) GetKeptVectors(_ context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	if s.kept == nil {
 		return nil, nil
 	}
@@ -317,9 +323,15 @@ func (s *store) hasChunk(chunk domain.ChunkID) bool {
 }
 
 // getVectors is the vectors this store holds for one chunk.
-func (s *store) getVectors(c storedChunk) []port.Vector { return s.vectors[chunkID(c.id)] }
+func (s *store) getVectors(c storedChunk) []port.Vector {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return slices.Clone(s.vectors[chunkID(c.id)])
+}
 
 func (s *store) hasVector(chunk int64, model port.EmbeddingModel) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	for _, v := range s.vectors[chunkID(chunk)] {
 		if v.Model == model {
 			return true
@@ -569,7 +581,7 @@ func vectorOf(text string, dims int) []float32 {
 
 // bookOf is the bytes of an EPUB whose spine is the parts given, each under a
 // heading of its own, so that the book names its places.
-func bookOf(t *testing.T, title string, parts ...string) []byte {
+func bookOf(t testing.TB, title string, parts ...string) []byte {
 	t.Helper()
 
 	var buf bytes.Buffer
