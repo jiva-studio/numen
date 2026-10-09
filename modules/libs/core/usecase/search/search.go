@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -139,39 +141,72 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	p = p.fill()
 
-	var rankings [][]domain.Passage
+	var (
+		lexical  []domain.Passage
+		named    []domain.Passage
+		dense    []domain.Passage
+		hasDense bool
+	)
+
+	g, gctx := errgroup.WithContext(ctx)
+
 	if p.Lexical > 0 {
-		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
-		if err != nil {
-			return nil, err
-		}
-		rankings = append(rankings, lexical)
+		g.Go(func() error {
+			found, err := u.passages.Lexical(gctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
+			if err != nil {
+				return err
+			}
+			lexical = found
+			return nil
+		})
 	}
-	var named []domain.Passage
 	if p.Named > 0 {
-		found, err := u.passages.GetNamedPassages(ctx, v.ID, query, p.Kinds, p.Named, p.IsGrowing)
-		if err != nil {
-			return nil, err
-		}
-		named = found
-		rankings = append(rankings, named)
+		g.Go(func() error {
+			found, err := u.passages.GetNamedPassages(gctx, v.ID, query, p.Kinds, p.Named, p.IsGrowing)
+			if err != nil {
+				return err
+			}
+			named = found
+			return nil
+		})
 	}
 	if p.Dense > 0 && u.embedder != nil {
-		dense, err := u.findNearest(ctx, v, query, p)
-		switch {
-		case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-			return nil, err
-		case errors.Is(err, errNoVector):
-			// A model out of reach leaves the words to answer. A vault is
-			// searched on a machine with no network, and by a person whose key
-			// has run out.
-			u.errorHandler(err)
-		case err != nil:
-			return nil, err
-		default:
-			rankings = append(rankings, dense)
-		}
+		g.Go(func() error {
+			found, err := u.findNearest(gctx, v, query, p)
+			switch {
+			case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+				return err
+			case errors.Is(err, errNoVector):
+				// A model out of reach leaves the words to answer. A vault is
+				// searched on a machine with no network, and by a person whose key
+				// has run out.
+				u.errorHandler(err)
+				return nil
+			case err != nil:
+				return err
+			default:
+				dense = found
+				hasDense = true
+				return nil
+			}
+		})
 	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	var rankings [][]domain.Passage
+	if p.Lexical > 0 {
+		rankings = append(rankings, lexical)
+	}
+	if p.Named > 0 {
+		rankings = append(rankings, named)
+	}
+	if hasDense {
+		rankings = append(rankings, dense)
+	}
+
 	return u.read(ctx, v, collapse(merge(rankings...), named, p.Each, p.Limit))
 }
 
