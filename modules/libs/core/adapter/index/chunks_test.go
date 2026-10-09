@@ -264,14 +264,14 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 	if len(dense) != 2 {
 		t.Fatalf("%d matches, want the two small chunks", len(dense))
 	}
-	// The words half finds the small chunks and the large one, which is one row
-	// per chunk of the book.
+	// The words half finds the small chunks, which is one row per small chunk
+	// of the book.
 	lexical, err := queries.Lexical(ctx, first.ID, "first", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lexical) != 3 {
-		t.Fatalf("%d matches, want every chunk of the one book", len(lexical))
+	if len(lexical) != 2 {
+		t.Fatalf("%d matches, want the two small chunks of the one book", len(lexical))
 	}
 
 	for _, p := range append(dense, lexical...) {
@@ -363,7 +363,7 @@ func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	vectors := countRows(t, db, `SELECT COUNT(*) FROM vectors`)
 	vec := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 	fts := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`)
-	if chunks != 3 || vectors != 2 || vec != 2 || fts != 3 {
+	if chunks != 3 || vectors != 2 || vec != 2 || fts != 2 {
 		t.Fatalf("cutting once gave %d chunks, %d vectors, %d rows in the vector index, %d in the full-text index",
 			chunks, vectors, vec, fts)
 	}
@@ -515,8 +515,8 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 2 {
 		t.Errorf("%d rows in the vector index, want the second vault's two", got)
 	}
-	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != 3 {
-		t.Errorf("%d rows in the full-text index, want the second vault's three", got)
+	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != 2 {
+		t.Errorf("%d rows in the full-text index, want the second vault's two", got)
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM sources`); got != 1 {
 		t.Errorf("%d sources, want the second vault's one", got)
@@ -1267,7 +1267,12 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 			Text: "Madhavendra Puri was the disciple of Laksmipati. " +
 				"Madhavendra Puri's disciples included Isvara Puri. " +
 				"Madhavendra Puri is said to be. Madhavendra Puri again.",
-			Small: []chunk.Chunk{{Start: 100, Length: 100, Text: "Madhavendra Puri four times over."}},
+			Small: []chunk.Chunk{{
+				Start: 100, Length: 100,
+				Text: "Madhavendra Puri was the disciple of Laksmipati. " +
+					"Madhavendra Puri's disciples included Isvara Puri. " +
+					"Madhavendra Puri is said to be. Madhavendra Puri again.",
+			}},
 		},
 		{
 			Start: 200, Length: 100, Location: "Alice Fenn",

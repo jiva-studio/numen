@@ -422,8 +422,8 @@ func Clear(ctx context.Context, tx *writing.Transaction, source int64) error {
 // were kept are then pointed at the large chunk they now sit in, and the rows
 // that are gone come out last.
 //
-// Every chunk written is indexed for the words it holds, large and small alike,
-// so that a search asked by words and one asked by meaning name one kind of row.
+// Only leaf chunks are indexed for the words they hold, so that a search asked
+// by words finds the smallest enclosing passage.
 func Replace(ctx context.Context, tx *writing.Transaction, source, vault int64, chunks []Chunk) error {
 	held, err := chunksOf(ctx, tx, source)
 	if err != nil {
@@ -436,12 +436,12 @@ func Replace(ctx context.Context, tx *writing.Transaction, source, vault int64, 
 	}
 
 	for _, large := range chunks {
-		row, err := put(ctx, tx, held, source, vault, large, nil)
+		row, err := put(ctx, tx, held, source, vault, large, nil, len(large.Small) == 0)
 		if err != nil {
 			return err
 		}
 		for _, small := range large.Small {
-			if _, err := put(ctx, tx, held, source, vault, small, row); err != nil {
+			if _, err := put(ctx, tx, held, source, vault, small, row, true); err != nil {
 				return err
 			}
 		}
@@ -458,7 +458,7 @@ func Replace(ctx context.Context, tx *writing.Transaction, source, vault int64, 
 // with nothing, which is also what the row's `parent_id` becomes.
 func put(
 	ctx context.Context, tx *writing.Transaction, held *rows,
-	source, vault int64, c Chunk, parent any,
+	source, vault int64, c Chunk, parent any, isLeaf bool,
 ) (int64, error) {
 	key := textID{hash: hashOf(c.Text), isSmall: parent != nil}
 	if row, kept := held.claim(key); kept {
@@ -478,8 +478,10 @@ func put(
 	if err != nil {
 		return 0, fmt.Errorf("store a chunk of this source: %w", err)
 	}
-	if _, err := tx.ExecContext(ctx, stmt.Get("insert_fts"), row, c.Text); err != nil {
-		return 0, fmt.Errorf("index a chunk for the words in it: %w", err)
+	if isLeaf {
+		if _, err := tx.ExecContext(ctx, stmt.Get("insert_fts"), row, c.Text); err != nil {
+			return 0, fmt.Errorf("index a chunk for the words in it: %w", err)
+		}
 	}
 	if err := writeSectionNames(ctx, tx, row, c); err != nil {
 		return 0, err

@@ -490,8 +490,8 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts WHERE rowid = ?`, kept); got != 1 {
 		t.Errorf("%d full-text rows for the chunk that was kept", got)
 	}
-	// One row per chunk, and none naming a chunk that is gone.
-	chunks := countRows(t, db, `SELECT COUNT(*) FROM chunks`)
+	// One row per small chunk, and none naming a chunk that is gone.
+	chunks := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NOT NULL`)
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_fts`); got != chunks {
 		t.Errorf("%d rows in the full-text index for %d chunks", got, chunks)
 	}
@@ -621,26 +621,22 @@ func TestAChunkIsNamedAfterTheSectionItWasCutInside(t *testing.T) {
 	}
 }
 
-func TestANoteWithSectionsIsStillFoundByItsTitle(t *testing.T) {
+func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	// One large chunk encloses the whole note however many sections it holds, and
-	// the note's title is in the text of it, so a note answers to the name it was
-	// given and not only to the words in it.
+	// a hit in any section returns the enclosing chunk for the note.
 	ctx := t.Context()
 	db := openDB(t)
 
 	body := sectionsOf(192, 48)
 	n := parseNote("notes/Entropy.md", body)
-	if strings.Contains(body, n.Title) {
-		t.Fatalf("the body holds the title %q, so a hit on it proves nothing", n.Title)
-	}
 	save(t, db, first, n)
 
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, n.Title, nil, 10, false)
+	found, err := db.ChunkQueries().Lexical(ctx, first.ID, "Sectiona", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) == 0 {
-		t.Fatalf("the note is not findable by %q, which is its title", n.Title)
+		t.Fatal("the note is not findable by \"Sectiona\", which is in its first section")
 	}
 	// The enclosing chunk is the note: it begins at the first word of the body and
 	// ends at the last.

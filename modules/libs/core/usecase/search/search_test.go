@@ -200,8 +200,8 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// can lose the vault filter.
 	ctx := t.Context()
 	c := newCorpus(t)
-	c.cut(t, c.first, "notes/Entropy.md", "a measure of disorder")
-	c.cut(t, c.second, "notes/Quasar.md", "a distant beacon")
+	c.cut(t, c.first, "notes/Entropy.md", "a measure of disorder, shared")
+	c.cut(t, c.second, "notes/Quasar.md", "a distant beacon, shared")
 
 	// The vaults point different ways, and the query below is the second's own
 	// vector: nearest to everything it holds, and near enough to the first's for
@@ -339,18 +339,18 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once", "disorder twice", "disorder again",
 		"disorder once more", "disorder at last")
 
-	// Every chunk of the note matches, the large one included.
+	// Every small chunk of the note matches.
 	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(hits) != 6 {
-		t.Fatalf("%d chunks of the note match, want its five small chunks and the large one", len(hits))
+	if len(hits) != 5 {
+		t.Fatalf("%d chunks of the note match, want its five small chunks", len(hits))
 	}
 
 	found := c.searchIn(t, c.first, "disorder", nil)
 	if len(found) != 1 {
-		t.Errorf("one note contributing six matching chunks gave %v", sources(found))
+		t.Errorf("one note contributing five matching chunks gave %v", sources(found))
 	}
 }
 
