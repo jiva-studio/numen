@@ -11,26 +11,26 @@ import { openNotes, type Notes } from '@/entities/note'
 import { useFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
 import type { NoteResult } from '@/entities/note'
 
-/** What the application says over the quit stream, when a test says it. */
-function stream() {
-  const said: { token: string; flush: boolean }[] = []
+/** What the application sends over the quit stream during tests. */
+function createMockStream() {
+  const events: { token: string; flush: boolean }[] = []
   let wake: (() => void) | null = null
-  let over = false
+  let isOver = false
   return {
-    say(message: { token: string; flush: boolean }) {
-      said.push(message)
+    send(message: { token: string; flush: boolean }) {
+      events.push(message)
       wake?.()
     },
     /** The stream drops. The next one a page opens is a stream again. */
     end() {
-      over = true
+      isOver = true
       wake?.()
     },
     async *read() {
       for (;;) {
-        while (said.length > 0) yield said.shift() as { token: string; flush: boolean }
-        if (over) {
-          over = false
+        while (events.length > 0) yield events.shift() as { token: string; flush: boolean }
+        if (isOver) {
+          isOver = false
           return
         }
         await new Promise<void>((woken) => {
@@ -41,24 +41,24 @@ function stream() {
   }
 }
 
-/** A core whose reads and writes a test drives, and whose quit it speaks for. */
-function fake(getQuits: () => AsyncIterable<{ token: string; flush: boolean }>) {
+/** A mock core whose reads and writes a test drives, and whose quit it speaks for. */
+function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: boolean }>) {
   const files = new Map<string, string>()
-  const wrote: { path: string; body: string }[] = []
-  const answered: { token: string; result: FlushResult }[] = []
+  const writtenFiles: { path: string; body: string }[] = []
+  const reportedResults: { token: string; result: FlushResult }[] = []
   /** Writes wait here until a test lets them through. */
-  let held: (() => void) | null = null
+  let pendingWriteResolve: (() => void) | null = null
 
   const core: Notes & FlushDeps = {
     watchQuit: getQuits,
     reportFlush: async (token: string, result: FlushResult = 'written') => {
-      answered.push({ token, result })
+      reportedResults.push({ token, result })
     },
     read: async (path): Promise<NoteResult> =>
       files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('missing'),
     write: async (path, body): Promise<NoteResult> => {
-      if (held) await new Promise<void>((through) => (held = through))
-      wrote.push({ path, body })
+      if (pendingWriteResolve) await new Promise<void>((through) => (pendingWriteResolve = through))
+      writtenFiles.push({ path, body })
       files.set(path, body)
       return asValue({ body: '' })
     },
@@ -66,41 +66,39 @@ function fake(getQuits: () => AsyncIterable<{ token: string; flush: boolean }>) 
   return {
     core,
     files,
-    wrote,
-    answered,
-    hold: () => {
-      held = () => {}
+    writtenFiles,
+    reportedResults,
+    holdWrites: () => {
+      pendingWriteResolve = () => {}
     },
-    release: () => {
-      const through = held
-      held = null
+    releaseWrites: () => {
+      const through = pendingWriteResolve
+      pendingWriteResolve = null
       through?.()
     },
   }
 }
 
 /**
- * A tab whose text the file changed under, which a test answers for. The write
- * each way out would do is not this file's subject; what it records is which
- * way the person took.
+ * A tab whose text changed under the file. Records the action taken.
  */
 function createConflict(note: string) {
-  const took: string[] = []
+  const actions: string[] = []
   let drop = () => {}
   const conflict: Conflict = {
     note,
     keep: async () => {
-      took.push('keep ' + note)
+      actions.push('keep ' + note)
       drop()
     },
     take: async () => {
-      took.push('take ' + note)
+      actions.push('take ' + note)
       drop()
     },
   }
   return {
     conflict,
-    took,
+    actions,
     raise: (raising: (one: Conflict) => () => void) => {
       drop = raising(conflict)
     },
@@ -116,10 +114,10 @@ const settle = async () => {
 
 describe('a page asked to write what it owes', () => {
   it('writes an unsaved tab and only then says it has', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const notes = openNotes(at.core)
-    const going = useFileFlush(at.core)
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const notes = openNotes(fakeCore.core)
+    const going = useFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     void going.start()
 
@@ -128,45 +126,47 @@ describe('a page asked to write what it owes', () => {
     notes.setBody('Note.md', 'what the person was in the middle of')
 
     // No interval has fired, so what was typed is in the page and nowhere else.
-    expect(at.wrote).toEqual([])
+    expect(fakeCore.writtenFiles).toEqual([])
 
-    said.say({ token: '7', flush: true })
+    mockStream.send({ token: '7', flush: true })
     await settle()
 
-    expect(at.wrote).toEqual([{ path: 'Note.md', body: 'what the person was in the middle of' }])
-    expect(at.answered).toEqual([{ token: '7', result: 'written' }])
+    expect(fakeCore.writtenFiles).toEqual([
+      { path: 'Note.md', body: 'what the person was in the middle of' },
+    ])
+    expect(fakeCore.reportedResults).toEqual([{ token: '7', result: 'written' }])
   })
 
   it('does not answer while the write it owes is still in the air', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const notes = openNotes(at.core)
-    const going = useFileFlush(at.core)
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const notes = openNotes(fakeCore.core)
+    const going = useFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     void going.start()
 
     notes.open('Note.md')
     await settle()
     notes.setBody('Note.md', 'held')
-    at.hold()
+    fakeCore.holdWrites()
 
-    said.say({ token: '1', flush: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([])
+    expect(fakeCore.reportedResults).toEqual([])
 
-    at.release()
+    fakeCore.releaseWrites()
     await settle()
 
-    expect(at.wrote).toEqual([{ path: 'Note.md', body: 'held' }])
-    expect(at.answered).toEqual([{ token: '1', result: 'written' }])
+    expect(fakeCore.writtenFiles).toEqual([{ path: 'Note.md', body: 'held' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '1', result: 'written' }])
   })
 
   it('says nothing until the application asks', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const notes = openNotes(at.core)
-    const going = useFileFlush(at.core)
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const notes = openNotes(fakeCore.core)
+    const going = useFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     void going.start()
 
@@ -175,48 +175,48 @@ describe('a page asked to write what it owes', () => {
     notes.setBody('Note.md', 'still being written')
 
     // The stream opens by handing over the token, which asks for nothing.
-    said.say({ token: '3', flush: false })
+    mockStream.send({ token: '3', flush: false })
     await settle()
 
-    expect(at.wrote).toEqual([])
-    expect(at.answered).toEqual([])
+    expect(fakeCore.writtenFiles).toEqual([])
+    expect(fakeCore.reportedResults).toEqual([])
   })
 
   it('answers for a window with nothing open', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const going = useFileFlush(at.core)
-    going.addHandler(openNotes(at.core).flush)
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core)
+    going.addHandler(openNotes(fakeCore.core).flush)
     void going.start()
 
-    said.say({ token: '0', flush: true })
+    mockStream.send({ token: '0', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '0', result: 'written' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '0', result: 'written' }])
   })
 })
 
 describe('a page holding text the file changed under', () => {
   it('says there are conflicts outstanding, and does not say it has written', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const going = useFileFlush(at.core)
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core)
     const note = createConflict('Note.md')
     note.raise(going.raise)
     void going.start()
 
-    said.say({ token: '4', flush: true })
+    mockStream.send({ token: '4', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '4', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '4', result: 'asking' }])
     expect(going.conflicts.value.map((one) => one.note)).toEqual(['Note.md'])
   })
 
   it('says so before the writes it owes have landed', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const notes = openNotes(at.core)
-    const going = useFileFlush(at.core)
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const notes = openNotes(fakeCore.core)
+    const going = useFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     const note = createConflict('Held.md')
     note.raise(going.raise)
@@ -225,61 +225,61 @@ describe('a page holding text the file changed under', () => {
     notes.open('Other.md')
     await settle()
     notes.setBody('Other.md', 'on its way')
-    at.hold()
+    fakeCore.holdWrites()
 
-    said.say({ token: '5', flush: true })
+    mockStream.send({ token: '5', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '5', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '5', result: 'asking' }])
 
-    at.release()
+    fakeCore.releaseWrites()
     await settle()
 
     // The write landed and the conflict still stands, so nothing has changed
     // about what the page owes.
-    expect(at.wrote).toEqual([{ path: 'Other.md', body: 'on its way' }])
-    expect(at.answered).toEqual([{ token: '5', result: 'asking' }])
+    expect(fakeCore.writtenFiles).toEqual([{ path: 'Other.md', body: 'on its way' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '5', result: 'asking' }])
   })
 
   it('says it has written once every conflict is settled', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const going = useFileFlush(at.core)
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core)
     const first = createConflict('One.md')
     const second = createConflict('Two.md')
     first.raise(going.raise)
     second.raise(going.raise)
     void going.start()
 
-    said.say({ token: '6', flush: true })
+    mockStream.send({ token: '6', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '6', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '6', result: 'asking' }])
 
     await going.conflicts.value.find((one) => one.note === 'One.md')?.keep()
     await settle()
 
     // One of the two is answered, so the window is still owed something.
-    expect(at.answered.at(-1)).toEqual({ token: '6', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '6', result: 'asking' })
     expect(going.conflicts.value.map((one) => one.note)).toEqual(['Two.md'])
 
     await going.conflicts.value.find((one) => one.note === 'Two.md')?.take()
     await settle()
 
-    expect(at.answered.at(-1)).toEqual({ token: '6', result: 'written' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '6', result: 'written' })
     expect(going.conflicts.value).toEqual([])
-    expect(first.took).toEqual(['keep One.md'])
-    expect(second.took).toEqual(['take Two.md'])
+    expect(first.actions).toEqual(['keep One.md'])
+    expect(second.actions).toEqual(['take Two.md'])
   })
 
   it('leaves a conflict the person put off standing, and stops drawing it', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const going = useFileFlush(at.core, async () => {})
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core, async () => {})
     createConflict('Later.md').raise(going.raise)
     void going.start()
 
-    said.say({ token: '8', flush: true })
+    mockStream.send({ token: '8', flush: true })
     await settle()
 
     going.conflicts.value[0]?.later()
@@ -287,62 +287,62 @@ describe('a page holding text the file changed under', () => {
 
     expect(going.conflicts.value).toEqual([])
     // Nothing was answered for it, so the window is still owed it.
-    expect(at.answered.at(-1)).toEqual({ token: '8', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '8', result: 'asking' })
 
     // And it is still owed it the next time the window is asked for.
-    said.end()
+    mockStream.end()
     await settle()
-    said.say({ token: '9', flush: true })
+    mockStream.send({ token: '9', flush: true })
     await settle()
 
-    expect(at.answered.at(-1)).toEqual({ token: '9', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '9', result: 'asking' })
   })
 
   it('says nothing under a token the stream took with it', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const going = useFileFlush(at.core, async () => {})
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core, async () => {})
     const note = createConflict('Note.md')
     note.raise(going.raise)
     void going.start()
 
-    said.say({ token: '2', flush: true })
+    mockStream.send({ token: '2', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '2', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'asking' }])
 
-    said.end()
+    mockStream.end()
     await settle()
     note.answered()
     await settle()
 
     // Nothing answers to that token now, and the page has not been asked again.
-    expect(at.answered).toEqual([{ token: '2', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'asking' }])
 
-    said.say({ token: '3', flush: true })
+    mockStream.send({ token: '3', flush: true })
     await settle()
 
-    expect(at.answered.at(-1)).toEqual({ token: '3', result: 'written' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '3', result: 'written' })
   })
 
   it('raises what stands again under the token it is asked under next', async () => {
-    const said = stream()
-    const at = fake(said.read)
-    const going = useFileFlush(at.core, async () => {})
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core, async () => {})
     createConflict('Note.md').raise(going.raise)
     void going.start()
 
-    said.say({ token: '9', flush: true })
+    mockStream.send({ token: '9', flush: true })
     await settle()
 
-    expect(at.answered).toEqual([{ token: '9', result: 'asking' }])
+    expect(fakeCore.reportedResults).toEqual([{ token: '9', result: 'asking' }])
 
     // The stream drops and the page listens again under a new token.
-    said.end()
+    mockStream.end()
     await settle()
-    said.say({ token: '10', flush: true })
+    mockStream.send({ token: '10', flush: true })
     await settle()
 
-    expect(at.answered.at(-1)).toEqual({ token: '10', result: 'asking' })
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '10', result: 'asking' })
   })
 })

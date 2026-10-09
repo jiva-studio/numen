@@ -106,21 +106,21 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   const readRecording = async () => {
     const mine = asks.ask()
     try {
-      const said = await recordings.getSummary(path)
+      const summary = await recordings.getSummary(path)
       if (!mine.claim()) return
-      setSource(said)
+      setSource(summary)
 
       // What the file carries says which text to read. A url publishing words
       // against a clock carries a transcript; every other page carries prose.
       const carried = await recordings.getTaskStates(path)
       if (!mine.claim()) return
-      const spoke = await (carried.transcript
+      const content = await (carried.transcript
         ? recordings.readTranscript(path)
         : recordings.readArticle(path))
       if (!mine.claim()) return
-      cues.value = spoke.cues
-      isEditable.value = spoke.isEditable
-      setText(spoke.cues.length ? getText(spoke.cues) : spoke.prose)
+      cues.value = content.cues
+      isEditable.value = content.isEditable
+      setText(content.cues.length ? getText(content.cues) : content.prose)
       error.value = ''
     } catch (thrown) {
       if (!mine.claim()) return

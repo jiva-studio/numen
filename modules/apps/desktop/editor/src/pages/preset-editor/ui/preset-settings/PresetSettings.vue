@@ -30,7 +30,7 @@ const fields = computed(() => fieldsUnder(settings.value.goal, settings.value.le
 <template>
   <section class="preset-settings" :aria-label="words.settings">
     <div v-for="field in fields" :key="field" class="preset-settings__row" :data-preset-row="field">
-      <span class="preset-settings__said">
+      <span class="preset-settings__label">
         <span class="preset-settings__name" :id="`preset-${field}`" data-preset="name">
           {{ words.fieldName(field) }}
         </span>
@@ -55,7 +55,7 @@ const fields = computed(() => fieldsUnder(settings.value.goal, settings.value.le
   --preset-settings-value: 6rem;
   --preset-settings-choice: 10rem;
   --preset-settings-air: 0.5rem;
-  --preset-settings-said-gap: 0.125rem;
+  --preset-settings-label-gap: 0.125rem;
   /* The track a share is moved along, and the room the figure beside it takes. */
   --preset-settings-track: 9rem;
   --preset-settings-percent: 2.25rem;
@@ -76,10 +76,10 @@ const fields = computed(() => fieldsUnder(settings.value.goal, settings.value.le
 }
 
 /* What the row is called, and under it what it means. */
-.preset-settings__said {
+.preset-settings__label {
   display: flex;
   flex-direction: column;
-  gap: var(--preset-settings-said-gap);
+  gap: var(--preset-settings-label-gap);
   min-inline-size: 0;
 }
 

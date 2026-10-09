@@ -41,22 +41,19 @@ function onOcrProofreadAlwaysChange(value: boolean) {
   setSetting(paths.ocrProofreadAlways, value)
 }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 function getSettingString(at: readonly string[]): string {
   const value = installation.value.getSetting(at)
   return typeof value === 'string' ? value : ''
 }
-const said = getSettingString
 
 function isSettingEnabled(at: readonly string[]): boolean {
   return installation.value.getSetting(at) === true
 }
-const on = isSettingEnabled
 
 function getModels(at: readonly string[]): readonly SelectChoice[] {
   return choicesFor(installation.value.getModels(at), getSettingString(at), words)
 }
-const models = getModels
 
 function setSetting(at: readonly string[], value: unknown): void {
   installation.value.write([{ at, value: write(value) }])
@@ -74,8 +71,8 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrModelDetail"
     >
       <Select
-        :model-value="said(paths.ocrModel)"
-        :choices="models(paths.ocrModel)"
+        :model-value="getSettingString(paths.ocrModel)"
+        :choices="getModels(paths.ocrModel)"
         :name="words.ocrModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -90,7 +87,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrProofreadDetail"
     >
       <Select
-        :model-value="said(paths.ocrProofread)"
+        :model-value="getSettingString(paths.ocrProofread)"
         :choices="props.profiles"
         :name="words.ocrProofread"
         :aria-labelledby="labelledBy"
@@ -106,7 +103,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.ocrProofreadAlwaysDetail"
     >
       <Switch
-        :model-value="on(paths.ocrProofreadAlways)"
+        :model-value="isSettingEnabled(paths.ocrProofreadAlways)"
         :aria-labelledby="labelledBy"
         @update:model-value="onOcrProofreadAlwaysChange"
       />

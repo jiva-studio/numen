@@ -65,24 +65,17 @@ func (a *API) getReached(
 	path string,
 	kind domain.SourceKind,
 ) (reached, error) {
-	said, store, produced, err := a.getSourceText(ctx, v, path)
+	meta, store, produced, err := a.getSourceText(ctx, v, path)
 	if err != nil {
 		return reached{}, err
 	}
 	if produced {
-		return farUnder(ctx, store, said.Producer, said.Hash)
+		return farUnder(ctx, store, meta.Producer, meta.Hash)
 	}
 	return a.byBytes(ctx, v, path, getDefaultProducer(kind))
 }
 
 // farUnder says how far the run keeping its files under a name has got.
-//
-// What a run reaches is written down as it goes and the whole of it is written
-// under its own name at the end, so a source stands on the text once that name
-// is there. It holds the name it is still writing under for as long as it
-// takes, so a claim on that name that is refused is a run over this source: the
-// claim is taken and given straight back, and whether it was refused is the
-// answer.
 func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (reached, error) {
 	var got reached
 	whole, err := store.Read(ctx, derived.Artifact(from, hash))
@@ -93,12 +86,9 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 	case !errors.Is(err, fs.ErrNotExist):
 		return got, err
 	}
-	// A run that got no words out of a source wrote down what it got instead,
-	// and asking again gets the same. Taking that record away is how a person
-	// asks for the source to be tried afresh.
-	switch held, err := store.Read(ctx, derived.Answer(from, hash)); {
+	switch payload, err := store.Read(ctx, derived.Answer(from, hash)); {
 	case err == nil:
-		switch answer, why := derived.ReadAnswer(held); answer {
+		switch answer, why := derived.ReadAnswer(payload); answer {
 		case derived.Silent:
 			got.stands = silent
 		case derived.Unopened:

@@ -70,7 +70,7 @@ func NewMemory(limit int) *Memory {
 // for the same page draw it once and are answered with the one drawing.
 func (p *Memory) Draw(ctx context.Context, key ID, drawn func() ([]byte, error)) ([]byte, error) {
 	p.mu.Lock()
-	if el, held := p.index[key]; held {
+	if el, ok := p.index[key]; ok {
 		p.order.MoveToFront(el)
 		pic := el.Value.(*entry).pic
 		p.mu.Unlock()
@@ -104,14 +104,14 @@ func (p *Memory) Draw(ctx context.Context, key ID, drawn func() ([]byte, error))
 func (p *Memory) Has(key ID) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	_, held := p.index[key]
-	return held
+	_, ok := p.index[key]
+	return ok
 }
 
 // Drop takes one drawing out.
 func (p *Memory) Drop(key ID) {
-	el, held := p.index[key]
-	if !held {
+	el, ok := p.index[key]
+	if !ok {
 		return
 	}
 	delete(p.index, key)

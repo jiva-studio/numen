@@ -54,8 +54,8 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
 
   /** The token the application is being answered under, once it has asked. */
   let under: string | null = null
-  /** The last thing said under that token, which is not worth saying twice. */
-  let told: FlushResult | null = null
+  /** The last result reported under that token. */
+  let lastResult: FlushResult | null = null
   /** The writes owed at the ask, while they are still in the air. */
   let writing: Promise<unknown> | null = null
   /** Every conflict a person has to settle, drawn or put off. */
@@ -78,32 +78,32 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
    */
   const raise = (one: Conflict) => {
     outstanding.add(one)
-    void say()
+    void report()
     return () => {
       if (!outstanding.delete(one)) return
       put.delete(one.note)
-      void say()
+      void report()
     }
   }
 
   async function answer(token: string) {
     under = token
-    told = null
+    lastResult = null
     // Every asking is put to the person whole. What was put off last time is
     // drawn again, because this is a fresh reason to answer it.
     put.clear()
-    const written = Promise.allSettled([...handlers].map((one) => one()))
-    writing = written
-    void written.then(() => {
-      if (writing !== written) return
+    const pendingWrites = Promise.allSettled([...handlers].map((one) => one()))
+    writing = pendingWrites
+    void pendingWrites.then(() => {
+      if (writing !== pendingWrites) return
       writing = null
-      void say()
+      void report()
     })
-    await say()
+    await report()
   }
 
-  /** What is standing, drawn, and told to the application. */
-  async function say() {
+  /** What is standing, drawn, and reported to the application. */
+  async function report() {
     const token = under
     if (token === null) return
     const all = [...outstanding]
@@ -115,8 +115,8 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     // not an answer either.
     if (all.length === 0 && writing !== null) return
     const result: FlushResult = all.length > 0 ? 'asking' : 'written'
-    if (result === told) return
-    told = result
+    if (result === lastResult) return
+    lastResult = result
     await core.reportFlush(token, result)
   }
 
@@ -139,7 +139,7 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     // token nothing answers to any more. It is asked for again.
     reset: () => {
       under = null
-      told = null
+      lastResult = null
       writing = null
     },
   })
@@ -148,8 +148,8 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
   const start = () =>
     follows(
       () => core.watchQuit(listening.signal),
-      async (said) => {
-        if (said.flush) await answer(said.token)
+      async (message) => {
+        if (message.flush) await answer(message.token)
       },
     )
 
