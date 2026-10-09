@@ -342,13 +342,18 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 		return nil, err
 	}
 
-	var block bytes.Buffer
-	for _, line := range strings.Split(strings.TrimRight(out.String(), "\n"), "\n") {
-		block.WriteString(indent)
-		block.WriteString(line)
-		block.WriteString(eol)
+	text := bytes.TrimRight(out.Bytes(), "\n")
+	block := make([]byte, 0, len(text)+(bytes.Count(text, []byte("\n"))+1)*(len(indent)+len(eol)))
+	for {
+		line, rest, more := bytes.Cut(text, []byte("\n"))
+		block = append(block, indent...)
+		block = append(block, line...)
+		block = append(block, eol...)
+		if !more {
+			return block, nil
+		}
+		text = rest
 	}
-	return block.Bytes(), nil
 }
 
 // linkOf reads one entry of the block, taking what it can and leaving the rest.
@@ -378,8 +383,11 @@ func linkOf(item *yaml.Node) domain.Link {
 // isReadable is whether the application can act on an entry at all: somewhere to
 // go, and a role it has decided on.
 func isReadable(item *yaml.Node) bool {
+	if item.Kind != yaml.MappingNode {
+		return false
+	}
 	l := linkOf(item)
-	return item.Kind == yaml.MappingNode && l.Target.Value != "" && domain.IsKnownRole(l.Role)
+	return l.Target.Value != "" && domain.IsKnownRole(l.Role)
 }
 
 // isOurs is whether every key in an entry is one the application owns.
