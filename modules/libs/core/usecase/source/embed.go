@@ -49,8 +49,22 @@ type Embed struct {
 	// BatchCharacters bounds one request to the model. Zero takes the default.
 	BatchCharacters int
 
+	// Concurrency is how many infer workers run in parallel. Zero takes the
+	// embedder's concurrency.
+	Concurrency int
+
 	// OnProgress, if set, is called each time a group of vectors is written.
 	OnProgress func(EmbedResult)
+}
+
+func (u Embed) inferWorkers() int {
+	if u.Concurrency > 0 {
+		return u.Concurrency
+	}
+	if c, ok := u.Embedder.(interface{ Concurrency() int }); ok && c.Concurrency() > 0 {
+		return c.Concurrency()
+	}
+	return 1
 }
 
 // NewEmbed is what a vault's chunks are given vectors through: the vault the
@@ -140,9 +154,15 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 		u.progress(snapshot)
 	}
 
+	workers := u.inferWorkers()
+	if workers < 1 {
+		workers = 1
+	}
+
 	g, gctx := errgroup.WithContext(ctx)
-	preparedChan := make(chan preparedBatch, pipelineBufferSize)
-	completedChan := make(chan completedBatch, pipelineBufferSize)
+	bufferSize := max(pipelineBufferSize, workers*2)
+	preparedChan := make(chan preparedBatch, bufferSize)
+	completedChan := make(chan completedBatch, bufferSize)
 
 	g.Go(func() error {
 		defer close(preparedChan)
@@ -221,25 +241,31 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 
 	g.Go(func() error {
 		defer close(completedChan)
-		for {
-			select {
-			case <-gctx.Done():
-				return gctx.Err()
-			case prep, ok := <-preparedChan:
-				if !ok {
-					return nil
+		ig, igctx := errgroup.WithContext(gctx)
+		for range workers {
+			ig.Go(func() error {
+				for {
+					select {
+					case <-igctx.Done():
+						return igctx.Err()
+					case prep, ok := <-preparedChan:
+						if !ok {
+							return nil
+						}
+						completed, err := u.inferBatch(igctx, prep)
+						if err != nil {
+							return err
+						}
+						select {
+						case <-igctx.Done():
+							return igctx.Err()
+						case completedChan <- completed:
+						}
+					}
 				}
-				completed, err := u.inferBatch(gctx, prep)
-				if err != nil {
-					return err
-				}
-				select {
-				case <-gctx.Done():
-					return gctx.Err()
-				case completedChan <- completed:
-				}
-			}
+			})
 		}
+		return ig.Wait()
 	})
 
 	g.Go(func() error {

@@ -43,18 +43,21 @@ type Embedder struct {
 	maxTokens  int
 	pooling    string
 	batchTexts int
+	poolSize   int
 
 	tokenizer api.Tokenizer
 	pad       int
-	session   *ort.Session
 	output    string
 	isTyped   bool
 	// isHeadPooled says the vector is the token that opens a text rather than the
 	// average of them.
 	isHeadPooled bool
 
-	// One session, one batch at a time.
-	mu sync.Mutex
+	// Pool of inference sessions for concurrent passes.
+	sessions    chan *ort.Session
+	allSessions []*ort.Session
+	mu          sync.Mutex
+	isClosed    bool
 }
 
 // Open loads the model, fetching it first where this machine does not hold it.
@@ -104,11 +107,31 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		return nil, err
 	}
 	defer options.Destroy()
-	session, err := onnxruntime.NewSession(engine, paths.Model, options)
-	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
+
+	poolSize := cfg.GetSessions()
+	if poolSize < 1 {
+		poolSize = 1
 	}
 
+	sessions := make([]*ort.Session, 0, poolSize)
+	destroySessions := func() {
+		for _, s := range sessions {
+			if s != nil {
+				s.Destroy()
+			}
+		}
+	}
+
+	for range poolSize {
+		session, err := onnxruntime.NewSession(engine, paths.Model, options)
+		if err != nil {
+			destroySessions()
+			return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
+		}
+		sessions = append(sessions, session)
+	}
+
+	first := sessions[0]
 	e := &Embedder{
 		name:         identity.Name,
 		origin:       identity.From,
@@ -116,30 +139,36 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		maxTokens:    identity.MaxTokens,
 		pooling:      identity.Pooling,
 		batchTexts:   max(cfg.BatchTexts, 1),
+		poolSize:     poolSize,
 		tokenizer:    tokenizer,
-		session:      session,
+		sessions:     make(chan *ort.Session, poolSize),
+		allSessions:  sessions,
 		isHeadPooled: identity.Pooling == embed.PoolHead,
 	}
+	for _, s := range sessions {
+		e.sessions <- s
+	}
+
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
 	}
 
-	for _, name := range session.InputNames {
+	for _, name := range first.InputNames {
 		switch name {
 		case inputIDs, attentionMask:
 		case tokenTypeIDs:
 			e.isTyped = true
 		default:
-			session.Destroy()
+			destroySessions()
 			return nil, fmt.Errorf("%s asks for an input this adapter does not have: %s", cfg.Name, name)
 		}
 	}
-	if !slices.Contains(session.InputNames, inputIDs) || !slices.Contains(session.InputNames, attentionMask) {
-		session.Destroy()
-		return nil, fmt.Errorf("%s takes %v, and a sentence encoder takes tokens and a mask", cfg.Name, session.InputNames)
+	if !slices.Contains(first.InputNames, inputIDs) || !slices.Contains(first.InputNames, attentionMask) {
+		destroySessions()
+		return nil, fmt.Errorf("%s takes %v, and a sentence encoder takes tokens and a mask", cfg.Name, first.InputNames)
 	}
-	if e.output, err = chooseOutput(session.OutputNames); err != nil {
-		session.Destroy()
+	if e.output, err = chooseOutput(first.OutputNames); err != nil {
+		destroySessions()
 		return nil, fmt.Errorf("%s: %w", cfg.Name, err)
 	}
 	return e, nil
@@ -149,11 +178,69 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 func (e *Embedder) Close() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if e.session != nil {
-		e.session.Destroy()
-		e.session = nil
+	if e.isClosed {
+		return nil
 	}
+	e.isClosed = true
+	close(e.sessions)
+	for _, s := range e.allSessions {
+		if s != nil {
+			s.Destroy()
+		}
+	}
+	e.allSessions = nil
 	return nil
+}
+
+// Concurrency is how many batches this embedder runs in parallel.
+func (e *Embedder) Concurrency() int {
+	return e.poolSize
+}
+
+// PoolSize is how many sessions the pool holds.
+func (e *Embedder) PoolSize() int {
+	return e.poolSize
+}
+
+// acquireSession borrows one session from the pool.
+func (e *Embedder) acquireSession(ctx context.Context) (*ort.Session, error) {
+	e.mu.Lock()
+	if e.isClosed {
+		e.mu.Unlock()
+		return nil, errors.New("the embedder is closed")
+	}
+	e.mu.Unlock()
+
+	if ctx != nil {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case s, ok := <-e.sessions:
+			if !ok || s == nil {
+				return nil, errors.New("the embedder is closed")
+			}
+			return s, nil
+		}
+	}
+
+	s, ok := <-e.sessions
+	if !ok || s == nil {
+		return nil, errors.New("the embedder is closed")
+	}
+	return s, nil
+}
+
+// releaseSession returns one session to the pool.
+func (e *Embedder) releaseSession(s *ort.Session) {
+	if s == nil {
+		return
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.isClosed {
+		return
+	}
+	e.sessions <- s
 }
 
 func (e *Embedder) Model() port.EmbeddingModel {
@@ -175,7 +262,7 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	}
 	tokens := e.tokenize(texts)
 	if len(texts) == 1 {
-		return e.forward(tokens)
+		return e.forward(ctx, tokens)
 	}
 
 	items := make([]sequenceItem, len(tokens))
@@ -198,7 +285,7 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 		for _, item := range batchItems {
 			batchTokens = append(batchTokens, item.tokens)
 		}
-		vectors, err := e.forward(batchTokens)
+		vectors, err := e.forward(ctx, batchTokens)
 		if err != nil {
 			return nil, err
 		}
@@ -257,15 +344,15 @@ func (e *Embedder) encode(text string) []int {
 //
 // A batch is laid out at the length of its longest text. The runtime takes a
 // shape as it comes.
-func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
+func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, error) {
 	rows, seq, padded := padBatch(batch, e.pad)
 	defer releasePadding(padded)
 
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if e.session == nil {
-		return nil, errors.New("the embedder is closed")
+	session, err := e.acquireSession(ctx)
+	if err != nil {
+		return nil, err
 	}
+	defer e.releaseSession(session)
 
 	// The library keeps a pointer into each of these and nothing else does, so
 	// they are held until the run is over.
@@ -290,7 +377,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 		in[one.name] = value
 	}
 
-	answered, err := e.session.Run(in)
+	answered, err := session.Run(in)
 	runtime.KeepAlive(padded)
 	if err != nil {
 		return nil, err

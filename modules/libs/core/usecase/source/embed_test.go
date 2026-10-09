@@ -478,3 +478,32 @@ func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 		}
 	}
 }
+
+func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(bookPath, domain.KindBook, bookOf(t, "Concurrent Test Book", words(sanskrit, 1000), words(latin, 1000)), 1)
+
+	small := cutBooks(t, index, shelf, first)
+	if len(small) == 0 {
+		t.Fatal("no chunks created")
+	}
+
+	model := &embedder{dims: dimensions}
+	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed.Embedder = model
+	embed.BatchCharacters = 200
+	embed.Concurrency = 3
+
+	res, err := embed.Execute(ctx, first)
+	if err != nil {
+		t.Fatalf("concurrent execution failed: %v", err)
+	}
+
+	if res.Embedded != len(small) {
+		t.Fatalf("embedded %d chunks, want %d", res.Embedded, len(small))
+	}
+	if len(index.vectors) != len(small) {
+		t.Fatalf("stored %d vectors, want %d", len(index.vectors), len(small))
+	}
+}

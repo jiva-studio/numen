@@ -163,3 +163,17 @@ func TestTheProviderIsReadOutOfTheFile(t *testing.T) {
 		t.Errorf("empty got %q, want %q", empty.GetProvider(), onnxruntime.ProviderAuto)
 	}
 }
+
+func TestSessionsAreReadOutOfTheFile(t *testing.T) {
+	var held embed.LocalModel
+	if err := json.Unmarshal([]byte(`{"sessions":4}`), &held); err != nil {
+		t.Fatal(err)
+	}
+	if held.GetSessions() != 4 {
+		t.Errorf("got %d, want 4", held.GetSessions())
+	}
+	var empty embed.LocalModel
+	if empty.GetSessions() <= 0 {
+		t.Errorf("expected positive default sessions, got %d", empty.GetSessions())
+	}
+}
