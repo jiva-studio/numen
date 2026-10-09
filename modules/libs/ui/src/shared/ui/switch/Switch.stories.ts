@@ -17,8 +17,8 @@ const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothi
 interface Knobs {
   isOn: boolean
   disabled: boolean
-  /** What the switch is called, said beside it. */
-  said: string
+  /** What the switch is called, shown beside it. */
+  label: string
 }
 
 const meta: Meta<Knobs> = {
@@ -28,9 +28,9 @@ const meta: Meta<Knobs> = {
   argTypes: {
     isOn: { control: 'boolean' },
     disabled: { control: 'boolean' },
-    said: { control: 'text' },
+    label: { control: 'text' },
   },
-  args: { isOn: true, disabled: false, said: 'Show the grid' },
+  args: { isOn: true, disabled: false, label: 'Show the grid' },
   render: (args) => ({
     components: { Switch },
     setup: () => {
@@ -41,8 +41,8 @@ const meta: Meta<Knobs> = {
     // words beside it are pointed at instead, which is how a window does it.
     template: `
       <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem; inline-size: 20rem">
-        <Switch v-model="isOn" :disabled="args.disabled" aria-labelledby="switch-said" />
-        <span id="switch-said" style="min-inline-size: 0; overflow-wrap: anywhere">{{ args.said }}</span>
+        <Switch v-model="isOn" :disabled="args.disabled" aria-labelledby="switch-label" />
+        <span id="switch-label" style="min-inline-size: 0; overflow-wrap: anywhere">{{ args.label }}</span>
       </div>
     `,
   }),
@@ -67,21 +67,21 @@ export const Off: Story = { args: { isOn: false } }
 export const Disabled: Story = { args: { disabled: true } }
 
 /** A name in another script. */
-export const OtherScripts: Story = { args: { said: 'Показывать сетку' } }
+export const OtherScripts: Story = { args: { label: 'Показывать сетку' } }
 
 /** A name far longer than anything a setting is called. */
 export const FarTooLong: Story = {
-  args: { said: 'Show the grid behind everything drawn on the canvas below it '.repeat(3) },
+  args: { label: 'Show the grid behind everything drawn on the canvas below it '.repeat(3) },
 }
 
 /** A name with nothing in it to break at. */
-export const Unbroken: Story = { args: { said: UNBROKEN } }
+export const Unbroken: Story = { args: { label: UNBROKEN } }
 
 /**
  * No name at all. The keyboard rule is off here because this is a switch with
  * nothing to read out, which is the whole of what the story draws.
  */
-export const NoTextAtAll: Story = { args: { said: '' }, parameters: { reach: false } }
+export const NoTextAtAll: Story = { args: { label: '' }, parameters: { reach: false } }
 
 /**
  * The switch on the dark set of tokens. Which way it stands is told by the

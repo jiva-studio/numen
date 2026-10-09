@@ -33,14 +33,14 @@ export interface DrawnIcon {
   /** How thick to stroke it, in the 24 units it is drawn on. */
   readonly stroke: number
   /** What it is called, for a reader who is listening rather than looking. */
-  readonly said: string
+  readonly label: string
 }
 
 const createIcon = (icon: LucideIcon, label: string, fills = 1): DrawnIcon => ({
   icon,
   fills,
   stroke: STROKE / fills,
-  said: label,
+  label,
 })
 
 /**

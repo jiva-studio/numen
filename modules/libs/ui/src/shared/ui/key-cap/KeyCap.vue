@@ -17,8 +17,8 @@ const props = defineProps<{ keys: PaletteKeys }>()
  * The keystroke in words, in the order it is held. This is the whole of what a
  * reader who is listening is told, and everything drawn is hidden from them.
  */
-const spoken = computed(() =>
-  [...props.keys.icons.map((icon) => ICONS[icon].said), props.keys.letter]
+const labelText = computed(() =>
+  [...props.keys.icons.map((icon) => ICONS[icon].label), props.keys.letter]
     .filter((word) => word !== '')
     .join(' '),
 )
@@ -28,7 +28,7 @@ const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills 
 
 <template>
   <kbd class="cap">
-    <span class="sr-only">{{ spoken }}</span>
+    <span class="sr-only">{{ labelText }}</span>
     <component
       :is="ICONS[icon].icon"
       v-for="icon in keys.icons"

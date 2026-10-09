@@ -58,25 +58,25 @@ func (u Import) Execute(
 	into string,
 	handles []string,
 ) (ImportResult, error) {
-	var brought ImportResult
+	var result ImportResult
 	if len(handles) == 0 {
-		return brought, nil
+		return result, nil
 	}
 	writer, err := u.writers.Open(v)
 	if err != nil {
-		return brought, err
+		return result, err
 	}
 
 	for _, handle := range handles {
 		if err := ctx.Err(); err != nil {
-			return brought, err
+			return result, err
 		}
 		name := u.files.GetName(handle)
-		if err := u.bring(ctx, writer, v, handle, joinPath(into, name), &brought); err != nil {
-			brought.Errors = append(brought.Errors, ImportFailure{Name: name, Why: err})
+		if err := u.bring(ctx, writer, v, handle, joinPath(into, name), &result); err != nil {
+			result.Errors = append(result.Errors, ImportFailure{Name: name, Why: err})
 		}
 	}
-	return brought, nil
+	return result, nil
 }
 
 // bring copies one file or one whole folder to a path in the vault.
@@ -85,7 +85,7 @@ func (u Import) bring(
 	writer port.VaultWriter,
 	v domain.Vault,
 	from, to string,
-	brought *ImportResult,
+	result *ImportResult,
 ) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -105,14 +105,14 @@ func (u Import) bring(
 		if err := writer.MakeFolder(ctx, to); err != nil {
 			return err
 		}
-		brought.Landed = append(brought.Landed, to)
-		held, err := u.files.List(ctx, from)
+		result.Landed = append(result.Landed, to)
+		entries, err := u.files.List(ctx, from)
 		if err != nil {
 			return err
 		}
-		for _, one := range held {
-			if err := u.bring(ctx, writer, v, one.Handle, joinPath(to, one.Name), brought); err != nil {
-				brought.Errors = append(brought.Errors, ImportFailure{Name: one.Name, Why: err})
+		for _, one := range entries {
+			if err := u.bring(ctx, writer, v, one.Handle, joinPath(to, one.Name), result); err != nil {
+				result.Errors = append(result.Errors, ImportFailure{Name: one.Name, Why: err})
 			}
 		}
 		return nil
@@ -126,7 +126,7 @@ func (u Import) bring(
 		if err := writer.Bring(ctx, to, file); err != nil {
 			return err
 		}
-		brought.Landed = append(brought.Landed, to)
+		result.Landed = append(result.Landed, to)
 		return nil
 
 	default:

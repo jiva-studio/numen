@@ -43,11 +43,11 @@ const typed = computed({
  * front, and an empty field asks for nothing.
  */
 const turn = () => {
-  const asked = typing.value
+  const rawInput = typing.value
   typing.value = null
-  if (asked === null || (typeof asked === 'string' && !asked.trim())) return
+  if (rawInput === null || (typeof rawInput === 'string' && !rawInput.trim())) return
 
-  const page = Number(asked)
+  const page = Number(rawInput)
   if (Number.isFinite(page)) at.value = Math.round(page) - 1
 }
 </script>

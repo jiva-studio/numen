@@ -35,10 +35,10 @@ const inForce = computed(() => (onTheClock(model.value) ? model.value : ''))
 const element = useTemplateRef<HTMLInputElement>('element')
 
 const onChange = (event: Event) => {
-  const said = (event.target as HTMLInputElement).value
-  if (!onTheClock(said) || said === model.value) return
-  model.value = said
-  emit('settle', said)
+  const nextValue = (event.target as HTMLInputElement).value
+  if (!onTheClock(nextValue) || nextValue === model.value) return
+  model.value = nextValue
+  emit('settle', nextValue)
 }
 
 defineExpose({

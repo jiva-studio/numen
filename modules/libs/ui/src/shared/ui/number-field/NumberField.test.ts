@@ -339,7 +339,7 @@ describe('a number set from outside', () => {
  * caller holds after it.
  */
 describe('a field the caller holds the value of', () => {
-  const mountHeldField = (refuses: (said: number | null) => boolean) => {
+  const mountControlledField = (refuses: (val: number | null) => boolean) => {
     let inForce: number | null = 20
     const field = mount(NumberField, {
       props: {
@@ -347,9 +347,9 @@ describe('a field the caller holds the value of', () => {
         min: 0,
         max: 240,
         step: 5,
-        'onUpdate:modelValue': async (said: number | null) => {
-          if (refuses(said)) return
-          inForce = said
+        'onUpdate:modelValue': async (val: number | null) => {
+          if (refuses(val)) return
+          inForce = val
           await field.setProps({ modelValue: inForce })
         },
       },
@@ -358,7 +358,7 @@ describe('a field the caller holds the value of', () => {
   }
 
   it('stands on the number the caller holds where the caller refuses one', async () => {
-    const field = mountHeldField((said) => said === null)
+    const field = mountControlledField((val) => val === null)
     await field.get('input').setValue('')
     await field.get('input').trigger('blur')
     await field.vm.$nextTick()
@@ -367,7 +367,7 @@ describe('a field the caller holds the value of', () => {
   })
 
   it('stands on the number the caller took where the caller took one', async () => {
-    const field = mountHeldField((said) => said === null)
+    const field = mountControlledField((val) => val === null)
     await field.get('input').setValue('45')
     await field.get('input').trigger('blur')
     await field.vm.$nextTick()

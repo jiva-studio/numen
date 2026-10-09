@@ -15,7 +15,7 @@ export interface WindowStreamsDeps {
   /** What went wrong, in the person's own words. */
   readonly reportError: (why: unknown) => void
   /** What is being done behind the window, as cards to draw. */
-  readonly setTasks: (said: readonly Task[]) => void
+  readonly setTasks: (tasks: readonly Task[]) => void
   /** A key pressed anywhere in the window. */
   readonly onKeyDown: (press: KeyboardEvent) => void
   /** Everything the window shows, counted again. */

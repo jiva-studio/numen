@@ -161,9 +161,9 @@ type PresetReads struct {
 	// scheduling is the preset each deck asked about is scheduled by, so a deck
 	// is asked once however many times the run comes round to it.
 	scheduling map[string]PresetContents
-	// said is what parsing turned up against each file, read once for the run
+	// parseProblems is what parsing turned up against each file, read once for the run
 	// and only where a deck names no preset.
-	said map[string][]string
+	parseProblems map[string][]string
 }
 
 // Reading opens a run of reads sharing the notes they open.
@@ -246,19 +246,19 @@ func (r *PresetReads) roleless(ctx context.Context, v domain.Vault, deck string)
 	if r.Problems == nil {
 		return nil, nil
 	}
-	if r.said == nil {
+	if r.parseProblems == nil {
 		noted, err := r.Problems.GetParseProblems(ctx, v.ID)
 		if err != nil {
 			return nil, fmt.Errorf("what was noted in %s: %w", v.ID, err)
 		}
-		r.said = make(map[string][]string, len(noted))
+		r.parseProblems = make(map[string][]string, len(noted))
 		for _, one := range noted {
-			r.said[one.Path] = append(r.said[one.Path], one.Detail)
+			r.parseProblems[one.Path] = append(r.parseProblems[one.Path], one.Detail)
 		}
 	}
 
 	var out []string
-	for _, detail := range r.said[deck] {
+	for _, detail := range r.parseProblems[deck] {
 		if strings.HasSuffix(detail, markdown.NoRole) {
 			out = append(out, detail+", so it names no preset")
 		}

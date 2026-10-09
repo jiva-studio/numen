@@ -29,8 +29,8 @@ describe('how thick an icon is stroked', () => {
 
 describe('what a key held is called', () => {
   it('is a word each, and no two keys are called the same', () => {
-    const said = EVERY.map(([, icon]) => icon.said)
-    expect(said.every((word) => word !== '')).toBe(true)
-    expect(new Set(said).size).toBe(said.length)
+    const labels = EVERY.map(([, icon]) => icon.label)
+    expect(labels.every((word) => word !== '')).toBe(true)
+    expect(new Set(labels).size).toBe(labels.length)
   })
 })

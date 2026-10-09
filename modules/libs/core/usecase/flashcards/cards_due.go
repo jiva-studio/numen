@@ -204,7 +204,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	// What each preset leaves is counted from the same pass the deck rows are,
 	// so the tile over a preset and the session it opens are one number.
 	due, fresh := make(map[string]int), make(map[string]int)
-	for _, one := range holds.seen {
+	for _, one := range holds.owed {
 		out.Due++
 		at(one.Deck).Due++
 		due[day.under[one.ID]]++
@@ -290,8 +290,8 @@ func (u CountCardsDue) getPresets(
 // name: the budget the day of the week leaves it, and what has been answered
 // under it since the day opened.
 func (b *budgets) getCardsDue(due, fresh map[string]int) []PresetCardsDue {
-	out := make([]PresetCardsDue, 0, len(b.left))
-	for path, one := range b.left {
+	out := make([]PresetCardsDue, 0, len(b.allowances))
+	for path, one := range b.allowances {
 		out = append(out, PresetCardsDue{
 			Preset: path, Cards: b.cards[path],
 			Due: due[path], New: fresh[path],

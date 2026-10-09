@@ -17,7 +17,7 @@ import type { VaultCardsDue } from '../types'
 /** What the front door of the application answers. */
 export interface CardsDueClient {
   watchCardsDue(
-    said: Record<string, never>,
+    req: Record<string, never>,
     how?: { signal?: AbortSignal },
   ): AsyncIterable<DueCounts>
 }

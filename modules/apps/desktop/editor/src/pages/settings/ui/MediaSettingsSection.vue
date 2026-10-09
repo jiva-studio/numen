@@ -22,8 +22,9 @@ const WHOLE = Number.MAX_SAFE_INTEGER
 const UNDER = { least: -1, most: WHOLE }
 
 const profiles = computed<readonly SelectChoice[]>(() => {
-  const kept = installation.value.getSetting(paths.profiles)
-  const names = kept && typeof kept === 'object' ? Object.keys(kept) : []
+  const storedProfiles = installation.value.getSetting(paths.profiles)
+  const names =
+    storedProfiles && typeof storedProfiles === 'object' ? Object.keys(storedProfiles) : []
   return [{ id: '', text: words.proofreadingNone }, ...names.map((one) => ({ id: one, text: one }))]
 })
 

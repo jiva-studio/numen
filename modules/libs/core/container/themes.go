@@ -18,9 +18,9 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	return &theme.Service{
 		Catalogue: catalogue,
 		Settings: appearances{
-			cfg:  c,
-			said: &scales{drawn: c.InterfaceScale, set: c.TextScale},
-			say:  say,
+			cfg:    c,
+			scales: &scales{uiScale: c.InterfaceScale, textScale: c.TextScale},
+			say:    say,
 		},
 		InterfaceScaleBounds: theme.Bounds{
 			Least: settings.InterfaceScaleBounds.Least, Most: settings.InterfaceScaleBounds.Most,
@@ -34,14 +34,14 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 // appearances is the settings file as the themes reach it, with what the
 // command line said about size standing over what the file holds.
 type appearances struct {
-	cfg  Config
-	said *scales
-	say  func(string)
+	cfg    Config
+	scales *scales
+	say    func(string)
 }
 
-func (a appearances) Read() (theme.Appearance, error) { return a.cfg.readAppearance(a.said) }
+func (a appearances) Read() (theme.Appearance, error) { return a.cfg.readAppearance(a.scales) }
 
-func (a appearances) Write(chosen theme.Appearance) error { return a.cfg.wear(chosen, a.said) }
+func (a appearances) Write(chosen theme.Appearance) error { return a.cfg.wear(chosen, a.scales) }
 
 func (a appearances) Warn(why string) {
 	if a.say != nil {
@@ -49,35 +49,33 @@ func (a appearances) Warn(why string) {
 	}
 }
 
-// scales is what the command line said about size. Each stands over the file
-// until a person chooses that size themselves, and zero is not said.
+// scales holds CLI scale overrides until explicitly changed.
 type scales struct {
-	mu         sync.Mutex
-	drawn, set float64
+	mu                 sync.Mutex
+	uiScale, textScale float64
 }
 
-// apply puts what was said this launch over what the file holds.
+// apply overrides appearance scales with CLI flags if set.
 func (l *scales) apply(worn *theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.drawn > 0 {
-		worn.InterfaceScale = l.drawn
+	if l.uiScale > 0 {
+		worn.InterfaceScale = l.uiScale
 	}
-	if l.set > 0 {
-		worn.TextScale = l.set
+	if l.textScale > 0 {
+		worn.TextScale = l.textScale
 	}
 }
 
-// clearSizes lets go of what was said this launch about a size a person has now
-// chosen for themselves.
+// clearSizes clears CLI scale overrides when the user configures explicit values.
 func (l *scales) clearSizes(chosen theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if chosen.InterfaceScale > 0 {
-		l.drawn = 0
+		l.uiScale = 0
 	}
 	if chosen.TextScale > 0 {
-		l.set = 0
+		l.textScale = 0
 	}
 }
 
@@ -93,29 +91,29 @@ func (c Config) catalogue() (theme.Catalogue, error) {
 
 // readAppearance and wear are the settings file as the themes need it: one
 // section of it read, and up to four fields of it written.
-func (c Config) readAppearance(said *scales) (theme.Appearance, error) {
+func (c Config) readAppearance(scales *scales) (theme.Appearance, error) {
 	path, err := c.settingsFile()
 	if err != nil {
 		return theme.Appearance{}, err
 	}
-	held, err := c.getSettingsAt(path)
+	activeSettings, err := c.getSettingsAt(path)
 	if err != nil {
 		return theme.Appearance{}, err
 	}
 	worn := theme.Appearance{
-		ThemeName:      held.Appearance.Theme,
-		Mode:           settings.Mode(held.Appearance.Mode),
-		InterfaceScale: held.Appearance.InterfaceScale,
-		TextScale:      held.Appearance.TextScale,
+		ThemeName:      activeSettings.Appearance.Theme,
+		Mode:           settings.Mode(activeSettings.Appearance.Mode),
+		InterfaceScale: activeSettings.Appearance.InterfaceScale,
+		TextScale:      activeSettings.Appearance.TextScale,
 	}
-	said.apply(&worn)
+	scales.apply(&worn)
 	return worn, nil
 }
 
 // wear writes a choice into the file. Both sizes are checked before any of it
 // is written, so a number outside what its setting goes to leaves the file as
 // it stands.
-func (c Config) wear(chosen theme.Appearance, said *scales) error {
+func (c Config) wear(chosen theme.Appearance, scales *scales) error {
 	path, err := c.settingsFile()
 	if err != nil {
 		return err
@@ -143,6 +141,6 @@ func (c Config) wear(chosen theme.Appearance, said *scales) error {
 	if err := settings.Save(path, &into, writing...); err != nil {
 		return err
 	}
-	said.clearSizes(chosen)
+	scales.clearSizes(chosen)
 	return nil
 }

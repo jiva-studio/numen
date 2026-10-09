@@ -46,7 +46,7 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 	}
 	day := &budgets{
 		under: make(map[review.CardFaceID]string),
-		left: map[string]*allowance{"Preset.md": {
+		allowances: map[string]*allowance{"Preset.md": {
 			admits: review.Allowance{
 				Keeps: keeps, New: keeps.New, Reviews: keeps.Reviews,
 				Minutes: time.Duration(keeps.Minutes * float64(time.Minute)),

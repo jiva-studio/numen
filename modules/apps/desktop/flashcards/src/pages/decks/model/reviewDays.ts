@@ -78,14 +78,14 @@ export function useReviewDays(deps: ReviewDaysDeps) {
     of.value = vault
     try {
       const { from, to } = getHeatmapStretch({ width: deps.widest(), cell: CELL, gap: GAP }, now())
-      const said = await deps.cards.listReviewDays({ vault, from, to })
+      const reviewData = await deps.cards.listReviewDays({ vault, from, to })
       // A person who moved to another vault while this was on its way is
       // looking at that one, and these days are not its days.
       if (of.value !== vault) return
-      days.value = new Map(said.days.map((one) => [one.day, createTally(one)]))
-      due.value = new Map(said.due.map((one) => [one.day, one.answered]))
-      streak.value = said.streak
-      answered.value = said.answered
+      days.value = new Map(reviewData.days.map((one) => [one.day, createTally(one)]))
+      due.value = new Map(reviewData.due.map((one) => [one.day, one.answered]))
+      streak.value = reviewData.streak
+      answered.value = reviewData.answered
     } catch (why) {
       if (of.value !== vault) return
       deps.reportError(why)

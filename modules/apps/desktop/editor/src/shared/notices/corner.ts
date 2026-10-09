@@ -130,7 +130,7 @@ export const cornerOf = (
     ...soThat('wordsOnly', wordsOnly(vault) ? words.wordsOnly : '', { isAsked: false }),
   ]
 
-  const said: Notice[] = messages.map((one) => ({
+  const messageNotices: Notice[] = messages.map((one) => ({
     id: one.id,
     text: one.text,
     isWorking: false,
@@ -138,5 +138,5 @@ export const cornerOf = (
     ...manner[one.kind],
   }))
 
-  return [...isWorking, ...so, ...said]
+  return [...isWorking, ...so, ...messageNotices]
 }

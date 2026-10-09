@@ -63,16 +63,16 @@ let rested = model.value
  * marked where they stand. A number between two places the step lays is a
  * number on the way to one of them, and stands unmarked until the field is left.
  */
-const refused = computed(() => {
-  const said = typed.value.trim()
-  if (said === '') return false
-  if (!onItsWay(said)) return true
-  const value = numberOf(said)
+const isInvalid = computed(() => {
+  const raw = typed.value.trim()
+  if (raw === '') return false
+  if (!onItsWay(raw)) return true
+  const value = numberOf(raw)
   return value !== null && value !== clamp(value, bounds.value)
 })
 
 /** What a refused line is said as, so it is read out and not only marked. */
-const saying = computed(() => (refused.value ? typed.value.trim() : undefined))
+const speechText = computed(() => (isInvalid.value ? typed.value.trim() : undefined))
 
 /** The number in force, which is a number the bounds hold. */
 const inForce = computed(() => (model.value === null ? null : clamp(model.value, bounds.value)))
@@ -136,12 +136,12 @@ const onKeyDown = (event: KeyboardEvent) => {
     void settle()
     return
   }
-  const said = stepForKey(event.key, numberOf(typed.value) ?? model.value, bounds.value)
-  if (said === null) return
+  const steppedValue = stepForKey(event.key, numberOf(typed.value) ?? model.value, bounds.value)
+  if (steppedValue === null) return
   event.preventDefault()
   if (props.disabled) return
-  model.value = said
-  typed.value = formatNumber(said)
+  model.value = steppedValue
+  typed.value = formatNumber(steppedValue)
 }
 
 defineExpose({
@@ -165,8 +165,8 @@ defineExpose({
     :aria-valuemin="min"
     :aria-valuemax="max"
     :aria-valuenow="model ?? undefined"
-    :aria-valuetext="saying"
-    :aria-invalid="refused || undefined"
+    :aria-valuetext="speechText"
+    :aria-invalid="isInvalid || undefined"
     :class="
       cn(
         'rounded-tight border-field-rule bg-field w-full border',

@@ -159,7 +159,7 @@ func (u Session) Execute(
 		return SessionResult{}, err
 	}
 	holds := day.getAsking(faces, schedules, u.day, now, over)
-	if over.IsNamed && len(holds.seen)+len(holds.fresh) == 0 {
+	if over.IsNamed && len(holds.owed)+len(holds.fresh) == 0 {
 		return SessionResult{}, day.getStopError(over.Preset)
 	}
 
@@ -171,8 +171,8 @@ func (u Session) Execute(
 	}
 
 	out := SessionResult{Unwritten: marked.Unwritten, Skipped: held.Skipped}
-	out.Queue = make([]QueuedCardFace, 0, len(holds.seen)+len(holds.fresh))
-	for _, one := range holds.seen {
+	out.Queue = make([]QueuedCardFace, 0, len(holds.owed)+len(holds.fresh))
+	for _, one := range holds.owed {
 		s := schedules[one.ID]
 		out.Queue = append(out.Queue, QueuedCardFace{
 			CardFace: one, Schedule: s, Ahead: getIntervals(asks.under, on, one.ID, s, now),

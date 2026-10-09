@@ -23,8 +23,8 @@ const GROUPED = /^[+-]?[1-9]\d{0,2},\d{3}$/
 
 /** Whether more typing could still make a number of the text. */
 export const onItsWay = (text: string): boolean => {
-  const said = text.trim()
-  return ON_ITS_WAY.test(said) && !GROUPED.test(said)
+  const trimmed = text.trim()
+  return ON_ITS_WAY.test(trimmed) && !GROUPED.test(trimmed)
 }
 
 /**
@@ -32,9 +32,9 @@ export const onItsWay = (text: string): boolean => {
  * is what a person types: no exponent, no hexadecimal, no word for infinity.
  */
 export const numberOf = (text: string): number | null => {
-  const said = text.trim()
-  if (said === '' || !onItsWay(said)) return null
-  const value = Number(said.replace(',', '.'))
+  const trimmed = text.trim()
+  if (trimmed === '' || !onItsWay(trimmed)) return null
+  const value = Number(trimmed.replace(',', '.'))
   return Number.isFinite(value) ? value : null
 }
 
@@ -44,9 +44,9 @@ export const clamp = (value: number, bounds: Bounds): number =>
 
 /** The getDecimalPlaces a step is written to, which is what a number moved by it is kept to. */
 const getDecimalPlaces = (step: number): number => {
-  const said = `${step}`
-  const point = said.indexOf('.')
-  return point < 0 ? 0 : said.length - point - 1
+  const str = `${step}`
+  const point = str.indexOf('.')
+  return point < 0 ? 0 : str.length - point - 1
 }
 
 /** The place the step lays nearest a number, counted from the floor. */

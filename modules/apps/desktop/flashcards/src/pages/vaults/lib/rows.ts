@@ -14,13 +14,13 @@ export function getVaultRows(
   words: VaultsWords,
 ): readonly VaultRow[] {
   return vaults.map((one) => {
-    const said = one.isReading ? words.reading : one.unread
+    const detail = one.isReading ? words.reading : one.unread
     return {
       id: one.vault,
       name: one.name,
       path: one.path,
       isWorking: !one.isCounted,
-      ...(said ? { detail: said } : {}),
+      ...(detail ? { detail } : {}),
     }
   })
 }

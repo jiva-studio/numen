@@ -56,14 +56,14 @@ export function jumpTo(
 
   const first = word[0]!
   const drumming = [...word].every((each) => each === first)
-  const said = (drumming ? first : word).toLowerCase()
+  const prefix = (drumming ? first : word).toLowerCase()
   const start = from < 0 ? 0 : from + (word.length > 1 && !drumming ? 0 : 1)
 
   for (let step = 0; step < items.length; step += 1) {
     const at = (start + step) % items.length
     const item = items[at]
     if (!item || item.disabled) continue
-    if (item.text.toLowerCase().startsWith(said)) return { typed, at }
+    if (item.text.toLowerCase().startsWith(prefix)) return { typed, at }
   }
   return { typed, at: null }
 }

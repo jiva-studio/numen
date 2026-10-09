@@ -134,9 +134,11 @@ function getPartsWidth(
   deps: PartsDeps,
 ): { width: number; offset: number } {
   const measure = deps.measure
-  const asked = measure ? Math.max(...hung.map((part) => measure(part.text) + part.indent)) : 0
+  const measuredContentWidth = measure
+    ? Math.max(...hung.map((part) => measure(part.text) + part.indent))
+    : 0
   const width = Math.min(
-    Math.max(asked + 2 * pad, node.width),
+    Math.max(measuredContentWidth + 2 * pad, node.width),
     deps.viewport.width - 2 * deps.margin,
   )
 

@@ -24,8 +24,8 @@ export interface Words {
  * last segment of a path, a repository or an address.
  */
 export const nameOf = (value: string): string => {
-  const said = value.split(/[?#]/, 1)[0] ?? ''
-  const last = said
+  const basePath = value.split(/[?#]/, 1)[0] ?? ''
+  const last = basePath
     .split('/')
     .filter((one) => one.length > 0)
     .at(-1)
