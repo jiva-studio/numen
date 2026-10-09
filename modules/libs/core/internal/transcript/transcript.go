@@ -25,7 +25,6 @@ package transcript
 
 import (
 	"bytes"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -52,17 +51,29 @@ type Cue struct {
 // A cue carrying no words is not written: silence is not something a person
 // scrolls past, and a timing over nothing is a moment the recording never had.
 func Marshal(cues []Cue) []byte {
-	var out strings.Builder
-	out.WriteString(Head)
-	out.WriteString("\n")
+	size := len(Head) + 1
+	for _, cue := range cues {
+		size += 33 + len(cue.Text)
+	}
+	out := make([]byte, 0, size)
+	out = append(out, Head...)
+	out = append(out, '\n')
 	for _, cue := range cues {
 		text := strings.TrimSpace(cue.Text)
 		if text == "" {
 			continue
 		}
-		fmt.Fprintf(&out, "\n%s %s %s\n%s\n", Stamp(cue.From), arrow, Stamp(cue.To), text)
+		out = append(out, '\n')
+		out = appendStamp(out, cue.From)
+		out = append(out, ' ')
+		out = append(out, arrow...)
+		out = append(out, ' ')
+		out = appendStamp(out, cue.To)
+		out = append(out, '\n')
+		out = append(out, text...)
+		out = append(out, '\n')
 	}
-	return []byte(out.String())
+	return out
 }
 
 // Parse is an artifact, as the words it holds and the cues they came from.
@@ -70,110 +81,279 @@ func Marshal(cues []Cue) []byte {
 // The words of a cue stand one to a line, which is what a person reading the
 // transcript sees and what a chunk is cut out of.
 func Parse(raw []byte) (string, []Cue) {
-	var out strings.Builder
+	var outBuf []byte
 	var cues []Cue
-	for _, block := range strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n\n") {
-		cue, ok := parse(block)
-		if !ok {
-			continue
-		}
-		if out.Len() > 0 {
-			out.WriteString("\n")
-		}
-		cue.Offset = out.Len()
-		out.WriteString(cue.Text)
-		cues = append(cues, cue)
-	}
-	return out.String(), cues
-}
+	var cueLens []int
 
-// parse is one block of the file as a cue, and whether it is one. The header,
-// a note and anything a later version of the format adds are not.
-func parse(block string) (Cue, bool) {
-	lines := strings.Split(strings.Trim(block, "\n"), "\n")
-	for at, line := range lines {
-		before, after, found := strings.Cut(line, arrow)
-		if !found {
-			// A cue may be named on the line above its timing. Anything else
-			// standing there is not a cue.
-			if at > 0 || strings.HasPrefix(line, Head) || strings.HasPrefix(line, "NOTE") {
-				return Cue{}, false
+	if len(raw) > 0 {
+		estCues := len(raw) / 60
+		cues = make([]Cue, 0, estCues)
+		cueLens = make([]int, 0, estCues)
+		outBuf = make([]byte, 0, len(raw)/2)
+	}
+
+	var lineBuf [16][]byte
+	lines := lineBuf[:0]
+
+	for pos := 0; pos < len(raw); {
+		lineEnd := bytes.IndexByte(raw[pos:], '\n')
+		var line []byte
+		if lineEnd < 0 {
+			line = raw[pos:]
+			pos = len(raw)
+		} else {
+			line = raw[pos : pos+lineEnd]
+			pos += lineEnd + 1
+		}
+
+		if len(line) > 0 && line[len(line)-1] == '\r' {
+			line = line[:len(line)-1]
+		}
+
+		if len(line) == 0 {
+			if len(lines) > 0 {
+				outBuf, cues, cueLens = parseBlock(lines, outBuf, cues, cueLens)
+				lines = lineBuf[:0]
 			}
 			continue
 		}
-		from, ok := parseStamp(before)
-		if !ok {
-			return Cue{}, false
-		}
-		// Cue settings may follow the second timing, separated by a space. A
-		// timing with nothing after the arrow is a line somebody was still
-		// writing.
-		second := strings.Fields(after)
-		if len(second) == 0 {
-			return Cue{}, false
-		}
-		to, ok := parseStamp(second[0])
-		if !ok {
-			return Cue{}, false
-		}
-		text := strings.TrimSpace(strings.Join(lines[at+1:], "\n"))
-		if text == "" {
-			return Cue{}, false
-		}
-		return Cue{Text: text, From: from, To: to}, true
+
+		lines = append(lines, line)
 	}
-	return Cue{}, false
+
+	if len(lines) > 0 {
+		outBuf, cues, cueLens = parseBlock(lines, outBuf, cues, cueLens)
+	}
+
+	said := string(outBuf)
+	for i := range cues {
+		cues[i].Text = said[cues[i].Offset : cues[i].Offset+cueLens[i]]
+	}
+	return said, cues
+}
+
+// parseBlock is one block of the file as a cue, and whether it is one. The
+// header, a note and anything a later version of the format adds are not.
+func parseBlock(lines [][]byte, outBuf []byte, cues []Cue, cueLens []int) ([]byte, []Cue, []int) {
+	at, from, to, ok := findTiming(lines)
+	if !ok {
+		return outBuf, cues, cueLens
+	}
+	var offset, length int
+	outBuf, offset, length, ok = appendCueText(outBuf, lines[at+1:], len(cues) == 0)
+	if !ok {
+		return outBuf, cues, cueLens
+	}
+	cues = append(cues, Cue{From: from, To: to, Offset: offset})
+	cueLens = append(cueLens, length)
+	return outBuf, cues, cueLens
+}
+
+// findTiming is where the arrow stands in a block, and the timings it connects.
+func findTiming(lines [][]byte) (at int, from, to int, ok bool) {
+	for i, line := range lines {
+		before, after, found := bytes.Cut(line, []byte(arrow))
+		if !found {
+			// A cue may be named on the line above its timing. Anything else
+			// standing there is not a cue.
+			if i > 0 || bytes.HasPrefix(line, []byte(Head)) || bytes.HasPrefix(line, []byte("NOTE")) {
+				return 0, 0, 0, false
+			}
+			continue
+		}
+		from, ok = parseStamp(before)
+		if !ok {
+			return 0, 0, 0, false
+		}
+		to, ok = parseSecondStamp(after)
+		if !ok {
+			return 0, 0, 0, false
+		}
+		return i, from, to, true
+	}
+	return 0, 0, 0, false
+}
+
+// parseSecondStamp is the second timing of a cue, which cue settings may
+// follow.
+func parseSecondStamp(after []byte) (int, bool) {
+	after = bytes.TrimLeft(after, " \t\r\n")
+	if len(after) == 0 {
+		return 0, false
+	}
+	second := after
+	if end := indexSpace(after); end >= 0 {
+		second = after[:end]
+	}
+	return parseStamp(second)
+}
+
+// appendCueText writes the words of a cue into outBuf.
+func appendCueText(outBuf []byte, lines [][]byte, isFirstCue bool) (buf []byte, offset, length int, ok bool) {
+	if len(lines) == 0 {
+		return outBuf, 0, 0, false
+	}
+	cueStart := len(outBuf)
+	if !isFirstCue {
+		outBuf = append(outBuf, '\n')
+	}
+	textOffset := len(outBuf)
+
+	if len(lines) == 1 {
+		trimmed := bytes.TrimSpace(lines[0])
+		if len(trimmed) == 0 {
+			return outBuf[:cueStart], 0, 0, false
+		}
+		outBuf = append(outBuf, trimmed...)
+		return outBuf, textOffset, len(trimmed), true
+	}
+
+	for i, line := range lines {
+		if i > 0 {
+			outBuf = append(outBuf, '\n')
+		}
+		outBuf = append(outBuf, line...)
+	}
+	textBytes := outBuf[textOffset:]
+	trimmed := bytes.TrimSpace(textBytes)
+	if len(trimmed) == 0 {
+		return outBuf[:cueStart], 0, 0, false
+	}
+	if &trimmed[0] != &textBytes[0] {
+		copy(outBuf[textOffset:], trimmed)
+	}
+	outBuf = outBuf[:textOffset+len(trimmed)]
+	return outBuf, textOffset, len(trimmed), true
+}
+
+// indexSpace is the index of the first ASCII whitespace byte in b.
+func indexSpace(b []byte) int {
+	for i, c := range b {
+		if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
+			return i
+		}
+	}
+	return -1
 }
 
 // Stamp is a millisecond as the format writes it: hours, minutes, seconds and
 // thousandths.
 func Stamp(ms int) string {
+	var buf [16]byte
+	b := appendStamp(buf[:0], ms)
+	return string(b)
+}
+
+// appendStamp formats a millisecond as hours, minutes, seconds and
+// thousandths.
+func appendStamp(dst []byte, ms int) []byte {
 	if ms < 0 {
 		ms = 0
 	}
-	return fmt.Sprintf("%02d:%02d:%02d.%03d", ms/3600000, ms/60000%60, ms/1000%60, ms%1000)
+	h := ms / 3600000
+	m := (ms / 60000) % 60
+	s := (ms / 1000) % 60
+	f := ms % 1000
+
+	if h < 100 {
+		dst = append(dst, byte('0'+h/10), byte('0'+h%10))
+	} else {
+		dst = strconv.AppendInt(dst, int64(h), 10)
+	}
+	dst = append(dst, ':', byte('0'+m/10), byte('0'+m%10), ':', byte('0'+s/10), byte('0'+s%10), '.')
+	dst = append(dst, byte('0'+f/100), byte('0'+(f/10)%10), byte('0'+f%10))
+	return dst
 }
 
 // Clock is a moment of a recording as a person reads one: the way a player
 // writes where it stands. An hour that is not there is not written.
 func Clock(ms int) string {
 	whole := max(ms, 0) / 1000
+	m := whole / 60 % 60
+	s := whole % 60
+	var buf [16]byte
+	b := buf[:0]
 	if hours := whole / 3600; hours > 0 {
-		return fmt.Sprintf("%d:%02d:%02d", hours, whole/60%60, whole%60)
+		b = strconv.AppendInt(b, int64(hours), 10)
+		b = append(b, ':', byte('0'+m/10), byte('0'+m%10), ':', byte('0'+s/10), byte('0'+s%10))
+		return string(b)
 	}
-	return fmt.Sprintf("%d:%02d", whole/60, whole%60)
+	b = strconv.AppendInt(b, int64(whole/60), 10)
+	b = append(b, ':', byte('0'+s/10), byte('0'+s%10))
+	return string(b)
 }
 
 // parseStamp is a timing the format writes. The hours are optional, which is
 // what the format says and what other tools write.
-func parseStamp(raw string) (int, bool) {
-	parts := strings.Split(strings.TrimSpace(raw), ":")
-	if len(parts) < 2 || len(parts) > 3 {
+func parseStamp(raw []byte) (int, bool) {
+	raw = bytes.TrimSpace(raw)
+	c1 := bytes.IndexByte(raw, ':')
+	if c1 < 0 {
 		return 0, false
 	}
-	ms := 0
-	for _, part := range parts[:len(parts)-1] {
-		n, err := strconv.Atoi(part)
-		if err != nil {
+	var p0, p1, last []byte
+	c2 := bytes.IndexByte(raw[c1+1:], ':')
+	if c2 < 0 {
+		p0 = raw[:c1]
+		last = raw[c1+1:]
+	} else {
+		c2 = c1 + 1 + c2
+		if bytes.IndexByte(raw[c2+1:], ':') >= 0 {
 			return 0, false
 		}
-		ms = ms*60 + n
+		p0 = raw[:c1]
+		p1 = raw[c1+1 : c2]
+		last = raw[c2+1:]
+	}
+
+	ms := 0
+	n0, ok := parseUint(p0)
+	if !ok {
+		return 0, false
+	}
+	ms = n0
+	if p1 != nil {
+		n1, ok := parseUint(p1)
+		if !ok {
+			return 0, false
+		}
+		ms = ms*60 + n1
 	}
 	ms *= 60000
 
-	seconds, thousandths, found := strings.Cut(parts[len(parts)-1], ".")
-	if !found {
+	dot := bytes.IndexByte(last, '.')
+	if dot < 0 {
 		return 0, false
 	}
-	s, err := strconv.Atoi(seconds)
-	if err != nil {
+	seconds := last[:dot]
+	thousandths := last[dot+1:]
+	if len(thousandths) != 3 {
 		return 0, false
 	}
-	t, err := strconv.Atoi(thousandths)
-	if err != nil || len(thousandths) != 3 {
+	s, ok := parseUint(seconds)
+	if !ok {
+		return 0, false
+	}
+	t, ok := parseUint(thousandths)
+	if !ok {
 		return 0, false
 	}
 	return ms + s*1000 + t, true
+}
+
+// parseUint parses a non-negative decimal integer from b.
+func parseUint(b []byte) (int, bool) {
+	if len(b) == 0 {
+		return 0, false
+	}
+	n := 0
+	for _, c := range b {
+		if c < '0' || c > '9' {
+			return 0, false
+		}
+		n = n*10 + int(c-'0')
+	}
+	return n, true
 }
 
 // GetCuesAt is where a run of the words sits: the cues it falls in, in the
@@ -205,7 +385,14 @@ const reaches = "NOTE heard "
 // GetReachMarker is that note. It stands after the cues it claims, so a batch
 // that did not land whole is one no note claims.
 func GetReachMarker(ms int) []byte {
-	return []byte(fmt.Sprintf("\n%s%d\n", reaches, ms))
+	var buf [32]byte
+	b := append(buf[:0], '\n')
+	b = append(b, reaches...)
+	b = strconv.AppendInt(b, int64(ms), 10)
+	b = append(b, '\n')
+	res := make([]byte, len(b))
+	copy(res, b)
+	return res
 }
 
 // ByHand is the note a transcript a person wrote carries.
@@ -220,8 +407,9 @@ func Hand() []byte {
 // IsWrittenByHand says whether a person wrote these words. The mark is a note
 // of its own, and the same words spoken in a cue are speech.
 func IsWrittenByHand(raw []byte) bool {
-	for at := 0; at <= len(raw)-len(ByHand); {
-		found := bytes.Index(raw[at:], []byte(ByHand))
+	note := []byte(ByHand)
+	for at := 0; at <= len(raw)-len(note); {
+		found := bytes.Index(raw[at:], note)
 		if found < 0 {
 			return false
 		}
@@ -250,8 +438,8 @@ func ReadReached(raw []byte) (ms, end int) {
 		if stop < 0 || !isBlockStart(raw, at) {
 			continue
 		}
-		ms, err := strconv.Atoi(strings.TrimSpace(string(line[:stop])))
-		if err != nil {
+		ms, ok := parseUint(bytes.TrimSpace(line[:stop]))
+		if !ok {
 			continue
 		}
 		return ms, at + len(note) + stop + 1
