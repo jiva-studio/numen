@@ -96,7 +96,8 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		return nil, err
 	}
 	options, _, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
-		Threads: cfg.GetThreads(),
+		Provider: cfg.GetProvider(),
+		Threads:  cfg.GetThreads(),
 	})
 	if err != nil {
 		return nil, err

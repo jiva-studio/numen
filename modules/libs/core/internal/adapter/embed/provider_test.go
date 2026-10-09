@@ -148,3 +148,18 @@ func TestTheEngineIsReadOutOfTheFile(t *testing.T) {
 		t.Errorf("one pass takes %d threads", held.GetThreads())
 	}
 }
+
+// A provider configured in settings is read from the file.
+func TestTheProviderIsReadOutOfTheFile(t *testing.T) {
+	var held embed.LocalModel
+	if err := json.Unmarshal([]byte(`{"provider":"coreml"}`), &held); err != nil {
+		t.Fatal(err)
+	}
+	if held.GetProvider() != onnxruntime.ProviderCoreML {
+		t.Errorf("got %q, want %q", held.GetProvider(), onnxruntime.ProviderCoreML)
+	}
+	var empty embed.LocalModel
+	if empty.GetProvider() != onnxruntime.ProviderAuto {
+		t.Errorf("empty got %q, want %q", empty.GetProvider(), onnxruntime.ProviderAuto)
+	}
+}
