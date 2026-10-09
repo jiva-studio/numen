@@ -147,11 +147,16 @@ func (q *Queries) Lexical(ctx context.Context, vaultID domain.VaultID, query str
 		return nil, err
 	}
 
-	wanted, err := kinds(of)
-	if err != nil {
-		return nil, err
+	var rows *sql.Rows
+	if len(of) == 0 {
+		rows, err = q.db.QueryContext(ctx, stmt.Get("lexical"), expression, vault, limit)
+	} else {
+		wanted, errWanted := kinds(of)
+		if errWanted != nil {
+			return nil, errWanted
+		}
+		rows, err = q.db.QueryContext(ctx, stmt.Get("lexical_kinds"), expression, vault, wanted, limit)
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("lexical"), expression, vault, wanted, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -193,11 +198,16 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 		return nil, err
 	}
 
-	wanted, err := kinds(of)
-	if err != nil {
-		return nil, err
+	var rows *sql.Rows
+	if len(of) == 0 {
+		rows, err = q.db.QueryContext(ctx, stmt.Get("sections"), expression, vault, limit)
+	} else {
+		wanted, errWanted := kinds(of)
+		if errWanted != nil {
+			return nil, errWanted
+		}
+		rows, err = q.db.QueryContext(ctx, stmt.Get("sections_kinds"), expression, vault, wanted, limit)
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("sections"), expression, vault, wanted, limit)
 	if err != nil {
 		return nil, err
 	}

@@ -18,5 +18,6 @@ JOIN sources s ON s.id = c.source_id
 LEFT JOIN chunks p ON p.id = c.parent_id
 WHERE chunks_fts MATCH ?1
   AND c.vault_id = ?2
+  AND s.kind IN (SELECT value FROM json_each(?3))
 ORDER BY bm25(chunks_fts)
-LIMIT ?3;
+LIMIT ?4;

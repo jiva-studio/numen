@@ -14,5 +14,6 @@ JOIN chunks c ON c.id = sections_fts.rowid
 JOIN sources s ON s.id = c.source_id
 WHERE sections_fts MATCH ?1
   AND c.vault_id = ?2
+  AND s.kind IN (SELECT value FROM json_each(?3))
 ORDER BY bm25(sections_fts)
-LIMIT ?3;
+LIMIT ?4;
