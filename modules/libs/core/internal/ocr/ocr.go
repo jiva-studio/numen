@@ -10,8 +10,10 @@
 package ocr
 
 import (
+	"cmp"
 	"image"
-	"sort"
+	"iter"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -80,12 +82,22 @@ type Page struct {
 //
 // The one kept is the one the model was surest of, so the regions are ordered by
 // score first and put back in reading order after.
+//
+// The regions are reordered and filtered in place, and the result is a prefix of
+// the slice passed in.
 func Distinct(regions []Region, most float64) []Region {
-	byScore := append([]Region(nil), regions...)
-	sort.SliceStable(byScore, func(a, b int) bool { return byScore[a].Score > byScore[b].Score })
+	slices.SortStableFunc(regions, func(a, b Region) int {
+		switch {
+		case a.Score > b.Score:
+			return -1
+		case b.Score > a.Score:
+			return 1
+		}
+		return 0
+	})
 
-	kept := make([]Region, 0, len(byScore))
-	for _, r := range byScore {
+	kept := regions[:0]
+	for _, r := range regions {
 		covered := false
 		for _, k := range kept {
 			if overlap(r.Rect, k.Rect) > most || isInside(r.Rect, k.Rect) {
@@ -97,7 +109,7 @@ func Distinct(regions []Region, most float64) []Region {
 			kept = append(kept, r)
 		}
 	}
-	sort.SliceStable(kept, func(a, b int) bool { return kept[a].Order < kept[b].Order })
+	slices.SortStableFunc(kept, func(a, b Region) int { return cmp.Compare(a.Order, b.Order) })
 	return kept
 }
 
@@ -129,7 +141,7 @@ func isInside(a, b image.Rectangle) bool {
 func Assemble(lines []Line) (string, []Box) {
 	var out []byte
 	var kept []Box
-	for _, line := range group(lines) {
+	for line := range group(lines) {
 		text, boxes := writeLine(line)
 		if text == "" {
 			continue
@@ -183,27 +195,28 @@ func isHyphen(r rune) bool {
 // Two boxes belong to one line when they overlap vertically by most of their
 // height, which holds for a line sitting slightly askew on the scan and does not
 // hold for the line beneath it.
-func group(lines []Line) [][]Line {
-	sorted := append([]Line(nil), lines...)
-	sort.SliceStable(sorted, func(a, b int) bool { return sorted[a].Box.Min.Y < sorted[b].Box.Min.Y })
+func group(lines []Line) iter.Seq[[]Line] {
+	sorted := slices.Clone(lines)
+	slices.SortStableFunc(sorted, func(a, b Line) int { return cmp.Compare(a.Box.Min.Y, b.Box.Min.Y) })
 
-	var out [][]Line
-	var current []Line
-	for _, line := range sorted {
-		if len(current) > 0 && measureVerticalOverlap(current, line) < 0.5 {
-			out = append(out, sortLine(current))
-			current = nil
+	return func(yield func([]Line) bool) {
+		start := 0
+		for i, line := range sorted {
+			if i > start && measureVerticalOverlap(sorted[start:i], line) < 0.5 {
+				if !yield(sortLine(sorted[start:i])) {
+					return
+				}
+				start = i
+			}
 		}
-		current = append(current, line)
+		if start < len(sorted) {
+			yield(sortLine(sorted[start:]))
+		}
 	}
-	if len(current) > 0 {
-		out = append(out, sortLine(current))
-	}
-	return out
 }
 
 func sortLine(line []Line) []Line {
-	sort.SliceStable(line, func(a, b int) bool { return line[a].Box.Min.X < line[b].Box.Min.X })
+	slices.SortStableFunc(line, func(a, b Line) int { return cmp.Compare(a.Box.Min.X, b.Box.Min.X) })
 	return line
 }
 

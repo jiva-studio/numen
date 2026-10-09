@@ -3,8 +3,11 @@ package ocr_test
 import (
 	"fmt"
 	"image"
+	"math/rand"
 	"reflect"
 	"regexp"
+	"slices"
+	"sort"
 	"strings"
 	"testing"
 
@@ -465,5 +468,179 @@ func TestAssembleMatchesTheRegexpJoin(t *testing.T) {
 				t.Errorf("boxes %v, want %v", gotBoxes, wantBoxes)
 			}
 		})
+	}
+}
+
+// createRegions is n regions in a scrambled reading order, a third of which
+// repeat another and a third of which sit inside another.
+func createRegions(n int) []ocr.Region {
+	regions := make([]ocr.Region, 0, n)
+	for i := range n {
+		y := (i / 3) * 100
+		rect := image.Rect(0, y, 400, y+80)
+		switch i % 3 {
+		case 1:
+			rect = rect.Add(image.Pt(5, 3))
+		case 2:
+			rect = image.Rect(20, y+10, 200, y+50)
+		}
+		regions = append(regions, ocr.Region{
+			Label: "text",
+			Score: float32((i*7919)%101) / 100,
+			Rect:  rect,
+			Order: (i * 31) % n,
+		})
+	}
+	return regions
+}
+
+// createRows is rows lines of three skewed boxes each, in scrambled order.
+func createRows(rows int) []ocr.Line {
+	lines := make([]ocr.Line, 0, rows*3)
+	for i := range rows * 3 {
+		row, col := (i*7)%rows, (i*5)%3
+		skew := (i % 4) - 1
+		lines = append(lines, line(col*200, row*40+skew, col*200+190, row*40+20+skew, "word"))
+	}
+	return lines
+}
+
+func BenchmarkDistinct(b *testing.B) {
+	for _, n := range []int{20, 100, 400} {
+		regions := createRegions(n)
+		scratch := make([]ocr.Region, n)
+		b.Run(fmt.Sprintf("%d regions", n), func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				copy(scratch, regions)
+				ocr.Distinct(scratch, 0.6)
+			}
+		})
+	}
+}
+
+func BenchmarkGroup(b *testing.B) {
+	for _, rows := range []int{50, 200} {
+		lines := createRows(rows)
+		b.Run(fmt.Sprintf("%d rows", rows), func(b *testing.B) {
+			b.ReportAllocs()
+			for range b.N {
+				ocr.Assemble(lines)
+			}
+		})
+	}
+}
+
+func distinctByCopy(regions []ocr.Region, most float64) []ocr.Region {
+	byScore := append([]ocr.Region(nil), regions...)
+	sort.SliceStable(byScore, func(a, b int) bool { return byScore[a].Score > byScore[b].Score })
+	kept := make([]ocr.Region, 0, len(byScore))
+	for _, r := range byScore {
+		covered := false
+		for _, k := range kept {
+			both := r.Rect.Intersect(k.Rect)
+			if both.Empty() {
+				continue
+			}
+			common := float64(both.Dx() * both.Dy())
+			either := float64(r.Rect.Dx()*r.Rect.Dy()) + float64(k.Rect.Dx()*k.Rect.Dy()) - common
+			if (either > 0 && common/either > most) || common > 0.9*float64(r.Rect.Dx()*r.Rect.Dy()) {
+				covered = true
+				break
+			}
+		}
+		if !covered {
+			kept = append(kept, r)
+		}
+	}
+	sort.SliceStable(kept, func(a, b int) bool { return kept[a].Order < kept[b].Order })
+	return kept
+}
+
+func createRandomRegions(random *rand.Rand, n int) []ocr.Region {
+	regions := make([]ocr.Region, n)
+	for i := range regions {
+		x, y := random.Intn(300), random.Intn(300)
+		regions[i] = ocr.Region{
+			Label: fmt.Sprint(i),
+			Score: float32(random.Intn(5)) / 4,
+			Rect:  image.Rect(x, y, x+random.Intn(200), y+random.Intn(200)),
+			Order: random.Intn(6),
+		}
+	}
+	return regions
+}
+
+func TestDistinctMatchesTheCopyingFilter(t *testing.T) {
+	random := rand.New(rand.NewSource(364))
+	for i := range 300 {
+		regions := createRandomRegions(random, random.Intn(60))
+		want := distinctByCopy(regions, 0.6)
+		got := ocr.Distinct(append([]ocr.Region(nil), regions...), 0.6)
+		if !slices.Equal(got, want) {
+			t.Fatalf("case %d: kept %v, want %v", i, got, want)
+		}
+	}
+}
+
+func groupByLists(lines []ocr.Line) [][]ocr.Line {
+	sorted := append([]ocr.Line(nil), lines...)
+	sort.SliceStable(sorted, func(a, b int) bool { return sorted[a].Box.Min.Y < sorted[b].Box.Min.Y })
+	overlapOf := func(line []ocr.Line, box ocr.Line) float64 {
+		top, bottom, height := box.Box.Min.Y, box.Box.Max.Y, box.Box.Dy()
+		for _, l := range line {
+			top, bottom, height = max(top, l.Box.Min.Y), min(bottom, l.Box.Max.Y), min(height, l.Box.Dy())
+		}
+		if height <= 0 {
+			return 0
+		}
+		return float64(max(bottom-top, 0)) / float64(height)
+	}
+	var out [][]ocr.Line
+	var current []ocr.Line
+	flush := func() {
+		sort.SliceStable(current, func(a, b int) bool { return current[a].Box.Min.X < current[b].Box.Min.X })
+		out = append(out, current)
+	}
+	for _, l := range sorted {
+		if len(current) > 0 && overlapOf(current, l) < 0.5 {
+			flush()
+			current = nil
+		}
+		current = append(current, l)
+	}
+	if len(current) > 0 {
+		flush()
+	}
+	return out
+}
+
+func TestAssembleMatchesTheListGrouping(t *testing.T) {
+	random := rand.New(rand.NewSource(364))
+	for i := range 300 {
+		lines := make([]ocr.Line, random.Intn(40))
+		for j := range lines {
+			x, y := random.Intn(400), random.Intn(120)
+			lines[j] = line(x, y, x+random.Intn(100), y+random.Intn(30), fmt.Sprintf("w%d-", random.Intn(9)))
+		}
+		var want []string
+		for _, l := range groupByLists(lines) {
+			for _, one := range l {
+				want = append(want, one.Text)
+			}
+		}
+		original := append([]ocr.Line(nil), lines...)
+		text, boxes := ocr.Assemble(lines)
+		if !slices.Equal(lines, original) {
+			t.Fatalf("case %d: Assemble reordered its input", i)
+		}
+		// Every box's span reads back one of the words, in grouped order.
+		var got []string
+		for _, b := range boxes {
+			got = append(got, strings.TrimSuffix(text[b.Span.From:b.Span.To], "-")+"-")
+		}
+		if !slices.Equal(got, want) {
+			t.Fatalf("case %d: boxes read %q, want %q", i, got, want)
+		}
 	}
 }
