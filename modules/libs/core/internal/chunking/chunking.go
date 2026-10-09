@@ -185,8 +185,18 @@ func whole(text string, divisions []division, s Sizes, l Legibility) []Chunk {
 		return nil
 	}
 	var small []Chunk
+	start := 0
 	for _, d := range divisions {
-		small = append(small, smallChunks(text, wordsIn(text, d.from, d.to), d.location, s, l)...)
+		for start < len(words) && words[start].start < d.from {
+			start++
+		}
+		end := start
+		for end < len(words) && words[end].end <= d.to {
+			end++
+		}
+		if start < end {
+			small = append(small, smallChunks(text, words[start:end], d.location, s, l)...)
+		}
 	}
 	return enclose([]Chunk{large}, small)
 }
