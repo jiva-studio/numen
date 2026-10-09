@@ -20,6 +20,9 @@ func TestParseProvider(t *testing.T) {
 		{"core-ml", onnxruntime.ProviderCoreML, false},
 		{"cuda", onnxruntime.ProviderCUDA, false},
 		{"directml", onnxruntime.ProviderDirectML, false},
+		{"direct-ml", onnxruntime.ProviderDirectML, false},
+		{"dml", onnxruntime.ProviderDirectML, false},
+		{"DML", onnxruntime.ProviderDirectML, false},
 		{"rocm", onnxruntime.ProviderROCm, false},
 		{"unknown-ep", onnxruntime.ProviderCPU, true},
 	} {
@@ -72,7 +75,7 @@ func TestNewSessionOptionsAuto(t *testing.T) {
 	defer opts.Destroy()
 
 	switch used {
-	case onnxruntime.ProviderCPU, onnxruntime.ProviderCUDA, onnxruntime.ProviderCoreML:
+	case onnxruntime.ProviderCPU, onnxruntime.ProviderCUDA, onnxruntime.ProviderCoreML, onnxruntime.ProviderDirectML:
 	default:
 		t.Errorf("unexpected provider for Auto: %v", used)
 	}
@@ -90,6 +93,25 @@ func TestNewSessionOptionsExplicitUnsupportedProvider(t *testing.T) {
 		})
 		if err == nil {
 			t.Error("expected error for CoreML provider on non-darwin, got nil")
+		}
+	}
+
+	if runtime.GOOS != "windows" {
+		_, _, err = onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+			Provider: onnxruntime.ProviderDirectML,
+		})
+		if err == nil {
+			t.Error("expected error for DirectML provider on non-windows, got nil")
+		}
+	}
+}
+
+func BenchmarkParseProvider(b *testing.B) {
+	inputs := []string{"", "auto", "cpu", "coreml", "cuda", "directml", "dml", "rocm"}
+	b.ResetTimer()
+	for b.Loop() {
+		for _, input := range inputs {
+			_, _ = onnxruntime.ParseProvider(input)
 		}
 	}
 }

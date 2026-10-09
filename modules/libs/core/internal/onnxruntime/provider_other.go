@@ -1,4 +1,4 @@
-//go:build !darwin
+//go:build !darwin && !windows
 
 package onnxruntime
 
@@ -19,6 +19,8 @@ func applyProvider(opts *ort.SessionOptions, requested Provider) (Provider, erro
 		return ProviderCUDA, nil
 	case ProviderCoreML:
 		return ProviderCPU, fmt.Errorf("coreml execution provider is only available on darwin/arm64")
+	case ProviderDirectML:
+		return ProviderCPU, fmt.Errorf("directml execution provider is only available on windows")
 	case ProviderAuto:
 		if err := opts.EnableCUDA(); err == nil {
 			return ProviderCUDA, nil

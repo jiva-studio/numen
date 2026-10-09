@@ -32,6 +32,8 @@ func applyProvider(opts *ort.SessionOptions, requested Provider) (Provider, erro
 			return ProviderCPU, err
 		}
 		return ProviderCUDA, nil
+	case ProviderDirectML:
+		return ProviderCPU, fmt.Errorf("directml execution provider is only available on windows")
 	default:
 		return ProviderCPU, nil
 	}
