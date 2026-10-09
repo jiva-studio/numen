@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -39,6 +40,19 @@ type pages struct{ through *http.Client }
 
 func newPages() *pages {
 	return &pages{through: &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			MaxIdleConnsPerHost:   20,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
 		Timeout: 30 * time.Second,
 		// A site may send the fetch on, and where it lands is judged as the
 		// address was: a redirect onto this machine is refused.
