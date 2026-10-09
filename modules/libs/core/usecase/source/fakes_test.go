@@ -573,6 +573,7 @@ type embedder struct {
 	dims   int
 	refuse int
 
+	mu    sync.Mutex
 	calls int
 	seen  []string // every text handed over, in the order it arrived
 }
@@ -584,13 +585,18 @@ func (e *embedder) Model() port.EmbeddingModel {
 func (*embedder) Close() error { return nil }
 
 func (e *embedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
+	e.mu.Lock()
 	e.calls++
-	if e.refuse > 0 && e.calls == e.refuse {
+	refused := e.refuse > 0 && e.calls == e.refuse
+	e.mu.Unlock()
+	if refused {
 		return nil, fmt.Errorf("the model is not there")
 	}
 	out := make([][]float32, 0, len(texts))
 	for _, text := range texts {
+		e.mu.Lock()
 		e.seen = append(e.seen, text)
+		e.mu.Unlock()
 		out = append(out, vectorOf(text, e.dims))
 	}
 	return out, nil

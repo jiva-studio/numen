@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
@@ -117,6 +118,8 @@ type LocalModel struct {
 	Runtime string `json:"runtime"`
 	// Threads is how many of this machine one forward pass may use.
 	Threads int `json:"threads"`
+	// Sessions is how many parallel inference sessions to keep in the pool.
+	Sessions int `json:"sessions"`
 	// Provider is the execution provider for ONNX Runtime (auto, cpu, coreml, cuda). Empty is auto.
 	Provider string `json:"provider"`
 	// ShouldDownload allows fetching the model when it is not on this machine. Turned
@@ -155,6 +158,21 @@ func (m LocalModel) GetThreads() int {
 		return onnxruntime.DefaultThreads()
 	}
 	return m.Threads
+}
+
+// GetSessions is how many parallel inference sessions this model runs in its pool.
+func (m LocalModel) GetSessions() int {
+	if m.Sessions <= 0 {
+		cpus := runtime.GOMAXPROCS(0)
+		if cpus <= 2 {
+			return 1
+		}
+		if cpus <= 4 {
+			return 2
+		}
+		return 3
+	}
+	return m.Sessions
 }
 
 // GetAddress is where this machine reads the weights: the directory when one is
@@ -267,6 +285,7 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 		Engine     *string `json:"engine"`
 		Runtime    *string `json:"runtime"`
 		Threads    *int    `json:"threads"`
+		Sessions   *int    `json:"sessions"`
 		Provider   *string `json:"provider"`
 		Download   *bool   `json:"download"`
 	}
@@ -284,6 +303,7 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 	assign(&m.Engine, f.Engine)
 	assign(&m.Runtime, f.Runtime)
 	assign(&m.Threads, f.Threads)
+	assign(&m.Sessions, f.Sessions)
 	assign(&m.Provider, f.Provider)
 	assign(&m.ShouldDownload, f.Download)
 	return nil

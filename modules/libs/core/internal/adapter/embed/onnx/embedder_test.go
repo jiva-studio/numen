@@ -1,9 +1,11 @@
 package onnx_test
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -259,5 +261,62 @@ func TestINT8ModelEmbedsAndReportsItself(t *testing.T) {
 	}
 	if len(vectors[0]) != e.Model().Dimensions {
 		t.Errorf("got %d dimensions", len(vectors[0]))
+	}
+}
+
+func TestMultiGoroutineConcurrentEmbedBatch(t *testing.T) {
+	dir := modelDir(t)
+	cfg, local := setLocalModel(t, embed.Defaults(), dir)
+	local.Sessions = 3
+	e, err := onnx.Open(t.Context(), cfg.GetStoredModel(), local, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+
+	if e.Concurrency() != 3 {
+		t.Errorf("expected concurrency 3, got %d", e.Concurrency())
+	}
+	if e.PoolSize() != 3 {
+		t.Errorf("expected pool size 3, got %d", e.PoolSize())
+	}
+
+	sentences := []string{
+		"The gate is locked every evening at dusk.",
+		"Ворота запирают каждый вечер на закате.",
+		"Sourdough needs a starter and a warm kitchen.",
+		"Short sentence.",
+	}
+
+	const goroutines = 6
+	var wg sync.WaitGroup
+	errChan := make(chan error, goroutines)
+	for i := range goroutines {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for range 3 {
+				vectors, err := e.Embed(t.Context(), sentences)
+				if err != nil {
+					errChan <- err
+					return
+				}
+				if len(vectors) != len(sentences) {
+					errChan <- fmt.Errorf("goroutine %d: got %d vectors, want %d", id, len(vectors), len(sentences))
+					return
+				}
+				for _, v := range vectors {
+					if len(v) != e.Model().Dimensions {
+						errChan <- fmt.Errorf("goroutine %d: invalid dimensions %d", id, len(v))
+						return
+					}
+				}
+			}
+		}(i)
+	}
+	wg.Wait()
+	close(errChan)
+	for err := range errChan {
+		t.Errorf("concurrent embed error: %v", err)
 	}
 }
