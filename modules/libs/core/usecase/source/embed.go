@@ -84,7 +84,7 @@ type preparedBatch struct {
 	reused      []port.Vector
 	reusedCount int
 	asking      []string
-	askingFor   []int
+	askingMap   []int
 	reading     string
 }
 
@@ -307,18 +307,36 @@ func (u Embed) prepareBatch(
 	}
 
 	prep := preparedBatch{
-		model:   model,
-		owing:   owing,
-		hashes:  hashes,
-		reading: owing[len(owing)-1].Source,
+		model:     model,
+		owing:     owing,
+		hashes:    hashes,
+		asking:    make([]string, 0, len(texts)),
+		askingMap: make([]int, len(texts)),
+		reading:   owing[len(owing)-1].Source,
+	}
+	var seen map[string]int
+	if len(texts) > 1 {
+		seen = make(map[string]int, len(texts))
 	}
 	for i := range texts {
 		value, held := kept[hex.EncodeToString(hashes[i])]
 		if !held || len(hashes[i]) == 0 {
+			key := owing[i].ChunkHash
+			if key == "" {
+				key = texts[i]
+			}
+			if seen != nil {
+				if pos, exists := seen[key]; exists {
+					prep.askingMap[i] = pos
+					continue
+				}
+				seen[key] = len(prep.asking)
+			}
+			prep.askingMap[i] = len(prep.asking)
 			prep.asking = append(prep.asking, texts[i])
-			prep.askingFor = append(prep.askingFor, i)
 			continue
 		}
+		prep.askingMap[i] = -1
 		prep.reused = append(prep.reused, port.Vector{
 			ChunkID: owing[i].ChunkID,
 			Hash:    hashes[i],
@@ -330,6 +348,11 @@ func (u Embed) prepareBatch(
 		prep.reusedCount++
 	}
 	return prep, nil
+}
+
+type uniqueVector struct {
+	value  []byte
+	coarse []byte
 }
 
 // inferBatch embeds texts that owe vectors and normalises/quantises the output.
@@ -348,21 +371,29 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 		if len(vectors) != len(prep.asking) {
 			return completedBatch{}, fmt.Errorf("%s answered with %d vectors for %d texts", prep.model, len(vectors), len(prep.asking))
 		}
+		unique := make([]uniqueVector, len(vectors))
 		for i, v := range vectors {
 			if len(v) != prep.model.Dimensions {
 				return completedBatch{}, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
 			}
 			v = embedding.Normalise(v)
-			at := prep.askingFor[i]
 			quantised := embedding.Bytes(v)
-			out = append(out, port.Vector{
-				ChunkID: prep.owing[at].ChunkID,
-				Hash:    prep.hashes[at],
-				Model:   prep.model,
-				Kind:    port.QuantisedInt8,
-				Value:   packVector(quantised),
-				Coarse:  embedding.Coarse(quantised),
-			})
+			unique[i] = uniqueVector{
+				value:  packVector(quantised),
+				coarse: embedding.Coarse(quantised),
+			}
+		}
+		for i, at := range prep.askingMap {
+			if at >= 0 {
+				out = append(out, port.Vector{
+					ChunkID: prep.owing[i].ChunkID,
+					Hash:    prep.hashes[i],
+					Model:   prep.model,
+					Kind:    port.QuantisedInt8,
+					Value:   unique[at].value,
+					Coarse:  unique[at].coarse,
+				})
+			}
 		}
 	}
 	return completedBatch{

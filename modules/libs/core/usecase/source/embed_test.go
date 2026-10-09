@@ -15,7 +15,7 @@ import (
 const dimensions = 32
 
 // cutBooks extracts one vault's books and answers with the chunks that owe a vector.
-func cutBooks(t *testing.T, index *store, shelf *library, v domain.Vault) []storedChunk {
+func cutBooks(t testing.TB, index *store, shelf *library, v domain.Vault) []storedChunk {
 	t.Helper()
 	if _, err := (NewExtract(vaults{v.ID: shelf}, index, index)).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -392,6 +392,52 @@ func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
 		if progressReports[i].Embedded < progressReports[i-1].Embedded {
 			t.Errorf("progress reports not monotonically increasing: report[%d]=%d < report[%d]=%d",
 				i, progressReports[i].Embedded, i-1, progressReports[i-1].Embedded)
+		}
+	}
+}
+
+func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+	repeatedSection := words(sanskrit, 200)
+	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", repeatedSection, repeatedSection, repeatedSection), 1)
+	small := cutBooks(t, index, shelf, first)
+
+	model := &embedder{dims: dimensions}
+	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed.Embedder = model
+	embed.BatchCharacters = 50000
+
+	res, err := embed.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Embedded != len(small) {
+		t.Errorf("res.Embedded = %d, want %d", res.Embedded, len(small))
+	}
+	uniqueTexts := map[string]struct{}{}
+	for _, chunk := range small {
+		uniqueTexts[chunk.text] = struct{}{}
+	}
+	if len(uniqueTexts) >= len(small) {
+		t.Fatalf("expected duplicate chunks in test fixture, got %d unique out of %d total", len(uniqueTexts), len(small))
+	}
+	if len(model.seen) != len(uniqueTexts) {
+		t.Errorf("model saw %d texts, want %d unique texts", len(model.seen), len(uniqueTexts))
+	}
+	seenSet := map[string]struct{}{}
+	for _, text := range model.seen {
+		if _, exists := seenSet[text]; exists {
+			t.Errorf("model saw duplicate text %q", text)
+		}
+		seenSet[text] = struct{}{}
+	}
+	if len(index.vectors) != len(small) {
+		t.Errorf("%d chunks carry a vector, want %d", len(index.vectors), len(small))
+	}
+	for _, chunk := range small {
+		if len(index.getVectors(chunk)) != 1 {
+			t.Fatalf("chunk %d carries %d vectors, want 1", chunk.id, len(index.getVectors(chunk)))
 		}
 	}
 }
