@@ -46,7 +46,7 @@ func BenchmarkTokenizeBatch(b *testing.B) {
 	e := benchOpen(b, benchModelDir(b))
 	sample := strings.Repeat("The quick brown fox jumps over the lazy dog. A paragraph with multiple sentences for embedding. ", 10)
 
-	for _, count := range []int{1, 8, 16, 32, 64, 128} {
+	for _, count := range []int{1, 8, 16, 32, 64, 128, 256, 512} {
 		texts := make([]string, count)
 		for i := range texts {
 			texts[i] = fmt.Sprintf("%s chunk %d", sample, i)
