@@ -118,12 +118,6 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 	return out, rows.Err()
 }
 
-// kinds is what a caller's chosen kinds are on the wire: a JSON array, empty
-// for a question that says nothing about what sort of file it wants.
-func kinds(chosen []domain.SourceKind) (string, error) {
-	return formatKinds(chosen), nil
-}
-
 // Lexical is a search asked by words: the chunks of one vault whose text
 // matches what was typed, best first.
 //
@@ -147,11 +141,13 @@ func (q *Queries) Lexical(ctx context.Context, vaultID domain.VaultID, query str
 		return nil, err
 	}
 
-	wanted, err := kinds(of)
-	if err != nil {
-		return nil, err
+	var rows *sql.Rows
+	if len(of) == 0 {
+		rows, err = q.db.QueryContext(ctx, stmt.Get("lexical"), expression, vault, limit)
+	} else {
+		wanted := formatKinds(of)
+		rows, err = q.db.QueryContext(ctx, stmt.Get("lexical_kinds"), expression, vault, wanted, limit)
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("lexical"), expression, vault, wanted, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -193,11 +189,13 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 		return nil, err
 	}
 
-	wanted, err := kinds(of)
-	if err != nil {
-		return nil, err
+	var rows *sql.Rows
+	if len(of) == 0 {
+		rows, err = q.db.QueryContext(ctx, stmt.Get("sections"), expression, vault, limit)
+	} else {
+		wanted := formatKinds(of)
+		rows, err = q.db.QueryContext(ctx, stmt.Get("sections_kinds"), expression, vault, wanted, limit)
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("sections"), expression, vault, wanted, limit)
 	if err != nil {
 		return nil, err
 	}

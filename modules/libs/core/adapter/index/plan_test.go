@@ -54,9 +54,11 @@ var expectedPlans = []struct {
 	{chunk.Statements(), "progress", []any{"model", 1}, []string{"chunks_by_vault_parent", "vectors_by_hash"}},
 	// A search by words reads the full-text index and then the row each hit
 	// names. A virtual table reports itself as a scan and has no named index.
-	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, `[]`, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "lexical_kinds", []any{`"entropy"`, 1, `["note"]`, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
 	// A search by name reads its own full-text index the same way.
-	{chunk.Statements(), "sections", []any{`"entropy"`, 1, `[]`, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "sections", []any{`"entropy"`, 1, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+	{chunk.Statements(), "sections_kinds", []any{`"entropy"`, 1, `["note"]`, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
 	{chunk.Statements(), "clear_sections", []any{1}, []string{"chunks_by_source"}},
 	{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
 	// Cutting a source again reads what it holds now, and then moves, writes or
