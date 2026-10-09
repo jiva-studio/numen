@@ -362,3 +362,36 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 		t.Errorf("secondRes.Embedded = %d, want %d", secondRes.Embedded, len(small))
 	}
 }
+
+func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 1200), words(sanskrit, 1200)), 1)
+	small := cutBooks(t, index, shelf, first)
+
+	var progressReports []EmbedResult
+	model := &embedder{dims: dimensions}
+	embed := NewEmbed(vaults{first.ID: shelf}, index, index)
+	embed.Embedder = model
+	embed.BatchCharacters = 1000
+	embed.OnProgress = func(r EmbedResult) {
+		progressReports = append(progressReports, r)
+	}
+
+	res, err := embed.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Embedded != len(small) {
+		t.Errorf("res.Embedded = %d, want %d", res.Embedded, len(small))
+	}
+	if len(progressReports) < 2 {
+		t.Errorf("got %d progress reports, want >= 2", len(progressReports))
+	}
+	for i := 1; i < len(progressReports); i++ {
+		if progressReports[i].Embedded < progressReports[i-1].Embedded {
+			t.Errorf("progress reports not monotonically increasing: report[%d]=%d < report[%d]=%d",
+				i, progressReports[i].Embedded, i-1, progressReports[i-1].Embedded)
+		}
+	}
+}
