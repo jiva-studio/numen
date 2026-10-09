@@ -108,8 +108,8 @@ export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
 
 /** The size of one page, and the nearest thing to it that is known. */
 function sizeOf(pages: readonly Page[], page: number): Page {
-  const said = pages[page]
-  if (said && said.width > 0 && said.height > 0) return said
+  const targetPage = pages[page]
+  if (targetPage && targetPage.width > 0 && targetPage.height > 0) return targetPage
   const first = pages[0]
   return first && first.width > 0 && first.height > 0 ? first : UPRIGHT
 }

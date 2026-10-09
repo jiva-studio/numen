@@ -89,7 +89,7 @@ onBeforeUnmount(() => {
   stopWatching?.()
   // The branch is going, and where its handle reached is not news about a node
   // that will not be there to hear it.
-  reached = null
+  pendingShares = null
   putDown()
 })
 
@@ -101,8 +101,8 @@ const shape = computed(() => props.node.children.map((child) => child.id).join('
  * moves the panels itself while it is held, and the model is told where it came
  * to rest.
  */
-let holding = false
-let reached: readonly number[] | null = null
+let isDragging = false
+let pendingShares: readonly number[] | null = null
 
 /**
  * A splitter reports the shares it settled on, including the ones it worked
@@ -110,13 +110,13 @@ let reached: readonly number[] | null = null
  */
 function onLayout(percents: number[]): void {
   const shares = percents.map((size) => size / 100)
-  const held = sizes.value
+  const currentSizes = sizes.value
   const same =
-    shares.length === held.length &&
-    shares.every((share, index) => Math.abs(share - (held[index] ?? 0)) < 1e-6)
+    shares.length === currentSizes.length &&
+    shares.every((share, index) => Math.abs(share - (currentSizes[index] ?? 0)) < 1e-6)
 
   if (same) return
-  if (holding) reached = shares
+  if (isDragging) pendingShares = shares
   else workspace.value.resize(props.node.id, shares)
 }
 
@@ -131,22 +131,22 @@ const getFrameElement = (): HTMLElement | undefined => frame.value?.$el as HTMLE
 
 /** The handle put down, wherever the pointer had reached by then. */
 const putDown = () => {
-  if (!holding) return
-  holding = false
+  if (!isDragging) return
+  isDragging = false
   getFrameElement()?.removeAttribute(RESIZING)
 
-  const settled = reached
-  reached = null
+  const settled = pendingShares
+  pendingShares = null
   if (settled) workspace.value.resize(props.node.id, settled)
 }
 
 /** A handle taken up, and put down where it stopped. */
-function setHolding(now: boolean): void {
-  if (!now) {
+function onSplitterHold(isHeld: boolean): void {
+  if (!isHeld) {
     putDown()
     return
   }
-  holding = true
+  isDragging = true
   getFrameElement()?.setAttribute(RESIZING, '')
 }
 </script>
@@ -171,7 +171,7 @@ function setHolding(now: boolean): void {
       :depth="depth"
       :direction="direction"
       :branch-view="branchView"
-      @hold="setHolding"
+      @hold="onSplitterHold"
     >
       <template v-for="name in passed" #[name]="bound">
         <slot :name="name" v-bind="getSlotProps(bound)" />

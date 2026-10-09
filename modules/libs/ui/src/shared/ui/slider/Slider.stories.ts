@@ -17,8 +17,8 @@ interface Knobs {
   max: number
   step: number
   disabled: boolean
-  /** What the slider is called, said before it. */
-  said: string
+  /** What the slider is called, shown before it. */
+  label: string
   /** How wide the box drawing the control is. */
   width: string
 }
@@ -33,7 +33,7 @@ const meta: Meta<Knobs> = {
     max: { control: 'number' },
     step: { control: 'number' },
     disabled: { control: 'boolean' },
-    said: { control: 'text' },
+    label: { control: 'text' },
     width: { control: 'text' },
   },
   args: {
@@ -42,7 +42,7 @@ const meta: Meta<Knobs> = {
     max: 100,
     step: 1,
     disabled: false,
-    said: 'Overdue share',
+    label: 'Overdue share',
     width: '12rem',
   },
   render: (args) => ({
@@ -53,11 +53,11 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem">
-        <span id="said">{{ args.said }}</span>
+        <span id="slider-label">{{ args.label }}</span>
         <div :style="{ inlineSize: args.width }">
           <Slider
             v-model="share"
-            aria-labelledby="said"
+            aria-labelledby="slider-label"
             :min="args.min"
             :max="args.max"
             :step="args.step"
@@ -138,11 +138,11 @@ export const AStepAtTheCeiling: Story = {
 export const ANarrowBox: Story = { args: { width: '4rem' } }
 
 /** A name in another script. */
-export const OtherScripts: Story = { args: { said: 'Доля просроченных' } }
+export const OtherScripts: Story = { args: { label: 'Доля просроченных' } }
 
 /** A name far longer than anything a setting is called. */
 export const FarTooLong: Story = {
-  args: { said: 'What part of a session goes to the overdue pile before new material '.repeat(2) },
+  args: { label: 'What part of a session goes to the overdue pile before new material '.repeat(2) },
 }
 
 /** A slider nobody may move. */
@@ -153,7 +153,7 @@ export const AnnouncedAsASlider: Story = {
   play: async ({ canvasElement }) => {
     const control = handle(canvasElement)
     expect(control.getAttribute('role')).toBe('slider')
-    expect(control.getAttribute('aria-labelledby')).toBe('said')
+    expect(control.getAttribute('aria-labelledby')).toBe('slider-label')
     expect(control.getAttribute('aria-orientation')).toBe('horizontal')
     expect(control.getAttribute('aria-valuemin')).toBe('0')
     expect(control.getAttribute('aria-valuemax')).toBe('100')
@@ -209,11 +209,11 @@ export const SettlesWhenTheKeyIsLetGo: Story = {
     },
     template: `
       <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem">
-        <span id="said">{{ args.said }}</span>
+        <span id="slider-label">{{ args.label }}</span>
         <div :style="{ inlineSize: args.width }">
           <Slider
             v-model="share"
-            aria-labelledby="said"
+            aria-labelledby="slider-label"
             :min="args.min"
             :max="args.max"
             :step="args.step"

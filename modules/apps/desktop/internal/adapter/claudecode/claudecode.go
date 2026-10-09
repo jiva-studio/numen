@@ -287,19 +287,8 @@ func (a *Agent) command() (string, []string) {
 // address the text names is an address the text chooses: the vault leaves in
 // the request. A search names no address, and the words of it reach the model
 // that is reading them already.
-const brought = "WebSearch"
+const externalTool = "WebSearch"
 
-// arguments are what the agent is started with.
-//
-// Only what the command line documents: the answer as one JSON object per line,
-// this vault's tools and no other server's, and the tools named in Allowed
-// approved ahead of the run. The question itself is not here — it goes on the
-// input, where nothing reads it for options.
-//
-// The one tool it brings is the search; every other built-in is disabled. An
-// agent works this vault through the tools this vault serves, and
-// every one of those goes through a use case that says what a note is and keeps
-// the index level with the file.
 // buildArguments returns what the command line is started with.
 func (a *Agent) buildArguments(task port.Task, configuration string) []string {
 	turns := a.Turns
@@ -314,7 +303,7 @@ func (a *Agent) buildArguments(task port.Task, configuration string) []string {
 		"--include-partial-messages",
 		"--strict-mcp-config",
 		"--mcp-config", configuration,
-		"--tools", brought,
+		"--tools", externalTool,
 		"--permission-mode", "dontAsk",
 		"--max-turns", fmt.Sprint(turns),
 		"--append-system-prompt", getSystemPrompt(task),
@@ -336,7 +325,7 @@ func (a *Agent) buildArguments(task port.Task, configuration string) []string {
 	// The search is allowed alongside this vault's tools. Naming a tool on
 	// --tools offers it; the allowance is what lets it be called, and nothing
 	// outside the allowance is called at all under this mode.
-	args = append(args, "--allowedTools", strings.Join(append([]string{brought}, a.Allowed...), ","))
+	args = append(args, "--allowedTools", strings.Join(append([]string{externalTool}, a.Allowed...), ","))
 	if session := a.getSession(task.Conversation); session != "" {
 		args = append(args, "--resume", session)
 	}

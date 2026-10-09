@@ -20,20 +20,20 @@ export interface Question {
 export type AnswerGuard = ReturnType<typeof createAnswerGuard>
 
 export function createAnswerGuard() {
-  let asked = 0
-  let drawn = 0
-  let listening = true
+  let questionSeq = 0
+  let renderedSeq = 0
+  let isListening = true
 
   /** A turn for one question. What is already on its way is let go of. */
   const ask = (): Question => {
-    const mine = ++asked
+    const mine = ++questionSeq
     return {
       get isCurrent() {
-        return listening && mine === asked
+        return isListening && mine === questionSeq
       },
       claim() {
-        if (!listening || mine < drawn) return false
-        drawn = mine
+        if (!isListening || mine < renderedSeq) return false
+        renderedSeq = mine
         return true
       },
     }
@@ -41,17 +41,17 @@ export function createAnswerGuard() {
 
   /** Nothing already asked for will be drawn. */
   const drop = () => {
-    asked += 1
-    drawn = asked
+    questionSeq += 1
+    renderedSeq = questionSeq
   }
 
   /** Nothing will be drawn from here on, whenever it lands. */
   const close = () => {
-    listening = false
+    isListening = false
   }
 
   /** Whether answers are still being drawn. */
-  const open = () => listening
+  const open = () => isListening
 
   return { ask, drop, close, open }
 }

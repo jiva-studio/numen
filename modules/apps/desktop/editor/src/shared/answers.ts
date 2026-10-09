@@ -81,11 +81,11 @@ const AGAIN = 1000
  * says so, and is asked again after a wait.
  */
 export const retryWhileBusy = async <T>(ask: () => Promise<T>): Promise<T> => {
-  for (let asked = 0; ; asked++) {
+  for (let attempt = 0; ; attempt++) {
     try {
       return await ask()
     } catch (error) {
-      if (Code.Unavailable !== (error as ConnectError).code || asked >= PATIENCE) throw error
+      if (Code.Unavailable !== (error as ConnectError).code || attempt >= PATIENCE) throw error
       await sleep(AGAIN)
     }
   }

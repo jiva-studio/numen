@@ -58,8 +58,8 @@ const inForce = computed(() => clamp(model.value, bounds.value))
 watch(inForce, setValue, { immediate: true })
 
 const onMove = (value: number[] | undefined) => {
-  const said = value?.[0]
-  if (typeof said === 'number') setValue(said)
+  const next = value?.[0]
+  if (typeof next === 'number') setValue(next)
 }
 
 /** Whether a key is down, and where the handle stood when it went down. */
@@ -80,8 +80,8 @@ const onKeyDown = (event: KeyboardEvent) => {
     walking = true
     began = handed
   }
-  const said = stepForKey(event.key, inForce.value, bounds.value, event.shiftKey)
-  if (said !== null) setValue(said)
+  const next = stepForKey(event.key, inForce.value, bounds.value, event.shiftKey)
+  if (next !== null) setValue(next)
 }
 
 /** The handle let go of, at what the walk left it standing at. */
@@ -97,10 +97,10 @@ const onRelease = () => {
  * the first.
  */
 const onCommit = (value: number[]) => {
-  const said = value[0]
-  if (typeof said !== 'number') return
-  setValue(said)
-  emit('settle', said)
+  const next = value[0]
+  if (typeof next !== 'number') return
+  setValue(next)
+  emit('settle', next)
 }
 </script>
 

@@ -26,7 +26,7 @@ export interface StreamDeps {
   /** Whether the window is still open. Nothing is followed once it is not. */
   isOpen(): boolean
   /** What the window lost touch with, said until it has it back. */
-  setLost(said: string): void
+  setLost(message: string): void
   wait(ms: number): Promise<unknown>
   /**
    * What the follower lets go of when a stream ends: whatever it holds answers
@@ -40,14 +40,14 @@ export function createFollower(deps: StreamDeps) {
    * One reading of a stream, to its end or to the fault that ends it. It
    * answers whether the window is still open.
    */
-  const readStream = async <Said>(
-    stream: () => AsyncIterable<Said>,
-    each: (said: Said) => void | Promise<void>,
+  const readStream = async <T>(
+    stream: () => AsyncIterable<T>,
+    each: (item: T) => void | Promise<void>,
   ): Promise<boolean> => {
     try {
-      for await (const said of stream()) {
+      for await (const item of stream()) {
         if (!deps.isOpen()) return false
-        await each(said)
+        await each(item)
       }
     } catch {
       // Anything the reading throws ends this one and is said as losing
@@ -64,9 +64,9 @@ export function createFollower(deps: StreamDeps) {
    * answered before the next of it is read, and what the answer throws ends
    * this reading of the stream and begins another.
    */
-  return async function follows<Said>(
-    stream: () => AsyncIterable<Said>,
-    each: (said: Said) => void | Promise<void>,
+  return async function follows<T>(
+    stream: () => AsyncIterable<T>,
+    each: (item: T) => void | Promise<void>,
     again = AGAIN,
   ): Promise<void> {
     while (deps.isOpen()) {

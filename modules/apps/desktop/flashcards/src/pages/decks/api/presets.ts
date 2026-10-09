@@ -12,7 +12,7 @@ import type { Settings, SettingsMessage } from '../types'
  * written to.
  */
 export interface PresetsClient {
-  getVaultDeckPreset(said: { vault: string; deck: string }): Promise<{
+  getVaultDeckPreset(params: { vault: string; deck: string }): Promise<{
     preset?:
       | {
           path: string

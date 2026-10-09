@@ -12,20 +12,20 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// drawn is a window that keeps what it was told about a change being made, and
+// fakeDraftWindow is a window that keeps what it was told about a change being made, and
 // a vault that says one stretch stands in one place.
-type drawn struct {
-	said    []domain.Edit
-	at      time.Time
-	isFound bool
-	asked   []string
+type fakeDraftWindow struct {
+	edits              []domain.Edit
+	at                 time.Time
+	isFound            bool
+	requestedStretches []string
 }
 
-func (d *drawn) makeDrafting() claudecode.Drafting {
+func (d *fakeDraftWindow) makeDrafting() claudecode.Drafting {
 	return claudecode.Drafting{
-		Report: func(_ context.Context, said domain.Edit) { d.said = append(d.said, said) },
+		Report: func(_ context.Context, edit domain.Edit) { d.edits = append(d.edits, edit) },
 		Location: func(_ context.Context, _, stood string) (int, int, bool) {
-			d.asked = append(d.asked, stood)
+			d.requestedStretches = append(d.requestedStretches, stood)
 			return 3, 9, d.isFound
 		},
 		// Every frame is a moment later, so the pace never holds one back.
@@ -34,7 +34,7 @@ func (d *drawn) makeDrafting() claudecode.Drafting {
 }
 
 // startDrafting is the agent with a window behind it, fed a canned stream.
-func startDrafting(t *testing.T, window *drawn, prints string) port.Run {
+func startDrafting(t *testing.T, window *fakeDraftWindow, prints string) port.Run {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -93,7 +93,7 @@ const opens = `{"type":"stream_event","event":{"type":"content_block_start",` +
 // nothing in its place reads as having been deleted, so nothing is drawn until
 // the replacement has begun.
 func TestNothingIsDrawnBeforeTheReplacementHasBegun(t *testing.T) {
-	window := &drawn{isFound: true}
+	window := &fakeDraftWindow{isFound: true}
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md",`)+"\n"+
 		piece(`"stood":"A hedgehog`)+"\n"+
@@ -101,18 +101,18 @@ func TestNothingIsDrawnBeforeTheReplacementHasBegun(t *testing.T) {
 
 	getSteps(t, work)
 
-	if len(window.said) != 0 {
-		t.Fatalf("a change was drawn before its replacement: %+v", window.said)
+	if len(window.edits) != 0 {
+		t.Fatalf("a change was drawn before its replacement: %+v", window.edits)
 	}
-	if len(window.asked) != 0 {
-		t.Errorf("a stretch still arriving was looked for: %v", window.asked)
+	if len(window.requestedStretches) != 0 {
+		t.Errorf("a stretch still arriving was looked for: %v", window.requestedStretches)
 	}
 }
 
 // Once the replacement has begun the stretch it replaces is whole, and every
 // piece of the replacement is drawn where that stretch stands.
 func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
-	window := &drawn{isFound: true}
+	window := &fakeDraftWindow{isFound: true}
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md","stood":"A hedgehog",`)+"\n"+
 		piece(`"becomes":"An axe`)+"\n"+
@@ -120,32 +120,32 @@ func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
 
 	getSteps(t, work)
 
-	if len(window.said) < 2 {
-		t.Fatalf("the change was drawn %d times: %+v", len(window.said), window.said)
+	if len(window.edits) < 2 {
+		t.Fatalf("the change was drawn %d times: %+v", len(window.edits), window.edits)
 	}
-	first := window.said[0]
+	first := window.edits[0]
 	if first.Path != "Note.md" || first.From != 3 || first.To != 9 {
 		t.Errorf("the change was drawn as %+v", first)
 	}
 	if first.Change != "toolu_01" {
 		t.Errorf("the change is named %q", first.Change)
 	}
-	last := window.said[len(window.said)-1]
+	last := window.edits[len(window.edits)-1]
 	if last.Text != "An axe, two-bladed" {
 		t.Errorf("what goes in was drawn as %q", last.Text)
 	}
 	if last.IsDone {
 		t.Error("the adapter ended a change the vault ends")
 	}
-	if want := []string{"A hedgehog"}; len(window.asked) != 1 || window.asked[0] != want[0] {
-		t.Errorf("the stretch was looked for as %v", window.asked)
+	if want := []string{"A hedgehog"}; len(window.requestedStretches) != 1 || window.requestedStretches[0] != want[0] {
+		t.Errorf("the stretch was looked for as %v", window.requestedStretches)
 	}
 }
 
 // A stretch that stands nowhere or twice is not a place, and drawing over a
 // guess is worse than drawing nothing.
 func TestASpanThatIsNotOnePlaceIsNotDrawn(t *testing.T) {
-	window := &drawn{isFound: true}
+	window := &fakeDraftWindow{isFound: true}
 	window.isFound = false
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md","stood":"foe",`)+"\n"+
@@ -153,7 +153,7 @@ func TestASpanThatIsNotOnePlaceIsNotDrawn(t *testing.T) {
 
 	getSteps(t, work)
 
-	if len(window.said) != 0 {
-		t.Fatalf("a change was drawn over a stretch that stands nowhere: %+v", window.said)
+	if len(window.edits) != 0 {
+		t.Fatalf("a change was drawn over a stretch that stands nowhere: %+v", window.edits)
 	}
 }

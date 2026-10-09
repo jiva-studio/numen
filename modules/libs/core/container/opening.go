@@ -24,10 +24,10 @@ type VaultOpener struct {
 	// ShouldRebuild reads every note again, whatever its fingerprint says.
 	ShouldRebuild bool
 
-	watcher port.VaultWatcher
-	scan    vault.Scan
-	held    *holding
-	refresh vault.Refresh
+	watcher  port.VaultWatcher
+	scan     vault.Scan
+	buffered *bufferedNoteRepository
+	refresh  vault.Refresh
 }
 
 // VaultChanges is what an opener tells its callers: the notes that are
@@ -69,12 +69,12 @@ func (c Config) VaultOpenerWith(
 	scan.Walks = db.Walks()
 	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 
-	held := &holding{NoteRepository: db.NotesCutAt(c.GetChunkSizes(), c.Legibility())}
+	buffered := &bufferedNoteRepository{NoteRepository: db.NotesCutAt(c.GetChunkSizes(), c.Legibility())}
 	return &VaultOpener{
-		watcher: watcher,
-		scan:    scan,
-		held:    held,
-		refresh: makeRefresh(c, db, held),
+		watcher:  watcher,
+		scan:     scan,
+		buffered: buffered,
+		refresh:  makeRefresh(c, db, buffered),
 	}
 }
 
@@ -152,7 +152,7 @@ func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
 func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
-	o.opening.held.begin()
+	o.opening.buffered.begin()
 
 	walk := o.scan
 	if during != nil {
@@ -160,7 +160,7 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	}
 	res, err := walk.Execute(ctx, o.vault)
 
-	under := o.opening.held.takePaths()
+	under := o.opening.buffered.takePaths()
 	if err != nil {
 		return res.Notes, err
 	}
@@ -190,71 +190,71 @@ func (o *OpenVault) handleError(err error) {
 	}
 }
 
-// holding is the index, keeping the paths of the notes written through it while
+// bufferedNoteRepository is the index, keeping the paths of the notes written through it while
 // the first walk is still reading the vault.
-type holding struct {
+type bufferedNoteRepository struct {
 	port.NoteRepository
-	writes
+	bufferedWrites
 }
 
-// writes is every path written through the index while a walk is reading the
+// bufferedWrites is every path written through the index while a walk is reading the
 // vault: each path once, in the order it was first written.
-type writes struct {
-	mu     sync.Mutex
-	paths  []string
-	kept   map[string]bool
-	isOver bool
+type bufferedWrites struct {
+	mu       sync.Mutex
+	paths    []string
+	recorded map[string]bool
+	isOver   bool
 }
 
-func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
+func (b *bufferedNoteRepository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
 	for _, one := range notes {
-		h.hold(one.Fingerprint.Path)
+		b.record(one.Fingerprint.Path)
 	}
-	return h.NoteRepository.Save(ctx, vaultID, notes)
+	return b.NoteRepository.Save(ctx, vaultID, notes)
 }
 
-func (h *holding) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
+func (b *bufferedNoteRepository) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	for _, path := range paths {
-		h.hold(path)
+		b.record(path)
 	}
-	return h.NoteRepository.Remove(ctx, vaultID, paths)
+	return b.NoteRepository.Remove(ctx, vaultID, paths)
 }
 
 // begin holds the paths written through this, for the length of one walk. Every
 // walk holds again: a vault read a second time is read with the same guard as
 // the first.
-func (w *writes) begin() {
+func (w *bufferedWrites) begin() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	w.isOver = false
-	w.paths, w.kept = nil, nil
+	w.paths, w.recorded = nil, nil
 }
 
-// hold takes the path before the write it belongs to, so a note whose write
+// record takes the path before the write it belongs to, so a note whose write
 // lands while the walk is still running is one of the paths taken after it.
-func (w *writes) hold(path string) {
+func (w *bufferedWrites) record(path string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.isOver || w.kept[path] {
+	if w.isOver || w.recorded[path] {
 		return
 	}
-	if w.kept == nil {
-		w.kept = map[string]bool{}
+	if w.recorded == nil {
+		w.recorded = map[string]bool{}
 	}
-	w.kept[path] = true
+	w.recorded[path] = true
 	w.paths = append(w.paths, path)
 }
 
 // takePaths is every path held, and the end of the holding: the walk is over,
 // so a write that lands from now on is already the last one.
-func (w *writes) takePaths() []string {
+func (w *bufferedWrites) takePaths() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
 	w.isOver = true
 	paths := w.paths
-	w.paths, w.kept = nil, nil
+	w.paths, w.recorded = nil, nil
 	return paths
 }

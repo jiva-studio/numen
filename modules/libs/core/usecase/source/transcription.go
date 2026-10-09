@@ -429,22 +429,22 @@ func (t *TranscriptionWorker) proofreadTranscript(
 	ctx context.Context,
 	v domain.Vault,
 	path, hash string,
-	asked bool,
+	isUserRequested bool,
 	began func(ProofreadTranscriptResult),
 ) (ProofreadTranscriptResult, error) {
-	said := t.with.Proofreading
+	proofreading := t.with.Proofreading
 
 	id := proofreadID(path)
 	fail := func(err error) {
 		t.say(task.Task{
 			ID: id, Doing: "Proofreading a transcript", About: path, Error: err.Error(),
-		}, asked)
+		}, isUserRequested)
 	}
-	if asked {
-		t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, asked)
+	if isUserRequested {
+		t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, isUserRequested)
 	}
 
-	right, held, err := said.Transcript(t.with.Readers, t.with.Derived)
+	right, held, err := proofreading.Transcript(t.with.Readers, t.with.Derived)
 	if err != nil {
 		fail(err)
 		return ProofreadTranscriptResult{Path: path}, err
@@ -471,14 +471,14 @@ func (t *TranscriptionWorker) proofreadTranscript(
 			About: path,
 			Count: int64(res.Read),
 			Total: int64(res.Lines),
-		}, asked)
+		}, isUserRequested)
 	}
 	res, err := right.Execute(ctx, v, path)
 
 	switch {
 	case err != nil && !errors.Is(err, context.Canceled):
 		fail(err)
-	case res.IsBusy && !asked:
+	case res.IsBusy && !isUserRequested:
 		// The transcript is held by another run, and that run is the one whose
 		// progress the list carries.
 	default:
@@ -510,11 +510,11 @@ func (t *TranscriptionWorker) TakeUp(
 			if err != nil {
 				continue
 			}
-			for _, said := range recognised {
+			for _, sourceItem := range recognised {
 				if ctx.Err() != nil {
 					return
 				}
-				t.proofread(ctx, v, said.Path, said.Hash, false)
+				t.proofread(ctx, v, sourceItem.Path, sourceItem.Hash, false)
 			}
 		}
 	}()
@@ -526,12 +526,12 @@ func (t *TranscriptionWorker) transcribe(
 	ctx context.Context,
 	v domain.Vault,
 	id, path string,
-	asked bool,
+	isUserRequested bool,
 ) (res TranscribeResult, err error) {
 	// One run holds the models on a machine: a scan being recognised holds them,
 	// and this waits for it.
-	release, err := t.with.Models.acquire(ctx, asked, func() {
-		t.say(task.Task{ID: id, Doing: "Waiting for the models", About: path}, asked)
+	release, err := t.with.Models.acquire(ctx, isUserRequested, func() {
+		t.say(task.Task{ID: id, Doing: "Waiting for the models", About: path}, isUserRequested)
 	})
 	if err != nil {
 		return res, err
@@ -540,14 +540,14 @@ func (t *TranscriptionWorker) transcribe(
 
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
-	t.say(task.Task{ID: id, Doing: "Fetching models"}, asked)
+	t.say(task.Task{ID: id, Doing: "Fetching models"}, isUserRequested)
 	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		t.say(task.Task{
 			ID: id, Doing: "Fetching models", About: what,
 			Count: done, Total: total, Unit: task.Bytes,
-		}, asked)
+		}, isUserRequested)
 	})
 	if err != nil {
 		return res, fmt.Errorf("%w: %w", errNothingTranscribes, err)
@@ -560,7 +560,7 @@ func (t *TranscriptionWorker) transcribe(
 		}
 	}()
 
-	t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path}, asked)
+	t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path}, isUserRequested)
 	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
 	listen.Cut = t.Cut
 	listen.OnProgress = func(res TranscribeResult) {
@@ -571,7 +571,7 @@ func (t *TranscriptionWorker) transcribe(
 			Count: int64(res.Heard / 1000),
 			Total: int64(res.Length / 1000),
 			Unit:  task.Seconds,
-		}, asked)
+		}, isUserRequested)
 	}
 	return listen.Execute(ctx, v, path)
 }

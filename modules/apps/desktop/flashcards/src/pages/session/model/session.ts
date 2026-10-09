@@ -18,8 +18,8 @@ export interface SessionClient {
    * Deck is one deck, or empty for every deck the vault holds. Preset holds it
    * to the decks one preset schedules, and to the budget that preset keeps.
    */
-  startSession(said: { vault: string; deck: string; preset?: string }): Promise<SessionStart>
-  answerCard(said: {
+  startSession(params: { vault: string; deck: string; preset?: string }): Promise<SessionStart>
+  answerCard(params: {
     vault: string
     run: string
     mark: string
@@ -27,7 +27,7 @@ export interface SessionClient {
     rating: number
     tookMs: bigint
   }): Promise<{ answer: string }>
-  takeBackAnswer(said: { vault: string; run: string; answer: string }): Promise<unknown>
+  takeBackAnswer(params: { vault: string; run: string; answer: string }): Promise<unknown>
 }
 
 /** What opening a session comes back with. */
@@ -145,18 +145,18 @@ export function useReviewSession(deps: SessionDeps) {
   const answer = async (how: Grade) => {
     const one = card.value
     if (!one || !shown.value || writing.value) return
-    const took = now() - put
+    const elapsedMs = now() - put
     writing.value = true
     try {
-      const given = await deps.cards.answerCard({
+      const response = await deps.cards.answerCard({
         vault: vault.value,
         run: run.value,
         mark: one.mark,
         face: one.face,
         rating: rated[how],
-        tookMs: BigInt(took),
+        tookMs: BigInt(elapsedMs),
       })
-      answers.value.push(given.answer)
+      answers.value.push(response.answer)
     } catch (why) {
       deps.reportError(why)
       return

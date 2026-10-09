@@ -67,13 +67,13 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
    * What the drag was handed, held for the life of the gesture. Whoever is
    * dragging them may put them down on the same release this settles on.
    */
-  let holding: readonly string[] = []
+  let activeDragIds: readonly string[] = []
 
   const stop = () => {
     detach?.()
     detach = null
     at.value = null
-    holding = []
+    activeDragIds = []
   }
 
   const move = (event: PointerEvent) => {
@@ -83,7 +83,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
 
   const finish = (event: PointerEvent) => {
     move(event)
-    const dragged = holding
+    const dragged = activeDragIds
     const settled = seat.value
     stop()
     if (dragged.length > 0 && settled) drag.settle(dragged, settled)
@@ -91,7 +91,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
 
   const follow = () => {
     if (detach) return
-    holding = drag.getDragged()
+    activeDragIds = drag.getDragged()
 
     const onMove = (event: PointerEvent) => move(event)
     const onUp = (up: PointerEvent) => finish(up)

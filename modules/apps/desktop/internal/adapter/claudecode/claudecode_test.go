@@ -267,11 +267,12 @@ func getArgvWith(t *testing.T, change func(*claudecode.Agent)) []string {
 }
 
 // run is what the child was given: the arguments on its command line, what
-// stood on its input, and the configuration file the arguments name, copied
-// while the child was still running.
+// run is what a script saw: the arguments passed to it, what stood on its input,
+// and the configuration file the arguments name, copied while the child was
+// still running.
 type run struct {
 	argv   []string
-	asked  string
+	input  string
 	config string
 }
 
@@ -283,12 +284,12 @@ func runAgent(t *testing.T, change func(*claudecode.Agent)) run {
 	dir := t.TempDir()
 	script := filepath.Join(dir, "claude")
 	written := filepath.Join(dir, "argv")
-	asked := filepath.Join(dir, "asked")
+	inputFile := filepath.Join(dir, "input")
 	config := filepath.Join(dir, "config")
 	// The configuration is copied while the child is running: the run removes
 	// the file when the process is done with it.
 	body := "#!/bin/sh\n" +
-		"cat > " + asked + "\n" +
+		"cat > " + inputFile + "\n" +
 		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + written + "\n" +
 		"prev=\n" +
 		"for a in \"$@\"; do\n" +
@@ -318,8 +319,8 @@ func runAgent(t *testing.T, change func(*claudecode.Agent)) run {
 		t.Fatal(err)
 	}
 	out := run{argv: strings.Split(strings.TrimRight(string(raw), "\n"), "\n")}
-	if held, err := os.ReadFile(asked); err == nil {
-		out.asked = string(held)
+	if held, err := os.ReadFile(inputFile); err == nil {
+		out.input = string(held)
 	}
 	if held, err := os.ReadFile(config); err == nil {
 		out.config = string(held)
@@ -331,13 +332,13 @@ func runAgent(t *testing.T, change func(*claudecode.Agent)) run {
 // a command line it would be read for options first — a question beginning with
 // a dash is a flag, and the words after it are that flag's.
 func TestTheQuestionGoesOnTheInputAndNotOnTheCommandLine(t *testing.T) {
-	said := runAgent(t, func(*claudecode.Agent) {})
+	agentRun := runAgent(t, func(*claudecode.Agent) {})
 
-	if said.asked != "what is here?" {
-		t.Errorf("the child was asked %q on its input", said.asked)
+	if agentRun.input != "what is here?" {
+		t.Errorf("the child was given %q on its input", agentRun.input)
 	}
-	if slices.Contains(said.argv, "what is here?") {
-		t.Errorf("the question stands on the command line: %q", said.argv)
+	if slices.Contains(agentRun.argv, "what is here?") {
+		t.Errorf("the question stands on the command line: %q", agentRun.argv)
 	}
 }
 

@@ -196,23 +196,23 @@ export const WORDS = {
     },
   ): readonly string[] => {
     if (goal === 'date') {
-      const said = [`${many(at.value, 'day')} off`, `${many(at.minutes, 'minute')} a day`]
+      const phrases = [`${many(at.value, 'day')} off`, `${many(at.minutes, 'minute')} a day`]
       // A day that leaves every card time enough has nothing to say about it.
-      if (at.short > 0) said.push(`${count(at.short)} of ${count(at.cards)} cannot get there`)
-      return said
+      if (at.short > 0) phrases.push(`${count(at.short)} of ${count(at.cards)} cannot get there`)
+      return phrases
     }
-    const held =
+    const targetSummary =
       goal === 'minutes' ? `${many(at.value, 'minute')} a day` : `${percent(at.value)} remembered`
-    const buys =
+    const sessionSummary =
       goal === 'minutes'
         ? `${many(at.reviews, 'card')} a session`
         : `${many(at.minutes, 'minute')} a day`
-    if (at.clears === null) return [held, buys]
-    const gone =
+    if (at.clears === null) return [targetSummary, sessionSummary]
+    const clearanceSummary =
       at.clears < 0
         ? `not within ${many(at.horizon, 'day')}`
         : `overdue gone in ${many(at.clears, 'day')}`
-    return [held, buys, gone]
+    return [targetSummary, sessionSummary, clearanceSummary]
   },
   /** One height of the picture, against the line it is the height of. */
   heightAt: (goal: Goal, value: number) =>
@@ -227,14 +227,14 @@ export const WORDS = {
    * here and the material they hold between them.
    */
   material: (decks: number, cards: number, overdue: number, fresh: number) => {
-    const said = [
+    const items = [
       { figure: count(decks), name: plural(decks, 'deck') },
       { figure: count(cards), name: plural(cards, 'card') },
     ]
     // A figure standing at nothing is left out.
-    if (overdue > 0) said.push({ figure: count(overdue), name: 'overdue' })
-    if (fresh > 0) said.push({ figure: count(fresh), name: 'new' })
-    return said
+    if (overdue > 0) items.push({ figure: count(overdue), name: 'overdue' })
+    if (fresh > 0) items.push({ figure: count(fresh), name: 'new' })
+    return items
   },
   /**
    * When the material is learned, and how much of it stands learned now, read

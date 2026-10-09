@@ -36,7 +36,7 @@ export interface AgentPanelDeps {
    */
   readonly showPanel: (open: boolean) => void
   /** Where the window says what a person has to know. */
-  readonly showNotice: (said: string) => void
+  readonly showNotice: (message: string) => void
   /** When the words that have arrived are put on the screen. */
   readonly paint?: (draw: () => void) => void
 }

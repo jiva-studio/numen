@@ -47,7 +47,7 @@ export interface MessageLog {
  */
 export function messageLog(): MessageLog {
   const messages = shallowRef<readonly WindowMessage[]>([])
-  let minted = 0
+  let nextId = 0
 
   const getWriter =
     (name: string): MessageWriter =>
@@ -63,8 +63,8 @@ export function messageLog(): MessageLog {
         messages.value = rest
         return
       }
-      minted += 1
-      messages.value = [...rest, { id: `${name}#${minted}`, name, kind, text }]
+      nextId += 1
+      messages.value = [...rest, { id: `${name}#${nextId}`, name, kind, text }]
     }
 
   const dismiss = (id: string): void => {

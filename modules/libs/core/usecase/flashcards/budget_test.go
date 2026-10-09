@@ -1137,22 +1137,22 @@ func TestTheBacklogShareSaysWhatTheDayIsSpentOn(t *testing.T) {
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
 	all := s0(t, newBacklogVault(t, day+"backlog: 100\n"))
-	if all.seen != 20 || all.fresh == 0 {
+	if all.owed != 20 || all.fresh == 0 {
 		t.Errorf("giving the debt all of the day asked %+v, want every card owed and "+
 			"the rest of the day on new ones", all)
 	}
 	none := s0(t, newBacklogVault(t, day+"backlog: 0\n"))
-	if none.fresh != 20 || none.seen == 0 {
+	if none.fresh != 20 || none.owed == 0 {
 		t.Errorf("giving the debt none of the day asked %+v, want every new card and "+
 			"the rest of the day on owed ones", none)
 	}
 	// An odd day gives the extra card to the debt, so the two are never more
 	// than one apart.
 	half := s0(t, newBacklogVault(t, day+"backlog: 50\n"))
-	if half.seen-half.fresh < 0 || half.seen-half.fresh > 1 {
+	if half.owed-half.fresh < 0 || half.owed-half.fresh > 1 {
 		t.Errorf("splession the day evenly asked %+v", half)
 	}
-	if half.seen == 0 || half.fresh == 0 {
+	if half.owed == 0 || half.fresh == 0 {
 		t.Errorf("splession the day evenly left one side of it unspent: %+v", half)
 	}
 }
@@ -1167,7 +1167,7 @@ func TestAPresetNamingNoBacklogShareIsUnchanged(t *testing.T) {
 	if got := s0(t, newBacklogVault(t, day)); got != was {
 		t.Errorf("a preset naming no share asked %+v, and one naming a hundred %+v", got, was)
 	}
-	if was.seen != 20 {
+	if was.owed != 20 {
 		t.Errorf("the debt was not paid first: %+v", was)
 	}
 }
@@ -1190,9 +1190,9 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 
 	sat := s.sessionAt(t, today, saturday)
 	fresh := unseen(sat)
-	if seen := countQueue(sat) - fresh; seen != 2 || fresh != 20 {
+	if owed := countQueue(sat) - fresh; owed != 2 || fresh != 20 {
 		t.Errorf("the day asked %d owed and %d new, want the two owed and its twenty new",
-			seen, fresh)
+			owed, fresh)
 	}
 }
 
@@ -1208,21 +1208,21 @@ func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 		fresh := unseen(sat)
 		// Twenty owed, and twenty unbegun over the ten days to the day it aims
 		// at, which is two a day.
-		if seen := countQueue(sat) - fresh; seen != 20 || fresh != 2 {
+		if owed := countQueue(sat) - fresh; owed != 20 || fresh != 2 {
 			t.Errorf("under %q the day asked %d owed and %d new, want 20 and 2",
-				share, seen, fresh)
+				share, owed, fresh)
 		}
 	}
 }
 
 // what a session came to, of each kind.
-type session struct{ seen, fresh int }
+type session struct{ owed, fresh int }
 
 func s0(t *testing.T, s vaulted) session {
 	t.Helper()
 	sat := s.sessionAt(t, today, saturday)
 	fresh := unseen(sat)
-	return session{seen: countQueue(sat) - fresh, fresh: fresh}
+	return session{owed: countQueue(sat) - fresh, fresh: fresh}
 }
 
 // The share of the day that goes to the debt moves the day where the day is one
@@ -1244,7 +1244,7 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 		spent[name] = make(map[int]int)
 		for _, share := range []int{100, 50, 0} {
 			one := s0(t, newBacklogVault(t, fmt.Sprintf("%sbacklog: %d\n", day, share)))
-			spent[name][share] = one.seen
+			spent[name][share] = one.owed
 		}
 	}
 	if spent["minutes"][100] == spent["minutes"][0] {

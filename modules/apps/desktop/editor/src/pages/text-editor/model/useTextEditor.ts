@@ -98,7 +98,7 @@ export function useTextEditor(core: TextEditorTabDeps, readSettings: () => void)
   return {
     /** What stands in the editor. It is moved by `type` and nothing else. */
     text: readonly(typed),
-    type: (said: string) => void (typed.value = said),
+    type: (content: string) => void (typed.value = content),
     /** What is wrong, and empty where nothing is. */
     errorMessage: readonly(wrong),
     changed,

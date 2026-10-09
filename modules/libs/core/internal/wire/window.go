@@ -381,7 +381,7 @@ func (l *leaving) listen() (string, <-chan string, func()) {
 	}
 	l.reckon()
 
-	return token, p.told, func() { l.left(token, p) }
+	return token, p.told, func() { l.disconnectClient(token, p) }
 }
 
 // isAsking reports whether a round is running. The lock is held.
@@ -389,8 +389,8 @@ func (l *leaving) isAsking() bool {
 	return l.round != nil && !l.round.isPast
 }
 
-// left is one client no longer listening.
-func (l *leaving) left(token string, p *client) {
+// disconnectClient removes or marks gone one client no longer listening.
+func (l *leaving) disconnectClient(token string, p *client) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 

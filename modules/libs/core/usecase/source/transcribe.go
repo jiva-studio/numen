@@ -251,9 +251,9 @@ func (u Transcribe) answer(
 	ref domain.Fingerprint,
 	hash, area string,
 	store port.DerivedStore,
-	gave string,
+	transcript string,
 ) error {
-	if err := store.Write(ctx, text.Answer(area, hash), []byte(gave+"\n")); err != nil {
+	if err := store.Write(ctx, text.Answer(area, hash), []byte(transcript+"\n")); err != nil {
 		return err
 	}
 	if err := u.record(ctx, store, area, hash); err != nil {

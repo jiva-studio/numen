@@ -36,9 +36,9 @@ const PACES = 10
 
 /** The getDecimalPlaces a number is written to. */
 const getDecimalPlaces = (value: number): number => {
-  const said = `${value}`
-  const point = said.indexOf('.')
-  return point < 0 ? 0 : said.length - point - 1
+  const str = `${value}`
+  const point = str.indexOf('.')
+  return point < 0 ? 0 : str.length - point - 1
 }
 
 /** A value written to the getDecimalPlaces the floor and the step are written to. */

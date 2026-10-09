@@ -225,8 +225,8 @@ export const Scrolling: Story = {
     room.dispatchEvent(new Event('scroll'))
 
     await waitFor(async () => {
-      const said = Number((canvas.getByLabelText('Page') as HTMLInputElement).value)
-      await expect(said).toBeGreaterThan(1)
+      const pageValue = Number((canvas.getByLabelText('Page') as HTMLInputElement).value)
+      await expect(pageValue).toBeGreaterThan(1)
     })
   },
 }

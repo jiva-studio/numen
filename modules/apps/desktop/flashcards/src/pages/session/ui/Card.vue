@@ -65,9 +65,9 @@ const onClick = (press: MouseEvent) => {
   if (press.defaultPrevented) return
   // A hand that took the card across was moving the panel into view, and a
   // press that went nowhere is a person asking for the answer.
-  const went = from.value === null ? 0 : Math.abs(press.clientX - from.value)
+  const distanceX = from.value === null ? 0 : Math.abs(press.clientX - from.value)
   from.value = null
-  if (went <= STILL && !props.isShown) emit('show')
+  if (distanceX <= STILL && !props.isShown) emit('show')
 }
 </script>
 

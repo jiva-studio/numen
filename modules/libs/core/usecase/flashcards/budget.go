@@ -18,8 +18,8 @@ import (
 // The presets are separate scopes: one running out closes its own decks and no
 // others. A preset standing in no note schedules the decks naming none.
 type budgets struct {
-	under map[review.CardFaceID]string
-	left  map[string]*allowance
+	under      map[review.CardFaceID]string
+	allowances map[string]*allowance
 	// decks says which preset schedules each deck, by the path of its file.
 	decks map[string]string
 	// cards is how many card faces stand under each preset.
@@ -50,9 +50,9 @@ func getBudgets(
 	now time.Time,
 ) (*budgets, error) {
 	out := &budgets{
-		under: make(map[review.CardFaceID]string, len(faces)),
-		left:  make(map[string]*allowance),
-		cards: make(map[string]int),
+		under:      make(map[review.CardFaceID]string, len(faces)),
+		allowances: make(map[string]*allowance),
+		cards:      make(map[string]int),
 	}
 
 	// A deck is asked once which preset schedules it, however many card faces it
@@ -119,7 +119,7 @@ func getBudgets(
 		if p.Goal == review.GoalDate {
 			learn = review.GetDaysToLearn(at(p.Retention), day, p, now)
 		}
-		out.left[path] = &allowance{
+		out.allowances[path] = &allowance{
 			admits: p.GetAllowance(day, now, spent[path], unseen[path], learn),
 			cost:   cost,
 			counts: p.Counts,
@@ -140,7 +140,7 @@ func getBudgets(
 // comes round again for no count. The minutes are spent on every answer
 // whichever way the preset counts.
 func (b *budgets) charge(share *allowance, face review.CardFaceID, fresh bool) bool {
-	one, held := b.left[b.under[face]]
+	one, held := b.allowances[b.under[face]]
 	if !held || one.admits.IsPaused() {
 		return false
 	}
@@ -185,7 +185,7 @@ func (a *allowance) spend(fresh, counted bool, cost time.Duration) {
 // asking is what a day holds of the cards standing: the ones owed, the one
 // waiting longest at the front, and then the ones nobody has answered.
 type asking struct {
-	seen  []CardFace
+	owed  []CardFace
 	fresh []CardFace
 }
 
@@ -204,7 +204,7 @@ func (b *budgets) isAllowed(one CardFace, over Scope) bool {
 // getStopError says why a preset has nothing to ask in the day being sat, in
 // the person's own words.
 func (b *budgets) getStopError(preset string) error {
-	one, scheduling := b.left[preset]
+	one, scheduling := b.allowances[preset]
 	switch {
 	case !scheduling:
 		return fmt.Errorf("%w: no deck of this vault is scheduled by it", ErrSchedulesNothing)
@@ -251,7 +251,7 @@ func (b *budgets) getAsking(
 	var out asking
 	for at, one := range owed {
 		if allocations.owed[at] && b.isAllowed(one, over) {
-			out.seen = append(out.seen, one)
+			out.owed = append(out.owed, one)
 		}
 	}
 	for at, one := range fresh {
@@ -270,10 +270,10 @@ type budgetAllocation struct{ owed, fresh []bool }
 type deckShare struct {
 	deck        string
 	owed, fresh []int
-	// seen and unseen are how far each side has been walked, and debt and begun
+	// owedIndex and freshIndex are how far each side has been walked, and debt and begun
 	// how many of each the deck has taken.
-	seen, unseen int
-	debt, begun  int
+	owedIndex, freshIndex int
+	debt, begun           int
 }
 
 // countRemaining is how many of a deck's cards no share has taken, which is
@@ -350,7 +350,7 @@ func (b *budgets) spend(owed, fresh []CardFace) budgetAllocation {
 	slices.Sort(order)
 
 	for _, path := range order {
-		one, held := b.left[path]
+		one, held := b.allowances[path]
 		if !held || one.admits.IsPaused() {
 			continue
 		}
@@ -384,7 +384,7 @@ func (b *budgets) spend(owed, fresh []CardFace) budgetAllocation {
 			)
 		})
 		for _, q := range decks {
-			q.seen, q.unseen = 0, 0
+			q.owedIndex, q.freshIndex = 0, 0
 			over := *one
 			b.deal(&over, q, owed, fresh, &out)
 		}
@@ -429,30 +429,30 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 // over, and the deck picks up where its share left off.
 func (b *budgets) deal(share *allowance, q *deckShare, owed, fresh []CardFace, out *budgetAllocation) {
 	for {
-		for q.seen < len(q.owed) && out.owed[q.owed[q.seen]] {
-			q.seen++
+		for q.owedIndex < len(q.owed) && out.owed[q.owed[q.owedIndex]] {
+			q.owedIndex++
 		}
-		for q.unseen < len(q.fresh) && out.fresh[q.fresh[q.unseen]] {
-			q.unseen++
+		for q.freshIndex < len(q.fresh) && out.fresh[q.fresh[q.freshIndex]] {
+			q.freshIndex++
 		}
-		debt, begun := q.seen < len(q.owed), q.unseen < len(q.fresh)
+		debt, begun := q.owedIndex < len(q.owed), q.freshIndex < len(q.fresh)
 		if !debt && !begun {
 			return
 		}
 		// The next card comes from the side the share leaves short, and from
 		// whichever side is left when the other is done.
 		if share.admits.IsPayingDebt(q.debt, q.begun, debt, begun) {
-			if card := owed[q.owed[q.seen]]; b.charge(share, card.ID, false) {
-				out.owed[q.owed[q.seen]] = true
+			if card := owed[q.owed[q.owedIndex]]; b.charge(share, card.ID, false) {
+				out.owed[q.owed[q.owedIndex]] = true
 				q.debt++
 			}
-			q.seen++
+			q.owedIndex++
 			continue
 		}
-		if card := fresh[q.fresh[q.unseen]]; b.charge(share, card.ID, true) {
-			out.fresh[q.fresh[q.unseen]] = true
+		if card := fresh[q.fresh[q.freshIndex]]; b.charge(share, card.ID, true) {
+			out.fresh[q.fresh[q.freshIndex]] = true
 			q.begun++
 		}
-		q.unseen++
+		q.freshIndex++
 	}
 }
