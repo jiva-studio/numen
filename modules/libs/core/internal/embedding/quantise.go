@@ -2,6 +2,7 @@ package embedding
 
 import (
 	"math"
+	"unsafe"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -58,11 +59,10 @@ func Bytes(v []float32) []int8 {
 // Dimensions reads a stored vector back as the dimensions it holds, one per
 // byte. It is what Bytes wrote, arriving from storage as unsigned.
 func Dimensions(stored []byte) []int8 {
-	out := make([]int8, len(stored))
-	for i, b := range stored {
-		out[i] = int8(b)
+	if len(stored) == 0 {
+		return nil
 	}
-	return out
+	return unsafe.Slice((*int8)(unsafe.Pointer(unsafe.SliceData(stored))), len(stored))
 }
 
 // Normalise scales a vector to unit length, in place, and returns it. A vector
