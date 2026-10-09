@@ -35,7 +35,7 @@ func tool(t *testing.T, says string) []string {
 const aVideo = `{"title":"Entropy explained","duration":83.5,` +
 	`"subtitles":{"en":[{}]},"automatic_captions":{"ru":[{}]}}`
 
-func address(t *testing.T, written string) domain.URL {
+func address(t testing.TB, written string) domain.URL {
 	t.Helper()
 	at, err := domain.ParseURL(written)
 	if err == nil {
