@@ -13,8 +13,8 @@ func TestPaddingIsNotAveragedIn(t *testing.T) {
 		3, 0, 100, 100, 100, 100,
 		0, 3, 100, 100, 100, 100,
 	}
-	mask := [][]int64{{1, 0, 0}, {1, 0, 0}}
-	got := meanPool(flat, mask, 2)
+	mask := []int64{1, 0, 0, 1, 0, 0}
+	got := meanPool(flat, mask, 2, 3, 2)
 	if !slices.Equal(got[0], []float32{1, 0}) || !slices.Equal(got[1], []float32{0, 1}) {
 		t.Errorf("got %v", got)
 	}
@@ -25,7 +25,7 @@ func TestTokensAreAveragedAndTheResultIsUnitLength(t *testing.T) {
 		1, 0,
 		0, 1,
 	}
-	got := meanPool(flat, [][]int64{{1, 1}}, 2)
+	got := meanPool(flat, []int64{1, 1}, 1, 2, 2)
 	want := float32(math.Sqrt2 / 2)
 	if math.Abs(float64(got[0][0]-want)) > 1e-6 || math.Abs(float64(got[0][1]-want)) > 1e-6 {
 		t.Errorf("got %v, want %v", got[0], want)
@@ -46,7 +46,7 @@ func TestTheFirstTokenIsTheVectorWhenTheModelPoolsThatWay(t *testing.T) {
 }
 
 func TestAllPaddingIsAZeroVector(t *testing.T) {
-	got := meanPool([]float32{5, 5}, [][]int64{{0}}, 2)
+	got := meanPool([]float32{5, 5}, []int64{0}, 1, 1, 2)
 	if !slices.Equal(got[0], []float32{0, 0}) {
 		t.Errorf("got %v", got)
 	}
@@ -78,31 +78,29 @@ func TestABatchIsLaidOutAtTheSizeAFullOneCarries(t *testing.T) {
 		for i := range batch {
 			batch[i] = []int{7, 8, 9}
 		}
-		ids, mask, types := padBatch(batch, rows, seq, 1)
-		for _, held := range [][][]int64{ids, mask, types} {
-			if len(held) != rows {
-				t.Fatalf("%d texts were laid out in %d rows", texts, len(held))
-			}
-			for _, row := range held {
-				if len(row) != seq {
-					t.Fatalf("%d texts gave a row of %d", texts, len(row))
-				}
+		in := padBatch(batch, rows, seq, 1)
+		ids, mask, types := in.ids, in.mask, in.types
+		for _, held := range [][]int64{ids, mask, types} {
+			if len(held) != rows*seq {
+				t.Fatalf("%d texts were laid out in %d elements", texts, len(held))
 			}
 		}
 		// A row nothing was written into is padding, and what pools it divides
 		// by the tokens it is marked at.
 		for row := texts; row < rows; row++ {
-			if ids[row][0] != 1 {
-				t.Errorf("row %d of %d holds %d", row, texts, ids[row][0])
+			at := row * seq
+			if ids[at] != 1 {
+				t.Errorf("row %d of %d holds %d", row, texts, ids[at])
 			}
 			var marked int64
-			for _, at := range mask[row] {
-				marked += at
+			for _, v := range mask[at : at+seq] {
+				marked += v
 			}
 			if marked != 1 {
 				t.Errorf("row %d of %d is marked at %d tokens", row, texts, marked)
 			}
 		}
+		releasePadding(in)
 	}
 }
 
@@ -117,11 +115,48 @@ func TestARunMeetsOneShapePerSequenceLength(t *testing.T) {
 			for i := range batch {
 				batch[i] = make([]int, tokens)
 			}
-			ids, _, _ := padBatch(batch, rows, bucket(tokens, step, limit), 1)
-			seen[[2]int{len(ids), len(ids[0])}] = true
+			in := padBatch(batch, rows, bucket(tokens, step, limit), 1)
+			seen[[2]int{rows, len(in.ids) / rows}] = true
+			releasePadding(in)
 		}
 	}
 	if want := limit/step + 2; len(seen) > want {
 		t.Errorf("a run met %d shapes, and the cache holds %d", len(seen), want)
+	}
+}
+
+func BenchmarkMeanPool(b *testing.B) {
+	const rows, seq, dimensions = 8, 512, 1024
+	flat := make([]float32, rows*seq*dimensions)
+	for i := range flat {
+		flat[i] = float32(i%97) * 0.01
+	}
+	mask := make([]int64, rows*seq)
+	for row := range rows {
+		for token := 0; token < seq-row*16; token++ {
+			mask[row*seq+token] = 1
+		}
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		meanPool(flat, mask, rows, seq, dimensions)
+	}
+}
+
+func BenchmarkPadBatch(b *testing.B) {
+	batch := make([][]int, 32)
+	for row := range batch {
+		batch[row] = make([]int, 512-row*8)
+		for i := range batch[row] {
+			batch[row][i] = i + 1
+		}
+	}
+	const rows, seq = 32, 512
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		in := padBatch(batch, rows, seq, 0)
+		releasePadding(in)
 	}
 }

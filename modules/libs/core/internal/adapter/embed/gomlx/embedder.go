@@ -224,11 +224,19 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	seq := bucket(longest, tokenStep, e.maxTokens)
 	rows := max(e.batchTexts, len(batch))
 
-	ids, mask, types := padBatch(batch, rows, seq, e.pad)
+	padded := padBatch(batch, rows, seq, e.pad)
+	defer releasePadding(padded)
 
-	args := []any{ids, mask}
+	tIDs := tensors.FromFlatDataAndDimensions(padded.ids, rows, seq)
+	defer func() { _ = tIDs.FinalizeAll() }()
+	tMask := tensors.FromFlatDataAndDimensions(padded.mask, rows, seq)
+	defer func() { _ = tMask.FinalizeAll() }()
+
+	args := []any{tIDs, tMask}
 	if e.isTyped {
-		args = append(args, types)
+		tTypes := tensors.FromFlatDataAndDimensions(padded.types, rows, seq)
+		defer func() { _ = tTypes.FinalizeAll() }()
+		args = append(args, tTypes)
 	}
 
 	e.mu.Lock()
@@ -263,7 +271,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	if e.isHeadPooled {
 		return headPool(flat, rows, seq, e.dimensions)[:len(batch)], nil
 	}
-	return meanPool(flat, mask, e.dimensions)[:len(batch)], nil
+	return meanPool(flat, padded.mask, rows, seq, e.dimensions)[:len(batch)], nil
 }
 
 func split(flat []float32, rows, dimensions int) ([][]float32, error) {
