@@ -217,3 +217,47 @@ func dot(a, b []float32) float32 {
 	}
 	return sum
 }
+
+const ModelDirInt8EnvVar = "NUMEN_TEST_MODEL_DIR_INT8"
+
+func modelDirInt8(t testing.TB) string {
+	t.Helper()
+	dir := os.Getenv(ModelDirInt8EnvVar)
+	if dir == "" {
+		t.Skipf("set %s to a directory with model_qint8_avx512_vnni.onnx and tokenizer.json", ModelDirInt8EnvVar)
+	}
+	return dir
+}
+
+func openInt8(t testing.TB, dir string) *onnx.Embedder {
+	t.Helper()
+	cfg := embed.Defaults()
+	cfg.Model.Name = "e5-small-int8"
+	local, _ := cfg.Indexing.Local()
+	local.File = "model_qint8_avx512_vnni.onnx"
+	cfg, local = setLocalModel(t, cfg, dir)
+	e, err := onnx.Open(t.Context(), cfg.GetStoredModel(), local, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = e.Close() })
+	return e
+}
+
+func TestINT8ModelEmbedsAndReportsItself(t *testing.T) {
+	e := openInt8(t, modelDirInt8(t))
+	if got := e.Model(); got.Dimensions != embed.Defaults().Model.Dimensions {
+		t.Errorf("got %s", got)
+	}
+
+	vectors, err := e.Embed(t.Context(), []string{"a test sentence"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(vectors) != 1 {
+		t.Fatalf("got %d vectors", len(vectors))
+	}
+	if len(vectors[0]) != e.Model().Dimensions {
+		t.Errorf("got %d dimensions", len(vectors[0]))
+	}
+}

@@ -16,6 +16,34 @@ const (
 // section of the settings.
 var ModelAt = []string{"model", "name"}
 
+// Profiles offers pre-quantized and hardware-accelerated model presets (e.g. INT8 for VNNI / Apple Neural Engine).
+func Profiles() []Config {
+	return []Config{
+		Defaults(),
+		{
+			Model: Model{Name: "e5-small-int8", Dimensions: 384, MaxTokens: 256, Pooling: PoolMean},
+			Indexing: Provider{
+				Use:   UseLocal,
+				local: LocalModel{Name: "intfloat/multilingual-e5-small", File: "model_qint8_avx512_vnni.onnx", BatchTexts: 32, ShouldDownload: true},
+			},
+		},
+		{
+			Model: Model{Name: "bge-m3-int8", Dimensions: 1024, MaxTokens: 8192, Pooling: PoolHead},
+			Indexing: Provider{
+				Use:   UseLocal,
+				local: LocalModel{Name: "Xenova/bge-m3", File: "model_int8.onnx", BatchTexts: 32, ShouldDownload: true},
+			},
+		},
+		{
+			Model: Model{Name: "all-minilm-l6-v2-int8", Dimensions: 384, MaxTokens: 256, Pooling: PoolMean},
+			Indexing: Provider{
+				Use:   UseLocal,
+				local: LocalModel{Name: "Xenova/all-MiniLM-L6-v2", File: "model_int8.onnx", BatchTexts: 32, ShouldDownload: true},
+			},
+		},
+	}
+}
+
 // GetModels are the models a vault can be indexed by, read against the settings
 // in force: each row says what its files are on this machine, and a model the
 // settings name that is none of them stands as a row of its own.
@@ -56,6 +84,9 @@ func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
 	// repository beside it says nothing about this row.
 	if local, ok := provider.Local(); ok {
 		writes = append(writes, newSetting([]string{"indexing", "local", "name"}, local.Name))
+		if local.File != "" {
+			writes = append(writes, newSetting([]string{"indexing", "local", "file"}, local.File))
+		}
 	}
 	return append(models, port.Model{
 		Path:     ModelAt,
