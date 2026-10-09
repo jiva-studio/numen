@@ -113,7 +113,6 @@ func Defaults() Config {
 			Name: "silero-vad",
 			Repo: "https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx",
 		},
-		Threads: 4,
 
 		// What a transcription needs is fetched when it is wanted.
 		ShouldDownload: true,
@@ -123,7 +122,7 @@ func Defaults() Config {
 // The defaults for everything a settings file leaves out.
 func (c Config) threads() int {
 	if c.Threads <= 0 {
-		return 4
+		return onnxruntime.DefaultThreads()
 	}
 	return c.Threads
 }

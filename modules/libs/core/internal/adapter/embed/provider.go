@@ -138,13 +138,10 @@ func (m LocalModel) GetEngine() string {
 // recognition runs beside this one and is told the same.
 func (m LocalModel) GetThreads() int {
 	if m.Threads <= 0 {
-		return defaultThreads
+		return onnxruntime.DefaultThreads()
 	}
 	return m.Threads
 }
-
-// defaultThreads is what a forward pass takes where the settings say nothing.
-const defaultThreads = 4
 
 // GetAddress is where this machine reads the weights: the directory when one is
 // named, and the repository otherwise, with the file that is run inside it. A

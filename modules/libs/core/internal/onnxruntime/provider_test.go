@@ -93,3 +93,47 @@ func TestNewSessionOptionsExplicitUnsupportedProvider(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultThreads(t *testing.T) {
+	got := onnxruntime.DefaultThreads()
+	want := min(max(1, runtime.GOMAXPROCS(0)), 8)
+	if got != want {
+		t.Errorf("DefaultThreads() = %d, want %d", got, want)
+	}
+	if got < 1 || got > 8 {
+		t.Errorf("DefaultThreads() = %d, expected within [1, 8]", got)
+	}
+}
+
+func BenchmarkNewSessionOptions(b *testing.B) {
+	engine, _, err := onnxruntime.Open(b.Context(), onnxruntime.Settings{Section: "indexing.recognition"})
+	if err != nil {
+		b.Skipf("onnx runtime not available: %v", err)
+	}
+
+	for _, tc := range []struct {
+		name    string
+		threads int
+	}{
+		{"default", 0},
+		{"threads=1", 1},
+		{"threads=4", 4},
+		{"threads=8", 8},
+		{"threads=NumCPU", runtime.NumCPU()},
+	} {
+		b.Run(tc.name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				opts, _, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+					Provider: onnxruntime.ProviderCPU,
+					Threads:  tc.threads,
+				})
+				if err != nil {
+					b.Fatal(err)
+				}
+				opts.Destroy()
+			}
+		})
+	}
+}
