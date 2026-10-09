@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // ErrUnreadable is what opening a note says when its frontmatter is not YAML.
@@ -43,6 +45,8 @@ type Document struct {
 	shut  []byte // the closing `---` line, with its ending
 	body  []byte
 	eol   string
+	// mapping is the frontmatter parsed, held until the frontmatter changes.
+	mapping *yaml.Node
 	// isUnterminated is a file that opens with the delimiter and never closes it.
 	isUnterminated bool
 }

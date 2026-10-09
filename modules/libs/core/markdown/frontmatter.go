@@ -127,10 +127,10 @@ func (d *Document) set(key string, rendered []byte) error {
 // comes out of a splice unreadable is not written, and the note keeps the bytes
 // it arrived as.
 func (d *Document) commit(front []byte) error {
-	was := d.front
-	d.front = front
+	was, wasMapping := d.front, d.mapping
+	d.front, d.mapping = front, nil
 	if _, err := d.readMapping(); err != nil {
-		d.front = was
+		d.front, d.mapping = was, wasMapping
 		return err
 	}
 	return nil
@@ -141,7 +141,7 @@ func (d *Document) splice(start, end int, rendered []byte) {
 	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
 	front = append(front, d.front[:start]...)
 	front = append(front, rendered...)
-	d.front = append(front, d.front[end:]...)
+	d.front, d.mapping = append(front, d.front[end:]...), nil
 }
 
 // indent is the whitespace the frontmatter's own keys stand at. A block written
@@ -248,11 +248,11 @@ func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 
 	last := node.Line
 	for at := node.Line + 1; at < len(lines); at++ {
-		text := string(d.front[lines[at-1]:lines[at]])
-		if strings.TrimSpace(text) == "" {
+		text := d.front[lines[at-1]:lines[at]]
+		if len(bytes.TrimSpace(text)) == 0 {
 			continue
 		}
-		if len(getIndent(text)) < column {
+		if len(text)-len(bytes.TrimLeft(text, " \t")) < column {
 			break
 		}
 		last = at
@@ -262,6 +262,9 @@ func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 
 // readMapping is the frontmatter as YAML, or nil when there is none to read.
 func (d *Document) readMapping() (*yaml.Node, error) {
+	if d.mapping != nil {
+		return d.mapping, nil
+	}
 	if len(bytes.TrimSpace(d.front)) == 0 {
 		return nil, nil
 	}
@@ -286,6 +289,7 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 		}
 		written[key] = true
 	}
+	d.mapping = node
 	return node, nil
 }
 
