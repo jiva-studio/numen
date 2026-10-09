@@ -31,8 +31,8 @@ import type { SettledBookProps } from '../lib/props'
  */
 const lineOf = (text: HTMLElement): number => {
   const run = text.querySelector<HTMLElement>('p') ?? text
-  const said = Number.parseFloat(getComputedStyle(run).lineHeight)
-  return Number.isFinite(said) ? said : 0
+  const parsedHeight = Number.parseFloat(getComputedStyle(run).lineHeight)
+  return Number.isFinite(parsedHeight) ? parsedHeight : 0
 }
 
 /** `edgeOf` is handed on to the marks, which is what reads it. */

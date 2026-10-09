@@ -22,24 +22,29 @@ export interface VaultAnswer {
 export const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, at: '' }
 
 export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
-  const told = new Map<string, VaultAnswer>()
+  const fileAnswers = new Map<string, VaultAnswer>()
   const titles = new Map<string, string>()
 
   const read = async (path: string) => {
     const answer = await cards.readStencil(path)
     if (!answer.ok) {
-      told.set(path, { problems: [], reading: getFailureCode(answer.error), writing: null, at: '' })
+      fileAnswers.set(path, {
+        problems: [],
+        reading: getFailureCode(answer.error),
+        writing: null,
+        at: '',
+      })
       return asFailure(getFailureCode(answer.error) ?? 'notAStencil')
     }
-    const read = answer.value.stencil
-    told.set(path, {
-      problems: read.problems,
+    const stencilData = answer.value.stencil
+    fileAnswers.set(path, {
+      problems: stencilData.problems,
       reading: null,
       writing: null,
       at: answer.value.at,
     })
-    titles.set(path, read.title)
-    return asValue({ body: stencilBodyOf(stencilOf(read)), at: answer.value.at })
+    titles.set(path, stencilData.title)
+    return asValue({ body: stencilBodyOf(stencilOf(stencilData)), at: answer.value.at })
   }
 
   const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
@@ -50,12 +55,12 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       { preamble: stencil.preamble, faces: facesOf(stencil), tail: stencil.tail },
       baseline?.fingerprint ?? null,
     )
-    const said = told.get(path) ?? NOTHING
-    told.set(path, {
-      problems: said.problems,
-      reading: said.reading,
+    const currentAnswer = fileAnswers.get(path) ?? NOTHING
+    fileAnswers.set(path, {
+      problems: currentAnswer.problems,
+      reading: currentAnswer.reading,
       writing: answer.ok ? null : getFailureCode(answer.error),
-      at: answer.ok ? answer.value.at : said.at,
+      at: answer.ok ? answer.value.at : currentAnswer.at,
     })
     if (!answer.ok) return asFailure(answer.error)
     return asValue({ body: '', at: answer.value.at })
@@ -72,7 +77,7 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       path,
       field,
       name,
-      (told.get(path) ?? NOTHING).at || null,
+      (fileAnswers.get(path) ?? NOTHING).at || null,
     )
     if (!answer.ok) {
       if (answer.error !== 'changed') return say(ERRORS[answer.error], 'error')
@@ -89,18 +94,18 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
 
   const getErrorMessage = (path: string, error: ErrorCode | null): string => {
     if (error === null) return ''
-    const said = told.get(path) ?? NOTHING
-    if (said.reading !== null) {
-      return said.reading === 'notAStencil' ? words.notAStencil : words.notRead
+    const currentAnswer = fileAnswers.get(path) ?? NOTHING
+    if (currentAnswer.reading !== null) {
+      return currentAnswer.reading === 'notAStencil' ? words.notAStencil : words.notRead
     }
-    if (said.writing !== null) {
-      return said.writing === 'notAStencil' ? words.notAStencil : words.notSaved
+    if (currentAnswer.writing !== null) {
+      return currentAnswer.writing === 'notAStencil' ? words.notAStencil : words.notSaved
     }
     return words.unreachable
   }
 
   const getProblems = (path: string): readonly DeckProblem[] => {
-    return (told.get(path) ?? NOTHING).problems
+    return (fileAnswers.get(path) ?? NOTHING).problems
   }
 
   const getTitle = (path: string): string | undefined => {
@@ -113,18 +118,18 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
 
   const forget = (path: string, hasOtherTab: boolean): void => {
     if (hasOtherTab) return
-    told.delete(path)
+    fileAnswers.delete(path)
     titles.delete(path)
   }
 
   const movePaths = (renames: readonly PathRename[]): void => {
-    for (const went of renames) {
-      const said = told.get(went.from)
-      if (said) told.set(went.to, said)
-      told.delete(went.from)
-      const title = titles.get(went.from)
-      if (title !== undefined) titles.set(went.to, title)
-      titles.delete(went.from)
+    for (const rename of renames) {
+      const existing = fileAnswers.get(rename.from)
+      if (existing) fileAnswers.set(rename.to, existing)
+      fileAnswers.delete(rename.from)
+      const title = titles.get(rename.from)
+      if (title !== undefined) titles.set(rename.to, title)
+      titles.delete(rename.from)
     }
   }
 

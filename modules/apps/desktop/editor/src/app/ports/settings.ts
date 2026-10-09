@@ -13,7 +13,7 @@ export interface SettingsPort {
    * That setting written into the settings file. What could not be written, and
    * nothing where it was: the rename after this reads what was written.
    */
-  setSyncEnabled(kept: boolean): Promise<string | null>
+  setSyncEnabled(isEnabled: boolean): Promise<string | null>
   /**
    * Whether a node in the plex hangs the parts of its note under the box, and
    * how many of them stand there at once, as the settings hold them.
@@ -42,7 +42,7 @@ export interface SettingsPort {
    * the settings could not be read out of again is refused, and what the file
    * holds is unchanged.
    */
-  updateSettings(written: readonly SettingEdit[]): Promise<void>
+  updateSettings(edits: readonly SettingEdit[]): Promise<void>
   /** The settings file as its person wrote it, and where it stands. */
   getSettingsFile(): Promise<{ readonly written: string; readonly path: string }>
   /**
@@ -50,9 +50,11 @@ export interface SettingsPort {
    * the settings could not be read out of is refused, and what the file holds
    * is unchanged.
    *
-   * Seen is the file as it was last read, and a file standing at anything else
-   * is answered `changed` with nothing written. Nothing seen writes over
-   * whatever the file holds.
+   * Expected version is the file as it was last read, and a file standing at anything else
+   * is answered `changed` with nothing written.
    */
-  saveSettingsFile(written: string, seen: string | null): Promise<{ readonly isChanged: boolean }>
+  saveSettingsFile(
+    content: string,
+    expectedVersion: string | null,
+  ): Promise<{ readonly isChanged: boolean }>
 }

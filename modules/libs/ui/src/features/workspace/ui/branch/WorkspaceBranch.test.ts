@@ -44,14 +44,14 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
     show: () => {},
   }
 
-  const held = mount(WorkspaceBranch, {
+  const wrapper = mount(WorkspaceBranch, {
     attachTo: document.body,
     global: { provide: { [WORKSPACE_CONTEXT as symbol]: computed(() => workspacing) } },
     props: { node, axis: 'horizontal' as const, depth: 0 },
-    slots: { tab: '<span class="held">held</span>', ...slots },
+    slots: { tab: '<span class="tab-slot">tab</span>', ...slots },
   })
 
-  return { held, resize, claim }
+  return { wrapper, resize, claim }
 }
 
 /**
@@ -60,13 +60,13 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
  * element with is stood in for. Call it before mounting.
  */
 const stubResizeObserver = (): ((length: number) => void) => {
-  const told: ResizeObserverCallback[] = []
+  const callbacks: ResizeObserverCallback[] = []
 
   vi.stubGlobal(
     'ResizeObserver',
     class {
       constructor(tell: ResizeObserverCallback) {
-        told.push(tell)
+        callbacks.push(tell)
       }
       observe(): void {}
       disconnect(): void {}
@@ -74,18 +74,18 @@ const stubResizeObserver = (): ((length: number) => void) => {
   )
 
   return (length) => {
-    const seen = [{ contentRect: { width: length, height: length } } as ResizeObserverEntry]
-    for (const tell of told) tell(seen, {} as ResizeObserver)
+    const entries = [{ contentRect: { width: length, height: length } } as ResizeObserverEntry]
+    for (const callback of callbacks) callback(entries, {} as ResizeObserver)
   }
 }
 
 type BranchFixture = ReturnType<typeof mountBranch>
 
-const panes = ({ held }: BranchFixture) => held.findAllComponents(WorkspacePane)
+const panes = ({ wrapper }: BranchFixture) => wrapper.findAllComponents(WorkspacePane)
 
-const groups = ({ held }: BranchFixture) => held.findAllComponents(SplitterGroup)
+const groups = ({ wrapper }: BranchFixture) => wrapper.findAllComponents(SplitterGroup)
 
-const getHandles = ({ held }: BranchFixture) => held.findAllComponents(SplitterResizeHandle)
+const getHandles = ({ wrapper }: BranchFixture) => wrapper.findAllComponents(SplitterResizeHandle)
 
 /** The splitter reporting the shares it has settled on, in percent. */
 const layout = (one: BranchFixture, at: number, sizes: number[]) =>
@@ -106,10 +106,10 @@ describe('what a branch draws', () => {
   it('nests a branch inside a branch, and draws every pane of it', () => {
     const one = mountBranch(createNested())
 
-    expect(one.held.findAllComponents(WorkspaceBranch)).toHaveLength(1)
+    expect(one.wrapper.findAllComponents(WorkspaceBranch)).toHaveLength(1)
     expect(panes(one)).toHaveLength(3)
     expect(
-      one.held
+      one.wrapper
         .findAll('[data-workspace-pane]')
         .map((each) => each.attributes('data-workspace-pane')),
     ).toStrictEqual(['left', 'upper', 'lower'])
@@ -124,7 +124,7 @@ describe('what a branch draws', () => {
 
   it('gives each panel the share the model holds', () => {
     const one = mountBranch(twoPanes())
-    const panels = one.held.findAllComponents(SplitterPanel)
+    const panels = one.wrapper.findAllComponents(SplitterPanel)
 
     expect(panels.map((each) => each.props('defaultSize'))).toStrictEqual([70, 30])
     expect(panels.map((each) => each.props('id'))).toStrictEqual(['left', 'right'])
@@ -134,35 +134,35 @@ describe('what a branch draws', () => {
     const stretch = stubResizeObserver()
     const one = mountBranch(twoPanes())
     const floors = () =>
-      one.held.findAllComponents(SplitterPanel).map((each) => each.props('minSize'))
+      one.wrapper.findAllComponents(SplitterPanel).map((each) => each.props('minSize'))
 
     // This workspace calls 220 pixels worth drawing in, which is a quarter of a
     // branch 880 across and half of one 440 across.
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
     stretch(880)
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
     expect(floors()).toStrictEqual([25, 25])
 
     stretch(440)
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
     expect(floors()).toStrictEqual([50, 50])
 
     // An equal share is the ceiling: a branch too short to give both children
     // that many pixels divides what it has evenly.
     stretch(200)
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
     expect(floors()).toStrictEqual([50, 50])
   })
 
   it('hands a slot down however deep the pane stands', () => {
     const one = mountBranch(createNested())
 
-    expect(one.held.findAll('.held')).toHaveLength(3)
+    expect(one.wrapper.findAll('.tab-slot')).toHaveLength(3)
   })
 
   it('marks the pane the workspace is focused on', () => {
     const one = mountBranch(twoPanes())
-    const marked = one.held
+    const marked = one.wrapper
       .findAll('[data-workspace-pane]')
       .filter((each) => each.attributes('data-focused') !== undefined)
 
@@ -178,7 +178,7 @@ describe('a handle taken up and put down', () => {
 
     grab(one, true)
     layout(one, 0, [40, 60])
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
 
     expect(one.resize).not.toHaveBeenCalled()
   })
@@ -190,7 +190,7 @@ describe('a handle taken up and put down', () => {
     layout(one, 0, [40, 60])
     layout(one, 0, [45, 55])
     grab(one, false)
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
 
     expect(one.resize).toHaveBeenCalledExactlyOnceWith('root', [0.45, 0.55])
   })
@@ -199,7 +199,7 @@ describe('a handle taken up and put down', () => {
     const one = mountBranch(twoPanes())
 
     layout(one, 0, [20, 80])
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
 
     expect(one.resize).toHaveBeenCalledExactlyOnceWith('root', [0.2, 0.8])
   })
@@ -208,21 +208,21 @@ describe('a handle taken up and put down', () => {
     const one = mountBranch(twoPanes())
 
     layout(one, 0, [70, 30])
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
 
     expect(one.resize).not.toHaveBeenCalled()
   })
 
   it('marks the branch for as long as the handle is held', async () => {
     const one = mountBranch(twoPanes())
-    const branch = one.held.find('.branch')
+    const branch = one.wrapper.find('.branch')
 
     grab(one, true)
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
     expect(branch.attributes('data-resizing')).toBe('')
 
     grab(one, false)
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
     expect(branch.attributes('data-resizing')).toBeUndefined()
   })
 
@@ -230,7 +230,7 @@ describe('a handle taken up and put down', () => {
     const one = mountBranch(createNested())
 
     layout(one, 1, [30, 70])
-    await one.held.vm.$nextTick()
+    await one.wrapper.vm.$nextTick()
 
     expect(one.resize).toHaveBeenCalledExactlyOnceWith('down', [0.3, 0.7])
   })
@@ -240,7 +240,7 @@ describe('a handle taken up and put down', () => {
 
     grab(one, true)
     layout(one, 0, [40, 60])
-    one.held.unmount()
+    one.wrapper.unmount()
 
     expect(one.resize).not.toHaveBeenCalled()
   })

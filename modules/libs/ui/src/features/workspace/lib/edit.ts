@@ -37,7 +37,7 @@ export function activateTab(workspace: Workspace, tab: TabId): Workspace {
 
   return {
     ...workspace,
-    root: mapPane(workspace.root, holder.id, (held) => ({ ...held, active: tab })),
+    root: mapPane(workspace.root, holder.id, (pane) => ({ ...pane, active: tab })),
     focus: holder.id,
   }
 }
@@ -55,9 +55,9 @@ export function openTab(
 
   return {
     ...workspace,
-    root: mapPane(workspace.root, target.id, (held) => ({
-      ...held,
-      tabs: [...held.tabs, tab],
+    root: mapPane(workspace.root, target.id, (pane) => ({
+      ...pane,
+      tabs: [...pane.tabs, tab],
       active: tab,
     })),
     focus: target.id,
@@ -112,7 +112,7 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
 
   return {
     ...workspace,
-    root: mapPane(workspace.root, holder.id, (held) => ({ ...held, tabs })),
+    root: mapPane(workspace.root, holder.id, (pane) => ({ ...pane, tabs })),
     focus: holder.id,
   }
 }
@@ -135,9 +135,9 @@ export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFac
   const root = detach(workspace.root, drop.tab)
 
   if (drop.side === 'center') {
-    const joined = mapPane(root, target.id, (held) => ({
-      ...held,
-      tabs: [...held.tabs, drop.tab],
+    const joined = mapPane(root, target.id, (pane) => ({
+      ...pane,
+      tabs: [...pane.tabs, drop.tab],
       active: drop.tab,
     }))
     return settle({ ...workspace, root: joined }, target.id)

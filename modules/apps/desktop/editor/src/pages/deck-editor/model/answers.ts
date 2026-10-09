@@ -30,13 +30,13 @@ const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, bound
 
 /** The answers one window has, about the decks that window holds. */
 export function createDeckAnswers() {
-  /** What the vault last said about each file, under the path it is filed at. */
-  const told = new Map<string, VaultAnswer>()
+  /** What the vault reports about each file, under the path it is filed at. */
+  const fileAnswers = new Map<string, VaultAnswer>()
   /** What each file is called, as the vault last read it. */
   const titles = new Map<string, string>()
 
-  /** What was said about a file, and nothing said where nothing was. */
-  const getAnswer = (path: string): VaultAnswer => told.get(path) ?? NOTHING
+  /** What was reported about a file, and default empty answer where nothing was. */
+  const getAnswer = (path: string): VaultAnswer => fileAnswers.get(path) ?? NOTHING
 
   /** What a read of a file came back with, under the title it came back as. */
   const recordRead = (
@@ -49,7 +49,7 @@ export function createDeckAnswers() {
       readonly title: string | null
     },
   ): void => {
-    told.set(path, {
+    fileAnswers.set(path, {
       problems: answer.problems,
       reading: answer.error ?? null,
       writing: null,
@@ -66,10 +66,10 @@ export function createDeckAnswers() {
       readonly bound: number
     },
   ): void => {
-    const said = getAnswer(path)
-    told.set(path, {
-      problems: said.problems,
-      reading: said.reading,
+    const currentAnswer = getAnswer(path)
+    fileAnswers.set(path, {
+      problems: currentAnswer.problems,
+      reading: currentAnswer.reading,
       writing: answer.error ?? null,
       bound: answer.bound,
     })
@@ -85,14 +85,15 @@ export function createDeckAnswers() {
   }
 
   /**
-   * What an errored tab failed for, in words a person reads. A vault that
-   * answered nothing at all left the tab failed and said no word of its own.
+   * What an errored tab failed for, in words a person reads.
    */
   const getErrorMessage = (path: string, hasError: boolean): string => {
     if (!hasError) return ''
-    const said = getAnswer(path)
-    if (said.reading !== null) return whyOf(said.reading, said.bound) ?? words.notRead
-    if (said.writing !== null) return whyOf(said.writing, said.bound) ?? words.notSaved
+    const currentAnswer = getAnswer(path)
+    if (currentAnswer.reading !== null)
+      return whyOf(currentAnswer.reading, currentAnswer.bound) ?? words.notRead
+    if (currentAnswer.writing !== null)
+      return whyOf(currentAnswer.writing, currentAnswer.bound) ?? words.notSaved
     return words.unreachable
   }
 
@@ -104,17 +105,17 @@ export function createDeckAnswers() {
     titles.set(path, title)
   }
 
-  /** What was said about a file no tab of this window stands at any longer. */
+  /** What was recorded about a file no tab of this window holds any longer. */
   const forgetFile = (path: string): void => {
-    told.delete(path)
+    fileAnswers.delete(path)
     titles.delete(path)
   }
 
   /** The same, carried to where the file was filed instead. */
   const moveFile = (from: string, to: string): void => {
-    const said = told.get(from)
-    if (said) told.set(to, said)
-    told.delete(from)
+    const existing = fileAnswers.get(from)
+    if (existing) fileAnswers.set(to, existing)
+    fileAnswers.delete(from)
     const title = titles.get(from)
     if (title !== undefined) titles.set(to, title)
     titles.delete(from)

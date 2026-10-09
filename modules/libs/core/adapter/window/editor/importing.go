@@ -43,26 +43,24 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	at := task.Task{ID: importingFiles + " " + into, Doing: "Bringing files in", About: into}
 	api.say(at)
 
-	brought, err := api.Files.Import.Execute(ctx, showing, into, paths)
-	if landed := getDirectChildren(into, brought.Landed); len(landed) > 0 {
-		api.Listeners.tell(change{paths: landed})
+	imported, err := api.Files.Import.Execute(ctx, showing, into, paths)
+	if direct := getDirectChildren(into, imported.Landed); len(direct) > 0 {
+		api.Listeners.tell(change{paths: direct})
 	}
 	if err != nil {
 		at.Error = err.Error()
 		api.say(at)
 		return
 	}
-	if said := describeImportFailures(brought.Errors); said != "" {
-		at.Error = said
+	if failureText := describeImportFailures(imported.Errors); failureText != "" {
+		at.Error = failureText
 		api.say(at)
 		return
 	}
 	api.finishTask(at.ID)
 }
 
-// getDirectChildren is what of a drop sits in the folder it was let go over. What
-// arrived deeper sits in folders that arrived with it, and those are read when
-// a person opens them.
+// getDirectChildren returns items in the target folder.
 func getDirectChildren(into string, landed []string) []string {
 	shown := make([]string, 0, len(landed))
 	for _, path := range landed {
@@ -73,18 +71,17 @@ func getDirectChildren(into string, landed []string) []string {
 	return shown
 }
 
-// describeImportFailures says what a drop could not bring in, in one sentence.
-// Nothing is said where every file arrived.
+// describeImportFailures formats import failures into a single descriptive message.
 func describeImportFailures(errs []vaults.ImportFailure) string {
 	if len(errs) == 0 {
 		return ""
 	}
-	said := make([]string, 0, namedInAnError)
+	messages := make([]string, 0, namedInAnError)
 	for _, one := range errs[:min(len(errs), namedInAnError)] {
-		said = append(said, fmt.Sprintf("%s: %v", one.Name, one.Why))
+		messages = append(messages, fmt.Sprintf("%s: %v", one.Name, one.Why))
 	}
-	if rest := len(errs) - len(said); rest > 0 {
-		said = append(said, fmt.Sprintf("and %d more", rest))
+	if rest := len(errs) - len(messages); rest > 0 {
+		messages = append(messages, fmt.Sprintf("and %d more", rest))
 	}
-	return strings.Join(said, "; ")
+	return strings.Join(messages, "; ")
 }

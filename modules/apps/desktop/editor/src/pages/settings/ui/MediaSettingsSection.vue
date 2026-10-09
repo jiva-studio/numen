@@ -44,23 +44,20 @@ function onTranscriptProofreadAlwaysChange(value: boolean) {
   setSetting(paths.transcriptProofreadAlways, value)
 }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 function getSettingString(at: readonly string[]): string {
   const value = installation.value.getSetting(at)
   return typeof value === 'string' ? value : ''
 }
-const said = getSettingString
 
 function isSettingEnabled(at: readonly string[]): boolean {
   return installation.value.getSetting(at) === true
 }
-const on = isSettingEnabled
 
 function getSettingNumber(at: readonly string[]): number | null {
   const value = installation.value.getSetting(at)
   return typeof value === 'number' ? value : null
 }
-const counted = getSettingNumber
 
 function setSetting(at: readonly string[], value: unknown): void {
   installation.value.write([{ at, value: write(value) }])
@@ -78,7 +75,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcribingDetail"
     >
       <Switch
-        :model-value="on(paths.transcribing)"
+        :model-value="isSettingEnabled(paths.transcribing)"
         :aria-labelledby="labelledBy"
         @update:model-value="onTranscribingChange"
       />
@@ -91,7 +88,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcribeUnderDetail"
     >
       <NumberField
-        :model-value="counted(paths.transcribeUnder)"
+        :model-value="getSettingNumber(paths.transcribeUnder)"
         :min="UNDER.least"
         :max="UNDER.most"
         :step="1"
@@ -108,7 +105,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcriptProofreadDetail"
     >
       <Select
-        :model-value="said(paths.transcriptProofread)"
+        :model-value="getSettingString(paths.transcriptProofread)"
         :choices="profiles"
         :name="words.transcriptProofread"
         :aria-labelledby="labelledBy"
@@ -124,7 +121,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.transcriptProofreadAlwaysDetail"
     >
       <Switch
-        :model-value="on(paths.transcriptProofreadAlways)"
+        :model-value="isSettingEnabled(paths.transcriptProofreadAlways)"
         :aria-labelledby="labelledBy"
         @update:model-value="onTranscriptProofreadAlwaysChange"
       />

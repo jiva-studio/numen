@@ -34,7 +34,7 @@ const nameId = computed(() => `settings-${props.at}`)
 
 <template>
   <div class="settings__row">
-    <span class="settings__said">
+    <span class="settings__label">
       <span :id="nameId" class="settings__name">{{ name }}</span>
       <span class="settings__detail">{{ detail }}</span>
     </span>
@@ -49,7 +49,7 @@ const nameId = computed(() => `settings-${props.at}`)
    it means. */
 .settings__row {
   --settings-row-air: 0.5rem;
-  --settings-said-gap: 0.125rem;
+  --settings-label-gap: 0.125rem;
   /* The name and what it means on the left, the control at the end of the row. */
   display: grid;
   grid-template-columns: 1fr max-content;
@@ -60,10 +60,10 @@ const nameId = computed(() => `settings-${props.at}`)
 }
 
 /* What the row is called, and under it what it means. */
-.settings__said {
+.settings__label {
   display: flex;
   flex-direction: column;
-  gap: var(--settings-said-gap);
+  gap: var(--settings-label-gap);
   min-inline-size: 0;
 }
 

@@ -85,22 +85,19 @@ func settings() *v1.Settings {
 func TestASettingOutsideItsBoundsIsNotWritten(t *testing.T) {
 	f := newScheduling(t, pointed)
 
-	asked := settings()
-	asked.Retention = 1.5
+	targetSettings := settings()
+	targetSettings.Retention = 1.5
 	_, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
-		Path: "Sanskrit.md", Settings: asked,
+		Path: "Sanskrit.md", Settings: targetSettings,
 	}))
 	if code := connect.CodeOf(err); code != connect.CodeInvalidArgument {
 		t.Errorf("a retention of 1.5 was answered %v", code)
 	}
-	if held := onDisk(t, f.root, "Sanskrit.md"); held != sanskrit {
-		t.Errorf("the preset on disk is now %q", held)
+	if onDiskContent := onDisk(t, f.root, "Sanskrit.md"); onDiskContent != sanskrit {
+		t.Errorf("the preset on disk is now %q", onDiskContent)
 	}
 }
 
-// TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead. Somebody editing
-// their own preset outranks a client that read it, thought about it and arrived
-// late.
 func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
@@ -110,17 +107,15 @@ func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The person writes their own preset while the client is thinking about
-	// what it read.
-	theirs := sanskrit + "\nThree decks point here.\n"
-	if err := os.WriteFile(filepath.Join(f.root, "Sanskrit.md"), []byte(theirs), 0o644); err != nil {
+	concurrentEdit := sanskrit + "\nThree decks point here.\n"
+	if err := os.WriteFile(filepath.Join(f.root, "Sanskrit.md"), []byte(concurrentEdit), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	asked := settings()
-	asked.MinutesADay = 35
+	targetSettings := settings()
+	targetSettings.MinutesADay = 35
 	answer, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
-		Path: "Sanskrit.md", Settings: asked, Seen: read.Msg.GetAt(),
+		Path: "Sanskrit.md", Settings: targetSettings, Seen: read.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -128,14 +123,11 @@ func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a preset the person had edited answered %+v", answer.Msg)
 	}
-	if held := onDisk(t, f.root, "Sanskrit.md"); held != theirs {
-		t.Errorf("the preset on disk is now %q", held)
+	if onDiskContent := onDisk(t, f.root, "Sanskrit.md"); onDiskContent != concurrentEdit {
+		t.Errorf("the preset on disk is now %q", onDiskContent)
 	}
 }
 
-// TestADeckNamingNoPresetIsScheduledByTheDefaults. A vault holding no preset at
-// all schedules every deck, so a deck pointing at nothing is answered with
-// settings and not with an error.
 func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	f := newScheduling(t, pointed)
 
@@ -151,15 +143,15 @@ func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	if path := answer.Msg.GetPreset().GetPath(); path != "" {
 		t.Errorf("a deck naming no preset was answered from %q", path)
 	}
-	held := answer.Msg.GetPreset().GetSettings()
-	if held.GetGoal() != v1.Goal_GOAL_MINUTES_A_DAY {
-		t.Errorf("the defaults steer %v", held.GetGoal())
+	actualSettings := answer.Msg.GetPreset().GetSettings()
+	if actualSettings.GetGoal() != v1.Goal_GOAL_MINUTES_A_DAY {
+		t.Errorf("the defaults steer %v", actualSettings.GetGoal())
 	}
-	if held.GetMinutesADay() != 20 || held.GetNewADay() != 10 || held.GetReviewsADay() != 200 {
-		t.Errorf("the defaults are %+v", held)
+	if actualSettings.GetMinutesADay() != 20 || actualSettings.GetNewADay() != 10 || actualSettings.GetReviewsADay() != 200 {
+		t.Errorf("the defaults are %+v", actualSettings)
 	}
-	if held.GetRetention() != 0.9 || !held.GetHasEvenLoad() {
-		t.Errorf("the defaults are %+v", held)
+	if actualSettings.GetRetention() != 0.9 || !actualSettings.GetHasEvenLoad() {
+		t.Errorf("the defaults are %+v", actualSettings)
 	}
 }
 
@@ -203,13 +195,13 @@ func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := read.Msg.GetPreset().GetSettings()
-	if held.GetCounts() != v1.BudgetUnit_BUDGET_UNIT_SHOWS {
-		t.Fatalf("the preset was read as counting %v", held.GetCounts())
+	presetSettings := read.Msg.GetPreset().GetSettings()
+	if presetSettings.GetCounts() != v1.BudgetUnit_BUDGET_UNIT_SHOWS {
+		t.Fatalf("the preset was read as counting %v", presetSettings.GetCounts())
 	}
 
 	if _, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
-		Path: "Shows.md", Settings: held, Seen: read.Msg.GetAt(),
+		Path: "Shows.md", Settings: presetSettings, Seen: read.Msg.GetAt(),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -230,11 +222,11 @@ func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := read.Msg.GetPreset().GetSettings()
-	held.Counts = v1.BudgetUnit_BUDGET_UNIT_SHOWS
+	presetSettings := read.Msg.GetPreset().GetSettings()
+	presetSettings.Counts = v1.BudgetUnit_BUDGET_UNIT_SHOWS
 
 	if _, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
-		Path: "Shows.md", Settings: held, Seen: read.Msg.GetAt(),
+		Path: "Shows.md", Settings: presetSettings, Seen: read.Msg.GetAt(),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -259,16 +251,16 @@ func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
 func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 	f := newScheduling(t, map[string]string{"Shows.md": counting})
 
-	asked := settings()
-	asked.Counts = v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
+	targetSettings := settings()
+	targetSettings.Counts = v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
 	_, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
-		Path: "Shows.md", Settings: asked,
+		Path: "Shows.md", Settings: targetSettings,
 	}))
 	if code := connect.CodeOf(err); code != connect.CodeInvalidArgument {
 		t.Errorf("a save naming no counts was answered %v", code)
 	}
-	if held := onDisk(t, f.root, "Shows.md"); held != counting {
-		t.Errorf("the preset on disk is now %q", held)
+	if onDiskContent := onDisk(t, f.root, "Shows.md"); onDiskContent != counting {
+		t.Errorf("the preset on disk is now %q", onDiskContent)
 	}
 }
 
@@ -322,15 +314,15 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := answer.Msg.GetPresets()
-	if len(held) != 2 {
-		t.Fatalf("listed %+v", held)
+	presets := answer.Msg.GetPresets()
+	if len(presets) != 2 {
+		t.Fatalf("listed %+v", presets)
 	}
-	if held[0].GetPath() != "Sanskrit.md" || held[0].GetTitle() != "Sanskrit" {
-		t.Errorf("the first is %+v", held[0])
+	if presets[0].GetPath() != "Sanskrit.md" || presets[0].GetTitle() != "Sanskrit" {
+		t.Errorf("the first is %+v", presets[0])
 	}
-	if held[1].GetPath() != "presets/Slow.md" || held[1].GetTitle() != "Slow going" {
-		t.Errorf("the second is %+v", held[1])
+	if presets[1].GetPath() != "presets/Slow.md" || presets[1].GetTitle() != "Slow going" {
+		t.Errorf("the second is %+v", presets[1])
 	}
 }
 
@@ -352,13 +344,13 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	if path := made.Msg.GetPath(); path != "presets/Prosody.md" {
 		t.Fatalf("the preset was filed at %q", path)
 	}
-	held := onDisk(t, f.root, "presets/Prosody.md")
-	if !strings.Contains(held, "type: preset\n") {
-		t.Errorf("the file does not say what it is: %q", held)
+	onDiskContent := onDisk(t, f.root, "presets/Prosody.md")
+	if !strings.Contains(onDiskContent, "type: preset\n") {
+		t.Errorf("the file does not say what it is: %q", onDiskContent)
 	}
 	for _, key := range []string{"goal", "minutes_a_day", "new_a_day", "reviews_a_day", "load"} {
-		if strings.Contains(held, key+":") {
-			t.Errorf("the file names %s: %q", key, held)
+		if strings.Contains(onDiskContent, key+":") {
+			t.Errorf("the file names %s: %q", key, onDiskContent)
 		}
 	}
 
@@ -463,8 +455,8 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 	if off.Msg.GetError() == v1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatal("the deck this caller had just written was answered as changed")
 	}
-	if held := onDisk(t, f.root, "decks/Terms.md"); strings.Contains(held, "preset") {
-		t.Errorf("the deck still names a preset: %q", held)
+	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); strings.Contains(onDiskContent, "preset") {
+		t.Errorf("the deck still names a preset: %q", onDiskContent)
 	}
 
 	again, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&v1.GetDeckPresetRequest{
@@ -496,8 +488,8 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_A_PRESET {
 		t.Errorf("the write was answered %v", answer.Msg.GetError())
 	}
-	if held := onDisk(t, f.root, "decks/Terms.md"); held != terms {
-		t.Errorf("the deck on disk is now %q", held)
+	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); onDiskContent != terms {
+		t.Errorf("the deck on disk is now %q", onDiskContent)
 	}
 }
 
@@ -515,8 +507,8 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_MISSING {
 		t.Errorf("the write was answered %v", answer.Msg.GetError())
 	}
-	if held := onDisk(t, f.root, "decks/Terms.md"); held != terms {
-		t.Errorf("the deck on disk is now %q", held)
+	if onDiskContent := onDisk(t, f.root, "decks/Terms.md"); onDiskContent != terms {
+		t.Errorf("the deck on disk is now %q", onDiskContent)
 	}
 }
 
@@ -531,9 +523,9 @@ func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	theirs := roots + "\n## Another ^zpqrstvwxy\n"
+	concurrentEdit := roots + "\n## Another ^zpqrstvwxy\n"
 	if err := os.WriteFile(
-		filepath.Join(f.root, "decks", "Roots.md"), []byte(theirs), 0o644); err != nil {
+		filepath.Join(f.root, "decks", "Roots.md"), []byte(concurrentEdit), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -546,7 +538,7 @@ func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a deck the person had edited answered %+v", answer.Msg)
 	}
-	if held := onDisk(t, f.root, "decks/Roots.md"); held != theirs {
-		t.Errorf("the deck on disk is now %q", held)
+	if onDiskContent := onDisk(t, f.root, "decks/Roots.md"); onDiskContent != concurrentEdit {
+		t.Errorf("the deck on disk is now %q", onDiskContent)
 	}
 }

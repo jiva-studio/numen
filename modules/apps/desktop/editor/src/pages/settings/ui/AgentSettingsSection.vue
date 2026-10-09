@@ -52,28 +52,24 @@ function onAgentHooksChange(value: boolean) {
   setSetting(paths.agentHooks, value)
 }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 function getSettingString(at: readonly string[]): string {
   const value = installation.value.getSetting(at)
   return typeof value === 'string' ? value : ''
 }
-const said = getSettingString
 
 function isSettingEnabled(at: readonly string[]): boolean {
   return installation.value.getSetting(at) === true
 }
-const on = isSettingEnabled
 
 function getSettingNumber(at: readonly string[]): number | null {
   const value = installation.value.getSetting(at)
   return typeof value === 'number' ? value : null
 }
-const counted = getSettingNumber
 
 function getModels(at: readonly string[]): readonly SelectChoice[] {
   return choicesFor(installation.value.getModels(at), getSettingString(at), words)
 }
-const models = getModels
 
 function setSetting(at: readonly string[], value: unknown): void {
   installation.value.write([{ at, value: write(value) }])
@@ -91,8 +87,8 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.indexingModelDetail"
     >
       <Select
-        :model-value="said(paths.indexingModel)"
-        :choices="models(paths.indexingModel)"
+        :model-value="getSettingString(paths.indexingModel)"
+        :choices="getModels(paths.indexingModel)"
         :name="words.indexingModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -111,8 +107,8 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentUseDetail"
     >
       <Select
-        :model-value="said(paths.agent)"
-        :choices="models(paths.agent)"
+        :model-value="getSettingString(paths.agent)"
+        :choices="getModels(paths.agent)"
         :name="words.agentUse"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -127,8 +123,8 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentModelDetail"
     >
       <Select
-        :model-value="said(paths.agentModel)"
-        :choices="models(paths.agentModel)"
+        :model-value="getSettingString(paths.agentModel)"
+        :choices="getModels(paths.agentModel)"
         :name="words.agentModel"
         :aria-labelledby="labelledBy"
         class="settings__choice"
@@ -143,7 +139,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentStepsDetail"
     >
       <NumberField
-        :model-value="counted(paths.agentSteps)"
+        :model-value="getSettingNumber(paths.agentSteps)"
         :min="STEPS.least"
         :max="STEPS.most"
         :step="1"
@@ -160,7 +156,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentToolsDetail"
     >
       <Switch
-        :model-value="on(paths.agentTools)"
+        :model-value="isSettingEnabled(paths.agentTools)"
         :aria-labelledby="labelledBy"
         @update:model-value="onAgentToolsChange"
       />
@@ -173,7 +169,7 @@ function setSetting(at: readonly string[], value: unknown): void {
       :detail="words.agentHooksDetail"
     >
       <Switch
-        :model-value="on(paths.agentHooks)"
+        :model-value="isSettingEnabled(paths.agentHooks)"
         :aria-labelledby="labelledBy"
         @update:model-value="onAgentHooksChange"
       />
