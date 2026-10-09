@@ -20,3 +20,8 @@ func support() {
 func loadLibrary(name string) (uintptr, error) {
 	return purego.Dlopen(name, purego.RTLD_NOW|purego.RTLD_GLOBAL)
 }
+
+// OpenLibrary opens a dynamic library with the platform dynamic loader.
+func OpenLibrary(name string) (uintptr, error) {
+	return loadLibrary(name)
+}
