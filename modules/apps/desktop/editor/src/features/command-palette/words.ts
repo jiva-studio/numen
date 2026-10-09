@@ -136,6 +136,8 @@ export interface Words extends EmptyWords {
   readonly hanging: string
   /** The command over how many of them stand under a node at once. */
   readonly parts: string
+  /** The command over the performance workload profile. */
+  readonly performanceProfile: string
   /** Everything this installation is configured as, in a tab of its own. */
   readonly settings: string
   readonly find: string

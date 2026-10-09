@@ -164,6 +164,7 @@ describe('the settings tab', () => {
       words.review,
       words.transcription,
       words.ocr,
+      words.performance,
       words.indexing,
       words.agent,
     ])

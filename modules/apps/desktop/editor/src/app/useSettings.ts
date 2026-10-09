@@ -87,6 +87,20 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
       if (command === SYNCING) return sync.getSyncingGroups()
       if (command === HANGING) return hungParts.getHangingGroups()
       if (command === PARTS) return hungParts.getPartsGroups()
+      if (command === 'performanceProfile') {
+        return [
+          {
+            id: 'performance',
+            title: words.performance,
+            items: [
+              { id: 'eco', title: words.eco, detail: words.ecoDetail },
+              { id: 'balanced', title: words.balanced, detail: words.balancedDetail },
+              { id: 'maximum', title: words.maximum, detail: words.maximumDetail },
+              { id: 'custom', title: words.custom, detail: words.customDetail },
+            ],
+          },
+        ]
+      }
       return []
     },
     previewItem: (command, item) => {

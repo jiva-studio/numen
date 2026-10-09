@@ -93,6 +93,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['syncing', RefreshCw],
   ['hanging', ListTree],
   ['parts', Rows3],
+  ['performanceProfile', Gauge],
   ['settings', SlidersHorizontal],
   ['first', Compass],
   ['goto', Navigation],

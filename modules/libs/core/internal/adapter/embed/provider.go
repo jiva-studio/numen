@@ -263,6 +263,7 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 		Dir        *string `json:"dir"`
 		File       *string `json:"file"`
 		BatchTexts *int    `json:"batch_texts"`
+		BatchSize  *int    `json:"batch_size"`
 		Engine     *string `json:"engine"`
 		Runtime    *string `json:"runtime"`
 		Threads    *int    `json:"threads"`
@@ -275,7 +276,11 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 	assign(&m.Name, f.Name)
 	assign(&m.Dir, f.Dir)
 	assign(&m.File, f.File)
-	assign(&m.BatchTexts, f.BatchTexts)
+	if f.BatchSize != nil {
+		assign(&m.BatchTexts, f.BatchSize)
+	} else {
+		assign(&m.BatchTexts, f.BatchTexts)
+	}
 	assign(&m.Engine, f.Engine)
 	assign(&m.Runtime, f.Runtime)
 	assign(&m.Threads, f.Threads)

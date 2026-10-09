@@ -104,6 +104,43 @@ Typing a new `# Heading` into a note does not rename its file. A save puts down 
 
 `Sync title and filename` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and the next rename reads what was written.
 
+## Performance profiles
+
+`performance` governs how intensively background AI pipelines (vector embedding, OCR, transcription, and agent concurrency) utilize system hardware.
+
+```json
+{
+  "performance": {
+    "profile": "balanced",
+    "custom": {
+      "embedding_batch_size": 32,
+      "ocr_threads": 4,
+      "ocr_sessions": 1,
+      "llm_concurrency": 2
+    }
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `profile` | the workload profile: `eco`, `balanced` (default), `maximum`, or `custom`. |
+| `custom.embedding_batch_size` | how many passages are embedded in a single forward pass when `profile` is `custom`. |
+| `custom.ocr_threads` | intra-op thread count per OCR model instance. |
+| `custom.ocr_sessions` | concurrent OCR inference workers. |
+| `custom.llm_concurrency` | maximum simultaneous LLM/agent requests in flight. |
+
+### Hardware adaptation
+
+When `profile` is set to `eco`, `balanced`, or `maximum`, numen automatically resolves compute parameters based on available CPU cores and physical RAM:
+
+- **Eco**: Keeps background work unobtrusive and battery-friendly. Embedding uses a conservative batch size (16), OCR runs single-threaded, and LLM concurrency is limited to 1.
+- **Balanced** *(default)*: Optimized for everyday responsive use. Dynamically scales embedding batch size (32 on standard hardware, 64 on machines with $\ge$ 16 GB RAM) and allocates half the available CPU cores to OCR.
+- **Maximum**: Full hardware saturation for fast initial indexing and bulk processing. Embedding batch size scales to 64–128 based on memory, OCR parallelizes across available performance cores, and LLM concurrency runs unthrottled.
+- **Custom**: Uses the explicit parameters written in `performance.custom`.
+
+`Set performance profile` is a command of its own in the palette, over the window. Choosing a profile updates the configuration immediately.
+
 ## What a vector is, and where it is made
 
 ```json
@@ -177,7 +214,7 @@ Two providers are asked whether they are one model: both embed the same short te
 | `name` | a HuggingFace repository. |
 | `dir` | a folder holding the model and `tokenizer.json`, used as given. This is what an installation with no network names. |
 | `file` | which build inside the repository's `onnx/` folder. Empty is `model.onnx`. Naming another is how a quantised build is run in place of the full one. |
-| `batch_texts` | how many texts one forward pass carries. |
+| `batch_size` | how many texts one forward pass carries (`batch_texts` is supported as an alias). |
 | `engine` | what runs the model: `onnxruntime`, the library fetched at run time, or `go`, the backend in the binary. Empty takes the runtime where this platform has one published and the Go backend where it has none. The vectors are the same either way, so the index does not record which ran. |
 | `runtime` | the ONNX Runtime shared library, when the engine is `onnxruntime`. Empty takes the one the process already opened for a recognition or a transcription. |
 | `threads` | how many threads one forward pass may use. 4. |

@@ -232,6 +232,7 @@ const window = (
       chooseSync: async (chosen) => void done.push(`syncing ${chosen}`),
       chooseHanging: async (chosen) => void done.push(`hanging ${chosen}`),
       chooseParts: async (chosen) => void done.push(`parts ${chosen}`),
+      choosePerformance: async (chosen) => void done.push(`performance ${chosen}`),
     },
     runSupport: runs,
     copyPath: (path) => void done.push(`copies ${path}`),

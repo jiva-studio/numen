@@ -28,6 +28,8 @@ import type { VaultCore } from './vault'
 
 type Words = typeof WORDS
 
+import type { SettingEdit } from '@/entities/settings'
+
 export interface CommandsDepsOptions {
   core: VaultCore
   words: Words
@@ -51,6 +53,7 @@ export interface CommandsDepsOptions {
     choose: (item: string) => Promise<void> | void
     chooseCount: (item: string) => Promise<void> | void
   }
+  rest: { writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }

@@ -56,6 +56,9 @@ type Settings struct {
 	// scheduled is in the vault, in the preset it points at.
 	Review settings.Review `json:"review"`
 
+	// Performance is the workload and resource calibration profile.
+	Performance settings.Performance `json:"performance"`
+
 	// Said is what reading the file leaves a person something to do about: a
 	// number written where a setting does not go that far. Each is one line of
 	// a band, which gives a line about sixty characters, and whoever read the
@@ -107,13 +110,14 @@ func (c Config) getSettingsAt(path string) (Settings, error) {
 // DefaultSettings is what an installation nobody has configured does.
 func DefaultSettings() Settings {
 	return Settings{
-		Version:    settings.DefaultVersion,
-		Appearance: settings.DefaultAppearance(),
-		Indexing:   DefaultIndexing(),
-		Agent:      agent.Defaults(),
-		Importing:  download.Defaults(),
-		Titles:     settings.DefaultTitles(),
-		Review:     settings.DefaultReview(),
+		Version:     settings.DefaultVersion,
+		Appearance:  settings.DefaultAppearance(),
+		Indexing:    DefaultIndexing(),
+		Agent:       agent.Defaults(),
+		Importing:   download.Defaults(),
+		Titles:      settings.DefaultTitles(),
+		Review:      settings.DefaultReview(),
+		Performance: settings.DefaultPerformance(),
 	}
 }
 
@@ -155,6 +159,8 @@ func (c Config) SetSettings(said Settings) Config {
 	c.TranscribesUnder = said.Indexing.GetTranscribeLimit()
 	c.Agent = said.Agent
 	c.Importing = said.Importing
+	c.Performance = said.Performance
+	c.ResolvedCompute = settings.ResolveCompute(said.Performance.Profile, settings.DetectHardware(), said.Performance.Custom)
 	return c
 }
 

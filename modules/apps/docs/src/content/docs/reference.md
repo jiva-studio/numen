@@ -187,4 +187,17 @@ What a day of review is, on this person's clock.
 | | | |
 | --- | --- | --- |
 | `day_starts` | text | the hour a day of review begins at, on the clock on the wall, written as hours and minutes. |
+
+### `performance`
+
+The workload and resource calibration profile.
+
+| | | |
+| --- | --- | --- |
+| `profile` | text | the active preset. |
+| `custom` |  | holds user-defined overrides when `profile` is ProfileCustom. |
+| `custom.embedding_batch_size` | a number |  |
+| `custom.ocr_threads` | a number |  |
+| `custom.ocr_sessions` | a number |  |
+| `custom.llm_concurrency` | a number |  |
 <!-- END AUTOGEN -->

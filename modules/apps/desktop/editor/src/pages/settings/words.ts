@@ -15,6 +15,7 @@ export const WORDS = {
   transcription: 'Transcribing recordings',
   ocr: 'OCR',
   indexing: 'Indexing',
+  performance: 'Performance',
   agent: 'The agent',
   /** The window's own settings. */
   theme: 'Theme',
@@ -65,6 +66,26 @@ export const WORDS = {
   /** Turning the vault into vectors. */
   indexingModel: 'Embedding model',
   indexingModelDetail: 'The model the text of the vault is turned into vectors by.',
+  /** Workload and performance calibration. */
+  performanceProfile: 'Performance profile',
+  performanceProfileDetail:
+    'Calibrates compute throughput and hardware saturation across local AI pipelines.',
+  eco: 'Eco',
+  ecoDetail: 'Minimal power, quiet fans (1 worker thread).',
+  balanced: 'Balanced',
+  balancedDetail: 'Standard workload, 50% CPU capacity.',
+  maximum: 'Maximum',
+  maximumDetail: 'Full hardware saturation across all CPU cores and memory.',
+  custom: 'Custom',
+  customDetail: 'Manual parameter tuning.',
+  embeddingBatchSize: 'Embedding batch size',
+  embeddingBatchSizeDetail: 'Number of text chunks processed in a single forward pass.',
+  ocrThreads: 'OCR parallel threads',
+  ocrThreadsDetail: 'Number of parallel CPU worker threads for page rendering.',
+  ocrSessions: 'OCR recognition sessions',
+  ocrSessionsDetail: 'Number of parallel ONNX text recognition sessions.',
+  llmConcurrency: 'LLM concurrency',
+  llmConcurrencyDetail: 'Maximum number of concurrent in-flight requests to the proofreader.',
   /** The agent. */
   agentUse: 'Which agent answers',
   agentUseDetail: 'The program the panel asks. Nothing answers where none is named.',

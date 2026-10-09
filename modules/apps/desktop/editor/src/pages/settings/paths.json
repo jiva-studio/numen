@@ -12,5 +12,10 @@
   "agentModel": ["agent", "claude", "model"],
   "agentSteps": ["agent", "claude", "max_steps"],
   "agentTools": ["agent", "serve_tools"],
-  "agentHooks": ["agent", "claude", "reads_hooks_and_skills"]
+  "agentHooks": ["agent", "claude", "reads_hooks_and_skills"],
+  "performanceProfile": ["performance", "profile"],
+  "performanceEmbeddingBatchSize": ["performance", "custom", "embedding_batch_size"],
+  "performanceOcrThreads": ["performance", "custom", "ocr_threads"],
+  "performanceOcrSessions": ["performance", "custom", "ocr_sessions"],
+  "performanceLlmConcurrency": ["performance", "custom", "llm_concurrency"]
 }
