@@ -1,10 +1,11 @@
 package chunk
 
 import (
+	"cmp"
 	"context"
-	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
+	"strconv"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
@@ -22,6 +23,7 @@ const coarseCandidates = 8
 type candidate struct {
 	chunk      int64
 	similarity float64
+	order      int
 }
 
 // rerank orders candidates by their full-precision similarity to the query,
@@ -31,24 +33,22 @@ type candidate struct {
 // is not an answer. A vector that is read and does not compare is a corrupt
 // row, and says so.
 func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
-	ids, err := json.Marshal(candidates)
-	if err != nil {
-		return nil, err
+	if len(candidates) == 0 {
+		return nil, nil
 	}
-	wanted, err := kinds(of)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("rerank"), string(ids), recipe, wanted)
+
+	ids := formatInt64s(candidates)
+	wanted := formatKinds(of)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("rerank"), ids, recipe, wanted)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	similarity := make(map[int64]float64, len(candidates))
+	kept := make([]candidate, 0, len(candidates))
+	var stored []byte
 	for rows.Next() {
 		var chunk int64
-		var stored []byte
 		if err := rows.Scan(&chunk, &stored); err != nil {
 			return nil, err
 		}
@@ -56,24 +56,68 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 			return nil, fmt.Errorf("chunk %d holds %d dimensions where the query has %d",
 				chunk, len(stored), len(query))
 		}
-		similarity[chunk] = embedding.Similarity(query, embedding.Dimensions(stored))
+		sim := embedding.SimilarityBytes(query, stored)
+		if sim >= floor {
+			kept = append(kept, candidate{
+				chunk:      chunk,
+				similarity: sim,
+				order:      len(kept),
+			})
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	kept := make([]candidate, 0, len(candidates))
-	for _, chunk := range candidates {
-		if s, held := similarity[chunk]; held && s >= floor {
-			kept = append(kept, candidate{chunk: chunk, similarity: s})
-		}
-	}
 	// Two chunks of equal similarity keep the coarse pass's order between them.
-	sort.SliceStable(kept, func(a, b int) bool { return kept[a].similarity > kept[b].similarity })
+	slices.SortFunc(kept, func(a, b candidate) int {
+		if c := cmp.Compare(b.similarity, a.similarity); c != 0 {
+			return c
+		}
+		return cmp.Compare(a.order, b.order)
+	})
 
-	out := make([]int64, 0, len(kept))
-	for _, k := range kept {
-		out = append(out, k.chunk)
+	out := make([]int64, len(kept))
+	for i, k := range kept {
+		out[i] = k.chunk
 	}
 	return out, nil
+}
+
+func formatInt64s(nums []int64) string {
+	if len(nums) == 0 {
+		return "[]"
+	}
+	b := make([]byte, 0, len(nums)*12+2)
+	b = append(b, '[')
+	for i, n := range nums {
+		if i > 0 {
+			b = append(b, ',')
+		}
+		b = strconv.AppendInt(b, n, 10)
+	}
+	b = append(b, ']')
+	return string(b)
+}
+
+func formatKinds(chosen []domain.SourceKind) string {
+	if len(chosen) == 0 {
+		return "[]"
+	}
+	size := 2
+	for _, k := range chosen {
+		size += len(k) + 3
+	}
+	b := make([]byte, 0, size)
+	b = append(b, '[')
+	for i, k := range chosen {
+		if i > 0 {
+			b = append(b, ',')
+		}
+		b = append(b, '"')
+		b = append(b, k...)
+		b = append(b, '"')
+	}
+	b = append(b, ']')
+	return string(b)
 }
