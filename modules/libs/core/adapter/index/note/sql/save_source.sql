@@ -13,4 +13,4 @@ ON CONFLICT (vault_id, path) DO UPDATE SET
     hash        = excluded.hash,
     recipe      = excluded.recipe,
     producer    = excluded.producer
-RETURNING id;
+RETURNING id, (EXISTS (SELECT 1 FROM notes WHERE source_id = sources.id));

@@ -10,6 +10,7 @@ import (
 	"context"
 	"database/sql"
 	"net/url"
+	"runtime"
 	"slices"
 	"strings"
 
@@ -28,9 +29,9 @@ import (
 //
 // There are two pools, because SQLite has one writer and any number of readers.
 // The write pool is capped at a single connection, so writers queue in Go,
-// where waiting is cheap and ordered. The read pool is unrestricted: in WAL
-// mode a reader never waits for the writer, which is what lets a search answer
-// while a scan is still running.
+// where waiting is cheap and ordered. The read pool is sized to the available
+// cores: in WAL mode a reader never waits for the writer, which is what lets
+// a search answer while a scan is still running.
 //
 // Several processes open the one file. Their writers queue in SQLite, under the
 // busy timeout, and a writer still waiting when it runs out asks again — see
@@ -105,6 +106,8 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 		write.Close()
 		return nil, err
 	}
+	read.SetMaxOpenConns(max(4, runtime.NumCPU()))
+	read.SetMaxIdleConns(max(2, runtime.NumCPU()/2))
 	return &DB{write: write, read: read}, nil
 }
 
