@@ -108,6 +108,8 @@ export interface SettingsWriter {
   chooseHanging(chosen: string): Promise<void>
   /** How many parts a node hangs at once. */
   chooseParts(chosen: string): Promise<void>
+  /** The performance workload profile chosen. */
+  choosePerformance(chosen: string): Promise<void>
 }
 
 /** The one line the window says a command's answer in. */

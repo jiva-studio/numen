@@ -53,7 +53,7 @@ func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
 	}
 	// The document holds the sections the file does, and the line a person is
 	// left about what it says.
-	if held := reflect.TypeOf(container.Settings{}).NumField(); held != 8 {
+	if held := reflect.TypeOf(container.Settings{}).NumField(); held != 9 {
 		t.Errorf("the settings hold %d sections; carry the new one in Config.SetSettings", held)
 	}
 }

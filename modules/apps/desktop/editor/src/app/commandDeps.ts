@@ -1,7 +1,3 @@
-/**
- * Command execution dependencies assembly for palette and shortcut actions.
- */
-
 import { vaults, type VaultCore } from './vault'
 import { running } from '@/entities/artifact'
 import { WORDS as cardWords } from '@/entities/deck'
@@ -10,6 +6,7 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import type { createFileCreators } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 import type { NoteCreator } from '@/pages/note-editor'
+import { write, type SettingEdit } from '@/entities/settings'
 
 export interface CommandDepsOptions {
   core: VaultCore
@@ -27,6 +24,7 @@ export interface CommandDepsOptions {
     choose: (item: string) => Promise<void> | void
     chooseCount: (item: string) => Promise<void> | void
   }
+  rest: { writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
@@ -143,6 +141,9 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       },
       chooseParts: async (chosen) => {
         await hungParts.chooseCount(chosen)
+      },
+      choosePerformance: async (chosen) => {
+        await options.rest.writeSettings([{ at: ['performance', 'profile'], value: write(chosen) }])
       },
     },
     notes: reached,

@@ -8,6 +8,7 @@ import { Button } from '@numen/ui'
 import type { SettingsTabState } from '../types'
 import WindowSettingsSection from './WindowSettingsSection.vue'
 import MediaSettingsSection from './MediaSettingsSection.vue'
+import PerformanceSettingsSection from './PerformanceSettingsSection.vue'
 import AgentSettingsSection from './AgentSettingsSection.vue'
 import { WORDS as words } from '../words'
 
@@ -37,6 +38,7 @@ function onOpenFile() {
 
       <WindowSettingsSection :state="props.state" />
       <MediaSettingsSection :state="props.state" />
+      <PerformanceSettingsSection :state="props.state" />
       <AgentSettingsSection :state="props.state" />
     </div>
   </div>

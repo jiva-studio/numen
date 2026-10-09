@@ -175,6 +175,7 @@ export const useWindow = () => {
     dressed: settings.dressed,
     oneName: settings.oneName,
     hungParts: settings.hungParts,
+    rest: settings.rest,
     recorded: kinds.recorded,
     pointed: kinds.pointed,
     files: () => kinds.files,
