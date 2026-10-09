@@ -158,6 +158,17 @@ func (w waitingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32
 // Close lets go of the one model both ways of waiting ask.
 func (w waitingEmbedder) Close() error { return w.e.Close() }
 
+// Concurrency reports how many parallel batches this embedder can execute.
+func (w waitingEmbedder) Concurrency() int {
+	w.e.mu.RLock()
+	held := w.e.held
+	w.e.mu.RUnlock()
+	if c, ok := held.(interface{ Concurrency() int }); ok {
+		return c.Concurrency()
+	}
+	return 1
+}
+
 type impatient struct{ e *Embedder }
 
 func (i impatient) Model() port.EmbeddingModel { return i.e.model }
@@ -179,3 +190,14 @@ func (i impatient) Embed(ctx context.Context, texts []string) ([][]float32, erro
 
 // Close lets go of the one model both ways of waiting ask.
 func (i impatient) Close() error { return i.e.Close() }
+
+// Concurrency reports how many parallel batches this embedder can execute.
+func (i impatient) Concurrency() int {
+	i.e.mu.RLock()
+	held := i.e.held
+	i.e.mu.RUnlock()
+	if c, ok := held.(interface{ Concurrency() int }); ok {
+		return c.Concurrency()
+	}
+	return 1
+}

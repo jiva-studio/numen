@@ -96,6 +96,9 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 
 	case embed.UseLocal:
 		local, _ := where.Local()
+		if c.ResolvedCompute.EmbeddingBatchSize > 0 && local.BatchTexts == 0 {
+			local.BatchTexts = c.ResolvedCompute.EmbeddingBatchSize
+		}
 		open, err := openLocal(is, local)
 		if err != nil {
 			return embedders.Provider{}, err
