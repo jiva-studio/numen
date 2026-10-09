@@ -141,18 +141,16 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	p = p.fill()
 
-	var (
-		lexical  []domain.Passage
-		named    []domain.Passage
-		dense    []domain.Passage
-		hasDense bool
-	)
+	var lexical []domain.Passage
+	var named []domain.Passage
+	var dense []domain.Passage
+	var appendDense bool
 
-	g, gctx := errgroup.WithContext(ctx)
+	eg, egCtx := errgroup.WithContext(ctx)
 
 	if p.Lexical > 0 {
-		g.Go(func() error {
-			found, err := u.passages.Lexical(gctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
+		eg.Go(func() error {
+			found, err := u.passages.Lexical(egCtx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
 			if err != nil {
 				return err
 			}
@@ -160,9 +158,10 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 			return nil
 		})
 	}
+
 	if p.Named > 0 {
-		g.Go(func() error {
-			found, err := u.passages.GetNamedPassages(gctx, v.ID, query, p.Kinds, p.Named, p.IsGrowing)
+		eg.Go(func() error {
+			found, err := u.passages.GetNamedPassages(egCtx, v.ID, query, p.Kinds, p.Named, p.IsGrowing)
 			if err != nil {
 				return err
 			}
@@ -170,9 +169,10 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 			return nil
 		})
 	}
+
 	if p.Dense > 0 && u.embedder != nil {
-		g.Go(func() error {
-			found, err := u.findNearest(gctx, v, query, p)
+		eg.Go(func() error {
+			found, err := u.findNearest(egCtx, v, query, p)
 			switch {
 			case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 				return err
@@ -186,13 +186,13 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 				return err
 			default:
 				dense = found
-				hasDense = true
+				appendDense = true
 				return nil
 			}
 		})
 	}
 
-	if err := g.Wait(); err != nil {
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -203,10 +203,9 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	if p.Named > 0 {
 		rankings = append(rankings, named)
 	}
-	if hasDense {
+	if appendDense {
 		rankings = append(rankings, dense)
 	}
-
 	return u.read(ctx, v, collapse(merge(rankings...), named, p.Each, p.Limit))
 }
 
