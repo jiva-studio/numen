@@ -14,6 +14,16 @@ import (
 // retyped from a file does not turn into a different one.
 const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
+// isAlphabet holds, for each byte, whether it is a character of the alphabet.
+var isAlphabet = createTable(alphabet)
+
+func createTable(characters string) (table [256]bool) {
+	for i := range len(characters) {
+		table[characters[i]] = true
+	}
+	return table
+}
+
 // New returns a ULID for the given instant: 48 bits of milliseconds followed by
 // 80 bits of randomness, encoded as 26 characters.
 func New(t time.Time) (string, error) {
@@ -59,15 +69,8 @@ func Valid(s string) bool {
 	if len(s) != 26 {
 		return false
 	}
-	for i := 0; i < len(s); i++ {
-		found := false
-		for j := 0; j < len(alphabet); j++ {
-			if s[i] == alphabet[j] {
-				found = true
-				break
-			}
-		}
-		if !found {
+	for i := range len(s) {
+		if !isAlphabet[s[i]] {
 			return false
 		}
 	}

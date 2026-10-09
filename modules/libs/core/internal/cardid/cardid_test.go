@@ -69,3 +69,20 @@ func TestWhatIsNotAnIdentifier(t *testing.T) {
 		})
 	}
 }
+
+func TestValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
+	for name, s := range map[string]string{
+		"upper case": "012345678A",
+		"letter i":   "012345678i",
+		"letter u":   "012345678u",
+		"non-ascii":  "01234567é",
+		"high byte":  "012345678\xff",
+		"nul byte":   "012345678\x00",
+		"too long":   "01234567890",
+		"too short":  "012345678",
+	} {
+		if cardid.Valid(domain.CardID(s)) {
+			t.Errorf("%s: %q validated", name, s)
+		}
+	}
+}

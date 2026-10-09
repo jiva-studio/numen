@@ -73,3 +73,21 @@ func TestValidRejectsNearMisses(t *testing.T) {
 		}
 	}
 }
+
+func TestValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
+	const base = "0123456789ABCDEFGHJKMNPQRS"
+	for name, s := range map[string]string{
+		"lower case": base[:25] + "a",
+		"letter I":   base[:25] + "I",
+		"letter U":   base[:25] + "U",
+		"non-ascii":  base[:24] + "É",
+		"high byte":  base[:25] + "\xff",
+		"nul byte":   base[:25] + "\x00",
+		"too long":   base + "T",
+		"too short":  base[:25],
+	} {
+		if ulid.Valid(s) {
+			t.Errorf("%s: %q validated", name, s)
+		}
+	}
+}
