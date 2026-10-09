@@ -139,8 +139,14 @@ func isInside(a, b image.Rectangle) bool {
 // Assemble writes one region out as running prose, and says where on the page
 // each run of it was read.
 func Assemble(lines []Line) (string, []Box) {
-	var out []byte
-	var kept []Box
+	// A line holds at most one box per input line, and a joining space adds at
+	// most one byte per line to the text.
+	size := len(lines)
+	for _, one := range lines {
+		size += len(one.Text)
+	}
+	out := make([]byte, 0, size)
+	kept := make([]Box, 0, len(lines))
 	for line := range group(lines) {
 		text, boxes := writeLine(line)
 		if text == "" {
@@ -244,8 +250,13 @@ func measureVerticalOverlap(line []Line, box Line) float64 {
 // every box it returns by a fixed number of pixels, and neighbours therefore
 // overlap however far apart the words were.
 func writeLine(line []Line) (string, []Box) {
+	size := len(line)
+	for _, one := range line {
+		size += len(one.Text)
+	}
 	var out strings.Builder
-	var kept []Box
+	out.Grow(size)
+	kept := make([]Box, 0, len(line))
 	for _, one := range line {
 		// A box the recogniser read as nothing is not a word.
 		text := strings.TrimSpace(one.Text)
