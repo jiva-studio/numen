@@ -221,3 +221,43 @@ func TestReachedReadsALargeTranscriptAtOnce(t *testing.T) {
 		t.Error("reading a transcript of 10 MB did not finish")
 	}
 }
+
+func makeBenchmarkCues(n int) []transcript.Cue {
+	cues := make([]transcript.Cue, n)
+	for i := range n {
+		cues[i] = transcript.Cue{
+			Text: "This is a sample cue text spoken during the recording session.",
+			From: i * 3000,
+			To:   (i + 1) * 3000,
+		}
+	}
+	return cues
+}
+
+func BenchmarkParse(b *testing.B) {
+	for _, n := range []int{100, 1000} {
+		cues := makeBenchmarkCues(n)
+		raw := transcript.Marshal(cues)
+		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			b.SetBytes(int64(len(raw)))
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				_, _ = transcript.Parse(raw)
+			}
+		})
+	}
+}
+
+func BenchmarkMarshal(b *testing.B) {
+	for _, n := range []int{100, 1000} {
+		cues := makeBenchmarkCues(n)
+		b.Run(fmt.Sprintf("%d", n), func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				_ = transcript.Marshal(cues)
+			}
+		})
+	}
+}
