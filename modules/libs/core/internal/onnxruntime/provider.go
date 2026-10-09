@@ -2,6 +2,7 @@ package onnxruntime
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"sync"
 	"unsafe"
@@ -154,6 +155,11 @@ type SessionSettings struct {
 	Threads  int
 }
 
+// DefaultThreads is the default intra-op thread count for ONNX sessions.
+func DefaultThreads() int {
+	return min(max(1, runtime.GOMAXPROCS(0)), 8)
+}
+
 // NewSessionOptions creates and configures session options according to the
 // requested provider, applying hardware acceleration with fallback to CPU.
 func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptions, Provider, error) {
@@ -164,7 +170,7 @@ func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptio
 
 	threads := s.Threads
 	if threads <= 0 {
-		threads = 4
+		threads = DefaultThreads()
 	}
 	if err := opts.SetIntraOpNumThreads(int32(threads)); err != nil {
 		opts.Destroy()

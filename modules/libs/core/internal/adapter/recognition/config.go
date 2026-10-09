@@ -132,9 +132,8 @@ func Defaults() Config {
 			Name: "https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/main/inference.onnx",
 		},
 		Recognise: RecogniserModel{
-			Name:    "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
-			DPI:     300,
-			Threads: 4,
+			Name: "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
+			DPI:  300,
 		},
 
 		// What a reading needs is fetched when it is wanted.
@@ -226,7 +225,7 @@ func (r RecogniserModel) jobs() int {
 
 func (r RecogniserModel) threads() int {
 	if r.Threads <= 0 {
-		return 4
+		return onnxruntime.DefaultThreads()
 	}
 	return r.Threads
 }
