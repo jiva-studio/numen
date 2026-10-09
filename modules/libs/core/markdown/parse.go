@@ -219,6 +219,30 @@ func (f *Fence) IsCrossedBy(line string) bool {
 	return true
 }
 
+// IsCrossedByBytes follows one line, and reports whether that line opens or closes the
+// fence.
+func (f *Fence) IsCrossedByBytes(line []byte) bool {
+	t := bytes.TrimSpace(line)
+	var mark byte
+	switch {
+	case bytes.HasPrefix(t, []byte("```")):
+		mark = '`'
+	case bytes.HasPrefix(t, []byte("~~~")):
+		mark = '~'
+	default:
+		return false
+	}
+	switch f.mark {
+	case 0:
+		f.mark = mark
+	case mark:
+		f.mark = 0
+	default:
+		return false
+	}
+	return true
+}
+
 // IsInside reports whether the walk stands within a fence.
 func (f *Fence) IsInside() bool { return f.mark != 0 }
 

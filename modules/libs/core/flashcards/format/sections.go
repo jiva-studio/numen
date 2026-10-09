@@ -2,7 +2,6 @@ package format
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
@@ -36,8 +35,8 @@ func sections(body []byte, first, last int) []section {
 		if i := bytes.IndexByte(body[at:], '\n'); i >= 0 {
 			end, next = at+i, at+i+1
 		}
-		line := strings.TrimRight(string(body[at:end]), "\r")
-		if !f.IsCrossedBy(line) && !f.IsInside() {
+		line := bytes.TrimRight(body[at:end], "\r")
+		if !f.IsCrossedByBytes(line) && !f.IsInside() {
 			if level, name, ok := heading(line, first, last); ok {
 				if n := len(out); n > 0 {
 					out[n-1].to = at
@@ -59,7 +58,7 @@ func sections(body []byte, first, last int) []section {
 
 // heading reads a heading of one of the levels from first to last. The name may
 // be empty: `##` on its own opens a card whose first field holds nothing.
-func heading(line string, first, last int) (level int, name string, ok bool) {
+func heading(line []byte, first, last int) (level int, name string, ok bool) {
 	hashes := 0
 	for hashes < len(line) && line[hashes] == '#' {
 		hashes++
@@ -68,18 +67,18 @@ func heading(line string, first, last int) (level int, name string, ok bool) {
 		return 0, "", false
 	}
 	rest := line[hashes:]
-	if rest != "" && rest[0] != ' ' && rest[0] != '\t' {
+	if len(rest) > 0 && rest[0] != ' ' && rest[0] != '\t' {
 		return 0, "", false
 	}
-	name = strings.TrimSpace(rest)
+	trimmed := bytes.TrimSpace(rest)
 	// A run of hashes at the end closes the heading where whitespace stands in
 	// front of it, and a name ending in one keeps it.
-	if closed := strings.TrimRight(name, "#"); closed != name {
-		if trimmed := strings.TrimRight(closed, " \t"); closed == "" || trimmed != closed {
-			name = trimmed
+	if closed := bytes.TrimRight(trimmed, "#"); len(closed) != len(trimmed) {
+		if t := bytes.TrimRight(closed, " \t"); len(closed) == 0 || len(t) != len(closed) {
+			trimmed = t
 		}
 	}
-	return hashes, name, true
+	return hashes, string(trimmed), true
 }
 
 // run is one part of the body as a person reads it — one kind of line break,
@@ -91,7 +90,7 @@ func run(body []byte, from, to int) (string, int) {
 	begin, end := from, to
 	for begin < end {
 		line, next := lineAt(body, begin, end)
-		if strings.TrimSpace(line) != "" {
+		if len(bytes.TrimSpace(line)) != 0 {
 			break
 		}
 		begin = next
@@ -107,11 +106,11 @@ func getTrimmedEnd(body []byte, from, to int) int {
 }
 
 // lineAt is one line without its ending, and the byte the next one begins at.
-func lineAt(body []byte, at, to int) (string, int) {
+func lineAt(body []byte, at, to int) ([]byte, int) {
 	if i := bytes.IndexByte(body[at:to], '\n'); i >= 0 {
-		return strings.TrimRight(string(body[at:at+i]), "\r"), at + i + 1
+		return bytes.TrimRight(body[at:at+i], "\r"), at + i + 1
 	}
-	return strings.TrimRight(string(body[at:to]), "\r"), to
+	return bytes.TrimRight(body[at:to], "\r"), to
 }
 
 // lineFrom is the byte the line holding at begins at, looked for no further
