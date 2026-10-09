@@ -34,9 +34,9 @@ func session(t *rapid.T) []review.Answer {
 				Card: rapid.SampledFrom(cards).Draw(t, "card"),
 				Face: rapid.SampledFrom(faces).Draw(t, "face"),
 			},
-			// Minutes, over a few weeks, so that two answers of one instant are
+			// Minutes, over a few days, so that two answers of one instant are
 			// drawn about as often as two of different ones.
-			At:     opened.Add(time.Duration(rapid.IntRange(0, 30000).Draw(t, "minutes")) * time.Minute),
+			At:     opened.Add(time.Duration(rapid.IntRange(0, 5000).Draw(t, "minutes")) * time.Minute),
 			Rating: review.Rating(rapid.IntRange(int(review.Again), int(review.Easy)).Draw(t, "rating")),
 		}
 	})
