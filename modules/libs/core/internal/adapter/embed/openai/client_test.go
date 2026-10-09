@@ -9,7 +9,9 @@ import (
 	"net/http/httptest"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
@@ -239,10 +241,15 @@ func TestTheWrongWidthIsRefusedRatherThanStored(t *testing.T) {
 }
 
 func TestABatchIsCutByCharacters(t *testing.T) {
-	var batches [][]string
+	var (
+		mu      sync.Mutex
+		batches [][]string
+	)
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		in := read(t, r)
+		mu.Lock()
 		batches = append(batches, in.Input)
+		mu.Unlock()
 		answer(w, in, 4)
 	})
 	t.Setenv(embed.KeyEnvVar, "test-key")
@@ -270,8 +277,11 @@ func TestABatchIsCutByCharacters(t *testing.T) {
 	if len(batches) != 3 {
 		t.Fatalf("sent %d requests, want 3: %v", len(batches), sizes(batches))
 	}
-	if want := []int{2, 2, 1}; !slices.Equal(sizes(batches), want) {
-		t.Errorf("request sizes %v, want %v", sizes(batches), want)
+	gotSizes := sizes(batches)
+	slices.Sort(gotSizes)
+	wantSizes := []int{1, 2, 2}
+	if !slices.Equal(gotSizes, wantSizes) {
+		t.Errorf("request sizes %v, want %v", gotSizes, wantSizes)
 	}
 }
 
@@ -330,6 +340,132 @@ func TestTheKeyIsNotInWhatTheConfigurationPrints(t *testing.T) {
 	_, service := setServiceModel(t, embed.Defaults(), func(*embed.ServiceModel) {})
 	if printed := fmt.Sprintf("%v", service); strings.Contains(printed, "sk-secret") {
 		t.Errorf("the key is in %q", printed)
+	}
+}
+
+func TestBatchesSentConcurrently(t *testing.T) {
+	var (
+		mu     sync.Mutex
+		active int
+		maxAct int
+	)
+	s := server(t, func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		active++
+		if active > maxAct {
+			maxAct = active
+		}
+		mu.Unlock()
+
+		time.Sleep(20 * time.Millisecond)
+
+		mu.Lock()
+		active--
+		mu.Unlock()
+
+		answer(w, read(t, r), 4)
+	})
+
+	t.Setenv(embed.KeyEnvVar, "test-key")
+	cfg := embed.Defaults()
+	cfg.Model.Dimensions = 4
+	cfg, service := setServiceModel(t, cfg, func(at *embed.ServiceModel) {
+		at.BaseURL, at.Name = s.URL, "test-embed"
+		at.BatchCharacters = 10
+	})
+	c, err := openai.New(cfg.GetStoredModel(), service)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Delay = 0
+
+	texts := []string{
+		"batch one text",
+		"batch two text",
+		"batch three text",
+		"batch four text",
+	}
+	got, err := c.Embed(t.Context(), texts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 4 {
+		t.Fatalf("got %d vectors, want 4", len(got))
+	}
+	mu.Lock()
+	peak := maxAct
+	mu.Unlock()
+	if peak < 2 {
+		t.Errorf("peak concurrent requests was %d, want >= 2", peak)
+	}
+}
+
+func TestBatchesOrderedAcrossParallelRequests(t *testing.T) {
+	s := server(t, func(w http.ResponseWriter, r *http.Request) {
+		in := read(t, r)
+		if in.Input[0] == "first batch" {
+			time.Sleep(30 * time.Millisecond)
+		}
+		answer(w, in, 4)
+	})
+
+	t.Setenv(embed.KeyEnvVar, "test-key")
+	cfg := embed.Defaults()
+	cfg.Model.Dimensions = 4
+	cfg, service := setServiceModel(t, cfg, func(at *embed.ServiceModel) {
+		at.BaseURL, at.Name = s.URL, "test-embed"
+		at.BatchCharacters = 15
+	})
+	c, err := openai.New(cfg.GetStoredModel(), service)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Delay = 0
+
+	texts := []string{"first batch", "second batch"}
+	got, err := c.Embed(t.Context(), texts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("got %d vectors, want 2", len(got))
+	}
+}
+
+func TestBatchErrorFailsRun(t *testing.T) {
+	var (
+		mu    sync.Mutex
+		calls int
+	)
+	s := server(t, func(w http.ResponseWriter, r *http.Request) {
+		in := read(t, r)
+		mu.Lock()
+		calls++
+		mu.Unlock()
+		if in.Input[0] == "bad batch" {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, `{"error":{"message":"bad input"}}`)
+			return
+		}
+		answer(w, in, 4)
+	})
+
+	t.Setenv(embed.KeyEnvVar, "test-key")
+	cfg := embed.Defaults()
+	cfg.Model.Dimensions = 4
+	cfg, service := setServiceModel(t, cfg, func(at *embed.ServiceModel) {
+		at.BaseURL, at.Name = s.URL, "test-embed"
+		at.BatchCharacters = 10
+	})
+	c, err := openai.New(cfg.GetStoredModel(), service)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Delay = 0
+
+	_, err = c.Embed(t.Context(), []string{"good batch", "bad batch", "another batch"})
+	if !errors.Is(err, openai.ErrRejected) {
+		t.Fatalf("got error %v, want ErrRejected", err)
 	}
 }
 
