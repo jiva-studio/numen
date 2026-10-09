@@ -75,23 +75,22 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.Fingerprint) erro
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		rel, err := filepath.Rel(s.root, p)
-		if err != nil {
-			return err
-		}
-		rel = filepath.ToSlash(rel)
-
 		if d.IsDir() {
 			if p == s.root {
 				return nil
 			}
+			rel := s.getRelPath(p)
 			if s.isSkipped(rel, d.Name()) {
 				return fs.SkipDir
 			}
 			return nil
 		}
 		kind, ok := s.opts.kind(d.Name())
-		if !ok || ignored.MatchesPath(rel) {
+		if !ok {
+			return nil
+		}
+		rel := s.getRelPath(p)
+		if ignored.MatchesPath(rel) {
 			return nil
 		}
 		found, err := info(p, d)
@@ -113,6 +112,17 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.Fingerprint) erro
 			ModTime: found.ModTime(),
 		})
 	})
+}
+
+// getRelPath names a path under the vault root in slash form.
+func (s *VaultReader) getRelPath(p string) string {
+	if len(p) <= len(s.root) {
+		return ""
+	}
+	if strings.HasSuffix(s.root, string(filepath.Separator)) {
+		return filepath.ToSlash(p[len(s.root):])
+	}
+	return filepath.ToSlash(p[len(s.root)+1:])
 }
 
 // List reports what one folder holds, without descending. Every file is
@@ -211,7 +221,13 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	info, err := os.Stat(target)
+	f, err := openReadable(target)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +237,32 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if err := s.checkSize(path, info); err != nil {
 		return nil, err
 	}
-	return os.ReadFile(target)
+	return readAll(f, info.Size())
+}
+
+// readAll reads all bytes from r using size to preallocate the buffer.
+func readAll(r io.Reader, size int64) ([]byte, error) {
+	var capSize int
+	if int64(int(size)) == size && size > 0 {
+		capSize = int(size) + 1
+	}
+	if capSize < 512 {
+		capSize = 512
+	}
+	data := make([]byte, 0, capSize)
+	for {
+		if len(data) >= cap(data) {
+			data = append(data[:cap(data)], 0)
+		}
+		n, err := r.Read(data[len(data):cap(data)])
+		data = data[:len(data)+n]
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return data, nil
+			}
+			return nil, err
+		}
+	}
 }
 
 // checkSize holds a note to the most one is read whole at. A book and a recording
@@ -246,14 +287,20 @@ func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 	if err != nil {
 		return nil, err
 	}
-	info, err := os.Stat(target)
+	f, err := openReadable(target)
 	if err != nil {
 		return nil, err
 	}
-	if err := checkReadable(path, info); err != nil {
+	info, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
 		return nil, err
 	}
-	return os.Open(target)
+	if err := checkReadable(path, info); err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	return f, nil
 }
 
 // checkReadable holds a path to something the operating system hands bytes over for
