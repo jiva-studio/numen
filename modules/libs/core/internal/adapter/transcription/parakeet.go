@@ -119,7 +119,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		{&out.joiner, found.joiner, "joiner"},
 		{&out.segmenter, found.segmenter, "segmenter model"},
 	} {
-		session, err := opened.engine.NewSession(one.at, options)
+		session, err := onnxruntime.NewSession(opened.engine, one.at, options)
 		if err != nil {
 			out.Close()
 			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.at, err)
