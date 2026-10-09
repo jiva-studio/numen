@@ -97,6 +97,7 @@ type Search struct {
 	documents    port.TextExtractor
 	floor        float64
 	errorHandler port.ErrorHandler
+	cache        *QueryCache
 }
 
 // New is a search over one vault's index.
@@ -126,7 +127,14 @@ func New(passages port.PassageQueries, readers port.VaultReaders, derived port.D
 		documents:    documents,
 		floor:        floor,
 		errorHandler: errorHandler,
+		cache:        NewQueryCache(defaultCacheCapacity),
 	}
+}
+
+// WithCache returns a search that uses the query cache given.
+func (u Search) WithCache(cache *QueryCache) Search {
+	u.cache = cache
+	return u
 }
 
 // Execute runs the ways the parameters name, merges their rankings by rank,
@@ -136,6 +144,9 @@ func New(passages port.PassageQueries, readers port.VaultReaders, derived port.D
 // the section a chunk opens. A chunk that two of them place well outranks one
 // that any of them placed first alone.
 func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if p.Floor == 0 {
 		p.Floor = u.floor
 	}
@@ -152,6 +163,9 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 
 	if p.Lexical > 0 {
 		g.Go(func() error {
+			if err := gctx.Err(); err != nil {
+				return err
+			}
 			found, err := u.passages.Lexical(gctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
 			if err != nil {
 				return err
@@ -162,6 +176,9 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	if p.Named > 0 {
 		g.Go(func() error {
+			if err := gctx.Err(); err != nil {
+				return err
+			}
 			found, err := u.passages.GetNamedPassages(gctx, v.ID, query, p.Kinds, p.Named, p.IsGrowing)
 			if err != nil {
 				return err
@@ -172,6 +189,9 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	if p.Dense > 0 && u.embedder != nil {
 		g.Go(func() error {
+			if err := gctx.Err(); err != nil {
+				return err
+			}
 			found, err := u.findNearest(gctx, v, query, p)
 			switch {
 			case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
@@ -216,17 +236,36 @@ var errNoVector = errors.New("the query was not turned into a vector")
 
 // findNearest is the search asked by meaning, over a vector of the query itself.
 func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p Parameters) ([]domain.Passage, error) {
-	vectors, err := u.embedder.Embed(ctx, []string{query})
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", errNoVector, err)
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
-	if len(vectors) != 1 {
-		return nil, fmt.Errorf("%w: the embedder answered with %d vectors for one query", errNoVector, len(vectors))
+	recipe := u.embedder.Model().Recipe()
+	var vector []float32
+	if u.cache != nil {
+		if cached, ok := u.cache.Get(recipe, query); ok {
+			vector = cached
+		}
+	}
+	if vector == nil {
+		vectors, err := u.embedder.Embed(ctx, []string{query})
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", errNoVector, err)
+		}
+		if len(vectors) != 1 {
+			return nil, fmt.Errorf("%w: the embedder answered with %d vectors for one query", errNoVector, len(vectors))
+		}
+		vector = vectors[0]
+		if u.cache != nil {
+			u.cache.Put(recipe, query, vector)
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 	// A vector is kept under the recipe it was made by, which is everything
 	// about the model that decides what a vector is. Asked under anything else,
 	// no vector is found and this half answers nothing at all.
-	return u.passages.FindNearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Kinds, p.Dense, p.Floor)
+	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, p.Floor)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a
@@ -237,6 +276,9 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -259,6 +301,9 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		prose, held := read[p.Source]
 		if !held && !gone[p.Source] {
 			prose, err = extractText(ctx, of, p.Source, p.Producer, p.SourceHash)

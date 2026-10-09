@@ -258,6 +258,24 @@ func BenchmarkSearch(b *testing.B) {
 				}
 			})
 
+			b.Run("Dense/ONNX/Cold", func(b *testing.B) {
+				if c.onnxModel == nil {
+					b.Skip("ONNX model not available")
+				}
+				p := search.Parameters{Limit: 20, Lexical: 0, Dense: 20, Named: 0, Floor: -1.0}
+				b.ReportAllocs()
+				b.ResetTimer()
+				for b.Loop() {
+					res, err := c.searchONNX.WithCache(nil).Execute(ctx, c.vault, queryLexical, p)
+					if err != nil {
+						b.Fatal(err)
+					}
+					if len(res) == 0 {
+						b.Fatal("dense onnx cold search returned no passages")
+					}
+				}
+			})
+
 			b.Run("Typing/Hybrid", func(b *testing.B) {
 				p := search.GetTypingParameters(search.Hybrid, 20)
 				p.Floor = 0.1
@@ -359,6 +377,19 @@ func BenchmarkComponents(b *testing.B) {
 					_, err := c.onnxModel.Embed(ctx, []string{queryLexical})
 					if err != nil {
 						b.Fatal(err)
+					}
+				}
+			})
+
+			b.Run("QueryEmbedding/Cached", func(b *testing.B) {
+				cache := search.NewQueryCache(256)
+				cache.Put(c.recipe, queryLexical, c.queryVec)
+				b.ReportAllocs()
+				b.ResetTimer()
+				for b.Loop() {
+					vec, ok := cache.Get(c.recipe, queryLexical)
+					if !ok || len(vec) == 0 {
+						b.Fatal("cached query vector not found")
 					}
 				}
 			})
