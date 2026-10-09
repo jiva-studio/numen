@@ -283,3 +283,65 @@ func getNewestVersion(t *testing.T) int {
 	}
 	return available[len(available)-1].version
 }
+
+func TestMigrationToPrefixIndex(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	m1, err := files.ReadFile("migration/0001_index.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := apply(ctx, raw, migration{version: 1, name: "0001_index.sql", body: string(m1)}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := raw.ExecContext(ctx, `INSERT INTO vaults (id, identifier) VALUES (1, '01TEST')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := raw.ExecContext(ctx, `INSERT INTO sources (id, vault_id, path, kind, size, modified_at) VALUES (1, 1, 'notes/entropy.md', 'note', 100, 123456)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := raw.ExecContext(ctx, `INSERT INTO notes (source_id, vault_id, folded_name, title, type) VALUES (1, 1, 'entropy', 'Entropy', 'note')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := raw.ExecContext(ctx, `INSERT INTO headings (id, note_id, line, level, text) VALUES (1, 1, 2, 2, 'Thermodynamics')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := raw.ExecContext(ctx, `INSERT INTO titles_fts (rowid, text) VALUES (1, 'Entropy')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := raw.ExecContext(ctx, `INSERT INTO headings_fts (rowid, text) VALUES (1, 'Thermodynamics')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := raw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	db, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	matches, err := db.NoteQueries().Names(ctx, "01TEST", "thermo", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 || matches[0].Heading != "Thermodynamics" {
+		t.Fatalf("expected heading match, got %+v", matches)
+	}
+
+	var modTime int64
+	if err := db.read.QueryRowContext(ctx, `SELECT modified_at FROM sources WHERE id = 1`).Scan(&modTime); err != nil {
+		t.Fatal(err)
+	}
+	if modTime != 0 {
+		t.Errorf("modified_at = %d, want 0", modTime)
+	}
+}
