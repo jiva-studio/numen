@@ -210,6 +210,21 @@ func BenchmarkSearch(b *testing.B) {
 				}
 			})
 
+			b.Run("Passages", func(b *testing.B) {
+				p := search.Parameters{Limit: 20, Each: 5, Floor: 0.1}
+				b.ReportAllocs()
+				b.ResetTimer()
+				for b.Loop() {
+					res, err := c.searchMock.Execute(ctx, c.vault, queryLexical, p)
+					if err != nil {
+						b.Fatal(err)
+					}
+					if len(res) == 0 {
+						b.Fatal("passages search returned no passages")
+					}
+				}
+			})
+
 			b.Run("Lexical", func(b *testing.B) {
 				p := search.Parameters{Limit: 20, Lexical: 100, Dense: 0, Named: 0}
 				b.ReportAllocs()
