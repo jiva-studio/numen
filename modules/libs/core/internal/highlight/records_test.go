@@ -1,9 +1,11 @@
 package highlight_test
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
@@ -42,5 +44,33 @@ func TestATornTailGivesBackTheWholeRecords(t *testing.T) {
 	}
 	if left := highlight.Unpack(raw[:12]); len(left) != 0 {
 		t.Errorf("unpacked %d boxes from less than one record", len(left))
+	}
+}
+
+func BenchmarkPackBox(b *testing.B) {
+	for _, count := range []int{10, 100, 1000} {
+		b.Run(fmt.Sprintf("Boxes_%d", count), func(b *testing.B) {
+			boxes := make([]highlight.Box, count)
+			for i := range count {
+				boxes[i] = highlight.Box{
+					Page: i / 10,
+					ByteSpan: domain.ByteSpan{
+						From: i * 20,
+						To:   i*20 + 15,
+					},
+					Rect: highlight.Rect{
+						MinX: 0.1,
+						MinY: 0.2,
+						MaxX: 0.8,
+						MaxY: 0.9,
+					},
+				}
+			}
+			b.ResetTimer()
+			b.ReportAllocs()
+			for b.Loop() {
+				_ = highlight.Pack(boxes)
+			}
+		})
 	}
 }

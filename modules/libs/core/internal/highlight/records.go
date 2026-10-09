@@ -18,17 +18,16 @@ const record = 28
 // Pack is boxes as bytes: fixed-width records, so a reader wanting one page
 // seeks to it and reads no more.
 func Pack(boxes []Box) []byte {
-	raw := make([]byte, 0, len(boxes)*record)
-	var one [record]byte
-	for _, box := range boxes {
-		binary.LittleEndian.PutUint32(one[0:], uint32(int32(box.Page)))
-		binary.LittleEndian.PutUint32(one[4:], uint32(int32(box.From)))
-		binary.LittleEndian.PutUint32(one[8:], uint32(int32(box.Len())))
-		binary.LittleEndian.PutUint32(one[12:], math.Float32bits(box.MinX))
-		binary.LittleEndian.PutUint32(one[16:], math.Float32bits(box.MinY))
-		binary.LittleEndian.PutUint32(one[20:], math.Float32bits(box.MaxX))
-		binary.LittleEndian.PutUint32(one[24:], math.Float32bits(box.MaxY))
-		raw = append(raw, one[:]...)
+	raw := make([]byte, len(boxes)*record)
+	for i, box := range boxes {
+		offset := i * record
+		binary.LittleEndian.PutUint32(raw[offset:], uint32(int32(box.Page)))
+		binary.LittleEndian.PutUint32(raw[offset+4:], uint32(int32(box.From)))
+		binary.LittleEndian.PutUint32(raw[offset+8:], uint32(int32(box.Len())))
+		binary.LittleEndian.PutUint32(raw[offset+12:], math.Float32bits(box.MinX))
+		binary.LittleEndian.PutUint32(raw[offset+16:], math.Float32bits(box.MinY))
+		binary.LittleEndian.PutUint32(raw[offset+20:], math.Float32bits(box.MaxX))
+		binary.LittleEndian.PutUint32(raw[offset+24:], math.Float32bits(box.MaxY))
 	}
 	return raw
 }
