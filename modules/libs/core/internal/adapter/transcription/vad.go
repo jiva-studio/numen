@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"sync"
+	"unsafe"
 
+	"github.com/ebitengine/purego"
 	ort "github.com/getcharzp/onnxruntime_purego"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -18,6 +22,111 @@ const (
 	speechScore = "output"
 	speechAfter = "stateN"
 )
+
+var (
+	speechInputCStr = []byte("input\x00")
+	speechStateCStr = []byte("state\x00")
+	speechRateCStr  = []byte("sr\x00")
+	speechScoreCStr = []byte("output\x00")
+	speechAfterCStr = []byte("stateN\x00")
+)
+
+var (
+	runnerMu sync.Mutex
+	ortRun   func(
+		session, runOptions, inputNames, inputValues, inputCount, outputNames, outputCount, outputValues uintptr,
+	) uintptr
+	ortGetTensorMutableData func(value, out uintptr) uintptr
+	ortReleaseValue         func(value uintptr)
+	ortReleaseStatus        func(status uintptr)
+	ortGetErrorCode         func(status uintptr) int32
+	ortGetErrorMessage      func(status uintptr) unsafe.Pointer
+)
+
+type ortAPIBase struct {
+	GetAPI           uintptr
+	GetVersionString uintptr
+}
+
+type ortAPITable struct {
+	_                    uintptr
+	GetErrorCode         uintptr
+	GetErrorMessage      uintptr
+	_                    [6]uintptr
+	Run                  uintptr
+	_                    [41]uintptr
+	GetTensorMutableData uintptr
+	_                    [41]uintptr
+	ReleaseStatus        uintptr
+	_                    [2]uintptr
+	ReleaseValue         uintptr
+}
+
+func init() {
+	onnxruntime.Register(func(at string) {
+		_ = initRunner(at)
+	})
+}
+
+func initRunner(at string) error {
+	runnerMu.Lock()
+	defer runnerMu.Unlock()
+	if ortRun != nil {
+		return nil
+	}
+	if at == "" {
+		return fmt.Errorf("onnx runtime not loaded")
+	}
+
+	handle, err := onnxruntime.OpenLibrary(at)
+	if err != nil {
+		return err
+	}
+
+	var ortGetAPIBase func() *ortAPIBase
+	purego.RegisterLibFunc(&ortGetAPIBase, handle, "OrtGetApiBase")
+	if ortGetAPIBase == nil {
+		return fmt.Errorf("symbol OrtGetApiBase not found")
+	}
+
+	apiBase := ortGetAPIBase()
+	if apiBase == nil {
+		return fmt.Errorf("OrtGetApiBase returned nil")
+	}
+
+	var getAPI func(uint32) *ortAPITable
+	purego.RegisterFunc(&getAPI, apiBase.GetAPI)
+	api := getAPI(23)
+	if api == nil || api.Run == 0 {
+		return fmt.Errorf("failed to get OrtApi")
+	}
+
+	purego.RegisterFunc(&ortRun, api.Run)
+	purego.RegisterFunc(&ortGetTensorMutableData, api.GetTensorMutableData)
+	purego.RegisterFunc(&ortReleaseValue, api.ReleaseValue)
+	purego.RegisterFunc(&ortReleaseStatus, api.ReleaseStatus)
+	purego.RegisterFunc(&ortGetErrorCode, api.GetErrorCode)
+	purego.RegisterFunc(&ortGetErrorMessage, api.GetErrorMessage)
+	return nil
+}
+
+func checkStatus(status uintptr) error {
+	if status == 0 {
+		return nil
+	}
+	defer ortReleaseStatus(status)
+	code := ortGetErrorCode(status)
+	msgPtr := ortGetErrorMessage(status)
+	var msg string
+	if msgPtr != nil {
+		var b []byte
+		for p := (*byte)(msgPtr); *p != 0; p = (*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + 1)) {
+			b = append(b, *p)
+		}
+		msg = string(b)
+	}
+	return fmt.Errorf("onnxruntime error [code %d]: %s", code, msg)
+}
 
 // The model takes the recording in windows of this many samples, and carries
 // this much state from one to the next. At 16 kHz a window is 32 milliseconds,
@@ -111,27 +220,104 @@ func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float
 	}
 	defer rateTensor.Destroy()
 
-	inputs := map[string]*ort.Value{
-		speechInput: inputTensor,
-		speechState: stateTensor,
-		speechRate:  rateTensor,
-	}
-
 	count := (len(sound) + speechWindow - 1) / speechWindow
 	out := make([]float32, 0, count)
-	for i := 0; i < count; i++ {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		clear(window)
-		copy(window, sound[i*speechWindow:min((i+1)*speechWindow, len(sound))])
 
-		score, err := t.listen(inputs, state)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, score)
+	var sessionHandle uintptr
+	if t.segmenter != nil {
+		sessionHandle = *(*uintptr)(unsafe.Pointer(t.segmenter))
 	}
+
+	runnerMu.Lock()
+	runFn := ortRun
+	getMutableDataFn := ortGetTensorMutableData
+	releaseValFn := ortReleaseValue
+	runnerMu.Unlock()
+
+	if runFn != nil && sessionHandle != 0 {
+		inputNames := [3]unsafe.Pointer{
+			unsafe.Pointer(&speechInputCStr[0]),
+			unsafe.Pointer(&speechStateCStr[0]),
+			unsafe.Pointer(&speechRateCStr[0]),
+		}
+		outputNames := [2]unsafe.Pointer{
+			unsafe.Pointer(&speechScoreCStr[0]),
+			unsafe.Pointer(&speechAfterCStr[0]),
+		}
+		inputHandles := [3]uintptr{
+			*(*uintptr)(unsafe.Pointer(inputTensor)),
+			*(*uintptr)(unsafe.Pointer(stateTensor)),
+			*(*uintptr)(unsafe.Pointer(rateTensor)),
+		}
+		var outputHandles [2]uintptr
+
+		for i := 0; i < count; i++ {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			clear(window)
+			copy(window, sound[i*speechWindow:min((i+1)*speechWindow, len(sound))])
+
+			outputHandles[0] = 0
+			outputHandles[1] = 0
+
+			status := runFn(
+				sessionHandle,
+				0,
+				uintptr(unsafe.Pointer(&inputNames[0])),
+				uintptr(unsafe.Pointer(&inputHandles[0])),
+				3,
+				uintptr(unsafe.Pointer(&outputNames[0])),
+				2,
+				uintptr(unsafe.Pointer(&outputHandles[0])),
+			)
+			if err := checkStatus(status); err != nil {
+				return nil, err
+			}
+
+			var scorePtr, statePtr unsafe.Pointer
+			status = getMutableDataFn(outputHandles[0], uintptr(unsafe.Pointer(&scorePtr)))
+			if err := checkStatus(status); err != nil {
+				releaseValFn(outputHandles[0])
+				releaseValFn(outputHandles[1])
+				return nil, err
+			}
+			status = getMutableDataFn(outputHandles[1], uintptr(unsafe.Pointer(&statePtr)))
+			if err := checkStatus(status); err != nil {
+				releaseValFn(outputHandles[0])
+				releaseValFn(outputHandles[1])
+				return nil, err
+			}
+
+			score := *(*float32)(scorePtr)
+			copy(state, unsafe.Slice((*float32)(statePtr), speechMemory))
+
+			releaseValFn(outputHandles[0])
+			releaseValFn(outputHandles[1])
+
+			out = append(out, score)
+		}
+	} else {
+		inputs := map[string]*ort.Value{
+			speechInput: inputTensor,
+			speechState: stateTensor,
+			speechRate:  rateTensor,
+		}
+		for i := 0; i < count; i++ {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			clear(window)
+			copy(window, sound[i*speechWindow:min((i+1)*speechWindow, len(sound))])
+
+			score, err := t.listen(inputs, state)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, score)
+		}
+	}
+
 	runtime.KeepAlive(window)
 	runtime.KeepAlive(state)
 	runtime.KeepAlive(rate)
@@ -144,32 +330,45 @@ func (t *Transcriber) listen(inputs map[string]*ort.Value, dst []float32) (float
 	if err != nil {
 		return 0, err
 	}
-	defer func() {
-		for _, v := range out {
-			v.Destroy()
-		}
-	}()
 
 	said, ok := out[speechScore]
 	if !ok {
+		for _, v := range out {
+			v.Destroy()
+		}
 		return 0, fmt.Errorf("the speech model answered with %v and not %s", names(out), speechScore)
 	}
 	score, err := ort.GetTensorData[float32](said)
 	if err != nil {
+		for _, v := range out {
+			v.Destroy()
+		}
 		return 0, err
 	}
 	if len(score) == 0 {
+		for _, v := range out {
+			v.Destroy()
+		}
 		return 0, fmt.Errorf("the speech model answered with no score")
 	}
 	after, ok := out[speechAfter]
 	if !ok {
+		for _, v := range out {
+			v.Destroy()
+		}
 		return 0, fmt.Errorf("the speech model answered with %v and not %s", names(out), speechAfter)
 	}
 	raw, err := ort.GetTensorData[float32](after)
 	if err != nil {
+		for _, v := range out {
+			v.Destroy()
+		}
 		return 0, err
 	}
 	copy(dst, raw)
+	for _, v := range out {
+		v.Destroy()
+	}
 	return score[0], nil
 }
 
