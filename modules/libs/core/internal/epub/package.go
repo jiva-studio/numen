@@ -95,11 +95,27 @@ func readBounded(f *zip.File, most int64) ([]byte, bool) {
 	}
 	defer r.Close()
 	// The header is a claim. This is the answer to it being false.
+	if f.UncompressedSize64 > 0 {
+		return readDeclared(r, int(f.UncompressedSize64))
+	}
 	raw, err := io.ReadAll(io.LimitReader(r, most+1))
 	if err != nil {
 		return nil, false
 	}
 	if int64(len(raw)) > most {
+		return nil, false
+	}
+	return raw, true
+}
+
+// readDeclared is exactly size bytes of r, and not-ok when r holds more or fewer.
+func readDeclared(r io.Reader, size int) ([]byte, bool) {
+	raw := make([]byte, size)
+	if _, err := io.ReadFull(r, raw); err != nil {
+		return nil, false
+	}
+	var extra [1]byte
+	if n, err := io.ReadFull(r, extra[:]); n != 0 || err != io.EOF {
 		return nil, false
 	}
 	return raw, true
