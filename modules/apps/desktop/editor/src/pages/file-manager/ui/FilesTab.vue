@@ -38,17 +38,17 @@ const renamingPath = computed({
 
 /** What the menu offers: on the row it was asked for on, or off every row. */
 const items = computed(() => {
-  const asked = props.state.menu.value
-  if (!asked || asked.path === null) return itemsFor(null, false, props.state.canRun)
+  const menuTarget = props.state.menu.value
+  if (!menuTarget || menuTarget.path === null) return itemsFor(null, false, props.state.canRun)
 
-  const entry = props.state.list.getEntryAt(asked.path)
+  const entry = props.state.list.getEntryAt(menuTarget.path)
   const on = {
     source: entry?.kind ?? 'other',
     isFolder: entry?.isFolder ?? false,
     format: entry?.path.endsWith('.epub') ? ('epub' as const) : ('pdf' as const),
-    made: props.state.getArtifactStates?.(asked.path),
+    made: props.state.getArtifactStates?.(menuTarget.path),
   }
-  return itemsFor(on, props.state.getOverPaths(asked.path).length > 1, props.state.canRun)
+  return itemsFor(on, props.state.getOverPaths(menuTarget.path).length > 1, props.state.canRun)
 })
 
 /* --------------------------------- Hooks ---------------------------------- */

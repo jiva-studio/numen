@@ -137,13 +137,13 @@ func getTextAround(text string, spans []domain.UnitSpan, from int) (string, []do
 	first, last := getOpeningRune(units, opens), getClosingRune(units, to)
 	shift := units[first]
 
-	var kept []domain.UnitSpan
+	var clippedSpans []domain.UnitSpan
 	for _, span := range spans {
 		clipped := domain.UnitSpan{From: max(span.From, units[first]), To: min(span.To, units[last])}
 		if clipped.From >= clipped.To {
 			continue
 		}
-		kept = append(kept, domain.UnitSpan{From: clipped.From - shift, To: clipped.To - shift})
+		clippedSpans = append(clippedSpans, domain.UnitSpan{From: clipped.From - shift, To: clipped.To - shift})
 	}
 
 	cut := string(runes[first:last])
@@ -151,14 +151,14 @@ func getTextAround(text string, spans []domain.UnitSpan, from int) (string, []do
 		// The mark for what was left off stands before the text, so everything
 		// in it begins one unit further along.
 		cut = "…" + cut
-		for i := range kept {
-			kept[i] = domain.UnitSpan{From: kept[i].From + 1, To: kept[i].To + 1}
+		for i := range clippedSpans {
+			clippedSpans[i] = domain.UnitSpan{From: clippedSpans[i].From + 1, To: clippedSpans[i].To + 1}
 		}
 	}
 	if last < len(runes) {
 		cut += "…"
 	}
-	return cut, kept
+	return cut, clippedSpans
 }
 
 // getRunes is the text one rune at a time, and where each of those runes begins

@@ -12,8 +12,8 @@ export const deserializeVaultDeck = (
   read: VaultDeck,
   generateBufferId: IdMaker = generateId,
 ): BufferDeck => {
-  const held = new Map<string, number>()
-  for (const card of read.cards) held.set(card.mark, (held.get(card.mark) ?? 0) + 1)
+  const markCounts = new Map<string, number>()
+  for (const card of read.cards) markCounts.set(card.mark, (markCounts.get(card.mark) ?? 0) + 1)
   const sections = read.sections.map((section) => ({
     id: generateBufferId(),
     name: section.name,
@@ -22,7 +22,7 @@ export const deserializeVaultDeck = (
   return {
     preamble: read.preamble,
     cards: read.cards.map((card) => ({
-      id: card.mark && held.get(card.mark) === 1 ? card.mark : generateBufferId(),
+      id: card.mark && markCounts.get(card.mark) === 1 ? card.mark : generateBufferId(),
       mark: card.mark,
       section: card.sectionIndex === null ? null : (sections[card.sectionIndex]?.id ?? null),
       heading: card.heading,

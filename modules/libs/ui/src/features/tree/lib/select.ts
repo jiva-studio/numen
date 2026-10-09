@@ -65,10 +65,10 @@ export function resolveSelection(
   }
 
   if (press.isJoining) {
-    const held = new Set(selection)
-    if (held.has(row)) held.delete(row)
-    else held.add(row)
-    return { rows: inOrder(visibleRows, held), anchor: row }
+    const selectionSet = new Set(selection)
+    if (selectionSet.has(row)) selectionSet.delete(row)
+    else selectionSet.add(row)
+    return { rows: inOrder(visibleRows, selectionSet), anchor: row }
   }
 
   return { rows: [row], anchor: row }

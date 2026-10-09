@@ -29,13 +29,13 @@ export const agentPort = (agent: AgentClient): AgentPort => ({
           yield { kind: 'said', text: step.step.value }
           break
         case 'toolCall': {
-          const said = step.step.value
+          const toolCall = step.step.value
           yield {
             kind: 'toolCall',
-            tool: said.tool,
-            subject: said.about,
-            written: said.written,
-            ...(said.path ? { place: { path: said.path, span: spanOf(said.span) } } : {}),
+            tool: toolCall.tool,
+            subject: toolCall.about,
+            written: toolCall.written,
+            ...(toolCall.path ? { place: { path: toolCall.path, span: spanOf(toolCall.span) } } : {}),
           }
           break
         }

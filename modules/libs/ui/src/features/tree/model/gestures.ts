@@ -87,16 +87,16 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     ;(event.currentTarget as HTMLElement).focus()
 
     const how: Press = { isJoining: event.ctrlKey || event.metaKey, isExtending: event.shiftKey }
-    selection.wasSaid.value = how.isJoining || how.isExtending || !selection.picked.value.has(row)
-    const taken = selection.wasSaid.value ? selection.selectRow(row, how) : getSelected()
+    selection.hasApplied.value = how.isJoining || how.isExtending || !selection.picked.value.has(row)
+    const selectedRows = selection.hasApplied.value ? selection.selectRow(row, how) : getSelected()
 
-    drag.lift(getDraggedRows(taken, row), event)
+    drag.lift(getDraggedRows(selectedRows, row), event)
   }
 
   function onRowClick(row: ShownRow): void {
-    const spoken = selection.wasSaid.value
-    selection.wasSaid.value = false
-    if (drag.hasMoved.value || spoken) return
+    const hasApplied = selection.hasApplied.value
+    selection.hasApplied.value = false
+    if (drag.hasMoved.value || hasApplied) return
     selection.selectRow(row.id, PLAIN)
   }
 

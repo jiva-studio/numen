@@ -47,14 +47,14 @@ func (s Settings) say(what string, done, total int64) {
 // caller that gave up on its own is not held to somebody else's.
 func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	for {
-		held.mu.Lock()
-		if held.engine != nil {
-			engine, at := held.engine, held.at
-			held.mu.Unlock()
+		runtimeState.mu.Lock()
+		if runtimeState.engine != nil {
+			engine, at := runtimeState.engine, runtimeState.at
+			runtimeState.mu.Unlock()
 			return engine, at, nil
 		}
-		if stand := held.opening; stand != nil {
-			held.mu.Unlock()
+		if stand := runtimeState.opening; stand != nil {
+			runtimeState.mu.Unlock()
 			select {
 			case <-stand:
 				// Whoever was opening one is done. There is an engine to hand
@@ -65,17 +65,17 @@ func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 			}
 		}
 		mine := make(chan struct{})
-		held.opening = mine
-		held.mu.Unlock()
+		runtimeState.opening = mine
+		runtimeState.mu.Unlock()
 
 		engine, at, err := open(ctx, s)
 
-		held.mu.Lock()
+		runtimeState.mu.Lock()
 		if err == nil {
 			keep(engine, at)
 		}
-		held.opening = nil
-		held.mu.Unlock()
+		runtimeState.opening = nil
+		runtimeState.mu.Unlock()
 		close(mine)
 		return engine, at, err
 	}
@@ -118,11 +118,11 @@ func open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	return engine, at, nil
 }
 
-// held is the runtime this process runs, and where it came from.
+// runtimeState is the runtime this process runs, and where it came from.
 //
 // One for the life of the process. The lock is over these fields and nothing
 // else; what one caller is doing to fill them, the rest wait on through opening.
-var held struct {
+var runtimeState struct {
 	mu      sync.Mutex
 	engine  *ort.Engine
 	at      string
@@ -138,9 +138,9 @@ var held struct {
 // that tensor's life, so one made on a library's first use moves what everything
 // already running was building its tensors through.
 func Register(also func(at string)) {
-	held.mu.Lock()
-	defer held.mu.Unlock()
-	held.also = append(held.also, also)
+	runtimeState.mu.Lock()
+	defer runtimeState.mu.Unlock()
+	runtimeState.also = append(runtimeState.also, also)
 }
 
 // here says whether this process has its runtime. It is read without the lock,
@@ -150,8 +150,8 @@ var here atomic.Bool
 // keep is the runtime this process has settled on, and the one moment every
 // library that makes an engine of its own makes it. The lock is the caller's.
 func keep(engine *ort.Engine, at string) {
-	held.engine, held.at = engine, at
-	for _, also := range held.also {
+	runtimeState.engine, runtimeState.at = engine, at
+	for _, also := range runtimeState.also {
 		also(at)
 	}
 	here.Store(true)

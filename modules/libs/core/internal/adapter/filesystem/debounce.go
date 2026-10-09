@@ -31,7 +31,7 @@ func debounce(
 	// goroutine may never do.
 	var queued []string
 	asked := make(chan string)
-	walked := make(chan found)
+	walked := make(chan walkResult)
 
 	going := make(chan struct{})
 	var walking sync.WaitGroup
@@ -141,8 +141,8 @@ func debounce(
 	}
 }
 
-// found is what a walk of one folder new to the watch came to.
-type found struct {
+// walkResult is what a walk of one folder new to the watch came to.
+type walkResult struct {
 	paths        []string
 	isWholeVault bool
 }
@@ -155,7 +155,7 @@ func walks(
 	shape *folders,
 	going <-chan struct{},
 	asked <-chan string,
-	walked chan<- found,
+	walked chan<- walkResult,
 ) {
 	for {
 		select {
@@ -170,7 +170,7 @@ func walks(
 				return
 			case <-going:
 				return
-			case walked <- found{paths: paths, isWholeVault: whole}:
+			case walked <- walkResult{paths: paths, isWholeVault: whole}:
 			}
 		}
 	}

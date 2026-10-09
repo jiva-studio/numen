@@ -77,9 +77,9 @@ func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
 	optLevelMu.Unlock()
 
 	if fn == nil {
-		held.mu.Lock()
-		at := held.at
-		held.mu.Unlock()
+		runtimeState.mu.Lock()
+		at := runtimeState.at
+		runtimeState.mu.Unlock()
 
 		if at == "" {
 			return fmt.Errorf("onnx runtime not loaded")

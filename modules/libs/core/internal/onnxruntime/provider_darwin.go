@@ -43,10 +43,10 @@ func applyProvider(opts *ort.SessionOptions, requested Provider) (Provider, erro
 }
 
 func enableCoreML(opts *ort.SessionOptions) error {
-	held.mu.Lock()
-	engine := held.engine
-	at := held.at
-	held.mu.Unlock()
+	runtimeState.mu.Lock()
+	engine := runtimeState.engine
+	at := runtimeState.at
+	runtimeState.mu.Unlock()
 
 	if engine == nil || at == "" {
 		return fmt.Errorf("onnx runtime not loaded")

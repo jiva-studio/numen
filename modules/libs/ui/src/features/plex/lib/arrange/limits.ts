@@ -27,13 +27,13 @@ export function limitsFor(
   options: PlexOptions,
   counts: Readonly<Record<PlexRelatedSeat, number>>,
 ): Limits {
-  const asked: RoleLimits = { perLine: options.maxPerLine, lines: options.maxLines }
+  const roleLimits: RoleLimits = { perLine: options.maxPerLine, lines: options.maxLines }
   const { viewport } = options
   if (!viewport)
     return getSeatLimits(
       options,
-      () => asked,
-      () => asked,
+      () => roleLimits,
+      () => roleLimits,
     )
 
   const halfWidth = viewport.width / 2 - options.margin

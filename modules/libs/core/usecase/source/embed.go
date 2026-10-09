@@ -314,23 +314,23 @@ func (u Embed) prepareBatch(
 		askingMap: make([]int, len(texts)),
 		reading:   owing[len(owing)-1].Source,
 	}
-	var seen map[string]int
+	var deduplicated map[string]int
 	if len(texts) > 1 {
-		seen = make(map[string]int, len(texts))
+		deduplicated = make(map[string]int, len(texts))
 	}
 	for i := range texts {
-		value, held := kept[hex.EncodeToString(hashes[i])]
-		if !held || len(hashes[i]) == 0 {
+		value, exists := kept[hex.EncodeToString(hashes[i])]
+		if !exists || len(hashes[i]) == 0 {
 			key := owing[i].ChunkHash
 			if key == "" {
 				key = texts[i]
 			}
-			if seen != nil {
-				if pos, exists := seen[key]; exists {
+			if deduplicated != nil {
+				if pos, ok := deduplicated[key]; ok {
 					prep.askingMap[i] = pos
 					continue
 				}
-				seen[key] = len(prep.asking)
+				deduplicated[key] = len(prep.asking)
 			}
 			prep.askingMap[i] = len(prep.asking)
 			prep.asking = append(prep.asking, texts[i])

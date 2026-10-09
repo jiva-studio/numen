@@ -156,7 +156,7 @@ func (f *folders) getConcernedPaths(absolute string) (paths []string, whole bool
 // shape short of a folder cannot tell a folder that has gone from a file that
 // has — the index would go on answering with files that are not there.
 func (f *folders) getPathsUnder(ctx context.Context, absolute string) (paths []string, whole bool) {
-	var held []string
+	var discovered []string
 	seen, over, short := 0, false, false
 	_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
 		if ctx.Err() != nil {
@@ -185,12 +185,12 @@ func (f *folders) getPathsUnder(ctx context.Context, absolute string) (paths []s
 			return nil
 		}
 		if _, holds := f.reader.getKind(path); holds {
-			held = append(held, path)
+			discovered = append(discovered, path)
 		}
 		return nil
 	})
 	if over || short {
 		return nil, true
 	}
-	return held, false
+	return discovered, false
 }

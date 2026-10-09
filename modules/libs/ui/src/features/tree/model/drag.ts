@@ -86,10 +86,10 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
   const hasMoved = computed(() => dragging.value?.hasMoved === true)
 
   const label = computed<DragLabel | null>(() => {
-    const held = dragging.value
+    const currentDrag = dragging.value
     const where = position.value
-    if (!held?.hasMoved || !where) return null
-    return dragLabel(options.getShownRows(), held.item, where, options.getCountWords())
+    if (!currentDrag?.hasMoved || !where) return null
+    return dragLabel(options.getShownRows(), currentDrag.item, where, options.getCountWords())
   })
 
   /** Where the pointer is, read off the drawing: the rows are one height each. */

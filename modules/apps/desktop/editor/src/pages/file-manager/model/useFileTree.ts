@@ -32,23 +32,23 @@ export const getParentFolders = (path: string): readonly string[] => {
  * Generates a name not taken in the folder.
  */
 export const generateUniqueName = (names: readonly string[], word: string): string => {
-  const held = new Set(names)
-  if (!held.has(word)) return word
+  const existingNames = new Set(names)
+  if (!existingNames.has(word)) return word
   for (let count = 2; ; count++) {
     const name = `${word} ${count}`
-    if (!held.has(name)) return name
+    if (!existingNames.has(name)) return name
   }
 }
 
 export function useFileTree(core: Folders): FileTree {
-  const held = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
+  const entriesByFolder = shallowRef<ReadonlyMap<string, readonly Entry[]>>(new Map())
   const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
   const selectedPaths = shallowRef<readonly string[]>([])
   const errorMessage = ref('')
 
   let isAlive = true
 
-  const getEntriesInFolder = (folder: string): readonly Entry[] => held.value.get(folder) ?? []
+  const getEntriesInFolder = (folder: string): readonly Entry[] => entriesByFolder.value.get(folder) ?? []
 
   const isFolderOpen = (folder: string): boolean => open.value.has(folder)
 
@@ -68,7 +68,7 @@ export function useFileTree(core: Folders): FileTree {
     try {
       const entries = await core.list(folder)
       if (!isAlive) return
-      held.value = new Map(held.value).set(folder, entries)
+      entriesByFolder.value = new Map(entriesByFolder.value).set(folder, entries)
       errorMessage.value = ''
     } catch (err) {
       if (!isAlive) return
@@ -139,7 +139,7 @@ export function useFileTree(core: Folders): FileTree {
 
   const close = () => {
     isAlive = false
-    held.value = new Map()
+    entriesByFolder.value = new Map()
     open.value = new Set([ROOT])
   }
 

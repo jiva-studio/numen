@@ -47,16 +47,16 @@ export function useHangingSetting(core: HangingDeps, words: HangingWords, write:
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
-    let held: HangingSettings
+    let settings: HangingSettings
     try {
-      held = await core.getHangingSettings()
+      settings = await core.getHangingSettings()
     } catch {
       // A vault that cannot be asked leaves both settings where they stand.
       return
     }
-    isHanging.value = held.isHanging
-    parts.value = held.parts
-    ends.value = { least: held.least, most: held.most }
+    isHanging.value = settings.isHanging
+    parts.value = settings.parts
+    ends.value = { least: settings.least, most: settings.most }
   }
 
   /** One row of a list, saying whether it is the value in force. */

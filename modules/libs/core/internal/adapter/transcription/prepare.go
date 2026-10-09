@@ -14,8 +14,8 @@ func Ready(cfg Config) bool {
 	if !onnxruntime.IsHere(cfg.settings()) {
 		return false
 	}
-	var found paths
-	for _, one := range getWantedFiles(cfg, &found) {
+	var resolved paths
+	for _, one := range getWantedFiles(cfg, &resolved) {
 		if _, err := model(context.Background(), cfg, one.path, one.name, one.kind); err != nil {
 			return false
 		}

@@ -32,20 +32,20 @@ type published struct {
 // A cue ends where the next begins, so that a moment on the player belongs to
 // one stretch of speech.
 func parseCues(raw []byte) ([]transcript.Cue, error) {
-	var held published
-	if err := json.Unmarshal(raw, &held); err != nil {
+	var captions published
+	if err := json.Unmarshal(raw, &captions); err != nil {
 		return nil, fmt.Errorf("what the captions said: %w", err)
 	}
-	cues := make([]transcript.Cue, 0, len(held.Events))
-	for _, event := range held.Events {
+	cues := make([]transcript.Cue, 0, len(captions.Events))
+	for _, event := range captions.Events {
 		if event.Appended != 0 {
 			continue
 		}
-		said := &strings.Builder{}
+		textBuilder := &strings.Builder{}
 		for _, segment := range event.Segments {
-			said.WriteString(segment.Text)
+			textBuilder.WriteString(segment.Text)
 		}
-		text := strings.Join(strings.Fields(said.String()), " ")
+		text := strings.Join(strings.Fields(textBuilder.String()), " ")
 		if text == "" {
 			continue
 		}

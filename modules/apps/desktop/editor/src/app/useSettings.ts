@@ -34,20 +34,20 @@ export interface SettingsDeps {
   core: SettingsPort
   words: Words
   log: MessageLog
-  held: ReturnType<typeof useWindowTabs>
+  windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
 }
 
-export function useSettings({ core, words, log, held, onSizeChanged }: SettingsDeps) {
+export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
   const dayBegins = createReviewSetting(core, words, log.getWriter('reviewed'))
   const hungParts = useHangingSetting(core, words, log.getWriter('hanging'))
   const dressed = createWindowAppearance(themes, words, log.getWriter('worn'))
-  const oneName = syncSetting(core, words, log.getWriter('named'))
+  const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
 
-  const file = createTextEditorTabKind(held.handle, core, () => void rest.start())
+  const file = createTextEditorTabKind(windowTabs.handle, core, () => void rest.start())
 
-  const configured = useSettingsTab(held.handle, {
+  const configured = useSettingsTab(windowTabs.handle, {
     themes: dressed.list,
     applied: dressed.applied,
     mode: dressed.mode,
@@ -56,8 +56,8 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     bounds: dressed.bounds,
     choose: (item) => void dressed.chooseItem(item),
     isSyncing: computed({
-      get: () => oneName.kept.value,
-      set: (on) => void oneName.choose(on ? ON : OFF),
+      get: () => sync.isEnabled.value,
+      set: (on) => void sync.choose(on ? ON : OFF),
     }),
     isHanging: computed({
       get: () => hungParts.isHanging.value,
@@ -84,7 +84,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
       if (command === MODE) return dressed.getModeGroups()
       if (command === INTERFACE_SCALE || command === TEXT_SCALE)
         return dressed.getSizeGroups(command, typed)
-      if (command === SYNCING) return oneName.getSyncingGroups()
+      if (command === SYNCING) return sync.getSyncingGroups()
       if (command === HANGING) return hungParts.getHangingGroups()
       if (command === PARTS) return hungParts.getPartsGroups()
       return []
@@ -99,7 +99,7 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
   const start = async () => {
     await dayBegins.start()
     void dressed.start()
-    void oneName.start()
+    void sync.start()
     void hungParts.start()
     void rest.start()
   }
@@ -112,7 +112,8 @@ export function useSettings({ core, words, log, held, onSizeChanged }: SettingsD
     dayBegins,
     hungParts,
     dressed,
-    oneName,
+    sync,
+    oneName: sync,
     rest,
     file,
     configured,

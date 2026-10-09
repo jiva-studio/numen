@@ -52,8 +52,8 @@ func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
 
 	// What the token says, read back. A span that does not say what the node
 	// said is the wrong span, and nothing is written over.
-	var said string
-	if err := yaml.Unmarshal(d.front[start:end], &said); err != nil || said != node.Value {
+	var parsed string
+	if err := yaml.Unmarshal(d.front[start:end], &parsed); err != nil || parsed != node.Value {
 		return 0, 0, false
 	}
 	return start, end, true
@@ -119,8 +119,8 @@ func scalarLike(value string, style yaml.Style) (string, error) {
 	}
 	written := strings.TrimRight(out.String(), "\n")
 
-	var said string
-	if err := yaml.Unmarshal([]byte(written), &said); err != nil || said != value {
+	var parsed string
+	if err := yaml.Unmarshal([]byte(written), &parsed); err != nil || parsed != value {
 		return scalar(value)
 	}
 	return written, nil

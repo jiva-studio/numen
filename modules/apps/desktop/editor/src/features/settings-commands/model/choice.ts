@@ -51,8 +51,8 @@ export function useAppearanceChoice(on: ChoiceDeps) {
 
   /** The sizes the window is drawn at now: the one being held, over the settings'. */
   const sized = computed<Sizes>(() => {
-    const held = holding.value
-    return held ? onto(settings.value, held.which, held.size) : settings.value
+    const scaleChoice = holding.value
+    return scaleChoice ? onto(settings.value, scaleChoice.which, scaleChoice.size) : settings.value
   })
 
   /** Whether the theme worn declares light and dark itself. */
@@ -109,12 +109,12 @@ export function useAppearanceChoice(on: ChoiceDeps) {
     const size = sizeOf(item)
     if (size) return await chooseSize(size)
     const was = { applied: applied.value, mode: mode.value }
-    const chosen = modeOf(item)
-    if (!chosen && !list.value.some((one) => one.name === item)) return
-    if (chosen && isPinned.value) return
+    const targetMode = modeOf(item)
+    if (!targetMode && !list.value.some((one) => one.name === item)) return
+    if (targetMode && isPinned.value) return
     write('')
-    applied.value = chosen ? was.applied : item
-    mode.value = chosen ?? was.mode
+    applied.value = targetMode ? was.applied : item
+    mode.value = targetMode ?? was.mode
     stood.value = ''
     await applyAppearance()
 

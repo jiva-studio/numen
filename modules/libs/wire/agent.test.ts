@@ -23,11 +23,11 @@ const call = (place?: { path: string; span: { from: number; to: number } }): Ask
 
 /** The service, saying what a test told it to and keeping what it was asked. */
 const service = (says: AskAgentResponse[]) => {
-  const asked: { request: unknown; signal: AbortSignal }[] = []
+  const requests: { request: unknown; signal: AbortSignal }[] = []
   const over: string[] = []
   const agent: AgentClient = {
     async *askAgent(request, options) {
-      asked.push({ request, signal: options.signal })
+      requests.push({ request, signal: options.signal })
       for (const step of says) yield step
     },
     async finishConversation(request) {
@@ -35,7 +35,7 @@ const service = (says: AskAgentResponse[]) => {
       return {}
     },
   }
-  return { agent, asked, over }
+  return { agent, requests, over }
 }
 
 /** Everything the port yields for what the service said. */
@@ -51,7 +51,7 @@ const steps = async (says: AskAgentResponse[]): Promise<AgentStep[]> => {
 
 describe('agentPort', () => {
   it('hands the question, the focus and the conversation to the service', async () => {
-    const { agent, asked } = service([])
+    const { agent, requests } = service([])
     const abort = new AbortController()
     for await (const _ of agentPort(agent).ask(
       'why?',
@@ -61,7 +61,7 @@ describe('agentPort', () => {
     )) {
       // The port is read to the end; what it yields is checked below.
     }
-    expect(asked).toEqual([
+    expect(requests).toEqual([
       {
         request: { asked: 'why?', focus: 'notes/Leaf mould.md', conversation: 'one' },
         signal: abort.signal,
@@ -70,8 +70,8 @@ describe('agentPort', () => {
   })
 
   it('reads what was said as text', async () => {
-    const said = create(AskAgentResponseSchema, { step: { case: 'said', value: 'Leaves.' } })
-    expect(await steps([said])).toEqual([{ kind: 'said', text: 'Leaves.' }])
+    const response = create(AskAgentResponseSchema, { step: { case: 'said', value: 'Leaves.' } })
+    expect(await steps([response])).toEqual([{ kind: 'said', text: 'Leaves.' }])
   })
 
   it('carries the place a call names', async () => {

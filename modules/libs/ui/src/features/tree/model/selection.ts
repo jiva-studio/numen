@@ -17,9 +17,9 @@ import {
 export interface RowSelectionState {
   /** The rows selected, for asking one row at a time. */
   readonly picked: ComputedRef<ReadonlySet<RowId>>
-  /** Whether the press being made has said what the selection is already. */
-  readonly wasSaid: Ref<boolean>
-  /** What a press on a row makes the selection, said and handed back. */
+  /** Whether the current press has already applied the selection. */
+  readonly hasApplied: Ref<boolean>
+  /** Updates the selection for a pressed row and returns the new selection. */
   readonly selectRow: (row: RowId, how: Press) => readonly RowId[]
   /** Every drawn row selected. */
   readonly selectEveryRow: () => readonly RowId[]
@@ -28,7 +28,7 @@ export interface RowSelectionState {
 export function useRowSelection(
   getVisibleRows: () => readonly ShownRow[],
   getSelection: () => readonly RowId[],
-  /** The rows the selection now stands on, said only where they have changed. */
+  /** The callback invoked when selected rows change. */
   select: (rows: readonly RowId[]) => void,
 ): RowSelectionState {
   const picked = computed(() => new Set(getSelection()))
@@ -36,9 +36,9 @@ export function useRowSelection(
   /** The row a reach is measured from, where a plain or joining press last landed. */
   const anchor = shallowRef<RowId | null>(null)
 
-  const wasSaid = shallowRef(false)
+  const hasApplied = shallowRef(false)
 
-  /** A selection a press came to, said, and the anchor put where it names. */
+  /** Applies a resolved row selection and updates the anchor. */
   const apply = (selection: RowSelection): readonly RowId[] => {
     anchor.value = selection.anchor
     if (!isSameSelection(selection.rows, getSelection())) select(selection.rows)
@@ -50,5 +50,5 @@ export function useRowSelection(
 
   const selectEveryRow = (): readonly RowId[] => apply(everyRow(getVisibleRows(), anchor.value))
 
-  return { picked, wasSaid, selectRow, selectEveryRow }
+  return { picked, hasApplied, selectRow, selectEveryRow }
 }

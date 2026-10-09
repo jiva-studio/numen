@@ -134,10 +134,10 @@ function settle(
   )
   if (!longest) return null
 
-  const held = getSpanLength(longest) * metrics.arc
-  if (held < LEAST * metrics.extent) return null
+  const availableArcLength = getSpanLength(longest) * metrics.arc
+  if (availableArcLength < LEAST * metrics.extent) return null
 
-  const cut = cutToFit(words, held, width)
+  const cut = cutToFit(words, availableArcLength, width)
   return { words: cut, at: (longest.from + longest.to) / 2, extent: width(cut) }
 }
 

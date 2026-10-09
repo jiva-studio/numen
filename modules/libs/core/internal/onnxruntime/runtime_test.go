@@ -72,15 +72,15 @@ func TestTheRuntimeIsOpenedOnceForTheProcess(t *testing.T) {
 // opened one settles nothing here.
 func halfOpen(t *testing.T) func() {
 	t.Helper()
-	held.mu.Lock()
-	engine, at := held.engine, held.at
+	runtimeState.mu.Lock()
+	engine, at := runtimeState.engine, runtimeState.at
 	stand := make(chan struct{})
-	held.engine, held.at, held.opening = nil, "", stand
-	held.mu.Unlock()
+	runtimeState.engine, runtimeState.at, runtimeState.opening = nil, "", stand
+	runtimeState.mu.Unlock()
 	return func() {
-		held.mu.Lock()
-		held.engine, held.at, held.opening = engine, at, nil
-		held.mu.Unlock()
+		runtimeState.mu.Lock()
+		runtimeState.engine, runtimeState.at, runtimeState.opening = engine, at, nil
+		runtimeState.mu.Unlock()
 		close(stand)
 	}
 }

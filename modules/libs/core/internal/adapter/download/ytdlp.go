@@ -63,11 +63,11 @@ func version(ctx context.Context, tool program) string {
 
 // Metadata is what the site says about the video, taking none of it.
 func (v *ytDLP) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
-	said, err := run(ctx, v.command, nil, "--dump-single-json", "--no-playlist", string(at))
+	output, err := run(ctx, v.command, nil, "--dump-single-json", "--no-playlist", string(at))
 	if err != nil {
 		return port.Metadata{}, err
 	}
-	var held struct {
+	var metadata struct {
 		Title             string                `json:"title"`
 		Language          string                `json:"language"`
 		Duration          float64               `json:"duration"`
@@ -76,16 +76,16 @@ func (v *ytDLP) Metadata(ctx context.Context, at domain.URL) (port.Metadata, err
 		Subtitles         map[string][]struct{} `json:"subtitles"`
 		AutomaticCaptions map[string][]struct{} `json:"automatic_captions"`
 	}
-	if err := json.Unmarshal(said, &held); err != nil {
-		return port.Metadata{}, fmt.Errorf("what yt-dlp said about %s: %w", string(at), err)
+	if err := json.Unmarshal(output, &metadata); err != nil {
+		return port.Metadata{}, fmt.Errorf("what yt-dlp output about %s: %w", string(at), err)
 	}
 	return port.Metadata{
-		Title:       strings.TrimSpace(held.Title),
-		Length:      int(held.Duration * 1000),
-		Language:    held.Language,
-		Bytes:       max(held.Filesize, held.Approximate),
-		Captions:    languages(held.Subtitles),
-		IsAutomatic: languages(held.AutomaticCaptions),
+		Title:       strings.TrimSpace(metadata.Title),
+		Length:      int(metadata.Duration * 1000),
+		Language:    metadata.Language,
+		Bytes:       max(metadata.Filesize, metadata.Approximate),
+		Captions:    languages(metadata.Subtitles),
+		IsAutomatic: languages(metadata.AutomaticCaptions),
 	}, nil
 }
 
@@ -188,25 +188,25 @@ func (v *ytDLP) Download(
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
 	}
 	taking := v.command.buildCommand(ctx, arguments...)
-	var said bytes.Buffer
-	taking.Stdout, taking.Stderr = &said, &said
+	var logBuffer bytes.Buffer
+	taking.Stdout, taking.Stderr = &logBuffer, &logBuffer
 	if err := taking.Run(); err != nil {
 		if stopped := ctx.Err(); stopped != nil {
 			return port.Copy{}, stopped
 		}
-		return port.Copy{}, fmt.Errorf("%w: %s", err, lastLine(said.String()))
+		return port.Copy{}, fmt.Errorf("%w: %s", err, lastLine(logBuffer.String()))
 	}
 
 	// What the container ended up being is read off the folder: codecs that mp4
 	// cannot hold are written to a container that can, and the name says which.
-	written, err := os.ReadDir(folder)
+	entries, err := os.ReadDir(folder)
 	if err != nil {
 		return port.Copy{}, err
 	}
-	if len(written) != 1 {
-		return port.Copy{}, fmt.Errorf("%w: %s", port.ErrNothingDownloaded, lastLine(said.String()))
+	if len(entries) != 1 {
+		return port.Copy{}, fmt.Errorf("%w: %s", port.ErrNothingDownloaded, lastLine(logBuffer.String()))
 	}
-	name := filepath.Join(folder, written[0].Name())
+	name := filepath.Join(folder, entries[0].Name())
 
 	copied, err := os.Open(name)
 	if err != nil {

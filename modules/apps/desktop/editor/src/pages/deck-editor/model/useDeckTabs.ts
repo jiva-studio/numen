@@ -196,8 +196,8 @@ export function useDeckTabs(
     paths: readonly string[],
     renames: readonly PathRename[] = [],
   ): void => {
-    for (const went of renames) {
-      vaultAnswers.moveFile(went.from, went.to)
+    for (const rename of renames) {
+      vaultAnswers.moveFile(rename.from, rename.to)
     }
     store.applyPathChanges(paths, renames)
     wiring.applyPathChanges(paths, renames)

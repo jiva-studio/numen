@@ -148,8 +148,8 @@ const reportOutcome = (
     invocation.id === 'downloadText'
       ? words.fetched[outcome.made]
       : words.made[outcome.of][outcome.made]
-  const said = outcome.error ? `${why} ${outcome.error}` : why
-  on.writeMessage(said, ERROR_STATES.includes(outcome.made) ? 'error' : 'report')
+  const message = outcome.error ? `${why} ${outcome.error}` : why
+  on.writeMessage(message, ERROR_STATES.includes(outcome.made) ? 'error' : 'report')
 }
 
 /**
@@ -189,7 +189,7 @@ const removeFiles = async (
       errors.push(words.errors[answer.error])
       continue
     }
-    if (tab.held) on.notes.close(tab.held)
+    if (tab.tabId) on.notes.close(tab.tabId)
     dangling.push(...answer.value.dangling)
     if (opening) await on.goes.leave(path, opening)
   }

@@ -48,11 +48,11 @@ func (d *Document) Title() (string, bool) {
 
 // SetTitle writes the title the note is shown by from now on.
 func (d *Document) SetTitle(title string) error {
-	var held yaml.Node
-	if err := held.Encode(title); err != nil {
+	var node yaml.Node
+	if err := node.Encode(title); err != nil {
 		return err
 	}
-	return d.put("title", &held)
+	return d.put("title", &node)
 }
 
 // List is the names one top-level frontmatter key holds, in the order they
@@ -214,11 +214,11 @@ func (d *Document) SetScalar(key, value string) error {
 // spelling its own type is written in: a number stands as a number, and true
 // and false stand as themselves.
 func (d *Document) SetValue(key string, value any) error {
-	var held yaml.Node
-	if err := held.Encode(value); err != nil {
+	var node yaml.Node
+	if err := node.Encode(value); err != nil {
 		return err
 	}
-	return d.put(key, &held)
+	return d.put(key, &node)
 }
 
 // SetDay writes the day one top-level frontmatter key stands for from now on,

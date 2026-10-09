@@ -87,16 +87,16 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (!here) return
 
     const notJoined: string[] = []
-    let written = false
+    let hasJoinedAny = false
 
     for (const path of nodes) {
       if (path === here) continue
-      if (await deps.editor.join(here, path, seat)) written = true
+      if (await deps.editor.join(here, path, seat)) hasJoinedAny = true
       else notJoined.push(getName(path))
     }
 
     if (notJoined.length > 0) deps.showMessage(`${words.notJoined} ${notJoined.join(', ')}`)
-    if (written) await view.go(here)
+    if (hasJoinedAny) await view.go(here)
   }
 
   const openNode = (node: string, how: PlexDestination = 'here') => {

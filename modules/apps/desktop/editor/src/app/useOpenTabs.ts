@@ -11,7 +11,7 @@ import type { OpenTab, useWindowTabs } from '@/entities/tab'
 export interface OpenTabsDeps {
   core: Pick<VaultPort, 'writeOpenTabs'>
   /** The window tabs manager. */
-  held: ReturnType<typeof useWindowTabs>
+  windowTabs: ReturnType<typeof useWindowTabs>
 }
 
 /** What a tab points at, where what it holds is kept in the vault. */
@@ -21,29 +21,29 @@ const getTabSource = (tab: OpenTab<'document' | 'recording' | 'book'> | undefine
   ...(tab?.book ? { book: tab.book } : {}),
 })
 
-export function useOpenTabs({ core, held }: OpenTabsDeps) {
+export function useOpenTabs({ core, windowTabs }: OpenTabsDeps) {
   /** Returns the ID of the front/active tab. */
   const getActiveTabId = (): string => {
-    const at = held.handle.front()
+    const at = windowTabs.handle.front()
     if (at && at.kind !== AGENT) return at.id
-    const beside = [...held.tabs.value]
+    const beside = [...windowTabs.tabs.value]
       .reverse()
-      .find((one) => held.getTab(one.id)?.kind.kind !== AGENT)
+      .find((one) => windowTabs.getTab(one.id)?.kind.kind !== AGENT)
     return beside?.id ?? at?.id ?? ''
   }
 
   const getOpenTabs = (): OpenTabs => ({
     front: getActiveTabId(),
-    tabs: held.tabs.value.map(({ id, title }) => {
-      const one = held.getTab(id)
-      const said = one?.kind.getOpenTab?.(one.state) as
+    tabs: windowTabs.tabs.value.map(({ id, title }) => {
+      const one = windowTabs.getTab(id)
+      const openTab = one?.kind.getOpenTab?.(one.state) as
         OpenTab<'document' | 'recording' | 'book'> | undefined
       return {
         id,
         kind: one?.kind.kind ?? '',
         title,
-        path: said?.path ?? '',
-        ...getTabSource(said),
+        path: openTab?.path ?? '',
+        ...getTabSource(openTab),
       }
     }),
   })
@@ -60,7 +60,7 @@ export function useOpenTabs({ core, held }: OpenTabsDeps) {
     { immediate: true },
   )
 
-  const tabIcon = (id: string) => iconOfKind(held.getTab(id)?.kind.kind ?? '')
+  const tabIcon = (id: string) => iconOfKind(windowTabs.getTab(id)?.kind.kind ?? '')
 
   return {
     open,

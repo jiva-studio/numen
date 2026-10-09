@@ -28,7 +28,7 @@ export function createWindowAppearance(
   /** What the page was served wearing, which is the applied theme's file. */
   const served = dressed.theme.textContent ?? ''
   /** What the sizes' element holds, once the window knows what it was served at. */
-  let written = ''
+  let appliedSizesCss = ''
 
   /** Every theme there is, and the theme and the mode the settings name. */
   const list = shallowRef<readonly Theme[]>([])
@@ -58,8 +58,8 @@ export function createWindowAppearance(
 
   /** One theme's file, read once and kept. */
   const fileOf = async (name: string): Promise<string> => {
-    const kept = files.get(name)
-    if (kept !== undefined) return kept
+    const cached = files.get(name)
+    if (cached !== undefined) return cached
     const css = await core.readTheme(name)
     files.set(name, css)
     return css
@@ -102,8 +102,8 @@ export function createWindowAppearance(
    */
   const writeSizes = () => {
     const css = getSizesCss(choice.sized.value)
-    if (css === written) return
-    written = css
+    if (css === appliedSizesCss) return
+    appliedSizesCss = css
     dressed.sizes ??= addAfter(dressed.theme, IS_SIZES, sheet)
     dressed.sizes.textContent = css
   }
@@ -139,7 +139,7 @@ export function createWindowAppearance(
       // The page was served wearing this theme, so its file has been read
       // already, and drawn at these sizes, so they already stand in the head.
       files.set(answer.applied, served)
-      written = dressed.sizes?.textContent ?? getSizesCss(answer.sizes)
+      appliedSizesCss = dressed.sizes?.textContent ?? getSizesCss(answer.sizes)
     }
     arrived = false
   }

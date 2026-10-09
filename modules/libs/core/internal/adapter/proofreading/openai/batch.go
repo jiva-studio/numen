@@ -102,14 +102,14 @@ func (c *Client) Leave(ctx context.Context, pages []proofread.Batch) (string, er
 			resp.StatusCode, http.StatusText(resp.StatusCode), c.readDetail(resp.Body))
 	}
 
-	var left batch
-	if err := json.NewDecoder(resp.Body).Decode(&left); err != nil {
+	var response batch
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", fmt.Errorf("leaving %d pages: %w", len(pages), err)
 	}
-	if left.ID == "" {
+	if response.ID == "" {
 		return "", fmt.Errorf("leaving %d pages: the service named no batch", len(pages))
 	}
-	return left.ID, nil
+	return response.ID, nil
 }
 
 // Collect is what came back about the pages left under a name, by the page it
@@ -137,21 +137,21 @@ func (c *Client) Collect(ctx context.Context, name string) (map[int]string, bool
 			resp.StatusCode, http.StatusText(resp.StatusCode), c.readDetail(resp.Body))
 	}
 
-	var held batch
-	if err := json.NewDecoder(resp.Body).Decode(&held); err != nil {
+	var current batch
+	if err := json.NewDecoder(resp.Body).Decode(&current); err != nil {
 		return nil, false, fmt.Errorf("batch %s: %w", name, err)
 	}
 
-	switch held.Status {
+	switch current.Status {
 	case statusFailed, statusExpired, statusCancelled:
-		return nil, false, fmt.Errorf("batch %s: %s", name, held.Status)
+		return nil, false, fmt.Errorf("batch %s: %s", name, current.Status)
 	case statusCompleted:
 	default:
 		return nil, false, nil
 	}
 
-	out := make(map[int]string, len(held.Results))
-	for _, result := range held.Results {
+	out := make(map[int]string, len(current.Results))
+	for _, result := range current.Results {
 		at, err := strconv.Atoi(result.CustomID)
 		if err != nil {
 			continue

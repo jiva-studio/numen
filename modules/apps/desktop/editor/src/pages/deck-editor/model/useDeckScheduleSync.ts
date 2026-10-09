@@ -40,8 +40,8 @@ export function useDeckScheduleSync(
     paths: readonly string[],
     renames: readonly PathRename[] = [],
   ): void => {
-    for (const went of renames) {
-      scheduled.moveFile(went.from, went.to)
+    for (const rename of renames) {
+      scheduled.moveFile(rename.from, rename.to)
     }
     if (store.getOpenIds().length === 0) return
     void listStencils()

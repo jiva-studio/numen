@@ -176,7 +176,7 @@ func (w *Window) ReportFlush(
 	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
-	w.clients.recordFlush(r.Msg.GetToken(), left(r.Msg.GetResult()))
+	w.clients.recordFlush(r.Msg.GetToken(), parseFlushResult(r.Msg.GetResult()))
 	return connect.NewResponse(&v1.ReportFlushResponse{}), nil
 }
 
@@ -296,12 +296,9 @@ const (
 	asks
 )
 
-// left is what a client said it has left, in the words this uses. A client with
-// nothing left and one that has written everything both leave the window free
-// to go; one that named nothing has said nothing, and the round waits its bound
-// for it the way it waits for a client that never answered.
-func left(said v1.FlushResult) owed {
-	switch said {
+// parseFlushResult converts a client's flush result to the internal owed state.
+func parseFlushResult(result v1.FlushResult) owed {
+	switch result {
 	case v1.FlushResult_FLUSH_RESULT_NOTHING, v1.FlushResult_FLUSH_RESULT_WRITTEN:
 		return wrote
 	case v1.FlushResult_FLUSH_RESULT_ASKING:
