@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand/v2"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
@@ -197,4 +198,24 @@ func BenchmarkSimilarity(b *testing.B) {
 			_ = embedding.Similarity(query, stored)
 		}
 	}
+}
+
+func BenchmarkDimensions(b *testing.B) {
+	for _, dim := range []int{384, 768, 1024, 1536, 3072} {
+		b.Run(strconv.Itoa(dim), func(b *testing.B) {
+			raw := make([]byte, dim)
+			for i := range raw {
+				raw[i] = byte(i)
+			}
+			b.ResetTimer()
+			b.ReportAllocs()
+			for b.Loop() {
+				_ = embedding.Dimensions(raw)
+			}
+		})
+	}
+}
+
+func BenchmarkAsDimensions(b *testing.B) {
+	BenchmarkDimensions(b)
 }
