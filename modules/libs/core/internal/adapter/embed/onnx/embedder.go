@@ -184,17 +184,30 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 // tokenize turns each text into tokens.
 func (e *Embedder) tokenize(texts []string) [][]int {
 	tokens := make([][]int, len(texts))
-	if len(texts) == 1 {
-		tokens[0] = e.encode(texts[0])
+	if len(texts) <= 1 {
+		if len(texts) == 1 {
+			tokens[0] = e.encode(texts[0])
+		}
+		return tokens
+	}
+	workers := min(len(texts), runtime.GOMAXPROCS(0))
+	if workers <= 1 {
+		for i, text := range texts {
+			tokens[i] = e.encode(text)
+		}
 		return tokens
 	}
 	var wg sync.WaitGroup
-	wg.Add(len(texts))
-	for i, text := range texts {
-		go func(i int, text string) {
+	wg.Add(workers)
+	for w := range workers {
+		start := (w * len(texts)) / workers
+		end := ((w + 1) * len(texts)) / workers
+		go func(start, end int) {
 			defer wg.Done()
-			tokens[i] = e.encode(text)
-		}(i, text)
+			for i := start; i < end; i++ {
+				tokens[i] = e.encode(texts[i])
+			}
+		}(start, end)
 	}
 	wg.Wait()
 	return tokens
