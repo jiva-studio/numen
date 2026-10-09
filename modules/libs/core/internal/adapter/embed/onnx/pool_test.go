@@ -52,24 +52,56 @@ func TestAllPaddingIsAZeroVector(t *testing.T) {
 	}
 }
 
-// A batch carries what its texts hold and no more: a short batch is not laid out
-// at the length of a long one.
-func TestABatchIsAsLongAsItsLongestText(t *testing.T) {
+func TestSequenceBucketing(t *testing.T) {
+	for _, c := range []struct {
+		length int
+		want   int
+	}{
+		{0, 64},
+		{1, 64},
+		{63, 64},
+		{64, 64},
+		{65, 128},
+		{128, 128},
+		{129, 256},
+		{256, 256},
+		{257, 512},
+		{512, 512},
+		{600, 512},
+	} {
+		tokens := make([]int, c.length)
+		_, seq, in := padBatch([][]int{tokens}, 0)
+		releasePadding(in)
+		if seq != c.want {
+			t.Errorf("length %d was bucketed to %d, want %d", c.length, seq, c.want)
+		}
+	}
+}
+
+// A batch is laid out at the discrete bucket boundary of its longest text.
+func TestABatchIsPaddedToBucketBoundary(t *testing.T) {
 	rows, seq, in := padBatch([][]int{{7, 8, 9}, {4}}, 1)
+	defer releasePadding(in)
 	ids, mask, types := in.ids, in.mask, in.types
-	if rows != 2 || seq != 3 {
-		t.Fatalf("two texts of three and one tokens were laid out %dx%d", rows, seq)
+	if rows != 2 || seq != 64 {
+		t.Fatalf("two texts of three and one tokens were laid out %dx%d, want 2x64", rows, seq)
 	}
 	for _, held := range [][]int64{ids, mask, types} {
 		if len(held) != rows*seq {
 			t.Fatalf("a row of %d holds %d", seq, len(held))
 		}
 	}
-	if !slices.Equal(ids, []int64{7, 8, 9, 4, 1, 1}) {
-		t.Errorf("the shorter text was padded with %v", ids)
+	if !slices.Equal(ids[:3], []int64{7, 8, 9}) || ids[3] != 1 || ids[63] != 1 {
+		t.Errorf("the first text was padded incorrectly: %v", ids[:64])
 	}
-	if !slices.Equal(mask, []int64{1, 1, 1, 1, 0, 0}) {
-		t.Errorf("the padding is marked: %v", mask)
+	if ids[64] != 4 || ids[65] != 1 || ids[127] != 1 {
+		t.Errorf("the second text was padded incorrectly: %v", ids[64:])
+	}
+	if !slices.Equal(mask[:4], []int64{1, 1, 1, 0}) || mask[63] != 0 {
+		t.Errorf("the first mask is marked: %v", mask[:64])
+	}
+	if !slices.Equal(mask[64:66], []int64{1, 0}) || mask[127] != 0 {
+		t.Errorf("the second mask is marked: %v", mask[64:])
 	}
 }
 
@@ -77,11 +109,12 @@ func TestABatchIsAsLongAsItsLongestText(t *testing.T) {
 // divides by something.
 func TestAnEmptyTextIsMarkedAtOneToken(t *testing.T) {
 	rows, seq, in := padBatch([][]int{{}}, 1)
+	defer releasePadding(in)
 	mask := in.mask
-	if rows != 1 || seq != 1 {
-		t.Fatalf("one empty text was laid out %dx%d", rows, seq)
+	if rows != 1 || seq != 64 {
+		t.Fatalf("one empty text was laid out %dx%d, want 1x64", rows, seq)
 	}
-	if !slices.Equal(mask, []int64{1}) {
+	if mask[0] != 1 || slices.Contains(mask[1:], 1) {
 		t.Errorf("an empty text is marked %v", mask)
 	}
 }

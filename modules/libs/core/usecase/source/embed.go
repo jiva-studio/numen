@@ -1,11 +1,13 @@
 package source
 
 import (
+	"cmp"
 	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
+	"slices"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -81,7 +83,7 @@ type preparedBatch struct {
 	model       port.EmbeddingModel
 	owing       []domain.Passage
 	hashes      [][]byte
-	reused      []port.Vector
+	reused      map[int]port.Vector
 	reusedCount int
 	asking      []string
 	askingMap   []int
@@ -167,6 +169,38 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 			chunks, texts, err := u.read(gctx, &source, owing, &res, &mu)
 			if err != nil {
 				return err
+			}
+
+			if len(chunks) > 1 {
+				sourceOrder := make(map[string]int)
+				for _, c := range chunks {
+					if _, ok := sourceOrder[c.Source]; !ok {
+						sourceOrder[c.Source] = len(sourceOrder)
+					}
+				}
+				type passageItem struct {
+					chunk       domain.Passage
+					text        string
+					sourceIndex int
+				}
+				items := make([]passageItem, len(chunks))
+				for i := range chunks {
+					items[i] = passageItem{
+						chunk:       chunks[i],
+						text:        texts[i],
+						sourceIndex: sourceOrder[chunks[i].Source],
+					}
+				}
+				slices.SortStableFunc(items, func(a, b passageItem) int {
+					if a.sourceIndex != b.sourceIndex {
+						return cmp.Compare(a.sourceIndex, b.sourceIndex)
+					}
+					return cmp.Compare(len(a.text), len(b.text))
+				})
+				for i, item := range items {
+					chunks[i] = item.chunk
+					texts[i] = item.text
+				}
 			}
 
 			at := 0
@@ -310,6 +344,7 @@ func (u Embed) prepareBatch(
 		model:     model,
 		owing:     owing,
 		hashes:    hashes,
+		reused:    make(map[int]port.Vector),
 		asking:    make([]string, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
 		reading:   owing[len(owing)-1].Source,
@@ -337,14 +372,14 @@ func (u Embed) prepareBatch(
 			continue
 		}
 		prep.askingMap[i] = -1
-		prep.reused = append(prep.reused, port.Vector{
+		prep.reused[i] = port.Vector{
 			ChunkID: owing[i].ChunkID,
 			Hash:    hashes[i],
 			Model:   model,
 			Kind:    port.QuantisedInt8,
 			Value:   value,
 			Coarse:  embedding.Coarse(embedding.Dimensions(value)),
-		})
+		}
 		prep.reusedCount++
 	}
 	return prep, nil
@@ -360,9 +395,7 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 	if len(prep.owing) == 0 {
 		return completedBatch{}, nil
 	}
-	out := make([]port.Vector, 0, len(prep.owing))
-	out = append(out, prep.reused...)
-
+	var unique []uniqueVector
 	if len(prep.asking) > 0 {
 		vectors, err := u.Embedder.Embed(ctx, prep.asking)
 		if err != nil {
@@ -371,7 +404,7 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 		if len(vectors) != len(prep.asking) {
 			return completedBatch{}, fmt.Errorf("%s answered with %d vectors for %d texts", prep.model, len(vectors), len(prep.asking))
 		}
-		unique := make([]uniqueVector, len(vectors))
+		unique = make([]uniqueVector, len(vectors))
 		for i, v := range vectors {
 			if len(v) != prep.model.Dimensions {
 				return completedBatch{}, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
@@ -383,17 +416,21 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 				coarse: embedding.Coarse(quantised),
 			}
 		}
-		for i, at := range prep.askingMap {
-			if at >= 0 {
-				out = append(out, port.Vector{
-					ChunkID: prep.owing[i].ChunkID,
-					Hash:    prep.hashes[i],
-					Model:   prep.model,
-					Kind:    port.QuantisedInt8,
-					Value:   unique[at].value,
-					Coarse:  unique[at].coarse,
-				})
+	}
+
+	out := make([]port.Vector, len(prep.owing))
+	for i := range prep.owing {
+		if at := prep.askingMap[i]; at >= 0 {
+			out[i] = port.Vector{
+				ChunkID: prep.owing[i].ChunkID,
+				Hash:    prep.hashes[i],
+				Model:   prep.model,
+				Kind:    port.QuantisedInt8,
+				Value:   unique[at].value,
+				Coarse:  unique[at].coarse,
 			}
+		} else if v, ok := prep.reused[i]; ok {
+			out[i] = v
 		}
 	}
 	return completedBatch{

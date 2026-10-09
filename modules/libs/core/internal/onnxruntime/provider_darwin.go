@@ -121,6 +121,7 @@ func appendCoreMLCached(handle, optHandle uintptr) bool {
 		{"ModelCacheDirectory", dir},
 		{"EnableOnSubgraphs", "1"},
 		{"CreateMLProgram", "1"},
+		{"MLComputeUnits", "ALL"},
 	}
 	keys := make([]*byte, len(pairs))
 	values := make([]*byte, len(pairs))

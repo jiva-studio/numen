@@ -16,16 +16,27 @@ func TestAReusedPaddingHoldsNothingOfThePreviousBatch(t *testing.T) {
 	releasePadding(first)
 
 	rows, seq, in := padBatch([][]int{{4}, {}}, 1)
-	if rows != 2 || seq != 1 {
+	if rows != 2 || seq != 64 {
 		t.Fatalf("laid out %dx%d", rows, seq)
 	}
-	if !slices.Equal(in.ids, []int64{4, 1}) || !slices.Equal(in.mask, []int64{1, 1}) || !slices.Equal(in.types, []int64{0, 0}) {
+	wantIds := make([]int64, 128)
+	for i := range wantIds {
+		wantIds[i] = 1
+	}
+	wantIds[0] = 4
+	wantMask := make([]int64, 128)
+	wantMask[0], wantMask[64] = 1, 1
+	if !slices.Equal(in.ids, wantIds) || !slices.Equal(in.mask, wantMask) || !slices.Equal(in.types, make([]int64, 128)) {
 		t.Errorf("ids %v mask %v types %v", in.ids, in.mask, in.types)
 	}
 	releasePadding(in)
 
 	_, _, wide := padBatch([][]int{{1}, {1, 2, 3}}, 0)
-	if !slices.Equal(wide.mask, []int64{1, 0, 0, 1, 1, 1}) || !slices.Equal(wide.ids, []int64{1, 0, 0, 1, 2, 3}) || !slices.Equal(wide.types, make([]int64, 6)) {
+	wantWideMask := make([]int64, 128)
+	wantWideMask[0], wantWideMask[64], wantWideMask[65], wantWideMask[66] = 1, 1, 1, 1
+	wantWideIds := make([]int64, 128)
+	wantWideIds[0], wantWideIds[64], wantWideIds[65], wantWideIds[66] = 1, 1, 2, 3
+	if !slices.Equal(wide.mask, wantWideMask) || !slices.Equal(wide.ids, wantWideIds) || !slices.Equal(wide.types, make([]int64, 128)) {
 		t.Errorf("ids %v mask %v types %v", wide.ids, wide.mask, wide.types)
 	}
 }
