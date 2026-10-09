@@ -616,3 +616,67 @@ func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by meaning answered %d passages of books in a vault of notes", len(dense))
 	}
 }
+
+type countingEmbedder struct {
+	inner port.Embedder
+	count int
+}
+
+func (e *countingEmbedder) Model() port.EmbeddingModel {
+	return e.inner.Model()
+}
+
+func (e *countingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	e.count += len(texts)
+	return e.inner.Embed(ctx, texts)
+}
+
+func (e *countingEmbedder) Close() error {
+	return e.inner.Close()
+}
+
+func TestASearchReusesCachedQueryEmbedding(t *testing.T) {
+	ctx := t.Context()
+	c := newCorpus(t)
+	c.vectorise(t, c.first, newVector(+1))
+
+	embedder := &countingEmbedder{inner: oneWay{direction: newVector(+1)}}
+	searching := c.search(embedder)
+
+	_, err := searching.Execute(ctx, c.first, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if embedder.count != 1 {
+		t.Fatalf("first search embedded %d times, want 1", embedder.count)
+	}
+
+	_, err = searching.Execute(ctx, c.first, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if embedder.count != 1 {
+		t.Fatalf("second search embedded %d times, want cached (count 1)", embedder.count)
+	}
+
+	_, err = searching.Execute(ctx, c.first, "heat", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if embedder.count != 2 {
+		t.Fatalf("third search embedded %d times, want 2", embedder.count)
+	}
+}
+
+func TestASearchAbortsOnCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	c := newCorpus(t)
+	searching := c.search(oneWay{direction: newVector(+1)})
+
+	_, err := searching.Execute(ctx, c.first, "disorder", search.Parameters{})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+}
