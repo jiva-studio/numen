@@ -16,10 +16,15 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
+
+// inFlight is how many batches are sent at once.
+const inFlight = 4
 
 // ErrRejected is a request the service answered with anything but a 5xx or a
 // 429 — a malformed batch, a key it does not know, an address that is not a
@@ -35,6 +40,8 @@ type Client struct {
 	identity port.EmbeddingModel
 	http     *http.Client
 
+	// InFlight is how many batches are sent at once.
+	InFlight int
 	// Attempts is how many times one request is sent before its error is
 	// reported. A real run meets "engine overloaded" repeatedly.
 	Attempts int
@@ -80,6 +87,7 @@ func New(is port.EmbeddingModel, model embed.ServiceModel) (*Client, error) {
 			},
 			Timeout: 90 * time.Second,
 		},
+		InFlight: inFlight,
 		Attempts: 5,
 		Delay:    time.Second,
 	}, nil
@@ -96,12 +104,35 @@ func (c *Client) Embed(ctx context.Context, texts []string) ([][]float32, error)
 	if len(texts) == 0 {
 		return nil, nil
 	}
+	batches := embedding.Batches(texts, c.model.BatchCharacters)
+	if len(batches) == 1 {
+		return c.request(ctx, batches[0])
+	}
+
+	limit := c.InFlight
+	if limit <= 0 {
+		limit = inFlight
+	}
+
+	results := make([][][]float32, len(batches))
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(limit)
+	for i, batch := range batches {
+		g.Go(func() error {
+			vectors, err := c.request(gctx, batch)
+			if err != nil {
+				return err
+			}
+			results[i] = vectors
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
 	out := make([][]float32, 0, len(texts))
-	for _, batch := range embedding.Batches(texts, c.model.BatchCharacters) {
-		vectors, err := c.request(ctx, batch)
-		if err != nil {
-			return nil, err
-		}
+	for _, vectors := range results {
 		out = append(out, vectors...)
 	}
 	return out, nil
