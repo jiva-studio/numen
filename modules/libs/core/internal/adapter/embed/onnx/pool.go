@@ -13,20 +13,34 @@ import (
 // texts in its batch are.
 func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float32 {
 	out := make([][]float32, rows)
+	backing := make([]float32, rows*dimensions)
 	for row := range rows {
-		vector := make([]float32, dimensions)
+		vector := backing[row*dimensions : (row+1)*dimensions]
 		kept := 0
+		rowOffset := row * seq
 		for token := 0; token < seq; token++ {
-			if mask[row*seq+token] == 0 {
+			if mask[rowOffset+token] == 0 {
 				continue
 			}
 			kept++
-			at := (row*seq + token) * dimensions
+			at := (rowOffset + token) * dimensions
 			addRow(vector, flat[at:at+dimensions])
 		}
 		if kept > 0 {
-			for d := range vector {
-				vector[d] /= float32(kept)
+			k := float32(kept)
+			d := 0
+			for ; d+8 <= dimensions; d += 8 {
+				vector[d] /= k
+				vector[d+1] /= k
+				vector[d+2] /= k
+				vector[d+3] /= k
+				vector[d+4] /= k
+				vector[d+5] /= k
+				vector[d+6] /= k
+				vector[d+7] /= k
+			}
+			for ; d < dimensions; d++ {
+				vector[d] /= k
 			}
 		}
 		out[row] = embedding.Normalise(vector)
@@ -34,18 +48,21 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 	return out
 }
 
-// addRow adds src to dst element by element, four elements a step. Each
-// element sums its tokens in order.
+// addRow adds src to dst element by element, eight elements a step.
 func addRow(dst, src []float32) {
-	src = src[:len(dst)]
+	n := min(len(dst), len(src))
 	d := 0
-	for ; d+4 <= len(dst); d += 4 {
+	for ; d+8 <= n; d += 8 {
 		dst[d] += src[d]
 		dst[d+1] += src[d+1]
 		dst[d+2] += src[d+2]
 		dst[d+3] += src[d+3]
+		dst[d+4] += src[d+4]
+		dst[d+5] += src[d+5]
+		dst[d+6] += src[d+6]
+		dst[d+7] += src[d+7]
 	}
-	for ; d < len(dst); d++ {
+	for ; d < n; d++ {
 		dst[d] += src[d]
 	}
 }

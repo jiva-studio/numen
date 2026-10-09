@@ -183,6 +183,33 @@ func TestThroughput(t *testing.T) {
 	t.Logf("%d chunks in %s: %.2f chunks/s", len(texts), elapsed.Round(time.Millisecond), float64(len(texts))/elapsed.Seconds())
 }
 
+func TestBucketedEmbedPreservesInputOrder(t *testing.T) {
+	e := open(t, modelDir(t))
+	texts := []string{
+		"Short sentence.",
+		"This is a considerably longer sentence designed to test length bucketing across different token counts.",
+		"Medium sentence here for testing.",
+		"A.",
+		"Another fairly long sentence with various descriptive adjectives and noun phrases to verify order preservation.",
+	}
+	vectors, err := e.Embed(t.Context(), texts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(vectors) != len(texts) {
+		t.Fatalf("got %d vectors, want %d", len(vectors), len(texts))
+	}
+	for i, text := range texts {
+		single, err := e.Embed(t.Context(), []string{text})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if similarity := dot(vectors[i], single[0]); similarity < 0.9999 {
+			t.Errorf("text %d vector similarity with single embed is %v, want >= 0.9999", i, similarity)
+		}
+	}
+}
+
 func dot(a, b []float32) float32 {
 	var sum float32
 	for i := range a {
