@@ -74,7 +74,7 @@ func (m Model) GetStoredModel(from string) port.EmbeddingModel {
 // fetched the first time it is wanted.
 func Defaults() Config {
 	here := Provider{
-		local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, ShouldDownload: true},
+		local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 32, ShouldDownload: true},
 		service: ServiceModel{
 			BaseURL:         "https://api.openai.com/v1",
 			Name:            "text-embedding-3-small",

@@ -117,9 +117,23 @@ type LocalModel struct {
 	Runtime string `json:"runtime"`
 	// Threads is how many of this machine one forward pass may use.
 	Threads int `json:"threads"`
+	// Provider is the execution provider for ONNX Runtime (auto, cpu, coreml, cuda). Empty is auto.
+	Provider string `json:"provider"`
 	// ShouldDownload allows fetching the model when it is not on this machine. Turned
 	// off, and with no directory named, a vault is searched by its words.
 	ShouldDownload bool `json:"download"`
+}
+
+// GetProvider is the execution provider for ONNX Runtime. Empty is auto.
+func (m LocalModel) GetProvider() onnxruntime.Provider {
+	if m.Provider == "" {
+		return onnxruntime.ProviderAuto
+	}
+	p, err := onnxruntime.ParseProvider(m.Provider)
+	if err != nil {
+		return onnxruntime.ProviderAuto
+	}
+	return p
 }
 
 // GetEngine is what runs this model here. A platform ONNX Runtime is published
@@ -252,6 +266,7 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 		Engine     *string `json:"engine"`
 		Runtime    *string `json:"runtime"`
 		Threads    *int    `json:"threads"`
+		Provider   *string `json:"provider"`
 		Download   *bool   `json:"download"`
 	}
 	if err := json.Unmarshal(raw, &f); err != nil {
@@ -264,6 +279,7 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 	assign(&m.Engine, f.Engine)
 	assign(&m.Runtime, f.Runtime)
 	assign(&m.Threads, f.Threads)
+	assign(&m.Provider, f.Provider)
 	assign(&m.ShouldDownload, f.Download)
 	return nil
 }
