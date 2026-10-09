@@ -1,7 +1,6 @@
 package markdown
 
 import (
-	"bufio"
 	"bytes"
 	"strings"
 
@@ -14,16 +13,23 @@ func bodyLinks(body []byte) []domain.Link {
 	var out []domain.Link
 	seen := map[string]bool{}
 
-	sc := bufio.NewScanner(bytes.NewReader(body))
-	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
 	var f Fence
-	for sc.Scan() {
-		line := strings.TrimRight(sc.Text(), "\r")
-		if f.IsCrossedBy(line) || f.IsInside() {
+	rest := body
+	for len(rest) > 0 {
+		var line []byte
+		if idx := bytes.IndexByte(rest, '\n'); idx >= 0 {
+			line = rest[:idx]
+			rest = rest[idx+1:]
+		} else {
+			line = rest
+			rest = nil
+		}
+		lineStr := strings.TrimRight(string(line), "\r")
+		if f.IsCrossedBy(lineStr) || f.IsInside() {
 			// A link inside a code fence is an example of a link, not one.
 			continue
 		}
-		for _, found := range WikilinksIn(line) {
+		for _, found := range WikilinksIn(lineStr) {
 			if seen[found.Target.String()] {
 				continue
 			}
