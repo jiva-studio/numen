@@ -6,6 +6,7 @@
 package onnx
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -162,22 +163,48 @@ func (e *Embedder) Model() port.EmbeddingModel {
 	}
 }
 
-// Embed runs the model over the texts, a batch at a time.
+type sequenceItem struct {
+	index  int
+	tokens []int
+}
+
+// Embed runs the model over the texts, grouped by token length to minimize padding.
 func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
 	tokens := e.tokenize(texts)
-	out := make([][]float32, 0, len(texts))
-	for start := 0; start < len(tokens); start += e.batchTexts {
+	if len(texts) == 1 {
+		return e.forward(tokens)
+	}
+
+	items := make([]sequenceItem, len(tokens))
+	for i, tok := range tokens {
+		items[i] = sequenceItem{index: i, tokens: tok}
+	}
+	slices.SortStableFunc(items, func(a, b sequenceItem) int {
+		return cmp.Compare(len(a.tokens), len(b.tokens))
+	})
+
+	out := make([][]float32, len(texts))
+	batchTokens := make([][]int, 0, e.batchTexts)
+	for start := 0; start < len(items); start += e.batchTexts {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		vectors, err := e.forward(tokens[start:min(start+e.batchTexts, len(tokens))])
+		end := min(start+e.batchTexts, len(items))
+		batchItems := items[start:end]
+		batchTokens = batchTokens[:0]
+		for _, item := range batchItems {
+			batchTokens = append(batchTokens, item.tokens)
+		}
+		vectors, err := e.forward(batchTokens)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, vectors...)
+		for i, item := range batchItems {
+			out[item.index] = vectors[i]
+		}
 	}
 	return out, nil
 }

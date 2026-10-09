@@ -83,3 +83,26 @@ func BenchmarkEmbedBatch(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkEmbedVariableLengthBatch(b *testing.B) {
+	e := benchOpen(b, benchModelDir(b))
+	sample := "The quick brown fox jumps over the lazy dog."
+
+	for _, count := range []int{32, 64, 128} {
+		texts := make([]string, count)
+		for i := range texts {
+			repeats := (i % 20) + 1
+			texts[i] = strings.Repeat(sample+" ", repeats)
+		}
+
+		b.Run(fmt.Sprintf("texts=%d", count), func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				if _, err := e.Embed(b.Context(), texts); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
