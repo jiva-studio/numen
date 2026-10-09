@@ -119,7 +119,7 @@ jobs:
           echo "matrix=[$entries]" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
-  # What .golangci.yml asks for, beyond the gofmt and go vet the test job runs.
+  # Code formatting, vet, and what .golangci.yml asks for.
   # Once, on the cheapest machine: a rule about the shape of the code answers
   # the same on all three.
   #
@@ -139,24 +139,42 @@ jobs:
           go-version-file: modules/libs/core/go.mod
           cache-dependency-path: modules/libs/core/go.sum
 
+      - name: Verify Go formatting (Core)
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
+          fi
+        working-directory: modules/libs/core
+
+      - name: Verify Go formatting (Protocol)
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
+          fi
+        working-directory: modules/libs/protocol
+
+      - name: Run go vet (Core)
+        run: go vet ./...
+        working-directory: modules/libs/core
+
+      - name: Run go vet (Protocol)
+        run: go vet ./...
+        working-directory: modules/libs/protocol
+
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
           working-directory: modules/libs/core
           args: --timeout 15m
 
-      # The schema's Go is generated and holds the set clean, so here the
-      # linter is allowed to say no.
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
           working-directory: modules/libs/protocol
           args: --timeout 10m
 
-      # The vulnerability list is kept elsewhere and read at the time of the
-      # run, so this step can find something on a branch that changed nothing.
-      # It answers for the standard library of the Go above as well as for what
-      # is required.
       - uses: ./.github/actions/govulncheck
         with:
           working-directory: modules/libs/core
@@ -245,16 +263,6 @@ jobs:
           path: ${{ steps.go-cache-paths.outputs.build }}
           key: go-build-core-${{ matrix.runner }}-${{ github.sha }}
           restore-keys: go-build-core-${{ matrix.runner }}-
-
-      - name: Verify Go formatting
-        run: |
-          unformatted=$(gofmt -l .)
-          if [ -n "$unformatted" ]; then
-            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
-          fi
-
-      - name: Run go vet
-        run: go vet ./...
 
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
