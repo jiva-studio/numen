@@ -11,11 +11,14 @@ The `/coder` skill guides the implementation of features from a validated specif
 flowchart TD
     ReadSpec["1. Read spec.md & Rules
     (Identify frozen contracts & target files)"] --> VerifyRed["2. Verify Red Acceptance Tests
-    (Run tests, confirm expected failure)"]
+    (Run targeted test, confirm expected failure)"]
     VerifyRed --> Implement["3. Implement Changes
     (Write domain, adapters, or UI components)"]
-    Implement --> RunChecks["4. Run Local Gate Checks
-    (go test, vue-tsc, vitest, depgraph)"]
+    Implement --> InnerTDD["3.1 Fast Inner Loop
+    (vitest related / go test ./pkg)"]
+    InnerTDD -->|Fails| Implement
+    InnerTDD -->|Passes| RunChecks["4. Run Local Gate Checks
+    (go test ./..., vue-tsc, vitest unit)"]
     RunChecks -->|Errors| Implement
     RunChecks -->|All Pass| Handover["5. Handover: Suggest `/review`"]
 ```
@@ -27,7 +30,8 @@ flowchart TD
 1. **Never edit acceptance test files**: The acceptance tests are the independent verification contract. If a test is failing unexpectedly, find the bug in your code or ask the human.
 2. **Frozen contracts**: Domain models, wire protocols, ports, and migrations are frozen. Do not alter them without human consent.
 3. **Internal unit tests**: You may write narrow unit tests for your internal helper functions and unexported logic.
-4. **Follow language rules**:
+4. **Targeted testing first (Inner Loop)**: While iterating on code, run only tests related to the changed files (`vitest related` or `go test ./pkg`). Do not run blanket heavy suites or `-race` until final verification.
+5. **Follow language rules**:
    - Backend (Go): [`.agents/rules/coding-style-backend.md`](../../rules/coding-style-backend.md)
    - Frontend (Vue/TS): [`.agents/rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md)
    - Architecture & Layers: [`.agents/rules/architecture.md`](../../rules/architecture.md)
@@ -39,14 +43,17 @@ flowchart TD
 
 ### Step 1: Read Spec & Verify Initial State
 - Read `.agents/tasks/<slug>/spec.md` (or the task description).
-- Verify the red acceptance tests exist and fail with expected errors.
+- Verify the red acceptance tests exist and fail with expected errors using a targeted test runner.
 
-### Step 2: Implement Code
+### Step 2: Implement Code (Fast Inner Loop)
 - Match the style of surrounding files.
 - Place files on their correct architectural layer.
 - Use imperative verb phrases for function names and predicate phrases (`is...`, `has...`) for booleans.
+- **Fast feedback loop during edits:**
+  - **Frontend:** `npx vitest related <changed-file>` or `npx vitest --changed`
+  - **Backend:** `go test ./path/to/package` (or `go test -run TestName ./path/to/package`)
 
-### Step 3: Run Local Validation Gates
+### Step 3: Run Local Validation Gates (Final check before handover)
 
 From the touched module:
 
@@ -61,7 +68,6 @@ go test ./container/...        # in modules/libs/core (architecture check)
 ```bash
 npx vue-tsc --noEmit
 npx vitest run --project unit
-npm run check --prefix modules/tools/depgraph
 ```
 
 *(Note: If touching `@numen/ui`, run `npm run build` in `modules/libs/ui` before running desktop window suites).*

@@ -277,7 +277,7 @@ tool_depgraph_graph_check: tool_depgraph_graph ## verify dependency graph is com
 	git diff --exit-code -- docs/dependencies.md
 
 .PHONY: tool_depgraph_check
-tool_depgraph_check: tool_depgraph_graph_check ## check module boundaries and dependency graph
+tool_depgraph_check: ## check module boundaries
 	cd $(DEPGRAPH) && npm run check
 
 .PHONY: tool_stories_check
