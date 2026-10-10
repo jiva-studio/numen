@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { ArrowLeft, ArrowRight, Minus } from '@lucide/vue'
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Minus } from '@lucide/vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { LinkInspectorRequest } from '../types'
 
@@ -35,7 +35,9 @@ describe('PlexLinkInspectorPopover component', () => {
 
     expect(popover.attributes('style')).toContain('left: 300px')
     expect(popover.attributes('style')).toContain('top: 200px')
-    expect(wrapper.text()).toContain('Note Alpha ⟷ Note Beta')
+    expect(wrapper.text()).toContain('Note Alpha')
+    expect(wrapper.text()).toContain('Note Beta')
+    expect(wrapper.findComponent(ArrowLeftRight).exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -118,6 +120,8 @@ describe('PlexLinkInspectorPopover component', () => {
     await deleteBtn.trigger('click')
 
     expect(wrapper.findAll('input').length).toBe(0)
+    expect(wrapper.find('.plex-link-popover__empty-state').exists()).toBe(true)
+    expect(wrapper.text()).toContain('The link between these notes will be removed.')
 
     const doneBtn = wrapper.get('.plex-link-popover__btn--done')
     await doneBtn.trigger('click')
@@ -257,6 +261,19 @@ describe('PlexLinkInspectorPopover component', () => {
     await popover.trigger('keydown', { key: 'Escape' })
 
     expect(wrapper.emitted('dismiss')).toBeTruthy()
+    wrapper.unmount()
+  })
+
+  it('emits dismiss and does not save when close/cancel button is clicked', async () => {
+    const wrapper = mountPopover()
+    const input = wrapper.get('input')
+    await input.setValue('Modified Text')
+
+    const closeBtn = wrapper.get('.plex-link-popover__close-btn')
+    await closeBtn.trigger('click')
+
+    expect(wrapper.emitted('dismiss')).toBeTruthy()
+    expect(wrapper.emitted('save')).toBeFalsy()
     wrapper.unmount()
   })
 

@@ -253,7 +253,9 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
       linkDescriptions.value.set(`${row.from}->${row.to}`, row.description)
     }
 
-    if (payload.rows.length === 1) {
+    if (payload.rows.length === 0) {
+      linkDirections.value.delete(payload.pairKey)
+    } else if (payload.rows.length === 1) {
       const row = payload.rows[0]!
       const pairKey = [row.from, row.to].sort().join(' ')
       if (row.direction === 'undirected') {

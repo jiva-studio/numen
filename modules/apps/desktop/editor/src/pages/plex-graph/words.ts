@@ -26,6 +26,12 @@ export const WORDS = {
   changeDirection: 'Change direction',
   /** Button to remove a link. */
   removeLink: 'Remove link',
-  /** Button to close inspector. */
+  /** Button to add link when none exist. */
+  addLink: 'Add link',
+  /** Notice shown when all links between nodes are deleted. */
+  linkWillBeRemoved: 'The link between these notes will be removed.',
+  /** Button to close inspector and save changes. */
   done: 'Done',
+  /** Button to cancel and close inspector without saving. */
+  cancel: 'Cancel',
 }

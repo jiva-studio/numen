@@ -84,76 +84,74 @@ function onInputKeyDown(event: KeyboardEvent) {
 .plex-link-row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
+  gap: 0.375rem;
+  block-size: 2.125rem;
+  padding-inline: 0.375rem;
+  background: var(--numen-field-bg, var(--numen-surface));
+  border: var(--numen-stroke, 1px) solid var(--numen-field-border, var(--numen-rule));
+  border-radius: var(--numen-radius, 0.375rem);
+  transition: border-color var(--numen-motion-hover, 110ms) ease;
+  min-inline-size: 0;
 }
-
-.plex-link-row__dir-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--size-icon-button);
-  height: var(--size-icon-button);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--text-2);
-  cursor: pointer;
-  border: none;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
+.plex-link-row:focus-within {
+  border-color: var(--numen-ring, var(--numen-accent));
 }
-
-.plex-link-row__dir-btn:hover:not(:disabled) {
-  background: var(--surface-3);
-  color: var(--text-1);
-}
-
-.plex-link-row__dir-btn:disabled,
-.plex-link-row__dir-btn--static {
-  cursor: default;
-  opacity: 0.8;
-}
-
-.plex-link-row__icon {
-  width: 14px;
-  height: 14px;
-}
-
-.plex-link-row__input {
-  flex: 1;
-  min-width: 0;
-  height: var(--size-icon-button);
-  padding: 0 var(--space-2);
-  background: var(--surface-1);
-  color: var(--text-1);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.plex-link-row__input:focus {
-  border-color: var(--accent);
-}
-
+.plex-link-row__dir-btn,
 .plex-link-row__delete-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--size-icon-button);
-  height: var(--size-icon-button);
-  border-radius: var(--radius-sm);
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
   background: transparent;
-  color: var(--text-3);
-  cursor: pointer;
+  color: var(--numen-hushed);
   border: none;
+  cursor: pointer;
   flex-shrink: 0;
-  transition: all 0.15s ease;
+  padding: 0;
+  transition: color var(--numen-motion-hover, 110ms) ease;
 }
-
+.plex-link-row__dir-btn:hover:not(:disabled) {
+  background: transparent;
+  color: var(--numen-ink);
+}
+.plex-link-row__dir-btn:disabled,
+.plex-link-row__dir-btn--static {
+  cursor: default;
+  opacity: 0.5;
+}
 .plex-link-row__delete-btn:hover {
-  background: var(--surface-2);
-  color: var(--danger, #e5484d);
+  background: transparent;
+  color: var(--numen-alarm);
+}
+.plex-link-row__icon {
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+  stroke-width: 2;
+}
+.plex-link-row__icon--trash {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  opacity: 0.6;
+  transition: opacity var(--numen-motion-hover, 110ms) ease;
+}
+.plex-link-row__delete-btn:hover .plex-link-row__icon--trash {
+  opacity: 1;
+}
+.plex-link-row__input {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: 100%;
+  border: none;
+  background: transparent;
+  color: var(--numen-ink);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-2, 0.8125rem);
+  outline: none;
+  padding: 0 0.25rem;
+}
+.plex-link-row__input::placeholder {
+  color: var(--numen-hushed);
+  opacity: 0.75;
 }
 </style>
