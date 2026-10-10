@@ -99,7 +99,7 @@ const painted = EditorView.theme({
     fontSize: '0.85em',
   },
   /* A line taller than one line of words is a heading, and its time stands
-     against the words rather than against the room above them. */
+     against the words. */
   '.cm-times .cm-gutterElement': {
     display: 'flex',
     alignItems: 'flex-end',
