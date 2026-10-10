@@ -634,6 +634,30 @@ const screen = ({
     const asking = ref('')
     const typed = ref(panel === 'search' ? 'entrop' : '')
     const at = ref(BOOK_FIRST)
+    const currentNeighbourhood = ref(neighbourhood)
+
+    const onActivate = (id: string) => {
+      const all = [...WIDE.nodes, ...RELATED]
+      const clicked = all.find((n) => n.id === id)
+      if (clicked && clicked.id !== 'focus') {
+        currentNeighbourhood.value = {
+          nodes: [
+            { id: clicked.id, title: clicked.title, seat: 'focus' },
+            { id: 'focus', title: 'Entropy', seat: 'parent' },
+            { id: 'landauer', title: "Landauer's principle", seat: 'child' },
+            { id: 'shannon', title: 'Shannon 1948', seat: 'sibling' },
+            { id: 'information', title: 'Information theory', seat: 'parent' },
+            { id: 'second-law', title: 'The second law', seat: 'jump' },
+          ],
+          edges: [
+            { from: 'focus', to: clicked.id, label: 'measures' },
+            { from: clicked.id, to: 'landauer', label: 'costs' },
+            { from: 'information', to: clicked.id, label: 'explains' },
+            { from: clicked.id, to: 'second-law', label: 'tests' },
+          ],
+        }
+      }
+    }
 
     return {
       held,
@@ -643,7 +667,8 @@ const screen = ({
       typed,
       at,
       panel,
-      neighbourhood,
+      currentNeighbourhood,
+      onActivate,
       parts,
       creatable,
       menu,
@@ -694,10 +719,11 @@ const screen = ({
         <template #tab="{ id }">
           <Plex
             v-if="id === PLEX"
-            :neighbourhood="neighbourhood"
+            :neighbourhood="currentNeighbourhood"
             :creatable="creatable"
-            :duration="0"
+            :duration="420"
             :parts="parts"
+            @activate="onActivate"
           />
           <Editor v-else-if="id === NOTE" v-model="text" />
           <Editor v-else-if="id === OTHER_NOTE" v-model="other" />

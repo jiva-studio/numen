@@ -117,3 +117,110 @@ export function createSingleInspectorLink(
 
   return [{ id: `${from}->${to}`, from, to, role, direction, description }]
 }
+
+export function resolveInspectorDirectionToggle(
+  row: DirectionalLinkItem,
+  nodeAPath: string,
+  nodeBPath: string,
+  initialLinkIds: Set<string>,
+): {
+  direction: LinkDirectionMode
+  from: string
+  to: string
+  role: PlexRelatedSeat
+  removedLink?: { from: string; to: string; role?: PlexRelatedSeat } | undefined
+} {
+  const nextDirection: Record<LinkDirectionMode, LinkDirectionMode> = {
+    undirected: 'forward',
+    forward: 'reverse',
+    reverse: 'undirected',
+  }
+  const next = nextDirection[row.direction]
+  const baseRole = row.from === nodeAPath ? row.role : getInverseSeat(row.role)
+
+  if (next === 'reverse') {
+    const removedLink =
+      initialLinkIds.has(row.id) && row.from === nodeAPath
+        ? { from: nodeAPath, to: nodeBPath, role: baseRole }
+        : undefined
+    return {
+      direction: next,
+      from: nodeBPath,
+      to: nodeAPath,
+      role: getInverseSeat(baseRole),
+      removedLink,
+    }
+  }
+
+  const removedLink =
+    initialLinkIds.has(row.id) && row.from === nodeBPath
+      ? { from: nodeBPath, to: nodeAPath, role: getInverseSeat(baseRole) }
+      : undefined
+  return {
+    direction: next,
+    from: nodeAPath,
+    to: nodeBPath,
+    role: baseRole,
+    removedLink,
+  }
+}
+
+function pruneEmptyDualRows(
+  rows: readonly DirectionalLinkItem[],
+  initialLinkIds: Set<string>,
+): {
+  rows: DirectionalLinkItem[]
+  removed: { from: string; to: string; role?: PlexRelatedSeat }[]
+} {
+  if (rows.length !== 2) return { rows: [...rows], removed: [] }
+  const r0Blank = !rows[0]!.description.trim()
+  const r1Blank = !rows[1]!.description.trim()
+
+  if (r0Blank && !r1Blank) {
+    const r0 = rows[0]!
+    const removed = initialLinkIds.has(r0.id) ? [{ from: r0.from, to: r0.to, role: r0.role }] : []
+    return { rows: [rows[1]!], removed }
+  }
+  if (r1Blank && !r0Blank) {
+    const r1 = rows[1]!
+    const removed = initialLinkIds.has(r1.id) ? [{ from: r1.from, to: r1.to, role: r1.role }] : []
+    return { rows: [rows[0]!], removed }
+  }
+  return { rows: [...rows], removed: [] }
+}
+
+function collectOmittedInitialLinks(
+  initialLinks: readonly DirectionalLinkItem[],
+  finalRows: readonly DirectionalLinkItem[],
+  alreadyRemoved: readonly { from: string; to: string; role?: PlexRelatedSeat }[],
+): { from: string; to: string; role?: PlexRelatedSeat }[] {
+  const isPresent = (link: DirectionalLinkItem) => finalRows.some((r) => r.id === link.id)
+  const isRemoved = (link: DirectionalLinkItem) =>
+    alreadyRemoved.some((r) => r.from === link.from && r.to === link.to && r.role === link.role)
+
+  return initialLinks
+    .filter((link) => !isPresent(link) && !isRemoved(link))
+    .map((link) => ({ from: link.from, to: link.to, role: link.role }))
+}
+
+export function resolveInspectorDonePayload(
+  localRows: readonly DirectionalLinkItem[],
+  initialLinks: readonly DirectionalLinkItem[],
+  initialLinkIds: Set<string>,
+  pairKey: string,
+  existingRemoved: readonly { from: string; to: string; role?: PlexRelatedSeat }[],
+): {
+  pairKey: string
+  rows: DirectionalLinkItem[]
+  removedLinks: { from: string; to: string; role?: PlexRelatedSeat }[]
+} {
+  const pruned = pruneEmptyDualRows(localRows, initialLinkIds)
+  const allRemoved = [...existingRemoved, ...pruned.removed]
+  const omitted = collectOmittedInitialLinks(initialLinks, pruned.rows, allRemoved)
+
+  return {
+    pairKey,
+    rows: pruned.rows,
+    removedLinks: [...allRemoved, ...omitted],
+  }
+}

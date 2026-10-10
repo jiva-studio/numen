@@ -1162,6 +1162,7 @@ export const RestingOnATitle: Story = {
  * rather than blinking out and in, because they are matched by identifier.
  */
 export const Walk: Story = {
+  render: renderWalk,
   args: {
     neighbourhood: neighbourhoodOf(walkStart),
     gap: 18,
@@ -1230,7 +1231,6 @@ export const Walk: Story = {
       },
     },
   },
-  render: renderWalk,
 }
 
 /**
