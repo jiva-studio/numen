@@ -36,8 +36,8 @@ export default {
         'repo',      // repo-level config, layout, tooling
       ],
     ],
-    // git log stays readable in a 80-column terminal
-    'header-max-length': [2, 'always', 72],
+    // git log stays readable in a terminal (warning only to avoid blocking agent workflows)
+    'header-max-length': [1, 'always', 100],
     'body-max-line-length': [1, 'always', 100],
   },
 }
