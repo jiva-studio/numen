@@ -77,7 +77,7 @@ Every node carries a small handle: a disc with a cross in it. Press it and pull 
 node, and a thread follows your hand. Let go where you want the new note, and it is made there —
 above the node it is a parent, below it is a child, to the side it is a jump.
 
-The link and the note arrive together. There is no separate step where you go and connect them.
+The link and the note arrive together. There is no separate step where you go and connect them. Letting go on empty space opens a quick-link popover: pick an existing note to link to, or type a new title to create and link in one motion.
 
 **Clicking the handle** rather than dragging it makes one more child — the thing most often
 wanted, and the one a trackpad can ask for without holding a button down. <kbd>Enter</kbd> on
@@ -103,3 +103,13 @@ drop them into a seat and they are linked to the note that seat belongs to.
 A line between two nodes is a link. Where you gave the link a
 [label](/links/#what-it-looks-like-in-the-file), the label is written along the line, so the map
 says *why* two notes are connected and not only *that* they are.
+
+## Inspecting and changing links
+
+Right-clicking any connection line between two nodes opens the link inspector:
+
+- **Change direction**: Cycle single link arrows between forward (`→`), reverse (`←`), and undirected (`—`).
+- **Add dual labels**: Click **+ Reverse** (or press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>Enter</kbd>) to give the reverse direction its own distinct description.
+- **Delete links**: Remove individual directions or remove the entire connection between the notes.
+
+Saving the inspector updates the frontmatter `links:` block in the notes.

@@ -80,6 +80,15 @@ The read is the check. A name is called gone when a read of it finds nothing, an
 
 A link in the prose is followed with the platform's modifier held down. `[[Entropy]]` and `[[note://<identifier>]]` are read as an address, resolved the way every link in the vault is, and the note that answers opens in a tab beside this one. An address no note answers to opens nothing.
 
+## Smart wikilink autocomplete and instant creation
+
+Typing `[[` inside the editor opens an autocomplete list of matching notes across the vault.
+
+- Suggestions filter fuzzy matches over note titles and paths as you type.
+- `ArrowUp` and `ArrowDown` navigate suggestions; `Enter` or `Tab` selects the active match.
+- Brackets balance automatically and prevent duplicate closing brackets (`[[]]`).
+- Choosing a title that does not exist in the vault creates the new empty note immediately in the vault root and inserts `[[New Note]]` without shifting editor focus.
+
 ## Limits
 
 **A megabyte is the most a note may be and still be read here.** The size is asked of the file before it is opened, so a file over the bound is refused with none of its bytes read, and the tab says which file and what the bound is. A body handed back over the same number is refused by it too. The bound is the core's, so what is refused to the window is refused to an agent.
@@ -124,7 +133,7 @@ Creating a note and renaming one are the same convention read in two directions:
 
 **A note whose frontmatter cannot be read is not renamed.** The order above cannot be walked without reading the frontmatter, and a block that does not parse is one the application refuses to read past. It cannot be known whether the note carries a `title`, so it cannot be known what renaming the note means. The application says so and changes nothing.
 
-**The file keeps the extension it had.** A note is created under `.md`, and a rename never touches what a note already carries.
+**The file keeps the extension it had.** A note is created under `.md`, and a rename never touches what a note already carries. Inline renaming in the file tree opens directly on the row, selecting the name stem while preserving the extension.
 
 **A heading in the prose names nothing.** What a person types into the body is the body: writing `# Something` at the top of a note does not rename it, and neither does changing one. The name is the `title` key, else the filename.
 
@@ -173,6 +182,15 @@ The window is asked for everything it still holds, and it answers once every tab
 A page that goes with a question standing is still owed. Its work is held by a window this process cannot reach into, and a page that comes back takes it over and raises the question again.
 
 The window then settles in one order — the page, the agents, the scan and the follower, the database. A page has three seconds to hand over what it holds; the agents' transport has two seconds to be cut off; the writes already taken are waited for with no bound, the door having been shut first. A quit that does not arrive through the window happens once, the same way. See [One process, one lifetime](adr/0020-one-process-one-lifetime.md).
+
+## Linked tabs across panes
+
+Tabs in separate panes can be linked into synchronized groups. Right-clicking a Note, Plex, or Files tab header opens the linking menu:
+
+- Linking two or more tabs assigns them a shared color badge (`blue`, `leaf`, `amber`, `purple`).
+- Navigating to a note in an editor tab focuses that note in linked Plex graphs and selects it in linked file trees.
+- Activating a node in a linked Plex or selecting a note in linked Files opens that note in the linked editor tab.
+- Choosing **Unlink** in the tab context menu removes the tab from its synchronization group.
 
 ## The states, drawn
 

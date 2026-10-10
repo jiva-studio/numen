@@ -60,7 +60,6 @@ const same = async (at, taken) => {
 
 const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
 
-/** A browser already on the machine; undefined uses Playwright's own. */
 const systemChrome = () => {
   const explicit = process.env['CHROME_PATH']
   if (explicit) return explicit
@@ -75,6 +74,20 @@ const systemChrome = () => {
       } catch {
         continue
       }
+    }
+  }
+  const cache = join(process.env['HOME'] ?? '', '.cache', 'ms-playwright')
+  for (const name of [
+    'chromium-1243/chrome-linux64/chrome',
+    'chromium-1234/chrome-linux64/chrome',
+    'chromium-1228/chrome-linux64/chrome',
+  ]) {
+    const candidate = join(cache, name)
+    try {
+      accessSync(candidate, constants.X_OK)
+      return candidate
+    } catch {
+      continue
     }
   }
   return undefined

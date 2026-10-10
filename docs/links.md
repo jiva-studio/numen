@@ -58,6 +58,20 @@ Multiple parents are ordinary: the hierarchy is a directed acyclic graph, not a 
 
 `sibling` is not stored. Siblings are the children of a shared parent, which is a query.
 
+## Interactive links in the Plex graph
+
+The Plex graph allows authoring and managing relationships directly on canvas:
+
+- Dragging a connection handle from any node pulls an interactive edge.
+- Releasing over an existing node establishes the link between them.
+- Releasing on open canvas presents an autocomplete search popover to pick a target note or create a new note on the fly.
+- Right-clicking an edge opens the link inspector popover to view and modify connections between two notes.
+- The link inspector supports:
+  - Cycling directions on a single link: forward (`→`), reverse (`←`), or undirected (`—`).
+  - Adding a reverse direction (`+ Reverse` or Ctrl+Enter) with its own distinct label for bidirectional relationships.
+  - Deleting individual directional links or the entire connection.
+- Editing a link from the graph updates the frontmatter `links:` block of the note directly.
+
 ## The same link written twice
 
 `[[notes/Entropy]]` in the block and `[[Entropy]]` in the prose are one link. Sameness is decided by where the links resolve, so the fold happens after resolution. Two links that resolve to nothing are the same only when they were written the same.

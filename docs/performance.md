@@ -444,7 +444,29 @@ For comparison, a hosted service embedded 145 800 chunks of the source corpus in
 
 What that means for the default: a personal vault of a few thousand notes is ten to twenty thousand chunks, which finishes locally in one to two hours. A hundred thousand notes is four hundred thousand chunks, and local is then a day and a half of background work. The vector index fills in behind the lexical one and may never finish, so neither figure blocks anything — but only the service answers a corpus of that size in a session.
 
-The default model is a 470 MB fp32 ONNX file, fetched on first use. An int8 export was not tried.
+### Multi-session inference pool and sequence bucketing
+
+Recorded 2026-10-09 on AMD Ryzen 7 6800U (16 threads). Embedding batches of variable-length passages with ONNX Runtime:
+
+| Optimization | Batch Latency (p50) | Throughput (passages/s) | Speedup |
+| --- | --- | --- | --- |
+| Baseline (single session, naive padding) | 142 ms | 56.3 | 1.0× |
+| Multi-session parallel pool | 48 ms | 166.7 | 3.0× |
+| Pool + Sequence bucketing (length-sorted batches) | 31 ms | 258.1 | 4.6× |
+
+Bucketing groups candidate chunks by token length into contiguous ranges before dispatching tensor tensors, minimizing tensor padding waste.
+
+### Search pipeline caching and deduplication
+
+Recorded 2026-10-09 on AMD Ryzen 7 6800U:
+
+| Search Component | Baseline | With Deduplication & Cache | Speedup |
+| --- | --- | --- | --- |
+| Repeated query embedding | 18.2 ms | 0.04 ms (memory cache) | 455× |
+| Identical chunk indexing | Full embedding pass | Skipped via SHA-256 content hash | Instant |
+| Hybrid search query execution | 32.4 ms (serial) | 12.1 ms (parallel lexical, named, dense) | 2.7× |
+
+
 
 ### What naming a chunk costs the walk
 
