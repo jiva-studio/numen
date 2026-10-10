@@ -5,6 +5,7 @@
  * and everything the editor was asked to do is kept in the order it was asked.
  */
 import { ref } from 'vue'
+import type { PlexRelatedSeat } from '@numen/ui'
 import type { PlexEditor } from '../model/usePlexTab'
 import type { PlexView } from '../model/usePlexView'
 import type { Neighbourhood } from '@/entities/note'
@@ -16,27 +17,48 @@ export const settle = () => new Promise((done) => setTimeout(done, 0))
 /** Which of three each note of a neighbourhood is, by the path it stands at. */
 export type Types = Record<string, NoteType>
 
+export interface RelatedNeighbourSpec {
+  path: string
+  seat?: PlexRelatedSeat
+  through?: string
+  label?: string
+  reverseLabel?: string
+  isMutual?: boolean
+  title?: string
+  type?: NoteType
+}
+
+export type NeighbourSpec = string | RelatedNeighbourSpec
+
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
 const createNeighbourhood = (
   focus: string,
-  neighbours: readonly string[] = [],
+  neighbours: readonly NeighbourSpec[] = [],
   types: Types = {},
 ): Neighbourhood => ({
   focus: { path: focus, title: focus.replace(/\.md$/, '') },
   focusType: types[focus] ?? 'note',
-  related: neighbours.map((path) => ({
-    seat: 'child',
-    through: '',
-    label: '',
-    isMutual: false,
-    path,
-    title: path.replace(/\.md$/, ''),
-    type: types[path] ?? 'note',
-  })),
+  related: neighbours.map((item) => {
+    const spec: RelatedNeighbourSpec = typeof item === 'string' ? { path: item } : item
+    return {
+      seat: spec.seat ?? 'child',
+      through: spec.through ?? '',
+      label: spec.label ?? '',
+      reverseLabel: spec.reverseLabel ?? '',
+      isMutual: spec.isMutual ?? false,
+      path: spec.path,
+      title: spec.title ?? spec.path.replace(/\.md$/, ''),
+      type: spec.type ?? types[spec.path] ?? 'note',
+    }
+  }),
 })
 
 /** A plex standing on a note, which records every note it was sent to. */
-export const viewOn = (at: string, neighbours: readonly string[] = [], types: Types = {}) => {
+export const viewOn = (
+  at: string,
+  neighbours: readonly NeighbourSpec[] = [],
+  types: Types = {},
+) => {
   const went: string[] = []
   const view = {
     neighbourhood: ref(createNeighbourhood(at, neighbours, types)),
@@ -45,7 +67,7 @@ export const viewOn = (at: string, neighbours: readonly string[] = [], types: Ty
     go: async (path: string) => {
       went.push(path)
       view.here.value = path
-      view.neighbourhood.value = createNeighbourhood(path, [], types)
+      view.neighbourhood.value = createNeighbourhood(path, path === at ? neighbours : [], types)
     },
     followMoves: (renamed: readonly { from: string; to: string }[]) => {
       const one = renamed.find((went) => went.from === view.here.value)
@@ -59,7 +81,8 @@ export const viewOn = (at: string, neighbours: readonly string[] = [], types: Ty
 /** A vault that takes every note it is asked to make, and records the asking. */
 export const createVault = (takes = true) => {
   const made: [string, string][] = []
-  const joined: [string, string, string][] = []
+  const joined: [string, string, string, string?][] = []
+  const removed: [string, string, PlexRelatedSeat?][] = []
   /** The notes this vault will write no link to, which a test names. */
   const notJoinedPaths = new Set<string>()
   const editor: PlexEditor = {
@@ -71,10 +94,16 @@ export const createVault = (takes = true) => {
       made.push([from, seat])
       return takes ? { path: `${title}.md`, title } : null
     },
-    join: async (from, to, seat) => {
-      joined.push([from, to, seat])
+    join: async (from, to, seat, label) => {
+      if (label !== undefined) joined.push([from, to, seat, label])
+      else joined.push([from, to, seat])
       return takes && !notJoinedPaths.has(to)
     },
+    removeLink: async (from, to, seat) => {
+      if (seat !== undefined) removed.push([from, to, seat])
+      else removed.push([from, to])
+      return takes
+    },
   }
-  return { editor, made, joined, notJoinedPaths }
+  return { editor, made, joined, removed, notJoinedPaths }
 }

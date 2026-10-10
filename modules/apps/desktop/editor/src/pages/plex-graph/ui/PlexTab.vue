@@ -7,10 +7,11 @@ import { Menu, optionsForType, Plex, threadOf, useTypeSize, Waiting } from '@num
 import type { MenuOpening, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
+import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import { ITEMS, NONE } from '../lib/menu'
 import { iconFor } from '@/shared/icons'
 import { iconOfNote } from '@/entities/note'
-import type { PlexTabState } from '../types'
+import type { LinkInspectorSavePayload, PlexTabState } from '../types'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -19,7 +20,15 @@ const props = defineProps<{ state: PlexTabState }>()
 /* --------------------------------- State ---------------------------------- */
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { dragged, empty, menu, quickLink, mostParts, picture: neighbourhood } = props.state
+const {
+  dragged,
+  empty,
+  menu,
+  quickLink,
+  linkInspector,
+  mostParts,
+  picture: neighbourhood,
+} = props.state
 
 /**
  * How large the picture is drawn, and how many parts a node hangs at once. A
@@ -134,6 +143,37 @@ function onDismissQuickLink() {
   props.state.dismissQuickLink()
 }
 
+function onEdgeMenu(pair: string, at: { x: number; y: number }) {
+  const rect = rootElement.value?.getBoundingClientRect()
+  if (rect) {
+    const margin = 20
+    const halfWidth = 160
+    const halfHeight = 90
+    const localX = at.x - rect.left
+    const localY = at.y - rect.top
+    const clampedX = Math.max(halfWidth + margin, Math.min(localX, rect.width - halfWidth - margin))
+    const clampedY = Math.max(
+      halfHeight + margin,
+      Math.min(localY, rect.height - halfHeight - margin),
+    )
+    props.state.openLinkInspector(pair, { x: clampedX, y: clampedY })
+  } else {
+    props.state.openLinkInspector(pair, at)
+  }
+}
+
+function onSaveLinkInspector(payload: LinkInspectorSavePayload) {
+  void props.state.saveLinkInspector(payload)
+}
+
+function onRemoveEntireLink(pairKey: string) {
+  void props.state.removeEntireLink(pairKey)
+}
+
+function onDismissLinkInspector() {
+  props.state.dismissLinkInspector()
+}
+
 /* -------------------------------- Helpers --------------------------------- */
 /**
  * What a node is drawn before its title, and nothing for an ordinary note. A
@@ -231,6 +271,7 @@ function getSourceHandlePosition(
       @menu="onOpenMenu"
       @show="onShowNode"
       @enter="onEnterPart"
+      @edge-menu="onEdgeMenu"
       @dismiss="onDismissPicture"
     >
       <!-- A deck, a stencil and a preset are drawn as the tree draws them. An
@@ -271,6 +312,14 @@ function getSourceHandlePosition(
       @select-note="onSelectQuickLinkNote"
       @create-note="onCreateQuickLinkNote"
       @dismiss="onDismissQuickLink"
+    />
+
+    <PlexLinkInspectorPopover
+      v-if="linkInspector"
+      :request="linkInspector"
+      @save="onSaveLinkInspector"
+      @remove-entire-link="onRemoveEntireLink"
+      @dismiss="onDismissLinkInspector"
     />
   </div>
 </template>

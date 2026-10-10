@@ -50,6 +50,9 @@ type Neighbour struct {
 	// Label is what the person wrote on the link.
 	Label string
 
+	// ReverseLabel is what the other note wrote on its link back, when IsMutual is true.
+	ReverseLabel string
+
 	// IsMutual is set when both notes name this relationship, each in its own
 	// words. Label is then the word the note in focus wrote for it.
 	IsMutual bool

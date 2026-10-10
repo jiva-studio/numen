@@ -10,6 +10,7 @@ import {
   mapNeighbourhood,
   mapNoteResult,
   mapWriteResult,
+  roles,
   run,
   writes,
 } from './words'
@@ -25,6 +26,7 @@ export type NoteOperations = Pick<
   | 'write'
   | 'create'
   | 'join'
+  | 'removeLink'
   | 'rename'
   | 'headings'
   | 'resolve'
@@ -60,6 +62,8 @@ export const notesCore: NoteOperations = {
     return error ? asFailure(error) : asValue({ path: answer.path })
   },
   join: async (path, link) => errorIn(await notes.writeLink({ path, link: mapLink(link) })),
+  removeLink: async (path, to, role) =>
+    errorIn(await notes.removeLink({ path, to, ...(role ? { role: roles[role] } : {}) })),
   rename: async (path, title) => {
     const answer = await notes.renameNote({ path, title })
     if (staleIn(answer)) return asFailure('changed')

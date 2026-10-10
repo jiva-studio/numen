@@ -29,6 +29,41 @@ export interface QuickLinkRequest {
   readonly at: { readonly x: number; readonly y: number }
 }
 
+/** Direction mode of a link. */
+export type LinkDirectionMode = 'forward' | 'reverse' | 'undirected'
+
+/** A single directional relationship between two nodes in the inspector. */
+export interface DirectionalLinkItem {
+  readonly id: string
+  readonly from: string
+  readonly to: string
+  readonly role: PlexRelatedSeat
+  readonly direction: LinkDirectionMode
+  readonly description: string
+}
+
+/** Payload emitted when saving changes in the link inspector. */
+export interface LinkInspectorSavePayload {
+  readonly pairKey: string
+  readonly rows: readonly DirectionalLinkItem[]
+  readonly removedLinks: readonly { from: string; to: string; role?: PlexRelatedSeat }[]
+}
+
+export interface LinkInspectorNode {
+  readonly id: string
+  readonly title: string
+  readonly path: string
+}
+
+/** Request to open the link inspector for a connection between two nodes. */
+export interface LinkInspectorRequest {
+  readonly pairKey: string
+  readonly nodeA: LinkInspectorNode
+  readonly nodeB: LinkInspectorNode
+  readonly links: readonly DirectionalLinkItem[]
+  readonly at: { readonly x: number; readonly y: number }
+}
+
 /** Making a note from the picture, and joining two that are already on it. */
 export interface PlexEditor {
   createInSeat(from: string, seat: PlexRelatedSeat): Promise<unknown>
@@ -37,7 +72,8 @@ export interface PlexEditor {
     from: string,
     seat: PlexRelatedSeat,
   ): Promise<{ path: string } | null>
-  join(from: string, to: string, seat: PlexRelatedSeat): Promise<boolean>
+  join(from: string, to: string, seat: PlexRelatedSeat, label?: string): Promise<boolean>
+  removeLink(from: string, to: string, seat?: PlexRelatedSeat): Promise<boolean>
 }
 
 /** Dependencies for plex tab state. */
@@ -103,9 +139,18 @@ export interface PlexQuickLinkState {
   searchNotes(query: string): Promise<readonly { path: string; title: string }[]>
 }
 
+export interface PlexLinkInspectorState {
+  readonly linkInspector: Ref<LinkInspectorRequest | null>
+  openLinkInspector(pair: string, at: { x: number; y: number }): void
+  dismissLinkInspector(): void
+  saveLinkInspector(payload: LinkInspectorSavePayload): Promise<void>
+  removeEntireLink(pairKey: string): Promise<void>
+}
+
 /** What one plex tab holds. */
 export type PlexTabState = PlexViewState &
   PlexMenuState &
   PlexPartsState &
   PlexNodeActions &
-  PlexQuickLinkState
+  PlexQuickLinkState &
+  PlexLinkInspectorState

@@ -80,6 +80,8 @@ export interface PlexViewEvents {
   (event: 'menu', id: string, at: Position, opening: MenuOpening): void
   /** A part of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, part: string): void
+  /** A menu or inspector was asked for on an edge. */
+  (event: 'edge-menu', pair: string, at: Position): void
 }
 
 export interface PlexNodeProps {

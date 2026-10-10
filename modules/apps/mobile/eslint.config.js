@@ -129,7 +129,8 @@ export default tseslint.config(
         {
           selector:
             'VAttribute[directive=true][key.name.name="bind"][key.argument.name="style"] ObjectExpression',
-          message: 'an inline style object is a computed in <script>, not an object literal in the template',
+          message:
+            'an inline style object is a computed in <script>, not an object literal in the template',
         },
       ],
 

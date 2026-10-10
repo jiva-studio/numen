@@ -217,6 +217,7 @@ func (s *seats) addMutual(neighbour domain.Neighbour) {
 		return
 	}
 	current.IsMutual = true
+	current.ReverseLabel = neighbour.Label
 	if current.Label == "" {
 		current.Label = neighbour.Label
 	}

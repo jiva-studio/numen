@@ -30,10 +30,9 @@ describe('wikilink completion source', () => {
   })
 
   it('suggests matching note titles on [[query', async () => {
-    const search = vi.fn().mockResolvedValue([
-      { title: 'Quantum Mechanics' },
-      { title: 'Quantum Field Theory' },
-    ])
+    const search = vi
+      .fn()
+      .mockResolvedValue([{ title: 'Quantum Mechanics' }, { title: 'Quantum Field Theory' }])
     const source = createWikilinkSource({ search })
     const context = createTestContext('Read [[Quantum')
     const result = await source(context)
