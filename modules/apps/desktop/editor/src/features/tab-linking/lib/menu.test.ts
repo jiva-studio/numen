@@ -5,7 +5,7 @@ describe('createLinkMenuItems', () => {
   it('creates items for unlinked tab', () => {
     const tabs = [
       { id: 'tab-1', title: 'Note 1', kind: 'note', isLinked: false },
-      { id: 'tab-2', title: 'Files', kind: 'files', isLinked: false },
+      { id: 'tab-2', title: '', kind: 'files', isLinked: false },
     ]
     const items = createLinkMenuItems(tabs, false)
     expect(items).toHaveLength(2)
@@ -17,26 +17,25 @@ describe('createLinkMenuItems', () => {
     })
     expect(items[1]).toEqual({
       id: 'tab-2',
-      text: 'Files',
+      text: 'files',
       detail: 'files',
       group: 'Link with tab',
     })
   })
 
-  it('includes unlink item when tab is already linked', () => {
+  it('includes unlink item when tab is already linked with or without target title', () => {
     const tabs = [{ id: 'tab-2', title: 'Files', kind: 'files', isLinked: false }]
-    const items = createLinkMenuItems(tabs, true, 'Note 1')
-    expect(items).toHaveLength(2)
-    expect(items[0]).toEqual({
+    const itemsWithTitle = createLinkMenuItems(tabs, true, 'Note 1')
+    expect(itemsWithTitle[0]).toEqual({
       id: UNLINK_ID,
       text: 'Unlink tab',
       detail: 'Linked with Note 1',
     })
-    expect(items[1]).toEqual({
-      id: 'tab-2',
-      text: 'Files',
-      detail: 'files',
-      group: 'Link with tab',
+
+    const itemsWithoutTitle = createLinkMenuItems(tabs, true, '')
+    expect(itemsWithoutTitle[0]).toEqual({
+      id: UNLINK_ID,
+      text: 'Unlink tab',
     })
   })
 })

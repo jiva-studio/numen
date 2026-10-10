@@ -43,7 +43,7 @@ describe('createPlexKind with linked tabs', () => {
       core: {
         neighbourhood: async (path: string) => ({
           focus: { path, title: 'Focus Title' },
-          related: [],
+          related: [{ path: 'Target.md', title: 'Target Title', kind: 'link' }],
         }),
       } as any,
       tabOpeners: tabOpenersMock,
@@ -72,20 +72,24 @@ describe('createPlexKind with linked tabs', () => {
     const plexTabId = await held.openTabOfKind('plex', 'Start.md')
     const noteTabId = await held.openTabOfKind('note', 'Note.md')
 
-    // Link plex tab and note tab
     tabLinks.linkTabs(plexTabId, noteTabId)
-
-    // Simulate front tab is the plex tab
     held.handle.show(plexTabId)
 
-    // Call openNode via the opened plex tab
     const plexState = held.getTabStateIn<any>(plexTabId, 'plex')
-    plexState.openNode('node-1')
+    await plexState.view.go('Start.md')
 
-    expect(tabLinks.getLinkedTargets(plexTabId)).toEqual([noteTabId])
+    const targetNode = plexState.picture.value.nodes.find((n: any) => n.title === 'Target Title')
+    expect(targetNode).toBeDefined()
+
+    plexState.openNode(targetNode.id)
+    expect(loadInTabMock).toHaveBeenCalledWith(
+      noteTabId.replace(/^note:/, ''),
+      'Target.md',
+      'Target Title',
+    )
   })
 
-  it('reveals file in linked files tab when plex node is selected', async () => {
+  it('reveals file in linked files tab when plex node is activated', async () => {
     const tabLinks = useTabLinks()
     const held = useWindowTabs()
 
@@ -121,7 +125,7 @@ describe('createPlexKind with linked tabs', () => {
       core: {
         neighbourhood: async (path: string) => ({
           focus: { path, title: 'Focus' },
-          related: [],
+          related: [{ path: 'Selected.md', title: 'Selected Title', kind: 'link' }],
         }),
       } as any,
       tabOpeners: tabOpenersMock,
@@ -156,14 +160,16 @@ describe('createPlexKind with linked tabs', () => {
     const plexTabId = await held.openTabOfKind('plex', 'Start.md')
     const filesTabId = await held.openTabOfKind('files', '')
 
-    // Link plex tab and files tab
     tabLinks.linkTabs(plexTabId, filesTabId)
-
-    // Front tab is plex
     held.handle.show(plexTabId)
 
-    const front = held.handle.front()
-    expect(front?.id).toBe(plexTabId)
-    expect(tabLinks.getLinkedTargets(plexTabId)).toEqual([filesTabId])
+    const plexState = held.getTabStateIn<any>(plexTabId, 'plex')
+    await plexState.view.go('Start.md')
+
+    const targetNode = plexState.picture.value.nodes.find((n: any) => n.title === 'Selected Title')
+    expect(targetNode).toBeDefined()
+
+    plexState.activate(targetNode.id)
+    expect(revealPathMock).toHaveBeenCalledWith('Selected.md')
   })
 })

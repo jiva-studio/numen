@@ -558,3 +558,43 @@ describe('what a note tab holds, as whoever answers for the person is told it', 
     expect(one.noted.kept.getTitle(tabId)).toBe('Note 2')
   })
 })
+
+describe('loadInTab and kind methods edge cases', () => {
+  it('handles loadInTab when path is already the current path', async () => {
+    const one = window()
+    one.openNote('Note1.md', 'Note 1')
+    await nextTick()
+    const tabId = one.idOf('Note1.md')
+
+    await one.noted.loadInTab(tabId, 'Note1.md', 'Updated Title')
+    expect(one.noted.kept.getTitle(tabId)).toBe('Updated Title')
+
+    await one.noted.loadInTab(tabId, 'Note1.md')
+    expect(one.noted.kept.getTitle(tabId)).toBe('Updated Title')
+  })
+
+  it('handles loadInTab to new path without title', async () => {
+    const one = window()
+    one.openNote('Note1.md', 'Note 1')
+    await nextTick()
+    const tabId = one.idOf('Note1.md')
+
+    await one.noted.loadInTab(tabId, 'Note2.md')
+    await nextTick()
+    expect(one.noted.kind.getOpenTab!(stateOf(one))).toStrictEqual({ path: 'Note2.md' })
+  })
+
+  it('covers kind onShow and onClose handlers', async () => {
+    const one = window()
+    one.openNote('Note.md', 'A note')
+    await nextTick()
+    const state = stateOf(one)
+
+    const measureSpy = vi.spyOn(state, 'measure')
+    one.noted.kind.onShow?.(state)
+    expect(measureSpy).toHaveBeenCalled()
+
+    const closeResult = one.noted.kind.onClose?.(state, one.held.tabs.value[0]?.id ?? '')
+    expect(closeResult).toBe(false)
+  })
+})

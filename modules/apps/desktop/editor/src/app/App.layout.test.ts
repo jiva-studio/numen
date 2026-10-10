@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import { Plex, Tree, WelcomePage } from '@numen/ui'
+import { Plex, Tree, WelcomePage, WorkspaceLayout } from '@numen/ui'
 import { AgentTab } from '@/pages/agent-chat'
 import { DocumentTab } from '@/pages/document-viewer'
 import { FilesTab } from '@/pages/file-manager'
@@ -262,5 +262,82 @@ describe('a file dragged out of the tree', () => {
 
   it('is nothing where the rows hold no note at all', async () => {
     expect(getDragged(await dragRows(['Cover.png', 'physics']))).toStrictEqual([])
+  })
+})
+
+describe('tab linking context menu', () => {
+  it('opens link menu on tab contextmenu and links tabs', async () => {
+    const window = await mountWindow()
+    const layout = window.findComponent(WorkspaceLayout)
+    expect(layout.exists()).toBe(true)
+
+    // Simulate tab element in DOM
+    const tabEl = document.createElement('div')
+    const plexTabId = tabsOf(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
+    const filesTabId = tabsOf(window).find((t) => t.id.startsWith('files:'))?.id ?? 'files:side'
+
+    tabEl.setAttribute('data-workspace-tab', plexTabId)
+    document.body.appendChild(tabEl)
+
+    const event = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 50,
+      clientY: 50,
+    })
+    Object.defineProperty(event, 'target', { value: tabEl, enumerable: true })
+
+    layout.vm.$emit('contextmenu', event)
+    await settle()
+
+    const linkMenu = window.findComponent({ name: 'TabLinkMenu' })
+    expect(linkMenu.exists()).toBe(true)
+
+    linkMenu.vm.$emit('link', filesTabId)
+    await settle()
+
+    expect(window.findComponent({ name: 'TabLinkMenu' }).exists()).toBe(false)
+
+    // Reopen menu to verify unlink
+    layout.vm.$emit('contextmenu', event)
+    await settle()
+
+    const openedMenu = window.findComponent({ name: 'TabLinkMenu' })
+    expect(openedMenu.exists()).toBe(true)
+    expect(openedMenu.props('isLinked')).toBe(true)
+
+    openedMenu.vm.$emit('unlink')
+    await settle()
+
+    expect(window.findComponent({ name: 'TabLinkMenu' }).exists()).toBe(false)
+    tabEl.remove()
+  })
+
+  it('closes link menu when close event is emitted', async () => {
+    const window = await mountWindow()
+    const layout = window.findComponent(WorkspaceLayout)
+
+    const tabEl = document.createElement('div')
+    const plexTabId = tabsOf(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
+    tabEl.setAttribute('data-workspace-tab', plexTabId)
+    document.body.appendChild(tabEl)
+
+    const event = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 50,
+      clientY: 50,
+    })
+    Object.defineProperty(event, 'target', { value: tabEl, enumerable: true })
+
+    layout.vm.$emit('contextmenu', event)
+    await settle()
+
+    const linkMenu = window.findComponent({ name: 'TabLinkMenu' })
+    linkMenu.vm.$emit('close')
+    await settle()
+
+    expect(window.findComponent({ name: 'TabLinkMenu' }).exists()).toBe(false)
+    tabEl.remove()
   })
 })
