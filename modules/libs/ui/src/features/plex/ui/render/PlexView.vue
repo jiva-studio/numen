@@ -21,6 +21,7 @@ import { byHandle } from '../../model/reaching'
 import { byDoubleClick } from '../../model/showing'
 import { browserClock } from '../../model/transition'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
   canReach: true,
@@ -37,18 +38,31 @@ const props = withDefaults(defineProps<PlexViewProps>(), {
   dropName: seatWord,
 })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<PlexViewEvents>()
 
 defineSlots<PlexDrawnSlots>()
 
+/* --------------------------------- State ---------------------------------- */
 const svg = useTemplateRef<SVGSVGElement>('svg')
 
 /** The boxes as they are drawn, so the keyboard can be put back on one. */
 const views = new Map<string, { focus: () => void }>()
+const nodeRefHolders = new Map<string, (view: unknown) => void>()
 
-const holdNode = (id: string, view: unknown): void => {
-  if (view) views.set(id, view as { focus: () => void })
-  else views.delete(id)
+const holdNode = (id: string): (view: unknown) => void => {
+  let holder = nodeRefHolders.get(id)
+  if (!holder) {
+    holder = (view: unknown) => {
+      if (view) views.set(id, view as { focus: () => void })
+      else {
+        views.delete(id)
+        nodeRefHolders.delete(id)
+      }
+    }
+    nodeRefHolders.set(id, holder)
+  }
+  return holder
 }
 
 defineExpose({ svg, focusNode: (id: string) => views.get(id)?.focus() })
@@ -71,25 +85,8 @@ const uid = useId()
 
 const { lines, lifted, resting, setOver } = useEdgeLines(() => props.frame, uid)
 
-/**
- * What each node is to the gesture. Only the node it left from keeps a handle
- * while one is running: the hand is somewhere else entirely, and a second
- * handle under it would offer to start a gesture already under way.
- */
-const roleOf = (node: PlacedNode): GestureRole => {
-  const outcome = props.gestureOutcome
-  if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
-  if (props.gestureFrom === node.id) return 'source'
-  return props.canReach && props.gestureFrom === null ? 'open' : 'closed'
-}
-
 /** The node the attention has settled on, as that node reports it. */
 const restedOn = ref<string | null>(null)
-
-const settle = (id: string, isResting: boolean) => {
-  if (isResting) restedOn.value = id
-  else if (restedOn.value === id) restedOn.value = null
-}
 
 /**
  * The boxes in the order they are drawn, the one being rested on last. It is
@@ -113,6 +110,25 @@ const ghost = computed(() =>
 const dragging = computed(() =>
   getDraggedShape(props.frame, props.dropSeat, props.draggedAt, props.dropName, props.nodeSize),
 )
+
+/* -------------------------------- Handlers -------------------------------- */
+const onSettle = (id: string, isResting: boolean) => {
+  if (isResting) restedOn.value = id
+  else if (restedOn.value === id) restedOn.value = null
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+/**
+ * What each node is to the gesture. Only the node it left from keeps a handle
+ * while one is running: the hand is somewhere else entirely, and a second
+ * handle under it would offer to start a gesture already under way.
+ */
+const roleOf = (node: PlacedNode): GestureRole => {
+  const outcome = props.gestureOutcome
+  if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
+  if (props.gestureFrom === node.id) return 'source'
+  return props.canReach && props.gestureFrom === null ? 'open' : 'closed'
+}
 </script>
 
 <template>
@@ -162,14 +178,14 @@ const dragging = computed(() =>
       :reaching="reaching"
       :showing="showing"
       :clock="clock"
+      :ref="holdNode(node.id)"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"
       @ask="emit('ask', node.id)"
-      :ref="(view) => holdNode(node.id, view)"
       @menu="(at, opening) => emit('menu', node.id, at, opening)"
       @enter="(part) => emit('enter', node.id, part)"
-      @settle="settle(node.id, $event)"
+      @settle="onSettle(node.id, $event)"
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>
