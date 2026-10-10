@@ -40,7 +40,7 @@ func addVaultTools(server *sdk.Server, core Core) {
 }
 
 func addVaultGet(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "vault_get",
 		Title: "Show the vault",
 		Description: "Where the vault is and how much of it has been read. The folder " +
@@ -75,7 +75,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 }
 
 func addVaultProblems(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "vault_problems",
 		Title: "List scan problems",
 		Description: "What the vault contains that could not be acted on and was not " +

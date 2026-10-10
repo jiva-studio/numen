@@ -16,7 +16,7 @@ func addLinkTools(server *sdk.Server, core Core) {
 }
 
 func addLinkReadingTools(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "link_list",
 		Title: "List links",
 		Description: "What one note points at and what points at it. A link is a " +
@@ -40,7 +40,7 @@ func addLinkReadingTools(server *sdk.Server, core Core) {
 }
 
 func addLinkWritingTools(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "link_add",
 		Title: "Add links",
 		Description: "Join notes to other notes. A link is written in the note it goes " +
@@ -129,7 +129,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		return nil, res, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "link_update",
 		Title: "Update links",
 		Description: "Change what an existing link says about itself — its role, its " +
@@ -164,7 +164,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		return nil, ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "link_remove",
 		Title: "Remove links",
 		Description: "Take a link out of the note it is written in. The note at the " +

@@ -11,7 +11,7 @@ import (
 // addFileReadingTools adds the tools that reach a vault's files by path,
 // whatever kind of file the vault holds each of them as.
 func addFileReadingTools(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "file_read",
 		Title: "Read a range of a file",
 		Description: "Read a span of any file the vault holds, by its path from the " +

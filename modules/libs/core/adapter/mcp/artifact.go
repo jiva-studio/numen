@@ -77,7 +77,7 @@ func addArtifactTools(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "artifact_list",
 		Title: "List artifacts",
 		Description: "What this application made from one file of the vault and keeps " +
@@ -106,7 +106,7 @@ func addArtifactTools(server *sdk.Server, core Core) {
 		return nil, out{Artifacts: held}, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "artifact_read",
 		Title: "Read an artifact",
 		Description: "A range of one thing made from a file, as it stands on disk, by the " +

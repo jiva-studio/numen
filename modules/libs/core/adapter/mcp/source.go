@@ -34,7 +34,7 @@ func addSourceTools(server *sdk.Server, core Core) {
 }
 
 func addSourceReadingTools(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "source_list",
 		Title: "List documents",
 		Description: "List the books, papers and scans filed in the vault beside its notes, " +
@@ -82,7 +82,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		return nil, out{Documents: documents, Reading: reading}, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "source_read",
 		Title: "Read a range of a document",
 		Description: "Read a span of one document's own text, in the offsets a search's " +
@@ -133,7 +133,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 }
 
 func addSourceWritingTools(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "source_recognise",
 		Title: "Recognise a scanned document",
 		Description: "Have a model read one scanned document and write what it says into " +
@@ -178,7 +178,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		return nil, out{IsStarted: true, Doing: doing}, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "source_transcribe",
 		Title: "Transcribe a recording",
 		Description: "Have a model listen to one recording and write the words it carries " +

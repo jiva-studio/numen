@@ -28,7 +28,7 @@ func addWindowTools(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "window_tab_list",
 		Title: "List open tabs",
 		Description: "Every tab of the person's window, and which of them they are looking " +
