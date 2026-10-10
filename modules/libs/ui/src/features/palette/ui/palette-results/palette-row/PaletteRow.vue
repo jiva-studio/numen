@@ -40,7 +40,7 @@ defineSlots<{
     :aria-disabled="row.item.disabled || undefined"
     :data-here="isCurrent || undefined"
     :data-disabled="row.item.disabled || undefined"
-    @pointerenter="emit('point-at', $event)"
+    @pointermove="emit('point-at', $event)"
     @pointerdown.prevent
     @click="emit('choose', $event.shiftKey)"
   >
