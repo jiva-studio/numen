@@ -36,12 +36,7 @@ export default tseslint.config(
       parserOptions: {
         // The files the build's tsconfig does not name.
         projectService: {
-          allowDefaultProject: [
-            'eslint.config.js',
-            'vitest.config.ts',
-            '.storybook/main.ts',
-            '.storybook/preview.ts',
-          ],
+          allowDefaultProject: ['eslint.config.js', 'vitest.config.ts', '.storybook/*.ts'],
         },
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],

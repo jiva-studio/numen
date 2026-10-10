@@ -25,6 +25,9 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 		cfg.IndexPath = where.Index
 		cfg.RegistryPath = where.Registry
 		cfg.ServiceDir = where.ServiceDir
+		if chosen, err := cfg.Settings(); err == nil {
+			cfg = cfg.SetSettings(chosen)
+		}
 
 		return cli.Deps{
 			Vaults: func() (cli.Vaults, error) {
