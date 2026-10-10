@@ -3,6 +3,7 @@ import {
   createMutualInspectorLinks,
   createSingleInspectorLink,
   getInverseSeat,
+  resolvePopoverPosition,
   resolveSingleDirection,
 } from './linkInspector'
 
@@ -184,6 +185,90 @@ describe('linkInspector helper module', () => {
       expect(rows[0]?.role).toBe('jump')
       expect(rows[0]?.direction).toBe('undirected')
       expect(rows[0]?.description).toBe('')
+    })
+  })
+
+  describe('resolvePopoverPosition', () => {
+    const popoverSize = { width: 320, height: 160 }
+    const containerSize = { width: 1000, height: 800 }
+
+    it('centers horizontally and places above when there is sufficient room', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 500, y: 400 },
+        popoverSize,
+        containerSize,
+        margin: 12,
+        gap: 12,
+      })
+
+      expect(pos).toEqual({
+        left: 340, // 500 - 160
+        top: 228, // 400 - 160 - 12
+      })
+    })
+
+    it('clamps to left margin when anchor point is near left boundary', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 50, y: 400 },
+        popoverSize,
+        containerSize,
+        margin: 12,
+        gap: 12,
+      })
+
+      expect(pos.left).toBe(12)
+      expect(pos.top).toBe(228)
+    })
+
+    it('clamps to right margin when anchor point is near right boundary', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 950, y: 400 },
+        popoverSize,
+        containerSize,
+        margin: 12,
+        gap: 12,
+      })
+
+      expect(pos.left).toBe(668) // 1000 - 320 - 12
+      expect(pos.top).toBe(228)
+    })
+
+    it('flips below anchor point when there is not enough room above', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 500, y: 80 },
+        popoverSize,
+        containerSize,
+        margin: 12,
+        gap: 12,
+      })
+
+      expect(pos.left).toBe(340)
+      expect(pos.top).toBe(92) // 80 + 12
+    })
+
+    it('clamps to top/left margins in top-left corner', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 30, y: 50 },
+        popoverSize,
+        containerSize,
+        margin: 12,
+        gap: 12,
+      })
+
+      expect(pos.left).toBe(12)
+      expect(pos.top).toBe(62) // 50 + 12
+    })
+
+    it('handles narrow container gracefully', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 100, y: 100 },
+        popoverSize: { width: 400, height: 200 },
+        containerSize: { width: 300, height: 400 },
+        margin: 12,
+        gap: 12,
+      })
+
+      expect(pos.left).toBe(12)
     })
   })
 })

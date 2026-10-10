@@ -146,17 +146,9 @@ function onDismissQuickLink() {
 function onEdgeMenu(pair: string, at: { x: number; y: number }) {
   const rect = rootElement.value?.getBoundingClientRect()
   if (rect) {
-    const margin = 20
-    const halfWidth = 160
-    const halfHeight = 90
     const localX = at.x - rect.left
     const localY = at.y - rect.top
-    const clampedX = Math.max(halfWidth + margin, Math.min(localX, rect.width - halfWidth - margin))
-    const clampedY = Math.max(
-      halfHeight + margin,
-      Math.min(localY, rect.height - halfHeight - margin),
-    )
-    props.state.openLinkInspector(pair, { x: clampedX, y: clampedY })
+    props.state.openLinkInspector(pair, { x: localX, y: localY })
   } else {
     props.state.openLinkInspector(pair, at)
   }

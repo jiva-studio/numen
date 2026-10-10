@@ -2,7 +2,7 @@
 /**
  * In-Plex popover for inspecting, managing direction, dual descriptions and deletion of links.
  */
-import { computed, onMounted, onScopeDispose, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
 import { ArrowLeftRight, X } from '@lucide/vue'
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { DirectionalLinkItem, LinkInspectorRequest, LinkInspectorSavePayload } from '../types'
@@ -10,6 +10,7 @@ import {
   getInverseSeat,
   resolveInspectorDirectionToggle,
   resolveInspectorDonePayload,
+  resolvePopoverPosition,
 } from '../model/linkInspector'
 import { WORDS as words } from '../words'
 import PlexLinkInspectorRow from './PlexLinkInspectorRow.vue'
@@ -31,25 +32,65 @@ const localRows = ref<DirectionalLinkItem[]>(props.request.links.map((link) => (
 const removedLinks = ref<{ from: string; to: string; role?: PlexRelatedSeat }[]>([])
 const initialLinkIds = new Set(props.request.links.map((link) => link.id))
 
+const placedPosition = ref<{ left: number; top: number }>(
+  resolvePopoverPosition({
+    at: props.request.at,
+    popoverSize: { width: 320, height: 160 },
+    containerSize: {
+      width: typeof window !== 'undefined' ? window.innerWidth : 800,
+      height: typeof window !== 'undefined' ? window.innerHeight : 600,
+    },
+  }),
+)
+
 const positionStyle = computed(() => ({
-  left: `${props.request.at.x}px`,
-  top: `${props.request.at.y}px`,
+  left: `${placedPosition.value.left}px`,
+  top: `${placedPosition.value.top}px`,
 }))
 
 /* --------------------------------- Hooks ---------------------------------- */
+let resizeObserver: ResizeObserver | null = null
+
 onMounted(() => {
   window.addEventListener('pointerdown', onWindowPointerDown)
+  window.addEventListener('resize', onWindowResize)
+  void nextTick(() => {
+    updatePosition()
+    if (typeof ResizeObserver !== 'undefined' && popover.value) {
+      resizeObserver = new ResizeObserver(() => {
+        updatePosition()
+      })
+      resizeObserver.observe(popover.value)
+      const parent = popover.value.offsetParent || popover.value.parentElement
+      if (parent) resizeObserver.observe(parent)
+    }
+  })
 })
 
 onScopeDispose(() => {
   window.removeEventListener('pointerdown', onWindowPointerDown)
+  window.removeEventListener('resize', onWindowResize)
+  resizeObserver?.disconnect()
 })
+
+watch(
+  [() => props.request.at, () => localRows.value.length],
+  async () => {
+    await nextTick()
+    updatePosition()
+  },
+  { deep: true },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onWindowPointerDown(event: PointerEvent) {
   if (!popover.value?.contains(event.target as Node)) {
     onDone()
   }
+}
+
+function onWindowResize() {
+  updatePosition()
 }
 
 function onCancel() {
@@ -146,6 +187,34 @@ function onDone() {
     removedLinks.value,
   )
   emit('save', payload)
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function getElementSize(el: HTMLElement): { width: number; height: number } {
+  const rect = el.getBoundingClientRect()
+  return {
+    width: rect.width || el.offsetWidth || 320,
+    height: rect.height || el.offsetHeight || 160,
+  }
+}
+
+function getContainerSize(parent: HTMLElement | null): { width: number; height: number } {
+  const rect = parent?.getBoundingClientRect()
+  return {
+    width: rect?.width || (typeof window !== 'undefined' ? window.innerWidth : 800),
+    height: rect?.height || (typeof window !== 'undefined' ? window.innerHeight : 600),
+  }
+}
+
+function updatePosition() {
+  const el = popover.value
+  if (!el) return
+  const parent = (el.offsetParent as HTMLElement | null) || el.parentElement
+  placedPosition.value = resolvePopoverPosition({
+    at: props.request.at,
+    popoverSize: getElementSize(el),
+    containerSize: getContainerSize(parent),
+  })
 }
 </script>
 

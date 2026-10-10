@@ -29,15 +29,28 @@ describe('PlexLinkInspectorPopover component', () => {
     })
   }
 
-  it('renders positioned at specified coordinates and shows node titles', () => {
+  it('renders positioned at resolved coordinates and shows node titles', () => {
     const wrapper = mountPopover()
     const popover = wrapper.get('.plex-link-popover')
 
-    expect(popover.attributes('style')).toContain('left: 300px')
-    expect(popover.attributes('style')).toContain('top: 200px')
+    expect(popover.attributes('style')).toContain('left: 140px')
+    expect(popover.attributes('style')).toContain('top: 28px')
     expect(wrapper.text()).toContain('Note Alpha')
     expect(wrapper.text()).toContain('Note Beta')
     expect(wrapper.findComponent(ArrowLeftRight).exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('clamps left position and flips below when placed near top-left boundary', () => {
+    const edgeRequest: LinkInspectorRequest = {
+      ...defaultRequest,
+      at: { x: 20, y: 40 },
+    }
+    const wrapper = mountPopover(edgeRequest)
+    const popover = wrapper.get('.plex-link-popover')
+
+    expect(popover.attributes('style')).toContain('left: 12px')
+    expect(popover.attributes('style')).toContain('top: 52px') // 40 + 12
     wrapper.unmount()
   })
 
