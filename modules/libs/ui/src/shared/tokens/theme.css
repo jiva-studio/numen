@@ -102,6 +102,41 @@
   --tw-prose-pre-bg: var(--numen-code-bg);
   --tw-prose-th-borders: var(--numen-panel-border);
   --tw-prose-td-borders: var(--numen-panel-border);
+
+  font-size: var(--numen-prose-size);
+}
+
+/* Inline code in marked-up prose takes a rounded pill in the code background. */
+.prose-numen :where(:not(pre) > code) {
+  background-color: var(--numen-code-bg);
+  color: var(--numen-answer-fg);
+  padding: 0.15em 0.375em;
+  border-radius: var(--numen-radius-tight);
+  white-space: break-spaces;
+}
+
+.prose-numen :where(:not(pre) > code)::before,
+.prose-numen :where(:not(pre) > code)::after {
+  content: none;
+}
+
+/* Fenced code blocks in marked-up prose take the product's code corner radius. */
+.prose-numen :where(pre) {
+  border-radius: var(--numen-radius);
+  overflow-x: auto;
+}
+
+/* A link that reaches nothing is drawn under a broken line. */
+.prose-numen :where(a[data-reaches='nothing']) {
+  color: var(--numen-hushed);
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+}
+
+/* A table wider than the measure scrolls inside itself, carrying its own scrollbar. */
+.prose-numen :where(table) {
+  display: block;
+  overflow-x: auto;
 }
 
 /* A word that has just arrived fades up where it lands in the editor. */

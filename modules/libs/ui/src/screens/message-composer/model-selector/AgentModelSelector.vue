@@ -94,7 +94,7 @@ function onDismiss() {
     <button
       ref="trigger"
       type="button"
-      class="model-selector__pill inline-flex h-7 max-w-full min-w-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
+      class="model-selector__pill bg-bubble text-ink text-small hover:bg-surface rounded-pill inline-flex h-7 max-w-full min-w-0 cursor-pointer items-center gap-1.5 px-2.5 font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
       :disabled="disabled || options.length === 0"
       @click="onToggle"
     >
@@ -125,15 +125,3 @@ function onDismiss() {
     />
   </div>
 </template>
-
-<style scoped>
-.model-selector__pill {
-  border: none;
-  background-color: var(--numen-bubble-bg);
-  color: var(--numen-ink);
-  font-size: 0.75em;
-}
-.model-selector__pill:hover {
-  background-color: color-mix(in oklab, var(--numen-bubble-bg), var(--numen-ink) 8%);
-}
-</style>
