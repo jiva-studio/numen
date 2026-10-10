@@ -8,15 +8,18 @@
 import { SplitterResizeHandle } from 'reka-ui'
 import type { Orientation } from '../../../lib/node'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{
   direction: Orientation
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   /** The handle taken up, and put down. */
   (event: 'hold', now: boolean): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 /**
  * How far from the line a pointer is caught, in pixels, by a mouse and by a
  * finger. The splitter is told this reach and the handle draws it.
@@ -39,7 +42,7 @@ const reach = { fine: 7, coarse: 15 }
    side of the line is a press on the handle. */
 .branch__handle {
   --line: var(--numen-stroke);
-  --reach: v-bind('`${reach.fine}px`');
+  --reach: 7px;
 
   position: relative;
   z-index: 1;
@@ -87,7 +90,7 @@ const reach = { fine: 7, coarse: 15 }
 /* A finger is caught from further out than a pointer. */
 @media (pointer: coarse) {
   .branch__handle {
-    --reach: v-bind('`${reach.coarse}px`');
+    --reach: 15px;
   }
 }
 </style>
