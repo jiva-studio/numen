@@ -274,6 +274,12 @@ The glossary itself must contain **only project-specific terms** — terms that
 have a meaning in this project different from or more specific than their
 general meaning. Obvious industry terms (tree, drag, chunk, window, theme) do not belong.
 
+### Vault and link formatting rules
+
+- **Books and passages:** `[Passage description](numen:<path>?start=<offset>&length=<len>)` (using the `at` field from `note_search` / `source_read`).
+- **Notes:** `[[Note Title]]` or `[[notes/path.md]]`.
+- **Prohibited:** Never format vault notes, books, or passages as `file://` URLs. The `file://` scheme is only for repository source code files.
+
 ---
 
 ## 10. File placement — domain code stays in its domain
