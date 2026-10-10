@@ -8,6 +8,7 @@ import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import type { ShownRow } from '../lib/row'
 import { TreeField } from './tree-field'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   row: ShownRow
   /** What the tree is announced as. */
@@ -28,6 +29,7 @@ const props = defineProps<{
   mark: Record<string, string>
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A name typed and committed. */
   (event: 'rename', name: string): void
@@ -42,11 +44,13 @@ defineSlots<{
   default(): unknown
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 /** The field a name is typed in. */
 const field = useTemplateRef<InstanceType<typeof TreeField>>('field')
 
 const rowStyle = computed(() => ({ '--level': props.row.level }))
 
+/* --------------------------------- Hooks ---------------------------------- */
 /** The keyboard into the field once it is drawn. */
 watch(
   () => props.isRenaming,
@@ -66,7 +70,8 @@ watch(
     :aria-selected="isSelected"
     :tabindex="isTabStop ? 0 : -1"
     :data-tree-row="row.id"
-    :data-selected="isSelected || undefined"
+    :data-selected="isSelected && !isRenaming ? '' : undefined"
+    :data-renaming="isRenaming ? '' : undefined"
     :data-dragged="isLifted || undefined"
     :data-last="row.isLast || undefined"
     :data-into="isDropInside || undefined"
@@ -83,6 +88,7 @@ watch(
       ref="field"
       :value="row.name"
       :name="name"
+      :is-folder="row.hasChildren"
       @rename="emit('rename', $event)"
       @abandon="emit('abandon')"
       @blur="emit('blur')"
@@ -109,6 +115,10 @@ watch(
 .tree__row[data-selected] {
   background: var(--numen-accent);
   color: var(--numen-accent-ink);
+}
+
+.tree__row[data-renaming] {
+  background: var(--numen-bubble-bg);
 }
 
 /* A row on its way somewhere, drawn plainly where it stands. */
