@@ -19,7 +19,7 @@ import { browserClock, type Clock } from '@/shared/lib/clock'
 import { DragPreview } from '@/shared/ui/drag-preview'
 import TreeRow from './TreeRow.vue'
 
-// --- Props & Emits ---
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** What is drawn, nested. */
@@ -58,6 +58,7 @@ const props = withDefaults(
 /** The row whose name is in a field. */
 const renamingPath = defineModel<RowId | null>('renamingPath', { default: null })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'open', row: RowId): void
   (event: 'close', row: RowId): void
@@ -89,7 +90,7 @@ defineSlots<{
   silence(): unknown
 }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const list = useTemplateRef<HTMLElement>('list')
 
 /** What the tree takes up on screen: a drop lands only over it. */
@@ -152,6 +153,21 @@ const {
   },
   tell: emit,
 })
+
+const rowRefs = new Map<RowId, (element: unknown) => void>()
+
+/* -------------------------------- Helpers --------------------------------- */
+function getRowRef(rowId: RowId): (element: unknown) => void {
+  let refCallback = rowRefs.get(rowId)
+  if (!refCallback) {
+    refCallback = (element: unknown) => {
+      setRowElement(rowId, element)
+      if (!element) rowRefs.delete(rowId)
+    }
+    rowRefs.set(rowId, refCallback)
+  }
+  return refCallback
+}
 </script>
 
 <template>
@@ -172,7 +188,7 @@ const {
     >
       <TreeRow
         v-for="row in shown"
-        :ref="(element) => setRowElement(row.id, element)"
+        :ref="getRowRef(row.id)"
         :key="row.id"
         :row="row"
         :name="name"

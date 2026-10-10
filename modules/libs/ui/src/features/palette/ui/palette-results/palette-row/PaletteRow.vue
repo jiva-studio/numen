@@ -8,6 +8,7 @@
 import { KeyCap } from '@/shared/ui/key-cap'
 import type { PlacedItem } from '../../../lib/place'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{
   /** The row as it is drawn, its lines already split. */
   row: PlacedItem
@@ -17,6 +18,7 @@ defineProps<{
   isCurrent: boolean
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The pointer crossed the row, and the move that took it there. */
   (event: 'point-at', hasMoved: PointerEvent): void
