@@ -68,7 +68,7 @@ func normalizeArguments(raw json.RawMessage, canonMap map[string]string) (json.R
 
 	var rawMap map[string]any
 	if err := json.Unmarshal(raw, &rawMap); err != nil {
-		return raw, nil
+		return nil, err
 	}
 
 	normalized := make(map[string]any, len(rawMap))
@@ -112,7 +112,7 @@ func addTool[In, Out any](
 		if inType.Kind() == reflect.Struct {
 			schema, err := jsonschema.ForType(inType, &jsonschema.ForOptions{})
 			if err != nil {
-				panic(fmt.Sprintf("addTool %q: generating input schema: %v", tool.Name, err))
+				schema = &jsonschema.Schema{Type: "object"}
 			}
 			tool.InputSchema = schema
 		} else {
