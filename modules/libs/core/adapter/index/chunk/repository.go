@@ -193,9 +193,13 @@ func (r *Repository) ReplaceChunks(ctx context.Context, vaultID domain.VaultID, 
 	return nil
 }
 
+// VectorBatchSize is the number of vectors written in a single transaction before
+// committing and checkpointing the WAL, to keep its footprint bounded.
+var VectorBatchSize = 1000
+
 // SaveVectors writes both representations of each vector.
 //
-// They go in one transaction, and both are written by reading the chunk they
+// They go in batched transactions, and both are written by reading the chunk they
 // belong to. A chunk with only one of the two is absent from the coarse pass
 // and invisible to the question of what has no vector.
 //
@@ -205,6 +209,27 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 	if len(vectors) == 0 {
 		return nil
 	}
+
+	for i := 0; i < len(vectors); i += VectorBatchSize {
+		end := i + VectorBatchSize
+		if end > len(vectors) {
+			end = len(vectors)
+		}
+
+		if err := r.saveBatch(ctx, vectors[i:end]); err != nil {
+			return err
+		}
+
+		// Checkpoint the WAL passively after every batch to keep the file size bounded.
+		// A passive checkpoint does not wait for readers and leaves the database unlocked.
+		if _, err := writing.Exec(ctx, r.db, "PRAGMA wal_checkpoint(PASSIVE)"); err != nil {
+			return fmt.Errorf("checkpoint wal: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *Repository) saveBatch(ctx context.Context, vectors []Vector) error {
 	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
