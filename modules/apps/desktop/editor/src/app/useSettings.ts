@@ -20,7 +20,8 @@ import {
 } from '@/features/settings-commands'
 import { createReviewSetting } from '@/entities/settings'
 import { createSettingsStore } from '@/entities/settings'
-import { useSettingsTab } from '@/pages/settings'
+import { useSettingsTab, paths, choicesFor } from '@/pages/settings'
+import type { SelectChoice } from '@numen/ui'
 import { createTextEditorTabKind } from '@/pages/text-editor'
 import type { PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
@@ -36,6 +37,45 @@ export interface SettingsDeps {
   log: MessageLog
   windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
+}
+
+function getPerformanceStepGroups(words: Words) {
+  return [
+    {
+      id: 'performance',
+      title: words.performance,
+      items: [
+        { id: 'eco', title: words.eco, detail: words.ecoDetail },
+        { id: 'balanced', title: words.balanced, detail: words.balancedDetail },
+        { id: 'maximum', title: words.maximum, detail: words.maximumDetail },
+        { id: 'custom', title: words.custom, detail: words.customDetail },
+      ],
+    },
+  ]
+}
+
+function getIndexingModelStepGroups(rest: ReturnType<typeof createSettingsStore>, words: Words) {
+  const models = rest.getModelsAt(paths.indexingModel)
+  const current = rest.getSetting(paths.indexingModel)
+  const choices = choicesFor(models, typeof current === 'string' ? current : '', words)
+
+  const groups: Record<string, SelectChoice[]> = {}
+  for (const choice of choices) {
+    const groupName = choice.group ?? 'Other'
+    const list = groups[groupName] ?? []
+    list.push(choice)
+    groups[groupName] = list
+  }
+
+  return Object.entries(groups).map(([groupName, groupChoices]) => ({
+    id: `indexingModel-${groupName}`,
+    title: groupName === 'Other' ? words.indexingModel : groupName,
+    items: groupChoices.map((c) => ({
+      id: c.id,
+      title: c.text,
+      ...(c.detail ? { detail: c.detail } : {}),
+    })),
+  }))
 }
 
 export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
@@ -87,20 +127,8 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
       if (command === SYNCING) return sync.getSyncingGroups()
       if (command === HANGING) return hungParts.getHangingGroups()
       if (command === PARTS) return hungParts.getPartsGroups()
-      if (command === 'performanceProfile') {
-        return [
-          {
-            id: 'performance',
-            title: words.performance,
-            items: [
-              { id: 'eco', title: words.eco, detail: words.ecoDetail },
-              { id: 'balanced', title: words.balanced, detail: words.balancedDetail },
-              { id: 'maximum', title: words.maximum, detail: words.maximumDetail },
-              { id: 'custom', title: words.custom, detail: words.customDetail },
-            ],
-          },
-        ]
-      }
+      if (command === 'performanceProfile') return getPerformanceStepGroups(words)
+      if (command === 'indexingModel') return getIndexingModelStepGroups(rest, words)
       return []
     },
     previewItem: (command, item) => {

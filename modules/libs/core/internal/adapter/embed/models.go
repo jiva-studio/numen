@@ -55,40 +55,78 @@ func Profiles() []Config {
 // Every place named here stands inside this section, and whoever composes the
 // file says where the section is.
 func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
+	var models []port.Model
 	offered := Defaults()
 	provider := held.Indexing
-	offeredLocal, _ := offered.Indexing.Local()
-	models := []port.Model{{
-		Path:      ModelAt,
-		Name:      offered.Model.Name,
-		Title:     offered.Model.Name,
-		Shelf:     shelfMachine,
-		IsDefault: true,
-		Presence:  getPresence(provider, offered.Model.Name, isFetched),
-		Writes: []port.Setting{
-			newSetting([]string{"model"}, offered.Model),
-			newSetting([]string{"indexing", "use"}, UseLocal),
-			newSetting([]string{"indexing", "local", "name"}, offeredLocal.Name),
-		},
-	}}
+
+	seenNames := make(map[string]bool)
+
+	for _, p := range Profiles() {
+		local, hasLocal := p.Indexing.Local()
+		var writes []port.Setting
+		writes = append(writes,
+			newSetting([]string{"model", "name"}, p.Model.Name),
+			newSetting([]string{"model", "dimensions"}, p.Model.Dimensions),
+			newSetting([]string{"model", "max_tokens"}, p.Model.MaxTokens),
+			newSetting([]string{"model", "pooling"}, p.Model.Pooling),
+			newSetting([]string{"indexing", "use"}, p.Indexing.Use),
+		)
+		if hasLocal {
+			writes = append(writes, newSetting([]string{"indexing", "local", "name"}, local.Name))
+			if local.File != "" {
+				writes = append(writes, newSetting([]string{"indexing", "local", "file"}, local.File))
+			}
+		}
+
+		var presence port.Presence
+		if providerLocal, ok := provider.Local(); ok {
+			if hasLocal {
+				providerLocal.Name = local.Name
+				providerLocal.File = local.File
+			} else {
+				providerLocal.Name = p.Model.Name
+			}
+			if isFetched(providerLocal) {
+				presence = port.Present
+			} else {
+				presence = port.NotFetched
+			}
+		} else {
+			presence = port.NothingToFetch
+		}
+
+		models = append(models, port.Model{
+			Path:      ModelAt,
+			Name:      p.Model.Name,
+			Title:     p.Model.Name,
+			Shelf:     shelfMachine,
+			IsDefault: p.Model.Name == offered.Model.Name,
+			Presence:  presence,
+			Writes:    writes,
+		})
+		seenNames[p.Model.Name] = true
+	}
+
 	name := held.Model.Name
-	if name == "" || name == offered.Model.Name {
+	if name == "" || seenNames[name] {
 		return models
 	}
+
 	writes := []port.Setting{
-		newSetting([]string{"model"}, held.Model),
+		newSetting([]string{"model", "name"}, held.Model.Name),
+		newSetting([]string{"model", "dimensions"}, held.Model.Dimensions),
+		newSetting([]string{"model", "max_tokens"}, held.Model.MaxTokens),
+		newSetting([]string{"model", "pooling"}, held.Model.Pooling),
 		newSetting([]string{"indexing", "use"}, provider.Use),
 	}
-	// The repository is written back where it is the one in force. A provider
-	// on a service is reached by what the service calls the model, and the
-	// repository beside it says nothing about this row.
 	if local, ok := provider.Local(); ok {
 		writes = append(writes, newSetting([]string{"indexing", "local", "name"}, local.Name))
 		if local.File != "" {
 			writes = append(writes, newSetting([]string{"indexing", "local", "file"}, local.File))
 		}
 	}
-	return append(models, port.Model{
+
+	models = append(models, port.Model{
 		Path:     ModelAt,
 		Name:     name,
 		Title:    name,
@@ -96,6 +134,8 @@ func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
 		Presence: getPresence(provider, name, isFetched),
 		Writes:   writes,
 	})
+
+	return models
 }
 
 // getPresence is what the model named is on this machine, at the provider the

@@ -24,7 +24,10 @@ export interface CommandDepsOptions {
     choose: (item: string) => Promise<void> | void
     chooseCount: (item: string) => Promise<void> | void
   }
-  rest: { writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void }
+  rest: {
+    writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void
+    getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
+  }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
@@ -144,6 +147,18 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       },
       choosePerformance: async (chosen) => {
         await options.rest.writeSettings([{ at: ['performance', 'profile'], value: write(chosen) }])
+      },
+      chooseIndexingModel: async (chosen) => {
+        // Find the model with the given name from the available models
+        const models = options.rest.getModelsAt?.(['indexing', 'model', 'name']) ?? []
+        const model = models.find((one) => one.name === chosen)
+        if (model) {
+          await options.rest.writeSettings(model.writes)
+        } else {
+          await options.rest.writeSettings([
+            { at: ['indexing', 'model', 'name'], value: write(chosen) },
+          ])
+        }
       },
     },
     notes: reached,

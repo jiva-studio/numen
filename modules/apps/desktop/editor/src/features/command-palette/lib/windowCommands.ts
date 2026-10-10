@@ -110,5 +110,12 @@ export const windowCommandsOf = (words: Words, agent: string): readonly Command[
     needs: 'choosing',
     isOffered: isOnAnything,
   },
+  {
+    id: 'indexingModel',
+    text: words.indexingModel,
+    group: 'window',
+    needs: 'choosing',
+    isOffered: isOnAnything,
+  },
   { id: 'settings', text: words.settings, group: 'window', isOffered: isOnAnything },
 ]

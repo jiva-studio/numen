@@ -4,7 +4,12 @@
  * Typing '[[' opens note and heading suggestions. Selecting an entry replaces
  * the trigger with a complete link and ensures closing brackets.
  */
-import { autocompletion, type Completion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete'
+import {
+  autocompletion,
+  type Completion,
+  type CompletionContext,
+  type CompletionResult,
+} from '@codemirror/autocomplete'
 import { syntaxTree } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
@@ -52,12 +57,13 @@ export function createWikilinkSource(options: WikilinkCompletionOptions) {
     const hashIndex = rawQuery.indexOf('#')
     if (hashIndex >= 0) {
       const notePart = rawQuery.slice(0, hashIndex).trim()
-      const headingQuery = rawQuery.slice(hashIndex + 1).trim().toLowerCase()
+      const headingQuery = rawQuery
+        .slice(hashIndex + 1)
+        .trim()
+        .toLowerCase()
       const headingsList = options.headings ? await options.headings(notePart) : []
 
-      const matchedHeadings = headingsList.filter((h) =>
-        h.toLowerCase().includes(headingQuery),
-      )
+      const matchedHeadings = headingsList.filter((h) => h.toLowerCase().includes(headingQuery))
 
       const completions: Completion[] = matchedHeadings.map((heading) => {
         const target = notePart ? `${notePart}#${heading}` : `#${heading}`
