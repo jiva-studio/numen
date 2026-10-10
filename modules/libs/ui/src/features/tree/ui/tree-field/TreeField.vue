@@ -8,13 +8,22 @@
  */
 import { useTemplateRef } from 'vue'
 
-defineProps<{
-  /** The name as it stands, which is what is typed over. */
-  value: string
-  /** What the field is announced as. */
-  name: string
-}>()
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(
+  defineProps<{
+    /** The name as it stands, which is what is typed over. */
+    value: string
+    /** What the field is announced as. */
+    name: string
+    /** Whether the row is a folder holding other rows. */
+    isFolder?: boolean
+  }>(),
+  {
+    isFolder: false,
+  },
+)
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A name typed and committed. */
   (event: 'rename', name: string): void
@@ -24,16 +33,10 @@ const emit = defineEmits<{
   (event: 'blur'): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 const field = useTemplateRef<HTMLInputElement>('field')
 
-/** The keyboard onto the field, with the name in it ready to be replaced. */
-const focus = (): void => {
-  field.value?.focus()
-  field.value?.select()
-}
-
-defineExpose({ focus })
-
+/* -------------------------------- Handlers -------------------------------- */
 function onKey(event: KeyboardEvent): void {
   if (event.key === 'Enter') {
     event.preventDefault()
@@ -46,12 +49,36 @@ function onKey(event: KeyboardEvent): void {
     emit('abandon')
   }
 }
+
+/* -------------------------------- Helpers --------------------------------- */
+/** The keyboard onto the field, selecting the stem or the whole name. */
+function focus(): void {
+  const input = field.value
+  if (!input) return
+  input.focus()
+
+  const value = input.value
+  if (props.isFolder) {
+    input.select()
+    return
+  }
+
+  const lastDot = value.lastIndexOf('.')
+  if (lastDot <= 0) {
+    input.select()
+    return
+  }
+
+  input.setSelectionRange(0, lastDot)
+}
+
+defineExpose({ focus })
 </script>
 
 <template>
   <input
     ref="field"
-    class="tree__field rounded-node min-w-0 grow"
+    class="tree__field min-w-0 grow"
     type="text"
     :value="value"
     :aria-label="name"
@@ -65,10 +92,18 @@ function onKey(event: KeyboardEvent): void {
 
 <style scoped>
 .tree__field {
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  background: var(--numen-field-bg);
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: calc(var(--row, 1.5rem) - 2px);
+  margin-inline-start: -3px;
+  padding-inline: 2px;
+  padding-block: 0;
+  border: var(--numen-stroke) solid var(--numen-ring);
+  border-radius: 1px;
+  background: var(--numen-raised);
   color: var(--numen-ink);
   font: inherit;
+  line-height: inherit;
 }
 
 /* Where the keyboard stands. */
