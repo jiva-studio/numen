@@ -2,6 +2,8 @@ package agent
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -20,42 +22,56 @@ var (
 	UseAt   = []string{"use"}
 )
 
-// GetModels are the models the agent can answer with. The command line takes a
-// size on its own and a name in full, and an installation naming neither
-// answers with whatever it is set up to answer with.
-//
-// The model is reached where the agent runs, and nothing of it is fetched here.
-// Every place named here stands inside this section, and whoever composes the
-// file says where the section is.
+// GetModels are the models the agent can answer with.
 func GetModels(held Config) []port.Model {
-	models := []port.Model{{
-		Path:      ModelAt,
-		Title:     "Whatever this machine answers with",
-		IsDefault: true,
-	}}
-	for _, one := range []string{"opus", "sonnet", "haiku"} {
-		models = append(models, port.Model{
-			Path: ModelAt, Name: one, Title: one, Shelf: shelfSize,
-		})
+	switch held.Use {
+	case UseAntigravity:
+		modelAt := []string{"antigravity", "model"}
+		models := []port.Model{
+			{Path: modelAt, Title: "Default (Gemini 3.7 Flash)", Name: "gemini-3.7-flash", IsDefault: true},
+			{Path: modelAt, Name: "gemini-2.5-pro", Title: "Gemini 2.5 Pro", Shelf: shelfInFull},
+			{Path: modelAt, Name: "gemini-2.5-flash", Title: "Gemini 2.5 Flash", Shelf: shelfInFull},
+		}
+		if name := held.Antigravity.Model; name != "" && !hasModel(models, name) {
+			models = append(models, port.Model{Path: modelAt, Name: name, Title: name, Shelf: shelfConfigured})
+		}
+		for at := range models {
+			models[at].Writes = []port.Setting{newSetting(modelAt, models[at].Name)}
+		}
+		return models
+
+	case UseCodex:
+		return getCodexModels(held)
+
+	default:
+		models := []port.Model{{
+			Path:      ModelAt,
+			Title:     "Whatever this machine answers with",
+			IsDefault: true,
+		}}
+		for _, one := range []string{"opus", "sonnet", "haiku"} {
+			models = append(models, port.Model{
+				Path: ModelAt, Name: one, Title: one, Shelf: shelfSize,
+			})
+		}
+		for _, one := range []string{"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"} {
+			models = append(models, port.Model{
+				Path: ModelAt, Name: one, Title: one, Shelf: shelfInFull,
+			})
+		}
+		if name := held.Claude.Model; name != "" && !hasModel(models, name) {
+			models = append(models, port.Model{
+				Path: ModelAt, Name: name, Title: name, Shelf: shelfConfigured,
+			})
+		}
+		for at := range models {
+			models[at].Writes = []port.Setting{newSetting(ModelAt, models[at].Name)}
+		}
+		return models
 	}
-	for _, one := range []string{"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"} {
-		models = append(models, port.Model{
-			Path: ModelAt, Name: one, Title: one, Shelf: shelfInFull,
-		})
-	}
-	if name := held.Claude.Model; name != "" && !hasModel(models, name) {
-		models = append(models, port.Model{
-			Path: ModelAt, Name: name, Title: name, Shelf: shelfConfigured,
-		})
-	}
-	for at := range models {
-		models[at].Writes = []port.Setting{newSetting(ModelAt, models[at].Name)}
-	}
-	return models
 }
 
-// GetPrograms are the programs the agent setting can name. This build reaches
-// the one it has an adapter for, and a name it cannot reach is not offered.
+// GetPrograms are the programs the agent setting can name.
 func GetPrograms() []port.Model {
 	return []port.Model{
 		{
@@ -64,6 +80,18 @@ func GetPrograms() []port.Model {
 			Title:     "Claude Code",
 			IsDefault: true,
 			Writes:    []port.Setting{newSetting(UseAt, UseClaude)},
+		},
+		{
+			Path:   UseAt,
+			Name:   UseAntigravity,
+			Title:  "Antigravity",
+			Writes: []port.Setting{newSetting(UseAt, UseAntigravity)},
+		},
+		{
+			Path:   UseAt,
+			Name:   UseCodex,
+			Title:  "OpenAI Codex",
+			Writes: []port.Setting{newSetting(UseAt, UseCodex)},
 		},
 		{
 			Path:   UseAt,
@@ -90,4 +118,59 @@ func newSetting(at []string, value any) port.Setting {
 		return port.Setting{Path: at, JSON: ""}
 	}
 	return port.Setting{Path: at, JSON: string(said)}
+}
+
+type codexCache struct {
+	Models []struct {
+		Slug        string `json:"slug"`
+		DisplayName string `json:"display_name"`
+		Visibility  string `json:"visibility"`
+		Priority    int    `json:"priority"`
+	} `json:"models"`
+}
+
+func getCodexModels(held Config) []port.Model {
+	modelAt := []string{"codex", "model"}
+	var models []port.Model
+
+	if home, err := os.UserHomeDir(); err == nil {
+		cachePath := filepath.Join(home, ".codex", "models_cache.json")
+		if data, err := os.ReadFile(cachePath); err == nil {
+			var cache codexCache
+			if err := json.Unmarshal(data, &cache); err == nil {
+				for _, m := range cache.Models {
+					if m.Visibility != "hide" && m.Slug != "" {
+						title := m.DisplayName
+						if title == "" {
+							title = m.Slug
+						}
+						models = append(models, port.Model{
+							Path:  modelAt,
+							Name:  m.Slug,
+							Title: title,
+							Shelf: shelfInFull,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	if len(models) == 0 {
+		models = []port.Model{
+			{Path: modelAt, Title: "Default (GPT-5.6 Terra)", Name: "gpt-5.6-terra", IsDefault: true},
+			{Path: modelAt, Name: "gpt-5.6-luna", Title: "GPT-5.6 Luna", Shelf: shelfInFull},
+		}
+	} else {
+		models[0].IsDefault = true
+		models[0].Title = "Default (" + models[0].Title + ")"
+	}
+
+	if name := held.Codex.Model; name != "" && !hasModel(models, name) {
+		models = append(models, port.Model{Path: modelAt, Name: name, Title: name, Shelf: shelfConfigured})
+	}
+	for at := range models {
+		models[at].Writes = []port.Setting{newSetting(modelAt, models[at].Name)}
+	}
+	return models
 }

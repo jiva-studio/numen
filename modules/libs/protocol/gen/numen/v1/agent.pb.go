@@ -125,8 +125,12 @@ type AskAgentRequest struct {
 	// The card in focus, for a window that asks about one: the mark its deck
 	// writes it under, and the face it is being shown through. The deck is the
 	// note in focus. Both empty in a window that asks about notes.
-	Mark          string `protobuf:"bytes,4,opt,name=mark,proto3" json:"mark,omitempty"`
-	Face          string `protobuf:"bytes,5,opt,name=face,proto3" json:"face,omitempty"`
+	Mark string `protobuf:"bytes,4,opt,name=mark,proto3" json:"mark,omitempty"`
+	Face string `protobuf:"bytes,5,opt,name=face,proto3" json:"face,omitempty"`
+	// Which agent answers (e.g. "antigravity", "codex", "claude"). Empty uses the installation default.
+	Agent string `protobuf:"bytes,6,opt,name=agent,proto3" json:"agent,omitempty"`
+	// Which model answers (e.g. "gemini-3.7-flash-high", "gpt-4o", "sonnet"). Empty uses default.
+	Model         string `protobuf:"bytes,7,opt,name=model,proto3" json:"model,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -192,6 +196,20 @@ func (x *AskAgentRequest) GetMark() string {
 func (x *AskAgentRequest) GetFace() string {
 	if x != nil {
 		return x.Face
+	}
+	return ""
+}
+
+func (x *AskAgentRequest) GetAgent() string {
+	if x != nil {
+		return x.Agent
+	}
+	return ""
+}
+
+func (x *AskAgentRequest) GetModel() string {
+	if x != nil {
+		return x.Model
 	}
 	return ""
 }
@@ -589,13 +607,15 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x14numen/v1/agent.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
 	"\x14GetAgentStateRequest\"9\n" +
 	"\x15GetAgentStateResponse\x12 \n" +
-	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\x89\x01\n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\xb5\x01\n" +
 	"\x0fAskAgentRequest\x12\x14\n" +
 	"\x05asked\x18\x01 \x01(\tR\x05asked\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
 	"\fconversation\x18\x03 \x01(\tR\fconversation\x12\x12\n" +
 	"\x04mark\x18\x04 \x01(\tR\x04mark\x12\x12\n" +
-	"\x04face\x18\x05 \x01(\tR\x04face\"?\n" +
+	"\x04face\x18\x05 \x01(\tR\x04face\x12\x14\n" +
+	"\x05agent\x18\x06 \x01(\tR\x05agent\x12\x14\n" +
+	"\x05model\x18\a \x01(\tR\x05model\"?\n" +
 	"\x19FinishConversationRequest\x12\"\n" +
 	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x1c\n" +
 	"\x1aFinishConversationResponse\"\xe3\x01\n" +

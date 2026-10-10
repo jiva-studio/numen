@@ -48,6 +48,8 @@ export interface AgentPort {
     focus: string,
     conversation: string,
     signal: AbortSignal,
+    agentId?: string,
+    modelId?: string,
   ) => AsyncIterable<AgentStep>
 
   /**

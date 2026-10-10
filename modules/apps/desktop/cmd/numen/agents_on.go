@@ -64,6 +64,17 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 		Drafting:     makeDrafting(opened),
 		Out:          out,
 	})
+	if err != nil && opts.addr == "" {
+		served, err = agents.Serve(ctx, agents.Options{
+			Config:       cfg,
+			Core:         agentCore(cfg, opened, root, out),
+			Addr:         "127.0.0.1:0",
+			IsAnnouncing: false,
+			Root:         root,
+			Drafting:     makeDrafting(opened),
+			Out:          out,
+		})
+	}
 	if err != nil {
 		return nil, err
 	}

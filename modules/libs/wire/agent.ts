@@ -14,7 +14,7 @@ const spanOf = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.t
 /** As much of the agent service as the port asks of it. */
 export interface AgentClient {
   askAgent(
-    request: { asked: string; focus: string; conversation: string },
+    request: { asked: string; focus: string; conversation: string; agent?: string; model?: string },
     options: { signal: AbortSignal },
   ): AsyncIterable<AskAgentResponse>
   finishConversation(request: { conversation: string }): Promise<unknown>
@@ -22,8 +22,17 @@ export interface AgentClient {
 
 /** The agent port, over the client the window talks on. */
 export const agentPort = (agent: AgentClient): AgentPort => ({
-  async *ask(asked, focus, conversation, signal) {
-    for await (const step of agent.askAgent({ asked, focus, conversation }, { signal })) {
+  async *ask(asked, focus, conversation, signal, agentId, modelId) {
+    for await (const step of agent.askAgent(
+      {
+        asked,
+        focus,
+        conversation,
+        ...(agentId ? { agent: agentId } : {}),
+        ...(modelId ? { model: modelId } : {}),
+      },
+      { signal },
+    )) {
       switch (step.step.case) {
         case 'said':
           yield { kind: 'said', text: step.step.value }
@@ -35,7 +44,9 @@ export const agentPort = (agent: AgentClient): AgentPort => ({
             tool: toolCall.tool,
             subject: toolCall.about,
             written: toolCall.written,
-            ...(toolCall.path ? { place: { path: toolCall.path, span: spanOf(toolCall.span) } } : {}),
+            ...(toolCall.path
+              ? { place: { path: toolCall.path, span: spanOf(toolCall.span) } }
+              : {}),
           }
           break
         }

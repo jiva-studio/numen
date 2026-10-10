@@ -48,7 +48,8 @@ export function useFileTree(core: Folders): FileTree {
 
   let isAlive = true
 
-  const getEntriesInFolder = (folder: string): readonly Entry[] => entriesByFolder.value.get(folder) ?? []
+  const getEntriesInFolder = (folder: string): readonly Entry[] =>
+    entriesByFolder.value.get(folder) ?? []
 
   const isFolderOpen = (folder: string): boolean => open.value.has(folder)
 

@@ -4,15 +4,19 @@ package agents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"slices"
+	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/acp"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/claudecode"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // ephemeral is a loopback port this machine picks, for a window that is not the
@@ -60,7 +64,7 @@ type Options struct {
 type Server struct {
 	// Agent is the agent this window asks on the person's behalf, and nothing
 	// where the settings name none.
-	Agent *claudecode.Agent
+	Agent port.Agent
 	// URL is where an agent reaches the tools, naming the port that was bound.
 	URL string
 
@@ -105,7 +109,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	}
 	forget := func() {}
 	if opts.IsAnnouncing {
-		gone, err := Announce(opts.Config, endpoint.URL, secret)
+		gone, err := Announce(opts.Config, opts.Root, endpoint.URL, secret)
 		if err != nil {
 			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
 			endpoint.Close(context.Background())
@@ -119,35 +123,36 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		fmt.Fprintf(opts.Out, "agents: %s is reachable from the network, not only from this machine\n", addr)
 	}
 
-	served := &Server{URL: endpoint.URL}
-	if opts.Config.Agent.Use == agent.UseClaude {
-		// What the window says about a call is what the tool declared about
-		// itself, asked for over the protocol an agent is answered by.
-		vocabulary := mcp.Vocabulary
-		switch {
-		case opts.ShouldRead:
-			vocabulary = mcp.ReadingVocabulary
-		case opts.ShouldReview:
-			vocabulary = mcp.GetReviewVocabulary
-		}
-		words, err := vocabulary(ctx, opts.Core)
-		if err != nil {
-			fmt.Fprintln(opts.Out, "agents:", err)
-		}
-		served.Agent = Claude(opts.Config, opts.Root, endpoint.URL, secret, words, opts.Drafting, opts.Out)
+	vocabulary := mcp.Vocabulary
+	switch {
+	case opts.ShouldRead:
+		vocabulary = mcp.ReadingVocabulary
+	case opts.ShouldReview:
+		vocabulary = mcp.GetReviewVocabulary
+	}
+	words, err := vocabulary(ctx, opts.Core)
+	if err != nil {
+		fmt.Fprintln(opts.Out, "agents:", err)
 	}
 
-	started := served.Agent
+	router := &Router{
+		opts:       opts,
+		url:        endpoint.URL,
+		secret:     secret,
+		vocabulary: words,
+	}
+
+	served := &Server{
+		URL: endpoint.URL,
+	}
+	if opts.Config.Agent.Use != "" {
+		served.Agent = router
+	}
+
 	//nolint:contextcheck // a close runs when the context is already over, so it carries one of its own with a bound
 	served.close = func() error {
 		forget()
-		// The agents this window started go first: each is in a process group
-		// of its own, so nothing else reaches them, and one still answering
-		// would go on writing to the vault after the window is gone.
-		var stopped error
-		if started != nil {
-			stopped = started.Close()
-		}
+		stopped := router.Close()
 		shutdown, cancel := context.WithTimeout(context.Background(), bound)
 		defer cancel()
 		if err := endpoint.Close(shutdown); err != nil {
@@ -158,11 +163,152 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	return served, nil
 }
 
+// Router routes tasks to the configured agent dynamically.
+type Router struct {
+	opts       Options
+	url        string
+	secret     string
+	vocabulary map[string]mcp.Tool
+
+	mu     sync.Mutex
+	closed bool
+	claude *claudecode.Agent
+	anti   *acp.Agent
+	codex  *acp.Agent
+}
+
+// Close stops every agent router managed.
+func (r *Router) Close() error {
+	r.mu.Lock()
+	r.closed = true
+	var errs []error
+	if r.claude != nil {
+		if err := r.claude.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if r.anti != nil {
+		if err := r.anti.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if r.codex != nil {
+		if err := r.codex.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	r.mu.Unlock()
+	return errors.Join(errs...)
+}
+
+func (r *Router) getAgent(use string, cfg container.Config) port.Agent {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	switch use {
+	case agent.UseAntigravity:
+		if r.anti == nil {
+			r.anti = &acp.Agent{
+				Program:      "antigravity",
+				Command:      cfg.Agent.Antigravity.Command,
+				Root:         r.opts.Root,
+				Tools:        acp.Endpoint{URL: r.url, Token: r.secret},
+				Model:        cfg.Agent.Antigravity.Model,
+				Turns:        cfg.Agent.Antigravity.MaxSteps,
+				ErrorHandler: func(err error) { fmt.Fprintln(r.opts.Out, "agent:", err) },
+			}
+		} else {
+			r.anti.Model = cfg.Agent.Antigravity.Model
+			r.anti.Turns = cfg.Agent.Antigravity.MaxSteps
+			if len(cfg.Agent.Antigravity.Command) > 0 {
+				r.anti.Command = cfg.Agent.Antigravity.Command
+			}
+		}
+		return r.anti
+	case agent.UseCodex:
+		if r.codex == nil {
+			r.codex = &acp.Agent{
+				Program:      "codex",
+				Command:      cfg.Agent.Codex.Command,
+				Root:         r.opts.Root,
+				Tools:        acp.Endpoint{URL: r.url, Token: r.secret},
+				Model:        cfg.Agent.Codex.Model,
+				Turns:        cfg.Agent.Codex.MaxSteps,
+				ErrorHandler: func(err error) { fmt.Fprintln(r.opts.Out, "agent:", err) },
+			}
+		} else {
+			r.codex.Model = cfg.Agent.Codex.Model
+			r.codex.Turns = cfg.Agent.Codex.MaxSteps
+			if len(cfg.Agent.Codex.Command) > 0 {
+				r.codex.Command = cfg.Agent.Codex.Command
+			}
+		}
+		return r.codex
+	default:
+		if r.claude == nil {
+			r.claude = Claude(cfg, r.opts.Root, r.url, r.secret, r.vocabulary, r.opts.Drafting, r.opts.Out)
+		} else {
+			r.claude.Model = cfg.Agent.Claude.Model
+			r.claude.Turns = cfg.Agent.Claude.MaxSteps
+		}
+		return r.claude
+	}
+}
+
+func (r *Router) currentConfig() (string, container.Config) {
+	use := r.opts.Config.Agent.Use
+	if use == "" {
+		use = agent.UseClaude
+	}
+	return use, r.opts.Config
+}
+
+// Take starts the task on the active agent.
+func (r *Router) Take(ctx context.Context, task port.Task) (port.Run, error) {
+	r.mu.Lock()
+	if r.closed {
+		r.mu.Unlock()
+		return nil, errors.New("agent is closed")
+	}
+	r.mu.Unlock()
+
+	use, cfg := r.currentConfig()
+	if task.Agent != "" {
+		use = task.Agent
+	}
+	fmt.Fprintf(r.opts.Out, "agents: dispatching task to %s (model: %s)\n", use, task.Model)
+	agentRunner := r.getAgent(use, cfg)
+	if agentRunner == nil {
+		return nil, errors.New("no agent configured")
+	}
+	return agentRunner.Take(ctx, task)
+}
+
+// Finish forwards conversation end to all active agents.
+func (r *Router) Finish(ctx context.Context, conversation string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var errs []error
+	if r.claude != nil {
+		if err := r.claude.Finish(ctx, conversation); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if r.anti != nil {
+		if err := r.anti.Finish(ctx, conversation); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if r.codex != nil {
+		if err := r.codex.Finish(ctx, conversation); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
 // Claude is what the window asks on the person's behalf.
-//
-// It reaches the same tools over the same port as an agent somebody configured
-// themselves, and is allowed each tool of the vocabulary by name: what it
-// changes appears in the window as it happens.
 func Claude(
 	cfg container.Config,
 	root, url, secret string,

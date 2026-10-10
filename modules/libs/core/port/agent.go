@@ -33,6 +33,11 @@ type Task struct {
 	// long as this process runs. Empty is no conversation, and a question
 	// asked under it is answered on its own.
 	Conversation string
+	// Agent is which agent answers for this task (e.g. "antigravity", "codex", "claude").
+	// Empty falls back to the configured default agent.
+	Agent string
+	// Model is which model answers for this task. Empty uses default.
+	Model string
 }
 
 // Run is one task being worked. Task is the request; this is its execution.

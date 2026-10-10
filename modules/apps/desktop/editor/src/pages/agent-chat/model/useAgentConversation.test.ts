@@ -303,3 +303,93 @@ describe('what a command asked over an agent tab is over', () => {
     })
   })
 })
+
+describe('agent model selection and settings', () => {
+  it('initializes with default agent and model options', () => {
+    const one = tab()
+    expect(one.state.selectedAgentId.value).toBe('antigravity')
+    expect(one.state.selectedModelId.value).toBe('gemini-3.7-flash-high')
+    expect(one.state.modelOptions.value.length).toBeGreaterThan(0)
+  })
+
+  it('initializes from provided getSetting dependency', () => {
+    const fake = createConversation()
+    const written: [readonly string[], unknown][] = []
+    const state = useAgentConversation(fake.conversation, {
+      openFileAt: () => {},
+      openFileBeside: () => {},
+      resolve: async () => new Map(),
+      unreachable: () => '',
+      getSetting: (path) => {
+        if (path[1] === 'use') return 'codex'
+        if (path[1] === 'codex' && path[2] === 'model') return 'gpt-5.6-luna'
+        return undefined
+      },
+      writeSetting: async (path, value) => {
+        written.push([path, value])
+      },
+    })
+
+    expect(state.selectedAgentId.value).toBe('codex')
+    expect(state.selectedModelId.value).toBe('gpt-5.6-luna')
+
+    state.selectModel({
+      agentId: 'claude',
+      agentTitle: 'Claude Code',
+      modelId: 'haiku',
+      modelTitle: 'Haiku 3.5',
+      isAvailable: true,
+    })
+
+    expect(state.selectedAgentId.value).toBe('claude')
+    expect(state.selectedModelId.value).toBe('haiku')
+    expect(written).toEqual([
+      [['agent', 'use'], 'claude'],
+      [['agent', 'claude', 'model'], 'haiku'],
+    ])
+  })
+
+  it('selects model and handles missing writeSetting cleanly', () => {
+    const one = tab()
+    one.state.selectModel({
+      agentId: 'codex',
+      agentTitle: 'OpenAI Codex',
+      modelId: 'gpt-5.6-terra',
+      modelTitle: 'GPT-5.6 Terra',
+      isAvailable: true,
+    })
+
+    expect(one.state.selectedAgentId.value).toBe('codex')
+    expect(one.state.selectedModelId.value).toBe('gpt-5.6-terra')
+  })
+
+  it('initializes fallback default models for each agent kind', () => {
+    const fake = createConversation()
+    const stateAntigravity = useAgentConversation(fake.conversation, {
+      openFileAt: () => {},
+      openFileBeside: () => {},
+      resolve: async () => new Map(),
+      unreachable: () => '',
+      getSetting: (path) => (path[1] === 'use' ? 'antigravity' : undefined),
+    })
+    expect(stateAntigravity.selectedModelId.value).toBe('gemini-3.7-flash-high')
+
+    const stateCodex = useAgentConversation(fake.conversation, {
+      openFileAt: () => {},
+      openFileBeside: () => {},
+      resolve: async () => new Map(),
+      unreachable: () => '',
+      getSetting: (path) => (path[1] === 'use' ? 'codex' : undefined),
+    })
+    expect(stateCodex.selectedModelId.value).toBe('gpt-5.6-terra')
+
+    const stateClaude = useAgentConversation(fake.conversation, {
+      openFileAt: () => {},
+      openFileBeside: () => {},
+      resolve: async () => new Map(),
+      unreachable: () => '',
+      getSetting: (path) => (path[1] === 'use' ? 'claude' : undefined),
+    })
+    expect(stateClaude.selectedModelId.value).toBe('sonnet')
+  })
+})

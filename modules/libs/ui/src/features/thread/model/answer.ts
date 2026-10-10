@@ -10,6 +10,10 @@ export interface Answer {
   readonly say: (text: string) => void
   /** The answer ends where it stands, and the next words begin another. */
   readonly settle: () => void
+  /** Mark the current answering turn as failed. */
+  readonly fail: () => void
+  /** The accumulated text of the current answer. */
+  readonly getText: () => string
   /** Whether a turn is open for the words still arriving. */
   readonly isOpen: () => boolean
   /** Whether the last answer carried any words. */
@@ -60,6 +64,13 @@ export function createAnswer(
       else put({ id, voice: 'answered', text })
       id = ''
     },
+    fail: () => {
+      if (!id) return
+      if (text === '') drop(id)
+      else put({ id, voice: 'answered', text, state: 'failed' })
+      id = ''
+    },
+    getText: () => text,
     isOpen: () => id !== '',
     hasContent: () => text !== '',
   }

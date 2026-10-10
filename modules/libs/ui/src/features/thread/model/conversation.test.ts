@@ -97,6 +97,24 @@ describe('an answer', () => {
     expect(last?.text).toBe('went round too many times')
     expect(last?.state).toBe('failed')
   })
+
+  it('marks existing answered turn as failed without duplicating when words match error', async () => {
+    const conversation = useConversation(
+      createPort([
+        createSaidStep('Your credit balance is too low to use Claude Code.'),
+        createStopped('Your credit balance is too low to use Claude Code.'),
+      ]),
+      words,
+      called,
+      now,
+    )
+    await conversation.ask('what is here?', '')
+
+    expect(conversation.turns.value.map((turn) => [turn.voice, turn.text, turn.state])).toEqual([
+      ['asked', 'what is here?', undefined],
+      ['answered', 'Your credit balance is too low to use Claude Code.', 'failed'],
+    ])
+  })
 })
 
 describe('the line about work', () => {

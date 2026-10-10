@@ -79,9 +79,7 @@ describe('PerformanceSettingsSection', () => {
     const { wrapper, written } = createSection()
     const segmented = wrapper.findComponent({ name: 'SegmentedControl' })
     segmented.vm.$emit('update:modelValue', 'maximum')
-    expect(written).toStrictEqual([
-      { at: paths.performanceProfile, value: '"maximum"' },
-    ])
+    expect(written).toStrictEqual([{ at: paths.performanceProfile, value: '"maximum"' }])
   })
 
   it('writes custom numeric settings when changed', async () => {

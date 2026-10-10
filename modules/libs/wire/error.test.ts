@@ -35,7 +35,9 @@ describe('a fault', () => {
   })
 
   it('carries no word of what was thrown, where the code wraps a Go error', () => {
-    const message = formatErrorMessage(new ConnectError('sql: no rows in result set', Code.Internal))
+    const message = formatErrorMessage(
+      new ConnectError('sql: no rows in result set', Code.Internal),
+    )
     expect(message).not.toContain('sql')
   })
 

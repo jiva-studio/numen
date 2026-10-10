@@ -32,6 +32,8 @@ func (a *API) AskAgent(
 		Question:     r.Msg.GetAsked(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
+		Agent:        r.Msg.GetAgent(),
+		Model:        r.Msg.GetModel(),
 	}, stream)
 }
 

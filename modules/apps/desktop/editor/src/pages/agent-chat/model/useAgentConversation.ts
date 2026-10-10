@@ -2,30 +2,116 @@
  * Conversation state for agent tabs.
  */
 import { computed, ref, shallowRef, watch } from 'vue'
-import { isNoteAddress, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
+import {
+  isNoteAddress,
+  wikilinksIn,
+  type Conversation,
+  type Turn,
+  type AgentModelOption,
+} from '@numen/ui'
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/entities/note'
 import type { AgentTabDeps } from '../types'
 
 export { firstLine } from '../lib/title'
 export type { AgentTabDeps, NoteRef } from '../types'
 
+export const DEFAULT_AGENT_OPTIONS: readonly AgentModelOption[] = [
+  {
+    agentId: 'antigravity',
+    agentTitle: 'Antigravity',
+    modelId: 'gemini-3.7-flash-high',
+    modelTitle: 'Gemini 3.7 Flash',
+    isAvailable: true,
+    isDefault: true,
+  },
+  {
+    agentId: 'antigravity',
+    agentTitle: 'Antigravity',
+    modelId: 'gemini-3.1-pro-high',
+    modelTitle: 'Gemini 3.1 Pro',
+    isAvailable: true,
+  },
+  {
+    agentId: 'claude',
+    agentTitle: 'Claude Code',
+    modelId: 'sonnet',
+    modelTitle: 'Sonnet 3.7',
+    isAvailable: true,
+  },
+  {
+    agentId: 'claude',
+    agentTitle: 'Claude Code',
+    modelId: 'haiku',
+    modelTitle: 'Haiku 3.5',
+    isAvailable: true,
+  },
+  {
+    agentId: 'claude',
+    agentTitle: 'Claude Code',
+    modelId: 'opus',
+    modelTitle: 'Opus 3',
+    isAvailable: true,
+  },
+  {
+    agentId: 'codex',
+    agentTitle: 'OpenAI Codex',
+    modelId: 'gpt-5.6-terra',
+    modelTitle: 'GPT-5.6 Terra',
+    isAvailable: true,
+  },
+  {
+    agentId: 'codex',
+    agentTitle: 'OpenAI Codex',
+    modelId: 'gpt-5.6-luna',
+    modelTitle: 'GPT-5.6 Luna',
+    isAvailable: true,
+  },
+]
+
 /** What one agent tab holds. */
 export type AgentTabState = ReturnType<typeof useAgentConversation>
 
 export type ResolvedAddressMap = ReadonlyMap<string, string>
 
+function getDefaultModel(agent: string): string {
+  if (agent === 'antigravity') {
+    return 'gemini-3.7-flash-high'
+  }
+  if (agent === 'codex') {
+    return 'gpt-5.6-terra'
+  }
+  return 'sonnet'
+}
+
 export function useAgentConversation(conversation: Conversation, deps: AgentTabDeps) {
   /** The question being written, until it is sent. */
   const userQuestion = ref('')
+  const initialAgent = (deps.getSetting?.(['agent', 'use']) as string | undefined) || 'antigravity'
+  const initialModel =
+    (deps.getSetting?.(['agent', initialAgent, 'model']) as string | undefined) ||
+    getDefaultModel(initialAgent)
+
+  const selectedAgentId = ref(initialAgent)
+  const selectedModelId = ref(initialModel)
+  const modelOptions = ref<readonly AgentModelOption[]>(DEFAULT_AGENT_OPTIONS)
 
   const setQuestion = (text: string) => {
     userQuestion.value = text
   }
 
+  const selectModel = (option: AgentModelOption) => {
+    selectedAgentId.value = option.agentId
+    selectedModelId.value = option.modelId
+    if (deps.writeSetting) {
+      void deps.writeSetting(['agent', 'use'], option.agentId)
+      void deps.writeSetting(['agent', option.agentId, 'model'], option.modelId)
+    }
+  }
+
   /** A question sent. What the person has open the agent reads for itself. */
   const send = (text: string) => {
     userQuestion.value = ''
-    void conversation.ask(text, '')
+    void conversation.ask(text, '', selectedAgentId.value, selectedModelId.value)
   }
 
   /** A line about work pressed: where that call was working is put in front. */
@@ -100,6 +186,10 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     ...conversation,
     turns,
     userQuestion,
+    selectedAgentId,
+    selectedModelId,
+    modelOptions,
+    selectModel,
     setQuestion,
     send,
     openTurnSource,

@@ -1,15 +1,9 @@
 <script setup lang="ts">
-/**
- * An agent talked to: the conversation, and the field it is carried on with.
- *
- * The composer is written over the conversation, and the conversation is held
- * clear of however much room it takes, sitting at its foot when a question is
- * sent. It fills whatever it is put in, and says nothing about where that is.
- */
+/* --------------------------------- Props ---------------------------------- */
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { browserViewport } from '@/shared/lib/viewport'
 import { Thread } from '@/features/thread'
-import { MessageComposer } from './message-composer'
+import { MessageComposer, type AgentModelOption } from './message-composer'
 import type { Turn } from '@/features/thread'
 
 withDefaults(
@@ -23,6 +17,9 @@ withDefaults(
     sendLabel?: string
     /** What it is called while it stops the answer on its way. */
     stopLabel?: string
+    options?: readonly AgentModelOption[]
+    selectedAgentId?: string
+    selectedModelId?: string
   }>(),
   {
     isWorking: false,
@@ -30,11 +27,15 @@ withDefaults(
     disabled: false,
     sendLabel: 'Send',
     stopLabel: 'Stop',
+    options: () => [],
+    selectedAgentId: '',
+    selectedModelId: '',
   },
 )
 
 const text = defineModel<string>({ default: '' })
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   (event: 'submit', text: string): void
   /** Give up on the answer on its way. */
@@ -43,23 +44,18 @@ const emit = defineEmits<{
   (event: 'open', turn: Turn): void
   /** A link inside a turn was pressed, with the turn it stands in. */
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
+  /** A model/agent was selected from the dropdown. */
+  (event: 'select-model', option: AgentModelOption): void
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 const composer = useTemplateRef<InstanceType<typeof MessageComposer>>('composer')
 const thread = useTemplateRef<InstanceType<typeof Thread>>('thread')
-
-defineExpose({ focus: (how?: FocusOptions) => composer.value?.focus(how) })
 const room = ref('0px')
 
-/** Sent. The conversation takes up following its foot, where the question is. */
-const onSubmit = (text: string) => {
-  emit('submit', text)
-  thread.value?.toFoot(true)
-}
+defineExpose({ focus: (how?: FocusOptions) => composer.value?.focus(how) })
 
-// A field grown taller carries the foot of the conversation up with it.
-watch(room, () => thread.value?.toFoot(), { flush: 'post' })
-
+/* --------------------------------- Hooks ---------------------------------- */
 /** What stops the watching, held from the moment it begins. */
 let stopWatching: (() => void) | null = null
 
@@ -73,9 +69,24 @@ onMounted(() => {
   })
 })
 
-const agentStyle = computed(() => ({ '--agent-room': room.value }))
+// A field grown taller carries the foot of the conversation up with it.
+watch(room, () => thread.value?.toFoot(), { flush: 'post' })
 
 onBeforeUnmount(() => stopWatching?.())
+
+/* -------------------------------- Handlers -------------------------------- */
+/** Sent. The conversation takes up following its foot, where the question is. */
+function onSubmit(text: string) {
+  emit('submit', text)
+  thread.value?.toFoot(true)
+}
+
+function onSelectModel(option: AgentModelOption) {
+  emit('select-model', option)
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+const agentStyle = computed(() => ({ '--agent-room': room.value }))
 </script>
 
 <template>
@@ -92,6 +103,8 @@ onBeforeUnmount(() => stopWatching?.())
       <template #failure="bound"><slot name="failure" v-bind="bound">Did not send</slot></template>
     </Thread>
 
+    <div class="agent__scrim" aria-hidden="true" />
+
     <MessageComposer
       ref="composer"
       v-model="text"
@@ -101,9 +114,16 @@ onBeforeUnmount(() => stopWatching?.())
       :disabled="disabled"
       :send-label="sendLabel"
       :stop-label="stopLabel"
+      :options="options"
+      :selected-agent-id="selectedAgentId"
+      :selected-model-id="selectedModelId"
       @submit="onSubmit"
       @stop="emit('stop')"
-    />
+      @select-model="onSelectModel"
+    >
+      <template v-if="$slots.selector" #selector><slot name="selector" /></template>
+      <template v-if="$slots.glyph" #glyph><slot name="glyph" /></template>
+    </MessageComposer>
   </div>
 </template>
 
@@ -123,31 +143,35 @@ onBeforeUnmount(() => stopWatching?.())
   padding-inline: var(--inset);
 }
 
-/* Takes the whole of it and scrolls inside. The words run on to the composer's
-   own edge and fade out over the band it stands in. The top is an edge of the
-   window and is drawn to it. */
 .agent__thread {
-  /* The band the composer stands in, up from the foot, and what the last turn
-     is held clear of above it. */
   --behind: calc(var(--agent-room) + var(--lift));
-  --clear: calc(var(--behind) + var(--lift) + var(--breath));
+  --clear: calc(var(--behind) + 1rem);
 
   flex: 1;
   min-height: 0;
-  padding-block-start: var(--fade);
+  padding-block-start: 1rem;
   padding-block-end: var(--clear);
-  /* A mask reads the alpha and nothing else, so this is opacity and not a
-     colour a theme reaches. */
-  mask-image: linear-gradient(
+}
+
+.agent__scrim {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: calc(var(--agent-room) + var(--lift) + 2rem);
+  pointer-events: none;
+  background: linear-gradient(
     to bottom,
-    black calc(100% - var(--behind)),
-    transparent calc(100% - var(--behind) + var(--fade))
+    transparent 0%,
+    var(--numen-surface) 60%,
+    var(--numen-surface) 100%
   );
+  z-index: 1;
 }
 
 .agent__composer {
   position: absolute;
   inset-inline: var(--inset);
   inset-block-end: var(--lift);
+  z-index: 2;
 }
 </style>

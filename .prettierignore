@@ -1,0 +1,5 @@
+modules/libs/protocol/src/
+modules/libs/protocol/gen/
+dist/
+coverage/
+storybook-static/

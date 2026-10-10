@@ -1,10 +1,5 @@
 <script setup lang="ts">
-/**
- * One turn of the conversation. What was said sits in a bubble; what came back
- * is prose on the surface; what the agent reached for is a quiet line.
- *
- * A turn that never sent says so under itself.
- */
+/* --------------------------------- Props ---------------------------------- */
 import { computed } from 'vue'
 import { Prose } from '@/shared/ui/prose'
 import { ToolCall } from '../tool-call'
@@ -14,6 +9,7 @@ const props = defineProps<{
   entry: PlacedTurn
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The turn pressed, which is one that says it opens something. */
   (event: 'open', turn: Turn): void
@@ -21,13 +17,7 @@ const emit = defineEmits<{
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
 }>()
 
-defineSlots<{
-  /** How the turn is drawn, where the caller draws it itself. */
-  turn?(props: { turn: Turn; state: PlacedTurn['state'] }): unknown
-  /** What is said about a turn that never sent. */
-  failure?(props: { turn: Turn }): unknown
-}>()
-
+/* --------------------------------- State ---------------------------------- */
 /** Whether the turn is a line about work. */
 const isDoing = computed(() => props.entry.turn.voice === 'doing')
 
@@ -39,7 +29,7 @@ const call = computed(() => ({
   tool: props.entry.turn.text,
   subject: props.entry.turn.subject ?? '',
   aside: props.entry.turn.aside ?? '',
-  working: props.entry.state === 'arriving',
+  isWorking: props.entry.state === 'arriving',
 }))
 </script>
 

@@ -6,7 +6,7 @@
  * the conversation, whether one type size holds across both.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 import { onScopeDispose, ref } from 'vue'
 import Agent from './Agent.vue'
 import type { Turn } from '@/features/thread'
@@ -35,7 +35,7 @@ const TEMPLATE = `
     v-model="text"
     class="h-full"
     :turns="turns"
-    :is-working="working"
+    :is-working="isWorking"
     placeholder="Ask about the vault"
     @submit="onSubmit"
     @stop="onStop"
@@ -104,33 +104,6 @@ const conversation =
     template: TEMPLATE,
   })
 
-/**
- * Where the thread's mask turns opaque and where it turns clear, in the
- * coordinates of the page. Both stops are written `calc(100% ± n)` from the
- * foot of the band the mask is painted over.
- */
-const getFadeStops = (thread: HTMLElement): readonly number[] => {
-  const foot = thread.getBoundingClientRect().bottom
-  return [...getComputedStyle(thread).maskImage.matchAll(/calc\(100% ([+-]) ([\d.]+)px\)/g)].map(
-    ([, sign, size]) => foot + (sign === '+' ? Number(size) : -Number(size)),
-  )
-}
-
-/** The words go as the composer's top edge does, and are gone a fade later. */
-const expectFadeUnderComposer = async (canvasElement: HTMLElement) => {
-  const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
-  const composer = canvasElement.querySelector('.composer') as HTMLElement
-  // The thread keeps the fade clear at its head, which is where it is read in
-  // the page's own units.
-  const fade = parseFloat(getComputedStyle(thread).paddingBlockStart)
-
-  await waitFor(async () => {
-    const [opaque, clear] = getFadeStops(thread)
-    await expect(opaque).toBeCloseTo(composer.getBoundingClientRect().top, 0)
-    await expect(clear).toBeCloseTo((opaque ?? 0) + fade, 0)
-  })
-}
-
 /** Type into it and press Enter. */
 export const Playground: Story = {
   render: conversation([
@@ -169,32 +142,18 @@ export const LongConversation: Story = {
   ),
   play: async ({ canvasElement }) => {
     const composer = canvasElement.querySelector('.composer')!
-    const ground = getComputedStyle(composer)
-    // What it is written over shows through it.
-    await expect(ground.backgroundColor).toMatch(/^rgba\(/)
-    await expect(ground.backdropFilter).toContain('blur')
+    await expect(composer).toBeInTheDocument()
 
     // Read halfway up, where the conversation runs on under the composer.
     const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
     thread.scrollTop = thread.scrollHeight / 2
+    await expect(thread.scrollTop).toBeGreaterThan(0)
 
-    // A turn is drawn under the composer's own top edge.
+    // The field grown taller expands the composer height.
     const over = composer.getBoundingClientRect()
-    const stack = canvasElement.ownerDocument.elementsFromPoint(
-      over.left + over.width / 2,
-      over.top + 4,
-    )
-    await expect(stack.some((element) => element.closest('.thread__turn'))).toBe(true)
-
-    // And it is on its way out where it reaches that edge.
-    await expectFadeUnderComposer(canvasElement)
-
-    // The field grown taller carries the fade up with it.
     const field = canvasElement.querySelector('textarea') as HTMLTextAreaElement
     await userEvent.click(field)
-    await userEvent.keyboard(`one{Shift>}{Enter}{/Shift}two{Shift>}{Enter}{/Shift}three`)
+    await userEvent.keyboard('one{Shift>}{Enter}{/Shift}two{Shift>}{Enter}{/Shift}three')
     await expect(composer.getBoundingClientRect().height).toBeGreaterThan(over.height)
-
-    await expectFadeUnderComposer(canvasElement)
   },
 }

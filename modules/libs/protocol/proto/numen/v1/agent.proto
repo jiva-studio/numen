@@ -52,6 +52,11 @@ message AskAgentRequest {
   // note in focus. Both empty in a window that asks about notes.
   string mark = 4;
   string face = 5;
+
+  // Which agent answers (e.g. "antigravity", "codex", "claude"). Empty uses the installation default.
+  string agent = 6;
+  // Which model answers (e.g. "gemini-3.7-flash-high", "gpt-4o", "sonnet"). Empty uses default.
+  string model = 7;
 }
 
 message FinishConversationRequest {
