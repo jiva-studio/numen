@@ -63,6 +63,15 @@ describe('what a person did', () => {
     await bar(player).setValue('42000')
     expect(player.emitted('seek')).toEqual([[42_000]])
   })
+
+  it('keeps the dragged position while dragging even when at updates', async () => {
+    const player = mountPlayer({ at: 10_000 })
+    const input = bar(player)
+    ;(input.element as HTMLInputElement).value = '50000'
+    await input.trigger('input')
+    await player.setProps({ at: 12_000 })
+    expect(times(player)[0]).toBe('0:50')
+  })
 })
 
 describe('a sound longer than it was said to be', () => {

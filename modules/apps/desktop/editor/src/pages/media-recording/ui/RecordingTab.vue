@@ -12,10 +12,10 @@ import { MediaLayout } from '@/entities/media'
 import { DELETE_TEXT, PROOFREAD, WORDS as words } from '@/entities/media'
 import type { MediaTabState } from '@/entities/media'
 
-// --- Props & Emits ---
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: MediaTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const { deletable, now, playable, isPlaying, proofreadable, runs } = props.state
 
 /** What the menu offers over this recording: each item only where it applies. */
@@ -24,7 +24,7 @@ const offered = computed(() => [
   ...(deletable.value ? [{ id: DELETE_TEXT, text: words.deleteText }] : []),
 ])
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onChoose(id: string) {
   if (id === PROOFREAD) props.state.proofread()
   if (id === DELETE_TEXT) props.state.deleteTranscript()
@@ -41,8 +41,6 @@ function onPause() {
 function onSeek(at: number) {
   props.state.go(at)
 }
-
-// --- Helpers ---
 </script>
 
 <template>
