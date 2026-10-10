@@ -98,4 +98,16 @@ describe('AgentModelSelector', () => {
     ])
     wrapper.unmount()
   })
+
+  it('renders "No agent installed" and disables button when options list is empty', () => {
+    const wrapper = mount(AgentModelSelector, {
+      props: {
+        options: [],
+        selectedAgentId: '',
+        selectedModelId: '',
+      },
+    })
+    expect(wrapper.text()).toContain('No agent installed')
+    expect(wrapper.find('button').attributes('disabled')).toBeDefined()
+  })
 })

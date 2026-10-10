@@ -93,7 +93,45 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
 
   const selectedAgentId = ref(initialAgent)
   const selectedModelId = ref(initialModel)
-  const modelOptions = ref<readonly AgentModelOption[]>(DEFAULT_AGENT_OPTIONS)
+
+  const modelOptions = computed<readonly AgentModelOption[]>(() => {
+    const allModels = deps.getModels?.() ?? []
+    const programModels = allModels.filter(
+      (m) => m.namedAt.length === 2 && m.namedAt[0] === 'agent' && m.namedAt[1] === 'use',
+    )
+    if (programModels.length === 0) {
+      return DEFAULT_AGENT_OPTIONS
+    }
+    const availableAgents = new Set<string>()
+    for (const p of programModels) {
+      if (p.name && p.presence === 'present') {
+        availableAgents.add(p.name)
+      }
+    }
+    return DEFAULT_AGENT_OPTIONS.filter((opt) => availableAgents.has(opt.agentId))
+  })
+
+  watch(
+    modelOptions,
+    (options) => {
+      if (options.length === 0) {
+        selectedAgentId.value = ''
+        selectedModelId.value = ''
+        return
+      }
+      const current = options.find(
+        (o) => o.agentId === selectedAgentId.value && o.modelId === selectedModelId.value,
+      )
+      if (!current) {
+        const first = options[0]
+        if (first) {
+          selectedAgentId.value = first.agentId
+          selectedModelId.value = first.modelId
+        }
+      }
+    },
+    { immediate: true },
+  )
 
   const setQuestion = (text: string) => {
     userQuestion.value = text

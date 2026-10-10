@@ -50,7 +50,7 @@ const currentOption = computed(() => {
 
 const label = computed(() => {
   const active = currentOption.value
-  if (!active) return 'Select agent'
+  if (!active) return 'No agent installed'
   return `${active.agentTitle} · ${active.modelTitle}`
 })
 
@@ -59,8 +59,7 @@ const menuItems = computed<MenuItem[]>(() =>
     id: `${one.agentId}:${one.modelId}`,
     text: one.modelTitle,
     group: one.agentTitle,
-    disabled: !one.isAvailable,
-    ...(one.isAvailable ? {} : { detail: 'Not installed' }),
+    disabled: false,
   })),
 )
 
