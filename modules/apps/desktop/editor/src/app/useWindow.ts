@@ -21,6 +21,7 @@ import { useCommands } from './useCommands'
 import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowNotices } from './useWindowNotices'
 import { useWindowKinds } from './useWindowKinds'
+import { useWindowStatusBar } from './useWindowStatusBar'
 import { useAppHotkeys } from './useAppHotkeys'
 import { useAppBootstrap } from './useAppBootstrap'
 
@@ -80,6 +81,10 @@ export const useWindow = () => {
     window,
     settings,
     vaults: vaultsModule,
+  })
+
+  const statusBar = useWindowStatusBar({
+    tasks: window.tasks,
   })
 
   /** The tab in front, and what its kind says it stands over. */
@@ -222,6 +227,7 @@ export const useWindow = () => {
     listed: vaultsModule.listed,
     log,
     notices,
+    statusBar,
     palette: commandsModule.palette,
     destinations: kinds.destinations,
     closeTab,

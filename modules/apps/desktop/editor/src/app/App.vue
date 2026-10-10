@@ -5,7 +5,7 @@
  * What the window is made of is `window.ts`. What is here is what a person
  * sees of it, and the binding between the two.
  */
-import { Notices, WorkspaceLayout } from '@numen/ui'
+import { Notices, StatusBar, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -38,6 +38,7 @@ const {
   listed,
   log,
   notices,
+  statusBar,
   palette,
   destinations,
   closeTab,
@@ -99,6 +100,13 @@ function dismissNotice(id: string) {
         />
       </template>
     </WorkspaceLayout>
+
+    <StatusBar
+      :tasks="statusBar.tasks.value"
+      @cancel="statusBar.onCancelTask"
+      @retry="statusBar.onRetryTask"
+      @dismiss="statusBar.onDismissTask"
+    />
 
     <Notices
       :notices="notices"

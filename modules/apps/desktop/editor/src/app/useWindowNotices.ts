@@ -28,7 +28,7 @@ export function useWindowNotices({
 }: WindowNoticesDeps): ComputedRef<readonly Notice[]> {
   return computed<readonly Notice[]>(() =>
     cornerOf(
-      window.tasks.value,
+      [],
       log.messages.value,
       {
         unwatched: window.unwatched.value,
