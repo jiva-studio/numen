@@ -11,7 +11,7 @@
 import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
 import { getDraggedHeight, LEAST } from '../../lib/height'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   /** Where a frame plays what is at the address, and nothing where a copy is. */
   embed: string
@@ -30,7 +30,7 @@ const emit = defineEmits<{
   'time-update': [ms: number]
 }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const frame = useTemplateRef<HTMLIFrameElement>('frame')
 const player = useTemplateRef<HTMLVideoElement>('player')
 
@@ -43,11 +43,11 @@ const frameStyle = computed(() =>
   tall.value === null ? undefined : { blockSize: `${tall.value}px` },
 )
 
-// --- Hooks ---
+/* --------------------------------- Hooks ---------------------------------- */
 // A drag the page is taken out from under lets go of the bar it was holding.
 onBeforeUnmount(() => onPointerUp())
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 /**
  * The bar under the player is taken hold of, and the player follows it.
  *
@@ -97,7 +97,7 @@ function onVideoTimeUpdate(event: Event): void {
   emit('time-update', Math.round(video.currentTime * 1000))
 }
 
-// --- Helpers ---
+/* -------------------------------- Helpers --------------------------------- */
 /**
  * How tall a person drew the player last, and nothing where they have not drawn
  * it: sixteen by nine is what it is until somebody says otherwise.
@@ -142,6 +142,7 @@ defineExpose({ seek })
       preload="metadata"
       @contextmenu.prevent
       @timeupdate="onVideoTimeUpdate"
+      @seeked="onVideoTimeUpdate"
     ></video>
 
     <iframe

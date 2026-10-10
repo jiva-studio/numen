@@ -283,6 +283,44 @@ describe('a moment gone to', () => {
 
     expect(sought).toStrictEqual([0])
   })
+
+  it('seeks a frame player directly where one is attached', async () => {
+    const { recordings } = talk()
+    const { player, sought } = createPlayer()
+    const heard = useTranscript(recordings, 'talks/video.mp4', { through: player })
+    await flush()
+
+    const frameSought: number[] = []
+    heard.setFramePlayer({ seek: (ms) => frameSought.push(ms) })
+
+    heard.go(3_000)
+
+    expect(frameSought).toStrictEqual([3_000])
+    expect(sought).toStrictEqual([])
+    expect(heard.now.value).toBe(3_000)
+  })
+
+  it('seeks a frame player once it attaches when gone to before attaching', async () => {
+    const URL_SUMMARY: RecordingSummary = {
+      duration: 10_000,
+      mediaUrl: 'http://127.0.0.1:1/files/w/v/video.mp4',
+      mediaType: 'text/html',
+      url: 'https://example.com/video',
+    }
+    const { recordings } = talk(CUES, URL_SUMMARY)
+    const { player, sought } = createPlayer()
+    const heard = useTranscript(recordings, 'links/video.url', { through: player })
+
+    heard.go(4_500)
+    await flush()
+
+    const frameSought: number[] = []
+    heard.setFramePlayer({ seek: (ms) => frameSought.push(ms) })
+
+    expect(frameSought).toStrictEqual([4_500])
+    expect(sought).toStrictEqual([])
+    expect(heard.now.value).toBe(4_500)
+  })
 })
 
 describe('the one player the window has', () => {

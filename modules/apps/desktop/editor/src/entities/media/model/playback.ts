@@ -81,7 +81,14 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
   /** The tab hands over the player it drew, and says where it stands. */
   const setFramePlayer = (player: TabPlayer | null) => {
     frame.value = player
-    framed.value = -1
+    if (player && wanted >= 0) {
+      const at = wanted
+      wanted = -1
+      framed.value = at
+      player.seek(at)
+    } else {
+      framed.value = -1
+    }
   }
   const setFrameTime = (ms: number) => {
     framed.value = ms
@@ -91,8 +98,11 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
   const go = (ms: number) => {
     if (!isOpen()) return
     const at = Math.max(0, Math.round(ms))
-    if (frame.value) return frame.value.seek(at)
-    if (!url.value) return void (wanted = at)
+    if (frame.value) {
+      framed.value = at
+      return frame.value.seek(at)
+    }
+    if (!url.value || points.value !== '') return void (wanted = at)
     through.seek(url.value, at)
   }
 
@@ -114,10 +124,16 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
     type.value = summary.mediaType
     points.value = summary.url
     // A moment asked for before the recording knew where its bytes are.
-    if (wanted >= 0 && url.value) {
+    if (wanted >= 0) {
       const at = wanted
-      wanted = -1
-      through.seek(url.value, at)
+      if (frame.value) {
+        wanted = -1
+        framed.value = at
+        frame.value.seek(at)
+      } else if (url.value && !points.value) {
+        wanted = -1
+        through.seek(url.value, at)
+      }
     }
     // The player holding nothing takes this recording, so the controls read
     // how long it runs before anybody presses play. One already in the

@@ -14,10 +14,10 @@ import Embed from './embed/Embed.vue'
 import { DELETE_TEXT, WORDS as words } from '@/entities/media'
 import type { MediaTabState } from '@/entities/media'
 
-// --- Props & Emits ---
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: MediaTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const { url, deletable, framing, playable } = props.state
 
 // What is at the address plays where it is drawn, so a moment chosen in the
@@ -29,7 +29,7 @@ const offered = computed(() =>
   deletable.value ? [{ id: DELETE_TEXT, text: words.deleteText }] : [],
 )
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onChoose(id: string) {
   if (id === DELETE_TEXT) props.state.deleteTranscript()
 }
@@ -37,8 +37,6 @@ function onChoose(id: string) {
 function onTimeUpdate(ms: number) {
   props.state.setFrameTime(ms)
 }
-
-// --- Helpers ---
 </script>
 
 <template>

@@ -6,10 +6,11 @@
  * It plays nothing of its own. What plays lives where being drawn cannot
  * reach it, and this only says what a person did.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Pause, Play } from '@lucide/vue'
 import { clock } from '@/shared/lib/duration'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** Where the sound stands, in milliseconds. */
@@ -25,16 +26,35 @@ const props = withDefaults(
   { label: 'The recording', play: 'Play', pause: 'Pause' },
 )
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   play: []
   pause: []
   seek: [ms: number]
 }>()
 
-/** A sound is at least as long as the getFurthest anything has stood in it. */
+/* --------------------------------- State ---------------------------------- */
+/** A sound is at least as long as the furthest anything has stood in it. */
 const runs = computed(() => Math.max(props.length, props.at, 0))
 
-const onSeek = (event: Event) => emit('seek', Number((event.target as HTMLInputElement).value))
+/**
+ * While a person drags the bar, where they dragged it is shown rather than
+ * where the sound stood before the move landed.
+ */
+const dragging = ref<number | null>(null)
+
+const position = computed(() => dragging.value ?? Math.min(props.at, runs.value))
+
+/* -------------------------------- Handlers -------------------------------- */
+function onSeekInput(event: Event) {
+  const ms = Number((event.target as HTMLInputElement).value)
+  dragging.value = ms
+  emit('seek', ms)
+}
+
+function onSeekChange() {
+  dragging.value = null
+}
 </script>
 
 <template>
@@ -50,7 +70,7 @@ const onSeek = (event: Event) => emit('seek', Number((event.target as HTMLInputE
       <Play v-else />
     </button>
 
-    <span class="player__at">{{ clock(props.at) }}</span>
+    <span class="player__at">{{ clock(position) }}</span>
 
     <input
       type="range"
@@ -58,10 +78,11 @@ const onSeek = (event: Event) => emit('seek', Number((event.target as HTMLInputE
       min="0"
       :max="runs"
       step="1000"
-      :value="Math.min(props.at, runs)"
+      :value="position"
       :aria-label="props.label"
-      :aria-valuetext="clock(props.at)"
-      @input="onSeek"
+      :aria-valuetext="clock(position)"
+      @input="onSeekInput"
+      @change="onSeekChange"
     />
 
     <span class="player__at">{{ clock(runs) }}</span>
