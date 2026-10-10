@@ -4,9 +4,7 @@
 // asked it to.
 //
 // The library's ban on importing the domain is the one rule that stops at this
-// package: a window is the thing that knows what a vault is. Which way the
-// modules may point is dependency-cruiser's answer, given by `npm run check`
-// in modules/tools/depgraph.
+// package: a window is the thing that knows what a vault is.
 
 import js from '@eslint/js'
 import globals from 'globals'

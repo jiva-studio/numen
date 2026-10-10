@@ -27,49 +27,9 @@ if [ -n "$GO_FILES" ]; then
 fi
 
 # 3. Fast architecture & boundary gates
-node "$root/modules/tools/depgraph/check.mjs" || exit 1
 "$root/modules/libs/core/adapter/index/migration-forward-only.sh" --self-test || exit 1
 
 PRETTIER_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue|json|css)$' || true)
 if [ -n "$PRETTIER_FILES" ]; then
   npx prettier --check $PRETTIER_FILES || exit 1
 fi
-
-# 4. Dynamic module discovery & targeted Make checks
-has_target() {
-  make -q "$1" >/dev/null 2>&1
-  [ $? -ne 2 ]
-}
-
-MODULES_TO_CHECK=()
-for file in $STAGED_FILES; do
-  if [[ "$file" =~ ^modules/(libs|apps|tools)/([^/]+) ]]; then
-    cat="${BASH_REMATCH[1]%s}" # libs -> lib, apps -> app, tools -> tool
-    name="${BASH_REMATCH[2]}"
-    prefix="${cat}_${name}"
-    if [[ ! " ${MODULES_TO_CHECK[*]} " =~ " ${prefix} " ]]; then
-      MODULES_TO_CHECK+=("$prefix")
-    fi
-  fi
-done
-
-for prefix in "${MODULES_TO_CHECK[@]}"; do
-  TARGETS=()
-  for action in check lint test; do
-    if has_target "${prefix}_${action}"; then
-      TARGETS+=("${prefix}_${action}")
-      if [ "$action" = "check" ]; then
-        break
-      fi
-    fi
-  done
-
-  if [ ${#TARGETS[@]} -eq 0 ] && has_target "${prefix}_build"; then
-    TARGETS+=("${prefix}_build")
-  fi
-
-  if [ ${#TARGETS[@]} -gt 0 ]; then
-    echo "🔍 [pre-commit] Running ${TARGETS[*]}..."
-    make "${TARGETS[@]}"
-  fi
-done

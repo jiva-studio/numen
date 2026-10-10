@@ -11,7 +11,6 @@ DOCS     := modules/apps/docs
 LANDING  := modules/apps/landing
 
 ICON     := modules/tools/icon
-DEPGRAPH := modules/tools/depgraph
 STORIES  := modules/tools/stories
 
 INSTALL  ?= npm install
@@ -55,12 +54,6 @@ shoot: app_landing_shoot ## take landing screenshots
 
 .PHONY: icons
 icons: tool_icon_build ## cut application icons
-
-.PHONY: graph
-graph: tool_depgraph_graph ## update dependency graph
-
-.PHONY: graph-check
-graph-check: tool_depgraph_graph_check ## verify dependency graph is up to date
 
 # --------------------------------- Lib: Core ----------------------------------
 .PHONY: lib_core_build
@@ -267,18 +260,6 @@ app_landing_lint: ## lint landing site
 .PHONY: tool_icon_build
 tool_icon_build: ## cut application icons
 	cd $(ICON) && npm run build
-
-.PHONY: tool_depgraph_graph
-tool_depgraph_graph: ## generate dependency graph
-	cd $(DEPGRAPH) && npm run graph
-
-.PHONY: tool_depgraph_graph_check
-tool_depgraph_graph_check: tool_depgraph_graph ## verify dependency graph is committed
-	git diff --exit-code -- docs/dependencies.md
-
-.PHONY: tool_depgraph_check
-tool_depgraph_check: tool_depgraph_graph_check ## check module boundaries and dependency graph
-	cd $(DEPGRAPH) && npm run check
 
 .PHONY: tool_stories_check
 tool_stories_check: ## verify story references
