@@ -48,7 +48,7 @@ func addNoteTools(server *sdk.Server, core Core) {
 // person writes in asks; the surfaces that only read are served the lookups by
 // path and no more.
 func addNoteResolve(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_resolve",
 		Title: "Resolve a name",
 		Description: "Every note filed under one name, which is what a link written by " +
@@ -74,7 +74,7 @@ func addNoteResolve(server *sdk.Server, core Core) {
 func addNoteReadingTools(server *sdk.Server, core Core) {
 	addNoteSearch(server, core)
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_titles",
 		Title: "Look up note titles",
 		Description: "What notes at these paths are called, and the identifier each " +
@@ -110,7 +110,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		return nil, res, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_read",
 		Title: "Read notes",
 		Description: "Read the prose of notes — the text below the frontmatter, which " +
@@ -165,7 +165,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		return nil, res, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_neighbourhood",
 		Title: "Show a note's neighbourhood",
 		Description: "One note and everything joined to it — its parents, children, " +
@@ -207,7 +207,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 	// text of a note: one at a time, each is filed as it is finished, and stopping
 	// halfway keeps what was made. The other calls that take a list carry names,
 	// which are written in a moment.
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_create",
 		Title: "Create a note",
 		Description: "Make one note. It is named after its title, so choose a title that " +
@@ -242,7 +242,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		return nil, outcome, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_rewrite",
 		Title: "Rewrite a note",
 		Description: "Replace the whole prose of a note. The frontmatter is left alone — " +
@@ -283,7 +283,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		return nil, out{Path: in.Path, Fingerprint: fingerprintOf(written)}, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_edit",
 		Title: "Edit a note",
 		Description: "Replace one span of a note's prose with another and leave the " +
@@ -331,7 +331,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		}, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_rename",
 		Title: "Rename a note",
 		Description: "Give a note a different name. " + namingOrder + " Whichever of the " +
@@ -347,7 +347,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		return nil, renamed, err
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_move",
 		Title: "Move a note",
 		Description: "File notes under a different folder, keeping their names. Folders " +
@@ -381,7 +381,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		return nil, res, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_remove",
 		Title: "Remove a note",
 		Description: "Take notes out of the vault. They go to the vault's trash folder " +

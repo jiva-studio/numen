@@ -42,7 +42,7 @@ func addressOf(source string, start, length int) string {
 // reaches the books and papers as well as the notes, so it asks about the vault
 // and not about a note.
 func addNoteSearch(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_search",
 		Title: "Search the vault",
 		Description: "Search everything the vault holds — the notes, and the books and " +

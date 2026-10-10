@@ -21,7 +21,7 @@ func addViewTools(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "note_focus",
 		Title: "Focus a note",
 		Description: "Make a note the one the person is looking at, so that the " +
@@ -55,7 +55,7 @@ func addViewTools(server *sdk.Server, core Core) {
 		return nil, out{Focused: noteOf(ref)}, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "source_focus",
 		Title: "Focus a passage",
 		Description: "Open one of the vault's documents in front of the person at one " +

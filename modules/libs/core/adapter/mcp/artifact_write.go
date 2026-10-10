@@ -23,7 +23,7 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "artifact_write",
 		Title: "Write an artifact",
 		Description: "Write a span of a transcript as it should read. What the site " +

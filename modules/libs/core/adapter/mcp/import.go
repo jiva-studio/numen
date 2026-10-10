@@ -39,7 +39,7 @@ func addImportTool(server *sdk.Server, core Core) {
 	if core.Sources.Import == nil || core.Sources.URLs == nil {
 		return
 	}
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "url_import",
 		Title: "Import a url",
 		Description: "Make a file holding a web address and fetch what is there. " +

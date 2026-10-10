@@ -85,7 +85,7 @@ func addCardShowing(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_showing",
 		Title: "Show the card in front",
 		Description: "The card in front of the person: the deck it stands in, the mark " +
@@ -102,7 +102,7 @@ func addCardShowing(server *sdk.Server, core Core) {
 }
 
 func addCardReadingTools(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_stencil_list",
 		Title: "List stencils",
 		Description: "The stencils of the vault: where each is filed, the name a card's " +
@@ -141,7 +141,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		return nil, res, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_read",
 		Title: "Read cards",
 		Description: "The cards of one deck, in the order they stand in the file, each " +
@@ -224,7 +224,7 @@ func addCardWritingTools(server *sdk.Server, core Core) {
 func addCardEditingTools(server *sdk.Server, core Core) {
 	// One card per call. A call is written out in full before it is made and
 	// this one carries what a person wrote, so each is filed as it is finished.
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_add",
 		Title: "Add a card",
 		Description: "Write one card at the end of a deck, or at the end of one of its " +
@@ -271,7 +271,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		return nil, written, nil
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_edit",
 		Title: "Edit a card",
 		Description: "Write values into one card of a deck. A field the card already " +
@@ -318,7 +318,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		return nil, written, err
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_value_remove",
 		Title: "Remove a card's field",
 		Description: "Remove one field from one card: its heading, and what the person " +
@@ -343,7 +343,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		return nil, written, err
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_remove",
 		Title: "Remove a card",
 		Description: "Remove one card from a deck: its heading, the stencil it named and " +
@@ -366,7 +366,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		return nil, written, err
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_section_add",
 		Title: "Add a section",
 		Description: "Write a section at the end of a deck. A section is a name a person " +
@@ -387,7 +387,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		return nil, written, err
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_section_rename",
 		Title: "Rename a section",
 		Description: "Give one of a deck's sections a different name. Only the heading " +
@@ -410,7 +410,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		return nil, written, err
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_section_remove",
 		Title: "Remove a section",
 		Description: "Remove the heading of one of a deck's sections. A section is a name " +
@@ -437,7 +437,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 // addCardMakingTools are what a vault is arranged into: a deck, a stencil, and
 // the name a stencil gives a field wherever it is written.
 func addCardMakingTools(server *sdk.Server, core Core) {
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_deck_create",
 		Title: "Create a deck",
 		Description: "Make a deck of no cards, and fill it with `card_add`. A deck is a " +
@@ -455,7 +455,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		return nil, made, err
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_stencil_create",
 		Title: "Create a stencil",
 		Description: "Make a stencil: the fields a card is asked for, in the order to ask " +
@@ -490,7 +490,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		return nil, made, err
 	})
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "card_field_rename",
 		Title: "Rename a field",
 		Description: "Give one of a stencil's fields a different name, everywhere it is " +

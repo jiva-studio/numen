@@ -51,7 +51,7 @@ func addVaultList(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "vault_list",
 		Title: "List vaults",
 		Description: "Every vault this installation holds: what each is called, where its " +
@@ -82,7 +82,7 @@ func addVaultAdd(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "vault_add",
 		Title: "Add a vault",
 		Description: "Put a folder on the list of vaults this installation holds. The " +
@@ -155,7 +155,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "vault_rename",
 		Title: "Rename a vault",
 		Description: "What the person calls a vault. The folder keeps the name the " +
@@ -191,7 +191,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "vault_forget",
 		Title: "Forget a vault",
 		Description: "Take a vault off the list and out of the index. Its folder stays " +
@@ -231,7 +231,7 @@ func addVaultOpen(server *sdk.Server, core Core) {
 		return
 	}
 
-	sdk.AddTool(server, &sdk.Tool{
+	addTool(server, &sdk.Tool{
 		Name:  "vault_open",
 		Title: "Open a vault",
 		Description: "Put another vault in front of the person, in the window they have " +
