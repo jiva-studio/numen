@@ -1313,4 +1313,90 @@ describe('quick-link popover from a node handle', () => {
     expect(joined).toEqual([])
     expect(removed).toEqual([])
   })
+
+  it('removes entire link when removeEntireLink is called', async () => {
+    const { state, node, removed } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    const focusId = node('Focus')
+    const childId = node('Child')
+    const pair = `${focusId} ${childId}`
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.removeEntireLink(pair)
+
+    expect(state.linkInspector.value).toBeNull()
+    expect(removed).toContainEqual(['Focus.md', 'Child.md', 'child'])
+  })
+
+  it('handles removeEntireLink when linkInspector is not active or for different pair', async () => {
+    const { state, removed } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    await state.removeEntireLink('nonexistent pair')
+    expect(removed).toEqual([])
+  })
+
+  it('saves undirected direction mode for a single link row', async () => {
+    const { state, node, joined } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    const focusId = node('Focus')
+    const childId = node('Child')
+    const pair = `${focusId} ${childId}`
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'child',
+          direction: 'undirected',
+          description: '',
+        },
+      ],
+      removedLinks: [],
+    })
+
+    expect(state.linkInspector.value).toBeNull()
+    expect(joined).toContainEqual(['Focus.md', 'Child.md', 'child', ''])
+  })
+
+  it('handles openLinkInspector with invalid pair formats gracefully', async () => {
+    const { state } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    state.openLinkInspector('invalidSingleToken', { x: 0, y: 0 })
+    expect(state.linkInspector.value).toBeNull()
+
+    state.openLinkInspector('unknown1 unknown2', { x: 0, y: 0 })
+    expect(state.linkInspector.value).toBeNull()
+  })
+
+  it('searches notes via searchNotes method', async () => {
+    const { state } = tab('Focus.md', ['Child.md'])
+    const emptyResults = await state.searchNotes('query')
+    expect(emptyResults).toEqual([])
+  })
+
+  it('ignores invalid parts in openPart', () => {
+    const { state, node, opened, entered } = tab('Focus.md', ['Child.md'])
+    const focusId = node('Focus')
+
+    state.openPart(focusId, 'not-a-number')
+    expect(entered).toEqual([])
+    expect(opened).toEqual([])
+
+    state.openPart('nonexistent', '1')
+    expect(entered).toEqual([])
+  })
+
+  it('confirms quick link with whitespace title or inactive state without error', async () => {
+    const { state } = tab('Focus.md', ['Child.md'])
+    await state.confirmQuickLink('  ', false)
+    expect(state.quickLink.value).toBeNull()
+  })
 })
