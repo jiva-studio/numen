@@ -74,12 +74,19 @@ onScopeDispose(() => {
 })
 
 watch(
-  [() => props.request.at, () => localRows.value.length],
+  () => props.request,
+  () => {
+    updatePosition()
+  },
+  { deep: true },
+)
+
+watch(
+  () => localRows.value.length,
   async () => {
     await nextTick()
     updatePosition()
   },
-  { deep: true },
 )
 
 /* -------------------------------- Handlers -------------------------------- */

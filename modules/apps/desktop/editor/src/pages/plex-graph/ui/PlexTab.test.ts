@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { PlexRelatedSeat } from '@numen/ui'
 import PlexTab from './PlexTab.vue'
+import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { MenuRequest, PlexTabState } from '../types'
 import { WORDS as words } from '../words'
 import type { NoteType } from '@/entities/file'
@@ -377,6 +378,62 @@ describe('interaction events forwarded from Plex component', () => {
     expect(chosen).toBe('item-1')
 
     menu.vm.$emit('dismiss')
+    expect(dismissed).toBe(true)
+    view.unmount()
+  })
+
+  it('handles edge-menu and link inspector lifecycle events', async () => {
+    drawing(13)
+    let openedInspector: { pair: string; at: { x: number; y: number } } | null = null
+    let savedPayload: unknown = null
+    let removedKey = ''
+    let dismissed = false
+
+    const linkInspector = ref<unknown>(null)
+    const tabState = {
+      ...createTabState(),
+      linkInspector,
+      openLinkInspector: (pair: string, at: { x: number; y: number }) => {
+        openedInspector = { pair, at }
+      },
+      saveLinkInspector: async (payload: unknown) => {
+        savedPayload = payload
+      },
+      removeEntireLink: async (pairKey: string) => {
+        removedKey = pairKey
+      },
+      dismissLinkInspector: () => {
+        dismissed = true
+      },
+    } as unknown as PlexTabState
+
+    const view = mount(PlexTab, { props: { state: tabState }, attachTo: document.body })
+    const plex = view.findComponent({ name: 'Plex' })
+
+    plex.vm.$emit('edge-menu', 'Root.md Child.md', { x: 200, y: 150 })
+    expect(openedInspector).toEqual({
+      pair: 'Root.md Child.md',
+      at: { x: 200, y: 150 },
+    })
+
+    // Mount with inspector open
+    linkInspector.value = {
+      pairKey: 'Root.md Child.md',
+      nodeA: { id: 'Root.md', title: 'Root', path: 'Root.md' },
+      nodeB: { id: 'Child.md', title: 'Child', path: 'Child.md' },
+      links: [],
+      at: { x: 200, y: 150 },
+    }
+    await view.vm.$nextTick()
+
+    const inspector = view.findComponent(PlexLinkInspectorPopover)
+    inspector.vm.$emit('save', { pairKey: 'Root.md Child.md', rows: [], removedLinks: [] })
+    expect(savedPayload).toBeDefined()
+
+    inspector.vm.$emit('remove-entire-link', 'Root.md Child.md')
+    expect(removedKey).toBe('Root.md Child.md')
+
+    inspector.vm.$emit('dismiss')
     expect(dismissed).toBe(true)
     view.unmount()
   })

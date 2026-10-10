@@ -270,5 +270,34 @@ describe('linkInspector helper module', () => {
 
       expect(pos.left).toBe(12)
     })
+
+    it('clamps in tight vertical space preferring top or bottom half accordingly', () => {
+      const tightContainer = { width: 800, height: 200 }
+      const largePopover = { width: 300, height: 180 }
+
+      const posTopHalf = resolvePopoverPosition({
+        at: { x: 400, y: 50 },
+        popoverSize: largePopover,
+        containerSize: tightContainer,
+      })
+      expect(posTopHalf.top).toBe(12)
+
+      const posBottomHalf = resolvePopoverPosition({
+        at: { x: 400, y: 150 },
+        popoverSize: largePopover,
+        containerSize: tightContainer,
+      })
+      expect(posBottomHalf.top).toBe(12)
+    })
+
+    it('uses default dimensions when zero size is provided', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 400, y: 300 },
+        popoverSize: { width: 0, height: 0 },
+        containerSize: { width: 0, height: 0 },
+      })
+      expect(pos.left).toBeGreaterThan(0)
+      expect(pos.top).toBeGreaterThan(0)
+    })
   })
 })

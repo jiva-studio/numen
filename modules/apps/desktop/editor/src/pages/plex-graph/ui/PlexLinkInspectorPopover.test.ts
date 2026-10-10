@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { ArrowLeft, ArrowLeftRight, ArrowRight, Minus } from '@lucide/vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { LinkInspectorRequest } from '../types'
@@ -525,6 +526,26 @@ describe('PlexLinkInspectorPopover component', () => {
 
     const inputs = wrapper.findAll('input')
     expect(inputs.length).toBe(2)
+    wrapper.unmount()
+  })
+
+  it('updates position when window is resized or request prop updates', async () => {
+    const wrapper = mountPopover()
+    const popover = wrapper.get('.plex-link-popover')
+
+    window.dispatchEvent(new Event('resize'))
+    expect(wrapper.find('.plex-link-popover').exists()).toBe(true)
+
+    await wrapper.setProps({
+      request: {
+        ...defaultRequest,
+        at: { x: 500, y: 350 },
+      },
+    })
+    await nextTick()
+
+    expect(popover.attributes('style')).toContain('left: 340px')
+    expect(popover.attributes('style')).toContain('top: 178px')
     wrapper.unmount()
   })
 })
