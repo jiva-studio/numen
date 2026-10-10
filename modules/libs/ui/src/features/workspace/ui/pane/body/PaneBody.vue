@@ -8,10 +8,12 @@
 import { getPanelName, getTabName } from '../names'
 import type { Pane, TabId } from '../../../lib/node'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   pane: Pane
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The panel let go of, back to the tab it is held under. */
   (event: 'leave', tab: TabId): void
@@ -22,9 +24,7 @@ defineSlots<{
   silence(): unknown
 }>()
 
-const tabName = (at: number): string => getTabName(props.pane.id, at)
-const panelName = (at: number): string => getPanelName(props.pane.id, at)
-
+/* -------------------------------- Handlers -------------------------------- */
 /**
  * The way out of what a tab holds, back to the tab itself. A panel that acts
  * on Escape itself keeps it.
@@ -38,6 +38,10 @@ function onPanelEscape(event: KeyboardEvent): void {
   event.preventDefault()
   emit('leave', showing)
 }
+
+/* -------------------------------- Helpers --------------------------------- */
+const tabName = (at: number): string => getTabName(props.pane.id, at)
+const panelName = (at: number): string => getPanelName(props.pane.id, at)
 </script>
 
 <template>
@@ -77,6 +81,7 @@ function onPanelEscape(event: KeyboardEvent): void {
   block-size: 100%;
   min-block-size: 0;
   min-inline-size: 0;
+  contain: strict;
 }
 
 .pane__held[data-showing] {
