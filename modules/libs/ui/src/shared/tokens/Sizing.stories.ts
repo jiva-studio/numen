@@ -61,7 +61,7 @@ const AS_DESIGNED: Record<Token, number> = {
   '--numen-prose-size': 14,
   '--numen-stroke': 1,
   '--numen-ring-width': 2,
-  '--numen-edge-width': 1.25,
+  '--numen-edge-width': 2,
   '--numen-edge-label-halo': 3,
 }
 

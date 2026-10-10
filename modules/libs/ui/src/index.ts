@@ -156,6 +156,7 @@ export type { PlexNeighbourhood } from './features/plex'
 export type { PlexNode, Position } from './features/plex'
 export type { PlexRelatedSeat } from './features/plex'
 export type { PlexDestination } from './features/plex'
+export { threadOf } from './features/plex'
 
 export { MessageComposer, AgentModelSelector } from './screens/message-composer'
 export type { AgentModelOption } from './screens/message-composer'

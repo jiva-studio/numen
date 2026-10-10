@@ -233,9 +233,9 @@
   --numen-ring-width: 2px;
   /* The line a carried thing lands on. */
   --numen-caret: 2px;
-  --numen-edge-width: 1.25px;
+  --numen-edge-width: 2px;
   /* The dash the thread a gesture drags behind it is drawn in. */
-  --numen-thread-dash: 4 4;
+  --numen-thread-dash: 6 4;
 
   --numen-motion: 220ms;
   /* How long one turn of a thing that is waiting takes. A shimmer reads slowly,
