@@ -18,4 +18,14 @@ export const WORDS = {
   createNote: (title: string) => `Create "${title}"`,
   /** When no existing notes match the search query. */
   noMatches: 'No matching notes',
+  /** The input placeholder for link description in inspector. */
+  linkDescriptionPlaceholder: 'Link description…',
+  /** Button to add reverse direction. */
+  addReverseDirection: 'Reverse',
+  /** Button to cycle direction. */
+  changeDirection: 'Change direction',
+  /** Button to remove a link. */
+  removeLink: 'Remove link',
+  /** Button to close inspector. */
+  done: 'Done',
 }

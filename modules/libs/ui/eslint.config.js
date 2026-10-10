@@ -153,12 +153,7 @@ export default tseslint.config(
   // and a story are shaped by what they are describing and are not held to either.
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-      'src/**/*.stories.ts',
-      'src/**/fixtures/**',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
     rules: {
       'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
@@ -171,10 +166,7 @@ export default tseslint.config(
 
   // Feature controllers, geometric layout algorithms and gesture state machines coordinate multi-parameter state.
   {
-    files: [
-      'src/features/**/*.{ts,vue}',
-      'src/shared/**/*.{ts,vue}',
-    ],
+    files: ['src/features/**/*.{ts,vue}', 'src/shared/**/*.{ts,vue}'],
     rules: {
       'max-lines-per-function': 'off',
       'max-params': 'off',
@@ -183,10 +175,7 @@ export default tseslint.config(
 
   // Book and Notices components encapsulate specialized multi-column layout and animated notification styles.
   {
-    files: [
-      'src/features/book/ui/Book.vue',
-      'src/features/notices/ui/Notices.vue',
-    ],
+    files: ['src/features/book/ui/Book.vue', 'src/features/notices/ui/Notices.vue'],
     rules: {
       'vue/max-lines-per-block': [
         'error',
@@ -201,12 +190,7 @@ export default tseslint.config(
   // the door marked "tests", so the rule covers every file the module holds.
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-      'src/**/*.stories.ts',
-      'src/**/fixtures/**',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
     rules: {
       'no-restricted-imports': [
         'error',

@@ -6,6 +6,7 @@ import type {
   NoteEdit,
   NoteHeading,
   NoteResult,
+  Role,
   WriteResult,
   RemoveResult,
   RenameResult,
@@ -49,6 +50,10 @@ export interface NotePort {
    * alone: a link is one end's account of a relationship.
    */
   join(path: string, link: Link): Promise<ErrorCode | null>
+  /**
+   * A relationship taken out of one note.
+   */
+  removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
   /**
    * A note given a different name. Whichever of the title and the filename
    * names it is brought into line, and the file follows where a title and a

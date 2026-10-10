@@ -202,9 +202,9 @@ describe('whose wording is on the line', () => {
     ).toEqual(['Bram Doyle -> Alice Fenn, The Chair: from'])
   })
 
-  it('draws no arrow where only one note named the relationship', () => {
-    // Alice Fenn jumps to Cora Hale and Cora Hale says nothing back: one
-    // wording, and nothing to choose between.
+  it('draws no arrow where only one note named a jump relationship', () => {
+    // Alice Fenn jumps to Cora Hale and Cora Hale says nothing back:
+    // an associative jump with one note naming it has no arrow.
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [
@@ -212,6 +212,100 @@ describe('whose wording is on the line', () => {
         ]),
       ),
     ).toEqual(['Cora Hale -> Alice Fenn, The Chair: no arrow'])
+  })
+
+  it('draws a directional arrow for single child and parent relationships by default', () => {
+    // Single child link points down into the child
+    expect(
+      arrows(
+        createNeighbourhood('Alice Fenn, The Chair', [
+          ['Child note', 'child', 'subtask', '', false],
+        ]),
+      ),
+    ).toEqual(['Alice Fenn, The Chair -> Child note: to'])
+
+    // Single parent link points down into the child
+    expect(
+      arrows(
+        createNeighbourhood('Alice Fenn, The Chair', [
+          ['Parent note', 'parent', 'depends on', '', false],
+        ]),
+      ),
+    ).toEqual(['Parent note -> Alice Fenn, The Chair: to'])
+  })
+
+  it('respects explicit undirected, forward, and reverse direction modes', () => {
+    const nh = createNeighbourhood('Alice Fenn, The Chair', [
+      ['Child note', 'child', 'subtask', '', false],
+    ])
+    const map = createNodeIdMap()
+
+    // 1. Explicit undirected mode removes the arrow from a child link
+    const undirectedMap = new Map([
+      [['Alice Fenn, The Chair', 'Child note'].sort().join(' '), 'undirected'],
+    ])
+    const undirectedPlex = asPlex(nh, map.getNodeId, undirectedMap)
+    expect(undirectedPlex.edges[0]?.arrow).toBeUndefined()
+
+    // 2. Explicit forward mode (Alice -> Child) sets arrow to 'to'
+    const forwardMap = new Map([
+      [
+        ['Alice Fenn, The Chair', 'Child note'].sort().join(' '),
+        'Alice Fenn, The Chair->Child note',
+      ],
+    ])
+    const forwardPlex = asPlex(nh, map.getNodeId, forwardMap)
+    expect(forwardPlex.edges[0]?.arrow).toBe('to')
+
+    // 3. Explicit reverse mode (Child -> Alice) sets arrow to 'from'
+    const reverseMap = new Map([
+      [
+        ['Alice Fenn, The Chair', 'Child note'].sort().join(' '),
+        'Child note->Alice Fenn, The Chair',
+      ],
+    ])
+    const reversePlex = asPlex(nh, map.getNodeId, reverseMap)
+    expect(reversePlex.edges[0]?.arrow).toBe('from')
+  })
+
+  it('renders consistent arrow directions between two notes regardless of which note is in focus', () => {
+    const map = createNodeIdMap()
+    const pairKey = ['Parent.md', 'Child.md'].sort().join(' ')
+
+    // Forward direction: Parent -> Child
+    const forwardMap = new Map([[pairKey, 'Parent.md->Child.md']])
+
+    // From Parent's perspective (Child is child seat)
+    const nhFromParent = createNeighbourhood('Parent.md', [['Child.md', 'child', '', '', false]])
+    const plexFromParent = asPlex(nhFromParent, map.getNodeId, forwardMap)
+    expect(plexFromParent.edges[0]?.from).toBe(map.getNodeId('Parent.md'))
+    expect(plexFromParent.edges[0]?.to).toBe(map.getNodeId('Child.md'))
+    expect(plexFromParent.edges[0]?.arrow).toBe('to') // points into Child.md (downwards)
+
+    // From Child's perspective (Parent is parent seat)
+    const nhFromChild = createNeighbourhood('Child.md', [['Parent.md', 'parent', '', '', false]])
+    const plexFromChild = asPlex(nhFromChild, map.getNodeId, forwardMap)
+    expect(plexFromChild.edges[0]?.from).toBe(map.getNodeId('Parent.md'))
+    expect(plexFromChild.edges[0]?.to).toBe(map.getNodeId('Child.md'))
+    expect(plexFromChild.edges[0]?.arrow).toBe('to') // points into Child.md (downwards)
+
+    // Reverse direction: Child -> Parent
+    const reverseMap = new Map([[pairKey, 'Child.md->Parent.md']])
+
+    // From Parent's perspective
+    const plexRevFromParent = asPlex(nhFromParent, map.getNodeId, reverseMap)
+    expect(plexRevFromParent.edges[0]?.arrow).toBe('from') // points into Parent.md (upwards)
+
+    // From Child's perspective
+    const plexRevFromChild = asPlex(nhFromChild, map.getNodeId, reverseMap)
+    expect(plexRevFromChild.edges[0]?.arrow).toBe('from') // points into Parent.md (upwards)
+
+    // Undirected: Parent — Child
+    const undirectedMap = new Map([[pairKey, 'undirected']])
+    const plexUndirectedParent = asPlex(nhFromParent, map.getNodeId, undirectedMap)
+    expect(plexUndirectedParent.edges[0]?.arrow).toBeUndefined()
+    const plexUndirectedChild = asPlex(nhFromChild, map.getNodeId, undirectedMap)
+    expect(plexUndirectedChild.edges[0]?.arrow).toBeUndefined()
   })
 
   it('draws no arrow on a sibling, whose line is between two other notes', () => {

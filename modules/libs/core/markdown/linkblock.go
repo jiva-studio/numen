@@ -128,11 +128,21 @@ func (d *Document) AddLink(add domain.Link) error {
 		if e.link.Target != add.Target {
 			continue
 		}
-		if e.link.Role == add.Role {
+		if e.link.Role == add.Role && e.link.Label == add.Label && e.link.Type == add.Type {
 			return nil
 		}
-		_, err := d.UpdateLink(add.Target, add)
-		return err
+		next := e.link
+		next.Role = add.Role
+		next.Label = add.Label
+		if add.Type != "" {
+			next.Type = add.Type
+		}
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return err
+		}
+		d.splice(e.start, e.end, rendered)
+		return nil
 	}
 
 	rendered, err := renderEntry(add, b.indent, d.eol)

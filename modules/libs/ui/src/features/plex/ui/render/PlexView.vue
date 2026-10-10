@@ -152,7 +152,7 @@ const roleOf = (node: PlacedNode): GestureRole => {
 
     <!-- The band a line is found by. It paints nothing, and the nodes come
          after it, so a box under the hand is what the hand is on. -->
-    <g aria-hidden="true">
+    <g>
       <path
         v-for="line in lines"
         :key="`reach:${line.key}`"
@@ -160,6 +160,10 @@ const roleOf = (node: PlacedNode): GestureRole => {
         :d="line.d"
         @pointerenter="setOver(line.pair)"
         @pointerleave="setOver(null)"
+        @click.stop="emit('edge-menu', line.pair, { x: $event.clientX, y: $event.clientY })"
+        @contextmenu.prevent.stop="
+          emit('edge-menu', line.pair, { x: $event.clientX, y: $event.clientY })
+        "
       />
     </g>
 

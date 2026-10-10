@@ -53,6 +53,10 @@ service NoteService {
   // left alone: a link is one end's account of a relationship.
   rpc WriteLink(WriteLinkRequest) returns (WriteLinkResponse);
 
+  // RemoveLink removes a relationship from one note. The note at the other end
+  // is left alone: a link is one end's account of a relationship.
+  rpc RemoveLink(RemoveLinkRequest) returns (RemoveLinkResponse);
+
   // RenameNote gives a note a different name. A note is shown by its title,
   // else by its first level-one heading, else by its filename: whichever of the
   // three names it is brought into line, and the file follows it where a title
@@ -125,6 +129,9 @@ message Neighbour {
   // Which of three the note is, so a client draws a deck and a stencil as what
   // they are.
   NoteType type = 6;
+
+  // What the other note wrote on its link back to this one, when is_mutual is true.
+  string reverse_label = 7;
 }
 
 message ResolveAddressesRequest {
@@ -304,6 +311,18 @@ message WriteLinkResponse {
   // Set when nothing was written, and why. A note that moved between being
   // read and being written is ERROR_CODE_STALE, and the caller reads it again
   // before asking for this.
+  optional ErrorCode error = 1;
+}
+
+message RemoveLinkRequest {
+  // The note the link is removed from.
+  string path = 1;
+  string to = 2;
+  Role role = 3;
+}
+
+message RemoveLinkResponse {
+  // Set when nothing was removed, and why.
   optional ErrorCode error = 1;
 }
 

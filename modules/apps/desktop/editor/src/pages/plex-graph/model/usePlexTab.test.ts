@@ -11,12 +11,17 @@ import { usePlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
 import { ITEMS, NEW_NOTE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
-import { createVault, settle, viewOn, type Types } from '../fixtures'
+import { createVault, settle, viewOn, type Types, type NeighbourSpec } from '../fixtures'
 import type { NoteHeading, Seat } from '@/entities/note'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 
 /** A plex tab with the window it is drawn in written down. */
-const tab = (at: string, neighbours: readonly string[] = [], takes = true, types: Types = {}) => {
+const tab = (
+  at: string,
+  neighbours: readonly NeighbourSpec[] = [],
+  takes = true,
+  types: Types = {},
+) => {
   const plex = viewOn(at, neighbours, types)
   const vault = createVault(takes)
   const opened: [string, string, string][] = []
@@ -1085,5 +1090,313 @@ describe('quick-link popover from a node handle', () => {
       creatable: ['parent', 'child', 'jump'],
     })
     expect(await stateNoSearch.searchNotes('test')).toEqual([])
+  })
+
+  it('opens, modifies direction/description, and removes links via inspector', async () => {
+    const { state, node, joined, removed } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    const focusId = node('Focus')
+    const childId = node('Child')
+    const pair = `${focusId} ${childId}`
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    expect(state.linkInspector.value).not.toBeNull()
+    expect(state.linkInspector.value?.nodeA.title).toBe('Focus')
+    expect(state.linkInspector.value?.nodeB.title).toBe('Child')
+    expect(state.linkInspector.value?.links.length).toBe(1)
+    expect(state.linkInspector.value?.links[0]?.direction).toBe('forward')
+
+    // 1. Save with modified description
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'child',
+          direction: 'forward',
+          description: 'Primary child',
+        },
+      ],
+      removedLinks: [],
+    })
+
+    expect(state.linkInspector.value).toBeNull()
+    expect(joined).toContainEqual(['Focus.md', 'Child.md', 'child', 'Primary child'])
+
+    // 2. Add reverse link and save
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'child',
+          direction: 'forward',
+          description: 'Primary child',
+        },
+        {
+          id: 'Child.md->Focus.md',
+          from: 'Child.md',
+          to: 'Focus.md',
+          role: 'parent',
+          direction: 'reverse',
+          description: 'Inverse parent',
+        },
+      ],
+      removedLinks: [],
+    })
+    expect(joined).toContainEqual(['Child.md', 'Focus.md', 'parent', 'Inverse parent'])
+
+    // 3. Remove reverse link and save
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'child',
+          direction: 'forward',
+          description: 'Only forward remains',
+        },
+      ],
+      removedLinks: [{ from: 'Child.md', to: 'Focus.md', role: 'parent' }],
+    })
+    expect(removed).toContainEqual(['Child.md', 'Focus.md', 'parent'])
+    expect(joined).toContainEqual(['Focus.md', 'Child.md', 'child', 'Only forward remains'])
+
+    // 4. Remove entire link
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.removeEntireLink(pair)
+    expect(state.linkInspector.value).toBeNull()
+    expect(removed).toContainEqual(['Focus.md', 'Child.md', 'child'])
+
+    // 5. Toggle to undirected jump and save
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'jump',
+          direction: 'undirected',
+          description: 'Undirected connection',
+        },
+      ],
+      removedLinks: [{ from: 'Focus.md', to: 'Child.md', role: 'child' }],
+    })
+    expect(removed).toContainEqual(['Focus.md', 'Child.md', 'child'])
+    expect(joined).toContainEqual(['Focus.md', 'Child.md', 'jump', 'Undirected connection'])
+  })
+
+  it('preserves and populates dual descriptions when reopening inspector on bidirectional link', async () => {
+    const { state, node, joined } = tab('Focus.md', [
+      { path: 'Child.md', isMutual: true, label: 'Forward 111' },
+    ])
+    await settle()
+
+    const focusId = node('Focus')
+    const childId = node('Child')
+    const pair = `${focusId} ${childId}`
+
+    // Save bidirectional descriptions
+    state.openLinkInspector(pair, { x: 100, y: 100 })
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'child',
+          direction: 'forward',
+          description: '111',
+        },
+        {
+          id: 'Child.md->Focus.md',
+          from: 'Child.md',
+          to: 'Focus.md',
+          role: 'parent',
+          direction: 'reverse',
+          description: '222',
+        },
+      ],
+      removedLinks: [],
+    })
+
+    expect(joined).toContainEqual(['Focus.md', 'Child.md', 'child', '111'])
+    expect(joined).toContainEqual(['Child.md', 'Focus.md', 'parent', '222'])
+
+    // Reopen link inspector on the same pair from Focus perspective
+    state.openLinkInspector(pair, { x: 100, y: 100 })
+    const active = state.linkInspector.value
+    expect(active).not.toBeNull()
+    expect(active?.links.length).toBe(2)
+    expect(active?.links[0]?.from).toBe('Focus.md')
+    expect(active?.links[0]?.to).toBe('Child.md')
+    expect(active?.links[0]?.direction).toBe('forward')
+    expect(active?.links[0]?.description).toBe('111')
+    expect(active?.links[1]?.from).toBe('Child.md')
+    expect(active?.links[1]?.to).toBe('Focus.md')
+    expect(active?.links[1]?.direction).toBe('reverse')
+    expect(active?.links[1]?.description).toBe('222')
+  })
+
+  it('preserves correct forward and reverse directions and descriptions when opening from the other node as focus', async () => {
+    // Note B (Child.md) is now the focus, and Focus.md is related as parent with label 222
+    const { state, node } = tab('Child.md', [
+      { path: 'Focus.md', seat: 'parent', isMutual: true, label: '222' },
+    ])
+    await settle()
+
+    const childId = node('Child')
+    const focusId = node('Focus')
+    // Node pair can be in any ticket order
+    const pair = `${focusId} ${childId}`
+
+    state.openLinkInspector(pair, { x: 100, y: 100 })
+    const active = state.linkInspector.value
+    expect(active).not.toBeNull()
+    expect(active?.links.length).toBe(2)
+    // Row 1 (Focus -> Child) is forward (→)
+    expect(active?.links[0]?.from).toBe('Focus.md')
+    expect(active?.links[0]?.to).toBe('Child.md')
+    expect(active?.links[0]?.role).toBe('child')
+    expect(active?.links[0]?.direction).toBe('forward')
+    // Row 2 (Child -> Focus) is reverse (←) with Child's label 222
+    expect(active?.links[1]?.from).toBe('Child.md')
+    expect(active?.links[1]?.to).toBe('Focus.md')
+    expect(active?.links[1]?.role).toBe('parent')
+    expect(active?.links[1]?.direction).toBe('reverse')
+    expect(active?.links[1]?.description).toBe('222')
+  })
+
+  it('populates both forward and reverse descriptions from neighbourhood data without prior saves', async () => {
+    const { state, node } = tab('Focus.md', [
+      { path: 'Child.md', seat: 'child', isMutual: true, label: '111', reverseLabel: '222' },
+    ])
+    await settle()
+
+    const focusId = node('Focus')
+    const childId = node('Child')
+    const pair = `${focusId} ${childId}`
+
+    state.openLinkInspector(pair, { x: 100, y: 100 })
+    const active = state.linkInspector.value
+    expect(active).not.toBeNull()
+    expect(active?.links.length).toBe(2)
+    expect(active?.links[0]?.direction).toBe('forward')
+    expect(active?.links[0]?.description).toBe('111')
+    expect(active?.links[1]?.direction).toBe('reverse')
+    expect(active?.links[1]?.description).toBe('222')
+  })
+
+  it('dismisses link inspector without performing writes', async () => {
+    const { state, node, joined, removed } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    const focusId = node('Focus')
+    const childId = node('Child')
+    state.openLinkInspector(`${focusId} ${childId}`, { x: 150, y: 200 })
+    expect(state.linkInspector.value).not.toBeNull()
+
+    state.dismissLinkInspector()
+    expect(state.linkInspector.value).toBeNull()
+    expect(joined).toEqual([])
+    expect(removed).toEqual([])
+  })
+
+  it('removes entire link when removeEntireLink is called', async () => {
+    const { state, node, removed } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    const focusId = node('Focus')
+    const childId = node('Child')
+    const pair = `${focusId} ${childId}`
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.removeEntireLink(pair)
+
+    expect(state.linkInspector.value).toBeNull()
+    expect(removed).toContainEqual(['Focus.md', 'Child.md', 'child'])
+  })
+
+  it('handles removeEntireLink when linkInspector is not active or for different pair', async () => {
+    const { state, removed } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    await state.removeEntireLink('nonexistent pair')
+    expect(removed).toEqual([])
+  })
+
+  it('saves undirected direction mode for a single link row', async () => {
+    const { state, node, joined } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    const focusId = node('Focus')
+    const childId = node('Child')
+    const pair = `${focusId} ${childId}`
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'child',
+          direction: 'undirected',
+          description: '',
+        },
+      ],
+      removedLinks: [],
+    })
+
+    expect(state.linkInspector.value).toBeNull()
+    expect(joined).toContainEqual(['Focus.md', 'Child.md', 'child', ''])
+  })
+
+  it('handles openLinkInspector with invalid pair formats gracefully', async () => {
+    const { state } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    state.openLinkInspector('invalidSingleToken', { x: 0, y: 0 })
+    expect(state.linkInspector.value).toBeNull()
+
+    state.openLinkInspector('unknown1 unknown2', { x: 0, y: 0 })
+    expect(state.linkInspector.value).toBeNull()
+  })
+
+  it('searches notes via searchNotes method', async () => {
+    const { state } = tab('Focus.md', ['Child.md'])
+    const emptyResults = await state.searchNotes('query')
+    expect(emptyResults).toEqual([])
+  })
+
+  it('ignores invalid parts in openPart', () => {
+    const { state, node, opened, entered } = tab('Focus.md', ['Child.md'])
+    const focusId = node('Focus')
+
+    state.openPart(focusId, 'not-a-number')
+    expect(entered).toEqual([])
+    expect(opened).toEqual([])
+
+    state.openPart('nonexistent', '1')
+    expect(entered).toEqual([])
+  })
+
+  it('confirms quick link with whitespace title or inactive state without error', async () => {
+    const { state } = tab('Focus.md', ['Child.md'])
+    await state.confirmQuickLink('  ', false)
+    expect(state.quickLink.value).toBeNull()
   })
 })

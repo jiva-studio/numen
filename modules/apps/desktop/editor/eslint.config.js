@@ -188,17 +188,10 @@ export default tseslint.config(
     },
   },
 
-
-
   // Package boundaries: no reaching out of the module via relative paths
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-      'src/**/*.stories.ts',
-      'src/testing/**',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts', 'src/testing/**'],
     rules: {
       'no-restricted-imports': [
         'error',

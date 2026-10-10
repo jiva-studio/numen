@@ -153,6 +153,36 @@ func (a *API) WriteLink(
 	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
 }
 
+// RemoveLink takes one relationship out of one note.
+func (a *API) RemoveLink(
+	ctx context.Context, r *connect.Request[v1.RemoveLinkRequest],
+) (*connect.Response[v1.RemoveLinkResponse], error) {
+	showing, err := a.getShownVault()
+	if err != nil {
+		return nil, err
+	}
+	if !a.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.finish()
+
+	role, _ := roleOf(r.Msg.GetRole())
+	to, err := a.getAddress(ctx, r.Msg.GetTo())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	if _, err := a.Notes.Linking.Remove(
+		ctx, showing, r.Msg.GetPath(), to, role, domain.Fingerprint{},
+	); err != nil {
+		reason, refused := wire.ErrorCodeBy(err)
+		if !refused {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.RemoveLinkResponse{Error: &reason}), nil
+	}
+	return connect.NewResponse(&v1.RemoveLinkResponse{}), nil
+}
+
 func (a *API) GetOpeningNote(
 	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 ) (*connect.Response[v1.GetOpeningNoteResponse], error) {
@@ -203,12 +233,13 @@ func (a *API) GetNeighbourhood(
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
-			Note:     noteOf(related.NoteRef),
-			Seat:     seatOf(related.Seat),
-			Label:    related.Label,
-			Through:  related.Parent,
-			IsMutual: related.IsMutual,
-			Type:     typeOf(types[related.Path]),
+			Note:         noteOf(related.NoteRef),
+			Seat:         seatOf(related.Seat),
+			Label:        related.Label,
+			ReverseLabel: related.ReverseLabel,
+			Through:      related.Parent,
+			IsMutual:     related.IsMutual,
+			Type:         typeOf(types[related.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil

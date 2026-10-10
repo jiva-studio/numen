@@ -22,6 +22,10 @@ export interface NoteMaker {
    * alone: a link is one end's account of a relationship.
    */
   join(path: string, link: Link): Promise<ErrorCode | null>
+  /**
+   * A relationship removed from one note.
+   */
+  removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
 }
 
 /**
@@ -158,13 +162,41 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
    * Join two notes that are both there. The link is written in the one the
    * gesture came from, and says where the other sits.
    */
-  async function join(from: string, to: string, seat: PlexRelatedSeat): Promise<boolean> {
+  async function join(
+    from: string,
+    to: string,
+    seat: PlexRelatedSeat,
+    label?: string,
+  ): Promise<boolean> {
     const role = seatRoles[seat]
     if (!role) return false
     try {
-      const joinError = await core.join(from, { to, role })
+      const joinError = await core.join(from, {
+        to,
+        role,
+        ...(label !== undefined ? { label } : {}),
+      })
       if (joinError !== null) {
         writeMessage(words[joinError], 'error')
+        return false
+      }
+      writeMessage('')
+      return true
+    } catch (error) {
+      writeMessage(formatErrorMessage(error), 'error')
+      return false
+    }
+  }
+
+  /**
+   * Remove a relationship from one note.
+   */
+  async function removeLink(from: string, to: string, seat?: PlexRelatedSeat): Promise<boolean> {
+    const role = seat ? seatRoles[seat] : undefined
+    try {
+      const removeError = await core.removeLink(from, to, role)
+      if (removeError !== null) {
+        writeMessage(words[removeError], 'error')
         return false
       }
       writeMessage('')
@@ -180,6 +212,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     createUntitled,
     createWithTitle,
     join,
+    removeLink,
   }
 }
 

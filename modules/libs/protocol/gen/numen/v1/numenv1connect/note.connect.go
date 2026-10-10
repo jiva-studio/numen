@@ -60,6 +60,8 @@ const (
 	NoteServiceCreateNoteProcedure = "/numen.v1.NoteService/CreateNote"
 	// NoteServiceWriteLinkProcedure is the fully-qualified name of the NoteService's WriteLink RPC.
 	NoteServiceWriteLinkProcedure = "/numen.v1.NoteService/WriteLink"
+	// NoteServiceRemoveLinkProcedure is the fully-qualified name of the NoteService's RemoveLink RPC.
+	NoteServiceRemoveLinkProcedure = "/numen.v1.NoteService/RemoveLink"
 	// NoteServiceRenameNoteProcedure is the fully-qualified name of the NoteService's RenameNote RPC.
 	NoteServiceRenameNoteProcedure = "/numen.v1.NoteService/RenameNote"
 	// NoteServiceWatchEditsProcedure is the fully-qualified name of the NoteService's WatchEdits RPC.
@@ -97,6 +99,9 @@ type NoteServiceClient interface {
 	// WriteLink writes a relationship into one note. The note at the other end is
 	// left alone: a link is one end's account of a relationship.
 	WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error)
+	// RemoveLink removes a relationship from one note. The note at the other end
+	// is left alone: a link is one end's account of a relationship.
+	RemoveLink(context.Context, *connect.Request[v1.RemoveLinkRequest]) (*connect.Response[v1.RemoveLinkResponse], error)
 	// RenameNote gives a note a different name. A note is shown by its title,
 	// else by its first level-one heading, else by its filename: whichever of the
 	// three names it is brought into line, and the file follows it where a title
@@ -167,6 +172,12 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(noteServiceMethods.ByName("WriteLink")),
 			connect.WithClientOptions(opts...),
 		),
+		removeLink: connect.NewClient[v1.RemoveLinkRequest, v1.RemoveLinkResponse](
+			httpClient,
+			baseURL+NoteServiceRemoveLinkProcedure,
+			connect.WithSchema(noteServiceMethods.ByName("RemoveLink")),
+			connect.WithClientOptions(opts...),
+		),
 		renameNote: connect.NewClient[v1.RenameNoteRequest, v1.RenameNoteResponse](
 			httpClient,
 			baseURL+NoteServiceRenameNoteProcedure,
@@ -192,6 +203,7 @@ type noteServiceClient struct {
 	writeNote        *connect.Client[v1.WriteNoteRequest, v1.WriteNoteResponse]
 	createNote       *connect.Client[v1.CreateNoteRequest, v1.CreateNoteResponse]
 	writeLink        *connect.Client[v1.WriteLinkRequest, v1.WriteLinkResponse]
+	removeLink       *connect.Client[v1.RemoveLinkRequest, v1.RemoveLinkResponse]
 	renameNote       *connect.Client[v1.RenameNoteRequest, v1.RenameNoteResponse]
 	watchEdits       *connect.Client[v1.WatchEditsRequest, v1.WatchEditsResponse]
 }
@@ -236,6 +248,11 @@ func (c *noteServiceClient) WriteLink(ctx context.Context, req *connect.Request[
 	return c.writeLink.CallUnary(ctx, req)
 }
 
+// RemoveLink calls numen.v1.NoteService.RemoveLink.
+func (c *noteServiceClient) RemoveLink(ctx context.Context, req *connect.Request[v1.RemoveLinkRequest]) (*connect.Response[v1.RemoveLinkResponse], error) {
+	return c.removeLink.CallUnary(ctx, req)
+}
+
 // RenameNote calls numen.v1.NoteService.RenameNote.
 func (c *noteServiceClient) RenameNote(ctx context.Context, req *connect.Request[v1.RenameNoteRequest]) (*connect.Response[v1.RenameNoteResponse], error) {
 	return c.renameNote.CallUnary(ctx, req)
@@ -277,6 +294,9 @@ type NoteServiceHandler interface {
 	// WriteLink writes a relationship into one note. The note at the other end is
 	// left alone: a link is one end's account of a relationship.
 	WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error)
+	// RemoveLink removes a relationship from one note. The note at the other end
+	// is left alone: a link is one end's account of a relationship.
+	RemoveLink(context.Context, *connect.Request[v1.RemoveLinkRequest]) (*connect.Response[v1.RemoveLinkResponse], error)
 	// RenameNote gives a note a different name. A note is shown by its title,
 	// else by its first level-one heading, else by its filename: whichever of the
 	// three names it is brought into line, and the file follows it where a title
@@ -343,6 +363,12 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(noteServiceMethods.ByName("WriteLink")),
 		connect.WithHandlerOptions(opts...),
 	)
+	noteServiceRemoveLinkHandler := connect.NewUnaryHandler(
+		NoteServiceRemoveLinkProcedure,
+		svc.RemoveLink,
+		connect.WithSchema(noteServiceMethods.ByName("RemoveLink")),
+		connect.WithHandlerOptions(opts...),
+	)
 	noteServiceRenameNoteHandler := connect.NewUnaryHandler(
 		NoteServiceRenameNoteProcedure,
 		svc.RenameNote,
@@ -373,6 +399,8 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 			noteServiceCreateNoteHandler.ServeHTTP(w, r)
 		case NoteServiceWriteLinkProcedure:
 			noteServiceWriteLinkHandler.ServeHTTP(w, r)
+		case NoteServiceRemoveLinkProcedure:
+			noteServiceRemoveLinkHandler.ServeHTTP(w, r)
 		case NoteServiceRenameNoteProcedure:
 			noteServiceRenameNoteHandler.ServeHTTP(w, r)
 		case NoteServiceWatchEditsProcedure:
@@ -416,6 +444,10 @@ func (UnimplementedNoteServiceHandler) CreateNote(context.Context, *connect.Requ
 
 func (UnimplementedNoteServiceHandler) WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.WriteLink is not implemented"))
+}
+
+func (UnimplementedNoteServiceHandler) RemoveLink(context.Context, *connect.Request[v1.RemoveLinkRequest]) (*connect.Response[v1.RemoveLinkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.RemoveLink is not implemented"))
 }
 
 func (UnimplementedNoteServiceHandler) RenameNote(context.Context, *connect.Request[v1.RenameNoteRequest]) (*connect.Response[v1.RenameNoteResponse], error) {

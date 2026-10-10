@@ -34,9 +34,9 @@ export default tseslint.config(
     languageOptions: {
       globals: globals.browser,
       parserOptions: {
-        // The files the build's tsconfig does not name.
+        // This file is the one the build's tsconfig does not name.
         projectService: {
-          allowDefaultProject: ['eslint.config.js', 'vitest.config.ts', '.storybook/*.ts'],
+          allowDefaultProject: ['eslint.config.js'],
         },
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
@@ -152,11 +152,7 @@ export default tseslint.config(
   // and a story are shaped by what they are describing and are not held to either.
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-      'src/**/*.stories.ts',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts'],
     rules: {
       'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
@@ -185,11 +181,7 @@ export default tseslint.config(
   // Package boundaries: no reaching out of the module via relative paths
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.spec.ts',
-      'src/**/*.stories.ts',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.stories.ts'],
     rules: {
       'no-restricted-imports': [
         'error',

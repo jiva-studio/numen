@@ -103,6 +103,8 @@ export interface PlexEvents {
    * back as given.
    */
   (event: 'enter', id: string, part: string): void
+  /** A menu or inspector was asked for on an edge between two nodes. */
+  (event: 'edge-menu', pair: string, at: Position): void
 }
 
 export interface PlexSlots {

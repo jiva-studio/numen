@@ -52,3 +52,72 @@ func TestAnEmptyLinksKeyTakesTheFirstEntry(t *testing.T) {
 		t.Errorf("links = %v\n%s", links, got)
 	}
 }
+
+func TestAddAndUpdateLinkWithLabelAndRole(t *testing.T) {
+	doc, err := Open([]byte("---\ntitle: Bhagavad-gita\n---\n"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+
+	// 1. Add child link with label "one"
+	if err := doc.AddLink(domain.Link{
+		Target: domain.ParseAddress("Q"),
+		Role:   domain.RoleChild,
+		Label:  "one",
+	}); err != nil {
+		t.Fatalf("add link: %v", err)
+	}
+	parsed := Parse(domain.Fingerprint{Path: "Bhagavad-gita.md"}, doc.Bytes())
+	if len(parsed.Links) != 1 || parsed.Links[0].Label != "one" || parsed.Links[0].Role != domain.RoleChild {
+		t.Fatalf("unexpected parsed links after add: %+v", parsed.Links)
+	}
+
+	// 2. Update existing link to have label "two" and role "jump"
+	if err := doc.AddLink(domain.Link{
+		Target: domain.ParseAddress("Q"),
+		Role:   domain.RoleJump,
+		Label:  "two",
+	}); err != nil {
+		t.Fatalf("update link: %v", err)
+	}
+	parsed = Parse(domain.Fingerprint{Path: "Bhagavad-gita.md"}, doc.Bytes())
+	if len(parsed.Links) != 1 || parsed.Links[0].Label != "two" || parsed.Links[0].Role != domain.RoleJump {
+		t.Fatalf("unexpected parsed links after update: %+v", parsed.Links)
+	}
+
+	// 3. Remove link
+	if _, err := doc.RemoveLink(domain.ParseAddress("Q"), domain.RoleJump); err != nil {
+		t.Fatalf("remove link: %v", err)
+	}
+	parsed = Parse(domain.Fingerprint{Path: "Bhagavad-gita.md"}, doc.Bytes())
+	if len(parsed.Links) != 0 {
+		t.Fatalf("expected 0 links after remove, got: %+v", parsed.Links)
+	}
+}
+
+func TestAddLinkWithComplexLabelContainingColonsAndQuotes(t *testing.T) {
+	doc, err := Open([]byte("---\ntitle: Srimad-Bhagavatam\n---\n"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+
+	complexLabel := "Part 1: The Creation: Section A (with \"quotes\" & symbols 🚀)"
+	if err := doc.AddLink(domain.Link{
+		Target: domain.ParseAddress("Canto1"),
+		Role:   domain.RoleChild,
+		Label:  complexLabel,
+	}); err != nil {
+		t.Fatalf("add link: %v", err)
+	}
+
+	parsed := Parse(domain.Fingerprint{Path: "Srimad-Bhagavatam.md"}, doc.Bytes())
+	if len(parsed.Links) != 1 {
+		t.Fatalf("expected 1 link, got %d", len(parsed.Links))
+	}
+	if parsed.Links[0].Label != complexLabel {
+		t.Errorf("expected label %q, got %q", complexLabel, parsed.Links[0].Label)
+	}
+	if parsed.Links[0].Role != domain.RoleChild {
+		t.Errorf("expected role child, got %v", parsed.Links[0].Role)
+	}
+}

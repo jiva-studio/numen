@@ -343,3 +343,85 @@ func TestAnEmptyVaultOpensOnNothing(t *testing.T) {
 		t.Error("an empty vault opened on something")
 	}
 }
+
+func TestMutualLinksCarryBothLabels(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{
+		"Alpha.md": "---\ntitle: Alpha\nlinks:\n  - to: \"[[Beta]]\"\n    role: jump\n    label: \"111\"\n---\n\n# Alpha\n",
+		"Beta.md":  "---\ntitle: Beta\nlinks:\n  - to: \"[[Alpha]]\"\n    role: jump\n    label: \"222\"\n---\n\n# Beta\n",
+	}
+
+	aroundAlpha := neighbourhoodOf(t, files, "Alpha.md")
+	if len(aroundAlpha.Related) != 1 {
+		t.Fatalf("expected 1 related note, got %d", len(aroundAlpha.Related))
+	}
+	relAlpha := aroundAlpha.Related[0]
+	if !relAlpha.IsMutual {
+		t.Errorf("expected IsMutual to be true")
+	}
+	if relAlpha.Label != "111" {
+		t.Errorf("expected Label to be 111, got %q", relAlpha.Label)
+	}
+	if relAlpha.ReverseLabel != "222" {
+		t.Errorf("expected ReverseLabel to be 222, got %q", relAlpha.ReverseLabel)
+	}
+
+	aroundBeta := neighbourhoodOf(t, files, "Beta.md")
+	if len(aroundBeta.Related) != 1 {
+		t.Fatalf("expected 1 related note, got %d", len(aroundBeta.Related))
+	}
+	relBeta := aroundBeta.Related[0]
+	if !relBeta.IsMutual {
+		t.Errorf("expected IsMutual to be true")
+	}
+	if relBeta.Label != "222" {
+		t.Errorf("expected Label to be 222, got %q", relBeta.Label)
+	}
+	if relBeta.ReverseLabel != "111" {
+		t.Errorf("expected ReverseLabel to be 111, got %q", relBeta.ReverseLabel)
+	}
+}
+
+func TestMutualChildParentLinksCarryBothLabels(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{
+		"Parent.md": "---\ntitle: Parent\nlinks:\n  - to: \"[[Child]]\"\n    role: child\n    label: \"child of parent\"\n---\n\n# Parent\n",
+		"Child.md":  "---\ntitle: Child\nlinks:\n  - to: \"[[Parent]]\"\n    role: parent\n    label: \"parent of child\"\n---\n\n# Child\n",
+	}
+
+	aroundParent := neighbourhoodOf(t, files, "Parent.md")
+	if len(aroundParent.Related) != 1 {
+		t.Fatalf("expected 1 related note, got %d", len(aroundParent.Related))
+	}
+	relParent := aroundParent.Related[0]
+	if !relParent.IsMutual {
+		t.Errorf("expected IsMutual to be true")
+	}
+	if relParent.Seat != domain.SeatChild {
+		t.Errorf("expected Seat to be child, got %v", relParent.Seat)
+	}
+	if relParent.Label != "child of parent" {
+		t.Errorf("expected Label to be 'child of parent', got %q", relParent.Label)
+	}
+	if relParent.ReverseLabel != "parent of child" {
+		t.Errorf("expected ReverseLabel to be 'parent of child', got %q", relParent.ReverseLabel)
+	}
+
+	aroundChild := neighbourhoodOf(t, files, "Child.md")
+	if len(aroundChild.Related) != 1 {
+		t.Fatalf("expected 1 related note, got %d", len(aroundChild.Related))
+	}
+	relChild := aroundChild.Related[0]
+	if !relChild.IsMutual {
+		t.Errorf("expected IsMutual to be true")
+	}
+	if relChild.Seat != domain.SeatParent {
+		t.Errorf("expected Seat to be parent, got %v", relChild.Seat)
+	}
+	if relChild.Label != "parent of child" {
+		t.Errorf("expected Label to be 'parent of child', got %q", relChild.Label)
+	}
+	if relChild.ReverseLabel != "child of parent" {
+		t.Errorf("expected ReverseLabel to be 'child of parent', got %q", relChild.ReverseLabel)
+	}
+}

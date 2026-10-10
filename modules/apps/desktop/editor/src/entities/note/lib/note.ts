@@ -38,6 +38,8 @@ export interface Neighbour {
   readonly seat: Seat
   /** What the person wrote on the link, and nothing where they wrote nothing. */
   readonly label: string
+  /** What the other note wrote on its link back, when isMutual is true. */
+  readonly reverseLabel?: string
   /** The parent a sibling shares with the note in focus. */
   readonly through: string
   /** Whether both notes named the relationship. */

@@ -166,6 +166,7 @@ defineExpose({
       @ask="gesture.ask"
       @menu="(id, at, opening) => emit('menu', id, at, opening)"
       @enter="(id, part) => emit('enter', id, part)"
+      @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>
     </PlexView>

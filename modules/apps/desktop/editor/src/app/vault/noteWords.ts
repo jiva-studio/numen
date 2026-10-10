@@ -111,6 +111,7 @@ export const mapNeighbourhood = (answer: NeighbourhoodMessage): Neighbourhood =>
         type: noteType(one.type),
         seat,
         label: one.label,
+        reverseLabel: one.reverseLabel,
         through: one.through,
         isMutual: one.isMutual,
       },

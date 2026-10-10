@@ -32,6 +32,7 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
       joined.push({ path, link })
       return errors.shift() ?? null
     },
+    removeLink: async () => null,
   }
   return { core, asked, joined, ...writer() }
 }

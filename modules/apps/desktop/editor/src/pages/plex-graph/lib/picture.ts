@@ -32,9 +32,36 @@ export function typesIn(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteT
  * A relationship both notes named is drawn with an arrow at the end away from
  * the focus, the words along the line being the ones the note in focus wrote.
  */
+function getSavedArrow(
+  saved: string,
+  seat: Seat,
+  focusPath: string,
+  targetPath: string,
+): EdgeArrow | undefined {
+  if (saved === 'undirected') return undefined
+  const target = saved.split('->')[1]
+  if (target === focusPath) return seat === 'child' ? 'from' : 'to'
+  if (target === targetPath) return seat === 'child' ? 'to' : 'from'
+  return undefined
+}
+
+function getEdgeArrow(
+  seat: Seat,
+  isMutual: boolean,
+  focusPath: string,
+  targetPath: string,
+  saved?: string,
+): EdgeArrow | undefined {
+  if (saved) return getSavedArrow(saved, seat, focusPath, targetPath)
+  if (isMutual) return seat === 'child' ? 'to' : 'from'
+  if (seat === 'child' || seat === 'parent') return 'to'
+  return undefined
+}
+
 export function asPlex(
   neighbourhood: Neighbourhood,
   ticket: (path: string) => string,
+  directions?: ReadonlyMap<string, string>,
 ): PlexNeighbourhood {
   const focus: PlexNode = {
     id: ticket(neighbourhood.focus.path),
@@ -49,6 +76,7 @@ export function asPlex(
     label: string
     through: string
     isMutual: boolean
+    path: string
   }[] = []
   /** The path of every note this picture draws, the note in focus included. */
   const shown = new Set<string>([neighbourhood.focus.path])
@@ -65,22 +93,23 @@ export function asPlex(
       label: related.label,
       through: related.through,
       isMutual: related.isMutual,
+      path: related.path,
     })
   }
 
-  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, isMutual }) => {
+  const edges: PlexEdge[] = seated.flatMap(({ id, seat, label, through, isMutual, path }) => {
     const line = label ? { label } : {}
-    // A mutual line carries an arrow at the end away from the note in focus,
-    // whichever end of the line that is. A relationship named at one end only
-    // has one wording, and nothing for an arrow to choose between.
-    const head = (end: EdgeArrow) => (isMutual ? { arrow: end } : {})
+    const pairKey = [neighbourhood.focus.path, path].sort().join(' ')
+    const saved = directions?.get(pairKey)
+    const arrow = getEdgeArrow(seat, isMutual, neighbourhood.focus.path, path, saved)
+    const head = arrow ? { arrow } : {}
+
     if (seat === 'parent' || seat === 'jump') {
-      return [{ from: id, to: focus.id, ...line, ...head('from') }]
+      return [{ from: id, to: focus.id, ...line, ...head }]
     }
-    if (seat === 'child') return [{ from: focus.id, to: id, ...line, ...head('to') }]
-    // A sibling hangs off the parent it shares, which the answer names. With
-    // that parent off the screen it hangs off nothing. Neither end of that line
-    // is the note in focus, so no arrow is drawn on it.
+    if (seat === 'child') {
+      return [{ from: focus.id, to: id, ...line, ...head }]
+    }
     return shown.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
   })
 
