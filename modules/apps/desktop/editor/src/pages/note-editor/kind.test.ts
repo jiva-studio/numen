@@ -28,6 +28,9 @@ const vault = (
   },
   resolve: async (_from, written) =>
     new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
+  names: async () => [],
+  headings: async () => new Map(),
+  create: async () => ({ ok: true, value: { path: '' } }),
 })
 
 /**

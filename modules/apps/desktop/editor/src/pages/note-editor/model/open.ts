@@ -8,6 +8,7 @@ import type { FileOpeners } from '@/entities/tab'
 import type { createNoteChanges } from './changes'
 import type { createNoteKeyboard } from './keyboard'
 import type { openNotes } from '@/entities/note'
+import { createNoteWikilinkExtension } from './wikilinks'
 import type { createNoteTitles } from './titles'
 import type { NoteTabDeps, NoteTabState } from '../types'
 
@@ -51,6 +52,7 @@ export function createNoteTab(
     note: computed(() => notes.getOpenNote(id)),
     errorMessage: computed(() => notes.getErrorMessage(id)),
     change: computed(() => changes.getChange(notes.getPath(id))),
+    extensions: createNoteWikilinkExtension(vault, () => notes.getPath(id)),
     updateBody: (body: string) => notes.setBody(id, body),
     save: () => notes.save(id),
     keepMine: () => notes.keep(id),

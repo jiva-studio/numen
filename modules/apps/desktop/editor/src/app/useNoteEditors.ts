@@ -9,7 +9,7 @@ import { usePresetTab } from '@/pages/preset-editor'
 import { createNoteChanges, createNoteWriter, useNoteTab } from '@/pages/note-editor'
 import { openNotes } from '@/entities/note'
 import { raiseConflicts, useFileFlush } from '@/features/file-conflict'
-import { createNotes, type Store } from '@/features/command-palette'
+import { createNotes, type SearchDeps, type Store } from '@/features/command-palette'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -17,7 +17,7 @@ import type { FileOpeners } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 
 export interface NoteEditorsDeps {
-  core: NotePort & Pick<VaultPort, 'watchQuit' | 'reportFlush'>
+  core: NotePort & SearchDeps & Pick<VaultPort, 'watchQuit' | 'reportFlush'>
   log: MessageLog
   tabOpeners: FileOpeners
   held: ReturnType<typeof useWindowTabs>

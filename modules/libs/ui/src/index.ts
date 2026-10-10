@@ -65,6 +65,8 @@ export { optionsForType, useTypeSize } from './features/plex'
 export { Editor } from './features/editor'
 /** A time against every line of an editor, and the line being said now. */
 export { timing } from './features/editor'
+export { createWikilinkCompletion, createWikilinkSource } from './features/editor'
+export type { WikilinkOption, WikilinkCompletionOptions, Extension, EditorExtension } from './features/editor'
 
 /** The controls a recording is played by. What plays is somewhere else. */
 export { Player } from './features/player'
