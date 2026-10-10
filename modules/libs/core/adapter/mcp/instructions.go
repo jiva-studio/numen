@@ -46,7 +46,8 @@ func instructions(core Core) string {
 	b.WriteString("about without a link is one the person cannot go to. The search hands ")
 	b.WriteString("you the address of each passage under `at`: put it in a markdown link ")
 	b.WriteString("where you speak about the passage, not in a list at the end.\n")
-	b.WriteString("  `[the Remuna episode](numen:library%2FA%20Book.pdf?start=62690&length=1246)`\n\n")
+	b.WriteString("  `[the Remuna episode](numen:library%2FA%20Book.pdf?start=62690&length=1246)`\n")
+	b.WriteString("- Never use file:// links for vault notes or books. Links to vault content use `numen:<path>?start=...` for documents and `[[Note]]` for notes.\n\n")
 
 	b.WriteString("Changes appear immediately in the window the person has open, so work in ")
 	b.WriteString("small steps they can follow.\n")
@@ -64,8 +65,7 @@ func opening(b *strings.Builder, core Core) {
 	fmt.Fprintf(b, "The vault %q is at %s on this machine.\n", shown.Vault.Name, shown.Root)
 	b.WriteString("Every note is addressed by its path relative to that folder, with forward ")
 	b.WriteString("slashes — `notes/entropy.md`. That path is what every tool takes and returns. ")
-	b.WriteString("To open a note as a file, join it to the folder above; if you cannot read ")
-	b.WriteString("files, `note_read` gives you the same text.\n\n")
+	b.WriteString("Read note contents with `note_read`.\n\n")
 
 	if core.Attending != nil {
 		b.WriteString("What the person has open is `window_tab_list`: every tab of their window, ")
