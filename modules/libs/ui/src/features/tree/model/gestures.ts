@@ -87,7 +87,8 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     ;(event.currentTarget as HTMLElement).focus()
 
     const how: Press = { isJoining: event.ctrlKey || event.metaKey, isExtending: event.shiftKey }
-    selection.hasApplied.value = how.isJoining || how.isExtending || !selection.picked.value.has(row)
+    selection.hasApplied.value =
+      how.isJoining || how.isExtending || !selection.picked.value.has(row)
     const selectedRows = selection.hasApplied.value ? selection.selectRow(row, how) : getSelected()
 
     drag.lift(getDraggedRows(selectedRows, row), event)

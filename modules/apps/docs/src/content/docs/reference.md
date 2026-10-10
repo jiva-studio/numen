@@ -51,6 +51,7 @@ How a vault is made searchable.
 | `embedding.indexing.local.engine` | text | engineRuntime or EnginePureGo. Empty takes ONNX `runtime` where this platform has one published, and the Go backend where it has none. |
 | `embedding.indexing.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
 | `embedding.indexing.local.threads` | a number | how many of this machine one forward pass may use. |
+| `embedding.indexing.local.sessions` | a number | how many parallel inference sessions to keep in the pool. |
 | `embedding.indexing.local.provider` | text | the execution provider for ONNX `runtime` (auto, cpu, coreml, cuda). |
 | `embedding.indexing.local.download` | yes or no | allows fetching the model when it is not on this machine. |
 | `embedding.indexing.service` |  | how a hosted model is reached over HTTP. |
@@ -68,6 +69,7 @@ How a vault is made searchable.
 | `embedding.query.local.engine` | text | engineRuntime or EnginePureGo. Empty takes ONNX `runtime` where this platform has one published, and the Go backend where it has none. |
 | `embedding.query.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
 | `embedding.query.local.threads` | a number | how many of this machine one forward pass may use. |
+| `embedding.query.local.sessions` | a number | how many parallel inference sessions to keep in the pool. |
 | `embedding.query.local.provider` | text | the execution provider for ONNX `runtime` (auto, cpu, coreml, cuda). |
 | `embedding.query.local.download` | yes or no | allows fetching the model when it is not on this machine. |
 | `embedding.query.service` |  | how a hosted model is reached over HTTP. |
@@ -152,6 +154,16 @@ Which agent answers in the panel, and what it may reach.
 | `claude.model` | text | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. |
 | `claude.max_steps` | a number | how many times it may go to the model before it is stopped. |
 | `claude.reads_hooks_and_skills` | yes or no | lets it read what is configured for it on this machine: hooks, skills, standing instructions in CLAUDE. |
+| `antigravity` |  | google `antigravity`, reached over ACP protocol. |
+| `antigravity.command` | a list of words |  |
+| `antigravity.model` | text |  |
+| `antigravity.max_steps` | a number |  |
+| `antigravity.reads_hooks_and_skills` | yes or no |  |
+| `codex` |  | openAI `codex`, reached over ACP protocol. |
+| `codex.command` | a list of words |  |
+| `codex.model` | text |  |
+| `codex.max_steps` | a number |  |
+| `codex.reads_hooks_and_skills` | yes or no |  |
 
 ### `importing`
 
