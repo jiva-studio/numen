@@ -8,10 +8,10 @@ import { conflictIn, FileConflictPrompt } from '@/features/file-conflict'
 import { WORDS as words } from '@/entities/note'
 import type { NoteTabState } from '../types'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: NoteTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 watch(
   () => props.state.note.value.body,
   (body, was) => {
@@ -19,7 +19,7 @@ watch(
   },
 )
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onKeep() {
   props.state.keepMine()
 }
@@ -43,8 +43,6 @@ function onSave() {
 function onOpen(url: string) {
   props.state.followLink(url)
 }
-
-// --- Helpers ---
 </script>
 
 <template>
@@ -61,6 +59,7 @@ function onOpen(url: string) {
       :ref="onSetEditor"
       :model-value="props.state.note.value.body"
       :change="props.state.change.value"
+      :extensions="props.state.extensions"
       class="note__text"
       @update:model-value="onUpdateModelValue"
       @save="onSave"
