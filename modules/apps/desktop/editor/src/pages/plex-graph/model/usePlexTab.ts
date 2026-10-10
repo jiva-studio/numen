@@ -93,7 +93,10 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const activate = (node: string) => {
     const path = map.getNodePath(node)
-    if (path) void view.go(path)
+    if (path) {
+      void view.go(path)
+      deps.onSelectPath?.(path, getName(path))
+    }
   }
 
   const openQuickLink = (request: QuickLinkRequest) => {

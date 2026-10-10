@@ -6,12 +6,12 @@ import { watch } from 'vue'
 import { core } from './vault'
 import { presets } from '@/entities/deck'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
-import { fileOpeners } from '@/entities/tab'
-import { useWindowTabs } from '@/entities/tab'
+import { AGENT, FILES, PLEX, createWorkspace, fileOpeners, useWindowTabs } from '@/entities/tab'
 import { messageLog } from '@/shared/notices/messages'
 import { createMediaTypeProbe } from '@/entities/media'
 import { WORDS as words } from '@/shared/words'
-import { AGENT, FILES, PLEX, createWorkspace } from '@/entities/tab'
+import { useTabLinks } from '@/features/tab-linking'
+import { useTabSync } from './useTabSync'
 
 import { useNoteEditors } from './useNoteEditors'
 import { useSettings } from './useSettings'
@@ -30,6 +30,7 @@ export const useWindow = () => {
   const log = messageLog()
   const writeMessage = log.getWriter('command')
   const held = useWindowTabs()
+  const tabLinks = useTabLinks()
   const { layout } = held
   const tabOpeners = fileOpeners({ ...core, reconcileTab: held.reconcileTab })
   const runs = runSupport()
@@ -42,6 +43,8 @@ export const useWindow = () => {
     held,
     day: () => settings.dayBegins.day.value,
   })
+
+  const tabSync = useTabSync({ held, tabLinks, editing })
 
   const window = useWindowDisplay(core, {
     onVaultChanged: async (paths, renamed) => {
@@ -138,6 +141,8 @@ export const useWindow = () => {
     getTarget,
     runCommand,
     commandDeps: () => commandsModule.commandDeps,
+    tabLinks,
+    tabSync,
   })
 
   const knows: NoteLookup = {
@@ -191,6 +196,7 @@ export const useWindow = () => {
   })
 
   const closeTab = (id: string, hold?: () => void) => {
+    tabLinks.removeClosedTab(id)
     if (!held.releaseTab(id)) hold?.()
   }
 
@@ -234,5 +240,6 @@ export const useWindow = () => {
     tabIcon: openTabs.tabIcon,
     getTitle: editing.getTitle,
     getTarget,
+    tabLinks,
   }
 }

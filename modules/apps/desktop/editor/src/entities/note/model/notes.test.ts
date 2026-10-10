@@ -614,3 +614,20 @@ describe('a note that points nowhere', () => {
     expect(notes.link('Heat.md')).toBeNull()
   })
 })
+
+describe('reloading a note', () => {
+  it('clears previous body and reloads new path', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'first body')
+    files.set('Cold.md', 'second body')
+    const notes = openNotes(core, { limits: quick })
+
+    notes.open('Heat.md')
+    await settle()
+    expect(notes.getOpenNote('Heat.md').body).toBe('first body')
+
+    notes.reload('Heat.md', 'Cold.md')
+    await settle()
+    expect(notes.getOpenNote('Heat.md').body).toBe('second body')
+  })
+})

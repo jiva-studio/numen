@@ -1400,3 +1400,27 @@ describe('quick-link popover from a node handle', () => {
     expect(state.quickLink.value).toBeNull()
   })
 })
+
+describe('usePlexTab edge cases and helpers', () => {
+  it('covers openPart edge cases, dismissals and menu choices', async () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.state.openPart('unknown-node', '12')
+    one.state.openPart(one.node('Root.md'), 'not-a-number')
+
+    one.state.openQuickLink({ from: one.node('Root.md'), seat: 'child', at: { x: 10, y: 10 } })
+    expect(one.state.quickLink.value).not.toBeNull()
+    one.state.dismissQuickLink()
+    expect(one.state.quickLink.value).toBeNull()
+
+    one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
+    one.state.dismiss()
+    expect(one.state.menu.value).toBeNull()
+
+    one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
+    one.state.chooseMenuItem('other-id')
+    expect(one.state.menu.value).toBeNull()
+
+    expect(one.state.empty.value).toBe(false)
+    expect(one.state.dragged.value).toEqual([])
+  })
+})

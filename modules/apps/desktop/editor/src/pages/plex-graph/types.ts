@@ -82,7 +82,14 @@ export interface PlexTabDeps {
   readonly isReady: Readonly<Ref<boolean>>
   readonly isHanging: Readonly<Ref<boolean>>
   readonly parts: Readonly<Ref<number>>
-  openNote(path: string, title: string, showing: PlexDestination, line?: number): void
+  openNote(
+    path: string,
+    title: string,
+    showing: PlexDestination,
+    line?: number,
+    state?: PlexTabState,
+  ): void
+  onSelectPath?(path: string, title?: string, state?: PlexTabState): void
   readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   askAgent(text: string): void
   runCommand(id: string, path: string, title: string): void

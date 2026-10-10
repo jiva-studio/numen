@@ -153,11 +153,28 @@ export function useNoteTab(
     getTabAt: (path) => tabbed.value.get(path) ?? null,
   }
 
+  /** Loads a different note path into an already existing open note tab. */
+  const loadInTab = async (id: string, path: string, title = '') => {
+    const currentPath = notes.getPath(id)
+    if (currentPath === path) {
+      if (title) names.setTitle(id, title)
+      return
+    }
+    changes.closeNote(currentPath)
+    notes.reload(id, path)
+    if (title) {
+      names.setTitle(id, title)
+    } else {
+      names.forgetTab(id)
+    }
+  }
+
   return {
     kind,
     kept,
     createNoteTabState,
     openTab,
+    loadInTab,
     titles: names.titles,
     /** Every open note's editor takes its measurements again. */
     measureAll: keyboard.measureAll,

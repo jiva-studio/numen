@@ -1,6 +1,7 @@
 /**
  * Window registration and navigation for plex graph tabs.
  */
+import { watch } from 'vue'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { PLEX } from '@/entities/tab'
 import type { PathRename } from '@/shared/paths'
@@ -27,10 +28,24 @@ export function createPlexKind(
   const kind: TabKind<PlexTabState, typeof PLEX> = {
     kind: PLEX,
     open: (at) => {
-      const state = usePlexTab(createView(), deps)
+      const current: { state?: PlexTabState } = {}
+      const wrappedDeps: PlexTabDeps = {
+        ...deps,
+        openNote: (path, title, how, line) =>
+          current.state && deps.openNote(path, title, how, line, current.state),
+        onSelectPath: (path, title) =>
+          current.state && deps.onSelectPath?.(path, title, current.state),
+      }
+      const tabState = usePlexTab(createView(), wrappedDeps)
+      current.state = tabState
       const from = at || getCurrentPath() || deps.openingPath.value
-      if (from) void state.view.go(from)
-      return state
+      if (from) void tabState.view.go(from)
+      watch(tabState.view.here, (path) => {
+        if (path) {
+          deps.onSelectPath?.(path, tabState.getName(path), tabState)
+        }
+      })
+      return tabState
     },
     getTitle: (state) => titleOf(state.view.neighbourhood.value?.focus.title ?? ''),
     pane: PlexTab,

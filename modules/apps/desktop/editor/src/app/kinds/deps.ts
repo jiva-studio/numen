@@ -5,6 +5,8 @@ import type { createMediaTypeProbe } from '@/entities/media'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { NotePort } from '@/app/ports/notes'
 import type { FilePort } from '@/app/ports/files'
+import type { TabLinksState } from '@/features/tab-linking'
+import type { useTabSync } from '../useTabSync'
 import type { useNoteEditors } from '../useNoteEditors'
 import type { useSettings } from '../useSettings'
 import type { useVaults } from '../useVaults'
@@ -24,4 +26,6 @@ export interface WindowKindsDeps {
   getTarget: () => CommandTarget
   runCommand: (id: string, target: CommandTarget) => void
   commandDeps: () => CommandDeps
+  tabLinks?: TabLinksState
+  tabSync?: ReturnType<typeof useTabSync>
 }

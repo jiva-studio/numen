@@ -59,6 +59,18 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     carry(id, openTab(path))
   }
 
+  const reload = (id: string, path: string = id): void => {
+    queue.forget(id)
+    const nextBodies = new Map(bodies.value)
+    nextBodies.delete(id)
+    bodies.value = nextBodies
+    const nextAddresses = new Map(addresses.value)
+    nextAddresses.delete(id)
+    addresses.value = nextAddresses
+    told.delete(id)
+    carry(id, openTab(path))
+  }
+
   const close = (id: string): Promise<boolean> =>
     new Promise((done) => {
       if (!tabs.value.has(id)) return done(true)
@@ -75,7 +87,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const getFilePath = (id: string): string => tabs.value.get(id)?.filePath ?? ''
 
   const setBody = (id: string, body: string): void => {
-    bodies.value.set(id, body)
+    bodies.value = new Map(bodies.value).set(id, body)
     turn(id, { kind: 'typed', body, at: now() })
   }
 
@@ -120,7 +132,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
         queue.disarm(id)
         return
       case 'replace':
-        bodies.value.set(id, effect.body)
+        bodies.value = new Map(bodies.value).set(id, effect.body)
         onReplaced(getPath(id))
         return
       case 'hold':
@@ -136,9 +148,15 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
 
   function forget(id: string): void {
     queue.forget(id)
-    tabs.value.delete(id)
-    bodies.value.delete(id)
-    addresses.value.delete(id)
+    const nextTabs = new Map(tabs.value)
+    nextTabs.delete(id)
+    tabs.value = nextTabs
+    const nextBodies = new Map(bodies.value)
+    nextBodies.delete(id)
+    bodies.value = nextBodies
+    const nextAddresses = new Map(addresses.value)
+    nextAddresses.delete(id)
+    addresses.value = nextAddresses
     closing.get(id)?.(true)
     closing.delete(id)
     told.delete(id)
@@ -150,6 +168,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
 
   return {
     open,
+    reload,
     close,
     settle: queue.settle,
     getPath,

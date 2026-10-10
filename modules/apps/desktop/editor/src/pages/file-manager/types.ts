@@ -34,7 +34,8 @@ export type DropPosition = { readonly into: string | null } | { readonly before:
 
 /** What a files tab asks of the window it is drawn in. */
 export interface FilesTabDeps {
-  openDestination(destination: SearchDestination | null): void
+  openDestination(destination: SearchDestination | null, state?: FilesTabState): void
+  onSelectPath?(path: string, state: FilesTabState): void
   runCommand(id: string, paths: readonly string[], name: string, source: Source): void
   movePath(from: string, to: string): Promise<void>
   setDraggedPaths(paths: readonly string[]): void

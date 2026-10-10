@@ -615,3 +615,31 @@ describe('an item chosen in the menu on a row', () => {
     expect(one.menu.value).toBeNull()
   })
 })
+
+describe('useFilesTab helper and interaction methods', () => {
+  it('covers folder operations, selections, renaming and dismiss', async () => {
+    const { list, one, done } = tab()
+    await list.openFolder(ROOT)
+
+    one.open('physics')
+    one.close('physics')
+    one.select(['physics'])
+    expect(list.selectedPaths.value).toEqual(['physics'])
+
+    one.setRenamingPath('physics')
+    expect(one.renamingPath.value).toBe('physics')
+
+    one.openMenu({ path: 'physics', at: { x: 10, y: 10 } })
+    expect(one.menu.value).not.toBeNull()
+    one.dismissMenu()
+    expect(one.menu.value).toBeNull()
+
+    one.importUrl('https://example.com/video')
+    expect(done).toContain('imports physics https://example.com/video')
+
+    expect(one.getNameOf('Entropy.md')).toBe('Entropy.md')
+    expect(one.getNameOf('nonexistent/file.txt')).toBe('file.txt')
+    expect(one.canRun({} as any)).toBe(true)
+    expect(one.getFolderFor(null)).toBe(ROOT)
+  })
+})

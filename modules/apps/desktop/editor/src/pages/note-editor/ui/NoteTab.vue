@@ -56,6 +56,7 @@ function onOpen(url: string) {
     />
 
     <Editor
+      :key="props.state.id + ':' + props.state.note.value.path"
       :ref="onSetEditor"
       :model-value="props.state.note.value.body"
       :change="props.state.change.value"
