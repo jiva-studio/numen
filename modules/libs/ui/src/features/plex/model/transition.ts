@@ -75,9 +75,26 @@ export function usePlexTransition(
   // A change to the arrangement is a move too: the reader still has to be able
   // to follow what became of what.
   watch(
-    () => input(),
+    [
+      () => input()?.placement,
+      () => input()?.options?.viewport?.width,
+      () => input()?.options?.viewport?.height,
+      () => input()?.options?.margin,
+      () => input()?.options?.maxPerLine,
+      () => input()?.options?.maxLines,
+      () => input()?.options?.minWidth,
+      () => input()?.options?.gap,
+      () => input()?.options?.lineGap,
+      () => input()?.options?.focusGap,
+      () => input()?.options?.nodeSize?.width,
+      () => input()?.options?.nodeSize?.height,
+      () => input()?.options?.focusSize?.width,
+      () => input()?.options?.focusSize?.height,
+      () => input()?.measure,
+      () => input()?.measureLabel,
+      () => input()?.labelDepth,
+    ],
     () => run(target()),
-    { deep: true },
   )
 
   onScopeDispose(stop)
