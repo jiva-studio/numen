@@ -591,7 +591,7 @@ describe('loadInTab and kind methods edge cases', () => {
     const state = stateOf(one)
 
     const measureSpy = vi.spyOn(state, 'measure')
-    one.noted.kind.onShow?.(state)
+    one.noted.kind.onShow?.(state, one.held.tabs.value[0]?.id ?? '')
     expect(measureSpy).toHaveBeenCalled()
 
     const closeResult = one.noted.kind.onClose?.(state, one.held.tabs.value[0]?.id ?? '')

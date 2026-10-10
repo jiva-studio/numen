@@ -20,10 +20,7 @@ describe('createFilesKind with linked tabs', () => {
     const tabSync = useTabSync({ held, tabLinks, editing: editingMock })
 
     const entriesMap = new Map([
-      [
-        'folder/target.md',
-        { path: 'folder/target.md', name: 'target.md', isFolder: false, kind: 'note' as const },
-      ],
+      ['folder/target.md', { path: 'folder/target.md', name: 'target.md', isFolder: false, kind: 'note' as const }],
     ])
 
     const filesKind = createFilesKind({
@@ -31,9 +28,7 @@ describe('createFilesKind with linked tabs', () => {
         listDirectory: async () => ({
           ok: true,
           value: {
-            entries: [
-              { path: 'folder/target.md', name: 'target.md', isFolder: false, kind: 'note' },
-            ],
+            entries: [{ path: 'folder/target.md', name: 'target.md', isFolder: false, kind: 'note' }],
           },
         }),
         createUrl: vi.fn(),
@@ -69,16 +64,10 @@ describe('createFilesKind with linked tabs', () => {
     held.handle.show(filesTabId)
 
     const filesState = held.getTabStateIn<any>(filesTabId, 'files')
-    vi.spyOn(filesState.list, 'getEntryAt').mockImplementation(
-      (p: string) => entriesMap.get(p) as any,
-    )
+    vi.spyOn(filesState.list, 'getEntryAt').mockImplementation(((p: string) => entriesMap.get(p) as any) as any)
 
     filesState.activate('folder/target.md')
 
-    expect(loadInTabMock).toHaveBeenCalledWith(
-      noteTabId.replace(/^note:/, ''),
-      'folder/target.md',
-      'target.md',
-    )
+    expect(loadInTabMock).toHaveBeenCalledWith(noteTabId.replace(/^note:/, ''), 'folder/target.md', 'target.md')
   })
 })

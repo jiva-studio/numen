@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import TabLinkMenu from './TabLinkMenu.vue'
 import { UNLINK_ID } from '../lib/menu'
+import type { EligibleLinkTab } from '../types'
 
 describe('TabLinkMenu', () => {
-  const eligibleTabs = [
-    { id: 'note:alpha', title: 'Alpha Note', kind: 'note' as const },
-    { id: 'plex:graph', title: 'Graph View', kind: 'plex' as const },
+  const eligibleTabs: readonly EligibleLinkTab[] = [
+    { id: 'note:alpha', title: 'Alpha Note', kind: 'note', isLinked: false },
+    { id: 'plex:graph', title: 'Graph View', kind: 'plex', isLinked: false },
   ]
 
   it('renders menu and emits link when tab item chosen', async () => {

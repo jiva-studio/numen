@@ -1099,11 +1099,11 @@ describe('usePlexTab edge cases and helpers', () => {
     one.state.dismissQuickLink()
     expect(one.state.quickLink.value).toBeNull()
 
-    one.state.openMenu({ node: null, at: { x: 10, y: 10 } })
+    one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
     one.state.dismiss()
     expect(one.state.menu.value).toBeNull()
 
-    one.state.openMenu({ node: null, at: { x: 10, y: 10 } })
+    one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
     one.state.chooseMenuItem('other-id')
     expect(one.state.menu.value).toBeNull()
 
