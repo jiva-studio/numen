@@ -52,6 +52,9 @@ const notes = (states: Record<string, State> = {}) => {
       open.value = [...open.value, id]
       at.value = { ...at.value, [id]: path }
     },
+    reload: (id: string, path: string = id) => {
+      at.value = { ...at.value, [id]: path }
+    },
     close: async (id: string) => {
       shut.push(getPath(id))
       if (!goes) return false
@@ -540,5 +543,18 @@ describe('what a note tab holds, as whoever answers for the person is told it', 
     await nextTick()
 
     expect(one.noted.kind.getOpenTab!(stateOf(one))).toStrictEqual({ path: 'Note.md' })
+  })
+
+  it('updates path and title when loadInTab is called on an existing tab', async () => {
+    const one = window()
+    one.openNote('Note1.md', 'Note 1')
+    await nextTick()
+    const tabId = one.idOf('Note1.md')
+
+    await one.noted.loadInTab(tabId, 'Note2.md', 'Note 2')
+    await nextTick()
+
+    expect(one.noted.kind.getOpenTab!(stateOf(one))).toStrictEqual({ path: 'Note2.md' })
+    expect(one.noted.kept.getTitle(tabId)).toBe('Note 2')
   })
 })

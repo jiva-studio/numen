@@ -1,6 +1,7 @@
 /**
  * Window tab registration for the files tab.
  */
+import { watch } from 'vue'
 import type { PathRename } from '@/shared/paths'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { FILES } from '@/entities/tab'
@@ -20,6 +21,12 @@ export function createFilesKind(
     open: () => {
       const state = useFilesTab(createTree(), deps)
       void state.list.openFolder(ROOT)
+      watch(state.list.selectedPaths, (paths) => {
+        const path = paths[0]
+        if (path) {
+          deps.onSelectPath?.(path, state)
+        }
+      })
       return state
     },
     getTitle: () => words.files,

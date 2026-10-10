@@ -11,7 +11,12 @@ import {
   runInvocation,
   type DestinationDeps,
 } from '@/features/command-palette'
-import { createFilesKind as buildFilesKind, useFileTree } from '@/pages/file-manager'
+import {
+  createFilesKind as buildFilesKind,
+  useFileTree,
+  type FilesTabState,
+} from '@/pages/file-manager'
+import { isNotePath } from '../useTabSync'
 import { WORDS as words } from '@/shared/words'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { WindowKindsDeps } from './deps'
@@ -27,10 +32,22 @@ export interface FilesKindDeps extends Pick<
   | 'getTarget'
   | 'runCommand'
   | 'commandDeps'
+  | 'tabLinks'
+  | 'tabSync'
 > {
   dragged: ShallowRef<readonly string[]>
   writeMessage: MessageWriter
   destinations: DestinationDeps
+}
+
+function findFilesTabId(held: FilesKindDeps['held'], state?: unknown): string | null {
+  if (state) {
+    const match = held.handle.each<FilesTabState>('files').find((tab) => tab.state === state)
+    if (match) return match.id
+  }
+  const front = held.handle.front()
+  if (front?.kind === 'files') return front.id
+  return held.handle.last<FilesTabState>('files')?.id ?? null
 }
 
 export function createFilesKind({
@@ -46,6 +63,7 @@ export function createFilesKind({
   dragged,
   writeMessage,
   destinations,
+  tabSync,
 }: FilesKindDeps) {
   const fetchArtifact = async (path: string): Promise<void> => {
     try {
@@ -74,7 +92,24 @@ export function createFilesKind({
   )
 
   const files = buildFilesKind(held.handle, () => useFileTree(core), {
-    openDestination: (landing) => void openDestination(landing, destinations),
+    openDestination: (landing, state) => {
+      if (landing?.path && isNotePath(landing.path)) {
+        const tabId = findFilesTabId(held, state)
+        if (tabId && tabSync?.syncPathFromTab(tabId, landing.path, landing.title ?? '')) {
+          return
+        }
+      }
+      void openDestination(landing, destinations)
+    },
+    onSelectPath: (path, state) => {
+      const entry = (state as FilesTabState).list.getEntryAt(path)
+      if (entry && !entry.isFolder && (entry.kind === 'note' || isNotePath(path))) {
+        const tabId = findFilesTabId(held, state)
+        if (tabId) {
+          tabSync?.syncPathFromTab(tabId, path, entry.name)
+        }
+      }
+    },
     runCommand: (id, paths, name, source) => {
       const path = paths[0] ?? ''
       runCommand(id, {

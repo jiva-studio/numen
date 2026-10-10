@@ -8,17 +8,17 @@
 import { Notices, StatusBar, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
+import { computed, ref } from 'vue'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
+import { TabLinkIndicator, TabLinkMenu } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
 import { useWindow } from './useWindow'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
 
-// --- Props & Emits ---
-
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 /** What the notes still unwritten are put in: the window's words and a note's. */
 const unsaved = {
   going: words.going,
@@ -45,9 +45,38 @@ const {
   tabIcon,
   getTitle,
   getTarget,
+  tabLinks,
 } = useWindow()
 
-// --- Handlers ---
+const activeMenuTabId = ref<string | null>(null)
+const menuPosition = ref<{ x: number; y: number }>({ x: 0, y: 0 })
+
+const eligibleTabs = computed(() => {
+  if (!activeMenuTabId.value) return []
+  const group = tabLinks.getGroupOf(activeMenuTabId.value)
+  return held.tabs.value
+    .filter((t) => {
+      if (t.id === activeMenuTabId.value) return false
+      if (group && group.tabs.includes(t.id)) return false
+      const kind = held.getTab(t.id)?.kind.kind
+      return kind === 'note' || kind === 'files' || kind === 'plex'
+    })
+    .map((t) => ({
+      id: t.id,
+      title: t.title,
+      kind: held.getTab(t.id)?.kind.kind ?? '',
+      isLinked: tabLinks.getGroupOf(t.id) !== null,
+    }))
+})
+
+const activeLinkedTargetTitle = computed(() => {
+  if (!activeMenuTabId.value) return ''
+  const targets = tabLinks.getLinkedTargets(activeMenuTabId.value)
+  if (targets.length === 0) return ''
+  return targets.map((id) => held.tabs.value.find((t) => t.id === id)?.title || id).join(', ')
+})
+
+/* -------------------------------- Handlers -------------------------------- */
 function onCloseTab(id: string) {
   closeTab(id)
 }
@@ -60,7 +89,40 @@ function dismissNotice(id: string) {
   log.dismiss(id)
 }
 
-// --- Helpers ---
+function onOpenLinkMenu(tabId: string, event: PointerEvent | MouseEvent) {
+  activeMenuTabId.value = tabId
+  menuPosition.value = { x: event.clientX, y: event.clientY }
+}
+
+function onTabContextMenu(event: MouseEvent) {
+  const target = (event.target as HTMLElement).closest('[data-workspace-tab]') as HTMLElement | null
+  const tabId = target?.getAttribute('data-workspace-tab')
+  if (tabId) {
+    const kind = held.getTab(tabId)?.kind.kind
+    if (kind === 'note' || kind === 'files' || kind === 'plex') {
+      event.preventDefault()
+      onOpenLinkMenu(tabId, event)
+    }
+  }
+}
+
+function onLinkTab(targetId: string) {
+  if (activeMenuTabId.value) {
+    tabLinks.linkTabs(activeMenuTabId.value, targetId)
+    activeMenuTabId.value = null
+  }
+}
+
+function onUnlinkTab() {
+  if (activeMenuTabId.value) {
+    tabLinks.unlinkTab(activeMenuTabId.value)
+    activeMenuTabId.value = null
+  }
+}
+
+function onCloseLinkMenu() {
+  activeMenuTabId.value = null
+}
 </script>
 
 <template>
@@ -73,9 +135,14 @@ function dismissNotice(id: string) {
       :tabs="held.tabs.value"
       @close="onCloseTab"
       @show="onShowTab"
+      @contextmenu="onTabContextMenu"
     >
       <template #icon="{ id }">
         <component :is="tabIcon(id)" v-if="tabIcon(id)" class="tab-icon" />
+        <TabLinkIndicator
+          :is-linked="tabLinks.getGroupOf(id) !== null"
+          :color-index="tabLinks.getGroupOf(id)?.colorIndex"
+        />
       </template>
 
       <template #tab="{ id }">
@@ -100,6 +167,18 @@ function dismissNotice(id: string) {
         />
       </template>
     </WorkspaceLayout>
+
+    <TabLinkMenu
+      v-if="activeMenuTabId"
+      :tab-id="activeMenuTabId"
+      :eligible-tabs="eligibleTabs"
+      :at="menuPosition"
+      :is-linked="tabLinks.getGroupOf(activeMenuTabId) !== null"
+      :linked-target-title="activeLinkedTargetTitle"
+      @link="onLinkTab"
+      @unlink="onUnlinkTab"
+      @close="onCloseLinkMenu"
+    />
 
     <StatusBar
       :tasks="statusBar.tasks.value"

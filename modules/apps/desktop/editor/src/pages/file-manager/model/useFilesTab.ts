@@ -45,7 +45,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     const entry = list.getEntryAt(path)
     if (!entry) return
     list.selectPaths([path])
-    deps.openDestination(getLandingDestination(entry))
+    deps.openDestination(getLandingDestination(entry), tabState)
   }
 
   const open = (path: string) => void list.openFolder(path)
@@ -156,7 +156,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
 
   const canRun: RunGuard = (run) => deps.canRun?.(run) ?? true
 
-  return {
+  const tabState: FilesTabState = {
     list,
     menu,
     renamingPath,
@@ -183,4 +183,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     canRun,
     getArtifactStates: deps.getArtifactStates,
   }
+
+  return tabState
 }
