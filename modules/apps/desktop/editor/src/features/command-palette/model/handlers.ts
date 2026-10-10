@@ -95,6 +95,7 @@ const HANDLERS: Record<string, CommandHandler> = {
   hanging: (invocation, on) => on.settings.chooseHanging(invocation.name),
   parts: (invocation, on) => on.settings.chooseParts(invocation.name),
   performanceProfile: (invocation, on) => on.settings.choosePerformance(invocation.name),
+  indexingModel: (invocation, on) => on.settings.chooseIndexingModel(invocation.name),
   first: (_, on, words) => navigateToPath(on.goes.getOpeningNote(), on, words),
   goto: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   openVault: (invocation, on, words) => showVault(invocation.vault.id, on, words),

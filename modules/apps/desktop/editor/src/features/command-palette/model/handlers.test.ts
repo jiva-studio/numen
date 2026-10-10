@@ -233,6 +233,7 @@ const window = (
       chooseHanging: async (chosen) => void done.push(`hanging ${chosen}`),
       chooseParts: async (chosen) => void done.push(`parts ${chosen}`),
       choosePerformance: async (chosen) => void done.push(`performance ${chosen}`),
+      chooseIndexingModel: async (chosen) => void done.push(`indexingModel ${chosen}`),
     },
     runSupport: runs,
     copyPath: (path) => void done.push(`copies ${path}`),
@@ -1134,5 +1135,33 @@ describe('the open files a command reaches', () => {
     expect(one.notes.getPath('Gone.md')).toBe('Gone.md')
     expect(one.notes.asking('Gone.md')).toBe(false)
     expect(one.done).toStrictEqual([])
+  })
+})
+
+describe('indexingModel command', () => {
+  it('changes the indexing model', async () => {
+    const done: string[] = []
+    const deps: any = {
+      goes: { getOpeningNote: () => '' },
+      settings: { chooseIndexingModel: async (c: string) => void done.push(`indexingModel ${c}`) },
+      writeMessage: () => {},
+    }
+    await runInvocation(
+      {
+        id: 'indexingModel',
+        name: 'e5-small-int8',
+        path: '',
+        file: '',
+        title: '',
+        others: [],
+        vault: { id: 'v', name: 'V' },
+        kind: null,
+        tab: '',
+        note: null,
+      },
+      deps,
+      words,
+    )
+    expect(done).toStrictEqual(['indexingModel e5-small-int8'])
   })
 })

@@ -110,6 +110,8 @@ export interface SettingsWriter {
   chooseParts(chosen: string): Promise<void>
   /** The performance workload profile chosen. */
   choosePerformance(chosen: string): Promise<void>
+  /** The indexing model chosen. */
+  chooseIndexingModel(chosen: string): Promise<void>
 }
 
 /** The one line the window says a command's answer in. */

@@ -53,7 +53,13 @@ describe('note wikilink completion adapter', () => {
 
   it('fetches headings for current note when title is empty', async () => {
     const headingsMap = new Map([
-      ['notes/Current.md', [{ text: 'Section 1', line: 1 }, { text: 'Section 2', line: 10 }]],
+      [
+        'notes/Current.md',
+        [
+          { text: 'Section 1', line: 1 },
+          { text: 'Section 2', line: 10 },
+        ],
+      ],
     ])
     const deps = mockDeps({
       headings: vi.fn().mockResolvedValue(headingsMap),
@@ -67,9 +73,7 @@ describe('note wikilink completion adapter', () => {
   })
 
   it('resolves note path and fetches headings when note title is provided', async () => {
-    const headingsMap = new Map([
-      ['notes/Relativity.md', [{ text: 'Spacetime', line: 4 }]],
-    ])
+    const headingsMap = new Map([['notes/Relativity.md', [{ text: 'Spacetime', line: 4 }]]])
     const deps = mockDeps({
       names: vi.fn().mockResolvedValue([
         {

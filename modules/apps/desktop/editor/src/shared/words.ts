@@ -95,6 +95,10 @@ export const WORDS = {
   maximumDetail: 'Full hardware utilization for indexing and models',
   custom: 'Custom',
   customDetail: 'Manual concurrency and batch settings',
+  indexingModel: 'Set indexing model',
+  byDefault: 'the default',
+  present: 'on this machine',
+  notFetched: 'not fetched yet',
   settings: 'Settings',
   findKeys: commandKeyChord(navigator.userAgent),
   /** The commands, under the second of the two keystrokes the window keeps for itself. */

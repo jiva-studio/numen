@@ -138,6 +138,8 @@ export interface Words extends EmptyWords {
   readonly parts: string
   /** The command over the performance workload profile. */
   readonly performanceProfile: string
+  /** The command over the indexing embedding model. */
+  readonly indexingModel: string
   /** Everything this installation is configured as, in a tab of its own. */
   readonly settings: string
   readonly find: string

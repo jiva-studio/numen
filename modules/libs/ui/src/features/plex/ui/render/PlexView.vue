@@ -50,7 +50,7 @@ const svg = useTemplateRef<SVGSVGElement>('svg')
 const views = new Map<string, { focus: () => void }>()
 const nodeRefHolders = new Map<string, (view: unknown) => void>()
 
-const holdNode = (id: string): (view: unknown) => void => {
+const holdNode = (id: string): ((view: unknown) => void) => {
   let holder = nodeRefHolders.get(id)
   if (!holder) {
     holder = (view: unknown) => {

@@ -53,7 +53,10 @@ export interface CommandsDepsOptions {
     choose: (item: string) => Promise<void> | void
     chooseCount: (item: string) => Promise<void> | void
   }
-  rest: { writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void }
+  rest: {
+    writeSettings: (written: readonly SettingEdit[]) => Promise<void> | void
+    getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
+  }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   files: () => { revealPath: (path: string) => void }
