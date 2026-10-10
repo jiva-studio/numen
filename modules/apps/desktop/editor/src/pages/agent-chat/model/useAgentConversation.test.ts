@@ -392,4 +392,99 @@ describe('agent model selection and settings', () => {
     })
     expect(stateClaude.selectedModelId.value).toBe('sonnet')
   })
+
+  it('filters out non-installed agents from modelOptions and selects available agent', async () => {
+    const fake = createConversation()
+    const models = ref([
+      {
+        namedAt: ['agent', 'use'],
+        name: 'claude',
+        title: 'Claude Code',
+        shelf: '',
+        isDefault: false,
+        writes: [],
+        presence: 'present' as const,
+      },
+      {
+        namedAt: ['agent', 'use'],
+        name: 'antigravity',
+        title: 'Antigravity',
+        shelf: '',
+        isDefault: false,
+        writes: [],
+        presence: 'not fetched' as const,
+      },
+      {
+        namedAt: ['agent', 'use'],
+        name: 'codex',
+        title: 'OpenAI Codex',
+        shelf: '',
+        isDefault: false,
+        writes: [],
+        presence: 'not fetched' as const,
+      },
+    ])
+
+    const state = useAgentConversation(fake.conversation, {
+      openFileAt: () => {},
+      openFileBeside: () => {},
+      resolve: async () => new Map(),
+      unreachable: () => '',
+      getSetting: (path) => (path[1] === 'use' ? 'antigravity' : undefined),
+      getModels: () => models.value,
+    })
+
+    // Antigravity is not installed, so it should auto-select Claude and omit Antigravity/Codex
+    expect(state.selectedAgentId.value).toBe('claude')
+    expect(state.selectedModelId.value).toBe('sonnet')
+
+    expect(state.modelOptions.value.every((o) => o.agentId === 'claude')).toBe(true)
+    expect(state.modelOptions.value.some((o) => o.agentId === 'antigravity')).toBe(false)
+    expect(state.modelOptions.value.some((o) => o.agentId === 'codex')).toBe(false)
+  })
+
+  it('returns empty modelOptions and resets selection when no agents are installed', () => {
+    const fake = createConversation()
+    const models = [
+      {
+        namedAt: ['agent', 'use'],
+        name: 'claude',
+        title: 'Claude Code',
+        shelf: '',
+        isDefault: false,
+        writes: [],
+        presence: 'not fetched' as const,
+      },
+      {
+        namedAt: ['agent', 'use'],
+        name: 'antigravity',
+        title: 'Antigravity',
+        shelf: '',
+        isDefault: false,
+        writes: [],
+        presence: 'not fetched' as const,
+      },
+      {
+        namedAt: ['agent', 'use'],
+        name: 'codex',
+        title: 'OpenAI Codex',
+        shelf: '',
+        isDefault: false,
+        writes: [],
+        presence: 'not fetched' as const,
+      },
+    ]
+
+    const state = useAgentConversation(fake.conversation, {
+      openFileAt: () => {},
+      openFileBeside: () => {},
+      resolve: async () => new Map(),
+      unreachable: () => '',
+      getModels: () => models,
+    })
+
+    expect(state.modelOptions.value).toHaveLength(0)
+    expect(state.selectedAgentId.value).toBe('')
+    expect(state.selectedModelId.value).toBe('')
+  })
 })
