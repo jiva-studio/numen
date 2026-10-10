@@ -70,8 +70,6 @@ const panelName = (at: number): string => getPanelName(props.pane.id, at)
 <style scoped>
 .pane__body {
   position: relative;
-  display: grid;
-  grid-template: 'stack' 1fr / 1fr;
   overflow: hidden;
 }
 
@@ -79,20 +77,15 @@ const panelName = (at: number): string => getPanelName(props.pane.id, at)
    a tab holds is alive for as long as the tab is: a caret, a scroll offset, an
    undo history. */
 .pane__held {
-  grid-area: stack;
+  display: none;
   block-size: 100%;
   min-block-size: 0;
   min-inline-size: 0;
-  content-visibility: hidden;
-  visibility: hidden;
-  pointer-events: none;
   contain: strict;
 }
 
 .pane__held[data-showing] {
-  content-visibility: visible;
-  visibility: visible;
-  pointer-events: auto;
+  display: block;
 }
 
 /* Drawn inside, because what a pane holds fills it to its edges. */
