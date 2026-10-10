@@ -12,10 +12,12 @@ import { ThreadTurn } from './thread-turn'
 import { atFoot, footOf } from '../lib/foot'
 import { placeTurns, type PlacedTurn, type Turn } from '../lib/turn'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   turns: readonly Turn[]
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** A turn the person pressed, which is one that says it opens something. */
   (event: 'open', turn: Turn): void
@@ -32,6 +34,7 @@ defineSlots<{
   failure?(props: { turn: Turn }): unknown
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 const placed = computed(() => placeTurns(props.turns))
 
 const area = useTemplateRef<HTMLElement>('area')
@@ -39,24 +42,31 @@ const area = useTemplateRef<HTMLElement>('area')
 /** Whether the foot is followed. Scrolling away from it stops that. */
 const follows = ref(true)
 
-const onScroll = () => {
+/* --------------------------------- Hooks ---------------------------------- */
+watch(
+  () => {
+    const turns = props.turns
+    const last = turns[turns.length - 1]
+    return [turns.length, last?.id, last?.text, last?.state, last?.aside]
+  },
+  () => toFoot(),
+  { flush: 'post' },
+)
+
+onMounted(() => toFoot())
+
+/* -------------------------------- Handlers -------------------------------- */
+function onScroll() {
   if (area.value) follows.value = atFoot(area.value)
 }
 
+/* -------------------------------- Helpers --------------------------------- */
 /** Brings the foot into view. Asked to, it takes the following up again. */
-const toFoot = (again = false) => {
+function toFoot(again = false) {
   if (again) follows.value = true
   if (!follows.value || !area.value) return
   area.value.scrollTop = footOf(area.value)
 }
-
-watch(
-  () => props.turns,
-  () => toFoot(),
-  { deep: true, flush: 'post' },
-)
-
-onMounted(() => toFoot())
 
 defineExpose({ toFoot })
 </script>
