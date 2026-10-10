@@ -394,7 +394,7 @@ jobs:
           # A flake handed over as a file cannot write itself a lock, so it
           # carries the one this tree holds.
           cp flake.nix flake.lock "$flake/"
-          cp nix/numen.nix "$flake/nix/"
+          cp modules/tools/nix/numen.nix "$flake/nix/"
           # The desktop entries and the icons are read from the tree the flake
           # stands in, so they come along at the path it reads them from.
           cp -r modules/apps/desktop/build/linux "$flake/modules/apps/desktop/build/"
