@@ -198,4 +198,81 @@ describe('quick link popover rendering', () => {
 
     expect(view.findComponent({ name: 'PlexQuickLinkPopover' }).exists()).toBe(true)
   })
+
+  it('computes handle position and draws thread using getScreenCTM', async () => {
+    drawing(13)
+    const tabState = createTabState()
+    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+
+    const originalGetScreenCTM = SVGSVGElement.prototype.getScreenCTM
+    SVGSVGElement.prototype.getScreenCTM = function () {
+      return {
+        a: 1,
+        b: 0,
+        c: 0,
+        d: 1,
+        e: 10,
+        f: 20,
+      } as DOMMatrix
+    }
+
+    try {
+      const view = mount(PlexTab, { props: { state: tabState } })
+      await view.vm.$nextTick()
+      const thread = view.find('path.plex__thread')
+      expect(thread.exists()).toBe(true)
+      expect(thread.attributes('d')).toBeDefined()
+    } finally {
+      SVGSVGElement.prototype.getScreenCTM = originalGetScreenCTM
+    }
+  })
+
+  it('draws thread using DOMRect fallback when CTM returns null', async () => {
+    drawing(13)
+    const tabState = createTabState()
+    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+
+    const originalGetScreenCTM = SVGSVGElement.prototype.getScreenCTM
+    SVGSVGElement.prototype.getScreenCTM = () => null
+
+    try {
+      const view = mount(PlexTab, { props: { state: tabState } })
+      await view.vm.$nextTick()
+      expect(view.find('path.plex__thread').exists()).toBe(true)
+    } finally {
+      SVGSVGElement.prototype.getScreenCTM = originalGetScreenCTM
+    }
+  })
+
+  it('handles popover events (dismiss, select-note, create-note)', async () => {
+    drawing(13)
+    let dismissed = false
+    let confirmed: [string, boolean] | null = null
+    const tabState = {
+      ...createTabState(),
+      dismissQuickLink: () => {
+        dismissed = true
+      },
+      confirmQuickLink: async (name: string, isExisting: boolean) => {
+        confirmed = [name, isExisting]
+      },
+    } as unknown as PlexTabState
+    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+
+    const view = mount(PlexTab, { props: { state: tabState } })
+    const popover = view.findComponent({ name: 'PlexQuickLinkPopover' })
+
+    popover.vm.$emit('dismiss')
+    expect(dismissed).toBe(true)
+
+    popover.vm.$emit('select-note', 'Existing.md')
+    expect(confirmed).toEqual(['Existing.md', true])
+
+    popover.vm.$emit('create-note', 'New Thought')
+    expect(confirmed).toEqual(['New Thought', false])
+  })
+
+  it('formats dropName from words', () => {
+    expect(words.dropName('child')).toBe('as child')
+  })
 })

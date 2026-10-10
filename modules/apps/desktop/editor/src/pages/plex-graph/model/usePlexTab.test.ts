@@ -5,7 +5,7 @@
  * written into the vault whatever happens, and a picture one seat deep draws
  * it only from the node it was made from.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { usePlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
 import { ITEMS, NEW_NOTE } from '../lib/menu'
@@ -1017,5 +1017,73 @@ describe('quick-link popover from a node handle', () => {
 
     expect(one.made).toEqual([['Root.md', 'child']])
     expect(one.went).toEqual(['Root.md'])
+  })
+
+  it('joins existing note and stays on source note when navigation is disabled', async () => {
+    const one = tab('Root.md', ['Other.md'])
+    one.state.isNavigatingOnCreate.value = false
+    const rootNode = one.node('Root.md')
+    one.state.openQuickLink({ from: rootNode, seat: 'jump', at: { x: 100, y: 200 } })
+
+    await one.state.confirmQuickLink('Other.md', true)
+
+    expect(one.joined).toEqual([['Root.md', 'Other.md', 'jump']])
+    expect(one.went).toEqual(['Root.md'])
+  })
+
+  it('ignores confirmQuickLink when title is empty or quick link is inactive', async () => {
+    const one = tab('Root.md')
+    await one.state.confirmQuickLink('', false)
+    expect(one.made).toEqual([])
+
+    const rootNode = one.node('Root.md')
+    one.state.openQuickLink({ from: rootNode, seat: 'child', at: { x: 100, y: 200 } })
+    await one.state.confirmQuickLink('   ', false)
+    expect(one.made).toEqual([])
+  })
+
+  it('searches notes via searchNames dependency', async () => {
+    const searchMock = vi.fn().mockResolvedValue([{ path: 'Note.md', title: 'Note' }])
+    const plex = viewOn('Root.md', [])
+    const vault = createVault()
+    const stateWithSearch = usePlexTab(plex.view, {
+      editor: vault.editor,
+      isReady: ref(true),
+      isHanging: ref(true),
+      parts: ref(6),
+      openNote: () => {},
+      readHeadings: async () => new Map(),
+      askAgent: () => {},
+      runCommand: () => {},
+      openingPath: ref('Opening.md'),
+      readOpeningPath: async () => 'Opening.md',
+      dragged: ref([]),
+      showMessage: () => {},
+      createUntitledNote: async () => '',
+      creatable: ['parent', 'child', 'jump'],
+      searchNames: searchMock,
+    })
+
+    const results = await stateWithSearch.searchNotes('test')
+    expect(searchMock).toHaveBeenCalledWith('test')
+    expect(results).toEqual([{ path: 'Note.md', title: 'Note' }])
+
+    const stateNoSearch = usePlexTab(plex.view, {
+      editor: vault.editor,
+      isReady: ref(true),
+      isHanging: ref(true),
+      parts: ref(6),
+      openNote: () => {},
+      readHeadings: async () => new Map(),
+      askAgent: () => {},
+      runCommand: () => {},
+      openingPath: ref('Opening.md'),
+      readOpeningPath: async () => 'Opening.md',
+      dragged: ref([]),
+      showMessage: () => {},
+      createUntitledNote: async () => '',
+      creatable: ['parent', 'child', 'jump'],
+    })
+    expect(await stateNoSearch.searchNotes('test')).toEqual([])
   })
 })

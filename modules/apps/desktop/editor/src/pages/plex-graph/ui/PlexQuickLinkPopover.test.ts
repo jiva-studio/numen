@@ -105,18 +105,82 @@ describe('PlexQuickLinkPopover component', () => {
     wrapper.unmount()
   })
 
-  it('navigates to create option with ArrowDown when search matches exist', async () => {
+  it('navigates options with ArrowDown and ArrowUp including cycle around', async () => {
     const wrapper = mountPopover()
     const input = wrapper.get('input')
     await input.setValue('topic')
     await wrapper.vm.$nextTick()
 
-    // 2 search results + 1 create option: move down twice to reach create option
-    await input.trigger('keydown', { key: 'ArrowDown' })
+    // Initially at index 0
+    // ArrowUp cycles backwards to index 2 (Create option)
+    await input.trigger('keydown', { key: 'ArrowUp' })
+    const createBtn = wrapper.find('.plex-quick-link__option--create')
+    expect(createBtn.classes()).toContain('plex-quick-link__option--active')
+
+    // ArrowUp moves to index 1
+    await input.trigger('keydown', { key: 'ArrowUp' })
+    await input.trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('select-note')).toStrictEqual([['notes/existing.md']])
+
+    // ArrowDown from index 1 moves to index 2
     await input.trigger('keydown', { key: 'ArrowDown' })
     await input.trigger('keydown', { key: 'Enter' })
-
     expect(wrapper.emitted('create-note')).toStrictEqual([['topic']])
+
+    wrapper.unmount()
+  })
+
+  it('updates highlightedIndex on pointerenter and triggers create on click', async () => {
+    const wrapper = mountPopover()
+    const input = wrapper.get('input')
+    await input.setValue('abc')
+    await wrapper.vm.$nextTick()
+
+    const options = wrapper.findAll('.plex-quick-link__option')
+    const secondOption = options[1]
+    await secondOption?.trigger('pointerenter')
+    expect(secondOption?.classes()).toContain('plex-quick-link__option--active')
+
+    const createBtn = wrapper.get('.plex-quick-link__option--create')
+    await createBtn.trigger('pointerenter')
+    expect(createBtn.classes()).toContain('plex-quick-link__option--active')
+
+    await createBtn.trigger('click')
+    expect(wrapper.emitted('create-note')).toStrictEqual([['abc']])
+    wrapper.unmount()
+  })
+
+  it('displays path when title is empty', async () => {
+    const searchMock = vi.fn().mockResolvedValue([{ path: 'notes/untitled-note.md', title: '' }])
+    const wrapper = mountPopover({ search: searchMock })
+
+    const input = wrapper.get('input')
+    await input.setValue('untitled')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('notes/untitled-note.md')
+    wrapper.unmount()
+  })
+
+  it('handles clearing query, empty query arrow keys, and empty search results', async () => {
+    const searchMock = vi.fn().mockResolvedValue([])
+    const wrapper = mountPopover({ search: searchMock })
+    const input = wrapper.get('input')
+
+    // Arrow keys when empty (totalItems is 0)
+    await input.trigger('keydown', { key: 'ArrowDown' })
+    await input.trigger('keydown', { key: 'ArrowUp' })
+
+    // Typing with search returning no results
+    await input.setValue('custom')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.plex-quick-link__dropdown').exists()).toBe(true)
+
+    // Clearing query
+    await input.setValue('')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.plex-quick-link__dropdown').exists()).toBe(false)
+
     wrapper.unmount()
   })
 
@@ -130,12 +194,17 @@ describe('PlexQuickLinkPopover component', () => {
     wrapper.unmount()
   })
 
-  it('emits dismiss when clicking outside the popover', async () => {
+  it('emits dismiss when clicking outside but not when clicking inside', async () => {
     const wrapper = mountPopover()
 
+    // Clicking inside popover
+    const popover = wrapper.get('.plex-quick-link')
+    popover.element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    expect(wrapper.emitted('dismiss')).toBeUndefined()
+
+    // Clicking outside popover
     const outsideElement = document.createElement('div')
     document.body.appendChild(outsideElement)
-
     outsideElement.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
 
     expect(wrapper.emitted('dismiss')).toHaveLength(1)
