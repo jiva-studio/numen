@@ -178,18 +178,35 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     })
   }
 
-  const addressesIn = (text: string) => wikilinksIn(text).map((one) => one.address)
+  /** Extracted wikilink addresses per turn, cached by turn text. */
+  const addressCache = new Map<string, { text: string; addresses: readonly string[] }>()
+
+  const getTurnAddresses = (turn: Turn): readonly string[] => {
+    const cached = addressCache.get(turn.id)
+    if (cached && cached.text === turn.text) {
+      return cached.addresses
+    }
+    const addresses = wikilinksIn(turn.text).map((one) => one.address)
+    addressCache.set(turn.id, { text: turn.text, addresses })
+    return addresses
+  }
 
   watch(
-    conversation.turns,
-    (all) => resolveAddresses(all.flatMap((turn) => addressesIn(turn.text))),
-    { deep: true },
+    () => {
+      const all = conversation.turns.value
+      const last = all[all.length - 1]
+      return [all.length, last?.id, last?.text, last?.state]
+    },
+    () => {
+      resolveAddresses(conversation.turns.value.flatMap((turn) => getTurnAddresses(turn)))
+    },
+    { immediate: true },
   )
 
   /** The turns as the thread draws them, each saying which of its links reach nothing. */
   const turns = computed<Turn[]>(() =>
     conversation.turns.value.map((turn) => {
-      const unresolved = addressesIn(turn.text).filter(
+      const unresolved = getTurnAddresses(turn).filter(
         (address) => resolvedAddresses.value.get(address) === '',
       )
       return unresolved.length ? { ...turn, unresolved } : turn
