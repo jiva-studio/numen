@@ -1,7 +1,7 @@
 /**
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import type { PlexNeighbourhood, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { NoteType } from '@/entities/file'
 import { fileOf, type PathRename } from '@/shared/paths'
@@ -10,10 +10,10 @@ import { asPlex, typesIn } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import type { PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
-import type { MenuRequest, PlexEditor, PlexTabDeps, PlexTabState } from '../types'
+import type { MenuRequest, PlexEditor, PlexTabDeps, PlexTabState, QuickLinkRequest } from '../types'
 import { usePlexParts } from './usePlexParts'
 
-export type { MenuRequest, PlexEditor, PlexTabDeps, PlexTabState }
+export type { MenuRequest, PlexEditor, PlexTabDeps, PlexTabState, QuickLinkRequest }
 
 export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
@@ -41,6 +41,8 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   })
 
   const menu = ref<MenuRequest | null>(null)
+  const quickLink = ref<QuickLinkRequest | null>(null)
+  const isNavigatingOnCreate = (deps.isNavigatingOnCreate ?? ref(true)) as Ref<boolean>
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
     const around = view.neighbourhood.value
@@ -64,7 +66,58 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (path) void view.go(path)
   }
 
-  const createNode = async (from: string, seat: PlexRelatedSeat) => {
+  const openQuickLink = (request: QuickLinkRequest) => {
+    quickLink.value = request
+  }
+
+  const dismissQuickLink = () => {
+    quickLink.value = null
+  }
+
+  const searchNotes = async (
+    query: string,
+  ): Promise<readonly { path: string; title: string }[]> => {
+    if (!deps.searchNames) return []
+    const results = await deps.searchNames(query)
+    return results.map((item) => ({ path: item.path, title: item.title }))
+  }
+
+  const confirmQuickLink = async (titleOrPath: string, isExisting: boolean) => {
+    const active = quickLink.value
+    quickLink.value = null
+    if (!active) return
+
+    const fromPath = map.getNodePath(active.from)
+    if (!fromPath) return
+
+    if (isExisting) {
+      const success = await deps.editor.join(fromPath, titleOrPath, active.seat)
+      if (success) {
+        if (isNavigatingOnCreate.value) {
+          await view.go(titleOrPath)
+        } else {
+          await view.go(fromPath)
+        }
+      }
+    } else {
+      const title = titleOrPath.trim()
+      if (!title) return
+      const created = await deps.editor.createWithTitle(title, fromPath, active.seat)
+      if (created) {
+        if (isNavigatingOnCreate.value) {
+          await view.go(created.path)
+        } else {
+          await view.go(fromPath)
+        }
+      }
+    }
+  }
+
+  const createNode = async (from: string, seat: PlexRelatedSeat, at?: { x: number; y: number }) => {
+    if (at) {
+      openQuickLink({ from, seat, at })
+      return
+    }
     const path = map.getNodePath(from)
     if (path && (await deps.editor.createInSeat(path, seat))) await view.go(path)
   }
@@ -121,6 +174,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const dismiss = () => {
     menu.value = null
+    quickLink.value = null
   }
 
   const chooseMenuItem = (id: string) => {
@@ -147,6 +201,8 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     empty,
     dragged,
     menu,
+    quickLink,
+    isNavigatingOnCreate,
     creatable: deps.creatable,
     typeOf,
     partsOf: getParts,
@@ -164,5 +220,9 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     chooseMenuItem,
     followMoves,
     getName,
+    openQuickLink,
+    dismissQuickLink,
+    confirmQuickLink,
+    searchNotes,
   }
 }

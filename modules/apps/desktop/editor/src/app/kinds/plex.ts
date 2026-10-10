@@ -3,6 +3,7 @@ import { computed, type ShallowRef } from 'vue'
 import { createPlexKind as buildPlexKind, usePlexView } from '@/pages/plex-graph'
 import { CREATABLE } from '@/pages/note-editor'
 import type { MessageWriter } from '@/shared/notices/messages'
+import { searchCore } from '../vault/search'
 import type { WindowKindsDeps } from './deps'
 
 export interface PlexKindDeps extends Pick<
@@ -42,5 +43,9 @@ export function createPlexKind({
     showMessage: (text) => writeMessage(text, 'error'),
     createUntitledNote: async () => (await editing.making.createUntitled('', []))?.path ?? '',
     creatable: CREATABLE,
+    searchNames: async (query, limit = 20) => {
+      const results = await searchCore.names(query, limit)
+      return results.map((r) => ({ path: r.path, title: r.title }))
+    },
   })
 }

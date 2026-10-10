@@ -67,6 +67,10 @@ export const createVault = (takes = true) => {
       made.push([from, seat])
       return takes ? { path: 'Made.md', title: 'Made' } : null
     },
+    createWithTitle: async (title, from, seat) => {
+      made.push([from, seat])
+      return takes ? { path: `${title}.md`, title } : null
+    },
     join: async (from, to, seat) => {
       joined.push([from, to, seat])
       return takes && !notJoinedPaths.has(to)

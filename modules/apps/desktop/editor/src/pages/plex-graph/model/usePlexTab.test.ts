@@ -959,3 +959,63 @@ describe('what a node stands for', () => {
     expect(one.state.typeOf(one.node('Root.md'))).toBe('note')
   })
 })
+
+describe('quick-link popover from a node handle', () => {
+  it('opens quick link request with drop coordinates', async () => {
+    const one = tab('Root.md', ['Child.md'])
+    const childNode = one.node('Child.md')
+
+    await one.state.createNode(childNode, 'child', { x: 450, y: 320 })
+
+    expect(one.state.quickLink.value).toStrictEqual({
+      from: childNode,
+      seat: 'child',
+      at: { x: 450, y: 320 },
+    })
+  })
+
+  it('dismisses quick link popover cleanly on dismiss', async () => {
+    const one = tab('Root.md')
+    one.state.openQuickLink({ from: one.node('Root.md'), seat: 'parent', at: { x: 100, y: 200 } })
+
+    one.state.dismissQuickLink()
+
+    expect(one.state.quickLink.value).toBeNull()
+  })
+
+  it('creates new note and navigates to it when confirmed with title and navigation enabled', async () => {
+    const one = tab('Root.md')
+    const rootNode = one.node('Root.md')
+    one.state.openQuickLink({ from: rootNode, seat: 'child', at: { x: 100, y: 200 } })
+
+    await one.state.confirmQuickLink('SubTopic', false)
+
+    expect(one.state.quickLink.value).toBeNull()
+    expect(one.made).toEqual([['Root.md', 'child']])
+    expect(one.went).toEqual(['SubTopic.md'])
+  })
+
+  it('joins existing note and navigates to it when confirmed as existing note', async () => {
+    const one = tab('Root.md', ['Other.md'])
+    const rootNode = one.node('Root.md')
+    one.state.openQuickLink({ from: rootNode, seat: 'jump', at: { x: 100, y: 200 } })
+
+    await one.state.confirmQuickLink('Other.md', true)
+
+    expect(one.state.quickLink.value).toBeNull()
+    expect(one.joined).toEqual([['Root.md', 'Other.md', 'jump']])
+    expect(one.went).toEqual(['Other.md'])
+  })
+
+  it('remains on source note when navigation on create is disabled', async () => {
+    const one = tab('Root.md')
+    one.state.isNavigatingOnCreate.value = false
+    const rootNode = one.node('Root.md')
+    one.state.openQuickLink({ from: rootNode, seat: 'child', at: { x: 100, y: 200 } })
+
+    await one.state.confirmQuickLink('SubTopic', false)
+
+    expect(one.made).toEqual([['Root.md', 'child']])
+    expect(one.went).toEqual(['Root.md'])
+  })
+})

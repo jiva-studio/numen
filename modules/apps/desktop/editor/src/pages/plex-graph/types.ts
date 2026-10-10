@@ -22,9 +22,21 @@ export interface MenuRequest {
   readonly opening: MenuOpening
 }
 
+/** Where the quick link popover stands, and what seat it connects. */
+export interface QuickLinkRequest {
+  readonly from: string
+  readonly seat: PlexRelatedSeat
+  readonly at: { readonly x: number; readonly y: number }
+}
+
 /** Making a note from the picture, and joining two that are already on it. */
 export interface PlexEditor {
   createInSeat(from: string, seat: PlexRelatedSeat): Promise<unknown>
+  createWithTitle(
+    title: string,
+    from: string,
+    seat: PlexRelatedSeat,
+  ): Promise<{ path: string } | null>
   join(from: string, to: string, seat: PlexRelatedSeat): Promise<boolean>
 }
 
@@ -44,6 +56,8 @@ export interface PlexTabDeps {
   createUntitledNote(): Promise<string>
   readOpeningPath(): Promise<string>
   readonly creatable: readonly PlexRelatedSeat[]
+  searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
+  readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
 }
 
 export interface PlexViewState {
@@ -71,7 +85,7 @@ export interface PlexPartsState {
 
 export interface PlexNodeActions {
   activate(node: string): void
-  createNode(from: string, seat: PlexRelatedSeat): Promise<void>
+  createNode(from: string, seat: PlexRelatedSeat, at?: { x: number; y: number }): Promise<void>
   joinNodes(from: string, to: string, seat: PlexRelatedSeat): Promise<void>
   dropNodes(dragged: readonly string[], seat: PlexRelatedSeat): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
@@ -80,5 +94,18 @@ export interface PlexNodeActions {
   getName(path: string): string
 }
 
+export interface PlexQuickLinkState {
+  readonly quickLink: Ref<QuickLinkRequest | null>
+  readonly isNavigatingOnCreate: Ref<boolean>
+  openQuickLink(request: QuickLinkRequest): void
+  dismissQuickLink(): void
+  confirmQuickLink(titleOrPath: string, isExisting: boolean): Promise<void>
+  searchNotes(query: string): Promise<readonly { path: string; title: string }[]>
+}
+
 /** What one plex tab holds. */
-export type PlexTabState = PlexViewState & PlexMenuState & PlexPartsState & PlexNodeActions
+export type PlexTabState = PlexViewState &
+  PlexMenuState &
+  PlexPartsState &
+  PlexNodeActions &
+  PlexQuickLinkState

@@ -21,7 +21,7 @@ defineProps<{
 <style scoped>
 .plex__thread {
   fill: none;
-  stroke: var(--numen-ring);
+  stroke: var(--numen-edge);
   stroke-width: var(--numen-edge-width);
   stroke-dasharray: var(--numen-thread-dash);
 }

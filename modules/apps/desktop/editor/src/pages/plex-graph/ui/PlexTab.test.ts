@@ -28,6 +28,8 @@ const createTabState = () =>
     dragged: ref([]),
     empty: ref(false),
     menu: ref(null),
+    quickLink: ref(null),
+    isNavigatingOnCreate: ref(true),
     creatable: ['child'],
     mostParts: ref(6),
     typeOf: () => 'note',
@@ -41,6 +43,10 @@ const createTabState = () =>
     dismiss: () => {},
     chooseMenuItem: () => {},
     getName: () => '',
+    openQuickLink: () => {},
+    dismissQuickLink: () => {},
+    confirmQuickLink: async () => {},
+    searchNotes: async () => [],
   }) as unknown as PlexTabState
 
 /** The probe the size is measured off is a box one em on a side. */
@@ -179,5 +185,17 @@ describe('what a node is drawn before its title', () => {
 
     expect(view.get('[aria-label^="Child"]').find('.plex__icon').exists()).toBe(true)
     expect(view.get('[aria-label^="Root"]').find('.plex__icon').exists()).toBe(false)
+  })
+})
+
+describe('quick link popover rendering', () => {
+  it('renders popover when state.quickLink is present', () => {
+    drawing(13)
+    const tabState = createTabState()
+    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+
+    const view = mount(PlexTab, { props: { state: tabState } })
+
+    expect(view.findComponent({ name: 'PlexQuickLinkPopover' }).exists()).toBe(true)
   })
 })
