@@ -79,6 +79,22 @@ describe('the times of an editor', () => {
 
     expect(asked).toStrictEqual([1])
   })
+
+  it('does not dispatch when the state is unchanged', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+
+    let dispatches = 0
+    const was = view.dispatch.bind(view)
+    view.dispatch = ((...specs: Parameters<EditorView['dispatch']>) => {
+      dispatches++
+      return was(...specs)
+    }) as EditorView['dispatch']
+
+    times.show({ ...TIMED })
+
+    expect(dispatches).toBe(0)
+  })
 })
 
 describe('the line being read', () => {

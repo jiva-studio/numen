@@ -7,15 +7,15 @@
  * play from there. Prose carries no times, so it is read with no gutter and
  * nothing to seek.
  */
-import { computed, watchPostEffect } from 'vue'
+import { computed, watch } from 'vue'
 import { Editor, timing, Waiting } from '@numen/ui'
 import { WORDS as words } from '../words'
 import type { MediaTabState } from '../kind'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: MediaTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const isEditable = computed(() => props.state.isEditable.value)
 
 const {
@@ -36,17 +36,22 @@ const {
 /** The times in the editor's gutter, and the line being said. */
 const times = timing((line) => props.state.goToLine(line))
 
+/* --------------------------------- Hooks ---------------------------------- */
 // The words move under what is played: the line being said is drawn in the
 // accent, and following is what brings it back into view.
-watchPostEffect(() =>
-  times.show({
-    times: cues.value,
-    current: current.value,
-    isFollowing: following.value && !typing.value,
-  }),
+watch(
+  [cues, current, following, typing],
+  ([timesValue, currentLine, isFollowing, isTyping]) => {
+    times.show({
+      times: timesValue,
+      current: currentLine,
+      isFollowing: isFollowing && !isTyping,
+    })
+  },
+  { immediate: true, flush: 'post' },
 )
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onTranscribe() {
   props.state.transcribe()
 }
