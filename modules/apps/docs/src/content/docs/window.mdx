@@ -55,6 +55,18 @@ pane next to the one you are in.
 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> closes the tab in front of you. A tab
 holding an unanswered question is told once, and closes the second time you ask.
 
+## Linked tabs across panes
+
+Tabs in separate panes can be linked together to synchronize the active note across views.
+
+Right-click any Note, Plex, or Files tab header to open the link menu:
+
+- Pick an open tab from another pane to link them into a group.
+- Linked tabs display a matching colored link indicator in their headers.
+- Navigating to a note in a note editor updates linked Plex graphs to focus that note and selects it in linked file trees.
+- Selecting a node in a linked Plex or a file in a linked Files tab opens that note in the linked editor pane.
+- Right-click and choose **Unlink** to detach a tab from its group.
+
 ## The two keys everything starts from
 
 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> searches the vault. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>
@@ -76,10 +88,8 @@ being read*.
 
 The [keyboard page](/keyboard/) lists what has a key of its own.
 
-## The corner
+## The status bar and background tasks
 
-The corner of the window shows what is running behind it: the first scan of a vault, a model
-being fetched, a scanned document being read. Each entry can be put away when you have seen it.
+The bottom status bar shows what is running behind the window: vault scanning, vector embedding, document OCR, and audio transcription progress. Clicking the task indicator opens a background task popover detailing active pipelines, completed items, and errors.
 
-It is also where the window says something is wrong with the vault as a whole — *not following
-the vault*, *the vault could not be read*. See [when something is wrong](/trouble/).
+It is also where the window reports overall vault status — *not following the vault*, *the vault could not be read*. See [when something is wrong](/trouble/).

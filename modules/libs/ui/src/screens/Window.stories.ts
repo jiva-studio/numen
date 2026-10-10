@@ -19,6 +19,7 @@ import {
   Folder,
   FolderOpen,
   FolderTree,
+  Link2,
   Trash2,
   Type,
   Waypoints,
@@ -33,6 +34,7 @@ import { Tree } from '@/features/tree'
 import { Menu } from '@/shared/ui/menu'
 import type { MenuItem } from '@/shared/ui/menu'
 import Agent from './Agent.vue'
+import type { AgentModelOption } from './message-composer'
 import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace'
 import { keyChord } from '@/features/palette'
 import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette'
@@ -572,6 +574,25 @@ The middle column is the one to watch: it is the same sentence three times, and
 only the noun changes.
 `
 
+/** Available models for the model selector pill inside the agent composer. */
+const AGENT_OPTIONS: readonly AgentModelOption[] = [
+  {
+    agentId: 'claude',
+    agentTitle: 'Claude',
+    modelId: 'claude-3-7-sonnet',
+    modelTitle: 'Sonnet 3.7',
+    isAvailable: true,
+    isDefault: true,
+  },
+  {
+    agentId: 'gemini',
+    agentTitle: 'Gemini',
+    modelId: 'gemini-2.5-pro',
+    modelTitle: '2.5 Pro',
+    isAvailable: true,
+  },
+]
+
 interface Screen {
   /** How the window is divided, and which tab each pane shows. */
   readonly workspace: () => State
@@ -648,7 +669,9 @@ const screen = ({
       BOOK,
       OTHER_NOTE,
       AGENT,
+      AGENT_OPTIONS,
       FILES,
+      Link2,
     }
   },
   template: `
@@ -660,6 +683,11 @@ const screen = ({
             :is="iconOfTab(id)"
             v-if="iconOfTab(id)"
             style="inline-size: 100%; block-size: 100%; stroke-width: 1.75; opacity: 0.75"
+          />
+          <Link2
+            v-if="id === PLEX || id === NOTE"
+            style="inline-size: 0.85rem; block-size: 0.85rem; stroke-width: 2.25; color: var(--numen-blue, #3b82f6); margin-inline-start: 2px"
+            aria-hidden="true"
           />
         </template>
 
@@ -677,6 +705,9 @@ const screen = ({
             v-else-if="id === AGENT"
             v-model="asking"
             :turns="TURNS"
+            :options="AGENT_OPTIONS"
+            selected-agent-id="claude"
+            selected-model-id="claude-3-7-sonnet"
             placeholder="Ask about the vault"
           />
           <Reader

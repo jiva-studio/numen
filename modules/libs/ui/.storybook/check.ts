@@ -6,7 +6,6 @@
  * fix when the rule changes.
  */
 import type { Preview } from '@storybook/vue3-vite'
-import { walk } from './keyboard'
 import { faults } from './reach'
 
 /**
@@ -37,9 +36,11 @@ export type Reach = false | { readonly keeps: string }
 export const reachCheck =
   (proof: Proof): NonNullable<Preview['afterEach']> =>
   async (context) => {
+    if (typeof window !== 'undefined' && !('__vitest_browser__' in window)) return
     const said = context.parameters['reach'] as Reach | undefined
     if (said === false) return
 
+    const { walk } = await import('./keyboard')
     const found = await walk()
 
     if (context.id === proof.story && found.stops.length < proof.stops)

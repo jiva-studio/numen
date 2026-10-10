@@ -115,6 +115,22 @@ The tools are served on a port, and the panel's agent is one caller of it. An ag
 
 It is off. An installation that names no agent and asks for no tools opens no port and writes no token file — a person who never asked for an agent is running a window and nothing besides.
 
+## Host agent auto-discovery
+
+At startup and on demand, the application inspects the host environment for installed CLI agents:
+
+- Scans system `PATH` and standard installation directories (`~/.local/bin`, npm global prefix, Homebrew, Nix store).
+- Probes binary availability, version, and execution readiness.
+- Discovered agents populate available options across the interface with their runtime status.
+
+## Multi-agent selector island
+
+The chat panel provides a floating selector island above the message composer:
+
+- Allows quick switching between discovered host agents and configured models per session.
+- Isolates MCP server connections and environment configuration per selected agent.
+- Manages sub-process lifetimes, terminating background child processes concurrently when sessions close.
+
 ## Settings
 
 `agent.use` names which agent answers, and empty names none. `agent.serve_tools` puts the tools on a port for an agent a person runs themselves, and is off. `agent.claude.*` is how Claude Code is run: `command` starts it, `model` is which of its models answers, `max_steps` is how many times it may go to the model before it is stopped, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. See [Settings](settings.md).
