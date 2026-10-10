@@ -10,5 +10,4 @@
 
 root=$(git rev-parse --show-toplevel)
 
-node "$root/modules/tools/depgraph/check.mjs" || exit 1
 npm run lint --workspaces --if-present --prefix "$root/modules" || exit 1

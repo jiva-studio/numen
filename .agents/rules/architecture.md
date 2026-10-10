@@ -55,7 +55,7 @@ There is no `go.work`. Each Go module — `libs/core`, `libs/protocol`, `apps/de
 
 **How an interface component is built*, *The component library is shadcn-vue*, *A file of the windows stands on a layer*.*
 
-The frontend is structured into **six FSD layers**, enforced by `dependency-cruiser` (`modules/tools/depgraph/layers.cjs`):
+The frontend is structured into **six FSD layers**:
 
 $$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{features (2)} \longrightarrow \text{widgets (3)} \longrightarrow \text{pages / screens (4)} \longrightarrow \text{app (5)}$$
 
