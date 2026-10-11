@@ -788,3 +788,39 @@ describe('a name given to a row, in more detail', () => {
     expect(done).toStrictEqual(['moves ghost/Note.md ghost/Other.md'])
   })
 })
+
+describe('a file refused in a folder that is shut', () => {
+  it.each([
+    ['note', NEW_NOTE],
+    ['deck', NEW_DECK],
+  ])('leaves the folder shut where the %s was refused', async (_kind, id) => {
+    const { one, list } = tab(true)
+    await list.openFolder(ROOT)
+    one.openMenu({ path: 'physics', at: { x: 0, y: 0 } })
+
+    one.chooseMenuItem(id)
+    await settle()
+
+    expect(list.isFolderOpen('physics')).toBe(false)
+  })
+
+  it('leaves the folder shut where the folder was refused on a row the tree does not hold', async () => {
+    const { one, list } = tab(true)
+    one.openMenu({ path: 'ghost/Note.md', at: { x: 0, y: 0 } })
+
+    one.chooseMenuItem(NEW_NOTE)
+    await settle()
+
+    expect(list.isFolderOpen('ghost')).toBe(false)
+  })
+
+  it('makes a note beside a row the tree does not hold', async () => {
+    const { one, done } = tab()
+    one.openMenu({ path: 'ghost/Note.md', at: { x: 0, y: 0 } })
+
+    one.chooseMenuItem(NEW_NOTE)
+    await settle()
+
+    expect(done).toStrictEqual(['writes ghost/Untitled note.md'])
+  })
+})

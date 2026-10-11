@@ -635,3 +635,17 @@ describe('the folder a change is drawn in', () => {
     expect(list.selectedPaths.value).toBe(chosen)
   })
 })
+
+describe('a change the vault reports without naming anything', () => {
+  it('reads every open folder when called with no arguments', async () => {
+    const { core, asked } = vault()
+    const list = useFileTree(core)
+    await list.openFolder(ROOT)
+    await list.openFolder('physics')
+    asked.length = 0
+
+    await list.refreshChanged()
+
+    expect(asked.sort()).toStrictEqual([ROOT, 'physics'])
+  })
+})
