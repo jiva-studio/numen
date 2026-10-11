@@ -148,8 +148,9 @@ export const renderVitestConfig = (at) => {
   ].join('\n')
 }
 
+/** An ES module whatever the package declares, so the configs it imports load as they do in the package. */
 const writeVitestConfig = (target) => {
-  const path = join(root, OUTPUT, 'vitest', `${target.name}.config.ts`)
+  const path = join(root, OUTPUT, 'vitest', `${target.name}.config.mts`)
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, renderVitestConfig(target.at))
   return relative(MODULES, path)
