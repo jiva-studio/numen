@@ -134,7 +134,10 @@ export function useStencilTabs(
 
   tabOpeners.registerEditor('stencil', openStencil)
 
-  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[]): void => {
+  const applyPathChanges = (
+    paths: readonly string[],
+    renames: readonly PathRename[] = [],
+  ): void => {
     wire.movePaths(renames)
     store.applyPathChanges(paths, renames)
   }
