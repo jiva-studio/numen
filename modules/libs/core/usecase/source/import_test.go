@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/operation"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -15,13 +16,15 @@ import (
 // A site that answers with what a test puts in it, and counts what it was asked
 // for: nothing here reaches a network.
 type site struct {
-	title    string
-	length   int
-	cues     []transcript.Cue
-	prose    string
-	bytes    []byte
-	asked    []string
-	refusing error
+	title  string
+	length int
+	cues   []transcript.Cue
+	prose  string
+	bytes  []byte
+	asked  []string
+	// inOperation records, for each Metadata and Download, whether it ran under an operation.
+	inOperation []bool
+	refusing    error
 }
 
 func (s *site) GetDownloadModel(_ domain.URL) port.DownloadModel {
@@ -32,7 +35,8 @@ func (s *site) GetDownloadModel(_ domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}
 }
 
-func (s *site) Metadata(_ context.Context, at domain.URL) (port.Metadata, error) {
+func (s *site) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
 	s.asked = append(s.asked, "metadata "+string(at))
 	if s.refusing != nil {
 		return port.Metadata{}, s.refusing
@@ -55,7 +59,8 @@ func (s *site) Text(
 	return port.Text{}, port.ErrNothingDownloaded
 }
 
-func (s *site) Download(_ context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
+func (s *site) Download(ctx context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
+	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
 	s.asked = append(s.asked, "download "+string(at))
 	if len(s.bytes) == 0 {
 		return port.Copy{}, port.ErrNothingDownloaded
@@ -349,5 +354,19 @@ func TestACopyAlreadyBesideTheNote(t *testing.T) {
 	}
 	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {
 		t.Errorf("the site was asked %v", from.asked)
+	}
+}
+
+// The size gate and the download of one copy run under one operation, so an
+// adapter can extract the address once for both.
+func TestACopyAsksMetadataAndDownloadUnderOneOperation(t *testing.T) {
+	from := &site{bytes: []byte("the bytes of a video")}
+	u, _, _ := newImportURL(t, pointsAtAVideo, from)
+
+	if _, err := u.Copy(t.Context(), first, videoNote); err != nil {
+		t.Fatal(err)
+	}
+	if len(from.inOperation) != 2 || !from.inOperation[0] || !from.inOperation[1] {
+		t.Errorf("metadata and download ran under an operation: %v", from.inOperation)
 	}
 }
