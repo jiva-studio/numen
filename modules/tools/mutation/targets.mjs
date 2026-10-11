@@ -23,16 +23,23 @@ export const GOMUTANTS = 'github.com/szhekpisov/gomutants@v0.6.1'
 export const SHARD_LINES = { go: 6000, ts: 4500 }
 export const MAX_SHARDS = 16
 
+/** Whether a path lies in a folder of helpers the tests are built with. */
+export const isTestSupport = (path) => /(^|\/)(testing|testsupport)\//.test(path)
+
 /** Whether a repository path is source a `ts` target mutates. */
 export const isMutatedSource = (path) =>
   /\.ts$/.test(path) &&
+  !isTestSupport(path) &&
   !/\.(test|stories|d)\.ts$/.test(path) &&
   !/(^|\/)(index|types|main)\.ts$/.test(path) &&
   /\/src\//.test(path)
 
 /** Whether a repository path is Go source gomutants mutates. */
 export const isMutatedGo = (path) =>
-  /\.go$/.test(path) && !/_test\.go$/.test(path) && !/(^|\/)testdata\//.test(path)
+  /\.go$/.test(path) &&
+  !/_test\.go$/.test(path) &&
+  !/(^|\/)testdata\//.test(path) &&
+  !isTestSupport(path)
 
 const hash = (text) => {
   let value = 2166136261
