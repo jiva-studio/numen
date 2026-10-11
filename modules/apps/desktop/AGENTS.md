@@ -44,3 +44,7 @@ A window reaches `@numen/ui` through its **build**. Run `npm run build` in
 `modules/libs/ui` before either window's suite, or it fails on
 `Cannot find module '@numen/ui'` — and a stale build is worse, because it
 compiles and draws the wrong thing.
+
+## The PGO profile
+
+`cmd/numen/default.pgo` is the CPU profile `go build` reads through `-pgo=auto`. `make app_desktop_pgo` rebuilds it from the benchmarks of the scan, search, flashcards and editor paths; run it on an idle machine, and again when those paths change enough to move what is hot. `go version -m` on the built binary shows `-pgo=` when the profile was used.
