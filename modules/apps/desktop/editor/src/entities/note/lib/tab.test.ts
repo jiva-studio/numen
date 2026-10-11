@@ -644,14 +644,14 @@ describe('a file about to be renamed or removed', () => {
   it('lets go of the interval it is waiting on', () => {
     const clean = tab()
 
-    expect(tabAfter(clean, { kind: 'settling' })).toEqual({
+    expect(tabAfter(clean, { kind: 'flushing' })).toEqual({
       tab: clean,
       effects: [{ kind: 'disarm' }],
     })
   })
 
   it('writes what is unsaved to the path it still stands at', () => {
-    const next = tabAfter(tab({ shown: 'two', since: 10 }), { kind: 'settling' })
+    const next = tabAfter(tab({ shown: 'two', since: 10 }), { kind: 'flushing' })
 
     expect(next.effects).toEqual([
       { kind: 'disarm' },
@@ -662,7 +662,7 @@ describe('a file about to be renamed or removed', () => {
 
   it('owes a write for what is unsaved behind one already in the air', () => {
     const next = tabAfter(tab({ shown: 'three', pendingWrite: 'two', since: 10 }), {
-      kind: 'settling',
+      kind: 'flushing',
     })
 
     expect(next.tab.hasPendingWrite).toBe(true)
@@ -670,7 +670,7 @@ describe('a file about to be renamed or removed', () => {
   })
 
   it('owes nothing behind a write that carries everything typed', () => {
-    const next = tabAfter(tab({ pendingWrite: 'one' }), { kind: 'settling' })
+    const next = tabAfter(tab({ pendingWrite: 'one' }), { kind: 'flushing' })
 
     expect(next.tab.hasPendingWrite).toBe(false)
     expect(kinds(next.effects)).toEqual(['disarm'])
@@ -678,7 +678,7 @@ describe('a file about to be renamed or removed', () => {
 
   it('writes nothing for a stale tab, whose question is the person to answer', () => {
     const stopped = stale()
-    const next = tabAfter(stopped, { kind: 'settling' })
+    const next = tabAfter(stopped, { kind: 'flushing' })
 
     expect(next.tab).toEqual(stopped)
     expect(kinds(next.effects)).toEqual(['disarm'])
@@ -690,15 +690,15 @@ describe('a file about to be renamed or removed', () => {
       generation: 1,
       answer: { kind: 'missing' },
     }).tab
-    const next = tabAfter(missing, { kind: 'settling' })
+    const next = tabAfter(missing, { kind: 'flushing' })
 
     expect(next.tab).toEqual(missing)
     expect(kinds(next.effects)).toEqual(['disarm'])
   })
 
   it('leaves the tab where it is, so the note is followed wherever it went', () => {
-    const settled = tabAfter(tab(), { kind: 'settling' }).tab
-    const next = tabAfter(settled, {
+    const flushed = tabAfter(tab(), { kind: 'flushing' }).tab
+    const next = tabAfter(flushed, {
       kind: 'changed',
       paths: [],
       renamed: [{ from: 'Note.md', to: 'Moved.md' }],

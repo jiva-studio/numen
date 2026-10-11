@@ -29,7 +29,7 @@ export function useCurveSlider(
   props: CurveSliderProps,
   emit: {
     (event: 'move', place: number): void
-    (event: 'settle'): void
+    (event: 'commit'): void
   },
 ) {
   const picture = ref<SVGSVGElement | null>(null)
@@ -146,7 +146,7 @@ export function useCurveSlider(
   function onPointerUp(event: PointerEvent): void {
     if (!picture.value?.hasPointerCapture(event.pointerId)) return
     picture.value.releasePointerCapture(event.pointerId)
-    emit('settle')
+    emit('commit')
   }
 
   function onKeyDown(event: KeyboardEvent): void {
@@ -158,7 +158,7 @@ export function useCurveSlider(
 
   function onKeyUp(event: KeyboardEvent): void {
     if (walkGrid(event.key, props.place, places.value) === null) return
-    emit('settle')
+    emit('commit')
   }
 
   function setPicture(element: SVGSVGElement | null): void {

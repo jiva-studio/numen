@@ -114,7 +114,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     const isWriting = next.effects.some((effect) => effect.kind === 'write')
     if (held && !isWriting) closing.get(id)?.(false)
 
-    if (next.tab.pendingWrite === null) queue.finishSettle(id)
+    if (next.tab.pendingWrite === null) queue.resolveFlush(id)
   }
 
   function applyEffect(id: string, effect: Effect): void {
@@ -170,7 +170,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     open,
     reload,
     close,
-    settle: queue.settle,
+    flushPending: queue.flushPending,
     getPath,
     has,
     getFilePath,

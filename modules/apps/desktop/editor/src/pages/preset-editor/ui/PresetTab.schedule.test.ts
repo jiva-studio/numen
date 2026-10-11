@@ -176,6 +176,6 @@ describe('the settings the chosen goal schedules by', () => {
     expect((day.element as HTMLInputElement).value).toBe('2026-09-29')
     // A day is chosen in one gesture, so choosing it is being done with it.
     await day.setValue('2026-10-09')
-    expect(done).toStrictEqual(['type byDate 2026-10-09', 'settle'])
+    expect(done).toStrictEqual(['type byDate 2026-10-09', 'flushPending'])
   })
 })

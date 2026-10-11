@@ -46,7 +46,7 @@ const model = defineModel<number | null>({ default: null })
 
 const emit = defineEmits<{
   /** The field come to rest at a number other than the one it was resting at. */
-  settle: [value: number | null]
+  commit: [value: number | null]
 }>()
 
 const bounds = computed(() => ({ min: props.min, max: props.max, step: props.step }))
@@ -54,7 +54,7 @@ const bounds = computed(() => ({ min: props.min, max: props.max, step: props.ste
 /** What stands in the field, which is what was typed until the field is left. */
 const typed = ref(formatNumber(model.value))
 
-/** The number the field last stood at rest at. Settling is what moves it. */
+/** The number the field last stood at rest at. Committing is what moves it. */
 let rested = model.value
 
 /**
@@ -106,19 +106,19 @@ const onInput = (event: Event) => {
 
 /**
  * Leaving writes back what holds: the number on a place of the step, in bounds.
- * A field left standing where it stood has not settled anywhere new.
+ * A field left standing where it stood has not committed anywhere new.
  *
  * What the caller does with the number is the caller's, and the field stands on
  * whatever the caller holds once it has answered.
  */
-const settle = async () => {
+const commit = async () => {
   const value = numberOf(typed.value)
   const now = value === null ? null : snapToBounds(value, bounds.value)
   model.value = now
   typed.value = formatNumber(now)
   if (now !== rested) {
     rested = now
-    emit('settle', now)
+    emit('commit', now)
   }
   await nextTick()
   if (!isTextForValue(typed.value, model.value)) {
@@ -129,11 +129,11 @@ const settle = async () => {
 
 /**
  * A key the spin button answers: the arrows a step, the page keys ten, and home
- * and end the ends. Enter settles the field where it stands.
+ * and end the ends. Enter commits the field where it stands.
  */
 const onKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
-    void settle()
+    void commit()
     return
   }
   const steppedValue = stepForKey(event.key, numberOf(typed.value) ?? model.value, bounds.value)
@@ -180,7 +180,7 @@ defineExpose({
       )
     "
     @input="onInput"
-    @blur="settle"
+    @blur="commit"
     @keydown="onKeyDown"
   />
 </template>

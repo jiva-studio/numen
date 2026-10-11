@@ -230,7 +230,7 @@ const PRESET_STATE: PresetTabState = {
   reload: () => {},
   chooseGoal: () => {},
   moveSlider: () => {},
-  settle: () => {},
+  flushPending: () => {},
   updateSetting: () => {},
   close: () => {},
 }

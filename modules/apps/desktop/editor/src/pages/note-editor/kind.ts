@@ -148,7 +148,7 @@ export function useNoteTab(
     getPath: (id) => notes.getPath(id),
     getTitle: (id) => names.getTitle(id),
     asking: (id) => notes.stale(id) !== null,
-    settle: (id) => notes.settle(id),
+    flushPending: (id) => notes.flushPending(id),
     close: closeTab,
     getTabAt: (path) => tabbed.value.get(path) ?? null,
   }
@@ -161,7 +161,7 @@ export function useNoteTab(
       return
     }
     changes.closeNote(currentPath)
-    await notes.settle(id)
+    await notes.flushPending(id)
     notes.reload(id, path)
     if (title) {
       names.setTitle(id, title)

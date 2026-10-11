@@ -315,7 +315,7 @@ describe('a stencil the vault refused', () => {
     const { stencils, tab } = await open({ wrote: 'unreadable' })
 
     tab.addField('Weight')
-    await stencils.kept.settle(stencils.getOpenIds()[0] ?? '')
+    await stencils.kept.flushPending(stencils.getOpenIds()[0] ?? '')
 
     expect(tab.errorMessage.value).toBe(words.notSaved)
   })

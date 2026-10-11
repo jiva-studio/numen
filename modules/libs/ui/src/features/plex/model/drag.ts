@@ -32,7 +32,7 @@ export interface PlexDragDeps {
   readonly getAllowedSeats: () => readonly PlexRelatedSeat[]
   /** How far from the focus the pointer stands before it names a direction. */
   readonly getThreshold: () => number
-  readonly settle: (dragged: readonly string[], seat: PlexRelatedSeat) => void
+  readonly commit: (dragged: readonly string[], seat: PlexRelatedSeat) => void
 }
 
 /**
@@ -65,7 +65,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
 
   /**
    * What the drag was handed, held for the life of the gesture. Whoever is
-   * dragging them may put them down on the same release this settles on.
+   * dragging them may put them down on the same release this commits on.
    */
   let activeDragIds: readonly string[] = []
 
@@ -84,9 +84,9 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
   const finish = (event: PointerEvent) => {
     move(event)
     const dragged = activeDragIds
-    const settled = seat.value
+    const resolved = seat.value
     stop()
-    if (dragged.length > 0 && settled) drag.settle(dragged, settled)
+    if (dragged.length > 0 && resolved) drag.commit(dragged, resolved)
   }
 
   const follow = () => {

@@ -74,7 +74,7 @@ export interface PresetTabActions {
   reload(): void
   chooseGoal(goal: Goal): void
   moveSlider(place: number): void
-  settle(): void
+  flushPending(): void
   updateSetting(field: Field, value: SettingValue): void
   close(id: string): void
 }

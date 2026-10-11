@@ -22,7 +22,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'move', place: number): void
-  (event: 'settle'): void
+  (event: 'commit'): void
 }>()
 
 // --- State ---

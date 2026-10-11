@@ -35,7 +35,7 @@ function onDayStartsChange(hour: string) {
         :max="installation.latestDayStarts.value"
         :aria-labelledby="labelledBy"
         class="settings__number"
-        @settle="onDayStartsChange"
+        @commit="onDayStartsChange"
       />
     </SettingRow>
   </section>

@@ -1,8 +1,9 @@
 /**
  * Carrying a command out, asked without a window.
  *
- * Two things are asked here: that a note is settled before its file is renamed
- * or removed, and that what a remove leaves behind is put to the person.
+ * Two things are asked here: that a note's pending write is flushed before its
+ * file is renamed or removed, and that what a remove leaves behind is put to
+ * the person.
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
@@ -185,7 +186,7 @@ const window = (
       getTabAt: (path) => (path === at ? 'held' : null),
       getPath: (id) => (id === 'held' ? at : id),
       asking: () => answers.isAsking === true,
-      settle: async (id) => void done.push(`settle ${id}`),
+      flushPending: async (id) => void done.push(`flushPending ${id}`),
       close: (id) => void done.push(`close ${id}`),
       openFile: (path, title, showing) => void done.push(`openFile ${path} ${title} ${showing}`),
       openNewFile: (path, title, type, showing) =>
@@ -528,7 +529,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['settle held', 'rename physics/Ontology.md Entropy'])
+    expect(one.done).toStrictEqual(['flushPending held', 'rename physics/Ontology.md Entropy'])
   })
 
   it('is refused while the note is waiting on the person', async () => {
@@ -619,7 +620,10 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.done.slice(0, 2)).toStrictEqual(['settle held', 'remove physics/Ontology.md false'])
+    expect(one.done.slice(0, 2)).toStrictEqual([
+      'flushPending held',
+      'remove physics/Ontology.md false',
+    ])
   })
 
   it('goes off the disk where destroying was what was asked', async () => {
@@ -766,15 +770,18 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done).toStrictEqual(['settle held', 'move physics/Ontology.md notes/Ontology.md'])
+    expect(one.done).toStrictEqual([
+      'flushPending held',
+      'move physics/Ontology.md notes/Ontology.md',
+    ])
   })
 
-  it('settles the tab holding it before its file goes anywhere', async () => {
+  it('flushes the tab holding it before its file goes anywhere', async () => {
     const one = window()
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done.indexOf('settle held')).toBeLessThan(
+    expect(one.done.indexOf('flushPending held')).toBeLessThan(
       one.done.indexOf('move physics/Ontology.md notes/Ontology.md'),
     )
   })
@@ -849,7 +856,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(invocationOf('title', front(), 'Substance', 'held'), one.on)
 
-    expect(one.done).toStrictEqual(['settle held', 'rename physics/Being.md Substance'])
+    expect(one.done).toStrictEqual(['flushPending held', 'rename physics/Being.md Substance'])
   })
 
   it('is removed where it stands now', async () => {
@@ -857,7 +864,10 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(invocationOf('remove', front(), '', 'held'), one.on)
 
-    expect(one.done.slice(0, 2)).toStrictEqual(['settle held', 'remove physics/Being.md false'])
+    expect(one.done.slice(0, 2)).toStrictEqual([
+      'flushPending held',
+      'remove physics/Being.md false',
+    ])
   })
 
   it('is left at the name it was made over where no tab holds it', async () => {
@@ -1098,7 +1108,7 @@ describe('the open files a command reaches', () => {
     getPath: (one) => (one === id ? path : one),
     getTitle: (one) => (one === id ? `${id} called` : ''),
     asking: () => false,
-    settle: async (one) => void steps.push(`settle ${one}`),
+    flushPending: async (one) => void steps.push(`flushPending ${one}`),
     close: (one) => void steps.push(`close ${one}`),
     getTabAt: (one) => (one === path ? id : null),
   })
@@ -1117,19 +1127,19 @@ describe('the open files a command reaches', () => {
     expect(one.notes.getTabAt('Loose.md')).toBeNull()
   })
 
-  it('settles and shuts the store holding the identity, and no other', async () => {
+  it('flushes and shuts the store holding the identity, and no other', async () => {
     const one = createStores()
 
-    await one.notes.settle('Animals.md')
+    await one.notes.flushPending('Animals.md')
     one.notes.close('Animals.md')
 
-    expect(one.done).toStrictEqual(['settle Animals.md', 'close Animals.md'])
+    expect(one.done).toStrictEqual(['flushPending Animals.md', 'close Animals.md'])
   })
 
   it('leaves an identity no store holds where it was, and does nothing to it', async () => {
     const one = createStores()
 
-    await one.notes.settle('Gone.md')
+    await one.notes.flushPending('Gone.md')
     one.notes.close('Gone.md')
 
     expect(one.notes.getPath('Gone.md')).toBe('Gone.md')

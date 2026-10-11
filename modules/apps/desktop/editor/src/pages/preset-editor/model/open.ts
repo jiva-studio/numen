@@ -179,7 +179,7 @@ export const createPresetState = (
     reload: () => void readPreset(one, core, bounds, titles, today()),
     chooseGoal,
     moveSlider,
-    settle: () =>
+    flushPending: () =>
       void requestWrite(one.flight, one.path.value, one.settings.value, core, writeMessage),
     updateSetting,
     close: closeTab,

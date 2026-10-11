@@ -221,12 +221,12 @@ describe('the other keys a spin button answers', () => {
   })
 })
 
-// A caller writes what it holds when the field settles, so a field left alone
-// is a field that has settled nowhere.
+// A caller writes what it holds when the field commits, so a field left alone
+// is a field that has committed nowhere.
 describe('leaving the field', () => {
   /** Every number the field has come to rest at, in the order it rested at them. */
-  const getSettles = (field: ReturnType<typeof mountField>): readonly unknown[] =>
-    (field.emitted('settle') ?? []).map((said) => (said as unknown[])[0])
+  const getCommits = (field: ReturnType<typeof mountField>): readonly unknown[] =>
+    (field.emitted('commit') ?? []).map((said) => (said as unknown[])[0])
 
   it('says nothing where nothing was typed into it', async () => {
     const field = mountField()
@@ -234,7 +234,7 @@ describe('leaving the field', () => {
     await field.get('input').trigger('focus')
     await field.get('input').trigger('blur')
 
-    expect(getSettles(field)).toEqual([])
+    expect(getCommits(field)).toEqual([])
   })
 
   it('says nothing where what was typed came to the number already standing', async () => {
@@ -242,7 +242,7 @@ describe('leaving the field', () => {
     await field.get('input').setValue('20')
     await field.get('input').trigger('blur')
 
-    expect(getSettles(field)).toEqual([])
+    expect(getCommits(field)).toEqual([])
   })
 
   it('says it where the number the field comes to rest at is another one', async () => {
@@ -251,7 +251,7 @@ describe('leaving the field', () => {
     await field.get('input').trigger('blur')
     await field.get('input').trigger('blur')
 
-    expect(getSettles(field)).toEqual([45])
+    expect(getCommits(field)).toEqual([45])
   })
 
   it('says nothing where a number set from outside is the one it is left at', async () => {
@@ -259,7 +259,7 @@ describe('leaving the field', () => {
     await field.setProps({ modelValue: 60 })
     await field.get('input').trigger('blur')
 
-    expect(getSettles(field)).toEqual([])
+    expect(getCommits(field)).toEqual([])
   })
 })
 

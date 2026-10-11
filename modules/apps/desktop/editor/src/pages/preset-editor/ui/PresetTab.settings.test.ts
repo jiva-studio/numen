@@ -2,7 +2,7 @@
  * The settings under the control: the rows a person types into, and what the
  * tab says about what it could not do.
  *
- * A row is written once the typing settles, and the words a row is drawn in
+ * A row is written once the typing is flushed, and the words a row is drawn in
  * come from one place, which is what the two sources are read for.
  */
 import { describe, expect, it } from 'vitest'
@@ -35,7 +35,7 @@ describe('the settings under the control', () => {
 
     const unit = tab.findAll('button').find((one) => one.text() === words.budgetUnitName('shows'))
     await unit?.trigger('click')
-    expect(done).toStrictEqual(['type counts shows', 'settle'])
+    expect(done).toStrictEqual(['type counts shows', 'flushPending'])
   })
 
   // The share of a day the debt takes is moved along its whole range, so any
@@ -61,7 +61,7 @@ describe('the settings under the control', () => {
     await track.trigger('keydown', { key: 'ArrowLeft' })
     expect(done).toStrictEqual(['type backlog 69'])
     await track.trigger('keyup', { key: 'ArrowLeft' })
-    expect(done).toStrictEqual(['type backlog 69', 'settle'])
+    expect(done).toStrictEqual(['type backlog 69', 'flushPending'])
   })
 
   // The rule stands over the one value it reads, and the value the other rule
@@ -110,7 +110,7 @@ describe('the settings under the control', () => {
     )
     chosen?.click()
     await tab.vm.$nextTick()
-    expect(done).toStrictEqual(['type learned retention', 'settle'])
+    expect(done).toStrictEqual(['type learned retention', 'flushPending'])
   })
 
   it('holds the days a card is put off inside what a preset may hold', async () => {
@@ -246,7 +246,7 @@ describe('the load of the week', () => {
     await tab.vm.$nextTick()
 
     expect(put).toStrictEqual([['load', { sat: 50, sun: 0, mon: 25 }]])
-    expect(done).toStrictEqual(['type', 'settle'])
+    expect(done).toStrictEqual(['type', 'flushPending'])
   })
 
   it('stops naming a day put back to the whole of a day', async () => {

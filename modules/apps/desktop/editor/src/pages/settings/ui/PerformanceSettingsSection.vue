@@ -113,7 +113,7 @@ function setSetting(at: readonly string[], value: unknown): void {
           :step="1"
           :aria-labelledby="labelledBy"
           class="settings__number"
-          @settle="onEmbeddingBatchSizeChange"
+          @commit="onEmbeddingBatchSizeChange"
         />
       </SettingRow>
 
@@ -130,7 +130,7 @@ function setSetting(at: readonly string[], value: unknown): void {
           :step="1"
           :aria-labelledby="labelledBy"
           class="settings__number"
-          @settle="onOcrThreadsChange"
+          @commit="onOcrThreadsChange"
         />
       </SettingRow>
 
@@ -147,7 +147,7 @@ function setSetting(at: readonly string[], value: unknown): void {
           :step="1"
           :aria-labelledby="labelledBy"
           class="settings__number"
-          @settle="onOcrSessionsChange"
+          @commit="onOcrSessionsChange"
         />
       </SettingRow>
 
@@ -164,7 +164,7 @@ function setSetting(at: readonly string[], value: unknown): void {
           :step="1"
           :aria-labelledby="labelledBy"
           class="settings__number"
-          @settle="onLlmConcurrencyChange"
+          @commit="onLlmConcurrencyChange"
         />
       </SettingRow>
     </template>

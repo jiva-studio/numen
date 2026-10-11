@@ -20,8 +20,8 @@ export const createNotes = (
     },
     getPath: (id) => holder(id)?.getPath(id) ?? id,
     asking: (id) => holder(id)?.asking(id) ?? false,
-    settle: async (id) => {
-      await holder(id)?.settle(id)
+    flushPending: async (id) => {
+      await holder(id)?.flushPending(id)
     },
     close: (id) => holder(id)?.close(id),
     openFile: noteOpeners.openFile,

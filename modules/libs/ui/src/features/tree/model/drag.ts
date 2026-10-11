@@ -71,7 +71,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     getThreshold: options.getThreshold,
     getClock: options.getClock,
     getLandingAt,
-    settle: (rows, found) => {
+    commit: (rows, found) => {
       if (found) options.tell('move', rows, found)
       options.tell('drop')
     },

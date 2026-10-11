@@ -133,7 +133,7 @@ const tabAt = (
       place.value = at
       done.push(`move ${at}`)
     },
-    settle: () => void done.push('settle'),
+    flushPending: () => void done.push('flushPending'),
     updateSetting: (field, value) => void done.push(`type ${field} ${value}`),
     close: () => {},
   }

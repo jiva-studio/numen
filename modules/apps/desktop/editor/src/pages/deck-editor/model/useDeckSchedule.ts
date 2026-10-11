@@ -31,7 +31,7 @@ export interface Choice {
 export interface ScheduledStore {
   getPath(id: string): string
   getFilePath(id: string): string
-  settle(id: string): Promise<void>
+  flushPending(id: string): Promise<void>
   applyPathChanges(paths: readonly string[]): void
 }
 
@@ -93,7 +93,7 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
    */
   const scheduleDeck = async (id: string, preset: string): Promise<void> => {
     const path = store.getPath(id)
-    await store.settle(id)
+    await store.flushPending(id)
     try {
       const answer = await presets.scheduleDeck(path, preset, store.getFilePath(id))
       if (answer.ok) setChoiceMessage(id, '')

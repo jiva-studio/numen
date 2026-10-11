@@ -87,10 +87,10 @@ describe('PerformanceSettingsSection', () => {
     const numberFields = wrapper.findAllComponents({ name: 'NumberField' })
     expect(numberFields).toHaveLength(4)
 
-    numberFields[0]!.vm.$emit('settle', 128)
-    numberFields[1]!.vm.$emit('settle', 12)
-    numberFields[2]!.vm.$emit('settle', 4)
-    numberFields[3]!.vm.$emit('settle', 8)
+    numberFields[0]!.vm.$emit('commit', 128)
+    numberFields[1]!.vm.$emit('commit', 12)
+    numberFields[2]!.vm.$emit('commit', 4)
+    numberFields[3]!.vm.$emit('commit', 8)
 
     expect(written).toStrictEqual([
       { at: paths.performanceEmbeddingBatchSize, value: '128' },
@@ -100,14 +100,14 @@ describe('PerformanceSettingsSection', () => {
     ])
   })
 
-  it('ignores null values on custom numeric fields settle', async () => {
+  it('ignores null values on custom numeric fields commit', async () => {
     const { wrapper, written } = createSection({ performance: { profile: 'custom' } })
     const numberFields = wrapper.findAllComponents({ name: 'NumberField' })
 
-    numberFields[0]!.vm.$emit('settle', null)
-    numberFields[1]!.vm.$emit('settle', null)
-    numberFields[2]!.vm.$emit('settle', null)
-    numberFields[3]!.vm.$emit('settle', null)
+    numberFields[0]!.vm.$emit('commit', null)
+    numberFields[1]!.vm.$emit('commit', null)
+    numberFields[2]!.vm.$emit('commit', null)
+    numberFields[3]!.vm.$emit('commit', null)
 
     expect(written).toHaveLength(0)
   })

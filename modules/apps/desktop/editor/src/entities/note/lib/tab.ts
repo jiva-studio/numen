@@ -42,8 +42,8 @@ const applyAsked = (tab: Tab, kind: AskedKind): Transition => {
       return applyTimer(tab)
     case 'saving':
       return applySave(tab)
-    case 'settling':
-      return applySettle(tab)
+    case 'flushing':
+      return applyFlush(tab)
     case 'keeping':
       return applyKeep(tab)
     case 'taking':
@@ -181,9 +181,9 @@ const applySave = (tab: Tab): Transition => {
 }
 
 /**
- * Settling disarms the timer and writes unsaved text immediately.
+ * Flushing disarms the timer and writes unsaved text immediately.
  */
-const applySettle = (tab: Tab): Transition => {
+const applyFlush = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'unsaved') {
     const going = beginWrite(tab, getBaseline(tab))

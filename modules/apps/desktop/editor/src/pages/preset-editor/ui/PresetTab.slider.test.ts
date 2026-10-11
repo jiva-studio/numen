@@ -30,7 +30,7 @@ describe('the one slider', () => {
     const control = tab.get('[data-control="picture"][role="slider"]')
     await control.trigger('keydown', { key: 'ArrowRight' })
     await control.trigger('keyup', { key: 'ArrowRight' })
-    expect(done).toStrictEqual(['move 3', 'settle'])
+    expect(done).toStrictEqual(['move 3', 'flushPending'])
   })
 
   it('walks to either end, and no further', async () => {

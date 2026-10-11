@@ -219,7 +219,7 @@ describe('the value the goal steers', () => {
   it('leaves the knob, the field and what is written at one value after a drag', async () => {
     const { state, written } = await openPresetTab()
     state.moveSlider(3)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     expect(state.place.value).toBe(3)
     expect(state.settings.value.minutesADay).toBe(30)
@@ -232,7 +232,7 @@ describe('the value the goal steers', () => {
   it('is the number typed, and the knob goes to the place nearest it', async () => {
     const { state, written } = await openPresetTab()
     state.updateSetting('minutesADay', 21)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     expect(state.place.value).toBe(2)
     expect(state.settings.value.minutesADay).toBe(21)
@@ -250,7 +250,7 @@ describe('the value the goal steers', () => {
       },
     )
     state.updateSetting('retention', 0.873)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     expect(state.place.value).toBe(1)
     expect(state.settings.value.retention).toBe(0.873)
@@ -263,7 +263,7 @@ describe('the value the goal steers', () => {
       { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
     )
     state.updateSetting('byDate', '2026-09-29')
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     expect(state.place.value).toBe(2)
     expect(state.settings.value.byDate).toBe('2026-09-29')
@@ -276,7 +276,7 @@ describe('the value the goal steers', () => {
       { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
     )
     state.updateSetting('byDate', '2026-09-22')
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     expect(state.place.value).toBe(1)
     expect(state.settings.value.byDate).toBe('2026-09-22')
@@ -299,7 +299,7 @@ describe('the curve behind the knob', () => {
     const { state, asked } = await openPresetTab()
     state.moveSlider(1)
     state.moveSlider(3)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     await Promise.resolve()
     await Promise.resolve()
@@ -488,7 +488,7 @@ describe('what the tab says it encountered as an error', () => {
         () => ({ error }),
       )
       state.updateSetting('newADay', 4)
-      state.settle()
+      state.flushPending()
       await flushPromises()
       messages.push(state.errorMessage.value)
     }
@@ -611,7 +611,7 @@ describe('what a tab still owes the file', () => {
           : {},
     )
     state.updateSetting('newADay', 4)
-    state.settle()
+    state.flushPending()
     await flushPromises()
 
     let isDone = false
@@ -699,7 +699,7 @@ describe('what the control writes', () => {
     // nothing under.
     const { state, written } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 0 })
     state.moveSlider(3)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
 
     expect(state.settings.value.minutesADay).toBe(30)
@@ -712,7 +712,7 @@ describe('what the control writes', () => {
   it('leaves the counts and the target alone under a goal of minutes', async () => {
     const { state, written } = await openPresetTab({ reviewsADay: 12, retention: 0.95 })
     state.moveSlider(1)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     expect(state.settings.value.reviewsADay).toBe(12)
     expect(state.settings.value.retention).toBe(0.95)
@@ -731,7 +731,7 @@ describe('a setting the goal on screen does not name', () => {
     )
 
     state.moveSlider(1)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     expect(written.at(-1)?.reviewsADay).toBe(7)
     expect(written.at(-1)?.newADay).toBe(12)
@@ -740,7 +740,7 @@ describe('a setting the goal on screen does not name', () => {
   it('comes back the moment its own goal is chosen again', async () => {
     const { state, written } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
     state.moveSlider(3)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
 
     state.chooseGoal('retention')
@@ -786,7 +786,7 @@ describe('a field the goal does not steer, typed', () => {
     expect(state.place.value).toBe(state.curve.value.now.at)
 
     state.updateSetting('backlog', 5)
-    state.settle()
+    state.flushPending()
     await Promise.resolve()
     await Promise.resolve()
     await Promise.resolve()
@@ -814,7 +814,7 @@ describe('a field the goal does not steer, typed', () => {
         const { state, written } = await openPresetTab({ goal, minutesADay: 23 }, createRangedCurve)
         const was = state.settings.value
         state.updateSetting(field, value)
-        state.settle()
+        state.flushPending()
         await Promise.resolve()
         await Promise.resolve()
         await Promise.resolve()
@@ -854,7 +854,7 @@ describe('a field moved before the first read lands', () => {
     expect(tab.settings.value.newADay).toBe(3)
     expect(tab.settings.value.interval).toBe(40)
 
-    tab.settle()
+    tab.flushPending()
     await flushPromises()
     expect(written.at(-1)).toStrictEqual(tab.settings.value)
   })

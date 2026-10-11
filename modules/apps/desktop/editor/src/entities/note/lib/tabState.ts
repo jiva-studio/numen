@@ -121,7 +121,7 @@ export type Event =
       readonly renamed: readonly Move[]
     }
   | { readonly kind: 'saving' }
-  | { readonly kind: 'settling' }
+  | { readonly kind: 'flushing' }
   | { readonly kind: 'keeping' }
   | { readonly kind: 'taking' }
   | { readonly kind: 'closing' }

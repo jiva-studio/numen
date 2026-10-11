@@ -16,8 +16,8 @@ export interface NoteTitlesDeps {
   neighbourhood(path: string): Promise<{ focus?: { title?: string } | undefined }>
 }
 
-/** One settled note: the identity it opened under, and the file it settled at. */
-interface SettledNote {
+/** One clean note: the identity it opened under, and the file it stands at. */
+interface CleanNote {
   readonly id: string
   readonly at: string
 }
@@ -54,8 +54,8 @@ export function createNoteTitles(vault: NoteTitlesDeps, notes: Notes) {
     }
   }
 
-  /** Every note that has settled, each with the file it settled at. */
-  const getSettledNotes = (): readonly SettledNote[] =>
+  /** Every clean note, each with the file it stands at. */
+  const getCleanNotes = (): readonly CleanNote[] =>
     notes
       .getOpenIds()
       .filter((id) => notes.getOpenNote(id).state === 'clean')
@@ -63,9 +63,9 @@ export function createNoteTitles(vault: NoteTitlesDeps, notes: Notes) {
 
   /**
    * A note is asked what it is called once what was typed into it has landed,
-   * and again once it settles at another file.
+   * and again once a clean note's file changes.
    */
-  watch(getSettledNotes, (now, before) => {
+  watch(getCleanNotes, (now, before) => {
     for (const one of now) {
       if (!before?.some((was) => was.id === one.id && was.at === one.at)) void refreshTitle(one.id)
     }

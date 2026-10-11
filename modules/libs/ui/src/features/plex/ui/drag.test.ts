@@ -3,7 +3,7 @@
  *
  * jsdom lays nothing out and has no pointer, so the element's matrix is stubbed
  * and the events are made here. What is being checked is the plumbing — that
- * the plex picks a drag up, follows it, draws it and settles it — not the
+ * the plex picks a drag up, follows it, draws it and commits it — not the
  * arithmetic, which is `arrange/drop.test.ts` and needs none of this.
  */
 import { mount } from '@vue/test-utils'
