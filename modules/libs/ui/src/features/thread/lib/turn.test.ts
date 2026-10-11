@@ -1,5 +1,9 @@
+import vm from 'node:vm'
+import { setFlagsFromString } from 'node:v8'
 import { describe, expect, it } from 'vitest'
 import { placeTurns, VOICES, type Turn } from './turn'
+
+setFlagsFromString('--expose-gc')
 
 const createAsked = (id: string, text = 'said', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
@@ -46,5 +50,45 @@ describe('placing the turns', () => {
     const placed = placeTurns([createAsked('1', '')])
     expect(placed).toHaveLength(1)
     expect(placed[0]?.turn.text).toBe('')
+  })
+})
+
+describe('placing the same turns again', () => {
+  it('hands back the entry a turn was given before', () => {
+    const turns = [createAsked('1'), createAnswered('2')]
+    const first = placeTurns(turns)
+    const second = placeTurns([...turns])
+    expect(second[0]).toBe(first[0])
+    expect(second[1]).toBe(first[1])
+  })
+
+  it('keeps the entries of earlier turns while the last one changes', () => {
+    const earlier = [createAsked('1'), createAnswered('2')]
+    const first = placeTurns([...earlier, createAnswered('3', 'th')])
+    const second = placeTurns([...earlier, createAnswered('3', 'thi')])
+    expect(second[0]).toBe(first[0])
+    expect(second[1]).toBe(first[1])
+    expect(second[2]).not.toBe(first[2])
+    expect(second[2]?.turn.text).toBe('thi')
+  })
+
+  it('does not keep a turn that was removed', async () => {
+    const collect = vm.runInNewContext('gc') as () => void
+    let isCollected = false
+    const registry = new FinalizationRegistry(() => (isCollected = true))
+    const place = () => {
+      const turn = createAnswered('1', 'removed')
+      registry.register(turn, 'removed')
+      placeTurns([turn])
+    }
+    place()
+
+    for (let attempt = 0; attempt < 50 && !isCollected; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      collect()
+    }
+
+    expect(isCollected).toBe(true)
+    expect(registry).toBeDefined()
   })
 })

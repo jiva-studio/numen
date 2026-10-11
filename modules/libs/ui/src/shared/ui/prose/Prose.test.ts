@@ -81,3 +81,25 @@ describe('prose pressed anywhere else', () => {
     expect(wrapper.emitted('follow')).toBeUndefined()
   })
 })
+
+describe('prose handed the same addresses again', () => {
+  it('is not drawn again while the unresolved addresses have the same members', async () => {
+    const wrapper = mount(Prose, {
+      props: { text: 'See [[Nowhere]].', unresolved: ['name://Nowhere'] },
+    })
+    const before = wrapper.find('a').element
+
+    await wrapper.setProps({ unresolved: ['name://Nowhere'] })
+
+    expect(wrapper.find('a').element).toBe(before)
+  })
+
+  it('is drawn again when the unresolved addresses change', async () => {
+    const wrapper = mount(Prose, { props: { text: 'See [[Nowhere]].', unresolved: [] } })
+    expect(wrapper.find('a').attributes('data-reaches')).toBeUndefined()
+
+    await wrapper.setProps({ unresolved: ['name://Nowhere'] })
+
+    expect(wrapper.find('a').attributes('data-reaches')).toBeDefined()
+  })
+})

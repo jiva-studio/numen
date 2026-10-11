@@ -56,16 +56,25 @@ export interface PlacedTurn {
   readonly state: TurnState
 }
 
-/** The turns, with what is true of each where it sits. */
-export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] =>
-  turns.map((turn) => {
-    const state = turn.state ?? 'settled'
-    return {
-      turn,
-      voice: VOICES[turn.voice],
-      state,
-    }
-  })
+/** The unresolved addresses of a turn that names none. */
+export const NO_UNRESOLVED: readonly string[] = Object.freeze([])
+
+const placedByTurn = new WeakMap<Turn, PlacedTurn>()
+
+const placeTurn = (turn: Turn): PlacedTurn => {
+  const known = placedByTurn.get(turn)
+  if (known) return known
+  const placed: PlacedTurn = {
+    turn,
+    voice: VOICES[turn.voice],
+    state: turn.state ?? 'settled',
+  }
+  placedByTurn.set(turn, placed)
+  return placed
+}
+
+/** The turns, with what is true of each where it sits. A turn keeps the entry it was first given. */
+export const placeTurns = (turns: readonly Turn[]): readonly PlacedTurn[] => turns.map(placeTurn)
 
 /**
  * How much of a call has been written, in words.

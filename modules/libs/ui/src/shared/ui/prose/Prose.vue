@@ -30,7 +30,12 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const drawn = computed(() => render(props.text, new Set(props.unresolved)))
+/** The same set for as long as the unresolved addresses have the same members. */
+const deadAddresses = computed<ReadonlySet<string>>((previous) => {
+  const members = new Set(props.unresolved)
+  return previous && isSameSet(previous, members) ? previous : members
+})
+const drawn = computed(() => render(props.text, deadAddresses.value))
 const Drawn = () => drawn.value
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -41,6 +46,11 @@ const onClick = (press: MouseEvent) => {
   // A note is addressed and not located, so a browser has nowhere to take one.
   if (isNoteAddress(href)) press.preventDefault()
   emit('follow', href, press)
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function isSameSet(a: ReadonlySet<string>, b: ReadonlySet<string>) {
+  return a.size === b.size && [...a].every((one) => b.has(one))
 }
 </script>
 

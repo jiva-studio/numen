@@ -203,15 +203,26 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     { immediate: true },
   )
 
+  /** The turn as last drawn, with the unresolved addresses it was drawn with. */
+  const enrichedByTurn = new WeakMap<Turn, { unresolved: readonly string[]; enriched: Turn }>()
+
+  const isSameList = (a: readonly string[], b: readonly string[]) =>
+    a.length === b.length && a.every((one, index) => one === b[index])
+
+  const enrichTurn = (turn: Turn): Turn => {
+    const unresolved = getTurnAddresses(turn).filter(
+      (address) => resolvedAddresses.value.get(address) === '',
+    )
+    if (!unresolved.length) return turn
+    const known = enrichedByTurn.get(turn)
+    if (known && isSameList(known.unresolved, unresolved)) return known.enriched
+    const enriched = { ...turn, unresolved }
+    enrichedByTurn.set(turn, { unresolved, enriched })
+    return enriched
+  }
+
   /** The turns as the thread draws them, each saying which of its links reach nothing. */
-  const turns = computed<Turn[]>(() =>
-    conversation.turns.value.map((turn) => {
-      const unresolved = getTurnAddresses(turn).filter(
-        (address) => resolvedAddresses.value.get(address) === '',
-      )
-      return unresolved.length ? { ...turn, unresolved } : turn
-    }),
-  )
+  const turns = computed<Turn[]>(() => conversation.turns.value.map(enrichTurn))
 
   /**
    * A link inside an answer pressed. One naming a place in the vault opens it,
