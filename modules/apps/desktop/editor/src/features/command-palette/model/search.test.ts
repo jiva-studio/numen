@@ -541,3 +541,189 @@ describe('a group landing under the keyboard', () => {
     expect(after).toBe(before)
   })
 })
+
+/** A hold that ends when the test says so, one per keystroke, in order. */
+function createHolds() {
+  const holds: Deferred<void>[] = []
+  const wait = () => {
+    const one = later<void>()
+    holds.push(one)
+    return one.promise
+  }
+  return { holds, wait }
+}
+
+/** How each group stands: what it holds, whether it is working, what it says. */
+const describeGroups = (groups: readonly { id: string }[]) =>
+  Object.fromEntries(
+    ['names', 'text', 'meaning'].map((id) => {
+      const group = groupOf(groups, id)
+      return [
+        id,
+        { items: group?.items.length, isWorking: group?.isWorking, silence: group?.silence },
+      ]
+    }),
+  )
+
+/** Every group holding nothing, working at nothing and saying nothing. */
+const IDLE = {
+  names: { items: 0, isWorking: false, silence: '' },
+  text: { items: 0, isWorking: false, silence: '' },
+  meaning: { items: 0, isWorking: false, silence: '' },
+}
+
+describe('the hold before a question', () => {
+  it('draws every group idle and saying nothing while the first keystroke waits', async () => {
+    const vault = createVault()
+    const { wait } = createHolds()
+    const palette = useSearch(vault.core, WORDS, { wait })
+
+    void palette.setTyped('ent')
+    await flushPromises()
+
+    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+  })
+
+  it('draws every group working once the hold is out and nothing has answered', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+
+    void palette.setTyped('ent')
+    await flushPromises()
+
+    expect(groupOf(palette.groups.value, 'names')?.isWorking).toBe(true)
+    expect(groupOf(palette.groups.value, 'text')?.isWorking).toBe(true)
+    expect(groupOf(palette.groups.value, 'meaning')?.isWorking).toBe(true)
+  })
+
+  it('asks nothing about a keystroke another one overtook while it waited', async () => {
+    const vault = createVault()
+    const { holds, wait } = createHolds()
+    const palette = useSearch(vault.core, WORDS, { wait })
+
+    void palette.setTyped('e')
+    void palette.setTyped('en')
+    holds[0]?.answer()
+    await flushPromises()
+
+    expect(vault.queries).toStrictEqual([])
+
+    holds[1]?.answer()
+    await flushPromises()
+
+    expect(vault.queries).toStrictEqual(['en', 'en', 'en'])
+  })
+})
+
+describe('what was typed taken back', () => {
+  it('forgets what each group found and said, before anything else is typed', async () => {
+    const vault = createVault()
+    const { holds, wait } = createHolds()
+    const palette = useSearch(vault.core, WORDS, { wait })
+    void palette.setTyped('ent')
+    holds[0]?.answer()
+    await flushPromises()
+    vault.names[0]?.answer([createNameMatch()])
+    vault.mode('words')?.answer([passage()])
+    vault.mode('meaning')?.fail('no model is set')
+    await flushPromises()
+
+    void palette.setTyped('')
+    void palette.setTyped('heat')
+    await flushPromises()
+
+    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+  })
+
+  it('draws no group at all where only spaces are typed', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+
+    void palette.setTyped('   ')
+    await flushPromises()
+
+    expect(palette.groups.value).toHaveLength(0)
+  })
+})
+
+describe('answers to a question overtaken', () => {
+  it('draws no failure of a question nobody is asking any more', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    void palette.setTyped('ent')
+    await flushPromises()
+    void palette.setTyped('entr')
+    await flushPromises()
+
+    vault.names[1]?.answer([createNameMatch()])
+    vault.names[0]?.fail('the vault went away')
+    await flushPromises()
+
+    expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(1)
+    expect(groupOf(palette.groups.value, 'names')?.silence).toBe('')
+  })
+
+  it('keeps the group working where only the overtaken question has answered', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    void palette.setTyped('ent')
+    await flushPromises()
+    void palette.setTyped('entr')
+    await flushPromises()
+
+    vault.names[0]?.answer([createNameMatch()])
+    await flushPromises()
+
+    expect(groupOf(palette.groups.value, 'names')?.isWorking).toBe(true)
+  })
+
+  it('holds nothing in a group whose question failed', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    void palette.setTyped('ent')
+    await flushPromises()
+
+    vault.names[0]?.fail('the vault went away')
+    await flushPromises()
+
+    expect(groupOf(palette.groups.value, 'names')?.items).toStrictEqual([])
+  })
+})
+
+describe('the palette opened and put away', () => {
+  it('keeps what was typed and what answered when it is opened while open', async () => {
+    const vault = createVault()
+    const palette = useSearch(vault.core, WORDS, { wait: now })
+    palette.setOpen(true)
+    void palette.setTyped('ent')
+    await flushPromises()
+
+    palette.setOpen(true)
+    vault.names[0]?.answer([createNameMatch()])
+    await flushPromises()
+
+    expect(palette.typed.value).toBe('ent')
+    expect(groupOf(palette.groups.value, 'names')?.items).toHaveLength(1)
+  })
+
+  it('draws nothing from before it was put away once it is typed into again', async () => {
+    const vault = createVault()
+    const { holds, wait } = createHolds()
+    const palette = useSearch(vault.core, WORDS, { wait })
+    palette.setOpen(true)
+    void palette.setTyped('ent')
+    holds[0]?.answer()
+    await flushPromises()
+    vault.names[0]?.answer([createNameMatch()])
+    await flushPromises()
+
+    palette.setOpen(false)
+    vault.mode('words')?.answer([passage()])
+    await flushPromises()
+    palette.setOpen(true)
+    void palette.setTyped('heat')
+    await flushPromises()
+
+    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+  })
+})

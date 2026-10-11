@@ -14,6 +14,7 @@ import { useCommandPalette } from './palette'
 import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch } from './search'
 import { WORDS as words } from '@/shared/words'
+import { later, type Deferred } from '@/testing/later'
 
 /** What is in front, which a test moves under the commands. */
 const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -30,13 +31,18 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
 })
 
 /** One name as the vault answers one. */
-const name = (path: string, title: string, heading = ''): NameMatch => ({
+const name = (
+  path: string,
+  title: string,
+  heading = '',
+  type: NameMatch['type'] = 'note',
+): NameMatch => ({
   path,
   title,
   heading,
   line: heading ? 4 : -1,
   at: [{ from: 0, to: 1 }],
-  type: 'note',
+  type,
 })
 
 /** One vault as the list answers one. */
@@ -1232,5 +1238,537 @@ describe('a vault taken off the list', () => {
     void commands.setTyped('Physics')
 
     expect(commands.chooseItem('exactly', 'exactly')).toBeNull()
+  })
+})
+
+/**
+ * The commands over a vault that answers when the test says so, and a hold
+ * that ends when the test says so. Nothing is opened.
+ */
+const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) => {
+  const names: Deferred<readonly NameMatch[]>[] = []
+  const lists: Deferred<VaultList>[] = []
+  const holds: Deferred<void>[] = []
+  const asked: string[] = []
+  const core = {
+    names: (query: string) => {
+      asked.push(query)
+      const one = later<readonly NameMatch[]>()
+      names.push(one)
+      return one.promise
+    },
+    vaults: () => {
+      const one = later<VaultList>()
+      lists.push(one)
+      return one.promise
+    },
+  }
+  const hold = { isOn: false }
+  const wait = () => {
+    if (!hold.isOn) return Promise.resolve()
+    const one = later<void>()
+    holds.push(one)
+    return one.promise
+  }
+  const commands = useCommandPalette(
+    core,
+    words,
+    () => front(),
+    createLookup().knows,
+    createLists(offers).paletteLists,
+    runSupport(),
+    wait,
+  )
+  return { commands, names, lists, holds, hold, asked }
+}
+
+/** How the one group a step draws stands. */
+const describeGroup = (groups: ReturnType<typeof createPalette>['commands']['groups']) => {
+  const group = groups.value[0]
+  return {
+    items: group?.items.map((item) => item.id),
+    isWorking: group?.isWorking,
+    silence: group?.silence,
+  }
+}
+
+describe('the palette before it is first opened', () => {
+  it('holds nothing typed', () => {
+    const { commands } = createSlowPalette()
+
+    expect(commands.typed.value).toBe('')
+  })
+})
+
+describe('a step that asks for a note, as the vault answers', () => {
+  it('opens working at nothing and asking for a note', () => {
+    const { commands } = createSlowPalette()
+
+    commands.startCommand('goto', front())
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: [],
+      isWorking: false,
+      silence: words.typeNote,
+    })
+  })
+
+  it('opens saying nothing of a list a step before it could not ask', async () => {
+    const { commands, lists } = createSlowPalette()
+    commands.startCommand('openVault', front())
+    lists[0]?.fail('the list is not there')
+    await settle()
+    commands.leaveStep()
+
+    commands.startCommand('goto', front())
+
+    expect(silence(commands.groups, 'picking')).toBe(words.typeNote)
+  })
+
+  it('is working while the vault has not answered', async () => {
+    const { commands } = createSlowPalette()
+    commands.startCommand('goto', front())
+
+    void commands.setTyped('en')
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: [],
+      isWorking: true,
+      silence: words.noneFound,
+    })
+  })
+
+  it('stops working once the vault answers', async () => {
+    const { commands, names } = createSlowPalette()
+    commands.startCommand('goto', front())
+    void commands.setTyped('en')
+    await settle()
+
+    names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: ['physics/Entropy.md'],
+      isWorking: false,
+      silence: words.noneFound,
+    })
+  })
+
+  it('asks about the words and not the spaces around them', async () => {
+    const { commands, asked } = createSlowPalette()
+    commands.startCommand('goto', front())
+
+    void commands.setTyped('  en  ')
+    await settle()
+
+    expect(asked).toStrictEqual(['en'])
+  })
+
+  it('asks nothing once what was typed is taken back, and draws nothing found', async () => {
+    const { commands, names, asked } = createSlowPalette()
+    commands.startCommand('goto', front())
+    void commands.setTyped('en')
+    await settle()
+    names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
+    await settle()
+
+    void commands.setTyped('')
+    await settle()
+
+    expect(asked).toStrictEqual(['en'])
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: [],
+      isWorking: false,
+      silence: words.typeNote,
+    })
+  })
+
+  it('asks nothing about a keystroke another one overtook while it waited', async () => {
+    const { commands, holds, hold, asked } = createSlowPalette()
+    commands.startCommand('goto', front())
+    hold.isOn = true
+
+    void commands.setTyped('e')
+    void commands.setTyped('en')
+    holds[0]?.answer()
+    await settle()
+
+    expect(asked).toStrictEqual([])
+
+    holds[1]?.answer()
+    await settle()
+
+    expect(asked).toStrictEqual(['en'])
+  })
+
+  it('draws the answer to the question asked last, whatever lands after it', async () => {
+    const { commands, names } = createSlowPalette()
+    commands.startCommand('goto', front())
+    void commands.setTyped('e')
+    await settle()
+    void commands.setTyped('en')
+    await settle()
+
+    names[1]?.answer([name('physics/Entropy.md', 'Entropy')])
+    await settle()
+    names[0]?.answer([name('Ether.md', 'Ether')])
+    await settle()
+
+    expect(describeGroup(commands.groups).items).toStrictEqual(['physics/Entropy.md'])
+  })
+
+  it('draws no failure of a question nobody is asking any more', async () => {
+    const { commands, names } = createSlowPalette()
+    commands.startCommand('goto', front())
+    void commands.setTyped('e')
+    await settle()
+    void commands.setTyped('en')
+    await settle()
+
+    names[1]?.answer([name('physics/Entropy.md', 'Entropy')])
+    await settle()
+    names[0]?.fail('the vault went away')
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: ['physics/Entropy.md'],
+      isWorking: false,
+      silence: words.noneFound,
+    })
+  })
+
+  it('keeps working where only a question nobody is asking has answered', async () => {
+    const { commands, names } = createSlowPalette()
+    commands.startCommand('goto', front())
+    void commands.setTyped('e')
+    await settle()
+    void commands.setTyped('en')
+    await settle()
+
+    names[0]?.answer([name('Ether.md', 'Ether')])
+    await settle()
+
+    expect(describeGroup(commands.groups).isWorking).toBe(true)
+  })
+
+  it('holds nothing where the vault could not answer', async () => {
+    const { commands, names } = createSlowPalette()
+    commands.startCommand('goto', front())
+    void commands.setTyped('en')
+    await settle()
+
+    names[0]?.fail('no model is set')
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: [],
+      isWorking: false,
+      silence: words.notAsked,
+    })
+  })
+
+  it('says nothing of a failure while the next question is out', async () => {
+    const { commands, names } = createSlowPalette()
+    commands.startCommand('goto', front())
+    void commands.setTyped('e')
+    await settle()
+    names[0]?.fail('no model is set')
+    await settle()
+
+    void commands.setTyped('en')
+    await settle()
+
+    expect(silence(commands.groups, 'picking')).toBe(words.noneFound)
+  })
+
+  it('draws no answer to a question asked at a step that was left', async () => {
+    const { commands, names } = createSlowPalette()
+    commands.startCommand('goto', front())
+    void commands.setTyped('en')
+    await settle()
+    commands.leaveStep()
+    commands.startCommand('goto', front())
+
+    names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
+    await settle()
+
+    expect(describeGroup(commands.groups).items).toStrictEqual([])
+  })
+
+  it('knows no note of an answer that lands after the palette is put away', async () => {
+    const { commands, names } = createSlowPalette()
+    commands.setOpen(true)
+    commands.startCommand('goto', front())
+    void commands.setTyped('en')
+    await settle()
+
+    commands.setOpen(false)
+    names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
+    await settle()
+
+    expect(commands.typeOf('physics/Entropy.md')).toBeNull()
+  })
+
+  it('asks the vault nothing at a step that does not pick a note', async () => {
+    const { commands, asked } = createSlowPalette()
+    commands.startCommand('child', front())
+
+    void commands.setTyped('Entropy')
+    await settle()
+
+    expect(asked).toStrictEqual([])
+  })
+})
+
+describe('a step that asks for a vault, as the list answers', () => {
+  const two = () => installation(vault('physics', 'Physics'), vault('heat', 'Heat'))
+
+  it('holds nothing and is working while the list has not come back', async () => {
+    const { commands } = createSlowPalette()
+
+    commands.startCommand('openVault', front())
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: [],
+      isWorking: true,
+      silence: words.noneFound,
+    })
+  })
+
+  it('draws the list asked for last, and is working until that one is back', async () => {
+    const { commands, lists } = createSlowPalette()
+    commands.startCommand('openVault', front())
+    commands.leaveStep()
+    commands.startCommand('openVault', front())
+
+    lists[0]?.answer(two())
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: [],
+      isWorking: true,
+      silence: words.noneFound,
+    })
+
+    lists[1]?.answer(installation(vault('heat', 'Heat')))
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: ['heat'],
+      isWorking: false,
+      silence: words.noneFound,
+    })
+  })
+
+  it('draws no failure of a list nobody is asking for any more', async () => {
+    const { commands, lists } = createSlowPalette()
+    commands.startCommand('openVault', front())
+    commands.leaveStep()
+    commands.startCommand('openVault', front())
+
+    lists[1]?.answer(two())
+    await settle()
+    lists[0]?.fail('the list is not there')
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: ['physics', 'heat'],
+      isWorking: false,
+      silence: words.noneFound,
+    })
+  })
+
+  it('holds nothing where the list could not be asked', async () => {
+    const { commands, lists } = createSlowPalette()
+    commands.startCommand('openVault', front())
+
+    lists[0]?.fail('the list is not there')
+    await settle()
+
+    expect(describeGroup(commands.groups)).toStrictEqual({
+      items: [],
+      isWorking: false,
+      silence: words.notAsked,
+    })
+  })
+
+  it('keeps the vaults the words typed name, around the spaces typed', async () => {
+    const { commands, lists } = createSlowPalette()
+    commands.startCommand('openVault', front())
+    lists[0]?.answer(two())
+    await settle()
+
+    await commands.setTyped('  hea  ')
+
+    expect(describeGroup(commands.groups).items).toStrictEqual(['heat'])
+  })
+})
+
+describe('a command asked for while a step stands open', () => {
+  it('stands over that step, and leaving it goes back to it', () => {
+    const { commands } = createPalette()
+    commands.startCommand('child', front())
+
+    commands.startCommand('title', front())
+    commands.leaveStep()
+
+    expect(commands.crumb.value).toBe(words.child)
+  })
+})
+
+describe('what a step draws', () => {
+  it('offers an address under the one action that imports it', () => {
+    const { commands } = createPalette()
+    commands.startCommand('importUrl', front())
+
+    void commands.setTyped('https://example.com/a')
+
+    expect(commands.groups.value[0]?.items[0]?.actions).toStrictEqual([
+      { id: 'name', text: words.importIt },
+    ])
+  })
+
+  it('draws each note found by its title, lit where a name matched, and by its file where it has none', async () => {
+    const { commands } = createPalette({}, [
+      name('physics/Entropy.md', 'Entropy'),
+      name('physics/Heat.md', 'Heat', 'What it counts'),
+      name('Untitled.md', ''),
+    ])
+    commands.startCommand('goto', front())
+
+    await commands.setTyped('en')
+
+    expect(commands.groups.value[0]?.id).toBe('picking')
+    expect(commands.groups.value[0]?.items).toStrictEqual([
+      {
+        id: 'physics/Entropy.md',
+        title: 'Entropy',
+        at: [{ from: 0, to: 1 }],
+        actions: [{ id: 'pick', text: words.travel }],
+      },
+      {
+        id: 'physics/Heat.md',
+        title: 'Heat',
+        actions: [{ id: 'pick', text: words.travel }],
+      },
+      {
+        id: 'Untitled.md',
+        title: 'Untitled.md',
+        actions: [{ id: 'pick', text: words.travel }],
+      },
+    ])
+  })
+
+  it('says which of four each note found is, and nothing of a note it did not find', async () => {
+    const { commands } = createPalette({}, [
+      name('physics/Entropy.md', 'Entropy', '', 'deck'),
+      name('physics/Heat.md', 'Heat', '', 'stencil'),
+    ])
+    commands.startCommand('goto', front())
+
+    await commands.setTyped('en')
+
+    expect(commands.typeOf('physics/Heat.md')).toBe('stencil')
+    expect(commands.typeOf('physics/Entropy.md')).toBe('deck')
+    expect(commands.typeOf('Order.md')).toBeNull()
+  })
+
+  it('asks for a note where only spaces are typed', async () => {
+    const { commands } = createPalette()
+    commands.startCommand('goto', front())
+
+    await commands.setTyped('   ')
+
+    expect(silence(commands.groups, 'picking')).toBe(words.typeNote)
+  })
+
+  it('confirms under the answer each row gives, filtered by the words typed around spaces', async () => {
+    const { commands } = createPalette(
+      {},
+      [],
+      {},
+      installation(vault('physics', 'Physics'), vault('heat', 'Heat')),
+    )
+    commands.startCommand('forgetVault', front())
+    await settle()
+    commands.chooseItem('heat', 'open')
+
+    expect(commands.groups.value[0]?.items.map((item) => item.actions)).toStrictEqual([
+      [{ id: 'no', text: words.keepsVault }],
+      [{ id: 'yes', text: words.forgets }],
+    ])
+
+    void commands.setTyped('  forg  ')
+
+    expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['yes'])
+  })
+
+  it('takes the name typed back around spaces, under the one action that destroys', () => {
+    const { commands } = createPalette()
+    commands.startCommand('destroy', front())
+
+    void commands.setTyped('  Ontology  ')
+
+    expect(commands.groups.value[0]?.id).toBe('exactly')
+    expect(commands.groups.value[0]?.items[0]?.disabled).toBe(false)
+    expect(commands.groups.value[0]?.items[0]?.actions).toStrictEqual([
+      { id: 'exactly', text: words.destroys },
+    ])
+  })
+})
+
+describe('a row of a list the window holds', () => {
+  const THEMES: readonly StepGroup[] = [
+    {
+      id: 'shipping',
+      title: 'Ships with numen',
+      items: [
+        { id: 'preset:numen', title: 'numen', detail: 'Current' },
+        { id: 'preset:dracula', title: 'dracula' },
+      ],
+    },
+  ]
+
+  it('is lit nowhere while nothing is typed', () => {
+    const { commands } = createPalette({}, [], { appearance: THEMES })
+    commands.startCommand('appearance', front())
+
+    expect(commands.groups.value[0]?.items).toStrictEqual([
+      {
+        id: 'preset:numen',
+        title: 'numen',
+        detail: 'Current',
+        actions: [{ id: 'chosen', text: words.chooses }],
+      },
+      {
+        id: 'preset:dracula',
+        title: 'dracula',
+        actions: [{ id: 'chosen', text: words.chooses }],
+      },
+    ])
+  })
+
+  it('is lit from its first letter where the words typed begin it', async () => {
+    const { commands } = createPalette({}, [], { appearance: THEMES })
+    commands.startCommand('appearance', front())
+
+    await commands.setTyped('num')
+
+    expect(commands.groups.value[0]?.items.map((item) => item.at)).toStrictEqual([
+      [{ from: 0, to: 3 }],
+    ])
+  })
+
+  it('is kept by the words typed around spaces', async () => {
+    const { commands } = createPalette({}, [], { appearance: THEMES })
+    commands.startCommand('appearance', front())
+
+    await commands.setTyped('  rac  ')
+
+    expect(commands.groups.value[0]?.items.map((item) => item.at)).toStrictEqual([
+      [{ from: 1, to: 4 }],
+    ])
   })
 })
