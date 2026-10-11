@@ -1,18 +1,17 @@
 package flashcards
 
 import (
+	"container/list"
 	"slices"
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// maxCachedDecks is the most decks a window keeps parsed. Past it the cache is
-// emptied and refilled by the requests that follow.
-const maxCachedDecks = 4096
-
-// deckParsers is the most decks parsed at once.
-const deckParsers = 4
+// defaultCachedFaces is how many card faces a window keeps parsed when
+// ListCardFaces.MaxFaces names none. Past it the least recently used decks are
+// forgotten one at a time.
+const defaultCachedFaces = 1 << 18
 
 type deckKey struct {
 	vault domain.VaultID
@@ -30,36 +29,39 @@ type deckFaces struct {
 // isCurrent says whether the deck and every stencil it was cut by are the files
 // the faces were parsed from.
 func (e deckFaces) isCurrent(deck domain.Fingerprint, stencils map[string]domain.Fingerprint) bool {
-	return isSameFile(e.deck, deck) && len(e.stencils) == len(stencils) &&
-		mapsEqualBy(e.stencils, stencils)
-}
-
-func isSameFile(a, b domain.Fingerprint) bool {
-	return a.Size == b.Size && a.ModTime.Equal(b.ModTime)
-}
-
-func mapsEqualBy(a, b map[string]domain.Fingerprint) bool {
-	for path, one := range a {
-		other, held := b[path]
-		if !held || !isSameFile(one, other) {
+	if !e.deck.IsUnchanged(deck) || len(e.stencils) != len(stencils) {
+		return false
+	}
+	for path, one := range e.stencils {
+		other, held := stencils[path]
+		if !held || !one.IsUnchanged(other) {
 			return false
 		}
 	}
 	return true
 }
 
+type cached struct {
+	key deckKey
+	deckFaces
+}
+
 // faceCache is the parsed faces of the decks a window has read, for the life of
 // the window. A nil cache holds nothing.
 type faceCache struct {
 	mu    sync.Mutex
-	decks map[deckKey]deckFaces
+	decks map[deckKey]*list.Element
+	// order runs from the most recently used deck to the least.
+	order *list.List
+	// total is the number of card faces held.
+	total int
 	// epoch counts invalidations, and a parse that began before one is not
 	// stored.
 	epoch uint64
 }
 
 func newFaceCache() *faceCache {
-	return &faceCache{decks: make(map[deckKey]deckFaces)}
+	return &faceCache{decks: make(map[deckKey]*list.Element), order: list.New()}
 }
 
 // begin returns the epoch a parse starts in.
@@ -78,24 +80,45 @@ func (c *faceCache) get(key deckKey) (deckFaces, bool) {
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	e, held := c.decks[key]
-	return e, held
+	at, held := c.decks[key]
+	if !held {
+		return deckFaces{}, false
+	}
+	c.order.MoveToFront(at)
+	return at.Value.(*cached).deckFaces, true
 }
 
-// put stores a deck parsed in the given epoch.
-func (c *faceCache) put(epoch uint64, key deckKey, e deckFaces) {
+// put stores a deck parsed in the given epoch, then forgets the least recently
+// used decks until no more than limit faces are held. A deck holding more than
+// limit faces is not stored.
+func (c *faceCache) put(epoch uint64, key deckKey, e deckFaces, limit int) {
 	if c == nil {
 		return
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if epoch != c.epoch {
+	if epoch != c.epoch || len(e.faces) > limit {
 		return
 	}
-	if _, held := c.decks[key]; !held && len(c.decks) >= maxCachedDecks {
-		clear(c.decks)
+	c.remove(key)
+	c.decks[key] = c.order.PushFront(&cached{key: key, deckFaces: e})
+	c.total += len(e.faces)
+	for c.total > limit {
+		c.removeElement(c.order.Back())
 	}
-	c.decks[key] = e
+}
+
+// remove forgets the deck at key. The caller holds the lock.
+func (c *faceCache) remove(key deckKey) {
+	if at, held := c.decks[key]; held {
+		c.removeElement(at)
+	}
+}
+
+func (c *faceCache) removeElement(at *list.Element) {
+	one := c.order.Remove(at).(*cached)
+	delete(c.decks, one.key)
+	c.total -= len(one.faces)
 }
 
 func (c *faceCache) drop(key deckKey) {
@@ -104,7 +127,7 @@ func (c *faceCache) drop(key deckKey) {
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	delete(c.decks, key)
+	c.remove(key)
 }
 
 // keep drops every entry of the vault whose path is not in paths.
@@ -116,7 +139,7 @@ func (c *faceCache) keep(vault domain.VaultID, paths []string) {
 	defer c.mu.Unlock()
 	for key := range c.decks {
 		if key.vault == vault && !slices.Contains(paths, key.path) {
-			delete(c.decks, key)
+			c.remove(key)
 		}
 	}
 }
@@ -130,12 +153,12 @@ func (c *faceCache) invalidate(vault domain.VaultID, paths []string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.epoch++
-	for key, e := range c.decks {
+	for key, at := range c.decks {
 		if key.vault != vault {
 			continue
 		}
-		if slices.Contains(paths, key.path) || usesAny(e.stencils, paths) {
-			delete(c.decks, key)
+		if slices.Contains(paths, key.path) || usesAny(at.Value.(*cached).stencils, paths) {
+			c.removeElement(at)
 		}
 	}
 }
@@ -157,4 +180,21 @@ func (c *faceCache) invalidateAll() {
 	defer c.mu.Unlock()
 	c.epoch++
 	clear(c.decks)
+	c.order.Init()
+	c.total = 0
+}
+
+// size is the number of card faces held.
+func (c *faceCache) size() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.total
+}
+
+// holds says whether the deck at key is held.
+func (c *faceCache) holds(key deckKey) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	_, held := c.decks[key]
+	return held
 }

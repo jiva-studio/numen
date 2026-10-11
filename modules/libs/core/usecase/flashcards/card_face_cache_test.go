@@ -280,7 +280,7 @@ func TestTheFacesComeBackInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
 
 	for range 10 {
 		many := flashcards.NewListCardFaces(filesystem.VaultReaders{}, s.notes, s.links)
-		many.Cores = 8
+		many.Cores = 64
 		if got := ids(many.GetFaces(t.Context(), s.vault, paths)); !reflect.DeepEqual(got, want) {
 			t.Fatalf("the order moved:\n got %v\nwant %v", got, want)
 		}
@@ -313,4 +313,47 @@ func TestRequestsAndInvalidationsMakeNoRaceBetweenThem(t *testing.T) {
 		}()
 	}
 	running.Wait()
+}
+
+func TestAPoolOfOneAndAPoolOfManyGiveTheSameFacesEveryTime(t *testing.T) {
+	t.Parallel()
+	notes := map[string]string{"Term.md": vault["Term.md"]}
+	var paths []string
+	for i := range 16 {
+		path := fmt.Sprintf("decks/Deck%02d.md", i)
+		paths = append(paths, path)
+		notes[path] = fmt.Sprintf("---\ntype: deck\n---\n\n## Card ^q%02dwxyzpqr\n\n[[Term]]\n\n### Word\n\nw%d\n\n### Meaning\n\nm%d\n", i, i, i)
+	}
+	s := openVault(t, notes)
+	one := flashcards.NewListCardFaces(filesystem.VaultReaders{}, s.notes, s.links)
+	one.Cores = 1
+	want := ids(one.GetFaces(t.Context(), s.vault, paths))
+
+	for _, cores := range []int{2, 3, 16, 64} {
+		many := flashcards.NewListCardFaces(filesystem.VaultReaders{}, s.notes, s.links)
+		many.Cores = cores
+		for range 3 {
+			if got := ids(many.GetFaces(t.Context(), s.vault, paths)); !reflect.DeepEqual(got, want) {
+				t.Fatalf("a pool of %d gave another order:\n got %v\nwant %v", cores, got, want)
+			}
+		}
+	}
+}
+
+func TestADeckPastTheFaceBoundIsParsedAgainWhileTheOthersStay(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, vault)
+	reads := &readTally{}
+	faces := flashcards.NewListCardFaces(reads, s.notes, s.links)
+	// Mammals stands as four faces and Words as one.
+	faces.MaxFaces = 3
+	for range 2 {
+		if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got := reads.take()
+	if got["decks/Mammals.md"] != 2 || got["decks/Words.md"] != 1 {
+		t.Errorf("reads under a bound of three faces: %v", got)
+	}
 }

@@ -55,9 +55,12 @@ type ListCardFaces struct {
 	// cache is the faces of the decks already parsed, for the life of the window.
 	// Copies of a ListCardFaces share it.
 	cache *faceCache
-	// Cores is how many decks are parsed at once, at most deckParsers. A build
-	// naming none parses one at a time.
+	// Cores is how many decks are parsed at once. A build naming none parses one
+	// at a time.
 	Cores int
+	// MaxFaces is the most card faces kept parsed. A build naming none keeps
+	// defaultCachedFaces.
+	MaxFaces int
 }
 
 // NewListCardFaces is what a vault's card faces are read through: the vault the
@@ -137,7 +140,7 @@ func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []str
 	}
 
 	stencils := &stencilMemo{read: cards.NewRead(u.readers, u.links), by: make(map[string]stencilRead)}
-	places := min(max(1, u.Cores), deckParsers, len(misses))
+	places := min(max(1, u.Cores), len(misses))
 	var running sync.WaitGroup
 	queue := make(chan int)
 	for range places {
@@ -215,7 +218,7 @@ func (u ListCardFaces) parseDeck(
 	if isWhole {
 		u.cache.put(epoch, deckKey{vault: v.ID, path: path}, deckFaces{
 			deck: deck.Fingerprint, stencils: used, faces: slices.Clone(faces),
-		})
+		}, u.faceLimit())
 	}
 	return faces
 }
@@ -303,4 +306,11 @@ func section(d format.Deck, c format.Card) string {
 		return ""
 	}
 	return d.Sections[c.Section].Name
+}
+
+func (u ListCardFaces) faceLimit() int {
+	if u.MaxFaces > 0 {
+		return u.MaxFaces
+	}
+	return defaultCachedFaces
 }
