@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Neighbourhood, Seat } from '@/entities/note'
-import { asPlex } from './picture'
+import { areNeighbourhoodsEqual, asPlex, typesIn } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
 /** A note and what sits around it: seat, label, the note it comes through, and
@@ -322,5 +322,139 @@ describe('whose wording is on the line', () => {
       'Marrowfield allotments -> Alice Fenn, The Chair: from',
       'Marrowfield allotments -> The question of the rota: no arrow',
     ])
+  })
+})
+
+describe('the ends of a line the person turned', () => {
+  it('draws no arrow where the saved direction names neither note of the line', () => {
+    const plex = asPlex(
+      createNeighbourhood('Here', [['Below', 'child', '', '']]),
+      (path) => `#${path}`,
+      new Map([['Below Here', 'Elsewhere->Somewhere']]),
+    )
+
+    expect(plex.edges[0]?.arrow).toBeUndefined()
+  })
+})
+
+describe('a sibling hung off the note in focus', () => {
+  it('runs its line from the focus, which the picture draws', () => {
+    expect(edgesOf(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Here']]))).toEqual([
+      'Here -> Beside',
+    ])
+  })
+})
+
+describe('what each note of a neighbourhood is', () => {
+  it('is what the vault says of the focus and of every note around it', () => {
+    const around: Neighbourhood = {
+      focus: { path: 'Words.md', title: 'Words' },
+      focusType: 'deck',
+      related: [
+        {
+          path: 'Faces.md',
+          title: 'Faces',
+          type: 'stencil',
+          seat: 'child',
+          label: '',
+          through: '',
+          isMutual: false,
+        },
+      ],
+    }
+
+    expect([...typesIn(around)]).toStrictEqual([
+      ['Words.md', 'deck'],
+      ['Faces.md', 'stencil'],
+    ])
+  })
+
+  it('names nothing for a focus with no path', () => {
+    const around: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
+
+    expect(typesIn(around).size).toBe(0)
+  })
+})
+
+/** One note around the focus, as the vault answers one. */
+type Neighbour = Neighbourhood['related'][number]
+
+describe('two neighbourhoods drawing one picture', () => {
+  const held = (): Neighbourhood => ({
+    focus: { path: 'Here.md', title: 'Here' },
+    focusType: 'note',
+    related: [
+      {
+        path: 'Above.md',
+        title: 'Above',
+        type: 'note',
+        seat: 'parent',
+        label: 'part of',
+        through: '',
+        isMutual: false,
+      },
+      {
+        path: 'Beside.md',
+        title: 'Beside',
+        type: 'note',
+        seat: 'sibling',
+        label: 'next to',
+        through: 'Above.md',
+        isMutual: true,
+      },
+    ],
+  })
+
+  /** The neighbourhood held, its second note changed as given. */
+  const changed = (more: Partial<Neighbour>): Neighbourhood => {
+    const one = held()
+    return { ...one, related: [one.related[0]!, { ...one.related[1]!, ...more }] }
+  }
+
+  it('are two answers with every part the same', () => {
+    expect(areNeighbourhoodsEqual(held(), held())).toBe(true)
+  })
+
+  it('are two answers of nothing', () => {
+    expect(areNeighbourhoodsEqual(null, null)).toBe(true)
+  })
+
+  it('are not an answer and nothing, either way round', () => {
+    expect(areNeighbourhoodsEqual(held(), null)).toBe(false)
+    expect(areNeighbourhoodsEqual(null, held())).toBe(false)
+  })
+
+  it('are not two answers standing on different notes', () => {
+    const other = { ...held(), focus: { path: 'There.md', title: 'Here' } }
+
+    expect(areNeighbourhoodsEqual(held(), other)).toBe(false)
+  })
+
+  it('are not two answers calling the focus differently', () => {
+    const other = { ...held(), focus: { path: 'Here.md', title: 'There' } }
+
+    expect(areNeighbourhoodsEqual(held(), other)).toBe(false)
+  })
+
+  it('are not two answers saying the focus is something different', () => {
+    expect(areNeighbourhoodsEqual(held(), { ...held(), focusType: 'deck' })).toBe(false)
+  })
+
+  it('are not two answers with a different number of notes around', () => {
+    const other = { ...held(), related: held().related.slice(0, 1) }
+
+    expect(areNeighbourhoodsEqual(held(), other)).toBe(false)
+  })
+
+  it.each<[string, Partial<Neighbour>]>([
+    ['path', { path: 'Across.md' }],
+    ['title', { title: 'Across' }],
+    ['type', { type: 'deck' }],
+    ['seat', { seat: 'child' }],
+    ['label', { label: 'far from' }],
+    ['through', { through: 'Here.md' }],
+    ['isMutual', { isMutual: false }],
+  ])('are not two answers whose second note differs in its %s', (_, more) => {
+    expect(areNeighbourhoodsEqual(held(), changed(more))).toBe(false)
   })
 })
