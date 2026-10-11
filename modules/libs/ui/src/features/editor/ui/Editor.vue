@@ -77,6 +77,7 @@ const emit = defineEmits<{
 
 const host = useTemplateRef<HTMLElement>('host')
 let view: EditorView | null = null
+let lastEmitted: string | null = null
 
 /** What the words about the keyboard are addressed by, this editor's alone. */
 const keysId = `${useId()}-keys`
@@ -101,7 +102,9 @@ onMounted(() => {
         opening.of((address) => emit('open', address)),
         saving.of(() => emit('save')),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) text.value = update.state.doc.toString()
+          if (!update.docChanged) return
+          lastEmitted = update.state.doc.toString()
+          text.value = lastEmitted
         }),
       ],
     }),
@@ -116,9 +119,10 @@ onBeforeUnmount(() => {
 
 // Text put in from outside replaces what is there; text that came from here
 // is already in. The caret, the selection and the scroll offset stay where
-// they were, and the replacement is no step to undo.
+// they were, and the replacement is no step to undo. The string this editor
+// last emitted is the document as it stands.
 watch(text, (fresh) => {
-  if (!view || view.state.doc.toString() === fresh) return
+  if (!view || fresh === lastEmitted || view.state.doc.toString() === fresh) return
   view.dispatch(replace(view.state, fresh))
 })
 

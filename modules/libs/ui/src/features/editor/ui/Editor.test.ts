@@ -4,11 +4,11 @@
  * The view is found through the DOM. The tests hold the component to its
  * props, its model, its events and what it exposes.
  */
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { undo } from '@codemirror/commands'
-import { EditorSelection, StateField } from '@codemirror/state'
+import { EditorSelection, StateField, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
 import { marked, type EditorChange } from '../lib/change'
@@ -93,6 +93,63 @@ describe('the text', () => {
     const { wrapper, view } = editor({ modelValue: 'one' })
     view.dispatch({ changes: { from: 3, insert: ' two' }, userEvent: 'input.type' })
     expect(wrapper.emitted('update:modelValue')).toHaveLength(1)
+  })
+})
+
+describe('the echo of what was typed', () => {
+  /** A parent that hands every emitted value straight back as the prop. */
+  const echoing = (modelValue: string, normalise = (value: string) => value) => {
+    const handle = editor({
+      modelValue,
+      'onUpdate:modelValue': (value: string) => {
+        void handle.wrapper.setProps({ modelValue: normalise(value) })
+      },
+    } as Partial<Props>)
+    return handle
+  }
+
+  const type = (view: EditorView, insert: string) =>
+    view.dispatch({ changes: { from: view.state.doc.length, insert }, userEvent: 'input.type' })
+
+  it('serialises the document once for one thing typed', async () => {
+    const { view } = echoing('one')
+    const serialise = vi.spyOn(Text.prototype, 'toString')
+    type(view, ' two')
+    await flushPromises()
+    expect(serialise).toHaveBeenCalledTimes(1)
+  })
+
+  it('is applied when the parent hands back a different string', async () => {
+    const { view } = echoing('one', (value) => value.toUpperCase())
+    type(view, ' two')
+    await flushPromises()
+    expect(view.state.doc.toString()).toBe('ONE TWO')
+  })
+
+  it('is applied when text arrives from outside after typing', async () => {
+    const { wrapper, view } = editor({ modelValue: 'one' })
+    type(view, ' two')
+    await wrapper.setProps({ modelValue: 'three' })
+    expect(view.state.doc.toString()).toBe('three')
+  })
+
+  it('leaves undo working after the echo', async () => {
+    const { view } = echoing('one')
+    type(view, ' two')
+    await flushPromises()
+    undo(view)
+    expect(view.state.doc.toString()).toBe('one')
+  })
+
+  it('does nothing when the prop is set to the string last emitted', async () => {
+    const { wrapper, view } = editor({ modelValue: 'one' })
+    type(view, ' two')
+    await wrapper.setProps({ modelValue: 'one two' })
+    const dispatch = vi.spyOn(view, 'dispatch')
+    const serialise = vi.spyOn(Text.prototype, 'toString')
+    await wrapper.setProps({ modelValue: 'one two' })
+    expect(dispatch).not.toHaveBeenCalled()
+    expect(serialise).not.toHaveBeenCalled()
   })
 })
 
