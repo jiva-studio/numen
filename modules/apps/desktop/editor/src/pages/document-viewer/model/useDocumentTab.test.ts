@@ -205,3 +205,16 @@ describe('a document tab that draws no pages yet', () => {
     expect(() => kindOver(held).onShow!(held, 'a tab')).not.toThrow()
   })
 })
+
+describe('a search that landed in a document whose tab is gone', () => {
+  it('opens the document and turns to nothing', async () => {
+    const { handle, opened } = createMockDocumentWindow(null)
+    const { tabOpeners, getReader } = openers()
+    createDocumentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
+
+    getReader()?.('physics/Boltzmann.pdf', [{ from: 0, to: 12 }])
+    await settle()
+
+    expect(opened).toEqual(['document physics/Boltzmann.pdf'])
+  })
+})

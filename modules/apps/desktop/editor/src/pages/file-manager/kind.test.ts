@@ -120,3 +120,29 @@ describe('a change to files without renames', () => {
     expect(tab.refreshChanged).toHaveBeenCalledExactlyOnceWith(['a.md'], [])
   })
 })
+
+describe('a path revealed in the files tab', () => {
+  it('is revealed in the files tab opened for it', async () => {
+    const revealPath = vi.fn(async (_path: string) => {})
+    const openTab = vi.fn(async (_kind: string) => 'files:front')
+    const getTabState = vi.fn(() => ({ list: { revealPath } }))
+    const handle = { openTab, getTabState } as unknown as WindowHandle
+    const files = createFilesKind(handle, () => ({}) as FileTree, {} as FilesTabDeps)
+
+    await files.revealPath('notes/a.md')
+
+    expect(openTab).toHaveBeenCalledExactlyOnceWith(FILES)
+    expect(getTabState).toHaveBeenCalledExactlyOnceWith(FILES, 'files:front')
+    expect(revealPath).toHaveBeenCalledExactlyOnceWith('notes/a.md')
+  })
+
+  it('is taken where the tab is gone', async () => {
+    const handle = {
+      openTab: async () => 'files:front',
+      getTabState: () => undefined,
+    } as unknown as WindowHandle
+    const files = createFilesKind(handle, () => ({}) as FileTree, {} as FilesTabDeps)
+
+    await expect(files.revealPath('notes/a.md')).resolves.toBeUndefined()
+  })
+})
