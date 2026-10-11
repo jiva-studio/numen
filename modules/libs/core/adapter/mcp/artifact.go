@@ -191,7 +191,8 @@ func artifactsOf(ctx context.Context, core Core, path string) ([]Artifact, error
 	}
 	// A copy of a video is bytes and no producer's text, so it is asked for by
 	// name rather than found by what wrote it.
-	if _, size, err := store.Open(ctx, text.Copy(hash)); err == nil {
+	if file, size, err := store.Open(ctx, text.Copy(hash)); err == nil {
+		_ = file.Close()
 		out = append(out, Artifact{
 			Path: path, Kind: kindCopy, Bytes: size, Format: text.CopyType,
 		})

@@ -23,20 +23,20 @@ import (
 
 // sequence is what happened, in the order it happened.
 type sequence struct {
-	mu   sync.Mutex
-	said []string
+	mu     sync.Mutex
+	events []string
 }
 
 func (s *sequence) record(what string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.said = append(s.said, what)
+	s.events = append(s.events, what)
 }
 
 func (s *sequence) getAll() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return append([]string(nil), s.said...)
+	return append([]string(nil), s.events...)
 }
 
 // presenting is what an agent shows to be let in.
@@ -187,9 +187,9 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 
 // errFrom is what a tool said when it answered with a failure.
 func errFrom(res *sdk.CallToolResult) error {
-	return &toolError{said: text(res)}
+	return &toolError{message: text(res)}
 }
 
-type toolError struct{ said string }
+type toolError struct{ message string }
 
-func (e *toolError) Error() string { return e.said }
+func (e *toolError) Error() string { return e.message }

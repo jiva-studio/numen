@@ -1,0 +1,110 @@
+package mcp_test
+
+import (
+	"context"
+	"io"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// closeTrackingStores wraps a store so a test can tell whether what it opened
+// was closed.
+type closeTrackingStores struct {
+	inner  port.DerivedStores
+	closed map[string]bool
+}
+
+func (s closeTrackingStores) Open(v domain.Vault) (port.DerivedStore, error) {
+	one, err := s.inner.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return closeTrackingStore{DerivedStore: one, closed: s.closed}, nil
+}
+
+// closeTrackingStore embeds the store it wraps, so every method but Open
+// forwards unchanged.
+type closeTrackingStore struct {
+	port.DerivedStore
+	closed map[string]bool
+}
+
+func (s closeTrackingStore) Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	reader, size, err := s.DerivedStore.Open(ctx, name)
+	if err != nil {
+		return reader, size, err
+	}
+	s.closed[name] = false
+	return closeTrackingReader{ReadSeekCloser: reader, name: name, closed: s.closed}, size, nil
+}
+
+// closeTrackingReader embeds the reader it wraps, so Read and Seek forward
+// unchanged and only Close is recorded.
+type closeTrackingReader struct {
+	io.ReadSeekCloser
+	name   string
+	closed map[string]bool
+}
+
+func (r closeTrackingReader) Close() error {
+	r.closed[r.name] = true
+	return r.ReadSeekCloser.Close()
+}
+
+// A copy artifact is opened only to ask its size, and the file that answers
+// that must not stay open: artifact_list is asked for every file a vault
+// carries, over and over, as an agent works.
+func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
+	from := &site{title: "Entropy explained", bytes: []byte("the bytes of a video")}
+	_, core := newCoreWithImport(t, from)
+
+	closed := map[string]bool{}
+	core.Sources.Derived = closeTrackingStores{
+		inner: filesystem.DerivedStores{
+			Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
+		},
+		closed: closed,
+	}
+	queries := &sourced{known: map[string]port.SourceText{}}
+	core.Sources.Queries = queries
+	session := sessionOf(t, mcp.New(core))
+
+	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{
+		"url": aVideo, "copy": true,
+	})
+	if made.Refused != "" || made.CopyRefused != "" {
+		t.Fatalf("the address or its copy was refused: %q %q", made.Refused, made.CopyRefused)
+	}
+	queries.known[made.Path] = port.SourceText{
+		Fingerprint: domain.Fingerprint{Path: made.Path},
+		Producer:    derived.Captions,
+		Hash:        derived.Fingerprint([]byte(aVideo)),
+	}
+
+	listed := call[struct {
+		Artifacts []mcp.Artifact `json:"artifacts"`
+	}](t, session, "artifact_list", map[string]any{"path": made.Path})
+
+	hasCopy := false
+	for _, one := range listed.Artifacts {
+		if one.Kind == "copy" {
+			hasCopy = true
+		}
+	}
+	if !hasCopy {
+		t.Fatalf("no copy artifact was listed: %+v", listed.Artifacts)
+	}
+	if len(closed) == 0 {
+		t.Fatal("artifact_list opened no file")
+	}
+	for name, ok := range closed {
+		if !ok {
+			t.Errorf("%s was opened and never closed", name)
+		}
+	}
+}
