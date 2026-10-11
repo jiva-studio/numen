@@ -37,7 +37,7 @@ const vault = (
  * The notes of a window, as far as anything here reads them. Each is filed
  * under the identity it opened under, and stands at a file of its own.
  */
-const notes = (states: Record<string, State> = {}) => {
+const notes = (states: Record<string, State> = {}, askedPaths: readonly string[] = []) => {
   /** The identity of every open note. */
   const open = ref<string[]>([])
   /** Where each open note stands now, under the identity it opened under. */
@@ -75,6 +75,7 @@ const notes = (states: Record<string, State> = {}) => {
       error: null,
     }),
     getPath,
+    stale: (id: string) => (askedPaths.includes(getPath(id)) ? { asked: true } : null),
     address: () => null,
     cues: () => [],
     copy: () => '',
@@ -130,8 +131,9 @@ const window = (
   titles: Record<string, string> = {},
   states: Record<string, State> = {},
   reaches: Record<string, string> = {},
+  askedPaths: readonly string[] = [],
 ) => {
-  const store = notes(states)
+  const store = notes(states, askedPaths)
   const drawing = drawings()
   const held = useWindowTabs()
   const tabOpeners = fileOpeners({
@@ -154,7 +156,7 @@ const window = (
    */
   const openNote = (path: string, title = '', how: PlexDestination = 'here') =>
     tabOpeners.openNewFile(path, title, 'note', how)
-  return { noted, held, open, openNote, ...store, drawings: drawing }
+  return { noted, held, open, openNote, tabOpeners, ...store, drawings: drawing }
 }
 
 describe('a link in the prose followed', () => {
@@ -612,5 +614,142 @@ describe('loadInTab and kind methods edge cases', () => {
 
     const closeResult = one.noted.kind.onClose?.(state, one.held.tabs.value[0]?.id ?? '')
     expect(closeResult).toBe(false)
+  })
+})
+
+describe('a minted identity once its tab has opened', () => {
+  it('is not the path a later tab opened under it stands at', async () => {
+    const one = window()
+    one.openNote('Deep/Note.md')
+    await nextTick()
+    const id = one.idOf('Deep/Note.md')
+    one.noted.closeTab(id)
+    await vi.waitFor(() => expect(one.open()).toEqual([]))
+
+    const state = one.noted.openTab(id)
+
+    expect(one.noted.kind.getOpenTab!(state)).toStrictEqual({ path: id })
+  })
+})
+
+describe('a note put in front of the person', () => {
+  it('opens in the pane the person is in', () => {
+    const one = window()
+    const beside = vi.spyOn(one.held.handle, 'openTabBeside')
+
+    one.openNote('Note.md', '', 'here')
+
+    expect(beside).not.toHaveBeenCalled()
+    expect(one.open()).toHaveLength(1)
+  })
+
+  it('opens beside it where it was asked to', () => {
+    const one = window()
+    const beside = vi.spyOn(one.held.handle, 'openTabBeside')
+
+    one.openNote('Note.md', '', 'beside')
+
+    expect(beside).toHaveBeenCalledOnce()
+    expect(one.open()).toHaveLength(1)
+  })
+
+  it('takes the keyboard again when it is put in front while it is already open', async () => {
+    const one = window()
+    one.openNote('Note.md')
+    const drew = editor()
+    stateOf(one).setEditor(drew.drawn)
+    await nextTick()
+
+    one.openNote('Note.md')
+    await nextTick()
+
+    expect(drew.focused).toEqual([-1, -1])
+  })
+
+  it('is revealed at the line it was asked to open on', async () => {
+    const one = window()
+    await one.tabOpeners.openFile('Note.md', '', 'here', 7)
+    const drew = editor()
+
+    stateOf(one).setEditor(drew.drawn)
+    await nextTick()
+
+    expect(drew.focused).toEqual([7])
+  })
+})
+
+describe('a note tab whose note the store has let go of', () => {
+  it('stands at no file and is called nothing', async () => {
+    const one = window()
+    one.openNote('Note.md', 'A note')
+    await nextTick()
+    const state = stateOf(one)
+    await one.store.close(one.idOf('Note.md'))
+
+    expect(one.noted.kind.getTarget!(state)).toStrictEqual({ path: '', title: '' })
+    expect(one.noted.kind.getOpenTab!(state)).toStrictEqual({ path: '' })
+  })
+})
+
+describe('the notes of the window, as a command reaches them', () => {
+  it('are told apart from names nothing stands at', async () => {
+    const one = window()
+    one.openNote('Note.md')
+    await nextTick()
+    const id = one.idOf('Note.md')
+
+    expect(one.noted.kept.has(id)).toBe(true)
+    expect(one.noted.kept.has('never opened')).toBe(false)
+  })
+
+  it('stand at the file the store keeps them at', async () => {
+    const one = window()
+    one.openNote('Note.md')
+    await nextTick()
+
+    expect(one.noted.kept.getPath(one.idOf('Note.md'))).toBe('Note.md')
+  })
+
+  it('are asking only where the store holds a newer file', async () => {
+    const one = window({}, {}, {}, ['Asked.md'])
+    one.openNote('Note.md')
+    one.openNote('Asked.md')
+    await nextTick()
+
+    expect(one.noted.kept.asking(one.idOf('Note.md'))).toBe(false)
+    expect(one.noted.kept.asking(one.idOf('Asked.md'))).toBe(true)
+  })
+
+  it('write what they owe through the store', async () => {
+    const one = window()
+    one.openNote('Note.md')
+    await nextTick()
+
+    await one.noted.kept.flushPending(one.idOf('Note.md'))
+
+    expect(one.calls).toEqual(['flushPending:Note.md'])
+  })
+})
+
+describe('a tab loaded onto another note', () => {
+  it('lets go of what was being drawn over the note it left', async () => {
+    const one = window()
+    one.openNote('Note1.md', 'Note 1')
+    await nextTick()
+
+    await one.noted.loadInTab(one.idOf('Note1.md'), 'Note2.md', 'Note 2')
+
+    expect(one.drawings.closedPaths).toEqual(['Note1.md'])
+  })
+
+  it('is called by its file once the name it had is forgotten', async () => {
+    const one = window()
+    one.openNote('Note1.md', 'Note 1')
+    await nextTick()
+    const tabId = one.idOf('Note1.md')
+
+    await one.noted.loadInTab(tabId, 'Note2.md')
+
+    expect(one.noted.kept.getTitle(tabId)).toBe('Note2.md')
   })
 })

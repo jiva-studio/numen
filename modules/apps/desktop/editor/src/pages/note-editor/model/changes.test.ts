@@ -99,3 +99,41 @@ describe('a window that is going', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 })
+
+describe('an interval that has been let go of', () => {
+  /** Every handle passed to clearTimeout from now on. */
+  const watchClears = () => vi.spyOn(globalThis, 'clearTimeout')
+
+  it('is forgotten once it fired', () => {
+    const changes = createNoteChanges(limits)
+    changes.reportChange(createEdit())
+    vi.advanceTimersByTime(limits.abandoned)
+    const cleared = watchClears()
+
+    changes.closeNote('Entropy.md')
+
+    expect(cleared).toHaveBeenCalledExactlyOnceWith(undefined)
+  })
+
+  it('is forgotten once the note was closed', () => {
+    const changes = createNoteChanges(limits)
+    changes.reportChange(createEdit())
+    changes.closeNote('Entropy.md')
+    const cleared = watchClears()
+
+    changes.closeNote('Entropy.md')
+
+    expect(cleared).toHaveBeenCalledExactlyOnceWith(undefined)
+  })
+
+  it('is forgotten once the window went', () => {
+    const changes = createNoteChanges(limits)
+    changes.reportChange(createEdit())
+    changes.close()
+    const cleared = watchClears()
+
+    changes.closeNote('Entropy.md')
+
+    expect(cleared).toHaveBeenCalledExactlyOnceWith(undefined)
+  })
+})
