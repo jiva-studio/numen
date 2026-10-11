@@ -31,7 +31,8 @@ export function usePageWidth(getRow: () => Row, atWidth: (pixels: number) => voi
   })
 
   const drawnWidth = ref(0)
-  let settling: ReturnType<typeof setTimeout> | undefined
+  /** Debounce before a changed width is drawn, once it stops changing. */
+  let widthTimer: ReturnType<typeof setTimeout> | undefined
 
   // The first width is asked for at once: a document opening has nothing drawn
   // and nothing to wait for.
@@ -42,15 +43,15 @@ export function usePageWidth(getRow: () => Row, atWidth: (pixels: number) => voi
       atWidth(pixels)
       return
     }
-    clearTimeout(settling)
-    settling = setTimeout(() => {
+    clearTimeout(widthTimer)
+    widthTimer = setTimeout(() => {
       drawnWidth.value = pixels
       atWidth(pixels)
     }, SETTLED)
   })
 
   onBeforeUnmount(() => {
-    clearTimeout(settling)
+    clearTimeout(widthTimer)
   })
 
   return { needed, drawnWidth }
