@@ -86,7 +86,7 @@ func (e EditorAssembly) GetPartsUnderANodeBounds() (least, most float64) {
 	return held.Least, held.Most
 }
 
-func (e EditorAssembly) GetLatestDayStarts() string { return e.cfg.GetLatestDayStart() }
+func (e EditorAssembly) GetLatestDayStart() string { return e.cfg.GetLatestDayStart() }
 
 func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }
 func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTranscribe }

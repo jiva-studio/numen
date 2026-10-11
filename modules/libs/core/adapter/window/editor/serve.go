@@ -210,7 +210,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		ConfiguredFile:  made.ReadSettingsFile,
 		WritesFile:      made.WriteSettingsFile,
 		PartsUnderANode: Bounds{Least: least, Most: most},
-		LatestDayStarts: made.GetLatestDayStarts(),
+		LatestDayStarts: made.GetLatestDayStart(),
 		Day:             running.Day,
 		Now:             made.GetClock(),
 	}

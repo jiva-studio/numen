@@ -66,10 +66,10 @@ type Assembly interface {
 	TurnSettings(written []port.Setting) error
 
 	// GetPartsUnderANodeBounds is how many parts a node may be asked to hang,
-	// at each end, and GetLatestDayStarts how late in the day a day of review
+	// at each end, and GetLatestDayStart how late in the day a day of review
 	// may be made to begin.
 	GetPartsUnderANodeBounds() (least, most float64)
-	GetLatestDayStarts() string
+	GetLatestDayStart() string
 
 	// IsRebuildingIndex is whether this launch was asked to read every file
 	// into the cache again. It belongs to the vault the window opened on and to
