@@ -9,7 +9,7 @@ import type { WindowKeysDeps, WindowScreen } from './windowKeys'
 import type { VaultCardsDue } from '@/entities/vault'
 
 /** One keystroke, as the window meets it. */
-const createPress = (key: string) =>
+const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
   ({
     key,
     repeat: false,
@@ -18,6 +18,7 @@ const createPress = (key: string) =>
     metaKey: false,
     shiftKey: false,
     preventDefault: vi.fn(),
+    ...more,
   }) as unknown as KeyboardEvent & { preventDefault: ReturnType<typeof vi.fn> }
 
 /** A vault as the counting hands one over. */
@@ -36,7 +37,11 @@ const createVault = (more: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   ...more,
 })
 
-const createKeys = (screen: WindowScreen, vault: VaultCardsDue) => {
+const createKeys = (
+  screen: WindowScreen,
+  vault: VaultCardsDue,
+  more: Partial<WindowKeysDeps> = {},
+) => {
   const deps: WindowKeysDeps = {
     getScreen: () => screen,
     getVaults: () => [vault],
@@ -56,6 +61,7 @@ const createKeys = (screen: WindowScreen, vault: VaultCardsDue) => {
     scrollPage: vi.fn(),
     closeAgent: vi.fn(),
     closeNotes: vi.fn(),
+    ...more,
   }
   return { ...createWindowKeys(deps), deps }
 }
@@ -111,5 +117,61 @@ describe('the keys of the session screen', () => {
 
     expect(deps.leave).toHaveBeenCalled()
     expect(deps.goToVaults).not.toHaveBeenCalled()
+  })
+
+  it('turns the card over, keeping the space bar from the page', () => {
+    const { onKeyDown, deps } = createKeys('session', createVault())
+    const press = createPress(' ')
+
+    onKeyDown(press)
+
+    expect(deps.show).toHaveBeenCalled()
+    expect(press.preventDefault).toHaveBeenCalled()
+  })
+
+  it('answers the card, leaving the number to the page', () => {
+    const { onKeyDown, deps } = createKeys('session', createVault(), { isShown: () => true })
+    const press = createPress('3')
+
+    onKeyDown(press)
+
+    expect(deps.answer).toHaveBeenCalledWith('good')
+    expect(press.preventDefault).not.toHaveBeenCalled()
+  })
+
+  it('brings each panel in with the overlay key', () => {
+    const { onKeyDown, deps } = createKeys('session', createVault())
+
+    onKeyDown(createPress('a', { ctrlKey: true }))
+    expect(deps.toggleAgent).toHaveBeenCalledOnce()
+    expect(deps.toggleNotes).not.toHaveBeenCalled()
+
+    onKeyDown(createPress('r', { ctrlKey: true }))
+    expect(deps.toggleNotes).toHaveBeenCalledOnce()
+    expect(deps.toggleAgent).toHaveBeenCalledOnce()
+  })
+
+  it('puts the conversation away on escape, and stays in the session', () => {
+    const { onKeyDown, deps } = createKeys('session', createVault(), {
+      getShowing: () => 'asking',
+    })
+
+    onKeyDown(createPress('Escape'))
+
+    expect(deps.closeAgent).toHaveBeenCalled()
+    expect(deps.closeNotes).not.toHaveBeenCalled()
+    expect(deps.leave).not.toHaveBeenCalled()
+  })
+
+  it('puts the reading away on escape, and stays in the session', () => {
+    const { onKeyDown, deps } = createKeys('session', createVault(), {
+      getShowing: () => 'reading',
+    })
+
+    onKeyDown(createPress('Escape'))
+
+    expect(deps.closeNotes).toHaveBeenCalled()
+    expect(deps.closeAgent).not.toHaveBeenCalled()
+    expect(deps.leave).not.toHaveBeenCalled()
   })
 })

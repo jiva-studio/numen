@@ -56,6 +56,7 @@ const wire = vi.hoisted(() => {
     agent: async (): Promise<{ unreachable: string }> => ({ unreachable: '' }),
     opened: { unwritten: [] as string[], skipped: 0 },
     isStartRefused: false,
+    sessionsAsked: [] as unknown[],
   }
 })
 
@@ -128,7 +129,8 @@ vi.mock('@/shared/clients', async (original) => ({
         unread: 0,
       }
     },
-    startSession: async () => {
+    startSession: async (asked: unknown) => {
+      wire.sessionsAsked.push(asked)
       if (wire.isStartRefused) {
         throw new ConnectError('the vault is closing', Code.FailedPrecondition)
       }
@@ -195,13 +197,13 @@ const Page = defineComponent({
 })
 
 /** The window made, in a page, with the counts on the screen. */
-const openWindow = async () => {
+const openWindow = async ({ isPageDrawn = true } = {}) => {
   let held: Window | null = null
   const page = mount(
     defineComponent({
       setup() {
         held = useWindow()
-        return () => h(Page, { ref: 'page' })
+        return () => (isPageDrawn ? h(Page, { ref: 'page' }) : null)
       },
     }),
   )
@@ -253,6 +255,7 @@ beforeEach(() => {
   wire.agent = async () => ({ unreachable: '' })
   wire.opened = { unwritten: [], skipped: 0 }
   wire.isStartRefused = false
+  wire.sessionsAsked.length = 0
 })
 
 afterEach(() => {
@@ -380,6 +383,57 @@ describe('a session sat down to', () => {
     expect(opened.notices.value).toHaveLength(0)
   })
 
+  it('sits down to every deck of a preset, and says what it could not act on', async () => {
+    wire.opened = { unwritten: ['decks/Suffixes.md'], skipped: 0 }
+    const opened = await openWindow()
+    opened.vaults.choose('roots')
+    await settle()
+
+    await opened.decks.startPreset('presets/Daily.md')
+
+    expect(opened.on.value).toBe('session')
+    expect(wire.sessionsAsked).toEqual([{ vault: 'roots', deck: '', preset: 'presets/Daily.md' }])
+    expect(opened.notices.value.map((one) => one.tone)).toEqual(['caution'])
+  })
+
+  it('stays on the decks when a preset’s session cannot be opened', async () => {
+    wire.isStartRefused = true
+    const opened = await openWindow()
+    opened.vaults.choose('roots')
+    await settle()
+
+    await opened.decks.startPreset('presets/Daily.md')
+
+    expect(opened.on.value).toBe('decks')
+    expect(opened.notices.value.map((one) => one.tone)).toEqual(['alarm'])
+  })
+
+  it('ends the conversation with the card it was about', async () => {
+    const opened = await openSession()
+    opened.session.toggleAgent()
+    expect(opened.session.agentPanel.about.value).not.toBeNull()
+
+    opened.session.state.show()
+    await opened.session.answerCard('good')
+
+    expect(opened.session.agentPanel.about.value).toBeNull()
+    expect(opened.session.agentPanel.open.value).toBe(false)
+  })
+
+  it('is left alone by a deck written underneath it', async () => {
+    const opened = await openSession()
+    const counted = wire.counts.length
+    const daysRead = wire.daysAsked.length
+
+    wire.reloads.send({ reload: true })
+    await settle()
+    await settle()
+
+    expect(opened.on.value).toBe('session')
+    expect(wire.counts).toHaveLength(counted)
+    expect(wire.daysAsked).toHaveLength(daysRead)
+  })
+
   it('stays on the decks when the session cannot be opened', async () => {
     wire.isStartRefused = true
     const opened = await openSession()
@@ -432,6 +486,24 @@ describe('the keys of the window', () => {
     await press('u')
     expect(wire.takenBack).toHaveLength(1)
     expect(opened.session.state.card.value?.mark).toBe('mark-1')
+  })
+
+  it('scroll nothing, and break nothing, while no reading is drawn', async () => {
+    const opened = await openWindow({ isPageDrawn: false })
+    opened.vaults.choose('roots')
+    await settle()
+    await opened.decks.start('decks/Suffixes.md')
+    opened.session.toggleNotes()
+    await settle()
+    const faults: unknown[] = []
+    const onFault = (event: ErrorEvent) => faults.push(event.error)
+    window.addEventListener('error', onFault)
+
+    await press(' ')
+    window.removeEventListener('error', onFault)
+
+    expect(faults).toEqual([])
+    expect(wire.scrolled).toEqual([])
   })
 
   it('scroll the reading with the space bar while it is up', async () => {

@@ -24,6 +24,7 @@ const wire = vi.hoisted(() => {
     tasksAsked: [] as unknown[],
     reloadsOpened: 0,
     reloads: (_signal?: AbortSignal): AsyncIterable<unknown> => waits(),
+    tasks: (): AsyncIterable<unknown> => waits(),
     agent: (): Promise<{ unreachable: string }> => new Promise<never>(() => {}),
   }
 })
@@ -41,7 +42,7 @@ vi.mock('@/shared/clients', () => ({
     watchTasks: (asked: unknown, call?: { signal?: AbortSignal }) => {
       if (call?.signal) wire.taken.push(call.signal)
       wire.tasksAsked.push(asked)
-      return wire.waits()
+      return wire.tasks()
     },
   },
   agentService: {
@@ -59,6 +60,12 @@ async function* failsOnAbort(signal?: AbortSignal): AsyncGenerator<never> {
   })
 }
 
+/** A stream that hands over what it is given, and then stays open. */
+async function* sends(...items: unknown[]): AsyncGenerator<unknown> {
+  yield* items
+  await new Promise<never>(() => {})
+}
+
 /** A stream that ends in a fault as it opens. */
 async function* fails(): AsyncGenerator<never> {
   await Promise.resolve()
@@ -69,11 +76,11 @@ async function* fails(): AsyncGenerator<never> {
 const openWindow = () => {
   const deps = {
     reportError: vi.fn(),
-    setTasks: () => {},
+    setTasks: vi.fn(),
     onKeyDown: () => {},
     count: async () => {},
     stop: vi.fn(),
-    refresh: async () => {},
+    refresh: vi.fn(async () => {}),
     unreachable: ref(''),
   }
   const host = defineComponent({
@@ -95,6 +102,7 @@ beforeEach(() => {
   wire.tasksAsked.length = 0
   wire.reloadsOpened = 0
   wire.reloads = () => wire.waits()
+  wire.tasks = () => wire.waits()
   wire.agent = () => new Promise<never>(() => {})
 })
 
@@ -150,6 +158,43 @@ describe('what the window follows', () => {
     const { window } = openWindow()
 
     expect(wire.tasksAsked).toEqual([{ window: 'review' }])
+    window.unmount()
+  })
+
+  it('hands the work being done over as cards to draw', async () => {
+    wire.tasks = () =>
+      sends({
+        tasks: [
+          {
+            id: 'reading\t01A',
+            doing: 'Reading the vault',
+            about: 'Garden',
+            error: 'no such folder',
+            isAsked: true,
+          },
+        ],
+      })
+    const { window, deps } = openWindow()
+    await settle()
+
+    expect(deps.setTasks).toHaveBeenCalledWith([
+      {
+        id: 'reading\t01A',
+        label: 'Reading the vault',
+        about: 'Garden',
+        error: 'no such folder',
+        isAsked: true,
+      },
+    ])
+    window.unmount()
+  })
+
+  it('reads again on a message that carries a reload, and on no other', async () => {
+    wire.reloads = () => sends({ reload: false }, { reload: true }, { reload: false })
+    const { window, deps } = openWindow()
+    await settle()
+
+    expect(deps.refresh).toHaveBeenCalledOnce()
     window.unmount()
   })
 })
