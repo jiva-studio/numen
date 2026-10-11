@@ -1063,3 +1063,256 @@ describe('the view going after the words', () => {
     expect(heard.typing.value).toBe(false)
   })
 })
+
+/** An answer held back until the test lets it go, or fails it. */
+interface Gate<T> {
+  readonly promise: Promise<T>
+  resolve(value: T): void
+  reject(reason: Error): void
+}
+
+function createGate<T>(): Gate<T> {
+  let resolve: (value: T) => void = () => {}
+  let reject: (reason: Error) => void = () => {}
+  const promise = new Promise<T>((done, fail) => {
+    resolve = done
+    reject = fail
+  })
+  return { promise, resolve, reject }
+}
+
+/** A recording whose every answer waits for the test, in the order it was asked. */
+function createGated() {
+  const summaries: Gate<RecordingSummary>[] = []
+  const states: Gate<ArtifactStates>[] = []
+  const transcripts: Gate<Transcript>[] = []
+  const hold = <T>(gates: Gate<T>[]): Promise<T> => {
+    const gate = createGate<T>()
+    gates.push(gate)
+    return gate.promise
+  }
+  const recordings: Recordings = {
+    getSummary: () => hold(summaries),
+    getTaskStates: () => hold(states),
+    readTranscript: () => hold(transcripts),
+    readArticle: () => hold(transcripts),
+    writeTranscript: async () => {},
+    findCueTime: async () => null,
+  }
+  return { recordings, summaries, states, transcripts }
+}
+
+const HEARD: Transcript = { cues: CUES, isEditable: true, prose: '' }
+
+const OLD_SUMMARY: RecordingSummary = {
+  ...SUMMARY,
+  mediaUrl: 'http://127.0.0.1:1/files/w/v/old.mp3',
+}
+
+describe('a window that says what it can play', () => {
+  it('plays a recording where it can play its kind', async () => {
+    const { recordings } = talk()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      plays: () => true,
+    })
+    await flush()
+
+    expect(heard.playable.value).toBe(true)
+  })
+
+  it('does not play it where it cannot', async () => {
+    const { recordings } = talk()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      plays: () => false,
+    })
+    await flush()
+
+    expect(heard.playable.value).toBe(false)
+  })
+})
+
+describe('a recording tab before its first reading lands', () => {
+  it('is editable and has nothing to report', () => {
+    const { recordings } = talk()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player })
+
+    expect(heard.isEditable.value).toBe(true)
+    expect(heard.error.value).toBe('')
+  })
+})
+
+describe('an older reading that lands after a newer one', () => {
+  /** Two readings asked for, the newer of which has gone all the way through. */
+  const createOverlap = async () => {
+    const gated = createGated()
+    const heard = useTranscript(gated.recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+    })
+    heard.setWorking(true)
+    await flush()
+    return { ...gated, heard }
+  }
+
+  /** The newer reading, the second asked, answers at every step. */
+  const finishNewer = async (
+    { summaries, states, transcripts }: Awaited<ReturnType<typeof createOverlap>>,
+    stateAt: number,
+  ) => {
+    summaries[1]?.resolve(SUMMARY)
+    await flush()
+    states[stateAt]?.resolve({ transcript: 'done' })
+    await flush()
+    transcripts[0]?.resolve(HEARD)
+    await flush()
+  }
+
+  it('does not move the recording to the address it answers with', async () => {
+    const overlap = await createOverlap()
+    await finishNewer(overlap, 0)
+
+    overlap.summaries[0]?.resolve(OLD_SUMMARY)
+    await flush()
+
+    expect(overlap.heard.url.value).toBe(SUMMARY.mediaUrl)
+    expect(overlap.states).toHaveLength(1)
+  })
+
+  it('does not read the words once it has been passed', async () => {
+    const overlap = await createOverlap()
+    overlap.summaries[0]?.resolve(SUMMARY)
+    await flush()
+    await finishNewer(overlap, 1)
+
+    overlap.states[0]?.resolve({ transcript: 'done' })
+    await flush()
+
+    expect(overlap.states).toHaveLength(2)
+    expect(overlap.transcripts).toHaveLength(1)
+    expect(overlap.heard.cues.value).toStrictEqual(CUES)
+  })
+
+  it('does not report its failure', async () => {
+    const overlap = await createOverlap()
+    await finishNewer(overlap, 0)
+
+    overlap.summaries[0]?.reject(new Error('the first asking failed'))
+    await flush()
+
+    expect(overlap.heard.error.value).toBe('')
+  })
+
+  it('does not end the loading of the newer reading', async () => {
+    const overlap = await createOverlap()
+    overlap.summaries[1]?.resolve(SUMMARY)
+    await flush()
+
+    overlap.summaries[0]?.resolve(SUMMARY)
+    await flush()
+
+    expect(overlap.heard.isLoading.value).toBe(true)
+  })
+})
+
+describe('a recording tab closed while its reading is on its way', () => {
+  it('draws nothing of what the reading answers', async () => {
+    const { recordings, summaries, states } = createGated()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player })
+    await flush()
+
+    heard.close()
+    summaries[0]?.resolve(SUMMARY)
+    await flush()
+
+    expect(heard.url.value).toBe('')
+    expect(heard.isLoading.value).toBe(true)
+    expect(states).toHaveLength(0)
+  })
+
+  it('takes the words off the screen', async () => {
+    const { recordings } = talk()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player })
+    await flush()
+    heard.setProse('One.\nThe second thing said.\nThe third thing said.')
+
+    heard.close()
+
+    expect(heard.prose.value).toBe('')
+  })
+})
+
+describe('a place in the words asked for', () => {
+  it('asks nothing for no span', async () => {
+    const { recordings, asked } = talk(CUES, SUMMARY, 2_500)
+    const { player, sought } = createPlayer()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
+
+    await heard.reach()
+
+    expect(asked.some((one) => one.startsWith('plays'))).toBe(false)
+    expect(heard.error.value).toBe('')
+    expect(sought).toStrictEqual([])
+  })
+
+  it('asks nothing once the tab has closed', async () => {
+    const { recordings, asked } = talk(CUES, SUMMARY, 2_500)
+    const { player, sought } = createPlayer()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: player })
+    await flush()
+    heard.close()
+
+    await heard.reach({ from: 22, to: 28 })
+
+    expect(asked.some((one) => one.startsWith('plays'))).toBe(false)
+    expect(sought).toStrictEqual([])
+  })
+
+  it('reports nothing where the question fails after the tab has closed', async () => {
+    const { recordings } = talk()
+    const gate = createGate<number | null>()
+    recordings.findCueTime = () => gate.promise
+    const heard = useTranscript(recordings, 'talks/Ants.mp3')
+    await flush()
+    const reaching = heard.reach({ from: 22, to: 28 })
+    await flush()
+    heard.close()
+
+    gate.reject(new Error('the words are being written'))
+    await reaching
+
+    expect(heard.error.value).toBe('')
+  })
+})
+
+describe('a recording drawn in a frame that has not said where it stands', () => {
+  it('has no line being said', async () => {
+    const { recordings } = talk()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player })
+    await flush()
+
+    heard.setFramePlayer({ seek: () => {} })
+
+    expect(heard.current.value).toBe(-1)
+  })
+})
+
+describe('the words asked for again', () => {
+  it('replace what stands on screen, and drop what was typed and not yet written', async () => {
+    const { recordings, asked, written } = talk()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
+    await flush()
+    const original = heard.prose.value
+    heard.setProse('Something else entirely.')
+
+    heard.reload()
+    await waitForStill()
+
+    expect(asked.filter((one) => one.startsWith('about'))).toHaveLength(2)
+    expect(heard.prose.value).toBe(original)
+    expect(written).toStrictEqual([])
+  })
+})

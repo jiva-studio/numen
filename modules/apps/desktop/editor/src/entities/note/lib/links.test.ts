@@ -19,6 +19,10 @@ describe('a link to a target', () => {
     }
   })
 
+  it('is nothing where the scheme is not ours, whatever follows it', () => {
+    expect(parseLinkTarget('https:book.pdf?start=1&length=2')).toBeNull()
+  })
+
   it('is nothing where it names no span of the text', () => {
     for (const href of [
       'numen:library%2FA%20Book.pdf',
@@ -59,5 +63,40 @@ describe('the targets a piece of prose links to', () => {
     expect(
       extractLinkTargets('He went to [Remuna](numen:book.pdf?start=100&length=20) and then'),
     ).toHaveLength(1)
+  })
+
+  it('name two targets apart when only one of path, start or length differs', () => {
+    const text = [
+      '[a](numen:book.pdf?start=100&length=20)',
+      '[b](numen:other.pdf?start=100&length=20)',
+      '[c](numen:book.pdf?start=200&length=20)',
+      '[d](numen:book.pdf?start=100&length=30)',
+    ].join(' ')
+
+    expect(extractLinkTargets(text)).toStrictEqual([
+      { path: 'book.pdf', start: 100, length: 20 },
+      { path: 'other.pdf', start: 100, length: 20 },
+      { path: 'book.pdf', start: 200, length: 20 },
+      { path: 'book.pdf', start: 100, length: 30 },
+    ])
+  })
+
+  it('are read through the space a model leaves inside the parentheses', () => {
+    expect(extractLinkTargets('[a]( numen:book.pdf?start=100&length=20 )')).toStrictEqual([
+      { path: 'book.pdf', start: 100, length: 20 },
+    ])
+    expect(extractLinkTargets('[a]( numen:book.pdf?start=100&length=20)')).toHaveLength(1)
+    expect(extractLinkTargets('[a](numen:book.pdf?start=100&length=20 )')).toHaveLength(1)
+  })
+
+  it('leave out a link of ours that names no span', () => {
+    const text = '[a](numen:book.pdf) and [b](numen:book.pdf?start=-1&length=2)'
+    expect(extractLinkTargets(text)).toStrictEqual([])
+  })
+})
+
+describe('a link with a broken escape', () => {
+  it('names no file', () => {
+    expect(parseLinkTarget('numen:100%?start=1&length=2')).toBeNull()
   })
 })
