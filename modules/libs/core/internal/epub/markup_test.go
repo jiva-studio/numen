@@ -300,6 +300,7 @@ func TestWhereALinkLeads(t *testing.T) {
 		{" mailto:someone@example.org", "mailto:someone@example.org"},
 		{"x:payload", ""},
 		{"AZaz09+-.:payload", ""},
+		{"a1:payload", ""},
 		{"1ab:payload", "OEBPS/1ab:payload"},
 		{"~ab:payload", "OEBPS/~ab:payload"},
 		{"a_b:payload", "OEBPS/a_b:payload"},
@@ -380,6 +381,8 @@ func TestRunsInATable(t *testing.T) {
 			`<table><tr><template>X</template></tr></table>`, "tr", ""},
 		{"a run waiting for a cell is no caption's",
 			`<table><template>X</template><caption><b>C</b></caption></table>`, "b", "C"},
+		{"a table whose text is all in an element keeps its line end",
+			`<table><template><b>X</b></template></table>`, "table", "X\n"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			book, drawn := readOne(t, c.markup)
@@ -393,6 +396,13 @@ func TestRunsInATable(t *testing.T) {
 			if len(holder.Children) > 0 && holder.Offset != holder.Children[0].Offset {
 				t.Errorf("the %s stands at %d and what it holds at %d",
 					c.in, holder.Offset, holder.Children[0].Offset)
+			}
+			if c.in == "td" {
+				for _, held := range element(t, drawn.Nodes, "table").Children {
+					if held.Name == "" {
+						t.Errorf("the table holds %q outside its cell", held.Text)
+					}
+				}
 			}
 		})
 	}
