@@ -340,3 +340,35 @@ func TestALongRunOfFailuresWaitsAtTheCeiling(t *testing.T) {
 		}
 	}
 }
+
+func TestAClientIsKnownByItsModel(t *testing.T) {
+	if got := client(t, "http://127.0.0.1:1").GetName(); got != "test-model" {
+		t.Errorf("known as %q", got)
+	}
+}
+
+// A wait is drawn at random up to its ceiling.
+func TestAWaitIsDrawnUpToItsCeiling(t *testing.T) {
+	s, _ := failing(t, nil, http.StatusServiceUnavailable)
+	w := &waits{}
+	c := clientWith(t, s.URL, func(p *proofreading.Profile) { p.Attempts = 12 })
+	c.SetSleep(w.sleep)
+
+	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+		t.Fatal("no error")
+	}
+	got := w.all()
+	if len(got) != 11 {
+		t.Fatalf("waited %d times", len(got))
+	}
+	var drawn bool
+	for i, d := range got {
+		if d < 0 || d > proofreading.DefaultMaxDelayMS*time.Millisecond {
+			t.Errorf("wait %d was %v", i, d)
+		}
+		drawn = drawn || d > 0
+	}
+	if !drawn {
+		t.Errorf("every wait was nothing: %v", got)
+	}
+}

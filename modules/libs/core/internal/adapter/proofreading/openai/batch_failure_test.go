@@ -22,9 +22,12 @@ func TestAClientWithNoQueueSendsNothing(t *testing.T) {
 	if err == nil || errors.As(err, &sending) {
 		t.Errorf("leaving: %v", err)
 	}
-	_, _, err = c.Collect(t.Context(), "batch_1")
+	_, ready, err := c.Collect(t.Context(), "batch_1")
 	if err == nil || errors.As(err, &sending) {
 		t.Errorf("collecting: %v", err)
+	}
+	if ready {
+		t.Error("a batch with no queue was taken as done")
 	}
 }
 
@@ -33,22 +36,31 @@ func TestAQueueThatIsNoURLIsReported(t *testing.T) {
 	if _, err := c.Leave(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
 		t.Error("no error out of Leave")
 	}
-	if _, _, err := c.Collect(t.Context(), "batch_1"); err == nil {
+	_, ready, err := c.Collect(t.Context(), "batch_1")
+	if err == nil {
 		t.Error("no error out of Collect")
+	}
+	if ready {
+		t.Error("a batch at no URL was taken as done")
 	}
 }
 
-func TestAQueueThatCannotBeReachedIsReported(t *testing.T) {
+func TestAQueueThatCannotBeReachedIsReportedAsTheRequestThatFailed(t *testing.T) {
 	s := server(t, func(http.ResponseWriter, *http.Request) {})
 	gone := s.URL
 	s.Close()
 	c := newBatchClient(t, gone)
+	var sending *url.Error
 
-	if _, err := c.Leave(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
-		t.Error("no error out of Leave")
+	if _, err := c.Leave(t.Context(), []proofread.Batch{page(1, "a line")}); !errors.As(err, &sending) {
+		t.Errorf("leaving: %v", err)
 	}
-	if _, _, err := c.Collect(t.Context(), "batch_1"); err == nil {
-		t.Error("no error out of Collect")
+	_, ready, err := c.Collect(t.Context(), "batch_1")
+	if !errors.As(err, &sending) {
+		t.Errorf("collecting: %v", err)
+	}
+	if ready {
+		t.Error("a batch at a queue out of reach was taken as done")
 	}
 }
 
@@ -164,10 +176,13 @@ func TestAMalformedAnswerToCollectingIsReportedAsSuch(t *testing.T) {
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"status": not json`)
 	})
-	_, _, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
+	_, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
 	var malformed *json.SyntaxError
 	if !errors.As(err, &malformed) {
 		t.Fatalf("want a malformed answer, got %v", err)
+	}
+	if ready {
+		t.Error("a malformed answer was taken as done")
 	}
 }
 
