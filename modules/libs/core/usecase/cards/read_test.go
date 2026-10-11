@@ -363,3 +363,18 @@ func TestADeckOverTheBoundSaysItsSize(t *testing.T) {
 		t.Errorf("problems = %+v, want the size said", got.Body.Problems)
 	}
 }
+
+// A file the vault's own rules leave alone is not a note, and its bytes are not
+// handed over.
+func TestAFileTheVaultLeavesAloneIsNotADeck(t *testing.T) {
+	vs := newVaults(t)
+	write(t, vs.first, "decks/.Hidden.md", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")
+
+	got, err := cards.NewRead(filesystem.VaultReaders{}, nil).Deck(t.Context(), vs.first, "decks/.Hidden.md")
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if got.Outcome != note.NotANote || got.Raw != "" {
+		t.Errorf("outcome = %q, raw = %q, want it not read as a note", got.Outcome, got.Raw)
+	}
+}
