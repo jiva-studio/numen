@@ -133,3 +133,14 @@ func TestAVectorIndexOfUnreadableWidthIsReported(t *testing.T) {
 		t.Errorf("the vector index was replaced by %s", created)
 	}
 }
+
+// Every positive width is a vector, down to a single dimension.
+func TestTheNarrowestWidthIsFitted(t *testing.T) {
+	db := openDB(t)
+	if err := db.FitVectors(t.Context(), 1, testRecipe); err != nil {
+		t.Fatal(err)
+	}
+	if width, _ := readWidth(t, db); width != 1 {
+		t.Errorf("the vector index holds width %d, want 1", width)
+	}
+}
