@@ -951,3 +951,39 @@ describe('the word a tab carries beside its title', () => {
     expect(new Set(words).size).toBe(3)
   })
 })
+
+describe('a tab that has asked for nothing to be written', () => {
+  it('asks for nothing when the first read finds no file', () => {
+    const next = tabAfter(openTab('Note.md').tab, {
+      kind: 'read',
+      generation: 1,
+      answer: { kind: 'missing' },
+    })
+
+    expect(next.effects).toEqual([])
+  })
+})
+
+describe('a write that was refused', () => {
+  it('asks for nothing further', () => {
+    const next = tabAfter(tab({ shown: 'two', pendingWrite: 'two', since: 10 }), {
+      kind: 'written',
+      answer: { kind: 'error', error: 'tooLarge' },
+    })
+
+    expect(next.effects).toEqual([])
+  })
+})
+
+describe('a rename of the file under a tab', () => {
+  it('reads the file at its new path, though the change names only the old one', () => {
+    const next = tabAfter(tab({ reading: 1 }), {
+      kind: 'changed',
+      paths: ['Note.md'],
+      renamed: [{ from: 'Note.md', to: 'Moved.md' }],
+    })
+
+    expect(next.tab.path).toBe('Moved.md')
+    expect(next.effects).toEqual([{ kind: 'read', path: 'Moved.md', generation: 2 }])
+  })
+})

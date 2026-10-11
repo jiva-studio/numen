@@ -728,3 +728,291 @@ describe('the ids of the open notes', () => {
     expect(notes.getOpenNote('A.md').state).toBe('clean')
   })
 })
+
+describe('the limits a store is given', () => {
+  it('set how long the text is still before it is written', async () => {
+    vi.useFakeTimers()
+    try {
+      const { core, files, wrote } = fake()
+      files.set('Heat.md', 'one')
+      const notes = openNotes(core, { limits: { quiet: 50, bound: 500 } })
+      notes.open('Heat.md')
+      await settle()
+
+      notes.setBody('Heat.md', 'one two')
+      vi.advanceTimersByTime(60)
+      await settle()
+
+      expect(wrote).toHaveLength(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('an id the store does not hold', () => {
+  it('is turned by nothing that is told to it', () => {
+    const { core } = fake()
+    const notes = openNotes(core, { limits: quick })
+
+    expect(() => {
+      notes.setBody('ghost.md', 'text')
+      notes.save('ghost.md')
+      notes.keep('ghost.md')
+      notes.take('ghost.md')
+    }).not.toThrow()
+    expect(notes.getOpenIds()).toEqual([])
+  })
+
+  it('is closed at once', async () => {
+    const { core } = fake()
+    const notes = openNotes(core, { limits: quick })
+
+    expect(await notes.close('ghost.md')).toBe(true)
+  })
+
+  it('is a note still loading, standing at no file, with nothing to say', () => {
+    const { core } = fake()
+    const notes = openNotes(core, { limits: quick })
+
+    expect(notes.getOpenNote('ghost.md')).toEqual({
+      path: 'ghost.md',
+      body: '',
+      state: 'loading',
+      error: null,
+    })
+    expect(notes.getFilePath('ghost.md')).toBe('')
+    expect(notes.getErrorMessage('ghost.md')).toBe('')
+  })
+})
+
+describe('a note with nothing wrong', () => {
+  it('has no error message', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'one')
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+
+    expect(notes.getErrorMessage('Heat.md')).toBe('')
+  })
+})
+
+describe('a note replaced by what its file holds', () => {
+  it('is announced by the path it stands at', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'entropy grows')
+    const onReplaced = vi.fn<(path: string) => void>()
+    const notes = openNotes(core, { limits: quick, onReplaced })
+
+    notes.open('Heat.md')
+    await settle()
+
+    expect(onReplaced).toHaveBeenCalledTimes(1)
+    expect(onReplaced).toHaveBeenCalledWith('Heat.md')
+  })
+})
+
+describe('reloading a note that held something', () => {
+  const linked = {
+    body: 'What I made of it.',
+    at: getFingerprint('What I made of it.'),
+    link: {
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      embed: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1',
+    },
+  }
+
+  it('shows an empty file as empty', async () => {
+    const { core, files } = fake()
+    files.set('Heat.md', 'first body')
+    files.set('Cold.md', '')
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+
+    notes.reload('Heat.md', 'Cold.md')
+    await settle()
+
+    expect(notes.getOpenNote('Heat.md').body).toBe('')
+  })
+
+  it('drops the link at once, before the new file has answered', async () => {
+    const { core } = fake({ read: async () => asValue(linked) })
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Entropy.md')
+    await settle()
+    expect(notes.link('Entropy.md')).not.toBeNull()
+
+    notes.reload('Entropy.md')
+
+    expect(notes.link('Entropy.md')).toBeNull()
+  })
+
+  it('leaves no timer running for the text typed before it', async () => {
+    vi.useFakeTimers()
+    try {
+      const { core, files } = fake()
+      files.set('Heat.md', 'one')
+      const notes = openNotes(core, { limits: { quiet: 50, bound: 500 } })
+      notes.open('Heat.md')
+      await settle()
+      notes.setBody('Heat.md', 'one two')
+      expect(vi.getTimerCount()).toBe(1)
+
+      notes.reload('Heat.md')
+
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('closing a note', () => {
+  it('leaves no timer running for the text it wrote', async () => {
+    vi.useFakeTimers()
+    try {
+      const { core, files } = fake()
+      files.set('Heat.md', 'one')
+      const notes = openNotes(core, { limits: { quiet: 50, bound: 500 } })
+      notes.open('Heat.md')
+      await settle()
+      notes.setBody('Heat.md', 'one two')
+
+      expect(await notes.close('Heat.md')).toBe(true)
+
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('leaves neither its text nor its link behind', async () => {
+    const { core } = fake({
+      read: async () =>
+        asValue({
+          body: 'What I made of it.',
+          at: getFingerprint('What I made of it.'),
+          link: { url: 'https://example.com/v', embed: 'https://example.com/e' },
+        }),
+    })
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Entropy.md')
+    await settle()
+    expect(notes.link('Entropy.md')).not.toBeNull()
+
+    await notes.close('Entropy.md')
+
+    expect(notes.link('Entropy.md')).toBeNull()
+    expect(notes.getOpenNote('Entropy.md').body).toBe('')
+  })
+
+  it('is not answered while a write in the air is still being waited on', async () => {
+    const base = fake()
+    base.files.set('Heat.md', 'one')
+    let release: () => void = () => {}
+    const gate = new Promise<void>((done) => {
+      release = done
+    })
+    let calls = 0
+    const core: Notes = {
+      ...base.core,
+      write: async (path, body) => {
+        calls += 1
+        if (calls === 1) await gate
+        base.files.set(path, body)
+        return asValue({ body: '', at: getFingerprint(body) })
+      },
+    }
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+    notes.setBody('Heat.md', 'one two')
+    const answers: boolean[] = []
+    void notes.close('Heat.md').then((gone) => answers.push(gone))
+
+    notes.setBody('Heat.md', 'one two three')
+    await settle()
+    expect(answers).toEqual([])
+
+    release()
+    await vi.waitFor(() => expect(answers).toEqual([true]))
+    expect(base.files.get('Heat.md')).toBe('one two three')
+  })
+
+  it('answers that a stale note was kept open, every time it is asked', async () => {
+    const base = fake()
+    base.files.set('Heat.md', 'one')
+    const notes = openNotes(base.core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+    notes.setBody('Heat.md', 'mine')
+    base.files.set('Heat.md', 'theirs')
+    notes.save('Heat.md')
+    await settle()
+    expect(notes.getOpenNote('Heat.md').state).toBe('stale')
+
+    expect(await notes.close('Heat.md')).toBe(false)
+    expect(await notes.close('Heat.md')).toBe(false)
+    expect(notes.has('Heat.md')).toBe(true)
+  })
+})
+
+describe('a note that could not be written, closed, and opened again', () => {
+  /** A core whose writes fail while `down.on` and land otherwise. */
+  const createFlakyCore = () => {
+    const base = fake()
+    base.files.set('Heat.md', 'one')
+    const down = { on: true }
+    const core: Notes = {
+      ...base.core,
+      write: async (path, body) => {
+        if (down.on) throw new Error('no transport')
+        base.files.set(path, body)
+        return asValue({ body: '', at: getFingerprint(body) })
+      },
+    }
+    return { core, down }
+  }
+
+  it('is held again, and is not closed by the writes of the note it was', async () => {
+    const { core, down } = createFlakyCore()
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+    notes.setBody('Heat.md', 'one two')
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
+    expect(await notes.close('Heat.md')).toBe(false)
+    expect(await notes.close('Heat.md')).toBe(true)
+
+    down.on = false
+    notes.open('Heat.md')
+    await settle()
+    notes.setBody('Heat.md', 'three')
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('clean'))
+    expect(notes.has('Heat.md')).toBe(true)
+
+    down.on = true
+    notes.setBody('Heat.md', 'four')
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
+    expect(await notes.close('Heat.md')).toBe(false)
+  })
+
+  it('is held again once it is reloaded and fails again', async () => {
+    const { core } = createFlakyCore()
+    const notes = openNotes(core, { limits: quick })
+    notes.open('Heat.md')
+    await settle()
+    notes.setBody('Heat.md', 'one two')
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
+    expect(await notes.close('Heat.md')).toBe(false)
+
+    notes.reload('Heat.md')
+    await settle()
+    notes.setBody('Heat.md', 'three')
+    await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
+
+    expect(await notes.close('Heat.md')).toBe(false)
+  })
+})
