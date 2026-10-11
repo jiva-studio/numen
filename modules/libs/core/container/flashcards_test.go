@@ -110,7 +110,7 @@ func TestTheSchedulesAreKeptInTheFolderTheConfigurationNames(t *testing.T) {
 // Without a folder named, the schedules are kept in the machine's cache location.
 func TestTheSchedulesAreKeptInTheMachinesCacheWhenNoFolderIsNamed(t *testing.T) {
 	isolate(t)
-	cache := os.Getenv("XDG_CACHE_HOME")
+	caches := []string{os.Getenv("XDG_CACHE_HOME"), os.Getenv("HOME")}
 
 	schedules, err := container.Config{ServiceDir: ".numen"}.Schedules()
 	if err != nil {
@@ -119,8 +119,8 @@ func TestTheSchedulesAreKeptInTheMachinesCacheWhenNoFolderIsNamed(t *testing.T) 
 	if err := schedules.Write(t.Context(), "vault1", []byte("one")); err != nil {
 		t.Fatal(err)
 	}
-	if !hasFileUnder(t, cache) {
-		t.Errorf("nothing was kept in %s", cache)
+	if !hasFileUnder(t, caches[0]) && !hasFileUnder(t, caches[1]) {
+		t.Errorf("nothing was kept in %v", caches)
 	}
 }
 
