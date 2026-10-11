@@ -64,7 +64,7 @@ export const placeActions = (
  * the first there is; a list holding none takes it nowhere.
  */
 export const findKeptAction = (actions: readonly PlacedAction[], was: string): number => {
-  const held = actions.findIndex((one) => one.action.id === was)
-  if (held >= 0) return held
+  const at = actions.findIndex((one) => one.action.id === was)
+  if (at >= 0) return at
   return actions.length > 0 ? 0 : -1
 }

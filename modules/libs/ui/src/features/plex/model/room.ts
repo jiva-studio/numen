@@ -82,12 +82,12 @@ export function useRoom(
    * picture is drawn to, so a plex set larger hangs them larger.
    */
   const hung = computed(() => {
-    const held = props.parts
-    if (!held) return undefined
+    const getParts = props.parts
+    if (!getParts) return undefined
 
     const { margin } = options.value
     const deps = { measure: measures.value?.part, viewport: room.value, margin }
-    return (node: PlacedNode) => getNodeParts(node, held(node.id), options.value, deps)
+    return (node: PlacedNode) => getNodeParts(node, getParts(node.id), options.value, deps)
   })
 
   return { room, options, measures, widen, hung }

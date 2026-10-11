@@ -174,11 +174,11 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
    */
   const dismissByHand = async (id: string): Promise<void> => {
     const at = folds.value.shown.findIndex((one) => one.id === id)
-    const held = cards.get(id)?.way === document.activeElement
+    const hadFocus = cards.get(id)?.way === document.activeElement
     forgotten.add(id)
     away.value = new Set([...away.value, id])
     options.dismiss(id)
-    if (!held || at < 0) return
+    if (!hadFocus || at < 0) return
     await nextTick()
     const left = folds.value.shown
     const next = left[Math.min(at, left.length - 1)]
