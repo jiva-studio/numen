@@ -202,3 +202,84 @@ describe('a link pressed in the card', () => {
     expect(held.at.value).toBe('')
   })
 })
+
+describe('the asking', () => {
+  /** The panel over a window that answers each deck when the test says. */
+  const slowPanel = () => {
+    const waiting: { deck: string; answer: () => void; refuse: () => void }[] = []
+    const deck = ref('decks/Words.md')
+    const notices: string[] = []
+    const held = useNotesPanel({
+      open: () => true,
+      showPanel: () => {},
+      vault: () => 'one',
+      deck: () => deck.value,
+      getDeckNeighbourhood: (_vault, of) =>
+        new Promise((then, fail) =>
+          waiting.push({
+            deck: of,
+            answer: () => then({ notes: [createNeighbour({ path: of })], unread: 1 }),
+            refuse: () => fail(new Error('out of reach')),
+          }),
+        ),
+      showNotice: (one) => notices.push(one),
+    })
+    return { held, waiting, deck, notices }
+  }
+
+  it('is working while the deck is being asked for, and not once it has answered', async () => {
+    const { held, waiting } = slowPanel()
+    expect(held.isWorking.value).toBe(false)
+
+    const asking = held.openPanel()
+    expect(held.isWorking.value).toBe(true)
+
+    waiting[0]?.answer()
+    await asking
+    expect(held.isWorking.value).toBe(false)
+  })
+
+  it('is still working on the deck it is on when the deck behind it answers', async () => {
+    const { held, waiting, deck } = slowPanel()
+    const first = held.openPanel()
+    deck.value = 'decks/Trees.md'
+    const second = held.openPanel()
+
+    waiting[0]?.answer()
+    await first
+    expect(held.isWorking.value).toBe(true)
+
+    waiting[1]?.answer()
+    await second
+    expect(held.isWorking.value).toBe(false)
+  })
+
+  // The deck the session has left could not be reached, and that is nothing to
+  // say under the card of another.
+  it('says nothing of a deck the session has left that could not be reached', async () => {
+    const { held, waiting, deck, notices } = slowPanel()
+    const first = held.openPanel()
+    deck.value = 'decks/Trees.md'
+    const second = held.openPanel()
+
+    waiting[1]?.answer()
+    await second
+    waiting[0]?.refuse()
+    await first
+
+    expect(notices).toEqual([])
+    expect(held.notes.value[0]?.path).toBe('decks/Trees.md')
+    expect(held.unread.value).toBe(1)
+  })
+})
+
+describe('the panel put away', () => {
+  it('takes the window off the reading', async () => {
+    const { held, open } = panel()
+    await held.openPanel()
+
+    held.closePanel()
+
+    expect(open.value).toBe(false)
+  })
+})

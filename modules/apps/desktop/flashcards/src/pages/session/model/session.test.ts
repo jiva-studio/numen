@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useReviewSession } from './session'
 import type { SessionClient, SessionStart } from './session'
@@ -262,5 +262,187 @@ describe('a session', () => {
     await one.answer('good')
 
     expect(asks[0]?.said).toMatchObject({ tookMs: 4200n })
+  })
+})
+
+describe('the next card', () => {
+  it('comes up with its answer hidden', async () => {
+    const { one } = createSession()
+    await one.start('01VAULT', '')
+    one.show()
+    await one.answer('good')
+
+    expect(one.card.value?.mark).toBe('two')
+    expect(one.shown.value).toBe(false)
+  })
+})
+
+describe('an answer taken back', () => {
+  it('tells the vault which answer of which run it was', async () => {
+    const { one, asks } = createSession()
+    await one.start('01VAULT', '')
+    one.show()
+    await one.answer('good')
+
+    await one.takeBack()
+
+    expect(asks.filter((ask) => ask.what === 'takeBack').map((ask) => ask.said)).toEqual([
+      { vault: '01VAULT', run: 'flashcards/01A.jsonl', answer: '011' },
+    ])
+  })
+
+  it('brings back the card before the one in front of the person', async () => {
+    const { one } = createSession()
+    await one.start('01VAULT', '')
+    for (const _ of [0, 1]) {
+      one.show()
+      await one.answer('good')
+    }
+
+    await one.takeBack()
+
+    expect(one.card.value?.mark).toBe('two')
+    expect(one.answers.value).toEqual(['011'])
+  })
+
+  // The answer is taken out of the vault once, whatever a second press says.
+  it('is taken back once, whatever a second press says', async () => {
+    let settle = () => {}
+    const asks: string[] = []
+    const cards: SessionClient = {
+      async startSession() {
+        return opening('one', 'two', 'three')
+      },
+      async answerCard() {
+        return { answer: `01${asks.length}` }
+      },
+      takeBackAnswer(one) {
+        asks.push(one.answer)
+        return new Promise<void>((then) => {
+          settle = then
+        })
+      },
+    }
+    const one = useReviewSession({ cards, reportError: () => {}, now: () => 1000 })
+    await one.start('01VAULT', '')
+    one.show()
+    await one.answer('good')
+
+    const first = one.takeBack()
+    expect(one.writing.value).toBe(true)
+    await one.takeBack()
+    expect(asks).toHaveLength(1)
+
+    settle()
+    await first
+    expect(one.writing.value).toBe(false)
+    expect(one.card.value?.mark).toBe('one')
+  })
+
+  it('leaves the session free to answer again once it is refused', async () => {
+    let refuses = true
+    const cards: SessionClient = {
+      async startSession() {
+        return opening('one', 'two')
+      },
+      async answerCard() {
+        return { answer: '011' }
+      },
+      async takeBackAnswer() {
+        if (refuses) throw new Error('gone')
+        return {}
+      },
+    }
+    const errors: unknown[] = []
+    const one = useReviewSession({ cards, reportError: (why) => errors.push(why), now: () => 1000 })
+    await one.start('01VAULT', '')
+    one.show()
+    await one.answer('good')
+
+    await one.takeBack()
+    expect(errors).toHaveLength(1)
+    expect(one.writing.value).toBe(false)
+
+    refuses = false
+    await one.takeBack()
+    expect(one.card.value?.mark).toBe('one')
+  })
+})
+
+describe('the cards a session opens on', () => {
+  it('holds each as it was handed over, with the intervals ahead of it in seconds', async () => {
+    const cards: SessionClient = {
+      async startSession() {
+        return {
+          run: 'flashcards/01A.jsonl',
+          asked: [
+            {
+              deck: 'decks/Words.md',
+              section: 'Garden',
+              mark: '3f4g5h6j7k',
+              face: 'Say it',
+              heading: 'Leaf mould',
+              front: '<p>Leaf mould</p>',
+              back: '<p>Compost made of fallen leaves alone</p>',
+              isNew: false,
+              ahead: { again: 60n, hard: 600n, good: 86400n, easy: 345600n },
+            },
+          ],
+          unwritten: [],
+          skipped: 0,
+        }
+      },
+      answerCard: () => Promise.reject(new Error('no')),
+      takeBackAnswer: () => Promise.reject(new Error('no')),
+    }
+    const one = useReviewSession({ cards, reportError: () => {} })
+
+    await one.start('01VAULT', '')
+
+    expect(one.asked.value).toEqual([
+      {
+        deck: 'decks/Words.md',
+        section: 'Garden',
+        mark: '3f4g5h6j7k',
+        face: 'Say it',
+        heading: 'Leaf mould',
+        front: '<p>Leaf mould</p>',
+        back: '<p>Compost made of fallen leaves alone</p>',
+        isNew: false,
+        ahead: { again: 60, hard: 600, good: 86400, easy: 345600 },
+      },
+    ])
+  })
+})
+
+describe('a session keeping its own time', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('measures how long the card stood there by the clock on the wall', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-01T09:00:00Z'))
+    const said: { tookMs: bigint }[] = []
+    const cards: SessionClient = {
+      async startSession() {
+        return opening('one')
+      },
+      async answerCard(one) {
+        said.push(one)
+        return { answer: '011' }
+      },
+      async takeBackAnswer() {
+        return {}
+      },
+    }
+    const one = useReviewSession({ cards, reportError: () => {} })
+
+    await one.start('01VAULT', '')
+    vi.setSystemTime(new Date('2026-03-01T09:00:03Z'))
+    one.show()
+    await one.answer('good')
+
+    expect(said.map((one) => one.tookMs)).toEqual([3000n])
   })
 })
