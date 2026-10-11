@@ -154,7 +154,7 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Physics' }])
       const doc = 'Text.\n\n    [[Phys more'
 
-      const result = await createWikilinkSource({ search })(contextAt(doc, doc.length))
+      const result = await createWikilinkSource({ search })(contextAt(doc, doc.length - ' more'.length))
 
       expect(result).toBeNull()
       expect(search).not.toHaveBeenCalled()
