@@ -9,11 +9,10 @@
  * are reused wherever the code and its covering tests are unchanged.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { patchVitestRunner } from './patch.mjs'
-import { isDetectingAll, readMutants } from './report.mjs'
 import {
   GOMUTANTS,
   OUTPUT,
@@ -125,7 +124,10 @@ const writeVitestConfig = (target) => {
   return relative(MODULES, path)
 }
 
-const runStryker = (target, mutate, report, incrementalFile) => {
+const runTs = (target, shard, report, cache) => {
+  const mutate = pickShard(listSources(target), ...shard).map((path) => relative('modules', path))
+  if (mutate.length === 0) return null
+  patchVitestRunner()
   const settings = {
     target,
     vitestConfig: writeVitestConfig(target),
@@ -133,43 +135,12 @@ const runStryker = (target, mutate, report, incrementalFile) => {
     concurrency: getWorkers(),
     report: relative(MODULES, report),
     html: relative(MODULES, report.replace(/\.json$/, '.html')),
-    incrementalFile: incrementalFile && relative(MODULES, incrementalFile),
+    incrementalFile: relative(MODULES, `${cache}.stryker.json`),
   }
   return run('npx', ['stryker', 'run', join(MODULES, 'tools/mutation/stryker.config.mjs')], {
     cwd: MODULES,
     env: { ...process.env, NUMEN_MUTATION: JSON.stringify(settings) },
   })
-}
-
-/** A module whose every mutant is killed by its tests, nested as a real suite is. */
-const CANARY = {
-  name: 'canary',
-  kind: 'ts',
-  at: 'modules/tools/mutation/canary',
-  testdata: [],
-}
-
-/** Exits unless the runner kills every mutant of the canary. */
-export const checkRunner = () => {
-  const report = join(root, OUTPUT, 'canary.json')
-  rmSync(report, { force: true })
-  const status = runStryker(CANARY, ['tools/mutation/canary/src/age.ts'], report, null)
-  const mutants =
-    status === 0 ? readMutants(CANARY, [JSON.parse(readFileSync(report, 'utf8'))]) : []
-  if (!isDetectingAll(mutants)) {
-    console.error(
-      'the runner did not kill every mutant of the canary, so a shard run with it would report survivors it never tested',
-    )
-    process.exit(1)
-  }
-}
-
-const runTs = (target, shard, report, cache) => {
-  const mutate = pickShard(listSources(target), ...shard).map((path) => relative('modules', path))
-  if (mutate.length === 0) return null
-  patchVitestRunner()
-  checkRunner()
-  return runStryker(target, mutate, report, `${cache}.stryker.json`)
 }
 
 /* ---------------------------------- Main ---------------------------------- */

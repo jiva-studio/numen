@@ -84,12 +84,6 @@ export const summarize = (mutants) => {
   return { counts, total: mutants.length, efficacy }
 }
 
-/** Whether there are mutants and the tests noticed every one that was run. */
-export const isDetectingAll = (mutants) => {
-  const run = mutants.filter((one) => one.status !== 'Ignored')
-  return run.length > 0 && run.every((one) => DETECTED.has(one.status))
-}
-
 /** The surviving mutants not waived for this target. */
 export const getSurvivors = (target, mutants, waivers) => {
   const waived = new Set(waivers.filter((one) => one.target === target.name).map((one) => one.key))

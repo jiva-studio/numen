@@ -53,4 +53,4 @@ node modules/tools/mutation/issue.mjs libs-core --dry-run       # prints the iss
 
 ## The Vitest runner patch
 
-`@stryker-mutator/vitest-runner` 10.0.0 names a test with its suite chain joined by single spaces, and Vitest 5 matches the chain joined by a spaced greater-than sign, so the runner selects no test per mutant and every mutant survives ([stryker-js#6210](https://github.com/stryker-mutator/stryker-js/issues/6210)). `patch.mjs` rewrites the join before each run and refuses any other version of the runner. Before each TypeScript shard, Stryker runs on `canary/`: a function whose every mutant its test kills, with the test nested in suites as real tests are. A runner that leaves any canary mutant alive fails the shard before it runs.
+`@stryker-mutator/vitest-runner` 10.0.0 names a test with its suite chain joined by single spaces, and Vitest 5 matches the chain joined by a spaced greater-than sign, so the runner selects no test per mutant and every mutant survives ([stryker-js#6210](https://github.com/stryker-mutator/stryker-js/issues/6210)). `patch.mjs` rewrites the join before each run and refuses any other version of the runner.
