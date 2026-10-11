@@ -50,8 +50,8 @@ type store struct {
 	groups  [][]port.Vector                  // every write of vectors, in order
 	written map[string]int                   // extractions per path
 	next    int64
-	// kept is what the index already holds, by recipe and hash. It outlives the
-	// chunks that asked for it, as the index's vectors do.
+	// kept is what the index already holds, by recipe and hash. A test seeds it
+	// to stand for vectors bought before the run under test.
 	kept map[string][]byte
 }
 
@@ -73,7 +73,6 @@ func newStore() *store {
 		sources: map[domain.VaultID]map[string]domain.Source{},
 		vectors: map[domain.ChunkID][]port.Vector{},
 		written: map[string]int{},
-		kept:    map[string][]byte{},
 	}
 }
 
@@ -105,9 +104,6 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 	s.groups = append(s.groups, slices.Clone(vectors))
 	for _, v := range vectors {
 		s.vectors[v.ChunkID] = append(s.vectors[v.ChunkID], v)
-		if len(v.Hash) > 0 {
-			s.kept[v.Model.Recipe()+"/"+hex.EncodeToString(v.Hash)] = v.Value
-		}
 	}
 	return nil
 }
@@ -357,14 +353,17 @@ func (s *store) getVectors(c storedChunk) []port.Vector {
 	return slices.Clone(s.vectors[chunkID(c.id)])
 }
 
-// hasVector says whether a chunk owes nothing under the model, as the index
-// answers it: the recipe keeps a vector for the chunk's text, and the chunk has
-// a coarse row of its own.
+// hasVector says whether a chunk owes nothing under the model. The index
+// answers by the recipe's vector for the chunk's text and a coarse row for the
+// chunk; a chunk with a row has had its vector written, and a chunk without one
+// owes however many other chunks hold its text.
 func (s *store) hasVector(c storedChunk, model port.EmbeddingModel) bool {
-	if _, held := s.kept[model.Recipe()+"/"+hashOf(c.text)]; !held {
-		return false
+	for _, v := range s.vectors[chunkID(c.id)] {
+		if v.Model == model {
+			return true
+		}
 	}
-	return len(s.vectors[chunkID(c.id)]) > 0
+	return false
 }
 
 // getOrderedChunks is the chunks ordered by source modification time descending,

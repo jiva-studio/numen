@@ -28,9 +28,12 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 
 	// What the index now holds, as a second vault finds it.
 	bought := map[string]port.Vector{}
+	index.kept = map[string][]byte{}
 	for _, held := range index.vectors {
 		for _, v := range held {
-			bought[hex.EncodeToString(v.Hash)] = v
+			hash := hex.EncodeToString(v.Hash)
+			bought[hash] = v
+			index.kept[v.Model.Recipe()+"/"+hash] = v.Value
 		}
 	}
 	if len(bought) == 0 {
