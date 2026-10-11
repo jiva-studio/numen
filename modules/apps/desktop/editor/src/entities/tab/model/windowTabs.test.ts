@@ -709,3 +709,61 @@ describe('reconciling tabs for a path, by what a tab stands on', () => {
     expect(window.getTab(id)).toBeNull()
   })
 })
+
+describe('a tab opened on nothing', () => {
+  it('is opened by its kind on the empty address, in front or beside', async () => {
+    const thing = kind()
+    const window = told([thing.declared])
+
+    await window.openTabOfKind('thing')
+    await window.handle.openTabBeside('thing')
+
+    expect(thing.opened).toEqual(['', ''])
+  })
+})
+
+describe('a window going, with kinds that say nothing about it', () => {
+  it('goes without a word to a tab whose kind has neither way of going', async () => {
+    const bare = kind()
+    delete bare.one.onClose
+    const window = told([bare.declared])
+    await window.openTabOfKind('thing', 'x')
+
+    expect(() => window.close()).not.toThrow()
+  })
+})
+
+describe('reconciling tabs for a path, by what a tab names', () => {
+  it('leaves a tab alone whose kind says nothing of where it stands', async () => {
+    const bare = kind({ kind: 'bare' })
+    const window = told([bare.declared])
+    const id = await window.openTabOfKind('bare', 'x')
+
+    expect(() => window.reconcileTab('x', 'deck')).not.toThrow()
+
+    expect(window.getTab(id)).not.toBeNull()
+  })
+
+  it('reads the file from the target where it names no path', async () => {
+    const note = kind({
+      kind: 'note',
+      getTarget: (state: { at: string }) => ({ file: state.at }),
+    })
+    const window = told([note.declared])
+    const id = await window.openTabOfKind('note', 'Cards.md')
+
+    window.reconcileTab('Cards.md', 'deck')
+
+    expect(window.getTab(id)).toBeNull()
+  })
+
+  it('leaves a tab alone whose target names neither path nor file', async () => {
+    const note = kind({ kind: 'note', getTarget: () => ({}) })
+    const window = told([note.declared])
+    const id = await window.openTabOfKind('note', 'Cards.md')
+
+    window.reconcileTab('Cards.md', 'deck')
+
+    expect(window.getTab(id)).not.toBeNull()
+  })
+})

@@ -252,6 +252,7 @@ const getTabPath = (tab: WindowTab): string => {
   const openTab = tab.kind.getOpenTab?.(tab.state)
   if (openTab?.path) return openTab.path
   const target = tab.kind.getTarget?.(tab.state)
+  // Stryker disable next-line StringLiteral: reconcileTab returns before comparing when the path asked for is empty, so the empty fallback is never compared
   return target?.path || target?.file || ''
 }
 
