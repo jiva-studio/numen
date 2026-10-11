@@ -215,6 +215,27 @@ describe('a row activated in the files', () => {
   })
 })
 
+describe('a tab asked to close', () => {
+  it('is told to hold while a kind with something to finish is still closing it', async () => {
+    const window = await mountWindow()
+    window.findComponent(Tree).vm.$emit('activate', 'Root.md')
+    await settle()
+    await settle()
+
+    const noteId = tabsOf(window).find((tab) => tab.id.startsWith('note:'))?.id
+    expect(noteId).toBeTruthy()
+
+    let held = false
+    window.findComponent(WorkspaceLayout).vm.$emit('close', noteId, () => {
+      held = true
+    })
+
+    // A note tab finishes its own close asynchronously, so the layout is
+    // told to hold it open rather than drop it from the tree on the spot.
+    expect(held).toBe(true)
+  })
+})
+
 describe('a file dragged out of the tree', () => {
   /** The window with the physics folder open, and a row dragged out of it. */
   const dragRows = async (rows: readonly string[]) => {
