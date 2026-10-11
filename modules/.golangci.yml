@@ -293,6 +293,12 @@ linters:
         text: SA1019.*StmtQueryContext
         linters: [staticcheck]
 
+      # `Exec` is the same case as `Query` above: the fallback for a driver
+      # that lacks StmtExecContext, which modernc.org/sqlite is not.
+      - path: (^|/)adapter/index/migrate_test\.go$
+        text: SA1019.*StmtExecContext
+        linters: [staticcheck]
+
       # A test builds the world it needs, names its own clock, and fails by
       # panicking as readily as by returning. What it opens is closed when the
       # process it opened for ends, it switches over the cases it is about, and
