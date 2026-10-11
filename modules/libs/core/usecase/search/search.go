@@ -16,6 +16,11 @@ import (
 // defaultLimit is how many results a caller that names no number gets.
 const defaultLimit = 20
 
+// defaultExtractors is how many sources a search extracts at once. Each one
+// holds its decoded text until its passages are cut, so it is also the most
+// decoded sources a search holds.
+const defaultExtractors = 4
+
 // lexicalCandidates is how many candidates the words keep for every result
 // the search returns, so the answer is among what it ranks.
 const lexicalCandidates = 5
@@ -97,6 +102,9 @@ type Search struct {
 	floor        float64
 	errorHandler port.ErrorHandler
 	cache        *QueryCache
+	// extractors is how many sources are extracted at once. Zero is
+	// defaultExtractors.
+	extractors int
 }
 
 // New is a search over one vault's index.
@@ -274,9 +282,10 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 // is true, and the index follows it.
 //
 // A ranking scatters one source's passages wherever each chunk placed, so they
-// are grouped by source before this reads any of them. Each source's decoded
-// text is then held only while its own passages are filled in, one source at a
-// time, however many sources `found` names.
+// are grouped by source before this reads any of them. Up to defaultExtractors
+// sources are extracted at once, and each one's decoded text is released as soon
+// as its own passages are filled in. The first error, or the end of ctx, stops
+// the sources not yet started.
 func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil
@@ -300,30 +309,22 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 
 	filled := make([]domain.Passage, len(found))
 	keep := make([]bool, len(found))
+	g, gctx := errgroup.WithContext(ctx)
+	g.SetLimit(u.getExtractors())
 	for _, source := range order {
-		if err := ctx.Err(); err != nil {
-			return nil, err
+		if gctx.Err() != nil {
+			break
 		}
 		indices := groups[source]
-		first := found[indices[0]]
-		prose, err := extractText(ctx, of, source, first.Producer, first.SourceHash)
-		if port.IsNoNote(err) || errors.Is(err, errUnreadable) {
-			continue
-		}
-		if err != nil {
-			return nil, fmt.Errorf("read %s: %w", source, err)
-		}
-		opens := proseOpens(prose)
-		for _, i := range indices {
-			if err := ctx.Err(); err != nil {
-				return nil, err
-			}
-			p := found[i]
-			p.Text = span(prose, p.Start, p.Length)
-			p.Line = lineOf(prose, opens, p.Start+p.HitAt)
-			filled[i] = p
-			keep[i] = true
-		}
+		g.Go(func() error {
+			return fillSource(gctx, of, source, indices, found, filled, keep)
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 
 	out := make([]domain.Passage, 0, len(found))
@@ -333,6 +334,49 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 		}
 	}
 	return out, nil
+}
+
+// getExtractors is how many sources a search extracts at once.
+func (u Search) getExtractors() int {
+	if u.extractors > 0 {
+		return u.extractors
+	}
+	return defaultExtractors
+}
+
+// fillSource extracts one source and fills in the passages of `found` at
+// `indices`, which name it. It writes only those indices of `filled` and `keep`.
+func fillSource(
+	ctx context.Context,
+	of text.Reader,
+	source string,
+	indices []int,
+	found, filled []domain.Passage,
+	keep []bool,
+) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	first := found[indices[0]]
+	prose, err := extractText(ctx, of, source, first.Producer, first.SourceHash)
+	if port.IsNoNote(err) || errors.Is(err, errUnreadable) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("read %s: %w", source, err)
+	}
+	opens := proseOpens(prose)
+	for _, i := range indices {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		p := found[i]
+		p.Text = span(prose, p.Start, p.Length)
+		p.Line = lineOf(prose, opens, p.Start+p.HitAt)
+		filled[i] = p
+		keep[i] = true
+	}
+	return nil
 }
 
 // groupBySource is the index of each passage in `found`, grouped by source and
