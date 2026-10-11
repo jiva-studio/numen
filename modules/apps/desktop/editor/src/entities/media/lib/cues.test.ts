@@ -328,3 +328,41 @@ describe('the cue being said at a millisecond', () => {
     expect(findCueAt([], 4_000)).toBe(-1)
   })
 })
+
+describe('cues that differ only in how many there are', () => {
+  it('are not the same words, whichever run is the shorter', () => {
+    expect(isSame(CUES.slice(0, 2), CUES)).toBe(false)
+    expect(isSame(CUES, CUES.slice(0, 2))).toBe(false)
+  })
+})
+
+describe('cues that differ only in where one ends', () => {
+  it('are not the same words', () => {
+    const later = CUES.map((cue, at) => (at === 1 ? { ...cue, to: cue.to + 1 } : cue))
+
+    expect(isSame(CUES, later)).toBe(false)
+  })
+})
+
+describe('lines typed past the cue that stood there', () => {
+  it('are all given an empty span after the cue they repeat', () => {
+    const was: readonly Cue[] = [{ text: 'A bell.', from: 1_000, to: 3_000 }]
+
+    expect(spanCues(was, 'A bell.\nA bell.\nA bell.')).toStrictEqual([
+      { text: 'A bell.', from: 1_000, to: 3_000 },
+      { text: 'A bell.', from: 3_000, to: 3_000 },
+      { text: 'A bell.', from: 3_000, to: 3_000 },
+    ])
+  })
+})
+
+describe('empty lines laid over one span', () => {
+  it('share its start, and the last of them takes its end', () => {
+    const was: readonly Cue[] = [{ text: 'A bell.', from: 1_000, to: 3_000 }]
+
+    expect(spanCues(was, '\n')).toStrictEqual([
+      { text: '', from: 1_000, to: 1_000 },
+      { text: '', from: 1_000, to: 3_000 },
+    ])
+  })
+})
