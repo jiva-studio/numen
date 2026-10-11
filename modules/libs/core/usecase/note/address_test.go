@@ -110,3 +110,27 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 		}
 	}
 }
+
+// A link is written as a path the way a person writes it by hand: the extension
+// comes off the file, and a leading dot is part of a name, not the start of an
+// extension.
+func TestAPathIsWrittenWithoutItsExtension(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		path string
+		held named
+		want string
+	}{
+		{"a/b.md", named{"b": {"b.md", "a/b.md"}}, "a/b"},
+		{"a/.hidden", named{".hidden": {".hidden", "a/.hidden"}}, "a/.hidden"},
+		{"a/b.c.md", named{"b.c": {"b.c.md", "a/b.c.md"}}, "a/b.c"},
+	} {
+		to, err := note.GetAddress(t.Context(), tc.held, "v", tc.path)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.path, err)
+		}
+		if to.Value != tc.want {
+			t.Errorf("%s was written as %q, want %q", tc.path, to.Value, tc.want)
+		}
+	}
+}

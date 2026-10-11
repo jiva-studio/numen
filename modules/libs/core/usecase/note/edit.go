@@ -122,6 +122,7 @@ func (e Edit) splice(
 		// The note is made by this write, out of the person's own text and
 		// nothing else: no frontmatter, and no identifier. An identifier
 		// arrives when the application changes a note's contents.
+		// gomutants:disable-next-line BRANCH_CASE reason="a read that fails hands back no bytes, so raw is already nil"
 		raw = nil
 	default:
 		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, mapMissingNote(err))
@@ -160,6 +161,7 @@ func (e Edit) splice(
 	// and leaves the frontmatter as they wrote it.
 	if _, carried := doc.Identifier(); !carried && !e.ShouldOverwrite {
 		identifier, err := ulid.New(e.now())
+		// gomutants:disable-next-line BRANCH_IF reason="ulid.New fails only when the system random source does"
 		if err != nil {
 			return domain.Fingerprint{}, err
 		}

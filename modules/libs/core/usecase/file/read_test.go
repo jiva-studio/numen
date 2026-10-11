@@ -513,3 +513,19 @@ func TestACharacterCutShortInsideTheRangeIsNotText(t *testing.T) {
 		t.Errorf("want not text, got %+v", got)
 	}
 }
+
+// The size a file was measured at bounds what is read, whatever the file holds
+// by the time its bytes come.
+func TestAFileThatGrewWhileItWasReadIsReadOnlyToWhereItWasMeasured(t *testing.T) {
+	_, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+	grown := faulty{file: &shifting{data: []byte("said and said"), size: 4}}
+
+	got, err := file.Read{Readers: grown}.Execute(t.Context(), v, "lecture.txt", 2, 0)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+
+	if got.Text != "id" || got.Start != 2 || got.Length != 2 || got.Whole != 4 {
+		t.Errorf("a file that grew came back as %+v", got)
+	}
+}
