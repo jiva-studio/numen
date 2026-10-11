@@ -44,8 +44,8 @@ const notes = (states: Record<string, State> = {}) => {
   const at = ref<Record<string, string>>({})
   const shut: string[] = []
   const said: string[] = []
-  /** What was settled or reloaded, in the order it happened. */
-  const settledThenReloaded: string[] = []
+  /** Order of settle/reload calls. */
+  const calls: string[] = []
   let goes = true
   const getPath = (id: string) => at.value[id] ?? id
   const store = {
@@ -55,11 +55,11 @@ const notes = (states: Record<string, State> = {}) => {
       at.value = { ...at.value, [id]: path }
     },
     reload: (id: string, path: string = id) => {
-      settledThenReloaded.push(`reload:${getPath(id)}`)
+      calls.push(`reload:${getPath(id)}`)
       at.value = { ...at.value, [id]: path }
     },
     settle: async (id: string) => {
-      settledThenReloaded.push(`settle:${getPath(id)}`)
+      calls.push(`settle:${getPath(id)}`)
     },
     close: async (id: string) => {
       shut.push(getPath(id))
@@ -89,7 +89,7 @@ const notes = (states: Record<string, State> = {}) => {
     store: store as unknown as ReturnType<typeof openNotes>,
     shut,
     said,
-    settledThenReloaded,
+    calls,
     /** The identity of the note standing at a file, for a test that has its name. */
     idOf: (path: string) => open.value.find((id) => getPath(id) === path) ?? '',
     /** The note standing at a file moved to another, the way a rename moves one. */
@@ -599,7 +599,7 @@ describe('loadInTab and kind methods edge cases', () => {
 
     await one.noted.loadInTab(tabId, 'Note2.md')
 
-    expect(one.settledThenReloaded).toEqual(['settle:Note1.md', 'reload:Note1.md'])
+    expect(one.calls).toEqual(['settle:Note1.md', 'reload:Note1.md'])
   })
 
   it('covers kind onShow and onClose handlers', async () => {
