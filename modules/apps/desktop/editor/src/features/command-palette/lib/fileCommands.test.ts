@@ -9,10 +9,8 @@ import type { Source } from '@/entities/file'
 import type { Command, CommandTarget, RunSupport } from '../types'
 import { fileCommandsOf } from './fileCommands'
 
-const commands = fileCommandsOf(words)
-
 const commandOf = (id: string): Command => {
-  const found = commands.find((one) => one.id === id)
+  const found = fileCommandsOf(words).find((one) => one.id === id)
   if (!found) throw new Error(`no command ${id}`)
   return found
 }
@@ -46,6 +44,8 @@ const isOffered = (id: string, target: CommandTarget, runs: RunSupport = only(id
 
 describe('the runs over a file', () => {
   it('are all filed with the file commands', () => {
+    const commands = fileCommandsOf(words)
+
     expect(commands.map((one) => one.group)).toStrictEqual(commands.map(() => 'file'))
   })
 })
@@ -113,5 +113,15 @@ describe('deleting a copy', () => {
 
   it('is not offered where no copy stands', () => {
     expect(isOffered('deleteCopy', at('url', { copy: 'none' }))).toBe(false)
+  })
+})
+
+describe('deleting the text of an address', () => {
+  it('is offered where the address carries a transcript', () => {
+    expect(isOffered('deleteText', at('url', { transcript: 'done' }))).toBe(true)
+  })
+
+  it('is not offered where its transcript was never made', () => {
+    expect(isOffered('deleteText', at('url', { transcript: 'none' }))).toBe(false)
   })
 })

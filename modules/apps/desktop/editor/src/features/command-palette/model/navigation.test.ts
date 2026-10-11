@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { WORDS as words } from '@/shared/words'
 import { EXACT, YES, type PendingStep } from '../lib/step'
-import type { Command, CommandTarget, PromptStep } from '../types'
+import type { Command, CommandTarget, PromptStep, StepGroup } from '../types'
 import type { NameMatch } from './search'
 import { createPaletteSteps } from './navigation'
 
@@ -38,13 +38,13 @@ const pending = (step: PromptStep, over: Partial<PendingStep> = {}): PendingStep
   ...over,
 })
 
-const createSteps = () => {
+const createSteps = (groups: readonly StepGroup[] = []) => {
   const text = ref('')
   const happened: string[] = []
   const invoked: [string, CommandTarget, string | undefined][] = []
   const steps = createPaletteSteps(
     words,
-    { getStepGroups: () => [], previewItem: () => {} },
+    { getStepGroups: () => groups, previewItem: () => {} },
     { getTitle: () => '', getTabAt: () => null },
     text,
     () => void happened.push('drop'),
@@ -133,6 +133,7 @@ describe('the steps when files move', () => {
     const before = steps.steps.value
 
     steps.applyRenames([])
+    steps.applyRenames()
 
     expect(steps.steps.value).toBe(before)
   })
@@ -201,5 +202,34 @@ describe('choosing on a step', () => {
     expect(typed.chosen()).toBeNull()
     exact.chosen()
     expect(exact.invoked).toHaveLength(1)
+  })
+})
+
+describe('the row a list opens on', () => {
+  const row = (id: string, isCurrent = false) => ({ id, text: id, isCurrent }) as never
+  const groups = [{ id: 'g', title: 'Themes', items: [row('light'), row('dark', true)] }]
+
+  it('is the one standing now, on the step that chooses from a list', () => {
+    const { steps } = createSteps(groups)
+
+    steps.pushStep(pending('choosing'))
+
+    expect(steps.opensOn.value).toBe('dark')
+  })
+
+  it('is none where no row stands now', () => {
+    const { steps } = createSteps([{ id: 'g', title: 'Themes', items: [row('light')] }])
+
+    steps.pushStep(pending('choosing'))
+
+    expect(steps.opensOn.value).toBe('')
+  })
+
+  it('is none on any other step', () => {
+    const { steps } = createSteps(groups)
+
+    steps.pushStep(pending('naming'))
+
+    expect(steps.opensOn.value).toBe('')
   })
 })
