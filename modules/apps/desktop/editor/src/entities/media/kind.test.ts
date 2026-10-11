@@ -128,7 +128,7 @@ describe('a recording tab being closed', () => {
     const close = vi.fn<() => void>()
     const held = { ...recording('talks/Ants.mp3', 0, 0), close } as unknown as MediaTabState
 
-    expect(kind(held).onClose!(held)).toBe(true)
+    expect(kind(held).onClose!(held, 'tab-1')).toBe(true)
     expect(close).toHaveBeenCalledTimes(1)
   })
 })
@@ -162,7 +162,7 @@ describe('a hit in the words of a recording', () => {
   }
 
   it('opens the recording and takes the person to the spans asked for', async () => {
-    const reach = vi.fn<(...spans: readonly Span[]) => void>()
+    const reach = vi.fn<(...spans: Span[]) => void>()
     const { read, opened } = createReader({ reach })
     const spans: readonly Span[] = [{ from: 3, to: 9 }]
 
