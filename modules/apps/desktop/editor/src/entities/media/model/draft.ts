@@ -34,10 +34,10 @@ export function useTranscriptDraft(how: DraftOptions) {
   let owed = false
   /** A write of the words that has not answered yet. */
   let isWriting = false
-  /** The wait the typing is being let settle over. */
-  let settling: ReturnType<typeof setTimeout> | undefined
+  /** The debounce before keep() writes the edited words back. */
+  let writeTimer: ReturnType<typeof setTimeout> | undefined
   /** The wait after which the view may go after the words again. */
-  let stilling: ReturnType<typeof setTimeout> | undefined
+  let followTimer: ReturnType<typeof setTimeout> | undefined
 
   /** Whether the words on screen have somewhere to go now. */
   const canWrite = (): boolean => isOpen() && owed && !isWriting && isEditable.value
@@ -47,8 +47,8 @@ export function useTranscriptDraft(how: DraftOptions) {
    * refused leaves them owed, so the next stillness offers them again.
    */
   const keep = async () => {
-    clearTimeout(settling)
-    settling = undefined
+    clearTimeout(writeTimer)
+    writeTimer = undefined
     if (!canWrite()) return
     const body = prose.value
     const next = applyCues(cues.value, body)
@@ -71,7 +71,7 @@ export function useTranscriptDraft(how: DraftOptions) {
       // Typing that landed while the write was in the air is still owed.
       if (isOpen() && prose.value !== body) {
         owed = true
-        settling = setTimeout(() => void keep(), quiet)
+        writeTimer = setTimeout(() => void keep(), quiet)
       }
     }
   }
@@ -85,10 +85,10 @@ export function useTranscriptDraft(how: DraftOptions) {
     // and the view does not go after a line a person moved under their own
     // hands.
     typing.value = true
-    clearTimeout(stilling)
-    stilling = setTimeout(() => void (typing.value = false), quiet)
-    clearTimeout(settling)
-    settling = setTimeout(() => void keep(), quiet)
+    clearTimeout(followTimer)
+    followTimer = setTimeout(() => void (typing.value = false), quiet)
+    clearTimeout(writeTimer)
+    writeTimer = setTimeout(() => void keep(), quiet)
   }
 
   /**
@@ -104,16 +104,16 @@ export function useTranscriptDraft(how: DraftOptions) {
    * longer the ones the recording has.
    */
   const drop = () => {
-    clearTimeout(settling)
-    settling = undefined
+    clearTimeout(writeTimer)
+    writeTimer = undefined
     owed = false
   }
 
   /** Nothing more is typed here, and the words leave the screen. */
   const stop = () => {
-    clearTimeout(stilling)
-    clearTimeout(settling)
-    settling = undefined
+    clearTimeout(followTimer)
+    clearTimeout(writeTimer)
+    writeTimer = undefined
     prose.value = ''
   }
 

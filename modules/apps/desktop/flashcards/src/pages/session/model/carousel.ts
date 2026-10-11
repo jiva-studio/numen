@@ -45,8 +45,8 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
    */
   let sending = 0
 
-  /** The strip has stopped somewhere of its own, and is waiting to be settled. */
-  let settling = 0
+  /** Debounce before the strip, stopped on its own, snaps to the nearest stop. */
+  let snapTimer = 0
 
   /** Where a move in flight is going, and nothing while none is. */
   let aim: PanelPlace | null = null
@@ -74,7 +74,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   }
 
   const slideTo = (where: PanelPlace) => {
-    window.clearTimeout(settling)
+    window.clearTimeout(snapTimer)
     const at = window_.value
     if (!at) return
     // A strip already standing where it is being sent is left alone: a move
@@ -97,7 +97,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const placeAt = (where: PanelPlace) => {
     const at = window_.value
     if (!at) return
-    window.clearTimeout(settling)
+    window.clearTimeout(snapTimer)
     window.clearTimeout(sending)
     sending = 0
     aim = null
@@ -140,9 +140,9 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     // Where it settles is the window's answer and not the strip's: a panel the
     // window refused to open is a panel the strip must not be left standing on.
     if (taking.value) return
-    window.clearTimeout(settling)
+    window.clearTimeout(snapTimer)
     const going = aim
-    settling = window.setTimeout(() => slideTo(going ?? shown.value), SETTLES)
+    snapTimer = window.setTimeout(() => slideTo(going ?? shown.value), SETTLES)
   }
 
   /** Where the hand went down, and where the strip was under it. */
@@ -187,7 +187,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   onBeforeUnmount(() => {
     window.removeEventListener('resize', onResize)
     window.clearTimeout(sending)
-    window.clearTimeout(settling)
+    window.clearTimeout(snapTimer)
   })
 
   return { taking, onScroll, onPointerDown, onPointerMove, letGo }
