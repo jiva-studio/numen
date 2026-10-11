@@ -26,6 +26,7 @@ export function useBookDocument(
 
   const draw = async (document: SpineDocument | undefined) => {
     if (!document || document.path === drawnDocument.value?.path) return
+    // Stryker disable next-line UpdateOperator: only the inequality of the tickets matters; the direction of the count does not
     const asked = ++wanted
     try {
       const markupContent = await books.readMarkup(path, document.path, fingerprint.value)

@@ -27,6 +27,20 @@ describe('a picture in a book', () => {
   })
 })
 
+describe('a picture with no name', () => {
+  it('is left as it stands and asks for no address', () => {
+    const asked: string[] = []
+
+    const drawn = resolveImageUrls('<img src="" alt="Blank">', (name) => {
+      asked.push(name)
+      return entry(name)
+    })
+
+    expect(asked).toStrictEqual([])
+    expect(drawn).toContain('src=""')
+  })
+})
+
 describe('the runs of the text', () => {
   it('carry the offsets they arrived with', () => {
     const drawn = resolveImageUrls(

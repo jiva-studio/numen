@@ -167,3 +167,44 @@ describe('a passage of a book reached', () => {
     expect(focusSpans).toHaveBeenCalledWith({ from: 3_600, to: 3_642 })
   })
 })
+
+describe('what a book tab is filed under', () => {
+  it('is the path of the book', () => {
+    const held = createBookTabAt('library/Mahabharata.epub', 0, 1, 5_000)
+
+    expect(kindOver(held).identity?.('library/Mahabharata.epub')).toBe('library/Mahabharata.epub')
+  })
+})
+
+describe('a book tab brought on screen', () => {
+  it('lays the columns out and takes the focus', () => {
+    const measure = vi.fn<() => void>()
+    const focusTab = vi.fn<() => void>()
+    const held = { measure, focusTab } as unknown as BookTabState
+
+    kindOver(held).onShow?.(held, 'a tab')
+
+    expect(measure).toHaveBeenCalledTimes(1)
+    expect(focusTab).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a passage of a book reached where the tab is gone', () => {
+  it('fails nothing', async () => {
+    const failures: unknown[] = []
+    const note = (reason: unknown) => failures.push(reason)
+    process.on('unhandledRejection', note)
+    try {
+      const { handle } = createMockWindow()
+      const { tabOpeners, getReader } = openers()
+      createBookKind(handle, () => ({}) as BookTabState, tabOpeners)
+
+      getReader()?.('library/Mahabharata.epub', [{ from: 1, to: 2 }])
+      await new Promise((done) => setTimeout(done, 20))
+    } finally {
+      process.off('unhandledRejection', note)
+    }
+
+    expect(failures).toStrictEqual([])
+  })
+})
