@@ -3,6 +3,7 @@ import { ErrorCode, StopReason } from '@numen/protocol'
 import { goalNames } from '@numen/wire'
 
 import { useVaultPresets } from './presets'
+import { UNREAD } from '../api/presets'
 import type { PresetsClient } from '../api/presets'
 import { canStart, getSpentShare, isSpent } from '../lib/progress'
 import { CLOSES_NOTHING } from '../types'
@@ -751,5 +752,259 @@ describe('every question about a preset', () => {
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
     expect(named).toEqual(['01A'])
+  })
+})
+
+/** An application answering each deck named here with the error given, and every other deck with its preset. */
+const createFailingPresets = (
+  failing: Record<string, ErrorCode>,
+  by: Parameters<typeof createPresets>[0] = {},
+): PresetsClient => {
+  const answers = createPresets(by)
+  return {
+    async getVaultDeckPreset(say) {
+      const error = failing[say.deck]
+      if (error !== undefined) return { error }
+      return answers.getVaultDeckPreset(say)
+    },
+  }
+}
+
+describe('what a preset read from its decks carries of the count', () => {
+  it('takes how many decks name it, its faces and its answers from the count', async () => {
+    const one = useVaultPresets({
+      presets: createPresets({
+        'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
+      }),
+    })
+
+    await one.read(
+      vault(
+        [{ deck: 'decks/Words.md', due: 3, new: 1 }],
+        [
+          presetDue({
+            decks: 3,
+            cards: 55,
+            closes: byCounts,
+            answered: 13,
+            answeredNew: 4,
+            answeredReviews: 9,
+          }),
+        ],
+      ),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[0]).toMatchObject({
+      named: 3,
+      faces: 55,
+      closes: byCounts,
+      answeredNew: 4,
+      answeredReviews: 9,
+    })
+  })
+
+  it('stands on its own decks and on nothing answered where the count names it not', async () => {
+    const one = useVaultPresets({
+      presets: createPresets({
+        'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
+        'decks/Roots.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
+      }),
+    })
+
+    await one.read(
+      vault([
+        { deck: 'decks/Words.md', due: 3, new: 1 },
+        { deck: 'decks/Roots.md', due: 2, new: 0 },
+      ]),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[0]).toMatchObject({
+      named: 2,
+      faces: 0,
+      closes: CLOSES_NOTHING,
+      answeredNew: 0,
+      answeredReviews: 0,
+    })
+  })
+
+  it('says each thing wrong in the file once, the distinct ones apart', async () => {
+    const said: Record<string, string> = {
+      'decks/Words.md': '`new_a_day` is not a number',
+      'decks/Roots.md': '`load` names no day',
+    }
+    const one = useVaultPresets({
+      presets: {
+        async getVaultDeckPreset({ deck }) {
+          return {
+            preset: {
+              path: 'Sanskrit.md',
+              title: 'Sanskrit',
+              settings: createSettingsMessage(settings()),
+              problems: [said[deck] ?? ''],
+              stopsOn: StopReason.NOTHING,
+            },
+          }
+        },
+      },
+    })
+
+    await one.read(
+      vault([
+        { deck: 'decks/Words.md', due: 3, new: 1 },
+        { deck: 'decks/Roots.md', due: 2, new: 0 },
+      ]),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[0]?.wrong).toBe('`new_a_day` is not a number; `load` names no day')
+  })
+})
+
+describe('what is wrong with a preset no deck answered for', () => {
+  it('is the error the decks that failed gave, whatever the decks that read gave', async () => {
+    const one = useVaultPresets({
+      presets: createFailingPresets(
+        { 'decks/Roots.md': ErrorCode.MISSING },
+        { 'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() } },
+      ),
+    })
+
+    await one.read(
+      vault(
+        [
+          { deck: 'decks/Words.md', due: 3, new: 1 },
+          { deck: 'decks/Roots.md', due: 2, new: 0 },
+        ],
+        [presetDue(), presetDue({ preset: 'Latin.md', title: 'Latin' })],
+      ),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[1]).toMatchObject({
+      path: 'Latin.md',
+      wrong: 'that note is not in the vault',
+    })
+  })
+
+  it('is no one of the errors where the decks gave several', async () => {
+    const one = useVaultPresets({
+      presets: createFailingPresets({
+        'decks/Words.md': ErrorCode.MISSING,
+        'decks/Roots.md': ErrorCode.NOT_A_NOTE,
+      }),
+    })
+
+    await one.read(
+      vault(
+        [
+          { deck: 'decks/Words.md', due: 3, new: 1 },
+          { deck: 'decks/Roots.md', due: 2, new: 0 },
+        ],
+        [presetDue({ decks: 2 })],
+      ),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[0]?.wrong).toBe(UNREAD)
+  })
+
+  it('is nothing for a preset no deck names, whatever the other decks gave', async () => {
+    const one = useVaultPresets({
+      presets: createFailingPresets({ 'decks/Words.md': ErrorCode.MISSING }),
+    })
+
+    await one.read(
+      vault(
+        [{ deck: 'decks/Words.md', due: 3, new: 1 }],
+        [presetDue(), presetDue({ preset: 'Empty.md', title: 'Empty', decks: 0, cards: 0 })],
+      ),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[1]).toMatchObject({ path: 'Empty.md', wrong: '' })
+  })
+})
+
+describe('what is known of the presets of a vault', () => {
+  /** An application that answers only once it is let go, with the same preset for every deck. */
+  const createHeldPresets = () => {
+    let release = () => {}
+    let gate = Promise.resolve()
+    const client: PresetsClient = {
+      async getVaultDeckPreset() {
+        await gate
+        return {
+          preset: {
+            path: 'Sanskrit.md',
+            title: 'Sanskrit',
+            settings: createSettingsMessage(settings()),
+            problems: [],
+            stopsOn: StopReason.NOTHING,
+          },
+        }
+      },
+    }
+    const hold = () => {
+      gate = new Promise<void>((then) => {
+        release = then
+      })
+    }
+    return { client, hold, release: () => release() }
+  }
+
+  const other = (): VaultCardsDue => ({
+    ...vault([{ deck: 'decks/Roots.md', due: 1, new: 0 }]),
+    vault: '01B',
+  })
+
+  it('is known once a reading has run', async () => {
+    const one = useVaultPresets({ presets: createHeldPresets().client })
+
+    expect(one.known.value).toBe(false)
+    await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
+
+    expect(one.known.value).toBe(true)
+  })
+
+  it('stays known while the same vault is read again', async () => {
+    const held = createHeldPresets()
+    const one = useVaultPresets({ presets: held.client })
+    await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
+
+    held.hold()
+    const reading = one.read(vault([{ deck: 'decks/Words.md', due: 2, new: 1 }]), '2026-09-05')
+
+    expect(one.known.value).toBe(true)
+    held.release()
+    await reading
+    expect(one.known.value).toBe(true)
+  })
+
+  it('is unknown for another vault until its own reading has run', async () => {
+    const held = createHeldPresets()
+    const one = useVaultPresets({ presets: held.client })
+    await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
+
+    held.hold()
+    const reading = one.read(other(), '2026-09-05')
+
+    expect(one.known.value).toBe(false)
+    expect(one.of.value).toBe('01B')
+    held.release()
+    await reading
+    expect(one.known.value).toBe(true)
+  })
+
+  it('holds nothing once it is read for no vault at all', async () => {
+    const one = useVaultPresets({ presets: createHeldPresets().client })
+    await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
+
+    await one.read(null, '2026-09-05')
+
+    expect(one.presets.value).toHaveLength(0)
+    expect(one.of.value).toBe('')
+    expect(one.known.value).toBe(false)
   })
 })
