@@ -41,3 +41,6 @@ refactoring-plan.md
 
 # Agent local task scratchpad
 .agents/tasks/
+
+# What a mutation run leaves: its reports, its cache and Stryker's sandbox.
+modules/.mutation/
