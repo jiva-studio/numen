@@ -16,7 +16,6 @@ export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): strin
 
 /** The two numbers first: a path holds spaces, and everything after them is it. */
 export const fingerprint = (at: string) => {
-  // Stryker disable next-line StringLiteral: BigInt of an empty string is the zero the default names
   const [size = '0', mtime = '0', ...rest] = at.split(' ')
   return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
 }
