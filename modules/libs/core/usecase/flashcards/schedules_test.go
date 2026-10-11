@@ -46,6 +46,44 @@ func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 	}
 }
 
+// A cache built from a listing in one order is recognized as fresh when the
+// same runs are listed in another order at the next launch. A directory's own
+// order is not promised to repeat between two listings of it.
+func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, vault)
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	for _, at := range []time.Time{
+		time.Now().AddDate(0, 0, -2),
+		time.Now().AddDate(0, 0, -1),
+		time.Now(),
+	} {
+		if _, err := s.run(t, at).Answer(t.Context(), on, review.Good, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	counts := &loadCounts{}
+	logs := countingStores{inner: &reorderedStores{DerivedStores: s.logs}, on: counts}
+	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), today, s.standings, s.presets)
+	schedules.Cache = countingKept{inner: s.kept.Cache, on: counts}
+
+	if _, err := schedules.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	if counts.Rewritten != 1 {
+		t.Fatalf("the first request wrote the cache %d times, want 1", counts.Rewritten)
+	}
+
+	*counts = loadCounts{}
+	if _, err := schedules.Execute(t.Context(), s.vault); err != nil {
+		t.Fatal(err)
+	}
+	if counts.Rewritten != 0 {
+		t.Errorf("a cache fresh under a reordered listing was rewritten %d times", counts.Rewritten)
+	}
+}
+
 // The cache is written in one order whatever order the schedules were worked
 // out in, so two machines that answered the same cards hold the same file and a
 // synchroniser has nothing to reconcile.
