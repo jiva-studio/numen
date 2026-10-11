@@ -79,22 +79,16 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	}
 
 	identifier, err := ulid.New(u.now())
-	// gomutants:disable-next-line BRANCH_IF reason="ulid.New fails only when the system random source does"
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="the branch above is unreachable: ulid.New fails only when the system random source does"
 		return CreateResult{}, err
 	}
 
 	content, err := writeTitle(markdown.Create(identifier, in.Body), title, exact)
-	// gomutants:disable-next-line BRANCH_IF reason="writeTitle fails only on frontmatter that does not open for writing, and this is frontmatter just made"
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="the branch above is unreachable: the frontmatter was just made"
 		return CreateResult{}, err
 	}
 	content, err = writeLinks(content, in.Links)
-	// gomutants:disable-next-line BRANCH_IF reason="writeLinks fails only on frontmatter that does not open for writing, and this is frontmatter just made"
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="the branch above is unreachable: the frontmatter was just made"
 		return CreateResult{}, err
 	}
 
@@ -134,14 +128,10 @@ func writeTitle(content []byte, title string, exact bool) ([]byte, error) {
 		return content, nil
 	}
 	doc, err := markdown.Open(content)
-	// gomutants:disable-next-line BRANCH_IF reason="Open fails only on frontmatter that does not parse, and this is frontmatter just made"
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="the branch above is unreachable: the frontmatter was just made"
 		return nil, err
 	}
-	// gomutants:disable-next-line BRANCH_IF reason="SetTitle fails only on frontmatter that does not open for writing, and this is frontmatter just made"
 	if err := doc.SetTitle(title); err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="the branch above is unreachable: the frontmatter was just made"
 		return nil, err
 	}
 	return doc.Bytes(), nil
@@ -150,20 +140,15 @@ func writeTitle(content []byte, title string, exact bool) ([]byte, error) {
 // writeLinks writes relationships into frontmatter that has just been made,
 // through the splicing every other link goes through: one set of quoting rules.
 func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
-	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="a note given no links comes back from Open and Bytes byte for byte"
 	if len(links) == 0 {
 		return content, nil
 	}
 	doc, err := markdown.Open(content)
-	// gomutants:disable-next-line BRANCH_IF reason="Open fails only on frontmatter that does not parse, and this is frontmatter just made"
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="the branch above is unreachable: the frontmatter was just made"
 		return nil, err
 	}
 	for _, link := range links {
-		// gomutants:disable-next-line BRANCH_IF reason="AddLink fails only on frontmatter that does not open for writing, and this is frontmatter just made"
 		if err := doc.AddLink(link); err != nil {
-			// gomutants:disable-next-line RETURN_ERROR_NIL reason="the branch above is unreachable: the frontmatter was just made"
 			return nil, err
 		}
 	}

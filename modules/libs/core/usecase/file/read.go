@@ -68,11 +68,9 @@ func (u Read) Execute(
 ) (ReadResult, error) {
 	out := ReadResult{Start: start}
 	if start < 0 {
-		// gomutants:disable-next-line RETURN_ZERO reason="nothing reads the result that comes beside an error"
 		return out, fmt.Errorf("a range of %s begins at %d", path, start)
 	}
 	if length < 0 || length > MostRead {
-		// gomutants:disable-next-line RETURN_ZERO reason="nothing reads the result that comes beside an error"
 		return out, fmt.Errorf("read between 1 and %d bytes of a file at a time", MostRead)
 	}
 	if length == 0 {
@@ -147,7 +145,6 @@ func getReadOutcome(ctx context.Context, reader port.VaultReader, path string) (
 		return LeftAlone, nil
 	}
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ZERO reason="the caller drops the outcome that comes beside an error"
 		return LeftAlone, err
 	}
 	for _, entry := range entries {
@@ -175,7 +172,6 @@ func WholeCharacters(start int, raw []byte, whole int) (int, []byte) {
 	if start+len(raw) >= whole {
 		return start, raw
 	}
-	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY reason="a start byte four or more bytes from the end begins a full rune, so the scan ends there either way"
 	for at := len(raw) - 1; at >= 0 && at > len(raw)-utf8.UTFMax; at-- {
 		if !utf8.RuneStart(raw[at]) {
 			continue

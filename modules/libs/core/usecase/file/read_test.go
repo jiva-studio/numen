@@ -529,3 +529,17 @@ func TestAFileThatGrewWhileItWasReadIsReadOnlyToWhereItWasMeasured(t *testing.T)
 		t.Errorf("a file that grew came back as %+v", got)
 	}
 }
+
+func TestWholeCharactersLeavesOffACutLeadByte(t *testing.T) {
+	start, raw := file.WholeCharacters(0, []byte{0xE2, 0x82}, 10)
+	if start != 0 || len(raw) != 0 {
+		t.Errorf("a range closing inside a character kept %x from %d", raw, start)
+	}
+}
+
+func TestWholeCharactersOfOnlyContinuationBytesIsEmpty(t *testing.T) {
+	start, raw := file.WholeCharacters(1, []byte{0x80}, 5)
+	if start != 2 || len(raw) != 0 {
+		t.Errorf("a range of continuation bytes came back as %x from %d", raw, start)
+	}
+}

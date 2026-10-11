@@ -316,3 +316,37 @@ func TestAnEditThatCannotStampAnIdentifierWritesNothing(t *testing.T) {
 		t.Errorf("the note was written anyway:\n%s", body)
 	}
 }
+
+// bytesWithNoNote answers every read with bytes and a missing file.
+type bytesWithNoNote struct{ brokenReaders }
+
+func (b bytesWithNoNote) Open(v domain.Vault) (port.VaultReader, error) {
+	inner, err := b.brokenReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return staleBytesReader{VaultReader: inner}, nil
+}
+
+type staleBytesReader struct{ port.VaultReader }
+
+func (staleBytesReader) Read(context.Context, string) ([]byte, error) {
+	return []byte("Left over, not the person's."), fs.ErrNotExist
+}
+
+func TestAnOverwriteOfAMissingNoteHoldsOnlyTheNewText(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, nil)
+	edit := c.editWith(bytesWithNoNote{}, filesystem.VaultWriters{})
+	edit.ShouldOverwrite = true
+
+	if _, err := edit.Apply(t.Context(), c.vault, "Heat.md", func(d *markdown.Document) error {
+		return d.SetBody("Mine.\n")
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if body := c.read(t, "Heat.md"); body != "Mine.\n" {
+		t.Errorf("the note holds %q", body)
+	}
+}
