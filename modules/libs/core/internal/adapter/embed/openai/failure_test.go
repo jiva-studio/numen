@@ -292,13 +292,13 @@ func TestARequestIsSentAsJSON(t *testing.T) {
 func TestAnErrorCarriesTheFirst4096BytesOfWhatTheServiceSaid(t *testing.T) {
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, strings.Repeat("z", 5000))
+		fmt.Fprint(w, strings.Repeat("x", 5000))
 	})
 	_, err := client(t, s.URL, 4).Embed(t.Context(), []string{"one"})
 	if err == nil {
 		t.Fatal("want an error")
 	}
-	if got := strings.Count(err.Error(), "z"); got != 4096 {
+	if got := strings.Count(err.Error(), "x"); got != 4096 {
 		t.Errorf("the error carries %d bytes of what the service said", got)
 	}
 }
