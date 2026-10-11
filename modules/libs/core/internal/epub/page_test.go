@@ -128,7 +128,7 @@ func TestAPageBeginsAtTheFirstLetterAtOrAfterItsMeasure(t *testing.T) {
 		bytes   int
 	}{
 		"latin":    {"a", 1024},
-		"cyrillic": {"б", 2048},
+		"cyrillic": {"б", 2047},
 		"mixed":    {"aa" + strings.Repeat("б", 20_000), 2047},
 	}
 	for name, script := range scripts {
