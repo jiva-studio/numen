@@ -81,13 +81,6 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	if err != nil {
 		return nil, err
 	}
-	options, _, err := onnxruntime.NewSessionOptions(opened.engine, onnxruntime.SessionSettings{
-		Threads: cfg.threads(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer options.Destroy()
 
 	pieces, err := tokens(found.tokens)
 	if err != nil {
@@ -109,17 +102,19 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 			From:      found.from,
 		},
 	}
+	threads := cfg.sessionThreads()
 	for _, one := range []struct {
-		dst  **ort.Session
-		at   string
-		kind string
+		dst     **ort.Session
+		at      string
+		kind    string
+		threads int
 	}{
-		{&out.encoder, found.encoder, "encoder"},
-		{&out.decoder, found.decoder, "decoder"},
-		{&out.joiner, found.joiner, "joiner"},
-		{&out.segmenter, found.segmenter, "segmenter model"},
+		{&out.encoder, found.encoder, "encoder", threads.encoder},
+		{&out.decoder, found.decoder, "decoder", threads.decoder},
+		{&out.joiner, found.joiner, "joiner", threads.joiner},
+		{&out.segmenter, found.segmenter, "segmenter model", threads.segmenter},
 	} {
-		session, err := onnxruntime.NewSession(opened.engine, one.at, options)
+		session, err := openSession(opened.engine, one.at, one.threads)
 		if err != nil {
 			out.Close()
 			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.at, err)
@@ -127,6 +122,18 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		*one.dst = session
 	}
 	return out, nil
+}
+
+// openSession compiles the model at path with the given intra-op thread count.
+func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, error) {
+	options, _, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+		Threads: threads,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer options.Destroy()
+	return onnxruntime.NewSession(engine, path, options)
 }
 
 // Transcription is what every recording this transcriber hears was heard by.
