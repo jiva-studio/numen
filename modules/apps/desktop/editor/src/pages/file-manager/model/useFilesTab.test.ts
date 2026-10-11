@@ -38,14 +38,24 @@ const held: Record<string, readonly Entry[]> = {
 const settle = () => new Promise((done) => setTimeout(done, 0))
 
 /** A tab of that vault, writing down everything it asked of the window. */
-const tab = (fails = false) => {
+const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const done: string[] = []
-  const vault: Record<string, readonly Entry[]> = { ...held }
-  const list = useFileTree({ list: async (at: string) => vault[at] ?? [] })
+  const asked: string[] = []
+  const sources: string[] = []
+  const vault: Record<string, readonly Entry[]> = { ...held, ...extra }
+  const list = useFileTree({
+    list: async (at: string) => {
+      asked.push(at)
+      return vault[at] ?? []
+    },
+  })
   const gestures = useFilesTab(list, {
     openDestination: (landing) =>
       void done.push(`lands ${landing ? `${landing.at} ${landing.path}` : '—'}`),
-    runCommand: (id, paths, name) => void done.push(`runs ${id} ${paths.join(' ')} ${name}`),
+    runCommand: (id, paths, name, source) => {
+      done.push(`runs ${id} ${paths.join(' ')} ${name}`)
+      sources.push(source)
+    },
     movePath: async (from, to) => void done.push(`moves ${from} ${to}`),
     setDraggedPaths: (paths) => void done.push(`drags ${paths.join(' ') || '—'}`),
     createFolder: async (path) => {
@@ -58,6 +68,7 @@ const tab = (fails = false) => {
     createNote: async (folderPath) => {
       const made = folderPath === ROOT ? 'Untitled note.md' : `${folderPath}/Untitled note.md`
       done.push(`writes ${made}`)
+      if (fails) return ''
       return made
     },
     createDeck: async (folderPath, name) => {
@@ -87,7 +98,7 @@ const tab = (fails = false) => {
     },
     showError: (text) => void done.push(`says ${text}`),
   })
-  return { done, list, one: gestures }
+  return { done, list, one: gestures, asked, sources }
 }
 
 describe('where a row activated takes the person', () => {
@@ -641,5 +652,175 @@ describe('useFilesTab helper and interaction methods', () => {
     expect(one.getNameOf('nonexistent/file.txt')).toBe('file.txt')
     expect(one.canRun({} as any)).toBe(true)
     expect(one.getFolderFor(null)).toBe(ROOT)
+  })
+})
+
+describe('a field already holding a name, and a file refused', () => {
+  const refuse = async (id: string) => {
+    const { one, list } = tab(true)
+    await list.openFolder(ROOT)
+    one.setRenamingPath('Cover.png')
+    one.openMenu({ path: 'Entropy.md', at: { x: 0, y: 0 } })
+    one.chooseMenuItem(id)
+    await settle()
+    return one.renamingPath.value
+  }
+
+  it.each([
+    ['folder', NEW_FOLDER],
+    ['note', NEW_NOTE],
+    ['deck', NEW_DECK],
+    ['stencil', NEW_STENCIL],
+    ['preset', NEW_PRESET],
+  ])('leaves the field alone where the %s was refused', async (_kind, id) => {
+    expect(await refuse(id)).toBe('Cover.png')
+  })
+})
+
+describe('a menu item chosen off every row', () => {
+  it('leaves the field alone and runs nothing for an item that needs a row', async () => {
+    const { done, one } = tab()
+    one.setRenamingPath('Cover.png')
+
+    one.openMenu({ path: null, at: { x: 0, y: 0 } })
+    one.chooseMenuItem(RENAME)
+    one.openMenu({ path: null, at: { x: 0, y: 0 } })
+    one.chooseMenuItem('transcribe')
+
+    expect(one.renamingPath.value).toBe('Cover.png')
+    expect(done).toStrictEqual([])
+  })
+})
+
+describe('the source a command is run over', () => {
+  it('is the kind of file the row stands for', async () => {
+    const { list, one, sources } = tab()
+    await list.openFolder(ROOT)
+
+    one.openMenu({ path: 'Heat.pdf', at: { x: 0, y: 0 } })
+    one.chooseMenuItem('recognise')
+    one.remove(['Entropy.md'])
+
+    expect(sources).toStrictEqual(['book', 'note'])
+  })
+
+  it('is other for a row the tree does not hold', () => {
+    const { one, sources } = tab()
+
+    one.openMenu({ path: 'ghost.bin', at: { x: 0, y: 0 } })
+    one.chooseMenuItem('recognise')
+
+    expect(sources).toStrictEqual(['other'])
+  })
+})
+
+describe('rows let go of, in more detail', () => {
+  it('are filed at the top of the vault under the names they carry', async () => {
+    const { done, list, one } = tab()
+    await list.openFolder(ROOT)
+    await list.openFolder('physics')
+
+    await one.move(['physics/Kelvin.md'], { into: null })
+
+    expect(done).toStrictEqual(['moves physics/Kelvin.md Kelvin.md'])
+  })
+
+  it('leave behind the second of two that carry the one name', async () => {
+    const { done, one } = tab()
+
+    await one.move(['heat/Entropy.md', 'physics/Entropy.md'], { into: 'notes' })
+
+    expect(done).toStrictEqual([
+      'moves heat/Entropy.md notes/Entropy.md',
+      `says ${words.taken} Entropy.md`,
+    ])
+  })
+
+  it('say every name left behind, parted by commas', async () => {
+    const { done, one } = tab(false, {
+      notes: [file('notes/Entropy.md'), file('notes/Heat.pdf')],
+    })
+
+    await one.move(['Entropy.md', 'Heat.pdf'], { into: 'notes' })
+
+    expect(done).toStrictEqual([`says ${words.taken} Entropy.md, Heat.pdf`])
+  })
+
+  it('read nothing from the vault where nothing was dragged', async () => {
+    const { asked, done, one } = tab()
+
+    await one.move([], { into: 'physics' })
+
+    expect(asked).toStrictEqual([])
+    expect(done).toStrictEqual([])
+  })
+})
+
+describe('a folder closed in the tab', () => {
+  it('draws nothing under it', async () => {
+    const { list, one } = tab()
+    await list.openFolder(ROOT)
+    one.open('physics')
+    await settle()
+    expect(list.isFolderOpen('physics')).toBe(true)
+
+    one.close('physics')
+
+    expect(list.isFolderOpen('physics')).toBe(false)
+  })
+})
+
+describe('a name given to a row, in more detail', () => {
+  it('is taken whole for a folder whose name carries a dot', async () => {
+    const { done, list, one } = tab(false, { [ROOT]: [...held[ROOT]!, folder('v1.0')] })
+    await list.openFolder(ROOT)
+
+    await one.rename('v1.0', 'v2')
+
+    expect(done).toStrictEqual(['moves v1.0 v2'])
+  })
+
+  it('is given to a row the tree does not hold, which is taken for a file', async () => {
+    const { done, one } = tab()
+
+    await one.rename('ghost/Note.md', 'Other')
+
+    expect(done).toStrictEqual(['moves ghost/Note.md ghost/Other.md'])
+  })
+})
+
+describe('a file refused in a folder that is shut', () => {
+  it.each([
+    ['note', NEW_NOTE],
+    ['deck', NEW_DECK],
+  ])('leaves the folder shut where the %s was refused', async (_kind, id) => {
+    const { one, list } = tab(true)
+    await list.openFolder(ROOT)
+    one.openMenu({ path: 'physics', at: { x: 0, y: 0 } })
+
+    one.chooseMenuItem(id)
+    await settle()
+
+    expect(list.isFolderOpen('physics')).toBe(false)
+  })
+
+  it('leaves the folder shut where the folder was refused on a row the tree does not hold', async () => {
+    const { one, list } = tab(true)
+    one.openMenu({ path: 'ghost/Note.md', at: { x: 0, y: 0 } })
+
+    one.chooseMenuItem(NEW_NOTE)
+    await settle()
+
+    expect(list.isFolderOpen('ghost')).toBe(false)
+  })
+
+  it('makes a note beside a row the tree does not hold', async () => {
+    const { one, done } = tab()
+    one.openMenu({ path: 'ghost/Note.md', at: { x: 0, y: 0 } })
+
+    one.chooseMenuItem(NEW_NOTE)
+    await settle()
+
+    expect(done).toStrictEqual(['writes ghost/Untitled note.md'])
   })
 })

@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { groupItems } from '@numen/ui'
+import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
 import {
   itemsFor,
@@ -244,5 +245,73 @@ describe('what the menu offers anywhere', () => {
 
   it('holds the preset, so choosing it is the menu’s own', () => {
     expect(OFFERED.has(NEW_PRESET)).toBe(true)
+  })
+})
+
+describe('a run that is under way or finished', () => {
+  const getDisabled = (
+    source: 'recording' | 'book',
+    made: ArtifactStates,
+    id: string,
+  ): boolean | undefined =>
+    itemsFor({ source, isFolder: false, format: 'pdf', made }, false, canRunAnything).find(
+      (one) => one.id === id,
+    )?.disabled
+
+  it('disables transcribe while the transcript is running', () => {
+    expect(getDisabled('recording', { transcript: 'running' }, 'transcribe')).toBe(true)
+  })
+
+  it('disables transcribe while the transcript is queued', () => {
+    expect(getDisabled('recording', { transcript: 'queued' }, 'transcribe')).toBe(true)
+  })
+
+  it('leaves transcribe enabled where the transcript failed or was never made', () => {
+    expect(getDisabled('recording', { transcript: 'failed' }, 'transcribe')).toBe(false)
+    expect(getDisabled('recording', {}, 'transcribe')).toBe(false)
+  })
+
+  it('disables recognise while the scan is running or queued', () => {
+    expect(getDisabled('book', { ocr: 'running' }, 'recognise')).toBe(true)
+    expect(getDisabled('book', { ocr: 'queued' }, 'recognise')).toBe(true)
+  })
+
+  it('leaves recognise enabled where the scan failed or was never made', () => {
+    expect(getDisabled('book', { ocr: 'failed' }, 'recognise')).toBe(false)
+    expect(getDisabled('book', {}, 'recognise')).toBe(false)
+  })
+
+  it('disables proofread while there is no transcript to proofread', () => {
+    expect(getDisabled('recording', {}, 'proofread')).toBe(true)
+    expect(getDisabled('recording', { transcript: 'running' }, 'proofread')).toBe(true)
+  })
+
+  it('disables proofread while the proofreading is running', () => {
+    const made: ArtifactStates = { transcript: 'done', 'transcript.corrected': 'running' }
+    expect(getDisabled('recording', made, 'proofread')).toBe(true)
+  })
+
+  it('leaves proofread enabled where the proofreading is queued or failed', () => {
+    const queued: ArtifactStates = { transcript: 'done', 'transcript.corrected': 'queued' }
+    const failed: ArtifactStates = { transcript: 'done', 'transcript.corrected': 'failed' }
+    expect(getDisabled('recording', queued, 'proofread')).toBe(false)
+    expect(getDisabled('recording', failed, 'proofread')).toBe(false)
+  })
+
+  it('disables proofread of a scan while the scan or the proofreading is running', () => {
+    const made: ArtifactStates = { ocr: 'done', 'ocr.corrected': 'running' }
+    expect(getDisabled('book', made, 'proofread')).toBe(true)
+    expect(getDisabled('book', { ocr: 'running' }, 'proofread')).toBe(true)
+  })
+})
+
+describe('the menu on a book that is an EPUB', () => {
+  it('offers exactly what a file offers', () => {
+    const epub = itemsFor(
+      { source: 'book', isFolder: false, format: 'epub' },
+      false,
+      canRunAnything,
+    ).map((one) => one.id)
+    expect(epub).toStrictEqual(getItemIds('other'))
   })
 })
