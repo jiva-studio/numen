@@ -74,7 +74,9 @@ export type AgentTabState = ReturnType<typeof useAgentConversation>
 export type ResolvedAddressMap = ReadonlyMap<string, string>
 
 function getDefaultModel(agent: string): string {
+  // Stryker disable next-line ConditionalExpression,BlockStatement,StringLiteral: the selection watch replaces a model the offered options lack with the first option, which is this one.
   if (agent === 'antigravity') {
+    // Stryker disable next-line StringLiteral: the selection watch replaces an unoffered model with the first option, which is this one.
     return 'gemini-3.7-flash-high'
   }
   if (agent === 'codex') {
@@ -124,6 +126,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
       )
       if (!current) {
         const first = options[0]
+        // Stryker disable next-line ConditionalExpression: the options are not empty here, so the first option exists.
         if (first) {
           selectedAgentId.value = first.agentId
           selectedModelId.value = first.modelId
