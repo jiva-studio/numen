@@ -1,6 +1,3 @@
-	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("a"), markOf("c")}) {
-		t.Errorf("the order is %v after b was closed", got)
-	}
 package pool
 
 import (
@@ -159,6 +156,9 @@ func TestADocumentAskedForAgainIsTheNewestInTheOrder(t *testing.T) {
 		t.Errorf("the order is %v after a was asked for again", got)
 	}
 	take("c", c)
+	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("a"), markOf("c")}) {
+		t.Errorf("the order is %v after b was closed", got)
+	}
 	if !b.isClosed() || a.isClosed() {
 		t.Errorf("the document closed was not the least recently asked for (a closed %v, b closed %v)", a.isClosed(), b.isClosed())
 	}
