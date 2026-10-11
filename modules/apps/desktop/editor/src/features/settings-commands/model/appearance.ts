@@ -28,6 +28,7 @@ export function createWindowAppearance(
   /** What the page was served wearing, which is the applied theme's file. */
   const served = dressed.theme.textContent ?? ''
   /** What the sizes' element holds, once the window knows what it was served at. */
+  // Stryker disable next-line StringLiteral: no size css is empty, so any other starting text compares the same
   let appliedSizesCss = ''
 
   /** Every theme there is, and the theme and the mode the settings name. */
@@ -177,6 +178,7 @@ export function createWindowAppearance(
 
   const listThemeGroups = () => getThemeGroups(list.value, applied.value, words)
   const listModeGroups = () => getModeGroups(mode.value, choice.isPinned.value, words)
+  // Stryker disable next-line StringLiteral: text that is not digits offers no typed size, as the empty text offers none
   const listSizeGroups = (command: string, text = '') =>
     getSizeGroups(command, text, settings.value, bounds.value, words)
 
