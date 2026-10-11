@@ -18,4 +18,17 @@ describe('how long a card is away for', () => {
     expect(getTimeAhead(0)).toBe('1m')
     expect(getTimeAhead(5)).toBe('1m')
   })
+
+  // Sixty minutes is an hour: each unit gives way to the next at the length the
+  // next one begins at.
+  it('moves to the next unit at the length it begins at', () => {
+    expect(getTimeAhead(59 * 60)).toBe('59m')
+    expect(getTimeAhead(60 * 60)).toBe('1h')
+    expect(getTimeAhead(23 * 3600)).toBe('23h')
+    expect(getTimeAhead(24 * 3600)).toBe('1d')
+    expect(getTimeAhead(29 * 24 * 3600)).toBe('29d')
+    expect(getTimeAhead(30 * 24 * 3600)).toBe('1mo')
+    expect(getTimeAhead(330 * 24 * 3600)).toBe('11mo')
+    expect(getTimeAhead(360 * 24 * 3600)).toBe('1y')
+  })
 })
