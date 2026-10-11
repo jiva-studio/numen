@@ -65,6 +65,10 @@ type Config struct {
 	// ResolvedCompute is the concrete calculated concurrency and batch limits.
 	ResolvedCompute settings.ResolvedCompute
 
+	// Hardware is what this machine was found to have when the settings were read; a
+	// container without it knows nothing of the machine.
+	Hardware settings.HardwareSpecs
+
 	// Importing is how an address a link note points at is reached, and where
 	// the tools that reach it are. A machine holding neither tool builds no
 	// downloader, and what asks for one is told this build cannot do it.
