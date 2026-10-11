@@ -195,6 +195,71 @@ describe('the commands reach the window', () => {
     expect(asked).toHaveBeenCalledWith('talk.mp3')
   })
 
+  it.each(['createArtifact', 'fetchArtifact', 'correctArtifact'] as const)(
+    'answers %s with what the runner answered, and reads what the file carries again',
+    async (run) => {
+      const outcome = { able: true }
+      const asked = vi.spyOn(running, run).mockResolvedValue(outcome as never)
+      const loaded: string[] = []
+      const { deps } = createOptions({ loadArtifactStates: async (path) => void loaded.push(path) })
+
+      const ask = deps.runs[run] as (...args: unknown[]) => Promise<unknown>
+      expect(await ask('talk.mp3', 'transcript')).toBe(outcome)
+      expect(asked).toHaveBeenCalledWith(
+        ...(run === 'createArtifact' ? ['talk.mp3', 'transcript'] : ['talk.mp3']),
+      )
+      expect(loaded).toStrictEqual(['talk.mp3'])
+    },
+  )
+
+  it('tells the recording and the address tabs a transcript went, and reads the file again', async () => {
+    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
+    const told: string[] = []
+    const loaded: string[] = []
+    const { deps } = createOptions({
+      loadArtifactStates: async (path) => void loaded.push(path),
+      recorded: {
+        onDelete: (path) => void told.push(`recorded deleted ${path}`),
+        reloadTranscript: (path) => void told.push(`recorded reloaded ${path}`),
+      },
+      pointed: { reloadTranscript: (path) => void told.push(`pointed reloaded ${path}`) },
+    })
+
+    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(true)
+    expect(told).toStrictEqual(['recorded deleted talk.mp3', 'pointed reloaded talk.mp3'])
+    expect(loaded).toStrictEqual(['talk.mp3'])
+  })
+
+  it('tells no tab of a transcript that did not go', async () => {
+    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(false)
+    const told: string[] = []
+    const { deps } = createOptions({
+      recorded: { onDelete: (path) => void told.push(path) },
+      pointed: { onDelete: (path) => void told.push(path) },
+    })
+
+    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(false)
+    expect(told).toStrictEqual([])
+  })
+
+  it('deletes a transcript where no tab is listening', async () => {
+    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
+    const { deps } = createOptions()
+
+    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(true)
+  })
+
+  it('reads the file again only after a copy went', async () => {
+    const deleted = vi.spyOn(running, 'deleteCopy').mockResolvedValue(true)
+    const loaded: string[] = []
+    const { deps } = createOptions({ loadArtifactStates: async (path) => void loaded.push(path) })
+
+    expect(await deps.runs.deleteCopy('video.md')).toBe(true)
+    deleted.mockResolvedValue(false)
+    expect(await deps.runs.deleteCopy('other.md')).toBe(false)
+    expect(loaded).toStrictEqual(['video.md'])
+  })
+
   it('makes a stencil with one field, and every other file as the makers make it', async () => {
     const { deps, calls } = createOptions()
 
@@ -229,6 +294,42 @@ describe('the commands reach the window', () => {
       ['requestClose', 'tab-1'],
       ['askQuestion', 'what is a llama?'],
     ])
+  })
+
+  it('travels and leaves through the plex', async () => {
+    const went: string[] = []
+    const { deps } = createOptions({
+      plexes: () => ({
+        travel: async (path) => void went.push(`travel ${path}`),
+        leavePath: async (from, to) => void went.push(`leave ${from} ${to}`),
+      }),
+    })
+
+    await deps.goes.travel('Llama.md')
+    await deps.goes.leave('Llama.md', 'Alpaca.md')
+    expect(went).toStrictEqual(['travel Llama.md', 'leave Llama.md Alpaca.md'])
+  })
+
+  it('hands each choice of a setting to the setting it is for', async () => {
+    const chosen: string[] = []
+    const { deps } = createOptions({
+      oneName: { choose: async (item) => void chosen.push(`sync ${item}`) },
+      hungParts: {
+        choose: async (item) => void chosen.push(`hanging ${item}`),
+        chooseCount: async (item) => void chosen.push(`parts ${item}`),
+      },
+    })
+
+    await deps.settings.chooseSync('on')
+    await deps.settings.chooseHanging('off')
+    await deps.settings.chooseParts('6')
+    expect(chosen).toStrictEqual(['sync on', 'hanging off', 'parts 6'])
+  })
+
+  it('copies nothing where there is no clipboard', () => {
+    vi.stubGlobal('navigator', {})
+
+    expect(() => createOptions().deps.copyPath('zoo/Llama.md')).not.toThrow()
   })
 
   it('searches with the search the window gave, and does nothing without one', () => {

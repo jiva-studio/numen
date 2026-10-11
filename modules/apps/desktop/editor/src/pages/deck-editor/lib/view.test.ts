@@ -119,6 +119,12 @@ describe('a reading under the identities the window drew it by', () => {
     expect(applyName(screen, read).cards.map((one) => one.section)).toStrictEqual(['s2', null])
   })
 
+  it('files a card under no section where the section it names was not read', () => {
+    const read = deck({ sections: [section({ id: 'r1' })], cards: [card({ section: 'ghost' })] })
+
+    expect(applyName(deck(), read).cards[0]?.section).toBeNull()
+  })
+
   it('keeps the identity of a card the window wrote, read back under its new mark', () => {
     const { screen, read } = written()
 

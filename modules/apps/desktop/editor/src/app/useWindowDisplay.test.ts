@@ -4,7 +4,7 @@
  * Every one of these has a failure that looks like nothing at all: a window
  * showing something stale, with no error and no way back.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { asValue } from '@numen/wire'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
@@ -301,6 +301,25 @@ describe('another vault under this window', () => {
 
     expect(one.drawn).toContain('changed Heat.md')
     expect(one.drawn.at(-1)).toBe('reloaded')
+
+    one.window.close()
+  })
+
+  it('reads the vault again where the vault cannot be asked where it stands', async () => {
+    let reads = 0
+    const one = createWindow(
+      createReloadingCore(async () => {
+        reads += 1
+        if (reads > 1) throw new Error('connection lost')
+        return settled
+      }),
+    )
+
+    await one.window.start()
+    await nap()
+    await nap()
+
+    expect(one.drawn).not.toContain('reloaded')
 
     one.window.close()
   })
@@ -698,5 +717,47 @@ describe('a closed window', () => {
 
     expect(signals).toHaveLength(1)
     expect(signals[0]?.aborted).toBe(true)
+  })
+})
+
+describe('a vault that cannot be reached at all', () => {
+  it('says so, and stops the waiting', async () => {
+    const window = useWindowDisplay(
+      fake({
+        state: async () => {
+          throw new Error('connection refused')
+        },
+      }),
+    )
+
+    await window.start()
+
+    expect(window.failure.value).not.toBe('')
+    expect(window.isIndexing.value).toBe(false)
+  })
+})
+
+describe('a vault still being read', () => {
+  it('is asked again a tenth of a second later', async () => {
+    vi.useFakeTimers()
+    let reads = 0
+    const window = useWindowDisplay(
+      fake({
+        getInitialOpenPath: async () => null,
+        state: async () => {
+          reads += 1
+          return { ...settled, scan: { ...settled.scan, isReady: false } }
+        },
+      }),
+    )
+
+    void window.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(reads).toBe(1)
+    await vi.advanceTimersByTimeAsync(100)
+    window.close()
+    vi.useRealTimers()
+
+    expect(reads).toBe(2)
   })
 })
