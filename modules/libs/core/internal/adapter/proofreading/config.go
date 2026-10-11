@@ -37,6 +37,15 @@ const (
 	DefaultAgentInFlight = 2
 )
 
+// DefaultAttempts is how many times one request is sent where nobody said, and
+// DefaultDelayMS the ceiling in milliseconds of the wait after its first
+// failure, which doubles with each failure up to DefaultMaxDelayMS.
+const (
+	DefaultAttempts   = 4
+	DefaultDelayMS    = 500
+	DefaultMaxDelayMS = 30_000
+)
+
 // DefaultAgentBatchSize is how many lines one run of the command line carries.
 // Starting it costs the same whatever it is asked, so it is asked a lot.
 const DefaultAgentBatchSize = 60
@@ -92,6 +101,14 @@ type Profile struct {
 	// command line this is how much of a person's own model is taken while
 	// they are using it.
 	InFlight int `json:"in_flight"`
+	// Attempts is how many times one request is sent before its error is
+	// reported. Only a service is sent to again.
+	Attempts int `json:"attempts"`
+	// DelayMS is the ceiling, in milliseconds, of the wait after a request first
+	// fails. It doubles with each failure up to MaxDelayMS.
+	DelayMS int `json:"delay_ms"`
+	// MaxDelayMS bounds every wait, including one the service asks for.
+	MaxDelayMS int `json:"max_delay_ms"`
 
 	// key is unexported: no value a caller formats or serialises carries it.
 	// Key reads it.
@@ -119,12 +136,15 @@ func Defaults() Config {
 // out.
 func ServiceDefaults() Profile {
 	return Profile{
-		Use:       UseService,
-		BaseURL:   "https://openrouter.ai/api/v1",
-		BatchURL:  "https://openrouter.ai/api/beta/batches",
-		KeyEnv:    KeyEnvVar,
-		BatchSize: DefaultBatchSize,
-		InFlight:  DefaultInFlight,
+		Use:        UseService,
+		BaseURL:    "https://openrouter.ai/api/v1",
+		BatchURL:   "https://openrouter.ai/api/beta/batches",
+		KeyEnv:     KeyEnvVar,
+		BatchSize:  DefaultBatchSize,
+		InFlight:   DefaultInFlight,
+		Attempts:   DefaultAttempts,
+		DelayMS:    DefaultDelayMS,
+		MaxDelayMS: DefaultMaxDelayMS,
 	}
 }
 
@@ -177,12 +197,15 @@ type profileFile struct {
 	Name     *string `json:"name,omitempty"`
 	KeyEnv   *string `json:"key_env,omitempty"`
 	// A key is written by a person and never by us.
-	Key       *string   `json:"key,omitempty"`
-	Model     *string   `json:"model,omitempty"`
-	Command   *[]string `json:"command,omitempty"`
-	BatchSize *int      `json:"batch_size"`
-	Overlap   *int      `json:"overlap"`
-	InFlight  *int      `json:"in_flight"`
+	Key        *string   `json:"key,omitempty"`
+	Model      *string   `json:"model,omitempty"`
+	Command    *[]string `json:"command,omitempty"`
+	BatchSize  *int      `json:"batch_size"`
+	Overlap    *int      `json:"overlap"`
+	InFlight   *int      `json:"in_flight"`
+	Attempts   *int      `json:"attempts,omitempty"`
+	DelayMS    *int      `json:"delay_ms,omitempty"`
+	MaxDelayMS *int      `json:"max_delay_ms,omitempty"`
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
@@ -225,6 +248,9 @@ func (p *Profile) UnmarshalJSON(raw []byte) error {
 	assign(&p.BatchSize, f.BatchSize)
 	assign(&p.Overlap, f.Overlap)
 	assign(&p.InFlight, f.InFlight)
+	assign(&p.Attempts, f.Attempts)
+	assign(&p.DelayMS, f.DelayMS)
+	assign(&p.MaxDelayMS, f.MaxDelayMS)
 	return nil
 }
 
@@ -235,6 +261,7 @@ func (p Profile) MarshalJSON() ([]byte, error) {
 	switch p.Use {
 	case UseService:
 		f.BaseURL, f.BatchURL, f.Name, f.KeyEnv = &p.BaseURL, &p.BatchURL, &p.Name, &p.KeyEnv
+		f.Attempts, f.DelayMS, f.MaxDelayMS = &p.Attempts, &p.DelayMS, &p.MaxDelayMS
 	case UseAgent:
 		f.Model = &p.Model
 		if len(p.Command) > 0 {

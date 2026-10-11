@@ -30,11 +30,17 @@ func server(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 }
 
 func client(t *testing.T, baseURL string) *openai.Client {
+	return clientWith(t, baseURL, func(*proofreading.Profile) {})
+}
+
+// clientWith is a client whose profile is changed by set before it is built.
+func clientWith(t *testing.T, baseURL string, set func(*proofreading.Profile)) *openai.Client {
 	t.Helper()
 	t.Setenv(proofreading.KeyEnvVar, theKey)
 	cfg := proofreading.ServiceDefaults()
 	cfg.BaseURL = baseURL
 	cfg.Name = "test-model"
+	set(&cfg)
 	c, err := openai.New(cfg, proofread.ScanInstruction)
 	if err != nil {
 		t.Fatal(err)

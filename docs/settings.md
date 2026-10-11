@@ -463,6 +463,9 @@ A profile is flat: every key sits at the profile's own level, and `use` says whi
 | `batch_size` | how many lines one request carries. 40 at a service, 60 at the command line, where starting it costs the same whatever it is asked. |
 | `overlap` | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows it. |
 | `in_flight` | how many batches are being asked about at any moment. 4 at a service, 2 at the command line, which is the person's own model and is left most of itself while they are using it. A batch costs what the model writes back rather than what it took to ask, so this is what a run's length answers to. |
+| `attempts` | `service`: how many times one request is sent before its error is reported. A 429, 408, 5xx or timeout is sent again; any other failure is reported at once. |
+| `delay_ms` | `service`: the ceiling, in milliseconds, of the wait after a request first fails. It doubles with each failure, and the wait is drawn at random below it. A `Retry-After` from the service sets the wait instead. |
+| `max_delay_ms` | `service`: the longest any wait is, including one the service asks for. |
 | `base_url` | `service`: anything speaking the `/v1/chat/completions` request shape. |
 | `batch_url` | `service`: the queue batches are left in and collected later, at half the price. Empty asks a batch at a time and waits. A batch outlives the run that left it, so one left before the application closed is collected when it opens. |
 | `name` | `service`: which model answers. The name of the model that corrected a line stands beside what it corrected. |

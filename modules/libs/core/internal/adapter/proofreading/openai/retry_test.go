@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
@@ -38,9 +39,13 @@ func (w *waits) all() []time.Duration {
 }
 
 func retrying(t *testing.T, baseURL string, now time.Time) (*openai.Client, *waits) {
+	return retryingWith(t, baseURL, now, func(*proofreading.Profile) {})
+}
+
+func retryingWith(t *testing.T, baseURL string, now time.Time, set func(*proofreading.Profile)) (*openai.Client, *waits) {
 	t.Helper()
 	w := &waits{}
-	c := client(t, baseURL)
+	c := clientWith(t, baseURL, set)
 	c.SetClock(w.sleep, func() time.Time { return now }, func(d time.Duration) time.Duration { return d })
 	return c, w
 }
@@ -108,7 +113,8 @@ func TestTheWaitDoublesFromTheBaseUpToTheCeiling(t *testing.T) {
 	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
 		t.Fatal("no error")
 	}
-	want := []time.Duration{500 * time.Millisecond, time.Second, 2 * time.Second}
+	base := proofreading.DefaultDelayMS * time.Millisecond
+	want := []time.Duration{base, 2 * base, 4 * base}
 	got := w.all()
 	if len(got) != len(want) {
 		t.Fatalf("waited %v", got)
@@ -153,7 +159,7 @@ func TestRetryAfterBeyondTheCeilingIsCutToIt(t *testing.T) {
 	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
-	if got := w.all(); len(got) != 1 || got[0] != 30*time.Second {
+	if got := w.all(); len(got) != 1 || got[0] != proofreading.DefaultMaxDelayMS*time.Millisecond {
 		t.Errorf("waited %v", got)
 	}
 }
@@ -170,7 +176,7 @@ func TestExhaustedAttemptsReturnTheLastError(t *testing.T) {
 	if !strings.Contains(err.Error(), "500") {
 		t.Errorf("the error is not the last one: %v", err)
 	}
-	if calls.Load() != 4 {
+	if calls.Load() != proofreading.DefaultAttempts {
 		t.Errorf("the service was asked %d times", calls.Load())
 	}
 	if got != nil {
@@ -275,5 +281,33 @@ func TestTheConnectionIsReusedAfterAnError(t *testing.T) {
 	}
 	if opened.Load() != 1 {
 		t.Errorf("%d connections were opened", opened.Load())
+	}
+}
+
+func TestTheProfileSetsAttemptsDelayAndCeiling(t *testing.T) {
+	s, calls := failing(t, http.Header{"Retry-After": {"3600"}}, http.StatusTooManyRequests)
+	c, w := retryingWith(t, s.URL, time.Now(), func(p *proofreading.Profile) {
+		p.Attempts, p.DelayMS, p.MaxDelayMS = 3, 100, 1000
+	})
+
+	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+		t.Fatal("no error")
+	}
+	if calls.Load() != 3 {
+		t.Errorf("the service was asked %d times", calls.Load())
+	}
+	for _, d := range w.all() {
+		if d != time.Second {
+			t.Errorf("waited %v, want the ceiling of one second", d)
+		}
+	}
+
+	s, _ = failing(t, nil, http.StatusServiceUnavailable)
+	c, w = retryingWith(t, s.URL, time.Now(), func(p *proofreading.Profile) { p.DelayMS = 100 })
+	if _, err := c.Proofread(t.Context(), []proofread.Batch{page(1, "a line")}); err == nil {
+		t.Fatal("no error")
+	}
+	if got := w.all(); len(got) == 0 || got[0] != 100*time.Millisecond {
+		t.Errorf("waited %v", got)
 	}
 }
