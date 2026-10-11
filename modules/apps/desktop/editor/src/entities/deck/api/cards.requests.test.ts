@@ -280,6 +280,12 @@ describe('reading a stencil', () => {
     expect(await cards.readStencil('Word.md')).toEqual(asFailure('unreadable'))
   })
 
+  it('is changed where the file moved past what was asked, though a stencil came', async () => {
+    answer('readStencil', { error: ErrorCode.STALE, stencil: stencilMessage })
+
+    expect(await cards.readStencil('Word.md')).toEqual(asFailure('changed'))
+  })
+
   it('is no stencil where no stencil and no error came', async () => {
     answer('readStencil', {})
 

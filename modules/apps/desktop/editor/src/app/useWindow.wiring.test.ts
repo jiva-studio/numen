@@ -4,16 +4,19 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
+import { WORDS } from '@/shared/words'
 import { useWindow } from './useWindow'
 
 /** What each part was made with, and what it was made as. */
 const h = vi.hoisted(() => ({
   args: {} as Record<string, any>,
   f: {} as Record<string, any>,
+  core: { name: 'core', fileKinds: vi.fn() },
+  getDeckPreset: vi.fn(),
 }))
 
-vi.mock('./vault', () => ({ core: { name: 'core' } }))
-vi.mock('@/entities/deck', () => ({ presets: {} }))
+vi.mock('./vault', () => ({ core: h.core }))
+vi.mock('@/entities/deck', () => ({ presets: { getDeckPreset: h.getDeckPreset } }))
 vi.mock('@/features/command-palette', () => ({ runSupport: () => ({ name: 'runs' }) }))
 vi.mock('@/entities/media', () => ({ createMediaTypeProbe: () => ({ name: 'plays' }) }))
 vi.mock('@/features/tab-linking', () => ({ useTabLinks: () => h.f.tabLinks }))
@@ -80,6 +83,8 @@ const createKind = (on: unknown) => ({ name: 'kind', getTarget: vi.fn(() => on) 
 beforeEach(() => {
   front.value = null
   h.args = {}
+  h.core.fileKinds.mockReset()
+  h.getDeckPreset.mockReset()
   const writer = vi.fn()
   h.f = {
     writer,
@@ -388,5 +393,78 @@ describe('the window started and closed', () => {
     expect(h.f.editing.close).toHaveBeenCalledOnce()
     expect(h.f.held.close).toHaveBeenCalledOnce()
     expect(h.f.settings.close).toHaveBeenCalledOnce()
+  })
+})
+
+describe('a preset opened', () => {
+  const kindsOf = (type: string) =>
+    h.core.fileKinds.mockResolvedValue(new Map([['a.md', { type }]]))
+
+  it('opens the schedules over a file that is no deck, asking nothing of the presets', async () => {
+    kindsOf('note')
+    useWindow()
+
+    await h.args.commands.openPreset('a.md')
+
+    expect(h.core.fileKinds).toHaveBeenCalledWith(['a.md'])
+    expect(h.f.editing.schedules.openPreset).toHaveBeenCalledWith('a.md')
+    expect(h.getDeckPreset).not.toHaveBeenCalled()
+  })
+
+  it('opens the schedules over a file the vault has no kind for', async () => {
+    h.core.fileKinds.mockResolvedValue(new Map())
+    useWindow()
+
+    await h.args.commands.openPreset('a.md')
+
+    expect(h.f.editing.schedules.openPreset).toHaveBeenCalledWith('a.md')
+    expect(h.getDeckPreset).not.toHaveBeenCalled()
+  })
+
+  it('says why the preset of a deck could not be read', async () => {
+    kindsOf('deck')
+    h.getDeckPreset.mockResolvedValue({ ok: false, error: 'missing' })
+    useWindow()
+
+    await h.args.commands.openPreset('a.md')
+
+    expect(h.getDeckPreset).toHaveBeenCalledWith('a.md')
+    expect(h.f.writer).toHaveBeenCalledWith(WORDS.errors.missing, 'error')
+    expect(h.f.editing.schedules.openPreset).not.toHaveBeenCalled()
+  })
+
+  it('says a deck has no preset where the answer names none', async () => {
+    kindsOf('deck')
+    h.getDeckPreset.mockResolvedValue({ ok: true, value: { preset: { path: '', title: 'T' } } })
+    useWindow()
+
+    await h.args.commands.openPreset('a.md')
+
+    expect(h.f.writer).toHaveBeenCalledWith(WORDS.noPreset, 'caution')
+    expect(h.f.editing.schedules.openPreset).not.toHaveBeenCalled()
+  })
+
+  it('says a deck has no preset where the answer holds none', async () => {
+    kindsOf('deck')
+    h.getDeckPreset.mockResolvedValue({ ok: true, value: {} })
+    useWindow()
+
+    await h.args.commands.openPreset('a.md')
+
+    expect(h.f.writer).toHaveBeenCalledWith(WORDS.noPreset, 'caution')
+  })
+
+  it('opens the preset a deck is under, with its title', async () => {
+    kindsOf('deck')
+    h.getDeckPreset.mockResolvedValue({
+      ok: true,
+      value: { preset: { path: 'Presets/Fast.md', title: 'Fast' } },
+    })
+    useWindow()
+
+    await h.args.commands.openPreset('a.md')
+
+    expect(h.f.editing.schedules.openPreset).toHaveBeenCalledWith('Presets/Fast.md', 'Fast')
+    expect(h.f.writer).not.toHaveBeenCalled()
   })
 })
