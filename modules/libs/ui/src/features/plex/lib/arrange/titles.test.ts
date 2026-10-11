@@ -463,6 +463,13 @@ describe('a title set on a straight line', () => {
     expect(getCentre(settled!).x + TEN(settled!.words!) / 2).toBeLessThanOrEqual(180)
   })
 
+  it('writes no title on a line that an arrowhead takes the whole of', () => {
+    const short = createLine({ x: 0, y: 0 }, { x: 30, y: 0 }, 'a', { arrow: 'to' })
+    const [settled] = settleTitles([short], [], routing)
+
+    expect(settled!.words).toBeUndefined()
+  })
+
   it('keeps a title clear of the corner of a slanting title that a box around it would take', () => {
     // The first title slants across the page; the second line runs below it,
     // under the empty corner of the box around the first.

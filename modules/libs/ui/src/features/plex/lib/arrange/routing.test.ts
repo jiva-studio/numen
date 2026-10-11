@@ -473,6 +473,20 @@ describe('the run of a line between two boxes', () => {
     const across = route(box('a', 'focus', 0, 0), box('b', 'focus', 300, 60), undeclared)
     expect(across.fromPoint).toStrictEqual({ x: 50, y: 0 })
     expect(across.toPoint).toStrictEqual({ x: 250, y: 60 })
+
+    // Equally far across and down, the run is down the page.
+    const level = route(box('a', 'focus', 0, 0), box('b', 'focus', 150, 150), undeclared)
+    expect(level.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(level.toPoint).toStrictEqual({ x: 150, y: 130 })
+
+    // The distances are those between the boxes, wherever they stand.
+    const farDown = route(box('a', 'focus', 0, 300), box('b', 'focus', 200, 400), undeclared)
+    expect(farDown.fromPoint).toStrictEqual({ x: 50, y: 300 })
+    expect(farDown.toPoint).toStrictEqual({ x: 150, y: 400 })
+
+    const farAcross = route(box('a', 'focus', 300, 0), box('b', 'focus', 420, 200), undeclared)
+    expect(farAcross.fromPoint).toStrictEqual({ x: 300, y: 20 })
+    expect(farAcross.toPoint).toStrictEqual({ x: 420, y: 180 })
   })
 
   it('leaves from the top of a box that is below the one it arrives at', () => {
