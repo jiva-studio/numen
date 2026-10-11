@@ -267,16 +267,16 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, p.Floor)
 }
 
-type passageSource struct {
-	prose string
-	opens int
-}
-
 // read fills in the text of each passage from the vault. A chunk is a place in a
 // file, and the file is what holds the words.
 //
 // A passage naming a file the vault no longer holds is dropped: the file is what
 // is true, and the index follows it.
+//
+// A ranking scatters one source's passages wherever each chunk placed, so they
+// are grouped by source before this reads any of them. Each source's decoded
+// text is then held only while its own passages are filled in, one source at a
+// time, however many sources `found` names.
 func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil
@@ -296,40 +296,57 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	}
 	of := text.Reader{Vault: reader, Derived: store, Documents: u.documents}
 
-	// Several passages of one file are read once. A source is one text however
-	// many passages name it, so its path is the whole of the key.
-	read := make(map[string]passageSource, len(found))
-	gone := make(map[string]bool)
+	groups, order := groupBySource(found)
 
-	out := make([]domain.Passage, 0, len(found))
-	for _, p := range found {
+	filled := make([]domain.Passage, len(found))
+	keep := make([]bool, len(found))
+	for _, source := range order {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		cached, held := read[p.Source]
-		if !held && !gone[p.Source] {
-			prose, err := extractText(ctx, of, p.Source, p.Producer, p.SourceHash)
-			if port.IsNoNote(err) || errors.Is(err, errUnreadable) {
-				gone[p.Source] = true
-				continue
-			}
-			if err != nil {
-				return nil, fmt.Errorf("read %s: %w", p.Source, err)
-			}
-			cached = passageSource{
-				prose: prose,
-				opens: proseOpens(prose),
-			}
-			read[p.Source] = cached
-		}
-		if gone[p.Source] {
+		indices := groups[source]
+		first := found[indices[0]]
+		prose, err := extractText(ctx, of, source, first.Producer, first.SourceHash)
+		if port.IsNoNote(err) || errors.Is(err, errUnreadable) {
 			continue
 		}
-		p.Text = span(cached.prose, p.Start, p.Length)
-		p.Line = lineOf(cached.prose, cached.opens, p.Start+p.HitAt)
-		out = append(out, p)
+		if err != nil {
+			return nil, fmt.Errorf("read %s: %w", source, err)
+		}
+		opens := proseOpens(prose)
+		for _, i := range indices {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			p := found[i]
+			p.Text = span(prose, p.Start, p.Length)
+			p.Line = lineOf(prose, opens, p.Start+p.HitAt)
+			filled[i] = p
+			keep[i] = true
+		}
+	}
+
+	out := make([]domain.Passage, 0, len(found))
+	for i, k := range keep {
+		if k {
+			out = append(out, filled[i])
+		}
 	}
 	return out, nil
+}
+
+// groupBySource is the index of each passage in `found`, grouped by source and
+// ordered by a source's first appearance.
+func groupBySource(found []domain.Passage) (map[string][]int, []string) {
+	groups := make(map[string][]int, len(found))
+	order := make([]string, 0, len(found))
+	for i, p := range found {
+		if _, held := groups[p.Source]; !held {
+			order = append(order, p.Source)
+		}
+		groups[p.Source] = append(groups[p.Source], i)
+	}
+	return groups, order
 }
 
 // errUnreadable is a source that is there and says nothing this can use. It is
@@ -358,6 +375,10 @@ func extractText(ctx context.Context, reader text.Reader, path, from, hash strin
 
 // span is the text a chunk addresses, bounded by what the source holds now. A
 // source edited since it was indexed is shorter than the chunk says.
+//
+// The result is copied out of the source's decoded text rather than sliced from
+// it, so a passage kept after this returns holds the span alone, not the whole
+// document the span was cut from.
 func span(raw string, start, length int) string {
 	if start < 0 || start >= len(raw) || length <= 0 {
 		return ""
@@ -366,7 +387,7 @@ func span(raw string, start, length int) string {
 	if end > len(raw) {
 		end = len(raw)
 	}
-	return raw[start:end]
+	return strings.Clone(raw[start:end])
 }
 
 // lineOf is the line a passage begins on, counted from the first line of the
