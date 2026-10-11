@@ -2,6 +2,7 @@ package openai
 
 import (
 	"context"
+	"net/http"
 	"time"
 )
 
@@ -13,3 +14,10 @@ func (c *Client) SetClock(
 ) {
 	c.sleep, c.now, c.jitter = sleep, now, jitter
 }
+
+// GetHTTPClient is the client every request is sent with.
+func (c *Client) GetHTTPClient() *http.Client { return c.http }
+
+// SetSleep replaces the sleep of the retry wait, keeping the instant and the
+// jitter.
+func (c *Client) SetSleep(sleep func(context.Context, time.Duration) error) { c.sleep = sleep }
