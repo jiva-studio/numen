@@ -1,6 +1,6 @@
 # Backend (Go) Coding Style & Guidelines
 
-The standards for Go code in numen: `modules/libs/core`, `modules/libs/protocol`, `modules/apps/desktop`, `modules/apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md) and in [`docs/adr/`](../../docs/adr/README.md).
+The standards for Go code in numen: `modules/libs/core`, `modules/libs/protocol`, `modules/apps/desktop`, `modules/apps/mobile`. The architecture these serve is in [`architecture.md`](./architecture.md).
 
 ---
 

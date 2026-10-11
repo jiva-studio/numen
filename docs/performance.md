@@ -171,7 +171,7 @@ The fifth row was measured when a note save was a handful of statements. A note 
 
 ## The source layer: finding a passage
 
-The numbers above are the note index. These are the source layer: text cut into chunks, embedded, and searched. The decisions they were taken for are in [A source is text in one table](adr/0010-a-source-is-text-in-one-table.md) and the four decisions after it.
+The numbers above are the note index. These are the source layer: text cut into chunks, embedded, and searched.
 
 Recorded 2026-08-17 on the same AMD Ryzen 7 6800U, `modernc.org/sqlite` v1.56 with the bundled `sqlite-vec` v0.1.9, WAL with `synchronous = NORMAL`.
 
@@ -400,7 +400,7 @@ The corpus is not in git. The test that measures it skips when the directory is 
 | Per book | 59 ms |
 | Slowest book | 0.26 s |
 
-Reading a passage back, which is what a result costs when the extracted text is not stored ([A book's text is a cache or an artifact](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)):
+Reading a passage back, which is what a result costs when the extracted text is not stored:
 
 | | |
 | --- | --- |

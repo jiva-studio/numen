@@ -1,6 +1,6 @@
 # Architecture & Repository Guidelines
 
-The architecture of numen is written down in [`docs/adr/`](../../docs/adr/README.md). This file is the map: it says where things live and which way the arrows point. When it and an ADR disagree, the ADR wins, and this file is the thing to fix.
+The architecture of numen is written down here. This file is the map: it says where things live and which way the arrows point. When this file and the code disagree, this file is the thing to fix.
 
 ---
 
@@ -9,7 +9,6 @@ The architecture of numen is written down in [`docs/adr/`](../../docs/adr/README
 ```text
 numen/
 ├── Makefile                      # every gate and build: make lint, make test, make build
-├── docs/adr/                     # the decisions — the rules live here
 ├── tests/                        # the one committed fixture vault, read-only and awkward
 └── modules/
     ├── libs/

@@ -7,7 +7,7 @@
 # --- types --------------------------------------------------------------
 #   feat      new capability
 #   fix       bug fix
-#   docs      documentation only (ADRs live here)
+#   docs      documentation only
 #   refactor  neither fixes a bug nor adds a feature
 #   perf      performance
 #   test      tests only
@@ -21,11 +21,10 @@
 #   mobile    modules/apps/mobile       domain  modules/libs/core/domain
 #   landing   modules/apps/landing      ui      modules/libs/ui
 #   protocol  modules/libs/protocol     wire    modules/libs/wire
-#   adr       docs/adr                  docs    everything else in docs/
-#   vault     vault format / parser     ci  deps  repo
+#   docs      everything else in docs/  vault   vault format / parser
+#   ci  deps  repo
 #
 # --- examples -----------------------------------------------------------
-#   docs(adr): add a record on two levels of addressing
 #   feat(domain): resolve wikilinks by name with priority rules
 #   fix(protocol): keep note:// links untouched on rename
 #   feat(domain)!: drop path-based note identity

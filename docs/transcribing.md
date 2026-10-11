@@ -1,6 +1,6 @@
 # How a recording is transcribed
 
-What a model writes down from a recording, where it is kept, and how a search lands on the second it was said. A transcript is written into the vault's own folder, under `.numen/transcript/`, and the source is cut from it (see [A transcript is WebVTT](adr/0031-a-transcript-is-webvtt.md)).
+What a model writes down from a recording, where it is kept, and how a search lands on the second it was said. A transcript is written into the vault's own folder, under `.numen/transcript/`, and the source is cut from it.
 
 The recording itself is never moved, copied or renamed. It plays where it lies.
 
@@ -54,7 +54,7 @@ A note is a comment in this format, so a partial file is still a file every othe
 
 ## Every ending is an answer
 
-A recording is transcribed without anybody asking ([A recording is transcribed without being asked](adr/0032-a-recording-is-transcribed-without-being-asked.md)), so a run that comes to nothing has to say so. Otherwise the scan offers the same file again forever.
+A recording is transcribed without anybody asking, so a run that comes to nothing has to say so. Otherwise the scan offers the same file again forever.
 
 | Ending | What is written | Offered again |
 | --- | --- | --- |

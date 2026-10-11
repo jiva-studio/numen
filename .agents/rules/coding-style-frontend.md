@@ -123,7 +123,7 @@ function formatValue(val: string) { ... }
 - **A composable has one coherent responsibility.** A composable that takes an entire component's script — every piece of state, every handler, a long list of exports — is that component undecomposed. Split the component instead.
 - **Factories are `create…`.** The word `make` is not used for a factory in frontend code.
 - **Files**: directories `kebab-case`, components `PascalCase`, other TypeScript `camelCase`.
-- **Domain code stays in its domain and layer.** A file of a window stands on one of six layers (`shared` → `entities` → `features` → `widgets` → `pages` → `app`), per ADR 0042. Slices reach lower layers or sibling slices through explicit `@x` public interfaces. Imports use the `@/` alias per ADR 0043.
+- **Domain code stays in its domain and layer.** A file of a window stands on one of six layers (`shared` → `entities` → `features` → `widgets` → `pages` → `app`). Slices reach lower layers or sibling slices through explicit `@x` public interfaces. Imports use the `@/` alias.
 
 ---
 
@@ -155,7 +155,7 @@ function formatValue(val: string) { ... }
 
 ## 10. Code formatting (Prettier & gofmt)
 
-*TypeScript, Vue, JSON and CSS are formatted with Prettier* (ADR 0044). Prettier is configured in `modules/prettier.config.mjs` and enforced in CI via `make lint` (`npm run format:check`). Format with `npm run format`.
+*TypeScript, Vue, JSON and CSS are formatted with Prettier.* Prettier is configured in `modules/prettier.config.mjs` and enforced in CI via `make lint` (`npm run format:check`). Format with `npm run format`.
 
 Go code is formatted with `gofmt` (`gofmt -l .`).
 

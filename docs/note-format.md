@@ -1,8 +1,8 @@
 # Note format
 
-The on-disk format of a single note. This is a specification, not a decision record: every rule here traces to an accepted ADR.
+The on-disk format of a single note. This is a specification, not a decision record.
 
-Scope is the **note file only**. The layout of the vault around it — the service folder and what is kept there — is in [A vault carries its identity, and application state lives with the application](adr/0003-a-vault-carries-its-identity.md).
+Scope is the **note file only**. The layout of the vault around it — one service folder holding everything else the application writes, named `.numen` by default and subfoldered by kind — is the vault's own concern, not the note's.
 
 ## What a note is
 
@@ -31,23 +31,23 @@ Fields the application owns live here rather than in the body. The body is prose
 The frontmatter is shared, not owned:
 
 - Keys the application does not own are **preserved verbatim**, in their original order, including keys it may own in a future version.
-- Owned keys are a **closed set**, and each is introduced by an ADR that defines its meaning. The set is listed below.
+- Owned keys are a **closed set**, each introduced for a reason the table below gives. The set is listed below.
 - A **collision is the user's win**: if a user key has the name of an owned key, the application reports the conflict rather than overwriting or reinterpreting it.
 
 ### Owned keys
 
 | Key | Meaning | Decided in |
 | --- | --- | --- |
-| `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | [A vault is scanned in the background](adr/0008-a-vault-is-scanned-in-the-background.md) |
-| `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | [A vault is scanned in the background](adr/0008-a-vault-is-scanned-in-the-background.md), [A schema change is a numbered migration](adr/0007-a-schema-change-is-a-numbered-migration.md) |
+| `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | — |
+| `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | — |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
-| `type` | Which of four this note is: `note`, `deck`, `stencil` or `preset`. A note carrying none is a `note`. | [The stencil, the deck and the card](adr/0026-the-stencil-and-the-deck.md), [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
-| `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | [The stencil, the deck and the card](adr/0026-the-stencil-and-the-deck.md) |
-| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
-| `learned`, `interval` | What this preset counts as a card learned, and what a day named under `by_date` is tested by. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
-| `counts`, `backlog` | What a day's budget is spent on, and in what order. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
-| `load` | The share of a day's load each day of the week carries. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
-| `even_load` | Whether a card is moved off the day it fell on. Read on a preset and nowhere else. | [A preset is a note, and one arithmetic schedules it](adr/0029-the-preset.md) |
+| `type` | Which of four this note is: `note`, `deck`, `stencil` or `preset`. A note carrying none is a `note`. | — |
+| `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | — |
+| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else. | — |
+| `learned`, `interval` | What this preset counts as a card learned, and what a day named under `by_date` is tested by. Read on a preset and nowhere else. | — |
+| `counts`, `backlog` | What a day's budget is spent on, and in what order. Read on a preset and nowhere else. | — |
+| `load` | The share of a day's load each day of the week carries. Read on a preset and nowhere else. | — |
+| `even_load` | Whether a card is moved off the day it fell on. Read on a preset and nowhere else. | — |
 
 A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
 
@@ -57,7 +57,7 @@ A note carrying no `id` is indexed in full and simply cannot be a *target*: noth
 
 ## What the application may add
 
-The complete permitted set, from [The note file](adr/0018-the-note-file.md). Everything must survive a third-party markdown editor and stay readable to a human.
+The complete permitted set. Everything must survive a third-party markdown editor and stay readable to a human.
 
 | Addition | Where | Status |
 | --- | --- | --- |

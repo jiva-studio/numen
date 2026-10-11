@@ -4,10 +4,8 @@ The conventions every language in this repository shares are in `AGENTS.md` at
 the root. This file is the protocol's own, and it holds over
 `modules/libs/protocol`.
 
-The decision behind the shape is
-[`docs/adr/0034-one-service-to-a-subject.md`](../../../docs/adr/0034-one-service-to-a-subject.md),
-and how a client comes from it is
-[`docs/adr/0005-a-client-is-generated-from-the-protocol.md`](../../../docs/adr/0005-a-client-is-generated-from-the-protocol.md).
+The shape is in the sections below: one service to a subject, and a client
+generated from it, never hand-written.
 
 ## Generated code is never edited
 
@@ -28,6 +26,16 @@ is on a service decides what a binary must be able to answer.
 
 A file is a place and not a subject. Two things that stand beside one file are
 two subjects.
+
+## An error code is a successful answer; a status code is not
+
+A call that cannot be served at all — nothing mounts it, the transport is
+going — fails with a status code. A call that was served and came back "no" —
+a name already taken, a vault not in the list — answers with an `ErrorCode`
+field on the response message instead, with the field that would have carried
+the result left unset. A client reading the status to tell the two apart is
+reading the wrong signal. This is convention, carried by the shape of each
+response message; no lint checks it yet.
 
 ## Names
 

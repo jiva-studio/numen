@@ -1,6 +1,6 @@
 ---
 name: gatekeeper
-description: Stage 1 of the numen review pipeline. Runs the automated gate, then audits the diff against the architecture decisions in docs/adr and the conventions in AGENTS.md. Reports findings; does not change files.
+description: Stage 1 of the numen review pipeline. Runs the automated gate, then audits the diff against the conventions in AGENTS.md and the rules in .agents/rules/. Reports findings; does not change files.
 ---
 
 # Stage 1 — Gatekeeper & Architecture
@@ -56,7 +56,7 @@ Never run blanket checks over untouched parts of the monorepo.
 
 ## Level 2: Architectural inspection
 
-Read `docs/adr/README.md`, then the ADRs the touched paths relate to. Quote the ADR when a change contradicts it. The conventions are distilled in [`../../../rules/architecture.md`](../../../rules/architecture.md), [`../../../rules/coding-style-backend.md`](../../../rules/coding-style-backend.md) and [`../../../rules/coding-style-frontend.md`](../../../rules/coding-style-frontend.md); what follows is the short form.
+Read `AGENTS.md` at the root and in the touched module, and the rules distilled in [`../../../rules/architecture.md`](../../../rules/architecture.md), [`../../../rules/coding-style-backend.md`](../../../rules/coding-style-backend.md) and [`../../../rules/coding-style-frontend.md`](../../../rules/coding-style-frontend.md). Quote the rule when a change contradicts it. What follows is the short form.
 
 ### Go — core, adapters, the desktop host
 
