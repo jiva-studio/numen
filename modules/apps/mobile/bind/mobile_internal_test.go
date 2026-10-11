@@ -159,6 +159,7 @@ func TestStartAnswersTheErrorOfAVaultFolderItCannotRead(t *testing.T) {
 		_ = Stop()
 		t.Fatalf("Start answered %d, %v for a vault folder it cannot read, want 0 and the error of reading it", port, err)
 	}
+	checkNoIndexOpened(t, dir)
 }
 
 func TestStartAnswersTheErrorOfAVaultListItCannotRead(t *testing.T) {
@@ -173,6 +174,7 @@ func TestStartAnswersTheErrorOfAVaultListItCannotRead(t *testing.T) {
 		_ = Stop()
 		t.Fatalf("Start answered %d, %v for a vault list that is not JSON, want 0 and the error of reading it", port, err)
 	}
+	checkNoIndexOpened(t, dir)
 	if Port() != 0 {
 		t.Errorf("a start that failed listens on %d", Port())
 	}
@@ -430,5 +432,14 @@ func TestSeedAnswersTheErrorOfANoteItCannotWrite(t *testing.T) {
 	err := seed(root)
 	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "seeding ") {
 		t.Errorf("seed answered %v, want the permission error naming the note it was writing", err)
+	}
+}
+
+// checkNoIndexOpened holds that a start which ended before it opened the index
+// left none behind.
+func checkNoIndexOpened(t *testing.T, dir string) {
+	t.Helper()
+	if _, err := os.Stat(filepath.Join(dir, "index.db")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("a start that failed before the index was opened left it behind: %v", err)
 	}
 }
