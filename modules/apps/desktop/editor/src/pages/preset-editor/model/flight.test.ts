@@ -82,7 +82,7 @@ describe('one write', () => {
 
   it('says a refusal as an error', async () => {
     const flight = createWriteFlight()
-    const { core } = createCore({ ok: false, error: 'notFound' } as PresetWriteResult)
+    const { core } = createCore({ ok: false, error: 'missing' } as PresetWriteResult)
     const { said, writeMessage } = createMessages()
 
     await sendWrite(flight, PATH, DEFAULTS, core, writeMessage)

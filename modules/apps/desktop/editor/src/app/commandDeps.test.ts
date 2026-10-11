@@ -154,7 +154,7 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     pointed: {},
     files: () => ({ revealPath: record('revealPath') }),
     plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
-    agents: () => ({ askQuestion: record('askQuestion') }),
+    agents: () => ({ askQuestion: (text: string) => void record('askQuestion')(text) }),
     getOpeningNote: () => '',
     runs: {} as never,
     writeMessage: () => {},
