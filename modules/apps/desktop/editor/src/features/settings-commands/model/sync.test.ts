@@ -96,4 +96,38 @@ describe('whether a title and a filename are one name', () => {
     expect(held.kept.value).toBe(true)
     expect(told.said.at(-1)).toContain(words.unturned)
   })
+
+  it('writes the row chosen when the settings hold the other', async () => {
+    const core = vault(false)
+    const held = syncSetting(core, words, writer().write)
+    await held.start()
+
+    await held.choose(ON)
+
+    expect(core.wrote).toStrictEqual([true])
+    expect(held.kept.value).toBe(true)
+  })
+
+  it('clears the message line before it writes', async () => {
+    const told = writer()
+    const held = syncSetting(vault(true), words, told.write)
+    await held.start()
+
+    await held.choose(OFF)
+
+    expect(told.told).toStrictEqual([{ text: '', kind: 'report' }])
+  })
+
+  it('says the failure as an error', async () => {
+    const told = writer()
+    const held = syncSetting(vault(true, 'unreadable'), words, told.write)
+    await held.start()
+
+    await held.choose(OFF)
+
+    expect(told.told.at(-1)).toStrictEqual({
+      text: `${words.unturned} unreadable`,
+      kind: 'error',
+    })
+  })
 })

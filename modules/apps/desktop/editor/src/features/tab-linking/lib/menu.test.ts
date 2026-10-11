@@ -38,4 +38,10 @@ describe('createLinkMenuItems', () => {
       text: 'Unlink tab',
     })
   })
+
+  it('offers the unlink item without a detail when no target title is given', () => {
+    const items = createLinkMenuItems([], true)
+
+    expect(items).toEqual([{ id: UNLINK_ID, text: 'Unlink tab' }])
+  })
 })
