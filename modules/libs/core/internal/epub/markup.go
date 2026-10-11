@@ -339,6 +339,7 @@ func inlineImage(url string) bool {
 func bare(url string) string {
 	return strings.Map(func(r rune) rune {
 		if r <= ' ' {
+			// gomutants:disable-next-line INTEGER_INCREMENT reason="strings.Map drops a rune for any negative result, -2 included"
 			return -1
 		}
 		return r
