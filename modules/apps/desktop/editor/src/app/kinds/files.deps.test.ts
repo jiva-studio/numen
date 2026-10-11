@@ -4,6 +4,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
+import { formatErrorMessage } from '@numen/wire'
 import { cards, presets, WORDS as cardWords } from '@/entities/deck'
 import { ANSWER_WORDS, invocationOf, openDestination, runInvocation } from '@/features/command-palette'
 import { running } from '@/entities/artifact'
@@ -420,11 +421,12 @@ describe('an address imported from the files tab', () => {
   it('says why the fetch failed and does not tell the notes', async () => {
     const { deps, createUrl, applyPathChanges, writeMessage } = setup()
     createUrl.mockResolvedValue({ ok: true, value: { path: 'dir/U.md' } })
-    vi.mocked(running.fetchArtifact).mockRejectedValueOnce(new Error('offline'))
+    const failure = new Error('offline')
+    vi.mocked(running.fetchArtifact).mockRejectedValueOnce(failure)
 
     await deps.importUrl('dir', 'https://example.test')
 
-    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith('offline', 'error'))
+    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith(formatErrorMessage(failure), 'error'))
     expect(applyPathChanges).not.toHaveBeenCalled()
   })
 
