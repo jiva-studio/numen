@@ -55,32 +55,89 @@ func TestAllPaddingIsAZeroVector(t *testing.T) {
 func TestSequenceBucketing(t *testing.T) {
 	for _, c := range []struct {
 		length int
+		limit  int
 		want   int
 	}{
-		{0, 64},
-		{1, 64},
-		{63, 64},
-		{64, 64},
-		{65, 128},
-		{128, 128},
-		{129, 256},
-		{256, 256},
-		{257, 512},
-		{512, 512},
-		{600, 512},
+		{0, 512, 64},
+		{1, 512, 64},
+		{63, 512, 64},
+		{64, 512, 64},
+		{65, 512, 128},
+		{128, 512, 128},
+		{129, 512, 256},
+		{256, 512, 256},
+		{257, 512, 512},
+		{512, 512, 512},
+		{100, 256, 128},
+		{513, 8192, 1024},
+		{600, 8192, 1024},
+		{1024, 8192, 1024},
+		{1025, 8192, 1536},
+		{8000, 8192, 8192},
+		{8192, 8192, 8192},
+		{600, 700, 700},
+		{700, 700, 700},
 	} {
 		tokens := make([]int, c.length)
-		_, seq, in := padBatch([][]int{tokens}, 0)
+		_, seq, in := padBatch([][]int{tokens}, 0, c.limit)
 		releasePadding(in)
 		if seq != c.want {
-			t.Errorf("length %d was bucketed to %d, want %d", c.length, seq, c.want)
+			t.Errorf("length %d under a window of %d was bucketed to %d, want %d", c.length, c.limit, seq, c.want)
 		}
+	}
+}
+
+// Every length a model of one window is run at is one of a fixed set, none of
+// them past the window.
+func TestTheSetOfLengthsIsFiniteAndBounded(t *testing.T) {
+	for _, limit := range []int{256, 512, 700, 8192} {
+		lengths := map[int]bool{}
+		for length := range limit + 1 {
+			seq := bucket(length, limit)
+			if seq < length {
+				t.Fatalf("window %d: length %d was bucketed below itself, to %d", limit, length, seq)
+			}
+			if seq > max(limit, bucketStep) {
+				t.Fatalf("window %d: length %d was bucketed past the window, to %d", limit, length, seq)
+			}
+			lengths[seq] = true
+		}
+		if want := 4 + max(0, (limit-1)/bucketStep); len(lengths) > want {
+			t.Errorf("window %d is run at %d lengths, want at most %d: %v", limit, len(lengths), want, lengths)
+		}
+	}
+}
+
+// A row as long as the window reaches the model whole, the token that ends it
+// included.
+func TestALongRowIsLaidOutWhole(t *testing.T) {
+	const limit, end = 8192, 2
+	row := make([]int, limit)
+	for i := range row {
+		row[i] = 5
+	}
+	row[0], row[limit-1] = 0, end
+	rows, seq, in := padBatch([][]int{{7}, row}, 1, limit)
+	defer releasePadding(in)
+	if rows != 2 || seq != limit {
+		t.Fatalf("laid out %dx%d, want 2x%d", rows, seq, limit)
+	}
+	at := seq
+	if got := in.ids[at+limit-1]; got != end {
+		t.Errorf("the last token of the long row is %d, want the end token %d", got, end)
+	}
+	kept := 0
+	for _, m := range in.mask[at : at+seq] {
+		kept += int(m)
+	}
+	if kept != limit {
+		t.Errorf("the mask keeps %d tokens of the long row, want %d", kept, limit)
 	}
 }
 
 // A batch is laid out at the discrete bucket boundary of its longest text.
 func TestABatchIsPaddedToBucketBoundary(t *testing.T) {
-	rows, seq, in := padBatch([][]int{{7, 8, 9}, {4}}, 1)
+	rows, seq, in := padBatch([][]int{{7, 8, 9}, {4}}, 1, 512)
 	defer releasePadding(in)
 	ids, mask, types := in.ids, in.mask, in.types
 	if rows != 2 || seq != 64 {
@@ -108,7 +165,7 @@ func TestABatchIsPaddedToBucketBoundary(t *testing.T) {
 // A text the tokenizer gave nothing for is still a text, and what pools its row
 // divides by something.
 func TestAnEmptyTextIsMarkedAtOneToken(t *testing.T) {
-	rows, seq, in := padBatch([][]int{{}}, 1)
+	rows, seq, in := padBatch([][]int{{}}, 1, 512)
 	defer releasePadding(in)
 	mask := in.mask
 	if rows != 1 || seq != 64 {
@@ -173,7 +230,7 @@ func BenchmarkPadBatch(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_, _, in := padBatch(batch, 0)
+		_, _, in := padBatch(batch, 0, 512)
 		releasePadding(in)
 	}
 }
