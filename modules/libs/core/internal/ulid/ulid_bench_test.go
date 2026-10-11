@@ -11,17 +11,12 @@ func BenchmarkNew(b *testing.B) {
 	now := time.Now()
 	b.ReportAllocs()
 	for b.Loop() {
-		if _, err := ulid.New(now); err != nil {
-			b.Fatal(err)
-		}
+		ulid.New(now)
 	}
 }
 
 func BenchmarkValid(b *testing.B) {
-	id, err := ulid.New(time.Now())
-	if err != nil {
-		b.Fatal(err)
-	}
+	id := ulid.New(time.Now())
 	b.ReportAllocs()
 	for b.Loop() {
 		if !ulid.Valid(id) {

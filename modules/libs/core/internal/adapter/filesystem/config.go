@@ -77,10 +77,7 @@ func Initialize(root, serviceDir string, now time.Time) (Config, error) {
 		return Config{}, err
 	}
 
-	id, err := ulid.New(now)
-	if err != nil {
-		return Config{}, err
-	}
+	id := ulid.New(now)
 	c := Config{Version: 1, ID: id}
 
 	dir := filepath.Join(root, serviceDir)

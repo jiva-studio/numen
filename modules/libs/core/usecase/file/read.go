@@ -68,10 +68,10 @@ func (u Read) Execute(
 ) (ReadResult, error) {
 	out := ReadResult{Start: start}
 	if start < 0 {
-		return out, fmt.Errorf("a range of %s begins at %d", path, start)
+		return ReadResult{}, fmt.Errorf("a range of %s begins at %d", path, start)
 	}
 	if length < 0 || length > MostRead {
-		return out, fmt.Errorf("read between 1 and %d bytes of a file at a time", MostRead)
+		return ReadResult{}, fmt.Errorf("read between 1 and %d bytes of a file at a time", MostRead)
 	}
 	if length == 0 {
 		length = MostRead
@@ -145,7 +145,7 @@ func getReadOutcome(ctx context.Context, reader port.VaultReader, path string) (
 		return LeftAlone, nil
 	}
 	if err != nil {
-		return LeftAlone, err
+		return "", err
 	}
 	for _, entry := range entries {
 		if entry.Path != clean {

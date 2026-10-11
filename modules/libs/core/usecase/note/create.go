@@ -78,10 +78,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		}
 	}
 
-	identifier, err := ulid.New(u.now())
-	if err != nil {
-		return CreateResult{}, err
-	}
+	identifier := ulid.New(u.now())
 
 	content, err := writeTitle(markdown.Create(identifier, in.Body), title, exact)
 	if err != nil {
@@ -140,9 +137,6 @@ func writeTitle(content []byte, title string, exact bool) ([]byte, error) {
 // writeLinks writes relationships into frontmatter that has just been made,
 // through the splicing every other link goes through: one set of quoting rules.
 func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
-	if len(links) == 0 {
-		return content, nil
-	}
 	doc, err := markdown.Open(content)
 	if err != nil {
 		return nil, err

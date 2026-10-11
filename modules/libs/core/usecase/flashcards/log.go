@@ -166,10 +166,7 @@ func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*LogWriter
 	if err != nil {
 		return nil, err
 	}
-	id, err := ulid.New(at)
-	if err != nil {
-		return nil, err
-	}
+	id := ulid.New(at)
 	return &LogWriter{store: store, name: Area + "/" + id + Suffix}, nil
 }
 

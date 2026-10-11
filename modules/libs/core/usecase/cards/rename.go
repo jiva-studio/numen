@@ -107,7 +107,7 @@ func (u RenameField) WithNotes(notes TypeQueries) RenameField {
 
 // createIdentifier is the identifier a file this rename writes is to carry
 // where it carries none.
-func (u RenameField) createIdentifier() (string, error) { return ulid.New(u.now()) }
+func (u RenameField) createIdentifier() string { return ulid.New(u.now()) }
 
 // Execute renames the field, in the stencil first and then in the vault.
 //
@@ -214,11 +214,7 @@ func (u RenameField) stencil(
 // writeIdentifier writes an identifier into a file that carries none, which is
 // what the application changing what a note holds does.
 func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
-	identifier, err := u.createIdentifier()
-	if err != nil {
-		return err
-	}
-	_, err = into(identifier)
+	_, err := into(u.createIdentifier())
 	return err
 }
 
