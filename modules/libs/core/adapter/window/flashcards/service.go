@@ -72,6 +72,7 @@ func (a *API) WatchCardsDue(
 		case one, open := <-counted:
 			if !open {
 				counted = nil
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the select and the loop condition, already false, ends the loop as continue does"
 				continue
 			}
 			if err := out.Send(&v1.WatchCardsDueResponse{Counted: one}); err != nil {

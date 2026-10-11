@@ -30,6 +30,7 @@ func (f *following) listen() (<-chan struct{}, func()) {
 	}
 	line := make(chan struct{}, 1)
 	at := f.next
+	// gomutants:disable-next-line INCREMENT_DECREMENT reason="a counter that steps down hands out distinct keys like one that steps up"
 	f.next++
 	f.listeners[at] = line
 	return line, func() {
