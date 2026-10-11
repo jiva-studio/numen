@@ -148,15 +148,22 @@ func TestAWalkInPagesVisitsEveryOwedChunkOfItsVaultOnce(t *testing.T) {
 // number is a chunk at the start, and two are an instant and a chunk at it.
 func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 	db := openDB(t)
-	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")
-	saveThroughPort(t, db, first, "library/old.epub", longAgo, "glaciers carve", "moraines remain")
+	saveThroughPort(t, db, first, "library/last.epub", lastInstant, "anchors weigh", "chains rattle")
+	saveThroughPort(t, db, first, "library/later.epub", farFuture.AddDate(1, 0, 0), "tides turn", "moons wane")
+	saveThroughPort(t, db, first, "library/far.epub", farFuture, "comets return", "orbits decay")
 
+	// Every number is past 2^62.
+	const row = "9000000000000000000"
 	for _, at := range []struct {
 		cursor port.ChunkCursor
 		want   []string
 	}{
-		{"1", []string{"library/a.epub", "library/a.epub", "library/old.epub", "library/old.epub"}},
-		{port.ChunkCursor(strconv.FormatInt(longAgo.UnixNano(), 10) + ":0"), []string{"library/old.epub", "library/old.epub"}},
+		{row, []string{
+			"library/last.epub", "library/last.epub",
+			"library/later.epub", "library/later.epub",
+			"library/far.epub", "library/far.epub",
+		}},
+		{port.ChunkCursor(strconv.FormatInt(farFuture.UnixNano(), 10) + ":" + row), []string{"library/far.epub", "library/far.epub"}},
 	} {
 		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), first.ID, benchModel, at.cursor, 10)
 		if err != nil {
@@ -225,5 +232,83 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	}
 	if _, found := books["library/scan.pdf"]; !found || len(books) != 1 {
 		t.Errorf("the vault's books are %v, want the one saved", books)
+	}
+}
+
+// A path the vault holds no source at is not held.
+func TestAPathWithNoSourceIsNotHeld(t *testing.T) {
+	db := openDB(t)
+	saveThroughPort(t, db, second, "library/a.epub", thisYear, "violins tune")
+
+	read, held, err := db.Sources().Reading(t.Context(), first.ID, "library/a.epub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if held {
+		t.Errorf("the first vault holds %+v, which only the second vault was given", read)
+	}
+}
+
+// Vectors saved through the port settle what the chunks owed, and a vector for
+// a chunk this index did not hand out is refused.
+func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
+	ctx := t.Context()
+	db := openDB(t)
+	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")
+
+	owed := getOwed(t, db, first)
+	if len(owed) != 2 {
+		t.Fatalf("%d chunks owe a vector, want 2", len(owed))
+	}
+	vectors := make([]port.Vector, 0, len(owed))
+	for _, p := range owed {
+		row, err := strconv.ParseInt(string(p.ChunkID), 10, 64)
+		if err != nil {
+			t.Fatal(err)
+		}
+		vectors = append(vectors, port.Vector{
+			ChunkID: p.ChunkID, Hash: hashOf(t, db, row), Model: benchModel,
+			Value: precise(direction(0x0f)), Coarse: bits(0x0f),
+		})
+	}
+	if err := db.Sources().SaveVectors(ctx, vectors); err != nil {
+		t.Fatal(err)
+	}
+	if left := getOwed(t, db, first); len(left) != 0 {
+		t.Errorf("%d chunks still owe a vector", len(left))
+	}
+
+	stranger := port.Vector{ChunkID: "x", Hash: []byte{1}, Model: benchModel, Value: precise(direction(0x0f)), Coarse: bits(0x0f)}
+	if err := db.Sources().SaveVectors(ctx, []port.Vector{stranger}); err == nil {
+		t.Error("a vector for chunk \"x\" was saved")
+	}
+}
+
+// The sources a producer made the text of are listed with the producer and the
+// hash their reading is kept under.
+func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
+	ctx := t.Context()
+	db := openDB(t)
+	if err := db.Sources().SaveSource(ctx, first.ID, domain.Source{
+		Fingerprint: domain.Fingerprint{Path: "library/scan.pdf", Kind: domain.KindBook, Size: 4321, ModTime: thisYear},
+		Hash:        "hash-scan",
+		Producer:    "ocr",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	found, err := db.Sources().GetRecognisedSources(ctx, first.ID, domain.KindBook)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Path != "library/scan.pdf" || found[0].Producer != "ocr" || found[0].Hash != "hash-scan" {
+		t.Errorf("the recognised sources are %+v", found)
+	}
+
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Sources().GetRecognisedSources(ctx, first.ID, domain.KindBook); err == nil {
+		t.Error("listing over a closed index reported nothing recognised")
 	}
 }

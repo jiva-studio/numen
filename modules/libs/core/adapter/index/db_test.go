@@ -301,3 +301,10 @@ func TestDSNJoinsAQueryThePathAlreadyCarries(t *testing.T) {
 		t.Errorf("dsn %q is missing the pragmas", got)
 	}
 }
+
+// Maintenance measures the index over the pool that writes.
+func TestMaintenanceMeasuresTheIndex(t *testing.T) {
+	if err := openDB(t).Maintenance().ReportChanges(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+}
