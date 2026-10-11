@@ -9,7 +9,8 @@
 import { mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, nextTick, ref, shallowRef } from 'vue'
+import { computed, defineComponent, nextTick, ref, shallowRef } from 'vue'
+import type { Ref } from 'vue'
 
 import { useCarouselStrip } from './carousel'
 import type { PanelPlace } from './carousel'
@@ -40,7 +41,7 @@ const press = (more: { button?: number; clientX?: number; pointerId?: number } =
  * ref. Every place the strip is set to is kept with the smoothing it was set
  * under.
  */
-const createStrip = (at: PanelPlace = 'here', more: { hasCard?: boolean } = {}) => {
+const createStrip = (at: PanelPlace = 'here', more: { hasCard?: boolean; owner?: Ref<PanelPlace> } = {}) => {
   const window_ = document.createElement('div')
   Object.defineProperty(window_, 'scrollWidth', { value: 1040 })
   Object.defineProperty(window_, 'clientWidth', { value: 600 })
@@ -61,7 +62,7 @@ const createStrip = (at: PanelPlace = 'here', more: { hasCard?: boolean } = {}) 
 
   const windowRef = shallowRef<HTMLElement | null>(window_)
   const middleRef = shallowRef<HTMLElement | null>(more.hasCard === false ? null : card)
-  const shown = ref<PanelPlace>(at)
+  const shown = more.owner ?? ref<PanelPlace>(at)
   const errors: unknown[] = []
 
   let held: ReturnType<typeof useCarouselStrip> | null = null
@@ -332,5 +333,67 @@ describe('a strip taken off the screen', () => {
     vi.advanceTimersByTime(200)
 
     expect(window_.scrollLeft).toBe(300)
+  })
+})
+
+/** The owner's hold on where the strip is, which hears of every write made to it. */
+const createOwner = (at: PanelPlace) => {
+  const held = ref<PanelPlace>(at)
+  const writes: PanelPlace[] = []
+  const owner = computed<PanelPlace>({
+    get: () => held.value,
+    set: (to) => {
+      writes.push(to)
+      held.value = to
+    },
+  })
+  return { owner, writes }
+}
+
+describe('what the owner is told', () => {
+  it('hears nothing of a strip that is scrolled and still stands on the one it showed', () => {
+    const { owner, writes } = createOwner('here')
+    const { scrollTo } = createStrip('here', { owner })
+
+    scrollTo(230)
+
+    expect(writes).toEqual([])
+  })
+
+  it('hears nothing of a hand that lets go on the one the strip showed', async () => {
+    const { owner, writes } = createOwner('here')
+    const { onPointerDown, letGo } = createStrip('here', { owner })
+
+    onPointerDown(press({ clientX: 500 }))
+    await letGo()
+
+    expect(writes).toEqual([])
+  })
+
+  it('hears of the one a hand lets go nearest to', async () => {
+    const { owner, writes } = createOwner('here')
+    const { window_, onPointerDown, letGo } = createStrip('here', { owner })
+
+    onPointerDown(press({ clientX: 500 }))
+    window_.scrollLeft = 400
+    await letGo()
+
+    expect(writes).toEqual(['after'])
+  })
+})
+
+describe('a move in flight when the strip is taken off the screen', () => {
+  it('has its time cancelled', async () => {
+    const set = vi.spyOn(window, 'setTimeout')
+    const { takeOff, moveTo } = createStrip('here')
+
+    await moveTo('after')
+    const timer = set.mock.results.at(-1)?.value as number
+    const cleared = vi.spyOn(window, 'clearTimeout')
+    takeOff()
+
+    expect(cleared).toHaveBeenCalledWith(timer)
+    set.mockRestore()
+    cleared.mockRestore()
   })
 })

@@ -283,3 +283,49 @@ describe('the panel put away', () => {
     expect(open.value).toBe(false)
   })
 })
+
+describe('a deck named by any text', () => {
+  const name = 'Stryker was here!'
+
+  it('is asked for the first time it is up', async () => {
+    const { held, asked } = panel({ deck: name })
+    await held.openPanel()
+    expect(asked).toEqual([{ vault: 'one', deck: name }])
+  })
+
+  it('is asked for again once the session has been away from it', async () => {
+    const { held, asked } = panel({ deck: name })
+    await held.openPanel()
+    held.endSession()
+    await held.openPanel()
+    expect(asked).toHaveLength(2)
+  })
+
+  it('is asked for again after it could not be reached', async () => {
+    const { held, asked } = panel({ deck: name, refuses: true })
+    await held.openPanel()
+    await held.openPanel()
+    expect(asked).toHaveLength(2)
+  })
+
+  it('has no answer taken once the session is over', async () => {
+    const waiting: (() => void)[] = []
+    const held = useNotesPanel({
+      open: () => true,
+      showPanel: () => {},
+      vault: () => 'one',
+      deck: () => name,
+      getDeckNeighbourhood: () =>
+        new Promise((then) => waiting.push(() => then({ notes: [createNeighbour()], unread: 1 }))),
+      showNotice: () => {},
+    })
+
+    const asking = held.openPanel()
+    held.endSession()
+    waiting[0]?.()
+    await asking
+
+    expect(held.notes.value).toEqual([])
+    expect(held.unread.value).toBe(0)
+  })
+})
