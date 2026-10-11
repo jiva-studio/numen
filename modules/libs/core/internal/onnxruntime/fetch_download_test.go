@@ -310,7 +310,7 @@ func TestFetchRefusesARedirectToPlainHTTP(t *testing.T) {
 // failingWriter reports two bytes written and fails.
 type failingWriter struct{ err error }
 
-func (w failingWriter) Write(raw []byte) (int, error) { return 2, w.err }
+func (w failingWriter) Write(_ []byte) (int, error) { return 2, w.err }
 
 // The counting writer passes every write on and returns what the writer under it
 // returned.
