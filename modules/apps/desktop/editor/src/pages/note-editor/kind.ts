@@ -161,6 +161,7 @@ export function useNoteTab(
       return
     }
     changes.closeNote(currentPath)
+    await notes.settle(id)
     notes.reload(id, path)
     if (title) {
       names.setTitle(id, title)
