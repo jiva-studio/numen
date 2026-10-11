@@ -2,6 +2,7 @@ package domain
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/unicode/norm"
@@ -19,7 +20,44 @@ var folder = cases.Fold()
 // names here. The form is NFC: a disk holds `Ｎｏｔｅ` and `Note` as two files,
 // and so does this.
 func FoldName(name string) string {
+	if folded, ok := foldASCII(name); ok {
+		return folded
+	}
+	return foldGeneral(name)
+}
+
+// foldGeneral is the fold of any name.
+func foldGeneral(name string) string {
 	return norm.NFC.String(folder.String(norm.NFC.String(name)))
+}
+
+// foldASCII folds a name made only of ASCII, where composing changes nothing and
+// folding lower-cases A to Z. ok is false for any other name, and a name already
+// folded is returned as it is.
+func foldASCII(name string) (folded string, ok bool) {
+	hasUpper := false
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if c >= utf8.RuneSelf {
+			return "", false
+		}
+		if 'A' <= c && c <= 'Z' {
+			hasUpper = true
+		}
+	}
+	if !hasUpper {
+		return name, true
+	}
+	var lower strings.Builder
+	lower.Grow(len(name))
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if 'A' <= c && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		lower.WriteByte(c)
+	}
+	return lower.String(), true
 }
 
 // Basename is the name a note is filed under: the last segment of its path,

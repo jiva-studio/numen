@@ -24,12 +24,14 @@ func bodyLinks(body []byte) []domain.Link {
 			line = rest
 			rest = nil
 		}
-		lineStr := strings.TrimRight(string(line), "\r")
-		if f.IsCrossedBy(lineStr) || f.IsInside() {
+		if f.IsCrossedByBytes(line) || f.IsInside() {
 			// A link inside a code fence is an example of a link, not one.
 			continue
 		}
-		for _, found := range WikilinksIn(lineStr) {
+		if !bytes.Contains(line, []byte("[[")) {
+			continue
+		}
+		for _, found := range WikilinksIn(strings.TrimRight(string(line), "\r")) {
 			if seen[found.Target.String()] {
 				continue
 			}

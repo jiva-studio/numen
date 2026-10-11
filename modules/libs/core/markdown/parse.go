@@ -141,9 +141,9 @@ func headings(body []byte) []domain.Heading {
 		if next := bytes.IndexByte(body[at:], '\n'); next >= 0 {
 			end = at + next
 		}
-		text := strings.TrimRight(string(body[at:end]), "\r")
-		if !f.IsCrossedBy(text) && !f.IsInside() {
-			if level, headingText, ok := parseHeading(text); ok {
+		text := bytes.TrimRight(body[at:end], "\r")
+		if !f.IsCrossedByBytes(text) && !f.IsInside() && len(text) > 0 && text[0] == '#' {
+			if level, headingText, ok := parseHeading(string(text)); ok {
 				out = append(out, domain.Heading{Level: level, Text: headingText, Line: line, Offset: at})
 			}
 		}
