@@ -8,63 +8,171 @@
  */
 import { mount } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { WORDS } from '@/pages/session'
 import { useWindowStreams } from './useWindowStreams'
 
-const taken: AbortSignal[] = []
-
-/** A stream that stays open, so nothing ends on its own. */
-async function* waits(): AsyncGenerator<never> {
-  await new Promise<never>(() => {})
-}
+const wire = vi.hoisted(() => {
+  /** A stream that stays open, so nothing ends on its own. */
+  async function* waits(): AsyncGenerator<never> {
+    await new Promise<never>(() => {})
+  }
+  return {
+    waits,
+    taken: [] as AbortSignal[],
+    tasksAsked: [] as unknown[],
+    reloadsOpened: 0,
+    reloads: (_signal?: AbortSignal): AsyncIterable<unknown> => waits(),
+    agent: (): Promise<{ unreachable: string }> => new Promise<never>(() => {}),
+  }
+})
 
 vi.mock('@/shared/clients', () => ({
   WINDOW: 'review',
   cards: {
     watchReloads: (_: unknown, call?: { signal?: AbortSignal }) => {
-      if (call?.signal) taken.push(call.signal)
-      return waits()
+      if (call?.signal) wire.taken.push(call.signal)
+      wire.reloadsOpened += 1
+      return wire.reloads(call?.signal)
     },
   },
   itself: {
-    watchTasks: (_: unknown, call?: { signal?: AbortSignal }) => {
-      if (call?.signal) taken.push(call.signal)
-      return waits()
+    watchTasks: (asked: unknown, call?: { signal?: AbortSignal }) => {
+      if (call?.signal) wire.taken.push(call.signal)
+      wire.tasksAsked.push(asked)
+      return wire.waits()
     },
   },
   agentService: {
     getAgentState: (_: unknown, call?: { signal?: AbortSignal }) => {
-      if (call?.signal) taken.push(call.signal)
-      return new Promise<never>(() => {})
+      if (call?.signal) wire.taken.push(call.signal)
+      return wire.agent()
     },
   },
 }))
 
-describe('what the window follows', () => {
-  it('is ended when the window closes', async () => {
-    const host = defineComponent({
-      setup() {
-        useWindowStreams({
-          reportError: () => {},
-          setTasks: () => {},
-          onKeyDown: () => {},
-          count: async () => {},
-          stop: () => {},
-          refresh: async () => {},
-          unreachable: ref(''),
-        })
-        return () => null
-      },
-    })
+/** A stream that ends in a fault the moment its call is ended. */
+async function* failsOnAbort(signal?: AbortSignal): AsyncGenerator<never> {
+  await new Promise<never>((_, fail) => {
+    signal?.addEventListener('abort', () => fail(new Error('the call was ended')))
+  })
+}
 
-    const window = mount(host)
+/** A stream that ends in a fault as it opens. */
+async function* fails(): AsyncGenerator<never> {
+  await Promise.resolve()
+  throw new Error('the connection went')
+}
+
+/** The streams followed in a mounted window, and what they were handed. */
+const openWindow = () => {
+  const deps = {
+    reportError: vi.fn(),
+    setTasks: () => {},
+    onKeyDown: () => {},
+    count: async () => {},
+    stop: vi.fn(),
+    refresh: async () => {},
+    unreachable: ref(''),
+  }
+  const host = defineComponent({
+    setup() {
+      useWindowStreams(deps)
+      return () => null
+    },
+  })
+  return { window: mount(host), deps }
+}
+
+/** How long a stream that went waits before it is taken up again, in milliseconds. */
+const AGAIN = 1000
+
+const settle = () => new Promise((done) => setTimeout(done, 0))
+
+beforeEach(() => {
+  wire.taken.length = 0
+  wire.tasksAsked.length = 0
+  wire.reloadsOpened = 0
+  wire.reloads = () => wire.waits()
+  wire.agent = () => new Promise<never>(() => {})
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+describe('what the window follows', () => {
+  it('is ended when the window closes', () => {
+    const { window } = openWindow()
     // Every call this window has in flight carries a signal, and it is one.
-    expect(taken.length).toBe(3)
-    expect(new Set(taken).size).toBe(1)
-    expect(taken.every((one) => !one.aborted)).toBe(true)
+    expect(wire.taken.length).toBe(3)
+    expect(new Set(wire.taken).size).toBe(1)
+    expect(wire.taken.every((one) => !one.aborted)).toBe(true)
 
     window.unmount()
-    expect(taken.every((one) => one.aborted)).toBe(true)
+    expect(wire.taken.every((one) => one.aborted)).toBe(true)
+  })
+
+  it('ends the counting when the window closes', () => {
+    const { window, deps } = openWindow()
+    expect(deps.stop).not.toHaveBeenCalled()
+
+    window.unmount()
+    expect(deps.stop).toHaveBeenCalledOnce()
+  })
+
+  it('says nothing about a stream it ended itself, and takes nothing up again', async () => {
+    wire.reloads = failsOnAbort
+    const { window, deps } = openWindow()
+
+    window.unmount()
+    await settle()
+
+    expect(deps.reportError).not.toHaveBeenCalled()
+    expect(wire.reloadsOpened).toBe(1)
+  })
+
+  it('takes a stream that went up again after a wait', async () => {
+    vi.useFakeTimers()
+    wire.reloads = (signal) => (wire.reloadsOpened > 1 ? failsOnAbort(signal) : fails())
+    const { window } = openWindow()
+
+    await vi.advanceTimersByTimeAsync(AGAIN - 1)
+    expect(wire.reloadsOpened).toBe(1)
+
+    await vi.advanceTimersByTimeAsync(1)
+    expect(wire.reloadsOpened).toBe(2)
+    window.unmount()
+  })
+
+  it('follows the work being done behind its own window', () => {
+    const { window } = openWindow()
+
+    expect(wire.tasksAsked).toEqual([{ window: 'review' }])
+    window.unmount()
+  })
+})
+
+describe('whether a card can be asked about', () => {
+  it('is what the agent says', async () => {
+    wire.agent = async () => ({ unreachable: 'no model is set up' })
+    const { window, deps } = openWindow()
+    await settle()
+
+    expect(deps.unreachable.value).toBe('no model is set up')
+    window.unmount()
+  })
+
+  it('is no, when the agent cannot be asked', async () => {
+    wire.agent = async () => {
+      throw new Error('the connection went')
+    }
+    const { window, deps } = openWindow()
+    await settle()
+
+    expect(deps.unreachable.value).toBe(WORDS.unreachable)
+    expect(deps.unreachable.value).not.toBe('')
+    window.unmount()
   })
 })
