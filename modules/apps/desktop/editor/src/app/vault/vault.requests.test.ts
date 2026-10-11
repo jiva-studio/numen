@@ -5,13 +5,17 @@
  * refusal comes back as a failure in the window's own words.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { ErrorCode, VaultsErrorCode } from '@numen/protocol'
+import { ErrorCode, Role, VaultsErrorCode } from '@numen/protocol'
 import { core, vaults } from './index'
 import { WINDOW } from './clients'
 
 const { asked } = vi.hoisted(() => {
   const asked = {
     createNote: vi.fn(),
+    getNeighbourhood: vi.fn(),
+    getOpeningNote: vi.fn(),
+    watchEdits: vi.fn(),
+    removeLink: vi.fn(),
     renameNote: vi.fn(),
     listHeadings: vi.fn(),
     resolveAddresses: vi.fn(),
@@ -188,5 +192,51 @@ describe('a vault asked for', () => {
   it('is refused in the words of the error', async () => {
     asked.addVault.mockResolvedValue({ error: VaultsErrorCode.NAME_TAKEN })
     expect(await vaults.add('/v', 'Name')).toEqual({ ok: false, error: 'nameTaken' })
+  })
+})
+
+describe('a note followed', () => {
+  it('has its neighbourhood asked of its path', async () => {
+    asked.getNeighbourhood.mockResolvedValue({ focus: { path: 'a.md', title: 'A' }, related: [] })
+    await core.neighbourhood('a.md')
+    expect(asked.getNeighbourhood.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md' })
+  })
+
+  it('has the opening note asked of nobody in particular', async () => {
+    asked.getOpeningNote.mockResolvedValue({})
+    expect(await core.getInitialOpenPath()).toBeNull()
+    expect(asked.getOpeningNote.mock.calls.at(-1)?.[0]).toEqual({})
+  })
+
+  it('has a link removed under the role it was written with, or under none', async () => {
+    asked.removeLink.mockResolvedValue({})
+    await core.removeLink('a.md', 'b.md', 'jump')
+    expect(asked.removeLink.mock.calls.at(-1)?.[0]).toEqual({
+      path: 'a.md',
+      to: 'b.md',
+      role: Role.JUMP,
+    })
+    await core.removeLink('a.md', 'b.md')
+    expect(asked.removeLink.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', to: 'b.md' })
+  })
+
+  it('has its edits read under the signal of the window, and a missing span read as the start', async () => {
+    const edits = [
+      { change: 1, path: 'a.md', span: { from: 2, to: 5 }, text: 'abc', isFinal: false },
+      { change: 2, path: 'a.md', text: 'x', isFinal: true },
+    ]
+    asked.watchEdits.mockImplementation(async function* () {
+      yield* edits
+    })
+    const signal = new AbortController().signal
+
+    const seen = []
+    for await (const edit of core.watchEdits(signal)) seen.push(edit)
+
+    expect(asked.watchEdits.mock.calls.at(-1)).toEqual([{}, { signal }])
+    expect(seen).toEqual([
+      { change: 1, path: 'a.md', span: { from: 2, to: 5 }, text: 'abc', isComplete: false },
+      { change: 2, path: 'a.md', span: { from: 0, to: 0 }, text: 'x', isComplete: true },
+    ])
   })
 })
