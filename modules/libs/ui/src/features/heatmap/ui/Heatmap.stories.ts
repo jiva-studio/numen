@@ -7,6 +7,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { h } from 'vue'
 
 import Heatmap from './Heatmap.vue'
 import { ROWS } from '../lib/grid'
@@ -165,10 +166,19 @@ const TODAY = getDayName(now)
 /** A day drawn on its own, so the cell pointed at is the one holding now. */
 const createOneDay = (tally: Tally): Map<string, Tally> => new Map([[TODAY, tally]])
 
-const room = (args: unknown) => ({
-  components: { Heatmap },
-  setup: () => ({ args }),
-  template: '<div style="inline-size: 480px"><Heatmap v-bind="args" /></div>',
+/**
+ * Every cell but the one holding now ignores the pointer, so the account these
+ * stories read is the one of the day the test pointed at, wherever the
+ * browser's own pointer stands.
+ */
+const ONLY_TODAY = '[data-only-today] [data-heatmap-day]:not([data-today]) { pointer-events: none }'
+
+const createRoom = (args: InstanceType<typeof Heatmap>['$props']) => ({
+  setup: () => () =>
+    h('div', { style: 'inline-size: 480px', 'data-only-today': '' }, [
+      h('style', ONLY_TODAY),
+      h(Heatmap, args),
+    ]),
 })
 
 /** Point at the day holding now, and read back the account it opens. */
@@ -202,7 +212,7 @@ export const ADayReviewed: Story = {
     now,
     words,
   },
-  render: room,
+  render: createRoom,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
     await expect(said.querySelector('[data-day-summary="day"]')?.textContent).toBe(TODAY)
@@ -236,7 +246,7 @@ export const ADayOfNewCards: Story = {
     now,
     words,
   },
-  render: room,
+  render: createRoom,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
     await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
@@ -250,7 +260,7 @@ export const ADayOfNewCards: Story = {
 /** A day nobody answered on says so, and says nothing else. */
 export const ADayOfNothing: Story = {
   args: { did: new Map<string, Tally>(), now, words },
-  render: room,
+  render: createRoom,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
     await expect(said.querySelector('[data-day-summary="count"]')?.textContent?.trim()).toBe(
