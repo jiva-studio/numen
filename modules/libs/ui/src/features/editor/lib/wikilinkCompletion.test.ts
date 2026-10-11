@@ -152,7 +152,7 @@ describe('wikilink completion in other places of a document', () => {
 
     it('is not completed in an indented block', async () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Physics' }])
-      const doc = 'Text.\n\n    [[Phys'
+      const doc = 'Text.\n\n    [[Phys more'
 
       const result = await createWikilinkSource({ search })(contextAt(doc, doc.length))
 
