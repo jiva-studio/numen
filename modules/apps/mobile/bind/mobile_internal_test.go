@@ -4,9 +4,11 @@ package bind
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -97,8 +99,8 @@ func TestStartAnswersTheErrorOfAFolderTheEnvironmentRefuses(t *testing.T) {
 	keepEnvironment(t)
 	port, err := Start("a\x00folder")
 	var refused *os.SyscallError
-	if !errors.As(err, &refused) || refused.Syscall != "setenv" {
-		t.Fatalf("Start answered %d, %v, want the error of setting the environment", port, err)
+	if !errors.As(err, &refused) || refused.Syscall != "setenv" || port != 0 {
+		t.Fatalf("Start answered %d, %v, want 0 and the error of setting the environment", port, err)
 	}
 	if Port() != 0 {
 		t.Errorf("a start that failed listens on %d", Port())
@@ -111,9 +113,11 @@ func TestStartAnswersTheErrorOfAFolderItCannotMakeAVaultIn(t *testing.T) {
 	if err := os.WriteFile(file, nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if port, err := Start(file); err == nil {
+	port, err := Start(file)
+	var failed *fs.PathError
+	if !errors.As(err, &failed) || failed.Op != "mkdir" || port != 0 {
 		_ = Stop()
-		t.Fatalf("Start answered port %d for a folder that is a file", port)
+		t.Fatalf("Start answered %d, %v for a folder that is a file, want 0 and the error of making the vault folder", port, err)
 	}
 }
 
@@ -149,9 +153,11 @@ func TestStartAnswersTheErrorOfAVaultFolderItCannotRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.Chmod(root, 0o700) })
-	if port, err := Start(dir); err == nil {
+	port, err := Start(dir)
+	var failed *fs.PathError
+	if !errors.As(err, &failed) || failed.Op != "open" || !errors.Is(err, fs.ErrPermission) || port != 0 {
 		_ = Stop()
-		t.Fatalf("Start answered port %d for a vault folder it cannot read", port)
+		t.Fatalf("Start answered %d, %v for a vault folder it cannot read, want 0 and the error of reading it", port, err)
 	}
 }
 
@@ -161,9 +167,11 @@ func TestStartAnswersTheErrorOfAVaultListItCannotRead(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "vaults.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if port, err := Start(dir); err == nil {
+	port, err := Start(dir)
+	var failed *json.SyntaxError
+	if !errors.As(err, &failed) || port != 0 {
 		_ = Stop()
-		t.Fatalf("Start answered port %d for a vault list that is not JSON", port)
+		t.Fatalf("Start answered %d, %v for a vault list that is not JSON, want 0 and the error of reading it", port, err)
 	}
 	if Port() != 0 {
 		t.Errorf("a start that failed listens on %d", Port())
@@ -176,9 +184,10 @@ func TestStartAnswersTheErrorOfAnIndexItCannotOpen(t *testing.T) {
 	if err := os.Mkdir(filepath.Join(dir, "index.db"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if port, err := Start(dir); err == nil {
+	port, err := Start(dir)
+	if err == nil || !strings.Contains(err.Error(), "unable to open database file") || port != 0 {
 		_ = Stop()
-		t.Fatalf("Start answered port %d for an index that is a folder", port)
+		t.Fatalf("Start answered %d, %v for an index that is a folder, want 0 and the error of opening it", port, err)
 	}
 }
 
@@ -324,8 +333,25 @@ func TestRegisterVaultAnswersTheErrorOfAListItCannotRead(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "vaults.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if filed, err := registerVault(makeConfig(dir, io.Discard), dir); err == nil {
-		t.Errorf("registerVault answered %q for a list that is not JSON", filed)
+	filed, err := registerVault(makeConfig(dir, io.Discard), dir)
+	var failed *json.SyntaxError
+	if !errors.As(err, &failed) || filed != "" {
+		t.Errorf("registerVault answered %q, %v for a list that is not JSON, want no path and the error of reading it", filed, err)
+	}
+}
+
+func TestRegisterVaultAnswersTheErrorOfAListItCannotWrite(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("a superuser writes into any folder")
+	}
+	kept := t.TempDir()
+	if err := os.Chmod(kept, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(kept, 0o700) })
+	filed, err := registerVault(makeConfig(kept, io.Discard), t.TempDir())
+	if !errors.Is(err, fs.ErrPermission) || filed != "" {
+		t.Errorf("registerVault answered %q, %v for a list it cannot write, want no path and the permission error", filed, err)
 	}
 }
 
