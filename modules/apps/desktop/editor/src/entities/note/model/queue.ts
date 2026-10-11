@@ -27,6 +27,7 @@ export function createNoteQueue(
     timers.set(
       id,
       setTimeout(() => {
+        // Stryker disable next-line CallExpression: clearTimeout on a handle already fired does nothing, so a stale entry is never observed
         timers.delete(id)
         turn(id, { kind: 'fired' })
       }, after),
@@ -35,11 +36,13 @@ export function createNoteQueue(
 
   const disarm = (id: string): void => {
     clearTimeout(timers.get(id))
+    // Stryker disable next-line CallExpression: clearTimeout on a handle already cleared does nothing, so a stale entry is never observed
     timers.delete(id)
   }
 
   const resolveFlush = (id: string): void => {
     flushWaiters.get(id)?.()
+    // Stryker disable next-line CallExpression: a stale waiter is a resolved promise callback, and calling it again changes nothing
     flushWaiters.delete(id)
   }
 

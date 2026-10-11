@@ -57,6 +57,7 @@ export function useWindowTabs() {
   /** A tab is gone, and nothing it started keeps answering. */
   const drop = (id: string) => {
     scopes.get(id)?.stop()
+    // Stryker disable next-line CallExpression: a stopped scope left in the map is stopped again as a no-op
     scopes.delete(id)
   }
 

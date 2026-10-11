@@ -5,7 +5,8 @@
  * window does with a kind is the whole of what a real one can count on.
  */
 import { describe, expect, it } from 'vitest'
-import { panesOf } from '@numen/ui'
+import { effectScope, onScopeDispose } from 'vue'
+import { openTab, panesOf } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
 import type { FileKind } from '@/entities/file/@x/tab'
 import type { AnyTabKind, WindowHandle } from '../lib/kinds'
@@ -441,5 +442,270 @@ describe('reconciling tabs for a path', () => {
     expect(window.tabs.value).toHaveLength(1)
     expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('deck')
     expect(noteKind.closedPaths).toEqual(['Animals.md'])
+  })
+})
+
+describe('a window with nothing open', () => {
+  it('has one pane named main, laid out horizontally and focused', () => {
+    const window = told([])
+
+    expect(window.layout.value.axis).toBe('horizontal')
+    expect(window.layout.value.focus).toBe('main')
+    expect(window.layout.value.root).toMatchObject({ kind: 'pane', id: 'main', tabs: [] })
+  })
+
+  it('calls a tab nothing where its kind gives no title', async () => {
+    const bare = kind()
+    delete bare.one.getTitle
+    const window = told([bare.declared])
+
+    const id = await window.openTabOfKind('thing', 'Note.md')
+
+    expect(window.tabs.value).toEqual([{ id, title: '' }])
+  })
+})
+
+describe('what a tab of a kind holds, asked by kind', () => {
+  it('is nothing for an identity the window does not hold', () => {
+    const window = told([kind().declared])
+
+    expect(window.getTabStateIn('missing', 'thing')).toBeNull()
+    expect(window.handle.getTabState('thing', 'missing')).toBeNull()
+  })
+
+  it('is nothing where the tab is of another kind', async () => {
+    const window = told([kind().declared, kind({ kind: 'other' }).declared])
+    const id = await window.openTabOfKind('thing', 'Note.md')
+
+    expect(window.getTabStateIn(id, 'other')).toBeNull()
+    expect(window.getTabStateIn(id, 'thing')).toEqual({ at: 'Note.md', title: 'Note.md' })
+  })
+})
+
+describe('what a tab watches', () => {
+  /** A kind whose tabs watch something that records when it is let go of. */
+  const watching = () => {
+    const stopped: string[] = []
+    const one = kind({
+      open: (at: string) => {
+        onScopeDispose(() => stopped.push(at))
+        return { at, title: at }
+      },
+    })
+    return { stopped, one }
+  }
+
+  it('is let go of when the tab closes itself', async () => {
+    const watch = watching()
+    const window = told([watch.one.declared])
+    const id = await window.openTabOfKind('thing', 'Note.md')
+
+    window.handle.closeTab(id)
+
+    expect(watch.stopped).toEqual(['Note.md'])
+  })
+
+  it('is let go of when the tab is let go of', async () => {
+    const watch = watching()
+    const window = told([watch.one.declared])
+    const id = await window.openTabOfKind('thing', 'Note.md')
+
+    window.releaseTab(id)
+
+    expect(watch.stopped).toEqual(['Note.md'])
+  })
+
+  it('is let go of when the window goes', async () => {
+    const watch = watching()
+    const window = told([watch.one.declared])
+    await window.openTabOfKind('thing', 'Note.md')
+
+    window.close()
+
+    expect(watch.stopped).toEqual(['Note.md'])
+  })
+
+  it('outlives the scope the tab was opened from', async () => {
+    const watch = watching()
+    const window = told([watch.one.declared])
+    const parent = effectScope()
+
+    await parent.run(() => window.openTabOfKind('thing', 'Note.md'))
+    parent.stop()
+
+    expect(watch.stopped).toEqual([])
+  })
+
+  it('is no trouble to close for an identity the window does not hold', () => {
+    const window = told([kind().declared])
+
+    expect(() => window.handle.closeTab('missing')).not.toThrow()
+  })
+})
+
+describe('a tab opened beside', () => {
+  it('lands in a new pane on the right, in a horizontal layout', async () => {
+    const window = told([kind().declared])
+    const one = await window.openTabOfKind('thing', 'One.md')
+
+    const two = await window.handle.openTabBeside('thing', 'Two.md')
+
+    expect(panesOf(window.layout.value.root).map((pane) => pane.tabs)).toEqual([[one], [two]])
+    expect(window.layout.value.axis).toBe('horizontal')
+  })
+
+  it('changes nothing for a kind the window was never told about', async () => {
+    const window = told([kind().declared])
+    await window.openTabOfKind('thing', 'One.md')
+    const before = window.layout.value
+
+    expect(await window.handle.openTabBeside('nothing', 'Two.md')).toBe('')
+
+    expect(window.layout.value).toBe(before)
+  })
+})
+
+describe('the tab in front, with the pane in front unknown to the layout', () => {
+  it('is nothing', async () => {
+    const window = told([kind().declared])
+    await window.openTabOfKind('thing', 'One.md')
+    window.layout.value = { ...window.layout.value, focus: 'ghost' }
+
+    expect(window.handle.front()).toBeNull()
+  })
+})
+
+describe('a key struck on the window, offered in turn', () => {
+  /** Tabs of a kind that records who was offered the key and takes it only where told. */
+  const offering = (takes: string) => {
+    const offered: string[] = []
+    const one = kind({
+      onKeyPress: (state: { at: string }) => {
+        offered.push(state.at)
+        return state.at === takes
+      },
+    })
+    return { offered, one }
+  }
+  const strike = new KeyboardEvent('keydown', { key: 'a' })
+
+  it('goes to the pane in front, then to the rest from the one the person was last in', async () => {
+    const offer = offering('none')
+    const window = told([offer.one.declared])
+    const first = await window.openTabOfKind('thing', 'A')
+    await window.handle.openTabBeside('thing', 'B')
+    await window.handle.openTabBeside('thing', 'C')
+    window.show(first)
+
+    expect(window.onKeyPress(strike)).toBe(false)
+
+    expect(offer.offered).toEqual(['A', 'C', 'B'])
+  })
+
+  it('is taken by the first tab that reads it, and by no later one', async () => {
+    const offer = offering('C')
+    const window = told([offer.one.declared])
+    const first = await window.openTabOfKind('thing', 'A')
+    await window.handle.openTabBeside('thing', 'B')
+    await window.handle.openTabBeside('thing', 'C')
+    window.show(first)
+
+    expect(window.onKeyPress(strike)).toBe(true)
+
+    expect(offer.offered).toEqual(['A', 'C'])
+  })
+
+  it('is not offered to a tab hidden behind another in its pane', async () => {
+    const offer = offering('none')
+    const window = told([offer.one.declared])
+    await window.openTabOfKind('thing', 'Hidden')
+    await window.openTabOfKind('thing', 'Shown')
+
+    window.onKeyPress(strike)
+
+    expect(offer.offered).toEqual(['Shown'])
+  })
+
+  it('is no trouble for a layout drawing a tab the window does not hold', () => {
+    const window = told([kind().declared])
+    window.layout.value = openTab(window.layout.value, 'ghost')
+
+    expect(window.onKeyPress(strike)).toBe(false)
+  })
+
+  it('is offered to the tabs on screen while the pane in front is unknown to the layout', async () => {
+    const offer = offering('A')
+    const window = told([offer.one.declared])
+    await window.openTabOfKind('thing', 'A')
+    window.layout.value = { ...window.layout.value, focus: 'ghost' }
+
+    expect(window.onKeyPress(strike)).toBe(true)
+    expect(offer.offered).toEqual(['A'])
+  })
+})
+
+describe('a tab let go of', () => {
+  it('goes where its kind has nothing to finish', async () => {
+    const bare = kind()
+    delete bare.one.onClose
+    const window = told([bare.declared])
+    const id = await window.openTabOfKind('thing', 'Note.md')
+
+    expect(window.releaseTab(id)).toBe(true)
+
+    expect(window.getTab(id)).toBeNull()
+  })
+})
+
+describe('reconciling tabs for a path, by what a tab stands on', () => {
+  it('leaves a tab with no path alone when asked for no path', async () => {
+    const bare = kind({ kind: 'bare' })
+    const window = told([bare.declared])
+    const id = await window.openTabOfKind('bare', 'x')
+
+    window.reconcileTab('', 'deck')
+
+    expect(window.getTab(id)).not.toBeNull()
+    expect(bare.closedPaths).toEqual([])
+  })
+
+  it('leaves a tab of another kind alone where it stands on another path', async () => {
+    const note = kind({
+      kind: 'note',
+      getOpenTab: (state: { at: string }) => ({ path: state.at }),
+    })
+    const window = told([note.declared])
+    const id = await window.openTabOfKind('note', 'Other.md')
+
+    window.reconcileTab('Cards.md', 'deck')
+
+    expect(window.getTab(id)).not.toBeNull()
+  })
+
+  it('reads the path from the target where the kind has no open tab', async () => {
+    const note = kind({
+      kind: 'note',
+      getTarget: (state: { at: string }) => ({ path: state.at }),
+    })
+    const window = told([note.declared])
+    const id = await window.openTabOfKind('note', 'Cards.md')
+
+    window.reconcileTab('Cards.md', 'deck')
+
+    expect(window.getTab(id)).toBeNull()
+  })
+
+  it('reads the path from the target where the open tab has none', async () => {
+    const note = kind({
+      kind: 'note',
+      getOpenTab: () => ({ path: '' }),
+      getTarget: (state: { at: string }) => ({ path: state.at }),
+    })
+    const window = told([note.declared])
+    const id = await window.openTabOfKind('note', 'Cards.md')
+
+    window.reconcileTab('Cards.md', 'deck')
+
+    expect(window.getTab(id)).toBeNull()
   })
 })
