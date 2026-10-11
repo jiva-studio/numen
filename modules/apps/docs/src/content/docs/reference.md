@@ -103,7 +103,7 @@ How a vault is made searchable.
 | `recognition.recognise.dpi` | a number | what a page is rendered at. |
 | `recognition.recognise.height` | a number | what a line is scaled to before it is read. |
 | `recognition.recognise.jobs` | a number | how many jobs the recogniser runs at once. |
-| `recognition.recognise.threads` | a number | how many threads one model may use. |
+| `recognition.recognise.threads` | a number | how many threads one model may use. Zero takes four. |
 | `recognition.regions` |  | says what the parts of a page are for. A part the model names that `body` does not carry is not read. |
 | `recognition.regions.body` | a list of words | carry what the document says. |
 | `recognition.regions.head` | a list of words | open a part of the document, outermost first: where a name stands in the list is how deep the part it opens sits. |
@@ -117,7 +117,7 @@ How a vault is made searchable.
 | `transcription.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
 | `transcription.dir` | text | a folder holding the models. Empty means the folder beside the application, and then the download cache. |
 | `transcription.download` | yes or no | allows fetching what is not on this machine. |
-| `transcription.threads` | a number | how many threads one model may use. |
+| `transcription.threads` | a number | how many threads the encoder may use. Zero takes one per core, up to eight. |
 | `transcription.model` |  | turns speech into words. It is exported as three graphs and the pieces they write, and all four are one model: three graphs from two exports answer with nothing anybody can read. |
 | `transcription.model.name` | text | what this model is called in the record kept beside a text. |
 | `transcription.model.from` | text | the folder the four files are fetched from. |
