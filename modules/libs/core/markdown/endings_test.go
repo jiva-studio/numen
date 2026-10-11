@@ -75,3 +75,26 @@ func TestALoneCarriageReturnIsALineBreak(t *testing.T) {
 		t.Errorf("text with no carriage return came back changed: %q", got)
 	}
 }
+
+// An offset standing where no line begins is the line that begins next, and an
+// offset past every line is len(lines).
+func TestOffsetLineFindsTheNextLineWhenNoneBeginsThere(t *testing.T) {
+	lines := []int{0, 5, 11, 15}
+	for name, c := range map[string]struct {
+		offset int
+		want   int
+	}{
+		"a line's own start":    {0, 1},
+		"mid-line":              {3, 2},
+		"the next line's start": {5, 2},
+		"mid-line again":        {8, 3},
+		"the last line's start": {15, 4},
+		"past every line":       {20, 4},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := offsetLine(lines, c.offset); got != c.want {
+				t.Errorf("offsetLine(%v, %d) = %d, want %d", lines, c.offset, got, c.want)
+			}
+		})
+	}
+}

@@ -2,6 +2,7 @@ package markdown
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -92,6 +93,29 @@ func TestAddAndUpdateLinkWithLabelAndRole(t *testing.T) {
 	parsed = Parse(domain.Fingerprint{Path: "Bhagavad-gita.md"}, doc.Bytes())
 	if len(parsed.Links) != 0 {
 		t.Fatalf("expected 0 links after remove, got: %+v", parsed.Links)
+	}
+}
+
+// A key written after the `links:` block is not inside the last entry's span,
+// a trailing comment on that entry's last line included.
+func TestAKeyAfterLinksSurvivesAnEditWithATrailingComment(t *testing.T) {
+	raw := "---\nid: 01\nlinks:\n  - to: A\n    role: jump  # a note to self\ntags: [one, two]\n---\nbody\n"
+	doc, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := doc.AddLink(domain.Link{Target: domain.ParseAddress("B"), Role: domain.RoleRef}); err != nil {
+		t.Fatalf("add link: %v", err)
+	}
+
+	got := string(doc.Bytes())
+	if !strings.Contains(got, "tags: [one, two]") {
+		t.Errorf("tags was lost\n%s", got)
+	}
+	if again, err := Open([]byte(got)); err != nil {
+		t.Fatalf("the note stopped being readable: %v\n%s", err, got)
+	} else if links := Parse(domain.Fingerprint{Path: "D.md"}, again.Bytes()).Links; len(links) != 2 {
+		t.Errorf("links = %v\n%s", links, got)
 	}
 }
 

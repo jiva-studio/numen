@@ -86,11 +86,11 @@ func (d *Document) block() (block, error) {
 		}
 		// An entry ends at the last line of its own value. A comment or a blank
 		// line below that belongs to the entry following it.
-		bound := len(lines) - 1
+		var bound int
 		if i+1 < len(items.Content) {
 			bound = items.Content[i+1].Line - 1
-		} else if to := offsetLine(lines, end); to > 0 {
-			bound = to - 1
+		} else {
+			bound = offsetLine(lines, end) - 1
 		}
 		last := d.endLine(lines, item, items.Column)
 		if last > bound {
