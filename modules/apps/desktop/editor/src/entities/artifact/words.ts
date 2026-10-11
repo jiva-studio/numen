@@ -2,6 +2,7 @@
  * What the window says about a run, in the words of the thing being run over: a
  * scan is recognised, a recording is transcribed, an address is fetched.
  */
+// Stryker disable StringLiteral: interface copy
 import type { Artifact, ArtifactState } from './types'
 
 export const FETCHED: Record<ArtifactState, string> = {

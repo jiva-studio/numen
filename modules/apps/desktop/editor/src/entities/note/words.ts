@@ -1,4 +1,5 @@
 /** What a note tab says: the questions its file puts, and the two ways out. */
+// Stryker disable StringLiteral: interface copy
 import type { NoteErrorCode } from './lib/tabState'
 
 export const WORDS = {

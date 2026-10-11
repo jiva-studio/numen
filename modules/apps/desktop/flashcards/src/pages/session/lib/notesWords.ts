@@ -1,4 +1,5 @@
 /** What the panel the deck's notes are read in says. */
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   reading: 'What these cards were written from',
   nothing: 'This deck is not joined to anything.',

@@ -1,4 +1,5 @@
 /** What a book tab says: turning its spreads, and what the book divides into. */
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   back: 'Previous page',
   next: 'Next page',

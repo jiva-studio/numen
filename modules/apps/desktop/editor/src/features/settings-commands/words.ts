@@ -2,6 +2,7 @@
  * The words the three settings are offered in: the window as it is drawn, the
  * two names a note keeps, and the parts a node hangs.
  */
+// Stryker disable StringLiteral: interface copy
 
 /** Everything the appearance says in the window's voice. */
 export interface AppearanceWords {

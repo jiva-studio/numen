@@ -1,4 +1,5 @@
 /** What an agent tab says: the composer, the answers, and the tab's own name. */
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   ask: 'Ask about the vault',
   send: 'Send',

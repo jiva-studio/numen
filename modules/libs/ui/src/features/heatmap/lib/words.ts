@@ -5,6 +5,7 @@
  * month, an answer or a day, so a person reads their own language wherever the
  * grid is drawn.
  */
+// Stryker disable StringLiteral: interface copy
 
 /** What each line of a day's account is called. */
 export interface Words {

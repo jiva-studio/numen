@@ -1,4 +1,5 @@
 /** What a document tab says: turning its pages, and how close it is drawn. */
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   back: 'Previous page',
   next: 'Next page',

@@ -1,4 +1,5 @@
 /** What the tab holding the settings file says. */
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   /** What the tab is called, which is the file it holds. */
   called: 'numen.json',
