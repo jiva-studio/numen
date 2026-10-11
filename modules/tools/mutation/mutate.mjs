@@ -85,7 +85,7 @@ const listGoPackages = (target) => {
   return listed
     .split('\n')
     .map((line) => line.split(' '))
-    .filter(([dir, ...files]) => dir && files.some((file) => isMutatedGo(file)))
+    .filter(([dir, ...files]) => dir && files.some((file) => isMutatedGo(join(relative(at, dir), file))))
     .map(([dir]) => (dir === at ? '.' : `./${relative(at, dir)}`))
     .sort()
 }
