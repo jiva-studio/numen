@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
 import { keyOf } from '@/features/command-palette'
-import { COMMANDS, SETTINGS, vaultsOn, waysIn, type ShownVault, type Words } from './screen'
+import { COMMANDS, SETTINGS, vaultsOn, waysIn, type CurrentVault, type Words } from './screen'
 import { WORDS as own } from '../words'
 
 const APPLE = 'MacIntel'
@@ -32,7 +32,7 @@ const words: Words = {
 }
 
 /** A window showing a vault it has read. */
-const createShownVault = (over: Partial<ShownVault> = {}): ShownVault => ({
+const createCurrentVault = (over: Partial<CurrentVault> = {}): CurrentVault => ({
   vault: 'physics',
   isReady: true,
   ...over,
@@ -56,18 +56,18 @@ const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
 describe('the ways into the vault', () => {
   it('are the settings alone where the window is showing no vault', () => {
     expect(
-      waysIn(createShownVault({ vault: '', isReady: false }), words, APPLE).map((one) => one.id),
+      waysIn(createCurrentVault({ vault: '', isReady: false }), words, APPLE).map((one) => one.id),
     ).toStrictEqual([SETTINGS])
   })
 
   it('are the settings alone where a window showing no vault says it is ready', () => {
     expect(
-      waysIn(createShownVault({ vault: '' }), words, APPLE).map((one) => one.id),
+      waysIn(createCurrentVault({ vault: '' }), words, APPLE).map((one) => one.id),
     ).toStrictEqual([SETTINGS])
   })
 
   it('are the six of a vault that has been read, in the order they are drawn', () => {
-    const ways = waysIn(createShownVault(), words, APPLE)
+    const ways = waysIn(createCurrentVault(), words, APPLE)
     expect(ways.map((one) => one.id)).toStrictEqual([
       'find',
       COMMANDS,
@@ -79,7 +79,7 @@ describe('the ways into the vault', () => {
   })
 
   it('are each called what the window calls them, and the plex what the screen does', () => {
-    const ways = waysIn(createShownVault(), words, APPLE)
+    const ways = waysIn(createCurrentVault(), words, APPLE)
     expect(ways.map((one) => one.text)).toStrictEqual([
       words.find,
       words.commands,
@@ -92,20 +92,20 @@ describe('the ways into the vault', () => {
 
   /** A note cannot be made in a vault that never opened. The rest stand. */
   it('leave out the new note where the vault could not be opened', () => {
-    const ways = waysIn(createShownVault({ isReady: false }), words, APPLE)
+    const ways = waysIn(createCurrentVault({ isReady: false }), words, APPLE)
     expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'agent', SETTINGS])
   })
 
   /** The settings are the installation's, so they are offered last of all. */
   it('offer the settings last, on a vault and off one', () => {
-    expect(waysIn(createShownVault(), words, APPLE).at(-1)?.id).toBe(SETTINGS)
-    expect(waysIn(createShownVault({ vault: '' }), words, APPLE).at(-1)?.id).toBe(SETTINGS)
+    expect(waysIn(createCurrentVault(), words, APPLE).at(-1)?.id).toBe(SETTINGS)
+    expect(waysIn(createCurrentVault({ vault: '' }), words, APPLE).at(-1)?.id).toBe(SETTINGS)
   })
 })
 
 describe('the keystroke drawn on a way', () => {
   const keysOn = (id: string, agent = APPLE) =>
-    waysIn(createShownVault(), words, agent).find((one) => one.id === id)?.keys
+    waysIn(createCurrentVault(), words, agent).find((one) => one.id === id)?.keys
 
   it('is the one the table binds to that command', () => {
     expect(keysOn('note')).toStrictEqual(keyOf('note', APPLE))

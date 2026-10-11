@@ -10,7 +10,7 @@ import { keysOf } from '@/features/command-palette'
 import { WORDS as own } from '../words'
 
 /** What the welcome screen is drawn over. */
-export interface ShownVault {
+export interface CurrentVault {
   /** The vault the window is showing, and nothing where it shows none. */
   readonly vault: string
   /** Whether that vault has been read and can be asked to do anything. */
@@ -53,7 +53,7 @@ export const SETTINGS = 'settings'
  * Every keystroke drawn here is the one the table binds, so a key a person sees
  * is a key that works.
  */
-export const waysIn = (at: ShownVault, words: Words, agent: string): readonly WelcomeAction[] => {
+export const waysIn = (at: CurrentVault, words: Words, agent: string): readonly WelcomeAction[] => {
   const settings: WelcomeAction = { id: SETTINGS, text: words.settings, ...keysOf(SETTINGS, agent) }
   if (at.vault === '') return [settings]
   const note: readonly WelcomeAction[] = at.isReady

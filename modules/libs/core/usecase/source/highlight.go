@@ -82,7 +82,7 @@ func (u Highlight) Execute(
 	if len(runs) == 0 {
 		return nil, nil
 	}
-	said, stands, err := u.sources.Reading(ctx, v.ID, path)
+	reading, stands, err := u.sources.Reading(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -102,16 +102,16 @@ func (u Highlight) Execute(
 	// coordinates describe those. A file rewritten since is read from its own
 	// layer, which is the words that are there now.
 	var boxes []highlight.Box
-	if said.Producer != "" && ref.IsUnchanged(said.Fingerprint) {
-		boxes, err = u.read(ctx, store, said)
+	if reading.Producer != "" && ref.IsUnchanged(reading.Fingerprint) {
+		boxes, err = u.read(ctx, store, reading)
 	} else {
-		said = port.SourceText{}
+		reading = port.SourceText{}
 		boxes, err = u.layer(ctx, reader, ref, runs)
 	}
 	if err != nil {
 		return nil, err
 	}
-	prose, err := u.prose(ctx, reader, store, path, said)
+	prose, err := u.prose(ctx, reader, store, path, reading)
 	if err != nil {
 		return nil, err
 	}
@@ -126,10 +126,10 @@ func (u Highlight) prose(
 	reader port.VaultReader,
 	store port.DerivedStore,
 	path string,
-	said port.SourceText,
+	reading port.SourceText,
 ) (string, error) {
 	of := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}
-	doc, err := of.GetDocument(ctx, path, said.Producer, said.Hash)
+	doc, err := of.GetDocument(ctx, path, reading.Producer, reading.Hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		return "", nil
 	}
@@ -160,12 +160,12 @@ func getRuns(prose string, boxes []highlight.Box, runs []domain.ByteSpan) []Run 
 func (u Highlight) read(
 	ctx context.Context,
 	store port.DerivedStore,
-	said port.SourceText,
+	reading port.SourceText,
 ) ([]highlight.Box, error) {
 	if store == nil {
 		return nil, nil
 	}
-	raw, err := store.Read(ctx, text.Boxes(said.Producer, said.Hash))
+	raw, err := store.Read(ctx, text.Boxes(reading.Producer, reading.Hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		// The store is a folder on the person's disk and they may empty it.
 		return nil, nil
@@ -178,7 +178,7 @@ func (u Highlight) read(
 	// A reading that was proofread is read with its corrections in it, so a run
 	// of its text is a run of the corrected prose and the coordinates say where
 	// those words stand.
-	corrections, err := store.Read(ctx, text.Corrections(said.Producer, said.Hash))
+	corrections, err := store.Read(ctx, text.Corrections(reading.Producer, reading.Hash))
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}

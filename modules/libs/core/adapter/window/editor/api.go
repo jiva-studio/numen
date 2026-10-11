@@ -271,9 +271,9 @@ type IndexState struct {
 	Recipe atomic.Value
 }
 
-// GetShownVault is the vault the window has open. A window standing on nothing
+// GetCurrentVault is the vault the window has open. A window standing on nothing
 // answers with no vault at all.
-func (a *API) GetShownVault() domain.Vault {
+func (a *API) GetCurrentVault() domain.Vault {
 	if v := a.vault.Load(); v != nil {
 		return *v
 	}
@@ -376,10 +376,10 @@ func (a *API) Shut() {
 
 func (a *API) isClosed() bool { return a.shut.Load() }
 
-// getShownVault is the vault a question is answered over. A window standing on nothing
+// getCurrentVault is the vault a question is answered over. A window standing on nothing
 // has none, and every question that would reach into a vault is refused there.
-func (a *API) getShownVault() (domain.Vault, error) {
-	v := a.GetShownVault()
+func (a *API) getCurrentVault() (domain.Vault, error) {
+	v := a.GetCurrentVault()
 	if v.ID == "" {
 		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
@@ -413,7 +413,7 @@ func text(v *atomic.Value) string {
 func (a *API) GetVaultState(
 	ctx context.Context, _ *connect.Request[v1.GetVaultStateRequest],
 ) (*connect.Response[v1.GetVaultStateResponse], error) {
-	showing := a.GetShownVault()
+	showing := a.GetCurrentVault()
 	out := &v1.GetVaultStateResponse{
 		Id:   string(showing.ID),
 		Name: showing.Name,

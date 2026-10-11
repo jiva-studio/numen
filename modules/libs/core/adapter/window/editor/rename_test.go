@@ -641,7 +641,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a note that changed was answered %v", code)
 	}
-	if isGone(t, f.installation.API.GetShownVault().Path, "Old.md") {
+	if isGone(t, f.installation.API.GetCurrentVault().Path, "Old.md") {
 		t.Error("the file moved for a rename that wrote nothing")
 	}
 }

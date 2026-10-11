@@ -21,7 +21,7 @@ import (
 func (a *API) ListFiles(
 	ctx context.Context, r *connect.Request[v1.ListFilesRequest],
 ) (*connect.Response[v1.ListFilesResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string)
 func (a *API) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
 ) (*connect.Response[v1.ListFileKindsResponse], error) {
-	showing := a.GetShownVault()
+	showing := a.GetCurrentVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
@@ -137,7 +137,7 @@ func (a *API) ListFileKinds(
 func (a *API) MoveFile(
 	ctx context.Context, r *connect.Request[v1.MoveFileRequest],
 ) (*connect.Response[v1.MoveFileResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (a *API) MoveFile(
 func (a *API) CreateFolder(
 	ctx context.Context, r *connect.Request[v1.CreateFolderRequest],
 ) (*connect.Response[v1.CreateFolderResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (a *API) CreateFolder(
 func (a *API) CreateURL(
 	ctx context.Context, r *connect.Request[v1.CreateURLRequest],
 ) (*connect.Response[v1.CreateURLResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}

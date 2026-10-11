@@ -290,32 +290,32 @@ func (b *builder) attributes(n *html.Node) []Attribute {
 //
 // An href naming no document names a place in the document being read, and
 // crosses as the fragment it is.
-func address(base, said string) string {
-	if named := scheme(bare(said)); named != "" {
+func address(base, url string) string {
+	if named := scheme(bare(url)); named != "" {
 		if reachable[named] {
-			return bare(said)
+			return bare(url)
 		}
 		return ""
 	}
-	if target, fragment := splitHref(said); target == "" {
+	if target, fragment := splitHref(url); target == "" {
 		if fragment == "" {
 			return ""
 		}
 		return "#" + fragment
 	}
-	return hrefIn(base, said)
+	return hrefIn(base, url)
 }
 
 // picture is what an img draws: a file the book carries, or the bytes written
 // into the markup itself. An address off the machine is a request made the
 // moment the book is opened, which tells whoever wrote the book that it was
 // read, and from where.
-func picture(base, said string) string {
-	if scheme(bare(said)) == "" {
-		return hrefIn(base, said)
+func picture(base, url string) string {
+	if scheme(bare(url)) == "" {
+		return hrefIn(base, url)
 	}
-	if inlineImage(bare(said)) {
-		return bare(said)
+	if inlineImage(bare(url)) {
+		return bare(url)
 	}
 	return ""
 }
@@ -329,32 +329,32 @@ var reachable = map[string]bool{
 }
 
 // inlineImage is whether an address is a picture written into the markup itself.
-func inlineImage(said string) bool {
-	head, _, written := strings.Cut(strings.ToLower(said), ",")
+func inlineImage(url string) bool {
+	head, _, written := strings.Cut(strings.ToLower(url), ",")
 	return written && strings.HasPrefix(head, "data:image/") && strings.HasSuffix(head, ";base64")
 }
 
 // bare is an address with the spaces and control characters a scheme can be
 // hidden behind taken out. A browser reads one out of them all the same.
-func bare(said string) string {
+func bare(url string) string {
 	return strings.Map(func(r rune) rune {
 		if r <= ' ' {
 			return -1
 		}
 		return r
-	}, said)
+	}, url)
 }
 
 // scheme is the scheme a URL names, and empty for one that names none.
-func scheme(said string) string {
-	for i := 0; i < len(said); i++ {
-		c := said[i]
+func scheme(url string) string {
+	for i := 0; i < len(url); i++ {
+		c := url[i]
 		switch {
 		case c == ':':
 			if i == 0 {
 				return ""
 			}
-			return said[:i]
+			return url[:i]
 		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z':
 		case i > 0 && (c >= '0' && c <= '9' || c == '+' || c == '-' || c == '.'):
 		default:

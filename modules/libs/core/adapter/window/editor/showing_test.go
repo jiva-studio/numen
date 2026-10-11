@@ -183,8 +183,8 @@ func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 
 	// And the question is the window's, so another window's name reaches
 	// nothing here.
-	_, err := f.drawn.GetShownVault(t.Context(),
-		connect.NewRequest(&v1.GetShownVaultRequest{Window: wire.Review}))
+	_, err := f.drawn.GetCurrentVault(t.Context(),
+		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Review}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("err = %v, want the question about another window turned away", err)
 	}
@@ -194,8 +194,8 @@ func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
 func (f *showing) shows(t *testing.T, window string) string {
 	t.Helper()
 
-	out, err := f.drawn.GetShownVault(t.Context(),
-		connect.NewRequest(&v1.GetShownVaultRequest{Window: window}))
+	out, err := f.drawn.GetCurrentVault(t.Context(),
+		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: window}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 	}
 	t.Cleanup(func() { again.Close() })
 
-	if got := again.GetShownVault(); got.ID != f.second.ID {
+	if got := again.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window opened on %s, want the vault it showed last", got.Name)
 	}
 }
@@ -452,7 +452,7 @@ func TestAPageThatSaysNothingCostsTheSwapItsBound(t *testing.T) {
 	case <-time.After(30 * time.Second):
 		t.Fatal("a page that says nothing held the swap with nothing to wait for")
 	}
-	if got := f.installation.GetShownVault(); got.ID != f.second.ID {
+	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }
@@ -564,7 +564,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the page never wrote what it holds")
 	}
-	if got := f.installation.GetShownVault(); got.ID != f.first.ID {
+	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }

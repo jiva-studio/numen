@@ -41,7 +41,7 @@ func addViewTools(server *sdk.Server, core Core) {
 			return nil, out{}, errors.New("name the note to put in focus")
 		}
 
-		found, err := core.Notes.Queries.Notes(ctx, core.getShownVault().Vault.ID, []string{in.Path})
+		found, err := core.Notes.Queries.Notes(ctx, core.getCurrentVault().Vault.ID, []string{in.Path})
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -121,7 +121,7 @@ func getFingerprint(ctx context.Context, core Core, path string) (domain.Fingerp
 	if core.Readers == nil {
 		return domain.Fingerprint{}, errors.New("this vault's files are not open")
 	}
-	reader, err := core.Readers.Open(core.getShownVault().Vault)
+	reader, err := core.Readers.Open(core.getCurrentVault().Vault)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}

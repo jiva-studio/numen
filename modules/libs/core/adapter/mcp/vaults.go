@@ -65,7 +65,7 @@ func addVaultList(server *sdk.Server, core Core) {
 			Vaults []Vault `json:"vaults"`
 		}
 		held, err := vaults.NewKnownVaults(core.Vaults.Registry, core.Readers).
-			Execute(core.getShownVault().Vault.ID)
+			Execute(core.getCurrentVault().Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -216,7 +216,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 		}
 		// The use cases are not told which vault is in front of the person, and
 		// this is.
-		if v.ID == core.getShownVault().Vault.ID {
+		if v.ID == core.getCurrentVault().Vault.ID {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
 		}
 		if err := core.Vaults.Forget.Execute(ctx, v); err != nil {
@@ -258,7 +258,7 @@ func addVaultOpen(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		if v.ID == core.getShownVault().Vault.ID {
+		if v.ID == core.getCurrentVault().Vault.ID {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is already showing", v.Name)
 		}
 

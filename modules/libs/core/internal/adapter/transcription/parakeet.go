@@ -89,17 +89,17 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	}
 	defer options.Destroy()
 
-	said, err := tokens(found.tokens)
+	pieces, err := tokens(found.tokens)
 	if err != nil {
 		return nil, err
 	}
-	blank := said.getIndex(blankPiece)
+	blank := pieces.getIndex(blankPiece)
 	if blank < 0 {
 		return nil, fmt.Errorf("%s names no %s", found.tokens, blankPiece)
 	}
 
 	out := &Transcriber{
-		pieces:  said,
+		pieces:  pieces,
 		blank:   blank,
 		cutting: cfg.Segmenter,
 		model: port.TranscriptionModel{

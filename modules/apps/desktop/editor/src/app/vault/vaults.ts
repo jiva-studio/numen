@@ -12,7 +12,7 @@ export const vaults: Vaults = {
   list: async () => {
     const [answer, shown] = await Promise.all([
       vaultsService.listVaults({}),
-      windowService.getShownVault({ window: WINDOW }),
+      windowService.getCurrentVault({ window: WINDOW }),
     ])
     return { vaults: answer.vaults.map(mapVault), showing: shown.vault }
   },

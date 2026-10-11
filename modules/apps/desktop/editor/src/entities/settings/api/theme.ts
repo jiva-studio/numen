@@ -103,7 +103,7 @@ export const themes: Themes = {
       })
     ).error,
   watchThemes: async function* (signal) {
-    for await (const said of theme.watchThemes({}, { signal })) yield said.names
+    for await (const update of theme.watchThemes({}, { signal })) yield update.names
   },
 }
 

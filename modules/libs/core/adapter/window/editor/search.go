@@ -35,7 +35,7 @@ const (
 func (a *API) SearchNames(
 	ctx context.Context, r *connect.Request[v1.SearchNamesRequest],
 ) (*connect.Response[v1.SearchNamesResponse], error) {
-	showing := a.GetShownVault()
+	showing := a.GetCurrentVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
@@ -65,7 +65,7 @@ func (a *API) ListHeadings(
 	ctx context.Context,
 	r *connect.Request[v1.ListHeadingsRequest],
 ) (*connect.Response[v1.ListHeadingsResponse], error) {
-	showing := a.GetShownVault()
+	showing := a.GetCurrentVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
 	}
@@ -109,7 +109,7 @@ func (a *API) SearchPassages(
 	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
 ) (*connect.Response[v1.SearchPassagesResponse], error) {
 	query := r.Msg.GetQuery()
-	showing := a.GetShownVault()
+	showing := a.GetCurrentVault()
 	if strings.TrimSpace(query) == "" || showing.ID == "" {
 		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
 	}

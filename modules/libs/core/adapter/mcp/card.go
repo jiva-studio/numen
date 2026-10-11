@@ -128,7 +128,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		if in.Limit > 0 {
 			limit = in.Limit
 		}
-		held, count, err := core.Cards.List.Execute(ctx, core.getShownVault().Vault, limit)
+		held, count, err := core.Cards.List.Execute(ctx, core.getCurrentVault().Vault, limit)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -178,7 +178,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		if in.Mark == "" && in.Limit > maxCards {
 			return nil, out{}, fmt.Errorf("read at most %d cards at a time", maxCards)
 		}
-		read, err := core.Cards.Read.Deck(ctx, core.getShownVault().Vault, in.Path)
+		read, err := core.Cards.Read.Deck(ctx, core.getCurrentVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -449,7 +449,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Title  string `json:"title" jsonschema:"what the deck is called"`
 		Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
-		made, err := core.Cards.Create.Deck(ctx, core.getShownVault().Vault, cards.New{
+		made, err := core.Cards.Create.Deck(ctx, core.getCurrentVault().Vault, cards.New{
 			Title: in.Title, Path: in.Folder,
 		})
 		return nil, made, err
@@ -484,7 +484,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			return nil, cards.CreateNoteResult{}, fmt.Errorf(
 				"a stencil of %d bytes is more than this writes at once, which is %d", len(body), maxBytes)
 		}
-		made, err := core.Cards.Create.Stencil(ctx, core.getShownVault().Vault, cards.New{
+		made, err := core.Cards.Create.Stencil(ctx, core.getCurrentVault().Vault, cards.New{
 			Title: in.Title, Body: body, Path: in.Folder, Fields: in.Fields,
 		})
 		return nil, made, err
@@ -518,7 +518,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			Cards      int      `json:"cards" jsonschema:"how many headings were rewritten"`
 			NotWritten []string `json:"notWritten,omitempty" jsonschema:"the decks the rename could not be written to, which keep the old heading"`
 		}
-		showing := core.getShownVault().Vault
+		showing := core.getCurrentVault().Vault
 		held, err := core.Notes.Queries.OfType(ctx, showing.ID, domain.TypeDeck)
 		if err != nil {
 			return nil, out{}, err
@@ -575,7 +575,7 @@ func changeDeck(
 	if err != nil {
 		return WriteOutcome{}, nil, err
 	}
-	v := core.getShownVault().Vault
+	v := core.getCurrentVault().Vault
 	read, err := core.Cards.Read.Deck(ctx, v, path)
 	if err != nil {
 		return WriteOutcome{}, nil, err

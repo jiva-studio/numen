@@ -253,15 +253,15 @@ func newAsked(one flashcards.QueuedCardFace) *v1.Asked {
 }
 
 // newAhead is where each of the four would leave the card, in seconds.
-func newAhead(said map[review.Rating]time.Duration) *v1.Ahead {
-	if said == nil {
+func newAhead(ahead map[review.Rating]time.Duration) *v1.Ahead {
+	if ahead == nil {
 		return nil
 	}
 	return &v1.Ahead{
-		Again: int64(said[review.Again].Seconds()),
-		Hard:  int64(said[review.Hard].Seconds()),
-		Good:  int64(said[review.Good].Seconds()),
-		Easy:  int64(said[review.Easy].Seconds()),
+		Again: int64(ahead[review.Again].Seconds()),
+		Hard:  int64(ahead[review.Hard].Seconds()),
+		Good:  int64(ahead[review.Good].Seconds()),
+		Easy:  int64(ahead[review.Easy].Seconds()),
 	}
 }
 

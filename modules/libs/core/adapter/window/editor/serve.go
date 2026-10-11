@@ -135,7 +135,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		Files: Files{Writers: made.GetVaultWriters()},
 	}
 	// The editor is open on one vault, and answers which as itself.
-	api.Window.Vault = func() string { return string(api.GetShownVault().ID) }
+	api.Window.Vault = func() string { return string(api.GetCurrentVault().ID) }
 	api.Indexing.Progress = made.GetIndexProgress()
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
@@ -210,7 +210,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		ConfiguredFile:  made.ReadSettingsFile,
 		WritesFile:      made.WriteSettingsFile,
 		PartsUnderANode: Bounds{Least: least, Most: most},
-		LatestDayStarts: made.GetLatestDayStarts(),
+		LatestDayStarts: made.GetLatestDayStart(),
 		Day:             running.Day,
 		Now:             made.GetClock(),
 	}
@@ -294,8 +294,8 @@ func (o *Installation) SourcesKnown() port.SourceQueries {
 	return o.made.GetSourceQueries()
 }
 
-// GetShownVault is the vault the window has open.
-func (o *Installation) GetShownVault() domain.Vault { return o.API.GetShownVault() }
+// GetCurrentVault is the vault the window has open.
+func (o *Installation) GetCurrentVault() domain.Vault { return o.API.GetCurrentVault() }
 
 // Notes and Cards are the use cases this window works its vault through.
 // Whatever else works the same vault in the same process is served these, so
@@ -310,7 +310,7 @@ func (o *Installation) Cards() cards.Scenarios { return o.cards }
 
 // DraftingLocation locates where a stretch stands in a note as UTF-16 count offsets.
 func (o *Installation) DraftingLocation(ctx context.Context, path, stood string) (int, int, bool) {
-	contents, err := o.notes.Read.Execute(ctx, o.GetShownVault(), path)
+	contents, err := o.notes.Read.Execute(ctx, o.GetCurrentVault(), path)
 	if err != nil || contents.Outcome != note.Ok {
 		return 0, 0, false
 	}

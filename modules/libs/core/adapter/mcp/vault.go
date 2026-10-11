@@ -10,26 +10,26 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ShownVault is the vault a call is answered about: the vault itself, and where
+// CurrentVault is the vault a call is answered about: the vault itself, and where
 // it sits on this machine. An agent that can open files joins the folder to a
 // path itself; one that cannot reads through a tool.
-type ShownVault struct {
+type CurrentVault struct {
 	Vault domain.Vault
 	Root  string
 }
 
-// getShownVault is the vault this call is about. A build that named none answers
+// getCurrentVault is the vault this call is about. A build that named none answers
 // about no vault at all.
-func (c Core) getShownVault() ShownVault {
+func (c Core) getCurrentVault() CurrentVault {
 	if c.Showing == nil {
-		return ShownVault{}
+		return CurrentVault{}
 	}
 	return c.Showing()
 }
 
 // ShowOneVault answers with the same vault for as long as the server is served.
-func ShowOneVault(v domain.Vault, root string) func() ShownVault {
-	return func() ShownVault { return ShownVault{Vault: v, Root: root} }
+func ShowOneVault(v domain.Vault, root string) func() CurrentVault {
+	return func() CurrentVault { return CurrentVault{Vault: v, Root: root} }
 }
 
 // addVaultTools gives an agent the vault it is working: where it is, and what
@@ -59,7 +59,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Notes    int    `json:"notes"`
 			Headings int    `json:"headings"`
 		}
-		shown := core.getShownVault()
+		shown := core.getCurrentVault()
 		summary, err := core.Notes.Queries.Summary(ctx, shown.Vault.ID)
 		if err != nil {
 			return nil, out{}, err
@@ -105,7 +105,7 @@ func addVaultProblems(server *sdk.Server, core Core) {
 				problems = check.Standard(pq)
 			}
 		}
-		found, err := problems.Run(ctx, core.getShownVault().Vault, named...)
+		found, err := problems.Run(ctx, core.getCurrentVault().Vault, named...)
 		if err != nil {
 			return nil, out{}, err
 		}

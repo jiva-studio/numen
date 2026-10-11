@@ -43,8 +43,8 @@ export const createMarks = (
   const whole: string[] = []
 
   const addProblemMark = (marks: Map<string, string[]>, key: string, text: string): void => {
-    const said = marks.get(key)
-    if (said) said.push(text)
+    const existing = marks.get(key)
+    if (existing) existing.push(text)
     else marks.set(key, [text])
   }
 
@@ -88,9 +88,9 @@ const areMarkMapsEqual = (
   other: ReadonlyMap<string, readonly string[]>,
 ): boolean => {
   if (one.size !== other.size) return false
-  for (const [key, said] of one) {
+  for (const [key, texts] of one) {
     const against = other.get(key)
-    if (!against || !areWordsEqual(said, against)) return false
+    if (!against || !areWordsEqual(texts, against)) return false
   }
   return true
 }
@@ -101,9 +101,9 @@ const areUnderMapsEqual = (
   other: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>,
 ): boolean => {
   if (one.size !== other.size) return false
-  for (const [key, said] of one) {
+  for (const [key, byField] of one) {
     const against = other.get(key)
-    if (!against || !areMarkMapsEqual(said, against)) return false
+    if (!against || !areMarkMapsEqual(byField, against)) return false
   }
   return true
 }

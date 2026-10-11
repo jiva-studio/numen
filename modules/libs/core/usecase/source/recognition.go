@@ -308,19 +308,19 @@ func (r *RecognitionWorker) Proofread(
 	v domain.Vault,
 	path string,
 ) (ProofreadReadingResult, error) {
-	said := make(chan readingOutcome, 2)
+	outcomes := make(chan readingOutcome, 2)
 	r.going.Add(1)
 	//nolint:contextcheck // the run outlives the caller and carries r.context()
 	go func() {
 		defer r.going.Done()
 		res, err := r.proofreadReading(r.context(), v, path, func(began ProofreadReadingResult) {
-			said <- readingOutcome{res: began}
+			outcomes <- readingOutcome{res: began}
 		})
-		said <- readingOutcome{res: res, err: err}
+		outcomes <- readingOutcome{res: res, err: err}
 	}()
 
 	select {
-	case one := <-said:
+	case one := <-outcomes:
 		return one.res, one.err
 	case <-ctx.Done():
 		return ProofreadReadingResult{Path: path}, ctx.Err()
@@ -348,8 +348,8 @@ func (r *RecognitionWorker) proofreadReading(
 	path string,
 	onBegan func(ProofreadReadingResult),
 ) (ProofreadReadingResult, error) {
-	said := r.with.Proofreading
-	right, held, err := said.Reading(r.with.Readers, r.with.Derived)
+	proofreading := r.with.Proofreading
+	right, held, err := proofreading.Reading(r.with.Readers, r.with.Derived)
 	if err != nil {
 		r.say(task.Task{ID: proofreadID(path), Doing: "Proofreading a reading", About: path, Error: err.Error()})
 		return ProofreadReadingResult{Path: path}, err
@@ -362,8 +362,8 @@ func (r *RecognitionWorker) proofreadReading(
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
 	right.Cut = r.Cut
-	right.Pages = said.Batch
-	right.MaxEditDistance = said.MaxEditDistance
+	right.Pages = proofreading.Batch
+	right.MaxEditDistance = proofreading.MaxEditDistance
 	right.OnProgress = func(res ProofreadReadingResult) {
 		r.say(task.Task{
 			ID:    id,
@@ -464,18 +464,18 @@ func (r *RecognitionWorker) TakeUp(
 	known port.SourceQueries,
 	vaults ...domain.Vault,
 ) {
-	said := r.with.Proofreading
-	if !said.IsAutomatic {
+	proofreading := r.with.Proofreading
+	if !proofreading.IsAutomatic {
 		return
 	}
 	r.going.Add(1)
 	go func() {
 		defer r.going.Done()
-		queue, err := said.Queue(proofread.ScanInstruction)
+		queue, err := proofreading.Queue(proofread.ScanInstruction)
 		if err != nil || queue != nil {
 			return
 		}
-		by, err := said.By(proofread.ScanInstruction)
+		by, err := proofreading.By(proofread.ScanInstruction)
 		if err != nil || by == nil {
 			return
 		}
@@ -498,7 +498,7 @@ func (r *RecognitionWorker) collect(
 	if err != nil {
 		return
 	}
-	said := r.with.Proofreading
+	proofreading := r.with.Proofreading
 	for _, one := range recognised {
 		if ctx.Err() != nil {
 			return
@@ -514,8 +514,8 @@ func (r *RecognitionWorker) collect(
 		}
 		right.Hash = one.Hash
 		right.Queue = queue
-		right.Pages = said.Batch
-		right.MaxEditDistance = said.MaxEditDistance
+		right.Pages = proofreading.Batch
+		right.MaxEditDistance = proofreading.MaxEditDistance
 		right.Cut = r.Cut
 		right.OnProgress = func(res ProofreadReadingResult) {
 			r.report(task.Task{

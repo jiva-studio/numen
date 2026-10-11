@@ -59,7 +59,7 @@ var errAsking = errors.New("a page is holding work a person has to answer for")
 // window stays on the one it had, and a window neither comes up in stands on
 // nothing and says so.
 func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
-	if v.ID == o.API.GetShownVault().ID {
+	if v.ID == o.API.GetCurrentVault().ID {
 		return nil
 	}
 	if err := checkReadable(o.made.GetVaultIdentity(), v); err != nil {
@@ -78,7 +78,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 		return errAsking
 	}
 
-	was := o.API.GetShownVault()
+	was := o.API.GetCurrentVault()
 	o.leave()
 	o.forget()
 

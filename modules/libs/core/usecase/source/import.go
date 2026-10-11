@@ -116,7 +116,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		return res, nil
 	}
 
-	said, err := u.By.Text(ctx, at, port.PreferredCaptions{
+	extracted, err := u.By.Text(ctx, at, port.PreferredCaptions{
 		Languages: u.Languages, IsAutomatic: u.IsAutomatic,
 	})
 	switch {
@@ -130,14 +130,14 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		return res, err
 	}
 
-	res.Producer, res.Bytes, err = u.writeDownload(ctx, store, hash, at, said)
+	res.Producer, res.Bytes, err = u.writeDownload(ctx, store, hash, at, extracted)
 	if err != nil {
 		return res, err
 	}
 	if err := u.cut(ctx, v, ref.Path); err != nil {
 		return res, err
 	}
-	return u.renameURL(ctx, v, ref, at, said.Title, res)
+	return u.renameURL(ctx, v, ref, at, extracted.Title, res)
 }
 
 // writeDownload writes down what came back, under the name of whatever
@@ -147,19 +147,19 @@ func (u ImportURL) writeDownload(
 	store port.DerivedStore,
 	hash string,
 	at domain.URL,
-	said port.Text,
+	extracted port.Text,
 ) (producer string, bytes int, err error) {
-	written := []byte(said.Prose)
-	if len(said.Cues) > 0 {
-		written = transcript.Marshal(said.Cues)
+	written := []byte(extracted.Prose)
+	if len(extracted.Cues) > 0 {
+		written = transcript.Marshal(extracted.Cues)
 	}
-	if err := store.Write(ctx, text.Artifact(said.Producer, hash), written); err != nil {
+	if err := store.Write(ctx, text.Artifact(extracted.Producer, hash), written); err != nil {
 		return "", 0, err
 	}
-	if err := u.record(ctx, store, said.Producer, hash, at, said); err != nil {
+	if err := u.record(ctx, store, extracted.Producer, hash, at, extracted); err != nil {
 		return "", 0, err
 	}
-	return said.Producer, len(written), nil
+	return extracted.Producer, len(written), nil
 }
 
 // silent writes down that the address published none of what was asked for, so
@@ -244,7 +244,7 @@ func (u ImportURL) record(
 	store port.DerivedStore,
 	producer, hash string,
 	at domain.URL,
-	said port.Text,
+	extracted port.Text,
 ) error {
 	written, err := json.Marshal(struct {
 		Address    string `json:"address"`
@@ -254,8 +254,8 @@ func (u ImportURL) record(
 		Downloader string `json:"downloader"`
 	}{
 		Address:    string(at),
-		Title:      said.Title,
-		Length:     said.Length,
+		Title:      extracted.Title,
+		Length:     extracted.Length,
 		Producer:   producer,
 		Downloader: u.By.GetDownloadModel(at).Recipe(),
 	})

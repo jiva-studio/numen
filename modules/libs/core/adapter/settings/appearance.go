@@ -56,8 +56,8 @@ const (
 
 // Mode is the word this file writes read back, and Word is the word for one. A
 // word this file does not name is the machine's own choice.
-func Mode(said string) appearance.ColorScheme {
-	switch said {
+func Mode(word string) appearance.ColorScheme {
+	switch word {
 	case ModeLight:
 		return appearance.Light
 	case ModeDark:

@@ -96,8 +96,8 @@ export interface NameCheckResult<Why extends Objection> {
  * carrying a brace cannot be written, and one already taken names two slots.
  */
 export function checkFieldName(name: string, names: readonly string[]): NameCheckResult<Objection> {
-  const said = name.trim()
-  if (said.includes('{') || said.includes('}')) return { name: said, objection: 'braced' }
+  const trimmed = name.trim()
+  if (trimmed.includes('{') || trimmed.includes('}')) return { name: trimmed, objection: 'braced' }
   return checkHeadingName(name, names)
 }
 
@@ -109,10 +109,10 @@ export function checkHeadingName(
   name: string,
   names: readonly string[],
 ): NameCheckResult<HeadingObjection> {
-  const said = name.trim()
-  if (said === '') return { name: said, objection: 'blank' }
-  if (names.some((each) => each.trim() === said)) return { name: said, objection: 'taken' }
-  return { name: said, objection: null }
+  const trimmed = name.trim()
+  if (trimmed === '') return { name: trimmed, objection: 'blank' }
+  if (names.some((each) => each.trim() === trimmed)) return { name: trimmed, objection: 'taken' }
+  return { name: trimmed, objection: null }
 }
 
 /**

@@ -553,7 +553,7 @@ func (*ReportFlushResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{6}
 }
 
-type GetShownVaultRequest struct {
+type GetCurrentVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
@@ -562,20 +562,20 @@ type GetShownVaultRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetShownVaultRequest) Reset() {
-	*x = GetShownVaultRequest{}
+func (x *GetCurrentVaultRequest) Reset() {
+	*x = GetCurrentVaultRequest{}
 	mi := &file_numen_v1_window_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetShownVaultRequest) String() string {
+func (x *GetCurrentVaultRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetShownVaultRequest) ProtoMessage() {}
+func (*GetCurrentVaultRequest) ProtoMessage() {}
 
-func (x *GetShownVaultRequest) ProtoReflect() protoreflect.Message {
+func (x *GetCurrentVaultRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -587,19 +587,19 @@ func (x *GetShownVaultRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetShownVaultRequest.ProtoReflect.Descriptor instead.
-func (*GetShownVaultRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetCurrentVaultRequest.ProtoReflect.Descriptor instead.
+func (*GetCurrentVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetShownVaultRequest) GetWindow() string {
+func (x *GetCurrentVaultRequest) GetWindow() string {
 	if x != nil {
 		return x.Window
 	}
 	return ""
 }
 
-type GetShownVaultResponse struct {
+type GetCurrentVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The identity the list of vaults holds that vault under. Empty in a window
 	// showing none, and in one that is open on the installation rather than on
@@ -609,20 +609,20 @@ type GetShownVaultResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetShownVaultResponse) Reset() {
-	*x = GetShownVaultResponse{}
+func (x *GetCurrentVaultResponse) Reset() {
+	*x = GetCurrentVaultResponse{}
 	mi := &file_numen_v1_window_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetShownVaultResponse) String() string {
+func (x *GetCurrentVaultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetShownVaultResponse) ProtoMessage() {}
+func (*GetCurrentVaultResponse) ProtoMessage() {}
 
-func (x *GetShownVaultResponse) ProtoReflect() protoreflect.Message {
+func (x *GetCurrentVaultResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_window_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -634,12 +634,12 @@ func (x *GetShownVaultResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetShownVaultResponse.ProtoReflect.Descriptor instead.
-func (*GetShownVaultResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetCurrentVaultResponse.ProtoReflect.Descriptor instead.
+func (*GetCurrentVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetShownVaultResponse) GetVault() string {
+func (x *GetCurrentVaultResponse) GetVault() string {
 	if x != nil {
 		return x.Vault
 	}
@@ -673,10 +673,10 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x06window\x18\x01 \x01(\tR\x06window\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12-\n" +
 	"\x06result\x18\x03 \x01(\x0e2\x15.numen.v1.FlushResultR\x06result\"\x15\n" +
-	"\x13ReportFlushResponse\".\n" +
-	"\x14GetShownVaultRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"-\n" +
-	"\x15GetShownVaultResponse\x12\x14\n" +
+	"\x13ReportFlushResponse\"0\n" +
+	"\x16GetCurrentVaultRequest\x12\x16\n" +
+	"\x06window\x18\x01 \x01(\tR\x06window\"/\n" +
+	"\x17GetCurrentVaultResponse\x12\x14\n" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault*O\n" +
 	"\x04Unit\x12\x14\n" +
 	"\x10UNIT_UNSPECIFIED\x10\x00\x12\x0f\n" +
@@ -688,13 +688,13 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x18FLUSH_RESULT_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14FLUSH_RESULT_NOTHING\x10\x01\x12\x18\n" +
 	"\x14FLUSH_RESULT_WRITTEN\x10\x02\x12\x17\n" +
-	"\x13FLUSH_RESULT_ASKING\x10\x032\xc0\x02\n" +
+	"\x13FLUSH_RESULT_ASKING\x10\x032\xc6\x02\n" +
 	"\rWindowService\x12I\n" +
 	"\n" +
 	"WatchTasks\x12\x1b.numen.v1.WatchTasksRequest\x1a\x1c.numen.v1.WatchTasksResponse0\x01\x12F\n" +
 	"\tWatchQuit\x12\x1a.numen.v1.WatchQuitRequest\x1a\x1b.numen.v1.WatchQuitResponse0\x01\x12J\n" +
-	"\vReportFlush\x12\x1c.numen.v1.ReportFlushRequest\x1a\x1d.numen.v1.ReportFlushResponse\x12P\n" +
-	"\rGetShownVault\x12\x1e.numen.v1.GetShownVaultRequest\x1a\x1f.numen.v1.GetShownVaultResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\vReportFlush\x12\x1c.numen.v1.ReportFlushRequest\x1a\x1d.numen.v1.ReportFlushResponse\x12V\n" +
+	"\x0fGetCurrentVault\x12 .numen.v1.GetCurrentVaultRequest\x1a!.numen.v1.GetCurrentVaultResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_window_proto_rawDescOnce sync.Once
@@ -711,17 +711,17 @@ func file_numen_v1_window_proto_rawDescGZIP() []byte {
 var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_window_proto_goTypes = []any{
-	(Unit)(0),                     // 0: numen.v1.Unit
-	(FlushResult)(0),              // 1: numen.v1.FlushResult
-	(*WatchTasksRequest)(nil),     // 2: numen.v1.WatchTasksRequest
-	(*WatchTasksResponse)(nil),    // 3: numen.v1.WatchTasksResponse
-	(*Task)(nil),                  // 4: numen.v1.Task
-	(*WatchQuitRequest)(nil),      // 5: numen.v1.WatchQuitRequest
-	(*WatchQuitResponse)(nil),     // 6: numen.v1.WatchQuitResponse
-	(*ReportFlushRequest)(nil),    // 7: numen.v1.ReportFlushRequest
-	(*ReportFlushResponse)(nil),   // 8: numen.v1.ReportFlushResponse
-	(*GetShownVaultRequest)(nil),  // 9: numen.v1.GetShownVaultRequest
-	(*GetShownVaultResponse)(nil), // 10: numen.v1.GetShownVaultResponse
+	(Unit)(0),                       // 0: numen.v1.Unit
+	(FlushResult)(0),                // 1: numen.v1.FlushResult
+	(*WatchTasksRequest)(nil),       // 2: numen.v1.WatchTasksRequest
+	(*WatchTasksResponse)(nil),      // 3: numen.v1.WatchTasksResponse
+	(*Task)(nil),                    // 4: numen.v1.Task
+	(*WatchQuitRequest)(nil),        // 5: numen.v1.WatchQuitRequest
+	(*WatchQuitResponse)(nil),       // 6: numen.v1.WatchQuitResponse
+	(*ReportFlushRequest)(nil),      // 7: numen.v1.ReportFlushRequest
+	(*ReportFlushResponse)(nil),     // 8: numen.v1.ReportFlushResponse
+	(*GetCurrentVaultRequest)(nil),  // 9: numen.v1.GetCurrentVaultRequest
+	(*GetCurrentVaultResponse)(nil), // 10: numen.v1.GetCurrentVaultResponse
 }
 var file_numen_v1_window_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.WatchTasksResponse.tasks:type_name -> numen.v1.Task
@@ -730,11 +730,11 @@ var file_numen_v1_window_proto_depIdxs = []int32{
 	2,  // 3: numen.v1.WindowService.WatchTasks:input_type -> numen.v1.WatchTasksRequest
 	5,  // 4: numen.v1.WindowService.WatchQuit:input_type -> numen.v1.WatchQuitRequest
 	7,  // 5: numen.v1.WindowService.ReportFlush:input_type -> numen.v1.ReportFlushRequest
-	9,  // 6: numen.v1.WindowService.GetShownVault:input_type -> numen.v1.GetShownVaultRequest
+	9,  // 6: numen.v1.WindowService.GetCurrentVault:input_type -> numen.v1.GetCurrentVaultRequest
 	3,  // 7: numen.v1.WindowService.WatchTasks:output_type -> numen.v1.WatchTasksResponse
 	6,  // 8: numen.v1.WindowService.WatchQuit:output_type -> numen.v1.WatchQuitResponse
 	8,  // 9: numen.v1.WindowService.ReportFlush:output_type -> numen.v1.ReportFlushResponse
-	10, // 10: numen.v1.WindowService.GetShownVault:output_type -> numen.v1.GetShownVaultResponse
+	10, // 10: numen.v1.WindowService.GetCurrentVault:output_type -> numen.v1.GetCurrentVaultResponse
 	7,  // [7:11] is the sub-list for method output_type
 	3,  // [3:7] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name

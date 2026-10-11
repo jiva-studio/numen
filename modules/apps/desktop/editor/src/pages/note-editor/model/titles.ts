@@ -45,8 +45,8 @@ export function createNoteTitles(vault: NoteTitlesDeps, notes: Notes) {
    */
   const refreshTitle = async (id: string): Promise<void> => {
     try {
-      const said = (await vault.neighbourhood(notes.getPath(id))).focus?.title
-      if (said) setTitle(id, said)
+      const title = (await vault.neighbourhood(notes.getPath(id))).focus?.title
+      if (title) setTitle(id, title)
     } catch {
       // The tab keeps the name it had, and the next thing that moves the note
       // asks again.

@@ -221,12 +221,12 @@ export function useReviewCounter(deps: CountsDeps) {
     const ends = new AbortController()
     taking = ends
     try {
-      for await (const said of deps.cards.watchCardsDue({}, { signal: ends.signal })) {
+      for await (const update of deps.cards.watchCardsDue({}, { signal: ends.signal })) {
         sampled = true
-        if (said.counted) setVaultCount(said.counted)
+        if (update.counted) setVaultCount(update.counted)
         else {
-          day.value = said.day
-          setVaults(said.vaults)
+          day.value = update.day
+          setVaults(update.vaults)
         }
       }
     } catch (why) {

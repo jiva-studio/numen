@@ -25,10 +25,10 @@ const attrs = useAttrs()
 
 /** What the caller handed the box itself. */
 const handed = computed(() => {
-  const held = { ...attrs }
-  delete held['class']
-  delete held['style']
-  return held
+  const rest = { ...attrs }
+  delete rest['class']
+  delete rest['style']
+  return rest
 })
 
 const box = useTemplateRef<HTMLTextAreaElement>('box')

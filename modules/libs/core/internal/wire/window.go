@@ -180,15 +180,15 @@ func (w *Window) ReportFlush(
 	return connect.NewResponse(&v1.ReportFlushResponse{}), nil
 }
 
-// GetShownVault is the vault this window has in front of the person.
-func (w *Window) GetShownVault(
+// GetCurrentVault is the vault this window has in front of the person.
+func (w *Window) GetCurrentVault(
 	_ context.Context,
-	r *connect.Request[v1.GetShownVaultRequest],
-) (*connect.Response[v1.GetShownVaultResponse], error) {
+	r *connect.Request[v1.GetCurrentVaultRequest],
+) (*connect.Response[v1.GetCurrentVaultResponse], error) {
 	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
-	out := &v1.GetShownVaultResponse{}
+	out := &v1.GetCurrentVaultResponse{}
 	if w.Vault != nil {
 		out.Vault = w.Vault()
 	}

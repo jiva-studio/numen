@@ -63,7 +63,7 @@ func addNoteResolve(server *sdk.Server, core Core) {
 		type out = struct {
 			Paths []string `json:"paths"`
 		}
-		paths, err := core.Notes.Queries.GetNamedPaths(ctx, core.getShownVault().Vault.ID, domain.LinkName(in.Name))
+		paths, err := core.Notes.Queries.GetNamedPaths(ctx, core.getCurrentVault().Vault.ID, domain.LinkName(in.Name))
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -95,7 +95,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("ask about at most %d notes at a time", maxRefs)
 		}
-		found, err := core.Notes.Queries.Notes(ctx, core.getShownVault().Vault.ID, in.Paths)
+		found, err := core.Notes.Queries.Notes(ctx, core.getCurrentVault().Vault.ID, in.Paths)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -142,7 +142,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 			if err := ctx.Err(); err != nil {
 				return nil, out{}, err
 			}
-			contents, err := read.Execute(ctx, core.getShownVault().Vault, path)
+			contents, err := read.Execute(ctx, core.getCurrentVault().Vault, path)
 			if err != nil {
 				return nil, out{}, err
 			}
@@ -180,7 +180,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 			Focus   Note        `json:"focus"`
 			Related []Neighbour `json:"related"`
 		}
-		found, err := core.Notes.Neighbourhood.Execute(ctx, core.getShownVault().Vault, in.Path)
+		found, err := core.Notes.Neighbourhood.Execute(ctx, core.getCurrentVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -228,7 +228,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 				"a call writing %d bytes is more than this carries at once, which is %d", size, maxBytes)
 		}
 
-		created, err := core.Notes.Create.Execute(ctx, core.getShownVault().Vault, note.NewNote{
+		created, err := core.Notes.Create.Execute(ctx, core.getCurrentVault().Vault, note.NewNote{
 			Title: in.Title, Body: in.Body, Path: in.Folder,
 			Links: newLinks(in.Links),
 		})
@@ -276,7 +276,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		}
 		// What the file became. A caller writing this note again presents it, and
 		// the one it read is behind by its own write.
-		written, err := core.Notes.Write.Execute(ctx, core.getShownVault().Vault, in.Path, in.Body, ref)
+		written, err := core.Notes.Write.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Body, ref)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -317,7 +317,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		done, err := core.Notes.Replace.Execute(ctx, core.getShownVault().Vault, in.Path, in.Match, in.Text, seen)
+		done, err := core.Notes.Replace.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Match, in.Text, seen)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -343,7 +343,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Path  string `json:"path" jsonschema:"the note to rename"`
 		Title string `json:"title" jsonschema:"what it is called from now on"`
 	}) (*sdk.CallToolResult, note.RenameResult, error) {
-		renamed, err := core.Notes.Rename.Execute(ctx, core.getShownVault().Vault, in.Path, in.Title)
+		renamed, err := core.Notes.Rename.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Title)
 		return nil, renamed, err
 	})
 
@@ -370,7 +370,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			if err := ctx.Err(); err != nil {
 				return nil, out{}, err
 			}
-			moved, err := core.Notes.Move.Execute(ctx, core.getShownVault().Vault, path, note.GetPathUnder(in.Folder, path))
+			moved, err := core.Notes.Move.Execute(ctx, core.getCurrentVault().Vault, path, note.GetPathUnder(in.Folder, path))
 			outcome := MoveOutcome{MoveResult: moved}
 			if err != nil {
 				outcome.MoveResult = note.MoveResult{From: path}
@@ -403,7 +403,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("remove at most %d notes at a time", maxRefs)
 		}
-		reader, err := core.Readers.Open(core.getShownVault().Vault)
+		reader, err := core.Readers.Open(core.getCurrentVault().Vault)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -422,9 +422,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			var removed note.RemoveResult
 			var err error
 			if in.ShouldDestroy {
-				removed, err = core.Notes.Remove.Destroy(ctx, core.getShownVault().Vault, path)
+				removed, err = core.Notes.Remove.Destroy(ctx, core.getCurrentVault().Vault, path)
 			} else {
-				removed, err = core.Notes.Remove.Execute(ctx, core.getShownVault().Vault, path)
+				removed, err = core.Notes.Remove.Execute(ctx, core.getCurrentVault().Vault, path)
 			}
 			outcome := RemoveOutcome{RemoveResult: removed}
 			if err != nil {

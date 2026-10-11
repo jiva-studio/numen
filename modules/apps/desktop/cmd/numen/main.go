@@ -149,7 +149,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		Serve: func() (func() error, error) {
 			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
-		Showing:      opened.GetShownVault,
+		Showing:      opened.GetCurrentVault,
 		Handler:      opened.API.SetAgent,
 		Unreachable:  func(said string) { opened.API.Unreachable.Store(said) },
 		ErrorHandler: func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
@@ -210,7 +210,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	})
 
 	window = app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  getWindowTitle(opened.GetShownVault(), opened.API.GetOpenTabs()),
+		Title:  getWindowTitle(opened.GetCurrentVault(), opened.API.GetOpenTabs()),
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
@@ -224,7 +224,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
-	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetShownVault(), open)) }
+	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
 	opened.API.Attends = naming
 
 	// Files let go of over the window, copied into the folder the mark under

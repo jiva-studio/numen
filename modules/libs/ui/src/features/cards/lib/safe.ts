@@ -18,8 +18,8 @@ export const scheme = (url: string): string | null =>
   /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(bare(url))?.[0]?.toLowerCase() ?? null
 
 const canLinkTo = (url: string): boolean => {
-  const said = scheme(url)
-  return said === null || SCHEMES.has(said)
+  const named = scheme(url)
+  return named === null || SCHEMES.has(named)
 }
 
 /**
@@ -29,11 +29,11 @@ const canLinkTo = (url: string): boolean => {
  * tells whoever wrote the deck that it was read, and from where.
  */
 const canShow = (url: string): boolean => {
-  const said = bare(url)
-  if (scheme(said) === 'data:') return INLINE_IMAGE.test(said)
+  const cleaned = bare(url)
+  if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
   // An address opening with two slashes names a host and keeps the window's
   // own scheme, so it names no scheme and reaches off the machine all the same.
-  return scheme(said) === null && !/^[\\/]{2}/.test(said)
+  return scheme(cleaned) === null && !/^[\\/]{2}/.test(cleaned)
 }
 
 /** A style with every declaration that is not drawn with dropped. */
@@ -45,9 +45,13 @@ const filterStyles = (value: string): string =>
       const at = each.indexOf(':')
       if (at === -1) return false
       const property = each.slice(0, at).trim().toLowerCase()
-      const said = each.slice(at + 1).toLowerCase()
+      const declaredValue = each.slice(at + 1).toLowerCase()
       if (!STYLED.has(property)) return false
-      return !said.includes('url(') && !said.includes('expression') && !said.includes('\\')
+      return (
+        !declaredValue.includes('url(') &&
+        !declaredValue.includes('expression') &&
+        !declaredValue.includes('\\')
+      )
     })
     .join('; ')
 
@@ -79,9 +83,9 @@ const strip = (element: Element): void => {
     const name = attribute.name.toLowerCase()
 
     if (name === 'style') {
-      const said = filterStyles(attribute.value)
-      if (said === '') element.removeAttribute(attribute.name)
-      else element.setAttribute('style', said)
+      const filtered = filterStyles(attribute.value)
+      if (filtered === '') element.removeAttribute(attribute.name)
+      else element.setAttribute('style', filtered)
       continue
     }
 

@@ -100,7 +100,7 @@ func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the socket stopped answering and nobody was told")
 	}
-	if at := back.Address(api.GetShownVault(), statOf(t, api, api.GetShownVault(), talk)); at != "" {
+	if at := back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk)); at != "" {
 		t.Errorf("a socket that answers nothing gave out %s", at)
 	}
 }
@@ -111,7 +111,7 @@ func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
-	right := back.Address(api.GetShownVault(), statOf(t, api, api.GetShownVault(), talk))
+	right := back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk))
 	if out := ask(handler, right); out.Code != http.StatusOK {
 		t.Fatalf("the address this run gave out was answered %d", out.Code)
 	}
@@ -131,7 +131,7 @@ func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
 // named in the address and not taken from the window.
 func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
-	held := api.GetShownVault()
+	held := api.GetCurrentVault()
 	api.Vaults.Registry = heldVaults{held}
 	back, handler := openLoopback(t, api)
 
@@ -149,7 +149,7 @@ func TestAFileOfAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	back, handler := openLoopback(t, api)
 
-	elsewhere := api.GetShownVault()
+	elsewhere := api.GetCurrentVault()
 	ref := statOf(t, api, elsewhere, talk)
 	elsewhere.ID = "01ANOTHERVAULTALTOGETHER00"
 	if out := ask(handler, back.Address(elsewhere, ref)); out.Code != http.StatusNotFound {
@@ -185,7 +185,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, back.Address(api.GetShownVault(), statOf(t, api, api.GetShownVault(), talk)), nil)
+	r := httptest.NewRequest(http.MethodGet, back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk)), nil)
 	r.Header.Set("Range", "bytes=4-12")
 	handler.ServeHTTP(out, r)
 
@@ -207,7 +207,7 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	}
 	defer back.Close()
 
-	out, err := http.Get(back.Address(api.GetShownVault(), statOf(t, api, api.GetShownVault(), talk)))
+	out, err := http.Get(back.Address(api.GetCurrentVault(), statOf(t, api, api.GetCurrentVault(), talk)))
 	if err != nil {
 		t.Fatalf("the socket answered nothing: %v", err)
 	}
