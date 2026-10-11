@@ -26,7 +26,7 @@
 - Do not introduce new external dependencies or libraries.
 - Do not modify wire protocol definitions (`modules/libs/protocol`) or DTO shapes.
 - Do not alter the signature of `port.Agent` or `Take(ctx context.Context, task port.Task)`.
-- No narrative comments or ADR citations in code comments (comments state the rule and stop).
+- No narrative code comments (comments state the rule and stop).
 
 ## 4. Acceptance Criteria
 

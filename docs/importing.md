@@ -2,7 +2,7 @@
 
 A person pastes an address into the palette and gets a file: the video plays in its tab, the words said in it stand under the player, and a search over the vault answers about them.
 
-The file holds the address and nothing else. What a person writes about what is there is a note of their own, pointing at the file — see [A url is a source of its own](adr/0038-a-url-is-a-source-of-its-own.md).
+The file holds the address and nothing else. What a person writes about what is there is a note of their own, pointing at the file.
 
 ## The gesture
 

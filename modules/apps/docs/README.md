@@ -11,7 +11,7 @@ npm run typecheck  # astro check
 
 ## What belongs here
 
-Only what somebody using numen needs. The specifications under `docs/` in this repository — the note format, the index, the performance targets, the decision records — are how the application is built, and stay there.
+Only what somebody using numen needs. The specifications under `docs/` in this repository — the note format, the index, the performance targets — are how the application is built, and stay there.
 
 ## Five pages write themselves
 

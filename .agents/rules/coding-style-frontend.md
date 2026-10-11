@@ -167,7 +167,7 @@ Go code is formatted with `gofmt` (`gofmt -l .`).
 
 ## 11. Comments
 
-A comment states the rule that holds, and stops. It never names an alternative that is not in the code and never cites an ADR number. Delete each clause in turn: what still describes the code is the comment, and the rest was argument.
+A comment states the rule that holds, and stops. It never names an alternative that is not in the code. Delete each clause in turn: what still describes the code is the comment, and the rest was argument.
 
 ---
 
