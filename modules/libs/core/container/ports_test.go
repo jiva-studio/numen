@@ -43,7 +43,7 @@ func getHeldAdapters(name, src string) []string {
 		under[at] = path
 	}
 
-	var said []string
+	var findings []string
 	for _, decl := range f.Decls {
 		fn, ok := decl.(*ast.FuncDecl)
 		if !ok || !fn.Name.IsExported() || fn.Type.Results == nil || !isReachable(fn) {
@@ -63,13 +63,13 @@ func getHeldAdapters(name, src string) []string {
 				if !strings.HasPrefix(path, compilerHolds) || driving[strings.TrimPrefix(path, module)] {
 					return true
 				}
-				said = append(said, fn.Name.Name+" answers with "+at.Name+"."+sel.Sel.Name+
+				findings = append(findings, fn.Name.Name+" answers with "+at.Name+"."+sel.Sel.Name+
 					", which is "+strings.TrimPrefix(path, module)+"'s own type and not a port")
 				return true
 			})
 		}
 	}
-	return said
+	return findings
 }
 
 // isReachable is whether a declaration is one something outside the package can
@@ -194,12 +194,12 @@ func (c Config) Options(held filesystem.Options) error { return nil }`,
 			isRefused: false,
 		},
 	} {
-		said := getHeldAdapters("probe.go", one.src)
-		if one.isRefused && len(said) == 0 {
+		findings := getHeldAdapters("probe.go", one.src)
+		if one.isRefused && len(findings) == 0 {
 			t.Errorf("%s is not refused", one.what)
 		}
-		if !one.isRefused && len(said) != 0 {
-			t.Errorf("%s is refused: %s", one.what, strings.Join(said, "; "))
+		if !one.isRefused && len(findings) != 0 {
+			t.Errorf("%s is refused: %s", one.what, strings.Join(findings, "; "))
 		}
 	}
 }

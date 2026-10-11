@@ -16,16 +16,16 @@ type Word = 'clean' | 'unsaved' | 'stale' | 'gone'
 /** Notes in the states the test puts them in, each under its own identity. */
 const notes = () => {
   const states = ref<Record<string, Word>>({})
-  const said: string[] = []
+  const calls: string[] = []
   const store: Notes = {
     getOpenIds: () => Object.keys(states.value),
     getOpenNote: (id) => ({ state: states.value[id] ?? 'clean' }),
-    keep: (id) => said.push(`keep ${id}`),
-    take: (id) => said.push(`take ${id}`),
+    keep: (id) => calls.push(`keep ${id}`),
+    take: (id) => calls.push(`take ${id}`),
   }
   return {
     store,
-    said,
+    calls,
     setState: (id: string, state: Word) => {
       states.value = { ...states.value, [id]: state }
     },
@@ -71,7 +71,7 @@ describe('a note the file moved past', () => {
 
     await one.answer('Note.md', 'keep')
 
-    expect(one.said).toEqual(['keep Note.md'])
+    expect(one.calls).toEqual(['keep Note.md'])
   })
 
   it('is dropped once the note is no longer stale', async () => {

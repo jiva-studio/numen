@@ -107,14 +107,14 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   const one = vault(answers)
   const held = useWindowTabs()
   /** Everything the window was given to say about this stencil. */
-  const said: string[] = []
+  const messages: string[] = []
   const road = tabOpeners()
-  const stencils = useStencilTabs(one.core, held.handle, road, (text) => void said.push(text))
+  const stencils = useStencilTabs(one.core, held.handle, road, (text) => void messages.push(text))
   held.registerKinds([stencils.kind])
   const id = await held.openTabOfKind(STENCIL, path)
   await settle()
   const tab = held.handle.getTabState<StencilTabState>(STENCIL, id) as StencilTabState
-  return { ...one, held, road, stencils, id, tab, said }
+  return { ...one, held, road, stencils, id, tab, messages }
 }
 
 describe('a stencil opened', () => {
@@ -180,7 +180,7 @@ describe('a field renamed in a stencil', () => {
   })
 
   it('says how far the new name reached', async () => {
-    const { tab, said } = await open({
+    const { tab, messages } = await open({
       renaming: asValue({
         decks: ['Animals.md', 'More.md'],
         cards: 3,
@@ -192,11 +192,11 @@ describe('a field renamed in a stencil', () => {
     tab.renameField('Height', 'Shoulder')
     await settle()
 
-    expect(said).toContain(words.renamed(3, 2))
+    expect(messages).toContain(words.renamed(3, 2))
   })
 
   it('says which decks keep the old heading, which nothing else would tell', async () => {
-    const { tab, said } = await open({
+    const { tab, messages } = await open({
       renaming: asValue({
         decks: ['Animals.md'],
         cards: 1,
@@ -208,29 +208,29 @@ describe('a field renamed in a stencil', () => {
     tab.renameField('Height', 'Shoulder')
     await settle()
 
-    expect(said).toContain(words.notWritten(['Broken.md']))
+    expect(messages).toContain(words.notWritten(['Broken.md']))
   })
 
   it('says the error, and says nothing of decks reached, where none was', async () => {
-    const { tab, said } = await open({
+    const { tab, messages } = await open({
       renaming: asFailure('notAStencil' as const),
     })
 
     tab.renameField('Height', 'Shoulder')
     await settle()
 
-    expect(said).toStrictEqual([ERRORS.notAStencil])
+    expect(messages).toStrictEqual([ERRORS.notAStencil])
   })
 
   it('says nothing was renamed where the file moved past the stencil that was read', async () => {
-    const { tab, said } = await open({
+    const { tab, messages } = await open({
       renaming: asFailure('changed' as const),
     })
 
     tab.renameField('Height', 'Shoulder')
     await settle()
 
-    expect(said).toStrictEqual([words.notRenamed])
+    expect(messages).toStrictEqual([words.notRenamed])
   })
 
   it('writes nothing where nothing was touched', async () => {

@@ -301,10 +301,10 @@ func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 
-	var said []error
+	var errs []error
 	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
 		outOfReach{why: errors.New("dial tcp: network is unreachable")}, 0,
-		func(err error) { said = append(said, err) })
+		func(err error) { errs = append(errs, err) })
 
 	found, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{})
 	if err != nil {
@@ -313,8 +313,8 @@ func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
 	if len(found) != 1 || !strings.Contains(found[0].Source, "Entropy") {
 		t.Fatalf("the words alone found %v", sources(found))
 	}
-	if len(said) != 1 {
-		t.Fatalf("the half that did not answer said %v", said)
+	if len(errs) != 1 {
+		t.Fatalf("the half that did not answer said %v", errs)
 	}
 }
 

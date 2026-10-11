@@ -27,7 +27,7 @@ const tab = (
   const opened: [string, string, string][] = []
   const asked: string[] = []
   const ran: [string, string, string][] = []
-  const said: string[] = []
+  const messages: string[] = []
   /** Every note the vault was asked to make on its own. */
   const wrote: string[] = []
   /** The notes the window is dragging over this picture, which a test sets. */
@@ -61,7 +61,7 @@ const tab = (
     openingPath: ref('Opening.md'),
     readOpeningPath: async () => 'Opening.md',
     dragged: dragging,
-    showMessage: (text) => said.push(text),
+    showMessage: (text) => messages.push(text),
     createUntitledNote: async () => {
       wrote.push(writes.value)
       return writes.value
@@ -86,7 +86,7 @@ const tab = (
     headingsAsked,
     asked,
     ran,
-    said,
+    messages,
   }
 }
 
@@ -364,7 +364,7 @@ describe('notes dragged in and let go over the picture', () => {
       ['Root.md', 'Kelvin.md', 'child'],
       ['Root.md', 'Heat.md', 'child'],
     ])
-    expect(one.said).toEqual([`${words.notJoined} Kelvin`])
+    expect(one.messages).toEqual([`${words.notJoined} Kelvin`])
     expect(one.went).toEqual(['Root.md'])
   })
 
@@ -373,7 +373,7 @@ describe('notes dragged in and let go over the picture', () => {
 
     await one.state.dropNodes(['Entropy.md', 'Heat.md'], 'child')
 
-    expect(one.said).toEqual([`${words.notJoined} Entropy, Heat`])
+    expect(one.messages).toEqual([`${words.notJoined} Entropy, Heat`])
     expect(one.went).toEqual([])
   })
 
@@ -383,7 +383,7 @@ describe('notes dragged in and let go over the picture', () => {
     await one.state.dropNodes(['Entropy.md'], 'child')
 
     expect(one.joined).toEqual([])
-    expect(one.said).toEqual([])
+    expect(one.messages).toEqual([])
   })
 
   it('leaves the note the plex stands on out, and joins the rest', async () => {
@@ -392,7 +392,7 @@ describe('notes dragged in and let go over the picture', () => {
     await one.state.dropNodes(['Root.md', 'Entropy.md'], 'child')
 
     expect(one.joined).toEqual([['Root.md', 'Entropy.md', 'child']])
-    expect(one.said).toEqual([])
+    expect(one.messages).toEqual([])
   })
 })
 

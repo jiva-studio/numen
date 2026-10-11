@@ -53,11 +53,11 @@ const vault = () => ({
 
 /** The wire over that vault, and the messages it wrote. */
 const wireOver = (cards: ReturnType<typeof vault>) => {
-  const said: { text: string; how: string | undefined }[] = []
+  const messages: { text: string; how: string | undefined }[] = []
   const wire = createStencilWire(cards as unknown as Cards, (text, how) => {
-    said.push({ text, how })
+    messages.push({ text, how })
   })
-  return { wire, said }
+  return { wire, messages }
 }
 
 describe('reading a stencil', () => {
@@ -228,12 +228,12 @@ describe('renaming a field', () => {
         notWritten: [{ path: 'Old.md', text: '' }],
       }),
     )
-    const { wire, said } = wireOver(cards)
+    const { wire, messages } = wireOver(cards)
     const changed = vi.fn()
 
     await wire.renameField('Word.md', 'Front', 'Face', changed)
 
-    expect(said).toEqual([
+    expect(messages).toEqual([
       { text: words.renamed(3, 1), how: undefined },
       { text: words.notWritten(['Old.md']), how: 'error' },
     ])
@@ -243,34 +243,34 @@ describe('renaming a field', () => {
   it('says nothing where the rename reached no card and missed no deck', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(getRenameAnswer())
-    const { wire, said } = wireOver(cards)
+    const { wire, messages } = wireOver(cards)
 
     await wire.renameField('Word.md', 'Front', 'Face', vi.fn())
 
-    expect(said).toEqual([])
+    expect(messages).toEqual([])
   })
 
   it('carries the refusal in the words the window shows', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(asFailure('unreadable'))
-    const { wire, said } = wireOver(cards)
+    const { wire, messages } = wireOver(cards)
     const changed = vi.fn()
 
     await wire.renameField('Word.md', 'Front', 'Face', changed)
 
-    expect(said).toEqual([{ text: ERRORS['unreadable'], how: 'error' }])
+    expect(messages).toEqual([{ text: ERRORS['unreadable'], how: 'error' }])
     expect(changed).not.toHaveBeenCalled()
   })
 
   it('says the file moved past what the tab read, and reads it again', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(asFailure('changed'))
-    const { wire, said } = wireOver(cards)
+    const { wire, messages } = wireOver(cards)
     const changed = vi.fn()
 
     await wire.renameField('Word.md', 'Front', 'Face', changed)
 
-    expect(said).toEqual([{ text: words.notRenamed, how: 'error' }])
+    expect(messages).toEqual([{ text: words.notRenamed, how: 'error' }])
     expect(changed).toHaveBeenCalledWith(['Word.md'])
   })
 

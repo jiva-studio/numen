@@ -170,18 +170,18 @@ func TestOnlyTheDaysInsideTheStretchComeBack(t *testing.T) {
 		"nothing in it": {"2026-09-01", "2026-12-31", nil},
 	} {
 		t.Run(name, func(t *testing.T) {
-			var said []string
+			var within []string
 			for _, day := range []string{"2026-07-01", "2026-08-09", "2026-08-30", "2027-01-02"} {
 				if isWithin(day, one.from, one.to) {
-					said = append(said, day)
+					within = append(within, day)
 				}
 			}
-			if len(said) != len(one.want) {
-				t.Fatalf("%v came back, want %v", said, one.want)
+			if len(within) != len(one.want) {
+				t.Fatalf("%v came back, want %v", within, one.want)
 			}
-			for at := range said {
-				if said[at] != one.want[at] {
-					t.Errorf("the day at %d is %s, want %s", at, said[at], one.want[at])
+			for at := range within {
+				if within[at] != one.want[at] {
+					t.Errorf("the day at %d is %s, want %s", at, within[at], one.want[at])
 				}
 			}
 		})
