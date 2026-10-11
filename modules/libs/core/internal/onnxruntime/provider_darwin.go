@@ -17,13 +17,13 @@ const (
 	coreMLFlagCreateMLProgram  uint32 = 0x010
 )
 
-func applyProvider(opts *ort.SessionOptions, requested Provider) (Provider, error) {
+func applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUnits) (Provider, error) {
 	switch requested {
 	case ProviderCPU:
 		return ProviderCPU, nil
 	case ProviderCoreML, ProviderAuto:
 		if runtime.GOARCH == "arm64" {
-			if err := enableCoreML(opts); err == nil {
+			if err := enableCoreML(opts, units); err == nil {
 				return ProviderCoreML, nil
 			} else if requested == ProviderCoreML {
 				return ProviderCPU, err
@@ -42,7 +42,7 @@ func applyProvider(opts *ort.SessionOptions, requested Provider) (Provider, erro
 	}
 }
 
-func enableCoreML(opts *ort.SessionOptions) error {
+func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
 	runtimeState.mu.Lock()
 	engine := runtimeState.engine
 	at := runtimeState.at
@@ -62,8 +62,11 @@ func enableCoreML(opts *ort.SessionOptions) error {
 		return fmt.Errorf("invalid session options handle")
 	}
 
-	if appendCoreMLCached(handle, optHandle) {
+	if appendCoreMLCached(handle, optHandle, units) {
 		return nil
+	}
+	if units != ComputeUnitsDefault && units != ComputeUnitsAll {
+		return fmt.Errorf("compute units %s need the keyed coreml entry point", units)
 	}
 
 	var appendCoreML func(options uintptr, flags uint32) uintptr
@@ -88,7 +91,7 @@ type ortAPIKeyed struct {
 // appendCoreMLCached appends CoreML with compiled models kept in the cache
 // directory. It reports false when anything it needs is missing, and leaves the
 // options untouched.
-func appendCoreMLCached(handle, optHandle uintptr) bool {
+func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits) bool {
 	dir, err := GetCoreMLCacheDir()
 	if err != nil {
 		return false
@@ -117,12 +120,7 @@ func appendCoreMLCached(handle, optHandle uintptr) bool {
 	if err != nil {
 		return false
 	}
-	pairs := [][2]string{
-		{"ModelCacheDirectory", dir},
-		{"EnableOnSubgraphs", "1"},
-		{"CreateMLProgram", "1"},
-		{"MLComputeUnits", "ALL"},
-	}
+	pairs := getCoreMLOptions(dir, units)
 	keys := make([]*byte, len(pairs))
 	values := make([]*byte, len(pairs))
 	for i, pair := range pairs {
