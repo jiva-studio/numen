@@ -231,7 +231,7 @@ describe('joining two notes that are both there', () => {
 describe('removing a relationship from a note', () => {
   /** A core whose removal answers as told and keeps what it was asked. */
   const removing = (answer: () => Promise<ErrorCode | null>) => {
-    const asked: { path: string; to: string; role?: Role }[] = []
+    const asked: { path: string; to: string; role: Role | undefined }[] = []
     const core = {
       removeLink: async (path: string, to: string, role?: Role) => {
         asked.push({ path, to, role })
