@@ -31,6 +31,7 @@ describe('the name a size is offered under', () => {
 
   it('is nothing for a row of any other command, and for a size of none', () => {
     expect(sizeOf('mine:sea')).toBeNull()
+    expect(sizeOf('mine:1.25')).toBeNull()
     expect(sizeOf(`${INTERFACE_SCALE}:0`)).toBeNull()
     expect(sizeOf(`${INTERFACE_SCALE}:large`)).toBeNull()
   })

@@ -76,6 +76,29 @@ describe('a note the file moved past', () => {
     expect(one.calls).toEqual(['keep Note.md'])
   })
 
+  it('answers with what the person took', async () => {
+    const one = window()
+    one.setState('Note.md', 'stale')
+    await nextTick()
+
+    await one.answer('Note.md', 'take')
+
+    expect(one.calls).toEqual(['take Note.md'])
+  })
+
+  it('is raised again when it goes stale again after it was dropped', async () => {
+    const one = window()
+    one.setState('Note.md', 'stale')
+    await nextTick()
+    one.setState('Note.md', 'clean')
+    await nextTick()
+
+    one.setState('Note.md', 'stale')
+    await nextTick()
+
+    expect(one.paths()).toEqual(['Note.md'])
+  })
+
   it('is dropped once the note is no longer stale', async () => {
     const one = window()
     one.setState('Note.md', 'stale')

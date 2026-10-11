@@ -8,6 +8,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { StepGroup } from '@/features/command-palette/@x/settings-commands'
+import { DESIGNED, NOWHERE } from '@/entities/settings'
 import type { Appearance, Themes } from '@/entities/settings'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '../lib/head'
 import { INTERFACE_SCALE, TEXT_SCALE } from '../lib/appearanceValues'
@@ -779,5 +780,185 @@ describe('a size held while a row is chosen or the list is left', () => {
     await wait()
 
     expect(one.worn.sized.value).toStrictEqual({ interfaceScale: 1, textScale: 1 })
+||||||| parent of 49c7b867 (test(editor): cover appearance, file-conflict flush and head elements)
+
+/** The first moments of a window and the stream it follows, with every answer in a test's hands. */
+const createManual = (waits = Infinity) => {
+  const sheet = page()
+  const reads: { name: string; give: (css: string) => void; fail: () => void }[] = []
+  const signals: AbortSignal[] = []
+  let fault = false
+  let wake: ((names: readonly string[] | null) => void) | null = null
+  let waited = 0
+  const core: Themes = {
+    getAppearance: async () => APPEARANCE,
+    readTheme: (name) =>
+      new Promise<string>((give, fail) =>
+        reads.push({ name, give, fail: () => fail(new Error('gone')) }),
+      ),
+    writeAppearance: async () => '',
+    watchThemes: async function* (signal) {
+      signals.push(signal)
+      if (fault) throw new Error('down')
+      while (!signal.aborted) {
+        const names = await new Promise<readonly string[] | null>((next) => {
+          wake = next
+          signal.addEventListener('abort', () => next(null))
+        })
+        if (names === null) return
+        yield names
+      }
+    },
+  }
+  const told: string[] = []
+  const worn = createWindowAppearance(
+    core,
+    words,
+    (text) => void told.push(text),
+    sheet,
+    () => (waited++ < waits ? new Promise((done) => setTimeout(done, 0)) : new Promise(() => {})),
+  )
+  return {
+    worn,
+    sheet,
+    reads,
+    signals,
+    told,
+    fails: () => (fault = true),
+    changeThemes: async (...names: readonly string[]) => {
+      wake?.(names)
+      await settle()
+    },
+  }
+}
+
+describe('the window before it has been told anything', () => {
+  it('holds no themes, wears no theme, reads as a system pair, and draws at the designed size', () => {
+    const { worn } = createManual()
+
+    expect(worn.list.value).toStrictEqual([])
+    expect(worn.applied.value).toBe('')
+    expect(worn.mode.value).toBe('system')
+    expect(worn.sized.value).toStrictEqual({ interfaceScale: DESIGNED, textScale: DESIGNED })
+    expect(worn.bounds.value).toStrictEqual({ interfaceScale: NOWHERE, textScale: NOWHERE })
+  })
+
+  it('writes nothing over the page it was served, whatever the keyboard stands on', async () => {
+    const { worn, sheet, reads } = createManual()
+
+    worn.previewItem('mine:sea')
+    await settle()
+
+    expect(reads).toStrictEqual([])
+    expect(getHeadStyles(sheet)).toStrictEqual([PAIR, SERVED, SIZED])
+  })
+})
+
+describe('files that come back out of order', () => {
+  it('leave the theme of the row the keyboard came to rest on', async () => {
+    const { worn, sheet, reads } = createManual()
+    await worn.start()
+    worn.previewItem('preset:dracula')
+    worn.previewItem('mine:sea')
+
+    reads[1]?.give('SEA')
+    await settle()
+    reads[0]?.give('DRACULA')
+    await settle()
+
+    expect(getThemeCss(sheet)).toBe('SEA')
+  })
+
+  it('say nothing of a file the keyboard has already left', async () => {
+    const { worn, told, reads } = createManual()
+    await worn.start()
+    worn.previewItem('preset:dracula')
+    worn.previewItem('mine:sea')
+
+    reads[1]?.give('SEA')
+    await settle()
+    reads[0]?.fail()
+    await settle()
+
+    expect(told).toStrictEqual([])
+  })
+})
+
+describe('the folder when it names a theme that is not worn', () => {
+  it('does not read the theme worn again', async () => {
+    const { worn, reads, changeThemes } = createManual()
+    await worn.start()
+    await settle()
+    worn.previewItem('mine:sea')
+
+    await changeThemes('mine:tide')
+
+    expect(reads.map((one) => one.name)).toStrictEqual(['mine:sea'])
+  })
+
+  it('names nothing at all, and the window is not asked for its list again', async () => {
+    const one = window()
+    await one.worn.start()
+    await settle()
+
+    await one.changeThemes()
+
+    expect(one.listed()).toBe(1)
+  })
+})
+
+describe('the folder when it cannot be followed', () => {
+  it('says the window lost touch, and keeps saying it until the stream is back', async () => {
+    const { worn, fails } = createManual(0)
+    fails()
+
+    await worn.start()
+    await settle()
+
+    expect(worn.lost.value).not.toBe('')
+  })
+})
+
+describe('a window that is closed', () => {
+  it('lets go of the folder it listens to', async () => {
+    const { worn, signals } = createManual()
+    await worn.start()
+
+    worn.close()
+
+    expect(signals.map((one) => one.aborted)).toStrictEqual([true])
+  })
+
+  it('does not listen to the folder again once the stream has ended', async () => {
+    const { worn, signals } = createManual(3)
+    await worn.start()
+    await settle()
+
+    worn.close()
+    await settle()
+    await settle()
+
+    expect(signals).toHaveLength(1)
+  })
+
+  it('draws no size the keyboard was still standing on', async () => {
+    const one = await startWindow()
+
+    one.worn.previewItem('interfaceScale:1.5')
+    one.worn.close()
+    await wait()
+
+    expect(one.worn.sized.value).toStrictEqual({ interfaceScale: 1, textScale: 1 })
+  })
+
+  it('writes no size into the head', async () => {
+    const one = await startWindow()
+    one.worn.close()
+
+    await one.worn.chooseItem('textScale:1.5')
+    await settle()
+
+    expect(one.worn.sized.value.textScale).toBe(1.5)
+    expect(sizes(one.sheet)).toBe(SIZED)
   })
 })

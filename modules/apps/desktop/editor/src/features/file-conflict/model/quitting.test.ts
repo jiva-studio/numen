@@ -346,3 +346,127 @@ describe('a page holding text the file changed under', () => {
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '10', result: 'asking' })
   })
 })
+
+describe('the conflicts a person put off', () => {
+  const getNotes = (going: ReturnType<typeof useFileFlush>) =>
+    going.conflicts.value.map((one) => one.note)
+
+  it('are drawn again when the application asks again on the same stream', async () => {
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core, async () => {})
+    createConflict('Later.md').raise(going.raise)
+    void going.start()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+    going.conflicts.value[0]?.later()
+
+    mockStream.send({ token: '2', flush: true })
+    await settle()
+
+    expect(getNotes(going)).toEqual(['Later.md'])
+    expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '2', result: 'asking' })
+  })
+
+  it('stay off the screen while other conflicts are raised, and the others stay drawn', async () => {
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core, async () => {})
+    createConflict('A.md').raise(going.raise)
+    createConflict('B.md').raise(going.raise)
+    void going.start()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    going.conflicts.value.find((one) => one.note === 'A.md')?.later()
+
+    expect(getNotes(going)).toEqual(['B.md'])
+
+    createConflict('C.md').raise(going.raise)
+    await settle()
+
+    expect(getNotes(going)).toEqual(['B.md', 'C.md'])
+  })
+})
+
+describe('the handlers of a page', () => {
+  it('are no longer waited for once removed', async () => {
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core, async () => {})
+    let calls = 0
+    const remove = going.addHandler(async () => void (calls += 1))
+    void going.start()
+
+    remove()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+
+    expect(calls).toBe(0)
+  })
+})
+
+describe('writes owed at an earlier ask', () => {
+  it('do not answer for the ask that came after them', async () => {
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core, async () => {})
+    const gates: (() => void)[] = []
+    going.addHandler(() => new Promise<void>((done) => gates.push(done)))
+    void going.start()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+    mockStream.send({ token: '2', flush: true })
+    await settle()
+
+    gates[0]?.()
+    await settle()
+
+    expect(fakeCore.reportedResults).toEqual([])
+
+    gates[1]?.()
+    await settle()
+
+    expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'written' }])
+  })
+})
+
+describe('a page that is closed', () => {
+  /** A core whose quit stream is the mock one, and which keeps what it was given to listen with. */
+  const createListening = () => {
+    const mockStream = createMockStream()
+    const signals: AbortSignal[] = []
+    const core: FlushDeps = {
+      watchQuit: (signal) => {
+        signals.push(signal)
+        return mockStream.read()
+      },
+      reportFlush: async () => {},
+    }
+    return { mockStream, signals, core }
+  }
+
+  it('lets go of the stream it listens on', async () => {
+    const { signals, core } = createListening()
+    const going = useFileFlush(core, async () => {})
+    void going.start()
+    await settle()
+
+    going.close()
+
+    expect(signals.map((one) => one.aborted)).toEqual([true])
+  })
+
+  it('does not listen again once the stream has ended', async () => {
+    const { mockStream, signals, core } = createListening()
+    const going = useFileFlush(core, async () => {})
+    void going.start()
+    await settle()
+
+    going.close()
+    mockStream.end()
+    await settle()
+
+    expect(signals).toHaveLength(1)
+  })
+})
