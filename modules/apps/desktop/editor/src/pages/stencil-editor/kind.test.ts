@@ -483,14 +483,16 @@ describe('a stencil tab as the window lists it', () => {
 
 describe('the stencils a command reaches', () => {
   it('knows the one it holds and none other', async () => {
-    const { stencils, id } = await open()
+    const { stencils, tab } = await open()
+    const id = tab.id
 
     expect(stencils.kept.has(id)).toBe(true)
     expect(stencils.kept.has('elsewhere')).toBe(false)
   })
 
   it('names each by the file it stands at and what it is called', async () => {
-    const { stencils, id } = await open()
+    const { stencils, tab } = await open()
+    const id = tab.id
 
     expect(stencils.kept.getPath(id)).toBe('Animal.md')
     expect(stencils.kept.getTitle(id)).toBe('Animal')
@@ -498,31 +500,31 @@ describe('the stencils a command reaches', () => {
 
   it('is not asking while the file reads as it did, and is once the file moved past it', async () => {
     const clean = await open()
-    expect(clean.stencils.kept.asking(clean.id)).toBe(false)
+    expect(clean.stencils.kept.asking(clean.tab.id)).toBe(false)
 
     const stale = await openStale()
-    expect(stale.stencils.kept.asking(stale.id)).toBe(true)
+    expect(stale.stencils.kept.asking(stale.tab.id)).toBe(true)
   })
 
   it('finds the tab at a file among several, and none where nothing stands', async () => {
     const one = await open()
-    const second = await one.held.openTabOfKind(STENCIL, 'Plant.md')
+    await one.held.openTabOfKind(STENCIL, 'Plant.md')
     await settle()
 
-    expect(one.stencils.kept.getTabAt('Plant.md')).toBe(second)
-    expect(one.stencils.kept.getTabAt('Animal.md')).toBe(one.id)
+    expect(one.stencils.kept.getTabAt('Plant.md')).toBe('Plant.md')
+    expect(one.stencils.kept.getTabAt('Animal.md')).toBe(one.tab.id)
     expect(one.stencils.kept.getTabAt('Nothing.md')).toBeNull()
   })
 
   it('closes the tab it was asked for and leaves the others open', async () => {
     const one = await open()
-    const second = await one.held.openTabOfKind(STENCIL, 'Plant.md')
+    await one.held.openTabOfKind(STENCIL, 'Plant.md')
     await settle()
 
-    one.stencils.kept.close(second)
+    one.stencils.kept.close('Plant.md')
     await settle()
 
-    expect(one.stencils.getOpenIds()).toStrictEqual([one.id])
+    expect(one.stencils.getOpenIds()).toStrictEqual([one.tab.id])
     expect(one.held.handle.each(STENCIL)).toHaveLength(1)
   })
 
@@ -540,11 +542,11 @@ describe('a stencil tab closed', () => {
   it('stays open, still called what it was, where the file moved past what it holds', async () => {
     const one = await openStale()
 
-    one.stencils.kept.close(one.id)
+    one.stencils.kept.close(one.tab.id)
     await settle()
 
     expect(one.held.handle.each(STENCIL)).toHaveLength(1)
-    expect(one.stencils.getOpenIds()).toStrictEqual([one.id])
+    expect(one.stencils.getOpenIds()).toStrictEqual([one.tab.id])
     expect(one.stencils.getTitle('Animal.md')).toBe('Animal')
   })
 
@@ -552,7 +554,7 @@ describe('a stencil tab closed', () => {
     const one = await open()
     const was = one.tab.stencil.value.faces[0]?.id
 
-    one.stencils.kept.close(one.id)
+    one.stencils.kept.close(one.tab.id)
     await settle()
     const id = await one.held.openTabOfKind(STENCIL, 'Animal.md')
     await settle()
