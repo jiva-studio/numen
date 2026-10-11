@@ -391,8 +391,9 @@ func TestAFlagMistypedAfterTheCommandIsAnError(t *testing.T) {
 		{"vault", "erase", "--no-such-flag"},
 		{"vault", "erase", "notebook", "--no-such-flag"},
 	} {
-		if _, err := runWith(cli.Deps{Vaults: listing(notebook)}, args...); err == nil {
-			t.Errorf("%v was accepted", args)
+		_, err := runWith(cli.Deps{Vaults: listing(notebook)}, args...)
+		if err == nil || !strings.Contains(err.Error(), "no-such-flag") {
+			t.Errorf("%v answered %v", args, err)
 		}
 	}
 }
@@ -600,5 +601,34 @@ func TestScanReturnsWhatWentWrong(t *testing.T) {
 	gone := domain.Vault{ID: held.ID, Name: held.Name, Path: filepath.Join(t.TempDir(), "not-there")}
 	if _, err := runWith((&scanning{}).deps(t, gone), "scan", gone.Name); err == nil {
 		t.Error("a scan of a folder that is not there succeeded")
+	}
+}
+
+// failing is a model that answers nothing.
+type failing struct{ pointing }
+
+func (failing) Embed(context.Context, []string) ([][]float32, error) { return nil, errRefused }
+
+func TestScanReturnsWhyTheVectorsWereNotMade(t *testing.T) {
+	t.Parallel()
+	held := oneNote(t)
+	s := &scanning{embedder: failing{}}
+	out, err := runWith(s.deps(t, held), "scan", held.Name)
+	if !errors.Is(err, errRefused) {
+		t.Errorf("a scan whose model failed answered %v", err)
+	}
+	if strings.Contains(out, "index now holds") {
+		t.Errorf("scan reported a count after it failed:\n%q", out)
+	}
+}
+
+func TestScanNeedsExactlyOneVault(t *testing.T) {
+	t.Parallel()
+	held := oneNote(t)
+	for _, args := range [][]string{{"scan"}, {"scan", held.Name, "other"}, {"scan", "--rebuild-index"}} {
+		_, err := runWith((&scanning{}).deps(t, held), args...)
+		if err == nil || !strings.Contains(err.Error(), "usage: numen-cli scan <vault> [--rebuild-index]") {
+			t.Errorf("%v answered %v", args, err)
+		}
 	}
 }
