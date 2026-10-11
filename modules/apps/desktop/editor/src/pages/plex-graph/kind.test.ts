@@ -5,7 +5,7 @@
  * A note is asked for somewhere the window cannot see — the palette, an agent
  * working the vault beside the person — and one of these has to take it.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { paneById, panesOf } from '@numen/ui'
 import { createPlexKind } from './kind'
@@ -435,6 +435,18 @@ describe('a plex tab as it moves', () => {
 
     expect(() => state.activate(state.picture.value!.nodes[0]!.id)).not.toThrow()
     expect(state.view.here.value).toBe('One.md')
+  })
+
+  it('moves without a word when the window listens for none', async () => {
+    const one = window('', false)
+    const { state } = await one.openTab()
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await state.view.go('One.md')
+    await settle()
+
+    expect(errors).not.toHaveBeenCalled()
+    errors.mockRestore()
   })
 
   it('is not sent anywhere when it opens on nothing', async () => {

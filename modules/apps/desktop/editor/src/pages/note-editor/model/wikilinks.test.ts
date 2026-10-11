@@ -203,6 +203,14 @@ describe('note wikilink completion adapter', () => {
       expect(result).toEqual(['Own'])
     })
 
+    it('lists nothing when the note has no headings recorded', async () => {
+      const deps = mockDeps({ headings: vi.fn().mockResolvedValue(new Map()) })
+
+      const result = await createWikilinkOptions(deps, () => 'cur.md').headings?.('')
+
+      expect(result).toStrictEqual([])
+    })
+
     it('lists nothing when there is no path at all', async () => {
       const deps = mockDeps()
 
@@ -211,6 +219,14 @@ describe('note wikilink completion adapter', () => {
       expect(result).toEqual([])
       expect(deps.headings).not.toHaveBeenCalled()
     })
+  })
+
+  it('creates no note, and answers nothing, when the vault refuses or fails', async () => {
+    const refusing = mockDeps({ create: vi.fn().mockResolvedValue({ ok: false, error: 'no' }) })
+    const failing = mockDeps({ create: vi.fn().mockRejectedValue(new Error('down')) })
+
+    expect(await createWikilinkOptions(refusing, () => 'a.md').createNote?.('X')).toBeNull()
+    expect(await createWikilinkOptions(failing, () => 'a.md').createNote?.('X')).toBeNull()
   })
 
   it('creates a CodeMirror extension', () => {

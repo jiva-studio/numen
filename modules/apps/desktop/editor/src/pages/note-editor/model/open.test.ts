@@ -6,12 +6,19 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createNoteTab } from './open'
+import { createNoteWikilinkExtension } from './wikilinks'
 import type { createNoteChanges } from './changes'
 import type { createNoteKeyboard } from './keyboard'
 import type { createNoteTitles } from './titles'
 import type { openNotes } from '@/entities/note'
 import type { FileOpeners, WindowHandle } from '@/entities/tab'
 import type { NoteTabDeps } from '../types'
+
+vi.mock('./wikilinks', () => ({
+  createNoteWikilinkExtension: vi.fn((_vault: unknown, getCurrentPath: () => string) => ({
+    getCurrentPath,
+  })),
+}))
 
 type Notes = ReturnType<typeof openNotes>
 type Changes = ReturnType<typeof createNoteChanges>
@@ -153,6 +160,17 @@ describe('a note tab', () => {
     tab.measure()
 
     expect(calls).toStrictEqual(['measure:Heat.md'])
+  })
+})
+
+describe('the links a note tab completes', () => {
+  it('are written from the file its note stands at', () => {
+    const { tab } = tabFor()
+
+    const [, getCurrentPath] = vi.mocked(createNoteWikilinkExtension).mock.lastCall ?? []
+
+    expect(tab.extensions).toStrictEqual({ getCurrentPath })
+    expect(getCurrentPath?.()).toBe('Deep/Heat.md')
   })
 })
 
