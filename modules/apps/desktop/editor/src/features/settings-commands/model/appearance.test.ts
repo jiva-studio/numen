@@ -780,7 +780,6 @@ describe('a size held while a row is chosen or the list is left', () => {
     await wait()
 
     expect(one.worn.sized.value).toStrictEqual({ interfaceScale: 1, textScale: 1 })
-||||||| parent of 49c7b867 (test(editor): cover appearance, file-conflict flush and head elements)
 
 /** The first moments of a window and the stream it follows, with every answer in a test's hands. */
 const createManual = (waits = Infinity) => {
