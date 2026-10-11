@@ -18,8 +18,13 @@ The install lives in `modules/` rather than at the repository root, deliberately
 
 ## Issue labels
 
-- **Type**: `task`, `bug`, `feature`.
-- **Area**: `desktop`, `mobile`, `core`, `domain`, `protocol`, `ui`, `wire`, `docs`, `ci`, `repo`.
+An issue carries exactly one type and at least one area.
+
+- **Type**: `bug` (something is broken: a wrong result, a crash, a leak), `perf` (it works, but is too slow or too heavy), `feature` (new behaviour), `task` (implementation work that is neither), `epic` (tracks a set of issues).
+- **Area**: `desktop`, `mobile`, `core`, `domain`, `protocol`, `ui`, `wire`, `vault`, `docs`, `ci`, `repo`.
+- **Status**: `needs-decision` (blocked on a decision, not on work).
+
+Dependabot sets `dependencies`, `go`, `javascript` and `github_actions` on its own pull requests.
 
 ## Commit messages
 
