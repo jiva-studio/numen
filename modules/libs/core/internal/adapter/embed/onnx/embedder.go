@@ -44,7 +44,7 @@ type Embedder struct {
 	window     int
 	pooling    string
 	batchTexts int
-	poolSize   int
+	passes     int
 
 	tokenizer api.Tokenizer
 	pad       int
@@ -54,7 +54,7 @@ type Embedder struct {
 	// average of them.
 	isHeadPooled bool
 
-	// Pool of inference sessions for concurrent passes.
+	// One loaded model, lent to as many concurrent passes as the plan allows.
 	sessions *sessionPool[*ort.Session]
 }
 
@@ -106,12 +106,8 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	}
 	defer options.Destroy()
 
-	poolSize := cfg.GetSessions()
-	if poolSize < 1 {
-		poolSize = 1
-	}
-
-	sessions := make([]*ort.Session, 0, poolSize)
+	passes := max(cfg.GetPasses(provider), 1)
+	sessions := make([]*ort.Session, 0, 1)
 	destroySessions := func() {
 		for _, s := range sessions {
 			if s != nil {
@@ -120,14 +116,11 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		}
 	}
 
-	for range poolSize {
-		session, err := onnxruntime.NewSession(engine, paths.Model, options)
-		if err != nil {
-			destroySessions()
-			return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
-		}
-		sessions = append(sessions, session)
+	session, err := onnxruntime.NewSession(engine, paths.Model, options)
+	if err != nil {
+		return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
 	}
+	sessions = append(sessions, session)
 
 	first := sessions[0]
 	e := &Embedder{
@@ -138,9 +131,9 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		window:       getWindow(provider, identity.MaxTokens),
 		pooling:      identity.Pooling,
 		batchTexts:   max(cfg.BatchTexts, 1),
-		poolSize:     poolSize,
+		passes:       passes,
 		tokenizer:    tokenizer,
-		sessions:     newSessionPool(sessions, (*ort.Session).Destroy),
+		sessions:     newSessionPool(sessions, passes, (*ort.Session).Destroy),
 		isHeadPooled: identity.Pooling == embed.PoolHead,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
@@ -177,12 +170,7 @@ func (e *Embedder) Close() error {
 
 // Concurrency is how many batches this embedder runs in parallel.
 func (e *Embedder) Concurrency() int {
-	return e.poolSize
-}
-
-// PoolSize is how many sessions the pool holds.
-func (e *Embedder) PoolSize() int {
-	return e.poolSize
+	return e.passes
 }
 
 func (e *Embedder) Model() port.EmbeddingModel {

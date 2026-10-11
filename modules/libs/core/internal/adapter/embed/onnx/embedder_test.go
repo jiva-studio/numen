@@ -277,8 +277,8 @@ func TestMultiGoroutineConcurrentEmbedBatch(t *testing.T) {
 	if e.Concurrency() != 3 {
 		t.Errorf("expected concurrency 3, got %d", e.Concurrency())
 	}
-	if e.PoolSize() != 3 {
-		t.Errorf("expected pool size 3, got %d", e.PoolSize())
+	if e.Concurrency() != 3 {
+		t.Errorf("expected pool size 3, got %d", e.Concurrency())
 	}
 
 	sentences := []string{

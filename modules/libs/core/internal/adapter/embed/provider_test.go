@@ -164,16 +164,59 @@ func TestTheProviderIsReadOutOfTheFile(t *testing.T) {
 	}
 }
 
-func TestSessionsAreReadOutOfTheFile(t *testing.T) {
+func TestPassesAreReadOutOfTheFile(t *testing.T) {
 	var held embed.LocalModel
 	if err := json.Unmarshal([]byte(`{"sessions":4}`), &held); err != nil {
 		t.Fatal(err)
 	}
-	if held.GetSessions() != 4 {
-		t.Errorf("got %d, want 4", held.GetSessions())
+	if got := held.GetPasses(onnxruntime.ProviderCPU); got != 4 {
+		t.Errorf("got %d, want 4", got)
 	}
 	var empty embed.LocalModel
-	if empty.GetSessions() <= 0 {
-		t.Errorf("expected positive default sessions, got %d", empty.GetSessions())
+	if got := empty.GetPasses(onnxruntime.ProviderCPU); got <= 0 {
+		t.Errorf("expected positive default passes, got %d", got)
+	}
+}
+
+func TestThePlanSizesThePassesAndThreadsWhereTheSettingsNameNone(t *testing.T) {
+	planned := embed.LocalModel{ThreadBudget: 12, PassBudget: 5}
+	if got := planned.GetThreads(); got != 12 {
+		t.Errorf("threads %d, want the budget", got)
+	}
+	if got := planned.GetPasses(onnxruntime.ProviderCPU); got != 5 {
+		t.Errorf("passes %d, want the plan's", got)
+	}
+
+	named := embed.LocalModel{Threads: 3, Sessions: 2, ThreadBudget: 12, PassBudget: 5}
+	if got := named.GetThreads(); got != 3 {
+		t.Errorf("threads %d, want the one the settings name", got)
+	}
+	if got := named.GetPasses(onnxruntime.ProviderCPU); got != 2 {
+		t.Errorf("passes %d, want the one the settings name", got)
+	}
+}
+
+func TestWithoutAPlanTheModelKeepsItsFallbacks(t *testing.T) {
+	var none embed.LocalModel
+	if got := none.GetThreads(); got != onnxruntime.DefaultThreads() {
+		t.Errorf("threads %d, want the runtime default", got)
+	}
+	if got := none.GetPasses(onnxruntime.ProviderCPU); got < 1 || got > 3 {
+		t.Errorf("passes %d, want one of the ladder", got)
+	}
+}
+
+func TestAnAcceleratorRunsOnePassWhateverThePlanSays(t *testing.T) {
+	planned := embed.LocalModel{ThreadBudget: 12, PassBudget: 5}
+	for _, provider := range []onnxruntime.Provider{
+		onnxruntime.ProviderCoreML, onnxruntime.ProviderCUDA, onnxruntime.ProviderDirectML,
+	} {
+		if got := planned.GetPasses(provider); got != 1 {
+			t.Errorf("%s runs %d passes, want 1", provider, got)
+		}
+	}
+	named := embed.LocalModel{Sessions: 3, PassBudget: 5}
+	if got := named.GetPasses(onnxruntime.ProviderCoreML); got != 3 {
+		t.Errorf("settings naming 3 passes got %d", got)
 	}
 }

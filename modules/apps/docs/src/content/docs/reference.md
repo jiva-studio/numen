@@ -50,8 +50,8 @@ How a vault is made searchable.
 | `embedding.indexing.local.batch_texts` | a number | how many texts one forward pass carries. |
 | `embedding.indexing.local.engine` | text | engineRuntime or EnginePureGo. Empty takes ONNX `runtime` where this platform has one published, and the Go backend where it has none. |
 | `embedding.indexing.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
-| `embedding.indexing.local.threads` | a number | how many of this machine one forward pass may use. |
-| `embedding.indexing.local.sessions` | a number | how many parallel inference sessions to keep in the pool. |
+| `embedding.indexing.local.threads` | a number | how many threads the model's intra-op pool runs. |
+| `embedding.indexing.local.sessions` | a number | how many forward passes run at once on the model. |
 | `embedding.indexing.local.provider` | text | the execution provider for ONNX `runtime` (auto, cpu, coreml, cuda). |
 | `embedding.indexing.local.download` | yes or no | allows fetching the model when it is not on this machine. |
 | `embedding.indexing.service` |  | how a hosted model is reached over HTTP. |
@@ -68,8 +68,8 @@ How a vault is made searchable.
 | `embedding.query.local.batch_texts` | a number | how many texts one forward pass carries. |
 | `embedding.query.local.engine` | text | engineRuntime or EnginePureGo. Empty takes ONNX `runtime` where this platform has one published, and the Go backend where it has none. |
 | `embedding.query.local.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
-| `embedding.query.local.threads` | a number | how many of this machine one forward pass may use. |
-| `embedding.query.local.sessions` | a number | how many parallel inference sessions to keep in the pool. |
+| `embedding.query.local.threads` | a number | how many threads the model's intra-op pool runs. |
+| `embedding.query.local.sessions` | a number | how many forward passes run at once on the model. |
 | `embedding.query.local.provider` | text | the execution provider for ONNX `runtime` (auto, cpu, coreml, cuda). |
 | `embedding.query.local.download` | yes or no | allows fetching the model when it is not on this machine. |
 | `embedding.query.service` |  | how a hosted model is reached over HTTP. |

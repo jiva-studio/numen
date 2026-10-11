@@ -56,6 +56,10 @@ const (
 // answering it differently is let go of: a question embedded in another space
 // finds nothing the first indexed.
 //
+// Where only the first is named, the index side holds at most one fewer call in
+// flight than the model runs passes at once (never fewer than one), and the
+// question side is not held.
+//
 // Naming no provider for the index is embedding with nothing, and there is
 // nothing to close.
 func Open(
@@ -66,7 +70,7 @@ func Open(
 	}
 	first := open(ctx, tasks, indexing.newArrival(forIndexing))
 	if !query.isPlaced() {
-		return first.GetWaitingEmbedder(), first.GetImpatientEmbedder(), first.Close
+		return newIndexLane(first), first.GetImpatientEmbedder(), first.Close
 	}
 
 	at := query.newArrival(forQuery)

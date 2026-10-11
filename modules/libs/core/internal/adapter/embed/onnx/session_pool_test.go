@@ -22,7 +22,7 @@ func newFakePool(t *testing.T, n int) (*sessionPool[*fakeSession], []*fakeSessio
 	for i := range all {
 		all[i] = &fakeSession{id: i}
 	}
-	pool := newSessionPool(all, func(s *fakeSession) {
+	pool := newSessionPool(all, n, func(s *fakeSession) {
 		if s.isRunning.Load() {
 			t.Errorf("session %d destroyed while running", s.id)
 		}

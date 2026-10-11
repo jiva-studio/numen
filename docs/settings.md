@@ -150,6 +150,9 @@ The **core budget** is the number of hardware threads CPU-bound work may occupy 
 | Consumer | Limit | Fallback without a plan |
 | --- | --- | --- |
 | Local embedding batch | embedding batch, unless the model names `batch_texts` | the model's own |
+| Local embedding, threads of the loaded model | core budget, unless the model names `threads` | the default of the runtime |
+| Local embedding, forward passes at once | workers, unless the model names `sessions`; one on an accelerator | one up to 2 CPUs, two up to 4, three beyond |
+| Search question and indexing sharing one local model | indexing holds one pass fewer than the model runs at once, at least one; a question is never held | not applicable |
 | OCR | OCR threads and sessions | unresolved counts, then named defaults |
 | Proofreading, batches in flight | LLM concurrency, unless the profile names `in_flight` | 4 at a service, 2 at the command line |
 | Embedding service, requests in flight | LLM concurrency | 4 |
@@ -247,7 +250,8 @@ Two providers are asked whether they are one model: both embed the same short te
 | `batch_size` | how many texts one forward pass carries (`batch_texts` is supported as an alias). |
 | `engine` | what runs the model: `onnxruntime`, the library fetched at run time, or `go`, the backend in the binary. Empty takes the runtime where this platform has one published and the Go backend where it has none. The vectors are the same either way, so the index does not record which ran. |
 | `runtime` | the ONNX Runtime shared library, when the engine is `onnxruntime`. Empty takes the one the process already opened for a recognition or a transcription. |
-| `threads` | how many threads one forward pass may use. 4. |
+| `threads` | how many threads the loaded model runs its passes on. Left out, it is the performance profile's core budget. |
+| `sessions` | how many forward passes run at once on the one loaded model. Left out, it is the performance profile's workers. A model running on an accelerator runs one pass unless this is set. |
 | `download` | fetch the model when this machine does not hold it. |
 
 What comes down is that build and what belongs to it: weights in a second file, a constant in a third, the tokeniser. The other builds in the same folder, and their weights, stay where they are.

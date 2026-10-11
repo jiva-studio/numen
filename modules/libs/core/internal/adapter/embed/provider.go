@@ -116,10 +116,13 @@ type LocalModel struct {
 	// Runtime is the ONNX Runtime shared library. Empty means the one beside the
 	// application, and then the one the platform holds.
 	Runtime string `json:"runtime"`
-	// Threads is how many of this machine one forward pass may use.
+	// Threads is how many threads the model's intra-op pool runs. Zero takes the thread budget of the compute plan.
 	Threads int `json:"threads"`
-	// Sessions is how many parallel inference sessions to keep in the pool.
+	// Sessions is how many forward passes run at once on the model. Zero takes the plan's workers.
 	Sessions int `json:"sessions"`
+	// ThreadBudget and PassBudget are the compute plan's share for this model: the threads it runs and the passes it runs at once. They are not settings: the composition root fills them, and zero leaves the fallback.
+	ThreadBudget int `json:"-"`
+	PassBudget   int `json:"-"`
 	// Provider is the execution provider for ONNX Runtime (auto, cpu, coreml, cuda). Empty is auto.
 	Provider string `json:"provider"`
 	// ShouldDownload allows fetching the model when it is not on this machine. Turned
@@ -151,28 +154,48 @@ func (m LocalModel) GetEngine() string {
 	return EnginePureGo
 }
 
-// GetThreads is how much of this machine one forward pass may use. A
-// recognition runs beside this one and is told the same.
+// GetThreads is how many threads the model's intra-op pool runs: what the
+// settings name, then the compute plan's thread budget, then the default of the
+// runtime. All the passes on the model share them.
 func (m LocalModel) GetThreads() int {
-	if m.Threads <= 0 {
-		return onnxruntime.DefaultThreads()
+	switch {
+	case m.Threads > 0:
+		return m.Threads
+	case m.ThreadBudget > 0:
+		return m.ThreadBudget
 	}
-	return m.Threads
+	return onnxruntime.DefaultThreads()
 }
 
-// GetSessions is how many parallel inference sessions this model runs in its pool.
-func (m LocalModel) GetSessions() int {
-	if m.Sessions <= 0 {
-		cpus := runtime.GOMAXPROCS(0)
-		if cpus <= 2 {
-			return 1
-		}
-		if cpus <= 4 {
-			return 2
-		}
-		return 3
+// Without a compute plan, the passes run at once step up with the CPUs the
+// process may use: one up to passLadderLow, two up to passLadderHigh, and
+// three beyond.
+const (
+	passLadderLow  = 2
+	passLadderHigh = 4
+)
+
+// GetPasses is how many forward passes run at once on a model that executes on
+// provider. The settings win; an accelerator runs one, because a pass there
+// does not scale and each costs a compile and memory; then the compute plan's
+// passes, then the CPU ladder.
+func (m LocalModel) GetPasses(provider onnxruntime.Provider) int {
+	switch {
+	case m.Sessions > 0:
+		return m.Sessions
+	case provider != onnxruntime.ProviderCPU:
+		return 1
+	case m.PassBudget > 0:
+		return m.PassBudget
 	}
-	return m.Sessions
+	cpus := runtime.GOMAXPROCS(0)
+	switch {
+	case cpus <= passLadderLow:
+		return 1
+	case cpus <= passLadderHigh:
+		return 2
+	}
+	return 3
 }
 
 // GetAddress is where this machine reads the weights: the directory when one is
