@@ -1,6 +1,8 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { Prose } from '@/shared/ui/prose'
 import Thread from './Thread.vue'
+import { NO_UNRESOLVED } from '../lib/turn'
 import type { Turn } from '../lib/turn'
 
 const createAsked = (id: string, text = 'said', state?: Turn['state']): Turn =>
@@ -219,5 +221,14 @@ describe('the step each part is set at', () => {
         .find('.thread__failure')
         .classes(),
     ).toContain('text-small')
+  })
+})
+
+describe('the addresses handed to the prose of a turn', () => {
+  it('are one shared empty list for a turn that names none', () => {
+    const wrapper = thread([createAnswered('1'), createAnswered('2')])
+    for (const prose of wrapper.findAllComponents(Prose)) {
+      expect(prose.props('unresolved')).toBe(NO_UNRESOLVED)
+    }
   })
 })

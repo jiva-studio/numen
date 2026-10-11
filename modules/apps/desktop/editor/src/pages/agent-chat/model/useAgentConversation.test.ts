@@ -488,3 +488,35 @@ describe('agent model selection and settings', () => {
     expect(state.selectedModelId.value).toBe('')
   })
 })
+
+describe('turns drawn again', () => {
+  it('keeps the turn it drew while its unresolved addresses are the same', async () => {
+    const one = tab()
+    one.said.value = [turn('a', 'See [[Nowhere]].'), turn('b', 'Then [[Elsewhere]].')]
+    await nextTick()
+    await nextTick()
+    const [first, second] = one.state.turns.value
+
+    one.said.value = [one.said.value[0]!, one.said.value[1]!, turn('c', 'Nothing')]
+    await nextTick()
+    await nextTick()
+
+    expect(one.state.turns.value[0]).toBe(first)
+    expect(one.state.turns.value[1]).toBe(second)
+  })
+
+  it('draws a turn again when its unresolved addresses change', async () => {
+    const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
+    one.said.value = [turn('a', 'See [[Nowhere]].')]
+    await nextTick()
+    await nextTick()
+    const first = one.state.turns.value[0]
+
+    one.said.value = [turn('a', 'See [[Nowhere]] and [[Elsewhere]].')]
+    await nextTick()
+    await nextTick()
+
+    expect(one.state.turns.value[0]).not.toBe(first)
+    expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Nowhere', 'name://Elsewhere'])
+  })
+})
