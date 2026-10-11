@@ -267,7 +267,9 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     }
 
     if (payload.rows.length === 0) {
-      linkDirections.value.delete(payload.pairKey)
+      // Directions are kept by the two notes' paths; the inspector's pair key names graph nodes.
+      const open = linkInspector.value
+      if (open) linkDirections.value.delete([open.nodeA.path, open.nodeB.path].sort().join(' '))
     } else if (payload.rows.length === 1) {
       const row = payload.rows[0]!
       const pairKey = [row.from, row.to].sort().join(' ')

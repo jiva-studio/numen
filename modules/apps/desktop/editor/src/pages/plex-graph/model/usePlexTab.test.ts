@@ -1215,6 +1215,39 @@ describe('quick-link popover from a node handle', () => {
     expect(joined).toContainEqual(['Focus.md', 'Child.md', 'jump', 'Undirected connection'])
   })
 
+  it('forgets the direction of two notes once every link between them is removed', async () => {
+    const { state, node } = tab('Focus.md', ['Child.md'])
+    await settle()
+    const pair = `${node('Focus')} ${node('Child')}`
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'jump',
+          direction: 'undirected',
+          description: '',
+        },
+      ],
+      removedLinks: [],
+    })
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    expect(state.linkInspector.value?.links[0]?.direction).toBe('undirected')
+
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [],
+      removedLinks: [{ from: 'Focus.md', to: 'Child.md', role: 'jump' }],
+    })
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+
+    expect(state.linkInspector.value?.links[0]?.direction).toBe('forward')
+  })
+
   it('preserves and populates dual descriptions when reopening inspector on bidirectional link', async () => {
     const { state, node, joined } = tab('Focus.md', [
       { path: 'Child.md', isMutual: true, label: 'Forward 111' },
