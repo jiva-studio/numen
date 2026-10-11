@@ -73,3 +73,89 @@ const oneDocumentOpf = `<?xml version="1.0"?>
   <manifest><item id="a" href="one.xhtml" media-type="application/xhtml+xml"/></manifest>
   <spine><itemref idref="a"/></spine>
 </package>`
+
+func textOfBytes(n int) *epub.Book {
+	return &epub.Book{Text: strings.Repeat("a", n)}
+}
+
+// A book whose text has not been measured is read a page of 1024 letters at a time.
+func TestAPageOfUnmeasuredTextIsAKibibyte(t *testing.T) {
+	if got := textOfBytes(0).PageBytes(); got != 1024 {
+		t.Errorf("a page is %d bytes, want 1024", got)
+	}
+
+	counts := map[int]int{0: 1, 1: 1, 1023: 1, 1024: 1, 1025: 2, 2048: 2, 2049: 3}
+	for size, want := range counts {
+		if got := textOfBytes(size).PageCount(); got != want {
+			t.Errorf("%d bytes are %d pages, want %d", size, got, want)
+		}
+	}
+
+	book := textOfBytes(3000)
+	offsets := map[int]int{-2000: 1, -1: 1, 0: 1, 1023: 1, 1024: 2, 2047: 2, 2048: 3, 2999: 3, 9000: 3}
+	for offset, want := range offsets {
+		if got := book.PageOf(offset); got != want {
+			t.Errorf("offset %d is on page %d, want %d", offset, got, want)
+		}
+	}
+
+	starts := map[int]int{-3: 0, 0: 0, 1: 0, 2: 1024, 3: 2048, 4: 3000, 100: 3000}
+	for page, want := range starts {
+		if got := book.PageStart(page); got != want {
+			t.Errorf("page %d begins at %d, want %d", page, got, want)
+		}
+	}
+}
+
+// A book with no letters at all is still one page of 1024 bytes.
+func TestAPageOfABookWithoutTextIsAKibibyte(t *testing.T) {
+	book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{
+		"OEBPS/one.xhtml": "<html><body></body></html>",
+	}))
+	if got := book.PageBytes(); got != 1024 {
+		t.Errorf("a page is %d bytes, want 1024", got)
+	}
+	if got := book.PageCount(); got != 1 {
+		t.Errorf("a book without text is %d pages, want 1", got)
+	}
+}
+
+// A page is measured in the script of its own book, and one that opens inside a
+// letter moves on to the next.
+func TestAPageBeginsAtTheFirstLetterAtOrAfterItsMeasure(t *testing.T) {
+	scripts := map[string]struct {
+		letters string
+		bytes   int
+	}{
+		"latin":    {"a", 1024},
+		"cyrillic": {"б", 2047},
+		"mixed":    {"aa" + strings.Repeat("б", 20_000), 2047},
+	}
+	for name, script := range scripts {
+		t.Run(name, func(t *testing.T) {
+			body := script.letters
+			if name != "mixed" {
+				body = strings.Repeat(script.letters, 20_000)
+			}
+			book := read(t, buildSpineArchive(t, oneDocumentOpf, map[string]string{
+				"OEBPS/one.xhtml": "<html><body><p>" + body + "</p></body></html>",
+			}))
+			if got := book.PageBytes(); got != script.bytes {
+				t.Fatalf("a page is %d bytes, want %d", got, script.bytes)
+			}
+			for page := 1; page <= book.PageCount(); page++ {
+				measure := (page - 1) * book.PageBytes()
+				at := book.PageStart(page)
+				if at < measure || at-measure >= utf8.UTFMax {
+					t.Fatalf("page %d begins at %d, measure %d", page, at, measure)
+				}
+				if !utf8.RuneStart(book.Text[at]) {
+					t.Fatalf("page %d begins inside a letter at %d", page, at)
+				}
+				if at > 0 && utf8.RuneStart(book.Text[measure]) && at != measure {
+					t.Fatalf("page %d moved off a letter, %d to %d", page, measure, at)
+				}
+			}
+		})
+	}
+}
