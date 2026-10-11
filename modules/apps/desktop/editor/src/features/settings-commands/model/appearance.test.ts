@@ -6,7 +6,7 @@
  * what the settings name without reading a file for it; and that a size is
  * drawn only once the keyboard has stood on its row.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { StepGroup } from '@/features/command-palette/@x/settings-commands'
 import { DESIGNED, NOWHERE } from '@/entities/settings'
 import type { Appearance, Themes } from '@/entities/settings'
@@ -960,5 +960,66 @@ describe('a window that is closed', () => {
 
     expect(one.worn.sized.value.textScale).toBe(1.5)
     expect(sizes(one.sheet)).toBe(SIZED)
+  })
+})
+
+describe('the application that cannot list the themes', () => {
+  it('is said, as an error, and the window keeps what it wears', async () => {
+    const sheet = page()
+    const told: { text: string; kind: string }[] = []
+    const worn = createWindowAppearance(
+      {
+        getAppearance: async () => {
+          throw new Error('down')
+        },
+        readTheme: async () => '',
+        writeAppearance: async () => '',
+        watchThemes: async function* (signal) {
+          await new Promise<void>((done) => signal.addEventListener('abort', () => done()))
+          yield* []
+        },
+      },
+      words,
+      (text, kind = 'report') => void told.push({ text, kind }),
+      sheet,
+    )
+
+    await worn.start()
+
+    expect(told).toStrictEqual([{ text: words.unlisted, kind: 'error' }])
+    expect(worn.list.value).toStrictEqual([])
+    expect(getHeadStyles(sheet)).toStrictEqual([PAIR, SERVED, SIZED])
+    worn.close()
+  })
+})
+
+describe('a folder stream that ended', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('is followed again after the wait the window keeps by default', async () => {
+    vi.useFakeTimers()
+    let watches = 0
+    const worn = createWindowAppearance(
+      {
+        getAppearance: async () => APPEARANCE,
+        readTheme: async () => '',
+        writeAppearance: async () => '',
+        watchThemes: async function* () {
+          watches += 1
+          yield* []
+        },
+      },
+      words,
+      () => {},
+      page(),
+    )
+    await worn.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(watches).toBe(1)
+
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(watches).toBe(2)
+    worn.close()
   })
 })

@@ -4,7 +4,7 @@
  * The failure this guards against is silent: the window goes, the application
  * answers that everything landed, and the last seconds of typing are gone.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 
 import { openNotes, type Notes } from '@/entities/note'
@@ -468,5 +468,30 @@ describe('a page that is closed', () => {
     await settle()
 
     expect(signals).toHaveLength(1)
+  })
+})
+
+describe('a quit stream that ended', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('is listened to again after the wait the page keeps by default', async () => {
+    vi.useFakeTimers()
+    let listens = 0
+    const core: FlushDeps = {
+      watchQuit: async function* () {
+        listens += 1
+        yield* []
+      },
+      reportFlush: async () => {},
+    }
+    const going = useFileFlush(core)
+    void going.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(listens).toBe(1)
+
+    await vi.advanceTimersByTimeAsync(1000)
+
+    expect(listens).toBe(2)
+    going.close()
   })
 })
