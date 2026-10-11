@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -75,6 +76,8 @@ func TestAFailedPageEndsTheRequestsStillStanding(t *testing.T) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		// The server notices a closed connection only once the body is read.
+		_, _ = io.Copy(io.Discard, r.Body)
 		<-r.Context().Done()
 	})
 	pages := []proofread.Batch{page(1, "refused")}
@@ -138,6 +141,8 @@ func TestARequestThatTimesOutIsSentAgain(t *testing.T) {
 	var calls atomic.Int32
 	s := server(t, func(w http.ResponseWriter, r *http.Request) {
 		if calls.Add(1) == 1 {
+			// The server notices a closed connection only once the body is read.
+			_, _ = io.Copy(io.Discard, r.Body)
 			<-r.Context().Done()
 			return
 		}
