@@ -259,7 +259,7 @@ func TestTheWritePoolHoldsOneConnection(t *testing.T) {
 func TestTheReadPoolAdmitsAReaderForEveryCore(t *testing.T) {
 	db := openDB(t)
 	held := db.read.Stats().MaxOpenConnections
-	if held < runtime.NumCPU() || held < 4 {
+	if held != max(4, runtime.NumCPU()) {
 		t.Errorf("the read pool holds up to %d connections over %d cores", held, runtime.NumCPU())
 	}
 }
