@@ -22,13 +22,52 @@ import (
 // and nothing to install beside it. The library is compiled into this program.
 //
 // A worker holds one document at a time, so there are several of them and a
-// reader borrows one. They are started once and kept for the life of the
-// process.
+// reader borrows one. A returned worker stays alive while the pool is within
+// its idle count, and the pool is released once no document has been open for
+// idleRelease.
 var workers struct {
 	sync.Mutex
 	pool pdfium.Pool
 	// size is the worker count the pool is started with; zero is one per CPU.
 	size int
+	// idle is how many returned workers the pool keeps alive; zero keeps none.
+	idle int
+	// open is the number of documents open on the pool.
+	open int
+	// release fires when the pool has had no open document for idleRelease.
+	release *time.Timer
+}
+
+// idleRelease is how long an unused pool keeps its workers; a worker holds
+// memory for as long as it lives.
+var idleRelease = 5 * time.Minute
+
+// idleMemoryPercent is the share of the available memory the idle workers may
+// hold together.
+const idleMemoryPercent = 5
+
+// workerBytes is the memory one worker holds once it has read a document: the
+// linear memory of a freshly instantiated pdfium module plus room for the
+// document's working set.
+const workerBytes int64 = 32 << 20
+
+// ComputeIdleWorkers is how many returned workers to keep alive: the planned
+// worker count, capped to what fits in idleMemoryPercent of the available
+// memory. Zero when the available memory is unknown.
+func ComputeIdleWorkers(planned int, availableBytes int64) int {
+	if planned <= 0 || availableBytes <= 0 {
+		return 0
+	}
+	fits := availableBytes / 100 * idleMemoryPercent / workerBytes
+	return int(min(int64(planned), fits))
+}
+
+// SetIdleWorkers sets how many returned workers the pool keeps alive. Zero or
+// less keeps none. It has no effect on a pool that has started.
+func SetIdleWorkers(n int) {
+	workers.Lock()
+	defer workers.Unlock()
+	workers.idle = max(n, 0)
 }
 
 // minWorkers is the fewest workers the pool starts: a reader and the reader
@@ -65,12 +104,72 @@ func pool() (pdfium.Pool, error) {
 	if workers.pool != nil {
 		return workers.pool, nil
 	}
-	made, err := webassembly.Init(webassembly.Config{MaxTotal: getPoolSize()})
+	total := getPoolSize()
+	made, err := webassembly.Init(webassembly.Config{
+		MaxTotal:     total,
+		MaxIdle:      min(workers.idle, total),
+		ReuseWorkers: workers.idle > 0,
+	})
 	if err != nil {
 		return nil, err
 	}
 	workers.pool = made
 	return made, nil
+}
+
+// getWorker borrows a worker and counts the document that will be open on it.
+func getWorker() (pdfium.Pdfium, error) {
+	p, err := pool()
+	if err != nil {
+		return nil, err
+	}
+	workers.Lock()
+	workers.open++
+	if workers.release != nil {
+		workers.release.Stop()
+		workers.release = nil
+	}
+	workers.Unlock()
+	worker, err := p.GetInstance(waitForWorker)
+	if err != nil {
+		finishWorker()
+		return nil, err
+	}
+	return worker, nil
+}
+
+// putWorker returns a worker to the pool.
+func putWorker(worker pdfium.Pdfium) {
+	worker.Close()
+	finishWorker()
+}
+
+// finishWorker counts a document closed and, once none is open, schedules the
+// pool's release.
+func finishWorker() {
+	workers.Lock()
+	defer workers.Unlock()
+	workers.open--
+	if workers.open > 0 || workers.pool == nil || workers.idle == 0 {
+		return
+	}
+	if workers.release != nil {
+		workers.release.Stop()
+	}
+	workers.release = time.AfterFunc(idleRelease, releasePool)
+}
+
+// releasePool closes the pool and every worker in it when no document is
+// open; the next document starts a new pool.
+func releasePool() {
+	workers.Lock()
+	defer workers.Unlock()
+	if workers.open > 0 || workers.pool == nil {
+		return
+	}
+	workers.pool.Close()
+	workers.pool = nil
+	workers.release = nil
 }
 
 // A document is one PDF, open, on a worker of its own.
@@ -128,12 +227,7 @@ func open(src source) (*document, error) {
 		closeFile()
 		return nil, fmt.Errorf("%w: the file is empty", ErrNotPDF)
 	}
-	p, err := pool()
-	if err != nil {
-		closeFile()
-		return nil, fmt.Errorf("pdf: %w", err)
-	}
-	worker, err := p.GetInstance(waitForWorker)
+	worker, err := getWorker()
 	if err != nil {
 		closeFile()
 		return nil, fmt.Errorf("pdf: %w", err)
@@ -141,7 +235,7 @@ func open(src source) (*document, error) {
 
 	opened, err := worker.OpenDocument(&requests.OpenDocument{FileReader: src.reader, FileReaderSize: src.size})
 	if err != nil {
-		worker.Close()
+		putWorker(worker)
 		closeFile()
 		// A file that asks for a password is a file whose text nobody here can
 		// read, and it is worth saying so rather than saying it is malformed.
@@ -164,7 +258,7 @@ func open(src source) (*document, error) {
 // close gives the worker back and releases the file. Closing the instance
 // closes the document with it.
 func (d *document) close() {
-	d.worker.Close()
+	putWorker(d.worker)
 	if d.file != nil {
 		d.file.Close()
 	}

@@ -158,7 +158,7 @@ The **core budget** is the number of hardware threads CPU-bound work may occupy 
 | Embedding service, requests in flight | LLM concurrency | 4 |
 | Search, sources extracted at once | workers | 4 |
 | Cards, decks parsed and curve places worked out at once | workers | one per CPU |
-| PDF worker pool | workers, at least 2 | one per CPU, at least 2 |
+| PDF worker pool | workers, at least 2; the workers kept alive between documents are the planned workers, lowered to what 5% of the available memory holds at 32 MB each, none when it is unknown, and all are released after 5 minutes without an open document | one per CPU, at least 2; none kept alive |
 | Transcription, resampling and feature extraction | workers | one per CPU |
 
 OCR threads × sessions never exceeds the core budget. The budget is split into 4 sessions, or more when one session would need over 8 threads; sessions are capped at 16 and at the budget, and each session gets the budget divided by the sessions, at most 8 threads.

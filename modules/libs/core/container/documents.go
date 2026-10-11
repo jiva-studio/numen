@@ -19,5 +19,6 @@ func (c Config) PageRenderer() port.PageRenderer { return c.getDocuments() }
 // A container without a plan leaves the pool at one worker per CPU.
 func (c Config) getDocuments() pdf.Documents {
 	pdf.SetWorkers(c.ResolvedCompute.Workers)
+	pdf.SetIdleWorkers(pdf.ComputeIdleWorkers(c.ResolvedCompute.Workers, c.Hardware.AvailableRAMMB*bytesPerMB))
 	return pdf.Documents{}
 }
