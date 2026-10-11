@@ -117,4 +117,72 @@ describe('a deck, a stencil or a preset made', () => {
     expect(told.said.join(' ')).not.toContain('the vault is not there')
     expect(told.said.join(' ')).toContain('numen did not answer')
   })
+
+  it('is asked of the vault with no fields where none were given', async () => {
+    const vault = maker()
+    const made = createFileCreators(
+      vault,
+      fileOpeners({ fileKinds: async () => new Map() }),
+      MAKING,
+      () => {},
+    )
+
+    await made.createFile('stencil', 'zoology', 'Words')
+
+    expect(vault.asked).toStrictEqual(['stencil zoology Words '])
+  })
+
+  it('says what the vault refused as an error', async () => {
+    const told = writer()
+    const made = createFileCreators(
+      maker('occupied'),
+      fileOpeners({ fileKinds: async () => new Map() }),
+      MAKING,
+      told.write,
+    )
+
+    await made.createFile('deck', 'zoology', 'Animals')
+
+    expect(told.told).toStrictEqual([{ text: ERRORS.occupied, kind: 'error' }])
+  })
+
+  it('says a vault that could not be asked as an error', async () => {
+    const told = writer()
+    const made = createFileCreators(
+      maker(null, true),
+      fileOpeners({ fileKinds: async () => new Map() }),
+      MAKING,
+      told.write,
+    )
+
+    await made.createFile('deck', 'zoology', 'Animals')
+
+    expect(told.told.map((one) => one.kind)).toStrictEqual(['error'])
+  })
+})
+
+describe('a note pointing at an address made', () => {
+  it('is asked of the vault under the address and folder, and put in front of the person', async () => {
+    const vault = maker()
+    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const opened: string[] = []
+    tabOpeners.registerEditor('url', (path) => opened.push(path))
+    const made = createFileCreators(vault, tabOpeners, MAKING, () => {})
+
+    const path = await made.createUrl('links', 'example.org')
+
+    expect(vault.asked).toStrictEqual(['link links example.org'])
+    expect(path).toBe('links/example.org.md')
+    expect(opened).toStrictEqual(['links/example.org.md'])
+  })
+
+  it('answers nothing, and opens nothing, where the vault refused', async () => {
+    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const opened: string[] = []
+    tabOpeners.registerEditor('url', (path) => opened.push(path))
+    const made = createFileCreators(maker('occupied'), tabOpeners, MAKING, () => {})
+
+    expect(await made.createUrl('links', 'example.org')).toBe('')
+    expect(opened).toStrictEqual([])
+  })
 })

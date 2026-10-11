@@ -7,7 +7,24 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { panesOf } from '@numen/ui'
-import { AGENT, CONVERSATION, PLEX, createWorkspace, generateId } from './workspace'
+import {
+  AGENT,
+  BOOK,
+  CONVERSATION,
+  DECK,
+  DOCUMENT,
+  FILES,
+  NOTE,
+  PLEX,
+  PRESET,
+  RECORDING,
+  SETTINGS,
+  SETTINGS_FILE,
+  STENCIL,
+  URL,
+  createWorkspace,
+  generateId,
+} from './workspace'
 
 describe('the identity a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
@@ -22,6 +39,33 @@ describe('the identity a tab is filed under', () => {
 
   it('says what kind of thing the tab holds', () => {
     expect(generateId(AGENT).startsWith(`${AGENT}:`)).toBe(true)
+  })
+})
+
+describe('the kinds a tab is filed under', () => {
+  const kinds = [
+    PLEX,
+    AGENT,
+    NOTE,
+    DOCUMENT,
+    BOOK,
+    RECORDING,
+    URL,
+    FILES,
+    DECK,
+    STENCIL,
+    PRESET,
+    SETTINGS,
+    SETTINGS_FILE,
+    CONVERSATION,
+  ]
+
+  it('are each a word, so an identity names its kind', () => {
+    for (const kind of kinds) expect(kind).not.toBe('')
+  })
+
+  it('are each their own, so two kinds never share an identity', () => {
+    expect(new Set(kinds).size).toBe(kinds.length)
   })
 })
 
@@ -71,6 +115,11 @@ describe('the layout the window opens with', () => {
 
   it('divides the width, so the two stand side by side', () => {
     expect(layout.axis).toBe('horizontal')
+  })
+
+  it('names the root after what it divides, and the panes after their places', () => {
+    expect(layout.root.id).toBe('root')
+    expect(panesOf(layout.root).map((one) => one.id)).toStrictEqual(['main', 'aside'])
   })
 
   it('leaves the person in the plex', () => {
