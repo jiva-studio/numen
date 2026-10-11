@@ -138,7 +138,12 @@ const openPresetTab = async (
     },
   }
   const registered: string[] = []
-  const handle = { closeTab: (tab: string) => void closed.push(tab) } as unknown as WindowHandle
+  const opened: string[] = []
+  const handle = {
+    closeTab: (tab: string) => void closed.push(tab),
+    openTab: (_kind: string, path: string) => void opened.push(`here ${path}`),
+    openTabBeside: (_kind: string, path: string) => void opened.push(`beside ${path}`),
+  } as unknown as WindowHandle
   const tabOpeners = {
     registerEditor: (name: string) => void registered.push(name),
   } as unknown as FileOpeners
@@ -160,6 +165,7 @@ const openPresetTab = async (
     asked,
     closed,
     registered,
+    opened,
     kind,
     getState: kind.getState,
     applyPathChanges: kind.applyPathChanges,
@@ -1121,5 +1127,67 @@ describe('the knob, as a field is typed', () => {
     await flushPromises()
     expect(state.place.value).toBe(2)
     expect(asked).toStrictEqual(['minutes'])
+  })
+})
+
+describe('a preset opened from elsewhere in the window', () => {
+  it('opens here under the title it was given, and keeps that title', async () => {
+    const { kind, opened } = await openPresetTab()
+    kind.openPreset('presets/Plan.md', 'Long plan')
+    kind.openPreset('presets/Plan.md')
+    expect(opened).toStrictEqual(['here presets/Plan.md', 'here presets/Plan.md'])
+    expect(kind.getTitle('presets/Plan.md')).toBe('Long plan')
+  })
+
+  it('is called by its file where it was given no title', async () => {
+    const { kind } = await openPresetTab()
+    kind.openPreset('presets/Plan.md')
+    expect(kind.getTitle('presets/Plan.md')).toBe('Plan.md')
+  })
+
+  it('opens beside the tab in front where it is asked to', async () => {
+    const { kind, opened } = await openPresetTab()
+    kind.openPreset('presets/Plan.md', '', 'beside')
+    expect(opened).toStrictEqual(['beside presets/Plan.md'])
+  })
+})
+
+describe('the tab closed by the window', () => {
+  it('is left to the preset, which writes what it owes and then closes it', async () => {
+    const { state, kind, closed } = await openPresetTab()
+    expect(kind.kind.onClose?.(state, 'Steady.md')).toBe(false)
+    await flushPromises()
+    expect(closed).toStrictEqual(['Steady.md'])
+  })
+})
+
+describe('a vault that does not answer', () => {
+  it('leaves the tab saying so, and not saying it is reading', async () => {
+    const { state } = await openPresetTab({}, curve, () => {
+      throw new Error('the vault is gone')
+    })
+    expect(state.errorMessage.value).toBe(words.unreachable)
+    expect(state.isWaiting.value).toBe(false)
+  })
+
+  it('says so where the curve of a goal chosen is not answered', async () => {
+    const { state } = await openPresetTab(
+      {},
+      (asked) => (asked.goal === 'retention' ? Promise.reject(new Error('gone')) : curve),
+      () => ({}),
+      neverWritten,
+    )
+    state.chooseGoal('retention')
+    await flushPromises()
+    expect(state.errorMessage.value).toBe(words.noCurve)
+  })
+
+  it('says so where the curve of a setting typed is not answered', async () => {
+    const { state } = await openPresetTab({}, (asked) =>
+      asked.newADay === 4 ? Promise.reject(new Error('gone')) : curve,
+    )
+    state.updateSetting('newADay', 4)
+    await flushPromises()
+    expect(state.errorMessage.value).toBe(words.noCurve)
   })
 })

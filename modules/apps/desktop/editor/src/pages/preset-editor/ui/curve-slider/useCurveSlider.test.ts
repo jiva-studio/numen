@@ -175,3 +175,86 @@ describe('the picture the pointer is read against', () => {
     expect(state.picture.value).toBe(element)
   })
 })
+
+/** A picture the pointer is read against, scaled and shifted as the test says. */
+const pictureAt = (a: number, e: number, isCaptured = false) => {
+  const done: string[] = []
+  const element = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {
+    getScreenCTM: () => ({ a, e }),
+    focus: () => void done.push('focus'),
+    setPointerCapture: (id: number) => void done.push(`capture ${id}`),
+    hasPointerCapture: () => isCaptured,
+    releasePointerCapture: (id: number) => void done.push(`release ${id}`),
+  })
+  return { element, done }
+}
+
+const pointer = (clientX: number, button = 0) =>
+  ({ clientX, button, pointerId: 7, preventDefault: vi.fn() }) as unknown as PointerEvent & {
+    preventDefault: ReturnType<typeof vi.fn>
+  }
+
+describe('the pointer on the picture', () => {
+  it('takes the knob to the place under it, and holds the pointer', () => {
+    const { state, emitted } = slider()
+    const { element, done } = pictureAt(2, 100)
+    state.setPicture(element)
+    const down = pointer(481)
+    state.onPointerDown(down)
+    expect(down.preventDefault).toHaveBeenCalled()
+    expect(done).toStrictEqual(['focus', 'capture 7'])
+    expect(emitted).toStrictEqual([['move', 1]])
+  })
+
+  it('leaves a button other than the first to the window', () => {
+    const { state, emitted } = slider()
+    const { element, done } = pictureAt(2, 100)
+    state.setPicture(element)
+    const down = pointer(481, 2)
+    state.onPointerDown(down)
+    expect(down.preventDefault).not.toHaveBeenCalled()
+    expect(done).toStrictEqual([])
+    expect(emitted).toStrictEqual([])
+  })
+
+  it('leaves the knob where it stands where the picture has no scale', () => {
+    const { state, emitted } = slider()
+    state.setPicture(pictureAt(0, 100).element)
+    state.onPointerDown(pointer(481))
+    expect(emitted).toStrictEqual([['move', 2]])
+  })
+
+  it('leaves the knob where it stands where there is no picture to read against', () => {
+    const { state, emitted } = slider()
+    state.onPointerDown(pointer(481))
+    const unscaled = Object.assign(document.createElement('div'), { setPointerCapture: () => {} })
+    state.setPicture(unscaled as unknown as SVGSVGElement)
+    state.onPointerDown(pointer(481))
+    expect(emitted).toStrictEqual([
+      ['move', 2],
+      ['move', 2],
+    ])
+  })
+
+  it('walks the knob while the pointer is held, and writes once it is let go', () => {
+    const { state, emitted } = slider()
+    const { element, done } = pictureAt(2, 100, true)
+    state.setPicture(element)
+    state.onPointerMove(pointer(481))
+    state.onPointerUp(pointer(481))
+    expect(emitted).toStrictEqual([['move', 1], ['commit']])
+    expect(done).toStrictEqual(['release 7'])
+  })
+
+  it('does nothing as a pointer it does not hold moves or is let go', () => {
+    const { state, emitted } = slider()
+    state.onPointerMove(pointer(481))
+    state.onPointerUp(pointer(481))
+    const { element, done } = pictureAt(2, 100, false)
+    state.setPicture(element)
+    state.onPointerMove(pointer(481))
+    state.onPointerUp(pointer(481))
+    expect(emitted).toStrictEqual([])
+    expect(done).toStrictEqual([])
+  })
+})
