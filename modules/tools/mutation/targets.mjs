@@ -24,7 +24,7 @@ export const SHARD_LINES = { go: 6000, ts: 4500 }
 export const MAX_SHARDS = 16
 
 /** Whether a path lies in a folder of helpers the tests are built with. */
-export const isTestSupport = (path) => /(^|\/)(testing|testsupport)\//.test(path)
+export const isTestSupport = (path) => /(^|\/)(testing|testsupport|fixtures)\//.test(path)
 
 /** Whether a repository path is source a `ts` target mutates. */
 export const isMutatedSource = (path) =>

@@ -43,6 +43,8 @@ A survivor is dealt with in one of two ways:
 
 Interface copy is not mutated: each `words.ts` file opens with `// Stryker disable StringLiteral: interface copy`.
 
+Test support is not mutated: files under `testing/`, `testsupport/` and `fixtures/` folders, `*_test.go`, `*.test.ts`, `*.stories.ts` and `testdata/`.
+
 ## Checking one file
 
 ```bash

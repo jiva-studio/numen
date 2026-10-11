@@ -114,6 +114,9 @@ test('source under test is told apart from tests, stories and barrels', () => {
   assert.equal(isMutatedGo('usecase/note/testdata/case.go'), false)
   assert.equal(isMutatedGo('internal/testsupport/indexfile/index.go'), false)
   assert.equal(isMutatedSource('modules/apps/desktop/editor/src/testing/answers.ts'), false)
+  assert.equal(isMutatedSource('modules/libs/ui/src/features/plex/fixtures/build.ts'), false)
+  assert.equal(isMutatedSource('modules/libs/ui/src/shared/fixtures/clock.ts'), false)
+  assert.equal(isMutatedGo('usecase/note/fixtures/case.go'), false)
 })
 
 test('the sandbox keeps the package and its test data and drops their siblings', () => {
