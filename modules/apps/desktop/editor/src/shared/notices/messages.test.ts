@@ -20,6 +20,33 @@ describe('a writer under a name', () => {
     })
   })
 
+  it('writes a report where no kind is given', () => {
+    const log = messageLog()
+    log.getWriter('command')('Renamed')
+
+    expect(log.messages.value[0]?.kind).toBe('report')
+  })
+
+  it('replaces what stands where only its kind differs', () => {
+    const log = messageLog()
+    const command = log.getWriter('command')
+
+    command('Renamed', 'report')
+    command('Renamed', 'error')
+
+    expect(log.messages.value).toHaveLength(1)
+    expect(log.messages.value[0]?.kind).toBe('error')
+  })
+
+  it('numbers the identities upward from one, across every name', () => {
+    const log = messageLog()
+    log.getWriter('command')('One')
+    log.getWriter('made')('Two')
+    log.getWriter('command')('Three')
+
+    expect(log.messages.value.map((one) => one.id)).toStrictEqual(['made#2', 'command#3'])
+  })
+
   it('gives every message an identity of its own', () => {
     const log = messageLog()
     const command = log.getWriter('command')
