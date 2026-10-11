@@ -145,6 +145,9 @@ func TestAPageThatCannotBeMovedIntoPlaceLeavesNothingBehind(t *testing.T) {
 	}
 
 	cache.Put(newDrawingID(0), []byte("page"))
+	if got := cache.Get(newDrawingID(0)); got != nil {
+		t.Errorf("a page that was never kept read back as %#v", got)
+	}
 
 	found, err := os.ReadDir(cache.GetDir())
 	if err != nil {
@@ -210,5 +213,46 @@ func TestASweepDropsWhatWasLookedAtLongestAgo(t *testing.T) {
 		if got := err == nil; got != isKept {
 			t.Errorf("drawing %d by name: kept = %v, want %v", at, got, isKept)
 		}
+	}
+}
+
+func TestTheDiskIsAFolderOfThisMachinesCache(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", "")
+	t.Setenv("HOME", t.TempDir())
+	under, err := os.UserCacheDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cache := NewDisk()
+	if cache == nil {
+		t.Fatal("no disk where the machine has a cache folder")
+	}
+	want := filepath.Join(under, "numen", "pages")
+	if cache.GetDir() != want {
+		t.Errorf("the folder is %s, want %s", cache.GetDir(), want)
+	}
+	if info, err := os.Stat(want); err != nil || !info.IsDir() {
+		t.Errorf("the folder was not made: %v", err)
+	}
+}
+
+func TestNoDiskWhereTheMachineKeepsNoCache(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", "")
+	t.Setenv("HOME", "")
+	if cache := NewDisk(); cache != nil {
+		t.Errorf("a disk in %s where the machine names no cache folder", cache.GetDir())
+	}
+}
+
+func TestNoDiskWhereItsFolderCannotBeMade(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "home")
+	if err := os.WriteFile(home, []byte("a file"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("XDG_CACHE_HOME", "")
+	t.Setenv("HOME", home)
+	if cache := NewDisk(); cache != nil {
+		t.Errorf("a disk in %s, under a file", cache.GetDir())
 	}
 }

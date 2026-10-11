@@ -1,9 +1,11 @@
 package pagecache
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"testing"
+	"testing/synctest"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 )
@@ -178,4 +180,76 @@ func TestAPageDroppedWhileBeingDrawnIsAnsweredAndNotHeld(t *testing.T) {
 // newDrawing draws a page of this many bytes.
 func newDrawing(size int) func() ([]byte, error) {
 	return func() ([]byte, error) { return make([]byte, size), nil }
+}
+
+func TestAFailedPageDroppedWhileBeingDrawnAnswersItsFailure(t *testing.T) {
+	cache := NewMemory(MostDrawn)
+	failure := errors.New("the page did not draw")
+	_, err := cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) {
+		cache.Drop(newTestID(0))
+		return nil, failure
+	})
+	if !errors.Is(err, failure) {
+		t.Errorf("got %v, want %v", err, failure)
+	}
+}
+
+// Room is made for as many pages as it takes, oldest first.
+func TestRoomIsMadeForAPageLargerThanTheOldest(t *testing.T) {
+	cache := NewMemory(100)
+	cache.Draw(t.Context(), newTestID(0), newDrawing(40))
+	cache.Draw(t.Context(), newTestID(1), newDrawing(40))
+	cache.Draw(t.Context(), newTestID(2), newDrawing(90))
+
+	for at, isHeld := range []bool{false, false, true} {
+		if got := cache.Has(newTestID(at)); got != isHeld {
+			t.Errorf("page %d: held = %v, want %v", at, got, isHeld)
+		}
+	}
+}
+
+// A second ask for a page being drawn waits for that drawing, and is
+// answered with its failure.
+func TestAnAskWaitingOnAFailedDrawingIsAnsweredWithItsFailure(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		cache := NewMemory(MostDrawn)
+		failure := errors.New("the page did not draw")
+		release := make(chan struct{})
+		answers := make([]error, 2)
+		var wg sync.WaitGroup
+
+		wg.Go(func() {
+			_, answers[0] = cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) {
+				<-release
+				return nil, failure
+			})
+		})
+		synctest.Wait()
+		wg.Go(func() {
+			_, answers[1] = cache.Draw(t.Context(), newTestID(0), newDrawing(10))
+		})
+		synctest.Wait()
+		close(release)
+		wg.Wait()
+
+		for at, err := range answers {
+			if !errors.Is(err, failure) {
+				t.Errorf("ask %d was answered %v, want %v", at, err, failure)
+			}
+		}
+	})
+}
+
+func TestAnAskThatStopsWaitingIsAnsweredBusy(t *testing.T) {
+	cache := NewMemory(MostDrawn)
+	stopped, stop := context.WithCancel(t.Context())
+	stop()
+	var waited error
+	cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) {
+		_, waited = cache.Draw(stopped, newTestID(0), newDrawing(10))
+		return make([]byte, 10), nil
+	})
+	if !errors.Is(waited, pool.ErrBusy) {
+		t.Errorf("got %v, want %v", waited, pool.ErrBusy)
+	}
 }

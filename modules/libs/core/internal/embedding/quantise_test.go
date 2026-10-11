@@ -33,6 +33,29 @@ func TestBitsKeepTheSign(t *testing.T) {
 	}
 }
 
+func TestCoarseKeepsTheSignOfAQuantisedVector(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   []int8
+		want []byte
+	}{
+		{"one positive dimension", []int8{1}, []byte{0b1000_0000}},
+		{"one negative dimension", []int8{-1}, []byte{0}},
+		{"zero is not positive", []int8{0}, []byte{0}},
+		{"first and last of a byte", []int8{127, -1, -1, -1, -1, -1, -1, 5}, []byte{0b1000_0001}},
+		{"a ninth dimension starts a second byte", []int8{-1, -1, -1, -1, -1, -1, -1, -1, 1}, []byte{0, 0b1000_0000}},
+		{"a partial byte is padded with zeros", []int8{1, 1, 1}, []byte{0b1110_0000}},
+		{"every dimension of two bytes", []int8{1, -1, 1, 1, -1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1}, []byte{0b1011_0100, 0b1110_0011}},
+		{"no dimensions", []int8{}, []byte{}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := embedding.Coarse(c.in); got == nil || !slices.Equal(got, c.want) {
+				t.Errorf("got %#v, want %08b", got, c.want)
+			}
+		})
+	}
+}
+
 func TestBytesRoundTrip(t *testing.T) {
 	step := port.Int8Scale / 127
 	for _, c := range []struct {
