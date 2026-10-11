@@ -367,6 +367,17 @@ describe('the marks of whole lines held in the state', () => {
     expect(getStanding(moved)).toHaveLength(0)
   })
 
+  it('keep their marks and take the nodes of the new parse when the same blocks are found', () => {
+    const { state, language } = createLinesState(RULE)
+    const was = state.field(wholeLines)
+
+    const swapped = state.update({ effects: language.reconfigure(markdown()) }).state
+    const now = swapped.field(wholeLines)
+    expect(now.marks).toBe(was.marks)
+    expect(now.nodes).toEqual([{ name: 'HorizontalRule', from: 3, to: 6 }])
+    expect(now.nodes).not.toBe(was.nodes)
+  })
+
   it('follow the parser when it is swapped without the text changing', () => {
     const { state, language } = createLinesState(INTRO)
     expect(getStanding(state)).toHaveLength(1)
@@ -462,6 +473,13 @@ describe('the marks drawn for the lines on screen', () => {
     const strongs = getStrongs(view)
     expect(strongs[0]).toBe(5984)
     expect(strongs.at(-1)).toBe(7992)
+    view.destroy()
+  })
+
+  it('are places the caret cannot be put', () => {
+    const { view } = open(DOC, [{ from: 4003, to: 4005 }])
+    const sizes = view.state.facet(EditorView.atomicRanges).map((get) => get(view).size)
+    expect(sizes.some((size) => size > 0)).toBe(true)
     view.destroy()
   })
 
