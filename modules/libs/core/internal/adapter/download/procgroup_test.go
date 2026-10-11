@@ -43,7 +43,7 @@ func readPID(path string) (int, bool) {
 // A script that starts a child of its own and then waits for it, the way
 // yt-dlp waits for ffmpeg. The child's output is detached, so only the process
 // group links them.
-func spawningScript(t *testing.T, folder string) program {
+func spawningScript(t *testing.T) program {
 	t.Helper()
 	at := filepath.Join(t.TempDir(), "tool")
 	body := "#!/bin/sh\nsleep 600 >/dev/null 2>&1 &\necho $! > \"$1/child.tmp\"\n" +
@@ -63,7 +63,7 @@ func TestCancellingARunEndsEveryProcessTheToolStarted(t *testing.T) {
 
 	returned := make(chan error, 1)
 	go func() {
-		_, err := run(ctx, spawningScript(t, folder), nil, folder)
+		_, err := run(ctx, spawningScript(t), nil, folder)
 		returned <- err
 	}()
 
@@ -92,16 +92,13 @@ func TestCancellingARunEndsEveryProcessTheToolStarted(t *testing.T) {
 // A folder the tool's child was writing in can be removed once the run is
 // cancelled.
 func TestTheFolderOfACancelledRunCanBeRemoved(t *testing.T) {
-	folder, err := os.MkdirTemp("", "numen-copy-")
-	if err != nil {
-		t.Fatal(err)
-	}
+	folder := t.TempDir()
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		_, _ = run(ctx, spawningScript(t, folder), nil, folder)
+		_, _ = run(ctx, spawningScript(t), nil, folder)
 	}()
 	waitFor(t, "the tool starting its child", func() bool {
 		_, ok := readPID(filepath.Join(folder, "child"))
