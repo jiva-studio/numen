@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import type { Task } from '@/shared/notices/task'
@@ -79,5 +79,73 @@ describe('useWindowStatusBar', () => {
     // Dismissing the failed task removes it from the status bar display
     statusBar.onDismissTask('failed-task')
     expect(statusBar.tasks.value).toHaveLength(0)
+  })
+})
+
+describe('useWindowStatusBar detail and unit', () => {
+  const base: Task = {
+    id: 't',
+    label: 'Reading',
+    about: '',
+    done: 1,
+    total: 4,
+    counting: 'things',
+    error: '',
+    isAsked: false,
+  }
+  const first = (task: Task) => useWindowStatusBar({ tasks: ref([task]) }).tasks.value[0]!
+
+  it('carries what the task is about as its detail, and nothing where it is about nothing', () => {
+    expect(first({ ...base, about: 'doc.pdf' }).detail).toBe('doc.pdf')
+    expect(first(base).detail).toBeUndefined()
+  })
+
+  it('names the unit a task counts, and none where it counts things', () => {
+    expect(first({ ...base, counting: 'seconds' }).unit).toBe('seconds')
+    expect(first(base).unit).toBeUndefined()
+  })
+
+  it('lets a running task be cancelled and a failed one not', () => {
+    expect(first(base).canCancel).toBe(true)
+    expect(first({ ...base, error: 'broken' }).canCancel).toBe(false)
+  })
+
+  it('carries the counts of a task that has a total, and none of one that has not', () => {
+    expect(first(base)).toMatchObject({ currentCount: 1, totalCount: 4, progress: 25 })
+    const none = first({ ...base, total: 0 })
+    expect(none.currentCount).toBeUndefined()
+    expect(none.totalCount).toBeUndefined()
+  })
+})
+
+describe('useWindowStatusBar groups and handlers', () => {
+  const plain: Task = {
+    id: 't',
+    label: 'Sorting',
+    about: 'shelf',
+    done: 0,
+    total: 0,
+    counting: 'things',
+    error: '',
+    isAsked: false,
+  }
+
+  it('groups a task that matches no pattern under its label, or under a general name without one', () => {
+    const bar = useWindowStatusBar({ tasks: ref([plain, { ...plain, id: 'u', label: '' }]) })
+    expect(bar.tasks.value.map((one) => one.group)).toEqual(['Sorting', 'Background Tasks'])
+  })
+
+  it('hands cancel and retry to the callbacks given, and does nothing without them', () => {
+    const onCancel = vi.fn()
+    const onRetry = vi.fn()
+    const bar = useWindowStatusBar({ tasks: ref([plain]), onCancel, onRetry })
+    bar.onCancelTask('t')
+    bar.onRetryTask('t')
+    expect(onCancel).toHaveBeenCalledWith('t')
+    expect(onRetry).toHaveBeenCalledWith('t')
+
+    const bare = useWindowStatusBar({ tasks: ref([plain]) })
+    expect(() => bare.onCancelTask('t')).not.toThrow()
+    expect(() => bare.onRetryTask('t')).not.toThrow()
   })
 })
