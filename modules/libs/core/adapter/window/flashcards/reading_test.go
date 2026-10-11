@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -131,5 +132,94 @@ func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
 	}
 	if said := stream.Msg().GetTasks(); len(said) != 0 {
 		t.Errorf("a window doing nothing said %+v", said)
+	}
+}
+
+// A vault is claimed by one reader at a time: the claim that begins a reading
+// says it is underway, a claim while it runs says so and begins nothing, a
+// reading that failed hands back why and begins nothing, and a vault read clean
+// begins nothing and is not underway.
+func TestAVaultIsClaimedForOneReadingAtATime(t *testing.T) {
+	r := &readings{}
+	r.start(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	v := domain.Vault{ID: "one"}
+
+	read, under, underway, reason := r.claim(v)
+	if read == nil || under == nil || !underway || reason != "" {
+		t.Fatalf("the first claim came back %v %v %v %q", read != nil, under != nil, underway, reason)
+	}
+
+	read, _, underway, reason = r.claim(v)
+	if read != nil || !underway || reason != "" {
+		t.Errorf("a claim while it ran came back %v %v %q", read != nil, underway, reason)
+	}
+
+	r.finish(v, errors.New("the folder is not there"))
+	read, _, underway, reason = r.claim(v)
+	if read != nil || underway || reason != "the folder is not there" {
+		t.Errorf("a claim after a failure came back %v %v %q", read != nil, underway, reason)
+	}
+
+	r.forget(v.ID)
+	r.finish(v, nil)
+	read, _, underway, reason = r.claim(v)
+	if read != nil || underway || reason != "" {
+		t.Errorf("a claim after a clean reading came back %v %v %q", read != nil, underway, reason)
+	}
+}
+
+// A window that reads nothing claims nothing.
+func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
+	r := &readings{}
+	read, _, underway, reason := r.claim(domain.Vault{ID: "one"})
+	if read != nil || underway || reason != "" {
+		t.Errorf("the claim came back %v %v %q", read != nil, underway, reason)
+	}
+}
+
+// A window with no index holds no vault.
+func TestAWindowWithNoIndexHoldsNoVault(t *testing.T) {
+	if (&API{}).hasVault(t.Context(), domain.Vault{ID: "one"}) {
+		t.Error("a window with no index holds a vault")
+	}
+}
+
+// A reading that failed stays in the list of work with why it failed.
+func TestAReadingThatFailedStaysAsWorkWithWhy(t *testing.T) {
+	isolate(t)
+	api, _ := newAPI(t)
+	unread := testsupport.NewVault(t, deck)
+	api.Registry = registry{held: []domain.Vault{unread}}
+	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
+		return errors.New("the folder is not there")
+	})
+
+	api.countVault(t.Context(), unread)
+	testsupport.WaitFor(t, func() bool {
+		for _, at := range api.Window.Tasking.List() {
+			if at.Doing == "Reading the vault" && at.Error == "the folder is not there" {
+				return true
+			}
+		}
+		return false
+	})
+}
+
+// A vault read wakes everyone waiting to hear that something moved.
+func TestAVaultReadWakesTheListeners(t *testing.T) {
+	isolate(t)
+	api, _ := newAPI(t)
+	unread := testsupport.NewVault(t, deck)
+	api.Registry = registry{held: []domain.Vault{unread}}
+	api.Reading(t.Context(), func(context.Context, domain.Vault) error { return nil })
+
+	heard, stop := api.listeners.listen()
+	t.Cleanup(stop)
+	api.countVault(t.Context(), unread)
+
+	select {
+	case <-heard:
+	case <-time.After(30 * time.Second):
+		t.Fatal("nobody was told the vault was read")
 	}
 }
