@@ -271,6 +271,7 @@ func TestAVaultAddedFromAFolderThatCannotBeNamedIsRefusedAsItIs(t *testing.T) {
 	if err == nil {
 		t.Fatalf("a path that cannot be made absolute was added:\n%s", out)
 	}
+	t.Logf("add answered: %v", err)
 	if strings.Contains(err.Error(), "absolute") {
 		t.Errorf("the vault was asked to add the empty path: %v", err)
 	}
