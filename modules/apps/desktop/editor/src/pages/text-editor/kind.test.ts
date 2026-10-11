@@ -13,10 +13,10 @@ const createHandle = (): WindowHandle => ({
   openTabBeside: vi.fn<WindowHandle['openTabBeside']>(() => Promise.resolve('tab')),
   show: vi.fn<WindowHandle['show']>(),
   closeTab: vi.fn<WindowHandle['closeTab']>(),
-  each: vi.fn<WindowHandle['each']>(() => []),
-  last: vi.fn<WindowHandle['last']>(() => null),
+  each: () => [],
+  last: () => null,
   front: vi.fn<WindowHandle['front']>(() => null),
-  getTabState: vi.fn<WindowHandle['getTabState']>(() => null),
+  getTabState: () => null,
 })
 
 const createCore = (): TextEditorTabDeps => ({
