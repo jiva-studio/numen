@@ -27,6 +27,9 @@ type Config struct {
 	// Threads is how many threads the encoder may use. Zero takes one per core, up to eight.
 	Threads int `json:"threads"`
 
+	// Workers is how many goroutines share the resampling and feature extraction of a recording. It is not a setting: the composition root fills it from the compute plan, and zero takes one per core.
+	Workers int `json:"-"`
+
 	Model     ParakeetModel  `json:"model"`
 	Segmenter SegmenterModel `json:"segmenter"`
 

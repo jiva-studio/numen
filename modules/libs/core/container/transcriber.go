@@ -14,13 +14,21 @@ import (
 // every other choice of adapter.
 func (c Config) TranscriberReady() bool { return transcription.Ready(c.Transcription) }
 
+// getTranscription is the transcription settings with the workers the compute
+// plan resolves to; a container without a plan leaves them at one per CPU.
+func (c Config) getTranscription() transcription.Config {
+	cfg := c.Transcription
+	cfg.Workers = c.ResolvedCompute.Workers
+	return cfg
+}
+
 // Transcriber is what listens to a recording on this machine, opened now: the
 // transcriber, what gives it back, and why there is none.
 //
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Transcribing instead.
 func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, closer func() error, why error) {
-	models, err := transcription.Open(ctx, c.Transcription)
+	models, err := transcription.Open(ctx, c.getTranscription())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -56,7 +64,7 @@ func (c Config) OpenTranscriptionWorker(
 			Open: func(
 				ctx context.Context, tell func(what string, done, total int64),
 			) (port.Transcriber, func() error, error) {
-				cfg := c.Transcription
+				cfg := c.getTranscription()
 				cfg.Progress = tell
 				models, err := transcription.Open(ctx, cfg)
 				if err != nil {

@@ -144,6 +144,19 @@ The **core budget** is the number of hardware threads CPU-bound work may occupy 
 | Embedding batch | 16 | 1 per 256 MB free, from 16 to 64 | 1 per 128 MB free, from 32 to 256 |
 | LLM concurrency | 1 | 2 | 4 |
 
+**Where each figure is read.** The resolved plan is the source of every limit below; a limit the user sets in a section of its own wins over it, and a component built without a plan keeps the fallback in the last column.
+
+| Consumer | Limit | Fallback without a plan |
+| --- | --- | --- |
+| Local embedding batch | embedding batch, unless the model names `batch_texts` | the model's own |
+| OCR | OCR threads and sessions | unresolved counts, then named defaults |
+| Proofreading, batches in flight | LLM concurrency, unless the profile names `in_flight` | 4 at a service, 2 at the command line |
+| Embedding service, requests in flight | LLM concurrency | 4 |
+| Search, sources extracted at once | workers | 4 |
+| Cards, decks parsed and curve places worked out at once | workers | one per CPU |
+| PDF worker pool | workers, at least 2 | one per CPU, at least 2 |
+| Transcription, resampling and feature extraction | workers | one per CPU |
+
 OCR threads × sessions never exceeds the core budget. The budget is split into 4 sessions, or more when one session would need over 8 threads; sessions are capped at 16 and at the budget, and each session gets the budget divided by the sessions, at most 8 threads.
 
 Free memory is what the operating system reports as available. When only installed memory is known, half of it is taken as free; when neither is known, 4096 MB is taken as free. macOS does not report free memory, so it takes the second rule.
@@ -476,7 +489,7 @@ A profile is flat: every key sits at the profile's own level, and `use` says whi
 | `use` | `service` or `agent`. |
 | `batch_size` | how many lines one request carries. 40 at a service, 60 at the command line, where starting it costs the same whatever it is asked. |
 | `overlap` | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows it. |
-| `in_flight` | how many batches are being asked about at any moment. 4 at a service, 2 at the command line, which is the person's own model and is left most of itself while they are using it. A batch costs what the model writes back rather than what it took to ask, so this is what a run's length answers to. |
+| `in_flight` | how many batches are being asked about at any moment. Left out, it is the performance profile's LLM concurrency; with no performance profile, 4 at a service and 2 at the command line, which is the person's own model and is left most of itself while they are using it. A batch costs what the model writes back rather than what it took to ask, so this is what a run's length answers to. |
 | `attempts` | `service`: how many times one request is sent before its error is reported. A 429, 408, 5xx or timeout is sent again; any other failure is reported at once. |
 | `delay_ms` | `service`: the ceiling, in milliseconds, of the wait after a request first fails. It doubles with each failure, and the wait is drawn at random below it. A `Retry-After` from the service sets the wait instead. |
 | `max_delay_ms` | `service`: the longest any wait is, including one the service asks for. |

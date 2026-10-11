@@ -74,7 +74,7 @@ func (c Config) NewSearch(db *Index, asking port.Embedder, errorHandler func(err
 // the index open for asking alone.
 func (c Config) NewSearchOver(passages port.PassageQueries, asking port.Embedder, errorHandler func(error)) search.Search {
 	return search.New(passages, c.VaultReaders(), c.GetDerivedStores(), c.TextExtractor(),
-		asking, c.Embedding.Floor, errorHandler)
+		asking, c.Embedding.Floor, errorHandler).WithExtractors(c.ResolvedCompute.Workers)
 }
 
 // provider is which adapter answers for one half of the work, under the
@@ -88,7 +88,7 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 	switch where.Use {
 	case embed.UseService:
 		service, _ := where.Service()
-		client, err := openai.New(is, service)
+		client, err := c.openServiceClient(is, service)
 		if err != nil {
 			return embedders.Provider{}, err
 		}
@@ -110,6 +110,20 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 	}
 	return embedders.Provider{}, fmt.Errorf("vectors are made %q, and they are made %q or %q",
 		where.Use, embed.UseLocal, embed.UseService)
+}
+
+// openServiceClient is the client for a hosted model, sending as many requests
+// at once as the compute plan's LLM concurrency. A container without a plan
+// leaves the client's own limit.
+func (c Config) openServiceClient(is port.EmbeddingModel, service embed.ServiceModel) (*openai.Client, error) {
+	client, err := openai.New(is, service)
+	if err != nil {
+		return nil, err
+	}
+	if c.ResolvedCompute.LlmConcurrency > 0 {
+		client.InFlight = c.ResolvedCompute.LlmConcurrency
+	}
+	return client, nil
 }
 
 // openLocal is the engine that runs the model on this machine. A desktop runs

@@ -16,9 +16,9 @@ import (
 // defaultLimit is how many results a caller that names no number gets.
 const defaultLimit = 20
 
-// defaultExtractors is how many sources a search extracts at once. Each one
-// holds its decoded text until its passages are cut, so it is also the most
-// decoded sources a search holds.
+// defaultExtractors is how many sources a search extracts at once when no limit
+// is set. Each one holds its decoded text until its passages are cut, so it is
+// also the most decoded sources a search holds.
 const defaultExtractors = 4
 
 // lexicalCandidates is how many candidates the words keep for every result
@@ -136,6 +136,13 @@ func New(passages port.PassageQueries, readers port.VaultReaders, derived port.D
 		errorHandler: errorHandler,
 		cache:        NewQueryCache(defaultCacheCapacity),
 	}
+}
+
+// WithExtractors returns a search that extracts up to n sources at once. Zero or
+// less is defaultExtractors.
+func (u Search) WithExtractors(n int) Search {
+	u.extractors = n
+	return u
 }
 
 // WithCache returns a search that uses the query cache given.
@@ -310,7 +317,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	filled := make([]domain.Passage, len(found))
 	keep := make([]bool, len(found))
 	g, gctx := errgroup.WithContext(ctx)
-	g.SetLimit(u.getExtractors())
+	g.SetLimit(u.GetExtractors())
 	for _, source := range order {
 		if gctx.Err() != nil {
 			break
@@ -336,8 +343,8 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	return out, nil
 }
 
-// getExtractors is how many sources a search extracts at once.
-func (u Search) getExtractors() int {
+// GetExtractors is how many sources a search extracts at once.
+func (u Search) GetExtractors() int {
 	if u.extractors > 0 {
 		return u.extractors
 	}

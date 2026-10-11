@@ -40,7 +40,15 @@ func (c Config) profile(name string) (proofreading.Profile, error) {
 		return proofreading.Profile{}, fmt.Errorf(
 			"proofreading profile %q names no model to use with %q", name, profile.Use)
 	}
-	return profile, nil
+	return c.planInFlight(profile), nil
+}
+
+// planInFlight is the profile with the number of batches it asks about at once
+// settled: its own, then the performance profile's LLM concurrency, then the
+// default of its kind.
+func (c Config) planInFlight(profile proofreading.Profile) proofreading.Profile {
+	profile.InFlight = profile.GetInFlight(c.ResolvedCompute.LlmConcurrency)
+	return profile
 }
 
 // Proofreader is what puts a reading right at the profile named, told what it
@@ -92,7 +100,7 @@ func (c Config) GetSpeechProofreading() source.ProofreadingConfig {
 // getProofreading is what a reading of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
 func (c Config) getProofreading(config proofreading.Proofread) source.ProofreadingConfig {
-	profile := c.Proofreading.Profiles[config.Profile]
+	profile := c.planInFlight(c.Proofreading.Profiles[config.Profile])
 	return source.ProofreadingConfig{
 		IsNamed:     config.Profile != "",
 		IsAutomatic: config.IsAutomatic,

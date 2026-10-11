@@ -67,6 +67,9 @@ type Transcriber struct {
 	segmenter *ort.Session
 	cutting   SegmenterModel
 
+	// workers is how many goroutines share the signal processing of a stretch.
+	workers int
+
 	model port.TranscriptionModel
 
 	// One set of sessions, one stretch at a time. The library is safe to call
@@ -95,6 +98,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		pieces:  pieces,
 		blank:   blank,
 		cutting: cfg.Segmenter,
+		workers: cfg.Workers,
 		model: port.TranscriptionModel{
 			Model:     getModelName(cfg.Model.Name, found.encoder),
 			Segmenter: getModelName(cfg.Segmenter.Name, found.segmenter),
@@ -155,7 +159,7 @@ func (t *Transcriber) Transcribe(ctx context.Context, audio port.Audio) (string,
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	feature, frames := logMel(audio.Samples)
+	feature, frames := logMel(audio.Samples, t.workers)
 	if frames < 2 {
 		return "", nil
 	}

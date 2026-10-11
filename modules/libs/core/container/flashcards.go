@@ -47,6 +47,16 @@ func (c Config) DayStarts() time.Duration {
 	return held.DayStarts()
 }
 
+// getCores is how many decks are parsed, and how many places of a curve are
+// worked out, at once: the compute plan's workers, or one per CPU when the
+// container has no plan.
+func (c Config) getCores() int {
+	if c.ResolvedCompute.Workers > 0 {
+		return c.ResolvedCompute.Workers
+	}
+	return runtime.GOMAXPROCS(0)
+}
+
 // Schedules is where the working out is remembered between launches: the folder
 // the configuration names, or the platform's cache location.
 func (c Config) Schedules() (port.ScheduleStore, error) {
@@ -99,9 +109,7 @@ func (c Config) Flashcards(
 	}
 
 	faces := flashcards.NewListCardFaces(c.VaultReaders(), notes, links)
-	// How many decks are parsed at once is what this machine can run at once,
-	// which is a fact only here is allowed to read.
-	faces.Cores = runtime.GOMAXPROCS(0)
+	faces.Cores = c.getCores()
 	// A deck or stencil this window writes is forgotten before the index is
 	// brought level with it.
 	leveled := func(ctx context.Context, v domain.Vault, paths []string) error {
@@ -137,9 +145,7 @@ func (c Config) Flashcards(
 	counted.Cache = counting
 
 	curves := flashcards.NewProjectCurve(faces, schedules, presets, day, now)
-	// How many places of a curve run at once is what this machine can run at
-	// once, which is a fact only here is allowed to read.
-	curves.Cores = runtime.GOMAXPROCS(0)
+	curves.Cores = c.getCores()
 
 	return flashcards.Scenarios{
 		CardFaces: faces,

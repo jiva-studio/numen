@@ -45,13 +45,13 @@ func TestAProfileKeepsTheDefaultsOfItsKind(t *testing.T) {
 		service.MaxDelayMS != proofreading.DefaultMaxDelayMS {
 		t.Errorf("a service retries %d times from %d to %d", service.Attempts, service.DelayMS, service.MaxDelayMS)
 	}
-	if service.BatchSize != proofreading.DefaultBatchSize || service.InFlight != proofreading.DefaultInFlight {
-		t.Errorf("a service carries %d lines and %d at once", service.BatchSize, service.InFlight)
+	if service.BatchSize != proofreading.DefaultBatchSize || service.InFlight != 0 {
+		t.Errorf("a service carries %d lines and %d at once, and names no number at once", service.BatchSize, service.InFlight)
 	}
 
 	agent := profile(t, cfg, "mine")
 	if agent.BatchSize != proofreading.DefaultAgentBatchSize ||
-		agent.InFlight != proofreading.DefaultAgentInFlight {
+		agent.InFlight != 0 {
 		t.Errorf("the command line carries %d lines and %d at once", agent.BatchSize, agent.InFlight)
 	}
 	if agent.BaseURL != "" {
@@ -176,5 +176,50 @@ func TestAKeyTheFileDoesNotCarryComesFromTheEnvironment(t *testing.T) {
 	}
 	if named.Key() != "sk-from-somewhere" {
 		t.Errorf("the variable the profile names holds %q", named.Key())
+	}
+}
+
+func TestAProfileNamingNoNumberAtOnceTakesTheNumberPlannedForIt(t *testing.T) {
+	cfg := read(t, `{"profiles":{
+		"openrouter":{"use":"service","name":"some-model"},
+		"mine":{"use":"agent","model":"haiku"}
+	}}`)
+	for _, name := range []string{"openrouter", "mine"} {
+		if got := profile(t, cfg, name).GetInFlight(7); got != 7 {
+			t.Errorf("%s asks about %d batches at once, want the 7 planned", name, got)
+		}
+	}
+}
+
+func TestAProfileNamingANumberAtOnceKeepsItWhateverIsPlanned(t *testing.T) {
+	cfg := read(t, `{"profiles":{"openrouter":{"use":"service","name":"some-model","in_flight":3}}}`)
+	if got := profile(t, cfg, "openrouter").GetInFlight(7); got != 3 {
+		t.Errorf("a service asks about %d batches at once, want the 3 it names", got)
+	}
+}
+
+func TestAProfileWithNothingPlannedTakesTheDefaultOfItsKind(t *testing.T) {
+	cfg := read(t, `{"profiles":{
+		"openrouter":{"use":"service","name":"some-model"},
+		"mine":{"use":"agent","model":"haiku"}
+	}}`)
+	if got := profile(t, cfg, "openrouter").GetInFlight(0); got != proofreading.DefaultInFlight {
+		t.Errorf("a service asks about %d batches at once, want %d", got, proofreading.DefaultInFlight)
+	}
+	if got := profile(t, cfg, "mine").GetInFlight(0); got != proofreading.DefaultAgentInFlight {
+		t.Errorf("the command line asks about %d batches at once, want %d", got, proofreading.DefaultAgentInFlight)
+	}
+}
+
+func TestANumberAtOnceIsWrittenOnlyWhenTheProfileNamesOne(t *testing.T) {
+	cfg := read(t, `{"profiles":{
+		"unnamed":{"use":"service","name":"some-model"},
+		"named":{"use":"service","name":"some-model","in_flight":3}
+	}}`)
+	if raw, _ := json.Marshal(profile(t, cfg, "unnamed")); strings.Contains(string(raw), "in_flight") {
+		t.Errorf("a profile naming no number is written as %s", raw)
+	}
+	if raw, _ := json.Marshal(profile(t, cfg, "named")); !strings.Contains(string(raw), `"in_flight":3`) {
+		t.Errorf("a profile naming 3 is written as %s", raw)
 	}
 }
