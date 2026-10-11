@@ -272,6 +272,30 @@ func TestACopyKeptInTheApplicationsFolder(t *testing.T) {
 	}
 }
 
+// A copy already in the application's folder is not downloaded a second
+// time, and the file opened to check for it is closed, not leaked.
+func TestACopyAlreadyInTheApplicationsFolder(t *testing.T) {
+	from := &site{bytes: []byte("the bytes of a video")}
+	u, kept, _ := newImportURL(t, pointsAtAVideo, from)
+
+	if _, err := u.Copy(t.Context(), first, videoNote); err != nil {
+		t.Fatal(err)
+	}
+	got, err := u.Copy(t.Context(), first, videoNote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.IsExisted {
+		t.Error("the video was downloaded again over a copy already standing")
+	}
+	if strings.Count(strings.Join(from.asked, "\n"), "download") != 1 {
+		t.Errorf("the site was asked %v", from.asked)
+	}
+	if kept.closeCount() != kept.opens {
+		t.Errorf("checking for an existing copy opened %d files and closed %d", kept.opens, kept.closeCount())
+	}
+}
+
 // `importing.copies_to_vault` keeps a copy beside the note, as a file the
 // person sees in their own folder and plays from where it lies.
 func TestACopyKeptBesideTheNote(t *testing.T) {
