@@ -160,3 +160,21 @@ func TestAnExcerptIsOneLineOfAtMostOneHundredSixtyCharacters(t *testing.T) {
 		}
 	}
 }
+
+func TestAHalfThatCannotRunIsHeardAboutBesideTheAnswer(t *testing.T) {
+	t.Parallel()
+	given := searchingIn(t.TempDir(), answers{}, nil)
+	open := given.Search
+	given.Search = func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
+		errorHandler(errRefused)
+		return open(ctx, errorHandler)
+	}
+
+	_, beside, err := runSaying(t, given, "search", "shelf", "bees")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if beside != "answering by words alone: refused on purpose\n" {
+		t.Errorf("search said beside its answer %q", beside)
+	}
+}

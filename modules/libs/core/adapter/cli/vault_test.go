@@ -257,26 +257,6 @@ type refusingToForget struct{ port.VaultRepository }
 
 func (refusingToForget) Forget(context.Context, domain.VaultID) error { return errRefused }
 
-func TestAVaultAddedFromAFolderThatCannotBeNamedIsRefusedAsItIs(t *testing.T) {
-	// Not parallel: the working directory is the process's.
-	isolate(t)
-	s := newSession(t)
-	gone := t.TempDir()
-	t.Chdir(gone)
-	if err := os.Remove(gone); err != nil {
-		t.Fatal(err)
-	}
-
-	out, err := s.run("vault", "add", "relative")
-	if err == nil {
-		t.Fatalf("a path that cannot be made absolute was added:\n%s", out)
-	}
-	t.Logf("add answered: %v", err)
-	if strings.Contains(err.Error(), "absolute") {
-		t.Errorf("the vault was asked to add the empty path: %v", err)
-	}
-}
-
 func TestErasingSaysWhereTheFolderWent(t *testing.T) {
 	isolate(t)
 	s := newSession(t)

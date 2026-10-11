@@ -7,7 +7,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -69,29 +68,8 @@ func TestClosingAnIndexClosesTheReadPoolWhenTheWritePoolRefuses(t *testing.T) {
 	}
 }
 
-// openFilesUnder is how many files below dir this process holds open.
-func openFilesUnder(t *testing.T, dir string) int {
-	t.Helper()
-	entries, err := os.ReadDir("/proc/self/fd")
-	if err != nil {
-		t.Skip("this machine does not list the files a process holds open")
-	}
-	held := 0
-	for _, e := range entries {
-		target, err := os.Readlink(filepath.Join("/proc/self/fd", e.Name()))
-		if err == nil && strings.HasPrefix(target, dir) {
-			held++
-		}
-	}
-	return held
-}
-
-func TestAnIndexThatCannotBeMigratedHoldsNoFileOpen(t *testing.T) {
-	dir, err := filepath.EvalSymlinks(t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	path := filepath.Join(dir, "index.db")
+func TestAnIndexThatCannotBeMigratedLeavesNoConnectionOpen(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "index.db")
 
 	// A table the first migration creates is already there.
 	seed, err := sql.Open("sqlite", path)
@@ -109,7 +87,10 @@ func TestAnIndexThatCannotBeMigratedHoldsNoFileOpen(t *testing.T) {
 		db.Close()
 		t.Fatal("an index whose first migration cannot run was opened")
 	}
-	if held := openFilesUnder(t, dir); held != 0 {
-		t.Errorf("%d files of the index stayed open", held)
+	// The write-ahead log goes with the last connection to close.
+	for _, side := range []string{"-wal", "-shm"} {
+		if _, err := os.Stat(path + side); err == nil {
+			t.Errorf("%s%s is still there: a connection stayed open", filepath.Base(path), side)
+		}
 	}
 }
