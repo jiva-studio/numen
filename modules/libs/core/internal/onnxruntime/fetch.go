@@ -106,7 +106,6 @@ func Fetch(ctx context.Context, s Settings, address string) (string, error) {
 func GetCacheName(address string) string {
 	sum := sha256.Sum256([]byte(address))
 	base := path.Base(address)
-	// gomutants:disable-next-line EXPRESSION_REMOVE reason="path.Base never returns an empty string"
 	if base == "" || base == "." || base == "/" {
 		base = "model.onnx"
 	}
@@ -163,20 +162,13 @@ func download(ctx context.Context, s Settings, address, at string) error {
 		os.Remove(part)
 		return fmt.Errorf("fetching %s: %w", address, err)
 	}
-	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="a regular file that was just written does not fail to sync or close"
 	if err := file.Sync(); err != nil {
-		// gomutants:disable-next-line STATEMENT_REMOVE reason="a regular file that was just written does not fail to sync or close"
 		file.Close()
-		// gomutants:disable-next-line STATEMENT_REMOVE reason="a regular file that was just written does not fail to sync or close"
 		os.Remove(part)
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="a regular file that was just written does not fail to sync or close"
 		return err
 	}
-	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="a regular file that was just written does not fail to sync or close"
 	if err := file.Close(); err != nil {
-		// gomutants:disable-next-line STATEMENT_REMOVE reason="a regular file that was just written does not fail to sync or close"
 		os.Remove(part)
-		// gomutants:disable-next-line RETURN_ERROR_NIL reason="a regular file that was just written does not fail to sync or close"
 		return err
 	}
 	return os.Rename(part, at)
