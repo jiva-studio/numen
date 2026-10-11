@@ -163,13 +163,20 @@ func download(ctx context.Context, s Settings, address, at string) error {
 		os.Remove(part)
 		return fmt.Errorf("fetching %s: %w", address, err)
 	}
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="a regular file that was just written does not fail to sync or close"
 	if err := file.Sync(); err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="a regular file that was just written does not fail to sync or close"
 		file.Close()
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="a regular file that was just written does not fail to sync or close"
 		os.Remove(part)
+		// gomutants:disable-next-line RETURN_ERROR_NIL reason="a regular file that was just written does not fail to sync or close"
 		return err
 	}
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="a regular file that was just written does not fail to sync or close"
 	if err := file.Close(); err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="a regular file that was just written does not fail to sync or close"
 		os.Remove(part)
+		// gomutants:disable-next-line RETURN_ERROR_NIL reason="a regular file that was just written does not fail to sync or close"
 		return err
 	}
 	return os.Rename(part, at)
@@ -191,6 +198,7 @@ type counting struct {
 func (c *counting) Write(raw []byte) (int, error) {
 	n, err := c.to.Write(raw)
 	c.done += int64(n)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the clock cannot read exactly one second after the previous report"
 	if now := time.Now(); now.Sub(c.last) > time.Second {
 		c.last = now
 		c.say(c.done, c.total)

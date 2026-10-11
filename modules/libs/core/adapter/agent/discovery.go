@@ -82,6 +82,7 @@ func findInSearchPlaces(places []string) string {
 	home, err := os.UserHomeDir()
 	// gomutants:disable-next-line BRANCH_IF reason="UserHomeDir returns an empty home with its error"
 	if err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="UserHomeDir returns an empty home with its error"
 		home = ""
 	}
 	for _, place := range places {

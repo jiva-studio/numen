@@ -178,3 +178,28 @@ func TestAbsolutePlacesAreSearchedWhenTheMachineHasNoHome(t *testing.T) {
 		t.Fatalf("found %q, want %q", got, want)
 	}
 }
+
+// A file is executable when any of its owner, group or other execute bits is
+// set.
+func TestAnyExecuteBitMakesAFileExecutable(t *testing.T) {
+	for _, mode := range []os.FileMode{0o100, 0o010, 0o001} {
+		home, _ := isolateMachine(t)
+		at := filepath.Join(home, "tool")
+		writeExecutable(t, at, mode)
+		if got := findInSearchPlaces([]string{at}); got != at {
+			t.Errorf("mode %o: found %q", mode, got)
+		}
+	}
+}
+
+// A place that is not a valid pattern is skipped, and the places after it are
+// still searched.
+func TestSearchContinuesPastAPlaceThatIsNotAPattern(t *testing.T) {
+	isolateMachine(t)
+	t.Setenv("HOME", filepath.Join(t.TempDir(), "["))
+	want := filepath.Join(t.TempDir(), "claude")
+	writeExecutable(t, want, 0o755)
+	if got := findInSearchPlaces([]string{"~/.local/bin/claude", want}); got != want {
+		t.Fatalf("found %q, want %q", got, want)
+	}
+}
