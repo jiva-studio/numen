@@ -19,6 +19,7 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -158,8 +159,13 @@ func (p program) buildCommand(ctx context.Context, arguments ...string) *exec.Cm
 	running := exec.CommandContext(ctx, p.command[0],
 		append(append([]string(nil), p.command[1:]...), arguments...)...)
 	running.Env = p.env
+	groupOf(running)
 	return running
 }
+
+// stopGrace is how long a cancelled run has to stop on its own before its
+// process group is killed, and how long Run waits on a pipe a child still holds.
+const stopGrace = 5 * time.Second
 
 // resolveProgram is the program to run, and nothing where this machine has no
 // such tool. A named command is taken as it stands: a machine that writes the
