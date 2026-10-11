@@ -6,7 +6,6 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
 import { undo } from '@codemirror/commands'
 import { EditorSelection, StateField } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
@@ -349,12 +348,11 @@ describe('a document written in one language', () => {
       attachTo: document.body,
     })
     // The language is loaded when it is first wanted.
-    await new Promise((settle) => setTimeout(settle, 0))
-    await nextTick()
-
-    // The face is the token the editor's theme names, not a family named here.
     const drawn = editor.get('.cm-editor').element
-    expect(getComputedStyle(drawn).fontFamily).toBe('var(--editor-mono)')
+    await vi.waitFor(() => {
+      // The face is the token the editor's theme names, not a family named here.
+      expect(getComputedStyle(drawn).fontFamily).toBe('var(--editor-mono)')
+    })
 
     editor.unmount()
   })
