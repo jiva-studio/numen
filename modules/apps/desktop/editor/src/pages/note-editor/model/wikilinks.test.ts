@@ -108,6 +108,111 @@ describe('note wikilink completion adapter', () => {
     expect(createdPath).toBe('notes/Gravity.md')
   })
 
+  describe('headings of a written title', () => {
+    const entry = (path: string, title: string, heading = '') => ({
+      path,
+      title,
+      heading,
+      line: heading ? 3 : -1,
+      at: [],
+      type: 'note' as const,
+    })
+    const headingsOf = (paths: Record<string, string[]>) =>
+      new Map(
+        Object.entries(paths).map(([path, texts]) => [
+          path,
+          texts.map((text) => ({ text, line: 1 })),
+        ]),
+      )
+
+    it('does not look any note up when the title is empty', async () => {
+      const deps = mockDeps({
+        headings: vi.fn().mockResolvedValue(headingsOf({ 'cur.md': ['Own'] })),
+      })
+
+      await createWikilinkOptions(deps, () => 'cur.md').headings?.('')
+
+      expect(deps.names).not.toHaveBeenCalled()
+    })
+
+    it('takes the note titled exactly the written title, wherever it stands in the matches', async () => {
+      const deps = mockDeps({
+        names: vi
+          .fn()
+          .mockResolvedValue([entry('a/Other.md', 'Other'), entry('b/Target.md', 'Target')]),
+        headings: vi.fn().mockResolvedValue(headingsOf({ 'b/Target.md': ['Right'] })),
+      })
+
+      const result = await createWikilinkOptions(deps, () => 'cur.md').headings?.('Target')
+
+      expect(deps.headings).toHaveBeenCalledWith(['b/Target.md'])
+      expect(result).toEqual(['Right'])
+    })
+
+    it('compares titles without regard to case', async () => {
+      const deps = mockDeps({
+        names: vi
+          .fn()
+          .mockResolvedValue([entry('a/Other.md', 'Other'), entry('b/Target.md', 'Target')]),
+        headings: vi.fn().mockResolvedValue(headingsOf({ 'b/Target.md': ['Right'] })),
+      })
+
+      await createWikilinkOptions(deps, () => 'cur.md').headings?.('tArGeT')
+
+      expect(deps.headings).toHaveBeenCalledWith(['b/Target.md'])
+    })
+
+    it('skips a heading match of the same title in favour of the note', async () => {
+      const deps = mockDeps({
+        names: vi
+          .fn()
+          .mockResolvedValue([
+            entry('a/Other.md', 'Target', 'Intro'),
+            entry('b/Target.md', 'Target'),
+          ]),
+        headings: vi.fn().mockResolvedValue(headingsOf({ 'b/Target.md': ['Right'] })),
+      })
+
+      await createWikilinkOptions(deps, () => 'cur.md').headings?.('Target')
+
+      expect(deps.headings).toHaveBeenCalledWith(['b/Target.md'])
+    })
+
+    it('falls back to the first match when no title is exact', async () => {
+      const deps = mockDeps({
+        names: vi
+          .fn()
+          .mockResolvedValue([entry('a/First.md', 'First note'), entry('b/Second.md', 'Second')]),
+        headings: vi.fn().mockResolvedValue(headingsOf({ 'a/First.md': ['One'] })),
+      })
+
+      const result = await createWikilinkOptions(deps, () => 'cur.md').headings?.('Fir')
+
+      expect(deps.headings).toHaveBeenCalledWith(['a/First.md'])
+      expect(result).toEqual(['One'])
+    })
+
+    it('falls back to the current note when nothing matches', async () => {
+      const deps = mockDeps({
+        headings: vi.fn().mockResolvedValue(headingsOf({ 'cur.md': ['Own'] })),
+      })
+
+      const result = await createWikilinkOptions(deps, () => 'cur.md').headings?.('Nothing')
+
+      expect(deps.headings).toHaveBeenCalledWith(['cur.md'])
+      expect(result).toEqual(['Own'])
+    })
+
+    it('lists nothing when there is no path at all', async () => {
+      const deps = mockDeps()
+
+      const result = await createWikilinkOptions(deps, () => '').headings?.('')
+
+      expect(result).toEqual([])
+      expect(deps.headings).not.toHaveBeenCalled()
+    })
+  })
+
   it('creates a CodeMirror extension', () => {
     const deps = mockDeps()
     const extension = createNoteWikilinkExtension(deps, () => 'current.md')

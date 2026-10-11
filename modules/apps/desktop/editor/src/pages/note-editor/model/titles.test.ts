@@ -128,3 +128,70 @@ describe('what a note is called', () => {
     expect(names.getTitle('Note.md')).toBe('Note.md')
   })
 })
+
+describe('what a note is asked about the vault', () => {
+  /** A vault that names every note after its file, and keeps the order it was asked in. */
+  const recording = () => {
+    const asked: string[] = []
+    const deps: NoteTitlesDeps = {
+      neighbourhood: async (path) => {
+        asked.push(path)
+        return { focus: { title: path.replace(/\.md$/, '') } }
+      },
+    }
+    return { asked, deps }
+  }
+
+  it('is left as it was when the vault names the note with nothing', async () => {
+    const asked: string[] = []
+    const store = notes()
+    const names = createNoteTitles(
+      {
+        neighbourhood: async (path) => {
+          asked.push(path)
+          return { focus: { title: '' } }
+        },
+      },
+      store.store,
+    )
+    names.setTitle('Note.md', 'Untitled note')
+
+    store.setState('Note.md', 'clean')
+    await nextTick()
+    await vi.waitFor(() => expect(asked).toStrictEqual(['Note.md']))
+    await new Promise((done) => setTimeout(done, 0))
+
+    expect(names.getTitle('Note.md')).toBe('Untitled note')
+  })
+
+  it('is not asked again for a note that stayed clean where it was', async () => {
+    const store = notes()
+    const { asked, deps } = recording()
+    createNoteTitles(deps, store.store)
+    store.setState('A.md', 'clean')
+    await nextTick()
+    await vi.waitFor(() => expect(asked).toStrictEqual(['A.md']))
+
+    store.setState('B.md', 'clean')
+    await nextTick()
+    await vi.waitFor(() => expect(asked).toHaveLength(2))
+    await new Promise((done) => setTimeout(done, 0))
+
+    expect(asked).toStrictEqual(['A.md', 'B.md'])
+  })
+
+  it('is asked again for a note that moved to the file another note stands at', async () => {
+    const store = notes()
+    const { asked, deps } = recording()
+    createNoteTitles(deps, store.store)
+    store.setState('A.md', 'clean')
+    store.setState('B.md', 'clean')
+    await nextTick()
+    await vi.waitFor(() => expect(asked).toHaveLength(2))
+
+    store.moveNote('A.md', 'B.md')
+    await nextTick()
+
+    await vi.waitFor(() => expect(asked).toStrictEqual(['A.md', 'B.md', 'B.md']))
+  })
+})

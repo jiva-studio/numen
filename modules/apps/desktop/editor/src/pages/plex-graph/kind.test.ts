@@ -23,7 +23,7 @@ const other: AnyTabKind = {
 }
 
 /** The plexes of a window, each standing where it was told to. */
-const window = (opening = 'Opening.md') => {
+const window = (opening = 'Opening.md', isListening = true) => {
   const views: ReturnType<typeof viewOn>[] = []
   /** Every time the vault was asked where it opens, and what it answered then. */
   const asked: string[] = []
@@ -32,10 +32,17 @@ const window = (opening = 'Opening.md') => {
   /** Every question the vault was asked about what the notes hold. */
   const headingsAsked: (readonly string[])[] = []
   const openingPath = ref(opening)
+  /** Every note the person was taken to by a tab, with what it was called and the tab. */
+  const selected: [string, string | undefined, PlexTabState | undefined][] = []
+  /** How many times a tab handed its view back. */
+  const closed: number[] = []
 
   const createView = () => {
     const view = viewOn('')
     views.push(view)
+    ;(view.view as { close: () => void }).close = () => {
+      closed.push(views.length)
+    }
     return view.view
   }
   const held = useWindowTabs()
@@ -45,6 +52,13 @@ const window = (opening = 'Opening.md') => {
     isHanging,
     parts: ref(6),
     openNote: () => {},
+    ...(isListening
+      ? {
+          onSelectPath: (path: string, title?: string, state?: PlexTabState) => {
+            selected.push([path, title, state])
+          },
+        }
+      : {}),
     readHeadings: async (paths) => {
       headingsAsked.push(paths)
       return new Map()
@@ -94,6 +108,8 @@ const window = (opening = 'Opening.md') => {
     asked,
     isHanging,
     headingsAsked,
+    selected,
+    closed,
   }
 }
 
@@ -377,4 +393,119 @@ describe('what a plex tab is called', () => {
 
     expect(one.kind.getTitle?.(state)).toBe('Plex')
   })
+})
+
+describe('a plex tab as it moves', () => {
+  it('tells the window the note it came to stand on, under its name', async () => {
+    const one = window('')
+    const { state } = await one.openTab()
+
+    await state.view.go('physics/Ontology.md')
+    await settle()
+
+    expect(one.selected).toStrictEqual([['physics/Ontology.md', 'physics/Ontology', state]])
+  })
+
+  it('tells it nothing when it comes to stand nowhere', async () => {
+    const one = window('')
+    const { state } = await one.openTab('One.md')
+    await settle()
+    one.selected.length = 0
+
+    await state.view.go('')
+    await settle()
+
+    expect(one.selected).toStrictEqual([])
+  })
+
+  it('tells the window the note of a node the person chose', async () => {
+    const one = window('', true)
+    const { state } = await one.openTab('One.md')
+    await settle()
+    one.selected.length = 0
+
+    state.activate(state.picture.value!.nodes[0]!.id)
+
+    expect(one.selected).toStrictEqual([['One.md', 'One', state]])
+  })
+
+  it('lets the person choose a node when the window listens for none', async () => {
+    const one = window('', false)
+    const { state } = await one.openTab('One.md')
+
+    expect(() => state.activate(state.picture.value!.nodes[0]!.id)).not.toThrow()
+    expect(state.view.here.value).toBe('One.md')
+  })
+
+  it('is not sent anywhere when it opens on nothing', async () => {
+    const one = window('')
+
+    await one.openTab()
+
+    expect(one.views[0]?.went).toStrictEqual([])
+  })
+
+  it('hands its view back when its tab closes', async () => {
+    const one = window()
+    const first = await one.openTab('One.md')
+    const second = await one.openTab('Two.md')
+
+    one.closeTab(second.id)
+
+    expect(one.closed).toStrictEqual([2])
+    expect(first.id).not.toBe(second.id)
+  })
+
+  it('is called a plex while its view holds no neighbourhood', async () => {
+    const one = window('')
+    const { state } = await one.openTab()
+    ;(state.view.neighbourhood as { value: unknown }).value = null
+
+    expect(one.kind.getTitle?.(state)).toBe('Plex')
+  })
+})
+
+describe('the name a window gives a note', () => {
+  it('is what the plex in front of the person calls it', async () => {
+    const one = window()
+    await one.openTab('physics/Ontology.md')
+
+    expect(one.getName('physics/Ontology.md')).toBe('physics/Ontology')
+  })
+
+  it('is nothing for no path', async () => {
+    const one = window()
+    await one.openTab('One.md')
+
+    expect(one.getName('')).toBe('')
+  })
+
+  it('is nothing in a window holding no plex', () => {
+    const one = window()
+
+    expect(one.getName('One.md')).toBe('')
+  })
+})
+
+describe('every plex asked again, in the cases that tell', () => {
+  it('asks the vault where it opens when only some stand nowhere', async () => {
+    const one = window('')
+    await one.openTab('One.md')
+    await one.openTab('')
+    one.setOpeningNote('First.md')
+
+    await one.refresh()
+
+    expect(one.asked).toHaveLength(1)
+  })
+
+  it('sends no plex anywhere while the vault opens with nothing', async () => {
+    const one = window('')
+    await one.openTab()
+
+    await one.refresh()
+
+    expect(one.views[0]?.went).toStrictEqual([])
+  })
+
 })
