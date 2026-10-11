@@ -273,3 +273,63 @@ describe('a document that will not open', () => {
     expect(read.picture.value).toBe('')
   })
 })
+
+describe('a page turned back', () => {
+  it('is the page before the one in front', async () => {
+    const { documents } = book()
+    const read = useDocumentReader(documents, 'Book.pdf')
+    await read.goToPage(2)
+
+    await read.prevPage()
+
+    expect(read.pageNumber.value).toBe(1)
+  })
+})
+
+describe('a document tab closed before the layout lands', () => {
+  const deferLayout = () => {
+    let settleLayout: (layout: DocumentLayout | Error) => void = () => {}
+    const pending = new Promise<DocumentLayout>((resolve, reject) => {
+      settleLayout = (layout) => (layout instanceof Error ? reject(layout) : resolve(layout))
+    })
+    const { documents } = book()
+    documents.getDocumentLayout = () => pending
+    return { documents, settleLayout }
+  }
+
+  it('holds no pages when the layout lands', async () => {
+    const { documents, settleLayout } = deferLayout()
+    const read = useDocumentReader(documents, 'Book.pdf')
+
+    read.close()
+    settleLayout(LAYOUT)
+    await read.goToPage(0)
+
+    expect(read.pages.value.length).toBe(0)
+    expect(read.isLoading.value).toBe(false)
+  })
+
+  it('says nothing of a layout that could not be read', async () => {
+    const { documents, settleLayout } = deferLayout()
+    const read = useDocumentReader(documents, 'Book.pdf')
+
+    read.close()
+    settleLayout(new Error('no such document'))
+    await read.goToPage(0)
+
+    expect(read.error.value).toBe('')
+  })
+})
+
+describe('a document tab closed after the layout landed', () => {
+  it('asks the document for no highlights', async () => {
+    const { documents, spans } = book(LAYOUT, [[{ page: 1, rects: [] }]])
+    const read = useDocumentReader(documents, 'Book.pdf')
+    await read.goToPage(0)
+
+    read.close()
+    await read.focusSpans({ from: 40_512, to: 40_543 })
+
+    expect(spans).toStrictEqual([])
+  })
+})

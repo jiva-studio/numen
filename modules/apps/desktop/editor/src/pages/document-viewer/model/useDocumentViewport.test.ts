@@ -35,4 +35,23 @@ describe('useDocumentViewport', () => {
     viewport.widen(5000)
     expect(viewport.wide.value).toBe(4096)
   })
+
+  it('keeps its width once the document is closed', () => {
+    const pages = shallowRef<readonly Page[]>([{ width: 100, height: 200 }])
+    let open = true
+    const viewport = useDocumentViewport(
+      documents,
+      'doc.pdf',
+      pages,
+      ref(0),
+      ref('v1'),
+      () => open,
+    )
+    viewport.widen(800)
+
+    open = false
+    viewport.widen(1600)
+
+    expect(viewport.wide.value).toBe(800)
+  })
 })

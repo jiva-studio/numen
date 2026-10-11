@@ -196,3 +196,12 @@ describe('a key struck while a document tab is the one the person is in', () => 
     expect(page.focusPages).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('a document tab that draws no pages yet', () => {
+  it('takes the keyboard for nobody as it comes on screen', () => {
+    const held = useDocumentTab(read('physics/Boltzmann.pdf'))
+
+    expect(() => held.focusTab()).not.toThrow()
+    expect(() => kindOver(held).onShow!(held, 'a tab')).not.toThrow()
+  })
+})

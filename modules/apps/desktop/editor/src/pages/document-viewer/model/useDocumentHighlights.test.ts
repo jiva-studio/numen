@@ -34,4 +34,91 @@ describe('useDocumentHighlights', () => {
     expect(hl.getHighlightsOn(1)).toEqual([rect])
     expect(hl.highlighted.value).toEqual([rect])
   })
+
+  const createDocumentsOf = (getHighlights: Documents['getHighlights']): Documents => ({
+    getDocumentLayout: async () => ({ pages: [], fingerprint: '' }),
+    getPageUrl: () => '',
+    getHighlights,
+  })
+
+  const createHighlightsOf = (documents: Documents, isOpen: () => boolean = () => true) => {
+    const pageNumber = ref(0)
+    const error = ref('')
+    const onGoToPage = vi.fn(async (page: number) => {
+      pageNumber.value = page
+    })
+    const hl = useDocumentHighlights(documents, 'doc.pdf', pageNumber, error, onGoToPage, isOpen)
+    return { hl, error, onGoToPage }
+  }
+
+  it('holds no highlights before any are applied', () => {
+    const { hl } = createHighlightsOf(createDocumentsOf(async () => []))
+
+    expect(hl.highlights.value).toStrictEqual([])
+    expect(hl.otherHighlights.value).toStrictEqual([])
+    expect(hl.getHighlightsOn(0)).toStrictEqual([])
+    expect(hl.getOtherHighlightsOn(0)).toStrictEqual([])
+  })
+
+  it('holds no highlights and turns to no page where none are applied', async () => {
+    const { hl, onGoToPage } = createHighlightsOf(createDocumentsOf(async () => []))
+    await hl.applyHighlights([[{ page: 1, rects: [rect] }]])
+
+    await hl.applyHighlights([])
+
+    expect(hl.highlights.value).toStrictEqual([])
+    expect(hl.otherHighlights.value).toStrictEqual([])
+    expect(onGoToPage).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks nothing of the document for no spans', async () => {
+    const getHighlights = vi.fn<Documents['getHighlights']>(async () => [pageHighlights])
+    const { hl, onGoToPage } = createHighlightsOf(createDocumentsOf(getHighlights))
+
+    await hl.focusSpans()
+
+    expect(getHighlights).not.toHaveBeenCalled()
+    expect(onGoToPage).not.toHaveBeenCalled()
+  })
+
+  it('asks nothing of the document once it is closed', async () => {
+    const getHighlights = vi.fn<Documents['getHighlights']>(async () => [pageHighlights])
+    const { hl, onGoToPage } = createHighlightsOf(createDocumentsOf(getHighlights), () => false)
+
+    await hl.focusSpans({ from: 0, to: 4 })
+
+    expect(getHighlights).not.toHaveBeenCalled()
+    expect(onGoToPage).not.toHaveBeenCalled()
+  })
+
+  it('applies nothing that arrives after the document is closed', async () => {
+    let open = true
+    const { hl, onGoToPage } = createHighlightsOf(
+      createDocumentsOf(async () => {
+        open = false
+        return [pageHighlights]
+      }),
+      () => open,
+    )
+
+    await hl.focusSpans({ from: 0, to: 4 })
+
+    expect(hl.highlights.value).toStrictEqual([])
+    expect(onGoToPage).not.toHaveBeenCalled()
+  })
+
+  it('says nothing of a failure that arrives after the document is closed', async () => {
+    let open = true
+    const { hl, error } = createHighlightsOf(
+      createDocumentsOf(async () => {
+        open = false
+        throw new Error('the layer is being written')
+      }),
+      () => open,
+    )
+
+    await hl.focusSpans({ from: 0, to: 4 })
+
+    expect(error.value).toBe('')
+  })
 })
