@@ -4,6 +4,8 @@
  */
 import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
 import type { PlexRelatedSeat } from '@numen/ui'
+import { HOLD } from '@/features/command-palette'
+import { createAnswerGuard, type Question } from '@/shared/questions'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -66,8 +68,13 @@ onScopeDispose(() => {
   window.removeEventListener('pointerdown', onWindowPointerDown)
 })
 
-watch(query, async (newQuery) => {
+const asks = createAnswerGuard()
+let holdTimer: ReturnType<typeof setTimeout> | undefined
+
+watch(query, (newQuery) => {
   const trimmed = newQuery.trim()
+  const mine = asks.ask()
+  clearTimeout(holdTimer)
   highlightedIndex.value = 0
   if (!trimmed) {
     results.value = []
@@ -75,12 +82,24 @@ watch(query, async (newQuery) => {
     return
   }
   isLoading.value = true
-  try {
-    results.value = await props.search(trimmed)
-  } finally {
-    isLoading.value = false
-  }
+  holdTimer = setTimeout(() => void runSearch(mine, trimmed), HOLD)
 })
+
+onScopeDispose(() => {
+  clearTimeout(holdTimer)
+  asks.close()
+})
+
+async function runSearch(mine: Question, trimmed: string) {
+  try {
+    const found = await props.search(trimmed)
+    if (mine.isCurrent) results.value = found
+  } catch {
+    if (mine.isCurrent) results.value = []
+  } finally {
+    if (mine.isCurrent) isLoading.value = false
+  }
+}
 
 /* -------------------------------- Handlers -------------------------------- */
 function onWindowPointerDown(event: PointerEvent) {
