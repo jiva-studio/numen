@@ -147,3 +147,14 @@ func TestWhatEachRuleAnswersFor(t *testing.T) {
 		})
 	}
 }
+
+func TestHasReservedDeviceName(t *testing.T) {
+	for path, want := range map[string]bool{
+		"NUL": true, "notes/con.md": true, "a/Com1.txt/b": true, "lpt9": true, "aux. ": true,
+		"notes/console.md": false, "com0": false, "com10": false, "notes/Entropy.md": false,
+	} {
+		if got := hasReservedDeviceName(path); got != want {
+			t.Errorf("hasReservedDeviceName(%q) = %v, want %v", path, got, want)
+		}
+	}
+}

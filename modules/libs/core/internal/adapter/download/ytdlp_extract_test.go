@@ -171,6 +171,9 @@ func TestMetadataOutsideAnOperationExtractsEachTime(t *testing.T) {
 }
 
 func TestAFailedExtractionIsReportedAndLeavesNothing(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the tool is a shell script")
+	}
 	left := useEmptyTempDir(t)
 	dir := t.TempDir()
 	at := filepath.Join(dir, "yt-dlp")
