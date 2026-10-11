@@ -98,15 +98,13 @@ func releasePadding(p *padding) {
 
 // padBatch lays a batch out as the model takes it: one row per text, every row
 // rounded up to a discrete bucket boundary, the rest of a row the padding token.
+// Every token of every row is laid out; limit is the model's window.
 //
 // The three come back as the model reads them, row after row, in a padding the
 // caller releases once the batch is done with.
-func padBatch(batch [][]int, pad int) (rows, seq int, in *padding) {
+func padBatch(batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 	rows = len(batch)
-	for _, one := range batch {
-		seq = max(seq, len(one))
-	}
-	seq = bucket(seq)
+	seq = bucket(getLongest(batch), limit)
 
 	in, _ = paddings.Get().(*padding)
 	if in == nil {
@@ -124,7 +122,7 @@ func padBatch(batch [][]int, pad int) (rows, seq int, in *padding) {
 		for i := range ids {
 			ids[i] = int64(pad)
 		}
-		for i, id := range one[:min(len(one), seq)] {
+		for i, id := range one {
 			ids[i] = int64(id)
 			in.mask[at+i] = 1
 		}
@@ -137,8 +135,23 @@ func padBatch(batch [][]int, pad int) (rows, seq int, in *padding) {
 	return rows, seq, in
 }
 
-// bucket rounds a sequence length up to the next discrete boundary.
-func bucket(seq int) int {
+// getLongest is the length of the longest row of a batch.
+func getLongest(batch [][]int) int {
+	longest := 0
+	for _, one := range batch {
+		longest = max(longest, len(one))
+	}
+	return longest
+}
+
+// bucketStep is what a length past the smallest buckets is rounded up to a
+// multiple of.
+const bucketStep = 512
+
+// bucket rounds a sequence length up to the next discrete boundary: 64, 128,
+// 256, 512, then multiples of bucketStep up to limit, and never below seq. A
+// model of one window is run at a fixed, finite set of lengths.
+func bucket(seq, limit int) int {
 	switch {
 	case seq <= 64:
 		return 64
@@ -146,9 +159,14 @@ func bucket(seq int) int {
 		return 128
 	case seq <= 256:
 		return 256
-	default:
-		return 512
+	case seq <= bucketStep:
+		return bucketStep
 	}
+	rounded := (seq + bucketStep - 1) / bucketStep * bucketStep
+	if rounded > limit {
+		return max(limit, seq)
+	}
+	return rounded
 }
 
 func resize(s []int64, size int) []int64 {

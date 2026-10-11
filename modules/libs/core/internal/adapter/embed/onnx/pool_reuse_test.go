@@ -11,11 +11,11 @@ import (
 // A released padding is reused, and the batch laid out on it holds nothing of
 // the one before.
 func TestAReusedPaddingHoldsNothingOfThePreviousBatch(t *testing.T) {
-	_, _, first := padBatch([][]int{{7, 8, 9, 10}, {5, 6, 7, 8}}, 3)
+	_, _, first := padBatch([][]int{{7, 8, 9, 10}, {5, 6, 7, 8}}, 3, 512)
 	first.types[0], first.types[5] = 9, 9
 	releasePadding(first)
 
-	rows, seq, in := padBatch([][]int{{4}, {}}, 1)
+	rows, seq, in := padBatch([][]int{{4}, {}}, 1, 512)
 	if rows != 2 || seq != 64 {
 		t.Fatalf("laid out %dx%d", rows, seq)
 	}
@@ -31,7 +31,7 @@ func TestAReusedPaddingHoldsNothingOfThePreviousBatch(t *testing.T) {
 	}
 	releasePadding(in)
 
-	_, _, wide := padBatch([][]int{{1}, {1, 2, 3}}, 0)
+	_, _, wide := padBatch([][]int{{1}, {1, 2, 3}}, 0, 512)
 	wantWideMask := make([]int64, 128)
 	wantWideMask[0], wantWideMask[64], wantWideMask[65], wantWideMask[66] = 1, 1, 1, 1
 	wantWideIds := make([]int64, 128)

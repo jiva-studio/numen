@@ -255,16 +255,28 @@ type sequenceItem struct {
 	tokens []int
 }
 
+// attentionBudget bounds one forward pass by rows × seq², the size of each
+// attention matrix it holds: a full batch of 32 rows at 512 tokens. A pass
+// takes at least one row, whatever its length.
+const attentionBudget = 32 * 512 * 512
+
 // Embed runs the model over the texts, grouped by token length to minimize padding.
 func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
-	tokens := e.tokenize(texts)
-	if len(texts) == 1 {
-		return e.forward(ctx, tokens)
-	}
+	return embedTokens(ctx, e.tokenize(texts), e.batchTexts, e.maxTokens, e.forward)
+}
 
+// embedTokens runs pass over tokenized texts sorted by length and answers one
+// vector a text, in the order of tokens. A pass holds at most batchTexts rows and
+// stays within attentionBudget at the length its rows are padded to.
+func embedTokens(
+	ctx context.Context,
+	tokens [][]int,
+	batchTexts, limit int,
+	pass func(context.Context, [][]int) ([][]float32, error),
+) ([][]float32, error) {
 	items := make([]sequenceItem, len(tokens))
 	for i, tok := range tokens {
 		items[i] = sequenceItem{index: i, tokens: tok}
@@ -273,27 +285,41 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 		return cmp.Compare(len(a.tokens), len(b.tokens))
 	})
 
-	out := make([][]float32, len(texts))
-	batchTokens := make([][]int, 0, e.batchTexts)
-	for start := 0; start < len(items); start += e.batchTexts {
+	out := make([][]float32, len(tokens))
+	batchTokens := make([][]int, 0, batchTexts)
+	for start := 0; start < len(items); {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		end := min(start+e.batchTexts, len(items))
+		end := start + 1
+		for end < len(items) && end-start < batchTexts && isWithinBudget(end-start+1, len(items[end].tokens), limit) {
+			end++
+		}
 		batchItems := items[start:end]
+		start = end
 		batchTokens = batchTokens[:0]
 		for _, item := range batchItems {
 			batchTokens = append(batchTokens, item.tokens)
 		}
-		vectors, err := e.forward(ctx, batchTokens)
+		vectors, err := pass(ctx, batchTokens)
 		if err != nil {
 			return nil, err
+		}
+		if len(vectors) != len(batchItems) {
+			return nil, fmt.Errorf("got %d vectors for %d texts", len(vectors), len(batchItems))
 		}
 		for i, item := range batchItems {
 			out[item.index] = vectors[i]
 		}
 	}
 	return out, nil
+}
+
+// isWithinBudget says a pass of rows, the longest of them longest tokens, stays
+// within attentionBudget at the length it is padded to.
+func isWithinBudget(rows, longest, limit int) bool {
+	seq := bucket(longest, limit)
+	return rows*seq*seq <= attentionBudget
 }
 
 // tokenize turns each text into tokens.
@@ -345,7 +371,7 @@ func (e *Embedder) encode(text string) []int {
 // A batch is laid out at the length of its longest text. The runtime takes a
 // shape as it comes.
 func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, error) {
-	rows, seq, padded := padBatch(batch, e.pad)
+	rows, seq, padded := padBatch(batch, e.pad, e.maxTokens)
 	defer releasePadding(padded)
 
 	session, err := e.acquireSession(ctx)
