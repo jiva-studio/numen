@@ -211,3 +211,43 @@ func TestDetectHardware_ReportsConsistentCounts(t *testing.T) {
 		t.Errorf("detected %+v, want available memory within installed memory", hw)
 	}
 }
+
+func TestResolveCompute_DerivesTheMemoryLimitFromInstalledMemoryAndProfile(t *testing.T) {
+	cases := []struct {
+		name    string
+		profile settings.PerformanceProfile
+		hw      settings.HardwareSpecs
+		want    int64
+	}{
+		{"eco on a Ryzen with 32 GB", settings.ProfileEco, settings.HardwareSpecs{LogicalCPUs: 16, TotalRAMMB: 32768}, 8192},
+		{"balanced on a Ryzen with 32 GB", settings.ProfileBalanced, settings.HardwareSpecs{LogicalCPUs: 16, TotalRAMMB: 32768}, 16384},
+		{"maximum on a Ryzen with 32 GB", settings.ProfileMaximum, settings.HardwareSpecs{LogicalCPUs: 16, TotalRAMMB: 32768}, 24576},
+		{"balanced on an M4 with 24 GB", settings.ProfileBalanced, settings.HardwareSpecs{LogicalCPUs: 10, TotalRAMMB: 24576}, 12288},
+		{"maximum on an M4 with 24 GB", settings.ProfileMaximum, settings.HardwareSpecs{LogicalCPUs: 10, TotalRAMMB: 24576}, 18432},
+		{"eco on a laptop with 2 GB", settings.ProfileEco, settings.HardwareSpecs{LogicalCPUs: 2, TotalRAMMB: 2048}, 512},
+		{"balanced on a laptop with 2 GB", settings.ProfileBalanced, settings.HardwareSpecs{LogicalCPUs: 2, TotalRAMMB: 2048}, 1024},
+		{"custom follows balanced", settings.ProfileCustom, settings.HardwareSpecs{LogicalCPUs: 16, TotalRAMMB: 32768}, 16384},
+		{"unknown memory sets no limit at eco", settings.ProfileEco, settings.HardwareSpecs{LogicalCPUs: 8}, 0},
+		{"unknown memory sets no limit at balanced", settings.ProfileBalanced, settings.HardwareSpecs{LogicalCPUs: 8}, 0},
+		{"unknown memory sets no limit at maximum", settings.ProfileMaximum, settings.HardwareSpecs{LogicalCPUs: 8}, 0},
+		{"unknown memory sets no limit at custom", settings.ProfileCustom, settings.HardwareSpecs{LogicalCPUs: 8}, 0},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := settings.ResolveCompute(c.profile, c.hw, settings.PerformanceCustom{}).MemoryLimitMB
+			if got != c.want {
+				t.Fatalf("MemoryLimitMB = %d, want %d", got, c.want)
+			}
+		})
+	}
+}
+
+func TestResolveCompute_RaisesTheMemoryLimitWithTheProfile(t *testing.T) {
+	hw := settings.HardwareSpecs{LogicalCPUs: 8, TotalRAMMB: 16384}
+	eco := settings.ResolveCompute(settings.ProfileEco, hw, settings.PerformanceCustom{}).MemoryLimitMB
+	balanced := settings.ResolveCompute(settings.ProfileBalanced, hw, settings.PerformanceCustom{}).MemoryLimitMB
+	maximum := settings.ResolveCompute(settings.ProfileMaximum, hw, settings.PerformanceCustom{}).MemoryLimitMB
+	if !(eco < balanced && balanced < maximum && maximum < hw.TotalRAMMB) {
+		t.Fatalf("limits eco=%d balanced=%d maximum=%d are not ordered below %d", eco, balanced, maximum, hw.TotalRAMMB)
+	}
+}
