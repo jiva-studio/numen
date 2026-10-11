@@ -1,8 +1,18 @@
-import { describe, expect, it } from 'vitest'
-import type { EditorState } from '@codemirror/state'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { markdown } from '@codemirror/lang-markdown'
+import { ensureSyntaxTree } from '@codemirror/language'
+import { Compartment, EditorSelection, EditorState, StateEffect } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
+import { GFM } from '@lezer/markdown'
+import { live, wholeLines } from './live'
 import { blockMarks, getMarks } from './marks'
 import { Box, Bullet, Picture, Rule } from './widgets'
 import { createState } from '../fixtures/state'
+
+// Nothing here has a size, and the editor measures anyway.
+Range.prototype.getClientRects = () =>
+  Object.assign([], { item: () => null }) as unknown as DOMRectList
+Range.prototype.getBoundingClientRect = () => new DOMRect()
 
 interface Drawn {
   readonly from: number
@@ -13,9 +23,7 @@ interface Drawn {
 /** Somewhere for the caret to stand that is in nothing. */
 const ELSEWHERE = '\n\nelsewhere'
 
-const getDrawn = (doc: string, caret?: number): Drawn[] => {
-  const text = caret === undefined ? doc + ELSEWHERE : doc
-  const state: EditorState = createState(text, caret ?? text.length)
+const collectDrawn = (state: EditorState): Drawn[] => {
   const found: Drawn[] = []
   const collect = (set: ReturnType<typeof getMarks>) =>
     set.between(
@@ -27,6 +35,25 @@ const getDrawn = (doc: string, caret?: number): Drawn[] => {
   collect(getMarks(state, 0, state.doc.length))
   collect(blockMarks(state))
   return found
+}
+
+const getDrawn = (doc: string, caret?: number): Drawn[] => {
+  const text = caret === undefined ? doc + ELSEWHERE : doc
+  return collectDrawn(createState(text, caret ?? text.length))
+}
+
+/** The stretch is drawn as something else, wherever the selection stands. */
+const isHidden = (drawn: readonly Drawn[], from: number, to: number) =>
+  drawn.some((deco) => deco.from === from && deco.to === to && !deco.spec.class)
+
+/** A state whose selection is a caret at each of `carets`, and which is read-only if asked. */
+const createCaretState = (doc: string, carets: number[], isReadOnly = false): EditorState => {
+  const extra = [EditorState.allowMultipleSelections.of(true), EditorState.readOnly.of(isReadOnly)]
+  return createState(doc)
+    .update({ effects: StateEffect.appendConfig.of(extra) })
+    .state.update({
+      selection: EditorSelection.create(carets.map((at) => EditorSelection.cursor(at))),
+    }).state
 }
 
 /** Whether the stretch of text is drawn as something else. */
@@ -166,5 +193,370 @@ describe('the text itself', () => {
   it('is never changed by any of this', () => {
     const doc = '# a\n\n**b**\n\n| d | e |\n|---|---|\n| f | g |\n'
     expect(createState(doc).doc.toString()).toBe(doc)
+  })
+})
+
+describe('what is shown as written', () => {
+  it('is a construct any one of the carets stands in', () => {
+    const doc = '**a** and **b**' + ELSEWHERE
+    const drawn = collectDrawn(createCaretState(doc, [3, 20]))
+    expect(isHidden(drawn, 0, 2)).toBe(false)
+    expect(isHidden(drawn, 3, 5)).toBe(false)
+    expect(isHidden(drawn, 10, 12)).toBe(true)
+  })
+
+  it('is a mark of quotation only under a caret in the quotation', () => {
+    expect(applyReplace('> said\n', '> ', 3)).toBe(false)
+    expect(applyReplace('> said\n', '> ')).toBe(true)
+  })
+
+  it('is the backticks of inline code under a caret in it', () => {
+    expect(applyReplace('a `piece` of it', '`', 5)).toBe(false)
+  })
+})
+
+describe('the space after a mark', () => {
+  it('is hidden with the mark when there is one', () => {
+    expect(isHidden(getDrawn('> said'), 0, 2)).toBe(true)
+  })
+
+  it('is not made up when there is none', () => {
+    const drawn = getDrawn('>said')
+    expect(isHidden(drawn, 0, 1)).toBe(true)
+    expect(isHidden(drawn, 0, 2)).toBe(false)
+  })
+})
+
+describe('what stays as written', () => {
+  it('is the line under a heading', () => {
+    const doc = 'Title\n===\n'
+    expect(classes(doc)).toContain('cm-heading cm-heading-1')
+    expect(applyReplace(doc, '===')).toBe(false)
+  })
+
+  it('is the fence of a block of code', () => {
+    expect(applyReplace('```go\nx := 1\n```\n', '```')).toBe(false)
+  })
+
+  it('is text that no construct stands over', () => {
+    expect(getDrawn('plain words')).toEqual([])
+  })
+
+  it('is the words of a picture, and what is inside them, under the caret', () => {
+    expect(classes('![a **b**](p.png)', 4)).toContain('cm-strong')
+  })
+
+  it('is the address of a picture, which has its own drawing', () => {
+    expect(getDrawn('![a](p.png)')).toHaveLength(1)
+  })
+})
+
+describe('a box for something to do', () => {
+  it('can be ticked where the text can be written', () => {
+    const [box] = collectDrawn(createCaretState('- [ ] a' + ELSEWHERE, [0]))
+      .map((deco) => deco.spec.widget)
+      .filter((it): it is Box => it instanceof Box)
+    expect(box?.isWritable).toBe(true)
+  })
+
+  it('cannot where the text is read-only', () => {
+    const [box] = collectDrawn(createCaretState('- [ ] a' + ELSEWHERE, [0], true))
+      .map((deco) => deco.spec.widget)
+      .filter((it): it is Box => it instanceof Box)
+    expect(box?.isWritable).toBe(false)
+  })
+})
+
+describe('whole lines', () => {
+  const TABLE = '| a | **b** |\n|---|---|\n| c | d |\n'
+
+  it('are drawn as blocks', () => {
+    const blocks = getDrawn('a\n\n---\n\nb\n').filter((deco) => deco.spec.widget)
+    expect(blocks).toHaveLength(1)
+    expect((blocks[0]?.spec as { block?: boolean }).block).toBe(true)
+  })
+
+  it('leave the words inside a table as written when it is drawn as a table', () => {
+    expect(classes(TABLE)).not.toContain('cm-strong')
+  })
+
+  it('give the words inside a table their marks where the caret stands in it', () => {
+    expect(classes(TABLE, 3)).toContain('cm-strong')
+  })
+})
+
+/** A state with a parser that can be swapped, and the table and rule widgets held in it. */
+const createLinesState = (doc: string, caret = doc.length) => {
+  const language = new Compartment()
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: caret },
+    extensions: [
+      language.of(markdown({ extensions: GFM })),
+      EditorState.allowMultipleSelections.of(true),
+      wholeLines,
+    ],
+  })
+  ensureSyntaxTree(state, doc.length, 5000)
+  return { state, language }
+}
+
+interface Standing {
+  readonly from: number
+  readonly to: number
+  readonly deco: { spec: { widget?: unknown; block?: boolean } }
+}
+
+const getStanding = (state: EditorState): Standing[] => {
+  const found: Standing[] = []
+  state
+    .field(wholeLines)
+    .marks.between(0, state.doc.length, (from, to, deco) => void found.push({ from, to, deco }))
+  return found
+}
+
+describe('the marks of whole lines held in the state', () => {
+  const RULE = 'a\n\n---\n\nb\n\nelse'
+  const INTRO = 'intro\n\n| a | b |\n|---|---|\n| c | d |\n\nelse'
+
+  it('carry on unchanged when text is typed before a rule', () => {
+    const { state } = createLinesState(RULE)
+    const [was] = getStanding(state)
+    const [now] = getStanding(state.update({ changes: { from: 0, insert: 'xy' } }).state)
+    expect(now?.deco).toBe(was?.deco)
+    expect([now?.from, now?.to]).toEqual([was ? was.from + 2 : -1, was ? was.to + 2 : -1])
+  })
+
+  it('carry on unchanged when text is typed after a rule', () => {
+    const { state } = createLinesState(RULE)
+    const [was] = getStanding(state)
+    const [now] = getStanding(state.update({ changes: { from: RULE.length, insert: 'xy' } }).state)
+    expect(now?.deco).toBe(was?.deco)
+  })
+
+  it('are drawn again when text is typed at the first character of a rule', () => {
+    const { state } = createLinesState(RULE)
+    const [was] = getStanding(state)
+    const [now] = getStanding(
+      state.update({ changes: { from: was?.from ?? 0, insert: '\n' } }).state,
+    )
+    expect(now?.deco.spec.widget).toBeInstanceOf(Rule)
+    expect(now?.deco.spec.widget).not.toBe(was?.deco.spec.widget)
+  })
+
+  it('move a table with the text before it', () => {
+    const { state } = createLinesState(INTRO)
+    const [was] = getStanding(state)
+    const [now] = getStanding(state.update({ changes: { from: 0, insert: 'x' } }).state)
+    const table = (now?.deco.spec.widget as { table: { from: number } }).table
+    expect(table.from).toBe((was?.from ?? 0) + 1)
+    expect(now?.from).toBe((was?.from ?? 0) + 1)
+    expect(now?.deco.spec.block).toBe(true)
+  })
+
+  it('show a rule as written when a second caret stands in it', () => {
+    const { state } = createLinesState(RULE)
+    expect(getStanding(state)).toHaveLength(1)
+
+    const moved = state.update({
+      selection: EditorSelection.create([
+        EditorSelection.cursor(RULE.length),
+        EditorSelection.cursor(4),
+      ]),
+    }).state
+    expect(getStanding(moved)).toHaveLength(0)
+  })
+
+  it('follow the parser when it is swapped without the text changing', () => {
+    const { state, language } = createLinesState(INTRO)
+    expect(getStanding(state)).toHaveLength(1)
+
+    const swapped = state.update({ effects: language.reconfigure(markdown()) }).state
+    expect(getStanding(swapped)).toHaveLength(0)
+  })
+})
+
+describe('the marks drawn for the lines on screen', () => {
+  // Eight characters to a line, so 2000 of margin is a line start.
+  const DOC = '**a** b\n'.repeat(1000)
+  const PING = StateEffect.define<null>()
+  let visible: { from: number; to: number }[] = []
+
+  beforeEach(() => {
+    visible = []
+    vi.spyOn(EditorView.prototype, 'visibleRanges', 'get').mockImplementation(() => visible)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const open = (doc: string, ranges: { from: number; to: number }[]) => {
+    visible = ranges
+    const language = new Compartment()
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({
+        doc,
+        extensions: [language.of(markdown({ extensions: GFM })), live],
+      }),
+    })
+    ensureSyntaxTree(view.state, doc.length, 5000)
+    return { view, language }
+  }
+
+  const getPlugin = (view: EditorView) => {
+    const plugin = view.plugin(live)
+    if (!plugin) throw new Error('the plugin is not in the view')
+    return plugin
+  }
+
+  /** Where each strong text starts among the marks in hand. */
+  const getStrongs = (view: EditorView) => {
+    const found: number[] = []
+    getPlugin(view).decorations.between(0, view.state.doc.length, (from, _to, deco) => {
+      if ((deco.spec as { class?: string }).class === 'cm-strong') found.push(from)
+    })
+    return found
+  }
+
+  const isDrawnAt = (view: EditorView, from: number, to: number) => {
+    let hidden = false
+    getPlugin(view).decorations.between(from, to, (start, end, deco) => {
+      if (start === from && end === to && !(deco.spec as { class?: string }).class) hidden = true
+    })
+    return hidden
+  }
+
+  it('reach a margin past the lines on screen, and no further', () => {
+    const { view } = open(DOC, [{ from: 4003, to: 4005 }])
+    const strongs = getStrongs(view)
+    expect(strongs[0]).toBe(2000)
+    expect(strongs.at(-1)).toBe(6000)
+    view.destroy()
+  })
+
+  it('reach from the last of the visible ranges', () => {
+    const { view } = open(DOC, [
+      { from: 4003, to: 4005 },
+      { from: 4403, to: 4405 },
+    ])
+    const strongs = getStrongs(view)
+    expect(strongs[0]).toBe(2000)
+    expect(strongs.at(-1)).toBe(6400)
+    view.destroy()
+  })
+
+  it('start at the top of the text when the screen is near it', () => {
+    const { view } = open(DOC, [{ from: 10, to: 12 }])
+    const strongs = getStrongs(view)
+    expect(strongs[0]).toBe(0)
+    expect(strongs.at(-1)).toBe(2008)
+    view.destroy()
+  })
+
+  it('stop at the bottom of the text when the screen is near it', () => {
+    const { view } = open(DOC, [{ from: 7990, to: 7995 }])
+    const strongs = getStrongs(view)
+    expect(strongs[0]).toBe(5984)
+    expect(strongs.at(-1)).toBe(7992)
+    view.destroy()
+  })
+
+  it('are none while nothing is on screen', () => {
+    const { view } = open(DOC, [])
+    expect(getPlugin(view).decorations.size).toBe(0)
+    expect(getPlugin(view).span).toBeNull()
+    view.destroy()
+  })
+
+  it('are drawn once the screen has something on it', () => {
+    const { view } = open(DOC, [])
+    visible = [{ from: 4003, to: 4005 }]
+    view.dispatch({ effects: PING.of(null) })
+    expect(getStrongs(view)[0]).toBe(2000)
+    view.destroy()
+  })
+
+  it('are dropped once the screen has nothing on it', () => {
+    const { view } = open(DOC, [{ from: 4003, to: 4005 }])
+    visible = []
+    view.dispatch({ effects: PING.of(null) })
+    expect(getPlugin(view).decorations.size).toBe(0)
+    view.destroy()
+  })
+
+  describe.each([
+    ['inside the span', [{ from: 3500, to: 3510 }]],
+    ['at the start of the span', [{ from: 2000, to: 2003 }]],
+    ['at the end of the span', [{ from: 6000, to: 6003 }]],
+  ])('a screen %s', (_name, ranges) => {
+    it('keeps the marks it has', () => {
+      const { view } = open(DOC, [{ from: 4003, to: 4005 }])
+      const was = getPlugin(view).decorations
+      visible = ranges
+      view.dispatch({ effects: PING.of(null) })
+      expect(getPlugin(view).decorations).toBe(was)
+      view.destroy()
+    })
+  })
+
+  it('are drawn again for a screen that moves above the span', () => {
+    const { view } = open(DOC, [{ from: 4003, to: 4005 }])
+    const was = getPlugin(view).decorations
+    visible = [{ from: 1000, to: 1003 }]
+    view.dispatch({ effects: PING.of(null) })
+    expect(getPlugin(view).decorations).not.toBe(was)
+    const strongs = getStrongs(view)
+    expect(strongs[0]).toBe(0)
+    expect(strongs.at(-1)).toBe(3000)
+    view.destroy()
+  })
+
+  it('are drawn again for a screen that moves below the span', () => {
+    const { view } = open(DOC, [{ from: 4003, to: 4005 }])
+    const was = getPlugin(view).decorations
+    visible = [{ from: 6008, to: 6010 }]
+    view.dispatch({ effects: PING.of(null) })
+    expect(getPlugin(view).decorations).not.toBe(was)
+    const strongs = getStrongs(view)
+    expect(strongs[0]).toBe(4008)
+    expect(strongs.at(-1)).toBe(7992)
+    view.destroy()
+  })
+
+  it('are drawn again where the text is typed in', () => {
+    const { view } = open(DOC, [{ from: 4003, to: 4005 }])
+    view.dispatch({ changes: { from: 0, insert: 'z' } })
+    const strongs = getStrongs(view)
+    expect(strongs).toContain(4001)
+    expect(strongs).not.toContain(4000)
+    view.destroy()
+  })
+
+  it('are drawn again where the caret moves into a construct', () => {
+    const { view } = open(DOC, [{ from: 4003, to: 4005 }])
+    expect(isDrawnAt(view, 4000, 4002)).toBe(true)
+
+    view.dispatch({ selection: { anchor: 4001 } })
+    expect(isDrawnAt(view, 4000, 4002)).toBe(false)
+    view.destroy()
+  })
+
+  it('are drawn again where the parser is swapped without the text changing', () => {
+    const doc = '~~a~~ b\n'
+    const { view, language } = open(doc, [{ from: 0, to: 3 }])
+    const struck = () => {
+      let found = false
+      getPlugin(view).decorations.between(0, doc.length, (_f, _t, deco) => {
+        if ((deco.spec as { class?: string }).class === 'cm-strike') found = true
+      })
+      return found
+    }
+    expect(struck()).toBe(true)
+
+    view.dispatch({ effects: language.reconfigure(markdown()) })
+    expect(struck()).toBe(false)
+    view.destroy()
   })
 })

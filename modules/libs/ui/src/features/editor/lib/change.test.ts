@@ -5,7 +5,7 @@
  * tests name. The clock is a port, wound here by hand.
  */
 import { describe, expect, it } from 'vitest'
-import { EditorState, StateEffect } from '@codemirror/state'
+import { Compartment, EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { changing, marked, createPacePlugin, revealOf, stepped, type EditorChange } from './change'
 import type { Clock } from '@/shared/lib/clock'
@@ -74,6 +74,7 @@ describe('how much of a change is shown', () => {
 
   it('has nothing to show for text with no words in it', () => {
     expect(revealOf('', 0.5)).toEqual({ shown: 0, fading: 0 })
+    expect(revealOf('   \n  ', 1)).toEqual({ shown: 6, fading: 6 })
     expect(revealOf('   \n  ', 0.5)).toEqual({ shown: 0, fading: 0 })
   })
 
@@ -113,6 +114,20 @@ describe('a change on its way', () => {
   it('leaves the text as it was', () => {
     expect(createMarkedState(DOC, CHANGE).doc.toString()).toBe(DOC)
   })
+
+  it('stays where it starts when the text is typed at its first character', () => {
+    const typed = createMarkedState(DOC, CHANGE).update({
+      changes: { from: 4, insert: 'x' },
+    }).state
+    expect(getDrawn(typed)).toEqual([{ from: 4, to: 8, mark: 'cm-changing' }])
+  })
+
+  it('is the same drawing after an update that says nothing about it', () => {
+    const OTHER = StateEffect.define<number>()
+    const state = createMarkedState(DOC, CHANGE)
+    expect(state.update({ effects: OTHER.of(5) }).state.field(marked)).toBe(state.field(marked))
+    expect(state.update({}).state.field(marked)).toBe(state.field(marked))
+  })
 })
 
 describe('a change that puts nothing in', () => {
@@ -130,6 +145,12 @@ describe('a change whose text has arrived', () => {
 
   it('covers all of the text before any of it is shown', () => {
     expect(getDrawn(createMarkedState(DOC, CHANGE))).toEqual([{ from: 4, to: 15, mark: null }])
+  })
+
+  it('ends after the text, at every step of the showing', () => {
+    const state = createMarkedState(DOC, CHANGE)
+    expect(state.field(marked).to).toBe(15)
+    expect(getStateAt(state, CHANGE, 0.4).field(marked).to).toBe(15)
   })
 
   it('shows the words that have had their turn and covers the rest', () => {
@@ -242,5 +263,133 @@ describe('the showing, stepped by the clock', () => {
     expect(view.state.doc.toString()).toBe(DOC)
 
     view.destroy()
+  })
+})
+
+/** A clock that keeps every frame it was asked for, and what it was told to cancel. */
+const createLedgerClock = () => {
+  const waiting = new Map<number, (now: number) => void>()
+  const asked: ((now: number) => void)[] = []
+  const cancelled: unknown[] = []
+  const clock: Clock = {
+    now: () => 0,
+    schedule: (run) => {
+      asked.push(run)
+      waiting.set(asked.length, run)
+      return asked.length
+    },
+    cancel: (handle) => {
+      cancelled.push(handle)
+      waiting.delete(handle)
+    },
+  }
+  return {
+    clock,
+    cancelled,
+    /** How many frames are waiting for their timestamp. */
+    getWaiting: () => waiting.size,
+    /** Hand the latest frame that is waiting its timestamp. */
+    tick: (now: number) => {
+      const [id, run] = [...waiting.entries()].at(-1) ?? []
+      if (id === undefined || !run) return
+      waiting.delete(id)
+      run(now)
+    },
+    /** Hand a frame that was asked for earlier, waiting or not. */
+    fire: (index: number, now: number) => asked[index]?.(now),
+  }
+}
+
+describe('the clock that steps the showing', () => {
+  const ARRIVED = 'the dog and cat sat'
+  const ABSENT = 'the cat sat'
+  const WORDS: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog and cat' }
+  const SHORT: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog' }
+
+  const open = (doc: string, change: EditorChange) => {
+    const world = createLedgerClock()
+    const slot = new Compartment()
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({
+        doc,
+        extensions: [marked, slot.of(changing.of(change)), createPacePlugin(world.clock)],
+      }),
+    })
+    return { world, view, slot }
+  }
+
+  it('counts from the first frame it is handed, whenever that is', () => {
+    const { world, view } = open(ARRIVED, WORDS)
+    const before = view.state.field(marked)
+
+    world.tick(1000)
+    expect(view.state.field(marked)).toBe(before)
+
+    world.tick(1220)
+    expect(view.state.field(marked).reveal).toEqual({ shown: 4, fading: 0 })
+
+    view.destroy()
+  })
+
+  it('asks for no frame when the text has not arrived', () => {
+    const { world, view } = open(ABSENT, SHORT)
+    expect(world.getWaiting()).toBe(0)
+    view.destroy()
+  })
+
+  it('asks for a frame when the text lands, and drops it when the text is typed away', () => {
+    const { world, view } = open(ABSENT, SHORT)
+
+    view.dispatch({ changes: { from: 4, to: 7, insert: 'dog' } })
+    expect(world.getWaiting()).toBe(1)
+
+    view.dispatch({ changes: { from: 5, to: 6, insert: 'x' } })
+    expect(world.getWaiting()).toBe(0)
+    expect(world.cancelled).toEqual([1])
+
+    // A frame that was already on its way finds nothing to step.
+    world.fire(0, 500)
+    expect(view.state.field(marked).reveal).toBeNull()
+
+    view.destroy()
+  })
+
+  it('counts from the start again when another change takes the place of the first', () => {
+    const { world, view, slot } = open(ARRIVED, WORDS)
+    world.tick(0)
+    world.tick(220)
+    expect(view.state.field(marked).reveal).toEqual({ shown: 4, fading: 0 })
+
+    view.dispatch({ effects: slot.reconfigure(changing.of({ ...WORDS, id: 'b' })) })
+    expect(world.cancelled).toEqual([3])
+    expect(world.getWaiting()).toBe(1)
+
+    world.tick(300)
+    expect(view.state.field(marked).reveal).toEqual({ shown: 0, fading: 0 })
+
+    view.destroy()
+  })
+
+  it('asks for no more frames once the last word is shown', () => {
+    const { world, view } = open(ARRIVED, WORDS)
+    for (const now of [0, 220, 440, 660]) world.tick(now)
+    expect(world.getWaiting()).toBe(1)
+
+    world.tick(880)
+    expect(world.getWaiting()).toBe(0)
+    expect(view.state.field(marked).reveal).toEqual({ shown: 11, fading: 11 })
+
+    view.destroy()
+    expect(world.cancelled).toEqual([])
+  })
+
+  it('gives back the frame it is waiting for when the view goes', () => {
+    const { world, view } = open(ARRIVED, WORDS)
+    expect(world.getWaiting()).toBe(1)
+
+    view.destroy()
+    expect(world.getWaiting()).toBe(0)
+    expect(world.cancelled).toEqual([1])
   })
 })
