@@ -16,12 +16,15 @@ import (
 // which is where a virtual table keeps its shape.
 var declaredWidth = regexp.MustCompile(`bit\[(\d+)]`)
 
-// FitVectors makes the coarse index hold vectors of the width given, and fills
-// it from what the recipe has already bought.
+// FitVectors makes the coarse index hold vectors of the width given and of the
+// recipe given, and fills it from what that recipe has already bought.
 //
 // The coarse index is built for one width, and a model of another width cannot
-// be written to it. What a model made is kept by the text it read, in a table of
-// its own, and the coarse form is read out of that.
+// be written to it. Two models of one width write bits that mean different
+// things, so the index also records the recipe that filled it. What a model
+// made is kept by the text it read, in a table of its own, and the coarse form
+// is read out of that. A chunk the recipe holds no vector for gets no row until
+// it is embedded.
 func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	if dims <= 0 {
 		return fmt.Errorf("a vector of %d dimensions is not a vector", dims)
@@ -30,7 +33,11 @@ func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	if err != nil {
 		return err
 	}
-	if held == dims {
+	filledBy, recorded, err := coarseRecipe(ctx, d.write)
+	if err != nil {
+		return err
+	}
+	if held == dims && recorded && filledBy == recipe {
 		return nil
 	}
 
@@ -55,7 +62,26 @@ func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	if err := fillCoarse(ctx, tx, dims, recipe); err != nil {
 		return err
 	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO coarse_recipe (id, recipe) VALUES (1, ?)
+		 ON CONFLICT (id) DO UPDATE SET recipe = excluded.recipe`, recipe); err != nil {
+		return fmt.Errorf("record the recipe that filled the vector index: %w", err)
+	}
 	return tx.Commit()
+}
+
+// coarseRecipe is the recipe that filled the coarse index, and whether any is
+// recorded.
+func coarseRecipe(ctx context.Context, db *sql.DB) (string, bool, error) {
+	var recipe string
+	err := db.QueryRowContext(ctx, `SELECT recipe FROM coarse_recipe WHERE id = 1`).Scan(&recipe)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, fmt.Errorf("which recipe filled the vector index: %w", err)
+	}
+	return recipe, true, nil
 }
 
 // fillCoarse writes a coarse row for every vector the recipe holds of the width
