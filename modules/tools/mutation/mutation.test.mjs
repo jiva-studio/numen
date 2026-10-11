@@ -9,7 +9,7 @@ import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody 
 import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
 import { patchSource } from './patch.mjs'
 import { listShards } from './shards.mjs'
-import { getOriginal, getSurvivors, readMutants, summarize } from './report.mjs'
+import { getOriginal, readMutants, summarize } from './report.mjs'
 import {
   findTestdata,
   getShardCount,
@@ -195,22 +195,6 @@ test('efficacy counts killed and timed-out mutants against the survivors only', 
   assert.equal(summary.efficacy, 75)
   assert.equal(summary.total, 6)
   assert.equal(summary.counts.CompileError, 1)
-})
-
-test('a waived survivor is dropped for its own target only', () => {
-  const mutants = [
-    { key: 'aaaaaaaaaa', status: 'Survived' },
-    { key: 'bbbbbbbbbb', status: 'Survived' },
-    { key: 'cccccccccc', status: 'Killed' },
-  ]
-  const waivers = [
-    { target: ts.name, key: 'aaaaaaaaaa', why: 'equivalent' },
-    { target: 'elsewhere', key: 'bbbbbbbbbb', why: 'equivalent' },
-  ]
-  assert.deepEqual(
-    getSurvivors(ts, mutants, waivers).map((one) => one.key),
-    ['bbbbbbbbbb'],
-  )
 })
 
 /* ---------------------------------- Issue --------------------------------- */

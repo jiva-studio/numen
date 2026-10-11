@@ -7,6 +7,7 @@
  * `lib/table.ts` which commands there are; this is only what a person reads of
  * them.
  */
+// Stryker disable StringLiteral: interface copy
 import type { PaletteKeys } from '@numen/ui'
 import { FETCHED, MADE } from '@/entities/artifact'
 import type { Artifact, ArtifactState } from '@/entities/artifact'

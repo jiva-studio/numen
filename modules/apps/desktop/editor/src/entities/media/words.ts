@@ -2,6 +2,7 @@
  * What a recording tab asks for, under the identities the commands give them:
  * the words written down, the words put right, and the words taken away.
  */
+// Stryker disable StringLiteral: interface copy
 export const TRANSCRIBE = 'transcribe'
 export const PROOFREAD = 'proofread'
 export const DELETE_TEXT = 'deleteText'

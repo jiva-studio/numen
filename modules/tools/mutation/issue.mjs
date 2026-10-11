@@ -14,7 +14,7 @@
  * `GITHUB_SERVER_URL` and `GITHUB_RUN_ID`.
  */
 import { execFileSync } from 'node:child_process'
-import { listReports, readMutants, readWaivers, getSurvivors, summarize } from './report.mjs'
+import { listReports, readMutants, getSurvivors, summarize } from './report.mjs'
 import { getTarget } from './targets.mjs'
 
 export const LABEL = 'mutation'
@@ -84,7 +84,7 @@ export const renderBody = ({ name, summary, survivors, link, runUrl, previous = 
       .join(',')} -->`,
     '',
     `Mutants of \`${name}\` that its tests do not notice: each line is a change to the code that every test still passes.`,
-    'Kill one with a test that fails on it, or, when the change does not alter behaviour, waive its key with the reason in `modules/tools/mutation/waivers.json`.',
+    "Kill one with a test that fails on it, or, when the change does not alter behaviour, silence it with the tool's inline directive and the reason.",
     '',
     `Last run: ${runUrl} — ${total} mutants, efficacy ${efficacy === null ? 'n/a' : `${efficacy.toFixed(1)}%`}.`,
     '',
@@ -136,7 +136,7 @@ const main = () => {
   }
   const mutants = readMutants(target, reports)
   const summary = summarize(mutants)
-  const survivors = getSurvivors(target, mutants, readWaivers())
+  const survivors = getSurvivors(mutants)
   const {
     GITHUB_REPOSITORY: repo,
     GITHUB_SHA: sha,
@@ -207,7 +207,7 @@ const main = () => {
   const number = String(existing.number)
   if (action === 'close') {
     gh(['issue', 'edit', number, '--body-file', '-'], body)
-    gh(['issue', 'close', number, '--comment', `Every mutant is killed or waived as of ${runUrl}.`])
+    gh(['issue', 'close', number, '--comment', `Every mutant is killed or silenced as of ${runUrl}.`])
     return
   }
   if (action === 'reopen') gh(['issue', 'reopen', number])

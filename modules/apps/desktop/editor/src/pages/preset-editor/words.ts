@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 import { StopReason } from '@numen/protocol'
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { many, percent, plural } from '@numen/ui'

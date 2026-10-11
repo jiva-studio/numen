@@ -1,4 +1,5 @@
 /** What the vaults screen says, in the words it says them by. */
+// Stryker disable StringLiteral: interface copy
 export const VAULTS_WORDS = {
   /** What the screen is called above the list. */
   heading: 'Vaults',

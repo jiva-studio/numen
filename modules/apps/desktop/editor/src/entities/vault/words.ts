@@ -1,4 +1,5 @@
 /** What the list of vaults reports as error for a command, in words a person reads. */
+// Stryker disable StringLiteral: interface copy
 import type { VaultErrorCode } from './types'
 
 export const VAULT_ERRORS: Record<VaultErrorCode, string> = {

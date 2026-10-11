@@ -5,6 +5,7 @@
  * the code that draws it. What is left here is the window itself: its tabs,
  * the palette, the commands, the corner, and the quit.
  */
+// Stryker disable StringLiteral: interface copy
 import { commandKeyChord, keyChord } from '@numen/ui'
 import { ERRORS } from './words/errors'
 

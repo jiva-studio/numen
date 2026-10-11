@@ -39,21 +39,9 @@ Each target has one issue labelled `mutation`, titled `Mutation survivors: <targ
 A survivor is dealt with in one of two ways:
 
 - a test that fails on it, which kills it the next night;
-- a waiver, when the mutant does not change behaviour: its key, the grey digits at the end of its line in the issue, goes into `waivers.json` with the reason.
+- an inline directive with the reason, when the mutant does not change behaviour. Stryker reads `// Stryker disable next-line <Mutator>: <reason>` (also `disable all` and `restore`); gomutants reads `// gomutants:disable <MUTATOR> reason="<reason>"` on the same line, the next line, a function doc comment, or as a regexp.
 
-```json
-{
-  "waived": [
-    {
-      "target": "libs-core",
-      "key": "16d8d7435c",
-      "why": "256 and 257 both exceed every table the tests build"
-    }
-  ]
-}
-```
-
-The key holds the file, the mutator, the replaced text and the replacement, so it survives edits elsewhere in the file.
+Interface copy is not mutated: each `words.ts` file opens with `// Stryker disable StringLiteral: interface copy`.
 
 ## Checking one file
 
