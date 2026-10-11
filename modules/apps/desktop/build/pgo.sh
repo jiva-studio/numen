@@ -2,7 +2,25 @@
 # Collects CPU profiles from the benchmarks of the paths the desktop spends its time in,
 # merges them, and writes the result to cmd/numen/default.pgo, which `go build` picks up
 # through -pgo=auto. Run it on an idle machine.
+# `pgo.sh --check` fails when the committed profile names a local path.
 set -euo pipefail
+
+here="$(cd "$(dirname "$0")" && pwd)"
+
+# Fails when the profile names a local path of the machine that collected it.
+check_profile() {
+	local file="$1" text
+	text="$(go tool pprof -raw "$file" 2>/dev/null)"
+	if grep -qE '/home/|/Users/|(^|[^A-Za-z0-9_])[A-Za-z]:\\' <<<"$text"; then
+		echo "$file contains a local path; run build/pgo.sh to normalise it" >&2
+		return 1
+	fi
+}
+
+if [ "${1:-}" = "--check" ]; then
+	check_profile "$here/../cmd/numen/default.pgo"
+	exit
+fi
 
 root="$(cd "$(dirname "$0")/../../../.." && pwd)"
 core="$root/modules/libs/core"
@@ -31,5 +49,8 @@ profile markdown ./markdown/ -bench . -benchtime 2s
 profile note ./usecase/note/ -bench . -benchtime 2s
 
 (cd "$core" && go tool pprof -proto -nodefraction="$node_fraction" -edgefraction="$node_fraction" "$work"/*.pprof >"$work/merged.pprof" 2>/dev/null)
-mv "$work/merged.pprof" "$out"
+# File names become repository-relative, $GOROOT/src and $GOMODCACHE paths.
+(cd "$here/pgonorm" && go run . "$root" "$work/merged.pprof" "$work/clean.pprof")
+check_profile "$work/clean.pprof"
+mv "$work/clean.pprof" "$out"
 ls -l "$out"

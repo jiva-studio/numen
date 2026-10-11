@@ -174,6 +174,10 @@ app_desktop_build: interface ## build desktop binary
 app_desktop_pgo: ## refresh the desktop PGO profile from the benchmarks
 	$(DESKTOP)/build/pgo.sh
 
+.PHONY: app_desktop_pgo_check
+app_desktop_pgo_check: ## fail when the desktop PGO profile names a local path
+	$(DESKTOP)/build/pgo.sh --check
+
 .PHONY: app_desktop_flashcards_bin
 app_desktop_flashcards_bin: interface ## build desktop flashcards binary
 	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen-flashcards ./cmd/numen-flashcards
