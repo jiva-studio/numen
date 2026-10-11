@@ -183,3 +183,56 @@ describe('a hit in the words of a recording', () => {
     expect(opened).toStrictEqual([['recording', 'talks/Ants.mp3']])
   })
 })
+
+describe('the recording tabs a window holds, as the application reports on them', () => {
+  /** Two recording tabs, of which the test sees what was asked. */
+  const createTabs = () => {
+    const make = (path: string) => ({
+      path,
+      setWorking: vi.fn<(next: boolean) => void>(),
+      reload: vi.fn<() => void>(),
+    })
+    const ants = make('talks/Ants.mp3')
+    const bees = make('talks/Bees.mp3')
+    const window = {
+      openTab: async () => '',
+      getTabState: () => null,
+      each: () => [{ state: ants }, { state: bees }],
+    } as unknown as WindowHandle
+    const made = createRecordingKind(
+      window,
+      () => ({}) as unknown as TranscriptState,
+      { runCommand: () => {} },
+      openers,
+      played,
+    )
+    return { made, ants, bees }
+  }
+
+  it('tells a tab it is working when a task is about its recording, and the others it is not', () => {
+    const { made, ants, bees } = createTabs()
+
+    made.updateTasks([{ about: 'talks/Ants.mp3' }, { about: 'talks/Other.mp3' }] as never)
+
+    expect(ants.setWorking).toHaveBeenCalledWith(true)
+    expect(bees.setWorking).toHaveBeenCalledWith(false)
+  })
+
+  it('tells every tab it is not working where there are no tasks', () => {
+    const { made, ants, bees } = createTabs()
+
+    made.updateTasks([])
+
+    expect(ants.setWorking).toHaveBeenCalledWith(false)
+    expect(bees.setWorking).toHaveBeenCalledWith(false)
+  })
+
+  it('has the tabs standing on a recording whose transcript went read it again', () => {
+    const { made, ants, bees } = createTabs()
+
+    made.reloadTranscript('talks/Ants.mp3')
+
+    expect(ants.reload).toHaveBeenCalledTimes(1)
+    expect(bees.reload).not.toHaveBeenCalled()
+  })
+})
