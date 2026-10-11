@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -64,9 +65,37 @@ func (c Config) OpenTranscriptionWorker(
 				}
 				return models, models.Close, nil
 			},
-			Ready: c.TranscriberReady,
+			Ready:   c.TranscriberReady,
+			CanKeep: c.CanKeepTranscriberLoaded,
 		},
 		Unasked:      c.TranscribesUnder,
 		Proofreading: c.getProofreading(c.TranscriptProofreading),
 	})
+}
+
+// residentHeadroomPercent is the memory required beyond the model files before
+// they stay loaded: a loaded session holds its weights again as optimised
+// constants, and its working arenas grow with the audio.
+const residentHeadroomPercent = 100
+
+// bytesPerMB is the size of the megabyte the detected memory is counted in.
+const bytesPerMB = 1 << 20
+
+// CanKeepTranscriberLoaded says whether the transcription models fit in the
+// memory available now, with headroom, so they may stay loaded between
+// recordings.
+func (c Config) CanKeepTranscriberLoaded() bool {
+	return canHoldResident(
+		settings.DetectHardware().AvailableRAMMB*bytesPerMB,
+		transcription.GetModelBytes(c.Transcription),
+	)
+}
+
+// canHoldResident says whether available bytes cover models of the given size
+// plus the headroom. Unknown memory or an unknown size holds nothing.
+func canHoldResident(available, models int64) bool {
+	if available <= 0 || models <= 0 {
+		return false
+	}
+	return models/100*(100+residentHeadroomPercent) <= available
 }

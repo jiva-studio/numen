@@ -34,6 +34,9 @@ type TranscriptionRuntime struct {
 	Open OpenTranscriber
 	// Ready says whether opening it would wait for anything to arrive.
 	Ready func() bool
+	// CanKeep says whether the opened models may stay loaded between
+	// recordings. Absent, they are opened and closed for each recording.
+	CanKeep func() bool
 }
 
 // Transcriptions is what one installation transcribes recordings with: what
@@ -97,7 +100,16 @@ type TranscriptionWorker struct {
 	// and path. Words, silence and a file that will not open are all answers,
 	// and a recording that has answered is not offered again.
 	answered map[string]bool
+
+	// resident is the opened models kept loaded between the recordings of a run.
+	resident resident
+	// residentIdle is how long they stay loaded with no recording to hear.
+	residentIdle time.Duration
 }
+
+// defaultResidentIdle is how long opened models stay loaded with no recording
+// to hear; loaded models hold memory other work may need.
+const defaultResidentIdle = 30 * time.Second
 
 // NewTranscriptionWorker is the transcriber an installation offers, reporting
 // itself into the list of what is being done.
@@ -105,7 +117,9 @@ func NewTranscriptionWorker(ctx context.Context, with Transcriptions) *Transcrip
 	if with.Models == nil {
 		with.Models = &Lock{}
 	}
-	return &TranscriptionWorker{with: with, under: ctx, answered: map[string]bool{}}
+	return &TranscriptionWorker{
+		with: with, under: ctx, answered: map[string]bool{}, residentIdle: defaultResidentIdle,
+	}
 }
 
 // Ready says whether a recording could be transcribed now without waiting for
@@ -320,6 +334,8 @@ func (t *TranscriptionWorker) drainAndRelease(ctx context.Context) {
 		t.drain(ctx)
 		t.mu.Lock()
 		if t.queue.countWaiting() == 0 || ctx.Err() != nil {
+			// A close that fails leaves nothing to retry; the run is over.
+			_ = t.resident.close()
 			if t.idle != nil {
 				t.idle()
 			}
@@ -528,37 +544,11 @@ func (t *TranscriptionWorker) transcribe(
 	id, path string,
 	isUserRequested bool,
 ) (res TranscribeResult, err error) {
-	// One run holds the models on a machine: a scan being recognised holds them,
-	// and this waits for it.
-	release, err := t.with.Models.acquire(ctx, isUserRequested, func() {
-		t.say(task.Task{ID: id, Doing: "Waiting for the models", About: path}, isUserRequested)
-	})
+	by, finish, err := t.lendModels(ctx, id, path, isUserRequested)
 	if err != nil {
 		return res, err
 	}
-	defer release()
-
-	// Getting the models is a step of its own and stands under its own name.
-	// Which file is coming down, and how much of it, is known once one is.
-	t.say(task.Task{ID: id, Doing: "Fetching models"}, isUserRequested)
-	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
-		// The count is bytes and says so, and the sizes a person reads them in
-		// are the window's to write.
-		t.say(task.Task{
-			ID: id, Doing: "Fetching models", About: what,
-			Count: done, Total: total, Unit: task.Bytes,
-		}, isUserRequested)
-	})
-	if err != nil {
-		return res, fmt.Errorf("%w: %w", errNothingTranscribes, err)
-	}
-	// Letting the models go is what leaves the machine able to transcribe again.
-	// A machine that will not is worth saying, and the transcript stands.
-	defer func() {
-		if why := letGo(); why != nil {
-			err = errors.Join(err, fmt.Errorf("letting the models go: %w", why))
-		}
-	}()
+	defer func() { err = errors.Join(err, finish(err)) }()
 
 	t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path}, isUserRequested)
 	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
@@ -574,6 +564,72 @@ func (t *TranscriptionWorker) transcribe(
 		}, isUserRequested)
 	}
 	return listen.Execute(ctx, v, path)
+}
+
+// lendModels hands over the models for one recording, and finish says what
+// became of it. A scan being recognised holds the models, and this waits for it.
+//
+// Models that may stay loaded stay with the run, held under the lock, until
+// someone else waits for the lock, the run fails or is cancelled, no recording
+// follows within the idle period, or the run ends.
+func (t *TranscriptionWorker) lendModels(
+	ctx context.Context,
+	id, path string,
+	isUserRequested bool,
+) (by port.Transcriber, finish func(ran error) error, err error) {
+	if kept, ok := t.resident.take(); ok {
+		return kept, func(ran error) error { return t.finishResident(ctx, ran) }, nil
+	}
+
+	release, err := t.with.Models.acquire(ctx, isUserRequested, func() {
+		t.say(task.Task{ID: id, Doing: "Waiting for the models", About: path}, isUserRequested)
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Getting the models is a step of its own and stands under its own name.
+	// Which file is coming down, and how much of it, is known once one is.
+	t.say(task.Task{ID: id, Doing: "Fetching models"}, isUserRequested)
+	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
+		// The count is bytes and says so, and the sizes a person reads them in
+		// are the window's to write.
+		t.say(task.Task{
+			ID: id, Doing: "Fetching models", About: what,
+			Count: done, Total: total, Unit: task.Bytes,
+		}, isUserRequested)
+	})
+	if err != nil {
+		release()
+		return nil, nil, fmt.Errorf("%w: %w", errNothingTranscribes, err)
+	}
+
+	if t.with.Runtime.CanKeep != nil && t.with.Runtime.CanKeep() {
+		t.resident.hold(by, letGo, release)
+		return by, func(ran error) error { return t.finishResident(ctx, ran) }, nil
+	}
+	// Letting the models go is what leaves the machine able to transcribe again.
+	// A machine that will not is worth saying, and the transcript stands.
+	return by, func(error) error {
+		defer release()
+		if why := letGo(); why != nil {
+			return fmt.Errorf("letting the models go: %w", why)
+		}
+		return nil
+	}, nil
+}
+
+// finishResident keeps the models loaded after a recording that succeeded while
+// nobody waits for them, and lets them go otherwise.
+func (t *TranscriptionWorker) finishResident(ctx context.Context, ran error) error {
+	if ran != nil || ctx.Err() != nil || t.with.Models.hasWaiting() {
+		if why := t.resident.close(); why != nil {
+			return fmt.Errorf("letting the models go: %w", why)
+		}
+		return nil
+	}
+	t.resident.park(t.residentIdle)
+	return nil
 }
 
 // recordAnswer puts a recording out of the queue's reach for the life of this
