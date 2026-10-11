@@ -58,8 +58,8 @@ export function useNameEntry<Why extends Objection>(deps: NameEntryDeps<Why>): N
   const getText = (over: string): string => getDraft(over) ?? deps.getName(over)
 
   const check = (over: string): NameCheckResult<Why> | null => {
-    const said = getDraft(over)
-    return said === null ? null : deps.checkName(said, deps.getTakenNames(over))
+    const drafted = getDraft(over)
+    return drafted === null ? null : deps.checkName(drafted, deps.getTakenNames(over))
   }
 
   const getObjection = (over: string): Why | null => check(over)?.objection ?? null

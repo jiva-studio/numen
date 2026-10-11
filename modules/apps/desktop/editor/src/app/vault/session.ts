@@ -35,13 +35,13 @@ export type SessionCore = Pick<
 
 export const sessionCore: SessionCore = {
   state: async () => {
-    const said = await vault.getVaultState({})
+    const state = await vault.getVaultState({})
     return {
-      id: said.id,
-      name: said.name,
-      path: said.path,
-      scan: parseScan(said.scan),
-      coverage: parseCoverage(said.coverage),
+      id: state.id,
+      name: state.name,
+      path: state.path,
+      scan: parseScan(state.scan),
+      coverage: parseCoverage(state.coverage),
     }
   },
   agentUnreachable: async () => (await agentService.getAgentState({})).unreachable,
@@ -59,8 +59,8 @@ export const sessionCore: SessionCore = {
     await workspace.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
   async *watchTasks(signal) {
-    for await (const said of windowService.watchTasks({ window: WINDOW }, { signal })) {
-      yield said.tasks.map((at) => ({
+    for await (const update of windowService.watchTasks({ window: WINDOW }, { signal })) {
+      yield update.tasks.map((at) => ({
         id: at.id,
         label: at.doing,
         about: at.about,

@@ -262,13 +262,13 @@ func (a *API) ResolveAddresses(
 	// In the order they were asked about, and an address asked about twice is
 	// one answer.
 	out := &v1.ResolveAddressesResponse{}
-	said := make(map[string]bool, len(found))
+	seen := make(map[string]bool, len(found))
 	for _, written := range r.Msg.GetWritten() {
 		one, reached := found[written]
-		if !reached || said[written] {
+		if !reached || seen[written] {
 			continue
 		}
-		said[written] = true
+		seen[written] = true
 		vault, crossed := one.InVault(showing.ID)
 		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
 			Written:     written,

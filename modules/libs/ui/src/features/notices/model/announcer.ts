@@ -47,10 +47,10 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     await nextTick()
     if (mine !== reading) return
 
-    const said = waiting
+    const pending = waiting
     waiting = []
-    const loud = said.filter((one) => one.tone === 'alarm')
-    const quiet = said.filter((one) => one.tone !== 'alarm')
+    const loud = pending.filter((one) => one.tone === 'alarm')
+    const quiet = pending.filter((one) => one.tone !== 'alarm')
     if (loud.length) cried.value = loud.map(wordsOf).join('. ')
     if (quiet.length) told.value = quiet.map(wordsOf).join('. ')
   }

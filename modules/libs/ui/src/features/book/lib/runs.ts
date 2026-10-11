@@ -24,8 +24,8 @@ export interface Run {
 export function getRunsIn(paper: HTMLElement): Run[] {
   const found: Run[] = []
   for (const element of paper.querySelectorAll<HTMLElement>('[data-offset]')) {
-    const said = Number(element.dataset['offset'])
-    if (Number.isFinite(said)) found.push({ at: said, element })
+    const offset = Number(element.dataset['offset'])
+    if (Number.isFinite(offset)) found.push({ at: offset, element })
   }
   return found
 }
@@ -77,8 +77,8 @@ export function offsetAt(
   const run =
     named.closest<HTMLElement>('[data-offset]') ?? named.querySelector<HTMLElement>('[data-offset]')
   if (run) {
-    const said = Number(run.dataset['offset'])
-    return Number.isFinite(said) ? said : undefined
+    const offset = Number(run.dataset['offset'])
+    return Number.isFinite(offset) ? offset : undefined
   }
   for (const after of runs) {
     if (named.compareDocumentPosition(after.element) & Node.DOCUMENT_POSITION_FOLLOWING) {

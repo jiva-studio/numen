@@ -60,12 +60,12 @@ export function renderPreview(
  * they stand.
  */
 export function getUndeclaredSlots(template: string, fields: readonly string[]): readonly string[] {
-  const said = new Set<string>()
+  const seen = new Set<string>()
   for (const slot of slotsIn(template)) {
     if (fields.includes(slot.field)) continue
-    said.add(slot.field)
+    seen.add(slot.field)
   }
-  return [...said]
+  return [...seen]
 }
 
 /** A field put into a face: the text it comes to, and where the caret lands. */

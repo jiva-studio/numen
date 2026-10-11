@@ -122,8 +122,8 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
    */
   const getDeckPreset = (id: string): DeckPreset => {
     const held = scheduled.value.get(store.getPath(id)) ?? BY_DEFAULT
-    const said = chose.value.get(id) ?? ''
-    return said === '' ? held : { ...held, errorMessage: said }
+    const error = chose.value.get(id) ?? ''
+    return error === '' ? held : { ...held, errorMessage: error }
   }
 
   /** What was known about a file no tab of this window stands at any longer. */

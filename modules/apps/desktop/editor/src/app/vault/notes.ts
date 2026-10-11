@@ -37,13 +37,13 @@ export const notesCore: NoteOperations = {
   neighbourhood: async (path) => mapNeighbourhood(await notes.getNeighbourhood({ path })),
   getInitialOpenPath: async () => (await notes.getOpeningNote({})).note ?? null,
   async *watchEdits(signal) {
-    for await (const said of notes.watchEdits({}, { signal })) {
+    for await (const update of notes.watchEdits({}, { signal })) {
       yield {
-        change: said.change,
-        path: said.path,
-        span: run(said.span ?? { from: 0, to: 0 }),
-        text: said.text,
-        isComplete: said.isFinal,
+        change: update.change,
+        path: update.path,
+        span: run(update.span ?? { from: 0, to: 0 }),
+        text: update.text,
+        isComplete: update.isFinal,
       }
     }
   },

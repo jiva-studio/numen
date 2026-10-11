@@ -252,8 +252,8 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 
 // layout is the layout a rendition:layout value names, and the one already in
 // force for a value that names neither.
-func layout(said string, inForce Layout) Layout {
-	switch Layout(strings.ToLower(strings.TrimSpace(said))) {
+func layout(value string, inForce Layout) Layout {
+	switch Layout(strings.ToLower(strings.TrimSpace(value))) {
 	case PrePaginated:
 		return PrePaginated
 	case Reflowable:
@@ -275,8 +275,8 @@ func itemLayout(properties string, book Layout) Layout {
 }
 
 // direction is the direction a page-progression-direction attribute names.
-func direction(said string) Direction {
-	named := Direction(strings.ToLower(strings.TrimSpace(said)))
+func direction(value string) Direction {
+	named := Direction(strings.ToLower(strings.TrimSpace(value)))
 	if named == LeftToRight || named == RightToLeft {
 		return named
 	}

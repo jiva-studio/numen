@@ -19,11 +19,11 @@ func Config() container.Config {
 
 // openProofreader opens a proofreading profile that reaches the command line
 // the person already has installed.
-func openProofreader(said container.ProofreaderSpec) (port.Proofreader, error) {
+func openProofreader(spec container.ProofreaderSpec) (port.Proofreader, error) {
 	return &claudecode.Proofreader{
-		Command:     said.Command,
-		Model:       said.Model,
-		Instruction: said.Instruction,
-		InFlight:    said.InFlight,
+		Command:     spec.Command,
+		Model:       spec.Model,
+		Instruction: spec.Instruction,
+		InFlight:    spec.InFlight,
 	}, nil
 }

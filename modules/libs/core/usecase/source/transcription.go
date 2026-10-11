@@ -265,8 +265,8 @@ func (t *TranscriptionWorker) getUntranscribed(ctx context.Context, known port.S
 	if err != nil {
 		return nil
 	}
-	for _, said := range recognised {
-		delete(held, said.Path)
+	for _, one := range recognised {
+		delete(held, one.Path)
 	}
 
 	t.mu.Lock()
@@ -382,20 +382,20 @@ func (t *TranscriptionWorker) Proofread(
 ) (ProofreadTranscriptResult, error) {
 	// A run says two things at most: that it began, and how it ended. The room
 	// for both is here, so a run whose caller has gone says them and ends.
-	said := make(chan outcome, 2)
+	outcomes := make(chan outcome, 2)
 
 	t.going.Add(1)
 	//nolint:contextcheck // the run outlives the caller and carries t.context()
 	go func() {
 		defer t.going.Done()
 		res, err := t.proofreadTranscript(t.context(), v, path, "", true, func(began ProofreadTranscriptResult) {
-			said <- outcome{res: began}
+			outcomes <- outcome{res: began}
 		})
-		said <- outcome{res: res, err: err}
+		outcomes <- outcome{res: res, err: err}
 	}()
 
 	select {
-	case one := <-said:
+	case one := <-outcomes:
 		return one.res, one.err
 	case <-ctx.Done():
 		return ProofreadTranscriptResult{Path: path}, ctx.Err()

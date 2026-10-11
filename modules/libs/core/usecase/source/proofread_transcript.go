@@ -257,21 +257,21 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		// The corrections go in by the line, so what a transcript ends as does
 		// not turn on the order a map hands them back in.
 		for _, line := range slices.Sorted(maps.Keys(put)) {
-			said := put[line]
-			if isJoined(together, said) {
+			gathered := put[line]
+			if isJoined(together, gathered) {
 				continue
 			}
-			cues[line].Text = said.Text
+			cues[line].Text = gathered.Text
 			wrote = true
 			fixed[line] = true
-			if !said.IsJoined() {
+			if !gathered.IsJoined() {
 				continue
 			}
 			// A sentence put back together is one cue, from the first moment of
 			// the run to the last. The cues it swallowed say nothing, and
 			// nothing is what a transcript writes them as.
 			together[line] = true
-			for gone := line + 1; gone <= said.Last; gone++ {
+			for gone := line + 1; gone <= gathered.Last; gone++ {
 				cues[line].To = max(cues[line].To, cues[gone].To)
 				cues[gone].Text = ""
 				together[gone] = true

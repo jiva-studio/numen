@@ -91,13 +91,15 @@ func (c Config) GetSpeechProofreading() source.ProofreadingConfig {
 
 // getProofreading is what a reading of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
-func (c Config) getProofreading(said proofreading.Proofread) source.ProofreadingConfig {
-	profile := c.Proofreading.Profiles[said.Profile]
+func (c Config) getProofreading(config proofreading.Proofread) source.ProofreadingConfig {
+	profile := c.Proofreading.Profiles[config.Profile]
 	return source.ProofreadingConfig{
-		IsNamed:         said.Profile != "",
-		IsAutomatic:     said.IsAutomatic,
-		By:              func(what string) (port.Proofreader, error) { return c.Proofreader(said.Profile, what) },
-		Queue:           func(what string) (port.ProofreadQueue, error) { return c.ProofreadQueue(said.Profile, what) },
+		IsNamed:     config.Profile != "",
+		IsAutomatic: config.IsAutomatic,
+		By:          func(what string) (port.Proofreader, error) { return c.Proofreader(config.Profile, what) },
+		Queue: func(what string) (port.ProofreadQueue, error) {
+			return c.ProofreadQueue(config.Profile, what)
+		},
 		Batch:           profile.BatchSize,
 		Overlap:         profile.Overlap,
 		InFlight:        profile.InFlight,

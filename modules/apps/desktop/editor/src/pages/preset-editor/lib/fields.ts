@@ -102,7 +102,7 @@ export const steer = (goal: Goal): Field => {
  */
 export const shapeOf = (settings: Settings): string => {
   const own = new Set<Field>(steer(settings.goal) === 'byDate' ? [] : ['byDate'])
-  const said: Record<Field, string> = {
+  const values: Record<Field, string> = {
     newADay: `${settings.newADay}`,
     reviewsADay: `${settings.reviewsADay}`,
     retention: `${settings.retention}`,
@@ -118,6 +118,6 @@ export const shapeOf = (settings: Settings): string => {
       .join(','),
     evenLoad: `${settings.evenLoad}`,
   }
-  const rest = FIELDS.filter((field) => !own.has(field)).map((field) => `${field}=${said[field]}`)
+  const rest = FIELDS.filter((field) => !own.has(field)).map((field) => `${field}=${values[field]}`)
   return [settings.goal, ...rest].join(' ')
 }
