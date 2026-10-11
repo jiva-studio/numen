@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -370,5 +371,209 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 	}
 	if got := titles(t, db, v, "entropy"); !slices.Equal(got, []string{"Note"}) {
 		t.Errorf("the index holds %v", got)
+	}
+}
+
+// savesCounted is the index's note repository, savesCounted the notes saved through it.
+type savesCounted struct {
+	port.NoteRepository
+	saved atomic.Int32
+}
+
+func (c *savesCounted) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
+	c.saved.Add(int32(len(notes)))
+	return c.NoteRepository.Save(ctx, vaultID, notes)
+}
+
+const settledNote = "---\ntitle: Note\n---\n\n# Note\n\nentropy\n"
+
+// newCounted is a vault scanned once with every file long settled, and a refresh
+// whose saves are counted.
+func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCounted, *container.Index, domain.Vault) {
+	t.Helper()
+	v := testsupport.NewVault(t, notes)
+	for name := range notes {
+		backdate(t, v, name)
+	}
+	db := openIndex(t)
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+	saves := &savesCounted{NoteRepository: db.Notes()}
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(),
+	)
+	refresh.Now = time.Now
+	return refresh, saves, db, v
+}
+
+func backdate(t *testing.T, v domain.Vault, name string) {
+	t.Helper()
+	at := time.Now().Add(-time.Hour)
+	if err := os.Chtimes(filepath.Join(v.Path, name), at, at); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func rewrite(t *testing.T, v domain.Vault, name, content string) {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(v.Path, name), []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func refreshOne(t *testing.T, refresh vaults.Refresh, v domain.Vault, name string) vaults.RefreshResult {
+	t.Helper()
+	res, err := refresh.Execute(t.Context(), v, []string{name})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res
+}
+
+func TestAnUnchangedNoteIsReportedAsIndexedAndNotSavedAgain(t *testing.T) {
+	t.Parallel()
+	refresh, saves, _, v := newCounted(t, map[string]string{"Note.md": settledNote})
+
+	res := refreshOne(t, refresh, v, "Note.md")
+
+	if !slices.Equal(res.Indexed, []string{"Note.md"}) {
+		t.Errorf("indexed %v", res.Indexed)
+	}
+	if n := saves.saved.Load(); n != 0 {
+		t.Errorf("%d notes were saved", n)
+	}
+}
+
+func TestANoteEditedOutsideTheAppWithAnotherSizeIsIndexed(t *testing.T) {
+	t.Parallel()
+	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+
+	rewrite(t, v, "Note.md", settledNote+"more entropy\n")
+	backdate(t, v, "Note.md")
+	refreshOne(t, refresh, v, "Note.md")
+
+	if n := saves.saved.Load(); n != 1 {
+		t.Errorf("%d notes were saved", n)
+	}
+	if got := searchNotes(t, db, v, "more"); !slices.Equal(got, []string{"Note.md"}) {
+		t.Errorf("the index finds %v", got)
+	}
+}
+
+func TestANoteEditedOutsideTheAppWithAnotherModificationTimeIsIndexed(t *testing.T) {
+	t.Parallel()
+	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+
+	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
+	at := time.Now().Add(-30 * time.Minute)
+	if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), at, at); err != nil {
+		t.Fatal(err)
+	}
+	refreshOne(t, refresh, v, "Note.md")
+
+	if n := saves.saved.Load(); n != 1 {
+		t.Errorf("%d notes were saved", n)
+	}
+	if got := searchNotes(t, db, v, "enthalpy"); !slices.Equal(got, []string{"Note.md"}) {
+		t.Errorf("the index finds %v", got)
+	}
+}
+
+func TestForceSavesANoteTheIndexHoldsAsItIs(t *testing.T) {
+	t.Parallel()
+	refresh, saves, _, v := newCounted(t, map[string]string{"Note.md": settledNote})
+	refresh.Force = true
+
+	res := refreshOne(t, refresh, v, "Note.md")
+
+	if !slices.Equal(res.Indexed, []string{"Note.md"}) {
+		t.Errorf("indexed %v", res.Indexed)
+	}
+	if n := saves.saved.Load(); n != 1 {
+		t.Errorf("%d notes were saved", n)
+	}
+}
+
+func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
+	t.Parallel()
+	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
+	db := openIndex(t)
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+	saves := &savesCounted{NoteRepository: db.Notes()}
+	refresh := vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources())
+	refresh.Now = time.Now
+
+	refreshOne(t, refresh, v, "Note.md")
+
+	if n := saves.saved.Load(); n != 1 {
+		t.Errorf("%d notes were saved", n)
+	}
+}
+
+func TestAWriteFollowedByTheWatchersRefreshIsIndexedOnce(t *testing.T) {
+	t.Parallel()
+	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+
+	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
+	refreshOne(t, refresh, v, "Note.md")
+	res := refreshOne(t, refresh, v, "Note.md")
+
+	if !slices.Equal(res.Indexed, []string{"Note.md"}) {
+		t.Errorf("the second refresh reported %v", res.Indexed)
+	}
+	if n := saves.saved.Load(); n != 1 {
+		t.Errorf("%d notes were saved", n)
+	}
+	if got := searchNotes(t, db, v, "enthalpy"); !slices.Equal(got, []string{"Note.md"}) {
+		t.Errorf("the index finds %v", got)
+	}
+}
+
+func TestASameSizeEditWithinTheModificationTimeGranularityIsIndexed(t *testing.T) {
+	t.Parallel()
+	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+
+	path := filepath.Join(v.Path, "Note.md")
+	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
+	refreshOne(t, refresh, v, "Note.md")
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpx\n")
+	if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	refreshOne(t, refresh, v, "Note.md")
+
+	if n := saves.saved.Load(); n != 2 {
+		t.Errorf("%d notes were saved", n)
+	}
+	if got := searchNotes(t, db, v, "enthalpx"); !slices.Equal(got, []string{"Note.md"}) {
+		t.Errorf("the index finds %v", got)
+	}
+}
+
+func TestADeletedNoteIsRemovedWithoutBeingSaved(t *testing.T) {
+	t.Parallel()
+	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
+
+	if err := os.Remove(filepath.Join(v.Path, "Note.md")); err != nil {
+		t.Fatal(err)
+	}
+	res := refreshOne(t, refresh, v, "Note.md")
+
+	if !slices.Equal(res.Removed, []string{"Note.md"}) || len(res.Indexed) != 0 {
+		t.Errorf("removed %v, indexed %v", res.Removed, res.Indexed)
+	}
+	if n := saves.saved.Load(); n != 0 {
+		t.Errorf("%d notes were saved", n)
+	}
+	if got := searchNotes(t, db, v, "entropy"); len(got) != 0 {
+		t.Errorf("the index finds %v", got)
 	}
 }

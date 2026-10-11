@@ -83,6 +83,8 @@ func (c Config) VaultOpenerWith(
 func makeRefresh(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources())
 	refresh.Derived = c.GetDerivedStores()
+	refresh.Ledger = db.ledger
+	refresh.Now = c.Clock()
 	return refresh
 }
 

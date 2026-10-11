@@ -21,6 +21,8 @@ type Index struct {
 	// the index's because a walk is what writes into one: two indexes are
 	// walked at once, and one index is walked a vault at a time.
 	walks vault.Walks
+	// ledger is shared by every refresh of this index.
+	ledger *vault.Ledger
 }
 
 // OpenIndex opens the cache. Closing it belongs to the caller, which is what
@@ -34,7 +36,7 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Index{db: db, path: path}, nil
+	return &Index{db: db, path: path, ledger: vault.NewLedger()}, nil
 }
 
 func (i *Index) Close() error { return i.db.Close() }
@@ -54,6 +56,8 @@ func (c Config) Level(db *Index) note.Levels {
 		db.Sources(),
 	)
 	refresh.Derived = c.GetDerivedStores()
+	refresh.Ledger = db.ledger
+	refresh.Now = c.Clock()
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
