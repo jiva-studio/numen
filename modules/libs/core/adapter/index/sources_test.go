@@ -338,3 +338,37 @@ func TestRemovingSourcesFromAClosedIndexFails(t *testing.T) {
 		t.Error("removing from a closed index reported success")
 	}
 }
+
+// A cursor that is refused gives no position to walk from, and one that is read
+// gives the positions it names, the ones it leaves out standing at the end of
+// the ordering.
+func TestACursorIsReadIntoThePositionItNames(t *testing.T) {
+	for _, c := range []struct {
+		cursor               port.ChunkCursor
+		mtime, source, chunk int64
+		refused              bool
+	}{
+		{cursor: "", mtime: math.MaxInt64, source: math.MaxInt64, chunk: 0},
+		{cursor: "7", mtime: math.MaxInt64, source: math.MaxInt64, chunk: 7},
+		{cursor: "5:7", mtime: 5, source: math.MaxInt64, chunk: 7},
+		{cursor: "5:6:7", mtime: 5, source: 6, chunk: 7},
+		{cursor: "x", refused: true},
+		{cursor: "x:1", refused: true},
+		{cursor: "1:x", refused: true},
+		{cursor: "x:1:2", refused: true},
+		{cursor: "1:x:2", refused: true},
+		{cursor: "1:2:x", refused: true},
+		{cursor: "1:2:3:4", refused: true},
+	} {
+		mtime, source, chunk, err := parseCursor(c.cursor)
+		if c.refused != (err != nil) {
+			t.Errorf("cursor %q: error %v, refused want %v", c.cursor, err, c.refused)
+		}
+		if c.refused {
+			c.mtime, c.source, c.chunk = 0, 0, 0
+		}
+		if mtime != c.mtime || source != c.source || chunk != c.chunk {
+			t.Errorf("cursor %q read as %d, %d, %d, want %d, %d, %d", c.cursor, mtime, source, chunk, c.mtime, c.source, c.chunk)
+		}
+	}
+}
