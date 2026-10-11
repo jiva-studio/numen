@@ -244,3 +244,100 @@ func TestHowManyRunsStandAtOnceReachesThePlatform(t *testing.T) {
 		t.Errorf("the platform was told %d runs may stand at once", asked.InFlight)
 	}
 }
+
+// A queue asked for under no name is nothing asked for, and nothing is left.
+func TestAQueueUnderNoNameLeavesNothing(t *testing.T) {
+	service := proofreading.ServiceDefaults()
+	service.Name = "test-model"
+
+	queue, why := makeConfig("openrouter", service).ProofreadQueue("", proofread.ScanInstruction)
+	if why != nil {
+		t.Fatalf("want no reason, got %v", why)
+	}
+	if queue != nil {
+		t.Errorf("got a queue: %v", queue.GetName())
+	}
+}
+
+// A queue under a name no profile carries is refused, as a proofreader is.
+func TestAQueueUnderANameNoProfileCarriesIsRefused(t *testing.T) {
+	held := makeConfig("openrouter", proofreading.ServiceDefaults())
+
+	queue, why := held.ProofreadQueue("agent", proofread.ScanInstruction)
+	if why == nil {
+		t.Fatal("no reason")
+	}
+	if !strings.Contains(why.Error(), "agent") {
+		t.Errorf("the reason does not name the profile asked for: %v", why)
+	}
+	if queue != nil {
+		t.Errorf("got a queue: %v", queue.GetName())
+	}
+}
+
+// A queue for a service that names no model is refused.
+func TestAQueueForAServiceWithoutAModelNameIsRefused(t *testing.T) {
+	t.Setenv(proofreading.KeyEnvVar, "sk-test")
+
+	queue, why := makeConfig("openrouter", proofreading.ServiceDefaults()).
+		ProofreadQueue("openrouter", proofread.ScanInstruction)
+	if why == nil {
+		t.Fatal("no reason")
+	}
+	if !strings.Contains(why.Error(), "model") {
+		t.Errorf("the reason does not say what is missing: %v", why)
+	}
+	if queue != nil {
+		t.Errorf("got a queue: %v", queue.GetName())
+	}
+}
+
+// A queue that cannot be opened for want of a key says so and leaves nothing.
+func TestAQueueWithoutAKeyGivesTheReasonAndNoQueue(t *testing.T) {
+	t.Setenv(proofreading.KeyEnvVar, "")
+	service := proofreading.ServiceDefaults()
+	service.Name = "test-model"
+
+	queue, why := makeConfig("openrouter", service).
+		ProofreadQueue("openrouter", proofread.ScanInstruction)
+	if why == nil {
+		t.Fatal("no reason")
+	}
+	if !strings.Contains(why.Error(), "key") {
+		t.Errorf("the reason does not say what is missing: %v", why)
+	}
+	if queue != nil {
+		t.Errorf("got a queue: %v", queue.GetName())
+	}
+}
+
+// A profile reaching the command line leaves nothing, whatever address it is
+// given to leave pages at.
+func TestAnAgentProfileWithABatchAddressLeavesNothing(t *testing.T) {
+	t.Setenv(proofreading.KeyEnvVar, "sk-a-key")
+	profile := proofreading.AgentDefaults()
+	profile.Model = "haiku"
+	profile.BatchURL = "http://127.0.0.1:1/v1/batches"
+
+	queue, why := makeConfig("agent", profile).ProofreadQueue("agent", proofread.ScanInstruction)
+	if why != nil {
+		t.Fatalf("want no reason, got %v", why)
+	}
+	if queue != nil {
+		t.Errorf("got a queue: %v", queue.GetName())
+	}
+}
+
+// A profile reached through neither a service nor the command line leaves no
+// queue, and the reason is said.
+func TestAProfileWithNeitherWayOfReachingItIsRefusedAsAQueue(t *testing.T) {
+	profile := proofreading.Profile{Use: "telepathy", Name: "some-model", Model: "haiku"}
+
+	queue, why := makeConfig("mine", profile).ProofreadQueue("mine", proofread.ScanInstruction)
+	if why == nil {
+		t.Fatal("no reason")
+	}
+	if queue != nil {
+		t.Errorf("got a queue: %v", queue.GetName())
+	}
+}

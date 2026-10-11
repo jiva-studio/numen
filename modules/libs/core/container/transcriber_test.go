@@ -2,8 +2,11 @@ package container
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -72,6 +75,84 @@ func TestModelsStayLoadedOnlyWhereMemoryCoversThemWithHeadroom(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := canHoldResident(c.available, c.models); got != c.want {
 				t.Errorf("canHoldResident = %v", got)
+			}
+		})
+	}
+}
+
+// The memory a model needs is counted in whole megabytes of what is available,
+// with the headroom on top, so the answer follows the size of the files.
+func TestTheTranscriberStaysLoadedOnlyWhereTheFilesFitInTheMemoryAvailable(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	availableMB := settings.DetectHardware().AvailableRAMMB
+	if availableMB <= 0 {
+		t.Skip("this machine does not say how much memory is free")
+	}
+	available := availableMB * (1 << 20)
+
+	for name, c := range map[string]struct {
+		share float64
+		want  bool
+	}{
+		"files of under half of what is free stay loaded": {0.4, true},
+		"files of over half of what is free do not":       {0.6, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			cfg := Config{}
+			cfg.Transcription.Model.Encoder = filepath.Join(dir, "encoder.onnx")
+			cfg.Transcription.Model.Decoder = filepath.Join(dir, "decoder.onnx")
+			cfg.Transcription.Model.Joiner = filepath.Join(dir, "joiner.onnx")
+			cfg.Transcription.Model.Tokens = filepath.Join(dir, "tokens.txt")
+			cfg.Transcription.Segmenter.Path = filepath.Join(dir, "segmenter.onnx")
+			for _, file := range []string{
+				cfg.Transcription.Model.Decoder, cfg.Transcription.Model.Joiner,
+				cfg.Transcription.Model.Tokens, cfg.Transcription.Segmenter.Path,
+			} {
+				if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			// A sparse file takes the size without taking the room.
+			big, err := os.Create(cfg.Transcription.Model.Encoder)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := big.Truncate(int64(float64(available) * c.share)); err != nil {
+				t.Fatal(err)
+			}
+			if err := big.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			if got := cfg.CanKeepTranscriberLoaded(); got != c.want {
+				t.Errorf("CanKeepTranscriberLoaded = %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+// Headroom is the share of the model files again, counted in whole hundredths
+// of them.
+func TestTheHeadroomIsAShareOfTheFilesCountedInHundredths(t *testing.T) {
+	for name, c := range map[string]struct {
+		available, models int64
+		want              bool
+	}{
+		"twice the files is enough":                        {2000, 1000, true},
+		"a byte short of twice the files is not":           {1999, 1000, false},
+		"hundredths of the files are whole ones":           {1800, 990, true},
+		"a byte short of those hundredths is not":          {1799, 990, false},
+		"unknown memory holds even the smallest files out": {0, 99, false},
+		"one byte of memory holds files under a hundredth": {1, 99, true},
+		"a single byte of file is a size":                  {1 << 20, 1, true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := canHoldResident(c.available, c.models); got != c.want {
+				t.Errorf("canHoldResident(%d, %d) = %v", c.available, c.models, got)
 			}
 		})
 	}

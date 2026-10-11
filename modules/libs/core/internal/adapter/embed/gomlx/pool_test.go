@@ -160,3 +160,71 @@ func BenchmarkPadBatch(b *testing.B) {
 		releasePadding(in)
 	}
 }
+
+// Each text's vector is its own first token, wherever the text stands in the batch.
+func TestEachTextTakesItsOwnFirstTokenWhateverItsPlace(t *testing.T) {
+	const rows, seq, dimensions = 3, 4, 3
+	flat := make([]float32, rows*seq*dimensions)
+	for i := range flat {
+		flat[i] = 9
+	}
+	for row := range rows {
+		at := row * seq * dimensions
+		copy(flat[at:at+dimensions], []float32{0, 0, 0})
+		flat[at+row] = 2
+	}
+	got := headPool(flat, rows, seq, dimensions)
+	for row := range rows {
+		want := make([]float32, dimensions)
+		want[row] = 1
+		if !slices.Equal(got[row], want) {
+			t.Errorf("row %d: got %v, want %v", row, got[row], want)
+		}
+	}
+}
+
+func TestAnEmptyTextIsHeldToOneStep(t *testing.T) {
+	for _, tokens := range []int{0, -3} {
+		if got := bucket(tokens, 64, 256); got != 64 {
+			t.Errorf("%d tokens gave %d, want 64", tokens, got)
+		}
+	}
+}
+
+func TestALimitThatIsNoStepIsNeverPassed(t *testing.T) {
+	for _, c := range []struct {
+		tokens, want int
+	}{
+		{150, 192},
+		{193, 200},
+		{200, 200},
+		{500, 200},
+	} {
+		if got := bucket(c.tokens, 64, 200); got != c.want {
+			t.Errorf("%d tokens gave %d, want %d", c.tokens, got, c.want)
+		}
+	}
+}
+
+// A padding handed back is the one the next batch of its size is laid out on,
+// slices and all.
+func TestAReleasedPaddingIsReusedForTheNextBatchOfItsSize(t *testing.T) {
+	batch := [][]int{{1, 2, 3}, {4, 5}}
+	reused := 0
+	previous := padBatch(batch, 2, 4, 0)
+	for range 100 {
+		ids, mask, types := &previous.ids[0], &previous.mask[0], &previous.types[0]
+		releasePadding(previous)
+		next := padBatch(batch, 2, 4, 0)
+		if next == previous {
+			reused++
+			if &next.ids[0] != ids || &next.mask[0] != mask || &next.types[0] != types {
+				t.Fatal("a reused padding was laid out on new slices")
+			}
+		}
+		previous = next
+	}
+	if reused == 0 {
+		t.Error("no padding handed back was ever reused")
+	}
+}
