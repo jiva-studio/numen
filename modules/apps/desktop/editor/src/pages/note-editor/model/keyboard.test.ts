@@ -154,3 +154,58 @@ describe('an editor that goes', () => {
     expect(drew.focused).toEqual([])
   })
 })
+
+/** An editor that keeps what it was asked, by name. */
+const createRecorder = () => {
+  const asked: string[] = []
+  const drawn: EditorHandle = {
+    focus: () => {
+      asked.push('focus')
+      return true
+    },
+    measure: () => {},
+    reveal: (line: number) => {
+      asked.push(`reveal ${line}`)
+      return true
+    },
+  }
+  return { drawn, asked }
+}
+
+describe('a note owed the first line', () => {
+  it('is revealed at line 0, and is not simply focused', async () => {
+    const owed = createNoteKeyboard()
+    const recorder = createRecorder()
+    owed.setEditor('Note.md', recorder.drawn)
+
+    owed.requestFocus('Note.md', 0)
+    await nextTick()
+
+    expect(recorder.asked).toEqual(['reveal 0'])
+  })
+
+  it('is focused, and not revealed, when it was asked for no line', async () => {
+    const owed = createNoteKeyboard()
+    const recorder = createRecorder()
+    owed.setEditor('Note.md', recorder.drawn)
+
+    owed.requestFocus('Note.md')
+    await nextTick()
+
+    expect(recorder.asked).toEqual(['focus'])
+  })
+})
+
+describe('a note measured while it is owed the keyboard', () => {
+  it('takes the keyboard at once', async () => {
+    const owed = createNoteKeyboard()
+    const recorder = createRecorder()
+    owed.requestFocus('Note.md')
+    owed.setEditor('Note.md', recorder.drawn)
+
+    owed.measure('Note.md')
+
+    expect(recorder.asked).toEqual(['focus'])
+    await nextTick()
+  })
+})

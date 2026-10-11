@@ -123,16 +123,43 @@ describe('making a note in a seat of another', () => {
         throw new Error('the vault is out of reach')
       },
     } as unknown as NoteMaker
-    const { write, last } = writer()
+    const { write, last, told } = writer()
     const making = createNoteWriter(core, write)
 
     expect(await making.createInSeat('Ontology.md', 'child')).toBeNull()
     expect(last()).toContain('numen did not answer')
     expect(last()).not.toContain('out of reach')
+    expect(told.at(-1)?.kind).toBe('error')
+  })
+})
+
+describe('a vault that has filed every name offered', () => {
+  it('is asked for a hundred names, and then the person is told', async () => {
+    const { core, asked, write, told } = fake(
+      Array.from({ length: 101 }, () => ({ ok: false, error: 'occupied' }) as const),
+    )
+
+    expect(await createNoteWriter(core, write).createUntitled('', [])).toBeNull()
+
+    expect(asked).toHaveLength(100)
+    expect(asked.at(-1)?.title).toBe(`${UNTITLED} 100`)
+    expect(told.at(-1)).toStrictEqual({
+      text: `every name from ${UNTITLED} onwards is taken`,
+      kind: 'error',
+    })
   })
 })
 
 describe('making a note under a name a person gave it', () => {
+  it('makes nothing in a seat no link writes', async () => {
+    const { core, asked, write } = fake()
+
+    expect(
+      await createNoteWriter(core, write).createWithTitle('Entropy', 'Ontology.md', 'sibling'),
+    ).toBeNull()
+    expect(asked).toStrictEqual([])
+  })
+
   it('files it beside the note it was made from, in that note’s seat', async () => {
     const { core, asked, write } = fake()
     const made = await createNoteWriter(core, write).createWithTitle(
@@ -170,6 +197,16 @@ describe('joining two notes that are both there', () => {
       { path: 'Ontology.md', link: { to: 'Entropy.md', role: 'child' } },
     ])
     expect(last()).toBe('')
+  })
+
+  it('writes the label it was given into the link', async () => {
+    const { core, joined, write } = fake()
+
+    await createNoteWriter(core, write).join('Ontology.md', 'Entropy.md', 'jump', 'see also')
+
+    expect(joined).toStrictEqual([
+      { path: 'Ontology.md', link: { to: 'Entropy.md', role: 'jump', label: 'see also' } },
+    ])
   })
 
   it('writes nothing for a seat no link writes', async () => {

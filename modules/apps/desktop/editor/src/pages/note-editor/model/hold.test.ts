@@ -121,3 +121,25 @@ describe('a change nobody says any more about', () => {
     })
   })
 })
+
+describe('a change reported again after it ended', () => {
+  it('is being made again, so the note changing under it arms nothing', () => {
+    const drawn = holdChanges()
+    drawn.reportChange(createEdit())
+    drawn.reportChange(createEdit({ isComplete: true }))
+    drawn.reportChange(createEdit({ text: 'An axe, two-bladed' }))
+
+    expect(drawn.handleNoteChange('Note.md')).toBeNull()
+  })
+})
+
+describe('a note whose change is gone', () => {
+  it('arms nothing when the note changes after the interval fired', () => {
+    const drawn = holdChanges()
+    drawn.reportChange(createEdit())
+    drawn.reportChange(createEdit({ isComplete: true }))
+    drawn.handleTimeout('Note.md')
+
+    expect(drawn.handleNoteChange('Note.md')).toBeNull()
+  })
+})
