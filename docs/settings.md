@@ -179,7 +179,7 @@ A vault is filled by `indexing` and asked wherever `query` says, and both read t
 | | |
 | --- | --- |
 | `model.name` | what the model is called here. Not how either place reaches it: a repository and a service call one model by two names. |
-| `model.dimensions` | how wide its vectors are. The coarse index is built for one width, and changing it rebuilds that index from what has been made. |
+| `model.dimensions` | how wide its vectors are. The coarse index is built for one width and records the recipe that filled it, and changing the width or the model rebuilds it from the vectors already kept, without a model call. |
 | `model.max_tokens` | where the model cuts off what it is given. A window cut somewhere else is a window whose vector describes text it does not hold. |
 | `model.pooling` | `mean` over the tokens, or `head` from the one that opens the text. |
 | `floor` | how near a question a passage stands to be an answer, in cosine similarity. Zero takes what the search was built against. Where a model puts two pieces of text about different things is a fact about that model, so a model changed is a floor measured again. |
