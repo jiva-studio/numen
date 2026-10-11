@@ -141,6 +141,14 @@ describe('the lists the palette offers for a setting', () => {
     ])
   })
 
+  it('offers nothing for a command that is over no setting', () => {
+    const { settings } = createSettings()
+    vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
+    vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
+
+    expect(settings.kept.getStepGroups('child', '')).toStrictEqual([])
+  })
+
   it('offers each switch the list its own setting holds', () => {
     const { settings } = createSettings()
 
