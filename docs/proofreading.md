@@ -169,4 +169,4 @@ A **follow** toggle says whether the view moves with the recording. On, the line
 
 ## Settings
 
-Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `use`, `batch_size`, `overlap`, `in_flight`, `base_url`, `batch_url`, `name`, `key`, `key_env`, `command` and `model`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.
+Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `use`, `batch_size`, `overlap`, `in_flight`, `attempts`, `delay_ms`, `max_delay_ms`, `base_url`, `batch_url`, `name`, `key`, `key_env`, `command` and `model`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.

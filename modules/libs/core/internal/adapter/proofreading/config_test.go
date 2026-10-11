@@ -41,6 +41,10 @@ func TestAProfileKeepsTheDefaultsOfItsKind(t *testing.T) {
 	if service.BaseURL != proofreading.ServiceDefaults().BaseURL {
 		t.Errorf("a service points at %q", service.BaseURL)
 	}
+	if service.Attempts != proofreading.DefaultAttempts || service.DelayMS != proofreading.DefaultDelayMS ||
+		service.MaxDelayMS != proofreading.DefaultMaxDelayMS {
+		t.Errorf("a service retries %d times from %d to %d", service.Attempts, service.DelayMS, service.MaxDelayMS)
+	}
 	if service.BatchSize != proofreading.DefaultBatchSize || service.InFlight != proofreading.DefaultInFlight {
 		t.Errorf("a service carries %d lines and %d at once", service.BatchSize, service.InFlight)
 	}
@@ -102,7 +106,8 @@ func TestAProfileIsReadBackAsWhatItWas(t *testing.T) {
 	}{
 		{"a service", `{"use":"service","base_url":"https://elsewhere/v1",
 			"batch_url":"https://elsewhere/batches","name":"some-model",
-			"key_env":"SOMEWHERE_KEY","batch_size":12,"overlap":3,"in_flight":7}`},
+			"key_env":"SOMEWHERE_KEY","batch_size":12,"overlap":3,"in_flight":7,
+			"attempts":2,"delay_ms":250,"max_delay_ms":9000}`},
 		{"the command line", `{"use":"agent","model":"haiku",
 			"command":["/somewhere/claude","--flag"],"batch_size":80,"overlap":4,"in_flight":1}`},
 	} {

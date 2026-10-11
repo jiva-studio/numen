@@ -12,7 +12,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/retry"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -172,7 +172,7 @@ func (c *Client) request(ctx context.Context, texts []string) ([][]float32, erro
 	var last error
 	for attempt := 1; attempt <= attempts; attempt++ {
 		if attempt > 1 {
-			if err := wait(ctx, delay); err != nil {
+			if err := retry.Wait(ctx, delay); err != nil {
 				return nil, err
 			}
 			delay *= 2
@@ -274,31 +274,5 @@ func (c *Client) collect(parsed response) ([][]float32, error) {
 // retryDelay is what the service asked to be waited, or zero for the client's
 // own backoff.
 func retryDelay(resp *http.Response) time.Duration {
-	header := resp.Header.Get("Retry-After")
-	if header == "" {
-		return 0
-	}
-	if seconds, err := strconv.Atoi(header); err == nil && seconds >= 0 {
-		return time.Duration(seconds) * time.Second
-	}
-	if at, err := http.ParseTime(header); err == nil {
-		if d := time.Until(at); d > 0 {
-			return d
-		}
-	}
-	return 0
-}
-
-func wait(ctx context.Context, d time.Duration) error {
-	if d <= 0 {
-		return ctx.Err()
-	}
-	timer := time.NewTimer(d)
-	defer timer.Stop()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-timer.C:
-		return nil
-	}
+	return retry.ParseAfter(resp.Header.Get("Retry-After"), time.Now())
 }
