@@ -76,7 +76,7 @@ func newFollowed(t *testing.T, notes map[string]string, watcher *hand) followed 
 	moved := make(chan vaults.VaultChanges, 8)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources()),
+		vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
 		scanner(filesystem.VaultReaders{}, db),
 	)
 	follow.Changed = func(m vaults.VaultChanges) { moved <- m }
@@ -208,7 +208,7 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources()),
+		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
 		scanner(filesystem.VaultReaders{}, db),
 	)
 	follow.ErrorHandler = func(err error) { reported <- err }

@@ -608,7 +608,7 @@ func TestARefreshTellsAFileTheVaultLeavesAloneFromANoteThatVanished(t *testing.T
 	}
 
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, c.db.Vaults(), c.db.Notes(), c.db.SourcesKnown(), c.db.Sources())
+		filesystem.VaultReaders{}, c.db.Vaults(), c.db.Notes(), c.db.SourcesKnown(), c.db.Sources(), time.Now)
 	res, err := refresh.Execute(t.Context(), c.vault, []string{"photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)

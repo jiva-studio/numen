@@ -81,8 +81,9 @@ func (c Config) VaultOpenerWith(
 // makeRefresh brings named notes up to date, cut at this installation's sizes
 // and carrying what was fetched for a link note.
 func makeRefresh(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
-	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources())
+	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources(), c.Clock())
 	refresh.Derived = c.GetDerivedStores()
+	refresh.Ledger = db.ledger
 	return refresh
 }
 
