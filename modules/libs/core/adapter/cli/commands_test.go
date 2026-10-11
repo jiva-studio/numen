@@ -354,7 +354,7 @@ func TestAMistypedFlagIsAnErrorAndNothingElse(t *testing.T) {
 
 	opened := false
 	var out bytes.Buffer
-	runErr := cli.Run(context.Background(), &out, io.Discard, []string{"--no-such-flag", "help"},
+	runErr := cli.Run(t.Context(), &out, io.Discard, []string{"--no-such-flag", "help"},
 		func(cli.Locations) cli.Deps { opened = true; return cli.Deps{} })
 
 	if runErr == nil {
@@ -372,7 +372,7 @@ func TestEveryLocationIsHandedToTheOpener(t *testing.T) {
 	t.Parallel()
 	var got cli.Locations
 	var out bytes.Buffer
-	err := cli.Run(context.Background(), &out, io.Discard,
+	err := cli.Run(t.Context(), &out, io.Discard,
 		[]string{"--index", "i.db", "--registry", "r.json", "--service-dir", ".mine", "help"},
 		func(where cli.Locations) cli.Deps { got = where; return cli.Deps{} })
 	if err != nil {
