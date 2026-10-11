@@ -36,8 +36,8 @@ import (
 // compiles the graph for the shape and the following ones touch its memory.
 const warmupRuns = 3
 
-// fillTokenID is the value a token tensor holds; it is a valid id in every
-// vocabulary a model here has.
+// fillTokenID is the value a token tensor holds; it is an ordinary id in every
+// vocabulary a model here has, and no model's padding id.
 const fillTokenID = 100
 
 // fillPeriod is the cycle of the pattern a float tensor holds.
@@ -204,28 +204,48 @@ func fill(in tensorSignature, count int, ints map[string]int64) (any, error) {
 	return nil, fmt.Errorf("input %s: element type %d is not one this benchmark fills", in.Name, in.Type)
 }
 
-// newInputs builds the tensors of one workload.
-func newInputs(b *testing.B, sig modelSignature, w workload) map[string]*ort.Value {
-	b.Helper()
-	inputs := make(map[string]*ort.Value, len(sig.Inputs))
+// An inputData is the extents and the contents of one input.
+type inputData struct {
+	dims []int64
+	data any
+}
+
+// buildInputData returns the extents and the contents of every input of the
+// model at one workload.
+func buildInputData(sig modelSignature, w workload) (map[string]inputData, error) {
+	built := make(map[string]inputData, len(sig.Inputs))
 	for _, in := range sig.Inputs {
 		dims, err := w.shape(in)
 		if err != nil {
-			b.Fatal(err)
+			return nil, err
 		}
 		data, err := fill(in, getElementCount(dims), w.ints)
 		if err != nil {
-			b.Fatal(err)
+			return nil, err
 		}
-		value, err := ort.NewTensor(dims, data)
+		built[in.Name] = inputData{dims: dims, data: data}
+	}
+	return built, nil
+}
+
+// newInputs builds the tensors of one workload.
+func newInputs(b *testing.B, sig modelSignature, w workload) map[string]*ort.Value {
+	b.Helper()
+	built, err := buildInputData(sig, w)
+	if err != nil {
+		b.Fatal(err)
+	}
+	inputs := make(map[string]*ort.Value, len(built))
+	for name, in := range built {
+		value, err := ort.NewTensor(in.dims, in.data)
 		if err != nil {
-			b.Fatalf("input %s %v: %v", in.Name, dims, err)
+			b.Fatalf("input %s %v: %v", name, in.dims, err)
 		}
 		b.Cleanup(func() {
 			value.Destroy()
-			runtime.KeepAlive(data)
+			runtime.KeepAlive(in.data)
 		})
-		inputs[in.Name] = value
+		inputs[name] = value
 	}
 	return inputs
 }
@@ -411,6 +431,26 @@ func BenchmarkDeviceOCRRecognise(b *testing.B) {
 	})
 }
 
+// getEmbedderWorkloads returns one workload per padded length and batch size.
+// Every text is one segment of real tokens with no padding: input_ids holds an
+// ordinary in-vocabulary id, attention_mask holds ones, and token_type_ids
+// holds zeros, the only row every token-type table has.
+func getEmbedderWorkloads() []workload {
+	var workloads []workload
+	for _, bucket := range embedBuckets {
+		for _, batch := range embedBatches {
+			workloads = append(workloads, workload{
+				name:   fmt.Sprintf("bucket=%d/batch=%d", bucket, batch),
+				shape:  byAxes(map[int]int64{0: batch, 1: bucket}, 0),
+				ints:   map[string]int64{"token_type_ids": 0},
+				amount: float64(batch),
+				unit:   "texts/s",
+			})
+		}
+	}
+	return workloads
+}
+
 func BenchmarkDeviceEmbedder(b *testing.B) {
 	cfg := benchenv.Read(b)
 	path := cfg.GetEmbeddingModel(b)
@@ -419,17 +459,5 @@ func BenchmarkDeviceEmbedder(b *testing.B) {
 		b.Fatal(err)
 	}
 	session := openSession(b, cfg, path)
-
-	var workloads []workload
-	for _, bucket := range embedBuckets {
-		for _, batch := range embedBatches {
-			workloads = append(workloads, workload{
-				name:   fmt.Sprintf("bucket=%d/batch=%d", bucket, batch),
-				shape:  byAxes(map[int]int64{0: batch, 1: bucket}, 0),
-				amount: float64(batch),
-				unit:   "texts/s",
-			})
-		}
-	}
-	timeWorkloads(b, session, sig, workloads)
+	timeWorkloads(b, session, sig, getEmbedderWorkloads())
 }
