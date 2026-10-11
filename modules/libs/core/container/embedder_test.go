@@ -1,6 +1,7 @@
 package container_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -366,5 +367,59 @@ func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
 	}
 	if held := tasks.List(); len(held) != 0 {
 		t.Errorf("a vault indexed over a network is getting a model ready: %+v", held)
+	}
+}
+
+// Both halves of the work are held by one thing the caller lets go of.
+func TestTheEmbeddersAreLetGoOfTogether(t *testing.T) {
+	t.Setenv(embed.KeyEnvVar, "sk-test")
+
+	_, _, closer, why := container.Config{Embedding: makeEmbedConfig("bge-m3")}.Embedders(t.Context(), nil)
+	if why != nil {
+		t.Fatal(why)
+	}
+	if closer == nil {
+		t.Fatal("nothing lets the embedders go")
+	}
+	if err := closer(); err != nil {
+		t.Error(err)
+	}
+}
+
+// A provider that cannot be built is a reason whichever way it is asked for,
+// and nothing is handed back with it.
+func TestEveryWayOfAskingForAnEmbedderRefusesAProviderNobodyImplements(t *testing.T) {
+	t.Setenv(embed.KeyEnvVar, "sk-test")
+	cfg := makeEmbedConfig("bge-m3")
+	cfg.Query = newServiceProvider(cfg.Query, "bge-m3", nowhere)
+	cfg.Query.Use = "grcp"
+	held := container.Config{Embedding: cfg}
+
+	if embedder, closer, why := held.OpenQuestionEmbedder(t.Context()); why == nil || embedder != nil || closer != nil {
+		t.Errorf("a question was given %v, %v: %v", embedder, closer != nil, why)
+	}
+
+	cfg = makeEmbedConfig("bge-m3")
+	cfg.Indexing.Use = "grcp"
+	held = container.Config{Embedding: cfg}
+	if embedder, closer, why := held.Embedder(t.Context()); why == nil || embedder != nil || closer != nil {
+		t.Errorf("a vault was given %v, %v: %v", embedder, closer != nil, why)
+	}
+	if indexing, asking, closer, why := held.Embedders(t.Context(), nil); why == nil || indexing != nil || asking != nil || closer != nil {
+		t.Errorf("a vault was given %v, %v, %v: %v", indexing, asking, closer != nil, why)
+	}
+}
+
+// A model is run on an engine somebody wrote, and a word for one nobody wrote
+// is a reason.
+func TestAModelRunOnAnEngineNobodyWroteIsARefusal(t *testing.T) {
+	cfg := embed.Defaults()
+	local, _ := cfg.Indexing.Local()
+	local.Engine = "quantum"
+	cfg.Indexing = cfg.Indexing.SetLocal(local)
+
+	_, _, why := container.Config{Embedding: cfg}.Embedder(t.Context())
+	if why == nil || !strings.Contains(why.Error(), "quantum") {
+		t.Errorf("got %v", why)
 	}
 }

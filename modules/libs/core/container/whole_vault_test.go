@@ -1,0 +1,169 @@
+package container_test
+
+import (
+	"context"
+	"path/filepath"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// makeIndex is an index in a folder of its own.
+func makeIndex(t *testing.T) *container.Index {
+	t.Helper()
+	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	return db
+}
+
+// unit is a model of the name given that makes a vector of eight dimensions
+// for each text.
+type unit struct{ name string }
+
+func (u unit) Model() port.EmbeddingModel {
+	return port.EmbeddingModel{Name: u.name, Dimensions: 8, MaxTokens: 256, Pooling: "mean"}
+}
+
+func (unit) Embed(_ context.Context, texts []string) ([][]float32, error) {
+	out := make([][]float32, len(texts))
+	for i := range texts {
+		out[i] = []float32{1, 0, 0, 0, 0, 0, 0, 0}
+	}
+	return out, nil
+}
+
+func (unit) Close() error { return nil }
+
+// missingVault is a vault whose folder is not there.
+func missingVault(t *testing.T) domain.Vault {
+	t.Helper()
+	return domain.Vault{ID: "gone", Path: filepath.Join(t.TempDir(), "absent")}
+}
+
+func TestAScanTakesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
+	db := makeIndex(t)
+
+	scan := container.Config{ShouldRebuildIndex: true}.Scan(db)
+	if scan.Walks != db.Walks() {
+		t.Error("the scan takes its turn from somebody other than the index it writes into")
+	}
+	if !scan.ShouldRebuildIndex {
+		t.Error("a rebuild was asked for and the scan skips files the index remembers")
+	}
+	if (container.Config{}).Scan(db).ShouldRebuildIndex {
+		t.Error("a rebuild was not asked for and the scan reads every file")
+	}
+}
+
+func TestTheCutOfASourceIsGivenWhatItReadsWith(t *testing.T) {
+	db := makeIndex(t)
+	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
+	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen", ShouldRebuildIndex: true}
+
+	cut, err := held.Extract(db.Sources(), db.SourcesKnown(), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cut.Derived == nil {
+		t.Error("the cut has no place to keep what it derives")
+	}
+	if cut.Documents == nil {
+		t.Error("the cut cannot take the text out of a document")
+	}
+	if !cut.ShouldRebuildIndex {
+		t.Error("a rebuild was asked for and the cut skips sources the index remembers")
+	}
+	if cut.Sizes != held.GetChunkSizes() {
+		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.GetChunkSizes())
+	}
+}
+
+func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
+	db := makeIndex(t)
+	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
+	model := unit{"first"}
+
+	made, err := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}.Embed(db, model, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if made.Derived == nil {
+		t.Error("the vectors have no place to keep what they derive")
+	}
+	if made.Documents == nil {
+		t.Error("the vectors cannot take the text out of a document")
+	}
+	if made.Embedder != model {
+		t.Errorf("the vectors are made by %v, and the model given is %v", made.Embedder, model)
+	}
+}
+
+func TestAVaultWhoseFolderIsGoneIsNotMadeSearchable(t *testing.T) {
+	db := makeIndex(t)
+	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}
+	v := missingVault(t)
+
+	if _, err := held.Extract(db.Sources(), db.SourcesKnown(), v); err == nil {
+		t.Error("the sources of a folder that is not there were cut")
+	}
+	if _, err := held.Embed(db, nil, v); err == nil {
+		t.Error("the vectors of a folder that is not there were made")
+	}
+	if _, err := held.ReadWholeVault(t.Context(), db, nil, v); err == nil {
+		t.Error("a folder that is not there was read")
+	}
+}
+
+// owingTo is how many small chunks of the vault the model has no vector for.
+func owingTo(t *testing.T, db *container.Index, v domain.Vault, model port.Embedder) int {
+	t.Helper()
+	owing, _, err := db.VectorsOwing().GetUnembeddedChunks(t.Context(), v.ID, model.Model(), "", 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(owing)
+}
+
+// Building the index again is where the vectors of a model nobody asks for any
+// more go; every other run keeps them.
+func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
+	db := makeIndex(t)
+	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
+	cfg := embed.Defaults()
+	first, second := unit{"first"}, unit{"second"}
+
+	whole, err := container.Config{Embedding: cfg, ServiceDir: ".numen"}.ReadWholeVault(t.Context(), db, first, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := whole.Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+	if owingTo(t, db, v, first) != 0 {
+		t.Fatal("the first model left chunks without a vector")
+	}
+	if owingTo(t, db, v, second) == 0 {
+		t.Fatal("the vault holds no chunk to be embedded")
+	}
+
+	if _, err := (container.Config{Embedding: cfg, ServiceDir: ".numen"}).ReadWholeVault(t.Context(), db, second, v); err != nil {
+		t.Fatal(err)
+	}
+	if got := owingTo(t, db, v, first); got != 0 {
+		t.Errorf("a run that was not a rebuild forgot the vectors of the first model: %d chunks owe one", got)
+	}
+
+	if _, err := (container.Config{Embedding: cfg, ServiceDir: ".numen", ShouldRebuildIndex: true}).ReadWholeVault(t.Context(), db, second, v); err != nil {
+		t.Fatal(err)
+	}
+	if owingTo(t, db, v, first) == 0 {
+		t.Error("a rebuild kept the vectors of a model nobody asks for")
+	}
+}
