@@ -47,6 +47,7 @@ func (g *grouping) flush(ctx context.Context) error {
 	if err := g.write(ctx, g.notes); err != nil {
 		return err
 	}
+	clear(g.notes)
 	g.notes, g.bytes = g.notes[:0], 0
 	return nil
 }
