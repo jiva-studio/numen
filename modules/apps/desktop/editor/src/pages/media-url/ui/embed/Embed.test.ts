@@ -76,6 +76,15 @@ describe('a moment chosen in the transcript', () => {
     expect(postedMessages[0]![1]).toBe('http://127.0.0.1:9')
   })
 
+  it('does nothing where the address given is not one a frame can be told to post to', () => {
+    const drawn = mount(Embed, {
+      props: { embed: 'not-a-url', copy: '', words },
+      attachTo: document.body,
+    })
+
+    expect(() => drawn.vm.seek(1_000)).not.toThrow()
+  })
+
   it('is where the copy is played from, where a copy stands', () => {
     const COPY = 'http://127.0.0.1:9/token/vault/notes%2Ftalk.md?size=12&mtime=0'
     const drawn = mount(Embed, {
