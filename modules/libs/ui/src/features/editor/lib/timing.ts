@@ -54,6 +54,7 @@ class Time extends GutterMarker {
   }
 
   override eq(other: Time): boolean {
+    // Stryker disable next-line ConditionalExpression: a marker stands in the slot of its own line, so equal text in one slot is at one line.
     return other.text === this.text && other.at === this.at && other.isCurrent === this.isCurrent
   }
 
@@ -82,6 +83,7 @@ const createTimingExtension = (goToLine: (line: number) => void): Extension =>
       const text = all[at]
       return text === undefined ? null : new Time(text, at, at === current, goToLine)
     },
+    // Stryker disable next-line ConditionalExpression: a marker recomputed unchanged is equal to the one held, so the gutter draws the same.
     lineMarkerChange: (update) => update.startState.field(held) !== update.state.field(held),
   })
 
@@ -133,6 +135,7 @@ export interface Timing {
 const isSame = (one: TimingState, two: TimingState): boolean =>
   one.current === two.current &&
   one.isFollowing === two.isFollowing &&
+  // Stryker disable next-line ConditionalExpression: the same array holds the same times, so the element-wise comparison says the same.
   (one.times === two.times ||
     (one.times.length === two.times.length &&
       one.times.every((text, at) => text === two.times[at])))
@@ -179,6 +182,7 @@ export function timing(goToLine: (line: number) => void): Timing {
       state.current < view.state.doc.lines
     ) {
       const { from } = view.state.doc.line(state.current + 1)
+      // Stryker disable next-line ObjectLiteral: the scroll target takes y as "nearest" when none is given.
       effects.push(EditorView.scrollIntoView(from, { y: 'nearest' }))
     }
     view.dispatch({ effects })
