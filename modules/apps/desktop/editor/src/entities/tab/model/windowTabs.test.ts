@@ -767,3 +767,15 @@ describe('reconciling tabs for a path, by what a tab names', () => {
     expect(window.getTab(id)).not.toBeNull()
   })
 })
+
+describe('a tab created without being shown', () => {
+  it('is opened by its kind on the empty address', async () => {
+    const thing = kind()
+    const window = told([thing.declared])
+
+    const id = await window.createTab('thing')
+
+    expect(thing.opened).toEqual([''])
+    expect(onScreen(window.layout.value)).not.toContain(id)
+  })
+})
