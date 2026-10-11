@@ -1,6 +1,7 @@
 package pdf
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -131,4 +132,48 @@ func TestReleasingThePoolClosesEveryWorker(t *testing.T) {
 	if hasPool() {
 		t.Fatal("the pool is still held after it was released")
 	}
+}
+
+func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {
+	startIdlePool(t, 2, time.Microsecond)
+	var wg sync.WaitGroup
+	errs := make(chan error, 4)
+	for range 4 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 150 {
+				doc, err := openPath("testdata/tiny.pdf")
+				if err != nil {
+					errs <- err
+					return
+				}
+				doc.close()
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Error(err)
+	}
+}
+
+func TestAReleaseCannotCloseAPoolADocumentHasAcquired(t *testing.T) {
+	startIdlePool(t, 2, time.Hour)
+	p, err := acquirePool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	releasePool()
+	if !hasPool() {
+		finishWorker()
+		t.Fatal("the pool was released while a document had acquired it")
+	}
+	worker, err := p.GetInstance(time.Minute)
+	if err != nil {
+		finishWorker()
+		t.Fatal(err)
+	}
+	putWorker(worker)
 }

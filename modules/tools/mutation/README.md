@@ -17,7 +17,20 @@ A target is named by its path under `modules/` with dashes (`libs-core`, `apps-d
 node modules/tools/mutation/shards.mjs          # every target and its shards
 ```
 
-Neither tool writes to the checked-out source. Each shard keeps its results in the Actions cache, and the next night measures again only the mutants whose code or covering tests changed. A shard that runs out of time saves what it measured and goes on from there the next night.
+Neither tool writes to the checked-out source.
+
+## The cache
+
+Each target keeps one cache in the Actions cache, `mutation-<target>-run-<run id>`: the gomutants cache of a Go module, or the Stryker incremental report of a package. Every shard starts from it and measures again only the mutants whose code or covering tests changed, and uploads the cache it ends with as the artifact `cache-<shard>`.
+
+After the shards, `cache.mjs` merges the target's cache. Each package or file is taken from the shard that holds it under the current shard count, and kept from the previous cache when that shard uploaded nothing. A shard that runs out of time uploads what it measured, and goes on from there the next night. A change in shard count moves files between shards and keeps their results.
+
+- **gomutants** keeps entries for packages outside the ones it is given, as long as their files are unchanged, so each shard's cache holds the whole module; the merge takes a shard's entries for its own packages only. The merged cache keeps the identity gomutants checks before reusing anything (schema, module, tool version, tags, test flags, toolchain) and drops the coverage profile, which belongs to one shard's packages. An entry's test hash covers same-named tests in the other packages of the shard that wrote it, so after a change in shard count some entries miss and are measured again.
+- **Stryker** numbers its tests anew in each report, so the merge renames every test by its file, position and name. A test is kept, and a mutant still names it, only where the test file's recorded source is the file's source now; a mutant whose killing test is dropped is measured again. Stryker reports every file its incremental report holds, and a shard's report keeps the files the shard mutated.
+
+On Sunday the shards start without the cache and measure every mutant again, which catches what reuse misses: an edit in a package a Go mutant's package imports, or a change Stryker's coverage does not see. Their result is merged and saved as on any other night.
+
+The Go shards read the build cache their module's own CI saves (`go-build-core-ubuntu-latest-`, `go-build-modules/apps/desktop-`, `go-build-modules/apps/mobile-`) and write none.
 
 ## The issues
 
@@ -26,21 +39,9 @@ Each target has one issue labelled `mutation`, titled `Mutation survivors: <targ
 A survivor is dealt with in one of two ways:
 
 - a test that fails on it, which kills it the next night;
-- a waiver, when the mutant does not change behaviour: its key, the grey digits at the end of its line in the issue, goes into `waivers.json` with the reason.
+- an inline directive with the reason, when the mutant does not change behaviour. Stryker reads `// Stryker disable next-line <Mutator>: <reason>` (also `disable all` and `restore`); gomutants reads `// gomutants:disable <MUTATOR> reason="<reason>"` on the same line, the next line, a function doc comment, or as a regexp.
 
-```json
-{
-  "waived": [
-    {
-      "target": "libs-core",
-      "key": "16d8d7435c",
-      "why": "256 and 257 both exceed every table the tests build"
-    }
-  ]
-}
-```
-
-The key holds the file, the mutator, the replaced text and the replacement, so it survives edits elsewhere in the file.
+Interface copy is not mutated: each `words.ts` file opens with `// Stryker disable StringLiteral: interface copy`.
 
 ## Checking one file
 

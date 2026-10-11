@@ -1,4 +1,5 @@
 /** What the settings tab says: the groups it draws, and what each setting is. */
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   settings: 'Settings',
   /**

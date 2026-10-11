@@ -8,7 +8,7 @@ import { build } from '../../fixtures/build'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
 import { headingOf, lengthOf, createPointOnCurve, type PlacedEdge } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
-import type { PlacedNode } from '../node'
+import type { PlacedNode, Position } from '../node'
 
 /** A letter of a fixed width, so what a title needs is a matter of counting. */
 const perLetter = (width: number) => (label: string) => width * [...label].length
@@ -287,5 +287,197 @@ describe('a title finds room on its line', () => {
     const frame = arrangePlex(crowd, { options: { viewport: VIEWPORT } })
 
     expect(frame.edges.map((edge) => edge.wordsAt)).toStrictEqual(frame.edges.map(() => 0.5))
+  })
+})
+
+/**
+ * Lines drawn straight across a plain page, so where a title stands is a
+ * matter of counting along them. A letter is ten wide, a line of type twelve
+ * deep, and a title keeps a quarter of that clear of whatever it stands near.
+ */
+describe('a title set on a straight line', () => {
+  const TEN = perLetter(10)
+  const routing = routingFor(DEFAULT_OPTIONS, TEN, labelDepth)
+
+  /** One step of the scan a line is looked at by, along the line. */
+  const A_STEP = 3
+
+  const createLine = (
+    from: Position,
+    to: Position,
+    words: string,
+    extra: Partial<PlacedEdge> = {},
+  ): PlacedEdge => {
+    const at = (share: number): Position => ({
+      x: from.x + (to.x - from.x) * share,
+      y: from.y + (to.y - from.y) * share,
+    })
+    return {
+      from: 'from',
+      to: 'to',
+      label: words,
+      opacity: 1,
+      heading: to.x < from.x ? 'against' : 'along',
+      words,
+      wordsAt: MIDDLE,
+      fromPoint: from,
+      control1: at(1 / 3),
+      control2: at(2 / 3),
+      toPoint: to,
+      ...extra,
+    } as PlacedEdge
+  }
+
+  /** A box over the page, as far as a title is concerned. */
+  const createBlocker = (id: string, left: number, right: number, y = 0): PlacedNode => ({
+    id,
+    title: id,
+    seat: 'sibling',
+    x: (left + right) / 2,
+    y,
+    width: right - left - 2 * 3,
+    height: 20,
+    order: 0,
+    opacity: 1,
+  })
+
+  /** Where the middle of a title is, in the picture. */
+  const getCentre = (edge: PlacedEdge): Position =>
+    createPointOnCurve(edge)(edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt)
+
+  const ACROSS = { from: { x: -200, y: 0 }, to: { x: 200, y: 0 } }
+  const across = (words: string) => createLine(ACROSS.from, ACROSS.to, words)
+
+  it('keeps clear of a box that stands over only the depth of the type', () => {
+    // The box starts 6 below the line. The type reaches 9 either side of it, and
+    // 3 of that is the room a title keeps from whatever it stands near.
+    const lower = createBlocker('lower', -32.5, 13.5, 19)
+    const [settled] = settleTitles([across('abcde')], [lower], routing)
+
+    expect(getCentre(settled!).x - 25).toBeGreaterThanOrEqual(13.5)
+    expect(getCentre(settled!).x - 25).toBeLessThan(13.5 + A_STEP + 0.01)
+  })
+
+  it('stands at the clear place nearest the middle, to the right of a box', () => {
+    const [settled] = settleTitles([across('abcde')], [createBlocker('box', -32.5, 13.5)], routing)
+
+    expect(settled!.words).toBe('abcde')
+    expect(getCentre(settled!).x - 25).toBeGreaterThanOrEqual(13.5)
+    expect(getCentre(settled!).x - 25).toBeLessThan(13.5 + A_STEP + 0.01)
+    expect(settled!.wordsAt).toBeCloseTo(0.6025, 3)
+  })
+
+  it('stands at the clear place nearest the middle, to the left of a box', () => {
+    const [settled] = settleTitles([across('abcde')], [createBlocker('box', -13.5, 32.5)], routing)
+
+    expect(settled!.words).toBe('abcde')
+    expect(getCentre(settled!).x + 25).toBeLessThanOrEqual(-13.5)
+    expect(getCentre(settled!).x + 25).toBeGreaterThan(-13.5 - A_STEP - 0.01)
+    expect(settled!.wordsAt).toBeCloseTo(0.4025, 3)
+  })
+
+  it('counts the fraction a title is read from along the line it is read on', () => {
+    // The same line taken right to left, so the title is read from its far end.
+    const backwards = createLine(ACROSS.to, ACROSS.from, 'abcde')
+    const [settled] = settleTitles([backwards], [createBlocker('box', -32.5, 13.5)], routing)
+
+    expect(settled!.heading).toBe('against')
+    expect(settled!.wordsAt).toBeCloseTo(0.5975, 3)
+    expect(getCentre(settled!).x - 25).toBeGreaterThanOrEqual(13.5)
+  })
+
+  it('starts a title at the near end of the only clear place that is to the right of the middle', () => {
+    // A box over the middle and the whole left side of the line.
+    const [settled] = settleTitles([across('abcde')], [createBlocker('box', -204, 53)], routing)
+
+    expect(settled!.words).toBe('abcde')
+    expect(getCentre(settled!).x - 25).toBeGreaterThanOrEqual(53)
+    expect(getCentre(settled!).x - 25).toBeLessThan(53 + A_STEP + 0.01)
+  })
+
+  it('clears the titles already set by what they take up, and no more', () => {
+    // Two lines a line of type apart: the first keeps the middle, and the
+    // second goes round it by the nearer side.
+    const upper = across('abcde')
+    const lower = createLine({ x: -192, y: 10 }, { x: 208, y: 10 }, 'abcde')
+    const [first, second] = settleTitles([upper, lower], [], routing)
+
+    expect(first!.wordsAt).toBe(MIDDLE)
+    expect(getCentre(second!).x - 25).toBeGreaterThanOrEqual(25)
+    expect(getCentre(second!).x - 25).toBeLessThan(25 + A_STEP + 0.01)
+  })
+
+  it('sets the line with the least room first, whatever order they come in', () => {
+    // The roomy line comes first, and its title would take the middle that the
+    // tight line, barely longer than its words, has no other place for.
+    const roomy = createLine({ x: -45, y: 0 }, { x: 45, y: 0 }, 'abcde')
+    const tight = createLine({ x: -40, y: 10 }, { x: 40, y: 10 }, 'abcdefg')
+    const [settledRoomy, settledTight] = settleTitles([roomy, tight], [], routing)
+
+    expect(settledTight!.words).toBe('abcdefg')
+    expect(settledTight!.wordsAt).toBeCloseTo(MIDDLE, 5)
+    expect(settledRoomy!.words).toBeUndefined()
+  })
+
+  it('leaves a title where it was put when its words measure nothing', () => {
+    const placed = createLine(ACROSS.from, ACROSS.to, 'abcde', { wordsAt: 0.3 })
+    const [settled] = settleTitles(
+      [placed],
+      [],
+      routingFor(DEFAULT_OPTIONS, () => 0, labelDepth),
+    )
+
+    expect(settled!.words).toBe('abcde')
+    expect(settled!.wordsAt).toBe(0.3)
+  })
+
+  it('leaves a title where it was put when its line has no length', () => {
+    const point = { x: 0, y: 0 }
+    const placed = createLine(point, point, 'abcde', { wordsAt: 0.3 })
+    const [settled] = settleTitles([placed], [], routing)
+
+    expect(settled!.words).toBe('abcde')
+    expect(settled!.wordsAt).toBe(0.3)
+  })
+
+  it('cuts a title to the longest clear place when no place holds the whole of it', () => {
+    // Three places of about 60, 105 and 80 between boxes, for words 120 long.
+    const boxes = [
+      createBlocker('one', -140, -122),
+      createBlocker('two', -17, 0),
+      createBlocker('three', 80, 200),
+    ]
+    const [settled] = settleTitles([across('abcdefghijkl')], boxes, routing)
+
+    expect(settled!.words).toBe('abcdefghi…')
+    expect(getCentre(settled!).x).toBeGreaterThan(-122)
+    expect(getCentre(settled!).x).toBeLessThan(-17)
+  })
+
+  it('keeps the room an arrowhead takes at the end of the line', () => {
+    // Clear only from 136 to the end, which an arrowhead takes 20 of.
+    const arrow = createLine(ACROSS.from, ACROSS.to, 'abcdefgh', { arrow: 'to' })
+    const [settled] = settleTitles([arrow], [createBlocker('box', -204, 134)], routing)
+
+    expect(settled!.words).toBe('abc…')
+    expect(getCentre(settled!).x + TEN(settled!.words!) / 2).toBeLessThanOrEqual(180)
+  })
+
+  it('writes no title on a line that an arrowhead takes the whole of', () => {
+    const short = createLine({ x: 0, y: 0 }, { x: 30, y: 0 }, 'a', { arrow: 'to' })
+    const [settled] = settleTitles([short], [], routing)
+
+    expect(settled!.words).toBeUndefined()
+  })
+
+  it('keeps a title clear of the corner of a slanting title that a box around it would take', () => {
+    // The first title slants across the page; the second line runs below it,
+    // under the empty corner of the box around the first.
+    const slanting = createLine({ x: -100, y: -100 }, { x: 100, y: 100 }, 'abcde')
+    const below = createLine({ x: -200, y: 28 }, { x: 200, y: 28 }, 'abcde')
+    const [, second] = settleTitles([slanting, below], [], routing)
+
+    expect(getCentre(second!).x).toBeGreaterThan(-30)
+    expect(getCentre(second!).x).toBeLessThan(-10)
   })
 })

@@ -1,4 +1,5 @@
 /** The words a book is read with. */
+// Stryker disable StringLiteral: interface copy
 
 /** The words a book is read with. */
 export interface BookWords {

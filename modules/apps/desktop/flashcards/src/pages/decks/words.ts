@@ -1,4 +1,5 @@
 /** What this screen says of a preset: its goal, its day, and why it asks nothing. */
+// Stryker disable StringLiteral: interface copy
 import { StopReason } from '@numen/protocol'
 import { dayOf, daysBetween, many, percent } from '@numen/ui'
 

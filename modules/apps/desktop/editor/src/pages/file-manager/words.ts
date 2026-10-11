@@ -1,4 +1,5 @@
 /** What a files tab says: what it is called, and what it offers on a row. */
+// Stryker disable StringLiteral: interface copy
 export const WORDS = {
   files: 'Files',
   /** The tree, said aloud to whoever is not looking at it. */

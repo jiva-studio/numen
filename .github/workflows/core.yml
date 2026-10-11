@@ -235,10 +235,11 @@ jobs:
         with:
           persist-credentials: false
 
-      # The two caches are keyed apart: the modules answer to go.sum, the build
-      # answers to the commit. Both carry the machine, because what a compiler
-      # leaves behind is that machine's.
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      # The modules answer to go.sum, the build to the Go version and go.sum.
+      # Both carry the machine, because what a compiler leaves behind is that
+      # machine's.
+      - id: setup-go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: modules/libs/core/go.mod
           cache: false
@@ -255,13 +256,13 @@ jobs:
           key: go-mod-core-${{ matrix.runner }}-${{ hashFiles('modules/libs/core/go.sum') }}
           restore-keys: go-mod-core-${{ matrix.runner }}-
 
-      # What the last compile and test run left behind: a run compiles what
-      # changed and re-runs the tests that changed. The key carries the commit,
-      # so the newest cache the branch can see is the one restored.
+      # What main's last compile and test run left behind: a run compiles what
+      # changed and re-runs the tests that changed. The prefix restores main's
+      # newest build when the Go version or go.sum differs.
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ steps.go-cache-paths.outputs.build }}
-          key: go-build-core-${{ matrix.runner }}-${{ github.sha }}
+          key: go-build-core-${{ matrix.runner }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/libs/core/go.sum') }}
           restore-keys: go-build-core-${{ matrix.runner }}-
 
       # A test builds its vault in a temporary folder, and there is memory here
@@ -288,12 +289,10 @@ jobs:
       - name: Run Go tests
         run: go test ${{ matrix.race && '-race' || '' }} ./...
 
-      # Every run writes what it built. A branch reads its own back on the next
-      # push to it and main's before that.
-      # A run that found something still built most of it, and the next one is
-      # the one that reads this back.
+      # A push to main writes what it built, and every other run only reads it.
+      # A run that found something still built most of it.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         with:
           path: ${{ steps.go-cache-paths.outputs.build }}
-          key: go-build-core-${{ matrix.runner }}-${{ github.sha }}
+          key: go-build-core-${{ matrix.runner }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/libs/core/go.sum') }}

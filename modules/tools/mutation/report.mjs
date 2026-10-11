@@ -84,11 +84,8 @@ export const summarize = (mutants) => {
   return { counts, total: mutants.length, efficacy }
 }
 
-/** The surviving mutants not waived for this target. */
-export const getSurvivors = (target, mutants, waivers) => {
-  const waived = new Set(waivers.filter((one) => one.target === target.name).map((one) => one.key))
-  return mutants.filter((one) => UNDETECTED.has(one.status) && !waived.has(one.key))
-}
+/** The mutants no test detects. */
+export const getSurvivors = (mutants) => mutants.filter((one) => UNDETECTED.has(one.status))
 
 /** The report files of every shard of a target. */
 export const listReports = (target, dir = join(root, OUTPUT, 'reports')) => {
@@ -98,6 +95,3 @@ export const listReports = (target, dir = join(root, OUTPUT, 'reports')) => {
     .filter((file) => name.test(file.split('/').pop()))
     .map((file) => JSON.parse(readFileSync(join(dir, file), 'utf8')))
 }
-
-export const readWaivers = () =>
-  JSON.parse(readFileSync(join(root, 'modules/tools/mutation/waivers.json'), 'utf8')).waived

@@ -121,4 +121,31 @@ describe('what the plex is handed', () => {
     expect(nodes.map((node) => node.id)).toEqual(['Here'])
     expect(edges).toEqual([])
   })
+
+  it('hangs a sibling off the focus when the focus is the parent they share', () => {
+    expect(
+      getEdges(createNeighbourhood('Here', [['Beside', Seat.SIBLING, 'next to', 'Here']])),
+    ).toEqual(['Here -> Beside (next to)'])
+  })
+
+  it('draws only the focus, and no edge, around a note with nothing seated near it', () => {
+    const { nodes, edges } = asPlex(createNeighbourhood('Here', []))
+    expect(nodes).toEqual([{ id: 'Here', title: 'Here', seat: 'focus' }])
+    expect(edges).toEqual([])
+  })
+
+  it('draws the focus under an empty path and title when the neighbourhood has none', () => {
+    const { nodes, edges } = asPlex(create(GetNeighbourhoodResponseSchema, {}))
+    expect(nodes).toEqual([{ id: '', title: '', seat: 'focus' }])
+    expect(edges).toEqual([])
+  })
+
+  it('titles the focus with the title its note holds', () => {
+    const { nodes } = asPlex(
+      create(GetNeighbourhoodResponseSchema, {
+        focus: { path: 'here.md', title: 'Here', identifier: '' },
+      }),
+    )
+    expect(nodes[0]).toEqual({ id: 'here.md', title: 'Here', seat: 'focus' })
+  })
 })

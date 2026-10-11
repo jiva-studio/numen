@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: interface copy
 import { seatWord } from '@numen/ui'
 import type { PlexRelatedSeat } from '@numen/ui'
 
