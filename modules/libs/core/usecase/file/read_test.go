@@ -513,3 +513,33 @@ func TestACharacterCutShortInsideTheRangeIsNotText(t *testing.T) {
 		t.Errorf("want not text, got %+v", got)
 	}
 }
+
+// The size a file was measured at bounds what is read, whatever the file holds
+// by the time its bytes come.
+func TestAFileThatGrewWhileItWasReadIsReadOnlyToWhereItWasMeasured(t *testing.T) {
+	_, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+	grown := faulty{file: &shifting{data: []byte("said and said"), size: 4}}
+
+	got, err := file.Read{Readers: grown}.Execute(t.Context(), v, "lecture.txt", 2, 0)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+
+	if got.Text != "id" || got.Start != 2 || got.Length != 2 || got.Whole != 4 {
+		t.Errorf("a file that grew came back as %+v", got)
+	}
+}
+
+func TestWholeCharactersLeavesOffACutLeadByte(t *testing.T) {
+	start, raw := file.WholeCharacters(0, []byte{0xE2, 0x82}, 10)
+	if start != 0 || len(raw) != 0 {
+		t.Errorf("a range closing inside a character kept %x from %d", raw, start)
+	}
+}
+
+func TestWholeCharactersOfOnlyContinuationBytesIsEmpty(t *testing.T) {
+	start, raw := file.WholeCharacters(1, []byte{0x80}, 5)
+	if start != 2 || len(raw) != 0 {
+		t.Errorf("a range of continuation bytes came back as %x from %d", raw, start)
+	}
+}
