@@ -3,10 +3,13 @@ package onnx
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/benchenv"
 )
 
 const benchModelDirEnvVar = "NUMEN_TEST_MODEL_DIR"
@@ -105,4 +108,56 @@ func BenchmarkEmbedVariableLengthBatch(b *testing.B) {
 			}
 		})
 	}
+}
+
+// benchPassesVar is how many forward passes run at once in
+// BenchmarkEmbedConcurrent; NUMEN_BENCH_THREADS is the model's thread count.
+const benchPassesVar = "NUMEN_BENCH_PASSES"
+
+// BenchmarkEmbedConcurrent embeds one full batch from each of several callers at
+// once and reports the texts embedded a second.
+func BenchmarkEmbedConcurrent(b *testing.B) {
+	dir := benchModelDir(b)
+	cfg, local := benchSetLocalModel(b, embed.Defaults(), dir)
+	if raw := os.Getenv(benchPassesVar); raw != "" {
+		passes, err := strconv.Atoi(raw)
+		if err != nil || passes < 1 {
+			b.Fatalf("%s: %q is not a positive integer", benchPassesVar, raw)
+		}
+		local.Sessions = passes
+	}
+	if raw := os.Getenv(benchenv.ThreadsVar); raw != "" {
+		threads, err := strconv.Atoi(raw)
+		if err != nil || threads < 1 {
+			b.Fatalf("%s: %q is not a positive integer", benchenv.ThreadsVar, raw)
+		}
+		local.Threads = threads
+	}
+	e, err := Open(b.Context(), cfg.GetStoredModel(), local, nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.Cleanup(func() { _ = e.Close() })
+
+	callers := e.Concurrency()
+	texts := make([]string, local.BatchTexts)
+	for i := range texts {
+		texts[i] = strings.Repeat("The quick brown fox jumps over the lazy dog. ", (i%20)+1)
+	}
+
+	b.ResetTimer()
+	for range b.N {
+		var wg sync.WaitGroup
+		for range callers {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if _, err := e.Embed(b.Context(), texts); err != nil {
+					b.Error(err)
+				}
+			}()
+		}
+		wg.Wait()
+	}
+	b.ReportMetric(float64(b.N*callers*len(texts))/b.Elapsed().Seconds(), "texts/s")
 }

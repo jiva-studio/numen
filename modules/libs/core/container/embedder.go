@@ -96,9 +96,7 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 
 	case embed.UseLocal:
 		local, _ := where.Local()
-		if c.ResolvedCompute.EmbeddingBatchSize > 0 && local.BatchTexts == 0 {
-			local.BatchTexts = c.ResolvedCompute.EmbeddingBatchSize
-		}
+		local = c.planLocalModel(local)
 		open, err := openLocal(is, local)
 		if err != nil {
 			return embedders.Provider{}, err
@@ -110,6 +108,19 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 	}
 	return embedders.Provider{}, fmt.Errorf("vectors are made %q, and they are made %q or %q",
 		where.Use, embed.UseLocal, embed.UseService)
+}
+
+// planLocalModel is a model on this machine with the compute plan's share: the
+// batch it embeds in one pass unless the settings name one, and the threads and
+// the passes at once it may run. A container without a plan leaves all three to
+// the model's own fallbacks.
+func (c Config) planLocalModel(local embed.LocalModel) embed.LocalModel {
+	if c.ResolvedCompute.EmbeddingBatchSize > 0 && local.BatchTexts == 0 {
+		local.BatchTexts = c.ResolvedCompute.EmbeddingBatchSize
+	}
+	local.ThreadBudget = c.ResolvedCompute.CoreBudget
+	local.PassBudget = c.ResolvedCompute.Workers
+	return local
 }
 
 // openServiceClient is the client for a hosted model, sending as many requests
