@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
-import { routeEdges, routingFor } from './routing'
+import { cutToFit, routeEdge, routeEdges, routingFor } from './routing'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
 import { ARROW_LENGTH, arrowOf, lengthOf, createPointOnCurve, type EdgeArrow } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
@@ -352,5 +352,165 @@ describe('the arrowhead a line carries', () => {
     const room = lengthOf(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
     expect(measure(words('to'))).toBeLessThanOrEqual(room)
     expect(measure(words())).toBeGreaterThan(room)
+  })
+})
+
+describe('the axis a seat is routed along', () => {
+  const axisOf = routingFor(DEFAULT_OPTIONS).axisOf
+
+  it('is left to the geometry for the focus', () => {
+    expect(axisOf({ seat: 'focus' })).toBe('auto')
+  })
+
+  it('runs down the page for the seats that grow up or down', () => {
+    expect(axisOf({ seat: 'parent' })).toBe('vertical')
+    expect(axisOf({ seat: 'child' })).toBe('vertical')
+  })
+
+  it('runs across the page for the seats that grow left or right', () => {
+    expect(axisOf({ seat: 'jump' })).toBe('horizontal')
+    expect(axisOf({ seat: 'sibling' })).toBe('horizontal')
+  })
+
+  it('follows the direction a seat has been given', () => {
+    const turned = routingFor({
+      ...DEFAULT_OPTIONS,
+      direction: { ...DEFAULT_OPTIONS.direction, child: 'left', jump: 'up' },
+    })
+    expect(turned.axisOf({ seat: 'child' })).toBe('horizontal')
+    expect(turned.axisOf({ seat: 'jump' })).toBe('vertical')
+  })
+})
+
+describe('cutting a title to a room', () => {
+  const perLetter = (label: string) => [...label].length
+
+  it('keeps a label that fills the room exactly', () => {
+    expect(cutToFit('abc', 3, perLetter)).toBe('abc')
+  })
+
+  it('trims the end of the cut and leaves its start as written', () => {
+    expect(cutToFit('  ab cd', 4, perLetter)).toBe('  a…')
+  })
+})
+
+/**
+ * Which way a line runs between two boxes is the axis of their seats, unless
+ * the boxes leave no clear space along it and do along the other.
+ */
+describe('the run of a line between two boxes', () => {
+  const box = (id: string, seat: PlexSeat, x: number, y: number): PlacedNode => ({
+    id,
+    title: id,
+    seat,
+    x,
+    y,
+    width: 100,
+    height: 40,
+    order: 0,
+    opacity: 1,
+  })
+
+  const routing = routingFor(DEFAULT_OPTIONS)
+
+  const route = (from: PlacedNode, to: PlacedNode, using = routing) =>
+    routeEdge(
+      { from: from.id, to: to.id },
+      new Map([from, to].map((node) => [node.id, node])),
+      using,
+    )!
+
+  it('runs down the page for a vertical seat with clear space below', () => {
+    const edge = route(box('a', 'child', 0, 0), box('b', 'child', 300, 60))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(edge.toPoint).toStrictEqual({ x: 300, y: 40 })
+  })
+
+  it('runs across the page where boxes of a vertical seat only touch', () => {
+    const edge = route(box('a', 'child', 0, 0), box('b', 'child', 300, 40))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })
+    expect(edge.toPoint).toStrictEqual({ x: 250, y: 40 })
+  })
+
+  it('runs down the page where boxes overlap in both directions', () => {
+    const edge = route(box('a', 'child', 0, 0), box('b', 'child', 30, 10))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(edge.toPoint).toStrictEqual({ x: 30, y: -10 })
+  })
+
+  it('runs across the page for a horizontal seat with clear space beside it', () => {
+    const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 150, 200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })
+    expect(edge.toPoint).toStrictEqual({ x: 100, y: 200 })
+  })
+
+  it('runs down the page where boxes of a horizontal seat only touch', () => {
+    const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 100, 200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(edge.toPoint).toStrictEqual({ x: 100, y: 180 })
+  })
+
+  it('takes the axis of the seat that has one, whichever end it is', () => {
+    // Further across than down, and still a line to a child hangs from below.
+    const edge = route(box('focus', 'focus', 0, 0), box('child', 'child', 500, 100))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(edge.toPoint).toStrictEqual({ x: 500, y: 80 })
+  })
+
+  it('takes the axis from the geometry where neither seat has one', () => {
+    const undeclared = { ...routing, axisOf: () => 'auto' as const }
+
+    const down = route(box('a', 'focus', 0, 0), box('b', 'focus', 150, 200), undeclared)
+    expect(down.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(down.toPoint).toStrictEqual({ x: 150, y: 180 })
+
+    const across = route(box('a', 'focus', 0, 0), box('b', 'focus', 300, 60), undeclared)
+    expect(across.fromPoint).toStrictEqual({ x: 50, y: 0 })
+    expect(across.toPoint).toStrictEqual({ x: 250, y: 60 })
+  })
+
+  it('leaves from the top of a box that is below the one it arrives at', () => {
+    const edge = route(box('low', 'child', 0, 200), box('high', 'child', 0, 0))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 180 })
+    expect(edge.toPoint).toStrictEqual({ x: 0, y: 20 })
+  })
+
+  it('leaves from the bottom of a box level with the one it arrives at', () => {
+    const edge = route(box('a', 'child', 0, 0), box('b', 'child', 10, 0))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(edge.toPoint).toStrictEqual({ x: 10, y: -20 })
+  })
+
+  it('leaves from the right of a box at the same height beside the one it arrives at', () => {
+    const edge = route(box('a', 'jump', 0, 0), box('b', 'jump', 0, 10))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 50, y: 0 })
+    expect(edge.toPoint).toStrictEqual({ x: -50, y: 10 })
+  })
+
+  it('holds the leaving direction for a fraction of the gap between the gates', () => {
+    const half = { ...routing, curvature: 0.5, minReach: 0 }
+    const edge = route(box('a', 'child', 0, 0), box('b', 'child', 0, 200), half)
+
+    // The gates are 160 apart, so each control stands 80 out of its gate.
+    expect(edge.control1).toStrictEqual({ x: 0, y: 100 })
+    expect(edge.control2).toStrictEqual({ x: 0, y: 100 })
+  })
+
+  it('draws a line fully opaque unless it is given an opacity', () => {
+    const a = box('a', 'child', 0, 0)
+    const b = box('b', 'child', 0, 200)
+    const byId = new Map([a, b].map((node) => [node.id, node]))
+
+    expect(routeEdges([{ from: 'a', to: 'b' }], byId, routing)[0]!.opacity).toBe(1)
+    expect(routeEdges([{ from: 'a', to: 'b' }], byId, routing, () => 0.25)[0]!.opacity).toBe(0.25)
   })
 })
