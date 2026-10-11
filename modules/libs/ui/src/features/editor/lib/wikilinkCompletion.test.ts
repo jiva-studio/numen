@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { CompletionContext, currentCompletions, startCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { createWikilinkCompletion, createWikilinkSource } from './wikilinkCompletion'
+import {
+  createWikilinkCompletion,
+  createWikilinkSource,
+  type WikilinkOption,
+} from './wikilinkCompletion'
 import { createState } from '../fixtures/state'
 
 describe('wikilink completion source', () => {
@@ -424,7 +428,7 @@ describe('wikilink completion without headings to look up', () => {
 })
 
 describe('the wikilink completion extension', () => {
-  const open = async (search: ReturnType<typeof vi.fn>) => {
+  const open = async (search: (query: string) => Promise<readonly WikilinkOption[]>) => {
     const doc = 'See [[Rel'
     const state = EditorState.create({
       doc,
