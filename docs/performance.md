@@ -1101,3 +1101,21 @@ The quantisation scale now stands in the recipe a vector is kept under, so every
 **What it does not settle is the space.** `vectors` is keyed by the text's hash and the recipe together, and `forget_vector` takes a row out only where no chunk holds that text at all. A chunk whose text did not change keeps its old-recipe row beside its new one, so a scale that moves doubles what the vectors cost on disk. At the corpus measured under "Dimensions cost more than bits" that is 149 MB become 298 MB.
 
 **The old rows are kept, and building the index again is what takes them out.** Keeping them is the reason the recipe is in the key: a person who sets the model, the width or the scale back finds every vector still there and buys none of them twice, which is minutes of a machine or money and a network. Nothing sweeps them behind a person's back. `numen-cli scan <vault> --rebuild-index` — the same request the window makes under its own name — forgets the vectors of every recipe but the one in use and vacuums the file, so the space comes back when a person says the old model is not coming back. That is the whole of the reclaim, and it is where the store's growth is answered: **the vectors grow by their own size each time a recipe moves, and shrink only on a rebuild.**
+
+## What a model session runs best on
+
+The sweep times one `Run` of each ONNX session the application opens — the Parakeet encoder, decoder and joiner, the Silero voice-activity model, PaddleOCR detection and recognition, and an embedding model — on every execution provider, compute unit and thread count the machine offers. It opens each model file directly and builds its inputs from the input metadata the file declares, so what it measures is the session and nothing around it. The session is created and run a few times before the timer starts, so a compile on the first run is not in the result.
+
+A model is recognised by the inputs and outputs it declares and not by its name: a PaddleOCR file with one image input and a rank-4 heat map as output is detection, one with rank-3 scores over the characters is recognition, and one with `im_shape` and `image` inputs is the layout model, which the sweep does not time. The thread counts are 1, 2, 4, half the physical cores, the physical cores and the logical cores of the machine the sweep runs on. The compute units (`ALL`, `CPUAndNeuralEngine`, `CPUAndGPU`, `CPUOnly`) are swept for CoreML only; `SessionSettings.ComputeUnits` leaves the default at `ALL`.
+
+```
+cd modules/libs/core
+internal/onnxruntime/bench-sweep.sh <output dir> [max load]
+benchstat <output dir>/cpu_default_t1.txt <output dir>/cpu_default_t8.txt
+```
+
+The script refuses to start while the 1-minute load average is above the limit it is given (a quarter of the logical CPUs by default), writes `header.txt` with the machine's facts, and writes one file per provider, compute units and thread count. `NUMEN_BENCH_MODELS` names the directory of model files (the model cache by default), `NUMEN_BENCH_EMBEDDING_MODEL` a directory holding an embedding `model.onnx`, and `NUMEN_BENCH_RUNTIME` the `libonnxruntime` to open. A model that is missing, or a provider the machine does not have, skips its benchmark with a message. A single configuration is run by hand with `NUMEN_BENCH_PROVIDER`, `NUMEN_BENCH_THREADS` and `NUMEN_BENCH_COMPUTE`:
+
+```
+NUMEN_BENCH_PROVIDER=cpu NUMEN_BENCH_THREADS=4 go test ./internal/onnxruntime/ -run XXX -bench Device -benchtime 1x
+```
