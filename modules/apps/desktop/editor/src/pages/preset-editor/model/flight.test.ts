@@ -91,6 +91,21 @@ describe('one write', () => {
   })
 })
 
+describe('a write the vault could not be asked for', () => {
+  it('says the settings were not written', async () => {
+    const flight = createWriteFlight()
+    const core = {
+      write: async () => {
+        throw new Error('connection refused')
+      },
+    } as unknown as Presets
+
+    await sendWrite(flight, PATH, DEFAULTS, core, createMessages().writeMessage)
+
+    expect(flight.errorMessage.value).toBe(words.unwritten)
+  })
+})
+
 describe('a write asked for while another is out', () => {
   it('goes after it', async () => {
     const flight = createWriteFlight()
