@@ -2,13 +2,13 @@
  * What a deck tab holds, asked without a screen: what it reads, what it writes
  * back, and what it does when the file moved past what it read.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { StopReason } from '@numen/protocol'
 import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultCard, DeckProblem, Preset } from '@/entities/deck'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
-import { fileOpeners } from '@/entities/tab'
+import { fileOpeners, type WindowHandle } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
 import { useDeckTabs, type DeckTabState } from './useDeckTabs'
@@ -59,7 +59,7 @@ const getCardName = (card: { values: readonly { field: string; text: string }[] 
 /** A vault holding one deck, writing down every write it was asked for. */
 const vault = (
   answers: {
-    error?: ErrorCode
+    error?: ErrorCode | 'changed'
     problems?: readonly DeckProblem[]
     bound?: number
     /** The write answers that the file moved past what the tab read. */
@@ -939,5 +939,261 @@ describe('the preset a deck is scheduled by', () => {
 
     expect(tab.scheduled.value.path).toBe('')
     expect(tab.scheduled.value.errorMessage).toContain('reaches no note')
+  })
+})
+
+describe('a deck the vault refused', () => {
+  it('draws no mark, since nothing was read to mark', async () => {
+    const { tab } = await open({ error: 'notADeck' })
+
+    expect(tab.marks.value.fields.size).toBe(0)
+    expect(tab.marks.value.whole).toStrictEqual([])
+  })
+
+  it('is refused under the code the vault gave', async () => {
+    const { tab } = await open({ error: 'deckTooLarge', bound: 10 })
+
+    expect(tab.note.value.error).toBe('deckTooLarge')
+  })
+
+  it('is refused as not a deck where the code names no refusal', async () => {
+    const { tab } = await open({ error: 'changed' })
+
+    expect(tab.note.value.error).toBe('notADeck')
+  })
+})
+
+describe('a deck written', () => {
+  it('leaves the string the tab holds as it was', async () => {
+    const { decks, tab } = await open()
+    tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
+    const body = tab.note.value.body
+
+    await decks.flush()
+
+    expect(tab.note.value.body).toBe(body)
+    expect(tab.note.value.state).toBe('clean')
+  })
+})
+
+describe('a card standing in a deck that was turned', () => {
+  it('is the card it was before the turn', async () => {
+    const { tab } = await open()
+    const llama = tab.deck.value.cards[0]
+
+    tab.addCard('Animal', [], null)
+
+    expect(tab.deck.value.cards[0]).toBe(llama)
+  })
+})
+
+describe('a deck tab closed', () => {
+  it('goes from the window, with what was said about its file', async () => {
+    const one = await open()
+
+    one.tab.close(one.id)
+    await settle()
+
+    expect(one.held.handle.each(DECK)).toHaveLength(0)
+    expect(one.decks.getTitle('Animals.md')).toBe('Animals.md')
+  })
+
+  it('stays where the file moved past what it holds', async () => {
+    const one = await open({ isChanged: true })
+    one.tab.addCard('Animal', [], null)
+    await one.decks.flush()
+
+    one.tab.close(one.id)
+    await settle()
+
+    expect(one.held.handle.each(DECK)).toHaveLength(1)
+    expect(one.decks.getTitle('Animals.md')).toBe('Animals')
+  })
+
+  it('keeps what was said about a file another tab still stands at', async () => {
+    const one = await open()
+    await one.held.openTabOfKind(DECK, 'Beasts.md')
+    await settle()
+    one.decks.applyPathChanges(['Animals.md'], [{ from: 'Beasts.md', to: 'Animals.md' }])
+    await settle()
+    expect(one.decks.kept.getPath('Beasts.md')).toBe('Animals.md')
+
+    one.tab.close(one.id)
+    await settle()
+
+    expect(one.decks.getTitle('Animals.md')).toBe('Animals')
+  })
+
+  it('forgets the preset its file was scheduled by', async () => {
+    const one = await open({ by: 'Sanskrit.md' })
+    expect(one.tab.scheduled.value.path).toBe('Sanskrit.md')
+    one.tab.close(one.id)
+    await settle()
+    one.presets.getDeckPreset = () => new Promise(() => {})
+
+    const again = await one.held.openTabOfKind(DECK, 'Animals.md')
+
+    const state = one.held.handle.getTabState<DeckTabState>(DECK, again) as DeckTabState
+    expect(state.scheduled.value.path).toBe('')
+  })
+
+  it('forgets what it was told about the preset it chose', async () => {
+    const one = await open({ notScheduled: 'unreadable' })
+    one.tab.setSchedule('Sanskrit.md')
+    await settle()
+    expect(one.tab.scheduled.value.errorMessage).toBe(words.notScheduled)
+    one.tab.close(one.id)
+    await settle()
+
+    const again = await one.held.openTabOfKind(DECK, 'Animals.md')
+    await settle()
+
+    const state = one.held.handle.getTabState<DeckTabState>(DECK, again) as DeckTabState
+    expect(state.scheduled.value.errorMessage).toBe('')
+  })
+
+  it('forgets the deck it drew, so the file is read again under new identities', async () => {
+    const unmarked = CARDS.map((one) => ({ ...one, mark: '' }))
+    const one = await open({ cards: unmarked })
+    const before = one.tab.deck.value.cards.map((card) => card.id)
+    one.tab.close(one.id)
+    await settle()
+
+    const again = await one.held.openTabOfKind(DECK, 'Animals.md')
+    await settle()
+
+    const state = one.held.handle.getTabState<DeckTabState>(DECK, again) as DeckTabState
+    const after = state.deck.value.cards.map((card) => card.id)
+    expect(after).toHaveLength(2)
+    expect(after).not.toStrictEqual(before)
+  })
+
+  it('forgets the marks it drew', async () => {
+    const one = await open({
+      problems: [{ fault: 'unknown', card: 0, face: null, field: '', text: 'Odd' }],
+    })
+    const before = one.tab.marks.value
+    one.tab.close(one.id)
+    await settle()
+
+    const again = await one.held.openTabOfKind(DECK, 'Animals.md')
+    await settle()
+
+    const state = one.held.handle.getTabState<DeckTabState>(DECK, again) as DeckTabState
+    expect(state.marks.value.at.size).toBe(1)
+    expect(state.marks.value).not.toBe(before)
+  })
+})
+
+describe('the decks the command palette keeps', () => {
+  it('has each deck that is open, and no other', async () => {
+    const one = await open()
+
+    expect(one.decks.kept.has('Animals.md')).toBe(true)
+    expect(one.decks.kept.has('Other.md')).toBe(false)
+  })
+
+  it('is called what the vault read the file as', async () => {
+    const one = await open()
+
+    expect(one.decks.kept.getTitle('Animals.md')).toBe('Animals')
+  })
+
+  it('is asking while the file moved past what the deck holds, and not otherwise', async () => {
+    const one = await open({ isChanged: true })
+    expect(one.decks.kept.asking('Animals.md')).toBe(false)
+
+    one.tab.addCard('Animal', [], null)
+    await one.decks.flush()
+
+    expect(one.decks.kept.asking('Animals.md')).toBe(true)
+  })
+
+  it('finds the deck standing at a path, and none at another', async () => {
+    const one = await open()
+    await one.held.openTabOfKind(DECK, 'Beasts.md')
+    await settle()
+
+    expect(one.decks.kept.getTabAt('Beasts.md')).toBe('Beasts.md')
+    expect(one.decks.kept.getTabAt('Animals.md')).toBe('Animals.md')
+    expect(one.decks.kept.getTabAt('Nowhere.md')).toBeNull()
+  })
+
+  it('closes the deck it is asked to, and no other', async () => {
+    const one = await open()
+    await one.held.openTabOfKind(DECK, 'Beasts.md')
+    await settle()
+
+    one.decks.kept.close('Beasts.md')
+    await settle()
+
+    expect(one.held.handle.each<DeckTabState>(DECK).map((tab) => tab.state.id)).toStrictEqual([
+      'Animals.md',
+    ])
+  })
+
+  it('closes nothing for a deck the window does not hold', async () => {
+    const one = await open()
+
+    expect(() => one.decks.kept.close('Nowhere.md')).not.toThrow()
+    expect(one.held.handle.each(DECK)).toHaveLength(1)
+  })
+})
+
+describe('a deck opened by a file opener', () => {
+  /** A window whose tabs are opened by spies, which open nothing. */
+  const spied = () => {
+    const one = vault()
+    const held = useWindowTabs()
+    const road = tabOpeners()
+    const openTab = vi.fn<WindowHandle['openTab']>(async () => '')
+    const openTabBeside = vi.fn<WindowHandle['openTabBeside']>(async () => '')
+    const handle: WindowHandle = { ...held.handle, openTab, openTabBeside }
+    const decks = useDeckTabs(one.core, one.presets, handle, road)
+    return { road, decks, openTab, openTabBeside }
+  }
+
+  it('is put in front where the person is', () => {
+    const { road, openTab, openTabBeside } = spied()
+
+    road.openNewFile('Animals.md', '', 'deck')
+
+    expect(openTab).toHaveBeenCalledTimes(1)
+    expect(openTabBeside).not.toHaveBeenCalled()
+  })
+
+  it('is put beside the pane the person is in, where that is asked', () => {
+    const { road, openTab, openTabBeside } = spied()
+
+    road.openNewFile('Animals.md', '', 'deck', 'beside')
+
+    expect(openTabBeside).toHaveBeenCalledTimes(1)
+    expect(openTab).not.toHaveBeenCalled()
+  })
+
+  it('is the one tab while the first asked for is not yet open', () => {
+    const { road, openTab } = spied()
+
+    road.openNewFile('Animals.md', '', 'deck')
+    road.openNewFile('Animals.md', '', 'deck')
+
+    expect(openTab.mock.calls[0]?.[1]).toBeTruthy()
+    expect(openTab.mock.calls[1]?.[1]).toBe(openTab.mock.calls[0]?.[1])
+  })
+
+  it('is called what it was told, until the vault reads another title', () => {
+    const { road, decks } = spied()
+
+    road.openNewFile('Animals.md', 'Told', 'deck')
+
+    expect(decks.getTitle('Animals.md')).toBe('Told')
+  })
+
+  it('keeps the title it has where it is asked for again without one', async () => {
+    const one = await open()
+
+    one.road.openNewFile('Animals.md', '', 'deck')
+
+    expect(one.decks.getTitle('Animals.md')).toBe('Animals')
   })
 })
