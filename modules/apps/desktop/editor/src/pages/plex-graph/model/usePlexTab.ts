@@ -1,7 +1,7 @@
 /**
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import type { PlexNeighbourhood, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { NoteType } from '@/entities/file'
 import { fileOf, type PathRename } from '@/shared/paths'
@@ -51,10 +51,23 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const picture = computed<PlexNeighbourhood | null>(() => {
     const around = view.neighbourhood.value
     if (!deps.isReady.value || !around) return null
-    const drawn = asPlex(around, map.getNodeId, linkDirections.value)
-    map.retainNodeIds(drawn.nodes.map((node) => node.id))
-    return drawn
+    return asPlex(around, map.getNodeId, linkDirections.value)
   })
+
+  /**
+   * A node id outlives the one navigation after its note stops being drawn,
+   * so a transition still reaching it by id finds it still there.
+   */
+  let lastDrawnIds: readonly string[] = []
+  watch(
+    picture,
+    (drawn) => {
+      const drawnIds = drawn?.nodes.map((node) => node.id) ?? []
+      map.retainNodeIds([...drawnIds, ...lastDrawnIds])
+      lastDrawnIds = drawnIds
+    },
+    { immediate: true },
+  )
 
   const empty = computed(
     () =>
