@@ -5,7 +5,7 @@
  * in, which is what a person sees.
  */
 import { afterEach, describe, expect, it } from 'vitest'
-import { EditorState, type Extension } from '@codemirror/state'
+import { EditorState, StateEffect, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { timing, type TimingState } from './timing'
 
@@ -311,5 +311,272 @@ describe('an editor drawn again while the recording stands still', () => {
     times.show({ times: [...TIMED.times, '0:09'], current: 2, isFollowing: true })
 
     expect(effects).toBe(0)
+  })
+})
+
+/** Every list of effects the view was dispatched, in order. */
+const recordEffects = (view: EditorView) => {
+  const seen: StateEffect<unknown>[][] = []
+  const was = view.dispatch.bind(view)
+  view.dispatch = ((...specs: Parameters<EditorView['dispatch']>) => {
+    for (const one of specs) {
+      const effects = one && typeof one === 'object' && 'effects' in one ? one.effects : null
+      if (Array.isArray(effects)) seen.push(effects)
+    }
+    return was(...specs)
+  }) as EditorView['dispatch']
+  return seen
+}
+
+/** The dispatches that asked the view to move. */
+const moves = (seen: StateEffect<unknown>[][]) => seen.filter((effects) => effects.length > 1)
+
+describe('an effect the times did not send', () => {
+  it('leaves what is shown as it was', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 1 })
+    const other = StateEffect.define<number>()
+
+    view.dispatch({ effects: other.of(5) })
+
+    expect(gutter(view)).toStrictEqual(['0:01', '0:03', '0:06'])
+    expect(current(view)).toStrictEqual(['Rain on the awning.'])
+  })
+})
+
+describe('the line being read, at the edges of the document', () => {
+  it('is drawn where it is the first line', () => {
+    const { times, view } = editor()
+
+    times.show({ ...TIMED, current: 0 })
+
+    expect(current(view)).toStrictEqual(['A bell over the door.'])
+  })
+
+  it('is drawn where it is the last line', () => {
+    const { times, view } = editor()
+
+    times.show({ ...TIMED, current: 2 })
+
+    expect(current(view)).toStrictEqual(['Someone counting change.'])
+  })
+
+  it('is no line where it is the count of the lines', () => {
+    const { times, view } = editor()
+
+    times.show({ ...TIMED, current: 3 })
+
+    expect(current(view)).toStrictEqual([])
+  })
+})
+
+describe('the gutter elements', () => {
+  const elements = (view: EditorView) =>
+    [...view.dom.querySelectorAll('.cm-times .cm-gutterElement')].map((one) => one.className)
+
+  it('carry the class of the line being read and no other', () => {
+    const { times, view } = editor()
+
+    times.show({ ...TIMED, current: 1 })
+
+    expect(elements(view)).toStrictEqual([
+      'cm-gutterElement',
+      'cm-gutterElement cm-current',
+      'cm-gutterElement',
+    ])
+  })
+
+  it('give the class up when the line is no longer the one being read', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 0 })
+
+    times.show({ ...TIMED, current: 1 })
+
+    expect(elements(view)).toStrictEqual([
+      'cm-gutterElement',
+      'cm-gutterElement cm-current',
+      'cm-gutterElement',
+    ])
+  })
+
+  it('keep the time of a line that did not change', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 0 })
+    const marks = () => [...view.dom.querySelectorAll('.cm-times .cm-time')]
+    const before = marks()
+
+    times.show({ ...TIMED, current: 1 })
+
+    const after = marks()
+    expect(after[2]).toBe(before[2])
+    expect(after[0]).not.toBe(before[0])
+    expect(after[1]).not.toBe(before[1])
+  })
+
+  it('keep every time while the text is typed into', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+    const before = [...view.dom.querySelectorAll('.cm-times .cm-time')]
+
+    view.dispatch({ changes: { from: 0, to: 0, insert: 'Then. ' } })
+
+    const after = [...view.dom.querySelectorAll('.cm-times .cm-time')]
+    expect(after).toHaveLength(3)
+    expect(after.every((one, at) => one === before[at])).toBe(true)
+  })
+})
+
+describe('a time in the gutter', () => {
+  it('is a button that submits nothing', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+
+    const mark = view.dom.querySelector<HTMLButtonElement>('.cm-times .cm-time')
+
+    expect(mark?.type).toBe('button')
+  })
+
+  it('keeps the editor from taking the click for its own', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+
+    const click = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    view.dom.querySelector('.cm-times .cm-time')?.dispatchEvent(click)
+
+    expect(click.defaultPrevented).toBe(true)
+  })
+})
+
+describe('the same times given again', () => {
+  it('are not shown again where they are a copy', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, times: [...TIMED.times] })
+
+    expect(seen).toHaveLength(0)
+  })
+
+  it('are shown again where one of them is another', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+
+    times.show({ ...TIMED, times: ['0:01', '9:99', '0:06'] })
+
+    expect(gutter(view)).toStrictEqual(['0:01', '9:99', '0:06'])
+  })
+
+  it('are shown again where only the following of the line changed', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 1 })
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: 1, isFollowing: true })
+
+    expect(seen).toHaveLength(1)
+  })
+})
+
+describe('the view following the line being said', () => {
+  it('moves to it where following is turned on', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 1 })
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: 1, isFollowing: true })
+
+    expect(moves(seen)).toHaveLength(1)
+  })
+
+  it('does not move where following is turned off', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 1, isFollowing: true })
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: 1, isFollowing: false })
+
+    expect(seen).toHaveLength(1)
+    expect(moves(seen)).toHaveLength(0)
+  })
+
+  it('moves to the nearest edge of the line', () => {
+    const { times, view } = editor()
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: 1, isFollowing: true })
+
+    const target = moves(seen)[0]?.[1] as unknown as { value: { y: string } }
+    expect(target.value.y).toBe('nearest')
+  })
+
+  it('moves to the first line', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 2, isFollowing: true })
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: 0, isFollowing: true })
+
+    expect(moves(seen)).toHaveLength(1)
+  })
+
+  it('does not move where no line is being said', () => {
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 2, isFollowing: true })
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: -1, isFollowing: true })
+
+    expect(seen).toHaveLength(1)
+    expect(moves(seen)).toHaveLength(0)
+  })
+
+  it('does not move to the line the count of the lines names', () => {
+    const { times, view } = editor()
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: 3, isFollowing: true })
+
+    expect(seen).toHaveLength(1)
+    expect(moves(seen)).toHaveLength(0)
+  })
+
+  it('does not move to a line the document does not have', () => {
+    const { times, view } = editor()
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: 9, isFollowing: true })
+
+    expect(seen).toHaveLength(1)
+    expect(moves(seen)).toHaveLength(0)
+  })
+})
+
+describe('an editor destroyed', () => {
+  it('is shown nothing more', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+    view.destroy()
+    const seen = recordEffects(view)
+
+    times.show({ ...TIMED, current: 1 })
+
+    expect(seen).toHaveLength(0)
+  })
+
+  it('before it was shown what the one before it was, leaves the later times to the next editor', async () => {
+    const times = timing(() => {})
+    const first = drawing(times)
+    times.show(TIMED)
+    first.destroy()
+    const second = drawing(times)
+    times.show({ ...TIMED, times: ['9:01', '9:03', '9:06'] })
+    second.destroy()
+    await waitTick()
+
+    const third = drawing(times)
+    await waitTick()
+
+    expect(gutter(third)).toStrictEqual(['9:01', '9:03', '9:06'])
   })
 })
