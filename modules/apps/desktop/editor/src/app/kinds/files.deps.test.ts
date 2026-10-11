@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { cards, presets, WORDS as cardWords } from '@/entities/deck'
 import { ANSWER_WORDS, invocationOf, openDestination, runInvocation } from '@/features/command-palette'
+import { running } from '@/entities/artifact'
 import { createFilesKind as buildFilesKind } from '@/pages/file-manager'
 import type { FilesTabDeps } from '@/pages/file-manager/types'
 import { createFilesKind } from './files'
@@ -56,6 +57,7 @@ const setup = (over: Record<string, unknown> = {}) => {
   const commandDeps = vi.fn(() => ({ marker: 'deps' }))
   const runCommand = vi.fn()
   const createUntitled = vi.fn()
+  const applyPathChanges = vi.fn()
   const canRun = vi.fn()
   const makes = shallowRef(new Map<string, unknown>())
   const dragged = shallowRef<readonly string[]>([])
@@ -65,7 +67,7 @@ const setup = (over: Record<string, unknown> = {}) => {
     tabOpeners: { openNewFile },
     held: holding([], { kind: 'files', id: 'front' }, { id: 'last' }),
     runs: { canRun },
-    editing: { notes: { applyPathChanges: vi.fn() }, making: { createUntitled } },
+    editing: { notes: { applyPathChanges }, making: { createUntitled } },
     vaults: { makes },
     getTarget,
     runCommand,
@@ -87,6 +89,7 @@ const setup = (over: Record<string, unknown> = {}) => {
     commandDeps,
     runCommand,
     createUntitled,
+    applyPathChanges,
     canRun,
     makes,
     destinations,
@@ -400,5 +403,56 @@ describe('what the files tab asks of the window', () => {
 
     expect(deps.getArtifactStates!('a.md')).toBe(made)
     expect(deps.getArtifactStates!('b.md')).toStrictEqual({})
+  })
+})
+
+describe('an address imported from the files tab', () => {
+  it('fetches what the note points at and tells the notes its path changed', async () => {
+    const { deps, createUrl, applyPathChanges } = setup()
+    createUrl.mockResolvedValue({ ok: true, value: { path: 'dir/U.md' } })
+
+    await deps.importUrl('dir', 'https://example.test')
+
+    await vi.waitFor(() => expect(applyPathChanges).toHaveBeenCalledWith(['dir/U.md']))
+    expect(running.fetchArtifact).toHaveBeenCalledWith('dir/U.md')
+  })
+
+  it('says why the fetch failed and does not tell the notes', async () => {
+    const { deps, createUrl, applyPathChanges, writeMessage } = setup()
+    createUrl.mockResolvedValue({ ok: true, value: { path: 'dir/U.md' } })
+    vi.mocked(running.fetchArtifact).mockRejectedValueOnce(new Error('offline'))
+
+    await deps.importUrl('dir', 'https://example.test')
+
+    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith('offline', 'error'))
+    expect(applyPathChanges).not.toHaveBeenCalled()
+  })
+
+  it('fetches nothing where the vault refused the address', async () => {
+    const { deps, createUrl, applyPathChanges } = setup()
+    createUrl.mockResolvedValue({ ok: false, error: 'occupied' })
+
+    await deps.importUrl('dir', 'https://example.test')
+
+    expect(running.fetchArtifact).not.toHaveBeenCalled()
+    expect(applyPathChanges).not.toHaveBeenCalled()
+  })
+})
+
+describe('what the files tab asks, with nothing to go on', () => {
+  it('syncs a destination with no title under an empty title', () => {
+    const { deps, syncPathFromTab } = setup()
+
+    deps.openDestination({ path: 'a.md' } as never, undefined)
+
+    expect(syncPathFromTab).toHaveBeenCalledWith('front', 'a.md', '')
+  })
+
+  it('runs a command over no paths with an empty path', () => {
+    const { deps, runCommand } = setup()
+
+    deps.runCommand('delete', [], 'A', 'tab' as never)
+
+    expect(runCommand.mock.calls[0]![1]).toMatchObject({ path: '', file: '', others: [] })
   })
 })
