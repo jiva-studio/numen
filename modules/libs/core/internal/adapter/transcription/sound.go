@@ -58,7 +58,7 @@ func (r *recording) Segments(ctx context.Context, from, count int) ([]port.Audio
 		if err != nil {
 			return nil, err
 		}
-		at, err := resample(ctx, sound, rate, sampleRate)
+		at, err := resample(ctx, sound, rate, sampleRate, r.owner.workers)
 		if err != nil {
 			return nil, err
 		}

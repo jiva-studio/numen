@@ -23,8 +23,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// inFlight is how many batches are sent at once.
-const inFlight = 4
+// defaultInFlight is how many batches are sent at once when no limit is set.
+const defaultInFlight = 4
 
 // ErrRejected is a request the service answered with anything but a 5xx or a
 // 429 — a malformed batch, a key it does not know, an address that is not a
@@ -40,7 +40,7 @@ type Client struct {
 	identity port.EmbeddingModel
 	http     *http.Client
 
-	// InFlight is how many batches are sent at once.
+	// InFlight is how many batches are sent at once. Zero or less is defaultInFlight.
 	InFlight int
 	// Attempts is how many times one request is sent before its error is
 	// reported. A real run meets "engine overloaded" repeatedly.
@@ -87,7 +87,7 @@ func New(is port.EmbeddingModel, model embed.ServiceModel) (*Client, error) {
 			},
 			Timeout: 90 * time.Second,
 		},
-		InFlight: inFlight,
+		InFlight: defaultInFlight,
 		Attempts: 5,
 		Delay:    time.Second,
 	}, nil
@@ -111,7 +111,7 @@ func (c *Client) Embed(ctx context.Context, texts []string) ([][]float32, error)
 
 	limit := c.InFlight
 	if limit <= 0 {
-		limit = inFlight
+		limit = defaultInFlight
 	}
 
 	results := make([][][]float32, len(batches))

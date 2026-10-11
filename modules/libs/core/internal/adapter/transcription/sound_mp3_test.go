@@ -215,7 +215,7 @@ func TestAnMP3RecordingHonoursItsContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := resample(ctx, sound, rate, sampleRate); err != context.Canceled {
+	if _, err := resample(ctx, sound, rate, sampleRate, 0); err != context.Canceled {
 		t.Errorf("resampling under a cancelled context returned %v", err)
 	}
 }

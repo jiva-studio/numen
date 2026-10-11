@@ -29,9 +29,10 @@ const DefaultMaxEditDistance = 0.30
 // DefaultBatchSize is how many lines one request carries where nobody said.
 const DefaultBatchSize = 40
 
-// DefaultInFlight is how many batches are asked about at once where nobody
-// said. A service is asked over four connections; the command line is a
-// person's own, and is left most of itself while they are using it.
+// DefaultInFlight and DefaultAgentInFlight are how many batches are asked about
+// at once at a service and at the command line when neither the profile nor the
+// performance profile says. The command line is a person's own model, and is
+// left most of itself while they are using it.
 const (
 	DefaultInFlight      = 4
 	DefaultAgentInFlight = 2
@@ -99,7 +100,7 @@ type Profile struct {
 	Overlap int `json:"overlap"`
 	// InFlight is how many batches are being asked about at any moment. At the
 	// command line this is how much of a person's own model is taken while
-	// they are using it.
+	// they are using it. Zero is the performance profile's LLM concurrency.
 	InFlight int `json:"in_flight"`
 	// Attempts is how many times one request is sent before its error is
 	// reported. Only a service is sent to again.
@@ -141,7 +142,6 @@ func ServiceDefaults() Profile {
 		BatchURL:   "https://openrouter.ai/api/beta/batches",
 		KeyEnv:     KeyEnvVar,
 		BatchSize:  DefaultBatchSize,
-		InFlight:   DefaultInFlight,
 		Attempts:   DefaultAttempts,
 		DelayMS:    DefaultDelayMS,
 		MaxDelayMS: DefaultMaxDelayMS,
@@ -153,7 +153,6 @@ func AgentDefaults() Profile {
 	return Profile{
 		Use:       UseAgent,
 		BatchSize: DefaultAgentBatchSize,
-		InFlight:  DefaultAgentInFlight,
 	}
 }
 
@@ -202,7 +201,7 @@ type profileFile struct {
 	Command    *[]string `json:"command,omitempty"`
 	BatchSize  *int      `json:"batch_size"`
 	Overlap    *int      `json:"overlap"`
-	InFlight   *int      `json:"in_flight"`
+	InFlight   *int      `json:"in_flight,omitempty"`
 	Attempts   *int      `json:"attempts,omitempty"`
 	DelayMS    *int      `json:"delay_ms,omitempty"`
 	MaxDelayMS *int      `json:"max_delay_ms,omitempty"`
@@ -257,7 +256,10 @@ func (p *Profile) UnmarshalJSON(raw []byte) error {
 // MarshalJSON writes what this profile's use applies to, and never the key.
 // Rewriting the file is not how a key is set.
 func (p Profile) MarshalJSON() ([]byte, error) {
-	f := profileFile{Use: &p.Use, BatchSize: &p.BatchSize, Overlap: &p.Overlap, InFlight: &p.InFlight}
+	f := profileFile{Use: &p.Use, BatchSize: &p.BatchSize, Overlap: &p.Overlap}
+	if p.InFlight > 0 {
+		f.InFlight = &p.InFlight
+	}
 	switch p.Use {
 	case UseService:
 		f.BaseURL, f.BatchURL, f.Name, f.KeyEnv = &p.BaseURL, &p.BatchURL, &p.Name, &p.KeyEnv
@@ -302,4 +304,19 @@ func assign[T any](dst *T, src *T) {
 	if src != nil {
 		*dst = *src
 	}
+}
+
+// GetInFlight is how many batches this profile asks about at once: its own
+// number, then planned when the performance profile resolves one, then the
+// default of its kind.
+func (p Profile) GetInFlight(planned int) int {
+	switch {
+	case p.InFlight > 0:
+		return p.InFlight
+	case planned > 0:
+		return planned
+	case p.Use == UseAgent:
+		return DefaultAgentInFlight
+	}
+	return DefaultInFlight
 }

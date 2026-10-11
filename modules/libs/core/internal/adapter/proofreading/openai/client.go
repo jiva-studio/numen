@@ -25,10 +25,6 @@ import (
 // ErrNoKey is a service configured without a key anywhere to find it.
 var ErrNoKey = errors.New("no key in the configuration or the environment")
 
-// inFlight is how many batches are being asked about at any moment where the
-// profile names no number.
-const inFlight = 4
-
 // maxDrain is how much of a response body is read and discarded before the
 // body is closed.
 const maxDrain = 64 << 10
@@ -76,10 +72,7 @@ func (c *Client) GetName() string { return c.service.Name }
 
 // inFlight is how many batches this service is asked about at once.
 func (c *Client) inFlight() int {
-	if c.service.InFlight <= 0 {
-		return inFlight
-	}
-	return c.service.InFlight
+	return c.service.GetInFlight(0)
 }
 
 // Proofread asks about every page and answers with what came back about each,

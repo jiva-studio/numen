@@ -31,8 +31,9 @@ const (
 
 // logMel is one stretch of 16 kHz mono audio as the encoder takes it: the bands
 // one after another, each holding every frame, and how many frames there are.
-func logMel(samples []float32) ([]float32, int) {
-	power, frames := spectrogram(applyPreemphasis(samples))
+// It is computed on up to workers goroutines; zero or less is one per CPU.
+func logMel(samples []float32, workers int) ([]float32, int) {
+	power, frames := spectrogram(applyPreemphasis(samples), workers)
 	if frames == 0 {
 		return nil, 0
 	}
@@ -41,13 +42,7 @@ func logMel(samples []float32) ([]float32, int) {
 	bank := filters()
 	out := make([]float32, melBands*frames)
 
-	workers := runtime.GOMAXPROCS(0)
-	if workers > melBands {
-		workers = melBands
-	}
-	if workers < 1 {
-		workers = 1
-	}
+	workers = getWorkerCount(workers, melBands)
 
 	var wg sync.WaitGroup
 	wg.Add(workers)
@@ -114,7 +109,7 @@ func applyPreemphasis(samples []float32) []float64 {
 //
 // The signal is reflected outward by half a window at each end, so that a frame
 // is centred on every hop from the first sample to the last.
-func spectrogram(x []float64) ([]float64, int) {
+func spectrogram(x []float64, workers int) ([]float64, int) {
 	if len(x) == 0 {
 		return nil, 0
 	}
@@ -124,13 +119,7 @@ func spectrogram(x []float64) ([]float64, int) {
 	bins := fftSize/2 + 1
 
 	out := make([]float64, frames*bins)
-	workers := runtime.GOMAXPROCS(0)
-	if workers > frames {
-		workers = frames
-	}
-	if workers < 1 {
-		workers = 1
-	}
+	workers = getWorkerCount(workers, frames)
 
 	var wg sync.WaitGroup
 	wg.Add(workers)
@@ -305,3 +294,12 @@ var twiddles = sync.OnceValue(func() []complex128 {
 	}
 	return out
 })
+
+// getWorkerCount is how many goroutines share jobs units of work: the count
+// asked for, or one per CPU when none is, and never more than there are jobs.
+func getWorkerCount(asked, jobs int) int {
+	if asked <= 0 {
+		asked = runtime.GOMAXPROCS(0)
+	}
+	return max(1, min(asked, jobs))
+}

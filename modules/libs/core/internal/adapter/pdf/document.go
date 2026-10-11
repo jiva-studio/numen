@@ -27,6 +27,29 @@ import (
 var workers struct {
 	sync.Mutex
 	pool pdfium.Pool
+	// size is the worker count the pool is started with; zero is one per CPU.
+	size int
+}
+
+// minWorkers is the fewest workers the pool starts: a reader and the reader
+// beside it each hold one document.
+const minWorkers = 2
+
+// SetWorkers sets how many workers the pool starts with. Zero or less is one
+// per CPU. It has no effect on a pool that has started.
+func SetWorkers(n int) {
+	workers.Lock()
+	defer workers.Unlock()
+	workers.size = n
+}
+
+// getPoolSize is the worker count the pool starts with. The caller holds the
+// lock.
+func getPoolSize() int {
+	if workers.size > 0 {
+		return max(workers.size, minWorkers)
+	}
+	return max(runtime.NumCPU(), minWorkers)
 }
 
 // waitForWorker is how long a reader waits for one to come free. Reading a
@@ -42,9 +65,7 @@ func pool() (pdfium.Pool, error) {
 	if workers.pool != nil {
 		return workers.pool, nil
 	}
-	// One worker a core, and at least two: a vault is read by one goroutine
-	// today and by more as soon as anything asks it to be.
-	made, err := webassembly.Init(webassembly.Config{MaxTotal: max(runtime.NumCPU(), 2)})
+	made, err := webassembly.Init(webassembly.Config{MaxTotal: getPoolSize()})
 	if err != nil {
 		return nil, err
 	}
@@ -161,4 +182,11 @@ func (d *document) text(index int) string {
 		return ""
 	}
 	return page.Text
+}
+
+// GetWorkers is the worker count the pool starts with, or has started with.
+func GetWorkers() int {
+	workers.Lock()
+	defer workers.Unlock()
+	return getPoolSize()
 }

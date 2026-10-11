@@ -28,7 +28,7 @@ func tone() []float32 {
 func TestLogMelMatchesReference(t *testing.T) {
 	want, bands, frames := reference(t, "testdata/features.txt")
 
-	got, made := logMel(tone())
+	got, made := logMel(tone(), 0)
 	if made != frames {
 		t.Fatalf("%d frames, and the reference has %d", made, frames)
 	}
@@ -157,6 +157,6 @@ func BenchmarkLogMel(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		_, _ = logMel(audio)
+		_, _ = logMel(audio, 0)
 	}
 }

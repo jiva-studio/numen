@@ -3,7 +3,6 @@ package transcription
 import (
 	"context"
 	"math"
-	"runtime"
 	"sync"
 )
 
@@ -14,8 +13,9 @@ const sincWidth = 16
 // resample is one signal at another rate.
 //
 // Each output sample is what the input says at that moment, band-limited to
-// whichever of the two rates is the lower.
-func resample(ctx context.Context, in []float32, from, to int) ([]float32, error) {
+// whichever of the two rates is the lower. It runs on up to workers goroutines;
+// zero or less is one per CPU.
+func resample(ctx context.Context, in []float32, from, to, workers int) ([]float32, error) {
 	if from == to || from <= 0 || len(in) == 0 {
 		return in, nil
 	}
@@ -29,13 +29,7 @@ func resample(ctx context.Context, in []float32, from, to int) ([]float32, error
 		return out, nil
 	}
 
-	workers := runtime.GOMAXPROCS(0)
-	if workers > len(out) {
-		workers = len(out)
-	}
-	if workers < 1 {
-		workers = 1
-	}
+	workers = getWorkerCount(workers, len(out))
 
 	var wg sync.WaitGroup
 	wg.Add(workers)
