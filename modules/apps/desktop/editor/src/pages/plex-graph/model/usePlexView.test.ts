@@ -53,6 +53,29 @@ describe('a plex still being read', () => {
   })
 })
 
+describe('a plex whose first answer is stale', () => {
+  it('goes on loading until the answer to the last question lands', async () => {
+    let releaseSecond = () => {}
+    const plex = usePlexView(
+      fake(async (path) => {
+        if (path === 'Second') await new Promise<void>((wake) => (releaseSecond = wake))
+        return answer(path)
+      }),
+    )
+
+    const first = plex.go('First')
+    const second = plex.go('Second')
+    await first
+
+    expect(plex.isLoading.value).toBe(true)
+
+    releaseSecond()
+    await second
+
+    expect(plex.isLoading.value).toBe(false)
+  })
+})
+
 describe('two questions in flight', () => {
   it('keeps the answer to the last one asked, however they come back', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }

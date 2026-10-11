@@ -16,7 +16,9 @@ import {
   CALLOUT_WIDE,
   getAxisNumber,
   getAxisNumberBox,
+  clearAt,
   getNameBox,
+  isApart,
   heightsOf,
   LABEL,
   labelsOf,
@@ -293,5 +295,88 @@ describe('where the knob’s own value is set', () => {
 
     expect(at.insetInlineStart).toBe(`${(x / WIDE) * 100}%`)
     expect(at.translate).toBe(`${back} 0`)
+  })
+})
+
+describe('two words that stand clear of each other', () => {
+  const one = box(100, 100, 40, 20)
+
+  it.each([
+    { where: 'to the right', other: box(140, 100, 40, 20) },
+    { where: 'to the left', other: box(60, 100, 40, 20) },
+    { where: 'below', other: box(100, 120, 40, 20) },
+    { where: 'above', other: box(100, 80, 40, 20) },
+  ])('are clear where the other touches at $where', ({ other }) => {
+    expect(isApart(one, other)).toBe(true)
+  })
+
+  it.each([
+    { where: 'to the right', other: box(139, 100, 40, 20) },
+    { where: 'to the left', other: box(61, 100, 40, 20) },
+    { where: 'below', other: box(100, 119, 40, 20) },
+    { where: 'above', other: box(100, 81, 40, 20) },
+  ])('are not clear where the other overlaps at $where', ({ other }) => {
+    expect(isApart(one, other)).toBe(false)
+  })
+})
+
+describe('a number set against a height', () => {
+  const y = 100
+
+  it('is clear where nothing is drawn near it', () => {
+    expect(clearAt(y, [], [])).toBe(true)
+  })
+
+  it('is clear where a mark is missing', () => {
+    expect(clearAt(y, [], [null])).toBe(true)
+  })
+
+  it('is not clear of a mark at the edge of the room a number takes across', () => {
+    expect(clearAt(y, [], [{ x: LEFT + AXIS_WIDE, y }])).toBe(false)
+    expect(clearAt(y, [], [{ x: LEFT + AXIS_WIDE + 1, y }])).toBe(true)
+  })
+
+  it('is not clear of a mark at the edge of the room a number takes down', () => {
+    expect(clearAt(y, [], [{ x: LEFT, y: y + AXIS_HIGH }])).toBe(false)
+    expect(clearAt(y, [], [{ x: LEFT, y: y - AXIS_HIGH }])).toBe(false)
+    expect(clearAt(y, [], [{ x: LEFT, y: y + AXIS_HIGH + 1 }])).toBe(true)
+  })
+
+  it('is not clear of a point of the curve at the same edges', () => {
+    expect(clearAt(y, [{ x: LEFT + AXIS_WIDE, y }], [])).toBe(false)
+    expect(clearAt(y, [{ x: LEFT, y: y + AXIS_HIGH }], [])).toBe(false)
+  })
+})
+
+describe('where a name is pulled back at the ends', () => {
+  it('is centred on a mark exactly a label from either end', () => {
+    expect(positionLabel({ x: LEFT + LABEL, y: 100 }).translate).toBe('-50% -100%')
+    expect(positionLabel({ x: RIGHT - LABEL, y: 100 }).translate).toBe('-50% -100%')
+  })
+
+  it('takes a centred room for a mark exactly a label from either end', () => {
+    expect(getNameBox({ x: LEFT + LABEL, y: 100 }).x).toBe(LEFT)
+    expect(getNameBox({ x: RIGHT - LABEL, y: 100 }).x).toBe(RIGHT - LABEL * 2)
+  })
+
+  it('is centred on the bubble of a knob exactly half a bubble from either end', () => {
+    const half = CALLOUT_WIDE / 2
+
+    expect(calloutOf({ x: LEFT + half, y: 120 }).at.translate).toBe('-50% -100%')
+    expect(calloutOf({ x: RIGHT - half, y: 120 }).at.translate).toBe('-50% -100%')
+  })
+
+  it('is centred on the value of a knob exactly a label from either end', () => {
+    expect(readingAt({ x: LEFT + LABEL, y: 100 }).translate).toBe('-50% 0')
+    expect(readingAt({ x: RIGHT - LABEL, y: 100 }).translate).toBe('-50% 0')
+  })
+})
+
+describe('where the number over the top is set', () => {
+  it('stands over the top line, lifted clear of it', () => {
+    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, formatValue)
+
+    expect(numbers[0]!.at).toStrictEqual(getAxisNumber(TOP, '-100%'))
+    expect(numbers[0]!.at.translate).toBe('0 -100%')
   })
 })

@@ -58,10 +58,12 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
    * A node id outlives the one navigation after its note stops being drawn,
    * so a transition still reaching it by id finds it still there.
    */
+  // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
   let lastDrawnIds: readonly string[] = []
   watch(
     picture,
     (drawn) => {
+      // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
       const drawnIds = drawn?.nodes.map((node) => node.id) ?? []
       map.retainNodeIds([...drawnIds, ...lastDrawnIds])
       lastDrawnIds = drawnIds
