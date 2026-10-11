@@ -1,4 +1,4 @@
-//go:build !unix
+//go:build !unix && !windows
 
 package filesystem
 
@@ -8,3 +8,6 @@ import "os"
 func openReadable(path string) (*os.File, error) {
 	return os.Open(path)
 }
+
+// openShared opens a file for reading.
+func openShared(path string) (*os.File, error) { return openReadable(path) }

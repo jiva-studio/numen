@@ -96,7 +96,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, fmt.Errorf("stat %s: %w", path, err)
 	}
-	file, err := reader.Open(ctx, path)
+	file, err := port.OpenDocumentFile(ctx, reader, path)
 	if err != nil {
 		return res, fmt.Errorf("read %s: %w", path, err)
 	}

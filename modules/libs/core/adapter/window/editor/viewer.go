@@ -258,7 +258,7 @@ func (a *API) opening(
 	mark pool.Fingerprint,
 ) (*pool.Document, func(), error) {
 	return a.Viewer.docs.Load().Take(ctx, mark, func() (pool.Scan, error) {
-		file, err := reader.Open(context.WithoutCancel(ctx), mark.Path)
+		file, err := port.OpenDocumentFile(context.WithoutCancel(ctx), reader, mark.Path)
 		if err != nil {
 			return nil, err
 		}
