@@ -22,7 +22,7 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
   const asked: { vault: string; deck: string }[] = []
   const open = ref(false)
   const deck = ref(more.deck === undefined ? 'decks/Words.md' : more.deck)
-  const said: string[] = []
+  const notices: string[] = []
   const held = useNotesPanel({
     open: () => open.value,
     showPanel: (up) => {
@@ -35,9 +35,9 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
       if (more.refuses) throw new Error('out of reach')
       return { notes: [createNeighbour({ written: of })], unread: 2 } satisfies DeckNeighbourhood
     },
-    showNotice: (one) => said.push(one),
+    showNotice: (one) => notices.push(one),
   })
-  return { held, asked, said, open, deck }
+  return { held, asked, notices, open, deck }
 }
 
 describe('the panel the deck is read in', () => {
@@ -58,10 +58,10 @@ describe('the panel the deck is read in', () => {
 
   // A gesture that does nothing is a gesture a person repeats.
   it('says why it could not be read, and holds nothing', async () => {
-    const { held, said, open } = panel({ refuses: true })
+    const { held, notices, open } = panel({ refuses: true })
     await held.openPanel()
     expect(held.notes.value).toEqual([])
-    expect(said).toHaveLength(1)
+    expect(notices).toHaveLength(1)
     expect(open.value).toBe(true)
   })
 

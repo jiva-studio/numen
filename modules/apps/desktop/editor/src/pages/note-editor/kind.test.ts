@@ -42,11 +42,10 @@ const notes = (states: Record<string, State> = {}) => {
   const open = ref<string[]>([])
   /** Where each open note stands now, under the identity it opened under. */
   const at = ref<Record<string, string>>({})
-  const shut: string[] = []
-  const said: string[] = []
+  const closedPaths: string[] = []
   /** Order of settle/reload calls. */
   const calls: string[] = []
-  let goes = true
+  let canClose = true
   const getPath = (id: string) => at.value[id] ?? id
   const store = {
     open: (id: string, path: string = id) => {
@@ -62,8 +61,8 @@ const notes = (states: Record<string, State> = {}) => {
       calls.push(`settle:${getPath(id)}`)
     },
     close: async (id: string) => {
-      shut.push(getPath(id))
-      if (!goes) return false
+      closedPaths.push(getPath(id))
+      if (!canClose) return false
       open.value = open.value.filter((one) => one !== id)
       return true
     },
@@ -82,13 +81,12 @@ const notes = (states: Record<string, State> = {}) => {
     getErrorMessage: () => '',
     typed: () => {},
     save: () => {},
-    keep: () => said.push('keep'),
-    take: () => said.push('take'),
+    keep: () => calls.push('keep'),
+    take: () => calls.push('take'),
   }
   return {
     store: store as unknown as ReturnType<typeof openNotes>,
-    shut,
-    said,
+    closedPaths,
     calls,
     /** The identity of the note standing at a file, for a test that has its name. */
     idOf: (path: string) => open.value.find((id) => getPath(id) === path) ?? '',
@@ -98,16 +96,16 @@ const notes = (states: Record<string, State> = {}) => {
       if (id) at.value = { ...at.value, [id]: to }
     },
     keepOpen: () => {
-      goes = false
+      canClose = false
     },
   }
 }
 
 /** What is being typed, which nothing here reads beyond letting a tab go. */
 const drawings = () => {
-  const shut: string[] = []
-  const store = { shown: () => 0, closeNote: (path: string) => shut.push(path) }
-  return { store: store as unknown as ReturnType<typeof createNoteChanges>, shut }
+  const closedPaths: string[] = []
+  const store = { shown: () => 0, closeNote: (path: string) => closedPaths.push(path) }
+  return { store: store as unknown as ReturnType<typeof createNoteChanges>, closedPaths }
 }
 
 /** An editor that says whether it took what it was handed. */
@@ -418,8 +416,8 @@ describe('the window going', () => {
 
     one.noted.kind.onDestroy?.(state, 'Note.md')
 
-    expect(one.shut).toEqual([])
-    expect(one.drawings.shut).toEqual([])
+    expect(one.closedPaths).toEqual([])
+    expect(one.drawings.closedPaths).toEqual([])
   })
 })
 
@@ -433,8 +431,8 @@ describe('a note tab closing', () => {
     one.held.releaseTab(id ?? '')
     await nextTick()
 
-    expect(one.shut).toEqual(['Note.md'])
-    expect(one.drawings.shut).toEqual(['Note.md'])
+    expect(one.closedPaths).toEqual(['Note.md'])
+    expect(one.drawings.closedPaths).toEqual(['Note.md'])
     await vi.waitFor(() => expect(one.open()).toEqual([]))
     expect(one.noted.getTitle('Note.md')).toBe('Note.md')
   })
@@ -464,7 +462,7 @@ describe('a note the window is told to let go of', () => {
     one.noted.closeTab(one.idOf('Note.md'))
     await nextTick()
 
-    expect(one.shut).toEqual(['Note.md'])
+    expect(one.closedPaths).toEqual(['Note.md'])
     await vi.waitFor(() => expect(one.open()).toEqual([]))
   })
 
@@ -479,7 +477,7 @@ describe('a note the window is told to let go of', () => {
     one.noted.closeTab(id)
     await nextTick()
 
-    expect(one.shut).toEqual(['Moved.md'])
+    expect(one.closedPaths).toEqual(['Moved.md'])
   })
 
   it('is nothing to a window holding no tab of it', async () => {
@@ -490,7 +488,7 @@ describe('a note the window is told to let go of', () => {
     one.noted.closeTab('never opened')
     await nextTick()
 
-    expect(one.shut).toEqual([])
+    expect(one.closedPaths).toEqual([])
     expect(one.open()).toHaveLength(1)
   })
 })

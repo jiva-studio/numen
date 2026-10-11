@@ -77,7 +77,7 @@ func getExposedDependencies(file *ast.File) []exposed {
 // getUseCases are every use case of the core, under the file it stands in.
 func getUseCases(t *testing.T) []string {
 	t.Helper()
-	var said []string
+	var findings []string
 	held, err := os.ReadDir(filepath.Join("..", "usecase"))
 	if err != nil {
 		t.Fatal(err)
@@ -101,12 +101,12 @@ func getUseCases(t *testing.T) []string {
 				t.Fatal(err)
 			}
 			for _, found := range getExposedDependencies(file) {
-				said = append(said, fmt.Sprintf("usecase/%s/%s %s exposes %s",
+				findings = append(findings, fmt.Sprintf("usecase/%s/%s %s exposes %s",
 					folder.Name(), one.Name(), found.in, strings.Join(found.fields, ", ")))
 			}
 		}
 	}
-	return said
+	return findings
 }
 
 // A use case is made with everything it needs, or it is not made.

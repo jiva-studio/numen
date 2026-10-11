@@ -50,7 +50,7 @@ const panel = (
   const { agent, asked, over } = createAgent()
   const on = ref<CardFace | null>(more.card === undefined ? card() : more.card)
   const showing = ref<'reading' | 'here' | 'asking'>(more.showing ?? 'here')
-  const said: string[] = []
+  const notices: string[] = []
   /** The cards a port was asked for, one to a conversation. */
   const about: CardFace[] = []
   const held = useAgentPanel({
@@ -65,12 +65,12 @@ const panel = (
       if (open) showing.value = 'asking'
       else if (showing.value === 'asking') showing.value = 'here'
     },
-    showNotice: (one) => said.push(one),
+    showNotice: (one) => notices.push(one),
     // The words are put up as they arrive, so a test reads them without waiting
     // for a frame.
     paint: (draw) => draw(),
   })
-  return { held, asked, over, said, on, showing, about }
+  return { held, asked, over, notices, on, showing, about }
 }
 
 describe('the panel coming in', () => {
@@ -89,10 +89,10 @@ describe('the panel coming in', () => {
 
   // A gesture that does nothing is a gesture a person repeats.
   it('says why it cannot come in, and does not', () => {
-    const { held, said } = panel({ unreachable: 'The agent could not be reached.' })
+    const { held, notices } = panel({ unreachable: 'The agent could not be reached.' })
     held.openPanel()
     expect(held.open.value).toBe(false)
-    expect(said).toEqual(['The agent could not be reached.'])
+    expect(notices).toEqual(['The agent could not be reached.'])
   })
 
   it('is put away and keeps what was said', async () => {

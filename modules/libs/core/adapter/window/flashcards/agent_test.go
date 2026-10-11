@@ -150,19 +150,19 @@ func TestEveryStepReachesThePageAsItself(t *testing.T) {
 	}
 	t.Cleanup(func() { stream.Close() })
 
-	var said []string
+	var steps []string
 	for stream.Receive() {
 		switch step := stream.Msg().GetStep().(type) {
 		case *v1.AskAgentResponse_Thinking:
-			said = append(said, "thinking")
+			steps = append(steps, "thinking")
 		case *v1.AskAgentResponse_ToolCall:
-			said = append(said, "doing "+step.ToolCall.GetTool()+" "+step.ToolCall.GetPath())
+			steps = append(steps, "doing "+step.ToolCall.GetTool()+" "+step.ToolCall.GetPath())
 		case *v1.AskAgentResponse_Answered:
-			said = append(said, "answered")
+			steps = append(steps, "answered")
 		case *v1.AskAgentResponse_Said:
-			said = append(said, "said "+step.Said)
+			steps = append(steps, "said "+step.Said)
 		case *v1.AskAgentResponse_Stopped:
-			said = append(said, "stopped "+step.Stopped)
+			steps = append(steps, "stopped "+step.Stopped)
 		}
 	}
 	if err := stream.Err(); err != nil {
@@ -176,8 +176,8 @@ func TestEveryStepReachesThePageAsItself(t *testing.T) {
 		"said Because the leaves make it.",
 		"stopped the agent went away",
 	}
-	if strings.Join(said, "|") != strings.Join(want, "|") {
-		t.Errorf("the page heard %q", said)
+	if strings.Join(steps, "|") != strings.Join(want, "|") {
+		t.Errorf("the page heard %q", steps)
 	}
 }
 
