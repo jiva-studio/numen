@@ -3,6 +3,7 @@ package pdf
 import (
 	"fmt"
 	"image"
+	"io"
 
 	"github.com/klippa-app/go-pdfium/requests"
 )
@@ -30,6 +31,17 @@ func Open(raw []byte) (*Scan, error) {
 // until the scan is closed.
 func OpenFile(path string) (*Scan, error) {
 	doc, err := openPath(path)
+	if err != nil {
+		return nil, err
+	}
+	return &Scan{doc: doc}, nil
+}
+
+// OpenReader holds a PDF open for its pages to be drawn, read from the file as
+// the library asks for it. The scan owns the file and closes it with the scan,
+// or at once if the document does not open.
+func OpenReader(file io.ReadSeekCloser) (*Scan, error) {
+	doc, err := openReader(file)
 	if err != nil {
 		return nil, err
 	}

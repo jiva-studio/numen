@@ -7,9 +7,11 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -57,7 +59,8 @@ func sheets(pages int) *paper {
 }
 
 // openScan is what the viewer is given in place of pdf.Open.
-func (p *paper) openScan([]byte) (pool.Scan, error) {
+func (p *paper) openScan(file io.ReadSeekCloser) (pool.Scan, error) {
+	defer file.Close()
 	if p.gate != nil {
 		<-p.gate
 	}
@@ -604,7 +607,11 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	drawn, err := newViewer(pdf.Documents{}).open(raw)
+	file, err := os.Open("../../../internal/adapter/pdf/testdata/labels.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	drawn, err := newViewer(pdf.Documents{}).open(file)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -617,5 +624,50 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 	defer scan.Close()
 	if drawn.Pages() != scan.Pages() {
 		t.Errorf("the viewer opened %d pages and the library %d", drawn.Pages(), scan.Pages())
+	}
+}
+
+// A file rewritten while the viewer has it open is a different document: the
+// next ask opens it afresh, and the document of the old bytes is released.
+func TestAFileReplacedWhileOpenIsOpenedAgainAndTheOldOneReleased(t *testing.T) {
+	from := sheets(4)
+	vault := testsupport.NewVault(t, map[string]string{book: "the bytes of a scan"})
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api.show(vault)
+	api.Viewer.open = from.openScan
+	const idleFor = 20 * time.Millisecond
+	api.Viewer.docs.Store(pool.NewDocuments(pool.MostOpen, idleFor))
+	t.Cleanup(api.Viewer.close)
+	handler := api.NewHandler(http.NotFoundHandler())
+	stopReadAhead(api)
+
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
+		t.Fatalf("asked for a page and got %d: %s", out.Code, out.Body)
+	}
+	if opens, _, _ := from.getCounts(); opens != 1 {
+		t.Fatalf("the document was opened %d times", opens)
+	}
+
+	replaced := filepath.Join(vault.Path, filepath.FromSlash(book))
+	if err := os.WriteFile(replaced, []byte("the bytes of a longer scan, written again"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
+		t.Fatalf("asked for a page of the new file and got %d: %s", out.Code, out.Body)
+	}
+	if opens, _, _ := from.getCounts(); opens != 2 {
+		t.Errorf("the document was opened %d times, want one more for the new bytes", opens)
+	}
+
+	deadline := time.After(time.Minute)
+	for {
+		if _, _, closes := from.getCounts(); closes >= 1 {
+			return
+		}
+		select {
+		case <-deadline:
+			t.Fatal("the document of the old bytes was never released")
+		case <-time.After(idleFor):
+		}
 	}
 }

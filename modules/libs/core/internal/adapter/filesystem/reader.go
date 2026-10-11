@@ -280,6 +280,20 @@ func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 // Open is one file, to read a part of. The path is checked by the same rule
 // Read checks it by, and what comes back is the file itself.
 func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	return s.openWith(ctx, path, openReadable)
+}
+
+// OpenShared is Open for a file that stays open for a long time: where the
+// platform allows, the file can be renamed or deleted while it is open.
+func (s *VaultReader) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	return s.openWith(ctx, path, openShared)
+}
+
+func (s *VaultReader) openWith(
+	ctx context.Context,
+	path string,
+	open func(string) (*os.File, error),
+) (io.ReadSeekCloser, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -287,7 +301,7 @@ func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 	if err != nil {
 		return nil, err
 	}
-	f, err := openReadable(target)
+	f, err := open(target)
 	if err != nil {
 		return nil, err
 	}

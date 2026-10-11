@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"image"
+	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
@@ -31,7 +32,11 @@ type PageRenderer interface {
 	// Draw holds a document open so its pages can be drawn. It holds a worker
 	// until it is closed, and there are as many workers as this machine has
 	// cores.
-	Draw(ctx context.Context, raw []byte) (OpenDocument, error)
+	//
+	// The document is read from the file as its pages are wanted. Draw owns the
+	// file from the call on and closes it when the document is closed, and at
+	// once when the document does not open.
+	Draw(ctx context.Context, file io.ReadSeekCloser) (OpenDocument, error)
 }
 
 // OpenDocument is a document held open, drawn a page at a time. Closing it gives back
@@ -51,3 +56,10 @@ var (
 	// ErrEncrypted is a document whose text is locked.
 	ErrEncrypted = errors.New("the document is locked")
 )
+
+// SharedOpener is a vault reader that can open a file to be held for a long
+// time, so that the file can be renamed or deleted while it is open where the
+// platform allows.
+type SharedOpener interface {
+	OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error)
+}

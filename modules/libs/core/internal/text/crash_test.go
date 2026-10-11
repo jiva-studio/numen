@@ -3,6 +3,7 @@ package text_test
 import (
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 
@@ -24,7 +25,7 @@ func (wild) Highlights(context.Context, []byte, []int, []int) ([]highlight.Box, 
 	panic("page 3 of 2")
 }
 
-func (wild) Draw(context.Context, []byte) (port.OpenDocument, error) {
+func (wild) Draw(context.Context, io.ReadSeekCloser) (port.OpenDocument, error) {
 	panic("page 3 of 2")
 }
 
