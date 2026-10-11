@@ -319,3 +319,106 @@ describe('a link inside a book followed', () => {
     expect(book.drawn.value).toBe('text/part0001.xhtml')
   })
 })
+
+describe('a book before it lands', () => {
+  it('is untitled, spans nothing, and holds no contents', () => {
+    const { books } = shelf()
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    expect(read.title.value).toBe('')
+    expect(read.span.value).toStrictEqual({ from: 0, to: 0 })
+    expect(read.contents.value).toStrictEqual([])
+  })
+})
+
+describe('the chapter the person is in', () => {
+  it('is the last place of the contents beginning at or before the offset', async () => {
+    const { books } = shelf()
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    await read.goToOffset(3_599)
+    expect(read.chapter.value).toBe('Ādi Parva')
+
+    await read.goToOffset(3_600)
+    expect(read.chapter.value).toBe('Сказание о сожжении леса')
+
+    await read.goToOffset(0)
+    expect(read.chapter.value).toBe('Ādi Parva')
+  })
+
+  it('is none where the offset stands before the first place of the contents', async () => {
+    const { books } = shelf({ ...BOOK, parts: [{ title: 'Late', offset: 100, level: 0 }] })
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    await read.goToOffset(0)
+
+    expect(read.chapter.value).toBe('')
+  })
+})
+
+describe('a book that holds no document', () => {
+  it('stays where it began wherever it is sent', async () => {
+    const { books, drawn } = shelf({ ...BOOK, documents: [] })
+    const read = useBookReader(books, 'library/Empty.epub', WORDS, writeMessage)
+
+    await read.goToOffset(500)
+
+    expect(read.offset.value).toBe(0)
+    expect(drawn).toStrictEqual([])
+  })
+})
+
+describe('a book tab closed before the book lands', () => {
+  it('takes nothing of the book and stops saying it is loading', async () => {
+    const { books, drawn } = shelf()
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    read.close()
+    await settle()
+
+    expect(read.title.value).toBe('')
+    expect(read.pages.value).toBe(0)
+    expect(read.contents.value).toStrictEqual([])
+    expect(drawn).toStrictEqual([])
+    expect(read.isLoading.value).toBe(false)
+  })
+
+  it('says nothing of a book that could not be read', async () => {
+    const { books } = shelf(new Error('no such book'))
+    const read = useBookReader(books, 'library/Broken.epub', WORDS, writeMessage)
+
+    read.close()
+    await settle()
+
+    expect(heard).toStrictEqual([])
+  })
+})
+
+describe('a book tab closed after the book landed', () => {
+  it('lets go of its contents and stays where it stood', async () => {
+    const { books } = shelf()
+    const read = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+    await settle()
+    expect(read.contents.value).toHaveLength(2)
+
+    read.close()
+    await read.goToOffset(6_500)
+
+    expect(read.contents.value).toStrictEqual([])
+    expect(read.offset.value).toBe(0)
+  })
+})
+
+describe('what is said of a book that will not open', () => {
+  it('is said as an error', async () => {
+    const { books } = shelf(new Error('no such book'))
+    const said: Array<string | undefined> = []
+    const read = useBookReader(books, 'library/Broken.epub', WORDS, (_text, level) =>
+      said.push(level),
+    )
+
+    await read.goToOffset(0)
+
+    expect(said).toStrictEqual(['error'])
+  })
+})

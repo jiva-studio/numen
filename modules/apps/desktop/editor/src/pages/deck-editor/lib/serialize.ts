@@ -24,6 +24,7 @@ export const deserializeVaultDeck = (
     cards: read.cards.map((card) => ({
       id: card.mark && markCounts.get(card.mark) === 1 ? card.mark : generateBufferId(),
       mark: card.mark,
+      // Stryker disable next-line ConditionalExpression: a null index reads no section and falls back to null
       section: card.sectionIndex === null ? null : (sections[card.sectionIndex]?.id ?? null),
       heading: card.heading,
       stencilLink: card.stencilLink,
@@ -72,6 +73,7 @@ export const serializeBufferCardsToVaultCards = (deck: BufferDeck): readonly Vau
   return deck.cards.map(
     ({ mark, section, heading, stencilLink, stencilPath, preamble, values }) => ({
       mark,
+      // Stryker disable next-line ConditionalExpression: a null section is not a key of the map and falls back to null
       sectionIndex: section === null ? null : (at.get(section) ?? null),
       heading,
       stencilLink,

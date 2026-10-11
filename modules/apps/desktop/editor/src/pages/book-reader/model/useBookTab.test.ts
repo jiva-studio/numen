@@ -97,6 +97,14 @@ describe('what a book tab holds', () => {
   })
 })
 
+describe('a book tab with no element to focus', () => {
+  it('focuses nothing and does not fail', () => {
+    const held = useBookTab(read('library/Mahabharata.epub'))
+
+    expect(() => held.focusTab()).not.toThrow()
+  })
+})
+
 describe('what a book tab is called', () => {
   it('is what the book calls itself', () => {
     const held = useBookTab(read('library/mbh-04.epub', 'Virāṭa Parva'))

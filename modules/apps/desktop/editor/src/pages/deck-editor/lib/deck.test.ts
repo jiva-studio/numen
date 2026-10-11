@@ -661,3 +661,148 @@ describe('whether two readings of a file read the same', () => {
     expect(sameDeck(deck(), deck({ cards: read().cards.slice(0, 1) }))).toBe(false)
   })
 })
+
+describe('cards and sections standing among three headings', () => {
+  /** Cards a (before the first heading), b (Roots) and c (Leaves), then Shoots holding none. */
+  const createThreeHeadingDeck = (): BufferDeck => {
+    const bare = read().cards[0]!
+    return deck({
+      sections: [
+        { name: 'Roots', preamble: 'about the roots\n' },
+        { name: 'Leaves', preamble: 'about the leaves\n' },
+        { name: 'Shoots', preamble: 'about the shoots\n' },
+      ],
+      cards: [
+        { ...bare, mark: 'ma', sectionIndex: null },
+        { ...bare, mark: 'mb', sectionIndex: 0 },
+        { ...bare, mark: 'mc', sectionIndex: 1 },
+      ],
+    })
+  }
+
+  const place = (held: BufferDeck) => held.cards.map((card) => [card.id, card.section])
+
+  describe('a card added', () => {
+    it('stands after the cards before the first heading and ahead of the headed ones', () => {
+      const held = createThreeHeadingDeck()
+      const added = addCard(held, 'Animal', '', [], null, () => 'new')
+      expect(place(added)).toStrictEqual([
+        ['ma', null],
+        ['new', null],
+        ['mb', held.sections[0]?.id],
+        ['mc', held.sections[1]?.id],
+      ])
+    })
+
+    it('stands after the cards of the section above and ahead of the section below', () => {
+      const held = createThreeHeadingDeck()
+      const roots = held.sections[0]?.id ?? ''
+      const added = addCard(held, 'Animal', '', [], roots, () => 'new')
+      expect(place(added)).toStrictEqual([
+        ['ma', null],
+        ['mb', roots],
+        ['new', roots],
+        ['mc', held.sections[1]?.id],
+      ])
+    })
+
+    it('stands last under the last section that holds cards, when the section is below it', () => {
+      const held = createThreeHeadingDeck()
+      const leaves = held.sections[1]?.id ?? ''
+      const added = addCard(held, 'Animal', '', [], leaves, () => 'new')
+      expect(place(added).at(-1)).toStrictEqual(['new', leaves])
+    })
+
+    it('stands before the first heading where the section it was asked for is not in the deck', () => {
+      const held = createThreeHeadingDeck()
+      const added = addCard(held, 'Animal', '', [], 'ghost', () => 'new')
+      expect(place(added)).toStrictEqual([
+        ['ma', null],
+        ['new', null],
+        ['mb', held.sections[0]?.id],
+        ['mc', held.sections[1]?.id],
+      ])
+    })
+  })
+
+  describe('a card dragged', () => {
+    it('is nothing for an identity the deck does not hold', () => {
+      const held = createThreeHeadingDeck()
+      expect(dropCard(held, 'ghost', null)).toBe(held)
+    })
+
+    it('lands before a card that is not the first, leaving the cards ahead of it in place', () => {
+      const held = createThreeHeadingDeck()
+      const moved = dropCard(held, 'ma', 'mc')
+      expect(place(moved)).toStrictEqual([
+        ['mb', held.sections[0]?.id],
+        ['ma', held.sections[1]?.id],
+        ['mc', held.sections[1]?.id],
+      ])
+    })
+
+    it('stands under the last section of the deck where it was let go on nothing', () => {
+      const held = createThreeHeadingDeck()
+      const moved = dropCard(held, 'ma', null)
+      expect(place(moved).at(-1)).toStrictEqual(['ma', held.sections[2]?.id])
+    })
+
+    it('stands ahead of the cards of later sections where the section it was let go past holds none', () => {
+      const held = createThreeHeadingDeck()
+      const roots = held.sections[0]?.id ?? ''
+      const moved = dropCard(removeCard(held, 'mb'), 'ma', cardEndOf(roots))
+      expect(place(moved)).toStrictEqual([
+        ['ma', roots],
+        ['mc', held.sections[1]?.id],
+      ])
+    })
+
+    it('stands after the last card of the section it was let go past, ahead of later sections', () => {
+      const held = createThreeHeadingDeck()
+      const roots = held.sections[0]?.id ?? ''
+      const moved = dropCard(held, 'ma', cardEndOf(roots))
+      expect(place(moved)).toStrictEqual([
+        ['mb', roots],
+        ['ma', roots],
+        ['mc', held.sections[1]?.id],
+      ])
+    })
+
+    it('moves nothing where it was let go past a section the deck does not hold', () => {
+      const held = createThreeHeadingDeck()
+      expect(dropCard(held, 'ma', cardEndOf('ghost'))).toStrictEqual(held)
+    })
+  })
+
+  describe('a section removed', () => {
+    it('is nothing for an identity the deck does not hold', () => {
+      const held = createThreeHeadingDeck()
+      expect(removeSection(held, 'ghost')).toBe(held)
+    })
+
+    it('leaves the text of the sections other than the one above it as it was', () => {
+      const held = createThreeHeadingDeck()
+      const gone = removeSection(held, held.sections[2]?.id ?? '')
+      expect(gone.sections.map((section) => section.preamble)).toStrictEqual([
+        'about the roots\n',
+        'about the leaves\n\nabout the shoots\n',
+      ])
+    })
+
+    it('leaves the text of the sections below it as it was where it is the first', () => {
+      const held = createThreeHeadingDeck()
+      const gone = removeSection(held, held.sections[0]?.id ?? '')
+      expect(gone.preamble).toBe('about the animals\n\nabout the roots\n')
+      expect(gone.sections.map((section) => section.preamble)).toStrictEqual([
+        'about the leaves\n',
+        'about the shoots\n',
+      ])
+    })
+
+    it('leaves the cards of other sections under the sections they stood under', () => {
+      const held = createThreeHeadingDeck()
+      const gone = removeSection(held, held.sections[2]?.id ?? '')
+      expect(place(gone)).toStrictEqual(place(held))
+    })
+  })
+})
