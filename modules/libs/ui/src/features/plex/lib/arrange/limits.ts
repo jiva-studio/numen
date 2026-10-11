@@ -41,6 +41,7 @@ export function limitsFor(
   const { width, height } = options.nodeSize
 
   const columnSeats = RELATED_SEATS.filter(
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: a seat of zero leaves the longest column unchanged
     (seat) => counts[seat] > 0 && !isVertical(options.direction[seat]),
   )
   const longestColumn = columnSeats.reduce((most, seat) => Math.max(most, counts[seat]), 0)
@@ -118,6 +119,7 @@ export function limitsFor(
 
 /** The widest line that fits, or one when none of them do. */
 function getWidestRow(most: number, fits: (perLine: number) => boolean): number {
+  // Stryker disable next-line EqualityOperator: a row of one is the answer when none fits
   for (let perLine = most; perLine >= 1; perLine--) {
     if (fits(perLine)) return perLine
   }

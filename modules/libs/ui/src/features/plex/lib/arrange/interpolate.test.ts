@@ -118,6 +118,37 @@ describe('a node that is only in one picture', () => {
     )
   })
 
+  it('puts a new node halfway between the chosen node and its own seat', () => {
+    const source = node(from, 'a')
+    const end = node(to, 'a1')
+    const middle = node(interpolatePlex(from, to, 0.5), 'a1')
+
+    expect(source.x).not.toBe(0)
+    expect(source.y).not.toBe(0)
+    expect(middle.x).toBeCloseTo((source.x + end.x) / 2)
+    expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
+  })
+
+  it('unfolds a new node out of the middle when the chosen node was not in the old picture', () => {
+    const stranger = arrangePlex({
+      nodes: [
+        { id: 'elsewhere', title: 'Elsewhere', seat: 'focus' },
+        { id: 'e1', title: 'E one', seat: 'child' },
+      ],
+      edges: [],
+    })
+    const arrival = node(stranger, 'e1')
+    const middle = node(interpolatePlex(from, stranger, 0.5), 'e1')
+
+    expect(middle.x).toBeCloseTo(arrival.x / 2)
+    expect(middle.y).toBeCloseTo(arrival.y / 2)
+  })
+
+  it('shows every node of either picture once', () => {
+    const ids = interpolatePlex(from, to, 0.5).nodes.map((n) => n.id)
+    expect([...ids].sort()).toStrictEqual(['a', 'a1', 'a2', 'a3', 'b', 'focus', 'up'])
+  })
+
   it('holds a new node invisible until the picture has begun to settle', () => {
     expect(node(interpolatePlex(from, to, 0.1), 'a1').opacity).toBe(0)
     expect(node(interpolatePlex(from, to, 0.9), 'a1').opacity).toBeGreaterThan(0.5)

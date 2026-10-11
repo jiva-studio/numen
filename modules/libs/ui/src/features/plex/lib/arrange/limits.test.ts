@@ -211,3 +211,80 @@ describe('given no window', () => {
     }
   })
 })
+
+describe('what a column asks of the rows', () => {
+  const viewport = { width: 1000, height: 800 }
+  const rowsOf = (jump: number, over: Partial<typeof DEFAULT_OPTIONS> = {}) =>
+    limitsFor({ ...DEFAULT_OPTIONS, viewport, ...over }, { parent: 0, child: 12, jump, sibling: 0 })
+      .child.perLine
+
+  it.each([1, 2, 3])(
+    'leaves the row whole beside a column of %i, which stays level with the focus',
+    (jump) => {
+      expect(rowsOf(jump)).toBe(6)
+    },
+  )
+
+  it('narrows the row once the column reaches the rows above and below', () => {
+    expect(rowsOf(4)).toBe(3)
+  })
+
+  it('leaves the row whole when the column reaches exactly where the rows begin', () => {
+    // Three nodes stand 70 from the axis; the first row begins 22 + 48 away.
+    expect(rowsOf(3, { focusGap: 48 })).toBe(6)
+    expect(rowsOf(3, { focusGap: 47 })).toBeLessThan(6)
+  })
+
+  it('keeps the widest row the window holds when no row width seats a column beside it', () => {
+    const narrow = limitsFor(
+      { ...DEFAULT_OPTIONS, viewport: { width: 600, height: 1400 } },
+      { parent: 0, child: 6, jump: 4, sibling: 0 },
+    )
+    expect(narrow.child.perLine).toBe(3)
+  })
+
+  it('gives a focus wider than the window a row of one', () => {
+    const limits = limitsFor(
+      {
+        ...DEFAULT_OPTIONS,
+        focusSize: { width: 600, height: 44 },
+        viewport: { width: 500, height: 800 },
+      },
+      { parent: 0, child: 6, jump: 0, sibling: 0 },
+    )
+    expect(limits.child.perLine).toBe(1)
+  })
+})
+
+describe('how deep the rows run', () => {
+  it('counts the lines from the bottom of the focus box', () => {
+    const limits = limitsFor(
+      { ...DEFAULT_OPTIONS, viewport: { width: 1000, height: 500 } },
+      { parent: 1, child: 1, jump: 0, sibling: 0 },
+    )
+    expect(limits.child.lines).toBe(3)
+    expect(limits.parent.lines).toBe(3)
+  })
+})
+
+describe('the columns of a side', () => {
+  const viewport = { width: 2400, height: 1400 }
+
+  it('run to one line when one line holds them', () => {
+    const limits = limitsFor(
+      { ...DEFAULT_OPTIONS, viewport },
+      { parent: 0, child: 0, jump: 2, sibling: 2 },
+    )
+    expect(limits.jump.lines).toBe(1)
+    expect(limits.sibling.lines).toBe(1)
+  })
+
+  it('run to one line when there is nothing in them', () => {
+    const limits = limitsFor(
+      { ...DEFAULT_OPTIONS, viewport: { width: 1000, height: 800 } },
+      { parent: 0, child: 5, jump: 0, sibling: 0 },
+    )
+    expect(limits.jump.lines).toBe(1)
+    expect(limits.sibling.lines).toBe(1)
+  })
+})

@@ -35,6 +35,16 @@ describe('the seat a direction stands for', () => {
     expect(seatTowards(origin, { x: -300, y: 40 }, DEFAULT_OPTIONS)).toBe('jump')
   })
 
+  it('counts a gesture exactly on the edge of the wedge as vertical', () => {
+    const origin = { x: 0, y: 0 }
+    const { verticalBias } = DEFAULT_OPTIONS.gesture
+    expect(seatTowards(origin, { x: 10 * verticalBias, y: 10 }, DEFAULT_OPTIONS)).toBe('child')
+    expect(seatTowards(origin, { x: 10 * verticalBias, y: -10 }, DEFAULT_OPTIONS)).toBe('parent')
+    expect(seatTowards(origin, { x: 10 * verticalBias + 1, y: 10 }, DEFAULT_OPTIONS)).toBe(
+      'sibling',
+    )
+  })
+
   it('is nothing at all when the gesture went nowhere', () => {
     expect(seatTowards({ x: 5, y: 5 }, { x: 5, y: 5 }, DEFAULT_OPTIONS)).toBeNull()
   })
@@ -228,6 +238,16 @@ describe('the seat something dragged in comes to', () => {
     }
     expect(dropAt({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
     expect(dropAt({ x: 0, y: 0 })).toBeNull()
+  })
+
+  it('is nothing until the pointer stands clear of a focus drawn off the middle', () => {
+    const shifted: PlexFrame = {
+      ...frame,
+      nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300, y: node.y + 200 })),
+    }
+    const where = { x: 300, y: 200 }
+    expect(dropAt({ x: where.x, y: where.y + THRESHOLD - 1 }, { frame: shifted })).toBeNull()
+    expect(dropAt({ x: where.x, y: where.y + THRESHOLD }, { frame: shifted })).toBe('child')
   })
 
   it('is nothing past the edge of the window, and a seat on it', () => {

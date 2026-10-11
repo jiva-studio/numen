@@ -43,8 +43,10 @@ export const seatWithoutDirection = (seats: readonly PlexRelatedSeat[]): PlexRel
 function getDropDirection(dx: number, dy: number, bias: number): Direction | null {
   if (dx === 0 && dy === 0) return null
   if (Math.abs(dy) * bias >= Math.abs(dx)) {
+    // Stryker disable next-line EqualityOperator: dy is never 0 once the vertical test has passed
     return dy < 0 ? 'up' : 'down'
   }
+  // Stryker disable next-line EqualityOperator: dx is 0 here only when the bias is negative
   return dx < 0 ? 'left' : 'right'
 }
 
@@ -60,6 +62,7 @@ export function seatTowards(
   options: PlexOptions,
 ): PlexRelatedSeat | null {
   const heading = getDropDirection(to.x - from.x, to.y - from.y, options.gesture.verticalBias)
+  // Stryker disable next-line ConditionalExpression: a null heading matches no seat and the lookup yields null
   if (!heading) return null
   return RELATED_SEATS.find((seat) => options.direction[seat] === heading) ?? null
 }
@@ -72,6 +75,7 @@ export function seatTowards(
  * the same rule that decides the click and the tab stop.
  */
 export function nodeAt(at: Position, frame: PlexFrame): PlacedNode | null {
+  // Stryker disable next-line ArithmeticOperator: indexes past the end read undefined and are skipped
   for (let i = frame.nodes.length - 1; i >= 0; i--) {
     const node = frame.nodes[i]
     if (!node || node.opacity < 1) continue
@@ -104,6 +108,7 @@ export function resolveDrop({ frame, options, from, at, seats }: DropInput): Dro
   if (!source) return null
 
   const landedOn = nodeAt(at, frame)
+  // Stryker disable next-line ConditionalExpression: a drop on the source has no direction, so the seat lookup yields null
   if (landedOn?.id === from) return null
 
   const target = landedOn ? { x: landedOn.x, y: landedOn.y } : at

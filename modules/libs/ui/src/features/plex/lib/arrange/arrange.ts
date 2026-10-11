@@ -102,6 +102,7 @@ function widthsFor(
 /** Whether every node stays inside the window, the margin kept clear. */
 function isInsideViewport(nodes: readonly PlacedNode[], options: PlexOptions): boolean {
   const { viewport, margin } = options
+  // Stryker disable next-line ConditionalExpression: spacingFor asks only when a viewport is set
   if (!viewport) return true
 
   const halfWidth = viewport.width / 2 - margin
@@ -119,6 +120,7 @@ function countSeats(nodes: readonly PlexNode[]): Record<PlexRelatedSeat, number>
     number
   >
   for (const node of nodes) {
+    // Stryker disable next-line ConditionalExpression,StringLiteral: a count kept under the focus seat is never read
     if (node.seat !== 'focus') counts[node.seat] += 1
   }
   return counts
@@ -137,6 +139,7 @@ function canPlace(
 
   for (const seat of RELATED_SEATS) {
     const ofSeat = nodes.filter((node) => node.seat === seat)
+    // Stryker disable next-line ConditionalExpression: an empty seat is placed as nothing and reaches no further than zero
     if (ofSeat.length === 0) continue
 
     const capacity = limits[seat].perLine * limits[seat].lines
