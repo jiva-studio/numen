@@ -43,6 +43,26 @@ describe('the file as it stands', () => {
     const { held } = vault()
     expect(held.isRead.value).toBe(false)
     expect(held.text.value).toBe('')
+    expect(held.changed.value).toBe(false)
+    expect(held.errorMessage.value).toBe('')
+    expect(held.isStale.value).toBe(false)
+  })
+
+  it('has nothing wrong with it once a read that failed is followed by one that did not', async () => {
+    let fails = true
+    const { held } = vault({
+      getSettingsFile: () =>
+        fails
+          ? Promise.reject(new Error('the folder is not there'))
+          : Promise.resolve({ written: HELD, path: '/numen.json' }),
+    })
+    await held.reload()
+    expect(held.errorMessage.value).not.toBe('')
+
+    fails = false
+    await held.reload()
+
+    expect(held.errorMessage.value).toBe('')
   })
 
   it('says so where it could not be read', async () => {
@@ -207,6 +227,15 @@ describe('a file that moved past what the tab read', () => {
     expect(held.text.value).toBe(MOVED)
     expect(held.isStale.value).toBe(false)
     expect(held.changed.value).toBe(false)
+    expect(wrote).toStrictEqual([])
+  })
+
+  it('writes nothing where keeping is asked of a file that did not move', async () => {
+    const { held, wrote } = vault()
+    await held.reload()
+    held.type('{}\n')
+    await held.keep()
+
     expect(wrote).toStrictEqual([])
   })
 

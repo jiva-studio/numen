@@ -127,6 +127,25 @@ describe('work that stopped badly', () => {
     expect(drawn).toHaveLength(2)
   })
 
+  it('is one card where the longer sentence arrived first', () => {
+    const error = 'the model is not on this machine'
+    const drawn = corner([
+      reading({ id: 'making the vectors', label: 'Indexing', error: `embedding demo: ${error}` }),
+      reading({ id: 'getting ready', label: 'Preparing the model', error }),
+    ])
+
+    expect(drawn.map((one) => one.id)).toStrictEqual(['getting ready'])
+  })
+
+  it('keeps a failure whose sentence ends where a pass running has no sentence yet', () => {
+    const drawn = corner([
+      reading({ id: 'one', error: 'could not read: ' }),
+      reading({ id: 'two', error: '' }),
+    ])
+
+    expect(drawn.map((one) => one.id)).toStrictEqual(['one', 'two'])
+  })
+
   it('keeps two failures that are two different things', () => {
     const drawn = corner([
       reading({ id: 'one', error: 'nothing to read with' }),
@@ -241,7 +260,95 @@ describe('what is so about the window', () => {
   })
 })
 
+describe('each state of the window', () => {
+  it('is drawn under its own identity, tone and manner', () => {
+    const drawn = corner(
+      [],
+      [],
+      well({ unwatched: '/home/vault', unread: 'no such folder', lost: 'the themes stopped' }),
+    )
+
+    expect(drawn).toStrictEqual([
+      {
+        id: 'unwatched',
+        text: words.unwatched,
+        about: '/home/vault',
+        tone: 'caution',
+        isWorking: false,
+        isAsked: true,
+        stay: 'holds',
+      },
+      {
+        id: 'unread',
+        text: words.unread,
+        about: 'no such folder',
+        tone: 'caution',
+        isWorking: false,
+        isAsked: true,
+        stay: 'holds',
+      },
+      {
+        id: 'lost',
+        text: 'the themes stopped',
+        about: '',
+        tone: 'caution',
+        isWorking: false,
+        isAsked: true,
+        stay: 'holds',
+      },
+    ])
+  })
+
+  it('draws the first reading plainly under its own identity', () => {
+    expect(corner([], [], well({ isReading: true }))).toStrictEqual([
+      {
+        id: 'reading',
+        text: words.reading,
+        about: '',
+        tone: 'plain',
+        isWorking: false,
+        isAsked: true,
+        stay: 'holds',
+      },
+    ])
+  })
+
+  it('draws nothing read plainly under its own identity', () => {
+    const drawn = corner([], [], well({ unread: 'gone', hasNote: false }))
+
+    expect(drawn[1]).toStrictEqual({
+      id: 'nothingRead',
+      text: words.nothingRead,
+      about: '',
+      tone: 'plain',
+      isWorking: false,
+      isAsked: true,
+      stay: 'holds',
+    })
+  })
+
+  it('draws the words-only state quietly under its own identity', () => {
+    const drawn = corner([], [], well(), vault({ chunks: 4823, isEmbedding: false }))
+
+    expect(drawn).toStrictEqual([
+      {
+        id: 'wordsOnly',
+        text: words.wordsOnly,
+        about: '',
+        tone: 'plain',
+        isWorking: false,
+        isAsked: false,
+        stay: 'holds',
+      },
+    ])
+  })
+})
+
 describe('what the window said', () => {
+  it('is never work in progress', () => {
+    expect(corner([], [createMessage()])[0]?.isWorking).toBe(false)
+  })
+
   it('draws a report to be read and then let go of', () => {
     const drawn = corner([], [createMessage()])
 

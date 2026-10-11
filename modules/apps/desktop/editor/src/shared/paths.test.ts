@@ -25,6 +25,11 @@ describe('the name a link writes', () => {
     expect(nameOf('stencils/Animal')).toBe('Animal')
   })
 
+  it('keeps the whole of a name that is only an ending', () => {
+    expect(nameOf('.hidden')).toBe('.hidden')
+    expect(nameOf('notes/.hidden')).toBe('.hidden')
+  })
+
   it('is nothing for a file filed nowhere', () => {
     expect(nameOf('')).toBe('')
   })
