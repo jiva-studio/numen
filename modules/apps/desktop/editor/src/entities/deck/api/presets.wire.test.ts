@@ -233,3 +233,203 @@ describe('what a preset comes to over the range of its goal', () => {
     })
   })
 })
+
+describe('what the requests of a preset name', () => {
+  it('asks for a preset under its path', async () => {
+    replyWith({ preset: { path: 'Daily.md', title: 'Daily' } })
+
+    await presets.read('Daily.md')
+
+    expect(asked[0]).toEqual({ path: 'Daily.md' })
+  })
+
+  it('files a new preset by its title in the folder', async () => {
+    replyWith({ path: 'Presets/Daily.md' })
+
+    await presets.createPreset('Daily', 'Presets')
+
+    expect(asked[0]).toEqual({ title: 'Daily', path: 'Presets' })
+  })
+
+  it('names the deck, the preset and the file the window read when scheduling', async () => {
+    replyWith({})
+
+    await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
+
+    expect(asked[0]).toMatchObject({ deck: 'Deck.md', preset: 'Daily.md' })
+  })
+
+  it('sends the path and the settings of a curve it asks for', async () => {
+    replyWith({})
+
+    await presets.curve('Daily.md', { ...DEFAULTS, minutesADay: 45 })
+
+    expect(asked[0]).toMatchObject({ path: 'Daily.md', settings: { minutesADay: 45 } })
+  })
+})
+
+describe('the stamp of a file an answer is about', () => {
+  it('is the empty string where a read answered with none', async () => {
+    replyWith({ preset: { path: 'Daily.md', title: 'Daily' } })
+
+    const answer = await presets.read('Daily.md')
+
+    expect(answer.ok ? answer.value.at : null).toBe('')
+  })
+
+  it('is the empty string where scheduling answered with none', async () => {
+    replyWith({})
+
+    const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '')
+
+    expect(answer.ok ? answer.value.at : null).toBe('')
+  })
+
+  it('is the empty string where a write answered with none', async () => {
+    replyWith({})
+
+    const answer = await presets.write('Daily.md', DEFAULTS, '')
+
+    expect(answer.ok ? answer.value.at : null).toBe('')
+  })
+
+  it('is the file a write came to', async () => {
+    replyWith({ at: { path: 'Daily.md', size: '12', mtime: '34' } })
+
+    const answer = await presets.write('Daily.md', DEFAULTS, '')
+
+    expect(answer).toEqual({ ok: true, value: { at: '12 34 Daily.md' } })
+  })
+})
+
+describe('writing into a preset the window read', () => {
+  it('names the file the window read', async () => {
+    replyWith({ at: { path: 'Daily.md', size: '12', mtime: '34' } })
+
+    await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')
+
+    expect(asked[0]).toMatchObject({
+      path: 'Daily.md',
+      seen: { path: 'Daily.md', size: '12', mtime: '34' },
+    })
+  })
+
+  it('names no file where the window read none', async () => {
+    replyWith({})
+
+    await presets.write('Daily.md', DEFAULTS, '')
+
+    expect(asked[0]?.seen).toBeUndefined()
+  })
+
+  it('says the file moved past what the window read', async () => {
+    replyWith({ error: 'ERROR_CODE_STALE' })
+
+    expect(await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')).toEqual(
+      asFailure('changed'),
+    )
+  })
+
+  it('names the refusal in the words the window uses', async () => {
+    replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
+
+    expect(await presets.write('Notes.md', DEFAULTS, '')).toEqual(asFailure('notAPreset'))
+  })
+
+  it('names the refusal of a scheduling in the words the window uses', async () => {
+    replyWith({ error: 'ERROR_CODE_NOT_A_PRESET' })
+
+    expect(await presets.scheduleDeck('Deck.md', 'Notes.md', '')).toEqual(asFailure('notAPreset'))
+  })
+})
+
+describe('the ends of every setting', () => {
+  it('are carried for each setting the application named', async () => {
+    const ends = { least: 1, most: 9 }
+    replyWith({
+      preset: { path: 'Daily.md', title: 'Daily' },
+      bounds: {
+        minutesADay: ends,
+        newADay: ends,
+        reviewsADay: ends,
+        retention: ends,
+        backlog: ends,
+        interval: ends,
+        load: ends,
+      },
+    })
+
+    const answer = await presets.read('Daily.md')
+
+    expect(answer.ok ? answer.value.bounds : null).toEqual({
+      minutesADay: ends,
+      newADay: ends,
+      reviewsADay: ends,
+      retention: ends,
+      backlog: ends,
+      interval: ends,
+      load: ends,
+    })
+  })
+
+  it('are left out for each setting the application did not name', async () => {
+    replyWith({
+      preset: { path: 'Daily.md', title: 'Daily' },
+      bounds: { interval: { least: 1, most: 9 } },
+    })
+
+    const answer = await presets.read('Daily.md')
+
+    expect(answer.ok ? answer.value.bounds : null).toEqual({ interval: { least: 1, most: 9 } })
+  })
+})
+
+describe('the curve of a goal other than the default', () => {
+  it('carries the goal the answer names', async () => {
+    replyWith({ curve: { goal: 'GOAL_RETENTION', grid: [], days: [], at: [] } })
+
+    expect((await presets.curve('Daily.md', DEFAULTS)).goal).toBe('retention')
+  })
+
+  it('is valid and honest', async () => {
+    replyWith({ curve: { goal: 'GOAL_RETENTION', grid: [], days: [], at: [] } })
+
+    expect(await presets.curve('Daily.md', DEFAULTS)).toMatchObject({
+      isValid: true,
+      isHonest: true,
+    })
+  })
+
+  it('carries the places the answer names', async () => {
+    replyWith({
+      curve: {
+        goal: 'GOAL_MINUTES_A_DAY',
+        grid: [],
+        days: [],
+        at: [],
+        now: { at: 3, value: 25, day: 'mon' },
+        suggested: { at: 5, value: 40, day: 'tue' },
+      },
+    })
+
+    const curve = await presets.curve('Daily.md', DEFAULTS)
+
+    expect(curve.now).toEqual({ at: 3, value: 25, day: 'mon' })
+    expect(curve.suggested).toEqual({ at: 5, value: 40, day: 'tue' })
+  })
+
+  it('names no learned figure for a place that has none', async () => {
+    replyWith({
+      curve: {
+        goal: 'GOAL_MINUTES_A_DAY',
+        grid: [10],
+        days: [],
+        at: [{ reviews: 1, minutes: 10 }],
+      },
+    })
+
+    const curve = await presets.curve('Daily.md', DEFAULTS)
+
+    expect('learns' in (curve.at[0] ?? { learns: 0 })).toBe(false)
+  })
+})

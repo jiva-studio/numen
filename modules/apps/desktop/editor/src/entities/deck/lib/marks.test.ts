@@ -2,7 +2,7 @@
  * Where each problem the vault reports is drawn, asked without a screen.
  */
 import { describe, expect, it } from 'vitest'
-import { createMarks } from './marks'
+import { areMarksEqual, createMarks } from './marks'
 import type { DeckProblem } from '../types'
 
 /** One problem as the vault reports one, against nothing in particular. */
@@ -81,5 +81,128 @@ describe('where a problem is drawn', () => {
     expect(createMarks([problem({ card: 5 })], ['c1'], []).whole).toStrictEqual([
       'a card under no stencil',
     ])
+  })
+})
+
+describe('where two problems of one card stand', () => {
+  it('keeps the fields of one card together, each under its own name', () => {
+    const marks = createMarks(
+      [
+        problem({ card: 0, field: 'Front', text: 'first' }),
+        problem({ card: 0, field: 'Back', text: 'second' }),
+      ],
+      ['c1'],
+      [],
+    )
+
+    expect(marks.under.get('c1')?.get('Front')).toStrictEqual(['first'])
+    expect(marks.under.get('c1')?.get('Back')).toStrictEqual(['second'])
+  })
+})
+
+/** The marks of problems read against two cards and a face. */
+const marksOf = (...problems: DeckProblem[]) => createMarks(problems, ['c1', 'c2'], ['f1'])
+
+describe('whether two readings are wrong in the same way', () => {
+  it('is so for two readings of nothing', () => {
+    expect(areMarksEqual(marksOf(), marksOf())).toBe(true)
+  })
+
+  it('is so for two readings saying the same against the same things', () => {
+    const all = () => [
+      problem({ text: 'file' }),
+      problem({ card: 0, text: 'card' }),
+      problem({ face: 0, text: 'face' }),
+      problem({ card: 1, field: 'Front', text: 'value' }),
+      problem({ field: 'Back', text: 'field' }),
+    ]
+
+    expect(areMarksEqual(marksOf(...all()), marksOf(...all()))).toBe(true)
+  })
+
+  it('is not so where the file is told something else', () => {
+    expect(areMarksEqual(marksOf(problem({ text: 'a' })), marksOf(problem({ text: 'b' })))).toBe(
+      false,
+    )
+  })
+
+  it('is not so where the file is told more in the same words', () => {
+    const one = marksOf(problem({ text: 'a' }))
+    const other = marksOf(problem({ text: 'a' }), problem({ text: 'b' }))
+
+    expect(areMarksEqual(one, other)).toBe(false)
+    expect(areMarksEqual(other, one)).toBe(false)
+  })
+
+  it('is not so where the file is told the same words in another order', () => {
+    const one = marksOf(problem({ text: 'a' }), problem({ text: 'b' }))
+    const other = marksOf(problem({ text: 'b' }), problem({ text: 'a' }))
+
+    expect(areMarksEqual(one, other)).toBe(false)
+  })
+
+  it('is not so where only a card or a face is told something else', () => {
+    expect(
+      areMarksEqual(
+        marksOf(problem({ card: 0, text: 'a' })),
+        marksOf(problem({ card: 0, text: 'b' })),
+      ),
+    ).toBe(false)
+    expect(
+      areMarksEqual(
+        marksOf(problem({ card: 0, text: 'a' })),
+        marksOf(problem({ card: 1, text: 'a' })),
+      ),
+    ).toBe(false)
+  })
+
+  it('is not so where one reading stands against more cards than the other', () => {
+    const one = marksOf(problem({ card: 0 }))
+    const other = marksOf(problem({ card: 0 }), problem({ card: 1 }))
+
+    expect(areMarksEqual(one, other)).toBe(false)
+    expect(areMarksEqual(other, one)).toBe(false)
+  })
+
+  it('is not so where only a value of a card is told something else', () => {
+    const one = marksOf(problem({ card: 0, field: 'Front', text: 'a' }))
+
+    expect(areMarksEqual(one, marksOf(problem({ card: 0, field: 'Front', text: 'b' })))).toBe(false)
+    expect(areMarksEqual(one, marksOf(problem({ card: 0, field: 'Back', text: 'a' })))).toBe(false)
+    expect(areMarksEqual(one, marksOf(problem({ card: 1, field: 'Front', text: 'a' })))).toBe(false)
+  })
+
+  it('is not so where one reading stands against more cards with values than the other', () => {
+    const one = marksOf(problem({ card: 0, field: 'Front' }))
+    const other = marksOf(
+      problem({ card: 0, field: 'Front' }),
+      problem({ card: 1, field: 'Front' }),
+    )
+
+    expect(areMarksEqual(one, other)).toBe(false)
+    expect(areMarksEqual(other, one)).toBe(false)
+  })
+
+  it('is not so where one reading stands against more values of a card than the other', () => {
+    const one = marksOf(problem({ card: 0, field: 'Front' }))
+    const other = marksOf(problem({ card: 0, field: 'Front' }), problem({ card: 0, field: 'Back' }))
+
+    expect(areMarksEqual(one, other)).toBe(false)
+    expect(areMarksEqual(other, one)).toBe(false)
+  })
+
+  it('is not so where only a field of the file is told something else', () => {
+    expect(
+      areMarksEqual(
+        marksOf(problem({ field: 'Back', text: 'a' })),
+        marksOf(problem({ field: 'Back', text: 'b' })),
+      ),
+    ).toBe(false)
+    expect(
+      areMarksEqual(
+        marksOf(problem({ field: 'Back', text: 'a' })),
+        marksOf(problem({ field: 'Front', text: 'a' })),
+      ),
+    ).toBe(false)
   })
 })
