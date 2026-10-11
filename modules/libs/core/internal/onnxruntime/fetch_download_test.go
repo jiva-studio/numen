@@ -239,8 +239,8 @@ func TestDownloadStopsWhenItsContextIsCancelled(t *testing.T) {
 func redirecting(hops int64) http.HandlerFunc {
 	var served atomic.Int64
 	return func(w http.ResponseWriter, r *http.Request) {
-		if served.Add(1) <= hops {
-			http.Redirect(w, r, r.URL.Path, http.StatusFound)
+		if n := served.Add(1); n <= hops {
+			http.Redirect(w, r, fmt.Sprintf("/hop/%d", n), http.StatusFound)
 			return
 		}
 		w.Write([]byte("arrived"))
@@ -256,7 +256,7 @@ func TestFetchFollowsNineRedirectsAndRefusesTen(t *testing.T) {
 	ten := newTLSServer(t, redirecting(10))
 	dir := t.TempDir()
 	_, err := Fetch(t.Context(), downloading(dir), ten.URL+"/m.onnx")
-	if err == nil || !strings.Contains(err.Error(), "redirects ten times") {
+	if err == nil || !strings.Contains(err.Error(), ten.URL+"/m.onnx redirects ten times") {
 		t.Fatalf("ten redirects: %v", err)
 	}
 	assertNothingKept(t, dir)

@@ -22,6 +22,7 @@ func TestPatienceGrowsWithTheLengthAnnounced(t *testing.T) {
 	}{
 		{"a thousand seconds of file", perSecond * 1000, 2*time.Minute + 1000*time.Second},
 		{"ten seconds of file", perSecond * 10, 2*time.Minute + 10*time.Second},
+		{"a length of one byte", 1, 2 * time.Minute},
 		{"less than a second of file", perSecond - 1, 2 * time.Minute},
 		{"no length announced", 0, 2*time.Minute + 5461*time.Second},
 		{"a negative length", -1, 2*time.Minute + 5461*time.Second},
