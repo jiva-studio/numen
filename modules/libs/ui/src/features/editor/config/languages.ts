@@ -2,53 +2,87 @@
  * What a fenced block can be written in.
  *
  * The word after the fence is looked up here; a word that is not here leaves
- * the block plain.
+ * the block plain. Each grammar is fetched the first time its language loads.
  */
 import { LanguageDescription, LanguageSupport, StreamLanguage } from '@codemirror/language'
-import { javascript } from '@codemirror/lang-javascript'
-import { python } from '@codemirror/lang-python'
-import { json } from '@codemirror/lang-json'
-import { html } from '@codemirror/lang-html'
-import { css } from '@codemirror/lang-css'
-import { go } from '@codemirror/lang-go'
-import { rust } from '@codemirror/lang-rust'
-import { sql } from '@codemirror/lang-sql'
-import { yaml } from '@codemirror/lang-yaml'
-import { xml } from '@codemirror/lang-xml'
-import { shell } from '@codemirror/legacy-modes/mode/shell'
-import { toml } from '@codemirror/legacy-modes/mode/toml'
-import { diff } from '@codemirror/legacy-modes/mode/diff'
 
-const createStreamLanguage = (mode: Parameters<typeof StreamLanguage.define>[0]) =>
+type StreamParser = Parameters<typeof StreamLanguage.define>[0]
+
+const createStreamLanguage = (mode: StreamParser) =>
   new LanguageSupport(StreamLanguage.define(mode))
 
 export const LANGUAGES: readonly LanguageDescription[] = [
   LanguageDescription.of({
     name: 'javascript',
     alias: ['js', 'jsx', 'mjs', 'cjs', 'node'],
-    load: async () => javascript({ jsx: true }),
+    load: () => import('@codemirror/lang-javascript').then((m) => m.javascript({ jsx: true })),
   }),
   LanguageDescription.of({
     name: 'typescript',
     alias: ['ts', 'tsx'],
-    load: async () => javascript({ jsx: true, typescript: true }),
+    load: () =>
+      import('@codemirror/lang-javascript').then((m) =>
+        m.javascript({ jsx: true, typescript: true }),
+      ),
   }),
-  LanguageDescription.of({ name: 'python', alias: ['py'], load: async () => python() }),
-  LanguageDescription.of({ name: 'json', load: async () => json() }),
-  LanguageDescription.of({ name: 'html', alias: ['htm', 'vue'], load: async () => html() }),
-  LanguageDescription.of({ name: 'css', load: async () => css() }),
-  LanguageDescription.of({ name: 'go', alias: ['golang'], load: async () => go() }),
-  LanguageDescription.of({ name: 'rust', alias: ['rs'], load: async () => rust() }),
-  LanguageDescription.of({ name: 'sql', load: async () => sql() }),
-  LanguageDescription.of({ name: 'yaml', alias: ['yml'], load: async () => yaml() }),
-  LanguageDescription.of({ name: 'xml', alias: ['svg'], load: async () => xml() }),
+  LanguageDescription.of({
+    name: 'python',
+    alias: ['py'],
+    load: () => import('@codemirror/lang-python').then((m) => m.python()),
+  }),
+  LanguageDescription.of({
+    name: 'json',
+    load: () => import('@codemirror/lang-json').then((m) => m.json()),
+  }),
+  LanguageDescription.of({
+    name: 'html',
+    alias: ['htm', 'vue'],
+    load: () => import('@codemirror/lang-html').then((m) => m.html()),
+  }),
+  LanguageDescription.of({
+    name: 'css',
+    load: () => import('@codemirror/lang-css').then((m) => m.css()),
+  }),
+  LanguageDescription.of({
+    name: 'go',
+    alias: ['golang'],
+    load: () => import('@codemirror/lang-go').then((m) => m.go()),
+  }),
+  LanguageDescription.of({
+    name: 'rust',
+    alias: ['rs'],
+    load: () => import('@codemirror/lang-rust').then((m) => m.rust()),
+  }),
+  LanguageDescription.of({
+    name: 'sql',
+    load: () => import('@codemirror/lang-sql').then((m) => m.sql()),
+  }),
+  LanguageDescription.of({
+    name: 'yaml',
+    alias: ['yml'],
+    load: () => import('@codemirror/lang-yaml').then((m) => m.yaml()),
+  }),
+  LanguageDescription.of({
+    name: 'xml',
+    alias: ['svg'],
+    load: () => import('@codemirror/lang-xml').then((m) => m.xml()),
+  }),
   LanguageDescription.of({
     name: 'shell',
     alias: ['sh', 'bash', 'zsh', 'console'],
-    load: async () => createStreamLanguage(shell),
+    load: () =>
+      import('@codemirror/legacy-modes/mode/shell').then((m) => createStreamLanguage(m.shell)),
   }),
-  LanguageDescription.of({ name: 'toml', load: async () => createStreamLanguage(toml) }),
-  LanguageDescription.of({ name: 'diff', load: async () => createStreamLanguage(diff) }),
+  LanguageDescription.of({
+    name: 'toml',
+    load: () =>
+      import('@codemirror/legacy-modes/mode/toml').then((m) => createStreamLanguage(m.toml)),
+  }),
+  LanguageDescription.of({
+    name: 'diff',
+    load: () =>
+      import('@codemirror/legacy-modes/mode/diff').then((m) => createStreamLanguage(m.diff)),
+  }),
 ]
 
 /**
