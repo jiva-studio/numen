@@ -4,6 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 import { StopReason } from '@numen/protocol'
+import { DEFAULTS, NO_BOUNDS, type Cards, type Presets } from '@/entities/deck'
 import { openNotes } from '@/entities/note'
 import { useDeckScheduleSync } from './useDeckScheduleSync'
 

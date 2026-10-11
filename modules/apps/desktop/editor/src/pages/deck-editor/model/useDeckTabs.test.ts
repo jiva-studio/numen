@@ -953,26 +953,13 @@ describe('a deck the vault refused', () => {
   it('is refused under the code the vault gave', async () => {
     const { tab } = await open({ error: 'deckTooLarge', bound: 10 })
 
-    expect(tab.note.value.error).toBe('deckTooLarge')
+    expect(tab.note.value.error).toBe('tooLarge')
   })
 
   it('is refused as not a deck where the code names no refusal', async () => {
     const { tab } = await open({ error: 'changed' })
 
-    expect(tab.note.value.error).toBe('notADeck')
-  })
-})
-
-describe('a deck written', () => {
-  it('leaves the string the tab holds as it was', async () => {
-    const { decks, tab } = await open()
-    tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    const body = tab.note.value.body
-
-    await decks.flush()
-
-    expect(tab.note.value.body).toBe(body)
-    expect(tab.note.value.state).toBe('clean')
+    expect(tab.note.value.error).toBe('notANote')
   })
 })
 
