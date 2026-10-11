@@ -10,6 +10,8 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 
+import { useWindowStreams } from './useWindowStreams'
+
 const taken: AbortSignal[] = []
 
 /** A stream that stays open, so nothing ends on its own. */
@@ -41,7 +43,6 @@ vi.mock('@/shared/clients', () => ({
 
 describe('what the window follows', () => {
   it('is ended when the window closes', async () => {
-    const { useWindowStreams } = await import('./useWindowStreams')
     const host = defineComponent({
       setup() {
         useWindowStreams({
