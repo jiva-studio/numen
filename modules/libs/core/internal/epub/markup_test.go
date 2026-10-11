@@ -2,6 +2,7 @@ package epub_test
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -157,6 +158,9 @@ func TestACoverThatWrapsNoPictureDrawsNone(t *testing.T) {
 			xmlns:xlink="http://www.w3.org/1999/xlink"><image xlink:href="gone.png"/></svg>`},
 		{"an address off the machine", `<svg xmlns="http://www.w3.org/2000/svg"
 			xmlns:xlink="http://www.w3.org/1999/xlink"><image xlink:href="https://example.invalid/p.png"/></svg>`},
+		{"a picture another element names", `<svg xmlns="http://www.w3.org/2000/svg"><use href="pictures/plate.png"/></svg>`},
+		{"a picture an image names by another attribute", `<svg xmlns="http://www.w3.org/2000/svg">
+			<image title="pictures/plate.png"/></svg>`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			drawn, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
@@ -178,6 +182,13 @@ func TestACoverNamesThePictureItDraws(t *testing.T) {
 		{`<svg xmlns="http://www.w3.org/2000/svg"><image href="pictures/plate.png"/></svg>`,
 			"OEBPS/pictures/plate.png"},
 		{`<svg xmlns="http://www.w3.org/2000/svg"><g><image href="` + written + `"/></g></svg>`, written},
+		// An entity the SVG does not declare and an encoding other than UTF-8
+		// still draw the picture.
+		{`<svg xmlns="http://www.w3.org/2000/svg"><title>Plate&nbsp;one</title>
+			<image href="pictures/plate.png"/></svg>`, "OEBPS/pictures/plate.png"},
+		{`<?xml version="1.0" encoding="iso-8859-1"?>
+			<svg xmlns="http://www.w3.org/2000/svg"><image href="pictures/plate.png"/></svg>`,
+			"OEBPS/pictures/plate.png"},
 	} {
 		drawn, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
 		if err != nil {
@@ -279,4 +290,128 @@ func attribute(node *epub.Node, name string) string {
 		}
 	}
 	return ""
+}
+
+// A link keeps an address in a scheme a person may be sent to, or an entry of
+// the archive. A scheme is a letter followed by letters, digits, plus, minus and
+// dots, and any other scheme leads nowhere.
+func TestWhereALinkLeads(t *testing.T) {
+	for _, c := range []struct{ href, want string }{
+		{" mailto:someone@example.org", "mailto:someone@example.org"},
+		{"x:payload", ""},
+		{"AZaz09+-.:payload", ""},
+		{"a1:payload", ""},
+		{"1ab:payload", "OEBPS/1ab:payload"},
+		{"~ab:payload", "OEBPS/~ab:payload"},
+		{"a_b:payload", "OEBPS/a_b:payload"},
+		{"notes/one:two.xhtml", "OEBPS/notes/one:two.xhtml"},
+		{"#here", "#here"},
+		{"", ""},
+	} {
+		t.Run(c.href, func(t *testing.T) {
+			_, drawn := readOne(t, `<p><a href="`+c.href+`">x</a></p>`)
+			if got := attribute(element(t, drawn.Nodes, "a"), "href"); got != c.want {
+				t.Errorf("the link points at %q, want %q", got, c.want)
+			}
+		})
+	}
+}
+
+// A picture is a file the book carries or one written into the markup as base64.
+func TestWhatAPictureIsDrawnFrom(t *testing.T) {
+	for _, c := range []struct{ src, want string }{
+		{"data:image/png;base64,iVBORw0KGgo=", "data:image/png;base64,iVBORw0KGgo="},
+		{"data:text/plain;base64,QQ==", ""},
+		{"data:image/svg+xml,%3Csvg%2F%3E", ""},
+	} {
+		t.Run(c.src, func(t *testing.T) {
+			_, drawn := readOne(t, `<p><img src="`+c.src+`" alt="A"/></p>`)
+			if got := attribute(element(t, drawn.Nodes, "img"), "src"); got != c.want {
+				t.Errorf("the picture is drawn from %q, want %q", got, c.want)
+			}
+		})
+	}
+}
+
+// An address that leads nowhere goes, and the attributes after it stay.
+func TestAnAddressThatLeadsNowhereTakesNothingElse(t *testing.T) {
+	_, drawn := readOne(t, `<p><a href="javascript:void(0)" id="k">x</a>`+
+		`<img src="https://example.org/p.png" alt="A plate"/></p>`)
+	link := element(t, drawn.Nodes, "a")
+	if want := []epub.Attribute{{Name: "id", Value: "k"}}; !slices.Equal(link.Attributes, want) {
+		t.Errorf("the link carries %v, want %v", link.Attributes, want)
+	}
+	picture := element(t, drawn.Nodes, "img")
+	if want := []epub.Attribute{{Name: "alt", Value: "A plate"}}; !slices.Equal(picture.Attributes, want) {
+		t.Errorf("the picture carries %v, want %v", picture.Attributes, want)
+	}
+}
+
+// An element standing on the space a line's end takes back stands where the
+// line ends.
+func TestAnElementOnASpaceTakenBackStandsAtTheLineEnd(t *testing.T) {
+	book, drawn := readOne(t, `<p>A <b></b></p>`)
+	if book.Text != "A\n" {
+		t.Fatalf("the text is %q", book.Text)
+	}
+	if got := element(t, drawn.Nodes, "b").Offset; got != 1 {
+		t.Errorf("the element stands at %d, want 1", got)
+	}
+	if got := getNodeText(drawn.Nodes); got != book.Text {
+		t.Errorf("the markup says %q, want %q", got, book.Text)
+	}
+}
+
+// A run written in a table stands in the cell that follows it, and in the table
+// itself when no cell follows. A run written after a table is not in it.
+func TestRunsInATable(t *testing.T) {
+	for _, c := range []struct {
+		name, markup, in, want string
+	}{
+		{"a cell holds the end of its row's line", `<table><tr><td>A</td></tr></table>`, "td", "A\n"},
+		{"text after a table is not in its last cell",
+			`<div><table><tr><td>A</td></tr></table>B</div>`, "td", "A\n"},
+		{"a run in a row before its cell is the cell's",
+			`<table><tr><template>X</template><td>A</td></tr></table>`, "td", "X A\n"},
+		{"a run in a table before its rows is the first cell's",
+			`<table><template>X</template><tr><td>A</td></tr></table>`, "td", "X\nA\n"},
+		{"a run in a table that opens no cell is the table's",
+			`<table><template>X</template></table>`, "table", "X\n"},
+		{"a run in a row that opens no cell is the table's, not the row's",
+			`<table><tr><template>X</template></tr></table>`, "tr", ""},
+		{"a run waiting for a cell is no caption's",
+			`<table><template>X</template><caption><b>C</b></caption></table>`, "b", "C"},
+		{"a table whose text is all in an element keeps its line end",
+			`<table><template><b>X</b></template></table>`, "table", "X\n"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			book, drawn := readOne(t, c.markup)
+			if got := getNodeText(drawn.Nodes); got != book.Text {
+				t.Fatalf("the markup says %q and the text is %q", got, book.Text)
+			}
+			holder := element(t, drawn.Nodes, c.in)
+			if got := getNodeText(holder.Children); got != c.want {
+				t.Errorf("the %s says %q, want %q", c.in, got, c.want)
+			}
+			if len(holder.Children) > 0 && holder.Offset != holder.Children[0].Offset {
+				t.Errorf("the %s stands at %d and what it holds at %d",
+					c.in, holder.Offset, holder.Children[0].Offset)
+			}
+			if c.in == "td" {
+				for _, held := range element(t, drawn.Nodes, "table").Children {
+					if held.Name == "" {
+						t.Errorf("the table holds %q outside its cell", held.Text)
+					}
+				}
+			}
+		})
+	}
+}
+
+// What the book holds beside its spine is not a document of it.
+func TestAnEntryBesideTheSpineIsNoDocument(t *testing.T) {
+	book := read(t, coverBook(t, `<svg xmlns="http://www.w3.org/2000/svg"/>`))
+	if _, err := book.Markup("OEBPS/pictures/plate.png"); !errors.Is(err, epub.ErrNoDocument) {
+		t.Errorf("err = %v, want %v", err, epub.ErrNoDocument)
+	}
 }
