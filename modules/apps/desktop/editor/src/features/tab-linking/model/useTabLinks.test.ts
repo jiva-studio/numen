@@ -63,6 +63,17 @@ describe('useTabLinks', () => {
     expect(tabLinks.getLinkedTargets('tab-1')).toEqual(['tab-2'])
   })
 
+  it('leaves the groups untouched when two tabs of one group are linked again', () => {
+    const tabLinks = useTabLinks()
+    tabLinks.linkTabs('tab-1', 'tab-2')
+    tabLinks.linkTabs('tab-1', 'tab-3')
+    const before = tabLinks.groups
+
+    tabLinks.linkTabs('tab-2', 'tab-3')
+
+    expect(tabLinks.groups).toBe(before)
+  })
+
   it('unlinks a single tab leaving remaining tabs linked', () => {
     const tabLinks = useTabLinks()
     tabLinks.linkTabs('tab-1', 'tab-2')

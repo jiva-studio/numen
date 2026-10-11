@@ -10,7 +10,7 @@ import type { Conversation, Turn } from '@numen/ui'
 import { firstLine, useAgentConversation, type AgentTabState } from './useAgentConversation'
 import { createAgentKind } from '../kind'
 import type { Span } from '@/shared/span'
-import { useWindowTabs } from '@/entities/tab'
+import { useWindowTabs, type WindowHandle } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
 
 /** A conversation that records what it was asked, and where its lines point. */
@@ -518,5 +518,43 @@ describe('turns drawn again', () => {
 
     expect(one.state.turns.value[0]).not.toBe(first)
     expect(one.state.turns.value[0]?.unresolved).toEqual(['name://Nowhere', 'name://Elsewhere'])
+  })
+})
+
+describe('what an agent tab is called while answers stand before the question', () => {
+  it('is the first thing asked, whatever was said before it', async () => {
+    const window = tabs()
+    const one = await window.openTab()
+    window.conversations[0]!.said.value = [
+      { id: 'a', voice: 'said', text: 'an answer', state: 'done' },
+      { id: 'b', voice: 'asked', text: 'the question', state: 'done' },
+    ] as unknown as Turn[]
+
+    expect(window.kind.getTitle?.(one.state)).toBe('the question')
+  })
+})
+
+describe('something to ask where the window holds no state for the tab', () => {
+  it('still puts the tab in front', async () => {
+    const shown: string[] = []
+    const handle: WindowHandle = {
+      openTab: async () => 'new',
+      openTabBeside: async () => 'beside',
+      show: (id) => void shown.push(id),
+      closeTab: () => {},
+      each: () => [],
+      last: <TabState>() => ({ id: 'agent-1', state: {} as TabState }),
+      front: () => null,
+      getTabState: () => null,
+    }
+    const agents = createAgentKind(
+      handle,
+      () => tab().state,
+      () => ({ path: '', title: '' }),
+    )
+
+    await agents.askQuestion('Note.md — ')
+
+    expect(shown).toStrictEqual(['agent-1'])
   })
 })

@@ -712,3 +712,72 @@ describe('the person editing their own theme file', () => {
     ).toStrictEqual(['preset:numen', 'preset:dracula'])
   })
 })
+
+describe('whether the theme worn pins light and dark', () => {
+  it('is not so for a theme the list does not hold', async () => {
+    const one = await startWindow({ applied: 'preset:gone' })
+
+    expect(one.worn.isPinned.value).toBe(false)
+  })
+
+  it('goes back to the theme applied once a size is chosen', async () => {
+    const one = await startWindow({ applied: 'preset:dracula' })
+    one.worn.previewItem('preset:numen')
+    expect(one.worn.isPinned.value).toBe(false)
+
+    await one.worn.chooseItem('interfaceScale:1.5')
+
+    expect(one.worn.isPinned.value).toBe(true)
+  })
+
+  it('refuses a mode while the keyboard stands on a pinned theme', async () => {
+    const one = await startWindow()
+    one.worn.previewItem('preset:dracula')
+    await settle()
+
+    await one.worn.chooseItem('mode:dark')
+
+    expect(one.chosen).toStrictEqual([])
+    expect(one.worn.mode.value).toBe('system')
+  })
+})
+
+describe('the message line when a row is chosen', () => {
+  it('is cleared before a size is written', async () => {
+    const one = await startWindow()
+
+    await one.worn.chooseItem('interfaceScale:1.5')
+
+    expect(one.told).toStrictEqual([{ text: '', kind: 'report' }])
+  })
+
+  it('is cleared before a theme is written', async () => {
+    const one = await startWindow()
+
+    await one.worn.chooseItem('mine:sea')
+
+    expect(one.told).toStrictEqual([{ text: '', kind: 'report' }])
+  })
+})
+
+describe('a size held while a row is chosen or the list is left', () => {
+  it('is not drawn after another size was chosen over it', async () => {
+    const one = await startWindow()
+    one.worn.previewItem('interfaceScale:1.25')
+
+    await one.worn.chooseItem('interfaceScale:1.5')
+    await wait()
+
+    expect(sizes(one.sheet)).toBe(':root { --numen-interface-scale: 1.5; --numen-text-scale: 1; }')
+  })
+
+  it('is not drawn once the window is closed', async () => {
+    const one = await startWindow()
+    one.worn.previewItem('interfaceScale:1.25')
+
+    one.worn.close()
+    await wait()
+
+    expect(one.worn.sized.value).toStrictEqual({ interfaceScale: 1, textScale: 1 })
+  })
+})

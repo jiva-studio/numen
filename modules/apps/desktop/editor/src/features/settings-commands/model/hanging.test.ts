@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { HANGING, OFF, ON, PARTS, useHangingSetting } from './hanging'
 import { writer } from '@/testing/writer'
 import { WORDS as words } from '@/shared/words'
+import { DEFAULT_PARTS } from '@/entities/settings'
 
 /** The vault, answering what the settings hold and keeping what was written. */
 const vault = (isOn: boolean, parts = 6, error: string | null = null, most = 12) => {
@@ -171,5 +172,93 @@ describe('how many parts stand under a node', () => {
 
     expect(core.counted).toStrictEqual([undefined])
     expect(held.parts.value).toBe(4)
+  })
+
+  it('writes the row chosen when the settings hold the other', async () => {
+    const core = vault(false)
+    const held = useHangingSetting(core, words, writer().write)
+    await held.start()
+
+    await held.choose(ON)
+
+    expect(core.wrote).toStrictEqual([true])
+    expect(held.isHanging.value).toBe(true)
+  })
+
+  it('clears the message line before it writes a switch', async () => {
+    const told = writer()
+    const held = useHangingSetting(vault(true), words, told.write)
+    await held.start()
+
+    await held.choose(OFF)
+
+    expect(told.told).toStrictEqual([{ text: '', kind: 'report' }])
+  })
+
+  it('says the failure of a switch as an error', async () => {
+    const told = writer()
+    const held = useHangingSetting(vault(true, 6, 'unreadable'), words, told.write)
+    await held.start()
+
+    await held.choose(OFF)
+
+    expect(told.told.at(-1)).toStrictEqual({
+      text: `${words.unturned} unreadable`,
+      kind: 'error',
+    })
+  })
+
+  it('offers only the default count before the vault has said how far the counts go', () => {
+    const held = useHangingSetting(vault(true), words, writer().write)
+
+    const items = held.getPartsGroups().flatMap((group) => group.items)
+    expect(items.map((one) => one.id)).toStrictEqual([`${DEFAULT_PARTS}`])
+  })
+
+  it('titles each count with the number itself', async () => {
+    const held = useHangingSetting(vault(true, 4), words, writer().write)
+    await held.start()
+
+    const items = held.getPartsGroups().flatMap((group) => group.items)
+    expect(items.map((one) => one.title)).toStrictEqual(
+      Array.from({ length: 12 }, (_, at) => `${at + 1}`),
+    )
+  })
+
+  it('takes the counts at both ends of what the vault takes, and none beyond', async () => {
+    const core = vault(true, 6)
+    const held = useHangingSetting(core, words, writer().write)
+    await held.start()
+
+    await held.chooseCount('0')
+    await held.chooseCount('1')
+    await held.chooseCount('12')
+    await held.chooseCount('13')
+
+    expect(core.counted).toStrictEqual([1, 12])
+    expect(held.parts.value).toBe(12)
+  })
+
+  it('clears the message line before it writes a count', async () => {
+    const told = writer()
+    const held = useHangingSetting(vault(true), words, told.write)
+    await held.start()
+
+    await held.chooseCount('3')
+
+    expect(told.told).toStrictEqual([{ text: '', kind: 'report' }])
+  })
+
+  it('says the failure of a count as an error', async () => {
+    const told = writer()
+    const held = useHangingSetting(vault(true, 6, 'unreadable'), words, told.write)
+    await held.start()
+
+    await held.chooseCount('3')
+
+    expect(told.told.at(-1)).toStrictEqual({
+      text: `${words.unturned} unreadable`,
+      kind: 'error',
+    })
   })
 })
