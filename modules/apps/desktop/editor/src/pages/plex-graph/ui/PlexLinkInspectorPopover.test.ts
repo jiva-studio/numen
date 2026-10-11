@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { ArrowLeft, ArrowLeftRight, ArrowRight, Minus } from '@lucide/vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { LinkInspectorRequest } from '../types'
@@ -29,15 +30,28 @@ describe('PlexLinkInspectorPopover component', () => {
     })
   }
 
-  it('renders positioned at specified coordinates and shows node titles', () => {
+  it('renders positioned at resolved coordinates and shows node titles', () => {
     const wrapper = mountPopover()
     const popover = wrapper.get('.plex-link-popover')
 
-    expect(popover.attributes('style')).toContain('left: 300px')
-    expect(popover.attributes('style')).toContain('top: 200px')
+    expect(popover.attributes('style')).toContain('left: 140px')
+    expect(popover.attributes('style')).toContain('top: 28px')
     expect(wrapper.text()).toContain('Note Alpha')
     expect(wrapper.text()).toContain('Note Beta')
     expect(wrapper.findComponent(ArrowLeftRight).exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('clamps left position and flips below when placed near top-left boundary', () => {
+    const edgeRequest: LinkInspectorRequest = {
+      ...defaultRequest,
+      at: { x: 20, y: 40 },
+    }
+    const wrapper = mountPopover(edgeRequest)
+    const popover = wrapper.get('.plex-link-popover')
+
+    expect(popover.attributes('style')).toContain('left: 12px')
+    expect(popover.attributes('style')).toContain('top: 52px') // 40 + 12
     wrapper.unmount()
   })
 
@@ -512,6 +526,26 @@ describe('PlexLinkInspectorPopover component', () => {
 
     const inputs = wrapper.findAll('input')
     expect(inputs.length).toBe(2)
+    wrapper.unmount()
+  })
+
+  it('updates position when window is resized or request prop updates', async () => {
+    const wrapper = mountPopover()
+    const popover = wrapper.get('.plex-link-popover')
+
+    window.dispatchEvent(new Event('resize'))
+    expect(wrapper.find('.plex-link-popover').exists()).toBe(true)
+
+    await wrapper.setProps({
+      request: {
+        ...defaultRequest,
+        at: { x: 500, y: 350 },
+      },
+    })
+    await nextTick()
+
+    expect(popover.attributes('style')).toContain('left: 340px')
+    expect(popover.attributes('style')).toContain('top: 178px')
     wrapper.unmount()
   })
 })

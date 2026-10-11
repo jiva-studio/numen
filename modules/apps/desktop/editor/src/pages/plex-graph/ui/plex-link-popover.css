@@ -6,11 +6,12 @@
   gap: 0.625rem;
   padding: 0.75rem;
   min-inline-size: 18rem;
+  max-inline-size: calc(100% - 1.5rem);
+  box-sizing: border-box;
   background: var(--numen-surface);
   border: var(--numen-stroke, 1px) solid var(--numen-rule);
   border-radius: var(--numen-radius-panel, 0.75rem);
   box-shadow: var(--numen-panel-shadow, 0 4px 16px rgba(0, 0, 0, 0.18));
-  transform: translate(-50%, -100%) translateY(-0.75rem);
   user-select: none;
   -webkit-user-select: none;
   font-family: var(--numen-font-sans);

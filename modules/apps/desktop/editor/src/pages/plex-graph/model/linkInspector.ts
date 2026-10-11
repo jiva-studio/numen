@@ -224,3 +224,61 @@ export function resolveInspectorDonePayload(
     removedLinks: [...allRemoved, ...omitted],
   }
 }
+
+export interface PopoverPlacementOptions {
+  readonly at: { readonly x: number; readonly y: number }
+  readonly popoverSize: { readonly width: number; readonly height: number }
+  readonly containerSize: { readonly width: number; readonly height: number }
+  readonly margin?: number
+  readonly gap?: number
+}
+
+export interface PopoverPlacementResult {
+  readonly left: number
+  readonly top: number
+}
+
+function getLeftPosition(atX: number, width: number, containerW: number, margin: number): number {
+  const idealLeft = atX - width / 2
+  const maxLeft = Math.max(margin, containerW - width - margin)
+  return Math.max(margin, Math.min(idealLeft, maxLeft))
+}
+
+function getTopPosition(
+  atY: number,
+  height: number,
+  containerH: number,
+  margin: number,
+  gap: number,
+): number {
+  const aboveTop = atY - height - gap
+  if (aboveTop >= margin) return aboveTop
+
+  const belowTop = atY + gap
+  const maxTop = Math.max(margin, containerH - height - margin)
+  if (belowTop + height <= containerH - margin) return belowTop
+
+  const clampedAbove = Math.max(margin, Math.min(aboveTop, maxTop))
+  const clampedBelow = Math.max(margin, Math.min(belowTop, maxTop))
+  return atY < containerH / 2 ? clampedBelow : clampedAbove
+}
+
+export function resolvePopoverPosition({
+  at,
+  popoverSize,
+  containerSize,
+  margin = 12,
+  gap = 12,
+}: PopoverPlacementOptions): PopoverPlacementResult {
+  const width = popoverSize.width || 320
+  const height = popoverSize.height || 160
+  const containerW =
+    containerSize.width || (typeof window !== 'undefined' ? window.innerWidth : 800)
+  const containerH =
+    containerSize.height || (typeof window !== 'undefined' ? window.innerHeight : 600)
+
+  return {
+    left: Math.round(getLeftPosition(at.x, width, containerW, margin)),
+    top: Math.round(getTopPosition(at.y, height, containerH, margin, gap)),
+  }
+}
