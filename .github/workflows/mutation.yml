@@ -2,10 +2,14 @@ name: Mutation
 
 # Mutation testing of the Go core and the interface packages, every night.
 #
-# Each target is split into shards that run side by side. A shard reuses the
-# results its previous run left in the cache wherever the code and its covering
-# tests are unchanged, and saves the cache even when it runs out of time, so a
-# shard too long for one night finishes over several.
+# Each target is split into shards that run side by side. Every shard reads the
+# target's one cache and reuses its results wherever the code and its covering
+# tests are unchanged. After the shards, each file's results are taken from the
+# shard that holds it, or kept from the cache where that shard wrote nothing, and
+# saved as the target's next cache; a shard that runs out of time contributes
+# what it measured, so a shard too long for one night finishes over several.
+#
+# On Sunday the shards start without the cache and measure every mutant again.
 #
 # The mutants the tests do not notice are kept in one issue per target,
 # labelled `mutation`: its body is rewritten each night, a comment names the
@@ -16,7 +20,8 @@ name: Mutation
 # workspace package with a Vitest config.
 on:
   schedule:
-    - cron: "23 1 * * *"
+    - cron: "23 1 * * 1-6"
+    - cron: "23 1 * * 0"
   workflow_dispatch:
     inputs:
       target:
@@ -67,7 +72,19 @@ jobs:
         if: matrix.kind == 'go'
         with:
           go-version-file: ${{ matrix.at }}/go.mod
-          cache-dependency-path: ${{ matrix.at }}/go.sum
+          cache: false
+
+      - id: go-cache-path
+        if: matrix.kind == 'go'
+        run: echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+
+      # The build cache the module's own CI saves, read and never written.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: matrix.kind == 'go'
+        with:
+          path: ${{ steps.go-cache-path.outputs.build }}
+          key: ${{ matrix.target == 'libs-core' && 'go-build-core-ubuntu-latest-' || format('go-build-{0}-', matrix.at) }}${{ github.sha }}
+          restore-keys: ${{ matrix.target == 'libs-core' && 'go-build-core-ubuntu-latest-' || format('go-build-{0}-', matrix.at) }}
 
       # A Go module that links the window needs the system browser's headers.
       - uses: ./.github/actions/setup-webkit
@@ -88,12 +105,14 @@ jobs:
         if: matrix.kind == 'ts'
         run: npm run build --prefix modules/libs/ui
 
-      - name: Restore the previous run
+      # `-run-` ends the target's name in the key, so `apps-desktop` matches no key of `apps-desktop-editor`.
+      - name: Restore the target's cache
+        if: github.event.schedule != '23 1 * * 0'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: modules/.mutation/cache
-          key: mutation-${{ matrix.name }}-${{ github.run_id }}
-          restore-keys: mutation-${{ matrix.name }}-
+          key: mutation-${{ matrix.target }}-run-${{ github.run_id }}
+          restore-keys: mutation-${{ matrix.target }}-run-
 
       - name: Mutate
         timeout-minutes: 330
@@ -103,12 +122,16 @@ jobs:
           VITE_CONFIG_NATIVE_IGNORE_WARNING: "true"
         run: node modules/tools/mutation/mutate.mjs "$TARGET" --shard "$SHARD"
 
-      - name: Save the run
+      - name: Upload the cache
         if: always()
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          path: modules/.mutation/cache
-          key: mutation-${{ matrix.name }}-${{ github.run_id }}
+          name: cache-${{ matrix.name }}
+          path: |
+            modules/.mutation/cache/${{ matrix.target }}.gomutants.json
+            modules/.mutation/cache/${{ matrix.target }}.stryker.json
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Upload the report
         if: always()
@@ -118,6 +141,45 @@ jobs:
           path: modules/.mutation/reports/
           if-no-files-found: ignore
           retention-days: 14
+
+  cache:
+    name: Cache ${{ matrix.target }}
+    needs: [shards, mutate]
+    if: always() && needs.shards.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.shards.outputs.targets) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Restore the target's cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: modules/.mutation/cache
+          key: mutation-${{ matrix.target }}-run-${{ github.run_id }}
+          restore-keys: mutation-${{ matrix.target }}-run-
+
+      # One folder per shard; the pattern also matches targets whose name extends this one, which the merge ignores.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: cache-${{ matrix.target }}*
+          path: modules/.mutation/shards
+
+      - name: Merge the shards
+        env:
+          TARGET: ${{ matrix.target }}
+        run: node modules/tools/mutation/cache.mjs "$TARGET" modules/.mutation/shards
+
+      - name: Save the target's cache
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: modules/.mutation/cache
+          key: mutation-${{ matrix.target }}-run-${{ github.run_id }}
 
   issues:
     name: Issues

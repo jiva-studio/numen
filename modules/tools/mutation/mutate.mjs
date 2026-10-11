@@ -6,16 +6,18 @@
  *   node mutate.mjs <target> [--shard 2/8]
  *   node mutate.mjs --file <path>
  *
- * Results of the previous run of the same shard, kept in `modules/.mutation/cache/`,
- * are reused wherever the code and its covering tests are unchanged.
+ * The target's cache in `modules/.mutation/cache/`, which every shard of the
+ * target reads and writes, supplies the results whose code and covering tests
+ * are unchanged.
  *
  * `--file` mutates one source file of whichever target holds it, with no cache,
  * and prints the mutants its tests do not notice.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
+import { getCacheFile, keepFiles } from './cache.mjs'
 import { patchVitestRunner } from './patch.mjs'
 import { readMutants } from './report.mjs'
 import {
@@ -101,15 +103,15 @@ const getGoFile = (target, file) => {
   return { packages: [dir === '.' ? '.' : `./${dir}`], others }
 }
 
-const runGo = (target, shard, report, cache, file) => {
+const runGo = (target, shard, { report, cache, result }, file) => {
   const { packages, others } = file
     ? getGoFile(target, file)
     : { packages: pickShard(listGoPackages(target), ...shard), others: [] }
   if (packages.length === 0) return null
   const args = ['run', GOMUTANTS, '-w', String(getWorkers()), '-q']
-  args.push(file ? '--cache=off' : `--cache=${cache}.gomutants.json`)
+  args.push(file ? '--cache=off' : `--cache=${cache}`)
   if (others.length > 0) args.push('-exclude-files', others.join(','))
-  args.push('--detect-equivalent', '-o', `${cache}.result.json`, '-stryker-output', report)
+  args.push('--detect-equivalent', '-o', result, '-stryker-output', report)
   args.push('-html-output', report.replace(/\.json$/, '.html'))
   return run('go', [...args, ...packages], { cwd: join(root, target.at) })
 }
@@ -156,7 +158,7 @@ const writeVitestConfig = (target) => {
   return relative(MODULES, path)
 }
 
-const runTs = (target, shard, report, cache, file) => {
+const runTs = (target, shard, { report, cache }, file) => {
   const sources = file ? [file] : pickShard(listSources(target), ...shard)
   const mutate = sources.map((path) => relative('modules', path))
   if (mutate.length === 0) return null
@@ -168,12 +170,24 @@ const runTs = (target, shard, report, cache, file) => {
     concurrency: getWorkers(),
     report: relative(MODULES, report),
     html: relative(MODULES, report.replace(/\.json$/, '.html')),
-    incrementalFile: file ? null : relative(MODULES, `${cache}.stryker.json`),
+    incrementalFile: file ? null : relative(MODULES, cache),
   }
-  return run('npx', ['stryker', 'run', join(MODULES, 'tools/mutation/stryker.config.mjs')], {
-    cwd: MODULES,
-    env: { ...process.env, NUMEN_MUTATION: JSON.stringify(settings) },
-  })
+  const status = run(
+    'npx',
+    ['stryker', 'run', join(MODULES, 'tools/mutation/stryker.config.mjs')],
+    {
+      cwd: MODULES,
+      env: { ...process.env, NUMEN_MUTATION: JSON.stringify(settings) },
+    },
+  )
+  // Stryker reports every file its incremental file holds; the shard reports the files it mutated.
+  if (existsSync(report)) {
+    writeFileSync(
+      report,
+      JSON.stringify(keepFiles(JSON.parse(readFileSync(report, 'utf8')), mutate)),
+    )
+  }
+  return status
 }
 
 /* ---------------------------------- Main ---------------------------------- */
@@ -194,12 +208,14 @@ const main = () => {
   mkdirSync(join(root, OUTPUT, 'reports'), { recursive: true })
   mkdirSync(join(root, OUTPUT, 'cache'), { recursive: true })
   const report = join(root, OUTPUT, 'reports', `${name}.json`)
-  const cache = join(root, OUTPUT, 'cache', name)
+  const paths = {
+    report,
+    cache: join(root, OUTPUT, 'cache', getCacheFile(target)),
+    result: join(root, OUTPUT, 'cache', `${name}.result.json`),
+  }
   rmSync(report, { force: true })
   const status =
-    target.kind === 'go'
-      ? runGo(target, shard, report, cache, file)
-      : runTs(target, shard, report, cache, file)
+    target.kind === 'go' ? runGo(target, shard, paths, file) : runTs(target, shard, paths, file)
   if (status === null) {
     console.log(`${name}: nothing to mutate`)
     writeFileSync(report, JSON.stringify({ schemaVersion: '2', thresholds: {}, files: {} }))
