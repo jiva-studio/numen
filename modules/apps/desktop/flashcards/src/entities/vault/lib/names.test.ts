@@ -13,4 +13,9 @@ describe('the name of a deck', () => {
     expect(deckName('Mammals')).toBe('Mammals')
     expect(deckName('')).toBe('')
   })
+
+  it('keeps every dot in the name but the one before the suffix', () => {
+    expect(deckName('decks/Vol. 2.md')).toBe('Vol. 2')
+    expect(deckName('v1.2.md')).toBe('v1.2')
+  })
 })

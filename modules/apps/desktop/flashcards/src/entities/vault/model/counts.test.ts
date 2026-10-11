@@ -90,6 +90,26 @@ const createFeed = () => {
 const flushPromises = () => new Promise((then) => setTimeout(then, 0))
 
 describe('counting what every vault owes', () => {
+  // The window opens counting, and has no day to stand in until the first
+  // message names one.
+  it('reads as counting, in no day yet, before the first count is asked for', () => {
+    const one = useReviewCounter({ cards: createFeed().cards, reportError: () => {} })
+
+    expect(one.isCounting.value).toBe(true)
+    expect(one.day.value).toBe('')
+    expect(one.vaults.value).toHaveLength(0)
+  })
+
+  it('holds no decks or goals for a vault before its own count arrives', async () => {
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+
+    void one.count()
+    front.sendCount({ day: '2026-09-05', vaults: [vault('01A')] })
+    await flushPromises()
+
+    expect(one.vaults.value[0]).toMatchObject({ isCounted: false, decks: [], presets: [] })
+  })
   it('holds the vaults before any of them is counted', async () => {
     const front = createFeed()
     const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
@@ -173,6 +193,20 @@ describe('counting what every vault owes', () => {
     await flushPromises()
 
     expect(one.vaults.value[0]).toMatchObject({ isCounted: false, isReading: true, unread: '' })
+  })
+
+  it('no longer says a vault is being read once its count has arrived', async () => {
+    const front = createFeed()
+    const one = useReviewCounter({ cards: front.cards, reportError: () => {} })
+
+    void one.count()
+    front.sendCount(createVaultList(vault('01A')))
+    front.sendCount(count(vault('01A', { isReading: true })))
+    front.sendCount(count(vault('01A', { due: 5 })))
+    front.endCounts()
+    await flushPromises()
+
+    expect(one.vaults.value[0]).toMatchObject({ isCounted: true, isReading: false, due: 5 })
   })
 
   it('is still counting until the last of them has arrived', async () => {

@@ -179,6 +179,34 @@ describe('the keys a session is done with', () => {
     expect(isSwallowed(getSessionKeyIntent(createPress('3'), { isShown: true }))).toBe(false)
     expect(isSwallowed(null)).toBe(false)
   })
+
+  // The field a panel opens takes the keyboard, and the letter that opened it
+  // would be the first thing typed into it.
+  it('swallows the letters that bring the panels in', () => {
+    expect(
+      isSwallowed(getSessionKeyIntent(createPress('a', { ctrlKey: true }), { isShown: true })),
+    ).toBe(true)
+    expect(
+      isSwallowed(getSessionKeyIntent(createPress('r', { ctrlKey: true }), { isShown: true })),
+    ).toBe(true)
+    expect(isSwallowed(getSessionKeyIntent(createPress('u'), { isShown: true }))).toBe(false)
+    expect(isSwallowed(getSessionKeyIntent(createPress('Escape'), { isShown: true }))).toBe(false)
+  })
+
+  it('brings no panel in from the overlay key held down or pressed with alt', () => {
+    for (const letter of ['a', 'r']) {
+      expect(
+        getSessionKeyIntent(createPress(letter, { ctrlKey: true, repeat: true }), {
+          isShown: true,
+        }),
+      ).toBeNull()
+      expect(
+        getSessionKeyIntent(createPress(letter, { metaKey: true, altKey: true }), {
+          isShown: true,
+        }),
+      ).toBeNull()
+    }
+  })
 })
 
 describe('the keys a deck is chosen with', () => {
@@ -203,6 +231,17 @@ describe('the keys a deck is chosen with', () => {
     expect(getPickerKeyIntent(createPress('f'), 5)).toBeNull()
     expect(getPickerKeyIntent(createPress('z'), 5)).toBeNull()
     expect(getPickerKeyIntent(createPress('a'), 0)).toBeNull()
+  })
+
+  it('picks no deck by a key that is not a letter', () => {
+    expect(getPickerKeyIntent(createPress('1'), 5)).toBeNull()
+    expect(getPickerKeyIntent(createPress('-'), 5)).toBeNull()
+  })
+
+  it('picks a deck only by a key of one character', () => {
+    expect(getPickerKeyIntent(createPress(''), 5)).toBeNull()
+    expect(getPickerKeyIntent(createPress('bc'), 5)).toBeNull()
+    expect(getPickerKeyIntent(createPress('Tab'), 5)).toBeNull()
   })
 
   it('goes back to the vaults on escape', () => {
