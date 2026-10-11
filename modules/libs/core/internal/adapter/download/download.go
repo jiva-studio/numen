@@ -63,8 +63,8 @@ type Downloader struct{ providers []provider }
 // downloaded by the tool that knows the site, and a page is what an address is
 // when nothing knows it better, which is why pages stand last and why every
 // machine downloads one.
-func New(ctx context.Context, c Config) (*Downloader, error) {
-	return &Downloader{providers: []provider{newYtDLP(ctx, c), newPages()}}, nil
+func New(_ context.Context, c Config) (*Downloader, error) {
+	return &Downloader{providers: []provider{newYtDLP(c), newPages()}}, nil
 }
 
 // providerFor is the provider that answers for an address, and ErrNoTool where

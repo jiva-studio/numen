@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/operation"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -66,6 +67,9 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 		return res, nil
 	}
 
+	// The size gate and the download share one operation on one address.
+	ctx, endOperation := operation.Begin(ctx)
+	defer endOperation()
 	meta, err := u.By.Metadata(ctx, at)
 	if err != nil {
 		return res, err

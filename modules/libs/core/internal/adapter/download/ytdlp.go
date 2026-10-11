@@ -12,8 +12,11 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/operation"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -28,16 +31,26 @@ import (
 type ytDLP struct {
 	command program
 	sound   program
-	version string
+	// getVersion runs the version probe on first use and answers the same
+	// string afterwards.
+	getVersion func() string
+	// probeTimeout bounds a run that only reads: metadata and the version.
+	probeTimeout time.Duration
 }
 
-func newYtDLP(ctx context.Context, c Config) *ytDLP {
+// defaultProbeTimeout bounds a run of the tool that downloads nothing. A tool
+// that has not answered by then is not going to.
+const defaultProbeTimeout = 2 * time.Minute
+
+func newYtDLP(c Config) *ytDLP {
 	command := resolveProgram(c.Video, "yt-dlp")
-	return &ytDLP{
-		command: command,
-		sound:   resolveProgram(c.Sound, "ffmpeg"),
-		version: version(ctx, command),
+	v := &ytDLP{
+		command:      command,
+		sound:        resolveProgram(c.Sound, "ffmpeg"),
+		probeTimeout: defaultProbeTimeout,
 	}
+	v.getVersion = sync.OnceValue(v.readVersion)
+	return v
 }
 
 // CanHandle answers for a video, on a machine holding the tool that gets at
@@ -45,25 +58,80 @@ func newYtDLP(ctx context.Context, c Config) *ytDLP {
 func (v *ytDLP) CanHandle(at domain.URL) bool { return isVideoSite(at) && v.command.isPresent() }
 
 func (v *ytDLP) GetDownloadModel(domain.URL) port.DownloadModel {
-	return port.DownloadModel{Tool: "yt-dlp", Version: v.version, Producer: text.Captions}
+	return port.DownloadModel{Tool: "yt-dlp", Version: v.getVersion(), Producer: text.Captions}
 }
 
-// version is what the tool answers when asked which it is. A tool that will not
-// say is still a tool, and what it produced is claimed by its name alone.
-func version(ctx context.Context, tool program) string {
-	if !tool.isPresent() {
+// readVersion is what the tool answers when asked which it is, and nothing when
+// it does not answer in time or at all. What it produced is then claimed by its
+// name alone.
+func (v *ytDLP) readVersion() string {
+	if !v.command.isPresent() {
 		return ""
 	}
-	said, err := run(ctx, tool, nil, "--version")
+	ctx, cancel := context.WithTimeout(context.Background(), v.probeTimeout)
+	defer cancel()
+	output, err := run(ctx, v.command, nil, "--version")
 	if err != nil {
 		return ""
 	}
-	return strings.TrimSpace(string(said))
+	return strings.TrimSpace(string(output))
+}
+
+// readInfo is the JSON the tool dumps for an address. Under an operation it is
+// extracted once, saved in a file, and read back by every later call.
+func (v *ytDLP) readInfo(ctx context.Context, at domain.URL) ([]byte, error) {
+	if saved, has := operation.Recall(ctx, infoKey(at)); has {
+		if raw, err := os.ReadFile(saved); err == nil {
+			return raw, nil
+		}
+	}
+	probing, cancel := context.WithTimeout(ctx, v.probeTimeout)
+	defer cancel()
+	output, err := run(probing, v.command, nil, "--dump-single-json", "--no-playlist", string(at))
+	if err != nil {
+		return nil, err
+	}
+	if operation.IsActive(ctx) {
+		saveInfo(ctx, at, output)
+	}
+	return output, nil
+}
+
+// saveInfo keeps the dump in a file until the operation ends. A dump that
+// cannot be written is not kept.
+func saveInfo(ctx context.Context, at domain.URL, output []byte) {
+	file, err := os.CreateTemp("", "numen-info-*.json")
+	if err != nil {
+		return
+	}
+	name := file.Name()
+	_, err = file.Write(output)
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		_ = os.Remove(name)
+		return
+	}
+	operation.Remember(ctx, infoKey(at), name, func() { _ = os.Remove(name) })
+}
+
+func infoKey(at domain.URL) string { return "yt-dlp-info|" + string(at) }
+
+// getTarget is what a run is pointed at: the saved dump where the operation
+// holds one, and the address where it does not.
+func getTarget(ctx context.Context, at domain.URL) []string {
+	if saved, has := operation.Recall(ctx, infoKey(at)); has {
+		if _, err := os.Stat(saved); err == nil {
+			return []string{"--load-info-json", saved}
+		}
+	}
+	return []string{string(at)}
 }
 
 // Metadata is what the site says about the video, taking none of it.
 func (v *ytDLP) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
-	output, err := run(ctx, v.command, nil, "--dump-single-json", "--no-playlist", string(at))
+	output, err := v.readInfo(ctx, at)
 	if err != nil {
 		return port.Metadata{}, err
 	}
@@ -109,6 +177,8 @@ func languages(tracks map[string][]struct{}) []string {
 func (v *ytDLP) Text(
 	ctx context.Context, at domain.URL, want port.PreferredCaptions,
 ) (port.Text, error) {
+	ctx, end := operation.Begin(ctx)
+	defer end()
 	meta, err := v.Metadata(ctx, at)
 	if err != nil {
 		return port.Text{}, err
@@ -139,11 +209,12 @@ func (v *ytDLP) subtitles(
 	}
 	defer func() { _ = os.RemoveAll(into) }()
 
-	if _, err := run(ctx, v.command, nil,
+	arguments := append([]string{
 		"--skip-download", "--write-subs", "--write-auto-subs",
 		"--sub-langs", language, "--sub-format", "json3",
-		"--no-playlist", "-o", filepath.Join(into, "words"), string(at),
-	); err != nil {
+		"--no-playlist", "-o", filepath.Join(into, "words"),
+	}, getTarget(ctx, at)...)
+	if _, err := run(ctx, v.command, nil, arguments...); err != nil {
 		return nil, err
 	}
 	found, err := filepath.Glob(filepath.Join(into, "words.*.json3"))
@@ -182,8 +253,9 @@ func (v *ytDLP) Download(
 
 	arguments := []string{
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
-		"-o", filepath.Join(folder, "copy.%(ext)s"), string(at),
+		"-o", filepath.Join(folder, "copy.%(ext)s"),
 	}
+	arguments = append(arguments, getTarget(ctx, at)...)
 	if where := v.sound.getPath(); where != "" {
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
 	}
