@@ -91,7 +91,7 @@ func (p *Memory) Draw(ctx context.Context, key ID, drawn func() ([]byte, error))
 		return pic.body, pic.why
 	}
 	if pic.why != nil {
-		p.Drop(key)
+		p.drop(key)
 		return nil, pic.why
 	}
 	p.bytes += len(pic.body)
@@ -110,6 +110,13 @@ func (p *Memory) Has(key ID) bool {
 
 // Drop takes one drawing out.
 func (p *Memory) Drop(key ID) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.drop(key)
+}
+
+// drop takes one drawing out. The caller holds p.mu.
+func (p *Memory) drop(key ID) {
 	el, ok := p.index[key]
 	if !ok {
 		return
@@ -130,7 +137,7 @@ func (p *Memory) trim() {
 		oldest := el.Value.(*entry)
 		select {
 		case <-oldest.pic.ready:
-			p.Drop(oldest.key)
+			p.drop(oldest.key)
 		default:
 		}
 		el = before
