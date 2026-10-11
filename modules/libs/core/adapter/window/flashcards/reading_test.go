@@ -93,6 +93,25 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
 }
 
+// A vault forgotten after a clean reading is claimable again.
+func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
+	r := &readings{}
+	v := testsupport.NewVault(t, deck)
+	r.start(t.Context(), func(context.Context, domain.Vault) error { return nil })
+
+	r.finish(v, nil)
+	if read, _, _, _ := r.claim(v); read != nil {
+		t.Fatalf("a vault read clean was claimed before it was forgotten")
+	}
+
+	r.forget(v.ID)
+
+	read, _, _, _ := r.claim(v)
+	if read == nil {
+		t.Fatalf("a vault forgotten after a clean reading was not claimable again")
+	}
+}
+
 // The list of work is answered whether or not the window keeps one, so the page
 // has one thing to listen to.
 func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {

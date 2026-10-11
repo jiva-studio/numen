@@ -35,11 +35,12 @@ func (r *readings) start(ctx context.Context, read ReadVault) {
 	r.under, r.read = ctx, read
 }
 
-// forget lets go of why a vault could not be read.
+// forget lets go of why a vault could not be read, and that it was read at all.
 func (r *readings) forget(id domain.VaultID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.why, id)
+	delete(r.done, id)
 }
 
 // claim claims a vault for reading. It hands back the reader and the life to
