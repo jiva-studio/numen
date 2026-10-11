@@ -104,6 +104,7 @@ export function usePlexGesture(
     detach = null
     if (element && pointer.value !== null) {
       try {
+        // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
         element.releasePointerCapture?.(pointer.value)
       } catch {
         // Never held it; nothing to let go of.
@@ -117,6 +118,7 @@ export function usePlexGesture(
 
   const move = (event: PointerEvent) => {
     const element = svg()
+    // Stryker disable next-line ConditionalExpression: the surface is set before any listener that calls this is installed
     if (!element) return
     at.value = positionIn(element, event)
   }
@@ -155,6 +157,7 @@ export function usePlexGesture(
     // cannot be captured — and failing must not take the listeners below with
     // it, or the gesture would begin and never end.
     try {
+      // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
       element.setPointerCapture?.(event.pointerId)
     } catch {
       // Nothing to hold on to; the listeners below still follow it.
