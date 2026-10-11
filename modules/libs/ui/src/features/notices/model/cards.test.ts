@@ -185,6 +185,12 @@ describe('what is left on a count', () => {
     expect(state.leftOn(counting('c', 10))).toBe('')
   })
 
+  it('is nothing for a count the corner has not yet seen', () => {
+    const { state } = stand([])
+
+    expect(state.leftOn(counting('unseen', 10))).toBe('')
+  })
+
   it('is what the rate it moved at leaves', async () => {
     const { state, notices, wind } = stand([counting('c', 0)])
 
