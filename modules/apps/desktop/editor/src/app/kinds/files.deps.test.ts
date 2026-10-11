@@ -55,7 +55,16 @@ const setup = (over: Record<string, unknown> = {}) => {
   const writeMessage = vi.fn()
   const openNewFile = vi.fn()
   const createUrl = vi.fn()
-  const getTarget = vi.fn(() => ({ vault: 'v', path: 'target' }))
+  const getTarget = vi.fn(() => ({
+    tab: 't',
+    kind: null,
+    vault: { id: 'v', name: 'V' },
+    made: {},
+    path: 'target',
+    title: '',
+    file: '',
+    source: null,
+  }))
   const commandDeps = vi.fn(() => ({ marker: 'deps' }))
   const runCommand = vi.fn()
   const createUntitled = vi.fn()
@@ -278,7 +287,9 @@ describe('what the files tab asks of the window', () => {
     deps.runCommand('delete', ['a.md', 'b.md', 'c.md'], 'A', 'tab' as never)
 
     expect(runCommand).toHaveBeenCalledWith('delete', {
-      vault: 'v',
+      vault: { id: 'v', name: 'V' },
+      tab: 't',
+      kind: null,
       path: 'a.md',
       title: 'A',
       file: 'a.md',
