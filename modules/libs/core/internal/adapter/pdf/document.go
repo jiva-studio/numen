@@ -96,40 +96,39 @@ func getPoolSize() int {
 // wedged inside the library is a failure rather than a program that stops.
 const waitForWorker = 2 * time.Minute
 
-// pool is the workers this process reads documents on, started the first time
-// one is wanted. A start that failed is tried again by the next reader.
-func pool() (pdfium.Pool, error) {
+// acquirePool returns the running pool, starting one when none is running or
+// the last was released, and counts a document open on it. The pool is chosen
+// and counted under one lock, so a release cannot close it between the two. A
+// start that failed is tried again by the next reader.
+func acquirePool() (pdfium.Pool, error) {
 	workers.Lock()
 	defer workers.Unlock()
-	if workers.pool != nil {
-		return workers.pool, nil
+	if workers.pool == nil {
+		total := getPoolSize()
+		made, err := webassembly.Init(webassembly.Config{
+			MaxTotal:     total,
+			MaxIdle:      min(workers.idle, total),
+			ReuseWorkers: workers.idle > 0,
+		})
+		if err != nil {
+			return nil, err
+		}
+		workers.pool = made
 	}
-	total := getPoolSize()
-	made, err := webassembly.Init(webassembly.Config{
-		MaxTotal:     total,
-		MaxIdle:      min(workers.idle, total),
-		ReuseWorkers: workers.idle > 0,
-	})
-	if err != nil {
-		return nil, err
-	}
-	workers.pool = made
-	return made, nil
-}
-
-// getWorker borrows a worker and counts the document that will be open on it.
-func getWorker() (pdfium.Pdfium, error) {
-	p, err := pool()
-	if err != nil {
-		return nil, err
-	}
-	workers.Lock()
 	workers.open++
 	if workers.release != nil {
 		workers.release.Stop()
 		workers.release = nil
 	}
-	workers.Unlock()
+	return workers.pool, nil
+}
+
+// getWorker borrows a worker and counts the document that will be open on it.
+func getWorker() (pdfium.Pdfium, error) {
+	p, err := acquirePool()
+	if err != nil {
+		return nil, err
+	}
 	worker, err := p.GetInstance(waitForWorker)
 	if err != nil {
 		finishWorker()
@@ -169,7 +168,10 @@ func releasePool() {
 	}
 	workers.pool.Close()
 	workers.pool = nil
-	workers.release = nil
+	if workers.release != nil {
+		workers.release.Stop()
+		workers.release = nil
+	}
 }
 
 // A document is one PDF, open, on a worker of its own.
