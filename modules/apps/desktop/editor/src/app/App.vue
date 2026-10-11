@@ -77,8 +77,8 @@ const activeLinkedTargetTitle = computed(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-function onCloseTab(id: string) {
-  closeTab(id)
+function onCloseTab(id: string, hold?: () => void) {
+  closeTab(id, hold)
 }
 
 function onShowTab(id: string) {
