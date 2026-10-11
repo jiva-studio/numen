@@ -181,6 +181,7 @@ func TestAnIndexIsNotMadeWhereTheCacheFolderCannotBeMade(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("XDG_CACHE_HOME", file)
+	t.Setenv("HOME", file)
 
 	if got, err := (Config{}).IndexPathOrDefault(); err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)

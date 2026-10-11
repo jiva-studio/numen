@@ -131,15 +131,17 @@ func owingTo(t *testing.T, db *container.Index, v domain.Vault, model port.Embed
 	return len(owing)
 }
 
-// Building the index again is where the vectors of a model nobody asks for any
-// more go; every other run keeps them.
-func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
+// owingAfterAModelSwitch is how many chunks the first model owes a vector for
+// once its vault has been made searchable by a second model and then by the
+// first again.
+func owingAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
+	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
-	cfg := embed.Defaults()
+	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}
 	first, second := unit{"first"}, unit{"second"}
 
-	whole, err := container.Config{Embedding: cfg, ServiceDir: ".numen"}.ReadWholeVault(t.Context(), db, first, v)
+	whole, err := held.ReadWholeVault(t.Context(), db, first, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,17 +155,25 @@ func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 		t.Fatal("the vault holds no chunk to be embedded")
 	}
 
-	if _, err := (container.Config{Embedding: cfg, ServiceDir: ".numen"}).ReadWholeVault(t.Context(), db, second, v); err != nil {
+	held.ShouldRebuildIndex = shouldRebuild
+	if _, err := held.ReadWholeVault(t.Context(), db, second, v); err != nil {
 		t.Fatal(err)
 	}
-	if got := owingTo(t, db, v, first); got != 0 {
+	held.ShouldRebuildIndex = false
+	if _, err := held.ReadWholeVault(t.Context(), db, first, v); err != nil {
+		t.Fatal(err)
+	}
+	return owingTo(t, db, v, first)
+}
+
+// Building the index again is where the vectors of a model nobody asks for any
+// more go; every other run keeps them, so a model set back is a model whose
+// vectors are all still here.
+func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
+	if got := owingAfterAModelSwitch(t, false); got != 0 {
 		t.Errorf("a run that was not a rebuild forgot the vectors of the first model: %d chunks owe one", got)
 	}
-
-	if _, err := (container.Config{Embedding: cfg, ServiceDir: ".numen", ShouldRebuildIndex: true}).ReadWholeVault(t.Context(), db, second, v); err != nil {
-		t.Fatal(err)
-	}
-	if owingTo(t, db, v, first) == 0 {
-		t.Error("a rebuild kept the vectors of a model nobody asks for")
+	if got := owingAfterAModelSwitch(t, true); got == 0 {
+		t.Error("a rebuild kept the vectors of a model nobody asked for")
 	}
 }
