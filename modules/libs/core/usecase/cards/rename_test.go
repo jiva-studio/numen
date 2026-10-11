@@ -584,9 +584,11 @@ func TestARenameWhoseContextEndsWritesNoFurtherDeck(t *testing.T) {
 	birds, mammals := read(t, vs.first, "decks/Birds.md"), read(t, vs.first, "decks/Mammals.md")
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	u := newRenameField(t, vs).WithNotes(decksOf{
-		paths: []string{"decks/Birds.md", "decks/Mammals.md"}, cancel: cancel,
-	})
+	u := cards.NewRenameField(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		decksOf{paths: []string{"decks/Birds.md", "decks/Mammals.md"}, cancel: cancel},
+		vs.db.NoteQueries(), indexNothing, time.Now,
+	)
 
 	got, err := u.Execute(ctx, vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
