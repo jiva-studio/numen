@@ -190,6 +190,7 @@ type counting struct {
 func (c *counting) Write(raw []byte) (int, error) {
 	n, err := c.to.Write(raw)
 	c.done += int64(n)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the clock cannot read exactly one second after the previous report"
 	if now := time.Now(); now.Sub(c.last) > time.Second {
 		c.last = now
 		c.say(c.done, c.total)

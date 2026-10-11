@@ -88,6 +88,7 @@ func findInSearchPlaces(places []string) string {
 			if home == "" {
 				continue
 			}
+			// gomutants:disable-next-line INTEGER_DECREMENT reason="filepath.Join cleans the doubled separator place[1:] leaves"
 			place = filepath.Join(home, place[2:])
 		}
 		matches, err := filepath.Glob(place)
