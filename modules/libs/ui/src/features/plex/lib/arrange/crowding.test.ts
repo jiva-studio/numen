@@ -2,9 +2,11 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { measureCrowding, packOptions } from './crowding'
+import { limitsFor } from './limits'
 import { DEFAULT_OPTIONS } from './options'
 import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
+import { RELATED_SEATS } from '../seat'
 
 const { nodeSize, minWidth, gap, squeeze, margin } = DEFAULT_OPTIONS
 
@@ -96,11 +98,57 @@ describe('how closely a plex is packed', () => {
     }
   })
 
+  it('closes every gap to the fraction of itself that the squeeze allows', () => {
+    const closest = packOptions(DEFAULT_OPTIONS, 0)
+    expect(closest.lineGap).toBeCloseTo(DEFAULT_OPTIONS.lineGap * squeeze)
+    expect(closest.focusGap).toBeCloseTo(DEFAULT_OPTIONS.focusGap * squeeze)
+  })
+
   it('leaves the heights, the counts and the window where they were', () => {
     const closest = packOptions(DEFAULT_OPTIONS, 0)
     expect(closest.nodeSize.height).toBe(nodeSize.height)
     expect(closest.maxPerLine).toBe(DEFAULT_OPTIONS.maxPerLine)
     expect(closest.maxLines).toBe(DEFAULT_OPTIONS.maxLines)
+  })
+})
+
+describe('the loosest packing that seats everything', () => {
+  const STEPS = 2 ** 7
+
+  const canSeatAll = (options: typeof DEFAULT_OPTIONS) => {
+    const limits = limitsFor(options, COUNTS)
+    return RELATED_SEATS.every((seat) => limits[seat].perLine * limits[seat].lines >= COUNTS[seat])
+  }
+
+  const tightnessOf = (packed: typeof DEFAULT_OPTIONS) =>
+    (packed.nodeSize.width - minWidth) / (nodeSize.width - minWidth)
+
+  it.each([
+    { width: 440, height: 1000 },
+    { width: 500, height: 1000 },
+    { width: 600, height: 1000 },
+  ])('$width×$height is found to a 128th, and one step looser seats less', (viewport) => {
+    const options = { ...DEFAULT_OPTIONS, viewport }
+    const packed = measureCrowding(options, COUNTS)
+    const tightness = tightnessOf(packed)
+
+    expect(canSeatAll(packed)).toBe(true)
+    expect(tightness).toBeGreaterThanOrEqual(0)
+    expect(tightness).toBeLessThan(1)
+    expect(tightness * STEPS).toBeCloseTo(Math.round(tightness * STEPS))
+    expect(canSeatAll(packOptions(options, tightness + 1 / STEPS))).toBe(false)
+  })
+
+  it('packs a window that is crowded at the settings tighter than the settings', () => {
+    const options = { ...DEFAULT_OPTIONS, viewport: { width: 500, height: 1000 } }
+    expect(tightnessOf(measureCrowding(options, COUNTS))).toBeGreaterThan(0)
+  })
+
+  it('leaves a window alone that holds the nodes with no seat to spare', () => {
+    // Twelve to a line and four lines: forty-eight children fill the seat exactly.
+    const options = { ...DEFAULT_OPTIONS, viewport: { width: 2000, height: 1400 } }
+    const counts = { parent: 0, child: 48, jump: 0, sibling: 0 }
+    expect(measureCrowding(options, counts)).toStrictEqual(options)
   })
 })
 

@@ -534,3 +534,16 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     expect(frame.overflow.child).toBe(200 - maxPerLine * maxLines)
   })
 })
+
+describe('a window that holds the arrangement exactly', () => {
+  it('opens the gaps that have room, the height being met to the pixel', () => {
+    const { nodeSize, gap, spread, focusSize, focusGap, margin } = DEFAULT_OPTIONS
+    const reach = focusSize.height / 2 + focusGap + nodeSize.height
+    const viewport = { width: 2000, height: 2 * (reach + margin) }
+
+    const frame = arrangePlex(createNeighbourhood('child', 'One', 'Two'), { options: { viewport } })
+    const [first, second] = withSeat(frame, 'child')
+
+    expect(second!.x - first!.x).toBe(nodeSize.width + gap * spread)
+  })
+})
