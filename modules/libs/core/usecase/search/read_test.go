@@ -6,16 +6,18 @@ import (
 	"io"
 	"io/fs"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// fakeVault is a vault held in memory, whose Read counts every call it gets
+// fakeVault is a vault held in memory, safe to read from several goroutines, whose Read counts every call it gets
 // and the order they came in, so a test can see how many times a source was
 // decoded and in what order.
 type fakeVault struct {
+	mu      sync.Mutex
 	content map[string]string
 	calls   map[string]int
 	order   []string
@@ -37,8 +39,10 @@ func (f *fakeVault) Stat(_ context.Context, path string) (domain.Fingerprint, er
 }
 
 func (f *fakeVault) Read(_ context.Context, path string) ([]byte, error) {
+	f.mu.Lock()
 	f.calls[path]++
 	f.order = append(f.order, path)
+	f.mu.Unlock()
 	raw, held := f.content[path]
 	if !held {
 		return nil, fs.ErrNotExist
