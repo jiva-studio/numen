@@ -47,4 +47,4 @@ compiles and draws the wrong thing.
 
 ## The PGO profile
 
-`cmd/numen/default.pgo` is the CPU profile `go build` reads through `-pgo=auto`. `make app_desktop_pgo` rebuilds it from the benchmarks of the scan, search, flashcards and editor paths; run it on an idle machine, and again when those paths change enough to move what is hot. `go version -m` on the built binary shows `-pgo=` when the profile was used.
+`cmd/numen/default.pgo` is the CPU profile `go build` reads through `-pgo=auto`. `make app_desktop_pgo` rebuilds it from the benchmarks of the scan, search, flashcards and editor paths; run it on an idle machine, and again when those paths change enough to move what is hot. `go version -m` on the built binary shows `-pgo=` when the profile was used. The refresh ends by rewriting every file name in the profile to a repository-relative, `$GOROOT` or `$GOMODCACHE` path and fails if a home directory or drive path remains; `make app_desktop_pgo_check` runs that check on the committed file.
