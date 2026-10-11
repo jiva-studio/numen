@@ -2,7 +2,7 @@
  * What a stencil tab holds, asked without a screen: what it reads, what it
  * writes back, and where what is wrong with it stands.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultFace, DeckProblem, FieldRenameResult } from '@/entities/deck'
@@ -436,5 +436,225 @@ describe('a stencil whose tab has gone', () => {
     await settle()
 
     expect(one.stencils.getTitle('Animal.md')).toBe('Animal.md')
+  })
+})
+
+/** A stencil whose write was refused because its file moved: the tab is stale. */
+const openStale = async () => {
+  const one = await open({ isChanged: true })
+  one.tab.addField('Weight')
+  await one.stencils.flush()
+  return one
+}
+
+describe('a stencil tab as the window lists it', () => {
+  it('is the identity it opened under', async () => {
+    const { stencils } = await open()
+
+    expect(stencils.kind.identity?.('anything')).toBe('anything')
+  })
+
+  it('names the file it stands at and what it is called', async () => {
+    const { stencils, tab } = await open()
+
+    expect(stencils.kind.getTarget?.(tab)).toStrictEqual({ path: 'Animal.md', title: 'Animal' })
+  })
+
+  it('names the file it stands at where it is asked what is open', async () => {
+    const { stencils, tab } = await open()
+
+    expect(stencils.kind.getOpenTab?.(tab)).toStrictEqual({ path: 'Animal.md' })
+  })
+
+  it('carries no mark while its file is read, and the mark of its state once stale', async () => {
+    const clean = await open()
+    expect(clean.stencils.kind.getMark?.(clean.tab)).toBeUndefined()
+
+    const stale = await openStale()
+    expect(stale.stencils.kind.getMark?.(stale.tab)).toBe('stale')
+  })
+
+  it('is closed by the stencil itself, and the window is told to leave it be', async () => {
+    const { stencils, tab } = await open()
+
+    expect(stencils.kind.onClose?.(tab, 'no such tab')).toBe(false)
+  })
+})
+
+describe('the stencils a command reaches', () => {
+  it('knows the one it holds and none other', async () => {
+    const { stencils, tab } = await open()
+    const id = tab.id
+
+    expect(stencils.kept.has(id)).toBe(true)
+    expect(stencils.kept.has('elsewhere')).toBe(false)
+  })
+
+  it('names each by the file it stands at and what it is called', async () => {
+    const { stencils, tab } = await open()
+    const id = tab.id
+
+    expect(stencils.kept.getPath(id)).toBe('Animal.md')
+    expect(stencils.kept.getTitle(id)).toBe('Animal')
+  })
+
+  it('is not asking while the file reads as it did, and is once the file moved past it', async () => {
+    const clean = await open()
+    expect(clean.stencils.kept.asking(clean.tab.id)).toBe(false)
+
+    const stale = await openStale()
+    expect(stale.stencils.kept.asking(stale.tab.id)).toBe(true)
+  })
+
+  it('finds the tab at a file among several, and none where nothing stands', async () => {
+    const one = await open()
+    await one.held.openTabOfKind(STENCIL, 'Plant.md')
+    await settle()
+
+    expect(one.stencils.kept.getTabAt('Plant.md')).toBe('Plant.md')
+    expect(one.stencils.kept.getTabAt('Animal.md')).toBe(one.tab.id)
+    expect(one.stencils.kept.getTabAt('Nothing.md')).toBeNull()
+  })
+
+  it('closes the tab it was asked for and leaves the others open', async () => {
+    const one = await open()
+    await one.held.openTabOfKind(STENCIL, 'Plant.md')
+    await settle()
+
+    one.stencils.kept.close('Plant.md')
+    await settle()
+
+    expect(one.stencils.getOpenIds()).toStrictEqual([one.tab.id])
+    expect(one.held.handle.each(STENCIL)).toHaveLength(1)
+  })
+
+  it('closes nothing for a stencil that is not open', async () => {
+    const one = await open()
+
+    one.stencils.kept.close('elsewhere')
+    await settle()
+
+    expect(one.held.handle.each(STENCIL)).toHaveLength(1)
+  })
+})
+
+describe('a stencil tab closed', () => {
+  it('stays open, still called what it was, where the file moved past what it holds', async () => {
+    const one = await openStale()
+
+    one.stencils.kept.close(one.tab.id)
+    await settle()
+
+    expect(one.held.handle.each(STENCIL)).toHaveLength(1)
+    expect(one.stencils.getOpenIds()).toStrictEqual([one.tab.id])
+    expect(one.stencils.getTitle('Animal.md')).toBe('Animal')
+  })
+
+  it('is read afresh where the file is opened again', async () => {
+    const one = await open()
+    const was = one.tab.stencil.value.faces[0]?.id
+
+    one.stencils.kept.close(one.tab.id)
+    await settle()
+    const id = await one.held.openTabOfKind(STENCIL, 'Animal.md')
+    await settle()
+    const tab = one.held.handle.getTabState<StencilTabState>(STENCIL, id) as StencilTabState
+
+    expect(tab.stencil.value.faces[0]?.id).not.toBe(was)
+  })
+
+  it('lets go of its title while a tab stands on another file', async () => {
+    const one = await open()
+    await one.held.openTabOfKind(STENCIL, 'Plant.md')
+    await settle()
+
+    one.stencils.kept.close('Animal.md')
+    await settle()
+
+    expect(one.stencils.getTitle('Animal.md')).toBe('Animal.md')
+  })
+
+  it('leaves the title with the other tab standing on the same file', async () => {
+    const one = await open()
+    one.stencils.applyPathChanges(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])
+    await settle()
+    await one.held.openTabOfKind(STENCIL, 'Beast.md')
+    await settle()
+
+    one.stencils.kept.close('Animal.md')
+    await settle()
+
+    expect(one.stencils.getTitle('Beast.md')).toBe('Animal')
+  })
+})
+
+describe('a stencil taken from its file', () => {
+  it('shows the file as it now reads, and is no longer stale', async () => {
+    const one = await openStale()
+
+    one.tab.takeFile()
+    await settle()
+
+    expect(one.tab.note.value.state).not.toBe('stale')
+    expect(one.tab.stencil.value.fields).toStrictEqual(['Height', 'Life span'])
+  })
+})
+
+describe('a stencil opened from a file', () => {
+  it('stands at one tab however many times it is asked for before it is open', async () => {
+    const one = await open()
+
+    one.road.openNewFile('Plant.md', '', 'stencil')
+    one.road.openNewFile('Plant.md', '', 'stencil')
+    await settle()
+
+    expect(one.stencils.getOpenIds()).toHaveLength(2)
+    expect(one.held.handle.each(STENCIL)).toHaveLength(2)
+  })
+
+  it('stands at the file again once its tab was closed and it is opened again', async () => {
+    const one = await open()
+    one.road.openNewFile('Plant.md', '', 'stencil')
+    await settle()
+    const first = one.stencils.kept.getTabAt('Plant.md') ?? ''
+    one.stencils.kept.close(first)
+    await settle()
+
+    one.road.openNewFile('Plant.md', '', 'stencil')
+    await settle()
+
+    const again = one.stencils.kept.getTabAt('Plant.md')
+    expect(again).not.toBeNull()
+    expect(one.stencils.kept.getPath(again ?? '')).toBe('Plant.md')
+  })
+
+  it('is called what it was given until the file says otherwise', async () => {
+    const one = await open()
+
+    one.road.openNewFile('Plant.md', 'Flora', 'stencil')
+
+    expect(one.stencils.getTitle('Plant.md')).toBe('Flora')
+  })
+
+  it('keeps the title it has where it is given none', async () => {
+    const one = await open()
+
+    one.road.openNewFile('Animal.md', '', 'stencil')
+
+    expect(one.stencils.getTitle('Animal.md')).toBe('Animal')
+  })
+
+  it('opens in front by default, and beside the tab in front where asked', async () => {
+    const one = await open()
+    const here = vi.spyOn(one.held.handle, 'openTab')
+    const beside = vi.spyOn(one.held.handle, 'openTabBeside')
+
+    one.road.openNewFile('Plant.md', '', 'stencil')
+    expect(here).toHaveBeenCalledTimes(1)
+    expect(beside).not.toHaveBeenCalled()
+
+    one.road.openNewFile('Leaf.md', '', 'stencil', 'beside')
+    expect(here).toHaveBeenCalledTimes(1)
+    expect(beside).toHaveBeenCalledTimes(1)
   })
 })

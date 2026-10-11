@@ -83,6 +83,26 @@ describe('reading a stencil', () => {
     expect(wire.getTitle('Notes.md')).toBeUndefined()
   })
 
+  it('is recorded as no failure of the file where the file moved past the tab', async () => {
+    const cards = vault()
+    cards.readStencil.mockResolvedValue(asFailure('changed'))
+    const { wire } = wireOver(cards)
+
+    expect(await wire.read('Notes.md')).toEqual(asFailure('notAStencil'))
+  })
+
+  it('leaves a refused read with no file to name in a later rename', async () => {
+    const cards = vault()
+    cards.readStencil.mockResolvedValue(asFailure('missing'))
+    cards.renameField.mockResolvedValue(asValue({ decks: [], cards: 0, notWritten: [], at: '' }))
+    const { wire } = wireOver(cards)
+    await wire.read('Word.md')
+
+    await wire.renameField('Word.md', 'Front', 'Face', vi.fn())
+
+    expect(cards.renameField).toHaveBeenCalledWith('Word.md', 'Front', 'Face', null)
+  })
+
   it('holds what is wrong with the file the vault named', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(
@@ -324,6 +344,21 @@ describe('what the window remembers of a file', () => {
     expect(wire.getTitle('Root.md')).toBe('Word')
     expect(wire.getProblems('Word.md')).toEqual([])
     expect(wire.getTitle('Still.md')).toBeUndefined()
+    expect(wire.getTitle('Word.md')).toBeUndefined()
+  })
+
+  it('leaves what was said of the file moved onto where the one moved from was never read', async () => {
+    const cards = vault()
+    cards.readStencil.mockResolvedValue(
+      asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
+    )
+    const { wire } = wireOver(cards)
+    await wire.read('Still.md')
+
+    wire.movePaths([{ from: 'Gone.md', to: 'Still.md' }])
+
+    expect(wire.getProblems('Still.md')).toEqual([problem])
+    expect(wire.getTitle('Still.md')).toBe('Word')
   })
 
   it('takes a title the tab read out of the file itself', () => {
