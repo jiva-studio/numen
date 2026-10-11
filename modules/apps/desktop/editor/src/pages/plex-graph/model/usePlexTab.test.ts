@@ -913,13 +913,15 @@ describe('a plex that travelled', () => {
     const arrived = one.picture()?.nodes.map((node) => node.id) ?? []
     expect(arrived).toHaveLength(2)
     expect(arrived.filter((id) => left.includes(id))).toStrictEqual([])
-    // A node of the picture it left stands for nothing, so a gesture dragging
-    // one asks the vault about nothing.
+
+    // A node stands for nothing once a navigation has passed it by twice, so
+    // a gesture dragging one asks the vault about nothing.
+    await one.goToNote('Warm.md', ['Fire.md', 'child'])
     for (const node of left) one.state.activate(node)
-    expect(one.asked.at(-1)).toBe('Cold.md')
+    expect(one.asked.at(-1)).toBe('Warm.md')
   })
 
-  it('calls a note that came back something other than what it called it', async () => {
+  it('calls a note that comes back the navigation right after leaving what it always called it', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     const root = one.node('Root')
     const before = one.node('Heat')
@@ -928,8 +930,19 @@ describe('a plex that travelled', () => {
     expect(one.node('Heat')).toBe('')
     await one.goToNote('Root.md', ['Heat.md', 'child'])
 
-    expect(one.node('Heat')).not.toBe(before)
+    expect(one.node('Heat')).toBe(before)
     expect(one.node('Root')).toBe(root)
+  })
+
+  it('calls a note that stayed away two navigations something other than what it called it', async () => {
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
+    const before = one.node('Heat')
+
+    await one.goToNote('Root.md')
+    await one.goToNote('Cold.md', ['Ice.md', 'child'])
+    await one.goToNote('Root.md', ['Heat.md', 'child'])
+
+    expect(one.node('Heat')).not.toBe(before)
   })
 
   it('does not cross a note that moved with an answer already on its way', async () => {
