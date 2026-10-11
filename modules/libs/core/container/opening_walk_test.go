@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -16,24 +15,6 @@ import (
 type unopenable struct{ err error }
 
 func (u unopenable) Open(domain.Vault) (port.VaultReader, error) { return nil, u.err }
-
-// reports collects what an opener says went wrong.
-type reports struct {
-	mu   sync.Mutex
-	held []error
-}
-
-func (r *reports) add(err error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.held = append(r.held, err)
-}
-
-func (r *reports) get() []error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return append([]error(nil), r.held...)
-}
 
 // The walk answers how many notes the vault holds.
 func TestAWalkAnswersHowManyNotesTheVaultHolds(t *testing.T) {
