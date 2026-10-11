@@ -1,6 +1,6 @@
 # Note format
 
-The on-disk format of a single note. This is a specification, not a decision record.
+The on-disk format of a single note. This is a specification.
 
 Scope is the **note file only**. The layout of the vault around it — one service folder holding everything else the application writes, named `.numen` by default and subfoldered by kind — is the vault's own concern, not the note's.
 

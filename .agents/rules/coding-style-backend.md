@@ -85,7 +85,7 @@ There is no `go.work`. Each module is built and tested from its own directory.
 
 ## 4. Comments
 
-A comment states the rule that holds, and stops. It never names an alternative that is not in the code, and never cites an ADR number — restate the rule inline.
+A comment states the rule that holds, and stops. It never names an alternative that is not in the code.
 
 Delete each clause in turn: if what remains still describes the code, the deleted clause was argument. Rewrite on sight of `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…`, or any comparison with a previous implementation. Benchmark numbers live in `docs/performance.md`.
 

@@ -38,7 +38,7 @@ them.
 ## 1. Comments state the rule, and stop
 
 A comment says what holds. It never names an alternative that is not in the
-code, and never cites an ADR number — restate the rule inline instead.
+code.
 
 Before writing a comment, delete each clause in turn. If what remains still
 describes the code, the deleted clause was argument and does not belong.
