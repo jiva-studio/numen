@@ -62,3 +62,49 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 		})
 	}
 }
+
+// Ready fetches nothing, whatever the configuration allows.
+func TestReadyFetchesNothing(t *testing.T) {
+	isolate(t)
+	dir := t.TempDir()
+	runtime := writeFile(t, dir, "libonnxruntime.so")
+	layout := writeFile(t, dir, "layout.onnx")
+	detect := writeFile(t, dir, "detect.onnx")
+
+	var told []string
+	cfg := Config{
+		Runtime:        runtime,
+		Dir:            dir,
+		ShouldDownload: true,
+		Layout:         LayoutModel{Path: layout},
+		Detect:         DetectModel{Path: detect},
+		Recognise:      RecogniserModel{Name: "https://127.0.0.1:1/models/inference.onnx"},
+		Progress:       func(what string, _, _ int64) { told = append(told, what) },
+	}
+
+	if Ready(cfg) {
+		t.Error("ready with a model that is not on this machine")
+	}
+	if len(told) != 0 {
+		t.Errorf("a fetch of %v was begun", told)
+	}
+}
+
+// Without a runtime nothing is ready, models or not.
+func TestReadyWithoutARuntimeIsNotReady(t *testing.T) {
+	if !isFreshProcess() {
+		runInFreshProcess(t, "TestReadyWithoutARuntimeIsNotReady")
+		return
+	}
+	dir := t.TempDir()
+	cfg := Config{
+		Runtime:   filepath.Join(dir, "missing-runtime.so"),
+		Dir:       dir,
+		Layout:    LayoutModel{Path: writeFile(t, dir, "layout.onnx")},
+		Detect:    DetectModel{Path: writeFile(t, dir, "detect.onnx")},
+		Recognise: RecogniserModel{Path: writeFile(t, dir, "inference.onnx")},
+	}
+	if Ready(cfg) {
+		t.Error("ready with no runtime")
+	}
+}
