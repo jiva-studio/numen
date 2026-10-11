@@ -163,6 +163,7 @@ func (e Edit) splice(
 		identifier, err := ulid.New(e.now())
 		// gomutants:disable-next-line BRANCH_IF reason="ulid.New fails only when the system random source does"
 		if err != nil {
+			// gomutants:disable-next-line RETURN_ERROR_NIL reason="the branch above is unreachable: ulid.New fails only when the system random source does"
 			return domain.Fingerprint{}, err
 		}
 		if err := doc.SetIdentifier(identifier); err != nil {

@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -293,8 +294,8 @@ func TestAnEditOfFrontmatterThatCannotBeReadChangesNothing(t *testing.T) {
 			return nil
 		})
 
-	if err == nil {
-		t.Error("frontmatter that does not parse was edited")
+	if err == nil || errors.Unwrap(err) == nil || !strings.Contains(err.Error(), "Heat.md") {
+		t.Errorf("want the parse failure wrapped under the path, got %v", err)
 	}
 	if called {
 		t.Error("the change ran over a note that did not open")
