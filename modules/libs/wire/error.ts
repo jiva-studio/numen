@@ -56,7 +56,7 @@ const CARRIES = new Set<Code>([
 export const formatErrorMessage = (error: unknown): string => {
   const fault = ConnectError.from(error)
   const carried = CARRIES.has(fault.code) ? fault.rawMessage.trim() : ''
-  return carried || TROUBLE[fault.code]
+  return carried || (TROUBLE[fault.code] ?? UNEXPECTED)
 }
 
 /**
@@ -83,4 +83,4 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
 
 /** What one error code says, and nothing where there was no error. */
 export const formatErrorCodeMessage = (errorCode: ProtoErrorCode | undefined): string =>
-  errorCode === undefined ? '' : ERROR_CODE_MESSAGES[errorCode]
+  errorCode === undefined ? '' : (ERROR_CODE_MESSAGES[errorCode] ?? UNEXPECTED)

@@ -4,6 +4,12 @@ import { ErrorCode as ProtoErrorCode, ErrorCodeSchema } from '@numen/protocol'
 
 import { formatErrorCodeMessage, formatErrorMessage } from './error'
 
+/** Past every error code the schema names today. */
+const UNNAMED_CODE = 999 as ProtoErrorCode
+
+/** Past every code connect's own enum names today. */
+const UNNAMED_CONNECT_CODE = 999 as Code
+
 describe('an error code', () => {
   it.each(ErrorCodeSchema.values.map((value) => [value.name, value.number] as const))(
     'has words of its own for %s',
@@ -24,6 +30,10 @@ describe('an error code', () => {
 
   it('says nothing where there was no error', () => {
     expect(formatErrorCodeMessage(undefined)).toBe('')
+  })
+
+  it('says something plain where the code names nothing here yet', () => {
+    expect(formatErrorCodeMessage(UNNAMED_CODE)).toMatch(/\S/)
   })
 })
 
@@ -69,5 +79,10 @@ describe('a fault', () => {
     expect(formatErrorMessage(new TypeError('undefined is not a function'))).toMatch(/\S/)
     expect(formatErrorMessage('nothing in particular')).toMatch(/\S/)
     expect(formatErrorMessage(undefined)).toMatch(/\S/)
+  })
+
+  it('says something plain where the code names nothing here yet', () => {
+    const message = formatErrorMessage(new ConnectError('', UNNAMED_CONNECT_CODE))
+    expect(message).toMatch(/\S/)
   })
 })
