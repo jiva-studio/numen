@@ -1,7 +1,10 @@
 package file_test
 
 import (
+	"context"
 	"errors"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -286,5 +289,227 @@ func TestARangeNamedOutsideWhatOneCallCarriesIsRefused(t *testing.T) {
 		if _, err := u.Execute(t.Context(), v, "lecture.txt", asked.start, asked.length); err == nil {
 			t.Errorf("a range beginning at %d for %d bytes was not refused", asked.start, asked.length)
 		}
+	}
+}
+
+var errOutOfReach = errors.New("the disk did not answer")
+
+// faulty is a vault on disk whose reader can refuse to open or to list, and can
+// hand over a file other than the one on disk.
+type faulty struct {
+	open error
+	list error
+	file io.ReadSeekCloser
+}
+
+func (f faulty) Open(v domain.Vault) (port.VaultReader, error) {
+	if f.open != nil {
+		return nil, f.open
+	}
+	reader, err := filesystem.VaultReaders{}.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return faultyReader{VaultReader: reader, on: f}, nil
+}
+
+type faultyReader struct {
+	port.VaultReader
+	on faulty
+}
+
+func (r faultyReader) List(ctx context.Context, folder string) ([]domain.Entry, error) {
+	if r.on.list != nil {
+		return nil, r.on.list
+	}
+	return r.VaultReader.List(ctx, folder)
+}
+
+func (r faultyReader) Open(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	if r.on.file != nil {
+		return r.on.file, nil
+	}
+	return r.VaultReader.Open(ctx, path)
+}
+
+// shifting is a file changing while it is read: it says it is size bytes long
+// and holds what data holds. A seek or a read can be made to fail.
+type shifting struct {
+	data []byte
+	size int64
+	at   int64
+	end  error
+	seek error
+	read error
+}
+
+func (f *shifting) Seek(offset int64, whence int) (int64, error) {
+	if whence == io.SeekEnd {
+		if f.end != nil {
+			return 0, f.end
+		}
+		f.at = f.size + offset
+		return f.at, nil
+	}
+	if f.seek != nil {
+		return 0, f.seek
+	}
+	f.at = offset
+	return f.at, nil
+}
+
+func (f *shifting) Read(p []byte) (int, error) {
+	if f.read != nil {
+		return 0, f.read
+	}
+	if f.at >= int64(len(f.data)) {
+		return 0, io.EOF
+	}
+	n := copy(p, f.data[f.at:])
+	f.at += int64(n)
+	return n, nil
+}
+
+func (f *shifting) Close() error { return nil }
+
+// One call carries sixteen thousand bytes, whether it asks for that much or
+// asks for nothing in particular.
+func TestOneCallCarriesSixteenThousandBytes(t *testing.T) {
+	u, v := openFileRead(t, map[string]string{"lecture.txt": strings.Repeat("a", 20000)})
+
+	if got := read(t, u, v, "lecture.txt", 0, 0); got.Length != 16000 {
+		t.Errorf("a call asking for nothing in particular carried %d bytes, want 16000", got.Length)
+	}
+	if got := read(t, u, v, "lecture.txt", 0, 16000); got.Length != 16000 {
+		t.Errorf("a call asking for 16000 bytes carried %d", got.Length)
+	}
+}
+
+// A range beginning before the file is refused before anything is looked at,
+// where there is no file as much as where there is one.
+func TestARangeBeginningBeforeTheFileIsRefusedWhereNoFileIs(t *testing.T) {
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+
+	if _, err := u.Execute(t.Context(), v, "gone.txt", -1, 0); err == nil {
+		t.Error("a range beginning at -1 was not refused")
+	}
+}
+
+// A vault or a file that will not answer is an error, and no outcome of the
+// file.
+func TestAReadThatDoesNotAnswerIsAnError(t *testing.T) {
+	for _, c := range []struct {
+		name    string
+		readers faulty
+	}{
+		{"vault will not open", faulty{open: errOutOfReach}},
+		{"folder will not list", faulty{list: errOutOfReach}},
+		{"end not found", faulty{file: &shifting{data: []byte("said"), size: 4, end: errOutOfReach}}},
+		{"start not found", faulty{file: &shifting{data: []byte("said"), size: 4, seek: errOutOfReach}}},
+		{"bytes not read", faulty{file: &shifting{data: []byte("said"), size: 4, read: errOutOfReach}}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			_, v := openFileRead(t, map[string]string{"lecture.txt": "said"})
+
+			got, err := file.Read{Readers: c.readers}.Execute(t.Context(), v, "lecture.txt", 0, 0)
+			if !errors.Is(err, errOutOfReach) {
+				t.Errorf("read = %+v, %v, want the vault's error", got, err)
+			}
+		})
+	}
+}
+
+// A path whose folder the vault does not list is a path it passes over.
+func TestAFileInAFolderTheVaultDoesNotListIsLeftAlone(t *testing.T) {
+	_, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
+
+	got, err := file.Read{Readers: faulty{list: fs.ErrNotExist}}.Execute(t.Context(), v, "notes/lecture.txt", 0, 0)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if got.Outcome != file.LeftAlone || got.Text != "" {
+		t.Errorf("want left alone, got %+v", got)
+	}
+}
+
+// Every file of a folder is read, and not only the first the vault lists.
+func TestAFileListedAfterAnotherIsRead(t *testing.T) {
+	u, v := openFileRead(t, map[string]string{
+		"notes/a lecture.txt":      "first",
+		"notes/another lecture.md": "second",
+	})
+
+	if got := read(t, u, v, "notes/another lecture.md", 0, 0); got.Outcome != file.Ok || got.Text != "second" {
+		t.Errorf("the second file came back as %+v", got)
+	}
+}
+
+// A file shorter by the time it is read than when it was measured comes back
+// as what it holds, with nothing made up to fill the range.
+func TestAFileThatShrankWhileItWasReadComesBackAsWhatItHolds(t *testing.T) {
+	_, v := openFileRead(t, map[string]string{"lecture.txt": "said and said"})
+
+	shrunk := faulty{file: &shifting{data: []byte("short"), size: 10}}
+	got, err := file.Read{Readers: shrunk}.Execute(t.Context(), v, "lecture.txt", 0, 0)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if got.Outcome != file.Ok || got.Text != "short" || got.Length != 5 {
+		t.Errorf("a file that shrank came back as %+v", got)
+	}
+
+	gone := faulty{file: &shifting{data: []byte("ab"), size: 10}}
+	got, err = file.Read{Readers: gone}.Execute(t.Context(), v, "lecture.txt", 5, 0)
+	if err != nil {
+		t.Fatalf("read past what is left: %v", err)
+	}
+	if got.Outcome != file.Ok || got.Text != "" {
+		t.Errorf("a range past what is left came back as %+v", got)
+	}
+}
+
+// A range opening inside a character and reaching the end of the file opens
+// after that character.
+func TestARangeOpeningInsideACharacterAtTheEndOpensAfterIt(t *testing.T) {
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "śā"})
+
+	got := read(t, u, v, "lecture.txt", 1, 0)
+	if got.Outcome != file.Ok || got.Text != "ā" || got.Start != 2 {
+		t.Errorf("want ā from byte 2, got %+v", got)
+	}
+}
+
+// A range lying wholly inside one character holds no character, and comes back
+// empty.
+func TestARangeInsideOneCharacterIsEmpty(t *testing.T) {
+	u, v := openFileRead(t, map[string]string{"lecture.txt": "śāstra"})
+
+	for _, start := range []int{0, 1} {
+		got := read(t, u, v, "lecture.txt", start, 1)
+		if got.Outcome != file.Ok || got.Text != "" || got.Length != 0 {
+			t.Errorf("one byte from %d came back as %+v", start, got)
+		}
+	}
+}
+
+// A file that begins inside a character is what the file holds, and that is not
+// text.
+func TestAFileBeginningInsideACharacterIsNotText(t *testing.T) {
+	u, v := openFileRead(t, map[string]string{"scan.txt": "\x80abc"})
+
+	for _, length := range []int{0, 1} {
+		if got := read(t, u, v, "scan.txt", 0, length); got.Outcome != file.NotText {
+			t.Errorf("%d bytes from the start: want not text, got %+v", length, got)
+		}
+	}
+}
+
+// Only the character the range closes inside is left off, and one cut short
+// before it is what the file holds.
+func TestACharacterCutShortInsideTheRangeIsNotText(t *testing.T) {
+	u, v := openFileRead(t, map[string]string{"scan.txt": "\xc5\xc5abc"})
+
+	if got := read(t, u, v, "scan.txt", 0, 2); got.Outcome != file.NotText {
+		t.Errorf("want not text, got %+v", got)
 	}
 }
