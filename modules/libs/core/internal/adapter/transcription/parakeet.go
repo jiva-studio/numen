@@ -77,8 +77,8 @@ type Transcriber struct {
 	mu sync.Mutex
 }
 
-// Open loads the models and compiles them. It is expensive — the weights are
-// read — and the result is reusable for the life of the process.
+// Open loads the models and compiles them, reading the weights. The result is
+// used for any number of recordings until it is closed.
 func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	opened, found, err := locate(ctx, cfg)
 	if err != nil {

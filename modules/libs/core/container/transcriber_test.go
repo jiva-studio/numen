@@ -55,3 +55,24 @@ func TestAProofreadingIsOfferedWhereAProfileIsNamed(t *testing.T) {
 		t.Error("an installation naming a profile does not offer the run")
 	}
 }
+
+// Models stay loaded only where the available memory covers them with headroom.
+func TestModelsStayLoadedOnlyWhereMemoryCoversThemWithHeadroom(t *testing.T) {
+	const models = 1000
+	whole := int64(models * (100 + residentHeadroomPercent) / 100)
+	for name, c := range map[string]struct {
+		available, models int64
+		want              bool
+	}{
+		"memory covers the models and the headroom": {whole, models, true},
+		"memory falls short by a byte":              {whole - 1, models, false},
+		"memory is unknown":                         {0, models, false},
+		"the size of the models is unknown":         {whole, 0, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := canHoldResident(c.available, c.models); got != c.want {
+				t.Errorf("canHoldResident = %v", got)
+			}
+		})
+	}
+}

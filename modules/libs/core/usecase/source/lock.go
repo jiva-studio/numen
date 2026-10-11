@@ -85,3 +85,15 @@ func (g *Lock) leave(at int, stand chan struct{}) {
 	<-stand
 	g.release()
 }
+
+// hasWaiting says whether any run stands in line for the lock.
+func (g *Lock) hasWaiting() bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, line := range g.waiting {
+		if len(line) > 0 {
+			return true
+		}
+	}
+	return false
+}
