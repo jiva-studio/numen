@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // meanPool turns a model's per-token output into one vector per text: the
@@ -174,4 +175,14 @@ func resize(s []int64, size int) []int64 {
 		return make([]int64, size)
 	}
 	return s[:size]
+}
+
+// getWindow is the most tokens a text keeps for a session on provider. A CoreML
+// session is compiled once per shape, so it keeps at most referenceLength
+// tokens, the end token included; every other provider keeps maxTokens.
+func getWindow(provider onnxruntime.Provider, maxTokens int) int {
+	if provider == onnxruntime.ProviderCoreML {
+		return min(maxTokens, referenceLength)
+	}
+	return maxTokens
 }

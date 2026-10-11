@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gomlx/go-huggingface/tokenizers/api"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // The tokens a fake tokenizer opens and ends every text with.
@@ -64,10 +65,10 @@ func createText(words int) string {
 // the token that ends it survives the cut.
 func TestALongTextReachesTheModelUpToTheWindow(t *testing.T) {
 	const limit = 8192
-	e := &Embedder{tokenizer: wordTokenizer{}, maxTokens: limit, batchTexts: 32}
+	e := &Embedder{tokenizer: wordTokenizer{}, maxTokens: limit, window: limit, batchTexts: 32}
 	texts := []string{createText(1000), createText(limit * 2), createText(3)}
 	var passes []passRecord
-	got, err := embedTokens(t.Context(), e.tokenize(texts), e.batchTexts, e.maxTokens, recordPasses(limit, &passes))
+	got, err := embedTokens(t.Context(), e.tokenize(texts), e.batchTexts, e.window, recordPasses(limit, &passes))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,45 +82,93 @@ func TestALongTextReachesTheModelUpToTheWindow(t *testing.T) {
 	}
 }
 
-// No forward pass holds more than the budget allows, and one too long for it
-// alone is run by itself.
+// No forward pass holds more than the configured batch or the budget derived
+// from it, a full batch at the reference length always fits, and a row too long
+// for the budget is run by itself.
 func TestEveryPassStaysWithinTheBudget(t *testing.T) {
 	const limit = 8192
-	var texts [][]int
-	for _, length := range []int{10, 300, 512, 513, 700, 1024, 1500, 2048, 4000, 8192} {
-		for range 40 {
-			texts = append(texts, make([]int, length))
+	for _, batchTexts := range []int{16, 32, 64, 256} {
+		var texts [][]int
+		for _, length := range []int{10, 300, 512, 513, 700, 1024, 1500, 2048, 4000, 8192} {
+			for range 300 {
+				texts = append(texts, make([]int, length))
+			}
+		}
+		for _, one := range texts {
+			one[len(one)-1] = endToken
+		}
+		var passes []passRecord
+		got, err := embedTokens(t.Context(), texts, batchTexts, limit, recordPasses(limit, &passes))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != len(texts) {
+			t.Fatalf("batch %d: got %d vectors for %d texts", batchTexts, len(got), len(texts))
+		}
+		rowsSeen := 0
+		for _, p := range passes {
+			rowsSeen += p.rows
+			if p.rows > batchTexts {
+				t.Errorf("batch %d: a pass held %d rows", batchTexts, p.rows)
+			}
+			if p.rows > 1 && p.rows*p.seq*p.seq > getAttentionBudget(batchTexts) {
+				t.Errorf("batch %d: a pass of %d rows at %d tokens is past the budget", batchTexts, p.rows, p.seq)
+			}
+		}
+		if rowsSeen != len(texts) {
+			t.Errorf("batch %d: the passes held %d rows for %d texts", batchTexts, rowsSeen, len(texts))
+		}
+		if !hasPass(passes, batchTexts, referenceLength) {
+			t.Errorf("batch %d: no pass held a full batch at %d tokens: %v", batchTexts, referenceLength, passes)
+		}
+		if !hasPass(passes, 1, limit) {
+			t.Errorf("batch %d: no pass held one row at the window", batchTexts)
 		}
 	}
-	for _, one := range texts {
-		one[len(one)-1] = endToken
+}
+
+// A CoreML session keeps at most the reference length, end token included;
+// every other provider keeps the model's window.
+func TestTheWindowDependsOnTheProvider(t *testing.T) {
+	for _, c := range []struct {
+		provider  onnxruntime.Provider
+		maxTokens int
+		want      int
+	}{
+		{onnxruntime.ProviderCoreML, 8192, referenceLength},
+		{onnxruntime.ProviderCoreML, 256, 256},
+		{onnxruntime.ProviderCPU, 8192, 8192},
+		{onnxruntime.ProviderCUDA, 8192, 8192},
+		{onnxruntime.ProviderDirectML, 8192, 8192},
+	} {
+		if got := getWindow(c.provider, c.maxTokens); got != c.want {
+			t.Errorf("%s with %d tokens keeps %d, want %d", c.provider, c.maxTokens, got, c.want)
+		}
+	}
+}
+
+// Under CoreML a long text is cut at the reference length with its end token
+// kept, and the model is run at no length past it.
+func TestACoreMLSessionCutsALongTextAtTheReferenceLength(t *testing.T) {
+	const maxTokens = 8192
+	e := &Embedder{
+		tokenizer:  wordTokenizer{},
+		maxTokens:  maxTokens,
+		window:     getWindow(onnxruntime.ProviderCoreML, maxTokens),
+		batchTexts: 4,
 	}
 	var passes []passRecord
-	got, err := embedTokens(t.Context(), texts, 32, limit, recordPasses(limit, &passes))
+	got, err := embedTokens(t.Context(), e.tokenize([]string{createText(3000), createText(3)}), e.batchTexts, e.window, recordPasses(e.window, &passes))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != len(texts) {
-		t.Fatalf("got %d vectors for %d texts", len(got), len(texts))
+	if int(got[0][0]) != referenceLength || int(got[0][1]) != endToken {
+		t.Errorf("the long text reached the model as %v, want %d tokens ending %d", got[0], referenceLength, endToken)
 	}
-	rowsSeen := 0
 	for _, p := range passes {
-		rowsSeen += p.rows
-		if p.rows > 32 {
-			t.Errorf("a pass held %d rows, and a batch holds 32", p.rows)
+		if p.seq > referenceLength {
+			t.Errorf("a pass ran at %d tokens, past %d", p.seq, referenceLength)
 		}
-		if p.rows > 1 && p.rows*p.seq*p.seq > attentionBudget {
-			t.Errorf("a pass of %d rows at %d tokens is past the budget of %d", p.rows, p.seq, attentionBudget)
-		}
-	}
-	if rowsSeen != len(texts) {
-		t.Errorf("the passes held %d rows for %d texts", rowsSeen, len(texts))
-	}
-	if !hasPass(passes, 32, 512) {
-		t.Errorf("no pass held a full batch at 512 tokens: %v", passes)
-	}
-	if !hasPass(passes, 1, limit) {
-		t.Errorf("no pass held one row at the window: %v", passes)
 	}
 }
 

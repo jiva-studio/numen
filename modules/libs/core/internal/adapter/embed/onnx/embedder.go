@@ -41,6 +41,8 @@ type Embedder struct {
 	origin     string
 	dimensions int
 	maxTokens  int
+	// window is the most tokens a text keeps before it reaches the model.
+	window     int
 	pooling    string
 	batchTexts int
 	poolSize   int
@@ -99,7 +101,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	if err != nil {
 		return nil, err
 	}
-	options, _, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+	options, provider, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
 		Provider: cfg.GetProvider(),
 		Threads:  cfg.GetThreads(),
 	})
@@ -137,6 +139,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		origin:       identity.From,
 		dimensions:   identity.Dimensions,
 		maxTokens:    identity.MaxTokens,
+		window:       getWindow(provider, identity.MaxTokens),
 		pooling:      identity.Pooling,
 		batchTexts:   max(cfg.BatchTexts, 1),
 		poolSize:     poolSize,
@@ -255,22 +258,28 @@ type sequenceItem struct {
 	tokens []int
 }
 
-// attentionBudget bounds one forward pass by rows × seq², the size of each
-// attention matrix it holds: a full batch of 32 rows at 512 tokens. A pass
+// referenceLength is the token length at which a full configured batch is one
+// pass; it is the window of the models this adapter runs.
+const referenceLength = 512
+
+// getAttentionBudget bounds one forward pass by rows × seq², the size of each
+// attention matrix it holds: batchTexts rows at referenceLength tokens. A pass
 // takes at least one row, whatever its length.
-const attentionBudget = 32 * 512 * 512
+func getAttentionBudget(batchTexts int) int {
+	return batchTexts * referenceLength * referenceLength
+}
 
 // Embed runs the model over the texts, grouped by token length to minimize padding.
 func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
-	return embedTokens(ctx, e.tokenize(texts), e.batchTexts, e.maxTokens, e.forward)
+	return embedTokens(ctx, e.tokenize(texts), e.batchTexts, e.window, e.forward)
 }
 
 // embedTokens runs pass over tokenized texts sorted by length and answers one
 // vector a text, in the order of tokens. A pass holds at most batchTexts rows and
-// stays within attentionBudget at the length its rows are padded to.
+// stays within getAttentionBudget at the length its rows are padded to.
 func embedTokens(
 	ctx context.Context,
 	tokens [][]int,
@@ -292,7 +301,7 @@ func embedTokens(
 			return nil, err
 		}
 		end := start + 1
-		for end < len(items) && end-start < batchTexts && isWithinBudget(end-start+1, len(items[end].tokens), limit) {
+		for end < len(items) && end-start < batchTexts && isWithinBudget(end-start+1, len(items[end].tokens), limit, batchTexts) {
 			end++
 		}
 		batchItems := items[start:end]
@@ -316,10 +325,10 @@ func embedTokens(
 }
 
 // isWithinBudget says a pass of rows, the longest of them longest tokens, stays
-// within attentionBudget at the length it is padded to.
-func isWithinBudget(rows, longest, limit int) bool {
+// within the budget of batchTexts rows at the length it is padded to.
+func isWithinBudget(rows, longest, limit, batchTexts int) bool {
 	seq := bucket(longest, limit)
-	return rows*seq*seq <= attentionBudget
+	return rows*seq*seq <= getAttentionBudget(batchTexts)
 }
 
 // tokenize turns each text into tokens.
@@ -358,10 +367,10 @@ func (e *Embedder) tokenize(texts []string) [][]int {
 // end so that the model sees a complete sentence.
 func (e *Embedder) encode(text string) []int {
 	ids := e.tokenizer.Encode(text)
-	if len(ids) <= e.maxTokens {
+	if len(ids) <= e.window {
 		return ids
 	}
-	cut := slices.Clone(ids[:e.maxTokens])
+	cut := slices.Clone(ids[:e.window])
 	cut[len(cut)-1] = ids[len(ids)-1]
 	return cut
 }
@@ -371,7 +380,7 @@ func (e *Embedder) encode(text string) []int {
 // A batch is laid out at the length of its longest text. The runtime takes a
 // shape as it comes.
 func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, error) {
-	rows, seq, padded := padBatch(batch, e.pad, e.maxTokens)
+	rows, seq, padded := padBatch(batch, e.pad, e.window)
 	defer releasePadding(padded)
 
 	session, err := e.acquireSession(ctx)
