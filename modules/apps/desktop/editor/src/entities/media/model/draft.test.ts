@@ -5,6 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
+import { formatErrorMessage } from '@numen/wire'
 import { useTranscriptDraft } from './draft'
 import { getText, type Cue } from '../lib/cues'
 
@@ -36,6 +37,7 @@ describe('a draft told nothing more is typed here', () => {
   })
 })
 
+const refusal = new Error('disk full')
 const QUIET = 100
 const EDITED = 'The first thing meant.\nThe second thing said.'
 const EDITED_AGAIN = 'The first thing meant twice.\nThe second thing said.'
@@ -98,7 +100,7 @@ describe('a draft whose words are typed over', () => {
 
     expect(written).toHaveLength(1)
     expect(written[0]![0]!.text).toBe('The first thing meant.')
-    expect(cues.value).toBe(written[0])
+    expect(cues.value).toStrictEqual(written[0])
   })
 
   it('waits for the last of the typing, and writes once', async () => {
@@ -290,7 +292,7 @@ describe('a draft whose words are typed over', () => {
     pending.answers[0]!.resolve()
     await first
 
-    expect(cues.value).toBe(CUES)
+    expect(cues.value).toStrictEqual(CUES)
     expect(error.value).toBe('The write failed.')
   })
 
@@ -300,11 +302,11 @@ describe('a draft whose words are typed over', () => {
 
     draft.setProse(EDITED)
     const first = draft.keep()
-    pending.answers[0]!.reject(new Error('disk full'))
+    pending.answers[0]!.reject(refusal)
     await first
 
-    expect(error.value).toContain('disk full')
-    expect(cues.value).toBe(CUES)
+    expect(error.value).toBe(formatErrorMessage(refusal))
+    expect(cues.value).toStrictEqual(CUES)
     draft.setText('Heard again.')
     expect(draft.prose.value).toBe(EDITED)
 
@@ -321,7 +323,7 @@ describe('a draft whose words are typed over', () => {
 
     draft.setProse(EDITED)
     const first = draft.keep()
-    pending.answers[0]!.reject(new Error('disk full'))
+    pending.answers[0]!.reject(refusal)
     await first
     await vi.advanceTimersByTimeAsync(QUIET * 3)
 
@@ -335,7 +337,7 @@ describe('a draft whose words are typed over', () => {
     draft.setProse(EDITED)
     const first = draft.keep()
     state.open = false
-    pending.answers[0]!.reject(new Error('disk full'))
+    pending.answers[0]!.reject(refusal)
     await first
     state.open = true
     draft.setText('Heard again.')
