@@ -376,6 +376,15 @@ describe('a session sat down to', () => {
     expect(said[1]!.text).toContain('2')
   })
 
+  it('names every deck it could not act on, in one line', async () => {
+    wire.opened = { unwritten: ['decks/Suffixes.md', 'decks/Prefixes.md'], skipped: 0 }
+    const opened = await openSession()
+
+    expect(opened.notices.value.map((one) => one.text)).toEqual([
+      'Not asked from Suffixes, Prefixes: the deck could not be written.',
+    ])
+  })
+
   it('says nothing when it could act on everything', async () => {
     const opened = await openSession()
 

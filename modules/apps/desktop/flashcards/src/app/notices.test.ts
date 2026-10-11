@@ -19,6 +19,14 @@ describe('what the window has to say', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
+  it('numbers what it says in the order it was said', () => {
+    const one = useNotices()
+    one.showNotice('the first', 'caution')
+    one.showNotice('the second', 'caution')
+
+    expect(one.notices.value.map((said) => said.id)).toEqual(['1', '2'])
+  })
+
   it('says trouble in the person’s own words, and stands until they put it away', () => {
     const one = useNotices()
     one.reportError(new ConnectError('the vault could not be read', Code.Unavailable))
