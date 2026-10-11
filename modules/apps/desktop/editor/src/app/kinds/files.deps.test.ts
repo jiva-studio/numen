@@ -60,6 +60,7 @@ const setup = (over: Record<string, unknown> = {}) => {
     kind: null,
     vault: { id: 'v', name: 'V' },
     made: {},
+    isReady: true,
     path: 'target',
     title: '',
     file: '',
@@ -289,6 +290,7 @@ describe('what the files tab asks of the window', () => {
     expect(runCommand).toHaveBeenCalledWith('delete', {
       vault: { id: 'v', name: 'V' },
       tab: 't',
+      isReady: true,
       kind: null,
       path: 'a.md',
       title: 'A',
