@@ -1284,3 +1284,35 @@ describe('a place in the words asked for', () => {
     expect(heard.error.value).toBe('')
   })
 })
+
+describe('a recording drawn in a frame that has not said where it stands', () => {
+  it('has no line being said', async () => {
+    const { recordings } = talk()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', { through: createPlayer().player })
+    await flush()
+
+    heard.setFramePlayer({ seek: () => {} })
+
+    expect(heard.current.value).toBe(-1)
+  })
+})
+
+describe('the words asked for again', () => {
+  it('replace what stands on screen, and drop what was typed and not yet written', async () => {
+    const { recordings, asked, written } = talk()
+    const heard = useTranscript(recordings, 'talks/Ants.mp3', {
+      through: createPlayer().player,
+      quiet: 5,
+    })
+    await flush()
+    const original = heard.prose.value
+    heard.setProse('Something else entirely.')
+
+    heard.reload()
+    await waitForStill()
+
+    expect(asked.filter((one) => one.startsWith('about'))).toHaveLength(2)
+    expect(heard.prose.value).toBe(original)
+    expect(written).toStrictEqual([])
+  })
+})

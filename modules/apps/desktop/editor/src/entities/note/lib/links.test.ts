@@ -94,3 +94,9 @@ describe('the targets a piece of prose links to', () => {
     expect(extractLinkTargets(text)).toStrictEqual([])
   })
 })
+
+describe('a link with a broken escape', () => {
+  it('names no file', () => {
+    expect(parseLinkTarget('numen:100%?start=1&length=2')).toBeNull()
+  })
+})
