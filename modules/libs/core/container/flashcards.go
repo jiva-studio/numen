@@ -99,8 +99,20 @@ func (c Config) Flashcards(
 	}
 
 	faces := flashcards.NewListCardFaces(c.VaultReaders(), notes, links)
+	// How many decks are parsed at once is what this machine can run at once,
+	// which is a fact only here is allowed to read.
+	faces.Cores = runtime.GOMAXPROCS(0)
+	// A deck or stencil this window writes is forgotten before the index is
+	// brought level with it.
+	leveled := func(ctx context.Context, v domain.Vault, paths []string) error {
+		faces.Invalidate(v.ID, paths...)
+		if index == nil {
+			return nil
+		}
+		return index(ctx, v, paths)
+	}
 	marking := flashcards.NewMarkCards(
-		c.VaultReaders(), c.VaultWriters(), notes, links, index, now,
+		c.VaultReaders(), c.VaultWriters(), notes, links, leveled, now,
 	)
 	day := review.Day{Starts: c.DayStarts()}
 
@@ -110,7 +122,7 @@ func (c Config) Flashcards(
 	}
 
 	presets := flashcards.NewPresets(
-		c.VaultReaders(), c.VaultWriters(), links, notes, index, day, now,
+		c.VaultReaders(), c.VaultWriters(), links, notes, leveled, day, now,
 	)
 	// A link the index does not carry is accounted for in what parsing turned
 	// up.

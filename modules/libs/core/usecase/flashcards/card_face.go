@@ -3,6 +3,8 @@ package flashcards
 import (
 	"context"
 	"errors"
+	"slices"
+	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -50,6 +52,12 @@ type ListCardFaces struct {
 	// read this one yet.
 	notes port.NoteQueries
 	links port.LinkQueries
+	// cache is the faces of the decks already parsed, for the life of the window.
+	// Copies of a ListCardFaces share it.
+	cache *faceCache
+	// Cores is how many decks are parsed at once, at most deckParsers. A build
+	// naming none parses one at a time.
+	Cores int
 }
 
 // NewListCardFaces is what a vault's card faces are read through: the vault the
@@ -58,12 +66,13 @@ type ListCardFaces struct {
 func NewListCardFaces(
 	readers port.VaultReaders, notes port.NoteQueries, links port.LinkQueries,
 ) ListCardFaces {
-	return ListCardFaces{readers: readers, notes: notes, links: links}
+	return ListCardFaces{readers: readers, notes: notes, links: links, cache: newFaceCache()}
 }
 
 // WithReaders returns a copy of ListCardFaces with the given VaultReaders.
 func (u ListCardFaces) WithReaders(readers port.VaultReaders) ListCardFaces {
 	u.readers = readers
+	u.cache = newFaceCache()
 	return u
 }
 
@@ -78,7 +87,9 @@ func (u ListCardFaces) Execute(ctx context.Context, v domain.Vault) ([]CardFace,
 	if err != nil {
 		return nil, err
 	}
-	return u.GetFaces(ctx, v, paths), nil
+	faces := u.GetFaces(ctx, v, paths)
+	u.cache.keep(v.ID, paths)
+	return faces, nil
 }
 
 // Decks is the path of every deck the vault holds.
@@ -103,30 +114,153 @@ func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, err
 // cards of one preset hands it the decks pointing there, and the rest of the
 // vault is left unread.
 //
+// A deck whose file and stencils are the ones its faces were last parsed from is
+// not parsed again. The decks that are parsed are parsed on up to Cores places at
+// once, and the faces come back in the order of paths.
+//
 // A deck that cannot be read contributes no card face and is not an error. What
 // was wrong with it is the deck's own problem, and the editor is where it is
 // settled.
 func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []string) []CardFace {
-	read := cards.NewRead(u.readers, u.links)
-	stencils := make(map[string]format.Stencil)
-	var out []CardFace
-	for _, path := range paths {
-		deck, err := read.Deck(ctx, v, path)
-		if err != nil || deck.Outcome != note.Ok {
-			continue
+	epoch := u.cache.begin()
+	reader, err := u.readers.Open(v)
+	found := make([][]CardFace, len(paths))
+	var misses []int
+	for at, path := range paths {
+		if err == nil {
+			if faces, held := u.getCached(ctx, reader, v, path); held {
+				found[at] = faces
+				continue
+			}
 		}
-		out = append(out, u.facesOf(ctx, v, read, deck, stencils)...)
+		misses = append(misses, at)
+	}
+
+	stencils := &stencilMemo{read: cards.NewRead(u.readers, u.links), by: make(map[string]stencilRead)}
+	places := min(max(1, u.Cores), deckParsers, len(misses))
+	var running sync.WaitGroup
+	queue := make(chan int)
+	for range places {
+		running.Add(1)
+		go func() {
+			defer running.Done()
+			for at := range queue {
+				found[at] = u.parseDeck(ctx, v, paths[at], epoch, stencils)
+			}
+		}()
+	}
+	for _, at := range misses {
+		queue <- at
+	}
+	close(queue)
+	running.Wait()
+
+	var out []CardFace
+	for _, faces := range found {
+		out = append(out, faces...)
 	}
 	return out
 }
 
-// facesOf is the card faces one deck holds: every card of a mark, through every
-// face of the stencil it names that lays anything out.
-func (u ListCardFaces) facesOf(
-	ctx context.Context, v domain.Vault, read cards.Read,
-	deck cards.DeckContents, stencils map[string]format.Stencil,
+// Invalidate forgets the decks at paths and every deck cut by a stencil at one
+// of them.
+func (u ListCardFaces) Invalidate(vault domain.VaultID, paths ...string) {
+	u.cache.invalidate(vault, paths)
+}
+
+// InvalidateAll forgets every deck parsed.
+func (u ListCardFaces) InvalidateAll() { u.cache.invalidateAll() }
+
+// getCached is the faces of the deck at path when the files they were parsed
+// from are the files now standing.
+func (u ListCardFaces) getCached(
+	ctx context.Context, reader port.VaultReader, v domain.Vault, path string,
+) ([]CardFace, bool) {
+	key := deckKey{vault: v.ID, path: path}
+	e, held := u.cache.get(key)
+	if !held {
+		return nil, false
+	}
+	deck, err := reader.Stat(ctx, path)
+	if err != nil {
+		u.cache.drop(key)
+		return nil, false
+	}
+	stencils := make(map[string]domain.Fingerprint, len(e.stencils))
+	for stencil := range e.stencils {
+		at, err := reader.Stat(ctx, stencil)
+		if err != nil {
+			u.cache.drop(key)
+			return nil, false
+		}
+		stencils[stencil] = at
+	}
+	if !e.isCurrent(deck, stencils) {
+		u.cache.drop(key)
+		return nil, false
+	}
+	return slices.Clone(e.faces), true
+}
+
+// parseDeck reads one deck and lays out its faces. They are stored when every
+// stencil a card named was read.
+func (u ListCardFaces) parseDeck(
+	ctx context.Context, v domain.Vault, path string, epoch uint64, stencils *stencilMemo,
 ) []CardFace {
-	var out []CardFace
+	deck, err := stencils.read.Deck(ctx, v, path)
+	if err != nil || deck.Outcome != note.Ok {
+		return nil
+	}
+	faces, used, isWhole := u.facesOf(ctx, v, deck, stencils)
+	if isWhole {
+		u.cache.put(epoch, deckKey{vault: v.ID, path: path}, deckFaces{
+			deck: deck.Fingerprint, stencils: used, faces: slices.Clone(faces),
+		})
+	}
+	return faces
+}
+
+// stencilMemo is the stencils one request has read, shared by the places
+// parsing it.
+type stencilMemo struct {
+	read cards.Read
+	mu   sync.Mutex
+	by   map[string]stencilRead
+}
+
+// stencilRead is a stencil as the request read it. A note that is not a stencil
+// carries a stencil of nothing and is not whole.
+type stencilRead struct {
+	stencil     format.Stencil
+	fingerprint domain.Fingerprint
+	isWhole     bool
+}
+
+func (m *stencilMemo) get(ctx context.Context, v domain.Vault, path string) stencilRead {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if held, seen := m.by[path]; seen {
+		return held
+	}
+	// A card whose stencil is not one is a card no face shows. It is a problem
+	// against the deck, and it is settled in a window.
+	out := stencilRead{}
+	one, err := m.read.Stencil(ctx, v, path)
+	if err == nil && one.Outcome == note.Ok && one.Type == domain.TypeStencil {
+		out = stencilRead{stencil: one.Body, fingerprint: one.Fingerprint, isWhole: true}
+	}
+	m.by[path] = out
+	return out
+}
+
+// facesOf is the card faces one deck holds: every card of a mark, through every
+// face of the stencil it names that lays anything out. It also says which
+// stencils the faces stand on, and whether every stencil a card named was read.
+func (u ListCardFaces) facesOf(
+	ctx context.Context, v domain.Vault, deck cards.DeckContents, stencils *stencilMemo,
+) (out []CardFace, used map[string]domain.Fingerprint, isWhole bool) {
+	used = make(map[string]domain.Fingerprint)
+	isWhole = true
 	for _, card := range deck.Body.Cards {
 		if card.Mark == "" {
 			continue
@@ -135,20 +269,14 @@ func (u ListCardFaces) facesOf(
 		if !held {
 			continue
 		}
-		stencil, held := stencils[path]
-		if !held {
-			one, err := read.Stencil(ctx, v, path)
-			if err != nil || one.Outcome != note.Ok || one.Type != domain.TypeStencil {
-				// A card whose stencil is not one is a card no face shows. It
-				// is a problem against the deck, and it is settled in a window.
-				stencils[path] = format.Stencil{}
-				continue
-			}
-			stencil = one.Body
-			stencils[path] = stencil
+		one := stencils.get(ctx, v, path)
+		if !one.isWhole {
+			isWhole = false
+			continue
 		}
+		used[path] = one.fingerprint
 
-		for _, face := range stencil.Faces {
+		for _, face := range one.stencil.Faces {
 			// A face missing a side lays out nothing, which is a problem
 			// against the stencil and no card face here.
 			if face.Front == "" || face.Back == "" {
@@ -159,13 +287,13 @@ func (u ListCardFaces) facesOf(
 				Section: section(deck.Body, card),
 				ID:      review.CardFaceID{Card: string(card.Mark), Face: face.Name},
 				Heading: card.Heading,
-				stencil: stencil,
+				stencil: one.stencil,
 				face:    face,
 				card:    card,
 			})
 		}
 	}
-	return out
+	return out, used, isWhole
 }
 
 // section is the name of the section a card stands under, and is empty for a
