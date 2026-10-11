@@ -33,7 +33,7 @@ func (b *Book) Highlights(raw []byte, pages []int) ([]highlight.Box, error) {
 		return nil, nil
 	}
 
-	doc, err := open(raw)
+	doc, err := openBytes(raw)
 	if err != nil {
 		return nil, err
 	}

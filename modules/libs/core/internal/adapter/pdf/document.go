@@ -1,8 +1,11 @@
 package pdf
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -54,21 +57,61 @@ type document struct {
 	worker pdfium.Pdfium
 	ref    references.FPDF_DOCUMENT
 	pages  int
+	file   io.Closer
 }
 
-func open(raw []byte) (*document, error) {
+// source is where a document's bytes are read from, a block at a time as the
+// library asks for them.
+type source struct {
+	reader io.ReadSeeker
+	size   int64
+	file   io.Closer
+}
+
+func openBytes(raw []byte) (*document, error) {
+	return open(source{reader: bytes.NewReader(raw), size: int64(len(raw))})
+}
+
+func openPath(path string) (*document, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("pdf: %w", err)
+	}
+	info, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return nil, fmt.Errorf("pdf: %w", err)
+	}
+	return open(source{reader: file, size: info.Size(), file: file})
+}
+
+// open takes ownership of the source's file and closes it when the document is
+// closed, or when opening fails.
+func open(src source) (*document, error) {
+	closeFile := func() {
+		if src.file != nil {
+			src.file.Close()
+		}
+	}
+	if src.size == 0 {
+		closeFile()
+		return nil, fmt.Errorf("%w: the file is empty", ErrNotPDF)
+	}
 	p, err := pool()
 	if err != nil {
+		closeFile()
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
 	worker, err := p.GetInstance(waitForWorker)
 	if err != nil {
+		closeFile()
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
 
-	opened, err := worker.OpenDocument(&requests.OpenDocument{File: &raw})
+	opened, err := worker.OpenDocument(&requests.OpenDocument{FileReader: src.reader, FileReaderSize: src.size})
 	if err != nil {
 		worker.Close()
+		closeFile()
 		// A file that asks for a password is a file whose text nobody here can
 		// read, and it is worth saying so rather than saying it is malformed.
 		if errors.Is(err, pdfiumerrors.ErrPassword) || errors.Is(err, pdfiumerrors.ErrSecurity) {
@@ -77,7 +120,7 @@ func open(raw []byte) (*document, error) {
 		return nil, fmt.Errorf("%w: %w", ErrNotPDF, err)
 	}
 
-	doc := &document{worker: worker, ref: opened.Document}
+	doc := &document{worker: worker, ref: opened.Document, file: src.file}
 	count, err := worker.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.ref})
 	if err != nil {
 		doc.close()
@@ -87,9 +130,14 @@ func open(raw []byte) (*document, error) {
 	return doc, nil
 }
 
-// close gives the worker back. Closing the instance closes the document with
-// it.
-func (d *document) close() { d.worker.Close() }
+// close gives the worker back and releases the file. Closing the instance
+// closes the document with it.
+func (d *document) close() {
+	d.worker.Close()
+	if d.file != nil {
+		d.file.Close()
+	}
+}
 
 // title is what the document says it is called. Most say nothing, and a good
 // many of the rest say the name of the program that made them.
