@@ -300,15 +300,15 @@ func TestSeedAnswersTheErrorOfAFolderItCannotList(t *testing.T) {
 
 func TestRegisterVaultFilesAVaultUnderThePathItResolvesTo(t *testing.T) {
 	dir := t.TempDir()
-	real := filepath.Join(dir, "real")
-	if err := os.Mkdir(real, 0o755); err != nil {
+	target := filepath.Join(dir, "target")
+	if err := os.Mkdir(target, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	link := filepath.Join(dir, "link")
-	if err := os.Symlink(real, link); err != nil {
+	if err := os.Symlink(target, link); err != nil {
 		t.Fatal(err)
 	}
-	resolved, err := filepath.EvalSymlinks(real)
+	resolved, err := filepath.EvalSymlinks(target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +321,7 @@ func TestRegisterVaultFilesAVaultUnderThePathItResolvesTo(t *testing.T) {
 	if filed != resolved {
 		t.Errorf("filed under %q, want %q", filed, resolved)
 	}
-	again, err := registerVault(cfg, real)
+	again, err := registerVault(cfg, target)
 	if err != nil {
 		t.Fatal(err)
 	}
