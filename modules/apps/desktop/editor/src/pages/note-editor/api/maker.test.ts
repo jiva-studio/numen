@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { CREATABLE, UNTITLED, createNoteWriter, type NoteMaker } from './maker'
-import type { Link, NewNote } from '@/entities/note'
+import type { Link, NewNote, Role } from '@/entities/note'
 import type { CreateResult } from '@/entities/file'
 import type { ErrorCode } from '@/shared/errors'
 import { writer } from '@/testing/writer'
@@ -224,6 +224,73 @@ describe('joining two notes that are both there', () => {
 
     expect(await making.join('Ontology.md', 'Entropy.md', 'jump')).toBe(false)
     expect(told.at(-1)?.text).not.toBe('')
+    expect(told.at(-1)?.kind).toBe('error')
+  })
+})
+
+describe('removing a relationship from a note', () => {
+  /** A core whose removal answers as told and keeps what it was asked. */
+  const removing = (answer: () => Promise<ErrorCode | null>) => {
+    const asked: { path: string; to: string; role?: Role }[] = []
+    const core = {
+      removeLink: async (path: string, to: string, role?: Role) => {
+        asked.push({ path, to, role })
+        return answer()
+      },
+    } as unknown as NoteMaker
+    return { core, asked, ...writer() }
+  }
+
+  it('asks for the role of the seat it was given, and says nothing when it is done', async () => {
+    const { core, asked, write, told } = removing(async () => null)
+
+    expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md', 'child')).toBe(
+      true,
+    )
+    expect(asked).toStrictEqual([{ path: 'Ontology.md', to: 'Entropy.md', role: 'child' }])
+    expect(told).toStrictEqual([{ text: '', kind: 'report' }])
+  })
+
+  it('asks for no role where no seat was given', async () => {
+    const { core, asked, write } = removing(async () => null)
+
+    await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')
+
+    expect(asked[0]?.role).toBeUndefined()
+  })
+
+  it('says why nothing was removed', async () => {
+    const { core, write, told } = removing(async () => 'unreadable')
+
+    expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')).toBe(false)
+    expect(told.at(-1)?.text).not.toBe('')
+    expect(told.at(-1)?.kind).toBe('error')
+  })
+
+  it('says a core that could not be reached', async () => {
+    const { core, write, told } = removing(async () => {
+      throw new Error('the vault is out of reach')
+    })
+
+    expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')).toBe(false)
+    expect(told.at(-1)?.text).toContain('numen did not answer')
+    expect(told.at(-1)?.kind).toBe('error')
+  })
+})
+
+describe('joining through a core that could not be reached', () => {
+  it('says so and writes nothing', async () => {
+    const core = {
+      join: async () => {
+        throw new Error('the vault is out of reach')
+      },
+    } as unknown as NoteMaker
+    const { write, told } = writer()
+
+    expect(await createNoteWriter(core, write).join('Ontology.md', 'Entropy.md', 'child')).toBe(
+      false,
+    )
+    expect(told.at(-1)?.text).toContain('numen did not answer')
     expect(told.at(-1)?.kind).toBe('error')
   })
 })
