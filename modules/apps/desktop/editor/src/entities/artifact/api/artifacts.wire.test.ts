@@ -56,6 +56,14 @@ describe('what a file carries', () => {
     })
   })
 
+  it('asks for the artifacts of the path', async () => {
+    answerWith({ artifacts: [] })
+
+    await running.getArtifactStates('Talk.url')
+
+    expect(asked[0]).toEqual({ path: 'Talk.url' })
+  })
+
   it('leaves out an artifact this window has no word for', async () => {
     answerWith({ artifacts: [{ kind: 99, state: 'STATE_DONE' }] })
 
@@ -80,6 +88,17 @@ describe('beginning a run', () => {
       error: '',
     })
     expect(asked[0]).toEqual({ path: 'Scan.pdf', kind: 'ARTIFACT_KIND_OCR' })
+  })
+
+  it('is nothing made, and no error, where the answer names no artifact', async () => {
+    answerWith({})
+
+    expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({
+      able: true,
+      of: 'ocr',
+      made: 'none',
+      error: '',
+    })
   })
 
   it('carries back what went wrong with it', async () => {
