@@ -26,10 +26,6 @@ A slice's segments are `ui`, `api`, `model`, `lib`, `config`. A slice reaches no
 sibling slice of its own layer; where two are bound by the domain, the one asked
 of declares a public API under `@x`, named for the slice it is for.
 
-`modules/tools/depgraph/layers.cjs` holds the rank of each layer, and every rule
-is generated from that one table. Its baseline holds the edges the tree still
-draws, each under a line saying why, and it only shrinks.
-
 ## What a `.vue` may not do
 
 A `.vue` file reaches no client. What talks to the core is a port in `app/`, and

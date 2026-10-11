@@ -12,7 +12,7 @@ The repo is mixed-language by design. Each module owns its own build and its own
 cd modules && npm install
 ```
 
-That is the whole setup. `modules/` is the npm workspace root, so one install fetches every package under it — the interface libraries, the two windows, the phone, the sites and the tools — and one copy of a package answers for all of them. It also installs commitlint, wires the `commit-msg` git hook through husky, and points `commit.template` at the message template.
+That is the whole setup. `modules/` is the npm workspace root, so one install fetches every package under it — the interface libraries, the two windows, the phone, the sites and the tools — and one copy of a package answers for all of them. It also wires git hooks through husky and points `commit.template` at the message template.
 
 The install lives in `modules/` rather than at the repository root, deliberately: the repo is mixed-language, and a `package.json` and `node_modules` in the root would read as "this is a Node project". The root carries no build system; `modules/` is the source root, and the Go modules under it are built by go.
 
@@ -23,11 +23,9 @@ The install lives in `modules/` rather than at the repository root, deliberately
 
 ## Commit messages
 
-[Conventional Commits](https://www.conventionalcommits.org). The format is checked in three places: locally by the `commit-msg` hook, in CI over every commit in a pull request — so a clone that skipped `npm install` is still caught before merge — and on the **pull request title**.
+[Conventional Commits](https://www.conventionalcommits.org).
 
-The title matters because merges are squash-only: the title becomes the subject of the single commit that lands in `main`. A tidy branch behind a sloppy title still produces a sloppy history.
-
-**A title has 64 characters.** The squash appends ` (#123)` to it, and the header the hook measures is what that comes to.
+Merges are squash-only: the PR title becomes the subject of the single commit that lands in `main`.
 
 ```
 <type>(<scope>): <subject>
@@ -37,9 +35,9 @@ The title matters because merges are squash-only: the title becomes the subject 
 <footer>
 ```
 
-- **subject** — imperative, no trailing dot, header capped at 72 characters.
+- **subject** — imperative, no trailing dot.
 - **types** — `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
-- **scopes** — follow the module layout: `desktop`, `mobile`, `landing`, `core`, `domain`, `protocol`, `ui`, `wire`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`. An unlisted scope is a **warning**, not an error: adding a module should never be blocked by a forgotten line in `modules/tools/git-hooks/commitlint.config.mjs` — but a typo still shows up.
+- **scopes** — follow the module layout: `desktop`, `mobile`, `landing`, `core`, `domain`, `protocol`, `ui`, `wire`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`.
 - **breaking change** — `!` after the scope, or a `BREAKING CHANGE:` footer.
 
 ```
@@ -47,12 +45,6 @@ docs(adr): add a record on two levels of addressing
 feat(domain): resolve wikilinks by name with priority rules
 fix(protocol): keep note:// links untouched on rename
 feat(domain)!: drop path-based note identity
-```
-
-Run the check by hand against the last commit:
-
-```bash
-cd modules/tools/git-hooks && npx commitlint --last --verbose
 ```
 
 ## Checks on other platforms
