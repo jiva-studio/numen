@@ -240,6 +240,11 @@ func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptio
 		return nil, "", err
 	}
 
+	if err := disableSpinning(opts); err != nil {
+		opts.Destroy()
+		return nil, "", err
+	}
+
 	if _, err := ParseComputeUnits(string(s.ComputeUnits)); err != nil {
 		opts.Destroy()
 		return nil, "", err
