@@ -14,12 +14,13 @@ func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
 	defer done()
 
 	// Fill what it may be owed, then one more it cannot take.
-	for range cap(line) {
+	room := following.getRoom()
+	for range room {
 		following.tell(change{paths: []string{"notes/one.md"}})
 	}
 	following.tell(change{paths: []string{"notes/missed.md"}})
 
-	for range cap(line) {
+	for range room {
 		<-line
 	}
 	following.tell(change{paths: []string{"notes/two.md"}})
@@ -44,8 +45,10 @@ func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 	if waiting := <-line; !reflect.DeepEqual(waiting, want) {
 		t.Errorf("the listener was handed %+v", waiting)
 	}
-	if len(line) != 0 {
-		t.Errorf("%d places are queued behind it", len(line))
+	select {
+	case extra := <-line:
+		t.Errorf("a place was queued behind it: %+v", extra)
+	default:
 	}
 }
 
@@ -58,5 +61,40 @@ func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
 
 	if _, open := <-line; open {
 		t.Error("a closed line was written to")
+	}
+}
+
+// A listener reading while tell runs on another goroutine is handed numbers
+// in the order they were told, never out of order and never twice.
+func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
+	counting := audience[int]{room: 16}
+	line, done := counting.listen()
+
+	const total = 20000
+
+	var received []int
+	read := make(chan struct{})
+	go func() {
+		defer close(read)
+		for v := range line {
+			received = append(received, v)
+		}
+	}()
+
+	for n := range total {
+		counting.tell(n)
+	}
+	done()
+	<-read
+
+	last := -1
+	for _, v := range received {
+		if v <= last {
+			t.Fatalf("got %d after %d: out of order or repeated", v, last)
+		}
+		last = v
+	}
+	if len(received) == 0 {
+		t.Fatal("the reader was handed nothing")
 	}
 }

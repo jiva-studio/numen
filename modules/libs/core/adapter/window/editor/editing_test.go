@@ -84,8 +84,10 @@ func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
 	if got := <-line; got.Change != "two" || got.Text != "A theme answered" {
 		t.Errorf("the next is %+v, want change two saying %q", got, "A theme answered")
 	}
-	if len(line) != 0 {
-		t.Errorf("got %d reports queued behind them, want 0", len(line))
+	select {
+	case extra := <-line:
+		t.Errorf("a report was queued behind them: %+v", extra)
+	default:
 	}
 }
 
