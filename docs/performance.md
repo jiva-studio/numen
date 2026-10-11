@@ -463,7 +463,7 @@ Recorded 2026-10-09 on AMD Ryzen 7 6800U:
 | Search Component | Baseline | With Deduplication & Cache | Speedup |
 | --- | --- | --- | --- |
 | Repeated query embedding | 18.2 ms | 0.04 ms (memory cache) | 455× |
-| Identical chunk indexing | Full embedding pass | Skipped via SHA-256 content hash | Instant |
+| Identical chunk indexing | Full embedding pass | Vector reused by SHA-256 content hash; the chunk still gets its own coarse row, written from that vector | No model call |
 | Hybrid search query execution | 32.4 ms (serial) | 12.1 ms (parallel lexical, named, dense) | 2.7× |
 
 

@@ -28,12 +28,9 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 
 	// What the index now holds, as a second vault finds it.
 	bought := map[string]port.Vector{}
-	index.kept = map[string][]byte{}
 	for _, held := range index.vectors {
 		for _, v := range held {
-			hash := hex.EncodeToString(v.Hash)
-			bought[hash] = v
-			index.kept[v.Model.Recipe()+"/"+hash] = v.Value
+			bought[hex.EncodeToString(v.Hash)] = v
 		}
 	}
 	if len(bought) == 0 {
@@ -47,7 +44,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res.Reused == 0 {
-		t.Fatal("the second vault bought every vector again")
+		t.Fatal("the second vault reclaimed no vector")
 	}
 
 	var read int

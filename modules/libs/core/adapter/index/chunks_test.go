@@ -96,15 +96,23 @@ func openDBAt(t *testing.T, path string) *DB {
 
 // book puts one source in, cuts it into a large chunk with two small ones
 // inside it, and embeds the small ones at the seed given.
-//
-// Every chunk carries the stem of its own path among its words, so a hit says
-// which vault it came from.
 func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
+	t.Helper()
+	cutBook(t, db, vault, path)
+	vectorise(t, db, vault, seed)
+}
+
+// cutBook puts one source in and cuts it into a large chunk with two small ones
+// inside it.
+//
+// Every chunk carries the stem of its file name among its words, so a hit says
+// which book it came from, and two copies of one book hold the same text.
+func cutBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 	t.Helper()
 	ctx := t.Context()
 	chunks := db.Chunks()
 
-	stem := strings.TrimSuffix(strings.TrimPrefix(path, "library/"), ".epub")
+	stem := strings.TrimSuffix(filepath.Base(path), ".epub")
 	if err := chunks.SaveSource(ctx, vault.ID, chunk.Source{
 		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
 	}); err != nil {
@@ -120,7 +128,6 @@ func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	vectorise(t, db, vault, seed)
 }
 
 // testRecipe is the one recipe these tests embed under. A vector is kept under

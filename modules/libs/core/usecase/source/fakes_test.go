@@ -46,11 +46,12 @@ type store struct {
 	mu      sync.RWMutex
 	sources map[domain.VaultID]map[string]domain.Source // vault, then path
 	chunks  []storedChunk
-	vectors map[domain.ChunkID][]port.Vector // by chunk, appended, so a second write shows
+	vectors map[domain.ChunkID][]port.Vector // the coarse rows, by chunk, appended, so a second write shows
 	groups  [][]port.Vector                  // every write of vectors, in order
 	written map[string]int                   // extractions per path
 	next    int64
-	// kept is what the index already holds, by recipe and hash.
+	// kept is what the index already holds, by recipe and hash. It outlives the
+	// chunks that asked for it, as the index's vectors do.
 	kept map[string][]byte
 }
 
@@ -72,6 +73,7 @@ func newStore() *store {
 		sources: map[domain.VaultID]map[string]domain.Source{},
 		vectors: map[domain.ChunkID][]port.Vector{},
 		written: map[string]int{},
+		kept:    map[string][]byte{},
 	}
 }
 
@@ -103,6 +105,9 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 	s.groups = append(s.groups, slices.Clone(vectors))
 	for _, v := range vectors {
 		s.vectors[v.ChunkID] = append(s.vectors[v.ChunkID], v)
+		if len(v.Hash) > 0 {
+			s.kept[v.Model.Recipe()+"/"+hex.EncodeToString(v.Hash)] = v.Value
+		}
 	}
 	return nil
 }
@@ -161,7 +166,7 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	var out []domain.Passage
 	var lastChunk storedChunk
 	for _, c := range s.getOrderedChunks() {
-		if c.vault != vaultID || c.parent == 0 || s.hasVector(c.id, model) {
+		if c.vault != vaultID || c.parent == 0 || s.hasVector(c, model) {
 			continue
 		}
 		src := s.sources[c.vault][c.path]
@@ -352,13 +357,14 @@ func (s *store) getVectors(c storedChunk) []port.Vector {
 	return slices.Clone(s.vectors[chunkID(c.id)])
 }
 
-func (s *store) hasVector(chunk int64, model port.EmbeddingModel) bool {
-	for _, v := range s.vectors[chunkID(chunk)] {
-		if v.Model == model {
-			return true
-		}
+// hasVector says whether a chunk owes nothing under the model, as the index
+// answers it: the recipe keeps a vector for the chunk's text, and the chunk has
+// a coarse row of its own.
+func (s *store) hasVector(c storedChunk, model port.EmbeddingModel) bool {
+	if _, held := s.kept[model.Recipe()+"/"+hashOf(c.text)]; !held {
+		return false
 	}
-	return false
+	return len(s.vectors[chunkID(c.id)]) > 0
 }
 
 // getOrderedChunks is the chunks ordered by source modification time descending,
