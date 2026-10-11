@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { WORDS as words } from '@/shared/words'
 import { commandsOf } from '../lib/commands'
+import type { PendingStep } from '../lib/step'
 import type { Command, CommandTarget, PaletteLists } from '../types'
 import { runSupport } from './runs'
 import { getPaletteView } from './view'
@@ -42,8 +43,8 @@ const createView = (commands: readonly Command[]) =>
     showing: ref(''),
     isWorking: ref(false),
     failureMessage: ref(''),
-    getStepTitle: () => '',
-    getStepLabel: () => '',
+    getStepTitle: () => 'Ontology',
+    getStepLabel: () => 'Ontology.md',
   })
 
 const createCommand = (over: Partial<Command> & Pick<Command, 'id' | 'text'>): Command => ({
@@ -132,5 +133,43 @@ describe('what the group over a note says while it holds nothing', () => {
 
   it('says no note is in front where none is', () => {
     expect(getNoteGroup(view, front({ path: '' }), '')?.silence).toBe(words.noNote)
+  })
+})
+
+describe('a command that gives no words for its confirmation', () => {
+  const command = createCommand({ id: 'bare', text: 'Bare' })
+  const step = (which: PendingStep['step']): PendingStep => ({
+    step: which,
+    command,
+    on: front(),
+  })
+  const view = createView([command])
+
+  it('draws the two answers with empty words', () => {
+    const items = view.groupsOf(step('asking'), front(), '')[0]?.items
+
+    expect(items).toStrictEqual([
+      { id: 'no', title: '', detail: '', actions: [{ id: 'no', text: '' }] },
+      {
+        id: 'yes',
+        title: ' Ontology.md',
+        detail: '',
+        actions: [{ id: 'yes', text: '' }],
+      },
+    ])
+  })
+
+  it('draws the name to type back with empty words', () => {
+    const items = view.groupsOf(step('exactly'), front(), 'Ontology')[0]?.items
+
+    expect(items).toStrictEqual([
+      {
+        id: 'exactly',
+        title: ' “Ontology”',
+        detail: '',
+        disabled: false,
+        actions: [{ id: 'exactly', text: '' }],
+      },
+    ])
   })
 })
