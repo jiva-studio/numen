@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import type { Task } from '@/shared/notices/task'
@@ -115,5 +115,37 @@ describe('useWindowStatusBar detail and unit', () => {
     const none = first({ ...base, total: 0 })
     expect(none.currentCount).toBeUndefined()
     expect(none.totalCount).toBeUndefined()
+  })
+})
+
+describe('useWindowStatusBar groups and handlers', () => {
+  const plain: Task = {
+    id: 't',
+    label: 'Sorting',
+    about: 'shelf',
+    done: 0,
+    total: 0,
+    counting: 'things',
+    error: '',
+    isAsked: false,
+  }
+
+  it('groups a task that matches no pattern under its label, or under a general name without one', () => {
+    const bar = useWindowStatusBar({ tasks: ref([plain, { ...plain, id: 'u', label: '' }]) })
+    expect(bar.tasks.value.map((one) => one.group)).toEqual(['Sorting', 'Background Tasks'])
+  })
+
+  it('hands cancel and retry to the callbacks given, and does nothing without them', () => {
+    const onCancel = vi.fn()
+    const onRetry = vi.fn()
+    const bar = useWindowStatusBar({ tasks: ref([plain]), onCancel, onRetry })
+    bar.onCancelTask('t')
+    bar.onRetryTask('t')
+    expect(onCancel).toHaveBeenCalledWith('t')
+    expect(onRetry).toHaveBeenCalledWith('t')
+
+    const bare = useWindowStatusBar({ tasks: ref([plain]) })
+    expect(() => bare.onCancelTask('t')).not.toThrow()
+    expect(() => bare.onRetryTask('t')).not.toThrow()
   })
 })
