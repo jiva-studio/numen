@@ -90,7 +90,13 @@ const createStrip = (at: PanelPlace = 'here', more: { hasCard?: boolean } = {}) 
     await nextTick()
   }
 
-  return { ...strip, window_, windowRef, shown, moves, capture, errors, scrollTo, moveTo }
+  /** The strip taken off the screen, as the window closing takes it. */
+  const takeOff = () => {
+    mounted.splice(mounted.indexOf(one), 1)
+    one.unmount()
+  }
+
+  return { ...strip, takeOff, window_, windowRef, shown, moves, capture, errors, scrollTo, moveTo }
 }
 
 describe('where the strip stands', () => {
@@ -164,6 +170,31 @@ describe('a move asked for', () => {
     scrollTo(200)
 
     expect(shown.value).toBe('here')
+  })
+
+  // A move that never arrives is over when its time is up.
+  it('hears a wheel once the move has had its time, arrived or not', async () => {
+    const { shown, scrollTo, moveTo } = createStrip('here')
+
+    await moveTo('after')
+    vi.advanceTimersByTime(700)
+    scrollTo(200)
+
+    expect(shown.value).toBe('here')
+  })
+
+  it('leaves the time of a move that arrived running out on no later move', async () => {
+    const { shown, scrollTo, moveTo } = createStrip('here')
+
+    await moveTo('after')
+    vi.advanceTimersByTime(100)
+    scrollTo(440)
+    vi.advanceTimersByTime(100)
+    await moveTo('before')
+    vi.advanceTimersByTime(450)
+    scrollTo(400)
+
+    expect(shown.value).toBe('before')
   })
 
   it('does not take the strip anywhere while a hand is on it', async () => {
@@ -288,5 +319,18 @@ describe('a strip with no window', () => {
     windowRef.value = null
 
     expect(() => onPointerMove(press({ clientX: 380 }))).not.toThrow()
+  })
+})
+
+describe('a strip taken off the screen', () => {
+  it('is moved by neither a resize nor a settling left pending', () => {
+    const { takeOff, window_, scrollTo } = createStrip('here')
+
+    scrollTo(300)
+    takeOff()
+    window.dispatchEvent(new Event('resize'))
+    vi.advanceTimersByTime(200)
+
+    expect(window_.scrollLeft).toBe(300)
   })
 })

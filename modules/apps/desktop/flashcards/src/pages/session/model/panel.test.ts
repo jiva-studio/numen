@@ -359,3 +359,11 @@ describe('what is written', () => {
     expect(held.written.value).toBe('wh')
   })
 })
+
+describe('stop', () => {
+  it('does nothing while no card is being asked about', () => {
+    const { held } = panel()
+    expect(() => held.stop()).not.toThrow()
+    expect(held.isWorking.value).toBe(false)
+  })
+})
