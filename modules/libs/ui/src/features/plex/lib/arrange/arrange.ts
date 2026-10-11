@@ -102,7 +102,7 @@ function widthsFor(
 /** Whether every node stays inside the window, the margin kept clear. */
 function isInsideViewport(nodes: readonly PlacedNode[], options: PlexOptions): boolean {
   const { viewport, margin } = options
-  // Stryker disable next-line ConditionalExpression: spacingFor asks only when a viewport is set
+  // Stryker disable next-line ConditionalExpression,BooleanLiteral: spacingFor asks only when a viewport is set
   if (!viewport) return true
 
   const halfWidth = viewport.width / 2 - margin

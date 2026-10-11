@@ -129,6 +129,16 @@ describe('a node that is only in one picture', () => {
     expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
   })
 
+  it('finds the chosen node wherever it stands in the new picture', () => {
+    const reordered: PlexFrame = { ...to, nodes: [...to.nodes].reverse() }
+    const source = node(from, 'a')
+    const end = node(to, 'a1')
+    const middle = node(interpolatePlex(from, reordered, 0.5), 'a1')
+
+    expect(middle.x).toBeCloseTo((source.x + end.x) / 2)
+    expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
+  })
+
   it('unfolds a new node out of the middle when the chosen node was not in the old picture', () => {
     const stranger = arrangePlex({
       nodes: [
