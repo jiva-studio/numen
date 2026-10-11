@@ -1007,6 +1007,23 @@ describe('leaving a step', () => {
 })
 
 describe('a command asked for from outside the palette', () => {
+  it('carries out a command that needs nothing with no name', () => {
+    const { commands } = createPalette()
+
+    expect(commands.startCommand('copy', front())?.name).toBe('')
+  })
+
+  it('starts from no step where the palette was shut with a step standing', () => {
+    const { commands } = createPalette()
+    commands.startCommand('title', front())
+    commands.open.value = false
+
+    commands.startCommand('title', front())
+    commands.leaveStep()
+
+    expect(commands.crumb.value).toBe(words.command)
+  })
+
   it('opens the palette where it asks for what it needs', () => {
     const { commands } = createPalette()
     commands.setOpen(false)
