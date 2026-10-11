@@ -145,3 +145,73 @@ describe('the days asked about', () => {
     expect(less.from > said.from).toBe(true)
   })
 })
+
+describe('what is held of a vault after another answer', () => {
+  it('holds nothing, and asks nothing, once it is read for no vault at all', async () => {
+    const asked: string[] = []
+    const errors: unknown[] = []
+    const cards: ReviewDaysClient = {
+      async listReviewDays({ vault }) {
+        asked.push(vault)
+        return createReviewDays([['2026-08-29', 3]], 1, [['2026-08-31', 12]])
+      },
+    }
+    const one = useReviewDays({ cards, reportError: (why) => errors.push(why), widest: () => 640 })
+    await one.read('01VAULT')
+
+    await one.read('')
+
+    expect(asked).toEqual(['01VAULT'])
+    expect(errors).toHaveLength(0)
+    expect(one.days.value.size).toBe(0)
+    expect(one.due.value.size).toBe(0)
+    expect(one.streak.value).toBe(0)
+    expect(one.answered.value).toBe(0)
+    expect(one.of.value).toBe('')
+  })
+
+  it('drops what it held of a vault whose days could not be read again', async () => {
+    let fails = false
+    const cards: ReviewDaysClient = {
+      async listReviewDays() {
+        if (fails) throw new Error('no such vault')
+        return createReviewDays([['2026-08-29', 3]], 1, [['2026-08-31', 12]])
+      },
+    }
+    const one = useReviewDays({ cards, reportError: () => {}, widest: () => 640 })
+    await one.read('01VAULT')
+
+    fails = true
+    await one.read('01VAULT')
+
+    expect(one.days.value.size).toBe(0)
+    expect(one.due.value.size).toBe(0)
+    expect(one.streak.value).toBe(0)
+    expect(one.answered.value).toBe(0)
+  })
+
+  it('keeps the vault moved to, and says nothing, when the one left fails', async () => {
+    let refuse = (_: Error) => {}
+    const errors: unknown[] = []
+    const cards: ReviewDaysClient = {
+      listReviewDays({ vault }) {
+        if (vault === '01SLOW') {
+          return new Promise<ReviewDays>((_, then) => {
+            refuse = then
+          })
+        }
+        return Promise.resolve(createReviewDays([['2026-08-29', 1]], 1))
+      },
+    }
+    const one = useReviewDays({ cards, reportError: (why) => errors.push(why), widest: () => 640 })
+
+    const slow = one.read('01SLOW')
+    await one.read('01OTHER')
+    refuse(new Error('no such vault'))
+    await slow
+
+    expect(errors).toHaveLength(0)
+    expect(one.days.value.get('2026-08-29')?.answered).toBe(1)
+    expect(one.of.value).toBe('01OTHER')
+  })
+})
