@@ -1,9 +1,14 @@
 package index
 
 import (
+	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"path/filepath"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -282,6 +287,186 @@ func getNewestVersion(t *testing.T) int {
 		t.Fatal(err)
 	}
 	return available[len(available)-1].version
+}
+
+// PRAGMA user_version writes through the same page as an ordinary table
+// change, and modernc.org/sqlite rolls it back with the rest of an explicit
+// transaction that never commits.
+func TestPragmaUserVersionRollsBackWithItsTransaction(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tx.ExecContext(ctx, "PRAGMA user_version = 99"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tx.ExecContext(ctx, "INSERT INTO nonexistent (x) VALUES (1)"); err == nil {
+		t.Fatal("an insert into a table that does not exist reported success")
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+
+	var version int
+	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if version != 0 {
+		t.Errorf("user_version = %d after rollback, want 0", version)
+	}
+}
+
+// breaksOn is the text a statement must contain for the breaking driver to
+// fail it. A test that uses the breaking driver sets this and clears it when
+// done, since the driver is registered once for the life of the process.
+var breaksOn atomic.Pointer[string]
+
+// breakingDriver registers a driver that fails the one statement whose text
+// contains breaksOn's value and runs every other statement unchanged.
+var breakingDriver = sync.OnceValue(func() error {
+	base, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		return err
+	}
+	defer base.Close()
+	sql.Register("sqlite-breaking", breaking{base.Driver()})
+	return nil
+})
+
+type breaking struct{ driver.Driver }
+
+func (d breaking) Open(name string) (driver.Conn, error) {
+	c, err := d.Driver.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return breakingConn{c}, nil
+}
+
+type breakingConn struct{ driver.Conn }
+
+func (c breakingConn) Prepare(query string) (driver.Stmt, error) {
+	s, err := c.Conn.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	return breakingStmt{s, query}, nil
+}
+
+func (c breakingConn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
+	prepares, ok := c.Conn.(driver.ConnPrepareContext)
+	if !ok {
+		return c.Prepare(query)
+	}
+	s, err := prepares.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return breakingStmt{s, query}, nil
+}
+
+type breakingStmt struct {
+	driver.Stmt
+	query string
+}
+
+func (s breakingStmt) isBroken() bool {
+	on := breaksOn.Load()
+	return on != nil && strings.Contains(s.query, *on)
+}
+
+// ExecContext is where every write in this package runs its statements, so
+// this is the one place that needs to see the fault. driver.Stmt keeps its
+// own Exec, reached only by a driver that lacks StmtExecContext, which
+// modernc.org/sqlite is not.
+func (s breakingStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if s.isBroken() {
+		return nil, fmt.Errorf("broken for the test: %s", strings.TrimSpace(s.query))
+	}
+	execs, ok := s.Stmt.(driver.StmtExecContext)
+	if !ok {
+		values := make([]driver.Value, 0, len(args))
+		for _, a := range args {
+			values = append(values, a.Value)
+		}
+		return s.Stmt.Exec(values)
+	}
+	return execs.ExecContext(ctx, args)
+}
+
+// remember's rename runs as one transaction: a statement that fails partway
+// through leaves the schema_migrations table that was there before remember
+// was called.
+func TestRememberLeavesTheOriginalTableWhenRenamingFails(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	raw, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, statement := range []string{
+		`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT)`,
+		`INSERT INTO schema_migrations (version, name, applied_at) VALUES (1, '0001_index.sql', '2024-01-01')`,
+	} {
+		if _, err := raw.ExecContext(ctx, statement); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := raw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := breakingDriver(); err != nil {
+		t.Fatal(err)
+	}
+	on := "RENAME TO"
+	breaksOn.Store(&on)
+	t.Cleanup(func() { breaksOn.Store(nil) })
+
+	db, err := sql.Open("sqlite-breaking", writeDSN(path, settings{synchronous: shipped}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.SetMaxOpenConns(1)
+	defer db.Close()
+
+	if err := remember(ctx, db); err == nil {
+		t.Fatal("remember reported success over a rename it could not make")
+	}
+
+	back, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer back.Close()
+
+	var name string
+	if err := back.QueryRowContext(ctx,
+		`SELECT name FROM schema_migrations WHERE version = 1`).Scan(&name); err != nil {
+		t.Fatalf("the original schema_migrations did not survive the failed rename: %v", err)
+	}
+	if name != "0001_index.sql" {
+		t.Errorf("schema_migrations held %q, want the original row", name)
+	}
+
+	var next int
+	if err := back.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations_next'`).Scan(&next); err != nil {
+		t.Fatal(err)
+	}
+	if next != 0 {
+		t.Error("schema_migrations_next was left behind by the rollback")
+	}
 }
 
 func TestMigrationToPrefixIndex(t *testing.T) {

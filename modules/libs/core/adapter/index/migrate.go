@@ -169,15 +169,25 @@ func remember(ctx context.Context, db *sql.DB) error {
 	if spare == 0 {
 		return nil
 	}
+	// The drop and the rename are two statements apart, so all four run as one
+	// transaction: either both happen or neither does.
+	tx, err := writing.Begin(ctx, db)
+	if err != nil {
+		return fmt.Errorf("what this index was migrated by: %w", err)
+	}
+	defer tx.Rollback()
 	for _, statement := range []string{
 		`CREATE TABLE schema_migrations_next (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`,
 		`INSERT INTO schema_migrations_next (version, name) SELECT version, name FROM schema_migrations`,
 		`DROP TABLE schema_migrations`,
 		`ALTER TABLE schema_migrations_next RENAME TO schema_migrations`,
 	} {
-		if _, err := writing.Exec(ctx, db, statement); err != nil {
+		if _, err := tx.ExecContext(ctx, statement); err != nil {
 			return fmt.Errorf("what this index was migrated by: %w", err)
 		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("what this index was migrated by: %w", err)
 	}
 	return nil
 }
