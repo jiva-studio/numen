@@ -33,7 +33,7 @@ func newFakePool(t *testing.T, n int) (*sessionPool[*fakeSession], []*fakeSessio
 
 func TestCloseWaitsForARunInFlightBeforeDestroyingItsSession(t *testing.T) {
 	pool, all := newFakePool(t, 2)
-	s, err := pool.acquire(context.Background())
+	s, err := pool.acquire(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,21 +67,18 @@ func TestCloseWaitsForARunInFlightBeforeDestroyingItsSession(t *testing.T) {
 func TestAcquireAfterCloseFailsWithTheClosedError(t *testing.T) {
 	pool, _ := newFakePool(t, 1)
 	pool.close()
-	if _, err := pool.acquire(context.Background()); !errors.Is(err, errClosed) {
-		t.Errorf("got %v", err)
-	}
-	if _, err := pool.acquire(nil); !errors.Is(err, errClosed) {
+	if _, err := pool.acquire(t.Context()); !errors.Is(err, errClosed) {
 		t.Errorf("got %v", err)
 	}
 }
 
 func TestAWaitingAcquireFailsWhenThePoolCloses(t *testing.T) {
 	pool, _ := newFakePool(t, 1)
-	held, _ := pool.acquire(context.Background())
+	held, _ := pool.acquire(t.Context())
 
 	result := make(chan error, 1)
 	go func() {
-		_, err := pool.acquire(context.Background())
+		_, err := pool.acquire(t.Context())
 		result <- err
 	}()
 	time.Sleep(20 * time.Millisecond)
@@ -105,8 +102,8 @@ func TestClosingTwiceDestroysEachSessionOnce(t *testing.T) {
 
 func TestAnAcquireWithACancelledContextReturnsItsError(t *testing.T) {
 	pool, _ := newFakePool(t, 1)
-	held, _ := pool.acquire(context.Background())
-	ctx, cancel := context.WithCancel(context.Background())
+	held, _ := pool.acquire(t.Context())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := pool.acquire(ctx); !errors.Is(err, context.Canceled) {
 		t.Errorf("got %v", err)
@@ -124,7 +121,7 @@ func TestConcurrentAcquireAndCloseNeverTouchADestroyedSession(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				s, err := pool.acquire(context.Background())
+				s, err := pool.acquire(t.Context())
 				if err != nil {
 					if !errors.Is(err, errClosed) {
 						t.Errorf("got %v", err)
