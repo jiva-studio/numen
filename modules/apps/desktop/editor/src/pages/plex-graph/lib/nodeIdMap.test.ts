@@ -18,6 +18,12 @@ describe('a note being drawn', () => {
     expect(new Set(drawn).size).toBe(3)
   })
 
+  it('holds IDs counting up from 1', () => {
+    const map = createNodeIdMap()
+
+    expect(['A.md', 'B.md', 'C.md'].map(map.getNodeId)).toEqual(['1', '2', '3'])
+  })
+
   it('holds nothing at all where there is no path to hold it', () => {
     const map = createNodeIdMap()
 
