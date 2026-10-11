@@ -79,10 +79,6 @@ func (b brokenWriters) Hold(ctx context.Context, v domain.Vault) (func(), error)
 	return b.VaultWriters.Hold(ctx, v)
 }
 
-func workingWriters() brokenWriters {
-	return brokenWriters{VaultWriters: filesystem.VaultWriters{}}
-}
-
 func titleHeat(d *markdown.Document) error { return d.SetTitle("Heat") }
 
 func (c changing) exists(path string) bool {
