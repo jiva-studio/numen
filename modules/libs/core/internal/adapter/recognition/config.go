@@ -103,7 +103,7 @@ type RecogniserModel struct {
 
 	// Jobs is how many jobs the recogniser runs at once.
 	Jobs int `json:"jobs"`
-	// Threads is how many threads one model may use.
+	// Threads is how many threads one model may use. Zero takes four.
 	Threads int `json:"threads"`
 }
 
@@ -225,7 +225,7 @@ func (r RecogniserModel) jobs() int {
 
 func (r RecogniserModel) threads() int {
 	if r.Threads <= 0 {
-		return onnxruntime.DefaultThreads()
+		return 4
 	}
 	return r.Threads
 }

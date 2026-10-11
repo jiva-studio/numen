@@ -24,7 +24,7 @@ type Config struct {
 	// ShouldDownload allows fetching what is not on this machine.
 	ShouldDownload bool `json:"download"`
 
-	// Threads is how many threads one model may use.
+	// Threads is how many threads the encoder may use. Zero takes one per core, up to eight.
 	Threads int `json:"threads"`
 
 	Model     ParakeetModel  `json:"model"`
@@ -125,6 +125,17 @@ func (c Config) threads() int {
 		return onnxruntime.DefaultThreads()
 	}
 	return c.Threads
+}
+
+// sessionThreads is the intra-op thread count of each session. The encoder
+// runs on whole stretches; the decoder, joiner and segmenter run on one small
+// tensor at a time and take one thread.
+type sessionThreads struct {
+	encoder, decoder, joiner, segmenter int
+}
+
+func (c Config) sessionThreads() sessionThreads {
+	return sessionThreads{encoder: c.threads(), decoder: 1, joiner: 1, segmenter: 1}
 }
 
 func (s SegmenterModel) threshold() float32 {
