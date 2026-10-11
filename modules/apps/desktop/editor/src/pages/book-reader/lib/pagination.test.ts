@@ -10,6 +10,7 @@ describe('pagination and document lookup', () => {
     expect(getPageNumber(1000, 10, 50000)).toBe(10)
     expect(getPageNumber(0, 10, 500)).toBe(0)
     expect(getPageNumber(1000, 0, 500)).toBe(0)
+    expect(getPageNumber(1000, -5, 500)).toBe(0)
   })
 
   it('finds spine document containing offset', () => {
@@ -52,5 +53,31 @@ describe('pagination and document lookup', () => {
     }
 
     expect(getContents(bookWithPrinted, words)).toEqual([{ title: 'Page iv', at: 50, level: 0 }])
+  })
+})
+
+describe('the name of a document of the spine', () => {
+  const book = (path: string): Book => ({
+    title: 'T',
+    span: { from: 0, to: 10 },
+    documents: [{ path, span: { from: 0, to: 10 } }],
+    parts: [],
+    printedPages: [],
+    pages: 1,
+    pageBytes: 10,
+    fingerprint: 'f',
+  })
+  const titleOf = (path: string) => getContents(book(path), { page: 'Page' })[0]?.title
+
+  it('is the file name without its extension', () => {
+    expect(titleOf('text/part0001.xhtml')).toBe('part0001')
+  })
+
+  it('is the whole file name where there is no extension', () => {
+    expect(titleOf('text/README')).toBe('README')
+  })
+
+  it('is the whole file name where the only dot begins it', () => {
+    expect(titleOf('text/.hidden')).toBe('.hidden')
   })
 })
