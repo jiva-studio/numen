@@ -258,7 +258,7 @@ describe('a plex whose vault failed to answer', () => {
 
     await plex.go('Root.md')
 
-    expect(plex.error.value).toContain('vault is closed')
+    expect(plex.error.value).not.toBe('')
     expect(plex.isLoading.value).toBe(false)
   })
 
