@@ -1,7 +1,6 @@
 package pagecache
 
 import (
-	"context"
 	"sync"
 	"testing"
 
@@ -18,7 +17,7 @@ func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
 	held := make([]ID, 10)
 	for at := range held {
 		held[at] = newTestID(at)
-		cache.Draw(context.Background(), held[at], drawn)
+		cache.Draw(t.Context(), held[at], drawn)
 	}
 
 	var wg sync.WaitGroup
@@ -26,7 +25,7 @@ func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
 		wg.Add(2)
 		go func(at int) {
 			defer wg.Done()
-			cache.Draw(context.Background(), newTestID(1000+at), drawn)
+			cache.Draw(t.Context(), newTestID(1000+at), drawn)
 		}(at)
 		go func(at int) {
 			defer wg.Done()
