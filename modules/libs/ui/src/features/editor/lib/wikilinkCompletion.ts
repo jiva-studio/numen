@@ -48,6 +48,7 @@ export function createWikilinkSource(options: WikilinkCompletionOptions) {
     const match = /\[\[([^\]\n]*)$/.exec(lineBefore)
     if (!match) return null
 
+    // Stryker disable next-line StringLiteral: the pattern has one group that always takes part in the match.
     const rawQuery = match[1] ?? ''
     const bracketStart = line.from + match.index
     const lineAfter = line.text.slice(context.pos - line.from)
@@ -124,6 +125,7 @@ export function createWikilinkSource(options: WikilinkCompletionOptions) {
               changes: { from: bracketStart, to: replaceTo, insert: insertText },
               selection: { anchor: bracketStart + insertText.length },
             })
+            // Stryker disable next-line OptionalChaining: the option exists only where createNote is given.
             void options.createNote?.(trimmedQuery)
           },
         })

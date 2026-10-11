@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { CompletionContext } from '@codemirror/autocomplete'
+import { CompletionContext, currentCompletions, startCompletion } from '@codemirror/autocomplete'
+import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { createWikilinkSource } from './wikilinkCompletion'
+import { createWikilinkCompletion, createWikilinkSource } from './wikilinkCompletion'
 import { createState } from '../fixtures/state'
 
 describe('wikilink completion source', () => {
@@ -154,7 +155,9 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Physics' }])
       const doc = 'Text.\n\n    [[Phys more'
 
-      const result = await createWikilinkSource({ search })(contextAt(doc, doc.length - ' more'.length))
+      const result = await createWikilinkSource({ search })(
+        contextAt(doc, doc.length - ' more'.length),
+      )
 
       expect(result).toBeNull()
       expect(search).not.toHaveBeenCalled()
@@ -405,5 +408,52 @@ describe('wikilink completion in other places of a document', () => {
 
       expect(result?.options).toStrictEqual([])
     })
+  })
+})
+
+describe('wikilink completion without headings to look up', () => {
+  it('offers none for a hash with nothing after it', async () => {
+    const doc = 'See [[Quantum#'
+
+    const result = await createWikilinkSource({ search: vi.fn() })(
+      new CompletionContext(createState(doc, doc.length), doc.length, true),
+    )
+
+    expect(result?.options).toStrictEqual([])
+  })
+})
+
+describe('the wikilink completion extension', () => {
+  const open = async (search: ReturnType<typeof vi.fn>) => {
+    const doc = 'See [[Rel'
+    const state = EditorState.create({
+      doc,
+      selection: { anchor: doc.length },
+      extensions: [createWikilinkCompletion({ search })],
+    })
+    const view = new EditorView({ state, parent: document.body })
+    startCompletion(view)
+    await vi.waitFor(() => expect(currentCompletions(view.state)).toHaveLength(1))
+    return view
+  }
+
+  it('offers the notes the search finds when completion is started', async () => {
+    const search = vi.fn().mockResolvedValue([{ title: 'Relativity' }])
+
+    const view = await open(search)
+
+    expect(search).toHaveBeenCalledWith('Rel')
+    expect(currentCompletions(view.state)[0]?.label).toBe('Relativity')
+    view.destroy()
+  })
+
+  it('draws the offered notes without icons', async () => {
+    const view = await open(vi.fn().mockResolvedValue([{ title: 'Relativity' }]))
+
+    await vi.waitFor(() =>
+      expect(view.dom.querySelector('.cm-tooltip-autocomplete')).not.toBeNull(),
+    )
+    expect(view.dom.querySelector('.cm-completionIcon')).toBeNull()
+    view.destroy()
   })
 })
