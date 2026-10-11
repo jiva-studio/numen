@@ -178,6 +178,18 @@ describe('a note a plex tab opens', () => {
   })
 })
 
+describe('a note a plex tab opens where a tab holds no state', () => {
+  it('goes to the plex tab in front, whatever tab holds no state', () => {
+    const one = plexKind({
+      tabs: [{ id: 'plex:0', kind: 'plex', state: undefined as unknown as PlexTabState }, ...THREE],
+    })
+
+    one.deps.openNote('Compost.md', 'Compost', 'here')
+
+    expect(one.synced).toStrictEqual([['plex:3', 'Compost.md', 'Compost']])
+  })
+})
+
 describe('a note a plex tab stands on', () => {
   it('goes to the tabs linked to the plex tab whose state asked, under its title', () => {
     const one = plexKind()
