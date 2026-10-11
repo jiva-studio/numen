@@ -14,6 +14,7 @@ const { asked } = vi.hoisted(() => {
     createNote: vi.fn(),
     getNeighbourhood: vi.fn(),
     getOpeningNote: vi.fn(),
+    readNote: vi.fn(),
     watchEdits: vi.fn(),
     removeLink: vi.fn(),
     renameNote: vi.fn(),
@@ -238,5 +239,13 @@ describe('a note followed', () => {
       { change: 1, path: 'a.md', span: { from: 2, to: 5 }, text: 'abc', isComplete: false },
       { change: 2, path: 'a.md', span: { from: 0, to: 0 }, text: 'x', isComplete: true },
     ])
+  })
+})
+
+describe('a note read', () => {
+  it('is asked for by its path', async () => {
+    asked.readNote.mockResolvedValue({ body: 'prose' })
+    await core.read('Notes/Heat.md')
+    expect(asked.readNote.mock.calls.at(-1)?.[0]).toEqual({ path: 'Notes/Heat.md' })
   })
 })
