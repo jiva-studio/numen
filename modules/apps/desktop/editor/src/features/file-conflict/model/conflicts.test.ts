@@ -8,6 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raiseConflicts, type Notes } from './conflicts'
+import { asFailure, asValue } from '@numen/wire'
+import { openNotes, type Notes as NotesCore } from '@/entities/note/model/notes'
 import type { Conflict } from './flush'
 
 /** The words this test puts its notes in. A screen has more; these are enough. */
@@ -105,5 +107,71 @@ describe('a note that is written', () => {
     await nextTick()
 
     expect(one.paths()).toEqual([])
+  })
+})
+
+describe('a window of real notes', () => {
+  /** A core holding the files a test puts in it. */
+  const createCore = (files: Map<string, string>): NotesCore => ({
+    read: async (path) => asValue({ body: files.get(path) ?? '', at: `at:${files.get(path)}` }),
+    write: async (path, body, seen) => {
+      if (seen && files.get(path) !== seen.prose && `at:${files.get(path)}` !== seen.fingerprint) {
+        return asFailure('changed' as const)
+      }
+      files.set(path, body)
+      return asValue({ body: '', at: `at:${body}` })
+    },
+  })
+
+  const settle = async () => {
+    for (let i = 0; i < 8; i++) await Promise.resolve()
+    await nextTick()
+  }
+
+  /** A stale note A beside a clean note B, with the conflicts watched. */
+  const createStale = async () => {
+    const files = new Map([
+      ['A.md', 'a'],
+      ['B.md', 'b'],
+    ])
+    const notes = openNotes(createCore(files), { limits: { quiet: 1000, bound: 5000 } })
+    const going = quit()
+    let raisedCount = 0
+    raiseConflicts(notes, {
+      raise: (one) => (raisedCount++, going.going.raise(one)),
+    })
+    notes.open('A.md')
+    notes.open('B.md')
+    await settle()
+
+    notes.setBody('A.md', 'mine')
+    files.set('A.md', 'theirs')
+    notes.save('A.md')
+    await settle()
+    return { notes, going, raised: () => raisedCount }
+  }
+
+  it('raises the conflict of the stale note and keeps it while another is typed into', async () => {
+    const { notes, going, raised } = await createStale()
+    expect(going.paths()).toEqual(['A.md'])
+
+    notes.setBody('B.md', 'b and more')
+    await settle()
+
+    expect(going.paths()).toEqual(['A.md'])
+    expect(raised()).toBe(1)
+  })
+
+  it('keeps the conflict while the stale note itself is typed into, and drops it once answered', async () => {
+    const { notes, going, raised } = await createStale()
+
+    notes.setBody('A.md', 'mine and more')
+    await settle()
+    expect(going.paths()).toEqual(['A.md'])
+    expect(raised()).toBe(1)
+
+    await going.answer('A.md', 'keep')
+    await settle()
+    expect(going.paths()).toEqual([])
   })
 })

@@ -49,6 +49,5 @@ export function raiseConflicts(notes: Notes, raiser: ConflictRaiser) {
         raised.delete(id)
       }
     },
-    { deep: true },
   )
 }
