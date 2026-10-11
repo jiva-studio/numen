@@ -73,12 +73,8 @@ export type AgentTabState = ReturnType<typeof useAgentConversation>
 
 export type ResolvedAddressMap = ReadonlyMap<string, string>
 
+/** Antigravity takes the first option, which the selection watch puts in place of a model the options lack. */
 function getDefaultModel(agent: string): string {
-  // Stryker disable next-line BlockStatement,StringLiteral: the selection watch replaces a model the offered options lack with the first option, which is this one.
-  if (agent === 'antigravity') {
-    // Stryker disable next-line StringLiteral: the selection watch replaces an unoffered model with the first option, which is this one.
-    return 'gemini-3.7-flash-high'
-  }
   if (agent === 'codex') {
     return 'gpt-5.6-terra'
   }

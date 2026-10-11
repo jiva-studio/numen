@@ -92,7 +92,7 @@ const dropOnSection = (
   at: string,
 ): BufferDeck => {
   const rank = (section: string | null): number =>
-    deck.sections.findIndex((each) => each.id === section) + 1
+    deck.sections.findIndex((each) => each.id === section)
   const head = (section: string | null): number => {
     const seat = left.findIndex((each) => rank(each.section) >= rank(section))
     return seat === -1 ? left.length : seat
