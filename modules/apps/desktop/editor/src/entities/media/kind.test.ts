@@ -4,11 +4,12 @@
  * How far a recording has been written down and how long it runs are both
  * milliseconds, and both are what is reported of the tab.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { createRecordingKind, useTranscriptTab, type MediaTabState, type Medium } from './kind'
 import type { TranscriptState } from './model/transcript'
-import type { FileOpeners, WindowHandle } from '@/entities/tab/@x/media'
+import type { FileOpeners, SourceReader, WindowHandle } from '@/entities/tab/@x/media'
+import type { Span } from '@/shared/span'
 
 /** A medium drawn by nothing, which is as much of one as a kind is asked for. */
 const played: Medium = {
@@ -28,6 +29,7 @@ const openers = { registerReader: () => {} } as unknown as FileOpeners
 const recording = (path: string, transcript: number, duration: number) =>
   ({
     path,
+    called: path.split('/').pop(),
     transcribedDuration: ref(transcript),
     duration: ref(duration),
   }) as unknown as MediaTabState
@@ -104,5 +106,80 @@ describe('a recording whose words have not been read yet', () => {
     expect(tab.transcribable.value).toBe(false)
     expect(tab.proofreadable.value).toBe(true)
     expect(tab.deletable.value).toBe(true)
+  })
+})
+
+describe('how a recording tab is named and found again', () => {
+  it('is called what the tab calls the recording', () => {
+    const held = recording('talks/Ants.mp3', 0, 0)
+
+    expect(kind(held).getTitle!(held)).toBe('Ants.mp3')
+  })
+
+  it('is found again by the file it plays', () => {
+    const held = recording('talks/Ants.mp3', 0, 0)
+
+    expect(kind(held).identity!('talks/Ants.mp3')).toBe('talks/Ants.mp3')
+  })
+})
+
+describe('a recording tab being closed', () => {
+  it('closes what it holds, and may close', () => {
+    const close = vi.fn<() => void>()
+    const held = { ...recording('talks/Ants.mp3', 0, 0), close } as unknown as MediaTabState
+
+    expect(kind(held).onClose!(held)).toBe(true)
+    expect(close).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a hit in the words of a recording', () => {
+  /** The reader the kind handed the openers, over a window whose tabs the test names. */
+  const createReader = (tab: { reach: (...spans: readonly Span[]) => void } | null) => {
+    let reader: SourceReader | undefined
+    const opened: [string, string][] = []
+    const window = {
+      openTab: async (kindName: string, path: string) => {
+        opened.push([kindName, path])
+        return 'tab-1'
+      },
+      getTabState: () => tab,
+    } as unknown as WindowHandle
+    const medium: Medium = {
+      ...played,
+      register: (_puts, read) => {
+        reader = read
+      },
+    }
+    createRecordingKind(
+      window,
+      () => ({}) as unknown as TranscriptState,
+      { runCommand: () => {} },
+      openers,
+      medium,
+    )
+    return { read: reader!, opened }
+  }
+
+  it('opens the recording and takes the person to the spans asked for', async () => {
+    const reach = vi.fn<(...spans: readonly Span[]) => void>()
+    const { read, opened } = createReader({ reach })
+    const spans: readonly Span[] = [{ from: 3, to: 9 }]
+
+    read('talks/Ants.mp3', spans)
+    await vi.waitFor(() => expect(reach).toHaveBeenCalledWith(...spans))
+
+    expect(opened).toStrictEqual([['recording', 'talks/Ants.mp3']])
+  })
+
+  it('opens the recording and goes nowhere where the tab is gone', async () => {
+    const { read, opened } = createReader(null)
+
+    read('talks/Ants.mp3', [{ from: 3, to: 9 }])
+    await vi.waitFor(() => expect(opened).toHaveLength(1))
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(opened).toStrictEqual([['recording', 'talks/Ants.mp3']])
   })
 })

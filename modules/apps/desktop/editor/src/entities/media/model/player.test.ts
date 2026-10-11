@@ -4,7 +4,7 @@
  * The element is made when it is first wanted and never put in the page, so
  * what it does is asked of it here through a stand-in element.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createAudioPlayer, createMediaTypeProbe, type AudioFactory } from './player'
 import { WORDS } from '../words'
 
@@ -352,5 +352,116 @@ describe('what this window can play', () => {
 
   it('plays nothing where the window answers for nothing', () => {
     expect(createMediaTypeProbe(() => false)('audio/mpeg')).toBe(false)
+  })
+})
+
+describe('a player nothing has been asked of', () => {
+  it('has no error to say', () => {
+    const { plays } = player()
+
+    expect(plays.error.value).toBe('')
+  })
+})
+
+describe('the element once it is made', () => {
+  it('loads only the metadata of a recording until it is played', () => {
+    const { plays, element } = player()
+
+    plays.load(TALK)
+
+    expect(element.preload).toBe('metadata')
+  })
+
+  it('is told where a seek landed when the element says it has seeked', () => {
+    const { plays, element, emit } = player()
+    plays.load(TALK)
+
+    element.currentTime = 7.5
+    emit('seeked')
+
+    expect(plays.at.value).toBe(7_500)
+  })
+})
+
+describe('a recording already loaded', () => {
+  it('is played where it stands when it is asked to play', () => {
+    const { plays, element } = player()
+    plays.load(TALK)
+
+    plays.play(TALK)
+
+    expect(element.started).toBe(1)
+    expect(element.loaded).toStrictEqual([TALK])
+  })
+})
+
+describe('a play the window refused', () => {
+  it('says the recording could not be played where it gave no reason', async () => {
+    const { plays, element } = player()
+    element.fails = true
+    element.playError = null as unknown as Error
+
+    plays.play(TALK)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(plays.error.value).toBe(WORDS.unreadable)
+    expect(plays.isPlaying.value).toBe(false)
+  })
+
+  it('leaves what the element already said of the recording', async () => {
+    const { plays, element, setError } = player()
+    element.fails = true
+
+    plays.play(TALK)
+    setError(2)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(plays.error.value).toBe(WORDS.unreached)
+  })
+})
+
+describe('an element that reports an error with no reason', () => {
+  it('is said to have been unable to play the recording', () => {
+    const { plays, emit } = player()
+    plays.load(TALK)
+
+    emit('error')
+
+    expect(plays.error.value).toBe(WORDS.unreadable)
+  })
+})
+
+describe('the window asked what it can play', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('says yes to a type an audio element of its own says it can play', () => {
+    const canPlayType = vi.fn<(type: string) => CanPlayTypeResult>(() => 'maybe')
+    const create = vi
+      .spyOn(document, 'createElement')
+      .mockReturnValue({ canPlayType } as unknown as HTMLElement)
+
+    expect(createMediaTypeProbe()('audio/mpeg')).toBe(true)
+    expect(create).toHaveBeenCalledWith('audio')
+    expect(canPlayType).toHaveBeenCalledWith('audio/mpeg')
+  })
+
+  it('says no to a type the audio element answers with nothing for', () => {
+    vi.spyOn(document, 'createElement').mockReturnValue({
+      canPlayType: () => '',
+    } as unknown as HTMLElement)
+
+    expect(createMediaTypeProbe()('audio/mpeg')).toBe(false)
+  })
+
+  it('says no where the window cannot be asked', () => {
+    vi.spyOn(document, 'createElement').mockImplementation(() => {
+      throw new Error('no document')
+    })
+
+    expect(createMediaTypeProbe()('audio/mpeg')).toBe(false)
   })
 })
