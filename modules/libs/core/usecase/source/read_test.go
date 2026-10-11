@@ -85,3 +85,34 @@ func TestAskingForMoreThanOneQuestionCarriesIsRefused(t *testing.T) {
 		t.Error("a run of no length was read")
 	}
 }
+
+// A run's bounds stand on whole characters wherever it begins and however
+// long it is asked for, including where it begins before the text, past it,
+// or asks for nothing at all.
+func TestGetRuneBounds(t *testing.T) {
+	// é is two bytes, so a run touching it from either side stands on it
+	// whole or not at all.
+	const prose = "éllo"
+
+	cases := []struct {
+		name                  string
+		start, length         int
+		wantStart, wantLength int
+	}{
+		{"a run past the end is no run", 10, 3, len(prose), 0},
+		{"a run is cut on whole characters", 1, 3, 0, 4},
+		{"a negative start begins at the start of the text", -3, 2, 0, 2},
+		{"a negative start still begins on a whole character", -5, 1, 0, 2},
+		{"a run of zero length is empty", 2, 0, 2, 0},
+		{"a run of negative length is empty", 2, -4, 2, 0},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			start, length := getRuneBounds(prose, c.start, c.length)
+			if start != c.wantStart || length != c.wantLength {
+				t.Errorf("getRuneBounds(%q, %d, %d) = (%d, %d), want (%d, %d)",
+					prose, c.start, c.length, start, length, c.wantStart, c.wantLength)
+			}
+		})
+	}
+}

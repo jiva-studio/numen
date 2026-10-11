@@ -99,10 +99,15 @@ func (u Read) Execute(
 }
 
 // getRuneBounds is a run within the text, standing on whole characters. A run
-// beginning past the end of the text is no run at all.
+// beginning past the end of the text is no run at all, a run beginning before
+// its start begins at its start instead, and a run of zero or negative length
+// is empty.
 func getRuneBounds(prose string, start, length int) (int, int) {
-	if start >= len(prose) {
-		return len(prose), 0
+	if start < 0 {
+		start = 0
+	}
+	if start >= len(prose) || length <= 0 {
+		return min(start, len(prose)), 0
 	}
 	end := min(start+length, len(prose))
 	for start > 0 && !utf8.RuneStart(prose[start]) {

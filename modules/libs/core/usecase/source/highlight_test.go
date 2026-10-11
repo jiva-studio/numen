@@ -244,6 +244,38 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	}
 }
 
+// A run beginning before the start of the text reads from the start instead
+// of slicing at a negative offset.
+func TestARunBeginningBeforeTheStartOfTheTextReadsFromTheStart(t *testing.T) {
+	// h is one byte and é is two, so a run reaching three bytes before the
+	// start would slice into é's own bytes if the start were not clamped
+	// first.
+	const prose = "héllo"
+	found := getRuns(prose, nil, []domain.ByteSpan{{From: -3, To: 2}})
+	if len(found) != 1 {
+		t.Fatalf("one run was asked about and %d came back", len(found))
+	}
+	if found[0].Text != "héll" {
+		t.Errorf("the run read %q, want %q", found[0].Text, "héll")
+	}
+}
+
+// A run of negative length reads nothing, even where the byte it would
+// otherwise land on stands inside one of a run of multi-byte characters.
+func TestARunOfNegativeLengthReadsNothing(t *testing.T) {
+	// Four copies of a four-byte character, so landing inside one and
+	// walking forward to the next whole character crosses into the next
+	// one's own bytes.
+	const prose = "😀😀😀😀"
+	found := getRuns(prose, nil, []domain.ByteSpan{{From: 10, To: 9}})
+	if len(found) != 1 {
+		t.Fatalf("one run was asked about and %d came back", len(found))
+	}
+	if found[0].Text != "" {
+		t.Errorf("a run of negative length read %q", found[0].Text)
+	}
+}
+
 // A path the vault does not hold is refused, and so is one leaving it. Nothing
 // is read and nothing is lit.
 func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
