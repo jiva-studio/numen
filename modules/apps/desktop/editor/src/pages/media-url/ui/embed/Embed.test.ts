@@ -55,23 +55,25 @@ describe('a moment chosen in the transcript', () => {
       props: { embed: EMBED, copy: '', words },
       attachTo: document.body,
     })
-    const said: [string, string][] = []
+    const postedMessages: [string, string][] = []
     const frame = drawn.get('iframe').element as HTMLIFrameElement
     Object.defineProperty(frame, 'contentWindow', {
-      value: { postMessage: (message: string, origin: string) => said.push([message, origin]) },
+      value: {
+        postMessage: (message: string, origin: string) => postedMessages.push([message, origin]),
+      },
     })
 
     drawn.vm.seek(83_000)
 
-    expect(said).toHaveLength(1)
-    expect(JSON.parse(said[0]![0])).toEqual({
+    expect(postedMessages).toHaveLength(1)
+    expect(JSON.parse(postedMessages[0]![0])).toEqual({
       event: 'command',
       func: 'seekTo',
       args: [83, true],
     })
     // The message goes to the page holding the player and to nothing else. That
     // page hands it on to the host, and this window speaks to no host at all.
-    expect(said[0]![1]).toBe('http://127.0.0.1:9')
+    expect(postedMessages[0]![1]).toBe('http://127.0.0.1:9')
   })
 
   it('is where the copy is played from, where a copy stands', () => {

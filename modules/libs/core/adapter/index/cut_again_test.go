@@ -11,16 +11,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 )
 
-// said is the words a generated cutting draws its chunks from. It is small, so
-// one text stands twice in a source about as often as it stands once, and a
-// large chunk holds what a chunk inside one holds.
-var said = []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
+// vocabulary is the words a generated cutting draws its chunks from. It is
+// small, so one text stands twice in a source about as often as it stands
+// once, and a large chunk holds what a chunk inside one holds.
+var vocabulary = []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
 
 // drawChunks generates a source cut into large chunks with small chunks inside
 // them. What a chunk holds is what identifies it, so the words are what varies;
 // where it stands is what a cut moves, and it moves with the text.
 func drawChunks(t *rapid.T, name string) []chunk.Chunk {
-	word := rapid.SampledFrom(said)
+	word := rapid.SampledFrom(vocabulary)
 	inside := rapid.Custom(func(t *rapid.T) chunk.Chunk {
 		return chunk.Chunk{Text: word.Draw(t, "small")}
 	})

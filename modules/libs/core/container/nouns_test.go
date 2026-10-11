@@ -119,23 +119,23 @@ func TestNoTypeOfTheCoreIsNamedByAGerundOrParticiple(t *testing.T) {
 // dictionary that keeps them fills up until it reads as a census. It only
 // shrinks.
 func TestEveryWordOfTheDictionaryNamesAType(t *testing.T) {
-	said := map[string]bool{}
+	used := map[string]bool{}
 	for name := range everyExportedType(t) {
 		if !strings.HasSuffix(name, "ing") && !strings.HasSuffix(name, "ed") {
 			continue
 		}
 		if words := nounWords.FindAllString(name, -1); len(words) > 0 {
-			said[strings.ToLower(words[len(words)-1])] = true
+			used[strings.ToLower(words[len(words)-1])] = true
 		}
 	}
-	var gone []string
+	var unused []string
 	for word := range nouns {
-		if !said[word] {
-			gone = append(gone, word)
+		if !used[word] {
+			unused = append(unused, word)
 		}
 	}
-	slices.Sort(gone)
-	for _, one := range gone {
+	slices.Sort(unused)
+	for _, one := range unused {
 		t.Error(one + " is in the dictionary and names no type: the dictionary only shrinks")
 	}
 }

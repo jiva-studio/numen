@@ -106,7 +106,7 @@ const window = (
   } = {},
 ) => {
   const done: string[] = []
-  const said: string[] = []
+  const notices: string[] = []
   /** The voice each sentence was said in, one to a sentence. */
   const tones: string[] = []
   const at = answers.at ?? 'physics/Ontology.md'
@@ -240,11 +240,11 @@ const window = (
     copyPath: (path) => void done.push(`copies ${path}`),
     writeMessage: (text, kind) => {
       if (!text) return
-      said.push(text)
+      notices.push(text)
       tones.push(kind ?? '')
     },
   }
-  return { on, done, said, tones, runs }
+  return { on, done, notices, tones, runs }
 }
 
 /** One command carried out over the note in front. */
@@ -418,7 +418,7 @@ describe('an artifact asked for over a file', () => {
 
       await carry(invocation, one.on)
 
-      expect(one.said, made).toStrictEqual([words.made.transcript[made]])
+      expect(one.notices, made).toStrictEqual([words.made.transcript[made]])
     }
   })
 
@@ -441,19 +441,19 @@ describe('an artifact asked for over a file', () => {
 
     await carry(invocation, one.on)
 
-    expect(one.said).toStrictEqual([words.made.transcript.done])
+    expect(one.notices).toStrictEqual([words.made.transcript.done])
   })
 
   // A run that could not read the file wrote down what it got, and asking again
   // gets the same until that record is taken away.
   it('says what a run said about a recording it could not open', async () => {
-    const said = 'mp3: MPEG version 2.5 is not supported'
-    const { one, invocation } = createArtifactRun('failed', said)
+    const reason = 'mp3: MPEG version 2.5 is not supported'
+    const { one, invocation } = createArtifactRun('failed', reason)
 
     await carry(invocation, one.on)
 
     expect(one.done).toStrictEqual(['makes transcript talks/Ants.mp3'])
-    expect(one.said).toStrictEqual([`${words.made.transcript.failed} ${said}`])
+    expect(one.notices).toStrictEqual([`${words.made.transcript.failed} ${reason}`])
   })
 
   it('says the same of a scan already recognised', async () => {
@@ -462,16 +462,16 @@ describe('an artifact asked for over a file', () => {
     await carry(invocationOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)
 
     expect(one.done).toStrictEqual(['makes ocr books/Ants.pdf'])
-    expect(one.said).toStrictEqual([words.made.ocr.done])
+    expect(one.notices).toStrictEqual([words.made.ocr.done])
   })
 
   // No two of them may say the same thing: a person reads the sentence and not
   // the word behind it.
   it('says something of its own for every artifact and every state', () => {
-    const said = Object.values(words.made).flatMap((one) => Object.values(one))
+    const texts = Object.values(words.made).flatMap((one) => Object.values(one))
 
-    expect(said.filter((one) => one === '')).toStrictEqual([])
-    expect(new Set(said).size).toBe(said.length)
+    expect(texts.filter((one) => one === '')).toStrictEqual([])
+    expect(new Set(texts).size).toBe(texts.length)
   })
 
   it('says this build cannot do it, and offers it nowhere after that', async () => {
@@ -479,7 +479,7 @@ describe('an artifact asked for over a file', () => {
 
     await carry(invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    expect(one.said).toStrictEqual([words.unrunnable])
+    expect(one.notices).toStrictEqual([words.unrunnable])
     expect(one.runs.canRun('transcribe')).toBe(false)
     expect(one.runs.canRun('recognise')).toBe(true)
   })
@@ -500,7 +500,7 @@ describe('the transcript of a recording deleted', () => {
     await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.done).toStrictEqual(['deletes the text of talks/Ants.mp3'])
-    expect(one.said).toStrictEqual([])
+    expect(one.notices).toStrictEqual([])
   })
 
   it('says what the application refused, in the words it sent', async () => {
@@ -509,7 +509,7 @@ describe('the transcript of a recording deleted', () => {
 
     await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    expect(one.said).toStrictEqual([why])
+    expect(one.notices).toStrictEqual([why])
     expect(one.tones).toStrictEqual(['error'])
   })
 
@@ -518,7 +518,7 @@ describe('the transcript of a recording deleted', () => {
 
     await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    expect(one.said).toStrictEqual([words.unrunnable])
+    expect(one.notices).toStrictEqual([words.unrunnable])
     expect(one.runs.canRun('deleteText')).toBe(false)
   })
 })
@@ -538,7 +538,7 @@ describe('a note renamed', () => {
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual([])
-    expect(one.said).toStrictEqual([words.unanswered])
+    expect(one.notices).toStrictEqual([words.unanswered])
   })
 
   it('says the note was written elsewhere while this was asked', async () => {
@@ -546,7 +546,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([words.stale])
+    expect(one.notices).toStrictEqual([words.stale])
   })
 
   it('is renamed where no tab of the window holds it', async () => {
@@ -578,7 +578,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([])
+    expect(one.notices).toStrictEqual([])
   })
 
   it('says nothing of the title it wrote into the frontmatter', async () => {
@@ -586,7 +586,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([])
+    expect(one.notices).toStrictEqual([])
   })
 
   it('says the name was taken, and that the note carries the new one', async () => {
@@ -594,7 +594,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([words.errors.occupied])
+    expect(one.notices).toStrictEqual([words.errors.occupied])
   })
 
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
@@ -602,7 +602,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), 'Entropy'), one.on)
 
-    expect(one.said).toStrictEqual([words.errors.unreadable])
+    expect(one.notices).toStrictEqual([words.errors.unreadable])
   })
 
   it('says a name no file can be named', async () => {
@@ -610,7 +610,7 @@ describe('a note renamed', () => {
 
     await carry(invocationOf('title', front(), '...'), one.on)
 
-    expect(one.said).toStrictEqual([words.errors.unnameable])
+    expect(one.notices).toStrictEqual([words.errors.unnameable])
   })
 })
 
@@ -640,7 +640,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.said).toStrictEqual([])
+    expect(one.notices).toStrictEqual([])
   })
 
   it('says the notes that link to nothing now', async () => {
@@ -648,7 +648,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.said).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
+    expect(one.notices).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
   })
 
   it('leaves every plex standing on it at the note the vault opens with', async () => {
@@ -689,7 +689,7 @@ describe('a note removed', () => {
 
     await carry(invocationOf('remove', front()), one.on)
 
-    expect(one.said).toStrictEqual([words.errors.missing])
+    expect(one.notices).toStrictEqual([words.errors.missing])
     expect(one.done.at(-1)).toBe('remove physics/Ontology.md false')
   })
 
@@ -699,7 +699,7 @@ describe('a note removed', () => {
     await carry(invocationOf('remove', front()), one.on)
 
     expect(one.done).toStrictEqual([])
-    expect(one.said).toStrictEqual([words.unanswered])
+    expect(one.notices).toStrictEqual([words.unanswered])
   })
 })
 
@@ -733,7 +733,7 @@ describe('several files removed at once', () => {
 
     await carry(invocationOf('remove', both), one.on)
 
-    expect(one.said).toStrictEqual([`${words.dangling} Order.md`])
+    expect(one.notices).toStrictEqual([`${words.dangling} Order.md`])
   })
 
   it('takes the rest out where the vault refuses one, and says what it refused', async () => {
@@ -757,7 +757,7 @@ describe('several files removed at once', () => {
       'remove physics/Ontology.md false',
       'remove physics/Heat.pdf false',
     ])
-    expect(one.said).toStrictEqual([words.errors.missing])
+    expect(one.notices).toStrictEqual([words.errors.missing])
   })
 })
 
@@ -792,7 +792,7 @@ describe('a file filed somewhere else', () => {
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
     expect(one.done).toStrictEqual([])
-    expect(one.said).toStrictEqual([words.unanswered])
+    expect(one.notices).toStrictEqual([words.unanswered])
   })
 
   it('stays where it is where something of that name is filed there', async () => {
@@ -800,7 +800,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.said).toStrictEqual([words.occupied])
+    expect(one.notices).toStrictEqual([words.occupied])
   })
 
   it('says nothing of a note renamed, which is what a move is not', async () => {
@@ -808,7 +808,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.said).not.toContain(words.errors.occupied)
+    expect(one.notices).not.toContain(words.errors.occupied)
   })
 
   it('asks the vault for nothing where it landed where it already was', async () => {
@@ -834,7 +834,7 @@ describe('a folder made', () => {
 
     await carry(invocationOf('createFolder', front(), 'physics/heat'), one.on)
 
-    expect(one.said).toStrictEqual([words.occupied])
+    expect(one.notices).toStrictEqual([words.occupied])
   })
 
   it('asks the vault for nothing where no path was given', async () => {
@@ -923,7 +923,7 @@ describe('a command over the vault', () => {
 
     await runInvocation(invocationOf('first', front()), empty, words)
 
-    expect(one.said).toStrictEqual([words.nowhere])
+    expect(one.notices).toStrictEqual([words.nowhere])
   })
 })
 
@@ -955,7 +955,7 @@ describe('another vault under this window', () => {
     await carry(invocationOf('openVault', heat()), one.on)
 
     expect(one.done).toStrictEqual(['opens vault heat'])
-    expect(one.said).toStrictEqual([words.vaultErrors.showing])
+    expect(one.notices).toStrictEqual([words.vaultErrors.showing])
   })
 })
 
@@ -979,7 +979,7 @@ describe('a vault made', () => {
     await carry(invocationOf('newVault', front()), one.on)
 
     expect(one.done).toStrictEqual([`choose ${words.folder}`])
-    expect(one.said).toStrictEqual([])
+    expect(one.notices).toStrictEqual([])
   })
 
   it('says a folder that lies inside a vault already added', async () => {
@@ -987,7 +987,7 @@ describe('a vault made', () => {
 
     await carry(invocationOf('newVault', front()), one.on)
 
-    expect(one.said).toStrictEqual([words.vaultErrors.overlaps])
+    expect(one.notices).toStrictEqual([words.vaultErrors.overlaps])
   })
 })
 
@@ -1013,7 +1013,7 @@ describe('a vault renamed', () => {
 
     await carry(invocationOf('renameVault', front(), 'Heat'), one.on)
 
-    expect(one.said).toStrictEqual([words.vaultErrors.nameTaken])
+    expect(one.notices).toStrictEqual([words.vaultErrors.nameTaken])
   })
 })
 
@@ -1034,7 +1034,7 @@ describe('a vault taken off the list', () => {
 
     await carry(invocationOf('forgetVault', heat()), one.on)
 
-    expect(one.said).toStrictEqual([words.vaultErrors.lastVault])
+    expect(one.notices).toStrictEqual([words.vaultErrors.lastVault])
   })
 
   it('is erased where erasing was what was asked', async () => {
@@ -1050,7 +1050,7 @@ describe('a vault taken off the list', () => {
 
     await carry(invocationOf('eraseVault', heat(), 'Heat'), one.on)
 
-    expect(one.said).toStrictEqual([words.vaultErrors.noTrash])
+    expect(one.notices).toStrictEqual([words.vaultErrors.noTrash])
   })
 
   it('says the vault in front of the person, which the window stands on', async () => {
@@ -1058,7 +1058,7 @@ describe('a vault taken off the list', () => {
 
     await carry(invocationOf('forgetVault', front()), one.on)
 
-    expect(one.said).toStrictEqual([words.vaultErrors.showing])
+    expect(one.notices).toStrictEqual([words.vaultErrors.showing])
   })
 })
 
@@ -1070,7 +1070,7 @@ describe('what the list of vaults reported as error', () => {
       await carry(invocationOf('openVault', front()), one.on)
 
       expect(words.vaultErrors[err], err).not.toBe('')
-      expect(one.said, err).toStrictEqual([words.vaultErrors[err]])
+      expect(one.notices, err).toStrictEqual([words.vaultErrors[err]])
     }
   })
 })
@@ -1095,7 +1095,7 @@ describe('nothing to carry out', () => {
 
     await runInvocation(invocationOf('remove', front()), broken, words)
 
-    expect(one.said).toStrictEqual([
+    expect(one.notices).toStrictEqual([
       'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
     ])
   })

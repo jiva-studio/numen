@@ -18,7 +18,7 @@ import { useWindowTabs } from './windowTabs'
  */
 const kind = ({ isKept = false, ...over }: Partial<AnyTabKind> & { isKept?: boolean } = {}) => {
   const opened: string[] = []
-  const shut: string[] = []
+  const closedPaths: string[] = []
   const seen: string[] = []
   const one: AnyTabKind = {
     kind: 'thing',
@@ -29,7 +29,7 @@ const kind = ({ isKept = false, ...over }: Partial<AnyTabKind> & { isKept?: bool
     getTitle: (state: { title: string }) => state.title,
     pane: {},
     onClose: (state: { at: string }) => {
-      shut.push(state.at)
+      closedPaths.push(state.at)
       return !isKept
     },
     onShow: (state: { at: string }) => {
@@ -37,7 +37,7 @@ const kind = ({ isKept = false, ...over }: Partial<AnyTabKind> & { isKept?: bool
     },
     ...over,
   }
-  return { declared: () => one, one, opened, shut, seen }
+  return { declared: () => one, one, opened, closedPaths, seen }
 }
 
 /** A window told what kinds it draws, each of them made with what it is given. */
@@ -141,7 +141,7 @@ describe('a tab that closes', () => {
     const id = await window.openTabOfKind('thing', 'Note.md')
 
     expect(window.releaseTab(id)).toBe(true)
-    expect(thing.shut).toEqual(['Note.md'])
+    expect(thing.closedPaths).toEqual(['Note.md'])
     expect(window.getTab(id)).toBeNull()
   })
 
@@ -182,7 +182,7 @@ describe('a tab let go of from outside', () => {
 
     window.requestClose(id)
 
-    expect(thing.shut).toEqual(['Note.md'])
+    expect(thing.closedPaths).toEqual(['Note.md'])
     expect(window.getTab(id)).toBeNull()
     expect(onScreen(window.layout.value)).not.toContain(id)
   })
@@ -339,7 +339,7 @@ describe('the window going', () => {
 
     window.close()
 
-    expect(thing.shut).toEqual(['One.md', 'Two.md'])
+    expect(thing.closedPaths).toEqual(['One.md', 'Two.md'])
   })
 
   it('lets a kind that has its own way of going take it, and asks no more', async () => {
@@ -351,7 +351,7 @@ describe('the window going', () => {
     window.close()
 
     expect(going).toEqual(['One.md'])
-    expect(thing.shut).toEqual([])
+    expect(thing.closedPaths).toEqual([])
   })
 })
 
@@ -372,7 +372,7 @@ describe('reconciling tabs for a path', () => {
 
     window.reconcileTab('Cards.md', 'deck')
 
-    expect(noteKind.shut).toEqual(['Cards.md'])
+    expect(noteKind.closedPaths).toEqual(['Cards.md'])
     expect(window.getTab(noteTabId)).toBeNull()
   })
 
@@ -386,7 +386,7 @@ describe('reconciling tabs for a path', () => {
     const noteTabId = await window.openTabOfKind('note', 'Note.md')
     window.reconcileTab('Note.md', 'note')
 
-    expect(noteKind.shut).toEqual([])
+    expect(noteKind.closedPaths).toEqual([])
     expect(window.getTab(noteTabId)).not.toBeNull()
   })
 
@@ -406,8 +406,8 @@ describe('reconciling tabs for a path', () => {
 
     window.reconcileTab('Graph.md', 'deck')
 
-    expect(noteKind.shut).toEqual(['Graph.md'])
-    expect(plexKind.shut).toEqual([])
+    expect(noteKind.closedPaths).toEqual(['Graph.md'])
+    expect(plexKind.closedPaths).toEqual([])
     expect(window.getTab(plexTabId)).not.toBeNull()
     expect(window.getTab(noteTabId)).toBeNull()
   })
@@ -440,6 +440,6 @@ describe('reconciling tabs for a path', () => {
 
     expect(window.tabs.value).toHaveLength(1)
     expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('deck')
-    expect(noteKind.shut).toEqual(['Animals.md'])
+    expect(noteKind.closedPaths).toEqual(['Animals.md'])
   })
 })

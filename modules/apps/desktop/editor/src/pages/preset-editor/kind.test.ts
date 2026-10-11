@@ -469,17 +469,17 @@ describe('what the tab says it encountered as an error', () => {
   const errors: readonly ErrorCode[] = ['missing', 'tooLarge', 'notANote', 'unreadable']
 
   it('is a sentence of its own for each error a read answers', async () => {
-    const said: string[] = []
+    const messages: string[] = []
     for (const error of errors) {
       const { state } = await openPresetTab({}, curve, () => ({ error }))
-      said.push(state.errorMessage.value)
+      messages.push(state.errorMessage.value)
     }
-    expect(said.every((one) => one !== '')).toBe(true)
-    expect(new Set(said).size).toBe(errors.length)
+    expect(messages.every((one) => one !== '')).toBe(true)
+    expect(new Set(messages).size).toBe(errors.length)
   })
 
   it('is a sentence of its own for each error a write answers', async () => {
-    const said: string[] = []
+    const messages: string[] = []
     for (const error of errors) {
       const { state } = await openPresetTab(
         {},
@@ -490,10 +490,10 @@ describe('what the tab says it encountered as an error', () => {
       state.updateSetting('newADay', 4)
       state.flushPending()
       await flushPromises()
-      said.push(state.errorMessage.value)
+      messages.push(state.errorMessage.value)
     }
-    expect(said.every((one) => one !== '')).toBe(true)
-    expect(new Set(said).size).toBe(errors.length)
+    expect(messages.every((one) => one !== '')).toBe(true)
+    expect(new Set(messages).size).toBe(errors.length)
   })
 
   // The settings are in the tab and nowhere else once a write is refused, and
@@ -614,15 +614,15 @@ describe('what a tab still owes the file', () => {
     state.flushPending()
     await flushPromises()
 
-    let gone = false
+    let isDone = false
     const going = flush().then(() => {
-      gone = true
+      isDone = true
     })
     await flushPromises()
-    expect(gone).toBe(false)
+    expect(isDone).toBe(false)
     resolveWrite()
     await going
-    expect(gone).toBe(true)
+    expect(isDone).toBe(true)
   })
 })
 
@@ -796,7 +796,7 @@ describe('a field the goal does not steer, typed', () => {
     expect(written.at(-1)?.minutesADay).toBe(23)
   })
 
-  const SAID: Partial<Record<Field, SettingValue>> = {
+  const NEW_VALUES: Partial<Record<Field, SettingValue>> = {
     newADay: 4,
     reviewsADay: 33,
     counts: 'shows',
@@ -808,12 +808,12 @@ describe('a field the goal does not steer, typed', () => {
   it('leaves every other setting exactly as it stood, under every goal', async () => {
     for (const goal of ['minutes', 'retention'] as const) {
       for (const field of fieldsUnder(goal, DEFAULTS.learned)) {
-        const said = SAID[field]
-        if (field === steer(goal) || said === undefined) continue
+        const value = NEW_VALUES[field]
+        if (field === steer(goal) || value === undefined) continue
 
         const { state, written } = await openPresetTab({ goal, minutesADay: 23 }, createRangedCurve)
         const was = state.settings.value
-        state.updateSetting(field, said)
+        state.updateSetting(field, value)
         state.flushPending()
         await Promise.resolve()
         await Promise.resolve()

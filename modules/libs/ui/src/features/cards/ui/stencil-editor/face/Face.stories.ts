@@ -370,19 +370,19 @@ export const NothingInIt: Story = {
   args: { corpus: 'nothing in it' },
   play: async ({ canvasElement }) => {
     // An empty part says what it is for, in the middle of itself.
-    const said: string[] = []
+    const placeholders: string[] = []
     for (const pane of PANES) {
       const held = paneOf(canvasElement, pane)
       const ghost = held.querySelector<HTMLElement>('.face__ghost')
       if (!ghost) throw new Error(`nothing said in ${pane}`)
-      said.push(ghost.textContent?.trim() ?? '')
+      placeholders.push(ghost.textContent?.trim() ?? '')
 
       const box = held.getBoundingClientRect()
       const middle = ghost.getBoundingClientRect()
       expect(middle.left + middle.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
       expect(middle.top + middle.height / 2).toBeCloseTo(box.top + box.height / 2, 0)
     }
-    expect(said).toEqual(['Front', 'Preview', 'Back', 'Preview'])
+    expect(placeholders).toEqual(['Front', 'Preview', 'Back', 'Preview'])
 
     // What is written into a part takes that place, and the part then draws the
     // box alone.
