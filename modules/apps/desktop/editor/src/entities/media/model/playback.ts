@@ -31,7 +31,6 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
    */
   const frame = shallowRef<TabPlayer | null>(null)
   /** Where that player stands, and nothing before it has said. */
-  // Stryker disable next-line UnaryOperator: a frame player always writes the position when it is handed over, so the starting value is never read.
   const framed = ref(-1)
 
   /**
@@ -127,7 +126,6 @@ export function usePlayback(through: Player, plays: MediaTypeProbe, isOpen: () =
     // A moment asked for before the recording knew where its bytes are.
     if (wanted >= 0) {
       const at = wanted
-      // Stryker disable next-line ConditionalExpression: handing over a frame player consumes the moment waiting, so a frame player and a waiting moment never stand together.
       if (frame.value) {
         wanted = -1
         framed.value = at

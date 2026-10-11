@@ -73,15 +73,12 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     }
     element.preload = 'metadata'
     element.addEventListener('timeupdate', () => {
-      // Stryker disable next-line OptionalChaining: the listener is added once the element exists, so it is never null when the listener runs.
       at.value = Math.round((element?.currentTime ?? 0) * 1000)
     })
     element.addEventListener('seeked', () => {
-      // Stryker disable next-line OptionalChaining: the listener is added once the element exists, so it is never null when the listener runs.
       at.value = Math.round((element?.currentTime ?? 0) * 1000)
     })
     element.addEventListener('durationchange', () => {
-      // Stryker disable next-line OptionalChaining: the listener is added once the element exists, so it is never null when the listener runs.
       const runs = element?.duration ?? 0
       duration.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
     })
@@ -89,7 +86,6 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     element.addEventListener('pause', () => void (isPlaying.value = false))
     element.addEventListener('ended', () => void (isPlaying.value = false))
     element.addEventListener('error', () => {
-      // Stryker disable next-line OptionalChaining: the element is never null when the listener runs, and the inner chain is covered by an event with no error.
       error.value = FAILED[element?.error?.code ?? 0] ?? WORDS.unreadable
     })
     return element
@@ -120,7 +116,6 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
 
     play: (url) => {
       if (!load(url)) return
-      // Stryker disable next-line OptionalChaining: load() returned true, so the element exists.
       void element?.play().catch((thrown: unknown) => {
         isPlaying.value = false
         // A play the window itself cut short is not a failure. Anything else is
@@ -137,7 +132,6 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
       if (!load(url)) return
       const to = Math.max(0, Math.round(ms))
       at.value = to
-      // Stryker disable next-line ConditionalExpression: load() returned true, so the element exists.
       if (element) element.currentTime = to / 1000
     },
   }
