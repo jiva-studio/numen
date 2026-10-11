@@ -4,7 +4,7 @@
  * Where the grid stands is kept on its own element: a widget is told nothing
  * but what it draws.
  */
-import type { EditorState } from '@codemirror/state'
+import type { ChangeDesc, EditorState } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { listen } from './cells'
@@ -118,6 +118,27 @@ const place = (element: HTMLElement, cell: Cell | null, isWritable: boolean) => 
 /** Whether this editor takes typing at all. */
 export const isWritable = (state: EditorState) =>
   !state.readOnly && state.facet(EditorView.editable)
+
+const shiftCells = (row: Row, by: number): Row =>
+  row.map((cell) => (cell ? { ...cell, from: cell.from + by, to: cell.to + by } : null))
+
+/** The same widget, standing where the changes have carried the table. Other widgets come back as they are. */
+export const moveBlock = (widget: WidgetType, changes: ChangeDesc): WidgetType => {
+  if (!(widget instanceof Grid)) return widget
+  const table = widget.table
+  const by = changes.mapPos(table.from, 1) - table.from
+  if (by === 0) return widget
+  return new Grid(
+    {
+      ...table,
+      from: table.from + by,
+      to: table.to + by,
+      head: shiftCells(table.head, by),
+      body: table.body.map((row) => shiftCells(row, by)),
+    },
+    widget.isWritable,
+  )
+}
 
 /** The widget drawn where a table is written. */
 export const gridOf = (state: EditorState, node: SyntaxNode) =>
