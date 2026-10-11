@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
@@ -38,6 +39,7 @@ func client(t *testing.T, baseURL string) *openai.Client {
 	if err != nil {
 		t.Fatal(err)
 	}
+	c.SetClock(func(ctx context.Context, _ time.Duration) error { return ctx.Err() }, time.Now, func(d time.Duration) time.Duration { return d })
 	return c
 }
 

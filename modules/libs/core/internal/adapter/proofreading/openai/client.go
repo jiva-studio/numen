@@ -10,7 +10,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand/v2"
+	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +29,22 @@ var ErrNoKey = errors.New("no key in the configuration or the environment")
 // profile names no number.
 const inFlight = 4
 
+const (
+	// maxAttempts is how many times one page is sent before the last failure is
+	// returned.
+	maxAttempts = 4
+	// baseBackoff is the ceiling of the wait after the first failure. The
+	// ceiling doubles with each failure up to maxBackoff, and the wait is drawn
+	// at random below it.
+	baseBackoff = 500 * time.Millisecond
+	// maxBackoff bounds every wait, including one the service asks for with
+	// Retry-After.
+	maxBackoff = 30 * time.Second
+	// maxDrain is how much of a response body is read and discarded before the
+	// body is closed.
+	maxDrain = 64 << 10
+)
+
 // Client is one hosted model, asked about several pages at once.
 type Client struct {
 	service proofreading.Profile
@@ -33,6 +52,12 @@ type Client struct {
 	// corrected for different mistakes, and the caller says which.
 	instruction string
 	http        *http.Client
+	// sleep waits for a duration or until the context ends.
+	sleep func(context.Context, time.Duration) error
+	// now is the instant a Retry-After date is measured from.
+	now func() time.Time
+	// jitter picks the wait below a ceiling.
+	jitter func(ceiling time.Duration) time.Duration
 }
 
 // New builds a client from configuration. The key is never an argument: it is
@@ -52,6 +77,9 @@ func New(cfg proofreading.Profile, instruction string) (*Client, error) {
 		service:     cfg,
 		instruction: instruction,
 		http:        &http.Client{Timeout: 120 * time.Second},
+		sleep:       sleep,
+		now:         time.Now,
+		jitter:      func(ceiling time.Duration) time.Duration { return rand.N(ceiling + 1) },
 	}, nil
 }
 
@@ -144,7 +172,9 @@ type response struct {
 	} `json:"choices"`
 }
 
-// ask sends one page and returns what the service said about it.
+// ask sends one page and returns what the service said about it. A 429, a 408,
+// a 5xx or a timeout is sent again after a wait, up to maxAttempts; any other
+// failure is returned at once.
 func (c *Client) ask(ctx context.Context, page proofread.Batch) (string, error) {
 	body, err := json.Marshal(request{
 		Model:       c.service.Name,
@@ -158,34 +188,110 @@ func (c *Client) ask(ctx context.Context, page proofread.Batch) (string, error) 
 		return "", err
 	}
 
+	for attempt := 1; ; attempt++ {
+		reply, again, err := c.send(ctx, page, body)
+		if err == nil {
+			return reply, nil
+		}
+		if !again.ok || attempt == maxAttempts || ctx.Err() != nil {
+			return "", err
+		}
+		if err := c.sleep(ctx, c.backoff(attempt, again.after)); err != nil {
+			return "", fmt.Errorf("page %d: %w", page.Number, err)
+		}
+	}
+}
+
+// retry says whether a failed request may be sent again, and how long the
+// service asked to wait first.
+type retry struct {
+	ok    bool
+	after time.Duration
+}
+
+// send makes one request. The response body is drained and closed on every
+// path.
+func (c *Client) send(ctx context.Context, page proofread.Batch, body []byte) (string, retry, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		strings.TrimSuffix(c.service.BaseURL, "/")+"/chat/completions", bytes.NewReader(body))
 	if err != nil {
-		return "", err
+		return "", retry{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.service.Key())
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("page %d: %w", page.Number, err)
+		var netErr net.Error
+		timedOut := errors.As(err, &netErr) && netErr.Timeout() && ctx.Err() == nil
+		return "", retry{ok: timedOut}, fmt.Errorf("page %d: %w", page.Number, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxDrain))
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return "", fmt.Errorf("page %d: %d %s: %s", page.Number,
-			resp.StatusCode, http.StatusText(resp.StatusCode), c.detail(body))
+		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		again := retry{ok: isTransient(resp.StatusCode), after: c.parseRetryAfter(resp.Header.Get("Retry-After"))}
+		return "", again, fmt.Errorf("page %d: %d %s: %s", page.Number,
+			resp.StatusCode, http.StatusText(resp.StatusCode), c.detail(detail))
 	}
 
 	var parsed response
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return "", fmt.Errorf("page %d: %w", page.Number, err)
+		return "", retry{}, fmt.Errorf("page %d: %w", page.Number, err)
 	}
 	if len(parsed.Choices) == 0 {
-		return "", nil
+		return "", retry{}, nil
 	}
-	return strings.TrimSpace(parsed.Choices[0].Message.Content), nil
+	return strings.TrimSpace(parsed.Choices[0].Message.Content), retry{}, nil
+}
+
+// isTransient is whether a status is one the service recovers from.
+func isTransient(status int) bool {
+	return status == http.StatusRequestTimeout ||
+		status == http.StatusTooManyRequests ||
+		status >= http.StatusInternalServerError
+}
+
+// parseRetryAfter reads a Retry-After value, in seconds or as an HTTP date,
+// into a wait. A value that is absent or unreadable is zero.
+func (c *Client) parseRetryAfter(value string) time.Duration {
+	value = strings.TrimSpace(value)
+	if seconds, err := strconv.Atoi(value); err == nil {
+		return max(0, time.Duration(seconds)*time.Second)
+	}
+	if at, err := http.ParseTime(value); err == nil {
+		return max(0, at.Sub(c.now()))
+	}
+	return 0
+}
+
+// backoff is the wait after the given failed attempt. A wait the service asked
+// for is used up to maxBackoff; otherwise it is drawn below a ceiling that
+// doubles with each failure.
+func (c *Client) backoff(attempt int, asked time.Duration) time.Duration {
+	if asked > 0 {
+		return min(asked, maxBackoff)
+	}
+	ceiling := baseBackoff
+	for i := 1; i < attempt && ceiling < maxBackoff; i++ {
+		ceiling *= 2
+	}
+	return c.jitter(min(ceiling, maxBackoff))
+}
+
+// sleep waits for d, or returns the context's error as soon as it ends.
+func sleep(ctx context.Context, d time.Duration) error {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // detail is a short piece of what the service said, with the key struck out of
