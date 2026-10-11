@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody } from './issue.mjs'
-import { getRunName, renderVitestConfig } from './mutate.mjs'
+import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
 import { patchSource } from './patch.mjs'
 import { listShards } from './shards.mjs'
 import { getOriginal, getSurvivors, readMutants, summarize } from './report.mjs'
@@ -321,4 +321,31 @@ test('the body carries how many survived, for the next run to compare', () => {
   assert.equal(readCount(body), 2)
   assert.match(body, /Survivors: 2 \(5 on the run before\), on 1 lines/)
   assert.equal(readCount('no marker'), null)
+})
+
+/* ---------------------------------- File ---------------------------------- */
+
+test('a file is mutated with the deepest target of its kind that holds it', () => {
+  const targets = [
+    { name: 'apps-desktop', kind: 'go', at: 'modules/apps/desktop' },
+    { name: 'apps-desktop-editor', kind: 'ts', at: 'modules/apps/desktop/editor' },
+    { name: 'apps-mobile-go', kind: 'go', at: 'modules/apps/mobile' },
+    { name: 'apps-mobile-ts', kind: 'ts', at: 'modules/apps/mobile' },
+  ]
+  assert.equal(
+    findTarget(targets, 'modules/apps/desktop/editor/src/a.ts').name,
+    'apps-desktop-editor',
+  )
+  assert.equal(findTarget(targets, 'modules/apps/desktop/internal/a.go').name, 'apps-desktop')
+  assert.equal(findTarget(targets, 'modules/apps/mobile/bind/a.go').name, 'apps-mobile-go')
+  assert.equal(findTarget(targets, 'modules/apps/mobile/src/a.ts').name, 'apps-mobile-ts')
+  assert.throws(() => findTarget(targets, 'modules/libs/wire/a.ts'))
+})
+
+test('the mutants a file run prints are the unnoticed ones, in line order', () => {
+  const one = (line, status) => ({ ...survivor('aaaaaa1111'), line, status })
+  assert.deepEqual(formatSurvivors([one(9, 'Survived'), one(3, 'Killed'), one(4, 'NoCoverage')]), [
+    'modules/libs/ui/src/lib/span.ts:4 not covered EqualityOperator: a > b → a >= b',
+    'modules/libs/ui/src/lib/span.ts:9 survived EqualityOperator: a > b → a >= b',
+  ])
 })

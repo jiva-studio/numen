@@ -42,6 +42,14 @@ A survivor is dealt with in one of two ways:
 
 The key holds the file, the mutator, the replaced text and the replacement, so it survives edits elsewhere in the file.
 
+## Checking one file
+
+```bash
+node modules/tools/mutation/mutate.mjs --file modules/apps/desktop/flashcards/src/app/usePanels.ts
+```
+
+mutates one source file with the target that holds it, uses no cache, and prints each mutant its tests do not notice. It is the check after writing tests against the survivors an issue lists.
+
 ## Running a shard by hand
 
 ```bash
