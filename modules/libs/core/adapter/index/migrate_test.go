@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,7 @@ func TestEveryMigrationIsNamedAndOrdered(t *testing.T) {
 }
 
 func TestVersionOfRejectsUnnumberedFiles(t *testing.T) {
-	for _, name := range []string{"initial.sql", "_initial.sql", "abc_initial.sql", "0000_zero.sql"} {
+	for _, name := range []string{"initial.sql", "_initial.sql", "abc_initial.sql", "0000_zero.sql", "0007"} {
 		if _, err := versionOf(name); err == nil {
 			t.Errorf("%q was accepted", name)
 		}
@@ -325,13 +326,17 @@ func TestPragmaUserVersionRollsBackWithItsTransaction(t *testing.T) {
 	}
 }
 
-// breaksOn is the text a statement must contain for the breaking driver to
-// fail it. A test that uses the breaking driver sets this and clears it when
-// done, since the driver is registered once for the life of the process.
-var breaksOn atomic.Pointer[string]
+// breaksOn says which statements the breaking driver fails. A test that uses
+// the breaking driver sets it through breakWhere, since the driver is registered
+// once for the life of the process.
+var breaksOn atomic.Pointer[func(query string) bool]
 
-// breakingDriver registers a driver that fails the one statement whose text
-// contains breaksOn's value and runs every other statement unchanged.
+// errBroken is what every statement the breaking driver fails answers with.
+var errBroken = errors.New("broken for the test")
+
+// breakingDriver registers a driver that fails the statements breaksOn names and
+// runs every other statement unchanged. A transaction's BEGIN is the statement
+// "BEGIN".
 var breakingDriver = sync.OnceValue(func() error {
 	base, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
@@ -341,6 +346,40 @@ var breakingDriver = sync.OnceValue(func() error {
 	sql.Register("sqlite-breaking", breaking{base.Driver()})
 	return nil
 })
+
+// breakWhere fails, until the test ends, every statement the predicate holds for.
+func breakWhere(t *testing.T, breaks func(query string) bool) {
+	t.Helper()
+	breaksOn.Store(&breaks)
+	t.Cleanup(func() { breaksOn.Store(nil) })
+}
+
+// breakOn fails, until the test ends, every statement containing the text given.
+func breakOn(t *testing.T, text string) {
+	t.Helper()
+	breakWhere(t, func(query string) bool { return strings.Contains(query, text) })
+}
+
+// openBreaking is the index file at path through the breaking driver, opened the
+// way the write pool is.
+func openBreaking(t *testing.T, path string) *sql.DB {
+	t.Helper()
+	if err := breakingDriver(); err != nil {
+		t.Fatal(err)
+	}
+	db, err := sql.Open("sqlite-breaking", writeDSN(path, settings{synchronous: shipped}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.SetMaxOpenConns(1)
+	t.Cleanup(func() { db.Close() })
+	return db
+}
+
+func isBroken(query string) bool {
+	breaks := breaksOn.Load()
+	return breaks != nil && (*breaks)(query)
+}
 
 type breaking struct{ driver.Driver }
 
@@ -374,33 +413,34 @@ func (c breakingConn) PrepareContext(ctx context.Context, query string) (driver.
 	return breakingStmt{s, query}, nil
 }
 
+// BeginTx is where database/sql starts every transaction on this driver.
+func (c breakingConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+	if isBroken("BEGIN") {
+		return nil, fmt.Errorf("%w: BEGIN", errBroken)
+	}
+	return c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+}
+
 type breakingStmt struct {
 	driver.Stmt
 	query string
 }
 
-func (s breakingStmt) isBroken() bool {
-	on := breaksOn.Load()
-	return on != nil && strings.Contains(s.query, *on)
+// ExecContext and QueryContext are where every statement in this package runs,
+// so they are the one place that needs to see the fault. modernc.org/sqlite
+// implements both on every statement.
+func (s breakingStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
+	if isBroken(s.query) {
+		return nil, fmt.Errorf("%w: %s", errBroken, strings.TrimSpace(s.query))
+	}
+	return s.Stmt.(driver.StmtExecContext).ExecContext(ctx, args)
 }
 
-// ExecContext is where every write in this package runs its statements, so
-// this is the one place that needs to see the fault. driver.Stmt keeps its
-// own Exec, reached only by a driver that lacks StmtExecContext, which
-// modernc.org/sqlite is not.
-func (s breakingStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
-	if s.isBroken() {
-		return nil, fmt.Errorf("broken for the test: %s", strings.TrimSpace(s.query))
+func (s breakingStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
+	if isBroken(s.query) {
+		return nil, fmt.Errorf("%w: %s", errBroken, strings.TrimSpace(s.query))
 	}
-	execs, ok := s.Stmt.(driver.StmtExecContext)
-	if !ok {
-		values := make([]driver.Value, 0, len(args))
-		for _, a := range args {
-			values = append(values, a.Value)
-		}
-		return s.Stmt.Exec(values)
-	}
-	return execs.ExecContext(ctx, args)
+	return s.Stmt.(driver.StmtQueryContext).QueryContext(ctx, args)
 }
 
 // remember's rename runs as one transaction: a statement that fails partway
@@ -426,22 +466,11 @@ func TestRememberLeavesTheOriginalTableWhenRenamingFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := breakingDriver(); err != nil {
-		t.Fatal(err)
-	}
-	on := "RENAME TO"
-	breaksOn.Store(&on)
-	t.Cleanup(func() { breaksOn.Store(nil) })
+	db := openBreaking(t, path)
+	breakOn(t, "RENAME TO")
 
-	db, err := sql.Open("sqlite-breaking", writeDSN(path, settings{synchronous: shipped}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	if err := remember(ctx, db); err == nil {
-		t.Fatal("remember reported success over a rename it could not make")
+	if err := remember(ctx, db); !errors.Is(err, errBroken) {
+		t.Fatalf("remember answered %v over a rename it could not make", err)
 	}
 
 	back, err := sql.Open("sqlite", dsn(path, settings{synchronous: shipped}))

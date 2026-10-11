@@ -1,8 +1,10 @@
 package index
 
 import (
+	"database/sql"
 	"encoding/hex"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testonly"
 )
 
 // walked is when a walk said every file these tests put in last changed.
@@ -213,5 +216,88 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
 		t.Fatalf("a %d-dimension vector could not be written: %v", dims, err)
+	}
+}
+
+// An index opened to skip the flush does not wait for the disk on any
+// connection, and keeps everything else it is opened with.
+func TestAnIndexOpenedToSkipTheFlushDoesNotWaitForTheDisk(t *testing.T) {
+	ctx := t.Context()
+	db, err := Open(ctx, filepath.Join(t.TempDir(), "index.db"), SkipFlush(testonly.NewGrant()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	for name, pool := range map[string]*sql.DB{"write": db.write, "read": db.read} {
+		var synchronous, foreignKeys int
+		if err := pool.QueryRowContext(ctx, "PRAGMA synchronous").Scan(&synchronous); err != nil {
+			t.Fatal(err)
+		}
+		if err := pool.QueryRowContext(ctx, "PRAGMA foreign_keys").Scan(&foreignKeys); err != nil {
+			t.Fatal(err)
+		}
+		// OFF is 0.
+		if synchronous != 0 {
+			t.Errorf("the %s pool has synchronous = %d, want 0 (OFF)", name, synchronous)
+		}
+		if foreignKeys != 1 {
+			t.Errorf("the %s pool has foreign_keys = %d, want 1", name, foreignKeys)
+		}
+	}
+}
+
+// The write pool holds one connection: SQLite has one writer.
+func TestTheWritePoolHoldsOneConnection(t *testing.T) {
+	db := openDB(t)
+	if held := db.write.Stats().MaxOpenConnections; held != 1 {
+		t.Errorf("the write pool holds up to %d connections, want 1", held)
+	}
+}
+
+// The read pool admits a reader for every core, and at least four.
+func TestTheReadPoolAdmitsAReaderForEveryCore(t *testing.T) {
+	db := openDB(t)
+	held := db.read.Stats().MaxOpenConnections
+	if held < runtime.NumCPU() || held < 4 {
+		t.Errorf("the read pool holds up to %d connections over %d cores", held, runtime.NumCPU())
+	}
+}
+
+// Readers that finish leave a connection open for half the cores, and for at
+// least two.
+func TestFinishedReadersLeaveHalfTheCoresConnected(t *testing.T) {
+	ctx := t.Context()
+	db := openDB(t)
+
+	held := db.read.Stats().MaxOpenConnections
+	conns := make([]*sql.Conn, 0, held)
+	for range held {
+		conn, err := db.read.Conn(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		conns = append(conns, conn)
+	}
+	for _, conn := range conns {
+		if err := conn.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	want := max(2, runtime.NumCPU()/2)
+	if idle := db.read.Stats().Idle; idle != want {
+		t.Errorf("%d of %d readers stayed connected, want %d", idle, held, want)
+	}
+}
+
+// A path carrying a query of its own keeps it, and the pragmas join it.
+func TestDSNJoinsAQueryThePathAlreadyCarries(t *testing.T) {
+	got := dsn("file:index.db?mode=rwc", settings{synchronous: shipped})
+	if !strings.HasPrefix(got, "file:index.db?mode=rwc&") || strings.Count(got, "?") != 1 {
+		t.Errorf("dsn %q does not join the query the path carries", got)
+	}
+	if !strings.Contains(got, "foreign_keys%281%29") {
+		t.Errorf("dsn %q is missing the pragmas", got)
 	}
 }
