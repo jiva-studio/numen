@@ -208,7 +208,7 @@ func peakHeap(run func()) int {
 // A recording is segmented from an mp3 as it is from any other container, and
 // the context is honoured on the way.
 func TestAnMP3RecordingHonoursItsContext(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
 	sound, rate, err := samples(encodeMP3(40, 4))
