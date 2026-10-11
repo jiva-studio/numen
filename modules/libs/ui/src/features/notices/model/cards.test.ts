@@ -156,7 +156,7 @@ describe('the clock behind the corner', () => {
   })
 
   it('does not run for a card that is not counting', () => {
-    stand([asked('k'), { ...asked('j'), done: undefined }])
+    stand([asked('k'), asked('j')])
 
     expect(vi.getTimerCount()).toBe(0)
   })
