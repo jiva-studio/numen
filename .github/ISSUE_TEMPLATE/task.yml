@@ -16,10 +16,11 @@ body:
     attributes:
       label: Follows from
       description: |
-        Which accepted decision this implements. Leave empty only if the task
-        genuinely follows from no ADR — that is usually a sign the decision has
-        not been made yet.
-      placeholder: "the accepted record this task implements"
+        Which existing decision this implements — a rule in AGENTS.md, a file
+        under .agents/rules/, or a spec in docs/. Leave empty only if the task
+        genuinely follows from nothing written down — that is usually a sign
+        the decision has not been made yet.
+      placeholder: "the document and section this task implements"
 
   - type: dropdown
     id: priority

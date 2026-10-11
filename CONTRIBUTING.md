@@ -18,7 +18,7 @@ The install lives in `modules/` rather than at the repository root, deliberately
 
 ## Issue labels
 
-- **Type**: `task`, `bug`, `feature`, `adr`.
+- **Type**: `task`, `bug`, `feature`.
 - **Area**: `desktop`, `mobile`, `core`, `domain`, `protocol`, `ui`, `wire`, `docs`, `ci`, `repo`.
 
 ## Commit messages
@@ -37,11 +37,10 @@ Merges are squash-only: the PR title becomes the subject of the single commit th
 
 - **subject** — imperative, no trailing dot.
 - **types** — `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
-- **scopes** — follow the module layout: `desktop`, `mobile`, `landing`, `core`, `domain`, `protocol`, `ui`, `wire`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`.
+- **scopes** — follow the module layout: `desktop`, `mobile`, `landing`, `core`, `domain`, `protocol`, `ui`, `wire`, `docs`, `vault`, `ci`, `deps`, `repo`.
 - **breaking change** — `!` after the scope, or a `BREAKING CHANGE:` footer.
 
 ```
-docs(adr): add a record on two levels of addressing
 feat(domain): resolve wikilinks by name with priority rules
 fix(protocol): keep note:// links untouched on rename
 feat(domain)!: drop path-based note identity
@@ -59,9 +58,9 @@ Run-On: macos
 
 The values are `windows`, `macos`, the two of them separated by a comma, or `all`. What Windows and macOS say is reported and does not hold the pull request.
 
-## Architecture decisions
+## Architecture
 
-Decisions and technical constraints live in [`docs/adr/`](docs/adr/README.md), which documents the rationale, architectural boundaries, and design trade-offs. Before proposing significant architectural changes, review existing ADRs or propose a new one.
+Architecture conventions and technical constraints live in [`AGENTS.md`](AGENTS.md) and [`.agents/rules/`](.agents/rules/). Before proposing a significant architectural change, read those and update them in the same pull request that changes what they describe.
 
 ## Development workflow
 

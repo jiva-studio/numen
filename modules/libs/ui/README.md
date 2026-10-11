@@ -2,7 +2,7 @@
 
 Interface components shared by the desktop and mobile clients.
 
-**The rules are [How an interface component is built](../../../docs/adr/0023-how-an-interface-component-is-built.md).** What follows is where they live in this tree.
+**The rules are in [`coding-style-frontend.md`](../../../.agents/rules/coding-style-frontend.md).** What follows is where they live in this tree.
 
 ## The one rule
 
@@ -102,6 +102,6 @@ Both end at the same place: `tokens.css` holds every value, `theme.css` defines 
 
 Every node offers a handle when a pointer is over it. Dragging from it and letting go on empty space asks for a new node; letting go on another node asks for a link between the two. Which seat either lands in comes from the direction the gesture went, read off the arrangement's own `direction` — so inverting the plex inverts the gesture with it. Escape gives up; a click without travel asks for one more child, which is what anyone reaches for.
 
-**The seat is decided when the gesture ends, not when it begins.** TheBrain does the opposite: it has a gate per seat, and which one you grab settles it. Deciding at the end means the reader cannot know what they will get, which is why the gesture draws the seat it would land in as it goes. Recorded here rather than in an ADR because it is a decision about an interaction, not about how components are built.
+**The seat is decided when the gesture ends, not when it begins.** TheBrain does the opposite: it has a gate per seat, and which one you grab settles it. Deciding at the end means the reader cannot know what they will get, which is why the gesture draws the seat it would land in as it goes.
 
 The plex reports and does not act: `create` and `link` carry identifiers and a seat, and what a parent *means* — what gets written, whether it is allowed — belongs to whoever answers. A sibling is another of the parent's children rather than something anyone makes directly, so it is left out of `creatable` by default; that default is the caller's to change.

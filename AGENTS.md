@@ -5,7 +5,6 @@ Gemini, or any other) must follow them.
 
 ## Canonical guides
 
-- **Architecture decisions**: [`docs/adr/README.md`](../source/numen/docs/adr/README.md) — the rules live here, not in this file's memory.
 - **Architecture guidelines**: [`.agents/rules/architecture.md`](.agents/rules/architecture.md)
 - **Backend coding style (Go)**: [`.agents/rules/coding-style-backend.md`](.agents/rules/coding-style-backend.md)
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
@@ -26,7 +25,7 @@ flowchart LR
     Stage3 --> Report["Unified report"]
 ```
 
-1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against the ADRs. A failing gate stops the pipeline.
+1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against `AGENTS.md` and the rules in `.agents/rules/`. A failing gate stops the pipeline.
 2. **Semantic logic audit** — [`stages/2-bughunter.md`](.agents/skills/review/stages/2-bughunter.md): the blast radius, and every defect proven with *Given → When → Then*.
 3. **Dynamic stress verification** — [`stages/3-adversary.md`](.agents/skills/review/stages/3-adversary.md): a test that forces the failure, and the mutation check on the change's own tests.
 4. **Synthesis** — the Unified Review Report exactly as templated in the skill.
@@ -53,8 +52,9 @@ Rewrite on sight of any of these:
 - benchmark numbers, or any comparison with a previous implementation
   (measurements live only in `docs/performance.md`)
 
-Two sentences is usually the ceiling. The same holds in ADRs: a passage that
-would read as true with nothing decided is narration.
+Two sentences is usually the ceiling. The same holds anywhere a rule is
+written down: a passage that would read as true with nothing decided is
+narration.
 
 ---
 
@@ -258,15 +258,15 @@ Specific term rules:
 | `make` (frontend) | `create` | factory functions in TS/Vue |
 
 Three words this table used to call wrong are the glossary's own, and renaming
-them breaks ADR-0026 rather than serving it:
+them breaks a settled distinction rather than serving it:
 
 - **`stretch`** is a run of a source's text where it stands, in bytes. **`span`**
   is that same run as a client counts it, `from` and `to` in UTF-16 code units.
-  Both are correct, on their own side of the boundary, and ADR-0026 lists the
-  pair as a rename the boundary requires. A third name for either is the defect.
+  Both are correct, on their own side of the boundary, and the pair is a rename
+  the boundary requires. A third name for either is the defect.
 - **`address`** is scheme and value, the only thing that says where a link goes.
   **`link`** is the relationship as written in a file. Collapsing the two makes
-  the homonym ADR-0026 forbids.
+  a homonym of the two concepts.
 - **`overtaken`** is the glossary's word for a tab whose file no longer holds
   the prose the tab read. `stale` appears nowhere in the glossary.
 

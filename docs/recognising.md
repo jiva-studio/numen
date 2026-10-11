@@ -1,6 +1,6 @@
 # How a document's pages are read
 
-What a model reads off the pages of a scanned document, where it is kept, and what is done to it afterwards. The run is a recognition and what it produces is a reading, written into the vault's own folder, under `.numen/ocr/`, and the source is cut from it (see [A book's text is a cache or an artifact](adr/0015-a-books-text-is-a-cache-or-an-artifact.md)).
+What a model reads off the pages of a scanned document, where it is kept, and what is done to it afterwards. The run is a recognition and what it produces is a reading, written into the vault's own folder, under `.numen/ocr/`, and the source is cut from it.
 
 ## The files of one reading
 

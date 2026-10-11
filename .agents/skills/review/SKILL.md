@@ -5,7 +5,7 @@ description: Executes the complete, standardized 3-stage code review pipeline (1
 
 # Unified 3-Stage Code Review Pipeline (`/review`)
 
-This skill orchestrates the sequential review pipeline for the numen repository. It locates the changed files, audits them against the decisions in `docs/adr/`, hunts for semantic defects across the blast radius, and proves or disproves each hypothesis with a test that runs.
+This skill orchestrates the sequential review pipeline for the numen repository. It locates the changed files, audits them against `AGENTS.md` and the rules in `.agents/rules/`, hunts for semantic defects across the blast radius, and proves or disproves each hypothesis with a test that runs.
 
 One pipeline covers both sides of the product: the Go core and its adapters, and the Vue windows and the component library beneath them. The stage guides say what differs.
 
@@ -22,11 +22,11 @@ flowchart LR
 
 ## Where the rules are
 
-**The architecture is written down, not remembered.** Read `docs/adr/README.md`, then only the ADRs that relate to the paths in the diff. If a rule matters, it is in an ADR; if it is not in an ADR it is not yet a rule. When a change appears to contradict a decision, quote the ADR.
+**The architecture is written down, not remembered.** `AGENTS.md` at the root and in the touched module carries the naming and placement conventions, and the distilled form of the rest lives in [`../../rules/`](../../rules/). If a rule matters, it is written in one of them; if it is not written there it is not yet a rule. When a change appears to contradict one, quote it.
 
-If a change is right and the ADR is wrong, say so. The finding is then "this contradicts ADR-NNNN, and the ADR looks outdated" — not silence.
+If a change is right and the rule is wrong, say so. The finding is then "this contradicts `<file>`, and the rule looks outdated" — not silence.
 
-`AGENTS.md` at the root and in the touched module carries the naming and placement conventions. They bind as the ADRs do. The distilled form lives in [`../../rules/`](../../rules/):
+The distilled rules:
 
 - [`rules/architecture.md`](../../rules/architecture.md) — the layout, the dependency arrows, determinism, one name per concept.
 - [`rules/coding-style-backend.md`](../../rules/coding-style-backend.md) — Go style, idioms, and naming.
@@ -117,7 +117,7 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 | **vue-tsc typecheck** | `PASS / FAIL / N/A` | <details or '0 errors'> |
 | **Unit tests** (`vitest`) | `PASS / FAIL / N/A` | <details or 'X passed'> |
 | **Story tests** (chromium / webkit) | `PASS / FAIL / N/A` | <both engines, or which one is missing> |
-| **Architecture** (ADRs) | `PASS / FAIL` | <ADR numbers honoured or contradicted> |
+| **Architecture** (`AGENTS.md` / rules) | `PASS / FAIL` | <rule honoured or contradicted, by file and section> |
 | **Naming & placement** (`AGENTS.md`) | `PASS / FAIL` | <details or 'clean'> |
 
 *Gatekeeper log:*
@@ -139,7 +139,7 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
   - **When**: <triggering action or event sequence>
   - **Then**: <failure, corrupted state, or crash>
 - **Root cause**: <what is actually wrong>
-- **Decision it contradicts**: <ADR-NNNN, or the Go / Vue rule, or none>
+- **Decision it contradicts**: <the `AGENTS.md` / rules statement, or none>
 - **Direction**: <a direction, not a patch>
 
 <!-- IF NO DEFECTS FOUND: output ONLY this line: -->
