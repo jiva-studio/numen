@@ -30,7 +30,7 @@ func (c Config) PrepareRecogniser(ctx context.Context) error {
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Recognising instead.
 func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, closer func() error, why error) {
-	models, err := recognition.Open(ctx, c.Recognition)
+	models, err := recognition.Open(ctx, c.getRecognition())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,7 +67,7 @@ func (c Config) OpenRecognitionWorker(
 			Open: func(
 				ctx context.Context, tell func(what string, done, total int64),
 			) (port.Recogniser, func() error, error) {
-				cfg := c.Recognition
+				cfg := c.getRecognition()
 				cfg.Progress = tell
 				models, err := recognition.Open(ctx, cfg)
 				if err != nil {
@@ -80,4 +80,15 @@ func (c Config) OpenRecognitionWorker(
 		},
 		Proofreading: c.getProofreading(c.ScanProofreading),
 	})
+}
+
+// getRecognition is the recognition settings with the thread count and the
+// number of sessions the performance profile resolves to.
+func (c Config) getRecognition() recognition.Config {
+	cfg := c.Recognition
+	cfg.Compute = recognition.Compute{
+		Threads: c.ResolvedCompute.OcrThreads,
+		Jobs:    c.ResolvedCompute.OcrSessions,
+	}
+	return cfg
 }

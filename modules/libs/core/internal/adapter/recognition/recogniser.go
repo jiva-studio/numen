@@ -48,7 +48,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		return nil, err
 	}
 	options, _, err := onnxruntime.NewSessionOptions(opened.engine, onnxruntime.SessionSettings{
-		Threads: cfg.Recognise.threads(),
+		Threads: cfg.threads(),
 	})
 	if err != nil {
 		return nil, err
@@ -76,8 +76,8 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		DetOutsideExpandPix: cfg.Detect.expand(),
 		HeatmapThreshold:    cfg.Detect.minimum(),
 		RecHeight:           cfg.Recognise.height(),
-		NumThreads:          cfg.Recognise.threads(),
-		ThreadCount:         cfg.Recognise.jobs(),
+		NumThreads:          cfg.threads(),
+		ThreadCount:         cfg.jobs(),
 	})
 	if err != nil {
 		layout.Close()

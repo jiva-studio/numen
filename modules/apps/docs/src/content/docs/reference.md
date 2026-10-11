@@ -102,8 +102,8 @@ How a vault is made searchable.
 | `recognition.recognise.classes` | a number | how many characters the model knows and two more. |
 | `recognition.recognise.dpi` | a number | what a page is rendered at. |
 | `recognition.recognise.height` | a number | what a line is scaled to before it is read. |
-| `recognition.recognise.jobs` | a number | how many jobs the recogniser runs at once. |
-| `recognition.recognise.threads` | a number | how many threads one model may use. Zero takes four. |
+| `recognition.recognise.jobs` | a number | how many recognition sessions run at once. Zero takes the performance profile. |
+| `recognition.recognise.threads` | a number | how many threads one model may use. Zero takes the performance profile. |
 | `recognition.regions` |  | says what the parts of a page are for. A part the model names that `body` does not carry is not read. |
 | `recognition.regions.body` | a list of words | carry what the document says. |
 | `recognition.regions.head` | a list of words | open a part of the document, outermost first: where a name stands in the list is how deep the part it opens sits. |
