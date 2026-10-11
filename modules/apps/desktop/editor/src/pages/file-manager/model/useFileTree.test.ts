@@ -467,3 +467,171 @@ describe('the refresh of every open folder', () => {
     expect(list.errorMessage.value).not.toBe('')
   })
 })
+
+describe('a tree before anything is asked of it', () => {
+  it('holds nothing chosen, nothing said, and the root open', () => {
+    const { core } = vault()
+    const list = useFileTree(core)
+
+    expect(list.selectedPaths.value).toStrictEqual([])
+    expect(list.errorMessage.value).toBe('')
+    expect(list.openRows.value).toStrictEqual([ROOT])
+    expect(list.isFolderOpen(ROOT)).toBe(true)
+  })
+
+  it('reads the root when every open folder is refreshed', async () => {
+    const { core, asked } = vault()
+    const list = useFileTree(core)
+
+    await list.refresh()
+
+    expect(asked).toStrictEqual([ROOT])
+  })
+})
+
+describe('a tab that has closed, asked for more', () => {
+  it('leaves only the root open', async () => {
+    const { core } = vault()
+    const list = useFileTree(core)
+    await list.openFolder('physics')
+
+    list.close()
+
+    expect(list.openRows.value).toStrictEqual([ROOT])
+    expect(list.isFolderOpen(ROOT)).toBe(true)
+  })
+
+  it('opens no folder and reads none', async () => {
+    const { core, asked } = vault()
+    const list = useFileTree(core)
+    list.close()
+
+    await list.openFolder('physics')
+
+    expect(list.isFolderOpen('physics')).toBe(false)
+    expect(asked).toStrictEqual([])
+  })
+
+  it('chooses no path when it closed while the folders above it were opening', async () => {
+    const folders: Record<string, readonly Entry[]> = {
+      [ROOT]: [folder('physics')],
+      physics: [file('physics/Entropy.md')],
+    }
+    const holder: { list?: ReturnType<typeof useFileTree> } = {}
+    const list = useFileTree({
+      list: async (at: string) => {
+        holder.list?.close()
+        return folders[at] ?? []
+      },
+    })
+    holder.list = list
+
+    await list.revealPath('physics/Entropy.md')
+
+    expect(list.selectedPaths.value).toStrictEqual([])
+  })
+})
+
+describe('the root folder closed', () => {
+  it('stays open', async () => {
+    const { core } = vault()
+    const list = useFileTree(core)
+
+    list.closeFolder(ROOT)
+
+    expect(list.isFolderOpen(ROOT)).toBe(true)
+    expect(list.openRows.value).toStrictEqual([ROOT])
+  })
+})
+
+describe('a folder toggled', () => {
+  it('opens where it was shut, and reads it', async () => {
+    const { core, asked } = vault()
+    const list = useFileTree(core)
+
+    list.toggleFolder('physics')
+    await Promise.resolve()
+
+    expect(list.isFolderOpen('physics')).toBe(true)
+    expect(asked).toContain('physics')
+  })
+
+  it('shuts where it was open', async () => {
+    const { core } = vault()
+    const list = useFileTree(core)
+    await list.openFolder('physics')
+
+    list.toggleFolder('physics')
+
+    expect(list.isFolderOpen('physics')).toBe(false)
+  })
+})
+
+describe('a folder that could not be read, then read', () => {
+  it('stops being said in the tab', async () => {
+    let fails = true
+    const list = useFileTree({
+      list: async () => {
+        if (fails) throw new Error('down')
+        return []
+      },
+    })
+    await list.openFolder(ROOT)
+    expect(list.errorMessage.value).not.toBe('')
+
+    fails = false
+    await list.refresh()
+
+    expect(list.errorMessage.value).toBe('')
+  })
+})
+
+describe('a listing that changes in one field of one entry', () => {
+  const first = file('a.md')
+  const second = file('b.md')
+  const changes: readonly [string, Partial<Entry>][] = [
+    ['path', { path: 'c.md' }],
+    ['name', { name: 'B' }],
+    ['isFolder', { isFolder: true }],
+    ['kind', { kind: 'book' }],
+    ['type', { type: 'deck' }],
+  ]
+
+  it.each(changes)('is drawn again where the %s changed', async (_field, over) => {
+    let listing: readonly Entry[] = [first, second]
+    const list = useFileTree({ list: async () => listing })
+    await list.openFolder(ROOT)
+    const changed = { ...second, ...over }
+    listing = [first, changed]
+
+    await list.refresh()
+
+    expect(list.getEntriesInFolder(ROOT)).toStrictEqual([first, changed])
+  })
+})
+
+describe('the folder a change is drawn in', () => {
+  it('is an open folder the listing above does not name', async () => {
+    const { core, asked } = vault()
+    const list = useFileTree(core)
+    await list.openFolder(ROOT)
+    await list.openFolder('ghost')
+    asked.length = 0
+
+    await list.refreshChanged(['ghost/Note.md'])
+
+    expect(asked).toStrictEqual(['ghost'])
+  })
+
+  it('leaves the chosen rows as they were where nothing was renamed', async () => {
+    const { core } = vault()
+    const list = useFileTree(core)
+    await list.openFolder(ROOT)
+    list.selectPaths(['Cover.png'])
+    const chosen = list.selectedPaths.value
+
+    await list.refreshChanged(['Cover.png'])
+
+    expect(list.selectedPaths.value).toBe(chosen)
+  })
+})
