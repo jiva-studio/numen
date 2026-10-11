@@ -12,7 +12,9 @@ export const AHEAD = 30
 
 /** Whether the value is a valid load record with daily numeric shares. */
 export const isLoad = (value: SettingValue): value is Load =>
-  typeof value === 'object' && Object.values(value).every((share) => typeof share === 'number')
+  value !== null &&
+  typeof value === 'object' &&
+  Object.values(value).every((share) => typeof share === 'number')
 
 /** Clamps every day of the week held inside load to within bounds. */
 export const clampShares = (load: Load, within: Bounds | undefined): Load => {
