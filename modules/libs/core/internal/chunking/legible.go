@@ -170,7 +170,18 @@ func isAllowedInside(r rune) bool {
 		return true
 	case r == '\'', r == '’', r == '-', r == '‑', r == '.':
 		return true
+	case isCJKPunctuation(r):
+		return true
 	default:
 		return false
 	}
+}
+
+// isCJKPunctuation says whether r falls in the two Unicode blocks CJK text is
+// punctuated with: CJK Symbols and Punctuation (U+3000–U+303F — the
+// ideographic full stop and comma, corner brackets, the wave dash) and
+// Halfwidth and Fullwidth Forms (U+FF00–U+FFEF — the fullwidth comma,
+// exclamation and question marks).
+func isCJKPunctuation(r rune) bool {
+	return (r >= 0x3000 && r <= 0x303F) || (r >= 0xFF00 && r <= 0xFFEF)
 }
