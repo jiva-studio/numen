@@ -70,3 +70,113 @@ describe('the span the sketch of a target is drawn across', () => {
     expect(approximate(settings({ goal: 'retention' }), today, NO_BOUNDS).grid).toStrictEqual([])
   })
 })
+
+/** A place of the sketch with nothing on it but what the test names. */
+const flat = {
+  retained: 0,
+  owed: 0,
+  through: 0,
+  canLearnEveryCard: true,
+  closed: [],
+  clears: 0,
+  learned: 0,
+  short: 0,
+  backlog: [],
+}
+
+describe('where a sketch says the preset stands', () => {
+  it('names no day under a goal that is not a date', () => {
+    const guess = approximate(settings({ minutesADay: 20 }), today, BOUNDS)
+    expect(guess.days).toStrictEqual([])
+    expect(guess.now).toStrictEqual({ at: 8, value: 20, day: '' })
+  })
+
+  it('names the day the preset aims at under a goal of a date', () => {
+    const guess = approximate(settings({ goal: 'date', byDate: '2026-09-29' }), today, BOUNDS)
+    expect(guess.now.day).toBe('2026-09-29')
+  })
+})
+
+describe('the days a sketch of a date runs over', () => {
+  it('runs from tomorrow to the day aimed at', () => {
+    const guess = approximate(settings({ goal: 'date', byDate: '2026-11-28' }), today, BOUNDS)
+    expect(guess.grid[0]).toBe(1)
+    expect(guess.grid.at(-1)).toBe(90)
+  })
+
+  it('runs a month at the least, however near the day aimed at is', () => {
+    const guess = approximate(settings({ goal: 'date', byDate: '2026-09-09' }), today, BOUNDS)
+    expect(guess.grid[0]).toBe(1)
+    expect(guess.grid.at(-1)).toBe(30)
+  })
+})
+
+describe('one place of a sketch of minutes', () => {
+  it('answers a card every eight seconds and keeps more the longer the day', () => {
+    const guess = approximate(settings({ minutesADay: 20 }), today, BOUNDS)
+    expect(guess.grid[4]).toBe(10)
+    expect(guess.at[4]).toStrictEqual({
+      ...flat,
+      minutes: 10,
+      reviews: 75,
+      retained: expect.closeTo(0.392, 9),
+    })
+  })
+})
+
+describe('one place of a sketch of a target', () => {
+  it('costs the day’s minutes at ninety percent, and more the more is asked back', () => {
+    const guess = approximate(
+      settings({ goal: 'retention', minutesADay: 30, retention: 0.8 }),
+      today,
+      BOUNDS,
+    )
+    expect(guess.grid[0]).toBe(0.7)
+    expect(guess.at[0]).toStrictEqual({
+      ...flat,
+      minutes: expect.closeTo(10, 9),
+      reviews: expect.closeTo(75, 9),
+      retained: 0.7,
+    })
+  })
+
+  it('reads a day of no minutes as the standing budget', () => {
+    const guess = approximate(settings({ goal: 'retention', minutesADay: 0 }), today, BOUNDS)
+    expect(guess.at[0]?.minutes).toBeCloseTo(20 / 3, 9)
+  })
+})
+
+describe('one place of a sketch of a date', () => {
+  const dated = (minutesADay: number) =>
+    approximate(settings({ goal: 'date', byDate: '2026-10-29', minutesADay }), today, BOUNDS)
+
+  it('learns every card on the day aimed at within the day’s minutes', () => {
+    const guess = dated(30)
+    expect(guess.grid.at(-1)).toBe(60)
+    expect(guess.at.at(-1)).toStrictEqual({
+      ...flat,
+      minutes: 30,
+      reviews: 225,
+      through: 1,
+      canLearnEveryCard: true,
+    })
+  })
+
+  it('costs more than the day holds to be through by tomorrow', () => {
+    const guess = dated(30)
+    expect(guess.grid[0]).toBe(1)
+    expect(guess.at[0]).toStrictEqual({
+      ...flat,
+      minutes: 1800,
+      reviews: 13500,
+      through: expect.closeTo(1 / 60, 9),
+      canLearnEveryCard: false,
+    })
+  })
+
+  it('reads a day of no minutes as the standing budget', () => {
+    const guess = dated(0)
+    expect(guess.at.at(-1)?.minutes).toBe(DEFAULTS.minutesADay)
+    expect(guess.at.at(-1)?.canLearnEveryCard).toBe(true)
+  })
+})
