@@ -1,11 +1,25 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createMutualInspectorLinks,
   createSingleInspectorLink,
   getInverseSeat,
+  resolveInspectorDirectionToggle,
+  resolveInspectorDonePayload,
   resolvePopoverPosition,
   resolveSingleDirection,
 } from './linkInspector'
+import type { DirectionalLinkItem } from '../types'
+
+/** A row as the inspector holds one, running A.md to B.md unless told otherwise. */
+const row = (more: Partial<DirectionalLinkItem> = {}): DirectionalLinkItem => ({
+  id: 'A.md->B.md',
+  from: 'A.md',
+  to: 'B.md',
+  role: 'child',
+  direction: 'forward',
+  description: '',
+  ...more,
+})
 
 describe('linkInspector helper module', () => {
   describe('getInverseSeat', () => {
@@ -120,6 +134,15 @@ describe('linkInspector helper module', () => {
       expect(rows[0]?.description).toBe('fallback label')
       expect(rows[1]?.description).toBe('')
     })
+
+    it('makes undescribed jumps both ways of a relationship that names no seat', () => {
+      const rows = createMutualInspectorLinks('A.md', 'B.md', { seat: '' }, true, new Map())
+
+      expect(rows.map((one) => [one.role, one.description])).toStrictEqual([
+        ['jump', ''],
+        ['jump', ''],
+      ])
+    })
   })
 
   describe('createSingleInspectorLink', () => {
@@ -185,6 +208,251 @@ describe('linkInspector helper module', () => {
       expect(rows[0]?.role).toBe('jump')
       expect(rows[0]?.direction).toBe('undirected')
       expect(rows[0]?.description).toBe('')
+    })
+
+    it('reads the saved direction under the pair key, whichever note comes first', () => {
+      const directions = new Map([['A.md B.md', 'A.md->B.md']])
+      const rows = createSingleInspectorLink(
+        'B.md',
+        'A.md',
+        { seat: 'child' },
+        true,
+        directions,
+        new Map(),
+      )
+
+      expect(rows[0]).toMatchObject({ from: 'A.md', to: 'B.md', direction: 'reverse' })
+    })
+
+    it('takes the description stored under the link it resolved', () => {
+      const directions = new Map([['A.md B.md', 'B.md->A.md']])
+      const descriptions = new Map([
+        ['A.md->B.md', 'one way'],
+        ['B.md->A.md', 'the other way'],
+      ])
+      const rows = createSingleInspectorLink(
+        'A.md',
+        'B.md',
+        { seat: 'child', directLabel: 'label' },
+        true,
+        directions,
+        descriptions,
+      )
+
+      expect(rows[0]?.description).toBe('the other way')
+    })
+  })
+
+  describe('resolveInspectorDirectionToggle', () => {
+    it('turns a forward link around and gives up the saved forward link', () => {
+      const next = resolveInspectorDirectionToggle(row(), 'A.md', 'B.md', new Set(['A.md->B.md']))
+
+      expect(next).toEqual({
+        direction: 'reverse',
+        from: 'B.md',
+        to: 'A.md',
+        role: 'parent',
+        removedLink: { from: 'A.md', to: 'B.md', role: 'child' },
+      })
+    })
+
+    it('gives up nothing when the forward link was never saved', () => {
+      const next = resolveInspectorDirectionToggle(row(), 'A.md', 'B.md', new Set())
+
+      expect(next.direction).toBe('reverse')
+      expect(next.removedLink).toBeUndefined()
+    })
+
+    it('gives up nothing on reversal when the saved row does not start at A', () => {
+      const next = resolveInspectorDirectionToggle(
+        row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', role: 'parent' }),
+        'A.md',
+        'B.md',
+        new Set(['B.md->A.md']),
+      )
+
+      expect(next).toEqual({
+        direction: 'reverse',
+        from: 'B.md',
+        to: 'A.md',
+        role: 'parent',
+        removedLink: undefined,
+      })
+    })
+
+    it('makes a saved reverse link undirected from A and gives up the reverse link', () => {
+      const next = resolveInspectorDirectionToggle(
+        row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', role: 'parent', direction: 'reverse' }),
+        'A.md',
+        'B.md',
+        new Set(['B.md->A.md']),
+      )
+
+      expect(next).toEqual({
+        direction: 'undirected',
+        from: 'A.md',
+        to: 'B.md',
+        role: 'child',
+        removedLink: { from: 'B.md', to: 'A.md', role: 'parent' },
+      })
+    })
+
+    it('gives up nothing when the reverse link was never saved', () => {
+      const next = resolveInspectorDirectionToggle(
+        row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', role: 'parent', direction: 'reverse' }),
+        'A.md',
+        'B.md',
+        new Set(),
+      )
+
+      expect(next.direction).toBe('undirected')
+      expect(next.removedLink).toBeUndefined()
+    })
+
+    it('gives up nothing when a saved undirected link from A turns forward', () => {
+      const next = resolveInspectorDirectionToggle(
+        row({ direction: 'undirected' }),
+        'A.md',
+        'B.md',
+        new Set(['A.md->B.md']),
+      )
+
+      expect(next).toEqual({
+        direction: 'forward',
+        from: 'A.md',
+        to: 'B.md',
+        role: 'child',
+        removedLink: undefined,
+      })
+    })
+  })
+
+  describe('resolveInspectorDonePayload', () => {
+    const forward = row({ description: 'feeds' })
+    const backward = row({
+      id: 'B.md->A.md',
+      from: 'B.md',
+      to: 'A.md',
+      role: 'parent',
+      direction: 'reverse',
+      description: 'is fed by',
+    })
+
+    it('keeps a single row and removes nothing', () => {
+      const payload = resolveInspectorDonePayload([forward], [forward], new Set(), 'A.md B.md', [])
+
+      expect(payload).toEqual({ pairKey: 'A.md B.md', rows: [forward], removedLinks: [] })
+    })
+
+    it('keeps both rows of a pair when both are described', () => {
+      const payload = resolveInspectorDonePayload(
+        [forward, backward],
+        [forward, backward],
+        new Set([forward.id, backward.id]),
+        'A.md B.md',
+        [],
+      )
+
+      expect(payload.rows).toEqual([forward, backward])
+      expect(payload.removedLinks).toEqual([])
+    })
+
+    it('drops a blank first row of a pair and removes its saved link', () => {
+      const blank = { ...forward, description: '   ' }
+      const payload = resolveInspectorDonePayload(
+        [blank, backward],
+        [],
+        new Set([forward.id]),
+        'A.md B.md',
+        [],
+      )
+
+      expect(payload.rows).toEqual([backward])
+      expect(payload.removedLinks).toEqual([{ from: 'A.md', to: 'B.md', role: 'child' }])
+    })
+
+    it('drops a blank first row of a pair that was never saved without removing anything', () => {
+      const blank = { ...forward, description: '' }
+      const payload = resolveInspectorDonePayload([blank, backward], [], new Set(), 'A.md B.md', [])
+
+      expect(payload.rows).toEqual([backward])
+      expect(payload.removedLinks).toEqual([])
+    })
+
+    it('drops a blank second row of a pair and removes its saved link', () => {
+      const blank = { ...backward, description: ' ' }
+      const payload = resolveInspectorDonePayload(
+        [forward, blank],
+        [],
+        new Set([backward.id]),
+        'A.md B.md',
+        [],
+      )
+
+      expect(payload.rows).toEqual([forward])
+      expect(payload.removedLinks).toEqual([{ from: 'B.md', to: 'A.md', role: 'parent' }])
+    })
+
+    it('drops a blank second row of a pair that was never saved without removing anything', () => {
+      const blank = { ...backward, description: '' }
+      const payload = resolveInspectorDonePayload([forward, blank], [], new Set(), 'A.md B.md', [])
+
+      expect(payload.rows).toEqual([forward])
+      expect(payload.removedLinks).toEqual([])
+    })
+
+    it('removes a saved link the rows no longer hold', () => {
+      const payload = resolveInspectorDonePayload(
+        [backward],
+        [forward],
+        new Set([forward.id]),
+        'A.md B.md',
+        [],
+      )
+
+      expect(payload.removedLinks).toEqual([{ from: 'A.md', to: 'B.md', role: 'child' }])
+    })
+
+    it('removes a saved link once when it is already among the removed', () => {
+      const removed = { from: 'A.md', to: 'B.md', role: 'child' as const }
+      const payload = resolveInspectorDonePayload(
+        [backward],
+        [forward],
+        new Set([forward.id]),
+        'A.md B.md',
+        [{ from: 'C.md', to: 'D.md', role: 'jump' }, removed],
+      )
+
+      expect(payload.removedLinks).toEqual([{ from: 'C.md', to: 'D.md', role: 'jump' }, removed])
+    })
+
+    it('removes a saved link that matches a removed one on only two of its three parts', () => {
+      const payload = resolveInspectorDonePayload(
+        [backward],
+        [forward],
+        new Set([forward.id]),
+        'A.md B.md',
+        [
+          { from: 'C.md', to: 'B.md', role: 'child' },
+          { from: 'A.md', to: 'C.md', role: 'child' },
+          { from: 'A.md', to: 'B.md', role: 'jump' },
+        ],
+      )
+
+      expect(payload.removedLinks).toHaveLength(4)
+      expect(payload.removedLinks[3]).toEqual({ from: 'A.md', to: 'B.md', role: 'child' })
+    })
+
+    it('removes no saved link that one of several rows still holds', () => {
+      const payload = resolveInspectorDonePayload(
+        [forward, backward],
+        [forward, backward],
+        new Set([forward.id, backward.id]),
+        'A.md B.md',
+        [],
+      )
+
+      expect(payload.removedLinks).toEqual([])
     })
   })
 
@@ -298,6 +566,101 @@ describe('linkInspector helper module', () => {
       })
       expect(pos.left).toBeGreaterThan(0)
       expect(pos.top).toBeGreaterThan(0)
+    })
+
+    it('centres a popover of its own width on the anchor', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 500, y: 400 },
+        popoverSize: { width: 240, height: 160 },
+        containerSize,
+      })
+
+      expect(pos.left).toBe(380)
+    })
+
+    it('places above when the room above is exactly the margin', () => {
+      const pos = resolvePopoverPosition({ at: { x: 500, y: 184 }, popoverSize, containerSize })
+
+      expect(pos.top).toBe(12)
+    })
+
+    it('places below the anchor even where that is inside the margin', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 500, y: 4 },
+        popoverSize,
+        containerSize,
+        gap: 0,
+      })
+
+      expect(pos.top).toBe(4)
+    })
+
+    it('places below when the popover ends exactly at the bottom margin', () => {
+      const pos = resolvePopoverPosition({
+        at: { x: 400, y: 8 },
+        popoverSize: { width: 300, height: 180 },
+        containerSize: { width: 800, height: 200 },
+        gap: 0,
+      })
+
+      expect(pos.top).toBe(8)
+    })
+
+    describe('when the popover fits neither above nor below', () => {
+      const tall = { width: 320, height: 200 }
+      const short = { width: 1000, height: 400 }
+
+      it('raises it to the bottom margin from the upper half', () => {
+        const pos = resolvePopoverPosition({
+          at: { x: 500, y: 190 },
+          popoverSize: tall,
+          containerSize: short,
+        })
+
+        expect(pos.top).toBe(188)
+      })
+
+      it('pins it to the top margin from the middle and the lower half', () => {
+        for (const y of [200, 210]) {
+          const pos = resolvePopoverPosition({
+            at: { x: 500, y },
+            popoverSize: tall,
+            containerSize: short,
+          })
+
+          expect(pos.top).toBe(12)
+        }
+      })
+    })
+
+    describe('without a measured container', () => {
+      afterEach(() => {
+        vi.unstubAllGlobals()
+      })
+
+      it('measures the window', () => {
+        vi.stubGlobal('window', { innerWidth: 900, innerHeight: 500 })
+
+        const pos = resolvePopoverPosition({
+          at: { x: 880, y: 100 },
+          popoverSize: { width: 0, height: 400 },
+          containerSize: { width: 0, height: 0 },
+        })
+
+        expect(pos).toEqual({ left: 568, top: 88 })
+      })
+
+      it('assumes 800 by 600 where there is no window', () => {
+        vi.stubGlobal('window', undefined)
+
+        const pos = resolvePopoverPosition({
+          at: { x: 790, y: 180 },
+          popoverSize: { width: 0, height: 400 },
+          containerSize: { width: 0, height: 0 },
+        })
+
+        expect(pos).toEqual({ left: 468, top: 188 })
+      })
     })
   })
 })

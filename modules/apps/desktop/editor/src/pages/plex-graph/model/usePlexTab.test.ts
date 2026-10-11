@@ -7,7 +7,12 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { usePlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
+import {
+  usePlexTab,
+  type DirectionalLinkItem,
+  type PlexTabState,
+  type PlexTabDeps,
+} from './usePlexTab'
 import { ITEMS, NEW_NOTE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
@@ -1435,5 +1440,293 @@ describe('usePlexTab edge cases and helpers', () => {
 
     expect(one.state.empty.value).toBe(false)
     expect(one.state.dragged.value).toEqual([])
+  })
+})
+
+describe('what a plex keeps calling a note', () => {
+  it('keeps the name of a note the plex left for one navigation, from the first picture on', async () => {
+    const one = tab('Root.md', ['Child.md', 'Other.md'])
+    const other = one.node('Other.md')
+
+    await one.state.view.go('Child.md')
+    await settle()
+    await one.state.view.go('Root.md')
+    await settle()
+
+    expect(one.node('Other.md')).toBe(other)
+  })
+})
+
+describe('the notes a plex asks the vault for the parts of', () => {
+  it('are none while the plex draws nothing', async () => {
+    const one = tab('Root.md')
+
+    one.state.view.neighbourhood.value = null
+    await settle()
+
+    expect(one.headingsAsked).toStrictEqual([['Root.md']])
+  })
+
+  it('leave out a note around the focus that has no path', () => {
+    const one = tab('Root.md', [{ path: '' }])
+
+    expect(one.headingsAsked).toStrictEqual([['Root.md']])
+  })
+})
+
+describe('a quick link confirmed', () => {
+  it('writes nothing from a node the picture never drew', async () => {
+    const one = tab('Root.md', ['Other.md'])
+    one.state.openQuickLink({ from: 'nowhere', seat: 'jump', at: { x: 1, y: 2 } })
+
+    await one.state.confirmQuickLink('Other.md', true)
+
+    expect(one.joined).toStrictEqual([])
+    expect(one.went).toStrictEqual([])
+  })
+
+  it('stands where it stood when the vault wrote no link to the note', async () => {
+    const one = tab('Root.md', ['Other.md'], false)
+    one.state.openQuickLink({ from: one.node('Root.md'), seat: 'jump', at: { x: 1, y: 2 } })
+
+    await one.state.confirmQuickLink('Other.md', true)
+
+    expect(one.joined).toStrictEqual([['Root.md', 'Other.md', 'jump']])
+    expect(one.went).toStrictEqual([])
+  })
+
+  it('stands where it stood when the vault made no note', async () => {
+    const one = tab('Root.md', [], false)
+    one.state.openQuickLink({ from: one.node('Root.md'), seat: 'child', at: { x: 1, y: 2 } })
+
+    await one.state.confirmQuickLink('Compost', false)
+
+    expect(one.made).toStrictEqual([['Root.md', 'child']])
+    expect(one.went).toStrictEqual([])
+  })
+})
+
+describe('what a note is called where the picture names it nowhere', () => {
+  it('is the file it is filed under while the plex draws nothing', () => {
+    const one = tab('Root.md')
+    one.state.view.neighbourhood.value = null
+
+    expect(one.state.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
+  })
+
+  it('is the file it is filed under beside the notes the picture does name', () => {
+    expect(tab('Root.md', ['Child.md']).state.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
+  })
+
+  it('loses only the extension at the end of the file name', () => {
+    expect(tab('Root.md').state.getName('Deep/Readme.md copy.md')).toBe('Readme.md copy')
+  })
+})
+
+describe('what a node the picture never drew stands for', () => {
+  it('is a note', () => {
+    expect(tab('Root.md', [], true, { 'Root.md': 'deck' }).state.typeOf('nowhere')).toBe('note')
+  })
+})
+
+describe('a node opened', () => {
+  it('opens its note here unless told where', () => {
+    const one = tab('Root.md', ['Child.md'])
+
+    one.state.openNode(one.node('Child.md'))
+
+    expect(one.opened).toStrictEqual([['Child.md', 'Child', 'here']])
+  })
+
+  it('opens nothing for a part whose name is not wholly a line number', () => {
+    const one = tab('Root.md', ['Child.md'])
+
+    one.state.openPart(one.node('Child.md'), 'a12')
+    one.state.openPart(one.node('Child.md'), '12a')
+
+    expect(one.opened).toStrictEqual([])
+    expect(one.entered).toStrictEqual([])
+  })
+})
+
+describe('the link inspector', () => {
+  /** A row of the inspector between two notes, running one way. */
+  const link = (
+    from: string,
+    to: string,
+    role: DirectionalLinkItem['role'],
+    direction: DirectionalLinkItem['direction'],
+    description = '',
+  ): DirectionalLinkItem => ({ id: `${from}->${to}`, from, to, role, direction, description })
+
+  /** A plex on Root.md with Child.md below it, and the pair of their two nodes. */
+  const inspecting = (neighbours: readonly NeighbourSpec[] = ['Child.md']) => {
+    const one = tab('Root.md', neighbours)
+    const pair = `${one.node('Root.md')} ${one.node('Child.md')}`
+    /** The rows the inspector shows once it is opened again on the pair. */
+    const reopen = () => {
+      one.state.openLinkInspector(pair, { x: 1, y: 2 })
+      return one.state.linkInspector.value?.links
+    }
+    return { ...one, pair, reopen }
+  }
+
+  it('opens on nothing where one of the two nodes was never drawn', () => {
+    const one = inspecting()
+
+    one.state.openLinkInspector(`${one.node('Root.md')} nowhere`, { x: 1, y: 2 })
+
+    expect(one.state.linkInspector.value).toBeNull()
+  })
+
+  it('shows the relationship of the two notes of the pair, not of another note', () => {
+    const one = tab('Root.md', ['Child.md', { path: 'Other.md', isMutual: true }])
+
+    one.state.openLinkInspector(`${one.node('Root.md')} ${one.node('Other.md')}`, { x: 1, y: 2 })
+
+    expect(one.state.linkInspector.value?.links).toHaveLength(2)
+  })
+
+  it('shows an undirected jump between two notes while the plex draws nothing', async () => {
+    const one = inspecting()
+    one.state.view.neighbourhood.value = null
+    await settle()
+
+    one.state.openLinkInspector(one.pair, { x: 1, y: 2 })
+
+    expect(one.state.linkInspector.value?.nodeA.title).toBe('Root')
+    expect(one.state.linkInspector.value?.links).toStrictEqual([
+      link('Root.md', 'Child.md', 'jump', 'undirected'),
+    ])
+  })
+
+  it('opens again on the direction a single reversed row was saved with', async () => {
+    const one = inspecting()
+
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [link('Child.md', 'Root.md', 'parent', 'reverse')],
+      removedLinks: [],
+    })
+
+    expect(one.reopen()?.[0]).toMatchObject({
+      from: 'Child.md',
+      to: 'Root.md',
+      direction: 'reverse',
+    })
+  })
+
+  it('opens again undirected after a single undirected row was saved', async () => {
+    const one = inspecting()
+
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [link('Root.md', 'Child.md', 'child', 'undirected')],
+      removedLinks: [],
+    })
+
+    expect(one.reopen()?.[0]?.direction).toBe('undirected')
+  })
+
+  it('forgets the saved direction once both rows are saved', async () => {
+    const one = inspecting()
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [link('Root.md', 'Child.md', 'child', 'undirected')],
+      removedLinks: [],
+    })
+
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [
+        link('Root.md', 'Child.md', 'child', 'forward'),
+        link('Child.md', 'Root.md', 'parent', 'reverse'),
+      ],
+      removedLinks: [],
+    })
+
+    expect(one.reopen()?.[0]?.direction).toBe('forward')
+  })
+
+  it('saves no direction from the first of two rows', async () => {
+    const one = inspecting()
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [link('Root.md', 'Child.md', 'child', 'undirected')],
+      removedLinks: [],
+    })
+
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [
+        link('Child.md', 'Root.md', 'parent', 'reverse'),
+        link('Root.md', 'Child.md', 'child', 'forward'),
+      ],
+      removedLinks: [],
+    })
+
+    expect(one.reopen()?.[0]?.direction).toBe('forward')
+  })
+
+  it('forgets the description of a link it removed', async () => {
+    const one = inspecting([{ path: 'Child.md', label: 'grows' }])
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [link('Root.md', 'Child.md', 'child', 'forward', 'feeds')],
+      removedLinks: [],
+    })
+
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [],
+      removedLinks: [{ from: 'Root.md', to: 'Child.md', role: 'child' }],
+    })
+
+    expect(one.reopen()?.[0]?.description).toBe('grows')
+  })
+
+  it('forgets the description of every link the whole link took with it', async () => {
+    const one = inspecting([{ path: 'Child.md', label: 'grows' }])
+    await one.state.saveLinkInspector({
+      pairKey: one.pair,
+      rows: [link('Root.md', 'Child.md', 'child', 'forward', 'feeds')],
+      removedLinks: [],
+    })
+    one.reopen()
+
+    await one.state.removeEntireLink(one.pair)
+
+    expect(one.reopen()?.[0]?.description).toBe('grows')
+  })
+
+  it('removes nothing for a pair other than the one it is open on', async () => {
+    const one = inspecting()
+    one.reopen()
+
+    await one.state.removeEntireLink('elsewhere nowhere')
+
+    expect(one.removed).toStrictEqual([])
+    expect(one.state.linkInspector.value).toBeNull()
+  })
+
+  it('stands the plex again where it stood once saved or removed', async () => {
+    const one = inspecting()
+    one.reopen()
+    await one.state.saveLinkInspector({ pairKey: one.pair, rows: [], removedLinks: [] })
+    one.reopen()
+    await one.state.removeEntireLink(one.pair)
+
+    expect(one.went).toStrictEqual(['Root.md', 'Root.md'])
+  })
+
+  it('travels nowhere once saved or removed while the plex stands nowhere', async () => {
+    const one = inspecting()
+    one.reopen()
+    one.state.view.here.value = ''
+
+    await one.state.saveLinkInspector({ pairKey: one.pair, rows: [], removedLinks: [] })
+    await one.state.removeEntireLink(one.pair)
+
+    expect(one.went).toStrictEqual([])
   })
 })
