@@ -1,8 +1,12 @@
 package flashcards
 
 import (
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -89,4 +93,46 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("something moved and the page was never told")
 	}
+}
+
+// A deck edited in place keeps its size and its stamp, and the window keeps no
+// face of it past a report that something moved.
+func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
+	api, held := newAPI(t, deck)
+	v := held[0]
+	faces := api.CardsDue.CardFaces()
+
+	before, err := faces.Execute(t.Context(), v)
+	if err != nil || len(before) != 1 {
+		t.Fatalf("the vault stands as %d card faces and %v", len(before), err)
+	}
+
+	at := filepath.Join(v.Path, "decks", "Words.md")
+	info, err := os.Stat(at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	edited := strings.Replace(deck["decks/Words.md"], "### Word\n\nLeaf mould", "### Word\n\nMould leaf", 1)
+	if err := os.WriteFile(at, []byte(edited), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(at, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+
+	stale, err := faces.Execute(t.Context(), v)
+	if err != nil || !isFront(stale[0], "Leaf mould") {
+		t.Fatalf("the faces were parsed again without a report: %+v %v", stale, err)
+	}
+
+	api.ReportChange()
+	fresh, err := faces.Execute(t.Context(), v)
+	if err != nil || !isFront(fresh[0], "Mould leaf") {
+		t.Errorf("the faces stand as they were after a report: %+v %v", fresh, err)
+	}
+}
+
+func isFront(f flashcards.CardFace, word string) bool {
+	front, _ := f.Lay()
+	return strings.Contains(front, word)
 }
