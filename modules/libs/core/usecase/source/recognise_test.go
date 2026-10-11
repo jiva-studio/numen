@@ -22,9 +22,11 @@ import (
 
 // A shelf is what a recognition is written to, in memory.
 type shelf struct {
-	mu    sync.Mutex
-	files map[string][]byte
-	held  map[string]bool
+	mu     sync.Mutex
+	files  map[string][]byte
+	held   map[string]bool
+	opens  int
+	closes int
 }
 
 func newShelf() *shelf { return &shelf{files: map[string][]byte{}, held: map[string]bool{}} }
@@ -42,7 +44,16 @@ func (s *shelf) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, 
 	if !held {
 		return nil, 0, fs.ErrNotExist
 	}
-	return nopCloser{bytes.NewReader(raw)}, int64(len(raw)), nil
+	s.opens++
+	return trackedCloser{Reader: bytes.NewReader(raw), of: s}, int64(len(raw)), nil
+}
+
+// closeCount is how many files opened from this shelf were closed, so a test
+// can tell a leak from one that was not.
+func (s *shelf) closeCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.closes
 }
 
 // Take puts what a reader gives under a name.
@@ -57,10 +68,19 @@ func (s *shelf) Take(_ context.Context, name string, from io.Reader) (int64, err
 	return int64(len(raw)), nil
 }
 
-// nopCloser is a reader of bytes already in memory, closed by nobody.
-type nopCloser struct{ *bytes.Reader }
+// trackedCloser is one file opened from a shelf, counted against it once it
+// is closed.
+type trackedCloser struct {
+	*bytes.Reader
+	of *shelf
+}
 
-func (nopCloser) Close() error { return nil }
+func (c trackedCloser) Close() error {
+	c.of.mu.Lock()
+	defer c.of.mu.Unlock()
+	c.of.closes++
+	return nil
+}
 
 func (s *shelf) Read(_ context.Context, name string) ([]byte, error) {
 	s.mu.Lock()

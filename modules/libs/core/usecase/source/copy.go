@@ -144,13 +144,14 @@ func (u ImportURL) getExistingCopy(
 		}
 		return ref.Size, true, nil
 	}
-	_, size, err := store.Open(ctx, text.Copy(hash))
+	reader, size, err := store.Open(ctx, text.Copy(hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		return 0, false, nil
 	}
 	if err != nil {
 		return 0, false, err
 	}
+	_ = reader.Close()
 	return size, true, nil
 }
 
