@@ -162,7 +162,7 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	var out []domain.Passage
 	var lastChunk storedChunk
 	for _, c := range s.getOrderedChunks() {
-		if c.vault != vaultID || c.parent == 0 || s.hasVector(c, model) {
+		if c.vault != vaultID || c.parent == 0 || s.hasVector(c.id, model) {
 			continue
 		}
 		src := s.sources[c.vault][c.path]
@@ -353,12 +353,11 @@ func (s *store) getVectors(c storedChunk) []port.Vector {
 	return slices.Clone(s.vectors[chunkID(c.id)])
 }
 
-// hasVector says whether a chunk owes nothing under the model. The index
-// answers by the recipe's vector for the chunk's text and a coarse row for the
-// chunk; a chunk with a row has had its vector written, and a chunk without one
-// owes however many other chunks hold its text.
-func (s *store) hasVector(c storedChunk, model port.EmbeddingModel) bool {
-	for _, v := range s.vectors[chunkID(c.id)] {
+// hasVector says whether a chunk has a coarse row under the model, which is
+// what the store writes once a vector is saved for it. A chunk without one owes,
+// whatever other chunks hold the same text.
+func (s *store) hasVector(chunk int64, model port.EmbeddingModel) bool {
+	for _, v := range s.vectors[chunkID(chunk)] {
 		if v.Model == model {
 			return true
 		}
