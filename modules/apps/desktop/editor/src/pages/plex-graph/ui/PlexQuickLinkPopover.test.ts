@@ -12,7 +12,7 @@ describe('PlexQuickLinkPopover component', () => {
     vi.useRealTimers()
   })
 
-  const settle = async () => {
+  const advanceHold = async () => {
     await vi.advanceTimersByTimeAsync(HOLD)
   }
 
@@ -50,7 +50,7 @@ describe('PlexQuickLinkPopover component', () => {
 
     const input = wrapper.get('input')
     await input.setValue('quantum')
-    await settle()
+    await advanceHold()
 
     expect(searchMock).toHaveBeenCalledWith('quantum')
     expect(wrapper.text()).toContain('Quantum Physics')
@@ -68,7 +68,7 @@ describe('PlexQuickLinkPopover component', () => {
 
     const input = wrapper.get('input')
     await input.setValue('g-mini')
-    await settle()
+    await advanceHold()
 
     expect(wrapper.text()).toContain('g-mini')
     expect(wrapper.find('.plex-quick-link__option--create').exists()).toBe(false)
@@ -81,7 +81,7 @@ describe('PlexQuickLinkPopover component', () => {
 
     const input = wrapper.get('input')
     await input.setValue('g-mini')
-    await settle()
+    await advanceHold()
 
     await input.trigger('keydown', { key: 'Enter' })
 
@@ -93,7 +93,7 @@ describe('PlexQuickLinkPopover component', () => {
     const wrapper = mountPopover()
     const input = wrapper.get('input')
     await input.setValue('test')
-    await settle()
+    await advanceHold()
 
     const results = wrapper.findAll('.plex-quick-link__option')
     const existingButton = results[0]
@@ -110,7 +110,7 @@ describe('PlexQuickLinkPopover component', () => {
 
     const input = wrapper.get('input')
     await input.setValue('Brand New Idea')
-    await settle()
+    await advanceHold()
 
     await input.trigger('keydown', { key: 'Enter' })
 
@@ -122,7 +122,7 @@ describe('PlexQuickLinkPopover component', () => {
     const wrapper = mountPopover()
     const input = wrapper.get('input')
     await input.setValue('topic')
-    await settle()
+    await advanceHold()
 
     // Initially at index 0
     // ArrowUp cycles backwards to index 2 (Create option)
@@ -147,7 +147,7 @@ describe('PlexQuickLinkPopover component', () => {
     const wrapper = mountPopover()
     const input = wrapper.get('input')
     await input.setValue('abc')
-    await settle()
+    await advanceHold()
 
     const options = wrapper.findAll('.plex-quick-link__option')
     const secondOption = options[1]
@@ -169,7 +169,7 @@ describe('PlexQuickLinkPopover component', () => {
 
     const input = wrapper.get('input')
     await input.setValue('untitled')
-    await settle()
+    await advanceHold()
 
     expect(wrapper.text()).toContain('notes/untitled-note.md')
     wrapper.unmount()
@@ -186,12 +186,12 @@ describe('PlexQuickLinkPopover component', () => {
 
     // Typing with search returning no results
     await input.setValue('custom')
-    await settle()
+    await advanceHold()
     expect(wrapper.find('.plex-quick-link__dropdown').exists()).toBe(true)
 
     // Clearing query
     await input.setValue('')
-    await settle()
+    await advanceHold()
     expect(wrapper.find('.plex-quick-link__dropdown').exists()).toBe(false)
 
     wrapper.unmount()
@@ -265,9 +265,9 @@ describe('PlexQuickLinkPopover component', () => {
       const input = wrapper.get('input')
 
       await input.setValue('a')
-      await settle()
+      await advanceHold()
       await input.setValue('ab')
-      await settle()
+      await advanceHold()
       expect(searchMock).toHaveBeenCalledTimes(2)
 
       second.resolve([{ path: 'notes/later.md', title: 'Later' }])
@@ -280,7 +280,7 @@ describe('PlexQuickLinkPopover component', () => {
       wrapper.unmount()
     })
 
-    it('stays loading until the current search settles', async () => {
+    it('stays loading until the current search finishes', async () => {
       const first = deferred<Found>()
       const second = deferred<Found>()
       const searchMock = vi
@@ -291,9 +291,9 @@ describe('PlexQuickLinkPopover component', () => {
       const input = wrapper.get('input')
 
       await input.setValue('a')
-      await settle()
+      await advanceHold()
       await input.setValue('ab')
-      await settle()
+      await advanceHold()
 
       first.resolve([{ path: 'notes/earlier.md', title: 'Earlier' }])
       await vi.advanceTimersByTimeAsync(0)
@@ -312,13 +312,13 @@ describe('PlexQuickLinkPopover component', () => {
       const input = wrapper.get('input')
 
       await input.setValue('a')
-      await settle()
+      await advanceHold()
       expect(wrapper.text()).toContain('Alpha')
       expect(searchMock).toHaveBeenCalledTimes(1)
 
       await input.setValue('ab')
       await input.setValue('')
-      await settle()
+      await advanceHold()
 
       expect(searchMock).toHaveBeenCalledTimes(1)
       expect(wrapper.find('.plex-quick-link__dropdown').exists()).toBe(false)
@@ -331,7 +331,7 @@ describe('PlexQuickLinkPopover component', () => {
       const wrapper = mountPopover({ search: searchMock })
 
       await wrapper.get('input').setValue('a')
-      await settle()
+      await advanceHold()
 
       expect(isLoading(wrapper)).toBe(false)
       expect(wrapper.findAll('.plex-quick-link__option')).toHaveLength(1)

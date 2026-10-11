@@ -123,7 +123,7 @@ describe('a window of real notes', () => {
     },
   })
 
-  const settle = async () => {
+  const flushMicrotasks = async () => {
     for (let i = 0; i < 8; i++) await Promise.resolve()
     await nextTick()
   }
@@ -142,12 +142,12 @@ describe('a window of real notes', () => {
     })
     notes.open('A.md')
     notes.open('B.md')
-    await settle()
+    await flushMicrotasks()
 
     notes.setBody('A.md', 'mine')
     files.set('A.md', 'theirs')
     notes.save('A.md')
-    await settle()
+    await flushMicrotasks()
     return { notes, going, raised: () => raisedCount }
   }
 
@@ -156,7 +156,7 @@ describe('a window of real notes', () => {
     expect(going.paths()).toEqual(['A.md'])
 
     notes.setBody('B.md', 'b and more')
-    await settle()
+    await flushMicrotasks()
 
     expect(going.paths()).toEqual(['A.md'])
     expect(raised()).toBe(1)
@@ -166,12 +166,12 @@ describe('a window of real notes', () => {
     const { notes, going, raised } = await createStale()
 
     notes.setBody('A.md', 'mine and more')
-    await settle()
+    await flushMicrotasks()
     expect(going.paths()).toEqual(['A.md'])
     expect(raised()).toBe(1)
 
     await going.answer('A.md', 'keep')
-    await settle()
+    await flushMicrotasks()
     expect(going.paths()).toEqual([])
   })
 })
