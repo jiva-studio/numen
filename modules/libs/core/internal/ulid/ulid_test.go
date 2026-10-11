@@ -91,3 +91,58 @@ func TestValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 		}
 	}
 }
+
+// The first ten characters are the instant: two zero bits and then the 48 bits
+// of milliseconds since the epoch, most significant first.
+func TestTheFirstTenCharactersAreTheMillisecond(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		ms   int64
+		want string
+	}{
+		{"the epoch", 0, "0000000000"},
+		{"one millisecond after it", 1, "0000000001"},
+		{"the example the format is published with", 1469918176385, "01ARYZ6S41"},
+		{"every byte of the instant distinct", 0xFEDCBA987654, "7YVJX9GXJM"},
+		{"the last millisecond 48 bits hold", 1<<48 - 1, "7ZZZZZZZZZ"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			for range 16 {
+				id, err := ulid.New(time.UnixMilli(c.ms))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if got := id[:10]; got != c.want {
+					t.Fatalf("%s starts %s, want %s", id, got, c.want)
+				}
+			}
+		})
+	}
+}
+
+// The last 80 bits are random: across identifiers made in one millisecond,
+// every one of them is set in some and clear in others.
+func TestEveryRandomBitVaries(t *testing.T) {
+	const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+	at := time.UnixMilli(1469918176385)
+	var isSet, isClear [130]bool
+	for range 64 {
+		id, err := ulid.New(at)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for bit := 50; bit < 130; bit++ {
+			value := strings.IndexByte(alphabet, id[bit/5])
+			if value>>(4-bit%5)&1 == 1 {
+				isSet[bit] = true
+			} else {
+				isClear[bit] = true
+			}
+		}
+	}
+	for bit := 50; bit < 130; bit++ {
+		if !isSet[bit] || !isClear[bit] {
+			t.Errorf("random bit %d never changed across 64 identifiers", bit-50)
+		}
+	}
+}

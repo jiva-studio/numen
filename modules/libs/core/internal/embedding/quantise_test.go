@@ -219,3 +219,98 @@ func BenchmarkDimensions(b *testing.B) {
 func BenchmarkAsDimensions(b *testing.B) {
 	BenchmarkDimensions(b)
 }
+
+func TestBytesClampAtTheLastLevelEitherSide(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   float32
+		want int8
+	}{
+		{"a hundred steps", float32(step * 100), 100},
+		{"a hundred steps, negative", float32(-step * 100), -100},
+		{"one step past the last level", float32(step * 128), 127},
+		{"one step past the last level, negative", float32(-step * 128), -127},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := embedding.Bytes([]float32{c.in}); got[0] != c.want {
+				t.Errorf("got %d, want %d", got[0], c.want)
+			}
+		})
+	}
+}
+
+func TestDimensionsOfAnEmptyVectorAreNone(t *testing.T) {
+	if got := embedding.Dimensions([]byte{}); got != nil {
+		t.Errorf("got %#v for an empty stored vector, want nil", got)
+	}
+	if got := embedding.Dimensions([]byte{0xff}); !slices.Equal(got, []int8{-1}) {
+		t.Errorf("got %v for one stored byte, want [-1]", got)
+	}
+}
+
+// Both forms of the similarity are the cosine, at every width: those the
+// unrolled loop covers whole and those with dimensions left over.
+func TestSimilarityIsTheCosineAtEveryWidth(t *testing.T) {
+	random := rand.New(rand.NewPCG(3, 5))
+	for width := 1; width <= 13; width++ {
+		query := make([]float32, width)
+		stored := make([]int8, width)
+		raw := make([]byte, width)
+		for i := range width {
+			query[i] = random.Float32()*2 - 1
+			stored[i] = int8(random.IntN(254) - 127)
+			if stored[i] >= 0 {
+				stored[i]++
+			}
+			raw[i] = byte(stored[i])
+		}
+		want := getCosine(query, stored)
+		if got := embedding.Similarity(query, stored); !(math.Abs(got-want) <= 1e-5) {
+			t.Errorf("width %d: Similarity = %v, want %v", width, got, want)
+		}
+		if got := embedding.SimilarityBytes(query, raw); !(math.Abs(got-want) <= 1e-5) {
+			t.Errorf("width %d: SimilarityBytes = %v, want %v", width, got, want)
+		}
+	}
+}
+
+// A side with no direction answers exactly zero, whatever the width.
+func TestSimilarityWithNoDirectionIsZero(t *testing.T) {
+	for _, c := range []struct {
+		name   string
+		query  []float32
+		stored []int8
+		want   float64
+	}{
+		{"a query of zeros", []float32{0, 0, 0, 0, 0}, []int8{1, 2, 3, 4, 5}, 0},
+		{"a stored vector of zeros", []float32{1, 2, 3, 4, 5}, []int8{0, 0, 0, 0, 0}, 0},
+		{"both of zeros", []float32{0}, []int8{0}, 0},
+		{"one dimension each way", []float32{1}, []int8{5}, 1},
+		{"one dimension against zero", []float32{1}, []int8{0}, 0},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			raw := make([]byte, len(c.stored))
+			for i, v := range c.stored {
+				raw[i] = byte(v)
+			}
+			if got := embedding.Similarity(c.query, c.stored); got != c.want {
+				t.Errorf("Similarity = %v, want %v", got, c.want)
+			}
+			if got := embedding.SimilarityBytes(c.query, raw); got != c.want {
+				t.Errorf("SimilarityBytes = %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+// getCosine is the cosine of the angle between two vectors, summed in float64.
+func getCosine(query []float32, stored []int8) float64 {
+	var dot, left, right float64
+	for i := range query {
+		q, s := float64(query[i]), float64(stored[i])
+		dot += q * s
+		left += q * q
+		right += s * s
+	}
+	return dot / math.Sqrt(left*right)
+}

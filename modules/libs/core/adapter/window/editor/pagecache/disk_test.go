@@ -1,9 +1,14 @@
 package pagecache
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"bytes"
 	"os"
+	"path/filepath"
+	"sort"
 	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 )
 
 // A sweep runs behind the page whose writing triggered it. The window owns it:
@@ -75,4 +80,135 @@ func countDrawings(t *testing.T, cache *Disk) int {
 		t.Fatal(err)
 	}
 	return len(found)
+}
+
+func TestTheDiskKeepsHalfAGibibyteAndSweepsEveryEighthOfIt(t *testing.T) {
+	cache := NewDiskIn(t.TempDir())
+	if cache.limit != 512<<20 {
+		t.Errorf("the bound is %d bytes, want %d", cache.limit, 512<<20)
+	}
+	if cache.every != 64<<20 {
+		t.Errorf("a sweep is due every %d bytes, want %d", cache.every, 64<<20)
+	}
+}
+
+func TestAPageKeptIsReadBack(t *testing.T) {
+	cache := NewDiskIn(t.TempDir())
+	for _, size := range []int{1, 2, 1000} {
+		page := bytes.Repeat([]byte{byte(size)}, size)
+		cache.Put(newDrawingID(size), page)
+		if got := cache.Get(newDrawingID(size)); !bytes.Equal(got, page) {
+			t.Errorf("a page of %d bytes read back as %d bytes", size, len(got))
+		}
+	}
+	if got := cache.Get(newDrawingID(7)); got != nil {
+		t.Errorf("a page never kept read back as %d bytes", len(got))
+	}
+}
+
+func TestAnEmptyPageIsNotKept(t *testing.T) {
+	cache := NewDiskIn(t.TempDir())
+	cache.Put(newDrawingID(0), nil)
+	cache.Put(newDrawingID(1), []byte{})
+	if n := countDrawings(t, cache); n != 0 {
+		t.Errorf("the folder holds %d files after two empty pages", n)
+	}
+}
+
+func TestNoDiskKeepsNothing(t *testing.T) {
+	var cache *Disk
+	cache.Put(newDrawingID(0), []byte("page"))
+	if got := cache.Get(newDrawingID(0)); got != nil {
+		t.Errorf("no disk read back %q", got)
+	}
+	cache.SweepTo(0)
+	cache.Close()
+}
+
+func TestAFolderThatIsNotThereKeepsNothing(t *testing.T) {
+	cache := NewDiskIn(filepath.Join(t.TempDir(), "missing"))
+	cache.Put(newDrawingID(0), []byte("page"))
+	if got := cache.Get(newDrawingID(0)); got != nil {
+		t.Errorf("a folder that is not there read back %q", got)
+	}
+}
+
+// A page that cannot be moved into place leaves no half-written file behind.
+func TestAPageThatCannotBeMovedIntoPlaceLeavesNothingBehind(t *testing.T) {
+	cache := NewDiskIn(t.TempDir())
+	blocked := cache.GetPath(newDrawingID(0))
+	if err := os.Mkdir(blocked, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(blocked, "inside"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cache.Put(newDrawingID(0), []byte("page"))
+
+	found, err := os.ReadDir(cache.GetDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Name() != filepath.Base(blocked) {
+		names := make([]string, 0, len(found))
+		for _, one := range found {
+			names = append(names, one.Name())
+		}
+		t.Errorf("the folder holds %v, want only the directory in the page's place", names)
+	}
+}
+
+// A sweep is due once as many bytes as the share between sweeps have been
+// written since the last one, and not a byte sooner.
+func TestASweepIsDueEachTimeItsShareHasBeenWritten(t *testing.T) {
+	cache := NewDiskIn(t.TempDir())
+	cache.limit = 0
+	cache.every = 1000
+
+	for _, step := range []struct {
+		size int
+		kept int
+	}{
+		{1000, 0},
+		{999, 1},
+		{1, 0},
+	} {
+		cache.Put(newDrawingID(step.size), make([]byte, step.size))
+		cache.going.Wait()
+		if n := countDrawings(t, cache); n != step.kept {
+			t.Fatalf("after a page of %d bytes the folder holds %d drawings, want %d", step.size, n, step.kept)
+		}
+	}
+	cache.Close()
+}
+
+// A sweep drops the drawings looked at longest ago, and stops at the bound.
+func TestASweepDropsWhatWasLookedAtLongestAgo(t *testing.T) {
+	cache := NewDiskIn(t.TempDir())
+	page := make([]byte, 100)
+	names := make([]string, 4)
+	for at := range names {
+		cache.Put(newDrawingID(at), page)
+		names[at] = cache.GetPath(newDrawingID(at))
+	}
+	sort.Strings(names)
+
+	// The two looked at longest ago sort in the middle by name.
+	base := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
+	for at, offset := range []time.Duration{3, 1, 2, 4} {
+		when := base.Add(offset * time.Hour)
+		if err := os.Chtimes(names[at], when, when); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	cache.SweepTo(2 * int64(len(page)))
+
+	for at, isKept := range []bool{true, false, false, true} {
+		_, err := os.Stat(names[at])
+		if got := err == nil; got != isKept {
+			t.Errorf("drawing %d by name: kept = %v, want %v", at, got, isKept)
+		}
+	}
 }
