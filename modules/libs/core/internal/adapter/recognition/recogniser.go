@@ -14,7 +14,6 @@ import (
 	"image"
 	"image/draw"
 	"strings"
-	"sync"
 
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
@@ -37,7 +36,10 @@ type Recogniser struct {
 	body   map[string]bool
 	head   map[string]int
 	margin int
-	model  port.RecognitionModel
+	// jobs is the most regions read at once, the recognition sessions the
+	// engine opened. Zero reads one at a time.
+	jobs  int
+	model port.RecognitionModel
 }
 
 // Open loads the models and compiles them. It is expensive — the weights are
@@ -92,6 +94,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		body:   set(cfg.Regions.body()),
 		head:   depths(cfg.Regions.head()),
 		margin: cfg.Layout.margin(),
+		jobs:   cfg.jobs(),
 		model: port.RecognitionModel{
 			Layout:     name(found.layout),
 			Recogniser: name(found.recognise),
@@ -155,28 +158,10 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 	}
 	results := make([]outcome, len(targets))
 
-	if len(targets) == 1 {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-		found, err := r.read(targets[0].crop)
-		results[0] = outcome{found: found, err: err}
-	} else {
-		var running sync.WaitGroup
-		running.Add(len(targets))
-		for i := range targets {
-			go func(at int) {
-				defer running.Done()
-				if err := ctx.Err(); err != nil {
-					results[at] = outcome{err: err}
-					return
-				}
-				found, err := r.read(targets[at].crop)
-				results[at] = outcome{found: found, err: err}
-			}(i)
-		}
-		running.Wait()
-	}
+	runBounded(ctx, len(targets), r.jobs, func(at int) {
+		found, err := r.read(targets[at].crop)
+		results[at] = outcome{found: found, err: err}
+	})
 
 	if err := ctx.Err(); err != nil {
 		return nil, err
