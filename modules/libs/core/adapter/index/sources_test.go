@@ -325,3 +325,16 @@ func TestReadingASourceOfAClosedIndexFails(t *testing.T) {
 		t.Error("reading a closed index reported the source as not held")
 	}
 }
+
+// Removing sources from an index that cannot be written is reported.
+func TestRemovingSourcesFromAClosedIndexFails(t *testing.T) {
+	db := openDB(t)
+	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises")
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.Sources().RemoveSources(t.Context(), first.ID, domain.KindBook, []string{"library/a.epub"}); err == nil {
+		t.Error("removing from a closed index reported success")
+	}
+}
