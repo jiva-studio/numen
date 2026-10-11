@@ -80,6 +80,7 @@ func IsCodexInstalled() bool {
 
 func findInSearchPlaces(places []string) string {
 	home, err := os.UserHomeDir()
+	// gomutants:disable-next-line BRANCH_IF reason="UserHomeDir returns an empty home with its error"
 	if err != nil {
 		home = ""
 	}
@@ -88,9 +89,11 @@ func findInSearchPlaces(places []string) string {
 			if home == "" {
 				continue
 			}
+			// gomutants:disable-next-line INTEGER_DECREMENT reason="filepath.Join cleans the doubled separator place[1:] leaves"
 			place = filepath.Join(home, place[2:])
 		}
 		matches, err := filepath.Glob(place)
+		// gomutants:disable-next-line BRANCH_IF reason="a failed Glob returns no matches, so the loop below is empty"
 		if err != nil {
 			continue
 		}

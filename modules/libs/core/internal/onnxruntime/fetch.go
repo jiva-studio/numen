@@ -106,6 +106,7 @@ func Fetch(ctx context.Context, s Settings, address string) (string, error) {
 func GetCacheName(address string) string {
 	sum := sha256.Sum256([]byte(address))
 	base := path.Base(address)
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="path.Base never returns an empty string"
 	if base == "" || base == "." || base == "/" {
 		base = "model.onnx"
 	}
