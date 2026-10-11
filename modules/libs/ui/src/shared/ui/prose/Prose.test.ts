@@ -5,8 +5,21 @@
  * and hands over what it points at, so nothing here has to know a scheme.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Prose from './Prose.vue'
+
+const { renderSpy } = vi.hoisted(() => ({ renderSpy: vi.fn() }))
+
+vi.mock('./render', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./render')>()
+  return {
+    ...original,
+    render: (...args: Parameters<typeof original.render>) => {
+      renderSpy(args[0])
+      return original.render(...args)
+    },
+  }
+})
 
 const prose = (text: string) => mount(Prose, { props: { text } })
 
@@ -83,23 +96,27 @@ describe('prose pressed anywhere else', () => {
 })
 
 describe('prose handed the same addresses again', () => {
+  beforeEach(() => renderSpy.mockClear())
+
   it('is not drawn again while the unresolved addresses have the same members', async () => {
     const wrapper = mount(Prose, {
       props: { text: 'See [[Nowhere]].', unresolved: ['name://Nowhere'] },
     })
-    const before = wrapper.find('a').element
+    renderSpy.mockClear()
 
     await wrapper.setProps({ unresolved: ['name://Nowhere'] })
 
-    expect(wrapper.find('a').element).toBe(before)
+    expect(renderSpy).not.toHaveBeenCalled()
   })
 
   it('is drawn again when the unresolved addresses change', async () => {
     const wrapper = mount(Prose, { props: { text: 'See [[Nowhere]].', unresolved: [] } })
     expect(wrapper.find('a').attributes('data-reaches')).toBeUndefined()
+    renderSpy.mockClear()
 
     await wrapper.setProps({ unresolved: ['name://Nowhere'] })
 
+    expect(renderSpy).toHaveBeenCalledTimes(1)
     expect(wrapper.find('a').attributes('data-reaches')).toBeDefined()
   })
 })
