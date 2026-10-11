@@ -39,6 +39,7 @@ export function useBookReader(
   const pages = ref(0)
   const pageBytes = ref(0)
   const offset = ref(0)
+  // Stryker disable next-line StringLiteral: the fingerprint is assigned before the first document is drawn
   const fingerprint = ref('')
 
   /**
@@ -94,6 +95,7 @@ export function useBookReader(
 
   const followLink = async (target: string) => {
     await shape
+    // Stryker disable next-line ConditionalExpression: a closed reader holds no documents, so the lookup returns
     if (!isOpen) return
     const targetDoc = documents.value.find((one) => one.path === target)
     if (!targetDoc) return
@@ -104,6 +106,7 @@ export function useBookReader(
 
   const focusSpans = async (...spans: readonly Span[]) => {
     await shape
+    // Stryker disable next-line ConditionalExpression: the highlights return when the reader is closed
     if (!isOpen) return
     await marks.focusSpans(...spans)
   }
@@ -111,6 +114,7 @@ export function useBookReader(
   const close = () => {
     isOpen = false
     bookDocument.close()
+    // Stryker disable next-line ArrayDeclaration: a closed reader returns before it reads its documents
     documents.value = []
     contents.value = []
     pages.value = 0

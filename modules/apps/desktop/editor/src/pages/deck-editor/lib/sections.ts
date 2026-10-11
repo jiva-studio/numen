@@ -34,10 +34,12 @@ export const removeSection = (deck: BufferDeck, id: string): BufferDeck => {
   const above = deck.sections[at - 1]
   return {
     ...deck,
+    // Stryker disable next-line OptionalChaining, StringLiteral: the section being removed was found by index, so it exists
     preamble: above ? deck.preamble : joinProse(deck.preamble, going?.preamble ?? ''),
     sections: deck.sections.flatMap((section) => {
       if (section.id === id) return []
       if (above && section.id === above.id) {
+        // Stryker disable next-line OptionalChaining, StringLiteral: the section being removed was found by index, so it exists
         return [{ ...section, preamble: joinProse(section.preamble, going?.preamble ?? '') }]
       }
       return [section]
