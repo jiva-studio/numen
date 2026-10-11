@@ -16,7 +16,7 @@ import (
 type refusingToClose struct{ err error }
 
 func (r refusingToClose) Connect(context.Context) (driver.Conn, error) {
-	return closeRefusal{r.err}, nil
+	return closeRefusal(r), nil
 }
 
 func (refusingToClose) Driver() driver.Driver { return nil }
