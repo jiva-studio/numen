@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useNoteEditors } from './useNoteEditors'
 
 const h = vi.hoisted(() => ({
-  calls: {} as Record<string, any[]>,
-  parts: {} as Record<string, any>,
+  calls: {} as any,
+  parts: {} as any,
 }))
 
 vi.mock('@/entities/deck', () => ({ cards: { name: 'cards' }, presets: { name: 'presets' } }))
