@@ -247,3 +247,37 @@ describe('a vault that changed somewhere else', () => {
     expect(plex.neighbourhood.value?.related).toHaveLength(1)
   })
 })
+
+describe('a plex whose vault failed to answer', () => {
+  it('says why, and stops loading', async () => {
+    const plex = usePlexView(
+      fake(async () => {
+        throw new Error('vault is closed')
+      }),
+    )
+
+    await plex.go('Root.md')
+
+    expect(plex.error.value).toContain('vault is closed')
+    expect(plex.isLoading.value).toBe(false)
+  })
+
+  it('says nothing of a failure that a newer question has overtaken', async () => {
+    let fail = () => {}
+    const plex = usePlexView(
+      fake(async (path) => {
+        if (path === 'First')
+          await new Promise<void>((_, reject) => (fail = () => reject(new Error('late'))))
+        return answer(path)
+      }),
+    )
+
+    const first = plex.go('First')
+    await plex.go('Second')
+    fail()
+    await first
+
+    expect(plex.error.value).toBe('')
+    expect(plex.here.value).toBe('Second')
+  })
+})
