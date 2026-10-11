@@ -31,9 +31,21 @@ type audience[T any] struct {
 
 // listener is one of the audience, and whether it is owed a message it never
 // received.
+//
+// What it has not been handed is a slice, read and written only under the
+// audience's lock. out is the channel listen gave out, and is written only by
+// deliver: a listener's own goroutine, carrying the slice to out one message
+// at a time. frontSeq counts how many times the first entry has been
+// replaced, so deliver can tell whether the one it is offering is still the
+// one at the front or has since been overtaken.
 type listener[T any] struct {
-	ch       chan T
+	out      chan T
 	isBehind bool
+
+	waiting  []T
+	frontSeq uint64
+	notify   chan struct{}
+	done     chan struct{}
 }
 
 // getRoom is how many messages one listener may have waiting.
@@ -48,15 +60,20 @@ func (a *audience[T]) listen() (<-chan T, func()) {
 	}
 	id := a.next
 	a.next++
-	l := &listener[T]{ch: make(chan T, a.getRoom())}
+	l := &listener[T]{
+		out:    make(chan T),
+		notify: make(chan struct{}, 1),
+		done:   make(chan struct{}),
+	}
 	a.listeners[id] = l
+	go a.deliver(l)
 
-	return l.ch, func() {
+	return l.out, func() {
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		if l, open := a.listeners[id]; open {
 			delete(a.listeners, id)
-			close(l.ch)
+			close(l.done)
 		}
 	}
 }
@@ -77,24 +94,33 @@ func (a *audience[T]) tell(what T) {
 // queue puts a message where a listener will read it, and says whether there
 // was anywhere for it to go.
 //
-// What the listener has not read is taken back out and looked at: the message
-// takes the place of one waiting about the same thing, and otherwise joins the
-// end of the line. A line with no room left keeps what it holds.
+// What the listener has not read is taken out of the slice and looked at: the
+// message takes the place of one waiting about the same thing, and otherwise
+// joins the end of the line. A line with no room left keeps what it holds.
 func (a *audience[T]) queue(l *listener[T], message T) bool {
-	waiting := unread(l.ch)
+	wasEmpty := len(l.waiting) == 0
 
 	fitted := false
-	switch at := a.findReplaced(waiting, message); {
+	switch at := a.findReplaced(l.waiting, message); {
 	case at >= 0:
-		waiting[at] = message
+		l.waiting[at] = message
 		fitted = true
-	case len(waiting) < a.getRoom():
-		waiting = append(waiting, message)
+		if at == 0 {
+			l.frontSeq++
+		}
+	case len(l.waiting) < a.getRoom():
+		l.waiting = append(l.waiting, message)
 		fitted = true
+		if wasEmpty {
+			l.frontSeq++
+		}
 	}
 
-	for _, held := range waiting {
-		l.ch <- held
+	if fitted {
+		select {
+		case l.notify <- struct{}{}:
+		default:
+		}
 	}
 	return fitted
 }
@@ -116,16 +142,51 @@ func (a *audience[T]) findReplaced(waiting []T, message T) int {
 	return -1
 }
 
-// unread is everything a listener was given and has not read, in the order it
-// was given.
-func unread[T any](ch chan T) []T {
-	var waiting []T
+// deliver carries what queue puts on the slice to the channel listen handed
+// out, one message at a time, in the order queue put them there.
+//
+// It only takes a message out of the slice once that exact message has been
+// handed to out: a replacement that lands on the front while one is offered
+// there is picked up in its place, and what was offered before it is dropped
+// from the slice only once nothing has overtaken it.
+func (a *audience[T]) deliver(l *listener[T]) {
+	defer close(l.out)
+
+outer:
 	for {
-		select {
-		case held := <-ch:
-			waiting = append(waiting, held)
-		default:
-			return waiting
+		a.mu.Lock()
+		for len(l.waiting) == 0 {
+			a.mu.Unlock()
+			select {
+			case <-l.notify:
+			case <-l.done:
+				return
+			}
+			a.mu.Lock()
+		}
+		head, seq := l.waiting[0], l.frontSeq
+		a.mu.Unlock()
+
+		for {
+			select {
+			case l.out <- head:
+				a.mu.Lock()
+				if l.frontSeq == seq && len(l.waiting) > 0 {
+					l.waiting = l.waiting[1:]
+				}
+				a.mu.Unlock()
+				continue outer
+			case <-l.notify:
+				a.mu.Lock()
+				if len(l.waiting) == 0 {
+					a.mu.Unlock()
+					continue outer
+				}
+				head, seq = l.waiting[0], l.frontSeq
+				a.mu.Unlock()
+			case <-l.done:
+				return
+			}
 		}
 	}
 }
