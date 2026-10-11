@@ -161,6 +161,19 @@ describe('a deck, a stencil or a preset made', () => {
   })
 })
 
+describe('a file made and put in front of the person', () => {
+  it('is opened with no title of its own', async () => {
+    const tabOpeners = fileOpeners({ fileKinds: async () => new Map() })
+    const titles: string[] = []
+    tabOpeners.registerEditor('deck', (_path, title) => titles.push(title))
+    const made = createFileCreators(maker(), tabOpeners, MAKING, () => {})
+
+    await made.createDeck('zoology', 'Animals')
+
+    expect(titles).toStrictEqual([''])
+  })
+})
+
 describe('a note pointing at an address made', () => {
   it('is asked of the vault under the address and folder, and put in front of the person', async () => {
     const vault = maker()
