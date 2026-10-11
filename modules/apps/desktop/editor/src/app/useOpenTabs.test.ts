@@ -86,7 +86,13 @@ describe('the open tabs', () => {
 
 describe('the active tab', () => {
   it('is the tab in front', () => {
-    const held = create([{ id: 'a', title: 'A' }], { id: 'a', kind: 'note' })
+    const held = create(
+      [
+        { id: 'a', title: 'A' },
+        { id: 'b', title: 'B' },
+      ],
+      { id: 'a', kind: 'note' },
+    )
 
     expect(held.getActiveTabId()).toBe('a')
     expect(held.open.value.front).toBe('a')

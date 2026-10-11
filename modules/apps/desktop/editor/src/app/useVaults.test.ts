@@ -9,7 +9,10 @@
 import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { useVaults } from './useVaults'
+import { running } from '@/entities/artifact'
 import { WORDS } from '@/shared/words'
+
+vi.mock('@/entities/artifact', () => ({ running: { getArtifactStates: vi.fn() } }))
 
 const TWO = {
   vaults: [
@@ -102,5 +105,37 @@ describe('the vault list before and after it is asked for', () => {
     expect(getWriter).toHaveBeenCalledWith('listed')
     expect(write).toHaveBeenCalledWith(WORDS.unlistedVaults, 'error')
     expect(held.listed.value).toEqual({ vaults: [], showing: '' })
+  })
+})
+
+describe('the artifact states of a file', () => {
+  it('are kept under the path once they are read', async () => {
+    const states = { summary: { state: 'ready' } } as never
+    vi.mocked(running.getArtifactStates).mockResolvedValueOnce(states)
+    const held = open()
+
+    await held.loadArtifactStates('a.md')
+
+    expect(running.getArtifactStates).toHaveBeenCalledWith('a.md')
+    expect(held.makes.value.get('a.md')).toBe(states)
+  })
+
+  it('are empty under the path when they cannot be read', async () => {
+    vi.mocked(running.getArtifactStates).mockRejectedValueOnce(new Error('down'))
+    const held = open()
+
+    await held.loadArtifactStates('a.md')
+
+    expect(held.makes.value.get('a.md')).toEqual({})
+  })
+
+  it('are not read for an empty path', async () => {
+    vi.mocked(running.getArtifactStates).mockClear()
+    const held = open()
+
+    await held.loadArtifactStates('')
+
+    expect(running.getArtifactStates).not.toHaveBeenCalled()
+    expect(held.makes.value.size).toBe(0)
   })
 })

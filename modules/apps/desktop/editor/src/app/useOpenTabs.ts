@@ -60,6 +60,7 @@ export function useOpenTabs({ core, windowTabs }: OpenTabsDeps) {
     { immediate: true },
   )
 
+  // Stryker disable next-line StringLiteral: no kind and the empty kind both map to no icon
   const tabIcon = (id: string) => iconOfKind(windowTabs.getTab(id)?.kind.kind ?? '')
 
   return {
