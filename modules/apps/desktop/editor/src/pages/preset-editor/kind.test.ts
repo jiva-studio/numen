@@ -137,8 +137,16 @@ const openPresetTab = async (
       return typeof answers === 'function' ? answers(put) : answers
     },
   }
-  const handle = { closeTab: (tab: string) => void closed.push(tab) } as unknown as WindowHandle
-  const tabOpeners = { registerEditor: () => {} } as unknown as FileOpeners
+  const registered: string[] = []
+  const opened: string[] = []
+  const handle = {
+    closeTab: (tab: string) => void closed.push(tab),
+    openTab: (_kind: string, path: string) => void opened.push(`here ${path}`),
+    openTabBeside: (_kind: string, path: string) => void opened.push(`beside ${path}`),
+  } as unknown as WindowHandle
+  const tabOpeners = {
+    registerEditor: (name: string) => void registered.push(name),
+  } as unknown as FileOpeners
   const kind = usePresetTab(
     core,
     handle,
@@ -156,6 +164,9 @@ const openPresetTab = async (
     written,
     asked,
     closed,
+    registered,
+    opened,
+    kind,
     getState: kind.getState,
     applyPathChanges: kind.applyPathChanges,
     flush: kind.flush,
@@ -920,5 +931,263 @@ describe('a control dragged across its range', () => {
     waiting[0]?.(curve)
     await flushPromises()
     expect(asked).toHaveLength(2)
+  })
+})
+
+/** A read answering a preset that stands at these settings, under this title. */
+const presetWith = (settings: Settings, title = 'Steady'): ReadOver => ({
+  preset: {
+    path: 'Steady.md',
+    title,
+    settings,
+    problems: [],
+    stops: StopReason.NOTHING,
+    stopsOn: StopReason.NOTHING,
+  },
+})
+
+/** A write that never comes back, so what the tab owes stays owed. */
+const neverWritten = () => new Promise<WriteOver>(() => {})
+
+describe('the tab a preset is drawn in', () => {
+  it('is registered as the editor of a preset', async () => {
+    const { registered } = await openPresetTab()
+    expect(registered).toStrictEqual(['preset'])
+  })
+
+  it('is the state of the open preset, asked for by its path', async () => {
+    const { state, getState } = await openPresetTab()
+    expect(getState('Steady.md')?.id).toBe('Steady.md')
+    expect(getState('Steady.md')?.settings).toBe(state.settings)
+  })
+
+  it('is called by the title the file names, and found again by its path', async () => {
+    const { state, kind } = await openPresetTab()
+    expect(kind.kind.getTitle?.(state)).toBe('Steady')
+    expect(kind.kind.identity?.('Steady.md')).toBe('Steady.md')
+    expect(kind.kind.getTarget?.(state)).toStrictEqual({ path: 'Steady.md', title: 'Steady' })
+    expect(kind.kind.getOpenTab?.(state)).toStrictEqual({ path: 'Steady.md' })
+  })
+
+  it('is called by its file where no title is known, and by a word where no file is', async () => {
+    const { kind } = await openPresetTab()
+    expect(kind.getTitle('presets/Plan.md')).toBe('Plan.md')
+    expect(kind.getTitle('')).toBe(words.newPreset)
+  })
+
+  it('keeps the title it was read under where a later read names none', async () => {
+    const { state, kind } = await openPresetTab({}, curve, (time) =>
+      time === 0 ? {} : presetWith(STEADY, ''),
+    )
+    state.reload()
+    await flushPromises()
+    expect(kind.getTitle('Steady.md')).toBe('Steady')
+  })
+})
+
+describe('a preset moved to another path', () => {
+  it('takes its title and its tab to the new path, and leaves nothing at the old one', async () => {
+    const { state, kind, getState, applyPathChanges } = await openPresetTab()
+    applyPathChanges([], [{ from: 'Steady.md', to: 'Slow.md' }])
+    expect(kind.getTitle('Slow.md')).toBe('Steady')
+    expect(kind.getTitle('Steady.md')).toBe('Steady.md')
+    expect(getState('Slow.md')?.settings).toBe(state.settings)
+    expect(getState('Steady.md')).toBeUndefined()
+  })
+
+  it('moves nothing where no tab holds the path', async () => {
+    const reads: number[] = []
+    const { applyPathChanges } = await openPresetTab({}, curve, (time) => {
+      reads.push(time)
+      return {}
+    })
+    expect(() => applyPathChanges([], [{ from: 'Other.md', to: 'Else.md' }])).not.toThrow()
+    applyPathChanges(['Other.md'])
+    await flushPromises()
+    expect(reads).toStrictEqual([0])
+  })
+})
+
+describe('a tab before its first read lands', () => {
+  it('holds no problems', async () => {
+    const { tab } = await opening({})
+    expect(tab.problems.value).toStrictEqual([])
+  })
+})
+
+describe('a tab read again', () => {
+  it('reads the file again when asked to', async () => {
+    const { state } = await openPresetTab({}, curve, (time) =>
+      time === 0 ? {} : presetWith({ ...STEADY, newADay: 7 }),
+    )
+    state.reload()
+    await flushPromises()
+    expect(state.settings.value.newADay).toBe(7)
+  })
+
+  it('stops saying a read failed once a read succeeds', async () => {
+    const { state } = await openPresetTab({}, curve, (time) =>
+      time === 0 ? { error: 'missing' } : {},
+    )
+    expect(state.errorMessage.value).not.toBe('')
+    state.reload()
+    await flushPromises()
+    expect(state.errorMessage.value).toBe('')
+  })
+})
+
+// What a person chose and has not seen written is theirs, and a read of the
+// file does not take it back.
+describe('a choice not yet written, across a read', () => {
+  it('keeps the goal chosen', async () => {
+    const { state, applyPathChanges } = await openPresetTab({}, curve, () => ({}), neverWritten)
+    state.chooseGoal('retention')
+    applyPathChanges(['Steady.md'])
+    await flushPromises()
+    expect(state.settings.value.goal).toBe('retention')
+  })
+
+  it('keeps the day a date goal named where the file named none', async () => {
+    const { state, applyPathChanges } = await openPresetTab(
+      { byDate: '' },
+      dated,
+      () => ({}),
+      neverWritten,
+    )
+    state.chooseGoal('date')
+    applyPathChanges(['Steady.md'])
+    await flushPromises()
+    expect(state.settings.value.byDate).toBe('2026-09-29')
+  })
+
+  it('takes up the file’s day where the goal chosen kept the day it had', async () => {
+    const { state, applyPathChanges } = await openPresetTab(
+      { byDate: '2026-12-25' },
+      dated,
+      (time) => (time === 0 ? {} : presetWith({ ...STEADY, byDate: '2027-01-01' })),
+      neverWritten,
+    )
+    state.chooseGoal('date')
+    applyPathChanges(['Steady.md'])
+    await flushPromises()
+    expect(state.settings.value.goal).toBe('date')
+    expect(state.settings.value.byDate).toBe('2027-01-01')
+  })
+
+  it('keeps where the knob was moved to', async () => {
+    const { state, applyPathChanges } = await openPresetTab()
+    state.moveSlider(3)
+    applyPathChanges(['Steady.md'])
+    await flushPromises()
+    expect(state.settings.value.minutesADay).toBe(30)
+  })
+
+  it('takes up the file’s value where what was typed changed nothing', async () => {
+    const { state, applyPathChanges } = await openPresetTab({}, curve, (time) =>
+      time === 0 ? {} : presetWith({ ...STEADY, counts: 'shows' }),
+    )
+    state.updateSetting('counts', 'hours')
+    applyPathChanges(['Steady.md'])
+    await flushPromises()
+    expect(state.settings.value.counts).toBe('shows')
+  })
+})
+
+describe('the goal chosen again', () => {
+  it('writes nothing where it is the goal already standing', async () => {
+    const { state, written } = await openPresetTab()
+    state.chooseGoal('minutes')
+    await flushPromises()
+    expect(written).toStrictEqual([])
+  })
+})
+
+describe('the knob, as a field is typed', () => {
+  it('stays where it stands where the field is not the one the goal steers', async () => {
+    const { state } = await openPresetTab()
+    state.updateSetting('newADay', 4)
+    await flushPromises()
+    expect(state.place.value).toBe(2)
+  })
+
+  it('goes to the first place where the value typed is nearest it', async () => {
+    const { state } = await openPresetTab()
+    state.updateSetting('minutesADay', 1)
+    await flushPromises()
+    expect(state.place.value).toBe(0)
+  })
+
+  it('goes to the place nearest a value typed that the curve already answers', async () => {
+    const { state, asked } = await openPresetTab(
+      {},
+      { ...curve, now: { at: 1, value: 20, day: '' } },
+    )
+    expect(state.place.value).toBe(1)
+    state.updateSetting('minutesADay', 20)
+    await flushPromises()
+    expect(state.place.value).toBe(2)
+    expect(asked).toStrictEqual(['minutes'])
+  })
+})
+
+describe('a preset opened from elsewhere in the window', () => {
+  it('opens here under the title it was given, and keeps that title', async () => {
+    const { kind, opened } = await openPresetTab()
+    kind.openPreset('presets/Plan.md', 'Long plan')
+    kind.openPreset('presets/Plan.md')
+    expect(opened).toStrictEqual(['here presets/Plan.md', 'here presets/Plan.md'])
+    expect(kind.getTitle('presets/Plan.md')).toBe('Long plan')
+  })
+
+  it('is called by its file where it was given no title', async () => {
+    const { kind } = await openPresetTab()
+    kind.openPreset('presets/Plan.md')
+    expect(kind.getTitle('presets/Plan.md')).toBe('Plan.md')
+  })
+
+  it('opens beside the tab in front where it is asked to', async () => {
+    const { kind, opened } = await openPresetTab()
+    kind.openPreset('presets/Plan.md', '', 'beside')
+    expect(opened).toStrictEqual(['beside presets/Plan.md'])
+  })
+})
+
+describe('the tab closed by the window', () => {
+  it('is left to the preset, which writes what it owes and then closes it', async () => {
+    const { state, kind, closed } = await openPresetTab()
+    expect(kind.kind.onClose?.(state, 'Steady.md')).toBe(false)
+    await flushPromises()
+    expect(closed).toStrictEqual(['Steady.md'])
+  })
+})
+
+describe('a vault that does not answer', () => {
+  it('leaves the tab saying so, and not saying it is reading', async () => {
+    const { state } = await openPresetTab({}, curve, () => {
+      throw new Error('the vault is gone')
+    })
+    expect(state.errorMessage.value).toBe(words.unreachable)
+    expect(state.isWaiting.value).toBe(false)
+  })
+
+  it('says so where the curve of a goal chosen is not answered', async () => {
+    const { state } = await openPresetTab(
+      {},
+      (asked) => (asked.goal === 'retention' ? Promise.reject(new Error('gone')) : curve),
+      () => ({}),
+      neverWritten,
+    )
+    state.chooseGoal('retention')
+    await flushPromises()
+    expect(state.errorMessage.value).toBe(words.noCurve)
+  })
+
+  it('says so where the curve of a setting typed is not answered', async () => {
+    const { state } = await openPresetTab({}, (asked) =>
+      asked.newADay === 4 ? Promise.reject(new Error('gone')) : curve,
+    )
+    state.updateSetting('newADay', 4)
+    await flushPromises()
+    expect(state.errorMessage.value).toBe(words.noCurve)
   })
 })
