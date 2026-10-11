@@ -81,3 +81,39 @@ describe('useWindowStatusBar', () => {
     expect(statusBar.tasks.value).toHaveLength(0)
   })
 })
+
+describe('useWindowStatusBar detail and unit', () => {
+  const base: Task = {
+    id: 't',
+    label: 'Reading',
+    about: '',
+    done: 1,
+    total: 4,
+    counting: 'things',
+    error: '',
+    isAsked: false,
+  }
+  const first = (task: Task) => useWindowStatusBar({ tasks: ref([task]) }).tasks.value[0]!
+
+  it('carries what the task is about as its detail, and nothing where it is about nothing', () => {
+    expect(first({ ...base, about: 'doc.pdf' }).detail).toBe('doc.pdf')
+    expect(first(base).detail).toBeUndefined()
+  })
+
+  it('names the unit a task counts, and none where it counts things', () => {
+    expect(first({ ...base, counting: 'seconds' }).unit).toBe('seconds')
+    expect(first(base).unit).toBeUndefined()
+  })
+
+  it('lets a running task be cancelled and a failed one not', () => {
+    expect(first(base).canCancel).toBe(true)
+    expect(first({ ...base, error: 'broken' }).canCancel).toBe(false)
+  })
+
+  it('carries the counts of a task that has a total, and none of one that has not', () => {
+    expect(first(base)).toMatchObject({ currentCount: 1, totalCount: 4, progress: 25 })
+    const none = first({ ...base, total: 0 })
+    expect(none.currentCount).toBeUndefined()
+    expect(none.totalCount).toBeUndefined()
+  })
+})
