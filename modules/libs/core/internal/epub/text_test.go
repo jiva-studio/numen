@@ -19,6 +19,8 @@ func TestMarkupBecomesText(t *testing.T) {
 			`<p>a&#12;b&#11;c&#13;d</p>`, "a b c d\n"},
 		{"a space outside ASCII is space", "<p>a\u2003b</p>", "a b\n"},
 		{"a space outside ASCII at the start of a book is not text", "<p>\u2003a</p>", "a\n"},
+		{"a space outside ASCII after a space is not text", "<p>a \u2003b</p>", "a b\n"},
+		{"a space outside ASCII at the start of a line is not text", "<p>a</p>\u2003b", "a\nb\n"},
 		{"the space before the end of a block is taken back", `<p>Ab </p>`, "Ab\n"},
 		{"text standing in no element still ends its line", `Nu`, "Nu\n"},
 		{"a block begins a line after the text before it", `<body>Lead<p>Para</p></body>`, "Lead\nPara\n"},
@@ -237,4 +239,35 @@ func readOne(t *testing.T, markup string) (*epub.Book, *epub.Markup) {
 		t.Fatalf("markup: %v", err)
 	}
 	return book, drawn
+}
+
+// A pre left open at the end of a document does not keep the next document
+// preformatted.
+func TestPreLeftOpenEndsWithItsDocument(t *testing.T) {
+	book := read(t, buildSpineArchive(t, twoDocumentOpf, map[string]string{
+		"OEBPS/one.xhtml": `<pre>kept  as it was`,
+		"OEBPS/two.xhtml": `<p>one   run</p>`,
+		"OEBPS/toc.ncx":   `<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1"><navMap></navMap></ncx>`,
+	}))
+	if want := "kept  as it was\none run\n"; book.Text != want {
+		t.Errorf("the text is %q, want %q", book.Text, want)
+	}
+}
+
+// A line break holds no text, and what follows it stands beside it.
+func TestLineBreakHoldsNoText(t *testing.T) {
+	_, drawn := readOne(t, `<p>a<br/>b</p>`)
+	if len(drawn.Nodes) != 1 || drawn.Nodes[0].Name != "p" {
+		t.Fatalf("nodes = %+v, want one paragraph", drawn.Nodes)
+	}
+	var names []string
+	for _, child := range drawn.Nodes[0].Children {
+		names = append(names, child.Name)
+		if child.Name == "br" && len(child.Children) != 0 {
+			t.Errorf("the break holds %+v, want nothing", child.Children)
+		}
+	}
+	if got := slices.Index(names, "br"); got < 0 {
+		t.Errorf("the paragraph holds %q, want a break among them", names)
+	}
 }

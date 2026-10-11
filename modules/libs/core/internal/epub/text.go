@@ -173,6 +173,7 @@ func (x *extractor) writeBytes(b []byte) {
 	}
 	for i := 0; i < len(b); {
 		c := b[i]
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="byte 0x80 starts no sequence and is kept as one byte on either path"
 		if c < utf8.RuneSelf {
 			i++
 			if c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v' {
@@ -245,6 +246,7 @@ func (x *extractor) tokenize(markup []byte) {
 			return
 
 		case html.CommentToken, html.DoctypeToken:
+			// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
 			continue
 
 		case html.TextToken:
@@ -260,6 +262,7 @@ func (x *extractor) tokenize(markup []byte) {
 				if skipAtom == 0 && len(text) > 0 {
 					x.writeBytes(text)
 				}
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
 				continue
 			}
 			if skipAtom == 0 {
@@ -275,6 +278,7 @@ func (x *extractor) tokenize(markup []byte) {
 				if skipAtom == atom.Head && (a == atom.Body || blocks[a]) {
 					skipAtom = 0
 				} else {
+					// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
 					continue
 				}
 			}
@@ -283,11 +287,13 @@ func (x *extractor) tokenize(markup []byte) {
 				if tt == html.StartTagToken {
 					skipAtom = a
 				}
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
 				continue
 			}
 
 			if a == atom.Br {
 				x.breakLine()
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
 				continue
 			}
 
@@ -389,6 +395,7 @@ func (x *extractor) tokenize(markup []byte) {
 				if a == skipAtom {
 					skipAtom = 0
 				}
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
 				continue
 			}
 
@@ -396,6 +403,7 @@ func (x *extractor) tokenize(markup []byte) {
 				if a == atom.Br {
 					x.breakLine()
 				}
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
 				continue
 			}
 
@@ -486,6 +494,7 @@ func (x *extractor) breakLine() {
 
 func (x *extractor) last() (byte, bool) {
 	if len(x.out) == 0 {
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="the byte is read only when the second result is true"
 		return 0, false
 	}
 	return x.out[len(x.out)-1], true
@@ -592,6 +601,7 @@ func headingLevel(a atom.Atom) int {
 	case atom.H6:
 		return 6
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="every caller tests the level for greater than zero"
 	return 0
 }
 
