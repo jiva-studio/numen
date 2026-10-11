@@ -143,8 +143,8 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	core.Sources.Derived = filesystem.DerivedStores{
 		Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
 	}
-	said := &sourced{said: map[string]port.SourceText{}}
-	core.Sources.Queries = said
+	queries := &sourced{known: map[string]port.SourceText{}}
+	core.Sources.Queries = queries
 	session := sessionOf(t, mcp.New(core))
 	_ = v
 
@@ -154,7 +154,7 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	}
 	// The index is what says which producer stands for a path, and a scan is
 	// what writes it. This is that row.
-	said.said[made.Path] = port.SourceText{
+	queries.known[made.Path] = port.SourceText{
 		Fingerprint: domain.Fingerprint{Path: made.Path},
 		Producer:    derived.Captions,
 		Hash:        derived.Fingerprint([]byte(aVideo)),
@@ -183,12 +183,12 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 // sourced is what the index says was made from each path.
 type sourced struct {
 	port.SourceQueries
-	said map[string]port.SourceText
+	known map[string]port.SourceText
 }
 
 func (s *sourced) Reading(
 	_ context.Context, _ domain.VaultID, path string,
 ) (port.SourceText, bool, error) {
-	one, held := s.said[path]
+	one, held := s.known[path]
 	return one, held, nil
 }

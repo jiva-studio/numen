@@ -70,8 +70,8 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 		},
 		closed: closed,
 	}
-	said := &sourced{said: map[string]port.SourceText{}}
-	core.Sources.Queries = said
+	queries := &sourced{known: map[string]port.SourceText{}}
+	core.Sources.Queries = queries
 	session := sessionOf(t, mcp.New(core))
 
 	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{
@@ -80,7 +80,7 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 	if made.Refused != "" || made.CopyRefused != "" {
 		t.Fatalf("the address or its copy was refused: %q %q", made.Refused, made.CopyRefused)
 	}
-	said.said[made.Path] = port.SourceText{
+	queries.known[made.Path] = port.SourceText{
 		Fingerprint: domain.Fingerprint{Path: made.Path},
 		Producer:    derived.Captions,
 		Hash:        derived.Fingerprint([]byte(aVideo)),
@@ -90,13 +90,13 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 		Artifacts []mcp.Artifact `json:"artifacts"`
 	}](t, session, "artifact_list", map[string]any{"path": made.Path})
 
-	held := false
+	hasCopy := false
 	for _, one := range listed.Artifacts {
 		if one.Kind == "copy" {
-			held = true
+			hasCopy = true
 		}
 	}
-	if !held {
+	if !hasCopy {
 		t.Fatalf("no copy artifact was listed: %+v", listed.Artifacts)
 	}
 	if len(closed) == 0 {
