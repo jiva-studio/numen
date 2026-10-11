@@ -149,10 +149,63 @@ func ParseProvider(name string) (Provider, error) {
 	}
 }
 
-// SessionSettings configures how an ONNX session is initialized.
+// ComputeUnits names the hardware CoreML may place a model on.
+type ComputeUnits string
+
+const (
+	// ComputeUnitsDefault leaves the choice to the runtime's setup, which is
+	// ComputeUnitsAll.
+	ComputeUnitsDefault ComputeUnits = ""
+
+	// ComputeUnitsAll places the model on the CPU, the GPU and the Neural Engine.
+	ComputeUnitsAll ComputeUnits = "ALL"
+
+	// ComputeUnitsCPUAndNeuralEngine places the model on the CPU and the Neural Engine.
+	ComputeUnitsCPUAndNeuralEngine ComputeUnits = "CPUAndNeuralEngine"
+
+	// ComputeUnitsCPUAndGPU places the model on the CPU and the GPU.
+	ComputeUnitsCPUAndGPU ComputeUnits = "CPUAndGPU"
+
+	// ComputeUnitsCPUOnly places the model on the CPU.
+	ComputeUnitsCPUOnly ComputeUnits = "CPUOnly"
+)
+
+// ParseComputeUnits converts a string into valid ComputeUnits. The spelling is
+// the runtime's own and the match ignores case.
+func ParseComputeUnits(name string) (ComputeUnits, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return ComputeUnitsDefault, nil
+	}
+	for _, units := range []ComputeUnits{
+		ComputeUnitsAll, ComputeUnitsCPUAndNeuralEngine, ComputeUnitsCPUAndGPU, ComputeUnitsCPUOnly,
+	} {
+		if strings.EqualFold(trimmed, string(units)) {
+			return units, nil
+		}
+	}
+	return ComputeUnitsDefault, fmt.Errorf("unknown compute units %q, expected one of: ALL, CPUAndNeuralEngine, CPUAndGPU, CPUOnly", name)
+}
+
+// getCoreMLOptions is the option list the keyed CoreML entry point is given.
+func getCoreMLOptions(cacheDir string, units ComputeUnits) [][2]string {
+	if units == ComputeUnitsDefault {
+		units = ComputeUnitsAll
+	}
+	return [][2]string{
+		{"ModelCacheDirectory", cacheDir},
+		{"EnableOnSubgraphs", "1"},
+		{"CreateMLProgram", "1"},
+		{"MLComputeUnits", string(units)},
+	}
+}
+
+// SessionSettings configures how an ONNX session is initialized. Only the
+// CoreML provider reads ComputeUnits.
 type SessionSettings struct {
-	Provider Provider
-	Threads  int
+	Provider     Provider
+	Threads      int
+	ComputeUnits ComputeUnits
 }
 
 // DefaultThreads is the default intra-op thread count for ONNX sessions.
@@ -187,7 +240,12 @@ func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptio
 		return nil, "", err
 	}
 
-	used, err := applyProvider(opts, s.Provider)
+	if _, err := ParseComputeUnits(string(s.ComputeUnits)); err != nil {
+		opts.Destroy()
+		return nil, "", err
+	}
+
+	used, err := applyProvider(opts, s.Provider, s.ComputeUnits)
 	if err != nil {
 		if s.Provider != ProviderAuto && s.Provider != "" {
 			opts.Destroy()

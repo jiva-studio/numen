@@ -2,11 +2,14 @@ package vault
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io/fs"
 	"maps"
 	"slices"
+	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -28,23 +31,125 @@ type Refresh struct {
 	// takes those rows out.
 	queries port.SourceQueries
 	sources port.SourceRepository
+	// now says which notes were modified recently enough to be edited again under
+	// the same modification time.
+	now port.Clock
 
 	// Derived is where what was downloaded for a link note is kept. A run given
 	// none indexes every note as the prose in its file.
 	Derived port.DerivedStores
+
+	// Ledger holds the content of notes indexed while their modification time
+	// was too recent to tell a second edit from the first. Refreshes that share
+	// an index share one.
+	Ledger *Ledger
+
+	// Force reads, parses and saves every named note, whatever the index holds
+	// about it.
+	Force bool
+}
+
+// TimestampGranularity is the coarsest step in which a supported file system
+// records modification times; FAT stores them in two-second steps. A file
+// modified less than this long ago can be edited again without its modification
+// time changing.
+const TimestampGranularity = 2 * time.Second
+
+// Ledger is the content hash of each note indexed while its modification time was
+// within TimestampGranularity of the clock. A refresh skips such a note only when
+// its bytes still hash to the recorded value. An entry is held only while its
+// file is inside that window.
+type Ledger struct {
+	mu   sync.Mutex
+	held map[ledgerKey]ledgerEntry
+}
+
+type ledgerKey struct {
+	vault domain.VaultID
+	path  string
+}
+
+type ledgerEntry struct {
+	fingerprint domain.Fingerprint
+	hash        [sha256.Size]byte
+}
+
+// NewLedger is a ledger holding nothing.
+func NewLedger() *Ledger { return &Ledger{held: make(map[ledgerKey]ledgerEntry)} }
+
+func (l *Ledger) get(now time.Time, v domain.VaultID, path string) (ledgerEntry, bool) {
+	if l == nil {
+		return ledgerEntry{}, false
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.prune(now)
+	entry, ok := l.held[ledgerKey{v, path}]
+	return entry, ok
+}
+
+func (l *Ledger) put(now time.Time, v domain.VaultID, path string, entry ledgerEntry) {
+	if l == nil {
+		return
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.held[ledgerKey{v, path}] = entry
+	l.prune(now)
+}
+
+// Len is how many notes the ledger holds.
+func (l *Ledger) Len() int {
+	if l == nil {
+		return 0
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return len(l.held)
+}
+
+// prune forgets the entries whose file has left the window. The caller holds the
+// lock.
+func (l *Ledger) prune(now time.Time) {
+	for key, entry := range l.held {
+		if now.Sub(entry.fingerprint.ModTime) >= TimestampGranularity {
+			delete(l.held, key)
+		}
+	}
+}
+
+func (l *Ledger) drop(v domain.VaultID, path string) {
+	if l == nil {
+		return
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.held, ledgerKey{v, path})
+}
+
+// isRecent reports whether a file modified at mtime can still be edited again
+// under the same modification time.
+func (u Refresh) isRecent(mtime time.Time) bool {
+	return u.now().Sub(mtime) < TimestampGranularity
 }
 
 // NewRefresh is how the index is brought level with a handful of files: the
 // vault they are read out of, the row it is filed under, where a note is filed,
-// and the two the rows of a book and a recording are swept through.
+// the two the rows of a book and a recording are swept through, and the clock
+// that says which notes were modified recently.
 func NewRefresh(
 	readers port.VaultReaders,
 	vaults port.VaultRepository,
 	notes port.NoteRepository,
 	queries port.SourceQueries,
 	sources port.SourceRepository,
+	now port.Clock,
 ) Refresh {
-	return Refresh{readers: readers, vaults: vaults, notes: notes, queries: queries, sources: sources}
+	return Refresh{
+		readers: readers, vaults: vaults, notes: notes, queries: queries, sources: sources,
+		now:    now,
+		Ledger: NewLedger(),
+	}
 }
 
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
@@ -66,6 +171,14 @@ func (r RefreshResult) GetChangedPaths() []string {
 	return append(append([]string(nil), r.Indexed...), r.Removed...)
 }
 
+// Execute brings the named notes up to date.
+//
+// A note whose size and modification time equal the index's row is reported in
+// Indexed without being saved, unless Force is set. It is skipped without a read
+// when its modification time is at least TimestampGranularity old; a more recent
+// one is skipped only when its bytes hash to what the ledger recorded at its last
+// save. A recent note is hashed only when the ledger knows it. A scan decides on
+// size and modification time alone.
 func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (RefreshResult, error) {
 	var res RefreshResult
 	if len(paths) == 0 {
@@ -89,6 +202,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 		return u.notes.Save(ctx, v.ID, notes)
 	}}
 
+	recorded := make(map[string]*ledgerEntry)
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
 			return res, err
@@ -120,6 +234,10 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			res.Assets = append(res.Assets, path)
 			continue
 		}
+		if !u.Force && u.isCurrent(ctx, reader, v, ref) {
+			res.Indexed = append(res.Indexed, path)
+			continue
+		}
 		raw, err := reader.Read(ctx, path)
 		if errors.Is(err, fs.ErrNotExist) {
 			// It was there a moment ago, when it was looked at. A file that
@@ -137,10 +255,22 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 			return res, fmt.Errorf("index: %w", err)
 		}
 		res.Indexed = append(res.Indexed, path)
+		if u.isRecent(ref.ModTime) {
+			recorded[path] = &ledgerEntry{fingerprint: ref, hash: sha256.Sum256(raw)}
+		} else {
+			recorded[path] = nil
+		}
 	}
 
 	if err := group.flush(ctx); err != nil {
 		return res, fmt.Errorf("index: %w", err)
+	}
+	for path, entry := range recorded {
+		if entry == nil {
+			u.Ledger.drop(v.ID, path)
+			continue
+		}
+		u.Ledger.put(u.now(), v.ID, path, *entry)
 	}
 	// Both leave the index, and they leave it for different reasons: one path
 	// has nothing at it, the other has something that is not a note.
@@ -181,4 +311,33 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 		}
 	}
 	return nil
+}
+
+// isCurrent reports whether the index already holds the note as the file is.
+func (u Refresh) isCurrent(ctx context.Context, reader port.VaultReader, v domain.Vault, ref domain.Fingerprint) bool {
+	held, err := u.queries.GetSourcesUnder(ctx, v.ID, ref.Path)
+	if err != nil {
+		return false
+	}
+	at := slices.IndexFunc(held, func(f domain.Fingerprint) bool {
+		return f.Path == ref.Path && f.Kind == domain.KindNote
+	})
+	if at < 0 || !held[at].IsUnchanged(ref) {
+		return false
+	}
+	entry, ok := u.Ledger.get(u.now(), v.ID, ref.Path)
+	if !ok {
+		return !u.isRecent(ref.ModTime)
+	}
+	if !entry.fingerprint.IsUnchanged(ref) {
+		return false
+	}
+	raw, err := reader.Read(ctx, ref.Path)
+	if err != nil || sha256.Sum256(raw) != entry.hash {
+		return false
+	}
+	if !u.isRecent(ref.ModTime) {
+		u.Ledger.drop(v.ID, ref.Path)
+	}
+	return true
 }

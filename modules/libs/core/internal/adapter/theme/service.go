@@ -166,7 +166,11 @@ func (s *Service) WatchThemes(
 	_ *connect.Request[v1.WatchThemesRequest],
 	stream *connect.ServerStream[v1.WatchThemesResponse],
 ) error {
-	changed, err := s.Catalogue.Watch(ctx, s.Hold)
+	// The folder watch ends with this call, whichever way it ends.
+	watching, stop := context.WithCancel(ctx)
+	defer stop()
+
+	changed, err := s.Catalogue.Watch(watching, s.Hold)
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}

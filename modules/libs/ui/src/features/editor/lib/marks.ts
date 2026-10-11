@@ -15,6 +15,22 @@ import { gridOf } from './grid'
 import { BULLET, HEADING, hidden, INLINE, line, mark, SHY } from './styles'
 import { Box, Bullet, Picture, Rule } from './widgets'
 
+/** The block nodes that hold other blocks; a Table or a HorizontalRule stands only in these. */
+const BLOCK_CONTAINERS = new Set([
+  'Document',
+  'Blockquote',
+  'BulletList',
+  'OrderedList',
+  'ListItem',
+])
+
+/** A node drawn as whole lines. */
+export interface BlockNode {
+  readonly name: 'Table' | 'HorizontalRule'
+  readonly from: number
+  readonly to: number
+}
+
 /**
  * What is drawn between `from` and `to`.
  *
@@ -191,7 +207,7 @@ const build = (
     enter: (node) => {
       const asBlock = takeBlock(node)
       if (asBlock !== null) return asBlock
-      if (blocks) return true
+      if (blocks) return BLOCK_CONTAINERS.has(node.name)
 
       return (
         takeLine(node) ??
@@ -214,3 +230,18 @@ export const getMarks = (state: EditorState, from: number, to: number) =>
 
 /** What is drawn in place of whole lines: a rule, a table. */
 export const blockMarks = (state: EditorState) => build(state, 0, state.doc.length, 'blocks')
+
+/** The tables and rules of the document, in order, with the stretch each one is written in. */
+export const findBlocks = (state: EditorState): BlockNode[] => {
+  const found: BlockNode[] = []
+  syntaxTree(state).iterate({
+    enter: (node) => {
+      if (node.name === 'Table' || node.name === 'HorizontalRule') {
+        found.push({ name: node.name, from: node.from, to: node.to })
+        return false
+      }
+      return BLOCK_CONTAINERS.has(node.name)
+    },
+  })
+  return found
+}

@@ -22,7 +22,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			doc, err := open(raw)
+			doc, err := openBytes(raw)
 			if err != nil {
 				t.Fatal(err)
 			}

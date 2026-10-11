@@ -5,15 +5,23 @@
  * drawn for the lines on screen with a margin either side of them.
  */
 import { syntaxTree } from '@codemirror/language'
-import { StateField } from '@codemirror/state'
+import {
+  type EditorSelection,
+  type EditorState,
+  type Range,
+  StateField,
+  type Transaction,
+} from '@codemirror/state'
 import {
   Decoration,
   type DecorationSet,
   EditorView,
   ViewPlugin,
   type ViewUpdate,
+  type WidgetType,
 } from '@codemirror/view'
-import { blockMarks, getMarks } from './marks'
+import { moveBlock } from './grid'
+import { type BlockNode, blockMarks, findBlocks, getMarks } from './marks'
 
 /**
  * How far past the lines on screen the marks are drawn, in characters. A pane
@@ -44,18 +52,84 @@ const getDrawnRange = (view: EditorView) => {
   }
 }
 
+/** The marks of the whole lines, and the tables and rules they stand for. */
+interface Blocks {
+  readonly marks: DecorationSet
+  readonly nodes: readonly BlockNode[]
+}
+
+const createBlocks = (state: EditorState): Blocks => ({
+  marks: blockMarks(state),
+  nodes: findBlocks(state),
+})
+
+const isSelected = (selection: EditorSelection, node: BlockNode) =>
+  selection.ranges.some((range) => range.from <= node.to && range.to >= node.from)
+
+/** Whether a changed range reaches the node. `start` is where the range's bounds begin in `ranges`. */
+const isTouched = (node: BlockNode, ranges: readonly number[], start: 0 | 2) => {
+  for (let at = 0; at < ranges.length; at += 4) {
+    const from = ranges[at + start] as number
+    const to = ranges[at + start + 1] as number
+    if (from <= node.to && to >= node.from) return true
+  }
+  return false
+}
+
+/**
+ * Whether the marks of `was` still stand after the transaction: the same
+ * tables and rules are written in the same places, no change reaches any of
+ * them, and the selection is in the same ones.
+ */
+const isUnchanged = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction) => {
+  if (was.nodes.length !== nodes.length) return false
+
+  const ranges: number[] = []
+  tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => void ranges.push(fromA, toA, fromB, toB))
+
+  return nodes.every((node, index) => {
+    const before = was.nodes[index] as BlockNode
+    return (
+      before.name === node.name &&
+      tr.changes.mapPos(before.from, 1) === node.from &&
+      tr.changes.mapPos(before.to, -1) === node.to &&
+      !isTouched(before, ranges, 0) &&
+      !isTouched(node, ranges, 2) &&
+      isSelected(tr.startState.selection, before) === isSelected(tr.state.selection, node)
+    )
+  })
+}
+
+/** The marks of `was`, standing where the changes have carried them. */
+const mapBlocks = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction): Blocks => {
+  if (tr.changes.empty) return nodes === was.nodes ? was : { marks: was.marks, nodes }
+
+  const moved: Range<Decoration>[] = []
+  was.marks.map(tr.changes).between(0, tr.state.doc.length, (from, to, mark) => {
+    const spec = mark.spec as { widget?: WidgetType }
+    const widget = spec.widget && moveBlock(spec.widget, tr.changes)
+    moved.push(
+      widget === spec.widget || !widget
+        ? mark.range(from, to)
+        : Decoration.replace({ widget, block: true }).range(from, to),
+    )
+  })
+  return { marks: Decoration.set(moved, true), nodes }
+}
+
 /** A widget standing for whole lines is the state's to hold, not a plugin's. */
-export const wholeLines = StateField.define<DecorationSet>({
-  create: (state) => blockMarks(state),
-  update: (was, transaction) =>
-    transaction.docChanged ||
-    transaction.selection ||
-    syntaxTree(transaction.startState) != syntaxTree(transaction.state)
-      ? blockMarks(transaction.state)
-      : was,
+export const wholeLines = StateField.define<Blocks>({
+  create: createBlocks,
+  update: (was, tr) => {
+    const isSameTree = syntaxTree(tr.startState) === syntaxTree(tr.state)
+    if (!tr.docChanged && !tr.selection && isSameTree) return was
+
+    const nodes = !tr.docChanged && isSameTree ? was.nodes : findBlocks(tr.state)
+    return isUnchanged(was, nodes, tr) ? mapBlocks(was, nodes, tr) : createBlocks(tr.state)
+  },
   provide: (field) => [
-    EditorView.decorations.from(field),
-    EditorView.atomicRanges.of((view) => view.state.field(field)),
+    EditorView.decorations.from(field, (blocks) => blocks.marks),
+    EditorView.atomicRanges.of((view) => view.state.field(field).marks),
   ],
 })
 

@@ -1,0 +1,14 @@
+{
+  "name": "@numen/mutation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Mutation testing for the Go core and the interface packages: a run over the lines a branch changed, a full run with its cache, and one issue per target listing the mutants the suite does not notice.",
+  "scripts": {
+    "check": "node --test ./*.test.mjs"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0"
+  }
+}

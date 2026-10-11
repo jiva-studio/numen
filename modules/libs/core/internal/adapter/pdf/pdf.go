@@ -107,10 +107,25 @@ var (
 
 // Read extracts one document from the bytes of a PDF file.
 func Read(raw []byte) (*Book, error) {
-	doc, err := open(raw)
+	doc, err := openBytes(raw)
 	if err != nil {
 		return nil, err
 	}
+	return readBook(doc), nil
+}
+
+// ReadFile extracts one document from a PDF file. The file is read as the
+// library asks for it and is closed before this returns.
+func ReadFile(path string) (*Book, error) {
+	doc, err := openPath(path)
+	if err != nil {
+		return nil, err
+	}
+	return readBook(doc), nil
+}
+
+// readBook reads the open document and closes it.
+func readBook(doc *document) *Book {
 	defer doc.close()
 
 	book := &Book{Title: doc.title()}
@@ -146,7 +161,7 @@ func Read(raw []byte) (*Book, error) {
 	sort.SliceStable(book.Parts, func(i, j int) bool {
 		return book.Parts[i].Offset < book.Parts[j].Offset
 	})
-	return book, nil
+	return book
 }
 
 // A Location is where an offset in the text falls.

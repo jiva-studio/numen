@@ -27,6 +27,11 @@ type Config struct {
 	Recognise RecogniserModel `json:"recognise"`
 	Regions   RegionKinds     `json:"regions"`
 
+	// Compute is what the hardware and the performance profile allow. It is
+	// not a setting and is not written down; a thread count or job count that
+	// the recogniser section sets takes precedence over it.
+	Compute Compute `json:"-"`
+
 	// Progress is told how far a download has got, when anything is listening.
 	// It is not a setting and is not written down: it is how the wait reaches
 	// whoever is watching it.
@@ -101,9 +106,9 @@ type RecogniserModel struct {
 	// Height is what a line is scaled to before it is read.
 	Height int `json:"height"`
 
-	// Jobs is how many jobs the recogniser runs at once.
+	// Jobs is how many recognition sessions run at once. Zero takes the performance profile.
 	Jobs int `json:"jobs"`
-	// Threads is how many threads one model may use.
+	// Threads is how many threads one model may use. Zero takes the performance profile.
 	Threads int `json:"threads"`
 }
 
@@ -216,20 +221,6 @@ func (r RecogniserModel) height() int {
 	return r.Height
 }
 
-func (r RecogniserModel) jobs() int {
-	if r.Jobs <= 0 {
-		return 4
-	}
-	return r.Jobs
-}
-
-func (r RecogniserModel) threads() int {
-	if r.Threads <= 0 {
-		return onnxruntime.DefaultThreads()
-	}
-	return r.Threads
-}
-
 // body are the parts of a page that carry what the document says.
 func (r RegionKinds) body() []string {
 	if len(r.Body) > 0 {
@@ -247,4 +238,38 @@ func (r RegionKinds) head() []string {
 		return r.Head
 	}
 	return []string{"doc_title", "paragraph_title"}
+}
+
+// Compute is the thread count of each model and the number of recognition
+// sessions a performance profile resolves to. A zero field is unresolved.
+type Compute struct {
+	Threads int
+	Jobs    int
+}
+
+const (
+	// fallbackThreads and fallbackJobs apply when neither the recogniser
+	// section nor a performance profile names a count.
+	fallbackThreads = 4
+	fallbackJobs    = 4
+)
+
+func (c Config) jobs() int {
+	switch {
+	case c.Recognise.Jobs > 0:
+		return c.Recognise.Jobs
+	case c.Compute.Jobs > 0:
+		return c.Compute.Jobs
+	}
+	return fallbackJobs
+}
+
+func (c Config) threads() int {
+	switch {
+	case c.Recognise.Threads > 0:
+		return c.Recognise.Threads
+	case c.Compute.Threads > 0:
+		return c.Compute.Threads
+	}
+	return min(fallbackThreads, onnxruntime.DefaultThreads())
 }

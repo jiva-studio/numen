@@ -58,7 +58,10 @@ func (f *following) say() {
 // What changed is not carried and not acted on. The page asks what the vaults
 // come to now, which is the one answer that cannot go stale. Who watches what
 // is the command's: this holds the listeners and nothing else.
-func (a *API) ReportChange() { a.listeners.say() }
+func (a *API) ReportChange() {
+	a.CardsDue.CardFaces().InvalidateAll()
+	a.listeners.say()
+}
 
 // Follow says ReportChange for everything one channel reports, until it closes
 // or ctx is done.

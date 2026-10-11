@@ -231,3 +231,57 @@ func BenchmarkNewSessionOptions(b *testing.B) {
 		})
 	}
 }
+
+// ParseProvider reads an empty name as auto; a session whose settings leave the
+// provider empty is not parsed from a name, and runs on the CPU.
+func TestASessionWithNoProviderRunsOnTheCPU(t *testing.T) {
+	engine, _, err := onnxruntime.Open(t.Context(), onnxruntime.Settings{Section: "indexing.recognition"})
+	if err != nil {
+		t.Skipf("onnx runtime not available: %v", err)
+	}
+
+	opts, used, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{Threads: 1})
+	if err != nil {
+		t.Fatalf("NewSessionOptions with no provider failed: %v", err)
+	}
+	defer opts.Destroy()
+
+	if used != onnxruntime.ProviderCPU {
+		t.Errorf("no provider ran as %v, want %v", used, onnxruntime.ProviderCPU)
+	}
+}
+
+func TestSessionOptionsRefuseUnknownComputeUnits(t *testing.T) {
+	engine, _, err := onnxruntime.Open(t.Context(), onnxruntime.Settings{Section: "indexing.recognition"})
+	if err != nil {
+		t.Skipf("onnx runtime not available: %v", err)
+	}
+
+	_, _, err = onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+		Provider:     onnxruntime.ProviderCPU,
+		ComputeUnits: "NeuralEngine",
+	})
+	if err == nil {
+		t.Error("expected an error for compute units the runtime does not know, got nil")
+	}
+}
+
+func TestComputeUnitsLeaveTheCPUProviderAlone(t *testing.T) {
+	engine, _, err := onnxruntime.Open(t.Context(), onnxruntime.Settings{Section: "indexing.recognition"})
+	if err != nil {
+		t.Skipf("onnx runtime not available: %v", err)
+	}
+
+	opts, used, err := onnxruntime.NewSessionOptions(engine, onnxruntime.SessionSettings{
+		Provider:     onnxruntime.ProviderCPU,
+		ComputeUnits: onnxruntime.ComputeUnitsCPUAndNeuralEngine,
+	})
+	if err != nil {
+		t.Fatalf("NewSessionOptions(CPU, compute units) failed: %v", err)
+	}
+	defer opts.Destroy()
+
+	if used != onnxruntime.ProviderCPU {
+		t.Errorf("expected ProviderCPU, got %v", used)
+	}
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
+import { computed, watch } from 'vue'
 
 import { openNotes, type Notes } from './notes'
 
@@ -629,5 +630,101 @@ describe('reloading a note', () => {
     notes.reload('Heat.md', 'Cold.md')
     await settle()
     expect(notes.getOpenNote('Heat.md').body).toBe('second body')
+  })
+})
+
+describe('a reader of one open note', () => {
+  /** Two notes open, each with a computed that counts how often it is evaluated. */
+  const createReaders = async () => {
+    const { core, files } = fake()
+    files.set('A.md', 'a')
+    files.set('B.md', 'b')
+    const notes = openNotes(core, { limits: { quiet: 1000, bound: 5000 } })
+    notes.open('A.md')
+    notes.open('B.md')
+    await settle()
+
+    const runs = { A: 0, B: 0, ids: 0 }
+    const noteA = computed(() => (runs.A++, notes.getOpenNote('A.md')))
+    const noteB = computed(() => (runs.B++, notes.getOpenNote('B.md')))
+    const ids = computed(() => (runs.ids++, notes.getOpenIds()))
+    const read = () => [noteA.value, noteB.value, ids.value] as const
+    read()
+    return { notes, files, runs, read, noteA, noteB, ids }
+  }
+
+  it('is not evaluated again when another note is typed into', async () => {
+    const { notes, runs, read, noteA, noteB } = await createReaders()
+    const before = { ...runs }
+
+    notes.setBody('A.md', 'a and more')
+    read()
+
+    expect(noteA.value.body).toBe('a and more')
+    expect(noteB.value.body).toBe('b')
+    expect(runs.A).toBe(before.A + 1)
+    expect(runs.B).toBe(before.B)
+    expect(runs.ids).toBe(before.ids)
+  })
+
+  it('is not evaluated again when another note is replaced by its file', async () => {
+    const { notes, files, runs, read } = await createReaders()
+    const before = { ...runs }
+
+    files.set('A.md', 'changed on disk')
+    notes.applyPathChanges(['A.md'])
+    await settle()
+    read()
+
+    expect(notes.getOpenNote('A.md').body).toBe('changed on disk')
+    expect(runs.B).toBe(before.B)
+    expect(runs.ids).toBe(before.ids)
+  })
+})
+
+describe('the ids of the open notes', () => {
+  it('are read again when a note is opened or closed, and only then', async () => {
+    const { core, files } = fake()
+    files.set('A.md', 'a')
+    files.set('B.md', 'b')
+    const notes = openNotes(core, { limits: quick })
+    const seen: string[][] = []
+    const stop = watch(
+      () => [...notes.getOpenIds()],
+      (ids) => seen.push(ids),
+      { flush: 'sync' },
+    )
+
+    notes.open('A.md')
+    await settle()
+    notes.setBody('A.md', 'a2')
+    notes.open('B.md')
+    await settle()
+    notes.setBody('B.md', 'b2')
+    expect(seen.at(-1)).toEqual(['A.md', 'B.md'])
+    const afterOpen = seen.length
+
+    notes.setBody('A.md', 'a3')
+    expect(seen).toHaveLength(afterOpen)
+
+    await notes.close('A.md')
+    expect(seen.at(-1)).toEqual(['B.md'])
+    stop()
+  })
+
+  it('keep the order of opening and the history of a note across typing', async () => {
+    const { core, files, wrote } = fake()
+    files.set('A.md', 'a')
+    const notes = openNotes(core, { limits: quick })
+    notes.open('A.md')
+    await settle()
+
+    notes.setBody('A.md', 'a1')
+    notes.setBody('A.md', 'a12')
+    expect(notes.getOpenNote('A.md')).toMatchObject({ body: 'a12', state: 'unsaved' })
+    expect(notes.getOpenIds()).toEqual(['A.md'])
+
+    await vi.waitFor(() => expect(wrote.at(-1)?.body).toBe('a12'))
+    expect(notes.getOpenNote('A.md').state).toBe('clean')
   })
 })

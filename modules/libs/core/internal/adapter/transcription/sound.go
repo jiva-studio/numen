@@ -303,22 +303,37 @@ func readSigned(raw []byte) int64 {
 	return out
 }
 
-// fromMP3 decodes an mp3, which comes out as two channels of sixteen bits at
-// the rate it was recorded at.
+// The decoder writes an mp3 as two channels of sixteen bits, four bytes to a
+// moment, and fromMP3 reads it in blocks of mp3BlockMoments of them.
+const (
+	mp3MomentBytes  = 4
+	mp3BlockMoments = 4096
+)
+
+// fromMP3 decodes an mp3 into one channel of floating point at the rate it was
+// recorded at, a block at a time.
 func fromMP3(raw []byte) ([]float32, int, error) {
 	decoder, err := mp3.NewDecoder(bytes.NewReader(raw))
 	if err != nil {
 		return nil, 0, fmt.Errorf("the mp3 recording: %w", err)
 	}
-	body, err := io.ReadAll(decoder)
-	if err != nil {
-		return nil, 0, fmt.Errorf("the mp3 recording: %w", err)
+	out := make([]float32, 0, max(decoder.Length()/mp3MomentBytes, 0))
+	block := make([]byte, mp3BlockMoments*mp3MomentBytes)
+	for {
+		read, err := io.ReadFull(decoder, block)
+		for i := 0; i+mp3MomentBytes <= read; i += mp3MomentBytes {
+			left := float32(int16(binary.LittleEndian.Uint16(block[i:]))) / 32768
+			right := float32(int16(binary.LittleEndian.Uint16(block[i+2:]))) / 32768
+			out = append(out, (left+right)/2)
+		}
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			break
+		}
+		if err != nil {
+			return nil, 0, fmt.Errorf("the mp3 recording: %w", err)
+		}
 	}
-	out := make([]float32, len(body)/2)
-	for i := range out {
-		out[i] = float32(int16(binary.LittleEndian.Uint16(body[2*i:]))) / 32768
-	}
-	return mono(out, 2), decoder.SampleRate(), nil
+	return out, decoder.SampleRate(), nil
 }
 
 // fromFlac decodes a flac, frame by frame, one subframe to a channel.
@@ -351,12 +366,13 @@ func fromFlac(raw []byte) ([]float32, int, error) {
 	return out, int(stream.Info.SampleRate), nil
 }
 
-// mono is many channels as one: what they say at each moment, averaged.
+// mono is many channels as one: what they say at each moment, averaged. The
+// result is written over the start of interleaved.
 func mono(interleaved []float32, channels int) []float32 {
 	if channels <= 1 {
 		return interleaved
 	}
-	out := make([]float32, len(interleaved)/channels)
+	out := interleaved[:len(interleaved)/channels]
 	for i := range out {
 		var sum float32
 		for c := 0; c < channels; c++ {

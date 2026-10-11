@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"runtime/pprof"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,6 +50,24 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("the client went away and the stream is still standing")
 	}
+
+	deadline := time.Now().Add(10 * time.Second)
+	for isWatchingFolder() {
+		if time.Now().After(deadline) {
+			t.Fatal("the stream ended and the folder watch is still running")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// isWatchingFolder says whether a folder watch goroutine is running, which is
+// the registration for the folder still held.
+func isWatchingFolder() bool {
+	var stacks strings.Builder
+	if err := pprof.Lookup("goroutine").WriteTo(&stacks, 2); err != nil {
+		return false
+	}
+	return strings.Contains(stacks.String(), "theme.Catalogue.debounce")
 }
 
 // wrapWithProcessContext serves the handler the way the window does: the request context is the
