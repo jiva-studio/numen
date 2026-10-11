@@ -15,11 +15,13 @@ const at = strip(run.target.at)
 export default {
   testRunner: 'vitest',
   plugins: ['@stryker-mutator/vitest-runner'],
-  vitest: { configFile: `${at}/vitest.mutation.config.ts`, dir: at, related: false },
-  coverageAnalysis: process.env.NUMEN_MUTATION_COVERAGE ?? 'perTest',
+  vitest: { configFile: run.vitestConfig, dir: at, related: false },
+  coverageAnalysis: 'perTest',
+  // A static mutant is evaluated once at load and needs the whole suite per mutant.
+  ignoreStatic: true,
   mutate: run.mutate,
   ignorePatterns: [
-    ...keepOnly([at, ...(run.target.testdata ?? []).map(strip)]),
+    ...keepOnly([at, '.mutation/vitest', ...run.target.testdata.map(strip)]),
     `/${at}/dist`,
     `/${at}/storybook-static`,
     `/${at}/coverage`,

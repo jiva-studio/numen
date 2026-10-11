@@ -11,47 +11,29 @@ name: Mutation
 # labelled `mutation`: its body is rewritten each night, a comment names the
 # survivors that are new, and it closes when none is left.
 #
-# A pull request that changes the tool runs the tool's own tests and nothing else.
+# The targets and their shards are found in the tree by
+# `modules/tools/mutation/shards.mjs`: every Go module with tests and every
+# workspace package with a Vitest config.
 on:
-  pull_request:
-    paths:
-      - "modules/tools/mutation/**"
-      - ".github/workflows/mutation.yml"
   schedule:
     - cron: "23 1 * * *"
   workflow_dispatch:
     inputs:
       target:
-        description: Target
-        type: choice
-        options: [all, core, ui, editor, flashcards]
+        description: "Target, as `node modules/tools/mutation/shards.mjs` names it, or all"
+        type: string
         default: all
 
-# One night at a time; a pull request only cancels its own older runs.
 concurrency:
-  group: mutation-${{ github.event_name == 'pull_request' && github.ref || 'nightly' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: mutation
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  tool:
-    name: Tool
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Test the tool
-        run: node --test modules/tools/mutation/*.test.mjs
-
   shards:
     name: Shards
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -68,7 +50,7 @@ jobs:
         run: node modules/tools/mutation/shards.mjs "$TARGET" >> "$GITHUB_OUTPUT"
 
   mutate:
-    name: ${{ matrix.name }}
+    name: Mutate ${{ matrix.name }}
     needs: shards
     runs-on: ubuntu-latest
     timeout-minutes: 350
@@ -84,8 +66,12 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         if: matrix.kind == 'go'
         with:
-          go-version-file: modules/libs/core/go.mod
-          cache-dependency-path: modules/libs/core/go.sum
+          go-version-file: ${{ matrix.at }}/go.mod
+          cache-dependency-path: ${{ matrix.at }}/go.sum
+
+      # A Go module that links the window needs the system browser's headers.
+      - uses: ./.github/actions/setup-webkit
+        if: matrix.kind == 'go'
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -99,7 +85,7 @@ jobs:
 
       # The windows reach the shared components through their build.
       - name: Build the components
-        if: matrix.kind == 'ts' && matrix.target != 'ui'
+        if: matrix.kind == 'ts'
         run: npm run build --prefix modules/libs/ui
 
       - name: Restore the previous run

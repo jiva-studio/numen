@@ -19,7 +19,7 @@ import { getTarget } from './targets.mjs'
 
 export const LABEL = 'mutation'
 
-/** The most survivors the body lists; the rest are in the run's HTML report. */
+/** The most lines the body lists; the rest are in the run's HTML report. */
 const LISTED = 150
 
 /** The most survivors whose keys the body keeps, each by its first six digits. */
@@ -38,21 +38,46 @@ export const readKeys = (body) => {
   return new Set(found && found[1] ? found[1].split(',') : [])
 }
 
+/** The number of survivors an issue body was written with, or null. */
+export const readCount = (body) => {
+  const found = (body ?? '').match(/<!-- numen-mutation count=(\d+) -->/)
+  return found ? Number(found[1]) : null
+}
+
+/**
+ * Survivors by line, in file order: the first of each line, and how many more
+ * survive on it. One mutant per line is what a reader acts on.
+ */
+export const groupByLine = (survivors) => {
+  const lines = new Map()
+  for (const one of [...survivors].sort(
+    (a, b) => a.path.localeCompare(b.path) || a.line - b.line,
+  )) {
+    const at = `${one.path}:${one.line}`
+    if (lines.has(at)) lines.get(at).more += 1
+    else lines.set(at, { survivor: one, more: 0 })
+  }
+  return [...lines.values()]
+}
+
 /** Whether an issue body is the one kept for this target. */
 export const isTargetIssue = (name, body) => (body ?? '').includes(getMarker(name))
 
-const formatLine = (survivor, link) =>
-  `- [\`${survivor.path}:${survivor.line}\`](${link(survivor)}) ${survivor.mutator}: \`${survivor.original || '∅'}\` → \`${survivor.replacement || '∅'}\` <sub>${survivor.key}</sub>`
+const formatLine = (survivor, link, more = 0) =>
+  `- [\`${survivor.path}:${survivor.line}\`](${link(survivor)}) ${survivor.mutator}: \`${survivor.original || '∅'}\` → \`${survivor.replacement || '∅'}\` <sub>${survivor.key}</sub>${more > 0 ? ` and ${more} more on this line` : ''}`
 
-export const renderBody = ({ name, summary, survivors, link, runUrl }) => {
+export const renderBody = ({ name, summary, survivors, link, runUrl, previous = null }) => {
   const { counts, total, efficacy } = summary
   const rows = Object.entries(counts)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([status, count]) => `| ${status} | ${count} |`)
-  const listed = survivors.slice(0, LISTED)
-  const rest = survivors.length - listed.length
+  const lines = groupByLine(survivors)
+  const listed = lines.slice(0, LISTED)
+  const rest = lines.length - listed.length
+  const trend = previous === null ? '' : ` (${previous} on the run before)`
   return [
     getMarker(name),
+    `<!-- numen-mutation count=${survivors.length} -->`,
     `<!-- numen-mutation keys=${survivors
       .slice(0, KEPT)
       .map((one) => shorten(one.key))
@@ -67,10 +92,10 @@ export const renderBody = ({ name, summary, survivors, link, runUrl }) => {
     '|---|---|',
     ...rows,
     '',
-    `### Survivors (${survivors.length})`,
+    `### Survivors: ${survivors.length}${trend}, on ${lines.length} lines`,
     '',
-    ...listed.map((one) => formatLine(one, link)),
-    ...(rest > 0 ? ['', `…and ${rest} more in the HTML report of the run.`] : []),
+    ...listed.map(({ survivor, more }) => formatLine(survivor, link, more)),
+    ...(rest > 0 ? ['', `…and ${rest} more lines in the HTML report of the run.`] : []),
   ].join('\n')
 }
 
@@ -158,7 +183,8 @@ const main = () => {
     .filter((one) => isTargetIssue(target.name, one.body))
     .sort((a, b) => b.number - a.number)[0]
   const { action, fresh } = planIssue(existing, survivors)
-  const body = renderBody({ name: target.name, summary, survivors, link, runUrl })
+  const previous = existing ? readCount(existing.body) : null
+  const body = renderBody({ name: target.name, summary, survivors, link, runUrl, previous })
   console.log(`${target.name}: ${survivors.length} survivors, ${fresh.length} new, issue ${action}`)
 
   if (action === 'create') {

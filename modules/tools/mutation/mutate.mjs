@@ -11,7 +11,7 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
-import { join, relative } from 'node:path'
+import { dirname, join, relative } from 'node:path'
 import { patchVitestRunner } from './patch.mjs'
 import { isBroken, readMutants, summarize } from './report.mjs'
 import {
@@ -79,7 +79,7 @@ const runGo = (target, shard, report, cache) => {
     '-q',
     `--cache=${cache}.gomutants.json`,
   ]
-  args.push('-o', `${cache}.result.json`, '-stryker-output', report)
+  args.push('--detect-equivalent', '-o', `${cache}.result.json`, '-stryker-output', report)
   args.push('-html-output', report.replace(/\.json$/, '.html'))
   return run('go', [...args, ...packages], { cwd: join(root, target.at) })
 }
@@ -92,12 +92,46 @@ const listSources = (target) =>
     .filter(isMutatedSource)
     .sort()
 
+/**
+ * A Vitest config for the target's tests that do not run in a browser, written
+ * where Stryker's sandbox keeps it and rooted at the package.
+ */
+export const renderVitestConfig = (at) => {
+  const up = `../../${at.replace(/^modules\//, '')}`
+  return [
+    "import { fileURLToPath, URL } from 'node:url'",
+    "import { defineConfig } from 'vitest/config'",
+    `import base from '${up}/vitest.config.ts'`,
+    '',
+    'const isBrowser = (project) => Boolean(project?.test?.browser?.enabled)',
+    'const projects = base.test?.projects',
+    '',
+    'export default defineConfig({',
+    '  ...base,',
+    `  root: fileURLToPath(new URL('${up}/', import.meta.url)),`,
+    '  test: {',
+    '    ...base.test,',
+    "    ...(projects ? { projects: projects.filter((one) => typeof one === 'object' && !isBrowser(one)) } : {}),",
+    '  },',
+    '})',
+    '',
+  ].join('\n')
+}
+
+const writeVitestConfig = (target) => {
+  const path = join(root, OUTPUT, 'vitest', `${target.name}.config.ts`)
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, renderVitestConfig(target.at))
+  return relative(MODULES, path)
+}
+
 const runTs = (target, shard, report, cache) => {
   const mutate = pickShard(listSources(target), ...shard).map((path) => relative('modules', path))
   if (mutate.length === 0) return null
   patchVitestRunner()
   const settings = {
     target,
+    vitestConfig: writeVitestConfig(target),
     mutate,
     concurrency: getWorkers(),
     report: relative(MODULES, report),

@@ -86,10 +86,10 @@ export const summarize = (mutants) => {
 
 /**
  * Whether a run's outcomes are those of a runner that executed no test per
- * mutant: several survivors and nothing killed or timed out.
+ * mutant: fifty survivors or more and nothing killed or timed out.
  */
 export const isBroken = (counts) =>
-  (counts.Survived ?? 0) >= 5 && (counts.Killed ?? 0) === 0 && (counts.Timeout ?? 0) === 0
+  (counts.Survived ?? 0) >= 50 && (counts.Killed ?? 0) === 0 && (counts.Timeout ?? 0) === 0
 
 /** The surviving mutants not waived for this target. */
 export const getSurvivors = (target, mutants, waivers) => {

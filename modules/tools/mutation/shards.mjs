@@ -5,13 +5,14 @@
  *
  *   node shards.mjs [target|all]   prints `matrix=[...]`
  */
-import { getTarget, targets } from './targets.mjs'
+import { getTarget, getTargets } from './targets.mjs'
 
 export const listShards = (name = 'all') =>
-  (name === 'all' ? targets : [getTarget(name)]).flatMap((target) =>
+  (name === 'all' ? getTargets() : [getTarget(name)]).flatMap((target) =>
     Array.from({ length: target.shards }, (_, at) => ({
       target: target.name,
       kind: target.kind,
+      at: target.at,
       shard: `${at + 1}/${target.shards}`,
       name: target.shards > 1 ? `${target.name}-${at + 1}-of-${target.shards}` : target.name,
     })),
@@ -20,5 +21,7 @@ export const listShards = (name = 'all') =>
 if (process.argv[1] === new URL(import.meta.url).pathname) {
   const name = process.argv[2] || 'all'
   console.log(`matrix=${JSON.stringify(listShards(name))}`)
-  console.log(`targets=${JSON.stringify(name === 'all' ? targets.map((one) => one.name) : [name])}`)
+  console.log(
+    `targets=${JSON.stringify(name === 'all' ? getTargets().map((one) => one.name) : [name])}`,
+  )
 }

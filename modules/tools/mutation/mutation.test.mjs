@@ -4,15 +4,24 @@
  */
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { isTargetIssue, planIssue, readKeys, renderBody } from './issue.mjs'
-import { getRunName } from './mutate.mjs'
+import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody } from './issue.mjs'
+import { getRunName, renderVitestConfig } from './mutate.mjs'
 import { patchSource } from './patch.mjs'
 import { listShards } from './shards.mjs'
 import { getOriginal, getSurvivors, isBroken, readMutants, summarize } from './report.mjs'
-import { isMutatedGo, isMutatedSource, keepOnly, pickShard, targets } from './targets.mjs'
+import {
+  findTestdata,
+  getShardCount,
+  getTargets,
+  isMutatedGo,
+  isMutatedSource,
+  keepOnly,
+  nameTargets,
+  pickShard,
+} from './targets.mjs'
 
-const go = targets.find((one) => one.kind === 'go')
-const ts = targets.find((one) => one.kind === 'ts')
+const go = { name: 'libs-core', kind: 'go', at: 'modules/libs/core', shards: 1, testdata: [] }
+const ts = { name: 'libs-ui', kind: 'ts', at: 'modules/libs/ui', shards: 1, testdata: [] }
 
 const at = (line, column, endColumn) => ({
   start: { line, column },
@@ -28,10 +37,67 @@ const link = (one) => `https://example.test/${one.path}#L${one.line}`
 /* --------------------------------- Shards --------------------------------- */
 
 test('every item lands in exactly one shard', () => {
-  const items = Array.from({ length: 23 }, (_, index) => `item-${index}`)
+  const items = Array.from({ length: 40 }, (_, index) => `./pkg/item-${index}`)
   const shards = [1, 2, 3, 4].map((index) => pickShard(items, index, 4))
   assert.deepEqual(shards.flat().sort(), [...items].sort())
-  assert.ok(shards.every((one) => one.length >= 5))
+  assert.ok(shards.every((one) => one.length > 0))
+})
+
+test('an added item moves no other between shards', () => {
+  const items = Array.from({ length: 40 }, (_, index) => `./pkg/item-${index}`)
+  const before = pickShard(items, 2, 4)
+  const after = pickShard([...items, './pkg/added'], 2, 4)
+  assert.deepEqual(
+    after.filter((one) => one !== './pkg/added'),
+    before,
+  )
+})
+
+test('a target takes a shard per slice of its source, within the ceiling', () => {
+  assert.equal(getShardCount('go', 1), 1)
+  assert.equal(getShardCount('go', 6001), 2)
+  assert.equal(getShardCount('ts', 4500), 1)
+  assert.equal(getShardCount('go', 10_000_000), 16)
+})
+
+test('a folder holding a Go module and a package names both by kind', () => {
+  const named = nameTargets([
+    { kind: 'go', at: 'modules/apps/mobile' },
+    { kind: 'ts', at: 'modules/apps/mobile' },
+    { kind: 'go', at: 'modules/libs/core' },
+  ])
+  assert.deepEqual(
+    named.map((one) => one.name),
+    ['apps-mobile-go', 'apps-mobile-ts', 'libs-core'],
+  )
+})
+
+test('test data outside the package is found from the paths its tests import', () => {
+  const tests = [
+    {
+      path: 'modules/libs/ui/src/shared/lib/address.test.ts',
+      source:
+        "import cases from '../../../../protocol/testdata/addresses.json'\nimport { read } from './address'\nimport raw from '../../../../protocol/testdata/html/spine.html?raw'",
+    },
+  ]
+  assert.deepEqual(findTestdata('modules/libs/ui', tests), ['modules/libs/protocol/testdata'])
+})
+
+test('the tree yields the core module and the components package, with what their tests read', () => {
+  const found = getTargets()
+  const core = found.find((one) => one.at === 'modules/libs/core')
+  const ui = found.find((one) => one.at === 'modules/libs/ui')
+  assert.equal(core?.kind, 'go')
+  assert.ok(core.shards > 1)
+  assert.equal(ui?.kind, 'ts')
+  assert.ok(ui.testdata.includes('modules/libs/protocol/testdata'))
+  assert.equal(new Set(found.map((one) => one.name)).size, found.length)
+})
+
+test('the generated Vitest config keeps the projects that do not run in a browser', () => {
+  const config = renderVitestConfig('modules/apps/desktop/editor')
+  assert.match(config, /from '\.\.\/\.\.\/apps\/desktop\/editor\/vitest\.config\.ts'/)
+  assert.match(config, /!isBrowser\(one\)/)
 })
 
 test('source under test is told apart from tests, stories and barrels', () => {
@@ -205,10 +271,10 @@ test('a survivor on a closed issue reopens it', () => {
 /* --------------------------------- Guards --------------------------------- */
 
 test('a run that kills nothing while several survive is a broken runner', () => {
-  assert.equal(isBroken({ Survived: 7 }), true)
-  assert.equal(isBroken({ Survived: 7, Killed: 1 }), false)
-  assert.equal(isBroken({ Survived: 2 }), false)
-  assert.equal(isBroken({ Survived: 7, Timeout: 1 }), false)
+  assert.equal(isBroken({ Survived: 70 }), true)
+  assert.equal(isBroken({ Survived: 70, Killed: 1 }), false)
+  assert.equal(isBroken({ Survived: 9 }), false)
+  assert.equal(isBroken({ Survived: 70, Timeout: 1 }), false)
 })
 
 test('the runner patch joins the suite chain as Vitest 5 does, once', () => {
@@ -220,6 +286,7 @@ test('the runner patch joins the suite chain as Vitest 5 does, once', () => {
 })
 
 test('the matrix names each shard as the run names its report', () => {
+  const targets = getTargets()
   for (const target of targets) {
     const shards = listShards(target.name)
     assert.equal(shards.length, target.shards)
@@ -231,4 +298,34 @@ test('the matrix names each shard as the run names its report', () => {
     listShards().length,
     targets.reduce((sum, one) => sum + one.shards, 0),
   )
+})
+
+test('the body lists one survivor per line and counts the rest of that line', () => {
+  const on = (key, line, path = 'modules/libs/ui/src/lib/span.ts') => ({
+    ...survivor(key),
+    line,
+    path,
+  })
+  const lines = groupByLine([on('cccccc3333', 9), on('aaaaaa1111', 4), on('bbbbbb2222', 4)])
+  assert.deepEqual(
+    lines.map(({ survivor: one, more }) => [one.line, more]),
+    [
+      [4, 1],
+      [9, 0],
+    ],
+  )
+})
+
+test('the body carries how many survived, for the next run to compare', () => {
+  const body = renderBody({
+    name: ts.name,
+    summary: { counts: { Survived: 2 }, total: 2, efficacy: 0 },
+    survivors: [survivor('aaaaaa1111'), survivor('bbbbbb2222')],
+    link,
+    runUrl: 'https://example.test/runs/2',
+    previous: 5,
+  })
+  assert.equal(readCount(body), 2)
+  assert.match(body, /Survivors: 2 \(5 on the run before\), on 1 lines/)
+  assert.equal(readCount('no marker'), null)
 })
