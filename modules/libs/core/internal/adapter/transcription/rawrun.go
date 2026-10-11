@@ -25,7 +25,7 @@ func makeCNames(names ...string) [][]byte {
 	return out
 }
 
-// rawCalls are the runtime entry points a rawRun goes through.
+// rawCalls are the runtime entry points a rawRun uses.
 type rawCalls struct {
 	run     func(session, options, inNames, inValues, inCount, outNames, outCount, outValues uintptr) uintptr
 	getData func(value, out uintptr) uintptr
@@ -62,6 +62,7 @@ func newRawRun(calls rawCalls, session *ort.Session, inNames, outNames [][]byte,
 	if session == nil || len(inNames) != len(inputs) {
 		return nil, false
 	}
+	// A Session and a Value each begin with their runtime handle.
 	handle := *(*uintptr)(unsafe.Pointer(session))
 	if handle == 0 {
 		return nil, false
@@ -90,6 +91,7 @@ func newRawRunOf(calls rawCalls, session uintptr, inNames, outNames [][]byte, in
 func getValueHandles(values []*ort.Value) []uintptr {
 	out := make([]uintptr, len(values))
 	for i, value := range values {
+		// A Value begins with its runtime handle.
 		out[i] = *(*uintptr)(unsafe.Pointer(value))
 	}
 	return out
@@ -98,6 +100,7 @@ func getValueHandles(values []*ort.Value) []uintptr {
 // call runs the graph once. The outputs it writes stay valid until the next call
 // or close.
 func (r *rawRun) call() error {
+	// The name and handle arrays and the name bytes are kept alive by r for the call.
 	status := r.calls.run(
 		r.session,
 		0,
@@ -121,6 +124,7 @@ func (r *rawRun) copyOutput(i int, dst []float32) error {
 	if r.data == nil {
 		return fmt.Errorf("the output %d holds no data", i)
 	}
+	// The output was sized by the first position and is not released until close.
 	copy(dst, unsafe.Slice((*float32)(r.data), len(dst)))
 	return nil
 }

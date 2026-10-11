@@ -11,7 +11,7 @@ import (
 )
 
 // openCachedTranscriber is the models a machine holds, in NUMEN_MODELS or in the
-// cache. A machine without them says so and the rest of the package is still
+// cache. A machine without them skips and the rest of the package is still
 // tested.
 func openCachedTranscriber(t testing.TB) *Transcriber {
 	t.Helper()
@@ -29,7 +29,7 @@ func openCachedTranscriber(t testing.TB) *Transcriber {
 }
 
 // makeFrames is a run of encoder frames that is the same on every call and
-// makes the joiner say tokens.
+// makes the joiner return tokens.
 func makeFrames(t testing.TB, width int) map[string]*ort.Value {
 	data := make([]float32, encoded*width)
 	seed := uint32(1)
@@ -61,7 +61,7 @@ func TestDecodingOnTheRawRuntimeSaysTheSameTokensAsDecodingThroughTheLibrary(t *
 			t.Fatal(err)
 		}
 		if !slices.Equal(got, want) {
-			t.Errorf("%d frames: raw run said %v, library said %v", width, got, want)
+			t.Errorf("%d frames: raw run returned %v, library returned %v", width, got, want)
 		}
 		if width == 120 && len(want) == 0 {
 			t.Error("the frames made the joiner say nothing, so the comparison holds nothing")
@@ -125,7 +125,7 @@ func TestDecodingOnTheRawRuntimeReleasesEveryOutputItCreated(t *testing.T) {
 type position struct {
 	target, count      []int32
 	state, cell        []float32
-	said, frame        []float32
+	prediction, frame  []float32
 	decoderInputs      map[string]*ort.Value
 	joinerInputs       map[string]*ort.Value
 	decoderRun, joiner *rawRun
@@ -136,7 +136,7 @@ func openPosition(t *testing.T, by *Transcriber) *position {
 	p := &position{
 		target: []int32{0}, count: []int32{1},
 		state: make([]float32, layers*hidden), cell: make([]float32, layers*hidden),
-		said: make([]float32, hidden), frame: make([]float32, encoded),
+		prediction: make([]float32, hidden), frame: make([]float32, encoded),
 	}
 	make1 := func(shape []int64, data any) *ort.Value {
 		value, err := ort.NewTensor(shape, data)
@@ -151,16 +151,16 @@ func openPosition(t *testing.T, by *Transcriber) *position {
 	stateT := make1([]int64{layers, 1, hidden}, p.state)
 	cellT := make1([]int64{layers, 1, hidden}, p.cell)
 	frameT := make1([]int64{1, encoded, 1}, p.frame)
-	saidT := make1([]int64{1, hidden, 1}, p.said)
+	predictionT := make1([]int64{1, hidden, 1}, p.prediction)
 	p.decoderInputs = map[string]*ort.Value{inputTargets: targetT, inputTargetN: countT, inputState: stateT, inputCell: cellT}
-	p.joinerInputs = map[string]*ort.Value{inputEncoded: frameT, inputDecoded: saidT}
+	p.joinerInputs = map[string]*ort.Value{inputEncoded: frameT, inputDecoded: predictionT}
 
 	calls, ok := getRawCalls()
 	if !ok {
 		t.Skip("the raw runtime is not registered")
 	}
 	p.decoderRun, _ = newRawRun(calls, by.decoder, decoderInputNames, decoderOutputs, []*ort.Value{targetT, countT, stateT, cellT})
-	p.joiner, _ = newRawRun(calls, by.joiner, joinerInputNames, joinerOutputs, []*ort.Value{frameT, saidT})
+	p.joiner, _ = newRawRun(calls, by.joiner, joinerInputNames, joinerOutputs, []*ort.Value{frameT, predictionT})
 	if p.decoderRun == nil || p.joiner == nil {
 		t.Skip("the sessions hold no handle to run by")
 	}
@@ -181,18 +181,18 @@ func TestEveryPositionOnTheRawRuntimeAnswersBitForBitWhatTheLibraryAnswers(t *te
 	var libraryScores, rawScores []float32
 	for step, token := range []int{by.blank, 3, 17, 250, 9, 1024, 4, 4, 77, 600, 12, 5} {
 		library.target[0], raw.target[0] = int32(token), int32(token)
-		if _, err := by.predict(library.decoderInputs, library.said, library.state, library.cell); err != nil {
+		if _, err := by.predict(library.decoderInputs, library.prediction, library.state, library.cell); err != nil {
 			t.Fatal(err)
 		}
 		if step == 0 {
-			if _, err := by.predict(raw.decoderInputs, raw.said, raw.state, raw.cell); err != nil {
+			if _, err := by.predict(raw.decoderInputs, raw.prediction, raw.state, raw.cell); err != nil {
 				t.Fatal(err)
 			}
-		} else if _, err := by.predictRaw(raw.decoderRun, raw.said, raw.state, raw.cell); err != nil {
+		} else if _, err := by.predictRaw(raw.decoderRun, raw.prediction, raw.state, raw.cell); err != nil {
 			t.Fatal(err)
 		}
 		for name, pair := range map[string][2][]float32{
-			"said": {library.said, raw.said}, "state": {library.state, raw.state}, "cell": {library.cell, raw.cell},
+			"prediction": {library.prediction, raw.prediction}, "state": {library.state, raw.state}, "cell": {library.cell, raw.cell},
 		} {
 			if !slices.Equal(pair[0], pair[1]) {
 				t.Fatalf("step %d: the raw runtime left a different %s", step, name)

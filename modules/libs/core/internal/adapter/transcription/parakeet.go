@@ -379,16 +379,16 @@ func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []
 
 // predictRaw is predict run on the outputs the run owns. The three are copied
 // out before the next run writes over them.
-func (t *Transcriber) predictRaw(run *rawRun, said, state, cell []float32) ([]float32, error) {
+func (t *Transcriber) predictRaw(run *rawRun, prediction, state, cell []float32) ([]float32, error) {
 	if err := run.call(); err != nil {
 		return nil, err
 	}
-	for i, into := range [...][]float32{said, state, cell} {
+	for i, into := range [...][]float32{prediction, state, cell} {
 		if err := run.copyOutput(i, into); err != nil {
 			return nil, err
 		}
 	}
-	return said, nil
+	return prediction, nil
 }
 
 // jointRaw is joint run on the output the run owns, copied into scoresDst, which
