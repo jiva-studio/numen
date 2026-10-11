@@ -114,13 +114,24 @@ jobs:
           key: mutation-${{ matrix.target }}-run-${{ github.run_id }}
           restore-keys: mutation-${{ matrix.target }}-run-
 
+      # Every 30 seconds a `probe:` line records the runner's available memory,
+      # used swap, free disk and the five processes with the largest RSS.
       - name: Mutate
         timeout-minutes: 330
         env:
           TARGET: ${{ matrix.target }}
           SHARD: ${{ matrix.shard }}
           VITE_CONFIG_NATIVE_IGNORE_WARNING: "true"
-        run: node modules/tools/mutation/mutate.mjs "$TARGET" --shard "$SHARD"
+        run: |
+          while sleep 30; do
+            memory=$(free -m | awk '/^Mem:/ {printf "mem_avail=%s/%sM", $7, $2} /^Swap:/ {printf " swap_used=%s/%sM", $3, $2}')
+            disk="disk_root=$(df -h --output=avail / | tail -1 | tr -d ' ') disk_workspace=$(df -h --output=avail . | tail -1 | tr -d ' ')"
+            top=$(ps -eo rss=,comm= --sort=-rss | head -5 | awk '{printf " %s=%dM", $2, $1 / 1024}')
+            echo "probe: $memory $disk rss:$top"
+          done &
+          probe=$!
+          trap 'kill "$probe"' EXIT
+          node modules/tools/mutation/mutate.mjs "$TARGET" --shard "$SHARD"
 
       - name: Upload the cache
         if: always()
