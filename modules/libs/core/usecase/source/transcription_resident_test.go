@@ -99,7 +99,7 @@ func TestModelsAreReleasedForARunWaitingOnTheLock(t *testing.T) {
 		if opened, _ := models.counts(); opened == 1 {
 			// A scan joins the line while the first recording is being heard.
 			go func() {
-				release, err := listening.with.Models.acquire(context.Background(), false, nil)
+				release, err := listening.with.Models.acquire(t.Context(), false, nil)
 				if err == nil {
 					granted <- release
 				}
