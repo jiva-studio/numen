@@ -90,6 +90,12 @@ func libraryAgrees(
 	s review.Schedule,
 ) {
 	t.Helper()
+	// A review schedule standing at no stability is floored before it is
+	// read. The library's answer to one is not asked here; its own test
+	// checks what this scheduler makes of it.
+	if fsrs.State(s.Phase) == fsrs.Review && s.Stability <= 0 {
+		return
+	}
 	stood := clampLastAnswer(s)
 	for _, r := range libraryRatings {
 		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)

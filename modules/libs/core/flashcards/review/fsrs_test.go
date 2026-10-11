@@ -1,10 +1,13 @@
 package review_test
 
 import (
+	"math"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
 
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
@@ -127,6 +130,34 @@ func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
 			}
 		}
 	}
+}
+
+// A schedule in review with no stability of its own still answers with a
+// finite, positive stability, because data a scheduler never wrote can carry
+// a review phase without one.
+func TestAReviewScheduleWithNoStabilityAnswersWithoutPoisoning(t *testing.T) {
+	by := review.NewFSRS()
+	when := parseTime("2026-08-29T09:00:00Z")
+
+	corrupt := review.Schedule{
+		Last:      when.Add(-10 * 24 * time.Hour),
+		Phase:     uint8(fsrs.Review),
+		Stability: 0,
+	}
+
+	assertFinitePositive := func(t *testing.T, label string, got float64) {
+		if math.IsNaN(got) || math.IsInf(got, 0) || got <= 0 {
+			t.Errorf("%s left stability %v, want a finite positive number", label, got)
+		}
+	}
+
+	for _, r := range []review.Rating{review.Again, review.Hard, review.Good, review.Easy} {
+		assertFinitePositive(t, r.String(), by.Next(corrupt, when, r).Stability)
+	}
+
+	good, again := by.Endings(corrupt, when)
+	assertFinitePositive(t, "Endings good", good.Stability)
+	assertFinitePositive(t, "Endings again", again.Stability)
 }
 
 // A schedule says which scheduler filled it, because the numbers one carries

@@ -146,6 +146,13 @@ func (f FSRS) readAtAnswer(s Schedule, at time.Time) atAnswer {
 	if !s.IsNew() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
 	}
+	// A card face in review carries a positive stability, read as a divisor
+	// and as the base of a power in getRecall and getStabilityOnRecall; zero
+	// or negative is floored to 0.1, the lowest this scheduler itself opens
+	// one at.
+	if one.phase == fsrs.Review && one.last.Stability <= 0 {
+		one.last.Stability = 0.1
+	}
 	// The days away are the whole days gone by, and they do not go below none.
 	if one.phase != fsrs.New {
 		one.away = math.Max(math.Floor(at.Sub(one.last.Last).Hours()/24), 0)
