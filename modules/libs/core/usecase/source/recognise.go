@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
@@ -96,7 +97,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, fmt.Errorf("stat %s: %w", path, err)
 	}
-	file, err := port.OpenDocumentFile(ctx, reader, path)
+	file, err := docfile.Open(ctx, reader, path)
 	if err != nil {
 		return res, fmt.Errorf("read %s: %w", path, err)
 	}

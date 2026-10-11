@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
 	"image"
 	"image/jpeg"
 	"io"
@@ -258,7 +259,7 @@ func (a *API) opening(
 	mark pool.Fingerprint,
 ) (*pool.Document, func(), error) {
 	return a.Viewer.docs.Load().Take(ctx, mark, func() (pool.Scan, error) {
-		file, err := port.OpenDocumentFile(context.WithoutCancel(ctx), reader, mark.Path)
+		file, err := docfile.Open(context.WithoutCancel(ctx), reader, mark.Path)
 		if err != nil {
 			return nil, err
 		}

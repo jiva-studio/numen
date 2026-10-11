@@ -1,4 +1,4 @@
-package port_test
+package docfile_test
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -35,7 +36,7 @@ func (nopFile) Close() error { return nil }
 
 func TestADocumentFileIsOpenedSharedWhereTheReaderCanShare(t *testing.T) {
 	sharing := &sharingReader{}
-	if _, err := port.OpenDocumentFile(t.Context(), sharing, "a.pdf"); err != nil {
+	if _, err := docfile.Open(t.Context(), sharing, "a.pdf"); err != nil {
 		t.Fatal(err)
 	}
 	if sharing.shared != 1 || sharing.opened != 0 {
@@ -45,7 +46,7 @@ func TestADocumentFileIsOpenedSharedWhereTheReaderCanShare(t *testing.T) {
 
 func TestADocumentFileIsOpenedPlainWhereTheReaderCannotShare(t *testing.T) {
 	plain := &plainReader{}
-	if _, err := port.OpenDocumentFile(t.Context(), plain, "a.pdf"); err != nil {
+	if _, err := docfile.Open(t.Context(), plain, "a.pdf"); err != nil {
 		t.Fatal(err)
 	}
 	if plain.opened != 1 {

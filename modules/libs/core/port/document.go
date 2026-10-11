@@ -63,11 +63,3 @@ var (
 type SharedOpener interface {
 	OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error)
 }
-
-// OpenDocumentFile opens a document's file to be held open while it is drawn.
-func OpenDocumentFile(ctx context.Context, reader VaultReader, path string) (io.ReadSeekCloser, error) {
-	if shared, ok := reader.(SharedOpener); ok {
-		return shared.OpenShared(ctx, path)
-	}
-	return reader.Open(ctx, path)
-}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -19,7 +20,7 @@ func TestAnOpenSharedFileReadsTheBytesAndCanBeRenamedAndRemoved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	file, err := port.OpenDocumentFile(t.Context(), reader, "a.pdf")
+	file, err := docfile.Open(t.Context(), reader, "a.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
