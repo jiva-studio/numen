@@ -90,6 +90,49 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			query: "engine",
 			want:  []domain.UnitSpan{{From: 13, To: 19}},
 		},
+		{
+			// Han characters either side of a match are letters by
+			// unicode.IsLetter, but Chinese holds no whitespace between words,
+			// so the character before the match is not what stands in its way.
+			name:  "a Chinese word with no space around it",
+			text:  "这是一个测试",
+			query: "测试",
+			want:  []domain.UnitSpan{{From: 4, To: 6}},
+		},
+		{
+			// Hangul syllables are letters the same way Han characters are, and
+			// Korean attaches particles straight onto the word before them with
+			// no space either.
+			name:  "a Korean word with no space around it",
+			text:  "이것은테스트입니다",
+			query: "테스트",
+			want:  []domain.UnitSpan{{From: 3, To: 6}},
+		},
+		{
+			// Japanese mixes Hiragana, Katakana and Han with no space between
+			// them, and a match can open right after any of the three.
+			name:  "a Japanese word mixing scripts with no space around it",
+			text:  "これは日本語のテストです",
+			query: "テスト",
+			want:  []domain.UnitSpan{{From: 7, To: 10}},
+		},
+		{
+			// A Han run stands directly against a Latin word with no space
+			// between them; the match on the Latin side still opens only where
+			// the Latin word itself begins.
+			name:  "a Latin word standing against a Chinese run with no space",
+			text:  "测试test",
+			query: "test",
+			want:  []domain.UnitSpan{{From: 2, To: 6}},
+		},
+		{
+			// A run of the same letters inside a Latin word is not that word:
+			// Latin words still need a letter boundary, which a CJK character
+			// never does.
+			name:  "letters standing inside a Latin word are still not marked",
+			text:  "concatenate",
+			query: "cat",
+		},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			got := spans(c.text, c.query)
