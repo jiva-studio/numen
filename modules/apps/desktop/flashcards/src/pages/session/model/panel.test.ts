@@ -226,3 +226,144 @@ describe('one conversation to a card', () => {
     expect(asked).toEqual([])
   })
 })
+
+describe('a conversation in flight', () => {
+  /** An agent whose answer does not arrive until the test lets it. */
+  const createSlowAgent = () => {
+    const asked: string[] = []
+    let answer = () => {}
+    const agent: AgentPort = {
+      async *ask(text, _focus, _conversation, signal) {
+        asked.push(text)
+        await new Promise<void>((then) => {
+          answer = then
+          signal.addEventListener('abort', () => then())
+        })
+        yield { kind: 'said', text: 'Because of the leaves.' }
+      },
+      async finish() {},
+    }
+    return { agent, asked, answer: () => answer() }
+  }
+
+  const slowPanel = () => {
+    const slow = createSlowAgent()
+    const held = useAgentPanel({
+      agent: () => slow.agent,
+      card: () => card(),
+      unreachable: () => '',
+      open: () => false,
+      showPanel: () => {},
+      showNotice: () => {},
+      paint: (draw) => draw(),
+    })
+    return { held, ...slow }
+  }
+
+  it('is working while an answer is on its way, and not before or after', async () => {
+    const { held, answer } = slowPanel()
+    expect(held.isWorking.value).toBe(false)
+
+    held.openPanel()
+    expect(held.isWorking.value).toBe(false)
+
+    const sent = held.send('why')
+    expect(held.isWorking.value).toBe(true)
+
+    answer()
+    await sent
+    expect(held.isWorking.value).toBe(false)
+  })
+
+  it('stops working when the answer on its way is stopped', async () => {
+    const { held } = slowPanel()
+    held.openPanel()
+    const sent = held.send('why')
+
+    held.stop()
+    expect(held.isWorking.value).toBe(false)
+    await sent
+  })
+})
+
+describe('the panel asked for again', () => {
+  it('keeps the conversation of the card it is already on', async () => {
+    const { held, over, about } = panel()
+    held.openPanel()
+    await held.send('why')
+    held.closePanel()
+
+    held.openPanel()
+
+    expect(about).toHaveLength(1)
+    expect(over).toEqual([])
+    expect(held.turns.value.length).toBeGreaterThan(0)
+  })
+
+  // A card is its mark and its face together: the same note asked the other way
+  // round is another card.
+  it('ends the conversation of another card with the same face, and opens one of its own', async () => {
+    const { held, over, about, on } = panel()
+    held.openPanel()
+    await held.send('why')
+
+    on.value = card({ mark: 'zpqrstvwxy' })
+    held.openPanel()
+
+    expect(over).toEqual(['card-0'])
+    expect(about.map((one) => one.mark)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
+    expect(held.turns.value).toEqual([])
+  })
+
+  it('ends the conversation of the other face of the same card, and opens one of its own', async () => {
+    const { held, over, about, on } = panel()
+    held.openPanel()
+    await held.send('why')
+
+    on.value = card({ face: 'Name it' })
+    held.openPanel()
+
+    expect(over).toEqual(['card-0'])
+    expect(about.map((one) => one.face)).toEqual(['Say it', 'Name it'])
+  })
+
+  it('names each conversation by how many the window opened before it', async () => {
+    const { held, asked, on } = panel()
+    for (const mark of ['a', 'b', 'c']) {
+      on.value = card({ mark })
+      held.openPanel()
+      await held.send('why')
+    }
+    expect(asked.map((one) => one.conversation)).toEqual(['card-0', 'card-1', 'card-2'])
+  })
+})
+
+describe('what is written', () => {
+  it('is cleared once it has been sent', async () => {
+    const { held } = panel()
+    held.openPanel()
+    held.setWritten('why')
+
+    await held.send('why')
+
+    expect(held.written.value).toBe('')
+  })
+
+  it('is kept when nothing was sent', async () => {
+    const { held } = panel()
+    held.openPanel()
+    held.setWritten('wh')
+
+    await held.send('')
+
+    expect(held.written.value).toBe('wh')
+  })
+})
+
+describe('stop', () => {
+  it('does nothing while no card is being asked about', () => {
+    const { held } = panel()
+    expect(() => held.stop()).not.toThrow()
+    expect(held.isWorking.value).toBe(false)
+  })
+})
