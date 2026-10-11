@@ -985,6 +985,18 @@ describe('a deck tab closed', () => {
     expect(one.decks.getTitle('Animals.md')).toBe('Animals.md')
   })
 
+  it('forgets what was said about its file while a tab at another file stays', async () => {
+    const one = await open()
+    await one.held.openTabOfKind(DECK, 'Beasts.md')
+    await settle()
+
+    one.tab.close(one.id)
+    await settle()
+
+    expect(one.decks.getTitle('Animals.md')).toBe('Animals.md')
+    expect(one.decks.getTitle('Beasts.md')).toBe('Animals')
+  })
+
   it('stays where the file moved past what it holds', async () => {
     const one = await open({ isChanged: true })
     one.tab.addCard('Animal', [], null)
