@@ -490,8 +490,8 @@ describe('the name a window gives a note', () => {
 describe('every plex asked again, in the cases that tell', () => {
   it('asks the vault where it opens when only some stand nowhere', async () => {
     const one = window('')
-    await one.openTab('One.md')
     await one.openTab('')
+    await one.openTab('One.md')
     one.setOpeningNote('First.md')
 
     await one.refresh()
