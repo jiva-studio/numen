@@ -86,6 +86,7 @@ func TestCacheDirFailsWhenThePlatformHasNone(t *testing.T) {
 // A file already in the folder is returned without a download, whether or not
 // downloads are allowed.
 func TestFetchReturnsAFileAlreadyKept(t *testing.T) {
+	isolateCache(t)
 	dir := t.TempDir()
 	address := "https://models.example/m/encoder.onnx"
 	at := filepath.Join(dir, GetCacheName(address))
@@ -101,6 +102,7 @@ func TestFetchReturnsAFileAlreadyKept(t *testing.T) {
 // A file that is not kept, with downloads off, is an error naming the file and
 // the two settings that would provide it.
 func TestFetchRefusesToDownloadWhenDownloadsAreOff(t *testing.T) {
+	isolateCache(t)
 	dir := t.TempDir()
 	address := "https://models.example/m/encoder.onnx"
 	got, err := Fetch(t.Context(), Settings{Dir: dir, Section: "indexing.recognition"}, address)

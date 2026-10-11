@@ -51,6 +51,7 @@ func assertNothingKept(t *testing.T, dir string) {
 // A fetched file is kept whole under its cache name, with no partial file
 // beside it, and the progress is reported from zero to the length.
 func TestFetchDownloadsTheFileAndReportsProgress(t *testing.T) {
+	isolateCache(t)
 	body := bytes.Repeat([]byte("onnx"), 1000)
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
@@ -95,6 +96,7 @@ func TestFetchDownloadsTheFileAndReportsProgress(t *testing.T) {
 
 // A folder that does not exist yet is made.
 func TestFetchMakesTheFolderItKeepsFilesIn(t *testing.T) {
+	isolateCache(t)
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("x")) })
 	dir := filepath.Join(t.TempDir(), "a", "b")
 	got, err := Fetch(t.Context(), downloading(dir), server.URL+"/m.onnx")
@@ -108,6 +110,7 @@ func TestFetchMakesTheFolderItKeepsFilesIn(t *testing.T) {
 
 // A folder that cannot be made is an error, and nothing is requested.
 func TestFetchFailsWhenTheFolderCannotBeMade(t *testing.T) {
+	isolateCache(t)
 	var asked atomic.Bool
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) { asked.Store(true) })
 	blocker := filepath.Join(t.TempDir(), "file")
@@ -125,6 +128,7 @@ func TestFetchFailsWhenTheFolderCannotBeMade(t *testing.T) {
 
 // Only an https address is downloaded.
 func TestFetchRefusesAnAddressThatIsNotHTTPS(t *testing.T) {
+	isolateCache(t)
 	var asked atomic.Bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { asked.Store(true) }))
 	t.Cleanup(server.Close)
@@ -154,6 +158,7 @@ func TestIsAddressIsHTTPSOnly(t *testing.T) {
 
 // A host that answers with anything but 200 gives no file.
 func TestFetchFailsOnAnAnswerThatIsNotOK(t *testing.T) {
+	isolateCache(t)
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) { http.NotFound(w, r) })
 	dir := t.TempDir()
 	_, err := Fetch(t.Context(), downloading(dir), server.URL+"/m.onnx")
@@ -165,6 +170,7 @@ func TestFetchFailsOnAnAnswerThatIsNotOK(t *testing.T) {
 
 // A host that cannot be reached gives no file, and the error names the address.
 func TestFetchFailsWhenTheHostIsUnreachable(t *testing.T) {
+	isolateCache(t)
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) {})
 	address := server.URL + "/m.onnx"
 	server.Close()
@@ -178,6 +184,7 @@ func TestFetchFailsWhenTheHostIsUnreachable(t *testing.T) {
 
 // An address that is not a URL gives no request.
 func TestDownloadFailsOnAnAddressThatIsNotAURL(t *testing.T) {
+	isolateCache(t)
 	dir := t.TempDir()
 	err := download(t.Context(), downloading(dir), "https://\x7f/m.onnx", filepath.Join(dir, "m.onnx"))
 	if err == nil {
@@ -189,6 +196,7 @@ func TestDownloadFailsOnAnAddressThatIsNotAURL(t *testing.T) {
 // A body that ends before its announced length leaves no file, finished or
 // not, and the error keeps its cause.
 func TestFetchLeavesNothingWhenTheBodyEndsEarly(t *testing.T) {
+	isolateCache(t)
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", "1000")
 		w.Write([]byte("short"))
@@ -203,6 +211,7 @@ func TestFetchLeavesNothingWhenTheBodyEndsEarly(t *testing.T) {
 
 // A file that cannot be created is an error.
 func TestDownloadFailsWhenThePartialFileCannotBeCreated(t *testing.T) {
+	isolateCache(t)
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("x")) })
 	missing := filepath.Join(t.TempDir(), "missing", "m.onnx")
 	if err := download(t.Context(), downloading(filepath.Dir(missing)), server.URL+"/m.onnx", missing); err == nil {
@@ -212,6 +221,7 @@ func TestDownloadFailsWhenThePartialFileCannotBeCreated(t *testing.T) {
 
 // A file that cannot be put in its place is an error.
 func TestDownloadFailsWhenTheFileCannotBePutInItsPlace(t *testing.T) {
+	isolateCache(t)
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("x")) })
 	at := filepath.Join(t.TempDir(), "m.onnx")
 	if err := os.MkdirAll(filepath.Join(at, "inside"), 0o755); err != nil {
@@ -224,6 +234,7 @@ func TestDownloadFailsWhenTheFileCannotBePutInItsPlace(t *testing.T) {
 
 // A cancelled context stops the download.
 func TestDownloadStopsWhenItsContextIsCancelled(t *testing.T) {
+	isolateCache(t)
 	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("x")) })
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -249,6 +260,7 @@ func redirecting(hops int64) http.HandlerFunc {
 
 // Nine redirects are followed, and a tenth is refused.
 func TestFetchFollowsNineRedirectsAndRefusesTen(t *testing.T) {
+	isolateCache(t)
 	nine := newTLSServer(t, redirecting(9))
 	if _, err := Fetch(t.Context(), downloading(t.TempDir()), nine.URL+"/m.onnx"); err != nil {
 		t.Fatalf("nine redirects: %v", err)
@@ -264,6 +276,7 @@ func TestFetchFollowsNineRedirectsAndRefusesTen(t *testing.T) {
 
 // A redirect to another https host is followed.
 func TestFetchFollowsARedirectToAnotherHTTPSHost(t *testing.T) {
+	isolateCache(t)
 	target := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("moved")) })
 	origin := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, target.URL+"/there.onnx", http.StatusFound)
@@ -280,6 +293,7 @@ func TestFetchFollowsARedirectToAnotherHTTPSHost(t *testing.T) {
 
 // A redirect to a plain http address is refused, and the error names both ends.
 func TestFetchRefusesARedirectToPlainHTTP(t *testing.T) {
+	isolateCache(t)
 	plain := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("plain")) }))
 	t.Cleanup(plain.Close)
 	origin := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -334,4 +348,13 @@ func TestCountingReportsOnceASecond(t *testing.T) {
 	if len(reports) != 2 {
 		t.Fatalf("a report followed the last at once: %v", reports)
 	}
+}
+
+// isolateCache leaves the platform's cache directory inside the test's own
+// folders.
+func isolateCache(t *testing.T) {
+	t.Helper()
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("LocalAppData", t.TempDir())
 }
