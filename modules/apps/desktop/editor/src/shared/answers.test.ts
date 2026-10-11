@@ -5,7 +5,8 @@
  * only thing that matters about it is that the parts come back out as they went
  * in — a path with spaces in it included.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import {
   asset,
@@ -84,6 +85,47 @@ describe('how an address names the bytes of a file', () => {
 })
 
 describe('waiting for an answer', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const busy = () => new ConnectError('the document is busy', Code.Unavailable)
+
+  it('asks again after a second where the document is busy', async () => {
+    vi.useFakeTimers()
+    const ask = vi.fn<() => Promise<string>>()
+    ask.mockRejectedValueOnce(busy()).mockResolvedValueOnce('ok')
+
+    const answer = retryWhileBusy(ask)
+    await vi.advanceTimersByTimeAsync(999)
+    expect(ask).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+
+    await expect(answer).resolves.toBe('ok')
+    expect(ask).toHaveBeenCalledTimes(2)
+  })
+
+  it('gives up on a document that stays busy after three more asks', async () => {
+    vi.useFakeTimers()
+    const error = busy()
+    const ask = vi.fn<() => Promise<string>>(() => Promise.reject(error))
+
+    const answer = retryWhileBusy(ask)
+    const settled = expect(answer).rejects.toBe(error)
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    await settled
+    expect(ask).toHaveBeenCalledTimes(4)
+  })
+
+  it('does not ask again after any other error', async () => {
+    const error = new ConnectError('no such note', Code.NotFound)
+    const ask = vi.fn<() => Promise<string>>(() => Promise.reject(error))
+
+    await expect(retryWhileBusy(ask)).rejects.toBe(error)
+    expect(ask).toHaveBeenCalledTimes(1)
+  })
+
   it('returns the answer when the call succeeds', async () => {
     const answer = await retryWhileBusy(async () => 'ok')
     expect(answer).toBe('ok')

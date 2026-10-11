@@ -50,6 +50,20 @@ describe('the settings file tab', () => {
     expect(kind.getMark?.(state)).toBe('•')
   })
 
+  it('carries the word stale where the file moved past what was read', async () => {
+    const core: TextEditorTabDeps = {
+      ...createCore(),
+      saveSettingsFile: () => Promise.resolve({ isChanged: true }),
+    }
+    const { kind } = createTextEditorTabKind(createHandle(), core, vi.fn())
+    const state = kind.open('')
+    await state.reload()
+    state.type('{ }\n')
+    await state.save()
+
+    expect(kind.getMark?.(state)).toBe('stale')
+  })
+
   it('is put in front beside the pane the person is in', () => {
     const handle = createHandle()
     const { openSettingsFile } = createTextEditorTabKind(handle, createCore(), vi.fn())
