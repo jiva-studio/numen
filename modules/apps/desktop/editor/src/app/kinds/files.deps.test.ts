@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
+import { WORDS as words } from '@/shared/words'
 import { cards, presets, WORDS as cardWords } from '@/entities/deck'
 import { ANSWER_WORDS, invocationOf, openDestination, runInvocation } from '@/features/command-palette'
 import { running } from '@/entities/artifact'
@@ -431,11 +432,12 @@ describe('an address imported from the files tab', () => {
   })
 
   it('fetches nothing where the vault refused the address', async () => {
-    const { deps, createUrl, applyPathChanges } = setup()
+    const { deps, createUrl, applyPathChanges, writeMessage } = setup()
     createUrl.mockResolvedValue({ ok: false, error: 'occupied' })
 
     await deps.importUrl('dir', 'https://example.test')
 
+    expect(writeMessage.mock.calls).toEqual([[words.errors.occupied, 'error']])
     expect(running.fetchArtifact).not.toHaveBeenCalled()
     expect(applyPathChanges).not.toHaveBeenCalled()
   })
