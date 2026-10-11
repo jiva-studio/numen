@@ -17,7 +17,8 @@ func TestMarkupBecomesText(t *testing.T) {
 		{"a space after the first letter of a book stands", `<p>a b</p>`, "a b\n"},
 		{"a form feed, a vertical tab and a carriage return are space",
 			`<p>a&#12;b&#11;c&#13;d</p>`, "a b c d\n"},
-		{"a space outside ASCII is space", "<p>a b</p>", "a b\n"},
+		{"a space outside ASCII is space", "<p>a\u2003b</p>", "a b\n"},
+		{"a space outside ASCII at the start of a book is not text", "<p>\u2003a</p>", "a\n"},
 		{"the space before the end of a block is taken back", `<p>Ab </p>`, "Ab\n"},
 		{"text standing in no element still ends its line", `Nu`, "Nu\n"},
 		{"a block begins a line after the text before it", `<body>Lead<p>Para</p></body>`, "Lead\nPara\n"},
@@ -30,6 +31,9 @@ func TestMarkupBecomesText(t *testing.T) {
 
 		{"a pre keeps its spaces", `<pre>a  b</pre>`, "a  b\n"},
 		{"the newline right after a pre is not text", "<pre>\na  b</pre>", "a  b\n"},
+		{"a carriage return right after a pre is not text", `<pre>&#13;x</pre>`, "x\n"},
+		{"a pre holding only a carriage return holds no text", `<p>a</p><pre>&#13;</pre>`, "a\n"},
+		{"only the first text of a pre loses its newline", "<pre>\na<!-- c -->\nb</pre>", "a\nb\n"},
 		{"a newline after an element inside a pre is text",
 			"<p>Lead</p><pre><code>\nx</code></pre>", "Lead\n\nx\n"},
 		{"text on either side of a pre is not preformatted",
@@ -48,9 +52,11 @@ func TestMarkupBecomesText(t *testing.T) {
 		{"a style and a title in the body are not text",
 			`<body><style>.x{}</style><p>Seen</p><title>Hidden</title><p>Too</p></body>`, "Seen\nToo\n"},
 		{"a head left open ends where the body begins",
-			`<html><head><title>T</title><body><p>Words</p></body></html>`, "Words\n"},
+			`<html><head><meta charset="utf-8"/><body><p>Words</p></body></html>`, "Words\n"},
 		{"a head left open ends where a block begins",
-			`<html><head><title>T</title><p>Words</p></html>`, "Words\n"},
+			`<html><head><meta charset="utf-8"/><p>Words</p></html>`, "Words\n"},
+		{"what a head holds after its title is not text",
+			`<html><head><title>T</title><noscript>Hidden</noscript></head><body><p>Seen</p></body></html>`, "Seen\n"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			book, drawn := readOne(t, c.markup)
@@ -89,6 +95,10 @@ func TestPagesTheMarkupMarks(t *testing.T) {
 			"<p><span epub:type=\"\npagebreak\" title=\"3\"></span>Three</p>", []string{"3"}},
 		{"a token after a carriage return",
 			`<p><span epub:type="&#13;pagebreak" title="3"></span>Three</p>`, []string{"3"}},
+		{"a page marked by its role",
+			`<p><span role="doc-pagebreak" title="6"></span>Six</p>`, []string{"6"}},
+		{"a page named by its label",
+			`<p><span epub:type="pagebreak" aria-label="7"></span>Seven</p>`, []string{"7"}},
 		{"a token that only begins with the word is not it",
 			`<p><span epub:type="pagebreaks" title="4"></span>Four</p>`, nil},
 		{"a value ending in a space marks nothing",
@@ -155,6 +165,17 @@ func TestHeadingsTheMarkupCarries(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("each level", func(t *testing.T) {
+		book, _ := readOne(t, `<h1>A</h1><h2>B</h2><h3>C</h3><h4>D</h4><h5>E</h5><h6>F</h6>`)
+		var want []epub.Part
+		for i, title := range []string{"A", "B", "C", "D", "E", "F"} {
+			want = append(want, epub.Part{Title: title, Offset: 2 * i, Level: i + 1})
+		}
+		if !slices.Equal(book.Parts, want) {
+			t.Errorf("parts = %v, want %v", book.Parts, want)
+		}
+	})
 }
 
 // An entry of the navigation that carries no name, or points at a document the
