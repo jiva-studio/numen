@@ -8,7 +8,7 @@ import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody 
 import { getRunName, renderVitestConfig } from './mutate.mjs'
 import { patchSource } from './patch.mjs'
 import { listShards } from './shards.mjs'
-import { getOriginal, getSurvivors, isBroken, readMutants, summarize } from './report.mjs'
+import { getOriginal, getSurvivors, isDetectingAll, readMutants, summarize } from './report.mjs'
 import {
   findTestdata,
   getShardCount,
@@ -270,11 +270,13 @@ test('a survivor on a closed issue reopens it', () => {
 
 /* --------------------------------- Guards --------------------------------- */
 
-test('a run that kills nothing while several survive is a broken runner', () => {
-  assert.equal(isBroken({ Survived: 70 }), true)
-  assert.equal(isBroken({ Survived: 70, Killed: 1 }), false)
-  assert.equal(isBroken({ Survived: 9 }), false)
-  assert.equal(isBroken({ Survived: 70, Timeout: 1 }), false)
+test('the canary passes only when every mutant that ran was noticed', () => {
+  const of = (...statuses) => statuses.map((status) => ({ status }))
+  assert.equal(isDetectingAll(of('Killed', 'Timeout', 'Ignored')), true)
+  assert.equal(isDetectingAll(of('Killed', 'Survived')), false)
+  assert.equal(isDetectingAll(of('Killed', 'NoCoverage')), false)
+  assert.equal(isDetectingAll(of('Ignored')), false)
+  assert.equal(isDetectingAll([]), false)
 })
 
 test('the runner patch joins the suite chain as Vitest 5 does, once', () => {

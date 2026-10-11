@@ -84,12 +84,11 @@ export const summarize = (mutants) => {
   return { counts, total: mutants.length, efficacy }
 }
 
-/**
- * Whether a run's outcomes are those of a runner that executed no test per
- * mutant: fifty survivors or more and nothing killed or timed out.
- */
-export const isBroken = (counts) =>
-  (counts.Survived ?? 0) >= 50 && (counts.Killed ?? 0) === 0 && (counts.Timeout ?? 0) === 0
+/** Whether there are mutants and the tests noticed every one that was run. */
+export const isDetectingAll = (mutants) => {
+  const run = mutants.filter((one) => one.status !== 'Ignored')
+  return run.length > 0 && run.every((one) => DETECTED.has(one.status))
+}
 
 /** The surviving mutants not waived for this target. */
 export const getSurvivors = (target, mutants, waivers) => {

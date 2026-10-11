@@ -31,7 +31,11 @@ A survivor is dealt with in one of two ways:
 ```json
 {
   "waived": [
-    { "target": "libs-core", "key": "16d8d7435c", "why": "256 and 257 both exceed every table the tests build" }
+    {
+      "target": "libs-core",
+      "key": "16d8d7435c",
+      "why": "256 and 257 both exceed every table the tests build"
+    }
   ]
 }
 ```
@@ -49,4 +53,4 @@ node modules/tools/mutation/issue.mjs libs-core --dry-run       # prints the iss
 
 ## The Vitest runner patch
 
-`@stryker-mutator/vitest-runner` 10.0.0 names a test with its suite chain joined by single spaces, and Vitest 5 matches the chain joined by a spaced greater-than sign, so the runner selects no test per mutant and every mutant survives ([stryker-js#6210](https://github.com/stryker-mutator/stryker-js/issues/6210)). `patch.mjs` rewrites the join before each run and refuses any other version of the runner. A shard in which fifty mutants or more survive and none is killed fails as a broken runner.
+`@stryker-mutator/vitest-runner` 10.0.0 names a test with its suite chain joined by single spaces, and Vitest 5 matches the chain joined by a spaced greater-than sign, so the runner selects no test per mutant and every mutant survives ([stryker-js#6210](https://github.com/stryker-mutator/stryker-js/issues/6210)). `patch.mjs` rewrites the join before each run and refuses any other version of the runner. Before each TypeScript shard, Stryker runs on `canary/`: a function whose every mutant its test kills, with the test nested in suites as real tests are. A runner that leaves any canary mutant alive fails the shard before it runs.
