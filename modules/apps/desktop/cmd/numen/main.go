@@ -16,6 +16,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"runtime/debug"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -108,6 +109,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		return err
 	}
 	cfg = cfg.SetSettings(chosen)
+	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 	cfg.InterfaceScale, cfg.TextScale = sizes.interfaceScale, sizes.textScale
 
 	// Before the window: every page this process reads is read through the

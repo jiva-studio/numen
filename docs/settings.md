@@ -143,8 +143,11 @@ The **core budget** is the number of hardware threads CPU-bound work may occupy 
 | Workers (general CPU-bound pool) | 1 | half the budget, at least 1 | the budget |
 | Embedding batch | 16 | 1 per 256 MB free, from 16 to 64 | 1 per 128 MB free, from 32 to 256 |
 | LLM concurrency | 1 | 2 | 4 |
+| Memory limit (soft) | 25% of installed memory | 50% of installed memory | 75% of installed memory |
 
 OCR threads × sessions never exceeds the core budget. The budget is split into 4 sessions, or more when one session would need over 8 threads; sessions are capped at 16 and at the budget, and each session gets the budget divided by the sessions, at most 8 threads.
+
+The memory limit is a soft limit on the memory the Go runtime manages, set once at startup from the installed memory: near it the collector runs more often, and no allocation fails. It is not set when the installed memory is unknown, when `GOMEMLIMIT` is set, or when a limit is already in force. Custom follows the Balanced share.
 
 Free memory is what the operating system reports as available. When only installed memory is known, half of it is taken as free; when neither is known, 4096 MB is taken as free. macOS does not report free memory, so it takes the second rule.
 

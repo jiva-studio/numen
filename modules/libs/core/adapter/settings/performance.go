@@ -82,6 +82,8 @@ type ResolvedCompute struct {
 	LlmConcurrency int `json:"llm_concurrency"`
 	// Workers is the size of a general pool for CPU-bound jobs such as text extraction and file parsing.
 	Workers int `json:"workers"`
+	// MemoryLimitMB is the soft limit on the memory managed by the Go runtime, in megabytes. Zero means no limit, which is the case when the installed memory is unknown.
+	MemoryLimitMB int64 `json:"memory_limit_mb"`
 }
 
 // DetectHardware inspects the current host machine capabilities.
@@ -154,6 +156,11 @@ const (
 
 	// ecoCoreBudget is the single hardware thread Eco occupies.
 	ecoCoreBudget = 1
+	// The share of installed memory each profile lets the Go runtime use before the collector works harder. Eco leaves the most to other programs; Maximum leaves the least.
+	ecoMemoryLimitPercent      = 25
+	balancedMemoryLimitPercent = 50
+	maximumMemoryLimitPercent  = 75
+
 	// balancedWorkerShare divides the Balanced budget into the size of the general pool.
 	balancedWorkerShare = 2
 )
@@ -178,6 +185,11 @@ func (hw HardwareSpecs) getPerformanceThreads() int {
 		threads = hw.LogicalCPUs
 	}
 	return threads
+}
+
+// getMemoryLimitMB is a share of the installed memory in megabytes, and zero when that size is unknown.
+func (hw HardwareSpecs) getMemoryLimitMB(sharePercent int64) int64 {
+	return hw.TotalRAMMB * sharePercent / 100
 }
 
 func getBudget(hw HardwareSpecs, sharePercent int) int {
@@ -211,6 +223,7 @@ func ResolveCompute(profile PerformanceProfile, hw HardwareSpecs, custom Perform
 			OcrSessions:        1,
 			LlmConcurrency:     ecoLlmConcurrency,
 			Workers:            1,
+			MemoryLimitMB:      hw.getMemoryLimitMB(ecoMemoryLimitPercent),
 		}
 
 	case ProfileMaximum:
@@ -224,6 +237,7 @@ func ResolveCompute(profile PerformanceProfile, hw HardwareSpecs, custom Perform
 			OcrSessions:        sessions,
 			LlmConcurrency:     maximumLlmConcurrency,
 			Workers:            budget,
+			MemoryLimitMB:      hw.getMemoryLimitMB(maximumMemoryLimitPercent),
 		}
 
 	case ProfileCustom:
@@ -242,6 +256,7 @@ func ResolveCompute(profile PerformanceProfile, hw HardwareSpecs, custom Perform
 			OcrSessions:        sessions,
 			LlmConcurrency:     balancedLlmConcurrency,
 			Workers:            max(budget/balancedWorkerShare, 1),
+			MemoryLimitMB:      hw.getMemoryLimitMB(balancedMemoryLimitPercent),
 		}
 	}
 }
@@ -276,5 +291,6 @@ func resolveCustom(hw HardwareSpecs, custom PerformanceCustom) ResolvedCompute {
 		OcrSessions:        sessions,
 		LlmConcurrency:     min(max(custom.LlmConcurrency, 1), customLlmMax),
 		Workers:            balancedWorkers,
+		MemoryLimitMB:      hw.getMemoryLimitMB(balancedMemoryLimitPercent),
 	}
 }
