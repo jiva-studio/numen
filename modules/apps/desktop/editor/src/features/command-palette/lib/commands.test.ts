@@ -46,3 +46,23 @@ describe('the commands over the vaults an installation holds', () => {
     ])
   })
 })
+
+describe('the commands that ask for a choice among a few', () => {
+  it('are the ones that set how the window is drawn and how it works', () => {
+    const choosing = commandsOf(words)
+      .filter((one) => one.needs === 'choosing')
+      .map((one) => one.id)
+
+    expect(choosing).toStrictEqual([
+      'appearance',
+      'mode',
+      'interfaceScale',
+      'textScale',
+      'syncing',
+      'hanging',
+      'parts',
+      'performanceProfile',
+      'indexingModel',
+    ])
+  })
+})

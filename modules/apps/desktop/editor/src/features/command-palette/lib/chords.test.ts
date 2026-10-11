@@ -88,14 +88,16 @@ describe('how a keystroke is drawn on the row that names it', () => {
 
 describe('every keystroke the table holds', () => {
   const APPLE = 'MacIntel'
-  const commands = commandsOf(words, APPLE)
+  const createCommands = () => commandsOf(words, APPLE)
 
   it('names a command the window has', () => {
+    const commands = createCommands()
     const known = new Set(commands.map((one) => one.id))
     for (const held of CHORDS) expect(known.has(held.command)).toBe(true)
   })
 
   it('is drawn on the row of the command it names', () => {
+    const commands = createCommands()
     for (const held of CHORDS) {
       const command = commands.find((one) => one.id === held.command)
       expect(command?.keys).toEqual(keyOf(held.command, APPLE))
