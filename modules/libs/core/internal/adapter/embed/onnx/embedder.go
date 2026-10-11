@@ -8,7 +8,6 @@ package onnx
 import (
 	"cmp"
 	"context"
-	"errors"
 	"fmt"
 	"runtime"
 	"slices"
@@ -56,10 +55,7 @@ type Embedder struct {
 	isHeadPooled bool
 
 	// Pool of inference sessions for concurrent passes.
-	sessions    chan *ort.Session
-	allSessions []*ort.Session
-	mu          sync.Mutex
-	isClosed    bool
+	sessions *sessionPool[*ort.Session]
 }
 
 // Open loads the model, fetching it first where this machine does not hold it.
@@ -144,14 +140,9 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		batchTexts:   max(cfg.BatchTexts, 1),
 		poolSize:     poolSize,
 		tokenizer:    tokenizer,
-		sessions:     make(chan *ort.Session, poolSize),
-		allSessions:  sessions,
+		sessions:     newSessionPool(sessions, (*ort.Session).Destroy),
 		isHeadPooled: identity.Pooling == embed.PoolHead,
 	}
-	for _, s := range sessions {
-		e.sessions <- s
-	}
-
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
 	}
@@ -177,21 +168,10 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	return e, nil
 }
 
-// Close releases the model. The runtime it ran on is the process's and stays.
+// Close releases the model once every pass running on it has returned. Embed
+// after Close fails. The runtime it ran on is the process's and stays.
 func (e *Embedder) Close() error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if e.isClosed {
-		return nil
-	}
-	e.isClosed = true
-	close(e.sessions)
-	for _, s := range e.allSessions {
-		if s != nil {
-			s.Destroy()
-		}
-	}
-	e.allSessions = nil
+	e.sessions.close()
 	return nil
 }
 
@@ -203,47 +183,6 @@ func (e *Embedder) Concurrency() int {
 // PoolSize is how many sessions the pool holds.
 func (e *Embedder) PoolSize() int {
 	return e.poolSize
-}
-
-// acquireSession borrows one session from the pool.
-func (e *Embedder) acquireSession(ctx context.Context) (*ort.Session, error) {
-	e.mu.Lock()
-	if e.isClosed {
-		e.mu.Unlock()
-		return nil, errors.New("the embedder is closed")
-	}
-	e.mu.Unlock()
-
-	if ctx != nil {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case s, ok := <-e.sessions:
-			if !ok || s == nil {
-				return nil, errors.New("the embedder is closed")
-			}
-			return s, nil
-		}
-	}
-
-	s, ok := <-e.sessions
-	if !ok || s == nil {
-		return nil, errors.New("the embedder is closed")
-	}
-	return s, nil
-}
-
-// releaseSession returns one session to the pool.
-func (e *Embedder) releaseSession(s *ort.Session) {
-	if s == nil {
-		return
-	}
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if e.isClosed {
-		return
-	}
-	e.sessions <- s
 }
 
 func (e *Embedder) Model() port.EmbeddingModel {
@@ -383,11 +322,11 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 	rows, seq, padded := padBatch(batch, e.pad, e.window)
 	defer releasePadding(padded)
 
-	session, err := e.acquireSession(ctx)
+	session, err := e.sessions.acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer e.releaseSession(session)
+	defer e.sessions.release(session)
 
 	// The library keeps a pointer into each of these and nothing else does, so
 	// they are held until the run is over.
