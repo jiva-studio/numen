@@ -46,6 +46,10 @@ describe('a search that turned up nothing', () => {
     expect(appendCreateOffer(createGroups(1), 'Entropy', words, front())).toHaveLength(1)
   })
 
+  it('offers nothing where there are no groups to have answered', () => {
+    expect(appendCreateOffer([], 'Entropy', words, front())).toHaveLength(0)
+  })
+
   it('offers nothing where nothing was looked for', () => {
     expect(appendCreateOffer(createGroups(0), '   ', words, front())).toHaveLength(1)
   })

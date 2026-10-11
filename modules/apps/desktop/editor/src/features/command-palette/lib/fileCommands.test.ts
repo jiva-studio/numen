@@ -50,6 +50,12 @@ describe('the runs over a file', () => {
   })
 })
 
+describe('a run over the file in front', () => {
+  it('is not offered where the tab names no file', () => {
+    expect(isOffered('recognise', { ...at('book', {}), file: '' })).toBe(false)
+  })
+})
+
 describe('reading a book', () => {
   it('is offered on a build that can read one', () => {
     expect(isOffered('recognise', at('book', {}))).toBe(true)

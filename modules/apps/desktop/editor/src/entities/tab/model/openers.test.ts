@@ -155,6 +155,33 @@ describe('a path opened', () => {
     expect(one.asked).toStrictEqual([['Animals.md']])
   })
 
+  it('hands an editor an empty title where the caller gave none', async () => {
+    const one = vault({ 'Animals.md': note('deck') })
+    const tabOpeners = fileOpeners(one.core)
+    const opened = editors(tabOpeners)
+
+    await tabOpeners.openFile('Animals.md')
+
+    expect(opened).toStrictEqual(['deck Animals.md — here —'])
+  })
+
+  it('opens nothing where no editor was handed over for the kind', async () => {
+    const one = vault({ 'Animals.md': note('deck') })
+    const tabOpeners = fileOpeners(one.core)
+
+    await expect(tabOpeners.openFile('Animals.md', 'Animals')).resolves.toBeUndefined()
+  })
+
+  it('opens a source in nothing where no reader was handed over for the kind', async () => {
+    const one = vault({ 'talks/Ants.mp3': TALK })
+    const tabOpeners = fileOpeners(one.core)
+
+    await expect(tabOpeners.openFile('talks/Ants.mp3')).resolves.toBeUndefined()
+    await expect(
+      tabOpeners.openFileAt('talks/Ants.mp3', [{ from: 22, to: 28 }]),
+    ).resolves.toBeUndefined()
+  })
+
   it('opens beside where that is where it was asked for', async () => {
     const one = vault({ 'Animals.md': note('deck') })
     const tabOpeners = fileOpeners(one.core)
@@ -261,6 +288,12 @@ describe('which reader a book opens in', () => {
 })
 
 describe('a file just made here', () => {
+  it('opens in nothing where no editor was handed over for what it was made as', () => {
+    const tabOpeners = fileOpeners(vault().core)
+
+    expect(() => tabOpeners.openNewFile('Animals.md', 'Animals', 'deck')).not.toThrow()
+  })
+
   it('opens as what it was made as, the vault not being asked', async () => {
     const one = vault()
     const tabOpeners = fileOpeners(one.core)
@@ -302,6 +335,21 @@ describe('reconciling open tabs when a file is opened', () => {
     await tabOpeners.openFile('Gita.epub')
 
     expect(reconciled).toStrictEqual([{ path: 'Gita.epub', newKind: 'book' }])
+  })
+
+  it('reconciles open tabs for a recording as a recording', async () => {
+    const reconciled: { path: string; newKind: string }[] = []
+    const one = vault({ 'talks/Ants.mp3': TALK })
+    const core: FileOpenerDeps = {
+      ...one.core,
+      reconcileTab: (path, newKind) => reconciled.push({ path, newKind }),
+    }
+    const tabOpeners = fileOpeners(core)
+    editors(tabOpeners)
+
+    await tabOpeners.openFile('talks/Ants.mp3')
+
+    expect(reconciled).toStrictEqual([{ path: 'talks/Ants.mp3', newKind: 'recording' }])
   })
 
   it('reconciles open tabs for a pdf document', async () => {

@@ -16,6 +16,7 @@ describe('the character that means the commands', () => {
   it('is not one typed into a field holding words, so a search for one stands', () => {
     expect(isCommandsTyped('foo', '>foo')).toBe(false)
     expect(isCommandsTyped('', '>foo')).toBe(false)
+    expect(isCommandsTyped('foo', '>')).toBe(false)
     expect(isCommandsTyped('>', '>>')).toBe(false)
   })
 })
