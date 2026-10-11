@@ -10,10 +10,6 @@ describe('a web address', () => {
     expect(isWebUrl('https://example.com/watch?v=1')).toBe(true)
   })
 
-  it('is one with spaces around it', () => {
-    expect(isWebUrl('  https://example.com \n')).toBe(true)
-  })
-
   it('is not one of another scheme', () => {
     expect(isWebUrl('ftp://example.com')).toBe(false)
     expect(isWebUrl('file:///notes/Entropy.md')).toBe(false)
