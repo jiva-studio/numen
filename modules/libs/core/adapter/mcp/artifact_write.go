@@ -89,7 +89,7 @@ func writeCorrections(
 	if err != nil || hash == "" {
 		return 0, err
 	}
-	store, err := core.Sources.Derived.Open(core.getShownVault().Vault)
+	store, err := core.Sources.Derived.Open(core.getCurrentVault().Vault)
 	if err != nil {
 		return 0, err
 	}

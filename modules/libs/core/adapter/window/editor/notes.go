@@ -18,7 +18,7 @@ import (
 func (a *API) ReadNote(
 	ctx context.Context, r *connect.Request[v1.ReadNoteRequest],
 ) (*connect.Response[v1.ReadNoteResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (a *API) ReadNote(
 func (a *API) WriteNote(
 	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
 ) (*connect.Response[v1.WriteNoteResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (a *API) WriteNote(
 func (a *API) CreateNote(
 	ctx context.Context, r *connect.Request[v1.CreateNoteRequest],
 ) (*connect.Response[v1.CreateNoteResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (a *API) CreateNote(
 func (a *API) WriteLink(
 	ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
 ) (*connect.Response[v1.WriteLinkResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (a *API) WriteLink(
 func (a *API) RemoveLink(
 	ctx context.Context, r *connect.Request[v1.RemoveLinkRequest],
 ) (*connect.Response[v1.RemoveLinkResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (a *API) RemoveLink(
 func (a *API) GetOpeningNote(
 	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 ) (*connect.Response[v1.GetOpeningNoteResponse], error) {
-	showing := a.GetShownVault()
+	showing := a.GetCurrentVault()
 	if showing.ID == "" {
 		// A window standing on nothing opens on no note.
 		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
@@ -206,7 +206,7 @@ func (a *API) GetOpeningNote(
 func (a *API) GetNeighbourhood(
 	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
 ) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (a *API) GetNeighbourhood(
 func (a *API) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -324,7 +324,7 @@ func (a *API) getAddress(ctx context.Context, to string) (domain.Address, error)
 	if a.Notes.Queries == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
 	}
-	return note.GetAddress(ctx, a.Notes.Queries, a.GetShownVault().ID, to)
+	return note.GetAddress(ctx, a.Notes.Queries, a.GetCurrentVault().ID, to)
 }
 
 // roleOf is the role a link carries, in the core's words. A link is written

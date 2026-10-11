@@ -31,7 +31,7 @@ func addLinkReadingTools(server *sdk.Server, core Core) {
 			Links     []ResolvedLink `json:"links"`
 			Backlinks []ResolvedLink `json:"backlinks"`
 		}
-		found, err := core.Notes.Links.Execute(ctx, core.getShownVault().Vault, in.Path)
+		found, err := core.Notes.Links.Execute(ctx, core.getCurrentVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -115,7 +115,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 			}
 			group := batches[from]
 			written, err := core.Notes.Linking.Add(
-				ctx, core.getShownVault().Vault, from, held[from], group[0], group[1:]...)
+				ctx, core.getCurrentVault().Vault, from, held[from], group[0], group[1:]...)
 			if err != nil {
 				for _, i := range at[from] {
 					res.Added[i].Refused = sayError(err)
@@ -152,7 +152,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 			return nil, ChangeOutcome{}, err
 		}
 		written, err := core.Notes.Linking.Update(
-			ctx, core.getShownVault().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
+			ctx, core.getCurrentVault().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
 				Role:  domain.LinkRole(in.Role),
 				Type:  in.Type,
 				Label: in.Label,
@@ -181,7 +181,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, ChangeOutcome{}, err
 		}
-		written, err := core.Notes.Linking.Remove(ctx, core.getShownVault().Vault, in.From,
+		written, err := core.Notes.Linking.Remove(ctx, core.getCurrentVault().Vault, in.From,
 			domain.ParseAddress(in.To), domain.LinkRole(in.Role), seen)
 		if err != nil {
 			return nil, ChangeOutcome{}, err

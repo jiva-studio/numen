@@ -174,7 +174,7 @@ func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if scans.times != 1 || scans.path != book || scans.vault != string(api.GetShownVault().ID) {
+	if scans.times != 1 || scans.path != book || scans.vault != string(api.GetCurrentVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", scans.path, scans.vault, scans.times)
 	}
 }
@@ -191,7 +191,7 @@ func TestARecordingIsHeardWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if hears.times != 1 || hears.path != talk || hears.vault != string(api.GetShownVault().ID) {
+	if hears.times != 1 || hears.path != talk || hears.vault != string(api.GetCurrentVault().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", hears.path, hears.vault, hears.times)
 	}
 }

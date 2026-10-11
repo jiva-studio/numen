@@ -48,7 +48,7 @@ const asked = {
   writeOpenTabs: vi.fn(),
   reportFlush: vi.fn(),
   listVaults: vi.fn(),
-  getShownVault: vi.fn(),
+  getCurrentVault: vi.fn(),
   chooseFolder: vi.fn(),
   addVault: vi.fn(),
   renameVault: vi.fn(),
@@ -262,7 +262,7 @@ describe('session domain', () => {
 describe('vaults domain', () => {
   it('handles list, choose, add, rename, remove, open, and core.vaults', async () => {
     asked.listVaults.mockResolvedValue({ vaults: [{ id: 'v1', name: 'Vault 1' }] })
-    asked.getShownVault.mockResolvedValue({ vault: 'v1' })
+    asked.getCurrentVault.mockResolvedValue({ vault: 'v1' })
 
     const list = await vaults.list()
     expect(list.vaults.length).toBe(1)

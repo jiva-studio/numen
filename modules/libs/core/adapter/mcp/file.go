@@ -41,7 +41,7 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 			Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 		}
 		contents, err := file.Read{Readers: core.Readers}.Execute(
-			ctx, core.getShownVault().Vault, in.Path, in.Start, in.Length)
+			ctx, core.getCurrentVault().Vault, in.Path, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err
 		}

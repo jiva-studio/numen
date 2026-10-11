@@ -61,7 +61,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	seen := readNote(t, api, "Entropy.md")
 
 	theirs := "# Entropy\n\nTheirs.\n"
-	on := filepath.Join(api.GetShownVault().Path, "Entropy.md")
+	on := filepath.Join(api.GetCurrentVault().Path, "Entropy.md")
 	if err := os.WriteFile(on, []byte(theirs), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 		t.Error("the write after a write said the note changed")
 	}
 
-	raw, err := os.ReadFile(filepath.Join(api.GetShownVault().Path, "Entropy.md"))
+	raw, err := os.ReadFile(filepath.Join(api.GetCurrentVault().Path, "Entropy.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +167,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
 	})
-	on := filepath.Join(api.GetShownVault().Path, "Heat.md")
+	on := filepath.Join(api.GetCurrentVault().Path, "Heat.md")
 
 	var once sync.Once
 	linking := note.NewEditLinks(

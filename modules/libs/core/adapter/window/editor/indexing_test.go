@@ -257,7 +257,7 @@ func cut(t *testing.T, db *container.Index, api *API) {
 		db.Queries(),
 		db.Maintenance(),
 	)
-	if _, err := scan.Execute(t.Context(), api.GetShownVault()); err != nil {
+	if _, err := scan.Execute(t.Context(), api.GetCurrentVault()); err != nil {
 		t.Fatal(err)
 	}
 }

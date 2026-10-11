@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIowBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSEAoIaXNfYXNrZWQYByABKAgSHAoEdW5pdBgIIAEoDjIOLm51bWVuLnYxLlVuaXQiIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIiYKFEdldFNob3duVmF1bHRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSImChVHZXRTaG93blZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeAoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhcKE0ZMVVNIX1JFU1VMVF9BU0tJTkcQAzLAAgoNV2luZG93U2VydmljZRJJCgpXYXRjaFRhc2tzEhsubnVtZW4udjEuV2F0Y2hUYXNrc1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaFRhc2tzUmVzcG9uc2UwARJGCglXYXRjaFF1aXQSGi5udW1lbi52MS5XYXRjaFF1aXRSZXF1ZXN0GhsubnVtZW4udjEuV2F0Y2hRdWl0UmVzcG9uc2UwARJKCgtSZXBvcnRGbHVzaBIcLm51bWVuLnYxLlJlcG9ydEZsdXNoUmVxdWVzdBodLm51bWVuLnYxLlJlcG9ydEZsdXNoUmVzcG9uc2USUAoNR2V0U2hvd25WYXVsdBIeLm51bWVuLnYxLkdldFNob3duVmF1bHRSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0U2hvd25WYXVsdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIowBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSEAoIaXNfYXNrZWQYByABKAgSHAoEdW5pdBgIIAEoDjIOLm51bWVuLnYxLlVuaXQiIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIigKFkdldEN1cnJlbnRWYXVsdFJlcXVlc3QSDgoGd2luZG93GAEgASgJIigKF0dldEN1cnJlbnRWYXVsdFJlc3BvbnNlEg0KBXZhdWx0GAEgASgJKk8KBFVuaXQSFAoQVU5JVF9VTlNQRUNJRklFRBAAEg8KC1VOSVRfVEhJTkdTEAESDgoKVU5JVF9CWVRFUxACEhAKDFVOSVRfU0VDT05EUxADKngKC0ZsdXNoUmVzdWx0EhwKGEZMVVNIX1JFU1VMVF9VTlNQRUNJRklFRBAAEhgKFEZMVVNIX1JFU1VMVF9OT1RISU5HEAESGAoURkxVU0hfUkVTVUxUX1dSSVRURU4QAhIXChNGTFVTSF9SRVNVTFRfQVNLSU5HEAMyxgIKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESRgoJV2F0Y2hRdWl0EhoubnVtZW4udjEuV2F0Y2hRdWl0UmVxdWVzdBobLm51bWVuLnYxLldhdGNoUXVpdFJlc3BvbnNlMAESSgoLUmVwb3J0Rmx1c2gSHC5udW1lbi52MS5SZXBvcnRGbHVzaFJlcXVlc3QaHS5udW1lbi52MS5SZXBvcnRGbHVzaFJlc3BvbnNlElYKD0dldEN1cnJlbnRWYXVsdBIgLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlcXVlc3QaIS5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -232,9 +232,9 @@ export const ReportFlushResponseSchema: GenMessage<ReportFlushResponse> = /*@__P
   messageDesc(file_numen_v1_window, 6);
 
 /**
- * @generated from message numen.v1.GetShownVaultRequest
+ * @generated from message numen.v1.GetCurrentVaultRequest
  */
-export type GetShownVaultRequest = Message<"numen.v1.GetShownVaultRequest"> & {
+export type GetCurrentVaultRequest = Message<"numen.v1.GetCurrentVaultRequest"> & {
   /**
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
@@ -245,16 +245,16 @@ export type GetShownVaultRequest = Message<"numen.v1.GetShownVaultRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.GetShownVaultRequest.
- * Use `create(GetShownVaultRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetCurrentVaultRequest.
+ * Use `create(GetCurrentVaultRequestSchema)` to create a new message.
  */
-export const GetShownVaultRequestSchema: GenMessage<GetShownVaultRequest> = /*@__PURE__*/
+export const GetCurrentVaultRequestSchema: GenMessage<GetCurrentVaultRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 7);
 
 /**
- * @generated from message numen.v1.GetShownVaultResponse
+ * @generated from message numen.v1.GetCurrentVaultResponse
  */
-export type GetShownVaultResponse = Message<"numen.v1.GetShownVaultResponse"> & {
+export type GetCurrentVaultResponse = Message<"numen.v1.GetCurrentVaultResponse"> & {
   /**
    * The identity the list of vaults holds that vault under. Empty in a window
    * showing none, and in one that is open on the installation rather than on
@@ -266,10 +266,10 @@ export type GetShownVaultResponse = Message<"numen.v1.GetShownVaultResponse"> & 
 };
 
 /**
- * Describes the message numen.v1.GetShownVaultResponse.
- * Use `create(GetShownVaultResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetCurrentVaultResponse.
+ * Use `create(GetCurrentVaultResponseSchema)` to create a new message.
  */
-export const GetShownVaultResponseSchema: GenMessage<GetShownVaultResponse> = /*@__PURE__*/
+export const GetCurrentVaultResponseSchema: GenMessage<GetCurrentVaultResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 8);
 
 /**
@@ -399,16 +399,16 @@ export const WindowService: GenService<{
     output: typeof ReportFlushResponseSchema;
   },
   /**
-   * GetShownVault is which vault this window has in front of the person. Two
+   * GetCurrentVault is which vault this window has in front of the person. Two
    * windows are open on one installation and each shows what it shows, so it is
    * the window that is asked and not the list of vaults.
    *
-   * @generated from rpc numen.v1.WindowService.GetShownVault
+   * @generated from rpc numen.v1.WindowService.GetCurrentVault
    */
-  getShownVault: {
+  getCurrentVault: {
     methodKind: "unary";
-    input: typeof GetShownVaultRequestSchema;
-    output: typeof GetShownVaultResponseSchema;
+    input: typeof GetCurrentVaultRequestSchema;
+    output: typeof GetCurrentVaultResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_window, 0);

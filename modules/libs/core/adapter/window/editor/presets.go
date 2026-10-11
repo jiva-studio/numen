@@ -19,7 +19,7 @@ import (
 func (a *API) GetDeckPreset(
 	ctx context.Context, r *connect.Request[v1.GetDeckPresetRequest],
 ) (*connect.Response[v1.GetDeckPresetResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (a *API) GetDeckPreset(
 func (a *API) ListPresets(
 	ctx context.Context, _ *connect.Request[v1.ListPresetsRequest],
 ) (*connect.Response[v1.ListPresetsResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (a *API) CreatePreset(
 func (a *API) ScheduleDeck(
 	ctx context.Context, r *connect.Request[v1.ScheduleDeckRequest],
 ) (*connect.Response[v1.ScheduleDeckResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (a *API) ScheduleDeck(
 func (a *API) ReadPreset(
 	ctx context.Context, r *connect.Request[v1.ReadPresetRequest],
 ) (*connect.Response[v1.ReadPresetResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (a *API) ReadPreset(
 func (a *API) WritePreset(
 	ctx context.Context, r *connect.Request[v1.WritePresetRequest],
 ) (*connect.Response[v1.WritePresetResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (a *API) WritePreset(
 func (a *API) ComputeCurve(
 	ctx context.Context, r *connect.Request[v1.ComputeCurveRequest],
 ) (*connect.Response[v1.ComputeCurveResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,7 @@ import (
 func (a *API) RenameNote(
 	ctx context.Context, r *connect.Request[v1.RenameNoteRequest],
 ) (*connect.Response[v1.RenameNoteResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (a *API) RenameNote(
 func (a *API) RemoveFile(
 	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
 ) (*connect.Response[v1.RemoveFileResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}

@@ -31,7 +31,7 @@ const Version = "0.1.0"
 type Core struct {
 	// Showing is the vault the tools work, asked at every call so that they
 	// follow the window.
-	Showing func() ShownVault
+	Showing func() CurrentVault
 
 	// Readers is the vault's files, which the notes, the documents and the
 	// window are all read out of.

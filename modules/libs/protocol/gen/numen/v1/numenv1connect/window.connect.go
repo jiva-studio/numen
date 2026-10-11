@@ -47,9 +47,9 @@ const (
 	// WindowServiceReportFlushProcedure is the fully-qualified name of the WindowService's ReportFlush
 	// RPC.
 	WindowServiceReportFlushProcedure = "/numen.v1.WindowService/ReportFlush"
-	// WindowServiceGetShownVaultProcedure is the fully-qualified name of the WindowService's
-	// GetShownVault RPC.
-	WindowServiceGetShownVaultProcedure = "/numen.v1.WindowService/GetShownVault"
+	// WindowServiceGetCurrentVaultProcedure is the fully-qualified name of the WindowService's
+	// GetCurrentVault RPC.
+	WindowServiceGetCurrentVaultProcedure = "/numen.v1.WindowService/GetCurrentVault"
 )
 
 // WindowServiceClient is a client for the numen.v1.WindowService service.
@@ -72,10 +72,10 @@ type WindowServiceClient interface {
 	// work a person is being asked about keeps it open. A caller that never says
 	// it is waited for and then left behind.
 	ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error)
-	// GetShownVault is which vault this window has in front of the person. Two
+	// GetCurrentVault is which vault this window has in front of the person. Two
 	// windows are open on one installation and each shows what it shows, so it is
 	// the window that is asked and not the list of vaults.
-	GetShownVault(context.Context, *connect.Request[v1.GetShownVaultRequest]) (*connect.Response[v1.GetShownVaultResponse], error)
+	GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error)
 }
 
 // NewWindowServiceClient constructs a client for the numen.v1.WindowService service. By default, it
@@ -107,10 +107,10 @@ func NewWindowServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(windowServiceMethods.ByName("ReportFlush")),
 			connect.WithClientOptions(opts...),
 		),
-		getShownVault: connect.NewClient[v1.GetShownVaultRequest, v1.GetShownVaultResponse](
+		getCurrentVault: connect.NewClient[v1.GetCurrentVaultRequest, v1.GetCurrentVaultResponse](
 			httpClient,
-			baseURL+WindowServiceGetShownVaultProcedure,
-			connect.WithSchema(windowServiceMethods.ByName("GetShownVault")),
+			baseURL+WindowServiceGetCurrentVaultProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("GetCurrentVault")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -118,10 +118,10 @@ func NewWindowServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // windowServiceClient implements WindowServiceClient.
 type windowServiceClient struct {
-	watchTasks    *connect.Client[v1.WatchTasksRequest, v1.WatchTasksResponse]
-	watchQuit     *connect.Client[v1.WatchQuitRequest, v1.WatchQuitResponse]
-	reportFlush   *connect.Client[v1.ReportFlushRequest, v1.ReportFlushResponse]
-	getShownVault *connect.Client[v1.GetShownVaultRequest, v1.GetShownVaultResponse]
+	watchTasks      *connect.Client[v1.WatchTasksRequest, v1.WatchTasksResponse]
+	watchQuit       *connect.Client[v1.WatchQuitRequest, v1.WatchQuitResponse]
+	reportFlush     *connect.Client[v1.ReportFlushRequest, v1.ReportFlushResponse]
+	getCurrentVault *connect.Client[v1.GetCurrentVaultRequest, v1.GetCurrentVaultResponse]
 }
 
 // WatchTasks calls numen.v1.WindowService.WatchTasks.
@@ -139,9 +139,9 @@ func (c *windowServiceClient) ReportFlush(ctx context.Context, req *connect.Requ
 	return c.reportFlush.CallUnary(ctx, req)
 }
 
-// GetShownVault calls numen.v1.WindowService.GetShownVault.
-func (c *windowServiceClient) GetShownVault(ctx context.Context, req *connect.Request[v1.GetShownVaultRequest]) (*connect.Response[v1.GetShownVaultResponse], error) {
-	return c.getShownVault.CallUnary(ctx, req)
+// GetCurrentVault calls numen.v1.WindowService.GetCurrentVault.
+func (c *windowServiceClient) GetCurrentVault(ctx context.Context, req *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error) {
+	return c.getCurrentVault.CallUnary(ctx, req)
 }
 
 // WindowServiceHandler is an implementation of the numen.v1.WindowService service.
@@ -164,10 +164,10 @@ type WindowServiceHandler interface {
 	// work a person is being asked about keeps it open. A caller that never says
 	// it is waited for and then left behind.
 	ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error)
-	// GetShownVault is which vault this window has in front of the person. Two
+	// GetCurrentVault is which vault this window has in front of the person. Two
 	// windows are open on one installation and each shows what it shows, so it is
 	// the window that is asked and not the list of vaults.
-	GetShownVault(context.Context, *connect.Request[v1.GetShownVaultRequest]) (*connect.Response[v1.GetShownVaultResponse], error)
+	GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error)
 }
 
 // NewWindowServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -195,10 +195,10 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(windowServiceMethods.ByName("ReportFlush")),
 		connect.WithHandlerOptions(opts...),
 	)
-	windowServiceGetShownVaultHandler := connect.NewUnaryHandler(
-		WindowServiceGetShownVaultProcedure,
-		svc.GetShownVault,
-		connect.WithSchema(windowServiceMethods.ByName("GetShownVault")),
+	windowServiceGetCurrentVaultHandler := connect.NewUnaryHandler(
+		WindowServiceGetCurrentVaultProcedure,
+		svc.GetCurrentVault,
+		connect.WithSchema(windowServiceMethods.ByName("GetCurrentVault")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.WindowService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -209,8 +209,8 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 			windowServiceWatchQuitHandler.ServeHTTP(w, r)
 		case WindowServiceReportFlushProcedure:
 			windowServiceReportFlushHandler.ServeHTTP(w, r)
-		case WindowServiceGetShownVaultProcedure:
-			windowServiceGetShownVaultHandler.ServeHTTP(w, r)
+		case WindowServiceGetCurrentVaultProcedure:
+			windowServiceGetCurrentVaultHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -232,6 +232,6 @@ func (UnimplementedWindowServiceHandler) ReportFlush(context.Context, *connect.R
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.ReportFlush is not implemented"))
 }
 
-func (UnimplementedWindowServiceHandler) GetShownVault(context.Context, *connect.Request[v1.GetShownVaultRequest]) (*connect.Response[v1.GetShownVaultResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.GetShownVault is not implemented"))
+func (UnimplementedWindowServiceHandler) GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.GetCurrentVault is not implemented"))
 }

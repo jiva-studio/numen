@@ -82,7 +82,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T) {
 	f := openEmptyWindow(t)
 
-	if got := f.installation.GetShownVault(); got != (domain.Vault{}) {
+	if got := f.installation.GetCurrentVault(); got != (domain.Vault{}) {
 		t.Errorf("the window opened on %+v, want no vault", got)
 	}
 
@@ -141,8 +141,8 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 		t.Errorf("the window opens on %q, and holds no vault to hold it", note.GetPath())
 	}
 
-	shown, err := f.drawn.GetShownVault(t.Context(),
-		connect.NewRequest(&v1.GetShownVaultRequest{Window: wire.Editor}))
+	shown, err := f.drawn.GetCurrentVault(t.Context(),
+		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatalf("the window cannot say which vault it is showing: %v", err)
 	}
@@ -415,7 +415,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.installation.GetShownVault().ID); got != added.Msg.GetVault().GetId() {
+	if got := string(f.installation.GetCurrentVault().ID); got != added.Msg.GetVault().GetId() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 

@@ -334,7 +334,7 @@ func cutToSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 // Everything from outside reaches the vault through a reader, so a path leaving
 // it is refused there.
 func (a *API) getShownFile(ctx context.Context, path string) (domain.Vault, domain.Fingerprint, error) {
-	showing := a.GetShownVault()
+	showing := a.GetCurrentVault()
 	if showing.ID == "" || a.Readers == nil {
 		return domain.Vault{}, domain.Fingerprint{}, errNoVault
 	}

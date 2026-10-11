@@ -22,7 +22,7 @@ import (
 func (a *API) ListStencils(
 	ctx context.Context, r *connect.Request[v1.ListStencilsRequest],
 ) (*connect.Response[v1.ListStencilsResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (a *API) CreateDeck(
 func (a *API) createCardNote(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return cards.CreateNoteResult{}, nil, false, err
 	}
@@ -121,7 +121,7 @@ func (a *API) createCardNote(
 func (a *API) RenameStencilField(
 	ctx context.Context, r *connect.Request[v1.RenameStencilFieldRequest],
 ) (*connect.Response[v1.RenameStencilFieldResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (a *API) RenameStencilField(
 func (a *API) ReadStencil(
 	ctx context.Context, r *connect.Request[v1.ReadStencilRequest],
 ) (*connect.Response[v1.ReadStencilResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (a *API) ReadStencil(
 func (a *API) ReadDeck(
 	ctx context.Context, r *connect.Request[v1.ReadDeckRequest],
 ) (*connect.Response[v1.ReadDeckResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (a *API) ReadDeck(
 func (a *API) WriteDeck(
 	ctx context.Context, r *connect.Request[v1.WriteDeckRequest],
 ) (*connect.Response[v1.WriteDeckResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (a *API) WriteDeck(
 func (a *API) WriteStencil(
 	ctx context.Context, r *connect.Request[v1.WriteStencilRequest],
 ) (*connect.Response[v1.WriteStencilResponse], error) {
-	showing, err := a.getShownVault()
+	showing, err := a.getCurrentVault()
 	if err != nil {
 		return nil, err
 	}

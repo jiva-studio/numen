@@ -34,10 +34,10 @@ service WindowService {
   // it is waited for and then left behind.
   rpc ReportFlush(ReportFlushRequest) returns (ReportFlushResponse);
 
-  // GetShownVault is which vault this window has in front of the person. Two
+  // GetCurrentVault is which vault this window has in front of the person. Two
   // windows are open on one installation and each shows what it shows, so it is
   // the window that is asked and not the list of vaults.
-  rpc GetShownVault(GetShownVaultRequest) returns (GetShownVaultResponse);
+  rpc GetCurrentVault(GetCurrentVaultRequest) returns (GetCurrentVaultResponse);
 }
 
 message WatchTasksRequest {
@@ -143,13 +143,13 @@ message ReportFlushRequest {
 
 message ReportFlushResponse {}
 
-message GetShownVaultRequest {
+message GetCurrentVaultRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
   string window = 1;
 }
 
-message GetShownVaultResponse {
+message GetCurrentVaultResponse {
   // The identity the list of vaults holds that vault under. Empty in a window
   // showing none, and in one that is open on the installation rather than on
   // any one vault.

@@ -38,7 +38,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 		return func() error { return nil }, nil
 	}
 
-	root, err := filepath.Abs(opened.GetShownVault().Path)
+	root, err := filepath.Abs(opened.GetCurrentVault().Path)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 	cutting := opened.Cards()
 
 	return mcp.Core{
-		Showing:   mcp.ShowOneVault(opened.GetShownVault(), root),
+		Showing:   mcp.ShowOneVault(opened.GetCurrentVault(), root),
 		Readers:   cfg.VaultReaders(),
 		View:      opened.API.GetWindow(),
 		Attending: opened.API.GetOpenTabs,

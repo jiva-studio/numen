@@ -58,7 +58,7 @@ func addImportTool(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, ImportOutcome{}, err
 		}
-		v := core.getShownVault().Vault
+		v := core.getCurrentVault().Vault
 		// It is named by the address until what is there says what it is
 		// called, which is what the import does next.
 		made, err := core.Sources.URLs.Execute(ctx, v, source.NewURL{
