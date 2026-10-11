@@ -132,6 +132,7 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		if err := empty(ctx, db); err != nil {
 			return err
 		}
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="a current below zero lets every migration run, as zero does"
 		current = 0
 	}
 

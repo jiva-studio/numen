@@ -1,3 +1,6 @@
+	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("a"), markOf("c")}) {
+		t.Errorf("the order is %v after b was closed", got)
+	}
 package pool
 
 import (
@@ -246,6 +249,12 @@ func TestACallerThatRanOutOfTimeIsToldTheDocumentIsBusy(t *testing.T) {
 	if !errors.Is(err, ErrBusy) {
 		t.Fatalf("answered %v", err)
 	}
+	docs.mu.Lock()
+	uses := docs.open[markOf("a")].uses
+	docs.mu.Unlock()
+	if uses != 0 {
+		t.Errorf("a caller that gave up still holds the document (%d uses)", uses)
+	}
 	close(release)
 }
 
@@ -436,6 +445,7 @@ func TestShuttingADocumentStillOpeningClosesItOnceOpened(t *testing.T) {
 	s := &shelf{}
 	doc := &Document{ready: make(chan struct{})}
 	doc.Shut()
+	time.Sleep(20 * time.Millisecond)
 	if s.isClosed() {
 		t.Fatal("closed before it was open")
 	}
@@ -528,5 +538,76 @@ func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
 	img, err := (&Document{Scan: draw, points: map[int]int{}}).Draw(0, 100)
 	if !errors.Is(err, cause) || img != nil {
 		t.Errorf("a page the library cannot draw was answered %v, %v", img, err)
+	}
+}
+
+func TestAnEvictedDocumentFromTheMiddleOfTheOrderLeavesTheRestInOrder(t *testing.T) {
+	docs := NewDocuments(1, time.Hour)
+	t.Cleanup(docs.Close)
+	_, giveA, err := docs.Take(t.Context(), markOf("a"), opens(&shelf{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer giveA()
+	b := &shelf{}
+	_, giveB, err := docs.Take(t.Context(), markOf("b"), opens(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	giveB()
+	clock := docs.open[markOf("b")].idle
+
+	_, giveC, err := docs.Take(t.Context(), markOf("c"), opens(&shelf{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer giveC()
+	if !b.isClosed() {
+		t.Error("the idle document was not closed")
+	}
+	if clock.Stop() {
+		t.Error("the clock of an evicted document was left running")
+	}
+	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("a"), markOf("c")}) {
+		t.Errorf("the order is %v", got)
+	}
+}
+
+func TestADocumentThatFailedToOpenIsClosedOnceGivenBack(t *testing.T) {
+	docs := NewDocuments(MostOpen, OpenIdleFor)
+	t.Cleanup(docs.Close)
+	s := &shelf{}
+	cause := errors.New("half open")
+	if _, _, err := docs.Take(t.Context(), markOf("a"), func() (Scan, error) { return s, cause }); !errors.Is(err, cause) {
+		t.Fatalf("answered %v", err)
+	}
+	if got := s.getCloses(); got != 1 {
+		t.Errorf("the scan was closed %d times", got)
+	}
+}
+
+func TestRetiringClosesOnlyTheDocumentNobodyHolds(t *testing.T) {
+	docs := NewDocuments(MostOpen, time.Hour)
+	t.Cleanup(docs.Close)
+	s := &shelf{}
+	doc, give, err := docs.Take(t.Context(), markOf("a"), opens(s))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	docs.Retire(markOf("a"), doc)
+	if s.isClosed() || getOpenCount(docs) != 1 {
+		t.Fatal("a document in use was retired")
+	}
+
+	give()
+	docs.Retire(markOf("a"), &Document{ready: make(chan struct{})})
+	if s.isClosed() || getOpenCount(docs) != 1 {
+		t.Fatal("a document was retired for another's clock")
+	}
+
+	docs.Retire(markOf("a"), doc)
+	if !s.isClosed() || getOpenCount(docs) != 0 || len(getOrder(docs)) != 0 {
+		t.Error("an idle document was not retired")
 	}
 }

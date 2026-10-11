@@ -2,6 +2,7 @@ package index
 
 import (
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -280,5 +281,23 @@ func TestCommentsAreTakenOutLineByLine(t *testing.T) {
 	got := withoutComments("SELECT 1\n  -- note\nFROM x")
 	if got != "SELECT 1\nFROM x\n" {
 		t.Errorf("got %q", got)
+	}
+}
+
+// An index whose migrations cannot be read is not migrated.
+func TestMigrationsThatCannotBeReadMigrateNothing(t *testing.T) {
+	db := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
+	saved := files
+	files = embed.FS{}
+	t.Cleanup(func() { files = saved })
+
+	if _, err := loadMigrations(); err == nil {
+		t.Fatal("migrations were loaded from nothing")
+	}
+	if err := migrate(t.Context(), db); err == nil {
+		t.Fatal("an index was migrated by nothing")
+	}
+	if at := readUserVersion(t, db); at != 0 {
+		t.Errorf("the index is at version %d, want 0", at)
 	}
 }

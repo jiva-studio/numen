@@ -262,6 +262,7 @@ func (d *Documents) Close() {
 // drawing from stays, and the bound is over until they are done with it.
 func (d *Documents) Evict() {
 	for len(d.open) > d.limit {
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="any negative start reads as nothing found"
 		oldest := -1
 		for i, print := range d.order {
 			if doc := d.open[print]; doc != nil && doc.uses == 0 {

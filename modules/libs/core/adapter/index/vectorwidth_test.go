@@ -84,8 +84,9 @@ func TestAWidthOfNoDimensionsIsRefused(t *testing.T) {
 	fit(t, db, testRecipe)
 
 	for _, dims := range []int{0, -1} {
-		if err := db.FitVectors(t.Context(), dims, testRecipe); err == nil {
-			t.Errorf("a vector index of %d dimensions was made", dims)
+		err := db.FitVectors(t.Context(), dims, testRecipe)
+		if err == nil || !strings.Contains(err.Error(), "is not a vector") {
+			t.Errorf("a vector index of %d dimensions was answered %v", dims, err)
 		}
 	}
 	if width, _ := readWidth(t, db); width != 1024 {
@@ -142,5 +143,93 @@ func TestTheNarrowestWidthIsFitted(t *testing.T) {
 	}
 	if width, _ := readWidth(t, db); width != 1 {
 		t.Errorf("the vector index holds width %d, want 1", width)
+	}
+}
+
+// The width of an index holding no vector index is nothing.
+func TestAnIndexWithoutAVectorIndexHoldsNoWidth(t *testing.T) {
+	db := openDB(t)
+	if _, err := db.write.ExecContext(t.Context(), `DROP TABLE chunks_vec`); err != nil {
+		t.Fatal(err)
+	}
+	width, err := vectorWidth(t.Context(), db.write)
+	if width != 0 || err != nil {
+		t.Errorf("got %d, %v", width, err)
+	}
+}
+
+// A width that cannot be read is nothing, and the report says why.
+func TestAWidthThatCannotBeReadIsNothing(t *testing.T) {
+	t.Run("the catalogue cannot be read", func(t *testing.T) {
+		db := openBreakingDB(t)
+		breakOn(t, "name = 'chunks_vec'")
+		width, err := vectorWidth(t.Context(), db.write)
+		mend()
+		if width != 0 || !errors.Is(err, errBroken) {
+			t.Errorf("got %d, %v", width, err)
+		}
+	})
+	t.Run("the table says nothing of its width", func(t *testing.T) {
+		db := openDB(t)
+		for _, statement := range []string{
+			`DROP TABLE chunks_vec`,
+			`CREATE VIRTUAL TABLE chunks_vec USING vec0 (chunk_id integer primary key, coarse float[8])`,
+		} {
+			if _, err := db.write.ExecContext(t.Context(), statement); err != nil {
+				t.Fatal(err)
+			}
+		}
+		width, err := vectorWidth(t.Context(), db.write)
+		if width != 0 || err == nil {
+			t.Errorf("got %d, %v", width, err)
+		}
+	})
+}
+
+// A recipe that cannot be read is reported, with the recipe nothing and none
+// recorded.
+func TestARecipeThatCannotBeReadIsReported(t *testing.T) {
+	db := openBreakingDB(t)
+	breakOn(t, "SELECT recipe FROM coarse_recipe")
+	recipe, recorded, err := coarseRecipe(t.Context(), db.write)
+	mend()
+	if !errors.Is(err, errBroken) || recipe != "" || recorded {
+		t.Errorf("got %q, %v, %v", recipe, recorded, err)
+	}
+}
+
+// Fitting reports the vectors it could not read, and leaves the index as it was.
+func TestAFitThatCannotReadTheVectorsLeavesTheVectorIndexAsItWas(t *testing.T) {
+	for _, c := range []struct {
+		name       string
+		unreadable bool
+	}{
+		{"a vector that cannot be taken", true},
+		{"a read that ends in an error", false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			ctx := t.Context()
+			db := openBreakingDB(t)
+			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
+				t.Fatal(err)
+			}
+			narrow(t, db, first, 384)
+			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
+				t.Fatal(err)
+			}
+			breakRows(t, "FROM vectors v JOIN chunks", c.unreadable)
+
+			err := db.FitVectors(ctx, 384, narrowRecipe(384))
+			if err == nil || !strings.Contains(err.Error(), "the vectors the recipe holds") {
+				t.Fatalf("fitting answered %v", err)
+			}
+			if !c.unreadable && !errors.Is(err, errBroken) {
+				t.Errorf("the cause was lost: %v", err)
+			}
+			width, recipe := readWidth(t, db)
+			if width != 1024 || recipe != narrowRecipe(1024) {
+				t.Errorf("the vector index holds width %d under %q", width, recipe)
+			}
+		})
 	}
 }
