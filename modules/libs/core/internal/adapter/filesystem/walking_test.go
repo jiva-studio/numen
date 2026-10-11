@@ -12,10 +12,14 @@ import (
 )
 
 // makeVaultAndShape is a vault holding one note, and the shape of it taken before anything
-// else arrives.
+// else arrives. The root is spelled as the operating system reports paths in it, with
+// every link resolved; a temporary folder on macOS is under a link.
 func makeVaultAndShape(t *testing.T) (string, *folders) {
 	t.Helper()
-	root := t.TempDir()
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(filepath.Join(root, "Note.md"), []byte("# Note\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
