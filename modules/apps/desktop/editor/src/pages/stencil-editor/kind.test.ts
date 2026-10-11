@@ -563,6 +563,17 @@ describe('a stencil tab closed', () => {
     expect(tab.stencil.value.faces[0]?.id).not.toBe(was)
   })
 
+  it('lets go of its title while a tab stands on another file', async () => {
+    const one = await open()
+    await one.held.openTabOfKind(STENCIL, 'Plant.md')
+    await settle()
+
+    one.stencils.kept.close('Animal.md')
+    await settle()
+
+    expect(one.stencils.getTitle('Animal.md')).toBe('Animal.md')
+  })
+
   it('leaves the title with the other tab standing on the same file', async () => {
     const one = await open()
     one.stencils.applyPathChanges(['Beast.md'], [{ from: 'Animal.md', to: 'Beast.md' }])

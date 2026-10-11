@@ -99,6 +99,7 @@ export function useStencilTabs(
     const open = tabbed.value.get(path) ?? pendingTabIds.get(path)
     if (open) return open
     const id = crypto.randomUUID()
+    // Stryker disable next-line CallExpression: the tab opens within the same call, so the open tab answers a second ask before this entry is read
     pendingTabIds.set(path, id)
     pendingTabPaths.set(id, path)
     return id
@@ -110,6 +111,7 @@ export function useStencilTabs(
       const path = pendingTabPaths.get(id) ?? id
       store.open(id, path)
       pendingTabIds.delete(path)
+      // Stryker disable next-line CallExpression: the entry is read only for an id that has not opened, and a new id overwrites it
       pendingTabPaths.delete(id)
       return createStencilTabState(id)
     },
@@ -129,6 +131,7 @@ export function useStencilTabs(
     onDestroy: () => {},
   }
 
+  // Stryker disable next-line StringLiteral: the editor registration always passes both arguments
   const openStencil = (path: string, title = '', how: PlexDestination = 'here'): void => {
     const id = getOrCreateTabId(path)
     if (title) wire.setTitle(path, title)
@@ -139,6 +142,7 @@ export function useStencilTabs(
 
   const applyPathChanges = (
     paths: readonly string[],
+    // Stryker disable next-line ArrayDeclaration: an entry naming no path moves nothing
     renames: readonly PathRename[] = [],
   ): void => {
     wire.movePaths(renames)

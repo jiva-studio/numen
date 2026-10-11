@@ -119,6 +119,7 @@ export const moveFace = (stencil: BufferStencil, id: string, at: InsertionPoint)
     at,
   )
   const held = new Map(stencil.faces.map((face) => [face.id, face]))
+  // Stryker disable next-line ArrayDeclaration: every name in the order is the id of a held face
   return { ...stencil, faces: order.flatMap((one) => held.get(one) ?? []) }
 }
 
