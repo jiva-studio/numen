@@ -114,13 +114,13 @@ func getIndent(line string) string {
 	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
 }
 
-// offsetLine is the 1-based line a byte offset begins, or zero when it is the
-// end of the block.
+// offsetLine is the 1-based line that begins at or after a byte offset, or
+// len(lines) when nothing in lines reaches that far.
 func offsetLine(lines []int, offset int) int {
 	for i, at := range lines {
-		if at == offset {
+		if at >= offset {
 			return i + 1
 		}
 	}
-	return 0
+	return len(lines)
 }
