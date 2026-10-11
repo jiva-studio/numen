@@ -470,7 +470,6 @@ func (s *scanning) deps(t *testing.T, held domain.Vault) cli.Deps {
 			books := source.NewExtract(readers, db.Sources(), db.Sources())
 			books.Derived, books.Documents = store, pdf.Documents{}
 			vectors := source.NewEmbed(readers, db.Sources(), db.Sources())
-			vectors.Derived, vectors.Documents = store, pdf.Documents{}
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.Model().Recipe()); err != nil {
 					_ = db.Close()
