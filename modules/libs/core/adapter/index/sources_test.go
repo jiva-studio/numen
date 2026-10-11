@@ -312,3 +312,16 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 		t.Error("listing over a closed index reported nothing recognised")
 	}
 }
+
+// Reading a source out of an index that cannot be read is reported.
+func TestReadingASourceOfAClosedIndexFails(t *testing.T) {
+	db := openDB(t)
+	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises")
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, _, err := db.Sources().Reading(t.Context(), first.ID, "library/a.epub"); err == nil {
+		t.Error("reading a closed index reported the source as not held")
+	}
+}
