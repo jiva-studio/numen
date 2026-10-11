@@ -112,6 +112,8 @@ export function useTranscriptDraft(how: DraftOptions) {
   /** Nothing more is typed here, and the words leave the screen. */
   const stop = () => {
     clearTimeout(stilling)
+    clearTimeout(settling)
+    settling = undefined
     prose.value = ''
   }
 
