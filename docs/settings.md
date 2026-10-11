@@ -151,7 +151,7 @@ The **core budget** is the number of hardware threads CPU-bound work may occupy 
 | --- | --- | --- |
 | Local embedding batch | embedding batch, unless the model names `batch_texts` | the model's own |
 | Local embedding, threads of the loaded model | core budget, unless the model names `threads` | the default of the runtime |
-| Local embedding, forward passes at once | workers, unless the model names `sessions`; one on an accelerator | one up to 2 CPUs, two up to 4, three beyond |
+| Local embedding, forward passes at once | workers, lowered to what a quarter of the available memory holds, unless the model names `sessions`; one on an accelerator | one up to 2 CPUs, two up to 4, three beyond |
 | Search question and indexing sharing one local model | indexing holds one pass fewer than the model runs at once, at least one; a question is never held | not applicable |
 | OCR | OCR threads and sessions | unresolved counts, then named defaults |
 | Proofreading, batches in flight | LLM concurrency, unless the profile names `in_flight` | 4 at a service, 2 at the command line |

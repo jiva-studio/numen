@@ -55,3 +55,28 @@ func TestAContainerWithoutAPlanLeavesTheModelItsFallbacks(t *testing.T) {
 		t.Errorf("threads %d, want the runtime default", local.GetThreads())
 	}
 }
+
+func TestTheEmbedderMayHoldAShareOfTheAvailableMemory(t *testing.T) {
+	for name, hw := range map[string]settings.HardwareSpecs{
+		"two gigabytes":              {LogicalCPUs: 4, PhysicalCPUs: 2, PerformanceCPUs: 2, TotalRAMMB: 2048, AvailableRAMMB: 1024},
+		"sixteen gigabytes":          {LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 16384, AvailableRAMMB: 12288},
+		"server of 128 logical CPUs": {LogicalCPUs: 128, PhysicalCPUs: 64, PerformanceCPUs: 64, TotalRAMMB: 65536, AvailableRAMMB: 60000},
+	} {
+		plan := settings.ResolveCompute(settings.ProfileMaximum, hw, settings.PerformanceCustom{})
+		local := Config{ResolvedCompute: plan, Hardware: hw}.planLocalModel(embed.LocalModel{})
+		want := hw.AvailableRAMMB * bytesPerMB / 100 * embedderMemoryPercent
+		if local.PassMemory != want {
+			t.Errorf("%s: the passes may hold %d bytes, want %d", name, local.PassMemory, want)
+		}
+		if local.PassMemory >= hw.AvailableRAMMB*bytesPerMB {
+			t.Errorf("%s: the passes may hold all the available memory", name)
+		}
+	}
+}
+
+func TestAContainerThatKnowsNoMemoryBoundsNothing(t *testing.T) {
+	local := Config{ResolvedCompute: settings.ResolvedCompute{Workers: 8}}.planLocalModel(embed.LocalModel{})
+	if local.PassMemory != 0 {
+		t.Errorf("the passes may hold %d bytes", local.PassMemory)
+	}
+}

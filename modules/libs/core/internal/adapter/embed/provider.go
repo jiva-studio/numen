@@ -123,6 +123,10 @@ type LocalModel struct {
 	// ThreadBudget and PassBudget are the compute plan's share for this model: the threads it runs and the passes it runs at once. They are not settings: the composition root fills them, and zero leaves the fallback.
 	ThreadBudget int `json:"-"`
 	PassBudget   int `json:"-"`
+	// PassMemory is the memory the passes may hold together, in bytes, taken from
+	// the memory this machine has available. It is not a setting: the composition
+	// root fills it, and zero bounds nothing.
+	PassMemory int64 `json:"-"`
 	// Provider is the execution provider for ONNX Runtime (auto, cpu, coreml, cuda). Empty is auto.
 	Provider string `json:"provider"`
 	// ShouldDownload allows fetching the model when it is not on this machine. Turned

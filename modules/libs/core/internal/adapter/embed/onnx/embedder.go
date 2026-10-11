@@ -106,7 +106,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	}
 	defer options.Destroy()
 
-	passes := max(cfg.GetPasses(provider), 1)
+	passes := resolvePasses(cfg, provider, identity)
 	sessions := make([]*ort.Session, 0, 1)
 	destroySessions := func() {
 		for _, s := range sessions {

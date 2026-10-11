@@ -160,7 +160,8 @@ func (c Config) SetSettings(said Settings) Config {
 	c.Agent = said.Agent
 	c.Importing = said.Importing
 	c.Performance = said.Performance
-	c.ResolvedCompute = settings.ResolveCompute(said.Performance.Profile, settings.DetectHardware(), said.Performance.Custom)
+	c.Hardware = settings.DetectHardware()
+	c.ResolvedCompute = settings.ResolveCompute(said.Performance.Profile, c.Hardware, said.Performance.Custom)
 	return c
 }
 

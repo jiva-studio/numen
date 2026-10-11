@@ -110,9 +110,14 @@ func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
 		where.Use, embed.UseLocal, embed.UseService)
 }
 
+// embedderMemoryPercent is the share of the available memory the passes of the
+// embedder may hold together; the rest stays with the other pipelines and the
+// interface.
+const embedderMemoryPercent = 25
+
 // planLocalModel is a model on this machine with the compute plan's share: the
-// batch it embeds in one pass unless the settings name one, and the threads and
-// the passes at once it may run. A container without a plan leaves all three to
+// batch it embeds in one pass unless the settings name one, and the threads, the
+// passes at once and the memory they may hold. A container without a plan leaves all three to
 // the model's own fallbacks.
 func (c Config) planLocalModel(local embed.LocalModel) embed.LocalModel {
 	if c.ResolvedCompute.EmbeddingBatchSize > 0 && local.BatchTexts == 0 {
@@ -120,6 +125,7 @@ func (c Config) planLocalModel(local embed.LocalModel) embed.LocalModel {
 	}
 	local.ThreadBudget = c.ResolvedCompute.CoreBudget
 	local.PassBudget = c.ResolvedCompute.Workers
+	local.PassMemory = c.Hardware.AvailableRAMMB * bytesPerMB / 100 * embedderMemoryPercent
 	return local
 }
 
