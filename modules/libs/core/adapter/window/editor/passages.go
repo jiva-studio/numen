@@ -45,8 +45,16 @@ func spans(text, query string) []domain.UnitSpan {
 }
 
 // isWordRune is what a word is made of, so that what stands either side of one is
-// what tells a word from a run of letters inside one.
-func isWordRune(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
+// what tells a word from a run of letters inside one. A Chinese, Japanese or
+// Korean character is never counted: those scripts hold no word-internal
+// letters to tell apart from a boundary, so every character in them is one.
+func isWordRune(r rune) bool { return (unicode.IsLetter(r) || unicode.IsDigit(r)) && !isCJKRune(r) }
+
+// isCJKRune is a character of a Chinese, Japanese or Korean script.
+func isCJKRune(r rune) bool {
+	return unicode.Is(unicode.Han, r) || unicode.Is(unicode.Hiragana, r) ||
+		unicode.Is(unicode.Katakana, r) || unicode.Is(unicode.Hangul, r)
+}
 
 // isWordStart and isWordEnd say whether a span beginning or ending here is a whole
 // word's beginning or end. The ends of the text are both.
