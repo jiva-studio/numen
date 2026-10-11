@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -51,7 +52,10 @@ func assertNothingKept(t *testing.T, dir string) {
 // beside it, and the progress is reported from zero to the length.
 func TestFetchDownloadsTheFileAndReportsProgress(t *testing.T) {
 	body := bytes.Repeat([]byte("onnx"), 1000)
-	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) { w.Write(body) })
+	server := newTLSServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+		w.Write(body)
+	})
 	dir := t.TempDir()
 	address := server.URL + "/models/encoder.onnx"
 	type report struct {
