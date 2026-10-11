@@ -402,6 +402,8 @@ describe('the marks drawn for the lines on screen', () => {
       }),
     })
     ensureSyntaxTree(view.state, doc.length, 5000)
+    // The tree parsed to the end joins the state with the first transaction.
+    view.dispatch({ effects: PING.of(null) })
     return { view, language }
   }
 
