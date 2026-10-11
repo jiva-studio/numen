@@ -41,7 +41,7 @@ func TestRecognisingAFileOnDiskHoldsNoCopyOfIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	padded := append(tiny, bytes.Repeat([]byte("%padding\n"), paddingSize/len("%padding\n"))...)
+	padded := append(bytes.Clone(tiny), bytes.Repeat([]byte("%padding\n"), paddingSize/len("%padding\n"))...)
 	v := newDiskVault(t, padded)
 	size := uint64(len(padded))
 	want := text.Fingerprint(padded)
