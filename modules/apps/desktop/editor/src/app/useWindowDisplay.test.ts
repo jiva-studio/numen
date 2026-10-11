@@ -629,12 +629,13 @@ describe('the first note shown', () => {
       },
     })
     const window = useWindowDisplay(core, {
-      wait: async () => window.close(),
+      wait: waitForever,
       reportChange: (one) => void said.push(one),
     })
 
     await window.start()
     await nap()
+    window.close()
 
     expect(said).toStrictEqual([edit])
   })
