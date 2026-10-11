@@ -474,7 +474,12 @@ func (documents) Highlights(
 	return documentOf(raw).boxes(pages), nil
 }
 
-func (documents) Draw(_ context.Context, raw []byte) (port.OpenDocument, error) {
+func (documents) Draw(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+	defer file.Close()
+	raw, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
 	return scanned{read: documentOf(raw)}, nil
 }
 
@@ -542,6 +547,20 @@ func (l *library) Read(_ context.Context, path string) ([]byte, error) {
 	l.reads[path]++
 	return held.raw, nil
 }
+
+func (l *library) Open(_ context.Context, path string) (io.ReadSeekCloser, error) {
+	held, ok := l.files[path]
+	if !ok {
+		return nil, fmt.Errorf("open %s: %w", path, fs.ErrNotExist)
+	}
+	l.reads[path]++
+	return nopCloser{bytes.NewReader(held.raw)}, nil
+}
+
+// nopCloser is a file held in memory, with nothing to release.
+type nopCloser struct{ *bytes.Reader }
+
+func (nopCloser) Close() error { return nil }
 
 func (l *library) Stat(_ context.Context, path string) (domain.Fingerprint, error) {
 	if _, ok := l.files[path]; !ok {

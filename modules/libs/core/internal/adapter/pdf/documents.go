@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
@@ -51,13 +52,15 @@ func (Documents) Highlights(ctx context.Context, raw []byte, starts []int, pages
 	return found, nil
 }
 
-// Draw holds a document open for its pages to be drawn.
-func (Documents) Draw(ctx context.Context, raw []byte) (open port.OpenDocument, err error) {
+// Draw holds a document open for its pages to be drawn. It owns the file from
+// the call on.
+func (Documents) Draw(ctx context.Context, file io.ReadSeekCloser) (open port.OpenDocument, err error) {
 	defer recoverPanic("opening a document to draw", &open, &err)
 	if err := ctx.Err(); err != nil {
+		file.Close()
 		return nil, err
 	}
-	scan, err := Open(raw)
+	scan, err := OpenReader(file)
 	if err != nil {
 		return nil, wrapError(err)
 	}

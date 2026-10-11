@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"strconv"
 	"strings"
@@ -95,16 +96,29 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, fmt.Errorf("stat %s: %w", path, err)
 	}
-	raw, err := reader.Read(ctx, path)
+	file, err := reader.Open(ctx, path)
 	if err != nil {
 		return res, fmt.Errorf("read %s: %w", path, err)
 	}
+	// The scan owns the file once Draw is called.
+	isHanded := false
+	defer func() {
+		if !isHanded {
+			file.Close()
+		}
+	}()
 	store, err := u.derived.Open(v)
 	if err != nil {
 		return res, err
 	}
 
-	hash := text.Fingerprint(raw)
+	hash, err := text.GetFingerprint(file)
+	if err != nil {
+		return res, fmt.Errorf("read %s: %w", path, err)
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return res, fmt.Errorf("read %s: %w", path, err)
+	}
 	area := u.area()
 	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
 	boxes, parts := text.Boxes(area, hash), text.Parts(area, hash)
@@ -128,7 +142,8 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		return res, u.stand(ctx, v, ref, hash, area)
 	}
 
-	scan, err := u.documents.Draw(ctx, raw)
+	isHanded = true
+	scan, err := u.documents.Draw(ctx, file)
 	if err != nil {
 		return res, fmt.Errorf("%s: %w", path, err)
 	}

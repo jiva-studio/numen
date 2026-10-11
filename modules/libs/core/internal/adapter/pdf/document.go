@@ -77,12 +77,22 @@ func openPath(path string) (*document, error) {
 	if err != nil {
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
-	info, err := file.Stat()
+	return openReader(file)
+}
+
+// openReader opens a document from a file the caller has open. It takes
+// ownership of the file and closes it when the document is closed, or when
+// opening fails.
+func openReader(file io.ReadSeekCloser) (*document, error) {
+	size, err := file.Seek(0, io.SeekEnd)
+	if err == nil {
+		_, err = file.Seek(0, io.SeekStart)
+	}
 	if err != nil {
 		file.Close()
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
-	return open(source{reader: file, size: info.Size(), file: file})
+	return open(source{reader: file, size: size, file: file})
 }
 
 // open takes ownership of the source's file and closes it when the document is

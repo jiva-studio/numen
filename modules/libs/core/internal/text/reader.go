@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"io"
 	"io/fs"
 	"strings"
 
@@ -342,6 +343,16 @@ func getPartStarts(prose string, parts []ocr.Part) []domain.PartStart {
 func Fingerprint(raw []byte) string {
 	sum := sha256.Sum256(raw)
 	return hex.EncodeToString(sum[:])
+}
+
+// GetFingerprint is Fingerprint of everything the reader holds, read a block at
+// a time.
+func GetFingerprint(r io.Reader) (string, error) {
+	h := sha256.New()
+	if _, err := io.Copy(h, r); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // Artifact is the name a producer's recognition of these bytes is kept under.

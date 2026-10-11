@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"image"
 	"image/jpeg"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -48,9 +49,9 @@ var errNoPage = errors.New("no such page in this document")
 // What is open belongs to the vault it was opened in, and is emptied when
 // another vault comes into the window.
 type viewer struct {
-	// open holds a document open for drawing. It is pdf.Open in the
+	// open holds a document open for drawing. It is pdf.OpenReader in the
 	// application, and a test puts its own in.
-	open  func(raw []byte) (pool.Scan, error)
+	open  func(file io.ReadSeekCloser) (pool.Scan, error)
 	docs  atomic.Pointer[pool.Documents]
 	drawn atomic.Pointer[pagecache.Memory]
 	// read holds the books open. A book is an archive unpacked and parsed, and
@@ -97,9 +98,9 @@ const (
 )
 
 // newDocumentOpener holds a document open with what the application draws with.
-func newDocumentOpener(docs port.PageRenderer) func([]byte) (pool.Scan, error) {
-	return func(raw []byte) (pool.Scan, error) {
-		return docs.Draw(context.Background(), raw)
+func newDocumentOpener(docs port.PageRenderer) func(io.ReadSeekCloser) (pool.Scan, error) {
+	return func(file io.ReadSeekCloser) (pool.Scan, error) {
+		return docs.Draw(context.Background(), file)
 	}
 }
 
@@ -248,7 +249,7 @@ func (a *API) stat(ctx context.Context, path string) (port.VaultReader, pool.Fin
 
 // opening hands over the document at a fingerprint, held open.
 //
-// The bytes are read where the document is not open already, and the read
+// The file is opened where the document is not open already, and the open
 // outlives the request that asked for it: a caller that ran out of patience is
 // told the document is busy, and the document is there for the next ask.
 func (a *API) opening(
@@ -257,11 +258,11 @@ func (a *API) opening(
 	mark pool.Fingerprint,
 ) (*pool.Document, func(), error) {
 	return a.Viewer.docs.Load().Take(ctx, mark, func() (pool.Scan, error) {
-		raw, err := reader.Read(context.WithoutCancel(ctx), mark.Path)
+		file, err := reader.Open(context.WithoutCancel(ctx), mark.Path)
 		if err != nil {
 			return nil, err
 		}
-		return a.Viewer.open(raw)
+		return a.Viewer.open(file)
 	})
 }
 

@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -57,7 +58,8 @@ func sheets(pages int) *paper {
 }
 
 // openScan is what the viewer is given in place of pdf.Open.
-func (p *paper) openScan([]byte) (pool.Scan, error) {
+func (p *paper) openScan(file io.ReadSeekCloser) (pool.Scan, error) {
+	defer file.Close()
 	if p.gate != nil {
 		<-p.gate
 	}
@@ -604,7 +606,11 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	drawn, err := newViewer(pdf.Documents{}).open(raw)
+	file, err := os.Open("../../../internal/adapter/pdf/testdata/labels.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	drawn, err := newViewer(pdf.Documents{}).open(file)
 	if err != nil {
 		t.Fatal(err)
 	}

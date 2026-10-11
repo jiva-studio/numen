@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"image"
+	"io"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
@@ -31,7 +32,11 @@ type PageRenderer interface {
 	// Draw holds a document open so its pages can be drawn. It holds a worker
 	// until it is closed, and there are as many workers as this machine has
 	// cores.
-	Draw(ctx context.Context, raw []byte) (OpenDocument, error)
+	//
+	// The document is read from the file as its pages are wanted. Draw owns the
+	// file from the call on and closes it when the document is closed, and at
+	// once when the document does not open.
+	Draw(ctx context.Context, file io.ReadSeekCloser) (OpenDocument, error)
 }
 
 // OpenDocument is a document held open, drawn a page at a time. Closing it gives back
