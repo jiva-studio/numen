@@ -206,3 +206,15 @@ func TestOnlyRegularFilesAreMatched(t *testing.T) {
 		t.Errorf("matched %q by a pattern that is none", got)
 	}
 }
+
+// With no fetch directory, a library beside the working directory is the
+// machine's own, whatever it carries.
+func TestALibraryBesideTheWorkingDirectoryIsUsableWithNoFetchDirectory(t *testing.T) {
+	publishLibrary(t, "published")
+	dir := t.TempDir()
+	writeFile(t, dir, "local.so", "other")
+	t.Chdir(dir)
+	if !isUsableLibrary("", "local.so") {
+		t.Error("a library the machine holds was refused")
+	}
+}
