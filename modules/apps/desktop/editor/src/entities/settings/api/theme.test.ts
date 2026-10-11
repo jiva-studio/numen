@@ -146,4 +146,13 @@ describe('the rest of what is asked', () => {
 
     expect(heard).toEqual([['own/Dusk.css'], ['own/Dusk.css', 'own/Dawn.css']])
   })
+
+  it('is asked for under the signal it was given', async () => {
+    asked.watchThemes.mockImplementation(async function* () {})
+    const controller = new AbortController()
+
+    for await (const names of themes.watchThemes(controller.signal)) void names
+
+    expect(asked.watchThemes).toHaveBeenLastCalledWith({}, { signal: controller.signal })
+  })
 })

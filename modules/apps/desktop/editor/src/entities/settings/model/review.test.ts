@@ -114,6 +114,13 @@ describe('an hour chosen', () => {
     expect(hours.starts.value).toBe('06:30')
   })
 
+  it('clears what was last said before it is written', async () => {
+    const { hours, said } = vault('04:00')
+    await hours.choose('06:30')
+    expect(said).toHaveBeenCalledTimes(1)
+    expect(said).toHaveBeenCalledWith('')
+  })
+
   it('is not written again where it is the hour in force', async () => {
     const { hours, written } = vault('04:00')
     await hours.choose('04:00')

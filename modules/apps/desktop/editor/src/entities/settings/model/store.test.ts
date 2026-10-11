@@ -97,6 +97,13 @@ describe('a setting written', () => {
     expect(asked).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
   })
 
+  it('clears what was last said before it is written', async () => {
+    const { kept, said } = createStore('{}')
+    await kept.writeSetting(['agent', 'claude', 'model'], 'opus')
+    expect(said).toHaveBeenCalledTimes(1)
+    expect(said).toHaveBeenCalledWith('')
+  })
+
   it('asks nothing of the vault where there is nothing to write', async () => {
     const { kept, asked } = createStore('{}')
     await kept.writeSettings([])

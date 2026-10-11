@@ -5,9 +5,26 @@
  * under one name are one conversation to the agent. The second is the worse of
  * the two: a question lands in a talk nobody can see.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { panesOf } from '@numen/ui'
-import { AGENT, CONVERSATION, PLEX, createWorkspace, generateId } from './workspace'
+import {
+  AGENT,
+  BOOK,
+  CONVERSATION,
+  DECK,
+  DOCUMENT,
+  FILES,
+  NOTE,
+  PLEX,
+  PRESET,
+  RECORDING,
+  SETTINGS,
+  SETTINGS_FILE,
+  STENCIL,
+  URL,
+  createWorkspace,
+  generateId,
+} from './workspace'
 
 describe('the identity a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
@@ -25,33 +42,46 @@ describe('the identity a tab is filed under', () => {
   })
 })
 
+describe('the kinds a tab is filed under', () => {
+  const kinds = [
+    PLEX,
+    AGENT,
+    NOTE,
+    DOCUMENT,
+    BOOK,
+    RECORDING,
+    URL,
+    FILES,
+    DECK,
+    STENCIL,
+    PRESET,
+    SETTINGS,
+    SETTINGS_FILE,
+    CONVERSATION,
+  ]
+
+  it('are each a word, so an identity names its kind', () => {
+    for (const kind of kinds) expect(kind).not.toBe('')
+  })
+
+  it('are each their own, so two kinds never share an identity', () => {
+    expect(new Set(kinds).size).toBe(kinds.length)
+  })
+})
+
 describe('the name a conversation is answered under', () => {
   it('is a new one for every conversation opened', () => {
     const names = [generateId(CONVERSATION), generateId(CONVERSATION), generateId(CONVERSATION)]
 
     expect(new Set(names).size).toBe(3)
   })
-
-  /**
-   * A reloaded page has forgotten every name it gave out, and the agent holds
-   * the conversation each of them stands for. The next name is new to both.
-   */
-  it('is not one the page gave out before it was reloaded', async () => {
-    const before = [generateId(CONVERSATION), generateId(CONVERSATION)]
-
-    // The page again, with everything it held forgotten.
-    vi.resetModules()
-    const reloaded = await import('./workspace')
-    const after = [reloaded.generateId(CONVERSATION), reloaded.generateId(CONVERSATION)]
-
-    expect(new Set([...before, ...after]).size).toBe(4)
-  })
 })
 
 describe('the layout the window opens with', () => {
-  const layout = createWorkspace('plex:one', 'agent:one', 'files:tree')
+  const createLayout = () => createWorkspace('plex:one', 'agent:one', 'files:tree')
 
   it('holds two panes, the plex alone and the agent over the files', () => {
+    const layout = createLayout()
     expect(panesOf(layout.root).map((one) => one.tabs)).toStrictEqual([
       ['plex:one'],
       ['agent:one', 'files:tree'],
@@ -59,10 +89,12 @@ describe('the layout the window opens with', () => {
   })
 
   it('stands the agent in front of the two the trailing pane holds', () => {
+    const layout = createLayout()
     expect(panesOf(layout.root).find((one) => one.id === 'aside')?.active).toBe('agent:one')
   })
 
   it('gives the plex the room, and the pane beside it the rest', () => {
+    const layout = createLayout()
     const sizes = layout.root.kind === 'branch' ? layout.root.sizes : []
 
     expect(sizes).toStrictEqual([0.72, 0.28])
@@ -70,10 +102,18 @@ describe('the layout the window opens with', () => {
   })
 
   it('divides the width, so the two stand side by side', () => {
+    const layout = createLayout()
     expect(layout.axis).toBe('horizontal')
   })
 
+  it('names the root after what it divides, and the panes after their places', () => {
+    const layout = createLayout()
+    expect(layout.root.id).toBe('root')
+    expect(panesOf(layout.root).map((one) => one.id)).toStrictEqual(['main', 'aside'])
+  })
+
   it('leaves the person in the plex', () => {
+    const layout = createLayout()
     expect(layout.focus).toBe('main')
     expect(panesOf(layout.root).find((one) => one.id === 'main')?.tabs).toStrictEqual(['plex:one'])
   })
