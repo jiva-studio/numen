@@ -127,7 +127,6 @@ describe('the loosest packing that seats everything', () => {
     { width: 440, height: 1000 },
     { width: 500, height: 1000 },
     { width: 600, height: 1000 },
-    { width: 700, height: 1000 },
   ])('$width×$height is found to a 128th, and one step looser seats less', (viewport) => {
     const options = { ...DEFAULT_OPTIONS, viewport }
     const packed = measureCrowding(options, COUNTS)

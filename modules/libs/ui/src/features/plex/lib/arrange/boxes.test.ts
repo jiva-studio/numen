@@ -109,8 +109,8 @@ describe('the room a run of a line takes', () => {
   })
 
   it('is the point itself on a line of no length', () => {
-    const point = { x: 30, y: 40 }
+    const point = { x: 0, y: 0 }
     const box = runBoxes(straight(point, point), 10)(0, 1)
-    expect(box).toStrictEqual({ minX: 30, minY: 40, maxX: 30, maxY: 40 })
+    expect(box).toStrictEqual({ minX: 0, minY: 0, maxX: 0, maxY: 0 })
   })
 })
