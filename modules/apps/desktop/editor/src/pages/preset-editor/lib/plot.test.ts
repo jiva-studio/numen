@@ -9,12 +9,15 @@ import { describe, expect, it } from 'vitest'
 import { NOWHERE, type Curve, type Point } from '../types'
 import {
   extentOf,
+  extentOfBacklog,
   FOOT,
   LEFT,
   lineOf,
   placeUnder,
   positionsOf,
   RIGHT,
+  runAt,
+  seriesOf,
   shortOf,
   TOP,
   walkGrid,
@@ -169,6 +172,10 @@ describe('the place a pointer stands over', () => {
   it('is the first place of a grid holding one', () => {
     expect(placeUnder(WIDE / 2, 1)).toBe(0)
   })
+
+  it('is the first place of a grid holding none', () => {
+    expect(placeUnder(WIDE / 2, 0)).toBe(0)
+  })
 })
 
 describe('where a keystroke takes the knob', () => {
@@ -192,5 +199,93 @@ describe('where a keystroke takes the knob', () => {
   it('is nothing for a keystroke of somebody else’s', () => {
     expect(walkGrid('a', 2, 5)).toBeNull()
     expect(walkGrid('Enter', 2, 5)).toBeNull()
+  })
+})
+
+describe('the extent a backlog is drawn against', () => {
+  it('stands on nothing and reaches the most the pace ever stands at', () => {
+    expect(extentOfBacklog([3, 7, 2])).toStrictEqual({ least: 0, most: 7 })
+  })
+
+  it('is nothing at all for a pace holding no days', () => {
+    expect(extentOfBacklog([])).toStrictEqual({ least: 0, most: 0 })
+  })
+})
+
+describe('a series drawn against an extent that does not begin at nothing', () => {
+  it('measures each value up from the least of the extent', () => {
+    const at = seriesOf([10, 15, 20], { least: 10, most: 20 })
+    expect(at.map((one) => one.y)).toStrictEqual([FOOT, FOOT - (FOOT - TOP) / 2, TOP])
+  })
+})
+
+describe('the line through places', () => {
+  it('writes each place as its two figures, rounded to two places, after M and then L', () => {
+    expect(
+      lineOf([
+        { x: 1.234, y: 5.678 },
+        { x: 10, y: 20 },
+        { x: 30, y: 40.5 },
+      ]),
+    ).toBe('M1.23 5.68 L10 20 L30 40.5')
+  })
+})
+
+describe('the stretch a budget does not get through, as drawn', () => {
+  const along = (count: number) => Array.from({ length: count }, (_, at) => ({ x: at, y: at }))
+
+  it('is one line through the places in a stretch', () => {
+    const one = curve([0, 0, 0, 0], [true, false, false, true])
+    expect(shortOf(one, along(4))).toBe('M1 1 L2 2')
+  })
+
+  it('is one line to a stretch, set apart by a space', () => {
+    const one = curve([0, 0, 0, 0, 0], [false, false, true, false, false])
+    expect(shortOf(one, along(5))).toBe('M0 0 L1 1 M3 3 L4 4')
+  })
+
+  it('draws no line for a single place at the start', () => {
+    expect(shortOf(curve([0, 0, 0], [false, true, true]), along(3))).toBe('')
+  })
+
+  it('draws no line for a single place at the end', () => {
+    expect(shortOf(curve([0, 0], [true, false]), along(2))).toBe('')
+  })
+
+  it('draws the line of a stretch that runs to the end', () => {
+    expect(shortOf(curve([0, 0, 0], [true, false, false]), along(3))).toBe('M1 1 L2 2')
+  })
+
+  it('leaves out the places of the curve that have no position', () => {
+    expect(shortOf(curve([0, 0, 0], [false, false, false]), along(1))).toBe('')
+  })
+})
+
+describe('what stands overdue at one place', () => {
+  const backlogs = (goal: 'date' | 'minutes', grid: readonly number[]): Curve => {
+    const base = curve([0, 0, 0])
+    return {
+      ...base,
+      goal,
+      grid,
+      at: base.at.map((one) => ({ ...one, backlog: [4, 5, 6, 7] })),
+    }
+  }
+
+  it('is the whole run for a goal that is not a date', () => {
+    expect(runAt(backlogs('minutes', [0, 1, 2]), 1)).toStrictEqual([4, 5, 6, 7])
+  })
+
+  it('is cut at the day a goal of a date names', () => {
+    expect(runAt(backlogs('date', [0, 2, 9]), 1)).toStrictEqual([4, 5])
+    expect(runAt(backlogs('date', [0, 2, 9]), 2)).toStrictEqual([4, 5, 6, 7])
+  })
+
+  it('is nothing at a goal of a date that names the first day', () => {
+    expect(runAt(backlogs('date', [0, 2, 9]), 0)).toStrictEqual([])
+  })
+
+  it('is nothing at a place the curve does not have', () => {
+    expect(runAt(backlogs('minutes', [0, 1, 2]), 7)).toStrictEqual([])
   })
 })

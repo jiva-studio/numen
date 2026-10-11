@@ -75,6 +75,12 @@ describe('a field of a stencil', () => {
     expect(held.faces[0]?.back).toBe('**Height:** {{Height}}')
   })
 
+  it('writes into that face alone', () => {
+    const held = writeFace(stencil(), 'c1', 'back', 'changed')
+    expect(held.faces[0]?.back).toBe('changed')
+    expect(held.faces[1]?.back).toBe('{{Height}}')
+  })
+
   it('lands before the field it was let go on', () => {
     expect(
       moveField(stencil({ fields: ['Name', 'Height', 'Life span'] }), 'Life span', 'Height').fields,
@@ -104,6 +110,15 @@ describe('a face of a stencil', () => {
     expect(renameFace(stencil(), 'c1', 'Spot it').faces[0]?.name).toBe('Spot it')
   })
 
+  it('renames that face alone', () => {
+    expect(renameFace(stencil(), 'c1', 'Spot it').faces[1]?.name).toBe('Name it')
+  })
+
+  it('leaves every face as it was when it names none', () => {
+    expect(renameFace(stencil(), 'nobody', 'Spot it')).toStrictEqual(stencil())
+    expect(writeFace(stencil(), 'nobody', 'front', 'x')).toStrictEqual(stencil())
+  })
+
   it('goes, and the rest stay in the order they were in', () => {
     expect(removeFace(stencil(), 'c1').faces.map((face) => face.name)).toStrictEqual(['Name it'])
   })
@@ -123,5 +138,13 @@ describe('whether two readings of a file read the same', () => {
   it('is not so for a field or a face written elsewhere', () => {
     expect(sameStencil(stencil(), stencil({ fields: ['Height'] }))).toBe(false)
     expect(sameStencil(stencil(), stencil({ faces: cut().faces.slice(0, 1) }))).toBe(false)
+  })
+
+  it('is not so for a preamble written elsewhere, however the tail reads', () => {
+    expect(sameStencil(stencil(), stencil({ preamble: 'Intro' }))).toBe(false)
+  })
+
+  it('is not so for a tail written elsewhere, however the preamble reads', () => {
+    expect(sameStencil(stencil(), stencil({ tail: 'Outro' }))).toBe(false)
   })
 })

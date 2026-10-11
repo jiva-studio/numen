@@ -59,6 +59,7 @@ export interface Extent {
  */
 export const extentOf = (curve: Curve): Extent => {
   const costs = curve.at.map((point) => costOf(curve.goal, point))
+  // Stryker disable next-line ConditionalExpression: Math.max(0) of no costs is 0, the same as the guard
   return { least: 0, most: costs.length === 0 ? 0 : Math.max(0, ...costs) }
 }
 
@@ -176,6 +177,7 @@ export const walkGrid = (key: string, place: number, places: number): number | n
  * stands at the nearer end.
  */
 export const placeUnder = (x: number, places: number): number => {
+  // Stryker disable next-line EqualityOperator: a grid of one place reads place 0 by the arithmetic below too
   if (places <= 1) return 0
   const inside = (x - LEFT) / (RIGHT - LEFT)
   return Math.min(Math.max(Math.round(inside * (places - 1)), 0), places - 1)

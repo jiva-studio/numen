@@ -31,6 +31,7 @@ export function createStencilFields(
   const getStencil = (id: string): BufferStencil => {
     const body = getBody(id)
     const held = parsed.get(id)
+    // Stryker disable next-line ConditionalExpression: a body that reads the same falls to the sameStencil check, which returns the held stencil
     if (held && held.body === body) return held.stencil
     const read = stencilIn(body)
     const stencil = held && sameStencil(held.stencil, read) ? held.stencil : read
