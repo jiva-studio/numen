@@ -57,6 +57,7 @@ export function useWindowTabs() {
   /** A tab is gone, and nothing it started keeps answering. */
   const drop = (id: string) => {
     scopes.get(id)?.stop()
+    // Stryker disable next-line CallExpression: a stopped scope left in the map is stopped again as a no-op
     scopes.delete(id)
   }
 
@@ -251,6 +252,7 @@ const getTabPath = (tab: WindowTab): string => {
   const openTab = tab.kind.getOpenTab?.(tab.state)
   if (openTab?.path) return openTab.path
   const target = tab.kind.getTarget?.(tab.state)
+  // Stryker disable next-line StringLiteral: reconcileTab returns before comparing when the path asked for is empty, so the empty fallback is never compared
   return target?.path || target?.file || ''
 }
 
