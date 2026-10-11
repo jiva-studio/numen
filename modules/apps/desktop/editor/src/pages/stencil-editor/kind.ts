@@ -92,14 +92,12 @@ export function useStencilTabs(
     () => new Map(store.getOpenIds().map((one) => [store.getPath(one), one])),
   )
 
-  const pendingTabIds = new Map<string, string>()
   const pendingTabPaths = new Map<string, string>()
 
   const getOrCreateTabId = (path: string): string => {
-    const open = tabbed.value.get(path) ?? pendingTabIds.get(path)
+    const open = tabbed.value.get(path)
     if (open) return open
     const id = crypto.randomUUID()
-    pendingTabIds.set(path, id)
     pendingTabPaths.set(id, path)
     return id
   }
@@ -109,7 +107,6 @@ export function useStencilTabs(
     open: (id) => {
       const path = pendingTabPaths.get(id) ?? id
       store.open(id, path)
-      pendingTabIds.delete(path)
       pendingTabPaths.delete(id)
       return createStencilTabState(id)
     },
@@ -129,7 +126,7 @@ export function useStencilTabs(
     onDestroy: () => {},
   }
 
-  const openStencil = (path: string, title = '', how: PlexDestination = 'here'): void => {
+  const openStencil = (path: string, title: string, how: PlexDestination): void => {
     const id = getOrCreateTabId(path)
     if (title) wire.setTitle(path, title)
     void (how === 'beside' ? handle.openTabBeside(STENCIL, id) : handle.openTab(STENCIL, id))
@@ -137,10 +134,7 @@ export function useStencilTabs(
 
   tabOpeners.registerEditor('stencil', openStencil)
 
-  const applyPathChanges = (
-    paths: readonly string[],
-    renames: readonly PathRename[] = [],
-  ): void => {
+  const applyPathChanges = (paths: readonly string[], renames: readonly PathRename[]): void => {
     wire.movePaths(renames)
     store.applyPathChanges(paths, renames)
   }

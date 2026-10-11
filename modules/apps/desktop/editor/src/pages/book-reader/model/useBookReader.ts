@@ -95,8 +95,6 @@ export function useBookReader(
 
   const followLink = async (target: string) => {
     await shape
-    // Stryker disable next-line ConditionalExpression: a closed reader holds no documents, so the lookup returns
-    if (!isOpen) return
     const targetDoc = documents.value.find((one) => one.path === target)
     if (!targetDoc) return
     await goToOffset(targetDoc.span.from)
@@ -106,16 +104,12 @@ export function useBookReader(
 
   const focusSpans = async (...spans: readonly Span[]) => {
     await shape
-    // Stryker disable next-line ConditionalExpression: the highlights return when the reader is closed
-    if (!isOpen) return
     await marks.focusSpans(...spans)
   }
 
   const close = () => {
     isOpen = false
     bookDocument.close()
-    // Stryker disable next-line ArrayDeclaration: a closed reader returns before it reads its documents
-    documents.value = []
     contents.value = []
     pages.value = 0
     pageBytes.value = 0

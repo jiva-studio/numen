@@ -118,8 +118,8 @@ export const moveFace = (stencil: BufferStencil, id: string, at: InsertionPoint)
     id,
     at,
   )
-  const held = new Map(stencil.faces.map((face) => [face.id, face]))
-  return { ...stencil, faces: order.flatMap((one) => held.get(one) ?? []) }
+  const faces = [...stencil.faces].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+  return { ...stencil, faces }
 }
 
 /** Add a face at the end, with both its halves empty. */

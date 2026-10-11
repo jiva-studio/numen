@@ -29,18 +29,16 @@ const joinProse = (above: string, below: string): string =>
  */
 export const removeSection = (deck: BufferDeck, id: string): BufferDeck => {
   const at = deck.sections.findIndex((section) => section.id === id)
-  if (at === -1) return deck
   const going = deck.sections[at]
+  if (!going) return deck
   const above = deck.sections[at - 1]
   return {
     ...deck,
-    // Stryker disable next-line OptionalChaining, StringLiteral: the section being removed was found by index, so it exists
-    preamble: above ? deck.preamble : joinProse(deck.preamble, going?.preamble ?? ''),
+    preamble: above ? deck.preamble : joinProse(deck.preamble, going.preamble),
     sections: deck.sections.flatMap((section) => {
       if (section.id === id) return []
       if (above && section.id === above.id) {
-        // Stryker disable next-line OptionalChaining, StringLiteral: the section being removed was found by index, so it exists
-        return [{ ...section, preamble: joinProse(section.preamble, going?.preamble ?? '') }]
+        return [{ ...section, preamble: joinProse(section.preamble, going.preamble) }]
       }
       return [section]
     }),

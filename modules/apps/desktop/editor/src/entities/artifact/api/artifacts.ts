@@ -91,7 +91,7 @@ const drawn: Readonly<Record<Kinds, Artifact | null>> = {
 const asking = namesOf<Artifact, Kinds>(drawn)
 
 /** What has become of an artifact, in the words the window uses. */
-const become: Record<States, ArtifactState> = {
+const become: Partial<Record<string, ArtifactState>> = {
   [States.UNSPECIFIED]: 'none',
   [States.NONE]: 'none',
   [States.QUEUED]: 'queued',
@@ -100,9 +100,7 @@ const become: Record<States, ArtifactState> = {
   [States.DONE]: 'done',
   [States.EMPTY]: 'empty',
   [States.FAILED]: 'failed',
-}
+} satisfies Record<States, ArtifactState>
 
 /** A state this window has no word for is an artifact nothing has made. */
-const parseState = (state: States | undefined): ArtifactState =>
-  // Stryker disable next-line ConditionalExpression: an absent state indexes the table to undefined, which falls to 'none' as well
-  (state === undefined ? undefined : become[state]) ?? 'none'
+const parseState = (state: States | undefined): ArtifactState => become[state ?? ''] ?? 'none'

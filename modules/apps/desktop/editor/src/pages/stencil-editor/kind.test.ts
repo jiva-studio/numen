@@ -372,7 +372,7 @@ describe('a stencil read again under the window', () => {
     const one = await open({ problems: [sideless] })
     const was = { stencil: one.tab.stencil.value, marks: one.tab.marks.value }
 
-    one.stencils.applyPathChanges(['Animal.md'])
+    one.stencils.applyPathChanges(['Animal.md'], [])
     await settle()
 
     // Each of them the same thing, and not merely a thing that reads the same:
@@ -386,7 +386,7 @@ describe('a stencil read again under the window', () => {
     // The face the editor is drawing, under the identity it was drawn with.
     const face = one.tab.stencil.value.faces[0]?.id ?? ''
 
-    one.stencils.applyPathChanges(['Animal.md'])
+    one.stencils.applyPathChanges(['Animal.md'], [])
     await settle()
 
     expect(one.tab.marks.value.at.get(face)).toStrictEqual(['no back'])
@@ -397,7 +397,7 @@ describe('a stencil read again under the window', () => {
     const was = one.tab.stencil.value
 
     one.setFaces([{ name: 'Recall', preamble: '', front: '{{Height}}', back: '{{Life span}}' }])
-    one.stencils.applyPathChanges(['Animal.md'])
+    one.stencils.applyPathChanges(['Animal.md'], [])
     await settle()
 
     expect(one.tab.stencil.value.faces.map((face) => face.name)).toStrictEqual(['Recall'])

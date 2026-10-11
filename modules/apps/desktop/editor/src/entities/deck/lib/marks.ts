@@ -49,8 +49,7 @@ export const createMarks = (
   }
 
   for (const problem of problems) {
-    // Stryker disable next-line ConditionalExpression: an index of null reads no card, as undefined does
-    const card = problem.card === null ? undefined : cards[problem.card]
+    const card = cards[problem.card ?? -1]
     if (card !== undefined) {
       if (problem.field === '') {
         addProblemMark(at, card, problem.text)
@@ -64,8 +63,7 @@ export const createMarks = (
       addProblemMark(held, problem.field, problem.text)
       continue
     }
-    // Stryker disable next-line ConditionalExpression: an index of null reads no face, as undefined does
-    const face = problem.face === null ? undefined : faces[problem.face]
+    const face = faces[problem.face ?? -1]
     if (face !== undefined) {
       addProblemMark(at, face, problem.text)
       continue

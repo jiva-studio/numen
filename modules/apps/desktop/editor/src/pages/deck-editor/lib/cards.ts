@@ -20,9 +20,8 @@ export const addCard = (
   section: string | null = null,
   generateCardId: IdMaker = generateId,
 ): BufferDeck => {
-  const ranks = new Map(deck.sections.map((each, index) => [each.id, index]))
-  // Stryker disable next-line ConditionalExpression: a null id finds no rank and falls back to the same -1
-  const rank = (id: string | null): number => (id === null ? -1 : (ranks.get(id) ?? -1))
+  const ranks = new Map<string | null, number>(deck.sections.map((each, index) => [each.id, index]))
+  const rank = (id: string | null): number => ranks.get(id) ?? -1
   const mine = rank(section)
 
   let at = 0
@@ -37,8 +36,7 @@ export const addCard = (
       {
         id: generateCardId(),
         mark: '',
-        // Stryker disable next-line ConditionalExpression: a null section is not a key of the rank map, so the null check adds nothing
-        section: section !== null && ranks.has(section) ? section : null,
+        section: ranks.has(section) ? section : null,
         heading: '',
         stencilLink: stencilPath ? nameOf(stencilPath) : title,
         stencilPath,
@@ -69,8 +67,7 @@ export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): Buff
 
   if (at === CARD_HEAD) return { ...deck, cards: [{ ...targetCard, section: null }, ...otherCards] }
 
-  // Stryker disable next-line ConditionalExpression: no card has a null id, so the search finds nothing for null
-  const before = at === null ? -1 : otherCards.findIndex((card) => card.id === at)
+  const before = otherCards.findIndex((card) => card.id === at)
   if (before !== -1) {
     // Stryker disable next-line OptionalChaining: the index was found in this array, so the card exists
     const under = { ...targetCard, section: otherCards[before]?.section ?? null }
@@ -95,8 +92,7 @@ const dropOnSection = (
   at: string,
 ): BufferDeck => {
   const rank = (section: string | null): number =>
-    // Stryker disable next-line ConditionalExpression: a null section finds no index and the sum is the same 0
-    section === null ? 0 : deck.sections.findIndex((each) => each.id === section) + 1
+    deck.sections.findIndex((each) => each.id === section) + 1
   const head = (section: string | null): number => {
     const seat = left.findIndex((each) => rank(each.section) >= rank(section))
     return seat === -1 ? left.length : seat
