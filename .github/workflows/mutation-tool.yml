@@ -1,0 +1,34 @@
+name: Mutation tool
+
+# The tool behind the nightly mutation workflow: how it finds targets, splits
+# them, names mutants and keeps the issues. It reads files and nothing else.
+on:
+  pull_request:
+    paths:
+      - "modules/tools/mutation/**"
+      - ".github/workflows/mutation*.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/tools/mutation/**"
+      - ".github/workflows/mutation*.yml"
+
+concurrency:
+  group: mutation-tool-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  tool:
+    name: Tool
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Test the tool
+        run: node --test modules/tools/mutation/*.test.mjs
