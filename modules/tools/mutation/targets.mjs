@@ -48,11 +48,14 @@ const hash = (text) => {
 }
 
 /**
- * The items of shard `index` of `count`, numbered from 1. An item's shard
- * depends on its name and the count only, so adding an item moves no other.
+ * The shard of `count`, numbered from 1, that holds an item. It depends on the
+ * item's name and the count only, so adding an item moves no other.
  */
+export const getShardOf = (item, count) => (hash(item) % count) + 1
+
+/** The items of shard `index` of `count`. */
 export const pickShard = (items, index, count) =>
-  items.filter((item) => hash(item) % count === index - 1)
+  items.filter((item) => getShardOf(item, count) === index)
 
 export const getShardCount = (kind, lines) =>
   Math.min(MAX_SHARDS, Math.max(1, Math.ceil(lines / SHARD_LINES[kind])))

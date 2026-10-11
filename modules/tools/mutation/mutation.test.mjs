@@ -4,6 +4,7 @@
  */
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { getGoShardOf, keepFiles, mergeGoCaches, mergeStrykerReports } from './cache.mjs'
 import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody } from './issue.mjs'
 import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
 import { patchSource } from './patch.mjs'
@@ -12,6 +13,7 @@ import { getOriginal, getSurvivors, readMutants, summarize } from './report.mjs'
 import {
   findTestdata,
   getShardCount,
+  getShardOf,
   getTargets,
   isMutatedGo,
   isMutatedSource,
@@ -350,4 +352,167 @@ test('the mutants a file run prints are the unnoticed ones, in line order', () =
     'modules/libs/ui/src/lib/span.ts:4 not covered EqualityOperator: a > b → a >= b',
     'modules/libs/ui/src/lib/span.ts:9 survived EqualityOperator: a > b → a >= b',
   ])
+})
+
+/* ---------------------------------- Cache --------------------------------- */
+
+/** Module-relative Go files, the first held by shard 1 of 2 and the second by shard 2. */
+const findGoFiles = () => {
+  const files = Array.from({ length: 20 }, (_, index) => `pkg${index}/a.go`)
+  return [1, 2].map((index) => files.find((file) => getGoShardOf(file, 2) === index))
+}
+
+const goCache = (entries, toolchain = 'go1.26.0') => ({
+  schema_version: 7,
+  go_module: 'example.test/core',
+  tool_version: 'v0.6.1',
+  go_toolchain: toolchain,
+  coverage_key: 'key',
+  coverage_profile: 'mode: set',
+  entries,
+})
+
+const entry = (rel_file, status) => ({ rel_file, line: 1, col: 1, type: 'NEGATE', status })
+
+test('a Go cache takes each package from the shard that holds it', () => {
+  const [first, second] = findGoFiles()
+  const previous = goCache([entry(first, 'LIVED'), entry(second, 'LIVED')])
+  const merged = mergeGoCaches(2, previous, [
+    { index: 1, cache: goCache([entry(first, 'KILLED'), entry(second, 'LIVED')]) },
+    { index: 2, cache: goCache([entry(first, 'LIVED'), entry(second, 'KILLED')]) },
+  ])
+  assert.deepEqual(
+    merged.entries.map((one) => [one.rel_file, one.status]).sort(),
+    [
+      [first, 'KILLED'],
+      [second, 'KILLED'],
+    ].sort(),
+  )
+  assert.equal(merged.coverage_key, undefined)
+  assert.equal(merged.coverage_profile, undefined)
+  assert.equal(merged.go_toolchain, 'go1.26.0')
+})
+
+test('a Go shard that wrote nothing keeps its packages from the previous cache', () => {
+  const [first, second] = findGoFiles()
+  const previous = goCache([entry(first, 'LIVED'), entry(second, 'LIVED')])
+  const merged = mergeGoCaches(2, previous, [
+    { index: 1, cache: goCache([entry(first, 'KILLED')]) },
+  ])
+  assert.deepEqual(
+    merged.entries.map((one) => [one.rel_file, one.status]).sort(),
+    [
+      [first, 'KILLED'],
+      [second, 'LIVED'],
+    ].sort(),
+  )
+})
+
+test('a Go cache written under another toolchain is dropped from the merge', () => {
+  const [first, second] = findGoFiles()
+  const previous = goCache([entry(second, 'LIVED')], 'go1.25.0')
+  const merged = mergeGoCaches(2, previous, [
+    { index: 1, cache: goCache([entry(first, 'KILLED')]) },
+  ])
+  assert.deepEqual(
+    merged.entries.map((one) => one.rel_file),
+    [first],
+  )
+  assert.equal(mergeGoCaches(2, null, []), null)
+})
+
+/** Repository-relative TypeScript files, the first held by shard 1 of 2 and the second by shard 2. */
+const findTsFiles = () => {
+  const files = Array.from({ length: 20 }, (_, index) => `libs/ui/src/lib/file${index}.ts`)
+  return [1, 2].map((index) => files.find((file) => getShardOf(`modules/${file}`, 2) === index))
+}
+
+const TESTS = 'libs/ui/src/lib/span.test.ts'
+const TEST_SOURCE = "it('grows', () => {})\nit('shrinks', () => {})\n"
+
+/** A Stryker report whose tests are numbered in the order given. */
+const strykerReport = (names, files, testSource = TEST_SOURCE) => ({
+  schemaVersion: '1.0',
+  files,
+  testFiles: {
+    [TESTS]: {
+      source: testSource,
+      tests: names.map((name, id) => ({
+        id: String(id),
+        name,
+        location: { start: { line: name === 'grows' ? 1 : 2, column: 1 } },
+      })),
+    },
+  },
+})
+
+const strykerFile = (status, killedBy) => ({
+  source: 'export const a = 1\n',
+  mutants: [{ id: '1', mutatorName: 'NumericLiteral', status, killedBy, coveredBy: killedBy }],
+})
+
+const getKillers = (report, file) =>
+  report.files[file].mutants[0].killedBy.map(
+    (id) => report.testFiles[TESTS].tests.find((one) => one.id === id).name,
+  )
+
+test('a Stryker report takes each file from the shard that holds it and renames its tests', () => {
+  const [first, second] = findTsFiles()
+  const merged = mergeStrykerReports(
+    2,
+    null,
+    [
+      {
+        index: 1,
+        report: strykerReport(['grows', 'shrinks'], {
+          [first]: strykerFile('Killed', ['1']),
+          [second]: strykerFile('Survived', []),
+        }),
+      },
+      {
+        index: 2,
+        report: strykerReport(['shrinks', 'grows'], { [second]: strykerFile('Killed', ['1']) }),
+      },
+    ],
+    () => TEST_SOURCE,
+  )
+  assert.equal(merged.files[second].mutants[0].status, 'Killed')
+  assert.deepEqual(getKillers(merged, first), ['shrinks'])
+  assert.deepEqual(getKillers(merged, second), ['grows'])
+  assert.equal(merged.testFiles[TESTS].tests.length, 2)
+})
+
+test('a Stryker shard that wrote nothing keeps its files from the previous report', () => {
+  const [first, second] = findTsFiles()
+  const previous = strykerReport(['grows', 'shrinks'], {
+    [first]: strykerFile('Survived', []),
+    [second]: strykerFile('Killed', ['0']),
+  })
+  const merged = mergeStrykerReports(
+    2,
+    previous,
+    [
+      {
+        index: 1,
+        report: strykerReport(['grows', 'shrinks'], { [first]: strykerFile('Killed', ['1']) }),
+      },
+    ],
+    () => TEST_SOURCE,
+  )
+  assert.equal(merged.files[first].mutants[0].status, 'Killed')
+  assert.deepEqual(getKillers(merged, second), ['grows'])
+})
+
+test('a test whose file changed since a report was written is dropped with the mutants that name it', () => {
+  const [, second] = findTsFiles()
+  const before = "it('grows', () => { expect(1) })\nit('shrinks', () => {})\n"
+  const previous = strykerReport(['grows'], { [second]: strykerFile('Killed', ['0']) }, before)
+  const merged = mergeStrykerReports(2, previous, [], () => TEST_SOURCE)
+  assert.deepEqual(merged.files[second].mutants[0].killedBy, [])
+  assert.equal(merged.testFiles[TESTS], undefined)
+})
+
+test('a shard report keeps the files the shard mutated', () => {
+  const report = { files: { 'a.ts': {}, 'b.ts': {} }, testFiles: {} }
+  assert.deepEqual(Object.keys(keepFiles(report, ['b.ts']).files), ['b.ts'])
 })
