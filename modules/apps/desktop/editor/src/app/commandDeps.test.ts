@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { createCommandDeps } from './commandDeps'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createCommandDeps, type CommandDepsOptions } from './commandDeps'
+import { running } from '@/entities/artifact'
+import { WORDS as cardWords } from '@/entities/deck'
 import { useSettings } from './useSettings'
 import { WORDS } from '@/shared/words'
 import type { Model } from '@/entities/settings'
@@ -111,6 +113,279 @@ describe('createCommandDeps', () => {
 
     await deps.settings.choosePerformance('maximum')
     expect(written).toStrictEqual([{ at: ['performance', 'profile'], value: '"maximum"' }])
+  })
+})
+
+/** Every dependency a fake that records what it was handed. */
+const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
+  const calls: unknown[][] = []
+  const record =
+    (name: string, answer?: unknown) =>
+    (...args: unknown[]) => {
+      calls.push([name, ...args])
+      return answer
+    }
+  const options: CommandDepsOptions = {
+    core: {
+      rename: record('rename', 'renamed'),
+      remove: record('remove', 'removed'),
+      move: record('move', 'moved'),
+      createFolder: record('createFolder', 'folded'),
+    } as never,
+    held: {
+      openTabOfKind: record('openTabOfKind'),
+      requestClose: record('requestClose'),
+    } as never,
+    making: { createWithTitle: record('createWithTitle', 'created') } as never,
+    made: {
+      createStencil: record('createStencil', 'stencilled'),
+      createDeck: record('createDeck', 'decked'),
+    } as never,
+    setVaultName: record('setVaultName'),
+    reload: record('reload'),
+    loadArtifactStates: async () => {},
+    reached: {} as never,
+    openPreset: async (path) => void record('openPreset')(path),
+    dressed: { chooseItem: async () => {} },
+    oneName: { choose: async () => {} },
+    hungParts: { choose: async () => {}, chooseCount: async () => {} },
+    rest: { writeSettings: async (written) => void record('writeSettings')(written) },
+    recorded: {},
+    pointed: {},
+    files: () => ({ revealPath: record('revealPath') }),
+    plexes: () => ({ travel: async () => {}, leavePath: async () => {} }),
+    agents: () => ({ askQuestion: (text: string) => void record('askQuestion')(text) }),
+    getOpeningNote: () => '',
+    runs: {} as never,
+    writeMessage: () => {},
+    ...over,
+  }
+  return { deps: createCommandDeps(options), calls, options }
+}
+
+describe('the commands reach the window', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('hands file gestures to the vault and answers with what the vault answered', async () => {
+    const { deps, calls } = createOptions()
+
+    expect(await deps.files.createNote('Llama', 'Animals.md', null)).toBe('created')
+    expect(await deps.files.rename('Llama.md', 'Alpaca')).toBe('renamed')
+    expect(await deps.files.remove('Llama.md', true)).toBe('removed')
+    expect(await deps.files.move('Llama.md', 'zoo/Llama.md')).toBe('moved')
+    expect(await deps.files.createFolder('zoo')).toBe('folded')
+    expect(calls).toStrictEqual([
+      ['createWithTitle', 'Llama', 'Animals.md', null],
+      ['rename', 'Llama.md', 'Alpaca'],
+      ['remove', 'Llama.md', true],
+      ['move', 'Llama.md', 'zoo/Llama.md'],
+      ['createFolder', 'zoo'],
+    ])
+  })
+
+  it('asks the runner what a file carries', async () => {
+    const states = { transcript: 'done' }
+    const asked = vi.spyOn(running, 'getArtifactStates').mockResolvedValue(states as never)
+    const { deps } = createOptions()
+
+    expect(await deps.runs.getArtifactStates('talk.mp3')).toBe(states)
+    expect(asked).toHaveBeenCalledWith('talk.mp3')
+  })
+
+  it.each(['createArtifact', 'fetchArtifact', 'correctArtifact'] as const)(
+    'answers %s with what the runner answered, and reads what the file carries again',
+    async (run) => {
+      const outcome = { able: true }
+      const asked = vi.spyOn(running, run).mockResolvedValue(outcome as never)
+      const loaded: string[] = []
+      const { deps } = createOptions({ loadArtifactStates: async (path) => void loaded.push(path) })
+
+      const ask = deps.runs[run] as (...args: unknown[]) => Promise<unknown>
+      expect(await ask('talk.mp3', 'transcript')).toBe(outcome)
+      expect(asked).toHaveBeenCalledWith(
+        ...(run === 'createArtifact' ? ['talk.mp3', 'transcript'] : ['talk.mp3']),
+      )
+      expect(loaded).toStrictEqual(['talk.mp3'])
+    },
+  )
+
+  it('tells the recording and the address tabs a transcript went, and reads the file again', async () => {
+    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
+    const told: string[] = []
+    const loaded: string[] = []
+    const { deps } = createOptions({
+      loadArtifactStates: async (path) => void loaded.push(path),
+      recorded: {
+        onDelete: (path) => void told.push(`recorded deleted ${path}`),
+        reloadTranscript: (path) => void told.push(`recorded reloaded ${path}`),
+      },
+      pointed: { reloadTranscript: (path) => void told.push(`pointed reloaded ${path}`) },
+    })
+
+    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(true)
+    expect(told).toStrictEqual(['recorded deleted talk.mp3', 'pointed reloaded talk.mp3'])
+    expect(loaded).toStrictEqual(['talk.mp3'])
+  })
+
+  it('tells no tab of a transcript that did not go', async () => {
+    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(false)
+    const told: string[] = []
+    const { deps } = createOptions({
+      recorded: { onDelete: (path) => void told.push(path) },
+      pointed: { onDelete: (path) => void told.push(path) },
+    })
+
+    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(false)
+    expect(told).toStrictEqual([])
+  })
+
+  it('deletes a transcript where no tab is listening', async () => {
+    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
+    const { deps } = createOptions()
+
+    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(true)
+  })
+
+  it('reads the file again only after a copy went', async () => {
+    const deleted = vi.spyOn(running, 'deleteCopy').mockResolvedValue(true)
+    const loaded: string[] = []
+    const { deps } = createOptions({ loadArtifactStates: async (path) => void loaded.push(path) })
+
+    expect(await deps.runs.deleteCopy('video.md')).toBe(true)
+    deleted.mockResolvedValue(false)
+    expect(await deps.runs.deleteCopy('other.md')).toBe(false)
+    expect(loaded).toStrictEqual(['video.md'])
+  })
+
+  it('makes a stencil with one field, and every other file as the makers make it', async () => {
+    const { deps, calls } = createOptions()
+
+    expect(await deps.makers.createStencil('stencils', 'Animal')).toBe('stencilled')
+    expect(await deps.makers.createDeck('decks', 'Animals')).toBe('decked')
+    expect(calls).toStrictEqual([
+      ['createStencil', 'stencils', 'Animal', [cardWords.newField]],
+      ['createDeck', 'decks', 'Animals'],
+    ])
+  })
+
+  it('names and reloads the vault through the window, and lists vaults through the service', () => {
+    const { deps, options } = createOptions()
+
+    expect(deps.vaults.setVaultName).toBe(options.setVaultName)
+    expect(deps.vaults.reload).toBe(options.reload)
+    expect(deps.vaults.list).toBeTypeOf('function')
+  })
+
+  it('goes where a command points', async () => {
+    const { deps, calls } = createOptions()
+
+    deps.goes.revealPath('Llama.md')
+    deps.goes.openTab('settings')
+    await deps.goes.openPreset('presets/Default.md')
+    deps.goes.closeTab('tab-1')
+    deps.goes.ask('what is a llama?')
+    expect(calls).toStrictEqual([
+      ['revealPath', 'Llama.md'],
+      ['openTabOfKind', 'settings'],
+      ['openPreset', 'presets/Default.md'],
+      ['requestClose', 'tab-1'],
+      ['askQuestion', 'what is a llama?'],
+    ])
+  })
+
+  it('travels and leaves through the plex', async () => {
+    const went: string[] = []
+    const { deps } = createOptions({
+      plexes: () => ({
+        travel: async (path) => void went.push(`travel ${path}`),
+        leavePath: async (from, to) => void went.push(`leave ${from} ${to}`),
+      }),
+    })
+
+    await deps.goes.travel('Llama.md')
+    await deps.goes.leave('Llama.md', 'Alpaca.md')
+    expect(went).toStrictEqual(['travel Llama.md', 'leave Llama.md Alpaca.md'])
+  })
+
+  it('hands each choice of a setting to the setting it is for', async () => {
+    const chosen: string[] = []
+    const { deps } = createOptions({
+      oneName: { choose: async (item) => void chosen.push(`sync ${item}`) },
+      hungParts: {
+        choose: async (item) => void chosen.push(`hanging ${item}`),
+        chooseCount: async (item) => void chosen.push(`parts ${item}`),
+      },
+    })
+
+    await deps.settings.chooseSync('on')
+    await deps.settings.chooseHanging('off')
+    await deps.settings.chooseParts('6')
+    expect(chosen).toStrictEqual(['sync on', 'hanging off', 'parts 6'])
+  })
+
+  it('copies nothing where there is no clipboard', () => {
+    vi.stubGlobal('navigator', {})
+
+    expect(() => createOptions().deps.copyPath('zoo/Llama.md')).not.toThrow()
+  })
+
+  it('searches with the search the window gave, and does nothing without one', () => {
+    const search = vi.fn()
+
+    createOptions({ search }).deps.goes.search()
+    expect(search).toHaveBeenCalledOnce()
+    expect(() => createOptions().deps.goes.search()).not.toThrow()
+  })
+
+  it('copies a path to the clipboard', () => {
+    const writeText = vi.fn(async () => {})
+    vi.stubGlobal('navigator', { clipboard: { writeText } })
+
+    createOptions().deps.copyPath('zoo/Llama.md')
+    expect(writeText).toHaveBeenCalledWith('zoo/Llama.md')
+  })
+
+  it('asks for the indexing models at the setting that names one', async () => {
+    const asked: (readonly string[])[] = []
+    const { deps } = createOptions({
+      rest: {
+        writeSettings: async () => {},
+        getModelsAt: (at) => {
+          asked.push(at)
+          return []
+        },
+      },
+    })
+
+    await deps.settings.chooseIndexingModel('e5-small-int8')
+    expect(asked).toStrictEqual([['indexing', 'model', 'name']])
+  })
+
+  it('writes the model of the name chosen, among several', async () => {
+    const written: unknown[] = []
+    const other = { name: 'bge-small', writes: [{ at: ['bge'], value: '1' }] }
+    const chosen = { name: 'e5-small-int8', writes: [{ at: ['e5'], value: '1' }] }
+    const { deps } = createOptions({
+      rest: {
+        writeSettings: async (w) => void written.push(...w),
+        getModelsAt: () => [other, chosen] as never,
+      },
+    })
+
+    await deps.settings.chooseIndexingModel('e5-small-int8')
+    expect(written).toStrictEqual(chosen.writes)
+  })
+
+  it('writes the name chosen where the settings list no models', async () => {
+    const { deps, calls } = createOptions()
+
+    await deps.settings.chooseIndexingModel('custom-model')
+    expect(calls).toStrictEqual([
+      ['writeSettings', [{ at: ['indexing', 'model', 'name'], value: '"custom-model"' }]],
+    ])
   })
 })
 

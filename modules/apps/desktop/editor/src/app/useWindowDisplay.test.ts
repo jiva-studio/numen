@@ -4,7 +4,7 @@
  * Every one of these has a failure that looks like nothing at all: a window
  * showing something stale, with no error and no way back.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { asValue } from '@numen/wire'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
@@ -305,6 +305,25 @@ describe('another vault under this window', () => {
     one.window.close()
   })
 
+  it('reads the vault again where the vault cannot be asked where it stands', async () => {
+    let reads = 0
+    const one = createWindow(
+      createReloadingCore(async () => {
+        reads += 1
+        if (reads > 1) throw new Error('connection lost')
+        return settled
+      }),
+    )
+
+    await one.window.start()
+    await nap()
+    await nap()
+
+    expect(one.drawn).not.toContain('reloaded')
+
+    one.window.close()
+  })
+
   it('reads the vault again where the reload stands where it stood', async () => {
     const one = createWindow(createReloadingCore(async () => settled))
 
@@ -572,5 +591,173 @@ describe('what the application is doing', () => {
     expect(window.chunks.value).toBe(asks * 1000)
 
     window.close()
+  })
+})
+
+describe('a window before it has asked the vault anything', () => {
+  it('says nothing yet, and is waiting for the vault to be read', () => {
+    const window = useWindowDisplay(fake())
+
+    expect(window.name.value).toBe('')
+    expect(window.isIndexing.value).toBe(true)
+    expect(window.failure.value).toBe('')
+    expect(window.lost.value).toBe('')
+    expect(window.error.value).toBe('')
+    expect(window.unwatched.value).toBe('')
+    expect(window.unreachable.value).toBe('')
+    expect(window.hasNote.value).toBe(false)
+    expect(window.opening.value).toBe('')
+    expect(window.isEmbedding.value).toBe(false)
+    expect(window.tasks.value).toStrictEqual([])
+  })
+})
+
+describe('the note the vault opens with', () => {
+  it('is none for a vault that holds no note', async () => {
+    const window = useWindowDisplay(fake({ getInitialOpenPath: async () => null }))
+
+    expect(await window.readInitialNote()).toBe('')
+    expect(window.opening.value).toBe('')
+    expect(window.hasNote.value).toBe(false)
+  })
+})
+
+describe('the first note shown', () => {
+  it('stops the waiting and tells everything showing the vault to read it whole', async () => {
+    const one = createDisplay(fake())
+
+    await one.window.start()
+    await nap()
+
+    expect(one.window.isIndexing.value).toBe(false)
+    expect(one.changed).toStrictEqual([''])
+  })
+
+  it('says what changed in a note while it is being made', async () => {
+    const edit = {
+      change: 'c1',
+      path: 'Note.md',
+      span: { from: 0, to: 4 },
+      text: 'Leaf',
+      isComplete: false,
+    }
+    const said: unknown[] = []
+    const core = fake({
+      watchEdits: async function* () {
+        yield edit
+      },
+    })
+    const window = useWindowDisplay(core, {
+      wait: waitForever,
+      reportChange: (one) => void said.push(one),
+    })
+
+    await window.start()
+    await nap()
+    window.close()
+
+    expect(said).toStrictEqual([edit])
+  })
+
+  it('is not shown by a window closed while the vault was being asked', async () => {
+    const changed: unknown[] = []
+    const core = fake({
+      getInitialOpenPath: async () => {
+        window.close()
+        return { path: 'Opening.md' }
+      },
+    })
+    const window = useWindowDisplay(core, { onVaultChanged: (paths) => void changed.push(paths) })
+
+    await window.start()
+    await nap()
+
+    expect(window.isIndexing.value).toBe(true)
+    expect(changed).toStrictEqual([])
+  })
+
+  it('is waited for while the vault holds none and is still being read', async () => {
+    const changed: unknown[] = []
+    const core = fake({
+      getInitialOpenPath: async () => null,
+      state: async () => ({ ...settled, scan: { ...settled.scan, isReady: false } }),
+    })
+    const waits: number[] = []
+    const window = useWindowDisplay(core, {
+      wait: async (ms) => {
+        waits.push(ms)
+        window.close()
+      },
+      onVaultChanged: (paths) => void changed.push(paths),
+    })
+
+    await window.start()
+    await nap()
+
+    expect(window.isIndexing.value).toBe(true)
+    expect(changed).toStrictEqual([])
+    expect(waits).toStrictEqual([100])
+  })
+})
+
+describe('a closed window', () => {
+  it('lets go of every stream it listens to', async () => {
+    const signals: AbortSignal[] = []
+    const core = fake({
+      watchTasks: async function* (signal) {
+        signals.push(signal)
+        await waitForever()
+      },
+    })
+    const window = useWindowDisplay(core, { wait: waitForever })
+
+    await window.start()
+    await nap()
+    window.close()
+
+    expect(signals).toHaveLength(1)
+    expect(signals[0]?.aborted).toBe(true)
+  })
+})
+
+describe('a vault that cannot be reached at all', () => {
+  it('says so, and stops the waiting', async () => {
+    const window = useWindowDisplay(
+      fake({
+        state: async () => {
+          throw new Error('connection refused')
+        },
+      }),
+    )
+
+    await window.start()
+
+    expect(window.failure.value).not.toBe('')
+    expect(window.isIndexing.value).toBe(false)
+  })
+})
+
+describe('a vault still being read', () => {
+  it('is asked again a tenth of a second later', async () => {
+    vi.useFakeTimers()
+    let reads = 0
+    const window = useWindowDisplay(
+      fake({
+        getInitialOpenPath: async () => null,
+        state: async () => {
+          reads += 1
+          return { ...settled, scan: { ...settled.scan, isReady: false } }
+        },
+      }),
+    )
+
+    void window.start()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(reads).toBe(1)
+    await vi.advanceTimersByTimeAsync(100)
+    window.close()
+    vi.useRealTimers()
+
+    expect(reads).toBe(2)
   })
 })
