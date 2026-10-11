@@ -40,6 +40,9 @@ func TestWhatOpensThePort(t *testing.T) {
 		"no agent named":            {`{"use": ""}`, false},
 		"no agent, tools asked for": {`{"use": "", "serve_tools": true}`, true},
 		"an agent named":            {`{"use": "claude"}`, true},
+		"antigravity named":         {`{"use": "antigravity"}`, true},
+		"codex named":               {`{"use": "codex"}`, true},
+		"an unknown agent named":    {`{"use": "other"}`, false},
 	} {
 		t.Run(name, func(t *testing.T) {
 			held := agent.Defaults()
@@ -50,5 +53,23 @@ func TestWhatOpensThePort(t *testing.T) {
 				t.Errorf("the tools are served: %v", got)
 			}
 		})
+	}
+}
+
+// A section a file leaves empty keeps the step limit the defaults give it, for
+// each agent alike.
+func TestAnEmptySectionKeepsItsStepLimit(t *testing.T) {
+	held := agent.Defaults()
+	if err := json.Unmarshal([]byte(`{"claude": {}, "antigravity": {}, "codex": {}}`), &held); err != nil {
+		t.Fatal(err)
+	}
+	for name, got := range map[string]int{
+		"claude":      held.Claude.MaxSteps,
+		"antigravity": held.Antigravity.MaxSteps,
+		"codex":       held.Codex.MaxSteps,
+	} {
+		if got != 100 {
+			t.Errorf("%s may go to the model %d times", name, got)
+		}
 	}
 }
