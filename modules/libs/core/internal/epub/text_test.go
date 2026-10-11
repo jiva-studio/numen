@@ -178,9 +178,9 @@ func TestHeadingsTheMarkupCarries(t *testing.T) {
 	})
 }
 
-// An entry of the navigation that carries no name, or points at a document the
-// book does not have, is passed over and the entries after it are read. An
-// entry naming a document with no place in it lands where the document begins.
+// An entry of the navigation that carries no name, or points at no document of
+// the book, is passed over and the entries after it are read. An entry naming a
+// document with no place in it lands where the document begins.
 func TestNavigationEntriesLandInTheText(t *testing.T) {
 	book := read(t, buildSpineArchive(t, twoDocumentOpf, map[string]string{
 		"OEBPS/one.xhtml": `<html><body><p>First words</p></body></html>`,
@@ -189,6 +189,7 @@ func TestNavigationEntriesLandInTheText(t *testing.T) {
 		  <navMap>
 		    <navPoint><navLabel><text> </text></navLabel><content src="one.xhtml"/></navPoint>
 		    <navPoint><navLabel><text>Gone</text></navLabel><content src="gone.xhtml"/></navPoint>
+		    <navPoint><navLabel><text>Here</text></navLabel><content src="#here"/></navPoint>
 		    <navPoint><navLabel><text>One</text></navLabel><content src="one.xhtml"/></navPoint>
 		    <navPoint><navLabel><text>Two</text></navLabel><content src="two.xhtml"/></navPoint>
 		  </navMap>
