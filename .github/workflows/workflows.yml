@@ -1,0 +1,41 @@
+name: Workflows
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters.
+concurrency:
+  group: workflows-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+
+  actionlint:
+    name: Workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/libs/core/go.mod
+          cache: false
+
+      - name: Verify GitHub Actions workflows
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
