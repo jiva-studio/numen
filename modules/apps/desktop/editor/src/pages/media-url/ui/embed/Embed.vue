@@ -119,9 +119,16 @@ function seek(ms: number): void {
     void player.value.play()
     return
   }
+  let origin: string
+  try {
+    origin = new URL(props.embed).origin
+  } catch {
+    // An embed that is not a parseable absolute URL has no origin to post the message to.
+    return
+  }
   frame.value?.contentWindow?.postMessage(
     JSON.stringify({ event: 'command', func: 'seekTo', args: [ms / 1000, true] }),
-    new URL(props.embed).origin,
+    origin,
   )
 }
 
