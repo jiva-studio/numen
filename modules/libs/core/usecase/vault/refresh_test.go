@@ -33,7 +33,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
-		db.Sources(),
+		db.Sources(), time.Now,
 	), db, v
 }
 
@@ -76,7 +76,7 @@ func TestANoteIsLevelledInAVaultNothingHasWalked(t *testing.T) {
 	})
 	db := openIndex(t)
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
 
 	if _, err := refresh.Execute(t.Context(), v, []string{"Note.md"}); err != nil {
 		t.Fatal(err)
@@ -276,7 +276,7 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
-		db.Sources(),
+		db.Sources(), time.Now,
 	)
 	res, err := refresh.Execute(t.Context(), v, []string{"Locked.md", "Note.md"})
 	if err != nil {
@@ -310,7 +310,7 @@ func TestARefreshWritesInGroups(t *testing.T) {
 	db := openIndex(t)
 	written := &countingNotes{}
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, &indexRows{}, written, db.SourcesKnown(), db.Sources(),
+		filesystem.VaultReaders{}, &indexRows{}, written, db.SourcesKnown(), db.Sources(), time.Now,
 	)
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
@@ -360,7 +360,7 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
-		db.Sources(),
+		db.Sources(), time.Now,
 	)
 	res, err := refresh.Execute(t.Context(), v, []string{"Note.md"})
 	if err != nil {
@@ -401,9 +401,8 @@ func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCo
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(),
+		filesystem.VaultReaders{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), time.Now,
 	)
-	refresh.Now = time.Now
 	return refresh, saves, db, v
 }
 
@@ -503,8 +502,7 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 		t.Fatal(err)
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
-	refresh := vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources())
-	refresh.Now = time.Now
+	refresh := vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), time.Now)
 
 	refreshOne(t, refresh, v, "Note.md")
 
@@ -575,5 +573,42 @@ func TestADeletedNoteIsRemovedWithoutBeingSaved(t *testing.T) {
 	}
 	if got := searchNotes(t, db, v, "entropy"); len(got) != 0 {
 		t.Errorf("the index finds %v", got)
+	}
+}
+
+func TestALongRunOfSavesLeavesTheLedgerHoldingOnlyTheRecentWindow(t *testing.T) {
+	t.Parallel()
+	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
+	db := openIndex(t)
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+	var tick atomic.Int64
+	start := time.Now()
+	clock := func() time.Time { return start.Add(time.Duration(tick.Load())) }
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), clock)
+
+	const perWindow = 4
+	step := vaults.TimestampGranularity / perWindow
+	for i := range 10 * perWindow {
+		tick.Store(int64(step) * int64(i))
+		rewrite(t, v, "Note.md", fmt.Sprintf("---\ntitle: Note\n---\n\n# Note\n\nversion %03d\n", i))
+		at := clock()
+		if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), at, at); err != nil {
+			t.Fatal(err)
+		}
+		refreshOne(t, refresh, v, "Note.md")
+		if n := refresh.Ledger.Len(); n > 1 {
+			t.Fatalf("the ledger holds %d entries after save %d", n, i)
+		}
+	}
+	tick.Add(int64(2 * vaults.TimestampGranularity))
+	other := vaults.NewRefresh(
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), clock)
+	other.Ledger = refresh.Ledger
+	refreshOne(t, other, v, "Note.md")
+	if n := refresh.Ledger.Len(); n != 0 {
+		t.Errorf("the ledger holds %d entries once the window has passed", n)
 	}
 }

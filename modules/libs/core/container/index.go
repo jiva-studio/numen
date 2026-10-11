@@ -54,10 +54,10 @@ func (c Config) Level(db *Index) note.Levels {
 		db.NotesCutAt(c.GetChunkSizes(), c.Legibility()),
 		db.SourcesKnown(),
 		db.Sources(),
+		c.Clock(),
 	)
 	refresh.Derived = c.GetDerivedStores()
 	refresh.Ledger = db.ledger
-	refresh.Now = c.Clock()
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err

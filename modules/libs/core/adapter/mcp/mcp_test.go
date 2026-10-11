@@ -79,7 +79,7 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err

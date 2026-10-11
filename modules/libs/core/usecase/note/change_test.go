@@ -31,7 +31,7 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources())
+		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
 	return changing{
 		db:    db,
 		vault: v,
