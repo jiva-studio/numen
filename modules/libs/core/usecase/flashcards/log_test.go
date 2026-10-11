@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -130,6 +132,86 @@ func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	}
 	if len(held.Files) != 1 {
 		t.Errorf("read from %d runs, want the one that is there", len(held.Files))
+	}
+}
+
+// reordered is a vault's store whose listing flips between ascending and
+// descending order each time it is asked, which is what a directory's own
+// order is not promised to keep across two listings of it.
+type reordered struct {
+	port.DerivedStore
+	reverse bool
+}
+
+func (r *reordered) List(ctx context.Context, name string) ([]port.Entry, error) {
+	held, err := r.DerivedStore.List(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	out := slices.Clone(held)
+	if r.reverse {
+		slices.Reverse(out)
+	}
+	r.reverse = !r.reverse
+	return out, nil
+}
+
+// reorderedStores opens the one store every call flips the order of, so the
+// same vault's listing keeps flipping across every call that asks for it.
+type reorderedStores struct {
+	port.DerivedStores
+	store *reordered
+}
+
+func (s *reorderedStores) Open(v domain.Vault) (port.DerivedStore, error) {
+	if s.store == nil {
+		inner, err := s.DerivedStores.Open(v)
+		if err != nil {
+			return nil, err
+		}
+		s.store = &reordered{DerivedStore: inner}
+	}
+	return s.store, nil
+}
+
+// getLogFiles sorts what it is given, so the same runs come back in the same
+// order whatever order the store's own listing came back in.
+func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
+	t.Parallel()
+	s := openVault(t, vault)
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	for _, at := range []time.Time{
+		time.Now().AddDate(0, 0, -2),
+		time.Now().AddDate(0, 0, -1),
+		time.Now(),
+	} {
+		if _, err := s.run(t, at).Answer(t.Context(), on, review.Good, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	log := flashcards.Log{Stores: &reorderedStores{DerivedStores: s.logs}}
+	first, err := log.Files(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := log.Files(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(first) != 3 || len(second) != 3 {
+		t.Fatalf("listed %d and then %d files, want the three runs each time", len(first), len(second))
+	}
+	byName := func(a, b port.Entry) int { return strings.Compare(a.Name, b.Name) }
+	for _, one := range [][]port.Entry{first, second} {
+		if !slices.IsSortedFunc(one, byName) {
+			t.Errorf("%v is not sorted by name", one)
+		}
+	}
+	for at := range first {
+		if first[at].Name != second[at].Name {
+			t.Errorf("the same runs came back in another order: %v then %v", first, second)
+		}
 	}
 }
 

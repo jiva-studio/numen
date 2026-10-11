@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -149,6 +150,9 @@ func getLogFiles(ctx context.Context, store port.DerivedStore) ([]port.Entry, er
 			out = append(out, one)
 		}
 	}
+	slices.SortFunc(out, func(a, b port.Entry) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 	return out, nil
 }
 
