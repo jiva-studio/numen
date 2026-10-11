@@ -16,7 +16,7 @@ import {
   replaceAt,
   withChildren,
 } from './tree'
-import { detach, mapPane, putBeside, settle, type NodeIdFactory } from './splice'
+import { detach, mapPane, putBeside, commit, type NodeIdFactory } from './splice'
 
 export type { NodeIdFactory }
 
@@ -88,13 +88,13 @@ export function openTabBeside(
 
   const root = detach(workspace.root, tab)
   const landed = putBeside(root, target.id, tab, side, workspace.axis, createId)
-  return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
+  return commit({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
 export function closeTab(workspace: Workspace, tab: TabId): Workspace {
   const holder = paneWithTab(workspace.root, tab)
   if (!holder) return workspace
-  return settle({ ...workspace, root: detach(workspace.root, tab) }, holder.id)
+  return commit({ ...workspace, root: detach(workspace.root, tab) }, holder.id)
 }
 
 /**
@@ -140,11 +140,11 @@ export function dropTab(workspace: Workspace, drop: TabDrop, createId: NodeIdFac
       tabs: [...pane.tabs, drop.tab],
       active: drop.tab,
     }))
-    return settle({ ...workspace, root: joined }, target.id)
+    return commit({ ...workspace, root: joined }, target.id)
   }
 
   const landed = putBeside(root, target.id, drop.tab, drop.side, workspace.axis, createId)
-  return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
+  return commit({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
 /** A tab let go on the outer edge divides the whole workspace. */
@@ -158,7 +158,7 @@ export function dropOnEdge(
 
   const root = detach(workspace.root, tab)
   const landed = putBeside(root, root.id, tab, side, workspace.axis, createId)
-  return settle({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
+  return commit({ ...workspace, root: landed.root, axis: landed.axis }, landed.focus)
 }
 
 export function resizeBranch(

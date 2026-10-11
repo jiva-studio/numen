@@ -103,7 +103,7 @@ function joinBeside(parent: Branch, newPane: Pane, index: number, side: Side): W
 
 /**
  * The tab taken off whichever pane holds it. The pane is left where it is,
- * empty if that was its last tab, and `settle` is what clears it away.
+ * empty if that was its last tab, and `commit` is what clears it away.
  */
 export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
   const holder = paneWithTab(root, tab)
@@ -118,15 +118,15 @@ export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
 }
 
 /** The canonical tree, with the focus on a pane that survived it. */
-export function settle(workspace: Workspace, focus: NodeId): Workspace {
-  const settled = normalize(workspace)
-  const panes = panesOf(settled.root)
+export function commit(workspace: Workspace, focus: NodeId): Workspace {
+  const normalized = normalize(workspace)
+  const panes = panesOf(normalized.root)
   const kept =
     panes.find((each) => each.id === focus) ??
     panes.find((each) => each.id === workspace.focus) ??
     panes[0]
 
-  return kept ? { ...settled, focus: kept.id } : settled
+  return kept ? { ...normalized, focus: kept.id } : normalized
 }
 
 export function mapPane(

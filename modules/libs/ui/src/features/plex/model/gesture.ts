@@ -57,7 +57,7 @@ export function usePlexGesture(
   options: () => PlexOptions,
   getSeats: () => readonly PlexRelatedSeat[],
   threshold: () => number,
-  settle: (drop: Drop) => void,
+  commit: (drop: Drop) => void,
 ): Gesture & GestureHandlers {
   const surface = ref<SVGSVGElement | null>(null)
   const svg = () => surface.value
@@ -122,16 +122,16 @@ export function usePlexGesture(
   }
 
   const finish = () => {
-    const settled = outcome.value
+    const resolved = outcome.value
     stop(svg())
-    if (settled) settle(settled)
+    if (resolved) commit(resolved)
   }
 
   const cancel = () => stop(svg())
 
   const ask = (source: string) => {
     const seat = seatWithoutDirection(getSeats())
-    if (seat) settle({ kind: 'create', from: source, seat })
+    if (seat) commit({ kind: 'create', from: source, seat })
   }
 
   const begin = (source: string, event: PointerEvent) => {

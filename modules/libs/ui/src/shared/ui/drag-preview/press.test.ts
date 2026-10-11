@@ -13,7 +13,7 @@ const pointer = (type: string, x: number, y: number) =>
 
 /** A press under way, with the frame held until the test lets it come. */
 function createPress(threshold = 4) {
-  const settle = vi.fn<(item: string, at: Position | null) => void>()
+  const commit = vi.fn<(item: string, at: Position | null) => void>()
   const begin = vi.fn<(item: string) => void>()
   let next: ((now: number) => void) | null = null
 
@@ -35,14 +35,14 @@ function createPress(threshold = 4) {
       getThreshold: () => threshold,
       getClock: () => clock,
       getLandingAt: (_item, at) => (at.x < 500 ? at : null),
-      settle,
+      commit,
       begin,
     }),
   )!
 
   return {
     ...press,
-    settle,
+    commit,
     begin,
     scope,
     frame: () => {
@@ -90,34 +90,34 @@ describe('usePressDrag', () => {
     press.scope.stop()
   })
 
-  it('settles on the landing the pointer was over', () => {
+  it('commits the landing the pointer was over', () => {
     const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointermove', 40, 60))
     window.dispatchEvent(pointer('pointerup', 40, 60))
 
-    expect(press.settle).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 })
+    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 })
     expect(press.at.value).toBeNull()
     expect(press.position.value).toBeNull()
     press.scope.stop()
   })
 
-  it('settles on nothing where the pointer is over no landing', () => {
+  it('commits nothing where the pointer is over no landing', () => {
     const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointermove', 600, 60))
     window.dispatchEvent(pointer('pointerup', 600, 60))
 
-    expect(press.settle).toHaveBeenCalledExactlyOnceWith('a row', null)
+    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', null)
     press.scope.stop()
   })
 
-  it('settles nothing where the press never travelled', () => {
+  it('commits nothing where the press never travelled', () => {
     const press = createPress()
     press.lift('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointerup', 11, 11))
 
-    expect(press.settle).not.toHaveBeenCalled()
+    expect(press.commit).not.toHaveBeenCalled()
     press.scope.stop()
   })
 
@@ -142,7 +142,7 @@ describe('usePressDrag', () => {
 
     window.dispatchEvent(pointer('pointermove', 90, 90))
     expect(press.dragging.value).toBeNull()
-    expect(press.settle).toHaveBeenCalledTimes(1)
+    expect(press.commit).toHaveBeenCalledTimes(1)
     press.scope.stop()
   })
 

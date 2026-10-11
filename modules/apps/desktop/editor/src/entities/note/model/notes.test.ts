@@ -246,13 +246,13 @@ describe('a note whose file is about to be renamed or removed', () => {
     await settle()
 
     notes.setBody('Heat.md', 'one two')
-    await notes.settle('Heat.md')
+    await notes.flushPending('Heat.md')
 
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
     expect(notes.getOpenNote('Heat.md').state).toBe('clean')
   })
 
-  it('answers what a write in the air still owes before it says it has settled', async () => {
+  it('answers what a write in the air still owes before it says it has flushed', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     const notes = openNotes(core, { limits: { quiet: 10_000, bound: 10_000 } })
@@ -262,13 +262,13 @@ describe('a note whose file is about to be renamed or removed', () => {
     notes.setBody('Heat.md', 'one two')
     notes.save('Heat.md')
     notes.setBody('Heat.md', 'one two three')
-    await notes.settle('Heat.md')
+    await notes.flushPending('Heat.md')
 
     expect(wrote.map((one) => one.body)).toEqual(['one two', 'one two three'])
     expect(files.get('Heat.md')).toBe('one two three')
   })
 
-  it('fires nothing at the path it is leaving once it has settled', async () => {
+  it('fires nothing at the path it is leaving once it has flushed', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
     // A write slower than the interval armed by the keystroke before it.
@@ -284,7 +284,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     await settle()
 
     notes.setBody('Heat.md', 'one two')
-    await notes.settle('Heat.md')
+    await notes.flushPending('Heat.md')
     await new Promise((wake) => setTimeout(wake, 20))
 
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
@@ -297,8 +297,8 @@ describe('a note whose file is about to be renamed or removed', () => {
     notes.open('Heat.md')
     await settle()
 
-    await notes.settle('Heat.md')
-    await notes.settle('Nowhere.md')
+    await notes.flushPending('Heat.md')
+    await notes.flushPending('Nowhere.md')
 
     expect(wrote).toEqual([])
     expect(notes.getOpenIds()).toEqual(['Heat.md'])
@@ -312,7 +312,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     notes.open('Heat.md')
     await settle()
 
-    await notes.settle('Heat.md')
+    await notes.flushPending('Heat.md')
     notes.applyPathChanges(['Warmth.md'], [{ from: 'Heat.md', to: 'Warmth.md' }])
     await settle()
 

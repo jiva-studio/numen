@@ -150,7 +150,7 @@ export function useDeckTabs(
     getPath: (id) => store.getPath(id),
     getTitle: (id) => vaultAnswers.getTitle(store.getPath(id)),
     asking: (id) => store.stale(id) !== null,
-    settle: (id) => store.settle(id),
+    flushPending: (id) => store.flushPending(id),
     close: closeTabById,
     getTabAt: (path) => store.getOpenIds().find((id) => store.getPath(id) === path) ?? null,
   }

@@ -196,10 +196,10 @@ export const TheFigureIsReadOutBesideIt: Story = {
 }
 
 /**
- * A walk with the keys is one settling, said when the key is let go of and not
+ * A walk with the keys commits once, said when the key is let go of and not
  * at each place it passed through.
  */
-export const SettlesWhenTheKeyIsLetGo: Story = {
+export const CommitsWhenTheKeyIsLetGo: Story = {
   render: (args) => ({
     components: { Slider },
     setup: () => {
@@ -217,7 +217,7 @@ export const SettlesWhenTheKeyIsLetGo: Story = {
             :min="args.min"
             :max="args.max"
             :step="args.step"
-            @settle="rests.push($event)"
+            @commit="rests.push($event)"
           />
         </div>
         <span data-slot="rests">{{ rests.join(' ') }}</span>

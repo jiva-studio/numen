@@ -54,8 +54,8 @@ function onMoveSlider(at: number) {
   props.state.moveSlider(at)
 }
 
-function onSettleSlider() {
-  props.state.settle()
+function onSliderCommit() {
+  props.state.flushPending()
 }
 
 // --- Helpers ---
@@ -83,7 +83,7 @@ function onSettleSlider() {
       :value-text="reading"
       :is-waiting="isWaiting"
       @move="onMoveSlider"
-      @settle="onSettleSlider"
+      @commit="onSliderCommit"
     />
 
     <p v-if="stopped" class="preset__stopped" data-preset="stopped">{{ stopped }}</p>

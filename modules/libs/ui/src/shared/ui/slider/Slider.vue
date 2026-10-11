@@ -29,7 +29,7 @@ const model = defineModel<number>({ default: 0 })
 
 const emit = defineEmits<{
   /** The handle let go of, at the end of a drag or of a walk with the keys. */
-  settle: [value: number]
+  commit: [value: number]
 }>()
 
 defineOptions({ inheritAttrs: false })
@@ -88,19 +88,19 @@ const onKeyDown = (event: KeyboardEvent) => {
 const onRelease = () => {
   if (!walking) return
   walking = false
-  if (handed !== began) emit('settle', handed)
+  if (handed !== began) emit('commit', handed)
 }
 
 /**
  * The handle come to rest under the pointer. What it came to rest at is handed
- * on before it is said to have settled, so a caller acting on the second has
+ * on before the commit is emitted, so a caller acting on the second has
  * the first.
  */
 const onCommit = (value: number[]) => {
   const next = value[0]
   if (typeof next !== 'number') return
   setValue(next)
-  emit('settle', next)
+  emit('commit', next)
 }
 </script>
 

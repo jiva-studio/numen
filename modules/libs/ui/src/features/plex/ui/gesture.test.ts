@@ -3,7 +3,7 @@
  *
  * jsdom lays nothing out and has no pointer, so the element's matrix is stubbed
  * and the events are made here. What is being checked is the plumbing — that a
- * gesture starts, follows, settles and can be given up on — not the arithmetic,
+ * gesture starts, follows, commits and can be given up on — not the arithmetic,
  * which is `arrange/drop.test.ts` and needs none of this.
  */
 import { mount } from '@vue/test-utils'

@@ -201,7 +201,7 @@ export interface Notes {
   /** Whether the note owes the person an answer about what its file now holds. */
   asking(id: string): boolean
   /** Answers once nothing of that note is on its way to the file. */
-  settle(id: string): Promise<void>
+  flushPending(id: string): Promise<void>
   /** The tab holding a note lets go of it. */
   close(id: string): void
   /**
@@ -227,7 +227,7 @@ export interface Store {
   /** Whether it owes the person an answer about what its file now holds. */
   asking(id: string): boolean
   /** Answers once nothing of it is on its way to the file. */
-  settle(id: string): Promise<void>
+  flushPending(id: string): Promise<void>
   /** The tab holding it lets go of it. */
   close(id: string): void
   /** The identity of the tab standing at a file, and nothing where none does. */

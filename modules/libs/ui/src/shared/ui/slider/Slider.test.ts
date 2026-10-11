@@ -164,25 +164,25 @@ describe('coming to rest', () => {
     }
   }
 
-  // A caller writes what it was handed when the handle settles, so the value
-  // has to be handed on before the settling is.
-  it('hands the value on before it says the handle has settled', async () => {
+  // A caller writes what it was handed when the handle commits, so the value
+  // has to be handed on before the commit is.
+  it('hands the value on before it says the handle has committed', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
 
     expect(getEmitted(control)).toEqual([41])
-    expect(control.emitted('settle')).toEqual([[41]])
+    expect(control.emitted('commit')).toEqual([[41]])
     const order = Object.keys(control.emitted())
-    expect(order.indexOf('update:modelValue')).toBeLessThan(order.indexOf('settle'))
+    expect(order.indexOf('update:modelValue')).toBeLessThan(order.indexOf('commit'))
   })
 
-  it('says nothing about settling while the keys are still walking it', async () => {
+  it('says nothing about committing while the keys are still walking it', async () => {
     const control = mountSlider()
     await walkTrack(control, [41, 42, 43])
 
     expect(getEmitted(control)).toEqual([41, 42, 43])
-    expect(control.emitted('settle')).toBeUndefined()
+    expect(control.emitted('commit')).toBeUndefined()
   })
 
   it('says it once, at where the walk left it, when the key is let go of', async () => {
@@ -190,7 +190,7 @@ describe('coming to rest', () => {
     await walkTrack(control, [41, 42, 43])
     await handle(control).trigger('keyup', { key: 'ArrowRight' })
 
-    expect(control.emitted('settle')).toEqual([[43]])
+    expect(control.emitted('commit')).toEqual([[43]])
   })
 
   it('says nothing where the walk left the handle where it began', async () => {
@@ -198,7 +198,7 @@ describe('coming to rest', () => {
     await handle(control).trigger('keydown', { key: 'ArrowLeft' })
     await handle(control).trigger('keyup', { key: 'ArrowLeft' })
 
-    expect(control.emitted('settle')).toBeUndefined()
+    expect(control.emitted('commit')).toBeUndefined()
   })
 
   // A handle the keyboard leaves in the middle of a walk is a handle let go of.
@@ -207,6 +207,6 @@ describe('coming to rest', () => {
     await walkTrack(control, [41])
     await handle(control).trigger('blur')
 
-    expect(control.emitted('settle')).toEqual([[41]])
+    expect(control.emitted('commit')).toEqual([[41]])
   })
 })

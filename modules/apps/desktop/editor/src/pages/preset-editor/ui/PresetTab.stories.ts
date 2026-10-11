@@ -104,7 +104,7 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     moveSlider: (at: number) => {
       place.value = at
     },
-    settle: fn(),
+    flushPending: fn(),
     updateSetting: fn(),
     close: fn(),
   }

@@ -61,7 +61,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     getThreshold: options.getThreshold,
     getClock: options.getClock,
     getLandingAt: (_item, at) => landingAt(at.x, at.y),
-    settle: (item, at) => {
+    commit: (item, at) => {
       if (at) land(item, at)
     },
   })

@@ -55,13 +55,13 @@ function onFieldType(field: Field, value: number | null) {
   props.state.updateSetting(field, field === 'retention' ? round(value / 100, 2) : value)
 }
 
-function onFieldSettle() {
-  props.state.settle()
+function onFieldCommit() {
+  props.state.flushPending()
 }
 
 function onChooseSetting(field: Field, value: SettingValue) {
   props.state.updateSetting(field, value)
-  props.state.settle()
+  props.state.flushPending()
 }
 
 function onUpdateSlider(field: Field, share: number) {
@@ -143,7 +143,7 @@ function getFieldCount(field: Field): number | null {
         :aria-labelledby="`preset-${field}`"
         class="preset-settings__slider"
         @update:model-value="(share: number) => onUpdateSlider(field, share)"
-        @settle="onFieldSettle"
+        @commit="onFieldCommit"
       />
       <span class="preset-settings__percent" data-preset="percent">
         {{ words.percent(settings.backlog) }}
@@ -170,7 +170,7 @@ function getFieldCount(field: Field): number | null {
       :aria-labelledby="`preset-${field}`"
       class="preset-settings__number"
       @update:model-value="(value: number | null) => onFieldType(field, value)"
-      @settle="onFieldSettle"
+      @commit="onFieldCommit"
     />
   </span>
 </template>

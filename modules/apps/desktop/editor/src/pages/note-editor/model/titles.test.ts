@@ -104,7 +104,7 @@ describe('what a note is called', () => {
     await vi.waitFor(() => expect(names.getTitle('Note.md')).toBe('Renamed'))
   })
 
-  it('is asked for at the file a note moved to once it settles there', async () => {
+  it('is asked for at the file a note moved to once it goes clean there', async () => {
     const store = notes()
     const names = createNoteTitles(vault({ 'Renamed.md': 'Renamed' }), store.store)
     names.setTitle('Note.md', 'Untitled note')

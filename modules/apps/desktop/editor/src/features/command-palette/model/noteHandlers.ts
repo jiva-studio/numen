@@ -7,8 +7,8 @@ import type { CommandInvocation } from '../types'
 import type { AnswerWords } from '../words'
 import { NOTE } from '@/entities/tab'
 
-/** A tab asked to settle: which one it was, and whether it is still waiting. */
-export interface SettleResult {
+/** A tab asked to flush its pending write: which one it was, and whether it is still waiting. */
+export interface FlushResult {
   readonly tabId: string | null
   readonly isWaiting: boolean
 }
@@ -22,13 +22,13 @@ export const atItsFile = (invocation: CommandInvocation, on: TabContext): Comman
 
 /**
  * The tab holding a note, once nothing of the note is on its way to its file.
- * A tab waiting on the person to answer for it settles nothing and says so.
+ * A tab waiting on the person to answer for it flushes nothing and says so.
  */
-export const settleTab = async (path: string, on: TabContext): Promise<SettleResult> => {
+export const flushTab = async (path: string, on: TabContext): Promise<FlushResult> => {
   const tabId = on.notes.getTabAt(path)
   if (tabId === null) return { tabId, isWaiting: false }
   if (on.notes.asking(tabId)) return { tabId, isWaiting: true }
-  await on.notes.settle(tabId)
+  await on.notes.flushPending(tabId)
   return { tabId, isWaiting: false }
 }
 
@@ -69,7 +69,7 @@ export const renameNoteCommand = async (
   words: AnswerWords,
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.title) return
-  const tab = await settleTab(invocation.path, on)
+  const tab = await flushTab(invocation.path, on)
   if (tab.isWaiting) return on.writeMessage(words.unanswered, 'caution')
   const answer = await on.files.rename(invocation.path, invocation.name)
   if (answer.ok) return
@@ -87,7 +87,7 @@ export const moveFileCommand = async (
   words: AnswerWords,
 ): Promise<void> => {
   if (!invocation.name || invocation.name === invocation.path) return
-  const tab = await settleTab(invocation.path, on)
+  const tab = await flushTab(invocation.path, on)
   if (tab.isWaiting) return on.writeMessage(words.unanswered, 'caution')
   const answer = await on.files.move(invocation.path, invocation.name)
   if (answer.ok) return

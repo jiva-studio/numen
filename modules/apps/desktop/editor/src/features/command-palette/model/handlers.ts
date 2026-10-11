@@ -20,7 +20,7 @@ import {
   moveFileCommand,
   navigateToPath,
   renameNoteCommand,
-  settleTab,
+  flushTab,
 } from './noteHandlers'
 import { addVault, renameVault, removeVault, showVault } from './vaults'
 import type { Outcome, ArtifactState } from '@/entities/artifact'
@@ -181,7 +181,7 @@ const removeFiles = async (
   const opening = on.goes.getOpeningNote()
 
   for (const path of getInvocationPaths(invocation)) {
-    const tab = await settleTab(path, on)
+    const tab = await flushTab(path, on)
     if (tab.isWaiting) {
       isWaiting = true
       continue

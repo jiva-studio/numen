@@ -44,7 +44,7 @@ const notes = (states: Record<string, State> = {}) => {
   const at = ref<Record<string, string>>({})
   const shut: string[] = []
   const said: string[] = []
-  /** Order of settle/reload calls. */
+  /** Order of flushPending/reload calls. */
   const calls: string[] = []
   let goes = true
   const getPath = (id: string) => at.value[id] ?? id
@@ -58,8 +58,8 @@ const notes = (states: Record<string, State> = {}) => {
       calls.push(`reload:${getPath(id)}`)
       at.value = { ...at.value, [id]: path }
     },
-    settle: async (id: string) => {
-      calls.push(`settle:${getPath(id)}`)
+    flushPending: async (id: string) => {
+      calls.push(`flushPending:${getPath(id)}`)
     },
     close: async (id: string) => {
       shut.push(getPath(id))
@@ -591,7 +591,7 @@ describe('loadInTab and kind methods edge cases', () => {
     expect(one.noted.kind.getOpenTab!(stateOf(one))).toStrictEqual({ path: 'Note2.md' })
   })
 
-  it('settles unsaved edits before reloading the tab onto a new path', async () => {
+  it('flushes unsaved edits before reloading the tab onto a new path', async () => {
     const one = window({}, { 'Note1.md': 'unsaved' })
     one.openNote('Note1.md', 'Note 1')
     await nextTick()
@@ -599,7 +599,7 @@ describe('loadInTab and kind methods edge cases', () => {
 
     await one.noted.loadInTab(tabId, 'Note2.md')
 
-    expect(one.calls).toEqual(['settle:Note1.md', 'reload:Note1.md'])
+    expect(one.calls).toEqual(['flushPending:Note1.md', 'reload:Note1.md'])
   })
 
   it('covers kind onShow and onClose handlers', async () => {

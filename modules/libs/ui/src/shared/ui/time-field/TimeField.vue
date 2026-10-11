@@ -26,7 +26,7 @@ const model = defineModel<string>({ default: '' })
 
 const emit = defineEmits<{
   /** The field come to rest at an hour of the day. */
-  settle: [value: string]
+  commit: [value: string]
 }>()
 
 /** What stands in the field, which is an hour of the day or nothing at all. */
@@ -38,7 +38,7 @@ const onChange = (event: Event) => {
   const nextValue = (event.target as HTMLInputElement).value
   if (!onTheClock(nextValue) || nextValue === model.value) return
   model.value = nextValue
-  emit('settle', nextValue)
+  emit('commit', nextValue)
 }
 
 defineExpose({

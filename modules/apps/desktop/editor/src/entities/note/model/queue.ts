@@ -1,5 +1,5 @@
 /**
- * Save timers, settling coordination, and read/write execution for open notes.
+ * Save timers, flush coordination, and read/write execution for open notes.
  */
 import type { LinkAddress, NoteResult, WriteResult as CoreWriteResult } from '../lib/note'
 import type { ErrorCode } from '@/shared/errors'
@@ -20,7 +20,7 @@ export function createNoteQueue(
   resumeClosing: (id: string) => void,
 ) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
-  const settling = new Map<string, () => void>()
+  const flushWaiters = new Map<string, () => void>()
 
   const arm = (id: string, after: number): void => {
     clearTimeout(timers.get(id))
@@ -38,16 +38,16 @@ export function createNoteQueue(
     timers.delete(id)
   }
 
-  const finishSettle = (id: string): void => {
-    settling.get(id)?.()
-    settling.delete(id)
+  const resolveFlush = (id: string): void => {
+    flushWaiters.get(id)?.()
+    flushWaiters.delete(id)
   }
 
-  const settle = (id: string): Promise<void> =>
+  const flushPending = (id: string): Promise<void> =>
     new Promise((done) => {
       if (!hasTab(id)) return done()
-      settling.set(id, done)
-      turn(id, { kind: 'settling' })
+      flushWaiters.set(id, done)
+      turn(id, { kind: 'flushing' })
     })
 
   const read = async (id: string, path: string, generation: number): Promise<void> => {
@@ -99,14 +99,14 @@ export function createNoteQueue(
 
   const forget = (id: string): void => {
     disarm(id)
-    finishSettle(id)
+    resolveFlush(id)
   }
 
   return {
     arm,
     disarm,
-    finishSettle,
-    settle,
+    resolveFlush,
+    flushPending,
     read,
     write,
     forget,

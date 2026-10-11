@@ -621,7 +621,7 @@ describe('a deck read again under the window', () => {
     const one = await open()
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     const made = one.tab.deck.value.cards.at(-1)?.id ?? ''
-    await one.decks.kept.settle(one.tab.id)
+    await one.decks.kept.flushPending(one.tab.id)
 
     // The deck was made whole where it was written: the card carries the mark
     // the core minted and the heading it read from the first field.
@@ -652,7 +652,7 @@ describe('a deck read again under the window', () => {
     const one = await open({ sections: [{ name: 'Roots', preamble: '' }] })
     const stood = one.tab.deck.value.sections[0]?.id ?? ''
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    await one.decks.kept.settle(one.tab.id)
+    await one.decks.kept.flushPending(one.tab.id)
 
     one.setCards([
       ...CARDS,
@@ -722,7 +722,7 @@ describe('a deck read again under the window', () => {
     const one = await open()
     one.tab.addCard('Animal', [{ field: 'Name', text: 'Vic' }], null)
     const made = one.tab.deck.value.cards.at(-1)?.id ?? ''
-    await one.decks.kept.settle(one.tab.id)
+    await one.decks.kept.flushPending(one.tab.id)
 
     one.tab.writeCardField(made, 'Name', 1, 'Vicuña')
 
@@ -835,7 +835,7 @@ describe('a deck the vault could not be reached for', () => {
     const { decks, tab } = await open({ wrote: 'unreadable' })
 
     tab.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    await decks.kept.settle(decks.getOpenIds()[0] ?? '')
+    await decks.kept.flushPending(decks.getOpenIds()[0] ?? '')
 
     expect(tab.errorMessage.value).toBe(words.notSaved)
   })

@@ -28,7 +28,7 @@ export interface Press<Item, At> {
   /** Where letting go here would put what is held. */
   readonly getLandingAt: (item: Item, at: Position) => At | null
   /** What letting go after a drag comes to. The landing is nothing off any target. */
-  readonly settle: (item: Item, at: At | null) => void
+  readonly commit: (item: Item, at: At | null) => void
   /** Said once, when the press turns into a drag. */
   readonly begin?: (item: Item) => void
 }
@@ -79,7 +79,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     detach()
     at.value = null
     position.value = null
-    if (held?.hasMoved) press.settle(held.item, found)
+    if (held?.hasMoved) press.commit(held.item, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
     press.getClock().schedule(() => {

@@ -99,7 +99,7 @@ const dragging = usePlexDrag({
   getViewport: () => room.value,
   getAllowedSeats: () => props.creatable,
   getThreshold: () => props.dragThreshold,
-  settle: (dragged, seat) => emit('bring', dragged, seat),
+  commit: (dragged, seat) => emit('bring', dragged, seat),
 })
 
 /**
