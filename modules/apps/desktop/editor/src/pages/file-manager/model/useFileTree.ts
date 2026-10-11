@@ -28,6 +28,19 @@ export const getParentFolders = (path: string): readonly string[] => {
   return parts.map((_, deep) => parts.slice(0, deep + 1).join('/'))
 }
 
+const isSameEntry = (one: Entry, other: Entry): boolean =>
+  one.path === other.path &&
+  one.name === other.name &&
+  one.isFolder === other.isFolder &&
+  one.kind === other.kind &&
+  one.type === other.type
+
+/** Whether two listings hold the same entries in the same order. */
+const isSameEntries = (one: readonly Entry[] | undefined, other: readonly Entry[]): boolean =>
+  one !== undefined &&
+  one.length === other.length &&
+  one.every((entry, at) => isSameEntry(entry, other[at]!))
+
 /**
  * Generates a name not taken in the folder.
  */
@@ -65,17 +78,32 @@ export function useFileTree(core: Folders): FileTree {
   const getEntryAt = (path: string): Entry | null =>
     getEntriesInFolder(getFolderPath(path)).find((one) => one.path === path) ?? null
 
-  const loadFolder = async (folder: string) => {
-    try {
-      const entries = await core.list(folder)
-      if (!isAlive) return
-      entriesByFolder.value = new Map(entriesByFolder.value).set(folder, entries)
-      errorMessage.value = ''
-    } catch (err) {
-      if (!isAlive) return
-      errorMessage.value = formatErrorMessage(err)
+  const loadFolders = async (folders: readonly string[]) => {
+    const listings = await Promise.all(
+      folders.map(async (folder) => {
+        try {
+          return { folder, entries: await core.list(folder) }
+        } catch (err) {
+          return { folder, error: err }
+        }
+      }),
+    )
+    if (!isAlive) return
+    const next = new Map(entriesByFolder.value)
+    let isChanged = false
+    for (const listing of listings) {
+      if ('error' in listing) {
+        errorMessage.value = formatErrorMessage(listing.error)
+      } else if (!isSameEntries(next.get(listing.folder), listing.entries)) {
+        next.set(listing.folder, listing.entries)
+        isChanged = true
+      }
     }
+    if (isChanged) entriesByFolder.value = next
+    if (!listings.some((one) => 'error' in one)) errorMessage.value = ''
   }
+
+  const loadFolder = (folder: string) => loadFolders([folder])
 
   const openFolder = async (folder: string) => {
     if (!isAlive) return
@@ -106,7 +134,7 @@ export function useFileTree(core: Folders): FileTree {
   }
 
   const refresh = async () => {
-    await Promise.all([...open.value].map(loadFolder))
+    await loadFolders([...open.value])
   }
 
   const getDrawnInFolder = (path: string): string | null => {
@@ -129,7 +157,7 @@ export function useFileTree(core: Folders): FileTree {
     const folders = new Set(
       named.map(getDrawnInFolder).filter((one): one is string => one !== null),
     )
-    await Promise.all([...folders].map(loadFolder))
+    await loadFolders([...folders])
   }
 
   const getUniqueNameInFolder = (folder: string, word: string): string =>

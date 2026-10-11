@@ -2,6 +2,7 @@
  * Tests for useFileTree state and tree operations.
  */
 import { describe, expect, it } from 'vitest'
+import { watch } from 'vue'
 import type { Entry } from '@/entities/file'
 import type { ListingRow } from '../types'
 import {
@@ -390,5 +391,79 @@ describe('a name nothing in a folder is filed under', () => {
     await list.openFolder(ROOT)
 
     expect(list.getUniqueNameInFolder(ROOT, 'New folder')).toBe('New folder 2')
+  })
+})
+
+describe('the refresh of every open folder', () => {
+  /** A tree with the root, physics and notes open, and a count of the times its rows were drawn again. */
+  const openTree = async (folders?: Record<string, readonly Entry[]>) => {
+    const one = vault(folders)
+    const list = useFileTree(one.core)
+    await list.openFolder(ROOT)
+    await list.openFolder('physics')
+    await list.openFolder('notes')
+    let redrawn = 0
+    watch(list.rows, () => redrawn++, { flush: 'sync' })
+    return { ...one, list, redrawn: () => redrawn }
+  }
+
+  it('draws the rows once for all the folders it listed', async () => {
+    const { list, redrawn, asked } = await openTree()
+    asked.length = 0
+    const rowsBefore = list.rows.value
+
+    await list.refresh()
+
+    expect(asked).toHaveLength(3)
+    expect(redrawn()).toBe(0)
+    expect(list.rows.value).toBe(rowsBefore)
+  })
+
+  it('draws the rows once when several folders changed', async () => {
+    const { list, redrawn, puts } = await openTree()
+    puts(ROOT, file('Extra.md'))
+    puts('notes', file('notes/Later.md'))
+
+    await list.refresh()
+
+    expect(redrawn()).toBe(1)
+    expect(paths(list.rows.value)).toContain('Extra.md')
+    expect(paths(list.rows.value)).toContain('notes/Later.md')
+  })
+
+  it('replaces the entries of the folder that changed and keeps the others', async () => {
+    const { list, puts } = await openTree()
+    const physics = list.getEntriesInFolder('physics')
+    const root = list.getEntriesInFolder(ROOT)
+    puts('notes', file('notes/Later.md'))
+
+    await list.refresh()
+
+    expect(list.getEntriesInFolder('notes')).toHaveLength(2)
+    expect(list.getEntriesInFolder('physics')).toBe(physics)
+    expect(list.getEntriesInFolder(ROOT)).toBe(root)
+  })
+
+  it('keeps the entries of a folder that failed and takes the others', async () => {
+    const one = vault()
+    let isFailing = false
+    const list = useFileTree({
+      list: async (at: string) => {
+        if (isFailing && at === 'physics') throw new Error('gone')
+        return one.core.list(at)
+      },
+    })
+    await list.openFolder(ROOT)
+    await list.openFolder('physics')
+    await list.openFolder('notes')
+    const kept = list.getEntriesInFolder('physics')
+    one.puts('notes', file('notes/Later.md'))
+    isFailing = true
+
+    await list.refresh()
+
+    expect(list.getEntriesInFolder('physics')).toBe(kept)
+    expect(list.getEntriesInFolder('notes')).toHaveLength(2)
+    expect(list.errorMessage.value).not.toBe('')
   })
 })

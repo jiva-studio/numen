@@ -38,15 +38,20 @@ export function createFilesKind(
     },
   }
 
-  const getFrontState = (): FilesTabState | null => handle.last<FilesTabState>(FILES)?.state ?? null
-
   const revealPath = async (path: string) => {
     const id = await handle.openTab(FILES)
     await handle.getTabState<FilesTabState>(FILES, id)?.list.revealPath(path)
   }
 
-  const refreshChangedPaths = (paths: readonly string[], renames: readonly PathRename[] = []) =>
-    getFrontState()?.list.refreshChanged(paths, renames) ?? Promise.resolve()
+  /** Every files tab takes the change, the ones out of sight included. */
+  const refreshChangedPaths = async (
+    paths: readonly string[],
+    renames: readonly PathRename[] = [],
+  ) => {
+    await Promise.all(
+      handle.each<FilesTabState>(FILES).map((tab) => tab.state.list.refreshChanged(paths, renames)),
+    )
+  }
 
   return { kind, revealPath, refreshChangedPaths }
 }
