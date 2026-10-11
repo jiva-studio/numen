@@ -50,6 +50,29 @@ describe('what the window has to say', () => {
     expect(one.notices.value[0]!.text).toBe('The deck could not be written.')
   })
 
+  it('ends a sentence whose only stop stands inside it', () => {
+    const one = useNotices()
+    one.reportError(
+      new ConnectError('is the preset paused? the deck says so', Code.FailedPrecondition),
+    )
+
+    expect(one.notices.value[0]!.text).toBe('Is the preset paused? the deck says so.')
+  })
+
+  it('raises nothing for a call the window itself stopped', () => {
+    const one = useNotices()
+    one.reportError(new ConnectError('the window closed', Code.Canceled))
+
+    expect(one.notices.value).toHaveLength(0)
+  })
+
+  it('draws what it was told at once, a person being there waiting to hear it', () => {
+    const one = useNotices()
+    one.showNotice('the first', 'caution')
+
+    expect(one.notices.value[0]).toMatchObject({ tone: 'caution', isAsked: true })
+  })
+
   it('puts away nothing when the name is not one it holds', () => {
     const one = useNotices()
     one.showNotice('the first', 'caution')
