@@ -3,6 +3,7 @@ package filesystem
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -12,6 +13,9 @@ import (
 // would later leave and be read as a file, and the index would go on answering
 // with the notes it took with it.
 func TestAFolderTheWalkCouldNotEnterIsTheWholeVault(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows folders have no permission bits to remove")
+	}
 	if os.Geteuid() == 0 {
 		t.Skip("root enters every folder")
 	}

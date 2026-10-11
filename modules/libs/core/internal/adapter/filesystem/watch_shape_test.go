@@ -3,6 +3,7 @@ package filesystem
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -10,6 +11,9 @@ import (
 // that has gone from a file that has, so a folder the walk could not enter is a
 // question the watch can no longer answer, and says so.
 func TestAShapeShortOfAFolderComesBackAsAnError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows folders have no permission bits to remove")
+	}
 	if os.Geteuid() == 0 {
 		t.Skip("root enters every folder")
 	}

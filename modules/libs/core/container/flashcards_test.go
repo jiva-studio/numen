@@ -15,6 +15,7 @@ import (
 func TestAMachineWithNoCacheFolderIsAnsweredNoStoreAtAll(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", "")
 	t.Setenv("HOME", "")
+	t.Setenv("LocalAppData", "")
 
 	for _, one := range []struct {
 		what  string

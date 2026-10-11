@@ -4,6 +4,7 @@ import (
 	"fmt"
 	pathpkg "path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -114,10 +115,29 @@ func cleanPath(path string) (string, error) {
 		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if clean == "." {
+	if clean == "." || (runtime.GOOS == "windows" && hasReservedDeviceName(clean)) {
 		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
 	return clean, nil
+}
+
+// hasReservedDeviceName reports whether any element of a slash-separated path
+// names a Windows device, with or without an extension.
+func hasReservedDeviceName(clean string) bool {
+	for _, element := range strings.Split(clean, "/") {
+		name := strings.TrimRight(element, " .")
+		if dot := strings.IndexByte(name, '.'); dot >= 0 {
+			name = strings.TrimRight(name[:dot], " ")
+		}
+		switch strings.ToUpper(name) {
+		case "CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$":
+			return true
+		}
+		if len(name) == 4 && name[3] >= '1' && name[3] <= '9' && (strings.EqualFold(name[:3], "COM") || strings.EqualFold(name[:3], "LPT")) {
+			return true
+		}
+	}
+	return false
 }
 
 // resolveContained is the containment rule and nothing else: where a cleaned path
