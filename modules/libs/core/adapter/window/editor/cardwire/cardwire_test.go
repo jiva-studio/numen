@@ -21,7 +21,33 @@ func TestEveryFaultIsWrittenFromOne(t *testing.T) {
 		v1.Fault_FAULT_FIELD_NOT_RENAMED:      format.FaultNotWritten,
 		v1.Fault_FAULT_MARK_CARRIED_TWICE:     format.FaultTwoMarks,
 	}, func(fault format.Fault) v1.Fault {
-		named, _ := newWireFault(fault)
+		named, isNamed := newWireFault(fault)
+		if !isNamed {
+			t.Errorf("the schema names no fault for %q", fault)
+		}
 		return named
 	})
+}
+
+func TestAFaultTheSchemaDoesNotNameIsLeftOut(t *testing.T) {
+	named, isNamed := newWireFault(format.FaultTooLarge)
+	if isNamed || named != v1.Fault_FAULT_UNSPECIFIED {
+		t.Errorf("a fault with no name in the schema was answered %v, %v", named, isNamed)
+	}
+	got := newWireProblems([]format.Problem{
+		{Fault: format.FaultTooLarge, Card: format.NoPosition, Face: format.NoPosition},
+		{Fault: format.FaultNoFields, Card: 3, Face: format.NoPosition, Detail: "d"},
+	})
+	if len(got) != 1 || got[0].GetFault() != v1.Fault_FAULT_STENCIL_WITHOUT_FIELDS {
+		t.Fatalf("got %v", got)
+	}
+	if got[0].Card == nil || *got[0].Card != 3 || got[0].Face != nil {
+		t.Errorf("the problem stands at card %v, face %v", got[0].Card, got[0].Face)
+	}
+}
+
+func TestAnAnswerCarriesAtMostTwoHundredStencils(t *testing.T) {
+	if MaxStencils != 200 {
+		t.Errorf("an answer carries %d stencils", MaxStencils)
+	}
 }

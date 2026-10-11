@@ -250,3 +250,35 @@ func TestAFailedMigrationIsNamedAndCarriesItsCause(t *testing.T) {
 		t.Errorf("the index is at version %d, want 0", at)
 	}
 }
+
+// Bookkeeping that cannot be committed is reported and left as it was.
+func TestBookkeepingWhoseReshapeCannotBeCommittedIsLeftAsItWas(t *testing.T) {
+	db := openLegacyBookkeeping(t)
+	breakOn(t, "COMMIT")
+
+	err := remember(t.Context(), db)
+	mend()
+	if !errors.Is(err, errBroken) {
+		t.Fatalf("remembering answered %v", err)
+	}
+	if !strings.Contains(readColumns(t, db, "schema_migrations"), "applied_at") {
+		t.Error("bookkeeping that was not reshaped lost its column")
+	}
+}
+
+// A file name that is not a migration's names no version.
+func TestAFileNameThatIsNotAMigrationsGivesVersionZero(t *testing.T) {
+	for _, name := range []string{"initial.sql", "abc_initial.sql", "0000_zero.sql", "-3_negative.sql"} {
+		if v, err := versionOf(name); err == nil || v != 0 {
+			t.Errorf("%q gave %d, %v", name, v, err)
+		}
+	}
+}
+
+// Comment lines go and every other line stays, each on a line of its own.
+func TestCommentsAreTakenOutLineByLine(t *testing.T) {
+	got := withoutComments("SELECT 1\n  -- note\nFROM x")
+	if got != "SELECT 1\nFROM x\n" {
+		t.Errorf("got %q", got)
+	}
+}

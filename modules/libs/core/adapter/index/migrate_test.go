@@ -418,7 +418,23 @@ func (c breakingConn) BeginTx(ctx context.Context, opts driver.TxOptions) (drive
 	if isBroken("BEGIN") {
 		return nil, fmt.Errorf("%w: BEGIN", errBroken)
 	}
-	return c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+	tx, err := c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return breakingTx{tx}, nil
+}
+
+// breakingTx fails a commit while "COMMIT" is broken, and leaves the transaction
+// rolled back.
+type breakingTx struct{ driver.Tx }
+
+func (t breakingTx) Commit() error {
+	if isBroken("COMMIT") {
+		_ = t.Tx.Rollback()
+		return fmt.Errorf("%w: COMMIT", errBroken)
+	}
+	return t.Tx.Commit()
 }
 
 type breakingStmt struct {
