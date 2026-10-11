@@ -417,3 +417,18 @@ func checkCORSHeaders(t *testing.T, head http.Header) {
 		}
 	}
 }
+
+func TestSeedAnswersTheErrorOfANoteItCannotWrite(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("a superuser writes into any folder")
+	}
+	root := t.TempDir()
+	if err := os.Chmod(root, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(root, 0o700) })
+	err := seed(root)
+	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "seeding ") {
+		t.Errorf("seed answered %v, want the permission error naming the note it was writing", err)
+	}
+}
