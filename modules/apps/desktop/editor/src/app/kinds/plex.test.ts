@@ -18,6 +18,17 @@ vi.mock('@/pages/plex-graph', () => ({
   usePlexView: () => ({}),
 }))
 
+const searched = vi.hoisted(() => ({ asked: [] as [string, number][] }))
+
+vi.mock('../vault/search', () => ({
+  searchCore: {
+    names: async (query: string, limit: number) => {
+      searched.asked.push([query, limit])
+      return [{ path: 'Compost.md', title: 'Compost', heading: 'Leaves', line: 3, at: [] }]
+    },
+  },
+}))
+
 /** A plex tab as the window holds one. */
 interface HeldTab {
   readonly id: string
@@ -41,6 +52,7 @@ const THREE: readonly HeldTab[] = [
 const plexKind = (
   more: {
     tabs?: readonly HeldTab[]
+    front?: HeldTab | null
     isLinked?: boolean
     hasTabSync?: boolean
     created?: { path: string } | null
@@ -69,7 +81,7 @@ const plexKind = (
     held: {
       handle: {
         each: (kind: string) => tabs.filter((tab) => tab.kind === kind),
-        front: () => tabs.at(-1) ?? null,
+        front: () => (more.front === undefined ? (tabs.at(-1) ?? null) : more.front),
         last: (kind: string) => tabs.filter((tab) => tab.kind === kind).at(-1),
       },
     },
@@ -148,6 +160,22 @@ describe('a note a plex tab opens', () => {
 
     expect(one.opened).toStrictEqual([['Compost.md', 'Compost', 'here', undefined]])
   })
+
+  it('goes to the tabs linked to the plex tab in front where none was named', () => {
+    const one = plexKind({ front: THREE[0]! })
+
+    one.deps.openNote('Compost.md', 'Compost', 'here')
+
+    expect(one.synced).toStrictEqual([['plex:1', 'Compost.md', 'Compost']])
+  })
+
+  it('goes to the tabs linked to the last plex tab where another kind of tab is in front', () => {
+    const one = plexKind({ front: { id: 'note:1', kind: 'note', state: first } })
+
+    one.deps.openNote('Compost.md', 'Compost', 'here')
+
+    expect(one.synced).toStrictEqual([['plex:3', 'Compost.md', 'Compost']])
+  })
 })
 
 describe('a note a plex tab stands on', () => {
@@ -211,5 +239,14 @@ describe('what the window answers a plex tab', () => {
 
   it('answers no path where the vault made no note', async () => {
     expect(await plexKind({ created: null }).deps.createUntitledNote()).toBe('')
+  })
+
+  it('finds notes by name, as a path and a title each', async () => {
+    searched.asked.length = 0
+
+    expect(await plexKind().deps.searchNames?.('comp')).toStrictEqual([
+      { path: 'Compost.md', title: 'Compost' },
+    ])
+    expect(searched.asked).toStrictEqual([['comp', 20]])
   })
 })

@@ -1523,6 +1523,12 @@ describe('what a note is called where the picture names it nowhere', () => {
   })
 })
 
+describe('what a node the picture never drew stands for', () => {
+  it('is a note', () => {
+    expect(tab('Root.md', [], true, { 'Root.md': 'deck' }).state.typeOf('nowhere')).toBe('note')
+  })
+})
+
 describe('a node opened', () => {
   it('opens its note here unless told where', () => {
     const one = tab('Root.md', ['Child.md'])

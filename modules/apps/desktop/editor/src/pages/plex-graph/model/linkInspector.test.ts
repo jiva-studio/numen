@@ -134,6 +134,15 @@ describe('linkInspector helper module', () => {
       expect(rows[0]?.description).toBe('fallback label')
       expect(rows[1]?.description).toBe('')
     })
+
+    it('makes undescribed jumps both ways of a relationship that names no seat', () => {
+      const rows = createMutualInspectorLinks('A.md', 'B.md', { seat: '' }, true, new Map())
+
+      expect(rows.map((one) => [one.role, one.description])).toStrictEqual([
+        ['jump', ''],
+        ['jump', ''],
+      ])
+    })
   })
 
   describe('createSingleInspectorLink', () => {
