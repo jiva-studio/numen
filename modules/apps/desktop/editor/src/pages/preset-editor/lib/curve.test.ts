@@ -7,7 +7,17 @@ import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from '../types'
 import { BOUNDS, curve as drawnCurve } from '../fixtures'
-import { clamp, goalValue, idle, findNearest, produceSchedule, round, valueAt } from './curve'
+import {
+  clamp,
+  clearBacklog,
+  costOf,
+  findNearest,
+  goalValue,
+  idle,
+  produceSchedule,
+  round,
+  valueAt,
+} from './curve'
 
 /** The review day the window is told, which is what a date is counted from. */
 const today = '2026-08-30'
@@ -209,5 +219,101 @@ describe('a number to that many places', () => {
   it('rounds and does not truncate', () => {
     expect(round(0.876, 2)).toBe(0.88)
     expect(round(0.874, 2)).toBe(0.87)
+  })
+})
+
+describe('what a curve is read in', () => {
+  it('is the cards a day answers under a goal of minutes, and the minutes it costs under the others', () => {
+    const one = point({ reviews: 40, minutes: 15 })
+
+    expect(costOf('minutes', one)).toBe(40)
+    expect(costOf('retention', one)).toBe(15)
+    expect(costOf('date', one)).toBe(15)
+  })
+})
+
+describe('the day the overdue pile is gone', () => {
+  it('is nothing where nothing is overdue', () => {
+    expect(clearBacklog([0, 0, 0])).toBeNull()
+    expect(clearBacklog([])).toBeNull()
+  })
+
+  it('counts days from one, so a pile gone on the first day is day one', () => {
+    expect(clearBacklog([0, 0])).toBeNull()
+    expect(clearBacklog([5, 0])).toBe(2)
+    expect(clearBacklog([5, 3, 0, 0])).toBe(3)
+  })
+
+  it('is -1 where the pile stands on the last day projected', () => {
+    expect(clearBacklog([5, 3, 1])).toBe(-1)
+  })
+
+  it('is day one where the first place of the projection is already empty', () => {
+    expect(clearBacklog([0, 4, 0])).toBe(1)
+  })
+})
+
+describe('where a value stands on a grid, at the edges', () => {
+  it('is the first place of a tie between two', () => {
+    expect(findNearest([0, 10], 5)).toBe(0)
+  })
+
+  it('is the first place for a value nearer the start than any place after it', () => {
+    expect(findNearest([10, 20], 0)).toBe(0)
+  })
+})
+
+describe('the value the knob stands at, at the edges', () => {
+  it('is the preset’s own at the first place', () => {
+    expect(valueAt(drawnCurve({ now: { at: 0, value: 7, day: '' } }), 0)).toBe(7)
+  })
+
+  it('is nothing at no place, where the preset falls outside the grid', () => {
+    expect(valueAt(drawnCurve({ now: { at: -1, value: 7, day: '' } }), -1)).toBe(0)
+  })
+})
+
+describe('a material nobody has begun, where the range has no place', () => {
+  it('is not a reason to say the preset begins nothing', () => {
+    const none: Curve = {
+      goal: 'minutes',
+      grid: [],
+      days: [],
+      at: [],
+      now: NOWHERE,
+      suggested: NOWHERE,
+      decks: 1,
+      cards: 900,
+      overdue: 0,
+      unbegun: 900,
+      isHonest: true,
+    }
+
+    expect(idle(none)).toBe('')
+  })
+})
+
+describe('the day a place of a curve of a date produces', () => {
+  const dated: Curve = {
+    goal: 'date',
+    grid: [0, 10, 20, 30],
+    days: ['2027-01-01', '2027-01-02', '2027-01-03', '2027-01-04'],
+    at: [point(), point(), point(), point()],
+    now: NOWHERE,
+    suggested: NOWHERE,
+    decks: 1,
+    cards: 400,
+    overdue: 0,
+    unbegun: 0,
+    isHonest: true,
+  }
+  const was = settings({ goal: 'date', byDate: '2026-09-01' })
+
+  it('is the day the curve names for it, whatever the grid says', () => {
+    expect(produceSchedule(was, 3, dated, today, BOUNDS).byDate).toBe('2027-01-04')
+  })
+
+  it('is the day the grid’s value comes to where the curve names none', () => {
+    expect(produceSchedule(was, 3, { ...dated, days: [] }, today, BOUNDS).byDate).toBe('2026-09-29')
   })
 })

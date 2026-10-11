@@ -53,6 +53,29 @@ describe('a plex still being read', () => {
   })
 })
 
+describe('a plex whose first answer is stale', () => {
+  it('goes on loading until the answer to the last question lands', async () => {
+    let releaseSecond = () => {}
+    const plex = usePlexView(
+      fake(async (path) => {
+        if (path === 'Second') await new Promise<void>((wake) => (releaseSecond = wake))
+        return answer(path)
+      }),
+    )
+
+    const first = plex.go('First')
+    const second = plex.go('Second')
+    await first
+
+    expect(plex.isLoading.value).toBe(true)
+
+    releaseSecond()
+    await second
+
+    expect(plex.isLoading.value).toBe(false)
+  })
+})
+
 describe('two questions in flight', () => {
   it('keeps the answer to the last one asked, however they come back', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
@@ -222,5 +245,39 @@ describe('a vault that changed somewhere else', () => {
 
     expect(plex.neighbourhood.value).not.toBe(drawn)
     expect(plex.neighbourhood.value?.related).toHaveLength(1)
+  })
+})
+
+describe('a plex whose vault failed to answer', () => {
+  it('says why, and stops loading', async () => {
+    const plex = usePlexView(
+      fake(async () => {
+        throw new Error('vault is closed')
+      }),
+    )
+
+    await plex.go('Root.md')
+
+    expect(plex.error.value).not.toBe('')
+    expect(plex.isLoading.value).toBe(false)
+  })
+
+  it('says nothing of a failure that a newer question has overtaken', async () => {
+    let fail = () => {}
+    const plex = usePlexView(
+      fake(async (path) => {
+        if (path === 'First')
+          await new Promise<void>((_, reject) => (fail = () => reject(new Error('late'))))
+        return answer(path)
+      }),
+    )
+
+    const first = plex.go('First')
+    await plex.go('Second')
+    fail()
+    await first
+
+    expect(plex.error.value).toBe('')
+    expect(plex.here.value).toBe('Second')
   })
 })
