@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useTabLinks } from '@/features/tab-linking'
-import { useTabSync } from './useTabSync'
+import { isNotePath, useTabSync } from './useTabSync'
 
 describe('useTabSync', () => {
   it('synchronizes path to linked note, plex, and files tabs', () => {
@@ -117,5 +117,123 @@ describe('useTabSync', () => {
 
     expect(loadInTabMock).not.toHaveBeenCalled()
     expect(plexGoMock).not.toHaveBeenCalled()
+  })
+})
+
+const linkedTo = (...targets: string[]): any => ({ getLinkedTargets: () => targets })
+
+describe('isNotePath', () => {
+  it('holds for markdown files and for paths without an extension', () => {
+    expect(isNotePath('Ideas/Plan.md')).toBe(true)
+    expect(isNotePath('Ideas/Plan')).toBe(true)
+  })
+
+  it('does not hold for other extensions', () => {
+    expect(isNotePath('Books/Guide.pdf')).toBe(false)
+    expect(isNotePath('Ideas/Plan.txt')).toBe(false)
+  })
+})
+
+describe('useTabSync targets', () => {
+  it('loads the note under the id its tab state holds', () => {
+    const loadInTab = vi.fn()
+    const held: any = { getTab: () => ({ kind: { kind: 'note' }, state: { id: 'kept' } }) }
+
+    useTabSync({
+      held,
+      tabLinks: linkedTo('note:other'),
+      editing: { noted: { loadInTab } } as any,
+    }).syncPathFromTab('s', 'a.md', 'A')
+
+    expect(loadInTab).toHaveBeenCalledWith('kept', 'a.md', 'A')
+  })
+
+  it('loads a stateless note tab under its id without the leading note:', () => {
+    const loadInTab = vi.fn()
+    const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
+
+    useTabSync({
+      held,
+      tabLinks: linkedTo('note:abc', 'x-note:def'),
+      editing: { noted: { loadInTab } } as any,
+    }).syncPathFromTab('s', 'a.md')
+
+    expect(loadInTab).toHaveBeenCalledWith('abc', 'a.md', '')
+    expect(loadInTab).toHaveBeenCalledWith('x-note:def', 'a.md', '')
+  })
+
+  it('leaves a plex tab alone when it already shows the path', () => {
+    const go = vi.fn()
+    const held: any = {
+      getTab: () => ({ kind: { kind: 'plex' } }),
+      getTabStateIn: () => ({ view: { here: { value: 'same.md' }, go } }),
+    }
+    const sync = useTabSync({ held, tabLinks: linkedTo('p'), editing: {} as any })
+
+    sync.syncPathFromTab('s', 'same.md')
+    expect(go).not.toHaveBeenCalled()
+
+    sync.syncPathFromTab('s', 'next.md')
+    expect(go).toHaveBeenCalledWith('next.md')
+  })
+
+  it('skips a files tab that has no state', () => {
+    const held: any = { getTab: () => ({ kind: { kind: 'files' } }), getTabStateIn: () => null }
+    const sync = useTabSync({ held, tabLinks: linkedTo('f'), editing: {} as any })
+
+    expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
+  })
+})
+
+describe('useTabSync guards', () => {
+  it('refuses an empty source tab id or an empty path even when targets are linked', () => {
+    const loadInTab = vi.fn()
+    const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
+    const sync = useTabSync({
+      held,
+      tabLinks: linkedTo('n'),
+      editing: { noted: { loadInTab } } as any,
+    })
+
+    expect(sync.syncPathFromTab('', 'a.md')).toBe(false)
+    expect(sync.syncPathFromTab('s', '')).toBe(false)
+    expect(loadInTab).not.toHaveBeenCalled()
+  })
+
+  it('refuses a sync started while one is running, and accepts the next after it ends', () => {
+    const inner: boolean[] = []
+    const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
+    const loadInTab = vi.fn(() => {
+      inner.push(sync.syncPathFromTab('s', 'b.md'))
+    })
+    const sync = useTabSync({
+      held,
+      tabLinks: linkedTo('n'),
+      editing: { noted: { loadInTab } } as any,
+    })
+
+    expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
+    expect(inner).toEqual([false])
+    expect(loadInTab).toHaveBeenCalledTimes(1)
+
+    expect(sync.syncPathFromTab('s', 'c.md')).toBe(true)
+    expect(loadInTab).toHaveBeenCalledTimes(2)
+  })
+
+  it('ends the running state when a target throws', () => {
+    const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
+    let fail = true
+    const loadInTab = vi.fn(() => {
+      if (fail) throw new Error('boom')
+    })
+    const sync = useTabSync({
+      held,
+      tabLinks: linkedTo('n'),
+      editing: { noted: { loadInTab } } as any,
+    })
+
+    expect(() => sync.syncPathFromTab('s', 'a.md')).toThrow('boom')
+    fail = false
+    expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
   })
 })
