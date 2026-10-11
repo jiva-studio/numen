@@ -12,8 +12,7 @@ const CUES: readonly Cue[] = [
   { text: 'Rain on the awning.', from: 3_000, to: 6_000 },
 ]
 
-const lines = (cues: readonly Cue[], prose: string) =>
-  useTranscriptLines(ref(cues), ref(prose))
+const lines = (cues: readonly Cue[], prose: string) => useTranscriptLines(ref(cues), ref(prose))
 
 describe('a recording nothing was heard in and nothing was typed into', () => {
   it('has no lines, is not timed, and has nothing written', () => {

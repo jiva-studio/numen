@@ -47,7 +47,11 @@ const createFrame = () => {
 const createPlayback = (how: { open?: boolean; plays?: boolean } = {}) => {
   const standing = createPlayer()
   const state = { open: how.open ?? true }
-  const playback = usePlayback(standing.through, () => how.plays ?? true, () => state.open)
+  const playback = usePlayback(
+    standing.through,
+    () => how.plays ?? true,
+    () => state.open,
+  )
   return { playback, state, ...standing }
 }
 
