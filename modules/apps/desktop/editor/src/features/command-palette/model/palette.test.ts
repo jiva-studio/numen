@@ -1656,6 +1656,7 @@ describe('what a step draws', () => {
       {
         id: 'Untitled.md',
         title: 'Untitled.md',
+        at: [{ from: 0, to: 1 }],
         actions: [{ id: 'pick', text: words.travel }],
       },
     ])
