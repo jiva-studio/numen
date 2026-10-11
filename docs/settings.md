@@ -132,12 +132,26 @@ Typing a new `# Heading` into a note does not rename its file. A save puts down 
 
 ### Hardware adaptation
 
-When `profile` is set to `eco`, `balanced`, or `maximum`, numen automatically resolves compute parameters based on available CPU cores and physical RAM:
+When `profile` is `eco`, `balanced`, or `maximum`, numen reads the machine and resolves every pool from it. The machine is described by its logical CPUs (hardware threads the process may run on, limited by the process affinity and, on Linux, the cgroup v2 CPU quota), its physical cores, its performance cores (the cores of the highest performance class; equal to the physical cores when none differ), and its installed and free memory. A figure that cannot be read is unknown and takes the fallback below.
 
-- **Eco**: Keeps background work unobtrusive and battery-friendly. Embedding uses a conservative batch size (16), OCR runs single-threaded, and LLM concurrency is limited to 1.
-- **Balanced** *(default)*: Optimized for everyday responsive use. Dynamically scales embedding batch size (32 on standard hardware, 64 on machines with $\ge$ 16 GB RAM) and allocates half the available CPU cores to OCR.
-- **Maximum**: Full hardware saturation for fast initial indexing and bulk processing. Embedding batch size scales to 64–128 based on memory, OCR parallelizes across available performance cores, and LLM concurrency runs unthrottled.
-- **Custom**: Uses the explicit parameters written in `performance.custom`.
+The **core budget** is the number of hardware threads CPU-bound work may occupy at once: a share of the hardware threads of the performance cores. A performance core is counted with as many threads as the machine has logical CPUs per physical core, rounded up. When the core counts are unknown, every logical CPU counts as a core.
+
+| | Eco | Balanced *(default)* | Maximum |
+| --- | --- | --- | --- |
+| Core budget | 1 | 50% of the performance threads, at least 1 | 100% of the performance threads |
+| OCR sessions × threads | 1 × 1 | the budget, split as below | the budget, split as below |
+| Workers (general CPU-bound pool) | 1 | half the budget, at least 1 | the budget |
+| Embedding batch | 16 | 1 per 256 MB free, from 16 to 64 | 1 per 128 MB free, from 32 to 256 |
+| LLM concurrency | 1 | 2 | 4 |
+
+OCR threads × sessions never exceeds the core budget. The budget is split into 4 sessions, or more when one session would need over 8 threads; sessions are capped at 16 and at the budget, and each session gets the budget divided by the sessions, at most 8 threads.
+
+Free memory is what the operating system reports as available. When only installed memory is known, half of it is taken as free; when neither is known, 4096 MB is taken as free. macOS does not report free memory, so it takes the second rule.
+
+- **Eco**: Keeps background work unobtrusive and battery-friendly: one thread for each pool.
+- **Balanced**: Optimized for everyday responsive use; half the performance threads, so the interface keeps the rest.
+- **Maximum**: Full use of the performance cores for fast initial indexing and bulk processing.
+- **Custom**: Uses the explicit parameters written in `performance.custom`, clamped to their bounds: batch size up to 512 (32 when unset), OCR threads up to 64, OCR sessions up to 16, LLM concurrency from 1 to 16. When both `ocr_threads` and `ocr_sessions` are set they are used as written, even if their product exceeds the core budget. When one is unset, it is derived so that the product fills the Maximum budget; when both are unset, the Maximum split applies. Workers follow the Balanced rule.
 
 `Set performance profile` is a command of its own in the palette, over the window. Choosing a profile updates the configuration immediately.
 
