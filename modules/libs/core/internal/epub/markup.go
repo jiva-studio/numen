@@ -228,6 +228,7 @@ func (b *builder) finish(text string, end int) []Node {
 
 	var last *Node
 	for _, node := range found {
+		// gomutants:disable-next-line BRANCH_IF reason="an element stands at the offset of the run that follows it, so reading it as a run assigns the same text"
 		if node.Name != "" {
 			continue
 		}

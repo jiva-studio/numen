@@ -364,3 +364,11 @@ func TestTheMarkupIsWrittenIntoOneAllocation(t *testing.T) {
 		t.Errorf("the page took %v allocations, want the one that holds it", got)
 	}
 }
+
+func TestALineEndAfterATableHoldingOnlyAnElementBelongsToThatTable(t *testing.T) {
+	_, drawn := readOne(t, `<table><template><b>X</b></template></table><table><tr><td>Y</td></tr></table>`)
+
+	if got := getNodeText(element(t, drawn.Nodes, "td").Children); got != "Y\n" {
+		t.Errorf("the cell says %q, want %q", got, "Y\n")
+	}
+}
