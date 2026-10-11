@@ -1,4 +1,4 @@
-import type { PlexOptions } from './options'
+import type { PlexOptions, Size } from './options'
 
 /** The gaps an arrangement is laid out with. */
 export interface Spacing {
@@ -28,17 +28,21 @@ const HALVINGS = 8
  * The widest gaps the window still holds.
  *
  * `canFit` answers whether an arrangement laid out with the given gaps stays
- * inside the window. It is asked, not worked out here, so a placement of any
- * shape is measured by the arrangement it produces.
+ * inside the window it is given. It is asked, not worked out here, so a
+ * placement of any shape is measured by the arrangement it produces.
  */
-export function spacingFor(options: PlexOptions, canFit: (spacing: Spacing) => boolean): Spacing {
+export function spacingFor(
+  options: PlexOptions,
+  canFit: (spacing: Spacing, viewport: Size) => boolean,
+): Spacing {
   const set = spacingAsSet(options)
-  if (!options.viewport || options.spread <= 1 || !canFit(set)) return set
+  const { viewport } = options
+  if (!viewport || options.spread <= 1 || !canFit(set, viewport)) return set
 
   let spacing = set
   for (const opening of OPENS) {
     const factor = findWidestFactor(options.spread, (candidate) =>
-      canFit({ ...spacing, [opening]: set[opening] * candidate }),
+      canFit({ ...spacing, [opening]: set[opening] * candidate }, viewport),
     )
     spacing = { ...spacing, [opening]: set[opening] * factor }
   }

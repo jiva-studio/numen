@@ -243,6 +243,30 @@ describe('what a column asks of the rows', () => {
     expect(narrow.child.perLine).toBe(3)
   })
 
+  it('gives the row the whole window where the columns are empty', () => {
+    expect(rowsOf(0)).toBe(6)
+  })
+
+  it('counts no row as a column, however long it runs', () => {
+    const limits = limitsFor(
+      { ...DEFAULT_OPTIONS, viewport: { width: 1000, height: 2000 } },
+      { parent: 0, child: 30, jump: 0, sibling: 0 },
+    )
+    expect(limits.child.perLine).toBe(6)
+  })
+
+  it('gives a box wider than the window a row of one', () => {
+    const limits = limitsFor(
+      {
+        ...DEFAULT_OPTIONS,
+        nodeSize: { width: 600, height: 36 },
+        viewport: { width: 500, height: 800 },
+      },
+      { parent: 0, child: 6, jump: 0, sibling: 0 },
+    )
+    expect(limits.child.perLine).toBe(1)
+  })
+
   it('gives a focus wider than the window a row of one', () => {
     const limits = limitsFor(
       {

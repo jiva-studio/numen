@@ -45,6 +45,13 @@ describe('the seat a direction stands for', () => {
     )
   })
 
+  it('reads a straight drag up or down as sideways to the right at a negative bias', () => {
+    const origin = { x: 0, y: 0 }
+    const backwards = resolveOptions({ gesture: { verticalBias: -1 } })
+    expect(seatTowards(origin, { x: 0, y: 300 }, backwards)).toBe('sibling')
+    expect(seatTowards(origin, { x: 0, y: -300 }, backwards)).toBe('sibling')
+  })
+
   it('is nothing at all when the gesture went nowhere', () => {
     expect(seatTowards({ x: 5, y: 5 }, { x: 5, y: 5 }, DEFAULT_OPTIONS)).toBeNull()
   })

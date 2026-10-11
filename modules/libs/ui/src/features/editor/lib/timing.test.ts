@@ -5,8 +5,8 @@
  * in, which is what a person sees.
  */
 import { afterEach, describe, expect, it } from 'vitest'
-import { EditorState, StateEffect, type Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
+import { Decoration, EditorView, type DecorationSet } from '@codemirror/view'
 import { timing, type TimingState } from './timing'
 
 const drawn: EditorView[] = []
@@ -578,5 +578,65 @@ describe('an editor destroyed', () => {
     await waitTick()
 
     expect(gutter(third)).toStrictEqual(['9:01', '9:03', '9:06'])
+  })
+})
+
+describe('a time that changes in place', () => {
+  it('is drawn anew where its text changes, and again where it becomes the line being read', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+    const marked = () =>
+      [...view.dom.querySelectorAll('.cm-times .cm-gutterElement')].map((one) =>
+        one.classList.contains('cm-current'),
+      )
+
+    times.show({ ...TIMED, times: ['0:01', '0:04', '0:06'] })
+    expect(gutter(view)).toStrictEqual(['0:01', '0:04', '0:06'])
+    expect(marked()).toStrictEqual([false, false, false])
+
+    times.show({ ...TIMED, times: ['0:01', '0:04', '0:06'], current: 1 })
+    expect(gutter(view)).toStrictEqual(['0:01', '0:04', '0:06'])
+    expect(marked()).toStrictEqual([false, true, false])
+  })
+
+  it('is drawn anew where only the times change and the text stays', () => {
+    const { times, view } = editor()
+    times.show(TIMED)
+    const text = view.state.doc
+
+    times.show({ ...TIMED, times: ['0:02', '0:03', '0:06'] })
+
+    expect(view.state.doc).toBe(text)
+    expect(gutter(view)).toStrictEqual(['0:02', '0:03', '0:06'])
+  })
+})
+
+describe('a time whose slot in the gutter is taken by another line', () => {
+  it('goes to the line it now stands against', () => {
+    const fold = StateEffect.define<null>()
+    const folded = StateField.define<DecorationSet>({
+      create: () => Decoration.none,
+      update: (set, transaction) =>
+        transaction.effects.some((effect) => effect.is(fold))
+          ? Decoration.set([Decoration.replace({}).range(0, transaction.state.doc.line(2).from)])
+          : set,
+      provide: (field) => EditorView.decorations.from(field),
+    })
+    const asked: number[] = []
+    const times = timing((line) => asked.push(line))
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({ doc: TEXT, extensions: [times.extension, folded] }),
+    })
+    drawn.push(view)
+    times.show({ ...TIMED, times: ['0:01', '0:05', '0:05'] })
+
+    view.dispatch({ effects: fold.of(null) })
+    view.dom
+      .querySelectorAll('.cm-times .cm-time')[1]
+      ?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+
+    expect(gutter(view)).toStrictEqual(['0:01', '0:05'])
+    expect(asked).toStrictEqual([2])
   })
 })

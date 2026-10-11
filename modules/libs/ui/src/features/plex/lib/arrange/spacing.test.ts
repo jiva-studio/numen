@@ -147,4 +147,13 @@ describe('spacingFor', () => {
     })
     expect(asked).toStrictEqual(['focusGap', 'lineGap', 'gap'])
   })
+
+  it('asks every time against the window the options give', () => {
+    const windows = new Set<unknown>()
+    spacingFor(options, (_spacing, viewport) => {
+      windows.add(viewport)
+      return true
+    })
+    expect([...windows]).toStrictEqual([options.viewport])
+  })
 })

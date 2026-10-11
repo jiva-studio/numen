@@ -109,7 +109,8 @@ export function createWikilinkSource(options: WikilinkCompletionOptions) {
       }
     })
 
-    if (options.createNote && trimmedQuery) {
+    const create = options.createNote
+    if (create && trimmedQuery) {
       const exists = results.some(
         (r) => r.title.toLowerCase() === trimmedQuery.toLowerCase() && !r.heading,
       )
@@ -125,8 +126,7 @@ export function createWikilinkSource(options: WikilinkCompletionOptions) {
               changes: { from: bracketStart, to: replaceTo, insert: insertText },
               selection: { anchor: bracketStart + insertText.length },
             })
-            // Stryker disable next-line OptionalChaining: the option exists only where createNote is given.
-            void options.createNote?.(trimmedQuery)
+            void create(trimmedQuery)
           },
         })
       }

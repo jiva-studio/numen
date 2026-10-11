@@ -11,7 +11,7 @@ import type { PlacedNode, PlexNode } from '../node'
 import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
 import { measureCrowding } from './crowding'
 import { limitsFor, type Limits } from './limits'
-import { resolveOptions, type PlexOptions, type PlexOptionsInput } from './options'
+import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
 import { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
 import { routeEdges, routingFor } from './routing'
 import { spacingFor, type Spacing } from './spacing'
@@ -72,7 +72,9 @@ export function arrangePlex(
   // arrangement itself, so a placement of any shape keeps the window.
   const lay = (spacing: Spacing) =>
     placement.place(seating, focus, { ...resolved, ...spacing }, limits, widthOf)
-  const spacing = spacingFor(resolved, (candidate) => isInsideViewport(lay(candidate), resolved))
+  const spacing = spacingFor(resolved, (candidate, viewport) =>
+    isInsideViewport(lay(candidate), viewport, resolved.margin),
+  )
 
   const nodes = [focus, ...lay(spacing)]
 
@@ -100,11 +102,7 @@ function widthsFor(
 }
 
 /** Whether every node stays inside the window, the margin kept clear. */
-function isInsideViewport(nodes: readonly PlacedNode[], options: PlexOptions): boolean {
-  const { viewport, margin } = options
-  // Stryker disable next-line ConditionalExpression,BooleanLiteral: spacingFor asks only when a viewport is set
-  if (!viewport) return true
-
+function isInsideViewport(nodes: readonly PlacedNode[], viewport: Size, margin: number): boolean {
   const halfWidth = viewport.width / 2 - margin
   const halfHeight = viewport.height / 2 - margin
   return nodes.every(
@@ -115,15 +113,9 @@ function isInsideViewport(nodes: readonly PlacedNode[], options: PlexOptions): b
 }
 
 function countSeats(nodes: readonly PlexNode[]): Record<PlexRelatedSeat, number> {
-  const counts = Object.fromEntries(RELATED_SEATS.map((seat) => [seat, 0])) as Record<
-    PlexRelatedSeat,
-    number
-  >
-  for (const node of nodes) {
-    // Stryker disable next-line ConditionalExpression,StringLiteral: a count kept under the focus seat is never read
-    if (node.seat !== 'focus') counts[node.seat] += 1
-  }
-  return counts
+  return Object.fromEntries(
+    RELATED_SEATS.map((seat) => [seat, nodes.filter((node) => node.seat === seat).length]),
+  ) as Record<PlexRelatedSeat, number>
 }
 
 /**
@@ -139,7 +131,6 @@ function canPlace(
 
   for (const seat of RELATED_SEATS) {
     const ofSeat = nodes.filter((node) => node.seat === seat)
-    // Stryker disable next-line ConditionalExpression: an empty seat is placed as nothing and reaches no further than zero
     if (ofSeat.length === 0) continue
 
     const capacity = limits[seat].perLine * limits[seat].lines
