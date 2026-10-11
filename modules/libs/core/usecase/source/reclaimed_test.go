@@ -47,7 +47,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res.Reused == 0 {
-		t.Fatal("the second vault bought every vector again")
+		t.Fatal("the second vault reclaimed no vector")
 	}
 
 	var read int

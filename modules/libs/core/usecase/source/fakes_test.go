@@ -46,11 +46,12 @@ type store struct {
 	mu      sync.RWMutex
 	sources map[domain.VaultID]map[string]domain.Source // vault, then path
 	chunks  []storedChunk
-	vectors map[domain.ChunkID][]port.Vector // by chunk, appended, so a second write shows
+	vectors map[domain.ChunkID][]port.Vector // the coarse rows, by chunk, appended, so a second write shows
 	groups  [][]port.Vector                  // every write of vectors, in order
 	written map[string]int                   // extractions per path
 	next    int64
-	// kept is what the index already holds, by recipe and hash.
+	// kept is what the index already holds, by recipe and hash. A test seeds it
+	// to stand for vectors bought before the run under test.
 	kept map[string][]byte
 }
 
@@ -352,6 +353,9 @@ func (s *store) getVectors(c storedChunk) []port.Vector {
 	return slices.Clone(s.vectors[chunkID(c.id)])
 }
 
+// hasVector says whether a chunk has a coarse row under the model, which is
+// what the store writes once a vector is saved for it. A chunk without one owes,
+// whatever other chunks hold the same text.
 func (s *store) hasVector(chunk int64, model port.EmbeddingModel) bool {
 	for _, v := range s.vectors[chunkID(chunk)] {
 		if v.Model == model {
