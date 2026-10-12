@@ -395,13 +395,9 @@ func (a *API) GetAgent() port.Agent {
 	return nil
 }
 
-// SetAgent names who takes the panel's tasks from now on. Nothing leaves the
-// vault with no agent.
+// SetAgent names who takes the panel's tasks from now on. Nil leaves the vault
+// with no agent.
 func (a *API) SetAgent(taking port.Agent) {
-	if taking == nil {
-		a.agent.Store(nil)
-		return
-	}
 	a.agent.Store(&taking)
 }
 

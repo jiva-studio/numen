@@ -20,7 +20,7 @@ export const NAME = 'name'
 export const NOTE = 'note'
 
 /** A scheme is letters, digits, `+`, `-` and `.`, written before the `://`. */
-const SCHEME = /^[A-Za-z0-9+\-.]+$/
+const SCHEMED = /^([A-Za-z0-9+\-.]+):\/\/([\s\S]*)$/
 
 /**
  * Reads what stands between the brackets.
@@ -39,11 +39,8 @@ export const addressOf = (raw: string): Address => {
   if (fragment >= 0) target = target.slice(0, fragment)
   target = target.trim()
 
-  const split = target.indexOf('://')
-  if (split > 0) {
-    const scheme = target.slice(0, split)
-    if (SCHEME.test(scheme)) return { scheme, value: target.slice(split + 3) }
-  }
+  const split = SCHEMED.exec(target)
+  if (split) return { scheme: split[1] as string, value: split[2] as string }
   return { scheme: NAME, value: target }
 }
 
@@ -71,7 +68,7 @@ const WIKILINK = /\[\[([^[\]]+)\]\]/g
 export const wikilinksIn = (text: string): readonly Wikilink[] => {
   const found: Wikilink[] = []
   for (const match of text.matchAll(WIKILINK)) {
-    const inside = match[1] ?? ''
+    const inside = match[0].slice(2, -2)
     const address = addressOf(inside)
     if (address.value === '') continue
     const alias = inside.indexOf('|')
@@ -79,7 +76,7 @@ export const wikilinksIn = (text: string): readonly Wikilink[] => {
       at: match.index,
       to: match.index + match[0].length,
       address: writeAddress(address),
-      text: (alias >= 0 ? inside.slice(alias + 1) : inside).trim(),
+      text: inside.slice(alias + 1).trim(),
     })
   }
   return found

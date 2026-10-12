@@ -33,7 +33,6 @@ const margin = 2000
 /** The lines the viewport shows, whole. */
 const onScreen = (view: EditorView) => {
   const ranges = view.visibleRanges
-  if (!ranges.length) return null
   const first = ranges[0]
   const last = ranges[ranges.length - 1]
   if (!first || !last) return null
@@ -106,10 +105,10 @@ const mapBlocks = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction): B
 
   const moved: Range<Decoration>[] = []
   was.marks.map(tr.changes).between(0, tr.state.doc.length, (from, to, mark) => {
-    const spec = mark.spec as { widget?: WidgetType }
-    const widget = spec.widget && moveBlock(spec.widget, tr.changes)
+    const spec = mark.spec as { widget: WidgetType }
+    const widget = moveBlock(spec.widget, tr.changes)
     moved.push(
-      widget === spec.widget || !widget
+      widget === spec.widget
         ? mark.range(from, to)
         : Decoration.replace({ widget, block: true }).range(from, to),
     )

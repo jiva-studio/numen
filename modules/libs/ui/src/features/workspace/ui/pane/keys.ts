@@ -5,7 +5,7 @@
  * ends.
  */
 export const stepTo = (key: string, at: number, count: number): number | null => {
-  if (count < 1 || at < 0 || at >= count) return null
+  if (at < 0 || at >= count) return null
 
   switch (key) {
     case 'ArrowRight':

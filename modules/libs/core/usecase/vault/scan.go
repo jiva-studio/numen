@@ -97,32 +97,27 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 
 	over, err := u.Walks.startOne(ctx, v.ID)
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before any step has run"
-		return res, err
+		return ScanResult{}, err
 	}
 	defer over()
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before the first step has run"
-		return res, err
+		return ScanResult{}, err
 	}
 	// The rows the walk writes point at the vault's own row. What the vault is
 	// called and where it is stay as the list has them.
 	if err := u.vaults.Register(ctx, v.ID); err != nil {
-		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before any note is counted"
-		return res, fmt.Errorf("register vault: %w", err)
+		return ScanResult{}, fmt.Errorf("register vault: %w", err)
 	}
 
 	known, err := u.known.GetFingerprints(ctx, v.ID)
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before any note is counted"
-		return res, fmt.Errorf("read index: %w", err)
+		return ScanResult{}, fmt.Errorf("read index: %w", err)
 	}
 	found, err := walkVault(ctx, reader)
 	if err != nil {
-		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is while the walk is only collecting"
-		return res, err
+		return ScanResult{}, err
 	}
 
 	group := u.newGroup(v, &res)

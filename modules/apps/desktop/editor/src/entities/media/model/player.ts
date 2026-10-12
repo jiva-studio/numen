@@ -64,45 +64,47 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
 
   const getElement = (): HTMLAudioElement | null => {
     if (element) return element
+    let audio: HTMLAudioElement
     try {
-      element = create()
+      audio = create()
     } catch {
       // A window that cannot make the element plays nothing, and says so.
       error.value = WORDS.unreadable
       return null
     }
-    element.preload = 'metadata'
-    element.addEventListener('timeupdate', () => {
-      at.value = Math.round((element?.currentTime ?? 0) * 1000)
+    element = audio
+    audio.preload = 'metadata'
+    audio.addEventListener('timeupdate', () => {
+      at.value = Math.round(audio.currentTime * 1000)
     })
-    element.addEventListener('seeked', () => {
-      at.value = Math.round((element?.currentTime ?? 0) * 1000)
+    audio.addEventListener('seeked', () => {
+      at.value = Math.round(audio.currentTime * 1000)
     })
-    element.addEventListener('durationchange', () => {
-      const runs = element?.duration ?? 0
+    audio.addEventListener('durationchange', () => {
+      const runs = audio.duration
       duration.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
     })
-    element.addEventListener('play', () => void (isPlaying.value = true))
-    element.addEventListener('pause', () => void (isPlaying.value = false))
-    element.addEventListener('ended', () => void (isPlaying.value = false))
-    element.addEventListener('error', () => {
-      error.value = FAILED[element?.error?.code ?? 0] ?? WORDS.unreadable
+    audio.addEventListener('play', () => void (isPlaying.value = true))
+    audio.addEventListener('pause', () => void (isPlaying.value = false))
+    audio.addEventListener('ended', () => void (isPlaying.value = false))
+    audio.addEventListener('error', () => {
+      error.value = FAILED[audio.error?.code ?? 0] ?? WORDS.unreadable
     })
-    return element
+    return audio
   }
 
-  /** Put a recording in the player, and say whether it is there. */
-  const load = (next: string): boolean => {
-    const element = getElement()
-    if (!element || !next) return false
-    if (url.value === next) return true
-    element.src = next
+  /** Put a recording in the player, and give the element it is in, or null where it is not there. */
+  const load = (next: string): HTMLAudioElement | null => {
+    const audio = getElement()
+    if (!audio || !next) return null
+    if (url.value === next) return audio
+    audio.src = next
     url.value = next
     at.value = 0
     duration.value = 0
     isPlaying.value = false
     error.value = ''
-    return true
+    return audio
   }
 
   return {
@@ -115,8 +117,9 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     load: (url) => void load(url),
 
     play: (url) => {
-      if (!load(url)) return
-      void element?.play().catch((thrown: unknown) => {
+      const audio = load(url)
+      if (!audio) return
+      void audio.play().catch((thrown: unknown) => {
         isPlaying.value = false
         // A play the window itself cut short is not a failure. Anything else is
         // a press that did nothing, and no `error` event fires on it, so this
@@ -129,10 +132,11 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     pause: () => element?.pause(),
 
     seek: (url, ms) => {
-      if (!load(url)) return
+      const audio = load(url)
+      if (!audio) return
       const to = Math.max(0, Math.round(ms))
       at.value = to
-      if (element) element.currentTime = to / 1000
+      audio.currentTime = to / 1000
     },
   }
 }

@@ -9,7 +9,7 @@
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState, Range } from '@codemirror/state'
 import { Decoration, type DecorationSet, type WidgetType } from '@codemirror/view'
-import type { SyntaxNodeRef } from '@lezer/common'
+import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { childOf } from './address'
 import { gridOf } from './grid'
 import { BULLET, HEADING, hidden, INLINE, line, mark, SHY } from './styles'
@@ -54,14 +54,14 @@ const build = (
   const isOutsideSelection = (node: SyntaxNodeRef) => !isSelected(node.from, node.to)
 
   const isParentSelected = (node: SyntaxNodeRef) => {
-    const parent = node.node.parent
-    return parent ? isSelected(parent.from, parent.to) : true
+    const parent = node.node.parent as SyntaxNode
+    return isSelected(parent.from, parent.to)
   }
 
   /** A mark and the space it is separated from its content by. */
   const hide = (start: number, end: number) => {
     const after = doc.sliceString(end, end + 1) === ' ' ? end + 1 : end
-    if (after > start) found.push(hidden.range(start, after))
+    found.push(hidden.range(start, after))
   }
 
   const eachLine = (
@@ -130,9 +130,6 @@ const build = (
   const takeWidget = (node: SyntaxNodeRef): boolean | null => {
     switch (node.name) {
       case 'ListMark': {
-        const list = node.node.parent?.parent?.name
-        // Stryker disable next-line BooleanLiteral: true descends into a ListMark, which has no children
-        if (list !== 'BulletList') return false
         if (BULLET.test(doc.sliceString(node.from, node.to)))
           found.push(Decoration.replace({ widget: new Bullet() }).range(node.from, node.to))
         // Stryker disable next-line BooleanLiteral: true descends into a ListMark, which has no children
@@ -185,9 +182,8 @@ const build = (
   /** A mark taken out with the space that separates it from its content. */
   const isSpacedMark = (node: SyntaxNodeRef): boolean | null => {
     if (node.name === 'HeaderMark') {
-      const parent = node.node.parent
       // Stryker disable next-line BooleanLiteral: true descends into a HeaderMark, which has no children
-      if (!parent || parent.name.startsWith('Setext')) return false
+      if ((node.node.parent as SyntaxNode).name.startsWith('Setext')) return false
       if (!isParentSelected(node)) hide(node.from, node.to)
       // Stryker disable next-line BooleanLiteral: true descends into a HeaderMark, which has no children
       return false
