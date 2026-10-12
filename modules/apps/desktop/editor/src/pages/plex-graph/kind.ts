@@ -82,6 +82,7 @@ export function createPlexKind(
     )
   }
 
+  // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
   const refresh = async (renames: readonly PathRename[] = []) => {
     for (const { state } of getAll()) state.followMoves(renames)
     if (getAll().some(({ state }) => !state.view.here.value)) {

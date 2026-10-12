@@ -76,6 +76,7 @@ export function asPlex(
     through: string
     isMutual: boolean
     path: string
+  // Stryker disable next-line ArrayDeclaration: an entry that is not a seated note has no seat, and no edge is drawn for it.
   }[] = []
   /** The path of every note this picture draws, the note in focus included. */
   const shown = new Set<string>([neighbourhood.focus.path])

@@ -315,6 +315,16 @@ describe('the frame a url is drawn in', () => {
     expect(playback.now.value).toBe(500)
   })
 
+  it('is not sent to a moment when none was gone to before it was handed over', () => {
+    const { playback } = createPlayback()
+    const { frame, seek } = createFrame()
+    playback.setSource(PAGE)
+
+    playback.setFramePlayer(frame)
+
+    expect(seek).not.toHaveBeenCalled()
+  })
+
   it('has said nothing again once another frame is handed over', () => {
     const { playback } = createPlayback()
     const { frame } = createFrame()
