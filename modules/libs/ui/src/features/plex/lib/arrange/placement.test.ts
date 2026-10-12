@@ -231,3 +231,40 @@ describe('rows and columns together', () => {
     expect(placed.every((node) => node.opacity === 1)).toBe(true)
   })
 })
+
+describe('how far a column reaches before it clears the rows', () => {
+  const focus: PlacedNode = { ...FOCUS, width: 100, height: 20 }
+
+  /** Children from the fourth on are drawn twice as wide as the rest. */
+  const widths: Widths = (node) =>
+    ['child-3', 'child-4', 'child-5'].includes(node.id) ? 200 : 100
+
+  /** The x of the first sibling, which stands clear of the rows within reach. */
+  const siblingX = (focusGapSetting: number): number => {
+    const options: PlexOptions = {
+      ...DEFAULT_OPTIONS,
+      nodeSize: { width: 100, height: 20 },
+      gap: 10,
+      lineGap: 4,
+      focusGap: focusGapSetting,
+    }
+    const placed = rowsAndColumns.place(
+      { child: createNodes('child', 6), sibling: createNodes('sibling', 3) },
+      focus,
+      options,
+      limits({ perLine: 3, lines: 3 }),
+      widths,
+    )
+    return of(placed, 'sibling')[0]!.x
+  }
+
+  it('clears a row whose near edge lies inside the reach of the column', () => {
+    // The wide second line begins 39 from the axis; three siblings reach 40.
+    expect(siblingX(5)).toBe(310 + 5 + 50)
+  })
+
+  it('ignores a row that begins where the column ends', () => {
+    // The wide second line begins 40 from the axis.
+    expect(siblingX(6)).toBe(160 + 6 + 50)
+  })
+})
