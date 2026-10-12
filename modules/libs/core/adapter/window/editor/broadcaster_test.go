@@ -74,9 +74,13 @@ func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
 
 	var received []int
 	read := make(chan struct{})
+	receivedFirst := make(chan struct{})
 	go func() {
 		defer close(read)
 		for v := range line {
+			if len(received) == 0 {
+				close(receivedFirst)
+			}
 			received = append(received, v)
 		}
 	}()
@@ -84,6 +88,7 @@ func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
 	for n := range total {
 		counting.publish(n)
 	}
+	<-receivedFirst
 	done()
 	<-read
 
