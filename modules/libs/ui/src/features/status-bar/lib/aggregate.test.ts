@@ -82,6 +82,49 @@ describe('groupTasks', () => {
   })
 })
 
+describe('calculateAggregate eta and cancelling', () => {
+  const createTask = (over: Partial<StatusBarTask>): StatusBarTask => ({
+    id: 'x',
+    label: 'x',
+    group: 'g',
+    state: 'running',
+    ...over,
+  })
+
+  it('counts a cancelling task as active, with its progress and eta', () => {
+    const aggregate = calculateAggregate([
+      createTask({ state: 'cancelling', progress: 30, etaSeconds: 20 }),
+    ])
+    expect(aggregate.activeCount).toBe(1)
+    expect(aggregate.isIdle).toBe(false)
+    expect(aggregate.overallProgress).toBe(30)
+    expect(aggregate.etaSeconds).toBe(20)
+  })
+
+  it('takes the longest eta of the active tasks', () => {
+    const aggregate = calculateAggregate([
+      createTask({ etaSeconds: 100 }),
+      createTask({ etaSeconds: 30 }),
+      createTask({ etaSeconds: 60 }),
+    ])
+    expect(aggregate.etaSeconds).toBe(100)
+  })
+
+  it('takes the eta of a task that has one beside tasks that have none', () => {
+    const aggregate = calculateAggregate([createTask({}), createTask({ etaSeconds: 45 })])
+    expect(aggregate.etaSeconds).toBe(45)
+  })
+
+  it('ignores an eta that is not positive', () => {
+    expect(calculateAggregate([createTask({ etaSeconds: -5 })]).etaSeconds).toBeUndefined()
+    expect(calculateAggregate([createTask({ etaSeconds: 0 })]).etaSeconds).toBeUndefined()
+    expect(
+      calculateAggregate([createTask({ etaSeconds: -5 }), createTask({ etaSeconds: 7 })])
+        .etaSeconds,
+    ).toBe(7)
+  })
+})
+
 describe('formatEta', () => {
   it('returns empty string for missing or non-positive values', () => {
     expect(formatEta(undefined)).toBe('')
@@ -91,6 +134,11 @@ describe('formatEta', () => {
 
   it('formats seconds', () => {
     expect(formatEta(45)).toBe('~45s')
+  })
+
+  it('formats a full minute as a minute', () => {
+    expect(formatEta(59)).toBe('~59s')
+    expect(formatEta(60)).toBe('~1m')
   })
 
   it('formats minutes', () => {
