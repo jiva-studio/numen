@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"context"
 	"fmt"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
@@ -24,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Where the document a test asks about sits in its vault, and a file beside it
@@ -116,6 +118,29 @@ func (p *paper) getPageDraws(index int) int {
 	return p.each[index]
 }
 
+// newViewingAPI is a window reading the documents of the vaults the readers open
+// through the viewer.
+func newViewingAPI(readers port.VaultReaders, v *viewer) *API {
+	return &API{Readers: readers, Viewer: v, Documents: newDocuments(readers, v)}
+}
+
+// stat is what the vault says about the file at a path, as an address names it.
+func (a *API) stat(ctx context.Context, path string) (port.VaultReader, pool.Fingerprint, error) {
+	showing := a.GetCurrentVault()
+	if showing.ID == "" {
+		return nil, pool.Fingerprint{}, errNoVault
+	}
+	reader, err := a.Readers.Open(showing)
+	if err != nil {
+		return nil, pool.Fingerprint{}, err
+	}
+	ref, err := reader.GetFingerprint(ctx, path)
+	if err != nil {
+		return nil, pool.Fingerprint{}, err
+	}
+	return reader, pool.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}, nil
+}
+
 // openViewerWindow is a window looking at one document, with the pages drawn by the
 // paper it is given.
 func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
@@ -125,7 +150,7 @@ func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
 		another: "the bytes of a second scan",
 		beside:  "a file the vault leaves alone",
 	})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	api.Viewer.open = from.openScan
 	t.Cleanup(api.Viewer.close)
@@ -143,7 +168,7 @@ func stopReadAhead(api *API) { api.Viewer.prefetch.slot = make(chan struct{}) }
 func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	api.Viewer.patience = time.Minute
 	t.Cleanup(api.Viewer.close)
@@ -632,7 +657,7 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 func TestAFileReplacedWhileOpenIsOpenedAgainAndTheOldOneReleased(t *testing.T) {
 	from := sheets(4)
 	vault := testsupport.NewVault(t, map[string]string{book: "the bytes of a scan"})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	api.Viewer.open = from.openScan
 	const idleFor = 20 * time.Millisecond

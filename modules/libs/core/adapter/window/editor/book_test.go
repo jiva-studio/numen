@@ -97,7 +97,7 @@ func TestAFileThatIsNoBook(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{
 		reflowed: "this is not an archive at all",
 	})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 
@@ -159,11 +159,6 @@ func markupOf(t *testing.T, api *API, path, document string, mark pool.Fingerpri
 	return out.Msg.GetMarkup()
 }
 
-// newWireFingerprint is a fingerprint as an ask over the schema carries it.
-func newWireFingerprint(mark pool.Fingerprint) *v1.Fingerprint {
-	return &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime}
-}
-
 // A picture the book carries is drawn out of the archive, and what settles the
 // type is the bytes.
 func TestAPictureTheBookCarries(t *testing.T) {
@@ -212,7 +207,7 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 // that address is one this window answers.
 func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(newCoveredBook(t))})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 	handler := api.NewHandler(http.NotFoundHandler())
@@ -384,7 +379,7 @@ func openBooks(held *pool.Books) int { return held.Len() }
 func readFrom(t *testing.T) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(bookOf(t))})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())

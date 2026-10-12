@@ -79,6 +79,7 @@ type API struct {
 	// pages it was read from. They are bound by every build that serves what a
 	// file of the vault is.
 	Viewer    *viewer
+	Documents Documents
 	Highlight *source.Highlight
 	// Texts reads and writes what was made from a file of the vault.
 	Texts source.Texts

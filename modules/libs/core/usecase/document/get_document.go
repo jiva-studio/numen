@@ -1,0 +1,62 @@
+package document
+
+import (
+	"context"
+	"io"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// PageSize is how big a page is in the page's own units.
+type PageSize struct {
+	Width  float64
+	Height float64
+}
+
+// Document is which bytes a document is and the shape of each of its pages.
+type Document struct {
+	Fingerprint Fingerprint
+	Pages       []PageSize
+}
+
+// GetDocument finds how many pages a document has and how big each of them is.
+type GetDocument struct {
+	readers   port.VaultReaders
+	documents Documents
+}
+
+func NewGetDocument(readers port.VaultReaders, documents Documents) GetDocument {
+	return GetDocument{readers: readers, documents: documents}
+}
+
+// Execute answers a page whose size could not be read with the size zero, and
+// the pages after it with theirs.
+func (u GetDocument) Execute(ctx context.Context, v domain.Vault, path string) (Document, error) {
+	reader, mark, err := getFingerprint(ctx, u.readers, v, path)
+	if err != nil {
+		return Document{}, err
+	}
+	out := Document{Fingerprint: mark}
+	err = u.documents.UseDocument(ctx, mark, openFile(reader, mark.Path), func(scan Scan) error {
+		out.Pages = make([]PageSize, scan.GetPageCount())
+		for i := range out.Pages {
+			if wide, high, err := scan.GetPageSize(i); err == nil {
+				out.Pages[i] = PageSize{Width: wide, Height: high}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return Document{}, err
+	}
+	return out, nil
+}
+
+// openFile is the file of a document, opened as it is drawn from.
+func openFile(reader port.VaultReader, path string) func(context.Context) (io.ReadSeekCloser, error) {
+	return func(ctx context.Context) (io.ReadSeekCloser, error) {
+		return docfile.Open(ctx, reader, path)
+	}
+}

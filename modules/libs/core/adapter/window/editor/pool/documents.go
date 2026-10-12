@@ -10,27 +10,20 @@ import (
 	"image"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
-// Scan is a document held open for its pages to be drawn. It is pdf.Scan in
-// the application, and a test puts its own in.
-type Scan interface {
-	GetPageCount() int
-	GetPageSize(index int) (wide, high float64, err error)
-	RenderPage(index, dpi int) (image.Image, error)
-	Close()
-}
+// Scan is a document held open for its pages to be drawn. A test puts its own
+// in.
+type Scan = port.OpenDocument
 
-// Fingerprint is which bytes a document is: where it sits in the vault, and
-// what the vault says about the file there. Both caches key on it, so a
+// Fingerprint is which bytes a document is. Both caches key on it, so a
 // document rewritten under the same name is drawn again. The stamp is
 // nanoseconds since the epoch: this is a cache key, and a time.Time compares by
 // zone and monotonic reading as well as by instant.
-type Fingerprint struct {
-	Path  string
-	Size  int64
-	Mtime int64
-}
+type Fingerprint = document.Fingerprint
 
 // ErrBusy is a document that could not be reached inside the bound: a worker of
 // the library's pool is held elsewhere, or the document is answering somebody
@@ -179,6 +172,28 @@ func (d *Documents) Acquire(
 	return doc, func() { d.Release(mark, doc) }, nil
 }
 
+// Use calls use with the document at a fingerprint, held for the length of the
+// call. A caller who ran out of time waiting for the document or its worker is
+// told ErrBusy.
+func (d *Documents) Use(
+	ctx context.Context,
+	mark Fingerprint,
+	open func() (Scan, error),
+	use func(document.Scan) error,
+) error {
+	doc, give, err := d.Acquire(ctx, mark, open)
+	if err != nil {
+		return err
+	}
+	defer give()
+
+	if !doc.Lock(ctx) {
+		return ErrBusy
+	}
+	defer doc.Unlock()
+	return use(doc)
+}
+
 // Load opens the document and tells whoever is waiting.
 func (d *Documents) Load(mark Fingerprint, doc *Document, open func() (Scan, error)) {
 	doc.Scan, doc.why = open()
@@ -298,6 +313,14 @@ func (d *Documents) RemoveFromOrder(mark Fingerprint) {
 			return
 		}
 	}
+}
+
+// GetPageCount is how many pages the document has.
+func (d *Document) GetPageCount() int { return d.Scan.GetPageCount() }
+
+// GetPageSize is how big a page is in the page's own units.
+func (d *Document) GetPageSize(index int) (wide, high float64, err error) {
+	return d.Scan.GetPageSize(index)
 }
 
 // PointsDPI is one of the page's own units to the pixel, which is what a

@@ -1,7 +1,6 @@
 package editor
 
 import (
-	"errors"
 	"fmt"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // What a file of the vault is made of is bytes, and bytes are what this route
@@ -103,7 +103,7 @@ const immutable = "public, max-age=31536000, immutable"
 
 // errChanged is a file that is no longer the one the address was given out for.
 // The address is gone: the caller asks the vault again and is given another.
-var errChanged = errors.New("the file changed since this address was given out")
+var errChanged = document.ErrChanged
 
 // formatFingerprint is a fingerprint as an address carries it, and parseFingerprint is it read
 // back. The path is a segment of the address already, so what is written here

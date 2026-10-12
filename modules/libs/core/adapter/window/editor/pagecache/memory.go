@@ -7,6 +7,7 @@ import (
 	"container/list"
 	"context"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	"sync"
 )
 
@@ -14,11 +15,7 @@ import (
 // how wide it was drawn. The width is part of the key because the window asks
 // for the width its screen has, and a page drawn for one width is not the page
 // another width asks for.
-type ID struct {
-	Document pool.Fingerprint
-	Page     int
-	Width    int
-}
+type ID = document.PageKey
 
 // renderedPage is one page drawn and encoded, or the drawing of it under way.
 type renderedPage struct {
