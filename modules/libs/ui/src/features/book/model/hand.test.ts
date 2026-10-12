@@ -22,7 +22,9 @@ const setUp = (edge = 0) => {
 
   const turn = vi.fn<(way: PageTurn) => void>()
   const areaRef = shallowRef<HTMLElement | null>(area)
-  XX
+  const paperRef = shallowRef<HTMLElement | null>(paper)
+  const hand = useBookHand(areaRef, paperRef, turn, () => edge)
+  return { area, areaRef, paper, paperRef, turn, hand }
 }
 
 const pointer = (clientX: number, target: unknown = null, button = 0): PointerEvent =>
