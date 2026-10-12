@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // This file is the only one that knows an agent can reach the vault. Built with
@@ -125,7 +124,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		Vaults: mcp.Vaults{
 			GetKnownVaults: cfg.GetKnownVaults(opened.API.Vaults.Registry),
 			Find:           opened.API.Vaults.Find,
-			PickFolder:     getPickFolder(opened),
+			PickFolder:     opened.API.Vaults.GetPickFolder(),
 			Add:            opened.API.Vaults.Add,
 			Rename:         opened.API.Vaults.Rename,
 			Unregister:     opened.API.Vaults.Unregister,
@@ -200,15 +199,4 @@ func makeOpenVault(opened *editor.Installation, out io.Writer) func(context.Cont
 		}
 		return err
 	}
-}
-
-// getPickFolder is the use case that lets an agent put the window folder dialog
-// in front of the person, or nil where the window has none.
-func getPickFolder(opened *editor.Installation) *vault.PickFolder {
-	choose := opened.API.Vaults.ChooseFolder
-	if choose == nil {
-		return nil
-	}
-	pick := choose.GetPickFolder()
-	return &pick
 }

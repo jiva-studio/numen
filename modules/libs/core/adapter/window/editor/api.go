@@ -209,6 +209,23 @@ type Vaults struct {
 	ChooseFolder *vaults.ChooseFolder
 }
 
+// SetFolderDialog puts the machine's folder dialog in front of the person when a
+// client asks for one.
+func (v *Vaults) SetFolderDialog(dialog port.FolderDialog) {
+	choose := vaults.NewChooseFolder(dialog)
+	v.ChooseFolder = &choose
+}
+
+// GetPickFolder is the use case that lets an agent put the same dialog in front
+// of the person, or nil where the window has none.
+func (v *Vaults) GetPickFolder() *vaults.PickFolder {
+	if v.ChooseFolder == nil {
+		return nil
+	}
+	pick := v.ChooseFolder.GetPickFolder()
+	return &pick
+}
+
 // Cards is the decks and stencils a vault is arranged into. Read takes a deck
 // or a stencil, List the stencils the vault holds, and Write puts either back.
 // Create makes a deck, a stencil or a preset, and RenameField gives one of a
