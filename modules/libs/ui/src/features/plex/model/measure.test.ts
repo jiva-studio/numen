@@ -460,3 +460,25 @@ describe('a theme changed in one token under a plex already standing', () => {
     stop()
   })
 })
+
+describe('type the document leaves unsaid or a window refuses', () => {
+  it('falls back to a generic family where the theme names none', () => {
+    const { context } = stubCanvas()
+    stubStyles()
+    setTheme({ '--numen-font-sans': '' })
+    widths()!.node(node('ab'))
+
+    expect(context.font).toBe('13px sans-serif')
+  })
+
+  it('gives nothing where the window throws on making a canvas context', () => {
+    vi.stubGlobal('CanvasRenderingContext2D', function () {})
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => {
+      throw new Error('no canvas')
+    })
+    setTheme()
+    stubStyles()
+
+    expect(widths()).toBeUndefined()
+  })
+})
