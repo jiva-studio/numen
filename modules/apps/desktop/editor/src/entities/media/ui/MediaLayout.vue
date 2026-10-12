@@ -10,7 +10,7 @@
 import { computed, ref } from 'vue'
 import { Menu } from '@numen/ui'
 import type { MenuItem, Position } from '@numen/ui'
-import { findIcon } from '@/shared/icons'
+import { iconFor } from '@/shared/icons'
 import { MediaActions } from './media-actions'
 import Transcript from './Transcript.vue'
 import { WORDS as words } from '../words'
@@ -95,7 +95,7 @@ function onToggleFollow() {
       @dismiss="onDismissMenu"
     >
       <template #icon="{ id }">
-        <component :is="findIcon(id)" v-if="findIcon(id)" class="media__mark" aria-hidden="true" />
+        <component :is="iconFor(id)" v-if="iconFor(id)" class="media__mark" aria-hidden="true" />
       </template>
     </Menu>
   </div>

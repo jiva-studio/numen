@@ -107,4 +107,4 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
 ])
 
 /** The icon for a command, and nothing where it has none. */
-export const findIcon = (id: string): LucideIcon | null => ICONS.get(id) ?? null
+export const iconFor = (id: string): LucideIcon | null => ICONS.get(id) ?? null
