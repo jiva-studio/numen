@@ -15,7 +15,6 @@ export function createNodeIdMap() {
   }
 
   const getNodePath = (id: string): string => {
-    if (!id) return ''
     for (const [path, mappedId] of nodeIdsByPath) {
       if (mappedId === id) return path
     }

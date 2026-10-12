@@ -78,7 +78,7 @@ export function createFileCreators(
     what: CreateKind,
     folder: string,
     name: string,
-    fields: readonly string[] = [],
+    fields?: readonly string[],
   ): Promise<string> => {
     const path = await createFile(what, folder, name, fields)
     if (!path) return ''

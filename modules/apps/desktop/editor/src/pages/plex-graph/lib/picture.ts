@@ -38,7 +38,6 @@ function getSavedArrow(
   focusPath: string,
   targetPath: string,
 ): EdgeArrow | undefined {
-  if (saved === 'undirected') return undefined
   const target = saved.split('->')[1]
   if (target === focusPath) return seat === 'child' ? 'from' : 'to'
   if (target === targetPath) return seat === 'child' ? 'to' : 'from'
@@ -149,9 +148,8 @@ export function areNeighbourhoodsEqual(
   if (one.related.length !== other.related.length) return false
 
   return one.related.every((related, at) => {
-    const against = other.related[at]
+    const against = other.related[at]!
     return (
-      against !== undefined &&
       related.path === against.path &&
       related.title === against.title &&
       related.type === against.type &&

@@ -13,7 +13,7 @@ type Notes = ReturnType<typeof openNotes>
 
 /** What a note is asked to be called, as the vault last said it. */
 export interface NoteTitlesDeps {
-  neighbourhood(path: string): Promise<{ focus?: { title?: string } | undefined }>
+  neighbourhood(path: string): Promise<{ focus: { title: string } }>
 }
 
 /** One clean note: the identity it opened under, and the file it stands at. */
@@ -45,12 +45,11 @@ export function createNoteTitles(vault: NoteTitlesDeps, notes: Notes) {
    */
   const refreshTitle = async (id: string): Promise<void> => {
     try {
-      const title = (await vault.neighbourhood(notes.getPath(id))).focus?.title
+      const title = (await vault.neighbourhood(notes.getPath(id))).focus.title
       if (title) setTitle(id, title)
     } catch {
       // The tab keeps the name it had, and the next thing that moves the note
       // asks again.
-      return
     }
   }
 
@@ -67,7 +66,7 @@ export function createNoteTitles(vault: NoteTitlesDeps, notes: Notes) {
    */
   watch(getCleanNotes, (now, before) => {
     for (const one of now) {
-      if (!before?.some((was) => was.id === one.id && was.at === one.at)) void refreshTitle(one.id)
+      if (!before.some((was) => was.id === one.id && was.at === one.at)) void refreshTitle(one.id)
     }
   })
 

@@ -39,7 +39,7 @@ export function usePlexParts(
   watch(deps.isHanging, () => void readParts())
 
   const getParts = (node: string): readonly PlexPart[] =>
-    deps.isHanging.value ? (parts.value.get(nodeIdMap.getNodePath(node) ?? '') ?? []) : []
+    deps.isHanging.value ? (parts.value.get(nodeIdMap.getNodePath(node)) ?? []) : []
 
   return { parts, readParts, getParts }
 }

@@ -41,9 +41,8 @@ export const isInBounds = (range: Bounds, size: number): boolean =>
 export const ladder = (range: Bounds): readonly number[] => {
   if (!isInBounds(range, range.least)) return []
   const rungs = [range.least]
-  const first = Math.ceil(range.least * STEPS)
   const last = Math.floor(range.most * STEPS)
-  for (let step = first; step <= last; step += 1) {
+  for (let step = 1; step <= last; step += 1) {
     const size = step / STEPS
     if (size > range.least && size < range.most) rungs.push(size)
   }

@@ -83,7 +83,7 @@ export function createPlexKind(
   }
 
   const refresh = async (renames: readonly PathRename[] = []) => {
-    if (renames.length) for (const { state } of getAll()) state.followMoves(renames)
+    for (const { state } of getAll()) state.followMoves(renames)
     if (getAll().some(({ state }) => !state.view.here.value)) {
       try {
         await deps.readOpeningPath()
