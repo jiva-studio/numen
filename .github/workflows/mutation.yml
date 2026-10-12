@@ -116,6 +116,11 @@ jobs:
 
       # Every 30 seconds a `probe:` line records the runner's available memory,
       # used swap, free disk and the five processes with the largest RSS.
+      #
+      # The shard runs in a systemd scope capped at 12G with no swap. Past the
+      # cap the kernel kills the scope's largest process, the test binary, and
+      # the shard goes on: gomutants records that mutant as an infra error.
+      # `--preserve-env` and `env` carry the step's environment into the scope.
       - name: Mutate
         timeout-minutes: 330
         env:
@@ -131,7 +136,11 @@ jobs:
           done &
           probe=$!
           trap 'kill "$probe"' EXIT
-          node modules/tools/mutation/mutate.mjs "$TARGET" --shard "$SHARD"
+          sudo --preserve-env systemd-run --scope --quiet \
+            --uid="$(id -u)" --gid="$(id -g)" \
+            -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue \
+            -- env "PATH=$PATH" "HOME=$HOME" \
+            node modules/tools/mutation/mutate.mjs "$TARGET" --shard "$SHARD"
 
       - name: Upload the cache
         if: always()
