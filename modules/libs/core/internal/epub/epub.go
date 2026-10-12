@@ -158,9 +158,9 @@ func Read(raw []byte) (*Book, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrNotArchive, err)
 	}
-	files := archiveIndex(archive)
+	files := createArchiveIndex(archive)
 
-	opfPath, err := packagePath(files)
+	opfPath, err := readPackagePath(files)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func Read(raw []byte) (*Book, error) {
 			continue
 		}
 		left -= int64(len(markup))
-		doc := text.document(item.path, markup)
+		doc := text.readDocument(item.path, markup)
 		doc.IsLinear, doc.Layout, doc.mediaType = item.isLinear, item.layout, item.mediaType
 		book.Documents = append(book.Documents, doc)
 		if _, twice := book.held[doc.Path]; !twice {
@@ -206,9 +206,9 @@ func Read(raw []byte) (*Book, error) {
 		}
 	}
 	book.Text = string(text.out)
-	book.pageBytes = pageBytes(book.Text)
+	book.pageBytes = countPageBytes(book.Text)
 
-	named := navigationParts(files, pkg, text)
+	named := readNavigationParts(files, pkg, text)
 	switch {
 	case len(named) >= minimumParts:
 		book.Parts, book.Tier = named, FromNavigation
@@ -221,7 +221,7 @@ func Read(raw []byte) (*Book, error) {
 		return book.Parts[i].Offset < book.Parts[j].Offset
 	})
 
-	book.Pages = text.pagesAt(pageEntries(files, pkg))
+	book.Pages = text.getPages(readPageEntries(files, pkg))
 	sort.SliceStable(book.Pages, func(i, j int) bool {
 		return book.Pages[i].Offset < book.Pages[j].Offset
 	})

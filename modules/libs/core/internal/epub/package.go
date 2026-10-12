@@ -52,8 +52,8 @@ type spineItem struct {
 	layout    Layout
 }
 
-// archiveIndex maps each archive entry to its cleaned name.
-func archiveIndex(archive *zip.Reader) map[string]*zip.File {
+// createArchiveIndex maps each archive entry to its cleaned name.
+func createArchiveIndex(archive *zip.Reader) map[string]*zip.File {
 	files := make(map[string]*zip.File, len(archive.File))
 	for _, f := range archive.File {
 		files[path.Clean(f.Name)] = f
@@ -61,8 +61,8 @@ func archiveIndex(archive *zip.Reader) map[string]*zip.File {
 	return files
 }
 
-// contents reads one archive entry. A missing or unreadable entry is not there.
-func contents(f *zip.File) ([]byte, bool) {
+// readArchiveEntry reads one archive entry. A missing or unreadable entry is not there.
+func readArchiveEntry(f *zip.File) ([]byte, bool) {
 	return readBounded(f, mostPerDocument)
 }
 
@@ -100,9 +100,9 @@ func readBounded(f *zip.File, most int64) ([]byte, bool) {
 	return raw, true
 }
 
-// packagePath reads the container for the name of the package document.
-func packagePath(files map[string]*zip.File) (string, error) {
-	raw, ok := contents(files[containerPath])
+// readPackagePath reads the container for the name of the package document.
+func readPackagePath(files map[string]*zip.File) (string, error) {
+	raw, ok := readArchiveEntry(files[containerPath])
 	if !ok {
 		return "", ErrNoContainer
 	}
@@ -138,7 +138,7 @@ func packagePath(files map[string]*zip.File) (string, error) {
 // readPackage reads the manifest and the spine. The order is the spine's: file
 // order inside the archive says nothing about the order of a book.
 func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error) {
-	raw, ok := contents(files[opfPath])
+	raw, ok := readArchiveEntry(files[opfPath])
 	if !ok {
 		return packageDoc{}, fmt.Errorf("%w: %s is not in the archive", ErrNoPackage, opfPath)
 	}
@@ -175,7 +175,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 	read := packageDoc{
 		base:      path.Dir(opfPath),
 		layout:    Reflowable,
-		direction: direction(document.Spine.Direction),
+		direction: getDirection(document.Spine.Direction),
 	}
 	for _, entry := range document.Metadata.Entries {
 		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] &&
@@ -186,7 +186,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 		// `rendition` is a reserved prefix, read as it is written.
 		if entry.XMLName.Local == "meta" && entry.Refines == "" &&
 			entry.Property == "rendition:layout" {
-			read.layout = layout(entry.Value, read.layout)
+			read.layout = getLayout(entry.Value, read.layout)
 		}
 	}
 
@@ -221,15 +221,15 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 			path:      named.path,
 			mediaType: named.mediaType,
 			isLinear:  !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
-			layout:    itemLayout(ref.Properties, read.layout),
+			layout:    getItemLayout(ref.Properties, read.layout),
 		})
 	}
 	return read, nil
 }
 
-// layout is the layout a rendition:layout value names, and the one already in
+// getLayout is the layout a rendition:layout value names, and the one already in
 // force for a value that names neither.
-func layout(value string, inForce Layout) Layout {
+func getLayout(value string, inForce Layout) Layout {
 	switch Layout(strings.ToLower(strings.TrimSpace(value))) {
 	case PrePaginated:
 		return PrePaginated
@@ -239,9 +239,9 @@ func layout(value string, inForce Layout) Layout {
 	return inForce
 }
 
-// itemLayout is the layout one spine document is laid out under: the book's,
+// getItemLayout is the layout one spine document is laid out under: the book's,
 // unless the itemref overrides it.
-func itemLayout(properties string, book Layout) Layout {
+func getItemLayout(properties string, book Layout) Layout {
 	switch {
 	case hasToken(properties, "rendition:layout-pre-paginated"):
 		return PrePaginated
@@ -251,8 +251,8 @@ func itemLayout(properties string, book Layout) Layout {
 	return book
 }
 
-// direction is the direction a page-progression-direction attribute names.
-func direction(value string) Direction {
+// getDirection is the direction a page-progression-direction attribute names.
+func getDirection(value string) Direction {
 	named := Direction(strings.ToLower(strings.TrimSpace(value)))
 	if named == LeftToRight || named == RightToLeft {
 		return named

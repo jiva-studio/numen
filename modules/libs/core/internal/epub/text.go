@@ -42,18 +42,18 @@ func newExtractor() *extractor {
 	}
 }
 
-// document reads one spine document into the text.
+// readDocument reads one spine document into the text.
 //
 // The markup is parsed as HTML: a document with three opening body tags is still
 // a document a person can read.
-func (x *extractor) document(docPath string, markup []byte) Document {
+func (x *extractor) readDocument(docPath string, markup []byte) Document {
 	start := len(x.out)
 	x.path = docPath
 	x.starts[docPath] = start
 
 	if x.markup != nil {
 		if root, err := html.Parse(bytes.NewReader(markup)); err == nil {
-			x.children(root)
+			x.writeChildren(root)
 		}
 	} else {
 		x.tokenize(markup)
@@ -62,7 +62,7 @@ func (x *extractor) document(docPath string, markup []byte) Document {
 	return Document{Path: docPath, Offset: start, Length: len(x.out) - start}
 }
 
-func (x *extractor) node(n *html.Node) {
+func (x *extractor) writeNode(n *html.Node) {
 	switch n.Type {
 	case html.TextNode:
 		x.write(n.Data)
@@ -100,7 +100,7 @@ func (x *extractor) node(n *html.Node) {
 		// stands inside the cell it opens.
 		x.write(" ")
 	}
-	x.children(n)
+	x.writeChildren(n)
 	if n.DataAtom == atom.Pre {
 		x.preformattedDepth--
 	}
@@ -114,9 +114,9 @@ func (x *extractor) node(n *html.Node) {
 	}
 }
 
-func (x *extractor) children(n *html.Node) {
+func (x *extractor) writeChildren(n *html.Node) {
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		x.node(c)
+		x.writeNode(c)
 	}
 }
 
@@ -129,7 +129,7 @@ func (x *extractor) write(text string) {
 	} else {
 		for _, r := range text {
 			if unicode.IsSpace(r) {
-				if last, ok := x.last(); ok && last != ' ' && last != '\n' {
+				if last, ok := x.getLastByte(); ok && last != ' ' && last != '\n' {
 					x.out = append(x.out, ' ')
 				}
 				continue
@@ -150,7 +150,7 @@ func (x *extractor) writeBytes(b []byte) {
 	for i := 0; i < len(b); {
 		r, size := utf8.DecodeRune(b[i:])
 		if unicode.IsSpace(r) {
-			if last, ok := x.last(); ok && last != ' ' && last != '\n' {
+			if last, ok := x.getLastByte(); ok && last != ' ' && last != '\n' {
 				x.out = append(x.out, ' ')
 			}
 		} else {
@@ -283,7 +283,7 @@ func (x *extractor) tokenize(markup []byte) {
 				x.writeBytes([]byte(" "))
 			}
 
-			level := headingLevel(a)
+			level := getHeadingLevel(a)
 
 			if isVoidTag(a) {
 				x.closeFrame(frame{start: start, isPagebreak: isPagebreak, pageLabel: pageLabel})
@@ -398,17 +398,17 @@ func isVoidTag(a atom.Atom) bool {
 
 // breakLine ends the line one block of text sits on.
 func (x *extractor) breakLine() {
-	if last, ok := x.last(); ok && last == ' ' {
+	if last, ok := x.getLastByte(); ok && last == ' ' {
 		x.out = x.out[:len(x.out)-1]
 	}
-	if last, ok := x.last(); ok && last != '\n' {
+	if last, ok := x.getLastByte(); ok && last != '\n' {
 		start := len(x.out)
 		x.out = append(x.out, '\n')
 		x.markup.run(start)
 	}
 }
 
-func (x *extractor) last() (byte, bool) {
+func (x *extractor) getLastByte() (byte, bool) {
 	if len(x.out) == 0 {
 		// gomutants:disable-next-line INTEGER_INCREMENT reason="the byte is read only when the second result is true"
 		return 0, false
@@ -425,7 +425,7 @@ func (x *extractor) getParts(entries []entry) []Part {
 		if title == "" {
 			continue
 		}
-		offset, ok := x.offsetOf(e.href)
+		offset, ok := x.getOffset(e.href)
 		if !ok {
 			continue
 		}
@@ -434,16 +434,16 @@ func (x *extractor) getParts(entries []entry) []Part {
 	return out
 }
 
-// pagesAt turns the entries of a page list into pages. A book with no page list
+// getPages turns the entries of a page list into pages. A book with no page list
 // keeps the page breaks its markup marks.
-func (x *extractor) pagesAt(entries []entry) []Page {
+func (x *extractor) getPages(entries []entry) []Page {
 	var out []Page
 	for _, e := range entries {
 		label := normaliseSpaces(e.title)
 		if label == "" {
 			continue
 		}
-		offset, ok := x.offsetOf(e.href)
+		offset, ok := x.getOffset(e.href)
 		if !ok {
 			continue
 		}
@@ -455,9 +455,9 @@ func (x *extractor) pagesAt(entries []entry) []Page {
 	return out
 }
 
-// offsetOf is where an href lands in the text: the place its fragment marks, or
+// getOffset is where an href lands in the text: the place its fragment marks, or
 // the start of the document it names.
-func (x *extractor) offsetOf(href string) (int, bool) {
+func (x *extractor) getOffset(href string) (int, bool) {
 	target, fragment := splitHref(href)
 	if fragment != "" {
 		if offset, ok := x.anchors[target+"#"+fragment]; ok {
@@ -468,10 +468,10 @@ func (x *extractor) offsetOf(href string) (int, bool) {
 	return offset, ok
 }
 
-// attribute reads an attribute of the element by name. The markup is read as
+// getAttribute reads an attribute of the element by name. The markup is read as
 // HTML, where a prefix is part of the name: `epub:type` is an attribute called
 // "epub:type".
-func attribute(n *html.Node, name string) string {
+func getAttribute(n *html.Node, name string) string {
 	for _, a := range n.Attr {
 		if strings.EqualFold(a.Key, name) {
 			return a.Val
@@ -480,10 +480,10 @@ func attribute(n *html.Node, name string) string {
 	return ""
 }
 
-// headingLevel is the level of a heading element, and 0 for anything else. The
+// getHeadingLevel is the level of a heading element, and 0 for anything else. The
 // level a book chose carries no meaning of its own: a book whose sections are
 // h4 has sections.
-func headingLevel(a atom.Atom) int {
+func getHeadingLevel(a atom.Atom) int {
 	switch a {
 	case atom.H1:
 		return 1
