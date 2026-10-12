@@ -189,7 +189,7 @@ func TestALayoutThatIsOpenCanBeClosed(t *testing.T) {
 
 // The answer is given back under the names the graph gives it.
 func TestNamesAreTheKeysOfAnAnswer(t *testing.T) {
-	got := names(map[string]*ort.Value{"a": nil, "b": nil})
+	got := getNames(map[string]*ort.Value{"a": nil, "b": nil})
 	if len(got) != 2 || !(got[0] == "a" && got[1] == "b" || got[0] == "b" && got[1] == "a") {
 		t.Errorf("names = %v", got)
 	}
@@ -199,8 +199,8 @@ func TestNamesAreTheKeysOfAnAnswer(t *testing.T) {
 func TestPlanesAreWrittenIntoTheSameSliceEachTime(t *testing.T) {
 	l := &Layout{}
 	page := image.NewRGBA(image.Rect(0, 0, 40, 40))
-	first := l.planes(page)
-	second := l.planes(page)
+	first := l.getPlanes(page)
+	second := l.getPlanes(page)
 	if &first[0] != &second[0] {
 		t.Error("a second page was written into a slice of its own")
 	}

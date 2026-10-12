@@ -159,7 +159,7 @@ func (p program) buildCommand(ctx context.Context, arguments ...string) *exec.Cm
 	running := exec.CommandContext(ctx, p.command[0],
 		append(append([]string(nil), p.command[1:]...), arguments...)...)
 	running.Env = p.env
-	groupOf(running)
+	setProcessGroup(running)
 	return running
 }
 
@@ -174,14 +174,14 @@ func resolveProgram(named Tool, tool string) program {
 	if len(named.Command) > 0 {
 		return program{
 			command: append(append([]string(nil), named.Command...), named.Arguments...),
-			env:     named.env(),
+			env:     named.getEnvironment(),
 		}
 	}
 	found, err := exec.LookPath(tool)
 	if err != nil {
 		return program{}
 	}
-	return program{command: append([]string{found}, named.Arguments...), env: named.env()}
+	return program{command: append([]string{found}, named.Arguments...), env: named.getEnvironment()}
 }
 
 // run is one tool, waited for. What it wrote to its error stream is what a
@@ -200,14 +200,14 @@ func run(ctx context.Context, tool program, into io.Writer, arguments ...string)
 		if stopped := ctx.Err(); stopped != nil {
 			return nil, stopped
 		}
-		return nil, fmt.Errorf("%w: %s", err, lastLine(said.String()))
+		return nil, fmt.Errorf("%w: %s", err, getLastLine(said.String()))
 	}
 	return out.Bytes(), nil
 }
 
-// lastLine is what the tool said, as one line a person reads. A tool that
+// getLastLine is what the tool said, as one line a person reads. A tool that
 // refuses says why at length, and the last of it is the reason.
-func lastLine(said string) string {
+func getLastLine(said string) string {
 	lines := strings.Split(strings.TrimSpace(said), "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
 		if line := strings.TrimSpace(lines[i]); line != "" {

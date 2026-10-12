@@ -4,7 +4,7 @@ package download
 
 import "os/exec"
 
-// groupOf bounds how long a cancelled run keeps its caller waiting.
-func groupOf(running *exec.Cmd) {
+// setProcessGroup bounds how long a cancelled run keeps its caller waiting.
+func setProcessGroup(running *exec.Cmd) {
 	running.WaitDelay = stopGrace
 }

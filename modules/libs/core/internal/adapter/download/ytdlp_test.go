@@ -24,7 +24,7 @@ func TestWhichLanguageTheWordsAreAskedFor(t *testing.T) {
 		{port.Metadata{Captions: []string{"en"}, IsAutomatic: []string{"ru-orig"}}, nil, true, "en"},
 		{port.Metadata{}, []string{"en"}, true, ""},
 	} {
-		if got := language(one.found, one.languages, one.isAutomatic); got != one.want {
+		if got := chooseLanguage(one.found, one.languages, one.isAutomatic); got != one.want {
 			t.Errorf("%+v with %v: asked for %q, want %q",
 				one.found, one.languages, got, one.want)
 		}
@@ -38,10 +38,10 @@ func TestAVideoTranslatedIntoManyLanguages(t *testing.T) {
 		Language: "en",
 		Captions: []string{"ar", "de", "en", "es", "zh"},
 	}
-	if got := language(meta, nil, true); got != "en" {
+	if got := chooseLanguage(meta, nil, true); got != "en" {
 		t.Errorf("asked for %q, want the language it was spoken in", got)
 	}
-	if got := language(meta, []string{"de"}, true); got != "de" {
+	if got := chooseLanguage(meta, []string{"de"}, true); got != "de" {
 		t.Errorf("asked for %q, want the language this installation named", got)
 	}
 }

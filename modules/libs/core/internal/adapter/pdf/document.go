@@ -131,7 +131,7 @@ func getWorker() (pdfium.Pdfium, error) {
 	}
 	worker, err := p.GetInstance(waitForWorker)
 	if err != nil {
-		finishWorker()
+		markDocumentClosed()
 		return nil, err
 	}
 	return worker, nil
@@ -140,12 +140,12 @@ func getWorker() (pdfium.Pdfium, error) {
 // putWorker returns a worker to the pool.
 func putWorker(worker pdfium.Pdfium) {
 	worker.Close()
-	finishWorker()
+	markDocumentClosed()
 }
 
-// finishWorker counts a document closed and, once none is open, schedules the
+// markDocumentClosed counts a document closed and, once none is open, schedules the
 // pool's release.
-func finishWorker() {
+func markDocumentClosed() {
 	workers.Lock()
 	defer workers.Unlock()
 	workers.open--
@@ -273,7 +273,7 @@ func (d *document) title() string {
 	if err != nil {
 		return ""
 	}
-	return tidy(meta.Value)
+	return normalizeSpaces(meta.Value)
 }
 
 // text is the text layer of one page, and is empty for a page that has none.

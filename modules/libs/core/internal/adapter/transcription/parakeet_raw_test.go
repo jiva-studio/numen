@@ -52,11 +52,11 @@ func TestDecodingOnTheRawRuntimeSaysTheSameTokensAsDecodingThroughTheLibrary(t *
 	for _, width := range []int{1, 2, 40, 120} {
 		frames := makeFrames(t, width)
 
-		want, err := by.decodeBy(t.Context(), frames, false)
+		want, err := by.decodeWith(t.Context(), frames, false)
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, err := by.decodeBy(t.Context(), frames, true)
+		got, err := by.decodeWith(t.Context(), frames, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,7 +77,7 @@ func TestDecodingOnTheRawRuntimeAllocatesLessThanDecodingThroughTheLibrary(t *te
 	perFrame := func(useRaw bool) float64 {
 		measure := func(frames map[string]*ort.Value) float64 {
 			return testing.AllocsPerRun(3, func() {
-				if _, err := by.decodeBy(t.Context(), frames, useRaw); err != nil {
+				if _, err := by.decodeWith(t.Context(), frames, useRaw); err != nil {
 					t.Fatal(err)
 				}
 			})
@@ -112,7 +112,7 @@ func TestDecodingOnTheRawRuntimeReleasesEveryOutputItCreated(t *testing.T) {
 		runnerMu.Unlock()
 	})
 
-	if _, err := by.decodeBy(t.Context(), frames, true); err != nil {
+	if _, err := by.decodeWith(t.Context(), frames, true); err != nil {
 		t.Fatal(err)
 	}
 	// The predictor answers three values and the joiner one.
@@ -199,13 +199,13 @@ func TestEveryPositionOnTheRawRuntimeAnswersBitForBitWhatTheLibraryAnswers(t *te
 			}
 		}
 
-		if libraryScores, err = by.joint(library.joinerInputs, library.frame, data[:encoded], libraryScores); err != nil {
+		if libraryScores, err = by.computeJoint(library.joinerInputs, library.frame, data[:encoded], libraryScores); err != nil {
 			t.Fatal(err)
 		}
 		if step == 0 {
-			rawScores, err = by.joint(raw.joinerInputs, raw.frame, data[:encoded], rawScores)
+			rawScores, err = by.computeJoint(raw.joinerInputs, raw.frame, data[:encoded], rawScores)
 		} else {
-			rawScores, err = by.jointRaw(raw.joiner, raw.frame, data[:encoded], rawScores)
+			rawScores, err = by.computeJointRaw(raw.joiner, raw.frame, data[:encoded], rawScores)
 		}
 		if err != nil {
 			t.Fatal(err)

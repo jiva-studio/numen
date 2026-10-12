@@ -195,7 +195,7 @@ func getPrecedingIndex(n, offset int, offsetOf func(int) int) int {
 	return sort.Search(n, func(i int) bool { return offsetOf(i) > offset }) - 1
 }
 
-// tidy is one line of text: the words of a name, single-spaced.
-func tidy(s string) string {
+// normalizeSpaces is one line of text: the words of a name, single-spaced.
+func normalizeSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
