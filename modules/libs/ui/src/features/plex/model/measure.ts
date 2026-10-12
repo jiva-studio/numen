@@ -110,6 +110,7 @@ function openProbe(): Probe | null {
   box.setAttribute('aria-hidden', 'true')
   box.style.cssText = PROBE
 
+  // Stryker disable next-line StringLiteral: the mutated value is "Stryker was here!", which is not a declaration, so the style engine drops it and the word keeps the box's own type, as with the empty string.
   const title = word('')
   const label = word(LABEL)
   box.append(title, label)

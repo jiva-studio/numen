@@ -299,3 +299,164 @@ describe('a theme changed under a plex already standing', () => {
     stop()
   })
 })
+
+describe('a page the plex cannot stand a box in', () => {
+  it('gives nothing where the document has no body', () => {
+    setTheme()
+    stubStyles()
+    Object.defineProperty(document, 'body', { configurable: true, get: () => null })
+
+    try {
+      expect(widths()).toBeUndefined()
+    } finally {
+      Reflect.deleteProperty(document, 'body')
+    }
+  })
+
+  it('gives nothing where there is no document at all', () => {
+    vi.stubGlobal('document', undefined)
+
+    expect(widths()).toBeUndefined()
+  })
+
+  it('gives nothing where the platform has no canvas class though a canvas answers', () => {
+    const context = { font: '', measureText: () => ({ width: 1 }) as TextMetrics }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
+      context as unknown as CanvasRenderingContext2D,
+    )
+    setTheme()
+    stubStyles()
+
+    expect(widths()).toBeUndefined()
+  })
+})
+
+describe('the box a plex measures its type against', () => {
+  /** An observer that remembers what it was asked to watch, and whether it was let go. */
+  function stubWatching() {
+    const observe = vi.fn<(target: Element, options?: ResizeObserverOptions) => void>()
+    const disconnect = vi.fn<() => void>()
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe = observe
+        disconnect = disconnect
+      },
+    )
+    return { observe, disconnect }
+  }
+
+  it('is hidden from assistive technology and holds a title word and a label word', () => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+    stubWatching()
+    widths()
+
+    const box = document.body.children[0] as HTMLElement
+    expect(box.getAttribute('aria-hidden')).toBe('true')
+    expect(box.children).toHaveLength(2)
+
+    const [title, label] = Array.from(box.children) as HTMLElement[]
+    expect(title!.textContent).toBe('Hxg')
+    expect(title!.style.getPropertyValue('font-size')).toBe('')
+    expect(label!.textContent).toBe('Hxg')
+    expect(label!.style.getPropertyValue('font-size')).toBe('var(--numen-edge-label-size)')
+  })
+
+  it('is watched for the size of its border box', () => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+    const { observe } = stubWatching()
+    widths()
+
+    expect(observe).toHaveBeenCalledExactlyOnceWith(document.body.children[0], {
+      box: 'border-box',
+    })
+  })
+
+  it('is let go of when the plex goes', () => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+    const { disconnect } = stubWatching()
+    const scope = effectScope()
+    scope.run(() => useTitleWidths(() => 0))
+    expect(disconnect).not.toHaveBeenCalled()
+
+    scope.stop()
+    expect(disconnect).toHaveBeenCalledOnce()
+  })
+
+  it('is read without a warning where no scope is there to dispose of it', () => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+    stubWatching()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    widths()
+
+    expect(warn).not.toHaveBeenCalled()
+  })
+})
+
+describe('what a part needs', () => {
+  it('is its words with the padding on both sides', () => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+
+    expect(widths()!.part('abc')).toBe(3 * PER_CHARACTER + 20)
+  })
+
+  it('is measured in the size a label is set at, in whole pixels', () => {
+    const { context } = stubCanvas()
+    stubStyles()
+    setTheme()
+    context.measureText = (text: string) => ({ width: text.length * 6.4 }) as TextMetrics
+    const measures = widths()!
+
+    expect(measures.part('abc')).toBe(Math.ceil(3 * 6.4 + 20))
+    expect(context.font).toBe('10px Test Sans, sans-serif')
+  })
+})
+
+describe('the canvas a plex measures with', () => {
+  it('is a two-dimensional one', () => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+    widths()
+
+    expect(HTMLCanvasElement.prototype.getContext).toHaveBeenCalledWith('2d')
+  })
+})
+
+describe('a theme changed in one token under a plex already standing', () => {
+  const scoped = <T>(run: () => T): { value: T; stop: () => void } => {
+    const scope = effectScope()
+    return { value: scope.run(run)!, stop: () => scope.stop() }
+  }
+
+  it.each([
+    ['the title size', { '--numen-font-size': '14px' }],
+    ['the label size', { '--numen-edge-label-size': '11px' }],
+    ['the padding', { '--numen-node-padding': '12px' }],
+    ['the gap', { '--numen-node-gap': '8px' }],
+  ])('measures again when only %s has changed', (_name, tokens) => {
+    stubCanvas()
+    stubStyles()
+    setTheme()
+    const observers = stubObserver()
+    const { value: measures, stop } = scoped(() => useTitleWidths(() => 0))
+    const first = measures.value
+
+    setTheme(tokens)
+    for (const ring of observers) ring()
+
+    expect(measures.value).not.toBe(first)
+    stop()
+  })
+})
