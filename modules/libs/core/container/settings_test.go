@@ -221,8 +221,8 @@ func TestSettingsOrDefaultsAnswerWhatIsReadableAndTheDefaultsOtherwise(t *testin
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 
-	cfg, _ := writeSettings(t, `{"agent": {"use": "claude"}}`)
-	if got := cfg.getSettingsOrDefaults().Agent.Use; got != "claude" {
+	cfg, _ := writeSettings(t, `{"agent": {"use": "somebody-else"}}`)
+	if got := cfg.getSettingsOrDefaults().Agent.Use; got != "somebody-else" {
 		t.Errorf("the agent is %q", got)
 	}
 

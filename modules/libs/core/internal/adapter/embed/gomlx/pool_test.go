@@ -209,13 +209,14 @@ func TestALimitThatIsNoStepIsNeverPassed(t *testing.T) {
 // A padding handed back is the one the next batch of its size is laid out on,
 // slices and all.
 func TestAReleasedPaddingIsReusedForTheNextBatchOfItsSize(t *testing.T) {
+	// Larger than any padding another batch left in the pool, so the first one is made to this size exactly.
 	batch := [][]int{{1, 2, 3}, {4, 5}}
 	reused := 0
-	previous := padBatch(batch, 2, 4, 0)
+	previous := padBatch(batch, 2, 1<<15, 0)
 	for range 100 {
 		ids, mask, types := &previous.ids[0], &previous.mask[0], &previous.types[0]
 		releasePadding(previous)
-		next := padBatch(batch, 2, 4, 0)
+		next := padBatch(batch, 2, 1<<15, 0)
 		if next == previous {
 			reused++
 			if &next.ids[0] != ids || &next.mask[0] != mask || &next.types[0] != types {
