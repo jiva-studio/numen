@@ -67,7 +67,6 @@ func TestOpeningWithoutADetectorThatLoadsFails(t *testing.T) {
 	}
 }
 
-
 // Locating finds the runtime and says where each model is and where they came
 // from.
 func TestLocatingNamesTheModelsAndWhereTheyCameFrom(t *testing.T) {
