@@ -123,17 +123,41 @@ func (u Extract) discover(
 	res *ExtractResult,
 	swept *[]port.SourceText,
 ) error {
+	known, err := u.readKnown(ctx, v)
+	if err != nil {
+		return err
+	}
+	found, err := u.walkAndRecord(ctx, v, reader, known, res)
+	if err != nil {
+		return err
+	}
+	return u.removeGone(ctx, v, known, found, res, swept)
+}
+
+// readKnown reads the fingerprints the index holds, by kind and path.
+func (u Extract) readKnown(ctx context.Context, v domain.Vault) (map[domain.SourceKind]map[string]domain.Fingerprint, error) {
 	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
 		held, err := u.queries.Fingerprints(ctx, v.ID, kind)
 		if err != nil {
-			return fmt.Errorf("read index: %w", err)
+			return nil, fmt.Errorf("read index: %w", err)
 		}
 		known[kind] = held
 	}
+	return known, nil
+}
 
+// walkAndRecord walks the vault, records each file the index does not already hold
+// as it is, and returns the paths it found.
+func (u Extract) walkAndRecord(
+	ctx context.Context,
+	v domain.Vault,
+	reader port.VaultReader,
+	known map[domain.SourceKind]map[string]domain.Fingerprint,
+	res *ExtractResult,
+) (map[string]bool, error) {
 	found := make(map[string]bool)
-	if err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
+	err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
 		held, ours := known[ref.Kind]
 		if !ours {
 			return nil
@@ -149,13 +173,21 @@ func (u Extract) discover(
 		}
 		res.Recorded++
 		return nil
-	}); err != nil {
-		return err
-	}
+	})
+	return found, err
+}
 
-	// What the index holds and the walk did not find is gone from the vault and
-	// is taken out here. The text of a passage is read from the file, so a
-	// source that is not there answers a search with nothing.
+// removeGone takes out of the index what it holds and the walk did not find.
+// The text of a passage is read from the file, so a source that is not there
+// answers a search with nothing.
+func (u Extract) removeGone(
+	ctx context.Context,
+	v domain.Vault,
+	known map[domain.SourceKind]map[string]domain.Fingerprint,
+	found map[string]bool,
+	res *ExtractResult,
+	swept *[]port.SourceText,
+) error {
 	for _, kind := range u.kinds() {
 		gone := make([]string, 0)
 		for path := range known[kind] {
@@ -167,9 +199,9 @@ func (u Extract) discover(
 			continue
 		}
 		slices.Sort(gone)
-		// What those paths stood on, before the rows saying so are taken out.
-		// Which of those readings nothing stands on any more is a question for
-		// once every source has been cut.
+		// The readings those paths stood on are read before the rows saying so
+		// are taken out; which of them nothing stands on any more is settled once
+		// every source has been cut.
 		went, err := u.readSourceTexts(ctx, v, kind, gone)
 		if err != nil {
 			return err
@@ -224,17 +256,9 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	if u.Derived == nil || len(went) == 0 {
 		return nil
 	}
-	stood := make(map[port.SourceText]bool)
-	named := make(map[string]bool)
-	for _, kind := range u.kinds() {
-		held, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
-		if err != nil {
-			return fmt.Errorf("read index: %w", err)
-		}
-		for _, r := range held {
-			stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
-			named[r.Hash] = true
-		}
+	stood, named, err := u.readReferencedReadings(ctx, v)
+	if err != nil {
+		return err
 	}
 	for _, r := range went {
 		if stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] {
@@ -246,10 +270,37 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 		if !named[r.Hash] {
 			gone = append(gone, text.Copy(r.Hash))
 		}
-		for _, name := range gone {
-			if err := u.Derived.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-				return fmt.Errorf("remove %s: %w", name, err)
-			}
+		if err := u.removeNames(ctx, gone); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// readReferencedReadings returns the readings some source stands on and the hashes some
+// source names.
+func (u Extract) readReferencedReadings(ctx context.Context, v domain.Vault) (map[port.SourceText]bool, map[string]bool, error) {
+	stood := make(map[port.SourceText]bool)
+	named := make(map[string]bool)
+	for _, kind := range u.kinds() {
+		held, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
+		if err != nil {
+			return nil, nil, fmt.Errorf("read index: %w", err)
+		}
+		for _, r := range held {
+			stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
+			named[r.Hash] = true
+		}
+	}
+	return stood, named, nil
+}
+
+// removeNames removes each named file from the store; a file already absent
+// counts as removed.
+func (u Extract) removeNames(ctx context.Context, names []string) error {
+	for _, name := range names {
+		if err := u.Derived.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("remove %s: %w", name, err)
 		}
 	}
 	return nil
@@ -275,22 +326,37 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			if u.hasAny(ctx, text.Artifact(r.Producer, r.Hash), text.Partial(r.Producer, r.Hash)) {
-				continue
+			if err := u.recordIfTextMissing(ctx, v, reader, r, res); err != nil {
+				return err
 			}
-			ref, err := reader.Stat(ctx, r.Path)
-			if port.IsNoNote(err) {
-				continue
-			}
-			if err != nil {
-				return fmt.Errorf("stat %s: %w", r.Path, err)
-			}
-			if err := u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
-				return fmt.Errorf("record %s: %w", r.Path, err)
-			}
-			res.Forgotten++
 		}
 	}
+	return nil
+}
+
+// recordIfTextMissing records the source afresh when the store holds no text for its
+// reading.
+func (u Extract) recordIfTextMissing(
+	ctx context.Context,
+	v domain.Vault,
+	reader port.VaultReader,
+	r port.SourceText,
+	res *ExtractResult,
+) error {
+	if u.hasAny(ctx, text.Artifact(r.Producer, r.Hash), text.Partial(r.Producer, r.Hash)) {
+		return nil
+	}
+	ref, err := reader.Stat(ctx, r.Path)
+	if port.IsNoNote(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("stat %s: %w", r.Path, err)
+	}
+	if err := u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
+		return fmt.Errorf("record %s: %w", r.Path, err)
+	}
+	res.Forgotten++
 	return nil
 }
 
@@ -334,19 +400,9 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 			if err != nil {
 				return err
 			}
-			fresh := 0
-			for _, path := range paths {
-				if tried[path] {
-					continue
-				}
-				tried[path] = true
-				fresh++
-				if err := ctx.Err(); err != nil {
-					return err
-				}
-				if err := u.source(ctx, v, reader, path, sizes, res); err != nil {
-					return err
-				}
+			fresh, err := u.chunkNewPaths(ctx, v, reader, paths, tried, sizes, res)
+			if err != nil {
+				return err
 			}
 			if fresh == 0 {
 				break
@@ -354,6 +410,34 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 		}
 	}
 	return nil
+}
+
+// chunkNewPaths cuts each path not yet in tried, marks it tried, and returns how
+// many it cut.
+func (u Extract) chunkNewPaths(
+	ctx context.Context,
+	v domain.Vault,
+	reader port.VaultReader,
+	paths []string,
+	tried map[string]bool,
+	sizes chunking.Sizes,
+	res *ExtractResult,
+) (int, error) {
+	fresh := 0
+	for _, path := range paths {
+		if tried[path] {
+			continue
+		}
+		tried[path] = true
+		fresh++
+		if err := ctx.Err(); err != nil {
+			return fresh, err
+		}
+		if err := u.source(ctx, v, reader, path, sizes, res); err != nil {
+			return fresh, err
+		}
+	}
+	return fresh, nil
 }
 
 // ExtractOne brings a single source's chunks up to date with its text.
