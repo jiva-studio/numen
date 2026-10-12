@@ -368,7 +368,7 @@ func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to stri
 
 	var heads []valueSpan
 	for i, span := range spans {
-		if !cutBy(deck.Cards[i], cutting, stencil) {
+		if !usesStencil(deck.Cards[i], cutting, stencil) {
 			continue
 		}
 		for _, v := range span.values {
@@ -391,10 +391,10 @@ func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to stri
 	return len(heads), nil
 }
 
-// cutBy reports whether a card is cut by the stencil filed at stencil. The name
+// usesStencil reports whether a card is cut by the stencil filed at stencil. The name
 // under the heading is an ordinary wikilink, so what cuts the card is the note
 // that name lands on.
-func cutBy(card Card, cutting map[string]string, stencil string) bool {
-	at, lands := cutting[card.StencilLink]
+func usesStencil(card Card, linkTargets map[string]string, stencil string) bool {
+	at, lands := linkTargets[card.StencilLink]
 	return lands && at == stencil
 }

@@ -5,9 +5,9 @@ import "math"
 // LeastCeiling is the shortest day a curve of minutes runs to.
 const LeastCeiling = 60
 
-// spread is up to as many places as are wanted, evenly over the days, and
+// pickEvenlySpacedDays is up to as many places as are wanted, evenly over the days, and
 // always both ends of them.
-func spread(days, places int) []int {
+func pickEvenlySpacedDays(days, places int) []int {
 	if days <= places {
 		out := make([]int, days)
 		for i := range out {
@@ -70,9 +70,9 @@ func abs(one int) int {
 	return one
 }
 
-// ceiling is how far a curve of minutes runs: twice what carrying the whole
+// getMinutesUpperBound is how far a curve of minutes runs: twice what carrying the whole
 // load costs, and never less than a short day or more than a day holds.
-func ceiling(load, keeping float64) float64 {
+func getMinutesUpperBound(load, keeping float64) float64 {
 	top := math.Ceil(2 * math.Max(load, keeping))
 	return math.Min(math.Max(top, LeastCeiling), MinutesADayBounds.Most)
 }

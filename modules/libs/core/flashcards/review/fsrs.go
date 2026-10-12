@@ -191,7 +191,7 @@ func (f FSRS) getNextFromNew(one atAnswer, at time.Time, r fsrs.Rating) Schedule
 // review.
 func (f FSRS) getNextFromLearning(one atAnswer, at time.Time, r fsrs.Rating) Schedule {
 	out := one.out
-	out.Difficulty = f.harder(one.last.Difficulty, r)
+	out.Difficulty = f.getNextDifficulty(one.last.Difficulty, r)
 	out.Stability = f.getLearningStability(one.last.Stability, r)
 	switch r {
 	case fsrs.Again:
@@ -218,7 +218,7 @@ func (f FSRS) getNextFromLearning(one atAnswer, at time.Time, r fsrs.Rating) Sch
 func (f FSRS) getNextFromReview(one atAnswer, at time.Time, back float64, r fsrs.Rating) Schedule {
 	d, s := one.last.Difficulty, one.last.Stability
 	out := one.out
-	out.Difficulty = f.harder(d, r)
+	out.Difficulty = f.getNextDifficulty(d, r)
 	if r == fsrs.Again {
 		out.Stability = math.Min(s/math.Exp(f.p.W[17]*f.p.W[18]), f.getStabilityOnLapse(d, s, back))
 		out.Lapses = one.last.Lapses + 1
@@ -268,9 +268,9 @@ func (f FSRS) first(r fsrs.Rating) float64 {
 	return clampDifficulty(f.p.W[4] - math.Exp(f.p.W[5]*float64(r-1)) + 1)
 }
 
-// harder is where an answer leaves a difficulty, pulled back towards the
+// getNextDifficulty is where an answer leaves a difficulty, pulled back towards the
 // difficulty an easy answer opens a card face at.
-func (f FSRS) harder(d float64, r fsrs.Rating) float64 {
+func (f FSRS) getNextDifficulty(d float64, r fsrs.Rating) float64 {
 	delta := -f.p.W[6] * float64(r-3)
 	next := d + (10.0-d)*delta/9.0
 	return clampDifficulty(f.p.W[7]*f.first(fsrs.Easy) + (1-f.p.W[7])*next)

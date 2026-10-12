@@ -19,10 +19,10 @@ func Lay(face FaceTemplate, card Card) (front, back string) {
 	if face.Front == "" || face.Back == "" {
 		return "", ""
 	}
-	return fill(face.Front, card), fill(face.Back, card)
+	return fillPlaceholders(face.Front, card), fillPlaceholders(face.Back, card)
 }
 
-func fill(face string, card Card) string {
+func fillPlaceholders(face string, card Card) string {
 	return placeholderRe.ReplaceAllStringFunc(face, func(match string) string {
 		name := placeholderRe.FindStringSubmatch(match)[1]
 		value, _ := card.Value(name)

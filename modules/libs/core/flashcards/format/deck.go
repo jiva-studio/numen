@@ -99,7 +99,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 		if s.level == SectionLevel {
 			// Everything down to the section's first card is the person's own
 			// writing about their deck, whatever it is made of.
-			lead, leadEnd := run(body, s.from, end)
+			lead, leadEnd := readTrimmedRun(body, s.from, end)
 			d.Sections = append(d.Sections, Section{Name: s.name, Preamble: lead})
 			under = len(d.Sections) - 1
 			read = getTrimmedEnd(body, s.head, s.from)
@@ -117,14 +117,14 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			linkFrom: s.from, linkTo: s.from,
 		}
 
-		target, leadFrom := stencil(body, s.from, s.to)
+		target, leadFrom := readStencilLink(body, s.from, s.to)
 		card.StencilLink = target
 		read = getTrimmedEnd(body, s.head, s.from)
 		if target != "" {
 			read = getTrimmedEnd(body, s.from, leadFrom)
 			span.linkFrom, span.linkTo = lineFrom(body, s.from, read), read
 		}
-		lead, leadEnd := run(body, leadFrom, s.to)
+		lead, leadEnd := readTrimmedRun(body, leadFrom, s.to)
 		card.Preamble = lead
 		if lead != "" {
 			read = leadEnd
@@ -139,7 +139,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 			if f.level != FieldLevel {
 				break
 			}
-			value, valueEnd := run(body, f.from, f.to)
+			value, valueEnd := readTrimmedRun(body, f.from, f.to)
 			read = getTrimmedEnd(body, f.head, f.from)
 			if value != "" {
 				read = valueEnd
@@ -158,19 +158,19 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 		spans = append(spans, span)
 	}
 
-	d.Problems = append(d.Problems, twoMarks(d.Cards)...)
+	d.Problems = append(d.Problems, findDuplicateMarks(d.Cards)...)
 	if len(d.Cards) > 0 || len(d.Sections) > 0 {
 		d.Tail = markdown.Normalise(string(body[read:]))
 	}
 	return d, spans
 }
 
-// twoMarks is one problem against each card of a mark another card in this deck
+// findDuplicateMarks is one problem against each card of a mark another card in this deck
 // carries. Both are read and both are shown marked: nothing a person wrote goes
 // missing from the screen, and which of the two is meant is a thing only they
 // know. Neither is given another mark, because choosing would be choosing which
 // of the two keeps its history.
-func twoMarks(cs []Card) []Problem {
+func findDuplicateMarks(cs []Card) []Problem {
 	carried := map[domain.CardID]int{}
 	for _, c := range cs {
 		if c.Mark != "" {
@@ -187,11 +187,11 @@ func twoMarks(cs []Card) []Problem {
 	return out
 }
 
-// stencil reads the lone wikilink paragraph directly beneath a card's heading.
+// readStencilLink reads the lone wikilink paragraph directly beneath a card's heading.
 // It returns what the link says and the byte the lead begins at; a card whose
-// first paragraph is something else names no stencil, and the whole of what is
+// first paragraph is something else names no readStencilLink, and the whole of what is
 // under the heading is lead.
-func stencil(body []byte, from, to int) (target string, leadFrom int) {
+func readStencilLink(body []byte, from, to int) (target string, leadFrom int) {
 	at := from
 	for at < to {
 		end, next := to, to

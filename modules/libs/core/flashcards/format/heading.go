@@ -77,7 +77,7 @@ func Project(value string) string {
 	// The cut never falls inside one of these: it falls in front of the whole
 	// of whichever it lands in. One of them stands inside another, so the cut is
 	// moved until it stops moving.
-	spans := unbroken(line)
+	spans := getUnsplittableRanges(line)
 	for moved := true; moved; {
 		moved = false
 		for _, span := range spans {
@@ -93,20 +93,20 @@ func Project(value string) string {
 var emphasisRe = regexp.MustCompile(
 	`\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|___[^_]+___|__[^_]+__|_[^_]+_`)
 
-// covered is what a link's bytes are read as while a run of emphasis is looked
+// maskRune is what a link's bytes are read as while a run of emphasis is looked
 // for: one character that opens and closes nothing.
-const covered = 'x'
+const maskRune = 'x'
 
-// unbroken is every run of the line a cut may not fall inside: its links, and
+// getUnsplittableRanges is every run of the line a cut may not fall inside: its links, and
 // its runs of emphasis. A link's brackets hold whatever a person wrote, so the
 // runs of emphasis are looked for over the line with every link covered over,
 // and a run holding a link is one run.
-func unbroken(line string) [][]int {
+func getUnsplittableRanges(line string) [][]int {
 	found := links(line)
 	masked := []byte(line)
 	for _, span := range found {
 		for at := span[0]; at < span[1]; at++ {
-			masked[at] = covered
+			masked[at] = maskRune
 		}
 	}
 	return append(found, emphasisRe.FindAllIndex(masked, -1)...)
