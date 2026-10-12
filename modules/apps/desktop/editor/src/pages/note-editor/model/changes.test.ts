@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createNoteChanges } from './changes'
 import type { NoteEdit } from '@/entities/note'
 
-const limits = { settle: 10, bound: 40, abandoned: 100 }
+const limits = { noteChangedMs: 10, endedMs: 40, unendedMs: 100 }
 
 /** One change reported on a note. */
 const createEdit = (over: Partial<NoteEdit> = {}): NoteEdit => ({
@@ -35,7 +35,7 @@ describe('a change reported on a note', () => {
     const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
 
-    vi.advanceTimersByTime(limits.abandoned)
+    vi.advanceTimersByTime(limits.unendedMs)
 
     expect(changes.getChange('Entropy.md')).toBeNull()
   })
@@ -44,9 +44,9 @@ describe('a change reported on a note', () => {
     const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
 
-    vi.advanceTimersByTime(limits.abandoned - 1)
+    vi.advanceTimersByTime(limits.unendedMs - 1)
     changes.reportChange(createEdit({ text: 'Order and disorder' }))
-    vi.advanceTimersByTime(limits.abandoned - 1)
+    vi.advanceTimersByTime(limits.unendedMs - 1)
 
     expect(changes.getChange('Entropy.md')?.text).toBe('Order and disorder')
   })
@@ -58,19 +58,19 @@ describe('a change that has ended', () => {
     changes.reportChange(createEdit())
     changes.reportChange(createEdit({ isComplete: true }))
 
-    changes.handleNoteChange('Entropy.md')
+    changes.reportNoteChange('Entropy.md')
     expect(changes.getChange('Entropy.md')).not.toBeNull()
 
-    vi.advanceTimersByTime(limits.settle)
+    vi.advanceTimersByTime(limits.noteChangedMs)
     expect(changes.getChange('Entropy.md')).toBeNull()
   })
 
-  it('is let go of on the longer bound where the text never arrives', () => {
+  it('is let go of on the longer endedMs where the text never arrives', () => {
     const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
     changes.reportChange(createEdit({ isComplete: true }))
 
-    vi.advanceTimersByTime(limits.bound)
+    vi.advanceTimersByTime(limits.endedMs)
 
     expect(changes.getChange('Entropy.md')).toBeNull()
   })
@@ -107,7 +107,7 @@ describe('an interval that has been let go of', () => {
   it('is forgotten once it fired', () => {
     const changes = createNoteChanges(limits)
     changes.reportChange(createEdit())
-    vi.advanceTimersByTime(limits.abandoned)
+    vi.advanceTimersByTime(limits.unendedMs)
     const cleared = watchClears()
 
     changes.closeNote('Entropy.md')
