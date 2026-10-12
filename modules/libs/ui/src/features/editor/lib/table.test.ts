@@ -114,3 +114,45 @@ describe('a row made at the end', () => {
     expect(table.body).toHaveLength(3)
   })
 })
+
+describe('the alignment of a table', () => {
+  it('is read from a row of dashes that carries no outer pipes', () => {
+    expect(read('a | b\n---|:-:\nc | d\n').align).toEqual(['none', 'centre'])
+  })
+
+  it('is read from a row of dashes with spaces around its cells', () => {
+    expect(read('| a | b | c |\n| :-- | --: | :-: |\n| d | e | f |\n').align).toEqual([
+      'start',
+      'end',
+      'centre',
+    ])
+  })
+
+  it('is read from an indented row of dashes', () => {
+    expect(read('  | a | b |\n  |:--|--:|\n  | c | d |\n').align).toEqual(['start', 'end'])
+  })
+})
+
+describe('what a cell reads as', () => {
+  it('has no space around it', () => {
+    expect(readCell('  a \\| b  ')).toBe('a | b')
+  })
+})
+
+describe('a column made at the right of rows written unevenly', () => {
+  it('keeps a blank line as it is', () => {
+    expect(withColumn('| a |\n\n| b |')).toBe('| a | |\n\n| b | |')
+  })
+
+  it('closes a row that ends in a pipe once', () => {
+    expect(withColumn('a | b |\n---|---|')).toBe('a | b | |\n---|---|---|')
+  })
+
+  it('closes a row that begins with a pipe and does not end with one', () => {
+    expect(withColumn('| a | b\n|---|---')).toBe('| a | b | |\n|---|---|---|')
+  })
+
+  it('ignores the spaces after the last pipe of a row', () => {
+    expect(withColumn('| a |   \n|---|\n| b |  ')).toBe('| a | |\n|---|---|\n| b | |')
+  })
+})
