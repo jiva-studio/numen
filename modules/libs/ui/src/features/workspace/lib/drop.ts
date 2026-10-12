@@ -92,7 +92,7 @@ export function getSlot(x: number, tabs: readonly Rect[]): number {
  * The gap a tab would take in a strip, as a box of no width. A strip holding
  * no tabs takes the whole of itself.
  */
-export function getCaret(slot: number, tabs: readonly Rect[], strip: Rect): Rect {
+export function getCaretRect(slot: number, tabs: readonly Rect[], strip: Rect): Rect {
   const beside = tabs[slot] ?? tabs[tabs.length - 1]
   if (!beside) return strip
 

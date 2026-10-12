@@ -10,7 +10,7 @@ import type { Clock } from '@/shared/lib/clock'
 import { usePressDrag } from '@/shared/ui/drag-preview'
 import type { Position } from '@/shared/lib/geometry'
 import {
-  getCaret,
+  getCaretRect,
   findEdgeSide,
   getOverlay,
   getRect,
@@ -173,7 +173,7 @@ function getStripDropTarget(
   // A strip holds tabs and nothing else, in the order they are drawn.
   const tabs = [...strip.children].map((tab) => getRect(tab))
   const slot = getSlot(x, tabs)
-  return { kind: 'strip', pane, slot, box: local(getCaret(slot, tabs, getRect(strip))) }
+  return { kind: 'strip', pane, slot, box: local(getCaretRect(slot, tabs, getRect(strip))) }
 }
 
 /** A pane divided along the side the pointer is nearest. */

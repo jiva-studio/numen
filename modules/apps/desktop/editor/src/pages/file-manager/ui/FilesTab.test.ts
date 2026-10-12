@@ -94,14 +94,14 @@ describe('the tree the tab draws', () => {
     const { window } = await mountFiles(['physics'])
     const marking = window.findComponent(Tree).props('marking') as {
       attribute: string
-      getValue: (row: string | null) => string
+      getAttributeValue: (row: string | null) => string
     }
 
     expect(marking.attribute).toBe('data-file-drop-target')
-    expect(marking.getValue('physics')).toBe('physics')
-    expect(marking.getValue('physics/Kelvin.md')).toBe('physics')
-    expect(marking.getValue('Entropy.md')).toBe(ROOT)
-    expect(marking.getValue(null)).toBe(ROOT)
+    expect(marking.getAttributeValue('physics')).toBe('physics')
+    expect(marking.getAttributeValue('physics/Kelvin.md')).toBe('physics')
+    expect(marking.getAttributeValue('Entropy.md')).toBe(ROOT)
+    expect(marking.getAttributeValue(null)).toBe(ROOT)
   })
 })
 

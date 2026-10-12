@@ -629,14 +629,14 @@ describe('the attribute rows are marked with', () => {
   const getMark = (wrapper: Tree, row: string) => getRow(wrapper, row).attributes(ATTRIBUTE)
 
   /** The place a row stands for, or the place it sits in. */
-  const getValue = (row: string | null): string => {
+  const getAttributeValue = (row: string | null): string => {
     if (row === null) return ''
     if (row === 'work' || row === 'plans' || row === 'empty') return row
     return row === 'friday' ? 'plans' : 'work'
   }
 
   it('is written on each row, and on the tree for the top level', () => {
-    const held = mountTree({ marking: { attribute: ATTRIBUTE, getValue } })
+    const held = mountTree({ marking: { attribute: ATTRIBUTE, getAttributeValue } })
 
     expect(getMark(held, 'plans')).toBe('plans')
     expect(getMark(held, 'notes')).toBe('work')
@@ -651,7 +651,7 @@ describe('the attribute rows are marked with', () => {
   })
 
   it('is written under the name it was given', () => {
-    const held = mountTree({ marking: { attribute: 'data-elsewhere', getValue } })
+    const held = mountTree({ marking: { attribute: 'data-elsewhere', getAttributeValue } })
 
     expect(getRow(held, 'plans').attributes('data-elsewhere')).toBe('plans')
     expect(getMark(held, 'plans')).toBeUndefined()
@@ -660,7 +660,7 @@ describe('the attribute rows are marked with', () => {
   it('is written on the rows answered for and on no other', () => {
     const marking = {
       attribute: ATTRIBUTE,
-      getValue: (row: string | null) => (row === 'empty' ? 'empty' : null),
+      getAttributeValue: (row: string | null) => (row === 'empty' ? 'empty' : null),
     }
     const held = mountTree({ marking })
 

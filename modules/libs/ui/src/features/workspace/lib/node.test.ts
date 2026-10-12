@@ -1,6 +1,6 @@
 /** The orientation a side asks for, and how a depth turns it. */
 import { describe, expect, it } from 'vitest'
-import { getOrientation, getSideOrientation, orthogonal, type Side } from './node'
+import { getOrientation, findSideOrientation, orthogonal, type Side } from './node'
 
 describe('orthogonal', () => {
   it('turns a row into a column', () => {
@@ -21,7 +21,7 @@ describe('getOrientation', () => {
   })
 })
 
-describe('getSideOrientation', () => {
+describe('findSideOrientation', () => {
   it.each<[Side, string | null]>([
     ['left', 'horizontal'],
     ['right', 'horizontal'],
@@ -29,6 +29,6 @@ describe('getSideOrientation', () => {
     ['bottom', 'vertical'],
     ['center', null],
   ])('asks %s for %s', (side, expected) => {
-    expect(getSideOrientation(side)).toBe(expected)
+    expect(findSideOrientation(side)).toBe(expected)
   })
 })

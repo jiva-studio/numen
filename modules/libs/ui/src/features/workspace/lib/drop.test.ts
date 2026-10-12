@@ -1,6 +1,14 @@
 /** The side a point asks for, and the slot in a strip of tabs. */
 import { describe, expect, it } from 'vitest'
-import { getCaret, findEdgeSide, getOverlay, getRect, getSide, getSlot, DEFAULT_DROP } from './drop'
+import {
+  getCaretRect,
+  findEdgeSide,
+  getOverlay,
+  getRect,
+  getSide,
+  getSlot,
+  DEFAULT_DROP,
+} from './drop'
 
 const BOX = { x: 0, y: 0, width: 800, height: 400 }
 
@@ -135,7 +143,7 @@ describe('getSlot', () => {
   })
 })
 
-describe('getCaret', () => {
+describe('getCaretRect', () => {
   const strip = { x: 0, y: 0, width: 300, height: 30 }
   const tabs = [
     { x: 0, y: 0, width: 100, height: 30 },
@@ -144,15 +152,15 @@ describe('getCaret', () => {
   ]
 
   it('stands at the leading edge of the tab it comes before', () => {
-    expect(getCaret(1, tabs, strip)).toStrictEqual({ x: 100, y: 0, width: 0, height: 30 })
+    expect(getCaretRect(1, tabs, strip)).toStrictEqual({ x: 100, y: 0, width: 0, height: 30 })
   })
 
   it('stands past the last tab for the place after it', () => {
-    expect(getCaret(3, tabs, strip)).toStrictEqual({ x: 300, y: 0, width: 0, height: 30 })
+    expect(getCaretRect(3, tabs, strip)).toStrictEqual({ x: 300, y: 0, width: 0, height: 30 })
   })
 
   it('takes the whole strip where there is no tab to stand beside', () => {
-    expect(getCaret(0, [], strip)).toStrictEqual(strip)
+    expect(getCaretRect(0, [], strip)).toStrictEqual(strip)
   })
 })
 

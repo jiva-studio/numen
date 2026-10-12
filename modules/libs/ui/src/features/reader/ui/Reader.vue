@@ -20,7 +20,7 @@ import {
   getPagesWithin,
   inFront,
   row,
-  getPageScroll,
+  findPageScroll,
   type Rect,
   type ReaderWords,
   type Page,
@@ -110,7 +110,7 @@ const onScroll = () => {
 
 /** The row put where a page stands, with that page against the left edge. */
 const stand = (page: number, how: ScrollBehavior) => {
-  const begins = getPageScroll(laid.value, page)
+  const begins = findPageScroll(laid.value, page)
   if (begins === undefined) return
 
   // As far as the row goes: the last page cannot be brought any further left
@@ -138,7 +138,7 @@ watch(
 )
 
 /** One page's box in the row. */
-const getBox = (page: number) => ({
+const getBoxStyle = (page: number) => ({
   insetInlineStart: `${laid.value.starts[page] ?? 0}px`,
   insetBlockStart: `${GAP}px`,
   inlineSize: `${laid.value.widths[page] ?? 0}px`,
@@ -211,7 +211,7 @@ defineExpose({
           :other-highlights="otherHighlights(page)"
           :page="words.page"
           :undrawn="undrawn"
-          :style="getBox(page)"
+          :style="getBoxStyle(page)"
         />
       </div>
       <p v-else class="text-small text-hushed grid h-full place-items-center">

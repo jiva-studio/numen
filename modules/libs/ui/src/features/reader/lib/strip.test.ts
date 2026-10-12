@@ -8,7 +8,7 @@ import {
   getPagesWithin,
   inFront,
   row,
-  getPageScroll,
+  findPageScroll,
   type Page,
 } from './strip'
 import type { Size } from '@/shared/lib/geometry'
@@ -186,13 +186,13 @@ describe('where the row stands', () => {
   it('puts the page asked for against the left edge', () => {
     const laid = row(book(20), VIEWPORT, 1)
 
-    expect(getPageScroll(laid, 5)).toBe(laid.starts[5]! - GAP)
+    expect(findPageScroll(laid, 5)).toBe(laid.starts[5]! - GAP)
   })
 
   it('says nothing about a page the document does not have', () => {
     const laid = row(book(4), VIEWPORT, 1)
 
-    expect(getPageScroll(laid, 9)).toBeUndefined()
+    expect(findPageScroll(laid, 9)).toBeUndefined()
   })
 })
 

@@ -3,7 +3,7 @@ import {
   branch,
   isLeading,
   getOrientation,
-  getSideOrientation,
+  findSideOrientation,
   pane,
   type Branch,
   type NodeId,
@@ -43,7 +43,7 @@ export function putBeside(
   axis: Orientation,
   id: NodeIdFactory,
 ): SplitResult {
-  const wanted = getSideOrientation(side)
+  const wanted = findSideOrientation(side)
   const path = pathTo(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }
 
