@@ -72,8 +72,8 @@ type AskedCard struct {
 }
 
 func addCardTools(server *sdk.Server, core Core) {
-	addCardReadingTools(server, core)
-	addCardWritingTools(server, core)
+	addCardReadTools(server, core)
+	addCardWriteTools(server, core)
 }
 
 // WriteOutcome is what a deck became: where it is, and what to present at the

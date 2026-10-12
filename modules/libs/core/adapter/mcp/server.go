@@ -172,10 +172,10 @@ func NewReading(core Core) *sdk.Server {
 		&sdk.ServerOptions{Instructions: readingInstructions(core)},
 	)
 
-	addNoteReadingTools(server, core)
-	addCardReadingTools(server, core)
-	addLinkReadingTools(server, core)
-	addSourceReadingTools(server, core)
+	addNoteReadTools(server, core)
+	addCardReadTools(server, core)
+	addLinkReadTools(server, core)
+	addSourceReadTools(server, core)
 	addVaultGet(server, core)
 	return server
 }
@@ -196,12 +196,12 @@ func NewReviewing(core Core) *sdk.Server {
 		&sdk.ServerOptions{Instructions: getReviewingInstructions(core)},
 	)
 
-	addNoteReadingTools(server, core)
-	addCardReadingTools(server, core)
-	addCardEditingTools(server, core)
-	addCardShowing(server, core)
-	addLinkReadingTools(server, core)
-	addSourceReadingTools(server, core)
+	addNoteReadTools(server, core)
+	addCardReadTools(server, core)
+	addCardEditTools(server, core)
+	addCardFocus(server, core)
+	addLinkReadTools(server, core)
+	addSourceReadTools(server, core)
 	addVaultGet(server, core)
 	return server
 }

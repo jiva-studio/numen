@@ -11,11 +11,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// addViewTools gives an agent the one thing a person watching can do that
-// reading and writing cannot: put a place in front of them.
-//
-// They are added only where there is somebody to show a place to. A binary
-// without a window serves the vault and nothing of this.
+// addViewTools adds the tools that move the person's window to a note or a source passage.
+// They are added only when the core has a view.
 func addViewTools(server *sdk.Server, core Core) {
 	if core.View == nil {
 		return
@@ -114,11 +111,11 @@ func focusSource(ctx context.Context, core Core, in sourceFocusInput) (sourceFoc
 	if err := core.View.Focus(ctx, at); err != nil {
 		return sourceFocusOutput{}, err
 	}
-	return sourceFocusOutput{IsShown: true, Looking: describeLooking(ref.Kind, in.Length)}, nil
+	return sourceFocusOutput{IsShown: true, Looking: describeFocus(ref.Kind, in.Length)}, nil
 }
 
-// checkSourceFocus refuses an input that names no document, a passage that
-// begins before the text, or more places than a document may light.
+// checkSourceFocus returns an error for an input with no document, a passage that
+// starts before the text, or more passages than a document may highlight.
 func checkSourceFocus(in sourceFocusInput) error {
 	if in.Path == "" {
 		return errors.New("name the document to show")
@@ -133,8 +130,7 @@ func checkSourceFocus(in sourceFocusInput) error {
 	return nil
 }
 
-// newPlace is the document at the passage the input names, with the others it
-// lights.
+// newPlace returns the place for the document and passages named in the input.
 func newPlace(in sourceFocusInput) (domain.Place, error) {
 	at := domain.Place{Path: in.Path}
 	if in.Length > 0 {
@@ -150,8 +146,8 @@ func newPlace(in sourceFocusInput) (domain.Place, error) {
 	return at, nil
 }
 
-// getFingerprint is what the vault holds at a path, and says so when it holds
-// nothing there. A file the vault leaves alone is a file it does not hold.
+// getFingerprint returns the fingerprint of the file at path, and an error when the vault
+// holds no file there.
 func getFingerprint(ctx context.Context, core Core, path string) (domain.Fingerprint, error) {
 	if core.Readers == nil {
 		return domain.Fingerprint{}, errors.New("this vault's files are not open")
@@ -170,9 +166,8 @@ func getFingerprint(ctx context.Context, core Core, path string) (domain.Fingerp
 	return ref, nil
 }
 
-// describeLooking is what the person now has in front of them, for the agent to
-// say back to them.
-func describeLooking(kind domain.SourceKind, length int) string {
+// describeFocus returns a sentence describing what the person now sees.
+func describeFocus(kind domain.SourceKind, length int) string {
 	switch {
 	case kind == domain.KindNote:
 		return "the note is in front of them, and a note is shown whole"

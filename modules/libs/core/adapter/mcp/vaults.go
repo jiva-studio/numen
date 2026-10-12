@@ -143,9 +143,8 @@ func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput,
 	return vaultAddOutput{IsAdded: true, ID: string(added.ID), Name: added.Name, Folder: added.Path}, nil
 }
 
-// getVaultRoot is the folder to add: the path the call named, or the one the
-// person picks when it named none. It reports false when the person picked
-// nothing.
+// getVaultRoot returns the folder to add: the path in the call, or the folder the person
+// picks when the call has none. It reports false when the person picks nothing.
 func getVaultRoot(ctx context.Context, core Core, path string) (string, bool, error) {
 	if path != "" {
 		return path, true, nil

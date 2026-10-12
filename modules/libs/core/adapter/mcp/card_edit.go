@@ -11,9 +11,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
-// addCardEditingTools are what changes the cards of a deck that is already
-// there. Nothing here makes a deck or a stencil.
-func addCardEditingTools(server *sdk.Server, core Core) {
+// addCardEditTools adds the tools that change the cards of an existing deck.
+func addCardEditTools(server *sdk.Server, core Core) {
 	addCardAdd(server, core)
 	addCardEdit(server, core)
 	addCardValueRemove(server, core)
@@ -23,7 +22,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 	addCardSectionRemove(server, core)
 }
 
-// checkCardSize refuses the values of a card that are more than one write holds.
+// checkCardSize returns an error when the card values exceed the size limit of one write.
 func checkCardSize(vs []FieldValue) error {
 	if size := countBytes(vs); size > maxBytes {
 		return fmt.Errorf("a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
@@ -39,8 +38,7 @@ type cardAddInput struct {
 	Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 }
 
-// One card per call. A call is written out in full before it is made and
-// this one carries what a person wrote, so each is filed as it is finished.
+// addCardAdd adds the tool that writes one card per call.
 func addCardAdd(server *sdk.Server, core Core) {
 	addTool(server, &sdk.Tool{
 		Name:  "card_add",
@@ -63,30 +61,29 @@ func writeCardAdd(ctx context.Context, core Core, in cardAddInput) (WriteOutcome
 	if err := checkCardSize(in.Values); err != nil {
 		return WriteOutcome{}, err
 	}
-	// Where the card went, so that the mark given to it is the one this
-	// answers with.
-	stands := 0
+	// position is the index of the new card in the deck.
+	position := 0
 	written, given, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-		func(read cards.DeckContents, file *format.DeckFile) error {
-			at, err := insertCard(read, file, in)
-			stands = at
+		func(contents cards.DeckContents, file *format.DeckFile) error {
+			at, err := insertCard(contents, file, in)
+			position = at
 			return err
 		})
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	written.Mark = getMark(given, stands)
+	written.Mark = getMark(given, position)
 	return written, nil
 }
 
 // insertCard writes the card at the end of the deck, or at the end of the
-// section the input names, and returns where it stands.
-func insertCard(read cards.DeckContents, file *format.DeckFile, in cardAddInput) (int, error) {
+// section the input names, and returns its index.
+func insertCard(contents cards.DeckContents, file *format.DeckFile, in cardAddInput) (int, error) {
 	card := format.Card{StencilLink: in.Stencil, Values: values(in.Values)}
 	if in.Section == nil {
-		return len(read.Body.Cards), file.AddCard(card)
+		return len(contents.Body.Cards), file.AddCard(card)
 	}
-	at, err := findSectionEnd(read.Body, *in.Section)
+	at, err := findSectionEnd(contents.Body, *in.Section)
 	if err != nil {
 		return 0, err
 	}
@@ -125,19 +122,17 @@ func writeCardEdit(ctx context.Context, core Core, in cardEditInput) (WriteOutco
 		return WriteOutcome{}, err
 	}
 	written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-		func(read cards.DeckContents, file *format.DeckFile) error {
-			return setCardValues(read, file, in)
+		func(contents cards.DeckContents, file *format.DeckFile) error {
+			return setCardValues(contents, file, in)
 		})
 	return written, err
 }
 
-// setCardValues sets the stencil and the values the input names on the card of
-// its mark.
-func setCardValues(read cards.DeckContents, file *format.DeckFile, in cardEditInput) error {
+// setCardValues sets the stencil and values from the input on the card with the given mark.
+func setCardValues(contents cards.DeckContents, file *format.DeckFile, in cardEditInput) error {
 	card := domain.CardID(in.Mark)
-	// A call writing nothing still says whether the deck holds the
-	// card it was addressed to.
-	if _, err := index(read.Body.Cards, in.Mark); err != nil {
+	// The card must exist even when no value changes.
+	if _, err := index(contents.Body.Cards, in.Mark); err != nil {
 		return err
 	}
 	if in.Stencil != "" {

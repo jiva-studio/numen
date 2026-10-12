@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
 
-func TestGetCardRunClampsToTheDeck(t *testing.T) {
-	held := make([]format.Card, 3)
+func TestGetCardRangeClampsToTheDeck(t *testing.T) {
+	deck := make([]format.Card, 3)
 	cases := []struct {
 		name        string
 		from, limit int
@@ -24,7 +24,7 @@ func TestGetCardRunClampsToTheDeck(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if got := len(getCardRun(held, c.from, c.limit)); got != c.want {
+			if got := len(getCardRange(deck, c.from, c.limit)); got != c.want {
 				t.Fatalf("got %d cards, want %d", got, c.want)
 			}
 		})
@@ -38,7 +38,7 @@ func TestFillResultKeepsExistingContent(t *testing.T) {
 	}
 }
 
-func TestFillResultCarriesOutputByShape(t *testing.T) {
+func TestFillResultSetsContentByOutputShape(t *testing.T) {
 	object := fillResult(nil, struct{ A int }{A: 1})
 	if object.StructuredContent == nil || len(object.Content) != 0 {
 		t.Fatalf("an object is structured content, got %+v", object)

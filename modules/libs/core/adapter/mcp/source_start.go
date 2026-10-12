@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-func addSourceWritingTools(server *sdk.Server, core Core) {
+func addSourceWriteTools(server *sdk.Server, core Core) {
 	addSourceRecognise(server, core)
 	addSourceTranscribe(server, core)
 }
@@ -47,25 +47,23 @@ func addSourceRecognise(server *sdk.Server, core Core) {
 	}))
 }
 
-// Nothing here happens inside the question. Fetching the models is minutes and
-// reading a book is an hour, and how far either has got is among everything
-// else the window shows being done.
+// startRecognition queues scan recognition and returns without waiting for it to finish.
 func startRecognition(core Core, in sourceStartInput) (sourceStartOutput, error) {
 	if core.Sources.Recognise == nil {
 		return sourceStartOutput{}, fmt.Errorf("this installation cannot read scans")
 	}
-	doing := "started; it runs in the background, the pages it has read are searchable " +
+	status := "started; it runs in the background, the pages it has read are searchable " +
 		"as it goes, and the window shows how far it has got"
 	switch core.Sources.Recognise.Start(core.getCurrentVault().Vault, in.Path) {
 	case port.Queued:
-		doing = "queued; another document is being read and this one is in line behind " +
+		status = "queued; another document is being read and this one is in line behind " +
 			"it — nothing more is needed, it begins when that reading is over"
 	default:
 		if !core.Sources.Recognise.Ready() {
-			doing = "started; what is needed to read scans is being fetched first, about 160 MB"
+			status = "started; what is needed to read scans is being fetched first, about 160 MB"
 		}
 	}
-	return sourceStartOutput{IsStarted: true, Doing: doing}, nil
+	return sourceStartOutput{IsStarted: true, Doing: status}, nil
 }
 
 func addSourceTranscribe(server *sdk.Server, core Core) {
@@ -88,23 +86,21 @@ func addSourceTranscribe(server *sdk.Server, core Core) {
 	}))
 }
 
-// Nothing here happens inside the question. Fetching the models is minutes and
-// transcribing a talk is an hour, and how far either has got is among
-// everything else the window shows being done.
+// startTranscription queues transcription and returns without waiting for it to finish.
 func startTranscription(core Core, in sourceTranscribeInput) (sourceStartOutput, error) {
 	if core.Sources.Transcribe == nil {
 		return sourceStartOutput{}, fmt.Errorf("this installation cannot hear recordings")
 	}
-	doing := "started; it runs in the background, and what has been transcribed is " +
+	status := "started; it runs in the background, and what has been transcribed is " +
 		"searchable as it goes"
 	switch core.Sources.Transcribe.Start(core.getCurrentVault().Vault, in.Path) {
 	case port.Queued:
-		doing = "queued; another recording is being transcribed and this one is in line " +
+		status = "queued; another recording is being transcribed and this one is in line " +
 			"behind it — nothing more is needed, it begins when that one is over"
 	default:
 		if !core.Sources.Transcribe.Ready() {
-			doing = "started; what is needed to transcribe recordings is being fetched first"
+			status = "started; what is needed to transcribe recordings is being fetched first"
 		}
 	}
-	return sourceStartOutput{IsStarted: true, Doing: doing}, nil
+	return sourceStartOutput{IsStarted: true, Doing: status}, nil
 }

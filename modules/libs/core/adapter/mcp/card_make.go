@@ -11,14 +11,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
-func addCardWritingTools(server *sdk.Server, core Core) {
-	addCardEditingTools(server, core)
-	addCardMakingTools(server, core)
+func addCardWriteTools(server *sdk.Server, core Core) {
+	addCardEditTools(server, core)
+	addCardCreateTools(server, core)
 }
 
-// addCardMakingTools are what a vault is arranged into: a deck, a stencil, and
-// the name a stencil gives a field wherever it is written.
-func addCardMakingTools(server *sdk.Server, core Core) {
+// addCardCreateTools adds the tools that create decks and stencils and rename stencil fields.
+func addCardCreateTools(server *sdk.Server, core Core) {
 	addCardDeckCreate(server, core)
 	addCardStencilCreate(server, core)
 	addCardFieldRename(server, core)
@@ -137,7 +136,7 @@ func renameCardField(ctx context.Context, core Core, in fieldRenameInput) (field
 	return res, nil
 }
 
-// checkDeckCount refuses a vault that holds more decks than a rename may read.
+// checkDeckCount returns an error when the vault holds more decks than a rename can read.
 func checkDeckCount(ctx context.Context, core Core, v domain.Vault) error {
 	held, err := core.Notes.Queries.OfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
