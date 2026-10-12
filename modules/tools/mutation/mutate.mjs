@@ -108,7 +108,8 @@ const runGo = (target, shard, { report, cache, result }, file) => {
     ? getGoFile(target, file)
     : { packages: pickShard(listGoPackages(target), ...shard), others: [] }
   if (packages.length === 0) return null
-  const args = ['run', GOMUTANTS, '-w', String(getWorkers()), '-q']
+  // A mutant is cut off at twice its package's baseline test time.
+  const args = ['run', GOMUTANTS, '-w', String(getWorkers()), '-q', '--timeout-coefficient', '2']
   args.push(file ? '--cache=off' : `--cache=${cache}`)
   if (others.length > 0) args.push('-exclude-files', others.join(','))
   args.push('--detect-equivalent', '-o', result, '-stryker-output', report)
