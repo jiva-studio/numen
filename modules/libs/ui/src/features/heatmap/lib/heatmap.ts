@@ -65,7 +65,6 @@ export function getDays(
   // the last week kept for what is still to come.
   const weeks = Math.min(AHEAD, Math.max(0, columns - 1))
   const last = new Date(now)
-  // Stryker disable next-line MethodExpression, CallExpression: the mutants call setMinutes(12, 0, 0, 0) or drop the call, both keep the hour of the instant; every result is a calendar day name and the hour never changes it
   last.setHours(12, 0, 0, 0)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
 
@@ -119,7 +118,6 @@ function getFirstDay(
 /** The Monday of the week a day stands in, which is the column it opens. */
 function monday(at: Date): Date {
   const out = new Date(at)
-  // Stryker disable next-line MethodExpression, CallExpression: the mutants call setMinutes(12, 0, 0, 0) or drop the call, both keep the hour of the instant; every result is a calendar day name and the hour never changes it
   out.setHours(12, 0, 0, 0)
   out.setDate(out.getDate() - (weekday(out) - 1))
   return out
