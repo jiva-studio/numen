@@ -22,9 +22,9 @@ export interface BoxOptions {
    */
   readonly iconWidth: number
   /** One place inside a node, as it is drawn under the box. */
-  readonly partHeight: number
+  readonly headingHeight: number
   /** How far one level of nesting sets a place in. */
-  readonly partIndent: number
+  readonly headingIndent: number
   /** Between neighbouring nodes along one line. */
   readonly gap: number
   /** Between one line and the next, further from the focus. */
@@ -55,10 +55,10 @@ export interface LimitOptions {
   /** Lines per seat. Nodes past the last line are reported as overflow. */
   readonly maxLines: number
   /**
-   * How many parts a node hangs under its box at once. The rest are scrolled to,
+   * How many headings a node hangs under its box at once. The rest are scrolled to,
    * and a node with less depth under it than this hangs what the depth holds.
    */
-  readonly maxParts: number
+  readonly maxHeadings: number
 }
 
 export interface RoutingOptions {
@@ -117,8 +117,8 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   nodeSize: { width: 144, height: 36 },
   minWidth: 72,
   iconWidth: 16,
-  partHeight: 22,
-  partIndent: 12,
+  headingHeight: 22,
+  headingIndent: 12,
   gap: 16,
   lineGap: 20,
   focusGap: 56,
@@ -127,7 +127,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   squeeze: 0.35,
   maxPerLine: 5,
   maxLines: 4,
-  maxParts: 6,
+  maxHeadings: 6,
   routing: { curvature: 0.55, minReach: 22, arrowRoom: 20 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },

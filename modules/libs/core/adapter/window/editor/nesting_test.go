@@ -16,7 +16,7 @@ import (
 // setting from the palette.
 
 // isHanging is whether a node hangs the headings of its note under it, and
-// parts how many of them stand there at once, as the settings hold the two.
+// getHeadingLimit how many of them stand there at once, as the settings hold the two.
 func isHanging(t *testing.T, f *going) bool {
 	t.Helper()
 	held, is := getSetting(t, f, "appearance", "nest_headings_under_notes").(bool)
@@ -26,7 +26,7 @@ func isHanging(t *testing.T, f *going) bool {
 	return held
 }
 
-func parts(t *testing.T, f *going) int {
+func getHeadingLimit(t *testing.T, f *going) int {
 	t.Helper()
 	held, is := getSetting(t, f, "appearance", "nested_heading_limit").(float64)
 	if !is {
@@ -67,16 +67,16 @@ func TestTurningTheNestingIsAnsweredByTheNextQuestion(t *testing.T) {
 	}
 
 	if isHanging(t, f) {
-		t.Error("the setting was turned and the window still hangs the parts")
+		t.Error("the setting was turned and the window still hangs the headings")
 	}
 }
 
-// How many parts stand under a node is turned the same way, and a request
+// How many headings stand under a node is turned the same way, and a request
 // naming no count leaves the one the settings hold where it was.
-func TestTurningTheCountOfPartsIsAnsweredByTheNextQuestion(t *testing.T) {
+func TestTurningTheCountOfHeadingsIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	if said := parts(t, f); said != 6 {
+	if said := getHeadingLimit(t, f); said != 6 {
 		t.Fatalf("an installation nobody has configured stands %d", said)
 	}
 
@@ -89,17 +89,17 @@ func TestTurningTheCountOfPartsIsAnsweredByTheNextQuestion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if said := parts(t, f); said != 3 {
-		t.Errorf("a node stands %d parts", said)
+	if said := getHeadingLimit(t, f); said != 3 {
+		t.Errorf("a node stands %d headings", said)
 	}
 	if isHanging(t, f) {
-		t.Error("the setting was turned and the window still hangs the parts")
+		t.Error("the setting was turned and the window still hangs the headings")
 	}
 }
 
 // A count the setting does not take is not written, and the settings are left
 // as they are.
-func TestACountOfPartsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
+func TestACountOfHeadingsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	twenty := 20
@@ -107,8 +107,8 @@ func TestACountOfPartsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
 		t.Fatal("a count of twenty was written")
 	}
 
-	if said := parts(t, f); said != 6 {
-		t.Errorf("a node stands %d parts", said)
+	if said := getHeadingLimit(t, f); said != 6 {
+		t.Errorf("a node stands %d headings", said)
 	}
 }
 
