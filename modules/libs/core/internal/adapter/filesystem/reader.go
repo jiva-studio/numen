@@ -80,42 +80,42 @@ func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.Fingerprint)
 			}
 			return nil
 		}
-		fingerprint, ok, err := s.getWalkedFingerprint(p, d)
-		if err != nil || !ok {
+		fingerprint, err := s.getWalkedFingerprint(p, d)
+		if err != nil || fingerprint == nil {
 			return err
 		}
-		return fn(fingerprint)
+		return fn(*fingerprint)
 	})
 }
 
-// getWalkedFingerprint is what a walk reports of a file, and whether it reports the
-// file at all. A source is a regular file: a device, a socket or a FIFO carries
+// getWalkedFingerprint is what a walk reports of a file, or nil where it reports
+// nothing. A source is a regular file: a device, a socket or a FIFO carries
 // no bytes to read whatever it is named.
-func (s *VaultReader) getWalkedFingerprint(p string, d fs.DirEntry) (domain.Fingerprint, bool, error) {
+func (s *VaultReader) getWalkedFingerprint(p string, d fs.DirEntry) (*domain.Fingerprint, error) {
 	kind, ok := s.opts.kind(d.Name())
 	if !ok {
-		return domain.Fingerprint{}, false, nil
+		return nil, nil
 	}
 	rel := s.getRelPath(p)
 	if s.ignored.MatchesPath(rel) {
-		return domain.Fingerprint{}, false, nil
+		return nil, nil
 	}
 	found, err := getEntryInfo(p, d)
 	if errors.Is(err, fs.ErrNotExist) {
-		return domain.Fingerprint{}, false, nil
+		return nil, nil
 	}
 	if err != nil {
-		return domain.Fingerprint{}, false, err
+		return nil, err
 	}
 	if !found.Mode().IsRegular() {
-		return domain.Fingerprint{}, false, nil
+		return nil, nil
 	}
-	return domain.Fingerprint{
+	return &domain.Fingerprint{
 		Path:    rel,
 		Kind:    kind,
 		Size:    found.Size(),
 		ModTime: found.ModTime(),
-	}, true, nil
+	}, nil
 }
 
 // getRelPath names a path under the vault root in slash form.
