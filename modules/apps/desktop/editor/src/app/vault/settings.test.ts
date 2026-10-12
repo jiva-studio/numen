@@ -19,7 +19,7 @@ const answer = (written: unknown, over: Record<string, unknown> = {}) => ({
   written: JSON.stringify(written),
   path: '/vault/.numen/settings.json',
   models: [],
-  partsUnderANodeBounds: { least: 2, most: 9 },
+  nestedHeadingLimitBounds: { least: 2, most: 9 },
   latestDayStarts: '06:00',
   day: '2026-03-14',
   ...over,
@@ -65,7 +65,7 @@ describe('keeping a title and its file name in line', () => {
 describe('the parts a node hangs', () => {
   it('reads whether they hang, how many, and the bounds the vault holds', async () => {
     asked.getSettings.mockResolvedValue(
-      answer({ appearance: { hang_parts_under_a_node: false, parts_under_a_node: 3 } }),
+      answer({ appearance: { nest_headings_under_notes: false, nested_heading_limit: 3 } }),
     )
 
     expect(await core.getHangingSettings()).toStrictEqual({
@@ -80,12 +80,12 @@ describe('the parts a node hangs', () => {
     asked.getSettings.mockResolvedValue(answer({}))
     expect((await core.getHangingSettings()).parts).toBe(6)
 
-    asked.getSettings.mockResolvedValue(answer({ appearance: { parts_under_a_node: '3' } }))
+    asked.getSettings.mockResolvedValue(answer({ appearance: { nested_heading_limit: '3' } }))
     expect((await core.getHangingSettings()).parts).toBe(6)
   })
 
   it('bounds the count at the default where the vault names no bounds', async () => {
-    asked.getSettings.mockResolvedValue(answer({}, { partsUnderANodeBounds: undefined }))
+    asked.getSettings.mockResolvedValue(answer({}, { nestedHeadingLimitBounds: undefined }))
 
     expect(await core.getHangingSettings()).toMatchObject({ isHanging: true, least: 6, most: 6 })
   })
@@ -94,7 +94,7 @@ describe('the parts a node hangs', () => {
     await core.setHangingSettings(true)
 
     expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['appearance', 'hang_parts_under_a_node'], value: 'true' }],
+      settings: [{ at: ['appearance', 'nest_headings_under_notes'], value: 'true' }],
     })
   })
 
@@ -103,8 +103,8 @@ describe('the parts a node hangs', () => {
 
     expect(writtenLast()).toStrictEqual({
       settings: [
-        { at: ['appearance', 'hang_parts_under_a_node'], value: 'false' },
-        { at: ['appearance', 'parts_under_a_node'], value: '4' },
+        { at: ['appearance', 'nest_headings_under_notes'], value: 'false' },
+        { at: ['appearance', 'nested_heading_limit'], value: '4' },
       ],
     })
   })
@@ -144,7 +144,7 @@ describe('every setting', () => {
       namedAt: ['indexing', 'model', 'name'],
       name: 'e5-small-int8',
       title: 'E5 small',
-      shelf: 'On this machine',
+      group: 'On this machine',
       isDefault: true,
       writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"', extra: 1 }],
       presence: Presence.NOT_FETCHED,
@@ -160,7 +160,7 @@ describe('every setting', () => {
           namedAt: ['indexing', 'model', 'name'],
           name: 'e5-small-int8',
           title: 'E5 small',
-          shelf: 'On this machine',
+          group: 'On this machine',
           isDefault: true,
           writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"' }],
           presence: 'not fetched',

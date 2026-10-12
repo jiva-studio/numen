@@ -37,7 +37,7 @@ message GetAgentStateResponse {
 
 message AskAgentRequest {
   // What the person wrote.
-  string asked = 1;
+  string prompt = 1;
   // The note in focus, for a task that says "this note". Empty when nothing
   // is in focus.
   string focus = 2;

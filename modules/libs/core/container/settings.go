@@ -80,7 +80,7 @@ func (s Settings) Sync() bool { return s.Titles.Sync() }
 // HasPartsUnderNode is whether a node hangs the headings of its note under it, and Parts is
 // how many of those headings stand under it at once.
 func (s Settings) HasPartsUnderNode() bool { return s.Appearance.HasPartsUnderNode() }
-func (s Settings) Parts() int              { return s.Appearance.PartsUnderANode }
+func (s Settings) Parts() int              { return s.Appearance.NestedHeadingLimit }
 
 // DayStarts is how long past midnight a day of review begins.
 func (s Settings) DayStarts() time.Duration {

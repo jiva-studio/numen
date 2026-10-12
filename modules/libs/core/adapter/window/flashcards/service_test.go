@@ -16,10 +16,10 @@ import (
 // it.
 func answerCard(t *testing.T, api *API, vault string, session *v1.StartSessionResponse) string {
 	t.Helper()
-	if len(session.GetAsked()) == 0 {
+	if len(session.GetCards()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
-	card := session.GetAsked()[0]
+	card := session.GetCards()[0]
 	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: vault, Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
@@ -39,7 +39,7 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 	v := held[0]
 
 	first := startSession(t, api, v)
-	for _, card := range first.GetAsked() {
+	for _, card := range first.GetCards() {
 		if !card.GetIsNew() {
 			t.Errorf("a card nobody answered says it is not new: %+v", card)
 		}
@@ -52,10 +52,10 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 	// Answered well, so the card is minutes away and asked again in this
 	// session: what it carries is where the answer left it.
 	next := startSession(t, api, v)
-	if len(next.GetAsked()) == 0 {
+	if len(next.GetCards()) == 0 {
 		t.Fatal("the card answered a moment ago is not asked again")
 	}
-	card := next.GetAsked()[0]
+	card := next.GetCards()[0]
 	if card.GetIsNew() {
 		t.Error("a card already answered says it was not seen")
 	}

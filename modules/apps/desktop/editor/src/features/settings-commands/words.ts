@@ -6,7 +6,7 @@
 
 /** Everything the appearance says in the window's voice. */
 export interface AppearanceWords {
-  /** The two shelves the themes are drawn in, and where a person's own go. */
+  /** The two origins the themes are drawn in, and where a person's own go. */
   readonly shipping: string
   readonly owned: string
   readonly noneOwned: string

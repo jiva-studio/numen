@@ -19,7 +19,7 @@ const WORDS = {
 const model = (one: Partial<Model> & { name: string }): Model => ({
   namedAt: ['indexing', 'embedding', 'model', 'name'],
   title: '',
-  shelf: '',
+  group: '',
   isDefault: false,
   writes: [],
   presence: 'nothing to fetch',
@@ -130,11 +130,11 @@ describe('the choices a setting offers', () => {
     expect(one?.detail).toBe('https://held.example/one')
   })
 
-  it('stand each preset on the shelf it names', () => {
+  it('stand each preset on the group it names', () => {
     const offered = choicesFor(
       [
-        model({ name: 'opus', title: 'Opus', shelf: 'By how large it is' }),
-        model({ name: 'held/claude-opus-5', title: 'claude-opus-5', shelf: 'In full' }),
+        model({ name: 'opus', title: 'Opus', group: 'By how large it is' }),
+        model({ name: 'held/claude-opus-5', title: 'claude-opus-5', group: 'In full' }),
       ],
       'opus',
       WORDS,

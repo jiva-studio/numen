@@ -8,11 +8,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// The shelves the models stand on.
+// The groups the models stand on.
 const (
-	shelfSize       = "By how large it is"
-	shelfInFull     = "In full"
-	shelfConfigured = "Named in the settings"
+	groupSize       = "By how large it is"
+	groupInFull     = "In full"
+	groupConfigured = "Named in the settings"
 )
 
 // ModelAt is where the model the agent answers with stands inside this
@@ -29,11 +29,11 @@ func GetModels(held Config) []port.Model {
 		modelAt := []string{"antigravity", "model"}
 		models := []port.Model{
 			{Path: modelAt, Title: "Default (Gemini 3.7 Flash)", Name: "gemini-3.7-flash", IsDefault: true, Presence: port.NothingToFetch},
-			{Path: modelAt, Name: "gemini-2.5-pro", Title: "Gemini 2.5 Pro", Shelf: shelfInFull, Presence: port.NothingToFetch},
-			{Path: modelAt, Name: "gemini-2.5-flash", Title: "Gemini 2.5 Flash", Shelf: shelfInFull, Presence: port.NothingToFetch},
+			{Path: modelAt, Name: "gemini-2.5-pro", Title: "Gemini 2.5 Pro", Group: groupInFull, Presence: port.NothingToFetch},
+			{Path: modelAt, Name: "gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: groupInFull, Presence: port.NothingToFetch},
 		}
 		if name := held.Antigravity.Model; name != "" && !hasModel(models, name) {
-			models = append(models, port.Model{Path: modelAt, Name: name, Title: name, Shelf: shelfConfigured, Presence: port.NothingToFetch})
+			models = append(models, port.Model{Path: modelAt, Name: name, Title: name, Group: groupConfigured, Presence: port.NothingToFetch})
 		}
 		for at := range models {
 			models[at].Writes = []port.Setting{newSetting(modelAt, models[at].Name)}
@@ -52,17 +52,17 @@ func GetModels(held Config) []port.Model {
 		}}
 		for _, one := range []string{"opus", "sonnet", "haiku"} {
 			models = append(models, port.Model{
-				Path: ModelAt, Name: one, Title: one, Shelf: shelfSize, Presence: port.NothingToFetch,
+				Path: ModelAt, Name: one, Title: one, Group: groupSize, Presence: port.NothingToFetch,
 			})
 		}
 		for _, one := range []string{"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"} {
 			models = append(models, port.Model{
-				Path: ModelAt, Name: one, Title: one, Shelf: shelfInFull, Presence: port.NothingToFetch,
+				Path: ModelAt, Name: one, Title: one, Group: groupInFull, Presence: port.NothingToFetch,
 			})
 		}
 		if name := held.Claude.Model; name != "" && !hasModel(models, name) {
 			models = append(models, port.Model{
-				Path: ModelAt, Name: name, Title: name, Shelf: shelfConfigured, Presence: port.NothingToFetch,
+				Path: ModelAt, Name: name, Title: name, Group: groupConfigured, Presence: port.NothingToFetch,
 			})
 		}
 		for at := range models {
@@ -166,7 +166,7 @@ func getCodexModels(held Config) []port.Model {
 							Path:     modelAt,
 							Name:     m.Slug,
 							Title:    title,
-							Shelf:    shelfInFull,
+							Group:    groupInFull,
 							Presence: port.NothingToFetch,
 						})
 					}
@@ -178,7 +178,7 @@ func getCodexModels(held Config) []port.Model {
 	if len(models) == 0 {
 		models = []port.Model{
 			{Path: modelAt, Title: "Default (GPT-5.6 Terra)", Name: "gpt-5.6-terra", IsDefault: true, Presence: port.NothingToFetch},
-			{Path: modelAt, Name: "gpt-5.6-luna", Title: "GPT-5.6 Luna", Shelf: shelfInFull, Presence: port.NothingToFetch},
+			{Path: modelAt, Name: "gpt-5.6-luna", Title: "GPT-5.6 Luna", Group: groupInFull, Presence: port.NothingToFetch},
 		}
 	} else {
 		models[0].IsDefault = true
@@ -186,7 +186,7 @@ func getCodexModels(held Config) []port.Model {
 	}
 
 	if name := held.Codex.Model; name != "" && !hasModel(models, name) {
-		models = append(models, port.Model{Path: modelAt, Name: name, Title: name, Shelf: shelfConfigured, Presence: port.NothingToFetch})
+		models = append(models, port.Model{Path: modelAt, Name: name, Title: name, Group: groupConfigured, Presence: port.NothingToFetch})
 	}
 	for at := range models {
 		models[at].Writes = []port.Setting{newSetting(modelAt, models[at].Name)}

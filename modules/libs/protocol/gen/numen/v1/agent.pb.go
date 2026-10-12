@@ -112,7 +112,7 @@ func (x *GetAgentStateResponse) GetUnreachable() string {
 type AskAgentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the person wrote.
-	Asked string `protobuf:"bytes,1,opt,name=asked,proto3" json:"asked,omitempty"`
+	Prompt string `protobuf:"bytes,1,opt,name=prompt,proto3" json:"prompt,omitempty"`
 	// The note in focus, for a task that says "this note". Empty when nothing
 	// is in focus.
 	Focus string `protobuf:"bytes,2,opt,name=focus,proto3" json:"focus,omitempty"`
@@ -165,9 +165,9 @@ func (*AskAgentRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *AskAgentRequest) GetAsked() string {
+func (x *AskAgentRequest) GetPrompt() string {
 	if x != nil {
-		return x.Asked
+		return x.Prompt
 	}
 	return ""
 }
@@ -607,9 +607,9 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x14numen/v1/agent.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
 	"\x14GetAgentStateRequest\"9\n" +
 	"\x15GetAgentStateResponse\x12 \n" +
-	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\xb5\x01\n" +
-	"\x0fAskAgentRequest\x12\x14\n" +
-	"\x05asked\x18\x01 \x01(\tR\x05asked\x12\x14\n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\xb7\x01\n" +
+	"\x0fAskAgentRequest\x12\x16\n" +
+	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
 	"\fconversation\x18\x03 \x01(\tR\fconversation\x12\x12\n" +
 	"\x04mark\x18\x04 \x01(\tR\x04mark\x12\x12\n" +

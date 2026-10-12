@@ -603,8 +603,8 @@ func (x *Ahead) GetEasy() int64 {
 	return 0
 }
 
-// Asked is one card face as it is put to a person.
-type Asked struct {
+// SessionCard is one card face as it is put to a person in a session.
+type SessionCard struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Deck is the path of the file the card stands in, and section the name of
 	// the section it stands under. A card standing before the first section
@@ -631,20 +631,20 @@ type Asked struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Asked) Reset() {
-	*x = Asked{}
+func (x *SessionCard) Reset() {
+	*x = SessionCard{}
 	mi := &file_numen_v1_flashcards_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Asked) String() string {
+func (x *SessionCard) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Asked) ProtoMessage() {}
+func (*SessionCard) ProtoMessage() {}
 
-func (x *Asked) ProtoReflect() protoreflect.Message {
+func (x *SessionCard) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_flashcards_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -656,75 +656,75 @@ func (x *Asked) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Asked.ProtoReflect.Descriptor instead.
-func (*Asked) Descriptor() ([]byte, []int) {
+// Deprecated: Use SessionCard.ProtoReflect.Descriptor instead.
+func (*SessionCard) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Asked) GetDeck() string {
+func (x *SessionCard) GetDeck() string {
 	if x != nil {
 		return x.Deck
 	}
 	return ""
 }
 
-func (x *Asked) GetSection() string {
+func (x *SessionCard) GetSection() string {
 	if x != nil {
 		return x.Section
 	}
 	return ""
 }
 
-func (x *Asked) GetMark() string {
+func (x *SessionCard) GetMark() string {
 	if x != nil {
 		return x.Mark
 	}
 	return ""
 }
 
-func (x *Asked) GetFace() string {
+func (x *SessionCard) GetFace() string {
 	if x != nil {
 		return x.Face
 	}
 	return ""
 }
 
-func (x *Asked) GetHeading() string {
+func (x *SessionCard) GetHeading() string {
 	if x != nil {
 		return x.Heading
 	}
 	return ""
 }
 
-func (x *Asked) GetFront() string {
+func (x *SessionCard) GetFront() string {
 	if x != nil {
 		return x.Front
 	}
 	return ""
 }
 
-func (x *Asked) GetBack() string {
+func (x *SessionCard) GetBack() string {
 	if x != nil {
 		return x.Back
 	}
 	return ""
 }
 
-func (x *Asked) GetIsNew() bool {
+func (x *SessionCard) GetIsNew() bool {
 	if x != nil {
 		return x.IsNew
 	}
 	return false
 }
 
-func (x *Asked) GetDue() string {
+func (x *SessionCard) GetDue() string {
 	if x != nil {
 		return x.Due
 	}
 	return ""
 }
 
-func (x *Asked) GetAhead() *Ahead {
+func (x *SessionCard) GetAhead() *Ahead {
 	if x != nil {
 		return x.Ahead
 	}
@@ -909,8 +909,8 @@ type StartSessionResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Run is what an answer given in this session is written to, and it is what
 	// an AnswerCard names.
-	Run   string   `protobuf:"bytes,1,opt,name=run,proto3" json:"run,omitempty"`
-	Asked []*Asked `protobuf:"bytes,2,rep,name=asked,proto3" json:"asked,omitempty"`
+	Run   string         `protobuf:"bytes,1,opt,name=run,proto3" json:"run,omitempty"`
+	Cards []*SessionCard `protobuf:"bytes,2,rep,name=cards,proto3" json:"cards,omitempty"`
 	// Unwritten are the decks holding a card with no mark that could not be given
 	// one. Their cards are not in this session and are asked for at the next.
 	Unwritten []string `protobuf:"bytes,3,rep,name=unwritten,proto3" json:"unwritten,omitempty"`
@@ -958,9 +958,9 @@ func (x *StartSessionResponse) GetRun() string {
 	return ""
 }
 
-func (x *StartSessionResponse) GetAsked() []*Asked {
+func (x *StartSessionResponse) GetCards() []*SessionCard {
 	if x != nil {
-		return x.Asked
+		return x.Cards
 	}
 	return nil
 }
@@ -1929,8 +1929,8 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
 	"\x04good\x18\x03 \x01(\x03R\x04good\x12\x12\n" +
-	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\xf1\x01\n" +
-	"\x05Asked\x12\x12\n" +
+	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\xf7\x01\n" +
+	"\vSessionCard\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x18\n" +
 	"\asection\x18\x02 \x01(\tR\asection\x12\x12\n" +
 	"\x04mark\x18\x03 \x01(\tR\x04mark\x12\x12\n" +
@@ -1951,10 +1951,10 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x1b\n" +
 	"\x06preset\x18\x03 \x01(\tH\x00R\x06preset\x88\x01\x01B\t\n" +
-	"\a_preset\"\x87\x01\n" +
+	"\a_preset\"\x8d\x01\n" +
 	"\x14StartSessionResponse\x12\x10\n" +
-	"\x03run\x18\x01 \x01(\tR\x03run\x12%\n" +
-	"\x05asked\x18\x02 \x03(\v2\x0f.numen.v1.AskedR\x05asked\x12\x1c\n" +
+	"\x03run\x18\x01 \x01(\tR\x03run\x12+\n" +
+	"\x05cards\x18\x02 \x03(\v2\x15.numen.v1.SessionCardR\x05cards\x12\x1c\n" +
 	"\tunwritten\x18\x03 \x03(\tR\tunwritten\x12\x18\n" +
 	"\askipped\x18\x04 \x01(\x05R\askipped\"\xa6\x01\n" +
 	"\x11AnswerCardRequest\x12\x14\n" +
@@ -2053,7 +2053,7 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*DeckCardsDue)(nil),                 // 2: numen.v1.DeckCardsDue
 	(*PresetCardsDue)(nil),               // 3: numen.v1.PresetCardsDue
 	(*Ahead)(nil),                        // 4: numen.v1.Ahead
-	(*Asked)(nil),                        // 5: numen.v1.Asked
+	(*SessionCard)(nil),                  // 5: numen.v1.SessionCard
 	(*WatchCardsDueRequest)(nil),         // 6: numen.v1.WatchCardsDueRequest
 	(*WatchCardsDueResponse)(nil),        // 7: numen.v1.WatchCardsDueResponse
 	(*StartSessionRequest)(nil),          // 8: numen.v1.StartSessionRequest
@@ -2080,10 +2080,10 @@ var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultCardsDue.decks:type_name -> numen.v1.DeckCardsDue
 	3,  // 1: numen.v1.VaultCardsDue.presets:type_name -> numen.v1.PresetCardsDue
 	24, // 2: numen.v1.PresetCardsDue.stops_on:type_name -> numen.v1.StopReason
-	4,  // 3: numen.v1.Asked.ahead:type_name -> numen.v1.Ahead
+	4,  // 3: numen.v1.SessionCard.ahead:type_name -> numen.v1.Ahead
 	1,  // 4: numen.v1.WatchCardsDueResponse.vaults:type_name -> numen.v1.VaultCardsDue
 	1,  // 5: numen.v1.WatchCardsDueResponse.counted:type_name -> numen.v1.VaultCardsDue
-	5,  // 6: numen.v1.StartSessionResponse.asked:type_name -> numen.v1.Asked
+	5,  // 6: numen.v1.StartSessionResponse.cards:type_name -> numen.v1.SessionCard
 	0,  // 7: numen.v1.AnswerCardRequest.rating:type_name -> numen.v1.Rating
 	16, // 8: numen.v1.ListReviewDaysResponse.days:type_name -> numen.v1.ReviewDay
 	16, // 9: numen.v1.ListReviewDaysResponse.due:type_name -> numen.v1.ReviewDay

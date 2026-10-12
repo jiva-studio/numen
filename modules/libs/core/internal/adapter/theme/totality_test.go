@@ -8,12 +8,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
-// TestEveryShelfIsWrittenFromOne. A shelf the schema names and nothing is put
+// TestEveryOriginIsWrittenFromOne. An origin the schema names and nothing is put
 // on reaches a window as the unspecified value, and the window draws the theme
 // under neither heading.
-func TestEveryShelfIsWrittenFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Shelf]Shelf{
-		v1.Shelf_SHELF_PRESET: Preset,
-		v1.Shelf_SHELF_MINE:   Mine,
-	}, encodeShelf)
+func TestEveryOriginIsWrittenFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.Origin]Origin{
+		v1.Origin_ORIGIN_PRESET: Preset,
+		v1.Origin_ORIGIN_MINE:   Mine,
+	}, encodeOrigin)
 }

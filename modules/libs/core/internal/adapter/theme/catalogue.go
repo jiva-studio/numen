@@ -33,28 +33,28 @@ const MaxSize = 256 << 10
 // wears. It is the theme an installation nobody has dressed is set to.
 const Default = "preset:numen"
 
-// Shelf is where a theme came off. A theme carries its shelf in its name, and
-// two themes on different shelves can share a filename.
-type Shelf string
+// Origin is where a theme comes from. A theme carries its origin in its name, and
+// two themes on different origins can share a filename.
+type Origin string
 
 const (
 	// Preset ships inside the application.
-	Preset Shelf = "preset"
+	Preset Origin = "preset"
 
 	// Mine is a `.css` file in the person's themes folder.
-	Mine Shelf = "mine"
+	Mine Origin = "mine"
 )
 
 // Theme is one theme as the list refers to it.
 type Theme struct {
-	// Name is the shelf and the filename, `preset:dracula` or `mine:dracula`,
+	// Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
 	// and it is how the theme is asked for again.
 	Name string
 
-	// Title is what the file is called, without the shelf and without `.css`.
+	// Title is what the file is called, without the origin and without `.css`.
 	Title string
 
-	Shelf Shelf
+	Origin Origin
 
 	// IsPinned is set for a theme declaring `color-scheme` itself. Light and dark
 	// are that theme's own, and the mode has nothing left to choose.
@@ -92,7 +92,7 @@ func OpenAt(dir string) (Catalogue, error) {
 // Dir is the folder the person's themes are read from.
 func (c Catalogue) Dir() string { return c.dir }
 
-// Themes is every theme there is, the shipped ones first and each shelf by
+// Themes is every theme there is, the shipped ones first and each origin by
 // name. A file that cannot be read is not among them: a name in this list is a
 // theme that can be worn.
 func (c Catalogue) Themes() []Theme {
@@ -137,23 +137,23 @@ func (c Catalogue) getOwnThemes() []Theme {
 	return themes
 }
 
-func describeTheme(shelf Shelf, filename, text string) Theme {
+func describeTheme(origin Origin, filename, text string) Theme {
 	title := strings.TrimSuffix(filename, Extension)
 	return Theme{
-		Name:     string(shelf) + ":" + title,
+		Name:     string(origin) + ":" + title,
 		Title:    title,
-		Shelf:    shelf,
+		Origin:   origin,
 		IsPinned: declaresColorScheme(text),
 	}
 }
 
 // Text is one theme's file, as the file stands when it is asked for.
 func (c Catalogue) Text(name string) (string, error) {
-	shelf, title, err := splitName(name)
+	origin, title, err := splitName(name)
 	if err != nil {
 		return "", err
 	}
-	if shelf == Preset {
+	if origin == Preset {
 		text, err := shipped.ReadFile(path.Join(shippedIn, title+Extension))
 		if err != nil {
 			return "", fmt.Errorf("%s: this build ships no such theme", name)
@@ -182,20 +182,20 @@ func (c Catalogue) GetApplied(name string) (applied, missing string) {
 	return name, ""
 }
 
-// splitName takes a name apart into the shelf it came off and the file it names.
+// splitName takes a name apart into the origin it comes from and the file it names.
 //
 // A name resolves to a file inside the themes folder and nowhere else, so the
-// half after the shelf is a filename and nothing else: `mine:../../.ssh/id_rsa`
+// half after the origin is a filename and nothing else: `mine:../../.ssh/id_rsa`
 // names no theme.
-func splitName(name string) (Shelf, string, error) {
-	shelf, title, found := strings.Cut(name, ":")
+func splitName(name string) (Origin, string, error) {
+	origin, title, found := strings.Cut(name, ":")
 	if found && isPlainName(title) {
-		switch Shelf(shelf) {
+		switch Origin(origin) {
 		case Preset, Mine:
-			return Shelf(shelf), title, nil
+			return Origin(origin), title, nil
 		}
 	}
-	return "", "", fmt.Errorf("%s: a theme is named by its shelf and one file in the themes folder", name)
+	return "", "", fmt.Errorf("%s: a theme is named by its origin and one file in the themes folder", name)
 }
 
 // isPlainName is a name that stays in the folder it is joined to.

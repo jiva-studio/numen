@@ -25,10 +25,10 @@ type Model struct {
 	// Name is what stands there while this model is the one in force.
 	Name string
 
-	// Title is what is drawn on the row, and Shelf what the rows around it
+	// Title is what is drawn on the row, and Group what the rows around it
 	// stand under.
 	Title string
-	Shelf string
+	Group string
 
 	// IsDefault marks the model an installation nobody has configured runs on.
 	IsDefault bool

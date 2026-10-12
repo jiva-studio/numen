@@ -81,8 +81,8 @@ func (e EditorAssembly) TurnSettings(written []port.Setting) error {
 	return e.cfg.GetSettingsWriter()(written)
 }
 
-func (e EditorAssembly) GetPartsUnderANodeBounds() (least, most float64) {
-	held := e.cfg.PartsUnderANodeBounds()
+func (e EditorAssembly) GetNestedHeadingLimitBounds() (least, most float64) {
+	held := e.cfg.NestedHeadingLimitBounds()
 	return held.Least, held.Most
 }
 

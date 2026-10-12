@@ -17,7 +17,7 @@ const BOUNDS: Ranges = {
 }
 
 describe('the themes offered', () => {
-  it('stands the shelf the theme worn came off first', () => {
+  it('stands the origin of the theme in force first', () => {
     expect(getThemeGroups(THEMES, 'mine:sea', words).map((one) => one.id)).toStrictEqual([
       'owned',
       'shipping',
@@ -28,7 +28,7 @@ describe('the themes offered', () => {
     ])
   })
 
-  it('opens the shelf on the theme in force', () => {
+  it('opens the origin of the theme in force', () => {
     const shipping = getThemeGroups(THEMES, 'preset:dracula', words)[0]
 
     expect(shipping?.items[0]?.title).toBe('dracula')

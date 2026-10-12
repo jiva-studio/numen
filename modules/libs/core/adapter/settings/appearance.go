@@ -25,26 +25,26 @@ type Appearance struct {
 	// this nothing to choose.
 	Mode string `json:"mode"`
 
-	// Theme is the stylesheet the window wears, named by the shelf it came off
+	// Theme is the stylesheet the window wears, named by its origin
 	// and its filename: `preset:dracula` ships here, `mine:dracula` is the
 	// person's file.
 	Theme string `json:"theme"`
 
-	// HangPartsUnderANode is whether a node in the plex hangs the headings of
-	// its note under the box. A file leaving it out hangs them, and a file
+	// NestHeadingsUnderNotes is whether a node in the plex nests the headings of
+	// its note under the box. A file leaving it out nests them, and a file
 	// naming false leaves the box alone.
-	HangPartsUnderANode *bool `json:"hang_parts_under_a_node"`
+	NestHeadingsUnderNotes *bool `json:"nest_headings_under_notes"`
 
-	// PartsUnderANode is how many of those headings stand under a node at once,
-	// the rest being wound to. A number outside PartsUnderANodeBounds is
+	// NestedHeadingLimit is how many of those headings stand under a node at once,
+	// the rest being reached by scrolling. A number outside NestedHeadingLimitBounds is
 	// refused, and a file naming none stands DefaultParts of them.
-	PartsUnderANode int `json:"parts_under_a_node"`
+	NestedHeadingLimit int `json:"nested_heading_limit"`
 }
 
 // HasPartsUnderNode is whether a node hangs the headings of its note under it. A section
 // naming nothing hangs them.
 func (a Appearance) HasPartsUnderNode() bool {
-	return a.HangPartsUnderANode == nil || *a.HangPartsUnderANode
+	return a.NestHeadingsUnderNotes == nil || *a.NestHeadingsUnderNotes
 }
 
 // The modes a colour pair is read by.
@@ -92,9 +92,9 @@ const DefaultParts = 6
 // typing still fits the row it is typed in. A node hangs at least one heading,
 // and twelve of them reach the foot of a window the plex is drawn in.
 var (
-	InterfaceScaleBounds  = Bounds{Least: 0.8, Most: 2}
-	TextScaleBounds       = Bounds{Least: 0.8, Most: 1.75}
-	PartsUnderANodeBounds = Bounds{Least: 1, Most: 12}
+	InterfaceScaleBounds     = Bounds{Least: 0.8, Most: 2}
+	TextScaleBounds          = Bounds{Least: 0.8, Most: 1.75}
+	NestedHeadingLimitBounds = Bounds{Least: 1, Most: 12}
 )
 
 // GetOutsideBounds is every number the section holds that its setting does not take,
@@ -104,7 +104,7 @@ func (a Appearance) GetOutsideBounds() []*OutsideBounds {
 	for _, err := range []error{
 		InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale),
 		TextScaleBounds.Check("appearance.text_scale", a.TextScale),
-		PartsUnderANodeBounds.Check("appearance.parts_under_a_node", float64(a.PartsUnderANode)),
+		NestedHeadingLimitBounds.Check("appearance.nested_heading_limit", float64(a.NestedHeadingLimit)),
 	} {
 		var outside *OutsideBounds
 		if errors.As(err, &outside) {

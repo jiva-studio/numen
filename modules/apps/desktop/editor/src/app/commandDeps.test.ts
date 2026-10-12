@@ -11,7 +11,7 @@ describe('createCommandDeps', () => {
     namedAt: ['indexing', 'model', 'name'],
     name: 'e5-small-int8',
     title: 'e5-small-int8',
-    shelf: 'On this machine',
+    group: 'On this machine',
     isDefault: false,
     presence: 'present',
     writes: [{ at: ['indexing', 'model', 'name'], value: 'e5-small-int8' }],

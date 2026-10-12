@@ -136,9 +136,9 @@ type GetSettingsResponse struct {
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The models the settings that name one can be set to.
 	Models []*Model `protobuf:"bytes,3,rep,name=models,proto3" json:"models,omitempty"`
-	// How many parts a node may be asked to hang, at each end. A number outside
+	// How many headings may nest under a note, at each end. A number outside
 	// it is refused. A client asking a person for one says these.
-	PartsUnderANodeBounds *Bounds `protobuf:"bytes,4,opt,name=parts_under_a_node_bounds,json=partsUnderANodeBounds,proto3" json:"parts_under_a_node_bounds,omitempty"`
+	NestedHeadingLimitBounds *Bounds `protobuf:"bytes,4,opt,name=nested_heading_limit_bounds,json=nestedHeadingLimitBounds,proto3" json:"nested_heading_limit_bounds,omitempty"`
 	// How late in the day a day of review may be made to begin, on the clock on
 	// the wall as `HH:MM`. An hour past it is refused. A client asking a person
 	// for one says this.
@@ -202,9 +202,9 @@ func (x *GetSettingsResponse) GetModels() []*Model {
 	return nil
 }
 
-func (x *GetSettingsResponse) GetPartsUnderANodeBounds() *Bounds {
+func (x *GetSettingsResponse) GetNestedHeadingLimitBounds() *Bounds {
 	if x != nil {
-		return x.PartsUnderANodeBounds
+		return x.NestedHeadingLimitBounds
 	}
 	return nil
 }
@@ -231,9 +231,9 @@ type Model struct {
 	NamedAt []string `protobuf:"bytes,1,rep,name=named_at,json=namedAt,proto3" json:"named_at,omitempty"`
 	// What stands there while this model is the one in force.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// What is drawn on the row, and the shelf the rows around it stand under.
+	// What is drawn on the row, and the group the rows around it stand under.
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Shelf string `protobuf:"bytes,4,opt,name=shelf,proto3" json:"shelf,omitempty"`
+	Group string `protobuf:"bytes,4,opt,name=group,proto3" json:"group,omitempty"`
 	// Set on the model an installation nobody has configured runs on.
 	IsDefault bool `protobuf:"varint,5,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
 	// What choosing it writes. One model is several keys where the model decides
@@ -296,9 +296,9 @@ func (x *Model) GetTitle() string {
 	return ""
 }
 
-func (x *Model) GetShelf() string {
+func (x *Model) GetGroup() string {
 	if x != nil {
-		return x.Shelf
+		return x.Group
 	}
 	return ""
 }
@@ -659,19 +659,19 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xf6\x01\n" +
+	"\x12GetSettingsRequest\"\xfb\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12'\n" +
-	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12J\n" +
-	"\x19parts_under_a_node_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x15partsUnderANodeBounds\x12*\n" +
+	"\x06models\x18\x03 \x03(\v2\x0f.numen.v1.ModelR\x06models\x12O\n" +
+	"\x1bnested_heading_limit_bounds\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\x18nestedHeadingLimitBounds\x12*\n" +
 	"\x11latest_day_starts\x18\x05 \x01(\tR\x0flatestDayStarts\x12\x10\n" +
 	"\x03day\x18\x06 \x01(\tR\x03day\"\xdc\x01\n" +
 	"\x05Model\x12\x19\n" +
 	"\bnamed_at\x18\x01 \x03(\tR\anamedAt\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x14\n" +
-	"\x05shelf\x18\x04 \x01(\tR\x05shelf\x12\x1d\n" +
+	"\x05group\x18\x04 \x01(\tR\x05group\x12\x1d\n" +
 	"\n" +
 	"is_default\x18\x05 \x01(\bR\tisDefault\x12)\n" +
 	"\x06writes\x18\x06 \x03(\v2\x11.numen.v1.SettingR\x06writes\x12.\n" +
@@ -735,7 +735,7 @@ var file_numen_v1_settings_proto_goTypes = []any{
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetSettingsResponse.models:type_name -> numen.v1.Model
-	11, // 1: numen.v1.GetSettingsResponse.parts_under_a_node_bounds:type_name -> numen.v1.Bounds
+	11, // 1: numen.v1.GetSettingsResponse.nested_heading_limit_bounds:type_name -> numen.v1.Bounds
 	4,  // 2: numen.v1.Model.writes:type_name -> numen.v1.Setting
 	0,  // 3: numen.v1.Model.presence:type_name -> numen.v1.Presence
 	4,  // 4: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting

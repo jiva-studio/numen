@@ -14,7 +14,7 @@ const spanOf = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.t
 /** As much of the agent service as the port asks of it. */
 export interface AgentClient {
   askAgent(
-    request: { asked: string; focus: string; conversation: string; agent?: string; model?: string },
+    request: { prompt: string; focus: string; conversation: string; agent?: string; model?: string },
     options: { signal: AbortSignal },
   ): AsyncIterable<AskAgentResponse>
   finishConversation(request: { conversation: string }): Promise<unknown>
@@ -22,10 +22,10 @@ export interface AgentClient {
 
 /** The agent port, over the client the window talks on. */
 export const agentPort = (agent: AgentClient): AgentPort => ({
-  async *ask(asked, focus, conversation, signal, agentId, modelId) {
+  async *ask(prompt, focus, conversation, signal, agentId, modelId) {
     for await (const step of agent.askAgent(
       {
-        asked,
+        prompt,
         focus,
         conversation,
         ...(agentId ? { agent: agentId } : {}),

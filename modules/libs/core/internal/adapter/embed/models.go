@@ -6,10 +6,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// The shelves the models stand on.
+// The groups the models stand on.
 const (
-	shelfMachine    = "On this machine"
-	shelfConfigured = "Named in the settings"
+	groupMachine    = "On this machine"
+	groupConfigured = "Named in the settings"
 )
 
 // ModelAt is where the model a vault is indexed by stands inside this adapter's
@@ -99,7 +99,7 @@ func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
 			Path:      ModelAt,
 			Name:      p.Model.Name,
 			Title:     p.Model.Name,
-			Shelf:     shelfMachine,
+			Group:     groupMachine,
 			IsDefault: p.Model.Name == offered.Model.Name,
 			Presence:  presence,
 			Writes:    writes,
@@ -130,7 +130,7 @@ func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
 		Path:     ModelAt,
 		Name:     name,
 		Title:    name,
-		Shelf:    shelfConfigured,
+		Group:    groupConfigured,
 		Presence: getPresence(provider, name, isFetched),
 		Writes:   writes,
 	})

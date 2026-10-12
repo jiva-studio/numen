@@ -161,13 +161,13 @@ describe('settings domain', () => {
   it('handles the sync, hanging, settings, settings-file and review settings', async () => {
     const writtenSettings = JSON.stringify({
       naming: { sync_title_and_filename: true },
-      appearance: { hang_parts_under_a_node: true, parts_under_a_node: 3 },
+      appearance: { nest_headings_under_notes: true, nested_heading_limit: 3 },
       review: { day_starts: '04:00' },
     })
     asked.getSettings.mockResolvedValue({
       written: writtenSettings,
       models: [],
-      partsUnderANodeBounds: { least: 1, most: 5 },
+      nestedHeadingLimitBounds: { least: 1, most: 5 },
       latestDayStarts: '06:00',
       day: '2026-09-10',
       path: 'settings.json',
@@ -214,7 +214,7 @@ describe('notes domain', () => {
     asked.renameNote.mockResolvedValue({
       path: 'b.md',
       title: 'B',
-      by: 1,
+      nameSource: 1,
       moved: { path: 'b.md' },
     })
     const renamed = await core.rename('a.md', 'B')

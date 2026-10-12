@@ -63,7 +63,7 @@ describe('a note asked for', () => {
   })
 
   it('is renamed by the path it has, and a stale answer is a change under the window', async () => {
-    asked.renameNote.mockResolvedValue({ path: 'B.md', title: 'B', by: 1 })
+    asked.renameNote.mockResolvedValue({ path: 'B.md', title: 'B', nameSource: 1 })
     const renamed = await core.rename('A.md', 'B')
     expect(asked.renameNote.mock.calls.at(-1)?.[0]).toEqual({ path: 'A.md', title: 'B' })
     expect(renamed).toEqual({

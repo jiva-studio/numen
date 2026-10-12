@@ -300,9 +300,9 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	}
 }
 
-func TestTheBoundsOnPartsUnderANodeAreTheSettingsOwn(t *testing.T) {
-	got := Config{}.PartsUnderANodeBounds()
-	if got != settings.PartsUnderANodeBounds || got == (settings.Bounds{}) {
+func TestTheBoundsOnNestedHeadingLimitAreTheSettingsOwn(t *testing.T) {
+	got := Config{}.NestedHeadingLimitBounds()
+	if got != settings.NestedHeadingLimitBounds || got == (settings.Bounds{}) {
 		t.Errorf("got %+v", got)
 	}
 }

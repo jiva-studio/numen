@@ -75,7 +75,7 @@ func readPresets(t *testing.T) map[string]string {
 	catalogue := createThemeFolder(t)
 	texts := map[string]string{}
 	for _, one := range catalogue.Themes() {
-		if one.Shelf != theme.Preset {
+		if one.Origin != theme.Preset {
 			continue
 		}
 		text, err := catalogue.Text(one.Name)

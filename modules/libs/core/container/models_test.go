@@ -108,21 +108,21 @@ func TestTheIndexingModelIsWrittenWithItsProvider(t *testing.T) {
 }
 
 // The agent answers with whatever the machine answers with until a person says
-// otherwise, and the sizes and the names in full stand on shelves of their own.
+// otherwise, and the sizes and the names in full stand on groups of their own.
 func TestTheAgentAnswersWithWhateverTheMachineAnswersWith(t *testing.T) {
 	held := modelsAt(t, DefaultSettings(), agentModelAt)
 	if held[0].Name != "" || !held[0].IsDefault {
 		t.Errorf("the agent opens on %+v", held[0])
 	}
-	shelves := map[string]bool{}
+	groups := map[string]bool{}
 	for _, one := range held[1:] {
-		shelves[one.Shelf] = true
+		groups[one.Group] = true
 		if one.Name == "" {
 			t.Errorf("a model past the first is named nothing")
 		}
 	}
-	if len(shelves) != 2 {
-		t.Errorf("the models stand on %d shelves", len(shelves))
+	if len(groups) != 2 {
+		t.Errorf("the models stand on %d groups", len(groups))
 	}
 }
 

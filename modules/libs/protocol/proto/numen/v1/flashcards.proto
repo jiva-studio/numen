@@ -210,8 +210,8 @@ message Ahead {
   int64 easy = 4;
 }
 
-// Asked is one card face as it is put to a person.
-message Asked {
+// SessionCard is one card face as it is put to a person in a session.
+message SessionCard {
   // Deck is the path of the file the card stands in, and section the name of
   // the section it stands under. A card standing before the first section
   // carries none.
@@ -279,7 +279,7 @@ message StartSessionResponse {
   // Run is what an answer given in this session is written to, and it is what
   // an AnswerCard names.
   string run = 1;
-  repeated Asked asked = 2;
+  repeated SessionCard cards = 2;
 
   // Unwritten are the decks holding a card with no mark that could not be given
   // one. Their cards are not in this session and are asked for at the next.

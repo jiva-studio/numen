@@ -15,8 +15,8 @@ import type { ReviewSettings } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
 const SYNCS = ['naming', 'sync_title_and_filename']
-const HANGS = ['appearance', 'hang_parts_under_a_node']
-const PARTS = ['appearance', 'parts_under_a_node']
+const HANGS = ['appearance', 'nest_headings_under_notes']
+const PARTS = ['appearance', 'nested_heading_limit']
 const STARTS = ['review', 'day_starts']
 
 /** Every setting as it stands, with the defaults under what the file leaves out. */
@@ -49,7 +49,7 @@ export const settingsCore: SettingsPort = {
   getHangingSettings: async () => {
     const answer = await settingsService.getSettings({})
     const written = JSON.parse(answer.written)
-    const held = answer.partsUnderANodeBounds
+    const held = answer.nestedHeadingLimitBounds
     return {
       isHanging: getSettingAt(written, HANGS) !== false,
       parts: partsIn(getSettingAt(written, PARTS)),
@@ -71,7 +71,7 @@ export const settingsCore: SettingsPort = {
         namedAt: one.namedAt,
         name: one.name,
         title: one.title,
-        shelf: one.shelf,
+        group: one.group,
         isDefault: one.isDefault,
         writes: one.writes.map((w) => ({ at: w.at, value: w.value })),
         presence: fetched[one.presence],

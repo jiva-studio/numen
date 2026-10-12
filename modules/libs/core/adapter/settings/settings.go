@@ -71,12 +71,12 @@ const DefaultVersion = 1
 // nobody has configured draws, names and reviews by.
 func DefaultAppearance() Appearance {
 	return Appearance{
-		InterfaceScale:      AsDesigned,
-		TextScale:           AsDesigned,
-		Mode:                ModeSystem,
-		Theme:               DefaultTheme,
-		HangPartsUnderANode: newTrue(),
-		PartsUnderANode:     DefaultParts,
+		InterfaceScale:         AsDesigned,
+		TextScale:              AsDesigned,
+		Mode:                   ModeSystem,
+		Theme:                  DefaultTheme,
+		NestHeadingsUnderNotes: newTrue(),
+		NestedHeadingLimit:     DefaultParts,
 	}
 }
 

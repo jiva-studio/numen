@@ -19,7 +19,7 @@ const MODELS: readonly Model[] = [
     namedAt: ['agent', 'claude', 'model'],
     name: 'opus',
     title: 'opus',
-    shelf: '',
+    group: '',
     isDefault: false,
     writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
     presence: 'nothing to fetch',

@@ -42,7 +42,7 @@ export const HELD = 150
 
 /**
  * What a mode is offered under: the command it belongs to, and the mode. A
- * theme is named by its shelf, and there are two shelves, so no theme is ever
+ * theme is named by its origin, and there are two origins, so no theme is ever
  * named this.
  */
 export const getModeId = (one: Mode): string => `${MODE}:${one}`
@@ -53,7 +53,7 @@ export const modeOf = (item: string): Mode | null =>
 
 /**
  * What a size is offered under: the command it belongs to, and the multiplier.
- * A theme is named by its shelf, and there are two shelves, so no theme is
+ * A theme is named by its origin, and there are two origins, so no theme is
  * ever named this.
  */
 export const getSizeId = (which: ScaleKind, size: number): string => `${which}:${size}`

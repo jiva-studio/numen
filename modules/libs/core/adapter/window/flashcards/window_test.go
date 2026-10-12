@@ -109,11 +109,11 @@ func runDays(t *testing.T, api *API, v domain.Vault, days int) {
 
 		session := startSession(t, api, v)
 		// How far a person got before they stopped, which is not always the end.
-		through := len(session.GetAsked())
+		through := len(session.GetCards())
 		if day%3 == 1 {
 			through = through * 2 / 3
 		}
-		for i, one := range session.GetAsked()[:through] {
+		for i, one := range session.GetCards()[:through] {
 			// The times run over a spread a person's would, and every one of
 			// them is counted whole.
 			took := time.Duration(4+(i+day)%9) * time.Second
@@ -315,7 +315,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 			t.Fatal(err)
 		}
 		want := int(one.GetDue()) + int(one.GetNew())
-		got := len(sat.Msg.GetAsked())
+		got := len(sat.Msg.GetCards())
 		if sole[one.GetDeck()] && got != want {
 			t.Errorf("%s offers %d card faces and its session asks %d",
 				one.GetDeck(), want, got)
@@ -324,7 +324,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 			t.Errorf("%s offers %d card faces and its session asks %d",
 				one.GetDeck(), want, got)
 		}
-		for _, card := range sat.Msg.GetAsked() {
+		for _, card := range sat.Msg.GetCards() {
 			if card.GetDeck() != one.GetDeck() {
 				t.Fatalf("a session over %s asked a card of %s",
 					one.GetDeck(), card.GetDeck())
@@ -360,10 +360,10 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(sat.Msg.GetAsked()) < 3 {
-		t.Fatalf("the deck offered %d card faces to answer", len(sat.Msg.GetAsked()))
+	if len(sat.Msg.GetCards()) < 3 {
+		t.Fatalf("the deck offered %d card faces to answer", len(sat.Msg.GetCards()))
 	}
-	for _, card := range sat.Msg.GetAsked()[:3] {
+	for _, card := range sat.Msg.GetCards()[:3] {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: sat.Msg.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),

@@ -25,9 +25,9 @@ How the window is drawn.
 | `interface_scale` | a number | how large the window is drawn: its chrome, its controls, the spacing between them and the type in them. |
 | `text_scale` | a number | how large the text a person reads is set: a note, a book, an answer, the editor. |
 | `mode` | text | which half of a colour pair the window takes: `system`, `light` or `dark`. |
-| `theme` | text | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships here, `mine:dracula` is the person's file. |
-| `hang_parts_under_a_node` | yes or no | whether a node in the plex hangs the headings of its note under the box. |
-| `parts_under_a_node` | a number | how many of those headings stand under a node at once, the rest being wound to. |
+| `theme` | text | the stylesheet the window wears, named by its origin and its filename: `preset:dracula` ships here, `mine:dracula` is the person's file. |
+| `nest_headings_under_notes` | yes or no | whether a node in the plex nests the headings of its note under the box. |
+| `nested_heading_limit` | a number | how many of those headings stand under a node at once, the rest being reached by scrolling. |
 
 ### `indexing`
 

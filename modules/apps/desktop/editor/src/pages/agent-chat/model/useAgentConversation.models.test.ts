@@ -22,7 +22,7 @@ const model = (namedAt: readonly string[], name: string, presence: Model['presen
   namedAt,
   name,
   title: name,
-  shelf: '',
+  group: '',
   isDefault: false,
   writes: [],
   presence,

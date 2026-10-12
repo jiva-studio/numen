@@ -19,7 +19,7 @@ const createCard = (mark: string) => ({
 /** opening is what starting a session comes back with. */
 const opening = (...cards: string[]): SessionStart => ({
   run: 'flashcards/01A.jsonl',
-  asked: cards.map(createCard),
+  cards: cards.map(createCard),
   unwritten: [],
   skipped: 0,
 })
@@ -375,7 +375,7 @@ describe('the cards a session opens on', () => {
       async startSession() {
         return {
           run: 'flashcards/01A.jsonl',
-          asked: [
+          cards: [
             {
               deck: 'decks/Words.md',
               section: 'Garden',

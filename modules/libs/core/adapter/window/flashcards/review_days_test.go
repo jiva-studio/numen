@@ -20,7 +20,7 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 	v := held[0]
 
 	session := startSession(t, api, v)
-	for _, card := range session.GetAsked() {
+	for _, card := range session.GetCards() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
@@ -36,8 +36,8 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	said := out.Msg
-	if said.GetAnswered() != int32(len(session.GetAsked())) {
-		t.Errorf("the vault holds %d answers, want %d", said.GetAnswered(), len(session.GetAsked()))
+	if said.GetAnswered() != int32(len(session.GetCards())) {
+		t.Errorf("the vault holds %d answers, want %d", said.GetAnswered(), len(session.GetCards()))
 	}
 	if said.GetStreak() != 1 {
 		t.Errorf("the streak is %d on the first day, want 1", said.GetStreak())
@@ -73,10 +73,10 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	v := held[0]
 
 	session := startSession(t, api, v)
-	if len(session.GetAsked()) == 0 {
+	if len(session.GetCards()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
-	card := session.GetAsked()[0]
+	card := session.GetCards()[0]
 	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
@@ -195,7 +195,7 @@ func TestAStretchNothingFallsInComesBackEmpty(t *testing.T) {
 	v := held[0]
 
 	session := startSession(t, api, v)
-	for _, card := range session.GetAsked() {
+	for _, card := range session.GetCards() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
@@ -217,8 +217,8 @@ func TestAStretchNothingFallsInComesBackEmpty(t *testing.T) {
 	}
 	// The streak and the count are over the whole of the vault whatever stretch
 	// was asked for.
-	if out.Msg.GetAnswered() != int32(len(session.GetAsked())) {
+	if out.Msg.GetAnswered() != int32(len(session.GetCards())) {
 		t.Errorf("the vault holds %d answers, want %d",
-			out.Msg.GetAnswered(), len(session.GetAsked()))
+			out.Msg.GetAnswered(), len(session.GetCards()))
 	}
 }

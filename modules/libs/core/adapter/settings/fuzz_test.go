@@ -106,7 +106,7 @@ type appearance struct {
 	TextScale      float64 `json:"text_scale"`
 	Mode           string  `json:"mode"`
 	Theme          string  `json:"theme"`
-	Parts          int     `json:"parts_under_a_node"`
+	Parts          int     `json:"nested_heading_limit"`
 }
 
 type indexing struct {
@@ -124,7 +124,7 @@ type review struct {
 // object, an empty file, and bytes that are no settings at all.
 var byteSeeds = []string{
 	`{"v":1,"appearance":{"interface_scale":1,"text_scale":1,"mode":"dark",` +
-		`"theme":"preset:numen","hang_parts_under_a_node":true,"parts_under_a_node":6},` +
+		`"theme":"preset:numen","nest_headings_under_notes":true,"nested_heading_limit":6},` +
 		`"review":{"day_starts":"04:00"}}`,
 	"{\n  \"appearance\": {\n    \"theme\": \"mine:dracula\"\n  }\n}\n",
 	`{"appearance":{"zoom":1.25}}`,

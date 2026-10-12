@@ -19,8 +19,8 @@ How the window is drawn: how large, which half of a colour pair, and which palet
     "text_scale": 1,
     "mode": "system",
     "theme": "preset:numen",
-    "hang_parts_under_a_node": true,
-    "parts_under_a_node": 6
+    "nest_headings_under_notes": true,
+    "nested_heading_limit": 6
   }
 }
 ```
@@ -30,9 +30,9 @@ How the window is drawn: how large, which half of a colour pair, and which palet
 | `interface_scale` | how large the interface is drawn — its chrome, its controls, the spacing between them and the type in them. 1 is as designed, and it goes from 0.8 to 2. |
 | `text_scale` | how large the text a person reads is set: a note, a book, an answer, the editor. 1 is as designed, and it goes from 0.8 to 1.75. |
 | `mode` | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`. |
-| `theme` | the stylesheet the window wears, named by the shelf it came off and its filename: `preset:dracula` ships inside the application, `mine:dracula` is the person's file. |
-| `hang_parts_under_a_node` | whether a node hangs the parts of the note it stands for under its box. On. |
-| `parts_under_a_node` | how many of those parts stand under a node at once, the rest being wound to. 6, and it goes from 1 to 12. |
+| `theme` | the stylesheet the window wears, named by its origin and its filename: `preset:dracula` ships inside the application, `mine:dracula` is the person's file. |
+| `nest_headings_under_notes` | whether a node nests the headings of the note it stands for under its box. On. |
+| `nested_heading_limit` | how many of those headings stand under a node at once, the rest being reached by scrolling. 6, and it goes from 1 to 12. |
 
 Each size is a multiplier. `interface_scale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the clearance inside a node, the radii, the spacing, and the type throughout. `text_scale` is a second multiplier over the text a person reads — the editor, and marked-up text with the scale above it, its headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle are one physical line under either.
 
@@ -56,7 +56,7 @@ Choosing a theme, light or dark, or either size writes the field it names back h
 
 On, a node in the plex hangs the parts of the note it stands for under its box — the note's headings, each at the line it stands on — and choosing one puts that note in front of the person with the keyboard on that line. Off, a node is its box alone, and nothing is asked of the vault about what a note is divided into.
 
-`Hang the parts of a note under its node` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and every plex the window holds is drawn again from what was written.
+`Nest headings under notes` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and every plex the window holds is drawn again from what was written.
 
 ## A day of review
 

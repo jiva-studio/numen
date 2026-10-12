@@ -64,9 +64,9 @@ The folder is watched at that one level: a theme written, saved over or taken ou
 
 ## What a theme is called
 
-`preset:dracula` ships inside the application; `mine:dracula` is the file `dracula.css` in the themes folder. Both shelves may carry one filename, and neither hides the other.
+`preset:dracula` ships inside the application; `mine:dracula` is the file `dracula.css` in the themes folder. Both origins may carry one filename, and neither hides the other.
 
-The half after the shelf is one filename in that folder. `mine:../../../.ssh/id_rsa`, `mine:..`, `dracula` and `shelfless:dracula` name no theme.
+The half after the origin is one filename in that folder. `mine:../../../.ssh/id_rsa`, `mine:..`, `dracula` and `originless:dracula` name no theme.
 
 A name matching nothing wears `preset:numen`, and the name that was not found is said. The settings are left as they are: putting the file back is all it takes.
 

@@ -238,12 +238,12 @@ type SettingsPorts struct {
 	ConfiguredFile func() (string, string, error)
 	WritesFile     func(written string, seen *string) error
 
-	// PartsUnderANode is how many parts a node may be asked to hang, at each
+	// NestedHeadingLimitBounds is how many headings may nest under a note, at each
 	// end, and LatestDayStarts how late in the day a day of review may be made
 	// to begin, on the clock as `HH:MM`. Each is refused outside, and the window
 	// is told both.
-	PartsUnderANode Bounds
-	LatestDayStarts string
+	NestedHeadingLimitBounds Bounds
+	LatestDayStarts          string
 
 	// Day is where one day of review gives way to the next, and Now is when
 	// this is happening. The window counts in review days and is told the one

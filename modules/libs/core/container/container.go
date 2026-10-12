@@ -200,11 +200,11 @@ func (c Config) WriteConfiguredFile() func(written string, seen *string) error {
 	}
 }
 
-// PartsUnderANodeBounds is how many parts a node may be asked to hang, at each
+// NestedHeadingLimitBounds is how many headings may nest under a note, at each
 // end. A number outside it is refused, and a client asking a person for one is
 // told them.
-func (Config) PartsUnderANodeBounds() settings.Bounds {
-	return settings.PartsUnderANodeBounds
+func (Config) NestedHeadingLimitBounds() settings.Bounds {
+	return settings.NestedHeadingLimitBounds
 }
 
 // GetLatestDayStart is how late in the day a day of review may be made to begin,

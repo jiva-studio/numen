@@ -375,9 +375,9 @@ func TestForgettingKeepsTheFolderAndSaysSo(t *testing.T) {
 	added := s.mustRun("vault", "add", s.vault, "--name", "leaving")
 	s.addVault("staying")
 
-	out := s.mustRun("vault", "forget", "leaving")
+	out := s.mustRun("vault", "remove", "leaving")
 	if !strings.Contains(out, s.vault) || !strings.Contains(out, "the folder is still") {
-		t.Errorf("vault forget said:\n%s", out)
+		t.Errorf("vault remove said:\n%s", out)
 	}
 	if _, err := os.Stat(s.vault); err != nil {
 		t.Errorf("the folder went with the entry: %v", err)
@@ -498,7 +498,7 @@ func TestAVaultThatMatchesNothingNamesWhatWasTyped(t *testing.T) {
 	s.mustRun("vault", "add", s.vault, "--name", "here")
 	for _, args := range [][]string{
 		{"vault", "rename", "nowhere", "elsewhere"},
-		{"vault", "forget", "nowhere"},
+		{"vault", "remove", "nowhere"},
 		{"vault", "erase", "nowhere", "--yes"},
 		{"vault", "open", "nowhere"},
 	} {
@@ -520,7 +520,7 @@ func TestTheOnlyVaultAnInstallationHasStays(t *testing.T) {
 	b := s.trash(nil)
 
 	for _, args := range [][]string{
-		{"vault", "forget", "single"},
+		{"vault", "remove", "single"},
 		{"vault", "erase", "single", "--yes"},
 	} {
 		out, err := s.run(args...)

@@ -1,7 +1,7 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
-import { NamedBy, NoteType as NoteTypes, Role as Roles, Seat as Seats } from '@numen/protocol'
+import { NameSource, NoteType as NoteTypes, Role as Roles, Seat as Seats } from '@numen/protocol'
 import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
@@ -15,10 +15,10 @@ import type { NoteType } from '@/entities/file'
  * Whether a rename wrote the title into the note, by the namer it was named
  * with.
  */
-export const writes: Record<NamedBy, boolean> = {
-  [NamedBy.UNSPECIFIED]: false,
-  [NamedBy.FRONTMATTER]: true,
-  [NamedBy.FILENAME]: false,
+export const writes: Record<NameSource, boolean> = {
+  [NameSource.UNSPECIFIED]: false,
+  [NameSource.FRONTMATTER]: true,
+  [NameSource.FILENAME]: false,
 }
 
 /** What kind of relationship a link is, in the words the window uses. */

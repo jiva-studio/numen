@@ -68,10 +68,10 @@ func TestEveryBookFormatIsWrittenFromOne(t *testing.T) {
 }
 
 func TestEveryNamingIsWrittenFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.NamedBy]note.NameSource{
-		v1.NamedBy_NAMED_BY_FRONTMATTER: note.ByFrontmatter,
-		v1.NamedBy_NAMED_BY_FILENAME:    note.ByFilename,
-	}, newNamedBy)
+	testsupport.CheckProduced(t, map[v1.NameSource]note.NameSource{
+		v1.NameSource_NAME_SOURCE_FRONTMATTER: note.ByFrontmatter,
+		v1.NameSource_NAME_SOURCE_FILENAME:    note.ByFilename,
+	}, newWireNameSource)
 }
 
 func TestEveryPresenceIsWrittenFromOne(t *testing.T) {

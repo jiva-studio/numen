@@ -23,8 +23,8 @@ numen-cli search Research "entropy"
 | `numen-cli vault add <path> [--name <name>]` | give a folder an identity and remember it |
 | `numen-cli vault list` | show the vaults this installation knows |
 | `numen-cli vault rename <vault> <new name>` | call a vault something else |
-| `numen-cli vault forget <vault>` | take a vault off the list, leaving its folder |
-| `numen-cli vault erase <vault> [--yes]` | forget it, and put its folder in the trash |
+| `numen-cli vault remove <vault>` | take a vault off the list, leaving its folder |
+| `numen-cli vault erase <vault> [--yes]` | remove it, and put its folder in the trash |
 | `numen-cli vault open <vault>` | the vault the next window opens |
 | `numen-cli scan <vault> [--rebuild-index]` | bring the index up to date with a vault --rebuild-index reads every file again, forgets the vectors of every model but the one in use, and gives their space back |
 | `numen-cli recognise <vault> <file>` | recognise a scanned document with a model |
@@ -48,7 +48,7 @@ numen-cli search Research "entropy"
 
 **`vault add`** gives a folder an identity and puts it on the list, the same list the window shows. `--name` calls it something other than the folder's own name; a name another vault has gets a number appended.
 
-**`vault erase`** asks before it moves a folder to the trash. `--yes` answers for you, which is what a script needs. `vault forget` never asks: the folder stays where it is.
+**`vault erase`** asks before it moves a folder to the trash. `--yes` answers for you, which is what a script needs. `vault remove` never asks: the folder stays where it is.
 
 **`vault open`** does not open anything here — it says which vault the *next window* will open.
 
