@@ -95,11 +95,11 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 		}
 		// A card is laid out by the stencil its wikilink lands on, so a name
 		// reaching a note that is not one is a card no face shows.
-		_, ordinary, err := u.stencils(ctx, v, out.Stencils)
+		_, ordinary, err := u.readStencils(ctx, v, out.Stencils)
 		if err != nil {
 			return DeckContents{}, err
 		}
-		out.Body.Problems = append(out.Body.Problems, notStencils(out.Body, ordinary)...)
+		out.Body.Problems = append(out.Body.Problems, getNonStencilProblems(out.Body, ordinary)...)
 	case note.TooLarge:
 		out.Body = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
 			format.FaultTooLarge,
@@ -122,7 +122,7 @@ func (u Read) GetCardStencils(
 	if err != nil {
 		return nil, err
 	}
-	by, _, err := u.stencils(ctx, v, at)
+	by, _, err := u.readStencils(ctx, v, at)
 	return by, err
 }
 
@@ -155,12 +155,12 @@ func getStencilPaths(
 	return at, nil
 }
 
-// stencils is the stencil the cards of a deck are cut by, keyed by what stands
+// readStencils reads the stencil the cards of a deck are cut by, keyed by what stands
 // in the brackets. Each file is opened once however many cards name it.
 //
 // A name landing on a note that is not a stencil is left out of the stencils
 // and stands in ordinary, so the cards written under it are marked.
-func (u Read) stencils(
+func (u Read) readStencils(
 	ctx context.Context, v domain.Vault, at map[string]string,
 ) (by map[string]format.Stencil, ordinary map[string]bool, err error) {
 	if len(at) == 0 {
@@ -189,9 +189,9 @@ func (u Read) stencils(
 	return by, ordinary, nil
 }
 
-// notStencils is one problem per card whose wikilink reaches a note that is not
+// getNonStencilProblems returns one problem per card whose wikilink reaches a note that is not
 // a stencil. The values are read, and no face lays the card out.
-func notStencils(d format.Deck, ordinary map[string]bool) []format.Problem {
+func getNonStencilProblems(d format.Deck, ordinary map[string]bool) []format.Problem {
 	var out []format.Problem
 	for at, card := range d.Cards {
 		if !ordinary[card.StencilLink] {
