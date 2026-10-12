@@ -7,7 +7,7 @@
  */
 import type { ErrorCode } from '@/shared/errors'
 import type { DeckProblem } from '@/entities/deck'
-import { fileOf } from '@/shared/paths'
+import { getFileName } from '@/shared/paths'
 import { WORDS as words } from '@/entities/deck'
 
 /** What the vault said about one file the last time it was read or written. */
@@ -98,7 +98,7 @@ export function createDeckAnswers() {
   }
 
   /** What a deck tab is called: the title the file carries, or the file itself. */
-  const getTitle = (path: string): string => titles.get(path) || fileOf(path)
+  const getTitle = (path: string): string => titles.get(path) || getFileName(path)
 
   /** A file the window was told the title of before any read of it answered. */
   const setTitle = (path: string, title: string): void => {

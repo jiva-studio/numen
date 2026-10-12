@@ -15,7 +15,7 @@ import { appendCreateOffer, createNoteInvocation, CREATE_NOTE_ID } from '../lib/
 import type { Commands } from '../model/palette'
 import { runInvocation } from '../model/handlers'
 import type { SearchState } from '../model/search'
-import { getSourceIcon } from '@/entities/file'
+import { findSourceIcon } from '@/entities/file'
 import { iconOfNote } from '@/entities/note'
 import { iconFor } from '@/shared/icons'
 import { isChord } from '../lib/chords'
@@ -146,7 +146,7 @@ function getRowIcon(id: string) {
   const type = props.search.typeOf(id)
   if (type) return iconOfNote(type)
   const kind = props.search.kindOf(id)
-  return kind ? getSourceIcon(kind) : null
+  return kind ? findSourceIcon(kind) : null
 }
 </script>
 

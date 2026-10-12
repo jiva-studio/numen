@@ -4,7 +4,7 @@
  * Nothing here draws: the port is `AgentPort`, `@numen/wire` says what the
  * steps mean, and this says what the question is about.
  */
-import { createWireAgentPort } from '@numen/wire'
+import { createAgentPort } from '@numen/wire'
 import type { CardFace } from '@/entities/card'
 import { agentService } from '@/shared/clients'
 
@@ -17,7 +17,7 @@ import { agentService } from '@/shared/clients'
  * answer, which is data.
  */
 export const createAgentPort = (card: CardFace) =>
-  createWireAgentPort({
+  createAgentPort({
     askAgent: (request, options) =>
       agentService.askAgent({ ...request, mark: card.mark, face: card.face }, options),
     finishConversation: (request) => agentService.finishConversation(request),

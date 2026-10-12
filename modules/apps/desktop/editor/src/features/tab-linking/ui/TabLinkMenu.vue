@@ -5,7 +5,7 @@
 import { computed } from 'vue'
 import { Menu, type Position } from '@numen/ui'
 import { Link2Off, type LucideIcon } from '@lucide/vue'
-import { getTabKindIcon } from '@/entities/tab'
+import { findTabKindIcon } from '@/entities/tab'
 import type { EligibleLinkTab, TabId } from '../types'
 import { createLinkMenuItems, UNLINK_ID } from '../lib/menu'
 
@@ -50,7 +50,7 @@ function onDismiss() {
 function getIconFor(id: string): LucideIcon | null {
   if (id === UNLINK_ID) return Link2Off
   const tab = props.eligibleTabs.find((t) => t.id === id)
-  return tab ? getTabKindIcon(tab.kind) : null
+  return tab ? findTabKindIcon(tab.kind) : null
 }
 </script>
 

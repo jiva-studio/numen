@@ -7,7 +7,7 @@ import type {
   GetNeighbourhoodResponse as NeighbourhoodMessage,
 } from '@numen/protocol'
 import { asFailure, asValue, namesOf } from '@numen/wire'
-import { parseFingerprint, getErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
+import { parseFingerprint, findErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
 import type { Link, Neighbourhood, NoteResult, Role, Seat, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 
@@ -75,7 +75,7 @@ export const mapNoteResult = (from: {
   url?: string | undefined
   embed?: string | undefined
 }): NoteResult => {
-  const error = getErrorCode(from)
+  const error = findErrorCode(from)
   if (error) return asFailure(error)
   const at = formatFingerprint(from.at)
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }

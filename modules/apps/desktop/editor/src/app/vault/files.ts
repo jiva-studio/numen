@@ -4,7 +4,7 @@
 import { asFailure, asValue } from '@numen/wire'
 import { files } from '@/shared/clients'
 import { mapBookFormat, mapEntry, mapMoveResult, mapNoteType, mapSourceKind } from './words'
-import { getErrorCode } from '@/shared/answers'
+import { findErrorCode } from '@/shared/answers'
 import type { FilePort } from '@/app/ports/files'
 import type { NotePort } from '@/app/ports/notes'
 
@@ -17,21 +17,21 @@ export type FilesCore = Pick<
 export const filesCore: FilesCore = {
   remove: async (path, isPermanent) => {
     const answer = await files.removeFile({ path, destroy: isPermanent ?? false })
-    const error = getErrorCode(answer)
+    const error = findErrorCode(answer)
     if (error) return asFailure(error)
     return asValue({ trashed: answer.trashed, dangling: answer.dangling })
   },
   list: async (folder) => (await files.listFiles({ path: folder })).entries.map(mapEntry),
   move: async (from, to) => {
     const answer = await files.moveFile({ from, to })
-    const error = getErrorCode(answer)
+    const error = findErrorCode(answer)
     if (error) return asFailure(error)
     return asValue(answer.moved ? mapMoveResult(answer.moved) : null)
   },
-  createFolder: async (path) => getErrorCode(await files.createFolder({ path })),
+  createFolder: async (path) => findErrorCode(await files.createFolder({ path })),
   createUrl: async (url, folder) => {
     const answer = await files.createURL({ url, path: folder })
-    const error = getErrorCode(answer)
+    const error = findErrorCode(answer)
     return error ? asFailure(error) : asValue({ path: answer.path })
   },
   fileKinds: async (paths) => {

@@ -13,4 +13,4 @@ const SOURCES: ReadonlyMap<Source, LucideIcon> = new Map([
 ])
 
 /** The icon for a source, and nothing for a file the vault holds no source for. */
-export const getSourceIcon = (kind: Source): LucideIcon | null => SOURCES.get(kind) ?? null
+export const findSourceIcon = (kind: Source): LucideIcon | null => SOURCES.get(kind) ?? null

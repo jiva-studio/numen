@@ -4,7 +4,7 @@
 import { CARD_HEAD, getRunEnd, type InsertionPoint } from '@numen/ui'
 import type { Value } from '@/entities/deck'
 import { generateId, type IdMaker } from '@/entities/deck'
-import { getBaseName } from '@/shared/paths'
+import { getFileStem } from '@/shared/paths'
 import type { BufferCard, BufferDeck } from '../types'
 
 /**
@@ -38,7 +38,7 @@ export const addCard = (
         mark: '',
         section: ranks.has(section) ? section : null,
         heading: '',
-        stencilLink: stencilPath ? getBaseName(stencilPath) : title,
+        stencilLink: stencilPath ? getFileStem(stencilPath) : title,
         stencilPath,
         preamble: '',
         values,

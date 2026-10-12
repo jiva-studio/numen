@@ -11,7 +11,7 @@ import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import {
   getAssetUrl,
   ERROR_CODE,
-  getErrorCode,
+  findErrorCode,
   parseFingerprint,
   getBytesQuery,
   retryWhileBusy,
@@ -56,17 +56,17 @@ describe('what an error is called', () => {
   })
 
   it('reads an error off an answer that carries one', () => {
-    expect(getErrorCode({ error: ProtoErrorCode.MISSING })).toBe('missing')
-    expect(getErrorCode({ error: ProtoErrorCode.TOO_LARGE })).toBe('tooLarge')
+    expect(findErrorCode({ error: ProtoErrorCode.MISSING })).toBe('missing')
+    expect(findErrorCode({ error: ProtoErrorCode.TOO_LARGE })).toBe('tooLarge')
   })
 
   it('says nothing about an answer with no error', () => {
-    expect(getErrorCode({})).toBeNull()
-    expect(getErrorCode({ error: undefined })).toBeNull()
+    expect(findErrorCode({})).toBeNull()
+    expect(findErrorCode({ error: undefined })).toBeNull()
   })
 
   it('calls an error it has no word of its own for unreadable', () => {
-    expect(getErrorCode({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
+    expect(findErrorCode({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
   })
 })
 

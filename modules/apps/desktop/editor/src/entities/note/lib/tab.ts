@@ -115,13 +115,13 @@ const getWriteDelay = (since: number, at: number, limits: WriteLimits): number =
 /**
  * An error about the body is cleared by typing when there is a written baseline.
  */
-const isMendable = (tab: Tab): boolean =>
+const isRetryable = (tab: Tab): boolean =>
   tab.written !== null && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)
 
 const applyEdit = (tab: Tab, body: string, at: number, limits: WriteLimits): Transition => {
   const state = getState(tab)
   if (state === 'loading') return keepTab(tab)
-  const error = isMendable(tab) ? null : tab.error
+  const error = isRetryable(tab) ? null : tab.error
   const since = tab.since ?? at
   const next: Tab = { ...tab, shown: body, since, error }
   if (state === 'stale') return keepTab(next)

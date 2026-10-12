@@ -6,7 +6,7 @@ import type { FileOpeners } from '@/entities/tab'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { DOCUMENT } from '@/entities/tab'
 import DocumentTab from './ui/DocumentTab.vue'
-import { fileOf } from '@/shared/paths'
+import { getFileName } from '@/shared/paths'
 import type { DocumentTabState } from './model/useDocumentTab'
 
 /**
@@ -21,7 +21,7 @@ export function createDocumentKind(
   const kind: TabKind<DocumentTabState, typeof DOCUMENT> = {
     kind: DOCUMENT,
     open,
-    getTitle: (state) => fileOf(state.path),
+    getTitle: (state) => getFileName(state.path),
     pane: DocumentTab,
     identity: (path) => path,
     onShow: (state) => {

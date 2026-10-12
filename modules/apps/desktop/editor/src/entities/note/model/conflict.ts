@@ -10,7 +10,7 @@ export function isStale(tab: Tab): boolean {
   return getState(tab) === 'stale'
 }
 
-export function getStaleConflict(tab: Tab | undefined): ConflictWords | null {
+export function findStaleConflict(tab: Tab | undefined): ConflictWords | null {
   return tab && isStale(tab) ? STALE_CONFLICT : null
 }
 
@@ -37,7 +37,7 @@ export function createConflictCoordinator(
     keep,
     take,
     notifyChanged,
-    stale: (id: string) => getStaleConflict(getTab(id)),
+    stale: (id: string) => findStaleConflict(getTab(id)),
     getErrorMessage: (id: string) => getErrorMessage(getTab(id)),
   }
 }

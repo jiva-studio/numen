@@ -4,7 +4,7 @@ import type { ErrorCode } from '@/shared/errors'
 import type { LinkAddress } from '../lib/note'
 import type { Event } from '../lib/tab'
 import type { Notes } from '../lib/noteTypes'
-import { createNoteQueue, getNoteErrorCode } from './queue'
+import { createNoteQueue, convertErrorCode } from './queue'
 
 describe('what a failed call is reported as', () => {
   it.each<[ErrorCode, string]>([
@@ -22,7 +22,7 @@ describe('what a failed call is reported as', () => {
     ['unreadable', 'unreadable'],
     ['unreachable', 'unreachable'],
   ])('turns %s into %s', (from, expected) => {
-    expect(getNoteErrorCode(from)).toBe(expected)
+    expect(convertErrorCode(from)).toBe(expected)
   })
 })
 
