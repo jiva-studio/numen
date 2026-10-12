@@ -9,7 +9,7 @@
  * comments, and punctuation in the text colour.
  *
  * Yellow is the accent a focused node is painted in, so a jump takes the
- * palette's pink and the four seats stand apart from it.
+ * palette's pink and the four relations stand apart from it.
  */
 :root {
   color-scheme: dark;
@@ -22,10 +22,10 @@
   --numen-accent: #ffc600;
   --numen-accent-ink: #000000;
 
-  --numen-seat-parent: #0088ff;
-  --numen-seat-child: #3ad900;
-  --numen-seat-jump: #ff628c;
-  --numen-seat-sibling: #fb94ff;
+  --numen-relation-parent: #0088ff;
+  --numen-relation-child: #3ad900;
+  --numen-relation-jump: #ff628c;
+  --numen-relation-sibling: #fb94ff;
 
   --numen-edge: #3b5364;
   --numen-edge-label: #aaaaaa;

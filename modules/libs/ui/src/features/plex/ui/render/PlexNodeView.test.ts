@@ -12,12 +12,12 @@ import { OPENING, type WideBox } from '../../model/dwell'
 import { getNodeHeadings, type PlexHeading } from '../../lib/inside'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { GestureRole, PlacedNode } from '../../lib/node'
-import type { PlexSeat } from '../../lib/seat'
+import type { PlexNodeRelation } from '../../lib/relation'
 
 const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: 'A node',
-  seat: 'child',
+  relation: 'child',
   x: 0,
   y: 0,
   width: 144,
@@ -60,7 +60,7 @@ describe('a node that is not fully there', () => {
 
 describe('the node in focus', () => {
   it('cannot be chosen, because it is where the reader already is', async () => {
-    const node = mountNode({ seat: 'focus' })
+    const node = mountNode({ relation: 'focus' })
     await node.trigger('click')
     await node.trigger('keydown', { key: 'Enter' })
     expect(node.emitted('activate')).toBeUndefined()
@@ -69,7 +69,7 @@ describe('the node in focus', () => {
   it('is stopped at by tab, and is announced', () => {
     // A menu is asked for from wherever the keyboard is, and the note being
     // read is the likeliest one to ask about.
-    const node = mountNode({ seat: 'focus' })
+    const node = mountNode({ relation: 'focus' })
     expect(node.attributes('tabindex')).toBe('0')
     expect(node.attributes('aria-hidden')).toBeUndefined()
     expect(node.attributes('role')).toBe('img')
@@ -134,7 +134,7 @@ describe('a node asked for on its own', () => {
   })
 
   it('is asked for on the focus too, which is the node being read', async () => {
-    const node = mountNode({ seat: 'focus' })
+    const node = mountNode({ relation: 'focus' })
     await node.trigger('dblclick')
     expect(node.emitted('show')).toStrictEqual([['here']])
     expect(node.emitted('activate')).toBeUndefined()
@@ -244,7 +244,7 @@ describe('the icon', () => {
 describe('a node that is not there yet', () => {
   const mountGhost = () =>
     mount(PlexNodeView, {
-      props: { node: createNode({ title: 'parent', seat: 'parent' }), gestureRole: 'ghost' },
+      props: { node: createNode({ title: 'parent', relation: 'parent' }), gestureRole: 'ghost' },
     })
 
   it('cannot be chosen, and is not a tab stop', async () => {
@@ -267,7 +267,7 @@ describe('a node that is not there yet', () => {
     expect(ghost.find('.plex__handle').exists()).toBe(false)
   })
 
-  it('says the seat it would take, because it has nothing else to say', () => {
+  it('says the relation it would take, because it has nothing else to say', () => {
     expect(mountGhost().get('.plex__title-text').text()).toBe('parent')
   })
 
@@ -281,11 +281,11 @@ describe('a node that is not there yet', () => {
 })
 
 describe('what a node is drawn as', () => {
-  it('carries its own seat, as a class and as a hue', () => {
-    for (const seat of ['focus', 'parent', 'child', 'jump', 'sibling'] as PlexSeat[]) {
-      const node = mountNode({ seat })
-      expect(node.classes()).toContain(`plex__node--${seat}`)
-      expect(node.attributes('style')).toContain(`var(--numen-seat-${seat})`)
+  it('carries its own relation, as a class and as a hue', () => {
+    for (const relation of ['focus', 'parent', 'child', 'jump', 'sibling'] as PlexNodeRelation[]) {
+      const node = mountNode({ relation })
+      expect(node.classes()).toContain(`plex__node--${relation}`)
+      expect(node.attributes('style')).toContain(`var(--numen-relation-${relation})`)
     }
   })
 

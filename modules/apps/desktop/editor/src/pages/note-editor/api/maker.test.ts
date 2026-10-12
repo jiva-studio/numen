@@ -1,7 +1,7 @@
 /**
  * Making a note from the picture, and joining two that are already on it.
  *
- * What is checked here is what the vault cannot answer for: which seat the new
+ * What is checked here is what the vault cannot answer for: which relation the new
  * note writes about the one it was made from, where it is filed, and what
  * happens when the name is already taken.
  */
@@ -37,10 +37,10 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
   return { core, asked, joined, ...writer() }
 }
 
-describe('making a note in a seat of another', () => {
-  it('writes the note it was made from into it, in the seat facing the one asked for', async () => {
+describe('making a note in a relation of another', () => {
+  it('writes the note it was made from into it, in the relation facing the one asked for', async () => {
     const { core, asked, write } = fake()
-    const made = await createNoteWriter(core, write).createInSeat('Ontology.md', 'child')
+    const made = await createNoteWriter(core, write).createInRelation('Ontology.md', 'child')
 
     expect(made).toStrictEqual({ path: `${UNTITLED}.md`, title: UNTITLED })
     expect(asked).toStrictEqual([
@@ -50,31 +50,38 @@ describe('making a note in a seat of another', () => {
 
   it('makes a parent the new note is the child of', async () => {
     const { core, asked, write } = fake()
-    await createNoteWriter(core, write).createInSeat('Ontology.md', 'parent')
+    await createNoteWriter(core, write).createInRelation('Ontology.md', 'parent')
 
     expect(asked[0]?.links).toStrictEqual([{ to: 'Ontology.md', role: 'child' }])
   })
 
   it('files it in the folder the note it was made from is in', async () => {
     const { core, asked, write } = fake()
-    const made = await createNoteWriter(core, write).createInSeat('physics/Ontology.md', 'child')
+    const made = await createNoteWriter(core, write).createInRelation(
+      'physics/Ontology.md',
+      'child',
+    )
 
     expect(asked[0]?.folder).toBe('physics')
     expect(made?.path).toBe(`physics/${UNTITLED}.md`)
   })
 
-  it('can make a note in every seat it offers', async () => {
-    for (const seat of CREATABLE) {
+  it('can make a note in every relation it offers', async () => {
+    for (const relation of CREATABLE) {
       const { core, asked, write } = fake()
-      expect(await createNoteWriter(core, write).createInSeat('Ontology.md', seat)).not.toBeNull()
+      expect(
+        await createNoteWriter(core, write).createInRelation('Ontology.md', relation),
+      ).not.toBeNull()
       expect(asked[0]?.links).toHaveLength(1)
     }
   })
 
-  it('makes nothing in a seat no link writes', async () => {
+  it('makes nothing in a relation no link writes', async () => {
     const { core, asked, write } = fake()
 
-    expect(await createNoteWriter(core, write).createInSeat('Ontology.md', 'sibling')).toBeNull()
+    expect(
+      await createNoteWriter(core, write).createInRelation('Ontology.md', 'sibling'),
+    ).toBeNull()
     expect(asked).toStrictEqual([])
   })
 
@@ -84,7 +91,7 @@ describe('making a note in a seat of another', () => {
       { ok: false, error: 'occupied' },
     ])
     const making = createNoteWriter(core, write)
-    const made = await making.createInSeat('Ontology.md', 'child')
+    const made = await making.createInRelation('Ontology.md', 'child')
 
     expect(asked.map((note) => note.title)).toStrictEqual([
       UNTITLED,
@@ -111,7 +118,7 @@ describe('making a note in a seat of another', () => {
     const { core, asked, write, told } = fake([{ ok: false, error: 'notANote' }])
     const making = createNoteWriter(core, write)
 
-    expect(await making.createInSeat('Ontology.md', 'child')).toBeNull()
+    expect(await making.createInRelation('Ontology.md', 'child')).toBeNull()
     expect(asked).toHaveLength(1)
     expect(told.at(-1)?.text).not.toBe('')
     expect(told.at(-1)?.kind).toBe('error')
@@ -126,7 +133,7 @@ describe('making a note in a seat of another', () => {
     const { write, last, told } = writer()
     const making = createNoteWriter(core, write)
 
-    expect(await making.createInSeat('Ontology.md', 'child')).toBeNull()
+    expect(await making.createInRelation('Ontology.md', 'child')).toBeNull()
     expect(last()).toContain('numen did not answer')
     expect(last()).not.toContain('out of reach')
     expect(told.at(-1)?.kind).toBe('error')
@@ -151,7 +158,7 @@ describe('a vault that has filed every name offered', () => {
 })
 
 describe('making a note under a name a person gave it', () => {
-  it('makes nothing in a seat no link writes', async () => {
+  it('makes nothing in a relation no link writes', async () => {
     const { core, asked, write } = fake()
 
     expect(
@@ -160,7 +167,7 @@ describe('making a note under a name a person gave it', () => {
     expect(asked).toStrictEqual([])
   })
 
-  it('files it beside the note it was made from, in that note’s seat', async () => {
+  it('files it beside the note it was made from, in that note’s relation', async () => {
     const { core, asked, write } = fake()
     const made = await createNoteWriter(core, write).createWithTitle(
       'Entropy',
@@ -188,7 +195,7 @@ describe('making a note under a name a person gave it', () => {
 })
 
 describe('joining two notes that are both there', () => {
-  it('writes the link in the note the gesture came from, in the seat it landed in', async () => {
+  it('writes the link in the note the gesture came from, in the relation it landed in', async () => {
     const { core, joined, write, last } = fake()
     const making = createNoteWriter(core, write)
 
@@ -209,7 +216,7 @@ describe('joining two notes that are both there', () => {
     ])
   })
 
-  it('writes nothing for a seat no link writes', async () => {
+  it('writes nothing for a relation no link writes', async () => {
     const { core, joined, write } = fake()
 
     expect(await createNoteWriter(core, write).join('Ontology.md', 'Entropy.md', 'sibling')).toBe(
@@ -241,7 +248,7 @@ describe('removing a relationship from a note', () => {
     return { core, asked, ...writer() }
   }
 
-  it('asks for the role of the seat it was given, and says nothing when it is done', async () => {
+  it('asks for the role of the relation it was given, and says nothing when it is done', async () => {
     const { core, asked, write, told } = removing(async () => null)
 
     expect(
@@ -251,7 +258,7 @@ describe('removing a relationship from a note', () => {
     expect(told).toStrictEqual([{ text: '', kind: 'report' }])
   })
 
-  it('asks for no role where no seat was given', async () => {
+  it('asks for no role where no relation was given', async () => {
     const { core, asked, write } = removing(async () => null)
 
     await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')

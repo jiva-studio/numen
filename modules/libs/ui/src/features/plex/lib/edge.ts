@@ -166,7 +166,7 @@ const getTangent = (edge: EdgeCurve, t: number): Position => {
  * tangent at `at`, where the middle of the title sits. A curve with no
  * sideways run at all is taken down the page.
  *
- * A seat says which way an edge was routed, and the curve says something else:
+ * A relation says which way an edge was routed, and the curve says something else:
  * one that loops out of a column arrives at its midpoint running back the way
  * it came, and one that doubles back turns twice over a short run.
  */

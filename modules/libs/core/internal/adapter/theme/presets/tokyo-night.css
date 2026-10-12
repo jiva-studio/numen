@@ -7,7 +7,7 @@
  * colour each half writes them in.
  *
  * Blue is the accent a focused node is painted in, so a parent takes the
- * palette's teal and the four seats stand apart from it.
+ * palette's teal and the four relations stand apart from it.
  *
  * Mixed here, because the palette does not name them: the caution band and the
  * highlight, which are the colour each half warns in laid on the ground it
@@ -22,10 +22,10 @@
   --numen-accent: light-dark(#2959aa, #3d59a1);
   --numen-accent-ink: light-dark(#ffffff, #ffffff);
 
-  --numen-seat-parent: light-dark(#006c86, #0db9d7);
-  --numen-seat-child: light-dark(#385f0d, #9ece6a);
-  --numen-seat-jump: light-dark(#965027, #ff9e64);
-  --numen-seat-sibling: light-dark(#65359d, #bb9af7);
+  --numen-relation-parent: light-dark(#006c86, #0db9d7);
+  --numen-relation-child: light-dark(#385f0d, #9ece6a);
+  --numen-relation-jump: light-dark(#965027, #ff9e64);
+  --numen-relation-sibling: light-dark(#65359d, #bb9af7);
 
   /* An edge takes the guide the palette draws down a line of code. */
   --numen-edge: light-dark(#bdc1cf, #363b54);

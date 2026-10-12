@@ -11,7 +11,7 @@ import type { PlacedNode } from './node'
 const NODE: PlacedNode = {
   id: 'a',
   title: 'A node',
-  seat: 'focus',
+  relation: 'focus',
   x: 0,
   y: 0,
   width: 144,

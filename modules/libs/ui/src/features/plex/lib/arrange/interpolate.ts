@@ -23,7 +23,7 @@ const createTitle = (edge: PlacedEdge): Title => ({
 
 /** Where an arriving node unfolds from: the place the new focus started at. */
 function getOrigin(to: PlexFrame, was: ReadonlyMap<string, PlacedNode>): Position {
-  const newFocus = to.nodes.find((node) => node.seat === 'focus')
+  const newFocus = to.nodes.find((node) => node.relation === 'focus')
   const cameFrom = newFocus ? was.get(newFocus.id) : undefined
   return { x: cameFrom?.x ?? 0, y: cameFrom?.y ?? 0 }
 }

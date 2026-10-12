@@ -15,18 +15,18 @@ export const CREATE_NOTE_ID = 'creating'
 
 /**
  * The note a search did not find, made under the words that were looked for.
- * A seat hangs it off the note in front; anything else stands it on its own.
+ * A relation hangs it off the note in front; anything else stands it on its own.
  */
 export const createNoteInvocation = (
-  seat: string,
+  relation: string,
   name: string,
   at: CommandTarget,
 ): CommandInvocation =>
-  NOTE_PLACEMENTS.includes(seat) && at.path
-    ? createInvocation(seat, at, name)
+  NOTE_PLACEMENTS.includes(relation) && at.path
+    ? createInvocation(relation, at, name)
     : createInvocation('note', { ...at, path: '', title: '' }, name)
 
-/** The seats a note the search did not find can be made in. */
+/** The relations a note the search did not find can be made in. */
 const NOTE_PLACEMENTS: readonly string[] = ['child', 'parent', 'jump']
 
 /**
@@ -44,7 +44,7 @@ export const appendCreateOffer = (
   if (!name || !empty) return groups
   // A note made from a search stands on its own, and the note in front is what
   // it can be joined to as it is made.
-  const seats = at.path
+  const relations = at.path
     ? [
         { id: 'child', text: words.asChild },
         { id: 'parent', text: words.asParent },
@@ -61,7 +61,7 @@ export const appendCreateOffer = (
           id: CREATE_NOTE_ID,
           title: `${words.creates} “${name}”`,
           ...(at.path ? { detail: at.title || at.path } : {}),
-          actions: [{ id: CREATE_NOTE_ID, text: words.creates }, ...seats],
+          actions: [{ id: CREATE_NOTE_ID, text: words.creates }, ...relations],
         },
       ],
     },

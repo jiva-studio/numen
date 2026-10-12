@@ -631,7 +631,7 @@ func TestARenameKeepsTheNotationItFound(t *testing.T) {
 
 // A note names another in one role, so a role written where one already
 // stands is the role it stands in from then on.
-func TestALinkWrittenAgainInAnotherRoleIsReseated(t *testing.T) {
+func TestALinkWrittenAgainInAnotherRoleIsRelatedAgain(t *testing.T) {
 	raw := "---\n" +
 		"links:\n" +
 		"  - to: \"[[Entropy]]\"\n" +

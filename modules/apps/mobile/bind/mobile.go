@@ -230,7 +230,7 @@ func registerVault(cfg container.Config, root string) (string, error) {
 }
 
 // Seeded is the note a vault this package filled opens on. It stands in every
-// seat at once: a parent above it, two children below, a sibling beside and a
+// relation at once: a parent above it, two children below, a sibling beside and a
 // jump across.
 const Seeded = "Physics.md"
 

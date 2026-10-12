@@ -11,7 +11,7 @@ import { build } from '../fixtures/build'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
-const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.seat === 'child')!.title
+const A_CHILD = NEIGHBOURHOOD.nodes.find((n) => n.relation === 'child')!.title
 
 type PlexProps = InstanceType<typeof Plex>['$props']
 
@@ -207,7 +207,7 @@ describe('asking for a menu from the keyboard', () => {
 describe('when the picture moves under a menu', () => {
   it('says a menu asked for on a node has nothing left to stand on', async () => {
     // The neighbourhood is re-fetched on every change and the nodes travel to
-    // new seats; a menu is anchored where one of them was.
+    // new relations; a menu is anchored where one of them was.
     const plex = mountPlex()
     await plex.setProps({ neighbourhood: neighbourhoods.leaf })
     expect(plex.emitted('dismiss')).toHaveLength(1)

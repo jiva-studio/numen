@@ -1,4 +1,4 @@
-import { SEATS, type PlexRelatedSeat } from '../seat'
+import { RELATIONS, type PlexRelation } from '../relation'
 import type { Size } from '@/shared/lib/geometry'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
@@ -29,7 +29,7 @@ export interface BoxOptions {
   readonly gap: number
   /** Between one line and the next, further from the focus. */
   readonly lineGap: number
-  /** Between the focus box and the first line of any seat. */
+  /** Between the focus box and the first line of any relation. */
   readonly focusGap: number
   /** Kept clear of the window edge, so nothing sits flush against it. */
   readonly margin: number
@@ -52,7 +52,7 @@ export interface LimitOptions {
    * is no window to measure a line against.
    */
   readonly maxPerLine: number
-  /** Lines per seat. Nodes past the last line are reported as overflow. */
+  /** Lines per relation. Nodes past the last line are reported as overflow. */
   readonly maxLines: number
   /**
    * How many headings a node hangs under its box at once. The rest are scrolled to,
@@ -99,7 +99,7 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly routing: RoutingOptions
   readonly motion: MotionOptions
   readonly gesture: GestureOptions
-  readonly direction: Readonly<Record<PlexRelatedSeat, Direction>>
+  readonly direction: Readonly<Record<PlexRelation, Direction>>
   /**
    * The window the plex is drawn in. Given one, a line runs as long as the
    * window holds and the gaps open into whatever room is left over. Without
@@ -108,9 +108,9 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly viewport?: Size | undefined
 }
 
-export const DEFAULT_DIRECTION: Readonly<Record<PlexRelatedSeat, Direction>> = Object.fromEntries(
-  Object.entries(SEATS).map(([seat, descriptor]) => [seat, descriptor.grows]),
-) as Record<PlexRelatedSeat, Direction>
+export const DEFAULT_DIRECTION: Readonly<Record<PlexRelation, Direction>> = Object.fromEntries(
+  Object.entries(RELATIONS).map(([relation, descriptor]) => [relation, descriptor.grows]),
+) as Record<PlexRelation, Direction>
 
 export const DEFAULT_OPTIONS: PlexOptions = {
   focusSize: { width: 176, height: 44 },

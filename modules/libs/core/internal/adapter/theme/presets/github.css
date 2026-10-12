@@ -7,7 +7,7 @@
  * constants, grey comments, and operators in the text colour.
  *
  * Blue is the accent a focused node is painted in, so a parent takes the
- * palette's cyan and the four seats stand apart from it.
+ * palette's cyan and the four relations stand apart from it.
  *
  * Mixed here, because the palette does not name them: the three grounds under
  * selected text, which are the accent at three alphas, and the dark half's
@@ -22,10 +22,10 @@
   --numen-accent: light-dark(#0969da, #1f6feb);
   --numen-accent-ink: light-dark(#ffffff, #ffffff);
 
-  --numen-seat-parent: light-dark(#1b7c83, #39c5cf);
-  --numen-seat-child: light-dark(#1a7f37, #3fb950);
-  --numen-seat-jump: light-dark(#9a6700, #d29922);
-  --numen-seat-sibling: light-dark(#8250df, #a371f7);
+  --numen-relation-parent: light-dark(#1b7c83, #39c5cf);
+  --numen-relation-child: light-dark(#1a7f37, #3fb950);
+  --numen-relation-jump: light-dark(#9a6700, #d29922);
+  --numen-relation-sibling: light-dark(#8250df, #a371f7);
 
   --numen-edge: light-dark(#d0d7de, #30363d);
   --numen-edge-label: light-dark(#656d76, #7d8590);

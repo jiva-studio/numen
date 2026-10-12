@@ -9,7 +9,7 @@ import { effectScope } from 'vue'
 import { useTitleWidths } from './measure'
 import type { PlexNode } from '../lib/node'
 
-const node = (title: string): PlexNode => ({ id: title, title, seat: 'child' })
+const node = (title: string): PlexNode => ({ id: title, title, relation: 'child' })
 
 /** The measurers read once, where nothing on the platform watches a box. */
 const widths = (icon = 0) => useTitleWidths(() => icon).value
@@ -168,8 +168,8 @@ describe('what a title needs', () => {
     setTheme()
     const measures = widths()!
 
-    measures.node({ id: 'a', title: 'Adapter', seat: 'child' })
-    measures.node({ id: 'b', title: 'Adapter', seat: 'parent' })
+    measures.node({ id: 'a', title: 'Adapter', relation: 'child' })
+    measures.node({ id: 'b', title: 'Adapter', relation: 'parent' })
     measures.node(node('Port'))
 
     // The sample word comes first: how deep a line stands is taken off the

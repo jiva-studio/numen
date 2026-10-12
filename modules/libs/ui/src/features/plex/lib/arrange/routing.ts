@@ -7,14 +7,14 @@ import {
   type PlexEdge,
 } from '../edge'
 import type { PlacedNode, Position } from '../node'
-import type { PlexSeat } from '../seat'
+import type { PlexNodeRelation } from '../relation'
 import { isVertical, type PlexOptions, type RoutingOptions } from './options'
 
 /** `auto` means take the axis from the geometry. */
 export type Axis = 'vertical' | 'horizontal' | 'auto'
 
 export interface Routing extends RoutingOptions {
-  readonly getAxis: (node: { seat: PlexSeat }) => Axis
+  readonly getAxis: (node: { relation: PlexNodeRelation }) => Axis
   /**
    * How wide a title is set. Text is measured where the plex is drawn; here it
    * arrives as a number, and without a measurer the whole label is drawn.
@@ -29,7 +29,7 @@ export interface Routing extends RoutingOptions {
 }
 
 /**
- * The axis is read off the seat, not off the distance between the boxes: the
+ * The axis is read off the relation, not off the distance between the boxes: the
  * last child in a wide row is further sideways than it is down, and measuring
  * would send its edge out of the focus's side.
  */
@@ -43,8 +43,8 @@ export function createRouting(
     labelWidth: measureLabel,
     labelDepth,
     getAxis: (node) => {
-      if (node.seat === 'focus') return 'auto'
-      return isVertical(options.direction[node.seat]) ? 'vertical' : 'horizontal'
+      if (node.relation === 'focus') return 'auto'
+      return isVertical(options.direction[node.relation]) ? 'vertical' : 'horizontal'
     },
   }
 }

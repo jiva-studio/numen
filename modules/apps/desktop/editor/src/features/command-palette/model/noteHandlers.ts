@@ -1,7 +1,7 @@
 /**
  * Note and file creation and mutation helpers for command execution.
  */
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import type { CommandDeps, TabContext, VaultContext, Voice } from './deps'
 import type { CommandInvocation } from '../types'
 import type { AnswerWords } from '../words'
@@ -51,12 +51,12 @@ export const navigateToPath = async (
  */
 export const createNoteCommand = async (
   invocation: CommandInvocation,
-  seat: PlexRelatedSeat | null,
+  relation: PlexRelation | null,
   on: CommandDeps,
   words: AnswerWords,
 ): Promise<void> => {
   if (!invocation.name) return
-  const made = await on.files.createNote(invocation.name, seat ? invocation.path : '', seat)
+  const made = await on.files.createNote(invocation.name, relation ? invocation.path : '', relation)
   if (!made) return
   if (invocation.kind === NOTE) return on.notes.openNewFile(made.path, made.title, 'note', 'beside')
   await navigateToPath(made.path, on, words)

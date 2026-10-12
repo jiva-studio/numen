@@ -41,7 +41,7 @@ import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palett
 import type { Span } from '@/shared/lib/span'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
 import type { PlexHeading } from '@/features/plex'
-import { RELATED_SEATS, type PlexRelatedSeat } from '@/features/plex'
+import { RELATION_NAMES, type PlexRelation } from '@/features/plex'
 import type { PlexEdge } from '@/features/plex'
 import type { PlexNeighbourhood } from '@/features/plex'
 import type { PlexNode } from '@/features/plex'
@@ -124,10 +124,10 @@ const getIcon = (id: string, open: boolean) => {
   return FileText
 }
 
-const node = (id: string, title: string, seat: PlexNode['seat']): PlexNode => ({
+const node = (id: string, title: string, relation: PlexNode['relation']): PlexNode => ({
   id,
   title,
-  seat,
+  relation,
 })
 
 const RELATED: readonly PlexNode[] = [
@@ -152,8 +152,8 @@ const LABELS: Readonly<Record<string, string>> = {
 /** A sibling hangs off the parent it shares; everything else meets the focus. */
 const createEdge = (neighbour: PlexNode): PlexEdge => {
   const label = LABELS[neighbour.id]
-  if (neighbour.seat === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
-  if (neighbour.seat === 'parent' || neighbour.seat === 'jump') {
+  if (neighbour.relation === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
+  if (neighbour.relation === 'parent' || neighbour.relation === 'jump') {
     return { from: neighbour.id, to: 'focus', ...(label ? { label } : {}) }
   }
   return { from: 'focus', to: neighbour.id, ...(label ? { label } : {}) }
@@ -605,10 +605,10 @@ interface Screen {
   /** The headings a node hangs under its box, and none where there are none. */
   readonly headings?: (id: string) => readonly PlexHeading[]
   /**
-   * The seats a new note may be made in. None leaves the map at rest, with no
+   * The relations a new note may be made in. None leaves the map at rest, with no
    * handle on any node and nothing coming out from under one.
    */
-  readonly creatable?: readonly PlexRelatedSeat[]
+  readonly creatable?: readonly PlexRelation[]
   /** Where the menu on a node stands, and none where it stands nowhere. */
   readonly menu?: { x: number; y: number } | null
   /** The rows of the vault the selection stands on. */
@@ -642,12 +642,12 @@ const screen = ({
       if (clicked && clicked.id !== 'focus') {
         currentNeighbourhood.value = {
           nodes: [
-            { id: clicked.id, title: clicked.title, seat: 'focus' },
-            { id: 'focus', title: 'Entropy', seat: 'parent' },
-            { id: 'landauer', title: "Landauer's principle", seat: 'child' },
-            { id: 'shannon', title: 'Shannon 1948', seat: 'sibling' },
-            { id: 'information', title: 'Information theory', seat: 'parent' },
-            { id: 'second-law', title: 'The second law', seat: 'jump' },
+            { id: clicked.id, title: clicked.title, relation: 'focus' },
+            { id: 'focus', title: 'Entropy', relation: 'parent' },
+            { id: 'landauer', title: "Landauer's principle", relation: 'child' },
+            { id: 'shannon', title: 'Shannon 1948', relation: 'sibling' },
+            { id: 'information', title: 'Information theory', relation: 'parent' },
+            { id: 'second-law', title: 'The second law', relation: 'jump' },
           ],
           edges: [
             { from: 'focus', to: clicked.id, label: 'measures' },
@@ -841,7 +841,7 @@ export const Mapping: Story = {
       }),
       neighbourhood: WIDE,
       headings: (id: string) => HEADINGS[id] ?? [],
-      creatable: RELATED_SEATS,
+      creatable: RELATION_NAMES,
       // Asked for on a node off to the trailing side, where it stands clear of
       // the map and of what a node is hanging.
       menu: { x: 902, y: 396 },
@@ -880,7 +880,7 @@ export const Nesting: Story = {
       }),
       neighbourhood: WIDE,
       headings: (id: string) => HEADINGS[id] ?? [],
-      creatable: RELATED_SEATS,
+      creatable: RELATION_NAMES,
     }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
