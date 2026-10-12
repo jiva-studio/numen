@@ -10,9 +10,9 @@ const Name = "numen"
 // an agent.
 const prefix = "mcp__" + Name + "__"
 
-// Tool is what a tool of this vault's server is called once it reaches an
+// ToolName is what a tool of this vault's server is called once it reaches an
 // agent.
-func Tool(name string) string { return prefix + name }
+func ToolName(name string) string { return prefix + name }
 
 // ToolDeclaration is how one tool is spoken about to a person: what it calls
 // itself and what a call of it does to the vault. Both are the tool's own

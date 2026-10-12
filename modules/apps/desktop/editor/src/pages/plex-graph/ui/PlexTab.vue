@@ -4,7 +4,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Menu, optionsForType, Plex, threadOf, useTypeSize, Waiting } from '@numen/ui'
-import type { MenuOpening, PlexRelatedSeat, PlexDestination } from '@numen/ui'
+import type { MenuTrigger, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
@@ -107,7 +107,7 @@ function onBringNodes(nodes: readonly string[], seat: PlexRelatedSeat) {
   void props.state.dropNodes(nodes, seat)
 }
 
-function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuOpening) {
+function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuTrigger) {
   props.state.openMenu({ node, at, opening })
 }
 
@@ -282,7 +282,7 @@ function getSourceHandlePosition(
       v-if="menu"
       :items="items"
       :at="menu!.at"
-      :opening="menu!.opening"
+      :trigger="menu!.opening"
       open
       @choose="onChooseMenuItem"
       @dismiss="onDismissMenu"

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { addressAt, follow } from './address'
-import { opening } from './outside'
+import { addressOpener } from './outside'
 import { createState } from '../fixtures/state'
 
 describe('the address under a position in the text', () => {
@@ -61,7 +61,7 @@ describe('a link followed with the pointer', () => {
       state: createState(doc).update({
         effects: StateEffect.appendConfig.of([
           follow,
-          opening.of(opened),
+          addressOpener.of(opened),
           EditorView.domEventHandlers({ mousedown: passed }),
         ]),
       }).state,

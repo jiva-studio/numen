@@ -11,16 +11,16 @@ import (
 // toolkit this binary is linked against, so where the machine does not put them
 // on the search path, the toolkit itself is asked where it keeps them.
 
-// findSchemas puts the settings a dialog reads on the search path, where this
+// setSchemasDir puts the settings a dialog reads on the search path, where this
 // machine has not.
 //
 // It is called before anything draws: the search path is read once, the first
 // time something asks for a setting.
-func findSchemas() {
+func setSchemasDir() {
 	if hasSchemas() {
 		return
 	}
-	found := schemasOf(toolkit())
+	found := getSchemasDir(getToolkitDir())
 	if found == "" {
 		return
 	}
@@ -30,9 +30,9 @@ func findSchemas() {
 	os.Setenv("GSETTINGS_SCHEMA_DIR", found)
 }
 
-// toolkit is where the drawing library this process runs on lives: the path it
+// getToolkitDir is where the drawing library this process runs on lives: the path it
 // was loaded from, up to the folder holding its lib and its share.
-func toolkit() string {
+func getToolkitDir() string {
 	maps, err := os.ReadFile("/proc/self/maps")
 	if err != nil {
 		return ""
@@ -51,10 +51,10 @@ func toolkit() string {
 	return ""
 }
 
-// schemasOf is where a toolkit keeps its compiled settings, and empty where it
+// getSchemasDir is where a toolkit keeps its compiled settings, and empty where it
 // keeps none. A machine that files them under the package they came from is
 // looked through for the package holding these.
-func schemasOf(prefix string) string {
+func getSchemasDir(prefix string) string {
 	if prefix == "" {
 		return ""
 	}

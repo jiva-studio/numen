@@ -8,7 +8,7 @@
  */
 import { computed, useTemplateRef, type HTMLAttributes } from 'vue'
 import { cn } from '@/shared/lib/classes'
-import { onTheClock } from './clock'
+import { isClockTime } from './clock'
 
 const props = withDefaults(
   defineProps<{
@@ -30,13 +30,13 @@ const emit = defineEmits<{
 }>()
 
 /** What stands in the field, which is an hour of the day or nothing at all. */
-const inForce = computed(() => (onTheClock(model.value) ? model.value : ''))
+const inForce = computed(() => (isClockTime(model.value) ? model.value : ''))
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
 const onChange = (event: Event) => {
   const nextValue = (event.target as HTMLInputElement).value
-  if (!onTheClock(nextValue) || nextValue === model.value) return
+  if (!isClockTime(nextValue) || nextValue === model.value) return
   model.value = nextValue
   emit('commit', nextValue)
 }

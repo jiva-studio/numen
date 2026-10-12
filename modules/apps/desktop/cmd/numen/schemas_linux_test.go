@@ -58,17 +58,17 @@ func TestTheToolkitIsLookedThroughForItsSettings(t *testing.T) {
 		prefix := t.TempDir()
 		want := schemasIn(t, filepath.Join(prefix, at))
 
-		if got := schemasOf(prefix); got != want {
+		if got := getSchemasDir(prefix); got != want {
 			t.Errorf("under %s the settings were %q, want %q", at, got, want)
 		}
 	}
 }
 
 func TestAToolkitCarryingNoSettingsAnswersWithNone(t *testing.T) {
-	if got := schemasOf(t.TempDir()); got != "" {
+	if got := getSchemasDir(t.TempDir()); got != "" {
 		t.Errorf("settings were claimed at %q", got)
 	}
-	if got := schemasOf(""); got != "" {
+	if got := getSchemasDir(""); got != "" {
 		t.Errorf("settings were claimed for a toolkit that was not found: %q", got)
 	}
 }
@@ -80,7 +80,7 @@ func TestTheSettingsTheEnvironmentNamesAreKept(t *testing.T) {
 	t.Setenv("XDG_DATA_DIRS", filepath.Join(t.TempDir(), "empty"))
 	t.Setenv("GSETTINGS_SCHEMA_DIR", theirs)
 
-	findSchemas()
+	setSchemasDir()
 
 	if got := os.Getenv("GSETTINGS_SCHEMA_DIR"); got != theirs {
 		t.Errorf("the folder the machine named became %q", got)

@@ -11,7 +11,7 @@
 import { useTemplateRef } from 'vue'
 import { LiveRegions } from './live-regions'
 import NoticeCard from './NoticeCard.vue'
-import { WAIT } from '../lib/dwell'
+import { CARD_DELAY } from '../lib/dwell'
 import { ROOM } from '../lib/fold'
 import { type Notice } from '../lib/notice'
 import { useAnnouncer } from '../model/announcer'
@@ -41,7 +41,7 @@ const props = withDefaults(
     name: 'Background work',
     dismiss: 'Put away',
     more: 'more',
-    wait: WAIT,
+    wait: CARD_DELAY,
     room: ROOM,
     clock: () => Date.now(),
     hidden: () => document.hidden,

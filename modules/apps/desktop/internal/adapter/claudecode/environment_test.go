@@ -26,7 +26,7 @@ func TestTheChildIsNotToldAboutSomebodyElsesSession(t *testing.T) {
 	}
 
 	kept := map[string]bool{}
-	for _, entry := range environment(given) {
+	for _, entry := range buildEnvironment(given) {
 		name, _, _ := strings.Cut(entry, "=")
 		kept[name] = true
 	}
@@ -54,7 +54,7 @@ func TestTheChildIsNotToldAboutSomebodyElsesSession(t *testing.T) {
 
 // An entry with no name and no value is not a variable, and must not become one.
 func TestAnEntryWithNoNameIsPassedOverUntouched(t *testing.T) {
-	got := environment([]string{"", "=x", "HOME=/home/somebody"})
+	got := buildEnvironment([]string{"", "=x", "HOME=/home/somebody"})
 	if !slices.Contains(got, "HOME=/home/somebody") {
 		t.Errorf("got %q", got)
 	}

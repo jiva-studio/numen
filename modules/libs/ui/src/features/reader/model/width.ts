@@ -5,7 +5,7 @@
  * it, and it follows the row only once the row has stood still.
  */
 import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { SETTLED, STAGE, type Row } from '../lib/strip'
+import { WIDTH_DEBOUNCE, WIDTH_STEP, type Row } from '../lib/strip'
 
 /** How many device pixels a CSS pixel is. One, where there is no window to ask. */
 const pixelRatio = (): number =>
@@ -14,7 +14,7 @@ const pixelRatio = (): number =>
     : window.devicePixelRatio
 
 /** The width a page is asked for at, staged. */
-const stageWidth = (pixels: number): number => Math.ceil(pixels / STAGE) * STAGE
+const roundUpWidth = (pixels: number): number => Math.ceil(pixels / WIDTH_STEP) * WIDTH_STEP
 
 export interface PageWidthState {
   /** What the row asks for its pages at, in device pixels. */
@@ -27,7 +27,7 @@ export function usePageWidth(getRow: () => Row, atWidth: (pixels: number) => voi
   /** The widest page there is, staged, in device pixels. */
   const needed = computed(() => {
     const widest = getRow().widths.reduce((most, each) => Math.max(most, each), 0)
-    return widest > 0 ? stageWidth(widest * pixelRatio()) : 0
+    return widest > 0 ? roundUpWidth(widest * pixelRatio()) : 0
   })
 
   const drawnWidth = ref(0)
@@ -47,7 +47,7 @@ export function usePageWidth(getRow: () => Row, atWidth: (pixels: number) => voi
     widthTimer = setTimeout(() => {
       drawnWidth.value = pixels
       atWidth(pixels)
-    }, SETTLED)
+    }, WIDTH_DEBOUNCE)
   })
 
   onBeforeUnmount(() => {

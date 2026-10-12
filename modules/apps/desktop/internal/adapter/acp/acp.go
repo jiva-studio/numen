@@ -71,7 +71,7 @@ func (w *work) Stop() error {
 	return nil
 }
 
-func (a *Agent) hold(w *work) bool {
+func (a *Agent) registerWork(w *work) bool {
 	a.taken.Lock()
 	defer a.taken.Unlock()
 
@@ -85,7 +85,7 @@ func (a *Agent) hold(w *work) bool {
 	return true
 }
 
-func (a *Agent) letGo(w *work) {
+func (a *Agent) unregisterWork(w *work) {
 	a.taken.Lock()
 	defer a.taken.Unlock()
 	delete(a.taken.running, w)
@@ -331,7 +331,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 		cleanup:      cleanupTempHome,
 	}
 
-	if !a.hold(w) {
+	if !a.registerWork(w) {
 		if stdin != nil {
 			stdin.Close()
 		}
@@ -348,7 +348,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 			stdin.Close()
 		}
 		stdout.Close()
-		a.letGo(w)
+		a.unregisterWork(w)
 		if cleanupTempHome != nil {
 			cleanupTempHome()
 		}
@@ -364,7 +364,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 			}
 		}()
 		defer w.reader.Done()
-		defer a.letGo(w)
+		defer a.unregisterWork(w)
 		defer close(w.steps)
 		if stdin != nil {
 			defer stdin.Close()

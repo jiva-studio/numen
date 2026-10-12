@@ -9,7 +9,7 @@ import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codemirror/view'
 
 /** What the editor shows against its lines. */
-export interface TimingState {
+export interface TimeGutterState {
   /** What stands in the gutter, one for each line from the first. */
   readonly times: readonly string[]
   /** The line being said, counted from zero. None is -1. */
@@ -18,25 +18,25 @@ export interface TimingState {
   readonly isFollowing: boolean
 }
 
-const NOTHING: TimingState = { times: [], current: -1, isFollowing: false }
+const NOTHING: TimeGutterState = { times: [], current: -1, isFollowing: false }
 
-const told = StateEffect.define<TimingState>()
+const setTimeGutterState = StateEffect.define<TimeGutterState>()
 
-const held = StateField.define<TimingState>({
+const timeGutterField = StateField.define<TimeGutterState>({
   create: () => NOTHING,
   update: (was, transaction) => {
-    for (const effect of transaction.effects) if (effect.is(told)) return effect.value
+    for (const effect of transaction.effects) if (effect.is(setTimeGutterState)) return effect.value
     return was
   },
 })
 
 /** The line being said. It is drawn in the accent and carries no fill. */
-const current = Decoration.line({ class: 'cm-current' })
+const currentLine = Decoration.line({ class: 'cm-current' })
 
-const marked = EditorView.decorations.compute([held, 'doc'], (state) => {
-  const at = state.field(held).current
+const currentLineMarks = EditorView.decorations.compute([timeGutterField, 'doc'], (state) => {
+  const at = state.field(timeGutterField).current
   if (at < 0 || at >= state.doc.lines) return Decoration.none
-  return Decoration.set([current.range(state.doc.line(at + 1).from)])
+  return Decoration.set([currentLine.range(state.doc.line(at + 1).from)])
 })
 
 /** One time in the gutter. It is clicked to go to the line it stands on. */
@@ -73,21 +73,22 @@ class Time extends GutterMarker {
   }
 }
 
-const createTimingExtension = (goToLine: (line: number) => void): Extension =>
+const createTimeGutterExtension = (goToLine: (line: number) => void): Extension =>
   gutter({
     class: 'cm-times',
     lineMarker: (view, line) => {
       const at = view.state.doc.lineAt(line.from).number - 1
-      const { times: all, current } = view.state.field(held)
+      const { times: all, current } = view.state.field(timeGutterField)
       const text = all[at]
       return text === undefined ? null : new Time(text, at, at === current, goToLine)
     },
-    lineMarkerChange: (update) => update.startState.field(held) !== update.state.field(held),
+    lineMarkerChange: (update) =>
+      update.startState.field(timeGutterField) !== update.state.field(timeGutterField),
   })
 
 /* The times take the room the longest of them needs, so an hour in and a
    minute in line up. */
-const painted = EditorView.theme({
+const timeGutterTheme = EditorView.theme({
   '.cm-gutters': {
     backgroundColor: 'transparent',
     border: 'none',
@@ -122,28 +123,28 @@ const painted = EditorView.theme({
 })
 
 /** The times of one editor, and what puts them there. */
-export interface Timing {
+export interface TimeGutter {
   /** The extension, put in the editor these are shown in. */
   readonly extension: Extension
   /** What the editor shows now. */
-  show(state: TimingState): void
+  show(state: TimeGutterState): void
 }
 
 /** Whether two of these say the same thing. */
-const isSame = (one: TimingState, two: TimingState): boolean =>
+const isSame = (one: TimeGutterState, two: TimeGutterState): boolean =>
   one.current === two.current &&
   one.isFollowing === two.isFollowing &&
   one.times.length === two.times.length &&
   one.times.every((text, at) => text === two.times[at])
 
-export function timing(goToLine: (line: number) => void): Timing {
+export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
   let view: EditorView | null = null
 
   // What was last shown. An editor drawn again — a tab moved, a pane split —
-  // is a new editor holding none of it, and is given it as it attaches.
-  let last: TimingState | null = null
+  // is a new editor attachPlugin none of it, and is given it as it attaches.
+  let last: TimeGutterState | null = null
 
-  const holding = ViewPlugin.define((got) => {
+  const attachPlugin = ViewPlugin.define((got) => {
     view = got
     if (last) {
       const shown = last
@@ -163,12 +164,12 @@ export function timing(goToLine: (line: number) => void): Timing {
   // put shows what is given. It moves the view only where it may: the line to
   // keep in sight has to be one the document has, following has to be on, and
   // one of the two has to have changed.
-  const put = (state: TimingState, may: boolean) => {
+  const put = (state: TimeGutterState, may: boolean) => {
     last = state
     if (!view) return
-    const was = view.state.field(held)
+    const was = view.state.field(timeGutterField)
     if (isSame(was, state)) return
-    const effects: StateEffect<unknown>[] = [told.of(state)]
+    const effects: StateEffect<unknown>[] = [setTimeGutterState.of(state)]
     const isMoved = state.current !== was.current || state.isFollowing !== was.isFollowing
     if (
       may &&
@@ -183,7 +184,16 @@ export function timing(goToLine: (line: number) => void): Timing {
     view.dispatch({ effects })
   }
 
-  const show = (state: TimingState) => put(state, true)
+  const show = (state: TimeGutterState) => put(state, true)
 
-  return { extension: [held, marked, createTimingExtension(goToLine), painted, holding], show }
+  return {
+    extension: [
+      timeGutterField,
+      currentLineMarks,
+      createTimeGutterExtension(goToLine),
+      timeGutterTheme,
+      attachPlugin,
+    ],
+    show,
+  }
 }

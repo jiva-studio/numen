@@ -18,7 +18,7 @@ import { PaletteField } from './palette-field'
 import { PaletteFrame } from './palette-frame'
 import { PaletteResults } from './palette-results'
 import { ACTION_WORDS, type ActionWords } from '../lib/actions'
-import { type PaletteGroup, type PaletteLit } from '../lib/item'
+import { type PaletteGroup, type PaletteItemId } from '../lib/item'
 import { commandKeyChord, getShortcuts } from '../lib/keys'
 import { usePaletteKeys } from '../model/keys'
 import { useActionPanel } from '../model/panel'
@@ -91,7 +91,7 @@ const emit = defineEmits<{
    * The item the keyboard is standing on, said whenever it moves. A list that
    * changes under the keyboard says this once, when it has settled.
    */
-  (event: 'light', item: PaletteLit): void
+  (event: 'light', item: PaletteItemId): void
   /**
    * Backspace was pressed in an empty field. The caller keeps the steps and
    * decides what going back means.

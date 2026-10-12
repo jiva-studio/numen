@@ -270,7 +270,7 @@ func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 
 // An archive is unpacked and parsed once, however many chapters are turned.
 func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
-	held := pool.NewBooks(pool.MostRead, pool.ReadIdleFor)
+	held := pool.NewBooks(pool.MaxOpenBooks, pool.BookIdleTimeout)
 	t.Cleanup(held.Close)
 
 	var reads int
@@ -283,7 +283,7 @@ func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
 	}
 	mark := pool.Fingerprint{Path: reflowed, Size: 1, Mtime: 2}
 	for range 3 {
-		if _, err := held.Take(t.Context(), mark, read); err != nil {
+		if _, err := held.Acquire(t.Context(), mark, read); err != nil {
 			t.Fatalf("take the book: %v", err)
 		}
 	}
@@ -295,25 +295,25 @@ func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
 // Few are held: a book is the whole of its text in memory beside the archive it
 // was read out of.
 func TestOnlyTheBooksInFrontOfThePersonAreHeld(t *testing.T) {
-	held := pool.NewBooks(pool.MostRead, pool.ReadIdleFor)
+	held := pool.NewBooks(pool.MaxOpenBooks, pool.BookIdleTimeout)
 	t.Cleanup(held.Close)
 
 	raw := bookOf(t)
-	for at := range pool.MostRead + 1 {
+	for at := range pool.MaxOpenBooks + 1 {
 		mark := pool.Fingerprint{Path: fmt.Sprintf("library/%d.epub", at), Size: int64(at)}
-		if _, err := held.Take(t.Context(), mark, func() (*epub.Book, error) { return epub.Read(raw) }); err != nil {
+		if _, err := held.Acquire(t.Context(), mark, func() (*epub.Book, error) { return epub.Read(raw) }); err != nil {
 			t.Fatalf("take the book: %v", err)
 		}
 	}
-	if got := openBooks(held); got != pool.MostRead {
-		t.Errorf("%d books are held, want %d", got, pool.MostRead)
+	if got := openBooks(held); got != pool.MaxOpenBooks {
+		t.Errorf("%d books are held, want %d", got, pool.MaxOpenBooks)
 	}
 }
 
 // A caller that ran out of patience is told the book is busy, and the reading
 // goes on and is there for the next ask.
 func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
-	held := pool.NewBooks(pool.MostRead, pool.ReadIdleFor)
+	held := pool.NewBooks(pool.MaxOpenBooks, pool.BookIdleTimeout)
 	t.Cleanup(held.Close)
 
 	gate := make(chan struct{})
@@ -327,11 +327,11 @@ func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
 
 	waited, cancel := context.WithTimeout(t.Context(), time.Millisecond)
 	defer cancel()
-	if _, err := held.Take(waited, mark, read); !errors.Is(err, pool.ErrBusy) {
+	if _, err := held.Acquire(waited, mark, read); !errors.Is(err, pool.ErrBusy) {
 		t.Errorf("a book still being read answered %v", err)
 	}
 	close(gate)
-	if _, err := held.Take(t.Context(), mark, read); err != nil {
+	if _, err := held.Acquire(t.Context(), mark, read); err != nil {
 		t.Errorf("the book the first ask left open: %v", err)
 	}
 	if got := reads.Load(); got != 1 {
@@ -342,11 +342,11 @@ func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
 // A book nobody has asked about for a while is let go: what a book holds is
 // memory.
 func TestABookNobodyIsReadingIsLetGo(t *testing.T) {
-	held := pool.NewBooks(pool.MostRead, time.Millisecond)
+	held := pool.NewBooks(pool.MaxOpenBooks, time.Millisecond)
 	t.Cleanup(held.Close)
 
 	mark := pool.Fingerprint{Path: reflowed, Size: 1}
-	if _, err := held.Take(t.Context(), mark, func() (*epub.Book, error) { return epub.Read(bookOf(t)) }); err != nil {
+	if _, err := held.Acquire(t.Context(), mark, func() (*epub.Book, error) { return epub.Read(bookOf(t)) }); err != nil {
 		t.Fatalf("take the book: %v", err)
 	}
 	for at := time.Now(); openBooks(held) != 0; {
@@ -362,17 +362,17 @@ func TestABookNobodyIsReadingIsLetGo(t *testing.T) {
 func TestTheBooksOfAVaultAreLetGoWhenAnotherComesIn(t *testing.T) {
 	api, _ := readFrom(t)
 	whatBook(t, api)
-	if openBooks(api.Viewer.read.Load()) == 0 {
+	if openBooks(api.Viewer.books.Load()) == 0 {
 		t.Fatal("reading a book left none held")
 	}
 
-	before := api.Viewer.read.Load()
-	api.Viewer.empty()
+	before := api.Viewer.books.Load()
+	api.Viewer.reset()
 
 	if got := openBooks(before); got != 0 {
 		t.Errorf("%d books of the vault that went are still held", got)
 	}
-	if got := openBooks(api.Viewer.read.Load()); got != 0 {
+	if got := openBooks(api.Viewer.books.Load()); got != 0 {
 		t.Errorf("the window came back to %d books open", got)
 	}
 }

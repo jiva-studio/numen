@@ -7,20 +7,20 @@ package shutdown
 
 import "sync"
 
-// Steps are what is let go of, first to last.
-type Steps struct {
+// Sequence are what is let go of, first to last.
+type Sequence struct {
 	steps []func()
 	once  sync.Once
 }
 
-// InOrder is the steps, in the order they are to run.
-func InOrder(steps ...func()) *Steps {
-	return &Steps{steps: steps}
+// NewSequence is the steps, in the order they are to run.
+func NewSequence(steps ...func()) *Sequence {
+	return &Sequence{steps: steps}
 }
 
-// Go runs each step in turn. Every call after the first does nothing, and one
+// Run runs each step in turn. Every call after the first does nothing, and one
 // arriving while the steps are running waits for them.
-func (s *Steps) Go() {
+func (s *Sequence) Run() {
 	s.once.Do(func() {
 		for _, step := range s.steps {
 			step()

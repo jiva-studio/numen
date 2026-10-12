@@ -12,27 +12,27 @@ type change struct {
 	renamed []domain.Move
 }
 
-// newChangeAudience is everyone listening for what moved.
+// newChangeBroadcaster delivers what moved to its subscribers.
 //
 // A listener that fell behind is told to read everything again, which is the
 // same answer the watcher gives when more arrives at once than it can follow.
 // A message that never arrives leaves a client showing something stale and
 // certain it is current.
-func newChangeAudience() audience[change] {
-	return audience[change]{
+func newChangeBroadcaster() broadcaster[change] {
+	return broadcaster[change]{
 		fallback: func(change) change { return change{shouldReload: true} },
-		room:     8,
+		capacity: 8,
 	}
 }
 
-// newPlaceAudience is everyone drawing the vault, for the places something asks to be
+// newPlaceBroadcaster delivers to every subscriber, for the places something asks to be
 // put in front of the person. A place asked for while a listener is busy
 // replaces the one it has not read: what matters is the last place asked for.
-func newPlaceAudience() audience[domain.Place] {
-	return audience[domain.Place]{isLatest: true, room: 1}
+func newPlaceBroadcaster() broadcaster[domain.Place] {
+	return broadcaster[domain.Place]{isLatest: true, capacity: 1}
 }
 
-// drawing is everyone drawing the vault, for a change to a note being made
+// newEditBroadcaster delivers to every subscriber, for a change to a note being made
 // while they are showing it.
 //
 // Each report carries the whole of what one change is doing, so a report
@@ -40,11 +40,11 @@ func newPlaceAudience() audience[domain.Place] {
 // are made at once, and each is drawn in a place of its own. The report that
 // ends a change is replaced by nothing, and arrives whatever a listener is
 // doing.
-func drawing() audience[domain.Edit] {
-	return audience[domain.Edit]{
-		isLatest: true,
-		about:    func(said domain.Edit) string { return said.Change },
-		keep:     func(said domain.Edit) bool { return said.IsDone },
-		room:     8,
+func newEditBroadcaster() broadcaster[domain.Edit] {
+	return broadcaster[domain.Edit]{
+		isLatest:   true,
+		getTopic:   func(said domain.Edit) string { return said.Change },
+		isRequired: func(said domain.Edit) bool { return said.IsDone },
+		capacity:   8,
 	}
 }

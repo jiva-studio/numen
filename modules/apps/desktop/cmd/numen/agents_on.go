@@ -57,21 +57,21 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	// is that child's allowance and is narrowed there.
 	served, err := agents.Serve(ctx, agents.Options{
 		Config:       cfg,
-		Core:         agentCore(cfg, opened, root, out),
+		Core:         makeAgentCore(cfg, opened, root, out),
 		Addr:         addr,
 		IsAnnouncing: true,
 		Root:         root,
-		Drafting:     makeDrafting(opened),
+		Preview:      makeEditPreview(opened),
 		Out:          out,
 	})
 	if err != nil && opts.addr == "" {
 		served, err = agents.Serve(ctx, agents.Options{
 			Config:       cfg,
-			Core:         agentCore(cfg, opened, root, out),
+			Core:         makeAgentCore(cfg, opened, root, out),
 			Addr:         "127.0.0.1:0",
 			IsAnnouncing: false,
 			Root:         root,
-			Drafting:     makeDrafting(opened),
+			Preview:      makeEditPreview(opened),
 			Out:          out,
 		})
 	}
@@ -89,18 +89,18 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 	return served.Close, nil
 }
 
-// makeDrafting is how a change the agent is making reaches the window before it
+// makeEditPreview is how a change the agent is making reaches the window before it
 // lands. Where a stretch stands is the vault's to say.
-func makeDrafting(opened *editor.Installation) claudecode.Drafting {
-	return claudecode.Drafting{
-		Report: func(ctx context.Context, said domain.Edit) {
+func makeEditPreview(opened *editor.Installation) claudecode.EditPreview {
+	return claudecode.EditPreview{
+		Emit: func(ctx context.Context, said domain.Edit) {
 			_ = opened.API.GetWindow().ShowEdit(ctx, said)
 		},
-		Location: opened.DraftingLocation,
+		Locate: opened.DraftingLocation,
 	}
 }
 
-// agentCore wires the tools to the use cases the window works this vault
+// makeAgentCore wires the tools to the use cases the window works this vault
 // through. They are built once, where the window was put together, so a tool
 // and the person reach the vault through the one set: the index is brought
 // level by the same refresh the watcher drives, and a note a tool writes is
@@ -109,7 +109,7 @@ func makeDrafting(opened *editor.Installation) claudecode.Drafting {
 // The one difference is Drawing, and it is why: a note a tool writes is drawn
 // as the stretch that changed, and a note the person writes is not, because
 // they are looking at the text they typed.
-func agentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
+func makeAgentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
 	notes := opened.Notes().Drawing(opened.API.GetWindow())
 	cutting := opened.Cards()
 
@@ -127,12 +127,12 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 			Add:          opened.API.Vaults.Add,
 			Rename:       opened.API.Vaults.Rename,
 			Forget:       opened.API.Vaults.Forget,
-			Opens:        opening(opened, out),
+			Opens:        makeOpenVault(opened, out),
 		},
 
 		Sources: mcp.Sources{
 			Queries:    opened.SourcesKnown(),
-			Recognise:  recogniser(opened),
+			Recognise:  makeRecogniser(opened),
 			Transcribe: opened.GetTranscriptionWorker(),
 			Derived:    cfg.GetDerivedStores(),
 			Documents:  cfg.TextExtractor(),
@@ -168,12 +168,12 @@ func agentCore(cfg container.Config, opened *editor.Installation, root string, o
 	}
 }
 
-// opening is the window moved to another vault, as a tool asks for it.
+// makeOpenVault is the window moved to another vault, as a tool asks for it.
 //
 // The session that asked is served for the vault that is going and ends with
 // it, so what went wrong is said here. A window that cannot be moved serves no
 // tool that would move it.
-func opening(opened *editor.Installation, out io.Writer) func(context.Context, domain.Vault) error {
+func makeOpenVault(opened *editor.Installation, out io.Writer) func(context.Context, domain.Vault) error {
 	if opened.API.Opens == nil {
 		return nil
 	}
@@ -186,11 +186,11 @@ func opening(opened *editor.Installation, out io.Writer) func(context.Context, d
 	}
 }
 
-// recogniser is what reads a scanned document for an agent that asks.
+// makeRecogniser is what reads a scanned document for an agent that asks.
 //
 // It is always served, even on a machine holding none of the models: what is
 // missing is fetched behind whoever asked, and the tool says so. A tool that is
 // not served at all leaves an agent saying the vault cannot do a thing it can.
-func recogniser(opened *editor.Installation) mcp.Recogniser {
+func makeRecogniser(opened *editor.Installation) mcp.Recogniser {
 	return opened.GetRecognitionWorker()
 }

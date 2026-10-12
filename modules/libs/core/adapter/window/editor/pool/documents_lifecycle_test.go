@@ -83,8 +83,8 @@ func getOrder(d *Documents) []Fingerprint {
 }
 
 func TestTheBoundsAWindowKeepsDocumentsUnder(t *testing.T) {
-	if OpenIdleFor != 2*time.Minute {
-		t.Errorf("a document nobody looks at is kept %v", OpenIdleFor)
+	if DocumentIdleTimeout != 2*time.Minute {
+		t.Errorf("a document nobody looks at is kept %v", DocumentIdleTimeout)
 	}
 	if PointsDPI != 72 {
 		t.Errorf("a page's own unit is 1/%d inch", PointsDPI)
@@ -92,20 +92,20 @@ func TestTheBoundsAWindowKeepsDocumentsUnder(t *testing.T) {
 }
 
 func TestAWindowKeepsMostOpenDocumentsAndClosesTheOldest(t *testing.T) {
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	var scans []*shelf
 	for _, name := range []string{"a", "b", "c"} {
 		s := &shelf{}
 		scans = append(scans, s)
-		_, give, err := docs.Take(t.Context(), markOf(name), opens(s))
+		_, give, err := docs.Acquire(t.Context(), markOf(name), opens(s))
 		if err != nil {
 			t.Fatal(err)
 		}
 		give()
 	}
-	if got := getOpenCount(docs); got != MostOpen {
-		t.Errorf("%d documents are open, want %d", got, MostOpen)
+	if got := getOpenCount(docs); got != MaxOpenDocuments {
+		t.Errorf("%d documents are open, want %d", got, MaxOpenDocuments)
 	}
 	if !scans[0].isClosed() {
 		t.Error("the oldest document was kept")
@@ -116,11 +116,11 @@ func TestAWindowKeepsMostOpenDocumentsAndClosesTheOldest(t *testing.T) {
 }
 
 func TestDocumentsAtTheBoundAreAllKept(t *testing.T) {
-	docs := NewDocuments(2, OpenIdleFor)
+	docs := NewDocuments(2, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	a, b := &shelf{}, &shelf{}
 	for name, s := range map[string]*shelf{"a": a, "b": b} {
-		_, give, err := docs.Take(t.Context(), markOf(name), opens(s))
+		_, give, err := docs.Acquire(t.Context(), markOf(name), opens(s))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -132,11 +132,11 @@ func TestDocumentsAtTheBoundAreAllKept(t *testing.T) {
 }
 
 func TestADocumentAskedForAgainIsTheNewestInTheOrder(t *testing.T) {
-	docs := NewDocuments(2, OpenIdleFor)
+	docs := NewDocuments(2, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	a, b, c := &shelf{}, &shelf{}, &shelf{}
 	take := func(name string, s *shelf) {
-		_, give, err := docs.Take(t.Context(), markOf(name), opens(s))
+		_, give, err := docs.Acquire(t.Context(), markOf(name), opens(s))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -165,14 +165,14 @@ func TestADocumentAskedForAgainIsTheNewestInTheOrder(t *testing.T) {
 }
 
 func TestADocumentInUseIsNotClosedForTheBound(t *testing.T) {
-	docs := NewDocuments(1, OpenIdleFor)
+	docs := NewDocuments(1, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	a, b := &shelf{}, &shelf{}
-	_, giveA, err := docs.Take(t.Context(), markOf("a"), opens(a))
+	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), opens(a))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, giveB, err := docs.Take(t.Context(), markOf("b"), opens(b))
+	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), opens(b))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,11 +184,11 @@ func TestADocumentInUseIsNotClosedForTheBound(t *testing.T) {
 }
 
 func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	cause := errors.New("not a document")
 	good := &shelf{}
-	_, giveGood, err := docs.Take(t.Context(), markOf("good"), opens(good))
+	_, giveGood, err := docs.Acquire(t.Context(), markOf("good"), opens(good))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
 		return nil, cause
 	}
 	for range 2 {
-		doc, give, err := docs.Take(t.Context(), markOf("bad"), broken)
+		doc, give, err := docs.Acquire(t.Context(), markOf("bad"), broken)
 		if !errors.Is(err, cause) {
 			t.Fatalf("a document that cannot be opened was answered %v", err)
 		}
@@ -217,13 +217,13 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
 }
 
 func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	docs.Close()
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		for range 2 {
-			if _, _, err := docs.Take(t.Context(), markOf("a"), opens(&shelf{})); !errors.Is(err, ErrBusy) {
+			if _, _, err := docs.Acquire(t.Context(), markOf("a"), opens(&shelf{})); !errors.Is(err, ErrBusy) {
 				t.Errorf("answered %v", err)
 			}
 		}
@@ -236,7 +236,7 @@ func TestADocumentAskedAfterTheWindowWentDoesNotLockTheWindow(t *testing.T) {
 }
 
 func TestACallerThatRanOutOfTimeIsToldTheDocumentIsBusy(t *testing.T) {
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -245,7 +245,7 @@ func TestACallerThatRanOutOfTimeIsToldTheDocumentIsBusy(t *testing.T) {
 		<-release
 		return &shelf{}, nil
 	}
-	_, _, err := docs.Take(ctx, markOf("a"), slow)
+	_, _, err := docs.Acquire(ctx, markOf("a"), slow)
 	if !errors.Is(err, ErrBusy) {
 		t.Fatalf("answered %v", err)
 	}
@@ -259,9 +259,9 @@ func TestACallerThatRanOutOfTimeIsToldTheDocumentIsBusy(t *testing.T) {
 }
 
 func TestADocumentIsHeldByOneCallAtATime(t *testing.T) {
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
-	doc, give, err := docs.Take(t.Context(), markOf("a"), opens(&shelf{}))
+	doc, give, err := docs.Acquire(t.Context(), markOf("a"), opens(&shelf{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,28 +269,28 @@ func TestADocumentIsHeldByOneCallAtATime(t *testing.T) {
 
 	first, cancelFirst := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancelFirst()
-	if !doc.Hold(first) {
+	if !doc.Lock(first) {
 		t.Fatal("a free document could not be held")
 	}
 	second, cancelSecond := context.WithTimeout(t.Context(), 30*time.Millisecond)
 	defer cancelSecond()
-	if doc.Hold(second) {
+	if doc.Lock(second) {
 		t.Fatal("a document held by one call was held by another")
 	}
-	doc.Release()
+	doc.Unlock()
 	third, cancelThird := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancelThird()
-	if !doc.Hold(third) {
+	if !doc.Lock(third) {
 		t.Error("a document let go could not be held")
 	}
-	doc.Release()
+	doc.Unlock()
 }
 
 func TestAskingAgainStopsTheClockOnClosingTheDocument(t *testing.T) {
-	docs := NewDocuments(MostOpen, time.Hour)
+	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
-	_, give, err := docs.Take(t.Context(), markOf("a"), opens(s))
+	_, give, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,7 +301,7 @@ func TestAskingAgainStopsTheClockOnClosingTheDocument(t *testing.T) {
 		t.Fatal("giving a document back started no clock")
 	}
 
-	_, give, err = docs.Take(t.Context(), markOf("a"), opens(s))
+	_, give, err = docs.Acquire(t.Context(), markOf("a"), opens(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -315,14 +315,14 @@ func TestAskingAgainStopsTheClockOnClosingTheDocument(t *testing.T) {
 }
 
 func TestADocumentStillHeldByAnotherCallIsNotOnTheClock(t *testing.T) {
-	docs := NewDocuments(MostOpen, time.Hour)
+	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
-	_, giveOne, err := docs.Take(t.Context(), markOf("a"), opens(s))
+	_, giveOne, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, giveTwo, err := docs.Take(t.Context(), markOf("a"), opens(s))
+	_, giveTwo, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,10 +339,10 @@ func TestADocumentStillHeldByAnotherCallIsNotOnTheClock(t *testing.T) {
 }
 
 func TestADocumentNobodyLooksAtIsClosedAndForgotten(t *testing.T) {
-	docs := NewDocuments(MostOpen, 10*time.Millisecond)
+	docs := NewDocuments(MaxOpenDocuments, 10*time.Millisecond)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
-	_, give, err := docs.Take(t.Context(), markOf("a"), opens(s))
+	_, give, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,15 +354,15 @@ func TestADocumentNobodyLooksAtIsClosedAndForgotten(t *testing.T) {
 }
 
 func TestADocumentGivenBackAfterItWasEvictedIsClosedOnce(t *testing.T) {
-	docs := NewDocuments(1, OpenIdleFor)
+	docs := NewDocuments(1, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	a, b := &shelf{}, &shelf{}
-	_, giveA, err := docs.Take(t.Context(), markOf("a"), opens(a))
+	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), opens(a))
 	if err != nil {
 		t.Fatal(err)
 	}
 	giveA()
-	_, giveB, err := docs.Take(t.Context(), markOf("b"), opens(b))
+	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), opens(b))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -380,7 +380,7 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 	for i := range 12 {
 		s := &shelf{}
 		name := string(rune('a' + i))
-		_, give, err := docs.Take(t.Context(), markOf(name), opens(s))
+		_, give, err := docs.Acquire(t.Context(), markOf(name), opens(s))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -438,13 +438,13 @@ func TestAWindowGoingClosesWhatEveryoneHasGivenBack(t *testing.T) {
 func TestShuttingADocumentThatNeverOpenedClosesNothing(t *testing.T) {
 	ready := make(chan struct{})
 	close(ready)
-	(&Document{ready: ready}).Shut()
+	(&Document{ready: ready}).Close()
 }
 
 func TestShuttingADocumentStillOpeningClosesItOnceOpened(t *testing.T) {
 	s := &shelf{}
 	doc := &Document{ready: make(chan struct{})}
-	doc.Shut()
+	doc.Close()
 	time.Sleep(20 * time.Millisecond)
 	if s.isClosed() {
 		t.Fatal("closed before it was open")
@@ -454,7 +454,7 @@ func TestShuttingADocumentStillOpeningClosesItOnceOpened(t *testing.T) {
 	waitFor(t, "the document is closed once open", s.isClosed)
 
 	never := &Document{ready: make(chan struct{})}
-	never.Shut()
+	never.Close()
 	close(never.ready)
 	time.Sleep(10 * time.Millisecond)
 }
@@ -463,7 +463,7 @@ func TestShuttingAnOpenDocumentClosesItsScan(t *testing.T) {
 	s := &shelf{}
 	ready := make(chan struct{})
 	close(ready)
-	(&Document{ready: ready, Scan: s}).Shut()
+	(&Document{ready: ready, Scan: s}).Close()
 	if got := s.getCloses(); got != 1 {
 		t.Errorf("the scan was closed %d times", got)
 	}
@@ -485,7 +485,7 @@ func TestAPageIsDrawnAtTheResolutionItsWidthNeeds(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			s := &shelf{across: c.across}
 			doc := &Document{Scan: s, points: map[int]int{}}
-			if _, err := doc.Draw(0, c.width); err != nil {
+			if _, err := doc.Render(0, c.width); err != nil {
 				t.Fatal(err)
 			}
 			if len(s.dpis) != 1 || s.dpis[0] != c.wantAt {
@@ -499,14 +499,14 @@ func TestAPagesWidthIsMeasuredOnce(t *testing.T) {
 	s := &shelf{across: 612}
 	doc := &Document{Scan: s, points: map[int]int{}}
 	for range 3 {
-		if _, err := doc.Draw(4, 612); err != nil {
+		if _, err := doc.Render(4, 612); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if s.sizes != 1 {
 		t.Errorf("the page was measured %d times", s.sizes)
 	}
-	if _, err := doc.Draw(5, 612); err != nil {
+	if _, err := doc.Render(5, 612); err != nil {
 		t.Fatal(err)
 	}
 	if s.sizes != 2 {
@@ -518,7 +518,7 @@ func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
 	cause := errors.New("the library said no")
 
 	measure := &shelf{across: 612, sizeErr: cause}
-	if _, err := (&Document{Scan: measure, points: map[int]int{}}).Draw(0, 100); !errors.Is(err, cause) {
+	if _, err := (&Document{Scan: measure, points: map[int]int{}}).Render(0, 100); !errors.Is(err, cause) {
 		t.Errorf("a page that cannot be measured was answered %v", err)
 	}
 	if len(measure.dpis) != 0 {
@@ -527,7 +527,7 @@ func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
 
 	empty := &shelf{across: 0.5}
 	doc := &Document{Scan: empty, points: map[int]int{}}
-	if _, err := doc.Draw(0, 100); err == nil {
+	if _, err := doc.Render(0, 100); err == nil {
 		t.Error("a page with no width was drawn")
 	}
 	if len(empty.dpis) != 0 || len(doc.points) != 0 {
@@ -535,7 +535,7 @@ func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
 	}
 
 	draw := &shelf{across: 612, imageErr: cause}
-	img, err := (&Document{Scan: draw, points: map[int]int{}}).Draw(0, 100)
+	img, err := (&Document{Scan: draw, points: map[int]int{}}).Render(0, 100)
 	if !errors.Is(err, cause) || img != nil {
 		t.Errorf("a page the library cannot draw was answered %v, %v", img, err)
 	}
@@ -544,20 +544,20 @@ func TestAPageThatCannotBeDrawnIsReported(t *testing.T) {
 func TestAnEvictedDocumentFromTheMiddleOfTheOrderLeavesTheRestInOrder(t *testing.T) {
 	docs := NewDocuments(1, time.Hour)
 	t.Cleanup(docs.Close)
-	_, giveA, err := docs.Take(t.Context(), markOf("a"), opens(&shelf{}))
+	_, giveA, err := docs.Acquire(t.Context(), markOf("a"), opens(&shelf{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer giveA()
 	b := &shelf{}
-	_, giveB, err := docs.Take(t.Context(), markOf("b"), opens(b))
+	_, giveB, err := docs.Acquire(t.Context(), markOf("b"), opens(b))
 	if err != nil {
 		t.Fatal(err)
 	}
 	giveB()
 	clock := docs.open[markOf("b")].idle
 
-	_, giveC, err := docs.Take(t.Context(), markOf("c"), opens(&shelf{}))
+	_, giveC, err := docs.Acquire(t.Context(), markOf("c"), opens(&shelf{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -574,11 +574,11 @@ func TestAnEvictedDocumentFromTheMiddleOfTheOrderLeavesTheRestInOrder(t *testing
 }
 
 func TestADocumentThatFailedToOpenIsClosedOnceGivenBack(t *testing.T) {
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
 	cause := errors.New("half open")
-	if _, _, err := docs.Take(t.Context(), markOf("a"), func() (Scan, error) { return s, cause }); !errors.Is(err, cause) {
+	if _, _, err := docs.Acquire(t.Context(), markOf("a"), func() (Scan, error) { return s, cause }); !errors.Is(err, cause) {
 		t.Fatalf("answered %v", err)
 	}
 	if got := s.getCloses(); got != 1 {
@@ -587,26 +587,26 @@ func TestADocumentThatFailedToOpenIsClosedOnceGivenBack(t *testing.T) {
 }
 
 func TestRetiringClosesOnlyTheDocumentNobodyHolds(t *testing.T) {
-	docs := NewDocuments(MostOpen, time.Hour)
+	docs := NewDocuments(MaxOpenDocuments, time.Hour)
 	t.Cleanup(docs.Close)
 	s := &shelf{}
-	doc, give, err := docs.Take(t.Context(), markOf("a"), opens(s))
+	doc, give, err := docs.Acquire(t.Context(), markOf("a"), opens(s))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	docs.Retire(markOf("a"), doc)
+	docs.CloseIfIdle(markOf("a"), doc)
 	if s.isClosed() || getOpenCount(docs) != 1 {
 		t.Fatal("a document in use was retired")
 	}
 
 	give()
-	docs.Retire(markOf("a"), &Document{ready: make(chan struct{})})
+	docs.CloseIfIdle(markOf("a"), &Document{ready: make(chan struct{})})
 	if s.isClosed() || getOpenCount(docs) != 1 {
 		t.Fatal("a document was retired for another's clock")
 	}
 
-	docs.Retire(markOf("a"), doc)
+	docs.CloseIfIdle(markOf("a"), doc)
 	if !s.isClosed() || getOpenCount(docs) != 0 || len(getOrder(docs)) != 0 {
 		t.Error("an idle document was not retired")
 	}

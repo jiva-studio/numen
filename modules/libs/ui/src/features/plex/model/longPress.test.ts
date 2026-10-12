@@ -1,7 +1,7 @@
 /** A finger left still on a node: when it counts as a rest, and when it does not. */
 import { effectScope } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { HOLD, STRAY, useHold } from './holding'
+import { LONG_PRESS_DELAY, LONG_PRESS_TOLERANCE, useLongPress } from './longPress'
 
 const press = (over: Partial<PointerEvent> = {}) =>
   ({ pointerType: 'touch', clientX: 100, clientY: 100, ...over }) as PointerEvent
@@ -10,7 +10,7 @@ const press = (over: Partial<PointerEvent> = {}) =>
 const createHolding = (ready = () => true) => {
   const reached = vi.fn()
   const scope = effectScope()
-  const held = scope.run(() => useHold(ready, reached))!
+  const held = scope.run(() => useLongPress(ready, reached))!
   return { held, reached, scope }
 }
 
@@ -27,7 +27,7 @@ describe('a rest on a node', () => {
     held.onPointerDown(event)
     expect(reached).not.toHaveBeenCalled()
 
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
     expect(reached).toHaveBeenCalledWith(event)
   })
 
@@ -36,7 +36,7 @@ describe('a rest on a node', () => {
     const { held } = createHolding()
 
     held.onPointerDown(press())
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
     expect(held.isResting()).toBe(false)
   })
 
@@ -45,8 +45,8 @@ describe('a rest on a node', () => {
     const { held, reached } = createHolding()
 
     held.onPointerDown(press())
-    held.onPointerMove(press({ clientX: 100 + STRAY + 1 }))
-    vi.advanceTimersByTime(HOLD)
+    held.onPointerMove(press({ clientX: 100 + LONG_PRESS_TOLERANCE + 1 }))
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
 
     expect(reached).not.toHaveBeenCalled()
   })
@@ -56,8 +56,8 @@ describe('a rest on a node', () => {
     const { held, reached } = createHolding()
 
     held.onPointerDown(press())
-    held.onPointerMove(press({ clientX: 100 + STRAY - 1 }))
-    vi.advanceTimersByTime(HOLD)
+    held.onPointerMove(press({ clientX: 100 + LONG_PRESS_TOLERANCE - 1 }))
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
 
     expect(reached).toHaveBeenCalledOnce()
   })
@@ -68,7 +68,7 @@ describe('a rest on a node', () => {
 
     held.onPointerDown(press())
     held.letGo()
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
 
     expect(reached).not.toHaveBeenCalled()
   })
@@ -78,7 +78,7 @@ describe('a rest on a node', () => {
     const { held, reached } = createHolding()
 
     held.onPointerDown(press({ pointerType: 'mouse' }))
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
 
     expect(reached).not.toHaveBeenCalled()
   })
@@ -88,7 +88,7 @@ describe('a rest on a node', () => {
     const { held, reached } = createHolding(() => false)
 
     held.onPointerDown(press())
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
 
     expect(reached).not.toHaveBeenCalled()
   })
@@ -98,7 +98,7 @@ describe('a rest on a node', () => {
     const { held, reached } = createHolding()
 
     held.onPointerDown(press())
-    vi.advanceTimersByTime(HOLD - 1)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY - 1)
     expect(reached).not.toHaveBeenCalled()
 
     vi.advanceTimersByTime(1)
@@ -123,9 +123,9 @@ describe('a rest on a node', () => {
     const second = press({ clientX: 140 })
 
     held.onPointerDown(press())
-    vi.advanceTimersByTime(HOLD / 2)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY / 2)
     held.onPointerDown(second)
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
 
     expect(reached).toHaveBeenCalledOnce()
     expect(reached).toHaveBeenCalledWith(second)
@@ -136,8 +136,8 @@ describe('a rest on a node', () => {
     const { held, reached } = createHolding()
 
     held.onPointerDown(press())
-    held.onPointerMove(press({ clientX: 100 + STRAY }))
-    vi.advanceTimersByTime(HOLD)
+    held.onPointerMove(press({ clientX: 100 + LONG_PRESS_TOLERANCE }))
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
 
     expect(reached).toHaveBeenCalledOnce()
   })
@@ -155,7 +155,7 @@ describe('a rest on a node', () => {
 
     held.onPointerDown(press())
     scope.stop()
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
 
     expect(reached).not.toHaveBeenCalled()
   })

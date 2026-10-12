@@ -30,7 +30,7 @@ import { insert } from './shares'
 /** Where an identity for a pane or a branch a gesture makes comes from. */
 export type NodeIdFactory = () => NodeId
 
-export interface Landing {
+export interface SplitResult {
   readonly root: WorkspaceNode
   readonly axis: Orientation
   readonly focus: NodeId
@@ -51,7 +51,7 @@ export function putBeside(
   side: Side,
   axis: Orientation,
   id: NodeIdFactory,
-): Landing {
+): SplitResult {
   const wanted = orientationOf(side)
   const path = pathTo(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }

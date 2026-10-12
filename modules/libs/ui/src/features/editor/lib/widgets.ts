@@ -6,7 +6,7 @@
  * writes in the right place.
  */
 import { EditorView, WidgetType } from '@codemirror/view'
-import { resolving } from './outside'
+import { addressResolver } from './outside'
 
 /** The disc a bullet list is marked by. */
 export class Bullet extends WidgetType {
@@ -83,7 +83,7 @@ export class Picture extends WidgetType {
     const frame = document.createElement('div')
     frame.className = 'cm-picture'
     const picture = document.createElement('img')
-    picture.src = view.state.facet(resolving)(this.address)
+    picture.src = view.state.facet(addressResolver)(this.address)
     picture.loading = 'lazy'
     picture.addEventListener('error', () => frame.classList.add('cm-picture-lost'))
     frame.appendChild(picture)

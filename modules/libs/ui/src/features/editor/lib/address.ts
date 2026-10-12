@@ -10,7 +10,7 @@ import type { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { wikilinkAt } from '@/shared/lib/address'
-import { opening } from './outside'
+import { addressOpener } from './outside'
 
 /** The first child of a node under that name, and nothing where it has none. */
 export const childOf = (node: SyntaxNode, name: string) => {
@@ -61,7 +61,7 @@ export const follow = EditorView.domEventHandlers({
 
     const address = addressAt(view.state, at)
     if (address === null) return false
-    view.state.facet(opening)(address)
+    view.state.facet(addressOpener)(address)
     event.preventDefault()
     return true
   },
