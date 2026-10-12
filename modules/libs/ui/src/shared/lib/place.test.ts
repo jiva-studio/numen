@@ -35,4 +35,12 @@ describe('where a thing standing beside a span goes', () => {
     expect(span({ from: 0, to: 0, gap: 0, margin: 24 })).toBe(24)
     expect(span({ from: 0, to: 0, gap: 0, margin: 0 })).toBe(0)
   })
+
+  it('runs on when it fits with exactly its margin left over', () => {
+    expect(span({ room: 196 })).toBe(128)
+  })
+
+  it('runs back when it fits only past its margin and running back leaves exactly its margin', () => {
+    expect(span({ from: 76, to: 96, room: 150 })).toBe(8)
+  })
 })
