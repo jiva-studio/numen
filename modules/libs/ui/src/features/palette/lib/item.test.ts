@@ -28,7 +28,7 @@ import {
   overlayIcon,
 } from './keys'
 import { partsOf } from './parts'
-import { placePalette } from './place'
+import { listId, optionId, placePalette } from './place'
 import { MANY } from '../fixtures/actions'
 
 const OPEN = [{ id: 'open', text: 'Open' }]
@@ -315,6 +315,13 @@ describe('the actions the panel draws', () => {
     expect(placeActions(MANY)[3]?.name).toEqual([{ text: 'Rename', isHit: false }])
   })
 
+  it('marks the run when the words stand at the start of the name', () => {
+    expect(placeActions(MANY, 'rena')[0]?.name).toEqual([
+      { text: 'Rena', isHit: true },
+      { text: 'me', isHit: false },
+    ])
+  })
+
   it('carries the key of an action a key reaches, and nothing for the rest', () => {
     expect(placeActions(MANY).map((one) => one.key)).toEqual([
       { icons: ['return'], letter: '' },
@@ -471,6 +478,12 @@ describe('marking why an item is here', () => {
 })
 
 describe('which group stands where', () => {
+  it('draws a group holding items once, whether or not it is working or has something to say', () => {
+    const busy = group('names', [item('one')], { isWorking: true })
+    const spoken = group('text', [item('two')], { silence: 'nothing' })
+    expect(orderGroups([busy, spoken]).map((one) => one.id)).toEqual(['names', 'text'])
+  })
+
   const holding = group('names', [item('one')])
   const empty = group('text', [], { silence: 'nothing to search with' })
   const alsoEmpty = group('meaning', [], { isWorking: true })
@@ -515,5 +528,58 @@ describe('which group stands where', () => {
     expect(flatten(orderGroups(groups)).map((place) => place.item.id)).toEqual(
       flatten(groups).map((place) => place.item.id),
     )
+  })
+})
+
+describe('where the half of a pair is moved off', () => {
+  const HIGH_START = '\ud800'
+  const HIGH_END = '\udbff'
+  const LOW_START = '\udc00'
+  const LOW_END = '\udfff'
+
+  /** The run a span on the second unit of `first` + `second` picks out, in `x...y`. */
+  const picked = (first: string, second: string) =>
+    partsOf(`x${first}${second}y`, [{ from: 2, to: 3 }])
+
+  it('moves outwards from the middle of a pair at either end of the surrogate ranges', () => {
+    for (const [first, second] of [
+      [HIGH_START, LOW_START],
+      [HIGH_END, LOW_END],
+      [HIGH_START, LOW_END],
+      [HIGH_END, LOW_START],
+    ] as const) {
+      expect(picked(first, second)).toEqual([
+        { text: 'x', isHit: false },
+        { text: first + second, isHit: true },
+        { text: 'y', isHit: false },
+      ])
+    }
+  })
+
+  it('leaves a span alone when the unit before it does not open a pair', () => {
+    for (const first of ['\ud7ff', LOW_START, 'a']) {
+      expect(picked(first, LOW_START)).toEqual([
+        { text: `x${first}`, isHit: false },
+        { text: LOW_START, isHit: true },
+        { text: 'y', isHit: false },
+      ])
+    }
+  })
+
+  it('leaves a span alone when the unit it starts on does not close a pair', () => {
+    for (const second of [HIGH_END, '\ue000', 'b']) {
+      expect(picked(HIGH_START, second)).toEqual([
+        { text: `x${HIGH_START}`, isHit: false },
+        { text: second, isHit: true },
+        { text: 'y', isHit: false },
+      ])
+    }
+  })
+})
+
+describe('what the list and its rows are addressed by', () => {
+  it('names the list and each row after the id given', () => {
+    expect(listId('p1')).toBe('p1-list')
+    expect(optionId('p1', 3)).toBe('p1-option-3')
   })
 })
