@@ -13,7 +13,7 @@ type Notes = ReturnType<typeof openNotes>
 
 /** What a note is asked to be called, as the vault last said it. */
 export interface NoteTitlesDeps {
-  neighbourhood(path: string): Promise<{ focus?: { title?: string } | undefined }>
+  neighbourhood(path: string): Promise<{ focus: { title: string } }>
 }
 
 /** One clean note: the identity it opened under, and the file it stands at. */

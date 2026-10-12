@@ -82,7 +82,7 @@ export function useDeckTabs(
         bound: answer.ok ? 0 : answer.error.bound,
       })
       if (!answer.ok) return asFailure(answer.error.code)
-      return asValue({ at: answer.value.at })
+      return asValue({ body: '', at: answer.value.at })
     },
   })
 
