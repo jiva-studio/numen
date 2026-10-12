@@ -9,18 +9,18 @@ import { onBeforeUnmount, shallowRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
 import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from '../lib/highlight'
-import { marksIn, offsetAt, rangesOver, getRunsIn, type Run } from '../lib/runs'
+import { getMarks, getOffset, rangesOver, getRuns, type Run } from '../lib/runs'
 import type { Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
 
 /**
- * `edgeOf` is the one measurement of the browser this makes: the near edge of
+ * `getEdge` is the one measurement of the browser this makes: the near edge of
  * the columns, which every mark is read against.
  */
 export function useBookMarks(
   paper: Readonly<ShallowRef<HTMLElement | null>>,
   props: SettledBookProps,
-  edgeOf: (of: HTMLElement) => number,
+  getEdge: (of: HTMLElement) => number,
 ) {
   /** Where each run of the text stands. */
   const marks = shallowRef<readonly Mark[]>([])
@@ -36,14 +36,14 @@ export function useBookMarks(
     // Where a run stands is read against the columns it stands in and not against
     // the area they are carried across: a turn under way carries both, and the
     // one measured against the other is where the run will come to rest.
-    runs = getRunsIn(text)
-    marks.value = marksIn(runs, edgeOf(text))
+    runs = getRuns(text)
+    marks.value = getMarks(runs, getEdge(text))
   }
 
   /** The offset a place named inside the drawn document stands at. */
-  const placeAt = (fragment: string): number | undefined => {
+  const getPlace = (fragment: string): number | undefined => {
     const text = paper.value
-    return text ? offsetAt(text, runs, fragment) : undefined
+    return text ? getOffset(text, runs, fragment) : undefined
   }
 
   /** The runs asked about marked where they stand, and the rest more faintly. */
@@ -58,5 +58,5 @@ export function useBookMarks(
     unhighlight(props)
   })
 
-  return { marks, gather, placeAt, markRuns }
+  return { marks, gather, getPlace, markRuns }
 }

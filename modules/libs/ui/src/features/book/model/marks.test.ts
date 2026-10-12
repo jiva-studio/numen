@@ -21,7 +21,7 @@ vi.mock('../lib/highlight', async (original) => ({
 
 const MARKUP = '<p><span data-offset="0">abcdef</span><span data-offset="6">ghijkl</span></p>'
 
-const paperOf = (markup: string, left: readonly number[] = []): HTMLElement => {
+const createPaper = (markup: string, left: readonly number[] = []): HTMLElement => {
   const paper = document.createElement('div')
   paper.innerHTML = markup
   document.body.append(paper)
@@ -47,7 +47,7 @@ const setUp = (paper: HTMLElement | null, highlights: Span[] = [], others: Span[
   return { props, state, wrapper, marks }
 }
 
-const textOf = (call: unknown[]): string[] => (call[2] as Range[]).map((range) => range.toString())
+const getText = (call: unknown[]): string[] => (call[2] as Range[]).map((range) => range.toString())
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -56,11 +56,11 @@ afterEach(() => {
 
 describe('the marks of a document', () => {
   it('are none before the runs are gathered', () => {
-    expect(setUp(paperOf(MARKUP)).marks.marks.value).toStrictEqual([])
+    expect(setUp(createPaper(MARKUP)).marks.marks.value).toStrictEqual([])
   })
 
   it('stand where each run is, measured from the near edge', () => {
-    const { marks } = setUp(paperOf(MARKUP, [130, 480]))
+    const { marks } = setUp(createPaper(MARKUP, [130, 480]))
 
     marks.gather()
 
@@ -81,35 +81,39 @@ describe('the marks of a document', () => {
 describe('the place a name stands at', () => {
   it('is that of the run holding it once the runs are gathered', () => {
     const { marks } = setUp(
-      paperOf('<p><span data-offset="0">abc</span></p><h2 id="part"></h2><p><span data-offset="9">d</span></p>'),
+      createPaper(
+        '<p><span data-offset="0">abc</span></p><h2 id="part"></h2><p><span data-offset="9">d</span></p>',
+      ),
     )
 
     marks.gather()
 
-    expect(marks.placeAt('part')).toBe(9)
+    expect(marks.getPlace('part')).toBe(9)
   })
 
   it('is nothing before the runs are gathered, or where no document is drawn', () => {
     const { marks } = setUp(
-      paperOf('<p><span data-offset="0">abc</span></p><h2 id="part"></h2><p><span data-offset="9">d</span></p>'),
+      createPaper(
+        '<p><span data-offset="0">abc</span></p><h2 id="part"></h2><p><span data-offset="9">d</span></p>',
+      ),
     )
 
-    expect(marks.placeAt('part')).toBeUndefined()
-    expect(setUp(null).marks.placeAt('part')).toBeUndefined()
+    expect(marks.getPlace('part')).toBeUndefined()
+    expect(setUp(null).marks.getPlace('part')).toBeUndefined()
   })
 })
 
 describe('the runs marked', () => {
   it('are none before the runs are gathered', () => {
-    const { marks } = setUp(paperOf(MARKUP), [{ from: 1, to: 3 }])
+    const { marks } = setUp(createPaper(MARKUP), [{ from: 1, to: 3 }])
 
     marks.markRuns()
 
-    expect(vi.mocked(highlight).mock.calls.map(textOf)).toStrictEqual([[], []])
+    expect(vi.mocked(highlight).mock.calls.map(getText)).toStrictEqual([[], []])
   })
 
   it('put the highlights and the others each into their own entry', () => {
-    const { marks, props } = setUp(paperOf(MARKUP), [{ from: 1, to: 3 }], [{ from: 7, to: 10 }])
+    const { marks, props } = setUp(createPaper(MARKUP), [{ from: 1, to: 3 }], [{ from: 7, to: 10 }])
     marks.gather()
 
     marks.markRuns()
@@ -119,37 +123,35 @@ describe('the runs marked', () => {
       [HIGHLIGHT, props],
       [OTHER_HIGHLIGHT, props],
     ])
-    expect(calls.map(textOf)).toStrictEqual([['bc'], ['hij']])
+    expect(calls.map(getText)).toStrictEqual([['bc'], ['hij']])
   })
 
   it('are marked again when the highlights change', async () => {
-    const { marks, state } = setUp(paperOf(MARKUP))
+    const { marks, state } = setUp(createPaper(MARKUP))
     marks.gather()
 
     state.highlights = [{ from: 0, to: 2 }]
     await nextTick()
 
-    expect(vi.mocked(highlight).mock.calls.map((call) => [call[0], ...textOf(call)])).toStrictEqual([
-      [HIGHLIGHT, 'ab'],
-      [OTHER_HIGHLIGHT],
-    ])
+    expect(
+      vi.mocked(highlight).mock.calls.map((call) => [call[0], ...getText(call)]),
+    ).toStrictEqual([[HIGHLIGHT, 'ab'], [OTHER_HIGHLIGHT]])
   })
 
   it('are marked again when the other highlights change', async () => {
-    const { marks, state } = setUp(paperOf(MARKUP))
+    const { marks, state } = setUp(createPaper(MARKUP))
     marks.gather()
 
     state.otherHighlights = [{ from: 6, to: 8 }]
     await nextTick()
 
-    expect(vi.mocked(highlight).mock.calls.map((call) => [call[0], ...textOf(call)])).toStrictEqual([
-      [HIGHLIGHT],
-      [OTHER_HIGHLIGHT, 'gh'],
-    ])
+    expect(
+      vi.mocked(highlight).mock.calls.map((call) => [call[0], ...getText(call)]),
+    ).toStrictEqual([[HIGHLIGHT], [OTHER_HIGHLIGHT, 'gh']])
   })
 
   it('are taken back when the book goes', () => {
-    const { wrapper, props } = setUp(paperOf(MARKUP))
+    const { wrapper, props } = setUp(createPaper(MARKUP))
 
     wrapper.unmount()
 

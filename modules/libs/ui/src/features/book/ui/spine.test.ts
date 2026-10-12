@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import spine from '../../../../../protocol/testdata/spine.html?raw'
 import Book from './Book.vue'
-import { bytesIn } from '../lib/bytes'
+import { countBytes } from '../lib/bytes'
 
 /** The document the corpus is taken from, as the archive names it. */
 const MIDDLE = 'OEBPS/middle.xhtml'
@@ -35,7 +35,7 @@ const span = () => {
   const all = getRuns()
   const first = all[0]!
   const last = all[all.length - 1]!
-  return { from: first.at, to: last.at + bytesIn(last.said) }
+  return { from: first.at, to: last.at + countBytes(last.said) }
 }
 
 /** A reader drawing the corpus, in a room jsdom has laid nothing out in. */
@@ -73,7 +73,7 @@ describe('the markup a spine document arrives as', () => {
     const all = getRuns()
     for (let i = 1; i < all.length; i++) {
       const before = all[i - 1]!
-      expect(all[i]!.at).toBe(before.at + bytesIn(before.said))
+      expect(all[i]!.at).toBe(before.at + countBytes(before.said))
     }
   })
 

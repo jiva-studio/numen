@@ -13,8 +13,8 @@ const setUp = () => {
   const reportMove = vi.fn<(at: number) => void>()
   const reportFollow = vi.fn<(path: string) => void>()
   const links = createBookLinks(props, { reportMove, reportFollow })
-  const placeAt = vi.fn<(fragment: string) => number | undefined>(() => 12)
-  return { links, reportMove, reportFollow, placeAt }
+  const getPlace = vi.fn<(fragment: string) => number | undefined>(() => 12)
+  return { links, reportMove, reportFollow, getPlace }
 }
 
 /** A press landing on the text inside a link, or on a bare paragraph. */
@@ -28,39 +28,39 @@ const pressOn = (markup: string, selector: string) => {
 
 describe('a press on a link', () => {
   it('moves within the document to the place the link names', () => {
-    const { links, reportMove, reportFollow, placeAt } = setUp()
+    const { links, reportMove, reportFollow, getPlace } = setUp()
     const { press, preventDefault } = pressOn('<a href="#n3"><b>note</b></a>', 'b')
 
-    links.follow(press, placeAt)
+    links.follow(press, getPlace)
 
     expect(preventDefault).toHaveBeenCalledOnce()
-    expect(placeAt).toHaveBeenCalledWith('n3')
+    expect(getPlace).toHaveBeenCalledWith('n3')
     expect(reportMove).toHaveBeenCalledExactlyOnceWith(12)
     expect(reportFollow).not.toHaveBeenCalled()
   })
 
   it('moves to the start of the document where the place is not drawn', () => {
-    const { links, reportMove, placeAt } = setUp()
-    placeAt.mockReturnValue(undefined)
+    const { links, reportMove, getPlace } = setUp()
+    getPlace.mockReturnValue(undefined)
 
-    links.follow(pressOn('<a href="#gone">x</a>', 'a').press, placeAt)
+    links.follow(pressOn('<a href="#gone">x</a>', 'a').press, getPlace)
 
     expect(reportMove).toHaveBeenCalledExactlyOnceWith(40)
   })
 
   it('moves within the document where the link names the document itself', () => {
-    const { links, reportMove, reportFollow, placeAt } = setUp()
+    const { links, reportMove, reportFollow, getPlace } = setUp()
 
-    links.follow(pressOn('<a href="text/one.xhtml#n3">x</a>', 'a').press, placeAt)
+    links.follow(pressOn('<a href="text/one.xhtml#n3">x</a>', 'a').press, getPlace)
 
     expect(reportMove).toHaveBeenCalledExactlyOnceWith(12)
     expect(reportFollow).not.toHaveBeenCalled()
   })
 
   it('reports another document and holds where the link led', () => {
-    const { links, reportMove, reportFollow, placeAt } = setUp()
+    const { links, reportMove, reportFollow, getPlace } = setUp()
 
-    links.follow(pressOn('<a href="text/two.xhtml#n3">x</a>', 'a').press, placeAt)
+    links.follow(pressOn('<a href="text/two.xhtml#n3">x</a>', 'a').press, getPlace)
 
     expect(reportFollow).toHaveBeenCalledExactlyOnceWith('text/two.xhtml')
     expect(reportMove).not.toHaveBeenCalled()
@@ -69,10 +69,10 @@ describe('a press on a link', () => {
   })
 
   it('is left alone where the link leads out of the book', () => {
-    const { links, reportMove, reportFollow, placeAt } = setUp()
+    const { links, reportMove, reportFollow, getPlace } = setUp()
     const { press, preventDefault } = pressOn('<a href="https://example.org/page">x</a>', 'a')
 
-    links.follow(press, placeAt)
+    links.follow(press, getPlace)
 
     expect(preventDefault).toHaveBeenCalledOnce()
     expect(reportMove).not.toHaveBeenCalled()
@@ -82,10 +82,10 @@ describe('a press on a link', () => {
 
 describe('a press that is not on a link', () => {
   it('does nothing on text outside any link', () => {
-    const { links, reportMove, reportFollow, placeAt } = setUp()
+    const { links, reportMove, reportFollow, getPlace } = setUp()
     const { press, preventDefault } = pressOn('<p>plain</p>', 'p')
 
-    links.follow(press, placeAt)
+    links.follow(press, getPlace)
 
     expect(preventDefault).not.toHaveBeenCalled()
     expect(reportMove).not.toHaveBeenCalled()
@@ -93,30 +93,30 @@ describe('a press that is not on a link', () => {
   })
 
   it('does nothing on an anchor with no href', () => {
-    const { links, reportMove, placeAt } = setUp()
+    const { links, reportMove, getPlace } = setUp()
     const { press, preventDefault } = pressOn('<a name="n3">x</a>', 'a')
 
-    links.follow(press, placeAt)
+    links.follow(press, getPlace)
 
     expect(preventDefault).not.toHaveBeenCalled()
     expect(reportMove).not.toHaveBeenCalled()
   })
 
   it('does nothing where the press has no target', () => {
-    const { links, reportMove, placeAt } = setUp()
+    const { links, reportMove, getPlace } = setUp()
     const preventDefault = vi.fn<() => void>()
 
-    links.follow({ target: null, preventDefault } as unknown as MouseEvent, placeAt)
+    links.follow({ target: null, preventDefault } as unknown as MouseEvent, getPlace)
 
     expect(preventDefault).not.toHaveBeenCalled()
     expect(reportMove).not.toHaveBeenCalled()
   })
 
   it('does nothing where the target is no element', () => {
-    const { links, reportMove, placeAt } = setUp()
+    const { links, reportMove, getPlace } = setUp()
     const preventDefault = vi.fn<() => void>()
 
-    links.follow({ target: {}, preventDefault } as unknown as MouseEvent, placeAt)
+    links.follow({ target: {}, preventDefault } as unknown as MouseEvent, getPlace)
 
     expect(preventDefault).not.toHaveBeenCalled()
     expect(reportMove).not.toHaveBeenCalled()

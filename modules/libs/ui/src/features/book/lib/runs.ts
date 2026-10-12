@@ -8,7 +8,7 @@
  * offsets and they are kept in it, so the run an offset falls in is the last
  * one beginning at or before it.
  */
-import { bytesIn, unitsIn } from './bytes'
+import { countBytes, countUnits } from './bytes'
 import type { Span } from '@/shared/lib/span'
 import type { Mark } from './spread'
 
@@ -21,7 +21,7 @@ export interface Run {
 }
 
 /** Every run of a drawn document, in the order the markup sets them. */
-export function getRunsIn(paper: HTMLElement): Run[] {
+export function getRuns(paper: HTMLElement): Run[] {
   const found: Run[] = []
   for (const element of paper.querySelectorAll<HTMLElement>('[data-offset]')) {
     const offset = Number(element.dataset['offset'])
@@ -35,7 +35,7 @@ export function getRunsIn(paper: HTMLElement): Run[] {
  * of a run's rectangles is the one that counts: a run broken over a column edge
  * has one in each column, and it begins in the first.
  */
-export function marksIn(runs: readonly Run[], origin: number): Mark[] {
+export function getMarks(runs: readonly Run[], origin: number): Mark[] {
   const placed: Mark[] = []
   for (const run of runs) {
     const first = run.element.getClientRects()[0]
@@ -45,7 +45,7 @@ export function marksIn(runs: readonly Run[], origin: number): Mark[] {
 }
 
 /** The run an offset falls in: the last one beginning at or before it. */
-export function runAt(runs: readonly Run[], at: number): Run | undefined {
+export function findRun(runs: readonly Run[], at: number): Run | undefined {
   let found: Run | undefined
   for (const run of runs) {
     if (run.at > at) break
@@ -58,7 +58,7 @@ export function runAt(runs: readonly Run[], at: number): Run | undefined {
  * The offset a place named inside the document stands at: the run the named
  * element falls in, or the first run after a name standing between runs.
  */
-export function offsetAt(
+export function getOffset(
   paper: HTMLElement,
   runs: readonly Run[],
   fragment: string,
@@ -91,7 +91,7 @@ export function offsetAt(
 /**
  * Where an offset stands inside a run: the text node it falls in, and how far
  * into that node it reaches. The distance from the run's own offset is a number
- * of bytes, and only `unitsIn` turns one of those into a place in a string.
+ * of bytes, and only `countUnits` turns one of those into a place in a string.
  */
 const getPlaceInRun = (
   run: HTMLElement,
@@ -101,8 +101,8 @@ const getPlaceInRun = (
   let counted = 0
   let node = walk.nextNode() as Text | null
   while (node) {
-    const bytes = bytesIn(node.data)
-    if (counted + bytes >= into) return { node, offset: unitsIn(node.data, into - counted) }
+    const bytes = countBytes(node.data)
+    if (counted + bytes >= into) return { node, offset: countUnits(node.data, into - counted) }
     counted += bytes
     node = walk.nextNode() as Text | null
   }
@@ -111,8 +111,8 @@ const getPlaceInRun = (
 
 /** One stretch of the book's text as a range over the nodes the markup carries. */
 const rangeOver = (runs: readonly Run[], span: Span): Range | undefined => {
-  const opens = runAt(runs, span.from)
-  const closes = runAt(runs, span.to)
+  const opens = findRun(runs, span.from)
+  const closes = findRun(runs, span.to)
   if (!opens || !closes) return undefined
   const from = getPlaceInRun(opens.element, span.from - opens.at)
   const to = getPlaceInRun(closes.element, span.to - closes.at)

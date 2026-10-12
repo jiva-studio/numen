@@ -14,8 +14,8 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import Book from './Book.vue'
 import { GAP } from '../lib/spread'
 import type { Span } from '@/shared/lib/span'
-import { bytesIn } from '../lib/bytes'
-import { PROSE, VERSE, VERSES, chapterOf, type Chapter } from '../fixtures/book'
+import { countBytes } from '../lib/bytes'
+import { PROSE, VERSE, VERSES, createChapter, type Chapter } from '../fixtures/book'
 
 const meta = {
   title: 'Reading/Book',
@@ -169,19 +169,19 @@ const outOfSight =
     `,
   })
 
-const areaOf = (canvasElement: HTMLElement) =>
+const getArea = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__area') as HTMLElement
 
-const paperOf = (canvasElement: HTMLElement) =>
+const getPaper = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__paper') as HTMLElement
 
 /** Every run of the text, in the order the document sets them. */
 const getRunsOf = (canvasElement: HTMLElement) => [
-  ...paperOf(canvasElement).querySelectorAll<HTMLElement>('[data-offset]'),
+  ...getPaper(canvasElement).querySelectorAll<HTMLElement>('[data-offset]'),
 ]
 
 /** The offset the reader says is in front. */
-const inFrontOf = (canvasElement: HTMLElement) =>
+const getInFront = (canvasElement: HTMLElement) =>
   Number(canvasElement.querySelector('[data-front]')?.getAttribute('data-front'))
 
 /**
@@ -198,13 +198,13 @@ const waitForLayout = async (canvasElement: HTMLElement) =>
   )
 
 /** How wide one column is, taken off the first run of the text. */
-const columnOf = (canvasElement: HTMLElement) =>
+const getColumn = (canvasElement: HTMLElement) =>
   getRunsOf(canvasElement)[0]!.getClientRects()[0]!.width
 
 /** Turn the pages, set the text larger, and watch the offset in front follow. */
 export const Playground: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf([...VERSES, ...PROSE])),
+  render: reading(createChapter([...VERSES, ...PROSE])),
 }
 
 /**
@@ -213,12 +213,12 @@ export const Playground: Story = {
  */
 export const OneColumn: Story = {
   decorators: [NARROW],
-  render: reading(chapterOf(PROSE)),
+  render: reading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const area = areaOf(canvasElement).getBoundingClientRect()
-    await expect(columnOf(canvasElement)).toBeCloseTo(area.width - GAP, -1)
+    const area = getArea(canvasElement).getBoundingClientRect()
+    await expect(getColumn(canvasElement)).toBeCloseTo(area.width - GAP, -1)
   },
 }
 
@@ -229,16 +229,16 @@ export const OneColumn: Story = {
  */
 export const NoLineCutInHalf: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf(PROSE)),
+  render: reading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const paper = paperOf(canvasElement)
+    const paper = getPaper(canvasElement)
     const line = Number.parseFloat(getComputedStyle(paper).lineHeight)
     await expect(line).toBeGreaterThan(0)
     await expect(paper.getBoundingClientRect().height % line).toBeCloseTo(0, 1)
     await expect(paper.getBoundingClientRect().height).toBeLessThanOrEqual(
-      areaOf(canvasElement).clientHeight + 1,
+      getArea(canvasElement).clientHeight + 1,
     )
   },
 }
@@ -251,12 +251,12 @@ export const NoLineCutInHalf: Story = {
  */
 export const OneColumnTurns: Story = {
   decorators: [NARROW],
-  render: reading(chapterOf(PROSE)),
+  render: reading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const area = areaOf(canvasElement)
-    const paper = paperOf(canvasElement)
+    const area = getArea(canvasElement)
+    const paper = getPaper(canvasElement)
 
     // The box is set in two columns whatever the spread shows, and a spread of
     // one is two columns across a box twice as wide. WebKit breaks no
@@ -271,7 +271,7 @@ export const OneColumnTurns: Story = {
     )
 
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
+    await waitFor(async () => await expect(getInFront(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
   },
@@ -283,12 +283,12 @@ export const OneColumnTurns: Story = {
  */
 export const TwoColumns: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf(PROSE)),
+  render: reading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const area = areaOf(canvasElement).getBoundingClientRect()
-    const column = columnOf(canvasElement)
+    const area = getArea(canvasElement).getBoundingClientRect()
+    const column = getColumn(canvasElement)
     await expect(column).toBeCloseTo(area.width / 2 - GAP, -1)
 
     // The run that stands in the second column of the first spread stands in
@@ -315,7 +315,7 @@ export const TwoColumns: Story = {
 export const PictureTallerThanTheColumn: Story = {
   decorators: [WIDE],
   render: reading(
-    chapterOf([
+    createChapter([
       { tag: 'p', text: 'A plate, taller than the column it is printed in.' },
       { tag: 'figure', inside: `<img src="${TALL}" alt="A plate" />` },
       ...PROSE.slice(0, 6),
@@ -324,15 +324,15 @@ export const PictureTallerThanTheColumn: Story = {
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const picture = paperOf(canvasElement).querySelector('img')!
+    const picture = getPaper(canvasElement).querySelector('img')!
     await waitFor(async () => await expect(picture.complete).toBe(true), {
       timeout: ITS_OWN_PACE,
     })
 
-    const area = areaOf(canvasElement).getBoundingClientRect()
+    const area = getArea(canvasElement).getBoundingClientRect()
     const box = picture.getBoundingClientRect()
     await expect(box.height).toBeLessThanOrEqual(area.height + 1)
-    await expect(box.width).toBeLessThanOrEqual(columnOf(canvasElement) + 1)
+    await expect(box.width).toBeLessThanOrEqual(getColumn(canvasElement) + 1)
   },
 }
 
@@ -342,7 +342,7 @@ export const PictureTallerThanTheColumn: Story = {
  */
 export const AWordWithNothingToBreakAt: Story = {
   decorators: [NARROW],
-  render: reading(chapterOf([{ tag: 'p', text: UNBROKEN }, ...PROSE.slice(0, 4)])),
+  render: reading(createChapter([{ tag: 'p', text: UNBROKEN }, ...PROSE.slice(0, 4)])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -351,7 +351,7 @@ export const AWordWithNothingToBreakAt: Story = {
     const run = getRunsOf(canvasElement)[0]!
     await expect(run.scrollWidth).toBeLessThanOrEqual(run.clientWidth + 1)
     await expect(run.getClientRects()[0]!.width).toBeLessThanOrEqual(
-      areaOf(canvasElement).clientWidth + 1,
+      getArea(canvasElement).clientWidth + 1,
     )
   },
 }
@@ -363,7 +363,7 @@ export const AWordWithNothingToBreakAt: Story = {
 export const ATableThatWillNotBreak: Story = {
   decorators: [WIDE],
   render: reading(
-    chapterOf([
+    createChapter([
       { tag: 'p', text: 'A table of nine columns, in a column of one.' },
       { tag: 'div', inside: TABLE },
       ...PROSE.slice(0, 4),
@@ -372,10 +372,10 @@ export const ATableThatWillNotBreak: Story = {
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const table = paperOf(canvasElement).querySelector('table')!
+    const table = getPaper(canvasElement).querySelector('table')!
     const box = table.getBoundingClientRect()
-    await expect(box.width).toBeLessThanOrEqual(columnOf(canvasElement) + 1)
-    await expect(box.height).toBeLessThanOrEqual(areaOf(canvasElement).clientHeight + 1)
+    await expect(box.width).toBeLessThanOrEqual(getColumn(canvasElement) + 1)
+    await expect(box.height).toBeLessThanOrEqual(getArea(canvasElement).clientHeight + 1)
   },
 }
 
@@ -387,11 +387,11 @@ export const ATableThatWillNotBreak: Story = {
  */
 export const VerseSetInAPreElement: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf([{ tag: 'pre', text: VERSE }])),
+  render: reading(createChapter([{ tag: 'pre', text: VERSE }])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const set = paperOf(canvasElement).querySelector('pre')!
+    const set = getPaper(canvasElement).querySelector('pre')!
     await expect(set.scrollHeight).toBeLessThanOrEqual(set.clientHeight + 1)
     await expect(set.scrollWidth).toBeLessThanOrEqual(set.clientWidth + 1)
 
@@ -399,10 +399,10 @@ export const VerseSetInAPreElement: Story = {
     // a pre as a block of code, and a title page is not one.
     const drawn = getComputedStyle(set)
     await expect(drawn.backgroundColor).toBe('rgba(0, 0, 0, 0)')
-    await expect(drawn.color).toBe(getComputedStyle(paperOf(canvasElement)).color)
+    await expect(drawn.color).toBe(getComputedStyle(getPaper(canvasElement)).color)
 
     // It ran on into columns of its own rather than stopping at the first.
-    const area = areaOf(canvasElement)
+    const area = getArea(canvasElement)
     await expect(area.scrollWidth).toBeGreaterThan(area.clientWidth)
   },
 }
@@ -414,14 +414,14 @@ export const VerseSetInAPreElement: Story = {
  */
 export const WordsCanBeTakenUp: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf([...PROSE])),
+  render: reading(createChapter([...PROSE])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
     // The room this story stands in forbids it, as the window does.
     await expect(getComputedStyle(canvasElement.firstElementChild!).userSelect).toBe('none')
 
-    await expect(getComputedStyle(paperOf(canvasElement)).userSelect).not.toBe('none')
+    await expect(getComputedStyle(getPaper(canvasElement)).userSelect).not.toBe('none')
     await expect(getComputedStyle(getRunsOf(canvasElement)[0]!).userSelect).not.toBe('none')
   },
 }
@@ -429,7 +429,7 @@ export const WordsCanBeTakenUp: Story = {
 /** A document of one line comes to one spread, and there is nowhere to turn. */
 export const OneLine: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf([{ tag: 'p', text: 'One line, and the book is over.' }])),
+  render: reading(createChapter([{ tag: 'p', text: 'One line, and the book is over.' }])),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
@@ -438,9 +438,9 @@ export const OneLine: Story = {
       '0 pages left in chapter',
     )
 
-    const was = paperOf(canvasElement).getBoundingClientRect().left
+    const was = getPaper(canvasElement).getBoundingClientRect().left
     await userEvent.keyboard('{ArrowRight}')
-    await expect(paperOf(canvasElement).getBoundingClientRect().left).toBe(was)
+    await expect(getPaper(canvasElement).getBoundingClientRect().left).toBe(was)
   },
 }
 
@@ -457,7 +457,7 @@ export const NoTextAtAll: Story = {
   decorators: [WIDE],
   render: reading({ markup: '', span: { from: 0, to: 0 } }),
   play: async ({ canvasElement }) => {
-    await expect(paperOf(canvasElement)).toBeInTheDocument()
+    await expect(getPaper(canvasElement)).toBeInTheDocument()
     await expect(getRunsOf(canvasElement)).toHaveLength(0)
     await expect(canvasElement.querySelector('.book__foot')).toBeInTheDocument()
     await expect(canvasElement.querySelector('.book__count')).not.toBeInTheDocument()
@@ -471,16 +471,16 @@ export const NoTextAtAll: Story = {
  */
 export const SetLarger: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf([...VERSES, ...PROSE])),
+  render: reading(createChapter([...VERSES, ...PROSE])),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitForLayout(canvasElement)
 
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
+    await waitFor(async () => await expect(getInFront(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
-    const before = inFrontOf(canvasElement)
+    const before = getInFront(canvasElement)
 
     const set = getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize
     await userEvent.click(canvas.getByLabelText('Larger'))
@@ -498,7 +498,7 @@ export const SetLarger: Story = {
           (run) => Number(run.dataset['offset']) === before,
         )!
         const rect = standing.getClientRects()[0]!
-        const area = areaOf(canvasElement).getBoundingClientRect()
+        const area = getArea(canvasElement).getBoundingClientRect()
         await expect(rect.left).toBeGreaterThanOrEqual(area.left - 1)
         await expect(rect.left).toBeLessThan(area.right)
       },
@@ -514,8 +514,8 @@ export const SetLarger: Story = {
 export const Marked: Story = {
   decorators: [WIDE],
   render: (() => {
-    const chapter = chapterOf(VERSES)
-    const second = chapter.span.from + bytesIn(VERSES[0]!.text!)
+    const chapter = createChapter(VERSES)
+    const second = chapter.span.from + countBytes(VERSES[0]!.text!)
     return reading(chapter, [{ from: second, to: second + 30 }])
   })(),
 }
@@ -523,19 +523,19 @@ export const Marked: Story = {
 /** The pages turned by the keyboard, and by a press near either edge. */
 export const TurnedByHand: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf(PROSE)),
+  render: reading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
-    const area = areaOf(canvasElement)
+    const area = getArea(canvasElement)
 
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
+    await waitFor(async () => await expect(getInFront(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
-    const turned = inFrontOf(canvasElement)
+    const turned = getInFront(canvasElement)
 
     await userEvent.keyboard('{ArrowLeft}')
-    await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeLessThan(turned), {
+    await waitFor(async () => await expect(getInFront(canvasElement)).toBeLessThan(turned), {
       timeout: ITS_OWN_PACE,
     })
 
@@ -545,7 +545,7 @@ export const TurnedByHand: Story = {
       { target: area, coords: { clientX: box.right - 8, clientY: box.top + box.height / 2 } },
       { keys: '[MouseLeft]', target: area },
     ])
-    await waitFor(async () => await expect(inFrontOf(canvasElement)).toBeGreaterThan(0), {
+    await waitFor(async () => await expect(getInFront(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
   },
@@ -558,14 +558,14 @@ export const TurnedByHand: Story = {
  */
 export const DrawnOutOfSight: Story = {
   decorators: [WIDE],
-  render: outOfSight(chapterOf(PROSE)),
+  render: outOfSight(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const area = areaOf(canvasElement)
-    await expect(paperOf(canvasElement).scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
+    const area = getArea(canvasElement)
+    await expect(getPaper(canvasElement).scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
     await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
-    await expect(columnOf(canvasElement)).toBeCloseTo(area.clientWidth / 2 - GAP, -1)
+    await expect(getColumn(canvasElement)).toBeCloseTo(area.clientWidth / 2 - GAP, -1)
   },
 }
 
@@ -577,11 +577,11 @@ export const DrawnOutOfSight: Story = {
  */
 export const TheTurnIsCarried: Story = {
   decorators: [WIDE],
-  render: reading(chapterOf(PROSE)),
+  render: reading(createChapter(PROSE)),
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const paper = paperOf(canvasElement)
+    const paper = getPaper(canvasElement)
     await expect(getComputedStyle(paper).transitionProperty).toContain('translate')
     await expect(paper.style.transition).toBe('')
 
@@ -592,7 +592,7 @@ export const TheTurnIsCarried: Story = {
     await waitFor(
       async () =>
         await expect(was - paper.getBoundingClientRect().left).toBeCloseTo(
-          areaOf(canvasElement).clientWidth,
+          getArea(canvasElement).clientWidth,
           -1,
         ),
       { timeout: ITS_OWN_PACE },

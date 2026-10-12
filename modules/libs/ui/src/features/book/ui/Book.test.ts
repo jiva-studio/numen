@@ -1,14 +1,14 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import Book from './Book.vue'
-import { chapterOf } from '../fixtures/book'
-import { bytesIn } from '../lib/bytes'
+import { createChapter } from '../fixtures/book'
+import { countBytes } from '../lib/bytes'
 
 /**
  * A chapter standing in the middle of a book, with a document before it and a
  * document after it.
  */
-const CHAPTER = chapterOf([{ tag: 'p', text: 'Один абзац, и глава окончена.' }], 400)
+const CHAPTER = createChapter([{ tag: 'p', text: 'Один абзац, и глава окончена.' }], 400)
 const BOOK = { from: 0, to: CHAPTER.span.to + 500 }
 
 /**
@@ -117,7 +117,7 @@ describe('a document with no text at all', () => {
 })
 
 /** A document whose text points inside the book and once out of it. */
-const POINTING = chapterOf(
+const POINTING = createChapter(
   [
     {
       tag: 'p',
@@ -180,7 +180,7 @@ describe('a link inside a book', () => {
 
     await press(held, 'the note')
 
-    expect(getMoves(held)).toEqual([POINTING.span.to - bytesIn('The note pointed down to.')])
+    expect(getMoves(held)).toEqual([POINTING.span.to - countBytes('The note pointed down to.')])
   })
 
   it('asks for nothing of the book, where the link leads out of it', async () => {
@@ -194,7 +194,7 @@ describe('a link inside a book', () => {
 })
 
 /** A document of three runs, the middle of them a spread along from the first. */
-const LAID = chapterOf(
+const LAID = createChapter(
   [
     { tag: 'p', text: 'Первая строка.' },
     { tag: 'p', text: 'Вторая.' },
@@ -285,7 +285,7 @@ describe('a document the browser has laid out', () => {
     expect(pressKey(held, 'ArrowRight')).toBe(true)
 
     expect(getTranslate(held)).toBe('-1100px 0')
-    expect(getMoves(held)).toEqual([LAID.span.from + bytesIn('Первая строка.')])
+    expect(getMoves(held)).toEqual([LAID.span.from + countBytes('Первая строка.')])
 
     held.unmount()
   })
@@ -316,7 +316,7 @@ describe('a document the browser has laid out', () => {
   it('is stood where an offset from outside asks, while the offset is inside it', async () => {
     const held = await mountBook()
 
-    await held.setProps({ at: LAID.span.from + bytesIn('Первая строка.Вторая.') })
+    await held.setProps({ at: LAID.span.from + countBytes('Первая строка.Вторая.') })
     await held.vm.$nextTick()
 
     expect(getTranslate(held)).toBe('0px 0')

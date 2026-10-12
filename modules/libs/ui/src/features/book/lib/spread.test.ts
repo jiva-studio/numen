@@ -1,27 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import {
   GAP,
-  columnAt,
+  getColumn,
   LARGEST,
   SMALLEST,
   clamp,
   NARROWEST,
   columnHeight,
   columnWidth,
-  columnsIn,
+  countColumns,
   countFilledColumns,
   columnsInAll,
   findSpreadAt,
   getSpreadStart,
   inFront,
   leftInDocument,
-  pagesOf,
-  spreadAt,
+  getPages,
+  getSpread,
   countSpreads,
   type Flow,
   type Mark,
 } from './spread'
-import { bytesIn, unitsIn } from './bytes'
+import { countBytes, countUnits } from './bytes'
 import { BOOK_WORDS } from './words'
 import { EDGE, SWIPE, handTurn, pressTurn, swipeTurn, turnTo } from './turn'
 
@@ -45,20 +45,20 @@ describe('how many columns a reading area takes', () => {
   it('takes two once each of them can be set at the narrowest a column is read at', () => {
     // Each column keeps a gap of its own, at the edge of the area as between
     // the two of them.
-    expect(columnsIn(2 * (NARROWEST + GAP), 1)).toBe(2)
-    expect(columnsIn(2 * (NARROWEST + GAP) - 1, 1)).toBe(1)
+    expect(countColumns(2 * (NARROWEST + GAP), 1)).toBe(2)
+    expect(countColumns(2 * (NARROWEST + GAP) - 1, 1)).toBe(1)
   })
 
   it('takes one in an area nothing has been measured in', () => {
-    expect(columnsIn(0, 1)).toBe(1)
+    expect(countColumns(0, 1)).toBe(1)
   })
 
   it('takes the size the text is set at into account', () => {
     // A column is measured in characters, so text set half again as large needs
     // half again as much room before a second column will hold a line.
     const wide = 2 * (NARROWEST + GAP)
-    expect(columnsIn(wide, 1)).toBe(2)
-    expect(columnsIn(wide, 1.5)).toBe(1)
+    expect(countColumns(wide, 1)).toBe(2)
+    expect(countColumns(wide, 1.5)).toBe(1)
   })
 
   it('sets each column to its share of the area, less the gap it keeps', () => {
@@ -204,17 +204,17 @@ describe('which spread a place falls in', () => {
     const flow = createFlow(WIDE, 2, 10)
     const step = columnWidth(flow) + GAP
 
-    expect(spreadAt(flow, 0)).toBe(0)
-    expect(spreadAt(flow, step)).toBe(0)
-    expect(spreadAt(flow, 2 * step)).toBe(1)
-    expect(spreadAt(flow, 3 * step)).toBe(1)
-    expect(spreadAt(flow, 8 * step)).toBe(4)
+    expect(getSpread(flow, 0)).toBe(0)
+    expect(getSpread(flow, step)).toBe(0)
+    expect(getSpread(flow, 2 * step)).toBe(1)
+    expect(getSpread(flow, 3 * step)).toBe(1)
+    expect(getSpread(flow, 8 * step)).toBe(4)
   })
 
   it('goes no further than the last spread there is', () => {
     const flow = createFlow(WIDE, 2, 10)
-    expect(spreadAt(flow, 100_000)).toBe(4)
-    expect(spreadAt(flow, -100)).toBe(0)
+    expect(getSpread(flow, 100_000)).toBe(4)
+    expect(getSpread(flow, -100)).toBe(0)
   })
 })
 
@@ -279,41 +279,41 @@ describe('which spread an offset stands in', () => {
 
 describe('a byte offset read into a string', () => {
   it('counts a Latin character as one byte', () => {
-    expect(bytesIn('abc')).toBe(3)
-    expect(unitsIn('abcdef', 3)).toBe(3)
+    expect(countBytes('abc')).toBe(3)
+    expect(countUnits('abcdef', 3)).toBe(3)
   })
 
   it('counts a Cyrillic character as two, and a Devanagari one as three', () => {
-    expect(bytesIn('да')).toBe(4)
-    expect(bytesIn('सत्य')).toBe(12)
+    expect(countBytes('да')).toBe(4)
+    expect(countBytes('सत्य')).toBe(12)
 
     // Four bytes into the Cyrillic is two characters, not four.
-    expect(unitsIn('дальше', 4)).toBe(2)
-    expect(unitsIn('सत्यम्', 6)).toBe(2)
+    expect(countUnits('дальше', 4)).toBe(2)
+    expect(countUnits('सत्यम्', 6)).toBe(2)
   })
 
   it('stops short of a character the bytes do not reach the end of', () => {
     // Half a Devanagari character is not a place in a string.
-    expect(unitsIn('सत्य', 4)).toBe(1)
-    expect(unitsIn('सत्य', 5)).toBe(1)
-    expect(unitsIn('सत्य', 6)).toBe(2)
+    expect(countUnits('सत्य', 4)).toBe(1)
+    expect(countUnits('सत्य', 5)).toBe(1)
+    expect(countUnits('सत्य', 6)).toBe(2)
   })
 
   it('counts a character written in two units as two', () => {
     // Four bytes of UTF-8, two units of UTF-16.
-    expect(bytesIn('𑀓')).toBe(4)
-    expect(unitsIn('𑀓a', 4)).toBe(2)
-    expect(unitsIn('𑀓a', 5)).toBe(3)
+    expect(countBytes('𑀓')).toBe(4)
+    expect(countUnits('𑀓a', 4)).toBe(2)
+    expect(countUnits('𑀓a', 5)).toBe(3)
   })
 
   it('reaches the start of a string for no bytes at all', () => {
-    expect(unitsIn('सत्य', 0)).toBe(0)
-    expect(unitsIn('सत्य', -3)).toBe(0)
-    expect(unitsIn('', 5)).toBe(0)
+    expect(countUnits('सत्य', 0)).toBe(0)
+    expect(countUnits('सत्य', -3)).toBe(0)
+    expect(countUnits('', 5)).toBe(0)
   })
 
   it('reaches the end of a string for more bytes than it holds', () => {
-    expect(unitsIn('да', 99)).toBe(2)
+    expect(countUnits('да', 99)).toBe(2)
   })
 })
 
@@ -380,14 +380,14 @@ describe('the page a person is looking at', () => {
   const before = Math.round((document.from - book.from) / perColumn)
 
   it('counts the columns on the screen, so a spread of two turns two pages', () => {
-    const first = pagesOf(book, document, flow, 0, marks)
-    const next = pagesOf(book, document, flow, 1, marks)
+    const first = getPages(book, document, flow, 0, marks)
+    const next = getPages(book, document, flow, 1, marks)
     expect(next.page - first.page).toBe(2)
   })
 
   it('counts the columns before this document at what a column of it holds', () => {
-    expect(pagesOf(book, document, flow, 0, marks).page).toBe(before + 1)
-    expect(pagesOf(book, document, flow, 0, marks).pages).toBe(
+    expect(getPages(book, document, flow, 0, marks).page).toBe(before + 1)
+    expect(getPages(book, document, flow, 0, marks).pages).toBe(
       Math.round((book.to - book.from) / perColumn),
     )
   })
@@ -396,11 +396,11 @@ describe('the page a person is looking at', () => {
     // A document of one line stands in one column of a spread of two.
     const one = createMarks(1)
     expect(countFilledColumns(one, flow)).toBe(1)
-    expect(pagesOf({ ...document }, document, flow, 0, one)).toEqual({ page: 1, pages: 1 })
+    expect(getPages({ ...document }, document, flow, 0, one)).toEqual({ page: 1, pages: 1 })
   })
 
   it('says one page for a document nothing has been laid out for', () => {
-    expect(pagesOf(book, document, flow, 0, [])).toEqual({ page: 1, pages: 1 })
+    expect(getPages(book, document, flow, 0, [])).toEqual({ page: 1, pages: 1 })
   })
 })
 
@@ -474,7 +474,7 @@ describe('which spread a place falls in, where the gap fills the column', () => 
     // Each share of the area is 50 wide and the gap takes all of it.
     const flow = { along: 500, width: 100, gap: GAP, columns: 2 }
     expect(columnWidth(flow)).toBe(0)
-    expect(spreadAt(flow, 300)).toBe(0)
+    expect(getSpread(flow, 300)).toBe(0)
   })
 })
 
@@ -495,7 +495,7 @@ describe('the page count of a document read against its bytes', () => {
 
   it('says the columns it fills where the document holds no bytes', () => {
     const empty = { from: 100, to: 100 }
-    expect(pagesOf({ from: 100, to: 5000 }, empty, flow, 0, marks)).toStrictEqual({
+    expect(getPages({ from: 100, to: 5000 }, empty, flow, 0, marks)).toStrictEqual({
       page: 1,
       pages: 2,
     })
@@ -503,13 +503,13 @@ describe('the page count of a document read against its bytes', () => {
 
   it('never puts the page in front before the first', () => {
     const empty = { from: 100, to: 100 }
-    expect(pagesOf({ from: 0, to: 1000 }, empty, flow, -1, marks).page).toBe(1)
+    expect(getPages({ from: 0, to: 1000 }, empty, flow, -1, marks).page).toBe(1)
   })
 
   it('reaches at least the last column of the document, wherever it stands in the book', () => {
     // 250 bytes to a column: the document begins two columns in, and the book
     // comes to two, short of the four the document ends at.
-    expect(pagesOf({ from: 0, to: 550 }, { from: 500, to: 1000 }, flow, 0, marks)).toStrictEqual({
+    expect(getPages({ from: 0, to: 550 }, { from: 500, to: 1000 }, flow, 0, marks)).toStrictEqual({
       page: 3,
       pages: 4,
     })
@@ -519,7 +519,7 @@ describe('the page count of a document read against its bytes', () => {
 describe('which column a place falls in, in an area nothing has been measured in', () => {
   it('is the first, wherever the place stands', () => {
     const flow = { along: 500, width: 0, gap: GAP, columns: 2 }
-    expect(columnAt(flow, 0)).toBe(0)
-    expect(columnAt(flow, 300)).toBe(0)
+    expect(getColumn(flow, 0)).toBe(0)
+    expect(getColumn(flow, 300)).toBe(0)
   })
 })

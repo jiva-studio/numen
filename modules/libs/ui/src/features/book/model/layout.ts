@@ -26,10 +26,10 @@ export function useBookLayout(
   props: SettledBookProps,
   onMove: (at: number) => void,
   takeLed: () => BookLink | undefined,
-  edgeOf: (of: HTMLElement) => number,
+  getEdge: (of: HTMLElement) => number,
 ) {
   const { textSize, viewport, isMeasured, flow, spreadCount, setting, marks, ...column } =
-    useBookColumns(area, paper, props, edgeOf)
+    useBookColumns(area, paper, props, getEdge)
 
   const { front, leftInChapter, stand, getKeptOffset, getSpreadOf, turn, standing } = useBookTurns(
     paper,
@@ -57,7 +57,7 @@ export function useBookLayout(
       column.readColumns(box, text)
       const landed =
         led && (led.path === '' || led.path === props.path)
-          ? column.placeAt(led.fragment)
+          ? column.getPlace(led.fragment)
           : undefined
       stand(getSpreadOf(landed ?? keep), 'auto')
       if (landed !== undefined) onMove(landed)
@@ -110,7 +110,7 @@ export function useBookLayout(
     setting,
     getKeptOffset,
     settle,
-    placeAt: column.placeAt,
+    getPlace: column.getPlace,
     turn,
   }
 }

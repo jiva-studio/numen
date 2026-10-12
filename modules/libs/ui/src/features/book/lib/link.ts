@@ -17,7 +17,7 @@ export interface BookLink {
 }
 
 /** Where an href points inside the book. */
-export function placeIn(href: string): BookLink {
+export function parseBookLink(href: string): BookLink {
   const cut = href.indexOf('#')
   if (cut < 0) return { path: href, fragment: '' }
   return { path: href.slice(0, cut), fragment: href.slice(cut + 1) }
