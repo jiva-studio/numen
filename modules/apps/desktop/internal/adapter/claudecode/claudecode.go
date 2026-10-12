@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -244,31 +245,45 @@ func (a *Agent) StartRun(ctx context.Context, task port.Task) (port.Run, error) 
 	}
 	started = true
 	w.reader.Add(1)
-	go func() {
-		defer w.reader.Done()
-		defer a.unregisterWork(w)
-		defer close(w.steps)
-		defer os.Remove(configuration)
-
-		failed := readStream(running, out, w.steps, a.ToolDeclarations, a.makeSessionRecorder(task.Conversation), a.Preview)
-
-		err := cmd.Wait()
-		if running.Err() != nil {
-			// Let go of: the person closed the panel or asked something else.
-			return
-		}
-		if failed == "" {
-			failed = getFailureMessage(err, said.String())
-		}
-		select {
-		case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
-		case <-running.Done():
-		}
-		if err != nil && a.ErrorHandler != nil {
-			a.ErrorHandler(fmt.Errorf("%s: %w: %s", name, err, strings.TrimSpace(said.String())))
-		}
-	}()
+	go a.follow(running, w, child{cmd: cmd, name: name, out: out, said: &said, configuration: configuration}, task.Conversation)
 	return w, nil
+}
+
+// child is the process an agent runs as: what it writes, and the file it was
+// given its tools in.
+type child struct {
+	cmd           *exec.Cmd
+	name          string
+	out           io.Reader
+	said          *strings.Builder
+	configuration string
+}
+
+// follow reads the steps of the process until its output ends, and says how it
+// stopped unless the run was let go of.
+func (a *Agent) follow(running context.Context, w *work, c child, conversation string) {
+	defer w.reader.Done()
+	defer a.unregisterWork(w)
+	defer close(w.steps)
+	defer os.Remove(c.configuration)
+
+	failed := readStream(running, c.out, w.steps, a.ToolDeclarations, a.makeSessionRecorder(conversation), a.Preview)
+
+	err := c.cmd.Wait()
+	if running.Err() != nil {
+		// Let go of: the person closed the panel or asked something else.
+		return
+	}
+	if failed == "" {
+		failed = getFailureMessage(err, c.said.String())
+	}
+	select {
+	case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
+	case <-running.Done():
+	}
+	if err != nil && a.ErrorHandler != nil {
+		a.ErrorHandler(fmt.Errorf("%s: %w: %s", c.name, err, strings.TrimSpace(c.said.String())))
+	}
 }
 
 func (a *Agent) getCommand() (string, []string) {
