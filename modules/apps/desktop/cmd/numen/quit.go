@@ -77,12 +77,12 @@ type vaultFlush struct {
 	flush func(context.Context) bool
 
 	mu     sync.Mutex
-	turn   *flushRun
+	turn   *flushAttempt
 	isDone bool
 }
 
-// flushRun is one settling, and what it answered.
-type flushRun struct {
+// flushAttempt is one settling, and what it answered.
+type flushAttempt struct {
 	done      chan struct{}
 	isFlushed bool
 }
@@ -97,7 +97,7 @@ func (g *vaultFlush) flushVault() bool {
 	}
 	this := g.turn
 	if this == nil {
-		this = &flushRun{done: make(chan struct{})}
+		this = &flushAttempt{done: make(chan struct{})}
 		g.turn = this
 		go g.run(this)
 	}
@@ -114,7 +114,7 @@ func (g *vaultFlush) isFlushed() bool {
 	return g.isDone
 }
 
-func (g *vaultFlush) run(this *flushRun) {
+func (g *vaultFlush) run(this *flushAttempt) {
 	defer close(this.done)
 
 	ctx, cancel := context.WithTimeout(context.Background(), quitBound)

@@ -24,12 +24,12 @@ import (
 // errNoAgentNamed is what the panel is told where the settings name no agent.
 const errNoAgentNamed = "no agent is named in the settings"
 
-// sessionVault is the agent on the vault a person's session is on.
+// vaultTracker is the agent on the vault a person's session is on.
 //
 // A session is on one vault and an agent is told which vault it works when it
 // starts, so the endpoint is stopped and served again when a session opens on
 // another one.
-type sessionVault struct {
+type vaultTracker struct {
 	endpoint *agents.Endpoint
 
 	mu    sync.Mutex
@@ -38,7 +38,7 @@ type sessionVault struct {
 
 // SetSessionVault is a session opening on a vault. A session opened on the same
 // vault again leaves the agent where it is.
-func (r *sessionVault) SetSessionVault(_ context.Context, v domain.Vault) {
+func (r *vaultTracker) SetSessionVault(_ context.Context, v domain.Vault) {
 	r.mu.Lock()
 	again := r.vault.ID == v.ID
 	r.vault = v
@@ -50,7 +50,7 @@ func (r *sessionVault) SetSessionVault(_ context.Context, v domain.Vault) {
 	_ = r.endpoint.RunWhileStopped(func() error { return nil })
 }
 
-func (r *sessionVault) getVault() domain.Vault {
+func (r *vaultTracker) getVault() domain.Vault {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.vault
@@ -90,7 +90,7 @@ func serveAgents(
 	// this window can reach one.
 	api.Unreachable.Store("")
 
-	held := &sessionVault{}
+	held := &vaultTracker{}
 	held.endpoint = &agents.Endpoint{
 		Serve: func() (func() error, error) {
 			v := held.getVault()

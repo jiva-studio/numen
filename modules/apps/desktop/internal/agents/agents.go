@@ -34,9 +34,9 @@ type Endpoint struct {
 	// ErrorHandler is told what went wrong serving the tools or taking them away.
 	ErrorHandler func(error)
 
-	// swapMu is one swap. It is held from the endpoint stopping to the endpoint
+	// runMu is one swap. It is held from the endpoint stopping to the endpoint
 	// being served again, so a second swap waits for the first.
-	swapMu sync.Mutex
+	runMu sync.Mutex
 
 	mu    sync.Mutex
 	close func() error
@@ -48,8 +48,8 @@ type Endpoint struct {
 // One swap holds this at a time, so the endpoint is started again by the swap
 // that stopped it and on the vault that swap ended on.
 func (s *Endpoint) RunWhileStopped(swap func() error) error {
-	s.swapMu.Lock()
-	defer s.swapMu.Unlock()
+	s.runMu.Lock()
+	defer s.runMu.Unlock()
 
 	s.Stop()
 	defer s.Start()

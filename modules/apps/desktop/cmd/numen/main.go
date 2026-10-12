@@ -34,7 +34,7 @@ import (
 func main() {
 	cfg := makeConfig(os.Stderr)
 	var agentFlags agentOptions
-	var scale scaleSettings
+	var scaleFlags scaleSettings
 	var vault string
 	var showVersion bool
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
@@ -44,9 +44,9 @@ func main() {
 	flag.StringVar(&agentFlags.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&agentFlags.isOff, "no-mcp", false, "do not let agents reach this vault")
-	flag.Float64Var(&scale.interfaceScale, "interface-scale", 0,
+	flag.Float64Var(&scaleFlags.interfaceScale, "interface-scale", 0,
 		"how large the interface is drawn, 1 being as designed; this launch alone")
-	flag.Float64Var(&scale.textScale, "text-scale", 0,
+	flag.Float64Var(&scaleFlags.textScale, "text-scale", 0,
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.ShouldRebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
@@ -58,7 +58,7 @@ func main() {
 		return
 	}
 
-	if err := run(cfg, agentFlags, vault, scale); err != nil {
+	if err := run(cfg, agentFlags, vault, scaleFlags); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
 		refuse(cfg, err)
 		os.Exit(1)
@@ -92,8 +92,8 @@ func (s scaleSettings) validate() error {
 	return nil
 }
 
-func run(cfg container.Config, mcp agentOptions, vault string, scale scaleSettings) error {
-	if err := scale.validate(); err != nil {
+func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings) error {
+	if err := scaleFlags.validate(); err != nil {
 		return err
 	}
 
@@ -110,7 +110,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scale scaleSettin
 	}
 	cfg = cfg.SetSettings(chosen)
 	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
-	cfg.InterfaceScale, cfg.TextScale = scale.interfaceScale, scale.textScale
+	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
 
 	// Before the window: every page this process reads is read through the
 	// runtime made here, and one made after the window reads a page as nothing.

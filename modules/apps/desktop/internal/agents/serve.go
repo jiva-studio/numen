@@ -337,7 +337,7 @@ func NewClaude(
 		Root:                     root,
 		Tools:                    claudecode.Endpoint{URL: url, Token: secret},
 		Allowed:                  allowed,
-		Declarations:             words,
+		ToolDeclarations:         words,
 		Preview:                  drafting,
 		Model:                    cfg.Agent.Claude.Model,
 		MaxTurns:                 cfg.Agent.Claude.MaxSteps,

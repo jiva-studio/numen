@@ -41,10 +41,10 @@ type Agent struct {
 	// from the allowance is refused. It names this vault's tools; the search
 	// the agent brings is allowed wherever the arguments are written.
 	Allowed []string
-	// Declarations are how the tools this vault serves are spoken about, by the name
+	// ToolDeclarations are how the tools this vault serves are spoken about, by the name
 	// the agent calls them. A tool that is not here is named as it named
 	// itself.
-	Declarations map[string]ToolDeclaration
+	ToolDeclarations map[string]ToolDeclaration
 	// Preview is how a change this agent is making is drawn before it lands.
 	Preview EditPreview
 	// Model is which model answers, by the name the command line knows it as.
@@ -114,7 +114,7 @@ func (a *Agent) Close() error {
 	a.taken.running = nil
 	a.taken.Unlock()
 
-	return stopAll(running)
+	return stopWork(running)
 }
 
 // Finish ends a conversation: everything still being answered in it stops, and
@@ -133,7 +133,7 @@ func (a *Agent) Finish(_ context.Context, conversation string) error {
 	}
 	a.taken.Unlock()
 
-	err := stopAll(answering)
+	err := stopWork(answering)
 
 	a.carried.Lock()
 	defer a.carried.Unlock()
@@ -141,8 +141,8 @@ func (a *Agent) Finish(_ context.Context, conversation string) error {
 	return err
 }
 
-// stopAll cancels each running task and waits for its reader to finish.
-func stopAll(works []*work) error {
+// stopWork cancels each running task and waits for its reader to finish.
+func stopWork(works []*work) error {
 	for _, w := range works {
 		w.once.Do(w.stop)
 	}
@@ -250,7 +250,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 		defer close(w.steps)
 		defer os.Remove(configuration)
 
-		failed := readStream(running, out, w.steps, a.Declarations, a.makeSessionRecorder(task.Conversation), a.Preview)
+		failed := readStream(running, out, w.steps, a.ToolDeclarations, a.makeSessionRecorder(task.Conversation), a.Preview)
 
 		err := cmd.Wait()
 		if running.Err() != nil {
@@ -258,7 +258,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 			return
 		}
 		if failed == "" {
-			failed = getStopReason(err, said.String())
+			failed = getFailureMessage(err, said.String())
 		}
 		select {
 		case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
@@ -431,11 +431,11 @@ func (w *work) Steps() <-chan port.Step { return w.steps }
 // Cancelling is the one way the child is ended, here and wherever the context
 // this work was taken with is cancelled.
 func (w *work) Stop() error {
-	return stopAll([]*work{w})
+	return stopWork([]*work{w})
 }
 
-// getStopReason is what to tell the person when the agent stopped.
-func getStopReason(err error, said string) string {
+// getFailureMessage is what to tell the person when the agent stopped.
+func getFailureMessage(err error, said string) string {
 	if err == nil {
 		return ""
 	}

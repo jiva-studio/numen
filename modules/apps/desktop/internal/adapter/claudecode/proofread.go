@@ -34,18 +34,18 @@ type Proofreader struct {
 
 	// turns is how many runs may stand at once, taken before one starts and
 	// given back after it ends.
-	once  sync.Once
-	slots chan struct{}
+	once      sync.Once
+	semaphore chan struct{}
 }
 
 // acquire waits for a turn at the command line, and hands back what gives it up.
 func (p *Proofreader) acquire(ctx context.Context) (func(), error) {
 	p.once.Do(func() {
-		p.slots = make(chan struct{}, max(p.InFlight, 1))
+		p.semaphore = make(chan struct{}, max(p.InFlight, 1))
 	})
 	select {
-	case p.slots <- struct{}{}:
-		return func() { <-p.slots }, nil
+	case p.semaphore <- struct{}{}:
+		return func() { <-p.semaphore }, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
