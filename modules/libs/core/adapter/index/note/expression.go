@@ -13,9 +13,9 @@ const (
 	closing = "\x03"
 )
 
-// split is a marked name as it actually reads, and the runs the index marked in
+// parseMarkedName is a marked name as it actually reads, and the runs the index marked in
 // it, counted the way a client counts text: in UTF-16 code units.
-func split(marked string) (string, []domain.UnitSpan) {
+func parseMarkedName(marked string) (string, []domain.UnitSpan) {
 	var name strings.Builder
 	name.Grow(len(marked))
 

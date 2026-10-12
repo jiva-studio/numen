@@ -29,7 +29,7 @@ func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 	if dims <= 0 {
 		return fmt.Errorf("a vector of %d dimensions is not a vector", dims)
 	}
-	held, err := vectorWidth(ctx, d.write)
+	held, err := getVectorWidth(ctx, d.write)
 	if err != nil {
 		return err
 	}
@@ -127,9 +127,9 @@ func fillCoarse(ctx context.Context, tx *writing.Transaction, dims int, recipe s
 	return nil
 }
 
-// vectorWidth is the width the vector index holds, or nothing when it holds no
+// getVectorWidth is the width the vector index holds, or nothing when it holds no
 // vector index at all.
-func vectorWidth(ctx context.Context, db *sql.DB) (int, error) {
+func getVectorWidth(ctx context.Context, db *sql.DB) (int, error) {
 	var created string
 	err := db.QueryRowContext(ctx,
 		`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'chunks_vec'`).Scan(&created)

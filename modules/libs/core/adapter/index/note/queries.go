@@ -179,7 +179,7 @@ func (q *Queries) Names(ctx context.Context, vaultID domain.VaultID, query strin
 			return nil, err
 		}
 		m.Type = domain.NoteType(held)
-		name, at := split(marked)
+		name, at := parseMarkedName(marked)
 		m.Spans = at
 		if kind != 0 {
 			m.Heading, m.Line = name, line

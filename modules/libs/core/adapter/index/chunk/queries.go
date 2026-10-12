@@ -241,7 +241,7 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 		return nil, err
 	}
 
-	near, err := q.coarse(ctx, vault, query, limit*coarseCandidates)
+	near, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
 	if err != nil {
 		return nil, err
 	}
@@ -255,9 +255,9 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 	return q.getEnclosingPassages(ctx, vault, ranked)
 }
 
-// coarse is the pass over the bit vectors: the chunks of one vault whose signs
+// findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs
 // stand nearest the query's, by Hamming distance, k of them.
-func (q *Queries) coarse(ctx context.Context, vault int64, query []float32, k int) ([]int64, error) {
+func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) ([]int64, error) {
 	rows, err := q.db.QueryContext(ctx, stmt.Get("coarse"), embedding.Bits(query), vault, k)
 	if err != nil {
 		return nil, err

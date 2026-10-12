@@ -22,8 +22,8 @@ func containing(text string) func(string) bool {
 	return func(query string) bool { return strings.Contains(query, text) }
 }
 
-// mend stops the breaking driver failing anything.
-func mend() { breaksOn.Store(nil) }
+// stopBreaking stops the breaking driver failing anything.
+func stopBreaking() { breaksOn.Store(nil) }
 
 // openAtVersionOne is a new index file, through the breaking driver, that one
 // migration of the test's own has been applied to.
@@ -102,7 +102,7 @@ func TestAMigrationStepThatFailsLeavesTheIndexAtItsVersion(t *testing.T) {
 			breakWhere(t, step.breaks)
 
 			err := apply(t.Context(), db, probe)
-			mend()
+			stopBreaking()
 			if !errors.Is(err, errBroken) {
 				t.Fatalf("the migration answered %v", err)
 			}
@@ -124,7 +124,7 @@ func TestBookkeepingInShapeIsNotRebuilt(t *testing.T) {
 	if err := apply(t.Context(), db, probe); err != nil {
 		t.Fatalf("a migration over bookkeeping in shape rebuilt it: %v", err)
 	}
-	mend()
+	stopBreaking()
 	if at := readUserVersion(t, db); at != 2 {
 		t.Errorf("the index is at version %d, want 2", at)
 	}
@@ -135,7 +135,7 @@ func TestBookkeepingInShapeIsNotRebuilt(t *testing.T) {
 func TestBookkeepingWithAColumnThisBuildDoesNotWriteIsReshaped(t *testing.T) {
 	db := openLegacyBookkeeping(t)
 
-	if err := remember(t.Context(), db); err != nil {
+	if err := createBookkeeping(t.Context(), db); err != nil {
 		t.Fatal(err)
 	}
 	if got := readColumns(t, db, "schema_migrations"); got != "version,name" {
@@ -156,8 +156,8 @@ func TestBookkeepingWhoseReshapeCannotBeginIsLeftAsItWas(t *testing.T) {
 	db := openLegacyBookkeeping(t)
 	breakWhere(t, func(query string) bool { return query == "BEGIN" })
 
-	err := remember(t.Context(), db)
-	mend()
+	err := createBookkeeping(t.Context(), db)
+	stopBreaking()
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("remember answered %v", err)
 	}
@@ -185,8 +185,8 @@ func TestEmptyingAnIndexReportsTheStepThatFailed(t *testing.T) {
 			db := openBreaking(t, path)
 			breakOn(t, step.breaks)
 
-			err := empty(t.Context(), db)
-			mend()
+			err := resetIndex(t.Context(), db)
+			stopBreaking()
 			if !errors.Is(err, errBroken) {
 				t.Fatalf("emptying answered %v", err)
 			}
@@ -203,7 +203,7 @@ func TestAnIndexWhoseVersionCannotBeReadIsNotMigrated(t *testing.T) {
 	breakWhere(t, func(query string) bool { return query == "PRAGMA user_version" })
 
 	err := migrate(t.Context(), db)
-	mend()
+	stopBreaking()
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("migrating answered %v", err)
 	}
@@ -225,7 +225,7 @@ func TestAnIndexFromALaterBuildThatCannotBeEmptiedIsReported(t *testing.T) {
 	breakOn(t, "PRAGMA user_version = 0")
 
 	err := migrate(t.Context(), db)
-	mend()
+	stopBreaking()
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("migrating answered %v", err)
 	}
@@ -240,7 +240,7 @@ func TestAFailedMigrationIsNamedAndCarriesItsCause(t *testing.T) {
 	breakOn(t, "PRAGMA user_version = 1")
 
 	err := migrate(t.Context(), db)
-	mend()
+	stopBreaking()
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("migrating answered %v", err)
 	}
@@ -257,8 +257,8 @@ func TestBookkeepingWhoseReshapeCannotBeCommittedIsLeftAsItWas(t *testing.T) {
 	db := openLegacyBookkeeping(t)
 	breakOn(t, "COMMIT")
 
-	err := remember(t.Context(), db)
-	mend()
+	err := createBookkeeping(t.Context(), db)
+	stopBreaking()
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("remembering answered %v", err)
 	}
@@ -270,7 +270,7 @@ func TestBookkeepingWhoseReshapeCannotBeCommittedIsLeftAsItWas(t *testing.T) {
 // A file name that is not a migration's names no version.
 func TestAFileNameThatIsNotAMigrationsGivesVersionZero(t *testing.T) {
 	for _, name := range []string{"initial.sql", "abc_initial.sql", "0000_zero.sql", "-3_negative.sql"} {
-		if v, err := versionOf(name); err == nil || v != 0 {
+		if v, err := parseVersion(name); err == nil || v != 0 {
 			t.Errorf("%q gave %d, %v", name, v, err)
 		}
 	}
@@ -278,7 +278,7 @@ func TestAFileNameThatIsNotAMigrationsGivesVersionZero(t *testing.T) {
 
 // Comment lines go and every other line stays, each on a line of its own.
 func TestCommentsAreTakenOutLineByLine(t *testing.T) {
-	got := withoutComments("SELECT 1\n  -- note\nFROM x")
+	got := stripComments("SELECT 1\n  -- note\nFROM x")
 	if got != "SELECT 1\nFROM x\n" {
 		t.Errorf("got %q", got)
 	}

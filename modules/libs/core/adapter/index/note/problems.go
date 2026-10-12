@@ -69,7 +69,7 @@ func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) 
 
 	var out []domain.ResolvedLink
 	for rows.Next() {
-		l, err := scanWritten(rows)
+		l, err := scanLinkAsWritten(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +101,7 @@ func (q *Queries) Ambiguous(ctx context.Context, vaultID domain.VaultID) ([]doma
 
 	var candidates []domain.ResolvedLink
 	for rows.Next() {
-		l, err := scanWritten(rows)
+		l, err := scanLinkAsWritten(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +125,7 @@ func (q *Queries) Ambiguous(ctx context.Context, vaultID domain.VaultID) ([]doma
 			}
 			answers[l.Target.Value] = answering
 		}
-		l.To, l.IsAmbiguous = pick(l.From, l.Target.Value, answering)
+		l.To, l.IsAmbiguous = chooseMatch(l.From, l.Target.Value, answering)
 		if !l.IsAmbiguous {
 			continue
 		}
@@ -135,9 +135,9 @@ func (q *Queries) Ambiguous(ctx context.Context, vaultID domain.VaultID) ([]doma
 	return out, nil
 }
 
-// scanWritten reads one link as it was written, before anything asks where it
+// scanLinkAsWritten reads one link as it was written, before anything asks where it
 // currently goes.
-func scanWritten(rows *sql.Rows) (domain.ResolvedLink, error) {
+func scanLinkAsWritten(rows *sql.Rows) (domain.ResolvedLink, error) {
 	var l domain.ResolvedLink
 	var role string
 	if err := rows.Scan(&l.From, &l.Target.Scheme, &l.Target.Value, &role,

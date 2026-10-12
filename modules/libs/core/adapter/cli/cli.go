@@ -85,23 +85,23 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 
 	switch rest[0] {
 	case "vault":
-		return vaultCommand(ctx, out, deps, rest[1:])
+		return runVaultCommand(ctx, out, deps, rest[1:])
 	case "scan":
-		return scanCommand(ctx, out, deps, rest[1:])
+		return runScanCommand(ctx, out, deps, rest[1:])
 	case "recognise":
-		return recogniseCommand(ctx, out, deps, rest[1:])
+		return runRecogniseCommand(ctx, out, deps, rest[1:])
 	case "proofread":
 		return proofreadCommand(ctx, out, deps, rest[1:])
 	case "transcribe":
-		return transcribeCommand(ctx, out, deps, rest[1:])
+		return runTranscribeCommand(ctx, out, deps, rest[1:])
 	case "import":
-		return importCommand(ctx, out, deps, rest[1:])
+		return runImportCommand(ctx, out, deps, rest[1:])
 	case "search":
-		return searchCommand(ctx, out, errOut, deps, rest[1:])
+		return runSearchCommand(ctx, out, errOut, deps, rest[1:])
 	case "links":
-		return linksCommand(ctx, out, deps, rest[1:])
+		return runLinksCommand(ctx, out, deps, rest[1:])
 	case "problems":
-		return problemsCommand(ctx, out, deps, rest[1:])
+		return runProblemsCommand(ctx, out, deps, rest[1:])
 	case "help", "-h", "--help":
 		fmt.Fprint(out, usage)
 		return nil

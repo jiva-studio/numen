@@ -17,34 +17,34 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
-// answers is what the index of a search says: the passages it names for a
+// fakeSearchIndex is what the index of a search says: the passages it names for a
 // query, or the error it fails with.
-type answers struct {
+type fakeSearchIndex struct {
 	passages []domain.Passage
 	err      error
 }
 
-func (a answers) Lexical(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool) ([]domain.Passage, error) {
+func (a fakeSearchIndex) Lexical(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool) ([]domain.Passage, error) {
 	return a.passages, a.err
 }
 
-func (a answers) GetNamedPassages(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool) ([]domain.Passage, error) {
+func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool) ([]domain.Passage, error) {
 	return nil, a.err
 }
 
-func (a answers) FindNearest(context.Context, domain.VaultID, string, []float32, []domain.SourceKind, int, float64) ([]domain.Passage, error) {
+func (a fakeSearchIndex) FindNearest(context.Context, domain.VaultID, string, []float32, []domain.SourceKind, int, float64) ([]domain.Passage, error) {
 	return nil, a.err
 }
 
-func shelf(folder string) domain.Vault {
+func newVault(folder string) domain.Vault {
 	return domain.Vault{ID: "vlt-search", Name: "shelf", Path: folder}
 }
 
-// searchingIn is a terminal whose only vault is the folder given and whose
+// createSearchDeps is a terminal whose only vault is the folder given and whose
 // index answers as given. words is why the search runs by words alone.
-func searchingIn(folder string, index answers, words error) cli.Deps {
+func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Deps {
 	return cli.Deps{
-		Vaults: listing(shelf(folder)),
+		Vaults: createVaultList(newVault(folder)),
 		Search: func(context.Context, port.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
 				Search: search.New(index, filesystem.VaultReaders{}, nil, nil, nil, 0, nil),
@@ -54,8 +54,8 @@ func searchingIn(folder string, index answers, words error) cli.Deps {
 	}
 }
 
-// runSaying runs the terminal and keeps what it said beside its answer.
-func runSaying(t *testing.T, given cli.Deps, args ...string) (out, beside string, err error) {
+// runWithStderr runs the terminal and keeps what it said beside its answer.
+func runWithStderr(t *testing.T, given cli.Deps, args ...string) (out, beside string, err error) {
 	var answer, aside bytes.Buffer
 	t.Helper()
 	err = cli.Run(t.Context(), &answer, &aside, args, func(cli.Locations) cli.Deps { return given })
@@ -65,7 +65,7 @@ func runSaying(t *testing.T, given cli.Deps, args ...string) (out, beside string
 func TestSearchNeedsAVaultAndAQuery(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{{"search"}, {"search", "shelf"}} {
-		_, err := runWith(cli.Deps{Vaults: listing(notebook)}, args...)
+		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, args...)
 		if err == nil || !strings.Contains(err.Error(), "usage: numen-cli search <vault> <query>") {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -80,12 +80,12 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 			Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
 		},
 		"the search cannot be opened": {
-			Vaults: listing(shelf(folder)),
+			Vaults: createVaultList(newVault(folder)),
 			Search: func(context.Context, port.ErrorHandler) (cli.Search, error) { return cli.Search{}, errRefused },
 		},
-		"the index cannot answer": searchingIn(folder, answers{err: errRefused}, nil),
+		"the index cannot answer": createSearchDeps(folder, fakeSearchIndex{err: errRefused}, nil),
 	} {
-		out, err := runWith(given, "search", "shelf", "bees")
+		out, err := runWithDeps(given, "search", "shelf", "bees")
 		if !errors.Is(err, errRefused) {
 			t.Errorf("%s: search answered %v", name, err)
 		}
@@ -99,7 +99,7 @@ func TestASearchByWordsAloneSaysWhy(t *testing.T) {
 	t.Parallel()
 	folder := t.TempDir()
 
-	out, beside, err := runSaying(t, searchingIn(folder, answers{}, errRefused), "search", "shelf", "bees")
+	out, beside, err := runWithStderr(t, createSearchDeps(folder, fakeSearchIndex{}, errRefused), "search", "shelf", "bees")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestASearchByWordsAloneSaysWhy(t *testing.T) {
 		t.Errorf("search said beside its answer %q", beside)
 	}
 
-	_, beside, err = runSaying(t, searchingIn(folder, answers{}, nil), "search", "shelf", "bees")
+	_, beside, err = runWithStderr(t, createSearchDeps(folder, fakeSearchIndex{}, nil), "search", "shelf", "bees")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,12 +132,12 @@ func TestEachPassageIsNamedByItsSourceAndItsPlace(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	index := answers{passages: []domain.Passage{
+	index := fakeSearchIndex{passages: []domain.Passage{
 		{ChunkID: "c1", Source: "Bees.md", Kind: domain.KindNote, Length: len("Bees fly\n\n   far"), Location: "p. 3"},
 		{ChunkID: "c2", Source: "Hives.md", Kind: domain.KindNote, Length: len("Hives  hum")},
 	}}
 
-	out, _, err := runSaying(t, searchingIn(folder, index, nil), "search", "shelf", "bees")
+	out, _, err := runWithStderr(t, createSearchDeps(folder, index, nil), "search", "shelf", "bees")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,14 +163,14 @@ func TestAnExcerptIsOneLineOfAtMostOneHundredSixtyCharacters(t *testing.T) {
 
 func TestAHalfThatCannotRunIsHeardAboutBesideTheAnswer(t *testing.T) {
 	t.Parallel()
-	given := searchingIn(t.TempDir(), answers{}, nil)
+	given := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
 	open := given.Search
 	given.Search = func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
 		errorHandler(errRefused)
 		return open(ctx, errorHandler)
 	}
 
-	_, beside, err := runSaying(t, given, "search", "shelf", "bees")
+	_, beside, err := runWithStderr(t, given, "search", "shelf", "bees")
 	if err != nil {
 		t.Fatal(err)
 	}

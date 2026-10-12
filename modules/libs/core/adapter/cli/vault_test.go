@@ -77,7 +77,7 @@ func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, e
 
 func TestAVaultCommandNeedsToBeAskedForOne(t *testing.T) {
 	t.Parallel()
-	_, err := runWith(cli.Deps{Vaults: listing(notebook)}, "vault")
+	_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, "vault")
 	if err == nil || !strings.Contains(err.Error(), "usage:\n  numen-cli vault add <path>") {
 		t.Errorf("vault with no command answered %v", err)
 	}
@@ -92,7 +92,7 @@ func TestAVaultCommandNeedsItsArguments(t *testing.T) {
 		"usage: numen-cli vault erase <vault> [--yes]":      {"vault", "erase"},
 		"usage: numen-cli vault open <vault>":               {"vault", "open"},
 	} {
-		out, err := runWith(cli.Deps{Vaults: listing(notebook)}, args...)
+		out, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, args...)
 		if err == nil || err.Error() != usage {
 			t.Errorf("%v answered %v, want %q", args, err, usage)
 		}
@@ -113,7 +113,7 @@ func TestAVaultCommandReturnsWhatWentWrongOpeningTheList(t *testing.T) {
 		{"vault", "erase", "notebook", "--yes"},
 		{"vault", "open", "notebook"},
 	} {
-		out, err := runWith(given, args...)
+		out, err := runWithDeps(given, args...)
 		if !errors.Is(err, errRefused) {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -142,7 +142,7 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsWritten(t *testing.T)
 		{"vault", "erase", "--no-such-flag"},
 		{"vault", "erase", "notebook", "--no-such-flag"},
 	} {
-		_, err := runWith(given, args...)
+		_, err := runWithDeps(given, args...)
 		if err == nil || !strings.Contains(err.Error(), "no-such-flag") {
 			t.Errorf("%v answered %v", args, err)
 		}

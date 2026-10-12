@@ -134,7 +134,7 @@ func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
 		t.Fatalf("fitting to the width it already holds: %v", err)
 	}
 
-	narrow(t, db, first, 384)
+	embedAtWidth(t, db, first, 384)
 }
 
 // Fitting the coarse index to another width leaves what was made standing, and
@@ -149,7 +149,7 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
-	narrow(t, db, first, 384)
+	embedAtWidth(t, db, first, 384)
 	made := countRows(t, db, `SELECT count(*) FROM vectors`)
 	if made == 0 {
 		t.Fatal("nothing was kept for the text that was embedded")
@@ -176,8 +176,8 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 // narrowRecipe is what a model of the width given writes its vectors under.
 func narrowRecipe(dims int) string { return "model/" + strconv.Itoa(dims) }
 
-// narrow cuts one source and embeds its small chunks at the width given.
-func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
+// embedAtWidth cuts one source and embeds its small chunks at the width given.
+func embedAtWidth(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	t.Helper()
 	ctx := t.Context()
 

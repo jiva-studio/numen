@@ -27,10 +27,10 @@ func coarseRows(t *testing.T, db *DB, vault domain.Vault, path string) (reached,
 	return reached, small
 }
 
-// reclaim writes every chunk a vault owes from the vectors the recipe already
+// embedFromKeptVectors writes every chunk a vault owes from the vectors the recipe already
 // keeps, as the embedding pass does, and says how many it wrote. A chunk whose
 // text has no kept vector would cost a model call, and fails the test.
-func reclaim(t *testing.T, db *DB, vault domain.Vault) int {
+func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	ctx := t.Context()
 
@@ -123,13 +123,13 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 			if held-done != int64(small) {
 				t.Errorf("progress counts %d of %d chunks still to do, want the %d of %s", held-done, held, small, path)
 			}
-			if wrote := reclaim(t, db, vault); wrote != small {
+			if wrote := embedFromKeptVectors(t, db, vault); wrote != small {
 				t.Errorf("%d of the %d small chunks of %s were owed", wrote, small, path)
 			}
 			if reached, _ := coarseRows(t, db, vault, path); reached != small {
 				t.Errorf("the coarse pass reaches %d of the %d small chunks of %s", reached, small, path)
 			}
-			if again := reclaim(t, db, vault); again != 0 {
+			if again := embedFromKeptVectors(t, db, vault); again != 0 {
 				t.Errorf("%d chunks are still owed once every one was written", again)
 			}
 		})
@@ -155,7 +155,7 @@ func TestAVectorWrittenBackAsItIsKeptLeavesItsRowUntouched(t *testing.T) {
 	}
 
 	cutBook(t, db, second, "library/tale.epub")
-	if wrote := reclaim(t, db, second); wrote == 0 {
+	if wrote := embedFromKeptVectors(t, db, second); wrote == 0 {
 		t.Fatal("nothing was reclaimed")
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM rewritten`); got != 0 {
@@ -169,7 +169,7 @@ func TestAVectorWrittenBackAsItIsKeptLeavesItsRowUntouched(t *testing.T) {
 	}
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
 		Chunk: one, Hash: hashOf(t, db, one), Recipe: testRecipe,
-		Value: precise(direction(0xf0)), Coarse: bits(0xf0),
+		Value: getPreciseBytes(getVectorForSeed(0xf0)), Coarse: bits(0xf0),
 	}}); err != nil {
 		t.Fatal(err)
 	}
