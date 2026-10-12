@@ -17,14 +17,14 @@ import {
 } from '@numen/ui'
 import { formatErrorCodeMessage, formatErrorMessage } from '@numen/wire'
 import NoteSheet from '../note/NoteSheet.vue'
-import { reach, type Core } from '../core'
-import { follow } from './follow'
+import { startCore, type Core } from '../core'
+import { watchVault } from './watchVault'
 import { asPlex } from './picture'
-import { CREATABLE, isCreatable, ROLES, SEEDED } from './seats'
+import { CREATABLE_SEATS, isCreatable, ROLE_BY_SEAT, SEED_NOTE_PATH } from './seats'
 
 const core = ref<Core | null>(null)
 const picture = ref<PlexNeighbourhood | null>(null)
-const at = ref(SEEDED)
+const focusPath = ref(SEED_NOTE_PATH)
 const errorMessage = ref('')
 
 /** A finger has no hover, so a node is reached out of by resting on it. */
@@ -34,12 +34,12 @@ const reaching = byLongPress()
 const showing = byDoubleTap()
 
 /** The note being written, and nothing while none is. */
-const writing = ref<string | null>(null)
+const editingPath = ref<string | null>(null)
 
-async function draw(path: string) {
+async function loadPicture(path: string) {
   if (!core.value) return
   const answer = await core.value.notes.getNeighbourhood({ path })
-  at.value = path
+  focusPath.value = path
   picture.value = asPlex(answer)
 }
 
@@ -60,25 +60,28 @@ async function linkNotes(from: string, to: string, seat: PlexRelatedSeat) {
   // The picture is only ever asked for a seat it offers, and it offers no
   // sibling: no link writes one.
   if (!isCreatable(seat)) return
-  const answer = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
+  const answer = await core.value.notes.writeLink({
+    path: from,
+    link: { to, role: ROLE_BY_SEAT[seat] },
+  })
   if (answer.error) {
     errorMessage.value = formatErrorCodeMessage(answer.error)
     return
   }
-  await draw(at.value)
+  await loadPicture(focusPath.value)
 }
 
 function onClose() {
-  writing.value = null
-  void draw(at.value)
+  editingPath.value = null
+  void loadPicture(focusPath.value)
 }
 
 onMounted(async () => {
   try {
-    core.value = await reach()
-    await draw(SEEDED)
+    core.value = await startCore()
+    await loadPicture(SEED_NOTE_PATH)
     // The vault is still being read; the picture is drawn again as it lands.
-    follow(core.value, () => void draw(at.value))
+    watchVault(core.value, () => void loadPicture(focusPath.value))
   } catch (why) {
     errorMessage.value = formatErrorMessage(why)
   }
@@ -94,11 +97,11 @@ onMounted(async () => {
         class="plex"
         data-testid="plex"
         :neighbourhood="picture"
-        :creatable="CREATABLE"
+        :creatable="CREATABLE_SEATS"
         :reaching="reaching"
         :showing="showing"
-        @activate="(node: string) => void draw(node)"
-        @show="(node: string) => (writing = node)"
+        @activate="(node: string) => void loadPicture(node)"
+        @show="(node: string) => (editingPath = node)"
         @create="(from: string, seat: PlexRelatedSeat) => void createRelatedNote(from, seat)"
         @link="(from: string, to: string, seat: PlexRelatedSeat) => void linkNotes(from, to, seat)"
       />
@@ -116,9 +119,9 @@ onMounted(async () => {
        built in, and every wrapper of the framework has one of its own. -->
   <Teleport to="body">
     <NoteSheet
-      v-if="core && writing"
+      v-if="core && editingPath"
       :core="core"
-      :path="writing"
+      :path="editingPath"
       @close="onClose"
       @error="(message: string) => (errorMessage = message)"
     />
