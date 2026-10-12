@@ -138,13 +138,23 @@ const mark = (token: Token, next: () => number): (VNode | string)[] => {
     case 'hardbreak':
       return [h('br')]
     case 'image':
-      return [h('img', attrs(token))]
+      return [h('img', { ...attrs(token), alt: getPlainText(token.children ?? []) })]
     case 'html_inline':
       return [token.content]
     default:
       return token.content ? [token.content] : []
   }
 }
+
+/** The text of inline tokens with their marks removed. */
+const getPlainText = (tokens: readonly Token[]): string =>
+  tokens
+    .map((token) => {
+      if (token.type === 'image') return getPlainText(token.children ?? [])
+      if (token.type === 'softbreak' || token.type === 'hardbreak') return ' '
+      return token.content
+    })
+    .join('')
 
 /** Text, cut into words with the spaces between them kept. */
 const words = (text: string, next: () => number): (VNode | string)[] =>
