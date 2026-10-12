@@ -27,9 +27,9 @@ func isolate(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
 }
 
-// failingLinks answers as the index does, except where it is told to fail or
+// staleLinks answers as the index does, except where it is told to fail or
 // to say nothing.
-type failingLinks struct {
+type staleLinks struct {
 	port.LinkQueries
 	backlinksErr error
 	linksErr     error
@@ -37,14 +37,14 @@ type failingLinks struct {
 	emptyFor     string
 }
 
-func (f failingLinks) Backlinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (f staleLinks) Backlinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	if f.backlinksErr != nil {
 		return nil, f.backlinksErr
 	}
 	return f.LinkQueries.Backlinks(ctx, id, to)
 }
 
-func (f failingLinks) Links(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (f staleLinks) Links(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if f.linksErr != nil {
 		return nil, f.linksErr
 	}
@@ -173,7 +173,7 @@ func TestAMoveThatStopsBeforeTheFileMovedSaysSo(t *testing.T) {
 		"the links pointing at it cannot be read": {
 			from: "physics/Entropy.md",
 			parts: func(c changing) moveParts {
-				return moveParts{links: failingLinks{LinkQueries: c.db.Links(), backlinksErr: boom}}
+				return moveParts{links: staleLinks{LinkQueries: c.db.Links(), backlinksErr: boom}}
 			},
 			want: boom,
 		},
@@ -271,7 +271,7 @@ func TestAMoveThatFailsAfterTheFileLandedSaysWhatFailed(t *testing.T) {
 		},
 		"the links of the note holding the link cannot be read": {
 			parts: func(c changing) moveParts {
-				return moveParts{links: failingLinks{LinkQueries: c.db.Links(), linksErr: boom}}
+				return moveParts{links: staleLinks{LinkQueries: c.db.Links(), linksErr: boom}}
 			},
 			want: boom,
 		},
@@ -346,7 +346,7 @@ func TestAMoveThatFailsAfterTheFileLandedSaysWhatFailed(t *testing.T) {
 // A link the note no longer holds is not repaired and not reported.
 func TestALinkTheNoteNoLongerHoldsIsLeftOut(t *testing.T) {
 	c := openLinked(t)
-	parts := moveParts{links: failingLinks{LinkQueries: c.db.Links(), isLinksEmpty: true}}
+	parts := moveParts{links: staleLinks{LinkQueries: c.db.Links(), isLinksEmpty: true}}
 
 	res, err := c.moveOf(parts).Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
 	if err != nil {
@@ -458,7 +458,7 @@ func TestALinkTheNoteNoLongerHoldsDoesNotStopTheNextRepair(t *testing.T) {
 		"physics/Cold.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Cold\n",
 		"physics/Heat.md":    heatLinkedToEntropy,
 	})
-	parts := moveParts{links: failingLinks{LinkQueries: c.db.Links(), emptyFor: "physics/Cold.md"}}
+	parts := moveParts{links: staleLinks{LinkQueries: c.db.Links(), emptyFor: "physics/Cold.md"}}
 
 	res, err := c.moveOf(parts).Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
 	if err != nil {
