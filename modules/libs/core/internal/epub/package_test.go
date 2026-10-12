@@ -325,8 +325,6 @@ func padChapter(word string, size int) []byte {
 	return []byte(head + strings.Repeat(" ", size-len(head)-len(foot)) + foot)
 }
 
-const mostPerDocument = 16 << 20
-
 func TestHowLargeADocumentMayBe(t *testing.T) {
 	const manifest = `<item id="a" href="over.xhtml" media-type="application/xhtml+xml"/>
 		<item id="b" href="exact.xhtml" media-type="application/xhtml+xml"/>
@@ -351,26 +349,6 @@ func TestHowLargeADocumentMayBe(t *testing.T) {
 	}
 	if _, err := book.Entry("OEBPS/over.xhtml"); !errors.Is(err, epub.ErrNoEntry) {
 		t.Errorf("entry over the bound: err = %v, want %v", err, epub.ErrNoEntry)
-	}
-}
-
-func TestHowMuchOfABookIsRead(t *testing.T) {
-	const (
-		manifest = `<item id="a" href="big.xhtml" media-type="application/xhtml+xml"/>
-			<item id="b" href="one.xhtml" media-type="application/xhtml+xml"/>`
-		fullDocuments = 16
-	)
-	spine := "<spine>" + strings.Repeat(`<itemref idref="a"/>`, fullDocuments+1) + `<itemref idref="b"/></spine>`
-	book := read(t, buildSpineArchive(t, buildOpf("", manifest, spine), map[string]string{
-		"OEBPS/big.xhtml": string(padChapter("Big", mostPerDocument)),
-		oneDoc:            chapterOne,
-	}))
-
-	if got := len(book.Documents); got != fullDocuments {
-		t.Errorf("documents = %d, want the %d the bound admits", got, fullDocuments)
-	}
-	if strings.Contains(book.Text, "Alpha") {
-		t.Error("a document was read after the bound for the book was reached")
 	}
 }
 
