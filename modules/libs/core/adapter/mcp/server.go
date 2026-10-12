@@ -76,14 +76,14 @@ type Notes struct {
 }
 
 // Vaults is the list of vaults this installation holds, and what a person does
-// to it. Without a registry an agent is told of the vault it is working and of
-// no other, and each tool is served where what it works through is here.
+// to it. Without a list an agent is told of the vault it is working and of no
+// other, and each tool is served where what it works through is here.
 type Vaults struct {
-	Registry port.VaultRegistry
-	// FolderDialog puts this machine's own folder dialog in front of the person,
-	// for a vault added without a path. Without it a folder is named or nothing
-	// is added.
-	FolderDialog port.FolderDialog
+	KnownVaults  *vaults.KnownVaults
+	ResolveVault *vaults.ResolveVault
+	// PickFolder puts this machine's own folder dialog in front of the person,
+	// for a vault added without a path.
+	PickFolder *vaults.PickFolder
 	// Add turns a folder into a vault, Rename is what a person calls one, and
 	// Unregister takes one off the list.
 	Add        *vaults.Add
