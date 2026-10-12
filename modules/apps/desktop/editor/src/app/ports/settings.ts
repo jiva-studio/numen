@@ -1,6 +1,6 @@
 /** What the window asks of the vault about its settings. */
 import type { Configuration, SettingEdit } from '@/entities/settings'
-import type { HangingSettings } from '@/entities/settings'
+import type { NestingSettings } from '@/entities/settings'
 import type { ReviewSettings } from '@/entities/settings'
 
 export interface SettingsPort {
@@ -15,15 +15,15 @@ export interface SettingsPort {
    */
   setSyncEnabled(isEnabled: boolean): Promise<string | null>
   /**
-   * Whether a node in the plex hangs the parts of its note under the box, and
+   * Whether a node in the plex nests the headings of its note under the box, and
    * how many of them stand there at once, as the settings hold them.
    */
-  getHangingSettings(): Promise<HangingSettings>
+  getNestingSettings(): Promise<NestingSettings>
   /**
    * Those settings written into the settings file. What could not be written,
    * and nothing where it was. A count left out stands as it is.
    */
-  setHangingSettings(isHanging: boolean, parts?: number): Promise<string | null>
+  setNestingSettings(isNesting: boolean, parts?: number): Promise<string | null>
   /**
    * The hour a day of review begins at, on the clock on the wall, written as
    * `04:00`, and how late in the day the vault takes one. An hour past that is

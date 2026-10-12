@@ -34,7 +34,7 @@ const installation = (): Installation =>
     }),
     choose: vi.fn(),
     isSyncing: ref(false),
-    isHanging: ref(false),
+    isNesting: ref(false),
     parts: ref(0),
     partsBounds: ref({ least: 1, most: 12 }),
     chooseParts: vi.fn(),

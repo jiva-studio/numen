@@ -49,7 +49,7 @@ export interface CommandsDepsOptions {
   openPreset: (path: string) => Promise<void>
   dressed: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
-  hungParts: {
+  nestedHeadings: {
     choose: (item: string) => Promise<void> | void
     chooseCount: (item: string) => Promise<void> | void
   }

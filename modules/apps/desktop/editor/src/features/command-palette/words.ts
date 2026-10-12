@@ -133,8 +133,8 @@ export interface Words extends EmptyWords {
   readonly textScale: string
   /** The command over whether a note's title and its filename are one name. */
   readonly syncing: string
-  /** The command over whether a node hangs the parts of its note under it. */
-  readonly hanging: string
+  /** The command over whether a node nests the headings of its note under it. */
+  readonly nesting: string
   /** The command over how many of them stand under a node at once. */
   readonly parts: string
   /** The command over the performance workload profile. */
@@ -152,7 +152,7 @@ export interface Words extends EmptyWords {
   readonly openVault: string
   readonly newVault: string
   readonly renameVault: string
-  readonly forgetVault: string
+  readonly removeVault: string
   readonly eraseVault: string
   /** The groups the commands are drawn in. */
   readonly noteGroupTitle: string
@@ -202,7 +202,7 @@ export interface Words extends EmptyWords {
   readonly kept: string
   /** The two answers over a vault, whose folder is left where it is. */
   readonly keepsVault: string
-  readonly forgets: string
+  readonly removeAction: string
   readonly stays: string
   /** The name typed back, which is what destroying asks for. */
   readonly exactly: string

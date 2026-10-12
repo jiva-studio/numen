@@ -1,5 +1,5 @@
 /**
- * Whether a node in the plex hangs the parts of its note under the box, and how
+ * Whether a node in the plex nests the headings of its note under the box, and how
  * many of them stand there at once.
  *
  * Two settings, offered as two lists. A list opens on the row the setting
@@ -8,12 +8,12 @@
 import { ref } from 'vue'
 import type { StepGroup, StepRow } from '@/features/command-palette/@x/settings-commands'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { DEFAULT_PARTS, hangingLadder as ladder } from '@/entities/settings'
-import type { HangingSettings } from '@/entities/settings'
-import type { HangingWords } from '../words'
+import { DEFAULT_PARTS, nestingLadder as ladder } from '@/entities/settings'
+import type { NestingSettings } from '@/entities/settings'
+import type { NestingWords } from '../words'
 
 /** The command whose step offers the two, and the one that offers the counts. */
-export const HANGING = 'hanging'
+export const NESTING = 'nesting'
 export const PARTS = 'parts'
 
 /** The two rows, by the name each is chosen under. */
@@ -21,22 +21,22 @@ export const ON = 'on'
 export const OFF = 'off'
 
 /** What this asks of the vault. */
-export interface HangingDeps {
+export interface NestingDeps {
   /** The two settings, as the settings file holds them. */
-  getHangingSettings(): Promise<HangingSettings>
+  getNestingSettings(): Promise<NestingSettings>
   /**
    * The settings written. What could not be written, and nothing where it was.
    * A count left out stands as it is.
    */
-  setHangingSettings(isHanging: boolean, parts?: number): Promise<string | null>
+  setNestingSettings(isNesting: boolean, parts?: number): Promise<string | null>
 }
 
-export function useHangingSetting(core: HangingDeps, words: HangingWords, write: MessageWriter) {
+export function useNestingSetting(core: NestingDeps, words: NestingWords, write: MessageWriter) {
   /**
    * The two settings. They open on what an installation nobody has configured
    * does, and are asked of the vault as the window opens.
    */
-  const isHanging = ref(true)
+  const isNesting = ref(true)
   const parts = ref(DEFAULT_PARTS)
 
   /**
@@ -47,14 +47,14 @@ export function useHangingSetting(core: HangingDeps, words: HangingWords, write:
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
-    let settings: HangingSettings
+    let settings: NestingSettings
     try {
-      settings = await core.getHangingSettings()
+      settings = await core.getNestingSettings()
     } catch {
       // A vault that cannot be asked leaves both settings where they stand.
       return
     }
-    isHanging.value = settings.isHanging
+    isNesting.value = settings.isNesting
     parts.value = settings.parts
     ends.value = { least: settings.least, most: settings.most }
   }
@@ -67,11 +67,11 @@ export function useHangingSetting(core: HangingDeps, words: HangingWords, write:
   })
 
   /** The two, in one group named for the setting they are of. */
-  const getHangingGroups = (): readonly StepGroup[] => [
+  const getNestingGroups = (): readonly StepGroup[] => [
     {
-      id: HANGING,
-      title: words.hangingGroup,
-      items: [row(ON, words.on, isHanging.value), row(OFF, words.off, !isHanging.value)],
+      id: NESTING,
+      title: words.nestingGroup,
+      items: [row(ON, words.on, isNesting.value), row(OFF, words.off, !isNesting.value)],
     },
   ]
 
@@ -92,16 +92,16 @@ export function useHangingSetting(core: HangingDeps, words: HangingWords, write:
    */
   const choose = async (item: string): Promise<void> => {
     if (item !== ON && item !== OFF) return
-    const was = isHanging.value
+    const was = isNesting.value
     const now = item === ON
     if (now === was) return
     write('')
-    isHanging.value = now
+    isNesting.value = now
 
-    const failed = await core.setHangingSettings(now)
+    const failed = await core.setNestingSettings(now)
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
-    isHanging.value = was
+    isNesting.value = was
   }
 
   /**
@@ -117,11 +117,11 @@ export function useHangingSetting(core: HangingDeps, words: HangingWords, write:
     write('')
     parts.value = now
 
-    const failed = await core.setHangingSettings(isHanging.value, now)
+    const failed = await core.setNestingSettings(isNesting.value, now)
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
     parts.value = was
   }
 
-  return { isHanging, parts, ends, start, getHangingGroups, getPartsGroups, choose, chooseCount }
+  return { isNesting, parts, ends, start, getNestingGroups, getPartsGroups, choose, chooseCount }
 }

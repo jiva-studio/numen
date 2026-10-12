@@ -50,7 +50,7 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['reviewed', 'hanging', 'worn', 'named', 'configured'])
+    expect(writers).toStrictEqual(['reviewed', 'nesting', 'worn', 'named', 'configured'])
   })
 
   it('opens the settings tab and the settings file as kinds of tab', () => {
@@ -155,11 +155,11 @@ describe('the lists the palette offers for a setting', () => {
     expect(settings.kept.getStepGroups('syncing', '')).toStrictEqual(
       settings.sync.getSyncingGroups(),
     )
-    expect(settings.kept.getStepGroups('hanging', '')).toStrictEqual(
-      settings.hungParts.getHangingGroups(),
+    expect(settings.kept.getStepGroups('nesting', '')).toStrictEqual(
+      settings.nestedHeadings.getNestingGroups(),
     )
     expect(settings.kept.getStepGroups('parts', '')).toStrictEqual(
-      settings.hungParts.getPartsGroups(),
+      settings.nestedHeadings.getPartsGroups(),
     )
     expect(settings.kept.getStepGroups('syncing', '')[0]?.items).toHaveLength(2)
   })
@@ -201,17 +201,17 @@ describe('the settings tab', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
     const sync = vi.spyOn(settings.sync, 'choose').mockResolvedValue()
-    const hang = vi.spyOn(settings.hungParts, 'choose').mockResolvedValue()
+    const hang = vi.spyOn(settings.nestedHeadings, 'choose').mockResolvedValue()
     settings.sync.isEnabled.value = false
-    settings.hungParts.isHanging.value = false
+    settings.nestedHeadings.isNesting.value = false
 
     expect(installation.isSyncing.value).toBe(false)
-    expect(installation.isHanging.value).toBe(false)
+    expect(installation.isNesting.value).toBe(false)
 
     installation.isSyncing.value = true
-    installation.isHanging.value = true
+    installation.isNesting.value = true
     installation.isSyncing.value = false
-    installation.isHanging.value = false
+    installation.isNesting.value = false
 
     expect(sync.mock.calls).toStrictEqual([['on'], ['off']])
     expect(hang.mock.calls).toStrictEqual([['on'], ['off']])
@@ -220,7 +220,7 @@ describe('the settings tab', () => {
   it('chooses a count of parts and the hour a day begins through the palette’s own choices', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
-    const count = vi.spyOn(settings.hungParts, 'chooseCount').mockResolvedValue()
+    const count = vi.spyOn(settings.nestedHeadings, 'chooseCount').mockResolvedValue()
     const hour = vi.spyOn(settings.dayBegins, 'choose').mockResolvedValue()
 
     installation.chooseParts(4)

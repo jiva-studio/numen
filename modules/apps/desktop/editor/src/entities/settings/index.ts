@@ -9,8 +9,8 @@ export {
   SCHEMES,
 } from './lib/appearance'
 export type { Configuration, Model, Presence, SettingEdit } from './lib/configuration'
-export { DEFAULT_PARTS, ladder as hangingLadder } from './lib/hanging'
-export type { HangingSettings } from './lib/hanging'
+export { DEFAULT_PARTS, ladder as nestingLadder } from './lib/nesting'
+export type { NestingSettings } from './lib/nesting'
 export { DEFAULT_STARTS, createReviewSetting } from './model/review'
 export type { ReviewSettings } from './model/review'
 export { getSettingAt, createSettingsStore } from './model/store'

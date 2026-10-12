@@ -136,11 +136,11 @@ function onPartsChange(count: number | null) {
 
     <SettingRow
       v-slot="{ labelledBy }"
-      at="hanging"
-      :name="words.hanging"
-      :detail="words.hangingDetail"
+      at="nesting"
+      :name="words.nesting"
+      :detail="words.nestingDetail"
     >
-      <Switch v-model="installation.isHanging.value" :aria-labelledby="labelledBy" />
+      <Switch v-model="installation.isNesting.value" :aria-labelledby="labelledBy" />
     </SettingRow>
 
     <SettingRow v-slot="{ labelledBy }" at="parts" :name="words.parts" :detail="words.partsDetail">

@@ -39,8 +39,8 @@ export const vaultCommandsOf = (words: Words, agent: string): readonly Command[]
     getFieldText: (at) => at.vault.name,
   },
   {
-    id: 'forgetVault',
-    text: words.forgetVault,
+    id: 'removeVault',
+    text: words.removeVault,
     group: 'vault',
     needs: 'vaults',
     next: 'asking',
@@ -48,7 +48,7 @@ export const vaultCommandsOf = (words: Words, agent: string): readonly Command[]
     answers: {
       keeps: words.keepsVault,
       kept: words.kept,
-      action: words.forgets,
+      action: words.removeAction,
       then: words.stays,
     },
   },

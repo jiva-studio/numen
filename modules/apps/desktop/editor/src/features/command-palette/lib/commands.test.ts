@@ -42,7 +42,7 @@ describe('the commands over the vaults an installation holds', () => {
       'openVault',
       'newVault',
       'renameVault',
-      'forgetVault',
+      'removeVault',
       'eraseVault',
     ])
   })
@@ -60,7 +60,7 @@ describe('the commands that ask for a choice among a few', () => {
       'interfaceScale',
       'textScale',
       'syncing',
-      'hanging',
+      'nesting',
       'parts',
       'performanceProfile',
       'indexingModel',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { HANGING, OFF, ON, PARTS, useHangingSetting } from './hanging'
+import { NESTING, OFF, ON, PARTS, useNestingSetting } from './nesting'
 import { writer } from '@/testing/writer'
 import { WORDS as words } from '@/shared/words'
 import { DEFAULT_PARTS } from '@/entities/settings'
@@ -12,66 +12,66 @@ const vault = (isOn: boolean, parts = 6, error: string | null = null, most = 12)
   return {
     wrote,
     counted,
-    getHangingSettings: async () => ({ isHanging: isOn, parts, least: 1, most }),
-    setHangingSettings: async (isHanging: boolean, count?: number) => {
-      wrote.push(isHanging)
+    getNestingSettings: async () => ({ isNesting: isOn, parts, least: 1, most }),
+    setNestingSettings: async (isNesting: boolean, count?: number) => {
+      wrote.push(isNesting)
       counted.push(count)
       return error
     },
   }
 }
 
-describe('whether a node hangs the parts of its note', () => {
+describe('whether a node nests the headings of its note', () => {
   it('opens on what the settings hold, so the list stands on what is in force', async () => {
     const core = vault(false)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
-    const groups = held.getHangingGroups()
-    expect(groups.map((group) => group.id)).toStrictEqual([HANGING])
+    const groups = held.getNestingGroups()
+    expect(groups.map((group) => group.id)).toStrictEqual([NESTING])
     const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual([ON, OFF])
     expect(items.find((one) => one.isCurrent)?.id).toBe(OFF)
   })
 
-  it('hangs the parts where the vault cannot be asked', async () => {
-    const held = useHangingSetting(
+  it('nests the headings where the vault cannot be asked', async () => {
+    const held = useNestingSetting(
       {
-        getHangingSettings: async () => Promise.reject(new Error('no')),
-        setHangingSettings: async () => null,
+        getNestingSettings: async () => Promise.reject(new Error('no')),
+        setNestingSettings: async () => null,
       },
       words,
       writer().write,
     )
     await held.start()
 
-    expect(held.isHanging.value).toBe(true)
+    expect(held.isNesting.value).toBe(true)
     expect(held.parts.value).toBe(6)
   })
 
   it('says which of the two is the one in force, and nothing beside the other', async () => {
-    const held = useHangingSetting(vault(true), words, writer().write)
+    const held = useNestingSetting(vault(true), words, writer().write)
     await held.start()
 
-    const items = held.getHangingGroups().flatMap((group) => group.items)
+    const items = held.getNestingGroups().flatMap((group) => group.items)
     expect(items.find((row) => row.id === ON)?.detail).toBe(words.current)
     expect(items.find((row) => row.id === OFF)?.detail).toBeUndefined()
   })
 
   it('writes the row chosen and stands on it', async () => {
     const core = vault(true)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
     await held.choose(OFF)
 
     expect(core.wrote).toStrictEqual([false])
-    expect(held.isHanging.value).toBe(false)
+    expect(held.isNesting.value).toBe(false)
   })
 
   it('writes nothing for the row already in force', async () => {
     const core = vault(true)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
     await held.choose(ON)
@@ -81,31 +81,31 @@ describe('whether a node hangs the parts of its note', () => {
 
   it('writes nothing for a row it does not offer', async () => {
     const core = vault(true)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
     await held.choose('interfaceScale:1.5')
 
     expect(core.wrote).toStrictEqual([])
-    expect(held.isHanging.value).toBe(true)
+    expect(held.isNesting.value).toBe(true)
   })
 
   it('goes back to what the settings hold where the setting could not be written', async () => {
     const core = vault(true, 6, 'unreadable')
     const told = writer()
-    const held = useHangingSetting(core, words, told.write)
+    const held = useNestingSetting(core, words, told.write)
     await held.start()
 
     await held.choose(OFF)
 
-    expect(held.isHanging.value).toBe(true)
+    expect(held.isNesting.value).toBe(true)
     expect(told.said.at(-1)).toContain(words.unturned)
   })
 })
 
 describe('how many parts stand under a node', () => {
   it('offers a ladder from one end of the setting to the other', async () => {
-    const held = useHangingSetting(vault(true, 4), words, writer().write)
+    const held = useNestingSetting(vault(true, 4), words, writer().write)
     await held.start()
 
     const groups = held.getPartsGroups()
@@ -117,7 +117,7 @@ describe('how many parts stand under a node', () => {
   })
 
   it('marks the count in force, and says nothing beside the rest', async () => {
-    const held = useHangingSetting(vault(true, 4), words, writer().write)
+    const held = useNestingSetting(vault(true, 4), words, writer().write)
     await held.start()
 
     const items = held.getPartsGroups().flatMap((group) => group.items)
@@ -128,7 +128,7 @@ describe('how many parts stand under a node', () => {
 
   it('writes the count chosen beside the switch the window already knows', async () => {
     const core = vault(false, 6)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
     await held.chooseCount('3')
@@ -140,7 +140,7 @@ describe('how many parts stand under a node', () => {
 
   it('writes nothing for the count in force, or for one it does not offer', async () => {
     const core = vault(true, 6)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
     await held.chooseCount('6')
@@ -154,7 +154,7 @@ describe('how many parts stand under a node', () => {
   it('goes back to what the settings hold where the count could not be written', async () => {
     const core = vault(true, 6, 'unreadable')
     const told = writer()
-    const held = useHangingSetting(core, words, told.write)
+    const held = useNestingSetting(core, words, told.write)
     await held.start()
 
     await held.chooseCount('3')
@@ -165,7 +165,7 @@ describe('how many parts stand under a node', () => {
 
   it('leaves the count out of a switch being turned', async () => {
     const core = vault(true, 4)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
     await held.choose(OFF)
@@ -176,18 +176,18 @@ describe('how many parts stand under a node', () => {
 
   it('writes the row chosen when the settings hold the other', async () => {
     const core = vault(false)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
     await held.choose(ON)
 
     expect(core.wrote).toStrictEqual([true])
-    expect(held.isHanging.value).toBe(true)
+    expect(held.isNesting.value).toBe(true)
   })
 
   it('clears the message line before it writes a switch', async () => {
     const told = writer()
-    const held = useHangingSetting(vault(true), words, told.write)
+    const held = useNestingSetting(vault(true), words, told.write)
     await held.start()
 
     await held.choose(OFF)
@@ -197,7 +197,7 @@ describe('how many parts stand under a node', () => {
 
   it('says the failure of a switch as an error', async () => {
     const told = writer()
-    const held = useHangingSetting(vault(true, 6, 'unreadable'), words, told.write)
+    const held = useNestingSetting(vault(true, 6, 'unreadable'), words, told.write)
     await held.start()
 
     await held.choose(OFF)
@@ -209,14 +209,14 @@ describe('how many parts stand under a node', () => {
   })
 
   it('offers only the default count before the vault has said how far the counts go', () => {
-    const held = useHangingSetting(vault(true), words, writer().write)
+    const held = useNestingSetting(vault(true), words, writer().write)
 
     const items = held.getPartsGroups().flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual([`${DEFAULT_PARTS}`])
   })
 
   it('titles each count with the number itself', async () => {
-    const held = useHangingSetting(vault(true, 4), words, writer().write)
+    const held = useNestingSetting(vault(true, 4), words, writer().write)
     await held.start()
 
     const items = held.getPartsGroups().flatMap((group) => group.items)
@@ -227,7 +227,7 @@ describe('how many parts stand under a node', () => {
 
   it('takes the counts at both ends of what the vault takes, and none beyond', async () => {
     const core = vault(true, 6)
-    const held = useHangingSetting(core, words, writer().write)
+    const held = useNestingSetting(core, words, writer().write)
     await held.start()
 
     await held.chooseCount('0')
@@ -241,7 +241,7 @@ describe('how many parts stand under a node', () => {
 
   it('clears the message line before it writes a count', async () => {
     const told = writer()
-    const held = useHangingSetting(vault(true), words, told.write)
+    const held = useNestingSetting(vault(true), words, told.write)
     await held.start()
 
     await held.chooseCount('3')
@@ -251,7 +251,7 @@ describe('how many parts stand under a node', () => {
 
   it('says the failure of a count as an error', async () => {
     const told = writer()
-    const held = useHangingSetting(vault(true, 6, 'unreadable'), words, told.write)
+    const held = useNestingSetting(vault(true, 6, 'unreadable'), words, told.write)
     await held.start()
 
     await held.chooseCount('3')

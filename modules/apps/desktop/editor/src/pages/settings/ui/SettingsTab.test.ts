@@ -69,7 +69,7 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
   const done: string[] = []
   const written: SettingEdit[] = []
   const isSyncing = ref(true)
-  const isHanging = ref(true)
+  const isNesting = ref(true)
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
@@ -96,11 +96,11 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
         done.push(`syncing ${on}`)
       },
     }),
-    isHanging: computed({
-      get: () => isHanging.value,
+    isNesting: computed({
+      get: () => isNesting.value,
       set: (on) => {
-        isHanging.value = on
-        done.push(`hanging ${on}`)
+        isNesting.value = on
+        done.push(`nesting ${on}`)
       },
     }),
     parts: ref(6),
@@ -192,9 +192,9 @@ describe('the settings tab', () => {
 
   it('turns the two switches the window keeps', async () => {
     const { tab, done } = createTab()
-    await tab.get(control('settings-hanging')).trigger('click')
+    await tab.get(control('settings-nesting')).trigger('click')
     await tab.get(control('settings-syncing')).trigger('click')
-    expect(done).toStrictEqual(['hanging false', 'syncing false'])
+    expect(done).toStrictEqual(['nesting false', 'syncing false'])
   })
 
   it('names the file the settings stand in, and opens it whole', async () => {

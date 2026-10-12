@@ -31,8 +31,8 @@ describe('createPlexKind with linked tabs', () => {
     }
 
     const settingsMock: any = {
-      hungParts: {
-        isHanging: ref(false),
+      nestedHeadings: {
+        isNesting: ref(false),
         parts: ref(0),
       },
     }
@@ -113,8 +113,8 @@ describe('createPlexKind with linked tabs', () => {
     }
 
     const settingsMock: any = {
-      hungParts: {
-        isHanging: ref(false),
+      nestedHeadings: {
+        isNesting: ref(false),
         parts: ref(0),
       },
     }

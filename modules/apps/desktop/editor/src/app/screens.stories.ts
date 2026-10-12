@@ -123,7 +123,7 @@ const INSTALLATION: Installation = {
   }),
   choose: () => {},
   isSyncing: ref(true),
-  isHanging: ref(true),
+  isNesting: ref(true),
   parts: ref(6),
   partsBounds: ref({ least: 1, most: 12 }),
   chooseParts: () => {},

@@ -174,13 +174,13 @@ describe('the commands as they open', () => {
         'interfaceScale',
         'textScale',
         'syncing',
-        'hanging',
+        'nesting',
         'parts',
         'performanceProfile',
         'indexingModel',
         'settings',
       ],
-      vault: ['first', 'goto', 'openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
+      vault: ['first', 'goto', 'openVault', 'newVault', 'renameVault', 'removeVault', 'eraseVault'],
     })
   })
 
@@ -257,13 +257,13 @@ describe('what is in front', () => {
         'interfaceScale',
         'textScale',
         'syncing',
-        'hanging',
+        'nesting',
         'parts',
         'performanceProfile',
         'indexingModel',
         'settings',
       ],
-      vault: ['openVault', 'newVault', 'renameVault', 'forgetVault', 'eraseVault'],
+      vault: ['openVault', 'newVault', 'renameVault', 'removeVault', 'eraseVault'],
     })
     expect(silence(commands.groups, 'note')).toBe(words.noVault)
   })
@@ -1052,7 +1052,7 @@ describe('the commands over the vaults an installation holds', () => {
       'goto',
       'openVault',
       'newVault',
-      'forgetVault',
+      'removeVault',
       'eraseVault',
     ])
   })
@@ -1102,10 +1102,10 @@ describe('a command that asks for a vault', () => {
 
   it('says on every row what choosing it asks for', async () => {
     const { commands } = createPalette({}, [], {}, two())
-    commands.startCommand('forgetVault', front())
+    commands.startCommand('removeVault', front())
     await settle()
 
-    expect(commands.groups.value[0]?.items[1]?.actions?.[0]?.text).toBe(words.forgetVault)
+    expect(commands.groups.value[0]?.items[1]?.actions?.[0]?.text).toBe(words.removeVault)
   })
 
   it('carries the vault that was picked, not the one the window is showing', async () => {
@@ -1197,25 +1197,25 @@ describe('a vault taken off the list', () => {
   }
 
   it('is confirmed over the vault that was chosen, saying the folder stays', async () => {
-    const commands = await chooseVault('forgetVault')
+    const commands = await chooseVault('removeVault')
 
     expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['no', 'yes'])
     expect(commands.groups.value[0]?.items[0]?.title).toBe(words.keepsVault)
-    expect(commands.groups.value[0]?.items[1]?.title).toBe('Forget “Heat”')
+    expect(commands.groups.value[0]?.items[1]?.title).toBe('Remove “Heat”')
     expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.stays)
   })
 
   it('is carried out over that vault once the question is answered', async () => {
-    const commands = await chooseVault('forgetVault')
+    const commands = await chooseVault('removeVault')
 
     expect(commands.chooseItem('yes', 'yes')).toMatchObject({
-      id: 'forgetVault',
+      id: 'removeVault',
       vault: { id: 'heat', name: 'Heat' },
     })
   })
 
   it('hands back the list, with the vaults on it, where the step is left', async () => {
-    const commands = await chooseVault('forgetVault')
+    const commands = await chooseVault('removeVault')
 
     commands.leaveStep()
     await settle()
@@ -1709,13 +1709,13 @@ describe('what a step draws', () => {
       {},
       installation(vault('physics', 'Physics'), vault('heat', 'Heat')),
     )
-    commands.startCommand('forgetVault', front())
+    commands.startCommand('removeVault', front())
     await settle()
     commands.chooseItem('heat', 'open')
 
     expect(commands.groups.value[0]?.items.map((item) => item.actions)).toStrictEqual([
       [{ id: 'no', text: words.keepsVault }],
-      [{ id: 'yes', text: words.forgets }],
+      [{ id: 'yes', text: words.removeAction }],
     ])
 
     void commands.setTyped('  forg  ')

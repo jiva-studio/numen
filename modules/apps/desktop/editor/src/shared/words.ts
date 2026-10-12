@@ -84,7 +84,7 @@ export const WORDS = {
   interfaceScale: 'Interface size',
   textScale: 'Reading font size',
   syncing: 'Sync title and filename',
-  hanging: 'Nest headings under notes',
+  nesting: 'Nest headings under notes',
   parts: 'How many headings nest under a note',
   performanceProfile: 'Set performance profile',
   performance: 'Performance Profile',
@@ -111,7 +111,7 @@ export const WORDS = {
   newVault: 'New vault',
   newVaultDetail: 'Choose a folder',
   renameVault: 'Rename vault',
-  forgetVault: 'Forget vault',
+  removeVault: 'Remove vault',
   eraseVault: 'Erase vault',
   /** Why nothing can be done to a note: the vault never opened, or none is in front. */
   noVault: 'The vault could not be opened',
@@ -159,7 +159,7 @@ export const WORDS = {
   /** The group the setting is drawn in, and the two it is. */
   syncingGroup: 'Sync title and filename',
   /** The group the setting is drawn in, and the two it is. */
-  hangingGroup: 'Nest headings under notes',
+  nestingGroup: 'Nest headings under notes',
   on: 'On',
   off: 'Off',
   /** The group the counts are drawn in. */
@@ -172,7 +172,7 @@ export const WORDS = {
   answer: 'Choose an answer',
   kept: 'Nothing happens to it',
   keepsVault: 'Keep the vault',
-  forgets: 'Forget',
+  removeAction: 'Remove',
   stays: 'The folder stays where it is',
   exactly: 'This cannot be undone',
   typeBack: 'Type the name of the note',

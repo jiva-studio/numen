@@ -10,7 +10,7 @@ import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
 import { formatErrorMessage } from '@numen/wire'
 import type { Configuration } from '@/entities/settings'
-import type { HangingSettings } from '@/entities/settings'
+import type { NestingSettings } from '@/entities/settings'
 import type { ReviewSettings } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
@@ -46,20 +46,20 @@ const writeSettings = async (
 export const settingsCore: SettingsPort = {
   getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
   setSyncEnabled: (kept) => writeSettings([{ at: SYNCS, value: kept }]),
-  getHangingSettings: async () => {
+  getNestingSettings: async () => {
     const answer = await settingsService.getSettings({})
     const written = JSON.parse(answer.written)
     const held = answer.nestedHeadingLimitBounds
     return {
-      isHanging: getSettingAt(written, HANGS) !== false,
+      isNesting: getSettingAt(written, HANGS) !== false,
       parts: partsIn(getSettingAt(written, PARTS)),
       least: held?.least ?? DEFAULT_PARTS,
       most: held?.most ?? DEFAULT_PARTS,
-    } satisfies HangingSettings
+    } satisfies NestingSettings
   },
-  setHangingSettings: (isHanging, parts) =>
+  setNestingSettings: (isNesting, parts) =>
     writeSettings([
-      { at: HANGS, value: isHanging },
+      { at: HANGS, value: isNesting },
       ...(parts === undefined ? [] : [{ at: PARTS, value: parts }]),
     ]),
   getSettings: async () => {

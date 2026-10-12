@@ -28,7 +28,7 @@ const createSection = (file: Record<string, unknown> = {}) => {
     }),
     choose: () => {},
     isSyncing: ref(true),
-    isHanging: ref(true),
+    isNesting: ref(true),
     parts: ref(6),
     partsBounds: ref({ least: 2, most: 9 }),
     chooseParts: () => {},

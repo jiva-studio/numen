@@ -6,7 +6,7 @@ import { themes } from '@/entities/settings'
 import {
   APPEARANCE,
   APPEARANCE_COMMANDS,
-  HANGING,
+  NESTING,
   INTERFACE_SCALE,
   MODE,
   OFF,
@@ -15,7 +15,7 @@ import {
   SYNCING,
   syncSetting,
   TEXT_SCALE,
-  useHangingSetting,
+  useNestingSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
 import { createReviewSetting } from '@/entities/settings'
@@ -80,7 +80,7 @@ function getIndexingModelStepGroups(rest: ReturnType<typeof createSettingsStore>
 
 export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
   const dayBegins = createReviewSetting(core, words, log.getWriter('reviewed'))
-  const hungParts = useHangingSetting(core, words, log.getWriter('hanging'))
+  const nestedHeadings = useNestingSetting(core, words, log.getWriter('nesting'))
   const dressed = createWindowAppearance(themes, words, log.getWriter('worn'))
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
@@ -99,13 +99,13 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
       get: () => sync.isEnabled.value,
       set: (on) => void sync.choose(on ? ON : OFF),
     }),
-    isHanging: computed({
-      get: () => hungParts.isHanging.value,
-      set: (on) => void hungParts.choose(on ? ON : OFF),
+    isNesting: computed({
+      get: () => nestedHeadings.isNesting.value,
+      set: (on) => void nestedHeadings.choose(on ? ON : OFF),
     }),
-    parts: hungParts.parts,
-    partsBounds: hungParts.ends,
-    chooseParts: (count) => void hungParts.chooseCount(`${count}`),
+    parts: nestedHeadings.parts,
+    partsBounds: nestedHeadings.ends,
+    chooseParts: (count) => void nestedHeadings.chooseCount(`${count}`),
     dayStarts: dayBegins.starts,
     latestDayStarts: dayBegins.latest,
     chooseDayStarts: (hour) => void dayBegins.choose(hour),
@@ -125,8 +125,8 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
       if (command === INTERFACE_SCALE || command === TEXT_SCALE)
         return dressed.getSizeGroups(command, typed)
       if (command === SYNCING) return sync.getSyncingGroups()
-      if (command === HANGING) return hungParts.getHangingGroups()
-      if (command === PARTS) return hungParts.getPartsGroups()
+      if (command === NESTING) return nestedHeadings.getNestingGroups()
+      if (command === PARTS) return nestedHeadings.getPartsGroups()
       if (command === 'performanceProfile') return getPerformanceStepGroups(words)
       if (command === 'indexingModel') return getIndexingModelStepGroups(rest, words)
       return []
@@ -142,7 +142,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     await dayBegins.start()
     void dressed.start()
     void sync.start()
-    void hungParts.start()
+    void nestedHeadings.start()
     void rest.start()
   }
 
@@ -152,7 +152,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   return {
     dayBegins,
-    hungParts,
+    nestedHeadings,
     dressed,
     sync,
     oneName: sync,

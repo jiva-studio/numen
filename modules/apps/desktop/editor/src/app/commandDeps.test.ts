@@ -31,7 +31,7 @@ describe('createCommandDeps', () => {
       openPreset: async () => {},
       dressed: { chooseItem: async () => {} },
       oneName: { choose: async () => {} },
-      hungParts: { choose: async () => {}, chooseCount: async () => {} },
+      nestedHeadings: { choose: async () => {}, chooseCount: async () => {} },
       rest: {
         writeSettings: async (w) => void written.push(...w),
         getModelsAt: () => [model],
@@ -64,7 +64,7 @@ describe('createCommandDeps', () => {
       openPreset: async () => {},
       dressed: { chooseItem: async () => {} },
       oneName: { choose: async () => {} },
-      hungParts: { choose: async () => {}, chooseCount: async () => {} },
+      nestedHeadings: { choose: async () => {}, chooseCount: async () => {} },
       rest: {
         writeSettings: async (w) => void written.push(...w),
         getModelsAt: () => [],
@@ -97,7 +97,7 @@ describe('createCommandDeps', () => {
       openPreset: async () => {},
       dressed: { chooseItem: async () => {} },
       oneName: { choose: async () => {} },
-      hungParts: { choose: async () => {}, chooseCount: async () => {} },
+      nestedHeadings: { choose: async () => {}, chooseCount: async () => {} },
       rest: {
         writeSettings: async (w) => void written.push(...w),
       },
@@ -148,7 +148,7 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     openPreset: async (path) => void record('openPreset')(path),
     dressed: { chooseItem: async () => {} },
     oneName: { choose: async () => {} },
-    hungParts: { choose: async () => {}, chooseCount: async () => {} },
+    nestedHeadings: { choose: async () => {}, chooseCount: async () => {} },
     rest: { writeSettings: async (written) => void record('writeSettings')(written) },
     recorded: {},
     pointed: {},
@@ -314,16 +314,16 @@ describe('the commands reach the window', () => {
     const chosen: string[] = []
     const { deps } = createOptions({
       oneName: { choose: async (item) => void chosen.push(`sync ${item}`) },
-      hungParts: {
-        choose: async (item) => void chosen.push(`hanging ${item}`),
+      nestedHeadings: {
+        choose: async (item) => void chosen.push(`nesting ${item}`),
         chooseCount: async (item) => void chosen.push(`parts ${item}`),
       },
     })
 
     await deps.settings.chooseSync('on')
-    await deps.settings.chooseHanging('off')
+    await deps.settings.chooseNesting('off')
     await deps.settings.chooseParts('6')
-    expect(chosen).toStrictEqual(['sync on', 'hanging off', 'parts 6'])
+    expect(chosen).toStrictEqual(['sync on', 'nesting off', 'parts 6'])
   })
 
   it('copies nothing where there is no clipboard', () => {

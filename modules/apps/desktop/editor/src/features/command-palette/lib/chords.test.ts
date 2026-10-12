@@ -116,7 +116,7 @@ describe('every keystroke the table holds', () => {
   })
 
   it('reaches nothing that removes a note, a file or a vault', () => {
-    const destroys = ['remove', 'destroy', 'forgetVault', 'eraseVault']
+    const destroys = ['remove', 'destroy', 'removeVault', 'eraseVault']
     for (const held of CHORDS) expect(destroys).not.toContain(held.command)
   })
 

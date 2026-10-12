@@ -1,6 +1,6 @@
 /**
  * The words the three settings are offered in: the window as it is drawn, the
- * two names a note keeps, and the parts a node hangs.
+ * two names a note keeps, and the headings a node nests.
  */
 // Stryker disable StringLiteral: interface copy
 
@@ -28,10 +28,10 @@ export interface AppearanceWords {
   readonly unworn: string
 }
 
-/** Everything the hanging says in the window's voice. */
-export interface HangingWords {
+/** Everything the nesting says in the window's voice. */
+export interface NestingWords {
   /** The group the setting is drawn in, and the two it is. */
-  readonly hangingGroup: string
+  readonly nestingGroup: string
   readonly on: string
   readonly off: string
   /** The group the counts are drawn in. */

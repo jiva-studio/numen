@@ -22,7 +22,7 @@ export const SHOTS = [
   { name: 'plex', story: 'application-window--mapping', width: 1180, height: 740 },
   {
     name: 'parts',
-    story: 'application-window--hanging',
+    story: 'application-window--nesting',
     width: 1180,
     height: 740,
     over: '.plex__node--focus',
