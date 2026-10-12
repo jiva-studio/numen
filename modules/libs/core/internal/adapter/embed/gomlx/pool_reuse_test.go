@@ -66,3 +66,20 @@ func TestMeanPoolMatchesThePlainLoopBitForBit(t *testing.T) {
 		}
 	}
 }
+
+func TestAddRowAddsEveryElementAcrossTheUnrolledStep(t *testing.T) {
+	for _, width := range []int{1, 4, 5, 8, 9, 13} {
+		dst := make([]float32, width)
+		src := make([]float32, width)
+		for i := range src {
+			dst[i] = float32(i)
+			src[i] = float32(10 * (i + 1))
+		}
+		addRow(dst, src)
+		for i := range dst {
+			if want := float32(i + 10*(i+1)); dst[i] != want {
+				t.Errorf("width %d: element %d is %v, want %v", width, i, dst[i], want)
+			}
+		}
+	}
+}

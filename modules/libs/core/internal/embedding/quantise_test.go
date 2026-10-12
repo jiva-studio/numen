@@ -337,3 +337,16 @@ func getCosine(query []float32, stored []int8) float64 {
 	}
 	return dot / math.Sqrt(left*right)
 }
+
+// Four elements are summed a step in single precision, so a sum of 2^24 and 1
+// stays at 2^24.
+func TestSimilaritySumsFourElementsAStepInSinglePrecision(t *testing.T) {
+	query := []float32{1 << 24, 1, 0, 0}
+	want := math.Sqrt2 / 2
+	if got := embedding.Similarity(query, []int8{1, 1, 0, 0}); math.Abs(got-want) > 1e-12 {
+		t.Errorf("Similarity = %v, want %v", got, want)
+	}
+	if got := embedding.SimilarityBytes(query, []byte{1, 1, 0, 0}); math.Abs(got-want) > 1e-12 {
+		t.Errorf("SimilarityBytes = %v, want %v", got, want)
+	}
+}
