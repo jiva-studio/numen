@@ -76,16 +76,9 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 
 	// Asked before the move, because afterwards nothing points at the old paths
 	// and there is nothing left to ask about.
-	pointing := make(map[string][]domain.ResolvedLink, len(travelling))
-	for _, source := range travelling {
-		if source.Kind != domain.KindNote {
-			continue
-		}
-		links, err := u.links.Backlinks(ctx, v.ID, source.Path)
-		if err != nil {
-			return res, err
-		}
-		pointing[source.Path] = links
+	pointing, err := u.getBacklinksByPath(ctx, v, travelling)
+	if err != nil {
+		return res, err
 	}
 
 	writer, err := u.writers.Open(v)
@@ -115,7 +108,42 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		called = u.notes.WriteFilenameAsTitle(ctx, v, to)
 	}
 
-	for _, source := range travelling {
+	if err := u.settleNotes(ctx, v, from, to, travelling, pointing, &res); err != nil {
+		return res, err
+	}
+	return res, called
+}
+
+// getBacklinksByPath is the links that point at each note among the sources, by
+// the note's path.
+func (u Move) getBacklinksByPath(
+	ctx context.Context, v domain.Vault, sources []domain.Fingerprint,
+) (map[string][]domain.ResolvedLink, error) {
+	pointing := make(map[string][]domain.ResolvedLink, len(sources))
+	for _, source := range sources {
+		if source.Kind != domain.KindNote {
+			continue
+		}
+		links, err := u.links.Backlinks(ctx, v.ID, source.Path)
+		if err != nil {
+			return nil, err
+		}
+		pointing[source.Path] = links
+	}
+	return pointing, nil
+}
+
+// settleNotes settles each note among the sources at its new path and adds what
+// it repaired and what it left dangling to res.
+func (u Move) settleNotes(
+	ctx context.Context,
+	v domain.Vault,
+	from, to string,
+	sources []domain.Fingerprint,
+	pointing map[string][]domain.ResolvedLink,
+	res *note.MoveResult,
+) error {
+	for _, source := range sources {
 		if source.Kind != domain.KindNote {
 			continue
 		}
@@ -123,10 +151,10 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		res.Repaired = append(res.Repaired, settled.Repaired...)
 		res.Dangling = append(res.Dangling, settled.Dangling...)
 		if err != nil {
-			return res, err
+			return err
 		}
 	}
-	return res, called
+	return nil
 }
 
 // isRename is whether this move is one note given a different name, in the

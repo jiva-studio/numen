@@ -109,34 +109,14 @@ func (e Edit) splice(
 
 	// What the file is, asked before its bytes are read, which is the order a
 	// read hands its fingerprint over in.
-	var on domain.Fingerprint
-	var looked error
-	if e.Seen != nil || (e.Fingerprint.IsZero() && !e.ShouldOverwrite) {
-		on, looked = reader.Stat(ctx, path)
+	on, looked := e.statNote(ctx, reader, path)
+	raw, err := e.readNote(ctx, reader, path)
+	if err != nil {
+		return domain.Fingerprint{}, err
 	}
-
-	raw, err := reader.Read(ctx, path)
-	switch {
-	case err == nil:
-	case e.ShouldOverwrite && errors.Is(err, fs.ErrNotExist):
-		// The note is made by this write, out of the person's own text and
-		// nothing else: no frontmatter, and no identifier. An identifier
-		// arrives when the application changes a note's contents.
-		raw = nil
-	default:
-		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, mapMissingNote(err))
-	}
-
-	// Every edit is a read, a think and a write, and the person may save the
-	// note in their own editor in between. A caller that said what it believed
-	// the note was is held to that; one that said nothing is held to what was
-	// read just now. A caller writing over what is there is held to neither.
-	against := e.Fingerprint
-	if against.IsZero() && !e.ShouldOverwrite {
-		if looked != nil {
-			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(looked))
-		}
-		against = on
+	against, err := e.getExpected(path, on, looked)
+	if err != nil {
+		return domain.Fingerprint{}, err
 	}
 	doc, err := markdown.Open(raw)
 	if err != nil {
@@ -152,17 +132,8 @@ func (e Edit) splice(
 	if err := change(doc); err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
-
-	// The application is editing this note, so it may write the identifier the
-	// note does not have. Writing one is what editing a note permits and reading
-	// past it does not: nothing backfills an identifier into a note it only read.
-	// A caller writing over what is there is the person editing their own note,
-	// and leaves the frontmatter as they wrote it.
-	if _, carried := doc.Identifier(); !carried && !e.ShouldOverwrite {
-		identifier := ulid.New(e.now())
-		if err := doc.SetIdentifier(identifier); err != nil {
-			return domain.Fingerprint{}, err
-		}
+	if err := e.stampIdentifier(doc); err != nil {
+		return domain.Fingerprint{}, err
 	}
 
 	// Every change to a note's contents comes through here, so the size it is
@@ -177,4 +148,50 @@ func (e Edit) splice(
 		return domain.Fingerprint{}, err
 	}
 	return writer.Write(ctx, path, content, against)
+}
+
+// statNote is the fingerprint of the file on disk, and the error of asking, for
+// a caller that holds the note to what it last saw or to what is there now.
+func (e Edit) statNote(ctx context.Context, reader port.VaultReader, path string) (domain.Fingerprint, error) {
+	if e.Seen != nil || (e.Fingerprint.IsZero() && !e.ShouldOverwrite) {
+		return reader.Stat(ctx, path)
+	}
+	return domain.Fingerprint{}, nil
+}
+
+// readNote is the bytes of the note at path. A caller overwriting a note that
+// is not there gets no bytes: the write makes the note out of the person's own
+// text, with no frontmatter and no identifier.
+func (e Edit) readNote(ctx context.Context, reader port.VaultReader, path string) ([]byte, error) {
+	raw, err := reader.Read(ctx, path)
+	switch {
+	case err == nil:
+		return raw, nil
+	case e.ShouldOverwrite && errors.Is(err, fs.ErrNotExist):
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("read %s: %w", path, mapMissingNote(err))
+	}
+}
+
+// getExpected is the fingerprint the write is held to: the one the caller gave,
+// else the one read just now. A caller writing over what is there is held to
+// neither.
+func (e Edit) getExpected(path string, on domain.Fingerprint, looked error) (domain.Fingerprint, error) {
+	if !e.Fingerprint.IsZero() || e.ShouldOverwrite {
+		return e.Fingerprint, nil
+	}
+	if looked != nil {
+		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(looked))
+	}
+	return on, nil
+}
+
+// stampIdentifier writes the identifier a note arrived without. A caller
+// writing over what is there leaves the frontmatter as the person wrote it.
+func (e Edit) stampIdentifier(doc *markdown.Document) error {
+	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
+		return nil
+	}
+	return doc.SetIdentifier(ulid.New(e.now()))
 }

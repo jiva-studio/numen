@@ -97,41 +97,59 @@ func (u Import) bring(
 
 	switch {
 	case info.IsFolder:
-		// A folder the vault sits inside does not come in: the vault is where it
-		// would be copied to.
-		if u.files.Contains(from, v.Path) {
-			return errHoldsTheVault
-		}
-		if err := writer.MakeFolder(ctx, to); err != nil {
-			return err
-		}
-		result.Landed = append(result.Landed, to)
-		entries, err := u.files.List(ctx, from)
-		if err != nil {
-			return err
-		}
-		for _, one := range entries {
-			if err := u.bring(ctx, writer, v, one.Handle, joinPath(to, one.Name), result); err != nil {
-				result.Errors = append(result.Errors, ImportFailure{Name: one.Name, Why: err})
-			}
-		}
-		return nil
-
+		return u.bringFolder(ctx, writer, v, from, to, result)
 	case info.IsFile:
-		file, err := u.files.Open(ctx, from)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		if err := writer.Bring(ctx, to, file); err != nil {
-			return err
-		}
-		result.Landed = append(result.Landed, to)
-		return nil
-
+		return u.bringFile(ctx, writer, from, to, result)
 	default:
 		return errNotAFile
 	}
+}
+
+// bringFolder makes the folder at a path in the vault and brings each entry of
+// the folder at from into it. An entry refused is an error of the result and
+// leaves the rest to arrive.
+func (u Import) bringFolder(
+	ctx context.Context,
+	writer port.VaultWriter,
+	v domain.Vault,
+	from, to string,
+	result *ImportResult,
+) error {
+	// A folder the vault sits inside does not come in: the vault is where it
+	// would be copied to.
+	if u.files.Contains(from, v.Path) {
+		return errHoldsTheVault
+	}
+	if err := writer.MakeFolder(ctx, to); err != nil {
+		return err
+	}
+	result.Landed = append(result.Landed, to)
+	entries, err := u.files.List(ctx, from)
+	if err != nil {
+		return err
+	}
+	for _, one := range entries {
+		if err := u.bring(ctx, writer, v, one.Handle, joinPath(to, one.Name), result); err != nil {
+			result.Errors = append(result.Errors, ImportFailure{Name: one.Name, Why: err})
+		}
+	}
+	return nil
+}
+
+// bringFile copies the file at from to a path in the vault.
+func (u Import) bringFile(
+	ctx context.Context, writer port.VaultWriter, from, to string, result *ImportResult,
+) error {
+	file, err := u.files.Open(ctx, from)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if err := writer.Bring(ctx, to, file); err != nil {
+		return err
+	}
+	result.Landed = append(result.Landed, to)
+	return nil
 }
 
 // errHoldsTheVault is a folder handed to the window that the vault itself sits

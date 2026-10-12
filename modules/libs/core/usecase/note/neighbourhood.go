@@ -42,29 +42,8 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 		return out, err
 	}
 
-	// The other children of every parent, which is the whole of what a sibling
-	// is. Asked of each parent in turn, because the question is about them, and
-	// the parent it came through is kept with it: that is the note the
-	// relationship runs from.
-	for _, parent := range around.getAll() {
-		if parent.Seat != domain.SeatParent {
-			continue
-		}
-		theirs, err := u.getSeats(ctx, v, parent.Path)
-		if err != nil {
-			return out, err
-		}
-		for _, sibling := range theirs.getAll() {
-			if sibling.Seat != domain.SeatChild {
-				continue
-			}
-			around.add(domain.Neighbour{
-				NoteRef: domain.NoteRef{Path: sibling.Path},
-				Seat:    domain.SeatSibling,
-				Label:   sibling.Label,
-				Parent:  parent.Path,
-			})
-		}
+	if err := u.addSiblings(ctx, v, around); err != nil {
+		return out, err
 	}
 	around.remove(path)
 
@@ -90,6 +69,33 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 		}
 	}
 	return out, nil
+}
+
+// addSiblings seats the other children of every parent, which is the whole of
+// what a sibling is. Each parent is asked in turn, and the sibling keeps the
+// parent it came through: that is the note the relationship runs from.
+func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, around *seats) error {
+	for _, parent := range around.getAll() {
+		if parent.Seat != domain.SeatParent {
+			continue
+		}
+		theirs, err := u.getSeats(ctx, v, parent.Path)
+		if err != nil {
+			return err
+		}
+		for _, sibling := range theirs.getAll() {
+			if sibling.Seat != domain.SeatChild {
+				continue
+			}
+			around.add(domain.Neighbour{
+				NoteRef: domain.NoteRef{Path: sibling.Path},
+				Seat:    domain.SeatSibling,
+				Label:   sibling.Label,
+				Parent:  parent.Path,
+			})
+		}
+	}
+	return nil
 }
 
 // getSeats seats everything one note is joined to, from both ends of its links.

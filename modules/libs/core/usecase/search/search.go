@@ -166,82 +166,102 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	p = p.fill()
 
-	var (
-		lexical  []domain.Passage
-		named    []domain.Passage
-		dense    []domain.Passage
-		hasDense bool
-	)
+	a, err := u.ask(ctx, v, query, p)
+	if err != nil {
+		return nil, err
+	}
+	return u.read(ctx, v, collapse(merge(a.rankings(p)...), a.named, p.Each, p.Limit))
+}
 
-	g, gctx := errgroup.WithContext(ctx)
+// answers is what each half of a search returned.
+type answers struct {
+	lexical  []domain.Passage
+	named    []domain.Passage
+	dense    []domain.Passage
+	hasDense bool
+}
 
+// rankings is the orders of the halves that ran, in the order they merge.
+func (a *answers) rankings(p Parameters) [][]domain.Passage {
+	var out [][]domain.Passage
 	if p.Lexical > 0 {
-		g.Go(func() error {
-			if err := gctx.Err(); err != nil {
-				return err
-			}
-			found, err := u.passages.Lexical(gctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
-			if err != nil {
-				return err
-			}
-			lexical = found
-			return nil
-		})
+		out = append(out, a.lexical)
 	}
 	if p.Named > 0 {
-		g.Go(func() error {
-			if err := gctx.Err(); err != nil {
-				return err
-			}
-			found, err := u.passages.GetNamedPassages(gctx, v.ID, query, p.Kinds, p.Named, p.IsGrowing)
-			if err != nil {
-				return err
-			}
-			named = found
-			return nil
-		})
+		out = append(out, a.named)
+	}
+	if a.hasDense {
+		out = append(out, a.dense)
+	}
+	return out
+}
+
+// ask runs the halves the parameters name at once and waits for all of them.
+func (u Search) ask(ctx context.Context, v domain.Vault, query string, p Parameters) (*answers, error) {
+	a := &answers{}
+	g, gctx := errgroup.WithContext(ctx)
+	if p.Lexical > 0 {
+		g.Go(func() error { return u.askLexical(gctx, v, query, p, a) })
+	}
+	if p.Named > 0 {
+		g.Go(func() error { return u.askNamed(gctx, v, query, p, a) })
 	}
 	if p.Dense > 0 && u.embedder != nil {
-		g.Go(func() error {
-			if err := gctx.Err(); err != nil {
-				return err
-			}
-			found, err := u.findNearest(gctx, v, query, p)
-			switch {
-			case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-				return err
-			case errors.Is(err, errNoVector):
-				// A model out of reach leaves the words to answer. A vault is
-				// searched on a machine with no network, and by a person whose key
-				// has run out.
-				u.errorHandler(err)
-				return nil
-			case err != nil:
-				return err
-			default:
-				dense = found
-				hasDense = true
-				return nil
-			}
-		})
+		g.Go(func() error { return u.askDense(gctx, v, query, p, a) })
 	}
-
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+	return a, nil
+}
 
-	var rankings [][]domain.Passage
-	if p.Lexical > 0 {
-		rankings = append(rankings, lexical)
+// askLexical stores the passages the words of the query match.
+func (u Search) askLexical(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
+	if err := ctx.Err(); err != nil {
+		return err
 	}
-	if p.Named > 0 {
-		rankings = append(rankings, named)
+	found, err := u.passages.Lexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
+	if err != nil {
+		return err
 	}
-	if hasDense {
-		rankings = append(rankings, dense)
-	}
+	a.lexical = found
+	return nil
+}
 
-	return u.read(ctx, v, collapse(merge(rankings...), named, p.Each, p.Limit))
+// askNamed stores the passages whose section names the query matches.
+func (u Search) askNamed(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	found, err := u.passages.GetNamedPassages(ctx, v.ID, query, p.Kinds, p.Named, p.IsGrowing)
+	if err != nil {
+		return err
+	}
+	a.named = found
+	return nil
+}
+
+// askDense stores the passages nearest the meaning of the query. A model out of
+// reach leaves the words to answer, because a vault is searched on a machine
+// with no network and by a person whose key has run out.
+func (u Search) askDense(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	found, err := u.findNearest(ctx, v, query, p)
+	switch {
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+		return err
+	case errors.Is(err, errNoVector):
+		u.errorHandler(err)
+		return nil
+	case err != nil:
+		return err
+	default:
+		a.dense = found
+		a.hasDense = true
+		return nil
+	}
 }
 
 // errNoVector marks the query having no vector, which is the half that asks by
