@@ -22,7 +22,7 @@ export function getInverseSeat(seat: PlexRelatedSeat): PlexRelatedSeat {
 
 /**
  * Resolves the initial link direction mode for a single link between two notes.
- * Jump links default to undirected ('—') while hierarchical parent/child links default to directional.
+ * Single links default to undirected ('—') unless explicitly set to a direction.
  */
 export function resolveSingleDirection(
   savedDirection: string | undefined,
@@ -35,8 +35,7 @@ export function resolveSingleDirection(
   if (savedDirection) {
     return savedDirection === `${pathA}->${pathB}` ? 'forward' : 'reverse'
   }
-  if (role === 'jump') return 'undirected'
-  return isFocusA ? 'forward' : 'reverse'
+  return 'undirected'
 }
 
 function getDefaultMutualDescriptions(
@@ -120,9 +119,8 @@ export function createSingleInspectorLink(
 
 export function resolveInspectorDirectionToggle(
   row: DirectionalLinkItem,
-  nodeAPath: string,
-  nodeBPath: string,
-  initialLinkIds: Set<string>,
+  nodeAPath?: string,
+  nodeBPath?: string,
 ): {
   direction: LinkDirectionMode
   from: string
@@ -136,32 +134,33 @@ export function resolveInspectorDirectionToggle(
     reverse: 'undirected',
   }
   const next = nextDirection[row.direction]
-  const baseRole = row.from === nodeAPath ? row.role : getInverseSeat(row.role)
+  if (!nodeAPath || !nodeBPath) {
+    return {
+      direction: next,
+      from: row.from,
+      to: row.to,
+      role: row.role,
+      removedLink: undefined,
+    }
+  }
 
+  const baseRole = row.from === nodeAPath ? row.role : getInverseSeat(row.role)
   if (next === 'reverse') {
-    const removedLink =
-      initialLinkIds.has(row.id) && row.from === nodeAPath
-        ? { from: nodeAPath, to: nodeBPath, role: baseRole }
-        : undefined
     return {
       direction: next,
       from: nodeBPath,
       to: nodeAPath,
       role: getInverseSeat(baseRole),
-      removedLink,
+      removedLink: undefined,
     }
   }
 
-  const removedLink =
-    initialLinkIds.has(row.id) && row.from === nodeBPath
-      ? { from: nodeBPath, to: nodeAPath, role: getInverseSeat(baseRole) }
-      : undefined
   return {
     direction: next,
     from: nodeAPath,
     to: nodeBPath,
     role: baseRole,
-    removedLink,
+    removedLink: undefined,
   }
 }
 

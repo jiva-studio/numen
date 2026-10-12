@@ -264,7 +264,11 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
     for (const row of payload.rows) {
       await deps.editor.join(row.from, row.to, row.role, row.description)
-      linkDescriptions.value.set(`${row.from}->${row.to}`, row.description)
+      if (row.description) {
+        linkDescriptions.value.set(`${row.from}->${row.to}`, row.description)
+      } else {
+        linkDescriptions.value.delete(`${row.from}->${row.to}`)
+      }
     }
 
     if (payload.rows.length === 0) {

@@ -53,9 +53,10 @@ describe('linkInspector helper module', () => {
       expect(resolveSingleDirection(undefined, 'jump', true, 'A.md', 'B.md')).toBe('undirected')
     })
 
-    it('defaults hierarchical seats to forward when isFocusA and reverse when not', () => {
-      expect(resolveSingleDirection(undefined, 'parent', true, 'A.md', 'B.md')).toBe('forward')
-      expect(resolveSingleDirection(undefined, 'parent', false, 'A.md', 'B.md')).toBe('reverse')
+    it('defaults hierarchical seats to undirected when unsaved', () => {
+      expect(resolveSingleDirection(undefined, 'parent', true, 'A.md', 'B.md')).toBe('undirected')
+      expect(resolveSingleDirection(undefined, 'parent', false, 'A.md', 'B.md')).toBe('undirected')
+      expect(resolveSingleDirection(undefined, 'child', true, 'A.md', 'B.md')).toBe('undirected')
     })
   })
 
@@ -244,32 +245,44 @@ describe('linkInspector helper module', () => {
   })
 
   describe('resolveInspectorDirectionToggle', () => {
-    it('turns a forward link around and gives up the saved forward link', () => {
-      const next = resolveInspectorDirectionToggle(row(), 'A.md', 'B.md', new Set(['A.md->B.md']))
+    it('cycles from forward to reverse without removing links', () => {
+      const next = resolveInspectorDirectionToggle(row({ direction: 'forward' }))
 
       expect(next).toEqual({
         direction: 'reverse',
-        from: 'B.md',
-        to: 'A.md',
-        role: 'parent',
-        removedLink: { from: 'A.md', to: 'B.md', role: 'child' },
+        from: 'A.md',
+        to: 'B.md',
+        role: 'child',
+        removedLink: undefined,
       })
     })
 
-    it('gives up nothing when the forward link was never saved', () => {
-      const next = resolveInspectorDirectionToggle(row(), 'A.md', 'B.md', new Set())
+    it('cycles from reverse to undirected without removing links', () => {
+      const next = resolveInspectorDirectionToggle(row({ direction: 'reverse' }))
 
-      expect(next.direction).toBe('reverse')
-      expect(next.removedLink).toBeUndefined()
+      expect(next).toEqual({
+        direction: 'undirected',
+        from: 'A.md',
+        to: 'B.md',
+        role: 'child',
+        removedLink: undefined,
+      })
     })
 
-    it('gives up nothing on reversal when the saved row does not start at A', () => {
-      const next = resolveInspectorDirectionToggle(
-        row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', role: 'parent' }),
-        'A.md',
-        'B.md',
-        new Set(['B.md->A.md']),
-      )
+    it('cycles from undirected to forward without removing links', () => {
+      const next = resolveInspectorDirectionToggle(row({ direction: 'undirected' }))
+
+      expect(next).toEqual({
+        direction: 'forward',
+        from: 'A.md',
+        to: 'B.md',
+        role: 'child',
+        removedLink: undefined,
+      })
+    })
+
+    it('inverts endpoints and role when cycling to reverse with node paths', () => {
+      const next = resolveInspectorDirectionToggle(row({ direction: 'forward' }), 'A.md', 'B.md')
 
       expect(next).toEqual({
         direction: 'reverse',
@@ -280,45 +293,17 @@ describe('linkInspector helper module', () => {
       })
     })
 
-    it('makes a saved reverse link undirected from A and gives up the reverse link', () => {
-      const next = resolveInspectorDirectionToggle(
-        row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', role: 'parent', direction: 'reverse' }),
-        'A.md',
-        'B.md',
-        new Set(['B.md->A.md']),
-      )
+    it('restores endpoints and role when cycling from reverse to undirected with node paths', () => {
+      const reversed = {
+        ...row({ direction: 'reverse' }),
+        from: 'B.md',
+        to: 'A.md',
+        role: 'parent' as const,
+      }
+      const next = resolveInspectorDirectionToggle(reversed, 'A.md', 'B.md')
 
       expect(next).toEqual({
         direction: 'undirected',
-        from: 'A.md',
-        to: 'B.md',
-        role: 'child',
-        removedLink: { from: 'B.md', to: 'A.md', role: 'parent' },
-      })
-    })
-
-    it('gives up nothing when the reverse link was never saved', () => {
-      const next = resolveInspectorDirectionToggle(
-        row({ id: 'B.md->A.md', from: 'B.md', to: 'A.md', role: 'parent', direction: 'reverse' }),
-        'A.md',
-        'B.md',
-        new Set(),
-      )
-
-      expect(next.direction).toBe('undirected')
-      expect(next.removedLink).toBeUndefined()
-    })
-
-    it('gives up nothing when a saved undirected link from A turns forward', () => {
-      const next = resolveInspectorDirectionToggle(
-        row({ direction: 'undirected' }),
-        'A.md',
-        'B.md',
-        new Set(['A.md->B.md']),
-      )
-
-      expect(next).toEqual({
-        direction: 'forward',
         from: 'A.md',
         to: 'B.md',
         role: 'child',

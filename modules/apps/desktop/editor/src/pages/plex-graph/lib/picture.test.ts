@@ -214,24 +214,24 @@ describe('whose wording is on the line', () => {
     ).toEqual(['Cora Hale -> Alice Fenn, The Chair: no arrow'])
   })
 
-  it('draws a directional arrow for single child and parent relationships by default', () => {
-    // Single child link points down into the child
+  it('draws no arrow for single child and parent relationships by default', () => {
+    // Single child link has no arrow by default
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [
           ['Child note', 'child', 'subtask', '', false],
         ]),
       ),
-    ).toEqual(['Alice Fenn, The Chair -> Child note: to'])
+    ).toEqual(['Alice Fenn, The Chair -> Child note: no arrow'])
 
-    // Single parent link points down into the child
+    // Single parent link has no arrow by default
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [
           ['Parent note', 'parent', 'depends on', '', false],
         ]),
       ),
-    ).toEqual(['Parent note -> Alice Fenn, The Chair: to'])
+    ).toEqual(['Parent note -> Alice Fenn, The Chair: no arrow'])
   })
 
   it('respects explicit undirected, forward, and reverse direction modes', () => {

@@ -53,7 +53,6 @@ function getEdgeArrow(
 ): EdgeArrow | undefined {
   if (saved) return getSavedArrow(saved, seat, focusPath, targetPath)
   if (isMutual) return seat === 'child' ? 'to' : 'from'
-  if (seat === 'child' || seat === 'parent') return 'to'
   return undefined
 }
 

@@ -1123,7 +1123,7 @@ describe('quick-link popover from a node handle', () => {
     expect(state.linkInspector.value?.nodeA.title).toBe('Focus')
     expect(state.linkInspector.value?.nodeB.title).toBe('Child')
     expect(state.linkInspector.value?.links.length).toBe(1)
-    expect(state.linkInspector.value?.links[0]?.direction).toBe('forward')
+    expect(state.linkInspector.value?.links[0]?.direction).toBe('undirected')
 
     // 1. Save with modified description
     await state.saveLinkInspector({
@@ -1245,7 +1245,7 @@ describe('quick-link popover from a node handle', () => {
     })
     state.openLinkInspector(pair, { x: 150, y: 200 })
 
-    expect(state.linkInspector.value?.links[0]?.direction).toBe('forward')
+    expect(state.linkInspector.value?.links[0]?.direction).toBe('undirected')
   })
 
   it('preserves and populates dual descriptions when reopening inspector on bidirectional link', async () => {
@@ -1414,6 +1414,78 @@ describe('quick-link popover from a node handle', () => {
 
     expect(state.linkInspector.value).toBeNull()
     expect(joined).toContainEqual(['Focus.md', 'Child.md', 'child', ''])
+  })
+
+  it('toggles direction on a single link without removing links and updates picture arrow', async () => {
+    const { state, node, removed } = tab('Focus.md', ['Child.md'])
+    await settle()
+
+    const pair = `${node('Focus')} ${node('Child')}`
+
+    expect(state.picture.value?.edges[0]?.arrow).toBeUndefined()
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    expect(state.linkInspector.value?.links[0]?.direction).toBe('undirected')
+
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'child',
+          direction: 'forward',
+          description: '',
+        },
+      ],
+      removedLinks: [],
+    })
+
+    expect(removed).toHaveLength(0)
+    expect(state.picture.value?.edges[0]?.arrow).toBe('to')
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    expect(state.linkInspector.value?.links[0]?.direction).toBe('forward')
+
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Child.md->Focus.md',
+          from: 'Child.md',
+          to: 'Focus.md',
+          role: 'parent',
+          direction: 'reverse',
+          description: '',
+        },
+      ],
+      removedLinks: [],
+    })
+
+    expect(removed).toHaveLength(0)
+    expect(state.picture.value?.edges[0]?.arrow).toBe('from')
+
+    state.openLinkInspector(pair, { x: 150, y: 200 })
+    expect(state.linkInspector.value?.links[0]?.direction).toBe('reverse')
+
+    await state.saveLinkInspector({
+      pairKey: pair,
+      rows: [
+        {
+          id: 'Focus.md->Child.md',
+          from: 'Focus.md',
+          to: 'Child.md',
+          role: 'child',
+          direction: 'undirected',
+          description: '',
+        },
+      ],
+      removedLinks: [],
+    })
+
+    expect(removed).toHaveLength(0)
+    expect(state.picture.value?.edges[0]?.arrow).toBeUndefined()
   })
 
   it('handles openLinkInspector with invalid pair formats gracefully', async () => {
@@ -1678,7 +1750,7 @@ describe('the link inspector', () => {
       removedLinks: [],
     })
 
-    expect(one.reopen()?.[0]?.direction).toBe('forward')
+    expect(one.reopen()?.[0]?.direction).toBe('undirected')
   })
 
   it('saves no direction from the first of two rows', async () => {
@@ -1698,7 +1770,7 @@ describe('the link inspector', () => {
       removedLinks: [],
     })
 
-    expect(one.reopen()?.[0]?.direction).toBe('forward')
+    expect(one.reopen()?.[0]?.direction).toBe('undirected')
   })
 
   it('forgets the description of a link it removed', async () => {
