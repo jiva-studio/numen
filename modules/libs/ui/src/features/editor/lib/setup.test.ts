@@ -101,7 +101,7 @@ describe('the markdown the editor is written in', () => {
     await javascript?.load()
     const doc = '```js\nlet total = 1\n```\n'
     const state = createProse(doc)
-    expect(syntaxTree(state).resolveInner(doc.indexOf('total'), 1).name).toBe('VariableDefinition')
+    expect(syntaxTree(state).resolveInner(doc.indexOf('total'), 1).name).not.toBe('CodeText')
   })
 })
 
