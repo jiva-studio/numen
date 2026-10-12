@@ -1,0 +1,58 @@
+package source
+
+import (
+	"context"
+	"errors"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// TranscriptWrite is a transcript that was written; CutError is why it could not be cut again, and nil when it was.
+type TranscriptWrite struct {
+	CutError error
+}
+
+// WriteTranscript writes a person's words beside what the model heard, which stays under its own name.
+type WriteTranscript struct {
+	texts sourceTexts
+}
+
+// Execute writes the cues and then cuts the recording again with cut, which may be nil.
+func (u WriteTranscript) Execute(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+	cues []transcript.Cue,
+	cut func(context.Context, domain.Vault, string) error,
+) (TranscriptWrite, error) {
+	stored, err := u.texts.getStoredText(ctx, v, path)
+	if err != nil {
+		return TranscriptWrite{}, err
+	}
+	if !stored.isStored {
+		return TranscriptWrite{}, ErrNoTranscript
+	}
+
+	// A run holds the recording it is listening to by the name it appends to.
+	release, err := stored.store.ClaimName(ctx, text.Partial(stored.meta.Producer, stored.meta.Hash))
+	if errors.Is(err, port.ErrClaimed) {
+		return TranscriptWrite{}, ErrTranscriptBusy
+	}
+	if err != nil {
+		return TranscriptWrite{}, err
+	}
+	defer release()
+
+	// The words are a person's, and a proofreader leaves them alone.
+	written := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)
+	if err := stored.store.Write(ctx, text.Corrections(stored.meta.Producer, stored.meta.Hash), written); err != nil {
+		return TranscriptWrite{}, err
+	}
+	if cut == nil {
+		return TranscriptWrite{}, nil
+	}
+	return TranscriptWrite{CutError: cut(ctx, v, path)}, nil
+}

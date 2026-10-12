@@ -39,6 +39,7 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
+		Texts:     source.NewTexts(filesystem.VaultReaders{}, nil, known, storing{held}),
 		Drops: &source.DropTranscript{
 			Readers: filesystem.VaultReaders{},
 			Sources: index,

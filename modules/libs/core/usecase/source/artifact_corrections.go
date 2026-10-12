@@ -20,9 +20,6 @@ var ErrNotCorrectable = errors.New(
 // ErrNoCue is words with no cue in them.
 var ErrNoCue = errors.New("no cue was read out of those words")
 
-// ErrTranscriptBusy is a transcript a run is writing down.
-var ErrTranscriptBusy = errors.New("a run is writing this transcript down")
-
 // Correction is a span of a transcript as it should read. Words is WebVTT, and
 // the span is Length milliseconds from Start; a Length of zero or less takes the
 // span the cues cover.

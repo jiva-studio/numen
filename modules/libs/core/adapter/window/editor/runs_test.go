@@ -86,6 +86,7 @@ func openRunWindow(
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
+		Texts:     source.NewTexts(filesystem.VaultReaders{}, nil, read, storing{held}),
 	}
 	// A note is read to find out where it points, which is what says whether
 	// anything is made from it.

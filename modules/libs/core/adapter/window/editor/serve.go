@@ -129,6 +129,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		Readers:           made.GetVaultReaders(),
 		Viewer:            newCachingViewer(made.GetPageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
 		Highlight:         &highlighting,
+		Texts:             made.OpenSourceTexts(),
 		Notes: Notes{
 			Queries: made.GetNoteQueries(),
 			Links:   made.GetLinkQueries(),

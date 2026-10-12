@@ -74,6 +74,10 @@ func openHighlightWindow(t *testing.T) (*API, http.Handler, *pdf.Book) {
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
+		Texts: source.NewTexts(
+			filesystem.VaultReaders{}, nil,
+			indexed{book: {Fingerprint: domain.Fingerprint{Path: book}}}, nil,
+		),
 	}
 	api.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler()), doc

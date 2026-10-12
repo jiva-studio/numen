@@ -185,6 +185,7 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
+		Texts:     source.NewTexts(filesystem.VaultReaders{}, nil, newEmptyIndex(), stores),
 	}
 	api.setVault(vault)
 	modifySession(api, func(on *vaultSession) { on.transcriptionRunner = talks })

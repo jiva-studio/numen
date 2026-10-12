@@ -119,6 +119,10 @@ func (e EditorAssembly) OpenFlashcards(index note.Levels) flashcards.Scenarios {
 	return e.cfg.Flashcards(e.db.Queries(), e.db.Links(), e.db.Problems(), index)
 }
 
+func (e EditorAssembly) OpenSourceTexts() source.Texts {
+	return e.cfg.SourceTexts(e.db.SourcesKnown())
+}
+
 func (e EditorAssembly) OpenDownloader(ctx context.Context) port.Downloader {
 	return e.cfg.Downloader(ctx)
 }
