@@ -940,14 +940,15 @@ func TestDeckFileWholeWritesTheMarksItGives(t *testing.T) {
 // A card that cannot be found is refused before anything is written, whichever
 // change was asked for.
 func TestSetStencilAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
-	f := format.OpenDeckBody(deck)
+	body := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n"
+	f := format.OpenDeckBody(body)
 	if err := f.SetStencil("wxyz01234t", "Animal"); !errors.Is(err, format.ErrNoSuchCard) {
 		t.Errorf("set stencil = %v, want ErrNoSuchCard", err)
 	}
 	if err := f.RemoveCard("wxyz01234t"); !errors.Is(err, format.ErrNoSuchCard) {
 		t.Errorf("remove card = %v, want ErrNoSuchCard", err)
 	}
-	if f.Body() != deck[strings.Index(deck, "\n\nCards"):][2:] && !strings.HasSuffix(deck, f.Body()) {
+	if f.Body() != body {
 		t.Error("a card that is not there was written anyway")
 	}
 }
