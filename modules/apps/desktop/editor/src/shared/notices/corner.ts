@@ -8,7 +8,7 @@
 import { createNotice } from '@numen/ui'
 import type { Notice, Stay, Tone } from '@numen/ui'
 import type { Task } from './task'
-import { wordsOnly, type IndexCoverage } from './coverage'
+import { isTextSearchOnly, type IndexCoverage } from './coverage'
 import type { MessageKind, WindowMessage } from './messages'
 
 /** The sentences the corner draws that are the window's own. */
@@ -48,7 +48,7 @@ const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
 }
 
 /** One state of the window, where it is in that state. */
-const soThat = (
+const createStateNotices = (
   id: string,
   text: string,
   how: { about?: string; tone?: Tone; isAsked?: boolean } = {},
@@ -82,7 +82,7 @@ const isSameReason = (outer: string, inner: string): boolean =>
  * sentence. The one that says it and nothing more is the card, and of two
  * saying the same thing it is the one that said it first.
  */
-const keepDistinct = (tasks: readonly Task[]): readonly Task[] =>
+const dropDuplicateErrors = (tasks: readonly Task[]): readonly Task[] =>
   tasks.filter((at, index) => {
     if (at.error === '') return true
     return !tasks.some(
@@ -101,33 +101,35 @@ const keepDistinct = (tasks: readonly Task[]): readonly Task[] =>
  * arriving must not shift what a person is reading. Within each of the three
  * the order is the order it was first seen in.
  */
-export const cornerOf = (
+export const getCornerNotices = (
   tasks: readonly Task[],
   messages: readonly WindowMessage[],
   state: State,
   vault: IndexCoverage,
   words: Words,
 ): readonly Notice[] => {
-  const isWorking: readonly Notice[] = keepDistinct(tasks).map(createNotice)
+  const isWorking: readonly Notice[] = dropDuplicateErrors(tasks).map(createNotice)
 
   const so: Notice[] = [
-    ...soThat('unwatched', state.unwatched && words.unwatched, {
+    ...createStateNotices('unwatched', state.unwatched && words.unwatched, {
       about: state.unwatched,
       tone: 'caution',
     }),
-    ...soThat('unread', state.unread && words.unread, {
+    ...createStateNotices('unread', state.unread && words.unread, {
       about: state.unread,
       tone: 'caution',
     }),
-    ...soThat('lost', state.lost, { tone: 'caution' }),
-    ...soThat('reading', state.isReading ? words.reading : ''),
+    ...createStateNotices('lost', state.lost, { tone: 'caution' }),
+    ...createStateNotices('reading', state.isReading ? words.reading : ''),
     // One at a time: a vault still being read has not finished reading nothing.
-    ...soThat(
+    ...createStateNotices(
       'nothingRead',
       !state.isReading && !state.hasNote && state.unread ? words.nothingRead : '',
     ),
     // Said once and quietly, and it is so whether or not anything is running.
-    ...soThat('wordsOnly', wordsOnly(vault) ? words.wordsOnly : '', { isAsked: false }),
+    ...createStateNotices('wordsOnly', isTextSearchOnly(vault) ? words.wordsOnly : '', {
+      isAsked: false,
+    }),
   ]
 
   const messageNotices: Notice[] = messages.map((one) => ({

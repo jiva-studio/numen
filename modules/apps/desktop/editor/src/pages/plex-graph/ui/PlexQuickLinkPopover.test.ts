@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { HOLD } from '@/features/command-palette'
+import { SEARCH_DEBOUNCE_MS } from '@/features/command-palette'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 
 describe('PlexQuickLinkPopover component', () => {
@@ -13,7 +13,7 @@ describe('PlexQuickLinkPopover component', () => {
   })
 
   const advanceHold = async () => {
-    await vi.advanceTimersByTimeAsync(HOLD)
+    await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
   }
 
   const mountPopover = (
@@ -243,9 +243,9 @@ describe('PlexQuickLinkPopover component', () => {
       const input = wrapper.get('input')
 
       await input.setValue('q')
-      await vi.advanceTimersByTimeAsync(HOLD - 1)
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 1)
       await input.setValue('qu')
-      await vi.advanceTimersByTimeAsync(HOLD - 1)
+      await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 1)
       expect(searchMock).not.toHaveBeenCalled()
 
       await vi.advanceTimersByTimeAsync(1)

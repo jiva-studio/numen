@@ -8,10 +8,10 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Palette, type ActionWords } from '@numen/ui'
-import { isCommandsTyped } from '../lib/commands'
+import { isCommandPrefixTyped } from '../lib/commands'
 import type { CommandDeps } from '../model/deps'
 import type { CommandTarget } from '../types'
-import { appendCreateOffer, createNoteInvocation, MAKING } from '../lib/offers'
+import { appendCreateOffer, createNoteInvocation, CREATE_NOTE_ID } from '../lib/offers'
 import type { Commands } from '../model/palette'
 import { runInvocation } from '../model/handlers'
 import type { SearchState } from '../model/search'
@@ -72,7 +72,7 @@ const field = computed(() =>
 // --- Handlers ---
 function onTyping(text: string) {
   if (props.commands.open.value) return void props.commands.setTyped(text)
-  if (!isCommandsTyped(props.search.typed.value, text)) return void props.search.setTyped(text)
+  if (!isCommandPrefixTyped(props.search.typed.value, text)) return void props.search.setTyped(text)
   const setSearchOpen = props.search.setOpen
   const setCommandsOpen = props.commands.setOpen
   setSearchOpen(false)
@@ -89,7 +89,7 @@ async function onChoose(item: string, action: string) {
     await runInvocation(invocation, props.doing, ANSWER_WORDS)
     return
   }
-  if (item === MAKING) {
+  if (item === CREATE_NOTE_ID) {
     const name = props.search.typed.value.trim()
     setSearchOpen(false)
     await runInvocation(
@@ -142,7 +142,7 @@ function rowIcon(id: string) {
     const picked = props.commands.typeOf(id)
     return picked ? iconOfNote(picked) : iconFor(id)
   }
-  if (id === MAKING) return iconFor('note')
+  if (id === CREATE_NOTE_ID) return iconFor('note')
   const type = props.search.typeOf(id)
   if (type) return iconOfNote(type)
   const kind = props.search.kindOf(id)
