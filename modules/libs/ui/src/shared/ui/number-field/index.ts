@@ -3,7 +3,7 @@ export {
   isAllowed,
   clamp,
   numberOf,
-  onItsWay,
+  isPartialNumber,
   snapToBounds,
   isTextForValue,
   stepBy,

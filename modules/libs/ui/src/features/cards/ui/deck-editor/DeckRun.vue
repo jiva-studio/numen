@@ -8,7 +8,7 @@ import { Card } from './card'
 import { CutChoice } from './cut-choice'
 import { Icon } from '../icon'
 import { Button } from '@/shared/ui/button'
-import { DECK_WORDS, endOf, type DeckWords, type Wrong } from '../../lib/deck'
+import { DECK_WORDS, endOf, type DeckWords, type DeckProblems } from '../../lib/deck'
 import type { Run } from '../../lib/grid'
 import { createSealedMap, type InsertionPoint, type StepDirection } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
@@ -22,7 +22,7 @@ const props = withDefaults(
     /** How many stand in the grid, every plus among them. */
     of: number
     /** What the caller found wrong with the cards it handed in. */
-    wrong: Wrong
+    wrong: DeckProblems
     /** Where letting go would put the card being dragged. */
     at: InsertionPoint | undefined
     /** Its plus is showing which stencils a new card may be cut by. */

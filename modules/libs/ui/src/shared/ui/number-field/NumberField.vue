@@ -12,7 +12,7 @@ import {
   isAllowed,
   clamp,
   numberOf,
-  onItsWay,
+  isPartialNumber,
   snapToBounds,
   isTextForValue,
   stepForKey,
@@ -66,7 +66,7 @@ let rested = model.value
 const isInvalid = computed(() => {
   const raw = typed.value.trim()
   if (raw === '') return false
-  if (!onItsWay(raw)) return true
+  if (!isPartialNumber(raw)) return true
   const value = numberOf(raw)
   return value !== null && value !== clamp(value, bounds.value)
 })

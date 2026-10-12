@@ -168,14 +168,14 @@ export const NEARER = 1.25
  * crosses a few of them, and a page drawn wider than its box is drawn down into
  * it.
  */
-export const STAGE = 128
+export const WIDTH_STEP = 128
 
 /**
  * How long a width has to have stood still before a page is asked for at it, in
  * milliseconds. A pane edge dragged across a screen crosses a dozen widths, and
  * each one is a page drawn and thrown away.
  */
-export const SETTLED = 150
+export const WIDTH_DEBOUNCE = 150
 
 /** How close a page is drawn, never past either end. */
 export function clampZoom(zoom: number): number {

@@ -93,7 +93,7 @@ export type { AgentPort, AgentStep } from './features/thread'
 export { isNoteAddress, wikilinksIn } from './shared/lib/address'
 
 /** A link that leads out of the application, and the window held against it. */
-export { holdWindow } from './shared/lib/outward'
+export { interceptOutwardLinks } from './shared/lib/outward'
 
 /** Numbers as they are read out, which both windows read the same way. */
 export { many, percent, plural } from './shared/lib/digits'

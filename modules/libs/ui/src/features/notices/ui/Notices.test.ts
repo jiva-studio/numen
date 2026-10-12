@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import Notices from './Notices.vue'
-import { SETTLE } from '../lib/dwell'
+import { MIN_DWELL } from '../lib/dwell'
 import type { Notice } from '../lib/notice'
 
 /** A clock a test winds by hand, so nothing waits on the real one. */
@@ -31,7 +31,7 @@ describe('a card the person is finished with', () => {
 
     expect(corner.emitted('dismiss')).toBeUndefined()
 
-    wind(SETTLE * 10)
+    wind(MIN_DWELL * 10)
     await corner.setProps({ notices: [report] })
 
     expect(corner.emitted('dismiss')).toStrictEqual([['renamed']])
@@ -51,7 +51,7 @@ describe('a card the person is finished with', () => {
     const corner = draw([report], clock)
 
     await corner.find('.notice__away').trigger('click')
-    wind(SETTLE * 10)
+    wind(MIN_DWELL * 10)
     await corner.setProps({ notices: [report] })
 
     expect(corner.emitted('dismiss')).toStrictEqual([['renamed']])
@@ -61,7 +61,7 @@ describe('a card the person is finished with', () => {
     const { clock, wind } = wound()
     const corner = draw([work], clock)
 
-    wind(SETTLE * 100)
+    wind(MIN_DWELL * 100)
     await corner.setProps({ notices: [work] })
 
     expect(corner.emitted('dismiss')).toBeUndefined()
@@ -71,7 +71,7 @@ describe('a card the person is finished with', () => {
     const { clock, wind } = wound()
     const corner = draw([error], clock)
 
-    wind(SETTLE * 100)
+    wind(MIN_DWELL * 100)
     await corner.setProps({ notices: [error] })
 
     expect(corner.emitted('dismiss')).toBeUndefined()
@@ -90,7 +90,7 @@ describe('a corner nothing is holding any more', () => {
     await corner.find('.notice__away').trigger('click')
     await corner.setProps({ notices: [report] })
 
-    wind(SETTLE * 10)
+    wind(MIN_DWELL * 10)
     await corner.setProps({ notices: [report] })
 
     expect(corner.emitted('dismiss')).toStrictEqual([['embedding'], ['renamed']])
