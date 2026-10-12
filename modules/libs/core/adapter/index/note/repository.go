@@ -97,39 +97,9 @@ func saveNote(
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) error {
 	n := indexed
-	frontmatter, storeErr := encodeFrontmatter(n)
-	problem := n.FrontmatterErr
-	if storeErr != "" {
-		// The parser promises that a file which cannot be understood is still
-		// indexed. Frontmatter that cannot be stored is the same case: the note
-		// goes in without it, and the reason is recorded beside the note rather
-		// than ending the scan of the whole vault.
-		problem = strings.TrimSpace(problem + "\n" + storeErr)
-	}
-
-	var row int64
-	var updated bool
-	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.ConvertTimeToNanos(n.Fingerprint.ModTime),
-		nil, nil, nil,
-	).Scan(&row, &updated); err != nil {
-		return fmt.Errorf("record the source this note is: %w", err)
-	}
-	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
-		n.Title, string(noteType(n)), newNullable(n.ID), frontmatter, newNullable(problem)); err != nil {
+	row, err := saveNoteRow(ctx, tx, vault, n)
+	if err != nil {
 		return err
-	}
-
-	if updated {
-		// The source row survives a re-save, so nothing cascades and each kind of
-		// derived row is cleared by hand.
-		for _, name := range []string{
-			"clear_heading_names", "clear_headings", "clear_links", "clear_problems",
-		} {
-			if err := exec(ctx, tx, name, row); err != nil {
-				return err
-			}
-		}
 	}
 	kept := getIndexedHeadings(n)
 
@@ -155,17 +125,66 @@ func saveNote(
 	if err := exec(ctx, tx, "insert_heading_names", row); err != nil {
 		return err
 	}
-	for i, l := range n.Links {
+	if err := insertLinks(ctx, tx, row, n.Links); err != nil {
+		return err
+	}
+	for _, detail := range n.Problems {
+		if err := exec(ctx, tx, "insert_problem", row, detail); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// saveNoteRow stores the source and the note rows, and gives the row of the
+// source. A source row that survives a re-save has its derived rows cleared by
+// hand, because nothing cascades.
+func saveNoteRow(
+	ctx context.Context, tx *writing.Transaction, vault int64, n domain.Note,
+) (int64, error) {
+	frontmatter, storeErr := encodeFrontmatter(n)
+	problem := n.FrontmatterErr
+	if storeErr != "" {
+		// The parser promises that a file which cannot be understood is still
+		// indexed. Frontmatter that cannot be stored is the same case: the note
+		// goes in without it, and the reason is recorded beside the note rather
+		// than ending the scan of the whole vault.
+		problem = strings.TrimSpace(problem + "\n" + storeErr)
+	}
+
+	var row int64
+	var updated bool
+	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
+		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.ConvertTimeToNanos(n.Fingerprint.ModTime),
+		nil, nil, nil,
+	).Scan(&row, &updated); err != nil {
+		return 0, fmt.Errorf("record the source this note is: %w", err)
+	}
+	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
+		n.Title, string(noteType(n)), newNullable(n.ID), frontmatter, newNullable(problem)); err != nil {
+		return 0, err
+	}
+	if !updated {
+		return row, nil
+	}
+	for _, name := range []string{
+		"clear_heading_names", "clear_headings", "clear_links", "clear_problems",
+	} {
+		if err := exec(ctx, tx, name, row); err != nil {
+			return 0, err
+		}
+	}
+	return row, nil
+}
+
+// insertLinks stores what a note points at, in the order it names them.
+func insertLinks(ctx context.Context, tx *writing.Transaction, row int64, links []domain.Link) error {
+	for i, l := range links {
 		if _, err := tx.ExecContext(ctx, stmt.Get("insert_link"), row, i,
 			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
 			string(l.Role), newNullable(l.Type), newNullable(l.Why), newNullable(l.Label),
 		); err != nil {
 			return fmt.Errorf("store what this note points at: %w", err)
-		}
-	}
-	for _, detail := range n.Problems {
-		if err := exec(ctx, tx, "insert_problem", row, detail); err != nil {
-			return err
 		}
 	}
 	return nil
@@ -299,25 +318,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 		return err
 	}
 	for _, path := range paths {
-		var row int64
-		err := tx.QueryRowContext(ctx, stmt.Get("identify"), vault, path).Scan(&row)
-		if errors.Is(err, sql.ErrNoRows) {
-			continue
-		}
-		if err != nil {
-			return fmt.Errorf("identify %s: %w", path, err)
-		}
-		// The full-text index, the index of names and the vector index are all
-		// virtual tables, and a cascade reaches none of them.
-		if err := chunk.Clear(ctx, tx, row); err != nil {
-			return err
-		}
-		for _, name := range []string{"clear_heading_names", "delete_title_name"} {
-			if err := exec(ctx, tx, name, row); err != nil {
-				return err
-			}
-		}
-		if err := exec(ctx, tx, "delete_source", row); err != nil {
+		if err := removeNote(ctx, tx, vault, path); err != nil {
 			return err
 		}
 	}
@@ -325,6 +326,29 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 		return fmt.Errorf("commit: %w", err)
 	}
 	return nil
+}
+
+// removeNote deletes the note at a path, and nothing where there is none. The
+// full-text index, the index of names and the vector index are all virtual
+// tables, and a cascade reaches none of them.
+func removeNote(ctx context.Context, tx *writing.Transaction, vault int64, path string) error {
+	var row int64
+	err := tx.QueryRowContext(ctx, stmt.Get("identify"), vault, path).Scan(&row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("identify %s: %w", path, err)
+	}
+	if err := chunk.Clear(ctx, tx, row); err != nil {
+		return err
+	}
+	for _, name := range []string{"clear_heading_names", "delete_title_name"} {
+		if err := exec(ctx, tx, name, row); err != nil {
+			return err
+		}
+	}
+	return exec(ctx, tx, "delete_source", row)
 }
 
 // encodeFrontmatter stores what was found as JSON, or nothing when there was no

@@ -156,27 +156,32 @@ func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 	}
 
 	for _, one := range held.pairs {
-		if one.key != at[0] {
-			continue
+		if one.key == at[0] {
+			return renamePair(object, held, one, at, to)
 		}
-		if len(at) > 1 {
-			section, done := renameMember(object[one.from:one.to], at[1:], to)
-			if !done {
-				return object, false
-			}
-			return splice(object, one.from, one.to, section), true
-		}
-		if one.nameTo == 0 || held.hasKey(to) {
-			return object, false
-		}
-		name, err := json.Marshal(to)
-		if err != nil {
-			return object, false
-		}
-		return splice(object, one.nameFrom, one.nameTo, name), true
 	}
 
 	return object, false
+}
+
+// renamePair renames the member at the end of the path, inside the section the
+// path leads through, and says whether it did.
+func renamePair(object []byte, held shape, one member, at []string, to string) ([]byte, bool) {
+	if len(at) > 1 {
+		section, done := renameMember(object[one.from:one.to], at[1:], to)
+		if !done {
+			return object, false
+		}
+		return splice(object, one.from, one.to, section), true
+	}
+	if one.nameTo == 0 || held.hasKey(to) {
+		return object, false
+	}
+	name, err := json.Marshal(to)
+	if err != nil {
+		return object, false
+	}
+	return splice(object, one.nameFrom, one.nameTo, name), true
 }
 
 // errNotASection is a name on the way to a setting that the file holds as
@@ -281,39 +286,12 @@ func parseObjectShape(object []byte) (shape, error) {
 
 	held := shape{last: int(decoder.InputOffset())}
 	for decoder.More() {
-		name, err := decoder.Token()
+		one, err := readMember(decoder, object, held)
 		if err != nil {
 			return shape{}, err
 		}
-		key, is := name.(string)
-		if !is {
-			return shape{}, errNotASection
-		}
-		// A name is read up to its closing quote, so the quoted name ends where
-		// the decoder now stands. It is the file's own bytes only where they are
-		// the plain quoting of it.
-		if held.hasKey(key) {
-			return shape{}, fmt.Errorf("%s: %w", key, errRepeated)
-		}
-		one := member{key: key}
-		quoted, err := json.Marshal(key)
-		if err != nil {
-			return shape{}, err
-		}
-		if head := object[:int(decoder.InputOffset())]; bytes.HasSuffix(head, quoted) {
-			one.nameFrom, one.nameTo = len(head)-len(quoted), len(head)
-		}
-
-		var value json.RawMessage
-		if err := decoder.Decode(&value); err != nil {
-			return shape{}, err
-		}
-		// A decoded value is the exact bytes of it, so where it ends and how
-		// long it is say where it began.
-		end := int(decoder.InputOffset())
-		one.from, one.to = end-len(value), end
 		held.pairs = append(held.pairs, one)
-		held.last = end
+		held.last = one.to
 	}
 	if _, err := decoder.Token(); err != nil {
 		return shape{}, err
@@ -322,6 +300,42 @@ func parseObjectShape(object []byte) (shape, error) {
 		held.indent = getIndent(object, held.pairs[0].from)
 	}
 	return held, nil
+}
+
+// readMember reads the next member of the object the decoder stands in. A name
+// is read up to its closing quote, so the quoted name ends where the decoder
+// now stands, and it is the file's own bytes only where they are the plain
+// quoting of it.
+func readMember(decoder *json.Decoder, object []byte, held shape) (member, error) {
+	name, err := decoder.Token()
+	if err != nil {
+		return member{}, err
+	}
+	key, is := name.(string)
+	if !is {
+		return member{}, errNotASection
+	}
+	if held.hasKey(key) {
+		return member{}, fmt.Errorf("%s: %w", key, errRepeated)
+	}
+	one := member{key: key}
+	quoted, err := json.Marshal(key)
+	if err != nil {
+		return member{}, err
+	}
+	if head := object[:int(decoder.InputOffset())]; bytes.HasSuffix(head, quoted) {
+		one.nameFrom, one.nameTo = len(head)-len(quoted), len(head)
+	}
+
+	var value json.RawMessage
+	if err := decoder.Decode(&value); err != nil {
+		return member{}, err
+	}
+	// A decoded value is the exact bytes of it, so where it ends and how long it
+	// is say where it began.
+	end := int(decoder.InputOffset())
+	one.from, one.to = end-len(value), end
+	return one, nil
 }
 
 // hasKey is whether the object has a member of this name.
