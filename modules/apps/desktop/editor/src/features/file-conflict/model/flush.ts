@@ -81,7 +81,6 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     void report()
     return () => {
       if (!outstanding.delete(one)) return
-      put.delete(one.note)
       void report()
     }
   }

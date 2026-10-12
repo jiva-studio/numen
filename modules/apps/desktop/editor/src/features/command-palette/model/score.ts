@@ -18,7 +18,7 @@ export const SEARCH_DEBOUNCE_MS = 120
  */
 export function getEmptyGroupReason(
   id: SearchGroup,
-  failureMessage: string,
+  failureMessage: string | undefined,
   words: Words,
   coverage?: () => IndexCoverage,
 ): string {

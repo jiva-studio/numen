@@ -9,8 +9,8 @@ export { commandsOf } from './table'
  * The commands another one reaches on its own row. They are offered there and
  * drawn nowhere of their own.
  */
-const getNestedCommandIds = (commands: readonly Command[]): ReadonlySet<string> =>
-  new Set(commands.map((one) => one.also).filter((id) => id !== undefined))
+const getNestedCommandIds = (commands: readonly Command[]): ReadonlySet<string | undefined> =>
+  new Set(commands.map((one) => one.also))
 
 /**
  * The commands of one group, in the order they are drawn, less the ones

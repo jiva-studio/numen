@@ -19,7 +19,7 @@ export type DocumentReaderState = ReturnType<typeof useDocumentReader>
 
 export function useDocumentReader(documents: Documents, path: string) {
   const pages = shallowRef<readonly Page[]>([])
-  const fingerprint = ref('')
+  const fingerprint = ref<string>()
   const error = ref('')
 
   /**
@@ -57,7 +57,6 @@ export function useDocumentReader(documents: Documents, path: string) {
 
   const goToPage = async (page: number) => {
     await layoutPromise
-    if (!open) return
     await navigation.goToPage(page)
   }
 
@@ -75,7 +74,6 @@ export function useDocumentReader(documents: Documents, path: string) {
 
   const focusSpans = async (...spans: readonly Span[]) => {
     await layoutPromise
-    if (!open) return
     await highlights.focusSpans(...spans)
   }
 

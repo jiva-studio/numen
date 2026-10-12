@@ -78,7 +78,7 @@ export function useNoteTab(
    * A note put in front of the person, under the name it is called by and in a
    * tab of its own. It takes the keyboard, opened now or already open.
    */
-  const openNote = (path: string, title = '', how: PlexDestination = 'here') => {
+  const openNote = (path: string, title: string, how: PlexDestination) => {
     const id = getOrCreateTabId(path)
     if (title) names.setTitle(id, title)
     void (how === 'beside' ? handle.openTabBeside(NOTE, id) : handle.openTab(NOTE, id))
@@ -95,7 +95,7 @@ export function useNoteTab(
   for (const kind of ['note'] as const) {
     tabOpeners.registerEditor(kind, (path, title, how, line) => {
       openNote(path, title, how)
-      if (line !== undefined) focusLine(path, line)
+      focusLine(path, line)
     })
   }
 
