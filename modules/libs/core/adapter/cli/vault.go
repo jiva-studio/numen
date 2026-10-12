@@ -82,7 +82,7 @@ func listVaults(out io.Writer, deps Deps) error {
 	}
 	// Nobody is sitting in front of a vault here, so the current one is the
 	// vault the next window opens.
-	known, err := vault.NewKnownVaults(vaults.Registry, vaults.Readers).Execute("")
+	known, err := vault.NewGetKnownVaults(vaults.Registry, vaults.Readers).Execute("")
 	if err != nil {
 		return err
 	}

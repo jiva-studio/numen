@@ -110,12 +110,12 @@ func onTheList(t *testing.T) *installation {
 	f.core = mcp.Core{
 		Showing: mcp.ShowOneVault(f.first, f.first.Path),
 		Vaults: mcp.Vaults{
-			KnownVaults: container.Config{}.GetKnownVaults(registry),
-			Find:        container.Config{}.FindVault(registry),
-			PickFolder:  container.Config{}.PickFolder(f.dialog),
-			Add:         &adding,
-			Rename:      &renaming,
-			Unregister:  &forgetting,
+			GetKnownVaults: container.Config{}.GetKnownVaults(registry),
+			Find:           container.Config{}.FindVault(registry),
+			PickFolder:     container.Config{}.PickFolder(f.dialog),
+			Add:            &adding,
+			Rename:         &renaming,
+			Unregister:     &forgetting,
 			Opens: func(_ context.Context, v domain.Vault) error {
 				f.swapped <- v
 				return nil
@@ -481,7 +481,7 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 		tool    string
 		without func(*mcp.Core)
 	}{
-		{"vault_list", func(c *mcp.Core) { c.Vaults.KnownVaults = nil }},
+		{"vault_list", func(c *mcp.Core) { c.Vaults.GetKnownVaults = nil }},
 		{"vault_add", func(c *mcp.Core) { c.Vaults.Add = nil }},
 		{"vault_rename", func(c *mcp.Core) { c.Vaults.Rename = nil }},
 		{"vault_remove", func(c *mcp.Core) { c.Vaults.Unregister = nil }},

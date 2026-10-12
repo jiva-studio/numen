@@ -9,5 +9,6 @@ func (c Config) PickFolder(dialog port.FolderDialog) *vault.PickFolder {
 	if dialog == nil {
 		return nil
 	}
-	return vault.NewPickFolder(dialog)
+	pick := vault.NewPickFolder(dialog)
+	return &pick
 }

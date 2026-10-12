@@ -18,12 +18,12 @@ type PickFolder struct {
 	dialog port.FolderDialog
 }
 
-func NewPickFolder(dialog port.FolderDialog) *PickFolder {
-	return &PickFolder{dialog: dialog}
+func NewPickFolder(dialog port.FolderDialog) PickFolder {
+	return PickFolder{dialog: dialog}
 }
 
 // Execute returns the folder the person chose.
-func (u *PickFolder) Execute(ctx context.Context) (PickedFolder, error) {
+func (u PickFolder) Execute(ctx context.Context) (PickedFolder, error) {
 	chosen, isChosen, err := u.dialog.ChooseFolder(ctx, "Choose a folder for a vault", "")
 	if err != nil {
 		return PickedFolder{}, err

@@ -104,7 +104,7 @@ func TestTheVaultOpenedLastIsCountedFirst(t *testing.T) {
 		"one the list dropped": {"four", []string{"one", "two", "three"}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			known, err := vaults.NewKnownVaults(registry{held: all, last: c.last}, nil).Execute("")
+			known, err := vaults.NewGetKnownVaults(registry{held: all, last: c.last}, nil).Execute("")
 			if err != nil {
 				t.Fatal(err)
 			}

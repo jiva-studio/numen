@@ -122,13 +122,13 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		// The list is the window's own, and an agent does not erase a vault:
 		// the folder that goes is a person's to ask for.
 		Vaults: mcp.Vaults{
-			KnownVaults: cfg.GetKnownVaults(opened.API.Vaults.Registry),
-			Find:        cfg.FindVault(opened.API.Vaults.Registry),
-			PickFolder:  cfg.PickFolder(opened.API.Vaults.FolderDialog),
-			Add:         opened.API.Vaults.Add,
-			Rename:      opened.API.Vaults.Rename,
-			Unregister:  opened.API.Vaults.Unregister,
-			Opens:       makeOpenVault(opened, out),
+			GetKnownVaults: cfg.GetKnownVaults(opened.API.Vaults.Registry),
+			Find:           cfg.FindVault(opened.API.Vaults.Registry),
+			PickFolder:     cfg.PickFolder(opened.API.Vaults.FolderDialog),
+			Add:            opened.API.Vaults.Add,
+			Rename:         opened.API.Vaults.Rename,
+			Unregister:     opened.API.Vaults.Unregister,
+			Opens:          makeOpenVault(opened, out),
 		},
 
 		Sources: mcp.Sources{

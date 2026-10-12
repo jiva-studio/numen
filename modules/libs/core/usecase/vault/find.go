@@ -9,7 +9,11 @@ import (
 )
 
 // ErrNoName is a call that names no vault.
-var ErrNoName = errors.New("name the vault to use")
+var ErrNoName = errors.New("name the vault, as vault_list gives it")
+
+// ErrShowing is the vault the window is showing, where the vault asked for must
+// be another.
+var ErrShowing = errors.New("this is the vault the window is showing")
 
 // ErrUnknown is a name, a path or an identity no vault on the list answers to.
 var ErrUnknown = errors.New("this installation holds no such vault")

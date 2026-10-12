@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -46,7 +47,7 @@ func addVaultsWritingTools(server *sdk.Server, core Core) {
 }
 
 func addVaultList(server *sdk.Server, core Core) {
-	if core.Vaults.KnownVaults == nil {
+	if core.Vaults.GetKnownVaults == nil {
 		return
 	}
 
@@ -63,7 +64,7 @@ func addVaultList(server *sdk.Server, core Core) {
 		type out = struct {
 			Vaults []Vault `json:"vaults"`
 		}
-		held, err := core.Vaults.KnownVaults.
+		held, err := core.Vaults.GetKnownVaults.
 			Execute(core.getCurrentVault().Vault.ID)
 		if err != nil {
 			return nil, out{}, err
@@ -121,20 +122,25 @@ type vaultAddOutput struct {
 }
 
 func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput, error) {
-	root, isChosen := in.Path, true
-	if in.Path == "" {
-		if core.Vaults.PickFolder == nil {
-			return vaultAddOutput{}, errors.New("there is nobody here to pick a folder: name the one to add")
-		}
-		picked, err := core.Vaults.PickFolder.Execute(ctx)
-		if err != nil {
-			return vaultAddOutput{}, err
-		}
-		root, isChosen = picked.Path, picked.IsChosen
+	if in.Path != "" {
+		return addVaultAt(core, in.Path, in.Name)
 	}
-	if !isChosen {
+	if core.Vaults.PickFolder == nil {
+		return vaultAddOutput{}, errNoDialog
+	}
+	picked, err := core.Vaults.PickFolder.Execute(ctx)
+	if err != nil {
+		return vaultAddOutput{}, err
+	}
+	if !picked.IsChosen {
 		return vaultAddOutput{Why: "the person closed the picker and chose no folder"}, nil
 	}
+	return addVaultAt(core, picked.Path, in.Name)
+}
+
+var errNoDialog = errors.New("there is nobody here to pick a folder: name the one to add")
+
+func addVaultAt(core Core, root, name string) (vaultAddOutput, error) {
 	if !filepath.IsAbs(root) {
 		return vaultAddOutput{}, fmt.Errorf("%s is not an absolute path, and a vault is named by one", root)
 	}
@@ -142,7 +148,7 @@ func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput,
 		return vaultAddOutput{}, err
 	}
 
-	added, err := core.Vaults.Add.Execute(root, in.Name)
+	added, err := core.Vaults.Add.Execute(root, name)
 	if err != nil {
 		return vaultAddOutput{}, err
 	}
@@ -213,7 +219,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		if v.ID == core.getCurrentVault().Vault.ID {
+		if core.isShown(v) {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
 		}
 		if err := core.Vaults.Unregister.Execute(ctx, v); err != nil {
@@ -255,7 +261,7 @@ func addVaultOpen(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		if v.ID == core.getCurrentVault().Vault.ID {
+		if core.isShown(v) {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is already showing", v.Name)
 		}
 
@@ -308,4 +314,8 @@ func oneName(path string) string {
 		return resolved
 	}
 	return clean
+}
+
+func (c Core) isShown(v domain.Vault) bool {
+	return v.ID == c.getCurrentVault().Vault.ID
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-func (c Config) GetKnownVaults(registry port.VaultRegistry) *vault.KnownVaults {
-	known := vault.NewKnownVaults(registry, c.VaultReaders())
+func (c Config) GetKnownVaults(registry port.VaultRegistry) *vault.GetKnownVaults {
+	known := vault.NewGetKnownVaults(registry, c.VaultReaders())
 	return &known
 }
