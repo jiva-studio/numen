@@ -71,7 +71,7 @@ func TestWithNoFolderForSettingsNothingIsReadOrWritten(t *testing.T) {
 	if _, said, err := (Config{}).ReadSettingsFile()(); err == nil || said != "" {
 		t.Errorf("the settings file was read from %q: %v", said, err)
 	}
-	err := Config{}.TurnsSetting()([]port.Setting{
+	err := Config{}.GetSettingsWriter()([]port.Setting{
 		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err == nil {
@@ -278,7 +278,7 @@ func TestWithNoFolderForSettingsTheFileIsNotWritten(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
-	err = Config{}.TurnsSetting()([]port.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
+	err = Config{}.GetSettingsWriter()([]port.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -287,7 +287,7 @@ func TestWithNoFolderForSettingsTheFileIsNotWritten(t *testing.T) {
 func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := cfg.TurnsSetting()([]port.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `opus`}})
+	err := cfg.GetSettingsWriter()([]port.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `opus`}})
 	if !errors.Is(err, port.ErrNotASetting) {
 		t.Errorf("got %v", err)
 	}

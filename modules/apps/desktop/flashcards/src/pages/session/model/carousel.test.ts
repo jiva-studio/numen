@@ -41,7 +41,10 @@ const press = (more: { button?: number; clientX?: number; pointerId?: number } =
  * ref. Every place the strip is set to is kept with the smoothing it was set
  * under.
  */
-const createStrip = (at: PanelPlace = 'here', more: { hasCard?: boolean; owner?: Ref<PanelPlace> } = {}) => {
+const createStrip = (
+  at: PanelPlace = 'here',
+  more: { hasCard?: boolean; owner?: Ref<PanelPlace> } = {},
+) => {
   const window_ = document.createElement('div')
   Object.defineProperty(window_, 'scrollWidth', { value: 1040 })
   Object.defineProperty(window_, 'clientWidth', { value: 600 })

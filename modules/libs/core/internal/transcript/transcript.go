@@ -377,17 +377,17 @@ func GetCuesAt(cues []Cue, start, length int) []Cue {
 	return out
 }
 
-// reaches is the note a run stopped part way leaves, as it stands in the file.
+// progressNote is the note a run stopped part way leaves, as it stands in the file.
 // The words after it are how many milliseconds of the recording have been
 // written down.
-const reaches = "NOTE heard "
+const progressNote = "NOTE heard "
 
 // GetReachMarker is that note. It stands after the cues it claims, so a batch
 // that did not land whole is one no note claims.
 func GetReachMarker(ms int) []byte {
 	var buf [32]byte
 	b := append(buf[:0], '\n')
-	b = append(b, reaches...)
+	b = append(b, progressNote...)
 	b = strconv.AppendInt(b, int64(ms), 10)
 	b = append(b, '\n')
 	res := make([]byte, len(b))
@@ -395,19 +395,19 @@ func GetReachMarker(ms int) []byte {
 	return res
 }
 
-// ByHand is the note a transcript a person wrote carries.
-const ByHand = "NOTE by hand"
+// HandWrittenNote is the note a transcript a person wrote carries.
+const HandWrittenNote = "NOTE by hand"
 
 // Hand marks a transcript as the words a person put there. A transcript
 // carrying it is left as they left it.
 func Hand() []byte {
-	return []byte("\n" + ByHand + "\n")
+	return []byte("\n" + HandWrittenNote + "\n")
 }
 
 // IsWrittenByHand says whether a person wrote these words. The mark is a note
 // of its own, and the same words spoken in a cue are speech.
 func IsWrittenByHand(raw []byte) bool {
-	note := []byte(ByHand)
+	note := []byte(HandWrittenNote)
 	for at := 0; at <= len(raw)-len(note); {
 		found := bytes.Index(raw[at:], note)
 		if found < 0 {
@@ -424,7 +424,7 @@ func IsWrittenByHand(raw []byte) bool {
 // ReadReached is how far a run before this one got, and where the last note
 // about it ends. A file carrying none is a recording nothing has transcribed.
 func ReadReached(raw []byte) (ms, end int) {
-	note := []byte(reaches)
+	note := []byte(progressNote)
 	// Each note is looked at once, and only what stands between it and the one
 	// after it is read.
 	for end := len(raw); ; {

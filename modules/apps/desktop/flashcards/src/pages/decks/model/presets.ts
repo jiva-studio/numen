@@ -11,7 +11,7 @@ import type { StopReason } from '@numen/protocol'
 import { deckName } from '@/entities/vault'
 import type { DeckCardsDue, PresetCardsDue, VaultCardsDue } from '@/entities/vault'
 
-import { readDeckPreset, UNREAD } from '../api/presets'
+import { readDeckPreset, PRESET_UNREADABLE_MESSAGE } from '../api/presets'
 import type { DeckPreset, DeckPresetResult, PresetsClient } from '../api/presets'
 import { CLOSES_NOTHING } from '../types'
 import type { Budget, Preset, Settings } from '../types'
@@ -66,7 +66,7 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
     )
     if (of.value !== due.vault) return
 
-    presets.value = gather(due, held, today)
+    presets.value = groupDecksIntoPresets(due, held, today)
     known.value = true
   }
 
@@ -99,7 +99,7 @@ const budgetOf = (settings: Settings): Budget => ({
  * Every preset the vault holds gets a row. The ones whose decks hold cards are
  * gathered from what each deck answered, and the rest stand on the count alone.
  */
-const gather = (
+const groupDecksIntoPresets = (
   vault: VaultCardsDue,
   results: readonly DeckPresetResult[],
   today: string,
@@ -224,5 +224,5 @@ const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Pr
 const getCommonError = (results: readonly DeckPresetResult[]): string => {
   const errors = new Set(results.filter((one) => !one.ok).map((one) => (one.ok ? '' : one.error)))
   if (errors.size === 0) return ''
-  return errors.size === 1 ? ([...errors][0] ?? '') : UNREAD
+  return errors.size === 1 ? ([...errors][0] ?? '') : PRESET_UNREADABLE_MESSAGE
 }

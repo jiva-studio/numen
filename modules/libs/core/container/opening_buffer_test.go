@@ -39,7 +39,7 @@ func notesAt(paths ...string) []domain.Note {
 // order it was first written, whether it was saved or removed.
 func TestThePathsWrittenUnderAWalkAreHeldOnceInOrder(t *testing.T) {
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{}}
-	buffered.begin()
+	buffered.startRecording()
 
 	if err := buffered.Save(t.Context(), "v", notesAt("b.md", "a.md")); err != nil {
 		t.Fatal(err)
@@ -52,10 +52,10 @@ func TestThePathsWrittenUnderAWalkAreHeldOnceInOrder(t *testing.T) {
 	}
 
 	want := []string{"b.md", "a.md", "c.md", "d.md"}
-	if got := buffered.takePaths(); !slices.Equal(got, want) {
+	if got := buffered.stopRecording(); !slices.Equal(got, want) {
 		t.Errorf("held %v, want %v", got, want)
 	}
-	if got := buffered.takePaths(); len(got) != 0 {
+	if got := buffered.stopRecording(); len(got) != 0 {
 		t.Errorf("held %v after they were taken", got)
 	}
 }
@@ -77,26 +77,26 @@ func TestAWriteThatFailsIsAnsweredWithTheFailure(t *testing.T) {
 // held no longer; the next walk holds again.
 func TestNothingIsHeldOnceTheWalkIsOver(t *testing.T) {
 	buffered := &bufferedNoteRepository{NoteRepository: repositoryAnswering{}}
-	buffered.begin()
+	buffered.startRecording()
 	if err := buffered.Save(t.Context(), "v", notesAt("a.md")); err != nil {
 		t.Fatal(err)
 	}
-	if got := buffered.takePaths(); !slices.Equal(got, []string{"a.md"}) {
+	if got := buffered.stopRecording(); !slices.Equal(got, []string{"a.md"}) {
 		t.Fatalf("held %v", got)
 	}
 
 	if err := buffered.Save(t.Context(), "v", notesAt("late.md")); err != nil {
 		t.Fatal(err)
 	}
-	if got := buffered.takePaths(); len(got) != 0 {
+	if got := buffered.stopRecording(); len(got) != 0 {
 		t.Errorf("held %v, written after the walk was over", got)
 	}
 
-	buffered.begin()
+	buffered.startRecording()
 	if err := buffered.Save(t.Context(), "v", notesAt("next.md")); err != nil {
 		t.Fatal(err)
 	}
-	if got := buffered.takePaths(); !slices.Equal(got, []string{"next.md"}) {
+	if got := buffered.stopRecording(); !slices.Equal(got, []string{"next.md"}) {
 		t.Errorf("the next walk held %v", got)
 	}
 }

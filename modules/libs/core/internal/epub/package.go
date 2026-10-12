@@ -201,7 +201,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 	for _, entry := range document.Metadata.Entries {
 		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] &&
 			read.title == "" {
-			read.title = tidy(entry.Value)
+			read.title = normaliseSpaces(entry.Value)
 		}
 		// A meta refining another element speaks for that element alone, and
 		// `rendition` is a reserved prefix, read as it is written.

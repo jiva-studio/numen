@@ -7,7 +7,7 @@ import type { Ref } from 'vue'
 import { createFollower } from '@numen/ui'
 import type { Task } from '@numen/ui'
 
-import { WINDOW, agentService, cards, itself } from '@/shared/clients'
+import { WINDOW, agentService, cards, windowService } from '@/shared/clients'
 import { WORDS } from '@/pages/session'
 
 /** What the streams ask of the window they are followed in. */
@@ -68,7 +68,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
     // What is being done behind the window, which is a vault read into the index.
     // It is a stream because an indexing begins without the page asking for one.
     void follows(
-      () => itself.watchTasks({ window: WINDOW }, { signal: listening.signal }),
+      () => windowService.watchTasks({ window: WINDOW }, { signal: listening.signal }),
       (said) => {
         deps.setTasks(
           said.tasks.map((at) => ({

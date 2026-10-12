@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ErrArriving is a model that is not on this machine yet.
-var ErrArriving = errors.New("the model is still arriving")
+// ErrModelNotReady is a model that is not on this machine yet.
+var ErrModelNotReady = errors.New("the model is still arriving")
 
 // Embedder is an embedder that is still being fetched and loaded.
 //
@@ -30,9 +30,9 @@ type Embedder struct {
 	mu     sync.RWMutex
 	held   port.Embedder
 	reason error
-	// isSettled is the wait being over: something answered for it, it was let go
+	// isDone is the wait being over: something answered for it, it was let go
 	// of, or it was closed.
-	isSettled bool
+	isDone bool
 }
 
 // WaitingEmbedder is an embedder whose model may still be on its way. Fetching
@@ -55,16 +55,16 @@ func NewArriving(is port.EmbeddingModel) *Embedder {
 // let go of where it stands.
 func (e *Embedder) ReportArrival(held port.Embedder, why error) {
 	e.mu.Lock()
-	late := e.isSettled
+	late := e.isDone
 	if !late {
-		e.isSettled = true
+		e.isDone = true
 		e.held, e.reason = held, why
 	}
 	e.mu.Unlock()
 
 	e.once.Do(func() { close(e.ready) })
 	if late {
-		_ = letGo(held)
+		_ = closeIfPresent(held)
 	}
 }
 
@@ -75,16 +75,16 @@ func (e *Embedder) ReportArrival(held port.Embedder, why error) {
 func (e *Embedder) Disown(why error) error {
 	e.mu.Lock()
 	held := e.held
-	e.held, e.reason, e.isSettled = nil, why, true
+	e.held, e.reason, e.isDone = nil, why, true
 	e.mu.Unlock()
 
 	e.once.Do(func() { close(e.ready) })
-	return letGo(held)
+	return closeIfPresent(held)
 }
 
-// letGo closes a model that is here, and says what closing it said. There is
+// closeIfPresent closes a model that is here, and says what closing it said. There is
 // nothing to close where nothing landed.
-func letGo(held port.Embedder) error {
+func closeIfPresent(held port.Embedder) error {
 	if held == nil {
 		return nil
 	}
@@ -107,7 +107,7 @@ func (e *Embedder) Wait(ctx context.Context) error {
 	case e.reason != nil:
 		return e.reason
 	case e.held == nil:
-		return ErrArriving
+		return ErrModelNotReady
 	}
 	return nil
 }
@@ -117,18 +117,18 @@ func (e *Embedder) Wait(ctx context.Context) error {
 func (e *Embedder) Close() error {
 	e.mu.Lock()
 	held := e.held
-	e.held, e.isSettled = nil, true
+	e.held, e.isDone = nil, true
 	e.mu.Unlock()
-	return letGo(held)
+	return closeIfPresent(held)
 }
 
 // GetWaitingEmbedder waits for the model. Nothing is owed to anybody watching a
 // pass over a vault.
-func (e *Embedder) GetWaitingEmbedder() port.Embedder { return waitingEmbedder{e} }
+func (e *Embedder) GetWaitingEmbedder() port.Embedder { return blockingEmbedder{e} }
 
 // GetImpatientEmbedder does not wait. A search short of the half that asks by
 // meaning is a search the words answer.
-func (e *Embedder) GetImpatientEmbedder() port.Embedder { return impatient{e} }
+func (e *Embedder) GetImpatientEmbedder() port.Embedder { return nonBlockingEmbedder{e} }
 
 // embed is what the model answers with, once it is here.
 func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, error) {
@@ -136,19 +136,19 @@ func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, erro
 	held := e.held
 	e.mu.RUnlock()
 	if held == nil {
-		return nil, ErrArriving
+		return nil, ErrModelNotReady
 	}
 	return held.Embed(ctx, texts)
 }
 
-type waitingEmbedder struct{ e *Embedder }
+type blockingEmbedder struct{ e *Embedder }
 
-func (w waitingEmbedder) Model() port.EmbeddingModel { return w.e.model }
+func (w blockingEmbedder) Model() port.EmbeddingModel { return w.e.model }
 
 // Wait blocks until the model turns up, and says what stopped it.
-func (w waitingEmbedder) Wait(ctx context.Context) error { return w.e.Wait(ctx) }
+func (w blockingEmbedder) Wait(ctx context.Context) error { return w.e.Wait(ctx) }
 
-func (w waitingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+func (w blockingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	if err := w.e.Wait(ctx); err != nil {
 		return nil, err
 	}
@@ -156,10 +156,10 @@ func (w waitingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32
 }
 
 // Close lets go of the one model both ways of waiting ask.
-func (w waitingEmbedder) Close() error { return w.e.Close() }
+func (w blockingEmbedder) Close() error { return w.e.Close() }
 
 // Concurrency reports how many parallel batches this embedder can execute.
-func (w waitingEmbedder) Concurrency() int {
+func (w blockingEmbedder) Concurrency() int {
 	w.e.mu.RLock()
 	held := w.e.held
 	w.e.mu.RUnlock()
@@ -169,15 +169,15 @@ func (w waitingEmbedder) Concurrency() int {
 	return 1
 }
 
-type impatient struct{ e *Embedder }
+type nonBlockingEmbedder struct{ e *Embedder }
 
-func (i impatient) Model() port.EmbeddingModel { return i.e.model }
+func (i nonBlockingEmbedder) Model() port.EmbeddingModel { return i.e.model }
 
-func (i impatient) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+func (i nonBlockingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	select {
 	case <-i.e.ready:
 	default:
-		return nil, ErrArriving
+		return nil, ErrModelNotReady
 	}
 	i.e.mu.RLock()
 	why := i.e.reason
@@ -189,10 +189,10 @@ func (i impatient) Embed(ctx context.Context, texts []string) ([][]float32, erro
 }
 
 // Close lets go of the one model both ways of waiting ask.
-func (i impatient) Close() error { return i.e.Close() }
+func (i nonBlockingEmbedder) Close() error { return i.e.Close() }
 
 // Concurrency reports how many parallel batches this embedder can execute.
-func (i impatient) Concurrency() int {
+func (i nonBlockingEmbedder) Concurrency() int {
 	i.e.mu.RLock()
 	held := i.e.held
 	i.e.mu.RUnlock()

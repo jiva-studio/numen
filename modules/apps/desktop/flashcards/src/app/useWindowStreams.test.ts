@@ -38,7 +38,7 @@ vi.mock('@/shared/clients', () => ({
       return wire.reloads(call?.signal)
     },
   },
-  itself: {
+  windowService: {
     watchTasks: (asked: unknown, call?: { signal?: AbortSignal }) => {
       if (call?.signal) wire.taken.push(call.signal)
       wire.tasksAsked.push(asked)

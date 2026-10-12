@@ -62,14 +62,14 @@ func (c Config) VaultOpenerWith(
 	scan := vault.NewScan(
 		walking,
 		db.Vaults(),
-		db.NotesCutAt(c.GetChunkSizes(), c.Legibility()),
+		db.NotesWithChunking(c.GetChunkSizes(), c.Legibility()),
 		db.Queries(),
 		db.Maintenance(),
 	)
 	scan.Walks = db.Walks()
 	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 
-	buffered := &bufferedNoteRepository{NoteRepository: db.NotesCutAt(c.GetChunkSizes(), c.Legibility())}
+	buffered := &bufferedNoteRepository{NoteRepository: db.NotesWithChunking(c.GetChunkSizes(), c.Legibility())}
 	return &VaultOpener{
 		watcher:  watcher,
 		scan:     scan,
@@ -153,7 +153,7 @@ func (o *OpenVault) GetUnwatchedReason() error { return o.unwatched }
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
 func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err error) {
-	o.opening.buffered.begin()
+	o.opening.buffered.startRecording()
 
 	walk := o.scan
 	if during != nil {
@@ -161,7 +161,7 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	}
 	res, err := walk.Execute(ctx, o.vault)
 
-	under := o.opening.buffered.takePaths()
+	under := o.opening.buffered.stopRecording()
 	if err != nil {
 		return res.Notes, err
 	}
@@ -221,10 +221,10 @@ func (b *bufferedNoteRepository) Remove(ctx context.Context, vaultID domain.Vaul
 	return b.NoteRepository.Remove(ctx, vaultID, paths)
 }
 
-// begin holds the paths written through this, for the length of one walk. Every
+// startRecording holds the paths written through this, for the length of one walk. Every
 // walk holds again: a vault read a second time is read with the same guard as
 // the first.
-func (w *bufferedWrites) begin() {
+func (w *bufferedWrites) startRecording() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -248,9 +248,9 @@ func (w *bufferedWrites) record(path string) {
 	w.paths = append(w.paths, path)
 }
 
-// takePaths is every path held, and the end of the holding: the walk is over,
+// stopRecording is every path held, and the end of the holding: the walk is over,
 // so a write that lands from now on is already the last one.
-func (w *bufferedWrites) takePaths() []string {
+func (w *bufferedWrites) stopRecording() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 

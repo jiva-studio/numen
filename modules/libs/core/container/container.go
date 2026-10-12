@@ -216,10 +216,10 @@ func (Config) GetLatestDayStart() string {
 	return review.Clock(settings.LatestDayStarts)
 }
 
-// TurnsSetting writes settings into the file. The file is patched as an object,
+// GetSettingsWriter writes settings into the file. The file is patched as an object,
 // so every key a person typed stays where it was, and a value the settings
 // could not be read out of again is refused before anything is written.
-func (c Config) TurnsSetting() func(written []port.Setting) error {
+func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 	return func(written []port.Setting) error {
 		held := make([]settings.Setting, 0, len(written))
 		for _, one := range written {

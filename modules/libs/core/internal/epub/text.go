@@ -117,13 +117,13 @@ func (x *extractor) node(n *html.Node) {
 	}
 
 	if level := headingLevel(n.DataAtom); level > 0 {
-		if title := tidy(string(x.out[start:])); title != "" {
+		if title := normaliseSpaces(string(x.out[start:])); title != "" {
 			x.headings = append(x.headings, Part{Title: title, Offset: start, Level: level})
 		}
 	}
 	if label, ok := getPrintedPage(n); ok {
 		if label == "" {
-			label = tidy(string(x.out[start:]))
+			label = normaliseSpaces(string(x.out[start:]))
 		}
 		if label != "" {
 			x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: start})
@@ -225,14 +225,14 @@ func (x *extractor) tokenize(markup []byte) {
 					x.preformattedDepth--
 				}
 				if f.heading > 0 {
-					if title := tidy(string(x.out[f.start:])); title != "" {
+					if title := normaliseSpaces(string(x.out[f.start:])); title != "" {
 						x.headings = append(x.headings, Part{Title: title, Offset: f.start, Level: f.heading})
 					}
 				}
 				if f.isPagebreak {
 					label := f.pageLabel
 					if label == "" {
-						label = tidy(string(x.out[f.start:]))
+						label = normaliseSpaces(string(x.out[f.start:]))
 					}
 					if label != "" {
 						x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: f.start})
@@ -333,9 +333,9 @@ func (x *extractor) tokenize(markup []byte) {
 				x.anchors[x.path+"#"+id] = len(x.out)
 			}
 			if isPagebreak {
-				if t := tidy(titleAttr); t != "" {
+				if t := normaliseSpaces(titleAttr); t != "" {
 					pageLabel = t
-				} else if al := tidy(ariaLabelAttr); al != "" {
+				} else if al := normaliseSpaces(ariaLabelAttr); al != "" {
 					pageLabel = al
 				}
 			}
@@ -360,14 +360,14 @@ func (x *extractor) tokenize(markup []byte) {
 					x.preformattedDepth--
 				}
 				if level > 0 {
-					if title := tidy(string(x.out[start:])); title != "" {
+					if title := normaliseSpaces(string(x.out[start:])); title != "" {
 						x.headings = append(x.headings, Part{Title: title, Offset: start, Level: level})
 					}
 				}
 				if isPagebreak {
 					label := pageLabel
 					if label == "" {
-						label = tidy(string(x.out[start:]))
+						label = normaliseSpaces(string(x.out[start:]))
 					}
 					if label != "" {
 						x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: start})
@@ -422,14 +422,14 @@ func (x *extractor) tokenize(markup []byte) {
 						x.preformattedDepth--
 					}
 					if f.heading > 0 {
-						if title := tidy(string(x.out[f.start:])); title != "" {
+						if title := normaliseSpaces(string(x.out[f.start:])); title != "" {
 							x.headings = append(x.headings, Part{Title: title, Offset: f.start, Level: f.heading})
 						}
 					}
 					if f.isPagebreak {
 						label := f.pageLabel
 						if label == "" {
-							label = tidy(string(x.out[f.start:]))
+							label = normaliseSpaces(string(x.out[f.start:]))
 						}
 						if label != "" {
 							x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: f.start})
@@ -505,7 +505,7 @@ func (x *extractor) last() (byte, bool) {
 func (x *extractor) getParts(entries []entry) []Part {
 	var out []Part
 	for _, e := range entries {
-		title := tidy(e.title)
+		title := normaliseSpaces(e.title)
 		if title == "" {
 			continue
 		}
@@ -523,7 +523,7 @@ func (x *extractor) getParts(entries []entry) []Part {
 func (x *extractor) pagesAt(entries []entry) []Page {
 	var out []Page
 	for _, e := range entries {
-		label := tidy(e.title)
+		label := normaliseSpaces(e.title)
 		if label == "" {
 			continue
 		}
@@ -576,7 +576,7 @@ func getPrintedPage(n *html.Node) (label string, marks bool) {
 		return "", false
 	}
 	for _, name := range []string{"title", "aria-label"} {
-		if label := tidy(attribute(n, name)); label != "" {
+		if label := normaliseSpaces(attribute(n, name)); label != "" {
 			return label, true
 		}
 	}

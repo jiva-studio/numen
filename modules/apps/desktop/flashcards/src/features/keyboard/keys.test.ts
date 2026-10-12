@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getPickerKeyIntent, getSessionKeyIntent, isSwallowed, letterOf } from './keys'
+import { getPickerKeyIntent, getSessionKeyIntent, shouldConsumeKey, letterOf } from './keys'
 
 /** One keystroke, as the window meets it. */
 const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
@@ -171,26 +171,28 @@ describe('the keys a session is done with', () => {
   })
 
   it('swallows only the keys the page would act on itself', () => {
-    expect(isSwallowed(getSessionKeyIntent(createPress(' '), { isShown: false }))).toBe(true)
+    expect(shouldConsumeKey(getSessionKeyIntent(createPress(' '), { isShown: false }))).toBe(true)
     // The page scrolls itself on space, and the reading is what is scrolled.
     expect(
-      isSwallowed(getSessionKeyIntent(createPress(' '), { isShown: true, isReading: true })),
+      shouldConsumeKey(getSessionKeyIntent(createPress(' '), { isShown: true, isReading: true })),
     ).toBe(true)
-    expect(isSwallowed(getSessionKeyIntent(createPress('3'), { isShown: true }))).toBe(false)
-    expect(isSwallowed(null)).toBe(false)
+    expect(shouldConsumeKey(getSessionKeyIntent(createPress('3'), { isShown: true }))).toBe(false)
+    expect(shouldConsumeKey(null)).toBe(false)
   })
 
   // The field a panel opens takes the keyboard, and the letter that opened it
   // would be the first thing typed into it.
   it('swallows the letters that bring the panels in', () => {
     expect(
-      isSwallowed(getSessionKeyIntent(createPress('a', { ctrlKey: true }), { isShown: true })),
+      shouldConsumeKey(getSessionKeyIntent(createPress('a', { ctrlKey: true }), { isShown: true })),
     ).toBe(true)
     expect(
-      isSwallowed(getSessionKeyIntent(createPress('r', { ctrlKey: true }), { isShown: true })),
+      shouldConsumeKey(getSessionKeyIntent(createPress('r', { ctrlKey: true }), { isShown: true })),
     ).toBe(true)
-    expect(isSwallowed(getSessionKeyIntent(createPress('u'), { isShown: true }))).toBe(false)
-    expect(isSwallowed(getSessionKeyIntent(createPress('Escape'), { isShown: true }))).toBe(false)
+    expect(shouldConsumeKey(getSessionKeyIntent(createPress('u'), { isShown: true }))).toBe(false)
+    expect(shouldConsumeKey(getSessionKeyIntent(createPress('Escape'), { isShown: true }))).toBe(
+      false,
+    )
   })
 
   it('brings no panel in from the overlay key held down or pressed with alt', () => {
