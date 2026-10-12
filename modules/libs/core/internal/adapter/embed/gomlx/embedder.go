@@ -93,6 +93,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		dimensions:   identity.Dimensions,
 		maxTokens:    identity.MaxTokens,
 		pooling:      identity.Pooling,
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 2: a batch floored at two texts carries a padding row more, and the rows past the texts are dropped from the result"
 		batchTexts:   max(cfg.BatchTexts, 1),
 		tokenizer:    tokenizer,
 		net:          net,
@@ -134,6 +135,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		return nil, err
 	}
 	// One entry per sequence length the buckets allow, and two to spare.
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 3: a text of any length fits one of the maxTokens/tokenStep+1 shapes, so a larger cache is never filled"
 	e.exec = exec.SetMaxCache(e.maxTokens/tokenStep + 2)
 	return e, nil
 }
@@ -207,6 +209,7 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 // end so that the model sees a complete sentence.
 func (e *Embedder) encode(text string) []int {
 	ids := e.tokenizer.Encode(text)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at exactly maxTokens the cut is the same ids with the same last one"
 	if len(ids) <= e.maxTokens {
 		return ids
 	}
