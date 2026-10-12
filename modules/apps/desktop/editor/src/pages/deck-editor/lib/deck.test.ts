@@ -1,6 +1,6 @@
 /** What a gesture in a deck makes of the file, asked without a screen. */
 import { describe, expect, it } from 'vitest'
-import { CARD_HEAD, cardEndOf } from '@numen/ui'
+import { CARD_HEAD, createCardRunEnd } from '@numen/ui'
 import type { VaultDeck } from '@/entities/deck'
 import {
   addCard,
@@ -422,7 +422,7 @@ describe('a card dragged among the sections', () => {
   it('stands last under the section it was let go past the end of', () => {
     const held = createSectionedDeck()
     const roots = held.sections[0]?.id ?? ''
-    const moved = dropCard(held, LLAMA, cardEndOf(roots))
+    const moved = dropCard(held, LLAMA, createCardRunEnd(roots))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [ALPACA, roots],
       [LLAMA, roots],
@@ -431,7 +431,7 @@ describe('a card dragged among the sections', () => {
 
   it('stands last under no section where it was let go past those before the first', () => {
     const held = createSectionedDeck()
-    const moved = dropCard(held, ALPACA, cardEndOf(CARD_HEAD))
+    const moved = dropCard(held, ALPACA, createCardRunEnd(CARD_HEAD))
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, null],
       [ALPACA, null],
@@ -448,7 +448,7 @@ describe('a card dragged among the sections', () => {
     }
     const deckLost = { ...held, cards: [lost, held.cards[1]!] }
 
-    const moved = dropCard(deckLost, ALPACA, cardEndOf(CARD_HEAD))
+    const moved = dropCard(deckLost, ALPACA, createCardRunEnd(CARD_HEAD))
 
     expect(moved.cards.map((card) => [card.id, card.section])).toStrictEqual([
       [LLAMA, 'gone'],
@@ -458,7 +458,7 @@ describe('a card dragged among the sections', () => {
 
   it('leaves the deck as it was where the card already stands last under that heading', () => {
     const held = createSectionedDeck()
-    expect(dropCard(held, ALPACA, cardEndOf(held.sections[0]?.id ?? ''))).toStrictEqual(held)
+    expect(dropCard(held, ALPACA, createCardRunEnd(held.sections[0]?.id ?? ''))).toStrictEqual(held)
   })
 
   it('stands first and under no section where it was let go at the head of the deck', () => {
@@ -750,7 +750,7 @@ describe('cards and sections standing among three headings', () => {
     it('stands ahead of the cards of later sections where the section it was let go past holds none', () => {
       const held = createThreeHeadingDeck()
       const roots = held.sections[0]?.id ?? ''
-      const moved = dropCard(removeCard(held, 'mb'), 'ma', cardEndOf(roots))
+      const moved = dropCard(removeCard(held, 'mb'), 'ma', createCardRunEnd(roots))
       expect(place(moved)).toStrictEqual([
         ['ma', roots],
         ['mc', held.sections[1]?.id],
@@ -760,7 +760,7 @@ describe('cards and sections standing among three headings', () => {
     it('stands after the last card of the section it was let go past, ahead of later sections', () => {
       const held = createThreeHeadingDeck()
       const roots = held.sections[0]?.id ?? ''
-      const moved = dropCard(held, 'ma', cardEndOf(roots))
+      const moved = dropCard(held, 'ma', createCardRunEnd(roots))
       expect(place(moved)).toStrictEqual([
         ['mb', roots],
         ['ma', roots],
@@ -770,7 +770,7 @@ describe('cards and sections standing among three headings', () => {
 
     it('moves nothing where it was let go past a section the deck does not hold', () => {
       const held = createThreeHeadingDeck()
-      expect(dropCard(held, 'ma', cardEndOf('ghost'))).toStrictEqual(held)
+      expect(dropCard(held, 'ma', createCardRunEnd('ghost'))).toStrictEqual(held)
     })
   })
 

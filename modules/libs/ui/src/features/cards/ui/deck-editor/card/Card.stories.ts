@@ -159,7 +159,7 @@ const CORPORA = {
 type Corpora = keyof typeof CORPORA
 
 /** The one card of a corpus, laid out against the stencil that cuts it. */
-const getTile = (corpus: Corpus): Tile => {
+const createTile = (corpus: Corpus): Tile => {
   const laid = getGrid([corpus.card], [], corpus.cut ? [corpus.cut] : [], null).runs[0]?.tiles[0]
   if (!laid) throw new Error('a corpus holding no card')
   return laid
@@ -197,13 +197,13 @@ const meta: Meta<Knobs> = {
     components: { Card },
     setup() {
       const held = ref<Corpus>(CORPORA[args.corpus])
-      const tile = ref<Tile>(getTile(CORPORA[args.corpus]))
+      const tile = ref<Tile>(createTile(CORPORA[args.corpus]))
 
       watch(
         () => args.corpus,
         (next) => {
           held.value = CORPORA[next]
-          tile.value = getTile(CORPORA[next])
+          tile.value = createTile(CORPORA[next])
         },
       )
 
@@ -225,7 +225,7 @@ const meta: Meta<Knobs> = {
           if (under < nth) filled.push({ field, text })
           const written = { ...held.value, card: { ...card, filled } }
           held.value = written
-          tile.value = getTile(written)
+          tile.value = createTile(written)
         },
       }
     },

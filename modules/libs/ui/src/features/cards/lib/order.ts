@@ -47,7 +47,7 @@ export function canDropField(
 export type StepDirection = 'up' | 'down'
 
 /** The direction along the order an arrow drags what is held, and nothing for any other key. */
-export const getDirection = (key: string): StepDirection | null => {
+export const parseStepKey = (key: string): StepDirection | null => {
   if (key === 'ArrowUp') return 'up'
   if (key === 'ArrowDown') return 'down'
   return null

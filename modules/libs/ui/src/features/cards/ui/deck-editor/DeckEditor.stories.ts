@@ -25,7 +25,7 @@ interface Corpus {
 }
 
 /** What a corpus says is wrong, as the grid takes it. */
-const getProblems = (corpus: Corpus): DeckProblems => ({
+const createProblems = (corpus: Corpus): DeckProblems => ({
   at: new Map(Object.entries(corpus.wrong?.at ?? {})),
   under: new Map(
     Object.entries(corpus.wrong?.under ?? {}).map(([card, fields]) => [
@@ -320,7 +320,7 @@ const meta: Meta<Knobs> = {
       const cards = ref<readonly DeckCard[]>(CORPORA[args.corpus].cards)
       const cuts = ref<readonly Stencil[]>(CORPORA[args.corpus].cuts)
       const sections = ref<readonly DeckSection[]>(getSections(CORPORA[args.corpus]))
-      const wrong = ref<DeckProblems>(getProblems(CORPORA[args.corpus]))
+      const wrong = ref<DeckProblems>(createProblems(CORPORA[args.corpus]))
 
       watch(
         () => args.corpus,
@@ -328,7 +328,7 @@ const meta: Meta<Knobs> = {
           cards.value = CORPORA[next].cards
           cuts.value = CORPORA[next].cuts
           sections.value = getSections(CORPORA[next])
-          wrong.value = getProblems(CORPORA[next])
+          wrong.value = createProblems(CORPORA[next])
         },
       )
 
