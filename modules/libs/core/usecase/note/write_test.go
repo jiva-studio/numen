@@ -104,12 +104,12 @@ func TestAWriteTellsTheStretchThatChanged(t *testing.T) {
 			want: domain.Edit{From: 6, To: 10, Text: "delta"},
 		},
 		{
-			name: "text only added", was: "alpha beta\n", now: "alpha gamma beta\n",
-			want: domain.Edit{From: 6, To: 6, Text: "gamma "},
+			name: "text only added", was: "alpha\n", now: "alpha\nbeta\n",
+			want: domain.Edit{From: 6, To: 6, Text: "beta\n"},
 		},
 		{
-			name: "text only removed", was: "alpha gamma beta\n", now: "alpha beta\n",
-			want: domain.Edit{From: 6, To: 12, Text: ""},
+			name: "text only removed", was: "alpha\nbeta\n", now: "alpha\n",
+			want: domain.Edit{From: 6, To: 11, Text: ""},
 		},
 		{
 			name: "positions count UTF-16 units", was: "é 😀 end\n", now: "é 😀 fin\n",
