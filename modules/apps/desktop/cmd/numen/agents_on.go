@@ -115,6 +115,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 
 	return mcp.Core{
 		Showing:   mcp.ShowOneVault(opened.GetCurrentVault(), root),
+		Overview:  cfg.Overview(opened.Queries()),
 		Readers:   cfg.VaultReaders(),
 		View:      opened.API.GetWindow(),
 		Attending: opened.API.GetOpenTabs,

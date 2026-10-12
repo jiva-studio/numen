@@ -14,7 +14,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
-	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -100,12 +99,12 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 		},
 
 		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,
+		Overview: cfg.Overview(queries),
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
 			Links:         note.NewShowLinks(db.Links()),
-			Problems:      check.Standard(db.Problems()),
 			Create:        note.NewCreate(writers, queries, index, time.Now),
 			Write:         note.NewWrite(readers, writers, index, time.Now),
 			Replace:       note.NewReplace(readers, writers, index, time.Now),
