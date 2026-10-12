@@ -47,6 +47,7 @@ describe('a tab as it opens', () => {
     const next = openTab('Note.md')
 
     expect(stateOf(next.tab)).toBe('loading')
+    expect(next.tab.hasPendingWrite).toBe(false)
     expect(next.effects).toEqual([{ kind: 'read', path: 'Note.md', generation: 1 }])
   })
 })

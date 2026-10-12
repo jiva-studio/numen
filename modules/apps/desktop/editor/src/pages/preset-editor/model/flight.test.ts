@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'
 import { WORDS as words } from '../words'
-import { createWriteFlight, flushWrites, requestWrite, sendWrite } from './flight'
+import { canCloseTab, createWriteFlight, flushWrites, requestWrite, sendWrite } from './flight'
 
 const PATH = 'presets/Daily.md'
 
@@ -124,6 +124,25 @@ describe('a write asked for while another is out', () => {
     expect(flight.flight).toBeNull()
   })
 
+  it('is not settled until the write out has landed', async () => {
+    const flight = createWriteFlight()
+    const first = createGate()
+    const { core } = createCore(first.answered)
+    const { writeMessage } = createMessages()
+
+    const one = requestWrite(flight, PATH, DEFAULTS, core, writeMessage)
+    let isSettled = false
+    const two = requestWrite(flight, PATH, DEFAULTS, core, writeMessage).then(() => {
+      isSettled = true
+    })
+    await nap()
+    expect(isSettled).toBe(false)
+
+    first.open({ ok: true, value: { at: 'v1' } })
+    await Promise.all([one, two])
+    expect(isSettled).toBe(true)
+  })
+
   it('is dropped where the first found the file changed elsewhere', async () => {
     const flight = createWriteFlight()
     const first = createGate()
@@ -188,5 +207,58 @@ describe('flushing a preset', () => {
     first.open({ ok: true, value: { at: 'v1' } })
     await flushed
     expect(isFlushed).toBe(true)
+  })
+})
+
+describe('closing a preset tab', () => {
+  it('closes at once where nothing is unwritten', async () => {
+    const flight = createWriteFlight()
+    const { core, based } = createCore()
+
+    const { writeMessage } = createMessages()
+
+    const isClosable = await canCloseTab(flight, PATH, DEFAULTS, core, writeMessage)
+
+    expect(isClosable).toBe(true)
+    expect(based).toStrictEqual([])
+    expect(flight.isWarned).toBe(false)
+  })
+
+  it('writes what the person changed and closes', async () => {
+    const flight = createWriteFlight()
+    flight.theirs.add('retention')
+    const { core, based } = createCore()
+
+    const { writeMessage } = createMessages()
+
+    const isClosable = await canCloseTab(flight, PATH, DEFAULTS, core, writeMessage)
+
+    expect(isClosable).toBe(true)
+    expect(based).toStrictEqual([''])
+  })
+
+  it('refuses once where the changes cannot be written, then closes', async () => {
+    const flight = createWriteFlight()
+    flight.theirs.add('retention')
+    const denied = { ok: false, error: 'denied' } as unknown as PresetWriteResult
+    const { core } = createCore(denied, denied)
+    const { writeMessage } = createMessages()
+
+    expect(await canCloseTab(flight, PATH, DEFAULTS, core, writeMessage)).toBe(false)
+    expect(flight.isWarned).toBe(true)
+    expect(await canCloseTab(flight, PATH, DEFAULTS, core, writeMessage)).toBe(true)
+  })
+
+  it('refuses where the file changed elsewhere', async () => {
+    const flight = createWriteFlight()
+    flight.hasChanged.value = true
+    const { core, based } = createCore()
+
+    const { writeMessage } = createMessages()
+
+    const isClosable = await canCloseTab(flight, PATH, DEFAULTS, core, writeMessage)
+
+    expect(isClosable).toBe(false)
+    expect(based).toStrictEqual([])
   })
 })
