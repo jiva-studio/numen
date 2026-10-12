@@ -70,8 +70,8 @@ func (q *queue) take() (events []notify.EventInfo, over, done bool) {
 	return events, over, done
 }
 
-// drain moves events out of the watcher's channel as fast as they arrive.
-func drain(ctx context.Context, raw <-chan notify.EventInfo, into *queue) {
+// forwardEvents moves events out of the watcher's channel as fast as they arrive.
+func forwardEvents(ctx context.Context, raw <-chan notify.EventInfo, into *queue) {
 	for {
 		select {
 		case <-ctx.Done():

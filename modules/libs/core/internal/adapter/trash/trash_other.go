@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// send is a platform this application knows no trash on.
-func send(path string) error {
+// moveToTrash is a platform this application knows no trash on.
+func moveToTrash(path string) error {
 	return fmt.Errorf("%s: %w", path, port.ErrNoTrash)
 }

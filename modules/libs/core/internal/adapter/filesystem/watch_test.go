@@ -49,7 +49,7 @@ func write(t *testing.T, root, name, body string) {
 // it, and nothing behind it.
 func TestOneSaveIsOneReport(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Hold: 200 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, _, err := filesystem.Watcher{Options: filesystem.Options{DebounceDelay: 200 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 // waited would stop emptying the backlog and lose what came after.
 func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := filesystem.Watcher{Options: filesystem.Options{Hold: 50 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, _, err := filesystem.Watcher{Options: filesystem.Options{DebounceDelay: 50 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -473,7 +473,7 @@ func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
 func TestAVaultThatIsNeverStillIsStillReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	changes, _, err := filesystem.Watcher{
-		Options: filesystem.Options{Hold: 200 * time.Millisecond},
+		Options: filesystem.Options{DebounceDelay: 200 * time.Millisecond},
 	}.Watch(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)

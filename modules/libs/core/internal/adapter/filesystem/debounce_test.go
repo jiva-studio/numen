@@ -86,13 +86,13 @@ func TestABurstPastTheBacklogMeansTheVaultIsReadAgain(t *testing.T) {
 	// One event past the bound, and everything held goes with it.
 	raw := make(chan notify.EventInfo, 4)
 	waiting := newQueue(4)
-	go drain(ctx, raw, waiting)
+	go forwardEvents(ctx, raw, waiting)
 	feed(t, raw, root, 0, 5)
 	waitForQueue(t, waiting, func() bool { return waiting.isOver })
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
 
 	select {
 	case <-lost:
@@ -112,13 +112,13 @@ func TestABurstInsideTheBacklogIsNotALoss(t *testing.T) {
 
 	raw := make(chan notify.EventInfo, 4)
 	waiting := newQueue(4)
-	go drain(ctx, raw, waiting)
+	go forwardEvents(ctx, raw, waiting)
 	feed(t, raw, root, 0, 4)
 	waitForQueue(t, waiting, func() bool { return len(waiting.events) == 4 })
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
 
 	select {
 	case <-lost:
@@ -145,11 +145,11 @@ func TestAListenerThatDoesNotTakeDoesNotStopTheReading(t *testing.T) {
 
 	raw := make(chan notify.EventInfo, 4)
 	waiting := newQueue(64)
-	go drain(ctx, raw, waiting)
+	go forwardEvents(ctx, raw, waiting)
 
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)
-	go debounce(ctx, shapeOf(t, reader), Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
+	go debounce(ctx, shapeOf(t, reader), Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
 
 	// One note, debounced and held, leaves the goroutine with a batch nobody is
 	// taking.

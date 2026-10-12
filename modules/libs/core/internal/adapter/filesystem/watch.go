@@ -65,7 +65,7 @@ func (w Watcher) Watch(
 		defer notify.Stop(raw)
 		defer close(debounced)
 		waiting := newQueue(Backlog)
-		go drain(ctx, raw, waiting)
+		go forwardEvents(ctx, raw, waiting)
 		debounce(ctx, shape, opts, waiting, debounced, gone)
 	}()
 

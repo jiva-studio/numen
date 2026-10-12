@@ -18,10 +18,10 @@ var ErrNoFolder = errors.New("there is no themes folder")
 // holds a handful of files.
 const Backlog = 256
 
-// DefaultHold is how long changes are kept before they are reported. An editor
+// DefaultDebounceDelay is how long changes are kept before they are reported. An editor
 // saves a file by writing a temporary one and renaming it over the top, and
 // that is several events.
-const DefaultHold = 50 * time.Millisecond
+const DefaultDebounceDelay = 50 * time.Millisecond
 
 // Watch reports the person's themes changing, by name, until ctx ends.
 //
@@ -33,7 +33,7 @@ func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []stri
 		return nil, ErrNoFolder
 	}
 	if hold <= 0 {
-		hold = DefaultHold
+		hold = DefaultDebounceDelay
 	}
 
 	raw := make(chan notify.EventInfo, Backlog)
@@ -88,7 +88,7 @@ func (c Catalogue) debounce(
 			if !open {
 				return
 			}
-			name, is := c.names(event.Path())
+			name, is := c.getThemeName(event.Path())
 			if !is {
 				continue
 			}
@@ -112,9 +112,9 @@ func (c Catalogue) debounce(
 	}
 }
 
-// names is the theme an event is about, where it is about one. A file one level
+// getThemeName is the theme an event is about, where it is about one. A file one level
 // down is not a theme and neither is a name that does not end `.css`.
-func (c Catalogue) names(absolute string) (string, bool) {
+func (c Catalogue) getThemeName(absolute string) (string, bool) {
 	if filepath.Clean(filepath.Dir(absolute)) != filepath.Clean(c.dir) {
 		return "", false
 	}
@@ -123,7 +123,7 @@ func (c Catalogue) names(absolute string) (string, bool) {
 		return "", false
 	}
 	title := strings.TrimSuffix(filename, Extension)
-	if !plain(title) {
+	if !isPlainName(title) {
 		return "", false
 	}
 	return string(Mine) + ":" + title, true
