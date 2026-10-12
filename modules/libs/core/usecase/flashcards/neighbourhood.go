@@ -82,47 +82,7 @@ func (u ShowNeighbourhood) Execute(
 		return Neighbourhood{}, err
 	}
 
-	// A deck naming itself, and a card naming the deck it stands in, are not
-	// somewhere else to read.
-	seen := map[string]bool{deck: true}
-
-	var found []Neighbour
-	for _, l := range linked.Links {
-		// Only an address that names a note can name one that is missing. An
-		// attachment and a web address are neither read here nor gone, and
-		// drawing them as notes whose name has come loose says a vault has a
-		// question in it where it has none.
-		if l.Target.Scheme != domain.SchemeName && l.Target.Scheme != domain.SchemeNote {
-			continue
-		}
-		one := Neighbour{
-			Written:     l.Target.GetWritten(),
-			Path:        l.To,
-			Label:       l.Label,
-			IsAmbiguous: l.IsAmbiguous,
-		}
-		if l.To == "" {
-			// Dangling: named by how it is written, and there is nothing to read.
-			found = append(found, one)
-			continue
-		}
-		if l.ToVault != v.ID || seen[l.To] {
-			// A link into another vault has nothing here to read it with.
-			continue
-		}
-		seen[l.To] = true
-		found = append(found, one)
-	}
-	for _, l := range linked.Backlinks {
-		if seen[l.From] {
-			continue
-		}
-		seen[l.From] = true
-		// Nothing is ambiguous on this side: the note shown is the one that
-		// wrote the link, whatever its own name resolved through.
-		found = append(found, Neighbour{Path: l.From, Label: l.Label, IsBacklink: true})
-	}
-
+	found := getNeighbours(v, deck, linked)
 	paths := make([]string, 0, len(found))
 	for _, one := range found {
 		if one.Path != "" {
@@ -140,55 +100,127 @@ func (u ShowNeighbourhood) Execute(
 
 	var out Neighbourhood
 	for _, one := range found {
-		if one.Path != "" {
-			ref, isNote := notes[one.Path]
-			if !isNote {
-				// The index answered where the link landed and then no longer
-				// held a note there: it is written while this reads it.
-				continue
-			}
-			// An ordinary note is what the cards were written from, and is
-			// taken below.
-			//exhaustive:ignore
-			switch kinds[one.Path] {
-			case domain.TypeStencil:
-				// Every card names the stencil it is cut by, so a deck points at
-				// its stencils. A stencil is how a card is laid out and not what
-				// it was written from.
-				continue
-			case domain.TypePreset:
-				// A deck points at the preset it is scheduled by. A preset is how
-				// the cards come round and not what they were written from.
-				continue
-			case domain.TypeDeck:
-				// Another deck is more cards to answer, and this is what the cards
-				// in front of a person were written from.
-				continue
-			}
-			one.Title = ref.Title
+		titled, isShown := getTitled(one, notes, kinds)
+		if isShown {
+			out.Notes = append(out.Notes, titled)
 		}
-		out.Notes = append(out.Notes, one)
 	}
 	if len(out.Notes) > MostRead {
 		out.Unread = len(out.Notes) - MostRead
 	}
+	if err := u.readBodies(ctx, v, out.Notes); err != nil {
+		return Neighbourhood{}, err
+	}
+	return out, nil
+}
 
-	for i := range out.Notes {
+// getNeighbours is what the links of a deck lead to: what it points at first,
+// then what points at it. A deck naming itself, and a card naming the deck it
+// stands in, are not somewhere else to read.
+func getNeighbours(v domain.Vault, deck string, linked note.NoteLinks) []Neighbour {
+	seen := map[string]bool{deck: true}
+	var found []Neighbour
+	for _, l := range linked.Links {
+		one, isKept := getLinkedNeighbour(v, l, seen)
+		if isKept {
+			found = append(found, one)
+		}
+	}
+	for _, l := range linked.Backlinks {
+		if seen[l.From] {
+			continue
+		}
+		seen[l.From] = true
+		// Nothing is ambiguous on this side: the note shown is the one that
+		// wrote the link, whatever its own name resolved through.
+		found = append(found, Neighbour{Path: l.From, Label: l.Label, IsBacklink: true})
+	}
+	return found
+}
+
+// getLinkedNeighbour is the neighbour a link of the deck leads to, and whether
+// it is one to show. A note reached is marked in seen.
+func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, seen map[string]bool) (Neighbour, bool) {
+	// Only an address that names a note can name one that is missing. An
+	// attachment and a web address are neither read here nor gone, and
+	// drawing them as notes whose name has come loose says a vault has a
+	// question in it where it has none.
+	if l.Target.Scheme != domain.SchemeName && l.Target.Scheme != domain.SchemeNote {
+		return Neighbour{}, false
+	}
+	one := Neighbour{
+		Written:     l.Target.GetWritten(),
+		Path:        l.To,
+		Label:       l.Label,
+		IsAmbiguous: l.IsAmbiguous,
+	}
+	if l.To == "" {
+		// Dangling: named by how it is written, and there is nothing to read.
+		return one, true
+	}
+	if l.ToVault != v.ID || seen[l.To] {
+		// A link into another vault has nothing here to read it with.
+		return Neighbour{}, false
+	}
+	seen[l.To] = true
+	return one, true
+}
+
+// getTitled is the neighbour with its title, and whether it is one to show.
+// A neighbour with a path is shown when the index still holds a note there and
+// the note is one the cards were written from.
+func getTitled(
+	one Neighbour, notes map[string]domain.NoteRef, kinds map[string]domain.NoteType,
+) (Neighbour, bool) {
+	if one.Path == "" {
+		return one, true
+	}
+	ref, isNote := notes[one.Path]
+	if !isNote {
+		// The index answered where the link landed and then no longer
+		// held a note there: it is written while this reads it.
+		return Neighbour{}, false
+	}
+	// An ordinary note is what the cards were written from, and is
+	// taken below.
+	//exhaustive:ignore
+	switch kinds[one.Path] {
+	case domain.TypeStencil:
+		// Every card names the stencil it is cut by, so a deck points at
+		// its stencils. A stencil is how a card is laid out and not what
+		// it was written from.
+		return Neighbour{}, false
+	case domain.TypePreset:
+		// A deck points at the preset it is scheduled by. A preset is how
+		// the cards come round and not what they were written from.
+		return Neighbour{}, false
+	case domain.TypeDeck:
+		// Another deck is more cards to answer, and this is what the cards
+		// in front of a person were written from.
+		return Neighbour{}, false
+	}
+	one.Title = ref.Title
+	return one, true
+}
+
+// readBodies reads the prose of the first MostRead notes that have a path. A
+// read fails when the vault itself is out of reach, and a panel of titles with
+// no prose under any of them would say nothing about why; what is wrong with
+// one note is an outcome, not an error.
+func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, shown []Neighbour) error {
+	for i := range shown {
 		if i == MostRead {
 			break
 		}
-		if out.Notes[i].Path == "" {
+		if shown[i].Path == "" {
 			continue
 		}
-		contents, err := u.reads.Execute(ctx, v, out.Notes[i].Path)
+		contents, err := u.reads.Execute(ctx, v, shown[i].Path)
 		if err != nil {
-			// A read fails when the vault itself is out of reach, and a panel
-			// of titles with no prose under any of them would say nothing about
-			// why. What is wrong with one note is an outcome, not an error.
-			return Neighbourhood{}, err
+			return err
 		}
-		out.Notes[i].Outcome = contents.Outcome
-		out.Notes[i].Body = contents.Body
+		shown[i].Outcome = contents.Outcome
+		shown[i].Body = contents.Body
 	}
-	return out, nil
+	return nil
 }

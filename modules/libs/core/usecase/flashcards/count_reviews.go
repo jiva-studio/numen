@@ -100,82 +100,111 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	if err != nil {
 		return ReviewCounts{}, err
 	}
-
-	was := u.readRemembered(ctx, v)
-	now := countCache{V: countedVersion}
-	out := ReviewCounts{Days: make(map[string]review.Tally)}
-
 	store, err := u.logs.Open(v)
 	if err != nil {
 		return ReviewCounts{}, err
 	}
-	// One identifier is one answer over the whole log, so a line another run
-	// was counted for is not counted again.
-	seen := make(map[string]bool)
-	// What is still to come is worked out from the whole history, so every run
-	// is read here and the reading is handed on.
-	coming := u.schedules.by != nil
-	var held ReviewLog
-	for _, file := range files {
-		var ran LogFile
-		var opened bool
-		one, kept := was[file.Name]
-		stale := !kept || one.Size != file.Size
-		if stale || coming {
-			ran, err = log.ReadFile(ctx, store, file)
-			if err != nil {
-				return ReviewCounts{}, err
-			}
-			opened = true
-		}
-		if stale {
-			one = cachedRun{
-				Name: file.Name,
-				Size: ran.Size,
-				Days: review.GetDayTallies(u.day, ran.Answers),
-				IDs:  identifiers(ran.Answers),
-			}
-		}
-		now.Runs = append(now.Runs, one)
-		if opened && !ran.IsGone && !ran.IsUnreadable {
-			held.Answers = append(held.Answers, ran.Answers...)
-			held.Files = append(held.Files, port.Entry{Name: file.Name, Size: ran.Size})
-		}
 
-		// What a run came to on its own is what is kept, and what the run adds
-		// to the counting is what no other run has been counted for.
-		days := one.Days
-		if isRepeated(one.IDs, seen) {
-			if !opened {
-				ran, err = log.ReadFile(ctx, store, file)
-				if err != nil {
-					return ReviewCounts{}, err
-				}
-			}
-			days = review.GetDayTallies(u.day, getUncounted(ran.Answers, seen))
-		}
-		for _, id := range one.IDs {
-			seen[id] = true
-		}
-		for day, count := range days {
-			out.Days[day] = addTallies(out.Days[day], count)
-			out.Answered += count.Answered
+	run := runCount{
+		was:    u.readRemembered(ctx, v),
+		now:    countCache{V: countedVersion},
+		out:    ReviewCounts{Days: make(map[string]review.Tally)},
+		seen:   make(map[string]bool),
+		coming: u.schedules.by != nil,
+	}
+	for _, file := range files {
+		if err := u.countFile(ctx, log, store, file, &run); err != nil {
+			return ReviewCounts{}, err
 		}
 	}
 
-	held.order = newHistory(held.Answers)
-	u.remember(ctx, v, now)
-	out.Streak = review.Streak(u.day, out.Days, u.now())
+	run.held.order = newHistory(run.held.Answers)
+	u.remember(ctx, v, run.now)
+	run.out.Streak = review.Streak(u.day, run.out.Days, u.now())
 
 	// What is still to come, and how much came back, are both worked out from
 	// the answers in the order they were given, so they are asked for together.
-	due, retained, err := u.getDueAndRetained(ctx, v, held)
+	due, retained, err := u.getDueAndRetained(ctx, v, run.held)
 	if err != nil {
 		return ReviewCounts{}, err
 	}
-	out.Due = due
-	out.Retained = retained
-	return out, nil
+	run.out.Due = due
+	run.out.Retained = retained
+	return run.out, nil
+}
+
+// runCount is the state of one counting over the runs of a log.
+type runCount struct {
+	// was is what was counted last time, by the name of the run.
+	was map[string]cachedRun
+	// now is what this counting remembers.
+	now countCache
+	out ReviewCounts
+	// seen holds every identifier already counted. One identifier is one answer
+	// over the whole log, so a line another run was counted for is not counted
+	// again.
+	seen map[string]bool
+	// coming is whether what is still to come is worked out from the whole
+	// history, so that every run is read and the reading is handed on.
+	coming bool
+	held   ReviewLog
+}
+
+// countFile adds one run of the log to the counting.
+func (u CountReviews) countFile(
+	ctx context.Context, log Log, store port.DerivedStore, file port.Entry, run *runCount,
+) error {
+	var ran LogFile
+	var opened bool
+	var err error
+	one, kept := run.was[file.Name]
+	stale := !kept || one.Size != file.Size
+	if stale || run.coming {
+		ran, err = log.ReadFile(ctx, store, file)
+		if err != nil {
+			return err
+		}
+		opened = true
+	}
+	if stale {
+		one = cachedRun{
+			Name: file.Name,
+			Size: ran.Size,
+			Days: review.GetDayTallies(u.day, ran.Answers),
+			IDs:  identifiers(ran.Answers),
+		}
+	}
+	run.now.Runs = append(run.now.Runs, one)
+	if opened && !ran.IsGone && !ran.IsUnreadable {
+		run.held.Answers = append(run.held.Answers, ran.Answers...)
+		run.held.Files = append(run.held.Files, port.Entry{Name: file.Name, Size: ran.Size})
+	}
+
+	days := one.Days
+	if isRepeated(one.IDs, run.seen) {
+		if !opened {
+			ran, err = log.ReadFile(ctx, store, file)
+			if err != nil {
+				return err
+			}
+		}
+		days = review.GetDayTallies(u.day, getUncounted(ran.Answers, run.seen))
+	}
+	run.addDays(one.IDs, days)
+	return nil
+}
+
+// addDays puts the days a run adds to the counting into it and marks the run's
+// lines as counted. What a run came to on its own is what is kept, and what
+// the run adds is what no other run has been counted for.
+func (run *runCount) addDays(ids []string, days map[string]review.Tally) {
+	for _, id := range ids {
+		run.seen[id] = true
+	}
+	for day, count := range days {
+		run.out.Days[day] = addTallies(run.out.Days[day], count)
+		run.out.Answered += count.Answered
+	}
 }
 
 // addTallies is two days' answers put together, which is how the runs of one
