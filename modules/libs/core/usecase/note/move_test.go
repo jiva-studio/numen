@@ -504,7 +504,7 @@ func TestANoteWithInlineFrontmatterIsReportedAndNotWritten(t *testing.T) {
 // back as it was set.
 func TestAMoveHandsBackTheCollaboratorsItWasGiven(t *testing.T) {
 	c := openLinked(t)
-	readers, writers := brokenReaders{}, failingWriters{VaultWriters: filesystem.VaultWriters{}, opened: new(int)}
+	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: filesystem.VaultWriters{}, opened: new(int)}
 	sources := sulking{SourceRepository: c.db.Sources()}
 
 	moving := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)
