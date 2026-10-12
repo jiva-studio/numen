@@ -34,7 +34,7 @@ func (d *folderDialog) Choose(_ context.Context, title, startingAt string) (stri
 	if !hasSchemas() {
 		return "", false, port.ErrNoFolderDialog
 	}
-	if !d.tryTake() {
+	if !d.tryAcquire() {
 		return "", false, port.ErrChoosing
 	}
 	defer d.release()
@@ -58,8 +58,8 @@ func (d *folderDialog) Choose(_ context.Context, title, startingAt string) (stri
 	return chosen, chosen != "", nil
 }
 
-// tryTake takes the dialog, and answers false where it is already up.
-func (d *folderDialog) tryTake() bool {
+// tryAcquire takes the dialog, and answers false where it is already up.
+func (d *folderDialog) tryAcquire() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
