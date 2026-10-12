@@ -112,8 +112,7 @@ func listVaultProblems(ctx context.Context, core Core, in vaultProblemsInput) (v
 
 	res := vaultProblemsOutput{Problems: make([]Problem, 0, len(found)), Ran: in.Checks}
 	if len(res.Ran) == 0 {
-		// Saying which checks an empty answer covers is the difference
-		// between "nothing is wrong" and "nothing I looked at is wrong".
+		// The checks that ran are reported so an empty result states what it covers.
 		for _, name := range problems.Loud() {
 			res.Ran = append(res.Ran, string(name))
 		}
@@ -130,8 +129,8 @@ func listVaultProblems(ctx context.Context, core Core, in vaultProblemsInput) (v
 	return res, nil
 }
 
-// getProblemChecks is the checks the core carries, or the standard ones over
-// the notes' queries when it carries none.
+// getProblemChecks returns the checks configured on the core, or the standard checks
+// over the notes' queries when none are configured.
 func getProblemChecks(core Core) check.Checks {
 	problems := core.Notes.Problems
 	if len(problems.List) == 0 {
