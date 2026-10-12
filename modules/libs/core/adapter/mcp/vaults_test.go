@@ -98,6 +98,7 @@ func onTheList(t *testing.T) *installation {
 	held := &rows{}
 	renaming := vaults.NewRename(registry, held)
 	forgetting := vaults.NewUnregister(registry, held)
+	finding := vaults.NewFind(registry)
 
 	f := &installation{
 		registry: registry,
@@ -111,7 +112,7 @@ func onTheList(t *testing.T) *installation {
 		Showing: mcp.ShowOneVault(f.first, f.first.Path),
 		Vaults: mcp.Vaults{
 			GetKnownVaults: container.Config{}.GetKnownVaults(registry),
-			Find:           container.Config{}.FindVault(registry),
+			Find:           &finding,
 			PickFolder:     container.Config{}.PickFolder(f.dialog),
 			Add:            &adding,
 			Rename:         &renaming,

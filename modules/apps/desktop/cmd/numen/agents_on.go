@@ -123,7 +123,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		// the folder that goes is a person's to ask for.
 		Vaults: mcp.Vaults{
 			GetKnownVaults: cfg.GetKnownVaults(opened.API.Vaults.Registry),
-			Find:           cfg.FindVault(opened.API.Vaults.Registry),
+			Find:           opened.API.Vaults.Find,
 			PickFolder:     cfg.PickFolder(opened.API.Vaults.FolderDialog),
 			Add:            opened.API.Vaults.Add,
 			Rename:         opened.API.Vaults.Rename,
