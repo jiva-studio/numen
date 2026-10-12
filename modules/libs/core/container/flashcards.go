@@ -155,6 +155,7 @@ func (c Config) Flashcards(
 		CardsDue:      flashcards.NewCountCardsDue(faces, schedules, presets, day, now),
 		Session:       flashcards.NewSession(marking, faces, schedules, presets, day, now),
 		Log:           flashcards.Log{Stores: logs},
+		Record:        flashcards.NewRecord(now),
 		Counted:       counted,
 		GetReviewDays: flashcards.NewGetReviewDays(counted),
 		Presets:       presets,

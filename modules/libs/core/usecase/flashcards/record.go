@@ -23,21 +23,18 @@ var ErrNoAnswer = errors.New("an answer taken back names the one it takes back")
 // A line is appended and nothing is ever rewritten, so what was recorded stands
 // whatever happens next — including a person taking an answer back, which is a
 // line of its own naming the one it takes back.
-type Record struct {
-	run *LogWriter
-	now port.Clock
-}
+type Record struct{ now port.Clock }
 
-// NewRecord is what an answer is written down through: the run its line is
-// appended to, and what time it is.
-func NewRecord(run *LogWriter, now port.Clock) Record {
-	return Record{run: run, now: now}
-}
+// errNoClock is what a Record that was given no clock answers.
+var errNoClock = errors.New("an answer is stamped by a clock, and none was given")
+
+// NewRecord is what an answer is written down through: what time it is.
+func NewRecord(now port.Clock) Record { return Record{now: now} }
 
 // Answer writes down one card answered once, and hands back the line as it was
 // written: it carries the identifier that taking this answer back would name.
 func (u Record) Answer(
-	ctx context.Context, on review.CardFaceID, r review.Rating, took time.Duration,
+	ctx context.Context, run *LogWriter, on review.CardFaceID, r review.Rating, took time.Duration,
 ) (review.Answer, error) {
 	if !r.Valid() {
 		return review.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)
@@ -46,10 +43,13 @@ func (u Record) Answer(
 		return review.Answer{}, errors.New("an answer says which card, and through which face")
 	}
 
+	if u.now == nil {
+		return review.Answer{}, errNoClock
+	}
 	at := u.now()
 	id := ulid.New(at)
 	a := review.Answer{ID: id, CardFace: on, At: at, Rating: r, Took: took}
-	if err := u.run.Append(ctx, a); err != nil {
+	if err := run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
 	}
 	return a, nil
@@ -57,14 +57,17 @@ func (u Record) Answer(
 
 // TakeBack writes down that an answer was taken back. A person hits the wrong
 // key, and the record of that is what says so.
-func (u Record) TakeBack(ctx context.Context, id string) (review.Answer, error) {
+func (u Record) TakeBack(ctx context.Context, run *LogWriter, id string) (review.Answer, error) {
 	if id == "" {
 		return review.Answer{}, ErrNoAnswer
+	}
+	if u.now == nil {
+		return review.Answer{}, errNoClock
 	}
 	at := u.now()
 	own := ulid.New(at)
 	a := review.Answer{ID: own, At: at, Undoes: id}
-	if err := u.run.Append(ctx, a); err != nil {
+	if err := run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
 	}
 	return a, nil
