@@ -8,7 +8,7 @@ import type { VaultCard } from '../types'
 import { deserializeDeck, serializeCardToWire } from './serialize'
 
 /** A card as the window carries it, standing under the section given. */
-const cardUnder = (sectionIndex: number | null): VaultCard => ({
+const createCard = (sectionIndex: number | null): VaultCard => ({
   mark: 'a1',
   sectionIndex,
   heading: 'Entropy',
@@ -20,17 +20,17 @@ const cardUnder = (sectionIndex: number | null): VaultCard => ({
 
 describe('a card on its way out', () => {
   it('names the section it stands under by its number, zero included', () => {
-    expect(serializeCardToWire(cardUnder(0))).toHaveProperty('sectionIndex', 0)
-    expect(serializeCardToWire(cardUnder(2))).toHaveProperty('sectionIndex', 2)
+    expect(serializeCardToWire(createCard(0))).toHaveProperty('sectionIndex', 0)
+    expect(serializeCardToWire(createCard(2))).toHaveProperty('sectionIndex', 2)
   })
 
   it('names no section where it stands under none', () => {
-    expect(serializeCardToWire(cardUnder(null))).not.toHaveProperty('sectionIndex')
+    expect(serializeCardToWire(createCard(null))).not.toHaveProperty('sectionIndex')
   })
 
   it('carries its values as field and text only', () => {
     const card: VaultCard = {
-      ...cardUnder(null),
+      ...createCard(null),
       values: [{ field: 'Front', text: 'Entropy', extra: 1 } as VaultCard['values'][number]],
     }
 

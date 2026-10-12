@@ -107,7 +107,7 @@ const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
 export const ATranscript: Story = { parameters: WRITING }
 
 /** The editor the transcript is written in, by the name the tab gives it. */
-const transcriptIn = (canvas: HTMLElement): HTMLElement => {
+const getTranscript = (canvas: HTMLElement): HTMLElement => {
   const host = canvas.querySelector<HTMLElement>(`[aria-label="${words.transcript}"]`)
   if (!host) throw new Error('no transcript')
   return host
@@ -117,9 +117,9 @@ const transcriptIn = (canvas: HTMLElement): HTMLElement => {
  * The words themselves, once the editor has drawn them. They are the editable
  * part of it, which is what the two custom properties are resolved against.
  */
-const wordsIn = async (canvas: HTMLElement): Promise<HTMLElement> =>
+const getWords = async (canvas: HTMLElement): Promise<HTMLElement> =>
   await waitFor(() => {
-    const written = transcriptIn(canvas).querySelector<HTMLElement>('[contenteditable="true"]')
+    const written = getTranscript(canvas).querySelector<HTMLElement>('[contenteditable="true"]')
     if (!written) throw new Error('the transcript has not been drawn yet')
     return written
   })
@@ -135,7 +135,7 @@ export const TheWordsClearThePlayer: Story = {
   parameters: WRITING,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const written = await wordsIn(canvasElement)
+    const written = await getWords(canvasElement)
     const follow = canvas.getByRole('button', { name: words.follow })
 
     // The controls stand in the strip the player heads the pane with, and that
@@ -164,7 +164,7 @@ export const TheWordsKeepTheirMeasure: Story = {
   parameters: WRITING,
   args: { cues: LONG, width: '1600px' },
   play: async ({ canvasElement }) => {
-    const written = await wordsIn(canvasElement)
+    const written = await getWords(canvasElement)
     const pane = canvasElement.firstElementChild as HTMLElement
 
     // The measure is what the tab declares, in the pixels it comes to here.

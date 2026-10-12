@@ -19,12 +19,12 @@ import type { WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
 import {
-  sectionsOf,
+  getSections,
   serializeBufferDeckToString,
   serializeBufferCardsToVaultCards,
   deserializeBufferDeckFromString,
   deserializeVaultDeck,
-  cardsOf,
+  getCards,
   serializeBufferSectionsToVaultSections,
   type BufferDeck,
 } from '../lib/deck'
@@ -86,8 +86,8 @@ export function useDeckTabs(
     },
   })
 
-  const read = createDeckReader(store, vaultAnswers.problemsAt)
-  const { deckAt, marksAt } = read
+  const read = createDeckReader(store, vaultAnswers.getProblems)
+  const { getDeck, getMarks } = read
 
   const wiring = useDeckScheduleSync(cards, presets, store)
   const { offers, stencils, listStencils, listStencilsAgain, scheduled } = wiring
@@ -101,17 +101,17 @@ export function useDeckTabs(
   }
 
   const createDeckTabState = (id: string): DeckTabState => {
-    const deck = computed(() => deckAt(id))
-    const actions = createDeckTabActions(id, deckAt, updateDeckState, () => offers.value)
+    const deck = computed(() => getDeck(id))
+    const actions = createDeckTabActions(id, getDeck, updateDeckState, () => offers.value)
 
     return {
       id,
       note: computed(() => store.getOpenNote(id)),
       deck,
-      drawn: computed(() => cardsOf(deck.value, offers.value)),
-      sections: computed(() => sectionsOf(deck.value)),
+      drawn: computed(() => getCards(deck.value, offers.value)),
+      sections: computed(() => getSections(deck.value)),
       stencils,
-      marks: computed(() => marksAt(id)),
+      marks: computed(() => getMarks(id)),
       errorMessage: computed(() =>
         vaultAnswers.getErrorMessage(store.getPath(id), store.getOpenNote(id).error !== null),
       ),

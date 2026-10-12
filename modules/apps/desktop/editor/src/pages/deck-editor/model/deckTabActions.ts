@@ -6,8 +6,8 @@ import {
   addCard,
   addSection,
   dropCard,
-  fillCard,
-  pathOfCut,
+  setCardValue,
+  getCutPath,
   removeCard,
   removeSection,
   renameSection,
@@ -16,7 +16,7 @@ import {
 
 export function createDeckTabActions(
   id: string,
-  deckAt: (id: string) => BufferDeck,
+  getDeck: (id: string) => BufferDeck,
   updateDeck: (id: string, deck: BufferDeck) => void,
   getOffers: () => readonly StencilSummary[],
 ) {
@@ -24,15 +24,15 @@ export function createDeckTabActions(
     addCard: (stencil: string, values: readonly Value[], section: string | null = null) =>
       updateDeck(
         id,
-        addCard(deckAt(id), stencil, pathOfCut(getOffers(), stencil), values, section),
+        addCard(getDeck(id), stencil, getCutPath(getOffers(), stencil), values, section),
       ),
-    removeCard: (card: string) => updateDeck(id, removeCard(deckAt(id), card)),
-    moveCard: (card: string, at: string | null) => updateDeck(id, dropCard(deckAt(id), card, at)),
+    removeCard: (card: string) => updateDeck(id, removeCard(getDeck(id), card)),
+    moveCard: (card: string, at: string | null) => updateDeck(id, dropCard(getDeck(id), card, at)),
     writeCardField: (card: string, field: string, nth: number, text: string) =>
-      updateDeck(id, fillCard(deckAt(id), card, field, nth, text)),
-    addSection: (name: string) => updateDeck(id, addSection(deckAt(id), name)),
+      updateDeck(id, setCardValue(getDeck(id), card, field, nth, text)),
+    addSection: (name: string) => updateDeck(id, addSection(getDeck(id), name)),
     renameSection: (section: string, name: string) =>
-      updateDeck(id, renameSection(deckAt(id), section, name)),
-    removeSection: (section: string) => updateDeck(id, removeSection(deckAt(id), section)),
+      updateDeck(id, renameSection(getDeck(id), section, name)),
+    removeSection: (section: string) => updateDeck(id, removeSection(getDeck(id), section)),
   }
 }

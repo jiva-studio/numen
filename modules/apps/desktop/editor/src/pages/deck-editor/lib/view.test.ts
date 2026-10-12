@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import type { StencilSummary } from '@/entities/deck'
 import type { BufferCard, BufferDeck, BufferSection } from '../types'
-import { applyHead, applyName, sameDeck, sameOffers } from './view'
+import { applyHeadings, applyIds, areDecksEqual, areOffersEqual } from './view'
 
 const card = (over: Partial<BufferCard> = {}): BufferCard => ({
   id: 'screen-card',
@@ -46,7 +46,7 @@ describe('whether two decks read the same', () => {
     const one = deck({ sections: [section()] })
     const other = deck({ sections: [section({ name: 'Birds' })] })
 
-    expect(sameDeck(one, other)).toBe(false)
+    expect(areDecksEqual(one, other)).toBe(false)
   })
 })
 
@@ -54,14 +54,14 @@ describe('the deck on screen under the headings the file carries', () => {
   it('is the deck on screen itself where every heading already matches', () => {
     const screen = deck({ cards: [card()] })
 
-    expect(applyHead(screen, deck({ cards: [card({ id: 'other' })] }))).toBe(screen)
+    expect(applyHeadings(screen, deck({ cards: [card({ id: 'other' })] }))).toBe(screen)
   })
 
   it('takes each heading from the card read at the same place', () => {
     const screen = deck({ cards: [card(), card({ id: 'second', heading: 'Alpaca' })] })
     const read = deck({ cards: [card({ heading: 'about 45"' }), card({ heading: 'Alpaca' })] })
 
-    expect(applyHead(screen, read).cards.map((one) => one.heading)).toStrictEqual([
+    expect(applyHeadings(screen, read).cards.map((one) => one.heading)).toStrictEqual([
       'about 45"',
       'Alpaca',
     ])
@@ -71,7 +71,7 @@ describe('the deck on screen under the headings the file carries', () => {
     const screen = deck({ cards: [card(), card({ id: 'second' })] })
     const read = deck({ cards: [card()] })
 
-    expect(applyHead(screen, read).cards.map((one) => one.heading)).toStrictEqual(['Llama', ''])
+    expect(applyHeadings(screen, read).cards.map((one) => one.heading)).toStrictEqual(['Llama', ''])
   })
 })
 
@@ -80,21 +80,21 @@ describe('a reading under the identities the window drew it by', () => {
     const screen = deck({ sections: [section()] })
     const read = deck({ sections: [section({ id: 'read-section' })] })
 
-    expect(applyName(screen, read).sections.map((one) => one.id)).toStrictEqual(['screen-section'])
+    expect(applyIds(screen, read).sections.map((one) => one.id)).toStrictEqual(['screen-section'])
   })
 
   it('takes the identity read for a section renamed', () => {
     const screen = deck({ sections: [section()] })
     const read = deck({ sections: [section({ id: 'read-section', name: 'Birds' })] })
 
-    expect(applyName(screen, read).sections.map((one) => one.id)).toStrictEqual(['read-section'])
+    expect(applyIds(screen, read).sections.map((one) => one.id)).toStrictEqual(['read-section'])
   })
 
   it('takes the identity read for a section whose prose changed', () => {
     const screen = deck({ sections: [section()] })
     const read = deck({ sections: [section({ id: 'read-section', preamble: 'warm blood\n' })] })
 
-    expect(applyName(screen, read).sections.map((one) => one.id)).toStrictEqual(['read-section'])
+    expect(applyIds(screen, read).sections.map((one) => one.id)).toStrictEqual(['read-section'])
   })
 
   it('takes every identity read where a section was added', () => {
@@ -103,10 +103,7 @@ describe('a reading under the identities the window drew it by', () => {
       sections: [section({ id: 'read-1' }), section({ id: 'read-2', name: 'Birds' })],
     })
 
-    expect(applyName(screen, read).sections.map((one) => one.id)).toStrictEqual([
-      'read-1',
-      'read-2',
-    ])
+    expect(applyIds(screen, read).sections.map((one) => one.id)).toStrictEqual(['read-1', 'read-2'])
   })
 
   it('files each card under the section it was read under, by the identity kept for it', () => {
@@ -116,19 +113,19 @@ describe('a reading under the identities the window drew it by', () => {
       cards: [card({ section: 'r2' }), card({ id: 'loose', section: null })],
     })
 
-    expect(applyName(screen, read).cards.map((one) => one.section)).toStrictEqual(['s2', null])
+    expect(applyIds(screen, read).cards.map((one) => one.section)).toStrictEqual(['s2', null])
   })
 
   it('files a card under no section where the section it names was not read', () => {
     const read = deck({ sections: [section({ id: 'r1' })], cards: [card({ section: 'ghost' })] })
 
-    expect(applyName(deck(), read).cards[0]?.section).toBeNull()
+    expect(applyIds(deck(), read).cards[0]?.section).toBeNull()
   })
 
   it('keeps the identity of a card the window wrote, read back under its new mark', () => {
     const { screen, read } = written()
 
-    expect(applyName(screen, read).cards[0]?.id).toBe('screen-card')
+    expect(applyIds(screen, read).cards[0]?.id).toBe('screen-card')
   })
 
   it('keeps the identity of a card the window wrote into a section', () => {
@@ -138,7 +135,7 @@ describe('a reading under the identities the window drew it by', () => {
       cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', section: 'r1' })],
     })
 
-    expect(applyName(screen, read).cards[0]).toMatchObject({
+    expect(applyIds(screen, read).cards[0]).toMatchObject({
       id: 'screen-card',
       section: 'screen-section',
     })
@@ -151,7 +148,7 @@ describe('a reading under the identities the window drew it by', () => {
   ])('takes the identity read for a card whose %s changed', (_what, over) => {
     const { screen, read } = written(over)
 
-    expect(applyName(screen, read).cards[0]?.id).toBe('k7m2xq9fzp')
+    expect(applyIds(screen, read).cards[0]?.id).toBe('k7m2xq9fzp')
   })
 
   it('takes the identity read for a card that moved into a section', () => {
@@ -161,7 +158,7 @@ describe('a reading under the identities the window drew it by', () => {
       cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', section: 'r2' })],
     })
 
-    expect(applyName({ ...screen, cards: [card({ section: null })] }, read).cards[0]?.id).toBe(
+    expect(applyIds({ ...screen, cards: [card({ section: null })] }, read).cards[0]?.id).toBe(
       'k7m2xq9fzp',
     )
   })
@@ -170,21 +167,21 @@ describe('a reading under the identities the window drew it by', () => {
     const { screen, read } = written()
     const more = { ...read, cards: [...read.cards, card({ id: 'second', mark: 'second' })] }
 
-    expect(applyName(screen, more).cards[0]?.id).toBe('k7m2xq9fzp')
+    expect(applyIds(screen, more).cards[0]?.id).toBe('k7m2xq9fzp')
   })
 
   it('takes the identity read for a card the screen already knew by a mark', () => {
     const screen = deck({ cards: [card({ id: 'old-mark', mark: 'old-mark' })] })
     const { read } = written()
 
-    expect(applyName(screen, read).cards[0]?.id).toBe('k7m2xq9fzp')
+    expect(applyIds(screen, read).cards[0]?.id).toBe('k7m2xq9fzp')
   })
 
   it('takes the identity read for a card the file still carries no mark for', () => {
     const { screen } = written()
     const read = deck({ cards: [card({ id: 'minted' })] })
 
-    expect(applyName(screen, read).cards[0]?.id).toBe('minted')
+    expect(applyIds(screen, read).cards[0]?.id).toBe('minted')
   })
 })
 
@@ -197,9 +194,9 @@ describe('whether two stencil listings are the same', () => {
   })
 
   it('is so for the same stencils in the same order', () => {
-    expect(sameOffers([offer(), offer({ path: 'b.md' })], [offer(), offer({ path: 'b.md' })])).toBe(
-      true,
-    )
+    expect(
+      areOffersEqual([offer(), offer({ path: 'b.md' })], [offer(), offer({ path: 'b.md' })]),
+    ).toBe(true)
   })
 
   it.each([
@@ -208,10 +205,10 @@ describe('whether two stencil listings are the same', () => {
     ['with a field more', { fields: ['Name', 'Height', 'Weight'] }],
     ['with a field renamed', { fields: ['Name', 'Weight'] }],
   ])('is not so where the second stencil is %s', (_what, over) => {
-    expect(sameOffers([offer(), offer()], [offer(), offer(over)])).toBe(false)
+    expect(areOffersEqual([offer(), offer()], [offer(), offer(over)])).toBe(false)
   })
 
   it('is not so where one listing has a stencil more', () => {
-    expect(sameOffers([offer()], [offer(), offer()])).toBe(false)
+    expect(areOffersEqual([offer()], [offer(), offer()])).toBe(false)
   })
 })

@@ -128,7 +128,7 @@ const dropOnSection = (
 /**
  * One value of one card as it now reads.
  */
-export const fillCard = (
+export const setCardValue = (
   deck: BufferDeck,
   id: string,
   field: string,

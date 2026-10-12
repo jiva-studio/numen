@@ -52,7 +52,7 @@ const vault = () => ({
 })
 
 /** The wire over that vault, and the messages it wrote. */
-const wireOver = (cards: ReturnType<typeof vault>) => {
+const createWire = (cards: ReturnType<typeof vault>) => {
   const messages: { text: string; how: string | undefined }[] = []
   const wire = createStencilWire(cards as unknown as Cards, (text, how) => {
     messages.push({ text, how })
@@ -64,7 +64,7 @@ describe('reading a stencil', () => {
   it('comes back as the body the tab is dirty against', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asValue({ stencil: stencil(), at: '12 34 Word.md' }))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     const answer = await wire.read('Word.md')
 
@@ -76,7 +76,7 @@ describe('reading a stencil', () => {
   it('carries no body at all where the read was refused', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('notAStencil'))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     expect(await wire.read('Notes.md')).toEqual(asFailure('notAStencil'))
     expect(wire.getProblems('Notes.md')).toEqual([])
@@ -86,7 +86,7 @@ describe('reading a stencil', () => {
   it('is recorded as no failure of the file where the file moved past the tab', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('changed'))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     expect(await wire.read('Notes.md')).toEqual(asFailure('notAStencil'))
   })
@@ -95,7 +95,7 @@ describe('reading a stencil', () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('missing'))
     cards.renameField.mockResolvedValue(asValue({ decks: [], cards: 0, notWritten: [], at: '' }))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
     await wire.read('Word.md')
 
     await wire.renameField('Word.md', 'Front', 'Face', vi.fn())
@@ -108,7 +108,7 @@ describe('reading a stencil', () => {
     cards.readStencil.mockResolvedValue(
       asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
     )
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     await wire.read('Word.md')
 
@@ -121,7 +121,7 @@ describe('writing a stencil', () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asValue({ stencil: stencil(), at: '12 34 Word.md' }))
     cards.writeStencil.mockResolvedValue(asValue({ at: '56 78 Word.md' }))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     const read = await wire.read('Word.md')
     const body = read.ok ? read.value.body : ''
@@ -143,7 +143,7 @@ describe('writing a stencil', () => {
   it('names no file where the tab read none, and nothing where the body is empty', async () => {
     const cards = vault()
     cards.writeStencil.mockResolvedValue(asValue({ at: '' }))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     await wire.write('Word.md', '')
 
@@ -159,7 +159,7 @@ describe('writing a stencil', () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asValue({ stencil: stencil(), at: '12 34 Word.md' }))
     cards.writeStencil.mockResolvedValue(asFailure('unreadable'))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     await wire.read('Word.md')
     await wire.write('Word.md', '')
@@ -170,13 +170,13 @@ describe('writing a stencil', () => {
 
 describe('what is shown for a fault', () => {
   it('is nothing at all where there is no fault', () => {
-    const { wire } = wireOver(vault())
+    const { wire } = createWire(vault())
 
     expect(wire.getErrorMessage('Word.md', null)).toBe('')
   })
 
   it('says the vault was out of reach where neither a read nor a write failed', () => {
-    const { wire } = wireOver(vault())
+    const { wire } = createWire(vault())
 
     expect(wire.getErrorMessage('Word.md', 'unreadable')).toBe(words.unreachable)
   })
@@ -184,7 +184,7 @@ describe('what is shown for a fault', () => {
   it('says the note is no stencil where the read was refused for that', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('notAStencil'))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     await wire.read('Notes.md')
 
@@ -194,7 +194,7 @@ describe('what is shown for a fault', () => {
   it('says the file could not be read where the read was refused for anything else', async () => {
     const cards = vault()
     cards.readStencil.mockResolvedValue(asFailure('missing'))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     await wire.read('Notes.md')
 
@@ -204,7 +204,7 @@ describe('what is shown for a fault', () => {
   it('says the note is no stencil where the write was refused for that', async () => {
     const cards = vault()
     cards.writeStencil.mockResolvedValue(asFailure('notAStencil'))
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     await wire.write('Notes.md', '')
 
@@ -219,7 +219,7 @@ describe('renaming a field', () => {
 
   it('asks the vault for nothing where the name is unchanged or empty', async () => {
     const cards = vault()
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
     const changed = vi.fn()
 
     await wire.renameField('Word.md', 'Front', '', changed)
@@ -232,7 +232,7 @@ describe('renaming a field', () => {
   it('names the file the tab read, and nothing where it read none', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(getRenameAnswer())
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
 
     await wire.renameField('Word.md', 'Front', 'Face', vi.fn())
 
@@ -248,7 +248,7 @@ describe('renaming a field', () => {
         notWritten: [{ path: 'Old.md', text: '' }],
       }),
     )
-    const { wire, messages } = wireOver(cards)
+    const { wire, messages } = createWire(cards)
     const changed = vi.fn()
 
     await wire.renameField('Word.md', 'Front', 'Face', changed)
@@ -263,7 +263,7 @@ describe('renaming a field', () => {
   it('says nothing where the rename reached no card and missed no deck', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(getRenameAnswer())
-    const { wire, messages } = wireOver(cards)
+    const { wire, messages } = createWire(cards)
 
     await wire.renameField('Word.md', 'Front', 'Face', vi.fn())
 
@@ -273,7 +273,7 @@ describe('renaming a field', () => {
   it('carries the refusal in the words the window shows', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(asFailure('unreadable'))
-    const { wire, messages } = wireOver(cards)
+    const { wire, messages } = createWire(cards)
     const changed = vi.fn()
 
     await wire.renameField('Word.md', 'Front', 'Face', changed)
@@ -285,7 +285,7 @@ describe('renaming a field', () => {
   it('says the file moved past what the tab read, and reads it again', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(asFailure('changed'))
-    const { wire, messages } = wireOver(cards)
+    const { wire, messages } = createWire(cards)
     const changed = vi.fn()
 
     await wire.renameField('Word.md', 'Front', 'Face', changed)
@@ -305,7 +305,7 @@ describe('renaming a field', () => {
 
 describe('what the window remembers of a file', () => {
   it('is nothing where the vault has said nothing about it', () => {
-    const { wire } = wireOver(vault())
+    const { wire } = createWire(vault())
 
     expect(wire.getProblems('Word.md')).toEqual(NOTHING.problems)
     expect(wire.getTitle('Word.md')).toBeUndefined()
@@ -316,7 +316,7 @@ describe('what the window remembers of a file', () => {
     cards.readStencil.mockResolvedValue(
       asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
     )
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
     await wire.read('Word.md')
 
     wire.forget('Word.md', true)
@@ -332,7 +332,7 @@ describe('what the window remembers of a file', () => {
     cards.readStencil.mockResolvedValue(
       asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
     )
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
     await wire.read('Word.md')
 
     wire.movePaths([
@@ -352,7 +352,7 @@ describe('what the window remembers of a file', () => {
     cards.readStencil.mockResolvedValue(
       asValue({ stencil: stencil({ problems: [problem] }), at: '' }),
     )
-    const { wire } = wireOver(cards)
+    const { wire } = createWire(cards)
     await wire.read('Still.md')
 
     wire.movePaths([{ from: 'Gone.md', to: 'Still.md' }])
@@ -362,7 +362,7 @@ describe('what the window remembers of a file', () => {
   })
 
   it('takes a title the tab read out of the file itself', () => {
-    const { wire } = wireOver(vault())
+    const { wire } = createWire(vault())
 
     wire.setTitle('Word.md', 'Root')
 

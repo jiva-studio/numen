@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { DeckProblem, VaultStencil } from '@/entities/deck'
-import { stencilBodyOf, stencilOf } from '../lib/stencil'
+import { getStencilBody, createStencil } from '../lib/stencil'
 import { createStencilFields } from './fields'
 
 const cut: VaultStencil = {
@@ -33,7 +33,7 @@ const lacking = (face: number, text: string): DeckProblem => ({
 const create = () => {
   let at = 0
   const state = {
-    body: stencilBodyOf(stencilOf(cut, () => `f${(at += 1)}`)),
+    body: getStencilBody(createStencil(cut, () => `f${(at += 1)}`)),
     problems: [] as readonly DeckProblem[],
   }
   const typed = vi.fn((_id: string, body: string) => {
@@ -69,7 +69,7 @@ describe('the stencil a body reads as', () => {
     const { fields, state } = create()
     const was = fields.getStencil('a')
 
-    state.body = stencilBodyOf({ ...was, fields: ['Height'] })
+    state.body = getStencilBody({ ...was, fields: ['Height'] })
 
     expect(fields.getStencil('a').fields).toStrictEqual(['Height'])
   })
@@ -144,7 +144,7 @@ describe('what a gesture makes of the stencil', () => {
   it('adds a field at the end', () => {
     const { fields, state, typed } = create()
 
-    fields.actionsFor('a').addField('Weight')
+    fields.createActions('a').addField('Weight')
 
     expect(fields.getStencil('a').fields).toStrictEqual(['Height', 'Life span', 'Weight'])
     expect(typed).toHaveBeenCalledWith('a', state.body)
@@ -153,7 +153,7 @@ describe('what a gesture makes of the stencil', () => {
   it('asks the wire to rename a field, and writes nothing itself', () => {
     const { fields, renamed, typed } = create()
 
-    fields.actionsFor('a').renameField('Height', 'Shoulder')
+    fields.createActions('a').renameField('Height', 'Shoulder')
 
     expect(renamed).toHaveBeenCalledWith('a', 'Height', 'Shoulder')
     expect(typed).not.toHaveBeenCalled()
@@ -162,14 +162,14 @@ describe('what a gesture makes of the stencil', () => {
   it('removes a field', () => {
     const { fields } = create()
 
-    fields.actionsFor('a').removeField('Life span')
+    fields.createActions('a').removeField('Life span')
 
     expect(fields.getStencil('a').fields).toStrictEqual(['Height'])
   })
 
   it('moves a field before another', () => {
     const { fields } = create()
-    const actions = fields.actionsFor('a')
+    const actions = fields.createActions('a')
     actions.addField('Weight')
 
     actions.moveField('Weight', 'Life span')
@@ -180,7 +180,7 @@ describe('what a gesture makes of the stencil', () => {
   it('adds a face at the end', () => {
     const { fields, state } = create()
 
-    fields.actionsFor('a').addFace('Spot it')
+    fields.createActions('a').addFace('Spot it')
 
     expect(names(state)).toStrictEqual(['Recognise', 'Name it', 'Spot it'])
   })
@@ -189,7 +189,7 @@ describe('what a gesture makes of the stencil', () => {
     const { fields, state } = create()
     const face = fields.getStencil('a').faces[0]?.id ?? ''
 
-    fields.actionsFor('a').renameFace(face, 'Spot it')
+    fields.createActions('a').renameFace(face, 'Spot it')
 
     expect(names(state)).toStrictEqual(['Spot it', 'Name it'])
   })
@@ -198,7 +198,7 @@ describe('what a gesture makes of the stencil', () => {
     const { fields, state } = create()
     const face = fields.getStencil('a').faces[0]?.id ?? ''
 
-    fields.actionsFor('a').removeFace(face)
+    fields.createActions('a').removeFace(face)
 
     expect(names(state)).toStrictEqual(['Name it'])
   })
@@ -207,7 +207,7 @@ describe('what a gesture makes of the stencil', () => {
     const { fields, state } = create()
     const face = fields.getStencil('a').faces[0]?.id ?? ''
 
-    fields.actionsFor('a').moveFace(face, null)
+    fields.createActions('a').moveFace(face, null)
 
     expect(names(state)).toStrictEqual(['Name it', 'Recognise'])
   })
@@ -216,7 +216,7 @@ describe('what a gesture makes of the stencil', () => {
     const { fields } = create()
     const face = fields.getStencil('a').faces[0]?.id ?? ''
 
-    fields.actionsFor('a').writeFaceHalf(face, 'back', 'changed')
+    fields.createActions('a').writeFaceHalf(face, 'back', 'changed')
 
     expect(fields.getStencil('a').faces[0]?.back).toBe('changed')
     expect(fields.getStencil('a').faces[0]?.front).toBe('{{Height}}')

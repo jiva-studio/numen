@@ -112,7 +112,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
    */
   async function createUntitled(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
     for (let taken = 1; taken <= names; taken++) {
-      const made = await createNote(nameAt(taken), folder, links)
+      const made = await createNote(getNumberedName(taken), folder, links)
       if (made === 'occupied') continue
       return reportNoteResult(made)
     }
@@ -131,14 +131,14 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
   ): Promise<NoteRef | null> {
     const links = resolveSeatLinks(from, seat)
     if (!links) return null
-    return reportNoteResult(await createNote(title, from ? folderOf(from) : '', links))
+    return reportNoteResult(await createNote(title, from ? getFolder(from) : '', links))
   }
 
   /** Create a note in a seat of another one, filed in the folder that one is in. */
   async function createInSeat(from: string, seat: PlexRelatedSeat): Promise<NoteRef | null> {
     const links = resolveSeatLinks(from, seat)
     if (!links) return null
-    return createUntitled(folderOf(from), links)
+    return createUntitled(getFolder(from), links)
   }
 
   /** What a note that was asked for came to, said to the person where it failed. */
@@ -213,10 +213,10 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
 export type NoteCreator = ReturnType<typeof createNoteWriter>
 
 /** The name the note asked for after that many taken ones is filed under. */
-const nameAt = (count: number): string => (count === 1 ? UNTITLED : `${UNTITLED} ${count}`)
+const getNumberedName = (count: number): string => (count === 1 ? UNTITLED : `${UNTITLED} ${count}`)
 
 /** The folder a note is in, so one made from it is filed beside it. */
-const folderOf = (path: string): string => {
+const getFolder = (path: string): string => {
   const cut = path.lastIndexOf('/')
   return cut < 0 ? '' : path.slice(0, cut)
 }

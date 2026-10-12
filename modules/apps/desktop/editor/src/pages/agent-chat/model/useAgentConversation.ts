@@ -12,7 +12,7 @@ import {
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '@/entities/note'
 import type { AgentTabDeps } from '../types'
 
-export { firstLine } from '../lib/title'
+export { getFirstLine } from '../lib/title'
 export type { AgentTabDeps, NoteRef } from '../types'
 
 export const DEFAULT_AGENT_OPTIONS: readonly AgentModelOption[] = [

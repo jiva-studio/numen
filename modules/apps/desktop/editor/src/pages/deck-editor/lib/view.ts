@@ -9,13 +9,13 @@ import {
   serializeBufferSectionsToVaultSections,
 } from './serialize'
 
-export const sectionsOf = (deck: BufferDeck): readonly DeckSection[] =>
+export const getSections = (deck: BufferDeck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
 
 /**
  * The cards as the grid draws them, each under the stencil its wikilink resolves to.
  */
-export const cardsOf = (
+export const getCards = (
   deck: BufferDeck,
   offers: readonly StencilSummary[],
 ): readonly DeckCard[] => {
@@ -31,7 +31,7 @@ export const cardsOf = (
 /**
  * The stencils a card may be cut by, under the word a card names one by.
  */
-export const stencilsOf = (offers: readonly StencilSummary[]): readonly Stencil[] => {
+export const getStencils = (offers: readonly StencilSummary[]): readonly Stencil[] => {
   const seenTitles = new Set<string>()
   const stencils: Stencil[] = []
   for (const offer of offers) {
@@ -49,7 +49,7 @@ const getWrittenCards = (deck: BufferDeck): readonly Omit<VaultCard, 'heading'>[
 /**
  * Whether two decks read the same.
  */
-export const sameDeck = (one: BufferDeck, other: BufferDeck): boolean =>
+export const areDecksEqual = (one: BufferDeck, other: BufferDeck): boolean =>
   one.preamble === other.preamble &&
   one.tail === other.tail &&
   JSON.stringify(serializeBufferSectionsToVaultSections(one)) ===
@@ -59,7 +59,7 @@ export const sameDeck = (one: BufferDeck, other: BufferDeck): boolean =>
 /**
  * The deck on screen under the headings the file now carries.
  */
-export const applyHead = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
+export const applyHeadings = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
   const getHeading = (at: number): string => read.cards[at]?.heading ?? ''
   if (screen.cards.every((card, at) => card.heading === getHeading(at))) return screen
   return {
@@ -71,7 +71,7 @@ export const applyHead = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
 /**
  * A reading of a deck under the identities the window already drew it by.
  */
-export const applyName = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
+export const applyIds = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
   const seat = (deck: BufferDeck, section: string | null): number =>
     section === null ? -1 : deck.sections.findIndex((each) => each.id === section)
 
@@ -109,7 +109,7 @@ export const applyName = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
  * Whether two listings name the same stencils, in the same order and with the
  * same fields.
  */
-export const sameOffers = (
+export const areOffersEqual = (
   one: readonly StencilSummary[],
   other: readonly StencilSummary[],
 ): boolean =>
@@ -126,5 +126,5 @@ export const sameOffers = (
   })
 
 /** Where the stencil of that title is filed, and nowhere where none is. */
-export const pathOfCut = (offers: readonly StencilSummary[], name: string): string =>
+export const getCutPath = (offers: readonly StencilSummary[], name: string): string =>
   offers.find((offer) => offer.title === name)?.path ?? ''

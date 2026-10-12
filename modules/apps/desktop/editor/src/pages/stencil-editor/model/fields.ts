@@ -10,9 +10,9 @@ import {
   removeFace,
   removeField,
   renameFace,
-  sameStencil,
-  stencilBodyOf,
-  stencilIn,
+  areStencilsEqual,
+  getStencilBody,
+  parseStencil,
   writeFace,
   type BufferStencil,
 } from '../lib/stencil'
@@ -31,8 +31,8 @@ export function createStencilFields(
   const getStencil = (id: string): BufferStencil => {
     const body = getBody(id)
     const held = parsed.get(id)
-    const read = stencilIn(body)
-    const stencil = held && sameStencil(held.stencil, read) ? held.stencil : read
+    const read = parseStencil(body)
+    const stencil = held && areStencilsEqual(held.stencil, read) ? held.stencil : read
     parsed.set(id, { body, stencil })
     return stencil
   }
@@ -52,7 +52,7 @@ export function createStencilFields(
   }
 
   const applyStencil = (id: string, stencil: BufferStencil): void => {
-    const body = stencilBodyOf(stencil)
+    const body = getStencilBody(stencil)
     parsed.set(id, { body, stencil })
     onTyped(id, body)
   }
@@ -62,7 +62,7 @@ export function createStencilFields(
     marked.delete(id)
   }
 
-  const actionsFor = (id: string) => ({
+  const createActions = (id: string) => ({
     addField: (name: string) => applyStencil(id, addField(getStencil(id), name)),
     renameField: (field: string, name: string) => void renameFieldOnWire(id, field, name),
     removeField: (field: string) => applyStencil(id, removeField(getStencil(id), field)),
@@ -83,6 +83,6 @@ export function createStencilFields(
     getMarks,
     applyStencil,
     forget,
-    actionsFor,
+    createActions,
   }
 }
