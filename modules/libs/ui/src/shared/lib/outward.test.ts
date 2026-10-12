@@ -56,6 +56,17 @@ describe('a press on a link', () => {
     expect(openLink).not.toHaveBeenCalled()
   })
 
+  it('leaves an href that is no address to the page', () => {
+    const faults: unknown[] = []
+    const onError = (event: ErrorEvent) => void faults.push(event.error)
+    window.addEventListener('error', onError)
+    const { openLink, prevented } = pressLink('http://')
+    window.removeEventListener('error', onError)
+    expect(faults).toStrictEqual([])
+    expect(prevented).toBe(false)
+    expect(openLink).not.toHaveBeenCalled()
+  })
+
   it('hands a letter to whatever writes one', () => {
     const { openLink, prevented } = pressLink('mailto:someone@example.com')
     expect(prevented).toBe(true)

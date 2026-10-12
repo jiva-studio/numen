@@ -137,6 +137,19 @@ describe('an element watched for the room it takes up whole', () => {
     expect(took).toHaveBeenCalledExactlyOnceWith({ width: 70, height: 40 })
   })
 
+  it('is told what the element measures where the observer reports nothing', () => {
+    const watchers = stubResizeObserver()
+    const took = createSizes()
+    const element = document.createElement('div')
+    Object.defineProperty(element, 'offsetWidth', { value: 70 })
+    Object.defineProperty(element, 'offsetHeight', { value: 40 })
+
+    browserViewport.watchWhole(element, took)
+    watchers[0]!.tell([], {} as ResizeObserver)
+
+    expect(took).toHaveBeenCalledExactlyOnceWith({ width: 70, height: 40 })
+  })
+
   it('is let go of when the watching is stopped', () => {
     const watchers = stubResizeObserver()
 
