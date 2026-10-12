@@ -153,9 +153,9 @@ type Baseline struct {
 	Fingerprint domain.Fingerprint
 }
 
-// stale reports whether the note in front of the writer holds prose this caller
+// isStale reports whether the note in front of the writer holds prose this caller
 // has not read.
-func (s *Baseline) stale(on domain.Fingerprint, prose string) bool {
+func (s *Baseline) isStale(on domain.Fingerprint, prose string) bool {
 	if s == nil {
 		return false
 	}
