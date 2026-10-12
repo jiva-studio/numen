@@ -132,7 +132,7 @@ func (e Edit) splice(
 	if err := change(doc); err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
-	if err := e.stampIdentifier(doc); err != nil {
+	if err := e.addIdentifier(doc); err != nil {
 		return domain.Fingerprint{}, err
 	}
 
@@ -187,9 +187,9 @@ func (e Edit) getExpected(path string, on domain.Fingerprint, looked error) (dom
 	return on, nil
 }
 
-// stampIdentifier writes the identifier a note arrived without. A caller
+// addIdentifier writes the identifier a note arrived without. A caller
 // writing over what is there leaves the frontmatter as the person wrote it.
-func (e Edit) stampIdentifier(doc *markdown.Document) error {
+func (e Edit) addIdentifier(doc *markdown.Document) error {
 	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
 		return nil
 	}

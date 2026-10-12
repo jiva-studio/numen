@@ -108,7 +108,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		called = u.notes.WriteFilenameAsTitle(ctx, v, to)
 	}
 
-	if err := u.settleNotes(ctx, v, from, to, travelling, pointing, &res); err != nil {
+	if err := u.rewriteNoteLinks(ctx, v, from, to, travelling, pointing, &res); err != nil {
 		return res, err
 	}
 	return res, called
@@ -133,9 +133,9 @@ func (u Move) getBacklinksByPath(
 	return pointing, nil
 }
 
-// settleNotes settles each note among the sources at its new path and adds what
+// rewriteNoteLinks rewrites the links of each note among the sources at its new path and adds what
 // it repaired and what it left dangling to res.
-func (u Move) settleNotes(
+func (u Move) rewriteNoteLinks(
 	ctx context.Context,
 	v domain.Vault,
 	from, to string,

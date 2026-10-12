@@ -162,7 +162,7 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 		}
 	}
 	for _, was := range pointing {
-		if err := u.settleLink(ctx, v, address, was, &res); err != nil {
+		if err := u.rewriteLink(ctx, v, address, was, &res); err != nil {
 			return res, err
 		}
 	}
@@ -174,9 +174,9 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 	return res, nil
 }
 
-// settleLink writes one link that pointed at the note again where it reaches
+// rewriteLink writes one link that pointed at the note again where it reaches
 // nothing, and records the note that wrote it in res.
-func (u Move) settleLink(
+func (u Move) rewriteLink(
 	ctx context.Context, v domain.Vault, address string, was domain.ResolvedLink, res *MoveResult,
 ) error {
 	lands, still, err := u.getLanding(ctx, v, was)

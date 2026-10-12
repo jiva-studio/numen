@@ -166,11 +166,11 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	p = p.fill()
 
-	a, err := u.ask(ctx, v, query, p)
+	a, err := u.searchAll(ctx, v, query, p)
 	if err != nil {
 		return nil, err
 	}
-	return u.read(ctx, v, collapse(merge(a.rankings(p)...), a.named, p.Each, p.Limit))
+	return u.read(ctx, v, collapse(merge(a.getRankings(p)...), a.named, p.Each, p.Limit))
 }
 
 // answers is what each half of a search returned.
@@ -181,8 +181,8 @@ type answers struct {
 	hasDense bool
 }
 
-// rankings is the orders of the halves that ran, in the order they merge.
-func (a *answers) rankings(p Parameters) [][]domain.Passage {
+// getRankings is the orders of the halves that ran, in the order they merge.
+func (a *answers) getRankings(p Parameters) [][]domain.Passage {
 	var out [][]domain.Passage
 	if p.Lexical > 0 {
 		out = append(out, a.lexical)
@@ -196,18 +196,18 @@ func (a *answers) rankings(p Parameters) [][]domain.Passage {
 	return out
 }
 
-// ask runs the halves the parameters name at once and waits for all of them.
-func (u Search) ask(ctx context.Context, v domain.Vault, query string, p Parameters) (*answers, error) {
+// searchAll runs the halves the parameters name at once and waits for all of them.
+func (u Search) searchAll(ctx context.Context, v domain.Vault, query string, p Parameters) (*answers, error) {
 	a := &answers{}
 	g, gctx := errgroup.WithContext(ctx)
 	if p.Lexical > 0 {
-		g.Go(func() error { return u.askLexical(gctx, v, query, p, a) })
+		g.Go(func() error { return u.searchLexical(gctx, v, query, p, a) })
 	}
 	if p.Named > 0 {
-		g.Go(func() error { return u.askNamed(gctx, v, query, p, a) })
+		g.Go(func() error { return u.searchNamed(gctx, v, query, p, a) })
 	}
 	if p.Dense > 0 && u.embedder != nil {
-		g.Go(func() error { return u.askDense(gctx, v, query, p, a) })
+		g.Go(func() error { return u.searchDense(gctx, v, query, p, a) })
 	}
 	if err := g.Wait(); err != nil {
 		return nil, err
@@ -215,8 +215,8 @@ func (u Search) ask(ctx context.Context, v domain.Vault, query string, p Paramet
 	return a, nil
 }
 
-// askLexical stores the passages the words of the query match.
-func (u Search) askLexical(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
+// searchLexical stores the passages the words of the query match.
+func (u Search) searchLexical(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -228,8 +228,8 @@ func (u Search) askLexical(ctx context.Context, v domain.Vault, query string, p 
 	return nil
 }
 
-// askNamed stores the passages whose section names the query matches.
-func (u Search) askNamed(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
+// searchNamed stores the passages whose section names the query matches.
+func (u Search) searchNamed(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -241,10 +241,10 @@ func (u Search) askNamed(ctx context.Context, v domain.Vault, query string, p Pa
 	return nil
 }
 
-// askDense stores the passages nearest the meaning of the query. A model out of
+// searchDense stores the passages nearest the meaning of the query. A model out of
 // reach leaves the words to answer, because a vault is searched on a machine
 // with no network and by a person whose key has run out.
-func (u Search) askDense(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
+func (u Search) searchDense(ctx context.Context, v domain.Vault, query string, p Parameters, a *answers) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}

@@ -97,18 +97,18 @@ func (u Import) bring(
 
 	switch {
 	case info.IsFolder:
-		return u.bringFolder(ctx, writer, v, from, to, result)
+		return u.importFolder(ctx, writer, v, from, to, result)
 	case info.IsFile:
-		return u.bringFile(ctx, writer, from, to, result)
+		return u.importFile(ctx, writer, from, to, result)
 	default:
 		return errNotAFile
 	}
 }
 
-// bringFolder makes the folder at a path in the vault and brings each entry of
+// importFolder makes the folder at a path in the vault and brings each entry of
 // the folder at from into it. An entry refused is an error of the result and
 // leaves the rest to arrive.
-func (u Import) bringFolder(
+func (u Import) importFolder(
 	ctx context.Context,
 	writer port.VaultWriter,
 	v domain.Vault,
@@ -136,8 +136,8 @@ func (u Import) bringFolder(
 	return nil
 }
 
-// bringFile copies the file at from to a path in the vault.
-func (u Import) bringFile(
+// importFile copies the file at from to a path in the vault.
+func (u Import) importFile(
 	ctx context.Context, writer port.VaultWriter, from, to string, result *ImportResult,
 ) error {
 	file, err := u.files.Open(ctx, from)

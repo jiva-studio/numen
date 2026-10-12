@@ -248,7 +248,7 @@ func (u Refresh) refreshPath(
 		res.Indexed = append(res.Indexed, path)
 		return nil
 	}
-	raw, isRead := readListed(ctx, reader, path, res)
+	raw, isRead := readListedFile(ctx, reader, path, res)
 	if !isRead {
 		return nil
 	}
@@ -264,11 +264,11 @@ func (u Refresh) refreshPath(
 	return nil
 }
 
-// readListed is the bytes of the note at path and whether they were read. A
+// readListedFile is the bytes of the note at path and whether they were read. A
 // file gone since it was looked at is an editor saving through a temporary
 // file, and the save that follows arrives as its own event; any other failure is
 // filed as unreadable.
-func readListed(ctx context.Context, reader port.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
+func readListedFile(ctx context.Context, reader port.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):

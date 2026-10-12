@@ -119,14 +119,14 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before any note is counted"
 		return res, fmt.Errorf("read index: %w", err)
 	}
-	found, err := getWalk(ctx, reader)
+	found, err := walkVault(ctx, reader)
 	if err != nil {
 		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is while the walk is only collecting"
 		return res, err
 	}
 
 	group := u.newGroup(v, &res)
-	seen, err := u.indexFound(ctx, reader, found, known, &group, &res)
+	seen, err := u.indexChanged(ctx, reader, found, known, &group, &res)
 	if err != nil {
 		return res, err
 	}
@@ -149,10 +149,10 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	return res, nil
 }
 
-// getWalk is every file of the vault, the most recently modified first. The walk
+// walkVault is every file of the vault, the most recently modified first. The walk
 // is collected before anything is read so that the order can be chosen: notes
 // touched recently are what the person is looking for while the scan runs.
-func getWalk(ctx context.Context, reader port.VaultReader) ([]domain.Fingerprint, error) {
+func walkVault(ctx context.Context, reader port.VaultReader) ([]domain.Fingerprint, error) {
 	var found []domain.Fingerprint
 	if err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
 		found = append(found, ref)
@@ -181,9 +181,9 @@ func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 	}}
 }
 
-// indexFound reads and groups every note whose fingerprint differs from the
+// indexChanged reads and groups every note whose fingerprint differs from the
 // index's, and is the paths of the notes the walk found.
-func (u Scan) indexFound(
+func (u Scan) indexChanged(
 	ctx context.Context,
 	reader port.VaultReader,
 	found []domain.Fingerprint,
@@ -209,7 +209,7 @@ func (u Scan) indexFound(
 			res.Unchanged++
 			continue
 		}
-		raw, isRead := readCounted(ctx, reader, ref.Path, res)
+		raw, isRead := readNoteBytes(ctx, reader, ref.Path, res)
 		if !isRead {
 			continue
 		}
@@ -220,10 +220,10 @@ func (u Scan) indexFound(
 	return seen, nil
 }
 
-// readCounted is the bytes of the note at path and whether they were read. A
+// readNoteBytes is the bytes of the note at path and whether they were read. A
 // note that cannot be read is counted in res and the scan goes on, and its path
 // stays among those seen: the row is still about the file.
-func readCounted(ctx context.Context, reader port.VaultReader, path string, res *ScanResult) ([]byte, bool) {
+func readNoteBytes(ctx context.Context, reader port.VaultReader, path string, res *ScanResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
