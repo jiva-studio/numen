@@ -102,6 +102,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 			Rename:        note.NewRename(moving),
 			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
 			Linking:       note.NewEditLinks(readers, writers, index, time.Now),
+			AddLinks:      note.NewAddLinks(note.NewEditLinks(readers, writers, index, time.Now)),
 		},
 	}
 

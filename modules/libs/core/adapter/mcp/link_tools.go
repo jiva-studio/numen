@@ -84,78 +84,29 @@ func addLinks(ctx context.Context, core Core, in linkAddInput) (linkAddOutput, e
 			"a call writing %d bytes is more than this carries at once, which is %d", size, maxBytes)
 	}
 
-	outcomes := make([]AddOutcome, 0, len(in.Links))
-	// A malformed link is rejected on its own; the remaining links are grouped by note, one write per note.
-	groups := newLinkGroups()
-	for i, add := range in.Links {
-		outcomes = append(outcomes, AddOutcome{From: add.From, To: add.To})
-		outcomes[i].Refused = groups.add(i, add)
+	additions := make([]note.LinkAddition, 0, len(in.Links))
+	for _, add := range in.Links {
+		seen, err := parseFingerprint(add.Fingerprint)
+		additions = append(additions, note.LinkAddition{
+			From: add.From, Fingerprint: seen, Link: newDomainLink(add.Link), FingerprintError: err,
+		})
 	}
-	if err := writeLinkGroups(ctx, core, groups, outcomes); err != nil {
+	added, err := core.Notes.AddLinks.Execute(ctx, core.getCurrentVault().Vault, additions)
+	if err != nil {
 		return linkAddOutput{}, err
 	}
+
+	outcomes := make([]AddOutcome, 0, len(in.Links))
+	for i, add := range in.Links {
+		outcome := AddOutcome{From: add.From, To: add.To}
+		if added[i].Refused != nil {
+			outcome.Refused = sayError(added[i].Refused)
+		} else {
+			outcome.Fingerprint = fingerprintOf(added[i].Fingerprint)
+		}
+		outcomes = append(outcomes, outcome)
+	}
 	return linkAddOutput{Added: outcomes}, nil
-}
-
-// linkGroups holds the links of one call grouped by target note, in order of first appearance.
-type linkGroups struct {
-	order        []string
-	links        map[string][]domain.Link
-	fingerprints map[string]domain.Fingerprint
-	positions    map[string][]int
-}
-
-func newLinkGroups() *linkGroups {
-	return &linkGroups{
-		links:        map[string][]domain.Link{},
-		fingerprints: map[string]domain.Fingerprint{},
-		positions:    map[string][]int{},
-	}
-}
-
-// add groups the i-th addition under its note and returns the rejection reason, empty when grouped.
-func (g *linkGroups) add(i int, add Addition) string {
-	link := newDomainLink(add.Link)
-	if err := note.CheckWritable(link); err != nil {
-		return sayError(err)
-	}
-	seen, err := parseFingerprint(add.Fingerprint)
-	if err != nil {
-		return sayError(err)
-	}
-	// All links of a note are written together against one fingerprint of that note.
-	if first, grouped := g.fingerprints[add.From]; grouped && first != seen {
-		return "the links written into " + add.From +
-			" name two different fingerprints, and they are one write"
-	}
-	if _, grouped := g.links[add.From]; !grouped {
-		g.order = append(g.order, add.From)
-	}
-	g.fingerprints[add.From] = seen
-	g.links[add.From] = append(g.links[add.From], link)
-	g.positions[add.From] = append(g.positions[add.From], i)
-	return ""
-}
-
-// writeLinkGroups writes each note's links as one change, and records the
-// result on the outcome of every link in it. The links of a note succeed or fail together with the same reason.
-func writeLinkGroups(ctx context.Context, core Core, groups *linkGroups, outcomes []AddOutcome) error {
-	for _, from := range groups.order {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		group := groups.links[from]
-		written, err := core.Notes.Linking.Add(
-			ctx, core.getCurrentVault().Vault, from, groups.fingerprints[from], group[0], group[1:]...)
-		for _, i := range groups.positions[from] {
-			if err != nil {
-				outcomes[i].Refused = sayError(err)
-			} else {
-				outcomes[i].Fingerprint = fingerprintOf(written)
-			}
-		}
-	}
-	return nil
 }
 
 type linkUpdateInput struct {
