@@ -12,31 +12,31 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
-// Announcement is where agents may reach this vault and what they must present.
+// Discovery is where agents may reach this vault and what they must present.
 //
 // It is written where the application keeps its own state: it belongs to this
 // installation and is worth nothing on another machine. Configuring an agent
 // is reading a file.
-type Announcement struct {
+type Discovery struct {
 	URL   string `json:"url"`
 	Token string `json:"token"`
 }
 
-// Announce writes the file, and hands back what removes it. A file left behind
+// WriteDiscovery writes the file, and hands back what removes it. A file left behind
 // points the next agent at a dead port with a live-looking token.
-func Announce(cfg container.Config, _ string, url, token string) (func(), error) {
-	path, err := AnnouncementPath(cfg)
+func WriteDiscovery(cfg container.Config, _ string, url, token string) (func(), error) {
+	path, err := DiscoveryPath(cfg)
 	if err != nil {
 		return nil, err
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, err
 	}
-	raw, err := json.MarshalIndent(Announcement{URL: url, Token: token}, "", "  ")
+	raw, err := json.MarshalIndent(Discovery{URL: url, Token: token}, "", "  ")
 	if err != nil {
 		return nil, err
 	}
-	if err := replace(path, append(raw, '\n')); err != nil {
+	if err := writeFileAtomic(path, append(raw, '\n')); err != nil {
 		return nil, err
 	}
 
@@ -68,7 +68,7 @@ func GetToken(cfg container.Config) (string, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return "", err
 	}
-	return token, replace(path, []byte(token))
+	return token, writeFileAtomic(path, []byte(token))
 }
 
 // CreateToken is a token an agent presents, kept nowhere. A window nobody
@@ -82,10 +82,10 @@ func CreateToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(raw), nil
 }
 
-// replace writes a file the way the rest of the application writes one: beside
+// writeFileAtomic writes a file the way the rest of the application writes one: beside
 // itself and renamed over the top, so a machine that dies mid-write leaves the
 // previous file whole. The mode is the person's alone: it carries a secret.
-func replace(path string, content []byte) error {
+func writeFileAtomic(path string, content []byte) error {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
 		return err
@@ -109,10 +109,10 @@ func replace(path string, content []byte) error {
 	return os.Rename(tmp.Name(), path)
 }
 
-// AnnouncementPath is where an agent a person configures themselves is told to
+// DiscoveryPath is where an agent a person configures themselves is told to
 // look, and TokenPath is where the token it presents is kept.
-func AnnouncementPath(cfg container.Config) (string, error) { return getStatePath(cfg, "agents.json") }
-func TokenPath(cfg container.Config) (string, error)        { return getStatePath(cfg, "agents.token") }
+func DiscoveryPath(cfg container.Config) (string, error) { return getStatePath(cfg, "agents.json") }
+func TokenPath(cfg container.Config) (string, error)     { return getStatePath(cfg, "agents.token") }
 
 // getStatePath is where this installation keeps its own state. A registry
 // pointed somewhere chosen takes everything else with it.

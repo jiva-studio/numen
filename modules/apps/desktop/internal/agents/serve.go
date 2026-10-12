@@ -54,8 +54,8 @@ type Options struct {
 	IsAnnouncing bool
 	// Root is the folder the agent is started in.
 	Root string
-	// Drafting is how a change the agent is making is drawn before it lands.
-	Drafting claudecode.Drafting
+	// Preview is how a change the agent is making is drawn before it lands.
+	Preview claudecode.EditPreview
 	// Out is where what happened is said.
 	Out io.Writer
 }
@@ -109,7 +109,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	}
 	forget := func() {}
 	if opts.IsAnnouncing {
-		gone, err := Announce(opts.Config, opts.Root, endpoint.URL, secret)
+		gone, err := WriteDiscovery(opts.Config, opts.Root, endpoint.URL, secret)
 		if err != nil {
 			//nolint:contextcheck // an endpoint taken down again is closed whatever became of the context it opened under
 			endpoint.Close(context.Background())
@@ -246,10 +246,10 @@ func (r *Router) getAgent(use string, cfg container.Config) port.Agent {
 		return r.codex
 	default:
 		if r.claude == nil {
-			r.claude = Claude(cfg, r.opts.Root, r.url, r.secret, r.vocabulary, r.opts.Drafting, r.opts.Out)
+			r.claude = NewClaude(cfg, r.opts.Root, r.url, r.secret, r.vocabulary, r.opts.Preview, r.opts.Out)
 		} else {
 			r.claude.Model = cfg.Agent.Claude.Model
-			r.claude.Turns = cfg.Agent.Claude.MaxSteps
+			r.claude.MaxTurns = cfg.Agent.Claude.MaxSteps
 		}
 		return r.claude
 	}
@@ -308,19 +308,19 @@ func (r *Router) Finish(ctx context.Context, conversation string) error {
 	return errors.Join(errs...)
 }
 
-// Claude is what the window asks on the person's behalf.
-func Claude(
+// NewClaude is what the window asks on the person's behalf.
+func NewClaude(
 	cfg container.Config,
 	root, url, secret string,
 	vocabulary map[string]mcp.Tool,
-	drafting claudecode.Drafting,
+	drafting claudecode.EditPreview,
 	out io.Writer,
 ) *claudecode.Agent {
 	words := make(map[string]claudecode.ToolDeclaration, len(vocabulary))
 	allowed := make([]string, 0, len(vocabulary))
 	for name, tool := range vocabulary {
-		allowed = append(allowed, claudecode.Tool(name))
-		words[claudecode.Tool(name)] = claudecode.ToolDeclaration{
+		allowed = append(allowed, claudecode.ToolName(name))
+		words[claudecode.ToolName(name)] = claudecode.ToolDeclaration{
 			Title: tool.Title,
 			Kind:  tool.Kind,
 			Arguments: claudecode.Arguments{
@@ -337,10 +337,10 @@ func Claude(
 		Root:                     root,
 		Tools:                    claudecode.Endpoint{URL: url, Token: secret},
 		Allowed:                  allowed,
-		Words:                    words,
-		Drafting:                 drafting,
+		Declarations:             words,
+		Preview:                  drafting,
 		Model:                    cfg.Agent.Claude.Model,
-		Turns:                    cfg.Agent.Claude.MaxSteps,
+		MaxTurns:                 cfg.Agent.Claude.MaxSteps,
 		ShouldReadHooksAndSkills: cfg.Agent.Claude.ShouldReadHooksAndSkills,
 		ErrorHandler:             func(err error) { fmt.Fprintln(out, "agent:", err) },
 	}

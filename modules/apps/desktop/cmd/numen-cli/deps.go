@@ -14,13 +14,13 @@ import (
 // downloaded with. The settings name where each of them is.
 var errNoTools = errors.New("neither yt-dlp nor ffmpeg is on this machine")
 
-// deps is what the terminal works through, built for the places one run was
+// makeDeps is what the terminal works through, built for the places one run was
 // pointed at. An installation is assembled by the application, so the openers
 // are made here and the terminal is handed them.
 //
 // Each one opens when its command asks and not before: a person listing vaults
 // waits for no index, and one asking about a scan waits for no transcriber.
-func deps(cfg container.Config) func(cli.Locations) cli.Deps {
+func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 	return func(where cli.Locations) cli.Deps {
 		cfg.IndexPath = where.Index
 		cfg.RegistryPath = where.Registry

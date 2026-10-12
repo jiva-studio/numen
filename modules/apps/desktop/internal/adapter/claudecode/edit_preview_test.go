@@ -12,19 +12,19 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// fakeDraftWindow is a window that keeps what it was told about a change being made, and
+// fakePreviewWindow is a window that keeps what it was told about a change being made, and
 // a vault that says one stretch stands in one place.
-type fakeDraftWindow struct {
+type fakePreviewWindow struct {
 	edits              []domain.Edit
 	at                 time.Time
 	isFound            bool
 	requestedStretches []string
 }
 
-func (d *fakeDraftWindow) makeDrafting() claudecode.Drafting {
-	return claudecode.Drafting{
-		Report: func(_ context.Context, edit domain.Edit) { d.edits = append(d.edits, edit) },
-		Location: func(_ context.Context, _, stood string) (int, int, bool) {
+func (d *fakePreviewWindow) makePreview() claudecode.EditPreview {
+	return claudecode.EditPreview{
+		Emit: func(_ context.Context, edit domain.Edit) { d.edits = append(d.edits, edit) },
+		Locate: func(_ context.Context, _, stood string) (int, int, bool) {
 			d.requestedStretches = append(d.requestedStretches, stood)
 			return 3, 9, d.isFound
 		},
@@ -34,7 +34,7 @@ func (d *fakeDraftWindow) makeDrafting() claudecode.Drafting {
 }
 
 // startDrafting is the agent with a window behind it, fed a canned stream.
-func startDrafting(t *testing.T, window *fakeDraftWindow, prints string) port.Run {
+func startDrafting(t *testing.T, window *fakePreviewWindow, prints string) port.Run {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -47,15 +47,15 @@ func startDrafting(t *testing.T, window *fakeDraftWindow, prints string) port.Ru
 		Command: []string{script},
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
-		Words: map[string]claudecode.ToolDeclaration{
-			claudecode.Tool("note_edit"): {
+		Declarations: map[string]claudecode.ToolDeclaration{
+			claudecode.ToolName("note_edit"): {
 				Title: "Edit a note", Kind: port.StepEdit,
 				Arguments: claudecode.Arguments{
 					About: "path", Match: "stood", Text: "becomes",
 				},
 			},
 		},
-		Drafting: window.makeDrafting(),
+		Preview: window.makePreview(),
 	}
 	work, err := claude.Take(t.Context(), port.Task{Question: "change it"})
 	if err != nil {
@@ -92,8 +92,8 @@ const opens = `{"type":"stream_event","event":{"type":"content_block_start",` +
 // The text going in arrives after the text it replaces. A stretch shown with
 // nothing in its place reads as having been deleted, so nothing is drawn until
 // the replacement has begun.
-func TestNothingIsDrawnBeforeTheReplacementHasBegun(t *testing.T) {
-	window := &fakeDraftWindow{isFound: true}
+func TestPreviewEmitsNothingBeforeReplacementStarts(t *testing.T) {
+	window := &fakePreviewWindow{isFound: true}
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md",`)+"\n"+
 		piece(`"stood":"A hedgehog`)+"\n"+
@@ -111,8 +111,8 @@ func TestNothingIsDrawnBeforeTheReplacementHasBegun(t *testing.T) {
 
 // Once the replacement has begun the stretch it replaces is whole, and every
 // piece of the replacement is drawn where that stretch stands.
-func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
-	window := &fakeDraftWindow{isFound: true}
+func TestPreviewEmitsChangeAsReplacementArrives(t *testing.T) {
+	window := &fakePreviewWindow{isFound: true}
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md","stood":"A hedgehog",`)+"\n"+
 		piece(`"becomes":"An axe`)+"\n"+
@@ -144,8 +144,8 @@ func TestAChangeIsDrawnAsItsReplacementArrives(t *testing.T) {
 
 // A stretch that stands nowhere or twice is not a place, and drawing over a
 // guess is worse than drawing nothing.
-func TestASpanThatIsNotOnePlaceIsNotDrawn(t *testing.T) {
-	window := &fakeDraftWindow{isFound: true}
+func TestPreviewSkipsNonUniqueSpan(t *testing.T) {
+	window := &fakePreviewWindow{isFound: true}
 	window.isFound = false
 	work := startDrafting(t, window, opens+"\n"+
 		piece(`{"path":"Note.md","stood":"foe",`)+"\n"+

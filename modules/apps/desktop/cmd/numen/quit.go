@@ -23,14 +23,14 @@ type visibility struct {
 // on a person and is not measured.
 func closeWindow(
 	ctx context.Context,
-	g *going,
+	g *vaultFlush,
 	s visibility,
 	answered func(context.Context) bool,
 	retry func(),
 ) bool {
 	s.hide()
 	//nolint:contextcheck // the settling runs when the caller's context is already over, under a bound of its own
-	if g.wait() {
+	if g.flushVault() {
 		return true
 	}
 	s.show()
@@ -50,13 +50,13 @@ func closeWindow(
 // over. A settling that ended with a question standing puts the window back and
 // asks for nothing: the person is answering it, and that is the whole of what
 // the goroutine left behind may do.
-func requestQuit(g *going, s visibility, quit func()) bool {
-	if g.isSettled() {
+func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
+	if g.isFlushed() {
 		return true
 	}
 	go func() {
 		s.hide()
-		if g.wait() {
+		if g.flushVault() {
 			quit()
 			return
 		}
@@ -69,27 +69,27 @@ func requestQuit(g *going, s visibility, quit func()) bool {
 // what only it holds. A vault being changed waits under the same bound.
 const quitBound = editor.HandedOverIn
 
-// going is the vault settling, whichever way the window is asked to go.
+// vaultFlush is the vault settling, whichever way the window is asked to go.
 //
 // A settling that ends with a question standing leaves the vault as it was, and
 // the next ask begins another one.
-type going struct {
-	settle func(context.Context) bool
+type vaultFlush struct {
+	flush func(context.Context) bool
 
 	mu     sync.Mutex
-	turn   *turn
+	turn   *flushRun
 	isDone bool
 }
 
-// turn is one settling, and what it answered.
-type turn struct {
+// flushRun is one settling, and what it answered.
+type flushRun struct {
 	done      chan struct{}
-	isSettled bool
+	isFlushed bool
 }
 
-// wait settles the vault and answers with whether it did. A settling already
+// flushVault settles the vault and answers with whether it did. A settling already
 // running is joined and its answer shared.
-func (g *going) wait() bool {
+func (g *vaultFlush) flushVault() bool {
 	g.mu.Lock()
 	if g.isDone {
 		g.mu.Unlock()
@@ -97,33 +97,33 @@ func (g *going) wait() bool {
 	}
 	this := g.turn
 	if this == nil {
-		this = &turn{done: make(chan struct{})}
+		this = &flushRun{done: make(chan struct{})}
 		g.turn = this
-		go g.begin(this)
+		go g.run(this)
 	}
 	g.mu.Unlock()
 
 	<-this.done
-	return this.isSettled
+	return this.isFlushed
 }
 
-// isSettled reports whether there is nothing left owed.
-func (g *going) isSettled() bool {
+// isFlushed reports whether there is nothing left owed.
+func (g *vaultFlush) isFlushed() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	return g.isDone
 }
 
-func (g *going) begin(this *turn) {
+func (g *vaultFlush) run(this *flushRun) {
 	defer close(this.done)
 
 	ctx, cancel := context.WithTimeout(context.Background(), quitBound)
 	defer cancel()
-	settled := g.settle(ctx)
+	settled := g.flush(ctx)
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	this.isSettled = settled
+	this.isFlushed = settled
 	g.isDone = settled
 	g.turn = nil
 }
