@@ -96,7 +96,7 @@ interface PresetTally {
 }
 
 /** What the day holds under a preset the application counted nothing for. */
-const getBudget = (settings: Settings): Budget => ({
+const createBudget = (settings: Settings): Budget => ({
   new: settings.newADay,
   reviews: settings.reviewsADay,
   minutes: settings.minutesADay,
@@ -130,9 +130,7 @@ const groupDecksIntoPresets = (
 }
 
 /** The decks each preset schedules, counted into it, by the path it is filed under. */
-const countDecksIntoPresets = (
-  reads: readonly DeckRead[],
-): Map<string, PresetTally> => {
+const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTally> => {
   const at = new Map<string, PresetTally>()
   for (const { deck, result } of reads) {
     if (!result.ok) continue
@@ -168,7 +166,7 @@ const getPresetFromDecks = (
   day: PresetCardsDue | undefined,
   today: string,
 ): Preset => {
-  const budget = day ?? getBudget(one.settings)
+  const budget = day ?? createBudget(one.settings)
   return {
     path: one.path,
     name: one.name,

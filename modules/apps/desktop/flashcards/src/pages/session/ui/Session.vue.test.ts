@@ -39,7 +39,7 @@ const getAskButtons = (one: VueWrapper) =>
   one.findAll('button').filter((it) => it.text().includes('Ask'))
 
 /** The way into the reading, wherever it stands. */
-const wayBack = (one: VueWrapper) =>
+const getReadingButtons = (one: VueWrapper) =>
   one.findAll('button').filter((it) => it.text().includes('Read'))
 
 describe('the way into the panel', () => {
@@ -52,9 +52,9 @@ describe('the way into the panel', () => {
   // The two panels stand in the order they stand in the strip.
   it('stands beside the way into the reading, which is offered the same way', async () => {
     const one = session({ isShown: false })
-    expect(wayBack(one)[0]?.attributes('disabled')).toBeUndefined()
+    expect(getReadingButtons(one)[0]?.attributes('disabled')).toBeUndefined()
 
-    await wayBack(one)[0]?.trigger('click')
+    await getReadingButtons(one)[0]?.trigger('click')
     expect(one.emitted('read')).toEqual([['']])
   })
 
