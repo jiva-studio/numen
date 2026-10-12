@@ -132,10 +132,9 @@ type Sources struct {
 	// tool that asks for one is served and answers that this installation cannot.
 	StartTranscription        *source.StartTranscription
 	GetTranscriptionReadiness *source.GetTranscriptionReadiness
-	// URLs makes the file a web address is kept in, and Import fetches what is
-	// at that address. Without both, the tool that imports one is not added.
-	URLs   *source.CreateURL
-	Import *source.ImportURL
+	// CreateAndImportURL makes the file a web address is kept in and fetches what is
+	// at that address. Without it the tool that imports one is not added.
+	CreateAndImportURL *source.CreateAndImportURL
 	// FocusPassage opens a document in front of the person at a passage. Without it the
 	// tool that does is not added.
 	FocusPassage *source.FocusPassage

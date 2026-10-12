@@ -53,14 +53,15 @@ func (s *site) Download(_ context.Context, _ domain.URL, into io.Writer) (port.C
 func newCoreWithImport(t *testing.T, from *site) (domain.Vault, mcp.Core) {
 	t.Helper()
 	v, core := newCore(t)
-	core.Sources.Import = &source.ImportURL{
+	fetcher := &source.ImportURL{
 		Readers: filesystem.VaultReaders{},
 		Derived: filesystem.DerivedStores{
 			Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
 		},
 		By: from,
 	}
-	core.Sources.URLs = &source.CreateURL{Writers: filesystem.VaultWriters{}}
+	core.Sources.CreateAndImportURL = source.NewCreateAndImportURL(
+		&source.CreateURL{Writers: filesystem.VaultWriters{}}, fetcher)
 	return v, core
 }
 
@@ -192,4 +193,19 @@ func (s *sourced) GetSourceText(
 ) (port.SourceText, bool, error) {
 	one, held := s.known[path]
 	return one, held, nil
+}
+
+// A copy that cannot be made is said beside the file it followed, which stands.
+func TestACopyThatFailsLeavesTheImportStanding(t *testing.T) {
+	from := &site{title: "Entropy explained", cues: []transcript.Cue{{Text: "what was said", From: 1500, To: 4200}}}
+	_, core := newCoreWithImport(t, from)
+	session := sessionOf(t, mcp.New(core))
+
+	out := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo, "copy": true})
+	if out.Refused != "" || out.Producer == "" {
+		t.Fatalf("the import did not stand: %+v", out)
+	}
+	if out.CopyRefused == "" || out.CopiedBytes != 0 {
+		t.Errorf("a copy of nothing came back as %+v", out)
+	}
 }
