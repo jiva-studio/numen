@@ -81,7 +81,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
   const into = computed(() => (at.value && 'into' in at.value ? at.value.into : null))
   const before = computed(() => (at.value && 'before' in at.value ? at.value.before : null))
 
-  const lifted = computed(() => new Set(position.value ? (dragging.value?.item ?? []) : []))
+  const lifted = computed(() => new Set(position.value ? dragging.value!.item : []))
 
   const hasMoved = computed(() => dragging.value?.hasMoved === true)
 

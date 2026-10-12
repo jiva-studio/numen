@@ -27,9 +27,7 @@ export function pathTo(root: WorkspaceNode, id: NodeId): Path | null {
   if (root.id === id) return []
   if (!isBranch(root)) return null
 
-  for (let i = 0; i < root.children.length; i++) {
-    const child = root.children[i]
-    if (!child) continue
+  for (const [i, child] of root.children.entries()) {
     const below = pathTo(child, id)
     if (below) return [i, ...below]
   }

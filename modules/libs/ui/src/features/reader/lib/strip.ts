@@ -124,8 +124,7 @@ export function getPagesWithin(row: Row, viewport: Size, along: number): number[
   const from = along - viewport.width * BEYOND
   const to = along + viewport.width * (1 + BEYOND)
   const out: number[] = []
-  for (let page = 0; page < row.starts.length; page++) {
-    const begins = row.starts[page]!
+  for (const [page, begins] of row.starts.entries()) {
     if (begins > to) break
     if (begins + row.widths[page]! >= from) out.push(page)
   }

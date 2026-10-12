@@ -7,10 +7,10 @@ import { branch, orthogonal, type Workspace, type WorkspaceNode } from './node'
 import { fit } from './shares'
 import { isBranch, isPane, panesOf, withChildren } from './tree'
 
-/** What a node comes to, and the shares those pieces take of its length. */
-interface Slice {
-  readonly nodes: readonly WorkspaceNode[]
-  readonly sizes: readonly number[]
+/** One node a node comes to, and the share it takes of that node's length. */
+interface Piece {
+  readonly node: WorkspaceNode
+  readonly share: number
 }
 
 /**
@@ -18,35 +18,33 @@ interface Slice {
  * parent: two levels turn a half, so they already divide their length the way
  * the parent does. A single child that is a pane goes up as it is.
  */
-function reduce(node: WorkspaceNode): Slice {
-  if (isPane(node)) {
-    return node.tabs.length > 0 ? { nodes: [node], sizes: [1] } : { nodes: [], sizes: [] }
-  }
+function reduce(node: WorkspaceNode): readonly Piece[] {
+  if (isPane(node)) return node.tabs.length > 0 ? [{ node, share: 1 }] : []
 
-  const nodes: WorkspaceNode[] = []
-  const sizes: number[] = []
   const own = fit(node.sizes, node.children.length)
+  const pieces = node.children.flatMap((child, index) =>
+    reduce(child).map((piece) => ({ node: piece.node, share: piece.share * (own[index] ?? 0) })),
+  )
 
-  node.children.forEach((child, index) => {
-    const share = own[index] ?? 0
-    const slice = reduce(child)
-    slice.nodes.forEach((kept, at) => {
-      nodes.push(kept)
-      sizes.push((slice.sizes[at] ?? 0) * share)
-    })
-  })
+  const [first, ...others] = pieces
+  if (!first) return []
 
-  if (nodes.length === 0) return { nodes: [], sizes: [] }
-
-  if (nodes.length === 1) {
-    const only = nodes[0]
-    if (!only) return { nodes: [], sizes: [] }
-    return isBranch(only)
-      ? { nodes: only.children, sizes: fit(only.sizes, only.children.length) }
-      : { nodes: [only], sizes: [1] }
+  if (others.length === 0) {
+    if (!isBranch(first.node)) return [{ node: first.node, share: 1 }]
+    const shares = fit(first.node.sizes, first.node.children.length)
+    return first.node.children.map((child, index) => ({ node: child, share: shares[index] ?? 0 }))
   }
 
-  return { nodes: [withChildren(node, nodes, sizes)], sizes: [1] }
+  return [
+    {
+      node: withChildren(
+        node,
+        pieces.map((piece) => piece.node),
+        pieces.map((piece) => piece.share),
+      ),
+      share: 1,
+    },
+  ]
 }
 
 /** A pane with nothing in it, kept so that a workspace always has a root. */
@@ -56,17 +54,24 @@ const emptyPane = (root: WorkspaceNode): WorkspaceNode => {
 }
 
 export function normalize(workspace: Workspace): Workspace {
-  const slice = reduce(workspace.root)
+  const pieces = reduce(workspace.root)
 
-  const only = slice.nodes[0]
+  const [only, ...others] = pieces
   if (!only) return { ...workspace, root: emptyPane(workspace.root) }
-  if (slice.nodes.length === 1) return { ...workspace, root: only }
+  if (others.length === 0) return { ...workspace, root: only.node }
 
   // The root itself kept one child and handed its children up. There is no
   // parent to take them, so they become the root and the axis turns with them.
   return {
     ...workspace,
-    root: branch(workspace.root.id, slice.nodes, fit(slice.sizes, slice.nodes.length)),
+    root: branch(
+      workspace.root.id,
+      pieces.map((piece) => piece.node),
+      fit(
+        pieces.map((piece) => piece.share),
+        pieces.length,
+      ),
+    ),
     axis: orthogonal(workspace.axis),
   }
 }

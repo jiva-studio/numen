@@ -33,7 +33,7 @@ export function useDrawnRows(
 
   const tabbed = computed<RowId | null>(() => {
     const getDrawnRow = (row: RowId | null | undefined) =>
-      row != null && getVisibleRows().some((each) => each.id === row) ? row : null
+      getVisibleRows().find((each) => each.id === row)?.id ?? null
     return (
       getDrawnRow(here.value) ?? getDrawnRow(getSelection()[0]) ?? getVisibleRows()[0]?.id ?? null
     )

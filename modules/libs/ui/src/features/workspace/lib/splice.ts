@@ -15,16 +15,7 @@ import {
   type WorkspaceNode,
 } from './node'
 import { normalize } from './normalize'
-import {
-  isBranch,
-  isPane,
-  nodeAt,
-  paneWithTab,
-  panesOf,
-  pathTo,
-  replaceAt,
-  withChildren,
-} from './tree'
+import { isPane, nodeAt, paneWithTab, panesOf, pathTo, replaceAt, withChildren } from './tree'
 import { insert } from './shares'
 
 /** Where an identity for a pane or a branch a gesture makes comes from. */
@@ -68,8 +59,7 @@ export function putBeside(
     }
   }
 
-  const parent = nodeAt(root, above)
-  if (!parent || !isBranch(parent)) return { root, axis, focus: onto }
+  const parent = nodeAt(root, above) as Branch
 
   if (orientationAt(axis, above.length) === wanted) {
     return {
@@ -79,8 +69,7 @@ export function putBeside(
     }
   }
 
-  const target = nodeAt(root, path)
-  if (!target) return { root, axis, focus: onto }
+  const target = nodeAt(root, path) as WorkspaceNode
 
   return {
     root: replaceAt(root, path, branch(id(), orderPair(made, target, side), [0.5, 0.5])),

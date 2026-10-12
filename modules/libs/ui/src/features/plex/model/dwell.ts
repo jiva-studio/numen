@@ -54,7 +54,7 @@ export function getWideBox(
  * to show is drawn as it was placed, however long the attention rests on it.
  */
 export function boxOf(node: PlacedNode, wide: WideBox | null, open: number): WideBox {
-  if (!wide || open <= 0) return { width: node.width, offset: 0 }
+  if (!wide) return { width: node.width, offset: 0 }
   return {
     width: lerp(node.width, wide.width, open),
     offset: lerp(0, wide.offset, open),
@@ -102,7 +102,7 @@ export function useDwell(
     // picture.
     const step = (now: number) => {
       started ??= now
-      const t = span <= 0 ? 1 : Math.min(1, (now - started) / span)
+      const t = Math.min(1, (now - started) / span)
       open.value = lerp(from, to, easeOut(t))
       frame = t < 1 ? clock.schedule(step) : null
     }

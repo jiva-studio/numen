@@ -25,6 +25,9 @@ const RISE = 0.7
 /** How wide an arrow at an edge of the ground is drawn, and how deep. */
 const ARROW = { wide: 4, deep: 2.5 }
 
+/** Which way an arrow points down the page: towards what is below, away from what is above. */
+const ARROW_DIRECTION = { above: -1, below: 1 } as const
+
 /** One part at a moment of the opening. */
 export interface DrawnPart extends HungPart {
   /** Where it stands now, from the top of what is hung. */
@@ -110,7 +113,7 @@ export function getOpenParts(hung: NodeParts, open: number, scrollOffset = 0): O
   // take the same share of the opening whatever number of parts stand. What is
   // left for any one of them to run in is the opening less every lead before it.
   const many = shown.length
-  const lead = many > 1 ? Math.min(LEAD, SPREAD / (many - 1)) : 0
+  const lead = Math.min(LEAD, SPREAD / (many - 1))
   const runs = 1 - lead * (many - 1)
 
   /** The deepest a part may set off from and still stand on the ground. */
@@ -133,8 +136,8 @@ export function getOpenParts(hung: NodeParts, open: number, scrollOffset = 0): O
     isAbove,
     isBelow,
     arrows: [
-      ...(isAbove ? [arrowAt(hung, hung.pad / 2, -1)] : []),
-      ...(isBelow ? [arrowAt(hung, hung.height - hung.pad / 2, 1)] : []),
+      ...(isAbove ? [arrowAt(hung, hung.pad / 2, 'above')] : []),
+      ...(isBelow ? [arrowAt(hung, hung.height - hung.pad / 2, 'below')] : []),
     ],
   }
 }
@@ -143,11 +146,12 @@ export function getOpenParts(hung: NodeParts, open: number, scrollOffset = 0): O
  * An arrow at one edge of the ground, pointing the way there is more to scroll
  * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
-function arrowAt(hung: NodeParts, down: number, direction: 1 | -1): Arrow {
+function arrowAt(hung: NodeParts, down: number, at: Arrow['at']): Arrow {
+  const direction = ARROW_DIRECTION[at]
   const middle = hung.offset
   const y = hung.top + down
   return {
-    at: direction > 0 ? 'below' : 'above',
+    at,
     points: [
       { x: middle - ARROW.wide, y: y - direction * ARROW.deep },
       { x: middle, y: y + direction * ARROW.deep },

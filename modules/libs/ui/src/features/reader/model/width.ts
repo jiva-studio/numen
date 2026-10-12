@@ -27,7 +27,7 @@ export function usePageWidth(getRow: () => Row, atWidth: (pixels: number) => voi
   /** The widest page there is, staged, in device pixels. */
   const needed = computed(() => {
     const widest = getRow().widths.reduce((most, each) => Math.max(most, each), 0)
-    return widest > 0 ? roundUpWidth(widest * pixelRatio()) : 0
+    return roundUpWidth(widest * pixelRatio())
   })
 
   const drawnWidth = ref(0)
