@@ -90,6 +90,7 @@ const build = (
     switch (node.name) {
       case 'HorizontalRule':
         if (blocks && isOutsideSelection(node)) found.push(block(node, new Rule()))
+        // Stryker disable next-line BooleanLiteral: true descends into a HorizontalRule, which has no children
         return false
 
       case 'Table':
@@ -118,6 +119,7 @@ const build = (
         const edge = `${first ? ' cm-code-first' : ''}${isLast ? ' cm-code-last' : ''}`
         found.push(line(`cm-code${edge}`).range(at))
       })
+      // Stryker disable next-line BooleanLiteral: true descends into a FencedCode, which has no child that is drawn
       return true
     }
 
@@ -129,9 +131,11 @@ const build = (
     switch (node.name) {
       case 'ListMark': {
         const list = node.node.parent?.parent?.name
+        // Stryker disable next-line BooleanLiteral: true descends into a ListMark, which has no children
         if (list !== 'BulletList') return false
         if (BULLET.test(doc.sliceString(node.from, node.to)))
           found.push(Decoration.replace({ widget: new Bullet() }).range(node.from, node.to))
+        // Stryker disable next-line BooleanLiteral: true descends into a ListMark, which has no children
         return false
       }
 
@@ -139,6 +143,7 @@ const build = (
         const done = doc.sliceString(node.from, node.to).toLowerCase() === '[x]'
         const box = new Box(done, !state.readOnly)
         found.push(Decoration.replace({ widget: box }).range(node.from, node.to))
+        // Stryker disable next-line BooleanLiteral: true descends into a TaskMarker, which has no children
         return false
       }
     }
@@ -163,12 +168,14 @@ const build = (
   const takeShy = (node: SyntaxNodeRef): boolean | null => {
     if (SHY.has(node.name)) {
       if (!isParentSelected(node)) found.push(hidden.range(node.from, node.to))
+      // Stryker disable next-line BooleanLiteral: true descends into a mark of the shy set, which has no children
       return false
     }
 
     if (node.name === 'CodeMark') {
       if (node.node.parent?.name === 'InlineCode' && !isParentSelected(node))
         found.push(hidden.range(node.from, node.to))
+      // Stryker disable next-line BooleanLiteral: true descends into a CodeMark, which has no children
       return false
     }
 
@@ -179,13 +186,16 @@ const build = (
   const isSpacedMark = (node: SyntaxNodeRef): boolean | null => {
     if (node.name === 'HeaderMark') {
       const parent = node.node.parent
+      // Stryker disable next-line BooleanLiteral: true descends into a HeaderMark, which has no children
       if (!parent || parent.name.startsWith('Setext')) return false
       if (!isParentSelected(node)) hide(node.from, node.to)
+      // Stryker disable next-line BooleanLiteral: true descends into a HeaderMark, which has no children
       return false
     }
 
     if (node.name === 'QuoteMark') {
       if (!isParentSelected(node)) hide(node.from, node.to)
+      // Stryker disable next-line BooleanLiteral: true descends into a QuoteMark, which has no children
       return false
     }
 
@@ -238,6 +248,7 @@ export const findBlocks = (state: EditorState): BlockNode[] => {
     enter: (node) => {
       if (node.name === 'Table' || node.name === 'HorizontalRule') {
         found.push({ name: node.name, from: node.from, to: node.to })
+        // Stryker disable next-line BooleanLiteral: true descends into a Table or HorizontalRule, which has no Table or HorizontalRule below it
         return false
       }
       return BLOCK_CONTAINERS.has(node.name)

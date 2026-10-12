@@ -359,6 +359,23 @@ describe('a draft whose words are typed over', () => {
     expect(draft.prose.value).toBe('Heard again.')
   })
 
+  it('offers dropped words again only after the stillness that follows a refused write', async () => {
+    const pending = createPendingWrite()
+    const { draft } = createDraft({ write: pending.write })
+
+    draft.setProse(EDITED)
+    const first = draft.keep()
+    draft.setProse(EDITED_AGAIN)
+    await vi.advanceTimersByTimeAsync(10)
+    draft.drop()
+    await vi.advanceTimersByTimeAsync(10)
+    pending.answers[0]!.reject(refusal)
+    await first
+    await vi.advanceTimersByTimeAsync(QUIET - 15)
+
+    expect(pending.calls).toHaveLength(1)
+  })
+
   it('takes the words off the screen and writes no more when stopped', async () => {
     const { draft, written } = createDraft()
 
