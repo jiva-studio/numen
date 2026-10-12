@@ -44,77 +44,12 @@ func mount(at string, to http.Handler) served { return served{at: at, to: to} }
 // nothing serves it — not because a handler standing there has nothing behind
 // it. Naming none is a build that answers the whole schema.
 func (a *API) NewHandler(files http.Handler, named ...string) http.Handler {
-	counted := a.newQuestionCounter()
-	serves := func(service string) bool {
-		return len(named) == 0 || slices.Contains(named, service)
-	}
-
-	var routes []served
-	if serves(numenv1connect.VaultServiceName) {
-		routes = append(routes, mount(numenv1connect.NewVaultServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.WorkspaceServiceName) {
-		routes = append(routes, mount(numenv1connect.NewWorkspaceServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.FileServiceName) {
-		routes = append(routes, mount(numenv1connect.NewFileServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.NoteServiceName) {
-		routes = append(routes, mount(numenv1connect.NewNoteServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.SearchServiceName) {
-		routes = append(routes, mount(numenv1connect.NewSearchServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.AgentServiceName) {
-		routes = append(routes, mount(numenv1connect.NewAgentServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.VaultsServiceName) {
-		routes = append(routes, mount(numenv1connect.NewVaultsServiceHandler(vaultsService{api: a}, counted)))
-	}
-	if serves(numenv1connect.CardsServiceName) {
-		routes = append(routes, mount(numenv1connect.NewCardsServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.PresetsServiceName) {
-		routes = append(routes, mount(numenv1connect.NewPresetsServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.SettingsServiceName) {
-		routes = append(routes, mount(numenv1connect.NewSettingsServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.WindowServiceName) {
-		routes = append(routes, mount(numenv1connect.NewWindowServiceHandler(a.Window, counted)))
-	}
-	if serves(numenv1connect.ArtifactServiceName) {
-		routes = append(routes, mount(numenv1connect.NewArtifactServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.TranscriptServiceName) {
-		routes = append(routes, mount(numenv1connect.NewTranscriptServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.ArticleServiceName) {
-		routes = append(routes, mount(numenv1connect.NewArticleServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.OcrServiceName) {
-		routes = append(routes, mount(numenv1connect.NewOcrServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.DocumentServiceName) {
-		routes = append(routes, mount(numenv1connect.NewDocumentServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.RecordingServiceName) {
-		routes = append(routes, mount(numenv1connect.NewRecordingServiceHandler(a, counted)))
-	}
-	if serves(numenv1connect.BookServiceName) {
-		routes = append(routes, mount(numenv1connect.NewBookServiceHandler(a, counted)))
-	}
-	// The themes belong to the installation and arrive here from whatever put
-	// the window together, so a build put together without a catalogue serves
-	// none.
-	if a.Themes != nil && serves(numenv1connect.ThemeServiceName) {
-		routes = append(routes, mount(numenv1connect.NewThemeServiceHandler(a.Themes, counted)))
-	}
+	routes := a.newRoutes(named)
 
 	// A page of a document, the markup of a book and a picture the book carries
 	// are what a browser's own elements speak, and each is the thing itself, so
 	// they are served where that thing is answered about and nowhere else.
-	bytes := serves(numenv1connect.DocumentServiceName) || serves(numenv1connect.BookServiceName)
+	hasAssets := isServed(named, numenv1connect.DocumentServiceName) || isServed(named, numenv1connect.BookServiceName)
 
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for. What a link note
@@ -139,20 +74,117 @@ func (a *API) NewHandler(files http.Handler, named ...string) http.Handler {
 				return
 			}
 		}
-		switch {
-		case bytes && strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
-			if !a.questions.begin() {
-				http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
-				return
-			}
-			defer a.questions.finish()
-			a.Asset(w, r)
-		case slices.Contains(wire.OpenedAt, r.URL.Path):
-			wire.WritePage(w, r, pages, a.Themes, files)
-		default:
-			files.ServeHTTP(w, r)
-		}
+		a.serveBeside(w, r, hasAssets, files)
 	})
+}
+
+// isServed is whether a build naming these services answers one. Naming none is
+// a build that answers the whole schema.
+func isServed(named []string, service string) bool {
+	return len(named) == 0 || slices.Contains(named, service)
+}
+
+// service is one service of the schema, and how its calls are answered.
+type service struct {
+	name   string
+	handle func(counted connect.HandlerOption) (string, http.Handler)
+}
+
+// newRoutes mounts each service this build answers, behind the count of the
+// questions asked.
+func (a *API) newRoutes(named []string) []served {
+	counted := a.newQuestionCounter()
+	var routes []served
+	for _, one := range a.newServices() {
+		if isServed(named, one.name) {
+			routes = append(routes, mount(one.handle(counted)))
+		}
+	}
+	// The themes belong to the installation and arrive here from whatever put
+	// the window together, so a build put together without a catalogue serves
+	// none.
+	if a.Themes != nil && isServed(named, numenv1connect.ThemeServiceName) {
+		routes = append(routes, mount(numenv1connect.NewThemeServiceHandler(a.Themes, counted)))
+	}
+	return routes
+}
+
+// newServices is every service the window itself answers.
+func (a *API) newServices() []service {
+	return []service{
+		{numenv1connect.VaultServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewVaultServiceHandler(a, c)
+		}},
+		{numenv1connect.WorkspaceServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewWorkspaceServiceHandler(a, c)
+		}},
+		{numenv1connect.FileServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewFileServiceHandler(a, c)
+		}},
+		{numenv1connect.NoteServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewNoteServiceHandler(a, c)
+		}},
+		{numenv1connect.SearchServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewSearchServiceHandler(a, c)
+		}},
+		{numenv1connect.AgentServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewAgentServiceHandler(a, c)
+		}},
+		{numenv1connect.VaultsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewVaultsServiceHandler(vaultsService{api: a}, c)
+		}},
+		{numenv1connect.CardsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewCardsServiceHandler(a, c)
+		}},
+		{numenv1connect.PresetsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewPresetsServiceHandler(a, c)
+		}},
+		{numenv1connect.SettingsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewSettingsServiceHandler(a, c)
+		}},
+		{numenv1connect.WindowServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewWindowServiceHandler(a.Window, c)
+		}},
+		{numenv1connect.ArtifactServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewArtifactServiceHandler(a, c)
+		}},
+		{numenv1connect.TranscriptServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewTranscriptServiceHandler(a, c)
+		}},
+		{numenv1connect.ArticleServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewArticleServiceHandler(a, c)
+		}},
+		{numenv1connect.OcrServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewOcrServiceHandler(a, c)
+		}},
+		{numenv1connect.DocumentServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewDocumentServiceHandler(a, c)
+		}},
+		{numenv1connect.RecordingServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewRecordingServiceHandler(a, c)
+		}},
+		{numenv1connect.BookServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewBookServiceHandler(a, c)
+		}},
+	}
+}
+
+// serveBeside answers what no service does: the bytes of a file, the page the
+// interface opens at, and every other file the interface is made of.
+func (a *API) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets bool, files http.Handler) {
+	switch {
+	case hasAssets && strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
+		if !a.questions.begin() {
+			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		defer a.questions.finish()
+		a.Asset(w, r)
+	case slices.Contains(wire.OpenedAt, r.URL.Path):
+		wire.WritePage(w, r, pages, a.Themes, files)
+	default:
+		files.ServeHTTP(w, r)
+	}
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is

@@ -437,15 +437,18 @@ func (a *API) WatchVaultChanges(
 			if !open {
 				return nil
 			}
-			renamed := make([]*v1.Move, 0, len(what.renamed))
-			for _, went := range what.renamed {
-				renamed = append(renamed, &v1.Move{From: went.From, To: went.To})
-			}
-			if err := out.Send(&v1.WatchVaultChangesResponse{
-				Paths: what.paths, Reload: what.shouldReload, Renamed: renamed,
-			}); err != nil {
+			if err := out.Send(newChangeResponse(what)); err != nil {
 				return err
 			}
 		}
 	}
+}
+
+// newChangeResponse is the wire message that reports one change.
+func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
+	renamed := make([]*v1.Move, 0, len(what.renamed))
+	for _, went := range what.renamed {
+		renamed = append(renamed, &v1.Move{From: went.From, To: went.To})
+	}
+	return &v1.WatchVaultChangesResponse{Paths: what.paths, Reload: what.shouldReload, Renamed: renamed}
 }

@@ -117,44 +117,8 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 
 	wake := newIndexTriggers(quietPeriod)
 
-	// Where a passage sits on the page is asked of whichever producer made the
-	// text it is a place in, which is what the index records.
-	highlight := source.NewHighlight(
-		made.GetVaultReaders(), made.GetSourceQueries(), made.GetDerivedStores())
-	highlight.Documents = made.GetTextExtractor()
-
-	api := &API{
-		ChangeEvents:      newChangeBroadcaster(),
-		Places:            newPlaceBroadcaster(),
-		Edits:             newEditBroadcaster(),
-		Window:            &wire.Window{Named: wire.Editor, Tasking: tasks},
-		NotifyNoteWritten: func() { fire(wake.notes) },
-		Readers:           made.GetVaultReaders(),
-		Viewer:            newCachingViewer(made.GetPageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
-		Highlight:         &highlight,
-		Texts:             made.OpenSourceTexts(),
-		Notes: Notes{
-			Queries: made.GetNoteQueries(),
-			Links:   made.GetLinkQueries(),
-		},
-		Files: Files{
-			GetFolderEntries: file.NewGetFolderEntries(made.GetVaultReaders(), made.GetNoteQueries()),
-			GetFileKinds:     file.NewGetFileKinds(made.GetVaultReaders(), made.GetNoteQueries()),
-			CreateFolder:     file.NewCreateFolder(made.GetVaultWriters()),
-		},
-	}
-	api.Documents = newDocuments(api.Readers, api.Viewer)
-	// The editor is open on one vault, and answers which as itself.
-	api.Window.Vault = func() string { return string(api.GetCurrentVault().ID) }
-	api.Indexing.Progress = made.GetIndexProgress()
-	// Named before anything is read: it is what decides whether a chunk already
-	// carries a vector, and what tells the window that something is going to
-	// embed what was cut.
-	if embedder != nil {
-		model := embedder.GetModel()
-		api.Indexing.Model.Store(model.String())
-		api.Indexing.Recipe.Store(model.Recipe())
-	}
+	//nolint:contextcheck // a document stays open for the window, not for the request that opened it
+	api := createAPI(made, tasks, wake, embedder)
 
 	// The search the window offers is the search the application already does.
 	// It is built once the embedder is settled, so a model that could not be
@@ -182,75 +146,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		stopEmbedder:  closeEmbedder,
 	}
 
-	// Everything that acts on this installation's notes, cards and vaults, built
-	// once. Whatever else works the same vault — the tools an agent calls — is
-	// served these and builds none of its own.
-	//
-	// A note the person saves is level before the save is answered, so the vault
-	// finds what it now holds without waiting on the watch.
-	pool.notes = made.OpenNotes(pool.level).FollowMoves(api.GetWindow())
-	pool.cards = made.OpenCards(pool.level)
-	pool.vaults = made.OpenVaults(pool.notes.Move)
-
-	notes := &pool.notes
-	api.Notes.Read = &notes.Read
-	api.Notes.Write = &notes.Write
-	api.Notes.Create = &notes.Create
-	api.Notes.EditLinks = &notes.Linking
-	api.Notes.Rename = &notes.Rename
-	api.Notes.Remove = &notes.Remove
-	api.Notes.ShowNeighbourhood = &notes.Neighbourhood
-	api.Notes.GetTitle = notes.GetTitle
-	api.Notes.GetLinkAddress = notes.GetLinkAddress
-
-	cutting := &pool.cards
-	api.Cards = Cards{
-		Read:        &cutting.Read,
-		List:        &cutting.List,
-		Write:       &cutting.Write,
-		Create:      &cutting.Create,
-		RenameField: &cutting.RenameField,
-	}
-	// A preset is a note the editor writes key by key, and the curve beside its
-	// one control is the same simulator the flashcards window runs on.
-	running := made.OpenFlashcards(pool.level)
-	api.Presets = &running.Presets
-	api.Curves = &running.Curves
-	api.Settings = Settings{
-		Get:       made.OpenGetSettings(running.Day),
-		Write:     made.OpenWriteSettings(),
-		GetFile:   made.OpenGetSettingsFile(),
-		WriteFile: made.OpenWriteSettingsFile(),
-	}
-
-	held := &pool.vaults
-	api.Files.Move = &held.Move
-	api.Files.Import = &held.Import
-	api.Files.URLs = &source.CreateURL{Writers: made.GetVaultWriters(), Index: pool.level}
-	api.Vaults = Vaults{
-		Registry:    held.Registry,
-		List:        &held.List,
-		Find:        &held.Find,
-		FolderCheck: &held.FolderCheck,
-		Add:         &held.Add,
-		Rename:      &held.Rename,
-		Remove:      &held.Remove,
-		Unregister:  &held.Unregister,
-	}
-
-	api.Drops = &source.DropTranscript{
-		Readers: made.GetVaultReaders(),
-		Sources: made.GetSourceRepository(),
-		Queries: made.GetSourceQueries(),
-		Derived: made.GetDerivedStores(),
-	}
-
-	// A machine holding neither of the tools an address is reached with binds
-	// no downloader, and the window is answered that this build cannot do it.
-	if by := made.OpenDownloader(ctx); by != nil {
-		fetching := made.OpenImportURL(ctx, by)
-		api.Imports = &fetching
-	}
+	pool.wireUseCases(ctx)
 
 	// Indexing every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
@@ -405,5 +301,124 @@ func (o *Installation) Report(said []string) {
 			Title: "Reading the settings",
 			Error: one,
 		})
+	}
+}
+
+// createAPI is the API a window answers through, with the pieces that need no vault.
+func createAPI(made Assembly, tasks *task.Tasks, wake indexTriggers, embedder port.Embedder) *API {
+	// Where a passage sits on the page is asked of whichever producer made the
+	// text it is a place in, which is what the index records.
+	highlight := source.NewHighlight(
+		made.GetVaultReaders(), made.GetSourceQueries(), made.GetDerivedStores())
+	highlight.Documents = made.GetTextExtractor()
+
+	api := &API{
+		ChangeEvents:      newChangeBroadcaster(),
+		Places:            newPlaceBroadcaster(),
+		Edits:             newEditBroadcaster(),
+		Window:            &wire.Window{Named: wire.Editor, Tasking: tasks},
+		NotifyNoteWritten: func() { fire(wake.notes) },
+		Readers:           made.GetVaultReaders(),
+		Viewer:            newCachingViewer(made.GetPageRenderer()),
+		Highlight:         &highlight,
+		Texts:             made.OpenSourceTexts(),
+		Notes: Notes{
+			Queries: made.GetNoteQueries(),
+			Links:   made.GetLinkQueries(),
+		},
+		Files: Files{
+			GetFolderEntries: file.NewGetFolderEntries(made.GetVaultReaders(), made.GetNoteQueries()),
+			GetFileKinds:     file.NewGetFileKinds(made.GetVaultReaders(), made.GetNoteQueries()),
+			CreateFolder:     file.NewCreateFolder(made.GetVaultWriters()),
+		},
+	}
+	api.Documents = newDocuments(api.Readers, api.Viewer)
+	// The editor is open on one vault, and answers which as itself.
+	api.Window.Vault = func() string { return string(api.GetCurrentVault().ID) }
+	api.Indexing.Progress = made.GetIndexProgress()
+	// Named before anything is read: it is what decides whether a chunk already
+	// carries a vector, and what tells the window that something is going to
+	// embed what was cut.
+	if embedder != nil {
+		model := embedder.GetModel()
+		api.Indexing.Model.Store(model.String())
+		api.Indexing.Recipe.Store(model.Recipe())
+	}
+	return api
+}
+
+// wireUseCases builds the use cases the window and everything else working its
+// vault are served, and hands the window the ones it answers through.
+func (o *Installation) wireUseCases(ctx context.Context) {
+	made, api := o.made, o.API
+
+	// Everything that acts on this installation's notes, cards and vaults, built
+	// once. Whatever else works the same vault — the tools an agent calls — is
+	// served these and builds none of its own.
+	//
+	// A note the person saves is level before the save is answered, so the vault
+	// finds what it now holds without waiting on the watch.
+	o.notes = made.OpenNotes(o.level).FollowMoves(api.GetWindow())
+	o.cards = made.OpenCards(o.level)
+	o.vaults = made.OpenVaults(o.notes.Move)
+
+	notes := &o.notes
+	api.Notes.Read = &notes.Read
+	api.Notes.Write = &notes.Write
+	api.Notes.Create = &notes.Create
+	api.Notes.EditLinks = &notes.Linking
+	api.Notes.Rename = &notes.Rename
+	api.Notes.Remove = &notes.Remove
+	api.Notes.ShowNeighbourhood = &notes.Neighbourhood
+	api.Notes.GetTitle = notes.GetTitle
+	api.Notes.GetLinkAddress = notes.GetLinkAddress
+
+	cutting := &o.cards
+	api.Cards = Cards{
+		Read:        &cutting.Read,
+		List:        &cutting.List,
+		Write:       &cutting.Write,
+		Create:      &cutting.Create,
+		RenameField: &cutting.RenameField,
+	}
+	// A preset is a note the editor writes key by key, and the curve beside its
+	// one control is the same simulator the flashcards window runs on.
+	running := made.OpenFlashcards(o.level)
+	api.Presets = &running.Presets
+	api.Curves = &running.Curves
+	api.Settings = Settings{
+		Get:       made.OpenGetSettings(running.Day),
+		Write:     made.OpenWriteSettings(),
+		GetFile:   made.OpenGetSettingsFile(),
+		WriteFile: made.OpenWriteSettingsFile(),
+	}
+
+	held := &o.vaults
+	api.Files.Move = &held.Move
+	api.Files.Import = &held.Import
+	api.Files.URLs = &source.CreateURL{Writers: made.GetVaultWriters(), Index: o.level}
+	api.Vaults = Vaults{
+		Registry:    held.Registry,
+		List:        &held.List,
+		Find:        &held.Find,
+		FolderCheck: &held.FolderCheck,
+		Add:         &held.Add,
+		Rename:      &held.Rename,
+		Remove:      &held.Remove,
+		Unregister:  &held.Unregister,
+	}
+
+	api.Drops = &source.DropTranscript{
+		Readers: made.GetVaultReaders(),
+		Sources: made.GetSourceRepository(),
+		Queries: made.GetSourceQueries(),
+		Derived: made.GetDerivedStores(),
+	}
+
+	// A machine holding neither of the tools an address is reached with binds
+	// no downloader, and the window is answered that this build cannot do it.
+	if by := made.OpenDownloader(ctx); by != nil {
+		fetching := made.OpenImportURL(ctx, by)
+		api.Imports = &fetching
 	}
 }

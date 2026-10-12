@@ -377,6 +377,3 @@ linters:
       - path: (^|/)proofread/
         linters: [cyclop, gocognit, nestif]
 
-      # The window adapters hold their logic until it moves into use cases.
-      - path: (^|/)adapter/window/
-        linters: [cyclop, gocognit, nestif, funlen]

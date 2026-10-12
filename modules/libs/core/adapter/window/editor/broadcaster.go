@@ -152,41 +152,67 @@ func (a *broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 func (a *broadcaster[T]) deliver(l *subscriber[T]) {
 	defer close(l.out)
 
-outer:
 	for {
-		a.mu.Lock()
-		for len(l.waiting) == 0 {
-			a.mu.Unlock()
-			select {
-			case <-l.notify:
-			case <-l.done:
-				return
-			}
-			a.mu.Lock()
+		head, ok := a.waitForFront(l)
+		if !ok || !a.offer(l, head) {
+			return
 		}
-		head, seq := l.waiting[0], l.frontSeq
-		a.mu.Unlock()
+	}
+}
 
-		for {
-			select {
-			case l.out <- head:
-				a.mu.Lock()
-				if l.frontSeq == seq && len(l.waiting) > 0 {
-					l.waiting = l.waiting[1:]
-				}
-				a.mu.Unlock()
-				continue outer
-			case <-l.notify:
-				a.mu.Lock()
-				if len(l.waiting) == 0 {
-					a.mu.Unlock()
-					continue outer
-				}
-				head, seq = l.waiting[0], l.frontSeq
-				a.mu.Unlock()
-			case <-l.done:
-				return
+// front is the message at the head of a subscriber's line, and the count of
+// times that head had been replaced when it was read.
+type front[T any] struct {
+	message T
+	seq     uint64
+}
+
+// getFront reads the head of the line, and reports whether the line holds one.
+func (a *broadcaster[T]) getFront(l *subscriber[T]) (front[T], bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if len(l.waiting) == 0 {
+		return front[T]{}, false
+	}
+	return front[T]{message: l.waiting[0], seq: l.frontSeq}, true
+}
+
+// waitForFront blocks until the line holds a message, and reports false once
+// the subscriber is done.
+func (a *broadcaster[T]) waitForFront(l *subscriber[T]) (front[T], bool) {
+	for {
+		if head, ok := a.getFront(l); ok {
+			return head, true
+		}
+		select {
+		case <-l.notify:
+		case <-l.done:
+			return front[T]{}, false
+		}
+	}
+}
+
+// offer hands the head to out until it is taken, and takes it off the line when
+// nothing has overtaken it. A replacement landing on the head is offered in its
+// place. It reports false once the subscriber is done.
+func (a *broadcaster[T]) offer(l *subscriber[T], head front[T]) bool {
+	for {
+		select {
+		case l.out <- head.message:
+			a.mu.Lock()
+			if l.frontSeq == head.seq && len(l.waiting) > 0 {
+				l.waiting = l.waiting[1:]
 			}
+			a.mu.Unlock()
+			return true
+		case <-l.notify:
+			next, ok := a.getFront(l)
+			if !ok {
+				return true
+			}
+			head = next
+		case <-l.done:
+			return false
 		}
 	}
 }
