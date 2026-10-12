@@ -16,19 +16,19 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// memFile is one entry a memVault walks: what the walk reports, and what a read
+// scanFile is one entry a scanVault walks: what the walk reports, and what a read
 // of it answers.
-type memFile struct {
+type scanFile struct {
 	kind    domain.SourceKind
 	size    int64
 	modTime time.Time
 	readErr error
 }
 
-// memVault is a vault held in memory, answering to a scan as a reader and, for
+// scanVault is a vault held in memory, answering to a scan as a reader and, for
 // the rows a scan writes, as every repository it asks.
-type memVault struct {
-	files   map[string]memFile
+type scanVault struct {
+	files   map[string]scanFile
 	openErr error
 	walkErr error
 
@@ -48,9 +48,9 @@ type memVault struct {
 	registerCalled bool
 }
 
-func (m *memVault) Open(context.Context, string) (io.ReadSeekCloser, error) { return nil, nil }
+func (m *scanVault) Open(context.Context, string) (io.ReadSeekCloser, error) { return nil, nil }
 
-func (m *memVault) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
+func (m *scanVault) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
 	if m.walkErr != nil {
 		return m.walkErr
 	}
@@ -62,7 +62,7 @@ func (m *memVault) Walk(ctx context.Context, fn func(domain.Fingerprint) error) 
 	return nil
 }
 
-func (m *memVault) Read(_ context.Context, path string) ([]byte, error) {
+func (m *scanVault) Read(_ context.Context, path string) ([]byte, error) {
 	m.reads = append(m.reads, path)
 	if err := m.files[path].readErr; err != nil {
 		return nil, err
@@ -70,24 +70,24 @@ func (m *memVault) Read(_ context.Context, path string) ([]byte, error) {
 	return []byte("# " + path), nil
 }
 
-func (m *memVault) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
+func (m *scanVault) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
 
-func (m *memVault) Stat(context.Context, string) (domain.Fingerprint, error) {
+func (m *scanVault) Stat(context.Context, string) (domain.Fingerprint, error) {
 	return domain.Fingerprint{}, nil
 }
 
-func (m *memVault) Register(context.Context, domain.VaultID) error {
+func (m *scanVault) Register(context.Context, domain.VaultID) error {
 	m.registerCalled = true
 	return m.registerErr
 }
 
-func (m *memVault) Forget(context.Context, domain.VaultID) error { return nil }
+func (m *scanVault) Forget(context.Context, domain.VaultID) error { return nil }
 
-func (m *memVault) Fingerprints(context.Context, domain.VaultID) (map[string]domain.Fingerprint, error) {
+func (m *scanVault) Fingerprints(context.Context, domain.VaultID) (map[string]domain.Fingerprint, error) {
 	return m.known, m.knownErr
 }
 
-func (m *memVault) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
+func (m *scanVault) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
 	m.saveCalls++
 	if m.saveErr != nil && m.saveCalls >= m.failSaveAt {
 		return m.saveErr
@@ -100,24 +100,24 @@ func (m *memVault) Save(_ context.Context, _ domain.VaultID, notes []domain.Note
 	return nil
 }
 
-func (m *memVault) Remove(_ context.Context, _ domain.VaultID, paths []string) error {
+func (m *scanVault) Remove(_ context.Context, _ domain.VaultID, paths []string) error {
 	m.removed = append(m.removed, paths...)
 	return m.removeErr
 }
 
-func (m *memVault) ReportChanges(context.Context) error {
+func (m *scanVault) ReportChanges(context.Context) error {
 	m.reports++
 	return m.reportErr
 }
 
-func (m *memVault) scan() vaults.Scan {
-	return vaults.NewScan(memReaders{m}, m, m, m, m)
+func (m *scanVault) scan() vaults.Scan {
+	return vaults.NewScan(scanReaders{m}, m, m, m, m)
 }
 
-// memReaders is the readers of a scan, answering for the one memVault.
-type memReaders struct{ vault *memVault }
+// scanReaders is the readers of a scan, answering for the one scanVault.
+type scanReaders struct{ vault *scanVault }
 
-func (r memReaders) Open(domain.Vault) (port.VaultReader, error) {
+func (r scanReaders) Open(domain.Vault) (port.VaultReader, error) {
 	r.vault.opens++
 	if r.vault.openErr != nil {
 		return nil, r.vault.openErr
@@ -125,15 +125,15 @@ func (r memReaders) Open(domain.Vault) (port.VaultReader, error) {
 	return r.vault, nil
 }
 
-func noteFile(modTime time.Time) memFile {
-	return memFile{kind: domain.KindNote, size: 10, modTime: modTime}
+func noteFile(modTime time.Time) scanFile {
+	return scanFile{kind: domain.KindNote, size: 10, modTime: modTime}
 }
 
 var epoch = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func TestAScanOfACancelledContextTouchesNothing(t *testing.T) {
 	t.Parallel()
-	m := &memVault{files: map[string]memFile{"a.md": noteFile(epoch)}}
+	m := &scanVault{files: map[string]scanFile{"a.md": noteFile(epoch)}}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -151,22 +151,22 @@ func TestAScanStopsAtTheFirstStepThatFails(t *testing.T) {
 	boom := errors.New("boom")
 	cases := []struct {
 		name    string
-		set     func(*memVault)
+		set     func(*scanVault)
 		message string
-		reached func(*memVault) bool
+		reached func(*scanVault) bool
 		indexed int
 	}{
-		{"the vault cannot be opened", func(m *memVault) { m.openErr = boom }, "boom", func(m *memVault) bool { return m.registerCalled }, 0},
-		{"the vault cannot be registered", func(m *memVault) { m.registerErr = boom }, "register vault: boom", func(m *memVault) bool { return len(m.reads) > 0 }, 0},
-		{"the index cannot be read", func(m *memVault) { m.knownErr = boom }, "read index: boom", func(m *memVault) bool { return len(m.reads) > 0 }, 0},
-		{"the walk fails", func(m *memVault) { m.walkErr = boom }, "boom", func(m *memVault) bool { return len(m.reads) > 0 }, 0},
-		{"the vault cannot be told which notes are gone", func(m *memVault) { m.removeErr = boom }, "remove deleted notes: boom", func(m *memVault) bool { return m.reports > 0 }, 1},
-		{"the index upkeep fails", func(m *memVault) { m.reportErr = boom }, "index upkeep for named: boom", func(*memVault) bool { return false }, 1},
+		{"the vault cannot be opened", func(m *scanVault) { m.openErr = boom }, "boom", func(m *scanVault) bool { return m.registerCalled }, 0},
+		{"the vault cannot be registered", func(m *scanVault) { m.registerErr = boom }, "register vault: boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
+		{"the index cannot be read", func(m *scanVault) { m.knownErr = boom }, "read index: boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
+		{"the walk fails", func(m *scanVault) { m.walkErr = boom }, "boom", func(m *scanVault) bool { return len(m.reads) > 0 }, 0},
+		{"the vault cannot be told which notes are gone", func(m *scanVault) { m.removeErr = boom }, "remove deleted notes: boom", func(m *scanVault) bool { return m.reports > 0 }, 1},
+		{"the index upkeep fails", func(m *scanVault) { m.reportErr = boom }, "index upkeep for named: boom", func(*scanVault) bool { return false }, 1},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			m := &memVault{files: map[string]memFile{"a.md": noteFile(epoch)}}
+			m := &scanVault{files: map[string]scanFile{"a.md": noteFile(epoch)}}
 			tc.set(m)
 
 			res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "named"})
@@ -186,7 +186,7 @@ func TestAScanStopsAtTheFirstStepThatFails(t *testing.T) {
 func TestAFailedGroupWriteKeepsWhatEarlierGroupsCounted(t *testing.T) {
 	t.Parallel()
 	const perGroup = 500
-	m := &memVault{files: map[string]memFile{}, saveErr: errors.New("disk full"), failSaveAt: 2}
+	m := &scanVault{files: map[string]scanFile{}, saveErr: errors.New("disk full"), failSaveAt: 2}
 	for i := range perGroup + 1 {
 		m.files[fmt.Sprintf("n%04d.md", i)] = noteFile(epoch.Add(time.Duration(i) * time.Second))
 	}
@@ -205,8 +205,8 @@ func TestAFailedGroupWriteKeepsWhatEarlierGroupsCounted(t *testing.T) {
 
 func TestAFailedWriteNamesTheFirstAndLastNoteOfTheGroup(t *testing.T) {
 	t.Parallel()
-	m := &memVault{
-		files: map[string]memFile{
+	m := &scanVault{
+		files: map[string]scanFile{
 			"a.md": noteFile(epoch.Add(3 * time.Second)),
 			"b.md": noteFile(epoch.Add(2 * time.Second)),
 			"c.md": noteFile(epoch.Add(1 * time.Second)),
@@ -225,17 +225,17 @@ func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 	newest := epoch.Add(time.Hour)
 	cases := []struct {
 		name  string
-		first memFile
+		first scanFile
 		want  func(vaults.ScanResult) bool
 	}{
-		{"a source of another kind", memFile{kind: domain.KindBook, size: 1, modTime: newest}, func(r vaults.ScanResult) bool { return r.Assets == 1 }},
-		{"a file that vanished", memFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: fs.ErrNotExist}, func(r vaults.ScanResult) bool { return r.Vanished == 1 }},
-		{"a file nobody can read", memFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: errors.New("denied")}, func(r vaults.ScanResult) bool { return r.Unreadable == 1 }},
+		{"a source of another kind", scanFile{kind: domain.KindBook, size: 1, modTime: newest}, func(r vaults.ScanResult) bool { return r.Assets == 1 }},
+		{"a file that vanished", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: fs.ErrNotExist}, func(r vaults.ScanResult) bool { return r.Vanished == 1 }},
+		{"a file nobody can read", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: errors.New("denied")}, func(r vaults.ScanResult) bool { return r.Unreadable == 1 }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			m := &memVault{files: map[string]memFile{
+			m := &scanVault{files: map[string]scanFile{
 				"first.md":  tc.first,
 				"second.md": noteFile(epoch.Add(2 * time.Minute)),
 				"third.md":  noteFile(epoch.Add(time.Minute)),
@@ -257,8 +257,8 @@ func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 
 func TestARebuildReadsWhatTheIndexRemembers(t *testing.T) {
 	t.Parallel()
-	m := &memVault{
-		files: map[string]memFile{"a.md": noteFile(epoch)},
+	m := &scanVault{
+		files: map[string]scanFile{"a.md": noteFile(epoch)},
 		known: map[string]domain.Fingerprint{"a.md": {Path: "a.md", Size: 10, ModTime: epoch}},
 	}
 
@@ -285,7 +285,7 @@ func TestTheIndexIsMeasuredAfterTheSmallestChange(t *testing.T) {
 	t.Parallel()
 	t.Run("one note indexed", func(t *testing.T) {
 		t.Parallel()
-		m := &memVault{files: map[string]memFile{"a.md": noteFile(epoch)}}
+		m := &scanVault{files: map[string]scanFile{"a.md": noteFile(epoch)}}
 		if _, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"}); err != nil {
 			t.Fatal(err)
 		}
@@ -295,8 +295,8 @@ func TestTheIndexIsMeasuredAfterTheSmallestChange(t *testing.T) {
 	})
 	t.Run("one note removed", func(t *testing.T) {
 		t.Parallel()
-		m := &memVault{
-			files: map[string]memFile{},
+		m := &scanVault{
+			files: map[string]scanFile{},
 			known: map[string]domain.Fingerprint{"gone.md": {Path: "gone.md", Size: 10, ModTime: epoch}},
 		}
 		res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"})
@@ -313,7 +313,7 @@ func TestAGroupThatFailsWhenFullStopsTheScanWithWhatWasCounted(t *testing.T) {
 	t.Parallel()
 	const perGroup = 500
 	boom := errors.New("disk full")
-	m := &memVault{files: map[string]memFile{}, saveErr: boom, failSaveAt: 1}
+	m := &scanVault{files: map[string]scanFile{}, saveErr: boom, failSaveAt: 1}
 	for i := range perGroup + 1 {
 		m.files[fmt.Sprintf("n%04d.md", i)] = noteFile(epoch.Add(time.Duration(i) * time.Second))
 	}
