@@ -38,11 +38,7 @@ func (l *indexLane) Close() error { return l.held.Close() }
 
 // Concurrency is how many calls the index side runs at once.
 func (l *indexLane) Concurrency() int {
-	passes := 1
-	if counted, ok := l.waiting.(interface{ Concurrency() int }); ok {
-		passes = counted.Concurrency()
-	}
-	return getIndexLaneLimit(passes)
+	return getIndexLaneLimit(l.held.Concurrency())
 }
 
 // Wait blocks until the model turns up, and says what stopped it.

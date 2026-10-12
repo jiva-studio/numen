@@ -677,37 +677,18 @@ func TestWholeSaysWhichCardsItGave(t *testing.T) {
 		"\n## Alpaca ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nAlpaca\n" +
 		"\n## Vicuña\n\n[[Animal]]\n\n### Name\n\nVicuña\n"
 	ids := []domain.CardID{"zpqrstvwxy", "m9n8b7v6c5"}
-	createID := func() (domain.CardID, error) {
+	createID := func() domain.CardID {
 		out := ids[0]
 		ids = ids[1:]
-		return out, nil
+		return out
 	}
 
-	_, given, err := format.Whole(body, map[string]format.Stencil{
+	_, given := format.Whole(body, map[string]format.Stencil{
 		"Animal": {Fields: []string{"Name"}},
 	}, createID)
-	if err != nil {
-		t.Fatalf("whole: %v", err)
-	}
 	want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
 	if !slices.Equal(given, want) {
 		t.Errorf("given = %+v, want %+v", given, want)
-	}
-}
-
-// A generator that cannot answer says which card was left without a mark, so
-// the write above can name the deck it happened in.
-func TestAMarkThatCouldNotBeCreatedSaysWhichCard(t *testing.T) {
-	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
-		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
-	broken := func() (domain.CardID, error) { return "", errors.New("no randomness") }
-
-	_, _, err := format.Whole(body, nil, broken)
-	if err == nil {
-		t.Fatal("a deck was made whole with no mark to give")
-	}
-	if !strings.Contains(err.Error(), "1") || !strings.Contains(err.Error(), "no randomness") {
-		t.Errorf("err = %v, want it to say which card carried none", err)
 	}
 }
 

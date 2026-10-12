@@ -3,7 +3,6 @@ package cards
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -94,10 +93,7 @@ func (u Write) whole(
 	if err != nil {
 		return "", nil, err
 	}
-	whole, given, err := format.Whole(body, by, cardid.New)
-	if err != nil {
-		return "", nil, fmt.Errorf("make %s whole: %w", path, err)
-	}
+	whole, given := format.Whole(body, by, cardid.New)
 	return whole, given, nil
 }
 
@@ -106,6 +102,9 @@ func (u Write) whole(
 //
 // The faces are the body and the fields are one key of the frontmatter, and
 // both are the one file, so one write carries both.
+//
+// The read, the change and the write are made under this vault's write lock,
+// from before the read until after the file is replaced.
 func (u Write) Stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	fingerprint domain.Fingerprint,
@@ -113,15 +112,6 @@ func (u Write) Stencil(
 	if err := note.CheckSize(path, len(body), note.MaxBytes); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	return u.stencil(ctx, v, path, body, fields, fingerprint)
-}
-
-// stencil is the read, the change and the write, under this vault's write lock
-// from before the read until after the file is replaced.
-func (u Write) stencil(
-	ctx context.Context, v domain.Vault, path, body string, fields []string,
-	fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
 	if markdown.IsFrontmatterStart(body) {
 		return domain.Fingerprint{}, note.ErrBodyUnwritable
 	}

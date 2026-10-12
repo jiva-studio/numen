@@ -49,10 +49,7 @@ func FuzzWhole(f *testing.F) {
 			"empty":   {},
 		}
 
-		out, given, err := format.Whole(body, stencils, createIDs())
-		if err != nil {
-			t.Fatalf("%q could not be made whole: %v", body, err)
-		}
+		out, given := format.Whole(body, stencils, createIDs())
 		was := format.ReadDeck(domain.Note{Body: body})
 		now := format.ReadDeck(domain.Note{Body: out})
 		if len(now.Cards) != len(was.Cards) {
@@ -80,10 +77,7 @@ func FuzzWhole(f *testing.F) {
 			}
 		}
 
-		again, second, err := format.Whole(out, stencils, createIDs())
-		if err != nil {
-			t.Fatalf("a deck already made whole could not be: %v", err)
-		}
+		again, second := format.Whole(out, stencils, createIDs())
 		if again != out {
 			t.Fatalf("a second pass rewrote the deck\n was %q\n now %q", out, again)
 		}
@@ -95,10 +89,10 @@ func FuzzWhole(f *testing.F) {
 
 // createIDs creates marks a run at a time, so that what comes out of one body
 // is the same on every machine and in every run.
-func createIDs() func() (domain.CardID, error) {
+func createIDs() func() domain.CardID {
 	at := 0
-	return func() (domain.CardID, error) {
+	return func() domain.CardID {
 		at++
-		return domain.CardID(fmt.Sprintf("%010d", at)), nil
+		return domain.CardID(fmt.Sprintf("%010d", at))
 	}
 }

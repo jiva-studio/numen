@@ -1,6 +1,7 @@
 package flashcards
 
 import (
+	"cmp"
 	"context"
 	"slices"
 
@@ -65,21 +66,9 @@ func (a *API) ListReviewDays(
 // sortReviewDays puts the days oldest first.
 func sortReviewDays(days []*v1.ReviewDay) []*v1.ReviewDay {
 	slices.SortFunc(days, func(one, other *v1.ReviewDay) int {
-		return cmpDay(one.GetDay(), other.GetDay())
+		return cmp.Compare(one.GetDay(), other.GetDay())
 	})
 	return days
-}
-
-// cmpDay orders two days. A day is written as the year, the month and the day,
-// each padded, so it sorts as text the way it sorts in time.
-func cmpDay(one, other string) int {
-	switch {
-	case one < other:
-		return -1
-	case one > other:
-		return 1
-	}
-	return 0
 }
 
 // isWithin says whether a day falls inside the stretch asked for, both ends
@@ -88,8 +77,5 @@ func cmpDay(one, other string) int {
 // A day is written as the year, the month and the day, each padded, so it is
 // compared as text the way it is compared in time.
 func isWithin(day, from, to string) bool {
-	if from != "" && day < from {
-		return false
-	}
-	return to == "" || day <= to
+	return day >= from && (to == "" || day <= to)
 }

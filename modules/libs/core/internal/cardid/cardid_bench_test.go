@@ -9,17 +9,12 @@ import (
 func BenchmarkNew(b *testing.B) {
 	b.ReportAllocs()
 	for b.Loop() {
-		if _, err := cardid.New(); err != nil {
-			b.Fatal(err)
-		}
+		cardid.New()
 	}
 }
 
 func BenchmarkValid(b *testing.B) {
-	id, err := cardid.New()
-	if err != nil {
-		b.Fatal(err)
-	}
+	id := cardid.New()
 	b.ReportAllocs()
 	for b.Loop() {
 		if !cardid.Valid(id) {

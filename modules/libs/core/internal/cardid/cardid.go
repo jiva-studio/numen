@@ -33,9 +33,8 @@ func createTable(characters string) (table [256]bool) {
 	return table
 }
 
-// New mints an identifier. The error is the shape of the identity source a
-// caller is handed; this one always answers nil.
-func New() (domain.CardID, error) {
+// New mints an identifier.
+func New() domain.CardID {
 	var b [Length]byte
 	// rand.Read aborts the program when the system has no randomness; it never
 	// returns an error.
@@ -46,7 +45,7 @@ func New() (domain.CardID, error) {
 		// so every character is as likely as every other.
 		out[i] = alphabet[v&0x1f]
 	}
-	return domain.CardID(out), nil
+	return domain.CardID(out)
 }
 
 // Valid reports whether s could have been minted here. It is strict: an

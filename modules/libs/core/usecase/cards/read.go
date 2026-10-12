@@ -177,7 +177,7 @@ func (u Read) stencils(
 			if err != nil {
 				return nil, nil, err
 			}
-			if found.Outcome == note.Ok && found.Type == domain.TypeStencil {
+			if found.Type == domain.TypeStencil {
 				held = found.Body
 			}
 			read[path] = held
@@ -192,9 +192,6 @@ func (u Read) stencils(
 // notStencils is one problem per card whose wikilink reaches a note that is not
 // a stencil. The values are read, and no face lays the card out.
 func notStencils(d format.Deck, ordinary map[string]bool) []format.Problem {
-	if len(ordinary) == 0 {
-		return nil
-	}
 	var out []format.Problem
 	for at, card := range d.Cards {
 		if !ordinary[card.StencilLink] {
@@ -254,9 +251,9 @@ func (u Read) readNote(
 	case errors.Is(err, fs.ErrNotExist):
 		return domain.Note{}, ref, note.Missing, nil
 	case !held && err == nil:
-		return domain.Note{}, ref, note.NotANote, nil
+		return domain.Note{}, domain.Fingerprint{}, note.NotANote, nil
 	case err != nil:
-		return domain.Note{}, ref, "", fmt.Errorf("read %s: %w", path, err)
+		return domain.Note{}, domain.Fingerprint{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
 
 	// The values of a card go out in string fields. A browser turns an

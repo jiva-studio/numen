@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -35,15 +36,13 @@ func NewShowNeighbourhood(links port.LinkQueries, notes RefQueries) ShowNeighbou
 }
 
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
-	var out domain.Neighbourhood
-
 	around, err := u.getSeats(ctx, v, path)
 	if err != nil {
-		return out, err
+		return domain.Neighbourhood{}, err
 	}
 
 	if err := u.addSiblings(ctx, v, around); err != nil {
-		return out, err
+		return domain.Neighbourhood{}, err
 	}
 	around.remove(path)
 
@@ -55,14 +54,14 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	}
 	notes, err := u.notes.Notes(ctx, v.ID, paths)
 	if err != nil {
-		return out, err
+		return domain.Neighbourhood{}, err
 	}
 
 	focus, known := notes[path]
 	if !known {
-		return out, nil
+		return domain.Neighbourhood{}, nil
 	}
-	out.Focus = focus
+	out := domain.Neighbourhood{Focus: focus}
 	for _, s := range neighbour {
 		if note, known := notes[s.Path]; known {
 			out.AddNeighbour(note, s)
@@ -114,9 +113,10 @@ func (u ShowNeighbourhood) getSeats(ctx context.Context, v domain.Vault, path st
 	// and a mutual edge takes its label from this end.
 	named := map[string]bool{}
 	for _, l := range links {
-		if l.To == "" || l.ToVault != v.ID {
-			// Dangling, or landed in another vault. Neither has a seat here:
-			// there is nothing to draw and nowhere to go.
+		if l.ToVault != v.ID {
+			// A link that is dangling lands in no vault, and one that landed in
+			// another vault has no seat here: there is nothing to draw and nowhere
+			// to go.
 			continue
 		}
 		if seat, navigable := seatFor(l.Role); navigable {
@@ -208,15 +208,11 @@ func (s *seats) add(neighbour domain.Neighbour) {
 	}
 }
 
-// addMutual records a neighbour that the note in focus names too. Both ends
-// naming the same relation is one relationship named twice, and the word for it
-// is the focus's own where it wrote one.
+// addMutual records a neighbour that the note in focus names too, and that is
+// seated already. Both ends naming the same relation is one relationship named
+// twice, and the word for it is the focus's own where it wrote one.
 func (s *seats) addMutual(neighbour domain.Neighbour) {
-	i, exists := s.at[neighbour.Path]
-	if !exists {
-		s.add(neighbour)
-		return
-	}
+	i := s.at[neighbour.Path]
 	current := s.order[i]
 	if current.Seat != neighbour.Seat {
 		s.add(neighbour)
@@ -230,18 +226,10 @@ func (s *seats) addMutual(neighbour domain.Neighbour) {
 	s.order[i] = current
 }
 
+// remove takes a note out of the order the picture is drawn in. Nothing is added to
+// the seats after it.
 func (s *seats) remove(path string) {
-	i, exists := s.at[path]
-	if !exists {
-		return
-	}
-	delete(s.at, path)
-	s.order = append(s.order[:i], s.order[i+1:]...)
-	for p, at := range s.at {
-		if at > i {
-			s.at[p] = at - 1
-		}
-	}
+	s.order = slices.DeleteFunc(s.order, func(n domain.Neighbour) bool { return n.Path == path })
 }
 
 func (s *seats) getAll() []domain.Neighbour { return s.order }

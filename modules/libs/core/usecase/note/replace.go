@@ -3,6 +3,7 @@ package note
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -109,14 +110,13 @@ func (u Replace) Execute(
 		body := markdown.Normalise(doc.Body())
 
 		where, plainly := markdown.Where(body, stood)
-		switch {
-		case len(where) == 1:
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the mutated operator is >=: a length of one is taken by the case above, so the two agree for every length"
-		case len(where) > 1: // gomutants:disable INTEGER_DECREMENT reason="the mutated value is 0: a length of one is taken by the case above, so > 0 selects the same lengths"
+		if len(where) > 1 {
 			return AmbiguousSpan{Places: len(where)}
-		case becomes != "" && strings.Contains(body, becomes):
-			return ErrAlreadyWritten
-		default:
+		}
+		if len(where) == 0 {
+			if becomes != "" && strings.Contains(body, becomes) {
+				return ErrAlreadyWritten
+			}
 			return newMissingSpan(body, stood)
 		}
 
@@ -150,38 +150,30 @@ func (u Replace) Execute(
 // newMissingSpan is what to say about a span that is not in the note: how much of
 // its opening does stand there, and what stands in its place.
 //
-// The opening is found by halving, which the text being present for every
-// shorter opening allows.
+// The opening is found by halving over the ends of its runes, which the text being
+// present for every shorter opening allows.
 func newMissingSpan(body, stood string) MissingSpan {
-	low, high := 0, len(stood)
-	for low < high {
-		middle := low + (high-low+1)/2
-		for middle < high && !utf8.RuneStart(stood[middle]) {
-			middle++
-		}
-		if middle > high {
-			break
-		}
-		if at, _ := markdown.Where(body, stood[:middle]); len(at) > 0 {
-			low = middle
-			continue
-		}
-		high = middle - 1
-		for high > low && !utf8.RuneStart(stood[high]) {
-			high--
-		}
+	var ends []int
+	for at := 0; at < len(stood); {
+		_, width := utf8.DecodeRuneInString(stood[at:])
+		at += width
+		ends = append(ends, at)
 	}
-	if low == 0 {
+	var first markdown.Span
+	count := sort.Search(len(ends), func(i int) bool {
+		at, _ := markdown.Where(body, stood[:ends[i]])
+		if len(at) == 0 {
+			return true
+		}
+		first = at[0]
+		return false
+	})
+	if count == 0 {
 		return MissingSpan{}
 	}
-	matched := stood[:low]
-	at, _ := markdown.Where(body, matched)
-	if len(at) == 0 {
-		return MissingSpan{}
-	}
-	end := min(at[0].From+len(stood), len(body))
+	end := min(first.From+len(stood), len(body))
 	for end < len(body) && !utf8.RuneStart(body[end]) {
 		end++
 	}
-	return MissingSpan{Matched: matched, Instead: body[at[0].From:end]}
+	return MissingSpan{Matched: stood[:ends[count-1]], Instead: body[first.From:end]}
 }

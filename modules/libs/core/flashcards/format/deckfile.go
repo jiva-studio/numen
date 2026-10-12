@@ -73,12 +73,9 @@ func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 // Whole makes every card of the file whole and reports the marks it gave, which
 // is what Whole does to a body. The file keeps its own line endings.
 func (f *DeckFile) Whole(
-	stencils map[string]Stencil, createID func() (domain.CardID, error),
+	stencils map[string]Stencil, createID func() domain.CardID,
 ) ([]CardMark, error) {
-	body, given, err := Whole(markdown.Normalise(f.doc.Body()), stencils, createID)
-	if err != nil {
-		return nil, err
-	}
+	body, given := Whole(markdown.Normalise(f.doc.Body()), stencils, createID)
 	if err := f.doc.SetBody(body); err != nil {
 		return nil, err
 	}
