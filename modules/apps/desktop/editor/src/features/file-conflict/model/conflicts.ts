@@ -5,7 +5,7 @@
  * stops, so the window waits on exactly what is still to be settled.
  */
 import { watch } from 'vue'
-import { conflictIn } from '../lib/states'
+import { getFileConflict } from '../lib/states'
 import type { Conflict } from './flush'
 
 /** The notes of a window, each under the identity its tab opened under. */
@@ -28,7 +28,7 @@ export function raiseConflicts(notes: Notes, raiser: ConflictRaiser) {
   watch(
     () =>
       notes.getOpenIds().filter((id) => {
-        const c = conflictIn(notes.getOpenNote(id).state)
+        const c = getFileConflict(notes.getOpenNote(id).state)
         return c === 'stale'
       }),
     (stale) => {

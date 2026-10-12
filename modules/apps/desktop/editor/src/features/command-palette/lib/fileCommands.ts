@@ -35,7 +35,7 @@ const isUrlDeleteTextOffered = createArtifactOffer(
 const isDeleteTextOffered = (at: CommandTarget, runs: RunSupport): boolean =>
   isRecordingDeleteTextOffered(at, runs) || isUrlDeleteTextOffered(at, runs)
 
-export const fileCommandsOf = (words: Words): readonly Command[] => [
+export const createFileCommands = (words: Words): readonly Command[] => [
   {
     id: 'transcribe',
     text: words.transcribe,

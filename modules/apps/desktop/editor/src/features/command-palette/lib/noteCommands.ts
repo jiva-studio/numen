@@ -1,25 +1,25 @@
 /**
  * The commands offered over the note in front.
  */
-import { keysOf } from './chords'
+import { getRowKeys } from './chords'
 import { isNoteOpen } from './offered'
 import type { Command } from '../types'
 import type { Words } from '../words'
 
-export const noteCommandsOf = (words: Words, agent: string): readonly Command[] => [
+export const createNoteCommands = (words: Words, agent: string): readonly Command[] => [
   { id: 'read', text: words.read, group: 'note', isOffered: isNoteOpen, also: 'beside' },
   { id: 'beside', text: words.beside, group: 'note', isOffered: isNoteOpen },
   {
     id: 'travel',
     text: words.travel,
-    ...keysOf('travel', agent),
+    ...getRowKeys('travel', agent),
     group: 'note',
     isOffered: isNoteOpen,
   },
   {
     id: 'child',
     text: words.child,
-    ...keysOf('child', agent),
+    ...getRowKeys('child', agent),
     group: 'note',
     needs: 'naming',
     isOffered: isNoteOpen,

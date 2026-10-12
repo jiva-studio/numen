@@ -6,7 +6,7 @@
  */
 import type { PaletteKeys, VaultRow, WelcomeAction } from '@numen/ui'
 import type { VaultList } from '@/entities/vault'
-import { keysOf } from '@/features/command-palette'
+import { getRowKeys } from '@/features/command-palette'
 import { WORDS as own } from '../words'
 
 /** What the welcome screen is drawn over. */
@@ -53,18 +53,26 @@ export const SETTINGS = 'settings'
  * Every keystroke drawn here is the one the table binds, so a key a person sees
  * is a key that works.
  */
-export const waysIn = (at: CurrentVault, words: Words, agent: string): readonly WelcomeAction[] => {
-  const settings: WelcomeAction = { id: SETTINGS, text: words.settings, ...keysOf(SETTINGS, agent) }
+export const getWelcomeActions = (
+  at: CurrentVault,
+  words: Words,
+  agent: string,
+): readonly WelcomeAction[] => {
+  const settings: WelcomeAction = {
+    id: SETTINGS,
+    text: words.settings,
+    ...getRowKeys(SETTINGS, agent),
+  }
   if (at.vault === '') return [settings]
   const note: readonly WelcomeAction[] = at.isReady
-    ? [{ id: 'note', text: words.newNote, ...keysOf('note', agent) }]
+    ? [{ id: 'note', text: words.newNote, ...getRowKeys('note', agent) }]
     : []
   return [
     { id: 'find', text: words.find, keys: words.findKeys },
     { id: COMMANDS, text: words.commands, keys: words.commandsKeys },
     ...note,
-    { id: 'plex', text: own.plex, ...keysOf('plex', agent) },
-    { id: 'agent', text: words.newAgent, ...keysOf('agent', agent) },
+    { id: 'plex', text: own.plex, ...getRowKeys('plex', agent) },
+    { id: 'agent', text: words.newAgent, ...getRowKeys('agent', agent) },
     settings,
   ]
 }
@@ -73,7 +81,7 @@ export const waysIn = (at: CurrentVault, words: Words, agent: string): readonly 
  * The vaults the installation holds. The one in front of the person says so,
  * and so does one whose folder is not there; the rest carry nothing.
  */
-export const vaultsOn = (list: VaultList, words: Words): readonly VaultRow[] =>
+export const getVaultRows = (list: VaultList, words: Words): readonly VaultRow[] =>
   list.vaults.map((one) => {
     let aside = ''
     if (one.isMissing) {

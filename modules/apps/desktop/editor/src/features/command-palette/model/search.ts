@@ -158,7 +158,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const passageItem = (group: SearchGroup, one: Passage): SearchRow =>
     createPassageItem(group, one, words)
 
-  const silenceOf = (id: SearchGroup): string =>
+  const getEmptyReason = (id: SearchGroup): string =>
     getEmptyGroupReason(id, failureMessages.value[id], words, coverage)
 
   const built = computed(() => {
@@ -172,7 +172,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
         title,
         items: rows.map((one) => one.item),
         isWorking: isWorking.value[id],
-        silence: silenceOf(id),
+        silence: getEmptyReason(id),
       }
     }
 
@@ -196,15 +196,16 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const groups = computed(() => built.value.groups)
 
-  const typeOf = (item: string): NoteType | null => built.value.hitsById.get(item)?.type ?? null
+  const getNoteType = (item: string): NoteType | null =>
+    built.value.hitsById.get(item)?.type ?? null
 
-  const kindOf = (item: string): Source | null => built.value.hitsById.get(item)?.kind ?? null
+  const getSource = (item: string): Source | null => built.value.hitsById.get(item)?.kind ?? null
 
   const chooseItem = (item: string, action: string): SearchDestination | null => {
     return resolveDestination(built.value.hitsById.get(item), action)
   }
 
-  return { open, typed, groups, setTyped, setOpen, chooseItem, typeOf, kindOf }
+  return { open, typed, groups, setTyped, setOpen, chooseItem, getNoteType, getSource }
 }
 
 export type SearchState = ReturnType<typeof useSearch>

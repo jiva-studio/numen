@@ -5,7 +5,7 @@
 import { computed } from 'vue'
 import { cardBlanks, cardFields, DeckEditor } from '@numen/ui'
 import type { InsertionPoint } from '@numen/ui'
-import { conflictIn, FileConflictPrompt } from '@/features/file-conflict'
+import { getFileConflict, FileConflictPrompt } from '@/features/file-conflict'
 import type { DeckTabState } from '../types'
 import DeckScheduleBar from './DeckScheduleBar.vue'
 import { WORDS as words } from '@/entities/deck'
@@ -71,7 +71,7 @@ function empty(stencil: string) {
   <div class="deck-tab">
     <FileConflictPrompt
       :error-message="errorMessage"
-      :conflict="conflictIn(note.state)"
+      :conflict="getFileConflict(note.state)"
       :words="words"
       @keep="onKeep"
       @take="onTake"

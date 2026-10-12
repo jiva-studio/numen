@@ -6,7 +6,7 @@
  * front is what the note can be nested under as it is made.
  */
 import type { PaletteGroup } from '@numen/ui'
-import { invocationOf } from './invocation'
+import { createInvocation } from './invocation'
 import type { CommandInvocation, CommandTarget } from '../types'
 import type { Words } from '../words'
 
@@ -23,8 +23,8 @@ export const createNoteInvocation = (
   at: CommandTarget,
 ): CommandInvocation =>
   NOTE_PLACEMENTS.includes(seat) && at.path
-    ? invocationOf(seat, at, name)
-    : invocationOf('note', { ...at, path: '', title: '' }, name)
+    ? createInvocation(seat, at, name)
+    : createInvocation('note', { ...at, path: '', title: '' }, name)
 
 /** The seats a note the search did not find can be made in. */
 const NOTE_PLACEMENTS: readonly string[] = ['child', 'parent', 'jump']

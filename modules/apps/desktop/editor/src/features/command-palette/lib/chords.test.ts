@@ -6,7 +6,7 @@
  * command the window does not have would draw a cap over silence.
  */
 import { describe, expect, it } from 'vitest'
-import { isChord, commandFor, keyOf, keysOf, CHORDS } from './chords'
+import { isChord, getChordCommand, getChordKeys, getRowKeys, CHORDS } from './chords'
 import { commandsOf } from './commands'
 import { WORDS as words } from '@/shared/words'
 
@@ -35,54 +35,57 @@ describe('a keystroke the window answers', () => {
 
 describe('the command a letter asks for', () => {
   it('is the one the chord beside it names', () => {
-    expect(commandFor('n', false)).toBe('note')
-    expect(commandFor('g', false)).toBe('goto')
+    expect(getChordCommand('n', false)).toBe('note')
+    expect(getChordCommand('g', false)).toBe('goto')
   })
 
   it('is the same command in either case', () => {
-    expect(commandFor('N', false)).toBe('note')
+    expect(getChordCommand('N', false)).toBe('note')
   })
 
   it('is another command entirely when Shift is held with the letter', () => {
-    expect(commandFor('p', true)).toBe('travel')
-    expect(commandFor('c', true)).toBe('child')
-    expect(commandFor('a', true)).toBe('agent')
-    expect(commandFor('w', true)).toBe('close')
-    expect(commandFor('n', true)).toBe('newVault')
+    expect(getChordCommand('p', true)).toBe('travel')
+    expect(getChordCommand('c', true)).toBe('child')
+    expect(getChordCommand('a', true)).toBe('agent')
+    expect(getChordCommand('w', true)).toBe('close')
+    expect(getChordCommand('n', true)).toBe('newVault')
   })
 
   it('is nothing when a letter is held with the wrong half of the chord', () => {
-    expect(commandFor('g', true)).toBe('')
-    expect(commandFor('c', false)).toBe('')
-    expect(commandFor('w', false)).toBe('')
+    expect(getChordCommand('g', true)).toBe('')
+    expect(getChordCommand('c', false)).toBe('')
+    expect(getChordCommand('w', false)).toBe('')
   })
 
   it('is nothing where no command answers to the letter', () => {
-    expect(commandFor('q', false)).toBe('')
-    expect(commandFor('q', true)).toBe('')
+    expect(getChordCommand('q', false)).toBe('')
+    expect(getChordCommand('q', true)).toBe('')
   })
 
   it('is nothing for the two letters the window keeps for itself', () => {
-    expect(commandFor('k', false)).toBe('')
-    expect(commandFor('p', false)).toBe('')
+    expect(getChordCommand('k', false)).toBe('')
+    expect(getChordCommand('p', false)).toBe('')
   })
 })
 
 describe('how a keystroke is drawn on the row that names it', () => {
   it('is the key the keyboard in hand holds, and the letter in capitals', () => {
-    expect(keyOf('note', 'MacIntel')).toEqual({ icons: ['command'], letter: 'N' })
-    expect(keyOf('note', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'N' })
-    expect(keyOf('goto', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'G' })
+    expect(getChordKeys('note', 'MacIntel')).toEqual({ icons: ['command'], letter: 'N' })
+    expect(getChordKeys('note', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'N' })
+    expect(getChordKeys('goto', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('carries Shift where the chord holds it', () => {
-    expect(keyOf('travel', 'MacIntel')).toEqual({ icons: ['command', 'shift'], letter: 'P' })
-    expect(keyOf('close', 'Linux x86_64')).toEqual({ icons: ['control', 'shift'], letter: 'W' })
+    expect(getChordKeys('travel', 'MacIntel')).toEqual({ icons: ['command', 'shift'], letter: 'P' })
+    expect(getChordKeys('close', 'Linux x86_64')).toEqual({
+      icons: ['control', 'shift'],
+      letter: 'W',
+    })
   })
 
   it('is nothing for a command no keystroke reaches', () => {
-    expect(keyOf('destroy', 'Linux x86_64')).toBeUndefined()
-    expect(keysOf('destroy', 'Linux x86_64')).toEqual({})
+    expect(getChordKeys('destroy', 'Linux x86_64')).toBeUndefined()
+    expect(getRowKeys('destroy', 'Linux x86_64')).toEqual({})
   })
 })
 
@@ -100,7 +103,7 @@ describe('every keystroke the table holds', () => {
     const commands = createCommands()
     for (const held of CHORDS) {
       const command = commands.find((one) => one.id === held.command)
-      expect(command?.keys).toEqual(keyOf(held.command, APPLE))
+      expect(command?.keys).toEqual(getChordKeys(held.command, APPLE))
     }
   })
 

@@ -1,7 +1,7 @@
 /** The file tree tab: the vault's folders, the menu over a row, and the state one tab holds. */
 export { default as FilesTab } from './ui/FilesTab.vue'
 export { createFilesKind } from './kind'
-export { itemsFor, NEW_DECK, NEW_STENCIL } from './lib/menu'
+export { getMenuItems, NEW_DECK, NEW_STENCIL } from './lib/menu'
 export { ROOT, useFileTree } from './model/useFileTree'
 export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabState } from './types'

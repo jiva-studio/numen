@@ -63,7 +63,7 @@ export function createStepGroups(state: ViewState) {
   }
 
   /** Which of four the note a row of the picking step stands for is. */
-  const typeOf = (id: string): NoteType | null =>
+  const getNoteType = (id: string): NoteType | null =>
     found.value.find((one) => one.path === id)?.type ?? null
 
   /**
@@ -230,7 +230,7 @@ export function createStepGroups(state: ViewState) {
     getVaultsGroup,
     getConfirmGroup,
     getExactlyGroup,
-    typeOf,
+    getNoteType,
     getVaultAside,
   }
 }

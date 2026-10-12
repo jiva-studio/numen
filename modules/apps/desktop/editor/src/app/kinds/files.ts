@@ -6,7 +6,7 @@ import { running } from '@/entities/artifact'
 import { createFileCreators } from '@/entities/tab'
 import {
   ANSWER_WORDS,
-  invocationOf,
+  createInvocation,
   openDestination,
   runInvocation,
   type DestinationDeps,
@@ -124,7 +124,7 @@ export function createFilesKind({
     },
     movePath: (from, to) =>
       runInvocation(
-        invocationOf('move', { ...getTarget(), path: from }, to),
+        createInvocation('move', { ...getTarget(), path: from }, to),
         commandDeps(),
         ANSWER_WORDS,
       ),
@@ -132,7 +132,11 @@ export function createFilesKind({
       dragged.value = paths
     },
     createFolder: (path) =>
-      runInvocation(invocationOf('createFolder', getTarget(), path), commandDeps(), ANSWER_WORDS),
+      runInvocation(
+        createInvocation('createFolder', getTarget(), path),
+        commandDeps(),
+        ANSWER_WORDS,
+      ),
     createNote: async (folder) => (await editing.making.createUntitled(folder, []))?.path ?? '',
     createDeck: (folder, name) => made.createFile('deck', folder, name),
     createStencil: (folder, name) => made.createFile('stencil', folder, name, [cardWords.newField]),
