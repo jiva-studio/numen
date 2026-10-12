@@ -43,9 +43,12 @@ export const OnlyCreate: Story = {
     await expect(gaps.top).toBeCloseTo(gaps.bottom, 1)
     await expect(gaps.top).toBeCloseTo(gaps.left, 1)
 
-    // The row's text lands on whole pixels.
-    const text = option.getBoundingClientRect()
-    await expect(text.left % 1).toBe(0)
-    await expect(text.top % 1).toBe(0)
+    // The popover and its dropdown stand on whole pixels, and the dropdown is not transformed.
+    for (const box of [canvas.getByRole('dialog'), dropdown]) {
+      const { left, top } = box.getBoundingClientRect()
+      await expect(left % 1).toBe(0)
+      await expect(top % 1).toBe(0)
+    }
+    await expect(getComputedStyle(dropdown).transform).toBe('none')
   },
 }
