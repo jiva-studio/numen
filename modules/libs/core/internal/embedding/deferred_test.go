@@ -54,7 +54,7 @@ func TestAModelSaysWhatItIsBeforeItIsHere(t *testing.T) {
 
 func TestAQuestionIsNotMadeToWaitForAModelStillArriving(t *testing.T) {
 	arriving := embedding.NewArriving(bge)
-	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, embedding.ErrArriving) {
+	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, embedding.ErrModelNotReady) {
 		t.Fatalf("got %v", err)
 	}
 }

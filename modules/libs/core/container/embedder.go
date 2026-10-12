@@ -25,11 +25,11 @@ import (
 // nothing. A provider that cannot be built — no key, no base URL — is a
 // reason, and nothing is built at all.
 func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, closer func() error, why error) {
-	first, why := c.provider(c.Embedding.Indexing)
+	first, why := c.getProvider(c.Embedding.Indexing)
 	if why != nil {
 		return nil, nil, nil, why
 	}
-	second, why := c.provider(c.Embedding.Query)
+	second, why := c.getProvider(c.Embedding.Query)
 	if why != nil {
 		return nil, nil, nil, why
 	}
@@ -40,7 +40,7 @@ func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, ask
 // Embedder is what makes the vectors a vault is searched by, waited for. A run
 // with nowhere to show that a model is arriving waits for it instead.
 func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, error) {
-	held, err := c.provider(c.Embedding.Indexing)
+	held, err := c.getProvider(c.Embedding.Indexing)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -52,7 +52,7 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 // index. Only the provider that answers questions is opened, and it answers
 // under the identity the index is filled with.
 func (c Config) OpenQuestionEmbedder(ctx context.Context) (port.Embedder, func() error, error) {
-	held, err := c.provider(c.Embedding.GetQueryProvider())
+	held, err := c.getProvider(c.Embedding.GetQueryProvider())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -77,13 +77,13 @@ func (c Config) NewSearchOver(passages port.PassageQueries, asking port.Embedder
 		asking, c.Embedding.Floor, errorHandler).WithExtractors(c.ResolvedCompute.Workers)
 }
 
-// provider is which adapter answers for one half of the work, under the
+// getProvider is which adapter answers for one half of the work, under the
 // identity the index is filled with and the name that half is reached by.
 //
-// Nothing for a provider that names neither kind. A word that is neither is a
+// Nothing for a getProvider that names neither kind. A word that is neither is a
 // word nobody implements: left to mean nothing, it is a vault searched by its
 // words and no reason given.
-func (c Config) provider(where embed.Provider) (embedders.Provider, error) {
+func (c Config) getProvider(where embed.Provider) (embedders.Provider, error) {
 	is := c.Embedding.GetStoredModel()
 	switch where.Use {
 	case embed.UseService:

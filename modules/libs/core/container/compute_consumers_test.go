@@ -29,7 +29,7 @@ func makeProofreading(inFlight int) proofreading.Config {
 func TestAProofreadingProfileNamingANumberAtOnceKeepsItWhateverThePlanSays(t *testing.T) {
 	cfg := Config{Proofreading: makeProofreading(3), ResolvedCompute: makePlan(8, 6)}
 	for _, name := range []string{"service", "agent"} {
-		profile, err := cfg.profile(name)
+		profile, err := cfg.getProfile(name)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -42,7 +42,7 @@ func TestAProofreadingProfileNamingANumberAtOnceKeepsItWhateverThePlanSays(t *te
 func TestAProofreadingProfileNamingNoNumberAtOnceTakesTheLlmConcurrencyOfThePlan(t *testing.T) {
 	cfg := Config{Proofreading: makeProofreading(0), ResolvedCompute: makePlan(8, 6)}
 	for _, name := range []string{"service", "agent"} {
-		profile, err := cfg.profile(name)
+		profile, err := cfg.getProfile(name)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -66,11 +66,11 @@ func TestAProofreadingProfileNamingNoNumberAtOnceTakesTheLlmConcurrencyOfThePlan
 
 func TestAProofreadingProfileWithoutAPlanTakesTheDefaultOfItsKind(t *testing.T) {
 	cfg := Config{Proofreading: makeProofreading(0)}
-	service, err := cfg.profile("service")
+	service, err := cfg.getProfile("service")
 	if err != nil {
 		t.Fatal(err)
 	}
-	agent, err := cfg.profile("agent")
+	agent, err := cfg.getProfile("agent")
 	if err != nil {
 		t.Fatal(err)
 	}

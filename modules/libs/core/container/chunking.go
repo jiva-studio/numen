@@ -30,10 +30,10 @@ func (c Config) Legibility() chunking.Legibility {
 	return chunking.Legibility{}
 }
 
-// NotesCutAt is the note repository, told the sizes a note is cut at and what
+// NotesWithChunking is the note repository, told the sizes a note is cut at and what
 // makes one legible. A note is cut in the adapter that stores it, and both
 // reach that adapter from here.
-func (i *Index) NotesCutAt(sizes chunking.Sizes, reads chunking.Legibility) port.NoteRepository {
+func (i *Index) NotesWithChunking(sizes chunking.Sizes, reads chunking.Legibility) port.NoteRepository {
 	return i.db.Notes().WithChunkSizes(sizes, reads)
 }
 
@@ -43,7 +43,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 	scan := vault.NewScan(
 		c.VaultReaders(),
 		db.Vaults(),
-		db.NotesCutAt(c.GetChunkSizes(), c.Legibility()),
+		db.NotesWithChunking(c.GetChunkSizes(), c.Legibility()),
 		db.Queries(),
 		db.Maintenance(),
 	)
@@ -71,7 +71,7 @@ func (c Config) ReadWholeVault(
 		// for any more go. Every other run keeps them, so a model set back is a
 		// model whose vectors are all still here.
 		if c.ShouldRebuildIndex {
-			if _, err := db.ForgetOtherRecipes(ctx, model.Recipe()); err != nil {
+			if _, err := db.DeleteVectorsOfOtherRecipes(ctx, model.Recipe()); err != nil {
 				return vault.ReadWholeVault{}, err
 			}
 			// The rows are gone whether or not the file gives its pages back,

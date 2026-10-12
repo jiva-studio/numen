@@ -122,7 +122,7 @@ func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
 	if strings.Contains(doc.Text, middle) {
 		t.Errorf("what was heard is still the text:\n%s", doc.Text)
 	}
-	if strings.Contains(doc.Text, transcript.ByHand) {
+	if strings.Contains(doc.Text, transcript.HandWrittenNote) {
 		t.Errorf("the mark of a person's own words is in the text:\n%s", doc.Text)
 	}
 }

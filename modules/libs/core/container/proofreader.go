@@ -18,13 +18,13 @@ type ProofreaderSpec struct {
 	InFlight    int
 }
 
-// profile is the place a reading is put right at, by the name a consumer
-// names it under. A name no profile carries is an error: a person who named one
+// getProfile is the place a reading is put right at, by the name a consumer
+// names it under. A name no getProfile carries is an error: a person who named one
 // is owed the news that it is not there.
 //
 // It is not exported: `proofreading.Profile` is the adapter's own type, and
 // what an application is handed is the proofreader itself.
-func (c Config) profile(name string) (proofreading.Profile, error) {
+func (c Config) getProfile(name string) (proofreading.Profile, error) {
 	profile, held := c.Proofreading.Profiles[name]
 	if !held {
 		return proofreading.Profile{}, fmt.Errorf("no proofreading profile named %q", name)
@@ -40,13 +40,13 @@ func (c Config) profile(name string) (proofreading.Profile, error) {
 		return proofreading.Profile{}, fmt.Errorf(
 			"proofreading profile %q names no model to use with %q", name, profile.Use)
 	}
-	return c.planInFlight(profile), nil
+	return c.resolveInFlight(profile), nil
 }
 
-// planInFlight is the profile with the number of batches it asks about at once
+// resolveInFlight is the profile with the number of batches it asks about at once
 // settled: its own, then the performance profile's LLM concurrency, then the
 // default of its kind.
-func (c Config) planInFlight(profile proofreading.Profile) proofreading.Profile {
+func (c Config) resolveInFlight(profile proofreading.Profile) proofreading.Profile {
 	profile.InFlight = profile.GetInFlight(c.ResolvedCompute.LlmConcurrency)
 	return profile
 }
@@ -61,7 +61,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 	if name == "" {
 		return nil, nil
 	}
-	profile, err := c.profile(name)
+	profile, err := c.getProfile(name)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (c Config) GetSpeechProofreading() source.ProofreadingConfig {
 // getProofreading is what a reading of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
 func (c Config) getProofreading(config proofreading.Proofread) source.ProofreadingConfig {
-	profile := c.planInFlight(c.Proofreading.Profiles[config.Profile])
+	profile := c.resolveInFlight(c.Proofreading.Profiles[config.Profile])
 	return source.ProofreadingConfig{
 		IsNamed:     config.Profile != "",
 		IsAutomatic: config.IsAutomatic,
@@ -121,7 +121,7 @@ func (c Config) ProofreadQueue(name, instruction string) (port.ProofreadQueue, e
 	if name == "" {
 		return nil, nil
 	}
-	profile, err := c.profile(name)
+	profile, err := c.getProfile(name)
 	if err != nil {
 		return nil, err
 	}

@@ -62,7 +62,7 @@ func TestAProofreadingIsOfferedWhereAProfileIsNamed(t *testing.T) {
 // Models stay loaded only where the available memory covers them with headroom.
 func TestModelsStayLoadedOnlyWhereMemoryCoversThemWithHeadroom(t *testing.T) {
 	const models = 1000
-	whole := int64(models * (100 + residentHeadroomPercent) / 100)
+	whole := int64(models * (100 + memoryHeadroomPercent) / 100)
 	for name, c := range map[string]struct {
 		available, models int64
 		want              bool
@@ -73,7 +73,7 @@ func TestModelsStayLoadedOnlyWhereMemoryCoversThemWithHeadroom(t *testing.T) {
 		"the size of the models is unknown":         {whole, 0, false},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := canHoldResident(c.available, c.models); got != c.want {
+			if got := hasEnoughMemory(c.available, c.models); got != c.want {
 				t.Errorf("canHoldResident = %v", got)
 			}
 		})
@@ -89,7 +89,7 @@ func TestTheTranscriberStaysLoadedOnlyWhereTheFilesFitInTheMemoryAvailable(t *te
 
 	availableMB := settings.DetectHardware().AvailableRAMMB
 	if availableMB <= 0 {
-		if (Config{}).CanKeepTranscriberLoaded() {
+		if (Config{}).HasMemoryForTranscriber() {
 			t.Error("models stay loaded where the memory available is not known")
 		}
 		return
@@ -131,7 +131,7 @@ func TestTheTranscriberStaysLoadedOnlyWhereTheFilesFitInTheMemoryAvailable(t *te
 				t.Fatal(err)
 			}
 
-			if got := cfg.CanKeepTranscriberLoaded(); got != c.want {
+			if got := cfg.HasMemoryForTranscriber(); got != c.want {
 				t.Errorf("CanKeepTranscriberLoaded = %v, want %v", got, c.want)
 			}
 		})
@@ -154,7 +154,7 @@ func TestTheHeadroomIsAShareOfTheFilesCountedInHundredths(t *testing.T) {
 		"a single byte of file is a size":                  {1 << 20, 1, true},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := canHoldResident(c.available, c.models); got != c.want {
+			if got := hasEnoughMemory(c.available, c.models); got != c.want {
 				t.Errorf("canHoldResident(%d, %d) = %v", c.available, c.models, got)
 			}
 		})
