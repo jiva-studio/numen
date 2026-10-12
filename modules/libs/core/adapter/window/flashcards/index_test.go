@@ -21,7 +21,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
 	unread.Name = "Sanskrit"
-	api.Registry = registry{held: []domain.Vault{unread}}
+	api.useRegistry(registry{held: []domain.Vault{unread}})
 
 	holding := make(chan struct{})
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
@@ -71,7 +71,7 @@ func TestIndexingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
-	api.Registry = registry{held: []domain.Vault{unread}}
+	api.useRegistry(registry{held: []domain.Vault{unread}})
 
 	var tried atomic.Int64
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
@@ -177,19 +177,12 @@ func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
 	}
 }
 
-// A window with no index holds no vault.
-func TestAWindowWithNoIndexHoldsNoVault(t *testing.T) {
-	if (&API{}).hasVault(t.Context(), domain.Vault{ID: "one"}) {
-		t.Error("a window with no index holds a vault")
-	}
-}
-
 // An indexing that failed stays in the list of work with why it failed.
 func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 	isolate(t)
 	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
-	api.Registry = registry{held: []domain.Vault{unread}}
+	api.useRegistry(registry{held: []domain.Vault{unread}})
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		return errors.New("the folder is not there")
 	})
@@ -210,7 +203,7 @@ func TestAVaultReadWakesTheListeners(t *testing.T) {
 	isolate(t)
 	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
-	api.Registry = registry{held: []domain.Vault{unread}}
+	api.useRegistry(registry{held: []domain.Vault{unread}})
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
 	heard, stop := api.subscribers.subscribe()

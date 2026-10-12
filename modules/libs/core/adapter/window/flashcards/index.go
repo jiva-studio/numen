@@ -107,17 +107,8 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 		return running, reason
 	}
 	//nolint:contextcheck // a vault is indexed for the life of the window, under behind, not under the count that asked
-	go a.runIndexing(behind, read, v, a.hasVault(ctx, v))
+	go a.runIndexing(behind, read, v, a.IsVaultIndexed.Execute(ctx, v))
 	return true, ""
-}
-
-// hasVault is whether the index already holds this vault.
-func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
-	if a.Notes == nil {
-		return false
-	}
-	held, err := a.Notes.Has(ctx, v.ID)
-	return err == nil && held
 }
 
 // runIndexing is one vault indexed, reported as work for as long as it runs. An indexing

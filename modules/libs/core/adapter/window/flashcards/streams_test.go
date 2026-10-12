@@ -104,7 +104,7 @@ func TestAReloadStreamThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
 		}, true},
 	} {
 		t.Run(name, func(t *testing.T) {
-			api := &API{Registry: registry{}, Now: time.Now}
+			api := newAPIOver(registry{})
 			returned := make(chan error, 1)
 			client := newBreakingClient(t, api, breaking{fails: one.fails, ctx: one.ctx, returned: returned})
 
@@ -129,7 +129,7 @@ func TestAReloadStreamThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
 
 // Following a channel stops at its end, and says nothing after.
 func TestFollowingAChannelStopsWhereItEnds(t *testing.T) {
-	api := &API{Registry: registry{}, Now: time.Now}
+	api := newAPIOver(registry{})
 	line, done := api.subscribers.subscribe()
 	t.Cleanup(done)
 	moved := make(chan struct{}, 1)

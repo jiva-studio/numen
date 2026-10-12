@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -43,7 +42,8 @@ func (dressing) WatchThemes(
 // The window is dressed from the installation's themes, so a person who chose
 // one in the editor meets it here as well.
 func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
-	api := &API{Registry: registry{}, Themes: dressing{wearing: "Evening"}, Now: time.Now}
+	api := newAPIOver(registry{})
+	api.Themes = dressing{wearing: "Evening"}
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
@@ -61,7 +61,7 @@ func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
 // A folder of themes that could not be made leaves the window undressed rather
 // than unopened: it goes on answering, and asking about themes is what fails.
 func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
-	api := &API{Registry: registry{}, Now: time.Now}
+	api := newAPIOver(registry{})
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
