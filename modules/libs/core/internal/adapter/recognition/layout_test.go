@@ -77,3 +77,56 @@ func documentImage(w, h int) image.Image {
 	}
 	return img
 }
+
+// The page is scaled to 800 by 800 and written one plane a colour, each
+// channel a fraction of 255, row after row.
+func TestPlanesHoldEachChannelOfEachPixelInPlace(t *testing.T) {
+	const side = 800
+	corners := []color.RGBA{
+		{R: 255, G: 0, B: 128, A: 255},
+		{R: 0, G: 255, B: 64, A: 255},
+		{R: 64, G: 128, B: 255, A: 255},
+		{R: 200, G: 100, B: 50, A: 255},
+	}
+	page := image.NewRGBA(image.Rect(0, 0, 400, 400))
+	for y := 0; y < 400; y++ {
+		for x := 0; x < 400; x++ {
+			quarter := 0
+			if x >= 200 {
+				quarter++
+			}
+			if y >= 200 {
+				quarter += 2
+			}
+			page.SetRGBA(x, y, corners[quarter])
+		}
+	}
+
+	got := planes(page)
+	if len(got) != 3*side*side {
+		t.Fatalf("planes length = %d, want %d", len(got), 3*side*side)
+	}
+	for y := 5; y < side; y += 37 {
+		for x := 5; x < side; x += 41 {
+			if x > 395 && x < 405 || y > 395 && y < 405 {
+				continue
+			}
+			quarter := 0
+			if x >= side/2 {
+				quarter++
+			}
+			if y >= side/2 {
+				quarter += 2
+			}
+			want := corners[quarter]
+			at := y*side + x
+			for plane, channel := range []uint8{want.R, want.G, want.B} {
+				wantValue := float32(channel) / 255
+				gotValue := got[plane*side*side+at]
+				if d := gotValue - wantValue; d > 0.0005 || d < -0.0005 {
+					t.Fatalf("plane %d at (%d, %d) = %f, want %f", plane, x, y, gotValue, wantValue)
+				}
+			}
+		}
+	}
+}

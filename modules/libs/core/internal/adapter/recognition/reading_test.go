@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"image"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -246,5 +247,161 @@ func TestCropRegionEmpty(t *testing.T) {
 	crop, corner := cropRegion(page, rect, 0)
 	if crop != nil || corner != (image.Point{}) {
 		t.Errorf("empty crop returned %v, %v; want nil, (0,0)", crop, corner)
+	}
+}
+
+// labelled is a layout that divides every page the same way, each part under
+// its own label.
+func labelled(parts ...ocr.Region) func(image.Image) ([]ocr.Region, error) {
+	return func(image.Image) ([]ocr.Region, error) { return parts, nil }
+}
+
+func oneLine(text string) func(image.Image) ([]read.RecResult, error) {
+	return func(image.Image) ([]read.RecResult, error) {
+		return []read.RecResult{{Text: text, Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
+	}
+}
+
+// A layout that could not divide the page is the page's failure.
+func TestALayoutThatFailsIsThePagesFailure(t *testing.T) {
+	broken := errors.New("the layout model is gone")
+	r := &Recogniser{
+		layout: func(image.Image) ([]ocr.Region, error) { return nil, broken },
+		body:   map[string]bool{"text": true},
+		read:   oneLine("what the page says"),
+	}
+
+	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	if !errors.Is(err, broken) {
+		t.Errorf("answered with %v", err)
+	}
+	if blocks != nil {
+		t.Errorf("blocks = %+v", blocks)
+	}
+}
+
+// A part of a kind the configuration does not ask for is not read.
+func TestAPartOfAnUnwantedKindIsNotRead(t *testing.T) {
+	var mu sync.Mutex
+	var heights []int
+	r := &Recogniser{
+		layout: labelled(
+			ocr.Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)},
+			ocr.Region{Label: "text", Rect: image.Rect(10, 100, 590, 400)},
+		),
+		body: map[string]bool{"text": true},
+		read: func(img image.Image) ([]read.RecResult, error) {
+			mu.Lock()
+			heights = append(heights, img.Bounds().Dy())
+			mu.Unlock()
+			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
+		},
+	}
+
+	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(heights) != 1 || heights[0] != 300 {
+		t.Errorf("parts read, by height: %v", heights)
+	}
+	if len(blocks) != 1 || blocks[0].Label != "text" {
+		t.Errorf("blocks = %+v", blocks)
+	}
+}
+
+// A part that lies outside the page has nothing to read.
+func TestAPartOutsideThePageIsNotRead(t *testing.T) {
+	var mu sync.Mutex
+	var asked []image.Image
+	r := &Recogniser{
+		layout: partsOf(image.Rect(700, 900, 800, 950), image.Rect(10, 10, 590, 400)),
+		body:   map[string]bool{"text": true},
+		read: func(img image.Image) ([]read.RecResult, error) {
+			mu.Lock()
+			asked = append(asked, img)
+			mu.Unlock()
+			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{0, 0, 100, 20}}}, nil
+		},
+	}
+
+	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(asked) != 1 || asked[0] == nil {
+		t.Errorf("parts read: %v", asked)
+	}
+	if len(blocks) != 1 {
+		t.Errorf("blocks = %+v", blocks)
+	}
+}
+
+// A page with no part to read says nothing, and is not a failure whatever the
+// context has come to.
+func TestAPageWithNothingToReadSaysNothing(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	r := &Recogniser{
+		layout: labelled(ocr.Region{Label: "header", Rect: image.Rect(10, 10, 590, 60)}),
+		body:   map[string]bool{"text": true},
+		read:   oneLine("never asked"),
+	}
+
+	blocks, err := r.Recognise(ctx, image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	if err != nil || blocks != nil {
+		t.Errorf("answered with %+v, %v", blocks, err)
+	}
+}
+
+// A box the recogniser returns is addressed from the crop and comes back
+// addressed from the page.
+func TestABoxIsAddressedFromThePage(t *testing.T) {
+	r := &Recogniser{
+		layout: partsOf(image.Rect(50, 60, 590, 400)),
+		body:   map[string]bool{"text": true},
+		read: func(image.Image) ([]read.RecResult, error) {
+			return []read.RecResult{{Text: "what the page says", Score: 0.9, Box: [4]int{3, 5, 40, 70}}}, nil
+		},
+	}
+
+	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(blocks) != 1 || len(blocks[0].Boxes) != 1 {
+		t.Fatalf("blocks = %+v", blocks)
+	}
+	if got, want := blocks[0].Boxes[0].Rect, image.Rect(53, 65, 90, 130); got != want {
+		t.Errorf("box = %v, want %v", got, want)
+	}
+}
+
+// One part, refused, is a page nothing could be read on.
+func TestAPageOfOnePartThatCouldNotBeReadIsAFailure(t *testing.T) {
+	broken := errors.New("the session is gone")
+	r := &Recogniser{
+		layout: partsOf(image.Rect(10, 10, 590, 400)),
+		body:   map[string]bool{"text": true},
+		read:   func(image.Image) ([]read.RecResult, error) { return nil, broken },
+	}
+
+	if _, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800))); !errors.Is(err, broken) {
+		t.Errorf("answered with %v", err)
+	}
+}
+
+// A page whose parts were read and held no text is a blank page, not a
+// failure.
+func TestAPageOfPartsThatSayNothingIsBlank(t *testing.T) {
+	r := &Recogniser{
+		layout: partsOf(image.Rect(10, 10, 590, 400)),
+		body:   map[string]bool{"text": true},
+		read:   func(image.Image) ([]read.RecResult, error) { return nil, nil },
+	}
+
+	blocks, err := r.Recognise(t.Context(), image.NewRGBA(image.Rect(0, 0, 600, 800)))
+	if err != nil || len(blocks) != 0 {
+		t.Errorf("answered with %+v, %v", blocks, err)
 	}
 }

@@ -25,6 +25,7 @@ const Length = 10
 // isAlphabet holds, for each byte, whether it is a character of the alphabet.
 var isAlphabet = createTable(alphabet)
 
+// gomutants:disable-next-line INTEGER_INCREMENT reason="a byte indexes the table, so a 257th slot is never read"
 func createTable(characters string) (table [256]bool) {
 	for i := range len(characters) {
 		table[characters[i]] = true

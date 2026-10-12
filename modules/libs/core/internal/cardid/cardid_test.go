@@ -86,3 +86,24 @@ func TestValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 		}
 	}
 }
+
+// Every character of the alphabet can be minted, in every position.
+func TestEveryCharacterOfTheAlphabetIsMinted(t *testing.T) {
+	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
+
+	seen := map[rune]bool{}
+	for range 3000 {
+		minted, err := cardid.New()
+		if err != nil {
+			t.Fatalf("mint: %v", err)
+		}
+		for _, c := range minted {
+			seen[c] = true
+		}
+	}
+	for _, c := range alphabet {
+		if !seen[c] {
+			t.Errorf("%q was never minted", c)
+		}
+	}
+}

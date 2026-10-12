@@ -181,6 +181,7 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 			continue
 		}
 		t := targets[i]
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="a leading zero line has no text and Assemble drops it"
 		lines := make([]ocr.Line, 0, len(res.found))
 		for _, line := range res.found {
 			lines = append(lines, ocr.Line{
