@@ -400,7 +400,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 			if err != nil {
 				return err
 			}
-			fresh, err := u.cutNewPaths(ctx, v, reader, paths, tried, sizes, res)
+			fresh, err := u.chunkNewPaths(ctx, v, reader, paths, tried, sizes, res)
 			if err != nil {
 				return err
 			}
@@ -412,9 +412,9 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	return nil
 }
 
-// cutNewPaths cuts each path not yet in tried, marks it tried, and returns how
+// chunkNewPaths cuts each path not yet in tried, marks it tried, and returns how
 // many it cut.
-func (u Extract) cutNewPaths(
+func (u Extract) chunkNewPaths(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,
