@@ -79,3 +79,19 @@ func TestRememberingAgainReleasesThePreviousValue(t *testing.T) {
 		t.Errorf("recalled %q, want two", got)
 	}
 }
+
+func TestRememberingAgainOverAValueKeptWithNothingToReleaseIsKept(t *testing.T) {
+	ctx, end := operation.Begin(t.Context())
+	defer end()
+
+	operation.Remember(ctx, "a", "one", nil)
+	released := 0
+	operation.Remember(ctx, "a", "two", func() { released++ })
+
+	if got, _ := operation.Recall(ctx, "a"); got != "two" {
+		t.Errorf("recalled %q, want two", got)
+	}
+	if released != 0 {
+		t.Errorf("released %d times before the operation ended", released)
+	}
+}

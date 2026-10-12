@@ -61,3 +61,23 @@ func TestAWaitElapses(t *testing.T) {
 		t.Errorf("got %v", err)
 	}
 }
+
+func TestRetryAfterOfMinusOneSecondIsNoWait(t *testing.T) {
+	if got := retry.ParseAfter("-1", now); got != 0 {
+		t.Errorf("got %v, want no wait", got)
+	}
+}
+
+// A wait of nothing reports the context and never takes the timer's branch,
+// whichever of the two is ready first.
+func TestAWaitOfNothingNeverOutlastsAnEndedContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	for _, d := range []time.Duration{0, -time.Second} {
+		for range 500 {
+			if err := retry.Wait(ctx, d); !errors.Is(err, context.Canceled) {
+				t.Fatalf("a wait of %v on an ended context = %v", d, err)
+			}
+		}
+	}
+}

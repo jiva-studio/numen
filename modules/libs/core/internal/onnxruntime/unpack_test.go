@@ -2,13 +2,19 @@ package onnxruntime
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+	"testing/iotest"
 )
 
 // createArchive is an archive laid out the way a mac release is: the library carrying
@@ -175,5 +181,156 @@ func TestALibraryInTheCacheThatIsNotTheOnePublishedIsWrittenOver(t *testing.T) {
 	}
 	if string(held) != "the library" {
 		t.Errorf("what stands in the cache is %q", held)
+	}
+}
+
+func isolate(t *testing.T) string {
+	t.Helper()
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	return t.TempDir()
+}
+
+// A library that is not the one published is not left in the cache.
+func TestALibraryThatIsNotTheOnePublishedIsTakenAway(t *testing.T) {
+	dir := isolate(t)
+	found := createArchive(t, dir)
+	found.library = computeSum("another library")
+
+	if at, err := unpack(found.archive, "libonnxruntime.dylib", found); err == nil {
+		t.Fatalf("a library that is not the one published was handed back at %s", at)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "libonnxruntime.dylib")); err == nil {
+		t.Error("the library was left in the cache")
+	}
+}
+
+func TestADirectoryIsNotAFileCarryingASum(t *testing.T) {
+	dir := isolate(t)
+	err := verify(dir, computeSum(""))
+	if err == nil || !strings.Contains(err.Error(), "is not a file") {
+		t.Errorf("verify a directory = %v", err)
+	}
+}
+
+func TestAFileThatCannotBeOpenedIsNotVerified(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("file modes do not keep this process out")
+	}
+	dir := isolate(t)
+	at := filepath.Join(dir, "locked")
+	if err := os.WriteFile(at, []byte("body"), 0o000); err != nil {
+		t.Fatal(err)
+	}
+	if err := verify(at, computeSum("body")); !errors.Is(err, fs.ErrPermission) {
+		t.Errorf("verify a file that cannot be opened = %v", err)
+	}
+}
+
+func TestAFileCarryingAnotherSumIsNotVerified(t *testing.T) {
+	dir := isolate(t)
+	at := filepath.Join(dir, "lib")
+	if err := os.WriteFile(at, []byte("body"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verify(at, computeSum("body")); err != nil {
+		t.Errorf("verify the file with its own sum = %v", err)
+	}
+	if err := verify(at, computeSum("other")); err == nil {
+		t.Error("a file carrying another sum was verified")
+	}
+}
+
+func TestAnArchiveThatIsNotThereIsNotUnpacked(t *testing.T) {
+	dir := isolate(t)
+	at := filepath.Join(dir, "lib")
+	if err := fromTgz(filepath.Join(dir, "missing.tgz"), "lib", at); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("unpack a tgz that is not there = %v", err)
+	}
+	if err := fromZip(filepath.Join(dir, "missing.zip"), "lib", at); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("unpack a zip that is not there = %v", err)
+	}
+}
+
+func TestAFileThatIsNotGzipIsRefusedByName(t *testing.T) {
+	dir := isolate(t)
+	archive := filepath.Join(dir, "plain.tgz")
+	if err := os.WriteFile(archive, []byte("not gzip at all"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	err := fromTgz(archive, "lib", filepath.Join(dir, "lib"))
+	if err == nil || !strings.Contains(err.Error(), archive) {
+		t.Errorf("unpack a file that is not gzip = %v", err)
+	}
+}
+
+func TestAGzipOfNoArchiveIsRefused(t *testing.T) {
+	dir := isolate(t)
+	archive := filepath.Join(dir, "garbage.tgz")
+	file, err := os.Create(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zipped := gzip.NewWriter(file)
+	if _, err := zipped.Write(bytes.Repeat([]byte{0xff}, 1024)); err != nil {
+		t.Fatal(err)
+	}
+	if err := zipped.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	err = fromTgz(archive, "lib", filepath.Join(dir, "lib"))
+	if err == nil || strings.Contains(err.Error(), "holds no") {
+		t.Errorf("unpack a gzip holding no archive = %v", err)
+	}
+}
+
+func TestAFileCannotBeWrittenWhereThereIsNoFolder(t *testing.T) {
+	dir := isolate(t)
+	err := write(filepath.Join(dir, "missing", "lib"), strings.NewReader("body"))
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("write into a folder that is not there = %v", err)
+	}
+}
+
+func TestAFileThatCannotBeReadIsNotLeftHalfWritten(t *testing.T) {
+	dir := isolate(t)
+	at := filepath.Join(dir, "lib")
+	broken := errors.New("the archive ended badly")
+
+	if err := write(at, io.MultiReader(strings.NewReader("half"), iotest.ErrReader(broken))); !errors.Is(err, broken) {
+		t.Fatalf("write from a reader that failed = %v", err)
+	}
+	for _, left := range []string{at, at + ".part"} {
+		if _, err := os.Stat(left); err == nil {
+			t.Errorf("%s was left behind", left)
+		}
+	}
+}
+
+// Whether something is the library by the name an archive gives it.
+func TestAnArchiveNameIsTheLibraryOnlyByItsOwnName(t *testing.T) {
+	for _, tc := range []struct {
+		found, name string
+		want        bool
+	}{
+		{"libonnxruntime.dylib", "libonnxruntime.dylib", true},
+		{"libonnxruntime.so.1.23.0", "libonnxruntime.so", true},
+		{"libonnxruntime.1.23.0.dylib", "libonnxruntime.dylib", true},
+		{"onnxruntime", "onnxruntime", true},
+		{"onnxruntime.1", "onnxruntime", true},
+		{"onnxruntime2", "onnxruntime", false},
+		{"libonnxruntime_providers_shared.dylib", "libonnxruntime.dylib", false},
+		{"libonnxruntime.so", "libonnxruntime.dylib", false},
+		{"libonnxruntime.1.23.0.so", "libonnxruntime.dylib", false},
+		{"libother.dylib", "libonnxruntime.dylib", false},
+	} {
+		if got := isLibrary(tc.found, tc.name); got != tc.want {
+			t.Errorf("isLibrary(%q, %q) = %v, want %v", tc.found, tc.name, got, tc.want)
+		}
 	}
 }
