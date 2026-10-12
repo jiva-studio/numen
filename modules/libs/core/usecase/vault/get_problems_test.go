@@ -53,8 +53,8 @@ func TestTheSummaryIsAskedOfTheVaultItIsGiven(t *testing.T) {
 	}
 }
 
-func newChecks() *vault.ListProblems {
-	return vault.NewListProblems(check.Checks{List: []check.Checker{
+func newChecks() *vault.GetProblems {
+	return vault.NewGetProblems(check.Checks{List: []check.Checker{
 		fixed{name: "parse"}, fixed{name: "dangling", quiet: true},
 	}})
 }
@@ -87,7 +87,7 @@ func TestProblemsNamingAQuietCheckRunIt(t *testing.T) {
 }
 
 func TestQueriesThatAnswerNoCheckRunNone(t *testing.T) {
-	list := vault.NewStandardListProblems(&sized{})
+	list := vault.NewStandardGetProblems(&sized{})
 
 	found, err := list.Execute(t.Context(), domain.Vault{})
 	if err != nil || len(found) != 0 || len(list.GetDefaultChecks()) != 0 {

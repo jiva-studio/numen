@@ -9,6 +9,6 @@ func (c Config) GetSummary(queries port.NoteQueries) *vault.GetSummary {
 	return vault.NewGetSummary(queries)
 }
 
-func (c Config) ListProblems(queries port.NoteQueries) *vault.ListProblems {
-	return vault.NewStandardListProblems(queries)
+func (c Config) GetProblems(queries port.NoteQueries) *vault.GetProblems {
+	return vault.NewStandardGetProblems(queries)
 }

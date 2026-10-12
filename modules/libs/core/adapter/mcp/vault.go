@@ -76,7 +76,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 }
 
 func addVaultProblems(server *sdk.Server, core Core) {
-	if core.ListProblems == nil {
+	if core.GetProblems == nil {
 		return
 	}
 	addTool(server, &sdk.Tool{
@@ -108,7 +108,7 @@ func listVaultProblems(ctx context.Context, core Core, in vaultProblemsInput) (v
 	for _, name := range in.Checks {
 		named = append(named, domain.Check(name))
 	}
-	found, err := core.ListProblems.Execute(ctx, core.getCurrentVault().Vault, named...)
+	found, err := core.GetProblems.Execute(ctx, core.getCurrentVault().Vault, named...)
 	if err != nil {
 		return vaultProblemsOutput{}, err
 	}
@@ -116,7 +116,7 @@ func listVaultProblems(ctx context.Context, core Core, in vaultProblemsInput) (v
 	// The checks that ran are reported so an empty result states what it covers.
 	res := vaultProblemsOutput{Problems: make([]Problem, 0, len(found)), Ran: in.Checks}
 	if len(res.Ran) == 0 {
-		for _, name := range core.ListProblems.GetDefaultChecks() {
+		for _, name := range core.GetProblems.GetDefaultChecks() {
 			res.Ran = append(res.Ran, string(name))
 		}
 	}
