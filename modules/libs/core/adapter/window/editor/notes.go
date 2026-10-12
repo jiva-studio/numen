@@ -222,7 +222,7 @@ func (a *API) GetNeighbourhood(
 	for _, related := range found.Related {
 		paths = append(paths, related.Path)
 	}
-	types, err := a.typesAt(ctx, showing, paths)
+	types, err := a.Notes.Queries.GetTypes(ctx, showing.ID, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
