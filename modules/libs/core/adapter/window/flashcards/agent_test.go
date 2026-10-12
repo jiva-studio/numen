@@ -334,10 +334,10 @@ func TestAConversationTheAgentCannotEndIsAnInternalFailure(t *testing.T) {
 	api := &API{}
 	api.SetAgent(refusingAgent{})
 
-	_, err := newAgentClient(t, api).FinishConversation(t.Context(),
+	_, err := api.FinishConversation(t.Context(),
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "one"}))
 	if code := connect.CodeOf(err); code != connect.CodeInternal {
-		t.Errorf("finishing answered %v", code)
+		t.Errorf("finishing answered %v", err)
 	}
 }
 

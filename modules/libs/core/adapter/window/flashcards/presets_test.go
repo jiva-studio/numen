@@ -147,3 +147,25 @@ func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
 		t.Errorf("reading answered %v", err)
 	}
 }
+
+// A preset the deck names that cannot be read comes back refused as the editor
+// refuses a note, and carries no preset.
+func TestAPresetThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
+	api, held := newAPI(t, pointed)
+	v := held[0]
+	if err := os.Remove(filepath.Join(v.Path, "Sanskrit.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
+		&v1.GetVaultDeckPresetRequest{Vault: string(v.ID), Deck: "decks/Words.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := out.Msg.GetError(); got != v1.ErrorCode_ERROR_CODE_MISSING {
+		t.Errorf("a preset that is not there is refused as %v", got)
+	}
+	if out.Msg.GetPreset() != nil {
+		t.Errorf("a refused preset came with %+v", out.Msg.GetPreset())
+	}
+}

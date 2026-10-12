@@ -2,11 +2,14 @@ package flashcards
 
 import (
 	"errors"
+	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -52,8 +55,14 @@ func TestAWindowNamingNoClockOpensARun(t *testing.T) {
 	api, held := newAPI(t, deck)
 	api.Now = nil
 
-	if out := startSession(t, api, held[0]); out.GetRun() == "" {
-		t.Error("a session opened without a run")
+	out := startSession(t, api, held[0])
+	now, err := ulid.New(time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := strings.TrimPrefix(out.GetRun(), flashcards.Area+"/")
+	if len(name) < 5 || name[:5] != now[:5] {
+		t.Errorf("the run %q was not opened at this machine's time", out.GetRun())
 	}
 }
 
