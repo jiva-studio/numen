@@ -50,7 +50,7 @@ const window = (opening = 'Opening.md', isListening = true) => {
     editor: createVault().editor,
     isReady: ref(true),
     isNesting,
-    parts: ref(6),
+    headings: ref(6),
     openNote: () => {},
     ...(isListening
       ? {

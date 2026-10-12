@@ -7,7 +7,7 @@
 import { computed, useTemplateRef, watch } from 'vue'
 import PlexNodeBox from './PlexNodeBox.vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
-import PlexNodeParts from './PlexNodeParts.vue'
+import PlexNodeHeadings from './PlexNodeHeadings.vue'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/hoverFocus'
 import { DWELL, useOpenBox } from '../../model/dwell'
@@ -72,7 +72,7 @@ const role = computed(() => {
   return props.node.seat === 'focus' ? 'img' : 'button'
 })
 
-/** Whether there is anything to open: more of the title, or parts to hang. */
+/** Whether there is anything to open: more of the title, or headings to hang. */
 const canOpen = computed(() => !!props.wide || !!props.hung)
 
 /**
@@ -134,7 +134,12 @@ const hue = computed(() => ({
       </template>
     </PlexNodeBox>
 
-    <PlexNodeParts v-if="hung" :hung="hung" :open="open" @enter="(part) => emit('enter', part)" />
+    <PlexNodeHeadings
+      v-if="hung"
+      :hung="hung"
+      :open="open"
+      @enter="(heading) => emit('enter', heading)"
+    />
 
     <!-- Reach out from here to make something. Under the hand or under the
          keyboard, so it is there when wanted and out of the way when not. -->

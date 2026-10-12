@@ -9,7 +9,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type WideBox } from '../../model/dwell'
-import { getNodeParts, type PlexPart } from '../../lib/inside'
+import { getNodeHeadings, type PlexHeading } from '../../lib/inside'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import type { PlexSeat } from '../../lib/seat'
@@ -469,32 +469,32 @@ describe('a box with nothing more to show', () => {
   })
 })
 
-describe('the parts a node hangs', () => {
+describe('the headings a node hangs', () => {
   const WAIT = 500
 
-  /** How many parts stand in the window at once, as the options ask for. */
+  /** How many headings stand in the window at once, as the options ask for. */
   const MOST = 6
-  const SIZES = { partHeight: 20, partIndent: 10, maxParts: MOST }
+  const SIZES = { headingHeight: 20, headingIndent: 10, maxHeadings: MOST }
 
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  const parts = (count: number): PlexPart[] =>
+  const headings = (count: number): PlexHeading[] =>
     Array.from({ length: count }, (_, at) => ({
       id: `${at}`,
-      text: `Part ${at}`,
+      text: `Heading ${at}`,
       level: 1,
     }))
 
-  const mountInside = (items: readonly PlexPart[], wide: WideBox | null = null) => {
+  const mountInside = (items: readonly PlexHeading[], wide: WideBox | null = null) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(),
         wide,
-        hung: getNodeParts(createNode(), items, SIZES, {
+        hung: getNodeHeadings(createNode(), items, SIZES, {
           viewport: { width: 1000, height: 600 },
           margin: 20,
         }),
@@ -516,104 +516,104 @@ describe('the parts a node hangs', () => {
 
   it('hangs nothing for a node with none, however long the hand stays', async () => {
     const node = await rest(mountInside([]))
-    expect(node.find('.plex__part').exists()).toBe(false)
+    expect(node.find('.plex__heading').exists()).toBe(false)
     expect(node.emitted('settle')).toBeUndefined()
   })
 
   it('opens for them although the title already fits its box', async () => {
-    const node = await rest(mountInside(parts(2)))
-    expect(node.findAll('.plex__part')).toHaveLength(2)
+    const node = await rest(mountInside(headings(2)))
+    expect(node.findAll('.plex__heading')).toHaveLength(2)
     expect(node.emitted('settle')).toStrictEqual([[true]])
   })
 
   it('draws them in the order they were given', async () => {
-    const node = await rest(mountInside(parts(3)))
-    expect(node.findAll('.plex__part').map((part) => part.text())).toStrictEqual([
-      'Part 0',
-      'Part 1',
-      'Part 2',
+    const node = await rest(mountInside(headings(3)))
+    expect(node.findAll('.plex__heading').map((heading) => heading.text())).toStrictEqual([
+      'Heading 0',
+      'Heading 1',
+      'Heading 2',
     ])
   })
 
-  it('says which part was chosen, and not that the node itself was', async () => {
-    const node = await rest(mountInside(parts(3)))
-    await node.findAll('.plex__part')[1]!.trigger('click')
+  it('says which heading was chosen, and not that the node itself was', async () => {
+    const node = await rest(mountInside(headings(3)))
+    await node.findAll('.plex__heading')[1]!.trigger('click')
     expect(node.emitted('enter')).toStrictEqual([['1']])
     expect(node.emitted('activate')).toBeUndefined()
   })
 
   it('stands the ceiling of them, and marks that there is more to scroll to', async () => {
-    const node = await rest(mountInside(parts(MOST + 3)))
-    expect(node.findAll('.plex__part')).toHaveLength(MOST)
+    const node = await rest(mountInside(headings(MOST + 3)))
+    expect(node.findAll('.plex__heading')).toHaveLength(MOST)
     expect(node.findAll('.plex__more')).toHaveLength(1)
   })
 
-  it('scrolls the window down a part at a time, and back up again', async () => {
-    const node = await rest(mountInside(parts(MOST + 3)))
-    const first = () => node.findAll('.plex__part')[0]!.text()
+  it('scrolls the window down a heading at a time, and back up again', async () => {
+    const node = await rest(mountInside(headings(MOST + 3)))
+    const first = () => node.findAll('.plex__heading')[0]!.text()
 
     await node.get('.plex__inside').trigger('wheel', { deltaY: 1, deltaMode: 1 })
-    expect(first()).toBe('Part 1')
+    expect(first()).toBe('Heading 1')
 
     await node.get('.plex__inside').trigger('wheel', { deltaY: 1, deltaMode: 1 })
-    expect(first()).toBe('Part 2')
+    expect(first()).toBe('Heading 2')
     expect(node.findAll('.plex__more')).toHaveLength(2)
 
     await node.get('.plex__inside').trigger('wheel', { deltaY: -1, deltaMode: 1 })
-    expect(first()).toBe('Part 1')
+    expect(first()).toBe('Heading 1')
   })
 
   it('scrolls no further than either end of them', async () => {
-    const node = await rest(mountInside(parts(MOST + 1)))
+    const node = await rest(mountInside(headings(MOST + 1)))
     const wheel = (deltaY: number) =>
       node.get('.plex__inside').trigger('wheel', { deltaY, deltaMode: 1 })
 
     await wheel(-1)
-    expect(node.findAll('.plex__part')[0]!.text()).toBe('Part 0')
+    expect(node.findAll('.plex__heading')[0]!.text()).toBe('Heading 0')
 
     for (let at = 0; at < 5; at++) await wheel(1)
-    expect(node.findAll('.plex__part').at(-1)!.text()).toBe(`Part ${MOST}`)
+    expect(node.findAll('.plex__heading').at(-1)!.text()).toBe(`Heading ${MOST}`)
   })
 
   it('scrolls nothing where every one of them stands at once', async () => {
-    const node = await rest(mountInside(parts(3)))
+    const node = await rest(mountInside(headings(3)))
     expect(node.findAll('.plex__more')).toHaveLength(0)
 
     await node.get('.plex__inside').trigger('wheel', { deltaY: 1, deltaMode: 1 })
-    expect(node.findAll('.plex__part')[0]!.text()).toBe('Part 0')
+    expect(node.findAll('.plex__heading')[0]!.text()).toBe('Heading 0')
   })
 
   it('is put away once the hand has left', async () => {
-    const mounted = mountInside(parts(3))
+    const mounted = mountInside(headings(3))
     await rest(mounted)
 
     await mounted.node.trigger('pointerleave')
     mounted.world.run()
     await mounted.node.vm.$nextTick()
-    expect(mounted.node.find('.plex__part').exists()).toBe(false)
+    expect(mounted.node.find('.plex__heading').exists()).toBe(false)
   })
 
   it('is nothing a screen reader is told about, the palette being the way there', async () => {
-    const node = await rest(mountInside(parts(2)))
+    const node = await rest(mountInside(headings(2)))
     expect(node.get('.plex__inside').attributes('aria-hidden')).toBe('true')
   })
 
   it('fades out from where it was scrolled, and opens at the top again', async () => {
-    const mounted = mountInside(parts(MOST + 3))
+    const mounted = mountInside(headings(MOST + 3))
     await rest(mounted)
-    const first = () => mounted.node.findAll('.plex__part')[0]!.text()
+    const first = () => mounted.node.findAll('.plex__heading')[0]!.text()
 
     await mounted.node.get('.plex__inside').trigger('wheel', { deltaY: 1, deltaMode: 1 })
-    expect(first()).toBe('Part 1')
+    expect(first()).toBe('Heading 1')
 
     await mounted.node.trigger('pointerleave')
     mounted.world.tick(0)
     mounted.world.tick(OPENING / 2)
     await mounted.node.vm.$nextTick()
-    expect(first()).toBe('Part 1')
+    expect(first()).toBe('Heading 1')
 
     mounted.world.run()
     await rest(mounted)
-    expect(first()).toBe('Part 0')
+    expect(first()).toBe('Heading 0')
   })
 })

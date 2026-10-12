@@ -52,7 +52,7 @@ export function createPlexKind({
     editor: editing.making,
     isReady: computed(() => !window.failure.value),
     isNesting: settings.nesting.isNesting,
-    parts: settings.nesting.headings,
+    headings: settings.nesting.headings,
     openNote: (path, title, showing, line, state) => {
       const tabId = findPlexTabId(held, state)
       if (tabId && tabSync?.syncPathFromTab(tabId, path, title)) {

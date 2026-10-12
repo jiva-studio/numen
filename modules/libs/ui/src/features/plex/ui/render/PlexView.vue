@@ -188,7 +188,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       @reach="emit('reach', node.id, $event)"
       @ask="emit('ask', node.id)"
       @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
-      @enter="(part) => emit('enter', node.id, part)"
+      @enter="(heading) => emit('enter', node.id, heading)"
       @settle="onSettle(node.id, $event)"
     >
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>

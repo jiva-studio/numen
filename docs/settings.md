@@ -54,7 +54,7 @@ A theme pinning `color-scheme` is published in one half, and `mode` has nothing 
 
 Choosing a theme, light or dark, or either size writes the field it names back here — each is a command of its own in the palette, over the window. The file is read as an object, the named fields are set, and it is written back, so a key this build knows nothing about comes through the write unchanged. A file that does not parse is not written.
 
-On, a node in the plex hangs the parts of the note it stands for under its box — the note's headings, each at the line it stands on — and choosing one puts that note in front of the person with the keyboard on that line. Off, a node is its box alone, and nothing is asked of the vault about what a note is divided into.
+On, a node in the plex nests the headings of the note it stands for under its box, each at the line it stands on, and choosing one puts that note in front of the person with the keyboard on that line. Off, a node is its box alone, and nothing is asked of the vault about what a note is divided into.
 
 `Nest headings under notes` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and every plex the window holds is drawn again from what was written.
 

@@ -1,11 +1,11 @@
 /**
- * The parts of a node: which of them are drawn, how far each is set in, and
+ * The headings of a node: which of them are drawn, how far each is set in, and
  * where each stands partway through the opening.
  */
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
-import { getNodeParts, type PartsDeps, type PlexPart } from './inside'
-import { getFurthest, getOpenParts, scrollBy } from './open'
+import { getNodeHeadings, type HeadingsDeps, type PlexHeading } from './inside'
+import { getFurthest, getOpenHeadings, scrollBy } from './open'
 import type { PlacedNode } from './node'
 
 const NODE: PlacedNode = {
@@ -20,149 +20,155 @@ const NODE: PlacedNode = {
   opacity: 1,
 }
 
-/** How many parts stand in the window at once, as the options ask for. */
+/** How many headings stand in the window at once, as the options ask for. */
 const MOST = 6
 
-const SIZES = { partHeight: 20, partIndent: 10, maxParts: MOST }
+const SIZES = { headingHeight: 20, headingIndent: 10, maxHeadings: MOST }
 
 /** A window with room to spare, and a measurer of ten pixels the letter. */
-const DEPS: PartsDeps = {
+const DEPS: HeadingsDeps = {
   measure: (text: string) => 10 * text.length,
   viewport: { width: 1000, height: 600 },
   margin: 20,
 }
 
-/** Parts all at one level, named by their number. */
-const parts = (count: number, level = 1): PlexPart[] =>
+/** Headings all at one level, named by their number. */
+const headings = (count: number, level = 1): PlexHeading[] =>
   Array.from({ length: count }, (_, at) => ({
     id: `${at}`,
-    text: `Part ${at}`,
+    text: `Heading ${at}`,
     level,
   }))
 
-const hung = (items: readonly PlexPart[], deps = DEPS) => getNodeParts(NODE, items, SIZES, deps)
+const hung = (items: readonly PlexHeading[], deps = DEPS) =>
+  getNodeHeadings(NODE, items, SIZES, deps)
 
 describe('what a node hangs', () => {
-  it('is nothing at all for a node with no parts', () => {
+  it('is nothing at all for a node with no headings', () => {
     expect(hung([])).toBeNull()
   })
 
   it('comes out from under the box, which is the node’s own bottom edge', () => {
-    expect(hung(parts(1))?.top).toBe(NODE.height / 2)
+    expect(hung(headings(1))?.top).toBe(NODE.height / 2)
   })
 
   it('holds them in the order they were given', () => {
-    const held = hung(parts(3))?.parts ?? []
-    expect(held.map((part) => part.text)).toStrictEqual(['Part 0', 'Part 1', 'Part 2'])
+    const held = hung(headings(3))?.headings ?? []
+    expect(held.map((heading) => heading.text)).toStrictEqual([
+      'Heading 0',
+      'Heading 1',
+      'Heading 2',
+    ])
   })
 
-  it('rests each part a part’s height below the one above it', () => {
-    const held = hung(parts(3))?.parts ?? []
-    expect(held.map((part) => part.at)).toStrictEqual([0, 20, 40])
+  it('rests each heading a heading’s height below the one above it', () => {
+    const held = hung(headings(3))?.headings ?? []
+    expect(held.map((heading) => heading.at)).toStrictEqual([0, 20, 40])
   })
 
-  it('stands as deep as the parts it holds, and the ground it keeps clear', () => {
-    const settled = hung(parts(3))!
-    expect(settled.height).toBe(3 * SIZES.partHeight + 2 * settled.pad)
+  it('stands as deep as the headings it holds, and the ground it keeps clear', () => {
+    const settled = hung(headings(3))!
+    expect(settled.height).toBe(3 * SIZES.headingHeight + 2 * settled.pad)
     expect(settled.pad).toBeGreaterThan(0)
   })
 })
 
-describe('more parts than the window holds', () => {
+describe('more headings than the window holds', () => {
   it('stands the ceiling of them in it, and keeps every one of them', () => {
-    const settled = hung(parts(MOST + 4))!
+    const settled = hung(headings(MOST + 4))!
     expect(settled.shown).toBe(MOST)
-    expect(settled.parts).toHaveLength(MOST + 4)
+    expect(settled.headings).toHaveLength(MOST + 4)
     expect(getFurthest(settled)).toBe(4)
   })
 
   it('has nowhere to scroll where every one of them stands at once', () => {
-    const settled = hung(parts(MOST))!
+    const settled = hung(headings(MOST))!
     expect(settled.shown).toBe(MOST)
     expect(getFurthest(settled)).toBe(0)
   })
 
   it('stands as deep as the window, not as deep as it holds', () => {
-    const settled = hung(parts(MOST + 4))!
-    expect(settled.height).toBe(MOST * SIZES.partHeight + 2 * settled.pad)
+    const settled = hung(headings(MOST + 4))!
+    expect(settled.height).toBe(MOST * SIZES.headingHeight + 2 * settled.pad)
   })
 
   it('stands as many as the options ask for', () => {
-    const settled = getNodeParts(NODE, parts(MOST + 4), { ...SIZES, maxParts: 3 }, DEPS)!
+    const settled = getNodeHeadings(NODE, headings(MOST + 4), { ...SIZES, maxHeadings: 3 }, DEPS)!
     expect(settled.shown).toBe(3)
     expect(getFurthest(settled)).toBe(MOST + 1)
   })
 })
 
-describe('scrolling the window over the parts', () => {
-  const many = () => hung(parts(MOST + 3))!
+describe('scrolling the window over the headings', () => {
+  const many = () => hung(headings(MOST + 3))!
 
   it('opens on the first of them, with more below and none above', () => {
-    const shown = getOpenParts(many(), 1)!
-    expect(shown.parts[0]!.text).toBe('Part 0')
+    const shown = getOpenHeadings(many(), 1)!
+    expect(shown.headings[0]!.text).toBe('Heading 0')
     expect(shown.isAbove).toBe(false)
     expect(shown.isBelow).toBe(true)
   })
 
-  it('moves by whole parts, so none is ever half on the ground', () => {
-    const shown = getOpenParts(many(), 1, 2)!
-    expect(shown.parts[0]!.text).toBe('Part 2')
-    expect(shown.parts.map((part) => part.at)).toStrictEqual(
-      shown.parts.map((_, at) => at * SIZES.partHeight),
+  it('moves by whole headings, so none is ever half on the ground', () => {
+    const shown = getOpenHeadings(many(), 1, 2)!
+    expect(shown.headings[0]!.text).toBe('Heading 2')
+    expect(shown.headings.map((heading) => heading.at)).toStrictEqual(
+      shown.headings.map((_, at) => at * SIZES.headingHeight),
     )
   })
 
   it('says there is more above it once it has been scrolled', () => {
-    expect(getOpenParts(many(), 1, 1)!.isAbove).toBe(true)
+    expect(getOpenHeadings(many(), 1, 1)!.isAbove).toBe(true)
   })
 
   it('scrolls no further than the last of them', () => {
     const settled = many()
-    const shown = getOpenParts(settled, 1, 99)!
-    expect(shown.parts.at(-1)!.text).toBe(`Part ${settled.parts.length - 1}`)
+    const shown = getOpenHeadings(settled, 1, 99)!
+    expect(shown.headings.at(-1)!.text).toBe(`Heading ${settled.headings.length - 1}`)
     expect(shown.isBelow).toBe(false)
   })
 
   it('scrolls no further back than the first of them', () => {
-    expect(getOpenParts(many(), 1, -5)!.parts[0]!.text).toBe('Part 0')
+    expect(getOpenHeadings(many(), 1, -5)!.headings[0]!.text).toBe('Heading 0')
   })
 
   it('stands the window full however far it is scrolled', () => {
     const settled = many()
     for (const scrollOffset of [0, 1, 2, 3, 99]) {
-      expect(getOpenParts(settled, 1, scrollOffset)!.parts).toHaveLength(settled.shown)
+      expect(getOpenHeadings(settled, 1, scrollOffset)!.headings).toHaveLength(settled.shown)
     }
   })
 })
 
-describe('how far in a part is set', () => {
-  const getPartIndents = (levels: readonly number[]) =>
+describe('how far in a heading is set', () => {
+  const getHeadingIndents = (levels: readonly number[]) =>
     (
-      hung(levels.map((level, at) => ({ id: `${at}`, text: `Part ${at}`, level })))?.parts ?? []
-    ).map((part) => part.indent)
+      hung(levels.map((level, at) => ({ id: `${at}`, text: `Heading ${at}`, level })))?.headings ??
+      []
+    ).map((heading) => heading.indent)
 
   it('is by where its level stands among the others, not by the number it carries', () => {
-    // Parts beginning at the second level are set from the edge as parts
+    // Headings beginning at the second level are set from the edge as headings
     // beginning at the first.
-    expect(getPartIndents([2, 3, 3])).toStrictEqual([0, 10, 10])
+    expect(getHeadingIndents([2, 3, 3])).toStrictEqual([0, 10, 10])
   })
 
   it('counts a level that was skipped as one step, not two', () => {
-    expect(getPartIndents([1, 3])).toStrictEqual([0, 10])
+    expect(getHeadingIndents([1, 3])).toStrictEqual([0, 10])
   })
 
   it('ranks the levels as numbers, whatever order they were given in', () => {
-    expect(getPartIndents([10, 2, 3])).toStrictEqual([20, 0, 10])
-    expect(getPartIndents([3, 2, 1])).toStrictEqual([20, 10, 0])
+    expect(getHeadingIndents([10, 2, 3])).toStrictEqual([20, 0, 10])
+    expect(getHeadingIndents([3, 2, 1])).toStrictEqual([20, 10, 0])
   })
 
   it('goes no further in however deep the nesting runs', () => {
-    expect(getPartIndents([1, 2, 3, 4, 5, 6])).toStrictEqual([0, 10, 20, 30, 30, 30])
+    expect(getHeadingIndents([1, 2, 3, 4, 5, 6])).toStrictEqual([0, 10, 20, 30, 30, 30])
   })
 })
 
 describe('the opening', () => {
-  const openTo = (open: number, count = 3) => getOpenParts(hung(parts(count))!, open)
+  const openTo = (open: number, count = 3) => getOpenHeadings(hung(headings(count))!, open)
 
   it('draws nothing while it is shut', () => {
     expect(openTo(0)).toBeNull()
@@ -173,62 +179,66 @@ describe('the opening', () => {
   })
 
   it('brings the ground up at the depth it keeps', () => {
-    const settled = hung(parts(3))!
+    const settled = hung(headings(3))!
     for (const open of [0.2, 0.5, 1]) {
-      expect(getOpenParts(settled, open)!.height).toBe(settled.height)
+      expect(getOpenHeadings(settled, open)!.height).toBe(settled.height)
     }
-    expect(getOpenParts(settled, 1)!.opacity).toBe(1)
+    expect(getOpenHeadings(settled, 1)!.opacity).toBe(1)
   })
 
-  it('has the first part further along than the last', () => {
-    const drawn = openTo(0.5)?.parts ?? []
+  it('has the first heading further along than the last', () => {
+    const drawn = openTo(0.5)?.headings ?? []
     expect(drawn[0]!.opacity).toBeGreaterThan(drawn.at(-1)!.opacity)
   })
 
   it('rises onto its place from below, never from above it', () => {
-    const settled = hung(parts(3))!
-    getOpenParts(settled, 0.5)!.parts.forEach((part, at) => {
-      const rests = settled.parts[at]!.at
-      expect(part.y).toBeGreaterThanOrEqual(rests)
-      expect(part.y).toBeLessThanOrEqual(rests + settled.partHeight)
+    const settled = hung(headings(3))!
+    getOpenHeadings(settled, 0.5)!.headings.forEach((heading, at) => {
+      const rests = settled.headings[at]!.at
+      expect(heading.y).toBeGreaterThanOrEqual(rests)
+      expect(heading.y).toBeLessThanOrEqual(rests + settled.headingHeight)
     })
   })
 
-  it('keeps every part on the ground, at every moment of the opening', () => {
-    // A part drawn past either edge is a part standing on nothing, which is
+  it('keeps every heading on the ground, at every moment of the opening', () => {
+    // A heading drawn past either edge is a heading standing on nothing, which is
     // what the ground is there to stop.
-    const settled = hung(parts(5))!
+    const settled = hung(headings(5))!
     for (const open of [0.05, 0.2, 0.4, 0.6, 0.8, 1]) {
-      for (const part of getOpenParts(settled, open)!.parts) {
-        expect(part.y).toBeGreaterThanOrEqual(0)
-        expect(part.y + settled.partHeight).toBeLessThanOrEqual(settled.height - 2 * settled.pad)
+      for (const heading of getOpenHeadings(settled, open)!.headings) {
+        expect(heading.y).toBeGreaterThanOrEqual(0)
+        expect(heading.y + settled.headingHeight).toBeLessThanOrEqual(
+          settled.height - 2 * settled.pad,
+        )
       }
     }
   })
 
-  it('rests every part where it hangs once it is all the way open', () => {
-    const settled = hung(parts(3))!
-    const drawn = getOpenParts(settled, 1)?.parts ?? []
-    expect(drawn.map((part) => part.y)).toStrictEqual(settled.parts.map((part) => part.at))
-    expect(drawn.every((part) => part.opacity === 1)).toBe(true)
+  it('rests every heading where it hangs once it is all the way open', () => {
+    const settled = hung(headings(3))!
+    const drawn = getOpenHeadings(settled, 1)?.headings ?? []
+    expect(drawn.map((heading) => heading.y)).toStrictEqual(
+      settled.headings.map((heading) => heading.at),
+    )
+    expect(drawn.every((heading) => heading.opacity === 1)).toBe(true)
   })
 
-  it('brings the ground up before the parts have finished rising', () => {
-    const settled = hung(parts(3))!
-    const half = getOpenParts(settled, 0.5)!
-    expect(half.opacity).toBeGreaterThan(half.parts.at(-1)!.opacity)
+  it('brings the ground up before the headings have finished rising', () => {
+    const settled = hung(headings(3))!
+    const half = getOpenHeadings(settled, 0.5)!
+    expect(half.opacity).toBeGreaterThan(half.headings.at(-1)!.opacity)
   })
 
   it('carries the words and the indent through untouched', () => {
-    const part = openTo(1)?.parts[1]
-    expect(part?.text).toBe('Part 1')
-    expect(part?.id).toBe('1')
-    expect(part?.indent).toBe(0)
+    const heading = openTo(1)?.headings[1]
+    expect(heading?.text).toBe('Heading 1')
+    expect(heading?.id).toBe('1')
+    expect(heading?.indent).toBe(0)
   })
 })
 
-describe('how wide the parts are drawn', () => {
-  const wide = (items: readonly PlexPart[], deps = DEPS) => hung(items, deps)!
+describe('how wide the headings are drawn', () => {
+  const wide = (items: readonly PlexHeading[], deps = DEPS) => hung(items, deps)!
 
   it('is the room the longest of them asks for, and the ground beside it', () => {
     const longest = 'A good deal longer than that'
@@ -244,17 +254,17 @@ describe('how wide the parts are drawn', () => {
     expect(wide([{ id: '0', text: 'Wee', level: 1 }]).width).toBe(NODE.width)
   })
 
-  it('counts how far a part is set in as room it needs', () => {
+  it('counts how far a heading is set in as room it needs', () => {
     const words = 'A'.repeat(20)
     const flat = [{ id: '0', text: words, level: 1 }]
     const nested = [...flat, { id: '1', text: words, level: 2 }]
 
-    expect(wide(nested).width - wide(flat).width).toBe(SIZES.partIndent)
+    expect(wide(nested).width - wide(flat).width).toBe(SIZES.headingIndent)
   })
 
   it('is the node’s own box where there is nothing to measure text with', () => {
     const bare = { viewport: DEPS.viewport, margin: DEPS.margin }
-    expect(wide(parts(3), bare).width).toBe(NODE.width)
+    expect(wide(headings(3), bare).width).toBe(NODE.width)
   })
 
   it('is held inside the window, however long the words run', () => {
@@ -263,32 +273,32 @@ describe('how wide the parts are drawn', () => {
   })
 
   it('grows about the node’s own middle where the window has room', () => {
-    expect(wide(parts(2)).offset).toBe(0)
+    expect(wide(headings(2)).offset).toBe(0)
   })
 
   it('slides back inside the window where the middle leaves no room', () => {
     const near = { ...NODE, x: 460 }
     const held = [{ id: '0', text: 'A heading of some length', level: 1 }]
-    const settled = getNodeParts(near, held, SIZES, DEPS)!
+    const settled = getNodeHeadings(near, held, SIZES, DEPS)!
     expect(near.x + settled.offset + settled.width / 2).toBeLessThanOrEqual(
       DEPS.viewport.width / 2 - DEPS.margin,
     )
   })
 })
 
-describe('where the parts slide to at the edges of the window', () => {
+describe('where the headings slide to at the edges of the window', () => {
   const held = [{ id: '0', text: 'A heading of some length', level: 1 }]
   const edge = DEPS.viewport.width / 2 - DEPS.margin
 
   it('ends flush with the margin on the right', () => {
     const near = { ...NODE, x: 460 }
-    const settled = getNodeParts(near, held, SIZES, DEPS)!
+    const settled = getNodeHeadings(near, held, SIZES, DEPS)!
     expect(near.x + settled.offset + settled.width / 2).toBe(edge)
   })
 
   it('begins flush with the margin on the left', () => {
     const near = { ...NODE, x: -460 }
-    const settled = getNodeParts(near, held, SIZES, DEPS)!
+    const settled = getNodeHeadings(near, held, SIZES, DEPS)!
     expect(near.x + settled.offset - settled.width / 2).toBe(-edge)
   })
 })
@@ -300,30 +310,30 @@ describe('a node with little room under it', () => {
     y: DEPS.viewport.height / 2 - DEPS.margin - NODE.height / 2 - left,
   })
 
-  const hangWithRoom = (left: number, items = parts(MOST + 3)) =>
-    getNodeParts(low(left), items, SIZES, DEPS)
+  const hangWithRoom = (left: number, items = headings(MOST + 3)) =>
+    getNodeHeadings(low(left), items, SIZES, DEPS)
 
-  it('hangs nothing where there is depth for not one part', () => {
-    expect(hangWithRoom(SIZES.partHeight)).toBeNull()
+  it('hangs nothing where there is depth for not one heading', () => {
+    expect(hangWithRoom(SIZES.headingHeight)).toBeNull()
   })
 
   it('stands in its window only what the depth left under it holds', () => {
-    const settled = hangWithRoom(3 * SIZES.partHeight + 10)!
+    const settled = hangWithRoom(3 * SIZES.headingHeight + 10)!
     expect(settled.shown).toBe(3)
     expect(getFurthest(settled)).toBe(MOST)
   })
 
-  it('hangs one part where the depth holds exactly one with its ground', () => {
+  it('hangs one heading where the depth holds exactly one with its ground', () => {
     const settled = hangWithRoom(30)!
     expect(settled.shown).toBe(1)
-    expect(settled.height).toBe(SIZES.partHeight + 2 * settled.pad)
+    expect(settled.height).toBe(SIZES.headingHeight + 2 * settled.pad)
   })
 
   it('hangs nothing where the depth is one short of that', () => {
     expect(hangWithRoom(29)).toBeNull()
   })
 
-  it('keeps every part it does hang inside the window', () => {
+  it('keeps every heading it does hang inside the window', () => {
     for (const left of [60, 90, 140, 200, 400]) {
       const settled = hangWithRoom(left)
       if (!settled) continue
@@ -333,21 +343,21 @@ describe('a node with little room under it', () => {
   })
 
   it('stands them all at once where the depth holds every one of them', () => {
-    const settled = getNodeParts(low(400), parts(3), SIZES, DEPS)!
+    const settled = getNodeHeadings(low(400), headings(3), SIZES, DEPS)!
     expect(settled.shown).toBe(3)
     expect(getFurthest(settled)).toBe(0)
   })
 })
 
 describe('what a wheel scrolls', () => {
-  const hangMany = () => hung(parts(20))!
+  const hangMany = () => hung(headings(20))!
   /** A wheel said in pixels, which is what a hand on a trackpad gives. */
   const pixels = (delta: number) => ({ delta, mode: 0 })
 
-  it('is nothing at all until the pixels come to a whole part', () => {
-    const wheel = scrollBy(hangMany(), pixels(SIZES.partHeight - 1), 0)
+  it('is nothing at all until the pixels come to a whole heading', () => {
+    const wheel = scrollBy(hangMany(), pixels(SIZES.headingHeight - 1), 0)
     expect(wheel.by).toBe(0)
-    expect(wheel.left).toBe(SIZES.partHeight - 1)
+    expect(wheel.left).toBe(SIZES.headingHeight - 1)
   })
 
   it('carries what was left over into the next one', () => {
@@ -358,7 +368,7 @@ describe('what a wheel scrolls', () => {
     expect(next.left).toBe(4)
   })
 
-  it('is one part for a flick of a hand, not one for every event it sends', () => {
+  it('is one heading for a flick of a hand, not one for every event it sends', () => {
     // A trackpad gives a few pixels at a time, dozens of times a flick.
     let carried = 0
     let scrollOffset = 0
@@ -370,7 +380,7 @@ describe('what a wheel scrolls', () => {
     expect(scrollOffset).toBe(1)
   })
 
-  it('reads a wheel said in lines as one part the line', () => {
+  it('reads a wheel said in lines as one heading the line', () => {
     expect(scrollBy(hangMany(), { delta: 2, mode: 1 }, 0).by).toBe(2)
   })
 
@@ -380,53 +390,58 @@ describe('what a wheel scrolls', () => {
   })
 
   it('scrolls back the way it came, and carries the leftover the same way', () => {
-    const back = scrollBy(hangMany(), pixels(-SIZES.partHeight - 6), 0)
+    const back = scrollBy(hangMany(), pixels(-SIZES.headingHeight - 6), 0)
     expect(back.by).toBe(-1)
     expect(back.left).toBe(-6)
   })
 })
 
-describe('however many parts stand at once', () => {
-  /** A node with depth under it for as many parts as the ceiling allows. */
+describe('however many headings stand at once', () => {
+  /** A node with depth under it for as many headings as the ceiling allows. */
   const hangWithCeiling = (most: number) =>
-    getNodeParts(NODE, parts(most + 4), { ...SIZES, maxParts: most }, DEPS)!
+    getNodeHeadings(NODE, headings(most + 4), { ...SIZES, maxHeadings: most }, DEPS)!
 
   it('every one of them is up by the time it is all the way open', () => {
     // A lead that outran the opening left the last of them at nothing at all,
     // on a ground drawn deep enough to hold them.
     for (const ceiling of [1, 2, 6, 9, 12, 20]) {
       const settled = hangWithCeiling(ceiling)
-      const drawn = getOpenParts(settled, 1)!.parts
+      const drawn = getOpenHeadings(settled, 1)!.headings
       expect(drawn).toHaveLength(settled.shown)
-      for (const part of drawn) expect(part.opacity).toBe(1)
+      for (const heading of drawn) expect(heading.opacity).toBe(1)
     }
   })
 
   it('the first of them is still ahead of the last partway through', () => {
     for (const ceiling of [2, 6, 12, 20]) {
-      const drawn = getOpenParts(hangWithCeiling(ceiling), 0.5)!.parts
+      const drawn = getOpenHeadings(hangWithCeiling(ceiling), 0.5)!.headings
       expect(drawn[0]!.opacity).toBeGreaterThan(drawn.at(-1)!.opacity)
     }
   })
 
   it('one alone opens with the whole of the opening to itself', () => {
-    expect(getOpenParts(hangWithCeiling(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
+    expect(getOpenHeadings(hangWithCeiling(1), 0.5)!.headings[0]!.opacity).toBe(easeOut(0.5))
   })
 })
 
 describe('when the leads set off', () => {
-  /** The opacity of the last part shown, at a moment of the opening. */
+  /** The opacity of the last heading shown, at a moment of the opening. */
   const getLast = (ceiling: number, open: number) => {
-    const settled = getNodeParts(NODE, parts(ceiling), { ...SIZES, maxParts: ceiling }, DEPS)!
-    return getOpenParts(settled, open)!.parts.at(-1)!.opacity
+    const settled = getNodeHeadings(
+      NODE,
+      headings(ceiling),
+      { ...SIZES, maxHeadings: ceiling },
+      DEPS,
+    )!
+    return getOpenHeadings(settled, open)!.headings.at(-1)!.opacity
   }
 
-  it('has the last of a few parts still down while two leads of the opening are taken', () => {
+  it('has the last of a few headings still down while two leads of the opening are taken', () => {
     expect(getLast(3, 0.23)).toBe(0)
     expect(getLast(3, 0.26)).toBeGreaterThan(0)
   })
 
-  it('has the leads of many parts take the same share between them', () => {
+  it('has the leads of many headings take the same share between them', () => {
     for (const ceiling of [8, 20]) {
       expect(getLast(ceiling, 0.59)).toBe(0)
       expect(getLast(ceiling, 0.61)).toBeGreaterThan(0)
@@ -434,24 +449,24 @@ describe('when the leads set off', () => {
   })
 })
 
-describe('where a part sets off from', () => {
+describe('where a heading sets off from', () => {
   it('is a fraction of its own height below its place', () => {
-    const settled = hung(parts(3))!
-    const first = getOpenParts(settled, 0.3)!.parts[0]!
+    const settled = hung(headings(3))!
+    const first = getOpenHeadings(settled, 0.3)!.headings[0]!
     expect(first.opacity).toBeGreaterThan(0)
     expect(first.opacity).toBeLessThan(1)
-    expect(first.y).toBeCloseTo((1 - first.opacity) * 0.7 * settled.partHeight, 6)
+    expect(first.y).toBeCloseTo((1 - first.opacity) * 0.7 * settled.headingHeight, 6)
   })
 })
 
 describe('the arrows at the edges of the ground', () => {
   const WIDE = 4
   const DEEP = 2.5
-  const many = () => hung(parts(MOST + 3))!
+  const many = () => hung(headings(MOST + 3))!
 
   it('points down from the bottom of the ground where there is more below', () => {
     const settled = many()
-    const { arrows } = getOpenParts(settled, 1, 0)!
+    const { arrows } = getOpenHeadings(settled, 1, 0)!
     const y = settled.top + settled.height - settled.pad / 2
     expect(arrows).toStrictEqual([
       {
@@ -467,7 +482,7 @@ describe('the arrows at the edges of the ground', () => {
 
   it('points up from the top of the ground where there is more above', () => {
     const settled = many()
-    const { arrows } = getOpenParts(settled, 1, getFurthest(settled))!
+    const { arrows } = getOpenHeadings(settled, 1, getFurthest(settled))!
     const y = settled.top + settled.pad / 2
     expect(arrows).toStrictEqual([
       {
@@ -482,19 +497,19 @@ describe('the arrows at the edges of the ground', () => {
   })
 
   it('draws both, the one above first, where the window is scrolled between', () => {
-    const { arrows } = getOpenParts(many(), 1, 1)!
+    const { arrows } = getOpenHeadings(many(), 1, 1)!
     expect(arrows.map((arrow) => arrow.at)).toStrictEqual(['above', 'below'])
   })
 
-  it('draws none where every part stands at once', () => {
-    expect(getOpenParts(hung(parts(3))!, 1)!.arrows).toStrictEqual([])
+  it('draws none where every heading stands at once', () => {
+    expect(getOpenHeadings(hung(headings(3))!, 1)!.arrows).toStrictEqual([])
   })
 
   it('is drawn about the middle of what is hung, not of the node', () => {
     const near = { ...NODE, x: 460 }
     const heading = { id: 'h', text: 'A heading of some length', level: 1 }
-    const settled = getNodeParts(near, [heading, ...parts(MOST + 3)], SIZES, DEPS)!
-    const [arrow] = getOpenParts(settled, 1, 0)!.arrows
+    const settled = getNodeHeadings(near, [heading, ...headings(MOST + 3)], SIZES, DEPS)!
+    const [arrow] = getOpenHeadings(settled, 1, 0)!.arrows
     expect(arrow!.points.map((point) => point.x)).toStrictEqual([
       settled.offset - WIDE,
       settled.offset,

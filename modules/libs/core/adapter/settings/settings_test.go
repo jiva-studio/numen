@@ -901,7 +901,7 @@ func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 // through a pointer the way the naming is: leaving the section out, leaving the
 // field out and writing false are three different things a person can write,
 // and the last of them is the only one that turns it off.
-func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
+func TestANodeHangsTheHeadingsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
 	for name, c := range map[string]struct {
 		file       string
 		isHanging  bool
@@ -931,8 +931,8 @@ func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if cfg.HasPartsUnderNode() != c.isHanging {
-				t.Errorf("a node hangs the parts of its note: %v", cfg.HasPartsUnderNode())
+			if cfg.HasNestedHeadings() != c.isHanging {
+				t.Errorf("a node hangs the headings of its note: %v", cfg.HasNestedHeadings())
 			}
 		})
 	}
@@ -957,24 +957,24 @@ func TestAnUntouchedInstallationWritesTheNestingDown(t *testing.T) {
 	}
 }
 
-// How many parts stand under a node at once. A file naming no number stands the
+// How many headings stand under a node at once. A file naming no number stands the
 // default of them, and a number the setting takes is the number that stands.
-func TestANodeStandsAsManyPartsAsTheFileNames(t *testing.T) {
+func TestANodeStandsAsManyHeadingsAsTheFileNames(t *testing.T) {
 	for name, c := range map[string]struct {
 		file       string
-		parts      int
+		headings   int
 		wasWritten bool
 	}{
-		"a file nobody wrote":         {parts: settings.DefaultParts},
-		"a file naming no appearance": {file: `{"naming":{}}`, parts: 6, wasWritten: true},
+		"a file nobody wrote":         {headings: settings.DefaultNestedHeadingLimit},
+		"a file naming no appearance": {file: `{"naming":{}}`, headings: 6, wasWritten: true},
 		"a section naming no field": {
-			file: `{"appearance":{"text_scale":1.5}}`, parts: 6, wasWritten: true,
+			file: `{"appearance":{"text_scale":1.5}}`, headings: 6, wasWritten: true,
 		},
 		"a field naming a number": {
-			file: `{"appearance":{"nested_heading_limit":3}}`, parts: 3, wasWritten: true,
+			file: `{"appearance":{"nested_heading_limit":3}}`, headings: 3, wasWritten: true,
 		},
 		"a field at either end": {
-			file: `{"appearance":{"nested_heading_limit":12}}`, parts: 12, wasWritten: true,
+			file: `{"appearance":{"nested_heading_limit":12}}`, headings: 12, wasWritten: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -986,8 +986,8 @@ func TestANodeStandsAsManyPartsAsTheFileNames(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if cfg.Parts() != c.parts {
-				t.Errorf("a node stands %d parts", cfg.Parts())
+			if cfg.GetNestedHeadingLimit() != c.headings {
+				t.Errorf("a node stands %d headings", cfg.GetNestedHeadingLimit())
 			}
 		})
 	}
@@ -995,7 +995,7 @@ func TestANodeStandsAsManyPartsAsTheFileNames(t *testing.T) {
 
 // A count the setting does not take stops the settings being read. Nothing is
 // drawn at a number nobody asked for, and the file says what a person wrote.
-func TestACountOfPartsOutsideWhatItGoesToIsRefused(t *testing.T) {
+func TestACountOfHeadingsOutsideWhatItGoesToIsRefused(t *testing.T) {
 	for _, body := range []string{
 		`{"appearance":{"nested_heading_limit":0}}`,
 		`{"appearance":{"nested_heading_limit":-1}}`,

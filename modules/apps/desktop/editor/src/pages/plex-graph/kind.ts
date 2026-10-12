@@ -96,7 +96,7 @@ export function createPlexKind(
       getAll().map(async ({ state }) => {
         const path = state.view.here.value || deps.openingPath.value
         if (path) await state.view.go(path)
-        await state.readParts()
+        await state.readHeadings()
       }),
     )
   }

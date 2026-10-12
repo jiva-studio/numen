@@ -5,7 +5,7 @@
 import type { MenuTrigger } from '@/shared/ui/menu'
 import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
-import type { NodeParts } from '../../lib/inside'
+import type { NodeHeadings } from '../../lib/inside'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { PlexRelatedSeat } from '../../lib/seat'
 import type { WideBox } from '../../model/dwell'
@@ -36,11 +36,11 @@ export interface PlexViewProps {
    */
   widen?: ((node: PlacedNode) => WideBox | null) | undefined
   /**
-   * The parts a node hangs under its box while the attention rests on it,
-   * and nothing for a node with none. Which parts a node holds is the
+   * The headings a node hangs under its box while the attention rests on it,
+   * and nothing for a node with none. Which headings a node holds is the
    * picture's to work out.
    */
-  hung?: ((node: PlacedNode) => NodeParts | null) | undefined
+  hung?: ((node: PlacedNode) => NodeHeadings | null) | undefined
   /** How long the attention rests on a box before it widens. Milliseconds. */
   dwell?: number
   /** How a node offers to be reached out of. The handle by default. */
@@ -78,8 +78,8 @@ export interface PlexViewEvents {
   (event: 'ask', id: string): void
   /** A menu was asked for on a node: which, where, and by what. */
   (event: 'menu', id: string, at: Position, trigger: MenuTrigger): void
-  /** A part of a node was chosen. Both identifiers are the caller's. */
-  (event: 'enter', id: string, part: string): void
+  /** A heading of a node was chosen. Both identifiers are the caller's. */
+  (event: 'enter', id: string, heading: string): void
   /** A menu or inspector was asked for on an edge. */
   (event: 'edge-menu', pair: string, at: Position): void
 }
@@ -94,10 +94,10 @@ export interface PlexNodeProps {
    */
   wide?: WideBox | null
   /**
-   * The parts it hangs under its box while the attention rests, and nothing
+   * The headings it hangs under its box while the attention rests, and nothing
    * for a node with none.
    */
-  hung?: NodeParts | null
+  hung?: NodeHeadings | null
   /** How long the attention rests before it widens. Milliseconds. */
   dwell?: number
   /** How this node offers to be reached out of. The handle by default. */
@@ -131,8 +131,8 @@ export interface PlexNodeEvents {
    * drawn last of all, and which box that is only the whole picture knows.
    */
   (event: 'settle', resting: boolean): void
-  /** A part of this node was chosen. The identifier is the caller's. */
-  (event: 'enter', part: string): void
+  /** A heading of this node was chosen. The identifier is the caller's. */
+  (event: 'enter', heading: string): void
 }
 
 export interface PlexDrawnSlots {

@@ -1,6 +1,6 @@
 /**
  * How much room the plex has, and everything measured against it: the options
- * the whole picture is drawn to, how wide a box opens, and the parts a node
+ * the whole picture is drawn to, how wide a box opens, and the headings a node
  * hangs under it.
  *
  * Text is measured where the plex is drawn, so what the drawing is handed is
@@ -9,7 +9,7 @@
 import { computed, onMounted, onScopeDispose, ref, type ShallowRef } from 'vue'
 import { getWideBox } from './dwell'
 import { useTitleWidths } from './measure'
-import { getNodeParts, type PlexPart } from '../lib/inside'
+import { getNodeHeadings, type PlexHeading } from '../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../lib/arrange'
 import type { PlacedNode } from '../lib/node'
 import type { Viewport } from '@/shared/lib/viewport'
@@ -21,7 +21,7 @@ const FALLBACK = { width: 1200, height: 800 }
 export interface PlexRoomProps {
   readonly options?: PlexOptionsInput | undefined
   readonly viewport: Viewport
-  readonly parts?: ((id: string) => readonly PlexPart[]) | undefined
+  readonly headings?: ((id: string) => readonly PlexHeading[]) | undefined
 }
 
 /** `hasIcon` says whether a caller draws anything beside a title. */
@@ -78,16 +78,16 @@ export function useRoom(
   })
 
   /**
-   * The parts each node hangs under its box. The sizes are the ones the whole
+   * The headings each node hangs under its box. The sizes are the ones the whole
    * picture is drawn to, so a plex set larger hangs them larger.
    */
   const hung = computed(() => {
-    const getParts = props.parts
-    if (!getParts) return undefined
+    const getHeadings = props.headings
+    if (!getHeadings) return undefined
 
     const { margin } = options.value
-    const deps = { measure: measures.value?.part, viewport: room.value, margin }
-    return (node: PlacedNode) => getNodeParts(node, getParts(node.id), options.value, deps)
+    const deps = { measure: measures.value?.heading, viewport: room.value, margin }
+    return (node: PlacedNode) => getNodeHeadings(node, getHeadings(node.id), options.value, deps)
   })
 
   return { room, options, measures, widen, hung }
