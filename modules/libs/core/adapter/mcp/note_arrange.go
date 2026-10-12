@@ -6,7 +6,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -99,49 +98,18 @@ func removeNotes(ctx context.Context, core Core, in noteRemoveInput) (noteRemove
 	if len(in.Paths) > maxRefs {
 		return noteRemoveOutput{}, fmt.Errorf("remove at most %d notes at a time", maxRefs)
 	}
-	reader, err := core.Readers.Open(core.getCurrentVault().Vault)
-	if err != nil {
-		return noteRemoveOutput{}, err
-	}
 	res := noteRemoveOutput{Removed: make([]RemoveOutcome, 0, len(in.Paths))}
 	for _, path := range in.Paths {
 		if err := ctx.Err(); err != nil {
 			return noteRemoveOutput{}, err
 		}
-		res.Removed = append(res.Removed, removeNote(ctx, core, reader, path, in.ShouldDestroy))
+		removed, err := core.Notes.RemoveNote.Execute(ctx, core.getCurrentVault().Vault, path, in.ShouldDestroy)
+		outcome := RemoveOutcome{RemoveResult: removed}
+		if err != nil {
+			outcome.RemoveResult = note.RemoveResult{Path: path}
+			outcome.Refused = sayError(err)
+		}
+		res.Removed = append(res.Removed, outcome)
 	}
 	return res, nil
-}
-
-// removeNote removes the note at path, or deletes it permanently when
-// shouldDestroy is set. A refusal is reported in the outcome.
-func removeNote(
-	ctx context.Context, core Core, reader port.VaultReader, path string, shouldDestroy bool,
-) RemoveOutcome {
-	if isFolder(ctx, reader, path) {
-		return RemoveOutcome{
-			RemoveResult: note.RemoveResult{Path: path},
-			Refused:      "this is a folder, and this removes notes: name the notes to remove",
-		}
-	}
-	v := core.getCurrentVault().Vault
-	var removed note.RemoveResult
-	var err error
-	if shouldDestroy {
-		removed, err = core.Notes.Remove.Destroy(ctx, v, path)
-	} else {
-		removed, err = core.Notes.Remove.Execute(ctx, v, path)
-	}
-	outcome := RemoveOutcome{RemoveResult: removed}
-	if err != nil {
-		outcome.RemoveResult = note.RemoveResult{Path: path}
-		outcome.Refused = sayError(err)
-	}
-	return outcome
-}
-
-// isFolder reports whether the vault holds a folder at the path.
-func isFolder(ctx context.Context, reader port.VaultReader, path string) bool {
-	_, err := reader.List(ctx, path)
-	return err == nil
 }

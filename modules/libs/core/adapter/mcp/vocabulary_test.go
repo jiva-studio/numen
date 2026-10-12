@@ -82,7 +82,7 @@ func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
 	attending := func() domain.OpenTabs { return domain.OpenTabs{} }
 	for _, core := range []mcp.Core{
 		{},
-		{View: &window{}},
+		lookingCore(&window{}),
 		{Attending: attending},
 		onTheList(t).core,
 	} {

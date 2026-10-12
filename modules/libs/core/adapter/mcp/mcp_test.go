@@ -113,7 +113,9 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			Replace:       note.NewReplace(readers, writers, index, time.Now),
 			Move:          moving,
 			Rename:        note.NewRename(moving),
-			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
+			RemoveNote:    note.NewRemoveNote(note.NewRemove(writers, db.Links(), db.SourcesKnown(), index), readers),
+			Read:          note.NewRead(readers),
+			GetTitles:     note.NewGetTitles(queries),
 			Linking:       note.NewEditLinks(readers, writers, index, time.Now),
 			AddLinks:      note.NewAddLinks(note.NewEditLinks(readers, writers, index, time.Now)),
 		},
@@ -247,7 +249,7 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 	_, core := newCoreWithNotes(t, nil)
 	core.Vaults = onTheList(t).core.Vaults
-	core.View = &window{}
+	lookAt(&core, &window{})
 	core.Attending = func() domain.OpenTabs { return domain.OpenTabs{} }
 
 	checkToolNames(t, getServedTools(t, newSessionOver(t, core)), []string{

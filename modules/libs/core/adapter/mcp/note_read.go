@@ -43,17 +43,13 @@ func getNoteTitles(ctx context.Context, core Core, in noteTitlesInput) (noteTitl
 	if len(in.Paths) > maxRefs {
 		return noteTitlesOutput{}, fmt.Errorf("ask about at most %d notes at a time", maxRefs)
 	}
-	found, err := core.Notes.Queries.GetNotes(ctx, core.getCurrentVault().Vault.ID, in.Paths)
+	found, err := core.Notes.GetTitles.Execute(ctx, core.getCurrentVault().Vault, in.Paths)
 	if err != nil {
 		return noteTitlesOutput{}, err
 	}
-	res := noteTitlesOutput{Notes: make([]Note, 0, len(found))}
-	for _, path := range in.Paths {
-		if ref, ok := found[path]; ok {
-			res.Notes = append(res.Notes, noteOf(ref))
-			continue
-		}
-		res.Missing = append(res.Missing, path)
+	res := noteTitlesOutput{Notes: make([]Note, 0, len(found.Notes)), Missing: found.Missing}
+	for _, ref := range found.Notes {
+		res.Notes = append(res.Notes, noteOf(ref))
 	}
 	return res, nil
 }
@@ -89,7 +85,7 @@ func readNotes(ctx context.Context, core Core, in noteReadInput) (noteReadOutput
 	if len(in.Paths) > maxBodies {
 		return noteReadOutput{}, fmt.Errorf("read at most %d notes at a time", maxBodies)
 	}
-	read := note.NewRead(core.Readers)
+	read := core.Notes.Read
 	res := noteReadOutput{Notes: make([]Contents, 0, len(in.Paths))}
 	for _, path := range in.Paths {
 		if err := ctx.Err(); err != nil {

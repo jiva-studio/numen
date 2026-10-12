@@ -23,6 +23,9 @@ type Scenarios struct {
 
 	Links         ShowLinks
 	Neighbourhood ShowNeighbourhood
+
+	GetTitles  GetTitles
+	RemoveNote RemoveNote
 }
 
 // FollowMoves tells a window where each note went, so whoever is showing one at
@@ -37,12 +40,12 @@ func (n Scenarios) FollowMoves(view port.Window) Scenarios {
 	return n
 }
 
-// Drawing tells a window what each write is doing while it is being made, so a
+// ShowEdits tells a window what each write is doing while it is being made, so a
 // person watching the note sees the stretch that is changing.
 //
 // Only a caller that is not the person binds it. The window's own writes draw
 // nothing, because the person is looking at the text they typed.
-func (n Scenarios) Drawing(view port.Window) Scenarios {
+func (n Scenarios) ShowEdits(view port.Window) Scenarios {
 	tell := TellEdit(func(ctx context.Context, said domain.Edit) {
 		_ = view.ShowEdit(ctx, said)
 	})

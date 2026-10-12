@@ -269,6 +269,8 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
+			Read:          note.NewRead(readers),
+			GetTitles:     note.NewGetTitles(queries),
 			Links:         note.NewShowLinks(db.Links()),
 		},
 		Cards:   mcp.Cards{Read: cutting.Read, List: cutting.List},

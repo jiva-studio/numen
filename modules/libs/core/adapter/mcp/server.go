@@ -45,10 +45,6 @@ type Core struct {
 	// Read reads a range of any file of the vault.
 	Read file.Read
 
-	// View is the person's window, where there is one. Without it an agent is
-	// served the vault and nothing that puts a note in front of anybody.
-	View port.Window
-
 	// Attending is what the person has open, asked at every call so that an
 	// agent reads the window as it stands. Without it an agent is told nothing
 	// of what is in front of anybody.
@@ -77,9 +73,15 @@ type Notes struct {
 	Replace  note.Replace
 	Move     note.Move
 	Rename   note.Rename
-	Remove   note.Remove
 	Linking  note.EditLinks
 	AddLinks note.AddLinks
+
+	Read       note.Read
+	GetTitles  note.GetTitles
+	RemoveNote note.RemoveNote
+	// FocusNote puts a note in front of the person. Without it the tool that does is
+	// not added.
+	FocusNote *note.FocusNote
 }
 
 // Vaults is the list of vaults this installation holds, and what a person does
@@ -134,6 +136,9 @@ type Sources struct {
 	// at that address. Without both, the tool that imports one is not added.
 	URLs   *source.CreateURL
 	Import *source.ImportURL
+	// FocusPassage opens a document in front of the person at a passage. Without it the
+	// tool that does is not added.
+	FocusPassage *source.FocusPassage
 	// The artifacts list, read and correct what was made from a file. Without
 	// them the tools for those artifacts are not added.
 	GetArtifactList  *source.GetArtifactList

@@ -163,6 +163,8 @@ func makeReviewCore(
 			Queries:       db.Queries(),
 			Neighbourhood: notes.Neighbourhood,
 			Links:         notes.Links,
+			Read:          notes.Read,
+			GetTitles:     notes.GetTitles,
 			Search: cfg.NewSearchOver(db.Passages(), nil,
 				func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
 		},

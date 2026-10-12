@@ -8,9 +8,26 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
+
+// lookAt gives the core a person to put notes and passages in front of.
+func lookAt(core *mcp.Core, view port.Window) {
+	core.Notes.FocusNote = note.NewFocusNote(core.Notes.Queries, view)
+	core.Sources.FocusPassage = source.NewFocusPassage(core.Readers, view)
+}
+
+// lookingCore is a core with nothing but a person to look.
+func lookingCore(view port.Window) mcp.Core {
+	core := mcp.Core{Readers: filesystem.VaultReaders{}}
+	lookAt(&core, view)
+	return core
+}
 
 // window is what an agent puts a place in front of.
 type window struct {
@@ -34,7 +51,7 @@ func newSessionWithWindow(t *testing.T, notes map[string]string) (*sdk.ClientSes
 	t.Helper()
 	_, core := newCoreWithNotes(t, notes)
 	looking := &window{}
-	core.View = looking
+	lookAt(&core, looking)
 	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
 		_ = looking.ShowEdit(ctx, said)
 	})
@@ -88,7 +105,7 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 
 func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
 	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
-	core.View = &window{fails: errors.New("nobody is looking")}
+	lookAt(&core, &window{fails: errors.New("nobody is looking")})
 	session := newSessionOver(t, core)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
