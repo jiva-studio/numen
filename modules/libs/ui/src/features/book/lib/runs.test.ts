@@ -165,3 +165,61 @@ describe('where the runs stand across the columns', () => {
     expect(marksIn(getRunsIn(paper), 0)).toStrictEqual([{ at: 0, x: 120 }])
   })
 })
+
+describe('a place named by nothing', () => {
+  it('stands nowhere even where an element carries an empty id', () => {
+    const paper = paperOf('<p id="" data-offset="3">Первая</p>')
+
+    expect(offsetAt(paper, getRunsIn(paper), '')).toBeUndefined()
+  })
+})
+
+describe('a stretch of the book over a run of several nodes', () => {
+  const several = '<p data-offset="0"><span>Один</span><b>два</b></p>'
+
+  it('begins in the node holding its first byte, counted from the run', () => {
+    const paper = paperOf(several)
+
+    const [range] = rangesOver(getRunsIn(paper), [{ from: 10, to: 12 }])
+
+    expect(range?.toString()).toBe('в')
+  })
+
+  it('closes at the end of the node its last byte ends', () => {
+    const paper = paperOf(several)
+
+    const [range] = rangesOver(getRunsIn(paper), [{ from: 0, to: 8 }])
+
+    expect(range?.endContainer.textContent).toBe('Один')
+    expect(range?.endOffset).toBe(4)
+  })
+
+  it('begins at the end of the node its first byte is the end of', () => {
+    const paper = paperOf(several)
+
+    const [range] = rangesOver(getRunsIn(paper), [{ from: 8, to: 12 }])
+
+    expect(range?.startContainer.textContent).toBe('Один')
+    expect(range?.startOffset).toBe(4)
+  })
+
+  it('runs from inside a later run, counted from where that run begins', () => {
+    const paper = paperOf(TWO)
+
+    const [range] = rangesOver(getRunsIn(paper), [{ from: 10, to: 12 }])
+
+    expect(range?.toString()).toBe('в')
+  })
+
+  it('is left out where it begins past the text of its run and ends in a later one', () => {
+    const paper = paperOf('<p data-offset="0">Один</p><p data-offset="20">два</p>')
+
+    expect(rangesOver(getRunsIn(paper), [{ from: 12, to: 22 }])).toStrictEqual([])
+  })
+
+  it('is left out where it ends before every run it could begin in', () => {
+    const paper = paperOf('<p data-offset="5">Один</p>')
+
+    expect(rangesOver(getRunsIn(paper), [{ from: 0, to: 8 }])).toStrictEqual([])
+  })
+})

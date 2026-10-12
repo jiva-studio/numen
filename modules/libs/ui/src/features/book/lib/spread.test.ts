@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   GAP,
+  columnAt,
+  LARGEST,
+  SMALLEST,
+  clamp,
   NARROWEST,
   columnHeight,
   columnWidth,
@@ -437,16 +441,85 @@ describe('where a turn lands', () => {
     expect(turnTo('next', 0, 3, span, book)).toStrictEqual({ spread: 1 })
     expect(turnTo('back', 2, 3, span, book)).toStrictEqual({ spread: 1 })
     expect(turnTo('first', 1, 3, span, book)).toStrictEqual({ spread: 0 })
+    expect(turnTo('first', 2, 3, span, book)).toStrictEqual({ spread: 0 })
     expect(turnTo('last', 1, 3, span, book)).toStrictEqual({ spread: 2 })
   })
 
   it('asks for the document beside this one, past either end of it', () => {
     expect(turnTo('next', 2, 3, span, book)).toStrictEqual({ offset: 900 })
     expect(turnTo('back', 0, 3, span, book)).toStrictEqual({ offset: 399 })
+    expect(turnTo('back', 1, 3, span, book)).toStrictEqual({ spread: 0 })
+    expect(turnTo('back', 0, 3, span, { from: 399, to: 1400 })).toStrictEqual({ offset: 399 })
   })
 
   it('lands nowhere at either end of the book itself', () => {
     expect(turnTo('next', 2, 3, span, span)).toStrictEqual({})
     expect(turnTo('back', 0, 3, span, span)).toStrictEqual({})
+  })
+})
+
+describe('a reading area holding no column', () => {
+  it('has columns of no width', () => {
+    expect(columnWidth({ along: 500, width: 800, gap: GAP, columns: 0 })).toBe(0)
+  })
+
+  it('comes to no columns and no spreads, however far the text runs', () => {
+    expect(columnsInAll({ along: 500, width: 0, gap: GAP, columns: 2 })).toBe(0)
+    expect(countSpreads({ along: 500, width: 800, gap: GAP, columns: 0 })).toBe(0)
+  })
+})
+
+describe('which spread a place falls in, where the gap fills the column', () => {
+  it('is the first, wherever the place stands', () => {
+    // Each share of the area is 50 wide and the gap takes all of it.
+    const flow = { along: 500, width: 100, gap: GAP, columns: 2 }
+    expect(columnWidth(flow)).toBe(0)
+    expect(spreadAt(flow, 300)).toBe(0)
+  })
+})
+
+describe('how large the text may be set', () => {
+  it('keeps a size inside the bounds it is read between', () => {
+    expect(clamp(1.5, SMALLEST, LARGEST)).toBe(1.5)
+    expect(clamp(0.1, SMALLEST, LARGEST)).toBe(SMALLEST)
+    expect(clamp(9, SMALLEST, LARGEST)).toBe(LARGEST)
+  })
+})
+
+describe('the page count of a document read against its bytes', () => {
+  const flow = { along: 10 * WIDE, width: WIDE, gap: GAP, columns: 2 }
+  const marks: Mark[] = [
+    { at: 100, x: 0 },
+    { at: 200, x: columnWidth(flow) + GAP },
+  ]
+
+  it('says the columns it fills where the document holds no bytes', () => {
+    const empty = { from: 100, to: 100 }
+    expect(pagesOf({ from: 100, to: 5000 }, empty, flow, 0, marks)).toStrictEqual({
+      page: 1,
+      pages: 2,
+    })
+  })
+
+  it('never puts the page in front before the first', () => {
+    const empty = { from: 100, to: 100 }
+    expect(pagesOf({ from: 0, to: 1000 }, empty, flow, -1, marks).page).toBe(1)
+  })
+
+  it('reaches at least the last column of the document, wherever it stands in the book', () => {
+    // 250 bytes to a column: the document begins two columns in, and the book
+    // comes to two, short of the four the document ends at.
+    expect(pagesOf({ from: 0, to: 550 }, { from: 500, to: 1000 }, flow, 0, marks)).toStrictEqual({
+      page: 3,
+      pages: 4,
+    })
+  })
+})
+
+describe('which column a place falls in, in an area nothing has been measured in', () => {
+  it('is the first, wherever the place stands', () => {
+    const flow = { along: 500, width: 0, gap: GAP, columns: 2 }
+    expect(columnAt(flow, 0)).toBe(0)
+    expect(columnAt(flow, 300)).toBe(0)
   })
 })

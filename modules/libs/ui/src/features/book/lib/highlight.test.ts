@@ -2,8 +2,8 @@
  * The marks a book puts into the browser's own highlight registry, and what it
  * takes back out.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { HIGHLIGHT, OTHER_HIGHLIGHT } from './highlight'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from './highlight'
 
 /** The registry a browser that draws ranges keeps, and the ranges it holds. */
 const registry = () => {
@@ -29,12 +29,16 @@ const kept = { book: 'kept' }
 const going = { book: 'going' }
 const staying = { book: 'staying' }
 const only = { book: 'only' }
+const books = [first, second, moving, kept, going, staying, only]
 
-// The ranges a book has put where stand between the asks of one test and the
-// next, so each test reads a registry nothing was put into before it.
 beforeEach(() => {
   registry()
-  vi.resetModules()
+})
+
+// The module keeps what each book put in it; every book is taken back out so
+// the next test reads a registry nothing was put into before it.
+afterEach(() => {
+  for (const book of books) unhighlight(book)
 })
 
 describe('the entries the names name', () => {
@@ -45,72 +49,87 @@ describe('the entries the names name', () => {
 })
 
 describe('the runs of one book in one entry', () => {
-  it('stand in the registry under the entry name', async () => {
-    const { highlight: fresh } = await import('./highlight')
+  it('stand in the registry under the entry name', () => {
     const held = registry()
 
-    fresh(HIGHLIGHT, first, [range()])
+    highlight(HIGHLIGHT, first, [range()])
 
     expect(held.get(HIGHLIGHT)).toBeInstanceOf(Highlight)
   })
 
-  it('are the ranges of each book beside the ranges of the others', async () => {
-    const { highlight: fresh } = await import('./highlight')
+  it('are the ranges of each book beside the ranges of the others', () => {
     const held = registry()
     const one = range()
     const other = range()
 
-    fresh(HIGHLIGHT, first, [one])
-    fresh(HIGHLIGHT, second, [other])
+    highlight(HIGHLIGHT, first, [one])
+    highlight(HIGHLIGHT, second, [other])
 
     const drawn = held.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
     expect(drawn.ranges).toStrictEqual([one, other])
   })
 
-  it('replace what the same book had there, and leave the rest', async () => {
-    const { highlight: fresh } = await import('./highlight')
+  it('replace what the same book had there, and leave the rest', () => {
     const held = registry()
     const standing = range()
     const freshRange = range()
-    fresh(HIGHLIGHT, kept, [standing])
-    fresh(HIGHLIGHT, moving, [range()])
+    highlight(HIGHLIGHT, kept, [standing])
+    highlight(HIGHLIGHT, moving, [range()])
 
-    fresh(HIGHLIGHT, moving, [freshRange])
+    highlight(HIGHLIGHT, moving, [freshRange])
 
     const drawn = held.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
     expect(drawn.ranges).toStrictEqual([standing, freshRange])
   })
 
-  it('are taken out of the registry where no book holds any', async () => {
-    const { highlight: fresh } = await import('./highlight')
+  it('are taken out of the registry where no book holds any', () => {
     const held = registry()
 
-    fresh(HIGHLIGHT, only, [range()])
-    fresh(HIGHLIGHT, only, [])
+    highlight(HIGHLIGHT, only, [range()])
+    highlight(HIGHLIGHT, only, [])
 
     expect(held.has(HIGHLIGHT)).toBe(false)
   })
 })
 
 describe('what a book took with it when it went', () => {
-  it('is taken back out of every entry, and the rest is left standing', async () => {
-    const { highlight: fresh, unhighlight: taken } = await import('./highlight')
+  it('is taken back out of every entry, and the rest is left standing', () => {
     const held = registry()
-    fresh(HIGHLIGHT, going, [range()])
-    fresh(OTHER_HIGHLIGHT, going, [range()])
-    fresh(HIGHLIGHT, staying, [range()])
+    highlight(HIGHLIGHT, going, [range()])
+    highlight(OTHER_HIGHLIGHT, going, [range()])
+    highlight(HIGHLIGHT, staying, [range()])
 
-    taken(going)
+    unhighlight(going)
 
     const drawn = held.get(HIGHLIGHT) as unknown as { ranges: readonly unknown[] }
     expect(drawn.ranges).toHaveLength(1)
     expect(held.has(OTHER_HIGHLIGHT)).toBe(false)
   })
 
-  it('is nothing, where the book had put nothing anywhere', async () => {
-    const { unhighlight: taken } = await import('./highlight')
-    registry()
+  it('is nothing, where the book had put nothing anywhere', () => {
+    expect(() => unhighlight({ book: 'never was' })).not.toThrow()
+  })
+})
 
-    expect(() => taken({ book: 'never was' })).not.toThrow()
+describe('a browser that cannot draw a range', () => {
+  it('is left alone where it has no CSS at all', () => {
+    Reflect.deleteProperty(globalThis, 'CSS')
+
+    expect(() => highlight(HIGHLIGHT, only, [range()])).not.toThrow()
+  })
+
+  it('is left alone where its CSS has no highlight registry', () => {
+    registry()
+    globalThis.CSS = {} as unknown as typeof CSS
+
+    expect(() => highlight(HIGHLIGHT, only, [range()])).not.toThrow()
+  })
+
+  it('is left alone where it has no Highlight to make', () => {
+    const held = registry()
+    Reflect.deleteProperty(globalThis, 'Highlight')
+
+    expect(() => highlight(HIGHLIGHT, only, [range()])).not.toThrow()
+    expect(held.size).toBe(0)
   })
 })
