@@ -10,6 +10,10 @@ import (
 // called where it is built. An application is handed the set and names it here.
 type Cards = cards.Scenarios
 
+// MaxDecksPerRename is the most decks a vault may hold and still have a field
+// renamed through an agent's tools.
+const MaxDecksPerRename = cards.MaxDecksPerRename
+
 // Cards builds everything that acts on the two notes a flashcard is made of,
 // against this installation's vault readers and writers.
 //

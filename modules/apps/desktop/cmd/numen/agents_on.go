@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
 // This file is the only one that knows an agent can reach the vault. Built with
@@ -147,7 +146,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			List:        cutting.List,
 			Write:       cutting.Write,
 			Create:      cutting.Create,
-			RenameField: cutting.Rename.WithMaxDecksPerRename(cards.MaxDecksPerRename),
+			RenameField: cutting.Rename.WithMaxDecksPerRename(container.MaxDecksPerRename),
 		},
 
 		Notes: mcp.Notes{
