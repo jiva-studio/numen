@@ -3,10 +3,19 @@ import { describe, expect, it, vi } from 'vitest'
 import { useDrag, type DragDeps } from './drag'
 import type { InsertionPoint } from '../lib/order'
 
-const dragEvent = (): { readonly press: DragEvent; readonly prevented: () => number } => {
+const dragEvent = (): {
+  readonly press: DragEvent
+  readonly prevented: () => number
+  readonly data: () => unknown[][]
+} => {
   const preventDefault = vi.fn<() => void>()
-  const press = { preventDefault, dataTransfer: null } as unknown as DragEvent
-  return { press, prevented: () => preventDefault.mock.calls.length }
+  const setData = vi.fn<(format: string, data: string) => void>()
+  const press = { preventDefault, dataTransfer: { setData } } as unknown as DragEvent
+  return {
+    press,
+    prevented: () => preventDefault.mock.calls.length,
+    data: () => setData.mock.calls,
+  }
 }
 
 const keyEvent = (): { readonly press: KeyboardEvent; readonly prevented: () => number } => {
@@ -32,6 +41,13 @@ describe('useDrag, the pointer', () => {
     expect(drag.dragged.value).toBeNull()
     drag.lift('a', dragEvent().press)
     expect(drag.dragged.value).toBe('a')
+  })
+
+  it('hands the browser the name of what was lifted as plain text', () => {
+    const { drag } = setup()
+    const lifted = dragEvent()
+    drag.lift('a', lifted.press)
+    expect(lifted.data()).toEqual([['text/plain', 'a']])
   })
 
   it('answers a hover over a place that takes it, and says the drop may follow', () => {
