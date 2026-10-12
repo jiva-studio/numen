@@ -3,7 +3,16 @@
  * The curve itself, and the knob dragged along it. It is the slider a person
  * points at, so it takes the pointer and the keys.
  */
-import { FOOT, GRIDLINES, HIGH, LEFT, RIGHT, TOP, WIDE, yOfGridline } from '../../../../lib/plot'
+import {
+  PLOT_BOTTOM,
+  GRIDLINES,
+  PLOT_HEIGHT,
+  PLOT_LEFT,
+  PLOT_RIGHT,
+  PLOT_TOP,
+  PLOT_WIDTH,
+  yOfGridline,
+} from '../../../../lib/plot'
 import { WORDS as words } from '../../../../words'
 import type { CurveSliderState } from '../../useCurveSlider'
 import '../../curve-slider.css'
@@ -49,7 +58,7 @@ const {
     data-control="picture"
     role="slider"
     tabindex="0"
-    :viewBox="`0 0 ${WIDE} ${HIGH}`"
+    :viewBox="`0 0 ${PLOT_WIDTH} ${PLOT_HEIGHT}`"
     :aria-label="words.knob"
     :aria-valuemin="least"
     :aria-valuemax="most"
@@ -66,8 +75,8 @@ const {
       v-for="share in GRIDLINES"
       :key="share"
       class="curve-slider__gridline"
-      :x1="LEFT"
-      :x2="RIGHT"
+      :x1="PLOT_LEFT"
+      :x2="PLOT_RIGHT"
       :y1="yOfGridline(share)"
       :y2="yOfGridline(share)"
     />
@@ -75,18 +84,18 @@ const {
     <line
       class="curve-slider__rule"
       data-control="rule"
-      :x1="LEFT"
-      :x2="LEFT"
-      :y1="TOP"
-      :y2="FOOT"
+      :x1="PLOT_LEFT"
+      :x2="PLOT_LEFT"
+      :y1="PLOT_TOP"
+      :y2="PLOT_BOTTOM"
     />
     <line
       class="curve-slider__rule"
       data-control="rule"
-      :x1="LEFT"
-      :x2="RIGHT"
-      :y1="FOOT"
-      :y2="FOOT"
+      :x1="PLOT_LEFT"
+      :x2="PLOT_RIGHT"
+      :y1="PLOT_BOTTOM"
+      :y2="PLOT_BOTTOM"
     />
 
     <path class="curve-slider__line" data-control="line" :d="line" />
@@ -98,8 +107,8 @@ const {
       data-control="drop"
       :x1="knob.x"
       :x2="knob.x"
-      :y1="isDated ? TOP : knob.y"
-      :y2="FOOT"
+      :y1="isDated ? PLOT_TOP : knob.y"
+      :y2="PLOT_BOTTOM"
     />
 
     <circle

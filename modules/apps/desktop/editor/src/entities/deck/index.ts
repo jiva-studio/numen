@@ -26,7 +26,7 @@ export {
   LOADS,
   loadOn,
   NO_BOUNDS,
-  NOWHERE,
+  NO_PLACE,
   RULES,
   STOP_REASONS,
   setLoadOn,

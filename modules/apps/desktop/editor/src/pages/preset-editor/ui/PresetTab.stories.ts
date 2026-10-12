@@ -17,7 +17,7 @@ import {
   type Settings,
   type SettingsBounds,
 } from '../types'
-import { BACKLOG_HIGH, HIGH, WIDE } from '../lib/plot'
+import { BACKLOG_PLOT_HEIGHT, PLOT_HEIGHT, PLOT_WIDTH } from '../lib/plot'
 import type { PresetTabState } from '../types'
 import { WORDS as words } from '../words'
 
@@ -98,7 +98,7 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     problems: shallowRef([]),
     stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
-    hasChanged: ref(false),
+    hasExternalChange: ref(false),
     reload: fn(),
     chooseGoal: fn(),
     moveSlider: (at: number) => {
@@ -346,7 +346,7 @@ export const TheBacklogKeepsItsRoom: Story = {
     expect(drawn.width).toBeGreaterThan(0)
     expect(empty.width).toBeCloseTo(drawn.width, 0)
     expect(empty.height).toBeCloseTo(drawn.height, 0)
-    expect(drawn.width / drawn.height).toBeCloseTo(WIDE / BACKLOG_HIGH, 1)
+    expect(drawn.width / drawn.height).toBeCloseTo(PLOT_WIDTH / BACKLOG_PLOT_HEIGHT, 1)
   },
 }
 
@@ -367,7 +367,7 @@ export const WaitingForAnAnswer: Story = {
     // picture's own proportion, so nothing below it moves when the line lands.
     const empty = roomsIn(canvasElement)[0]!.getBoundingClientRect()
     expect(empty.width).toBeGreaterThan(0)
-    expect(empty.width / empty.height).toBeCloseTo(WIDE / HIGH, 1)
+    expect(empty.width / empty.height).toBeCloseTo(PLOT_WIDTH / PLOT_HEIGHT, 1)
 
     // The settings under it are still there, and still on their own columns.
     const room = canvas.getByRole('region', { name: words.settings }).getBoundingClientRect()

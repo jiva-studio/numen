@@ -1,15 +1,15 @@
 import { computed, shallowRef, watch, ref } from 'vue'
 import type { Curve, PresetCounts } from '../../types'
 import { clearBacklog, valueAt } from '../../lib/curve'
-import { calloutOf, heightsOf, labelsOf, readingAt, type Mark } from '../../lib/label'
+import { calloutOf, heightsOf, labelsOf, getKnobValueStyle, type Mark } from '../../lib/label'
 import {
   extentOf,
   lineOf,
-  placeUnder,
+  getPlaceAtX,
   positionsOf,
-  runAt,
-  shortOf,
-  walkGrid,
+  getBacklogRun,
+  getShortPath,
+  getKeyPlace,
   type Extent,
 } from '../../lib/plot'
 import { WORDS as words } from '../../words'
@@ -48,7 +48,7 @@ export function useCurveSlider(
   const extent = computed<Extent>(() => scale.value?.extent ?? extentOf(props.curve))
   const positions = computed(() => positionsOf(props.curve, extent.value))
   const line = computed(() => lineOf(positions.value))
-  const short = computed(() => shortOf(props.curve, positions.value))
+  const short = computed(() => getShortPath(props.curve, positions.value))
 
   const places = computed(() => props.curve.grid.length)
   const knob = computed(() => positions.value[props.place] ?? null)
@@ -72,7 +72,7 @@ export function useCurveSlider(
     const at = knob.value
     const point = props.curve.at[props.place]
     if (!isHonest.value || !at || !point) return null
-    const backlog = runAt(props.curve, props.place)
+    const backlog = getBacklogRun(props.curve, props.place)
     const lines = words.buys(props.curve.goal, {
       value: held.value,
       reviews: point.reviews,
@@ -97,7 +97,7 @@ export function useCurveSlider(
     ),
   )
 
-  const reading = computed(() => readingAt(knob.value))
+  const reading = computed(() => getKnobValueStyle(knob.value))
   const atKnob = computed(() => words.widthAt(props.curve.goal, held.value))
 
   const counts = computed(() => {
@@ -127,7 +127,7 @@ export function useCurveSlider(
   function getPlaceUnder(event: PointerEvent): number {
     const at = picture.value?.getScreenCTM?.()
     if (!at || at.a === 0) return props.place
-    return placeUnder((event.clientX - at.e) / at.a, places.value)
+    return getPlaceAtX((event.clientX - at.e) / at.a, places.value)
   }
 
   function onPointerDown(event: PointerEvent): void {
@@ -150,14 +150,14 @@ export function useCurveSlider(
   }
 
   function onKeyDown(event: KeyboardEvent): void {
-    const step = walkGrid(event.key, props.place, places.value)
+    const step = getKeyPlace(event.key, props.place, places.value)
     if (step === null) return
     event.preventDefault()
     emit('move', step)
   }
 
   function onKeyUp(event: KeyboardEvent): void {
-    if (walkGrid(event.key, props.place, places.value) === null) return
+    if (getKeyPlace(event.key, props.place, places.value) === null) return
     emit('commit')
   }
 

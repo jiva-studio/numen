@@ -3,7 +3,7 @@
  * they come back.
  */
 import { asFailure, asValue } from '@numen/wire'
-import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
+import { parseFingerprint, errorIn, staleIn, formatFingerprint } from '@/shared/answers'
 import { cardsService } from '@/shared/clients'
 import type { Cards, DeckService, StencilService } from '../types'
 import {
@@ -28,7 +28,7 @@ export const deckService: DeckService = {
     const bound = Number(answer.bound)
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code || !answer.deck) return asFailure({ code: code ?? 'notADeck', bound })
-    return asValue({ deck: deserializeDeck(answer.deck), at: stamp(answer.at) ?? '' })
+    return asValue({ deck: deserializeDeck(answer.deck), at: formatFingerprint(answer.at) ?? '' })
   },
   writeDeck: async (path, deck, seen) => {
     const answer = await cardsService.writeDeck({
@@ -40,11 +40,11 @@ export const deckService: DeckService = {
         preamble: section.preamble,
       })),
       tail: deck.tail,
-      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+      ...(seen === null ? {} : { seen: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure({ code, bound: Number(answer.bound) })
-    return asValue({ at: stamp(answer.at) ?? '' })
+    return asValue({ at: formatFingerprint(answer.at) ?? '' })
   },
 }
 
@@ -64,7 +64,7 @@ export const stencilService: StencilService = {
       path,
       from,
       to,
-      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+      ...(seen === null ? {} : { seen: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure(code)
@@ -75,14 +75,17 @@ export const stencilService: StencilService = {
         path: one.path,
         text: one.problem?.text ?? '',
       })),
-      at: stamp(answer.at) ?? '',
+      at: formatFingerprint(answer.at) ?? '',
     })
   },
   readStencil: async (path) => {
     const answer = await cardsService.readStencil({ path })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code || !answer.stencil) return asFailure(code ?? 'notAStencil')
-    return asValue({ stencil: deserializeStencil(answer.stencil), at: stamp(answer.at) ?? '' })
+    return asValue({
+      stencil: deserializeStencil(answer.stencil),
+      at: formatFingerprint(answer.at) ?? '',
+    })
   },
   writeStencil: async (path, fields, stencil, seen) => {
     const answer = await cardsService.writeStencil({
@@ -96,11 +99,11 @@ export const stencilService: StencilService = {
         back: face.back,
       })),
       tail: stencil.tail,
-      ...(seen === null ? {} : { seen: fingerprint(seen) }),
+      ...(seen === null ? {} : { seen: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure(code)
-    return asValue({ at: stamp(answer.at) ?? '' })
+    return asValue({ at: formatFingerprint(answer.at) ?? '' })
   },
 }
 

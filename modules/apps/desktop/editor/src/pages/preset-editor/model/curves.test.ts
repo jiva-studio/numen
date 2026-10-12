@@ -4,9 +4,9 @@
  * answer to a question nobody is waiting for is not drawn.
  */
 import { describe, expect, it } from 'vitest'
-import { DEFAULTS, NOWHERE, type Curve, type Presets, type Settings } from '../types'
-import { approximate } from '../lib/sketch'
-import { shapeOf } from '../lib/fields'
+import { DEFAULTS, NO_PLACE, type Curve, type Presets, type Settings } from '../types'
+import { estimateCurve } from '../lib/sketch'
+import { getShapeKey } from '../lib/fields'
 import { WORDS as words } from '../words'
 import {
   applyCurveAnswer,
@@ -37,7 +37,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   days: [],
   at: [],
   now: { at: 1, value: 10, day: '' },
-  suggested: NOWHERE,
+  suggested: NO_PLACE,
   decks: 2,
   cards: 40,
   overdue: 3,
@@ -130,7 +130,7 @@ describe('asking for a curve', () => {
     state.curve.value = curve()
     const gate = createGate()
     const { core } = createCore(gate.answered)
-    const sketch = approximate(DEFAULTS, today, BOUNDS)
+    const sketch = estimateCurve(DEFAULTS, today, BOUNDS)
 
     const drawn = updateCurves(
       state,
@@ -167,7 +167,7 @@ describe('asking for a curve', () => {
     )
     await nap()
 
-    expect(state.curve.value).toStrictEqual(approximate(DEFAULTS, today, BOUNDS))
+    expect(state.curve.value).toStrictEqual(estimateCurve(DEFAULTS, today, BOUNDS))
     gate.open(curve())
     await drawn
   })
@@ -199,7 +199,7 @@ describe('asking for a curve', () => {
   it('draws an answer already held without asking again', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const held = curve({ now: { at: 3, value: 30, day: '' } })
-    state.answers.set(shapeOf(DEFAULTS), held)
+    state.answers.set(getShapeKey(DEFAULTS), held)
     const { core, asked } = createCore()
 
     await updateCurves(
@@ -256,7 +256,7 @@ describe('an answer nobody is waiting for any more', () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const held = curve({ cards: 99 })
     const other = settings({ minutesADay: 30 })
-    state.answers.set(shapeOf(other), held)
+    state.answers.set(getShapeKey(other), held)
     const gate = createGate()
     const { core } = createCore(gate.answered)
     let now = DEFAULTS
@@ -289,7 +289,7 @@ describe('an answer nobody is waiting for any more', () => {
   it('says nothing about a question that failed', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const other = settings({ minutesADay: 30 })
-    state.answers.set(shapeOf(other), curve())
+    state.answers.set(getShapeKey(other), curve())
     const gate = createGate()
     const { core } = createCore(gate.answered)
     const said: string[] = []
