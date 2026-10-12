@@ -12,6 +12,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
@@ -110,11 +111,12 @@ func onTheList(t *testing.T) *installation {
 		Showing: mcp.ShowOneVault(f.first, f.first.Path),
 		Readers: filesystem.VaultReaders{},
 		Vaults: mcp.Vaults{
-			Registry:     registry,
-			FolderDialog: f.dialog,
-			Add:          &adding,
-			Rename:       &renaming,
-			Unregister:   &forgetting,
+			KnownVaults: container.Config{}.KnownVaults(registry),
+			GetVault:    container.Config{}.GetVault(registry),
+			PickFolder:  container.Config{}.PickFolder(f.dialog),
+			Add:         &adding,
+			Rename:      &renaming,
+			Unregister:  &forgetting,
 			Opens: func(_ context.Context, v domain.Vault) error {
 				f.swapped <- v
 				return nil
@@ -480,14 +482,14 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 		tool    string
 		without func(*mcp.Core)
 	}{
-		{"vault_list", func(c *mcp.Core) { c.Vaults.Registry = nil }},
+		{"vault_list", func(c *mcp.Core) { c.Vaults.KnownVaults = nil }},
 		{"vault_add", func(c *mcp.Core) { c.Vaults.Add = nil }},
 		{"vault_rename", func(c *mcp.Core) { c.Vaults.Rename = nil }},
 		{"vault_remove", func(c *mcp.Core) { c.Vaults.Unregister = nil }},
 		{"vault_open", func(c *mcp.Core) { c.Vaults.Opens = nil }},
-		{"vault_rename", func(c *mcp.Core) { c.Vaults.Registry = nil }},
-		{"vault_remove", func(c *mcp.Core) { c.Vaults.Registry = nil }},
-		{"vault_open", func(c *mcp.Core) { c.Vaults.Registry = nil }},
+		{"vault_rename", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
+		{"vault_remove", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
+		{"vault_open", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
 	} {
 		t.Run(one.tool, func(t *testing.T) {
 			f := onTheList(t)
@@ -509,7 +511,7 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 func TestAddingWithNoPathAndNoFolderDialogSaysSo(t *testing.T) {
 	f := onTheList(t)
 	core := f.core
-	core.Vaults.FolderDialog = nil
+	core.Vaults.PickFolder = container.Config{}.PickFolder(nil)
 	session := newSessionOver(t, core)
 
 	if !hasTool(t, session, "vault_add") {

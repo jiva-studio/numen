@@ -9,7 +9,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -47,7 +46,7 @@ func addVaultsWritingTools(server *sdk.Server, core Core) {
 }
 
 func addVaultList(server *sdk.Server, core Core) {
-	if core.Vaults.Registry == nil {
+	if core.Vaults.KnownVaults == nil {
 		return
 	}
 
@@ -64,7 +63,7 @@ func addVaultList(server *sdk.Server, core Core) {
 		type out = struct {
 			Vaults []Vault `json:"vaults"`
 		}
-		held, err := vaults.NewKnownVaults(core.Vaults.Registry, core.Readers).
+		held, err := core.Vaults.KnownVaults.
 			Execute(core.getCurrentVault().Vault.ID)
 		if err != nil {
 			return nil, out{}, err
@@ -122,11 +121,12 @@ type vaultAddOutput struct {
 }
 
 func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput, error) {
-	root, chose, err := getVaultRoot(ctx, core, in.Path)
+	picked, err := core.Vaults.PickFolder.Execute(ctx, in.Path)
+	root := picked.Path
 	if err != nil {
 		return vaultAddOutput{}, err
 	}
-	if !chose {
+	if !picked.IsChosen {
 		return vaultAddOutput{Why: "the person closed the picker and chose no folder"}, nil
 	}
 	if !filepath.IsAbs(root) {
@@ -143,20 +143,8 @@ func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput,
 	return vaultAddOutput{IsAdded: true, ID: string(added.ID), Name: added.Name, Folder: added.Path}, nil
 }
 
-// getVaultRoot returns the folder to add: the path in the call, or the folder the person
-// picks when the call has none. It reports false when the person picks nothing.
-func getVaultRoot(ctx context.Context, core Core, path string) (string, bool, error) {
-	if path != "" {
-		return path, true, nil
-	}
-	if core.Vaults.FolderDialog == nil {
-		return "", false, errors.New("there is nobody here to pick a folder: name the one to add")
-	}
-	return core.Vaults.FolderDialog.ChooseFolder(ctx, "Choose a folder for a vault", "")
-}
-
 func addVaultRename(server *sdk.Server, core Core) {
-	if core.Vaults.Registry == nil || core.Vaults.Rename == nil {
+	if core.Vaults.GetVault == nil || core.Vaults.Rename == nil {
 		return
 	}
 
@@ -179,7 +167,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 			Name   string `json:"name"`
 			Folder string `json:"folder"`
 		}
-		v, err := core.Vaults.found(in.Vault)
+		v, err := core.Vaults.GetVault.Execute(in.Vault, "")
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -192,7 +180,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 }
 
 func addVaultForget(server *sdk.Server, core Core) {
-	if core.Vaults.Registry == nil || core.Vaults.Unregister == nil {
+	if core.Vaults.GetVault == nil || core.Vaults.Unregister == nil {
 		return
 	}
 
@@ -215,14 +203,12 @@ func addVaultForget(server *sdk.Server, core Core) {
 			IsForgotten bool   `json:"forgotten"`
 			Folder      string `json:"folder" jsonschema:"where the folder still is; vault_add on it brings the vault back"`
 		}
-		v, err := core.Vaults.found(in.Vault)
+		v, err := core.Vaults.GetVault.Execute(in.Vault, core.getCurrentVault().Vault.ID)
+		if errors.Is(err, vaults.ErrShowing) {
+			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
+		}
 		if err != nil {
 			return nil, out{}, err
-		}
-		// The use cases are not told which vault is in front of the person, and
-		// this is.
-		if v.ID == core.getCurrentVault().Vault.ID {
-			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
 		}
 		if err := core.Vaults.Unregister.Execute(ctx, v); err != nil {
 			return nil, out{}, err
@@ -232,7 +218,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 }
 
 func addVaultOpen(server *sdk.Server, core Core) {
-	if core.Vaults.Registry == nil || core.Vaults.Opens == nil {
+	if core.Vaults.GetVault == nil || core.Vaults.Opens == nil {
 		return
 	}
 
@@ -259,12 +245,12 @@ func addVaultOpen(server *sdk.Server, core Core) {
 			IsOpening bool   `json:"opening"`
 			Status    string `json:"status" jsonschema:"what is happening now, in words to say back to the person"`
 		}
-		v, err := core.Vaults.found(in.Vault)
+		v, err := core.Vaults.GetVault.Execute(in.Vault, core.getCurrentVault().Vault.ID)
+		if errors.Is(err, vaults.ErrShowing) {
+			return nil, out{}, fmt.Errorf("%s is the vault the window is already showing", v.Name)
+		}
 		if err != nil {
 			return nil, out{}, err
-		}
-		if v.ID == core.getCurrentVault().Vault.ID {
-			return nil, out{}, fmt.Errorf("%s is the vault the window is already showing", v.Name)
 		}
 
 		// The swap stops the endpoint this call arrived on, and that waits for
@@ -281,14 +267,6 @@ func addVaultOpen(server *sdk.Server, core Core) {
 				v.Name),
 		}, nil
 	})
-}
-
-// found is the vault a name, a folder or an identity reaches on the list.
-func (v Vaults) found(nameOrPath string) (domain.Vault, error) {
-	if nameOrPath == "" {
-		return domain.Vault{}, errors.New("name the vault, as vault_list gives it")
-	}
-	return vaults.NewFind(v.Registry).Execute(nameOrPath)
 }
 
 // newVault is one vault as an agent is told about it.
