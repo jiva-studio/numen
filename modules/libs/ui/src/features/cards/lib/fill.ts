@@ -25,7 +25,7 @@ export function slotsIn(template: string): readonly Slot[] {
   const found: Slot[] = []
   for (const match of template.matchAll(SLOT)) {
     found.push({
-      field: match[1] ?? '',
+      field: match[0].slice(2, -2),
       from: match.index,
       to: match.index + match[0].length,
     })

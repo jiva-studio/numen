@@ -30,8 +30,9 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
   /** `placeAt` is the offset a place named inside the drawn document stands at. */
   const follow = (press: MouseEvent, placeAt: (fragment: string) => number | undefined) => {
     const link = (press.target as Element | null)?.closest?.('a[href]')
-    const href = link?.getAttribute('href')
-    if (href === null || href === undefined) return
+    if (!link) return
+    // `a[href]` matches only anchors that carry the attribute.
+    const href = link.getAttribute('href') as string
 
     press.preventDefault()
     if (isOutwardHref(href)) return

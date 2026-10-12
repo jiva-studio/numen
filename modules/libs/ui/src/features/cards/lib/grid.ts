@@ -97,7 +97,7 @@ export function getGrid(
   stencils: readonly Stencil[],
   dragCard: string | null,
 ): Grid {
-  const sectioned = new Set(sections.map((section) => section.id))
+  const sectioned = new Set<string | null>(sections.map((section) => section.id))
   const tiles = cards.map((card) => {
     const cut = stencils.find((each) => each.name === card.stencil)
     const fields = getDeclaredFields(cut?.fields ?? [])
@@ -125,7 +125,7 @@ export function getGrid(
 
     return {
       id: card.id,
-      section: card.section !== null && sectioned.has(card.section) ? card.section : null,
+      section: sectioned.has(card.section) ? card.section : null,
       stencil: card.stencil,
       filled: counted.map((each) => ({
         ...each,
@@ -184,6 +184,5 @@ export const isMoved = (runs: readonly Run[], dragCard: string, at: InsertionPoi
   if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragCard
 
   const run = getRunEnd(at)
-  if (run !== null) return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragCard
-  return true
+  return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragCard
 }

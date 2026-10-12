@@ -36,9 +36,9 @@ interface Frame {
 }
 
 const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[] => {
-  const root: Frame = { tag: '', attrs: {}, children: [] }
-  const stack: Frame[] = [root]
-  const top = () => stack[stack.length - 1]!
+  const root: VNode[] = []
+  const stack: Frame[] = []
+  const top = (): (VNode | string)[] => stack.at(-1)?.children ?? root
   let placed = 0
 
   for (const token of tokens) {
@@ -51,22 +51,14 @@ const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[
       continue
     }
     if (token.nesting === -1) {
-      const done = stack.pop()
-      if (!done) continue
-      top().children.push(h(done.tag, done.attrs, done.children))
+      const done = stack.pop()!
+      top().push(h(done.tag, done.attrs, done.children))
       continue
     }
 
-    top().children.push(...block(token, deadAddresses, () => placed++))
+    top().push(...block(token, deadAddresses, () => placed++))
   }
-
-  // A stream stops mid-sentence, so elements are left open. They are closed
-  // here in the order they were opened.
-  while (stack.length > 1) {
-    const done = stack.pop()!
-    top().children.push(h(done.tag, done.attrs, done.children))
-  }
-  return root.children.filter((child): child is VNode => typeof child !== 'string')
+  return root
 }
 
 /** What a block token stands for, once it has opened and closed nothing. */
@@ -78,15 +70,11 @@ const block = (
   switch (token.type) {
     case 'inline':
       return inline(token.children ?? [], deadAddresses, next)
-    case 'fence':
-    case 'code_block':
-      return [h('pre', attrs(token), [h('code', token.content)])]
     case 'hr':
       return [h('hr')]
-    case 'html_block':
-      return [token.content]
     default:
-      return token.content ? [token.content] : []
+      // A fence or a code block.
+      return [h('pre', attrs(token), [h('code', token.content)])]
   }
 }
 
@@ -100,9 +88,9 @@ const inline = (
   deadAddresses: BrokenAddresses,
   next: () => number,
 ): (VNode | string)[] => {
-  const root: Frame = { tag: '', attrs: {}, children: [] }
-  const stack: Frame[] = [root]
-  const top = () => stack[stack.length - 1]!
+  const root: (VNode | string)[] = []
+  const stack: Frame[] = []
+  const top = (): (VNode | string)[] => stack.at(-1)?.children ?? root
 
   for (const token of tokens) {
     if (token.nesting === 1) {
@@ -110,20 +98,14 @@ const inline = (
       continue
     }
     if (token.nesting === -1) {
-      const done = stack.pop()
-      if (!done) continue
-      top().children.push(h(done.tag, done.attrs, done.children))
+      const done = stack.pop()!
+      top().push(h(done.tag, done.attrs, done.children))
       continue
     }
 
-    top().children.push(...mark(token, next))
+    top().push(...mark(token, next))
   }
-
-  while (stack.length > 1) {
-    const done = stack.pop()!
-    top().children.push(h(done.tag, done.attrs, done.children))
-  }
-  return root.children
+  return root
 }
 
 /** What an inline token stands for, once it has opened and closed nothing. */
@@ -137,12 +119,9 @@ const mark = (token: Token, next: () => number): (VNode | string)[] => {
       return [' ']
     case 'hardbreak':
       return [h('br')]
-    case 'image':
-      return [h('img', { ...attrs(token), alt: getPlainText(token.children ?? []) })]
-    case 'html_inline':
-      return [token.content]
     default:
-      return token.content ? [token.content] : []
+      // An image.
+      return [h('img', { ...attrs(token), alt: getPlainText(token.children ?? []) })]
   }
 }
 

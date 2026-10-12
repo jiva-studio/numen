@@ -46,7 +46,7 @@ const difference = (was: Text, now: Text): ChangeSpec => {
   let head = 0
   while (head < most && before.charCodeAt(head) === after.charCodeAt(head)) head += 1
   // A pair standing for one character is not cut between its halves.
-  if (head > 0 && lone(before.charCodeAt(head - 1))) head -= 1
+  if (lone(before.charCodeAt(head - 1))) head -= 1
 
   let tail = 0
   while (
@@ -55,7 +55,7 @@ const difference = (was: Text, now: Text): ChangeSpec => {
   ) {
     tail += 1
   }
-  if (tail > 0 && isTrailing(before.charCodeAt(before.length - tail))) tail -= 1
+  if (isTrailing(before.charCodeAt(before.length - tail))) tail -= 1
 
   return {
     from: head,

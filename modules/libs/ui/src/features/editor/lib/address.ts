@@ -62,7 +62,6 @@ export const follow = EditorView.domEventHandlers({
     const address = addressAt(view.state, at)
     if (address === null) return false
     view.state.facet(addressOpener)(address)
-    event.preventDefault()
     return true
   },
 })

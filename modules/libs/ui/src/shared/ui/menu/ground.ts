@@ -35,26 +35,18 @@ export function useMenuGround(
     dismiss()
   }
 
-  /** What the open menu installed on the window, if anything. */
-  let detach: (() => void) | null = null
-
   const listen = (): void => {
-    if (detach) return
     window.addEventListener('pointerdown', dismissOutside, true)
     window.addEventListener('scroll', dismissOutside, true)
     window.addEventListener('resize', dismissOutside)
     window.addEventListener('keydown', onWindowKey)
-    detach = () => {
-      window.removeEventListener('pointerdown', dismissOutside, true)
-      window.removeEventListener('scroll', dismissOutside, true)
-      window.removeEventListener('resize', dismissOutside)
-      window.removeEventListener('keydown', onWindowKey)
-    }
   }
 
   const release = (): void => {
-    detach?.()
-    detach = null
+    window.removeEventListener('pointerdown', dismissOutside, true)
+    window.removeEventListener('scroll', dismissOutside, true)
+    window.removeEventListener('resize', dismissOutside)
+    window.removeEventListener('keydown', onWindowKey)
   }
 
   // A menu can go while it is still open, and what it left on the window with it.

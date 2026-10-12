@@ -145,7 +145,7 @@ export function pagesOf(
   const here = countFilledColumns(marks, flow)
   const first = spread * flow.columns + 1
   const bytes = document.to - document.from
-  if (here <= 0 || bytes <= 0) return { page: Math.max(first, 1), pages: Math.max(here, 1) }
+  if (bytes <= 0) return { page: Math.max(first, 1), pages: Math.max(here, 1) }
 
   const perColumn = bytes / here
   const before = Math.round((document.from - book.from) / perColumn)

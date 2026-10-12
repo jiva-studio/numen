@@ -56,7 +56,6 @@ class Grid extends WidgetType {
   }
 
   private paint(frame: HTMLElement) {
-    const [head, ...body] = rowsOf(this.table)
     const table = document.createElement('table')
 
     const draw = (row: Row, index: number, tag: 'th' | 'td') => {
@@ -76,9 +75,11 @@ class Grid extends WidgetType {
     }
 
     const top = document.createElement('thead')
-    top.appendChild(draw(head ?? [], 0, 'th'))
     const rest = document.createElement('tbody')
-    body.forEach((row, index) => rest.appendChild(draw(row, index + 1, 'td')))
+    rowsOf(this.table).forEach((row, index) => {
+      if (index === 0) top.appendChild(draw(row, index, 'th'))
+      else rest.appendChild(draw(row, index, 'td'))
+    })
     table.append(top, rest)
 
     const grown = this.isWritable

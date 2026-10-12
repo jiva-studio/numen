@@ -29,15 +29,10 @@ export interface Table {
   readonly body: readonly Row[]
 }
 
-const ALIGNMENT = /^:?-+:?$/
-
 const alignmentOf = (text: string): Align[] => {
-  const parts = text.split('|')
-  if (parts[0]?.trim() === '') parts.shift()
-  if (parts[parts.length - 1]?.trim() === '') parts.pop()
+  const parts = text.trim().replace(/^\|/, '').replace(/\|$/, '').split('|')
   return parts.map((part) => {
     const written = part.trim()
-    if (!ALIGNMENT.test(written)) return 'none'
     const start = written.startsWith(':')
     const end = written.endsWith(':')
     if (start && end) return 'centre'
@@ -49,8 +44,7 @@ const alignmentOf = (text: string): Align[] => {
 
 const cellsOf = (state: EditorState, row: SyntaxNode): Cell[] => {
   const cells: Cell[] = []
-  let after: number | null = null
-  let written = false
+  let emptyFrom: number | null = null
 
   for (let child = row.firstChild; child; child = child.nextSibling) {
     if (child.name === 'TableCell') {
@@ -59,16 +53,14 @@ const cellsOf = (state: EditorState, row: SyntaxNode): Cell[] => {
         to: child.to,
         text: state.doc.sliceString(child.from, child.to),
       })
-      written = true
+      emptyFrom = null
       continue
     }
-    if (child.name !== 'TableDelimiter') continue
-    if (after !== null && !written) {
-      const at = Math.min(after + 1, child.from)
+    if (emptyFrom !== null) {
+      const at = Math.min(emptyFrom + 1, child.from)
       cells.push({ from: at, to: at, text: '' })
     }
-    after = child.to
-    written = false
+    emptyFrom = child.to
   }
   return cells
 }
@@ -82,8 +74,7 @@ export const readTable = (state: EditorState, node: SyntaxNode): Table => {
   for (let child = node.firstChild; child; child = child.nextSibling) {
     if (child.name === 'TableHeader') head = cellsOf(state, child)
     else if (child.name === 'TableRow') body.push(cellsOf(state, child))
-    else if (child.name === 'TableDelimiter')
-      align = alignmentOf(state.doc.sliceString(child.from, child.to))
+    else align = alignmentOf(state.doc.sliceString(child.from, child.to))
   }
 
   return {

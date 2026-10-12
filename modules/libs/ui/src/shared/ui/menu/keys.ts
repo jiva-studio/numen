@@ -35,11 +35,10 @@ export function useMenuKeys(
   const here = ref(-1)
 
   /** Each item as it is drawn, each under the item it stands for. */
-  const drawn = new Map<string, RowHandle>()
+  const drawn = new Map<string, RowHandle | null>()
 
   const holdRow = (item: string, row: unknown): void => {
-    if (row) drawn.set(item, row as RowHandle)
-    else drawn.delete(item)
+    drawn.set(item, row as RowHandle | null)
   }
 
   const goTo = (at: number): void => {
@@ -61,17 +60,21 @@ export function useMenuKeys(
   }
 
   const onKey = (event: KeyboardEvent): void => {
-    // Counting back from no item is counting back from the first.
-    const step = (by: number, from = by < 0 ? Math.max(here.value, 0) : here.value): void => {
+    const step = (by: number, from: number): void => {
       event.preventDefault()
       goTo(stepTo(items(), from, by))
     }
-    if (event.key === 'ArrowDown') step(1)
-    else if (event.key === 'ArrowUp') step(-1)
+    const stepForward = (): void => step(1, here.value)
+    // Counting back from no item is counting back from the first.
+    const stepBack = (): void => step(-1, Math.max(here.value, 0))
+    if (event.key === 'ArrowDown') stepForward()
+    else if (event.key === 'ArrowUp') stepBack()
     else if (event.key === 'Home') step(1, -1)
     else if (event.key === 'End') step(-1, 0)
-    else if (event.key === 'Tab') step(event.shiftKey ? -1 : 1)
-    else if (isLetter(event)) {
+    else if (event.key === 'Tab') {
+      if (event.shiftKey) stepBack()
+      else stepForward()
+    } else if (isLetter(event)) {
       event.preventDefault()
       jump(event.key)
     }
