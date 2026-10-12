@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // GetProblems lists what a vault contains that could not be acted on and was
@@ -15,6 +16,11 @@ type GetProblems struct {
 
 func NewGetProblems(checks check.Checks) *GetProblems {
 	return &GetProblems{checks: checks}
+}
+
+// NewStandardGetProblems holds the vault to the standard checks.
+func NewStandardGetProblems(problems port.ProblemQueries) *GetProblems {
+	return NewGetProblems(check.Standard(problems))
 }
 
 // ProblemReport is the problems found and the checks that ran to find them.
