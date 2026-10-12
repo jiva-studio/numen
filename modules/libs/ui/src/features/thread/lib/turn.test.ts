@@ -1,7 +1,7 @@
 import vm from 'node:vm'
 import { setFlagsFromString } from 'node:v8'
 import { describe, expect, it } from 'vitest'
-import { placeTurns, VOICES, type Turn } from './turn'
+import { placeTurns, VOICES, writeCharCount, type Turn } from './turn'
 
 setFlagsFromString('--expose-gc')
 
@@ -90,5 +90,17 @@ describe('placing the same turns again', () => {
 
     expect(isCollected).toBe(true)
     expect(registry).toBeDefined()
+  })
+})
+
+describe('writeCharCount', () => {
+  it('says nothing for no characters', () => {
+    expect(writeCharCount(0)).toBe('')
+    expect(writeCharCount(-3)).toBe('')
+  })
+
+  it('counts characters', () => {
+    expect(writeCharCount(1)).toBe('1 characters')
+    expect(writeCharCount(999)).toBe('999 characters')
   })
 })

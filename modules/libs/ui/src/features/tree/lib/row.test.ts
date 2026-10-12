@@ -213,6 +213,10 @@ describe('where a drag lands', () => {
     expect(getLandingAt(-4)).toBeNull()
   })
 
+  it('lands before the first row at its very top', () => {
+    expect(getLandingAt(0)).toStrictEqual({ before: 'work' })
+  })
+
   it('lands nowhere while the rows have no height', () => {
     expect(landing(shown, ['friday'], 12, 0)).toBeNull()
   })
@@ -263,6 +267,8 @@ describe('what rows being dragged are refused', () => {
 
   it('is nothing beside them', () => {
     expect(isRefused(ROWS, ['work'], 'empty')).toBe(false)
+    expect(isRefused(ROWS, ['loose'], 'friday')).toBe(false)
+    expect(isRefused(ROWS, ['empty'], 'plans')).toBe(false)
     expect(isRefused(ROWS, ['notes', 'loose'], 'empty')).toBe(false)
   })
 
