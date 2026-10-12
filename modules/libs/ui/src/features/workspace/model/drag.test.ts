@@ -63,17 +63,16 @@ function createDrag(options: { getTab?: typeof getTab; hasFrame?: boolean } = {}
   const workspace = shallowRef<Workspace>(withSpare())
   const clock: Clock = { now: () => 0, schedule: () => 0, cancel: () => {} }
   const scope = effectScope()
-  const drag = scope.run(
-    (): TabDragState =>
-      useTabDrag({
-        workspace,
-        frame: shallowRef(options.hasFrame === false ? null : frame),
-        getTab: options.getTab ?? getTab,
-        getIdFactory: () => createIdFactory(),
-        getEdge: () => 10,
-        getThreshold: () => 4,
-        getClock: () => clock,
-      }),
+  const drag = scope.run((): TabDragState =>
+    useTabDrag({
+      workspace,
+      frame: shallowRef(options.hasFrame === false ? null : frame),
+      getTab: options.getTab ?? getTab,
+      getIdFactory: () => createIdFactory(),
+      getEdge: () => 10,
+      getThreshold: () => 4,
+      getClock: () => clock,
+    }),
   )!
 
   /** A tab pressed at one place and dragged to another, then held there. */
@@ -112,7 +111,7 @@ describe('a press on a tab', () => {
     expect(drag.hasMoved.value).toBe(false)
     expect(drag.label.value).toBeNull()
     expect(drag.overlay.value).toBeNull()
-    expect(drag.landing.value).toBeNull()
+    expect(drag.dropTarget.value).toBeNull()
   })
 
   it('is a drag once the pointer has travelled far enough', () => {
@@ -151,7 +150,7 @@ describe('a tab being dragged', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [350, 300], [850, 300])
 
-    expect(drag.landing.value).toMatchObject({ kind: 'pane', pane: 'aside', side: 'center' })
+    expect(drag.dropTarget.value).toMatchObject({ kind: 'pane', pane: 'aside', side: 'center' })
     expect(drag.overlay.value).toStrictEqual({ x: 500, y: 0, width: 500, height: 600 })
   })
 
@@ -159,7 +158,7 @@ describe('a tab being dragged', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [350, 300], [620, 300])
 
-    expect(drag.landing.value).toMatchObject({ kind: 'pane', pane: 'aside', side: 'left' })
+    expect(drag.dropTarget.value).toMatchObject({ kind: 'pane', pane: 'aside', side: 'left' })
     expect(drag.overlay.value).toStrictEqual({ x: 500, y: 0, width: 250, height: 600 })
   })
 
@@ -167,7 +166,7 @@ describe('a tab being dragged', () => {
     const { drag, dragTo } = start()
     dragTo('chat', [650, 60], [105, 300])
 
-    expect(drag.landing.value).toMatchObject({ kind: 'edge', side: 'left' })
+    expect(drag.dropTarget.value).toMatchObject({ kind: 'edge', side: 'left' })
     expect(drag.overlay.value).toStrictEqual({ x: 0, y: 0, width: 500, height: 600 })
   })
 
@@ -175,7 +174,7 @@ describe('a tab being dragged', () => {
     const { drag, dragTo } = start()
     dragTo('plex', [150, 60], [790, 60])
 
-    expect(drag.landing.value).toMatchObject({ kind: 'strip', pane: 'aside', slot: 2 })
+    expect(drag.dropTarget.value).toMatchObject({ kind: 'strip', pane: 'aside', slot: 2 })
     expect(drag.overlay.value).toStrictEqual({ x: 700, y: 0, width: 0, height: 30 })
   })
 
@@ -188,10 +187,10 @@ describe('a tab being dragged', () => {
       [350, 650],
     ] as const) {
       dragTo('plex', [350, 300], [x, y])
-      expect(drag.landing.value?.kind).toBe('edge')
+      expect(drag.dropTarget.value?.kind).toBe('edge')
     }
     dragTo('plex', [350, 300], [150, 50])
-    expect(drag.landing.value?.kind).toBe('strip')
+    expect(drag.dropTarget.value?.kind).toBe('strip')
   })
 
   it('lands nowhere outside the frame', () => {
@@ -205,7 +204,7 @@ describe('a tab being dragged', () => {
     ] as const) {
       dragTo('plex', [350, 300], [x, y])
       expect(drag.hasMoved.value).toBe(true)
-      expect(drag.landing.value).toBeNull()
+      expect(drag.dropTarget.value).toBeNull()
       expect(drag.overlay.value).toBeNull()
     }
   })
@@ -214,7 +213,7 @@ describe('a tab being dragged', () => {
     const { drag, dragTo } = start({ hasFrame: false })
     dragTo('plex', [350, 300], [850, 300])
 
-    expect(drag.landing.value).toBeNull()
+    expect(drag.dropTarget.value).toBeNull()
   })
 
   it('lands nowhere over what is no pane', () => {
@@ -222,7 +221,7 @@ describe('a tab being dragged', () => {
     state.under = () => frame
     dragTo('plex', [350, 300], [850, 300])
 
-    expect(drag.landing.value).toBeNull()
+    expect(drag.dropTarget.value).toBeNull()
   })
 
   it('lands nowhere over a pane that has no identity', () => {
@@ -231,7 +230,7 @@ describe('a tab being dragged', () => {
     state.under = () => main
     dragTo('plex', [350, 300], [360, 300])
 
-    expect(drag.landing.value).toBeNull()
+    expect(drag.dropTarget.value).toBeNull()
   })
 
   it('lands nowhere where the document has nothing under the pointer', () => {
@@ -240,7 +239,7 @@ describe('a tab being dragged', () => {
     dragTo('plex', [350, 300], [850, 300])
 
     expect(drag.hasMoved.value).toBe(true)
-    expect(drag.landing.value).toBeNull()
+    expect(drag.dropTarget.value).toBeNull()
   })
 })
 
@@ -325,7 +324,7 @@ describe('letting go of a tab', () => {
     expect(aside?.active).toBe('chat')
   })
 
-    it('changes nothing where the pointer is let go over no landing', () => {
+  it('changes nothing where the pointer is let go over no drop target', () => {
     const { workspace, dragTo, release } = start()
     const before = workspace.value
     dragTo('plex', [350, 300], [20, 300])
