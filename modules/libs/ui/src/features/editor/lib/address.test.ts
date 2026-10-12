@@ -29,3 +29,20 @@ describe('the address under a position in the text', () => {
     expect(getAddressIn('write `[[Thermodynamics]]` for it', 'Thermo')).toBeNull()
   })
 })
+
+describe('the address under a position on a later line', () => {
+  it('is what a note in brackets points at', () => {
+    const doc = 'first line\nunder [[Thermodynamics]] it sits'
+    expect(addressAt(createState(doc), doc.indexOf('Thermo') + 1)).toBe('name://Thermodynamics')
+  })
+
+  it('is what an address in angle brackets is', () => {
+    const doc = 'go <https://example.invalid> now'
+    expect(addressAt(createState(doc), doc.indexOf('example') + 1)).toBe('https://example.invalid')
+  })
+
+  it('is nothing inside an indented block of code', () => {
+    const doc = '    [[Thermodynamics]]\n'
+    expect(addressAt(createState(doc), doc.indexOf('Thermo') + 1)).toBeNull()
+  })
+})
