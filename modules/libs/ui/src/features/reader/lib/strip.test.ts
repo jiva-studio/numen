@@ -72,6 +72,29 @@ describe('the row a document makes', () => {
     expect(laid.widths.every((wide) => wide > 0)).toBe(true)
   })
 
+  describe('a page whose size is unusable', () => {
+    const wide: Page = { width: 1000, height: 500 }
+    const height = Math.round(VIEWPORT.height - 2 * GAP)
+    const widthOf = (page: Page) => Math.round((height * page.width) / page.height)
+    const upright = widthOf({ width: 612, height: 792 })
+    const broken: [string, Page][] = [
+      ['no width', { width: 0, height: 100 }],
+      ['no height', { width: 100, height: 0 }],
+    ]
+
+    it.each(broken)('takes the first page size when it has %s', (_, page) => {
+      const laid = row([wide, page], VIEWPORT, 1)
+
+      expect(laid.widths).toEqual([widthOf(wide), widthOf(wide)])
+    })
+
+    it.each(broken)('takes an upright page when the first page has %s too', (_, page) => {
+      const laid = row([page, page], VIEWPORT, 1)
+
+      expect(laid.widths).toEqual([upright, upright])
+    })
+  })
+
   it('draws the pages larger when it is zoomed', () => {
     const one = row(book(4), VIEWPORT, 1)
     const two = row(book(4), VIEWPORT, 2)
@@ -115,6 +138,20 @@ describe('which pages are drawn', () => {
     expect(shown).toContain(at - 1)
   })
 
+  it('draws exactly the pages that touch the reach either side of the viewport', () => {
+    // The reach is 1.5 viewports before the left edge and 1.5 after the right one.
+    const viewport: Size = { width: 100, height: 100 }
+    const laid = {
+      height: 50,
+      starts: [0, 700, 1000, 1250, 1251],
+      widths: [100, 150, 10, 10, 10],
+      length: 1300,
+    }
+
+    // Page 1 ends on the near bound (850) and page 3 begins on the far one (1250).
+    expect(getPagesWithin(laid, viewport, 1000)).toEqual([1, 2, 3])
+  })
+
   it('draws nothing for a document with no pages', () => {
     expect(getPagesWithin(row([], VIEWPORT, 1), VIEWPORT, 0)).toEqual([])
   })
@@ -130,6 +167,12 @@ describe('which page is in front', () => {
 
     expect(inFront(laid, VIEWPORT, laid.starts[4]!)).toBe(4)
     expect(inFront(laid, { width: laid.widths[0]!, height: VIEWPORT.height }, half)).toBe(4)
+  })
+
+  it('is the last page at the end of the row', () => {
+    const laid = row(book(20), VIEWPORT, 1)
+
+    expect(inFront(laid, VIEWPORT, laid.length)).toBe(19)
   })
 
   it('is the first page at the beginning of the row', () => {
@@ -178,12 +221,16 @@ describe('a viewport nothing has been measured in', () => {
     const laid = row(book(8), { width: 0, height: 0 }, 1)
 
     expect(laid.height).toBe(0)
+    expect(laid.starts).toEqual([])
     expect(laid.widths).toEqual([])
     expect(laid.length).toBe(0)
     expect(getPagesWithin(laid, { width: 0, height: 0 }, 0)).toEqual([])
   })
 
   it('makes no row in a viewport too short to stand a page in', () => {
-    expect(row(book(8), { width: 900, height: 2 * GAP }, 1).widths).toEqual([])
+    const laid = row(book(8), { width: 900, height: 2 * GAP }, 1)
+
+    expect(laid.starts).toEqual([])
+    expect(laid.widths).toEqual([])
   })
 })

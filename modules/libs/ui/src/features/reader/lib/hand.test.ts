@@ -28,7 +28,23 @@ describe('a hand on the row', () => {
     const hand = new Hand()
 
     expect(hand.holding).toBe(false)
+    expect(hand.dragging).toBe(false)
     expect(hand.to(createPoint(100))).toBeUndefined()
+  })
+
+  it('holds the row once it has taken hold', () => {
+    const hand = new Hand()
+    hand.take(createPoint(200), createPoint(500))
+
+    expect(hand.holding).toBe(true)
+  })
+
+  it('drags once the hand has travelled exactly the threshold', () => {
+    const hand = new Hand()
+    hand.take(createPoint(200), createPoint(500))
+
+    expect(hand.to(createPoint(200 + DRAG_THRESHOLD))).toEqual({ x: 500 - DRAG_THRESHOLD, y: 0 })
+    expect(hand.dragging).toBe(true)
   })
 
   it('does not drag until the hand has travelled', () => {
