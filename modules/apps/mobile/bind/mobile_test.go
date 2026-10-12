@@ -69,14 +69,14 @@ func TestStartAnswers(t *testing.T) {
 	// The note it opens on stands in every seat at once, which is what makes a
 	// picture worth drawing. The vault is read behind the caller, so the seats
 	// arrive rather than being there.
-	wanted := []string{"SEAT_PARENT", "SEAT_CHILD", "SEAT_JUMP", "SEAT_SIBLING"}
+	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING"}
 	seats := map[string]int{}
 	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
 		seats = map[string]int{}
 		around, _ := ask("NoteService", "GetNeighbourhood",
 			map[string]any{"path": bind.Seeded})["related"].([]any)
 		for _, one := range around {
-			seats[one.(map[string]any)["seat"].(string)]++
+			seats[one.(map[string]any)["relation"].(string)]++
 		}
 		if len(seats) == len(wanted) {
 			break
