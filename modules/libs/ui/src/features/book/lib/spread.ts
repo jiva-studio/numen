@@ -135,7 +135,7 @@ export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[
  * carried over it — an estimate, and the only one that costs nothing. It moves
  * when the reading area does, which is what a page measured on the screen does.
  */
-export function getPages(
+export function createPages(
   book: Span,
   document: Span,
   flow: Flow,

@@ -15,13 +15,13 @@ import {
   getSpreadStart,
   inFront,
   leftInDocument,
-  getPages,
+  createPages,
   getSpread,
   countSpreads,
   type Flow,
   type Mark,
 } from './spread'
-import { countBytes, countUnits } from './bytes'
+import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
 import { EDGE, SWIPE, handTurn, pressTurn, swipeTurn, turnTo } from './turn'
 
@@ -280,7 +280,7 @@ describe('which spread an offset stands in', () => {
 describe('a byte offset read into a string', () => {
   it('counts a Latin character as one byte', () => {
     expect(countBytes('abc')).toBe(3)
-    expect(countUnits('abcdef', 3)).toBe(3)
+    expect(getUnitOffset('abcdef', 3)).toBe(3)
   })
 
   it('counts a Cyrillic character as two, and a Devanagari one as three', () => {
@@ -288,32 +288,32 @@ describe('a byte offset read into a string', () => {
     expect(countBytes('सत्य')).toBe(12)
 
     // Four bytes into the Cyrillic is two characters, not four.
-    expect(countUnits('дальше', 4)).toBe(2)
-    expect(countUnits('सत्यम्', 6)).toBe(2)
+    expect(getUnitOffset('дальше', 4)).toBe(2)
+    expect(getUnitOffset('सत्यम्', 6)).toBe(2)
   })
 
   it('stops short of a character the bytes do not reach the end of', () => {
     // Half a Devanagari character is not a place in a string.
-    expect(countUnits('सत्य', 4)).toBe(1)
-    expect(countUnits('सत्य', 5)).toBe(1)
-    expect(countUnits('सत्य', 6)).toBe(2)
+    expect(getUnitOffset('सत्य', 4)).toBe(1)
+    expect(getUnitOffset('सत्य', 5)).toBe(1)
+    expect(getUnitOffset('सत्य', 6)).toBe(2)
   })
 
   it('counts a character written in two units as two', () => {
     // Four bytes of UTF-8, two units of UTF-16.
     expect(countBytes('𑀓')).toBe(4)
-    expect(countUnits('𑀓a', 4)).toBe(2)
-    expect(countUnits('𑀓a', 5)).toBe(3)
+    expect(getUnitOffset('𑀓a', 4)).toBe(2)
+    expect(getUnitOffset('𑀓a', 5)).toBe(3)
   })
 
   it('reaches the start of a string for no bytes at all', () => {
-    expect(countUnits('सत्य', 0)).toBe(0)
-    expect(countUnits('सत्य', -3)).toBe(0)
-    expect(countUnits('', 5)).toBe(0)
+    expect(getUnitOffset('सत्य', 0)).toBe(0)
+    expect(getUnitOffset('सत्य', -3)).toBe(0)
+    expect(getUnitOffset('', 5)).toBe(0)
   })
 
   it('reaches the end of a string for more bytes than it holds', () => {
-    expect(countUnits('да', 99)).toBe(2)
+    expect(getUnitOffset('да', 99)).toBe(2)
   })
 })
 
@@ -380,14 +380,14 @@ describe('the page a person is looking at', () => {
   const before = Math.round((document.from - book.from) / perColumn)
 
   it('counts the columns on the screen, so a spread of two turns two pages', () => {
-    const first = getPages(book, document, flow, 0, marks)
-    const next = getPages(book, document, flow, 1, marks)
+    const first = createPages(book, document, flow, 0, marks)
+    const next = createPages(book, document, flow, 1, marks)
     expect(next.page - first.page).toBe(2)
   })
 
   it('counts the columns before this document at what a column of it holds', () => {
-    expect(getPages(book, document, flow, 0, marks).page).toBe(before + 1)
-    expect(getPages(book, document, flow, 0, marks).pages).toBe(
+    expect(createPages(book, document, flow, 0, marks).page).toBe(before + 1)
+    expect(createPages(book, document, flow, 0, marks).pages).toBe(
       Math.round((book.to - book.from) / perColumn),
     )
   })
@@ -396,11 +396,11 @@ describe('the page a person is looking at', () => {
     // A document of one line stands in one column of a spread of two.
     const one = createMarks(1)
     expect(countFilledColumns(one, flow)).toBe(1)
-    expect(getPages({ ...document }, document, flow, 0, one)).toEqual({ page: 1, pages: 1 })
+    expect(createPages({ ...document }, document, flow, 0, one)).toEqual({ page: 1, pages: 1 })
   })
 
   it('says one page for a document nothing has been laid out for', () => {
-    expect(getPages(book, document, flow, 0, [])).toEqual({ page: 1, pages: 1 })
+    expect(createPages(book, document, flow, 0, [])).toEqual({ page: 1, pages: 1 })
   })
 })
 
@@ -495,7 +495,7 @@ describe('the page count of a document read against its bytes', () => {
 
   it('says the columns it fills where the document holds no bytes', () => {
     const empty = { from: 100, to: 100 }
-    expect(getPages({ from: 100, to: 5000 }, empty, flow, 0, marks)).toStrictEqual({
+    expect(createPages({ from: 100, to: 5000 }, empty, flow, 0, marks)).toStrictEqual({
       page: 1,
       pages: 2,
     })
@@ -503,13 +503,15 @@ describe('the page count of a document read against its bytes', () => {
 
   it('never puts the page in front before the first', () => {
     const empty = { from: 100, to: 100 }
-    expect(getPages({ from: 0, to: 1000 }, empty, flow, -1, marks).page).toBe(1)
+    expect(createPages({ from: 0, to: 1000 }, empty, flow, -1, marks).page).toBe(1)
   })
 
   it('reaches at least the last column of the document, wherever it stands in the book', () => {
     // 250 bytes to a column: the document begins two columns in, and the book
     // comes to two, short of the four the document ends at.
-    expect(getPages({ from: 0, to: 550 }, { from: 500, to: 1000 }, flow, 0, marks)).toStrictEqual({
+    expect(
+      createPages({ from: 0, to: 550 }, { from: 500, to: 1000 }, flow, 0, marks),
+    ).toStrictEqual({
       page: 3,
       pages: 4,
     })

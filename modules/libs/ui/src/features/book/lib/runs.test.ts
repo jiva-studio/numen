@@ -6,7 +6,7 @@
  * three, and no offset below is a count of characters.
  */
 import { describe, expect, it } from 'vitest'
-import { getMarks, getOffset, rangesOver, findRun, getRuns } from './runs'
+import { createMarks, findOffset, rangesOver, findRun, getRuns } from './runs'
 
 /** A document as it is drawn, held in an element the way the reader holds it. */
 const createMarkupPaper = (markup: string): HTMLElement => {
@@ -57,13 +57,13 @@ describe('a place named inside the document', () => {
   it('stands at the offset of the run holding the name', () => {
     const paper = createMarkupPaper('<p><span data-offset="6">प्रथम<b id="here">x</b></span></p>')
 
-    expect(getOffset(paper, getRuns(paper), 'here')).toBe(6)
+    expect(findOffset(paper, getRuns(paper), 'here')).toBe(6)
   })
 
   it('stands at the first run inside a name holding several', () => {
     const paper = createMarkupPaper('<section id="parva"><p data-offset="40">आदि</p></section>')
 
-    expect(getOffset(paper, getRuns(paper), 'parva')).toBe(40)
+    expect(findOffset(paper, getRuns(paper), 'parva')).toBe(40)
   })
 
   it('stands at the first run after a name standing between runs', () => {
@@ -73,25 +73,25 @@ describe('a place named inside the document', () => {
       '<p data-offset="0">Первая</p><h2 id="second"></h2><p data-offset="12">Вторая</p>',
     )
 
-    expect(getOffset(paper, getRuns(paper), 'second')).toBe(12)
+    expect(findOffset(paper, getRuns(paper), 'second')).toBe(12)
   })
 
   it('stands nowhere where the document names no such place', () => {
     const paper = createMarkupPaper(TWO)
 
-    expect(getOffset(paper, getRuns(paper), 'nowhere')).toBeUndefined()
+    expect(findOffset(paper, getRuns(paper), 'nowhere')).toBeUndefined()
   })
 
   it('stands nowhere where nothing was named', () => {
     const paper = createMarkupPaper(TWO)
 
-    expect(getOffset(paper, getRuns(paper), '')).toBeUndefined()
+    expect(findOffset(paper, getRuns(paper), '')).toBeUndefined()
   })
 
   it('stands nowhere where the name comes after every run of the document', () => {
     const paper = createMarkupPaper('<p data-offset="0">Первая</p><h2 id="ends"></h2>')
 
-    expect(getOffset(paper, getRuns(paper), 'ends')).toBeUndefined()
+    expect(findOffset(paper, getRuns(paper), 'ends')).toBeUndefined()
   })
 })
 
@@ -149,7 +149,7 @@ describe('where the runs stand across the columns', () => {
   it('is where the first of the rectangles a run has begins', () => {
     const paper = createPaper(TWO, [120, 480])
 
-    const marks = getMarks(getRuns(paper), 40)
+    const marks = createMarks(getRuns(paper), 40)
 
     expect(marks).toStrictEqual([
       { at: 0, x: 80 },
@@ -162,7 +162,7 @@ describe('where the runs stand across the columns', () => {
     // document nothing has laid out has no rectangles at all.
     const paper = createPaper(TWO, [120])
 
-    expect(getMarks(getRuns(paper), 0)).toStrictEqual([{ at: 0, x: 120 }])
+    expect(createMarks(getRuns(paper), 0)).toStrictEqual([{ at: 0, x: 120 }])
   })
 })
 
@@ -170,7 +170,7 @@ describe('a place named by nothing', () => {
   it('stands nowhere even where an element carries an empty id', () => {
     const paper = createMarkupPaper('<p id="" data-offset="3">Первая</p>')
 
-    expect(getOffset(paper, getRuns(paper), '')).toBeUndefined()
+    expect(findOffset(paper, getRuns(paper), '')).toBeUndefined()
   })
 })
 

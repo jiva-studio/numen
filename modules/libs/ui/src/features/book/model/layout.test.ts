@@ -42,7 +42,7 @@ const setUp = () => {
     marks: shallowRef([]),
     measure: vi.fn(),
     readColumns: vi.fn(),
-    getPlace: vi.fn(),
+    findFragmentOffset: vi.fn(),
     markRuns: vi.fn(),
   }
   fake.turns = {
@@ -63,7 +63,7 @@ const columns = () =>
     isMeasured: { value: boolean }
     measure: ReturnType<typeof vi.fn>
     readColumns: ReturnType<typeof vi.fn>
-    getPlace: ReturnType<typeof vi.fn>
+    findFragmentOffset: ReturnType<typeof vi.fn>
     markRuns: ReturnType<typeof vi.fn>
   }
 
@@ -179,13 +179,13 @@ describe('setting the columns', () => {
 describe('the place a link led to', () => {
   it('is found when the link names this document, and the spread of it is put in front', () => {
     const { layout, onMove } = room()
-    columns().getPlace.mockReturnValue(150)
+    columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
     layout().settle(40, { path: 'ch1.xhtml', fragment: 'here' })
     flushFrames()
 
-    expect(columns().getPlace).toHaveBeenCalledWith('here')
+    expect(columns().findFragmentOffset).toHaveBeenCalledWith('here')
     expect(turns().getSpreadOf).toHaveBeenLastCalledWith(150)
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(150), 'auto')
     expect(onMove).toHaveBeenCalledWith(150)
@@ -193,33 +193,33 @@ describe('the place a link led to', () => {
 
   it('is found when the link names no document, and a place at the start of the text is reported', () => {
     const { layout, onMove } = room()
-    columns().getPlace.mockReturnValue(0)
+    columns().findFragmentOffset.mockReturnValue(0)
     fake.frames.length = 0
 
     layout().settle(40, { path: '', fragment: 'top' })
     flushFrames()
 
-    expect(columns().getPlace).toHaveBeenCalledWith('top')
+    expect(columns().findFragmentOffset).toHaveBeenCalledWith('top')
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(0), 'auto')
     expect(onMove).toHaveBeenCalledWith(0)
   })
 
   it('is not looked for when the link names another document', () => {
     const { layout, onMove } = room()
-    columns().getPlace.mockReturnValue(150)
+    columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
     layout().settle(40, { path: 'ch2.xhtml', fragment: 'here' })
     flushFrames()
 
-    expect(columns().getPlace).not.toHaveBeenCalled()
+    expect(columns().findFragmentOffset).not.toHaveBeenCalled()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(40), 'auto')
     expect(onMove).not.toHaveBeenCalled()
   })
 
   it('keeps the offset when the link names a place the document does not hold', () => {
     const { layout, onMove } = room()
-    columns().getPlace.mockReturnValue(undefined)
+    columns().findFragmentOffset.mockReturnValue(undefined)
     fake.frames.length = 0
 
     layout().settle(40, { path: '', fragment: 'missing' })
@@ -236,7 +236,7 @@ describe('the place a link led to', () => {
     layout().settle(40)
     flushFrames()
 
-    expect(columns().getPlace).not.toHaveBeenCalled()
+    expect(columns().findFragmentOffset).not.toHaveBeenCalled()
     expect(onMove).not.toHaveBeenCalled()
   })
 })
@@ -313,14 +313,14 @@ describe('another document being opened', () => {
 
   it('lands on the place the link led to', async () => {
     const { props, onMove } = room({ led: { path: '', fragment: 'here' } })
-    columns().getPlace.mockReturnValue(160)
+    columns().findFragmentOffset.mockReturnValue(160)
     fake.frames.length = 0
 
     props.markup = '<p>two</p>'
     await nextTick()
     flushFrames()
 
-    expect(columns().getPlace).toHaveBeenCalledWith('here')
+    expect(columns().findFragmentOffset).toHaveBeenCalledWith('here')
     expect(onMove).toHaveBeenCalledWith(160)
   })
 })

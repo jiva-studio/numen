@@ -51,7 +51,7 @@ export function useBookColumns(
   /** How far the columns run, taken once they have been laid out. */
   const along = ref(0)
 
-  const { marks, gather, getPlace, markRuns } = useBookMarks(paper, props, getEdge)
+  const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(paper, props, getEdge)
 
   /**
    * Whether the reading area has been measured. A book is turned and never
@@ -107,7 +107,7 @@ export function useBookColumns(
     marks,
     measure,
     readColumns,
-    getPlace,
+    findFragmentOffset,
     markRuns,
   }
 }

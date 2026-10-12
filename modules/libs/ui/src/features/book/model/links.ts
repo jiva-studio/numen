@@ -27,8 +27,11 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
     return place
   }
 
-  /** `getPlace` is the offset a place named inside the drawn document stands at. */
-  const follow = (press: MouseEvent, getPlace: (fragment: string) => number | undefined) => {
+  /** `findFragmentOffset` is the offset a place named inside the drawn document stands at. */
+  const follow = (
+    press: MouseEvent,
+    findFragmentOffset: (fragment: string) => number | undefined,
+  ) => {
     const link = (press.target as Element | null)?.closest?.('a[href]')
     if (!link) return
     // `a[href]` matches only anchors that carry the attribute.
@@ -43,7 +46,7 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
       listeners.reportFollow(place.path)
       return
     }
-    listeners.reportMove(getPlace(place.fragment) ?? props.span.from)
+    listeners.reportMove(findFragmentOffset(place.fragment) ?? props.span.from)
   }
 
   return { takeLed, follow }

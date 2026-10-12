@@ -181,7 +181,7 @@ const getRunsOf = (canvasElement: HTMLElement) => [
 ]
 
 /** The offset the reader says is in front. */
-const getInFront = (canvasElement: HTMLElement) =>
+const getFrontOffset = (canvasElement: HTMLElement) =>
   Number(canvasElement.querySelector('[data-front]')?.getAttribute('data-front'))
 
 /**
@@ -198,7 +198,7 @@ const waitForLayout = async (canvasElement: HTMLElement) =>
   )
 
 /** How wide one column is, taken off the first run of the text. */
-const getColumn = (canvasElement: HTMLElement) =>
+const getColumnWidth = (canvasElement: HTMLElement) =>
   getRunsOf(canvasElement)[0]!.getClientRects()[0]!.width
 
 /** Turn the pages, set the text larger, and watch the offset in front follow. */
@@ -218,7 +218,7 @@ export const OneColumn: Story = {
     await waitForLayout(canvasElement)
 
     const area = getArea(canvasElement).getBoundingClientRect()
-    await expect(getColumn(canvasElement)).toBeCloseTo(area.width - GAP, -1)
+    await expect(getColumnWidth(canvasElement)).toBeCloseTo(area.width - GAP, -1)
   },
 }
 
@@ -271,7 +271,7 @@ export const OneColumnTurns: Story = {
     )
 
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(async () => await expect(getInFront(canvasElement)).toBeGreaterThan(0), {
+    await waitFor(async () => await expect(getFrontOffset(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
   },
@@ -288,7 +288,7 @@ export const TwoColumns: Story = {
     await waitForLayout(canvasElement)
 
     const area = getArea(canvasElement).getBoundingClientRect()
-    const column = getColumn(canvasElement)
+    const column = getColumnWidth(canvasElement)
     await expect(column).toBeCloseTo(area.width / 2 - GAP, -1)
 
     // The run that stands in the second column of the first spread stands in
@@ -332,7 +332,7 @@ export const PictureTallerThanTheColumn: Story = {
     const area = getArea(canvasElement).getBoundingClientRect()
     const box = picture.getBoundingClientRect()
     await expect(box.height).toBeLessThanOrEqual(area.height + 1)
-    await expect(box.width).toBeLessThanOrEqual(getColumn(canvasElement) + 1)
+    await expect(box.width).toBeLessThanOrEqual(getColumnWidth(canvasElement) + 1)
   },
 }
 
@@ -374,7 +374,7 @@ export const ATableThatWillNotBreak: Story = {
 
     const table = getPaper(canvasElement).querySelector('table')!
     const box = table.getBoundingClientRect()
-    await expect(box.width).toBeLessThanOrEqual(getColumn(canvasElement) + 1)
+    await expect(box.width).toBeLessThanOrEqual(getColumnWidth(canvasElement) + 1)
     await expect(box.height).toBeLessThanOrEqual(getArea(canvasElement).clientHeight + 1)
   },
 }
@@ -477,10 +477,10 @@ export const SetLarger: Story = {
     await waitForLayout(canvasElement)
 
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(async () => await expect(getInFront(canvasElement)).toBeGreaterThan(0), {
+    await waitFor(async () => await expect(getFrontOffset(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
-    const before = getInFront(canvasElement)
+    const before = getFrontOffset(canvasElement)
 
     const set = getComputedStyle(getRunsOf(canvasElement)[0]!).fontSize
     await userEvent.click(canvas.getByLabelText('Larger'))
@@ -529,13 +529,13 @@ export const TurnedByHand: Story = {
     const area = getArea(canvasElement)
 
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(async () => await expect(getInFront(canvasElement)).toBeGreaterThan(0), {
+    await waitFor(async () => await expect(getFrontOffset(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
-    const turned = getInFront(canvasElement)
+    const turned = getFrontOffset(canvasElement)
 
     await userEvent.keyboard('{ArrowLeft}')
-    await waitFor(async () => await expect(getInFront(canvasElement)).toBeLessThan(turned), {
+    await waitFor(async () => await expect(getFrontOffset(canvasElement)).toBeLessThan(turned), {
       timeout: ITS_OWN_PACE,
     })
 
@@ -545,7 +545,7 @@ export const TurnedByHand: Story = {
       { target: area, coords: { clientX: box.right - 8, clientY: box.top + box.height / 2 } },
       { keys: '[MouseLeft]', target: area },
     ])
-    await waitFor(async () => await expect(getInFront(canvasElement)).toBeGreaterThan(0), {
+    await waitFor(async () => await expect(getFrontOffset(canvasElement)).toBeGreaterThan(0), {
       timeout: ITS_OWN_PACE,
     })
   },
@@ -565,7 +565,7 @@ export const DrawnOutOfSight: Story = {
     const area = getArea(canvasElement)
     await expect(getPaper(canvasElement).scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
     await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
-    await expect(getColumn(canvasElement)).toBeCloseTo(area.clientWidth / 2 - GAP, -1)
+    await expect(getColumnWidth(canvasElement)).toBeCloseTo(area.clientWidth / 2 - GAP, -1)
   },
 }
 

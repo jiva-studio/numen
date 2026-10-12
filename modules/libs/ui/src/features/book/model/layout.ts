@@ -57,7 +57,7 @@ export function useBookLayout(
       column.readColumns(box, text)
       const landed =
         led && (led.path === '' || led.path === props.path)
-          ? column.getPlace(led.fragment)
+          ? column.findFragmentOffset(led.fragment)
           : undefined
       stand(getSpreadOf(landed ?? keep), 'auto')
       if (landed !== undefined) onMove(landed)
@@ -110,7 +110,7 @@ export function useBookLayout(
     setting,
     getKeptOffset,
     settle,
-    getPlace: column.getPlace,
+    findFragmentOffset: column.findFragmentOffset,
     turn,
   }
 }

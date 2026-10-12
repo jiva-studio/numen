@@ -88,7 +88,7 @@ describe('the place a name stands at', () => {
 
     marks.gather()
 
-    expect(marks.getPlace('part')).toBe(9)
+    expect(marks.findFragmentOffset('part')).toBe(9)
   })
 
   it('is nothing before the runs are gathered, or where no document is drawn', () => {
@@ -98,8 +98,8 @@ describe('the place a name stands at', () => {
       ),
     )
 
-    expect(marks.getPlace('part')).toBeUndefined()
-    expect(setUp(null).marks.getPlace('part')).toBeUndefined()
+    expect(marks.findFragmentOffset('part')).toBeUndefined()
+    expect(setUp(null).marks.findFragmentOffset('part')).toBeUndefined()
   })
 })
 

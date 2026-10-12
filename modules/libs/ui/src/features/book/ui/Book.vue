@@ -62,7 +62,7 @@ const { isMeasured, setting, spreadCount, front, leftInChapter } = layout
 const hand = useBookHand(area, paper, layout.turn, getEdge)
 
 /* -------------------------------- Handlers -------------------------------- */
-const follow = (press: MouseEvent) => links.follow(press, layout.getPlace)
+const follow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)
 
 /**
  * A key the tab caught. Turning belongs to whatever holds the book, so the

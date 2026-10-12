@@ -8,7 +8,7 @@
  * offsets and they are kept in it, so the run an offset falls in is the last
  * one beginning at or before it.
  */
-import { countBytes, countUnits } from './bytes'
+import { countBytes, getUnitOffset } from './bytes'
 import type { Span } from '@/shared/lib/span'
 import type { Mark } from './spread'
 
@@ -35,7 +35,7 @@ export function getRuns(paper: HTMLElement): Run[] {
  * of a run's rectangles is the one that counts: a run broken over a column edge
  * has one in each column, and it begins in the first.
  */
-export function getMarks(runs: readonly Run[], origin: number): Mark[] {
+export function createMarks(runs: readonly Run[], origin: number): Mark[] {
   const placed: Mark[] = []
   for (const run of runs) {
     const first = run.element.getClientRects()[0]
@@ -58,7 +58,7 @@ export function findRun(runs: readonly Run[], at: number): Run | undefined {
  * The offset a place named inside the document stands at: the run the named
  * element falls in, or the first run after a name standing between runs.
  */
-export function getOffset(
+export function findOffset(
   paper: HTMLElement,
   runs: readonly Run[],
   fragment: string,
@@ -91,7 +91,7 @@ export function getOffset(
 /**
  * Where an offset stands inside a run: the text node it falls in, and how far
  * into that node it reaches. The distance from the run's own offset is a number
- * of bytes, and only `countUnits` turns one of those into a place in a string.
+ * of bytes, and only `getUnitOffset` turns one of those into a place in a string.
  */
 const getPlaceInRun = (
   run: HTMLElement,
@@ -102,7 +102,7 @@ const getPlaceInRun = (
   let node = walk.nextNode() as Text | null
   while (node) {
     const bytes = countBytes(node.data)
-    if (counted + bytes >= into) return { node, offset: countUnits(node.data, into - counted) }
+    if (counted + bytes >= into) return { node, offset: getUnitOffset(node.data, into - counted) }
     counted += bytes
     node = walk.nextNode() as Text | null
   }
