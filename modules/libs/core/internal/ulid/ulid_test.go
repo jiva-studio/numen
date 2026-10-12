@@ -9,10 +9,7 @@ import (
 )
 
 func TestShapeAndAlphabet(t *testing.T) {
-	id, err := ulid.New(time.Now())
-	if err != nil {
-		t.Fatal(err)
-	}
+	id := ulid.New(time.Now())
 	if len(id) != 26 {
 		t.Fatalf("len = %d, want 26 (%s)", len(id), id)
 	}
@@ -30,14 +27,8 @@ func TestOrderMatchesTime(t *testing.T) {
 	// Lexicographic order equalling chronological order is why ULID was chosen
 	// over UUID, so it is worth a test rather than a comment.
 	base := time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)
-	earlier, err := ulid.New(base)
-	if err != nil {
-		t.Fatal(err)
-	}
-	later, err := ulid.New(base.Add(time.Second))
-	if err != nil {
-		t.Fatal(err)
-	}
+	earlier := ulid.New(base)
+	later := ulid.New(base.Add(time.Second))
 	if !(earlier < later) {
 		t.Errorf("%s should sort before %s", earlier, later)
 	}
@@ -47,10 +38,7 @@ func TestDistinctWithinTheSameMillisecond(t *testing.T) {
 	at := time.Now()
 	seen := map[string]bool{}
 	for range 1000 {
-		id, err := ulid.New(at)
-		if err != nil {
-			t.Fatal(err)
-		}
+		id := ulid.New(at)
 		if seen[id] {
 			t.Fatalf("duplicate within one millisecond: %s", id)
 		}
@@ -59,10 +47,7 @@ func TestDistinctWithinTheSameMillisecond(t *testing.T) {
 }
 
 func TestValidRejectsNearMisses(t *testing.T) {
-	good, err := ulid.New(time.Now())
-	if err != nil {
-		t.Fatal(err)
-	}
+	good := ulid.New(time.Now())
 	for _, bad := range []string{
 		"", good[:25], good + "0",
 		strings.Replace(good, string(good[10]), "I", 1),
@@ -108,10 +93,7 @@ func TestTheFirstTenCharactersAreTheMillisecond(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			for range 16 {
-				id, err := ulid.New(time.UnixMilli(c.ms))
-				if err != nil {
-					t.Fatal(err)
-				}
+				id := ulid.New(time.UnixMilli(c.ms))
 				if got := id[:10]; got != c.want {
 					t.Fatalf("%s starts %s, want %s", id, got, c.want)
 				}
@@ -127,10 +109,7 @@ func TestEveryRandomBitVaries(t *testing.T) {
 	at := time.UnixMilli(1469918176385)
 	var isSet, isClear [130]bool
 	for range 64 {
-		id, err := ulid.New(at)
-		if err != nil {
-			t.Fatal(err)
-		}
+		id := ulid.New(at)
 		for bit := 50; bit < 130; bit++ {
 			value := strings.IndexByte(alphabet, id[bit/5])
 			if value>>(4-bit%5)&1 == 1 {

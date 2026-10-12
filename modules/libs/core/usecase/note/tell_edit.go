@@ -21,10 +21,7 @@ func (tell TellEdit) beginChange(ctx context.Context, now port.Clock, said domai
 	if tell == nil {
 		return func() {}
 	}
-	name, err := ulid.New(now())
-	if err != nil {
-		return func() {}
-	}
+	name := ulid.New(now())
 	said.Change = name
 	tell(ctx, said)
 	return func() {

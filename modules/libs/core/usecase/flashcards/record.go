@@ -44,10 +44,7 @@ func (u Record) Answer(
 	}
 
 	at := u.now()
-	id, err := ulid.New(at)
-	if err != nil {
-		return review.Answer{}, err
-	}
+	id := ulid.New(at)
 	a := review.Answer{ID: id, CardFace: on, At: at, Rating: r, Took: took}
 	if err := u.run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
@@ -62,10 +59,7 @@ func (u Record) TakeBack(ctx context.Context, id string) (review.Answer, error) 
 		return review.Answer{}, errors.New("an answer taken back names the one it takes back")
 	}
 	at := u.now()
-	own, err := ulid.New(at)
-	if err != nil {
-		return review.Answer{}, err
-	}
+	own := ulid.New(at)
 	a := review.Answer{ID: own, At: at, Undoes: id}
 	if err := u.run.Append(ctx, a); err != nil {
 		return review.Answer{}, err

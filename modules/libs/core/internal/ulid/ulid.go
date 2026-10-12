@@ -26,7 +26,7 @@ func createTable(characters string) (table [256]bool) {
 
 // New returns a ULID for the given instant: 48 bits of milliseconds followed by
 // 80 bits of randomness, encoded as 26 characters.
-func New(t time.Time) (string, error) {
+func New(t time.Time) string {
 	var b [16]byte
 	ms := uint64(t.UTC().UnixMilli())
 	b[0] = byte(ms >> 40)
@@ -35,9 +35,8 @@ func New(t time.Time) (string, error) {
 	b[3] = byte(ms >> 16)
 	b[4] = byte(ms >> 8)
 	b[5] = byte(ms)
-	if _, err := rand.Read(b[6:]); err != nil {
-		return "", err
-	}
+	// rand.Read never returns an error: it aborts the program instead.
+	_, _ = rand.Read(b[6:])
 
 	out := make([]byte, 26)
 	// 26 base32 characters carry 130 bits; the value is left-padded into them.
@@ -59,7 +58,7 @@ func New(t time.Time) (string, error) {
 		idx--
 		carry >>= 5
 	}
-	return string(out), nil
+	return string(out)
 }
 
 // Valid reports whether s could have been produced by New. It is deliberately

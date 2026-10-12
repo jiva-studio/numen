@@ -159,10 +159,7 @@ func (e Edit) splice(
 	// A caller writing over what is there is the person editing their own note,
 	// and leaves the frontmatter as they wrote it.
 	if _, carried := doc.Identifier(); !carried && !e.ShouldOverwrite {
-		identifier, err := ulid.New(e.now())
-		if err != nil {
-			return domain.Fingerprint{}, err
-		}
+		identifier := ulid.New(e.now())
 		if err := doc.SetIdentifier(identifier); err != nil {
 			return domain.Fingerprint{}, err
 		}

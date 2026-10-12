@@ -101,10 +101,7 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	}
 	path := pathpkg.Join(in.Path, name+domain.NoteExtension)
 
-	identifier, err := ulid.New(u.now())
-	if err != nil {
-		return CreateNoteResult{}, err
-	}
+	identifier := ulid.New(u.now())
 	doc, err := markdown.Open(markdown.Create(identifier, in.Body))
 	if err != nil {
 		return CreateNoteResult{}, err
