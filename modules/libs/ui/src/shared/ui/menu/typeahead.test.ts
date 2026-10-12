@@ -106,3 +106,22 @@ describe('a key that stands for a letter', () => {
     expect(press({ key: 'ArrowDown' })).toBe(false)
   })
 })
+
+describe('where a letter counts on from', () => {
+  const PAIR: MenuItem[] = [
+    { id: 'copy', text: 'Copy' },
+    { id: 'cost', text: 'Cost' },
+  ]
+
+  it('moves on to the next item when a letter is struck again on the first', () => {
+    expect(jumpTo(PAIR, NOTHING_TYPED, 'c', 0, 0).at).toBe(1)
+  })
+
+  it('stands on the item the keyboard is on while the word grows', () => {
+    expect(jumpTo(PAIR, { word: 'c', struck: 0 }, 'o', 0, 10).at).toBe(0)
+  })
+
+  it('looks at the last item when the keyboard is on none', () => {
+    expect(jumpTo(ITEMS, { word: 'c', struck: 0 }, 'u', -1, 10).at).toBe(3)
+  })
+})

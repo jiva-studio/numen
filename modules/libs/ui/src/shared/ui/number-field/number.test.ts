@@ -179,3 +179,25 @@ describe('whether what is typed stands for the number in force', () => {
     expect(isTextForValue('twenty', 20)).toBe(false)
   })
 })
+
+describe('text with spaces around it', () => {
+  it('is on its way as long as the trimmed text is', () => {
+    expect(onItsWay(' 12 ')).toBe(true)
+    expect(onItsWay(' 1,200 ')).toBe(false)
+  })
+})
+
+describe('the places a number is kept to', () => {
+  it('keeps to the decimals the step is written with', () => {
+    expect(snapToBounds(0.7, { min: 0.25, max: 5, step: 0.5 })).toBe(0.8)
+  })
+
+  it('keeps to whole numbers for a whole step', () => {
+    expect(snapToBounds(1.2, { min: 0.5, max: 5, step: 1 })).toBe(2)
+  })
+
+  it('leaves a number alone where the step is nothing or less', () => {
+    expect(snapToBounds(5, { min: 0, max: 10, step: 0 })).toBe(5)
+    expect(snapToBounds(5, { min: 0, max: 10, step: -1 })).toBe(5)
+  })
+})
