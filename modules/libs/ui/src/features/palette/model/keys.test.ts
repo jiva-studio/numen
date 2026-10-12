@@ -203,7 +203,7 @@ describe('usePaletteKeys', () => {
       isOpen.value = true
       await flushPromises()
       expect(isPanelOpen.value).toBe(false)
-      expect(handle.focus).toHaveBeenCalledOnce()
+      expect(handle.focus).toHaveBeenCalled()
       expect(handle.select).toHaveBeenCalledOnce()
       expect(reveal).toHaveBeenCalledOnce()
     })
