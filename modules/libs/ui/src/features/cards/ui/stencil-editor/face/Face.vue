@@ -60,7 +60,7 @@ const focusedHalf = computed<Half>(() => aim.value ?? 'front')
 const front = shallowRef<InstanceType<typeof FacePane> | null>(null)
 const back = shallowRef<InstanceType<typeof FacePane> | null>(null)
 
-const boxOf = (half: Half): HTMLTextAreaElement | null =>
+const getBox = (half: Half): HTMLTextAreaElement | null =>
   (half === 'front' ? front.value : back.value)?.box ?? null
 
 /** A part was drawn, or taken away. The part a half is written in holds its box. */
@@ -85,14 +85,14 @@ const isFocused = (pane: Pane): boolean =>
  */
 const put = async (field: string): Promise<void> => {
   const half = focusedHalf.value
-  const target = boxOf(half)
+  const target = getBox(half)
   if (!target) return
 
   const caret = (aim.value === null ? null : target.selectionStart) ?? target.value.length
   const done = insert(target.value, caret, field)
   emit('write', half, done.text)
   await nextTick()
-  const again = boxOf(half)
+  const again = getBox(half)
   again?.focus()
   again?.setSelectionRange(done.caret, done.caret)
 }

@@ -14,7 +14,7 @@
 import { onScopeDispose, shallowRef } from 'vue'
 import { CardRow } from '../card-row'
 import { Icon } from '../icon'
-import { directionOf, STEP_KEYS, type StepDirection } from '../../lib/order'
+import { getDirection, STEP_KEYS, type StepDirection } from '../../lib/order'
 
 defineProps<{
   /** What is said of taking hold of it. */
@@ -60,7 +60,7 @@ onScopeDispose(release)
 
 /** The handle asked by an arrow to carry what it heads one place along. */
 const step = (event: KeyboardEvent): void => {
-  const direction = directionOf(event.key)
+  const direction = getDirection(event.key)
   if (direction !== null) emit('step', direction, event)
 }
 </script>

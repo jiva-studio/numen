@@ -25,7 +25,7 @@ interface Corpus {
 }
 
 /** What a corpus says is wrong, as the grid takes it. */
-const wrongOf = (corpus: Corpus): DeckProblems => ({
+const getProblems = (corpus: Corpus): DeckProblems => ({
   at: new Map(Object.entries(corpus.wrong?.at ?? {})),
   under: new Map(
     Object.entries(corpus.wrong?.under ?? {}).map(([card, fields]) => [
@@ -319,16 +319,16 @@ const meta: Meta<Knobs> = {
     setup() {
       const cards = ref<readonly DeckCard[]>(CORPORA[args.corpus].cards)
       const cuts = ref<readonly Stencil[]>(CORPORA[args.corpus].cuts)
-      const sections = ref<readonly DeckSection[]>(sectionsOf(CORPORA[args.corpus]))
-      const wrong = ref<DeckProblems>(wrongOf(CORPORA[args.corpus]))
+      const sections = ref<readonly DeckSection[]>(getSections(CORPORA[args.corpus]))
+      const wrong = ref<DeckProblems>(getProblems(CORPORA[args.corpus]))
 
       watch(
         () => args.corpus,
         (next) => {
           cards.value = CORPORA[next].cards
           cuts.value = CORPORA[next].cuts
-          sections.value = sectionsOf(CORPORA[next])
-          wrong.value = wrongOf(CORPORA[next])
+          sections.value = getSections(CORPORA[next])
+          wrong.value = getProblems(CORPORA[next])
         },
       )
 
@@ -408,7 +408,7 @@ const meta: Meta<Knobs> = {
   }),
 }
 
-const sectionsOf = (corpus: Corpus): readonly DeckSection[] => corpus.sections ?? []
+const getSections = (corpus: Corpus): readonly DeckSection[] => corpus.sections ?? []
 
 /**
  * A card let go before another, at the head of the deck, at the head of a

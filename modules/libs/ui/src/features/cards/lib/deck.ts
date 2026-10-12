@@ -22,7 +22,7 @@ const END = 'the end of '
  * under that heading, and under the heading itself. The run before the first
  * section is named by the head of the deck.
  */
-export const endOf = (run: string): InsertionPoint => `${END}${run}`
+export const createRunEnd = (run: string): InsertionPoint => `${END}${run}`
 
 /** Which run's end a drop target is, and nothing for a drop target that is not one. */
 export const getRunEnd = (at: InsertionPoint): string | null =>

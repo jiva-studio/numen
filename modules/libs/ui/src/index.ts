@@ -146,7 +146,7 @@ export type { Half, InsertionPoint } from './features/cards'
 export {
   getBlanks as cardBlanks,
   getRunEnd,
-  endOf as cardEndOf,
+  createRunEnd as cardEndOf,
   HEAD as CARD_HEAD,
 } from './features/cards'
 export { getDeclaredFields as cardFields } from './features/cards'

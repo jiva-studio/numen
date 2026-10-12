@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  directionOf,
+  getDirection,
   canDropField,
   getFreeName,
   checkFieldName,
@@ -142,15 +142,15 @@ describe('getStepInsertionPoint, a name that is not there', () => {
   })
 })
 
-describe('directionOf', () => {
+describe('getDirection', () => {
   it('reads the two arrows along the order', () => {
-    expect(directionOf('ArrowUp')).toBe('up')
-    expect(directionOf('ArrowDown')).toBe('down')
+    expect(getDirection('ArrowUp')).toBe('up')
+    expect(getDirection('ArrowDown')).toBe('down')
   })
 
   it('reads every other key as no direction at all', () => {
-    expect(directionOf('ArrowLeft')).toBeNull()
-    expect(directionOf('Enter')).toBeNull()
+    expect(getDirection('ArrowLeft')).toBeNull()
+    expect(getDirection('Enter')).toBeNull()
   })
 })
 

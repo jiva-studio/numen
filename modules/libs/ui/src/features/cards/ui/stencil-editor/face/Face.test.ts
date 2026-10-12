@@ -24,7 +24,7 @@ const FACE: StencilFace = {
 }
 
 /** One face, laid out against the fields a stencil declares. */
-const faceOf = (
+const createFace = (
   face: StencilFace,
   fields: readonly string[] = FIELDS,
   sample?: readonly FieldValue[],
@@ -34,7 +34,7 @@ const faceOf = (
   return laid
 }
 
-const mountFace = (face: FaceRow = faceOf(FACE), props: Record<string, unknown> = {}) =>
+const mountFace = (face: FaceRow = createFace(FACE), props: Record<string, unknown> = {}) =>
   mount(Face, {
     attachTo: document.body,
     props: { face, ...props },
@@ -42,14 +42,14 @@ const mountFace = (face: FaceRow = faceOf(FACE), props: Record<string, unknown> 
 
 type Drawn = ReturnType<typeof mountFace>
 
-const boxIn = (wrapper: Drawn, half: string) =>
+const getBox = (wrapper: Drawn, half: string) =>
   wrapper.get<HTMLTextAreaElement>(`[data-half="${half}"]`)
 
-const nameOf = (wrapper: Drawn) => wrapper.get<HTMLInputElement>('header input')
+const getName = (wrapper: Drawn) => wrapper.get<HTMLInputElement>('header input')
 
 /** A name typed into the name box and not yet committed. */
 const type = async (wrapper: Drawn, name: string): Promise<void> => {
-  const box = nameOf(wrapper)
+  const box = getName(wrapper)
   box.element.value = name
   await box.trigger('input')
 }
@@ -80,7 +80,7 @@ describe('Face, the window', () => {
   it('names each box it is written in, and names it to a reader alone', () => {
     const held = mountFace()
     for (const half of ['front', 'back']) {
-      expect(boxIn(held, half).attributes('aria-label')).toBe(half === 'front' ? 'Front' : 'Back')
+      expect(getBox(held, half).attributes('aria-label')).toBe(half === 'front' ? 'Front' : 'Back')
     }
   })
 
@@ -94,7 +94,7 @@ describe('Face, the window', () => {
   })
 
   it('stands what an empty part is called in the part, and says it to nobody twice', () => {
-    const held = mountFace(faceOf({ id: 'one', name: 'One', front: '', back: '' }))
+    const held = mountFace(createFace({ id: 'one', name: 'One', front: '', back: '' }))
     const ghosts = held.findAll('.face__ghost')
     expect(ghosts.map((each) => each.text())).toEqual(['Front', 'Preview', 'Back', 'Preview'])
     for (const ghost of ghosts) expect(ghost.attributes('aria-hidden')).toBe('true')
@@ -109,7 +109,7 @@ describe('Face, the window', () => {
   })
 
   it('says a part is empty where what is written in it fills out to nothing', () => {
-    const face = faceOf({ id: 'one', name: 'One', front: '{{Height}}', back: 'said' }, FIELDS, [
+    const face = createFace({ id: 'one', name: 'One', front: '{{Height}}', back: 'said' }, FIELDS, [
       { field: 'Height', text: '' },
     ])
     const held = mountFace(face)
@@ -120,11 +120,11 @@ describe('Face, the window', () => {
   })
 
   it('shows the braces in the box it is written in', () => {
-    expect(boxIn(mountFace(), 'back').element.value).toContain('{{Height}}')
+    expect(getBox(mountFace(), 'back').element.value).toContain('{{Height}}')
   })
 
   it('draws no braces in the preview, and the tags around them as tags', () => {
-    const held = mountFace(faceOf(FACE, FIELDS, [{ field: 'Height', text: 'about 45"' }]))
+    const held = mountFace(createFace(FACE, FIELDS, [{ field: 'Height', text: 'about 45"' }]))
     const preview = held.get('[data-preview="back"]')
     expect(preview.text()).toContain('about 45"')
     expect(preview.text()).not.toContain('{{')
@@ -136,7 +136,7 @@ describe('Face, the window', () => {
      typed and are drawn as themselves. */
   it('draws the marks a face carries as the text they are', () => {
     const held = mountFace(
-      faceOf({ id: 'one', name: 'One', front: '**Name**: {{Name}}', back: '' }),
+      createFace({ id: 'one', name: 'One', front: '**Name**: {{Name}}', back: '' }),
     )
     const preview = held.get('[data-preview="front"]')
     expect(preview.text()).toBe('**Name**: Name')
@@ -145,13 +145,13 @@ describe('Face, the window', () => {
 
   it('emits a half as it now reads when it is typed into', async () => {
     const held = mountFace()
-    await boxIn(held, 'back').setValue('nothing but words')
+    await getBox(held, 'back').setValue('nothing but words')
     expect(held.emitted('write')).toEqual([['back', 'nothing but words']])
   })
 
   it('follows no link a preview draws: the window stays where it is', () => {
     const held = mountFace(
-      faceOf({
+      createFace({
         id: 'one',
         name: 'One',
         front: '<a href="https://example.org">there</a>',
@@ -165,7 +165,7 @@ describe('Face, the window', () => {
 
   it('draws no script it was written with', () => {
     const held = mountFace(
-      faceOf({ id: 'one', name: 'One', front: '<script>alert(1)</script>after', back: '' }),
+      createFace({ id: 'one', name: 'One', front: '<script>alert(1)</script>after', back: '' }),
     )
     const preview = held.get('[data-preview="front"]')
     expect(preview.find('script').exists()).toBe(false)
@@ -202,7 +202,7 @@ describe('Face, the fields it is written with', () => {
       'front-written',
     ])
 
-    await boxIn(held, 'back').trigger('focus')
+    await getBox(held, 'back').trigger('focus')
     expect(held.findAll('[data-focused]').map((each) => each.attributes('data-pane'))).toEqual([
       'back-written',
     ])
@@ -218,7 +218,7 @@ describe('Face, the fields it is written with', () => {
      caret standing at the head of it. */
   it('writes a field after what a box nothing has been typed in holds', async () => {
     const held = mountFace()
-    boxIn(held, 'front').element.setSelectionRange(0, 0)
+    getBox(held, 'front').element.setSelectionRange(0, 0)
 
     await held.get('[data-insert="Weight"]').trigger('click')
 
@@ -227,7 +227,7 @@ describe('Face, the fields it is written with', () => {
 
   it('writes a field where the caret stands in a box that has been typed in', async () => {
     const held = mountFace()
-    const written = boxIn(held, 'front')
+    const written = getBox(held, 'front')
     await written.trigger('focus')
     written.element.setSelectionRange(0, 0)
 
@@ -238,7 +238,7 @@ describe('Face, the fields it is written with', () => {
 
   it('writes a field into the half last typed in', async () => {
     const held = mountFace()
-    const back = boxIn(held, 'back')
+    const back = getBox(held, 'back')
     await back.trigger('focus')
     back.element.setSelectionRange(0, 0)
 
@@ -251,7 +251,7 @@ describe('Face, the fields it is written with', () => {
 describe('Face, what is wrong with it', () => {
   it('says a stray slot over the markup naming it, and nowhere else', () => {
     const held = mountFace(
-      faceOf({ id: 'one', name: 'One', front: '{{Name}}', back: '{{Colour}}' }),
+      createFace({ id: 'one', name: 'One', front: '{{Name}}', back: '{{Colour}}' }),
     )
 
     expect(held.get('[data-pane="back-written"] .face__objections').text()).toBe(
@@ -264,7 +264,7 @@ describe('Face, what is wrong with it', () => {
 
   it('marks a stray slot in the preview where the slot itself stands', () => {
     const held = mountFace(
-      faceOf({ id: 'one', name: 'One', front: 'before {{Colour}} after', back: '' }),
+      createFace({ id: 'one', name: 'One', front: 'before {{Colour}} after', back: '' }),
     )
     const preview = held.get('[data-preview="front"]')
     expect(preview.get('mark').text()).toBe('{{Colour}}')
@@ -284,7 +284,7 @@ describe('Face, what is wrong with it', () => {
   })
 
   it('stands what is wrong outside the rows it is wrong about', () => {
-    const held = mountFace(faceOf({ id: 'one', name: 'One', front: '{{Colour}}', back: '' }), {
+    const held = mountFace(createFace({ id: 'one', name: 'One', front: '{{Colour}}', back: '' }), {
       wrong: ['this face has no back'],
     })
     expect(held.find('.face__head .face__objections').exists()).toBe(false)
@@ -308,68 +308,68 @@ describe('Face, its name', () => {
   it('emits a name typed and committed', async () => {
     const held = mountFace()
     await type(held, 'Name it')
-    await nameOf(held).trigger('change')
+    await getName(held).trigger('change')
     expect(held.emitted('rename')).toEqual([['Name it']])
   })
 
   it('drops the space around a name it commits', async () => {
     const held = mountFace()
     await type(held, '  Recall  ')
-    await nameOf(held).trigger('change')
+    await getName(held).trigger('change')
     expect(held.emitted('rename')).toEqual([['Recall']])
   })
 
   it('renames nothing where the name typed is another face’s', async () => {
-    const held = mountFace({ ...faceOf(FACE), taken: ['Recall'] })
+    const held = mountFace({ ...createFace(FACE), taken: ['Recall'] })
     await type(held, 'Recall')
-    await nameOf(held).trigger('change')
+    await getName(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
   })
 
   it('renames nothing where the name typed has nothing in it', async () => {
     const held = mountFace()
     await type(held, '   ')
-    await nameOf(held).trigger('change')
+    await getName(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
   })
 
   it('renames nothing where the name typed is the one it already carries', async () => {
     const held = mountFace()
     await type(held, 'Recognise')
-    await nameOf(held).trigger('change')
+    await getName(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
   })
 
   it('renames nothing where a name is abandoned', async () => {
     const held = mountFace()
     await type(held, 'Recall')
-    await nameOf(held).trigger('keydown', { key: 'Escape' })
-    await nameOf(held).trigger('change')
+    await getName(held).trigger('keydown', { key: 'Escape' })
+    await getName(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
-    expect(nameOf(held).element.value).toBe('Recognise')
+    expect(getName(held).element.value).toBe('Recognise')
   })
 
   it('says why a name typed cannot be used, and says it to the box', async () => {
-    const held = mountFace({ ...faceOf(FACE), taken: ['Recall'] })
+    const held = mountFace({ ...createFace(FACE), taken: ['Recall'] })
     await type(held, 'Recall')
 
     const said = held.get('header .face__objections')
     expect(said.text()).toBe('That name is taken')
-    expect(nameOf(held).attributes('aria-invalid')).toBe('true')
-    expect(nameOf(held).attributes('aria-describedby')).toBe(said.attributes('id'))
+    expect(getName(held).attributes('aria-invalid')).toBe('true')
+    expect(getName(held).attributes('aria-describedby')).toBe(said.attributes('id'))
   })
 
   it('says nothing about a name nothing is being typed over', () => {
     const held = mountFace()
     expect(held.find('header .face__objections').exists()).toBe(false)
-    expect(nameOf(held).attributes('aria-invalid')).toBeUndefined()
+    expect(getName(held).attributes('aria-invalid')).toBeUndefined()
   })
 
   describe('a name holding a brace', () => {
     it('is a name like any other, a face standing in no brace', async () => {
       const held = mountFace()
       await type(held, 'What {{Name}} is')
-      await nameOf(held).trigger('change')
+      await getName(held).trigger('change')
       expect(held.emitted('rename')).toEqual([['What {{Name}} is']])
     })
 
@@ -377,7 +377,7 @@ describe('Face, its name', () => {
       const held = mountFace()
       await type(held, 'What {{Name}} is')
       expect(held.find('header .face__objections').exists()).toBe(false)
-      expect(nameOf(held).attributes('aria-invalid')).toBeUndefined()
+      expect(getName(held).attributes('aria-invalid')).toBeUndefined()
     })
   })
 })

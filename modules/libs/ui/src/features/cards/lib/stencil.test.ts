@@ -135,13 +135,17 @@ describe('panes', () => {
     { field: 'Height', text: 'about 45"' },
   ]
 
-  const faceOf = (face: StencilFace, fields: readonly string[], sample: readonly FieldValue[]) => {
+  const createFace = (
+    face: StencilFace,
+    fields: readonly string[],
+    sample: readonly FieldValue[],
+  ) => {
     const drawn = faceRows([face], fields, sample)[0]
     if (!drawn) throw new Error('no face')
     return drawn
   }
 
-  const getFacePanes = (face: StencilFace) => getPanes(faceOf(face, FIELDS, SAMPLE))
+  const getFacePanes = (face: StencilFace) => getPanes(createFace(face, FIELDS, SAMPLE))
 
   const FULL: StencilFace = {
     id: 'recognise',
@@ -188,7 +192,7 @@ describe('panes', () => {
 
   it('calls a part blank where what is written fills out to nothing', () => {
     const face: StencilFace = { id: 'one', name: 'One', front: '{{Blank}}', back: '' }
-    const drawn = getPanes(faceOf(face, ['Blank'], [{ field: 'Blank', text: '' }]))
+    const drawn = getPanes(createFace(face, ['Blank'], [{ field: 'Blank', text: '' }]))
     expect(drawn[0]?.isBlank).toBe(false)
     expect(drawn[1]?.isBlank).toBe(true)
   })
@@ -199,7 +203,7 @@ describe('panes', () => {
   })
 
   it('draws every part with the words it was handed', () => {
-    const drawn = getPanes(faceOf(FULL, FIELDS, SAMPLE), {
+    const drawn = getPanes(createFace(FULL, FIELDS, SAMPLE), {
       ...STENCIL_WORDS,
       front: 'Recto',
       back: 'Verso',

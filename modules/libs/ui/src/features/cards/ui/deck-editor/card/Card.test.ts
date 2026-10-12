@@ -27,7 +27,7 @@ const WORDS: CardWords = {
   wrong: 'What is wrong',
 }
 
-const tileOf = (
+const getTile = (
   id: string,
   cards: readonly DeckCard[] = CARDS,
   sections: readonly DeckSection[] = [],
@@ -48,18 +48,18 @@ afterEach(() => {
 
 describe('Card', () => {
   it('says its place among the tiles and how many stand with it, from the tile itself', () => {
-    const held = mountCard(tileOf('yak'))
+    const held = mountCard(getTile('yak'))
     expect(held.get('[data-card]').attributes('aria-posinset')).toBe('2')
     expect(held.get('[data-card]').attributes('aria-setsize')).toBe('3')
   })
 
   it('is drawn with words that say nothing of adding a card', () => {
-    const held = mountCard(tileOf('llama'), { words: WORDS })
+    const held = mountCard(getTile('llama'), { words: WORDS })
     expect(held.get('[data-cut-of]').attributes('aria-label')).toBe('Stencil')
   })
 
   it('announces a card by the place it stands in the deck, and by no name of its own', () => {
-    const held = mountCard(tileOf('yak'), { words: WORDS })
+    const held = mountCard(getTile('yak'), { words: WORDS })
     expect(held.get('[data-card]').attributes('aria-label')).toBe('Card 2')
     expect(held.get('.card-header__grip').attributes('aria-label')).toBe('Reorder: Card 2')
   })
@@ -68,13 +68,15 @@ describe('Card', () => {
     const under: readonly DeckCard[] = [
       { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
     ]
-    const tile = tileOf('llama', under, [{ id: 'roots', name: 'Roots' }])
+    const tile = getTile('llama', under, [{ id: 'roots', name: 'Roots' }])
     expect(mountCard(tile).get('[data-card]').attributes('data-section')).toBe('roots')
-    expect(mountCard(tileOf('llama')).get('[data-card]').attributes('data-section')).toBeUndefined()
+    expect(
+      mountCard(getTile('llama')).get('[data-card]').attributes('data-section'),
+    ).toBeUndefined()
   })
 
   it('holds what was typed, breaks and all, in the box of the first field', async () => {
-    const held = mountCard(tileOf('llama'))
+    const held = mountCard(getTile('llama'))
     const box = held.get<HTMLTextAreaElement>('[data-value="Name"]')
     const press = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
     box.element.dispatchEvent(press)
@@ -86,21 +88,21 @@ describe('Card', () => {
 
   it('says on the strip which stencil cut the card, and where none did, that none did', () => {
     const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
-    expect(mountCard(tileOf('llama')).get('[data-cut-of]').text()).toBe('Animal')
-    expect(mountCard(tileOf('bare', bare), { words: WORDS }).get('[data-cut-of]').text()).toBe(
+    expect(mountCard(getTile('llama')).get('[data-cut-of]').text()).toBe('Animal')
+    expect(mountCard(getTile('bare', bare), { words: WORDS }).get('[data-cut-of]').text()).toBe(
       'Cut by no stencil',
     )
   })
 
   it('holds nothing against a card that names no stencil, having said so on its strip', () => {
     const bare: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
-    const held = mountCard(tileOf('bare', bare), { words: WORDS })
+    const held = mountCard(getTile('bare', bare), { words: WORDS })
     expect(held.findAll('.card__objections')).toHaveLength(0)
   })
 
   it('says which stencil a card naming one is waiting for', () => {
     const gone: readonly DeckCard[] = [{ id: 'gone', section: null, stencil: 'Gone', filled: [] }]
-    const held = mountCard(tileOf('gone', gone), { words: WORDS })
+    const held = mountCard(getTile('gone', gone), { words: WORDS })
     expect(held.get('.card__objections').text()).toContain('No stencil called Gone')
   })
 
@@ -113,7 +115,7 @@ describe('Card', () => {
         filled: [{ field: 'Question', text: 'what did I mean' }],
       },
     ]
-    const held = mountCard(tileOf('bare', bare), { words: WORDS })
+    const held = mountCard(getTile('bare', bare), { words: WORDS })
     expect(held.findAll('textarea')).toHaveLength(0)
     expect(held.find('.card__silence').exists()).toBe(false)
     const wrote = held.get('[data-wrote="Question"]')
@@ -133,7 +135,7 @@ describe('Card', () => {
         ],
       },
     ]
-    const held = mountCard(tileOf('twice', twice), {
+    const held = mountCard(getTile('twice', twice), {
       wrongUnder: new Map([['Name', ['this card writes Name twice']]]),
     })
     const said = held.findAll('[data-wrong-value="Name"]')
@@ -142,7 +144,7 @@ describe('Card', () => {
   })
 
   it('holds nothing against any value of a card it was handed no marks for', () => {
-    const held = mountCard(tileOf('llama'))
+    const held = mountCard(getTile('llama'))
     expect(held.find('[data-wrong-value]').exists()).toBe(false)
   })
 })

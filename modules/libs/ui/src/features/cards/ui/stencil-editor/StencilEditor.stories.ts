@@ -105,7 +105,7 @@ const CORPORA = {
 type Corpora = keyof typeof CORPORA
 
 /** One corpus, read as the stencil is handed it. */
-const corpusOf = (key: Corpora): Corpus => CORPORA[key]
+const getCorpus = (key: Corpora): Corpus => CORPORA[key]
 
 interface Knobs {
   corpus: Corpora
@@ -138,14 +138,14 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { Stencil },
     setup() {
-      const held = corpusOf(args.corpus)
+      const held = getCorpus(args.corpus)
       const fields = ref<readonly string[]>(held.fields)
       const faces = ref<readonly StencilFace[]>(held.faces)
 
       watch(
         () => args.corpus,
         (next) => {
-          const held = corpusOf(next)
+          const held = getCorpus(next)
           fields.value = held.fields
           faces.value = held.faces
         },
@@ -226,7 +226,7 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-const boxFor = (canvas: HTMLElement, id: string, half: Half) => {
+const getBox = (canvas: HTMLElement, id: string, half: Half) => {
   const box = canvas.querySelector<HTMLTextAreaElement>(`[data-face="${id}"] [data-half="${half}"]`)
   if (!box) throw new Error(`no ${half} of ${id}`)
   return box
@@ -332,13 +332,13 @@ export const AStencil: Story = {
 export const WhatAPersonDoesToIt: Story = {
   play: async ({ canvasElement }) => {
     // A field pressed in one face's strip is written into that face alone.
-    const front = boxFor(canvasElement, 'recognise', 'front')
+    const front = getBox(canvasElement, 'recognise', 'front')
     front.focus()
     front.setSelectionRange(front.value.length, front.value.length)
 
     await userEvent.click(found(canvasElement, '[data-face="recognise"] [data-insert="Weight"]'))
-    expect(boxFor(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
-    expect(boxFor(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
+    expect(getBox(canvasElement, 'recognise', 'front').value).toBe('{{Name}}{{Weight}}')
+    expect(getBox(canvasElement, 'name-it', 'back').value).toBe('{{Name}}')
 
     // A field asked for stands under a name nothing had taken, below the last.
     await userEvent.click(buttonSaying(canvasElement, 'Add a field'))
