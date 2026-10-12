@@ -48,6 +48,8 @@ type memWorld struct {
 	sourcesErr  error
 	// saveFailures is how many saves fail before the rest succeed.
 	saveFailures int
+	// afterRead runs after every successful read.
+	afterRead func()
 
 	opens          int
 	registers      int
@@ -126,6 +128,9 @@ func (r memReader) Read(_ context.Context, path string) ([]byte, error) {
 	}
 	if f.readErr != nil {
 		return nil, f.readErr
+	}
+	if r.w.afterRead != nil {
+		r.w.afterRead()
 	}
 	return append([]byte(nil), f.content...), nil
 }
@@ -310,9 +315,12 @@ func TestARefreshFailsWhenTheIndexCannotSaveTheLastGroup(t *testing.T) {
 	w.saveFailures = 1
 	w.addNote("Note.md", "entropy", memBase.Add(-time.Hour))
 
-	_, err := w.refresh().Execute(t.Context(), memVault, []string{"Note.md"})
+	res, err := w.refresh().Execute(t.Context(), memVault, []string{"Note.md"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
+	}
+	if len(res.Indexed) == 0 {
+		t.Errorf("the result lost what was done before the failure")
 	}
 }
 
@@ -327,9 +335,12 @@ func TestARefreshFailsWhenTheIndexCannotSaveAFullGroup(t *testing.T) {
 		paths = append(paths, path)
 	}
 
-	_, err := w.refresh().Execute(t.Context(), memVault, paths)
+	res, err := w.refresh().Execute(t.Context(), memVault, paths)
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
+	}
+	if len(res.Indexed) == 0 {
+		t.Errorf("the result lost what was done before the failure")
 	}
 }
 
@@ -339,9 +350,12 @@ func TestARefreshFailsWhenTheIndexCannotRemoveANote(t *testing.T) {
 	w.removeErr = errMemory
 	w.files["Gone.md"] = &memFile{statErr: fs.ErrNotExist}
 
-	_, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone.md"})
+	res, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone.md"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
+	}
+	if len(res.Removed) == 0 {
+		t.Errorf("the result lost what was done before the failure")
 	}
 }
 
@@ -351,9 +365,12 @@ func TestARefreshFailsWhenTheSourcesUnderARemovedPathCannotBeListed(t *testing.T
 	w.queriesErr = errMemory
 	w.files["Gone.md"] = &memFile{statErr: fs.ErrNotExist}
 
-	_, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone.md"})
+	res, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone.md"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
+	}
+	if len(res.Removed) == 0 {
+		t.Errorf("the result lost what was done before the failure")
 	}
 }
 
@@ -611,5 +628,37 @@ func TestARefreshWithoutALedgerSavesARecentNoteEveryTime(t *testing.T) {
 	}
 	if n := refresh.Ledger.Len(); n != 0 {
 		t.Errorf("a missing ledger holds %d notes", n)
+	}
+}
+
+func TestACancelledRefreshReportsWhatItDidFirst(t *testing.T) {
+	t.Parallel()
+	w := newMemWorld()
+	w.addNote("First.md", "entropy", memBase.Add(-time.Hour))
+	w.addNote("Second.md", "entropy", memBase.Add(-time.Hour))
+	ctx, cancel := context.WithCancel(t.Context())
+	w.afterRead = cancel
+
+	res, err := w.refresh().Execute(ctx, memVault, []string{"First.md", "Second.md"})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("got %v", err)
+	}
+	if fmt.Sprint(res.Indexed) != "[First.md]" {
+		t.Errorf("indexed %v", res.Indexed)
+	}
+}
+
+func TestARefreshWithoutALedgerTakesASettledNoteForCurrent(t *testing.T) {
+	t.Parallel()
+	w := newMemWorld()
+	w.addNote("Note.md", "entropy", memBase.Add(-time.Hour))
+	w.index("Note.md")
+	refresh := w.refresh()
+	refresh.Ledger = nil
+
+	res := execute(t, refresh, "Note.md")
+
+	if fmt.Sprint(res.Indexed) != "[Note.md]" || len(w.savedPaths()) != 0 {
+		t.Errorf("indexed %v after %d saves", res.Indexed, len(w.savedPaths()))
 	}
 }
