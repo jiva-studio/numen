@@ -67,7 +67,6 @@ func (c Config) VaultOpenerWith(
 		db.Maintenance(),
 	)
 	scan.Walks = db.Walks()
-	scan.ShouldRebuildIndex = c.ShouldRebuildIndex
 
 	buffered := &bufferedNoteRepository{NoteRepository: db.NotesWithChunking(c.GetChunkSizes(), c.Legibility())}
 	return &VaultOpener{
@@ -79,10 +78,9 @@ func (c Config) VaultOpenerWith(
 }
 
 // makeRefresh brings named notes up to date, cut at this installation's sizes
-// and carrying what was fetched for a link note.
+// and sharing the installation's ledger.
 func makeRefresh(c Config, db *Index, notes port.NoteRepository) vault.Refresh {
 	refresh := vault.NewRefresh(c.VaultReaders(), db.Vaults(), notes, db.SourcesKnown(), db.Sources(), c.Clock())
-	refresh.Derived = c.GetDerivedStores()
 	refresh.Ledger = db.ledger
 	return refresh
 }
@@ -165,10 +163,8 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 	if err != nil {
 		return res.Notes, err
 	}
-	if len(under) > 0 {
-		if _, err := o.opening.refresh.Execute(ctx, o.vault, under); err != nil {
-			o.handleError(err)
-		}
+	if _, err := o.opening.refresh.Execute(ctx, o.vault, under); err != nil {
+		o.handleError(err)
 	}
 	return res.Notes, nil
 }

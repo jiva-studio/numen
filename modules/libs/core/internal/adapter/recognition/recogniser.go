@@ -171,13 +171,13 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 	// What could not be read, and the last of it. A page whose every part was
 	// refused says nothing, and a page that says nothing is a blank page to
 	// everything downstream.
-	var refused int
+	var refused bool
 	var failed error
 	for i, res := range results {
 		if res.err != nil {
 			// One part of a page that could not be read is one part. A page is
 			// hundreds of words, and the rest of them are still what it says.
-			refused, failed = refused+1, res.err
+			refused, failed = true, res.err
 			continue
 		}
 		t := targets[i]
@@ -204,7 +204,7 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 			})
 		}
 	}
-	if len(out) == 0 && refused > 0 {
+	if len(out) == 0 && refused {
 		return nil, fmt.Errorf("every part of the page: %w", failed)
 	}
 	return out, nil

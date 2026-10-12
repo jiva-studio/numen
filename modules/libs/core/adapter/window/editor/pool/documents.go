@@ -265,7 +265,7 @@ func (d *Documents) Evict() {
 		// gomutants:disable-next-line INTEGER_INCREMENT reason="any negative start reads as nothing found"
 		oldest := -1
 		for i, print := range d.order {
-			if doc := d.open[print]; doc != nil && doc.uses == 0 {
+			if d.open[print].uses == 0 {
 				oldest = i
 				break
 			}

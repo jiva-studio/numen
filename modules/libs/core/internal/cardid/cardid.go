@@ -33,12 +33,13 @@ func createTable(characters string) (table [256]bool) {
 	return table
 }
 
-// New mints an identifier.
+// New mints an identifier. The error is the shape of the identity source a
+// caller is handed; this one always answers nil.
 func New() (domain.CardID, error) {
 	var b [Length]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "", err
-	}
+	// rand.Read aborts the program when the system has no randomness; it never
+	// returns an error.
+	_, _ = rand.Read(b[:])
 	out := make([]byte, Length)
 	for i, v := range b {
 		// The alphabet is 32 characters and a byte holds eight of them evenly,
