@@ -11,7 +11,7 @@ import { useRowSelection } from './selection'
 
 const ROWS: readonly Row[] = [{ id: 'notes', name: 'Notes', hasChildren: false }]
 
-const create = () => {
+const create = (renamingPath = ref<string | null>(null)) => {
   const told: unknown[][] = []
   const tell: TreeGesturesTell = (...args: unknown[]) => {
     told.push(args)
@@ -38,7 +38,7 @@ const create = () => {
   const gestures = useTreeGestures({
     getShownRows: () => shown,
     getSelected: () => [],
-    renamingPath: ref<string | null>(null),
+    renamingPath,
     rows,
     selection,
     drag,
@@ -57,5 +57,16 @@ describe('the menu key on a row with no place on screen', () => {
 
     expect(event.defaultPrevented).toBe(true)
     expect(told).toStrictEqual([])
+  })
+})
+
+describe('a name field losing the keyboard', () => {
+  it('stops the renaming', () => {
+    const renamingPath = ref<string | null>('notes')
+    const { gestures } = create(renamingPath)
+
+    gestures.onFieldBlur()
+
+    expect(renamingPath.value).toBeNull()
   })
 })

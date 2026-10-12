@@ -175,6 +175,24 @@ describe('how far the tree reaches', () => {
   })
 })
 
+describe('a tree whose rows begin below its top edge', () => {
+  it('takes in nothing above the edge, though a row stands there', () => {
+    const { drag } = setup(() => ({ ...METRICS, top: 88 }))
+    lift(drag, ['loose'])
+    pointer('pointermove', 10, 95)
+
+    expect(drag.at.value).toBeNull()
+  })
+
+  it('takes in the edge itself', () => {
+    const { drag } = setup(() => ({ ...METRICS, top: 88 }))
+    lift(drag, ['loose'])
+    pointer('pointermove', 10, 100)
+
+    expect(drag.at.value).toStrictEqual({ into: 'work' })
+  })
+})
+
 describe('letting go', () => {
   it('tells where the rows landed, then that they were let go', () => {
     const { drag, told } = setup()
