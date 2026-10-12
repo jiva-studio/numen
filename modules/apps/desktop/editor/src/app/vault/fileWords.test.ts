@@ -2,7 +2,7 @@
  * A listing row and a move result, read into the window's own words.
  */
 import { describe, expect, it } from 'vitest'
-import { NoteType, SourceKind, type Entry } from '@numen/protocol'
+import { NoteType, SourceKind, type Entry, type MoveResult } from '@numen/protocol'
 import { mapEntry, mapMoveResult } from './fileWords'
 
 describe('a row of a listing', () => {
@@ -44,9 +44,14 @@ describe('a row of a listing', () => {
 })
 
 describe('the result of a move', () => {
-  it('keeps where the file stood, where it stands and whether it was repaired', () => {
-    const answer = { from: 'A.md', to: 'B.md', repaired: 2 } as Parameters<typeof mapMoveResult>[0]
+  it('keeps where the file stood, where it stands and which links were repaired', () => {
+    const answer = { from: 'A.md', to: 'B.md', repaired: ['C.md'] } as unknown as MoveResult
 
-    expect(mapMoveResult(answer)).toStrictEqual({ from: 'A.md', to: 'B.md', repaired: 2 })
+
+    expect(mapMoveResult(answer)).toStrictEqual({
+      from: 'A.md',
+      to: 'B.md',
+      repaired: ['C.md'],
+    })
   })
 })
