@@ -11,7 +11,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -32,6 +31,11 @@ type Core struct {
 	// Showing is the vault the tools work, asked at every call so that they
 	// follow the window.
 	Showing func() CurrentVault
+
+	// GetSummary says how much of the vault has been read, and GetProblems what
+	// in it could not be acted on. A tool is added where its use case is here.
+	GetSummary  *vaults.GetSummary
+	GetProblems *vaults.GetProblems
 
 	// Readers is the vault's files, which the notes, the documents and the
 	// window are all read out of.
@@ -63,7 +67,6 @@ type Notes struct {
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood
 	Links         note.ShowLinks
-	Problems      check.Checks
 
 	Create   note.Create
 	Write    note.Write

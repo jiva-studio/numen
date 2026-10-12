@@ -10,7 +10,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
-	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
@@ -90,12 +89,13 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 	core := mcp.Core{
 		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,
+		GetSummary:  container.Config{}.GetSummary(queries),
+		GetProblems: container.Config{}.GetProblems(queries),
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
 			Links:         note.NewShowLinks(db.Links()),
-			Problems:      check.Standard(db.Problems()),
 			Create:        note.NewCreate(writers, queries, index, time.Now),
 			Write:         note.NewWrite(readers, writers, index, time.Now),
 			Move:          moving,

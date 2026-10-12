@@ -258,8 +258,10 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 	cutting := cfg.Cards(queries, db.Links(), levelNothing)
 
 	return mcp.Core{
-		Showing: mcp.ShowOneVault(v, v.Path),
-		Readers: readers,
+		Showing:     mcp.ShowOneVault(v, v.Path),
+		Readers:     readers,
+		GetSummary:  cfg.GetSummary(queries),
+		GetProblems: cfg.GetProblems(queries),
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
