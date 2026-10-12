@@ -7,13 +7,13 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { IonToast } from '@ionic/vue'
 import { formatErrorMessage } from '@numen/wire'
 import PlexPage from './PlexPage.vue'
-import { reach } from '../core'
+import { startCore } from '../core'
 
-vi.mock('../core', () => ({ reach: vi.fn() }))
+vi.mock('../core', () => ({ startCore: vi.fn() }))
 
 /** The toast the page puts its error on, after the core has answered. */
 async function toastAfter(why: unknown) {
-  vi.mocked(reach).mockRejectedValueOnce(why)
+  vi.mocked(startCore).mockRejectedValueOnce(why)
   const page = mount(PlexPage)
   await flushPromises()
   const toast = page.getComponent(IonToast)

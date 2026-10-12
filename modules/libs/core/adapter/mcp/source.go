@@ -25,8 +25,8 @@ type Source struct {
 // An agent asked to read a document finds out first which have been read
 // already, so the listing is what makes the reading usable.
 func addSourceTools(server *sdk.Server, core Core) {
-	addSourceReadingTools(server, core)
-	addSourceWritingTools(server, core)
+	addSourceReadTools(server, core)
+	addSourceWriteTools(server, core)
 }
 
 // Recogniser is what the tools need in order to read a document: a way to

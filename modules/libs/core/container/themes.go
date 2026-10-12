@@ -122,7 +122,7 @@ func (c Config) writeAppearance(chosen theme.Appearance, scales *scales) error {
 	}
 	writing := []settings.Setting{
 		{At: []string{"appearance", "theme"}, Written: chosen.ThemeName},
-		{At: []string{"appearance", "mode"}, Written: settings.Word(chosen.Mode)},
+		{At: []string{"appearance", "mode"}, Written: settings.GetModeName(chosen.Mode)},
 	}
 	if chosen.InterfaceScale > 0 {
 		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)

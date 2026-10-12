@@ -155,13 +155,13 @@ func onAList(t *testing.T) *onTheList {
 			Erase:        &erase,
 		},
 	}
-	f.api.Opens = func(_ context.Context, v domain.Vault) error {
+	f.api.OpenVault = func(_ context.Context, v domain.Vault) error {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		f.shown = append(f.shown, v)
 		return f.refuses
 	}
-	f.api.show(f.first)
+	f.api.setVault(f.first)
 
 	server := httptest.NewUnstartedServer(f.api.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
@@ -404,7 +404,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	f := onAList(t)
 	// A window standing on nothing is not what keeps this vault: the list is.
-	f.api.show(domain.Vault{})
+	f.api.setVault(domain.Vault{})
 
 	gone, err := f.client.RemoveVault(t.Context(),
 		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID)}))
@@ -532,7 +532,7 @@ func TestAnotherVaultIsPutInTheWindow(t *testing.T) {
 // TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn.
 func TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn(t *testing.T) {
 	f := onAList(t)
-	f.opening(errAsking)
+	f.opening(errAnswerPending)
 
 	out, err := f.client.OpenVault(t.Context(),
 		connect.NewRequest(&v1.OpenVaultRequest{Id: string(f.second.ID)}))
@@ -553,7 +553,7 @@ func TestAWindowThatIsGoingIsNotACodeAboutTheVault(t *testing.T) {
 		why  error
 	}{
 		{"the window is closing", errWindowClosing},
-		{"the window is settling", errSettling},
+		{"the window is settling", errShutdownInProgress},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			f := onAList(t)

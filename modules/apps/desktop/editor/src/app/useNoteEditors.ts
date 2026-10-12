@@ -26,7 +26,7 @@ export interface NoteEditorsDeps {
 
 export function useNoteEditors({ core, log, tabOpeners, held, day }: NoteEditorsDeps) {
   const changes = createNoteChanges()
-  const notes = openNotes(core, { onReplaced: changes.handleNoteChange })
+  const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(core, log.getWriter('made'))
 
   const noted = useNoteTab(core, notes, changes, held.handle, tabOpeners)

@@ -73,7 +73,7 @@ func weekday(number int) time.Weekday {
 //
 // It is the one place a day is chosen. A session and a projection of it both
 // come here.
-func (p Preset) ScheduleDay(s *DueByDay, at, due time.Time) time.Time {
+func (p Preset) AssignDueDay(s *DueByDay, at, due time.Time) time.Time {
 	out := p.computeDueDay(s, at, due)
 	s.Add(out)
 	return out
@@ -83,7 +83,7 @@ func (p Preset) ScheduleDay(s *DueByDay, at, due time.Time) time.Time {
 // counting it against no day.
 //
 // The four windows put to a person are four askings of one card, and one of
-// them is answered. ScheduleDay chooses the day each of them names, so the
+// them is answered. AssignDueDay chooses the day each of them names, so the
 // button says the day the card comes back on.
 func (p Preset) GetDueDay(s *DueByDay, at, due time.Time) time.Time {
 	return p.computeDueDay(s, at, due)
@@ -95,7 +95,7 @@ func (p Preset) computeDueDay(s *DueByDay, at, due time.Time) time.Time {
 		return due
 	}
 	first, last, opens := window(due.Sub(at))
-	if !p.CanEvenLoad() || !opens {
+	if !p.ShouldBalanceLoad() || !opens {
 		return due
 	}
 

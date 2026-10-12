@@ -9,35 +9,35 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import {
-  asset,
+  getAssetUrl,
   ERROR_CODE,
   errorIn,
-  fingerprint,
+  parseFingerprint,
   getBytesQuery,
   retryWhileBusy,
   staleIn,
-  stamp,
+  formatFingerprint,
 } from './answers'
 
 describe('the file an answer came out of', () => {
   it('comes back out as it went in', () => {
     const at = { path: 'physics/Entropy.md', size: 1234n, mtime: 1_700_000_000n }
-    expect(fingerprint(stamp(at) as string)).toEqual(at)
+    expect(parseFingerprint(formatFingerprint(at) as string)).toEqual(at)
   })
 
   // A path is the one part that may hold a space, so it is what is left after
   // the two numbers rather than one field among several.
   it('comes back out whole where the path holds spaces', () => {
     const at = { path: 'heat/Maxwell’s demon and the rest.md', size: 7n, mtime: 9n }
-    expect(fingerprint(stamp(at) as string)).toEqual(at)
+    expect(parseFingerprint(formatFingerprint(at) as string)).toEqual(at)
   })
 
   it('is nothing where the answer named no file', () => {
-    expect(stamp(undefined)).toBeUndefined()
+    expect(formatFingerprint(undefined)).toBeUndefined()
   })
 
   it('is nothing at all where there is nothing to read', () => {
-    expect(fingerprint('')).toEqual({ path: '', size: 0n, mtime: 0n })
+    expect(parseFingerprint('')).toEqual({ path: '', size: 0n, mtime: 0n })
   })
 })
 
@@ -72,7 +72,9 @@ describe('what an error is called', () => {
 
 describe('the address a file is asked about at', () => {
   it('escapes characters in the path', () => {
-    expect(asset('notes/Maxwell’s demon.md')).toBe('/assets/notes%2FMaxwell%E2%80%99s%20demon.md')
+    expect(getAssetUrl('notes/Maxwell’s demon.md')).toBe(
+      '/assets/notes%2FMaxwell%E2%80%99s%20demon.md',
+    )
   })
 })
 

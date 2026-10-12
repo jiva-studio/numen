@@ -12,13 +12,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// transcribeCommand listens to one recording with a model and writes down what
+// runTranscribeCommand listens to one recording with a model and writes down what
 // it heard.
 //
 // A recording carries no text of its own, so what the model heard is the only
 // text there is. The window listens to a vault's recordings on its own; this is
 // the hand asking for one.
-func transcribeCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	again := false
 	rest := make([]string, 0, len(args))
 	for _, one := range args {

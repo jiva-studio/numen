@@ -11,22 +11,21 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
-func addCardReadingTools(server *sdk.Server, core Core) {
+func addCardReadTools(server *sdk.Server, core Core) {
 	addCardStencilList(server, core)
 	addCardRead(server, core)
 }
 
-// addCardShowing tells an agent which card the person is looking at.
+// addCardFocus adds the tool that returns the card the person is looking at.
 //
-// It is added only where a window says. A binary nobody is sitting at answers
-// about a vault and about nothing in front of anybody.
-func addCardShowing(server *sdk.Server, core Core) {
-	if core.Reviewing == nil {
+// It is added only when the core has a reviewing session.
+func addCardFocus(server *sdk.Server, core Core) {
+	if core.GetCurrentCard == nil {
 		return
 	}
 
 	addTool(server, &sdk.Tool{
-		Name:  "card_showing",
+		Name:  "card_current",
 		Title: "Show the card in front",
 		Description: "The card in front of the person: the deck it stands in, the mark " +
 			"`card_read` addresses it by, and the face it is being shown through. Ask it " +
@@ -36,8 +35,8 @@ func addCardShowing(server *sdk.Server, core Core) {
 			"back empty.",
 	}, func(
 		_ context.Context, _ *sdk.CallToolRequest, _ struct{},
-	) (*sdk.CallToolResult, AskedCard, error) {
-		return nil, core.Reviewing(), nil
+	) (*sdk.CallToolResult, CurrentCard, error) {
+		return nil, core.GetCurrentCard(), nil
 	})
 }
 
@@ -73,12 +72,12 @@ func listCardStencils(ctx context.Context, core Core, in stencilListInput) (sten
 	if in.Limit > 0 {
 		limit = in.Limit
 	}
-	held, count, err := core.Cards.List.Execute(ctx, core.getCurrentVault().Vault, limit)
+	stencils, count, err := core.Cards.List.Execute(ctx, core.getCurrentVault().Vault, limit)
 	if err != nil {
 		return stencilListOutput{}, err
 	}
 	res := stencilListOutput{Total: count}
-	for _, s := range held {
+	for _, s := range stencils {
 		res.Stencils = append(res.Stencils, Stencil{
 			Path: s.Path, Name: domain.Basename(s.Path), Title: s.Title, Fields: s.Fields,
 		})
@@ -121,45 +120,44 @@ func addCardRead(server *sdk.Server, core Core) {
 }
 
 func readCards(ctx context.Context, core Core, in cardReadInput) (cardReadOutput, error) {
-	// One card is one card however many were asked for, so the ceiling is
-	// put on the call that reads a run of them.
+	// The limit applies to the number of cards one call reads.
 	if in.Mark == "" && in.Limit > maxCards {
 		return cardReadOutput{}, fmt.Errorf("read at most %d cards at a time", maxCards)
 	}
-	read, err := readDeck(ctx, core, in.Path)
+	deckContents, err := readDeck(ctx, core, in.Path)
 	if err != nil {
 		return cardReadOutput{}, err
 	}
 	res := cardReadOutput{
-		Total:       len(read.Body.Cards),
-		Faults:      faults(read.Body.Problems),
-		Fingerprint: fingerprintOf(read.Fingerprint),
+		Total:       len(deckContents.Body.Cards),
+		Faults:      faults(deckContents.Body.Problems),
+		Fingerprint: fingerprintOf(deckContents.Fingerprint),
 	}
-	for _, s := range read.Body.Sections {
+	for _, s := range deckContents.Body.Sections {
 		res.Sections = append(res.Sections, s.Name)
 	}
 	if in.Mark != "" {
-		at, err := index(read.Body.Cards, in.Mark)
+		at, err := index(deckContents.Body.Cards, in.Mark)
 		if err != nil {
 			return cardReadOutput{}, err
 		}
-		res.Cards = append(res.Cards, keepFields(newCard(read.Body.Cards[at]), in.Fields))
+		res.Cards = append(res.Cards, keepFields(newCard(deckContents.Body.Cards[at]), in.Fields))
 		return res, nil
 	}
-	for _, card := range getCardRun(read.Body.Cards, in.From, in.Limit) {
+	for _, card := range getCardRange(deckContents.Body.Cards, in.From, in.Limit) {
 		res.Cards = append(res.Cards, keepFields(newCard(card), in.Fields))
 	}
 	return res, nil
 }
 
-// getCardRun is the run of at most limit cards that starts at from, clamped to
-// the deck. A limit of zero or less asks for as many as one call may read.
-func getCardRun(held []format.Card, from, limit int) []format.Card {
+// getCardRange returns at most limit cards starting at from, clamped to the deck.
+// A limit of zero or less means the maximum one call may read.
+func getCardRange(deck []format.Card, from, limit int) []format.Card {
 	if limit <= 0 {
 		limit = maxCards
 	}
-	from = min(max(from, 0), len(held))
-	return held[from:min(from+limit, len(held))]
+	from = min(max(from, 0), len(deck))
+	return deck[from:min(from+limit, len(deck))]
 }
 
 // readDeck reads the deck at path in the current vault, and refuses a file
@@ -170,12 +168,12 @@ func readDeck(ctx context.Context, core Core, path string) (cards.DeckContents, 
 
 // readDeckIn reads the deck at path in v, and refuses a file that is not a deck.
 func readDeckIn(ctx context.Context, core Core, v domain.Vault, path string) (cards.DeckContents, error) {
-	read, err := core.Cards.Read.Deck(ctx, v, path)
+	contents, err := core.Cards.Read.Deck(ctx, v, path)
 	if err != nil {
 		return cards.DeckContents{}, err
 	}
-	if why := whyNotADeck(read); why != "" {
+	if why := whyNotADeck(contents); why != "" {
 		return cards.DeckContents{}, fmt.Errorf("%s: %s", path, why)
 	}
-	return read, nil
+	return contents, nil
 }

@@ -253,7 +253,7 @@ const commands = async () => {
   })
 
   const groups = [
-    ['note', 'overNote'],
+    ['note', 'noteGroupTitle'],
     ['file', 'overFile'],
     ['window', 'overWindow'],
     ['vault', 'overVault'],

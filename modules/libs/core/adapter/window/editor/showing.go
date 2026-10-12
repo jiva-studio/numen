@@ -13,40 +13,40 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// passes is the half of the window that belongs to one vault: what runs behind
+// vaultSession is the half of the window that belongs to one vault: what runs behind
 // it, what a request reaches them through, and what ends them.
 //
 // It is published as one, through API.showing, and every request reads it there.
-type passes struct {
+type vaultSession struct {
 	// refresh brings a note of this vault up to date through the opening it is
 	// being followed by.
-	refresh      vaults.Refresh
-	recognising  *source.RecognitionWorker
-	transcribing *source.TranscriptionWorker
+	refresh             vaults.Refresh
+	recognitionWorker   *source.RecognitionWorker
+	transcriptionWorker *source.TranscriptionWorker
 
-	// recognises reads a scanned document, transcribes hears a recording,
+	// recognitionRunner reads a scanned document, transcriptionRunner hears a recording,
 	// proofreads puts a transcript right, and proofreadsReading puts a reading
 	// right, each for whoever asks.
-	recognises        Runner
-	transcribes       Runner
-	proofreads        Proofreader
-	proofreadsReading ReadingProofreader
-	// cut asks for a source to be cut again from what its text now says, and
+	recognitionRunner     Runner
+	transcriptionRunner   Runner
+	transcriptProofreader Proofreader
+	proofreadsReading     ReadingProofreader
+	// rechunk asks for a source to be cut again from what its text now says, and
 	// forgets takes a recording out of what the queue has had an answer about.
-	cut     func(context.Context, domain.Vault, string) error
-	forgets func(domain.Vault, string)
+	rechunk         func(context.Context, domain.Vault, string) error
+	forgetRecording func(domain.Vault, string)
 
-	// under is what every pass behind this vault runs under, and what work
-	// nobody is waiting for is started under. stop ends them, and ended waits
+	// ctx is what every pass behind this vault runs under, and what work
+	// nobody is waiting for is started under. cancel ends them, and wait waits
 	// for them.
-	under context.Context
-	stop  context.CancelFunc
-	ended func()
+	ctx    context.Context
+	cancel context.CancelFunc
+	wait   func()
 }
 
-// errAsking is a vault asked for while a page holds work a person is being
+// errAnswerPending is a vault asked for while a page holds work a person is being
 // asked about.
-var errAsking = errors.New("a page is holding work a person has to answer for")
+var errAnswerPending = errors.New("a page is holding work a person has to answer for")
 
 // Show puts a vault in the window: another in place of the one it has, or the
 // first where it is standing on nothing. The index and the embedder belong to
@@ -65,30 +65,30 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if err := checkReadable(o.made.GetVaultIdentity(), v); err != nil {
 		return err
 	}
-	if err := o.shutting.tryTake(); err != nil {
+	if err := o.shutdown.tryBegin(); err != nil {
 		return err
 	}
-	defer o.shutting.free()
+	defer o.shutdown.endKeepOpen()
 
 	// A page that says nothing is waited for HandedOverIn and no longer.
-	held, spent := context.WithTimeout(ctx, HandedOverIn)
+	held, spent := context.WithTimeout(ctx, FlushTimeout)
 	defer spent()
 
-	if !settle(held, o.API.Window, &o.API.Writing) {
-		return errAsking
+	if !flushPending(held, o.API.Window, &o.API.Writing) {
+		return errAnswerPending
 	}
 
 	was := o.API.GetCurrentVault()
-	o.leave()
-	o.forget()
+	o.stopVault()
+	o.resetStatus()
 
 	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands
-	err := o.arrive(v, false)
+	err := o.startVault(v, false)
 	if err != nil {
-		if back := o.arrive(was, false); back != nil { //nolint:contextcheck // and so do the ones behind the vault it goes back to
+		if back := o.startVault(was, false); back != nil { //nolint:contextcheck // and so do the ones behind the vault it goes back to
 			// The window is standing on nothing: it says so, and the door on
 			// writes stays shut.
-			o.API.show(domain.Vault{})
+			o.API.setVault(domain.Vault{})
 			o.API.Error.Store(back.Error())
 			return errors.Join(err, back)
 		}
@@ -104,12 +104,12 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	return err
 }
 
-// arrive puts a vault in the window and builds everything that belongs to it.
+// startVault puts a vault in the window and builds everything that belongs to it.
 //
 // The zero vault is a window standing on nothing: it shows no vault, and no
 // pass runs behind it.
-func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
-	o.API.show(v)
+func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
+	o.API.setVault(v)
 	if v.ID == "" {
 		// Nothing is being read, so nothing is waited for.
 		o.API.Ready.Store(true)
@@ -120,20 +120,20 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 	if err := o.registry.RecordOpened(v.ID); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
-	on, err := o.beginVault(v, rebuild)
+	on, err := o.buildSession(v, rebuild)
 	if err != nil {
 		return err
 	}
 	// Last, so a request that reads a run reads the one belonging to the vault
 	// in front of it.
-	o.API.setPasses(on)
+	o.API.setSession(on)
 	return nil
 }
 
-// beginVault builds the half of the window that belongs to one vault: the scan
+// buildSession builds the half of the window that belongs to one vault: the scan
 // and the watch behind it, the reading of the documents it holds, and the
 // batches left with a proofreader.
-func (o *Installation) beginVault(v domain.Vault, rebuild bool) (*passes, error) {
+func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession, error) {
 	known, err := vaults.NewList(o.registry).Execute()
 	if err != nil {
 		return nil, err
@@ -146,10 +146,10 @@ func (o *Installation) beginVault(v domain.Vault, rebuild bool) (*passes, error)
 	// What a recognition writes down is cut where every other cut happens. A
 	// document being read and a vault being scanned are then never two passes
 	// over the index at once.
-	owed := &pending{}
+	owed := &pendingSources{}
 	recognising.Cut = func(_ context.Context, of domain.Vault, path string) error {
-		owed.put(of, path)
-		raise(o.wake.read)
+		owed.add(of, path)
+		fire(o.triggers.read)
 		return nil
 	}
 
@@ -178,46 +178,46 @@ func (o *Installation) beginVault(v domain.Vault, rebuild bool) (*passes, error)
 
 	// Reading every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
-	refresh, ended := begin(watching, v, o.made, o.API, rebuild, o.Embedder, o.wake, owed, o.out)
+	refresh, ended := startIndexing(watching, v, o.made, o.API, rebuild, o.Embedder, o.triggers, owed, o.out)
 
-	return &passes{
-		refresh:      refresh,
-		recognising:  recognising,
-		transcribing: transcribing,
+	return &vaultSession{
+		refresh:             refresh,
+		recognitionWorker:   recognising,
+		transcriptionWorker: transcribing,
 		// The window asks for a scan to be read through the same job an agent
 		// asks through.
-		recognises:  recognising,
-		transcribes: transcribing,
+		recognitionRunner:   recognising,
+		transcriptionRunner: transcribing,
 		// A transcript is put right by the same proofreading that runs on its
 		// own, so a person asking for one is shown the run everything else is
 		// shown in.
-		proofreads:        transcribing,
-		proofreadsReading: recognising,
+		transcriptProofreader: transcribing,
+		proofreadsReading:     recognising,
 		// A transcript the window put right is cut where every other cut
 		// happens.
-		cut: recognising.Cut,
+		rechunk: recognising.Cut,
 		// A recording whose answer was dropped is one the queue has had no
 		// answer about.
-		forgets: transcribing.Forget,
-		under:   watching,
-		stop:    stop,
-		ended:   ended,
+		forgetRecording: transcribing.Forget,
+		ctx:             watching,
+		cancel:          stop,
+		wait:            ended,
 	}, nil
 }
 
-// leave takes down the half of the window that belongs to the vault it is
+// stopVault takes down the half of the window that belongs to the vault it is
 // showing.
-func (o *Installation) leave() {
-	on := o.API.showing.Swap(nil)
+func (o *Installation) stopVault() {
+	on := o.API.session.Swap(nil)
 	if on == nil {
 		return
 	}
-	on.stop()
-	on.ended()
+	on.cancel()
+	on.wait()
 	// A reading and a transcription both write to the index, so they end before
 	// anything reads what they wrote.
-	on.recognising.Wait()
-	on.transcribing.Wait()
+	on.recognitionWorker.Wait()
+	on.transcriptionWorker.Wait()
 	// The documents held open go with the vault, and each gives back the worker
 	// it was holding.
 	if o.API.Viewer != nil {
@@ -225,13 +225,13 @@ func (o *Installation) leave() {
 	}
 }
 
-// forget is the vault that went leaving nothing of itself behind: what was said
+// resetStatus clears what the previous vault left behind: what was said
 // about reading it, and the entries its passes left in the list of what is
 // being done.
 //
 // What stopped this installation from embedding at all is put back. It stands
 // for as long as the window is open.
-func (o *Installation) forget() {
+func (o *Installation) resetStatus() {
 	o.API.Ready.Store(false)
 	o.API.Error.Store("")
 	o.API.Unwatched.Store("")
@@ -239,8 +239,8 @@ func (o *Installation) forget() {
 	for _, pass := range []string{walkingNotes, readingBooks, makingVectors, wordsAlone} {
 		o.API.finishTask(pass)
 	}
-	if o.why != nil {
-		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Error: o.why.Error()})
+	if o.embedderError != nil {
+		o.API.reportTask(task.Task{ID: makingVectors, Doing: "Indexing", Error: o.embedderError.Error()})
 	}
 }
 

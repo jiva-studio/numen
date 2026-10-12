@@ -81,12 +81,12 @@ func heading(line []byte, first, last int) (level int, name string, ok bool) {
 	return hashes, string(trimmed), true
 }
 
-// run is one part of the body as a person reads it — one kind of line break,
+// readTrimmedRun is one part of the body as a person reads it — one kind of line break,
 // and the blank lines at either end dropped — and the byte the reading of it
 // stopped at. The blank lines it stopped short of separate one part of a deck
 // from the next and belong to neither, which is what leaves a tail at the end
 // of a file.
-func run(body []byte, from, to int) (string, int) {
+func readTrimmedRun(body []byte, from, to int) (string, int) {
 	begin, end := from, to
 	for begin < end {
 		line, next := lineAt(body, begin, end)
@@ -126,6 +126,6 @@ func lineFrom(body []byte, from, at int) int {
 // whitespace. What a line begins with is the person's, so an indented block
 // arrives indented.
 func trimBlankLines(s string) string {
-	read, _ := run([]byte(s), 0, len(s))
+	read, _ := readTrimmedRun([]byte(s), 0, len(s))
 	return read
 }

@@ -7,7 +7,7 @@ import type { WindowHandle } from '@/entities/tab'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { DEFAULTS } from '../types'
 import { produceSchedule } from '../lib/curve'
-import { shapeOf, steer } from '../lib/fields'
+import { getShapeKey, getGoalField } from '../lib/fields'
 import { WORDS as words } from '../words'
 import type {
   Field,
@@ -18,9 +18,9 @@ import type {
   SettingsBounds,
   SettingValue,
 } from '../types'
-import { aimGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
+import { applyGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
 import { createCurveState, updateCurves, type CurveState } from './curves'
-import { canCloseTab, createWriteFlight, requestWrite, type WriteFlight } from './flight'
+import { canCloseTab, createWriteQueue, requestWrite, type WriteQueue } from './writeQueue'
 
 /** State held by one open preset tab. */
 export interface OpenPreset {
@@ -29,7 +29,7 @@ export interface OpenPreset {
   readonly problems: Ref<readonly string[]>
   readonly stopped: Ref<StopReason>
   readonly curves: CurveState
-  readonly flight: WriteFlight
+  readonly writeQueue: WriteQueue
 }
 
 export function createOpenPreset(path: string, today: string, bounds: SettingsBounds): OpenPreset {
@@ -39,7 +39,7 @@ export function createOpenPreset(path: string, today: string, bounds: SettingsBo
     problems: shallowRef<readonly string[]>([]),
     stopped: ref<StopReason>(StopReason.NOTHING),
     curves: createCurveState(DEFAULTS, today, bounds),
-    flight: createWriteFlight(),
+    writeQueue: createWriteQueue(),
   }
 }
 
@@ -56,16 +56,16 @@ export const readPreset = async (
     answer = await core.read(one.path.value)
   } catch {
     // The window says what it could not do; what the call carried back adds nothing a person can act on.
-    one.flight.errorMessage.value = words.unreachable
+    one.writeQueue.errorMessage.value = words.unreachable
     one.curves.isWaiting.value = false
     return
   }
-  one.flight.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
-  one.flight.hasChanged.value = false
+  one.writeQueue.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
+  one.writeQueue.hasExternalChange.value = false
   one.curves.answers.clear()
   const read = answer.ok ? answer.value.preset : null
   if (answer.ok) {
-    one.flight.at = answer.value.at
+    one.writeQueue.revision = answer.value.at
     bounds.value = answer.value.bounds
   }
   if (!read) {
@@ -77,7 +77,11 @@ export const readPreset = async (
   if (read.title) titles.set(one.path.value, read.title)
   one.problems.value = read.problems
   one.stopped.value = read.stopsOn
-  one.settings.value = reconcileSettings(read.settings, one.settings.value, one.flight.theirs)
+  one.settings.value = reconcileSettings(
+    read.settings,
+    one.settings.value,
+    one.writeQueue.dirtyFields,
+  )
   await updateCurves(
     one.curves,
     one.path.value,
@@ -86,7 +90,7 @@ export const readPreset = async (
     bounds.value,
     today,
     (msg) => {
-      one.flight.errorMessage.value = msg
+      one.writeQueue.errorMessage.value = msg
     },
   )
 }
@@ -106,10 +110,10 @@ export const createPresetState = (
   const chooseGoal = (goal: Goal) => {
     const was = one.settings.value
     if (goal === was.goal) return
-    one.settings.value = aimGoal(was, goal, today())
-    one.flight.theirs.add('goal')
-    if (one.settings.value.byDate !== was.byDate) one.flight.theirs.add('byDate')
-    void requestWrite(one.flight, one.path.value, one.settings.value, core, writeMessage)
+    one.settings.value = applyGoal(was, goal, today())
+    one.writeQueue.dirtyFields.add('goal')
+    if (one.settings.value.byDate !== was.byDate) one.writeQueue.dirtyFields.add('byDate')
+    void requestWrite(one.writeQueue, one.path.value, one.settings.value, core, writeMessage)
     void updateCurves(
       one.curves,
       one.path.value,
@@ -118,7 +122,7 @@ export const createPresetState = (
       bounds.value,
       today(),
       (msg) => {
-        one.flight.errorMessage.value = msg
+        one.writeQueue.errorMessage.value = msg
       },
     )
   }
@@ -126,13 +130,13 @@ export const createPresetState = (
   const updateSetting = (field: Field, value: SettingValue) => {
     const was = one.settings.value
     one.settings.value = applyTypedSetting(was, field, value, bounds.value)
-    if (one.settings.value !== was) one.flight.theirs.add(field)
+    if (one.settings.value !== was) one.writeQueue.dirtyFields.add(field)
 
-    if (field === steer(one.settings.value.goal)) {
+    if (field === getGoalField(one.settings.value.goal)) {
       const place = findGridIndex(one.curves.curve.value.grid, value, today())
       if (place >= 0) one.curves.place.value = place
     }
-    if (shapeOf(one.settings.value) !== one.curves.shape) {
+    if (getShapeKey(one.settings.value) !== one.curves.shape) {
       void updateCurves(
         one.curves,
         one.path.value,
@@ -141,7 +145,7 @@ export const createPresetState = (
         bounds.value,
         today(),
         (msg) => {
-          one.flight.errorMessage.value = msg
+          one.writeQueue.errorMessage.value = msg
         },
       )
     }
@@ -151,11 +155,11 @@ export const createPresetState = (
     const was = one.settings.value
     one.settings.value = produceSchedule(was, place, one.curves.curve.value, today(), bounds.value)
     one.curves.place.value = place
-    one.flight.theirs.add(steer(one.curves.curve.value.goal))
+    one.writeQueue.dirtyFields.add(getGoalField(one.curves.curve.value.goal))
   }
 
   const closeTab = (tab: string) => {
-    void canCloseTab(one.flight, one.path.value, one.settings.value, core, writeMessage).then(
+    void canCloseTab(one.writeQueue, one.path.value, one.settings.value, core, writeMessage).then(
       (gone) => {
         if (!gone) return
         onClosed(one.path.value)
@@ -174,13 +178,13 @@ export const createPresetState = (
     bounds,
     problems: one.problems,
     stopped: one.stopped,
-    errorMessage: one.flight.errorMessage,
-    hasChanged: one.flight.hasChanged,
+    errorMessage: one.writeQueue.errorMessage,
+    hasExternalChange: one.writeQueue.hasExternalChange,
     reload: () => void readPreset(one, core, bounds, titles, today()),
     chooseGoal,
     moveSlider,
     flushPending: () =>
-      void requestWrite(one.flight, one.path.value, one.settings.value, core, writeMessage),
+      void requestWrite(one.writeQueue, one.path.value, one.settings.value, core, writeMessage),
     updateSetting,
     close: closeTab,
   }

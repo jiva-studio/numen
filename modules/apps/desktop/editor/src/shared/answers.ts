@@ -11,11 +11,14 @@ import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import type { ErrorCode } from '@/shared/errors'
 
 /** The file an answer came out of, as the one string the window carries. */
-export const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
-  at && `${at.size} ${at.mtime} ${at.path}`
+export const formatFingerprint = (at?: {
+  path: string
+  size: bigint
+  mtime: bigint
+}): string | undefined => at && `${at.size} ${at.mtime} ${at.path}`
 
 /** The two numbers first: a path holds spaces, and everything after them is it. */
-export const fingerprint = (at: string) => {
+export const parseFingerprint = (at: string) => {
   const [size = '0', mtime = '0', ...rest] = at.split(' ')
   return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
 }
@@ -58,7 +61,7 @@ export const staleIn = (from: { error?: ProtoErrorCode | undefined }): boolean =
  * file in a folder is one part of the address and the facet asked of it is the
  * next.
  */
-export const asset = (path: string): string => `/assets/${encodeURIComponent(path)}`
+export const getAssetUrl = (path: string): string => `/assets/${encodeURIComponent(path)}`
 
 /**
  * Which bytes an address is about, as the address writes them. The path is a
@@ -66,15 +69,15 @@ export const asset = (path: string): string => `/assets/${encodeURIComponent(pat
  * which file it is.
  */
 export const getBytesQuery = (file: string): string => {
-  const at = fingerprint(file)
+  const at = parseFingerprint(file)
   return `size=${at.size}&mtime=${at.mtime}`
 }
 
 /** How often a document that is busy is waited out before it errors. */
-const PATIENCE = 3
+const MAX_BUSY_RETRIES = 3
 
 /** How long the window waits before asking a busy document again. */
-const AGAIN = 1000
+const BUSY_RETRY_DELAY_MS = 1000
 
 /**
  * What the application answered. A document held by whoever is drawing from it
@@ -85,8 +88,9 @@ export const retryWhileBusy = async <T>(ask: () => Promise<T>): Promise<T> => {
     try {
       return await ask()
     } catch (error) {
-      if (Code.Unavailable !== (error as ConnectError).code || attempt >= PATIENCE) throw error
-      await sleep(AGAIN)
+      if (Code.Unavailable !== (error as ConnectError).code || attempt >= MAX_BUSY_RETRIES)
+        throw error
+      await sleep(BUSY_RETRY_DELAY_MS)
     }
   }
 }

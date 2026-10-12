@@ -38,7 +38,7 @@ func (w *inflight) finish() {
 	defer w.mu.Unlock()
 
 	w.count--
-	w.reckon()
+	w.closeIfIdle()
 }
 
 // seal shuts the door on new writes and answers with what closes once the ones
@@ -52,7 +52,7 @@ func (w *inflight) seal() <-chan struct{} {
 	if w.idle == nil {
 		w.idle = make(chan struct{})
 	}
-	w.reckon()
+	w.closeIfIdle()
 	return w.idle
 }
 
@@ -65,8 +65,8 @@ func (w *inflight) open() {
 	w.isSealed, w.isOver, w.idle = false, false, nil
 }
 
-// reckon ends the wait once nothing is being written. The lock is held.
-func (w *inflight) reckon() {
+// closeIfIdle ends the wait once nothing is being written. The lock is held.
+func (w *inflight) closeIfIdle() {
 	if !w.isSealed || w.isOver || w.count > 0 {
 		return
 	}

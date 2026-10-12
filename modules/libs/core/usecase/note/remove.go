@@ -67,38 +67,18 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 	}
 	// Asked before the move, because afterwards nothing points at the old paths
 	// and there is nothing left to ask about.
-	var pointing []domain.ResolvedLink
-	for _, source := range went {
-		if source.Kind != domain.KindNote {
-			continue
-		}
-		links, err := u.links.Backlinks(ctx, v.ID, source.Path)
-		if err != nil {
-			return res, err
-		}
-		pointing = append(pointing, links...)
+	pointing, err := u.getBacklinksOfNotes(ctx, v, went)
+	if err != nil {
+		return res, err
 	}
 
 	writer, err := u.writers.Open(v)
 	if err != nil {
 		return res, err
 	}
-
-	// Keeping the path underneath the trash means two notes of the same name
-	// do not land on each other, and that putting one back is obvious.
-	target := pathpkg.Join(TrashDir, path)
-	for attempt := 2; ; attempt++ {
-		err := writer.Move(ctx, path, target)
-		if err == nil {
-			break
-		}
-		if !errors.Is(err, port.ErrOccupied) {
-			return res, mapMissingNote(err)
-		}
-		if attempt > 100 {
-			return res, fmt.Errorf("remove %s: the trash already holds it", path)
-		}
-		target = pathpkg.Join(TrashDir, withSuffix(path, "-"+strconv.Itoa(attempt)))
+	target, err := moveToTrash(ctx, writer, path)
+	if err != nil {
+		return res, err
 	}
 	res.Trashed = target
 
@@ -125,6 +105,43 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 		res.Dangling = append(res.Dangling, was.From)
 	}
 	return res, levelled
+}
+
+// getBacklinksOfNotes is the links that point at any of the notes among the
+// sources.
+func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources []domain.Fingerprint) ([]domain.ResolvedLink, error) {
+	var pointing []domain.ResolvedLink
+	for _, source := range sources {
+		if source.Kind != domain.KindNote {
+			continue
+		}
+		links, err := u.links.Backlinks(ctx, v.ID, source.Path)
+		if err != nil {
+			return nil, err
+		}
+		pointing = append(pointing, links...)
+	}
+	return pointing, nil
+}
+
+// moveToTrash moves path under the trash and is where it landed. Keeping the
+// path underneath the trash means two notes of the same name do not land on each
+// other, and that putting one back is obvious.
+func moveToTrash(ctx context.Context, writer port.VaultWriter, path string) (string, error) {
+	target := pathpkg.Join(TrashDir, path)
+	for attempt := 2; ; attempt++ {
+		err := writer.Move(ctx, path, target)
+		if err == nil {
+			return target, nil
+		}
+		if !errors.Is(err, port.ErrOccupied) {
+			return "", mapMissingNote(err)
+		}
+		if attempt > 100 {
+			return "", fmt.Errorf("remove %s: the trash already holds it", path)
+		}
+		target = pathpkg.Join(TrashDir, withSuffix(path, "-"+strconv.Itoa(attempt)))
+	}
 }
 
 // Destroy takes the file off the disk. Nothing brings it back.

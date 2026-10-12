@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// claim takes an advisory lock on the file and returns what lets it go.
+// acquireFileLock takes an advisory lock on the file and returns what lets it go.
 //
 // The kernel holds the lock and drops it when the process ends, however it
 // ends. The file is somewhere for the lock to live and says nothing on its own.
-func claim(path string) (func() error, error) {
+func acquireFileLock(path string) (func() error, error) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		return nil, err

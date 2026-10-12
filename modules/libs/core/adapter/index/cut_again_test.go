@@ -16,10 +16,10 @@ import (
 // once, and a large chunk holds what a chunk inside one holds.
 var vocabulary = []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
 
-// drawChunks generates a source cut into large chunks with small chunks inside
+// generateChunks generates a source cut into large chunks with small chunks inside
 // them. What a chunk holds is what identifies it, so the words are what varies;
 // where it stands is what a cut moves, and it moves with the text.
-func drawChunks(t *rapid.T, name string) []chunk.Chunk {
+func generateChunks(t *rapid.T, name string) []chunk.Chunk {
 	word := rapid.SampledFrom(vocabulary)
 	inside := rapid.Custom(func(t *rapid.T) chunk.Chunk {
 		return chunk.Chunk{Text: word.Draw(t, "small")}
@@ -96,8 +96,8 @@ func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	return out
 }
 
-// howMany is what a set of rows comes to, one key at a time.
-func howMany(rows map[textOf][]int64) map[textOf]int {
+// countByText is what a set of rows comes to, one key at a time.
+func countByText(rows map[textOf][]int64) map[textOf]int {
 	out := make(map[textOf]int, len(rows))
 	for key, held := range rows {
 		out[key] = len(held)
@@ -139,8 +139,8 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 
 	var kept, twice, gone int
 	rapid.Check(t, func(t *rapid.T) {
-		was := drawChunks(t, "the first cut")
-		now := drawChunks(t, "the second cut")
+		was := generateChunks(t, "the first cut")
+		now := generateChunks(t, "the second cut")
 
 		db := openDB(outer)
 		source := cutSource(outer, db, "library/a.epub", was)
@@ -152,9 +152,9 @@ func TestCuttingASourceAgainKeepsTheRowsOfTheTextItStillHolds(t *testing.T) {
 		after := getSourceRows(outer, db, source)
 
 		// The source stands on exactly the chunks this cut asked for.
-		if want := countChunks(now); !maps.Equal(howMany(after), want) {
+		if want := countChunks(now); !maps.Equal(countByText(after), want) {
 			t.Fatalf("%v cut again as %v stands on %v, want %v",
-				was, now, howMany(after), want)
+				was, now, countByText(after), want)
 		}
 
 		// The text it held before, at the size it held it at, keeps the rows it

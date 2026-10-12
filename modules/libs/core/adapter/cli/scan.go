@@ -11,7 +11,7 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	// `--rebuild-index` reads every file, whatever the index remembers.
 	rebuild := false
 	rest := make([]string, 0, len(args))

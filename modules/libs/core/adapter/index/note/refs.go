@@ -133,7 +133,7 @@ func (q *Queries) Headings(ctx context.Context, vaultID domain.VaultID, paths []
 	defer statement.Close()
 
 	for _, path := range paths {
-		found, err := headingsAt(ctx, statement, vault, path)
+		found, err := getHeadingsAt(ctx, statement, vault, path)
 		if err != nil {
 			return nil, err
 		}
@@ -144,8 +144,8 @@ func (q *Queries) Headings(ctx context.Context, vaultID domain.VaultID, paths []
 	return out, nil
 }
 
-// headingsAt is one note's headings, read off a statement already prepared.
-func headingsAt(
+// getHeadingsAt is one note's headings, read off a statement already prepared.
+func getHeadingsAt(
 	ctx context.Context,
 	statement *sql.Stmt,
 	vault int64,

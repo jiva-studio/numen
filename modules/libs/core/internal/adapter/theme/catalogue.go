@@ -125,7 +125,7 @@ func (c Catalogue) getOwnThemes() []Theme {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), Extension) {
 			continue
 		}
-		if !plain(strings.TrimSuffix(entry.Name(), Extension)) {
+		if !isPlainName(strings.TrimSuffix(entry.Name(), Extension)) {
 			continue
 		}
 		text, err := read(filepath.Join(c.dir, entry.Name()))
@@ -143,13 +143,13 @@ func describeTheme(shelf Shelf, filename, text string) Theme {
 		Name:     string(shelf) + ":" + title,
 		Title:    title,
 		Shelf:    shelf,
-		IsPinned: pins(text),
+		IsPinned: declaresColorScheme(text),
 	}
 }
 
 // Text is one theme's file, as the file stands when it is asked for.
 func (c Catalogue) Text(name string) (string, error) {
-	shelf, title, err := split(name)
+	shelf, title, err := splitName(name)
 	if err != nil {
 		return "", err
 	}
@@ -182,14 +182,14 @@ func (c Catalogue) GetApplied(name string) (applied, missing string) {
 	return name, ""
 }
 
-// split takes a name apart into the shelf it came off and the file it names.
+// splitName takes a name apart into the shelf it came off and the file it names.
 //
 // A name resolves to a file inside the themes folder and nowhere else, so the
 // half after the shelf is a filename and nothing else: `mine:../../.ssh/id_rsa`
 // names no theme.
-func split(name string) (Shelf, string, error) {
+func splitName(name string) (Shelf, string, error) {
 	shelf, title, found := strings.Cut(name, ":")
-	if found && plain(title) {
+	if found && isPlainName(title) {
 		switch Shelf(shelf) {
 		case Preset, Mine:
 			return Shelf(shelf), title, nil
@@ -198,8 +198,8 @@ func split(name string) (Shelf, string, error) {
 	return "", "", fmt.Errorf("%s: a theme is named by its shelf and one file in the themes folder", name)
 }
 
-// plain is a name that stays in the folder it is joined to.
-func plain(title string) bool {
+// isPlainName is a name that stays in the folder it is joined to.
+func isPlainName(title string) bool {
 	if title == "" || title == "." || title == ".." {
 		return false
 	}
@@ -227,9 +227,9 @@ func read(path string) (string, error) {
 	return string(text), nil
 }
 
-// pins says whether a theme declares `color-scheme` itself. The comments are
-// cut away first: a preset that pins says so in one of them.
-func pins(css string) bool { return hasDeclared(stripComments(css), "color-scheme") }
+// declaresColorScheme says whether a theme declares `color-scheme` itself. The comments are
+// cut away first: a preset that declaresColorScheme says so in one of them.
+func declaresColorScheme(css string) bool { return hasDeclared(stripComments(css), "color-scheme") }
 
 func stripComments(css string) string {
 	var text strings.Builder

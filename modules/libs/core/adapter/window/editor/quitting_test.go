@@ -260,7 +260,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 		defer close(shut)
 		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 		defer cancel()
-		f.installation.Settle(ctx)
+		f.installation.FlushPending(ctx)
 		if err := f.installation.Close(); err != nil {
 			t.Error(err)
 		}
@@ -348,7 +348,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-	f.installation.Settle(ctx)
+	f.installation.FlushPending(ctx)
 	f.order.record("settled")
 
 	select {
@@ -399,7 +399,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	defer cancel()
 
 	began := time.Now()
-	if !f.installation.Settle(ctx) {
+	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault never settled")
 	}
 	took := time.Since(began)
@@ -507,7 +507,7 @@ func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 	defer cancel()
 
 	began := time.Now()
-	if f.installation.Settle(ctx) {
+	if f.installation.FlushPending(ctx) {
 		t.Fatal("the vault settled with a question standing")
 	}
 	if took := time.Since(began); took > 5*time.Second {
@@ -541,7 +541,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if f.installation.Settle(asking) {
+	if f.installation.FlushPending(asking) {
 		t.Fatal("the vault settled with a question standing")
 	}
 
@@ -594,13 +594,13 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 
 	first, cancelFirst := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelFirst()
-	if f.installation.Settle(first) {
+	if f.installation.FlushPending(first) {
 		t.Fatal("the vault settled with a question standing")
 	}
 
 	second, cancelSecond := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelSecond()
-	if !f.installation.Settle(second) {
+	if !f.installation.FlushPending(second) {
 		t.Fatal("the second quit did not settle the vault")
 	}
 
@@ -628,7 +628,7 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if f.installation.Settle(asking) {
+	if f.installation.FlushPending(asking) {
 		t.Fatal("the vault settled with a question standing")
 	}
 	page.endStream(t)
@@ -638,7 +638,7 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 	defer endsAt()
 
 	began := time.Now()
-	if !f.installation.Settle(ctx) {
+	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault never settled after the page went")
 	}
 	took := time.Since(began)
@@ -662,7 +662,7 @@ func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
 
 	asking, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if f.installation.Settle(asking) {
+	if f.installation.FlushPending(asking) {
 		t.Fatal("the vault settled with a question standing")
 	}
 	first.endStream(t)
@@ -675,7 +675,7 @@ func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
 
 	again, cancelAgain := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancelAgain()
-	if f.installation.Settle(again) {
+	if f.installation.FlushPending(again) {
 		t.Fatal("the vault settled with the question raised again")
 	}
 }

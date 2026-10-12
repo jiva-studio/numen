@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-func addSourceReadingTools(server *sdk.Server, core Core) {
+func addSourceReadTools(server *sdk.Server, core Core) {
 	addSourceList(server, core)
 	addSourceRead(server, core)
 }
@@ -43,24 +43,23 @@ func listSources(ctx context.Context, core Core) (sourceListOutput, error) {
 	if err != nil {
 		return sourceListOutput{}, err
 	}
-	read, err := core.Sources.Queries.GetRecognisedSources(ctx, shown.Vault.ID, domain.KindBook)
+	recognised, err := core.Sources.Queries.GetRecognisedSources(ctx, shown.Vault.ID, domain.KindBook)
 	if err != nil {
 		return sourceListOutput{}, err
 	}
-	stands := make(map[string]bool, len(read))
-	for _, one := range read {
-		stands[one.Path] = one.Producer != ""
+	isRecognised := make(map[string]bool, len(recognised))
+	for _, one := range recognised {
+		isRecognised[one.Path] = one.Producer != ""
 	}
 	documents := make([]Source, 0, len(known))
 	for path := range known {
-		documents = append(documents, Source{Path: path, ShouldRead: stands[path]})
+		documents = append(documents, Source{Path: path, ShouldRead: isRecognised[path]})
 	}
-	return sourceListOutput{Documents: documents, Reading: getRecognitionHindrance(core.Sources.Recognise)}, nil
+	return sourceListOutput{Documents: documents, Reading: getRecognitionBlocker(core.Sources.Recognise)}, nil
 }
 
-// getRecognitionHindrance says what stands in the way of having a scan read
-// now, and is empty when nothing does.
-func getRecognitionHindrance(r Recogniser) string {
+// getRecognitionBlocker returns the reason a scan cannot be recognised now, empty when none.
+func getRecognitionBlocker(r Recogniser) string {
 	if r == nil {
 		return ""
 	}

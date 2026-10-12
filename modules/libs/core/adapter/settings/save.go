@@ -55,7 +55,7 @@ func Save(path string, into Document, settings ...Setting) error {
 		}
 
 		for _, setting := range settings {
-			patched, err := set(raw, setting)
+			patched, err := applySetting(raw, setting)
 			if err != nil {
 				return fmt.Errorf("%s: %w", path, err)
 			}
@@ -65,7 +65,7 @@ func Save(path string, into Document, settings ...Setting) error {
 		if err := writeSettings(raw, settings, into); err != nil {
 			return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
 		}
-		return replace(path, raw)
+		return writeFileAtomically(path, raw)
 	})
 }
 
@@ -88,7 +88,7 @@ func writeSettings(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err
 	}
-	for _, outside := range into.GetAppearance().Outsides() {
+	for _, outside := range into.GetAppearance().GetOutsideBounds() {
 		for _, setting := range wrote {
 			if isFieldCovered(setting.At, outside.At) {
 				return outside
@@ -116,13 +116,13 @@ func isFieldCovered(at []string, field string) bool {
 	return field == name || strings.HasPrefix(field, name+".")
 }
 
-// rename gives one field of the file another name. Its value, its place among
+// renameField gives one field of the file another name. Its value, its place among
 // the fields around it and every other byte of the file stay as they are, so a
-// file comes back from a rename the way its person wrote it, under one word.
+// file comes back from a renameField the way its person wrote it, under one word.
 //
 // A file that has not got the field is left alone. A field whose new name the
 // section already holds is left alone as well: one section holds one of a name.
-func rename(path string, at []string, to string) error {
+func renameField(path string, at []string, to string) error {
 	return runOnFile(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if err != nil {
@@ -140,7 +140,7 @@ func rename(path string, at []string, to string) error {
 		if !done {
 			return nil
 		}
-		return replace(path, renamed)
+		return writeFileAtomically(path, renamed)
 	})
 }
 
@@ -150,7 +150,7 @@ func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 	if len(at) == 0 {
 		return object, false
 	}
-	held, err := members(object)
+	held, err := parseObjectShape(object)
 	if err != nil {
 		return object, false
 	}
@@ -187,10 +187,10 @@ var errNotASection = errors.New("a setting goes inside a section")
 // from the last of the two, and a span is replaced at the first.
 var errRepeated = errors.New("a section holds one of a name")
 
-// distinct says which name a section of the file holds twice, and nothing where
+// checkNoDuplicateNames says which name a section of the file holds twice, and nothing where
 // every section holds one of each. A value that is not a section holds no names.
-func distinct(object []byte) error {
-	held, err := members(object)
+func checkNoDuplicateNames(object []byte) error {
+	held, err := parseObjectShape(object)
 	if errors.Is(err, errNotASection) {
 		return nil
 	}
@@ -198,14 +198,14 @@ func distinct(object []byte) error {
 		return err
 	}
 	for _, one := range held.pairs {
-		if err := distinct(object[one.from:one.to]); err != nil {
+		if err := checkNoDuplicateNames(object[one.from:one.to]); err != nil {
 			return fmt.Errorf("%s: %w", one.key, err)
 		}
 	}
 	return nil
 }
 
-func set(raw []byte, setting Setting) ([]byte, error) {
+func applySetting(raw []byte, setting Setting) ([]byte, error) {
 	if len(setting.At) == 0 {
 		return nil, errors.New("a setting with no name")
 	}
@@ -213,16 +213,16 @@ func set(raw []byte, setting Setting) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return put(raw, setting.At, value, "")
+	return replaceValueAt(raw, setting.At, value, "")
 }
 
-// put replaces the value at a path through an object, and hands back the
+// replaceValueAt replaces the value at a path through an object, and hands back the
 // object's bytes with that one span changed.
 //
 // outer is the indentation of the line the object's own name sits on, which is
 // what a section made here is laid out against.
-func put(object []byte, at []string, value []byte, outer string) ([]byte, error) {
-	held, err := members(object)
+func replaceValueAt(object []byte, at []string, value []byte, outer string) ([]byte, error) {
+	held, err := parseObjectShape(object)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func put(object []byte, at []string, value []byte, outer string) ([]byte, error)
 		if len(at) == 1 {
 			return splice(object, one.from, one.to, value), nil
 		}
-		section, err := put(object[one.from:one.to], at[1:], value, held.indent)
+		section, err := replaceValueAt(object[one.from:one.to], at[1:], value, held.indent)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", one.key, err)
 		}
@@ -268,8 +268,8 @@ type shape struct {
 	indent string
 }
 
-// members reads an object without disturbing it: what it holds, and where.
-func members(object []byte) (shape, error) {
+// parseObjectShape reads an object without disturbing it: what it holds, and where.
+func parseObjectShape(object []byte) (shape, error) {
 	decoder := json.NewDecoder(bytes.NewReader(object))
 	open, err := decoder.Token()
 	if err != nil {
@@ -319,7 +319,7 @@ func members(object []byte) (shape, error) {
 		return shape{}, err
 	}
 	if len(held.pairs) > 0 {
-		held.indent = indentOf(object, held.pairs[0].from)
+		held.indent = getIndent(object, held.pairs[0].from)
 	}
 	return held, nil
 }
@@ -370,9 +370,9 @@ func wrapInSections(at []string, value []byte, indent string) []byte {
 	return []byte("{\n" + indent + "  " + string(name) + ": " + string(inside) + "\n" + indent + "}")
 }
 
-// indentOf is the whitespace an object's members are laid out with, taken from
+// getIndent is the whitespace an object's members are laid out with, taken from
 // the line the first one sits on.
-func indentOf(object []byte, first int) string {
+func getIndent(object []byte, first int) string {
 	head := object[:first]
 	line := bytes.LastIndexByte(head, '\n')
 	if line < 0 {
@@ -430,13 +430,13 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 	return append(patched, raw[to:]...)
 }
 
-// replace writes the file beside itself and renames it over the top, so a
+// writeFileAtomically writes the file beside itself and renames it over the top, so a
 // machine that dies mid-write leaves the settings whole. Where a file carries a
 // mode it is the person's alone: they type their service keys into this file.
 //
 // The path is the one runOnFile hands its work: the file itself, with every link
 // on the way to it already followed.
-func replace(path string, content []byte) error {
+func writeFileAtomically(path string, content []byte) error {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
 		return err
@@ -460,15 +460,15 @@ func replace(path string, content []byte) error {
 	if err := os.Rename(tmp.Name(), path); err != nil {
 		return err
 	}
-	return settle(filepath.Dir(path))
+	return syncDirectory(filepath.Dir(path))
 }
 
-// settle flushes the folder the rename was recorded in. Flushing the file is
+// syncDirectory flushes the folder the rename was recorded in. Flushing the file is
 // what keeps its contents; flushing the folder is what keeps the rename.
 //
 // Not every filesystem lets a folder be opened for this, and the ones that
 // refuse are the ones that did not need it.
-func settle(dir string) error {
+func syncDirectory(dir string) error {
 	folder, err := os.Open(dir)
 	if err != nil {
 		return nil

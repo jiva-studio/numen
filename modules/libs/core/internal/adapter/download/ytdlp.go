@@ -92,14 +92,14 @@ func (v *ytDLP) readInfo(ctx context.Context, at domain.URL) ([]byte, error) {
 		return nil, err
 	}
 	if operation.IsActive(ctx) {
-		saveInfo(ctx, at, output)
+		cacheInfo(ctx, at, output)
 	}
 	return output, nil
 }
 
-// saveInfo keeps the dump in a file until the operation ends. A dump that
+// cacheInfo keeps the dump in a file until the operation ends. A dump that
 // cannot be written is not kept.
-func saveInfo(ctx context.Context, at domain.URL, output []byte) {
+func cacheInfo(ctx context.Context, at domain.URL, output []byte) {
 	file, err := os.CreateTemp("", "numen-info-*.json")
 	if err != nil {
 		return
@@ -152,14 +152,14 @@ func (v *ytDLP) Metadata(ctx context.Context, at domain.URL) (port.Metadata, err
 		Length:      int(metadata.Duration * 1000),
 		Language:    metadata.Language,
 		Bytes:       max(metadata.Filesize, metadata.Approximate),
-		Captions:    languages(metadata.Subtitles),
-		IsAutomatic: languages(metadata.AutomaticCaptions),
+		Captions:    getLanguages(metadata.Subtitles),
+		IsAutomatic: getLanguages(metadata.AutomaticCaptions),
 	}, nil
 }
 
-// languages are the languages of one set of tracks, in one order however the
+// getLanguages are the getLanguages of one set of tracks, in one order however the
 // tool listed them.
-func languages(tracks map[string][]struct{}) []string {
+func getLanguages(tracks map[string][]struct{}) []string {
 	out := make([]string, 0, len(tracks))
 	for language := range tracks {
 		out = append(out, language)
@@ -183,7 +183,7 @@ func (v *ytDLP) Text(
 	if err != nil {
 		return port.Text{}, err
 	}
-	cues, err := v.subtitles(ctx, at, language(meta, want.Languages, want.IsAutomatic))
+	cues, err := v.subtitles(ctx, at, chooseLanguage(meta, want.Languages, want.IsAutomatic))
 	if err != nil {
 		return port.Text{}, err
 	}
@@ -266,7 +266,7 @@ func (v *ytDLP) Download(
 		if stopped := ctx.Err(); stopped != nil {
 			return port.Copy{}, stopped
 		}
-		return port.Copy{}, fmt.Errorf("%w: %s", err, lastLine(logBuffer.String()))
+		return port.Copy{}, fmt.Errorf("%w: %s", err, getLastLine(logBuffer.String()))
 	}
 
 	// What the container ended up being is read off the folder: codecs that mp4
@@ -276,7 +276,7 @@ func (v *ytDLP) Download(
 		return port.Copy{}, err
 	}
 	if len(entries) != 1 {
-		return port.Copy{}, fmt.Errorf("%w: %s", port.ErrNothingDownloaded, lastLine(logBuffer.String()))
+		return port.Copy{}, fmt.Errorf("%w: %s", port.ErrNothingDownloaded, getLastLine(logBuffer.String()))
 	}
 	name := filepath.Join(folder, entries[0].Name())
 
@@ -299,13 +299,13 @@ func (v *ytDLP) Download(
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
 
-// language is the one the words are asked for in.
+// chooseLanguage is the one the words are asked for in.
 //
 // What a person published is preferred over what a machine wrote; among those,
-// the languages this installation named, and then the language it was spoken
+// the languages this installation named, and then the chooseLanguage it was spoken
 // in. Something translated into thirty languages publishes words in all thirty,
 // and what was said in it is one of them.
-func language(meta port.Metadata, languages []string, automatic bool) string {
+func chooseLanguage(meta port.Metadata, languages []string, automatic bool) string {
 	tracks := meta.Captions
 	if len(tracks) == 0 && automatic {
 		tracks = meta.IsAutomatic
@@ -318,7 +318,7 @@ func language(meta port.Metadata, languages []string, automatic bool) string {
 			return tracks[one]
 		}
 	}
-	if one := slices.IndexFunc(tracks, original); one >= 0 {
+	if one := slices.IndexFunc(tracks, isOriginalTrack); one >= 0 {
 		return tracks[one]
 	}
 	return tracks[0]
@@ -331,8 +331,8 @@ func matchLanguage(language string) func(string) bool {
 	return func(track string) bool { return track == language || track == language+"-orig" }
 }
 
-// original says whether a track is the language it was spoken in.
-func original(track string) bool { return strings.HasSuffix(track, "-orig") }
+// isOriginalTrack says whether a track is the language it was spoken in.
+func isOriginalTrack(track string) bool { return strings.HasSuffix(track, "-orig") }
 
 // videoSites are the hosts this provider answers for. yt-dlp knows far more
 // than these; what is listed is what this application hands it rather than

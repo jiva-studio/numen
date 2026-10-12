@@ -18,28 +18,28 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// mostBytes is the most of a page that is read. A page is an article somebody
+// maxPageBytes is the most of a page that is read. A page is an article somebody
 // wrote, and something larger is a download wearing a page's clothes.
-const mostBytes = 8 << 20
+const maxPageBytes = 8 << 20
 
-// browser is what a page is asked for as. A great many sites answer a request
+// browserUserAgent is what a page is asked for as. A great many sites answer a request
 // carrying no such name with a refusal.
-const browser = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+const browserUserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
 	"(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 
 // readerName is what a page's prose is claimed by, which is the library that
 // found it.
 const readerName = "go-readability"
 
-// pages is the provider for an address no tool here knows better. It fetches
+// pageProvider is the provider for an address no tool here knows better. It fetches
 // the page as a person's browser would, and what it says is bytes from a
 // stranger: the parse is somebody else's library, fed a bounded read.
 //
 // It runs in this process, so every machine has it.
-type pages struct{ through *http.Client }
+type pageProvider struct{ client *http.Client }
 
-func newPages() *pages {
-	return &pages{through: &http.Client{
+func newPages() *pageProvider {
+	return &pageProvider{client: &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
@@ -71,15 +71,15 @@ func newPages() *pages {
 // CanHandle answers for anything published as a page, which is every address a
 // site does not publish as a video. It stands last, and it takes whatever the
 // providers before it did not.
-func (p *pages) CanHandle(at domain.URL) bool { return !isVideoSite(at) }
+func (p *pageProvider) CanHandle(at domain.URL) bool { return !isVideoSite(at) }
 
-func (p *pages) GetDownloadModel(domain.URL) port.DownloadModel {
+func (p *pageProvider) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: readerName, Producer: text.Article}
 }
 
 // Metadata is what a page calls itself, which is the whole of what is known
 // about one before it is read. It is the same read the prose comes out of.
-func (p *pages) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+func (p *pageProvider) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
 	article, err := p.Text(ctx, at, port.PreferredCaptions{})
 	if err != nil {
 		return port.Metadata{}, err
@@ -89,7 +89,7 @@ func (p *pages) Metadata(ctx context.Context, at domain.URL) (port.Metadata, err
 
 // Text is the prose a page is written around. A page is read once: what it
 // calls itself and the prose come out of the same read.
-func (p *pages) Text(ctx context.Context, at domain.URL, _ port.PreferredCaptions) (port.Text, error) {
+func (p *pageProvider) Text(ctx context.Context, at domain.URL, _ port.PreferredCaptions) (port.Text, error) {
 	address, err := url.Parse(string(at))
 	if err != nil {
 		return port.Text{}, err
@@ -101,9 +101,9 @@ func (p *pages) Text(ctx context.Context, at domain.URL, _ port.PreferredCaption
 	// A page is asked for the way the browser this person pasted the address
 	// out of would ask for it. A site that refuses everything else refuses this
 	// too, and says so in its answer.
-	req.Header.Set("User-Agent", browser)
+	req.Header.Set("User-Agent", browserUserAgent)
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-	answer, err := p.through.Do(req)
+	answer, err := p.client.Do(req)
 	if err != nil {
 		return port.Text{}, err
 	}
@@ -112,7 +112,7 @@ func (p *pages) Text(ctx context.Context, at domain.URL, _ port.PreferredCaption
 		return port.Text{}, fmt.Errorf("%s answered %s", string(at), answer.Status)
 	}
 
-	read, err := readability.FromReader(io.LimitReader(answer.Body, mostBytes), address)
+	read, err := readability.FromReader(io.LimitReader(answer.Body, maxPageBytes), address)
 	if err != nil {
 		return port.Text{}, port.ErrNothingDownloaded
 	}

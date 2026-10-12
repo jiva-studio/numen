@@ -151,9 +151,9 @@ func makeReviewCore(
 		// Which card the person is on is a tool's answer and never part of the
 		// question, so a deck named by whoever synced it is data and not
 		// instruction.
-		Reviewing: func() mcp.AskedCard {
-			on := api.Current()
-			return mcp.AskedCard{Deck: on.Deck, Card: on.Card, Face: on.Face}
+		GetCurrentCard: func() mcp.CurrentCard {
+			on := api.GetCurrentCard()
+			return mcp.CurrentCard{Deck: on.Deck, Card: on.Card, Face: on.Face}
 		},
 
 		Notes: mcp.Notes{

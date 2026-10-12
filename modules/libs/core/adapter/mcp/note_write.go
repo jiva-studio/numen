@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-func addNoteWritingTools(server *sdk.Server, core Core) {
+func addNoteWriteTools(server *sdk.Server, core Core) {
 	addImportTool(server, core)
 	addNoteCreate(server, core)
 	addNoteRewrite(server, core)
@@ -19,12 +19,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 	addNoteRemove(server, core)
 }
 
-// One note per call.
-//
-// A call is written out in full before it is made, and this one carries the
-// text of a note: one at a time, each is filed as it is finished, and stopping
-// halfway keeps what was made. The other calls that take a list carry names,
-// which are written in a moment.
+// addNoteCreate adds the tool that creates one note per call.
 func addNoteCreate(server *sdk.Server, core Core) {
 	addTool(server, &sdk.Tool{
 		Name:  "note_create",
@@ -56,8 +51,7 @@ func createNote(ctx context.Context, core Core, in NewNote) (CreateOutcome, erro
 		Title: in.Title, Body: in.Body, Path: in.Folder,
 		Links: newLinks(in.Links),
 	})
-	// A path alongside an error means the file was written and something
-	// after it was not; the note is there under that name.
+	// A path returned with an error means the file was written and a later step failed.
 	outcome := CreateOutcome{CreateResult: created}
 	if err != nil {
 		outcome.CreateResult.Title = in.Title
@@ -104,8 +98,7 @@ func rewriteNote(ctx context.Context, core Core, in noteRewriteInput) (noteRewri
 	if err != nil {
 		return noteRewriteOutput{}, err
 	}
-	// What the file became. A caller writing this note again presents it, and
-	// the one it read is behind by its own write.
+	// The fingerprint after the write; the next write to this note presents it.
 	written, err := core.Notes.Write.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Body, ref)
 	if err != nil {
 		return noteRewriteOutput{}, err
@@ -155,8 +148,8 @@ func editNote(ctx context.Context, core Core, in noteEditInput) (noteEditOutput,
 	if err != nil {
 		return noteEditOutput{}, err
 	}
-	// What stood there is answered because a span found by a looser
-	// reading is not the text that was asked for.
+	// The text found at the span is returned as stored; a span matched loosely
+	// is not the requested text.
 	return noteEditOutput{
 		Path:        in.Path,
 		Fingerprint: fingerprintOf(done.Fingerprint),

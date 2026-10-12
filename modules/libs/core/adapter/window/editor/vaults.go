@@ -123,14 +123,14 @@ func (s vaultsService) OpenVault(
 ) (*connect.Response[v1.OpenVaultResponse], error) {
 	v, err := s.found(r.Msg.GetId())
 	if err == nil {
-		err = s.api.Opens(ctx, v)
+		err = s.api.OpenVault(ctx, v)
 	}
 	if err == nil {
 		return connect.NewResponse(&v1.OpenVaultResponse{}), nil
 	}
 	// A window that is closing, or already settling what it owes, is what
 	// stopped this, and the vault asked for is as it was.
-	if errors.Is(err, errWindowClosing) || errors.Is(err, errSettling) {
+	if errors.Is(err, errWindowClosing) || errors.Is(err, errShutdownInProgress) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	reason, refused := vaultsErrorCodeBy(err)
@@ -192,7 +192,7 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true
 	case errors.Is(err, port.ErrNoTrash):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH, true
-	case errors.Is(err, errAsking):
+	case errors.Is(err, errAnswerPending):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING, true
 	default:
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false

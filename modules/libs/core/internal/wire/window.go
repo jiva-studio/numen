@@ -63,7 +63,7 @@ type Window struct {
 	// none.
 	Vault func() string
 
-	clients leaving
+	clients flushCoordinator
 }
 
 // Again is how often a stream says what it last said when nothing has changed.
@@ -133,7 +133,7 @@ func (w *Window) WatchQuit(
 	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return err
 	}
-	token, told, done := w.clients.listen()
+	token, told, done := w.clients.registerClient()
 	defer done()
 
 	// The token before anything is asked. A client that has not been given one
@@ -217,40 +217,40 @@ func (w *Window) Finish(id string) {
 	}
 }
 
-// Settle asks every page to write what it owes and waits for the round to
+// Settle asks every page to write what it owes and waits for the request to
 // end. It answers false where a page is holding work a person is being asked
-// about, and where another round has taken this one's place.
+// about, and where another request has taken this one's place.
 func (w *Window) Settle(ctx context.Context) bool {
-	round := w.clients.ask()
+	request := w.clients.startRequest()
 	select {
-	case <-round.written:
-	case <-round.questions:
-	case <-round.over:
+	case <-request.allWritten:
+	case <-request.questionRaised:
+	case <-request.superseded:
 	case <-ctx.Done():
 	}
-	return !round.isPending() && w.clients.current() == round
+	return !request.isPending() && w.clients.getRunning() == request
 }
 
-// WaitForAnswers waits for the round in progress to end with every page having
+// WaitForAnswers waits for the request in progress to end with every page having
 // written what it owes.
 func (w *Window) WaitForAnswers(ctx context.Context) bool {
-	round := w.clients.current()
-	if round == nil {
+	request := w.clients.getRunning()
+	if request == nil {
 		return false
 	}
 	select {
-	case <-round.written:
+	case <-request.allWritten:
 		return true
-	case <-round.over:
+	case <-request.superseded:
 		return false
 	case <-ctx.Done():
 		return false
 	}
 }
 
-// EndRound ends the round that was running, and lets go of whoever was waiting
+// EndRound ends the request that was running, and lets go of whoever was waiting
 // on it. What the pages hold from here belongs to the vault in front of them.
-func (w *Window) EndRound() { w.clients.endRound() }
+func (w *Window) EndRound() { w.clients.endRequest() }
 
 // describeTasks is the work as the schema says it.
 func describeTasks(list []task.Task) []*v1.Task {
@@ -283,220 +283,220 @@ func unitOf(in task.Unit) v1.Unit {
 	return v1.Unit_UNIT_THINGS
 }
 
-// owed is what a page has left when it answers.
-type owed int
+// flushState is what a page has left when it answers.
+type flushState int
 
 const (
-	// silent is a page that has said nothing about this round.
-	silent owed = iota
-	// wrote is a page with nothing left: what it held is on disk.
-	wrote
-	// asks is a page holding work that could not be written, with a person
+	// flushUnanswered is a page that has said nothing about this request.
+	flushUnanswered flushState = iota
+	// flushWritten is a page with nothing left: what it held is on disk.
+	flushWritten
+	// flushAsking is a page holding work that could not be written, with a person
 	// being asked what happens to it.
-	asks
+	flushAsking
 )
 
 // parseFlushResult converts a client's flush result to the internal owed state.
-func parseFlushResult(result v1.FlushResult) owed {
+func parseFlushResult(result v1.FlushResult) flushState {
 	switch result {
 	case v1.FlushResult_FLUSH_RESULT_NOTHING, v1.FlushResult_FLUSH_RESULT_WRITTEN:
-		return wrote
+		return flushWritten
 	case v1.FlushResult_FLUSH_RESULT_ASKING:
-		return asks
+		return flushAsking
 	default:
-		return silent
+		return flushUnanswered
 	}
 }
 
-// leaving is everyone drawing this window, for the moment it goes.
+// flushCoordinator is everyone drawing this window, for the moment it goes.
 //
 // A client holds unwritten work in a buffer this process cannot see, so it is
 // asked to write what it owes and answers when it has. A client that stops
 // listening stops being owed, unless its stream ended with a question standing:
 // the work is still in that buffer, and it is silence until a page listens
 // again.
-type leaving struct {
-	mu    sync.Mutex
-	next  int
-	pages map[string]*client
-	round *round
+type flushCoordinator struct {
+	mu      sync.Mutex
+	next    int
+	clients map[string]*client
+	current *flushRequest
 }
 
 // client is one browser tab drawing the window, and what it has said.
 type client struct {
-	told chan string
-	said owed
-	// isGone is a page whose stream ended with a question standing. It is told
+	flushTokens chan string
+	state       flushState
+	// isDisconnected is a page whose stream ended with a question standing. It is told
 	// nothing and answers nothing; a page that listens takes it over.
-	isGone bool
+	isDisconnected bool
 }
 
-// round is one asking of every page, and how far it has got.
-type round struct {
-	// written closes once every page has written what it owes.
-	written chan struct{}
-	// questions closes once a page is holding work a person has to answer for.
-	questions chan struct{}
-	// over closes once another round has taken this one's place.
-	over chan struct{}
+// flushRequest is one asking of every page, and how far it has got.
+type flushRequest struct {
+	// allWritten closes once every page has allWritten what it owes.
+	allWritten chan struct{}
+	// questionRaised closes once a page is holding work a person has to answer for.
+	questionRaised chan struct{}
+	// superseded closes once another request has taken this one's place.
+	superseded chan struct{}
 
-	// The lock of the leaving that made this round is held for these.
-	isSettled bool
-	isRaised  bool
-	isPast    bool
+	// The lock of the flush coordinator that made this request is held for these.
+	isAllWrittenSignaled bool
+	isQuestionSignaled   bool
+	isSuperseded         bool
 }
 
 // isPending reports whether a question a person has to answer is outstanding.
-func (r *round) isPending() bool {
+func (r *flushRequest) isPending() bool {
 	select {
-	case <-r.questions:
+	case <-r.questionRaised:
 		return true
 	default:
 		return false
 	}
 }
 
-// listen registers a client, and answers with the token it will flush under,
+// registerClient registers a client, and answers with the token it will flush under,
 // what it is told on, and how it stops listening.
-func (l *leaving) listen() (string, <-chan string, func()) {
+func (l *flushCoordinator) registerClient() (string, <-chan string, func()) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if l.pages == nil {
-		l.pages = map[string]*client{}
+	if l.clients == nil {
+		l.clients = map[string]*client{}
 	}
 	// One window draws one vault, so a page that listens is the page that went,
 	// and it takes over what that one was holding.
-	for token, p := range l.pages {
-		if p.isGone {
-			delete(l.pages, token)
+	for token, p := range l.clients {
+		if p.isDisconnected {
+			delete(l.clients, token)
 		}
 	}
 	token := strconv.Itoa(l.next)
 	l.next++
-	p := &client{told: make(chan string, 1)}
-	l.pages[token] = p
-	if l.isAsking() {
-		p.told <- token
+	p := &client{flushTokens: make(chan string, 1)}
+	l.clients[token] = p
+	if l.isRunning() {
+		p.flushTokens <- token
 	}
-	l.reckon()
+	l.updateProgress()
 
-	return token, p.told, func() { l.disconnectClient(token, p) }
+	return token, p.flushTokens, func() { l.disconnectClient(token, p) }
 }
 
-// isAsking reports whether a round is running. The lock is held.
-func (l *leaving) isAsking() bool {
-	return l.round != nil && !l.round.isPast
+// isRunning reports whether a request is running. The lock is held.
+func (l *flushCoordinator) isRunning() bool {
+	return l.current != nil && !l.current.isSuperseded
 }
 
 // disconnectClient removes or marks gone one client no longer listening.
-func (l *leaving) disconnectClient(token string, p *client) {
+func (l *flushCoordinator) disconnectClient(token string, p *client) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if l.pages[token] != p || p.isGone {
+	if l.clients[token] != p || p.isDisconnected {
 		return
 	}
-	close(p.told)
+	close(p.flushTokens)
 	// A page that went with a question standing is the only place that work
 	// exists. It is remembered, and it is remembered as silence, which is what
-	// a round waits its bound for.
-	if p.said == asks {
-		p.said = silent
-		p.isGone = true
+	// a request waits its bound for.
+	if p.state == flushAsking {
+		p.state = flushUnanswered
+		p.isDisconnected = true
 	} else {
-		delete(l.pages, token)
+		delete(l.clients, token)
 	}
-	l.reckon()
+	l.updateProgress()
 }
 
-// ask begins a round: every page is told to write what it owes, and what it
-// said in the round before counts for nothing. A round already running is put
+// startRequest begins a request: every page is told to write what it owes, and what it
+// said in the request before counts for nothing. A request already running is put
 // past, and whoever was waiting on it is let go.
-func (l *leaving) ask() *round {
+func (l *flushCoordinator) startRequest() *flushRequest {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if l.isAsking() {
-		l.round.isPast = true
-		close(l.round.over)
+	if l.isRunning() {
+		l.current.isSuperseded = true
+		close(l.current.superseded)
 	}
-	l.round = &round{
-		written:   make(chan struct{}),
-		questions: make(chan struct{}),
-		over:      make(chan struct{}),
+	l.current = &flushRequest{
+		allWritten:     make(chan struct{}),
+		questionRaised: make(chan struct{}),
+		superseded:     make(chan struct{}),
 	}
-	for token, p := range l.pages {
-		p.said = silent
-		if p.isGone {
+	for token, p := range l.clients {
+		p.state = flushUnanswered
+		if p.isDisconnected {
 			continue
 		}
 		select {
-		case p.told <- token:
+		case p.flushTokens <- token:
 		default:
 		}
 	}
-	l.reckon()
-	return l.round
+	l.updateProgress()
+	return l.current
 }
 
-// endRound ends the round that was running, and lets go of whoever was waiting
+// endRequest ends the request that was running, and lets go of whoever was waiting
 // on it.
-func (l *leaving) endRound() {
+func (l *flushCoordinator) endRequest() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if !l.isAsking() {
+	if !l.isRunning() {
 		return
 	}
-	l.round.isPast = true
-	close(l.round.over)
-	l.round = nil
+	l.current.isSuperseded = true
+	close(l.current.superseded)
+	l.current = nil
 }
 
-// current is the round running, or nothing.
-func (l *leaving) current() *round {
+// getRunning is the request running, or nothing.
+func (l *flushCoordinator) getRunning() *flushRequest {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if !l.isAsking() {
+	if !l.isRunning() {
 		return nil
 	}
-	return l.round
+	return l.current
 }
 
 // recordFlush records what one page has left.
-func (l *leaving) recordFlush(token string, said owed) {
+func (l *flushCoordinator) recordFlush(token string, said flushState) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if p, listening := l.pages[token]; listening && !p.isGone {
-		p.said = said
+	if p, listening := l.clients[token]; listening && !p.isDisconnected {
+		p.state = said
 	}
-	l.reckon()
+	l.updateProgress()
 }
 
-// reckon says how far the round has got: everything is written, or a question
+// updateProgress says how far the request has got: everything is written, or a question
 // a person has to answer is outstanding. The lock is held.
-func (l *leaving) reckon() {
-	r := l.round
-	if r == nil || r.isPast {
+func (l *flushCoordinator) updateProgress() {
+	r := l.current
+	if r == nil || r.isSuperseded {
 		return
 	}
-	for _, p := range l.pages {
-		if p.said == asks && !r.isRaised {
-			r.isRaised = true
-			close(r.questions)
+	for _, p := range l.clients {
+		if p.state == flushAsking && !r.isQuestionSignaled {
+			r.isQuestionSignaled = true
+			close(r.questionRaised)
 		}
 	}
-	if r.isSettled {
+	if r.isAllWrittenSignaled {
 		return
 	}
-	for _, p := range l.pages {
-		if p.said != wrote {
+	for _, p := range l.clients {
+		if p.state != flushWritten {
 			return
 		}
 	}
-	r.isSettled = true
-	close(r.written)
+	r.isAllWrittenSignaled = true
+	close(r.allWritten)
 }

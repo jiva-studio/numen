@@ -162,10 +162,10 @@ func byAxes(axes map[int]int64, rest int64) func(tensorSignature) ([]int64, erro
 	return func(in tensorSignature) ([]int64, error) { return shapeOf(in, axes, rest) }
 }
 
-// fill returns the data of an input: a float tensor holds a repeating ramp, a
+// createTensorData returns the data of an input: a float tensor holds a repeating ramp, a
 // mask holds ones, and any other integer tensor holds the value ints gives its
 // name, else fillTokenID.
-func fill(in tensorSignature, count int, ints map[string]int64) (any, error) {
+func createTensorData(in tensorSignature, count int, ints map[string]int64) (any, error) {
 	integer := func() int64 {
 		if value, ok := ints[in.Name]; ok {
 			return value
@@ -219,7 +219,7 @@ func buildInputData(sig modelSignature, w workload) (map[string]inputData, error
 		if err != nil {
 			return nil, err
 		}
-		data, err := fill(in, getElementCount(dims), w.ints)
+		data, err := createTensorData(in, getElementCount(dims), w.ints)
 		if err != nil {
 			return nil, err
 		}

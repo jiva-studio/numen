@@ -24,8 +24,8 @@ var useCaseEdges = map[string][]string{
 	"vault":      {"note", "source"},
 }
 
-// getUseCase is the use case a package belongs to, and whether it is one.
-func getUseCase(pkg string) (name string, isUseCase bool) {
+// getUseCaseName is the use case a package belongs to, and whether it is one.
+func getUseCaseName(pkg string) (name string, isUseCase bool) {
 	rest, found := strings.CutPrefix(pkg, "usecase/")
 	if !found {
 		return "", false
@@ -34,11 +34,11 @@ func getUseCase(pkg string) (name string, isUseCase bool) {
 	return name, true
 }
 
-// getUseCaseRefusal says why one package may not reach another, and nothing
+// getUseCaseEdgeRefusal says why one package may not reach another, and nothing
 // where it may.
-func getUseCaseRefusal(from, to string) string {
-	source, isSource := getUseCase(from)
-	target, isTarget := getUseCase(to)
+func getUseCaseEdgeRefusal(from, to string) string {
+	source, isSource := getUseCaseName(from)
+	target, isTarget := getUseCaseName(to)
 	if !isSource || !isTarget || source == target {
 		return ""
 	}
@@ -50,11 +50,11 @@ func getUseCaseRefusal(from, to string) string {
 
 // A use case reaches another only along an edge useCaseEdges declares.
 //
-// A test file is left out: a test stands outside the package it exercises.
-func TestNoUseCaseReachesAnotherExceptAsDeclared(t *testing.T) {
-	var wrong []string
-	var read, between int
-	reached := map[string]bool{}
+// Test files are not walked.
+func TestUseCaseImportsFollowDeclaredEdges(t *testing.T) {
+	var violations []string
+	var importsRead, useCaseImportsRead int
+	visited := map[string]bool{}
 	err := filepath.WalkDir("../usecase", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
 			return err
@@ -67,21 +67,21 @@ func TestNoUseCaseReachesAnotherExceptAsDeclared(t *testing.T) {
 			return err
 		}
 		from := getPackage("..", path)
-		if name, ok := getUseCase(from); ok {
-			reached[name] = true
+		if name, ok := getUseCaseName(from); ok {
+			visited[name] = true
 		}
-		for _, one := range file.Imports {
-			to, err := strconv.Unquote(one.Path.Value)
+		for _, spec := range file.Imports {
+			to, err := strconv.Unquote(spec.Path.Value)
 			if err != nil || !strings.HasPrefix(to, module) {
 				continue
 			}
 			to = strings.TrimPrefix(to, module)
-			read++
-			if _, ok := getUseCase(to); ok {
-				between++
+			importsRead++
+			if _, ok := getUseCaseName(to); ok {
+				useCaseImportsRead++
 			}
-			if why := getUseCaseRefusal(from, to); why != "" {
-				wrong = append(wrong, from+" reaches "+to+": "+why)
+			if reason := getUseCaseEdgeRefusal(from, to); reason != "" {
+				violations = append(violations, from+" reaches "+to+": "+reason)
 			}
 		}
 		return nil
@@ -89,31 +89,28 @@ func TestNoUseCaseReachesAnotherExceptAsDeclared(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range wrong {
-		t.Error(one)
+	for _, violation := range violations {
+		t.Error(violation)
 	}
 
-	// A walk that read no edge between use cases is a rule checked against
-	// nothing, and it passes. The floors are under what the tree holds, and
-	// each use case is named because a count cannot say which of them the walk
-	// reached.
-	if read < 50 {
-		t.Fatalf("%d edges of this module read: the walk is not reading the use cases", read)
+	// The floors sit under what the tree holds; each use case is checked by
+	// name because a count cannot say which use cases the walk visited.
+	if importsRead < 50 {
+		t.Fatalf("%d edges of this module read: the walk is not reading the use cases", importsRead)
 	}
-	if between < 5 {
-		t.Fatalf("%d edges between use cases read: the walk is not reading them", between)
+	if useCaseImportsRead < 5 {
+		t.Fatalf("%d edges between use cases read: the walk is not reading them", useCaseImportsRead)
 	}
 	for name := range useCaseEdges {
-		if !reached[name] {
+		if !visited[name] {
 			t.Errorf("usecase/%s has no file the walk read: the rule stops at that use case", name)
 		}
 	}
 }
 
-// The declared edges are asked directly: a walk that refuses nothing passes,
-// and an entry admitting one edge could admit every edge.
-func TestWhatTheUseCaseEdgeRuleRefuses(t *testing.T) {
-	for _, one := range []struct {
+// The edge rule is called directly on declared and undeclared edges.
+func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
+	for _, tc := range []struct {
 		from, to  string
 		isRefused bool
 	}{
@@ -144,18 +141,18 @@ func TestWhatTheUseCaseEdgeRuleRefuses(t *testing.T) {
 		{"usecase/vault/sub", "usecase/note", false},
 		{"usecase/note/sub", "usecase/note", false},
 
-		// What is a use case on neither side is another rule's.
+		// Pairs with a side that is not a use case are not this rule's.
 		{"usecase/note", "domain", false},
 		{"usecase/note", "port", false},
 		{"adapter/mcp", "usecase/note", false},
 		{"container", "usecase/vault", false},
 	} {
-		why := getUseCaseRefusal(one.from, one.to)
-		if one.isRefused && why == "" {
-			t.Errorf("%s reaches %s and is not refused", one.from, one.to)
+		reason := getUseCaseEdgeRefusal(tc.from, tc.to)
+		if tc.isRefused && reason == "" {
+			t.Errorf("%s reaches %s and is not refused", tc.from, tc.to)
 		}
-		if !one.isRefused && why != "" {
-			t.Errorf("%s reaches %s and is refused: %s", one.from, one.to, why)
+		if !tc.isRefused && reason != "" {
+			t.Errorf("%s reaches %s and is refused: %s", tc.from, tc.to, reason)
 		}
 	}
 }

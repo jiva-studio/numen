@@ -23,17 +23,17 @@ type Options struct {
 	// Ignore is what the vault says not to look at, in the syntax of
 	// `.gitignore`. Empty means the default.
 	Ignore []string
-	// Hold is how long changes are kept before they are reported. Zero means
+	// DebounceDelay is how long changes are kept before they are reported. Zero means
 	// the default.
-	Hold time.Duration
+	DebounceDelay time.Duration
 	// MaxNoteBytes is the most a note may be and still be read whole. Zero
 	// means the default.
 	MaxNoteBytes int64
 }
 
-// DefaultHold is how long events are held before they are acted on. One save
+// DefaultDebounceDelay is how long events are held before they are acted on. One save
 // is several events, and the same path arrives more than once inside it.
-const DefaultHold = 50 * time.Millisecond
+const DefaultDebounceDelay = 50 * time.Millisecond
 
 // ignoring is what a vault leaves out: the rules no vault has to ask for, and
 // the rules the vault asked for beside them. A path either of them names is
@@ -75,11 +75,11 @@ func (o Options) maxNoteBytes() int64 {
 	return o.MaxNoteBytes
 }
 
-func (o Options) hold() time.Duration {
-	if o.Hold <= 0 {
-		return DefaultHold
+func (o Options) getDebounceDelay() time.Duration {
+	if o.DebounceDelay <= 0 {
+		return DefaultDebounceDelay
 	}
-	return o.Hold
+	return o.DebounceDelay
 }
 
 // NoteExtensions is what counts as a note. A note, a deck, a stencil and a

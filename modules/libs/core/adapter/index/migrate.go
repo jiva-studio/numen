@@ -35,12 +35,12 @@ var dropping = []struct {
 	{"TABLE", `type = 'table'`},
 }
 
-// empty takes everything out of the index and puts its version back to nothing,
+// resetIndex takes everything out of the index and puts its version back to nothing,
 // so the migrations run from the first file.
 //
 // The catalogue is read again after every drop: a shadow table is listed in it
 // and is gone once the virtual table that owns it is dropped.
-func empty(ctx context.Context, db *sql.DB) error {
+func resetIndex(ctx context.Context, db *sql.DB) error {
 	// A reference to a table already dropped holds nothing back while every
 	// table is going. The index writes over one connection, so the setting and
 	// the drops meet on it.
@@ -129,7 +129,7 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	// It is a cache: what it holds is a reading of the vault, and the next scan
 	// reads the vault again. It is emptied and migrated from the first file.
 	if current > newest {
-		if err := empty(ctx, db); err != nil {
+		if err := resetIndex(ctx, db); err != nil {
 			return err
 		}
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="a current below zero lets every migration run, as zero does"
@@ -147,13 +147,13 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// remember is where an index keeps what migrated it. It is not one of the
+// createBookkeeping is where an index keeps what migrated it. It is not one of the
 // numbered migrations: it is what says whether those ran, so it cannot be one
 // of them.
 //
 // A table carrying a column this build does not write is brought to the shape
 // this build writes, which is the one thing the bookkeeping owes itself.
-func remember(ctx context.Context, db *sql.DB) error {
+func createBookkeeping(ctx context.Context, db *sql.DB) error {
 	if _, err := writing.Exec(ctx, db, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY,
 		name    TEXT NOT NULL
@@ -194,7 +194,7 @@ func remember(ctx context.Context, db *sql.DB) error {
 }
 
 func apply(ctx context.Context, db *sql.DB, m migration) error {
-	if err := remember(ctx, db); err != nil {
+	if err := createBookkeeping(ctx, db); err != nil {
 		return err
 	}
 	tx, err := writing.Begin(ctx, db)
@@ -203,7 +203,7 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	}
 	defer tx.Rollback()
 
-	for _, stmt := range statements(m.body) {
+	for _, stmt := range splitStatements(m.body) {
 		if _, err := tx.ExecContext(ctx, stmt); err != nil {
 			return fmt.Errorf("%w\nin statement:\n%s", err, strings.TrimSpace(stmt))
 		}
@@ -234,7 +234,7 @@ func loadMigrations() ([]migration, error) {
 	out := make([]migration, 0, len(entries))
 	seen := map[int]string{}
 	for _, e := range entries {
-		version, err := versionOf(e.Name())
+		version, err := parseVersion(e.Name())
 		if err != nil {
 			return nil, err
 		}
@@ -253,7 +253,7 @@ func loadMigrations() ([]migration, error) {
 	return out, nil
 }
 
-func versionOf(name string) (int, error) {
+func parseVersion(name string) (int, error) {
 	prefix, _, ok := strings.Cut(name, "_")
 	if !ok {
 		return 0, fmt.Errorf("migration %q is not named <version>_<description>.sql", name)
@@ -265,19 +265,19 @@ func versionOf(name string) (int, error) {
 	return version, nil
 }
 
-// statements cuts a file on semicolons. This is deliberately not a SQL parser:
+// splitStatements cuts a file on semicolons. This is deliberately not a SQL parser:
 // a statement that needs more than this does not belong in a migration.
-func statements(raw string) []string {
+func splitStatements(raw string) []string {
 	var out []string
 	for _, chunk := range strings.Split(raw, ";") {
-		if strings.TrimSpace(withoutComments(chunk)) != "" {
+		if strings.TrimSpace(stripComments(chunk)) != "" {
 			out = append(out, chunk)
 		}
 	}
 	return out
 }
 
-func withoutComments(s string) string {
+func stripComments(s string) string {
 	var b strings.Builder
 	for _, line := range strings.Split(s, "\n") {
 		if !strings.HasPrefix(strings.TrimSpace(line), "--") {

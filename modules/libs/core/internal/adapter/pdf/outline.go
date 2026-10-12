@@ -46,7 +46,7 @@ func (d *document) outline(starts []int) []Part {
 			}
 			seen[*at] = true
 
-			if part, ok := d.part(*at, level, starts); ok {
+			if part, ok := d.readPart(*at, level, starts); ok {
 				parts = append(parts, part)
 			}
 			walk(at, level+1)
@@ -64,30 +64,30 @@ func (d *document) outline(starts []int) []Part {
 	return parts
 }
 
-// part is one outline entry, as a name and the offset of the page it leads to.
-// An entry with no name, or one that leads nowhere, is not a part.
-func (d *document) part(bookmark references.FPDF_BOOKMARK, level int, starts []int) (Part, bool) {
+// readPart is one outline entry, as a name and the offset of the page it leads to.
+// An entry with no name, or one that leads nowhere, is not a readPart.
+func (d *document) readPart(bookmark references.FPDF_BOOKMARK, level int, starts []int) (Part, bool) {
 	named, err := d.worker.FPDFBookmark_GetTitle(&requests.FPDFBookmark_GetTitle{Bookmark: bookmark})
 	if err != nil {
 		return Part{}, false
 	}
-	title := tidy(named.Title)
+	title := normalizeSpaces(named.Title)
 	if title == "" {
 		return Part{}, false
 	}
-	page, ok := d.destination(bookmark)
+	page, ok := d.getDestinationPage(bookmark)
 	if !ok || page < 0 || page >= len(starts) {
 		return Part{}, false
 	}
 	return Part{Title: title, Offset: starts[page], Level: level}, true
 }
 
-// destination is the page an outline entry leads to.
+// getDestinationPage is the page an outline entry leads to.
 //
-// An entry carries its destination directly or carries an action that holds
+// An entry carries its getDestinationPage directly or carries an action that holds
 // one. Both are asked, because which of the two a file uses is the choice of
 // whatever wrote it.
-func (d *document) destination(bookmark references.FPDF_BOOKMARK) (int, bool) {
+func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, bool) {
 	dest, err := d.worker.FPDFBookmark_GetDest(&requests.FPDFBookmark_GetDest{
 		Document: d.ref, Bookmark: bookmark,
 	})

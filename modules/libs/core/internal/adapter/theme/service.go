@@ -64,9 +64,9 @@ type Service struct {
 	// goes.
 	InterfaceScaleBounds, TextScaleBounds Bounds
 
-	// Hold is how long a change to the themes folder is kept before it is
+	// DebounceDelay is how long a change to the themes folder is kept before it is
 	// reported. Zero is DefaultHold.
-	Hold time.Duration
+	DebounceDelay time.Duration
 }
 
 // ListThemes is every theme there is, and what the window is wearing out of it.
@@ -77,7 +77,7 @@ func (s *Service) ListThemes(
 	worn := s.getAppearance()
 	applied, missing := s.Catalogue.GetApplied(worn.ThemeName)
 	if missing != "" {
-		s.say(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
+		s.warn(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
 	}
 
 	themes := s.Catalogue.Themes()
@@ -170,7 +170,7 @@ func (s *Service) WatchThemes(
 	watching, stop := context.WithCancel(ctx)
 	defer stop()
 
-	changed, err := s.Catalogue.Watch(watching, s.Hold)
+	changed, err := s.Catalogue.Watch(watching, s.DebounceDelay)
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -178,7 +178,7 @@ func (s *Service) WatchThemes(
 	// Naming nothing changed, so that a client that has gone fails the write.
 	// The request context belongs to the process and says nothing about the page
 	// a stream was opened from.
-	repeat := time.NewTicker(again)
+	repeat := time.NewTicker(keepaliveInterval)
 	defer repeat.Stop()
 
 	for {
@@ -200,9 +200,9 @@ func (s *Service) WatchThemes(
 	}
 }
 
-// again is how often the stream says nothing changed. It is the one thing that
+// keepaliveInterval is how often the stream says nothing changed. It is the one thing that
 // tells a handler its client has gone.
-const again = time.Second
+const keepaliveInterval = time.Second
 
 // getAppearance is what the settings say, and this product's own palette at the size it
 // was designed at, under the system's choice, where they say nothing or could
@@ -219,7 +219,7 @@ func (s *Service) getAppearance() Appearance {
 	}
 	said, err := s.Settings.Read()
 	if err != nil {
-		s.say(fmt.Sprintf("the settings could not be read, so the window wears %s: %v", Default, err))
+		s.warn(fmt.Sprintf("the settings could not be read, so the window wears %s: %v", Default, err))
 		return worn
 	}
 	if said.ThemeName != "" {
@@ -235,7 +235,7 @@ func (s *Service) getAppearance() Appearance {
 	return worn
 }
 
-func (s *Service) say(why string) {
+func (s *Service) warn(why string) {
 	if s.Settings != nil {
 		s.Settings.Warn(why)
 	}

@@ -96,7 +96,7 @@ func (l *Layout) Regions(page image.Image) ([]ocr.Region, error) {
 	defer scale.Destroy()
 	// The library keeps a pointer into this and nothing else does, so it is held
 	// in a variable until the run is over.
-	flat := l.planes(page)
+	flat := l.getPlanes(page)
 	pixels, err := ort.NewTensor([]int64{1, 3, layoutSide, layoutSide}, flat)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (l *Layout) Regions(page image.Image) ([]ocr.Region, error) {
 
 	answer, held := out[outputBoxes]
 	if !held {
-		return nil, fmt.Errorf("the layout model answered with %v and not %s", names(out), outputBoxes)
+		return nil, fmt.Errorf("the layout model answered with %v and not %s", getNames(out), outputBoxes)
 	}
 	data, err := ort.GetTensorData[float32](answer)
 	if err != nil {
@@ -146,9 +146,9 @@ func (l *Layout) Regions(page image.Image) ([]ocr.Region, error) {
 	return ocr.Distinct(regions, l.overlap), nil
 }
 
-// planes is the page as the model asks for it: one plane a colour, each pixel a
+// getPlanes is the page as the model asks for it: one plane a colour, each pixel a
 // fraction of one. The only scaling it wants is a byte into that fraction.
-func (l *Layout) planes(page image.Image) []float32 {
+func (l *Layout) getPlanes(page image.Image) []float32 {
 	if l.small == nil {
 		l.small = image.NewRGBA(image.Rect(0, 0, layoutSide, layoutSide))
 	}
@@ -170,12 +170,12 @@ func (l *Layout) planes(page image.Image) []float32 {
 	return flat
 }
 
-func planes(page image.Image) []float32 {
+func getPagePlanes(page image.Image) []float32 {
 	l := &Layout{}
-	return l.planes(page)
+	return l.getPlanes(page)
 }
 
-func names(m map[string]*ort.Value) []string {
+func getNames(m map[string]*ort.Value) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)

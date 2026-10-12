@@ -137,7 +137,7 @@ func TestMP3IsDecodedToTheSamplesOfTheWholeOutput(t *testing.T) {
 	raw := encodeMP3(40, 2)
 	want := decodeMP3Whole(t, raw)
 
-	got, rate, err := samples(raw)
+	got, rate, err := readSamples(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +211,7 @@ func TestAnMP3RecordingHonoursItsContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	sound, rate, err := samples(encodeMP3(40, 4))
+	sound, rate, err := readSamples(encodeMP3(40, 4))
 	if err != nil {
 		t.Fatal(err)
 	}

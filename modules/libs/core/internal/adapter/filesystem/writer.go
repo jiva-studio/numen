@@ -62,7 +62,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	if ctx.Err() != nil {
 		return domain.Fingerprint{}, ctx.Err()
 	}
-	target, err := w.file(path)
+	target, err := w.resolveNoteFile(path)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -93,7 +93,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 		return domain.Fingerprint{}, err
 	}
 
-	if err := parents(root, filepath.Dir(name), path); err != nil {
+	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	written, err := replace(ctx, root, name, bytes.NewReader(content), mode)
@@ -111,11 +111,11 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	// A file of any kind moves, and so does a folder. Both ends have to be a
 	// place this vault keeps the person's files or one this application keeps
 	// for itself.
-	source, err := w.reach(from)
+	source, err := w.resolvePath(from)
 	if err != nil {
 		return err
 	}
-	target, err := w.reach(to)
+	target, err := w.resolvePath(to)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 		return err
 	}
 
-	if err := parents(root, filepath.Dir(arrives), to); err != nil {
+	if err := createParents(root, filepath.Dir(arrives), to); err != nil {
 		return err
 	}
 	return rename(ctx, root, leaves, arrives)
@@ -163,7 +163,7 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	target, err := w.reach(path)
+	target, err := w.resolvePath(path)
 	if err != nil {
 		return err
 	}
@@ -178,14 +178,14 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
 	case err != nil && !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
-	return parents(root, name, path)
+	return createParents(root, name, path)
 }
 
 func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	target, err := w.reach(path)
+	target, err := w.resolvePath(path)
 	if err != nil {
 		return err
 	}
@@ -201,14 +201,14 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 	return nil
 }
 
-// note is where a note goes on this machine, and refuses a path this vault
-// does not hold as a note.
+// resolveNotePath is where a resolveNotePath goes on this machine, and refuses a path this vault
+// does not hold as a resolveNotePath.
 //
 // A writer driven by an agent is why the second half is here. Containment alone
 // leaves everything else in the folder — attachments, another tool's state, the
 // repository the vault is kept in — writable and removable by whatever asks,
 // while the reader is already saying those paths do not exist.
-func (w *VaultWriter) note(path string) (string, error) {
+func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 	target, err := w.getContainedPath(path)
 	if err != nil {
 		return "", err
@@ -219,9 +219,9 @@ func (w *VaultWriter) note(path string) (string, error) {
 	return target, nil
 }
 
-// reach is where a path is on this machine, for work that takes a file of any
+// resolvePath is where a path is on this machine, for work that takes a file of any
 // kind and a folder alike.
-func (w *VaultWriter) reach(path string) (string, error) {
+func (w *VaultWriter) resolvePath(path string) (string, error) {
 	target, err := w.getContainedPath(path)
 	if err != nil {
 		return "", err
@@ -232,10 +232,10 @@ func (w *VaultWriter) reach(path string) (string, error) {
 	return target, nil
 }
 
-// file is where the bytes of a note are, by the same rules note goes by. A note
-// kept as a link to another file in the vault has its bytes at the other end,
+// resolveNoteFile is where the bytes of a note are, by the same rules note goes by. A note
+// kept as a link to another resolveNoteFile in the vault has its bytes at the other end,
 // and that is what a rename replaces.
-func (w *VaultWriter) file(path string) (string, error) {
+func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
 	resolved, err := resolveLinks(w.root, path, w.opts.serviceDir())
 	if err != nil {
 		return "", err
@@ -363,7 +363,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	target, err := w.note(path)
+	target, err := w.resolveNotePath(path)
 	if err != nil {
 		return err
 	}
@@ -372,7 +372,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 		return err
 	}
 	defer root.Close()
-	if err := parents(root, filepath.Dir(name), path); err != nil {
+	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
 
@@ -394,7 +394,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 	if err := file.Close(); err != nil {
 		return err
 	}
-	return settle(root, filepath.Dir(name))
+	return syncDirectory(root, filepath.Dir(name))
 }
 
 // Bring copies a file from this machine into the vault.
@@ -406,7 +406,7 @@ func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader)
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	target, err := w.reach(path)
+	target, err := w.resolvePath(path)
 	if err != nil {
 		return err
 	}
@@ -421,17 +421,17 @@ func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader)
 	case !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
-	if err := parents(root, filepath.Dir(name), path); err != nil {
+	if err := createParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
-	return arrive(ctx, root, name, content)
+	return streamReplace(ctx, root, name, content)
 }
 
-// arrive streams content beside the target and renames it over the top, by the
+// streamReplace streams content beside the target and renames it over the top, by the
 // same rules replace writes bytes it already holds.
-func arrive(ctx context.Context, root *os.Root, target string, content io.Reader) error {
+func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
 	dir := filepath.Dir(target)
-	tmp, at, err := temporary(root, dir, getTempPattern(filepath.Base(target)))
+	tmp, at, err := createTempFile(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
 		return err
 	}
@@ -455,5 +455,5 @@ func arrive(ctx context.Context, root *os.Root, target string, content io.Reader
 	if err := rename(ctx, root, at, target); err != nil {
 		return err
 	}
-	return settle(root, dir)
+	return syncDirectory(root, dir)
 }

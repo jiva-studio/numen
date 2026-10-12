@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-// groupOf puts the run in a process group of its own and makes cancelling it
+// setProcessGroup puts the run in a process group of its own and makes cancelling it
 // ask the whole group to stop, then force the group to stop after stopGrace.
-func groupOf(running *exec.Cmd) {
+func setProcessGroup(running *exec.Cmd) {
 	running.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	running.Cancel = func() error {
 		group := -running.Process.Pid

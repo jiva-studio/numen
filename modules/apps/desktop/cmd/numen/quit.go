@@ -67,7 +67,7 @@ func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 
 // quitBound is how long the window waits for a page that says nothing to write
 // what only it holds. A vault being changed waits under the same bound.
-const quitBound = editor.HandedOverIn
+const quitBound = editor.FlushTimeout
 
 // vaultFlush is the vault settling, whichever way the window is asked to go.
 //

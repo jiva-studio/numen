@@ -139,8 +139,8 @@ func CurveOf(c review.Curve) *v1.Curve {
 		Grid:      c.Grid,
 		Days:      c.Days,
 		At:        make([]*v1.Point, 0, len(c.Points)),
-		Now:       placeOf(c.Now),
-		Suggested: placeOf(c.Suggested),
+		Now:       convertPlace(c.Now),
+		Suggested: convertPlace(c.Suggested),
 		Decks:     int32(c.Decks),
 		Cards:     int32(c.Cards),
 		Overdue:   int32(c.Overdue),
@@ -158,8 +158,8 @@ func CurveOf(c review.Curve) *v1.Curve {
 			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),
 			Learned:  int32(one.Learned),
-			Learns:   newLearnedDay(one.Learns),
-			Backlog:  backlog(one.Backlog),
+			Learns:   convertLearnedDay(one.Learns),
+			Backlog:  convertBacklog(one.Backlog),
 		})
 	}
 	return out
@@ -196,7 +196,7 @@ func BudgetOf(name review.BudgetName) v1.BudgetName {
 	return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
 }
 
-func placeOf(p review.Place) *v1.Place {
+func convertPlace(p review.Place) *v1.Place {
 	return &v1.Place{At: int32(p.Index), Value: p.Value, Day: p.Day}
 }
 
@@ -280,9 +280,9 @@ func BudgetUnitIn(u v1.BudgetUnit) review.BudgetUnit {
 	}
 }
 
-// newLearnedDay is the day the whole material stands learned, as the schema
+// convertLearnedDay is the day the whole material stands learned, as the schema
 // carries it. A place with no such day to name carries none.
-func newLearnedDay(day int) *int32 {
+func convertLearnedDay(day int) *int32 {
 	if day == review.LearnsUnasked {
 		return nil
 	}
@@ -290,8 +290,8 @@ func newLearnedDay(day int) *int32 {
 	return &out
 }
 
-// backlog is a backlog day by day, as the schema carries one.
-func backlog(days []int) []int32 {
+// convertBacklog is a convertBacklog day by day, as the schema carries one.
+func convertBacklog(days []int) []int32 {
 	out := make([]int32, 0, len(days))
 	for _, one := range days {
 		out = append(out, int32(one))

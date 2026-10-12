@@ -105,7 +105,7 @@ func releasePadding(p *padding) {
 // caller releases once the batch is done with.
 func padBatch(batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 	rows = len(batch)
-	seq = bucket(getLongest(batch), limit)
+	seq = roundUpToBucket(getLongest(batch), limit)
 
 	in, _ = paddings.Get().(*padding)
 	if in == nil {
@@ -149,10 +149,10 @@ func getLongest(batch [][]int) int {
 // multiple of.
 const bucketStep = 512
 
-// bucket rounds a sequence length up to the next discrete boundary: 64, 128,
+// roundUpToBucket rounds a sequence length up to the next discrete boundary: 64, 128,
 // 256, 512, then multiples of bucketStep up to limit, and never below seq. A
 // model of one window is run at a fixed, finite set of lengths.
-func bucket(seq, limit int) int {
+func roundUpToBucket(seq, limit int) int {
 	switch {
 	case seq <= 64:
 		return 64

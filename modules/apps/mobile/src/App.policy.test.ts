@@ -11,7 +11,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import NoteSheet from './note/NoteSheet.vue'
-import { reach } from './core'
+import { startCore } from './core'
 import type { Core } from './core'
 
 vi.mock('@capacitor/core', () => ({
@@ -125,7 +125,7 @@ describe('what the page asks for', () => {
       throw new Error('this test serves nothing')
     })
 
-    const core = await reach()
+    const core = await startCore()
     await expect(core.notes.getNeighbourhood({ path: 'Physics.md' })).rejects.toThrow()
 
     expect(asked).not.toStrictEqual([])

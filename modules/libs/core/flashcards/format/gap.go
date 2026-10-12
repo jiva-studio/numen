@@ -26,16 +26,16 @@ func formatSection(value string, last bool) string {
 // above it that markdown wants and the blank line below it when something
 // follows.
 func insert(body []byte, at int, block string) string {
-	written := gap(body, at) + block + "\n"
+	written := getSeparator(body, at) + block + "\n"
 	if at < len(body) {
 		written += "\n"
 	}
 	return written
 }
 
-// gap is the break and the blank line a new block needs, counting what already
+// getSeparator is the break and the blank line a new block needs, counting what already
 // stands above it.
-func gap(body []byte, at int) string {
+func getSeparator(body []byte, at int) string {
 	above := markdown.Normalise(string(body[:at]))
 	switch {
 	// Nothing but blank lines above is the top of the body, and a block written

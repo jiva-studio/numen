@@ -46,7 +46,7 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*API, *noting
 			Derived: storing{held},
 		},
 	}
-	api.show(vault)
+	api.setVault(vault)
 	return api, index, api.NewHandler(http.NotFoundHandler())
 }
 

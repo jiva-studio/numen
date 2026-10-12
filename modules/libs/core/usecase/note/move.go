@@ -162,31 +162,8 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 		}
 	}
 	for _, was := range pointing {
-		lands, still, err := u.getLanding(ctx, v, was)
-		if err != nil {
+		if err := u.rewriteLink(ctx, v, address, was, &res); err != nil {
 			return res, err
-		}
-		if !still {
-			// The note that wrote it has changed since, and the link is not in
-			// it any more. There is nothing to repair and nothing to report.
-			continue
-		}
-		switch lands {
-		case to:
-			// It followed the note, which is what a name does.
-		case "":
-			repaired, dangling, err := u.repair(ctx, v, was.From, was.Target, address)
-			switch {
-			case err != nil:
-				return res, err
-			case repaired:
-				res.Repaired = append(res.Repaired, was.From)
-			case dangling:
-				res.Dangling = append(res.Dangling, was.From)
-			}
-		default:
-			// It reaches another note of the same name. The link is not broken,
-			// and which of the two a name means is the person's to settle.
 		}
 	}
 	if len(res.Repaired) > 0 {
@@ -195,6 +172,38 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 		}
 	}
 	return res, nil
+}
+
+// rewriteLink writes one link that pointed at the note again where it reaches
+// nothing, and records the note that wrote it in res.
+func (u Move) rewriteLink(
+	ctx context.Context, v domain.Vault, address string, was domain.ResolvedLink, res *MoveResult,
+) error {
+	lands, still, err := u.getLanding(ctx, v, was)
+	if err != nil {
+		return err
+	}
+	if !still {
+		// The note that wrote it has changed since, and the link is not in
+		// it any more. There is nothing to repair and nothing to report.
+		return nil
+	}
+	// A link that lands on the note followed it, which is what a name does. One
+	// that lands on another note of the same name is not broken, and which of the
+	// two a name means is the person's to settle.
+	if lands != "" {
+		return nil
+	}
+	repaired, dangling, err := u.repair(ctx, v, was.From, was.Target, address)
+	switch {
+	case err != nil:
+		return err
+	case repaired:
+		res.Repaired = append(res.Repaired, was.From)
+	case dangling:
+		res.Dangling = append(res.Dangling, was.From)
+	}
+	return nil
 }
 
 // getAddress is how a link reaches the note at this path, asked of the vault

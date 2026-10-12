@@ -48,7 +48,7 @@ func Ask(
 			if !working {
 				return nil
 			}
-			for _, out := range stepsOf(step) {
+			for _, out := range convertSteps(step) {
 				if err := stream.Send(out); err != nil {
 					return err
 				}
@@ -60,11 +60,11 @@ func Ask(
 	}
 }
 
-// stepsOf says a step of an agent's work in the schema's words.
+// convertSteps says a step of an agent's work in the schema's words.
 //
 // Every kind that names a tool is drawn as one, whatever that tool does to the
 // vault, and carries where in the vault it is working.
-func stepsOf(step port.Step) []*v1.AskAgentResponse {
+func convertSteps(step port.Step) []*v1.AskAgentResponse {
 	switch step.Kind {
 	case port.StepToolCall, port.StepRead, port.StepEdit,
 		port.StepRemove, port.StepMove, port.StepSearch:
@@ -74,7 +74,7 @@ func stepsOf(step port.Step) []*v1.AskAgentResponse {
 				About:   step.About,
 				Written: int32(step.Count),
 				Path:    step.Place.Path,
-				Span:    spanOf(step.Place.Spans),
+				Span:    convertSpan(step.Place.Spans),
 			},
 		}}}
 	case port.StepAnswered:
@@ -88,9 +88,9 @@ func stepsOf(step port.Step) []*v1.AskAgentResponse {
 	}
 }
 
-// spanOf is the one span a call names, and nothing where it named the source
+// convertSpan is the one span a call names, and nothing where it named the source
 // and no place inside it.
-func spanOf(spans []domain.ByteSpan) *v1.Span {
+func convertSpan(spans []domain.ByteSpan) *v1.Span {
 	if len(spans) == 0 {
 		return nil
 	}

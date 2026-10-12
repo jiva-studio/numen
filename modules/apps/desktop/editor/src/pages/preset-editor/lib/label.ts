@@ -8,15 +8,23 @@
  */
 import type { CSSProperties } from 'vue'
 import type { Position } from '@numen/ui'
-import { FOOT, HIGH, LEFT, RIGHT, TOP, WIDE, type Extent } from './plot'
+import {
+  PLOT_BOTTOM,
+  PLOT_HEIGHT,
+  PLOT_LEFT,
+  PLOT_RIGHT,
+  PLOT_TOP,
+  PLOT_WIDTH,
+  type Extent,
+} from './plot'
 
 /** How far the name of a mark stands above it, and how wide it is set. */
-export const LIFT = 9
+export const AXIS_LABEL_LIFT = 9
 export const LABEL = 34
 
 /** The room a number set against a line takes, in the picture's own units. */
-export const AXIS_WIDE = 64
-export const AXIS_HIGH = 15
+export const AXIS_LABEL_WIDTH = 64
+export const AXIS_LABEL_HEIGHT = 15
 
 /**
  * The room the bubble over the knob takes, and how far off the knob it sits.
@@ -25,8 +33,8 @@ export const AXIS_HIGH = 15
  * far enough that the curve on either side of the knob is read through it, and
  * is the same gap on whichever side the bubble hangs.
  */
-export const CALLOUT_WIDE = 104
-export const CALLOUT_HIGH = 48
+export const CALLOUT_WIDTH = 104
+export const CALLOUT_HEIGHT = 48
 export const CALLOUT_GAP = 24
 
 /** The room one word takes on the picture, in the picture's own units. */
@@ -38,7 +46,7 @@ export interface Box {
 }
 
 /** Whether two words stand clear of each other. */
-export const isApart = (one: Box, two: Box): boolean =>
+export const areBoxesSeparate = (one: Box, two: Box): boolean =>
   one.x + one.wide <= two.x ||
   two.x + two.wide <= one.x ||
   one.y + one.high <= two.y ||
@@ -49,13 +57,13 @@ export const isApart = (one: Box, two: Box): boolean =>
  * near the edge it is set at. A number that would print over the line or over
  * a mark is not drawn: the axis loses the label and the drawing keeps its own.
  */
-export const clearAt = (
+export const isAxisLabelClear = (
   y: number,
   places: readonly Position[],
   marks: readonly (Position | null)[],
 ): boolean => {
   const isNear = (at: Position): boolean =>
-    at.x <= LEFT + AXIS_WIDE && Math.abs(at.y - y) <= AXIS_HIGH
+    at.x <= PLOT_LEFT + AXIS_LABEL_WIDTH && Math.abs(at.y - y) <= AXIS_LABEL_HEIGHT
   if (marks.some((at) => at !== null && isNear(at))) return false
   return !places.some(isNear)
 }
@@ -66,11 +74,11 @@ export const clearAt = (
  */
 export const positionLabel = (at: Position): CSSProperties => {
   let back = '-50%'
-  if (at.x < LEFT + LABEL) back = '0'
-  else if (at.x > RIGHT - LABEL) back = '-100%'
+  if (at.x < PLOT_LEFT + LABEL) back = '0'
+  else if (at.x > PLOT_RIGHT - LABEL) back = '-100%'
   return {
-    insetInlineStart: `${(at.x / WIDE) * 100}%`,
-    insetBlockStart: `${(Math.max(at.y - LIFT, TOP) / HIGH) * 100}%`,
+    insetInlineStart: `${(at.x / PLOT_WIDTH) * 100}%`,
+    insetBlockStart: `${(Math.max(at.y - AXIS_LABEL_LIFT, PLOT_TOP) / PLOT_HEIGHT) * 100}%`,
     translate: `${back} -100%`,
   }
 }
@@ -78,29 +86,29 @@ export const positionLabel = (at: Position): CSSProperties => {
 /** The room that name takes, which the knob's own figures stand clear of. */
 export const getNameBox = (at: Position): Box => {
   let back = LABEL
-  if (at.x < LEFT + LABEL) back = 0
-  else if (at.x > RIGHT - LABEL) back = LABEL * 2
+  if (at.x < PLOT_LEFT + LABEL) back = 0
+  else if (at.x > PLOT_RIGHT - LABEL) back = LABEL * 2
   return {
     x: at.x - back,
-    y: Math.max(at.y - LIFT, TOP) - AXIS_HIGH,
+    y: Math.max(at.y - AXIS_LABEL_LIFT, PLOT_TOP) - AXIS_LABEL_HEIGHT,
     wide: LABEL * 2,
-    high: AXIS_HIGH,
+    high: AXIS_LABEL_HEIGHT,
   }
 }
 
 /** Where a number against one of a plot's own lines is set, in the plot's room. */
-export const getAxisNumber = (y: number, lift: string, high = HIGH): CSSProperties => ({
-  insetInlineStart: `${(LEFT / WIDE) * 100}%`,
+export const getAxisNumber = (y: number, lift: string, high = PLOT_HEIGHT): CSSProperties => ({
+  insetInlineStart: `${(PLOT_LEFT / PLOT_WIDTH) * 100}%`,
   insetBlockStart: `${(y / high) * 100}%`,
   translate: `0 ${lift}`,
 })
 
 /** The room that number takes, which the knob's own figures stand clear of. */
 export const getAxisNumberBox = (y: number, lift: string): Box => ({
-  x: LEFT,
-  y: lift === '0' ? y : y - AXIS_HIGH,
-  wide: AXIS_WIDE,
-  high: AXIS_HIGH,
+  x: PLOT_LEFT,
+  y: lift === '0' ? y : y - AXIS_LABEL_HEIGHT,
+  wide: AXIS_LABEL_WIDTH,
+  high: AXIS_LABEL_HEIGHT,
 })
 
 /** The bubble over the knob: the side it hangs on, the room it takes, and where. */
@@ -118,28 +126,28 @@ export interface Callout {
  * bubble, so what the numbers belong to is never in doubt.
  */
 export const calloutOf = (knob: Position): Callout => {
-  const isUnder = knob.y - CALLOUT_GAP - CALLOUT_HIGH < TOP
-  const half = CALLOUT_WIDE / 2
+  const isUnder = knob.y - CALLOUT_GAP - CALLOUT_HEIGHT < PLOT_TOP
+  const half = CALLOUT_WIDTH / 2
   let back = half
-  if (knob.x < LEFT + half) back = 0
-  else if (knob.x > RIGHT - half) back = CALLOUT_WIDE
+  if (knob.x < PLOT_LEFT + half) back = 0
+  else if (knob.x > PLOT_RIGHT - half) back = CALLOUT_WIDTH
   const edge = isUnder ? knob.y + CALLOUT_GAP : knob.y - CALLOUT_GAP
   return {
     isUnder,
     box: {
       x: knob.x - back,
-      y: isUnder ? edge : edge - CALLOUT_HIGH,
-      wide: CALLOUT_WIDE,
-      high: CALLOUT_HIGH,
+      y: isUnder ? edge : edge - CALLOUT_HEIGHT,
+      wide: CALLOUT_WIDTH,
+      high: CALLOUT_HEIGHT,
     },
     at: {
-      insetInlineStart: `${(knob.x / WIDE) * 100}%`,
-      insetBlockStart: `${(edge / HIGH) * 100}%`,
-      translate: `${(-back / CALLOUT_WIDE) * 100}% ${isUnder ? '0' : '-100%'}`,
+      insetInlineStart: `${(knob.x / PLOT_WIDTH) * 100}%`,
+      insetBlockStart: `${(edge / PLOT_HEIGHT) * 100}%`,
+      translate: `${(-back / CALLOUT_WIDTH) * 100}% ${isUnder ? '0' : '-100%'}`,
     },
     tail: {
-      insetInlineStart: `${(knob.x / WIDE) * 100}%`,
-      insetBlockStart: `${(edge / HIGH) * 100}%`,
+      insetInlineStart: `${(knob.x / PLOT_WIDTH) * 100}%`,
+      insetBlockStart: `${(edge / PLOT_HEIGHT) * 100}%`,
     },
   }
 }
@@ -170,7 +178,7 @@ export const labelsOf = (marks: readonly Mark[], over: Box | null): readonly Lab
   for (const mark of marks) {
     if (!mark.text) continue
     const box = getNameBox(mark.at)
-    if (!placed.every((one) => isApart(box, one))) continue
+    if (!placed.every((one) => areBoxesSeparate(box, one))) continue
     placed.push(box)
     out.push({ key: mark.key, text: mark.text, at: positionLabel(mark.at), box })
   }
@@ -201,27 +209,33 @@ export const heightsOf = (
   const { least, most } = extent
   const measureHeightAt = (y: number, lift: string, value: number): readonly Height[] => {
     const box = getAxisNumberBox(y, lift)
-    if (!clearAt(y, places, marks)) return []
-    if (over && !isApart(box, over)) return []
+    if (!isAxisLabelClear(y, places, marks)) return []
+    if (over && !areBoxesSeparate(box, over)) return []
     return [{ at: getAxisNumber(y, lift), box, text: getText(value) }]
   }
   // An extent of no width has one number and nothing else to read, and it is set
   // over the line it names. That line is the foot, which is where a run with no
   // height is drawn.
   if (most === least) {
-    return [{ at: getAxisNumber(FOOT, '0'), box: getAxisNumberBox(FOOT, '0'), text: getText(most) }]
+    return [
+      {
+        at: getAxisNumber(PLOT_BOTTOM, '0'),
+        box: getAxisNumberBox(PLOT_BOTTOM, '0'),
+        text: getText(most),
+      },
+    ]
   }
-  return [...measureHeightAt(TOP, '-100%', most), ...measureHeightAt(FOOT, '0', least)]
+  return [...measureHeightAt(PLOT_TOP, '-100%', most), ...measureHeightAt(PLOT_BOTTOM, '0', least)]
 }
 
 /**
  * Where the knob's own value is set. It rides a line of its own under the
  * picture, so it never prints over a number read off the picture's edges.
  */
-export const readingAt = (knob: Position | null): CSSProperties => {
+export const getKnobValueStyle = (knob: Position | null): CSSProperties => {
   if (!knob) return {}
   let back = '-50%'
-  if (knob.x < LEFT + LABEL) back = '0'
-  else if (knob.x > RIGHT - LABEL) back = '-100%'
-  return { insetInlineStart: `${(knob.x / WIDE) * 100}%`, translate: `${back} 0` }
+  if (knob.x < PLOT_LEFT + LABEL) back = '0'
+  else if (knob.x > PLOT_RIGHT - LABEL) back = '-100%'
+  return { insetInlineStart: `${(knob.x / PLOT_WIDTH) * 100}%`, translate: `${back} 0` }
 }

@@ -24,29 +24,29 @@ const vaultUsage = `usage:
   numen-cli vault erase <vault> [--yes]
   numen-cli vault open <vault>`
 
-func vaultCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runVaultCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) == 0 {
 		return errors.New(vaultUsage)
 	}
 	switch args[0] {
 	case "add":
-		return vaultAdd(out, deps, args[1:])
+		return addVault(out, deps, args[1:])
 	case "list":
-		return vaultList(out, deps)
+		return listVaults(out, deps)
 	case "rename":
-		return vaultRename(ctx, out, deps, args[1:])
+		return renameVault(ctx, out, deps, args[1:])
 	case "forget":
-		return vaultForget(ctx, out, deps, args[1:])
+		return removeVaultFromList(ctx, out, deps, args[1:])
 	case "erase":
-		return vaultErase(ctx, out, deps, args[1:])
+		return eraseVault(ctx, out, deps, args[1:])
 	case "open":
-		return vaultOpen(out, deps, args[1:])
+		return openVault(out, deps, args[1:])
 	default:
 		return fmt.Errorf("unknown vault command %q", args[0])
 	}
 }
 
-func vaultAdd(out io.Writer, deps Deps, args []string) error {
+func addVault(out io.Writer, deps Deps, args []string) error {
 	fs := flag.NewFlagSet("vault add", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	name := fs.String("name", "", "name for this vault (default: the folder name)")
@@ -75,7 +75,7 @@ func vaultAdd(out io.Writer, deps Deps, args []string) error {
 	return nil
 }
 
-func vaultList(out io.Writer, deps Deps) error {
+func listVaults(out io.Writer, deps Deps) error {
 	vaults, err := deps.Vaults()
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func vaultList(out io.Writer, deps Deps) error {
 	return nil
 }
 
-func vaultRename(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli vault rename <vault> <new name>")
 	}
@@ -131,7 +131,7 @@ func vaultRename(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	return nil
 }
 
-func vaultForget(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 1 {
 		return errors.New("usage: numen-cli vault forget <vault>")
 	}
@@ -158,7 +158,7 @@ func vaultForget(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	return nil
 }
 
-func vaultErase(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	fs := flag.NewFlagSet("vault erase", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	yes := fs.Bool("yes", false, "erase without asking")
@@ -215,7 +215,7 @@ func confirmErase(out io.Writer, v domain.Vault) bool {
 	return strings.EqualFold(strings.TrimSpace(answer), "yes")
 }
 
-func vaultOpen(out io.Writer, deps Deps, args []string) error {
+func openVault(out io.Writer, deps Deps, args []string) error {
 	if len(args) != 1 {
 		return errors.New("usage: numen-cli vault open <vault>")
 	}

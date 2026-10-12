@@ -194,7 +194,7 @@ func selectModelFiles(folder []string, named string) []string {
 	}
 	out := []string{named}
 	for _, name := range folder {
-		if name == named || isTheirs(name, others) {
+		if name == named || isFileOfAnyModel(name, others) {
 			continue
 		}
 		out = append(out, name)
@@ -202,9 +202,9 @@ func selectModelFiles(folder []string, named string) []string {
 	return out
 }
 
-// isTheirs says a file belongs to one of the models given: it is that model, or
+// isFileOfAnyModel says a file belongs to one of the models given: it is that model, or
 // it stands beside it under that model's name.
-func isTheirs(name string, models []string) bool {
+func isFileOfAnyModel(name string, models []string) bool {
 	for _, model := range models {
 		if strings.HasPrefix(name, model) {
 			return true

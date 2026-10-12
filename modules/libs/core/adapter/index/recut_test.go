@@ -23,18 +23,18 @@ func wordsOf(n int) string { return wordsBetween(0, n) }
 func wordsBetween(from, to int) string {
 	out := make([]string, 0, to-from)
 	for i := from; i < to; i++ {
-		out = append(out, "word"+spelt(i))
+		out = append(out, "word"+spellNumber(i))
 	}
 	return strings.Join(out, " ")
 }
 
-// sectionsOf is a body of n words under a heading every per of them. At 48 words
+// createSections is a body of n words under a heading every per of them. At 48 words
 // a section holds what one small chunk is cut at, so a section is one chunk
 // and an edit inside it is recognisable.
-func sectionsOf(n, per int) string {
+func createSections(n, per int) string {
 	var parts []string
 	for at := 0; at < n; at += per {
-		parts = append(parts, "## Section"+spelt(at), wordsBetween(at, min(at+per, n)))
+		parts = append(parts, "## Section"+spellNumber(at), wordsBetween(at, min(at+per, n)))
 	}
 	return strings.Join(parts, "\n\n")
 }
@@ -42,13 +42,13 @@ func sectionsOf(n, per int) string {
 // insertWordBefore is the body with a word put in front of the word at that
 // point. The words after it keep their spelling and move.
 func insertWordBefore(body string, at int) string {
-	word := "word" + spelt(at)
+	word := "word" + spellNumber(at)
 	return strings.Replace(body, word, "wordzz "+word, 1)
 }
 
-// spelt writes a number in letters, so that a word is letters throughout and a
+// spellNumber writes a number in letters, so that a word is letters throughout and a
 // chunk made of these reads as text.
-func spelt(i int) string {
+func spellNumber(i int) string {
 	digits := []byte(strconv.Itoa(i))
 	for at, d := range digits {
 		digits[at] = 'a' + (d - '0')
@@ -97,7 +97,7 @@ func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vectorise(t, db, vault, e.seed)
+	saveSeededVectors(t, db, vault, e.seed)
 	return len(owing)
 }
 
@@ -358,7 +358,7 @@ func TestAHeadingBoundsWhatAnEditRecuts(t *testing.T) {
 	//
 	// Every figure here is in docs/performance.md.
 	const path = "notes/Entropy.md"
-	body := sectionsOf(192, 48)
+	body := createSections(192, 48)
 
 	frontmattered := parseNote(path, body)
 	frontmattered.Fingerprint.Size += 20
@@ -483,7 +483,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 
 	kept := smallChunks(t, db, first, n.Fingerprint.Path)[0]
 	// A word of the first chunk, which an edit at the other end does not reach.
-	opening := "word" + spelt(3)
+	opening := "word" + spellNumber(3)
 
 	save(t, db, first, noteAt(n.Fingerprint.Path, n.Title, body+" wordzz"))
 
@@ -612,7 +612,7 @@ func TestAChunkIsNamedAfterTheSectionItWasCutInside(t *testing.T) {
 	// there, which is what a result has to show to say where the passage is.
 	db := openDB(t)
 
-	n := parseNote("notes/Entropy.md", sectionsOf(192, 48))
+	n := parseNote("notes/Entropy.md", createSections(192, 48))
 	save(t, db, first, n)
 
 	want := []string{"Sectiona", "Sectionei", "Sectionjg", "Sectionbee"}
@@ -627,7 +627,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	body := sectionsOf(192, 48)
+	body := createSections(192, 48)
 	n := parseNote("notes/Entropy.md", body)
 	save(t, db, first, n)
 
@@ -662,7 +662,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 	model := embedder{seed: 0x33}
 
 	const path = "notes/Entropy.md"
-	body := sectionsOf(192, 48)
+	body := createSections(192, 48)
 	mine := parseNote(path, body)
 	theirs := parseNote(path, strings.Replace(
 		strings.ReplaceAll(body, "word", "other"), "## Sectiona", "## Quasar", 1))
@@ -728,7 +728,7 @@ func TestTheWorstCaseIsBoundedByTheSectionAndNotByTheNote(t *testing.T) {
 	//
 	// Every figure here is in docs/performance.md.
 	const path = "notes/Entropy.md"
-	body := sectionsOf(1000, 200)
+	body := createSections(1000, 200)
 
 	frontmattered := parseNote(path, body)
 	frontmattered.Fingerprint.Size += 20
@@ -782,7 +782,7 @@ func TestASectionShorterThanAChunkIsAChunkOfItsOwn(t *testing.T) {
 	// The figures are in docs/performance.md.
 	db := openDB(t)
 
-	body := sectionsOf(200, 5)
+	body := createSections(200, 5)
 	named := parseNote("notes/Named.md", body)
 	unnamed := noParts(parseNote("notes/Unnamed.md", body))
 	save(t, db, first, named)

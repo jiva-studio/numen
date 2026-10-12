@@ -4,7 +4,7 @@
  */
 import { effectScope } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
-import { follow } from './follow'
+import { watchVault } from './watchVault'
 import type { Core } from '../core'
 
 /** What the core was asked to follow with, and how the stream answered. */
@@ -34,7 +34,7 @@ describe('following a vault', () => {
     })
 
     const scope = effectScope()
-    scope.run(() => follow(reached, redraw))
+    scope.run(() => watchVault(reached, redraw))
     await settle()
 
     expect(redraw).toHaveBeenCalledTimes(3)
@@ -48,7 +48,7 @@ describe('following a vault', () => {
     })
 
     const scope = effectScope()
-    scope.run(() => follow(reached, () => {}))
+    scope.run(() => watchVault(reached, () => {}))
     await settle()
     expect(asked.signal?.aborted).toBe(false)
 
@@ -66,7 +66,7 @@ describe('following a vault', () => {
     })
 
     const scope = effectScope()
-    expect(() => scope.run(() => follow(reached, redraw))).not.toThrow()
+    expect(() => scope.run(() => watchVault(reached, redraw))).not.toThrow()
     await settle()
 
     expect(redraw).toHaveBeenCalledTimes(1)

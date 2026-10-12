@@ -83,7 +83,7 @@ func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {
 // DeleteVectorsOfOtherRecipes takes out the vectors kept under any recipe but the one in
 // use, and says how many went.
 func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) (int64, error) {
-	return i.db.ForgetOtherRecipes(ctx, recipe)
+	return i.db.DeleteOtherRecipeVectors(ctx, recipe)
 }
 
 // Compact hands back the space the index no longer holds.

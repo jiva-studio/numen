@@ -52,7 +52,7 @@ var doing = map[string]Tool{
 	"file_read":           {Kind: port.StepRead},
 	"card_stencil_list":   {Kind: port.StepRead},
 	"card_read":           {Kind: port.StepRead},
-	"card_showing":        {Kind: port.StepRead},
+	"card_current":        {Kind: port.StepRead},
 	"card_add":            {Kind: port.StepEdit},
 	"card_edit":           {Kind: port.StepEdit},
 	"card_value_remove":   {Kind: port.StepRemove},
@@ -75,7 +75,7 @@ var doing = map[string]Tool{
 	"vault_list":        {Kind: port.StepRead},
 	"vault_add":         {Kind: port.StepEdit},
 	"vault_rename":      {Kind: port.StepMove},
-	"vault_forget":      {Kind: port.StepRemove},
+	"vault_remove":      {Kind: port.StepRemove},
 	"vault_open":        {Kind: port.StepRead},
 	"source_list":       {Kind: port.StepRead},
 	"source_read":       {Kind: port.StepRead},
@@ -104,7 +104,7 @@ func ReadingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) 
 
 // GetReviewVocabulary is the same, for the window a person runs their cards in.
 func GetReviewVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
-	return vocabulary(ctx, NewReviewing(core))
+	return vocabulary(ctx, NewReviewServer(core))
 }
 
 func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error) {
