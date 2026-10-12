@@ -110,8 +110,8 @@ func onTheList(t *testing.T) *installation {
 	f.core = mcp.Core{
 		Showing: mcp.ShowOneVault(f.first, f.first.Path),
 		Vaults: mcp.Vaults{
-			KnownVaults: container.Config{}.KnownVaults(registry),
-			GetVault:    container.Config{}.GetVault(registry),
+			KnownVaults: container.Config{}.GetKnownVaults(registry),
+			Find:        container.Config{}.FindVault(registry),
 			PickFolder:  container.Config{}.PickFolder(f.dialog),
 			Add:         &adding,
 			Rename:      &renaming,
@@ -486,9 +486,9 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 		{"vault_rename", func(c *mcp.Core) { c.Vaults.Rename = nil }},
 		{"vault_remove", func(c *mcp.Core) { c.Vaults.Unregister = nil }},
 		{"vault_open", func(c *mcp.Core) { c.Vaults.Opens = nil }},
-		{"vault_rename", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
-		{"vault_remove", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
-		{"vault_open", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
+		{"vault_rename", func(c *mcp.Core) { c.Vaults.Find = nil }},
+		{"vault_remove", func(c *mcp.Core) { c.Vaults.Find = nil }},
+		{"vault_open", func(c *mcp.Core) { c.Vaults.Find = nil }},
 	} {
 		t.Run(one.tool, func(t *testing.T) {
 			f := onTheList(t)
@@ -510,7 +510,7 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 func TestAddingWithNoPathAndNoFolderDialogSaysSo(t *testing.T) {
 	f := onTheList(t)
 	core := f.core
-	core.Vaults.PickFolder = container.Config{}.PickFolder(nil)
+	core.Vaults.PickFolder = nil
 	session := newSessionOver(t, core)
 
 	if !hasTool(t, session, "vault_add") {

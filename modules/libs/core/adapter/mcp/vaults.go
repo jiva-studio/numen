@@ -121,12 +121,18 @@ type vaultAddOutput struct {
 }
 
 func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput, error) {
-	picked, err := core.Vaults.PickFolder.Execute(ctx, in.Path)
-	root := picked.Path
-	if err != nil {
-		return vaultAddOutput{}, err
+	root, isChosen := in.Path, true
+	if in.Path == "" {
+		if core.Vaults.PickFolder == nil {
+			return vaultAddOutput{}, errors.New("there is nobody here to pick a folder: name the one to add")
+		}
+		picked, err := core.Vaults.PickFolder.Execute(ctx)
+		if err != nil {
+			return vaultAddOutput{}, err
+		}
+		root, isChosen = picked.Path, picked.IsChosen
 	}
-	if !picked.IsChosen {
+	if !isChosen {
 		return vaultAddOutput{Why: "the person closed the picker and chose no folder"}, nil
 	}
 	if !filepath.IsAbs(root) {
@@ -144,7 +150,7 @@ func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput,
 }
 
 func addVaultRename(server *sdk.Server, core Core) {
-	if core.Vaults.GetVault == nil || core.Vaults.Rename == nil {
+	if core.Vaults.Find == nil || core.Vaults.Rename == nil {
 		return
 	}
 
@@ -167,7 +173,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 			Name   string `json:"name"`
 			Folder string `json:"folder"`
 		}
-		v, err := core.Vaults.GetVault.Execute(in.Vault, "")
+		v, err := core.Vaults.Find.Execute(in.Vault)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -180,7 +186,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 }
 
 func addVaultForget(server *sdk.Server, core Core) {
-	if core.Vaults.GetVault == nil || core.Vaults.Unregister == nil {
+	if core.Vaults.Find == nil || core.Vaults.Unregister == nil {
 		return
 	}
 
@@ -203,12 +209,12 @@ func addVaultForget(server *sdk.Server, core Core) {
 			IsForgotten bool   `json:"forgotten"`
 			Folder      string `json:"folder" jsonschema:"where the folder still is; vault_add on it brings the vault back"`
 		}
-		v, err := core.Vaults.GetVault.Execute(in.Vault, core.getCurrentVault().Vault.ID)
-		if errors.Is(err, vaults.ErrShowing) {
-			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
-		}
+		v, err := core.Vaults.Find.Execute(in.Vault)
 		if err != nil {
 			return nil, out{}, err
+		}
+		if v.ID == core.getCurrentVault().Vault.ID {
+			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
 		}
 		if err := core.Vaults.Unregister.Execute(ctx, v); err != nil {
 			return nil, out{}, err
@@ -218,7 +224,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 }
 
 func addVaultOpen(server *sdk.Server, core Core) {
-	if core.Vaults.GetVault == nil || core.Vaults.Opens == nil {
+	if core.Vaults.Find == nil || core.Vaults.Opens == nil {
 		return
 	}
 
@@ -245,12 +251,12 @@ func addVaultOpen(server *sdk.Server, core Core) {
 			IsOpening bool   `json:"opening"`
 			Status    string `json:"status" jsonschema:"what is happening now, in words to say back to the person"`
 		}
-		v, err := core.Vaults.GetVault.Execute(in.Vault, core.getCurrentVault().Vault.ID)
-		if errors.Is(err, vaults.ErrShowing) {
-			return nil, out{}, fmt.Errorf("%s is the vault the window is already showing", v.Name)
-		}
+		v, err := core.Vaults.Find.Execute(in.Vault)
 		if err != nil {
 			return nil, out{}, err
+		}
+		if v.ID == core.getCurrentVault().Vault.ID {
+			return nil, out{}, fmt.Errorf("%s is the vault the window is already showing", v.Name)
 		}
 
 		// The swap stops the endpoint this call arrived on, and that waits for

@@ -8,6 +8,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
+// ErrNoName is a call that names no vault.
+var ErrNoName = errors.New("name the vault to use")
+
 // ErrUnknown is a name, a path or an identity no vault on the list answers to.
 var ErrUnknown = errors.New("this installation holds no such vault")
 
@@ -24,6 +27,9 @@ func NewFind(registry port.VaultRegistry) Find {
 }
 
 func (u Find) Execute(nameOrPath string) (domain.Vault, error) {
+	if nameOrPath == "" {
+		return domain.Vault{}, ErrNoName
+	}
 	v, found, err := u.registry.FindVault(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, err
