@@ -248,9 +248,9 @@ func TestTheSettingsFileIsReplacedWholeByWhatWasTyped(t *testing.T) {
 func TestTheSettingsFileIsLeftAloneWhenItMovedSinceItWasRead(t *testing.T) {
 	const standing = `{"appearance": {"theme": "mine:sea"}}`
 	cfg, path := writeSettings(t, standing)
-	seen := `{"appearance": {"theme": "mine:forest"}}`
+	baseline := `{"appearance": {"theme": "mine:forest"}}`
 
-	err := cfg.WriteConfiguredFile()(`{"appearance": {"theme": "mine:sand"}}`, &seen)
+	err := cfg.WriteConfiguredFile()(`{"appearance": {"theme": "mine:sand"}}`, &baseline)
 	if !errors.Is(err, port.ErrStale) {
 		t.Errorf("got %v", err)
 	}

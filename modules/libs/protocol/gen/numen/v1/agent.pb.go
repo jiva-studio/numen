@@ -436,8 +436,7 @@ func (*AskAgentResponse_ToolFinished) isAskAgentResponse_Step() {}
 
 func (*AskAgentResponse_ModelStarted) isAskAgentResponse_Step() {}
 
-// ToolFinished and ModelStarted carry nothing: each is a moment, and what it
-// means is its name. A client that does not know one ignores the step it names.
+// ToolFinished and ModelStarted carry no fields.
 type ToolFinished struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields

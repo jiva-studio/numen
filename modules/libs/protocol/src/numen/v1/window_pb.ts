@@ -113,9 +113,7 @@ export type Task = Message<"numen.v1.Task"> & {
   error: string;
 
   /**
-   * IsUserStarted is set for work a person started and is waiting to be told about.
-   * Work nobody started is drawn once it has lasted, and most of it is over
-   * before that.
+   * Set for work a person started and is waiting to be told about.
    *
    * @generated from field: bool is_user_started = 7;
    */

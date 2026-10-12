@@ -53,7 +53,7 @@ func (a *API) WriteNote(
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.finish()
-	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newReadBaseline(r.Msg.GetBaseline()))
+	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save. It is told in the
 	// same breath where the index did not follow, because the prose is on disk
@@ -375,13 +375,13 @@ func convertFingerprintToWire(ref domain.Fingerprint) *v1.Fingerprint {
 	return &v1.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
-// newReadBaseline is what a client says it last saw of a note. Nothing said is nothing
+// newBaseline is what a client says it last saw of a note. Nothing said is nothing
 // compared, and the write lands on whatever the note now holds.
-func newReadBaseline(seen *v1.ReadBaseline) *note.ReadBaseline {
-	if seen == nil {
+func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
+	if baseline == nil {
 		return nil
 	}
-	return &note.ReadBaseline{Prose: seen.GetProse(), Fingerprint: convertFingerprintFromWire(seen.GetAt())}
+	return &note.Baseline{Prose: baseline.GetProse(), Fingerprint: convertFingerprintFromWire(baseline.GetAt())}
 }
 
 // convertFingerprintFromWire is a fingerprint as the core holds one. The kind is left empty: what

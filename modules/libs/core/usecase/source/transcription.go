@@ -349,15 +349,15 @@ func (t *TranscriptionWorker) drainAndRelease(ctx context.Context) {
 
 // transcribeOne is a single recording transcribed, put right, and reported.
 //
-// asked says whether a person is waiting to be told it began. Whatever it ends
+// isUserStarted says whether a person is waiting to be told it began. Whatever it ends
 // as is recorded, and a recording that ended in an answer is not offered again:
 // words, silence and a file nothing here can open are all answers, and only
 // bytes somebody else holds mean come back later.
-func (t *TranscriptionWorker) transcribeOne(ctx context.Context, v domain.Vault, path string, asked bool) error {
+func (t *TranscriptionWorker) transcribeOne(ctx context.Context, v domain.Vault, path string, isUserStarted bool) error {
 	id := transcriptionID(path)
-	t.say(task.Task{ID: id, Title: "Transcribing a recording", About: path}, asked)
+	t.reportTask(task.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
 
-	res, err := t.transcribe(ctx, v, id, path, asked)
+	res, err := t.transcribe(ctx, v, id, path, isUserStarted)
 	switch {
 	case errors.Is(err, context.Canceled):
 		// A transcription somebody stopped is one that is over, and the
@@ -367,14 +367,14 @@ func (t *TranscriptionWorker) transcribeOne(ctx context.Context, v domain.Vault,
 		// The recording is left where the next round finds it. A store that
 		// would not write and an index that would not answer are the machine,
 		// and the recording has said nothing about itself.
-		t.say(task.Task{ID: id, Title: "Transcribing a recording", About: path, Error: err.Error()}, asked)
+		t.reportTask(task.Task{ID: id, Title: "Transcribing a recording", About: path, Error: err.Error()}, isUserStarted)
 	case res.IsBusy:
 		t.finishTask(id)
 	default:
 		t.finishTask(id)
 		t.recordAnswer(v, path)
 		if !res.IsSilent && !res.IsUnopened {
-			t.proofread(ctx, v, path, "", asked)
+			t.proofread(ctx, v, path, "", isUserStarted)
 		}
 	}
 	return err
@@ -427,11 +427,11 @@ type outcome struct {
 
 // proofread puts a transcript right, where an installation asked for its
 // transcripts to be put right on their own.
-func (t *TranscriptionWorker) proofread(ctx context.Context, v domain.Vault, path, hash string, asked bool) {
+func (t *TranscriptionWorker) proofread(ctx context.Context, v domain.Vault, path, hash string, isUserStarted bool) {
 	if !t.with.Proofreading.IsAutomatic {
 		return
 	}
-	_, _ = t.proofreadTranscript(ctx, v, path, hash, asked, nil)
+	_, _ = t.proofreadTranscript(ctx, v, path, hash, isUserStarted, nil)
 }
 
 // proofreadTranscript puts one transcript right with the profile named for
@@ -445,19 +445,19 @@ func (t *TranscriptionWorker) proofreadTranscript(
 	ctx context.Context,
 	v domain.Vault,
 	path, hash string,
-	isUserRequested bool,
+	isUserStarted bool,
 	began func(ProofreadTranscriptResult),
 ) (ProofreadTranscriptResult, error) {
 	proofreading := t.with.Proofreading
 
 	id := proofreadID(path)
 	fail := func(err error) {
-		t.say(task.Task{
+		t.reportTask(task.Task{
 			ID: id, Title: "Proofreading a transcript", About: path, Error: err.Error(),
-		}, isUserRequested)
+		}, isUserStarted)
 	}
-	if isUserRequested {
-		t.say(task.Task{ID: id, Title: "Proofreading a transcript", About: path}, isUserRequested)
+	if isUserStarted {
+		t.reportTask(task.Task{ID: id, Title: "Proofreading a transcript", About: path}, isUserStarted)
 	}
 
 	right, held, err := proofreading.Transcript(t.with.Readers, t.with.Derived)
@@ -481,20 +481,20 @@ func (t *TranscriptionWorker) proofreadTranscript(
 				began(res)
 			}
 		})
-		t.say(task.Task{
+		t.reportTask(task.Task{
 			ID:    id,
 			Title: "Proofreading a transcript",
 			About: path,
 			Count: int64(res.Read),
 			Total: int64(res.Lines),
-		}, isUserRequested)
+		}, isUserStarted)
 	}
 	res, err := right.Execute(ctx, v, path)
 
 	switch {
 	case err != nil && !errors.Is(err, context.Canceled):
 		fail(err)
-	case res.IsBusy && !isUserRequested:
+	case res.IsBusy && !isUserStarted:
 		// The transcript is held by another run, and that run is the one whose
 		// progress the list carries.
 	default:
@@ -542,47 +542,47 @@ func (t *TranscriptionWorker) transcribe(
 	ctx context.Context,
 	v domain.Vault,
 	id, path string,
-	isUserRequested bool,
+	isUserStarted bool,
 ) (res TranscribeResult, err error) {
-	by, finish, err := t.lendModels(ctx, id, path, isUserRequested)
+	by, finish, err := t.acquireModels(ctx, id, path, isUserStarted)
 	if err != nil {
 		return res, err
 	}
 	defer func() { err = errors.Join(err, finish(err)) }()
 
-	t.say(task.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserRequested)
+	t.reportTask(task.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
 	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
 	listen.Cut = t.Cut
 	listen.OnProgress = func(res TranscribeResult) {
-		t.say(task.Task{
+		t.reportTask(task.Task{
 			ID:    id,
 			Title: "Transcribing a recording",
 			About: path,
 			Count: int64(res.Heard / 1000),
 			Total: int64(res.Length / 1000),
 			Unit:  task.Seconds,
-		}, isUserRequested)
+		}, isUserStarted)
 	}
 	return listen.Execute(ctx, v, path)
 }
 
-// lendModels hands over the models for one recording, and finish says what
+// acquireModels hands over the models for one recording, and finish says what
 // became of it. A scan being recognised holds the models, and this waits for it.
 //
 // Models that may stay loaded stay with the run, held under the lock, until
 // someone else waits for the lock, the run fails or is cancelled, no recording
 // follows within the idle period, or the run ends.
-func (t *TranscriptionWorker) lendModels(
+func (t *TranscriptionWorker) acquireModels(
 	ctx context.Context,
 	id, path string,
-	isUserRequested bool,
+	isUserStarted bool,
 ) (by port.Transcriber, finish func(ran error) error, err error) {
 	if kept, ok := t.resident.take(); ok {
 		return kept, func(ran error) error { return t.finishResident(ctx, ran) }, nil
 	}
 
-	release, err := t.with.Models.acquire(ctx, isUserRequested, func() {
-		t.say(task.Task{ID: id, Title: "Waiting for the models", About: path}, isUserRequested)
+	release, err := t.with.Models.acquire(ctx, isUserStarted, func() {
+		t.reportTask(task.Task{ID: id, Title: "Waiting for the models", About: path}, isUserStarted)
 	})
 	if err != nil {
 		return nil, nil, err
@@ -590,14 +590,14 @@ func (t *TranscriptionWorker) lendModels(
 
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
-	t.say(task.Task{ID: id, Title: "Fetching models"}, isUserRequested)
+	t.reportTask(task.Task{ID: id, Title: "Fetching models"}, isUserStarted)
 	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
-		t.say(task.Task{
+		t.reportTask(task.Task{
 			ID: id, Title: "Fetching models", About: what,
 			Count: done, Total: total, Unit: task.Bytes,
-		}, isUserRequested)
+		}, isUserStarted)
 	})
 	if err != nil {
 		release()
@@ -656,11 +656,11 @@ func (t *TranscriptionWorker) context() context.Context {
 	return t.under
 }
 
-// say puts this transcription in the list of what is being done. Work nobody
+// reportTask puts this transcription in the list of what is being done. Work nobody
 // asked for is shown once it has lasted, and work a person started is shown at
 // once.
-func (t *TranscriptionWorker) say(at task.Task, asked bool) {
-	at.IsUserStarted = asked
+func (t *TranscriptionWorker) reportTask(at task.Task, isUserStarted bool) {
+	at.IsUserStarted = isUserStarted
 	if t.with.Tasks != nil {
 		t.with.Tasks.Set(at)
 	}

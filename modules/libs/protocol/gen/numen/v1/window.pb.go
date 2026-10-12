@@ -255,9 +255,7 @@ type Task struct {
 	Total int64 `protobuf:"varint,5,opt,name=total,proto3" json:"total,omitempty"`
 	// Error is why the work stopped, when it stopped badly.
 	Error string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
-	// IsUserStarted is set for work a person started and is waiting to be told about.
-	// Work nobody started is drawn once it has lasted, and most of it is over
-	// before that.
+	// Set for work a person started and is waiting to be told about.
 	IsUserStarted bool `protobuf:"varint,7,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
 	// Unit is what done and total are counted in.
 	Unit          Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`

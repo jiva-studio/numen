@@ -61,7 +61,7 @@ type Assembly interface {
 	// writes settings into the file.
 	ReadSettings() (written string, at string, err error)
 	ReadSettingsFile() (written string, at string, err error)
-	WriteSettingsFile(written string, seen *string) error
+	WriteSettingsFile(written string, baseline *string) error
 	GetModels() []port.Model
 	TurnSettings(written []port.Setting) error
 

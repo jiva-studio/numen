@@ -58,7 +58,7 @@ func readNote(t *testing.T, api *API, path string) *v1.ReadBaseline {
 // person.
 func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	seen := readNote(t, api, "Entropy.md")
+	baseline := readNote(t, api, "Entropy.md")
 
 	theirs := "# Entropy\n\nTheirs.\n"
 	on := filepath.Join(api.GetCurrentVault().Path, "Entropy.md")
@@ -69,7 +69,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	out, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path:     "Entropy.md",
 		Body:     "# Entropy\n\nMine.\n",
-		Baseline: seen,
+		Baseline: baseline,
 	}))
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
@@ -94,12 +94,12 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 // write, and it is what lets a session hold more than one save.
 func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	seen := readNote(t, api, "Entropy.md")
+	baseline := readNote(t, api, "Entropy.md")
 
 	first, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path:     "Entropy.md",
 		Body:     "# Entropy\n\nOne.\n",
-		Baseline: seen,
+		Baseline: baseline,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -114,7 +114,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	second, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path:     "Entropy.md",
 		Body:     "# Entropy\n\nTwo.\n",
-		Baseline: &v1.ReadBaseline{Prose: seen.GetProse(), At: first.Msg.GetAt()},
+		Baseline: &v1.ReadBaseline{Prose: baseline.GetProse(), At: first.Msg.GetAt()},
 	}))
 	if err != nil {
 		t.Fatal(err)

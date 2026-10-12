@@ -77,9 +77,7 @@ message Task {
   // Error is why the work stopped, when it stopped badly.
   string error = 6;
 
-  // IsUserStarted is set for work a person started and is waiting to be told about.
-  // Work nobody started is drawn once it has lasted, and most of it is over
-  // before that.
+  // Set for work a person started and is waiting to be told about.
   bool is_user_started = 7;
 
   // Unit is what done and total are counted in.

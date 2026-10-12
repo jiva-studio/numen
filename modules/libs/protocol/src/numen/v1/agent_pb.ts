@@ -216,8 +216,7 @@ export const AskAgentResponseSchema: GenMessage<AskAgentResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_agent, 5);
 
 /**
- * ToolFinished and ModelStarted carry nothing: each is a moment, and what it
- * means is its name. A client that does not know one ignores the step it names.
+ * ToolFinished and ModelStarted carry no fields.
  *
  * @generated from message numen.v1.ToolFinished
  */

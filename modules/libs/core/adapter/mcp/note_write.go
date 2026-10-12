@@ -140,11 +140,11 @@ func addNoteEdit(server *sdk.Server, core Core) {
 }
 
 func editNote(ctx context.Context, core Core, in noteEditInput) (noteEditOutput, error) {
-	seen, err := parseFingerprint(in.Fingerprint)
+	baseline, err := parseFingerprint(in.Fingerprint)
 	if err != nil {
 		return noteEditOutput{}, err
 	}
-	done, err := core.Notes.Replace.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Match, in.Text, seen)
+	done, err := core.Notes.Replace.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Match, in.Text, baseline)
 	if err != nil {
 		return noteEditOutput{}, err
 	}

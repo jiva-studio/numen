@@ -236,7 +236,7 @@ type SettingsPorts struct {
 	// ConfiguredFile reads that file as its person wrote it, and WritesFile
 	// replaces it whole, presenting the file the caller last read.
 	ConfiguredFile func() (string, string, error)
-	WritesFile     func(written string, seen *string) error
+	WritesFile     func(written string, baseline *string) error
 
 	// NestedHeadingLimitBounds is how many headings may nest under a note, at each
 	// end, and LatestDayStarts how late in the day a day of review may be made
@@ -324,7 +324,7 @@ func (a *API) getRecognitionProofreader() RecognitionProofreader {
 // getRechunker asks for a source to be cut again from whatever its text now says. A
 // window that put a transcript right calls it, so search answers with the words
 // as they now read. Nothing while the window has no vault, and then a
-// correction is seen in the tab alone.
+// correction is baseline in the tab alone.
 func (a *API) getRechunker() func(context.Context, domain.Vault, string) error {
 	if on := a.session.Load(); on != nil {
 		return on.rechunk

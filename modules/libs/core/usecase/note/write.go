@@ -136,7 +136,7 @@ func (u Write) Execute(
 	})
 }
 
-// ReadBaseline is what a caller last saw of the note it is saving.
+// Baseline is what a caller last saw of the note it is saving.
 //
 // Prose answers first: text that is still what the caller was given is the text
 // it read, whatever the file's size and time say. A synchroniser, a checkout
@@ -146,7 +146,7 @@ func (u Write) Execute(
 // Fingerprint answers for text that did move, and is what makes a save that
 // follows a save land: the note is at the fingerprint the last write produced,
 // so it is the note this caller put there.
-type ReadBaseline struct {
+type Baseline struct {
 	// Prose is what a read gave this caller, with every line break as one \n.
 	Prose string
 	// Fingerprint is the file that read came out of.
@@ -155,7 +155,7 @@ type ReadBaseline struct {
 
 // stale reports whether the note in front of the writer holds prose this caller
 // has not read.
-func (s *ReadBaseline) stale(on domain.Fingerprint, prose string) bool {
+func (s *Baseline) stale(on domain.Fingerprint, prose string) bool {
 	if s == nil {
 		return false
 	}
@@ -169,22 +169,22 @@ func (s *ReadBaseline) stale(on domain.Fingerprint, prose string) bool {
 // carrying no identifier keeps none. A note made here is made with no
 // frontmatter at all.
 //
-// Seen is what the caller last saw of the note. Under the write lock the file
-// is read and held against it: a note the caller has seen is written over, and
+// Baseline is what the caller last saw of the note. Under the write lock the file
+// is read and held against it: a note the caller has baseline is written over, and
 // a note holding prose it has not is left alone with port.ErrStale. Nil is a
 // caller that compares nothing, and its body lands.
 //
 // What comes back is the fingerprint of the file the save produced, which is
 // what the caller presents at its next save.
 func (u Write) Save(
-	ctx context.Context, v domain.Vault, path, body string, seen *ReadBaseline,
+	ctx context.Context, v domain.Vault, path, body string, baseline *Baseline,
 ) (domain.Fingerprint, error) {
 	if markdown.IsFrontmatterStart(body) {
 		return domain.Fingerprint{}, ErrBodyUnwritable
 	}
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.ShouldOverwrite = true
-	e.Seen = seen
+	e.Baseline = baseline
 	e.Bound = u.bound()
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		return doc.SetBody(body)
