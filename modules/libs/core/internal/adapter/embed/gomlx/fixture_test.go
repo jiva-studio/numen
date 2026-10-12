@@ -243,7 +243,7 @@ func buildModel(spec modelSpec) []byte {
 	last := "sum"
 	if spec.typed {
 		inits = append(inits, encodeTensor("types_table", onnxFloat, []int64{2, fixtureWidth},
-			oneHotTable([]int{fixtureVocab + 2, fixtureVocab + 2})))
+			oneHotTable([]int{fixtureVocab + 2, -1})))
 		nodes = append(nodes,
 			node{op: "Gather", in: []string{"types_table", "token_type_ids"}, out: "types_h"},
 			node{op: "Add", in: []string{"sum", "types_h"}, out: "typed"})

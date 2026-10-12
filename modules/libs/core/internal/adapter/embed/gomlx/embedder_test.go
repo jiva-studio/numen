@@ -287,8 +287,9 @@ func TestAGraphThatCannotTakeALengthIsAnErrorForThatText(t *testing.T) {
 
 func TestAnOutputOfAnotherTypeIsAnError(t *testing.T) {
 	e := openFixture(t, fixture{model: modelSpec{pooled: true, double: true}})
-	if _, err := e.Embed(t.Context(), []string{"a"}); err == nil {
-		t.Error("float64 output returned vectors")
+	_, err := e.Embed(t.Context(), []string{"a"})
+	if err == nil || strings.Contains(err.Error(), "values") {
+		t.Errorf("float64 output: got %v", err)
 	}
 }
 
@@ -370,7 +371,7 @@ func TestOpenRefusesWhatItCannotRun(t *testing.T) {
 		wraps    bool
 	}{
 		{
-			name: "an identity without dimensions", fixture: fixture{model: modelSpec{pooled: true}}, contains: "dimensions",
+			name: "an identity without dimensions", fixture: fixture{model: modelSpec{pooled: true}}, contains: "dimensions must be known",
 			change: func(_ string, id *port.EmbeddingModel, _ *embed.LocalModel) { id.Dimensions = 0 },
 		},
 		{
@@ -464,6 +465,8 @@ func TestTheOutputChosenIsTheOneThatHoldsTheVector(t *testing.T) {
 	}{
 		{"the sentence embedding before all", []string{"other", "last_hidden_state", "sentence_embedding"},
 			[]shapes.Shape{float(2, 3, 4), float(2, 3, 4), float(2, 4)}, "sentence_embedding", true},
+		{"the sentence embedding at the head of the outputs", []string{"sentence_embedding", "last_hidden_state"},
+			[]shapes.Shape{float(2, 4), float(2, 3, 4)}, "sentence_embedding", true},
 		{"the sentence embedding wherever it stands", []string{"last_hidden_state", "sentence_embedding"},
 			[]shapes.Shape{float(2, 3, 4), float(2, 4)}, "sentence_embedding", true},
 		{"the hidden state before the rest", []string{"other", "last_hidden_state"},

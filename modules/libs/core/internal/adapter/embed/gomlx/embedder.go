@@ -88,11 +88,11 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	}
 
 	e := &Embedder{
-		name:         identity.Name,
-		origin:       identity.From,
-		dimensions:   identity.Dimensions,
-		maxTokens:    identity.MaxTokens,
-		pooling:      identity.Pooling,
+		name:       identity.Name,
+		origin:     identity.From,
+		dimensions: identity.Dimensions,
+		maxTokens:  identity.MaxTokens,
+		pooling:    identity.Pooling,
 		// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 2: a batch floored at two texts carries a padding row more, and the rows past the texts are dropped from the result"
 		batchTexts:   max(cfg.BatchTexts, 1),
 		tokenizer:    tokenizer,
@@ -129,6 +129,7 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		if e.isTyped {
 			in[tokenTypeIDs] = inputs[2]
 		}
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 1: every input of a call belongs to the one graph"
 		return net.CallGraph(scope, inputs[0].Graph(), in, output)
 	})
 	if err != nil {
@@ -192,6 +193,7 @@ func (e *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 		tokens[i] = e.encode(text)
 	}
 	out := make([][]float32, 0, len(texts))
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a start at len(tokens) takes an empty batch, which returns no vectors"
 	for start := 0; start < len(tokens); start += e.batchTexts {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -223,6 +225,7 @@ func (e *Embedder) encode(text string) []int {
 // A batch is laid out at a bucketed length and padded out to a full one: a
 // graph is compiled per shape, and the shapes are held to a few.
 func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="the mutated value is -1 or 1: a length of one or less rounds up to the same step"
 	longest := 0
 	for _, ids := range batch {
 		longest = max(longest, len(ids))
@@ -255,6 +258,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 		return nil, err
 	}
 	defer func() {
+		// gomutants:disable-next-line RANGE_BREAK reason="one output is asked for, so the loop has one pass"
 		for _, t := range outputs {
 			_ = t.FinalizeAll()
 		}
