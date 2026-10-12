@@ -51,8 +51,8 @@ const showCreateOption = computed(() => {
 const totalItems = computed(() => results.value.length + (showCreateOption.value ? 1 : 0))
 
 const positionStyle = computed(() => ({
-  left: `${props.at.x}px`,
-  top: `${props.at.y}px`,
+  left: `${Math.round(props.at.x)}px`,
+  top: `${Math.round(props.at.y)}px`,
   '--seat-color': `var(--numen-seat-${props.seat}, var(--numen-accent))`,
 }))
 
@@ -230,6 +230,7 @@ function submitHighlighted() {
   transform: translate(-50%, -50%);
   pointer-events: auto;
   font-family: var(--numen-font-sans);
+  --plex-quick-link-width: 14rem;
 }
 .plex-quick-link__node,
 .plex-quick-link__dropdown {
@@ -238,8 +239,7 @@ function submitHighlighted() {
   border-radius: var(--radius, 0.375rem);
 }
 .plex-quick-link__node {
-  min-inline-size: 9.5rem;
-  max-inline-size: 16rem;
+  inline-size: var(--plex-quick-link-width);
   block-size: 2rem;
   padding-inline: var(--numen-node-padding, 0.625rem);
   display: flex;
@@ -267,9 +267,8 @@ function submitHighlighted() {
   position: absolute;
   top: calc(100% + 0.375rem);
   inset-inline-start: 50%;
-  transform: translateX(-50%);
-  min-inline-size: 13rem;
-  max-inline-size: 18rem;
+  margin-inline-start: calc(var(--plex-quick-link-width) / -2);
+  inline-size: var(--plex-quick-link-width);
   max-block-size: 12rem;
   overflow-y: auto;
   display: flex;
@@ -289,7 +288,7 @@ function submitHighlighted() {
   background: var(--numen-accent);
   color: var(--numen-accent-ink);
 }
-.plex-quick-link__option--create {
+.plex-quick-link__option + .plex-quick-link__option--create {
   border-top: var(--numen-stroke, 1px) solid var(--numen-rule);
   margin-top: 0.125rem;
   padding-top: 0.375rem;
