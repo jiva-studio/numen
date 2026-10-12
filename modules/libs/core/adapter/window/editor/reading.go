@@ -46,7 +46,7 @@ func newIndexTriggers(still time.Duration) indexTriggers {
 	}
 }
 
-// fire leaves one nudge waiting. What owes work is asked of the index, so
+// fire leaves one trigger waiting. What owes work is asked of the index, so
 // several changes at once are one pass.
 func fire(nudge chan struct{}) {
 	select {

@@ -43,7 +43,7 @@ type API struct {
 	closed atomic.Bool
 
 	// questions are the questions taken and not yet answered. A search, a note
-	// and a link are read straight from the index, and Shut stands here until
+	// and a link are read straight from the index, and Close waits here until
 	// the last of them is off it.
 	//
 	// A stream is not counted: it lives as long as the page that opened it.

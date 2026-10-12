@@ -225,7 +225,7 @@ func (o *Installation) stopVault() {
 	}
 }
 
-// resetStatus is the vault that went leaving nothing of itself behind: what was said
+// resetStatus clears what the previous vault left behind: what was said
 // about reading it, and the entries its passes left in the list of what is
 // being done.
 //
