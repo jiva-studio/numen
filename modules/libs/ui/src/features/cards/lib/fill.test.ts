@@ -9,7 +9,7 @@ import {
   renderPreview,
   renameField,
   sampleValues,
-  slotsIn,
+  getSlots,
   getUndeclaredSlots,
 } from './fill'
 
@@ -70,24 +70,24 @@ describe('a card face', () => {
   })
 })
 
-describe('slotsIn', () => {
+describe('getSlots', () => {
   it('finds every slot where it stands', () => {
-    expect(slotsIn('a {{One}} b {{Two}}')).toEqual([
+    expect(getSlots('a {{One}} b {{Two}}')).toEqual([
       { field: 'One', from: 2, to: 9 },
       { field: 'Two', from: 12, to: 19 },
     ])
   })
 
   it('reads the name between the braces as it is written, space and all', () => {
-    expect(slotsIn('{{  Life span  }}')[0]?.field).toBe('  Life span  ')
+    expect(getSlots('{{  Life span  }}')[0]?.field).toBe('  Life span  ')
   })
 
   it('finds nothing in text with no braces', () => {
-    expect(slotsIn('plain words, and a { brace } that is not doubled')).toEqual([])
+    expect(getSlots('plain words, and a { brace } that is not doubled')).toEqual([])
   })
 
   it('takes an empty pair of braces as a slot with no name', () => {
-    expect(slotsIn('{{}}')).toEqual([{ field: '', from: 0, to: 4 }])
+    expect(getSlots('{{}}')).toEqual([{ field: '', from: 0, to: 4 }])
   })
 })
 
@@ -231,6 +231,6 @@ describe('sampleValues', () => {
 
 describe('braceField', () => {
   it('is what a slot is written as', () => {
-    expect(slotsIn(braceField('Life span'))[0]?.field).toBe('Life span')
+    expect(getSlots(braceField('Life span'))[0]?.field).toBe('Life span')
   })
 })

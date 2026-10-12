@@ -93,30 +93,30 @@ describe('grid', () => {
   ]
 
   /** Every tile of the grid, over all its runs, in the order they stand. */
-  const tilesOf = (deck: ReturnType<typeof getGrid>) => deck.runs.flatMap((run) => run.tiles)
+  const getTiles = (deck: ReturnType<typeof getGrid>) => deck.runs.flatMap((run) => run.tiles)
 
   it('stands the plus last, and counts it among the tiles', () => {
     const shown = getGrid(CARDS, [], CUTS, null)
-    expect(tilesOf(shown).map((tile) => tile.at)).toEqual([1, 2])
+    expect(getTiles(shown).map((tile) => tile.at)).toEqual([1, 2])
     expect(shown.runs[0]?.plusAt).toBe(3)
     expect(shown.of).toBe(3)
   })
 
   it('is one tile, the plus, where there are no cards', () => {
     const shown = getGrid([], [], CUTS, null)
-    expect(tilesOf(shown)).toEqual([])
+    expect(getTiles(shown)).toEqual([])
     expect(shown.runs[0]?.plusAt).toBe(1)
     expect(shown.of).toBe(1)
   })
 
   it('lays every field the stencil asks for out under its own name, the first included', () => {
-    const tile = tilesOf(getGrid(CARDS, [], CUTS, null))[0]
+    const tile = getTiles(getGrid(CARDS, [], CUTS, null))[0]
     expect(tile?.filled.map((each) => each.field)).toEqual(['Name', 'Height', 'Weight'])
     expect(tile?.isKnown).toBe(true)
   })
 
   it('stands the first field where the card wrote it, as it stands every other', () => {
-    const tile = tilesOf(getGrid(CARDS, [], CUTS, null))[0]
+    const tile = getTiles(getGrid(CARDS, [], CUTS, null))[0]
     expect(tile?.filled[0]).toEqual({
       field: 'Name',
       text: 'Llama',
@@ -129,7 +129,7 @@ describe('grid', () => {
   })
 
   it('tells every tile how many stand in the grid, the plus among them', () => {
-    expect(tilesOf(getGrid(CARDS, [], CUTS, null)).map((tile) => tile.of)).toEqual([3, 3])
+    expect(getTiles(getGrid(CARDS, [], CUTS, null)).map((tile) => tile.of)).toEqual([3, 3])
   })
 
   it('counts the values under a field from one, the first field among them', () => {
@@ -144,7 +144,7 @@ describe('grid', () => {
         ],
       },
     ]
-    const filled = tilesOf(getGrid(said, [], CUTS, null))[0]?.filled ?? []
+    const filled = getTiles(getGrid(said, [], CUTS, null))[0]?.filled ?? []
     expect(filled.filter((each) => each.field === 'Name').map((each) => each.nth)).toEqual([1, 2])
   })
 
@@ -160,7 +160,7 @@ describe('grid', () => {
         ],
       },
     ]
-    const filled = tilesOf(getGrid(said, [], CUTS, null))[0]?.filled ?? []
+    const filled = getTiles(getGrid(said, [], CUTS, null))[0]?.filled ?? []
     expect(filled.map((each) => [each.field, each.isLast])).toEqual([
       ['Name', false],
       ['Name', true],
@@ -170,13 +170,13 @@ describe('grid', () => {
   })
 
   it('marks the one box standing for a field the card writes once', () => {
-    const filled = tilesOf(getGrid(CARDS, [], CUTS, null))[0]?.filled ?? []
+    const filled = getTiles(getGrid(CARDS, [], CUTS, null))[0]?.filled ?? []
     expect(filled.every((each) => each.isLast)).toBe(true)
   })
 
   it('draws a card cut by nothing as cut by nothing', () => {
     const bare: readonly DeckCard[] = [{ id: 'x', section: null, stencil: null, filled: [] }]
-    const tile = tilesOf(getGrid(bare, [], CUTS, null))[0]
+    const tile = getTiles(getGrid(bare, [], CUTS, null))[0]
     expect(tile?.stencil).toBeNull()
     expect(tile?.isKnown).toBe(false)
   })
@@ -193,14 +193,14 @@ describe('grid', () => {
         ],
       },
     ]
-    const filled = tilesOf(getGrid(bare, [], CUTS, null))[0]?.filled ?? []
+    const filled = getTiles(getGrid(bare, [], CUTS, null))[0]?.filled ?? []
     expect(filled.map((each) => each.field)).toEqual(['Question', 'Answer'])
     expect(filled.map((each) => each.text)).toEqual(['what', 'this'])
     expect(filled.every((each) => !each.isDeclared)).toBe(true)
   })
 
   it('stands a field the card leaves out empty', () => {
-    expect(tilesOf(getGrid(CARDS, [], CUTS, null))[1]?.filled[0]?.text).toBe('')
+    expect(getTiles(getGrid(CARDS, [], CUTS, null))[1]?.filled[0]?.text).toBe('')
   })
 
   it('numbers the values from one, so two of a name are still two values', () => {
@@ -215,7 +215,7 @@ describe('grid', () => {
         ],
       },
     ]
-    const filled = tilesOf(getGrid(said, [], CUTS, null))[0]?.filled ?? []
+    const filled = getTiles(getGrid(said, [], CUTS, null))[0]?.filled ?? []
     expect(filled.map((each) => each.at)).toEqual([1, 2, 3, 4])
   })
 
@@ -223,7 +223,7 @@ describe('grid', () => {
     const orphan: readonly DeckCard[] = [
       { id: 'x', section: null, stencil: 'Gone', filled: [{ field: 'A', text: 'a' }] },
     ]
-    const tile = tilesOf(getGrid(orphan, [], CUTS, null))[0]
+    const tile = getTiles(getGrid(orphan, [], CUTS, null))[0]
     expect(tile?.isKnown).toBe(false)
     // Nothing names these values, so nothing lays them out. They stay in the
     // file, and the tile says which stencil it is waiting for.
@@ -237,12 +237,12 @@ describe('grid', () => {
       { id: 'llano', section: null, stencil: 'Word', filled: [] },
     ]
     const shown = getGrid(mixed, [], CUTS, null)
-    expect(tilesOf(shown).map((tile) => tile.stencil)).toEqual(['Animal', 'Animal', 'Word'])
-    expect(Object.keys(tilesOf(shown)[0] ?? {})).not.toContain('cut')
+    expect(getTiles(shown).map((tile) => tile.stencil)).toEqual(['Animal', 'Animal', 'Word'])
+    expect(Object.keys(getTiles(shown)[0] ?? {})).not.toContain('cut')
   })
 
   it('marks the one tile on its way and no other', () => {
-    expect(tilesOf(getGrid(CARDS, [], CUTS, 'llama')).map((tile) => tile.isDragged)).toEqual([
+    expect(getTiles(getGrid(CARDS, [], CUTS, 'llama')).map((tile) => tile.isDragged)).toEqual([
       true,
       false,
     ])

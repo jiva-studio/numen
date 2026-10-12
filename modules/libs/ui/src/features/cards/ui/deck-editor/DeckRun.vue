@@ -8,7 +8,7 @@ import { Card } from './card'
 import { CutChoice } from './cut-choice'
 import { Icon } from '../icon'
 import { Button } from '@/shared/ui/button'
-import { DECK_WORDS, endOf, type DeckWords, type DeckProblems } from '../../lib/deck'
+import { DECK_WORDS, createRunEnd, type DeckWords, type DeckProblems } from '../../lib/deck'
 import type { Run } from '../../lib/grid'
 import { createSealedMap, type InsertionPoint, type StepDirection } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
@@ -53,7 +53,7 @@ const emit = defineEmits<{
 const NO_FIELDS: ReadonlyMap<string, readonly string[]> = createSealedMap()
 
 /** Where a card let go past the last of this run lands. */
-const getRunEnd = (run: Run): InsertionPoint => endOf(run.id)
+const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 
 /** The section this run stands under, under a new name. */
 const renameSection = (name: string): void => {

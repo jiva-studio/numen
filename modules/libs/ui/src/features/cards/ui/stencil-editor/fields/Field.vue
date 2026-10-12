@@ -11,7 +11,7 @@ import { CardRow } from '../../card-row'
 import { Button } from '@/shared/ui/button'
 import type { NameEntryState } from '../../../model/naming'
 import {
-  directionOf,
+  parseStepKey,
   STEP_KEYS,
   type InsertionPoint,
   type Objection,
@@ -60,7 +60,7 @@ const says = computed(() => {
 
 /** A field asked by the keyboard to go one place along the order. */
 const onGripKey = (event: KeyboardEvent): void => {
-  const direction = directionOf(event.key)
+  const direction = parseStepKey(event.key)
   if (direction !== null) emit('step', direction, event)
 }
 </script>

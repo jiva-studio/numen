@@ -59,7 +59,7 @@ const cut = computed(() => props.tile.stencil ?? props.words.unknown(null))
 const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
 /** What is wrong with one value, said once, under the last box standing for its field. */
-const wrongIn = (value: PlacedFieldValue): readonly string[] =>
+const getProblems = (value: PlacedFieldValue): readonly string[] =>
   value.isLast ? (props.wrongUnder.get(value.field) ?? []) : []
 </script>
 
@@ -119,7 +119,7 @@ const wrongIn = (value: PlacedFieldValue): readonly string[] =>
         :key="value.key"
         :value="value"
         :box-id="boxId(value)"
-        :wrong="wrongIn(value)"
+        :wrong="getProblems(value)"
         :words="words"
         @write="(text: string) => emit('write', value.field, value.nth, text)"
       />

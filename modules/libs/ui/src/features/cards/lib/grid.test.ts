@@ -1,7 +1,7 @@
 /** Where a card lands, and which runs draw a drop target of their own. */
 import { describe, expect, it } from 'vitest'
 import type { Stencil } from './card'
-import { endOf, HEAD, type DeckCard, type DeckSection } from './deck'
+import { createRunEnd, HEAD, type DeckCard, type DeckSection } from './deck'
 import { getGrid, isMoved } from './grid'
 
 const CUTS: readonly Stencil[] = [{ name: 'Animal', fields: ['Name'] }]
@@ -41,8 +41,8 @@ describe('getGrid, the drop target a run draws', () => {
 })
 
 describe('isMoved', () => {
-  const runsOf = (cards: readonly DeckCard[]) => getGrid(cards, SECTIONS, CUTS, null).runs
-  const RUNS = runsOf([card('a', null), card('b', null), card('c', 'roots')])
+  const getRuns = (cards: readonly DeckCard[]) => getGrid(cards, SECTIONS, CUTS, null).runs
+  const RUNS = getRuns([card('a', null), card('b', null), card('c', 'roots')])
 
   it('moves nothing let go on itself', () => {
     expect(isMoved(RUNS, 'a', 'a')).toBe(false)
@@ -58,16 +58,16 @@ describe('isMoved', () => {
   })
 
   it('moves nothing let go at the end of the run it ends', () => {
-    expect(isMoved(RUNS, 'c', endOf('roots'))).toBe(false)
-    expect(isMoved(RUNS, 'a', endOf('roots'))).toBe(true)
+    expect(isMoved(RUNS, 'c', createRunEnd('roots'))).toBe(false)
+    expect(isMoved(RUNS, 'a', createRunEnd('roots'))).toBe(true)
   })
 
   it('moves a card let go at the end of a run holding none', () => {
-    expect(isMoved(RUNS, 'a', endOf('leaves'))).toBe(true)
+    expect(isMoved(RUNS, 'a', createRunEnd('leaves'))).toBe(true)
   })
 
   it('moves a card let go at the end of a run that is not there', () => {
-    expect(isMoved(RUNS, 'a', endOf('gone'))).toBe(true)
+    expect(isMoved(RUNS, 'a', createRunEnd('gone'))).toBe(true)
   })
 
   it('moves a card let go before another card, or at the end of nothing', () => {

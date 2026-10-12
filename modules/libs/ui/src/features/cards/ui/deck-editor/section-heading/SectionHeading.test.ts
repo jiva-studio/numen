@@ -14,11 +14,11 @@ const mountHeading = (props: Record<string, unknown> = {}) =>
 
 type Held = ReturnType<typeof mountHeading>
 
-const boxIn = (wrapper: Held) => wrapper.get<HTMLInputElement>('input')
+const getBox = (wrapper: Held) => wrapper.get<HTMLInputElement>('input')
 
 /** A name typed into the box and not yet committed. */
 const type = async (wrapper: Held, name: string): Promise<void> => {
-  const box = boxIn(wrapper)
+  const box = getBox(wrapper)
   box.element.value = name
   await box.trigger('input')
 }
@@ -34,17 +34,17 @@ describe('SectionHeading', () => {
   })
 
   it('stands the name the section carries in the box', () => {
-    expect(boxIn(mountHeading()).element.value).toBe('Roots')
+    expect(getBox(mountHeading()).element.value).toBe('Roots')
   })
 
   it('announces the box by the place the section stands among them', () => {
-    expect(boxIn(mountHeading()).attributes('aria-label')).toBe('Section 1')
+    expect(getBox(mountHeading()).attributes('aria-label')).toBe('Section 1')
   })
 
   it('emits the name typed over it, committed', async () => {
     const held = mountHeading()
     await type(held, 'Leaves')
-    await boxIn(held).trigger('change')
+    await getBox(held).trigger('change')
     expect(held.emitted('rename')).toEqual([['Leaves']])
   })
 
@@ -58,7 +58,7 @@ describe('SectionHeading', () => {
     const held = mountHeading({ section: { id: 'shoots', name: 'Shoots', at: 2 } })
     await type(held, 'Roots')
     expect(held.find('[role="alert"]').exists()).toBe(false)
-    await boxIn(held).trigger('change')
+    await getBox(held).trigger('change')
     expect(held.emitted('rename')).toEqual([['Roots']])
   })
 
@@ -68,18 +68,18 @@ describe('SectionHeading', () => {
 
     const said = held.get('[role="alert"]')
     expect(said.text()).toBe('A section needs a name')
-    expect(boxIn(held).attributes('aria-invalid')).toBe('true')
-    expect(boxIn(held).attributes('aria-describedby')).toBe(said.attributes('id'))
+    expect(getBox(held).attributes('aria-invalid')).toBe('true')
+    expect(getBox(held).attributes('aria-describedby')).toBe(said.attributes('id'))
 
-    await boxIn(held).trigger('change')
+    await getBox(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
   })
 
   it('abandons what was typed on escape, and keeps the name the section carries', async () => {
     const held = mountHeading()
     await type(held, 'Leaves')
-    await boxIn(held).trigger('keydown', { key: 'Escape' })
-    await boxIn(held).trigger('change')
+    await getBox(held).trigger('keydown', { key: 'Escape' })
+    await getBox(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
   })
 

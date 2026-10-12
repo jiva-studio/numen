@@ -182,13 +182,13 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
   return held
 }
 
-const boxFor = (canvas: HTMLElement, half: Half): HTMLTextAreaElement => {
+const getBox = (canvas: HTMLElement, half: Half): HTMLTextAreaElement => {
   const box = canvas.querySelector<HTMLTextAreaElement>(`[data-half="${half}"]`)
   if (!box) throw new Error(`no ${half}`)
   return box
 }
 
-const paneOf = (canvas: HTMLElement, pane: string): HTMLElement =>
+const getPane = (canvas: HTMLElement, pane: string): HTMLElement =>
   found(canvas, `[data-pane="${pane}"]`)
 
 /** The four parts of a face, in the order they are drawn. */
@@ -209,7 +209,7 @@ export const AFace: Story = {
     expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(2)
 
     const getPaneBox = (pane: string): DOMRect =>
-      paneOf(canvasElement, pane).getBoundingClientRect()
+      getPane(canvasElement, pane).getBoundingClientRect()
 
     // The writing stands beside its preview, on one line.
     expect(Math.round(getPaneBox('front-written').top)).toBe(
@@ -234,8 +234,8 @@ export const AFace: Story = {
 
     // A part is a box to write in, not a line: the box fills the part it stands
     // in, so every point of the part is a point to type at.
-    const part = paneOf(canvasElement, 'front-written')
-    const box = boxFor(canvasElement, 'front')
+    const part = getPane(canvasElement, 'front-written')
+    const box = getBox(canvasElement, 'front')
     const deep = Number.parseFloat(getComputedStyle(box).lineHeight)
     expect(box.getBoundingClientRect().height).toBeGreaterThan(deep * 4)
     expect(box.getBoundingClientRect().height).toBeCloseTo(part.getBoundingClientRect().height, 0)
@@ -244,7 +244,7 @@ export const AFace: Story = {
     const face = found(canvasElement, '[data-face]')
     expect(Number.parseFloat(getComputedStyle(face).borderTopWidth)).toBeGreaterThan(0)
     for (const pane of PANES) {
-      const drawn = getComputedStyle(paneOf(canvasElement, pane))
+      const drawn = getComputedStyle(getPane(canvasElement, pane))
       for (const side of [
         'borderTopWidth',
         'borderInlineStartWidth',
@@ -281,12 +281,12 @@ export const AFace: Story = {
     )
 
     // A field is written into the half last typed in, where the caret stands.
-    const back = boxFor(canvasElement, 'back')
+    const back = getBox(canvasElement, 'back')
     back.focus()
     back.setSelectionRange(0, 0)
     await userEvent.click(chip)
     await waitFor(() =>
-      expect(boxFor(canvasElement, 'back').value.startsWith('{{Height}}')).toBe(true),
+      expect(getBox(canvasElement, 'back').value.startsWith('{{Height}}')).toBe(true),
     )
 
     // The keyboard landing in a box changes the face, the strip and the parts
@@ -294,7 +294,7 @@ export const AFace: Story = {
     const watched = [
       face,
       found(canvasElement, '.card-header'),
-      ...PANES.map((pane) => paneOf(canvasElement, pane)),
+      ...PANES.map((pane) => getPane(canvasElement, pane)),
     ]
     const look = (): readonly string[] =>
       watched.map((each) => {
@@ -310,7 +310,7 @@ export const AFace: Story = {
       })
 
     const before = look()
-    const written = boxFor(canvasElement, 'front')
+    const written = getBox(canvasElement, 'front')
     written.focus()
     expect(document.activeElement).toBe(written)
     expect(look()).toEqual(before)
@@ -325,7 +325,7 @@ export const Narrow: Story = {
     expect(getComputedStyle(body).gridTemplateColumns.split(' ')).toHaveLength(1)
 
     const tops = PANES.map((pane) =>
-      Math.round(paneOf(canvasElement, pane).getBoundingClientRect().top),
+      Math.round(getPane(canvasElement, pane).getBoundingClientRect().top),
     )
     expect([...tops].sort((first, second) => first - second)).toEqual(tops)
     expect(new Set(tops).size).toBe(4)
@@ -350,8 +350,8 @@ export const AStraySlot: Story = {
 
     // It stands in the foot of the part, over what is written there: the box
     // still fills the part, and a press meant for the box reaches it.
-    const pane = paneOf(canvasElement, 'front-written').getBoundingClientRect()
-    const box = boxFor(canvasElement, 'front').getBoundingClientRect()
+    const pane = getPane(canvasElement, 'front-written').getBoundingClientRect()
+    const box = getBox(canvasElement, 'front').getBoundingClientRect()
     expect(box.height).toBeCloseTo(pane.height, 0)
 
     const layer = found(canvasElement, '[data-pane="front-written"] .face__amiss')
@@ -372,7 +372,7 @@ export const NothingInIt: Story = {
     // An empty part says what it is for, in the middle of itself.
     const placeholders: string[] = []
     for (const pane of PANES) {
-      const held = paneOf(canvasElement, pane)
+      const held = getPane(canvasElement, pane)
       const ghost = held.querySelector<HTMLElement>('.face__ghost')
       if (!ghost) throw new Error(`nothing said in ${pane}`)
       placeholders.push(ghost.textContent?.trim() ?? '')
@@ -386,17 +386,17 @@ export const NothingInIt: Story = {
 
     // What is written into a part takes that place, and the part then draws the
     // box alone.
-    const written = boxFor(canvasElement, 'front')
+    const written = getBox(canvasElement, 'front')
     await userEvent.type(written, 'a word')
     await waitFor(() => {
-      expect(paneOf(canvasElement, 'front-written').querySelector('.face__ghost')).toBeNull()
-      expect(paneOf(canvasElement, 'front-preview').querySelector('.face__ghost')).toBeNull()
+      expect(getPane(canvasElement, 'front-written').querySelector('.face__ghost')).toBeNull()
+      expect(getPane(canvasElement, 'front-preview').querySelector('.face__ghost')).toBeNull()
     })
-    const pane = paneOf(canvasElement, 'front-written')
+    const pane = getPane(canvasElement, 'front-written')
     expect(written.getBoundingClientRect().top).toBeCloseTo(pane.getBoundingClientRect().top, 0)
 
     // The half nothing was written in still says what it is for.
-    expect(paneOf(canvasElement, 'back-written').querySelector('.face__ghost')?.textContent).toBe(
+    expect(getPane(canvasElement, 'back-written').querySelector('.face__ghost')?.textContent).toBe(
       'Back',
     )
   },
@@ -420,7 +420,7 @@ export const MarksAPersonWrote: Story = {
 
     // What the person wrote is theirs to read and change, standing as the text
     // of a box.
-    expect(boxFor(canvasElement, 'back').value).toContain('<script>')
+    expect(getBox(canvasElement, 'back').value).toContain('<script>')
   },
 }
 

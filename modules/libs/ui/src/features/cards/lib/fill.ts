@@ -21,7 +21,7 @@ export interface Slot {
 }
 
 /** Every slot a face names, in the order it stands. */
-export function slotsIn(template: string): readonly Slot[] {
+export function getSlots(template: string): readonly Slot[] {
   const found: Slot[] = []
   for (const match of template.matchAll(SLOT)) {
     found.push({
@@ -61,7 +61,7 @@ export function renderPreview(
  */
 export function getUndeclaredSlots(template: string, fields: readonly string[]): readonly string[] {
   const seen = new Set<string>()
-  for (const slot of slotsIn(template)) {
+  for (const slot of getSlots(template)) {
     if (fields.includes(slot.field)) continue
     seen.add(slot.field)
   }
