@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -69,24 +71,25 @@ func (e EditorAssembly) GetPassageQueries() port.PassageQueries     { return e.d
 
 func (e EditorAssembly) CloseIndex() error { return e.db.Close() }
 
-func (e EditorAssembly) ReadSettings() (string, string, error)     { return e.cfg.ReadSettings()() }
-func (e EditorAssembly) ReadSettingsFile() (string, string, error) { return e.cfg.ReadSettingsFile()() }
-func (e EditorAssembly) GetModels() []port.Model                   { return e.cfg.Models()() }
-
-func (e EditorAssembly) WriteSettingsFile(written string, baseline *string) error {
-	return e.cfg.WriteConfiguredFile()(written, baseline)
-}
-
-func (e EditorAssembly) TurnSettings(written []port.Setting) error {
-	return e.cfg.GetSettingsWriter()(written)
-}
-
-func (e EditorAssembly) GetNestedHeadingLimitBounds() (least, most float64) {
+func (e EditorAssembly) OpenGetSettings(day review.Day) *settings.Get {
 	held := e.cfg.NestedHeadingLimitBounds()
-	return held.Least, held.Most
+	return settings.NewGet(
+		e.cfg.ReadSettings(), e.cfg.Models(), settings.Bounds{Least: held.Least, Most: held.Most},
+		e.cfg.GetLatestDayStart(), day, e.cfg.Clock(),
+	)
 }
 
-func (e EditorAssembly) GetLatestDayStart() string { return e.cfg.GetLatestDayStart() }
+func (e EditorAssembly) OpenWriteSettings() *settings.Write {
+	return settings.NewWrite(e.cfg.GetSettingsWriter())
+}
+
+func (e EditorAssembly) OpenGetSettingsFile() *settings.GetFile {
+	return settings.NewGetFile(e.cfg.ReadSettingsFile())
+}
+
+func (e EditorAssembly) OpenWriteSettingsFile() *settings.WriteFile {
+	return settings.NewWriteFile(e.cfg.WriteConfiguredFile())
+}
 
 func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }
 func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTranscribe }

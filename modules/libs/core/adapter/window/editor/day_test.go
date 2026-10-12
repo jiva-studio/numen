@@ -43,7 +43,7 @@ func TestBothWindowsAreToldTheSameDay(t *testing.T) {
 	getting := setting.NewGet(
 		func() (string, string, error) { return "{}", "", nil }, nil, setting.Bounds{}, "", day, clock,
 	)
-	editing := &editor.API{Settings: editor.Settings{Get: &getting}}
+	editing := &editor.API{Settings: editor.Settings{Get: getting}}
 	said, err := editing.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)

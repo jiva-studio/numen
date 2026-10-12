@@ -8,10 +8,10 @@ type Write struct {
 	write func(written []port.Setting) error
 }
 
-func NewWrite(write func(written []port.Setting) error) Write {
-	return Write{write: write}
+func NewWrite(write func(written []port.Setting) error) *Write {
+	return &Write{write: write}
 }
 
-func (u Write) Execute(written []port.Setting) error {
+func (u *Write) Execute(written []port.Setting) error {
 	return u.write(written)
 }

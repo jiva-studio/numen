@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -213,19 +212,11 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	running := made.OpenFlashcards(pool.level)
 	api.Presets = &running.Presets
 	api.Curves = &running.Curves
-	least, most := made.GetNestedHeadingLimitBounds()
-	getSettings := settings.NewGet(
-		made.ReadSettings, made.GetModels, settings.Bounds{Least: least, Most: most},
-		made.GetLatestDayStart(), running.Day, made.GetClock(),
-	)
-	writeSettings := settings.NewWrite(made.TurnSettings)
-	getSettingsFile := settings.NewGetFile(made.ReadSettingsFile)
-	writeSettingsFile := settings.NewWriteFile(made.WriteSettingsFile)
 	api.Settings = Settings{
-		Get:       &getSettings,
-		Write:     &writeSettings,
-		GetFile:   &getSettingsFile,
-		WriteFile: &writeSettingsFile,
+		Get:       made.OpenGetSettings(running.Day),
+		Write:     made.OpenWriteSettings(),
+		GetFile:   made.OpenGetSettingsFile(),
+		WriteFile: made.OpenWriteSettingsFile(),
 	}
 
 	held := &pool.vaults

@@ -220,11 +220,7 @@ type Cards struct {
 	RenameField *cards.RenameField
 }
 
-// Settings is the file a person configures this installation in: every setting
-// read and written, and the file read and replaced whole. They are bound by
-// every build that serves the settings: the phone serves them to a socket
-// answering any origin at all, so it mounts no service about the file the keys
-// are written in.
+// Settings is every setting read and written, and the settings file read and replaced whole.
 type Settings struct {
 	Get       *settings.Get
 	Write     *settings.Write
