@@ -28,6 +28,8 @@ import (
 // Config is what the user may point somewhere else. Empty fields mean the
 // platform's own locations.
 type Config struct {
+	// IsMockML uses fast synthetic stubs for automated test runs.
+	IsMockML     bool
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string

@@ -1,4 +1,5 @@
 node_modules/
+test-results/
 .DS_Store
 *.log
 
@@ -21,6 +22,8 @@ node_modules/
 /numen-cli
 /numen-flashcards
 /numen-desktop
+/numen-debug
+modules/apps/desktop/numen-debug
 /Numen.app/
 /Numen Flashcards.app/
 

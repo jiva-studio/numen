@@ -1,0 +1,11 @@
+{
+  "name": "@numen/e2e-desktop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end tests for the desktop application",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  }
+}

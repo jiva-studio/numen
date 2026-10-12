@@ -267,6 +267,11 @@ app_desktop_test: lib_ui_build ## run desktop tests
 	cd $(DESKTOP)/editor && npm test
 	cd $(DESKTOP)/flashcards && npm test
 
+.PHONY: app_desktop_e2e
+app_desktop_e2e: lib_ui_build app_desktop_editor_build ## run desktop end-to-end tests
+	cd $(DESKTOP) && go build -tags debug -o numen-debug ./cmd/numen
+	cd $(MODULES)/tests/e2e/desktop && npx playwright test
+
 .PHONY: app_desktop_lint
 app_desktop_lint: ## lint desktop module
 	cd $(DESKTOP) && go vet ./...
