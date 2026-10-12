@@ -15,7 +15,7 @@ type Current struct {
 	Path                     string
 	Models                   []Model
 	NestedHeadingLimitBounds Bounds
-	LatestDayStarts          string
+	LatestDayStartTime       string
 	Day                      string
 }
 
@@ -25,7 +25,7 @@ type Get struct {
 	read                     func() (written, path string, err error)
 	models                   func() []Model
 	nestedHeadingLimitBounds Bounds
-	latestDayStarts          string
+	latestDayStartTime       string
 	day                      review.Day
 	now                      port.Clock
 }
@@ -34,7 +34,7 @@ func NewGet(
 	read func() (written, path string, err error),
 	models func() []Model,
 	nestedHeadingLimitBounds Bounds,
-	latestDayStarts string,
+	latestDayStartTime string,
 	day review.Day,
 	now port.Clock,
 ) *Get {
@@ -42,7 +42,7 @@ func NewGet(
 		read:                     read,
 		models:                   models,
 		nestedHeadingLimitBounds: nestedHeadingLimitBounds,
-		latestDayStarts:          latestDayStarts,
+		latestDayStartTime:       latestDayStartTime,
 		day:                      day,
 		now:                      now,
 	}
@@ -62,7 +62,7 @@ func (u *Get) Execute() (Current, error) {
 		Path:                     path,
 		Models:                   models,
 		NestedHeadingLimitBounds: u.nestedHeadingLimitBounds,
-		LatestDayStarts:          u.latestDayStarts,
+		LatestDayStartTime:       u.latestDayStartTime,
 		Day:                      u.day.GetName(u.now()),
 	}, nil
 }

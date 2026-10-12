@@ -224,7 +224,7 @@ describe('the settings tab', () => {
     const hour = vi.spyOn(settings.dayBegins, 'choose').mockResolvedValue()
 
     installation.chooseHeadings(4)
-    installation.chooseDayStarts('05:30')
+    installation.chooseDayStartTime('05:30')
 
     expect(count).toHaveBeenCalledWith('4')
     expect(hour).toHaveBeenCalledWith('05:30')

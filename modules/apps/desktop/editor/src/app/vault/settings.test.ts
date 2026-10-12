@@ -20,7 +20,7 @@ const answer = (written: unknown, over: Record<string, unknown> = {}) => ({
   path: '/vault/.numen/settings.json',
   models: [],
   nestedHeadingLimitBounds: { least: 2, most: 9 },
-  latestDayStarts: '06:00',
+  latestDayStartTime: '06:00',
   day: '2026-03-14',
   ...over,
 })
@@ -112,7 +112,7 @@ describe('the headings a node nests', () => {
 
 describe('the hour a day of review begins', () => {
   it('reads the hour the file holds, and how late one may be', async () => {
-    asked.getSettings.mockResolvedValue(answer({ review: { day_starts: '05:30' } }))
+    asked.getSettings.mockResolvedValue(answer({ review: { day_start_time: '05:30' } }))
 
     expect(await core.getReviewSettings()).toStrictEqual({
       starts: '05:30',
@@ -125,7 +125,7 @@ describe('the hour a day of review begins', () => {
     asked.getSettings.mockResolvedValue(answer({}))
     expect((await core.getReviewSettings()).starts).toBe('04:00')
 
-    asked.getSettings.mockResolvedValue(answer({ review: { day_starts: 5 } }))
+    asked.getSettings.mockResolvedValue(answer({ review: { day_start_time: 5 } }))
     expect((await core.getReviewSettings()).starts).toBe('04:00')
   })
 
@@ -133,7 +133,7 @@ describe('the hour a day of review begins', () => {
     expect(await core.setReviewSettings('05:30')).toBeNull()
 
     expect(writtenLast()).toStrictEqual({
-      settings: [{ at: ['review', 'day_starts'], value: '"05:30"' }],
+      settings: [{ at: ['review', 'day_start_time'], value: '"05:30"' }],
     })
   })
 })

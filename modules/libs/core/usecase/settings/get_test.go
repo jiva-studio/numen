@@ -21,7 +21,7 @@ func TestGetAnswersTheSettingsTheirModelsAndTheDay(t *testing.T) {
 	bounds := settings.Bounds{Least: 1, Most: 6}
 	get := settings.NewGet(
 		read, func() []port.Model { return models }, bounds, "08:00",
-		review.Day{Starts: review.DayStarts, In: time.UTC}, func() time.Time { return morning },
+		review.Day{Starts: review.DayStartTime, In: time.UTC}, func() time.Time { return morning },
 	)
 
 	got, err := get.Execute()
@@ -35,8 +35,8 @@ func TestGetAnswersTheSettingsTheirModelsAndTheDay(t *testing.T) {
 	if len(got.Models) != 1 || got.Models[0].Name != "base" {
 		t.Errorf("the models are %v", got.Models)
 	}
-	if got.NestedHeadingLimitBounds != bounds || got.LatestDayStarts != "08:00" {
-		t.Errorf("the limits are %v and %q", got.NestedHeadingLimitBounds, got.LatestDayStarts)
+	if got.NestedHeadingLimitBounds != bounds || got.LatestDayStartTime != "08:00" {
+		t.Errorf("the limits are %v and %q", got.NestedHeadingLimitBounds, got.LatestDayStartTime)
 	}
 	if got.Day != "2026-09-04" {
 		t.Errorf("an hour past midnight is the day %q", got.Day)

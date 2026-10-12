@@ -308,7 +308,7 @@ func TestTheBoundsOnNestedHeadingLimitAreTheSettingsOwn(t *testing.T) {
 }
 
 func TestTheLatestStartOfADayIsSaidAsAClockTime(t *testing.T) {
-	if got, want := (Config{}).GetLatestDayStart(), review.Clock(settings.LatestDayStarts); got == "" || got != want {
+	if got, want := (Config{}).GetLatestDayStart(), review.Clock(settings.LatestDayStartTime); got == "" || got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }

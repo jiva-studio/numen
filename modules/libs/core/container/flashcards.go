@@ -36,15 +36,15 @@ func (c Config) Answers() port.DerivedStores {
 	return filesystem.DerivedStores{Options: c.vaultOptions(), Area: filesystem.FlashcardsDir}
 }
 
-// DayStarts is how long past midnight a day of review begins, as the settings
+// GetDayStartTime is how long past midnight a day of review begins, as the settings
 // hold it. A file that cannot be read begins the day where an installation
 // nobody has configured begins it.
-func (c Config) DayStarts() time.Duration {
+func (c Config) GetDayStartTime() time.Duration {
 	held, err := c.Settings()
 	if err != nil {
 		return settings.DefaultDayStart()
 	}
-	return held.DayStarts()
+	return held.GetDayStartTime()
 }
 
 // getCores is how many decks are parsed, and how many places of a curve are
@@ -123,7 +123,7 @@ func (c Config) Flashcards(
 	marking := flashcards.NewMarkCards(
 		c.VaultReaders(), c.VaultWriters(), notes, links, leveled, now,
 	)
-	day := review.Day{Starts: c.DayStarts()}
+	day := review.Day{Starts: c.GetDayStartTime()}
 
 	counting, err := c.OpenDayCounts()
 	if err != nil {
