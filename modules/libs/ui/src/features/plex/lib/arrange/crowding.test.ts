@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { measureCrowding, packOptions } from './crowding'
-import { limitsFor } from './limits'
+import { getLimits } from './limits'
 import { DEFAULT_OPTIONS } from './options'
 import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
@@ -20,7 +20,7 @@ const findEscaped = (frame: PlexFrame, viewport: { width: number; height: number
       Math.abs(node.y) + node.height / 2 > viewport.height / 2 - margin,
   )
 
-const boxOf = (frame: PlexFrame) => frame.nodes.find((node) => node.seat === 'child')!.width
+const getBox = (frame: PlexFrame) => frame.nodes.find((node) => node.seat === 'child')!.width
 
 describe('a box narrows and a gap closes before a seat is given up', () => {
   const NARROW = [
@@ -43,7 +43,7 @@ describe('a box narrows and a gap closes before a seat is given up', () => {
 
   it('draws a narrower box the less room the window has', () => {
     const boxes = NARROW.map((viewport) =>
-      boxOf(arrangePlex(build('A node', COUNTS), { options: { viewport } })),
+      getBox(arrangePlex(build('A node', COUNTS), { options: { viewport } })),
     )
     for (let i = 1; i < boxes.length; i++) {
       expect(boxes[i]!).toBeGreaterThanOrEqual(boxes[i - 1]!)
@@ -62,7 +62,7 @@ describe('no closer than the window needs', () => {
     const frame = arrangePlex(build('A node', COUNTS), {
       options: { viewport: { width: 2000, height: 1400 } },
     })
-    expect(boxOf(frame)).toBe(nodeSize.width)
+    expect(getBox(frame)).toBe(nodeSize.width)
   })
 
   it('leaves a plex with no window alone', () => {
@@ -116,11 +116,11 @@ describe('the loosest packing that seats everything', () => {
   const STEPS = 2 ** 7
 
   const canSeatAll = (options: typeof DEFAULT_OPTIONS) => {
-    const limits = limitsFor(options, COUNTS)
+    const limits = getLimits(options, COUNTS)
     return RELATED_SEATS.every((seat) => limits[seat].perLine * limits[seat].lines >= COUNTS[seat])
   }
 
-  const tightnessOf = (packed: typeof DEFAULT_OPTIONS) =>
+  const getTightness = (packed: typeof DEFAULT_OPTIONS) =>
     (packed.nodeSize.width - minWidth) / (nodeSize.width - minWidth)
 
   it.each([
@@ -130,7 +130,7 @@ describe('the loosest packing that seats everything', () => {
   ])('$width×$height is found to a 128th, and one step looser seats less', (viewport) => {
     const options = { ...DEFAULT_OPTIONS, viewport }
     const packed = measureCrowding(options, COUNTS)
-    const tightness = tightnessOf(packed)
+    const tightness = getTightness(packed)
 
     expect(canSeatAll(packed)).toBe(true)
     expect(tightness).toBeGreaterThanOrEqual(0)
@@ -141,7 +141,7 @@ describe('the loosest packing that seats everything', () => {
 
   it('packs a window that is crowded at the settings tighter than the settings', () => {
     const options = { ...DEFAULT_OPTIONS, viewport: { width: 500, height: 1000 } }
-    expect(tightnessOf(measureCrowding(options, COUNTS))).toBeGreaterThan(0)
+    expect(getTightness(measureCrowding(options, COUNTS))).toBeGreaterThan(0)
   })
 
   it('leaves a window alone that holds the nodes with no seat to spare', () => {

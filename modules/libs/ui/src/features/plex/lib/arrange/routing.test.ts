@@ -2,9 +2,9 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
-import { cutToFit, routeEdge, routeEdges, routingFor } from './routing'
+import { cutToFit, routeEdge, routeEdges, getRouting } from './routing'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
-import { ARROW_LENGTH, arrowOf, lengthOf, createPointOnCurve, type EdgeArrow } from '../edge'
+import { ARROW_LENGTH, getArrow, getLength, createPointOnCurve, type EdgeArrow } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode } from '../node'
 import type { PlexSeat } from '../seat'
@@ -12,7 +12,7 @@ import type { PlexSeat } from '../seat'
 const withSeat = (frame: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
   frame.nodes.filter((node) => node.seat === seat)
 
-const focusOf = (frame: { nodes: readonly PlacedNode[] }) => {
+const getFocus = (frame: { nodes: readonly PlacedNode[] }) => {
   const focus = frame.nodes.find((node) => node.seat === 'focus')
   if (!focus) throw new Error('unreachable: every frame places a focus')
   return focus
@@ -20,7 +20,7 @@ const focusOf = (frame: { nodes: readonly PlacedNode[] }) => {
 describe('edges', () => {
   it('leaves the focus by one gate and arrives at the top of each child', () => {
     const layout = arrangePlex(neighbourhoods.typical)
-    const focus = focusOf(layout)
+    const focus = getFocus(layout)
     const children = withSeat(layout, 'child')
 
     for (const child of children) {
@@ -52,7 +52,7 @@ describe('edges', () => {
 
   it('runs sideways for a seat that is seated sideways', () => {
     const layout = arrangePlex(neighbourhoods.typical)
-    const focus = focusOf(layout)
+    const focus = getFocus(layout)
     const jump = withSeat(layout, 'jump')[0]!
     const edge = layout.edges.find((e) => e.from === jump.id)!
 
@@ -173,10 +173,10 @@ describe('a title cut to the line it is set on', () => {
   const placed = arrangePlex(sideways)
   const byId = new Map(placed.nodes.map((node) => [node.id, node]))
   const curve = placed.edges[0]!
-  const arc = lengthOf(curve)
+  const arc = getLength(curve)
 
   const routeWithLabel = (measureLabel?: (label: string) => number) =>
-    routeEdges(sideways.edges, byId, routingFor(DEFAULT_OPTIONS, measureLabel))[0]!
+    routeEdges(sideways.edges, byId, getRouting(DEFAULT_OPTIONS, measureLabel))[0]!
 
   it('estimates the curve between its chord and the way round its controls', () => {
     const step = (a: { x: number; y: number }, b: { x: number; y: number }) =>
@@ -239,7 +239,7 @@ describe('a title cut to the line it is set on', () => {
     routeEdges(
       [{ from: 'aside', to: 'focus', label }],
       byId,
-      routingFor(DEFAULT_OPTIONS, (words) => {
+      getRouting(DEFAULT_OPTIONS, (words) => {
         asked.push(words)
         return [...words].length
       }),
@@ -300,7 +300,7 @@ describe('the arrowhead a line carries', () => {
       ],
     }).edges.find((edge) => edge.to === 'wide')!
 
-    const covered = ARROW_LENGTH / lengthOf(aside)
+    const covered = ARROW_LENGTH / getLength(aside)
     const behind = createPointOnCurve(aside)(1 - covered)
     const chord =
       (Math.atan2(aside.toPoint.y - behind.y, aside.toPoint.x - behind.x) * 180) / Math.PI
@@ -310,8 +310,8 @@ describe('the arrowhead a line carries', () => {
     expect(aside.arrowhead!.angle).toBeCloseTo(chord, 1)
 
     // The end a line leaves from is read the same way, backwards.
-    const leaving = arrowOf(aside, 'from')
-    const along = createPointOnCurve(aside)(ARROW_LENGTH / lengthOf(aside))
+    const leaving = getArrow(aside, 'from')
+    const along = createPointOnCurve(aside)(ARROW_LENGTH / getLength(aside))
     const back =
       (Math.atan2(aside.fromPoint.y - along.y, aside.fromPoint.x - along.x) * 180) / Math.PI
     expect(leaving.angle).toBeCloseTo(back, 1)
@@ -327,9 +327,9 @@ describe('the arrowhead a line carries', () => {
       control2: { x: 0, y: 4 },
       toPoint: { x: 0, y: 6 },
     }
-    expect(lengthOf(short)).toBeLessThan(ARROW_LENGTH)
-    expect(arrowOf(short, 'to').angle).toBeCloseTo(90)
-    expect(arrowOf(short, 'from').angle).toBeCloseTo(-90)
+    expect(getLength(short)).toBeLessThan(ARROW_LENGTH)
+    expect(getArrow(short, 'to').angle).toBeCloseTo(90)
+    expect(getArrow(short, 'from').angle).toBeCloseTo(-90)
   })
 
   it('leaves the title of its line short of the head', () => {
@@ -346,39 +346,39 @@ describe('the arrowhead a line carries', () => {
           },
         ],
         byId,
-        routingFor(DEFAULT_OPTIONS, measure),
+        getRouting(DEFAULT_OPTIONS, measure),
       )[0]!.words!
 
-    const room = lengthOf(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
+    const room = getLength(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
     expect(measure(words('to'))).toBeLessThanOrEqual(room)
     expect(measure(words())).toBeGreaterThan(room)
   })
 })
 
 describe('the axis a seat is routed along', () => {
-  const axisOf = routingFor(DEFAULT_OPTIONS).axisOf
+  const getAxis = getRouting(DEFAULT_OPTIONS).getAxis
 
   it('is left to the geometry for the focus', () => {
-    expect(axisOf({ seat: 'focus' })).toBe('auto')
+    expect(getAxis({ seat: 'focus' })).toBe('auto')
   })
 
   it('runs down the page for the seats that grow up or down', () => {
-    expect(axisOf({ seat: 'parent' })).toBe('vertical')
-    expect(axisOf({ seat: 'child' })).toBe('vertical')
+    expect(getAxis({ seat: 'parent' })).toBe('vertical')
+    expect(getAxis({ seat: 'child' })).toBe('vertical')
   })
 
   it('runs across the page for the seats that grow left or right', () => {
-    expect(axisOf({ seat: 'jump' })).toBe('horizontal')
-    expect(axisOf({ seat: 'sibling' })).toBe('horizontal')
+    expect(getAxis({ seat: 'jump' })).toBe('horizontal')
+    expect(getAxis({ seat: 'sibling' })).toBe('horizontal')
   })
 
   it('follows the direction a seat has been given', () => {
-    const turned = routingFor({
+    const turned = getRouting({
       ...DEFAULT_OPTIONS,
       direction: { ...DEFAULT_OPTIONS.direction, child: 'left', jump: 'up' },
     })
-    expect(turned.axisOf({ seat: 'child' })).toBe('horizontal')
-    expect(turned.axisOf({ seat: 'jump' })).toBe('vertical')
+    expect(turned.getAxis({ seat: 'child' })).toBe('horizontal')
+    expect(turned.getAxis({ seat: 'jump' })).toBe('vertical')
   })
 })
 
@@ -411,7 +411,7 @@ describe('the run of a line between two boxes', () => {
     opacity: 1,
   })
 
-  const routing = routingFor(DEFAULT_OPTIONS)
+  const routing = getRouting(DEFAULT_OPTIONS)
 
   const route = (from: PlacedNode, to: PlacedNode, using = routing) =>
     routeEdge(
@@ -464,7 +464,7 @@ describe('the run of a line between two boxes', () => {
   })
 
   it('takes the axis from the geometry where neither seat has one', () => {
-    const undeclared = { ...routing, axisOf: () => 'auto' as const }
+    const undeclared = { ...routing, getAxis: () => 'auto' as const }
 
     const down = route(box('a', 'focus', 0, 0), box('b', 'focus', 150, 200), undeclared)
     expect(down.fromPoint).toStrictEqual({ x: 0, y: 20 })

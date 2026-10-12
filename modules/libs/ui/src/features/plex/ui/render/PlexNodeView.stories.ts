@@ -49,7 +49,7 @@ const GLYPH = `
   </svg>
 `
 
-const nodeFrom = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: a.title,
   seat: a.seat,
@@ -157,7 +157,7 @@ const meta: Meta<Knobs> = {
     onAsk: fn(),
   },
 
-  render: renderScene((args) => [nodeFrom(args)]),
+  render: renderScene((args) => [createNode(args)]),
 }
 
 export default meta
@@ -176,17 +176,17 @@ export const Playground: Story = {}
 export const EverySeat: Story = {
   render: renderScene(
     (args) => [
-      nodeFrom(args, {
+      createNode(args, {
         id: 'focus',
         title: 'Where you are',
         seat: 'focus',
         width: 176,
         height: 44,
       }),
-      nodeFrom(args, { id: 'parent', title: 'Above it', seat: 'parent', y: -72 }),
-      nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', y: 72 }),
-      nodeFrom(args, { id: 'jump', title: 'Off to the left', seat: 'jump', x: -190 }),
-      nodeFrom(args, { id: 'sibling', title: 'Off to the right', seat: 'sibling', x: 190 }),
+      createNode(args, { id: 'parent', title: 'Above it', seat: 'parent', y: -72 }),
+      createNode(args, { id: 'child', title: 'Below it', seat: 'child', y: 72 }),
+      createNode(args, { id: 'jump', title: 'Off to the left', seat: 'jump', x: -190 }),
+      createNode(args, { id: 'sibling', title: 'Off to the right', seat: 'sibling', x: 190 }),
     ],
     { width: 560, height: 240 },
   ),
@@ -283,7 +283,7 @@ export const AwkwardLabels: Story = {
   render: renderScene(
     (args) =>
       awkwardLabels.nodes.map((node, index) =>
-        nodeFrom(args, {
+        createNode(args, {
           ...node,
           x: ((index % 4) - 1.5) * (args.width + 24),
           y: (Math.floor(index / 4) - 0.5) * (args.height + 32),
@@ -321,18 +321,18 @@ export const AwkwardLabels: Story = {
 export const TheCornersAreAsDesigned: Story = {
   render: renderScene(
     (args) => [
-      nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', x: -130 }),
-      nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: 130, width: 176 }),
+      createNode(args, { id: 'child', title: 'Below it', seat: 'child', x: -130 }),
+      createNode(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: 130, width: 176 }),
     ],
     { width: 560, height: 200 },
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const boxOf = (title: string): SVGRectElement =>
+    const getBox = (title: string): SVGRectElement =>
       canvas.getByLabelText(new RegExp(`^${title},`)).querySelector('rect')!
 
-    await expect(getComputedStyle(boxOf('Below it')).rx).toBe('6px')
-    await expect(getComputedStyle(boxOf('Where you are')).rx).toBe('8px')
+    await expect(getComputedStyle(getBox('Below it')).rx).toBe('6px')
+    await expect(getComputedStyle(getBox('Where you are')).rx).toBe('8px')
   },
 }
 
@@ -346,8 +346,8 @@ export const TheCornersAreAsDesigned: Story = {
  */
 export const PartWayThere: Story = {
   render: renderScene((args) => [
-    nodeFrom(args, { id: 'staying', title: 'Staying', x: -84 }),
-    nodeFrom(args, { id: 'going', title: 'On its way out', x: 84, opacity: 0.35 }),
+    createNode(args, { id: 'staying', title: 'Staying', x: -84 }),
+    createNode(args, { id: 'going', title: 'On its way out', x: 84, opacity: 0.35 }),
   ]),
 }
 
@@ -363,8 +363,8 @@ export const Dark: Story = {
   globals: DARK,
   render: renderScene(
     (args) => [
-      nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: -130, width: 176 }),
-      nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', x: 130 }),
+      createNode(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: -130, width: 176 }),
+      createNode(args, { id: 'child', title: 'Below it', seat: 'child', x: 130 }),
     ],
     { width: 560, height: 200 },
   ),

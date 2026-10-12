@@ -1,6 +1,6 @@
 /** The boxes a node and a run of a line take, worked out without drawing them. */
 import { describe, expect, it } from 'vitest'
-import { boxOf, getTitleBoxes, isOverlapping, runBoxes, type Box } from './boxes'
+import { getBox, getTitleBoxes, isOverlapping, runBoxes, type Box } from './boxes'
 import type { PlacedEdge } from '../edge'
 import type { PlacedNode } from '../node'
 
@@ -35,7 +35,7 @@ describe('the room a node takes', () => {
       order: 0,
       opacity: 1,
     }
-    expect(boxOf(node, 3)).toStrictEqual({ minX: 77, minY: 37, maxX: 123, maxY: 63 })
+    expect(getBox(node, 3)).toStrictEqual({ minX: 77, minY: 37, maxX: 123, maxY: 63 })
   })
 })
 

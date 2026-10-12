@@ -116,7 +116,7 @@ describe('what each node is to a gesture', () => {
 })
 
 describe('the window onto the drawing', () => {
-  const boxOf = (frame = arrangePlex(before)) => {
+  const getBox = (frame = arrangePlex(before)) => {
     const view = mount(PlexView, {
       props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
@@ -125,7 +125,7 @@ describe('the window onto the drawing', () => {
   }
 
   it('is centred on the origin, which is where the focus is', () => {
-    const box = boxOf()
+    const box = getBox()
     expect(box.x).toBe(-box.w / 2)
     expect(box.y).toBe(-box.h / 2)
   })
@@ -133,9 +133,9 @@ describe('the window onto the drawing', () => {
   it('is the same window whatever the neighbourhood holds', () => {
     // Fitting the window to the drawing would shrink every box and letter as
     // neighbours are added.
-    const small = boxOf(arrangePlex(before))
-    const large = boxOf(arrangePlex({ ...before, nodes: [...before.nodes] }))
-    const crowded = boxOf(
+    const small = getBox(arrangePlex(before))
+    const large = getBox(arrangePlex({ ...before, nodes: [...before.nodes] }))
+    const crowded = getBox(
       arrangePlex({
         nodes: [
           { id: 'focus', title: 'Start', seat: 'focus' },
@@ -400,7 +400,7 @@ describe('the box the attention has settled on', () => {
   const getDrawnOrder = (view: ReturnType<typeof mountView>) =>
     view.findAll('.plex__node').map((node) => node.attributes('aria-label'))
 
-  const boxOf = (view: ReturnType<typeof mountView>, name: string) =>
+  const getBox = (view: ReturnType<typeof mountView>, name: string) =>
     view.findAllComponents(PlexNodeView).find((node) => node.props('node').id === name)!
 
   const mountResting = () =>
@@ -416,7 +416,7 @@ describe('the box the attention has settled on', () => {
     const view = mountResting()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
 
-    boxOf(view, 'staying').vm.$emit('settle', true)
+    getBox(view, 'staying').vm.$emit('settle', true)
     await view.vm.$nextTick()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Going, child', 'Staying, child'])
   })
@@ -425,7 +425,7 @@ describe('the box the attention has settled on', () => {
     const view = mountResting()
     const was = view.get('[aria-label^="Staying"]').element
 
-    boxOf(view, 'staying').vm.$emit('settle', true)
+    getBox(view, 'staying').vm.$emit('settle', true)
     await view.vm.$nextTick()
 
     expect(view.get('[aria-label^="Staying"]').element).toBe(was)
@@ -433,10 +433,10 @@ describe('the box the attention has settled on', () => {
 
   it('goes back to where it was drawn once the hand has left it', async () => {
     const view = mountResting()
-    boxOf(view, 'staying').vm.$emit('settle', true)
+    getBox(view, 'staying').vm.$emit('settle', true)
     await view.vm.$nextTick()
 
-    boxOf(view, 'staying').vm.$emit('settle', false)
+    getBox(view, 'staying').vm.$emit('settle', false)
     await view.vm.$nextTick()
     expect(getDrawnOrder(view)).toStrictEqual(['Start, focus', 'Staying, child', 'Going, child'])
   })
@@ -452,8 +452,8 @@ describe('the box the attention has settled on', () => {
       },
     })
 
-    expect(boxOf(view, 'going').props('wide')).toStrictEqual(wide)
-    expect(boxOf(view, 'staying').props('wide')).toBeNull()
+    expect(getBox(view, 'going').props('wide')).toStrictEqual(wide)
+    expect(getBox(view, 'staying').props('wide')).toBeNull()
   })
 })
 

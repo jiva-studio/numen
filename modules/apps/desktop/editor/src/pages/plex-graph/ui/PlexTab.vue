@@ -3,7 +3,7 @@
  * Displays the graph neighborhood of notes and handles graph interaction gestures.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { Menu, optionsForType, Plex, threadOf, useTypeSize, Waiting } from '@numen/ui'
+import { Menu, optionsForType, Plex, getThread, useTypeSize, Waiting } from '@numen/ui'
 import type { MenuTrigger, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
@@ -60,7 +60,7 @@ const sourceCenter = computed(() => {
 
 const threadPath = computed(() => {
   if (!sourceCenter.value || !quickLink.value) return ''
-  return threadOf(sourceCenter.value, quickLink.value.at)
+  return getThread(sourceCenter.value, quickLink.value.at)
 })
 
 /* -------------------------------- Handlers -------------------------------- */

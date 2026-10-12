@@ -7,9 +7,9 @@
  * place while it is not, cut to the longest clear stretch where the whole of the
  * words stand nowhere, and dropped where that stretch holds less than half.
  */
-import { headingOf, lengthOf, type PlacedEdge } from '../edge'
+import { getHeading, getLength, type PlacedEdge } from '../edge'
 import type { PlacedNode } from '../node'
-import { boxOf, isOverlapping, getTitleBoxes, runBoxes, type Box } from './boxes'
+import { getBox, isOverlapping, getTitleBoxes, runBoxes, type Box } from './boxes'
 import { cutToFit, MIDDLE, type Routing } from './routing'
 
 /** A run of one line, as fractions of its length. */
@@ -55,7 +55,7 @@ export function separateTitles(
   if (!width) return [...edges]
 
   const apart = APART * routing.labelDepth
-  const boxes = nodes.map((node) => boxOf(node, apart))
+  const boxes = nodes.map((node) => getBox(node, apart))
   const titles: Box[] = []
   const settled = [...edges]
 
@@ -75,7 +75,7 @@ export function separateTitles(
 
     // The reading direction is the tangent where the words end up, and the
     // words of a curve taken the other way round are read from its far end.
-    const heading = headingOf(edge, found.at)
+    const heading = getHeading(edge, found.at)
     settled[at] = {
       ...edge,
       words: found.words,
@@ -100,7 +100,7 @@ function sortTightestFirst(
 
   for (const [at, edge] of edges.entries()) {
     if (!edge.words) continue
-    const arc = lengthOf(edge)
+    const arc = getLength(edge)
     const extent = width(edge.words)
     if (arc <= 0 || extent <= 0) continue
     measured.push({ edge, at, metrics: { arc, extent } })

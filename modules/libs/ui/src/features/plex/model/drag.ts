@@ -5,7 +5,7 @@
  */
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { getDropSeat, type PlexOptions, type Size } from '../lib/arrange'
-import { positionIn } from './gesture'
+import { getPosition } from './gesture'
 import type { PlexFrame } from '../lib/frame'
 import type { Position } from '../lib/node'
 import type { PlexRelatedSeat } from '../lib/seat'
@@ -77,7 +77,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
 
   const move = (event: PointerEvent) => {
     const element = drag.getSurface()
-    at.value = element ? positionIn(element, event) : null
+    at.value = element ? getPosition(element, event) : null
   }
 
   const finish = (event: PointerEvent) => {

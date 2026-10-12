@@ -15,7 +15,7 @@ import { useNodePress } from '../../model/press'
 import { byHandle } from '../../model/reaching'
 import { byDoubleClick } from '../../model/showing'
 import { browserClock } from '../../model/transition'
-import { nameOf, type Position } from '../../lib/node'
+import { getName, type Position } from '../../lib/node'
 
 const props = withDefaults(defineProps<PlexNodeProps>(), {
   gestureRole: 'open',
@@ -117,7 +117,7 @@ const hue = computed(() => ({
     :aria-hidden="isAnnounced ? undefined : 'true'"
     :role="role"
     :class="[`plex__node--${node.seat}`, `plex__node--${gestureRole}`]"
-    :aria-label="isGhost ? undefined : nameOf(node)"
+    :aria-label="isGhost ? undefined : getName(node)"
     @click="press.onClick"
     @dblclick="press.onDoubleClick"
     @contextmenu="press.onContextMenu"

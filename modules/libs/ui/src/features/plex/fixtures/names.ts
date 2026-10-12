@@ -84,7 +84,7 @@ function hash(text: string): number {
  * A name for the `index`-th node invented around `stem`. Stepping the index
  * keeps a neighbourhood free of repeats until it outgrows the pool.
  */
-export const nameFor = (stem: string, index: number): string =>
+export const createName = (stem: string, index: number): string =>
   NAMES[(hash(stem) + index) % NAMES.length]!
 
 /**
@@ -95,4 +95,4 @@ export const nameFor = (stem: string, index: number): string =>
  * should really be called is the application's to decide; this is what a
  * story uses in its place.
  */
-export const nameNow = (): string => nameFor(String(Date.now()), 0)
+export const nameNow = (): string => createName(String(Date.now()), 0)

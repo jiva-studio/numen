@@ -329,7 +329,7 @@ describe('being given the next neighbourhood', () => {
 
 describe('how much room the plex has', () => {
   /** A window of the size a test names, whatever the machine laid out. */
-  const roomOf = (size: Size): Viewport => ({
+  const createViewport = (size: Size): Viewport => ({
     watch: (_of, took) => {
       took(size)
       return () => {}
@@ -342,7 +342,7 @@ describe('how much room the plex has', () => {
   })
 
   it('draws to the size it is handed', async () => {
-    const plex = mountPlex({ viewport: roomOf({ width: 900, height: 700 }) })
+    const plex = mountPlex({ viewport: createViewport({ width: 900, height: 700 }) })
     await nextTick()
     expect(plex.get('svg').attributes('viewBox')).toBe('-450 -350 900 700')
   })

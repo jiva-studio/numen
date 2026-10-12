@@ -72,7 +72,7 @@ export const edgeKey = (edge: PlexEdge): string =>
   edge.from < edge.to ? `${edge.from} ${edge.to}` : `${edge.to} ${edge.from}`
 
 /** Where the curve has got to at `t`. */
-const pointAt = (edge: EdgeCurve, t: number): Position => {
+const getPoint = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = back * back * back
   const first = 3 * back * back * t
@@ -104,7 +104,7 @@ function measureAlong(edge: EdgeCurve): number[] {
   const along = [0]
   let previous = edge.fromPoint
   for (let step = 1; step <= LENGTH_SAMPLES; step += 1) {
-    const point = pointAt(edge, step / LENGTH_SAMPLES)
+    const point = getPoint(edge, step / LENGTH_SAMPLES)
     along.push(along[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
     previous = point
   }
@@ -112,14 +112,14 @@ function measureAlong(edge: EdgeCurve): number[] {
 }
 
 /** How long the curve is, as an estimate. */
-export const lengthOf = (edge: EdgeCurve): number => measureAlong(edge)[LENGTH_SAMPLES]!
+export const getLength = (edge: EdgeCurve): number => measureAlong(edge)[LENGTH_SAMPLES]!
 
 /**
  * Which `t` stands a fraction of the way along the measured length. The steps
  * are chords of even parameter, so the answer walks them and lands between the
  * two the fraction falls across.
  */
-function parameterAt(along: readonly number[], fraction: number): number {
+function getParameter(along: readonly number[], fraction: number): number {
   const total = along[LENGTH_SAMPLES]!
   if (total <= 0) return 0
   const wanted = Math.min(Math.max(fraction, 0), 1) * total
@@ -140,11 +140,11 @@ function parameterAt(along: readonly number[], fraction: number): number {
  */
 export function createPointOnCurve(edge: EdgeCurve): (fraction: number) => Position {
   const along = measureAlong(edge)
-  return (fraction) => pointAt(edge, parameterAt(along, fraction))
+  return (fraction) => getPoint(edge, getParameter(along, fraction))
 }
 
 /** Which way the curve is travelling at `t`, as a direction of any length. */
-const tangentAt = (edge: EdgeCurve, t: number): Position => {
+const getTangent = (edge: EdgeCurve, t: number): Position => {
   const back = 1 - t
   const leaving = 3 * back * back
   const middle = 6 * back * t
@@ -170,8 +170,8 @@ const tangentAt = (edge: EdgeCurve, t: number): Position => {
  * one that loops out of a column arrives at its midpoint running back the way
  * it came, and one that doubles back turns twice over a short run.
  */
-export const headingOf = (edge: EdgeCurve, at: number): EdgeHeading => {
-  const way = tangentAt(edge, parameterAt(measureAlong(edge), at))
+export const getHeading = (edge: EdgeCurve, at: number): EdgeHeading => {
+  const way = getTangent(edge, getParameter(measureAlong(edge), at))
   if (way.x !== 0) return way.x < 0 ? 'against' : 'along'
   return way.y < 0 ? 'against' : 'along'
 }
@@ -188,17 +188,17 @@ export const ARROW_LENGTH = 15
  * runs into its base; the tangent at the very end is what a curve shorter than
  * the head is read by.
  */
-export const arrowOf = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
+export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const t = end === 'to' ? 1 : 0
-  const at = pointAt(edge, t)
+  const at = getPoint(edge, t)
 
   const along = measureAlong(edge)
   const total = along[LENGTH_SAMPLES]!
   const covered = total > ARROW_LENGTH ? ARROW_LENGTH / total : 0
-  const behind = pointAt(edge, parameterAt(along, end === 'to' ? 1 - covered : covered))
+  const behind = getPoint(edge, getParameter(along, end === 'to' ? 1 - covered : covered))
 
   const spanned = { x: at.x - behind.x, y: at.y - behind.y }
-  const way = tangentAt(edge, t)
+  const way = getTangent(edge, t)
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent
 

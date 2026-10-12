@@ -2,7 +2,7 @@ import type { PlexEdge } from '../lib/edge'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlexNode } from '../lib/node'
 import { RELATED_SEATS, type PlexRelatedSeat } from '../lib/seat'
-import { nameFor } from './names'
+import { createName } from './names'
 
 export type SeatCounts = Readonly<Partial<Record<PlexRelatedSeat, number>>>
 
@@ -41,7 +41,7 @@ export function buildAround(
   const invented: PlexNode[] = RELATED_SEATS.flatMap((seat) =>
     Array.from({ length: counts[seat] ?? 0 }, (_, index) => ({
       id: `${focus.id}/${seat}-${index}`,
-      title: nameFor(focus.id, nameIndex++),
+      title: createName(focus.id, nameIndex++),
       seat,
     })),
   )

@@ -81,7 +81,7 @@ export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
 export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 
 /** A title may be empty; an accessible name may not. */
-export const nameOf = (node: PlexNode): string => `${node.title || 'Untitled'}, ${node.seat}`
+export const getName = (node: PlexNode): string => `${node.title || 'Untitled'}, ${node.seat}`
 
 /**
  * Where the handle sits within a node: on its trailing edge, halfway down.
@@ -89,4 +89,4 @@ export const nameOf = (node: PlexNode): string => `${node.title || 'Untitled'}, 
  * Both drawings read it from here: the node draws the handle there, and the
  * plex starts the gesture's thread there.
  */
-export const handleIn = (node: PlacedNode): Position => ({ x: node.width / 2, y: 0 })
+export const getHandle = (node: PlacedNode): Position => ({ x: node.width / 2, y: 0 })

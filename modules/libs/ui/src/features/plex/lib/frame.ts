@@ -23,7 +23,7 @@ export interface PlexFrame {
   readonly overflow: Readonly<Partial<Record<PlexRelatedSeat, number>>>
 }
 
-export function extentOf(nodes: readonly PlacedNode[]): Extent {
+export function getExtent(nodes: readonly PlacedNode[]): Extent {
   let minX = Infinity
   let minY = Infinity
   let maxX = -Infinity

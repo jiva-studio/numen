@@ -136,8 +136,8 @@ export function getOpenParts(hung: NodeParts, open: number, scrollOffset = 0): O
     isAbove,
     isBelow,
     arrows: [
-      ...(isAbove ? [arrowAt(hung, hung.pad / 2, 'above')] : []),
-      ...(isBelow ? [arrowAt(hung, hung.height - hung.pad / 2, 'below')] : []),
+      ...(isAbove ? [getArrow(hung, hung.pad / 2, 'above')] : []),
+      ...(isBelow ? [getArrow(hung, hung.height - hung.pad / 2, 'below')] : []),
     ],
   }
 }
@@ -146,7 +146,7 @@ export function getOpenParts(hung: NodeParts, open: number, scrollOffset = 0): O
  * An arrow at one edge of the ground, pointing the way there is more to scroll
  * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
-function arrowAt(hung: NodeParts, down: number, at: Arrow['at']): Arrow {
+function getArrow(hung: NodeParts, down: number, at: Arrow['at']): Arrow {
   const direction = ARROW_DIRECTION[at]
   const middle = hung.offset
   const y = hung.top + down

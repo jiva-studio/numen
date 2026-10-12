@@ -1,7 +1,7 @@
 /** What a drag away from a node comes to, worked out without a pointer. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { getDropSeat, nodeAt, resolveDrop, seatTowards } from './drop'
+import { getDropSeat, findNode, resolveDrop, seatTowards } from './drop'
 import { DEFAULT_OPTIONS, resolveOptions } from './options'
 import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
@@ -73,18 +73,18 @@ describe('the seat a direction stands for', () => {
 
 describe('what a point lands on', () => {
   it('finds the node under it', () => {
-    expect(nodeAt({ x: child.x, y: child.y }, frame)?.id).toBe(child.id)
-    expect(nodeAt({ x: focus.x, y: focus.y }, frame)?.id).toBe(focus.id)
+    expect(findNode({ x: child.x, y: child.y }, frame)?.id).toBe(child.id)
+    expect(findNode({ x: focus.x, y: focus.y }, frame)?.id).toBe(focus.id)
   })
 
   it('counts the border as inside, and a hair past it as out', () => {
     const edge = { x: child.x + child.width / 2, y: child.y }
-    expect(nodeAt(edge, frame)?.id).toBe(child.id)
-    expect(nodeAt({ x: edge.x + 0.001, y: edge.y }, frame)).toBeNull()
+    expect(findNode(edge, frame)?.id).toBe(child.id)
+    expect(findNode({ x: edge.x + 0.001, y: edge.y }, frame)).toBeNull()
   })
 
   it('finds nothing in the space between', () => {
-    expect(nodeAt({ x: 0, y: 4000 }, frame)).toBeNull()
+    expect(findNode({ x: 0, y: 4000 }, frame)).toBeNull()
   })
 })
 
@@ -174,13 +174,13 @@ describe('the node under the pointer', () => {
     // Partway through a move a departing node and an arriving one occupy the
     // same place. The one on top is the one the reader sees, so it is the one
     // they meant.
-    expect(nodeAt(origin, createFrame({ id: 'under' }, { id: 'over' }))?.id).toBe('over')
+    expect(findNode(origin, createFrame({ id: 'under' }, { id: 'over' }))?.id).toBe('over')
   })
 
   it('is not one on its way in or out, however squarely it is under it', () => {
     // The rule that decides the click and the tab stop decides this too: a link
     // to something the reader never saw is not what the gesture asked for.
-    expect(nodeAt(origin, createFrame({ id: 'leaving', opacity: 0.4 }))).toBeNull()
+    expect(findNode(origin, createFrame({ id: 'leaving', opacity: 0.4 }))).toBeNull()
   })
 })
 
@@ -188,7 +188,7 @@ describe('the seat something dragged in comes to', () => {
   const VIEWPORT = { width: 1200, height: 800 }
   const THRESHOLD = 8
 
-  const dropAt = (
+  const getDropResult = (
     at: { x: number; y: number },
     over: Partial<Parameters<typeof getDropSeat>[0]> = {},
   ) =>
@@ -203,17 +203,17 @@ describe('the seat something dragged in comes to', () => {
     })
 
   it('is a parent above the focus, a child below it, and a jump to the side', () => {
-    expect(dropAt({ x: focus.x, y: focus.y - 300 })).toBe('parent')
-    expect(dropAt({ x: focus.x, y: focus.y + 300 })).toBe('child')
-    expect(dropAt({ x: focus.x - 500, y: focus.y })).toBe('jump')
+    expect(getDropResult({ x: focus.x, y: focus.y - 300 })).toBe('parent')
+    expect(getDropResult({ x: focus.x, y: focus.y + 300 })).toBe('child')
+    expect(getDropResult({ x: focus.x - 500, y: focus.y })).toBe('jump')
   })
 
   it('reads which way a seat lies off the arrangement', () => {
     const upside = resolveOptions({
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
     })
-    expect(dropAt({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
-    expect(dropAt({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
+    expect(getDropResult({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
+    expect(getDropResult({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
   })
 
   it('counts a wide row as down, though it reaches further sideways', () => {
@@ -224,16 +224,16 @@ describe('the seat something dragged in comes to', () => {
       .filter((n) => n.seat === 'child')
       .reduce((a, b) => (a.x <= b.x ? a : b))
     expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
-    expect(dropAt(leftmost)).toBe('child')
+    expect(getDropResult(leftmost)).toBe('child')
 
     const flat = resolveOptions({ gesture: { verticalBias: 1 } })
-    expect(dropAt(leftmost, { options: flat })).toBe('jump')
+    expect(getDropResult(leftmost, { options: flat })).toBe('jump')
   })
 
   it('is nothing towards a seat the caller did not allow', () => {
     const beside = { x: focus.x + 500, y: focus.y }
-    expect(dropAt(beside)).toBeNull()
-    expect(dropAt(beside, { seats: [...ALLOWED, 'sibling'] })).toBe('sibling')
+    expect(getDropResult(beside)).toBeNull()
+    expect(getDropResult(beside, { seats: [...ALLOWED, 'sibling'] })).toBe('sibling')
   })
 
   it('is measured from the focus, wherever the focus is drawn', () => {
@@ -243,8 +243,8 @@ describe('the seat something dragged in comes to', () => {
       ...frame,
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300 })),
     }
-    expect(dropAt({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
-    expect(dropAt({ x: 0, y: 0 })).toBeNull()
+    expect(getDropResult({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
+    expect(getDropResult({ x: 0, y: 0 })).toBeNull()
   })
 
   it('is nothing until the pointer stands clear of a focus drawn off the middle', () => {
@@ -253,20 +253,20 @@ describe('the seat something dragged in comes to', () => {
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300, y: node.y + 200 })),
     }
     const where = { x: 300, y: 200 }
-    expect(dropAt({ x: where.x, y: where.y + THRESHOLD - 1 }, { frame: shifted })).toBeNull()
-    expect(dropAt({ x: where.x, y: where.y + THRESHOLD }, { frame: shifted })).toBe('child')
+    expect(getDropResult({ x: where.x, y: where.y + THRESHOLD - 1 }, { frame: shifted })).toBeNull()
+    expect(getDropResult({ x: where.x, y: where.y + THRESHOLD }, { frame: shifted })).toBe('child')
   })
 
   it('is nothing past the edge of the window, and a seat on it', () => {
-    expect(dropAt({ x: focus.x, y: 400 })).toBe('child')
-    expect(dropAt({ x: focus.x, y: 401 })).toBeNull()
-    expect(dropAt({ x: -600, y: focus.y })).toBe('jump')
-    expect(dropAt({ x: -601, y: focus.y })).toBeNull()
+    expect(getDropResult({ x: focus.x, y: 400 })).toBe('child')
+    expect(getDropResult({ x: focus.x, y: 401 })).toBeNull()
+    expect(getDropResult({ x: -600, y: focus.y })).toBe('jump')
+    expect(getDropResult({ x: -601, y: focus.y })).toBeNull()
   })
 
   it('is nothing until the pointer stands clear of the focus', () => {
-    expect(dropAt({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
-    expect(dropAt({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
+    expect(getDropResult({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
+    expect(getDropResult({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
   })
 
   it('is nothing where there is no focus to measure from', () => {
@@ -274,6 +274,6 @@ describe('the seat something dragged in comes to', () => {
       ...frame,
       nodes: frame.nodes.filter((node) => node.seat !== 'focus'),
     }
-    expect(dropAt({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
+    expect(getDropResult({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
   })
 })

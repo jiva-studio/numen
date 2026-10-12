@@ -16,7 +16,7 @@ import { byDoubleClick } from '../model/showing'
 import { useRoom } from '../model/room'
 import { usePlexTransition, browserClock } from '../model/transition'
 import { browserViewport } from '@/shared/lib/viewport'
-import { countOf, seatWord, type PlexRelatedSeat } from '../lib/seat'
+import { getCount, seatWord, type PlexRelatedSeat } from '../lib/seat'
 import { usePlexDrag } from '../model/drag'
 import { usePlexGesture } from '../model/gesture'
 
@@ -172,7 +172,7 @@ defineExpose({
     </PlexView>
     <div v-if="overflow.length" class="plex-frame__overflow" role="status">
       <slot name="overflow" :overflow="overflow">
-        {{ overflow.map(([seat, count]) => countOf(seat, count)).join(', ') }} not shown
+        {{ overflow.map(([seat, count]) => getCount(seat, count)).join(', ') }} not shown
       </slot>
     </div>
   </div>

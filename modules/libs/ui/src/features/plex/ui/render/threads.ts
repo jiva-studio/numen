@@ -5,12 +5,12 @@
  * place — it is only that it has no name yet, and says the seat it would take
  * instead, in whatever words it was given.
  */
-import { threadOf, type Drop, type Size } from '../../lib/arrange'
+import { getThread, type Drop, type Size } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
-import { ghostNode, handleIn, type PlacedNode, type Position } from '../../lib/node'
+import { ghostNode, getHandle, type PlacedNode, type Position } from '../../lib/node'
 import type { PlexRelatedSeat } from '../../lib/seat'
 
-type Thread = ReturnType<typeof threadOf>
+type Thread = ReturnType<typeof getThread>
 
 /** A line ending in the box letting go there would leave. */
 export interface DraggedShape {
@@ -26,8 +26,8 @@ export function getReachThread(
 ): Thread | null {
   const source = frame.nodes.find((node) => node.id === from)
   if (!source || !to) return null
-  const offset = handleIn(source)
-  return threadOf({ x: source.x + offset.x, y: source.y }, to)
+  const offset = getHandle(source)
+  return getThread({ x: source.x + offset.x, y: source.y }, to)
 }
 
 /**
@@ -62,7 +62,7 @@ export function getDraggedShape(
   if (!seat || !to || !focus) return null
 
   return {
-    thread: threadOf(focus, to),
+    thread: getThread(focus, to),
     ghost: ghostNode('dragged', dropName(seat), seat, to, nodeSize),
   }
 }

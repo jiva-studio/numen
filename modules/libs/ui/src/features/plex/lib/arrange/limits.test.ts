@@ -1,7 +1,7 @@
 /** Wrapping the arrangement into the window it is drawn in. */
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
-import { limitsFor } from './limits'
+import { getLimits } from './limits'
 import { DEFAULT_OPTIONS } from './options'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
 import { build } from '../../fixtures/build'
@@ -112,7 +112,7 @@ describe('the row is measured against the window either way', () => {
 describe('the rows keep the room when it runs out', () => {
   it('narrows a row only as far as it must to seat a column beside it', () => {
     const viewport = { width: 1000, height: 800 }
-    const limits = limitsFor(
+    const limits = getLimits(
       { ...DEFAULT_OPTIONS, viewport },
       { parent: 0, child: 12, jump: 4, sibling: 0 },
     )
@@ -125,7 +125,7 @@ describe('the rows keep the room when it runs out', () => {
     // room a column cannot use is the room the children are read in.
     const viewport = { width: 600, height: 1400 }
     const counts = { parent: 1, child: 6, jump: 1, sibling: 2 }
-    const limits = limitsFor({ ...DEFAULT_OPTIONS, viewport }, counts)
+    const limits = getLimits({ ...DEFAULT_OPTIONS, viewport }, counts)
 
     expect(limits.jump.lines).toBe(0)
     expect(limits.child.perLine).toBeGreaterThan(1)
@@ -137,11 +137,11 @@ describe('the rows keep the room when it runs out', () => {
 
   it('gives a row the whole window when nothing sits beside it', () => {
     const viewport = { width: 1000, height: 800 }
-    const alone = limitsFor(
+    const alone = getLimits(
       { ...DEFAULT_OPTIONS, viewport },
       { parent: 0, child: 12, jump: 0, sibling: 0 },
     )
-    const crowded = limitsFor(
+    const crowded = getLimits(
       { ...DEFAULT_OPTIONS, viewport },
       { parent: 0, child: 12, jump: 4, sibling: 0 },
     )
@@ -164,8 +164,8 @@ describe('the margin is a setting, not a number in the source', () => {
   it('fits less as the margin grows', () => {
     const viewport = { width: 1000, height: 800 }
     const counts = { parent: 0, child: 12, jump: 4, sibling: 0 }
-    const tight = limitsFor({ ...DEFAULT_OPTIONS, viewport, margin: 200 }, counts)
-    const loose = limitsFor({ ...DEFAULT_OPTIONS, viewport, margin: 0 }, counts)
+    const tight = getLimits({ ...DEFAULT_OPTIONS, viewport, margin: 200 }, counts)
+    const loose = getLimits({ ...DEFAULT_OPTIONS, viewport, margin: 0 }, counts)
     expect(tight.child.perLine).toBeLessThan(loose.child.perLine)
   })
 })
@@ -179,7 +179,7 @@ describe('how many lines a column may run to', () => {
     const counts = { parent: 2, child: 2, jump: 60, sibling: 60 }
 
     for (const maxLines of [1, 2, 3]) {
-      const limits = limitsFor({ ...DEFAULT_OPTIONS, viewport, maxLines }, counts)
+      const limits = getLimits({ ...DEFAULT_OPTIONS, viewport, maxLines }, counts)
       expect(limits.jump.lines).toBeLessThanOrEqual(maxLines)
       expect(limits.sibling.lines).toBeLessThanOrEqual(maxLines)
     }
@@ -190,14 +190,14 @@ describe('how many lines a column may run to', () => {
     // the window, which they cannot.
     const viewport = { width: 420, height: 700 }
     const counts = { parent: 0, child: 6, jump: 4, sibling: 0 }
-    const limits = limitsFor({ ...DEFAULT_OPTIONS, viewport }, counts)
+    const limits = getLimits({ ...DEFAULT_OPTIONS, viewport }, counts)
     expect(limits.jump.lines).toBe(0)
   })
 })
 
 describe('given no window', () => {
   it('takes the limits the caller asked for literally', () => {
-    const limits = limitsFor(DEFAULT_OPTIONS, {
+    const limits = getLimits(DEFAULT_OPTIONS, {
       parent: 3,
       child: 3,
       jump: 3,
@@ -214,29 +214,29 @@ describe('given no window', () => {
 
 describe('what a column asks of the rows', () => {
   const viewport = { width: 1000, height: 800 }
-  const rowsOf = (jump: number, over: Partial<typeof DEFAULT_OPTIONS> = {}) =>
-    limitsFor({ ...DEFAULT_OPTIONS, viewport, ...over }, { parent: 0, child: 12, jump, sibling: 0 })
+  const getRows = (jump: number, over: Partial<typeof DEFAULT_OPTIONS> = {}) =>
+    getLimits({ ...DEFAULT_OPTIONS, viewport, ...over }, { parent: 0, child: 12, jump, sibling: 0 })
       .child.perLine
 
   it.each([1, 2, 3])(
     'leaves the row whole beside a column of %i, which stays level with the focus',
     (jump) => {
-      expect(rowsOf(jump)).toBe(6)
+      expect(getRows(jump)).toBe(6)
     },
   )
 
   it('narrows the row once the column reaches the rows above and below', () => {
-    expect(rowsOf(4)).toBe(3)
+    expect(getRows(4)).toBe(3)
   })
 
   it('leaves the row whole when the column reaches exactly where the rows begin', () => {
     // Three nodes stand 70 from the axis; the first row begins 22 + 48 away.
-    expect(rowsOf(3, { focusGap: 48 })).toBe(6)
-    expect(rowsOf(3, { focusGap: 47 })).toBeLessThan(6)
+    expect(getRows(3, { focusGap: 48 })).toBe(6)
+    expect(getRows(3, { focusGap: 47 })).toBeLessThan(6)
   })
 
   it('keeps the widest row the window holds when no row width seats a column beside it', () => {
-    const narrow = limitsFor(
+    const narrow = getLimits(
       { ...DEFAULT_OPTIONS, viewport: { width: 600, height: 1400 } },
       { parent: 0, child: 6, jump: 4, sibling: 0 },
     )
@@ -244,11 +244,11 @@ describe('what a column asks of the rows', () => {
   })
 
   it('gives the row the whole window where the columns are empty', () => {
-    expect(rowsOf(0)).toBe(6)
+    expect(getRows(0)).toBe(6)
   })
 
   it('counts no row as a column, however long it runs', () => {
-    const limits = limitsFor(
+    const limits = getLimits(
       { ...DEFAULT_OPTIONS, viewport: { width: 1000, height: 2000 } },
       { parent: 0, child: 30, jump: 0, sibling: 0 },
     )
@@ -256,7 +256,7 @@ describe('what a column asks of the rows', () => {
   })
 
   it('gives a box wider than the window a row of one', () => {
-    const limits = limitsFor(
+    const limits = getLimits(
       {
         ...DEFAULT_OPTIONS,
         nodeSize: { width: 600, height: 36 },
@@ -268,7 +268,7 @@ describe('what a column asks of the rows', () => {
   })
 
   it('gives a focus wider than the window a row of one', () => {
-    const limits = limitsFor(
+    const limits = getLimits(
       {
         ...DEFAULT_OPTIONS,
         focusSize: { width: 600, height: 44 },
@@ -282,7 +282,7 @@ describe('what a column asks of the rows', () => {
 
 describe('how deep the rows run', () => {
   it('counts the lines from the bottom of the focus box', () => {
-    const limits = limitsFor(
+    const limits = getLimits(
       { ...DEFAULT_OPTIONS, viewport: { width: 1000, height: 500 } },
       { parent: 1, child: 1, jump: 0, sibling: 0 },
     )
@@ -295,7 +295,7 @@ describe('the columns of a side', () => {
   const viewport = { width: 2400, height: 1400 }
 
   it('run to one line when one line holds them', () => {
-    const limits = limitsFor(
+    const limits = getLimits(
       { ...DEFAULT_OPTIONS, viewport },
       { parent: 0, child: 0, jump: 2, sibling: 2 },
     )
@@ -304,7 +304,7 @@ describe('the columns of a side', () => {
   })
 
   it('run to one line when there is nothing in them', () => {
-    const limits = limitsFor(
+    const limits = getLimits(
       { ...DEFAULT_OPTIONS, viewport: { width: 1000, height: 800 } },
       { parent: 0, child: 5, jump: 0, sibling: 0 },
     )

@@ -63,7 +63,7 @@ interface Probe {
 }
 
 /** A resolved length, which a document writes in pixels. */
-const pixelsOf = (value: string): number => {
+const getPixels = (value: string): number => {
   const parsed = Number.parseFloat(value)
   return Number.isFinite(parsed) ? parsed : 0
 }
@@ -82,13 +82,13 @@ export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined>
   const probe = openProbe()
   if (!probe) return shallowRef<PlexMetrics | undefined>(undefined)
 
-  const type = shallowRef(typeOf(probe))
+  const type = shallowRef(getType(probe))
 
   if (typeof ResizeObserver === 'undefined') {
     probe.box.remove()
   } else {
     const observer = new ResizeObserver(() => {
-      const now = typeOf(probe)
+      const now = getType(probe)
       if (!sameType(now, type.value)) type.value = now
     })
     observer.observe(probe.box, { box: 'border-box' })
@@ -99,7 +99,7 @@ export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined>
     }, true)
   }
 
-  return computed(() => measuresFor(type.value, icon()))
+  return computed(() => getMeasures(type.value, icon()))
 }
 
 /** A box of the plex's own type, standing in the page. */
@@ -127,7 +127,7 @@ function word(style: string): HTMLElement {
 }
 
 /** What the document makes of the tokens, read off the probe. */
-function typeOf(probe: Probe): PlexType {
+function getType(probe: Probe): PlexType {
   const box = getComputedStyle(probe.box)
   const label = getComputedStyle(probe.label)
   const family = box.fontFamily || 'sans-serif'
@@ -135,8 +135,8 @@ function typeOf(probe: Probe): PlexType {
   return {
     font: `${box.fontSize} ${family}`,
     labelFont: `${label.fontSize} ${family}`,
-    padding: pixelsOf(box.paddingInlineStart),
-    gap: pixelsOf(box.columnGap),
+    padding: getPixels(box.paddingInlineStart),
+    gap: getPixels(box.columnGap),
   }
 }
 
@@ -146,7 +146,7 @@ const sameType = (one: PlexType, other: PlexType): boolean =>
   one.padding === other.padding &&
   one.gap === other.gap
 
-function measuresFor(type: PlexType, icon: number): PlexMetrics | undefined {
+function getMeasures(type: PlexType, icon: number): PlexMetrics | undefined {
   const context = getMeasuringContext()
   if (!context) return undefined
 
@@ -173,7 +173,7 @@ function lineDepth(context: CanvasRenderingContext2D, font: string): number {
   context.font = font
   const line = context.measureText(SAMPLE)
   const deep = line.fontBoundingBoxAscent + line.fontBoundingBoxDescent
-  return Math.ceil(deep) || pixelsOf(font)
+  return Math.ceil(deep) || getPixels(font)
 }
 
 /** Text in one type, each distinct string measured once. */

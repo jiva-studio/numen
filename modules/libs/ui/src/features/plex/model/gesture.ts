@@ -35,7 +35,7 @@ export interface GestureHandlers {
  * Through the element's own matrix, so the scale it is drawn at is whatever
  * the element says it is.
  */
-export function positionIn(svg: SVGSVGElement, event: PointerEvent): Position | null {
+export function getPosition(svg: SVGSVGElement, event: PointerEvent): Position | null {
   const screen = svg.getScreenCTM?.()
   if (!screen) return null
   const m = screen.inverse()
@@ -118,7 +118,7 @@ export function usePlexGesture(
   const move = (event: PointerEvent) => {
     const element = svg()
     if (!element) return
-    at.value = positionIn(element, event)
+    at.value = getPosition(element, event)
   }
 
   const finish = () => {
@@ -142,7 +142,7 @@ export function usePlexGesture(
     if (!element) return
     surface.value = element
 
-    const began = positionIn(element, event)
+    const began = getPosition(element, event)
     if (!began) return
 
     from.value = source

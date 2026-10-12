@@ -70,7 +70,7 @@ export function seatTowards(
  * in or out, and it would be a link to something the reader never saw. That is
  * the same rule that decides the click and the tab stop.
  */
-export function nodeAt(at: Position, frame: PlexFrame): PlacedNode | null {
+export function findNode(at: Position, frame: PlexFrame): PlacedNode | null {
   return (
     [...frame.nodes]
       .reverse()
@@ -104,7 +104,7 @@ export function resolveDrop({ frame, options, from, at, seats }: DropInput): Dro
   const source = frame.nodes.find((node) => node.id === from)
   if (!source) return null
 
-  const landedOn = nodeAt(at, frame)
+  const landedOn = findNode(at, frame)
   const target = landedOn ? { x: landedOn.x, y: landedOn.y } : at
   const seat = seatTowards(source, target, options)
   if (!seat || !seats.includes(seat)) return null

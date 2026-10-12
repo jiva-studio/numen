@@ -8,7 +8,7 @@ import type { PlacedNode } from '../lib/node'
 const WINDOW = { width: 1200, height: 800 }
 const MARGIN = 16
 
-const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: 'A node',
   seat: 'child',
@@ -22,14 +22,14 @@ const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
 })
 
 /** Where a widened box begins and ends, in the plex's own coordinates. */
-const spanOf = (node: PlacedNode, wide: { width: number; offset: number }) => ({
+const getSpan = (node: PlacedNode, wide: { width: number; offset: number }) => ({
   from: node.x + wide.offset - wide.width / 2,
   to: node.x + wide.offset + wide.width / 2,
 })
 
 describe('a box with more of its title to show', () => {
   it('widens to the room the whole title asks for', () => {
-    const node = nodeAt()
+    const node = createNode()
     expect(getWideBox(node, 300, WINDOW, MARGIN)).toStrictEqual({
       width: 300,
       offset: 0,
@@ -37,37 +37,37 @@ describe('a box with more of its title to show', () => {
   })
 
   it('grows about its own middle, so it opens both ways at once', () => {
-    const node = nodeAt({ x: 120 })
+    const node = createNode({ x: 120 })
     const wide = getWideBox(node, 300, WINDOW, MARGIN)!
-    expect(spanOf(node, wide)).toStrictEqual({ from: -30, to: 270 })
+    expect(getSpan(node, wide)).toStrictEqual({ from: -30, to: 270 })
   })
 
   it('slides back inside the window where its middle leaves no room', () => {
-    const node = nodeAt({ x: 500 })
+    const node = createNode({ x: 500 })
     const wide = getWideBox(node, 300, WINDOW, MARGIN)!
     expect(wide.width).toBe(300)
-    expect(spanOf(node, wide)).toStrictEqual({ from: 284, to: 584 })
+    expect(getSpan(node, wide)).toStrictEqual({ from: 284, to: 584 })
   })
 
   it('grows no wider than the window, the margin kept clear', () => {
-    const node = nodeAt({ x: 500 })
+    const node = createNode({ x: 500 })
     const wide = getWideBox(node, 2000, WINDOW, MARGIN)!
     expect(wide.width).toBe(WINDOW.width - 2 * MARGIN)
-    expect(spanOf(node, wide)).toStrictEqual({ from: -584, to: 584 })
+    expect(getSpan(node, wide)).toStrictEqual({ from: -584, to: 584 })
   })
 })
 
 describe('a box with nothing more to show', () => {
   it('stays as it was placed when its title needs exactly the room it has', () => {
-    expect(getWideBox(nodeAt(), 144, WINDOW, MARGIN)).toBeNull()
+    expect(getWideBox(createNode(), 144, WINDOW, MARGIN)).toBeNull()
   })
 
   it('stays as it was placed when its title is already in it', () => {
-    expect(getWideBox(nodeAt(), 120, WINDOW, MARGIN)).toBeNull()
+    expect(getWideBox(createNode(), 120, WINDOW, MARGIN)).toBeNull()
   })
 
   it('stays as it was placed when the window is no wider than it is', () => {
-    expect(getWideBox(nodeAt(), 300, { width: 160, height: 800 }, MARGIN)).toBeNull()
+    expect(getWideBox(createNode(), 300, { width: 160, height: 800 }, MARGIN)).toBeNull()
   })
 })
 

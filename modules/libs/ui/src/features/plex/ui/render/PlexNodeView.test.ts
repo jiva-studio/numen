@@ -14,7 +14,7 @@ import { stubClock } from '@/shared/fixtures/clock'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import type { PlexSeat } from '../../lib/seat'
 
-const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: 'A node',
   seat: 'child',
@@ -28,7 +28,7 @@ const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
 })
 
 const mountNode = (over: Partial<PlacedNode> = {}) =>
-  mount(PlexNodeView, { props: { node: nodeAt(over) } })
+  mount(PlexNodeView, { props: { node: createNode(over) } })
 
 /** A pointer arrives, which is the only thing that offers a handle. */
 const hover = async (node: ReturnType<typeof mountNode>) => {
@@ -148,7 +148,7 @@ describe('a node asked for on its own', () => {
   })
 
   it('is not asked for by a node that is not there yet', async () => {
-    const ghost = mount(PlexNodeView, { props: { node: nodeAt(), gestureRole: 'ghost' } })
+    const ghost = mount(PlexNodeView, { props: { node: createNode(), gestureRole: 'ghost' } })
     await ghost.trigger('dblclick')
     expect(ghost.emitted('show')).toBeUndefined()
   })
@@ -190,7 +190,7 @@ describe('the handle', () => {
   })
 
   it('is not offered where reaching out is not on offer', async () => {
-    const node = mount(PlexNodeView, { props: { node: nodeAt(), gestureRole: 'closed' } })
+    const node = mount(PlexNodeView, { props: { node: createNode(), gestureRole: 'closed' } })
     await node.trigger('pointerenter')
     expect(node.find('.plex__handle').exists()).toBe(false)
   })
@@ -202,7 +202,7 @@ describe('the handle', () => {
 
   it('stays put once a gesture has left from it, hand or no hand', () => {
     // The pointer is somewhere else entirely by then, dragging the thread.
-    const node = mount(PlexNodeView, { props: { node: nodeAt(), gestureRole: 'source' } })
+    const node = mount(PlexNodeView, { props: { node: createNode(), gestureRole: 'source' } })
     expect(node.find('.plex__handle').exists()).toBe(true)
   })
 
@@ -228,7 +228,7 @@ describe('the handle', () => {
 describe('the icon', () => {
   it('is whatever the slot was handed, and sits beside the title', () => {
     const node = mount(PlexNodeView, {
-      props: { node: nodeAt() },
+      props: { node: createNode() },
       slots: { icon: '<i class="glyph" />' },
     })
     const title = node.get('.plex__title')
@@ -244,7 +244,7 @@ describe('the icon', () => {
 describe('a node that is not there yet', () => {
   const mountGhost = () =>
     mount(PlexNodeView, {
-      props: { node: nodeAt({ title: 'parent', seat: 'parent' }), gestureRole: 'ghost' },
+      props: { node: createNode({ title: 'parent', seat: 'parent' }), gestureRole: 'ghost' },
     })
 
   it('cannot be chosen, and is not a tab stop', async () => {
@@ -291,7 +291,7 @@ describe('what a node is drawn as', () => {
 
   it('carries what it is to the gesture as a class of its own', () => {
     expect(mountNode().classes()).toContain('plex__node--open')
-    const target = mount(PlexNodeView, { props: { node: nodeAt(), gestureRole: 'target' } })
+    const target = mount(PlexNodeView, { props: { node: createNode(), gestureRole: 'target' } })
     expect(target.classes()).toContain('plex__node--target')
   })
 
@@ -323,7 +323,7 @@ describe('a box with more of its title to show', () => {
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
-        node: nodeAt(over),
+        node: createNode(over),
         wide,
         dwell: WAIT,
         gestureRole,
@@ -334,7 +334,7 @@ describe('a box with more of its title to show', () => {
   }
 
   /** How wide the box is drawn, and where its leading edge stands. */
-  const boxOf = (node: VueWrapper) => {
+  const getBox = (node: VueWrapper) => {
     const rect = node.get('rect')
     return {
       width: Number(rect.attributes('width')),
@@ -355,7 +355,7 @@ describe('a box with more of its title to show', () => {
     const mounted = mountWide()
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT - 1)
-    expect(boxOf(mounted.node)).toStrictEqual({ width: 144, x: -72 })
+    expect(getBox(mounted.node)).toStrictEqual({ width: 144, x: -72 })
   })
 
   it('opens across several frames rather than in one', async () => {
@@ -366,14 +366,14 @@ describe('a box with more of its title to show', () => {
     mounted.world.tick(0)
     mounted.world.tick(OPENING / 2)
     await mounted.node.vm.$nextTick()
-    const halfway = boxOf(mounted.node).width
+    const halfway = getBox(mounted.node).width
     expect(halfway).toBeGreaterThan(144)
     expect(halfway).toBeLessThan(400)
   })
 
   it('widens where it stands once the hand has rested there', async () => {
     const node = await rest(mountWide())
-    expect(boxOf(node)).toStrictEqual({ width: 400, x: -200 })
+    expect(getBox(node)).toStrictEqual({ width: 400, x: -200 })
   })
 
   it('carries its title and its handle out to the widened edge', async () => {
@@ -386,7 +386,7 @@ describe('a box with more of its title to show', () => {
 
   it('is drawn where the widening was told to put it', async () => {
     const node = await rest(mountWide({ width: 400, offset: -60 }))
-    expect(boxOf(node)).toStrictEqual({ width: 400, x: -260 })
+    expect(getBox(node)).toStrictEqual({ width: 400, x: -260 })
     expect(node.get('.plex__handle-at').attributes('transform')).toBe('translate(140 0)')
   })
 
@@ -409,7 +409,7 @@ describe('a box with more of its title to show', () => {
     mounted.world.run(1000)
     await mounted.node.vm.$nextTick()
 
-    expect(boxOf(mounted.node)).toStrictEqual({ width: 144, x: -72 })
+    expect(getBox(mounted.node)).toStrictEqual({ width: 144, x: -72 })
     expect(mounted.node.emitted('settle')).toStrictEqual([[true], [false]])
   })
 
@@ -418,14 +418,14 @@ describe('a box with more of its title to show', () => {
     await mounted.node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT - 1)
 
-    await mounted.node.setProps({ node: nodeAt({ x: 40 }) })
+    await mounted.node.setProps({ node: createNode({ x: 40 }) })
     await vi.advanceTimersByTimeAsync(WAIT - 1)
-    expect(boxOf(mounted.node)).toStrictEqual({ width: 144, x: -72 })
+    expect(getBox(mounted.node)).toStrictEqual({ width: 144, x: -72 })
 
     await vi.advanceTimersByTimeAsync(1)
     mounted.world.run()
     await mounted.node.vm.$nextTick()
-    expect(boxOf(mounted.node)).toStrictEqual({ width: 400, x: -200 })
+    expect(getBox(mounted.node)).toStrictEqual({ width: 400, x: -200 })
   })
 })
 
@@ -440,7 +440,7 @@ describe('a box with nothing more to show', () => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
-      props: { node: nodeAt(), dwell: WAIT, clock: world.clock, ...props },
+      props: { node: createNode(), dwell: WAIT, clock: world.clock, ...props },
     })
     await node.trigger('pointerenter')
     await vi.advanceTimersByTimeAsync(WAIT)
@@ -462,7 +462,7 @@ describe('a box with nothing more to show', () => {
 
   it('stays as it was placed while it is on its way in or out', async () => {
     const node = await rest({
-      node: nodeAt({ opacity: 0.4 }),
+      node: createNode({ opacity: 0.4 }),
       wide: { width: 400, offset: 0 },
     })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
@@ -492,9 +492,9 @@ describe('the parts a node hangs', () => {
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
-        node: nodeAt(),
+        node: createNode(),
         wide,
-        hung: getNodeParts(nodeAt(), items, SIZES, {
+        hung: getNodeParts(createNode(), items, SIZES, {
           viewport: { width: 1000, height: 600 },
           margin: 20,
         }),

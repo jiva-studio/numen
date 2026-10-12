@@ -1,6 +1,6 @@
 /** An edge with what the drawing asks of it, worked out once for both layers. */
 import { computed, ref, watch } from 'vue'
-import { arrowTransformOf, pathOf, readingPathOf } from '../../lib/arrange'
+import { getArrowTransform, getPath, getReadingPath } from '../../lib/arrange'
 import { edgeKey, type PlacedEdge } from '../../lib/edge'
 import type { PlexFrame } from '../../lib/frame'
 
@@ -28,15 +28,15 @@ export interface EdgeLine {
  * `uid` names the paths the titles are set along, so two plexes on one page
  * each name their own.
  */
-export const linesOf = (edges: readonly PlacedEdge[], uid: string): readonly EdgeLine[] =>
+export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly EdgeLine[] =>
   edges.map((edge, at) => ({
     edge,
     key: `${edge.from}->${edge.to}`,
     pair: edgeKey(edge),
-    d: pathOf(edge),
-    arrow: edge.arrowhead ? arrowTransformOf(edge.arrowhead) : null,
+    d: getPath(edge),
+    arrow: edge.arrowhead ? getArrowTransform(edge.arrowhead) : null,
     titlePath: edge.words ? `${uid}-title-${at}` : null,
-    titleLine: readingPathOf(edge),
+    titleLine: getReadingPath(edge),
     titleAt: `${100 * edge.wordsAt}%`,
   }))
 
@@ -47,7 +47,7 @@ export const linesOf = (edges: readonly PlacedEdge[], uid: string): readonly Edg
  * `uid` names the paths the titles are set along.
  */
 export function useEdgeLines(frame: () => PlexFrame, uid: string) {
-  const lines = computed(() => linesOf(frame().edges, uid))
+  const lines = computed(() => getLines(frame().edges, uid))
 
   /** The edge the hand is on, by a key that survives the re-routing of a move. */
   const over = ref<string | null>(null)

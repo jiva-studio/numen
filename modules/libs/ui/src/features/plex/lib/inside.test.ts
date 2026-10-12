@@ -136,7 +136,7 @@ describe('scrolling the window over the parts', () => {
 })
 
 describe('how far in a part is set', () => {
-  const setIn = (levels: readonly number[]) =>
+  const getPartIndents = (levels: readonly number[]) =>
     (
       hung(levels.map((level, at) => ({ id: `${at}`, text: `Part ${at}`, level })))?.parts ?? []
     ).map((part) => part.indent)
@@ -144,20 +144,20 @@ describe('how far in a part is set', () => {
   it('is by where its level stands among the others, not by the number it carries', () => {
     // Parts beginning at the second level are set from the edge as parts
     // beginning at the first.
-    expect(setIn([2, 3, 3])).toStrictEqual([0, 10, 10])
+    expect(getPartIndents([2, 3, 3])).toStrictEqual([0, 10, 10])
   })
 
   it('counts a level that was skipped as one step, not two', () => {
-    expect(setIn([1, 3])).toStrictEqual([0, 10])
+    expect(getPartIndents([1, 3])).toStrictEqual([0, 10])
   })
 
   it('ranks the levels as numbers, whatever order they were given in', () => {
-    expect(setIn([10, 2, 3])).toStrictEqual([20, 0, 10])
-    expect(setIn([3, 2, 1])).toStrictEqual([20, 10, 0])
+    expect(getPartIndents([10, 2, 3])).toStrictEqual([20, 0, 10])
+    expect(getPartIndents([3, 2, 1])).toStrictEqual([20, 10, 0])
   })
 
   it('goes no further in however deep the nesting runs', () => {
-    expect(setIn([1, 2, 3, 4, 5, 6])).toStrictEqual([0, 10, 20, 30, 30, 30])
+    expect(getPartIndents([1, 2, 3, 4, 5, 6])).toStrictEqual([0, 10, 20, 30, 30, 30])
   })
 })
 
@@ -416,20 +416,20 @@ describe('however many parts stand at once', () => {
 
 describe('when the leads set off', () => {
   /** The opacity of the last part shown, at a moment of the opening. */
-  const lastAt = (ceiling: number, open: number) => {
+  const getLast = (ceiling: number, open: number) => {
     const settled = getNodeParts(NODE, parts(ceiling), { ...SIZES, maxParts: ceiling }, DEPS)!
     return getOpenParts(settled, open)!.parts.at(-1)!.opacity
   }
 
   it('has the last of a few parts still down while two leads of the opening are taken', () => {
-    expect(lastAt(3, 0.23)).toBe(0)
-    expect(lastAt(3, 0.26)).toBeGreaterThan(0)
+    expect(getLast(3, 0.23)).toBe(0)
+    expect(getLast(3, 0.26)).toBeGreaterThan(0)
   })
 
   it('has the leads of many parts take the same share between them', () => {
     for (const ceiling of [8, 20]) {
-      expect(lastAt(ceiling, 0.59)).toBe(0)
-      expect(lastAt(ceiling, 0.61)).toBeGreaterThan(0)
+      expect(getLast(ceiling, 0.59)).toBe(0)
+      expect(getLast(ceiling, 0.61)).toBeGreaterThan(0)
     }
   })
 })
