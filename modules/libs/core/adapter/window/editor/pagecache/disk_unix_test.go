@@ -38,3 +38,24 @@ func TestAPageThatCannotBeWrittenLeavesNothingBehind(t *testing.T) {
 		t.Error("the page's file exists")
 	}
 }
+
+// The folder of drawings is made readable and searchable by everyone, writable
+// by its owner.
+func TestTheDiskFolderIsMadeWithItsOwnersWriteAccessOnly(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", "")
+	t.Setenv("HOME", t.TempDir())
+	old := syscall.Umask(0)
+	t.Cleanup(func() { syscall.Umask(old) })
+
+	cache := NewDisk()
+	if cache == nil {
+		t.Fatal("no disk")
+	}
+	info, err := os.Stat(cache.GetDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o755 {
+		t.Errorf("the folder is %o, want 755", got)
+	}
+}
