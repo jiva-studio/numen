@@ -1,6 +1,7 @@
 /** The plex at another size: what a size carries, and what it leaves alone. */
-import { describe, expect, it } from 'vitest'
-import { DESIGNED_TYPE, optionsForType, scaleOptions } from './sizing'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { effectScope } from 'vue'
+import { DESIGNED_TYPE, optionsForType, scaleOptions, useTypeSize } from './sizing'
 import { arrangePlex, DEFAULT_OPTIONS, type PlexOptions } from '../lib/arrange'
 import { build } from '../fixtures/build'
 
@@ -27,7 +28,11 @@ describe('the size the plex was designed at', () => {
 })
 
 describe('a label half again as large', () => {
-  const larger = optionsForType(DESIGNED_TYPE * HALF_AGAIN)
+  let larger: PlexOptions
+
+  beforeEach(() => {
+    larger = optionsForType(DESIGNED_TYPE * HALF_AGAIN)
+  })
 
   it('is held by a box half again as large', () => {
     expect(larger.nodeSize).toStrictEqual({ width: 216, height: 54 })
@@ -106,5 +111,115 @@ describe('a label half again as large', () => {
         Math.abs(node.y) + node.height / 2 > viewport.height / 2 - larger.margin,
     )
     expect(escapes.map((node) => node.title)).toStrictEqual([])
+  })
+})
+
+/** A window that reports a size for the boxes it is asked to watch. */
+function stubObserver() {
+  const watched: Element[] = []
+  const state = { ring: (_entries: unknown[]) => {}, disconnected: 0 }
+
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(ring: (entries: unknown[]) => void) {
+        state.ring = ring
+      }
+      observe(element: Element) {
+        watched.push(element)
+      }
+      disconnect() {
+        state.disconnected++
+      }
+    },
+  )
+
+  return { watched, state }
+}
+
+const tell = (state: { ring: (entries: unknown[]) => void }, width: number) =>
+  state.ring([{ contentRect: { width } }])
+
+describe('the size a label is being set at', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    document.body.replaceChildren()
+  })
+
+  it('is the size the plex was designed at where nothing watches a box', () => {
+    const scope = effectScope()
+    const type = scope.run(() => useTypeSize())
+    expect(type?.value).toBe(DESIGNED_TYPE)
+    expect(document.body.children).toHaveLength(0)
+    scope.stop()
+  })
+
+  it('is the size the plex was designed at where there is no document', () => {
+    const { watched } = stubObserver()
+    vi.stubGlobal('document', undefined)
+    const scope = effectScope()
+    const type = scope.run(() => useTypeSize())
+    expect(type?.value).toBe(DESIGNED_TYPE)
+    expect(watched).toHaveLength(0)
+    scope.stop()
+  })
+
+  it('is measured off a hidden box of the window’s own type', () => {
+    const { watched } = stubObserver()
+    const scope = effectScope()
+    scope.run(() => useTypeSize())
+    const probe = document.body.firstElementChild as HTMLElement
+    expect(probe.tagName).toBe('DIV')
+    expect(probe.getAttribute('aria-hidden')).toBe('true')
+    expect(probe.style.fontSize).toBe('var(--numen-font-size)')
+    expect(watched).toStrictEqual([probe])
+    scope.stop()
+  })
+
+  it('follows the width the box takes', () => {
+    const { state } = stubObserver()
+    const scope = effectScope()
+    const type = scope.run(() => useTypeSize())!
+    tell(state, 19.5)
+    expect(type.value).toBe(19.5)
+    scope.stop()
+  })
+
+  it('keeps its size when the box has no width yet', () => {
+    const { state } = stubObserver()
+    const scope = effectScope()
+    const type = scope.run(() => useTypeSize())!
+    tell(state, 0)
+    expect(type.value).toBe(DESIGNED_TYPE)
+    tell(state, -3)
+    expect(type.value).toBe(DESIGNED_TYPE)
+    scope.stop()
+  })
+
+  it('keeps its size when the observer reports no box at all', () => {
+    const { state } = stubObserver()
+    const scope = effectScope()
+    const type = scope.run(() => useTypeSize())!
+    state.ring([])
+    expect(type.value).toBe(DESIGNED_TYPE)
+    scope.stop()
+  })
+
+  it('stops watching and leaves nothing in the page when its scope ends', () => {
+    const { state } = stubObserver()
+    const scope = effectScope()
+    scope.run(() => useTypeSize())
+    expect(document.body.children).toHaveLength(1)
+    scope.stop()
+    expect(state.disconnected).toBe(1)
+    expect(document.body.children).toHaveLength(0)
+  })
+
+  it('is read without a warning where no scope holds it', () => {
+    stubObserver()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    useTypeSize()
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 })
