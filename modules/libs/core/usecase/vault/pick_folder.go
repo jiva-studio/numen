@@ -16,14 +16,25 @@ func NewPickFolder(dialog port.FolderDialog) *PickFolder {
 	return &PickFolder{dialog: dialog}
 }
 
-// Execute returns the folder the person chose, and false when they chose none.
-// A path that is given is returned as it is without asking anybody.
-func (u *PickFolder) Execute(ctx context.Context, path string) (string, bool, error) {
+// PickedFolder is the folder to add. IsChosen is false when the person closed
+// the dialog and chose none.
+type PickedFolder struct {
+	Path     string
+	IsChosen bool
+}
+
+// Execute returns the folder the person chose. A path that is given is returned
+// as it is without asking anybody.
+func (u *PickFolder) Execute(ctx context.Context, path string) (PickedFolder, error) {
 	if path != "" {
-		return path, true, nil
+		return PickedFolder{Path: path, IsChosen: true}, nil
 	}
 	if u == nil || u.dialog == nil {
-		return "", false, errors.New("there is nobody here to pick a folder: name the one to add")
+		return PickedFolder{}, errors.New("there is nobody here to pick a folder: name the one to add")
 	}
-	return u.dialog.ChooseFolder(ctx, "Choose a folder for a vault", "")
+	chosen, isChosen, err := u.dialog.ChooseFolder(ctx, "Choose a folder for a vault", "")
+	if err != nil {
+		return PickedFolder{}, err
+	}
+	return PickedFolder{Path: chosen, IsChosen: isChosen}, nil
 }

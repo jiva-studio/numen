@@ -121,11 +121,12 @@ type vaultAddOutput struct {
 }
 
 func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput, error) {
-	root, chose, err := core.Vaults.PickFolder.Execute(ctx, in.Path)
+	picked, err := core.Vaults.PickFolder.Execute(ctx, in.Path)
+	root := picked.Path
 	if err != nil {
 		return vaultAddOutput{}, err
 	}
-	if !chose {
+	if !picked.IsChosen {
 		return vaultAddOutput{Why: "the person closed the picker and chose no folder"}, nil
 	}
 	if !filepath.IsAbs(root) {

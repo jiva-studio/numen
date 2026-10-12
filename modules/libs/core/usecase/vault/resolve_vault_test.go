@@ -64,16 +64,16 @@ func TestAFolderIsPickedOnlyWhenNoneIsNamed(t *testing.T) {
 	t.Parallel()
 	pick := vaults.NewPickFolder(dialog{chose: "/picked", did: true})
 
-	if got, chose, err := pick.Execute(t.Context(), "/named"); got != "/named" || !chose || err != nil {
-		t.Errorf("a named folder came back as %q, %v, %v", got, chose, err)
+	if got, err := pick.Execute(t.Context(), "/named"); got.Path != "/named" || !got.IsChosen || err != nil {
+		t.Errorf("a named folder came back as %+v, %v", got, err)
 	}
-	if got, chose, err := pick.Execute(t.Context(), ""); got != "/picked" || !chose || err != nil {
-		t.Errorf("a picked folder came back as %q, %v, %v", got, chose, err)
+	if got, err := pick.Execute(t.Context(), ""); got.Path != "/picked" || !got.IsChosen || err != nil {
+		t.Errorf("a picked folder came back as %+v, %v", got, err)
 	}
-	if _, chose, err := vaults.NewPickFolder(dialog{}).Execute(t.Context(), ""); chose || err != nil {
-		t.Errorf("a closed dialog came back as %v, %v", chose, err)
+	if got, err := vaults.NewPickFolder(dialog{}).Execute(t.Context(), ""); got.IsChosen || err != nil {
+		t.Errorf("a closed dialog came back as %+v, %v", got, err)
 	}
-	if _, _, err := vaults.NewPickFolder(nil).Execute(t.Context(), ""); err == nil {
+	if _, err := vaults.NewPickFolder(nil).Execute(t.Context(), ""); err == nil {
 		t.Error("a machine with no dialog picked a folder")
 	}
 }
