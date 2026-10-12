@@ -109,7 +109,7 @@ const setup = (over: Record<string, unknown> = {}) => {
   }
 }
 
-const stateOf = (entry: unknown) => ({ list: { getEntryAt: () => entry } }) as never
+const createFilesState = (entry: unknown) => ({ list: { getEntryAt: () => entry } }) as never
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -117,10 +117,10 @@ beforeEach(() => {
 
 describe('choosing a note in the files tab', () => {
   it('syncs the tab that holds the state, whichever tab is in front', () => {
-    const mine = stateOf(noteEntry)
+    const mine = createFilesState(noteEntry)
     const held = holding(
       [
-        { id: 'one', state: stateOf(noteEntry) },
+        { id: 'one', state: createFilesState(noteEntry) },
         { id: 'two', state: mine },
       ],
       { kind: 'files', id: 'front' },
@@ -137,7 +137,7 @@ describe('choosing a note in the files tab', () => {
     const held = holding([{ id: 'one', state: {} }], { kind: 'files', id: 'front' }, { id: 'last' })
     const { deps, syncPathFromTab } = setup({ held })
 
-    deps.onSelectPath!('a.md', stateOf(noteEntry))
+    deps.onSelectPath!('a.md', createFilesState(noteEntry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('front', 'a.md', 'a.md')
   })
@@ -146,7 +146,7 @@ describe('choosing a note in the files tab', () => {
     const held = holding([], { kind: 'note', id: 'front' }, { id: 'last' })
     const { deps, syncPathFromTab } = setup({ held })
 
-    deps.onSelectPath!('a.md', stateOf(noteEntry))
+    deps.onSelectPath!('a.md', createFilesState(noteEntry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('last', 'a.md', 'a.md')
   })
@@ -155,7 +155,7 @@ describe('choosing a note in the files tab', () => {
     const held = holding([], null, { id: 'last' })
     const { deps, syncPathFromTab } = setup({ held })
 
-    deps.onSelectPath!('a.md', stateOf(noteEntry))
+    deps.onSelectPath!('a.md', createFilesState(noteEntry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('last', 'a.md', 'a.md')
   })
@@ -164,7 +164,7 @@ describe('choosing a note in the files tab', () => {
     const held = holding([], null, null)
     const { deps, syncPathFromTab } = setup({ held })
 
-    deps.onSelectPath!('a.md', stateOf(noteEntry))
+    deps.onSelectPath!('a.md', createFilesState(noteEntry))
 
     expect(syncPathFromTab).not.toHaveBeenCalled()
   })
@@ -173,7 +173,7 @@ describe('choosing a note in the files tab', () => {
     const entry = { path: 'a.txt', name: 'a.txt', isFolder: false, kind: 'note' }
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('a.txt', stateOf(entry))
+    deps.onSelectPath!('a.txt', createFilesState(entry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('front', 'a.txt', 'a.txt')
   })
@@ -182,7 +182,7 @@ describe('choosing a note in the files tab', () => {
     const entry = { path: 'a.md', name: 'a.md', isFolder: false, kind: 'file' }
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('a.md', stateOf(entry))
+    deps.onSelectPath!('a.md', createFilesState(entry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('front', 'a.md', 'a.md')
   })
@@ -191,7 +191,7 @@ describe('choosing a note in the files tab', () => {
     const entry = { path: 'a.png', name: 'a.png', isFolder: false, kind: 'file' }
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('a.png', stateOf(entry))
+    deps.onSelectPath!('a.png', createFilesState(entry))
 
     expect(syncPathFromTab).not.toHaveBeenCalled()
   })
@@ -200,7 +200,7 @@ describe('choosing a note in the files tab', () => {
     const entry = { path: 'dir', name: 'dir', isFolder: true, kind: 'note' }
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('dir', stateOf(entry))
+    deps.onSelectPath!('dir', createFilesState(entry))
 
     expect(syncPathFromTab).not.toHaveBeenCalled()
   })
@@ -208,7 +208,7 @@ describe('choosing a note in the files tab', () => {
   it('syncs nothing for a path the list does not hold', () => {
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('a.md', stateOf(null))
+    deps.onSelectPath!('a.md', createFilesState(null))
 
     expect(syncPathFromTab).not.toHaveBeenCalled()
   })
@@ -216,7 +216,7 @@ describe('choosing a note in the files tab', () => {
   it('is no trouble for a window that links no tabs', () => {
     const { deps } = setup({ tabSync: undefined })
 
-    expect(() => deps.onSelectPath!('a.md', stateOf(noteEntry))).not.toThrow()
+    expect(() => deps.onSelectPath!('a.md', createFilesState(noteEntry))).not.toThrow()
   })
 })
 

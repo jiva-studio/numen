@@ -9,7 +9,7 @@ import type { AskAgentResponse, Span } from '@numen/protocol'
 import type { AgentPort } from '@numen/ui'
 
 /** The span a call named, and one naming no place inside the source. */
-const spanOf = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.to ?? 0 })
+const getPlainSpan = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.to ?? 0 })
 
 /** As much of the agent service as the port asks of it. */
 export interface AgentClient {
@@ -21,7 +21,7 @@ export interface AgentClient {
 }
 
 /** The agent port, over the client the window talks on. */
-export const agentPort = (agent: AgentClient): AgentPort => ({
+export const createWireAgentPort = (agent: AgentClient): AgentPort => ({
   async *ask(prompt, focus, conversation, signal, agentId, modelId) {
     for await (const step of agent.askAgent(
       {
@@ -45,7 +45,7 @@ export const agentPort = (agent: AgentClient): AgentPort => ({
             subject: toolCall.about,
             written: toolCall.written,
             ...(toolCall.path
-              ? { place: { path: toolCall.path, span: spanOf(toolCall.span) } }
+              ? { place: { path: toolCall.path, span: getPlainSpan(toolCall.span) } }
               : {}),
           }
           break

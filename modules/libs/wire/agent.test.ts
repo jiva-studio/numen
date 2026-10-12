@@ -4,7 +4,7 @@ import { AskAgentResponseSchema, ToolCallSchema } from '@numen/protocol'
 import type { AskAgentResponse } from '@numen/protocol'
 import type { AgentStep } from '@numen/ui'
 
-import { agentPort } from './agent'
+import { createWireAgentPort } from './agent'
 import type { AgentClient } from './agent'
 
 /** A tool call as the service sends one, working on a place or on none. */
@@ -42,18 +42,18 @@ const service = (says: AskAgentResponse[]) => {
 const steps = async (says: AskAgentResponse[]): Promise<AgentStep[]> => {
   const { agent } = service(says)
   const read: AgentStep[] = []
-  const port = agentPort(agent)
+  const port = createWireAgentPort(agent)
   const abort = new AbortController()
   for await (const step of port.ask('why?', 'notes/Leaf mould.md', 'one', abort.signal))
     read.push(step)
   return read
 }
 
-describe('agentPort', () => {
+describe('createWireAgentPort', () => {
   it('hands the question, the focus and the conversation to the service', async () => {
     const { agent, requests } = service([])
     const abort = new AbortController()
-    for await (const _ of agentPort(agent).ask(
+    for await (const _ of createWireAgentPort(agent).ask(
       'why?',
       'notes/Leaf mould.md',
       'one',
@@ -117,7 +117,7 @@ describe('agentPort', () => {
 
   it('finishes the conversation it was given', async () => {
     const { agent, over } = service([])
-    await agentPort(agent).finish('one')
+    await createWireAgentPort(agent).finish('one')
     expect(over).toEqual(['one'])
   })
 })

@@ -4,7 +4,7 @@
  * The window hands over what was written and reads what the agent does as it
  * does it. The port is `AgentPort`, and `@numen/wire` says what the steps mean.
  */
-import { agentPort } from '@numen/wire'
+import { createWireAgentPort } from '@numen/wire'
 import { agentService } from '@/shared/clients'
 
-export const core = agentPort(agentService)
+export const core = createWireAgentPort(agentService)

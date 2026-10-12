@@ -48,4 +48,4 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
 ])
 
 /** The icon for a kind of tab, and nothing for a kind that has none. */
-export const iconOfKind = (kind: string): LucideIcon | null => KINDS.get(kind) ?? null
+export const getTabKindIcon = (kind: string): LucideIcon | null => KINDS.get(kind) ?? null

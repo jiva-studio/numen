@@ -40,7 +40,7 @@ import {
 } from '@/pages/document-viewer'
 import { FilesTab, ROOT, useFilesTab, useFileTree } from '@/pages/file-manager'
 import type { Entry } from '@/entities/file'
-import { iconOfKind } from '@/entities/tab'
+import { getTabKindIcon } from '@/entities/tab'
 import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab'
 
 /** Every tab this file draws, under the identity the window opens it at. */
@@ -55,7 +55,7 @@ const TABS: readonly Tab[] = [
 ]
 
 /** A tab is drawn as its kind, which is what stands before the identity. */
-const iconOfTab = (id: string) => iconOfKind(id.split(':')[0] ?? id)
+const iconOfTab = (id: string) => getTabKindIcon(id.split(':')[0] ?? id)
 
 /** One tab filling the window, drawn in the chrome the window draws it in. */
 const window = (tab: string, tabPane: Component, state: unknown) => ({

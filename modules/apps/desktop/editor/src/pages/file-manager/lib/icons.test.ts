@@ -15,7 +15,7 @@ import {
   LayoutTemplate,
 } from '@lucide/vue'
 import type { Entry } from '@/entities/file'
-import { iconOfEntry } from './icons'
+import { getEntryIcon } from './icons'
 
 const entry = (over: Partial<Entry> = {}): Entry => ({
   path: 'a',
@@ -28,36 +28,36 @@ const entry = (over: Partial<Entry> = {}): Entry => ({
 
 describe('the icon of an entry', () => {
   it('is a plain file where there is no entry', () => {
-    expect(iconOfEntry(null, false)).toBe(File)
-    expect(iconOfEntry(undefined, true)).toBe(File)
+    expect(getEntryIcon(null, false)).toBe(File)
+    expect(getEntryIcon(undefined, true)).toBe(File)
   })
 
   it('is a closed folder for a folder that is shut', () => {
-    expect(iconOfEntry(entry({ isFolder: true, kind: 'other' }), false)).toBe(Folder)
+    expect(getEntryIcon(entry({ isFolder: true, kind: 'other' }), false)).toBe(Folder)
   })
 
   it('is an open folder for a folder that is open', () => {
-    expect(iconOfEntry(entry({ isFolder: true, kind: 'other' }), true)).toBe(FolderOpen)
+    expect(getEntryIcon(entry({ isFolder: true, kind: 'other' }), true)).toBe(FolderOpen)
   })
 
   it('is a folder even where the folder is named for a note', () => {
-    expect(iconOfEntry(entry({ isFolder: true, kind: 'note' }), false)).toBe(Folder)
+    expect(getEntryIcon(entry({ isFolder: true, kind: 'note' }), false)).toBe(Folder)
   })
 
   it('is drawn by the kind of note for a note', () => {
-    expect(iconOfEntry(entry({ type: 'note' }), false)).toBe(FileText)
-    expect(iconOfEntry(entry({ type: 'deck' }), false)).toBe(Layers)
-    expect(iconOfEntry(entry({ type: 'stencil' }), false)).toBe(LayoutTemplate)
-    expect(iconOfEntry(entry({ type: 'preset' }), false)).toBe(Gauge)
+    expect(getEntryIcon(entry({ type: 'note' }), false)).toBe(FileText)
+    expect(getEntryIcon(entry({ type: 'deck' }), false)).toBe(Layers)
+    expect(getEntryIcon(entry({ type: 'stencil' }), false)).toBe(LayoutTemplate)
+    expect(getEntryIcon(entry({ type: 'preset' }), false)).toBe(Gauge)
   })
 
   it('is drawn by the source for a file that is not a note', () => {
-    expect(iconOfEntry(entry({ kind: 'book' }), false)).toBe(BookOpen)
-    expect(iconOfEntry(entry({ kind: 'recording' }), false)).toBe(AudioLines)
-    expect(iconOfEntry(entry({ kind: 'url' }), false)).toBe(Globe)
+    expect(getEntryIcon(entry({ kind: 'book' }), false)).toBe(BookOpen)
+    expect(getEntryIcon(entry({ kind: 'recording' }), false)).toBe(AudioLines)
+    expect(getEntryIcon(entry({ kind: 'url' }), false)).toBe(Globe)
   })
 
   it('is a plain file for a file the vault holds no source for', () => {
-    expect(iconOfEntry(entry({ kind: 'other', type: 'deck' }), false)).toBe(File)
+    expect(getEntryIcon(entry({ kind: 'other', type: 'deck' }), false)).toBe(File)
   })
 })

@@ -64,7 +64,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
   }
 
   /** The key a reader is held under: the kind, and the format where one claims it. */
-  const keyOf = (kind: FileKind['kind'], format?: BookFormat | DocumentFormat): string =>
+  const getReaderKey = (kind: FileKind['kind'], format?: BookFormat | DocumentFormat): string =>
     format ? `${kind}/${format}` : kind
 
   /**
@@ -72,14 +72,14 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * of a source is read its own way, the kind that reads it that way says so.
    */
   const registerReader = (key: ReaderKey, read: SourceReader) => {
-    readers.set(keyOf(key.kind, key.format), read)
+    readers.set(getReaderKey(key.kind, key.format), read)
   }
 
   /**
    * What stands at a path. Nothing stands where the vault answers nothing; a
    * vault that cannot be asked at all leaves it the ordinary note it reads as.
    */
-  const fileKindAt = async (path: string): Promise<FileKind | null> => {
+  const fetchFileKind = async (path: string): Promise<FileKind | null> => {
     try {
       return (await vault.fileKinds([path])).get(path) ?? null
     } catch {
@@ -95,8 +95,8 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * book that reflows is turned a spread at a time, and every other book is
    * the row of pages it is drawn as.
    */
-  const readerOf = (kind: FileKind): SourceReader | undefined =>
-    readers.get(keyOf(kind.kind, kind.format)) ?? readers.get(keyOf(kind.kind))
+  const getReader = (kind: FileKind): SourceReader | undefined =>
+    readers.get(getReaderKey(kind.kind, kind.format)) ?? readers.get(getReaderKey(kind.kind))
 
   /**
    * A file just made here, put in front of the person as what it was made as.
@@ -124,11 +124,11 @@ export function fileOpeners(vault: FileOpenerDeps) {
     where: PlexDestination = 'here',
     line?: number,
   ): Promise<void> => {
-    const kind = await fileKindAt(path)
+    const kind = await fetchFileKind(path)
     if (!kind) return
     if (kind.kind === 'note') return void openNewFile(path, title, kind.type, where, line)
-    vault.reconcileTab?.(path, targetKindOf(kind))
-    readerOf(kind)?.(path, [])
+    vault.reconcileTab?.(path, getTargetKind(kind))
+    getReader(kind)?.(path, [])
   }
 
   /**
@@ -138,18 +138,18 @@ export function fileOpeners(vault: FileOpenerDeps) {
    * opens whole.
    */
   const openFileAt = async (path: string, spans: readonly Span[]): Promise<void> => {
-    const kind = await fileKindAt(path)
+    const kind = await fetchFileKind(path)
     if (!kind) return
     if (kind.kind === 'note') return void openNewFile(path, '', kind.type)
-    vault.reconcileTab?.(path, targetKindOf(kind))
-    readerOf(kind)?.(path, spans)
+    vault.reconcileTab?.(path, getTargetKind(kind))
+    getReader(kind)?.(path, spans)
   }
 
   return { registerEditor, registerReader, openFile, openFileAt, openNewFile }
 }
 
 /** The kind of tab a file opens in. */
-const targetKindOf = (kind: FileKind): string => {
+const getTargetKind = (kind: FileKind): string => {
   if (kind.kind === 'book') {
     return kind.format === 'epub' ? 'book' : 'document'
   }

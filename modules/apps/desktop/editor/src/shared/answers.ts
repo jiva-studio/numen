@@ -49,11 +49,11 @@ export const ERROR_CODE: Record<ProtoErrorCode, ErrorCode | null> = {
 }
 
 /** What one answer encountered as an error, and nothing where it succeeded. */
-export const errorIn = (from: { error?: ProtoErrorCode | undefined }): ErrorCode | null =>
+export const getErrorCode = (from: { error?: ProtoErrorCode | undefined }): ErrorCode | null =>
   ERROR_CODE[from.error as ProtoErrorCode] ?? null
 
 /** Whether the file an answer is about had moved past what the caller read. */
-export const staleIn = (from: { error?: ProtoErrorCode | undefined }): boolean =>
+export const isStaleAnswer = (from: { error?: ProtoErrorCode | undefined }): boolean =>
   from.error === ProtoErrorCode.STALE
 
 /**

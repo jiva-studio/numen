@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { iconFor } from '@/shared/icons'
 import { iconOfNote } from '@/entities/note'
-import { iconOfKind } from '@/entities/tab'
+import { getTabKindIcon } from '@/entities/tab'
 import { PRESET } from '@/entities/tab'
 import { commandsOf } from '@/features/command-palette'
 import { itemsFor } from '@/pages/file-manager'
@@ -76,6 +76,6 @@ describe('the icon of a kind of note', () => {
   })
 
   it('draws a preset as the tab that opens it does', () => {
-    expect(iconOfNote('preset')).toBe(iconOfKind(PRESET))
+    expect(iconOfNote('preset')).toBe(getTabKindIcon(PRESET))
   })
 })

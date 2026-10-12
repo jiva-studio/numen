@@ -10,7 +10,7 @@ import {
   isDirty,
   getMarkOf,
   openTab,
-  stateOf,
+  getState,
   transitionTab,
   DEFAULT_WRITE_LIMITS,
   type Effect,
@@ -46,7 +46,7 @@ describe('a tab as it opens', () => {
   it('has nothing read yet and asks for the note', () => {
     const next = openTab('Note.md')
 
-    expect(stateOf(next.tab)).toBe('loading')
+    expect(getState(next.tab)).toBe('loading')
     expect(next.tab.hasPendingWrite).toBe(false)
     expect(next.effects).toEqual([{ kind: 'read', path: 'Note.md', generation: 1 }])
   })
@@ -62,12 +62,12 @@ describe('the states', () => {
     })
     const readable = { ...everything, error: null }
 
-    expect(stateOf(everything)).toBe('stuck')
-    expect(stateOf(readable)).toBe('loading')
-    expect(stateOf({ ...readable, written: 'one', isStale: true })).toBe('stale')
-    expect(stateOf({ ...readable, written: 'one' })).toBe('saving')
-    expect(stateOf({ ...readable, written: 'one', pendingWrite: null })).toBe('unsaved')
-    expect(stateOf(tab())).toBe('clean')
+    expect(getState(everything)).toBe('stuck')
+    expect(getState(readable)).toBe('loading')
+    expect(getState({ ...readable, written: 'one', isStale: true })).toBe('stale')
+    expect(getState({ ...readable, written: 'one' })).toBe('saving')
+    expect(getState({ ...readable, written: 'one', pendingWrite: null })).toBe('unsaved')
+    expect(getState(tab())).toBe('clean')
   })
 })
 
@@ -82,7 +82,7 @@ describe('a read answers with a body', () => {
     expect(next.tab.written).toBe('one')
     expect(next.tab.filePath).toBe('a1')
     expect(next.tab.shown).toBe('one')
-    expect(stateOf(next.tab)).toBe('clean')
+    expect(getState(next.tab)).toBe('clean')
     expect(next.effects).toEqual([{ kind: 'replace', body: 'one' }])
   })
 
@@ -146,7 +146,7 @@ describe('a read answers missing', () => {
 
     expect(next.tab.written).toBe('')
     expect(next.tab.shown).toBe('')
-    expect(stateOf(next.tab)).toBe('clean')
+    expect(getState(next.tab)).toBe('clean')
 
     const typed = transitionTab(next.tab, { kind: 'edited', body: 'again', at: 0 })
     expect(transitionTab(typed.tab, { kind: 'timerFired' }).effects).toEqual([
@@ -165,7 +165,7 @@ describe('a read answers missing', () => {
     })
 
     expect(next.tab.shown).toBe(reading.shown)
-    expect(stateOf(next.tab)).toBe('gone')
+    expect(getState(next.tab)).toBe('gone')
     expect(next.effects).toEqual([])
   })
 
@@ -180,7 +180,7 @@ describe('a read answers missing', () => {
     })
 
     expect(next).toEqual({ tab: reading, effects: [] })
-    expect(stateOf(next.tab)).toBe('clean')
+    expect(getState(next.tab)).toBe('clean')
   })
 })
 
@@ -193,7 +193,7 @@ describe('a read answers an error', () => {
     })
 
     expect(next.tab.error).toBe('notText')
-    expect(stateOf(next.tab)).toBe('stuck')
+    expect(getState(next.tab)).toBe('stuck')
     expect(next.effects).toEqual([])
   })
 
@@ -206,7 +206,7 @@ describe('a read answers an error', () => {
     })
 
     expect(next).toEqual({ tab: reading, effects: [] })
-    expect(stateOf(next.tab)).toBe('loading')
+    expect(getState(next.tab)).toBe('loading')
   })
 
   it('strands nothing: a tab that never read its note is not mended by typing', () => {
@@ -221,7 +221,7 @@ describe('a read answers an error', () => {
     const typed = transitionTab(stuck, { kind: 'edited', body: 'anything', at: 10 })
 
     expect(typed.tab.error).toBe('tooLarge')
-    expect(stateOf(typed.tab)).toBe('stuck')
+    expect(getState(typed.tab)).toBe('stuck')
     expect(transitionTab(typed.tab, { kind: 'timerFired' }).effects).toEqual([])
     expect(transitionTab(typed.tab, { kind: 'close' }).effects).toEqual([
       { kind: 'reportError', error: 'tooLarge' },
@@ -248,7 +248,7 @@ describe('the person types', () => {
 
     expect(next.tab.shown).toBe('onemore')
     expect(next.tab.since).toBe(1000)
-    expect(stateOf(next.tab)).toBe('unsaved')
+    expect(getState(next.tab)).toBe('unsaved')
     expect(next.effects).toEqual([{ kind: 'startTimer', after: DEFAULT_WRITE_LIMITS.quiet }])
   })
 
@@ -270,7 +270,7 @@ describe('the person types', () => {
     })
 
     expect(next.tab.shown).toBe('one!!')
-    expect(stateOf(next.tab)).toBe('saving')
+    expect(getState(next.tab)).toBe('saving')
     expect(next.effects).toEqual([{ kind: 'startTimer', after: DEFAULT_WRITE_LIMITS.quiet }])
   })
 
@@ -282,7 +282,7 @@ describe('the person types', () => {
     })
 
     expect(next.tab.error).toBeNull()
-    expect(stateOf(next.tab)).toBe('unsaved')
+    expect(getState(next.tab)).toBe('unsaved')
   })
 
   it('leaves an error that is a condition of the file', () => {
@@ -293,7 +293,7 @@ describe('the person types', () => {
     })
 
     expect(next.tab.error).toBe('unreadable')
-    expect(stateOf(next.tab)).toBe('stuck')
+    expect(getState(next.tab)).toBe('stuck')
   })
 
   it('does nothing to a tab that has not read its note', () => {
@@ -309,7 +309,7 @@ describe('the interval fires', () => {
   it('begins a write of what is on screen when something is unsaved', () => {
     const next = transitionTab(tab({ shown: 'two', since: 10 }), { kind: 'timerFired' })
 
-    expect(stateOf(next.tab)).toBe('saving')
+    expect(getState(next.tab)).toBe('saving')
     expect(next.tab.pendingWrite).toBe('two')
     expect(next.effects).toEqual([
       { kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', fingerprint: 'a1' } },
@@ -361,7 +361,7 @@ describe('the interval fires', () => {
     }
 
     expect(after).toBe(0)
-    expect(stateOf(transitionTab(held, { kind: 'timerFired' }).tab)).toBe('saving')
+    expect(getState(transitionTab(held, { kind: 'timerFired' }).tab)).toBe('saving')
   })
 })
 
@@ -375,7 +375,7 @@ describe('a write answers ok', () => {
     expect(next.tab.written).toBe('two')
     expect(next.tab.filePath).toBe('a2')
     expect(next.tab.since).toBeNull()
-    expect(stateOf(next.tab)).toBe('clean')
+    expect(getState(next.tab)).toBe('clean')
     expect(next.effects).toEqual([])
   })
 
@@ -387,7 +387,7 @@ describe('a write answers ok', () => {
 
     expect(next.tab.written).toBe('two')
     expect(isDirty(next.tab)).toBe(true)
-    expect(stateOf(next.tab)).toBe('unsaved')
+    expect(getState(next.tab)).toBe('unsaved')
   })
 
   it('begins the write it owed', () => {
@@ -399,7 +399,7 @@ describe('a write answers ok', () => {
       },
     )
 
-    expect(stateOf(next.tab)).toBe('saving')
+    expect(getState(next.tab)).toBe('saving')
     expect(next.tab.hasPendingWrite).toBe(false)
     expect(next.effects).toEqual([
       { kind: 'write', path: 'Note.md', body: 'three', seen: { prose: 'two', fingerprint: 'a2' } },
@@ -445,7 +445,7 @@ describe('a write answers changed', () => {
       answer: { kind: 'changed' },
     })
 
-    expect(stateOf(next.tab)).toBe('stale')
+    expect(getState(next.tab)).toBe('stale')
     expect(next.tab.pendingWrite).toBeNull()
     expect(next.tab.shown).toBe('mine')
     expect(next.tab.written).toBe('one')
@@ -466,7 +466,7 @@ describe('a write answers changed', () => {
     const next = transitionTab(stale(), { kind: 'edited', body: 'mine and more', at: 2000 })
 
     expect(next.tab.shown).toBe('mine and more')
-    expect(stateOf(next.tab)).toBe('stale')
+    expect(getState(next.tab)).toBe('stale')
     expect(next.effects).toEqual([])
   })
 
@@ -496,7 +496,7 @@ describe('a write answers changed', () => {
     const back = transitionTab(stopped, { kind: 'edited', body: 'one', at: 2000 }).tab
 
     expect(isDirty(back)).toBe(false)
-    expect(stateOf(back)).toBe('stale')
+    expect(getState(back)).toBe('stale')
     expect(transitionTab(back, { kind: 'keepLocal' }).effects).toEqual([
       { kind: 'write', path: 'Note.md', body: 'one', seen: null },
     ])
@@ -510,7 +510,7 @@ describe('a write answers changed', () => {
     })
 
     expect(next.tab).toEqual(stopped)
-    expect(stateOf(next.tab)).toBe('stale')
+    expect(getState(next.tab)).toBe('stale')
   })
 })
 
@@ -519,7 +519,7 @@ describe('the person keeps theirs', () => {
     const next = transitionTab(stale(), { kind: 'keepLocal' })
 
     expect(next.effects).toEqual([{ kind: 'write', path: 'Note.md', body: 'mine', seen: null }])
-    expect(stateOf(next.tab)).toBe('saving')
+    expect(getState(next.tab)).toBe('saving')
     expect(next.tab.isStale).toBe(false)
   })
 
@@ -529,7 +529,7 @@ describe('the person keeps theirs', () => {
 
     expect(next.tab.written).toBe('mine')
     expect(next.tab.filePath).toBe('a3')
-    expect(stateOf(next.tab)).toBe('clean')
+    expect(getState(next.tab)).toBe('clean')
   })
 
   it('does nothing to a tab that was not stale', () => {
@@ -544,7 +544,7 @@ describe("the person takes the file's", () => {
     const next = transitionTab(stale(), { kind: 'takeFile' })
 
     expect(next.tab.reading).toBe(2)
-    expect(stateOf(next.tab)).toBe('stale')
+    expect(getState(next.tab)).toBe('stale')
     expect(next.effects).toEqual([{ kind: 'read', path: 'Note.md', generation: 2 }])
   })
 
@@ -560,7 +560,7 @@ describe("the person takes the file's", () => {
     expect(next.tab.shown).toBe('theirs')
     expect(next.tab.written).toBe('theirs')
     expect(next.tab.filePath).toBe('a2')
-    expect(stateOf(next.tab)).toBe('clean')
+    expect(getState(next.tab)).toBe('clean')
   })
 
   it('leaves the bound to start again with the next change', () => {
@@ -587,7 +587,7 @@ describe("the person takes the file's", () => {
     })
 
     expect(next.tab).toEqual(reading)
-    expect(stateOf(next.tab)).toBe('stale')
+    expect(getState(next.tab)).toBe('stale')
   })
 
   it('says the note is not there where the file is gone, since there is nothing to take', () => {
@@ -599,7 +599,7 @@ describe("the person takes the file's", () => {
     })
 
     expect(next.tab.shown).toBe(reading.shown)
-    expect(stateOf(next.tab)).toBe('gone')
+    expect(getState(next.tab)).toBe('gone')
   })
 
   it('does nothing to a tab that was not stale', () => {
@@ -616,7 +616,7 @@ describe('a save is asked for', () => {
     expect(next.effects).toEqual([
       { kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', fingerprint: 'a1' } },
     ])
-    expect(stateOf(next.tab)).toBe('saving')
+    expect(getState(next.tab)).toBe('saving')
   })
 
   it('owes one while a write is in the air', () => {
@@ -670,7 +670,7 @@ describe('a file about to be renamed or removed', () => {
       { kind: 'cancelTimer' },
       { kind: 'write', path: 'Note.md', body: 'two', seen: { prose: 'one', fingerprint: 'a1' } },
     ])
-    expect(stateOf(next.tab)).toBe('saving')
+    expect(getState(next.tab)).toBe('saving')
   })
 
   it('owes a write for what is unsaved behind one already in the air', () => {
@@ -731,7 +731,7 @@ describe('a write answers an error', () => {
       },
     )
 
-    expect(stateOf(next.tab)).toBe('stuck')
+    expect(getState(next.tab)).toBe('stuck')
     expect(next.tab.hasPendingWrite).toBe(false)
     expect(next.tab.shown).toBe('two')
 
@@ -811,7 +811,7 @@ describe('a close is asked for', () => {
       body: 'two',
       seen: { prose: 'one', fingerprint: 'a1' },
     })
-    expect(stateOf(next.tab)).toBe('saving')
+    expect(getState(next.tab)).toBe('saving')
   })
 
   it('holds a tab with a write in the air, and owes it what was typed since', () => {
@@ -839,7 +839,7 @@ describe('a close is asked for', () => {
     const next = transitionTab(stale(), { kind: 'close' })
 
     expect(kinds(next.effects)).toEqual(['keepOpen'])
-    expect(stateOf(next.tab)).toBe('stale')
+    expect(getState(next.tab)).toBe('stale')
     expect(next.tab.shown).toBe('mine')
   })
 
@@ -899,7 +899,7 @@ describe('a note that is no longer there', () => {
   })
 
   it('is a state of its own, so the tab can say so', () => {
-    expect(stateOf(applyMissingRead())).toBe('gone')
+    expect(getState(applyMissingRead())).toBe('gone')
   })
 
   it('stops the unasked save, so nothing is written back without being asked', () => {
@@ -911,7 +911,7 @@ describe('a note that is no longer there', () => {
 
   it('is not written by typing either', () => {
     const typed = transitionTab(applyMissingRead(), { kind: 'edited', body: 'more', at: 20 })
-    expect(stateOf(typed.tab)).toBe('gone')
+    expect(getState(typed.tab)).toBe('gone')
     expect(kinds(transitionTab(typed.tab, { kind: 'timerFired' }).effects)).toEqual([])
   })
 
@@ -933,7 +933,7 @@ describe('a note that is no longer there', () => {
       generation: back.tab.reading,
       answer: { kind: 'body', body: 'theirs', at: 'a2' },
     })
-    expect(stateOf(read.tab)).toBe('clean')
+    expect(getState(read.tab)).toBe('clean')
     expect(read.tab.shown).toBe('theirs')
   })
 })

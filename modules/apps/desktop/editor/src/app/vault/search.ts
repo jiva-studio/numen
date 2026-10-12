@@ -2,7 +2,7 @@
  * Search and lookup domain methods for the window core.
  */
 import { search } from '@/shared/clients'
-import { modes, noteType, run, sourceKind } from './words'
+import { modes, mapNoteType, run, mapSourceKind } from './words'
 import type { SearchDeps } from '@/features/command-palette'
 
 export const searchCore: SearchDeps = {
@@ -14,7 +14,7 @@ export const searchCore: SearchDeps = {
       heading: one.heading?.text ?? '',
       line: one.heading?.line ?? -1,
       at: one.spans.map(run),
-      type: noteType(one.type),
+      type: mapNoteType(one.type),
     }))
   },
   search: async (query, mode, limit) => {
@@ -23,8 +23,8 @@ export const searchCore: SearchDeps = {
       path: one.path,
       title: one.note?.title ?? '',
       isNote: one.note !== undefined,
-      type: noteType(one.type),
-      kind: sourceKind(one.kind),
+      type: mapNoteType(one.type),
+      kind: mapSourceKind(one.kind),
       text: one.text,
       start: one.span?.from ?? 0,
       length: (one.span?.to ?? 0) - (one.span?.from ?? 0),

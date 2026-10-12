@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fileOf, nameOf } from './paths'
+import { fileOf, getBaseName } from './paths'
 
 describe('what a file is filed as', () => {
   it('is the last segment of the path', () => {
@@ -17,20 +17,20 @@ describe('what a file is filed as', () => {
 
 describe('the name a link writes', () => {
   it('is the file, without the folders above it and without the extension', () => {
-    expect(nameOf('stencils/cards/Animal.md')).toBe('Animal')
+    expect(getBaseName('stencils/cards/Animal.md')).toBe('Animal')
   })
 
   it('keeps a name a dot stands inside, and one carrying no extension at all', () => {
-    expect(nameOf('stencils/Animal v2.md')).toBe('Animal v2')
-    expect(nameOf('stencils/Animal')).toBe('Animal')
+    expect(getBaseName('stencils/Animal v2.md')).toBe('Animal v2')
+    expect(getBaseName('stencils/Animal')).toBe('Animal')
   })
 
   it('keeps the whole of a name that is only an ending', () => {
-    expect(nameOf('.hidden')).toBe('.hidden')
-    expect(nameOf('notes/.hidden')).toBe('.hidden')
+    expect(getBaseName('.hidden')).toBe('.hidden')
+    expect(getBaseName('notes/.hidden')).toBe('.hidden')
   })
 
   it('is nothing for a file filed nowhere', () => {
-    expect(nameOf('')).toBe('')
+    expect(getBaseName('')).toBe('')
   })
 })
