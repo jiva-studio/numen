@@ -244,9 +244,9 @@ describe('removing a relationship from a note', () => {
   it('asks for the role of the seat it was given, and says nothing when it is done', async () => {
     const { core, asked, write, told } = removing(async () => null)
 
-    expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md', 'child')).toBe(
-      true,
-    )
+    expect(
+      await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md', 'child'),
+    ).toBe(true)
     expect(asked).toStrictEqual([{ path: 'Ontology.md', to: 'Entropy.md', role: 'child' }])
     expect(told).toStrictEqual([{ text: '', kind: 'report' }])
   })
