@@ -70,7 +70,7 @@ export function getPaletteView(state: ViewState) {
   }
 
   /** What the palette draws where it stands, over the words typed into it. */
-  const groupsOf = (step: PendingStep | null, over: CommandTarget, text: string) => {
+  const createGroups = (step: PendingStep | null, over: CommandTarget, text: string) => {
     if (!step) return getCommandGroups(over, text)
     if (step.step === 'naming') return [steps.getNamingGroup(text)]
     if (step.step === 'address') return [steps.getAddressGroup(text)]
@@ -81,5 +81,5 @@ export function getPaletteView(state: ViewState) {
     return [steps.getExactlyGroup(step, text)]
   }
 
-  return { groupsOf, typeOf: steps.typeOf, getVaultAside: steps.getVaultAside }
+  return { createGroups, findNoteType: steps.findNoteType, getVaultAside: steps.getVaultAside }
 }

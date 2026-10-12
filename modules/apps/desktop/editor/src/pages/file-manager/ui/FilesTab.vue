@@ -12,7 +12,7 @@ import { getEntryIcon } from '../lib/icons'
 import type { DropPosition, FilesTabState } from '../types'
 import { getRows } from '../lib/rows'
 import { getDroppedUrl, hasUrl } from '../lib/drag'
-import { itemsFor } from '../lib/menu'
+import { createMenuItems } from '../lib/menu'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -39,7 +39,9 @@ const renamingPath = computed({
 /** What the menu offers: on the row it was asked for on, or off every row. */
 const items = computed(() => {
   const menuTarget = props.state.menu.value
-  if (!menuTarget || menuTarget.path === null) return itemsFor(null, false, props.state.canRun)
+  if (!menuTarget || menuTarget.path === null) {
+    return createMenuItems(null, false, props.state.canRun)
+  }
 
   const entry = props.state.list.getEntryAt(menuTarget.path)
   const on = {
@@ -48,7 +50,11 @@ const items = computed(() => {
     format: entry?.path.endsWith('.epub') ? ('epub' as const) : ('pdf' as const),
     made: props.state.getArtifactStates?.(menuTarget.path),
   }
-  return itemsFor(on, props.state.getOverPaths(menuTarget.path).length > 1, props.state.canRun)
+  return createMenuItems(
+    on,
+    props.state.getOverPaths(menuTarget.path).length > 1,
+    props.state.canRun,
+  )
 })
 
 /* --------------------------------- Hooks ---------------------------------- */

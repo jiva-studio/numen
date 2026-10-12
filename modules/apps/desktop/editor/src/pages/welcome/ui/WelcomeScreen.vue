@@ -12,8 +12,8 @@ import { getVaultForKey, WelcomePage } from '@numen/ui'
 import type { Tab } from '@numen/ui'
 import {
   runInvocation,
-  invocationOf,
-  keysOf,
+  createInvocation,
+  createRowKeys,
   ANSWER_WORDS,
   type CommandDeps,
   type Commands,
@@ -24,7 +24,7 @@ import {
 import type { VaultList } from '@/entities/vault'
 import { iconFor } from '@/shared/icons'
 import { VERSION } from '../lib/version'
-import { COMMANDS, vaultsOn, waysIn } from '../lib/screen'
+import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
 import { WORDS as words } from '@/shared/words'
 
 // --- Props & Emits ---
@@ -48,21 +48,23 @@ const adding = computed(() => {
     text: words.newVault,
     detail: words.newVaultDetail,
     ...(icon ? { icon } : {}),
-    ...keysOf('newVault', navigator.userAgent),
+    ...createRowKeys('newVault', navigator.userAgent),
   }
 })
 
 const ways = computed(() => {
   const at = props.getTarget()
-  return waysIn({ vault: at.vault.id, isReady: at.isReady }, words, navigator.userAgent).map(
-    (one) => {
-      const icon = iconFor(one.id)
-      return { ...one, ...(icon ? { icon } : {}) }
-    },
-  )
+  return createWelcomeActions(
+    { vault: at.vault.id, isReady: at.isReady },
+    words,
+    navigator.userAgent,
+  ).map((one) => {
+    const icon = iconFor(one.id)
+    return { ...one, ...(icon ? { icon } : {}) }
+  })
 })
 
-const onList = computed(() => vaultsOn(props.listed, words))
+const onList = computed(() => createVaultRows(props.listed, words))
 
 /** Whether the welcome screen is what the person is looking at and typing into. */
 const welcoming = computed(
@@ -81,7 +83,7 @@ function onOpen(id: string) {
   if (!one) return
   const vault: VaultRef = { id: one.id, name: one.name }
   void runInvocation(
-    invocationOf('openVault', { ...props.getTarget(), vault }),
+    createInvocation('openVault', { ...props.getTarget(), vault }),
     props.doing,
     ANSWER_WORDS,
   )

@@ -9,7 +9,7 @@ import { WORDS as words } from '@/shared/words'
 import { cards, presets, WORDS as cardWords } from '@/entities/deck'
 import {
   ANSWER_WORDS,
-  invocationOf,
+  createInvocation,
   openDestination,
   runInvocation,
 } from '@/features/command-palette'
@@ -321,7 +321,7 @@ describe('what the files tab asks of the window', () => {
     await deps.movePath('a.md', 'dir/a.md')
 
     expect(answered).toHaveBeenCalledWith(
-      invocationOf('move', { ...getTarget(), path: 'a.md' }, 'dir/a.md'),
+      createInvocation('move', { ...getTarget(), path: 'a.md' }, 'dir/a.md'),
       commandDeps(),
       ANSWER_WORDS,
     )
@@ -333,7 +333,7 @@ describe('what the files tab asks of the window', () => {
     await deps.createFolder('dir')
 
     expect(runInvocation).toHaveBeenCalledWith(
-      invocationOf('createFolder', getTarget(), 'dir'),
+      createInvocation('createFolder', getTarget(), 'dir'),
       commandDeps(),
       ANSWER_WORDS,
     )

@@ -12,7 +12,7 @@ import { createAnswerGuard as latest } from '@/shared/questions'
 import type { Vault } from '@/entities/vault'
 import { commandsOf } from '../lib/commands'
 import { getPaletteView } from './view'
-import { invocationOf } from '../lib/invocation'
+import { createInvocation } from '../lib/invocation'
 import type {
   CommandsDeps,
   CommandTarget,
@@ -68,7 +68,7 @@ export function useCommandPalette(
   const on = computed<CommandTarget>(() => at())
 
   const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
-    invocationOf(id, over, name, over.path ? knows.getTabAt(over.path) : null)
+    createInvocation(id, over, name, over.path ? knows.getTabAt(over.path) : null)
 
   const drop = () => {
     asked.drop()
@@ -169,7 +169,7 @@ export function useCommandPalette(
     getStepLabel: steps.getStepLabel,
   })
 
-  const groups = computed(() => draws.groupsOf(steps.here.value, on.value, typed.value))
+  const groups = computed(() => draws.createGroups(steps.here.value, on.value, typed.value))
 
   const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
     const command = byId.get(id)
@@ -214,7 +214,7 @@ export function useCommandPalette(
     chooseItem,
     leaveStep: steps.leaveStep,
     goBack: steps.goBack,
-    typeOf: draws.typeOf,
+    findNoteType: draws.findNoteType,
   }
 }
 

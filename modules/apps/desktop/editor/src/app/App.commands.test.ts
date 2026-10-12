@@ -38,7 +38,7 @@ describe('the palette', () => {
     return event
   }
 
-  const groupsOf = (window: Awaited<ReturnType<typeof mountWindow>>) =>
+  const getGroups = (window: Awaited<ReturnType<typeof mountWindow>>) =>
     (window.findComponent(Palette).props('groups') as readonly { id: string }[]).map(
       (one) => one.id,
     )
@@ -51,7 +51,7 @@ describe('the palette', () => {
 
     expect(event.defaultPrevented).toBe(true)
     expect(window.findComponent(Palette).props('open')).toBe(true)
-    expect(groupsOf(window)).toStrictEqual(['note', 'window', 'vault'])
+    expect(getGroups(window)).toStrictEqual(['note', 'window', 'vault'])
   })
 
   it('opens on the search under its own keystroke', async () => {
@@ -61,7 +61,7 @@ describe('the palette', () => {
     await settle()
 
     expect(window.findComponent(Palette).props('open')).toBe(true)
-    expect(groupsOf(window)).toStrictEqual([])
+    expect(getGroups(window)).toStrictEqual([])
   })
 
   /** A name the search turned up, chosen to be read. */
@@ -203,7 +203,7 @@ describe('the palette', () => {
     window.findComponent(Palette).vm.$emit('update:modelValue', '>')
     await settle()
 
-    expect(groupsOf(window)).toStrictEqual(['note', 'window', 'vault'])
+    expect(getGroups(window)).toStrictEqual(['note', 'window', 'vault'])
   })
 
   /** The note the commands are over, which the step that renames one opens on. */
@@ -289,7 +289,7 @@ describe('a command reached by its own keystroke', () => {
   }
 
   /** The row of a command in the list of commands, by the identity it is drawn under. */
-  const rowOf = (window: Awaited<ReturnType<typeof mountWindow>>, id: string) => {
+  const getRow = (window: Awaited<ReturnType<typeof mountWindow>>, id: string) => {
     const groups = window.findComponent(Palette).props('groups') as readonly PaletteGroup[]
     return groups.flatMap((group) => group.items).find((one) => one.id === id)
   }
@@ -300,8 +300,8 @@ describe('a command reached by its own keystroke', () => {
     pressKey('p')
     await settle()
 
-    expect(rowOf(window, 'note')?.keys).toEqual({ icons: ['control'], letter: 'N' })
-    expect(rowOf(window, 'goto')?.keys).toEqual({ icons: ['control'], letter: 'G' })
+    expect(getRow(window, 'note')?.keys).toEqual({ icons: ['control'], letter: 'N' })
+    expect(getRow(window, 'goto')?.keys).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('draws no keystroke on the rows no keystroke reaches', async () => {
@@ -310,8 +310,8 @@ describe('a command reached by its own keystroke', () => {
     pressKey('p')
     await settle()
 
-    expect(rowOf(window, 'destroy')?.keys).toBeUndefined()
-    expect(rowOf(window, 'eraseVault')?.keys).toBeUndefined()
+    expect(getRow(window, 'destroy')?.keys).toBeUndefined()
+    expect(getRow(window, 'eraseVault')?.keys).toBeUndefined()
   })
 
   it('makes a note under the name typed, on the keystroke the new note draws', async () => {

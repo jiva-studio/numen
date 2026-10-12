@@ -8,8 +8,15 @@
 import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
-import { keyOf } from '@/features/command-palette'
-import { COMMANDS, SETTINGS, vaultsOn, waysIn, type CurrentVault, type Words } from './screen'
+import { findChordKeys } from '@/features/command-palette'
+import {
+  COMMANDS,
+  SETTINGS,
+  createVaultRows,
+  createWelcomeActions,
+  type CurrentVault,
+  type Words,
+} from './screen'
 import { WORDS as own } from '../words'
 
 const APPLE = 'MacIntel'
@@ -56,18 +63,20 @@ const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
 describe('the ways into the vault', () => {
   it('are the settings alone where the window is showing no vault', () => {
     expect(
-      waysIn(createCurrentVault({ vault: '', isReady: false }), words, APPLE).map((one) => one.id),
+      createWelcomeActions(createCurrentVault({ vault: '', isReady: false }), words, APPLE).map(
+        (one) => one.id,
+      ),
     ).toStrictEqual([SETTINGS])
   })
 
   it('are the settings alone where a window showing no vault says it is ready', () => {
     expect(
-      waysIn(createCurrentVault({ vault: '' }), words, APPLE).map((one) => one.id),
+      createWelcomeActions(createCurrentVault({ vault: '' }), words, APPLE).map((one) => one.id),
     ).toStrictEqual([SETTINGS])
   })
 
   it('are the six of a vault that has been read, in the order they are drawn', () => {
-    const ways = waysIn(createCurrentVault(), words, APPLE)
+    const ways = createWelcomeActions(createCurrentVault(), words, APPLE)
     expect(ways.map((one) => one.id)).toStrictEqual([
       'find',
       COMMANDS,
@@ -79,7 +88,7 @@ describe('the ways into the vault', () => {
   })
 
   it('are each called what the window calls them, and the plex what the screen does', () => {
-    const ways = waysIn(createCurrentVault(), words, APPLE)
+    const ways = createWelcomeActions(createCurrentVault(), words, APPLE)
     expect(ways.map((one) => one.text)).toStrictEqual([
       words.find,
       words.commands,
@@ -92,45 +101,47 @@ describe('the ways into the vault', () => {
 
   /** A note cannot be made in a vault that never opened. The rest stand. */
   it('leave out the new note where the vault could not be opened', () => {
-    const ways = waysIn(createCurrentVault({ isReady: false }), words, APPLE)
+    const ways = createWelcomeActions(createCurrentVault({ isReady: false }), words, APPLE)
     expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'agent', SETTINGS])
   })
 
   /** The settings are the installation's, so they are offered last of all. */
   it('offer the settings last, on a vault and off one', () => {
-    expect(waysIn(createCurrentVault(), words, APPLE).at(-1)?.id).toBe(SETTINGS)
-    expect(waysIn(createCurrentVault({ vault: '' }), words, APPLE).at(-1)?.id).toBe(SETTINGS)
+    expect(createWelcomeActions(createCurrentVault(), words, APPLE).at(-1)?.id).toBe(SETTINGS)
+    expect(createWelcomeActions(createCurrentVault({ vault: '' }), words, APPLE).at(-1)?.id).toBe(
+      SETTINGS,
+    )
   })
 })
 
 describe('the keystroke drawn on a way', () => {
-  const keysOn = (id: string, agent = APPLE) =>
-    waysIn(createCurrentVault(), words, agent).find((one) => one.id === id)?.keys
+  const getKeys = (id: string, agent = APPLE) =>
+    createWelcomeActions(createCurrentVault(), words, agent).find((one) => one.id === id)?.keys
 
   it('is the one the table binds to that command', () => {
-    expect(keysOn('note')).toStrictEqual(keyOf('note', APPLE))
-    expect(keysOn('plex')).toStrictEqual(keyOf('plex', APPLE))
-    expect(keysOn('agent')).toStrictEqual(keyOf('agent', APPLE))
+    expect(getKeys('note')).toStrictEqual(findChordKeys('note', APPLE))
+    expect(getKeys('plex')).toStrictEqual(findChordKeys('plex', APPLE))
+    expect(getKeys('agent')).toStrictEqual(findChordKeys('agent', APPLE))
   })
 
   it('is the key the keyboard in hand holds', () => {
-    expect(keysOn('note', LINUX)).toStrictEqual({ icons: ['control'], letter: 'N' })
-    expect(keysOn('agent', LINUX)).toStrictEqual({ icons: ['control', 'shift'], letter: 'A' })
+    expect(getKeys('note', LINUX)).toStrictEqual({ icons: ['control'], letter: 'N' })
+    expect(getKeys('agent', LINUX)).toStrictEqual({ icons: ['control', 'shift'], letter: 'A' })
   })
 
   it('is the two the window keeps for itself, as the window hands them over', () => {
-    expect(keysOn('find')).toBe(words.findKeys)
-    expect(keysOn(COMMANDS)).toBe(words.commandsKeys)
+    expect(getKeys('find')).toBe(words.findKeys)
+    expect(getKeys(COMMANDS)).toBe(words.commandsKeys)
   })
 })
 
 describe('the vaults the screen lists', () => {
   it('holds every vault on the list, under its name', () => {
-    expect(vaultsOn(two, words).map((one) => one.name)).toStrictEqual(['Physics', 'Heat'])
+    expect(createVaultRows(two, words).map((one) => one.name)).toStrictEqual(['Physics', 'Heat'])
   })
 
   it('marks the one the window is showing, and draws it all the same', () => {
-    expect(vaultsOn(two, words)[0]).toStrictEqual({
+    expect(createVaultRows(two, words)[0]).toStrictEqual({
       id: 'a',
       name: 'Physics',
       path: '/vaults/Physics',
@@ -139,7 +150,7 @@ describe('the vaults the screen lists', () => {
   })
 
   it('marks one whose folder is not there', () => {
-    const held = vaultsOn(createVaultList([vault('b', 'Heat', true)], 'a'), words)
+    const held = createVaultRows(createVaultList([vault('b', 'Heat', true)], 'a'), words)
     expect(held[0]).toStrictEqual({
       id: 'b',
       name: 'Heat',
@@ -149,7 +160,7 @@ describe('the vaults the screen lists', () => {
   })
 
   it('says the folder is gone of the vault it is showing, which is the worse news', () => {
-    const held = vaultsOn(createVaultList([vault('a', 'Physics', true)], 'a'), words)
+    const held = createVaultRows(createVaultList([vault('a', 'Physics', true)], 'a'), words)
     expect(held[0]).toStrictEqual({
       id: 'a',
       name: 'Physics',
@@ -159,7 +170,7 @@ describe('the vaults the screen lists', () => {
   })
 
   it('says nothing beside a vault that is neither', () => {
-    expect(vaultsOn(two, words)[1]).toStrictEqual({
+    expect(createVaultRows(two, words)[1]).toStrictEqual({
       id: 'b',
       name: 'Heat',
       path: '/vaults/Heat',
@@ -167,6 +178,6 @@ describe('the vaults the screen lists', () => {
   })
 
   it('is empty where the installation holds no vault', () => {
-    expect(vaultsOn(createVaultList([], ''), words)).toStrictEqual([])
+    expect(createVaultRows(createVaultList([], ''), words)).toStrictEqual([])
   })
 })

@@ -11,7 +11,7 @@ import type { Ref } from 'vue'
 import { isInBounds } from '@/entities/settings'
 import type { Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { HELD, its, modeOf, onto, sizeOf } from '../lib/appearanceValues'
+import { HELD, its, parseMode, onto, parseSize } from '../lib/appearanceValues'
 import type { ScaleChoice } from '../lib/appearanceValues'
 
 /** What choosing a row reaches: the settings it writes, and what it wears. */
@@ -41,13 +41,13 @@ export function useAppearanceChoice(on: ChoiceDeps) {
   let hold: ReturnType<typeof setTimeout> | undefined
 
   /** Whether a row names a theme, which the rows of the other lists do not. */
-  const isTheme = (item: string): boolean => item !== '' && !modeOf(item) && !sizeOf(item)
+  const isTheme = (item: string): boolean => item !== '' && !parseMode(item) && !parseSize(item)
 
   /** The theme worn now: the one the keyboard is on, else the one applied. */
   const worn = computed(() => (isTheme(stood.value) ? stood.value : applied.value))
 
   /** The mode read now, the same way. */
-  const half = computed<Mode>(() => modeOf(stood.value) ?? mode.value)
+  const half = computed<Mode>(() => parseMode(stood.value) ?? mode.value)
 
   /** The sizes the window is drawn at now: the one being held, over the settings'. */
   const sized = computed<Sizes>(() => {
@@ -72,7 +72,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
   const previewItem = (item: string) => {
     stood.value = item
     clearTimeout(hold)
-    const size = sizeOf(item)
+    const size = parseSize(item)
     if (size && isInBounds(its(bounds.value, size.which), size.size)) {
       hold = setTimeout(() => (holding.value = size), HELD)
       return
@@ -106,10 +106,10 @@ export function useAppearanceChoice(on: ChoiceDeps) {
    * that could not be written say so, and the window wears what they hold.
    */
   const chooseItem = async (item: string) => {
-    const size = sizeOf(item)
+    const size = parseSize(item)
     if (size) return await chooseSize(size)
     const was = { applied: applied.value, mode: mode.value }
-    const targetMode = modeOf(item)
+    const targetMode = parseMode(item)
     if (!targetMode && !list.value.some((one) => one.name === item)) return
     if (targetMode && isPinned.value) return
     write('')

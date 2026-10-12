@@ -1,10 +1,10 @@
 /**
  * Construction of the full list of commands offered by the application.
  */
-import { fileCommandsOf } from './fileCommands'
-import { noteCommandsOf } from './noteCommands'
-import { vaultCommandsOf } from './vaultCommands'
-import { windowCommandsOf } from './windowCommands'
+import { createFileCommands } from './fileCommands'
+import { createNoteCommands } from './noteCommands'
+import { createVaultCommands } from './vaultCommands'
+import { createWindowCommands } from './windowCommands'
 import type { Command } from '../types'
 import type { Words } from '../words'
 
@@ -19,8 +19,8 @@ export const commandsOf = (
   words: Words,
   agent: string = navigator.userAgent,
 ): readonly Command[] => [
-  ...noteCommandsOf(words, agent),
-  ...fileCommandsOf(words),
-  ...windowCommandsOf(words, agent),
-  ...vaultCommandsOf(words, agent),
+  ...createNoteCommands(words, agent),
+  ...createFileCommands(words),
+  ...createWindowCommands(words, agent),
+  ...createVaultCommands(words, agent),
 ]

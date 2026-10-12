@@ -3,10 +3,10 @@
  * search that stands behind them.
  */
 export { default as CommandPalette } from './ui/CommandPalette.vue'
-export { isChord, commandFor, keyOf, keysOf } from './lib/chords'
+export { isChord, findChordCommand, findChordKeys, createRowKeys } from './lib/chords'
 export { commandsOf } from './lib/table'
 export { getNoteCommands } from './lib/commands'
-export { invocationOf } from './lib/invocation'
+export { createInvocation } from './lib/invocation'
 export { createNotes } from './lib/notes'
 export { openDestination } from './model/destination'
 export type { DestinationDeps } from './model/destination'

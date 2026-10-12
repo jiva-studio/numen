@@ -7,10 +7,10 @@ import { WORDS as words } from '@/shared/words'
 import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
 import type { Command, CommandTarget, RunSupport } from '../types'
-import { fileCommandsOf } from './fileCommands'
+import { createFileCommands } from './fileCommands'
 
-const commandOf = (id: string): Command => {
-  const found = fileCommandsOf(words).find((one) => one.id === id)
+const getCommand = (id: string): Command => {
+  const found = createFileCommands(words).find((one) => one.id === id)
   if (!found) throw new Error(`no command ${id}`)
   return found
 }
@@ -40,11 +40,11 @@ const allBut = (run: string): RunSupport => ({
 })
 
 const isOffered = (id: string, target: CommandTarget, runs: RunSupport = only(id)) =>
-  commandOf(id).isOffered(target, runs)
+  getCommand(id).isOffered(target, runs)
 
 describe('the runs over a file', () => {
   it('are all filed with the file commands', () => {
-    const commands = fileCommandsOf(words)
+    const commands = createFileCommands(words)
 
     expect(commands.map((one) => one.group)).toStrictEqual(commands.map(() => 'file'))
   })
@@ -102,8 +102,8 @@ describe('downloading a copy of a video', () => {
 
 describe('deleting a copy', () => {
   it('is asked about before it happens', () => {
-    expect(commandOf('deleteCopy').needs).toBe('asking')
-    expect(commandOf('deleteCopy').answers).toStrictEqual({
+    expect(getCommand('deleteCopy').needs).toBe('asking')
+    expect(getCommand('deleteCopy').answers).toStrictEqual({
       keeps: words.keepsCopy,
       kept: words.kept,
       action: words.deletes,

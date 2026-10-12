@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
-import { invocationOf } from '../lib/invocation'
+import { createInvocation } from '../lib/invocation'
 import type { CommandInvocation, CommandTarget } from '../types'
 import { ANSWER_WORDS as words } from '../words'
 import type { VaultContext, Voice } from './deps'
@@ -86,7 +86,8 @@ const target: CommandTarget = {
   isReady: true,
 }
 
-const invocationFor = (name = ''): CommandInvocation => invocationOf('renameVault', target, name)
+const createRenameInvocation = (name = ''): CommandInvocation =>
+  createInvocation('renameVault', target, name)
 
 describe('showing another vault', () => {
   it('opens it and draws the page again', async () => {
@@ -158,7 +159,7 @@ describe('renaming a vault', () => {
   it('names it what was typed and tells the window', async () => {
     const one = createWindow()
 
-    await renameVault(invocationFor('Heat'), one.on, words)
+    await renameVault(createRenameInvocation('Heat'), one.on, words)
 
     expect(one.calls.rename).toHaveBeenCalledWith('physics', 'Heat')
     expect(one.calls.setVaultName).toHaveBeenCalledWith({ id: 'physics', name: 'Heat' })
@@ -167,7 +168,7 @@ describe('renaming a vault', () => {
   it('tells the window nothing where the list is as it was', async () => {
     const one = createWindow({ renamed: asValue(null) })
 
-    await renameVault(invocationFor('Heat'), one.on, words)
+    await renameVault(createRenameInvocation('Heat'), one.on, words)
 
     expect(one.calls.setVaultName).not.toHaveBeenCalled()
     expect(one.messages).toStrictEqual([])
@@ -176,7 +177,7 @@ describe('renaming a vault', () => {
   it('says why the list refused, as an error', async () => {
     const one = createWindow({ renamed: asFailure('nameTaken' as const) })
 
-    await renameVault(invocationFor('Heat'), one.on, words)
+    await renameVault(createRenameInvocation('Heat'), one.on, words)
 
     expect(one.messages).toStrictEqual([{ text: words.vaultErrors.nameTaken, kind: 'error' }])
   })
@@ -184,8 +185,8 @@ describe('renaming a vault', () => {
   it('asks for nothing where the name is empty or the one it has', async () => {
     const one = createWindow()
 
-    await renameVault(invocationFor(''), one.on, words)
-    await renameVault(invocationFor('Physics'), one.on, words)
+    await renameVault(createRenameInvocation(''), one.on, words)
+    await renameVault(createRenameInvocation('Physics'), one.on, words)
 
     expect(one.calls.rename).not.toHaveBeenCalled()
   })
@@ -195,8 +196,8 @@ describe('taking a vault off the list', () => {
   it('asks to erase the folder only where the command erases', async () => {
     const one = createWindow()
 
-    await removeVault(invocationFor(), true, one.on, words)
-    await removeVault(invocationFor(), false, one.on, words)
+    await removeVault(createRenameInvocation(), true, one.on, words)
+    await removeVault(createRenameInvocation(), false, one.on, words)
 
     expect(one.calls.remove.mock.calls).toStrictEqual([
       ['physics', true],
@@ -207,7 +208,7 @@ describe('taking a vault off the list', () => {
   it('says nothing where the list took it off', async () => {
     const one = createWindow()
 
-    await removeVault(invocationFor(), false, one.on, words)
+    await removeVault(createRenameInvocation(), false, one.on, words)
 
     expect(one.messages).toStrictEqual([])
   })
@@ -215,7 +216,7 @@ describe('taking a vault off the list', () => {
   it('says why the list refused, as an error', async () => {
     const one = createWindow({ removed: 'lastVault' })
 
-    await removeVault(invocationFor(), false, one.on, words)
+    await removeVault(createRenameInvocation(), false, one.on, words)
 
     expect(one.messages).toStrictEqual([{ text: words.vaultErrors.lastVault, kind: 'error' }])
   })
