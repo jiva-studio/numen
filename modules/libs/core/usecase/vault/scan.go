@@ -103,6 +103,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before the first step has run"
 		return res, err
 	}
 	// The rows the walk writes point at the vault's own row. What the vault is
