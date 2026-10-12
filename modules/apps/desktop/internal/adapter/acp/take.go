@@ -51,11 +51,11 @@ func (a *Agent) StartRun(ctx context.Context, task port.Task) (port.Run, error) 
 		return nil, err
 	}
 
-	stdin, stdout, err := openPipes(cmd, isRPC)
+	opened, err := openPipes(cmd, isRPC)
 	if err != nil {
 		return abandon(err)
 	}
-	pipes := closers(stdin, stdout)
+	pipes := opened.getClosers()
 
 	w := &work{
 		cmd:          cmd,
@@ -74,7 +74,7 @@ func (a *Agent) StartRun(ctx context.Context, task port.Task) (port.Run, error) 
 	}
 
 	w.reader.Add(1)
-	go a.read(w, stdin, stdout, task, isRPC)
+	go a.read(w, opened.stdin, opened.stdout, task, isRPC)
 
 	return w, nil
 }
@@ -93,33 +93,39 @@ func (a *Agent) configureCommand(cmd *exec.Cmd) {
 	cmd.WaitDelay = 2 * time.Second
 }
 
-// openPipes opens the pipes of the process: its output, and its input where it
-// speaks JSON-RPC. Nothing stays open when an error is returned.
-func openPipes(cmd *exec.Cmd, isRPC bool) (io.WriteCloser, io.ReadCloser, error) {
-	var stdin io.WriteCloser
-	if isRPC {
-		var err error
-		if stdin, err = cmd.StdinPipe(); err != nil {
-			return nil, nil, err
-		}
-	}
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		if stdin != nil {
-			stdin.Close()
-		}
-		return nil, nil, err
-	}
-	return stdin, stdout, nil
+// processPipes are the pipes of the process: its input where it speaks
+// JSON-RPC, and its output.
+type processPipes struct {
+	stdin  io.WriteCloser
+	stdout io.ReadCloser
 }
 
-// closers are the pipes that were opened, which leaves out a standard input
-// the agent is not given.
-func closers(stdin io.WriteCloser, stdout io.ReadCloser) []io.Closer {
-	if stdin == nil {
-		return []io.Closer{stdout}
+// openPipes opens the pipes of the process. Nothing stays open when an error is
+// returned.
+func openPipes(cmd *exec.Cmd, isRPC bool) (processPipes, error) {
+	var opened processPipes
+	if isRPC {
+		var err error
+		if opened.stdin, err = cmd.StdinPipe(); err != nil {
+			return processPipes{}, err
+		}
 	}
-	return []io.Closer{stdin, stdout}
+	var err error
+	if opened.stdout, err = cmd.StdoutPipe(); err != nil {
+		if opened.stdin != nil {
+			opened.stdin.Close()
+		}
+		return processPipes{}, err
+	}
+	return opened, nil
+}
+
+// getClosers are the pipes that were opened.
+func (p processPipes) getClosers() []io.Closer {
+	if p.stdin == nil {
+		return []io.Closer{p.stdout}
+	}
+	return []io.Closer{p.stdin, p.stdout}
 }
 
 // getModel is the model that answers a task: the one the task names, or else
