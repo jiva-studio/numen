@@ -32,3 +32,27 @@ func TestVectorsOfTwoWidthsAreTwoModels(t *testing.T) {
 		t.Error("nothing was taken for a model")
 	}
 }
+
+func TestOneDimensionEachWayCanAgree(t *testing.T) {
+	if !embedding.IsAgreed([]float32{1}, []float32{1}) {
+		t.Error("one model was taken for two")
+	}
+}
+
+func TestVectorsStandingExactlyAtTheAgreementAgree(t *testing.T) {
+	// The dot product of these is exactly Agreement: a float32 head and two
+	// float32 pieces that sum to the rest of it.
+	target := float64(embedding.Agreement)
+	head := float32(target)
+	rest := target - float64(head)
+	first := float32(rest)
+	second := float32(rest - float64(first))
+	if float64(head)+float64(first)+float64(second) != target {
+		t.Fatal("the vectors do not sum to the agreement")
+	}
+	a := []float32{head, first, second}
+	b := []float32{1, 1, 1}
+	if !embedding.IsAgreed(a, b) {
+		t.Error("vectors at the agreement were taken for two models")
+	}
+}

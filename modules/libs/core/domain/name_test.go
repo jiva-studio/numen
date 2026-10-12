@@ -69,3 +69,47 @@ func TestTheExtensionComesOffALinkHoweverItIsSpelled(t *testing.T) {
 		}
 	}
 }
+
+// A path from the root of a vault has a separator at its very start.
+func TestAPathFromTheRootIsFoundByItsLastSegment(t *testing.T) {
+	for path, want := range map[string]string{
+		"/Entropy.md":       "Entropy",
+		"/.hidden":          ".hidden",
+		"/a/Entropy.md":     "Entropy",
+		"notes/":            "",
+		"/":                 "",
+		"notes/a.b/Entropy": "Entropy",
+	} {
+		if got := domain.Basename(path); got != want {
+			t.Errorf("%q is found by %q, want %q", path, got, want)
+		}
+	}
+	for written, want := range map[string]string{
+		"/Entropy": "Entropy",
+		"/.md":     ".md",
+		"a/.md":    ".md",
+		"x.md":     "x",
+		"a.md":     "a",
+	} {
+		if got := domain.LinkName(written); got != want {
+			t.Errorf("[[%s]] is written by %q, want %q", written, got, want)
+		}
+	}
+}
+
+func TestANameIsFoldedToLowerCase(t *testing.T) {
+	for name, want := range map[string]string{
+		"ABC":      "abc",
+		"Entropy":  "entropy",
+		"a-Z_9":    "a-z_9",
+		"@AZ[":     "@az[",
+		"`az{":     "`az{",
+		"already":  "already",
+		"İstanbul": "i̇stanbul",
+		"\x7f":     "\x7f",
+	} {
+		if got := domain.FoldName(name); got != want {
+			t.Errorf("FoldName(%q) = %q, want %q", name, got, want)
+		}
+	}
+}
