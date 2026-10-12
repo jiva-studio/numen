@@ -68,6 +68,7 @@ const stripComments = (root: ParentNode & Node): void => {
 
 /** Whether a tag may carry an attribute of that name. */
 const canCarry = (tag: string, name: string): boolean =>
+  // Stryker disable next-line ArrayDeclaration: the mutated value is ["Stryker was here"], a name with spaces that no parsed attribute has.
   ANY.has(name) || (OWN[tag] ?? []).includes(name)
 
 /** Whether an address an attribute names is one a card may reach. */
