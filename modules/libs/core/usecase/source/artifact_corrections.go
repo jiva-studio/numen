@@ -58,15 +58,15 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 		return 0, ErrNoCue
 	}
 
-	held, store, hash, err := u.shelf.getArtifacts(ctx, v, in.Path)
+	set, err := u.shelf.getArtifacts(ctx, v, in.Path)
 	if err != nil {
 		return 0, err
 	}
-	for _, one := range held {
+	for _, one := range set.Artifacts {
 		if one.Kind != KindTranscript {
 			continue
 		}
-		return u.write(ctx, store, in, one.Producer, hash, put)
+		return u.write(ctx, set.Store, in, one.Producer, set.Hash, put)
 	}
 	return 0, fmt.Errorf("nothing of the kind %q was made from %s", in.Kind, in.Path)
 }
