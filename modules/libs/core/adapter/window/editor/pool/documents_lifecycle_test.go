@@ -8,6 +8,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // shelf is a Scan that counts what is asked of it.
@@ -54,9 +57,13 @@ func (s *shelf) getCloses() int {
 
 func (s *shelf) isClosed() bool { return s.getCloses() > 0 }
 
-func opens(s Scan) func() (Scan, error) { return func() (Scan, error) { return s, nil } }
+func opens(s port.OpenDocument) func() (port.OpenDocument, error) {
+	return func() (port.OpenDocument, error) { return s, nil }
+}
 
-func markOf(name string) Fingerprint { return Fingerprint{Path: name, Size: 1, Mtime: 1} }
+func markOf(name string) document.Fingerprint {
+	return document.Fingerprint{Path: name, Size: 1, Mtime: 1}
+}
 
 // waitFor holds until the condition does, or fails the test.
 func waitFor(t *testing.T, what string, holds func() bool) {
@@ -76,7 +83,7 @@ func getOpenCount(d *Documents) int {
 	return len(d.open)
 }
 
-func getOrder(d *Documents) []Fingerprint {
+func getOrder(d *Documents) []document.Fingerprint {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return slices.Clone(d.order)
@@ -144,19 +151,19 @@ func TestADocumentAskedForAgainIsTheNewestInTheOrder(t *testing.T) {
 	}
 	take("a", a)
 	take("b", b)
-	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("a"), markOf("b")}) {
+	if got := getOrder(docs); !slices.Equal(got, []document.Fingerprint{markOf("a"), markOf("b")}) {
 		t.Fatalf("the order is %v", got)
 	}
 	take("b", b)
-	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("a"), markOf("b")}) {
+	if got := getOrder(docs); !slices.Equal(got, []document.Fingerprint{markOf("a"), markOf("b")}) {
 		t.Errorf("asking for the newest again left the order %v", got)
 	}
 	take("a", a)
-	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("b"), markOf("a")}) {
+	if got := getOrder(docs); !slices.Equal(got, []document.Fingerprint{markOf("b"), markOf("a")}) {
 		t.Errorf("the order is %v after a was asked for again", got)
 	}
 	take("c", c)
-	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("a"), markOf("c")}) {
+	if got := getOrder(docs); !slices.Equal(got, []document.Fingerprint{markOf("a"), markOf("c")}) {
 		t.Errorf("the order is %v after b was closed", got)
 	}
 	if !b.isClosed() || a.isClosed() {
@@ -195,7 +202,7 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
 	defer giveGood()
 
 	attempts := 0
-	broken := func() (Scan, error) {
+	broken := func() (port.OpenDocument, error) {
 		attempts++
 		return nil, cause
 	}
@@ -212,7 +219,7 @@ func TestADocumentThatCannotBeOpenedIsReportedAndNotKept(t *testing.T) {
 		t.Errorf("the file was read %d times, want 2", attempts)
 	}
 	waitFor(t, "the failed document is forgotten", func() bool {
-		return getOpenCount(docs) == 1 && slices.Equal(getOrder(docs), []Fingerprint{markOf("good")})
+		return getOpenCount(docs) == 1 && slices.Equal(getOrder(docs), []document.Fingerprint{markOf("good")})
 	})
 }
 
@@ -241,7 +248,7 @@ func TestACallerThatRanOutOfTimeIsToldTheDocumentIsBusy(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	release := make(chan struct{})
-	slow := func() (Scan, error) {
+	slow := func() (port.OpenDocument, error) {
 		<-release
 		return &shelf{}, nil
 	}
@@ -568,7 +575,7 @@ func TestAnEvictedDocumentFromTheMiddleOfTheOrderLeavesTheRestInOrder(t *testing
 	if clock.Stop() {
 		t.Error("the clock of an evicted document was left running")
 	}
-	if got := getOrder(docs); !slices.Equal(got, []Fingerprint{markOf("a"), markOf("c")}) {
+	if got := getOrder(docs); !slices.Equal(got, []document.Fingerprint{markOf("a"), markOf("c")}) {
 		t.Errorf("the order is %v", got)
 	}
 }
@@ -578,7 +585,7 @@ func TestADocumentThatFailedToOpenIsClosedOnceGivenBack(t *testing.T) {
 	t.Cleanup(docs.Close)
 	s := &shelf{}
 	cause := errors.New("half open")
-	if _, _, err := docs.Acquire(t.Context(), markOf("a"), func() (Scan, error) { return s, cause }); !errors.Is(err, cause) {
+	if _, _, err := docs.Acquire(t.Context(), markOf("a"), func() (port.OpenDocument, error) { return s, cause }); !errors.Is(err, cause) {
 		t.Fatalf("answered %v", err)
 	}
 	if got := s.getCloses(); got != 1 {

@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
 	"strconv"
 
@@ -12,7 +11,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // A book that reflows reaches the window as words: the markup of one document
@@ -23,25 +22,6 @@ import (
 // A book names as many as it likes.
 const mostListed = 10_000
 
-// errNotAPicture is an entry of an archive that is not one of the pictures a
-// book is drawn from.
-var errNotAPicture = errors.New("this entry is not a picture")
-
-// pictured are the types an entry may be served as, and what settles the type is
-// the bytes. What the manifest calls a file is the book's own claim about it,
-// and a book is somebody else's: an entry served as markup hands the window's
-// origin to whoever wrote it.
-//
-// SVG is not among them. It is a document — script, style, and addresses of its
-// own, which resolve against this route and reach no entry of the archive — and
-// nothing about reading it out of an archive makes it a picture.
-var pictured = map[string]bool{
-	"image/png":  true,
-	"image/jpeg": true,
-	"image/gif":  true,
-	"image/webp": true,
-}
-
 // GetBook answers what a book that reflows is: what it is called, the documents
 // it is read in, and what it names inside them.
 //
@@ -51,40 +31,43 @@ func (a *API) GetBook(
 	ctx context.Context,
 	r *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
-	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
-	defer cancel()
-
-	reader, mark, err := a.stat(ctx, r.Msg.GetPath())
+	if a.Documents.GetBook == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+	}
+	showing, err := a.getShownVault()
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	read, err := a.book(ctx, reader, mark)
+	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
+	defer cancel()
+
+	read, err := a.Documents.GetBook.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
 
 	out := &v1.GetBookResponse{
-		Title:       read.Title,
-		PageCount:   int32(read.PageCount()),
-		TextBytes:   int32(len(read.Text)),
-		PageBytes:   int32(read.PageBytes()),
-		Fingerprint: &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime},
+		Title:       read.Book.Title,
+		PageCount:   int32(read.Book.PageCount()),
+		TextBytes:   int32(len(read.Book.Text)),
+		PageBytes:   int32(read.Book.PageBytes()),
+		Fingerprint: newWireFingerprint(read.Fingerprint),
 	}
-	for _, doc := range read.Documents[:min(len(read.Documents), mostListed)] {
+	for _, doc := range read.Book.Documents[:min(len(read.Book.Documents), mostListed)] {
 		out.Documents = append(out.Documents, &v1.SpineDocument{
 			Path:   doc.Path,
 			Offset: int32(doc.Offset),
 			Length: int32(doc.Length),
 		})
 	}
-	for _, part := range read.Parts[:min(len(read.Parts), mostListed)] {
+	for _, part := range read.Book.Parts[:min(len(read.Book.Parts), mostListed)] {
 		out.Parts = append(out.Parts, &v1.BookPart{
 			Title:  part.Title,
 			Offset: int32(part.Offset),
 			Level:  int32(part.Level),
 		})
 	}
-	for _, page := range read.Pages[:min(len(read.Pages), mostListed)] {
+	for _, page := range read.Book.Pages[:min(len(read.Book.Pages), mostListed)] {
 		out.PrintedPages = append(out.PrintedPages, &v1.PrintedPage{Label: page.Label, Offset: int32(page.Offset)})
 	}
 	return connect.NewResponse(out), nil
@@ -99,25 +82,25 @@ func (a *API) ReadBookMarkup(
 	ctx context.Context,
 	r *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
+	if a.Documents.GetBookMarkup == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
+	}
+	showing, err := a.getShownVault()
+	if err != nil {
+		return nil, connect.NewError(getDrawCode(err), err)
+	}
 	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
 	defer cancel()
 
-	reader, mark, err := a.stat(ctx, r.Msg.GetPath())
+	var baseline *document.Fingerprint
+	if named := r.Msg.GetBaseline(); named != nil {
+		baseline = &document.Fingerprint{Size: named.GetSize(), Mtime: named.GetMtime()}
+	}
+	markup, err := a.Documents.GetBookMarkup.Execute(ctx, showing, r.Msg.GetPath(), baseline, r.Msg.GetDocument())
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	if baseline := r.Msg.GetBaseline(); baseline != nil && (baseline.GetSize() != mark.Size || baseline.GetMtime() != mark.Mtime) {
-		return nil, connect.NewError(connect.CodeNotFound, errChanged)
-	}
-	read, err := a.book(ctx, reader, mark)
-	if err != nil {
-		return nil, connect.NewError(getDrawCode(err), err)
-	}
-	drawn, err := read.Markup(r.Msg.GetDocument())
-	if err != nil {
-		return nil, connect.NewError(getDrawCode(err), err)
-	}
-	return connect.NewResponse(&v1.ReadBookMarkupResponse{Markup: drawn.HTML()}), nil
+	return connect.NewResponse(&v1.ReadBookMarkupResponse{Markup: markup}), nil
 }
 
 // Entry answers with the bytes of one entry of a book's archive, which is how a
@@ -133,58 +116,29 @@ func (a *API) Entry(w http.ResponseWriter, r *http.Request, path, entry string) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if a.Documents.GetBookPicture == nil {
+		http.Error(w, errNoDocuments.Error(), http.StatusNotImplemented)
+		return
+	}
+	showing, err := a.getShownVault()
+	if err != nil {
+		refuse(w, err)
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
 	defer cancel()
 
-	reader, mark, err := a.stat(ctx, path)
+	picture, err := a.Documents.GetBookPicture.Execute(ctx, showing, path, named, entry)
 	if err != nil {
 		refuse(w, err)
-		return
-	}
-	if named.Size != mark.Size || named.Mtime != mark.Mtime {
-		refuse(w, errChanged)
-		return
-	}
-	read, err := a.book(ctx, reader, mark)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	body, err := read.Entry(entry)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	drawn := http.DetectContentType(body)
-	if !pictured[drawn] {
-		refuse(w, errNotAPicture)
 		return
 	}
 
-	w.Header().Set("Content-Type", drawn)
+	w.Header().Set("Content-Type", picture.Type)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(picture.Body)))
 	w.Header().Set("Cache-Control", immutable)
-	_, _ = w.Write(body)
-}
-
-// book hands over the book at a fingerprint, read where it is not held already.
-//
-// The bytes are read where the book is not open, and the read outlives the
-// request that asked for it: a caller that ran out of patience is told the book
-// is busy, and the book is there for the next ask.
-func (a *API) book(
-	ctx context.Context,
-	reader port.VaultReader,
-	mark pool.Fingerprint,
-) (*epub.Book, error) {
-	return a.Viewer.books.Load().Acquire(ctx, mark, func() (*epub.Book, error) {
-		raw, err := reader.Read(context.WithoutCancel(ctx), mark.Path)
-		if err != nil {
-			return nil, err
-		}
-		return epub.Read(raw)
-	})
+	_, _ = w.Write(picture.Body)
 }
 
 // isMisnamed is whether the bytes are not what they are called: a file that is no
@@ -195,5 +149,5 @@ func isMisnamed(err error) bool {
 		errors.Is(err, epub.ErrNoContainer) ||
 		errors.Is(err, epub.ErrNoPackage) ||
 		errors.Is(err, epub.ErrEncrypted) ||
-		errors.Is(err, errNotAPicture)
+		errors.Is(err, document.ErrNotAPicture)
 }

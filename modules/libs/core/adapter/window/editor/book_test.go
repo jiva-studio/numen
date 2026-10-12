@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,6 +13,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 
 	"connectrpc.com/connect"
 
@@ -97,7 +99,7 @@ func TestAFileThatIsNoBook(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{
 		reflowed: "this is not an archive at all",
 	})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 
@@ -148,7 +150,7 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 
 // markupOf is the markup of one document of a book, asked as the schema asks it
 // with the bytes it was given out for.
-func markupOf(t *testing.T, api *API, path, document string, mark pool.Fingerprint) string {
+func markupOf(t *testing.T, api *API, path, document string, mark document.Fingerprint) string {
 	t.Helper()
 	out, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
 		Path: path, Document: document, Baseline: newWireFingerprint(mark),
@@ -157,11 +159,6 @@ func markupOf(t *testing.T, api *API, path, document string, mark pool.Fingerpri
 		t.Fatalf("asked for %s of %s and was refused: %v", document, path, err)
 	}
 	return out.Msg.GetMarkup()
-}
-
-// newWireFingerprint is a fingerprint as an ask over the schema carries it.
-func newWireFingerprint(mark pool.Fingerprint) *v1.Fingerprint {
-	return &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime}
 }
 
 // A picture the book carries is drawn out of the archive, and what settles the
@@ -212,7 +209,7 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 // that address is one this window answers.
 func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(newCoveredBook(t))})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 	handler := api.NewHandler(http.NotFoundHandler())
@@ -281,7 +278,7 @@ func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
 		reads++
 		return epub.Read(bookOf(t))
 	}
-	mark := pool.Fingerprint{Path: reflowed, Size: 1, Mtime: 2}
+	mark := document.Fingerprint{Path: reflowed, Size: 1, Mtime: 2}
 	for range 3 {
 		if _, err := held.Acquire(t.Context(), mark, read); err != nil {
 			t.Fatalf("take the book: %v", err)
@@ -300,7 +297,7 @@ func TestOnlyTheBooksInFrontOfThePersonAreHeld(t *testing.T) {
 
 	raw := bookOf(t)
 	for at := range pool.MaxOpenBooks + 1 {
-		mark := pool.Fingerprint{Path: fmt.Sprintf("library/%d.epub", at), Size: int64(at)}
+		mark := document.Fingerprint{Path: fmt.Sprintf("library/%d.epub", at), Size: int64(at)}
 		if _, err := held.Acquire(t.Context(), mark, func() (*epub.Book, error) { return epub.Read(raw) }); err != nil {
 			t.Fatalf("take the book: %v", err)
 		}
@@ -323,7 +320,7 @@ func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
 		<-gate
 		return epub.Read(bookOf(t))
 	}
-	mark := pool.Fingerprint{Path: reflowed, Size: 1}
+	mark := document.Fingerprint{Path: reflowed, Size: 1}
 
 	waited, cancel := context.WithTimeout(t.Context(), time.Millisecond)
 	defer cancel()
@@ -345,7 +342,7 @@ func TestABookNobodyIsReadingIsLetGo(t *testing.T) {
 	held := pool.NewBooks(pool.MaxOpenBooks, time.Millisecond)
 	t.Cleanup(held.Close)
 
-	mark := pool.Fingerprint{Path: reflowed, Size: 1}
+	mark := document.Fingerprint{Path: reflowed, Size: 1}
 	if _, err := held.Acquire(t.Context(), mark, func() (*epub.Book, error) { return epub.Read(bookOf(t)) }); err != nil {
 		t.Fatalf("take the book: %v", err)
 	}
@@ -384,7 +381,7 @@ func openBooks(held *pool.Books) int { return held.Len() }
 func readFrom(t *testing.T) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(bookOf(t))})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())
@@ -392,7 +389,7 @@ func readFrom(t *testing.T) (*API, http.Handler) {
 
 // pictureOf is where a picture a book carries is asked for: the place it has in
 // the archive, each segment of it escaped on its own.
-func pictureOf(path, entry string, mark pool.Fingerprint) string {
+func pictureOf(path, entry string, mark document.Fingerprint) string {
 	parts := strings.Split(entry, "/")
 	for at, one := range parts {
 		parts[at] = url.PathEscape(one)

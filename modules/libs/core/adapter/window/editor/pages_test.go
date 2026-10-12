@@ -2,7 +2,6 @@ package editor
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"io"
 	"io/fs"
 	"net/http"
@@ -29,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // mine is a theme of the person's, carrying a colour nothing else has and
@@ -394,10 +394,10 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	}
 	// A page is the one thing left under this route, and drawing one looks the
 	// file up before anything else. That look is where the door stands.
-	api := &API{Readers: readers, Viewer: newViewer(nil)}
-	api.Viewer.open = func(file io.ReadSeekCloser) (pool.Scan, error) {
+	api := newViewingAPI(readers, newViewer(nil))
+	api.Viewer.open = func(file io.ReadSeekCloser) (port.OpenDocument, error) {
 		file.Close()
-		return nil, errNoPage
+		return nil, document.ErrNoPage
 	}
 	api.setVault(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
 	handler := api.NewHandler(http.NotFoundHandler())
@@ -405,7 +405,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	answered := make(chan struct{})
 	go func() {
 		defer close(answered)
-		at := getPageRoute("Note.pdf", 0, 800, pool.Fingerprint{})
+		at := getPageRoute("Note.pdf", 0, 800, document.Fingerprint{})
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
 	}()
 	<-readers.begun

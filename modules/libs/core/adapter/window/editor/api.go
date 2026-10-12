@@ -80,6 +80,8 @@ type API struct {
 	// file of the vault is.
 	Viewer    *viewer
 	Highlight *source.Highlight
+	// Documents reads the pages and books of the vault through the viewer.
+	Documents DocumentScenarios
 	// Texts reads and writes what was made from a file of the vault.
 	Texts source.Texts
 	// Playing is the socket a recording is played from. A build without one

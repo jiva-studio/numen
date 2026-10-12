@@ -1,9 +1,8 @@
 package editor
 
 import (
+	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -17,6 +16,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
+
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -24,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Where the document a test asks about sits in its vault, and a file beside it
@@ -59,7 +63,7 @@ func sheets(pages int) *paper {
 }
 
 // openScan is what the viewer is given in place of pdf.Open.
-func (p *paper) openScan(file io.ReadSeekCloser) (pool.Scan, error) {
+func (p *paper) openScan(file io.ReadSeekCloser) (port.OpenDocument, error) {
 	defer file.Close()
 	if p.gate != nil {
 		<-p.gate
@@ -116,6 +120,29 @@ func (p *paper) getPageDraws(index int) int {
 	return p.each[index]
 }
 
+// newViewingAPI is a window reading the documents of the vaults the readers open
+// through the viewer.
+func newViewingAPI(readers port.VaultReaders, v *viewer) *API {
+	return &API{Readers: readers, Viewer: v, Documents: newDocuments(readers, v)}
+}
+
+// stat is what the vault says about the file at a path, as an address names it.
+func (a *API) stat(ctx context.Context, path string) (port.VaultReader, document.Fingerprint, error) {
+	showing := a.GetCurrentVault()
+	if showing.ID == "" {
+		return nil, document.Fingerprint{}, errNoVault
+	}
+	reader, err := a.Readers.Open(showing)
+	if err != nil {
+		return nil, document.Fingerprint{}, err
+	}
+	ref, err := reader.GetFingerprint(ctx, path)
+	if err != nil {
+		return nil, document.Fingerprint{}, err
+	}
+	return reader, document.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}, nil
+}
+
 // openViewerWindow is a window looking at one document, with the pages drawn by the
 // paper it is given.
 func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
@@ -125,7 +152,7 @@ func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
 		another: "the bytes of a second scan",
 		beside:  "a file the vault leaves alone",
 	})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	api.Viewer.open = from.openScan
 	t.Cleanup(api.Viewer.close)
@@ -143,7 +170,7 @@ func stopReadAhead(api *API) { api.Viewer.prefetch.slot = make(chan struct{}) }
 func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	api.Viewer.patience = time.Minute
 	t.Cleanup(api.Viewer.close)
@@ -158,7 +185,7 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 }
 
 // printOf is which bytes the file at a path is, as an address names them.
-func printOf(t *testing.T, api *API, path string) pool.Fingerprint {
+func printOf(t *testing.T, api *API, path string) document.Fingerprint {
 	t.Helper()
 	_, mark, err := api.stat(t.Context(), path)
 	if err != nil {
@@ -250,7 +277,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 
 			for _, url := range []string{
 				getAssetRoute(path),
-				getPageRoute(path, 0, 400, pool.Fingerprint{}),
+				getPageRoute(path, 0, 400, document.Fingerprint{}),
 			} {
 				out := ask(handler, url)
 				if out.Code == http.StatusOK {
@@ -632,7 +659,7 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 func TestAFileReplacedWhileOpenIsOpenedAgainAndTheOldOneReleased(t *testing.T) {
 	from := sheets(4)
 	vault := testsupport.NewVault(t, map[string]string{book: "the bytes of a scan"})
-	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
+	api := newViewingAPI(filesystem.VaultReaders{}, newViewer(pdf.Documents{}))
 	api.setVault(vault)
 	api.Viewer.open = from.openScan
 	const idleFor = 20 * time.Millisecond

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // A sweep runs behind the page whose writing triggered it. The window owns it:
@@ -50,8 +50,8 @@ func TestNoSweepIsStartedAfterTheWindowCloses(t *testing.T) {
 }
 
 // newDrawingID names one page of the one book these tests keep drawings of.
-func newDrawingID(at int) ID {
-	return ID{Document: pool.Fingerprint{Path: "book.pdf", Size: 1, Mtime: 1}, Page: at, Width: 400}
+func newDrawingID(at int) document.PageKey {
+	return document.PageKey{Document: document.Fingerprint{Path: "book.pdf", Size: 1, Mtime: 1}, Page: at, Width: 400}
 }
 
 // countBytes is what the folder's drawings come to, in bytes.

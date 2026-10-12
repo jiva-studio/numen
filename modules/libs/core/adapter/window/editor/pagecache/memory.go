@@ -7,18 +7,9 @@ import (
 	"container/list"
 	"context"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	"sync"
 )
-
-// ID is one drawn page: which document it belongs to, which page it is, and
-// how wide it was drawn. The width is part of the key because the window asks
-// for the width its screen has, and a page drawn for one width is not the page
-// another width asks for.
-type ID struct {
-	Document pool.Fingerprint
-	Page     int
-	Width    int
-}
 
 // renderedPage is one page drawn and encoded, or the drawing of it under way.
 type renderedPage struct {
@@ -39,7 +30,7 @@ func (p *renderedPage) wait(ctx context.Context) ([]byte, error) {
 
 // entry is one picture in the order it was last asked for.
 type entry struct {
-	key ID
+	key document.PageKey
 	pic *renderedPage
 }
 
@@ -50,7 +41,7 @@ type entry struct {
 // second, and what is here goes when the window does.
 type Memory struct {
 	mu    sync.Mutex
-	index map[ID]*list.Element
+	index map[document.PageKey]*list.Element
 	order *list.List
 	// bytes is what the drawings held come to, and limit is what they may come
 	// to.
@@ -63,12 +54,12 @@ const MaxMemoryBytes = 64 << 20
 
 // NewMemory is a window with nothing drawn yet, holding up to this many bytes.
 func NewMemory(limit int) *Memory {
-	return &Memory{index: map[ID]*list.Element{}, order: list.New(), limit: limit}
+	return &Memory{index: map[document.PageKey]*list.Element{}, order: list.New(), limit: limit}
 }
 
 // GetOrRender hands over one drawn page, drawing it where it is not held. Several asks
 // for the same page draw it once and are answered with the one drawing.
-func (p *Memory) GetOrRender(ctx context.Context, key ID, drawn func() ([]byte, error)) ([]byte, error) {
+func (p *Memory) GetOrRender(ctx context.Context, key document.PageKey, drawn func() ([]byte, error)) ([]byte, error) {
 	p.mu.Lock()
 	if el, ok := p.index[key]; ok {
 		p.order.MoveToFront(el)
@@ -101,7 +92,7 @@ func (p *Memory) GetOrRender(ctx context.Context, key ID, drawn func() ([]byte, 
 
 // Has says whether a page is drawn already, which is what deciding to draw one
 // ahead turns on.
-func (p *Memory) Has(key ID) bool {
+func (p *Memory) Has(key document.PageKey) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	_, ok := p.index[key]
@@ -109,14 +100,14 @@ func (p *Memory) Has(key ID) bool {
 }
 
 // Remove takes one drawing out.
-func (p *Memory) Remove(key ID) {
+func (p *Memory) Remove(key document.PageKey) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.remove(key)
 }
 
 // remove takes one drawing out. The caller holds p.mu.
-func (p *Memory) remove(key ID) {
+func (p *Memory) remove(key document.PageKey) {
 	el, ok := p.index[key]
 	if !ok {
 		return

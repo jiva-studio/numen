@@ -9,6 +9,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // A Disk is the pages drawn before, kept where this machine keeps what it can
@@ -92,7 +94,7 @@ func (s *Disk) Close() {
 //
 // The file's time is set to now, so what is dropped when the folder is swept is
 // what has gone longest without being looked at.
-func (s *Disk) Get(key ID) []byte {
+func (s *Disk) Get(key document.PageKey) []byte {
 	if s == nil {
 		return nil
 	}
@@ -108,7 +110,7 @@ func (s *Disk) Get(key ID) []byte {
 
 // Put keeps one drawn page. A page that cannot be written is a page drawn again
 // next time and nothing else, so nothing here is reported.
-func (s *Disk) Put(key ID, body []byte) {
+func (s *Disk) Put(key document.PageKey, body []byte) {
 	if s == nil || len(body) == 0 {
 		return
 	}
@@ -196,7 +198,7 @@ func (s *Disk) trim() {
 // The file's own name says nothing about the vault. A folder listing is
 // readable by whatever else runs as this person, and what they are reading is
 // theirs.
-func (s *Disk) getFileName(key ID) string {
+func (s *Disk) getFileName(key document.PageKey) string {
 	sum := sha256.Sum256(fmt.Appendf(nil, "%s\x00%d\x00%d\x00%d\x00%d",
 		key.Document.Path, key.Document.Size, key.Document.Mtime, key.Page, key.Width))
 	return hex.EncodeToString(sum[:]) + ".jpg"
@@ -206,7 +208,7 @@ func (s *Disk) getFileName(key ID) string {
 func (s *Disk) GetDir() string { return s.dir }
 
 // GetPath is where one drawing is kept, whether or not it has been drawn yet.
-func (s *Disk) GetPath(key ID) string { return filepath.Join(s.dir, s.getFileName(key)) }
+func (s *Disk) GetPath(key document.PageKey) string { return filepath.Join(s.dir, s.getFileName(key)) }
 
 // TrimTo brings what is kept down to this many bytes, oldest first, and waits
 // for the sweep. What is kept is a cache, so a folder emptied further than the

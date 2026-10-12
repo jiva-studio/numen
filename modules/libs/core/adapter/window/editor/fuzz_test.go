@@ -1,10 +1,11 @@
 package editor
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // pathSeeds are the names a file of a vault arrives under: one in a folder, one
@@ -49,7 +50,7 @@ func FuzzAssetAddress(f *testing.F) {
 		if path == "" || page < 0 {
 			return
 		}
-		mark := pool.Fingerprint{Size: size, Mtime: mtime}
+		mark := document.Fingerprint{Size: size, Mtime: mtime}
 		url := getPageRoute(path, page, 800, mark)
 
 		at, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil))

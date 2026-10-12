@@ -6,6 +6,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // A held document is one being drawn from, and it says when the drawing began
@@ -47,11 +50,11 @@ func (h *held) Close() {
 func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 	one := &held{drawing: make(chan struct{}), let: make(chan struct{})}
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
-	mark := Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
+	mark := document.Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
 
 	drawn := make(chan error, 1)
 	go func() {
-		doc, give, err := docs.Acquire(t.Context(), mark, func() (Scan, error) { return one, nil })
+		doc, give, err := docs.Acquire(t.Context(), mark, func() (port.OpenDocument, error) { return one, nil })
 		if err != nil {
 			drawn <- err
 			return
@@ -108,9 +111,9 @@ func TestAWindowGoingOpensNothingMore(t *testing.T) {
 	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	docs.Close()
 
-	mark := Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
+	mark := document.Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
 	opens := 0
-	_, _, err := docs.Acquire(t.Context(), mark, func() (Scan, error) {
+	_, _, err := docs.Acquire(t.Context(), mark, func() (port.OpenDocument, error) {
 		opens++
 		return &held{drawing: make(chan struct{}), let: make(chan struct{})}, nil
 	})

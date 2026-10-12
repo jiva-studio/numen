@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // Books are the books the window has open. An archive is read and parsed once,
@@ -19,9 +20,9 @@ type Books struct {
 	mu sync.Mutex
 	// open is the books read, keyed by the fingerprint of the file each
 	// came out of.
-	open map[Fingerprint]*Volume
+	open map[document.Fingerprint]*Volume
 	// order is what is held, least recently asked for first.
-	order []Fingerprint
+	order []document.Fingerprint
 	// limit is how many are held at once, and idleFor how long one nobody is
 	// reading is kept.
 	limit   int
@@ -48,7 +49,7 @@ const (
 // NewBooks is a window with no book open yet: how many books it keeps at once,
 // and how long it keeps one nobody is reading.
 func NewBooks(limit int, idleFor time.Duration) *Books {
-	return &Books{open: map[Fingerprint]*Volume{}, limit: limit, idleFor: idleFor}
+	return &Books{open: map[document.Fingerprint]*Volume{}, limit: limit, idleFor: idleFor}
 }
 
 // Acquire hands over the book at a fingerprint, reading it if it is not held.
@@ -59,7 +60,7 @@ func NewBooks(limit int, idleFor time.Duration) *Books {
 // read it once.
 func (b *Books) Acquire(
 	ctx context.Context,
-	mark Fingerprint,
+	mark document.Fingerprint,
 	read func() (*epub.Book, error),
 ) (*epub.Book, error) {
 	b.mu.Lock()
@@ -86,7 +87,7 @@ func (b *Books) Acquire(
 }
 
 // Load reads the book and tells whoever is waiting.
-func (b *Books) Load(mark Fingerprint, held *Volume, read func() (*epub.Book, error)) {
+func (b *Books) Load(mark document.Fingerprint, held *Volume, read func() (*epub.Book, error)) {
 	held.book, held.why = read()
 	close(held.ready)
 	if held.why == nil {
@@ -100,7 +101,7 @@ func (b *Books) Load(mark Fingerprint, held *Volume, read func() (*epub.Book, er
 }
 
 // CloseIfIdle lets go of a book nobody has asked about for a while.
-func (b *Books) CloseIfIdle(mark Fingerprint, held *Volume) {
+func (b *Books) CloseIfIdle(mark document.Fingerprint, held *Volume) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.Remove(mark, held)
@@ -116,7 +117,7 @@ func (b *Books) Evict() {
 
 // Remove takes one book out, which is the whole of letting one go: what a book
 // holds is memory.
-func (b *Books) Remove(mark Fingerprint, held *Volume) {
+func (b *Books) Remove(mark document.Fingerprint, held *Volume) {
 	if held == nil || b.open[mark] != held {
 		return
 	}
@@ -129,13 +130,13 @@ func (b *Books) Remove(mark Fingerprint, held *Volume) {
 
 // Touch puts a fingerprint at the end of the order, which is the most recently
 // asked for.
-func (b *Books) Touch(mark Fingerprint) {
+func (b *Books) Touch(mark document.Fingerprint) {
 	b.RemoveFromOrder(mark)
 	b.order = append(b.order, mark)
 }
 
 // RemoveFromOrder takes a fingerprint out of the order, wherever it stands in it.
-func (b *Books) RemoveFromOrder(mark Fingerprint) {
+func (b *Books) RemoveFromOrder(mark document.Fingerprint) {
 	for i, held := range b.order {
 		if held == mark {
 			b.order = append(b.order[:i], b.order[i+1:]...)
@@ -148,7 +149,7 @@ func (b *Books) RemoveFromOrder(mark Fingerprint) {
 func (b *Books) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	for _, print := range append([]Fingerprint(nil), b.order...) {
+	for _, print := range append([]document.Fingerprint(nil), b.order...) {
 		b.Remove(print, b.open[print])
 	}
 }

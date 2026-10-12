@@ -143,6 +143,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 			CreateFolder:     file.NewCreateFolder(made.GetVaultWriters()),
 		},
 	}
+	api.Documents = newDocuments(api.Readers, api.Viewer)
 	// The editor is open on one vault, and answers which as itself.
 	api.Window.Vault = func() string { return string(api.GetCurrentVault().ID) }
 	api.Indexing.Progress = made.GetIndexProgress()

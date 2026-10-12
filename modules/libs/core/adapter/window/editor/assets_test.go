@@ -1,11 +1,12 @@
 package editor
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // A file of the vault is one part of its address, and what is asked of it is
@@ -23,11 +24,11 @@ func TestAFileIsOnePartOfItsAddress(t *testing.T) {
 		where string
 	}{
 		{"a file", getAssetRoute("library/a.pdf"), "library/a.pdf", ""},
-		{"a page of it", getPageRoute("library/a.pdf", 3, 800, pool.Fingerprint{}),
+		{"a page of it", getPageRoute("library/a.pdf", 3, 800, document.Fingerprint{}),
 			"library/a.pdf", "pages/3"},
-		{"a file in a folder named for a page", getPageRoute("pages/pages/x.pdf", 2, 400, pool.Fingerprint{}),
+		{"a file in a folder named for a page", getPageRoute("pages/pages/x.pdf", 2, 400, document.Fingerprint{}),
 			"pages/pages/x.pdf", "pages/2"},
-		{"a picture of a book", pictureOf("library/a.epub", "OEBPS/pictures/plate.png", pool.Fingerprint{}),
+		{"a picture of a book", pictureOf("library/a.epub", "OEBPS/pictures/plate.png", document.Fingerprint{}),
 			"library/a.epub", "OEBPS/pictures/plate.png"},
 		{"a name with a space in it", getAssetRoute("library/A Book.pdf"), "library/A Book.pdf", ""},
 	} {
@@ -62,7 +63,7 @@ func TestAnAssetNoReaderReadsIsNotAnswered(t *testing.T) {
 		want int
 	}{
 		{"a file with no place named", getAssetRoute("library/a.pdf"), http.StatusBadRequest},
-		{"a file of no reader", getPageRoute("library/a.md", 0, 800, pool.Fingerprint{}), http.StatusNotFound},
+		{"a file of no reader", getPageRoute("library/a.md", 0, 800, document.Fingerprint{}), http.StatusNotFound},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			if out := ask(handler, one.url); out.Code != one.want {

@@ -8,6 +8,7 @@ import (
 	"testing/synctest"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // Drop is exported and may be called from any goroutine, concurrently with
@@ -17,7 +18,7 @@ func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
 	cache := NewMemory(MaxMemoryBytes)
 	drawn := func() ([]byte, error) { return make([]byte, 100), nil }
 
-	held := make([]ID, 10)
+	held := make([]document.PageKey, 10)
 	for at := range held {
 		held[at] = newTestID(at)
 		cache.GetOrRender(t.Context(), held[at], drawn)
@@ -41,8 +42,8 @@ func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
 }
 
 // newTestID names one page of the one book these tests keep drawings of.
-func newTestID(at int) ID {
-	return ID{Document: pool.Fingerprint{Path: "book.pdf", Size: 1, Mtime: 1}, Page: at, Width: 400}
+func newTestID(at int) document.PageKey {
+	return document.PageKey{Document: document.Fingerprint{Path: "book.pdf", Size: 1, Mtime: 1}, Page: at, Width: 400}
 }
 
 func TestMemoryHoldsSixtyFourMebibytes(t *testing.T) {
