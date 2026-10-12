@@ -2,8 +2,6 @@ package agent
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -15,60 +13,21 @@ const (
 	groupConfigured = "Named in the settings"
 )
 
-// ModelAt is where the model the agent answers with stands inside this
-// adapter's section of the settings, and UseAt the program that answers.
-var (
-	ModelAt = []string{"claude", "model"}
-	UseAt   = []string{"use"}
-)
+// UseAt is where the program that answers stands inside this adapter's
+// section of the settings.
+var UseAt = []string{"use"}
 
 // GetModels are the models the agent can answer with.
 func GetModels(held Config) []port.Model {
 	switch held.Use {
 	case UseAntigravity:
-		modelAt := []string{"antigravity", "model"}
-		models := []port.Model{
-			{Path: modelAt, Title: "Default (Gemini 3.7 Flash)", Name: "gemini-3.7-flash", IsDefault: true, Presence: port.NothingToFetch},
-			{Path: modelAt, Name: "gemini-2.5-pro", Title: "Gemini 2.5 Pro", Group: groupInFull, Presence: port.NothingToFetch},
-			{Path: modelAt, Name: "gemini-2.5-flash", Title: "Gemini 2.5 Flash", Group: groupInFull, Presence: port.NothingToFetch},
-		}
-		if name := held.Antigravity.Model; name != "" && !hasModel(models, name) {
-			models = append(models, port.Model{Path: modelAt, Name: name, Title: name, Group: groupConfigured, Presence: port.NothingToFetch})
-		}
-		for at := range models {
-			models[at].Writes = []port.Setting{newSetting(modelAt, models[at].Name)}
-		}
-		return models
+		return getAntigravityModels(held)
 
 	case UseCodex:
 		return getCodexModels(held)
 
 	default:
-		models := []port.Model{{
-			Path:      ModelAt,
-			Title:     "Whatever this machine answers with",
-			IsDefault: true,
-			Presence:  port.NothingToFetch,
-		}}
-		for _, one := range []string{"opus", "sonnet", "haiku"} {
-			models = append(models, port.Model{
-				Path: ModelAt, Name: one, Title: one, Group: groupSize, Presence: port.NothingToFetch,
-			})
-		}
-		for _, one := range []string{"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"} {
-			models = append(models, port.Model{
-				Path: ModelAt, Name: one, Title: one, Group: groupInFull, Presence: port.NothingToFetch,
-			})
-		}
-		if name := held.Claude.Model; name != "" && !hasModel(models, name) {
-			models = append(models, port.Model{
-				Path: ModelAt, Name: name, Title: name, Group: groupConfigured, Presence: port.NothingToFetch,
-			})
-		}
-		for at := range models {
-			models[at].Writes = []port.Setting{newSetting(ModelAt, models[at].Name)}
-		}
-		return models
+		return getClaudeModels(held)
 	}
 }
 
@@ -136,71 +95,4 @@ func newSetting(at []string, value any) port.Setting {
 		return port.Setting{Path: at, JSON: ""}
 	}
 	return port.Setting{Path: at, JSON: string(said)}
-}
-
-type codexCache struct {
-	Models []struct {
-		Slug        string `json:"slug"`
-		DisplayName string `json:"display_name"`
-		Visibility  string `json:"visibility"`
-		Priority    int    `json:"priority"`
-	} `json:"models"`
-}
-
-// readCodexCache is the visible models in the cache the codex program keeps in
-// the home folder, and none where there is no readable cache.
-func readCodexCache(modelAt []string) []port.Model {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil
-	}
-	data, err := os.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
-	if err != nil {
-		return nil
-	}
-	var cache codexCache
-	if err := json.Unmarshal(data, &cache); err != nil {
-		return nil
-	}
-	var models []port.Model
-	for _, m := range cache.Models {
-		if m.Visibility == "hide" || m.Slug == "" {
-			continue
-		}
-		title := m.DisplayName
-		if title == "" {
-			title = m.Slug
-		}
-		models = append(models, port.Model{
-			Path:     modelAt,
-			Name:     m.Slug,
-			Title:    title,
-			Group:    groupInFull,
-			Presence: port.NothingToFetch,
-		})
-	}
-	return models
-}
-
-func getCodexModels(held Config) []port.Model {
-	modelAt := []string{"codex", "model"}
-	models := readCodexCache(modelAt)
-
-	if len(models) == 0 {
-		models = []port.Model{
-			{Path: modelAt, Title: "Default (GPT-5.6 Terra)", Name: "gpt-5.6-terra", IsDefault: true, Presence: port.NothingToFetch},
-			{Path: modelAt, Name: "gpt-5.6-luna", Title: "GPT-5.6 Luna", Group: groupInFull, Presence: port.NothingToFetch},
-		}
-	} else {
-		models[0].IsDefault = true
-		models[0].Title = "Default (" + models[0].Title + ")"
-	}
-
-	if name := held.Codex.Model; name != "" && !hasModel(models, name) {
-		models = append(models, port.Model{Path: modelAt, Name: name, Title: name, Group: groupConfigured, Presence: port.NothingToFetch})
-	}
-	for at := range models {
-		models[at].Writes = []port.Setting{newSetting(modelAt, models[at].Name)}
-	}
-	return models
 }
