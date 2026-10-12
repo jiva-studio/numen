@@ -105,10 +105,8 @@ type Cards struct {
 	Create      cards.Create
 	RenameField cards.RenameField
 	// DeckEdit holds a deck's body open so that one card can be changed and every
-	// other byte left as it arrived, and StencilBody is the markdown a stencil's
-	// faces are written as.
-	DeckEdit    func(body string) *format.DeckFile
-	StencilBody func(preamble string, faces []format.FaceTemplate, tail string) (string, error)
+	// other byte left as it arrived.
+	DeckEdit func(body string) *format.DeckFile
 }
 
 // Sources is the documents a vault holds beside its notes. Without Queries the

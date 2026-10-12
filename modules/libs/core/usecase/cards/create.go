@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -83,6 +84,24 @@ func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (CreateNote
 		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
 	return u.make(ctx, v, domain.TypeStencil, in)
+}
+
+// StencilWithFaces makes a stencil declaring the fields it was given, with the
+// faces laid down as its body. A body larger than a note is written at once is
+// refused.
+func (u Create) StencilWithFaces(
+	ctx context.Context, v domain.Vault, in New, faces []format.FaceTemplate,
+) (CreateNoteResult, error) {
+	body, err := format.StencilBody("", faces, "")
+	if err != nil {
+		return CreateNoteResult{}, err
+	}
+	if len(body) > note.MaxBytes {
+		return CreateNoteResult{}, fmt.Errorf(
+			"a stencil of %d bytes is more than this writes at once, which is %d", len(body), note.MaxBytes)
+	}
+	in.Body = body
+	return u.Stencil(ctx, v, in)
 }
 
 // Preset makes a preset naming none of its settings. A key the file does not

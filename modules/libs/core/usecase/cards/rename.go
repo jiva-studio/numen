@@ -53,6 +53,11 @@ type RenameResult struct {
 //
 // Every field a stencil declares is written this way, the first included.
 type RenameField struct {
+	// MostDecks is how many decks a vault may hold and still have a field
+	// renamed. A vault past it is refused before the stencil is written. Zero
+	// puts no bound on it.
+	MostDecks int
+
 	readers port.VaultReaders
 	writers port.VaultWriters
 	notes   TypeQueries
@@ -115,6 +120,9 @@ func (u RenameField) createIdentifier() string { return ulid.New(u.now()) }
 // could not be written to keeps the old heading and comes back as a problem
 // against that deck, and the decks after it are written all the same.
 func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
+	if err := u.checkDeckCount(ctx, v); err != nil {
+		return RenameResult{}, err
+	}
 	if in.From == in.To {
 		return RenameResult{Stencil: in.Fingerprint}, nil
 	}
@@ -125,6 +133,37 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 	}
 	written := append([]string{in.Stencil}, out.Decks...)
 	return out, note.WrapUnlevelled(u.index(ctx, v, written), written...)
+}
+
+// MostDecksRenamed is how many decks a vault may hold and still have a
+// field renamed through an agent's tools. A field's name is a heading in every
+// card of every deck its stencil cuts, so the rename reads and writes every
+// deck the vault holds, one behind the other under the write lock.
+const MostDecksRenamed = 200
+
+// WithMostDecks returns a copy of RenameField refusing a vault that holds more
+// than n decks.
+func (u RenameField) WithMostDecks(n int) RenameField {
+	u.MostDecks = n
+	return u
+}
+
+// checkDeckCount returns an error when the vault holds more decks than MostDecks.
+func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
+	if u.MostDecks <= 0 {
+		return nil
+	}
+	held, err := u.decks(ctx, v)
+	if err != nil {
+		return err
+	}
+	if len(held) > u.MostDecks {
+		return fmt.Errorf(
+			"this rename reads and writes every deck in the vault, and there are %d of them, "+
+				"which is more than the %d this does at once: rename the field in the window",
+			len(held), u.MostDecks)
+	}
+	return nil
 }
 
 // rename is the whole of the writing, under this vault's write lock from before

@@ -6,7 +6,6 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
@@ -69,21 +68,9 @@ func addCardStencilCreate(server *sdk.Server, core Core) {
 }
 
 func createCardStencil(ctx context.Context, core Core, in stencilCreateInput) (cards.CreateNoteResult, error) {
-	stencilBody := core.Cards.StencilBody
-	if stencilBody == nil {
-		stencilBody = format.StencilBody
-	}
-	body, err := stencilBody("", newFaceTemplates(in.Faces), "")
-	if err != nil {
-		return cards.CreateNoteResult{}, err
-	}
-	if len(body) > maxBytes {
-		return cards.CreateNoteResult{}, fmt.Errorf(
-			"a stencil of %d bytes is more than this writes at once, which is %d", len(body), maxBytes)
-	}
-	return core.Cards.Create.Stencil(ctx, core.getCurrentVault().Vault, cards.New{
-		Title: in.Title, Body: body, Path: in.Folder, Fields: in.Fields,
-	})
+	return core.Cards.Create.StencilWithFaces(ctx, core.getCurrentVault().Vault, cards.New{
+		Title: in.Title, Path: in.Folder, Fields: in.Fields,
+	}, newFaceTemplates(in.Faces))
 }
 
 type fieldRenameInput struct {
@@ -111,7 +98,7 @@ func addCardFieldRename(server *sdk.Server, core Core) {
 			"the first included, so renaming any of them reaches the decks. A " +
 			"deck it could not be written to comes back under `notWritten` and keeps the " +
 			"old heading. Every deck of the vault is read for this, so a vault holding " +
-			"more than " + fmt.Sprint(maxDecks) + " of them is refused whole and the " +
+			"more than " + fmt.Sprint(cards.MostDecksRenamed) + " of them is refused whole and the " +
 			"person renames the field in the window.",
 	}, newHandler(func(ctx context.Context, in fieldRenameInput) (fieldRenameOutput, error) {
 		return renameCardField(ctx, core, in)
@@ -120,9 +107,6 @@ func addCardFieldRename(server *sdk.Server, core Core) {
 
 func renameCardField(ctx context.Context, core Core, in fieldRenameInput) (fieldRenameOutput, error) {
 	v := core.getCurrentVault().Vault
-	if err := checkDeckCount(ctx, core, v); err != nil {
-		return fieldRenameOutput{}, err
-	}
 	renamed, err := core.Cards.RenameField.Execute(ctx, v, cards.Rename{
 		Stencil: in.Path, From: in.From, To: in.To,
 	})
@@ -134,21 +118,6 @@ func renameCardField(ctx context.Context, core Core, in fieldRenameInput) (field
 		res.NotWritten = append(res.NotWritten, deck.Path)
 	}
 	return res, nil
-}
-
-// checkDeckCount returns an error when the vault holds more decks than a rename can read.
-func checkDeckCount(ctx context.Context, core Core, v domain.Vault) error {
-	held, err := core.Notes.Queries.GetPathsOfType(ctx, v.ID, domain.TypeDeck)
-	if err != nil {
-		return err
-	}
-	if len(held) > maxDecks {
-		return fmt.Errorf(
-			"this rename reads and writes every deck in the vault, and there are %d of them, "+
-				"which is more than the %d this does at once: rename the field in the window",
-			len(held), maxDecks)
-	}
-	return nil
 }
 
 // Face is one way a stencil shows a card.
