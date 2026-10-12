@@ -132,7 +132,7 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 // window's vault. This window writes neither it nor a token: a second writer
 // would point that agent at whichever window started last.
 func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
-	cfg, db, vaults, api, vaults := makeWindow(t)
+	cfg, db, opening, api, vaults := makeWindow(t)
 	cfg.Agent = agent.Defaults()
 
 	notes, cards := makeNotesAndCards(cfg, db, opening)
@@ -153,7 +153,7 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 // The agent works the vault the person's session is on. A session on another
 // vault starts it again there; one on the same vault leaves it where it is.
 func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
-	cfg, db, vaults, api, vaults := makeWindow(t)
+	cfg, db, opening, api, vaults := makeWindow(t)
 	cfg.Agent = agent.Defaults()
 
 	notes, cards := makeNotesAndCards(cfg, db, opening)
