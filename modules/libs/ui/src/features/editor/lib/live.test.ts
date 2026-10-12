@@ -410,7 +410,11 @@ describe('the marks of whole lines when the parser finds other blocks in the sam
     const swapped = state.update({
       effects: language.reconfigure(markdown({ extensions: [GFM, config] })),
     }).state
-    return { was: getStanding(state), now: getStanding(swapped) }
+    return {
+      was: getStanding(state),
+      now: getStanding(swapped),
+      nodes: swapped.field(wholeLines).nodes,
+    }
   }
 
   it('are drawn again when a table is found to be a rule', () => {
@@ -421,13 +425,13 @@ describe('the marks of whole lines when the parser finds other blocks in the sam
   })
 
   it('are drawn again when a rule is found to start later', () => {
-    const { now } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 1))
-    expect([now[0]?.from, now[0]?.to]).toEqual([4, 6])
+    const { nodes } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 1))
+    expect(nodes).toEqual([{ name: 'HorizontalRule', from: 4, to: 6 }])
   })
 
   it('are drawn again when a rule is found to end earlier', () => {
-    const { now } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 0, 1))
-    expect([now[0]?.from, now[0]?.to]).toEqual([3, 5])
+    const { nodes } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 0, 1))
+    expect(nodes).toEqual([{ name: 'HorizontalRule', from: 3, to: 5 }])
   })
 
   it('are drawn again when a change far away makes a rule of what was code', () => {
