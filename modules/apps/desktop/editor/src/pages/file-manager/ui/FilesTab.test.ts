@@ -54,14 +54,14 @@ const mountFiles = async (open: readonly string[] = []) => {
 }
 
 /** What the tree was handed, as a path and the paths under it. */
-const rowsOf = (rows: readonly { id: string; rows?: readonly unknown[] }[]): unknown =>
-  rows.map((one) => [one.id, rowsOf((one.rows ?? []) as never)])
+const getRowIds = (rows: readonly { id: string; rows?: readonly unknown[] }[]): unknown =>
+  rows.map((one) => [one.id, getRowIds((one.rows ?? []) as never)])
 
 describe('the tree the tab draws', () => {
   it('is handed a row per file the vault holds, under the path it is filed at', async () => {
     const { window } = await mountFiles()
 
-    expect(rowsOf(window.findComponent(Tree).props('rows'))).toStrictEqual([
+    expect(getRowIds(window.findComponent(Tree).props('rows'))).toStrictEqual([
       ['physics', []],
       ['Entropy.md', []],
       ['Cover.png', []],
@@ -71,7 +71,7 @@ describe('the tree the tab draws', () => {
   it('is handed what an open folder holds, inside the row that stands for it', async () => {
     const { window } = await mountFiles(['physics'])
 
-    expect(rowsOf(window.findComponent(Tree).props('rows'))).toStrictEqual([
+    expect(getRowIds(window.findComponent(Tree).props('rows'))).toStrictEqual([
       ['physics', [['physics/Kelvin.md', []]]],
       ['Entropy.md', []],
       ['Cover.png', []],
@@ -190,7 +190,7 @@ describe('the menu on a row', () => {
     expect(window.findComponent(Menu).exists()).toBe(false)
   })
 
-  const menuOn = async (path: string | null, selection: readonly string[] = []) => {
+  const openMenu = async (path: string | null, selection: readonly string[] = []) => {
     const { list, window } = await mountFiles()
     if (selection.length) list.selectPaths(selection)
     window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
@@ -198,11 +198,11 @@ describe('the menu on a row', () => {
     return window.findComponent(Menu).props('items') as readonly { id: string; group?: string }[]
   }
 
-  const itemsOn = async (path: string | null, selection: readonly string[] = []) =>
-    (await menuOn(path, selection)).map((one) => one.id)
+  const getItemIds = async (path: string | null, selection: readonly string[] = []) =>
+    (await openMenu(path, selection)).map((one) => one.id)
 
   it('offers everything that can be done to a note it was asked for on', async () => {
-    expect(await itemsOn('Entropy.md')).toStrictEqual([
+    expect(await getItemIds('Entropy.md')).toStrictEqual([
       'read',
       'travel',
       'newNote',
@@ -222,7 +222,7 @@ describe('the menu on a row', () => {
   })
 
   it('stands the items of a note in the groups they belong to', async () => {
-    expect((await menuOn('Entropy.md')).map((one) => one.group)).toStrictEqual([
+    expect((await openMenu('Entropy.md')).map((one) => one.group)).toStrictEqual([
       'open',
       'open',
       'file',
@@ -242,7 +242,7 @@ describe('the menu on a row', () => {
   })
 
   it('offers no command over a note on a file the vault holds no source for', async () => {
-    expect(await itemsOn('Cover.png')).toStrictEqual([
+    expect(await getItemIds('Cover.png')).toStrictEqual([
       'newNote',
       'newDeck',
       'newStencil',
@@ -255,11 +255,11 @@ describe('the menu on a row', () => {
   })
 
   it('offers no command over a note on a folder', async () => {
-    expect(await itemsOn('physics')).not.toContain('title')
+    expect(await getItemIds('physics')).not.toContain('title')
   })
 
   it('offers what can be made at the root, asked off every row', async () => {
-    expect(await itemsOn(null)).toStrictEqual([
+    expect(await getItemIds(null)).toStrictEqual([
       'newNote',
       'newDeck',
       'newStencil',
@@ -269,7 +269,7 @@ describe('the menu on a row', () => {
   })
 
   it('offers removal alone over a selection of several', async () => {
-    expect(await itemsOn('Entropy.md', ['Entropy.md', 'Cover.png'])).toStrictEqual(['remove'])
+    expect(await getItemIds('Entropy.md', ['Entropy.md', 'Cover.png'])).toStrictEqual(['remove'])
   })
 })
 

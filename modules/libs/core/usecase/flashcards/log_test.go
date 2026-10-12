@@ -174,7 +174,7 @@ func (s *reorderedStores) Open(v domain.Vault) (port.DerivedStore, error) {
 	return s.store, nil
 }
 
-// getLogFiles sorts what it is given, so the same runs come back in the same
+// GetLogFiles sorts what the store lists, so the same runs come back in the same
 // order whatever order the store's own listing came back in.
 func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	t.Parallel()
@@ -191,11 +191,11 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	}
 
 	log := flashcards.Log{Stores: &reorderedStores{DerivedStores: s.logs}}
-	first, err := log.Files(t.Context(), s.vault)
+	first, err := log.GetLogFiles(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := log.Files(t.Context(), s.vault)
+	second, err := log.GetLogFiles(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

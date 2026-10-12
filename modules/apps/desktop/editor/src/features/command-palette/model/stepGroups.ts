@@ -63,7 +63,7 @@ export function createStepGroups(state: ViewState) {
   }
 
   /** Which of four the note a row of the picking step stands for is. */
-  const typeOf = (id: string): NoteType | null =>
+  const findNoteType = (id: string): NoteType | null =>
     found.value.find((one) => one.path === id)?.type ?? null
 
   /**
@@ -196,9 +196,7 @@ export function createStepGroups(state: ViewState) {
     return {
       id: 'asking',
       title: words.asking,
-      items: answers
-        .filter(([text]) => text.toLowerCase().includes(word))
-        .map(([, item]) => item),
+      items: answers.filter(([text]) => text.toLowerCase().includes(word)).map(([, item]) => item),
       silence: words.answer,
     }
   }
@@ -230,7 +228,7 @@ export function createStepGroups(state: ViewState) {
     getVaultsGroup,
     getConfirmGroup,
     getExactlyGroup,
-    typeOf,
+    findNoteType,
     getVaultAside,
   }
 }

@@ -167,7 +167,7 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 		t.Fatalf("cards = %+v", deck.Cards)
 	}
 	for _, card := range deck.Cards {
-		if !cardid.Valid(card.Mark) {
+		if !cardid.IsValid(card.Mark) {
 			t.Errorf("%q carries %q, which is no mark", card.Heading, card.Mark)
 		}
 	}
@@ -209,7 +209,7 @@ func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
 	if strings.Contains(strings.ReplaceAll(got, "\r\n", ""), "\n") {
 		t.Errorf("a bare break was written into a file of carriage returns: %q", got)
 	}
-	if !cardid.Valid(readDeck(t, vs, "decks/Crlf.md").Cards[0].Mark) {
+	if !cardid.IsValid(readDeck(t, vs, "decks/Crlf.md").Cards[0].Mark) {
 		t.Errorf("no mark was written: %q", got)
 	}
 }
@@ -298,7 +298,7 @@ func TestACardWhoseStencilCannotBeReadIsNotReprojected(t *testing.T) {
 	if deck.Cards[0].Heading != "Whatever a person typed" {
 		t.Errorf("heading = %q, want it left as it stands", deck.Cards[0].Heading)
 	}
-	if !cardid.Valid(deck.Cards[0].Mark) {
+	if !cardid.IsValid(deck.Cards[0].Mark) {
 		t.Errorf("mark = %q", deck.Cards[0].Mark)
 	}
 }

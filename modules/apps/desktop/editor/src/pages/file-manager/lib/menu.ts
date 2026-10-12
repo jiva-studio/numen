@@ -174,7 +174,7 @@ export type RunGuard = (run: string) => boolean
  * was asked off every row, removal over a selection of several, and everything
  * that can be done to the one row it was asked for on.
  */
-export const itemsFor = (
+export const createMenuItems = (
   on: MenuRow | null,
   hasSeveral: boolean,
   canRun: RunGuard,

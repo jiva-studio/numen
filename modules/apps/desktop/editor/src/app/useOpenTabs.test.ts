@@ -3,7 +3,7 @@
  */
 import { ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
-import { iconOfKind } from '@/entities/tab'
+import { findTabKindIcon } from '@/entities/tab'
 import { useOpenTabs } from './useOpenTabs'
 
 interface Entry {
@@ -138,13 +138,13 @@ describe('the tab icon', () => {
   it('is the icon of the kind of the tab', () => {
     const held = create([{ id: 'a', title: 'A', kind: 'agent' }])
 
-    expect(held.tabIcon('a')).toBe(iconOfKind('agent'))
-    expect(held.tabIcon('a')).not.toBe(iconOfKind(''))
+    expect(held.getTabIcon('a')).toBe(findTabKindIcon('agent'))
+    expect(held.getTabIcon('a')).not.toBe(findTabKindIcon(''))
   })
 
   it('is the icon of no kind for a tab the window cannot resolve', () => {
     const held = create([])
 
-    expect(held.tabIcon('missing')).toBe(iconOfKind(''))
+    expect(held.getTabIcon('missing')).toBe(findTabKindIcon(''))
   })
 })

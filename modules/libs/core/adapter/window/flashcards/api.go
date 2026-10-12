@@ -51,7 +51,7 @@ type API struct {
 	Session       flashcards.Session
 	Schedules     flashcards.Schedules
 	Log           flashcards.Log
-	Counted       flashcards.CountReviews
+	GetReviewDays flashcards.GetReviewDays
 	Neighbourhood flashcards.ShowNeighbourhood
 	// Presets is which preset each deck of a vault is scheduled by.
 	Presets flashcards.Presets

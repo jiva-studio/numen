@@ -20,7 +20,7 @@ func TestAnIdentifierIsTenCharactersOfTheAlphabet(t *testing.T) {
 			t.Errorf("id = %q, and %q is outside the alphabet", minted, c)
 		}
 	}
-	if !cardid.Valid(minted) {
+	if !cardid.IsValid(minted) {
 		t.Errorf("a minted identifier is not one: %q", minted)
 	}
 }
@@ -57,14 +57,14 @@ func TestWhatIsNotAnIdentifier(t *testing.T) {
 		"an apostrophe": "k7m2xq9fz'",
 	} {
 		t.Run(name, func(t *testing.T) {
-			if cardid.Valid(s) {
+			if cardid.IsValid(s) {
 				t.Errorf("%q reads as an identifier", s)
 			}
 		})
 	}
 }
 
-func TestValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
+func TestIsValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 	for name, s := range map[string]string{
 		"upper case": "012345678A",
 		"letter i":   "012345678i",
@@ -75,7 +75,7 @@ func TestValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 		"too long":   "01234567890",
 		"too short":  "012345678",
 	} {
-		if cardid.Valid(domain.CardID(s)) {
+		if cardid.IsValid(domain.CardID(s)) {
 			t.Errorf("%s: %q validated", name, s)
 		}
 	}

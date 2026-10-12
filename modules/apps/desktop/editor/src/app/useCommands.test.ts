@@ -11,14 +11,14 @@ const h = vi.hoisted(() => ({
   isCommandsOpen: { value: false },
   runInvocation: vi.fn(),
   isChord: vi.fn(),
-  commandFor: vi.fn(),
+  findChordCommand: vi.fn(),
   depsOptions: null as unknown,
 }))
 
 vi.mock('@/features/command-palette', () => ({
   ANSWER_WORDS: { name: 'answer words' },
   isChord: h.isChord,
-  commandFor: h.commandFor,
+  findChordCommand: h.findChordCommand,
   runInvocation: h.runInvocation,
   useSearch: () => ({ setOpen: h.setPaletteOpen }),
   useCommandPalette: () => ({
@@ -69,7 +69,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   h.isCommandsOpen.value = false
   h.isChord.mockReturnValue(true)
-  h.commandFor.mockReturnValue('save')
+  h.findChordCommand.mockReturnValue('save')
 })
 
 describe('running a command', () => {
@@ -131,7 +131,7 @@ describe('a key press', () => {
 
     one.onKeyDown(event)
 
-    expect(h.commandFor).toHaveBeenCalledWith('s', true)
+    expect(h.findChordCommand).toHaveBeenCalledWith('s', true)
     expect(h.startCommand).toHaveBeenCalledWith('save', target)
     expect(event.preventDefault).toHaveBeenCalledOnce()
   })
@@ -163,12 +163,12 @@ describe('a key press', () => {
 
     one.onKeyDown(event)
 
-    expect(h.commandFor).not.toHaveBeenCalled()
+    expect(h.findChordCommand).not.toHaveBeenCalled()
     expect(event.preventDefault).not.toHaveBeenCalled()
   })
 
   it('does nothing where the chord has no command', () => {
-    h.commandFor.mockReturnValue(null)
+    h.findChordCommand.mockReturnValue(null)
     const one = setup()
     const event = keyEvent('s')
 

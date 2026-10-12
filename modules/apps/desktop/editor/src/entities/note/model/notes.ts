@@ -6,7 +6,7 @@
 import { shallowReactive } from 'vue'
 import {
   openTab,
-  stateOf,
+  getState,
   transitionTab,
   DEFAULT_WRITE_LIMITS,
   type Effect,
@@ -95,7 +95,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     return {
       path: tab?.path ?? id,
       body: bodies.get(id) ?? '',
-      state: tab ? stateOf(tab) : 'loading',
+      state: tab ? getState(tab) : 'loading',
       error: err,
     }
   }

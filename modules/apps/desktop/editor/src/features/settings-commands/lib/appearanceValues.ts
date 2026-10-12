@@ -48,7 +48,7 @@ export const HELD = 150
 export const getModeId = (one: Mode): string => `${MODE}:${one}`
 
 /** The mode a row names, and nothing for a row naming a theme. */
-export const modeOf = (item: string): Mode | null =>
+export const parseMode = (item: string): Mode | null =>
   MODES.find((one) => getModeId(one) === item) ?? null
 
 /**
@@ -59,7 +59,7 @@ export const modeOf = (item: string): Mode | null =>
 export const getSizeId = (which: ScaleKind, size: number): string => `${which}:${size}`
 
 /** The size a row names, and nothing for a row naming anything else. */
-export const sizeOf = (item: string): ScaleChoice | null => {
+export const parseSize = (item: string): ScaleChoice | null => {
   const [which, count] = item.split(':')
   if (which !== INTERFACE_SCALE && which !== TEXT_SCALE) return null
   const size = Number(count)

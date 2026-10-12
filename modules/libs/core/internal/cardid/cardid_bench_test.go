@@ -13,11 +13,11 @@ func BenchmarkNew(b *testing.B) {
 	}
 }
 
-func BenchmarkValid(b *testing.B) {
+func BenchmarkIsValid(b *testing.B) {
 	id := cardid.New()
 	b.ReportAllocs()
 	for b.Loop() {
-		if !cardid.Valid(id) {
+		if !cardid.IsValid(id) {
 			b.Fatal("invalid")
 		}
 	}

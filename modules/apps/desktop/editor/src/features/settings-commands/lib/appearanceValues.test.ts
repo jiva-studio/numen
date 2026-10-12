@@ -6,34 +6,34 @@ import {
   getModeId,
   getSizeId,
   its,
-  modeOf,
+  parseMode,
   onto,
-  sizeOf,
+  parseSize,
 } from './appearanceValues'
 
 describe('the name a mode is offered under', () => {
   it('names the command it belongs to, and reads back as that mode', () => {
     expect(getModeId('dark')).toBe(`${MODE}:dark`)
-    expect(modeOf(getModeId('dark'))).toBe('dark')
+    expect(parseMode(getModeId('dark'))).toBe('dark')
   })
 
   it('is nothing for a row naming a theme', () => {
-    expect(modeOf('mine:sea')).toBeNull()
-    expect(modeOf('')).toBeNull()
+    expect(parseMode('mine:sea')).toBeNull()
+    expect(parseMode('')).toBeNull()
   })
 })
 
 describe('the name a size is offered under', () => {
   it('names which of the two it is, and reads back as that size', () => {
     expect(getSizeId(TEXT_SCALE, 1.25)).toBe(`${TEXT_SCALE}:1.25`)
-    expect(sizeOf(`${TEXT_SCALE}:1.25`)).toStrictEqual({ which: TEXT_SCALE, size: 1.25 })
+    expect(parseSize(`${TEXT_SCALE}:1.25`)).toStrictEqual({ which: TEXT_SCALE, size: 1.25 })
   })
 
   it('is nothing for a row of any other command, and for a size of none', () => {
-    expect(sizeOf('mine:sea')).toBeNull()
-    expect(sizeOf('mine:1.25')).toBeNull()
-    expect(sizeOf(`${INTERFACE_SCALE}:0`)).toBeNull()
-    expect(sizeOf(`${INTERFACE_SCALE}:large`)).toBeNull()
+    expect(parseSize('mine:sea')).toBeNull()
+    expect(parseSize('mine:1.25')).toBeNull()
+    expect(parseSize(`${INTERFACE_SCALE}:0`)).toBeNull()
+    expect(parseSize(`${INTERFACE_SCALE}:large`)).toBeNull()
   })
 })
 

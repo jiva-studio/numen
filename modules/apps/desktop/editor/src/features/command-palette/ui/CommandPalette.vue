@@ -15,7 +15,7 @@ import { appendCreateOffer, createNoteInvocation, CREATE_NOTE_ID } from '../lib/
 import type { Commands } from '../model/palette'
 import { runInvocation } from '../model/handlers'
 import type { SearchState } from '../model/search'
-import { iconOfSource } from '@/entities/file'
+import { findSourceIcon } from '@/entities/file'
 import { iconOfNote } from '@/entities/note'
 import { iconFor } from '@/shared/icons'
 import { isChord } from '../lib/chords'
@@ -137,16 +137,16 @@ onMounted(() => globalThis.addEventListener('keydown', onKeyDown))
 onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
 
 // --- Helpers ---
-function rowIcon(id: string) {
+function getRowIcon(id: string) {
   if (props.commands.open.value) {
-    const picked = props.commands.typeOf(id)
+    const picked = props.commands.findNoteType(id)
     return picked ? iconOfNote(picked) : iconFor(id)
   }
   if (id === CREATE_NOTE_ID) return iconFor('note')
-  const type = props.search.typeOf(id)
+  const type = props.search.findNoteType(id)
   if (type) return iconOfNote(type)
-  const kind = props.search.kindOf(id)
-  return kind ? iconOfSource(kind) : null
+  const kind = props.search.findHitSource(id)
+  return kind ? findSourceIcon(kind) : null
 }
 </script>
 
@@ -168,7 +168,7 @@ function rowIcon(id: string) {
     @dismiss="onDismiss"
   >
     <template #icon="{ id }">
-      <component :is="rowIcon(id)" v-if="rowIcon(id)" class="command-icon" />
+      <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
   </Palette>
 </template>

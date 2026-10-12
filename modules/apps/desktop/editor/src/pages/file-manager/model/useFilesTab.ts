@@ -4,7 +4,7 @@
 import { ref } from 'vue'
 import type { Entry, Source } from '@/entities/file'
 import type { SearchDestination } from '@/features/command-palette'
-import { fileOf } from '@/shared/paths'
+import { getFileName } from '@/shared/paths'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import {
   NEW_DECK,
@@ -68,7 +68,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     const conflictedNames: string[] = []
 
     for (const path of paths) {
-      const name = fileOf(path)
+      const name = getFileName(path)
       const to = into === ROOT ? name : `${into}/${name}`
       if (to === path) continue
       if (existingNames.has(name)) {
@@ -150,7 +150,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     deps.runCommand(id, getOverPaths(path), getNameOf(path), getSourceOf(path))
   }
 
-  const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? fileOf(path)
+  const getNameOf = (path: string): string => list.getEntryAt(path)?.name ?? getFileName(path)
 
   const getSourceOf = (path: string): Source => list.getEntryAt(path)?.kind ?? 'other'
 

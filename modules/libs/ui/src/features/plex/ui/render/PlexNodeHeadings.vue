@@ -6,29 +6,29 @@
  * they are and what choosing one does are the caller's.
  */
 import { computed, ref, watch } from 'vue'
-import { PlexPart } from './plex-part'
-import type { NodeParts } from '../../lib/inside'
-import { getOpenParts, scrollBy, type Arrow } from '../../lib/open'
+import { PlexHeading } from './plex-heading'
+import type { NodeHeadings } from '../../lib/inside'
+import { getOpenHeadings, scrollBy, type Arrow } from '../../lib/open'
 
 const props = defineProps<{
-  /** The parts and the room they are given. */
-  hung: NodeParts
+  /** The headings and the room they are given. */
+  hung: NodeHeadings
   /** How far the box they hang from has opened, from nothing to the whole way. */
   open: number
 }>()
 
 const emit = defineEmits<{
-  /** A part was chosen. The identifier is the caller's. */
-  (event: 'enter', part: string): void
+  /** A heading was chosen. The identifier is the caller's. */
+  (event: 'enter', heading: string): void
 }>()
 
-/** How far the window on the parts has been scrolled down, counted in parts. */
+/** How far the window on the headings has been scrolled down, counted in headings. */
 const scrollOffset = ref(0)
 
-/** The parts, as far out from under the box as they have come. */
-const openParts = computed(() => getOpenParts(props.hung, props.open, scrollOffset.value))
+/** The headings, as far out from under the box as they have come. */
+const openHeadings = computed(() => getOpenHeadings(props.hung, props.open, scrollOffset.value))
 
-/** What a wheel moved that came to no whole part, held for the next one. */
+/** What a wheel moved that came to no whole heading, held for the next one. */
 let carried = 0
 
 // The window opens at the top each time the attention settles afresh, and is
@@ -43,12 +43,12 @@ watch(
 )
 
 /**
- * Scrolling the window over the parts. A wheel with nowhere to go is left to
- * whatever else wants it, and what it moved that came to no whole part is
+ * Scrolling the window over the headings. A wheel with nowhere to go is left to
+ * whatever else wants it, and what it moved that came to no whole heading is
  * carried into the next one.
  */
-const scrollParts = (event: WheelEvent) => {
-  const shown = openParts.value
+const scrollHeadings = (event: WheelEvent) => {
+  const shown = openHeadings.value
   if (!shown) return
 
   const wheel = { delta: event.deltaY, mode: event.deltaMode }
@@ -76,39 +76,39 @@ const arrowLine = (arrow: Arrow) =>
 </script>
 
 <template>
-  <!-- The parts are for the hand; the same parts are reached by name in the
+  <!-- The headings are for the hand; the same headings are reached by name in the
        palette. -->
-  <g v-if="openParts" class="plex__inside" aria-hidden="true" @wheel="scrollParts">
+  <g v-if="openHeadings" class="plex__inside" aria-hidden="true" @wheel="scrollHeadings">
     <!-- One ground under all of them, as deep as they have come. -->
     <rect
       class="plex__ground"
       :x="hung.offset - hung.width / 2"
       :y="hung.top"
       :width="hung.width"
-      :height="openParts.height"
-      :opacity="openParts.opacity"
+      :height="openHeadings.height"
+      :opacity="openHeadings.opacity"
     />
-    <PlexPart
-      v-for="part in openParts.parts"
-      :key="part.id"
-      :part="part"
+    <PlexHeading
+      v-for="heading in openHeadings.headings"
+      :key="heading.id"
+      :heading="heading"
       :hung="hung"
-      @enter="emit('enter', part.id)"
+      @enter="emit('enter', heading.id)"
     />
 
     <!-- More of them than the window holds, the way they are scrolled to. -->
     <path
-      v-for="arrow in openParts.arrows"
+      v-for="arrow in openHeadings.arrows"
       :key="arrow.at"
       class="plex__more"
       :d="arrowLine(arrow)"
-      :opacity="openParts.opacity"
+      :opacity="openHeadings.opacity"
     />
   </g>
 </template>
 
 <style scoped>
-/* The ground the parts stand on: enough of it to hold them together, and thin
+/* The ground the headings stand on: enough of it to hold them together, and thin
    enough to read the picture through. */
 .plex__ground {
   rx: 0.25rem;

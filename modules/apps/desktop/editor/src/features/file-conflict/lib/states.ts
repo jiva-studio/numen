@@ -8,5 +8,5 @@
 export type FileConflict = 'gone' | 'stale' | null
 
 /** Which conflict a screen's word names, and nothing for every other word. */
-export const conflictIn = (state: string): FileConflict =>
+export const parseFileConflict = (state: string): FileConflict =>
   state === 'gone' || state === 'stale' ? state : null

@@ -54,7 +54,7 @@ const createCommand = (over: Partial<Command> & Pick<Command, 'id' | 'text'>): C
 })
 
 const getNoteGroup = (view: ReturnType<typeof createView>, over: CommandTarget, typed: string) =>
-  view.groupsOf(null, over, typed).find((group) => group.id === 'note')
+  view.createGroups(null, over, typed).find((group) => group.id === 'note')
 
 describe('the commands as the words typed leave them', () => {
   const view = createView(commandsOf(words))
@@ -146,7 +146,7 @@ describe('a command that gives no words for its confirmation', () => {
   const view = createView([command])
 
   it('draws the two answers with empty words', () => {
-    const items = view.groupsOf(step('asking'), front(), '')[0]?.items
+    const items = view.createGroups(step('asking'), front(), '')[0]?.items
 
     expect(items).toStrictEqual([
       { id: 'no', title: '', detail: '', actions: [{ id: 'no', text: '' }] },
@@ -160,7 +160,7 @@ describe('a command that gives no words for its confirmation', () => {
   })
 
   it('draws the name to type back with empty words', () => {
-    const items = view.groupsOf(step('exactly'), front(), 'Ontology')[0]?.items
+    const items = view.createGroups(step('exactly'), front(), 'Ontology')[0]?.items
 
     expect(items).toStrictEqual([
       {

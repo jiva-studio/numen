@@ -33,14 +33,14 @@ const createTabState = () =>
     quickLink: ref(null),
     isNavigatingOnCreate: ref(true),
     creatable: ['child'],
-    mostParts: ref(6),
+    maxHeadings: ref(6),
     typeOf: () => 'note',
     activate: () => {},
     createNode: async () => {},
     joinNodes: async () => {},
     dropNodes: async () => {},
     openNode: () => {},
-    openPart: () => {},
+    openHeading: () => {},
     openMenu: () => {},
     dismiss: () => {},
     chooseMenuItem: () => {},
@@ -311,8 +311,8 @@ describe('interaction events forwarded from Plex component', () => {
       openNode: (node: string, how: unknown) => {
         shown = [node, how]
       },
-      openPart: (node: string, part: string) => {
-        entered = [node, part]
+      openHeading: (node: string, heading: string) => {
+        entered = [node, heading]
       },
       dismiss: () => {
         dismissed = true

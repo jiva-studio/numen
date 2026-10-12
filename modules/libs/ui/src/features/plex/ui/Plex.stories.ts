@@ -17,7 +17,7 @@ import {
 } from '../lib/arrange'
 import { optionsForType, useTypeSize } from '../model/sizing'
 import { DWELL } from '../model/dwell'
-import { type PlexPart } from '../lib/inside'
+import { type PlexHeading } from '../lib/inside'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
 import { createNeighbourhood, walkStart } from '../fixtures/walk'
 import { build, buildAround, type TitledNode } from '../fixtures/build'
@@ -44,8 +44,8 @@ interface Knobs {
   onBring: (dragged: readonly string[], seat: PlexRelatedSeat) => void
   onMenu: (id: string, at: Position, trigger: MenuTrigger) => void
   onDismiss: () => void
-  parts: (id: string) => readonly PlexPart[]
-  onEnter: (id: string, part: string) => void
+  headings: (id: string) => readonly PlexHeading[]
+  onEnter: (id: string, heading: string) => void
 
   focusWidth: number
   focusHeight: number
@@ -59,7 +59,7 @@ interface Knobs {
   squeeze: number
   maxPerLine: number
   maxLines: number
-  maxParts: number
+  maxHeadings: number
   orientation: 'parents above' | 'parents below'
 
   curvature: number
@@ -109,7 +109,7 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   spread: a.spread,
   maxPerLine: a.maxPerLine,
   maxLines: a.maxLines,
-  maxParts: a.maxParts,
+  maxHeadings: a.maxHeadings,
   routing: { curvature: a.curvature, minReach: a.minReach, arrowRoom: a.arrowRoom },
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
@@ -244,8 +244,8 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
         :dwell="args.dwell"
         :dragged="args.dragged"
         :drop-name="args.dropName"
-        :parts="args.parts"
-        @enter="(id, part) => args.onEnter(id, part)"
+        :headings="args.headings"
+        @enter="(id, heading) => args.onEnter(id, heading)"
         @activate="onActivate($event); args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
         @create="(from, seat) => { create(from, seat); args.onCreate(from, seat) }"
@@ -322,7 +322,7 @@ const meta = {
     squeeze: range(0.2, 1, 0.05),
     maxPerLine: range(1, 12),
     maxLines: range(1, 8),
-    maxParts: range(1, 12),
+    maxHeadings: range(1, 12),
     orientation: {
       control: 'inline-radio',
       options: ['parents above', 'parents below'],
@@ -372,7 +372,7 @@ const meta = {
     onBring: { table: { disable: true } },
     onMenu: { table: { disable: true } },
     onDismiss: { table: { disable: true } },
-    parts: { table: { disable: true } },
+    headings: { table: { disable: true } },
     onEnter: { table: { disable: true } },
   },
 
@@ -388,7 +388,7 @@ const meta = {
     onBring: fn(),
     onMenu: fn(),
     onDismiss: fn(),
-    parts: () => [],
+    headings: () => [],
     onEnter: fn(),
     naming: nameNow,
     dragged: [],
@@ -406,7 +406,7 @@ const meta = {
     squeeze: 0.35,
     maxPerLine: 5,
     maxLines: 4,
-    maxParts: 6,
+    maxHeadings: 6,
     orientation: 'parents above',
 
     curvature: 0.55,
@@ -1237,11 +1237,11 @@ export const Walk: Story = {
 }
 
 /**
- * Everything hung parts have to survive, one node each: a nested set, far more
- * than fit, one alone, one that runs on past the box, parts not written in
- * Latin, a part with no words at all, and nodes with none.
+ * Everything hung headings have to survive, one node each: a nested set, far more
+ * than fit, one alone, one that runs on past the box, headings not written in
+ * Latin, a heading with no words at all, and nodes with none.
  */
-const INSIDE: Record<string, readonly PlexPart[]> = {
+const INSIDE: Record<string, readonly PlexHeading[]> = {
   focus: [
     { id: '0', text: 'What it is', level: 1 },
     { id: '4', text: 'Where it came from', level: 2 },
@@ -1272,60 +1272,64 @@ const INSIDE: Record<string, readonly PlexPart[]> = {
   })),
 }
 
-export const PartsInside: Story = {
+export const HeadingsInside: Story = {
   args: {
     ...invented.args,
     parents: 1,
     children: 4,
     jumps: 1,
     siblings: 0,
-    parts: (id: string) => INSIDE[id] ?? [],
+    headings: (id: string) => INSIDE[id] ?? [],
   },
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
-    const getParts = (node: Element) => [...node.querySelectorAll('.plex__part')]
+    const getHeadings = (node: Element) => [...node.querySelectorAll('.plex__heading')]
 
     /** How many stand in the window at once, which the knob says. */
-    const most = args.maxParts
+    const most = args.maxHeadings
 
     // Nothing hangs until the hand has been on it a while.
-    await expect(getParts(focus)).toHaveLength(0)
+    await expect(getHeadings(focus)).toHaveLength(0)
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getParts(focus)).toHaveLength(most), { timeout: 3000 })
+    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
+      timeout: 3000,
+    })
 
-    // The nesting is drawn by setting a part in, and the deeper of them stands
+    // The nesting is drawn by setting a heading in, and the deeper of them stands
     // further in than the one it sits under.
-    const getIndent = (part: Element) =>
-      Number.parseFloat(getComputedStyle(part).paddingInlineStart)
-    const [first, second, third] = getParts(focus)
+    const getIndent = (heading: Element) =>
+      Number.parseFloat(getComputedStyle(heading).paddingInlineStart)
+    const [first, second, third] = getHeadings(focus)
     await expect(getIndent(second!)).toBeGreaterThan(getIndent(first!))
     await expect(getIndent(third!)).toBeGreaterThan(getIndent(second!))
 
     // The hand leaves, and they go back under the box.
     await userEvent.unhover(focus)
-    await waitFor(async () => await expect(getParts(focus)).toHaveLength(0))
+    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(0))
 
-    // Choosing one says which part it was, on the node it hangs from.
+    // Choosing one says which heading it was, on the node it hangs from.
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getParts(focus)).toHaveLength(most), { timeout: 3000 })
-    await userEvent.click(getParts(focus)[1]!)
+    await waitFor(async () => await expect(getHeadings(focus)).toHaveLength(most), {
+      timeout: 3000,
+    })
+    await userEvent.click(getHeadings(focus)[1]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
 
-    // A note with more parts than stand at once is scrolled through them.
+    // A note with more headings than stand at once is scrolled through them.
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
-    await waitFor(async () => await expect(getParts(many)).toHaveLength(most), { timeout: 3000 })
+    await waitFor(async () => await expect(getHeadings(many)).toHaveLength(most), { timeout: 3000 })
 
     // A window on more than it holds carries an arrow at the edge it may be
-    // scrolled towards, and scrolling it moves it by whole parts.
+    // scrolled towards, and scrolling it moves it by whole headings.
     const arrows = () => [...many.querySelectorAll('.plex__more')]
     await expect(arrows()).toHaveLength(1)
 
-    // Said in lines, which is one part the line. A hand on a trackpad speaks
-    // in pixels and scrolls when they come to a part's height.
+    // Said in lines, which is one heading the line. A hand on a trackpad speaks
+    // in pixels and scrolls when they come to a heading's height.
     const wheel = (deltaY: number) =>
       many
         .querySelector('.plex__inside')!
@@ -1334,18 +1338,18 @@ export const PartsInside: Story = {
         )
     wheel(1)
     await waitFor(
-      async () => await expect(getParts(many)[0]!.textContent?.trim()).toBe('Section 2'),
+      async () => await expect(getHeadings(many)[0]!.textContent?.trim()).toBe('Section 2'),
     )
     await expect(arrows()).toHaveLength(2)
 
     wheel(-1)
     await waitFor(
-      async () => await expect(getParts(many)[0]!.textContent?.trim()).toBe('Section 1'),
+      async () => await expect(getHeadings(many)[0]!.textContent?.trim()).toBe('Section 1'),
     )
 
-    // Choosing a part is not choosing the node it hangs from: the plex stays
+    // Choosing a heading is not choosing the node it hangs from: the plex stays
     // where it is standing.
-    await userEvent.click(getParts(many)[0]!)
+    await userEvent.click(getHeadings(many)[0]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
     await expect(args.onActivate).not.toHaveBeenCalled()
   },

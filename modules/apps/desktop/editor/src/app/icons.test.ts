@@ -8,12 +8,12 @@ import { describe, expect, it } from 'vitest'
 
 import { iconFor } from '@/shared/icons'
 import { iconOfNote } from '@/entities/note'
-import { iconOfKind } from '@/entities/tab'
+import { findTabKindIcon } from '@/entities/tab'
 import { PRESET } from '@/entities/tab'
 import { commandsOf } from '@/features/command-palette'
-import { itemsFor } from '@/pages/file-manager'
+import { createMenuItems } from '@/pages/file-manager'
 import { ITEMS, NONE } from '@/pages/plex-graph'
-import { waysIn } from '@/pages/welcome'
+import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
 import type { NoteType, Source } from '@/entities/file'
 
@@ -22,12 +22,12 @@ const canRunAnything = () => true
 
 /** Every menu the tree draws: off every row, and on a row of each kind. */
 const inTheTree = [
-  itemsFor(null, false, canRunAnything),
+  createMenuItems(null, false, canRunAnything),
   ...(['note', 'book', 'recording', 'other'] as Source[]).flatMap((source) => [
-    itemsFor({ source, isFolder: false }, false, canRunAnything),
-    itemsFor({ source, isFolder: true }, false, canRunAnything),
+    createMenuItems({ source, isFolder: false }, false, canRunAnything),
+    createMenuItems({ source, isFolder: true }, false, canRunAnything),
   ]),
-  itemsFor({ source: 'note', isFolder: false }, true, canRunAnything),
+  createMenuItems({ source: 'note', isFolder: false }, true, canRunAnything),
 ].flat()
 
 describe('the icon a command is drawn with', () => {
@@ -52,7 +52,7 @@ describe('the icon a command is drawn with', () => {
   })
 
   it('is there for every way into a vault the welcome screen offers', () => {
-    const ways = waysIn({ vault: 'physics', isReady: true }, words, 'Linux')
+    const ways = createWelcomeActions({ vault: 'physics', isReady: true }, words, 'Linux')
     for (const one of ways) expect(iconFor(one.id), one.id).not.toBeNull()
   })
 
@@ -76,6 +76,6 @@ describe('the icon of a kind of note', () => {
   })
 
   it('draws a preset as the tab that opens it does', () => {
-    expect(iconOfNote('preset')).toBe(iconOfKind(PRESET))
+    expect(iconOfNote('preset')).toBe(findTabKindIcon(PRESET))
   })
 })

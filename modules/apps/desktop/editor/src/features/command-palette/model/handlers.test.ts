@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 import { commandsOf } from '../lib/commands'
 import { runSupport } from './runs'
-import { invocationOf } from '../lib/invocation'
+import { createInvocation } from '../lib/invocation'
 import { createNotes } from '../lib/notes'
 import type { VaultRef } from '../types'
 import type { CommandDeps } from './deps'
@@ -258,7 +258,7 @@ describe('every command that is offered', () => {
   it('is carried out by something', async () => {
     for (const command of commandsOf(WORDS)) {
       const one = window()
-      await carry(invocationOf(command.id, front(), 'Entropy'), one.on)
+      await carry(createInvocation(command.id, front(), 'Entropy'), one.on)
 
       expect(one.done, command.id).not.toStrictEqual([])
     }
@@ -269,8 +269,8 @@ describe('a note put in front of the person', () => {
   it('opens in a tab of its own, and beside it where the second key reached it', async () => {
     const one = window()
 
-    await carry(invocationOf('read', front()), one.on)
-    await carry(invocationOf('beside', front()), one.on)
+    await carry(createInvocation('read', front()), one.on)
+    await carry(createInvocation('beside', front()), one.on)
 
     expect(one.done).toStrictEqual([
       'openFile physics/Ontology.md Ontology here',
@@ -281,7 +281,7 @@ describe('a note put in front of the person', () => {
   it('is travelled to in the plex, where that is what was asked', async () => {
     const one = window()
 
-    await carry(invocationOf('travel', front()), one.on)
+    await carry(createInvocation('travel', front()), one.on)
 
     expect(one.done).toStrictEqual(['travel physics/Ontology.md'])
   })
@@ -291,7 +291,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('is made at the top of the vault, under the name as it was typed', async () => {
     const one = window()
 
-    await carry(invocationOf('deck', front(), 'Animals'), one.on)
+    await carry(createInvocation('deck', front(), 'Animals'), one.on)
 
     // The vault names the file, so nothing here puts an ending on the name.
     expect(one.done).toStrictEqual(['decks — Animals'])
@@ -300,7 +300,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('hands a name that carries an ending over unchanged', async () => {
     const one = window()
 
-    await carry(invocationOf('deck', front(), 'Animals.md'), one.on)
+    await carry(createInvocation('deck', front(), 'Animals.md'), one.on)
 
     expect(one.done).toStrictEqual(['decks — Animals.md'])
   })
@@ -308,7 +308,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('is a stencil where that is what was asked for', async () => {
     const one = window()
 
-    await carry(invocationOf('stencil', front(), 'Animal'), one.on)
+    await carry(createInvocation('stencil', front(), 'Animal'), one.on)
 
     expect(one.done).toStrictEqual(['stencils — Animal'])
   })
@@ -316,7 +316,7 @@ describe('a deck, a stencil or a preset made', () => {
   it('is a preset where that is what was asked for', async () => {
     const one = window()
 
-    await carry(invocationOf('newPreset', front(), 'Sanskrit'), one.on)
+    await carry(createInvocation('newPreset', front(), 'Sanskrit'), one.on)
 
     expect(one.done).toStrictEqual(['presets — Sanskrit'])
   })
@@ -324,8 +324,8 @@ describe('a deck, a stencil or a preset made', () => {
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
-    await carry(invocationOf('deck', front(), ''), one.on)
-    await carry(invocationOf('newPreset', front(), ''), one.on)
+    await carry(createInvocation('deck', front(), ''), one.on)
+    await carry(createInvocation('newPreset', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -335,7 +335,7 @@ describe('a note made', () => {
   it('writes the note it was made from into it, in the seat that was asked for', async () => {
     const one = window()
 
-    await carry(invocationOf('child', front(), 'Entropy'), one.on)
+    await carry(createInvocation('child', front(), 'Entropy'), one.on)
 
     expect(one.done[0]).toBe('createNote Entropy physics/Ontology.md child')
   })
@@ -343,7 +343,7 @@ describe('a note made', () => {
   it('stands on its own where no seat was asked for', async () => {
     const one = window()
 
-    await carry(invocationOf('note', front(), 'Entropy'), one.on)
+    await carry(createInvocation('note', front(), 'Entropy'), one.on)
 
     expect(one.done[0]).toBe('createNote Entropy — —')
   })
@@ -351,7 +351,7 @@ describe('a note made', () => {
   it('is travelled to in the plex the person is looking at', async () => {
     const one = window()
 
-    await carry(invocationOf('child', front(), 'Entropy'), one.on)
+    await carry(createInvocation('child', front(), 'Entropy'), one.on)
 
     expect(one.done.at(-1)).toBe('travel Entropy.md')
   })
@@ -359,7 +359,7 @@ describe('a note made', () => {
   it('opens in a tab beside the note the person is in', async () => {
     const one = window()
 
-    await carry(invocationOf('child', front({ kind: 'note' }), 'Entropy'), one.on)
+    await carry(createInvocation('child', front({ kind: 'note' }), 'Entropy'), one.on)
 
     expect(one.done.at(-1)).toBe('openNewFile note Entropy.md Entropy beside')
   })
@@ -367,7 +367,7 @@ describe('a note made', () => {
   it('takes the person nowhere where the vault would not make it', async () => {
     const one = window({ wasMade: false })
 
-    await carry(invocationOf('child', front(), 'Entropy'), one.on)
+    await carry(createInvocation('child', front(), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual(['createNote Entropy physics/Ontology.md child'])
   })
@@ -375,7 +375,7 @@ describe('a note made', () => {
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
-    await carry(invocationOf('child', front(), ''), one.on)
+    await carry(createInvocation('child', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -401,7 +401,7 @@ const REACHED: readonly ArtifactState[] = [
 /** An artifact of the recording in front asked for, as it came out. */
 const createArtifactRun = (state: ArtifactState, error = '') => {
   const one = window({ outcome: outcome('transcript', state, error) })
-  return { one, invocation: invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
+  return { one, invocation: createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })) }
 }
 
 describe('an artifact asked for over a file', () => {
@@ -462,7 +462,7 @@ describe('an artifact asked for over a file', () => {
   it('says the same of a scan already recognised', async () => {
     const one = window({ outcome: outcome('ocr', 'done') })
 
-    await carry(invocationOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)
+    await carry(createInvocation('recognise', front({ file: 'books/Ants.pdf' })), one.on)
 
     expect(one.done).toStrictEqual(['makes ocr books/Ants.pdf'])
     expect(one.notices).toStrictEqual([words.made.ocr.done])
@@ -480,7 +480,7 @@ describe('an artifact asked for over a file', () => {
   it('says this build cannot do it, and offers it nowhere after that', async () => {
     const one = window({ outcome: { able: false } })
 
-    await carry(invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.notices).toStrictEqual([words.unrunnable])
     expect(one.runs.canRun('transcribe')).toBe(false)
@@ -490,7 +490,7 @@ describe('an artifact asked for over a file', () => {
   it('is said only in the window it was asked in', async () => {
     const one = window({ outcome: { able: false } })
 
-    await carry(invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(window().runs.canRun('transcribe')).toBe(true)
   })
@@ -500,7 +500,7 @@ describe('the transcript of a recording deleted', () => {
   it('asks the application over the file the tab in front holds', async () => {
     const one = window()
 
-    await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.done).toStrictEqual(['deletes the text of talks/Ants.mp3'])
     expect(one.notices).toStrictEqual([])
@@ -510,7 +510,7 @@ describe('the transcript of a recording deleted', () => {
     const why = 'this recording is being listened to'
     const one = window({ deleteError: why })
 
-    await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.notices).toStrictEqual([why])
     expect(one.tones).toStrictEqual(['error'])
@@ -519,7 +519,7 @@ describe('the transcript of a recording deleted', () => {
   it('says this build cannot do it, and offers it nowhere after that', async () => {
     const one = window({ isUndeletable: true })
 
-    await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.notices).toStrictEqual([words.unrunnable])
     expect(one.runs.canRun('deleteText')).toBe(false)
@@ -530,7 +530,7 @@ describe('a note renamed', () => {
   it('has nothing on its way to its file before the file moves', async () => {
     const one = window()
 
-    await carry(invocationOf('title', front(), 'Entropy'), one.on)
+    await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual(['flushPending held', 'rename physics/Ontology.md Entropy'])
   })
@@ -538,7 +538,7 @@ describe('a note renamed', () => {
   it('is refused while the note is waiting on the person', async () => {
     const one = window({ isAsking: true })
 
-    await carry(invocationOf('title', front(), 'Entropy'), one.on)
+    await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
@@ -547,7 +547,7 @@ describe('a note renamed', () => {
   it('says the note was written elsewhere while this was asked', async () => {
     const one = window({ renamed: asFailure('changed' as const) })
 
-    await carry(invocationOf('title', front(), 'Entropy'), one.on)
+    await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
     expect(one.notices).toStrictEqual([words.stale])
   })
@@ -555,7 +555,7 @@ describe('a note renamed', () => {
   it('is renamed where no tab of the window holds it', async () => {
     const one = window()
 
-    await carry(invocationOf('title', front({ path: 'Elsewhere.md' }), 'Entropy'), one.on)
+    await carry(createInvocation('title', front({ path: 'Elsewhere.md' }), 'Entropy'), one.on)
 
     expect(one.done).toStrictEqual(['rename Elsewhere.md Entropy'])
   })
@@ -563,7 +563,7 @@ describe('a note renamed', () => {
   it('is left alone where the name it was given is the name it has', async () => {
     const one = window()
 
-    await carry(invocationOf('title', front(), 'Ontology'), one.on)
+    await carry(createInvocation('title', front(), 'Ontology'), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -579,7 +579,7 @@ describe('a note renamed', () => {
       }),
     })
 
-    await carry(invocationOf('title', front(), 'Entropy'), one.on)
+    await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
     expect(one.notices).toStrictEqual([])
   })
@@ -587,7 +587,7 @@ describe('a note renamed', () => {
   it('says nothing of the title it wrote into the frontmatter', async () => {
     const one = window({ renamed: createRenameResult({ hasFrontmatter: true }) })
 
-    await carry(invocationOf('title', front(), 'Entropy'), one.on)
+    await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
     expect(one.notices).toStrictEqual([])
   })
@@ -595,7 +595,7 @@ describe('a note renamed', () => {
   it('says the name was taken, and that the note carries the new one', async () => {
     const one = window({ renamed: asFailure('occupied' as const) })
 
-    await carry(invocationOf('title', front(), 'Entropy'), one.on)
+    await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
     expect(one.notices).toStrictEqual([words.errors.occupied])
   })
@@ -603,7 +603,7 @@ describe('a note renamed', () => {
   it('says a note whose frontmatter cannot be read cannot be renamed', async () => {
     const one = window({ renamed: asFailure('unreadable' as const) })
 
-    await carry(invocationOf('title', front(), 'Entropy'), one.on)
+    await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
     expect(one.notices).toStrictEqual([words.errors.unreadable])
   })
@@ -611,7 +611,7 @@ describe('a note renamed', () => {
   it('says a name no file can be named', async () => {
     const one = window({ renamed: asFailure('unnameable' as const) })
 
-    await carry(invocationOf('title', front(), '...'), one.on)
+    await carry(createInvocation('title', front(), '...'), one.on)
 
     expect(one.notices).toStrictEqual([words.errors.unnameable])
   })
@@ -621,7 +621,7 @@ describe('a note removed', () => {
   it('has nothing on its way to its file before the file goes', async () => {
     const one = window()
 
-    await carry(invocationOf('remove', front()), one.on)
+    await carry(createInvocation('remove', front()), one.on)
 
     expect(one.done.slice(0, 2)).toStrictEqual([
       'flushPending held',
@@ -632,7 +632,7 @@ describe('a note removed', () => {
   it('goes off the disk where destroying was what was asked', async () => {
     const one = window()
 
-    await carry(invocationOf('destroy', front(), 'Ontology'), one.on)
+    await carry(createInvocation('destroy', front(), 'Ontology'), one.on)
 
     expect(one.done[1]).toBe('remove physics/Ontology.md true')
   })
@@ -641,7 +641,7 @@ describe('a note removed', () => {
   it('says nothing about a note that went where it was asked to go', async () => {
     const one = window()
 
-    await carry(invocationOf('remove', front()), one.on)
+    await carry(createInvocation('remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([])
   })
@@ -649,7 +649,7 @@ describe('a note removed', () => {
   it('says the notes that link to nothing now', async () => {
     const one = window({ removed: createRemoveResult({ dangling: ['Order.md', 'Notes.md'] }) })
 
-    await carry(invocationOf('remove', front()), one.on)
+    await carry(createInvocation('remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
   })
@@ -657,7 +657,7 @@ describe('a note removed', () => {
   it('leaves every plex standing on it at the note the vault opens with', async () => {
     const one = window()
 
-    await carry(invocationOf('remove', front()), one.on)
+    await carry(createInvocation('remove', front()), one.on)
 
     expect(one.done.at(-1)).toBe('leave physics/Ontology.md Root.md')
   })
@@ -666,7 +666,7 @@ describe('a note removed', () => {
     const one = window()
     const nowhere: CommandDeps = { ...one.on, goes: { ...one.on.goes, getOpeningNote: () => '' } }
 
-    await carry(invocationOf('remove', front()), nowhere)
+    await carry(createInvocation('remove', front()), nowhere)
 
     expect(one.done.some((step) => step.startsWith('leave'))).toBe(false)
   })
@@ -674,7 +674,7 @@ describe('a note removed', () => {
   it('lets go of the tab that was reading it', async () => {
     const one = window()
 
-    await carry(invocationOf('remove', front(), '', 'held'), one.on)
+    await carry(createInvocation('remove', front(), '', 'held'), one.on)
 
     expect(one.done).toContain('close held')
   })
@@ -682,7 +682,7 @@ describe('a note removed', () => {
   it('keeps the tab of a note the vault would not remove', async () => {
     const one = window({ removed: asFailure('missing' as const) })
 
-    await carry(invocationOf('remove', front(), '', 'held'), one.on)
+    await carry(createInvocation('remove', front(), '', 'held'), one.on)
 
     expect(one.done).not.toContain('close held')
   })
@@ -690,7 +690,7 @@ describe('a note removed', () => {
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
     const one = window({ removed: asFailure('missing' as const) })
 
-    await carry(invocationOf('remove', front()), one.on)
+    await carry(createInvocation('remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([words.errors.missing])
     expect(one.done.at(-1)).toBe('remove physics/Ontology.md false')
@@ -699,7 +699,7 @@ describe('a note removed', () => {
   it('is refused while the note is waiting on the person', async () => {
     const one = window({ isAsking: true })
 
-    await carry(invocationOf('remove', front()), one.on)
+    await carry(createInvocation('remove', front()), one.on)
 
     expect(one.done).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
@@ -712,7 +712,7 @@ describe('several files removed at once', () => {
   it('takes each of them out of the vault, in the order they were given', async () => {
     const one = window()
 
-    await carry(invocationOf('remove', both), one.on)
+    await carry(createInvocation('remove', both), one.on)
 
     expect(one.done.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
@@ -723,7 +723,7 @@ describe('several files removed at once', () => {
   it('takes every plex standing on one of them to the note the vault opens with', async () => {
     const one = window()
 
-    await carry(invocationOf('remove', both), one.on)
+    await carry(createInvocation('remove', both), one.on)
 
     expect(one.done.filter((step) => step.startsWith('leave'))).toStrictEqual([
       'leave physics/Ontology.md Root.md',
@@ -734,7 +734,7 @@ describe('several files removed at once', () => {
   it('says the notes that link to nothing now, each of them once', async () => {
     const one = window({ removed: createRemoveResult({ trashed: '', dangling: ['Order.md'] }) })
 
-    await carry(invocationOf('remove', both), one.on)
+    await carry(createInvocation('remove', both), one.on)
 
     expect(one.notices).toStrictEqual([`${words.dangling} Order.md`])
   })
@@ -754,7 +754,7 @@ describe('several files removed at once', () => {
       },
     }
 
-    await carry(invocationOf('remove', both), picky)
+    await carry(createInvocation('remove', both), picky)
 
     expect(one.done.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
@@ -766,7 +766,7 @@ describe('several files removed at once', () => {
 
 describe('a file filed somewhere else', () => {
   /** The destination is the whole path, so a name changed in one folder is a move. */
-  const createMoveInvocation = (to: string) => invocationOf('move', front(), to)
+  const createMoveInvocation = (to: string) => createInvocation('move', front(), to)
 
   it('is asked of the vault under the path it is filed at from now on', async () => {
     const one = window()
@@ -827,7 +827,7 @@ describe('a folder made', () => {
   it('is asked of the vault under the path it goes at', async () => {
     const one = window()
 
-    await carry(invocationOf('createFolder', front(), 'physics/heat'), one.on)
+    await carry(createInvocation('createFolder', front(), 'physics/heat'), one.on)
 
     expect(one.done).toStrictEqual(['createFolder physics/heat'])
   })
@@ -835,7 +835,7 @@ describe('a folder made', () => {
   it('is not made where something of that name is filed there', async () => {
     const one = window({ folderError: 'occupied' })
 
-    await carry(invocationOf('createFolder', front(), 'physics/heat'), one.on)
+    await carry(createInvocation('createFolder', front(), 'physics/heat'), one.on)
 
     expect(one.notices).toStrictEqual([words.occupied])
   })
@@ -843,7 +843,7 @@ describe('a folder made', () => {
   it('asks the vault for nothing where no path was given', async () => {
     const one = window()
 
-    await carry(invocationOf('createFolder', front()), one.on)
+    await carry(createInvocation('createFolder', front()), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -857,7 +857,7 @@ describe('a note that moved between the answer and the invocation', () => {
   it('is renamed where it stands now, not at the name the invocation was made over', async () => {
     const one = window({ at: 'physics/Being.md' })
 
-    await carry(invocationOf('title', front(), 'Substance', 'held'), one.on)
+    await carry(createInvocation('title', front(), 'Substance', 'held'), one.on)
 
     expect(one.done).toStrictEqual(['flushPending held', 'rename physics/Being.md Substance'])
   })
@@ -865,7 +865,7 @@ describe('a note that moved between the answer and the invocation', () => {
   it('is removed where it stands now', async () => {
     const one = window({ at: 'physics/Being.md' })
 
-    await carry(invocationOf('remove', front(), '', 'held'), one.on)
+    await carry(createInvocation('remove', front(), '', 'held'), one.on)
 
     expect(one.done.slice(0, 2)).toStrictEqual([
       'flushPending held',
@@ -876,7 +876,7 @@ describe('a note that moved between the answer and the invocation', () => {
   it('is left at the name it was made over where no tab holds it', async () => {
     const one = window({ at: 'physics/Being.md' })
 
-    await carry(invocationOf('remove', front()), one.on)
+    await carry(createInvocation('remove', front()), one.on)
 
     expect(one.done[0]).toBe('remove physics/Ontology.md false')
   })
@@ -886,9 +886,9 @@ describe('a command over the window', () => {
   it('opens a tab of the kind asked for, and closes the one in front', async () => {
     const one = window()
 
-    await carry(invocationOf('plex', front()), one.on)
-    await carry(invocationOf('agent', front()), one.on)
-    await carry(invocationOf('close', front()), one.on)
+    await carry(createInvocation('plex', front()), one.on)
+    await carry(createInvocation('agent', front()), one.on)
+    await carry(createInvocation('close', front()), one.on)
 
     expect(one.done).toStrictEqual(['openTab plex', 'openTab agent', 'closeTab tab'])
   })
@@ -896,7 +896,7 @@ describe('a command over the window', () => {
   it('hands the field back to the search', async () => {
     const one = window()
 
-    await carry(invocationOf('find', front()), one.on)
+    await carry(createInvocation('find', front()), one.on)
 
     expect(one.done).toStrictEqual(['search'])
   })
@@ -904,8 +904,8 @@ describe('a command over the window', () => {
   it('hands over the row that was chosen, and nothing about the note in front', async () => {
     const one = window()
 
-    await carry(invocationOf('appearance', front(), 'mine:sea'), one.on)
-    await carry(invocationOf('appearance', front(), 'mode:dark'), one.on)
+    await carry(createInvocation('appearance', front(), 'mine:sea'), one.on)
+    await carry(createInvocation('appearance', front(), 'mode:dark'), one.on)
 
     expect(one.done).toStrictEqual(['appearance mine:sea', 'appearance mode:dark'])
   })
@@ -915,7 +915,7 @@ describe('a command over the vault', () => {
   it('travels to the note the vault opens with', async () => {
     const one = window()
 
-    await carry(invocationOf('first', front()), one.on)
+    await carry(createInvocation('first', front()), one.on)
 
     expect(one.done).toStrictEqual(['travel Root.md'])
   })
@@ -924,7 +924,7 @@ describe('a command over the vault', () => {
     const one = window()
     const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, getOpeningNote: () => '' } }
 
-    await runInvocation(invocationOf('first', front()), empty, words)
+    await runInvocation(createInvocation('first', front()), empty, words)
 
     expect(one.notices).toStrictEqual([words.nowhere])
   })
@@ -934,8 +934,8 @@ describe('what the window is asked about a note', () => {
   it('is put to the agent, and its path put on the clipboard', async () => {
     const one = window()
 
-    await carry(invocationOf('ask', front()), one.on)
-    await carry(invocationOf('copy', front()), one.on)
+    await carry(createInvocation('ask', front()), one.on)
+    await carry(createInvocation('copy', front()), one.on)
 
     expect(one.done).toStrictEqual(['ask physics/Ontology.md — ', 'copies physics/Ontology.md'])
   })
@@ -947,7 +947,7 @@ describe('another vault under this window', () => {
   it('is opened, and the page drawn again on it', async () => {
     const one = window()
 
-    await carry(invocationOf('openVault', heat()), one.on)
+    await carry(createInvocation('openVault', heat()), one.on)
 
     expect(one.done).toStrictEqual(['opens vault heat', 'reloads'])
   })
@@ -955,7 +955,7 @@ describe('another vault under this window', () => {
   it('leaves the page where it stands where the vault would not open', async () => {
     const one = window({ turnedDown: 'showing' })
 
-    await carry(invocationOf('openVault', heat()), one.on)
+    await carry(createInvocation('openVault', heat()), one.on)
 
     expect(one.done).toStrictEqual(['opens vault heat'])
     expect(one.notices).toStrictEqual([words.vaultErrors.showing])
@@ -966,7 +966,7 @@ describe('a vault made', () => {
   it('is the folder chosen in the machine’s own picker, and is opened', async () => {
     const one = window()
 
-    await carry(invocationOf('newVault', front()), one.on)
+    await carry(createInvocation('newVault', front()), one.on)
 
     expect(one.done).toStrictEqual([
       `choose ${words.folder}`,
@@ -979,7 +979,7 @@ describe('a vault made', () => {
   it('is nothing at all where the person closed the picker', async () => {
     const one = window({ chose: '' })
 
-    await carry(invocationOf('newVault', front()), one.on)
+    await carry(createInvocation('newVault', front()), one.on)
 
     expect(one.done).toStrictEqual([`choose ${words.folder}`])
     expect(one.notices).toStrictEqual([])
@@ -988,7 +988,7 @@ describe('a vault made', () => {
   it('says a folder that lies inside a vault already added', async () => {
     const one = window({ added: asFailure('overlaps') })
 
-    await carry(invocationOf('newVault', front()), one.on)
+    await carry(createInvocation('newVault', front()), one.on)
 
     expect(one.notices).toStrictEqual([words.vaultErrors.overlaps])
   })
@@ -998,7 +998,7 @@ describe('a vault renamed', () => {
   it('is called what was typed, and the window calls it that from now on', async () => {
     const one = window()
 
-    await carry(invocationOf('renameVault', front(), 'Heat'), one.on)
+    await carry(createInvocation('renameVault', front(), 'Heat'), one.on)
 
     expect(one.done).toStrictEqual(['renames vault physics Heat', 'calls physics Heat'])
   })
@@ -1006,7 +1006,7 @@ describe('a vault renamed', () => {
   it('is left alone where the name it was given is the name it has', async () => {
     const one = window()
 
-    await carry(invocationOf('renameVault', front(), 'Physics'), one.on)
+    await carry(createInvocation('renameVault', front(), 'Physics'), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -1014,7 +1014,7 @@ describe('a vault renamed', () => {
   it('says a name another vault is already called', async () => {
     const one = window({ added: asFailure('nameTaken') })
 
-    await carry(invocationOf('renameVault', front(), 'Heat'), one.on)
+    await carry(createInvocation('renameVault', front(), 'Heat'), one.on)
 
     expect(one.notices).toStrictEqual([words.vaultErrors.nameTaken])
   })
@@ -1027,7 +1027,7 @@ describe('a vault taken off the list', () => {
   it('is forgotten, and its folder left where it is', async () => {
     const one = window()
 
-    await carry(invocationOf('removeVault', heat()), one.on)
+    await carry(createInvocation('removeVault', heat()), one.on)
 
     expect(one.done).toStrictEqual(['removes heat'])
   })
@@ -1035,7 +1035,7 @@ describe('a vault taken off the list', () => {
   it('says the only vault this installation has stays on it', async () => {
     const one = window({ turnedDown: 'lastVault' })
 
-    await carry(invocationOf('removeVault', heat()), one.on)
+    await carry(createInvocation('removeVault', heat()), one.on)
 
     expect(one.notices).toStrictEqual([words.vaultErrors.lastVault])
   })
@@ -1043,7 +1043,7 @@ describe('a vault taken off the list', () => {
   it('is erased where erasing was what was asked', async () => {
     const one = window()
 
-    await carry(invocationOf('eraseVault', heat(), 'Heat'), one.on)
+    await carry(createInvocation('eraseVault', heat(), 'Heat'), one.on)
 
     expect(one.done).toStrictEqual(['erases heat'])
   })
@@ -1051,7 +1051,7 @@ describe('a vault taken off the list', () => {
   it('says a machine with nowhere to put what is deleted', async () => {
     const one = window({ turnedDown: 'noTrash' })
 
-    await carry(invocationOf('eraseVault', heat(), 'Heat'), one.on)
+    await carry(createInvocation('eraseVault', heat(), 'Heat'), one.on)
 
     expect(one.notices).toStrictEqual([words.vaultErrors.noTrash])
   })
@@ -1059,7 +1059,7 @@ describe('a vault taken off the list', () => {
   it('says the vault in front of the person, which the window stands on', async () => {
     const one = window({ turnedDown: 'showing' })
 
-    await carry(invocationOf('removeVault', front()), one.on)
+    await carry(createInvocation('removeVault', front()), one.on)
 
     expect(one.notices).toStrictEqual([words.vaultErrors.showing])
   })
@@ -1070,7 +1070,7 @@ describe('what the list of vaults reported as error', () => {
     for (const err of Object.keys(words.vaultErrors) as VaultErrorCode[]) {
       const one = window({ turnedDown: err })
 
-      await carry(invocationOf('openVault', front()), one.on)
+      await carry(createInvocation('openVault', front()), one.on)
 
       expect(words.vaultErrors[err], err).not.toBe('')
       expect(one.notices, err).toStrictEqual([words.vaultErrors[err]])
@@ -1083,8 +1083,8 @@ describe('nothing to carry out', () => {
     const one = window()
 
     await runInvocation(null, one.on, words)
-    await carry(invocationOf('constructor', front()), one.on)
-    await carry(invocationOf('', front()), one.on)
+    await carry(createInvocation('constructor', front()), one.on)
+    await carry(createInvocation('', front()), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -1096,7 +1096,7 @@ describe('nothing to carry out', () => {
       files: { ...one.on.files, remove: async () => Promise.reject(new Error('gone')) },
     }
 
-    await runInvocation(invocationOf('remove', front()), broken, words)
+    await runInvocation(createInvocation('remove', front()), broken, words)
 
     expect(one.notices).toStrictEqual([
       'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
@@ -1183,8 +1183,8 @@ describe('a note made in a seat of another', () => {
   it('is made as a parent or as a jump where that was asked', async () => {
     const one = window()
 
-    await carry(invocationOf('parent', front(), 'Entropy'), one.on)
-    await carry(invocationOf('jump', front(), 'Heat'), one.on)
+    await carry(createInvocation('parent', front(), 'Entropy'), one.on)
+    await carry(createInvocation('jump', front(), 'Heat'), one.on)
 
     expect(one.done.filter((step) => step.startsWith('createNote'))).toStrictEqual([
       'createNote Entropy physics/Ontology.md parent',
@@ -1195,7 +1195,7 @@ describe('a note made in a seat of another', () => {
   it('says nothing where the vault would not make it', async () => {
     const one = window({ wasMade: false })
 
-    await carry(invocationOf('child', front(), 'Entropy'), one.on)
+    await carry(createInvocation('child', front(), 'Entropy'), one.on)
 
     expect(one.calls).toStrictEqual([['', undefined]])
   })
@@ -1205,8 +1205,8 @@ describe('a stencil or an address made', () => {
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
-    await carry(invocationOf('stencil', front(), ''), one.on)
-    await carry(invocationOf('importUrl', front(), ''), one.on)
+    await carry(createInvocation('stencil', front(), ''), one.on)
+    await carry(createInvocation('importUrl', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -1214,7 +1214,7 @@ describe('a stencil or an address made', () => {
   it('is a note at the address that was typed, at the top of the vault', async () => {
     const one = window()
 
-    await carry(invocationOf('importUrl', front(), 'https://example.org'), one.on)
+    await carry(createInvocation('importUrl', front(), 'https://example.org'), one.on)
 
     expect(one.done).toStrictEqual(['imports — https://example.org'])
   })
@@ -1224,7 +1224,7 @@ describe('a copy or a text of a file asked for', () => {
   it('asks the application for a copy over the file', async () => {
     const one = window()
 
-    await carry(invocationOf('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.done).toStrictEqual(['makes copy talks/Ants.mp3'])
   })
@@ -1232,7 +1232,7 @@ describe('a copy or a text of a file asked for', () => {
   it('says what fetching the address came to, in the words for an address', async () => {
     const one = window({ outcome: outcome('transcript', 'done') })
 
-    await carry(invocationOf('downloadText', front({ file: 'https://example.org' })), one.on)
+    await carry(createInvocation('downloadText', front({ file: 'https://example.org' })), one.on)
 
     expect(one.done).toStrictEqual(['fetches https://example.org'])
     expect(one.notices).toStrictEqual([words.fetched.done])
@@ -1242,7 +1242,7 @@ describe('a copy or a text of a file asked for', () => {
   it('says a run that came out wrong as an error, with what the run said', async () => {
     const one = window({ outcome: outcome('transcript', 'failed', 'no network') })
 
-    await carry(invocationOf('downloadText', front({ file: 'https://example.org' })), one.on)
+    await carry(createInvocation('downloadText', front({ file: 'https://example.org' })), one.on)
 
     expect(one.notices).toStrictEqual([`${words.fetched.failed} no network`])
     expect(one.tones).toStrictEqual(['error'])
@@ -1251,7 +1251,7 @@ describe('a copy or a text of a file asked for', () => {
   it('says as an error that this build cannot run it', async () => {
     const one = window({ outcome: { able: false } })
 
-    await carry(invocationOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.tones).toStrictEqual(['error'])
   })
@@ -1259,8 +1259,8 @@ describe('a copy or a text of a file asked for', () => {
   it('says as an error that this build cannot delete the text or the copy', async () => {
     const one = window({ isUndeletable: true })
 
-    await carry(invocationOf('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
-    await carry(invocationOf('deleteCopy', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('deleteCopy', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.notices).toStrictEqual([words.unrunnable, words.unrunnable])
     expect(one.tones).toStrictEqual(['error', 'error'])
@@ -1272,7 +1272,7 @@ describe('a command nothing carries out', () => {
   it('does nothing and says nothing', async () => {
     const one = window()
 
-    await carry({ ...invocationOf('read', front()), id: 'nothing' }, one.on)
+    await carry({ ...createInvocation('read', front()), id: 'nothing' }, one.on)
 
     expect(one.done).toStrictEqual([])
     expect(one.calls).toStrictEqual([])
@@ -1284,7 +1284,7 @@ describe('what the voice says in which tone', () => {
     const one = window()
     const empty: CommandDeps = { ...one.on, goes: { ...one.on.goes, getOpeningNote: () => '' } }
 
-    await runInvocation(invocationOf('first', front()), empty, words)
+    await runInvocation(createInvocation('first', front()), empty, words)
 
     expect(one.tones).toStrictEqual(['caution'])
   })
@@ -1294,9 +1294,9 @@ describe('what the voice says in which tone', () => {
     const refused = window({ renamed: asFailure('unnameable' as const) })
     const stale = window({ renamed: asFailure('changed' as const) })
 
-    await carry(invocationOf('title', front(), 'Entropy'), waiting.on)
-    await carry(invocationOf('title', front(), 'Entropy'), refused.on)
-    await carry(invocationOf('title', front(), 'Entropy'), stale.on)
+    await carry(createInvocation('title', front(), 'Entropy'), waiting.on)
+    await carry(createInvocation('title', front(), 'Entropy'), refused.on)
+    await carry(createInvocation('title', front(), 'Entropy'), stale.on)
 
     expect(waiting.tones).toStrictEqual(['caution'])
     expect(refused.tones).toStrictEqual(['error'])
@@ -1306,7 +1306,7 @@ describe('what the voice says in which tone', () => {
   it('says nothing of a rename that came off', async () => {
     const one = window()
 
-    await carry(invocationOf('title', front(), 'Entropy'), one.on)
+    await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
     expect(one.calls).toStrictEqual([['', undefined]])
   })
@@ -1316,9 +1316,9 @@ describe('what the voice says in which tone', () => {
     const taken = window({ movement: { ok: false, error: 'occupied' } })
     const refused = window({ movement: { ok: false, error: 'missing' } })
 
-    await carry(invocationOf('move', front(), 'notes/Ontology.md'), waiting.on)
-    await carry(invocationOf('move', front(), 'notes/Ontology.md'), taken.on)
-    await carry(invocationOf('move', front(), 'notes/Ontology.md'), refused.on)
+    await carry(createInvocation('move', front(), 'notes/Ontology.md'), waiting.on)
+    await carry(createInvocation('move', front(), 'notes/Ontology.md'), taken.on)
+    await carry(createInvocation('move', front(), 'notes/Ontology.md'), refused.on)
 
     expect(waiting.tones).toStrictEqual(['caution'])
     expect(taken.tones).toStrictEqual(['error'])
@@ -1329,7 +1329,7 @@ describe('what the voice says in which tone', () => {
   it('says nothing of a move that came off', async () => {
     const one = window()
 
-    await carry(invocationOf('move', front(), 'notes/Ontology.md'), one.on)
+    await carry(createInvocation('move', front(), 'notes/Ontology.md'), one.on)
 
     expect(one.calls).toStrictEqual([['', undefined]])
   })
@@ -1338,8 +1338,8 @@ describe('what the voice says in which tone', () => {
     const taken = window({ folderError: 'occupied' })
     const refused = window({ folderError: 'unnameable' })
 
-    await carry(invocationOf('createFolder', front(), 'physics/heat'), taken.on)
-    await carry(invocationOf('createFolder', front(), 'physics/heat'), refused.on)
+    await carry(createInvocation('createFolder', front(), 'physics/heat'), taken.on)
+    await carry(createInvocation('createFolder', front(), 'physics/heat'), refused.on)
 
     expect(taken.tones).toStrictEqual(['error'])
     expect(refused.notices).toStrictEqual([words.errors.unnameable])
@@ -1349,7 +1349,7 @@ describe('what the voice says in which tone', () => {
   it('says nothing of a folder that was made', async () => {
     const one = window()
 
-    await carry(invocationOf('createFolder', front(), 'physics/heat'), one.on)
+    await carry(createInvocation('createFolder', front(), 'physics/heat'), one.on)
 
     expect(one.calls).toStrictEqual([['', undefined]])
   })
@@ -1358,8 +1358,8 @@ describe('what the voice says in which tone', () => {
     const refused = window({ removed: asFailure('missing' as const) })
     const waiting = window({ isAsking: true })
 
-    await carry(invocationOf('remove', front()), refused.on)
-    await carry(invocationOf('remove', front()), waiting.on)
+    await carry(createInvocation('remove', front()), refused.on)
+    await carry(createInvocation('remove', front()), waiting.on)
 
     expect(refused.tones).toStrictEqual(['error'])
     expect(waiting.notices).toStrictEqual([words.unanswered])
@@ -1371,7 +1371,7 @@ describe('a file removed that no tab holds', () => {
   it('closes no tab', async () => {
     const one = window()
 
-    await carry(invocationOf('remove', front({ path: 'physics/Heat.pdf' })), one.on)
+    await carry(createInvocation('remove', front({ path: 'physics/Heat.pdf' })), one.on)
 
     expect(one.done).toStrictEqual([
       'remove physics/Heat.pdf false',

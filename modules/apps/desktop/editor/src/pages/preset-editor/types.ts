@@ -41,7 +41,7 @@ export {
   STOP_REASONS,
   WHOLE_LOAD,
   LOADS,
-  loadOn,
+  getLoadOn,
   setLoadOn,
   DEFAULTS,
   NO_BOUNDS,

@@ -96,7 +96,7 @@ func (u CountReviews) WithNow(now port.Clock) CountReviews {
 // Execute counts one vault.
 func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
 	log := Log{Stores: u.logs}
-	files, err := log.Files(ctx, v)
+	files, err := log.GetLogFiles(ctx, v)
 	if err != nil {
 		return ReviewCounts{}, err
 	}
@@ -171,7 +171,7 @@ func (u CountReviews) countFile(
 			Name: file.Name,
 			Size: ran.Size,
 			Days: review.GetDayTallies(u.day, ran.Answers),
-			IDs:  identifiers(ran.Answers),
+			IDs:  collectIdentifiers(ran.Answers),
 		}
 	}
 	run.now.Runs = append(run.now.Runs, one)
@@ -220,9 +220,9 @@ func addTallies(one, other review.Tally) review.Tally {
 	}
 }
 
-// identifiers is what every line of a run is named by, the lines taking an
+// collectIdentifiers returns what every line of a run is named by, the lines taking an
 // answer back among them.
-func identifiers(answers []review.Answer) []string {
+func collectIdentifiers(answers []review.Answer) []string {
 	out := make([]string, 0, len(answers))
 	for _, a := range answers {
 		out = append(out, a.ID)
@@ -282,7 +282,7 @@ func (u CountReviews) getDueAndRetained(
 		}
 		falls[u.day.GetName(s.Due)]++
 	}
-	return falls, held.History().GetRetained(u.schedules.by, u.day), nil
+	return falls, held.GetHistory().GetRetained(u.schedules.by, u.day), nil
 }
 
 // readRemembered is what was counted last time, by the name of the run it was

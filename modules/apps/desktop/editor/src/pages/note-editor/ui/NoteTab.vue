@@ -4,7 +4,7 @@
  */
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
-import { conflictIn, FileConflictPrompt } from '@/features/file-conflict'
+import { parseFileConflict, FileConflictPrompt } from '@/features/file-conflict'
 import { WORDS as words } from '@/entities/note'
 import type { NoteTabState } from '../types'
 
@@ -49,7 +49,7 @@ function onOpen(url: string) {
   <div class="note">
     <FileConflictPrompt
       :error-message="props.state.errorMessage.value"
-      :conflict="conflictIn(props.state.note.value.state)"
+      :conflict="parseFileConflict(props.state.note.value.state)"
       :words="words"
       @keep="onKeep"
       @take="onTake"

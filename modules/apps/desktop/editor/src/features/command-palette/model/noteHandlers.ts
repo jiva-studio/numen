@@ -17,7 +17,10 @@ export interface FlushResult {
  * The invocation at the file its note stands at now. One over a note no tab of the
  * window holds is at the name it was made over.
  */
-export const atItsFile = (invocation: CommandInvocation, on: TabContext): CommandInvocation =>
+export const withCurrentNotePath = (
+  invocation: CommandInvocation,
+  on: TabContext,
+): CommandInvocation =>
   invocation.note ? { ...invocation, path: on.notes.getPath(invocation.note) } : invocation
 
 /**

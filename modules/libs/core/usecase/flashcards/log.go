@@ -43,12 +43,12 @@ type ReviewLog struct {
 	Skipped int
 }
 
-// History is the answers in the order they were given: nothing a line takes
+// GetHistory returns the answers in the order they were given: nothing a line takes
 // back, one line to an identifier, earliest first.
 //
 // One request asks several things of one loaded log, and each of them reads this
 // order. It is worked out once for the log and handed to all of them.
-func (h ReviewLog) History() review.History {
+func (h ReviewLog) GetHistory() review.History {
 	if h.order == nil {
 		return review.OrderAnswers(h.Answers)
 	}
@@ -60,14 +60,14 @@ func newHistory(answers []review.Answer) func() review.History {
 	return sync.OnceValue(func() review.History { return review.OrderAnswers(answers) })
 }
 
-// Files is what the vault's log is made of, without reading any of it. It is
+// GetLogFiles lists what the vault's log is made of, without reading any of it. It is
 // what a cache is measured against, and measuring it costs one listing.
-func (u Log) Files(ctx context.Context, v domain.Vault) ([]port.Entry, error) {
+func (u Log) GetLogFiles(ctx context.Context, v domain.Vault) ([]port.Entry, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
 		return nil, err
 	}
-	return getLogFiles(ctx, store)
+	return readLogFiles(ctx, store)
 }
 
 // Read is every answer a vault holds.
@@ -79,7 +79,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 	if err != nil {
 		return ReviewLog{}, err
 	}
-	files, err := getLogFiles(ctx, store)
+	files, err := readLogFiles(ctx, store)
 	if err != nil {
 		return ReviewLog{}, err
 	}
@@ -138,8 +138,8 @@ func (u Log) ReadFile(
 	return LogFile{Answers: answers, Size: len(raw), Skipped: skipped}, nil
 }
 
-// getLogFiles is the files of the log, sorted by name.
-func getLogFiles(ctx context.Context, store port.DerivedStore) ([]port.Entry, error) {
+// readLogFiles returns the files of the log, sorted by name.
+func readLogFiles(ctx context.Context, store port.DerivedStore) ([]port.Entry, error) {
 	held, err := store.List(ctx, Area)
 	if err != nil {
 		return nil, err

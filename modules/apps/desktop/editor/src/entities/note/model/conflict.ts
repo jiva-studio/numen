@@ -1,16 +1,16 @@
 /**
  * External conflict detection and resolution for open notes.
  */
-import { stateOf, type Event, type Tab } from '../lib/tab'
+import { getState, type Event, type Tab } from '../lib/tab'
 import type { PathRename } from '@/shared/paths'
 import type { ConflictWords } from '../lib/noteTypes'
 import { ERROR_MESSAGES, STALE_CONFLICT } from '../words'
 
 export function isStale(tab: Tab): boolean {
-  return stateOf(tab) === 'stale'
+  return getState(tab) === 'stale'
 }
 
-export function staleOf(tab: Tab | undefined): ConflictWords | null {
+export function findStaleConflict(tab: Tab | undefined): ConflictWords | null {
   return tab && isStale(tab) ? STALE_CONFLICT : null
 }
 
@@ -37,7 +37,7 @@ export function createConflictCoordinator(
     keep,
     take,
     notifyChanged,
-    stale: (id: string) => staleOf(getTab(id)),
+    stale: (id: string) => findStaleConflict(getTab(id)),
     getErrorMessage: (id: string) => getErrorMessage(getTab(id)),
   }
 }
