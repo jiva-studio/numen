@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   GAP,
+  columnAt,
   LARGEST,
   SMALLEST,
   clamp,
@@ -512,5 +513,13 @@ describe('the page count of a document read against its bytes', () => {
       page: 3,
       pages: 4,
     })
+  })
+})
+
+describe('which column a place falls in, in an area nothing has been measured in', () => {
+  it('is the first, wherever the place stands', () => {
+    const flow = { along: 500, width: 0, gap: GAP, columns: 2 }
+    expect(columnAt(flow, 0)).toBe(0)
+    expect(columnAt(flow, 300)).toBe(0)
   })
 })
