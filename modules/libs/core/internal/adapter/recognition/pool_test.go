@@ -70,15 +70,21 @@ func TestRunBoundedWithNoJobsReturns(t *testing.T) {
 }
 
 func TestRunBoundedStopsStartingAfterCancel(t *testing.T) {
+	const workers = 2
 	ctx, cancel := context.WithCancel(t.Context())
-	var calls atomic.Int32
-	runBounded(ctx, 50, 2, func(int) {
+	var calls, afterCancel atomic.Int32
+	var cancelled atomic.Bool
+	runBounded(ctx, 50, workers, func(int) {
+		if cancelled.Load() {
+			afterCancel.Add(1)
+		}
 		if calls.Add(1) == 3 {
 			cancel()
+			cancelled.Store(true)
 		}
 	})
-	if got := calls.Load(); got > 4 {
-		t.Errorf("%d calls started, want at most one per worker after the third", got)
+	if got := afterCancel.Load(); got > workers {
+		t.Errorf("%d calls started after cancel, want at most one per worker", got)
 	}
 }
 
