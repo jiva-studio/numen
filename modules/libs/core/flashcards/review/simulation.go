@@ -102,7 +102,7 @@ func (s Simulation) getDaysToLearn(p Preset, open time.Time) int {
 			open = ends
 			continue
 		}
-		c = s.settleDay(c, open, p)
+		c = s.getScheduleAfterDay(c, open, p)
 		if p.IsLearned(c, ends) {
 			return days
 		}
@@ -112,22 +112,22 @@ func (s Simulation) getDaysToLearn(p Preset, open time.Time) int {
 	return NeverLearns
 }
 
-// getAfterShowing is where one showing leaves a card face, at the hour the day
+// getScheduleAfterShowing is where one showing leaves a card face, at the hour the day
 // opens. A card face the day is not asking for stands where it is.
-func (s Simulation) getAfterShowing(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
+func (s Simulation) getScheduleAfterShowing(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
 	if !c.IsNew() && !c.Due.Before(ends) {
 		return c
 	}
 	return s.step(c, open, p, on)
 }
 
-// settleDay is where a day of review leaves a card face when the day answers
+// getScheduleAfterDay is where a day of review leaves a card face when the day answers
 // every showing it asks for: an answer that leaves the card falling due before
 // the day closes is a card the day asks again, up to MostShowings.
 //
 // It is the day with no budget over it, which is the day the learning of a card
 // face is counted in.
-func (s Simulation) settleDay(c Schedule, open time.Time, p Preset) Schedule {
+func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Schedule {
 	for range MostShowings {
 		if !c.IsNew() && !s.Day.IsOwed(c, open) {
 			break
@@ -156,7 +156,7 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool 
 		// A day of the week at none of the load asks it nothing, and the next
 		// day of review picks it up.
 		if p.GetShare(open.Weekday()) != 0 {
-			c = s.settleDay(c, open, p)
+			c = s.getScheduleAfterDay(c, open, p)
 		}
 		open = ends
 	}
@@ -194,7 +194,7 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Sched
 	}
 	if c.IsNew() {
 		good := s.By.Next(c, at, Good)
-		good.Due = p.ScheduleDay(on, at, good.Due)
+		good.Due = p.AssignDueDay(on, at, good.Due)
 		return good
 	}
 	back := s.getRecallProbability(c, at)
@@ -204,7 +204,7 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Sched
 	out.Stability = back*good.Stability + (1-back)*again.Stability
 	out.Difficulty = back*good.Difficulty + (1-back)*again.Difficulty
 	away := back*good.Due.Sub(at).Seconds() + (1-back)*again.Due.Sub(at).Seconds()
-	out.Due = p.ScheduleDay(on, at, at.Add(time.Duration(away*float64(time.Second))))
+	out.Due = p.AssignDueDay(on, at, at.Add(time.Duration(away*float64(time.Second))))
 	return out
 }
 

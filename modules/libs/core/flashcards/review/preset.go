@@ -73,19 +73,19 @@ func (p Preset) GetShare(day time.Weekday) float64 {
 	return float64(per) / FullLoad
 }
 
-// CanEvenLoad reports whether this preset moves a card face off the day the scheduler
+// ShouldBalanceLoad reports whether this preset moves a card face off the day the scheduler
 // chose.
 //
 // A preset aiming at a day does not. The pace is what spreads a date's material
 // over its days, and the days it has are the days it needs.
-func (p Preset) CanEvenLoad() bool { return p.IsEvenLoad && p.Goal != GoalDate }
+func (p Preset) ShouldBalanceLoad() bool { return p.IsEvenLoad && p.Goal != GoalDate }
 
 // GetPlacing is how this preset puts a card on a day, as a short name: whether
 // it evens the days out, and the share each day of the week carries. A schedule
 // worked out under one placing is not read back under another.
 func (p Preset) GetPlacing() string {
 	var out strings.Builder
-	fmt.Fprintf(&out, "even=%t", p.CanEvenLoad())
+	fmt.Fprintf(&out, "even=%t", p.ShouldBalanceLoad())
 	for day := time.Sunday; day <= time.Saturday; day++ {
 		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.GetShare(day)*FullLoad)))
 	}

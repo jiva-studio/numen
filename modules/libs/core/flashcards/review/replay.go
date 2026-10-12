@@ -48,7 +48,7 @@ func ScheduleBy(s Scheduler) Assignment {
 type History []Answer
 
 // Give puts a vault's answers in the order they were given.
-func Give(answers []Answer) History { return getGivenAnswers(answers) }
+func Give(answers []Answer) History { return getActiveAnswers(answers) }
 
 // Replay works out where this history leaves every card face, each under the
 // scheduler its own preset asks for and on the day its own preset puts it.
@@ -61,7 +61,7 @@ func (h History) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
 	for _, a := range h {
 		one := by(a.CardFace)
 		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
-		next.Due = one.Preset.ScheduleDay(on, a.At, next.Due)
+		next.Due = one.Preset.AssignDueDay(on, a.At, next.Due)
 		out[a.CardFace] = next
 	}
 	return out
@@ -129,13 +129,13 @@ func (h History) walkAnswers(
 	return out
 }
 
-// getGivenAnswers is the answers that count, in the order they were given.
+// getActiveAnswers is the answers that count, in the order they were given.
 //
 // An answer some line takes back is left out, and one identifier is one answer
 // however many lines carry it. The files arrive in whatever order they were
 // synchronised, and what a card face has been through is the order of the
 // answers themselves.
-func getGivenAnswers(answers []Answer) []Answer {
+func getActiveAnswers(answers []Answer) []Answer {
 	taken := make(map[string]bool)
 	for _, a := range answers {
 		if a.IsUndo() {
@@ -152,17 +152,17 @@ func getGivenAnswers(answers []Answer) []Answer {
 		seen[a.ID] = true
 		out = append(out, a)
 	}
-	slices.SortStableFunc(out, byWhen)
+	slices.SortStableFunc(out, compareAnswersByTime)
 	return out
 }
 
-// byWhen puts answers in the order they were given.
+// compareAnswersByTime puts answers in the order they were given.
 //
 // Two answers of one millisecond are put in the order of their identifiers,
 // which is one order and the same at every launch. Which of them was given
 // first is not known: an identifier carries the millisecond and then
 // randomness.
-func byWhen(a, b Answer) int {
+func compareAnswersByTime(a, b Answer) int {
 	if !a.At.Equal(b.At) {
 		return a.At.Compare(b.At)
 	}

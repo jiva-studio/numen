@@ -148,9 +148,9 @@ func (p Projection) minutesADay(through int) float64 {
 	return all.Minutes() / float64(days)
 }
 
-// hasReached reports whether every card face that can be learned by this day of
+// isAllLearned reports whether every card face that can be learned by this day of
 // the run stands learned on it. Short is how many cannot be, whatever the pace.
-func (p Projection) hasReached(day int) bool {
+func (p Projection) isAllLearned(day int) bool {
 	if p.Faces == 0 {
 		return true
 	}
@@ -217,7 +217,7 @@ func (s Simulation) Run(
 	for _, one := range at {
 		cards = append(cards, one)
 	}
-	slices.SortFunc(cards, older)
+	slices.SortFunc(cards, compareByDue)
 
 	// The day the whole material stands learned is asked of a preset counting by
 	// an interval and aiming at no date. The other two are answered by a level
@@ -296,8 +296,8 @@ func (s Simulation) Run(
 		// a day that cannot pay all of it leaves the cards least overdue
 		// standing: what the day before did not reach, and what falls due in
 		// this one.
-		slices.SortFunc(falls[today], func(a, b int) int { return older(cards[a], cards[b]) })
-		spare = merge(spare[:0], due[take:], falls[today], cards)
+		slices.SortFunc(falls[today], func(a, b int) int { return compareByDue(cards[a], cards[b]) })
+		spare = mergeByDue(spare[:0], due[take:], falls[today], cards)
 		due, spare = spare, due
 		take = 0
 		clear(shown)
@@ -375,7 +375,7 @@ func (s Simulation) Run(
 					faced++
 				}
 				shown[at]++
-				cards[at] = s.getAfterShowing(cards[at], open, ends, p, on)
+				cards[at] = s.getScheduleAfterShowing(cards[at], open, ends, p, on)
 				reckoned.countAnswer(at, cards[at], ends)
 				if s.Day.IsOwed(cards[at], open) && shown[at] < MostShowings {
 					again = append(again, at)
@@ -401,7 +401,7 @@ func (s Simulation) Run(
 			faced++
 			left--
 			out.Seen++
-			one := s.getAfterShowing(Schedule{}, open, ends, p, on)
+			one := s.getScheduleAfterShowing(Schedule{}, open, ends, p, on)
 			cards = append(cards, one)
 			shown = append(shown, 1)
 			reckoned.countBegun(one, ends)
@@ -467,15 +467,15 @@ func (s Simulation) Run(
 	return out, nil
 }
 
-// merge puts what a day before did not reach and what falls due in this one
+// mergeByDue puts what a day before did not reach and what falls due in this one
 // into one run, the card face owed longest first.
 //
 // Both are in that order already, so a day sees the whole of what it owes for
 // the cost of what it owes.
-func merge(into, carried, fell []int, cards []Schedule) []int {
+func mergeByDue(into, carried, fell []int, cards []Schedule) []int {
 	a, b := 0, 0
 	for a < len(carried) && b < len(fell) {
-		if older(cards[carried[a]], cards[fell[b]]) <= 0 {
+		if compareByDue(cards[carried[a]], cards[fell[b]]) <= 0 {
 			into = append(into, carried[a])
 			a++
 			continue
@@ -585,9 +585,9 @@ func (r *learnedCount) countLearned(
 	return stands, back / float64(faces)
 }
 
-// older puts the card face owed longest first. Two schedules alike in all of
+// compareByDue puts the card face owed longest first. Two schedules alike in all of
 // this are one card face as far as any of these numbers go.
-func older(a, b Schedule) int {
+func compareByDue(a, b Schedule) int {
 	if !a.Due.Equal(b.Due) {
 		return a.Due.Compare(b.Due)
 	}
