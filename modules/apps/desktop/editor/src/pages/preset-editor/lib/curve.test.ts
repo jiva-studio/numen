@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NO_PLACE, type Curve, type Point, type Settings } from '../types'
+import { DEFAULTS, NO_CURVE_POINT, type Curve, type Point, type Settings } from '../types'
 import { BOUNDS, curve as drawnCurve } from '../fixtures'
 import {
   clamp,
@@ -71,7 +71,7 @@ describe('the value the knob stands at', () => {
 
   it('is the place itself anywhere else, and where the preset falls outside the grid', () => {
     expect(getKnobValue(riding, 3)).toBe(30)
-    expect(getKnobValue(drawnCurve({ now: NO_PLACE }), 2)).toBe(20)
+    expect(getKnobValue(drawnCurve({ now: NO_CURVE_POINT }), 2)).toBe(20)
   })
 
   it('is nothing at all where the grid has no such place', () => {
@@ -108,7 +108,7 @@ describe('what one place of the curve produces', () => {
       point({ reviews: 120, retained: 0.93 }),
     ],
     now: { at: 2, value: 20, day: '' },
-    suggested: NO_PLACE,
+    suggested: NO_CURVE_POINT,
     decks: 1,
     cards: 400,
     overdue: 0,
@@ -166,8 +166,8 @@ describe('a goal with nothing to work on', () => {
     grid: [0, 10, 20],
     days: [],
     at: [point(), point(), point()],
-    now: NO_PLACE,
-    suggested: NO_PLACE,
+    now: NO_CURVE_POINT,
+    suggested: NO_CURVE_POINT,
     decks: 0,
     cards: 0,
     overdue: 0,
@@ -282,8 +282,8 @@ describe('a material nobody has begun, where the range has no place', () => {
       grid: [],
       days: [],
       at: [],
-      now: NO_PLACE,
-      suggested: NO_PLACE,
+      now: NO_CURVE_POINT,
+      suggested: NO_CURVE_POINT,
       decks: 1,
       cards: 900,
       overdue: 0,
@@ -301,8 +301,8 @@ describe('the day a place of a curve of a date produces', () => {
     grid: [0, 10, 20, 30],
     days: ['2027-01-01', '2027-01-02', '2027-01-03', '2027-01-04'],
     at: [point(), point(), point(), point()],
-    now: NO_PLACE,
-    suggested: NO_PLACE,
+    now: NO_CURVE_POINT,
+    suggested: NO_CURVE_POINT,
     decks: 1,
     cards: 400,
     overdue: 0,

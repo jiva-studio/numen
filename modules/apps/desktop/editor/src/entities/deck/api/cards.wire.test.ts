@@ -139,16 +139,16 @@ describe('reading a deck', () => {
         sections: [],
         tail: '',
         problems: [
-          { fault: 'FAULT_MARK_CARRIED_TWICE', card: 2, field: '', text: 'a1' },
-          { fault: 'FAULT_CARD_WITHOUT_A_STENCIL', field: 'Front', text: '' },
+          { kind: 'PROBLEM_KIND_MARK_CARRIED_TWICE', card: 2, field: '', text: 'a1' },
+          { kind: 'PROBLEM_KIND_CARD_WITHOUT_A_STENCIL', field: 'Front', text: '' },
         ],
       },
     })
 
     const read = await cards.readDeck('Deck.md')
     expect(read.ok ? read.value.deck.problems : null).toEqual([
-      { fault: 'markCarriedTwice', card: 2, face: null, field: '', text: 'a1' },
-      { fault: 'cardWithoutAStencil', card: null, face: null, field: 'Front', text: '' },
+      { kind: 'markCarriedTwice', card: 2, face: null, field: '', text: 'a1' },
+      { kind: 'cardWithoutAStencil', card: null, face: null, field: 'Front', text: '' },
     ])
   })
 })
@@ -255,7 +255,7 @@ describe('renaming a field', () => {
       decks: ['Words.md', 'Roots.md'],
       cards: 12,
       notWritten: [
-        { path: 'Old.md', problem: { fault: 'FAULT_FIELD_NOT_RENAMED', text: 'Front' } },
+        { path: 'Old.md', problem: { kind: 'PROBLEM_KIND_FIELD_NOT_RENAMED', text: 'Front' } },
       ],
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })

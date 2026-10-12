@@ -265,8 +265,8 @@ message Curve {
   repeated Point at = 4;
 
   // Where the preset stands, and what is suggested.
-  Place now = 5;
-  Place suggested = 6;
+  CurvePoint now = 5;
+  CurvePoint suggested = 6;
 
   // How many decks are scheduled by this preset. Zero is a preset no deck
   // points at, and every place of the curve stands at zero with it.
@@ -360,8 +360,8 @@ message Point {
   int32 short = 12;
 }
 
-// Place is one place on the curve worth pointing at.
-message Place {
+// CurvePoint is one point on the curve worth pointing at.
+message CurvePoint {
   // Where on the grid it stands, and -1 for a value that falls outside it.
   int32 at = 1;
 

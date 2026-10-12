@@ -27,7 +27,7 @@ export type {
   ReadPreset,
   MakeResult,
   Point,
-  Place,
+  CurvePoint,
   PresetCounts,
   Curve,
   PresetChoice,
@@ -45,7 +45,7 @@ export {
   setLoadOn,
   DEFAULTS,
   NO_BOUNDS,
-  NO_PLACE,
+  NO_CURVE_POINT,
 } from '@/entities/deck'
 
 export type { Field }

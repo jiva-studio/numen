@@ -3,8 +3,8 @@
  * one out. It is arithmetic over the settings alone, and it says so.
  */
 import { dayAfter, daysBetween } from '@numen/ui'
-import { DEFAULTS, NO_PLACE } from '../types'
-import type { Curve, Place, Point, Settings, SettingsBounds } from '../types'
+import { DEFAULTS, NO_CURVE_POINT } from '../types'
+import type { Curve, CurvePoint, Point, Settings, SettingsBounds } from '../types'
 import { getGoalValue, findNearest } from './curve'
 
 /** How many places the line drawn in the answer's place is worked out at. */
@@ -43,14 +43,14 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = getGoalValue(settings, today)
   const place = findNearest(grid, value)
-  const now: Place = { at: place, value, day: days[place] ?? '' }
+  const now: CurvePoint = { at: place, value, day: days[place] ?? '' }
   return {
     goal: settings.goal,
     grid,
     days,
     at,
     now,
-    suggested: NO_PLACE,
+    suggested: NO_CURVE_POINT,
     decks: 0,
     cards: 0,
     overdue: 0,

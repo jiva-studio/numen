@@ -324,7 +324,7 @@ describe('a stencil the vault refused', () => {
 describe('what is wrong with a stencil', () => {
   it('stands against the face it was read against', async () => {
     const { tab } = await open({
-      problems: [{ fault: 'faceMissingASide', card: null, face: 0, field: '', text: 'no back' }],
+      problems: [{ kind: 'faceMissingASide', card: null, face: 0, field: '', text: 'no back' }],
     })
 
     const face = tab.stencil.value.faces[0]?.id ?? ''
@@ -335,7 +335,7 @@ describe('what is wrong with a stencil', () => {
     const { tab } = await open({
       problems: [
         {
-          fault: 'fieldDeclaredTwice',
+          kind: 'fieldDeclaredTwice',
           card: null,
           face: null,
           field: 'Height',
@@ -361,7 +361,7 @@ describe('a stencil read again under the window', () => {
   // The file is read wrong in a way that stands against one face, so a mark
   // that went is a mark this can see going.
   const sideless: DeckProblem = {
-    fault: 'faceMissingASide',
+    kind: 'faceMissingASide',
     card: null,
     face: 0,
     field: '',
