@@ -102,8 +102,8 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 	cfg, db, opening, api, _ := makeWindow(t)
 	cfg.Agent = agent.Config{}
 
-	notes, cutting := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, false, io.Discard)
+	notes, cards := makeNotesAndCards(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.GetAgent() != nil {
@@ -119,8 +119,8 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 	cfg, db, opening, api, _ := makeWindow(t)
 	cfg.Agent = agent.Defaults()
 
-	notes, cutting := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, true, io.Discard)
+	notes, cards := makeNotesAndCards(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cards, api, true, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.GetAgent() != nil {
@@ -132,11 +132,11 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 // window's vault. This window writes neither it nor a token: a second writer
 // would point that agent at whichever window started last.
 func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
-	cfg, db, opening, api, vaults := makeWindow(t)
+	cfg, db, vaults, api, vaults := makeWindow(t)
 	cfg.Agent = agent.Defaults()
 
-	notes, cutting := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, false, io.Discard)
+	notes, cards := makeNotesAndCards(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	api.Opened(t.Context(), vaults[0])
@@ -153,11 +153,11 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 // The agent works the vault the person's session is on. A session on another
 // vault starts it again there; one on the same vault leaves it where it is.
 func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
-	cfg, db, opening, api, vaults := makeWindow(t)
+	cfg, db, vaults, api, vaults := makeWindow(t)
 	cfg.Agent = agent.Defaults()
 
-	notes, cutting := makeNotesAndCards(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, false, io.Discard)
+	notes, cards := makeNotesAndCards(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cards, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.GetAgent() != nil {

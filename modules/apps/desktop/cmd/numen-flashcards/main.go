@@ -101,13 +101,13 @@ func run(cfg container.Config, noAgent bool) error {
 	// levelled by the paths a write touches.
 	vaults := &openVaults{cfg: cfg, db: db, lifetime: ctx, out: os.Stderr}
 
-	notes, cutting := makeNotesAndCards(cfg, db, vaults)
+	notes, cards := makeNotesAndCards(cfg, db, vaults)
 	api := makeWindowAPI(cfg, registry, db, notes, vaults)
 	bindVaultIndexer(ctx, api, vaults)
 
 	// The agent reaches the cards through tools on a port this window opens, and
 	// is started and stopped around a session.
-	away := serveAgents(ctx, cfg, db, notes, cutting, api, noAgent, os.Stderr)
+	away := serveAgents(ctx, cfg, db, notes, cards, api, noAgent, os.Stderr)
 
 	held := makeShutdown(away, stop, vaults, db)
 	defer held.Run()
