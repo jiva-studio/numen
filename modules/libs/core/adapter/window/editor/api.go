@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -27,6 +26,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -151,12 +151,12 @@ type API struct {
 	// together. A build put together without a catalogue serves no ThemeService.
 	Themes numenv1connect.ThemeServiceHandler
 
-	Notes       Notes
-	Files       Files
-	Vaults      Vaults
-	Cards       Cards
-	Configuring SettingsPorts
-	Indexing    IndexState
+	Notes    Notes
+	Files    Files
+	Vaults   Vaults
+	Cards    Cards
+	Settings Settings
+	Indexing IndexState
 }
 
 // Notes is a vault's notes: what is asked of them, and what changes them.
@@ -220,40 +220,17 @@ type Cards struct {
 	RenameField *cards.RenameField
 }
 
-// SettingsPorts is every setting the window reads and writes. Each is a reader
-// and the writer beside it, and they are bound by every build that serves the
-// settings: the phone serves them to a socket answering any origin at all, so
-// it mounts no service about the file the keys are written in.
-type SettingsPorts struct {
-	// Configured reads every setting as JSON and the file it stands in, Models
-	// the models the settings that name one can be set to, and ChoosesSetting
-	// writes settings into that file.
-	Configured     func() (string, string, error)
-	Models         func() []port.Model
-	ChoosesSetting func(written []port.Setting) error
-
-	// ConfiguredFile reads that file as its person wrote it, and WritesFile
-	// replaces it whole, presenting the file the caller last read.
-	ConfiguredFile func() (string, string, error)
-	WritesFile     func(written string, baseline *string) error
-
-	// NestedHeadingLimitBounds is how many headings may nest under a note, at each
-	// end, and LatestDayStarts how late in the day a day of review may be made
-	// to begin, on the clock as `HH:MM`. Each is refused outside, and the window
-	// is told both.
-	NestedHeadingLimitBounds Bounds
-	LatestDayStarts          string
-
-	// Day is where one day of review gives way to the next, and Now is when
-	// this is happening. The window counts in review days and is told the one
-	// standing. A build naming no clock reads this machine's, which an adapter
-	// is allowed to.
-	Day review.Day
-	Now port.Clock
+// Settings is the file a person configures this installation in: every setting
+// read and written, and the file read and replaced whole. They are bound by
+// every build that serves the settings: the phone serves them to a socket
+// answering any origin at all, so it mounts no service about the file the keys
+// are written in.
+type Settings struct {
+	Get       *settings.Get
+	Write     *settings.Write
+	GetFile   *settings.GetFile
+	WriteFile *settings.WriteFile
 }
-
-// Bounds is how far a setting holding a number goes, at each end.
-type Bounds struct{ Least, Most float64 }
 
 // IndexState is how far the vault has been read for meaning.
 type IndexState struct {
