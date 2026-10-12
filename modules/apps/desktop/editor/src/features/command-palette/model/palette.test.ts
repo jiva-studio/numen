@@ -1718,7 +1718,7 @@ describe('what a step draws', () => {
       [{ id: 'yes', text: words.removeAction }],
     ])
 
-    void commands.setTyped('  forg  ')
+    void commands.setTyped('  remo  ')
 
     expect(commands.groups.value[0]?.items.map((item) => item.id)).toStrictEqual(['yes'])
   })
