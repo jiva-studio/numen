@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writer"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 )
 
@@ -41,7 +41,7 @@ func (d *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 		return nil
 	}
 
-	tx, err := writing.Begin(ctx, d.write)
+	tx, err := writer.Begin(ctx, d.write)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -87,7 +87,7 @@ func coarseRecipe(ctx context.Context, db *sql.DB) (string, bool, error) {
 // fillCoarse writes a coarse row for every vector the recipe holds of the width
 // given. A vector of another width belongs to another model and is left where
 // it is.
-func fillCoarse(ctx context.Context, tx *writing.Transaction, dims int, recipe string) error {
+func fillCoarse(ctx context.Context, tx *writer.Transaction, dims int, recipe string) error {
 	rows, err := tx.QueryContext(ctx,
 		`SELECT c.id, c.vault_id, v.embedding
 		 FROM vectors v JOIN chunks c ON unhex(c.hash) = v.hash

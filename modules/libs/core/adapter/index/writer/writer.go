@@ -1,10 +1,5 @@
-// Package writing is how a write on the index waits out a writer in another
-// process.
-//
-// SQLite has one write lock for the whole file, and several processes open the
-// one index. A driver that has waited out its busy timeout answers that the
-// database is locked, and a write that meets that answer asks again.
-package writing
+// Package writer runs writes on the index database and retries them while another process holds the lock.
+package writer
 
 import (
 	"context"
