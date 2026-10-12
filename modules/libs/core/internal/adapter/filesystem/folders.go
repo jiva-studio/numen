@@ -156,41 +156,57 @@ func (f *folders) getConcernedPaths(absolute string) (paths []string, whole bool
 // shape short of a folder cannot tell a folder that has gone from a file that
 // has — the index would go on answering with files that are not there.
 func (f *folders) getPathsUnder(ctx context.Context, absolute string) (paths []string, whole bool) {
-	var discovered []string
-	seen, over, short := 0, false, false
-	_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
-		if ctx.Err() != nil {
-			return fs.SkipAll
-		}
-		if err != nil {
-			// The rest of the walk still stands: as much of the shape as can be
-			// learnt is learnt, and the vault is read again for what cannot.
-			short = true
-			return nil //nolint:nilerr // what could not be read is carried out in whole
-		}
-		seen++
-		if seen > Entries {
-			over = true
-			return fs.SkipAll
-		}
-		path, inside := f.reader.relative(p)
-		if !inside {
-			return nil
-		}
-		if d.IsDir() {
-			if p != absolute && f.reader.isSkipped(path, d.Name()) {
-				return fs.SkipDir
-			}
-			f.addFolder(path)
-			return nil
-		}
-		if _, holds := f.reader.getKind(path); holds {
-			discovered = append(discovered, path)
-		}
-		return nil
-	})
-	if over || short {
+	w := &underWalk{ctx: ctx, folders: f, absolute: absolute}
+	_ = filepath.WalkDir(absolute, w.visit)
+	if w.over || w.short {
 		return nil, true
 	}
-	return discovered, false
+	return w.discovered, false
+}
+
+// underWalk is the walk of a folder new to the watch: the files found, and
+// whether the walk went past the entries it may read or met a folder it could
+// not enter.
+type underWalk struct {
+	ctx        context.Context
+	folders    *folders
+	absolute   string
+	discovered []string
+	seen       int
+	over       bool
+	short      bool
+}
+
+// visit is one entry of the walk.
+func (w *underWalk) visit(p string, d fs.DirEntry, err error) error {
+	if w.ctx.Err() != nil {
+		return fs.SkipAll
+	}
+	if err != nil {
+		// The rest of the walk still stands: as much of the shape as can be
+		// learnt is learnt, and the vault is read again for what cannot.
+		w.short = true
+		return nil //nolint:nilerr // what could not be read is carried out in whole
+	}
+	w.seen++
+	if w.seen > Entries {
+		w.over = true
+		return fs.SkipAll
+	}
+	reader := w.folders.reader
+	path, inside := reader.relative(p)
+	if !inside {
+		return nil
+	}
+	if d.IsDir() {
+		if p != w.absolute && reader.isSkipped(path, d.Name()) {
+			return fs.SkipDir
+		}
+		w.folders.addFolder(path)
+		return nil
+	}
+	if _, holds := reader.getKind(path); holds {
+		w.discovered = append(w.discovered, path)
+	}
+	return nil
 }

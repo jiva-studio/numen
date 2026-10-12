@@ -128,34 +128,11 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 		return nil, err
 	}
 
-	type target struct {
-		region ocr.Region
-		crop   image.Image
-		corner image.Point
-	}
-	var targets []target
-	for _, region := range regions {
-		if !r.body[region.Label] {
-			continue
-		}
-		crop, corner := cropRegion(page, region.Rect, r.margin)
-		if crop == nil {
-			continue
-		}
-		targets = append(targets, target{
-			region: region,
-			crop:   crop,
-			corner: corner,
-		})
-	}
+	targets := r.getTargets(page, regions)
 	if len(targets) == 0 {
 		return nil, nil
 	}
 
-	type outcome struct {
-		found []read.RecResult
-		err   error
-	}
 	results := make([]outcome, len(targets))
 
 	runBounded(ctx, len(targets), r.jobs, func(at int) {
@@ -180,34 +157,77 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 			refused, failed = true, res.err
 			continue
 		}
-		t := targets[i]
-		// gomutants:disable-next-line INTEGER_INCREMENT reason="a leading zero line has no text and Assemble drops it"
-		lines := make([]ocr.Line, 0, len(res.found))
-		for _, line := range res.found {
-			lines = append(lines, ocr.Line{
-				Box: image.Rect(
-					line.Box[0]+t.corner.X, line.Box[1]+t.corner.Y,
-					line.Box[2]+t.corner.X, line.Box[3]+t.corner.Y,
-				),
-				Text:  collapseSpaces(line.Text),
-				Score: line.Score,
-			})
-		}
-		if text, boxes := ocr.Assemble(lines); text != "" {
-			depth, head := r.head[t.region.Label]
-			out = append(out, ocr.Block{
-				Label:     t.region.Label,
-				Text:      text,
-				IsHeading: head,
-				Depth:     depth,
-				Boxes:     boxes,
-			})
+		if block, ok := r.makeBlock(targets[i], res.found); ok {
+			out = append(out, block)
 		}
 	}
 	if len(out) == 0 && refused {
 		return nil, fmt.Errorf("every part of the page: %w", failed)
 	}
 	return out, nil
+}
+
+// recogniseTarget is a part of the page to read: where it is, and the crop of
+// the page it is read from.
+type recogniseTarget struct {
+	region ocr.Region
+	crop   image.Image
+	corner image.Point
+}
+
+// outcome is what reading one target came to.
+type outcome struct {
+	found []read.RecResult
+	err   error
+}
+
+// getTargets are the parts of the page the configuration asks to have read.
+func (r *Recogniser) getTargets(page image.Image, regions []ocr.Region) []recogniseTarget {
+	var targets []recogniseTarget
+	for _, region := range regions {
+		if !r.body[region.Label] {
+			continue
+		}
+		crop, corner := cropRegion(page, region.Rect, r.margin)
+		if crop == nil {
+			continue
+		}
+		targets = append(targets, recogniseTarget{
+			region: region,
+			crop:   crop,
+			corner: corner,
+		})
+	}
+	return targets
+}
+
+// makeBlock is what a target says, set in the page's own coordinates, and
+// whether it says anything at all.
+func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (ocr.Block, bool) {
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="a leading zero line has no text and Assemble drops it"
+	lines := make([]ocr.Line, 0, len(found))
+	for _, line := range found {
+		lines = append(lines, ocr.Line{
+			Box: image.Rect(
+				line.Box[0]+t.corner.X, line.Box[1]+t.corner.Y,
+				line.Box[2]+t.corner.X, line.Box[3]+t.corner.Y,
+			),
+			Text:  collapseSpaces(line.Text),
+			Score: line.Score,
+		})
+	}
+	text, boxes := ocr.Assemble(lines)
+	if text == "" {
+		return ocr.Block{}, false
+	}
+	depth, head := r.head[t.region.Label]
+	return ocr.Block{
+		Label:     t.region.Label,
+		Text:      text,
+		IsHeading: head,
+		Depth:     depth,
+		Boxes:     boxes,
+	}, true
 }
 
 // cropRegion is the part of the page a region covers, widened.

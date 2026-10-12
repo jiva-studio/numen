@@ -81,44 +81,57 @@ func (d *document) words(index, offset int) []highlight.Box {
 		return nil
 	}
 
-	var boxes []highlight.Box
-	// The word being read: where it covers the page, where it begins in the
-	// text, and how far it has got.
-	var word responses.CharPosition
-	start, length := 0, 0
-	done := func() {
-		if length > 0 {
-			boxes = append(boxes, sheet.getWordBox(index, start, length, word))
-		}
-		length = 0
-	}
-
+	reading := &wordReading{sheet: sheet, index: index}
 	at := offset
 	for _, char := range read.Chars {
 		text := char.Text
 		if text == "" {
 			continue
 		}
-		mark := char.PointPosition
-		if strings.TrimSpace(text) == "" || mark.Right <= mark.Left || mark.Top <= mark.Bottom {
-			// A space ends a word, and so does a character covering nothing.
-			done()
-			at += len(text)
-			continue
-		}
-		if length > 0 && !isWordContinued(word, mark) {
-			done()
-		}
-		if length == 0 {
-			start, word = at, mark
-		} else {
-			word = extendWord(word, mark)
-		}
-		length += len(text)
+		reading.add(at, len(text), char.PointPosition, strings.TrimSpace(text) == "")
 		at += len(text)
 	}
-	done()
-	return boxes
+	reading.finish()
+	return reading.boxes
+}
+
+// wordReading is the words of a page read character by character: the boxes
+// done, and the word being read, with where it covers the page, where it begins
+// in the text, and how far it has got.
+type wordReading struct {
+	sheet  pageGeometry
+	index  int
+	boxes  []highlight.Box
+	word   responses.CharPosition
+	start  int
+	length int
+}
+
+// add takes the next character, which begins at the given place in the text. A
+// space ends a word, and so does a character covering nothing.
+func (r *wordReading) add(at, size int, mark responses.CharPosition, isSpace bool) {
+	if isSpace || mark.Right <= mark.Left || mark.Top <= mark.Bottom {
+		r.finish()
+		return
+	}
+	if r.length > 0 && !isWordContinued(r.word, mark) {
+		r.finish()
+	}
+	if r.length == 0 {
+		r.start, r.word = at, mark
+	} else {
+		r.word = extendWord(r.word, mark)
+	}
+	r.length += size
+}
+
+// finish ends the word being read, and keeps its box where it has any
+// characters.
+func (r *wordReading) finish() {
+	if r.length > 0 {
+		r.boxes = append(r.boxes, r.sheet.getWordBox(r.index, r.start, r.length, r.word))
+	}
+	r.length = 0
 }
 
 // isWordContinued says whether a character carries the word on: it stands on

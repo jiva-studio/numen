@@ -65,17 +65,8 @@ type Embedder struct {
 // is is the identity the vectors this model returns are kept under, which the
 // settings decide.
 func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalModel, progress embed.FetchProgress) (*Embedder, error) {
-	if identity.Dimensions <= 0 {
-		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
-	}
-	// Where a text is cut off is part of what a vector is, and this machine is
-	// what does the cutting. A model run here says where.
-	if identity.MaxTokens <= 0 {
-		return nil, fmt.Errorf("%s: where a text is cut off must be known before a vector is stored", cfg.Name)
-	}
-	if identity.Pooling != "" && identity.Pooling != embed.PoolMean && identity.Pooling != embed.PoolHead {
-		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
-			identity.Name, identity.Pooling, embed.PoolMean, embed.PoolHead)
+	if err := embed.CheckIdentity(identity, cfg.Name); err != nil {
+		return nil, err
 	}
 	paths, err := embed.Locate(ctx, cfg, progress)
 	if err != nil {
@@ -140,25 +131,36 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 		e.pad = pad
 	}
 
-	for _, name := range first.InputNames {
-		switch name {
-		case inputIDs, attentionMask:
-		case tokenTypeIDs:
-			e.isTyped = true
-		default:
-			destroySessions()
-			return nil, fmt.Errorf("%s asks for an input this adapter does not have: %s", cfg.Name, name)
-		}
-	}
-	if !slices.Contains(first.InputNames, inputIDs) || !slices.Contains(first.InputNames, attentionMask) {
+	isTyped, err := checkInputs(cfg.Name, first.InputNames)
+	if err != nil {
 		destroySessions()
-		return nil, fmt.Errorf("%s takes %v, and a sentence encoder takes tokens and a mask", cfg.Name, first.InputNames)
+		return nil, err
 	}
+	e.isTyped = isTyped
 	if e.output, err = chooseOutput(first.OutputNames); err != nil {
 		destroySessions()
 		return nil, fmt.Errorf("%s: %w", cfg.Name, err)
 	}
 	return e, nil
+}
+
+// checkInputs says whether the model takes token types, and an error where it
+// asks for an input this adapter does not have or lacks the tokens or the mask.
+func checkInputs(model string, names []string) (bool, error) {
+	isTyped := false
+	for _, name := range names {
+		switch name {
+		case inputIDs, attentionMask:
+		case tokenTypeIDs:
+			isTyped = true
+		default:
+			return false, fmt.Errorf("%s asks for an input this adapter does not have: %s", model, name)
+		}
+	}
+	if !slices.Contains(names, inputIDs) || !slices.Contains(names, attentionMask) {
+		return false, fmt.Errorf("%s takes %v, and a sentence encoder takes tokens and a mask", model, names)
+	}
+	return isTyped, nil
 }
 
 // Close releases the model once every pass running on it has returned. Embed
@@ -352,6 +354,12 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 	if !ok {
 		return nil, fmt.Errorf("%s answered without %s", e.name, e.output)
 	}
+	return e.readVectors(held, rows, seq, padded.mask)
+}
+
+// readVectors is the vectors in the output of a pass, one for each text of the
+// batch.
+func (e *Embedder) readVectors(held *ort.Value, rows, seq int, mask []int64) ([][]float32, error) {
 	out, err := held.GetShape()
 	if err != nil {
 		return nil, err
@@ -376,7 +384,7 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 	if e.isHeadPooled {
 		return headPool(flat, rows, seq, e.dimensions), nil
 	}
-	return meanPool(flat, padded.mask, rows, seq, e.dimensions), nil
+	return meanPool(flat, mask, rows, seq, e.dimensions), nil
 }
 
 func splitRows(flat []float32, rows, dimensions int) ([][]float32, error) {

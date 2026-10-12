@@ -62,47 +62,14 @@ func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
 	seenNames := make(map[string]bool)
 
 	for _, p := range Profiles() {
-		local, hasLocal := p.Indexing.Local()
-		var writes []port.Setting
-		writes = append(writes,
-			newSetting([]string{"model", "name"}, p.Model.Name),
-			newSetting([]string{"model", "dimensions"}, p.Model.Dimensions),
-			newSetting([]string{"model", "max_tokens"}, p.Model.MaxTokens),
-			newSetting([]string{"model", "pooling"}, p.Model.Pooling),
-			newSetting([]string{"indexing", "use"}, p.Indexing.Use),
-		)
-		if hasLocal {
-			writes = append(writes, newSetting([]string{"indexing", "local", "name"}, local.Name))
-			if local.File != "" {
-				writes = append(writes, newSetting([]string{"indexing", "local", "file"}, local.File))
-			}
-		}
-
-		var presence port.Presence
-		if providerLocal, ok := provider.Local(); ok {
-			if hasLocal {
-				providerLocal.Name = local.Name
-				providerLocal.File = local.File
-			} else {
-				providerLocal.Name = p.Model.Name
-			}
-			if isFetched(providerLocal) {
-				presence = port.Present
-			} else {
-				presence = port.NotFetched
-			}
-		} else {
-			presence = port.NothingToFetch
-		}
-
 		models = append(models, port.Model{
 			Path:      ModelAt,
 			Name:      p.Model.Name,
 			Title:     p.Model.Name,
 			Group:     groupMachine,
 			IsDefault: p.Model.Name == offered.Model.Name,
-			Presence:  presence,
-			Writes:    writes,
+			Presence:  getProfilePresence(p, provider, isFetched),
+			Writes:    getWrites(p.Model, p.Indexing),
 		})
 		seenNames[p.Model.Name] = true
 	}
@@ -112,11 +79,26 @@ func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
 		return models
 	}
 
+	models = append(models, port.Model{
+		Path:     ModelAt,
+		Name:     name,
+		Title:    name,
+		Group:    groupConfigured,
+		Presence: getPresence(provider, name, isFetched),
+		Writes:   getWrites(held.Model, provider),
+	})
+
+	return models
+}
+
+// getWrites are the settings that choose a model together with the provider
+// that runs it.
+func getWrites(m Model, provider Provider) []port.Setting {
 	writes := []port.Setting{
-		newSetting([]string{"model", "name"}, held.Model.Name),
-		newSetting([]string{"model", "dimensions"}, held.Model.Dimensions),
-		newSetting([]string{"model", "max_tokens"}, held.Model.MaxTokens),
-		newSetting([]string{"model", "pooling"}, held.Model.Pooling),
+		newSetting([]string{"model", "name"}, m.Name),
+		newSetting([]string{"model", "dimensions"}, m.Dimensions),
+		newSetting([]string{"model", "max_tokens"}, m.MaxTokens),
+		newSetting([]string{"model", "pooling"}, m.Pooling),
 		newSetting([]string{"indexing", "use"}, provider.Use),
 	}
 	if local, ok := provider.Local(); ok {
@@ -125,17 +107,26 @@ func GetModels(held Config, isFetched func(LocalModel) bool) []port.Model {
 			writes = append(writes, newSetting([]string{"indexing", "local", "file"}, local.File))
 		}
 	}
+	return writes
+}
 
-	models = append(models, port.Model{
-		Path:     ModelAt,
-		Name:     name,
-		Title:    name,
-		Group:    groupConfigured,
-		Presence: getPresence(provider, name, isFetched),
-		Writes:   writes,
-	})
-
-	return models
+// getProfilePresence is what the files of a profile's model are on this
+// machine, at the provider the settings run it at.
+func getProfilePresence(p Config, provider Provider, isFetched func(LocalModel) bool) port.Presence {
+	providerLocal, ok := provider.Local()
+	if !ok {
+		return port.NothingToFetch
+	}
+	if local, hasLocal := p.Indexing.Local(); hasLocal {
+		providerLocal.Name = local.Name
+		providerLocal.File = local.File
+	} else {
+		providerLocal.Name = p.Model.Name
+	}
+	if isFetched(providerLocal) {
+		return port.Present
+	}
+	return port.NotFetched
 }
 
 // getPresence is what the model named is on this machine, at the provider the

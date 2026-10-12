@@ -61,7 +61,6 @@ func (s *VaultReader) Root() string { return s.root }
 // The service folder is named separately because its name is a setting, and a
 // name without a leading dot must still be skipped.
 func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
-	ignored := s.ignored
 	return filepath.WalkDir(s.root, func(p string, d fs.DirEntry, err error) error {
 		if errors.Is(err, fs.ErrNotExist) {
 			// The vault is edited while it is walked. A file or folder that has
@@ -76,42 +75,47 @@ func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.Fingerprint)
 			return ctx.Err()
 		}
 		if d.IsDir() {
-			if p == s.root {
-				return nil
-			}
-			rel := s.getRelPath(p)
-			if s.isSkipped(rel, d.Name()) {
+			if p != s.root && s.isSkipped(s.getRelPath(p), d.Name()) {
 				return fs.SkipDir
 			}
 			return nil
 		}
-		kind, ok := s.opts.kind(d.Name())
-		if !ok {
-			return nil
-		}
-		rel := s.getRelPath(p)
-		if ignored.MatchesPath(rel) {
-			return nil
-		}
-		found, err := getEntryInfo(p, d)
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil
-		}
-		if err != nil {
+		fingerprint, ok, err := s.getWalkedFingerprint(p, d)
+		if err != nil || !ok {
 			return err
 		}
-		// A source is a regular file. A device, a socket or a FIFO carries no
-		// bytes to read whatever it is named.
-		if !found.Mode().IsRegular() {
-			return nil
-		}
-		return fn(domain.Fingerprint{
-			Path:    rel,
-			Kind:    kind,
-			Size:    found.Size(),
-			ModTime: found.ModTime(),
-		})
+		return fn(fingerprint)
 	})
+}
+
+// getWalkedFingerprint is what a walk reports of a file, and whether it reports the
+// file at all. A source is a regular file: a device, a socket or a FIFO carries
+// no bytes to read whatever it is named.
+func (s *VaultReader) getWalkedFingerprint(p string, d fs.DirEntry) (domain.Fingerprint, bool, error) {
+	kind, ok := s.opts.kind(d.Name())
+	if !ok {
+		return domain.Fingerprint{}, false, nil
+	}
+	rel := s.getRelPath(p)
+	if s.ignored.MatchesPath(rel) {
+		return domain.Fingerprint{}, false, nil
+	}
+	found, err := getEntryInfo(p, d)
+	if errors.Is(err, fs.ErrNotExist) {
+		return domain.Fingerprint{}, false, nil
+	}
+	if err != nil {
+		return domain.Fingerprint{}, false, err
+	}
+	if !found.Mode().IsRegular() {
+		return domain.Fingerprint{}, false, nil
+	}
+	return domain.Fingerprint{
+		Path:    rel,
+		Kind:    kind,
+		Size:    found.Size(),
+		ModTime: found.ModTime(),
+	}, true, nil
 }
 
 // getRelPath names a path under the vault root in slash form.
@@ -159,29 +163,29 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 
 	entries := make([]domain.Entry, 0, len(read))
 	for _, d := range read {
-		rel := pathpkg.Join(folder, d.Name())
-		var kind domain.SourceKind
-		if d.IsDir() {
-			if s.opts.isService(d.Name()) || s.ignored.MatchesPath(rel+"/") {
-				continue
-			}
-		} else {
-			if s.ignored.MatchesPath(rel) {
-				continue
-			}
-			if found, err := getEntryInfo(filepath.Join(target, d.Name()), d); err == nil && found.Mode().IsRegular() {
-				kind, _ = s.opts.kind(d.Name())
-			}
+		if entry, listed := s.getEntry(target, folder, d); listed {
+			entries = append(entries, entry)
 		}
-		entries = append(entries, domain.Entry{
-			Path:     rel,
-			Name:     d.Name(),
-			IsFolder: d.IsDir(),
-			Kind:     kind,
-		})
 	}
 	slices.SortFunc(entries, inOrder)
 	return entries, nil
+}
+
+// getEntry is what List reports of one entry of a folder, and whether it
+// reports the entry at all. The kind is set for a regular file only.
+func (s *VaultReader) getEntry(target, folder string, d fs.DirEntry) (domain.Entry, bool) {
+	rel := pathpkg.Join(folder, d.Name())
+	entry := domain.Entry{Path: rel, Name: d.Name(), IsFolder: d.IsDir()}
+	if d.IsDir() {
+		return entry, !s.opts.isService(d.Name()) && !s.ignored.MatchesPath(rel+"/")
+	}
+	if s.ignored.MatchesPath(rel) {
+		return domain.Entry{}, false
+	}
+	if found, err := getEntryInfo(filepath.Join(target, d.Name()), d); err == nil && found.Mode().IsRegular() {
+		entry.Kind, _ = s.opts.kind(d.Name())
+	}
+	return entry, true
 }
 
 // getEntryInfo is what a walk knows about one entry, with a link followed: a note kept
