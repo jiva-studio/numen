@@ -200,15 +200,21 @@ func isCanceled(err error) bool { return errors.Is(err, context.Canceled) }
 // the same columns, since a trigger cannot sit on a virtual table.
 func (s *store) failOn(table, event string) {
 	s.t.Helper()
-	replacement := map[string]string{
-		"chunks_fts":   `CREATE TABLE chunks_fts (text TEXT)`,
-		"sections_fts": `CREATE TABLE sections_fts (text TEXT)`,
-		"titles_fts":   `CREATE TABLE titles_fts (text TEXT)`,
-		"chunks_vec":   `CREATE TABLE chunks_vec (chunk_id INTEGER PRIMARY KEY, vault_id INTEGER, coarse BLOB)`,
+	type replacement struct{ columns, fill string }
+	replaced := map[string]replacement{
+		"chunks_fts":   {`(text TEXT)`, `(rowid, text) SELECT rowid, COALESCE(text, '') FROM chunks_fts`},
+		"sections_fts": {`(text TEXT)`, `(rowid, text) SELECT rowid, COALESCE(text, '') FROM sections_fts`},
+		"titles_fts":   {`(text TEXT)`, `(rowid, text) SELECT rowid, text FROM titles_fts`},
+		"chunks_vec": {
+			`(chunk_id INTEGER PRIMARY KEY, vault_id INTEGER, coarse BLOB)`,
+			`SELECT chunk_id, vault_id, coarse FROM chunks_vec`,
+		},
 	}
-	if create, virtual := replacement[table]; virtual {
+	if with, virtual := replaced[table]; virtual {
+		s.exec(`CREATE TABLE ` + table + `_copy ` + with.columns)
+		s.exec(`INSERT INTO ` + table + `_copy ` + with.fill)
 		s.exec(`DROP TABLE ` + table)
-		s.exec(create)
+		s.exec(`ALTER TABLE ` + table + `_copy RENAME TO ` + table)
 	}
 	s.exec(`CREATE TRIGGER refuse_` + strings.ToLower(event) + `_` + table + ` BEFORE ` + event + ` ON ` + table +
 		` BEGIN SELECT RAISE(ABORT, 'boom'); END`)

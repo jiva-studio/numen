@@ -160,18 +160,9 @@ func TestAFolderMovedInsideItselfKeepsWhatIsMoving(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := s.paths(vaultA); !slices.Equal(got, []string{"a/Three.md", "a/Two.md"}) {
-		// The folder landed on a/, displacing the sibling that stood there and
-		// keeping everything that was moving.
-		t.Logf("the vault holds %v", got)
-	}
-	for _, path := range s.paths(vaultA) {
-		if path == "a/b/Two.md" || path == "a/b/c/Three.md" {
-			t.Errorf("%s did not move", path)
-		}
-	}
-	if n := s.count(`SELECT count(*) FROM sources WHERE path LIKE '%Two.md' OR path LIKE '%Three.md'`); n != 2 {
-		t.Errorf("%d of the moving files remain, want both", n)
+	// The sibling standing where the folder lands is displaced; what moves stays.
+	if got := s.paths(vaultA); !slices.Equal(got, []string{"a/Two.md", "a/c/Three.md"}) {
+		t.Errorf("the vault holds %v", got)
 	}
 }
 
