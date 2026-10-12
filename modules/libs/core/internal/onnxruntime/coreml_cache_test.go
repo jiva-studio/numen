@@ -76,12 +76,17 @@ func TestGetCoreMLCacheDirFailsWithoutACacheDirectory(t *testing.T) {
 func TestGetCoreMLCacheDirFailsWhereAFolderCannotBeMade(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	blocker := filepath.Join(home, "file")
-	if err := os.WriteFile(blocker, nil, 0o600); err != nil {
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	base, err := os.UserCacheDir()
+	if err != nil {
+		t.Skip(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(base), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("XDG_CACHE_HOME", blocker)
-	t.Setenv("LocalAppData", blocker)
+	if err := os.WriteFile(base, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	dir, err := GetCoreMLCacheDir()
 	if err == nil || dir != "" {
@@ -95,8 +100,11 @@ func TestGetCoreMLCacheDirFailsWhereTheFolderIsNotTheUsers(t *testing.T) {
 	}
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	cache := filepath.Join(home, "cache")
-	t.Setenv("XDG_CACHE_HOME", cache)
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		t.Skip(err)
+	}
 	if err := os.MkdirAll(filepath.Join(cache, "numen"), 0o700); err != nil {
 		t.Fatal(err)
 	}
