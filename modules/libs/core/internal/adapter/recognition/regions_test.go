@@ -150,7 +150,7 @@ func TestAModelThatCannotBeRunIsThePagesFailure(t *testing.T) {
 	defer layout.Close()
 
 	got, err := layout.Regions(image.NewRGBA(image.Rect(0, 0, 200, 400)))
-	if err == nil || got != nil {
+	if err == nil || got != nil || strings.Contains(err.Error(), "answered with") {
 		t.Errorf("regions = %+v, %v", got, err)
 	}
 }

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // isolate points everything a test could write to at a folder of its own.
@@ -39,7 +41,11 @@ func runInFreshProcess(t *testing.T, test string) {
 	}
 }
 
-func isFreshProcess() bool { return os.Getenv(freshProcess) != "" }
+// isFreshProcess says whether this process has opened no runtime, so that the
+// test asking is the first to.
+func isFreshProcess() bool {
+	return !onnxruntime.IsHere(onnxruntime.Settings{Runtime: filepath.Join(os.TempDir(), "numen-no-such-runtime")})
+}
 
 // A runtime that cannot be opened stops the search for models.
 func TestLocateStopsWhenTheRuntimeCannotBeOpened(t *testing.T) {
