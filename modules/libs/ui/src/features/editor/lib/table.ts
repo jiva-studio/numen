@@ -30,7 +30,7 @@ export interface Table {
 }
 
 const alignmentOf = (text: string): Align[] => {
-  const parts = text.trim().replace(/^\|/, '').replace(/\|$/, '').split('|')
+  const parts = text.replace(/^\|/, '').replace(/\|$/, '').split('|')
   return parts.map((part) => {
     const written = part.trim()
     const start = written.startsWith(':')
