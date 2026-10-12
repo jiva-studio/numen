@@ -126,7 +126,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 	}
 
 	area := u.area()
-	corrections, far := text.Corrections(area, hash), text.Proofread(area, hash)
+	corrections, progressPath := text.Corrections(area, hash), text.Proofread(area, hash)
 
 	// One run to a reading. The name is the one the corrections are kept under,
 	// and it is held for as long as the proofreading takes.
@@ -150,7 +150,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 	}
 	res.Pages = len(pages)
 
-	stood, err := u.readCheckpoint(ctx, store, corrections, far)
+	stood, err := u.readCheckpoint(ctx, store, corrections, progressPath)
 	if err != nil {
 		return res, err
 	}
@@ -166,24 +166,24 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		u.progress(res)
 	}
 
-	pass := readingPass{v: v, store: store, path: path, pages: pages, corrections: corrections, far: far}
+	job := readingProofreadJob{v: v, store: store, path: path, pages: pages, corrections: corrections, progressPath: progressPath}
 	if u.Queue != nil {
-		err = u.await(ctx, pass, stood, &res)
+		err = u.await(ctx, job, stood, &res)
 	} else {
-		err = u.askPages(ctx, pass, done, &res)
+		err = u.askPages(ctx, job, done, &res)
 	}
 	return res, err
 }
 
-// readingPass is one run over a reading: where its pages and their corrections
+// readingProofreadJob is the state of proofreading one reading: where its pages and their corrections
 // are kept.
-type readingPass struct {
-	v           domain.Vault
-	store       port.DerivedStore
-	path        string
-	pages       []proofread.Batch
-	corrections string
-	far         string
+type readingProofreadJob struct {
+	v            domain.Vault
+	store        port.DerivedStore
+	path         string
+	pages        []proofread.Batch
+	corrections  string
+	progressPath string
 }
 
 // getHash is the fingerprint of the reading's source file.
@@ -206,7 +206,7 @@ func (u ProofreadReading) getHash(ctx context.Context, v domain.Vault, path stri
 // time.
 func (u ProofreadReading) askPages(
 	ctx context.Context,
-	p readingPass,
+	p readingProofreadJob,
 	at int,
 	res *ProofreadReadingResult,
 ) error {
@@ -235,7 +235,7 @@ func (u ProofreadReading) askPages(
 // about again, and it trims the corrections back to the count first.
 func (u ProofreadReading) writeCorrections(
 	ctx context.Context,
-	p readingPass,
+	p readingProofreadJob,
 	asked []proofread.Batch,
 	replies map[int]string,
 	end int,
@@ -253,7 +253,7 @@ func (u ProofreadReading) writeCorrections(
 	if err := u.cut(ctx, p.v, p.path); err != nil {
 		return err
 	}
-	if err := u.writeCheckpoint(ctx, p.store, p.far, checkpoint{Pages: end}); err != nil {
+	if err := u.writeCheckpoint(ctx, p.store, p.progressPath, checkpoint{Pages: end}); err != nil {
 		return err
 	}
 	u.progress(*res)
@@ -321,9 +321,9 @@ func (u ProofreadReading) getCorrections(
 func (u ProofreadReading) readCheckpoint(
 	ctx context.Context,
 	store port.DerivedStore,
-	corrections, far string,
+	corrections, progressPath string,
 ) (checkpoint, error) {
-	raw, err := store.Read(ctx, far)
+	raw, err := store.Read(ctx, progressPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return checkpoint{}, nil
 	}
@@ -335,7 +335,7 @@ func (u ProofreadReading) readCheckpoint(
 		if err := store.Remove(ctx, corrections); err != nil {
 			return checkpoint{}, err
 		}
-		return checkpoint{}, store.Remove(ctx, far)
+		return checkpoint{}, store.Remove(ctx, progressPath)
 	}
 	return stood, nil
 }
@@ -345,7 +345,7 @@ func (u ProofreadReading) readCheckpoint(
 // over as many runs as it has batches.
 func (u ProofreadReading) await(
 	ctx context.Context,
-	p readingPass,
+	p readingProofreadJob,
 	stood checkpoint,
 	res *ProofreadReadingResult,
 ) error {
@@ -371,7 +371,7 @@ func (u ProofreadReading) await(
 // the batch was ready.
 func (u ProofreadReading) fetchBatch(
 	ctx context.Context,
-	p readingPass,
+	p readingProofreadJob,
 	stood checkpoint,
 	res *ProofreadReadingResult,
 ) (checkpoint, bool, error) {
@@ -380,7 +380,7 @@ func (u ProofreadReading) fetchBatch(
 		// The batch is forgotten, and the pages it covered are left again by the
 		// next run.
 		stood.Batch, stood.Left = "", 0
-		if put := u.writeCheckpoint(ctx, p.store, p.far, stood); put != nil {
+		if put := u.writeCheckpoint(ctx, p.store, p.progressPath, stood); put != nil {
 			return stood, false, put
 		}
 		return stood, false, fmt.Errorf("collect the proofreading of %s: %w", p.path, err)
@@ -399,7 +399,7 @@ func (u ProofreadReading) fetchBatch(
 // down the name it is collected under.
 func (u ProofreadReading) submitBatch(
 	ctx context.Context,
-	p readingPass,
+	p readingProofreadJob,
 	at int,
 	res *ProofreadReadingResult,
 ) error {
@@ -409,7 +409,7 @@ func (u ProofreadReading) submitBatch(
 		return fmt.Errorf("leave the pages of %s: %w", p.path, err)
 	}
 	res.IsWaiting = true
-	return u.writeCheckpoint(ctx, p.store, p.far, checkpoint{Pages: at, Batch: name, Left: end - at})
+	return u.writeCheckpoint(ctx, p.store, p.progressPath, checkpoint{Pages: at, Batch: name, Left: end - at})
 }
 
 // dropCorrections drops the corrections of pages no count claims. A line is
@@ -461,13 +461,13 @@ func opening(pages []proofread.Batch, done int) (int, bool) {
 
 // writeCheckpoint writes down who put this reading right and how far they got.
 // It stands last and is what makes the batch before it count.
-func (u ProofreadReading) writeCheckpoint(ctx context.Context, store port.DerivedStore, far string, stood checkpoint) error {
+func (u ProofreadReading) writeCheckpoint(ctx context.Context, store port.DerivedStore, progressPath string, stood checkpoint) error {
 	stood.By = u.by.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, far, append(raw, '\n'))
+	return store.Write(ctx, progressPath, append(raw, '\n'))
 }
 
 // cut makes this source's chunks from the reading as it now stands.
