@@ -544,16 +544,16 @@ func TestStartAnswersTheErrorOfAVaultListThatCannotBeReadOnceTheIndexIsOpen(t *t
 	}
 }
 
-// countOpenFiles is one past the highest file descriptor the process holds,
-// which is the least limit on descriptors that still lets it keep them all.
+// countOpenFiles is how many file descriptors the process holds. A limit of
+// that many leaves room for the new ones only in the gaps below its highest.
 func countOpenFiles() int {
-	highest := 0
+	held := 0
 	for fd := 0; fd < 4096; fd++ {
 		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno == 0 {
-			highest = fd + 1
+			held++
 		}
 	}
-	return highest
+	return held
 }
 
 func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding(t *testing.T) {
