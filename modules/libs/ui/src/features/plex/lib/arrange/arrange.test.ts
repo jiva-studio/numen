@@ -41,7 +41,7 @@ const inLines = (nodes: readonly PlacedNode[], perLine: number): PlacedNode[][] 
 const withSeat = (layout: { nodes: readonly PlacedNode[] }, seat: PlexSeat) =>
   layout.nodes.filter((node) => node.seat === seat)
 
-const focusOf = (layout: { nodes: readonly PlacedNode[] }) => {
+const getFocus = (layout: { nodes: readonly PlacedNode[] }) => {
   const focus = layout.nodes.find((node) => node.seat === 'focus')
   if (!focus) throw new Error('unreachable: every layout places a focus')
   return focus
@@ -81,7 +81,7 @@ describe('the contract on the neighbourhood', () => {
 
 describe('where the seats sit', () => {
   const layout = arrangePlex(neighbourhoods.typical)
-  const focus = focusOf(layout)
+  const focus = getFocus(layout)
 
   it('puts the focus at the origin', () => {
     expect(focus.x).toBe(0)
@@ -143,7 +143,7 @@ describe('a box is as wide as its title needs', () => {
 
   it('draws every box at its widest when nothing was measured', () => {
     const layout = arrangePlex(neighbourhoods.typical)
-    expect(focusOf(layout).width).toBe(focusSize.width)
+    expect(getFocus(layout).width).toBe(focusSize.width)
     for (const node of withSeat(layout, 'child')) expect(node.width).toBe(nodeSize.width)
   })
 
@@ -155,20 +155,20 @@ describe('a box is as wide as its title needs', () => {
 
   it('sizes the focus to its title as it sizes any other box', () => {
     const layout = arrangePlex(createNeighbourhood('child', 'Port'), { measure: byTitle })
-    const focus = focusOf(layout)
+    const focus = getFocus(layout)
     expect(focus.width).toBe(byTitle(focus))
     expect(focus.width).toBeLessThan(focusSize.width)
   })
 
   it('clamps a title past the maximum, which each seat has its own of', () => {
     const layout = arrangePlex(neighbourhoods.typical, { measure: () => 4000 })
-    expect(focusOf(layout).width).toBe(focusSize.width)
+    expect(getFocus(layout).width).toBe(focusSize.width)
     for (const node of withSeat(layout, 'child')) expect(node.width).toBe(nodeSize.width)
   })
 
   it('gives a title that measures next to nothing the minimum', () => {
     const layout = arrangePlex(createNeighbourhood('child', '', 'A'), { measure: () => 0 })
-    expect(focusOf(layout).width).toBe(minWidth)
+    expect(getFocus(layout).width).toBe(minWidth)
     for (const node of withSeat(layout, 'child')) expect(node.width).toBe(minWidth)
   })
 
@@ -238,7 +238,7 @@ describe('a label is as long as its words', () => {
     edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
   }
 
-  const wordsOf = (measureLabel?: (label: string) => number) =>
+  const getWords = (measureLabel?: (label: string) => number) =>
     arrangePlex(labelled, { measureLabel }).edges[0]!.words
 
   it('asks the measurer for the words a line carries, and for no others', () => {
@@ -255,19 +255,19 @@ describe('a label is as long as its words', () => {
   })
 
   it('cuts words too long for their line', () => {
-    expect(wordsOf((label) => 6 * [...label].length)).toBe('the scen…')
+    expect(getWords((label) => 6 * [...label].length)).toBe('the scen…')
   })
 
   it('writes no words at all where the line holds none of them', () => {
-    expect(wordsOf(() => 4000)).toBeUndefined()
+    expect(getWords(() => 4000)).toBeUndefined()
   })
 
   it('leaves words that fit as they were written', () => {
-    expect(wordsOf(() => 1)).toBe('the scene in the assembly')
+    expect(getWords(() => 1)).toBe('the scene in the assembly')
   })
 
   it('draws the whole label where nothing measured it', () => {
-    expect(wordsOf()).toBe('the scene in the assembly')
+    expect(getWords()).toBe('the scene in the assembly')
   })
 })
 
@@ -499,7 +499,7 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     }
 
     const frame = arrangePlex(neighbourhoods.typical, { placement: ring })
-    const focus = focusOf(frame)
+    const focus = getFocus(frame)
 
     expect(focus.x).toBe(0)
     expect(focus.y).toBe(0)

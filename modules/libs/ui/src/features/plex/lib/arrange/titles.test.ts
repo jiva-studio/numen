@@ -2,11 +2,11 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
-import { MIDDLE, routeEdges, routingFor } from './routing'
+import { MIDDLE, routeEdges, createRouting } from './routing'
 import { separateTitles } from './titles'
 import { build } from '../../fixtures/build'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
-import { headingOf, lengthOf, createPointOnCurve, type PlacedEdge } from '../edge'
+import { getHeading, getLength, createPointOnCurve, type PlacedEdge } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, Position } from '../node'
 
@@ -51,8 +51,8 @@ const isOverlapping = (one: Box, other: Box): boolean =>
  * Where a title's words lie in the picture: the run of them along the line,
  * with half a line of type standing either side of the line.
  */
-function boxOf(edge: PlacedEdge, width: (label: string) => number): Box {
-  const arc = lengthOf(edge)
+function getBox(edge: PlacedEdge, width: (label: string) => number): Box {
+  const arc = getLength(edge)
   const along = createPointOnCurve(edge)
   const at = edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt
   const half = width(edge.words!) / 2 / arc
@@ -112,7 +112,7 @@ describe('a title finds room on its line', () => {
   it('stands every title of a fan clear of the others', () => {
     const fan = build('A node', { child: 5 })
     const frame = arrangePlex(fan, { options: { viewport: VIEWPORT }, ...measured })
-    const boxes = frame.edges.map((edge) => boxOf(edge, measureLabel))
+    const boxes = frame.edges.map((edge) => getBox(edge, measureLabel))
 
     expect(boxes.length).toBe(5)
 
@@ -138,7 +138,7 @@ describe('a title finds room on its line', () => {
     const pair = createOneLine('see also')
     const placed = arrangePlex(pair, measured)
     const byId = new Map(placed.nodes.map((node) => [node.id, node]))
-    const routing = routingFor(DEFAULT_OPTIONS, measureLabel, labelDepth)
+    const routing = createRouting(DEFAULT_OPTIONS, measureLabel, labelDepth)
     const routed = routeEdges(pair.edges, byId, routing)
 
     // A box over the whole picture, so no place on the line is clear of it.
@@ -186,7 +186,7 @@ describe('a title finds room on its line', () => {
     const boxes = frame.nodes.map(boxAround)
 
     const over = frame.edges.filter((edge) =>
-      boxes.some((box) => isOverlapping(box, boxOf(edge, measureLabel))),
+      boxes.some((box) => isOverlapping(box, getBox(edge, measureLabel))),
     )
     expect(over).toStrictEqual([])
   })
@@ -219,9 +219,9 @@ describe('a title finds room on its line', () => {
     }
 
     const byId = new Map([far, here].map((node) => [node.id, node]))
-    const routing = routingFor(DEFAULT_OPTIONS, measureLabel, labelDepth)
+    const routing = createRouting(DEFAULT_OPTIONS, measureLabel, labelDepth)
     const routed = routeEdges([{ from: 'here', to: 'far', label: 'see also' }], byId, routing)
-    expect(headingOf(routed[0]!, MIDDLE)).toBe('against')
+    expect(getHeading(routed[0]!, MIDDLE)).toBe('against')
 
     const settled = separateTitles(routed, [far, here, covering], routing)[0]!
     expect(settled.words).toBe('see also')
@@ -229,7 +229,7 @@ describe('a title finds room on its line', () => {
     expect(settled.wordsAt).not.toBe(MIDDLE)
 
     // The place on the curve is the fraction taken the other way round.
-    expect(headingOf(settled, 1 - settled.wordsAt)).toBe('against')
+    expect(getHeading(settled, 1 - settled.wordsAt)).toBe('against')
   })
 
   it('keeps a title off the boxes its line crosses', () => {
@@ -241,7 +241,7 @@ describe('a title finds room on its line', () => {
 
     const over = frame.edges
       .filter((edge) => edge.words)
-      .filter((edge) => boxes.some((box) => isOverlapping(box, boxOf(edge, measureLabel))))
+      .filter((edge) => boxes.some((box) => isOverlapping(box, getBox(edge, measureLabel))))
       .map((edge) => edge.words)
 
     expect(over).toStrictEqual([])
@@ -297,7 +297,7 @@ describe('a title finds room on its line', () => {
  */
 describe('a title set on a straight line', () => {
   const TEN = perLetter(10)
-  const routing = routingFor(DEFAULT_OPTIONS, TEN, labelDepth)
+  const routing = createRouting(DEFAULT_OPTIONS, TEN, labelDepth)
 
   /** One step of the scan a line is looked at by, along the line. */
   const A_STEP = 3
@@ -432,7 +432,7 @@ describe('a title set on a straight line', () => {
     const [settled] = separateTitles(
       [placed],
       [],
-      routingFor(DEFAULT_OPTIONS, () => 0, labelDepth),
+      createRouting(DEFAULT_OPTIONS, () => 0, labelDepth),
     )
 
     expect(settled!.words).toBe('abcde')

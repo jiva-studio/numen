@@ -62,7 +62,7 @@ async function letGo(plex: ReturnType<typeof mountPlex>, x: number, y: number) {
 }
 
 /** Where a node of this seat is drawn, in the page's own coordinates. */
-const nodeAt = (plex: ReturnType<typeof mountPlex>, seat: string) => {
+const getNode = (plex: ReturnType<typeof mountPlex>, seat: string) => {
   const at = plex
     .get(`[aria-label$=", ${seat}"]`)
     .attributes('transform')!
@@ -106,7 +106,7 @@ describe('letting go of something dragged in', () => {
     // A node under the pointer is not a target: there is one rule, and it is
     // the direction from the focus.
     const plex = mountPlex()
-    const jump = nodeAt(plex, 'jump')
+    const jump = getNode(plex, 'jump')
     window.dispatchEvent(pointer('pointermove', jump.x, jump.y))
     await plex.vm.$nextTick()
 

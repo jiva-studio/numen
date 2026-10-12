@@ -19,7 +19,7 @@ import { optionsForType, useTypeSize } from '../model/sizing'
 import { DWELL } from '../model/dwell'
 import { type PlexPart } from '../lib/inside'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import { neighbourhoodOf, walkStart } from '../fixtures/walk'
+import { createNeighbourhood, walkStart } from '../fixtures/walk'
 import { build, buildAround, type TitledNode } from '../fixtures/build'
 import { nameNow } from '../fixtures/names'
 import { ring } from '../lib/arrange/ring'
@@ -123,7 +123,7 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
  * how large the interface is drawn, the label follows it, and the boxes and
  * the clearances are handed in to hold that label.
  */
-const optionsFrom = (a: Knobs, type: number): PlexOptionsInput =>
+const createOptions = (a: Knobs, type: number): PlexOptionsInput =>
   optionsForType(type, resolveOptions(getOptions(a)))
 
 const range = (min: number, max: number, step = 1, category = 'Layout') => ({
@@ -131,7 +131,7 @@ const range = (min: number, max: number, step = 1, category = 'Layout') => ({
   table: { category },
 })
 
-const countsFrom = (a: Knobs) => ({
+const createCounts = (a: Knobs) => ({
   parent: a.parents,
   child: a.children,
   jump: a.jumps,
@@ -159,7 +159,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
 
     const neighbourhood = computed<PlexNeighbourhood>(() => {
       const base = focus.value
-        ? buildAround(focus.value, cameFrom.value, countsFrom(args))
+        ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
       const here = focus.value?.id ?? base.nodes.find((n) => n.seat === 'focus')?.id
       const mine = made.value.filter((node) =>
@@ -230,7 +230,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
       link,
       dropOnto,
       neighbourhood,
-      options: computed(() => optionsFrom(args, type.value)),
+      options: computed(() => createOptions(args, type.value)),
     }
   },
   template: `
@@ -272,8 +272,8 @@ const renderWalk = (args: Knobs) => ({
     return {
       args,
       focused,
-      neighbourhood: computed(() => neighbourhoodOf(focused.value)),
-      options: computed(() => optionsFrom(args, type.value)),
+      neighbourhood: computed(() => createNeighbourhood(focused.value)),
+      options: computed(() => createOptions(args, type.value)),
     }
   },
   template: `
@@ -434,7 +434,7 @@ type Story = StoryObj<typeof meta>
  */
 const invented = {
   args: { neighbourhood: neighbourhoods.typical, maxPerLine: 9 },
-  render: createNavigable((args: Knobs) => build(args.title, countsFrom(args))),
+  render: createNavigable((args: Knobs) => build(args.title, createCounts(args))),
 }
 
 export const Playground: Story = invented
@@ -768,7 +768,7 @@ export const TitledLines: Story = {
       )
 
     /** The line a title is set along, by the path it names. */
-    const lineOf = (text: SVGTextElement) => {
+    const getTextLine = (text: SVGTextElement) => {
       const href = text.querySelector('textPath')!.getAttribute('href')!
       return canvasElement.querySelector<SVGPathElement>(`defs path[id="${href.slice(1)}"]`)!
     }
@@ -785,7 +785,9 @@ export const TitledLines: Story = {
     await expect(titles.length).toBeGreaterThan(0)
     for (const text of titles) {
       await expect(text.querySelector('textPath')).not.toBeNull()
-      await expect(text.getComputedTextLength()).toBeLessThanOrEqual(lineOf(text).getTotalLength())
+      await expect(text.getComputedTextLength()).toBeLessThanOrEqual(
+        getTextLine(text).getTotalLength(),
+      )
     }
 
     // Words longer than their curve are cut to it and end in an ellipsis.
@@ -827,7 +829,7 @@ export const TitledLines: Story = {
     // any other, and its words are short enough to stay whole.
     const loop = title('see also')[0]!
     await expect(loop.querySelector('textPath')).not.toBeNull()
-    await expect(loop.getComputedTextLength()).toBeLessThan(lineOf(loop).getTotalLength())
+    await expect(loop.getComputedTextLength()).toBeLessThan(getTextLine(loop).getTotalLength())
   },
 }
 
@@ -859,7 +861,7 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
    * curve is a ribbon of letters: the box around the whole of a diagonal one
    * covers a quarter of the picture the letters are nowhere near.
    */
-  const lettersOf = (text: SVGTextElement): Edges[] => {
+  const getLetters = (text: SVGTextElement): Edges[] => {
     const onScreen = text.getScreenCTM()!
     const letters: Edges[] = []
 
@@ -898,7 +900,7 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
 
   const drawn = titles().map((text) => ({
     words: text.textContent,
-    letters: lettersOf(text),
+    letters: getLetters(text),
   }))
   const boxes = [...canvasElement.querySelectorAll<SVGRectElement>('.plex__box')].map((box) =>
     box.getBoundingClientRect(),
@@ -1009,7 +1011,7 @@ export const ArrowedLines: Story = {
     }
 
     /** The line that touches a node's box, and the end of it that does. */
-    const lineAt = (name: string) => {
+    const getLine = (name: string) => {
       const box = canvas.getByLabelText(name).getBoundingClientRect()
       for (const { line, ends } of lines()) {
         const end = ends.find((point) => hasPoint(box, point))
@@ -1018,12 +1020,12 @@ export const ArrowedLines: Story = {
       throw new Error(`no line touches ${name}`)
     }
 
-    const endAt = (name: string) => lineAt(name).end
+    const getEnd = (name: string) => getLine(name).end
 
     const heads = () => [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-arrow')]
 
     /** Whether an arrowhead was drawn on a given end of a line. */
-    const headAt = (end: DOMPoint) =>
+    const getHead = (end: DOMPoint) =>
       heads().some((head) => hasPoint(head.getBoundingClientRect(), end))
 
     /** Where every head and every end of every line stands, as one reading. */
@@ -1056,16 +1058,16 @@ export const ArrowedLines: Story = {
     }
 
     // Each of them at the far end of its own line, away from the focus.
-    await expect(headAt(endAt('Marrowfield allotments, parent'))).toBe(true)
-    await expect(headAt(endAt('Bram Doyle, jump'))).toBe(true)
+    await expect(getHead(getEnd('Marrowfield allotments, parent'))).toBe(true)
+    await expect(getHead(getEnd('Bram Doyle, jump'))).toBe(true)
 
     // The lines given none carry none, the sibling's line among them.
-    await expect(headAt(endAt('Cora Hale, jump'))).toBe(false)
-    await expect(headAt(endAt('The question of the rota, sibling'))).toBe(false)
+    await expect(getHead(getEnd('Cora Hale, jump'))).toBe(false)
+    await expect(getHead(getEnd('The question of the rota, sibling'))).toBe(false)
 
     // The head stands outside the box it points into: it is turned along the
     // line, and its tip is what touches the border.
-    const jump = lineAt('Bram Doyle, jump')
+    const jump = getLine('Bram Doyle, jump')
     const box = canvas.getByLabelText('Bram Doyle, jump').getBoundingClientRect()
     const head = heads().find((one) => hasPoint(one.getBoundingClientRect(), jump.end))!
     const drawn = head.getBoundingClientRect()
@@ -1129,8 +1131,9 @@ export const RestingOnATitle: Story = {
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
     const beside = canvas.getByLabelText('日本語のノート, child')
 
-    const widthOf = (box: Element) => box.querySelector('.plex__box')!.getBoundingClientRect().width
-    const placed = widthOf(node)
+    const getWidth = (box: Element) =>
+      box.querySelector('.plex__box')!.getBoundingClientRect().width
+    const placed = getWidth(node)
     const nextDoor = beside.getBoundingClientRect().x
 
     // Cut short in the box the arrangement drew, and the whole of it under a
@@ -1139,7 +1142,7 @@ export const RestingOnATitle: Story = {
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
     await userEvent.hover(node)
-    await waitFor(async () => await expect(widthOf(node)).toBeGreaterThan(placed), {
+    await waitFor(async () => await expect(getWidth(node)).toBeGreaterThan(placed), {
       timeout: 3000,
     })
     await waitFor(
@@ -1153,7 +1156,7 @@ export const RestingOnATitle: Story = {
 
     // The hand leaves, and the picture is the one it was.
     await userEvent.unhover(node)
-    await waitFor(async () => await expect(widthOf(node)).toBe(placed))
+    await waitFor(async () => await expect(getWidth(node)).toBe(placed))
   },
 }
 
@@ -1164,7 +1167,7 @@ export const RestingOnATitle: Story = {
 export const Walk: Story = {
   render: renderWalk,
   args: {
-    neighbourhood: neighbourhoodOf(walkStart),
+    neighbourhood: createNeighbourhood(walkStart),
     gap: 18,
   },
   play: async ({ args, canvasElement }) => {
@@ -1282,38 +1285,39 @@ export const PartsInside: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const focus = canvas.getByLabelText(/, focus$/)
-    const partsOf = (node: Element) => [...node.querySelectorAll('.plex__part')]
+    const getParts = (node: Element) => [...node.querySelectorAll('.plex__part')]
 
     /** How many stand in the window at once, which the knob says. */
     const most = args.maxParts
 
     // Nothing hangs until the hand has been on it a while.
-    await expect(partsOf(focus)).toHaveLength(0)
+    await expect(getParts(focus)).toHaveLength(0)
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(most), { timeout: 3000 })
+    await waitFor(async () => await expect(getParts(focus)).toHaveLength(most), { timeout: 3000 })
 
     // The nesting is drawn by setting a part in, and the deeper of them stands
     // further in than the one it sits under.
-    const setIn = (part: Element) => Number.parseFloat(getComputedStyle(part).paddingInlineStart)
-    const [first, second, third] = partsOf(focus)
-    await expect(setIn(second!)).toBeGreaterThan(setIn(first!))
-    await expect(setIn(third!)).toBeGreaterThan(setIn(second!))
+    const getIndent = (part: Element) =>
+      Number.parseFloat(getComputedStyle(part).paddingInlineStart)
+    const [first, second, third] = getParts(focus)
+    await expect(getIndent(second!)).toBeGreaterThan(getIndent(first!))
+    await expect(getIndent(third!)).toBeGreaterThan(getIndent(second!))
 
     // The hand leaves, and they go back under the box.
     await userEvent.unhover(focus)
-    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(0))
+    await waitFor(async () => await expect(getParts(focus)).toHaveLength(0))
 
     // Choosing one says which part it was, on the node it hangs from.
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(partsOf(focus)).toHaveLength(most), { timeout: 3000 })
-    await userEvent.click(partsOf(focus)[1]!)
+    await waitFor(async () => await expect(getParts(focus)).toHaveLength(most), { timeout: 3000 })
+    await userEvent.click(getParts(focus)[1]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
 
     // A note with more parts than stand at once is scrolled through them.
     const many = canvas.getByLabelText(/, jump$/)
     await userEvent.hover(many)
-    await waitFor(async () => await expect(partsOf(many)).toHaveLength(most), { timeout: 3000 })
+    await waitFor(async () => await expect(getParts(many)).toHaveLength(most), { timeout: 3000 })
 
     // A window on more than it holds carries an arrow at the edge it may be
     // scrolled towards, and scrolling it moves it by whole parts.
@@ -1329,15 +1333,19 @@ export const PartsInside: Story = {
           new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
         )
     wheel(1)
-    await waitFor(async () => await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 2'))
+    await waitFor(
+      async () => await expect(getParts(many)[0]!.textContent?.trim()).toBe('Section 2'),
+    )
     await expect(arrows()).toHaveLength(2)
 
     wheel(-1)
-    await waitFor(async () => await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 1'))
+    await waitFor(
+      async () => await expect(getParts(many)[0]!.textContent?.trim()).toBe('Section 1'),
+    )
 
     // Choosing a part is not choosing the node it hangs from: the plex stays
     // where it is standing.
-    await userEvent.click(partsOf(many)[0]!)
+    await userEvent.click(getParts(many)[0]!)
     await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
     await expect(args.onActivate).not.toHaveBeenCalled()
   },
@@ -1350,7 +1358,7 @@ export const SmallWindow: Story = {
     components: { Plex },
     setup: () => {
       const type = useTypeSize()
-      return { args, options: computed(() => optionsFrom(args, type.value)) }
+      return { args, options: computed(() => createOptions(args, type.value)) }
     },
     template: `
       <div style="height:100vh;display:grid;place-items:center;background:#8883">

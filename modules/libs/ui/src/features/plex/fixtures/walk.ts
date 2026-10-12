@@ -43,16 +43,16 @@ const GRAPH: Record<string, GraphNode> = {
   'dependency-inversion': { title: 'Dependency inversion' },
 }
 
-const parentsOf = (id: string): readonly string[] => GRAPH[id]?.parents ?? []
+const getParents = (id: string): readonly string[] => GRAPH[id]?.parents ?? []
 
-const childrenOf = (id: string): string[] =>
-  Object.keys(GRAPH).filter((other) => parentsOf(other).includes(id))
+const getChildren = (id: string): string[] =>
+  Object.keys(GRAPH).filter((other) => getParents(other).includes(id))
 
 /** The other children of my parents. Worked out here, never by the plex. */
-const siblingsOf = (id: string): string[] => {
+const getSiblings = (id: string): string[] => {
   const seen = new Set<string>()
-  for (const parent of parentsOf(id)) {
-    for (const child of childrenOf(parent)) {
+  for (const parent of getParents(id)) {
+    for (const child of getChildren(parent)) {
       if (child !== id) seen.add(child)
     }
   }
@@ -60,7 +60,7 @@ const siblingsOf = (id: string): string[] => {
 }
 
 /** Everything that points at me by association, and everything I point at. */
-const jumpsOf = (id: string): string[] => {
+const getJumps = (id: string): string[] => {
   const mine = GRAPH[id]?.jumps ?? []
   const theirs = Object.keys(GRAPH).filter((other) => (GRAPH[other]?.jumps ?? []).includes(id))
   return [...new Set([...mine, ...theirs])]
@@ -68,7 +68,7 @@ const jumpsOf = (id: string): string[] => {
 
 export const walkStart = 'hexagonal'
 
-export function neighbourhoodOf(id: string): PlexNeighbourhood {
+export function createNeighbourhood(id: string): PlexNeighbourhood {
   const focus = GRAPH[id]
   if (!focus) throw new Error(`no such node: ${id}`)
 
@@ -82,10 +82,10 @@ export function neighbourhoodOf(id: string): PlexNeighbourhood {
   const related: PlexNode[] = []
   const taken = new Set<string>([id])
   for (const group of [
-    seat(parentsOf(id), 'parent'),
-    seat(childrenOf(id), 'child'),
-    seat(jumpsOf(id), 'jump'),
-    seat(siblingsOf(id), 'sibling'),
+    seat(getParents(id), 'parent'),
+    seat(getChildren(id), 'child'),
+    seat(getJumps(id), 'jump'),
+    seat(getSiblings(id), 'sibling'),
   ]) {
     for (const node of group) {
       if (taken.has(node.id)) continue
@@ -104,7 +104,7 @@ export function neighbourhoodOf(id: string): PlexNeighbourhood {
       // A sibling hangs off the parent it shares with the focus, not off the
       // focus. Working out which parent is a question about relationships, so
       // it belongs here rather than in the plex.
-      const shared = parentsOf(id).find((parent) => parentsOf(node.id).includes(parent))
+      const shared = getParents(id).find((parent) => getParents(node.id).includes(parent))
       return shared ? [{ from: shared, to: node.id, label: 'contains' }] : []
     }),
   }

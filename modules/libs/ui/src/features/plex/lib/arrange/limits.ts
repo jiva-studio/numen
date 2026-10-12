@@ -23,7 +23,7 @@ const countAlong = (room: number, size: number, gap: number) =>
  * served first — they are the axis the plex is read on — and a column takes
  * what is left beyond the widest of them.
  */
-export function limitsFor(
+export function getLimits(
   options: PlexOptions,
   counts: Readonly<Record<PlexRelatedSeat, number>>,
 ): Limits {

@@ -58,7 +58,7 @@ export const rowsAndColumns: Placement = {
     const rowsPlaced = [...placed]
     const reach = Math.max(
       0,
-      ...columns.map(([seat, nodes]) => reachOf(nodes.length, options, limits[seat])),
+      ...columns.map(([seat, nodes]) => getReach(nodes.length, options, limits[seat])),
     )
     const clearance = measureWidestWithin(rowsPlaced, reach)
 
@@ -188,7 +188,7 @@ function lines(
 }
 
 /** How far above and below the focus a column of `count` nodes reaches. */
-function reachOf(count: number, options: PlexOptions, limits: RoleLimits): number {
+function getReach(count: number, options: PlexOptions, limits: RoleLimits): number {
   const perColumn = Math.min(limits.perLine, count)
   const step = options.nodeSize.height + options.gap
   return ((perColumn - 1) / 2) * step + options.nodeSize.height / 2

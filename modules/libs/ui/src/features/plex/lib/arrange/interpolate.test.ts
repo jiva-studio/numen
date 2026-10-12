@@ -4,7 +4,7 @@ import { arrangePlex } from './arrange'
 import { interpolatePlex } from './interpolate'
 import { easeOut } from './math'
 import { MIDDLE } from './routing'
-import { ARROW_LENGTH, headingOf, lengthOf, createPointOnCurve } from '../edge'
+import { ARROW_LENGTH, getHeading, getLength, createPointOnCurve } from '../edge'
 import type { PlexFrame } from '../frame'
 import type { PlexNeighbourhood } from '../neighbourhood'
 
@@ -231,7 +231,7 @@ describe('the title a line carries while the picture moves', () => {
     // halfway over it runs the other way round from the way it ends.
     const swung = interpolatePlex(from, to, 0.5).edges.find((e) => e.to === 'a')!
     expect(swung.heading).toBe('along')
-    expect(headingOf(swung, MIDDLE)).toBe('against')
+    expect(getHeading(swung, MIDDLE)).toBe('against')
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
@@ -326,7 +326,7 @@ describe('the title a line carries while the picture moves', () => {
 
     expect(going.heading).toBe('against')
     expect(going.words).toBe('went that way…')
-    expect(headingOf(going, MIDDLE)).toBe('along')
+    expect(getHeading(going, MIDDLE)).toBe('along')
   })
 })
 
@@ -353,7 +353,7 @@ describe('the arrow a line carries while the picture moves', () => {
   it('keeps it aimed along the piece of curve it covers, wherever the line has got to', () => {
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      const behind = createPointOnCurve(edge)(1 - ARROW_LENGTH / lengthOf(edge))
+      const behind = createPointOnCurve(edge)(1 - ARROW_LENGTH / getLength(edge))
       const chord =
         (Math.atan2(edge.toPoint.y - behind.y, edge.toPoint.x - behind.x) * 180) / Math.PI
       expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(chord, 1)

@@ -123,7 +123,7 @@ const onSettle = (id: string, isResting: boolean) => {
  * while one is running: the hand is somewhere else entirely, and a second
  * handle under it would offer to start a gesture already under way.
  */
-const roleOf = (node: PlacedNode): GestureRole => {
+const getRole = (node: PlacedNode): GestureRole => {
   const outcome = props.gestureOutcome
   if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
   if (props.gestureFrom === node.id) return 'source'
@@ -175,7 +175,7 @@ const roleOf = (node: PlacedNode): GestureRole => {
       v-for="node in drawn"
       :key="node.id"
       :node="node"
-      :gesture-role="roleOf(node)"
+      :gesture-role="getRole(node)"
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
       :dwell="dwell"

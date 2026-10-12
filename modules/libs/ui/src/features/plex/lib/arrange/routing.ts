@@ -1,7 +1,7 @@
 import {
-  arrowOf,
-  headingOf,
-  lengthOf,
+  getArrow,
+  getHeading,
+  getLength,
   type EdgeCurve,
   type PlacedEdge,
   type PlexEdge,
@@ -14,7 +14,7 @@ import { isVertical, type PlexOptions, type RoutingOptions } from './options'
 export type Axis = 'vertical' | 'horizontal' | 'auto'
 
 export interface Routing extends RoutingOptions {
-  readonly axisOf: (node: { seat: PlexSeat }) => Axis
+  readonly getAxis: (node: { seat: PlexSeat }) => Axis
   /**
    * How wide a title is set. Text is measured where the plex is drawn; here it
    * arrives as a number, and without a measurer the whole label is drawn.
@@ -33,7 +33,7 @@ export interface Routing extends RoutingOptions {
  * last child in a wide row is further sideways than it is down, and measuring
  * would send its edge out of the focus's side.
  */
-export function routingFor(
+export function createRouting(
   options: PlexOptions,
   measureLabel?: (label: string) => number,
   labelDepth = 0,
@@ -42,7 +42,7 @@ export function routingFor(
     ...options.routing,
     labelWidth: measureLabel,
     labelDepth,
-    axisOf: (node) => {
+    getAxis: (node) => {
       if (node.seat === 'focus') return 'auto'
       return isVertical(options.direction[node.seat]) ? 'vertical' : 'horizontal'
     },
@@ -99,7 +99,7 @@ function isSeparated(a: PlacedNode, b: PlacedNode, isVertical: boolean): boolean
 
 /** Which way an edge runs: down the picture, or across it. */
 function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): boolean {
-  const declared = [routing.axisOf(from), routing.axisOf(to)].find((axis) => axis !== 'auto')
+  const declared = [routing.getAxis(from), routing.getAxis(to)].find((axis) => axis !== 'auto')
   const wanted =
     declared === 'vertical' ||
     (declared === undefined && Math.abs(to.y - from.y) >= Math.abs(to.x - from.x))
@@ -110,7 +110,7 @@ function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): bool
 }
 
 /** The control point standing out from a getEdgeAnchor along the run. */
-function controlFrom(at: Position, vertical: boolean, reach: number): Position {
+function getControl(at: Position, vertical: boolean, reach: number): Position {
   return vertical ? { x: at.x, y: at.y + reach } : { x: at.x + reach, y: at.y }
 }
 
@@ -142,8 +142,8 @@ function curveBetween(
 
   const along: EdgeCurve = {
     fromPoint: firstGate,
-    control1: controlFrom(firstGate, isVertical, reach),
-    control2: controlFrom(secondGate, isVertical, -reach),
+    control1: getControl(firstGate, isVertical, reach),
+    control2: getControl(secondGate, isVertical, -reach),
     toPoint: secondGate,
   }
 
@@ -158,7 +158,7 @@ function curveBetween(
  */
 function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | undefined {
   if (edge.label === undefined || !routing.labelWidth) return edge.label
-  const room = lengthOf(curve) - (edge.arrow ? 2 * routing.arrowRoom : 0)
+  const room = getLength(curve) - (edge.arrow ? 2 * routing.arrowRoom : 0)
   return cutToFit(edge.label, room, routing.labelWidth)
 }
 
@@ -182,10 +182,10 @@ export function routeEdge(
     ...edge,
     ...curve,
     opacity,
-    heading: headingOf(curve, MIDDLE),
+    heading: getHeading(curve, MIDDLE),
     words: cutLabel(edge, curve, routing),
     wordsAt: MIDDLE,
-    arrowhead: edge.arrow ? arrowOf(curve, edge.arrow) : undefined,
+    arrowhead: edge.arrow ? getArrow(curve, edge.arrow) : undefined,
   }
 }
 

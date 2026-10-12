@@ -27,5 +27,5 @@ export const RELATED_SEATS = Object.keys(SEATS) as readonly PlexRelatedSeat[]
 export const seatWord = (seat: PlexRelatedSeat): string => SEATS[seat].plural[0]
 
 /** `3 children`, `1 jump`. */
-export const countOf = (seat: PlexRelatedSeat, count: number): string =>
+export const formatCount = (seat: PlexRelatedSeat, count: number): string =>
   `${count} ${SEATS[seat].plural[count === 1 ? 0 : 1]}`

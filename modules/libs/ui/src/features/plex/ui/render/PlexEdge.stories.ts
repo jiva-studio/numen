@@ -13,7 +13,7 @@ import { expect } from 'storybook/test'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import type { EdgeLine } from './lines'
-import { arrowTransformOf, pathOf, readingPathOf } from '../../lib/arrange'
+import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
 import type { PlacedEdge } from '../../lib/edge'
 import { lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
@@ -29,7 +29,7 @@ interface Knobs {
   isArrow: boolean
 }
 
-const edgeFrom = (args: Knobs): PlacedEdge => ({
+const createEdge = (args: Knobs): PlacedEdge => ({
   from: 'one',
   to: 'two',
   label: args.words,
@@ -46,14 +46,14 @@ const edgeFrom = (args: Knobs): PlacedEdge => ({
 })
 
 /** The edge with what the drawing asks of it, as the plex works it out. */
-const lineFrom = (edge: PlacedEdge): EdgeLine => ({
+const createLine = (edge: PlacedEdge): EdgeLine => ({
   edge,
   key: `${edge.from}->${edge.to}`,
   pair: `${edge.from}|${edge.to}`,
-  d: pathOf(edge),
-  arrow: edge.arrowhead ? arrowTransformOf(edge.arrowhead) : null,
+  d: createPath(edge),
+  arrow: edge.arrowhead ? createArrowTransform(edge.arrowhead) : null,
   titlePath: edge.words ? 'edge-title' : null,
-  titleLine: readingPathOf(edge),
+  titleLine: createReadingPath(edge),
   titleAt: `${100 * edge.wordsAt}%`,
 })
 
@@ -63,7 +63,7 @@ const lineFrom = (edge: PlacedEdge): EdgeLine => ({
  */
 const createBoth = (args: Knobs) => ({
   components: { PlexEdgeLine, PlexEdgeTitle },
-  setup: () => ({ line: lineFrom(edgeFrom(args)) }),
+  setup: () => ({ line: createLine(createEdge(args)) }),
   template: `
     <div data-ground style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
       <svg class="numen" width="480" height="180" viewBox="-240 -90 480 180" style="font-family:var(--numen-font-sans)">
@@ -135,7 +135,7 @@ export const PartWayThere: Story = {
 }
 
 /** The parts of one edge, in the order they are drawn under a group. */
-const partsOf = (canvas: HTMLElement, edge: string) => {
+const getParts = (canvas: HTMLElement, edge: string) => {
   const group = canvas.querySelector(`[data-edge="${edge}"]`)
   if (!group) throw new Error(`no ${edge} edge`)
   const [curve, head] = group.querySelectorAll('path')
@@ -159,8 +159,8 @@ export const Dark: Story = {
     const surface = lightness(ground)
     const getDistanceFrom = (colour: string) => Math.abs(lightness(colour, ground) - surface)
 
-    const resting = partsOf(canvasElement, 'resting')
-    const lifted = partsOf(canvasElement, 'lifted')
+    const resting = getParts(canvasElement, 'resting')
+    const lifted = getParts(canvasElement, 'lifted')
 
     // A line lying quietly on the surface still stands above it on the dark
     // set, where a line is drawn lighter than what it is drawn on.

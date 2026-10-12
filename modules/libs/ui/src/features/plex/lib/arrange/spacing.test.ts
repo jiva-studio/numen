@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
-import { spacingAsSet, spacingFor, type Spacing } from './spacing'
+import { spacingAsSet, findSpacing, type Spacing } from './spacing'
 import { build } from '../../fixtures/build'
 import type { PlexFrame } from '../frame'
 
@@ -117,19 +117,19 @@ describe('what opens still keeps the window', () => {
   })
 })
 
-describe('spacingFor', () => {
+describe('findSpacing', () => {
   const options = { ...DEFAULT_OPTIONS, viewport: { width: 1200, height: 800 } }
 
   it('gives the settings when nothing at all fits', () => {
-    expect(spacingFor(options, () => false)).toStrictEqual(spacingAsSet(options))
+    expect(findSpacing(options, () => false)).toStrictEqual(spacingAsSet(options))
   })
 
   it('gives the settings when the window is not known', () => {
-    expect(spacingFor(DEFAULT_OPTIONS, () => true)).toStrictEqual(spacingAsSet(DEFAULT_OPTIONS))
+    expect(findSpacing(DEFAULT_OPTIONS, () => true)).toStrictEqual(spacingAsSet(DEFAULT_OPTIONS))
   })
 
   it('opens every gap to the spread when everything fits', () => {
-    expect(spacingFor(options, () => true)).toStrictEqual({
+    expect(findSpacing(options, () => true)).toStrictEqual({
       gap: options.gap * spread,
       lineGap: options.lineGap * spread,
       focusGap: options.focusGap * spread,
@@ -139,7 +139,7 @@ describe('spacingFor', () => {
   it('asks about the focus gap before either of the others', () => {
     const asked: (keyof Spacing)[] = []
     const set = spacingAsSet(options)
-    spacingFor(options, (spacing) => {
+    findSpacing(options, (spacing) => {
       for (const key of ['focusGap', 'lineGap', 'gap'] as const) {
         if (spacing[key] !== set[key] && !asked.includes(key)) asked.push(key)
       }
@@ -150,7 +150,7 @@ describe('spacingFor', () => {
 
   it('asks every time against the window the options give', () => {
     const windows = new Set<unknown>()
-    spacingFor(options, (_spacing, viewport) => {
+    findSpacing(options, (_spacing, viewport) => {
       windows.add(viewport)
       return true
     })
@@ -158,14 +158,14 @@ describe('spacingFor', () => {
   })
 
   it('never gives a gap less than its setting, whatever spread it is told', () => {
-    expect(spacingFor({ ...options, spread: 0.5 }, () => true)).toStrictEqual(
+    expect(findSpacing({ ...options, spread: 0.5 }, () => true)).toStrictEqual(
       spacingAsSet(options),
     )
   })
 
   it('asks nothing at all at a spread of one', () => {
     let asked = 0
-    spacingFor({ ...options, spread: 1 }, () => {
+    findSpacing({ ...options, spread: 1 }, () => {
       asked++
       return true
     })
@@ -185,7 +185,7 @@ describe('spacingFor', () => {
         spacing.focusGap <= set.focusGap * limit
 
     it('lands within a 256th of the range below the limit', () => {
-      const found = spacingFor(wide, fitsUpTo(1.5))
+      const found = findSpacing(wide, fitsUpTo(1.5))
       for (const key of ['gap', 'lineGap', 'focusGap'] as const) {
         expect(found[key]).toBeLessThanOrEqual(set[key] * 1.5)
         expect(found[key]).toBeGreaterThanOrEqual(set[key] * (1.5 - 2 / 256))
@@ -193,7 +193,7 @@ describe('spacingFor', () => {
     })
 
     it('stops short of a limit that lies inside the last step', () => {
-      expect(spacingFor(wide, fitsUpTo(1 + 1 / 256))).toStrictEqual(set)
+      expect(findSpacing(wide, fitsUpTo(1 + 1 / 256))).toStrictEqual(set)
     })
   })
 })

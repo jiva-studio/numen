@@ -1,5 +1,5 @@
 import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
-import { limitsFor } from './limits'
+import { getLimits } from './limits'
 import { lerp } from './math'
 import type { PlexOptions } from './options'
 
@@ -57,6 +57,6 @@ export function measureCrowding(options: PlexOptions, counts: SeatCounts): PlexO
 
 /** Whether the window holds every node of every seat. */
 function canSeatAll(options: PlexOptions, counts: SeatCounts): boolean {
-  const limits = limitsFor(options, counts)
+  const limits = getLimits(options, counts)
   return RELATED_SEATS.every((seat) => limits[seat].perLine * limits[seat].lines >= counts[seat])
 }
