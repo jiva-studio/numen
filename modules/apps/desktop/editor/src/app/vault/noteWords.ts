@@ -1,7 +1,12 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
-import { NameSource, NoteType as NoteTypes, Role as Roles, Relation as Relations } from '@numen/protocol'
+import {
+  NameSource,
+  NoteType as NoteTypes,
+  Role as Roles,
+  Relation as Relations,
+} from '@numen/protocol'
 import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,

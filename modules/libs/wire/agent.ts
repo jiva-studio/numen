@@ -14,7 +14,13 @@ const normalizeSpan = (span: Span | undefined) => ({ from: span?.from ?? 0, to: 
 /** As much of the agent service as the port asks of it. */
 export interface AgentClient {
   askAgent(
-    request: { prompt: string; focus: string; conversation: string; agent?: string; model?: string },
+    request: {
+      prompt: string
+      focus: string
+      conversation: string
+      agent?: string
+      model?: string
+    },
     options: { signal: AbortSignal },
   ): AsyncIterable<AskAgentResponse>
   finishConversation(request: { conversation: string }): Promise<unknown>
