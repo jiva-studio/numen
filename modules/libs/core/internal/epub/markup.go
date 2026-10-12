@@ -55,10 +55,7 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrNoDocument, docPath)
 	}
-	raw, ok := readBounded(b.files[docPath], mostPerDocument)
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", ErrNoDocument, docPath)
-	}
+	raw, _ := readBounded(b.files[docPath], mostPerDocument)
 
 	x := newExtractor()
 	x.markup = newBuilder(path.Dir(docPath))
@@ -131,7 +128,7 @@ func newBuilder(base string) *builder {
 // openElement starts an element and reports whether one was started. An element that
 // is not drawn is passed through to its children.
 func (b *builder) openElement(n *html.Node, offset int) bool {
-	if b == nil || !drawn[n.DataAtom] {
+	if !drawn[n.DataAtom] {
 		return false
 	}
 	opening := Node{Name: n.Data, Offset: offset, Attributes: b.attributes(n)}
@@ -144,9 +141,6 @@ func (b *builder) openElement(n *html.Node, offset int) bool {
 }
 
 func (b *builder) close() {
-	if b == nil {
-		return
-	}
 	done := b.stack[len(b.stack)-1]
 	b.stack = b.stack[:len(b.stack)-1]
 	// A table that opened no cell keeps the runs written inside it, in the
@@ -212,9 +206,6 @@ func (b *builder) appendChild(n Node) {
 // A run reaches to where the next one begins, so every byte of the document is
 // said once and in one place.
 func (b *builder) finish(text string, end int) []Node {
-	for len(b.stack) > 1 {
-		b.close()
-	}
 	nodes := b.stack[0].Children
 	found := nodesIn(nodes, nil)
 
@@ -353,9 +344,6 @@ func scheme(url string) string {
 		c := url[i]
 		switch {
 		case c == ':':
-			if i == 0 {
-				return ""
-			}
 			return url[:i]
 		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z':
 		case i > 0 && (c >= '0' && c <= '9' || c == '+' || c == '-' || c == '.'):

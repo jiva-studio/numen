@@ -15,9 +15,9 @@ const lettersPerPage = 1024
 func pageBytes(text string) int {
 	letters := utf8.RuneCountInString(text)
 	if letters == 0 {
-		return lettersPerPage
+		return 0
 	}
-	return max(1, lettersPerPage*len(text)/letters)
+	return lettersPerPage * len(text) / letters
 }
 
 // PageCount is how many pages the book is read in. A book with no text is one
@@ -45,7 +45,7 @@ func (b *Book) PageStart(page int) int {
 // PageBytes is how many bytes of this book's text stand on one page. Whoever
 // counts a page of this book counts it by this number.
 func (b *Book) PageBytes() int {
-	if b.pageBytes <= 0 {
+	if b.pageBytes == 0 {
 		return lettersPerPage
 	}
 	return b.pageBytes

@@ -47,14 +47,13 @@ func newExtractor() *extractor {
 // The markup is parsed as HTML: a document with three opening body tags is still
 // a document a person can read.
 func (x *extractor) document(docPath string, markup []byte) Document {
-	x.breakLine()
 	start := len(x.out)
 	x.path = docPath
 	x.starts[docPath] = start
 
 	if x.markup != nil {
 		if root, err := html.Parse(bytes.NewReader(markup)); err == nil {
-			x.node(root)
+			x.children(root)
 		}
 	} else {
 		x.tokenize(markup)
@@ -64,17 +63,11 @@ func (x *extractor) document(docPath string, markup []byte) Document {
 }
 
 func (x *extractor) node(n *html.Node) {
-	if n == nil {
-		return
-	}
 	switch n.Type {
 	case html.TextNode:
 		x.write(n.Data)
 		return
 	case html.ElementNode:
-	case html.DocumentNode:
-		x.children(n)
-		return
 	default:
 		return
 	}
@@ -97,15 +90,11 @@ func (x *extractor) node(n *html.Node) {
 	if block {
 		x.breakLine()
 	}
-	if id := attribute(n, "id"); id != "" {
-		x.anchors[x.path+"#"+id] = len(x.out)
-	}
-	start := len(x.out)
 
 	if n.DataAtom == atom.Pre {
 		x.preformattedDepth++
 	}
-	element := x.markup.openElement(n, start)
+	element := x.markup.openElement(n, len(x.out))
 	if n.DataAtom == atom.Td || n.DataAtom == atom.Th {
 		// A cell is set off from the one before it by a space, and the space
 		// stands inside the cell it opens.
@@ -116,19 +105,6 @@ func (x *extractor) node(n *html.Node) {
 		x.preformattedDepth--
 	}
 
-	if level := headingLevel(n.DataAtom); level > 0 {
-		if title := normaliseSpaces(string(x.out[start:])); title != "" {
-			x.headings = append(x.headings, Part{Title: title, Offset: start, Level: level})
-		}
-	}
-	if label, ok := getPrintedPage(n); ok {
-		if label == "" {
-			label = normaliseSpaces(string(x.out[start:]))
-		}
-		if label != "" {
-			x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: start})
-		}
-	}
 	if block {
 		x.breakLine()
 	}
@@ -161,7 +137,7 @@ func (x *extractor) write(text string) {
 			x.out = utf8.AppendRune(x.out, r)
 		}
 	}
-	if len(x.out) > start && x.markup != nil {
+	if len(x.out) > start {
 		x.markup.run(start)
 	}
 }
@@ -172,22 +148,9 @@ func (x *extractor) writeBytes(b []byte) {
 		return
 	}
 	for i := 0; i < len(b); {
-		c := b[i]
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="byte 0x80 starts no sequence and is kept as one byte on either path"
-		if c < utf8.RuneSelf {
-			i++
-			if c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == '\v' {
-				if len(x.out) > 0 && x.out[len(x.out)-1] != ' ' && x.out[len(x.out)-1] != '\n' {
-					x.out = append(x.out, ' ')
-				}
-				continue
-			}
-			x.out = append(x.out, c)
-			continue
-		}
 		r, size := utf8.DecodeRune(b[i:])
 		if unicode.IsSpace(r) {
-			if len(x.out) > 0 && x.out[len(x.out)-1] != ' ' && x.out[len(x.out)-1] != '\n' {
+			if last, ok := x.last(); ok && last != ' ' && last != '\n' {
 				x.out = append(x.out, ' ')
 			}
 		} else {
@@ -220,54 +183,21 @@ func (x *extractor) tokenize(markup []byte) {
 		switch tt {
 		case html.ErrorToken:
 			for i := len(stack) - 1; i >= 0; i-- {
-				f := stack[i]
-				if f.atom == atom.Pre && x.preformattedDepth > 0 {
-					x.preformattedDepth--
-				}
-				if f.heading > 0 {
-					if title := normaliseSpaces(string(x.out[f.start:])); title != "" {
-						x.headings = append(x.headings, Part{Title: title, Offset: f.start, Level: f.heading})
-					}
-				}
-				if f.isPagebreak {
-					label := f.pageLabel
-					if label == "" {
-						label = normaliseSpaces(string(x.out[f.start:]))
-					}
-					if label != "" {
-						x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: f.start})
-					}
-				}
-				if f.block {
-					x.breakLine()
-				}
+				x.closeFrame(stack[i])
 			}
 			x.preformattedDepth = 0
 			return
 
 		case html.CommentToken, html.DoctypeToken:
-			// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
-			continue
-
 		case html.TextToken:
-			if dropLeadingNewline {
-				dropLeadingNewline = false
-				text := z.Text()
-				if len(text) > 0 && text[0] == '\r' {
-					text = text[1:]
-				}
-				if len(text) > 0 && text[0] == '\n' {
-					text = text[1:]
-				}
-				if skipAtom == 0 && len(text) > 0 {
-					x.writeBytes(text)
-				}
-				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
-				continue
-			}
 			if skipAtom == 0 {
-				x.writeBytes(z.Text())
+				text := z.Text()
+				if dropLeadingNewline {
+					text = bytes.TrimPrefix(bytes.TrimPrefix(text, []byte{'\r'}), []byte{'\n'})
+				}
+				x.writeBytes(text)
 			}
+			dropLeadingNewline = false
 
 		case html.StartTagToken, html.SelfClosingTagToken:
 			dropLeadingNewline = false
@@ -275,7 +205,7 @@ func (x *extractor) tokenize(markup []byte) {
 			a := atom.Lookup(name)
 
 			if skipAtom != 0 {
-				if skipAtom == atom.Head && (a == atom.Body || blocks[a]) {
+				if a == atom.Body || blocks[a] {
 					skipAtom = 0
 				} else {
 					// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break leaves the switch and ends the iteration like continue"
@@ -356,23 +286,7 @@ func (x *extractor) tokenize(markup []byte) {
 			level := headingLevel(a)
 
 			if isVoidTag(a) {
-				if a == atom.Pre && x.preformattedDepth > 0 {
-					x.preformattedDepth--
-				}
-				if level > 0 {
-					if title := normaliseSpaces(string(x.out[start:])); title != "" {
-						x.headings = append(x.headings, Part{Title: title, Offset: start, Level: level})
-					}
-				}
-				if isPagebreak {
-					label := pageLabel
-					if label == "" {
-						label = normaliseSpaces(string(x.out[start:]))
-					}
-					if label != "" {
-						x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: start})
-					}
-				}
+				x.closeFrame(frame{start: start, isPagebreak: isPagebreak, pageLabel: pageLabel})
 				if block {
 					x.breakLine()
 				}
@@ -417,25 +331,8 @@ func (x *extractor) tokenize(markup []byte) {
 
 			if found >= 0 {
 				for i := len(stack) - 1; i >= found; i-- {
-					f := stack[i]
-					if f.atom == atom.Pre && x.preformattedDepth > 0 {
-						x.preformattedDepth--
-					}
-					if f.heading > 0 {
-						if title := normaliseSpaces(string(x.out[f.start:])); title != "" {
-							x.headings = append(x.headings, Part{Title: title, Offset: f.start, Level: f.heading})
-						}
-					}
-					if f.isPagebreak {
-						label := f.pageLabel
-						if label == "" {
-							label = normaliseSpaces(string(x.out[f.start:]))
-						}
-						if label != "" {
-							x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: f.start})
-						}
-					}
-					if f.block {
+					x.closeFrame(stack[i])
+					if stack[i].block {
 						x.breakLine()
 					}
 				}
@@ -447,14 +344,33 @@ func (x *extractor) tokenize(markup []byte) {
 	}
 }
 
+// closeFrame records the heading and the page break an element that has ended
+// carried, and leaves a pre element.
+func (x *extractor) closeFrame(f frame) {
+	if f.atom == atom.Pre {
+		x.preformattedDepth--
+	}
+	if f.heading > 0 {
+		if title := normaliseSpaces(string(x.out[f.start:])); title != "" {
+			x.headings = append(x.headings, Part{Title: title, Offset: f.start, Level: f.heading})
+		}
+	}
+	if f.isPagebreak {
+		label := f.pageLabel
+		if label == "" {
+			label = normaliseSpaces(string(x.out[f.start:]))
+		}
+		if label != "" {
+			x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: f.start})
+		}
+	}
+}
+
 // hasTokenBytes reports whether a space-separated attribute carries a value.
 func hasTokenBytes(attribute []byte, token string) bool {
 	for len(attribute) > 0 {
 		for len(attribute) > 0 && (attribute[0] == ' ' || attribute[0] == '\t' || attribute[0] == '\n' || attribute[0] == '\r') {
 			attribute = attribute[1:]
-		}
-		if len(attribute) == 0 {
-			break
 		}
 		end := 0
 		for end < len(attribute) && attribute[end] != ' ' && attribute[end] != '\t' && attribute[end] != '\n' && attribute[end] != '\r' {
@@ -543,9 +459,6 @@ func (x *extractor) pagesAt(entries []entry) []Page {
 // the start of the document it names.
 func (x *extractor) offsetOf(href string) (int, bool) {
 	target, fragment := splitHref(href)
-	if target == "" {
-		return 0, false
-	}
 	if fragment != "" {
 		if offset, ok := x.anchors[target+"#"+fragment]; ok {
 			return offset, true
@@ -565,22 +478,6 @@ func attribute(n *html.Node, name string) string {
 		}
 	}
 	return ""
-}
-
-// getPrintedPage reports whether an element marks a page of the printed book, and
-// the number it gives.
-func getPrintedPage(n *html.Node) (label string, marks bool) {
-	marks = hasToken(attribute(n, "epub:type"), "pagebreak") ||
-		hasToken(attribute(n, "role"), "doc-pagebreak")
-	if !marks {
-		return "", false
-	}
-	for _, name := range []string{"title", "aria-label"} {
-		if label := normaliseSpaces(attribute(n, name)); label != "" {
-			return label, true
-		}
-	}
-	return "", true
 }
 
 // headingLevel is the level of a heading element, and 0 for anything else. The

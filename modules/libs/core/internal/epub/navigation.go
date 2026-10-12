@@ -35,10 +35,7 @@ func navigationParts(files map[string]*zip.File, read packageDoc, text *extracto
 // pageEntries reads the pages of the printed book from the navigation control
 // file's page list.
 func pageEntries(files map[string]*zip.File, read packageDoc) []entry {
-	raw, ok := contents(files[read.ncx])
-	if !ok {
-		return nil
-	}
+	raw, _ := contents(files[read.ncx])
 	return ncxPageList(raw, path.Dir(read.ncx))
 }
 
@@ -121,7 +118,7 @@ func navDocument(raw []byte, base string) []entry {
 
 // tableOfContents is the nav element that says it is the table of contents.
 func tableOfContents(n *html.Node) *html.Node {
-	if n.Type == html.ElementNode && n.DataAtom == atom.Nav {
+	if n.DataAtom == atom.Nav {
 		if hasToken(attribute(n, "epub:type"), "toc") || hasToken(attribute(n, "role"), "doc-toc") {
 			return n
 		}
@@ -135,7 +132,7 @@ func tableOfContents(n *html.Node) *html.Node {
 }
 
 func appendLinks(out []entry, n *html.Node, base string) []entry {
-	if n.Type == html.ElementNode && n.DataAtom == atom.A {
+	if n.DataAtom == atom.A {
 		if href := attribute(n, "href"); href != "" {
 			out = append(out, entry{title: textOf(n), href: hrefIn(base, href)})
 		}
