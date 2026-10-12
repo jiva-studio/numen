@@ -83,7 +83,7 @@ func (p Preset) AssignDueDay(s *DueByDay, at, due time.Time) time.Time {
 // counting it against no day.
 //
 // The four windows put to a person are four askings of one card, and one of
-// them is answered. ScheduleDay chooses the day each of them names, so the
+// them is answered. AssignDueDay chooses the day each of them names, so the
 // button says the day the card comes back on.
 func (p Preset) GetDueDay(s *DueByDay, at, due time.Time) time.Time {
 	return p.computeDueDay(s, at, due)
