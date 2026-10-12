@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -73,5 +75,88 @@ func TestTheNameAVaultAlreadyHasChangesNothing(t *testing.T) {
 	}
 	if len(index.saved) != 0 {
 		t.Errorf("the index was written to: %v", index.saved)
+	}
+}
+
+// faultyRegistry is a list that fails when it is read or written.
+type faultyRegistry struct {
+	port.VaultRegistry
+	listErr error
+	saveErr error
+}
+
+func (r faultyRegistry) List() ([]domain.Vault, error) {
+	if r.listErr != nil {
+		return nil, r.listErr
+	}
+	return r.VaultRegistry.List()
+}
+
+func (r faultyRegistry) Save(v domain.Vault) error {
+	if r.saveErr != nil {
+		return r.saveErr
+	}
+	return r.VaultRegistry.Save(v)
+}
+
+var errBroken = errors.New("broken")
+
+func TestAVaultIsNotRenamedToNothing(t *testing.T) {
+	t.Parallel()
+	_, v, registry := twoVaults(t)
+	index := &indexRows{}
+
+	if _, err := vaults.NewRename(registry, index).Execute(t.Context(), v, ""); err == nil {
+		t.Fatal("an empty name was accepted")
+	}
+	onTheList, _, err := registry.Find(string(v.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if onTheList.Name != v.Name {
+		t.Errorf("the list calls it %q, want %q", onTheList.Name, v.Name)
+	}
+	if len(index.saved) != 0 {
+		t.Errorf("the index was told %v", index.saved)
+	}
+}
+
+func TestARenameFailsWhenTheListCannotBeRead(t *testing.T) {
+	t.Parallel()
+	_, v, registry := twoVaults(t)
+	index := &indexRows{}
+
+	_, err := vaults.NewRename(faultyRegistry{VaultRegistry: registry, listErr: errBroken}, index).
+		Execute(t.Context(), v, "journal")
+	if !errors.Is(err, errBroken) {
+		t.Fatalf("got %v, want %v", err, errBroken)
+	}
+	if len(index.saved) != 0 {
+		t.Errorf("the index was told %v", index.saved)
+	}
+}
+
+func TestARenameFailsWhenTheListCannotBeWritten(t *testing.T) {
+	t.Parallel()
+	_, v, registry := twoVaults(t)
+	index := &indexRows{}
+
+	_, err := vaults.NewRename(faultyRegistry{VaultRegistry: registry, saveErr: errBroken}, index).
+		Execute(t.Context(), v, "journal")
+	if !errors.Is(err, errBroken) {
+		t.Fatalf("got %v, want %v", err, errBroken)
+	}
+	if len(index.saved) != 0 {
+		t.Errorf("the index was told %v", index.saved)
+	}
+}
+
+func TestARenameFailsWhenTheIndexRefusesTheVault(t *testing.T) {
+	t.Parallel()
+	_, v, registry := twoVaults(t)
+
+	_, err := vaults.NewRename(registry, &indexRows{fails: errBroken}).Execute(t.Context(), v, "journal")
+	if !errors.Is(err, errBroken) {
+		t.Fatalf("got %v, want %v", err, errBroken)
 	}
 }
