@@ -95,11 +95,11 @@ func TestTakingAnAnswerBackIsAnsweredWithAResponse(t *testing.T) {
 
 // A card with no projection of what each answer would do carries none.
 func TestACardWithNoProjectionCarriesNone(t *testing.T) {
-	if got := newAhead(nil); got != nil {
+	if got := newWireAhead(nil); got != nil {
 		t.Errorf("a card with nothing ahead of it carries %+v", got)
 	}
 
-	got := newAhead(map[review.Rating]time.Duration{
+	got := newWireAhead(map[review.Rating]time.Duration{
 		review.Again: time.Minute, review.Hard: 2 * time.Minute,
 		review.Good: 3 * time.Minute, review.Easy: 4 * time.Minute,
 	})

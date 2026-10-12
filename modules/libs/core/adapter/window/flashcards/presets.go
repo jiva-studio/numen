@@ -15,7 +15,7 @@ import (
 func (a *API) GetVaultDeckPreset(
 	ctx context.Context, r *connect.Request[v1.GetVaultDeckPresetRequest],
 ) (*connect.Response[v1.GetVaultDeckPresetResponse], error) {
-	v, err := a.Vault(r.Msg.GetVault())
+	v, err := a.GetVault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}

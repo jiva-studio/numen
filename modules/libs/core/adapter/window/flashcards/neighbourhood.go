@@ -16,7 +16,7 @@ import (
 func (a *API) GetDeckNeighbourhood(
 	ctx context.Context, r *connect.Request[v1.GetDeckNeighbourhoodRequest],
 ) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error) {
-	v, err := a.Vault(r.Msg.GetVault())
+	v, err := a.GetVault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}

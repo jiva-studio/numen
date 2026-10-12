@@ -152,7 +152,7 @@ func makeReviewCore(
 		// question, so a deck named by whoever synced it is data and not
 		// instruction.
 		GetCurrentCard: func() mcp.CurrentCard {
-			on := api.Current()
+			on := api.GetCurrentCard()
 			return mcp.CurrentCard{Deck: on.Deck, Card: on.Card, Face: on.Face}
 		},
 

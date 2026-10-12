@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
 
-// ReadVault is a vault walked into the index.
-type ReadVault func(ctx context.Context, v domain.Vault) error
+// IndexVault is a vault walked into the index.
+type IndexVault func(ctx context.Context, v domain.Vault) error
 
 // readings is which vaults this window has read into the index: the ones read
 // since it opened, the ones being read now, and why the last reading of one
@@ -17,83 +17,83 @@ type ReadVault func(ctx context.Context, v domain.Vault) error
 type readings struct {
 	mu sync.Mutex
 
-	// read is how a vault is brought up to date in the index, and under is the
+	// indexVault is how a vault is brought up to date in the index, and ctx is the
 	// life those readings run for.
-	read  ReadVault
-	under context.Context
+	indexVault IndexVault
+	ctx        context.Context
 
-	done     map[domain.VaultID]bool
-	underway map[domain.VaultID]bool
-	why      map[domain.VaultID]string
+	indexed  map[domain.VaultID]bool
+	running  map[domain.VaultID]bool
+	failures map[domain.VaultID]string
 }
 
-// start is how a vault is read from now on, and the life those readings run
+// setIndexer is how a vault is read from now on, and the life those readings run
 // for.
-func (r *readings) start(ctx context.Context, read ReadVault) {
+func (r *readings) setIndexer(ctx context.Context, read IndexVault) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.under, r.read = ctx, read
+	r.ctx, r.indexVault = ctx, read
 }
 
-// forget lets go of why a vault could not be read, and that it was read at all.
-func (r *readings) forget(id domain.VaultID) {
+// clear lets go of why a vault could not be read, and that it was read at all.
+func (r *readings) clear(id domain.VaultID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	delete(r.why, id)
-	delete(r.done, id)
+	delete(r.failures, id)
+	delete(r.indexed, id)
 }
 
-// claim claims a vault for reading. It hands back the reader and the life to
+// tryStart claims a vault for reading. It hands back the reader and the life to
 // run it under where this call is the one that begins it, and no reader where
 // the vault has been read, is being read, could not be read, or where this
 // window reads nothing.
-func (r *readings) claim(
+func (r *readings) tryStart(
 	v domain.Vault,
-) (read ReadVault, under context.Context, underway bool, reason string) {
+) (read IndexVault, under context.Context, underway bool, reason string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.done[v.ID] {
+	if r.indexed[v.ID] {
 		return nil, nil, false, ""
 	}
-	if why, told := r.why[v.ID]; told {
+	if why, told := r.failures[v.ID]; told {
 		return nil, nil, false, why
 	}
-	if r.underway[v.ID] {
+	if r.running[v.ID] {
 		return nil, nil, true, ""
 	}
-	if r.read == nil {
+	if r.indexVault == nil {
 		return nil, nil, false, ""
 	}
-	if r.underway == nil {
-		r.underway = make(map[domain.VaultID]bool)
+	if r.running == nil {
+		r.running = make(map[domain.VaultID]bool)
 	}
-	r.underway[v.ID] = true
-	return r.read, r.under, true, ""
+	r.running[v.ID] = true
+	return r.indexVault, r.ctx, true, ""
 }
 
-// finish is what one reading came to: the vault is read, or it is why it is not.
-func (r *readings) finish(v domain.Vault, err error) {
+// record is what one reading came to: the vault is read, or it is why it is not.
+func (r *readings) record(v domain.Vault, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	delete(r.underway, v.ID)
+	delete(r.running, v.ID)
 	if err != nil {
-		if r.why == nil {
-			r.why = make(map[domain.VaultID]string)
+		if r.failures == nil {
+			r.failures = make(map[domain.VaultID]string)
 		}
-		r.why[v.ID] = err.Error()
+		r.failures[v.ID] = err.Error()
 		return
 	}
-	if r.done == nil {
-		r.done = make(map[domain.VaultID]bool)
+	if r.indexed == nil {
+		r.indexed = make(map[domain.VaultID]bool)
 	}
-	r.done[v.ID] = true
+	r.indexed[v.ID] = true
 }
 
 // Reading is how a vault is brought up to date in the index, and the life those
 // readings run for. A window naming none counts a vault from the index as it
 // stands.
-func (a *API) Reading(ctx context.Context, read ReadVault) {
-	a.readings.start(ctx, read)
+func (a *API) Reading(ctx context.Context, read IndexVault) {
+	a.readings.setIndexer(ctx, read)
 }
 
 // reading brings a vault up to date in the index. It says whether a reading of
@@ -103,12 +103,12 @@ func (a *API) Reading(ctx context.Context, read ReadVault) {
 // from there. One vault is read once at a time however many counts ask for it,
 // and a reading that failed is not begun again until the vault moves.
 func (a *API) reading(ctx context.Context, v domain.Vault) (underway bool, reason string) {
-	read, behind, running, reason := a.readings.claim(v)
+	read, behind, running, reason := a.readings.tryStart(v)
 	if read == nil {
 		return running, reason
 	}
 	//nolint:contextcheck // a vault is read for the life of the window, under behind, not under the count that asked
-	go a.walk(behind, read, v, a.hasVault(ctx, v))
+	go a.runIndexing(behind, read, v, a.hasVault(ctx, v))
 	return true, ""
 }
 
@@ -121,7 +121,7 @@ func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
 	return err == nil && held
 }
 
-// walk is one vault read, reported as work for as long as it runs. A reading
+// runIndexing is one vault read, reported as work for as long as it runs. A reading
 // that finished wakes the counts, which is what puts the vault's numbers on the
 // page.
 //
@@ -129,30 +129,30 @@ func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
 // nothing to show until this is done and the person is waiting on it, so that
 // work is drawn the moment it begins; a vault it carries is work drawn once it
 // has lasted.
-func (a *API) walk(ctx context.Context, read ReadVault, v domain.Vault, held bool) {
+func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, held bool) {
 	at := task.Task{
 		ID:      "reading\t" + string(v.ID),
 		Doing:   "Reading the vault",
 		About:   v.Name,
 		IsAsked: !held,
 	}
-	a.say(at)
+	a.reportTask(at)
 
 	err := read(ctx, v)
 
-	a.readings.finish(v, err)
+	a.readings.record(v, err)
 
 	if err != nil {
 		at.Error = err.Error()
-		a.say(at)
+		a.reportTask(at)
 		return
 	}
 	a.finishTask(at.ID)
 	a.ReportChange()
 }
 
-// Forget lets go of why a vault could not be read. A vault that moved
+// ClearIndexFailure lets go of why a vault could not be read. A vault that moved
 // underneath the window is read again.
-func (a *API) Forget(vaultID domain.VaultID) {
-	a.readings.forget(vaultID)
+func (a *API) ClearIndexFailure(vaultID domain.VaultID) {
+	a.readings.clear(vaultID)
 }
