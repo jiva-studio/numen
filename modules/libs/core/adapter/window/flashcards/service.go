@@ -323,9 +323,7 @@ func (a *API) TakeBackAnswer(
 	}
 	record := flashcards.NewRecord(run, a.getNow)
 	if _, err := record.TakeBack(ctx, r.Msg.GetAnswer()); err != nil {
-		// An answer with no identifier is the caller's mistake; a line that
-		// could not be written is not.
-		if r.Msg.GetAnswer() == "" {
+		if errors.Is(err, flashcards.ErrNoAnswer) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
