@@ -2,6 +2,7 @@ package pagecache
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -254,5 +255,42 @@ func TestNoDiskWhereItsFolderCannotBeMade(t *testing.T) {
 	t.Setenv("HOME", home)
 	if cache := NewDisk(); cache != nil {
 		t.Errorf("a disk in %s, under a file", cache.GetDir())
+	}
+}
+
+// Closing waits for a sweep that still has files to delete.
+func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
+	cache := NewDiskIn(t.TempDir())
+	for at := range 4000 {
+		name := filepath.Join(cache.GetDir(), fmt.Sprintf("old-%d.jpg", at))
+		if err := os.WriteFile(name, []byte("0123456789"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cache.limit = 0
+	cache.every = 1
+
+	cache.Put(newDrawingID(0), []byte("page"))
+	cache.Close()
+
+	if n := countDrawings(t, cache); n != 0 {
+		t.Errorf("%d files remain after Close", n)
+	}
+}
+
+// A sweep keeps what fits the bound when the folder is exactly at it, and
+// drops nothing from a folder under it.
+func TestASweepOfAFolderWithinTheBoundDropsNothing(t *testing.T) {
+	cache := NewDiskIn(t.TempDir())
+	for at := range 3 {
+		cache.Put(newDrawingID(at), make([]byte, 100))
+	}
+	cache.TrimTo(300)
+	if n := countDrawings(t, cache); n != 3 {
+		t.Errorf("a folder at its bound holds %d drawings", n)
+	}
+	cache.TrimTo(299)
+	if n := countDrawings(t, cache); n != 2 {
+		t.Errorf("a folder over its bound holds %d drawings", n)
 	}
 }

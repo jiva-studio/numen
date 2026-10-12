@@ -106,3 +106,32 @@ func TestALinkSaysWhichVaultItLandedIn(t *testing.T) {
 		t.Errorf("got %q, crossed %v", vault, crossed)
 	}
 }
+
+// Only letters, digits, `+`, `-` and `.` make a scheme; anything else in front
+// of `://` is a name that carries a colon of its own.
+func TestOnlyAWrittenSchemeIsReadAsOne(t *testing.T) {
+	for _, scheme := range []string{"a", "z", "A", "Z", "0", "9", "+", "-", ".", "az09AZ", "a+b-c.d", "x9", "9x"} {
+		got := domain.ParseAddress(scheme + "://v")
+		if got != (domain.Address{Scheme: scheme, Value: "v"}) {
+			t.Errorf("%q is not read as a scheme: %+v", scheme, got)
+		}
+	}
+	for _, scheme := range []string{
+		"`", "{", "@", "[", "/", ":", "*", ",", "_", "é", "Я",
+		"a_", "_a", "a b", "ab!", "!ab", "ab{", "a`b", "a@b", "a[b", "a/b", "a:b", "a*b", "a,b",
+	} {
+		written := scheme + "://v"
+		got := domain.ParseAddress(written)
+		if got != (domain.Address{Scheme: domain.SchemeName, Value: written}) {
+			t.Errorf("%q is read as %+v", written, got)
+		}
+	}
+}
+
+func TestANameHoldingALineBreakOrNothingIsNotReachable(t *testing.T) {
+	for _, name := range []string{"a\nb", "a\rb", "\n", "\r", ""} {
+		if domain.IsNameable(name) {
+			t.Errorf("%q is said to be reachable", name)
+		}
+	}
+}
