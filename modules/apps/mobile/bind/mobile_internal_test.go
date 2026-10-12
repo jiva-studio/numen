@@ -542,13 +542,16 @@ func TestStartAnswersTheErrorOfAVaultListThatCannotBeReadOnceTheIndexIsOpen(t *t
 	}
 }
 
-func countOpenFiles(t *testing.T) int {
-	t.Helper()
-	held, err := os.ReadDir("/dev/fd")
-	if err != nil {
-		t.Skipf("the open files cannot be counted: %v", err)
+// countOpenFiles is one past the highest file descriptor the process holds,
+// which is the least limit on descriptors that still lets it keep them all.
+func countOpenFiles() int {
+	highest := 0
+	for fd := 0; fd < 4096; fd++ {
+		if _, _, errno := syscall.Syscall(syscall.SYS_FCNTL, uintptr(fd), syscall.F_GETFD, 0); errno == 0 {
+			highest = fd + 1
+		}
 	}
-	return len(held)
+	return highest
 }
 
 func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding(t *testing.T) {
@@ -562,7 +565,7 @@ func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding
 	for extra := 0; extra < 200; extra++ {
 		dir := t.TempDir()
 		limit := before
-		limit.Cur = uint64(countOpenFiles(t) + extra)
+		limit.Cur = uint64(countOpenFiles() + extra)
 		if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &limit); err != nil {
 			t.Skipf("the open files limit cannot be lowered: %v", err)
 		}
