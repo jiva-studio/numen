@@ -107,6 +107,7 @@ func TestANameIsFoldedToLowerCase(t *testing.T) {
 		"already":  "already",
 		"İstanbul": "i̇stanbul",
 		"\x7f":     "\x7f",
+		"\x80":     "\ufffd",
 	} {
 		if got := domain.FoldName(name); got != want {
 			t.Errorf("FoldName(%q) = %q, want %q", name, got, want)
