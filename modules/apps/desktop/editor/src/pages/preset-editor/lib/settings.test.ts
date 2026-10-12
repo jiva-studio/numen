@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NO_BOUNDS, type Settings } from '../types'
 import {
-  aimGoal,
+  applyGoal,
   applyTypedSetting,
   clampShares,
   findGridIndex,
@@ -151,13 +151,13 @@ describe('where a typed value falls on the grid', () => {
 
 describe('aiming at a goal', () => {
   it('names a day a month off where a date is aimed at and the file names none', () => {
-    expect(aimGoal(settings({ byDate: '' }), 'date', today)).toStrictEqual(
+    expect(applyGoal(settings({ byDate: '' }), 'date', today)).toStrictEqual(
       settings({ goal: 'date', byDate: '2026-09-29' }),
     )
   })
 
   it('names no day for a goal that is not a date', () => {
-    expect(aimGoal(settings({ byDate: '' }), 'retention', today)).toStrictEqual(
+    expect(applyGoal(settings({ byDate: '' }), 'retention', today)).toStrictEqual(
       settings({ goal: 'retention', byDate: '' }),
     )
   })

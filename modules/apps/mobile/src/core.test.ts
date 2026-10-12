@@ -3,7 +3,7 @@
  * address each client asks it at.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { reach } from './core'
+import { startCore } from './core'
 
 const PORT = 41234
 
@@ -30,7 +30,7 @@ describe('reaching the core', () => {
       throw new Error('nothing answers')
     })
 
-    const core = await reach()
+    const core = await startCore()
     expect(core.port).toBe(PORT)
     expect(core.dir).toBe('/data/vault')
 

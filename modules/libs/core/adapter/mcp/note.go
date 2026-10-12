@@ -37,9 +37,9 @@ func noteOf(ref domain.NoteRef) Note {
 }
 
 func addNoteTools(server *sdk.Server, core Core) {
-	addNoteReadingTools(server, core)
+	addNoteReadTools(server, core)
 	addNoteResolve(server, core)
-	addNoteWritingTools(server, core)
+	addNoteWriteTools(server, core)
 }
 
 type noteResolveInput struct {

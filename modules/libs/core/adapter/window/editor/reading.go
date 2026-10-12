@@ -17,16 +17,16 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// settled is how long the vault has to have been still before the notes written
+// quietPeriod is how long the vault has to have been still before the notes written
 // into it are embedded. It is longer than the bound in the editor window's
 // note/tab.ts, which writes an unfinished edit every five seconds while a
 // person goes on typing.
-const settled = 8 * time.Second
+const quietPeriod = 8 * time.Second
 
-// nudges are the two ways work reaches the reading behind the window once the
+// indexTriggers are the two ways work reaches the reading behind the window once the
 // first pass is over: a book, which is found and cut before anything is
 // embedded, and a note, which arrives already cut and owes only its vectors.
-type nudges struct {
+type indexTriggers struct {
 	sources chan struct{}
 	notes   chan struct{}
 	// read is one source with more text than its chunks account for, which is
@@ -37,8 +37,8 @@ type nudges struct {
 	still time.Duration
 }
 
-func newNudges(still time.Duration) nudges {
-	return nudges{
+func newIndexTriggers(still time.Duration) indexTriggers {
+	return indexTriggers{
 		sources: make(chan struct{}, 1),
 		notes:   make(chan struct{}, 1),
 		read:    make(chan struct{}, 1),
@@ -46,26 +46,26 @@ func newNudges(still time.Duration) nudges {
 	}
 }
 
-// raise leaves one nudge waiting. What owes work is asked of the index, so
+// fire leaves one trigger waiting. What owes work is asked of the index, so
 // several changes at once are one pass.
-func raise(nudge chan struct{}) {
+func fire(nudge chan struct{}) {
 	select {
 	case nudge <- struct{}{}:
 	default:
 	}
 }
 
-// pending is the sources a recognition has written more of than their chunks
+// pendingSources is the sources a recognition has written more of than their chunks
 // account for.
 //
 // A source stands here once, however many batches it wrote, and several stand
 // at a time. It belongs to the vault that was being read and goes with it.
-type pending struct {
+type pendingSources struct {
 	mu    sync.Mutex
 	paths map[string]domain.Vault
 }
 
-func (p *pending) put(v domain.Vault, path string) {
+func (p *pendingSources) add(v domain.Vault, path string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.paths == nil {
@@ -74,8 +74,8 @@ func (p *pending) put(v domain.Vault, path string) {
 	p.paths[path] = v
 }
 
-// take is everything waiting, and leaves nothing behind.
-func (p *pending) take() map[string]domain.Vault {
+// drain is everything waiting, and leaves nothing behind.
+func (p *pendingSources) drain() map[string]domain.Vault {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	held := p.paths
@@ -83,7 +83,7 @@ func (p *pending) take() map[string]domain.Vault {
 	return held
 }
 
-// begin starts the watch and the first scan together, and answers with what
+// startIndexing starts the watch and the first scan together, and answers with what
 // waits for both to stop.
 //
 // The watch is acted on alongside the scan: a change reaches the window through
@@ -91,15 +91,15 @@ func (p *pending) take() map[string]domain.Vault {
 //
 // A vault that cannot be watched is still a vault: the application keeps
 // working, and says that changes will not appear by themselves.
-func begin(
+func startIndexing(
 	ctx context.Context,
 	v domain.Vault,
 	made Assembly,
 	api *API,
 	rebuild bool,
 	embedder port.Embedder,
-	wake nudges,
-	owed *pending,
+	wake indexTriggers,
+	owed *pendingSources,
 	out io.Writer,
 ) (vaults.Refresh, func()) {
 	handleError := func(err error) {
@@ -115,18 +115,18 @@ func begin(
 		api.ChangeEvents.publish(change{paths: slices.Concat(paths, assets), shouldReload: reload})
 		if reload || len(assets) > 0 {
 			// A book dropped into an open vault is read without anybody asking.
-			raise(wake.sources)
+			fire(wake.sources)
 		}
 		if len(paths) > 0 {
 			// A note written is a note cut again, and its chunks owe their
 			// vectors. Which ones is not carried: the debt is in the index.
-			raise(wake.notes)
+			fire(wake.notes)
 		}
 	}
 
 	// Said before the goroutine starts, so a window that opens on a fresh vault
 	// is shown the walk from its first moment.
-	api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
+	api.reportTask(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
 
 	var running sync.WaitGroup
 
@@ -155,7 +155,7 @@ func begin(
 		// The walk runs behind the window, which answers from what it has
 		// reached. A later one is the index being brought level with a vault
 		// that moved under it.
-		api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
+		api.reportTask(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
 		notes, err := read(ctx, nil)
 
 		switch {
@@ -211,9 +211,9 @@ func begin(
 				// A batch of pages is on disk. What has been read of the
 				// document is cut and embedded while the rest of it is still
 				// being read.
-				if held := owed.take(); len(held) > 0 {
+				if held := owed.drain(); len(held) > 0 {
 					for path, of := range held {
-						cutSource(ctx, made, api, embedder, of, path)
+						rechunkSource(ctx, made, api, embedder, of, path)
 					}
 					embedSources(ctx, made, api, v, embedder, wake.read)
 				}
@@ -249,11 +249,11 @@ func readSources(
 ) {
 	making, err := made.ReadWholeVault(ctx, embedder, v, rebuild)
 	if err != nil {
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Error: err.Error()})
+		api.reportTask(task.Task{ID: readingBooks, Doing: "Reading books", Error: err.Error()})
 		return
 	}
 	making.OnBooksProgress = func(res source.ExtractResult) {
-		api.say(task.Task{
+		api.reportTask(task.Task{
 			ID: readingBooks, Doing: "Reading books", About: res.Reading,
 			// Every book the walk found leaves this pass one of several ways, and
 			// all four count as done.
@@ -262,7 +262,7 @@ func readSources(
 		})
 	}
 
-	api.say(task.Task{ID: readingBooks, Doing: "Reading books"})
+	api.reportTask(task.Task{ID: readingBooks, Doing: "Reading books"})
 	res, read := making.ReadBooks(ctx, v)
 	switch {
 	case read == nil:
@@ -276,18 +276,18 @@ func readSources(
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it
 		// out.
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Error: read.Error()})
+		api.reportTask(task.Task{ID: readingBooks, Doing: "Reading books", Error: read.Error()})
 	}
 
 	embedSources(ctx, made, api, v, embedder, nudge)
 }
 
-// cutSource cuts one source again from whatever its text now says.
+// rechunkSource cuts one source again from whatever its text now says.
 //
 // A recognition writes a batch of pages and asks for this, so a book being read
 // answers questions about the pages that have been read. Failing is one source:
 // the next batch asks again.
-func cutSource(
+func rechunkSource(
 	ctx context.Context,
 	made Assembly,
 	api *API,
@@ -296,7 +296,7 @@ func cutSource(
 	path string,
 ) {
 	cut := func(err error) {
-		api.say(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Error: err.Error()})
+		api.reportTask(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Error: err.Error()})
 	}
 
 	making, err := made.ReadWholeVault(ctx, embedder, v, false)
@@ -362,7 +362,7 @@ func embedSources(
 		select {
 		case <-under.Done():
 		case <-nudge:
-			raise(nudge)
+			fire(nudge)
 			aside()
 		}
 	}()
@@ -381,7 +381,7 @@ func embedSources(
 	}
 
 	indexing := func(err error) {
-		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Error: err.Error()})
+		api.reportTask(task.Task{ID: makingVectors, Doing: "Indexing", Error: err.Error()})
 	}
 
 	making, err := made.ReadWholeVault(ctx, embedder, v, false)
@@ -398,7 +398,7 @@ func embedSources(
 		if res.Embedded > 0 {
 			at.Count, at.Total = int64(res.Embedded), owing
 		}
-		api.say(at)
+		api.reportTask(at)
 	}
 
 	switch _, err := making.MakeVectors(under, v); {

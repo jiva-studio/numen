@@ -13,28 +13,28 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// read turns what the agent prints into steps, and reports why it stopped when
+// readStream turns what the agent prints into steps, and reports why it stopped when
 // the stream says so.
 //
 // One JSON object arrives per line, but a line arrives in as many pieces as the
-// pipe feels like: the tail of one read is the head of the next, so lines are
+// pipe feels like: the tail of one readStream is the head of the next, so lines are
 // put together before anything is decoded. A line that will not decode is
 // passed over.
-func read(
+func readStream(
 	ctx context.Context,
 	r io.Reader,
 	steps chan<- port.Step,
-	words map[string]ToolDeclaration,
+	declarations map[string]ToolDeclaration,
 	record func(string),
-	draft Drafting,
+	preview EditPreview,
 ) string {
-	reading := parser{steps: steps, words: words, record: record, draft: draft}
+	reading := parser{steps: steps, words: declarations, record: record, draft: preview}
 	lines := bufio.NewReader(r)
 
 	for {
 		line, err := lines.ReadString('\n')
 		if trimmed := strings.TrimSpace(line); trimmed != "" {
-			reading.line(ctx, trimmed)
+			reading.parseLine(ctx, trimmed)
 		}
 		if err != nil {
 			return reading.reason
@@ -42,13 +42,13 @@ func read(
 	}
 }
 
-// writtenStep is how much more of a call has to be written before it is
+// reportChunk is how much more of a call has to be written before it is
 // reported again.
-const writtenStep = 200
+const reportChunk = 200
 
-// framePace is how often a change being written is drawn. The words arrive
+// previewInterval is how often a change being written is drawn. The words arrive
 // faster than a screen is redrawn.
-const framePace = 50 * time.Millisecond
+const previewInterval = 50 * time.Millisecond
 
 // parser is what has been made of the stream so far.
 type parser struct {
@@ -73,12 +73,12 @@ type parser struct {
 	// offset is how much of the call had been reported the last time it was.
 	offset int
 	// draft is how a change being written is drawn before it lands.
-	draft Drafting
+	draft EditPreview
 	// path is the note the change being written goes into, and from and to are
 	// the stretch it replaces. Set once that stretch has been found.
-	path     string
-	from, to int
-	isDrawn  bool
+	path      string
+	from, to  int
+	isLocated bool
 	// last is when a frame was last sent. A long call is drawn at a pace a
 	// screen can keep.
 	last time.Time
@@ -86,7 +86,7 @@ type parser struct {
 	reason string
 }
 
-func (rd *parser) line(ctx context.Context, line string) {
+func (rd *parser) parseLine(ctx context.Context, line string) {
 	var said event
 	if err := json.Unmarshal([]byte(line), &said); err != nil {
 		return
@@ -94,14 +94,14 @@ func (rd *parser) line(ctx context.Context, line string) {
 
 	switch said.Type {
 	case "stream_event":
-		rd.piece(ctx, said.Event)
+		rd.parseStreamEvent(ctx, said.Event)
 	case "assistant":
-		rd.whole(ctx, said)
+		rd.parseMessage(ctx, said)
 	case "user":
 		// The tool answered. Everything from here until the next block arrives
 		// is the model's, and the step says so.
 		if said.hasToolAnswer() {
-			rd.tell(ctx, port.Step{Kind: port.StepAnswered})
+			rd.send(ctx, port.Step{Kind: port.StepAnswered})
 		}
 	case "system":
 		switch said.Subtype {
@@ -109,25 +109,25 @@ func (rd *parser) line(ctx context.Context, line string) {
 			if said.Session != "" && rd.record != nil {
 				rd.record(said.Session)
 			}
-			rd.stop(getUnreachableReason(said))
+			rd.setReason(getUnreachableReason(said))
 		case "status":
 			// `requesting` is written when a request to the model begins. It is
 			// the start of the wait, reported by the agent itself.
 			if said.Status == "requesting" {
-				rd.tell(ctx, port.Step{Kind: port.StepThinking})
+				rd.send(ctx, port.Step{Kind: port.StepThinking})
 			}
 		}
 	case "result":
 		if said.IsError {
-			rd.stop(result(said))
+			rd.setReason(getResultError(said))
 			return
 		}
-		rd.stop("")
+		rd.setReason("")
 	}
 }
 
-// piece reports a word as it is written, and a call once it is whole.
-func (rd *parser) piece(ctx context.Context, event streamEvent) {
+// parseStreamEvent reports a word as it is written, and a call once it is whole.
+func (rd *parser) parseStreamEvent(ctx context.Context, event streamEvent) {
 	switch event.Type {
 	case "content_block_start":
 		if event.Block.Type == "tool_use" {
@@ -136,9 +136,9 @@ func (rd *parser) piece(ctx context.Context, event streamEvent) {
 			rd.tool = event.Block.Name
 			rd.arguments.Reset()
 			rd.offset = 0
-			rd.path, rd.from, rd.to, rd.isDrawn = "", 0, 0, false
+			rd.path, rd.from, rd.to, rd.isLocated = "", 0, 0, false
 			rd.last = time.Time{}
-			rd.tell(ctx, rd.calls(rd.callID, rd.tool, ""))
+			rd.send(ctx, rd.buildCallStep(rd.callID, rd.tool, ""))
 		}
 	case "content_block_delta":
 		switch event.Delta.Type {
@@ -147,32 +147,32 @@ func (rd *parser) piece(ctx context.Context, event streamEvent) {
 				return
 			}
 			rd.isStreaming = true
-			rd.tell(ctx, port.Step{Kind: port.StepSaying, Text: event.Delta.Text})
+			rd.send(ctx, port.Step{Kind: port.StepSaying, Text: event.Delta.Text})
 		case "input_json_delta":
 			rd.arguments.WriteString(event.Delta.Partial)
 			// Reported as it is written, one writtenStep of characters at a
 			// time. A call carrying the body of a note is written for minutes.
-			if rd.arguments.Len()-rd.offset >= writtenStep {
+			if rd.arguments.Len()-rd.offset >= reportChunk {
 				rd.offset = rd.arguments.Len()
-				rd.tell(ctx, rd.calls(rd.callID, rd.tool, rd.arguments.String()))
+				rd.send(ctx, rd.buildCallStep(rd.callID, rd.tool, rd.arguments.String()))
 			}
-			rd.draw(ctx)
+			rd.reportEdit(ctx)
 		}
 	case "content_block_stop":
 		if rd.tool == "" {
 			return
 		}
-		rd.tell(ctx, rd.calls(rd.callID, rd.tool, rd.arguments.String()))
+		rd.send(ctx, rd.buildCallStep(rd.callID, rd.tool, rd.arguments.String()))
 		rd.callID = ""
 		rd.tool = ""
 		rd.arguments.Reset()
-		rd.isDrawn = false
+		rd.isLocated = false
 	}
 }
 
-// whole reports a message that arrived in one piece, for a version that does
+// parseMessage reports a message that arrived in one piece, for a version that does
 // not write them as they are made.
-func (rd *parser) whole(ctx context.Context, said event) {
+func (rd *parser) parseMessage(ctx context.Context, said event) {
 	if rd.isStreaming {
 		return
 	}
@@ -180,23 +180,23 @@ func (rd *parser) whole(ctx context.Context, said event) {
 		switch block.Type {
 		case "text":
 			if block.Text != "" {
-				rd.tell(ctx, port.Step{Kind: port.StepSaying, Text: block.Text})
+				rd.send(ctx, port.Step{Kind: port.StepSaying, Text: block.Text})
 			}
 		case "tool_use":
-			rd.tell(ctx, rd.calls(block.ID, block.Name, string(block.Input)))
+			rd.send(ctx, rd.buildCallStep(block.ID, block.Name, string(block.Input)))
 		}
 	}
 }
 
-// stop keeps the first reason the work ended.
-func (rd *parser) stop(why string) {
+// setReason keeps the first reason the work ended.
+func (rd *parser) setReason(why string) {
 	if rd.reason == "" {
 		rd.reason = why
 	}
 }
 
-// tell hands a step over, or gives up when nobody is listening any more.
-func (rd *parser) tell(ctx context.Context, s port.Step) {
+// send hands a step over, or gives up when nobody is listening any more.
+func (rd *parser) send(ctx context.Context, s port.Step) {
 	select {
 	case rd.steps <- s:
 	case <-ctx.Done():
@@ -249,8 +249,8 @@ func formatSubtype(subtype string) string {
 	}
 }
 
-// result is what the last line says went wrong.
-func result(said event) string {
+// getResultError is what the last line says went wrong.
+func getResultError(said event) string {
 	if text := strings.TrimSpace(said.Result); text != "" && text != said.Subtype {
 		return text
 	}
@@ -309,7 +309,7 @@ type block struct {
 	Input json.RawMessage `json:"input"`
 }
 
-// calls is a tool as the person is told about it: what the tool calls itself,
+// buildCallStep is a tool as the person is told about it: what the tool buildCallStep itself,
 // what this call was about, what it does to the vault, and what the agent named
 // the call.
 //
@@ -317,7 +317,7 @@ type block struct {
 // its title, and what the call is about is the argument it declared it cannot be
 // called without. A tool this vault does not serve is named as it named itself
 // and is about nothing: nothing was declared here to read it by.
-func (rd *parser) calls(callID, tool, arguments string) port.Step {
+func (rd *parser) buildCallStep(callID, tool, arguments string) port.Step {
 	words, served := rd.words[tool]
 	if !served {
 		return port.Step{Kind: port.StepToolCall, Call: callID, Tool: tool}
@@ -364,10 +364,10 @@ func getPlace(path, arguments string) domain.Place {
 func getAbout(names Arguments, arguments string) string {
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
-		if seen := getGlimpse(arguments, names.Element); seen != "" {
+		if seen := getPartialJSONField(arguments, names.Element); seen != "" {
 			return seen
 		}
-		return getGlimpse(arguments, names.About)
+		return getPartialJSONField(arguments, names.About)
 	}
 	switch value := made[names.About].(type) {
 	case string:
@@ -423,17 +423,17 @@ func (e event) blocks() []block {
 	return message.Content
 }
 
-// draw reports what a change is doing while the call making it is still being
+// reportEdit reports what a change is doing while the call making it is still being
 // written.
 //
 // The text going in arrives after the text it replaces, so nothing is drawn
 // until the replacement has begun: a stretch shown with nothing in its place
 // reads as having been deleted. Once the replacement has begun the stretch it
 // replaces is whole, and where it stands can be found.
-func (rd *parser) draw(ctx context.Context) {
+func (rd *parser) reportEdit(ctx context.Context) {
 	words, served := rd.words[rd.tool]
 	names := words.Arguments
-	if !served || names.Text == "" || !rd.draft.drawing() {
+	if !served || names.Text == "" || !rd.draft.isEnabled() {
 		return
 	}
 
@@ -441,28 +441,28 @@ func (rd *parser) draw(ctx context.Context) {
 	if !strings.Contains(arguments, `"`+names.Text+`"`) {
 		return
 	}
-	if !rd.isDrawn {
-		path, stood := getGlimpse(arguments, names.About), getGlimpse(arguments, names.Match)
+	if !rd.isLocated {
+		path, stood := getPartialJSONField(arguments, names.About), getPartialJSONField(arguments, names.Match)
 		if path == "" || stood == "" {
 			return
 		}
-		from, to, one := rd.draft.Location(ctx, path, stood)
+		from, to, one := rd.draft.Locate(ctx, path, stood)
 		if !one {
 			return
 		}
-		rd.path, rd.from, rd.to, rd.isDrawn = path, from, to, true
+		rd.path, rd.from, rd.to, rd.isLocated = path, from, to, true
 	}
 
-	now := rd.draft.now()
-	if now.Sub(rd.last) < framePace {
+	now := rd.draft.getNow()
+	if now.Sub(rd.last) < previewInterval {
 		return
 	}
 	rd.last = now
-	rd.draft.Report(ctx, domain.Edit{
+	rd.draft.Emit(ctx, domain.Edit{
 		Change: rd.callID,
 		Path:   rd.path,
 		From:   rd.from,
 		To:     rd.to,
-		Text:   getGlimpse(arguments, names.Text),
+		Text:   getPartialJSONField(arguments, names.Text),
 	})
 }

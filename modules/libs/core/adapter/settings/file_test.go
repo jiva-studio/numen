@@ -166,8 +166,8 @@ func TestWriteMakesTheFileWhereThereIsNone(t *testing.T) {
 	}
 }
 
-// newLastRead is the file a caller presents as the one it last read.
-func newLastRead(written string) *string { return &written }
+// newString is the file a caller presents as the one it last read.
+func newString(written string) *string { return &written }
 
 func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 	read := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
@@ -175,7 +175,7 @@ func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 	path := writeSettingsFile(t, held)
 
 	err := settings.Write(
-		path, []byte(`{"agent": {"use": "gemini"}}`), newLastRead(read), newDocument())
+		path, []byte(`{"agent": {"use": "gemini"}}`), newString(read), newDocument())
 	if !errors.Is(err, port.ErrStale) {
 		t.Fatalf("refused with %v, wanted the file to have moved past what was read", err)
 	}
@@ -191,7 +191,7 @@ func TestWriteOverTheFileThatWasReadLands(t *testing.T) {
 	path := writeSettingsFile(t, held)
 	written := "{\n  \"agent\": { \"use\": \"gemini\" }\n}\n"
 
-	if err := settings.Write(path, []byte(written), newLastRead(held), newDocument()); err != nil {
+	if err := settings.Write(path, []byte(written), newString(held), newDocument()); err != nil {
 		t.Fatalf("writing: %v", err)
 	}
 
@@ -208,7 +208,7 @@ func TestWriteOverAFileThatIsNotThereLands(t *testing.T) {
 	written := "{\n  \"agent\": { \"use\": \"gemini\" }\n}\n"
 
 	if err := settings.Write(
-		path, []byte(written), newLastRead("{}\n"), newDocument()); err != nil {
+		path, []byte(written), newString("{}\n"), newDocument()); err != nil {
 		t.Fatalf("writing: %v", err)
 	}
 

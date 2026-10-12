@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { Role, Seat } from '@numen/protocol'
 import type { PlexRelatedSeat } from '@numen/ui'
-import { CREATABLE, isCreatable, ROLES } from './seats'
+import { CREATABLE_SEATS, isCreatable, ROLE_BY_SEAT } from './seats'
 
 /** Every seat the schema names, in the words the picture uses for them. */
 const SEATS = Object.keys(Seat)
@@ -20,17 +20,17 @@ describe('a seat of the picture', () => {
     for (const seat of SEATS) {
       const named = Role[seat.toUpperCase() as keyof typeof Role]
       expect(isCreatable(seat)).toBe(named !== undefined)
-      if (isCreatable(seat)) expect(ROLES[seat]).toBe(named)
+      if (isCreatable(seat)) expect(ROLE_BY_SEAT[seat]).toBe(named)
     }
   })
 
   it('cannot be a sibling where a gesture asked for it', () => {
-    expect(CREATABLE).not.toContain('sibling')
+    expect(CREATABLE_SEATS).not.toContain('sibling')
   })
 
   it('is one the vault can be told about wherever a gesture may produce it', () => {
-    for (const seat of CREATABLE) {
-      expect(ROLES[seat]).not.toBe(Role.UNSPECIFIED)
+    for (const seat of CREATABLE_SEATS) {
+      expect(ROLE_BY_SEAT[seat]).not.toBe(Role.UNSPECIFIED)
     }
   })
 })

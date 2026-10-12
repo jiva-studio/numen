@@ -77,7 +77,7 @@ func FuzzInside(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, path string) {
 		asVault, vaultReal, vaultErr := resolveVaultPath(root, path, DefaultServiceDir)
-		asOurs, oursReal, oursErr := service(root, path, DefaultServiceDir)
+		asOurs, oursReal, oursErr := resolveServicePath(root, path, DefaultServiceDir)
 
 		if vaultErr == nil && oursErr == nil {
 			t.Fatalf("%q is both the vault's (%s) and the application's (%s)",
@@ -129,7 +129,7 @@ func checkRule(t *testing.T, root, path, rule string, application bool, target, 
 			t.Fatalf("%s took %q, which %s %q, outside %q", rule, path, what, got, root)
 		}
 	}
-	if got := isOurs(landing(resolved, root), DefaultServiceDir); got != application {
+	if got := isOurs(getRootRelativeName(resolved, root), DefaultServiceDir); got != application {
 		where := "outside the application's folder"
 		if got {
 			where = "into the application's folder"

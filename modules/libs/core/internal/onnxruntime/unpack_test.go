@@ -65,11 +65,11 @@ func createArchive(t *testing.T, dir string) release {
 	if err := file.Sync(); err != nil {
 		t.Fatal(err)
 	}
-	return release{archive: at, sum: sum(t, at), library: computeSum(body)}
+	return release{archive: at, sum: hashFile(t, at), library: computeSum(body)}
 }
 
-// sum is what one file on this machine carries.
-func sum(t *testing.T, at string) string {
+// hashFile is what one file on this machine carries.
+func hashFile(t *testing.T, at string) string {
 	t.Helper()
 	held, err := os.ReadFile(at)
 	if err != nil {
@@ -368,7 +368,7 @@ func TestALibraryIsTakenOutOfAZip(t *testing.T) {
 		"onnxruntime-win-x64-1.23.0/lib/onnxruntime_providers_shared.dll": "another library",
 		"onnxruntime-win-x64-1.23.0/lib/onnxruntime.dll":                  "the library",
 	})
-	found := release{archive: archive, sum: sum(t, archive), library: computeSum("the library")}
+	found := release{archive: archive, sum: hashFile(t, archive), library: computeSum("the library")}
 
 	at, err := unpack(archive, "onnxruntime.dll", found)
 	if err != nil {

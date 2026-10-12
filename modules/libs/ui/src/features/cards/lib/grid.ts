@@ -62,11 +62,11 @@ export interface Run {
   readonly section: PlacedSection | null
   readonly tiles: readonly Tile[]
   /**
-   * It draws a landing of its own. A run under a section is landed on by that
+   * It draws a drop target of its own. A run under a section is landed on by that
    * section's heading and a run holding cards by the first of them; the cards
    * before the first section have neither where none of them stands.
    */
-  readonly isLanding: boolean
+  readonly isDropTarget: boolean
   /**
    * Where this run's plus stands in the grid, counting from one, and nothing
    * where the run draws none. A card is made at the end of a run, so a run
@@ -143,12 +143,17 @@ export function getGrid(
 
   const head = tilesUnder(null)
   const drawn = [
-    { id: HEAD, section: null, tiles: head, isLanding: head.length === 0 && sections.length > 0 },
+    {
+      id: HEAD,
+      section: null,
+      tiles: head,
+      isDropTarget: head.length === 0 && sections.length > 0,
+    },
     ...sections.map((section, index) => ({
       id: section.id,
       section: { id: section.id, name: section.name, at: index + 1 },
       tiles: tilesUnder(section.id),
-      isLanding: false,
+      isDropTarget: false,
     })),
   ]
 

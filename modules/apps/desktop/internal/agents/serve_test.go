@@ -129,10 +129,10 @@ func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 	}
 }
 
-// TestAWindowThatDoesNotAnnounceWritesNothing. The announcement names one
+// TestWindowWithoutDiscoveryWritesNoFile. The announcement names one
 // window's vault, and a second window rewriting it points a person's own agent
 // at whichever started last.
-func TestAWindowThatDoesNotAnnounceWritesNothing(t *testing.T) {
+func TestWindowWithoutDiscoveryWritesNoFile(t *testing.T) {
 	cfg := makeInstallation(t)
 	cfg.Agent = agent.Config{ShouldServeTools: true}
 	state := filepath.Dir(cfg.RegistryPath)
@@ -246,7 +246,7 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	argv := strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
 
 	allowed := strings.Split(getFlagValue(t, argv, "--allowedTools"), ",")
-	if slices.Contains(allowed, claudecode.Tool("*")) {
+	if slices.Contains(allowed, claudecode.ToolName("*")) {
 		t.Fatalf("the allowance is %q", allowed)
 	}
 	words, err := mcp.Vocabulary(t.Context(), core)
@@ -257,7 +257,7 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 		t.Fatal("the surface serves no tool, and an allowance naming none would pass")
 	}
 	for name := range words {
-		if !slices.Contains(allowed, claudecode.Tool(name)) {
+		if !slices.Contains(allowed, claudecode.ToolName(name)) {
 			t.Errorf("%s is served and is not in the allowance %q", name, allowed)
 		}
 	}

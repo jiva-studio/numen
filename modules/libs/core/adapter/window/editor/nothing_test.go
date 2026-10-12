@@ -57,7 +57,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 	t.Cleanup(func() { installation.Close() })
 
 	// The welcome screen's way into a vault: the list opens one in this window.
-	installation.API.Opens = installation.Show
+	installation.API.OpenVault = installation.Show
 
 	server := httptest.NewUnstartedServer(installation.API.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true

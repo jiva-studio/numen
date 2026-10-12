@@ -25,7 +25,7 @@ func openBreakingDB(t *testing.T) *DB {
 // having filled it.
 func readWidth(t *testing.T, db *DB) (int, string) {
 	t.Helper()
-	width, err := vectorWidth(t.Context(), db.write)
+	width, err := getVectorWidth(t.Context(), db.write)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,14 +58,14 @@ func TestAFitThatFailsLeavesTheVectorIndexAsItWas(t *testing.T) {
 			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}
-			narrow(t, db, first, 384)
+			embedAtWidth(t, db, first, 384)
 			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 				t.Fatal(err)
 			}
 			breakWhere(t, step.breaks)
 
 			err := db.FitVectors(ctx, 384, narrowRecipe(384))
-			mend()
+			stopBreaking()
 			if !errors.Is(err, errBroken) {
 				t.Fatalf("fitting answered %v", err)
 			}
@@ -152,7 +152,7 @@ func TestAnIndexWithoutAVectorIndexHoldsNoWidth(t *testing.T) {
 	if _, err := db.write.ExecContext(t.Context(), `DROP TABLE chunks_vec`); err != nil {
 		t.Fatal(err)
 	}
-	width, err := vectorWidth(t.Context(), db.write)
+	width, err := getVectorWidth(t.Context(), db.write)
 	if width != 0 || err != nil {
 		t.Errorf("got %d, %v", width, err)
 	}
@@ -163,8 +163,8 @@ func TestAWidthThatCannotBeReadIsNothing(t *testing.T) {
 	t.Run("the catalogue cannot be read", func(t *testing.T) {
 		db := openBreakingDB(t)
 		breakOn(t, "name = 'chunks_vec'")
-		width, err := vectorWidth(t.Context(), db.write)
-		mend()
+		width, err := getVectorWidth(t.Context(), db.write)
+		stopBreaking()
 		if width != 0 || !errors.Is(err, errBroken) {
 			t.Errorf("got %d, %v", width, err)
 		}
@@ -179,7 +179,7 @@ func TestAWidthThatCannotBeReadIsNothing(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		width, err := vectorWidth(t.Context(), db.write)
+		width, err := getVectorWidth(t.Context(), db.write)
 		if width != 0 || err == nil {
 			t.Errorf("got %d, %v", width, err)
 		}
@@ -192,7 +192,7 @@ func TestARecipeThatCannotBeReadIsReported(t *testing.T) {
 	db := openBreakingDB(t)
 	breakOn(t, "SELECT recipe FROM coarse_recipe")
 	recipe, recorded, err := coarseRecipe(t.Context(), db.write)
-	mend()
+	stopBreaking()
 	if !errors.Is(err, errBroken) || recipe != "" || recorded {
 		t.Errorf("got %q, %v, %v", recipe, recorded, err)
 	}
@@ -213,7 +213,7 @@ func TestAFitThatCannotReadTheVectorsLeavesTheVectorIndexAsItWas(t *testing.T) {
 			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}
-			narrow(t, db, first, 384)
+			embedAtWidth(t, db, first, 384)
 			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 				t.Fatal(err)
 			}

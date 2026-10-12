@@ -30,14 +30,14 @@ import (
 
 func main() {
 	cfg := makeConfig(os.Stderr)
-	var telling, noAgent bool
+	var showVersion, noAgent bool
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	flag.BoolVar(&noAgent, "no-agent", false, "do not let a card be asked about")
-	flag.BoolVar(&telling, "version", false, "say what this build is and stop")
+	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
 	flag.Parse()
 
-	if telling {
+	if showVersion {
 		fmt.Println(version.GetVersionLine("numen-flashcards"))
 		return
 	}
@@ -67,8 +67,8 @@ func makeConfig(out io.Writer) container.Config {
 func makeNotesAndCards(
 	cfg container.Config, db *container.Index, vaults *openVaults,
 ) (container.Notes, container.Cards) {
-	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.level),
-		cfg.Cards(db.Queries(), db.Links(), vaults.level)
+	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.updateIndex),
+		cfg.Cards(db.Queries(), db.Links(), vaults.updateIndex)
 }
 
 func run(cfg container.Config, noAgent bool) error {
@@ -97,11 +97,11 @@ func run(cfg container.Config, noAgent bool) error {
 	// Every vault this window shows is opened the way the editor opens the one
 	// it shows: watched from the moment it is opened, walked into the index, and
 	// levelled by the paths a write touches.
-	vaults := &openVaults{cfg: cfg, db: db, under: ctx, out: os.Stderr}
+	vaults := &openVaults{cfg: cfg, db: db, lifetime: ctx, out: os.Stderr}
 
 	notes, cutting := makeNotesAndCards(cfg, db, vaults)
 
-	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.level)
+	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.updateIndex)
 	api := &window.API{
 		Registry:      registry,
 		CardsDue:      running.CardsDue,
@@ -123,7 +123,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// A vault that moved is counted again, and is one whose walk is worth trying
 	// again where the last one failed.
 	vaults.recordVault = func(v domain.Vault) {
-		api.Forget(v.ID)
+		api.ClearIndexFailure(v.ID)
 		api.ReportChange()
 	}
 	api.Reading(ctx, vaults.readVault)
@@ -136,21 +136,21 @@ func run(cfg container.Config, noAgent bool) error {
 	// What the window holds, in the order each part needs the next: the agents
 	// are let go of, then the walk and the watch, which write to the index, and
 	// then the index itself.
-	held := shutdown.InOrder(
+	held := shutdown.NewSequence(
 		func() {
 			if err := away(); err != nil {
 				fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
 			}
 		},
 		stop,
-		vaults.wait,
+		vaults.closeAndWait,
 		func() {
 			if err := db.Close(); err != nil {
 				fmt.Fprintln(os.Stderr, "numen-flashcards:", err)
 			}
 		},
 	)
-	defer held.Go()
+	defer held.Run()
 
 	// What the window draws from is followed while it is open, so a card changed
 	// or a deck written is counted again without a person asking. The vaults are
@@ -162,7 +162,7 @@ func run(cfg container.Config, noAgent bool) error {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards: the index is not being followed:", err)
 	} else {
-		api.Follow(ctx, moves)
+		api.ReportChangesFrom(ctx, moves)
 	}
 
 	// The themes are the installation's, and a folder that could not be made
@@ -190,7 +190,7 @@ func run(cfg container.Config, noAgent bool) error {
 		// Run on the thread the window is drawn on, once the application has
 		// stopped dispatching. The walk and the watch are waited for with no
 		// bound, and a window not yet destroyed holds until they are done.
-		PostShutdown: held.Go,
+		PostShutdown: held.Run,
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen — flashcards",

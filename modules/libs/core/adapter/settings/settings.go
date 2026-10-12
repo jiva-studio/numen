@@ -58,8 +58,8 @@ func (n Titles) Sync() bool {
 	return n.SyncTitleAndFilename == nil || *n.SyncTitleAndFilename
 }
 
-// turnOn is a setting turned on.
-func turnOn() *bool {
+// newTrue is a setting turned on.
+func newTrue() *bool {
 	set := true
 	return &set
 }
@@ -75,12 +75,12 @@ func DefaultAppearance() Appearance {
 		TextScale:           AsDesigned,
 		Mode:                ModeSystem,
 		Theme:               DefaultTheme,
-		HangPartsUnderANode: turnOn(),
+		HangPartsUnderANode: newTrue(),
 		PartsUnderANode:     DefaultParts,
 	}
 }
 
-func DefaultTitles() Titles { return Titles{SyncTitleAndFilename: turnOn()} }
+func DefaultTitles() Titles { return Titles{SyncTitleAndFilename: newTrue()} }
 
 func DefaultReview() Review { return Review{DayStarts: review.Clock(DefaultDayStart())} }
 
@@ -101,7 +101,7 @@ func OpenAt(path string, into Document) error {
 		// An installation nobody has configured is written down as what it is
 		// doing, the size the desktop asks for included. A machine that will
 		// not take the file runs on the same settings.
-		into.GetAppearance().InterfaceScale = fromDesktop()
+		into.GetAppearance().InterfaceScale = getDesktopScale()
 		_ = write(path, into)
 		return nil
 	}
@@ -113,7 +113,7 @@ func OpenAt(path string, into Document) error {
 	}
 	// The reading above takes a bare null and leaves the defaults standing, so
 	// the bytes are asked again whether they are one object.
-	if err := object(raw); err != nil {
+	if err := checkObject(raw); err != nil {
 		return err
 	}
 	// A file naming no version, and one naming a number that is no version at
@@ -127,7 +127,7 @@ func OpenAt(path string, into Document) error {
 	}
 	checkMode(into)
 	if _, hour := into.GetReview().DayStart(); !hour {
-		say(into, "review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
+		warn(into, "review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
 			review.Clock(LatestDayStarts), review.Clock(DefaultDayStart()))
 	}
 	return nil
@@ -142,7 +142,7 @@ func checkMode(into Document) {
 	case ModeSystem, ModeLight, ModeDark:
 		return
 	}
-	say(into, "appearance.mode is %s, %s or %s, and %s stands",
+	warn(into, "appearance.mode is %s, %s or %s, and %s stands",
 		ModeSystem, ModeLight, ModeDark, ModeSystem)
 	drawn.Mode = ModeSystem
 }
@@ -176,20 +176,20 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 	}
 	switch {
 	case zoom <= 0:
-		into.GetAppearance().InterfaceScale = fromDesktop()
+		into.GetAppearance().InterfaceScale = getDesktopScale()
 	case InterfaceScaleBounds.Contains(zoom):
 		into.GetAppearance().InterfaceScale = zoom
-		_ = rename(path, []string{"appearance", "zoom"}, "interface_scale")
+		_ = renameField(path, []string{"appearance", "zoom"}, "interface_scale")
 	default:
 		// One line of a band: the setting the number would be read as, and how
 		// far that goes. The number itself stays in the file, where a person
 		// wrote it and where they will read it again.
-		say(into, "appearance.zoom is outside interface_scale, %v to %v",
+		warn(into, "appearance.zoom is outside interface_scale, %v to %v",
 			InterfaceScaleBounds.Least, InterfaceScaleBounds.Most)
 	}
 }
 
-func say(into Document, said string, about ...any) {
+func warn(into Document, said string, about ...any) {
 	into.Say(fmt.Sprintf(said, about...))
 }
 
@@ -202,6 +202,6 @@ func write(path string, held Document) error {
 		return err
 	}
 	return runOnFile(path, func(path string) error {
-		return replace(path, append(raw, '\n'))
+		return writeFileAtomically(path, append(raw, '\n'))
 	})
 }

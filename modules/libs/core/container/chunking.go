@@ -34,7 +34,7 @@ func (c Config) Legibility() chunking.Legibility {
 // makes one legible. A note is cut in the adapter that stores it, and both
 // reach that adapter from here.
 func (i *Index) NotesCutAt(sizes chunking.Sizes, reads chunking.Legibility) port.NoteRepository {
-	return i.db.Notes().Cut(sizes, reads)
+	return i.db.Notes().WithChunkSizes(sizes, reads)
 }
 
 // Scan is the walk that reads a vault's notes into the index, cut at this

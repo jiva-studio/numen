@@ -51,7 +51,7 @@ export interface PaletteGroup {
  * The item the keyboard is standing on, by the identity it was given, and the
  * empty string where it stands on none.
  */
-export type PaletteLit = string
+export type PaletteItemId = string
 
 /** One item, and the group it was drawn in. */
 export interface PalettePlace {

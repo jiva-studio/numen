@@ -78,7 +78,7 @@ const createNodeId = createNodeIdFactory()
 
 const frame = useTemplateRef<HTMLElement>('frame')
 
-const { hasMoved, overlay, label, position, landing, press } = useTabDrag({
+const { hasMoved, overlay, label, position, dropTarget, press } = useTabDrag({
   workspace,
   frame,
   getTab: tabOf,
@@ -157,7 +157,7 @@ provide(
       </template>
     </WorkspacePane>
 
-    <WorkspaceOverlay v-if="overlay" :box="overlay" :has-caret="landing?.kind === 'strip'" />
+    <WorkspaceOverlay v-if="overlay" :box="overlay" :has-caret="dropTarget?.kind === 'strip'" />
 
     <DragPreview
       v-if="label && position"

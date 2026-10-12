@@ -48,7 +48,7 @@ func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 	for _, path := range paths {
 		t.Run(path, func(t *testing.T) {
 			isVault, _, vaultErr := resolveVaultPath(resolved, path, DefaultServiceDir)
-			isOurs, _, oursErr := service(resolved, path, DefaultServiceDir)
+			isOurs, _, oursErr := resolveServicePath(resolved, path, DefaultServiceDir)
 
 			switch {
 			case vaultErr == nil && oursErr == nil:
@@ -85,7 +85,7 @@ func TestALinkIsJudgedByWhereItLeads(t *testing.T) {
 			if _, _, err := resolveVaultPath(root, c.path, DefaultServiceDir); (err == nil) != c.isVault {
 				t.Errorf("resolveVaultPath(%q) gave %v, want accepted=%v", c.path, err, c.isVault)
 			}
-			if _, _, err := service(root, c.path, DefaultServiceDir); (err == nil) != c.isOurs {
+			if _, _, err := resolveServicePath(root, c.path, DefaultServiceDir); (err == nil) != c.isOurs {
 				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.isOurs)
 			}
 		})
@@ -141,7 +141,7 @@ func TestWhatEachRuleAnswersFor(t *testing.T) {
 			if _, _, err := resolveVaultPath(resolved, c.path, DefaultServiceDir); (err == nil) != c.isVault {
 				t.Errorf("resolveVaultPath(%q) gave %v, want accepted=%v", c.path, err, c.isVault)
 			}
-			if _, _, err := service(resolved, c.path, DefaultServiceDir); (err == nil) != c.isOurs {
+			if _, _, err := resolveServicePath(resolved, c.path, DefaultServiceDir); (err == nil) != c.isOurs {
 				t.Errorf("service(%q) gave %v, want accepted=%v", c.path, err, c.isOurs)
 			}
 		})

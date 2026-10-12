@@ -17,7 +17,12 @@ import {
   type SearchRow,
 } from './lookup'
 import type { Span } from '@/shared/span'
-import { evaluateSilence, EACH, HOLD, type SearchGroup } from './score'
+import {
+  getEmptyGroupReason,
+  GROUP_RESULT_LIMIT,
+  SEARCH_DEBOUNCE_MS,
+  type SearchGroup,
+} from './score'
 
 export type { Span, NameMatch, Passage, SearchDestination, SearchHit, SearchRow, SearchGroup }
 
@@ -110,19 +115,19 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       fill(
         mine,
         'names',
-        () => core.names(query, EACH),
+        () => core.names(query, GROUP_RESULT_LIMIT),
         (found) => (names.value = found),
       ),
       fill(
         mine,
         'text',
-        () => core.search(query, 'words', EACH),
+        () => core.search(query, 'words', GROUP_RESULT_LIMIT),
         (found) => (texts.value = found),
       ),
       fill(
         mine,
         'meaning',
-        () => core.search(query, 'meaning', EACH),
+        () => core.search(query, 'meaning', GROUP_RESULT_LIMIT),
         (found) => (meanings.value = found),
       ),
     ])
@@ -136,7 +141,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       drop()
       return
     }
-    await wait(HOLD)
+    await wait(SEARCH_DEBOUNCE_MS)
     if (!mine.isCurrent) return
     await ask(mine, query)
   }
@@ -154,7 +159,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     createPassageItem(group, one, words)
 
   const silenceOf = (id: SearchGroup): string =>
-    evaluateSilence(id, failureMessages.value[id], words, coverage)
+    getEmptyGroupReason(id, failureMessages.value[id], words, coverage)
 
   const built = computed(() => {
     const hitsById = new Map<string, SearchHit>()

@@ -33,8 +33,8 @@ type shFileOpStruct struct {
 
 var shFileOperationW = windows.NewLazySystemDLL("shell32.dll").NewProc("SHFileOperationW")
 
-// send puts the folder in the recycle bin.
-func send(path string) error {
+// moveToTrash puts the folder in the recycle bin.
+func moveToTrash(path string) error {
 	// The shell reads a list of paths, and the list ends with a NUL of its own
 	// after the one that ends the last path in it.
 	from, err := windows.UTF16FromString(path)

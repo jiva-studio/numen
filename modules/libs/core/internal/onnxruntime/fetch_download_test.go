@@ -20,9 +20,9 @@ import (
 // trustServer lets the download client talk to a test server's certificate.
 func trustServer(t *testing.T, server *httptest.Server) {
 	t.Helper()
-	previous := fetching.Transport
-	fetching.Transport = server.Client().Transport
-	t.Cleanup(func() { fetching.Transport = previous })
+	previous := httpsClient.Transport
+	httpsClient.Transport = server.Client().Transport
+	t.Cleanup(func() { httpsClient.Transport = previous })
 }
 
 func newTLSServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
@@ -316,13 +316,13 @@ func (w failingWriter) Write(_ []byte) (int, error) { return 2, w.err }
 // returned.
 func TestCountingPassesWritesOn(t *testing.T) {
 	var out bytes.Buffer
-	c := &counting{to: &out, total: 9, say: func(int64, int64) {}}
+	c := &progressWriter{to: &out, total: 9, onProgress: func(int64, int64) {}}
 	n, err := c.Write([]byte("abcd"))
 	if n != 4 || err != nil || out.String() != "abcd" {
 		t.Fatalf("Write = %d, %v, %q", n, err, out.String())
 	}
 	broken := errors.New("disk full")
-	c = &counting{to: failingWriter{broken}, say: func(int64, int64) {}}
+	c = &progressWriter{to: failingWriter{broken}, onProgress: func(int64, int64) {}}
 	if n, err := c.Write([]byte("abcd")); n != 2 || err != broken {
 		t.Fatalf("Write = %d, %v", n, err)
 	}
@@ -332,7 +332,7 @@ func TestCountingPassesWritesOn(t *testing.T) {
 func TestCountingReportsOnceASecond(t *testing.T) {
 	type report struct{ done, total int64 }
 	var reports []report
-	c := &counting{to: io.Discard, total: 9, say: func(done, total int64) { reports = append(reports, report{done, total}) }}
+	c := &progressWriter{to: io.Discard, total: 9, onProgress: func(done, total int64) { reports = append(reports, report{done, total}) }}
 
 	c.Write([]byte("abc"))
 	c.Write([]byte("d"))

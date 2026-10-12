@@ -21,26 +21,26 @@ import (
 // costs a download and no knowledge.
 const cacheDir = "numen/models"
 
-// opening is how long a host has to answer at all, and slowest is the rate a
-// download has to keep up once it is answering. Together they are how long one
-// file has.
+// headerTimeout is how long a host has to answer at all, and minBytesPerSecond
+// is the rate a download has to keep up once it is answering. Together they
+// are how long one file has.
 const (
-	opening = 2 * time.Minute
-	slowest = 192 << 10
-	assumed = 1 << 30
+	headerTimeout     = 2 * time.Minute
+	minBytesPerSecond = 192 << 10
+	unknownSizeBytes  = 1 << 30
 )
 
-// patience is how long a file of one size has to arrive. A length nobody said
+// getDownloadTimeout is how long a file of one size has to arrive. A length nobody said
 // is taken to be larger than any of these files.
-func patience(size int64) time.Duration {
+func getDownloadTimeout(size int64) time.Duration {
 	if size <= 0 {
-		size = assumed
+		size = unknownSizeBytes
 	}
-	return opening + time.Duration(size/slowest)*time.Second
+	return headerTimeout + time.Duration(size/minBytesPerSecond)*time.Second
 }
 
-// fetching follows a redirect only to another https address.
-var fetching = &http.Client{
+// httpsClient follows a redirect only to another https address.
+var httpsClient = &http.Client{
 	CheckRedirect: func(request *http.Request, via []*http.Request) error {
 		if request.URL.Scheme != "https" {
 			return fmt.Errorf("%s redirects to %s", via[len(via)-1].URL, request.URL)
@@ -129,15 +129,15 @@ func download(ctx context.Context, s Settings, address, at string) error {
 	}
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
-	waited := time.AfterFunc(opening, stop)
+	waited := time.AfterFunc(headerTimeout, stop)
 	defer waited.Stop()
-	s.say(path.Base(address), 0, 0)
+	s.reportProgress(path.Base(address), 0, 0)
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, address, nil)
 	if err != nil {
 		return err
 	}
-	answer, err := fetching.Do(request)
+	answer, err := httpsClient.Do(request)
 	if err != nil {
 		return fmt.Errorf("fetching %s: %w", address, err)
 	}
@@ -145,17 +145,17 @@ func download(ctx context.Context, s Settings, address, at string) error {
 	if answer.StatusCode != http.StatusOK {
 		return fmt.Errorf("fetching %s: %s", address, answer.Status)
 	}
-	waited.Reset(patience(answer.ContentLength))
+	waited.Reset(getDownloadTimeout(answer.ContentLength))
 
 	part := at + ".part"
 	file, err := os.Create(part)
 	if err != nil {
 		return err
 	}
-	counted := &counting{
-		to:    file,
-		total: answer.ContentLength,
-		say:   func(done, total int64) { s.say(path.Base(address), done, total) },
+	counted := &progressWriter{
+		to:         file,
+		total:      answer.ContentLength,
+		onProgress: func(done, total int64) { s.reportProgress(path.Base(address), done, total) },
 	}
 	if _, err := io.Copy(counted, answer.Body); err != nil {
 		file.Close()
@@ -174,26 +174,26 @@ func download(ctx context.Context, s Settings, address, at string) error {
 	return os.Rename(part, at)
 }
 
-// counting is a writer that says how far it has got.
+// progressWriter is a writer that says how far it has got.
 //
 // It says so no more than once a second, because what reads it is drawn on a
 // screen and a number that changes faster than a person can read it is a number
 // nobody reads.
-type counting struct {
-	to    io.Writer
-	total int64
-	done  int64
-	last  time.Time
-	say   func(done, total int64)
+type progressWriter struct {
+	to         io.Writer
+	total      int64
+	done       int64
+	last       time.Time
+	onProgress func(done, total int64)
 }
 
-func (c *counting) Write(raw []byte) (int, error) {
+func (c *progressWriter) Write(raw []byte) (int, error) {
 	n, err := c.to.Write(raw)
 	c.done += int64(n)
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the clock cannot read exactly one second after the previous report"
 	if now := time.Now(); now.Sub(c.last) > time.Second {
 		c.last = now
-		c.say(c.done, c.total)
+		c.onProgress(c.done, c.total)
 	}
 	return n, err
 }

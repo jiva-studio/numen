@@ -30,6 +30,12 @@ make app_desktop_lint app_desktop_test
 make app_mobile_lint app_mobile_test
 ```
 
+When the change touches TypeScript, Vue, JSON or CSS, also run the formatter check, which no make target covers:
+
+```bash
+cd modules && npm run format:check
+```
+
 Never run blanket checks over untouched parts of the monorepo.
 
 
@@ -38,7 +44,7 @@ Never run blanket checks over untouched parts of the monorepo.
 - `gofmt -l` prints a file → **REJECT** (unformatted Go).
 - `go vet`, `golangci-lint` or `govulncheck` fails → **REJECT**.
 - `npm run lint` fails → **REJECT**. A house rule refuses a thing a reader would trip over, and it is never a preference about where a line breaks.
-- A pull request adds Prettier, any other formatter, or a `format` script → **REJECT.** *TypeScript and Vue are formatted by hand* forbids it, and adding one is a change to that record, taken before the code. `gofmt` is not an exception to this: it is part of Go, and `gofmt -l` printing a name is still a failure.
+- `npm run format:check` in `modules/` reports a file → **REJECT** (not Prettier-clean). TypeScript, Vue, JSON and CSS are formatted with Prettier (`npm run format`), and its use is mandatory.
 - A formatter or a linter has touched generated output — anything under `protocol/gen`, `protocol/src` or another generator's target → **REJECT.** A generated file is whatever generated it: not hand-formatted, not linted for layout, not read for style.
 - `go test -race` fails → **REJECT** (a broken test or a data race).
 - `buf lint` fails → **REJECT** (schema violation).
@@ -103,9 +109,9 @@ Related: *How an interface component is built*, *The component library is shadcn
 
 ## What not to report
 
-- Anything `gofmt`, `go vet`, `golangci-lint`, `buf lint`, `vue-tsc` or a house ESLint rule already enforces; they all run in the gate above.
+- Anything `gofmt`, `go vet`, `golangci-lint`, `buf lint`, `vue-tsc`, Prettier or a house ESLint rule already enforces; they all run in the gate above.
 - **A file's length, an import count, or a block size.** A file is split by responsibility.
-- **Where a line breaks.** No formatter runs over TypeScript, Vue or Markdown, and that is a decision, not an omission. Layout is read like the rest of the code: a finding about it says what a reader trips over, never that a tool would have done it differently.
+- **Where a line breaks** in TypeScript, Vue, JSON or CSS. Prettier decides it, and `npm run format:check` is the check.
 - Preferences with no consequence: a helper you would have written differently, an early return you find prettier, a name that is merely not your choice.
 - Speculative structure. "This should be an interface in case we swap it" is a finding only when the second implementation is in sight.
 - The same point twice in different words.

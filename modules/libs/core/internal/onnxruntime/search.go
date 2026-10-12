@@ -9,14 +9,14 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// candidates is every ONNX Runtime this machine holds without fetching one:
+// getLibraryCandidates is every ONNX Runtime this machine holds without fetching one:
 // beside the application, where a fetched one was unpacked, wherever this
 // platform keeps its packages, and by the name the loader searches for on its
 // own.
 //
 // A library in the fetch directory is offered only where it carries the sum
 // pinned for this platform.
-func candidates(s Settings) []string {
+func getLibraryCandidates(s Settings) []string {
 	dir, err := CacheDir(s)
 	if err != nil {
 		dir = ""
@@ -53,9 +53,9 @@ func isUsableLibrary(dir, at string) bool {
 	return ok && verify(at, found.library) == nil
 }
 
-// load is the first library that loads, the one that did, and why each of the
+// loadFirstLibrary is the first library that loads, the one that did, and why each of the
 // others would not. A file that is there is not a library that loads.
-func load(candidates []string) (*ort.Engine, string, []string) {
+func loadFirstLibrary(candidates []string) (*ort.Engine, string, []string) {
 	var refused []string
 	for _, at := range candidates {
 		engine, err := ort.NewEngine(at)
@@ -83,8 +83,8 @@ func GetPaths(dir string, names ...string) []string {
 	return out
 }
 
-// directories are where this machine keeps shared libraries.
-func directories() []string {
+// getLibraryDirectories are where this machine keeps shared libraries.
+func getLibraryDirectories() []string {
 	out := filepath.SplitList(os.Getenv("LD_LIBRARY_PATH"))
 	if home, err := os.UserHomeDir(); err == nil {
 		out = append(out, filepath.Join(home, ".nix-profile", "lib"))
@@ -108,7 +108,7 @@ func directories() []string {
 // the loader's path at all.
 func findInstalled(name, pkg string) []string {
 	var out []string
-	for _, dir := range directories() {
+	for _, dir := range getLibraryDirectories() {
 		out = append(out, findMatching(filepath.Join(dir, name+"*"))...)
 	}
 	return append(out, findMatching(filepath.Join("/nix/store", pkg, "lib", name+"*"))...)

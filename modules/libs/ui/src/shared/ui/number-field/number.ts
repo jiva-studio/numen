@@ -22,7 +22,7 @@ const ON_ITS_WAY = /^[+-]?(\d+([.,]\d*)?|[.,]\d*)?$/
 const GROUPED = /^[+-]?[1-9]\d{0,2},\d{3}$/
 
 /** Whether more typing could still make a number of the text. */
-export const onItsWay = (text: string): boolean => {
+export const isPartialNumber = (text: string): boolean => {
   const trimmed = text.trim()
   return ON_ITS_WAY.test(trimmed) && !GROUPED.test(trimmed)
 }
@@ -33,7 +33,7 @@ export const onItsWay = (text: string): boolean => {
  */
 export const numberOf = (text: string): number | null => {
   const trimmed = text.trim()
-  if (trimmed === '' || !onItsWay(trimmed)) return null
+  if (trimmed === '' || !isPartialNumber(trimmed)) return null
   const value = Number(trimmed.replace(',', '.'))
   return Number.isFinite(value) ? value : null
 }

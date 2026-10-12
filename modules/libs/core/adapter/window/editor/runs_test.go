@@ -93,8 +93,8 @@ func openRunWindow(
 	// What a url carries follows from what fetches it, so a window that reaches
 	// no address at all says a url carries nothing.
 	api.Imports = &source.ImportURL{By: reachingASite{}}
-	api.show(vault)
-	setPasses(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
+	api.setVault(vault)
+	modifySession(api, func(on *vaultSession) { on.recognitionRunner, on.transcriptionRunner = scans, hears })
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 

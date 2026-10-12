@@ -97,28 +97,15 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, fmt.Errorf("stat %s: %w", path, err)
 	}
-	file, err := docfile.Open(ctx, reader, path)
-	if err != nil {
-		return res, fmt.Errorf("read %s: %w", path, err)
-	}
-	// The scan owns the file once Draw is called.
-	isHanded := false
-	defer func() {
-		if !isHanded {
-			file.Close()
-		}
-	}()
 	store, err := u.derived.Open(v)
 	if err != nil {
 		return res, err
 	}
-
-	hash, err := text.GetFingerprint(file)
+	// The scan owns the file once Draw is called, and every return before that
+	// closes it.
+	file, hash, err := openDocument(ctx, reader, path)
 	if err != nil {
-		return res, fmt.Errorf("read %s: %w", path, err)
-	}
-	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		return res, fmt.Errorf("read %s: %w", path, err)
+		return res, err
 	}
 	area := u.area()
 	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
@@ -127,11 +114,12 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	// One run to a document. The name is the hash of its bytes, and it is held for
 	// as long as the reading takes.
 	release, err := store.Claim(ctx, partial)
-	if errors.Is(err, port.ErrClaimed) {
-		res.IsBusy = true
-		return res, nil
-	}
 	if err != nil {
+		file.Close()
+		if errors.Is(err, port.ErrClaimed) {
+			res.IsBusy = true
+			return res, nil
+		}
 		return res, err
 	}
 	defer release()
@@ -139,11 +127,11 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	// A document already read is not read again. The name is the hash of what
 	// was read, so this holds however the file was renamed or moved since.
 	if _, err := store.Read(ctx, final); err == nil {
+		file.Close()
 		res.Read, res.Pages = 1, 1
 		return res, u.stand(ctx, v, ref, hash, area)
 	}
 
-	isHanded = true
 	scan, err := u.documents.Draw(ctx, file)
 	if err != nil {
 		return res, fmt.Errorf("%s: %w", path, err)
@@ -151,120 +139,180 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	defer scan.Close()
 	res.Pages = scan.Pages()
 
-	done, prose, err := readResumePoint(ctx, store, partial)
-	if err != nil {
+	out := pageWriter{u: u, v: v, store: store, path: path, partial: partial, boxes: boxes, parts: parts}
+	if err := u.readPages(ctx, scan, &out, &res); err != nil {
 		return res, err
 	}
+	err = u.saveRecognition(ctx, v, store, ref, hash, area, out, &res)
+	return res, err
+}
+
+// openDocument opens a document and returns it rewound, with the fingerprint of
+// its bytes. The file is closed when it returns an error.
+func openDocument(ctx context.Context, reader port.VaultReader, path string) (io.ReadSeekCloser, string, error) {
+	file, err := docfile.Open(ctx, reader, path)
+	if err != nil {
+		return nil, "", fmt.Errorf("read %s: %w", path, err)
+	}
+	hash, err := text.GetFingerprint(file)
+	if err == nil {
+		_, err = file.Seek(0, io.SeekStart)
+	}
+	if err != nil {
+		file.Close()
+		return nil, "", fmt.Errorf("read %s: %w", path, err)
+	}
+	return file, hash, nil
+}
+
+// pageWriter writes runs of pages into the partial and its coordinate and part
+// files, and cuts the source from everything the document has said so far.
+//
+// The coordinates and the parts go first, so a run that dies among the writes
+// leaves them ahead of the count and the next run trims them back to it. Cutting
+// writes which text the source stands on together with its chunks, in one
+// statement, and the two are one fact.
+type pageWriter struct {
+	u       Recognise
+	v       domain.Vault
+	store   port.DerivedStore
+	path    string
+	partial string
+	boxes   string
+	parts   string
+	prose   int
+}
+
+// write appends pages and, after them, the count of pages read.
+func (w *pageWriter) write(ctx context.Context, pages []ocr.Page, read int) error {
+	written, found, named := ocr.Write(pages)
+	for i := range found {
+		found[i].From += w.prose
+		found[i].To += w.prose
+	}
+	for i := range named {
+		named[i].Start += w.prose
+	}
+	if err := w.store.Append(ctx, w.boxes, highlight.Pack(found)); err != nil {
+		return err
+	}
+	if len(named) > 0 {
+		if err := w.store.Append(ctx, w.parts, ocr.Pack(named)); err != nil {
+			return err
+		}
+	}
+	if err := w.store.Append(ctx, w.partial, appendCount(written, read)); err != nil {
+		return err
+	}
+	said, _ := ocr.Read(written)
+	w.prose += len(said)
+	return w.u.cut(ctx, w.v, w.path)
+}
+
+// readPages reads the pages the partial does not yet claim, writing a batch at a
+// time.
+func (u Recognise) readPages(
+	ctx context.Context,
+	scan port.OpenDocument,
+	out *pageWriter,
+	res *RecogniseResult,
+) error {
+	done, prose, err := readResumePoint(ctx, out.store, out.partial)
+	if err != nil {
+		return err
+	}
+	out.prose = prose
 	// The files are written one after the other, so a run that died between them
 	// left coordinates and parts the count does not claim.
-	if err := dropBoxes(ctx, store, boxes, done); err != nil {
-		return res, err
+	if err := dropBoxes(ctx, out.store, out.boxes, done); err != nil {
+		return err
 	}
-	if err := dropParts(ctx, store, parts, prose); err != nil {
-		return res, err
+	if err := dropParts(ctx, out.store, out.parts, prose); err != nil {
+		return err
 	}
 	res.Resumed, res.Read = done, done
-	u.progress(res)
-
-	// write puts a run of pages down and cuts the source from everything the
-	// document has said so far.
-	//
-	// The coordinates and the parts go first, so a run that dies among the
-	// writes leaves them ahead of the count and the next run trims them back to
-	// it.
-	//
-	// Nothing here says which text the source stands on. Cutting writes that
-	// and the chunks cut from it in one statement, and they are one fact: a row
-	// naming a text its chunks are not offsets into answers with the wrong
-	// words.
-	write := func(pages []ocr.Page) error {
-		written, found, named := ocr.Write(pages)
-		for i := range found {
-			found[i].From += prose
-			found[i].To += prose
-		}
-		for i := range named {
-			named[i].Start += prose
-		}
-		if err := store.Append(ctx, boxes, highlight.Pack(found)); err != nil {
-			return err
-		}
-		if len(named) > 0 {
-			if err := store.Append(ctx, parts, ocr.Pack(named)); err != nil {
-				return err
-			}
-		}
-		if err := store.Append(ctx, partial, appendCount(written, res.Read)); err != nil {
-			return err
-		}
-		said, _ := ocr.Read(written)
-		prose += len(said)
-		return u.cut(ctx, v, path)
-	}
+	u.progress(*res)
 
 	pages := make([]ocr.Page, 0, u.batch())
 	for index := done; index < scan.Pages(); index++ {
 		if err := ctx.Err(); err != nil {
-			// What has been read is on disk already. Stopping is a thing a
-			// person did, and the next run begins where this one stopped.
-			return res, err
+			// What has been read is on disk already, and the next run begins
+			// where this one stopped.
+			return err
 		}
-		drawn, err := scan.Image(index, u.by.Recognition().DPI)
+		page, err := u.recognisePage(ctx, scan, out.path, index)
 		if err != nil {
-			return res, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
+			return err
 		}
-		blocks, err := u.by.Recognise(ctx, drawn)
-		if err != nil {
-			return res, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
-		}
-		pages = append(pages, ocr.Page{
-			Index:  index,
-			Size:   drawn.Bounds().Size(),
-			Blocks: blocks,
-		})
+		pages = append(pages, page)
 
 		res.Read = index + 1
 		if len(pages) >= u.batch() {
-			if err := write(pages); err != nil {
-				return res, err
+			if err := out.write(ctx, pages, res.Read); err != nil {
+				return err
 			}
 			pages = pages[:0]
 		}
-		u.progress(res)
+		u.progress(*res)
 	}
-	if len(pages) > 0 {
-		if err := write(pages); err != nil {
-			return res, err
-		}
+	if len(pages) == 0 {
+		return nil
 	}
+	return out.write(ctx, pages, res.Read)
+}
 
+// recognisePage draws one page and reads its blocks.
+func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, path string, index int) (ocr.Page, error) {
+	drawn, err := scan.Image(index, u.by.Recognition().DPI)
+	if err != nil {
+		return ocr.Page{}, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
+	}
+	blocks, err := u.by.Recognise(ctx, drawn)
+	if err != nil {
+		return ocr.Page{}, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
+	}
+	return ocr.Page{Index: index, Size: drawn.Bounds().Size(), Blocks: blocks}, nil
+}
+
+// saveRecognition stands the source on the artifact made from the partial, or forgets a
+// document that said nothing.
+func (u Recognise) saveRecognition(
+	ctx context.Context,
+	v domain.Vault,
+	store port.DerivedStore,
+	ref domain.Fingerprint,
+	hash, area string,
+	out pageWriter,
+	res *RecogniseResult,
+) error {
+	partial := out.partial
+	final := text.Artifact(area, hash)
 	whole, err := store.Read(ctx, partial)
 	if errors.Is(err, fs.ErrNotExist) {
 		res.IsEmpty = true
-		return res, nil
+		return nil
 	}
 	if err != nil {
-		return res, err
+		return err
 	}
 	if said, _ := ocr.Read(whole); strings.TrimSpace(said) == "" {
-		// A document that says nothing writes nothing. An empty artifact would
-		// stand in for a text layer that worked, and there is no falling back
-		// from one.
+		// A document that says nothing writes nothing: an empty artifact would
+		// stand in for a text layer that worked.
 		res.IsEmpty = true
-		return res, u.forget(ctx, v, ref, hash, store, partial, boxes, parts)
+		return u.forget(ctx, v, ref, hash, store, partial, out.boxes, out.parts)
 	}
 
 	if err := store.Write(ctx, final, whole); err != nil {
-		return res, err
+		return err
 	}
 	if err := u.record(ctx, store, area, hash); err != nil {
-		return res, err
+		return err
 	}
 	// The source stands on the artifact before the partial goes.
 	if err := u.stand(ctx, v, ref, hash, area); err != nil {
-		return res, err
+		return err
 	}
-	return res, store.Remove(ctx, partial)
+	return store.Remove(ctx, partial)
 }
 
 // stand puts the source on the text a producer made.

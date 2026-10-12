@@ -48,8 +48,8 @@ func (a *API) WriteOpenTabs(
 		open.Tabs = append(open.Tabs, tab)
 	}
 	a.openTabs.Store(&open)
-	if a.Attends != nil {
-		a.Attends(open)
+	if a.NotifyOpenTabs != nil {
+		a.NotifyOpenTabs(open)
 	}
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
 }

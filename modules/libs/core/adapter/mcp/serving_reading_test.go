@@ -36,7 +36,7 @@ func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
 // stencil are what a vault is arranged into, and nothing there makes one.
 func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 	_, core := newCore(t)
-	endpoint, err := mcp.ServeReviewingHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
+	endpoint, err := mcp.ServeReviewHTTP(t.Context(), "127.0.0.1:0", "the-token", core, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

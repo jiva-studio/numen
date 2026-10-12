@@ -186,8 +186,8 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
 	}
-	api.show(vault)
-	setPasses(api, func(on *passes) { on.transcribes = talks })
+	api.setVault(vault)
+	modifySession(api, func(on *vaultSession) { on.transcriptionRunner = talks })
 
 	made := createArtifact(t, api, talk, transcriptOf)
 	if made.GetState() != v1.State_STATE_FAILED {

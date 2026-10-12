@@ -6,22 +6,22 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { NOWHERE, type Curve, type Point } from '../types'
+import { NO_PLACE, type Curve, type Point } from '../types'
 import {
   extentOf,
   extentOfBacklog,
-  FOOT,
-  LEFT,
+  PLOT_BOTTOM,
+  PLOT_LEFT,
   lineOf,
-  placeUnder,
+  getPlaceAtX,
   positionsOf,
-  RIGHT,
-  runAt,
+  PLOT_RIGHT,
+  getBacklogRun,
   seriesOf,
-  shortOf,
-  TOP,
-  walkGrid,
-  WIDE,
+  getShortPath,
+  PLOT_TOP,
+  getKeyPlace,
+  PLOT_WIDTH,
   xOf,
   yOfGridline,
 } from './plot'
@@ -47,8 +47,8 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
   grid: cards.map((_, at) => at * 10),
   days: [],
   at: cards.map((one, at) => point({ reviews: one, canLearnEveryCard: enough[at] ?? true })),
-  now: NOWHERE,
-  suggested: NOWHERE,
+  now: NO_PLACE,
+  suggested: NO_PLACE,
   decks: 1,
   cards: 400,
   overdue: 0,
@@ -58,17 +58,17 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
 
 describe('where a place of the grid stands across the picture', () => {
   it('puts the first at one edge of the room and the last at the other', () => {
-    expect(xOf(0, 4)).toBe(LEFT)
-    expect(xOf(3, 4)).toBe(RIGHT)
+    expect(xOf(0, 4)).toBe(PLOT_LEFT)
+    expect(xOf(3, 4)).toBe(PLOT_RIGHT)
   })
 
   it('puts a single place at the edge it begins at', () => {
-    expect(xOf(0, 1)).toBe(LEFT)
+    expect(xOf(0, 1)).toBe(PLOT_LEFT)
   })
 
   it('draws its faint lines between the foot and the top', () => {
-    expect(yOfGridline(0)).toBe(FOOT)
-    expect(yOfGridline(1)).toBe(TOP)
+    expect(yOfGridline(0)).toBe(PLOT_BOTTOM)
+    expect(yOfGridline(1)).toBe(PLOT_TOP)
   })
 })
 
@@ -77,8 +77,8 @@ describe('the curve as it is drawn', () => {
     const one = curve([0, 0.5, 1])
     expect(extentOf(one)).toStrictEqual({ least: 0, most: 1 })
     const positions = positionsOf(one, extentOf(one))
-    expect(positions[0]?.y).toBe(FOOT)
-    expect(positions[2]?.y).toBe(TOP)
+    expect(positions[0]?.y).toBe(PLOT_BOTTOM)
+    expect(positions[2]?.y).toBe(PLOT_TOP)
   })
 
   // The extent is the goal's and not this answer's, so an answer that moves
@@ -90,15 +90,15 @@ describe('the curve as it is drawn', () => {
 
   it('keeps a curve past either end of its extent inside the picture', () => {
     const positions = positionsOf(curve([-1, 0.5, 2]), { least: 0, most: 1 })
-    expect(positions[0]?.y).toBe(FOOT)
-    expect(positions[2]?.y).toBe(TOP)
+    expect(positions[0]?.y).toBe(PLOT_BOTTOM)
+    expect(positions[2]?.y).toBe(PLOT_TOP)
   })
 
   // A count does not go below nothing, so nothing is the foot of the picture
   // and a run of it lies along that foot.
   it('lies along the floor where the extent has no width', () => {
     const positions = positionsOf(curve([0, 0, 0]), { least: 0, most: 0 })
-    expect(positions.every((one) => one.y === FOOT)).toBe(true)
+    expect(positions.every((one) => one.y === PLOT_BOTTOM)).toBe(true)
   })
 
   it('stands an extent on nothing, whatever the run it holds comes to', () => {
@@ -118,8 +118,8 @@ describe('the curve as it is drawn', () => {
       const one = curve(run)
       const positions = positionsOf(one, extentOf(one))
       for (const [at, value] of run.entries()) {
-        if (value === 0) expect(positions[at]?.y).toBe(FOOT)
-        expect(positions[at]?.y).toBeLessThanOrEqual(FOOT)
+        if (value === 0) expect(positions[at]?.y).toBe(PLOT_BOTTOM)
+        expect(positions[at]?.y).toBeLessThanOrEqual(PLOT_BOTTOM)
       }
     }
   })
@@ -138,67 +138,67 @@ describe('the curve as it is drawn', () => {
 describe('the stretch a budget does not get through', () => {
   it('is a line of its own over the places the budget falls short at', () => {
     const one = curve([0, 0.4, 0.7, 1], [true, false, false, true])
-    expect(shortOf(one, positionsOf(one, extentOf(one))).startsWith('M')).toBe(true)
+    expect(getShortPath(one, positionsOf(one, extentOf(one))).startsWith('M')).toBe(true)
   })
 
   it('is nothing where the budget gets through all of it', () => {
     const one = curve([0, 0.4, 1])
-    expect(shortOf(one, positionsOf(one, extentOf(one)))).toBe('')
+    expect(getShortPath(one, positionsOf(one, extentOf(one)))).toBe('')
   })
 
   it('is nothing where it falls short at one place alone, which draws no line', () => {
     const one = curve([0, 0.4, 1], [true, false, true])
-    expect(shortOf(one, positionsOf(one, extentOf(one)))).toBe('')
+    expect(getShortPath(one, positionsOf(one, extentOf(one)))).toBe('')
   })
 })
 
 describe('the place a pointer stands over', () => {
   it('is the first at the left edge of the room and the last at the right', () => {
-    expect(placeUnder(LEFT, 25)).toBe(0)
-    expect(placeUnder(RIGHT, 25)).toBe(24)
+    expect(getPlaceAtX(PLOT_LEFT, 25)).toBe(0)
+    expect(getPlaceAtX(PLOT_RIGHT, 25)).toBe(24)
   })
 
   it('is the nearer end for a pointer outside the room the line is drawn in', () => {
-    expect(placeUnder(0, 25)).toBe(0)
-    expect(placeUnder(WIDE, 25)).toBe(24)
+    expect(getPlaceAtX(0, 25)).toBe(0)
+    expect(getPlaceAtX(PLOT_WIDTH, 25)).toBe(24)
   })
 
   it('reads back the place a point was drawn at', () => {
     const one = curve([0, 0.25, 0.5, 0.75, 1])
     const positions = positionsOf(one, extentOf(one))
-    positions.forEach((at, place) => expect(placeUnder(at.x, positions.length)).toBe(place))
+    positions.forEach((at, place) => expect(getPlaceAtX(at.x, positions.length)).toBe(place))
   })
 
   it('is the first place of a grid holding one', () => {
-    expect(placeUnder(WIDE / 2, 1)).toBe(0)
+    expect(getPlaceAtX(PLOT_WIDTH / 2, 1)).toBe(0)
   })
 
   it('is the first place of a grid holding none', () => {
-    expect(placeUnder(WIDE / 2, 0)).toBe(0)
+    expect(getPlaceAtX(PLOT_WIDTH / 2, 0)).toBe(0)
   })
 })
 
 describe('where a keystroke takes the knob', () => {
   it('is one place either way, and stops at either end', () => {
-    expect(walkGrid('ArrowRight', 2, 5)).toBe(3)
-    expect(walkGrid('ArrowLeft', 2, 5)).toBe(1)
-    expect(walkGrid('ArrowLeft', 0, 5)).toBe(0)
-    expect(walkGrid('ArrowRight', 4, 5)).toBe(4)
+    expect(getKeyPlace('ArrowRight', 2, 5)).toBe(3)
+    expect(getKeyPlace('ArrowLeft', 2, 5)).toBe(1)
+    expect(getKeyPlace('ArrowLeft', 0, 5)).toBe(0)
+    expect(getKeyPlace('ArrowRight', 4, 5)).toBe(4)
   })
 
   it('is the same either way for the two axes, so a knob answers both', () => {
-    expect(walkGrid('ArrowDown', 2, 5)).toBe(walkGrid('ArrowLeft', 2, 5))
-    expect(walkGrid('ArrowUp', 2, 5)).toBe(walkGrid('ArrowRight', 2, 5))
+    expect(getKeyPlace('ArrowDown', 2, 5)).toBe(getKeyPlace('ArrowLeft', 2, 5))
+    expect(getKeyPlace('ArrowUp', 2, 5)).toBe(getKeyPlace('ArrowRight', 2, 5))
   })
 
   it('is either end of the range', () => {
-    expect(walkGrid('Home', 2, 5)).toBe(0)
-    expect(walkGrid('End', 2, 5)).toBe(4)
+    expect(getKeyPlace('Home', 2, 5)).toBe(0)
+    expect(getKeyPlace('End', 2, 5)).toBe(4)
   })
 
   it('is nothing for a keystroke of somebody else’s', () => {
-    expect(walkGrid('a', 2, 5)).toBeNull()
-    expect(walkGrid('Enter', 2, 5)).toBeNull()
+    expect(getKeyPlace('a', 2, 5)).toBeNull()
+    expect(getKeyPlace('Enter', 2, 5)).toBeNull()
   })
 })
 
@@ -215,7 +215,11 @@ describe('the extent a backlog is drawn against', () => {
 describe('a series drawn against an extent that does not begin at nothing', () => {
   it('measures each value up from the least of the extent', () => {
     const at = seriesOf([10, 15, 20], { least: 10, most: 20 })
-    expect(at.map((one) => one.y)).toStrictEqual([FOOT, FOOT - (FOOT - TOP) / 2, TOP])
+    expect(at.map((one) => one.y)).toStrictEqual([
+      PLOT_BOTTOM,
+      PLOT_BOTTOM - (PLOT_BOTTOM - PLOT_TOP) / 2,
+      PLOT_TOP,
+    ])
   })
 })
 
@@ -236,28 +240,28 @@ describe('the stretch a budget does not get through, as drawn', () => {
 
   it('is one line through the places in a stretch', () => {
     const one = curve([0, 0, 0, 0], [true, false, false, true])
-    expect(shortOf(one, along(4))).toBe('M1 1 L2 2')
+    expect(getShortPath(one, along(4))).toBe('M1 1 L2 2')
   })
 
   it('is one line to a stretch, set apart by a space', () => {
     const one = curve([0, 0, 0, 0, 0], [false, false, true, false, false])
-    expect(shortOf(one, along(5))).toBe('M0 0 L1 1 M3 3 L4 4')
+    expect(getShortPath(one, along(5))).toBe('M0 0 L1 1 M3 3 L4 4')
   })
 
   it('draws no line for a single place at the start', () => {
-    expect(shortOf(curve([0, 0, 0], [false, true, true]), along(3))).toBe('')
+    expect(getShortPath(curve([0, 0, 0], [false, true, true]), along(3))).toBe('')
   })
 
   it('draws no line for a single place at the end', () => {
-    expect(shortOf(curve([0, 0], [true, false]), along(2))).toBe('')
+    expect(getShortPath(curve([0, 0], [true, false]), along(2))).toBe('')
   })
 
   it('draws the line of a stretch that runs to the end', () => {
-    expect(shortOf(curve([0, 0, 0], [true, false, false]), along(3))).toBe('M1 1 L2 2')
+    expect(getShortPath(curve([0, 0, 0], [true, false, false]), along(3))).toBe('M1 1 L2 2')
   })
 
   it('leaves out the places of the curve that have no position', () => {
-    expect(shortOf(curve([0, 0, 0], [false, false, false]), along(1))).toBe('')
+    expect(getShortPath(curve([0, 0, 0], [false, false, false]), along(1))).toBe('')
   })
 })
 
@@ -273,19 +277,19 @@ describe('what stands overdue at one place', () => {
   }
 
   it('is the whole run for a goal that is not a date', () => {
-    expect(runAt(backlogs('minutes', [0, 1, 2]), 1)).toStrictEqual([4, 5, 6, 7])
+    expect(getBacklogRun(backlogs('minutes', [0, 1, 2]), 1)).toStrictEqual([4, 5, 6, 7])
   })
 
   it('is cut at the day a goal of a date names', () => {
-    expect(runAt(backlogs('date', [0, 2, 9]), 1)).toStrictEqual([4, 5])
-    expect(runAt(backlogs('date', [0, 2, 9]), 2)).toStrictEqual([4, 5, 6, 7])
+    expect(getBacklogRun(backlogs('date', [0, 2, 9]), 1)).toStrictEqual([4, 5])
+    expect(getBacklogRun(backlogs('date', [0, 2, 9]), 2)).toStrictEqual([4, 5, 6, 7])
   })
 
   it('is nothing at a goal of a date that names the first day', () => {
-    expect(runAt(backlogs('date', [0, 2, 9]), 0)).toStrictEqual([])
+    expect(getBacklogRun(backlogs('date', [0, 2, 9]), 0)).toStrictEqual([])
   })
 
   it('is nothing at a place the curve does not have', () => {
-    expect(runAt(backlogs('minutes', [0, 1, 2]), 7)).toStrictEqual([])
+    expect(getBacklogRun(backlogs('minutes', [0, 1, 2]), 7)).toStrictEqual([])
   })
 })

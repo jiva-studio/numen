@@ -64,7 +64,7 @@ func resolveVaultPath(root, path, serviceDir string) (target, resolved string, e
 	return target, resolved, nil
 }
 
-// service is the complement of resolveVaultPath: a path that stays inside the
+// resolveServicePath is the complement of resolveVaultPath: a path that stays inside the
 // vault, and that is in the folder belonging to the application by both of the
 // same measures.
 //
@@ -72,7 +72,7 @@ func resolveVaultPath(root, path, serviceDir string) (target, resolved string, e
 // where no writer of notes can reach, without making any note's refusal weaker.
 // That property is the subject of a test. A path whose spelling and whose
 // landing disagree is neither's, and both refuse it.
-func service(root, path, serviceDir string) (target, resolved string, err error) {
+func resolveServicePath(root, path, serviceDir string) (target, resolved string, err error) {
 	clean, err := cleanPath(path)
 	if err != nil {
 		return "", "", err
@@ -162,12 +162,12 @@ func resolveContained(root, clean string) (target, resolved, landed string, err 
 	if !isUnderRoot(resolved, root) {
 		return "", "", "", fmt.Errorf("%s: %w", clean, ErrOutside)
 	}
-	return target, resolved, landing(resolved, root), nil
+	return target, resolved, getRootRelativeName(resolved, root), nil
 }
 
-// landing is a resolved path as a name under the root, in the form the rules
+// getRootRelativeName is a resolved path as a name under the root, in the form the rules
 // are written against. The root itself lands nowhere and is named by nothing.
-func landing(resolved, root string) string {
+func getRootRelativeName(resolved, root string) string {
 	if len(resolved) <= len(root) {
 		return ""
 	}

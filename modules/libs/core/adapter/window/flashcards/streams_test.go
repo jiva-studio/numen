@@ -130,10 +130,10 @@ func TestAReloadStreamThatCannotBeWrittenToEndsWithWhyItCannot(t *testing.T) {
 // Following a channel stops at its end, and says nothing after.
 func TestFollowingAChannelStopsWhereItEnds(t *testing.T) {
 	api := &API{Registry: registry{}, Now: time.Now}
-	line, done := api.listeners.listen()
+	line, done := api.subscribers.subscribe()
 	t.Cleanup(done)
 	moved := make(chan struct{}, 1)
-	api.Follow(t.Context(), moved)
+	api.ReportChangesFrom(t.Context(), moved)
 
 	moved <- struct{}{}
 	select {

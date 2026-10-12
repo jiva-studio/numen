@@ -52,7 +52,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 
 func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	var heard []domain.OpenTabs
-	api := &API{Attends: func(open domain.OpenTabs) { heard = append(heard, open) }}
+	api := &API{NotifyOpenTabs: func(open domain.OpenTabs) { heard = append(heard, open) }}
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		Front: "one",

@@ -8,9 +8,9 @@ import (
 	"syscall"
 )
 
-// groupOf puts the run in a process group of its own and makes cancelling it
+// setProcessGroup puts the run in a process group of its own and makes cancelling it
 // end the whole process tree.
-func groupOf(running *exec.Cmd) {
+func setProcessGroup(running *exec.Cmd) {
 	running.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP}
 	running.Cancel = func() error {
 		kill := exec.Command("taskkill", "/T", "/F", "/PID", strconv.Itoa(running.Process.Pid))

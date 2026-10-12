@@ -11,7 +11,7 @@ func TestTheStepsRunInTheOrderTheyWereGiven(t *testing.T) {
 	var ran []string
 	mark := func(what string) func() { return func() { ran = append(ran, what) } }
 
-	InOrder(mark("page"), mark("agents"), mark("vault"), mark("under")).Go()
+	NewSequence(mark("page"), mark("agents"), mark("vault"), mark("under")).Run()
 
 	if want := []string{"page", "agents", "vault", "under"}; !slices.Equal(ran, want) {
 		t.Errorf("what the window let go of was %v", ran)
@@ -22,11 +22,11 @@ func TestTheStepsRunInTheOrderTheyWereGiven(t *testing.T) {
 // and the window is let go of once.
 func TestTheStepsRunOnceHoweverOftenTheyAreAskedFor(t *testing.T) {
 	times := 0
-	steps := InOrder(func() { times++ })
+	steps := NewSequence(func() { times++ })
 
-	steps.Go()
-	steps.Go()
-	steps.Go()
+	steps.Run()
+	steps.Run()
+	steps.Run()
 
 	if times != 1 {
 		t.Errorf("the step ran %d times", times)
@@ -38,17 +38,17 @@ func TestTheStepsRunOnceHoweverOftenTheyAreAskedFor(t *testing.T) {
 func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
 	running := make(chan struct{})
 	held := make(chan struct{})
-	steps := InOrder(func() {
+	steps := NewSequence(func() {
 		close(running)
 		<-held
 	})
 
-	go steps.Go()
+	go steps.Run()
 	<-running
 
 	returned := make(chan struct{})
 	go func() {
-		steps.Go()
+		steps.Run()
 		close(returned)
 	}()
 
@@ -69,7 +69,7 @@ func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
 func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
 	var mu sync.Mutex
 	times := 0
-	steps := InOrder(func() {
+	steps := NewSequence(func() {
 		mu.Lock()
 		defer mu.Unlock()
 		times++
@@ -80,7 +80,7 @@ func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
 		asking.Add(1)
 		go func() {
 			defer asking.Done()
-			steps.Go()
+			steps.Run()
 		}()
 	}
 	asking.Wait()
@@ -92,6 +92,6 @@ func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
 	}
 }
 
-func TestAWindowHoldingNothingIsLetGoOfWithoutTrouble(t *testing.T) {
-	InOrder().Go()
+func TestEmptySequenceRunsWithoutError(t *testing.T) {
+	NewSequence().Run()
 }

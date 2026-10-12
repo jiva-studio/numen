@@ -62,8 +62,8 @@ func (a *API) WriteNote(
 	if err == nil || behind {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
-		if a.Wrote != nil {
-			a.Wrote()
+		if a.NotifyNoteWritten != nil {
+			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
 			At: fingerprintOf(at), IsUnlevelled: behind,

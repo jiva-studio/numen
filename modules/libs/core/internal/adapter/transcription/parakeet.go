@@ -80,7 +80,7 @@ type Transcriber struct {
 // Open loads the models and compiles them, reading the weights. The result is
 // used for any number of recordings until it is closed.
 func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
-	opened, found, err := locate(ctx, cfg)
+	opened, found, err := locateModels(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		model: port.TranscriptionModel{
 			Model:     getModelName(cfg.Model.Name, found.encoder),
 			Segmenter: getModelName(cfg.Segmenter.Name, found.segmenter),
-			Cutting:   cfg.Segmenter.describeCutting(),
+			Cutting:   cfg.Segmenter.describeSegmentSettings(),
 			From:      found.from,
 		},
 	}
@@ -197,17 +197,17 @@ func (t *Transcriber) Transcribe(ctx context.Context, audio port.Audio) (string,
 
 // decode is what the encoder's frames say, read one at a time.
 func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]int, error) {
-	return t.decodeBy(ctx, out, true)
+	return t.decodeWith(ctx, out, true)
 }
 
-// decodeBy is decode with the predictor and the joiner run through the raw
+// decodeWith is decode with the predictor and the joiner run through the raw
 // runtime when useRaw holds and the runtime offers it, and through the library
 // otherwise. The first position of each graph always runs through the library,
 // which checks the size of what the graph answers.
-func (t *Transcriber) decodeBy(ctx context.Context, out map[string]*ort.Value, useRaw bool) ([]int, error) {
+func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value, useRaw bool) ([]int, error) {
 	frames, ok := out[outputFrames]
 	if !ok {
-		return nil, fmt.Errorf("the encoder answered with %v and not %s", names(out), outputFrames)
+		return nil, fmt.Errorf("the encoder answered with %v and not %s", getNames(out), outputFrames)
 	}
 	shape, err := frames.GetShape()
 	if err != nil {
@@ -326,9 +326,9 @@ func (t *Transcriber) decodeBy(ctx context.Context, out map[string]*ort.Value, u
 			var err error
 			if joinerRun == nil || !joined {
 				joined = true
-				scores, err = t.joint(joinerInputs, frame, encodedFrame, scores)
+				scores, err = t.computeJoint(joinerInputs, frame, encodedFrame, scores)
 			} else {
-				scores, err = t.jointRaw(joinerRun, frame, encodedFrame, scores)
+				scores, err = t.computeJointRaw(joinerRun, frame, encodedFrame, scores)
 			}
 			return scores, err
 		},
@@ -365,7 +365,7 @@ func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []
 			for _, v := range out {
 				v.Destroy()
 			}
-			return nil, fmt.Errorf("the predictor answered with %v and not %s", names(out), one.name)
+			return nil, fmt.Errorf("the predictor answered with %v and not %s", getNames(out), one.name)
 		}
 		raw, err := ort.GetTensorData[float32](value)
 		if err != nil {
@@ -391,7 +391,7 @@ func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []
 // predictRaw is predict run on the outputs the run owns. The three are copied
 // out before the next run writes over them.
 func (t *Transcriber) predictRaw(run *rawRun, prediction, state, cell []float32) ([]float32, error) {
-	if err := run.call(); err != nil {
+	if err := run.run(); err != nil {
 		return nil, err
 	}
 	for i, into := range [...][]float32{prediction, state, cell} {
@@ -402,11 +402,11 @@ func (t *Transcriber) predictRaw(run *rawRun, prediction, state, cell []float32)
 	return prediction, nil
 }
 
-// jointRaw is joint run on the output the run owns, copied into scoresDst, which
+// computeJointRaw is joint run on the output the run owns, copied into scoresDst, which
 // holds as many scores as the first position answered.
-func (t *Transcriber) jointRaw(run *rawRun, frameDst, frame, scoresDst []float32) ([]float32, error) {
+func (t *Transcriber) computeJointRaw(run *rawRun, frameDst, frame, scoresDst []float32) ([]float32, error) {
 	copy(frameDst, frame)
-	if err := run.call(); err != nil {
+	if err := run.run(); err != nil {
 		return nil, err
 	}
 	if err := run.copyOutput(0, scoresDst); err != nil {
@@ -415,10 +415,10 @@ func (t *Transcriber) jointRaw(run *rawRun, frameDst, frame, scoresDst []float32
 	return scoresDst, nil
 }
 
-// joint is what one frame of the encoder and one position of the predictor say
+// computeJoint is what one frame of the encoder and one position of the predictor say
 // together: a score for every token, and after them a score for every number of
 // frames to step on by.
-func (t *Transcriber) joint(inputs map[string]*ort.Value, frameDst, frame, scoresDst []float32) ([]float32, error) {
+func (t *Transcriber) computeJoint(inputs map[string]*ort.Value, frameDst, frame, scoresDst []float32) ([]float32, error) {
 	copy(frameDst, frame)
 	out, err := t.joiner.Run(inputs)
 	if err != nil {
@@ -430,7 +430,7 @@ func (t *Transcriber) joint(inputs map[string]*ort.Value, frameDst, frame, score
 		for _, v := range out {
 			v.Destroy()
 		}
-		return nil, fmt.Errorf("the joiner answered with %v and not %s", names(out), outputFrames)
+		return nil, fmt.Errorf("the joiner answered with %v and not %s", getNames(out), outputFrames)
 	}
 	raw, err := ort.GetTensorData[float32](value)
 	if err != nil {
@@ -449,7 +449,7 @@ func (t *Transcriber) joint(inputs map[string]*ort.Value, frameDst, frame, score
 	return scoresDst, nil
 }
 
-func names(m map[string]*ort.Value) []string {
+func getNames(m map[string]*ort.Value) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)

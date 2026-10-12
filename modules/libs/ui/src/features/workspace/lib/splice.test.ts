@@ -9,36 +9,36 @@ describe('putBeside', () => {
   const two = split('root', [stack('a', 'one'), stack('b', 'two')])
 
   it('leaves the tree alone for the middle, which is not a side', () => {
-    const landing = putBeside(two, 'a', 't', 'center', 'horizontal', createIdFactory())
-    expect(landing).toStrictEqual({ root: two, axis: 'horizontal', focus: 'a' })
+    const split = putBeside(two, 'a', 't', 'center', 'horizontal', createIdFactory())
+    expect(split).toStrictEqual({ root: two, axis: 'horizontal', focus: 'a' })
   })
 
   it('leaves the tree alone for a node that is not there', () => {
-    const landing = putBeside(two, 'missing', 't', 'left', 'horizontal', createIdFactory())
-    expect(landing).toStrictEqual({ root: two, axis: 'horizontal', focus: 'missing' })
+    const split = putBeside(two, 'missing', 't', 'left', 'horizontal', createIdFactory())
+    expect(split).toStrictEqual({ root: two, axis: 'horizontal', focus: 'missing' })
   })
 
   it('divides a root that is one pane into two halves, turning the axis', () => {
-    const landing = putBeside(stack('a', 'one'), 'a', 't', 'bottom', 'horizontal', createIdFactory())
+    const split = putBeside(stack('a', 'one'), 'a', 't', 'bottom', 'horizontal', createIdFactory())
 
-    expect(landing.axis).toBe('vertical')
-    expect(landing.focus).toBe('made-1')
-    expect(isBranch(landing.root) && landing.root.sizes).toStrictEqual([0.5, 0.5])
-    expect(isBranch(landing.root) && landing.root.children.map((child) => child.id)).toStrictEqual([
+    expect(split.axis).toBe('vertical')
+    expect(split.focus).toBe('made-1')
+    expect(isBranch(split.root) && split.root.sizes).toStrictEqual([0.5, 0.5])
+    expect(isBranch(split.root) && split.root.children.map((child) => child.id)).toStrictEqual([
       'a',
       'made-1',
     ])
   })
 
   it('wraps a pane in two halves when the parent divides the other way', () => {
-    const landing = putBeside(two, 'a', 't', 'top', 'horizontal', createIdFactory())
-    const wrapper = nodeAt(landing.root, [0])
+    const split = putBeside(two, 'a', 't', 'top', 'horizontal', createIdFactory())
+    const wrapper = nodeAt(split.root, [0])
 
     expect(wrapper && isBranch(wrapper) && wrapper.sizes).toStrictEqual([0.5, 0.5])
     expect(wrapper && isBranch(wrapper) && wrapper.children.map((child) => child.id)).toStrictEqual(
       ['made-1', 'a'],
     )
-    expect(landing.focus).toBe('made-1')
+    expect(split.focus).toBe('made-1')
   })
 })
 

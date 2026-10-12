@@ -193,7 +193,7 @@ func (d DetectModel) maxSide() int {
 // The boundary the detector draws falls inside the letters by a share of the
 // line's own height. One number serves a heading and a paragraph because a part
 // is read scaled to MaxSide, which brings the two to nearly one size.
-func (d DetectModel) expand() int {
+func (d DetectModel) getExpansion() int {
 	if d.Expand <= 0 {
 		return 18
 	}

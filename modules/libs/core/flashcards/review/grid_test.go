@@ -16,7 +16,7 @@ func TestHowFarACurveOfMinutesRuns(t *testing.T) {
 		{load: 30.5, keeping: 0, want: 61},
 		{load: 5000, keeping: 0, want: MinutesADayBounds.Most},
 	} {
-		if got := ceiling(one.load, one.keeping); got != one.want {
+		if got := getMinutesUpperBound(one.load, one.keeping); got != one.want {
 			t.Errorf("a load of %v minutes under a day of %v runs to %v, want %v",
 				one.load, one.keeping, got, one.want)
 		}

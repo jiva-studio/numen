@@ -110,7 +110,7 @@ func TestTheVaultOpenedLastIsCountedFirst(t *testing.T) {
 			}
 
 			got := make([]string, 0, len(all))
-			for _, v := range orderVaults(known) {
+			for _, v := range sortVaults(known) {
 				got = append(got, string(v.ID))
 			}
 			if len(got) != len(c.want) {

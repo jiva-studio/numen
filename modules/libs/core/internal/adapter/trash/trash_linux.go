@@ -22,14 +22,14 @@ const suffix = ".trashinfo"
 // deletedAt is the form the note writes the time in, in local time.
 const deletedAt = "2006-01-02T15:04:05"
 
-// send puts the folder in the trash the desktop reads.
-func send(path string) error {
-	return sendTo(path, home())
+// moveToTrash puts the folder in the trash the desktop reads.
+func moveToTrash(path string) error {
+	return moveToUserOrVolumeTrash(path, getUserTrashDir())
 }
 
-// home is the trash of this login. It is empty where the machine will not say
+// getUserTrashDir is the trash of this login. It is empty where the machine will not say
 // where this person's data lives.
-func home() string {
+func getUserTrashDir() string {
 	data := os.Getenv("XDG_DATA_HOME")
 	if !filepath.IsAbs(data) {
 		dir, err := os.UserHomeDir()
@@ -41,20 +41,20 @@ func home() string {
 	return filepath.Join(data, "Trash")
 }
 
-// sendTo puts the folder in the trash of this login, and in the trash at the root
+// moveToUserOrVolumeTrash puts the folder in the trash of this login, and in the trash at the root
 // of its own volume when a rename cannot reach the first. A volume that has no
 // trash and takes none has nowhere to put it.
-func sendTo(path, home string) error {
+func moveToUserOrVolumeTrash(path, home string) error {
 	if home != "" {
 		if err := moveIntoTrash(home, path, path); !errors.Is(err, syscall.EXDEV) {
 			return err
 		}
 	}
-	top, err := topdir(path)
+	top, err := getVolumeRoot(path)
 	if err != nil {
 		return err
 	}
-	dir, err := volume(top, os.Getuid())
+	dir, err := getVolumeTrashDir(top, os.Getuid())
 	if err != nil {
 		return err
 	}
@@ -65,9 +65,9 @@ func sendTo(path, home string) error {
 	return moveIntoTrash(dir, path, from)
 }
 
-// topdir is the root of the volume the folder is on: the last directory on the
+// getVolumeRoot is the root of the volume the folder is on: the last directory on the
 // way up that is still on the folder's device.
-func topdir(path string) (string, error) {
+func getVolumeRoot(path string) (string, error) {
 	var folder syscall.Stat_t
 	if err := syscall.Lstat(path, &folder); err != nil {
 		return "", err
@@ -88,10 +88,10 @@ func topdir(path string) (string, error) {
 	}
 }
 
-// volume is the trash at the root of a mounted volume: the one the volume
+// getVolumeTrashDir is the trash at the root of a mounted getVolumeTrashDir: the one the getVolumeTrashDir
 // carries for everybody where it is a sticky directory of its own, and this
 // login's otherwise.
-func volume(top string, uid int) (string, error) {
+func getVolumeTrashDir(top string, uid int) (string, error) {
 	shared := filepath.Join(top, ".Trash")
 	if info, err := os.Lstat(shared); err == nil && info.IsDir() && info.Mode()&os.ModeSticky != 0 {
 		mine := filepath.Join(shared, strconv.Itoa(uid))
@@ -120,11 +120,11 @@ func moveIntoTrash(dir, path, from string) error {
 		}
 	}
 
-	name, note, err := reserve(files, info, filepath.Base(path))
+	name, note, err := reserveTrashName(files, info, filepath.Base(path))
 	if err != nil {
 		return err
 	}
-	_, err = note.WriteString(record(from))
+	_, err = note.WriteString(formatTrashInfo(from))
 	if closed := note.Close(); err == nil {
 		err = closed
 	}
@@ -138,10 +138,10 @@ func moveIntoTrash(dir, path, from string) error {
 	return nil
 }
 
-// reserve is a free name in one trash directory and the open note that holds
+// reserveTrashName is a free name in one trash directory and the open note that holds
 // it. Two deletions of folders called the same thing race for the note, and the
 // one that creates it has the name.
-func reserve(files, notes, name string) (string, *os.File, error) {
+func reserveTrashName(files, notes, name string) (string, *os.File, error) {
 	for n := 1; ; n++ {
 		taken := name
 		if n > 1 {
@@ -160,10 +160,10 @@ func reserve(files, notes, name string) (string, *os.File, error) {
 	}
 }
 
-// record is the note beside a trashed folder: where it was and when it was
+// formatTrashInfo is the note beside a trashed folder: where it was and when it was
 // deleted. The path is URL-encoded, and is relative to the root of the volume
 // for a trash that sits at that root.
-func record(from string) string {
+func formatTrashInfo(from string) string {
 	return "[Trash Info]\n" +
 		"Path=" + (&url.URL{Path: from}).EscapedPath() + "\n" +
 		"DeletionDate=" + time.Now().Format(deletedAt) + "\n"

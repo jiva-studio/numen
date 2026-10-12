@@ -125,9 +125,9 @@ func resize(s []int64, size int) []int64 {
 	return s[:size]
 }
 
-// bucket rounds a sequence length up to the next step. Every distinct shape
+// roundUpToBucket rounds a sequence length up to the next step. Every distinct shape
 // costs a compilation, so the lengths are held to a few.
-func bucket(tokens, step, limit int) int {
+func roundUpToBucket(tokens, step, limit int) int {
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a length equal to the limit is assigned the limit"
 	if tokens > limit {
 		tokens = limit

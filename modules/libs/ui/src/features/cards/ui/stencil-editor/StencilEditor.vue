@@ -15,11 +15,11 @@ import { useDrag } from '../../model/drag'
 import { getDeclaredFields, getFreeName, type Half, type InsertionPoint } from '../../lib/order'
 import {
   faceRows,
-  NOTHING_AMISS,
+  NO_STENCIL_PROBLEMS,
   STENCIL_WORDS,
   type StencilFace,
   type StencilWords,
-  type StencilWrong,
+  type StencilProblems,
 } from '../../lib/stencil'
 import { sampleValues } from '../../lib/fill'
 
@@ -37,13 +37,13 @@ const props = withDefaults(
     /** What the editor is announced as. */
     name?: string
     /** What the caller found wrong with the fields and the faces it handed in. */
-    wrong?: StencilWrong
+    wrong?: StencilProblems
     /** The words it is drawn with. */
     words?: StencilWords
   }>(),
   {
     name: 'Stencil',
-    wrong: () => NOTHING_AMISS,
+    wrong: () => NO_STENCIL_PROBLEMS,
     words: () => STENCIL_WORDS,
   },
 )

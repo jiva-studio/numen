@@ -7,14 +7,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writing"
 )
 
-// ForgetOtherRecipes takes out every vector kept under a recipe other than the
+// DeleteOtherRecipeVectors takes out every vector kept under a recipe other than the
 // one in use, and says how many went.
 //
 // A vector is addressed by the text it was made from and the recipe it was made
 // under, so a recipe that moved leaves the vectors of the old one on disk beside
 // the new. They stay there for a person who sets the old model back, and this is
 // asked only where a person has said to build the index again.
-func (d *DB) ForgetOtherRecipes(ctx context.Context, recipe string) (int64, error) {
+func (d *DB) DeleteOtherRecipeVectors(ctx context.Context, recipe string) (int64, error) {
 	if recipe == "" {
 		return 0, nil
 	}

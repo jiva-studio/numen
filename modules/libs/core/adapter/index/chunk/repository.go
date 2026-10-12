@@ -177,7 +177,7 @@ func (r *Repository) ReplaceChunks(ctx context.Context, vaultID domain.VaultID, 
 	if err != nil {
 		return err
 	}
-	source, err := identify(ctx, tx, vault, kind, path)
+	source, err := getSourceRow(ctx, tx, vault, kind, path)
 	if errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("%s is not a %s the index holds", path, kind)
 	}
@@ -272,7 +272,7 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 		return err
 	}
 	for _, path := range paths {
-		source, err := identify(ctx, tx, vault, kind, path)
+		source, err := getSourceRow(ctx, tx, vault, kind, path)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
@@ -312,10 +312,10 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 	if err != nil {
 		return err
 	}
-	if err := displace(ctx, tx, vault, from, to); err != nil {
+	if err := deleteMoveTarget(ctx, tx, vault, from, to); err != nil {
 		return err
 	}
-	if err := rename(ctx, tx, vault, from, to); err != nil {
+	if err := updateNoteName(ctx, tx, vault, from, to); err != nil {
 		return err
 	}
 	first, past := getRangeUnder(from)
@@ -331,7 +331,7 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 	return nil
 }
 
-// displace takes out what the vault holds where a move is about to land.
+// deleteMoveTarget takes out what the vault holds where a move is about to land.
 //
 // A file is moved on disk and then moved here, and a scan reading the vault
 // between the two files it afresh under its new path. The row that travels
@@ -340,7 +340,7 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 //
 // The rows that are moving stand still: a folder moved inside itself holds
 // them, and they are the ones about to be filed.
-func displace(ctx context.Context, tx *writing.Transaction, vault int64, from, to string) error {
+func deleteMoveTarget(ctx context.Context, tx *writing.Transaction, vault int64, from, to string) error {
 	first, past := getRangeUnder(to)
 	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
 	if err != nil {
@@ -377,7 +377,7 @@ func displace(ctx context.Context, tx *writing.Transaction, vault int64, from, t
 	return nil
 }
 
-// rename says what the note at a path is called once its file is at another.
+// updateNoteName says what the note at a path is called once its file is at another.
 //
 // A note is called by its `title` key, else by its filename. It takes the name
 // of the file it lands under where the file carries no key, and where that
@@ -386,7 +386,7 @@ func displace(ctx context.Context, tx *writing.Transaction, vault int64, from, t
 //
 // The name goes into the title index with it: that is what a search by name
 // ranks and highlights against.
-func rename(ctx context.Context, tx *writing.Transaction, vault int64, from, to string) error {
+func updateNoteName(ctx context.Context, tx *writing.Transaction, vault int64, from, to string) error {
 	name := domain.Basename(to)
 	if name == domain.Basename(from) {
 		return nil
@@ -461,32 +461,32 @@ func Replace(ctx context.Context, tx *writing.Transaction, source, vault int64, 
 	}
 
 	for _, large := range chunks {
-		row, err := put(ctx, tx, held, source, vault, large, nil, len(large.Small) == 0)
+		row, err := upsertChunk(ctx, tx, held, source, vault, large, nil, len(large.Small) == 0)
 		if err != nil {
 			return err
 		}
 		for _, small := range large.Small {
-			if _, err := put(ctx, tx, held, source, vault, small, row, true); err != nil {
+			if _, err := upsertChunk(ctx, tx, held, source, vault, small, row, true); err != nil {
 				return err
 			}
 		}
 	}
-	if err := remove(ctx, tx, held.getUnclaimedRows()); err != nil {
+	if err := deleteRows(ctx, tx, held.getUnusedRows()); err != nil {
 		return err
 	}
-	return forget(ctx, tx, held.getForgottenHashes())
+	return deleteOrphanVectors(ctx, tx, held.getRemovedHashes())
 }
 
-// put is the row one chunk is held on, and moves or writes it.
+// upsertChunk is the row one chunk is held on, and moves or writes it.
 //
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent_id` becomes.
-func put(
+func upsertChunk(
 	ctx context.Context, tx *writing.Transaction, held *rows,
 	source, vault int64, c Chunk, parent any, isLeaf bool,
 ) (int64, error) {
-	key := textID{hash: hashOf(c.Text), isSmall: parent != nil}
-	if row, kept := held.claim(key); kept {
+	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
+	if row, kept := held.takeUnusedRow(key); kept {
 		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
 			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
@@ -564,9 +564,9 @@ func chunksOf(ctx context.Context, tx *writing.Transaction, source int64) (*rows
 	return h, cursor.Err()
 }
 
-// claim is a row holding the text given, and false where none does. A row is
+// takeUnusedRow is a row holding the text given, and false where none does. A row is
 // claimed once, so a text that occurs twice in a source is two rows.
-func (h *rows) claim(key textID) (int64, bool) {
+func (h *rows) takeUnusedRow(key textID) (int64, bool) {
 	rows := h.candidates[key]
 	if len(rows) == 0 {
 		return 0, false
@@ -577,9 +577,9 @@ func (h *rows) claim(key textID) (int64, bool) {
 	return row, true
 }
 
-// getUnclaimedRows is the rows of the source no chunk holds, in order, so that
+// getUnusedRows is the rows of the source no chunk holds, in order, so that
 // a cut writes the same thing twice running.
-func (h *rows) getUnclaimedRows() []int64 {
+func (h *rows) getUnusedRows() []int64 {
 	out := make([]int64, 0, len(h.left))
 	for row := range h.left {
 		out = append(out, row)
@@ -588,14 +588,14 @@ func (h *rows) getUnclaimedRows() []int64 {
 	return out
 }
 
-// remove takes out the rows given, and everything indexed over them.
+// deleteRows takes out the rows given, and everything indexed over them.
 //
 // The rows in the two virtual tables go first, by the chunk's own number.
 // Nothing cascades into a virtual table, and a row left in either answers a
 // search with a chunk that no longer exists. A large chunk takes the chunks
 // inside it, so a row here may already be gone from `chunks` by the time it is
 // reached.
-func remove(ctx context.Context, tx *writing.Transaction, rows []int64) error {
+func deleteRows(ctx context.Context, tx *writing.Transaction, rows []int64) error {
 	for _, row := range rows {
 		for _, name := range []string{"delete_fts", "delete_vec", "delete_chunk"} {
 			if err := exec(ctx, tx, name, row); err != nil {
@@ -606,9 +606,9 @@ func remove(ctx context.Context, tx *writing.Transaction, rows []int64) error {
 	return nil
 }
 
-// hashOf addresses a chunk by the text it holds. A chunk keeps its row, and its
+// computeHash addresses a chunk by the text it holds. A chunk keeps its row, and its
 // vector and its full-text row with it, for as long as this value stays the same.
-func hashOf(s string) string {
+func computeHash(s string) string {
 	sum := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(sum[:])
 }
@@ -638,8 +638,8 @@ func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64
 	return row, err
 }
 
-// identify is the row number of one source of one kind.
-func identify(ctx context.Context, db querier, vault int64, kind, path string) (int64, error) {
+// getSourceRow is the row number of one source of one kind.
+func getSourceRow(ctx context.Context, db querier, vault int64, kind, path string) (int64, error) {
 	var row int64
 	err := db.QueryRowContext(ctx, stmt.Get("identify"), vault, kind, path).Scan(&row)
 	return row, err
@@ -654,9 +654,9 @@ func newNullable(s string) any {
 	return s
 }
 
-// getForgottenHashes is the text of the rows no chunk holds: what this source
+// getRemovedHashes is the text of the rows no chunk holds: what this source
 // used to hold and does not any more.
-func (h *rows) getForgottenHashes() []string {
+func (h *rows) getRemovedHashes() []string {
 	out := make([]string, 0, len(h.left))
 	for row := range h.left {
 		if hash := h.hash[row]; hash != "" {
@@ -667,13 +667,13 @@ func (h *rows) getForgottenHashes() []string {
 	return slices.Compact(out)
 }
 
-// forget takes out the vectors made for text no chunk holds.
+// deleteOrphanVectors takes out the vectors made for text no chunk holds.
 //
 // It is asked where a source was cut again, so the text is known to have been
 // replaced. A source the vault no longer offers takes nothing with it: a folder
 // that could not be read looks the same from here as one whose files were
 // deleted, and a vector was bought.
-func forget(ctx context.Context, tx *writing.Transaction, texts []string) error {
+func deleteOrphanVectors(ctx context.Context, tx *writing.Transaction, texts []string) error {
 	for _, hash := range texts {
 		if err := exec(ctx, tx, "forget_vector", hash, hash); err != nil {
 			return err

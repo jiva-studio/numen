@@ -26,10 +26,10 @@ import type { NameMatch } from './search'
 import { createPaletteSteps } from './navigation'
 
 /** How many notes the step that picks one asks for. */
-const EACH = 8
+const GROUP_RESULT_LIMIT = 8
 
 /** How long a keystroke waits before the vault is asked. */
-const HOLD = 120
+const SEARCH_DEBOUNCE_MS = 120
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
@@ -124,10 +124,10 @@ export function useCommandPalette(
     }
     isWorking.value = true
     failureMessage.value = ''
-    await wait(HOLD)
+    await wait(SEARCH_DEBOUNCE_MS)
     if (!mine.isCurrent) return
     try {
-      const names = await core.names(query, EACH)
+      const names = await core.names(query, GROUP_RESULT_LIMIT)
       if (!mine.isCurrent) return
       found.value = names
     } catch {

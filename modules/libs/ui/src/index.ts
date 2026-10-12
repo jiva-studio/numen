@@ -11,7 +11,7 @@ export { Plex } from './features/plex'
 export { seatWord } from './features/plex'
 
 export { Menu, groupItems } from './shared/ui/menu'
-export type { MenuItem, MenuOpening } from './shared/ui/menu'
+export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
 
@@ -64,7 +64,7 @@ export { optionsForType, useTypeSize } from './features/plex'
 
 export { Editor } from './features/editor'
 /** A time against every line of an editor, and the line being said now. */
-export { timing } from './features/editor'
+export { createTimeGutter } from './features/editor'
 export { createWikilinkCompletion, createWikilinkSource } from './features/editor'
 export type {
   WikilinkOption,
@@ -93,7 +93,7 @@ export type { AgentPort, AgentStep } from './features/thread'
 export { isNoteAddress, wikilinksIn } from './shared/lib/address'
 
 /** A link that leads out of the application, and the window held against it. */
-export { holdWindow } from './shared/lib/outward'
+export { interceptOutwardLinks } from './shared/lib/outward'
 
 /** Numbers as they are read out, which both windows read the same way. */
 export { many, percent, plural } from './shared/lib/digits'
@@ -153,7 +153,7 @@ export { getDeclaredFields as cardFields } from './features/cards'
 export type { DeckCard, DeckSection } from './features/cards'
 export type { Stencil } from './features/cards'
 
-export { byHolding } from './features/plex'
+export { byLongPress } from './features/plex'
 export { byDoubleTap } from './features/plex'
 export type { PlexPart } from './features/plex'
 export type { EdgeArrow, PlexEdge } from './features/plex'

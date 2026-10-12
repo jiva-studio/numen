@@ -152,18 +152,18 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 func padReflect(x []float64, by int) []float64 {
 	out := make([]float64, 0, len(x)+2*by)
 	for i := by; i > 0; i-- {
-		out = append(out, x[mirrorIndex(i, len(x))])
+		out = append(out, x[getMirroredIndex(i, len(x))])
 	}
 	out = append(out, x...)
 	for i := 1; i <= by; i++ {
-		out = append(out, x[mirrorIndex(len(x)-1-i, len(x))])
+		out = append(out, x[getMirroredIndex(len(x)-1-i, len(x))])
 	}
 	return out
 }
 
-// mirrorIndex folds an index back into a signal of n samples, mirroring at each
+// getMirroredIndex folds an index back into a signal of n samples, mirroring at each
 // end as often as it takes.
-func mirrorIndex(i, n int) int {
+func getMirroredIndex(i, n int) int {
 	if n == 1 {
 		return 0
 	}

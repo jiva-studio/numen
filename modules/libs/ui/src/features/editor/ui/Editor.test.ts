@@ -10,8 +10,8 @@ import { undo } from '@codemirror/commands'
 import { EditorSelection, StateField, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
-import { marked, type EditorChange } from '../lib/change'
-import { opening, resolving } from '../lib/outside'
+import { changeMarks, type EditorChange } from '../lib/change'
+import { addressOpener, addressResolver } from '../lib/outside'
 
 type Props = InstanceType<typeof Editor>['$props']
 type EditorHandle = { focus: () => void; measure: () => void; reveal: (line: number) => boolean }
@@ -40,7 +40,7 @@ const caretOf = (view: EditorView) => {
 /** What is drawn over a change, and nothing where nothing is. */
 const getChangeMarks = (view: EditorView) => {
   const found: { from: number; to: number; mark: string | null }[] = []
-  view.state.field(marked).decorations.between(0, view.state.doc.length, (from, to, deco) => {
+  view.state.field(changeMarks).decorations.between(0, view.state.doc.length, (from, to, deco) => {
     found.push({ from, to, mark: (deco.spec as { class?: string }).class ?? null })
   })
   return found
@@ -285,7 +285,7 @@ describe('a change something other than the reader is making', () => {
 describe('an address in the text', () => {
   it('is emitted when something follows it', () => {
     const { wrapper, view } = editor({ modelValue: '<https://example.invalid>' })
-    view.state.facet(opening)('https://example.invalid')
+    view.state.facet(addressOpener)('https://example.invalid')
     expect(wrapper.emitted('open')).toEqual([['https://example.invalid']])
   })
 
@@ -298,11 +298,13 @@ describe('an address in the text', () => {
       modelValue: 'go [there](note.md)',
       resolve: (address: string) => `vault://${address}`,
     })
-    expect(view.state.facet(resolving)('note.md')).toBe('vault://note.md')
+    expect(view.state.facet(addressResolver)('note.md')).toBe('vault://note.md')
   })
 
   it('stands as it was written where the caller makes nothing of it', () => {
-    expect(editor({ modelValue: 'go' }).view.state.facet(resolving)('note.md')).toBe('note.md')
+    expect(editor({ modelValue: 'go' }).view.state.facet(addressResolver)('note.md')).toBe(
+      'note.md',
+    )
   })
 })
 

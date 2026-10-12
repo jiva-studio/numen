@@ -75,7 +75,7 @@ func openHighlightWindow(t *testing.T) (*API, http.Handler, *pdf.Book) {
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
 	}
-	api.show(vault)
+	api.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler()), doc
 }
 

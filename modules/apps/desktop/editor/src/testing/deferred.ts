@@ -10,7 +10,7 @@ export interface Deferred<T> {
   fail: (error: string) => void
 }
 
-export function later<T>(): Deferred<T> {
+export function createDeferred<T>(): Deferred<T> {
   let answer!: (value: T) => void
   let fail!: (error: unknown) => void
   const promise = new Promise<T>((resolve, reject) => {

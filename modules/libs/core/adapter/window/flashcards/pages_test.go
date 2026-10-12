@@ -81,3 +81,20 @@ func TestAWindowWithNoThemesStillAnswers(t *testing.T) {
 		t.Error("a window with no themes answered about them")
 	}
 }
+
+// The page itself is asked for at its addresses, and a build carrying no
+// interface answers them with the files the window was given.
+func TestThePageIsAnsweredAtEveryAddressItOpensAt(t *testing.T) {
+	files := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("the files"))
+	})
+	handler := (&API{}).NewHandler(files)
+
+	for _, at := range []string{"/", "/index.html"} {
+		out := httptest.NewRecorder()
+		handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, at, nil))
+		if got := out.Body.String(); got != "the files" {
+			t.Errorf("%s answered %q", at, got)
+		}
+	}
+}

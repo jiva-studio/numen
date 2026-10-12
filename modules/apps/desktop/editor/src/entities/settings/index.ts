@@ -1,5 +1,13 @@
 /** What the settings file holds, and how the window is drawn from it. */
-export { DESIGNED, isInBounds, ladder, MODES, NOWHERE, parseSize, SCHEMES } from './lib/appearance'
+export {
+  DESIGNED,
+  isInBounds,
+  ladder,
+  MODES,
+  EMPTY_RANGE,
+  parseSize,
+  SCHEMES,
+} from './lib/appearance'
 export type { Configuration, Model, Presence, SettingEdit } from './lib/configuration'
 export { DEFAULT_PARTS, ladder as hangingLadder } from './lib/hanging'
 export type { HangingSettings } from './lib/hanging'

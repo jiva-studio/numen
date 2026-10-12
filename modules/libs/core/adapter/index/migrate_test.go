@@ -33,18 +33,18 @@ func TestEveryMigrationIsNamedAndOrdered(t *testing.T) {
 
 func TestVersionOfRejectsUnnumberedFiles(t *testing.T) {
 	for _, name := range []string{"initial.sql", "_initial.sql", "abc_initial.sql", "0000_zero.sql", "0007"} {
-		if _, err := versionOf(name); err == nil {
+		if _, err := parseVersion(name); err == nil {
 			t.Errorf("%q was accepted", name)
 		}
 	}
-	v, err := versionOf("0007_add_column.sql")
+	v, err := parseVersion("0007_add_column.sql")
 	if err != nil || v != 7 {
 		t.Errorf("0007 gave %d, %v", v, err)
 	}
 }
 
 func TestStatementsIgnoreCommentsAndBlanks(t *testing.T) {
-	got := statements("-- a comment\n\nSELECT 1;\n-- another\n;\nSELECT 2;\n")
+	got := splitStatements("-- a comment\n\nSELECT 1;\n-- another\n;\nSELECT 2;\n")
 	if len(got) != 2 {
 		t.Fatalf("got %d statements: %q", len(got), got)
 	}
@@ -526,7 +526,7 @@ func TestRememberLeavesTheOriginalTableWhenRenamingFails(t *testing.T) {
 	db := openBreaking(t, path)
 	breakOn(t, "RENAME TO")
 
-	if err := remember(ctx, db); !errors.Is(err, errBroken) {
+	if err := createBookkeeping(ctx, db); !errors.Is(err, errBroken) {
 		t.Fatalf("remember answered %v over a rename it could not make", err)
 	}
 

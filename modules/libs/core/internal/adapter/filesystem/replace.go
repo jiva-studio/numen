@@ -38,9 +38,9 @@ func getTempPattern(name string) string {
 	return "." + name + ".*"
 }
 
-// parents puts the folders above a name there, and says a file standing where
+// createParents puts the folders above a name there, and says a file standing where
 // one of them would go in the words a caller acts on.
-func parents(root *os.Root, dir, path string) error {
+func createParents(root *os.Root, dir, path string) error {
 	err := root.MkdirAll(dir, 0o755)
 	if errors.Is(err, fs.ErrExist) {
 		return fmt.Errorf("make %s: %w", path, port.ErrOccupied)
@@ -48,10 +48,10 @@ func parents(root *os.Root, dir, path string) error {
 	return err
 }
 
-// temporary is a file created beside a target, under the vault's own handle.
+// createTempFile is a file created beside a target, under the vault's own handle.
 // It is what os.CreateTemp is, for a root: a name nobody else holds, taken by
 // creating it and not by looking first.
-func temporary(root *os.Root, dir, pattern string) (*os.File, string, error) {
+func createTempFile(root *os.Root, dir, pattern string) (*os.File, string, error) {
 	prefix, suffix, _ := strings.Cut(pattern, "*")
 	for range 10_000 {
 		name := filepath.Join(dir, prefix+strconv.FormatUint(uint64(rand.Uint32()), 10)+suffix)
@@ -78,7 +78,7 @@ func temporary(root *os.Root, dir, pattern string) (*os.File, string, error) {
 // ones at the target from the moment the rename lands.
 func replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.Fingerprint, error) {
 	dir := filepath.Dir(target)
-	tmp, at, err := temporary(root, dir, getTempPattern(filepath.Base(target)))
+	tmp, at, err := createTempFile(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -110,17 +110,17 @@ func replace(ctx context.Context, root *os.Root, target string, from io.Reader, 
 		return domain.Fingerprint{}, err
 	}
 	written := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
-	return written, settle(root, dir)
+	return written, syncDirectory(root, dir)
 }
 
-// settle flushes the folder the rename was recorded in.
+// syncDirectory flushes the folder the rename was recorded in.
 //
 // Flushing the file is what keeps its contents whole; flushing the folder is
 // what keeps the rename itself.
 //
 // Not every filesystem lets a directory be opened for this, and a refusal is
 // not an error to hand back: the note is written either way.
-func settle(root *os.Root, dir string) error {
+func syncDirectory(root *os.Root, dir string) error {
 	folder, err := root.Open(dir)
 	if err != nil {
 		return nil

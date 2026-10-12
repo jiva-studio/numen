@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// errGoing is work asked for once the window has begun closing.
-var errGoing = errors.New("the window is closing")
+// errClosing is work asked for once the window has begun closing.
+var errClosing = errors.New("the window is closing")
 
 // openVaults is every vault this window has open.
 //
@@ -22,9 +22,9 @@ var errGoing = errors.New("the window is closing")
 type openVaults struct {
 	cfg container.Config
 	db  *container.Index
-	// under is the life a vault stays open for. It outlives the question that
+	// lifetime is the life a vault stays open for. It outlives the question that
 	// first asked after the vault.
-	under context.Context
+	lifetime context.Context
 	// recordVault is called with the vault the index has just been brought
 	// level with.
 	recordVault func(domain.Vault)
@@ -35,53 +35,53 @@ type openVaults struct {
 	// closes.
 	running sync.WaitGroup
 
-	mu       sync.Mutex
-	isGoing  bool
-	openings map[domain.VaultID]*vaultOpening
+	mu        sync.Mutex
+	isClosing bool
+	opened    map[domain.VaultID]*openedVault
 }
 
-// vaultOpening is one vault's opening, made once however many ask for it.
-type vaultOpening struct {
+// openedVault is one vault's opening, made once however many ask for it.
+type openedVault struct {
 	once    sync.Once
 	opening *container.VaultOpener
 	open    *container.OpenVault
 }
 
-// wait lets go of every vault and holds until nothing is still writing to the
+// closeAndWait lets go of every vault and holds until nothing is still writing to the
 // index.
-func (o *openVaults) wait() {
+func (o *openVaults) closeAndWait() {
 	o.mu.Lock()
-	o.isGoing = true
+	o.isClosing = true
 	o.mu.Unlock()
 
 	o.running.Wait()
 }
 
-// startWork takes a piece of work on and says whether it may run. A window that
+// tryBeginWork takes a piece of work on and says whether it may run. A window that
 // is going takes none, so nothing begins writing after the index is waited for.
-func (o *openVaults) startWork() bool {
+func (o *openVaults) tryBeginWork() bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	if o.isGoing {
+	if o.isClosing {
 		return false
 	}
 	o.running.Add(1)
 	return true
 }
 
-// getOpening is the vault opened, and opens it the first time it is asked for.
+// getOpenedVault is the vault opened, and opens it the first time it is asked for.
 // Opening one registers a watch over its whole tree, which is done outside the
 // lock.
-func (o *openVaults) getOpening(v domain.Vault) *vaultOpening {
+func (o *openVaults) getOpenedVault(v domain.Vault) *openedVault {
 	o.mu.Lock()
-	one, there := o.openings[v.ID]
+	one, there := o.opened[v.ID]
 	if !there {
-		one = &vaultOpening{}
-		if o.openings == nil {
-			o.openings = map[domain.VaultID]*vaultOpening{}
+		one = &openedVault{}
+		if o.opened == nil {
+			o.opened = map[domain.VaultID]*openedVault{}
 		}
-		o.openings[v.ID] = one
+		o.opened[v.ID] = one
 	}
 	o.mu.Unlock()
 
@@ -90,7 +90,7 @@ func (o *openVaults) getOpening(v domain.Vault) *vaultOpening {
 }
 
 // openVault starts one vault's watch and leaves it running.
-func (o *openVaults) openVault(v domain.Vault, one *vaultOpening) {
+func (o *openVaults) openVault(v domain.Vault, one *openedVault) {
 	opening := o.cfg.VaultOpener(o.db)
 	opening.Told = func(container.VaultChanges) { o.recordVault(v) }
 	opening.ErrorHandler = func(err error) {
@@ -99,42 +99,42 @@ func (o *openVaults) openVault(v domain.Vault, one *vaultOpening) {
 		}
 	}
 
-	open := opening.Begin(o.under, v)
+	open := opening.Begin(o.lifetime, v)
 	if why := open.GetUnwatchedReason(); why != nil {
 		fmt.Fprintf(o.out, "numen-flashcards: %s is not being followed: %v\n", v.Name, why)
 	}
 	one.opening, one.open = opening, open
 
-	if o.startWork() {
+	if o.tryBeginWork() {
 		go func() {
 			defer o.running.Done()
-			open.Run(o.under)
+			open.Run(o.lifetime)
 		}()
 	}
 }
 
 // readVault walks a vault into the index.
 func (o *openVaults) readVault(ctx context.Context, v domain.Vault) error {
-	if !o.startWork() {
-		return errGoing
+	if !o.tryBeginWork() {
+		return errClosing
 	}
 	defer o.running.Done()
 
-	_, err := o.getOpening(v).open.Read(ctx, nil)
+	_, err := o.getOpenedVault(v).open.Read(ctx, nil)
 	return err
 }
 
-// level brings the paths a write touched up to date, through the opening of the
+// updateIndex brings the paths a write touched up to date, through the opening of the
 // vault they are in.
 //
 // A levelling writes to the index, so a window that is closing refuses one: the
 // prose is on disk either way, and a write into a database being closed is
 // worse than a search that has to be caught up on next time.
-func (o *openVaults) level(ctx context.Context, v domain.Vault, paths []string) error {
-	if !o.startWork() {
-		return errGoing
+func (o *openVaults) updateIndex(ctx context.Context, v domain.Vault, paths []string) error {
+	if !o.tryBeginWork() {
+		return errClosing
 	}
 	defer o.running.Done()
 
-	return o.getOpening(v).opening.Level(ctx, v, paths)
+	return o.getOpenedVault(v).opening.Level(ctx, v, paths)
 }

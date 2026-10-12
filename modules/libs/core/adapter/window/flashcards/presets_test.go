@@ -1,6 +1,8 @@
 package flashcards
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +11,8 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -121,5 +125,47 @@ func TestAQuestionAboutThePresetsOfAVaultNobodyHoldsIsRefused(t *testing.T) {
 		&v1.GetVaultDeckPresetRequest{Vault: "nobody", Deck: "decks/Words.md"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("reading answered %v", err)
+	}
+}
+
+// brokenPresetLinks is an index that cannot say what a deck points at.
+type brokenPresetLinks struct{ port.LinkQueries }
+
+func (brokenPresetLinks) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+	return nil, errors.New("the index is out of reach")
+}
+
+// The index being out of reach is an internal failure and not a deck on the
+// defaults.
+func TestAnIndexOutOfReachIsAnInternalFailureForAPreset(t *testing.T) {
+	api, held := newAPI(t, pointed)
+	api.Presets = flashcards.NewPresets(nil, nil, brokenPresetLinks{}, nil, nil, api.Day, nil)
+
+	_, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
+		&v1.GetVaultDeckPresetRequest{Vault: string(held[0].ID), Deck: "decks/Words.md"}))
+	if code := connect.CodeOf(err); code != connect.CodeInternal {
+		t.Errorf("reading answered %v", err)
+	}
+}
+
+// A preset the deck names that cannot be read comes back refused as the editor
+// refuses a note, and carries no preset.
+func TestAPresetThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
+	api, held := newAPI(t, pointed)
+	v := held[0]
+	if err := os.Remove(filepath.Join(v.Path, "Sanskrit.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
+		&v1.GetVaultDeckPresetRequest{Vault: string(v.ID), Deck: "decks/Words.md"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := out.Msg.GetError(); got != v1.ErrorCode_ERROR_CODE_MISSING {
+		t.Errorf("a preset that is not there is refused as %v", got)
+	}
+	if out.Msg.GetPreset() != nil {
+		t.Errorf("a refused preset came with %+v", out.Msg.GetPreset())
 	}
 }

@@ -77,7 +77,7 @@ func TestHearingARecording(t *testing.T) {
 func TestHearingAWholeRecording(t *testing.T) {
 	by, raw := openTranscriber(t)
 
-	sound, rate, err := samples(raw)
+	sound, rate, err := readSamples(raw)
 	if err != nil {
 		t.Fatal(err)
 	}

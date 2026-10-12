@@ -10,11 +10,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// importCommand fetches what is at the address a url file holds.
+// runImportCommand fetches what is at the address a url file holds.
 //
 // The window asks for it as the file is made; this is the hand asking for one,
 // and `--again` is how a person asks a site for its words afresh.
-func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runImportCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	again, copying := false, false
 	rest := make([]string, 0, len(args))
 	for _, one := range args {
@@ -44,7 +44,7 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	importing := open.ImportURL
 	importing.IsRepeat = again
 	if copying {
-		return copyURL(ctx, out, importing, v, args[1])
+		return copyFromURL(ctx, out, importing, v, args[1])
 	}
 	fmt.Fprintf(out, "downloading what %s points at\n", args[1])
 
@@ -65,8 +65,8 @@ func importCommand(ctx context.Context, out io.Writer, deps Deps, args []string)
 	return nil
 }
 
-// copyURL fetches a copy of what an address points at, onto this disk.
-func copyURL(
+// copyFromURL fetches a copy of what an address points at, onto this disk.
+func copyFromURL(
 	ctx context.Context,
 	out io.Writer,
 	importing source.ImportURL,

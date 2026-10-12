@@ -18,7 +18,7 @@ import (
 func (a *API) ListReviewDays(
 	ctx context.Context, r *connect.Request[v1.ListReviewDaysRequest],
 ) (*connect.Response[v1.ListReviewDaysResponse], error) {
-	v, err := a.Vault(r.Msg.GetVault())
+	v, err := a.GetVault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -55,15 +55,15 @@ func (a *API) ListReviewDays(
 	}
 
 	return connect.NewResponse(&v1.ListReviewDaysResponse{
-		Days:     inOrder(days),
-		Due:      inOrder(due),
+		Days:     sortReviewDays(days),
+		Due:      sortReviewDays(due),
 		Streak:   int32(said.Streak),
 		Answered: int32(said.Answered),
 	}), nil
 }
 
-// inOrder puts the days oldest first.
-func inOrder(days []*v1.ReviewDay) []*v1.ReviewDay {
+// sortReviewDays puts the days oldest first.
+func sortReviewDays(days []*v1.ReviewDay) []*v1.ReviewDay {
 	slices.SortFunc(days, func(one, other *v1.ReviewDay) int {
 		return cmpDay(one.GetDay(), other.GetDay())
 	})

@@ -20,12 +20,12 @@ import (
 // than waited for: every message says the same thing, so what is said to a
 // full listener is what the one it holds already says.
 func TestAListenerIsPassedOverRatherThanWaitedFor(t *testing.T) {
-	var f following
-	line, done := f.listen()
+	var f changeSubscribers
+	line, done := f.subscribe()
 	t.Cleanup(done)
 
-	f.say()
-	f.say()
+	f.notify()
+	f.notify()
 
 	if _, is := <-line; !is {
 		t.Fatal("the listener was told nothing")
@@ -40,9 +40,9 @@ func TestAListenerIsPassedOverRatherThanWaitedFor(t *testing.T) {
 // A listener that has stopped listening is not spoken to, and does not hold up
 // the ones that still are.
 func TestAListenerThatStoppedIsNotSpokenTo(t *testing.T) {
-	var f following
-	going, still := f.listen()
-	stays, done := f.listen()
+	var f changeSubscribers
+	going, still := f.subscribe()
+	stays, done := f.subscribe()
 	t.Cleanup(done)
 
 	still()
@@ -50,7 +50,7 @@ func TestAListenerThatStoppedIsNotSpokenTo(t *testing.T) {
 		t.Error("a listener that stopped was still told something")
 	}
 
-	f.say()
+	f.notify()
 	if _, is := <-stays; !is {
 		t.Error("the listener that stayed was told nothing")
 	}
@@ -61,7 +61,7 @@ func TestAListenerThatStoppedIsNotSpokenTo(t *testing.T) {
 func TestSomethingMovingReachesThePage(t *testing.T) {
 	api := &API{Registry: registry{}, Now: time.Now}
 	moved := make(chan struct{}, 1)
-	api.Follow(t.Context(), moved)
+	api.ReportChangesFrom(t.Context(), moved)
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)

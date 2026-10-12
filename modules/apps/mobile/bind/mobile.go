@@ -28,10 +28,10 @@ import (
 // answers with the port it already has.
 var (
 	mu      sync.Mutex
-	running *held
+	running *runningCore
 )
 
-type held struct {
+type runningCore struct {
 	port int
 	// gone says the server stopped on its own, so the port answers nothing.
 	gone   atomic.Bool
@@ -67,7 +67,7 @@ func Start(dir string) (int, error) {
 
 	cfg := makeConfig(dir, os.Stderr)
 
-	if err := seed(root); err != nil {
+	if err := seedVault(root); err != nil {
 		return 0, err
 	}
 	// The list holds a folder under the name it resolves to, and that is the
@@ -128,7 +128,7 @@ func Start(dir string) (int, error) {
 			numenv1connect.FileServiceName,
 		)),
 	}
-	running = &held{
+	running = &runningCore{
 		port:   addr.Port,
 		stop:   stop,
 		opened: opened,
@@ -216,9 +216,9 @@ func registerVault(cfg container.Config, root string) (string, error) {
 // jump across.
 const Seeded = "Physics.md"
 
-// seed writes a small graph into a vault that holds none, so that a picture has
+// seedVault writes a small graph into a vault that holds none, so that a picture has
 // something to draw.
-func seed(root string) error {
+func seedVault(root string) error {
 	held, err := os.ReadDir(root)
 	if err != nil {
 		return err

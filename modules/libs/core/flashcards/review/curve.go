@@ -117,9 +117,9 @@ type Place struct {
 // Nowhere is a place that falls outside the grid.
 var Nowhere = Place{Index: -1}
 
-// drawing is one curve being worked out: the run every place of it is projected
+// curveBuilder is one curve being worked out: the run every place of it is projected
 // with, and what stands the same at every place.
-type drawing struct {
+type curveBuilder struct {
 	run    Simulation
 	now    time.Time
 	preset Preset
@@ -157,7 +157,7 @@ func (s Simulation) Curve(
 			return nil
 		}
 	}
-	d := drawing{run: s, now: now, preset: p, at: at, unseen: unseen, by: by, places: places}
+	d := curveBuilder{run: s, now: now, preset: p, at: at, unseen: unseen, by: by, places: places}
 	switch p.Goal {
 	case GoalRetention:
 		return d.retention(ctx)
@@ -173,7 +173,7 @@ func (s Simulation) Curve(
 // It runs from a short day to twice what carrying the whole load costs, so the
 // place where the load is carried stands inside it. Each place is the session a
 // person would sit down to now, which is the day the deck screen offers.
-func (d drawing) minutes(ctx context.Context) (Curve, error) {
+func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
 
 	free := p
@@ -184,7 +184,7 @@ func (d drawing) minutes(ctx context.Context) (Curve, error) {
 	}
 
 	out := Curve{Goal: GoalMinutes, Now: Nowhere, Suggested: Nowhere}
-	top := ceiling(getSessionMinutes(load), float64(p.MinutesADay))
+	top := getMinutesUpperBound(getSessionMinutes(load), float64(p.MinutesADay))
 	for i := range Points {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
 	}
@@ -202,7 +202,7 @@ func (d drawing) minutes(ctx context.Context) (Curve, error) {
 			return err
 		}
 		place := session(ran)
-		if place.Learns, err = learnt(ctx, run, now, one, at, unseen); err != nil {
+		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, run, now, one, at, unseen); err != nil {
 			return err
 		}
 		out.Points[i] = place
@@ -234,7 +234,7 @@ func (d drawing) minutes(ctx context.Context) (Curve, error) {
 // week after week. Today is no part of it: the schedules a day opens with are
 // the same whatever target is chosen, and what a target changes it changes from
 // tomorrow on.
-func (d drawing) retention(ctx context.Context) (Curve, error) {
+func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
 
 	out := Curve{Goal: GoalRetention, Now: Nowhere, Suggested: Nowhere}
@@ -259,7 +259,7 @@ func (d drawing) retention(ctx context.Context) (Curve, error) {
 			return err
 		}
 		place := point(ran)
-		if place.Learns, err = learnt(ctx, asks, now, one, at, unseen); err != nil {
+		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, asks, now, one, at, unseen); err != nil {
 			return err
 		}
 		out.Points[i] = place
@@ -282,7 +282,7 @@ func (d drawing) retention(ctx context.Context) (Curve, error) {
 // can always give themselves longer than they have. It begins tomorrow and
 // reaches whichever is further off: twice as far as the day named, or the day
 // the material is through at one card a day, the slowest a day of review goes.
-func (d drawing) date(ctx context.Context) (Curve, error) {
+func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 	run, now, p, at, unseen := d.run, d.now, d.preset, d.at, d.unseen
 
 	out := Curve{Goal: GoalDate, Now: Nowhere, Suggested: Nowhere}
@@ -316,7 +316,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 	//
 	// A place runs a horizon of Ahead days, and of its own day where that stands
 	// further off.
-	steps := setNearestStep(spread(last-first+1, Points), named-first)
+	steps := setNearestStep(pickEvenlySpacedDays(last-first+1, Points), named-first)
 	out.Grid = make([]float64, len(steps))
 	out.Days = make([]string, len(steps))
 	out.Points = make([]Point, len(steps))
@@ -348,7 +348,7 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 			Owed:     ran.Backlog[day],
 			Retained: back,
 			Share:    ran.Through[day],
-			IsEnough: ran.hasReached(day),
+			IsEnough: ran.isAllLearned(day),
 			Short:    ran.Short,
 			Closed:   BudgetNames{ClosedPaused},
 			Clears:   ran.Clears,
@@ -397,13 +397,13 @@ func (d drawing) date(ctx context.Context) (Curve, error) {
 	return out, nil
 }
 
-// learnt is how many days of review it takes before the whole material stands
+// getDaysToLearnWithoutForgetting is how many days of review it takes before the whole material stands
 // learned, projected on the assumption that nothing is forgotten.
 //
 // The day it names is the day a person reaches if the answers go well. It is
 // the one figure drawn under that assumption, and the run and the arithmetic
 // are those of every figure beside it.
-func learnt(
+func getDaysToLearnWithoutForgetting(
 	ctx context.Context, run Simulation, now time.Time, p Preset,
 	at map[CardFaceID]Schedule, unseen int,
 ) (int, error) {

@@ -4,7 +4,7 @@
  */
 import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
 import type { PlexRelatedSeat } from '@numen/ui'
-import { HOLD } from '@/features/command-palette'
+import { SEARCH_DEBOUNCE_MS } from '@/features/command-palette'
 import { createAnswerGuard, type Question } from '@/shared/questions'
 import { WORDS as words } from '../words'
 
@@ -69,12 +69,12 @@ onScopeDispose(() => {
 })
 
 const asks = createAnswerGuard()
-let holdTimer: ReturnType<typeof setTimeout> | undefined
+let debounceTimer: ReturnType<typeof setTimeout> | undefined
 
 watch(query, (newQuery) => {
   const trimmed = newQuery.trim()
   const mine = asks.ask()
-  clearTimeout(holdTimer)
+  clearTimeout(debounceTimer)
   highlightedIndex.value = 0
   if (!trimmed) {
     results.value = []
@@ -82,11 +82,11 @@ watch(query, (newQuery) => {
     return
   }
   isLoading.value = true
-  holdTimer = setTimeout(() => void runSearch(mine, trimmed), HOLD)
+  debounceTimer = setTimeout(() => void runSearch(mine, trimmed), SEARCH_DEBOUNCE_MS)
 })
 
 onScopeDispose(() => {
-  clearTimeout(holdTimer)
+  clearTimeout(debounceTimer)
   asks.close()
 })
 

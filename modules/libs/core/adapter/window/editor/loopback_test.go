@@ -136,7 +136,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.
-	api.show(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
+	api.setVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
 
 	if out := ask(handler, back.Address(held, statOf(t, api, held, talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording of the vault that moved out of the window was answered %d: %s",
@@ -165,7 +165,7 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 		"note.md": "# What a note says",
 	})
 	api := &API{Readers: filesystem.VaultReaders{}}
-	api.show(vault)
+	api.setVault(vault)
 	back, handler := openLoopback(t, api)
 
 	if out := ask(handler, back.Address(vault, statOf(t, api, vault, "note.md"))); out.Code != http.StatusOK {

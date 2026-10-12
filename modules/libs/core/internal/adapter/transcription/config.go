@@ -141,14 +141,14 @@ func (c Config) sessionThreads() sessionThreads {
 	return sessionThreads{encoder: c.threads(), decoder: 1, joiner: 1, segmenter: 1}
 }
 
-func (s SegmenterModel) threshold() float32 {
+func (s SegmenterModel) getThreshold() float32 {
 	if s.Threshold <= 0 {
 		return 0.5
 	}
 	return s.Threshold
 }
 
-func (s SegmenterModel) silence() int {
+func (s SegmenterModel) getSilenceLength() int {
 	if s.Silence <= 0 {
 		return 500
 	}
@@ -157,7 +157,7 @@ func (s SegmenterModel) silence() int {
 
 // The model answers on the window a sound begins in, and the sound before that
 // window is what the first letter of the word is made of.
-func (s SegmenterModel) pad() int {
+func (s SegmenterModel) getPadding() int {
 	if s.Pad <= 0 {
 		return 200
 	}
@@ -188,10 +188,10 @@ func (s SegmenterModel) getShortestPause() int {
 	return s.Least
 }
 
-// describeCutting is every setting a segment is cut by, as one value. Each of them
+// describeSegmentSettings is every setting a segment is cut by, as one value. Each of them
 // moves where a segment ends, and a segment that ends elsewhere is transcribed
 // as other words.
-func (s SegmenterModel) describeCutting() string {
+func (s SegmenterModel) describeSegmentSettings() string {
 	return fmt.Sprintf("%.2f/%d/%d/%d/%d/%d",
-		s.threshold(), s.silence(), s.pad(), s.getLongestSegment(), s.getShortestSegment(), s.getShortestPause())
+		s.getThreshold(), s.getSilenceLength(), s.getPadding(), s.getLongestSegment(), s.getShortestSegment(), s.getShortestPause())
 }

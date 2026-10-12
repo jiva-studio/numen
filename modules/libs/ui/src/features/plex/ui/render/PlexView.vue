@@ -187,7 +187,7 @@ const roleOf = (node: PlacedNode): GestureRole => {
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"
       @ask="emit('ask', node.id)"
-      @menu="(at, opening) => emit('menu', node.id, at, opening)"
+      @menu="(at, trigger) => emit('menu', node.id, at, trigger)"
       @enter="(part) => emit('enter', node.id, part)"
       @settle="onSettle(node.id, $event)"
     >

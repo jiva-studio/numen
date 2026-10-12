@@ -10,7 +10,7 @@ import CurveSlider from '../curve-slider/CurveSlider.vue'
 import type { PresetTabState } from '../../types'
 import { GOALS } from '../../types'
 import type { Goal } from '../../types'
-import { idle, valueAt } from '../../lib/curve'
+import { getIdleReason, valueAt } from '../../lib/curve'
 import { WORDS as words } from '../../words'
 
 // --- Props & Emits ---
@@ -22,7 +22,7 @@ const props = defineProps<{ state: PresetTabState }>()
 const { curve, material, place, settings, stopped: stoppedAt, isWaiting } = props.state
 
 /** Why the goal has nothing to work on, and empty where it has. */
-const nothing = computed(() => idle(curve.value))
+const nothing = computed(() => getIdleReason(curve.value))
 
 /** What is said in the control's place where the goal has nothing to work on. */
 const emptyGoalExplanation = computed(() => {

@@ -22,7 +22,7 @@ import (
 // gone: the editor reloads on a vault swap and leaves one behind every time. A
 // write that fails is the one report there is, so the stream makes one.
 func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
-	service := createDressing(t, theme.Appearance{}).service
+	service := createFakeAppearances(t, theme.Appearance{}).service
 
 	entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 	route, handler := numenv1connect.NewThemeServiceHandler(service)

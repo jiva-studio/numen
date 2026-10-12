@@ -7,16 +7,16 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, type DecorationSet } from '@codemirror/view'
-import { timing, type TimingState } from './timing'
+import { createTimeGutter, type TimeGutterState } from './timeGutter'
 
 const drawn: EditorView[] = []
 
 const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting change.'
 
-const TIMED: TimingState = { times: ['0:01', '0:03', '0:06'], current: -1, isFollowing: false }
+const TIMED: TimeGutterState = { times: ['0:01', '0:03', '0:06'], current: -1, isFollowing: false }
 
 const editor = (goToLine: (line: number) => void = () => {}) => {
-  const times = timing(goToLine)
+  const times = createTimeGutter(goToLine)
   return { times, view: drawing(times) }
 }
 
@@ -157,7 +157,7 @@ describe('an editor these are shown in', () => {
 
 describe('an editor drawn a second time', () => {
   it('is shown what the one before it was shown', async () => {
-    const times = timing(() => {})
+    const times = createTimeGutter(() => {})
     const first = drawing(times)
     times.show({ ...TIMED, current: 1 })
     first.destroy()
@@ -170,7 +170,7 @@ describe('an editor drawn a second time', () => {
   })
 
   it('is shown them where nothing was drawn when they were given', async () => {
-    const times = timing(() => {})
+    const times = createTimeGutter(() => {})
     times.show(TIMED)
 
     const view = drawing(times)
@@ -180,7 +180,7 @@ describe('an editor drawn a second time', () => {
   })
 
   it('is the one shown what comes next, and the one before it is left alone', async () => {
-    const times = timing(() => {})
+    const times = createTimeGutter(() => {})
     const first = drawing(times)
     times.show(TIMED)
     const again = drawing(times)
@@ -193,7 +193,7 @@ describe('an editor drawn a second time', () => {
   })
 
   it('goes on being shown them once the one before it is destroyed', () => {
-    const times = timing(() => {})
+    const times = createTimeGutter(() => {})
     const first = drawing(times)
     const again = drawing(times)
 
@@ -288,7 +288,7 @@ describe('an editor drawn a second time', () => {
 
 describe('an editor drawn again while the recording stands still', () => {
   it('is not moved by the words being asked for again', async () => {
-    const times = timing(() => {})
+    const times = createTimeGutter(() => {})
     const first = drawing(times)
     times.show({ ...TIMED, current: 2, isFollowing: true })
     first.destroy()
@@ -565,7 +565,7 @@ describe('an editor destroyed', () => {
   })
 
   it('before it was shown what the one before it was, leaves the later times to the next editor', async () => {
-    const times = timing(() => {})
+    const times = createTimeGutter(() => {})
     const first = drawing(times)
     times.show(TIMED)
     first.destroy()
@@ -623,7 +623,7 @@ describe('a time whose slot in the gutter is taken by another line', () => {
       provide: (field) => EditorView.decorations.from(field),
     })
     const asked: number[] = []
-    const times = timing((line) => asked.push(line))
+    const times = createTimeGutter((line) => asked.push(line))
     const view = new EditorView({
       parent: document.body,
       state: EditorState.create({ doc: TEXT, extensions: [times.extension, folded] }),
