@@ -31,6 +31,15 @@ const GROUP_RESULT_LIMIT = 8
 /** How long a keystroke waits before the vault is asked. */
 const SEARCH_DEBOUNCE_MS = 120
 
+/** What the palette holds before anything is asked of the vault. */
+const BLANK = {
+  found: [] as readonly NameMatch[],
+  known: [] as readonly Vault[],
+  showing: '',
+  isWorking: false,
+  failureMessage: '',
+}
+
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
 export function useCommandPalette(
@@ -48,11 +57,11 @@ export function useCommandPalette(
   const commands = commandsOf(words)
   const byId = new Map(commands.map((one) => [one.id, one]))
 
-  const found = shallowRef<readonly NameMatch[]>([])
-  const known = shallowRef<readonly Vault[]>([])
-  const showing = ref('')
-  const isWorking = ref(false)
-  const failureMessage = ref('')
+  const found = shallowRef<readonly NameMatch[]>(BLANK.found)
+  const known = shallowRef<readonly Vault[]>(BLANK.known)
+  const showing = ref(BLANK.showing)
+  const isWorking = ref(BLANK.isWorking)
+  const failureMessage = ref(BLANK.failureMessage)
 
   const asked = latest()
 
@@ -63,11 +72,11 @@ export function useCommandPalette(
 
   const drop = () => {
     asked.drop()
-    found.value = []
-    known.value = []
-    showing.value = ''
-    isWorking.value = false
-    failureMessage.value = ''
+    found.value = BLANK.found
+    known.value = BLANK.known
+    showing.value = BLANK.showing
+    isWorking.value = BLANK.isWorking
+    failureMessage.value = BLANK.failureMessage
   }
 
   const setOpen = (now: boolean) => {

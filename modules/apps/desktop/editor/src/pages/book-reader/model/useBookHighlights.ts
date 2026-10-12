@@ -13,7 +13,7 @@ export function useBookHighlights(
   const otherHighlights = shallowRef<readonly Span[]>([])
 
   const focusSpans = async (...spans: readonly Span[]) => {
-    if (!isOpen() || spans.length === 0) return
+    if (!isOpen()) return
     const [front, ...rest] = spans
     if (!front) return
     highlights.value = [front]

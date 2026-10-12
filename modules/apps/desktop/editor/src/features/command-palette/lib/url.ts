@@ -10,9 +10,7 @@ export const isWebUrl = (text: string): boolean => {
   try {
     // Stryker disable next-line MethodExpression: the URL parser strips surrounding whitespace itself.
     const address = new URL(text.trim())
-    return (
-      (address.protocol === 'http:' || address.protocol === 'https:') && address.hostname !== ''
-    )
+    return address.protocol === 'http:' || address.protocol === 'https:'
   } catch {
     // A string a URL cannot be constructed from is not a web url.
     return false

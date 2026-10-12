@@ -18,14 +18,12 @@ import {
 export function createNoteChanges(limits: ChangeLimits = CHANGE_LIMITS) {
   const tracker = createChangeTracker(limits)
   /** What each note is drawn with, which Vue reads to draw it. */
-  const changes = ref(new Map<string, Change>())
+  const changes = ref(new Map<string, Change | null>())
   /** The interval each note is waiting on, so arming again replaces it. */
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
   const syncChange = (path: string, request: TimerRequest | null): void => {
-    const change = tracker.getChange(path)
-    if (change) changes.value.set(path, change)
-    else changes.value.delete(path)
+    changes.value.set(path, tracker.getChange(path))
     if (request) scheduleExpiry(request)
   }
 

@@ -39,8 +39,7 @@ const NOTED: ReadonlyMap<string, string> = new Map(
 
 /** One command over a note, in the group it stands in. */
 const getNoteCommand = (id: string, group: string): readonly MenuItem[] => {
-  const text = NOTED.get(id)
-  return text === undefined ? [] : [{ id, text, group }]
+  return [{ id, text: NOTED.get(id)!, group }]
 }
 
 /** What the tab makes, offered wherever the menu was asked for. */
