@@ -43,7 +43,8 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 // days.
 func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 	api, held := newAPI(t, deck)
-	api.Counted = flashcards.NewCountReviews(unopenable{}, api.Schedules, reviewDay, time.Now)
+	api.GetReviewDays = flashcards.NewGetReviewDays(
+		flashcards.NewCountReviews(unopenable{}, api.Schedules, reviewDay, time.Now))
 
 	out, err := api.ListReviewDays(t.Context(),
 		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(held[0].ID)}))

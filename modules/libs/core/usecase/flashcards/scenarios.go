@@ -13,6 +13,8 @@ type Scenarios struct {
 	Log       Log
 	// Counted is how much of a vault was answered on each day it was reviewed.
 	Counted CountReviews
+	// GetReviewDays is those days inside a stretch of them.
+	GetReviewDays GetReviewDays
 	// Presets is which preset each deck is scheduled by, and how one is read,
 	// written and made.
 	Presets Presets

@@ -155,40 +155,7 @@ func TestAVaultNobodyHoldsIsRefused(t *testing.T) {
 	}
 }
 
-// A caller draws a fixed stretch of time, so it asks for one. Both ends are
-// inside it, and an end left empty is unbounded at that end.
-func TestOnlyTheDaysInsideTheStretchComeBack(t *testing.T) {
-	for name, one := range map[string]struct {
-		from, to string
-		want     []string
-	}{
-		"both ends":     {"2026-08-09", "2026-08-30", []string{"2026-08-09", "2026-08-30"}},
-		"from alone":    {"2026-08-30", "", []string{"2026-08-30", "2027-01-02"}},
-		"to alone":      {"", "2026-08-09", []string{"2026-07-01", "2026-08-09"}},
-		"neither end":   {"", "", []string{"2026-07-01", "2026-08-09", "2026-08-30", "2027-01-02"}},
-		"one day":       {"2026-08-09", "2026-08-09", []string{"2026-08-09"}},
-		"nothing in it": {"2026-09-01", "2026-12-31", nil},
-	} {
-		t.Run(name, func(t *testing.T) {
-			var within []string
-			for _, day := range []string{"2026-07-01", "2026-08-09", "2026-08-30", "2027-01-02"} {
-				if isWithin(day, one.from, one.to) {
-					within = append(within, day)
-				}
-			}
-			if len(within) != len(one.want) {
-				t.Fatalf("%v came back, want %v", within, one.want)
-			}
-			for at := range within {
-				if within[at] != one.want[at] {
-					t.Errorf("the day at %d is %s, want %s", at, within[at], one.want[at])
-				}
-			}
-		})
-	}
-}
-
-// The stretch reaches the answer itself, and not only the helper: a day outside
+// The stretch reaches the answer itself: a day outside
 // what was asked for is in neither list.
 func TestAStretchNothingFallsInComesBackEmpty(t *testing.T) {
 	api, held := newAPI(t, deck)

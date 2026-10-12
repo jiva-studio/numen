@@ -135,7 +135,7 @@ func makeWindowAPI(
 		Session:        running.Session,
 		Schedules:      running.Schedules,
 		Log:            running.Log,
-		Counted:        running.Counted,
+		GetReviewDays:  running.GetReviewDays,
 		Neighbourhood:  cfg.ShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
 		Presets:        running.Presets,
 		GetTitle:       notes.GetTitle,
