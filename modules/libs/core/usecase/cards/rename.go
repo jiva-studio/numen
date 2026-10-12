@@ -3,6 +3,7 @@ package cards
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
@@ -53,7 +54,7 @@ type RenameResult struct {
 //
 // Every field a stencil declares is written this way, the first included.
 type RenameField struct {
-	maxDecksPerRename int
+	maxDecks int
 
 	readers port.VaultReaders
 	writers port.VaultWriters
@@ -80,7 +81,8 @@ type TypeQueries interface {
 // NewRenameField is what a stencil's field is renamed through: the vault the
 // stencil and every deck are read and written through, what says which notes
 // are decks, where each card's wikilink lands, what brings every file the
-// rename touched level in the index, and what time it is.
+// rename touched level in the index, what time it is, and the most decks a
+// vault may hold for the rename to run.
 func NewRenameField(
 	readers port.VaultReaders,
 	writers port.VaultWriters,
@@ -88,10 +90,11 @@ func NewRenameField(
 	links port.LinkQueries,
 	index note.Levels,
 	now port.Clock,
+	maxDecks int,
 ) RenameField {
 	return RenameField{
 		readers: readers, writers: writers, notes: notes, links: links,
-		index: index, now: now,
+		index: index, now: now, maxDecks: maxDecks,
 	}
 }
 
@@ -132,30 +135,25 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 	return out, note.WrapUnlevelled(u.index(ctx, v, written), written...)
 }
 
-// MaxDecksPerRename is the most decks a vault may hold and still have a field
-// renamed through WithMaxDecksPerRename.
+// MaxDecksPerRename is the most decks an agent's rename reads and writes at once.
 const MaxDecksPerRename = 200
 
-// WithMaxDecksPerRename returns a copy of RenameField that refuses a vault
-// holding more than n decks before it writes the stencil.
-func (u RenameField) WithMaxDecksPerRename(n int) RenameField {
-	u.maxDecksPerRename = n
-	return u
-}
+// UnboundedDecks is the bound of a rename that takes a vault of any size.
+const UnboundedDecks = math.MaxInt
 
 func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
-	if u.maxDecksPerRename <= 0 {
+	if u.maxDecks == UnboundedDecks {
 		return nil
 	}
 	held, err := u.decks(ctx, v)
 	if err != nil {
 		return err
 	}
-	if len(held) > u.maxDecksPerRename {
+	if len(held) > u.maxDecks {
 		return fmt.Errorf(
 			"this rename reads and writes every deck in the vault, and there are %d of them, "+
 				"which is more than the %d this does at once: rename the field in the window",
-			len(held), u.maxDecksPerRename)
+			len(held), u.maxDecks)
 	}
 	return nil
 }

@@ -14,7 +14,7 @@ func TestRenamingAFieldIsRefusedWhereTheVaultHoldsMoreDecksThanTheBound(t *testi
 	vs := newVaults(t)
 	before := read(t, vs.first, "Animal.md")
 
-	_, err := newRenameField(t, vs).WithMaxDecksPerRename(1).Execute(t.Context(), vs.first, cards.Rename{
+	_, err := newBoundedRenameField(t, vs, 1).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err == nil || !strings.Contains(err.Error(), "there are 2 of them") || !strings.Contains(err.Error(), "more than the 1") {
@@ -24,11 +24,19 @@ func TestRenamingAFieldIsRefusedWhereTheVaultHoldsMoreDecksThanTheBound(t *testi
 		t.Error("the stencil was written")
 	}
 
-	if _, err := newRenameField(t, vs).WithMaxDecksPerRename(2).Execute(t.Context(), vs.first, cards.Rename{
+	if _, err := newBoundedRenameField(t, vs, 2).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	}); err != nil {
 		t.Errorf("a vault at the bound was refused: %v", err)
 	}
+}
+
+func newBoundedRenameField(t *testing.T, vs vaulted, maxDecks int) cards.RenameField {
+	t.Helper()
+	return cards.NewRenameField(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		vs.db.NoteQueries(), vs.db.NoteQueries(), vs.index(t), time.Now, maxDecks,
+	)
 }
 
 func TestAStencilIsMadeWithItsFacesLaidDown(t *testing.T) {

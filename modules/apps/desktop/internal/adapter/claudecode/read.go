@@ -101,7 +101,7 @@ func (rd *parser) parseLine(ctx context.Context, line string) {
 		// The tool answered. Everything from here until the next block arrives
 		// is the model's, and the step says so.
 		if said.hasToolAnswer() {
-			rd.send(ctx, port.Step{Kind: port.StepAnswered})
+			rd.send(ctx, port.Step{Kind: domain.StepAnswered})
 		}
 	case "system":
 		switch said.Subtype {
@@ -114,7 +114,7 @@ func (rd *parser) parseLine(ctx context.Context, line string) {
 			// `requesting` is written when a request to the model begins. It is
 			// the start of the wait, reported by the agent itself.
 			if said.Status == "requesting" {
-				rd.send(ctx, port.Step{Kind: port.StepThinking})
+				rd.send(ctx, port.Step{Kind: domain.StepThinking})
 			}
 		}
 	case "result":
@@ -147,7 +147,7 @@ func (rd *parser) parseStreamEvent(ctx context.Context, event streamEvent) {
 				return
 			}
 			rd.isStreaming = true
-			rd.send(ctx, port.Step{Kind: port.StepSaying, Text: event.Delta.Text})
+			rd.send(ctx, port.Step{Kind: domain.StepSaying, Text: event.Delta.Text})
 		case "input_json_delta":
 			rd.arguments.WriteString(event.Delta.Partial)
 			// Reported as it is written, one writtenStep of characters at a
@@ -180,7 +180,7 @@ func (rd *parser) parseMessage(ctx context.Context, said event) {
 		switch block.Type {
 		case "text":
 			if block.Text != "" {
-				rd.send(ctx, port.Step{Kind: port.StepSaying, Text: block.Text})
+				rd.send(ctx, port.Step{Kind: domain.StepSaying, Text: block.Text})
 			}
 		case "tool_use":
 			rd.send(ctx, rd.buildCallStep(block.ID, block.Name, string(block.Input)))
@@ -320,7 +320,7 @@ type block struct {
 func (rd *parser) buildCallStep(callID, tool, arguments string) port.Step {
 	words, served := rd.words[tool]
 	if !served {
-		return port.Step{Kind: port.StepToolCall, Call: callID, Tool: tool}
+		return port.Step{Kind: domain.StepToolCall, Call: callID, Tool: tool}
 	}
 
 	step := port.Step{Kind: words.Kind, Call: callID, Tool: words.Title}

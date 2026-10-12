@@ -38,7 +38,7 @@ func addVaultTools(server *sdk.Server, core Core) {
 }
 
 func addVaultGet(server *sdk.Server, core Core) {
-	if core.GetSummary == nil {
+	if core.Notes.Queries == nil {
 		return
 	}
 	addTool(server, &sdk.Tool{
@@ -61,7 +61,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Headings int    `json:"headings"`
 		}
 		shown := core.getCurrentVault()
-		summary, err := core.GetSummary.Execute(ctx, shown.Vault)
+		summary, err := core.Notes.Queries.GetSummary(ctx, shown.Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -108,19 +108,16 @@ func listVaultProblems(ctx context.Context, core Core, in vaultProblemsInput) (v
 	for _, name := range in.Checks {
 		named = append(named, domain.Check(name))
 	}
-	found, err := core.GetProblems.Execute(ctx, core.getCurrentVault().Vault, named...)
+	report, err := core.GetProblems.Execute(ctx, core.getCurrentVault().Vault, named...)
 	if err != nil {
 		return vaultProblemsOutput{}, err
 	}
 
-	// The checks that ran are reported so an empty result states what it covers.
-	res := vaultProblemsOutput{Problems: make([]Problem, 0, len(found)), Ran: in.Checks}
-	if len(res.Ran) == 0 {
-		for _, name := range core.GetProblems.GetDefaultChecks() {
-			res.Ran = append(res.Ran, string(name))
-		}
+	res := vaultProblemsOutput{Problems: make([]Problem, 0, len(report.Problems)), Ran: make([]string, 0, len(report.Ran))}
+	for _, name := range report.Ran {
+		res.Ran = append(res.Ran, string(name))
 	}
-	for _, p := range found {
+	for _, p := range report.Problems {
 		res.Problems = append(res.Problems, Problem{
 			Path:       p.Path,
 			Check:      string(p.Kind),

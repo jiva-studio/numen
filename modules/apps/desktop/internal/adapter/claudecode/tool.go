@@ -1,6 +1,6 @@
 package claudecode
 
-import "github.com/jiva-studio/numen/modules/libs/core/port"
+import "github.com/jiva-studio/numen/modules/libs/core/domain"
 
 // Name is what the server this agent is served by calls itself, and the prefix
 // its tools arrive under.
@@ -20,8 +20,8 @@ func ToolName(name string) string { return prefix + name }
 type ToolDeclaration struct {
 	Title string
 	// Kind is what a call of this tool does to the vault. A tool that declares
-	// nothing about it is port.StepToolCall.
-	Kind port.StepKind
+	// nothing about it is domain.StepToolCall.
+	Kind domain.StepKind
 	// Arguments is how a call of it is read while it is being written.
 	Arguments Arguments
 }

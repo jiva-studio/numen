@@ -19,12 +19,12 @@ import (
 // lookAt gives the core a person to put notes and passages in front of.
 func lookAt(core *mcp.Core, view port.Window) {
 	core.Notes.FocusNote = note.NewFocusNote(core.Notes.Queries, view)
-	core.Sources.FocusPassage = source.NewFocusPassage(core.Readers, view)
+	core.Sources.FocusPassage = source.NewFocusPassage(filesystem.VaultReaders{}, view)
 }
 
 // lookingCore is a core with nothing but a person to look.
 func lookingCore(view port.Window) mcp.Core {
-	core := mcp.Core{Readers: filesystem.VaultReaders{}}
+	core := mcp.Core{}
 	lookAt(&core, view)
 	return core
 }

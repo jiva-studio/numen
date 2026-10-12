@@ -23,7 +23,7 @@ func newRenameField(t *testing.T, vs vaulted) cards.RenameField {
 	t.Helper()
 	return cards.NewRenameField(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{},
-		vs.db.NoteQueries(), vs.db.NoteQueries(), vs.index(t), time.Now,
+		vs.db.NoteQueries(), vs.db.NoteQueries(), vs.index(t), time.Now, cards.UnboundedDecks,
 	)
 }
 
@@ -402,7 +402,7 @@ func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 			levelled = append(levelled, paths...)
 			return nil
 		},
-		time.Now,
+		time.Now, cards.UnboundedDecks,
 	)
 
 	if _, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -421,7 +421,7 @@ func TestARenameWithNoIndexToLevelSaysWhatItWrote(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRenameField(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{},
-		vs.db.NoteQueries(), vs.db.NoteQueries(), nil, time.Now,
+		vs.db.NoteQueries(), vs.db.NoteQueries(), nil, time.Now, cards.UnboundedDecks,
 	)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -476,7 +476,7 @@ func TestARenameInAVaultOutOfReachWritesNothing(t *testing.T) {
 			vs := newVaults(t)
 			stencil, birds := read(t, vs.first, "Animal.md"), read(t, vs.first, "decks/Birds.md")
 			u := cards.NewRenameField(
-				c.readers, c.writers, vs.db.NoteQueries(), vs.db.NoteQueries(), indexNothing, time.Now,
+				c.readers, c.writers, vs.db.NoteQueries(), vs.db.NoteQueries(), indexNothing, time.Now, cards.UnboundedDecks,
 			)
 
 			_, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -506,7 +506,7 @@ func TestARenameOfAStencilOutOfReachWritesNothing(t *testing.T) {
 			vs := newVaults(t)
 			stencil, birds := read(t, vs.first, "Animal.md"), read(t, vs.first, "decks/Birds.md")
 			u := cards.NewRenameField(
-				c.readers, filesystem.VaultWriters{}, vs.db.NoteQueries(), vs.db.NoteQueries(), indexNothing, time.Now,
+				c.readers, filesystem.VaultWriters{}, vs.db.NoteQueries(), vs.db.NoteQueries(), indexNothing, time.Now, cards.UnboundedDecks,
 			)
 
 			_, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -546,7 +546,7 @@ func TestARenameDoesNotWriteOverAStencilSavedWhileItRan(t *testing.T) {
 	saved := animals["Animal.md"] + "\nA line written while the rename ran.\n"
 	readers := faulty{saved: map[string]string{"Animal.md": saved}, root: vs.first.Path}
 	u := cards.NewRenameField(
-		readers, filesystem.VaultWriters{}, vs.db.NoteQueries(), vs.db.NoteQueries(), indexNothing, time.Now,
+		readers, filesystem.VaultWriters{}, vs.db.NoteQueries(), vs.db.NoteQueries(), indexNothing, time.Now, cards.UnboundedDecks,
 	)
 
 	_, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -587,7 +587,7 @@ func TestARenameWhoseContextEndsWritesNoFurtherDeck(t *testing.T) {
 	u := cards.NewRenameField(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{},
 		decksOf{paths: []string{"decks/Birds.md", "decks/Mammals.md"}, cancel: cancel},
-		vs.db.NoteQueries(), indexNothing, time.Now,
+		vs.db.NoteQueries(), indexNothing, time.Now, cards.UnboundedDecks,
 	)
 
 	got, err := u.Execute(ctx, vs.first, cards.Rename{
@@ -646,7 +646,7 @@ func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 				links = c.links
 			}
 			u := cards.NewRenameField(
-				readers, filesystem.VaultWriters{}, vs.db.NoteQueries(), links, indexNothing, time.Now,
+				readers, filesystem.VaultWriters{}, vs.db.NoteQueries(), links, indexNothing, time.Now, cards.UnboundedDecks,
 			)
 
 			got, err := u.Execute(t.Context(), vs.first, cards.Rename{

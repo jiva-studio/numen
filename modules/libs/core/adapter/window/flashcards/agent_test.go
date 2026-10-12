@@ -135,12 +135,12 @@ func TestTheCardsNameIsNotInTheQuestion(t *testing.T) {
 // it was taken.
 func TestEveryStepReachesThePageAsItself(t *testing.T) {
 	agent := &asking{took: make(chan port.Task, 1), takes: []port.Step{
-		{Kind: port.StepThinking},
-		{Kind: port.StepSearch, Tool: "note_search", About: "leaf mould", Count: 11,
+		{Kind: domain.StepThinking},
+		{Kind: domain.StepSearch, Tool: "note_search", About: "leaf mould", Count: 11,
 			Place: domain.Place{Path: "decks/Words.md", Spans: []domain.ByteSpan{{From: 4, To: 13}}}},
-		{Kind: port.StepAnswered},
-		{Kind: port.StepSaying, Text: "Because the leaves make it."},
-		{Kind: port.StepStopped, Detail: "the agent went away"},
+		{Kind: domain.StepAnswered},
+		{Kind: domain.StepSaying, Text: "Because the leaves make it."},
+		{Kind: domain.StepStopped, Detail: "the agent went away"},
 	}}
 	api := &API{}
 	api.SetAgent(agent)

@@ -9,6 +9,8 @@ type Scenarios struct {
 	Write  Write
 	Create Create
 	Rename RenameField
+	// BoundedRename refuses a vault holding more than MaxDecksPerRename decks.
+	BoundedRename RenameField
 
 	GetCardPage     GetCardPage
 	AddCard         AddCard

@@ -32,14 +32,9 @@ type Core struct {
 	// follow the window.
 	Showing func() CurrentVault
 
-	// GetSummary says how much of the vault has been read, and GetProblems what
-	// in it could not be acted on. A tool is added where its use case is here.
-	GetSummary  *vaults.GetSummary
+	// GetProblems says what in the vault could not be acted on. The tool is
+	// added where it is here.
 	GetProblems *vaults.GetProblems
-
-	// Readers is the vault's files, which the notes, the documents and the
-	// window are all read out of.
-	Readers port.VaultReaders
 
 	// Read reads a range of any file of the vault.
 	Read file.Read
@@ -62,6 +57,7 @@ type Core struct {
 
 // Notes is a vault's notes: what is asked of them, and what changes them.
 type Notes struct {
+	// Queries answers note_resolve and vault_get, which are added where it is here.
 	Queries       port.NoteQueries
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood

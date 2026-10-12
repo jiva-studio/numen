@@ -6,8 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 )
 
-// A tool is served where the use case behind it is here, so a core built without
-// them is not served a tool that would dereference nothing.
+// A vault tool is served only where what it works through is here.
 func TestVaultToolsAreServedOnlyWhereTheirUseCasesAre(t *testing.T) {
 	session := sessionOf(t, mcp.New(mcp.Core{}))
 

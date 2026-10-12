@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	deckcases "github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -93,7 +92,7 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			GetCardPage:     cards.GetCardPage,
 			List:            cards.List,
 			Create:          cards.Create,
-			RenameField:     cards.Rename.WithMaxDecksPerRename(deckcases.MaxDecksPerRename),
+			RenameField:     cards.BoundedRename,
 			AddCard:         cards.AddCard,
 			EditCard:        cards.EditCard,
 			RemoveCardValue: cards.RemoveCardValue,
@@ -103,10 +102,9 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			RemoveSection:   cards.RemoveSection,
 		},
 
-		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,
+		Showing:     mcp.ShowOneVault(v, v.Path),
 		Read:        file.Read{Readers: readers},
-		GetSummary:  cfg.GetSummary(queries),
-		GetProblems: cfg.GetProblems(queries),
+		GetProblems: cfg.GetProblems(db.Problems()),
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
