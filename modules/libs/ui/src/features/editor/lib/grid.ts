@@ -65,8 +65,9 @@ class Grid extends WidgetType {
         const element = document.createElement(tag)
         element.className = 'cm-cell'
         element.dataset['column'] = String(column)
-        const align = this.table.align[column] ?? 'none'
-        if (align !== 'none') element.style.textAlign = align === 'centre' ? 'center' : align
+        const align = this.table.align[column]
+        if (align === 'centre') element.style.textAlign = 'center'
+        else if (align === 'start' || align === 'end') element.style.textAlign = align
         place(element, cell, this.isWritable)
         if (cell) element.textContent = readCell(cell.text)
         line.appendChild(element)

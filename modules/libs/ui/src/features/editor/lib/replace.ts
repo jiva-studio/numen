@@ -44,7 +44,7 @@ const difference = (was: Text, now: Text): ChangeSpec => {
   const most = Math.min(before.length, after.length)
 
   let head = 0
-  while (head < most && before.charCodeAt(head) === after.charCodeAt(head)) head += 1
+  while (before.charCodeAt(head) === after.charCodeAt(head)) head += 1
   // A pair standing for one character is not cut between its halves.
   if (lone(before.charCodeAt(head - 1))) head -= 1
 
