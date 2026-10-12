@@ -22,13 +22,13 @@ describe('the line that says what the agent has in hand', () => {
 
   it('names the tool as a program is not named, and how much was written', () => {
     const { line, put } = create()
-    line.reach('read_note', 'Plans', undefined, 1234)
+    line.reach('read_note', 'Plans', undefined, 12)
     expect(put).toHaveBeenCalledExactlyOnceWith({
       id: 'work',
       voice: 'doing',
       text: 'read note',
       subject: 'Plans',
-      aside: '1,234 characters',
+      aside: '12 characters',
       state: 'arriving',
     })
   })

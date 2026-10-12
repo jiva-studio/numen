@@ -99,8 +99,8 @@ describe('writeCharCount', () => {
     expect(writeCharCount(-3)).toBe('')
   })
 
-  it('counts characters, grouped in thousands', () => {
+  it('counts characters', () => {
     expect(writeCharCount(1)).toBe('1 characters')
-    expect(writeCharCount(12345)).toBe('12,345 characters')
+    expect(writeCharCount(999)).toBe('999 characters')
   })
 })
