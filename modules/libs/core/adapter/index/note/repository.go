@@ -226,14 +226,14 @@ func splitIntoChunks(
 			Start:    at + large.Start,
 			Length:   large.Length,
 			Location: large.Location,
-			Text:     n.Title + "\n" + large.Slice(body),
+			Text:     n.Title + "\n" + large.GetText(body),
 		}
 		for _, small := range large.Small {
 			c.Small = append(c.Small, chunk.Chunk{
 				Start:    at + small.Start,
 				Length:   small.Length,
 				Location: small.Location,
-				Text:     small.Slice(body),
+				Text:     small.GetText(body),
 			})
 		}
 		out = append(out, c)

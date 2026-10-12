@@ -140,7 +140,7 @@ func TestCutOneLongLine(t *testing.T) {
 		t.Errorf("large chunks: got %d, want 1250", len(out))
 	}
 	for _, c := range out {
-		if words := len(strings.Fields(c.Slice(text))); words > DefaultLarge {
+		if words := len(strings.Fields(c.GetText(text))); words > DefaultLarge {
 			t.Fatalf("large chunk of %d words, at %d", words, c.Start)
 		}
 	}
@@ -165,7 +165,7 @@ func TestCutOverlaps(t *testing.T) {
 	}
 	shared := 0
 	for i := 0; i+1 < len(small); i++ {
-		before, after := strings.Fields(small[i].Slice(text)), strings.Fields(small[i+1].Slice(text))
+		before, after := strings.Fields(small[i].GetText(text)), strings.Fields(small[i+1].GetText(text))
 		if small[i].Location != small[i+1].Location || len(before) <= size-overlap {
 			continue
 		}
@@ -201,7 +201,7 @@ func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
 			seen := 0
 			for _, large := range out {
 				for _, small := range large.Small {
-					if n := utf8.RuneCountInString(small.Slice(test.text)); n > test.limit {
+					if n := utf8.RuneCountInString(small.GetText(test.text)); n > test.limit {
 						t.Errorf("small chunk of %d characters, limit %d", n, test.limit)
 					}
 					seen++
@@ -270,7 +270,7 @@ func assertCutRules(t *testing.T, text string, parts []domain.PartStart, sizes S
 		if s.Large != Whole {
 			assertWithinParts(t, bounds, large)
 			assertPartName(t, parts, large)
-			if words := len(strings.Fields(large.Slice(text))); words > s.Large {
+			if words := len(strings.Fields(large.GetText(text))); words > s.Large {
 				t.Errorf("large chunk of %d words, bound %d", words, s.Large)
 			}
 		}
@@ -278,10 +278,10 @@ func assertCutRules(t *testing.T, text string, parts []domain.PartStart, sizes S
 			wordBounded(t, text, small)
 			assertWithinParts(t, bounds, small)
 			assertPartName(t, parts, small)
-			if words := len(strings.Fields(small.Slice(text))); words > s.Small {
+			if words := len(strings.Fields(small.GetText(text))); words > s.Small {
 				t.Errorf("small chunk of %d words, bound %d", words, s.Small)
 			}
-			if n := utf8.RuneCountInString(small.Slice(text)); n > s.Limit {
+			if n := utf8.RuneCountInString(small.GetText(text)); n > s.Limit {
 				t.Errorf("small chunk of %d characters, limit %d", n, s.Limit)
 			}
 			if middle := small.Start + small.Length/2; middle < large.Start || middle >= large.Start+large.Length {
@@ -296,7 +296,7 @@ func wordBounded(t *testing.T, text string, c Chunk) {
 	if c.Start < 0 || c.Length <= 0 || c.Start+c.Length > len(text) {
 		t.Fatalf("chunk %d+%d is not inside %d bytes of text", c.Start, c.Length, len(text))
 	}
-	if body := c.Slice(text); body != strings.TrimSpace(body) {
+	if body := c.GetText(text); body != strings.TrimSpace(body) {
 		t.Errorf("chunk at %d carries space at an end: %q", c.Start, body)
 	}
 }
