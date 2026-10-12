@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -133,7 +134,12 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 			Queries: made.GetNoteQueries(),
 			Links:   made.GetLinkQueries(),
 		},
-		Files: Files{Writers: made.GetVaultWriters()},
+		Files: Files{
+			Writers:          made.GetVaultWriters(),
+			GetFolderEntries: file.NewGetFolderEntries(made.GetVaultReaders(), made.GetNoteQueries()),
+			GetFileKinds:     file.NewGetFileKinds(made.GetVaultReaders(), made.GetNoteQueries()),
+			CreateFolder:     file.NewCreateFolder(made.GetVaultWriters()),
+		},
 	}
 	// The editor is open on one vault, and answers which as itself.
 	api.Window.Vault = func() string { return string(api.GetCurrentVault().ID) }

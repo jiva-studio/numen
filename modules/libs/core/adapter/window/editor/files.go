@@ -25,55 +25,25 @@ func (a *API) ListFiles(
 	if err != nil {
 		return nil, err
 	}
-	reader, err := a.Readers.Open(showing)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+	if a.Files.GetFolderEntries == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	held, err := reader.List(ctx, r.Msg.GetPath())
+	listing, err := a.Files.GetFolderEntries.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getListCode(err), err)
 	}
 
-	// The folder says which of its entries are notes, and the index says what
-	// each of those notes is. A listing carries both.
-	types, err := a.getNoteTypes(ctx, showing, held)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
-	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(held))}
-	for _, entry := range held {
+	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(listing.Entries))}
+	for _, one := range listing.Entries {
 		out.Entries = append(out.Entries, &v1.Entry{
-			Path:     entry.Path,
-			Name:     entry.Name,
-			IsFolder: entry.IsFolder,
-			Kind:     convertSourceKindToWire(entry.Kind),
-			Type:     convertNoteTypeToWire(types[entry.Path]),
+			Path:     one.Path,
+			Name:     one.Name,
+			IsFolder: one.IsFolder,
+			Kind:     convertSourceKindToWire(one.Kind),
+			Type:     convertNoteTypeToWire(listing.Types[one.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil
-}
-
-// getNoteTypes is what each note of a listing is, keyed by the path it is filed
-// under.
-func (a *API) getNoteTypes(ctx context.Context, showing domain.Vault, held []domain.Entry) (map[string]domain.NoteType, error) {
-	paths := make([]string, 0, len(held))
-	for _, entry := range held {
-		if !entry.IsFolder && entry.Kind == domain.KindNote {
-			paths = append(paths, entry.Path)
-		}
-	}
-	return a.typesAt(ctx, showing, paths)
-}
-
-// typesAt is what each of the notes at those paths is, keyed by path. A build
-// holding no index answers nothing, and every file is then drawn as the file it
-// is.
-func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string) (map[string]domain.NoteType, error) {
-	if a.Notes.Queries == nil || len(paths) == 0 {
-		return nil, nil
-	}
-	return a.Notes.Queries.GetTypes(ctx, showing.ID, paths)
 }
 
 // ListFileKinds hands the client what the vault holds at each of those paths,
@@ -90,45 +60,52 @@ func (a *API) ListFileKinds(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
-	reader, err := a.Readers.Open(showing)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+	if a.Files.GetFileKinds == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-
-	// In the order they were asked about, and the notes among them kept to ask
-	// the index about in one question.
 	paths, err := eachOnce(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
 	}
-	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(paths))}
-	notes := make([]string, 0, len(paths))
-	for _, path := range paths {
-		ref, err := reader.GetFingerprint(ctx, path)
-		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, port.ErrOutside) {
-			continue
-		}
-		// A file the vault leaves alone stands there and is no source, which is
-		// the kind a zero reference carries.
-		if err != nil && !errors.Is(err, port.ErrNotANote) {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		out.Kinds = append(out.Kinds, &v1.FileKind{
-			Path:   path,
-			Kind:   convertSourceKindToWire(ref.Kind),
-			Format: convertBookFormatToWire(path, ref.Kind),
-		})
-		if ref.Kind == domain.KindNote {
-			notes = append(notes, path)
-		}
-	}
-
-	types, err := a.typesAt(ctx, showing, notes)
+	listing, err := a.Files.GetFileKinds.Execute(ctx, showing, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	for _, one := range out.GetKinds() {
-		one.Type = convertNoteTypeToWire(types[one.GetPath()])
+	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(listing.Entries))}
+	for _, one := range listing.Entries {
+		out.Kinds = append(out.Kinds, &v1.FileKind{
+			Path:   one.Path,
+			Kind:   convertSourceKindToWire(one.Kind),
+			Format: convertBookFormatToWire(one.Path, one.Kind),
+			Type:   convertNoteTypeToWire(listing.Types[one.Path]),
+		})
+	}
+	return connect.NewResponse(out), nil
+}
+
+// CreateFolder puts an empty folder in the vault, with the folders above it.
+func (a *API) CreateFolder(
+	ctx context.Context, r *connect.Request[v1.CreateFolderRequest],
+) (*connect.Response[v1.CreateFolderResponse], error) {
+	showing, err := a.getCurrentVault()
+	if err != nil {
+		return nil, err
+	}
+	if a.Files.CreateFolder == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
+	}
+	if !a.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.finish()
+
+	out := &v1.CreateFolderResponse{}
+	if err := a.Files.CreateFolder.Execute(ctx, showing, r.Msg.GetPath()); err != nil {
+		reason, refused := wire.GetErrorCode(err)
+		if !refused {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		out.Error = &reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -162,34 +139,6 @@ func (a *API) MoveFile(
 		}
 		// The file is where it was sent, so where it went and which links were
 		// repaired is the answer, whatever came apart after it landed.
-	}
-	return connect.NewResponse(out), nil
-}
-
-// CreateFolder puts an empty folder in the vault, with the folders above it.
-func (a *API) CreateFolder(
-	ctx context.Context, r *connect.Request[v1.CreateFolderRequest],
-) (*connect.Response[v1.CreateFolderResponse], error) {
-	showing, err := a.getCurrentVault()
-	if err != nil {
-		return nil, err
-	}
-	if !a.Writing.begin() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer a.Writing.finish()
-
-	writer, err := a.Files.Writers.Open(showing)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	out := &v1.CreateFolderResponse{}
-	if err := writer.MakeFolder(ctx, r.Msg.GetPath()); err != nil {
-		reason, refused := wire.GetErrorCode(err)
-		if !refused {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		out.Error = &reason
 	}
 	return connect.NewResponse(out), nil
 }

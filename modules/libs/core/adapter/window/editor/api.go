@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -174,17 +175,14 @@ type Notes struct {
 	Remove  *note.Remove
 }
 
-// Files is the vault's tree as a person moves things about in it. Writers open
-// the vault a folder is made in, Move puts a file or a folder somewhere else,
-// and Import copies files a person handed the window into a folder of the
-// vault. They are bound by every build that serves the tree.
-//
-// What a folder holds is read through the API's own Readers, which everything
-// else reads through too.
+// Files is the vault's tree: what a folder holds, and what a person does to it.
 type Files struct {
-	Writers port.VaultWriters
-	Move    *vaults.Move
-	Import  *vaults.Import
+	Writers          port.VaultWriters
+	GetFolderEntries *file.GetFolderEntries
+	GetFileKinds     *file.GetFileKinds
+	CreateFolder     *file.CreateFolder
+	Move             *vaults.Move
+	Import           *vaults.Import
 	// URLs makes the file a web address is kept in.
 	URLs *source.CreateURL
 }

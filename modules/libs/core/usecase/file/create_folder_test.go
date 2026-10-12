@@ -1,0 +1,22 @@
+package file_test
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
+)
+
+func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
+	v := testsupport.NewVault(t, nil)
+
+	if err := file.NewCreateFolder(filesystem.VaultWriters{}).Execute(t.Context(), v, "a/b/c"); err != nil {
+		t.Fatal(err)
+	}
+	if info, err := os.Stat(filepath.Join(v.Path, "a", "b", "c")); err != nil || !info.IsDir() {
+		t.Fatalf("the folder was not made: %v", err)
+	}
+}
