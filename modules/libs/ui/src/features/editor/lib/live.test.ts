@@ -396,7 +396,7 @@ const readRulesAt = (lead: string, insetFrom = 0, insetTo = 0): MarkdownConfig =
       parse: (cx, line) => {
         if (!line.text.startsWith(lead)) return false
         const from = cx.lineStart
-        while (cx.nextLine() && cx.line.text.startsWith(lead)) continue
+        while (cx.nextLine() && line.text.startsWith(lead)) continue
         cx.addElement(cx.elt('HorizontalRule', from + insetFrom, cx.prevLineEnd() - insetTo))
         return true
       },
