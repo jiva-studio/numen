@@ -85,6 +85,8 @@ describe('the keys the handle walks under', () => {
     expect(stepForKey('Enter', 40, bounds(), false)).toBeNull()
   })
 
+})
+
 describe('a step far from the floor', () => {
   it('leaves a whole-numbered track on whole numbers', () => {
     const wide = bounds({ max: 1e17, step: 10 })
