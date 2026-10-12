@@ -159,15 +159,7 @@ func (w blockingEmbedder) Embed(ctx context.Context, texts []string) ([][]float3
 func (w blockingEmbedder) Close() error { return w.e.Close() }
 
 // Concurrency reports how many parallel batches this embedder can execute.
-func (w blockingEmbedder) Concurrency() int {
-	w.e.mu.RLock()
-	held := w.e.held
-	w.e.mu.RUnlock()
-	if c, ok := held.(interface{ Concurrency() int }); ok {
-		return c.Concurrency()
-	}
-	return 1
-}
+func (w blockingEmbedder) Concurrency() int { return w.e.Concurrency() }
 
 type nonBlockingEmbedder struct{ e *Embedder }
 
@@ -192,10 +184,14 @@ func (i nonBlockingEmbedder) Embed(ctx context.Context, texts []string) ([][]flo
 func (i nonBlockingEmbedder) Close() error { return i.e.Close() }
 
 // Concurrency reports how many parallel batches this embedder can execute.
-func (i nonBlockingEmbedder) Concurrency() int {
-	i.e.mu.RLock()
-	held := i.e.held
-	i.e.mu.RUnlock()
+func (i nonBlockingEmbedder) Concurrency() int { return i.e.Concurrency() }
+
+// Concurrency reports how many parallel batches the model runs, and one while it
+// has not arrived.
+func (e *Embedder) Concurrency() int {
+	e.mu.RLock()
+	held := e.held
+	e.mu.RUnlock()
 	if c, ok := held.(interface{ Concurrency() int }); ok {
 		return c.Concurrency()
 	}
