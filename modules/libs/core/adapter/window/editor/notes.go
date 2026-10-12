@@ -141,7 +141,7 @@ func (a *API) WriteLink(
 
 	// The request names no fingerprint, so the write is held to what the note is
 	// at the moment it is made.
-	if _, err := a.Notes.Linking.Add(
+	if _, err := a.Notes.EditLinks.Add(
 		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
 	); err != nil {
 		reason, refused := wire.GetErrorCode(err)
@@ -171,7 +171,7 @@ func (a *API) RemoveLink(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if _, err := a.Notes.Linking.Remove(
+	if _, err := a.Notes.EditLinks.Remove(
 		ctx, showing, r.Msg.GetPath(), to, role, domain.Fingerprint{},
 	); err != nil {
 		reason, refused := wire.GetErrorCode(err)
@@ -210,8 +210,7 @@ func (a *API) GetNeighbourhood(
 	if err != nil {
 		return nil, err
 	}
-	found, err := note.NewShowNeighbourhood(a.Notes.Links, a.Notes.Queries).
-		Execute(ctx, showing, r.Msg.GetPath())
+	found, err := a.Notes.ShowNeighbourhood.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -318,13 +317,9 @@ func (a *API) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error)
 	return domain.Link{Target: target, Role: role, Label: l.GetLabel()}, nil
 }
 
-// getAddress is the note at the other end as a link carries it. A build with no
-// index cannot ask what else is filed under the name, and writes the name.
+// getAddress is the note at the other end as a link carries it.
 func (a *API) getAddress(ctx context.Context, to string) (domain.Address, error) {
-	if a.Notes.Queries == nil {
-		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
-	}
-	return note.GetAddress(ctx, a.Notes.Queries, a.GetCurrentVault().ID, to)
+	return a.Notes.GetLinkAddress.Execute(ctx, a.GetCurrentVault(), to)
 }
 
 // convertRoleFromWire is the role a link carries, in the core's words. A link is written

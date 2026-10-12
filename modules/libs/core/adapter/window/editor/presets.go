@@ -33,7 +33,7 @@ func (a *API) GetDeckPreset(
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.ConvertPresetToWire(found, wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path))
+	out.Preset = wire.ConvertPresetToWire(found, a.Notes.GetTitle.Execute(ctx, showing, found.Path))
 	// What the file was when this came out of it, for the client to present
 	// when it writes the settings back.
 	out.At = convertFingerprintToWire(found.Fingerprint)
@@ -136,7 +136,7 @@ func (a *API) ReadPreset(
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.ConvertPresetToWire(found, wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path))
+	out.Preset = wire.ConvertPresetToWire(found, a.Notes.GetTitle.Execute(ctx, showing, found.Path))
 	out.At = convertFingerprintToWire(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }

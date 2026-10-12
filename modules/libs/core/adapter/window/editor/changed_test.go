@@ -185,7 +185,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 		levelNothing,
 		time.Now,
 	)
-	api.Notes.Linking = &linking
+	api.Notes.EditLinks = &linking
 
 	out, err := api.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 		Path: "Heat.md",

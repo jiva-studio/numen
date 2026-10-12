@@ -26,6 +26,19 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
+// askingNotes is the questions a window asks of the index in db about the notes.
+func askingNotes(db *container.Index) Notes {
+	queries, links := db.Queries(), db.Links()
+	neighbourhood := note.NewShowNeighbourhood(links, queries)
+	return Notes{
+		Queries:           queries,
+		Links:             links,
+		ShowNeighbourhood: &neighbourhood,
+		GetTitle:          note.NewGetTitle(queries),
+		GetLinkAddress:    note.NewGetLinkAddress(queries),
+	}
+}
+
 // hand is a watch a test drives itself, so what a window is told while a vault
 // is being read can be asked without a filesystem or a timer.
 type hand struct {
@@ -178,15 +191,12 @@ func openingWith(
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	read := note.NewRead(filesystem.VaultReaders{})
+	asking := askingNotes(db)
+	asking.Read, asking.Write = &read, &writing
 	api := &API{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
-		Notes: Notes{
-			Queries: db.Queries(),
-			Links:   db.Links(),
-			Read:    &read,
-			Write:   &writing,
-		},
+		Notes:        asking,
 	}
 	api.setVault(v)
 	if embedder != nil {
@@ -520,7 +530,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: task.New()},
-		Notes:        Notes{Queries: db.Queries(), Links: db.Links()},
+		Notes:        askingNotes(db),
 	}
 	api.setVault(v)
 

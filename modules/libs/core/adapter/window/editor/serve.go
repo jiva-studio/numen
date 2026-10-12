@@ -195,9 +195,12 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	api.Notes.Read = &notes.Read
 	api.Notes.Write = &notes.Write
 	api.Notes.Create = &notes.Create
-	api.Notes.Linking = &notes.Linking
+	api.Notes.EditLinks = &notes.Linking
 	api.Notes.Rename = &notes.Rename
 	api.Notes.Remove = &notes.Remove
+	api.Notes.ShowNeighbourhood = &notes.Neighbourhood
+	api.Notes.GetTitle = notes.GetTitle
+	api.Notes.GetLinkAddress = notes.GetLinkAddress
 
 	cutting := &pool.cards
 	api.Cards = Cards{
