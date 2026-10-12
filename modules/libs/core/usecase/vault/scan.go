@@ -97,6 +97,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 
 	over, err := u.Walks.startOne(ctx, v.ID)
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before any step has run"
 		return res, err
 	}
 	defer over()
@@ -115,6 +116,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 
 	known, err := u.known.Fingerprints(ctx, v.ID)
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before any note is counted"
 		return res, fmt.Errorf("read index: %w", err)
 	}
 	// The walk is collected before anything is read, so that the order can be

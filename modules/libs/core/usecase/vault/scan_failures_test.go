@@ -154,13 +154,14 @@ func TestAScanStopsAtTheFirstStepThatFails(t *testing.T) {
 		set     func(*memVault)
 		message string
 		reached func(*memVault) bool
+		indexed int
 	}{
-		{"the vault cannot be opened", func(m *memVault) { m.openErr = boom }, "boom", func(m *memVault) bool { return m.registerCalled }},
-		{"the vault cannot be registered", func(m *memVault) { m.registerErr = boom }, "register vault: boom", func(m *memVault) bool { return len(m.reads) > 0 }},
-		{"the index cannot be read", func(m *memVault) { m.knownErr = boom }, "read index: boom", func(m *memVault) bool { return len(m.reads) > 0 }},
-		{"the walk fails", func(m *memVault) { m.walkErr = boom }, "boom", func(m *memVault) bool { return len(m.reads) > 0 }},
-		{"the vault cannot be told which notes are gone", func(m *memVault) { m.removeErr = boom }, "remove deleted notes: boom", func(m *memVault) bool { return m.reports > 0 }},
-		{"the index upkeep fails", func(m *memVault) { m.reportErr = boom }, "index upkeep for named: boom", func(*memVault) bool { return false }},
+		{"the vault cannot be opened", func(m *memVault) { m.openErr = boom }, "boom", func(m *memVault) bool { return m.registerCalled }, 0},
+		{"the vault cannot be registered", func(m *memVault) { m.registerErr = boom }, "register vault: boom", func(m *memVault) bool { return len(m.reads) > 0 }, 0},
+		{"the index cannot be read", func(m *memVault) { m.knownErr = boom }, "read index: boom", func(m *memVault) bool { return len(m.reads) > 0 }, 0},
+		{"the walk fails", func(m *memVault) { m.walkErr = boom }, "boom", func(m *memVault) bool { return len(m.reads) > 0 }, 0},
+		{"the vault cannot be told which notes are gone", func(m *memVault) { m.removeErr = boom }, "remove deleted notes: boom", func(m *memVault) bool { return m.reports > 0 }, 1},
+		{"the index upkeep fails", func(m *memVault) { m.reportErr = boom }, "index upkeep for named: boom", func(*memVault) bool { return false }, 1},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -168,7 +169,10 @@ func TestAScanStopsAtTheFirstStepThatFails(t *testing.T) {
 			m := &memVault{files: map[string]memFile{"a.md": noteFile(epoch)}}
 			tc.set(m)
 
-			_, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "named"})
+			res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "named"})
+			if res.Indexed != tc.indexed {
+				t.Errorf("result after %s counted %d indexed, want %d", tc.name, res.Indexed, tc.indexed)
+			}
 			if !errors.Is(err, boom) || err.Error() != tc.message {
 				t.Errorf("error = %v, want %q wrapping the cause", err, tc.message)
 			}
