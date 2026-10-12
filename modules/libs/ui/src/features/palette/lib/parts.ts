@@ -16,7 +16,7 @@ export interface PalettePart {
  * outwards, so no run ends on half of one.
  */
 // Stryker disable next-line ArrayDeclaration: the mutated default is ["Stryker was here"], whose one entry has no span bounds and is dropped as empty.
-export const partsOf = (text: string, at: readonly Span[] = []): readonly PalettePart[] => {
+export const getParts = (text: string, at: readonly Span[] = []): readonly PalettePart[] => {
   const runs = mergeSpans(text, at)
   const out: PalettePart[] = []
   let read = 0

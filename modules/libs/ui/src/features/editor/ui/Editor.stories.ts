@@ -130,7 +130,7 @@ const reach = (name: string) => {
 export const Steady: Story = {
   render: renderEditor(STEADY),
   play: async ({ canvasElement }) => {
-    const view = viewOf(canvasElement)
+    const view = getView(canvasElement)
 
     const put = async (line: number, column: number) => {
       view.dispatch({ selection: EditorSelection.single(view.state.doc.line(line).from + column) })
@@ -139,7 +139,7 @@ export const Steady: Story = {
     }
 
     /** The block the editor drew for a line, measured where it stands. */
-    const heightOf = (line: number) => {
+    const getHeight = (line: number) => {
       const row = view.state.doc.line(line)
       const drawn = Array.from(view.contentDOM.children).find((block) => {
         const at = view.posAtDOM(block)
@@ -162,9 +162,9 @@ export const Steady: Story = {
       for (const text of CONCEALED) {
         const line = getLineOf(text)
         await put(PARKED, 0)
-        const concealed = heightOf(line)
+        const concealed = getHeight(line)
         await put(line, 2)
-        await expect({ face, text, height: heightOf(line) }).toEqual({
+        await expect({ face, text, height: getHeight(line) }).toEqual({
           face,
           text,
           height: concealed,
@@ -174,9 +174,9 @@ export const Steady: Story = {
       for (const text of REDRAWN) {
         const line = getLineOf(text)
         await put(PARKED, 0)
-        const concealed = heightOf(line)
+        const concealed = getHeight(line)
         await put(line, 2)
-        await expect({ face, text, same: heightOf(line) === concealed }).toEqual({
+        await expect({ face, text, same: getHeight(line) === concealed }).toEqual({
           face,
           text,
           same: false,
@@ -422,7 +422,7 @@ const AFTER = `# Entropy, retitled by whoever else has this open\n\n${BODY}\n`
 const LINE = 40
 const COLUMN = 3
 
-const viewOf = (canvas: HTMLElement): EditorView => {
+const getView = (canvas: HTMLElement): EditorView => {
   const view = EditorView.findFromDOM(canvas.querySelector('.editor') as HTMLElement)
   if (!view) throw new Error('the editor drew no view')
   return view
@@ -461,7 +461,7 @@ export const ReadAgain: Story = {
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const view = viewOf(canvasElement)
+    const view = getView(canvasElement)
 
     view.dispatch({ selection: EditorSelection.single(view.state.doc.line(LINE).from + COLUMN) })
     view.scrollDOM.scrollTop = 600
@@ -580,7 +580,7 @@ export const ShownAgain: Story = {
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const view = viewOf(canvasElement)
+    const view = getView(canvasElement)
     const tab = (id: string) =>
       canvasElement.querySelector(`[data-workspace-tab="${id}"]`) as HTMLElement
 
@@ -640,7 +640,7 @@ export const Kept: Story = {
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const view = viewOf(canvasElement)
+    const view = getView(canvasElement)
     const getText = (what: string) =>
       (canvasElement.querySelector(`[${what}]`) as HTMLElement).textContent?.trim()
 
@@ -689,7 +689,7 @@ export const LeftByTheKeyboard: Story = {
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const view = viewOf(canvasElement)
+    const view = getView(canvasElement)
     const stop = (which: string) => canvasElement.querySelector(`[${which}]`) as HTMLElement
 
     // What a reader is told on arrival is the way back out.
@@ -769,7 +769,7 @@ const MIDDLE: EditorChange = {
 export const Changed: Story = {
   render: renderWithChange(NOTE, MIDDLE),
   play: async ({ canvasElement }) => {
-    const view = viewOf(canvasElement)
+    const view = getView(canvasElement)
     const getArriving = () => canvasElement.querySelectorAll('.cm-arriving')
 
     await expect(canvasElement.querySelectorAll('.cm-changing').length).toBeGreaterThan(0)

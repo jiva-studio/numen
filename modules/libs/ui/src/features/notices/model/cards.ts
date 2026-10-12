@@ -18,10 +18,10 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import { getArrivalTimes, dwellOf, getFinishedNotices, getShownNotices } from '../lib/dwell'
+import { getArrivalTimes, getDwell, getFinishedNotices, getShownNotices } from '../lib/dwell'
 import { foldNotices } from '../lib/fold'
 import { measureMovement, type Movement } from '../lib/movement'
-import { getStillAway, getReadable, tallyOf, type Notice } from '../lib/notice'
+import { getStillAway, getReadable, findTally, type Notice } from '../lib/notice'
 import { getRemainingWord } from '../lib/tally'
 import { useNoticeStack } from './stack'
 
@@ -108,7 +108,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   )
 
   const leftOn = (one: Notice): string => {
-    const tally = tallyOf(one)
+    const tally = findTally(one)
     if (tally === undefined) return ''
     return getRemainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
   }
@@ -138,11 +138,11 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
 
   /** Whether anything drawn is going to go by itself. */
   const dwelling = computed(() =>
-    drawn.value.some((one) => one.stay === 'read' && dwellOf(one.text, one.about) !== Infinity),
+    drawn.value.some((one) => one.stay === 'read' && getDwell(one.text, one.about) !== Infinity),
   )
 
   /** Whether anything drawn is counting, and so has a rate to be read. */
-  const counting = computed(() => drawn.value.some((one) => tallyOf(one) !== undefined))
+  const counting = computed(() => drawn.value.some((one) => findTally(one) !== undefined))
 
   // The corner changes by itself while nothing else changes, so the moment is
   // watched for as long as something is waiting on it.

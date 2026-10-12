@@ -3,7 +3,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { ChangeSet, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
-import { gridOf, isWritable, moveBlock } from './grid'
+import { getGrid, isWritable, moveBlock } from './grid'
 import { GFM } from '@lezer/markdown'
 import { LANGUAGES } from '../config/languages'
 import { createState } from '../fixtures/state'
@@ -14,7 +14,7 @@ const createGrid = (doc: string) => {
   const state = createState(doc)
   const node = syntaxTree(state).topNode.getChild('Table')
   if (!node) throw new Error('no table was parsed')
-  return gridOf(state, node)
+  return getGrid(state, node)
 }
 
 describe('whether the editor takes typing', () => {
@@ -87,11 +87,11 @@ describe('a grid drawn', () => {
   const createGridIn = (state: EditorState) => {
     const node = syntaxTree(state).topNode.getChild('Table')
     if (!node) throw new Error('no table was parsed')
-    return gridOf(state, node)
+    return getGrid(state, node)
   }
 
   const views: EditorView[] = []
-  const draw = (grid: ReturnType<typeof gridOf>) => {
+  const draw = (grid: ReturnType<typeof getGrid>) => {
     const view = new EditorView({ parent: document.body, state: EditorState.create({}) })
     views.push(view)
     return grid.toDOM(view)
@@ -147,7 +147,12 @@ describe('a grid drawn', () => {
 
   it('leaves a cell of an unaligned column unset', () => {
     const frame = draw(createGridIn(createStateIn('| a | b |\n|---|---|\n| c | d |\n')))
-    expect(getCells(frame, '.cm-cell').map((cell) => cell.style.textAlign)).toEqual(['', '', '', ''])
+    expect(getCells(frame, '.cm-cell').map((cell) => cell.style.textAlign)).toEqual([
+      '',
+      '',
+      '',
+      '',
+    ])
   })
 
   it('leaves a cell past the last aligned column unset', () => {
@@ -263,9 +268,9 @@ describe('a grid drawn', () => {
 
       createGridIn(createStateIn(SOURCE, EditorState.readOnly.of(true))).updateDOM(frame)
 
-      expect(
-        getCells(frame, '.cm-cell').some((cell) => cell.hasAttribute('contenteditable')),
-      ).toBe(false)
+      expect(getCells(frame, '.cm-cell').some((cell) => cell.hasAttribute('contenteditable'))).toBe(
+        false,
+      )
       expect(getCells(frame, '.cm-cell').some((cell) => 'from' in cell.dataset)).toBe(false)
       expect(getCells(frame, '.cm-cell').some((cell) => 'to' in cell.dataset)).toBe(false)
     })

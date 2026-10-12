@@ -16,7 +16,7 @@ import {
   type PaletteItem,
   type PalettePlace,
 } from '../lib/item'
-import { actionAt } from '../lib/keys'
+import { getActionId } from '../lib/keys'
 import { placePalette, type PlacedGroup } from '../lib/place'
 
 export interface PalettePlacesState {
@@ -128,7 +128,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
 
   const chooseAt = (at: number, second: boolean): void => {
     const item = places.value[at]?.item
-    const action = actionAt(item, second)
+    const action = getActionId(item, second)
     if (!item || !action) return
     options.tellChoice(item.id, action)
   }

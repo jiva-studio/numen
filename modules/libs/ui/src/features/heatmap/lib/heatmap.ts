@@ -152,11 +152,11 @@ export interface Cell {
 }
 
 /** How far apart two cells begin. */
-const stepOf = (grid: { cell: number; gap: number }): number => grid.cell + grid.gap
+const getStep = (grid: { cell: number; gap: number }): number => grid.cell + grid.gap
 
 /** How tall the grid stands: seven rows, with no gap past the last of them. */
 export function getGridHeight(grid: { cell: number; gap: number }): number {
-  return ROWS * stepOf(grid) - grid.gap
+  return ROWS * getStep(grid) - grid.gap
 }
 
 /**
@@ -167,7 +167,7 @@ export function getCells(
   grid: { cell: number; gap: number },
   days: readonly Day[],
 ): readonly Cell[] {
-  const step = stepOf(grid)
+  const step = getStep(grid)
   return days.map((day, at) => ({
     day,
     x: Math.floor(at / ROWS) * step,

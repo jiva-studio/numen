@@ -12,7 +12,7 @@
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import ActionRow from './ActionRow.vue'
 import { findKeptAction, placeActions, type ActionWords } from '../../lib/actions'
-import { stepIn, type PaletteAction } from '../../lib/item'
+import { getSteppedIndex, type PaletteAction } from '../../lib/item'
 import { isActionsChord } from '../../lib/keys'
 
 const props = defineProps<{
@@ -111,7 +111,7 @@ watch(
 const onKey = (event: KeyboardEvent) => {
   const step = (by: number, from = here.value) => {
     event.preventDefault()
-    goTo(stepIn(actions.value.length, from, by))
+    goTo(getSteppedIndex(actions.value.length, from, by))
     void reveal()
   }
   if (isActionsChord(event) || event.key === 'Escape') {

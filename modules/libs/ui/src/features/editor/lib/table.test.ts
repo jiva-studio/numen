@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
-import { emptyRow, readCell, readTable, rowsOf, widthOf, withColumn, writeCell } from './table'
+import { emptyRow, readCell, readTable, getRows, getWidth, withColumn, writeCell } from './table'
 import { createState } from '../fixtures/state'
 
-const tableIn = (state: EditorState) => {
+const getTable = (state: EditorState) => {
   const node = syntaxTree(state).topNode.getChild('Table')
   if (!node) throw new Error('no table was parsed')
   return readTable(state, node)
 }
 
-const read = (doc: string) => tableIn(createState(doc))
+const read = (doc: string) => getTable(createState(doc))
 
 const TABLE = `| Word | Kind |
 |:-----|----:|
@@ -21,7 +21,7 @@ const TABLE = `| Word | Kind |
 describe('reading a table', () => {
   it('gives every cell the stretch of the text it is written in', () => {
     const state = createState(TABLE)
-    const table = tableIn(state)
+    const table = getTable(state)
     const cell = table.body[0]?.[0]
 
     expect(cell).toBeTruthy()
@@ -41,7 +41,7 @@ describe('reading a table', () => {
 
   it('gives an empty cell a place to be written', () => {
     const state = createState('| a | b |\n|---|---|\n| c |  |\n')
-    const empty = tableIn(state).body[0]?.[1]
+    const empty = getTable(state).body[0]?.[1]
 
     expect(empty).toBeTruthy()
     expect(empty?.from).toBe(empty?.to)
@@ -50,8 +50,8 @@ describe('reading a table', () => {
 
   it('leaves a column nothing was written in without a cell', () => {
     const table = read('| a | b | c |\n|---|---|---|\n| d |\n')
-    expect(widthOf(table)).toBe(3)
-    expect(rowsOf(table)[1]).toEqual([expect.objectContaining({ text: 'd' }), null, null])
+    expect(getWidth(table)).toBe(3)
+    expect(getRows(table)[1]).toEqual([expect.objectContaining({ text: 'd' }), null, null])
   })
 
   it('reads a row that carries no outer pipes', () => {
@@ -93,7 +93,7 @@ describe('a column made at the right', () => {
   it('is read back as one column more', () => {
     const before = read(TABLE)
     const after = read(`${withColumn(TABLE.trimEnd())}\n`)
-    expect(widthOf(after)).toBe(widthOf(before) + 1)
+    expect(getWidth(after)).toBe(getWidth(before) + 1)
     expect(after.body).toHaveLength(before.body.length)
   })
 
@@ -127,8 +127,6 @@ describe('the alignment of a table', () => {
       'centre',
     ])
   })
-
-
 
   it('is read from an indented row of dashes', () => {
     expect(read('  | a | b |\n  |:--|--:|\n  | c | d |\n').align).toEqual(['start', 'end'])

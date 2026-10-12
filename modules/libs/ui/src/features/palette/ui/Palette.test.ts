@@ -89,7 +89,7 @@ const getSpokenKey = (cap: Element | null | undefined): string =>
   getText(cap?.querySelector('.sr-only'))
 
 /** The marks a cap draws, by the name Lucide files each under. */
-const marksOf = (cap: Element | null | undefined): readonly string[] =>
+const getMarks = (cap: Element | null | undefined): readonly string[] =>
   Array.from(cap?.querySelectorAll('svg') ?? []).map(
     (mark) =>
       /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(mark.getAttribute('class') ?? '')?.[1] ??
@@ -374,7 +374,7 @@ describe('choosing', () => {
   it('draws each key held as its own mark, in the order it is held', async () => {
     mountPalette()
     await settle()
-    expect(keys().map((key) => marksOf(key.querySelector('.cap')))).toEqual([
+    expect(keys().map((key) => getMarks(key.querySelector('.cap')))).toEqual([
       ['corner-down-left'],
       ['arrow-big-up', 'corner-down-left'],
     ])
@@ -620,7 +620,7 @@ describe('an item offering more than two actions', () => {
     await settle()
 
     const hint = options()[0]?.querySelector('[data-palette="hint"]')
-    expect(marksOf(hint)).toEqual(['option'])
+    expect(getMarks(hint)).toEqual(['option'])
     expect(getSpokenKey(hint)).toBe('Option 1')
     expect(options()[1]?.querySelector('[data-palette="hint"]')).toBeNull()
   })

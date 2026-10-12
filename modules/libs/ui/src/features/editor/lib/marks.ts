@@ -10,8 +10,8 @@ import { syntaxTree } from '@codemirror/language'
 import type { EditorState, Range } from '@codemirror/state'
 import { Decoration, type DecorationSet, type WidgetType } from '@codemirror/view'
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
-import { childOf } from './address'
-import { gridOf } from './grid'
+import { findChild } from './address'
+import { getGrid } from './grid'
 import { BULLET, HEADING, hidden, INLINE, line, mark, SHY } from './styles'
 import { Box, Bullet, Picture, Rule } from './widgets'
 
@@ -95,7 +95,7 @@ const build = (
 
       case 'Table':
         if (!isOutsideSelection(node)) return !blocks
-        if (blocks) found.push(block(node, gridOf(state, node.node)))
+        if (blocks) found.push(block(node, getGrid(state, node.node)))
         return false
     }
     return null
@@ -151,7 +151,7 @@ const build = (
   const takeImage = (node: SyntaxNodeRef): boolean | null => {
     if (node.name !== 'Image') return null
 
-    const address = childOf(node.node, 'URL')
+    const address = findChild(node.node, 'URL')
     if (!address || !isOutsideSelection(node)) return true
     found.push(
       Decoration.replace({

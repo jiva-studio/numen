@@ -2,7 +2,7 @@
 import type { PaletteKeys } from '@/shared/ui/key-cap'
 import type { PaletteAction } from './item'
 import { PALETTE_KEYS } from './keys'
-import { partsOf, type PalettePart } from './parts'
+import { getParts, type PalettePart } from './parts'
 
 /** The words the action panel is drawn with. */
 export interface ActionWords {
@@ -51,7 +51,7 @@ export const placeActions = (
     out.push({
       action,
       at: out.length,
-      name: partsOf(action.text, [{ from: found, to: found + word.length }]),
+      name: getParts(action.text, [{ from: found, to: found + word.length }]),
       key: PALETTE_KEYS[offered] ?? null,
     })
   }

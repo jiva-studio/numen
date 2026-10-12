@@ -2,17 +2,17 @@
 import { EditorView } from '@codemirror/view'
 import { emptyRow, withColumn, writeCell } from './table'
 
-const spanOf = (frame: HTMLElement) => {
+const getSpan = (frame: HTMLElement) => {
   const from = Number(frame.dataset['from'])
   const to = Number(frame.dataset['to'])
   return Number.isNaN(from) || Number.isNaN(to) ? null : { from, to }
 }
 
-const cellsIn = (frame: HTMLElement) => [
+const getCells = (frame: HTMLElement) => [
   ...frame.querySelectorAll<HTMLElement>('.cm-cell[data-from]'),
 ]
 
-const rangeOf = (element: HTMLElement) => {
+const getRange = (element: HTMLElement) => {
   const from = Number(element.dataset['from'])
   const to = Number(element.dataset['to'])
   return Number.isNaN(from) || Number.isNaN(to) ? null : { from, to }
@@ -20,7 +20,7 @@ const rangeOf = (element: HTMLElement) => {
 
 /** What is in the cell, written back over the stretch the cell came from. */
 const keep = (view: EditorView, element: HTMLElement) => {
-  const range = rangeOf(element)
+  const range = getRange(element)
   if (!range) return
   const text = writeCell(element.textContent ?? '')
   if (view.state.doc.sliceString(range.from, range.to) === text) return
@@ -39,17 +39,17 @@ const focus = (element: HTMLElement | undefined) => {
   selection.addRange(range)
 }
 
-const columnsIn = (frame: HTMLElement) => frame.querySelectorAll('thead .cm-cell').length
+const countColumns = (frame: HTMLElement) => frame.querySelectorAll('thead .cm-cell').length
 
 /** A row under the table, and a column at its right. */
 const grow = (frame: HTMLElement, view: EditorView) => {
-  const where = spanOf(frame)
+  const where = getSpan(frame)
   if (!where) return null
   return {
     row: () => ({
       changes: {
         from: view.state.doc.lineAt(where.to).to,
-        insert: emptyRow(columnsIn(frame)),
+        insert: emptyRow(countColumns(frame)),
       },
     }),
     column: () => ({
@@ -96,7 +96,7 @@ export const listen = (frame: HTMLElement, view: EditorView) => {
 
     if (event.key === 'Escape') {
       event.preventDefault()
-      const range = rangeOf(cell)
+      const range = getRange(cell)
       if (range) view.dispatch({ selection: { anchor: view.state.doc.lineAt(range.to).to } })
       view.focus()
       return
@@ -104,8 +104,8 @@ export const listen = (frame: HTMLElement, view: EditorView) => {
 
     if (event.key === 'Enter') {
       event.preventDefault()
-      const cells = cellsIn(frame)
-      const columns = columnsIn(frame)
+      const cells = getCells(frame)
+      const columns = countColumns(frame)
       const below = cells[cells.indexOf(cell) + columns]
       if (below) focus(below)
       return
@@ -113,7 +113,7 @@ export const listen = (frame: HTMLElement, view: EditorView) => {
 
     if (event.key !== 'Tab') return
     event.preventDefault()
-    const cells = cellsIn(frame)
+    const cells = getCells(frame)
     const at = cells.indexOf(cell)
 
     if (event.shiftKey) {
@@ -125,11 +125,11 @@ export const listen = (frame: HTMLElement, view: EditorView) => {
       return
     }
 
-    const range = rangeOf(cell)
+    const range = getRange(cell)
     if (!range) return
     const end = view.state.doc.lineAt(range.to).to
-    const columns = columnsIn(frame)
+    const columns = countColumns(frame)
     view.dispatch({ changes: { from: end, insert: emptyRow(columns) } })
-    focus(cellsIn(frame)[at + 1])
+    focus(getCells(frame)[at + 1])
   })
 }

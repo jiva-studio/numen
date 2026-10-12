@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { activity, percentWord, rateOf, getRemainingWord, shareOf, SMOOTHING } from './tally'
+import { activity, percentWord, getRate, getRemainingWord, findShare, SMOOTHING } from './tally'
 
-describe('shareOf', () => {
+describe('findShare', () => {
   it.each([
     { done: 0, total: 0, want: undefined, why: 'nothing to do has no share' },
     { done: 0, total: 10, want: 0, why: 'nothing done' },
@@ -11,7 +11,7 @@ describe('shareOf', () => {
     { done: -1, total: 10, want: 0, why: 'a count below nothing is nothing' },
     { done: 1, total: -3, want: undefined, why: 'a total below nothing is no total' },
   ])('$why', ({ done, total, want }) => {
-    expect(shareOf({ done, total })).toBe(want)
+    expect(findShare({ done, total })).toBe(want)
   })
 })
 
@@ -101,20 +101,20 @@ describe('getRemainingWord', () => {
   })
 })
 
-describe('rateOf', () => {
+describe('getRate', () => {
   it('is what moved over the time it took, the first time', () => {
-    expect(rateOf({ done: 0, rate: 0 }, 20, 2)).toBe(10)
+    expect(getRate({ done: 0, rate: 0 }, 20, 2)).toBe(10)
   })
 
   it('leans on the rate already known when something moved', () => {
-    expect(rateOf({ done: 20, rate: 10 }, 40, 2)).toBeCloseTo(10, 5)
-    expect(rateOf({ done: 20, rate: 10 }, 60, 2)).toBeGreaterThan(10)
-    expect(rateOf({ done: 20, rate: 10 }, 60, 2)).toBeLessThan(20)
+    expect(getRate({ done: 20, rate: 10 }, 40, 2)).toBeCloseTo(10, 5)
+    expect(getRate({ done: 20, rate: 10 }, 60, 2)).toBeGreaterThan(10)
+    expect(getRate({ done: 20, rate: 10 }, 60, 2)).toBeLessThan(20)
   })
 
   it('leans further the longer the reading covers', () => {
-    const brief = rateOf({ done: 20, rate: 10 }, 40, 1)
-    const long = rateOf({ done: 20 * SMOOTHING, rate: 10 }, 40 * SMOOTHING, SMOOTHING)
+    const brief = getRate({ done: 20, rate: 10 }, 40, 1)
+    const long = getRate({ done: 20 * SMOOTHING, rate: 10 }, 40 * SMOOTHING, SMOOTHING)
     // Both saw twenty a second. The one that watched for a smoothing length
     // moved most of the way there; the one that watched for a second barely
     // moved.
@@ -127,16 +127,16 @@ describe('rateOf', () => {
     // here divides into a longer and longer estimate every time it is drawn.
     let rate = 8
     for (let stalled = 0; stalled < 40; stalled++) {
-      rate = rateOf({ done: 100, rate }, 100, 2)
+      rate = getRate({ done: 100, rate }, 100, 2)
     }
     expect(rate).toBe(8)
   })
 
   it('keeps the old rate when no time has passed', () => {
-    expect(rateOf({ done: 20, rate: 10 }, 40, 0)).toBe(10)
+    expect(getRate({ done: 20, rate: 10 }, 40, 0)).toBe(10)
   })
 
   it('is nothing when the count went backwards, which is a fresh start', () => {
-    expect(rateOf({ done: 100, rate: 10 }, 5, 2)).toBe(0)
+    expect(getRate({ done: 100, rate: 10 }, 5, 2)).toBe(0)
   })
 })

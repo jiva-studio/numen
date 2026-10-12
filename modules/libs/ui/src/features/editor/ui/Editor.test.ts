@@ -32,7 +32,7 @@ const editor = (props: Partial<Props> = {}) => {
 }
 
 /** Where the caret is, as a person would say it. */
-const caretOf = (view: EditorView) => {
+const getCaret = (view: EditorView) => {
   const line = view.state.doc.lineAt(view.state.selection.main.head)
   return { line: line.number, column: view.state.selection.main.head - line.from }
 }
@@ -46,7 +46,7 @@ const getChangeMarks = (view: EditorView) => {
   return found
 }
 
-const caretAt = (view: EditorView, line: number, column: number) => {
+const setCaret = (view: EditorView, line: number, column: number) => {
   const at = view.state.doc.line(line).from + column
   view.dispatch({ selection: EditorSelection.single(at) })
 }
@@ -171,18 +171,18 @@ describe('a document put in from outside', () => {
 
   it('keeps the caret on its line when the lines above it move', async () => {
     const { wrapper, view } = editor({ modelValue: 'one\ntwo\nthree' })
-    caretAt(view, 3, 2)
+    setCaret(view, 3, 2)
 
     await wrapper.setProps({ modelValue: 'one, and a good deal more of it\ntwo\nthree' })
-    expect(caretOf(view)).toEqual({ line: 3, column: 2 })
+    expect(getCaret(view)).toEqual({ line: 3, column: 2 })
   })
 
   it('puts the caret at the end of a line that no longer reaches it', async () => {
     const { wrapper, view } = editor({ modelValue: 'one\ntwo and more\nthree' })
-    caretAt(view, 2, 11)
+    setCaret(view, 2, 11)
 
     await wrapper.setProps({ modelValue: 'one\ntwo\nthree' })
-    expect(caretOf(view)).toEqual({ line: 2, column: 3 })
+    expect(getCaret(view)).toEqual({ line: 2, column: 3 })
   })
 
   it('keeps both ends of a selection', async () => {

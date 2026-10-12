@@ -8,7 +8,7 @@ import type { ChangeDesc, EditorState } from '@codemirror/state'
 import { EditorView, WidgetType } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { listen } from './cells'
-import { readCell, readTable, rowsOf, type Cell, type Row, type Table } from './table'
+import { readCell, readTable, getRows, type Cell, type Row, type Table } from './table'
 
 class Grid extends WidgetType {
   constructor(
@@ -37,7 +37,7 @@ class Grid extends WidgetType {
 
   override updateDOM(frame: HTMLElement) {
     const drawn = [...frame.querySelectorAll<HTMLElement>('.cm-cell')]
-    const rows = rowsOf(this.table)
+    const rows = getRows(this.table)
     const cells = rows.flat()
 
     if (drawn.length !== cells.length) {
@@ -77,7 +77,7 @@ class Grid extends WidgetType {
 
     const top = document.createElement('thead')
     const rest = document.createElement('tbody')
-    rowsOf(this.table).forEach((row, index) => {
+    getRows(this.table).forEach((row, index) => {
       if (index === 0) top.appendChild(draw(row, index, 'th'))
       else rest.appendChild(draw(row, index, 'td'))
     })
@@ -143,5 +143,5 @@ export const moveBlock = (widget: WidgetType, changes: ChangeDesc): WidgetType =
 }
 
 /** The widget drawn where a table is written. */
-export const gridOf = (state: EditorState, node: SyntaxNode) =>
+export const getGrid = (state: EditorState, node: SyntaxNode) =>
   new Grid(readTable(state, node), isWritable(state))

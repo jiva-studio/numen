@@ -11,7 +11,7 @@ import {
   pendingChange,
   changeMarks,
   createPacePlugin,
-  revealOf,
+  createReveal,
   setReveal,
   type EditorChange,
 } from './change'
@@ -50,45 +50,45 @@ const createMarkedState = (doc: string, change: EditorChange | null): EditorStat
 
 /** The showing, moved on to `part` of the way through. */
 const getStateAt = (state: EditorState, change: EditorChange, part: number): EditorState =>
-  state.update({ effects: setReveal.of(revealOf(change.text, part)) }).state
+  state.update({ effects: setReveal.of(createReveal(change.text, part)) }).state
 
 describe('how much of a change is shown', () => {
   it('is none of it before it starts', () => {
-    expect(revealOf(FIVE, 0)).toEqual({ shown: 0, fading: 0 })
+    expect(createReveal(FIVE, 0)).toEqual({ shown: 0, fading: 0 })
   })
 
   it('is two words of five, forty per cent of the way through', () => {
-    expect(revealOf(FIVE, 0.4)).toEqual({ shown: 8, fading: 4 })
+    expect(createReveal(FIVE, 0.4)).toEqual({ shown: 8, fading: 4 })
   })
 
   it('is one more word at each step', () => {
-    const steps = [0, 1, 2, 3, 4, 5, 6].map((step) => revealOf(FIVE, step / 6).shown)
+    const steps = [0, 1, 2, 3, 4, 5, 6].map((step) => createReveal(FIVE, step / 6).shown)
     expect(steps).toEqual([0, 4, 8, 14, 19, 23, 23])
   })
 
   it('takes in the space after a word, so the boundary stands between words', () => {
-    expect(revealOf(FIVE, 0.2).shown).toBe(4)
+    expect(createReveal(FIVE, 0.2).shown).toBe(4)
   })
 
   it('is all of it at the end, with nothing arriving', () => {
-    expect(revealOf(FIVE, 1)).toEqual({ shown: 23, fading: 23 })
+    expect(createReveal(FIVE, 1)).toEqual({ shown: 23, fading: 23 })
   })
 
   it('stays inside the text however far it is asked for', () => {
-    expect(revealOf(FIVE, 4)).toEqual({ shown: 23, fading: 23 })
-    expect(revealOf(FIVE, -1)).toEqual({ shown: 0, fading: 0 })
+    expect(createReveal(FIVE, 4)).toEqual({ shown: 23, fading: 23 })
+    expect(createReveal(FIVE, -1)).toEqual({ shown: 0, fading: 0 })
   })
 
   it('has nothing to show for text with no words in it', () => {
-    expect(revealOf('', 0.5)).toEqual({ shown: 0, fading: 0 })
-    expect(revealOf('   \n  ', 1)).toEqual({ shown: 6, fading: 6 })
-    expect(revealOf('   \n  ', 0.5)).toEqual({ shown: 0, fading: 0 })
+    expect(createReveal('', 0.5)).toEqual({ shown: 0, fading: 0 })
+    expect(createReveal('   \n  ', 1)).toEqual({ shown: 6, fading: 6 })
+    expect(createReveal('   \n  ', 0.5)).toEqual({ shown: 0, fading: 0 })
   })
 
   it('counts the words of a script that is not Latin', () => {
-    expect(revealOf(RUSSIAN, 1)).toEqual({ shown: RUSSIAN.length, fading: RUSSIAN.length })
-    expect(revealOf(RUSSIAN, 0.5).shown).toBeGreaterThan(0)
-    expect(revealOf(RUSSIAN, 0.5).shown).toBeLessThan(RUSSIAN.length)
+    expect(createReveal(RUSSIAN, 1)).toEqual({ shown: RUSSIAN.length, fading: RUSSIAN.length })
+    expect(createReveal(RUSSIAN, 0.5).shown).toBeGreaterThan(0)
+    expect(createReveal(RUSSIAN, 0.5).shown).toBeLessThan(RUSSIAN.length)
   })
 })
 

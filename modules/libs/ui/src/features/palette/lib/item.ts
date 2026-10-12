@@ -105,7 +105,7 @@ export const stepTo = (places: readonly PalettePlace[], from: number, by: number
  * wraps, and answers -1 for a list holding nothing. Every row of such a list
  * can be landed on.
  */
-export const stepIn = (total: number, from: number, by: number): number => {
+export const getSteppedIndex = (total: number, from: number, by: number): number => {
   if (total <= 0) return -1
   return (((from + by) % total) + total) % total
 }
