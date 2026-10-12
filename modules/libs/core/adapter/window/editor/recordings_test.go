@@ -117,6 +117,11 @@ func windowOn(t *testing.T, held port.DerivedStore) (*API, http.Handler) {
 	api := &API{
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
+		Texts: source.NewTexts(
+			filesystem.VaultReaders{}, nil,
+			indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
+			storing{held},
+		),
 	}
 	api.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
@@ -548,6 +553,7 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
 	api, _ := openRecordingWindow(t, held)
 	hl := source.NewHighlight(filesystem.VaultReaders{}, indexed{}, storing{held})
 	api.Highlight = &hl
+	api.Texts = source.NewTexts(filesystem.VaultReaders{}, nil, indexed{}, storing{held})
 
 	err := writeTranscript(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeNotFound {

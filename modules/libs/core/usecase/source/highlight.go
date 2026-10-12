@@ -51,12 +51,6 @@ func NewHighlight(
 	return Highlight{readers: readers, sources: sources, derived: derived}
 }
 
-// Sources is what says which producer made a source's text.
-func (u Highlight) Sources() port.SourceQueries { return u.sources }
-
-// Derived is the store the producer's text and coordinates are kept in.
-func (u Highlight) Derived() port.DerivedStores { return u.derived }
-
 // Execute is what the runs of one source's text say and where each of them
 // sits: the boxes covering it, each on the page it was read from.
 //

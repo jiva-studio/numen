@@ -79,6 +79,8 @@ type API struct {
 	// file of the vault is.
 	Viewer    *viewer
 	Highlight *source.Highlight
+	// Texts reads and writes what was made from a file of the vault.
+	Texts source.Texts
 	// Playing is the socket a recording is played from. A build without one
 	// answers with no address, and the window says the recording cannot be
 	// played here.

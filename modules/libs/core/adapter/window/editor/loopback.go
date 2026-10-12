@@ -221,31 +221,22 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 func (a *API) serveCopy(
 	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named pool.Fingerprint,
 ) bool {
-	_, stores, ready := a.getSourceStores()
-	if !ready {
-		return false
-	}
 	points := a.getArtifactAddress(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
 	if getPlayerURL(points) == "" {
 		return false
 	}
-	store, err := stores.Open(held)
-	if err != nil {
+	video, found := a.Texts.OpenCopy.Execute(r.Context(), held, points)
+	if !found {
 		return false
 	}
-	name := derived.Copy(derived.Fingerprint([]byte(string(points))))
-	file, size, err := store.Open(r.Context(), name)
-	if err != nil {
-		return false
-	}
-	defer file.Close()
-	if named.Size != size {
+	defer video.File.Close()
+	if named.Size != video.Size {
 		refuse(w, errChanged)
 		return true
 	}
 	w.Header().Set("Cache-Control", immutable)
 	w.Header().Set("Content-Type", derived.CopyType)
-	http.ServeContent(w, r, name, time.Time{}, file)
+	http.ServeContent(w, r, "", time.Time{}, video.File)
 	return true
 }
 

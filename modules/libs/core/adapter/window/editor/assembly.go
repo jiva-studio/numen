@@ -99,6 +99,9 @@ type Assembly interface {
 	OpenVaults(moves note.Move) vaults.Scenarios
 	OpenFlashcards(index note.Levels) flashcards.Scenarios
 
+	// OpenSourceTexts reads and writes the text made from a file of the vault.
+	OpenSourceTexts() source.Texts
+
 	// OpenDownloader reaches the address a link note points at, and is nothing
 	// on a machine holding neither of the tools that reach one. OpenImportURL
 	// is one such address fetched into the vault.

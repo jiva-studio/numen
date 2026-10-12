@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 	"strings"
 	"unicode/utf8"
 
@@ -15,9 +14,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/urlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // A recording crosses to the window twice: as the bytes a player is pointed at,
@@ -27,12 +25,7 @@ import (
 // not one.
 var errNotARecording = errors.New("not a recording this vault holds")
 
-// errNotHeard is a recording nothing has listened to, which holds no words to
-// edit, to take away or to put right.
-var errNotHeard = errors.New("nothing has listened to this recording")
-
-// errBeingHeard is what an edit to a recording a run holds gets. A run appends
-// to the transcript, and what is being appended to is not edited underneath.
+// errBeingHeard is what an edit to a recording a run holds gets.
 var errBeingHeard = errors.New("this recording is being listened to")
 
 // GetRecording answers what the file at a path is: how long it runs and where
@@ -48,12 +41,12 @@ func (a *API) GetRecording(
 	if err != nil {
 		return nil, err
 	}
-	raw, err := a.transcript(ctx, showing, ref.Path)
+	heard, err := a.Texts.GetHeardTranscript.Execute(ctx, showing, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	transcribed, _ := transcript.ReadReached(raw)
-	_, cues := transcript.Parse(raw)
+	transcribed, _ := transcript.ReadReached(heard.Words)
+	_, cues := transcript.Parse(heard.Words)
 	// Where a recording is played from and what it is played as are answered
 	// here: the socket is opened afresh for every run, and what counts as a
 	// recording is this application's to say.
@@ -90,8 +83,8 @@ func (a *API) getCopyMedia(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint,
 ) (media, kind string) {
 	at := a.getArtifactAddress(ctx, v, ref)
-	beside, size, held := a.getCopyLocation(ctx, v, ref.Path, at)
-	if !held {
+	location := a.Texts.GetCopyLocation.Execute(ctx, v, ref.Path, at)
+	if !location.Exists {
 		return "", ""
 	}
 	// The address names how large the copy was when it was given out, as a
@@ -99,10 +92,10 @@ func (a *API) getCopyMedia(
 	// address. A copy kept in the vault is a file of the vault, played the way
 	// every file of it is played.
 	played := ref.Path
-	if beside != "" {
-		played = beside
+	if location.VaultPath != "" {
+		played = location.VaultPath
 	}
-	return a.Playing.Address(v, domain.Fingerprint{Path: played, Size: size}), derived.CopyType
+	return a.Playing.Address(v, domain.Fingerprint{Path: played, Size: location.Size}), derived.CopyType
 }
 
 // ReadTranscript answers with the words of a file that carries times: each
@@ -117,11 +110,11 @@ func (a *API) ReadTranscript(
 	if err != nil {
 		return nil, err
 	}
-	raw, err := a.text(ctx, showing, ref.Path)
+	standing, err := a.Texts.GetTranscript.Execute(ctx, showing, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	_, cues := transcript.Parse(raw)
+	_, cues := transcript.Parse(standing.Words)
 	if at := r.Msg.GetSpan(); at != nil {
 		if cues, err = selectSpan(at)(cues); err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -141,11 +134,11 @@ func (a *API) ReadArticle(
 	if err != nil {
 		return nil, err
 	}
-	raw, err := a.text(ctx, showing, ref.Path)
+	standing, err := a.Texts.GetTranscript.Execute(ctx, showing, ref.Path)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	whole, _ := transcript.Parse(raw)
+	whole, _ := transcript.Parse(standing.Words)
 	prose, err := readSpan(whole, r.Msg.GetSpan())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -177,16 +170,6 @@ func readSpan(prose string, at *v1.Span) (string, error) {
 	return prose[start:end], nil
 }
 
-// text is the text of the file at a path as it now stands: what a person put
-// right, and what a model wrote or a site published where nothing put it right.
-func (a *API) text(ctx context.Context, v domain.Vault, path string) ([]byte, error) {
-	said, store, made, err := a.getSourceText(ctx, v, path)
-	if err != nil || !made {
-		return nil, err
-	}
-	return a.getTranscript(ctx, store, said)
-}
-
 // WriteTranscript writes the transcript of a recording as a person left it.
 //
 // What the model heard stays under its own name and the words as they now stand
@@ -204,38 +187,18 @@ func (a *API) WriteTranscript(
 	if err != nil {
 		return nil, err
 	}
-	said, store, listened, err := a.getSourceText(ctx, showing, ref.Path)
-	if err != nil {
-		return nil, connect.NewError(getReachCode(err), err)
-	}
-	if !listened {
-		return nil, connect.NewError(connect.CodeNotFound, errNotHeard)
-	}
-
-	// A run holds the recording it is listening to for as long as it takes, by
-	// the name it appends to.
-	release, err := store.ClaimName(ctx, derived.Partial(said.Producer, said.Hash))
-	if errors.Is(err, port.ErrClaimed) {
+	written, err := a.Texts.WriteTranscript.Execute(ctx, showing, ref.Path, cues, a.getRechunker())
+	switch {
+	case errors.Is(err, source.ErrNoTranscript):
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	case errors.Is(err, source.ErrTranscriptBusy):
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errBeingHeard)
-	}
-	if err != nil {
+	case err != nil:
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	defer release()
-
-	// The words are a person's, and a proofreader leaves them alone.
-	written := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)
-	if err := store.Write(ctx, derived.Corrections(said.Producer, said.Hash), written); err != nil {
-		return nil, connect.NewError(getReachCode(err), err)
-	}
-
-	// The chunks in the index hold the words as they were heard, so the source
-	// is cut again from what it now says. A write that landed is not refused
-	// for a cut that could not be asked for.
-	if cut := a.getRechunker(); cut != nil {
-		if err := cut(ctx, showing, ref.Path); err != nil {
-			a.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: err.Error()})
-		}
+	// A write that landed is not refused for a cut that could not be asked for.
+	if written.CutError != nil {
+		a.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: written.CutError.Error()})
 	}
 	return connect.NewResponse(&v1.WriteTranscriptResponse{Cues: newWireCues(cues)}), nil
 }
@@ -347,141 +310,4 @@ func (a *API) getShownFile(ctx context.Context, path string) (domain.Vault, doma
 		return domain.Vault{}, domain.Fingerprint{}, err
 	}
 	return showing, ref, nil
-}
-
-// getSourceStores is what says which model transcribed a recording and where what
-// it wrote is kept. They are the index and the store a passage is placed from,
-// which read the same artifacts.
-func (a *API) getSourceStores() (port.SourceQueries, port.DerivedStores, bool) {
-	if a.Highlight == nil || a.Highlight.Sources() == nil || a.Highlight.Derived() == nil {
-		return nil, nil, false
-	}
-	return a.Highlight.Sources(), a.Highlight.Derived(), true
-}
-
-// getSourceText is what was made from the file at a path, and the store holding it. It
-// answers false for a file nothing has been made from.
-//
-// A document's recognition is named by the bytes that were read, which the index
-// holds. What a link note points at was never in the note's bytes: it is named
-// by the address, so it is looked for under that name and a walk that has not
-// reached the note yet takes nothing away from it.
-func (a *API) getSourceText(
-	ctx context.Context,
-	v domain.Vault,
-	path string,
-) (port.SourceText, port.DerivedStore, bool, error) {
-	sources, stores, ok := a.getSourceStores()
-	if !ok {
-		return port.SourceText{}, nil, false, nil
-	}
-	if at := a.getNoteURL(ctx, v, path); string(at) != "" {
-		return a.getFetchedText(ctx, v, at)
-	}
-	said, held, err := sources.GetSourceText(ctx, v.ID, path)
-	if err != nil || !held || said.Producer == "" {
-		return port.SourceText{}, nil, false, err
-	}
-	store, err := stores.Open(v)
-	if err != nil {
-		return port.SourceText{}, nil, false, err
-	}
-	return said, store, true, nil
-}
-
-// getNoteURL is the address the note at a path carries, and nothing where the
-// file is not a note or points nowhere.
-func (a *API) getNoteURL(ctx context.Context, v domain.Vault, path string) domain.URL {
-	reader, err := a.Readers.Open(v)
-	if err != nil {
-		return domain.URL("")
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return domain.URL("")
-	}
-	at, err := urlfile.Read(raw)
-	if err != nil {
-		return domain.URL("")
-	}
-	return at
-}
-
-// getFetchedText is what stands in the store under an address, and which producer
-// wrote it. Nothing fetched is an address nothing has been fetched for, which is
-// a link note's ordinary state until something is.
-func (a *API) getFetchedText(
-	ctx context.Context, v domain.Vault, at domain.URL,
-) (port.SourceText, port.DerivedStore, bool, error) {
-	_, stores, ok := a.getSourceStores()
-	if !ok {
-		return port.SourceText{}, nil, false, nil
-	}
-	store, err := stores.Open(v)
-	if err != nil {
-		return port.SourceText{}, nil, false, err
-	}
-	hash := derived.Fingerprint([]byte(string(at)))
-	for _, from := range derived.Producers() {
-		got, err := readRunProgress(ctx, store, from, hash)
-		if err != nil {
-			return port.SourceText{}, nil, false, err
-		}
-		if got.state != runNone {
-			return port.SourceText{Producer: from, Hash: hash}, store, true, nil
-		}
-	}
-	return port.SourceText{}, store, false, nil
-}
-
-// transcript is what a model wrote down of the recording at a path, and nothing
-// where nothing has listened to it. A run still going is read as far as it has
-// got.
-func (a *API) transcript(ctx context.Context, v domain.Vault, path string) ([]byte, error) {
-	said, store, listened, err := a.getSourceText(ctx, v, path)
-	if err != nil || !listened {
-		return nil, err
-	}
-	return readFirst(ctx, store,
-		derived.Artifact(said.Producer, said.Hash),
-		derived.Partial(said.Producer, said.Hash),
-	)
-}
-
-// getTranscript is the transcript of a recording as it now stands: what it was put
-// right to, and what was heard where nothing put it right.
-func (a *API) getTranscript(ctx context.Context, store port.DerivedStore, said port.SourceText) ([]byte, error) {
-	return readFirst(ctx, store,
-		derived.Corrections(said.Producer, said.Hash),
-		derived.Artifact(said.Producer, said.Hash),
-		derived.Partial(said.Producer, said.Hash),
-	)
-}
-
-// readFirst is what the store holds under the first of these names, and nothing
-// where it holds none of them. The store is a folder on the person's disk and
-// they may empty it.
-func readFirst(ctx context.Context, store port.DerivedStore, names ...string) ([]byte, error) {
-	for _, name := range names {
-		raw, err := store.Read(ctx, name)
-		if errors.Is(err, fs.ErrNotExist) {
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		return raw, nil
-	}
-	return nil, nil
-}
-
-// isUnclaimed says whether a name is one nobody holds. It is taken and let go, so what
-// it answers is what stood a moment ago.
-func isUnclaimed(ctx context.Context, store port.DerivedStore, name string) bool {
-	release, err := store.ClaimName(ctx, name)
-	if err != nil {
-		return false
-	}
-	release()
-	return true
 }

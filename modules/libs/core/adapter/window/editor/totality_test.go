@@ -12,6 +12,7 @@ import (
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -104,12 +105,12 @@ func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
 // writes it.
 func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.State]func() v1.State{
-		v1.State_STATE_NONE:    getStateAt(runProgress{state: runNone}),
-		v1.State_STATE_DONE:    getStateAt(runProgress{state: runComplete}),
-		v1.State_STATE_RUNNING: getStateAt(runProgress{state: runActive}),
-		v1.State_STATE_STOPPED: getStateAt(runProgress{state: runStopped}),
-		v1.State_STATE_EMPTY:   getStateAt(runProgress{state: runNoSpeech}),
-		v1.State_STATE_FAILED:  getStateAt(runProgress{state: runUnopened}),
+		v1.State_STATE_NONE:    getStateAt(source.RunProgress{State: source.RunNone}),
+		v1.State_STATE_DONE:    getStateAt(source.RunProgress{State: source.RunComplete}),
+		v1.State_STATE_RUNNING: getStateAt(source.RunProgress{State: source.RunActive}),
+		v1.State_STATE_STOPPED: getStateAt(source.RunProgress{State: source.RunStopped}),
+		v1.State_STATE_EMPTY:   getStateAt(source.RunProgress{State: source.RunNoSpeech}),
+		v1.State_STATE_FAILED:  getStateAt(source.RunProgress{State: source.RunUnopened}),
 		v1.State_STATE_QUEUED:  func() v1.State { return getStartState(port.Queued) },
 	}, func(writes func() v1.State) v1.State { return writes() })
 }
@@ -132,9 +133,9 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 }
 
 // getStateAt is what an artifact over a source standing here is answered with.
-func getStateAt(got runProgress) func() v1.State {
+func getStateAt(got source.RunProgress) func() v1.State {
 	return func() v1.State {
-		return newArtifact(v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
+		return newRunArtifact(v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
 	}
 }
 
