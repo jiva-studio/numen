@@ -114,11 +114,11 @@ func TestThePageProgressionDirection(t *testing.T) {
 }
 
 func TestTheManifestItemsThatNameNothingAreNotInTheBook(t *testing.T) {
-	manifest := twoItems + `
+	manifest := `<item href="ghost.xhtml" media-type="application/xhtml+xml"/>
+` + twoItems + `
 		<item id="n1" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-		<item id="n2" media-type="application/x-dtbncx+xml"/>
-		<item href="ghost.xhtml" media-type="application/xhtml+xml"/>`
-	spine := `<spine toc="n1"><itemref idref="a"/><itemref idref="b"/><itemref/></spine>`
+		<item id="n2" media-type="application/x-dtbncx+xml"/>`
+	spine := `<spine><itemref idref="a"/><itemref idref="b"/><itemref/></spine>`
 	book := read(t, buildSpineArchive(t, buildOpf("", manifest, spine), map[string]string{
 		oneDoc:              chapterOne,
 		twoDoc:              chapterTwo,
@@ -419,4 +419,41 @@ func TestAnEntryTheArchiveCannotOpenIsLeftUnread(t *testing.T) {
 	if _, err := book.Entry(oneDoc); !errors.Is(err, epub.ErrNoEntry) {
 		t.Errorf("entry: err = %v, want %v", err, epub.ErrNoEntry)
 	}
+}
+
+func TestHowTheLayoutValuesAreRead(t *testing.T) {
+	for _, c := range []struct {
+		name     string
+		metadata string
+		want     epub.Layout
+	}{
+		{"a later value that reflows", `<meta property="rendition:layout">pre-paginated</meta>
+			<meta property="rendition:layout"> Reflowable </meta>`, epub.Reflowable},
+		{"a later value that names neither", `<meta property="rendition:layout">pre-paginated</meta>
+			<meta property="rendition:layout">fixed</meta>`, epub.PrePaginated},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			book := read(t, buildSpineArchive(t, buildOpf(c.metadata, twoItems, twoRefs), map[string]string{
+				oneDoc: chapterOne, twoDoc: chapterTwo,
+			}))
+
+			if book.Layout != c.want {
+				t.Errorf("layout = %q, want %q", book.Layout, c.want)
+			}
+		})
+	}
+
+	t.Run("a document laid out once in a book that reflows", func(t *testing.T) {
+		spine := `<spine><itemref idref="a" properties="rendition:layout-pre-paginated"/><itemref idref="b"/></spine>`
+		book := read(t, buildSpineArchive(t, buildOpf("", twoItems, spine), map[string]string{
+			oneDoc: chapterOne, twoDoc: chapterTwo,
+		}))
+
+		if got := book.Documents[0].Layout; got != epub.PrePaginated {
+			t.Errorf("first document layout = %q, want %q", got, epub.PrePaginated)
+		}
+		if got := book.Documents[1].Layout; got != epub.Reflowable {
+			t.Errorf("second document layout = %q, want %q", got, epub.Reflowable)
+		}
+	})
 }
