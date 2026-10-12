@@ -35,14 +35,14 @@ const loadFresh = async (): Promise<typeof Languages> => {
 const find = (languages: typeof Languages, name: string, fuzzy = false) =>
   LanguageDescription.matchLanguageName(languages.LANGUAGES, name, fuzzy)
 
-const hasSyntaxError = (support: LanguageSupport, code: string): boolean => {
-  let found = false
+const getNodeNames = (support: LanguageSupport, code: string): Set<string> => {
+  const names = new Set<string>()
   support.language.parser.parse(code).iterate({
     enter: (node) => {
-      if (node.type.isError) found = true
+      names.add(node.name)
     },
   })
-  return found
+  return names
 }
 
 afterEach(() => {
@@ -92,13 +92,15 @@ describe('LANGUAGES', () => {
   it('loads javascript with JSX', async () => {
     const languages = await loadFresh()
     const js = await languages.loadLanguage('javascript')
-    expect(hasSyntaxError(js!, 'const a = <i>x</i>')).toBe(false)
+    expect(getNodeNames(js!, 'const a = <i>x</i>').has('JSXElement')).toBe(true)
   })
 
   it('loads typescript with JSX and with types', async () => {
     const languages = await loadFresh()
     const ts = await languages.loadLanguage('typescript')
-    expect(hasSyntaxError(ts!, 'const a: number = 1; const b = <i>x</i>')).toBe(false)
+    const names = getNodeNames(ts!, 'const a: number = 1; const b = <i>x</i>')
+    expect(names.has('TypeAnnotation')).toBe(true)
+    expect(names.has('JSXElement')).toBe(true)
   })
 
   it('answers a second load with the same instance', async () => {
