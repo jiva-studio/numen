@@ -94,7 +94,7 @@ Related: *How an interface component is built*, *The component library is shadcn
 
 ### Everywhere
 
-- **A function is named by an imperative verb phrase or a predicate**, and the reader is what checks the part no machine does. `modules/tools/lint` refuses a gerund, a participle, a lone preposition and a third-person verb, in both languages. What is left to a person is the word that is neither: a bare noun (`paper`, `room`, `ceiling`), an adjective or an adverb (`plainly`, `quietest`, `harder`), and a metaphor standing where an engineering term exists (`seal`, `retire`, `wake`). The rule is not written for a machine because telling `open` the imperative from `paper` the noun needs a dictionary of every English verb, and that is the reader's to hold. Say what the operation is: `measurePage`, `hasRoom`, `getPlainRune`.
+- **A function is named by an imperative verb phrase or a predicate**, and the reader checks it. The reader catches a gerund, a participle, a lone preposition and a third-person verb, and also the word that is neither: a bare noun (`paper`, `room`, `ceiling`), an adjective or an adverb (`plainly`, `quietest`, `harder`), and a metaphor standing where an engineering term exists (`seal`, `retire`, `wake`). Say what the operation is: `measurePage`, `hasRoom`, `getPlainRune`.
 - **One name for one thing** (the glossary preamble). A concept under a name nobody wrote down, or under two names in two packages, is the point at which the code and the documents start describing different systems. A field renamed across a boundary is a defect unless the glossary lists the rename.
 - **A comment states the rule that holds, and stops.** Flag a comment that restates the code or argues — `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…` — and any comparison with a previous implementation. Benchmark numbers live in `docs/performance.md`.
 - **Anything that makes the same fact true in two places**, and any new dependency inside the core.
@@ -103,7 +103,7 @@ Related: *How an interface component is built*, *The component library is shadcn
 
 ## What not to report
 
-- Anything `gofmt`, `go vet`, `golangci-lint`, `buf lint`, `vue-tsc` or a house ESLint rule already enforces; they all run in the gate above. Naming in particular is largely machine-refused — check `modules/tools/lint` before writing a naming finding by hand.
+- Anything `gofmt`, `go vet`, `golangci-lint`, `buf lint`, `vue-tsc` or a house ESLint rule already enforces; they all run in the gate above.
 - **A file's length, an import count, or a block size.** A file is split by responsibility.
 - **Where a line breaks.** No formatter runs over TypeScript, Vue or Markdown, and that is a decision, not an omission. Layout is read like the rest of the code: a finding about it says what a reader trips over, never that a tool would have done it differently.
 - Preferences with no consequence: a helper you would have written differently, an early return you find prettier, a name that is merely not your choice.
