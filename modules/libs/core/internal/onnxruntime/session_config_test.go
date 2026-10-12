@@ -1,9 +1,12 @@
 package onnxruntime
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"unsafe"
 )
@@ -149,4 +152,104 @@ func TestSessionOpensWithSpinningDisabled(t *testing.T) {
 		t.Fatal(err)
 	}
 	session.Destroy()
+}
+
+func TestAddConfigEntryNamesTheRejectedKeyAndKeepsTheCause(t *testing.T) {
+	var key, value string
+	var options uintptr
+	table := recordTable(0, &key, &value, &options)
+
+	err := addConfigEntry(table, 1, "a\x00b", "0")
+	if !errors.Is(err, syscall.EINVAL) {
+		t.Errorf("error = %v, want one wrapping %v", err, syscall.EINVAL)
+	}
+}
+
+func TestAddConfigEntryNamesTheRejectedValueAndKeepsTheCause(t *testing.T) {
+	var key, value string
+	var options uintptr
+	table := recordTable(0, &key, &value, &options)
+
+	err := addConfigEntry(table, 1, allowSpinningKey, "0\x001")
+	if !errors.Is(err, syscall.EINVAL) {
+		t.Fatalf("error = %v, want one wrapping %v", err, syscall.EINVAL)
+	}
+	if !strings.Contains(err.Error(), allowSpinningKey) {
+		t.Errorf("error = %v, want the key named", err)
+	}
+	if key != "" {
+		t.Errorf("the runtime was called with key %q though the value was refused", key)
+	}
+}
+
+func TestAddConfigEntryReleasesTheStatusItReports(t *testing.T) {
+	var key, value string
+	var options uintptr
+	table := recordTable(7, &key, &value, &options)
+	var released []uintptr
+	table.releaseStatus = func(status uintptr) { released = append(released, status) }
+
+	if err := addConfigEntry(table, 1, allowSpinningKey, "0"); err == nil {
+		t.Fatal("expected the status to be reported")
+	}
+	if len(released) != 1 || released[0] != 7 {
+		t.Errorf("released = %v, want the status once", released)
+	}
+}
+
+func TestAddConfigEntryReportsAStatusWithoutReleaseOrMessageCalls(t *testing.T) {
+	table := &configEntryTable{addEntry: func(uintptr, *byte, *byte) uintptr { return 3 }}
+
+	err := addConfigEntry(table, 1, allowSpinningKey, "0")
+	if err == nil || !strings.Contains(err.Error(), "unknown error") {
+		t.Errorf("error = %v, want the unknown error", err)
+	}
+}
+
+func TestAddConfigEntryFallsBackWhenTheMessageIsEmpty(t *testing.T) {
+	table := &configEntryTable{
+		addEntry:   func(uintptr, *byte, *byte) uintptr { return 3 },
+		getMessage: func(uintptr) *byte { return nil },
+	}
+
+	err := addConfigEntry(table, 1, allowSpinningKey, "0")
+	if err == nil || !strings.Contains(err.Error(), "unknown error") {
+		t.Errorf("error = %v, want the unknown error", err)
+	}
+}
+
+func TestReadCStringCopiesUpToTheTerminator(t *testing.T) {
+	text := []byte("abc\x00def\x00")
+	if got := readCString(&text[0]); got != "abc" {
+		t.Errorf("readCString = %q, want abc", got)
+	}
+	if got := readCString(nil); got != "" {
+		t.Errorf("readCString(nil) = %q, want empty", got)
+	}
+}
+
+// The runtime is asked for the OrtApi table revision of the release this build
+// pins, and an older release answers that it does not have it.
+func TestTheApiRevisionIsTheOneThePinnedRuntimeCarries(t *testing.T) {
+	minor := strings.Split(runtimeVersion, ".")[1]
+	if strconv.Itoa(ortAPIVersion) != minor {
+		t.Errorf("API revision %d, runtime %s", ortAPIVersion, runtimeVersion)
+	}
+}
+
+// The slots are counted from the start of the OrtApi table.
+func TestTheOrtApiSlotsSitWhereTheTableKeepsThem(t *testing.T) {
+	word := unsafe.Sizeof(uintptr(0))
+	var config ortAPIConfig
+	var optimization ortAPI
+	for name, got := range map[string][2]uintptr{
+		"GetErrorMessage":                  {unsafe.Offsetof(config.GetErrorMessage), 2 * word},
+		"ReleaseStatus":                    {unsafe.Offsetof(config.ReleaseStatus), 93 * word},
+		"AddSessionConfigEntry":            {unsafe.Offsetof(config.AddSessionConfigEntry), 130 * word},
+		"SetSessionGraphOptimizationLevel": {unsafe.Offsetof(optimization.SetSessionGraphOptimizationLevel), 23 * word},
+	} {
+		if got[0] != got[1] {
+			t.Errorf("%s at %d, want %d", name, got[0], got[1])
+		}
+	}
 }

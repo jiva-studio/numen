@@ -285,3 +285,22 @@ func TestComputeUnitsLeaveTheCPUProviderAlone(t *testing.T) {
 		t.Errorf("expected ProviderCPU, got %v", used)
 	}
 }
+
+// The thread count follows the processors the process may use, up to eight, and
+// asking for it leaves that number as it was.
+func TestDefaultThreadsFollowsTheProcessorsUpToEight(t *testing.T) {
+	previous := runtime.GOMAXPROCS(0)
+	t.Cleanup(func() { runtime.GOMAXPROCS(previous) })
+
+	for _, tc := range []struct{ procs, want int }{
+		{1, 1}, {3, 3}, {8, 8}, {9, 8}, {32, 8},
+	} {
+		runtime.GOMAXPROCS(tc.procs)
+		if got := onnxruntime.DefaultThreads(); got != tc.want {
+			t.Errorf("DefaultThreads() with %d processors = %d, want %d", tc.procs, got, tc.want)
+		}
+		if left := runtime.GOMAXPROCS(0); left != tc.procs {
+			t.Errorf("DefaultThreads() left %d processors of %d", left, tc.procs)
+		}
+	}
+}

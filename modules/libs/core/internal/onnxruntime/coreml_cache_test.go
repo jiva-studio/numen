@@ -59,3 +59,117 @@ func TestDeleteCoreMLCache(t *testing.T) {
 		t.Errorf("%d entries left", len(entries))
 	}
 }
+
+func TestGetCoreMLCacheDirFailsWithoutACacheDirectory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the cache directory comes from the profile")
+	}
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CACHE_HOME", "")
+
+	dir, err := GetCoreMLCacheDir()
+	if err == nil || dir != "" {
+		t.Errorf("GetCoreMLCacheDir = %q, %v; want no folder and an error", dir, err)
+	}
+}
+
+func TestGetCoreMLCacheDirFailsWhereAFolderCannotBeMade(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	base, err := os.UserCacheDir()
+	if err != nil {
+		t.Skip(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(base), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(base, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	dir, err := GetCoreMLCacheDir()
+	if err == nil || dir != "" {
+		t.Errorf("GetCoreMLCacheDir = %q, %v; want no folder and an error", dir, err)
+	}
+}
+
+func TestGetCoreMLCacheDirFailsWhereTheFolderIsNotTheUsers(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("permissions are not checked here")
+	}
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		t.Skip(err)
+	}
+	if err := os.MkdirAll(filepath.Join(cache, "numen"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("/", filepath.Join(cache, "numen", "coreml")); err != nil {
+		t.Fatal(err)
+	}
+
+	dir, err := GetCoreMLCacheDir()
+	if err == nil || dir != "" {
+		t.Errorf("GetCoreMLCacheDir = %q, %v; want no folder and an error", dir, err)
+	}
+}
+
+func TestDeleteCoreMLCacheKeepsWhatItCannotRemove(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("permissions are not checked here")
+	}
+	useCacheHome(t)
+	dir, err := GetCoreMLCacheDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	held := filepath.Join(dir, "123")
+	if err := os.MkdirAll(filepath.Join(held, "model.mlmodelc"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(held, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(held, 0o700) })
+
+	if deleteCoreMLCache() {
+		t.Error("a cache that could not be emptied reported as emptied")
+	}
+}
+
+func TestDeleteCoreMLCacheReportsNothingHeldWithoutACacheDirectory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the cache directory comes from the profile")
+	}
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CACHE_HOME", "")
+
+	if deleteCoreMLCache() {
+		t.Error("a missing cache directory reported as having held something")
+	}
+}
+
+func TestGetCoreMLCacheDirCreatesEveryFolderItMakesPrivate(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows reports no permission bits")
+	}
+	useCacheHome(t)
+
+	dir, err := GetCoreMLCacheDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, folder := range []string{dir, filepath.Dir(dir)} {
+		info, err := os.Stat(folder)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if info.Mode().Perm() != 0o700 {
+			t.Errorf("%s mode = %v, want 0700", folder, info.Mode().Perm())
+		}
+	}
+}

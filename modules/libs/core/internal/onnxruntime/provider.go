@@ -175,6 +175,7 @@ const (
 func ParseComputeUnits(name string) (ComputeUnits, error) {
 	trimmed := strings.TrimSpace(name)
 	if trimmed == "" {
+		// gomutants:disable-next-line RETURN_ZERO reason="the mutant replaces only ComputeUnitsDefault with *new(ComputeUnits), the same empty string; the error value is untouched"
 		return ComputeUnitsDefault, nil
 	}
 	for _, units := range []ComputeUnits{
@@ -184,6 +185,7 @@ func ParseComputeUnits(name string) (ComputeUnits, error) {
 			return units, nil
 		}
 	}
+	// gomutants:disable-next-line RETURN_ZERO reason="the mutant replaces only ComputeUnitsDefault with *new(ComputeUnits), the same empty string; the error value is untouched"
 	return ComputeUnitsDefault, fmt.Errorf("unknown compute units %q, expected one of: ALL, CPUAndNeuralEngine, CPUAndGPU, CPUOnly", name)
 }
 
