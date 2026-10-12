@@ -2,6 +2,7 @@ package embedders_test
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -261,4 +262,32 @@ func TestTheIndexSideIsSizedByTheModelThatArrives(t *testing.T) {
 	}
 	cancel()
 	wg.Wait()
+}
+
+func TestTheIndexSideLetsGoOfTheModelAndSaysWhatClosingSaid(t *testing.T) {
+	held := newSaying("closing", 1, 0, 0)
+	filling, _, letGo := embedders.Open(t.Context(), task.New(),
+		embedders.NewReached(held.model, "closing", closing{saying: held, why: errModelGone}), embedders.Provider{})
+	_ = letGo
+
+	if err := filling.Close(); !errors.Is(err, errModelGone) {
+		t.Errorf("close = %v, want what closing the model said", err)
+	}
+	if held.closed.Load() != 1 {
+		t.Error("the model was not let go of")
+	}
+}
+
+func TestTheIndexSideSaysWhyTheModelNeverArrives(t *testing.T) {
+	filling, _, letGo := embedders.Open(t.Context(), task.New(),
+		embedders.NewFetched(is("never"), "never", failWith(errModelGone)), embedders.Provider{})
+	defer func() { _ = letGo() }()
+
+	waiter, ok := filling.(interface{ Wait(context.Context) error })
+	if !ok {
+		t.Fatal("the index side cannot be waited on")
+	}
+	if err := waiter.Wait(t.Context()); !errors.Is(err, errModelGone) {
+		t.Errorf("wait = %v, want why the model never arrived", err)
+	}
 }

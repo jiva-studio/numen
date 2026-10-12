@@ -14,7 +14,10 @@ import (
 // and no error.
 func TestAPathTheVaultLeavesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
 	vs := newVaults(t)
-	left := faulty{stat: map[string]error{"decks/Birds.md": port.ErrNotANote}}
+	left := faulty{
+		stat: map[string]error{"decks/Birds.md": port.ErrNotANote},
+		read: map[string]error{"decks/Birds.md": errOutOfReach},
+	}
 
 	got, err := cards.NewRead(left, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {

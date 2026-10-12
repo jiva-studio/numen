@@ -145,3 +145,21 @@ func TestAStencilWhoseFrontmatterIsNeverClosedIsNotWritten(t *testing.T) {
 		t.Error("the stencil was written")
 	}
 }
+
+// A stencil whose frontmatter is never closed is refused even when the fields
+// written are the ones it declares.
+func TestAStencilWhoseFrontmatterIsNeverClosedIsRefusedWithItsOwnFields(t *testing.T) {
+	vs := newVaults(t)
+	write(t, vs.first, "Open.md", "---\ntype: stencil\nfields:\n  - Name\n\n## Recognise\n")
+	before := read(t, vs.first, "Open.md")
+	w := cards.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), indexNothing, time.Now)
+
+	_, err := w.Stencil(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Name"}, domain.Fingerprint{})
+	if !errors.Is(err, markdown.ErrUnterminated) {
+		t.Fatalf("write = %v, want the frontmatter unterminated", err)
+	}
+	if after := read(t, vs.first, "Open.md"); after != before {
+		t.Error("the stencil was written")
+	}
+}
