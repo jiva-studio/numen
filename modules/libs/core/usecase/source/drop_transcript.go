@@ -86,13 +86,8 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 		return res, nil
 	}
 
-	for _, name := range names {
-		if name == partial {
-			continue
-		}
-		if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return res, fmt.Errorf("remove %s: %w", name, err)
-		}
+	if err := removeNamesExcept(ctx, store, names, partial); err != nil {
+		return res, err
 	}
 
 	// The source is recorded as it was walked: no fingerprint, no recipe, no
@@ -146,6 +141,20 @@ func (u DropTranscript) hasAnyName(ctx context.Context, store port.DerivedStore,
 		}
 	}
 	return false, nil
+}
+
+// removeNamesExcept removes every name from the store but keep, and passes over
+// names that are already absent.
+func removeNamesExcept(ctx context.Context, store port.DerivedStore, names []string, keep string) error {
+	for _, name := range names {
+		if name == keep {
+			continue
+		}
+		if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("remove %s: %w", name, err)
+		}
+	}
+	return nil
 }
 
 func (u DropTranscript) area() string {
