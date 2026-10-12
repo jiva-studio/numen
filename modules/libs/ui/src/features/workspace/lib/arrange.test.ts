@@ -1,7 +1,7 @@
 /** Where the tree puts each node inside a box. */
 import { describe, expect, it } from 'vitest'
 import { arrangeWorkspace } from './arrange'
-import { deep, sideBySide, split, stack, workspaceOf } from '../fixtures/build'
+import { deep, sideBySide, split, stack, createWorkspace } from '../fixtures/build'
 
 const SCREEN = { x: 0, y: 0, width: 1000, height: 600 }
 
@@ -21,7 +21,7 @@ describe('a row divides the width', () => {
 describe('depth turns the orientation', () => {
   it('divides the height one level down', () => {
     const boxes = arrangeWorkspace(
-      workspaceOf(
+      createWorkspace(
         split('root', [stack('a', 'one'), split('down', [stack('b', 'two'), stack('c', 'three')])]),
       ),
       SCREEN,
@@ -67,7 +67,7 @@ describe('a gap is taken out before the shares are counted', () => {
 
 describe('a gap between three children', () => {
   const three = () =>
-    workspaceOf(split('root', [stack('a', 'one'), stack('b', 'two'), stack('c', 'three')]))
+    createWorkspace(split('root', [stack('a', 'one'), stack('b', 'two'), stack('c', 'three')]))
 
   it('is left once between each neighbour', () => {
     const boxes = arrangeWorkspace(three(), SCREEN, { gap: 10 })
@@ -89,7 +89,7 @@ describe('a gap between three children', () => {
 
 describe('a workspace holding one pane', () => {
   it('gives it everything', () => {
-    const boxes = arrangeWorkspace(workspaceOf(stack('main', 'one')), SCREEN)
+    const boxes = arrangeWorkspace(createWorkspace(stack('main', 'one')), SCREEN)
     expect(boxes.get('main')).toStrictEqual(SCREEN)
   })
 })

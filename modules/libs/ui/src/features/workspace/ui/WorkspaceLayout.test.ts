@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import WorkspaceLayout from './WorkspaceLayout.vue'
 import { WorkspacePane } from './pane'
 import { type Tab, type Workspace as State } from '../lib/node'
-import { oneStack, sideBySide, stack, workspaceOf } from '../fixtures/build'
+import { oneStack, sideBySide, stack, createWorkspace } from '../fixtures/build'
 
 const TABS: readonly Tab[] = [
   { id: 'plex', title: 'Plex' },
@@ -27,7 +27,7 @@ const mountWorkspace = (
     slots,
   })
 
-const closeOf = (wrapper: ReturnType<typeof mountWorkspace>, tab: string) =>
+const findCloseButton = (wrapper: ReturnType<typeof mountWorkspace>, tab: string) =>
   wrapper.find(`[data-workspace-tab="${tab}"] button`)
 
 describe('a close', () => {
@@ -39,7 +39,7 @@ describe('a close', () => {
       },
     })
 
-    await closeOf(held, 'chat').trigger('click')
+    await findCloseButton(held, 'chat').trigger('click')
 
     expect(told).toBeUndefined()
     expect(held.emitted('close')?.[0]?.[0]).toBe('chat')
@@ -47,7 +47,7 @@ describe('a close', () => {
 
   it('is applied where the caller lets it go', async () => {
     const held = mountWorkspace()
-    await closeOf(held, 'chat').trigger('click')
+    await findCloseButton(held, 'chat').trigger('click')
 
     const after = held.emitted('update:modelValue')?.[0]?.[0] as State
     expect(after.root.kind === 'pane' && after.root.tabs).toStrictEqual(['plex'])
@@ -62,7 +62,7 @@ describe('a close', () => {
       },
     })
 
-    await closeOf(held, 'chat').trigger('click')
+    await findCloseButton(held, 'chat').trigger('click')
 
     expect(hold).toHaveBeenCalledOnce()
     expect(held.emitted('update:modelValue')).toBeUndefined()
@@ -71,15 +71,15 @@ describe('a close', () => {
 })
 
 describe('the last tab in the workspace', () => {
-  const createLoneTab = () => workspaceOf(stack('main', 'plex'))
+  const createLoneTab = () => createWorkspace(stack('main', 'plex'))
 
   it('is offered a close, as every other tab is', () => {
-    expect(closeOf(mountWorkspace(createLoneTab()), 'plex').exists()).toBe(true)
+    expect(findCloseButton(mountWorkspace(createLoneTab()), 'plex').exists()).toBe(true)
   })
 
   it('leaves one pane holding nothing where it is closed', async () => {
     const held = mountWorkspace(createLoneTab())
-    await closeOf(held, 'plex').trigger('click')
+    await findCloseButton(held, 'plex').trigger('click')
 
     const after = held.emitted('update:modelValue')?.[0]?.[0] as State
     expect(after.root.kind === 'pane' && after.root.tabs).toStrictEqual([])
@@ -96,7 +96,7 @@ describe('the last tab in the workspace', () => {
       {},
       { silence: '<p class="quiet">Nothing here</p>' },
     )
-    await closeOf(held, 'plex').trigger('click')
+    await findCloseButton(held, 'plex').trigger('click')
 
     const after = held.emitted('update:modelValue')?.[0]?.[0] as State
     expect(after.root.kind === 'pane' && after.root.tabs).toStrictEqual([])

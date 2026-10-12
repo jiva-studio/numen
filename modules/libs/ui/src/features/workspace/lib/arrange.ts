@@ -4,7 +4,7 @@
  * Pure — the same tree and the same box give the same numbers on any machine.
  * Nothing here measures the DOM.
  */
-import { orientationAt, type NodeId, type Workspace, type WorkspaceNode } from './node'
+import { getOrientation, type NodeId, type Workspace, type WorkspaceNode } from './node'
 import type { Rect } from './rect'
 import { isBranch } from './tree'
 import { fit } from './shares'
@@ -38,7 +38,7 @@ function place(
   into.set(node.id, box)
   if (!isBranch(node)) return
 
-  const across = orientationAt(workspace.axis, depth) === 'horizontal'
+  const across = getOrientation(workspace.axis, depth) === 'horizontal'
   const length = across ? box.width : box.height
   const free = Math.max(length - gap * Math.max(node.children.length - 1, 0), 0)
   const sizes = fit(node.sizes, node.children.length)

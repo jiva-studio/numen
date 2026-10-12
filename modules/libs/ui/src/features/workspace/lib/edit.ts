@@ -8,10 +8,10 @@
 import type { NodeId, Side, TabId, Workspace } from './node'
 import {
   isBranch,
-  nodeAt,
+  findNode,
   paneById,
   paneWithTab,
-  panesOf,
+  getPanes,
   pathTo,
   replaceAt,
   withChildren,
@@ -50,7 +50,7 @@ export function openTab(
 ): Workspace {
   if (paneWithTab(workspace.root, tab)) return activateTab(workspace, tab)
 
-  const target = paneById(workspace.root, into) ?? panesOf(workspace.root)[0]
+  const target = paneById(workspace.root, into) ?? getPanes(workspace.root)[0]
   if (!target) return workspace
 
   return {
@@ -78,7 +78,7 @@ export function openTabBeside(
   createId: NodeIdFactory,
   onto: NodeId = workspace.focus,
 ): Workspace {
-  const target = paneById(workspace.root, onto) ?? panesOf(workspace.root)[0]
+  const target = paneById(workspace.root, onto) ?? getPanes(workspace.root)[0]
   if (!target || side === 'center') return workspace
 
   const source = paneWithTab(workspace.root, tab)
@@ -99,7 +99,7 @@ export function closeTab(workspace: Workspace, tab: TabId): Workspace {
 
 /**
  * A tab moved along its own strip. `slot` is counted in gaps between tabs, as
- * `slotAt` reports them.
+ * `getSlot` reports them.
  */
 export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): Workspace {
   const holder = paneWithTab(workspace.root, tab)
@@ -169,7 +169,7 @@ export function resizeBranch(
   const path = pathTo(workspace.root, id)
   if (!path) return workspace
 
-  const node = nodeAt(workspace.root, path)
+  const node = findNode(workspace.root, path)
   if (!node || !isBranch(node)) return workspace
 
   return {

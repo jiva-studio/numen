@@ -5,7 +5,7 @@
  */
 import { branch, orthogonal, type Workspace, type WorkspaceNode } from './node'
 import { fit } from './shares'
-import { isBranch, isPane, panesOf, withChildren } from './tree'
+import { isBranch, isPane, getPanes, withChildren } from './tree'
 
 /** One node a node comes to, and the share it takes of that node's length. */
 interface Piece {
@@ -49,7 +49,7 @@ function reduce(node: WorkspaceNode): readonly Piece[] {
 
 /** A pane with nothing in it, kept so that a workspace always has a root. */
 const emptyPane = (root: WorkspaceNode): WorkspaceNode => {
-  const first = panesOf(root)[0]
+  const first = getPanes(root)[0]
   return { kind: 'pane', id: first?.id ?? root.id, tabs: [], active: null }
 }
 

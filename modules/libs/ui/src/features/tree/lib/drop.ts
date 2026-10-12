@@ -26,7 +26,7 @@ export function getRowDropTarget(
   y: number,
   height: number,
 ): RowDropTarget | null {
-  const found = bandAt(visibleRows, y, height)
+  const found = findBand(visibleRows, y, height)
   if (!found) return null
 
   const on = getTargetRow(found)
@@ -34,7 +34,11 @@ export function getRowDropTarget(
 }
 
 /** The band a height falls in, as a drop target. */
-function bandAt(visibleRows: readonly ShownRow[], y: number, height: number): RowDropTarget | null {
+function findBand(
+  visibleRows: readonly ShownRow[],
+  y: number,
+  height: number,
+): RowDropTarget | null {
   if (height <= 0 || y < 0) return null
 
   const at = Math.floor(y / height)
@@ -52,7 +56,7 @@ function bandAt(visibleRows: readonly ShownRow[], y: number, height: number): Ro
 }
 
 /** The row a drop target puts what is held inside. Null at the top level. */
-export const holderOf = (visibleRows: readonly ShownRow[], at: RowDropTarget): RowId | null =>
+export const findHolder = (visibleRows: readonly ShownRow[], at: RowDropTarget): RowId | null =>
   'into' in at ? at.into : (visibleRows.find((row) => row.id === at.before)?.parent ?? null)
 
 /**

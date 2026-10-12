@@ -2,7 +2,7 @@
  * What letting go of a dragged tab comes to, as geometry alone.
  *
  * A point and a box in, a side out. Which pane that box belongs to and what
- * the side then does to the tree are settled elsewhere; `rectOf` is the one
+ * the side then does to the tree are settled elsewhere; `getRect` is the one
  * thing here that measures anything.
  */
 import type { NodeId, Side } from './node'
@@ -34,7 +34,7 @@ export const DEFAULT_DROP: DropOptions = { share: 0.2, limit: 96 }
  * goes to whichever edge it is deeper inside. A place in no zone lands in the
  * middle, and the tab joins the stack.
  */
-export function sideAt(at: Position, box: Rect, options: Partial<DropOptions> = {}): Side {
+export function getSide(at: Position, box: Rect, options: Partial<DropOptions> = {}): Side {
   const { share, limit } = { ...DEFAULT_DROP, ...options }
   const { x, y } = getPlaceInBox(at, box)
 
@@ -60,7 +60,7 @@ export function sideAt(at: Position, box: Rect, options: Partial<DropOptions> = 
 }
 
 /** The part of a box a side would take, for the overlay that shows it. */
-export function overlayFor(side: Side, box: Rect): Rect {
+export function getOverlay(side: Side, box: Rect): Rect {
   const half = { width: box.width / 2, height: box.height / 2 }
   switch (side) {
     case 'left':
@@ -81,7 +81,7 @@ export function overlayFor(side: Side, box: Rect): Rect {
  * before the first tab, and the length of the strip is after the last. A tab
  * is passed once the point is beyond its middle.
  */
-export function slotAt(x: number, tabs: readonly Rect[]): number {
+export function getSlot(x: number, tabs: readonly Rect[]): number {
   for (const [i, tab] of tabs.entries()) {
     if (x < tab.x + tab.width / 2) return i
   }
@@ -92,7 +92,7 @@ export function slotAt(x: number, tabs: readonly Rect[]): number {
  * The gap a tab would take in a strip, as a box of no width. A strip holding
  * no tabs takes the whole of itself.
  */
-export function caretAt(slot: number, tabs: readonly Rect[], strip: Rect): Rect {
+export function getCaretRect(slot: number, tabs: readonly Rect[], strip: Rect): Rect {
   const beside = tabs[slot] ?? tabs[tabs.length - 1]
   if (!beside) return strip
 
@@ -101,7 +101,7 @@ export function caretAt(slot: number, tabs: readonly Rect[], strip: Rect): Rect 
 }
 
 /** The outer edge a place is within reach of, and nothing away from every edge. */
-export function edgeOf(at: Position, box: Rect, reach: number): Side | null {
+export function findEdgeSide(at: Position, box: Rect, reach: number): Side | null {
   const near: readonly (readonly [Side, number])[] = [
     ['left', at.x - box.x],
     ['right', box.x + box.width - at.x],
@@ -121,7 +121,7 @@ export function edgeOf(at: Position, box: Rect, reach: number): Side | null {
 }
 
 /** What an element takes up on screen, in the window's own coordinates. */
-export const rectOf = (element: Element): Rect => {
+export const getRect = (element: Element): Rect => {
   const box = element.getBoundingClientRect()
   return { x: box.left, y: box.top, width: box.width, height: box.height }
 }

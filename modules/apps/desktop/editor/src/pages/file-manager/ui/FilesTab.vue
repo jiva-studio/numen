@@ -25,7 +25,7 @@ const props = defineProps<{ state: FilesTabState }>()
  */
 const dropTarget = computed<RowMarker>(() => ({
   attribute: 'data-file-drop-target',
-  valueFor: (row: string | null) => props.state.getFolderFor(row),
+  getAttributeValue: (row: string | null) => props.state.getFolderFor(row),
 }))
 
 const rows = computed(() => getRows(props.state.list.rows.value))

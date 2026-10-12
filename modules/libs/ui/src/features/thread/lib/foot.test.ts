@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { atFoot, footOf, SLACK } from './foot'
+import { atFoot, getFoot, SLACK } from './foot'
 
 const area = (scrollTop: number, scrollHeight = 500, clientHeight = 100) => ({
   scrollTop,
@@ -9,11 +9,11 @@ const area = (scrollTop: number, scrollHeight = 500, clientHeight = 100) => ({
 
 describe('where the foot is', () => {
   it('is as far down as what is in the area runs past what shows', () => {
-    expect(footOf(area(0))).toBe(400)
+    expect(getFoot(area(0))).toBe(400)
   })
 
   it('is the head, for an area with less in it than shows', () => {
-    expect(footOf(area(0, 40, 100))).toBe(0)
+    expect(getFoot(area(0, 40, 100))).toBe(0)
   })
 })
 

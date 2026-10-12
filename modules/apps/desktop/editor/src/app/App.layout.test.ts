@@ -13,7 +13,7 @@ import { DocumentTab } from '@/pages/document-viewer'
 import { FilesTab } from '@/pages/file-manager'
 import { NoteTab } from '@/pages/note-editor'
 import { PlexTab } from '@/pages/plex-graph'
-import { panesOf } from '@numen/ui'
+import { getPanes } from '@numen/ui'
 import {
   requests,
   cards,
@@ -31,7 +31,7 @@ describe('the window as it opens', () => {
     const window = await mountWindow()
 
     expect(paneKinds(window)).toStrictEqual([['plex'], ['agent', 'files']])
-    expect(panesOf(layoutOf(window).root)[1]?.active).toMatch(/^agent:/)
+    expect(getPanes(layoutOf(window).root)[1]?.active).toMatch(/^agent:/)
     expect(window.findComponent(PlexTab).exists()).toBe(true)
     expect(window.findComponent(AgentTab).exists()).toBe(true)
     expect(window.findComponent(FilesTab).exists()).toBe(true)

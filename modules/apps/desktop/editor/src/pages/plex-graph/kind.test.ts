@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { paneById, panesOf } from '@numen/ui'
+import { paneById, getPanes } from '@numen/ui'
 import { createPlexKind } from './kind'
 import type { PlexTabState } from './model/usePlexTab'
 import { createVault, settle, viewOn } from './fixtures'
@@ -90,7 +90,7 @@ const window = (opening = 'Opening.md', isListening = true) => {
   const setOpeningNote = (path: string) => {
     openingPath.value = path
   }
-  const onScreen = () => panesOf(held.layout.value.root).flatMap((pane) => pane.tabs)
+  const onScreen = () => getPanes(held.layout.value.root).flatMap((pane) => pane.tabs)
   /** The tab the person is in, which is the active tab of the pane they are in. */
   const active = () => paneById(held.layout.value.root, held.layout.value.focus)?.active ?? ''
   /** A tab holding no plex, opened in front of the person. */

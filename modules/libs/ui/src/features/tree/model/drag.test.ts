@@ -143,7 +143,7 @@ describe('a press that has become a drag', () => {
 })
 
 describe('how far the tree reaches', () => {
-  const landsAt = (x: number, y: number): boolean => {
+  const canLandAt = (x: number, y: number): boolean => {
     const { drag } = setup()
     lift(drag, ['loose'])
     pointer('pointermove', x, y)
@@ -151,27 +151,27 @@ describe('how far the tree reaches', () => {
   }
 
   it('takes in each edge', () => {
-    expect(landsAt(0, 150)).toBe(true)
-    expect(landsAt(200, 150)).toBe(true)
-    expect(landsAt(10, 100)).toBe(true)
-    expect(landsAt(10, 220)).toBe(true)
+    expect(canLandAt(0, 150)).toBe(true)
+    expect(canLandAt(200, 150)).toBe(true)
+    expect(canLandAt(10, 100)).toBe(true)
+    expect(canLandAt(10, 220)).toBe(true)
   })
 
   it('takes in nothing beyond any edge', () => {
-    expect(landsAt(-1, 150)).toBe(false)
-    expect(landsAt(201, 150)).toBe(false)
-    expect(landsAt(10, 99)).toBe(false)
-    expect(landsAt(10, 221)).toBe(false)
+    expect(canLandAt(-1, 150)).toBe(false)
+    expect(canLandAt(201, 150)).toBe(false)
+    expect(canLandAt(10, 99)).toBe(false)
+    expect(canLandAt(10, 221)).toBe(false)
   })
 
   it('takes in nothing beside it, level with its rows', () => {
-    expect(landsAt(300, 150)).toBe(false)
-    expect(landsAt(-50, 150)).toBe(false)
+    expect(canLandAt(300, 150)).toBe(false)
+    expect(canLandAt(-50, 150)).toBe(false)
   })
 
   it('takes in nothing above or below it, in line with its rows', () => {
-    expect(landsAt(10, 50)).toBe(false)
-    expect(landsAt(10, 300)).toBe(false)
+    expect(canLandAt(10, 50)).toBe(false)
+    expect(canLandAt(10, 300)).toBe(false)
   })
 })
 
@@ -200,7 +200,11 @@ describe('letting go', () => {
     pointer('pointermove', 10, 112)
     pointer('pointerup', 10, 112)
 
-    expect(told).toStrictEqual([['drag', ['loose']], ['move', ['loose'], { into: 'work' }], ['drop']])
+    expect(told).toStrictEqual([
+      ['drag', ['loose']],
+      ['move', ['loose'], { into: 'work' }],
+      ['drop'],
+    ])
   })
 
   it('tells only that they were let go where they landed nowhere', () => {

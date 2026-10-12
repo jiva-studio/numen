@@ -2,8 +2,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { commit, detach, mapPane, putBeside } from './splice'
 import { pane, type Pane, type WorkspaceNode } from './node'
-import { isBranch, isPane, nodeAt, paneById } from './tree'
-import { createIdFactory, split, stack, workspaceOf } from '../fixtures/build'
+import { isBranch, isPane, findNode, paneById } from './tree'
+import { createIdFactory, split, stack, createWorkspace } from '../fixtures/build'
 
 describe('putBeside', () => {
   const two = split('root', [stack('a', 'one'), stack('b', 'two')])
@@ -32,7 +32,7 @@ describe('putBeside', () => {
 
   it('wraps a pane in two halves when the parent divides the other way', () => {
     const split = putBeside(two, 'a', 't', 'top', 'horizontal', createIdFactory())
-    const wrapper = nodeAt(split.root, [0])
+    const wrapper = findNode(split.root, [0])
 
     expect(wrapper && isBranch(wrapper) && wrapper.sizes).toStrictEqual([0.5, 0.5])
     expect(wrapper && isBranch(wrapper) && wrapper.children.map((child) => child.id)).toStrictEqual(
@@ -43,20 +43,20 @@ describe('putBeside', () => {
 })
 
 describe('detach', () => {
-  const stackOf = (active: string) =>
+  const createStack = (active: string) =>
     split('root', [pane('main', ['a', 'b', 'c'], active), stack('other', 'x')])
-  const activeOf = (root: WorkspaceNode) => paneById(root, 'main')?.active
+  const getActive = (root: WorkspaceNode) => paneById(root, 'main')?.active
 
   it('leaves the shown tab alone when another one goes', () => {
-    expect(activeOf(detach(stackOf('a'), 'c'))).toBe('a')
+    expect(getActive(detach(createStack('a'), 'c'))).toBe('a')
   })
 
   it('shows the next tab along when the shown one goes', () => {
-    expect(activeOf(detach(stackOf('b'), 'b'))).toBe('c')
+    expect(getActive(detach(createStack('b'), 'b'))).toBe('c')
   })
 
   it('shows the previous tab when the shown one was last', () => {
-    expect(activeOf(detach(stackOf('c'), 'c'))).toBe('b')
+    expect(getActive(detach(createStack('c'), 'c'))).toBe('b')
   })
 
   it('shows nothing when the last tab goes', () => {
@@ -65,13 +65,13 @@ describe('detach', () => {
   })
 
   it('leaves the tree alone for a tab that is not open', () => {
-    const root = stackOf('a')
+    const root = createStack('a')
     expect(detach(root, 'missing')).toBe(root)
   })
 })
 
 describe('commit', () => {
-  const three = workspaceOf(
+  const three = createWorkspace(
     split('root', [stack('a', 'one'), stack('b', 'two'), stack('c', 'three')]),
     'horizontal',
     'c',

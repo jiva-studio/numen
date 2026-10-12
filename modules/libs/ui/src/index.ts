@@ -124,7 +124,7 @@ export { closeTab, openTab, openTabBeside } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'
-export { paneById, panesOf } from './features/workspace'
+export { paneById, getPanes } from './features/workspace'
 export type { Tab, Workspace } from './features/workspace'
 
 export { Tree } from './features/tree'

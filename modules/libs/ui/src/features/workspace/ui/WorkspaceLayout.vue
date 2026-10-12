@@ -71,7 +71,7 @@ const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 /** What a slot was given, handed on as it came. */
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
-const tabOf = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
+const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
 
 /** The identities this layout makes where a caller hands over no factory. */
 const createNodeId = createNodeIdFactory()
@@ -81,7 +81,7 @@ const frame = useTemplateRef<HTMLElement>('frame')
 const { hasMoved, overlay, label, position, dropTarget, press } = useTabDrag({
   workspace,
   frame,
-  getTab: tabOf,
+  getTab: findTab,
   getIdFactory: () => props.createId ?? createNodeId,
   getEdge: () => props.edge,
   getThreshold: () => props.threshold,
@@ -116,7 +116,7 @@ function onResizeBranch(branch: NodeId, sizes: readonly number[]): void {
 provide(
   WORKSPACE_CONTEXT,
   computed<WorkspaceContext>(() => ({
-    tabOf,
+    findTab,
     focus: workspace.value.focus,
     minimum: props.minimum,
     choose: onChooseTab,

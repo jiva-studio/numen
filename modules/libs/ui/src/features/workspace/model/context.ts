@@ -7,7 +7,7 @@ import type { NodeId, Tab, TabId } from '../lib/node'
 
 export interface WorkspaceContext {
   /** The tab an identity stands for, and nothing for one the workspace has lost. */
-  readonly tabOf: (id: TabId) => Tab | undefined
+  readonly findTab: (id: TabId) => Tab | undefined
   /** The pane a tab opens into. */
   readonly focus: NodeId
   /** The least room a pane is worth drawing in. */

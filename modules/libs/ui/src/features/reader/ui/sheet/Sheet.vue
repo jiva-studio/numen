@@ -67,7 +67,7 @@ watch(
 )
 
 /** One rectangle, as a share of the page it is drawn over. */
-const boxOf = (one: Rect) => ({
+const getBoxStyle = (one: Rect) => ({
   insetInlineStart: `${one.minX * 100}%`,
   insetBlockStart: `${one.minY * 100}%`,
   inlineSize: `${(one.maxX - one.minX) * 100}%`,
@@ -98,13 +98,13 @@ const boxOf = (one: Rect) => ({
         v-for="(one, index) in otherHighlights"
         :key="`other-highlight-${index}`"
         class="reader__other-highlight rounded-tight pointer-events-none absolute bg-(--numen-highlight)"
-        :style="boxOf(one)"
+        :style="getBoxStyle(one)"
       />
       <div
         v-for="(one, index) in highlights"
         :key="index"
         class="reader__highlight rounded-tight pointer-events-none absolute bg-(--numen-highlight)"
-        :style="boxOf(one)"
+        :style="getBoxStyle(one)"
       />
     </template>
   </figure>

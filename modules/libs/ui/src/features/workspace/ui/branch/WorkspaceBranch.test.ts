@@ -32,7 +32,7 @@ const mountBranch = (node: Branch, slots: Record<string, string> = {}) => {
   const claim = vi.fn<(pane: string) => void>()
 
   const workspacing: WorkspaceContext = {
-    tabOf: (id: TabId): Tab | undefined =>
+    findTab: (id: TabId): Tab | undefined =>
       TITLES[id] === undefined ? undefined : { id, title: TITLES[id] },
     focus: 'left',
     minimum: 220,

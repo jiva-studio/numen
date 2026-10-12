@@ -64,11 +64,11 @@ export const orthogonal = (orientation: Orientation): Orientation =>
   orientation === 'horizontal' ? 'vertical' : 'horizontal'
 
 /** How a branch at this depth divides its length. */
-export const orientationAt = (axis: Orientation, depth: number): Orientation =>
+export const getOrientation = (axis: Orientation, depth: number): Orientation =>
   depth % 2 === 0 ? axis : orthogonal(axis)
 
 /** The orientation a split towards a side needs. Center splits nothing. */
-export const orientationOf = (side: Side): Orientation | null => {
+export const findSideOrientation = (side: Side): Orientation | null => {
   if (side === 'center') return null
   return side === 'left' || side === 'right' ? 'horizontal' : 'vertical'
 }

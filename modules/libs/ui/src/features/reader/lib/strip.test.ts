@@ -8,7 +8,7 @@ import {
   getPagesWithin,
   inFront,
   row,
-  standAt,
+  findPageScroll,
   type Page,
 } from './strip'
 import type { Size } from '@/shared/lib/geometry'
@@ -75,8 +75,8 @@ describe('the row a document makes', () => {
   describe('a page whose size is unusable', () => {
     const wide: Page = { width: 1000, height: 500 }
     const height = Math.round(VIEWPORT.height - 2 * GAP)
-    const widthOf = (page: Page) => Math.round((height * page.width) / page.height)
-    const upright = widthOf({ width: 612, height: 792 })
+    const getWidth = (page: Page) => Math.round((height * page.width) / page.height)
+    const upright = getWidth({ width: 612, height: 792 })
     const broken: [string, Page][] = [
       ['no width', { width: 0, height: 100 }],
       ['no height', { width: 100, height: 0 }],
@@ -85,7 +85,7 @@ describe('the row a document makes', () => {
     it.each(broken)('takes the first page size when it has %s', (_, page) => {
       const laid = row([wide, page], VIEWPORT, 1)
 
-      expect(laid.widths).toEqual([widthOf(wide), widthOf(wide)])
+      expect(laid.widths).toEqual([getWidth(wide), getWidth(wide)])
     })
 
     it.each(broken)('takes an upright page when the first page has %s too', (_, page) => {
@@ -186,13 +186,13 @@ describe('where the row stands', () => {
   it('puts the page asked for against the left edge', () => {
     const laid = row(book(20), VIEWPORT, 1)
 
-    expect(standAt(laid, 5)).toBe(laid.starts[5]! - GAP)
+    expect(findPageScroll(laid, 5)).toBe(laid.starts[5]! - GAP)
   })
 
   it('says nothing about a page the document does not have', () => {
     const laid = row(book(4), VIEWPORT, 1)
 
-    expect(standAt(laid, 9)).toBeUndefined()
+    expect(findPageScroll(laid, 9)).toBeUndefined()
   })
 })
 

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { effectScope, onScopeDispose } from 'vue'
-import { openTab, panesOf } from '@numen/ui'
+import { openTab, getPanes } from '@numen/ui'
 import type { Workspace } from '@numen/ui'
 import type { FileKind } from '@/entities/file/@x/tab'
 import type { AnyTabKind, WindowHandle } from '../lib/kinds'
@@ -49,7 +49,7 @@ const told = (declared: readonly ((handle: WindowHandle) => AnyTabKind)[]) => {
 }
 
 /** Every tab on the screen, whichever pane it is in. */
-const onScreen = (layout: Workspace) => panesOf(layout.root).flatMap((pane) => pane.tabs)
+const onScreen = (layout: Workspace) => getPanes(layout.root).flatMap((pane) => pane.tabs)
 
 describe('a tab of a kind', () => {
   it('is opened by the kind, drawn, and called what the kind calls it', async () => {
@@ -550,7 +550,7 @@ describe('a tab opened beside', () => {
 
     const two = await window.handle.openTabBeside('thing', 'Two.md')
 
-    expect(panesOf(window.layout.value.root).map((pane) => pane.tabs)).toEqual([[one], [two]])
+    expect(getPanes(window.layout.value.root).map((pane) => pane.tabs)).toEqual([[one], [two]])
     expect(window.layout.value.axis).toBe('horizontal')
   })
 

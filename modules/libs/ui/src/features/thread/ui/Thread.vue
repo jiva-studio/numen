@@ -9,7 +9,7 @@
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { ThreadTurn } from './thread-turn'
-import { atFoot, footOf } from '../lib/foot'
+import { atFoot, getFoot } from '../lib/foot'
 import { placeTurns, type PlacedTurn, type Turn } from '../lib/turn'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -65,7 +65,7 @@ function onScroll() {
 function toFoot(again = false) {
   if (again) follows.value = true
   if (!follows.value || !area.value) return
-  area.value.scrollTop = footOf(area.value)
+  area.value.scrollTop = getFoot(area.value)
 }
 
 defineExpose({ toFoot })
