@@ -130,3 +130,11 @@ func TestTheSameFolderWrittenTwoWaysIsNotInsideItself(t *testing.T) {
 		t.Errorf("CheckRoom(/notes) = %v, want room", err)
 	}
 }
+
+func TestAnOverlapIsFoundAfterTheVaultAtTheSamePath(t *testing.T) {
+	err := vaultsAt("/x/y", "/x").CheckRoom("/x/y")
+
+	if !errors.Is(err, domain.ErrOverlaps) {
+		t.Fatalf("CheckRoom error = %v, want ErrOverlaps", err)
+	}
+}
