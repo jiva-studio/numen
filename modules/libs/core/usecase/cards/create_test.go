@@ -1,6 +1,7 @@
 package cards_test
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -133,5 +134,24 @@ func TestANoteIsNotMadeInAVaultThatCannotBeWritten(t *testing.T) {
 
 	if _, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"}); !errors.Is(err, errUnopenable) {
 		t.Errorf("make a deck = %v, want %v", err, errUnopenable)
+	}
+}
+
+// The index a creation is given brings the new file level, with its path.
+func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
+	v := newCreateVault(t)
+	var levelled []string
+	u := cards.NewCreate(filesystem.VaultWriters{}, nil, time.Now).WithIndex(
+		func(_ context.Context, _ domain.Vault, paths []string) error {
+			levelled = append(levelled, paths...)
+			return nil
+		})
+
+	made, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(levelled) != 1 || levelled[0] != made.Path {
+		t.Errorf("the index was brought level with %v, want %s", levelled, made.Path)
 	}
 }

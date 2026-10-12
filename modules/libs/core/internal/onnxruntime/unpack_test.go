@@ -2,6 +2,7 @@ package onnxruntime
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
@@ -332,5 +333,87 @@ func TestAnArchiveNameIsTheLibraryOnlyByItsOwnName(t *testing.T) {
 		if got := isLibrary(tc.found, tc.name); got != tc.want {
 			t.Errorf("isLibrary(%q, %q) = %v, want %v", tc.found, tc.name, got, tc.want)
 		}
+	}
+}
+
+func createZip(t *testing.T, dir string, entries map[string]string) string {
+	t.Helper()
+	at := filepath.Join(dir, "onnxruntime-win-x64-1.23.0.zip")
+	file, err := os.Create(at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writing := zip.NewWriter(file)
+	for name, body := range entries {
+		out, err := writing.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := out.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := writing.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return at
+}
+
+func TestALibraryIsTakenOutOfAZip(t *testing.T) {
+	dir := isolate(t)
+	archive := createZip(t, dir, map[string]string{
+		"onnxruntime-win-x64-1.23.0/lib/onnxruntime_providers_shared.dll": "another library",
+		"onnxruntime-win-x64-1.23.0/lib/onnxruntime.dll":                  "the library",
+	})
+	found := release{archive: archive, sum: sum(t, archive), library: computeSum("the library")}
+
+	at, err := unpack(archive, "onnxruntime.dll", found)
+	if err != nil {
+		t.Fatal(err)
+	}
+	held, err := os.ReadFile(at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(held) != "the library" {
+		t.Errorf("what came out of the zip was %q", held)
+	}
+}
+
+func TestAZipHoldingNoSuchLibrarySaysSo(t *testing.T) {
+	dir := isolate(t)
+	archive := createZip(t, dir, map[string]string{"readme.txt": "nothing"})
+	err := fromZip(archive, "onnxruntime.dll", filepath.Join(dir, "onnxruntime.dll"))
+	if err == nil || !strings.Contains(err.Error(), "holds no onnxruntime.dll") {
+		t.Errorf("a zip holding no such library was refused as %v", err)
+	}
+}
+
+// A library already in the cache with the published sum needs no archive.
+func TestALibraryInTheCacheNeedsNoArchive(t *testing.T) {
+	dir := isolate(t)
+	at := filepath.Join(dir, "libonnxruntime.dylib")
+	if err := os.WriteFile(at, []byte("the library"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	found := release{archive: filepath.Join(dir, "gone.tgz"), sum: computeSum("x"), library: computeSum("the library")}
+
+	got, err := unpack(found.archive, "libonnxruntime.dylib", found)
+	if err != nil || got != at {
+		t.Errorf("unpack = %q, %v; want %q", got, err, at)
+	}
+}
+
+func TestAFileThatIsNotGzipIsRefusedAsAGzipHeader(t *testing.T) {
+	dir := isolate(t)
+	archive := filepath.Join(dir, "plain.tgz")
+	if err := os.WriteFile(archive, []byte("not gzip at all"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := fromTgz(archive, "lib", filepath.Join(dir, "lib")); !errors.Is(err, gzip.ErrHeader) {
+		t.Errorf("unpack a file that is not gzip = %v", err)
 	}
 }

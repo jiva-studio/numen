@@ -95,3 +95,14 @@ func TestRememberingAgainOverAValueKeptWithNothingToReleaseIsKept(t *testing.T) 
 		t.Errorf("released %d times before the operation ended", released)
 	}
 }
+
+func TestAnOperationIsActiveOnlyWithinIt(t *testing.T) {
+	if operation.IsActive(t.Context()) {
+		t.Error("a context under no operation is active")
+	}
+	ctx, end := operation.Begin(t.Context())
+	defer end()
+	if !operation.IsActive(ctx) {
+		t.Error("a context under an operation is not active")
+	}
+}
