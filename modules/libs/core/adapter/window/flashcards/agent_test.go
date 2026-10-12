@@ -2,6 +2,7 @@ package flashcards
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -319,5 +320,37 @@ func TestTheAgentIsToldWhichVaultTheSessionIsOn(t *testing.T) {
 
 	if strings.Join(told, "|") != strings.Join(opened, "|") {
 		t.Errorf("sessions opened on %v and the agent was told %v", opened, told)
+	}
+}
+
+// refusingAgent is an agent that cannot end a conversation.
+type refusingAgent struct{ port.Agent }
+
+func (refusingAgent) Finish(context.Context, string) error { return errors.New("the agent went away") }
+
+// An agent that cannot end a conversation is an internal failure, and the page
+// is told so.
+func TestAConversationTheAgentCannotEndIsAnInternalFailure(t *testing.T) {
+	api := &API{}
+	api.SetAgent(refusingAgent{})
+
+	_, err := api.FinishConversation(t.Context(),
+		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "one"}))
+	if code := connect.CodeOf(err); code != connect.CodeInternal {
+		t.Errorf("finishing answered %v", err)
+	}
+}
+
+// Naming no agent takes the window's agent away.
+func TestNamingNoAgentLeavesTheWindowWithNone(t *testing.T) {
+	api := &API{}
+	api.SetAgent(&asking{})
+	if api.GetAgent() == nil {
+		t.Fatal("the agent that was named is not there")
+	}
+
+	api.SetAgent(nil)
+	if api.GetAgent() != nil {
+		t.Error("the window still has an agent")
 	}
 }
