@@ -334,8 +334,8 @@ func (a *API) readAhead(reader port.VaultReader, key pagecache.ID) {
 // ends it, so a window that is closing is not held open by a page nobody has
 // turned to. A window standing on no vault has no passes, and nothing to end.
 func (a *API) getBackgroundContext() context.Context {
-	if on := a.showing.Load(); on != nil {
-		return on.under
+	if on := a.session.Load(); on != nil {
+		return on.ctx
 	}
 	return context.Background()
 }

@@ -100,8 +100,8 @@ func (a *API) ScheduleDeck(
 	// index did not follow.
 	behind := a.isUnlevelled(err)
 	if err == nil || behind {
-		if a.Wrote != nil {
-			a.Wrote()
+		if a.NotifyNoteWritten != nil {
+			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.ScheduleDeckResponse{
 			At: fingerprintOf(at), IsUnlevelled: behind,
@@ -166,8 +166,8 @@ func (a *API) WritePreset(
 	// index did not follow.
 	behind := a.isUnlevelled(err)
 	if err == nil || behind {
-		if a.Wrote != nil {
-			a.Wrote()
+		if a.NotifyNoteWritten != nil {
+			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WritePresetResponse{
 			At: fingerprintOf(at), IsUnlevelled: behind,

@@ -118,7 +118,7 @@ func windowOn(t *testing.T, held port.DerivedStore) (*API, http.Handler) {
 		Readers:   filesystem.VaultReaders{},
 		Highlight: &hl,
 	}
-	api.show(vault)
+	api.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
@@ -277,7 +277,7 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 func TestABuildThatServesNoArtifactPlaysTheRecording(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := &API{Readers: filesystem.VaultReaders{}}
-	api.show(vault)
+	api.setVault(vault)
 	_ = api.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName)
 
 	back, playing := openLoopback(t, api)
@@ -297,7 +297,7 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 	_, cues := transcript.Parse(transcript.Marshal(spoke))
 
 	// "second" begins after "first\n".
-	got, err := cutToSpan(&v1.Span{From: 6, To: 12})(cues)
+	got, err := selectSpan(&v1.Span{From: 6, To: 12})(cues)
 	if err != nil {
 		t.Fatalf("a run of the words was refused: %v", err)
 	}
@@ -305,7 +305,7 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 		t.Errorf("the run was placed at %v", got)
 	}
 
-	if _, err := cutToSpan(&v1.Span{From: -1, To: 5})(cues); err == nil {
+	if _, err := selectSpan(&v1.Span{From: -1, To: 5})(cues); err == nil {
 		t.Errorf("a place before the words was taken")
 	}
 }
@@ -390,8 +390,8 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 	api, _ := openRecordingWindow(t, whole(newCues()))
 
 	var asked []string
-	setPasses(api, func(on *passes) {
-		on.cut = func(_ context.Context, _ domain.Vault, path string) error {
+	modifySession(api, func(on *vaultSession) {
+		on.rechunk = func(_ context.Context, _ domain.Vault, path string) error {
 			asked = append(asked, path)
 			return nil
 		}
@@ -410,8 +410,8 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	held := whole(newCues())
 	api, _ := openRecordingWindow(t, held)
-	setPasses(api, func(on *passes) {
-		on.cut = func(context.Context, domain.Vault, string) error {
+	modifySession(api, func(on *vaultSession) {
+		on.rechunk = func(context.Context, domain.Vault, string) error {
 			return errors.New("nothing is cutting")
 		}
 	})
@@ -621,11 +621,11 @@ func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	showing := api.GetCurrentVault()
 	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
 
-	api.Readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.show(elsewhere) }}
+	api.Readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.setVault(elsewhere) }}
 
 	var cutIn []domain.Vault
-	setPasses(api, func(on *passes) {
-		on.cut = func(_ context.Context, v domain.Vault, _ string) error {
+	modifySession(api, func(on *vaultSession) {
+		on.rechunk = func(_ context.Context, v domain.Vault, _ string) error {
 			cutIn = append(cutIn, v)
 			return nil
 		}
@@ -662,8 +662,8 @@ func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
 	api, _ := windowOn(t, held)
 
 	var asked []string
-	setPasses(api, func(on *passes) {
-		on.cut = func(_ context.Context, _ domain.Vault, path string) error {
+	modifySession(api, func(on *vaultSession) {
+		on.rechunk = func(_ context.Context, _ domain.Vault, path string) error {
 			asked = append(asked, path)
 			return nil
 		}

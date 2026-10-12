@@ -92,7 +92,7 @@ func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING:    errShowing,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN:    vaults.ErrUnknown,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   port.ErrNoTrash,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:     errAsking,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING:     errAnswerPending,
 	}, func(err error) v1.VaultsErrorCode {
 		reason, _ := vaultsErrorCodeBy(err)
 		return reason
@@ -104,12 +104,12 @@ func TestEveryVaultsErrorCodeIsWrittenFromOne(t *testing.T) {
 // writes it.
 func TestEveryArtifactStateIsWrittenFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.State]func() v1.State{
-		v1.State_STATE_NONE:    getStateAt(reached{stands: untouched}),
-		v1.State_STATE_DONE:    getStateAt(reached{stands: done}),
-		v1.State_STATE_RUNNING: getStateAt(reached{stands: under}),
-		v1.State_STATE_STOPPED: getStateAt(reached{stands: stopped}),
-		v1.State_STATE_EMPTY:   getStateAt(reached{stands: silent}),
-		v1.State_STATE_FAILED:  getStateAt(reached{stands: unopened}),
+		v1.State_STATE_NONE:    getStateAt(runProgress{state: runNone}),
+		v1.State_STATE_DONE:    getStateAt(runProgress{state: runComplete}),
+		v1.State_STATE_RUNNING: getStateAt(runProgress{state: runActive}),
+		v1.State_STATE_STOPPED: getStateAt(runProgress{state: runStopped}),
+		v1.State_STATE_EMPTY:   getStateAt(runProgress{state: runNoSpeech}),
+		v1.State_STATE_FAILED:  getStateAt(runProgress{state: runUnopened}),
 		v1.State_STATE_QUEUED:  func() v1.State { return getStartState(port.Queued) },
 	}, func(writes func() v1.State) v1.State { return writes() })
 }
@@ -132,7 +132,7 @@ func TestEveryArtifactTheSchemaNamesStandsSomewhere(t *testing.T) {
 }
 
 // getStateAt is what an artifact over a source standing here is answered with.
-func getStateAt(got reached) func() v1.State {
+func getStateAt(got runProgress) func() v1.State {
 	return func() v1.State {
 		return newArtifact(v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, got).GetState()
 	}

@@ -123,7 +123,7 @@ func (a *API) ReadTranscript(
 	}
 	_, cues := transcript.Parse(raw)
 	if at := r.Msg.GetSpan(); at != nil {
-		if cues, err = cutToSpan(at)(cues); err != nil {
+		if cues, err = selectSpan(at)(cues); err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
@@ -232,9 +232,9 @@ func (a *API) WriteTranscript(
 	// The chunks in the index hold the words as they were heard, so the source
 	// is cut again from what it now says. A write that landed is not refused
 	// for a cut that could not be asked for.
-	if cut := a.cuts(); cut != nil {
+	if cut := a.getRechunker(); cut != nil {
 		if err := cut(ctx, showing, ref.Path); err != nil {
-			a.say(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Error: err.Error()})
+			a.reportTask(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Error: err.Error()})
 		}
 	}
 	return connect.NewResponse(&v1.WriteTranscriptResponse{Cues: newWireCues(cues)}), nil
@@ -309,12 +309,12 @@ func parseCues(cues []*v1.Cue) ([]transcript.Cue, error) {
 	return out, nil
 }
 
-// cutToSpan cuts the cues down to the run of the words a request named.
+// selectSpan cuts the cues down to the run of the words a request named.
 //
 // The run is a span of the words, which is how a passage is addressed
 // everywhere else, and what comes back is the speech those bytes were said in.
 // A search hit is played from the first of them.
-func cutToSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
+func selectSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 	return func(cues []transcript.Cue) ([]transcript.Cue, error) {
 		span := domain.ByteSpan{From: int(at.GetFrom()), To: int(at.GetTo())}
 		if span.From < 0 {
@@ -423,11 +423,11 @@ func (a *API) getFetchedText(
 	}
 	hash := derived.Fingerprint([]byte(string(at)))
 	for _, from := range derived.Producers() {
-		got, err := farUnder(ctx, store, from, hash)
+		got, err := readRunProgress(ctx, store, from, hash)
 		if err != nil {
 			return port.SourceText{}, nil, false, err
 		}
-		if got.stands != untouched {
+		if got.state != runNone {
 			return port.SourceText{Producer: from, Hash: hash}, store, true, nil
 		}
 	}
@@ -475,9 +475,9 @@ func readFirst(ctx context.Context, store port.DerivedStore, names ...string) ([
 	return nil, nil
 }
 
-// free says whether a name is one nobody holds. It is taken and let go, so what
+// isUnclaimed says whether a name is one nobody holds. It is taken and let go, so what
 // it answers is what stood a moment ago.
-func free(ctx context.Context, store port.DerivedStore, name string) bool {
+func isUnclaimed(ctx context.Context, store port.DerivedStore, name string) bool {
 	release, err := store.Claim(ctx, name)
 	if err != nil {
 		return false

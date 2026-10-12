@@ -38,9 +38,9 @@ type API struct {
 	// being served, so every reader takes it through Showing.
 	vault atomic.Pointer[domain.Vault]
 
-	// shut is the door on every question. It is closed before the index and the
+	// closed is the door on every question. It is closed before the index and the
 	// embedder an answer reaches into are taken away.
-	shut atomic.Bool
+	closed atomic.Bool
 
 	// questions are the questions taken and not yet answered. A search, a note
 	// and a link are read straight from the index, and Shut stands here until
@@ -49,18 +49,18 @@ type API struct {
 	// A stream is not counted: it lives as long as the page that opened it.
 	questions inflight
 
-	// showing is the passes behind the vault the window is showing. It is
+	// session is the passes behind the vault the window is showing. It is
 	// published as one after the vault, so a run, a cut and a drop reach the
 	// vault the request was answered over. Nothing while the vault is being
 	// changed.
-	showing atomic.Pointer[passes]
+	session atomic.Pointer[vaultSession]
 
 	Listeners audience[change]
 
-	// Opens puts another vault in the window: the agents are stopped, the vault
+	// OpenVault puts another vault in the window: the agents are stopped, the vault
 	// is swapped, and the agents are started again against the one that
 	// arrived. It is bound by every build that serves the list of vaults.
-	Opens func(context.Context, domain.Vault) error
+	OpenVault func(context.Context, domain.Vault) error
 
 	// agent is the agent the panel's tasks go to. A vault without one answers
 	// that it has none, and the rest of the window works as it did. It is
@@ -83,10 +83,10 @@ type API struct {
 	// answers with no address, and the window says the recording cannot be
 	// played here.
 	Playing *Loopback
-	// Wrote is what a save raises: the reading behind the window asks the index
+	// NotifyNoteWritten is what a save raises: the reading behind the window asks the index
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
-	Wrote func()
+	NotifyNoteWritten func()
 	// Drops takes a recording's transcript away, with everything listening to
 	// it produced. It is bound by every build that serves what is made from a
 	// file.
@@ -122,10 +122,10 @@ type API struct {
 	// through Attended.
 	openTabs atomic.Pointer[domain.OpenTabs]
 
-	// Attends hears what the person has open each time the window says it,
+	// NotifyOpenTabs hears what the person has open each time the window says it,
 	// once what it said stands. A build without one takes the report and tells
 	// nobody.
-	Attends func(domain.OpenTabs)
+	NotifyOpenTabs func(domain.OpenTabs)
 
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
@@ -280,70 +280,70 @@ func (a *API) GetCurrentVault() domain.Vault {
 	return domain.Vault{}
 }
 
-// show puts a vault in front of whoever asks from now on.
-func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
+// setVault puts a vault in front of whoever asks from now on.
+func (a *API) setVault(v domain.Vault) { a.vault.Store(&v) }
 
-// setPasses is the passes a run, a cut and a drop are taken through from now
+// setSession sets the session a run, a rechunk and a drop are taken through from now
 // on. They arrive together, after the vault they belong to.
-func (a *API) setPasses(on *passes) { a.showing.Store(on) }
+func (a *API) setSession(on *vaultSession) { a.session.Store(on) }
 
 // getRecogniser reads a scanned document and getTranscriber hears a recording,
 // each for whoever asks. They are the jobs an agent asks through too, so what a
 // person started in the window is shown to both. Nothing where the window has
 // no vault, and where this build does no such run.
 func (a *API) getRecogniser() Runner {
-	if on := a.showing.Load(); on != nil {
-		return on.recognises
+	if on := a.session.Load(); on != nil {
+		return on.recognitionRunner
 	}
 	return nil
 }
 
 func (a *API) getTranscriber() Runner {
-	if on := a.showing.Load(); on != nil {
-		return on.transcribes
+	if on := a.session.Load(); on != nil {
+		return on.transcriptionRunner
 	}
 	return nil
 }
 
 // getProofreader puts a recording's transcript right, for whoever asks.
 func (a *API) getProofreader() Proofreader {
-	if on := a.showing.Load(); on != nil {
-		return on.proofreads
+	if on := a.session.Load(); on != nil {
+		return on.transcriptProofreader
 	}
 	return nil
 }
 
 // getReadingProofreader puts a document's reading right, for whoever asks.
 func (a *API) getReadingProofreader() ReadingProofreader {
-	if on := a.showing.Load(); on != nil {
+	if on := a.session.Load(); on != nil {
 		return on.proofreadsReading
 	}
 	return nil
 }
 
-// cuts asks for a source to be cut again from whatever its text now says. A
+// getRechunker asks for a source to be cut again from whatever its text now says. A
 // window that put a transcript right calls it, so search answers with the words
 // as they now read. Nothing while the window has no vault, and then a
 // correction is seen in the tab alone.
-func (a *API) cuts() func(context.Context, domain.Vault, string) error {
-	if on := a.showing.Load(); on != nil {
-		return on.cut
+func (a *API) getRechunker() func(context.Context, domain.Vault, string) error {
+	if on := a.session.Load(); on != nil {
+		return on.rechunk
 	}
 	return nil
 }
 
-// getForgetter takes a recording out of what the queue behind the vault has
+// getRecordingForgetter takes a recording out of what the queue behind the vault has
 // already had an answer about, so one that gave no words is offered again.
-func (a *API) getForgetter() func(domain.Vault, string) {
-	if on := a.showing.Load(); on != nil {
-		return on.forgets
+func (a *API) getRecordingForgetter() func(domain.Vault, string) {
+	if on := a.session.Load(); on != nil {
+		return on.forgetRecording
 	}
 	return nil
 }
 
-// say puts one piece of work in the list of what is being done behind the
+// reportTask puts one piece of work in the list of what is being done behind the
 // window, for a build that keeps one.
-func (a *API) say(at task.Task) { a.Window.Say(at) }
+func (a *API) reportTask(at task.Task) { a.Window.Say(at) }
 
 // finishTask takes one piece of work out of that list.
 func (a *API) finishTask(id string) { a.Window.Finish(id) }
@@ -362,19 +362,19 @@ func (a *API) isUnlevelled(err error) bool {
 	if !errors.Is(err, note.ErrUnlevelled) {
 		return false
 	}
-	a.say(task.Task{ID: levellingTheIndex, Doing: "Bringing the index level", Error: err.Error()})
+	a.reportTask(task.Task{ID: levellingTheIndex, Doing: "Bringing the index level", Error: err.Error()})
 	return true
 }
 
-// Shut refuses every question from now on, and there is no opening it again. It
+// Close refuses every question from now on, and there is no opening it again. It
 // answers once the questions already taken have been answered, so everything an
 // answer reaches into is still there for the whole of it.
-func (a *API) Shut() {
-	a.shut.Store(true)
+func (a *API) Close() {
+	a.closed.Store(true)
 	<-a.questions.seal()
 }
 
-func (a *API) isClosed() bool { return a.shut.Load() }
+func (a *API) isClosed() bool { return a.closed.Load() }
 
 // getCurrentVault is the vault a question is answered over. A window standing on nothing
 // has none, and every question that would reach into a vault is refused there.

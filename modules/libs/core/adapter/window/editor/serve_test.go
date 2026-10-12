@@ -152,7 +152,7 @@ type behind struct {
 // does, with the pieces a test drives in place of the ones a window gets.
 func opening(t *testing.T, notes map[string]string, watcher port.VaultWatcher, readers port.VaultReaders) *behind {
 	t.Helper()
-	return openingWith(t, notes, watcher, readers, nil, settled)
+	return openingWith(t, notes, watcher, readers, nil, quietPeriod)
 }
 
 // openingWith is the same, with the model that fills the index for meaning and
@@ -188,7 +188,7 @@ func openingWith(
 			Write:   &writing,
 		},
 	}
-	api.show(v)
+	api.setVault(v)
 	if embedder != nil {
 		if err := db.FitVectors(t.Context(), embedder.Model().Dimensions, embedder.Model().Recipe()); err != nil {
 			t.Fatal(err)
@@ -199,12 +199,12 @@ func openingWith(
 	line, done := api.Listeners.listen()
 	t.Cleanup(done)
 
-	wake := newNudges(still)
-	api.Wrote = func() { raise(wake.notes) }
+	wake := newIndexTriggers(still)
+	api.NotifyNoteWritten = func() { fire(wake.notes) }
 
 	ctx, stop := context.WithCancel(t.Context())
-	_, wait := begin(ctx, v, newWatched(cfg, db, readers, watcher),
-		api, false, embedder, wake, &pending{}, io.Discard)
+	_, wait := startIndexing(ctx, v, newWatched(cfg, db, readers, watcher),
+		api, false, embedder, wake, &pendingSources{}, io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -441,15 +441,15 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 	})
 }
 
-// setPasses publishes the passes a request is answered through, the way a
+// modifySession publishes the passes a request is answered through, the way a
 // vault arriving in the window does.
-func setPasses(api *API, change func(*passes)) {
-	on := passes{}
-	if held := api.showing.Load(); held != nil {
+func modifySession(api *API, change func(*vaultSession)) {
+	on := vaultSession{}
+	if held := api.session.Load(); held != nil {
 		on = *held
 	}
 	change(&on)
-	api.setPasses(&on)
+	api.setSession(&on)
 }
 
 // saying is where the reading behind the window writes what it did, kept for a
@@ -522,12 +522,12 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		Window:    &wire.Window{Named: wire.Editor, Tasking: task.New()},
 		Notes:     Notes{Queries: db.Queries(), Links: db.Links()},
 	}
-	api.show(v)
+	api.setVault(v)
 
 	out := &saying{}
 	ctx, stop := context.WithCancel(t.Context())
-	_, wait := begin(ctx, v, newWatched(cfg, db, readers, watcher),
-		api, true, nil, newNudges(settled), &pending{}, out)
+	_, wait := startIndexing(ctx, v, newWatched(cfg, db, readers, watcher),
+		api, true, nil, newIndexTriggers(quietPeriod), &pendingSources{}, out)
 	t.Cleanup(func() {
 		stop()
 		wait()

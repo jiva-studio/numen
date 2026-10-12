@@ -157,7 +157,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		ErrorHandler: func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
 
-	going := &going{settle: opened.Settle}
+	going := &going{settle: opened.FlushPending}
 
 	// Everything behind the settling, in the order each part needs the next: the
 	// agents are let go of, then the scan and the follower stop and the database
@@ -227,7 +227,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
 	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
-	opened.API.Attends = naming
+	opened.API.NotifyOpenTabs = naming
 
 	// Files let go of over the window, copied into the folder the mark under
 	// the pointer names. A drop that landed on no mark is not this window's.
@@ -246,7 +246,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// Opening another vault, as a person asks for it. The agents are told which
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.
-	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
+	opened.API.OpenVault = func(ctx context.Context, v domain.Vault) error {
 		err := reachable.RunSwap(func() error { return opened.Show(ctx, v) })
 		naming(opened.API.GetOpenTabs())
 		return err

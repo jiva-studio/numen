@@ -126,7 +126,7 @@ func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
 		beside:  "a file the vault leaves alone",
 	})
 	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
-	api.show(vault)
+	api.setVault(vault)
 	api.Viewer.open = from.openScan
 	t.Cleanup(api.Viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())
@@ -144,7 +144,7 @@ func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
 	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
-	api.show(vault)
+	api.setVault(vault)
 	api.Viewer.patience = time.Minute
 	t.Cleanup(api.Viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())
@@ -633,7 +633,7 @@ func TestAFileReplacedWhileOpenIsOpenedAgainAndTheOldOneReleased(t *testing.T) {
 	from := sheets(4)
 	vault := testsupport.NewVault(t, map[string]string{book: "the bytes of a scan"})
 	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
-	api.show(vault)
+	api.setVault(vault)
 	api.Viewer.open = from.openScan
 	const idleFor = 20 * time.Millisecond
 	api.Viewer.docs.Store(pool.NewDocuments(pool.MostOpen, idleFor))
