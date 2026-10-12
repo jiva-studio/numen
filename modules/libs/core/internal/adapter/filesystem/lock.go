@@ -39,7 +39,7 @@ func (w VaultWriters) Hold(ctx context.Context, v domain.Vault) (func(), error) 
 }
 
 func lockFor(root string) chan struct{} {
-	key := canonical(root)
+	key := getLockKey(root)
 	locks.Lock()
 	defer locks.Unlock()
 	lock, found := locks.held[key]
@@ -50,9 +50,9 @@ func lockFor(root string) chan struct{} {
 	return lock
 }
 
-// canonical is the one name a folder is locked under. A path that cannot be
+// getLockKey is the one name a folder is locked under. A path that cannot be
 // resolved is its own key: what is asked for is what is locked.
-func canonical(root string) string {
+func getLockKey(root string) string {
 	abs, err := filepath.Abs(root)
 	if err != nil {
 		return root

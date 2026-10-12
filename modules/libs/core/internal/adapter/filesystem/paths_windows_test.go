@@ -24,8 +24,8 @@ func TestAPathThatNamesWhereItStartsFromIsRefused(t *testing.T) {
 		if _, _, err := resolveVaultPath(real, path, DefaultServiceDir); err == nil {
 			t.Errorf("resolveVaultPath(%q) was accepted", path)
 		}
-		if _, _, err := service(real, path, DefaultServiceDir); err == nil {
-			t.Errorf("service(%q) was accepted", path)
+		if _, _, err := resolveServicePath(real, path, DefaultServiceDir); err == nil {
+			t.Errorf("resolveServicePath(%q) was accepted", path)
 		}
 	}
 }

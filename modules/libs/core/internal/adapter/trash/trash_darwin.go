@@ -39,9 +39,9 @@ var foundation = sync.OnceValue(func() error {
 	return err
 })
 
-// send puts the folder where the Finder shows what was deleted, recording where
+// moveToTrash puts the folder where the Finder shows what was deleted, recording where
 // it came from so that Put Back works.
-func send(path string) error {
+func moveToTrash(path string) error {
 	if err := foundation(); err != nil {
 		return err
 	}
@@ -65,11 +65,11 @@ func send(path string) error {
 	if failure != 0 && objc.Send[int](failure, code) == unsupported {
 		return fmt.Errorf("%s: %w", path, port.ErrNoTrash)
 	}
-	return fmt.Errorf("%s: %s", path, reason(failure))
+	return fmt.Errorf("%s: %s", path, getFailureMessage(failure))
 }
 
-// reason is what Cocoa would tell a person about the failure.
-func reason(failure objc.ID) string {
+// getFailureMessage is what Cocoa would tell a person about the failure.
+func getFailureMessage(failure objc.ID) string {
 	if failure == 0 {
 		return "the trash would not take it"
 	}

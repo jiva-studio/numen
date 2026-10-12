@@ -38,19 +38,19 @@ func debounce(
 	walking.Add(1)
 	go func() {
 		defer walking.Done()
-		walks(ctx, shape, going, asked, walked)
+		walkFolders(ctx, shape, going, asked, walked)
 	}()
 	defer walking.Wait()
 	defer close(going)
 
-	forget := func() {
+	clearPending := func() {
 		clear(pending)
 		clear(inReady)
 		ready, hold, queued = nil, nil, nil
 	}
 
 	rescan := func() {
-		forget()
+		clearPending()
 		select {
 		case lost <- struct{}{}:
 		default:
@@ -90,7 +90,7 @@ func debounce(
 				pending[path] = true
 			}
 			if hold == nil && len(pending) > 0 {
-				hold = time.After(opts.hold())
+				hold = time.After(opts.getDebounceDelay())
 			}
 
 		case <-waiting.woke:
@@ -101,7 +101,7 @@ func debounce(
 				// and the shape with it: an event that made a folder is among
 				// what went.
 				rescan()
-				shape.rereadShape()
+				shape.reloadShape()
 			}
 			for _, event := range events {
 				paths, whole, folder := shape.getConcernedPaths(event.Path())
@@ -122,7 +122,7 @@ func debounce(
 			// being written to continuously — a sync client, a checkout — never
 			// stops long enough for a deadline that moves with it.
 			if hold == nil && len(pending) > 0 {
-				hold = time.After(opts.hold())
+				hold = time.After(opts.getDebounceDelay())
 			}
 			if done {
 				return
@@ -147,10 +147,10 @@ type walkResult struct {
 	isWholeVault bool
 }
 
-// walks walks the folders handed to it, one after another, and answers with
+// walkFolders walkFolders the folders handed to it, one after another, and answers with
 // what each holds. It stands beside the debounce, so a folder that arrives with
 // a thousand files in it is walked while the backlog goes on emptying.
-func walks(
+func walkFolders(
 	ctx context.Context,
 	shape *folders,
 	going <-chan struct{},

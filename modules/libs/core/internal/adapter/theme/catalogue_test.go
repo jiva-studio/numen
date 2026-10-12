@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/theme"
 )
 
-// folder is a themes folder of a person's, made the way the first run makes it.
-func folder(t *testing.T) theme.Catalogue {
+// createThemeFolder is a themes createThemeFolder of a person's, made the way the first run makes it.
+func createThemeFolder(t *testing.T) theme.Catalogue {
 	t.Helper()
 	catalogue, err := theme.OpenAt(filepath.Join(t.TempDir(), "numen", "themes"))
 	if err != nil {
@@ -20,7 +20,7 @@ func folder(t *testing.T) theme.Catalogue {
 	return catalogue
 }
 
-func put(t *testing.T, catalogue theme.Catalogue, name, body string) {
+func writeTheme(t *testing.T, catalogue theme.Catalogue, name, body string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(catalogue.Dir(), name), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
@@ -54,7 +54,7 @@ func TestTheSettingAnInstallationStartsOnIsThisProductsOwnPalette(t *testing.T) 
 }
 
 func TestTheFolderIsMadeEmptyOnTheFirstRun(t *testing.T) {
-	catalogue := folder(t)
+	catalogue := createThemeFolder(t)
 	entries, err := os.ReadDir(catalogue.Dir())
 	if err != nil {
 		t.Fatal(err)
@@ -70,7 +70,7 @@ func TestTheFolderIsMadeEmptyOnTheFirstRun(t *testing.T) {
 }
 
 func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
-	themes := folder(t).Themes()
+	themes := createThemeFolder(t).Themes()
 	for _, name := range []string{
 		"preset:numen", "preset:dracula", "preset:nord", "preset:solarized",
 		"preset:catppuccin", "preset:gruvbox", "preset:amber", "preset:github",
@@ -86,7 +86,7 @@ func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
 // The mode chooses for this product's own palette, so that palette says nothing
 // about `color-scheme`.
 func TestThisProductsOwnPaletteLeavesTheModeSomethingToChoose(t *testing.T) {
-	catalogue := folder(t)
+	catalogue := createThemeFolder(t)
 	text, err := catalogue.Text(theme.Default)
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +105,7 @@ func TestThisProductsOwnPaletteLeavesTheModeSomethingToChoose(t *testing.T) {
 // and the setting chooses.
 func TestAThemeSaysWhetherItIsAPair(t *testing.T) {
 	pinned := map[string]bool{"preset:dracula": true, "preset:solarized": false}
-	for _, one := range folder(t).Themes() {
+	for _, one := range createThemeFolder(t).Themes() {
 		want, asked := pinned[one.Name]
 		if asked && one.IsPinned != want {
 			t.Errorf("%s is pinned: %v", one.Name, one.IsPinned)
@@ -114,8 +114,8 @@ func TestAThemeSaysWhetherItIsAPair(t *testing.T) {
 }
 
 func TestAPersonsThemeStandsBesideThePresetItsNameIsShared(t *testing.T) {
-	catalogue := folder(t)
-	put(t, catalogue, "dracula.css", ":root { --numen-surface: #000000 }")
+	catalogue := createThemeFolder(t)
+	writeTheme(t, catalogue, "dracula.css", ":root { --numen-surface: #000000 }")
 
 	themes := catalogue.Themes()
 	if !hasTheme(themes, "preset:dracula") || !hasTheme(themes, "mine:dracula") {
@@ -132,13 +132,13 @@ func TestAPersonsThemeStandsBesideThePresetItsNameIsShared(t *testing.T) {
 
 // One level, and names ending `.css`.
 func TestOnlyACssFileInTheFolderIsATheme(t *testing.T) {
-	catalogue := folder(t)
-	put(t, catalogue, "dracula.css.bak", ":root {}")
-	put(t, catalogue, "README.md", "the themes I wrote")
+	catalogue := createThemeFolder(t)
+	writeTheme(t, catalogue, "dracula.css.bak", ":root {}")
+	writeTheme(t, catalogue, "README.md", "the themes I wrote")
 	if err := os.MkdirAll(filepath.Join(catalogue.Dir(), "kept.css", "inner"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	put(t, catalogue, filepath.Join("kept.css", "nord.css"), ":root {}")
+	writeTheme(t, catalogue, filepath.Join("kept.css", "nord.css"), ":root {}")
 
 	for _, one := range catalogue.Themes() {
 		if one.Shelf == theme.Mine {
@@ -151,7 +151,7 @@ func TestOnlyACssFileInTheFolderIsATheme(t *testing.T) {
 }
 
 func TestANameThatWouldLeaveTheFolderIsRefused(t *testing.T) {
-	catalogue := folder(t)
+	catalogue := createThemeFolder(t)
 	secret := filepath.Join(filepath.Dir(catalogue.Dir()), "numen.json")
 	if err := os.WriteFile(secret, []byte(`{"key":"sk-the-persons-own"}`), 0o600); err != nil {
 		t.Fatal(err)
@@ -175,9 +175,9 @@ func TestANameThatWouldLeaveTheFolderIsRefused(t *testing.T) {
 }
 
 func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
-	catalogue := folder(t)
-	put(t, catalogue, "vast.css", strings.Repeat("a", theme.MaxSize+1))
-	put(t, catalogue, "small.css", strings.Repeat("a", theme.MaxSize))
+	catalogue := createThemeFolder(t)
+	writeTheme(t, catalogue, "vast.css", strings.Repeat("a", theme.MaxSize+1))
+	writeTheme(t, catalogue, "small.css", strings.Repeat("a", theme.MaxSize))
 
 	themes := catalogue.Themes()
 	if hasTheme(themes, "mine:vast") {
@@ -192,7 +192,7 @@ func TestAFileTooLargeToSpliceIntoThePageIsNoTheme(t *testing.T) {
 }
 
 func TestANameMatchingNothingWearsThisProductsPaletteAndSaysWhichNameItWas(t *testing.T) {
-	catalogue := folder(t)
+	catalogue := createThemeFolder(t)
 	applied, missing := catalogue.GetApplied("mine:the-one-i-deleted")
 	if applied != theme.Default {
 		t.Errorf("wears %q", applied)
@@ -201,7 +201,7 @@ func TestANameMatchingNothingWearsThisProductsPaletteAndSaysWhichNameItWas(t *te
 		t.Errorf("says %q could not be found", missing)
 	}
 
-	put(t, catalogue, "kept.css", ":root {}")
+	writeTheme(t, catalogue, "kept.css", ":root {}")
 	if applied, missing := catalogue.GetApplied("mine:kept"); applied != "mine:kept" || missing != "" {
 		t.Errorf("wears %q, missing %q", applied, missing)
 	}
@@ -212,7 +212,7 @@ func TestANameMatchingNothingWearsThisProductsPaletteAndSaysWhichNameItWas(t *te
 
 // Nothing the disk answers here stops the window: what is left is the presets.
 func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
-	catalogue := folder(t)
+	catalogue := createThemeFolder(t)
 	if os.Geteuid() == 0 {
 		t.Skip("root reads a folder whatever its mode says")
 	}
@@ -252,7 +252,7 @@ func TestACatalogueWithNoFolderOffersWhatShips(t *testing.T) {
 
 // A `.css` that is a link to nothing is a file in the folder and not a theme.
 func TestAThemeThatCannotBeReadIsNotOffered(t *testing.T) {
-	catalogue := folder(t)
+	catalogue := createThemeFolder(t)
 	if err := os.Symlink(filepath.Join(catalogue.Dir(), "gone.css"),
 		filepath.Join(catalogue.Dir(), "dangling.css")); err != nil {
 		t.Skipf("no links on this filesystem: %v", err)
