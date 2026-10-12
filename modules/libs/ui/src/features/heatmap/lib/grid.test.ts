@@ -51,3 +51,52 @@ describe('the stretch a grid asks about', () => {
     expect(wide.to >= narrow.to).toBe(true)
   })
 })
+
+describe('the columns that fit a room', () => {
+  const cell = 10
+  const gap = 2
+
+  it('keeps the gap it was given where one column fits', () => {
+    expect(measureGrid({ width: 15, cell, gap })).toEqual({ columns: 1, cell, gap })
+  })
+
+  it('spreads what two columns leave over between them', () => {
+    expect(measureGrid({ width: 30, cell, gap })).toEqual({ columns: 2, cell, gap: 10 })
+  })
+})
+
+describe('the exact stretch of a grid', () => {
+  const cell = 10
+  const gap = 2
+  // A Friday and a Sunday.
+  const friday = new Date('2026-09-18T12:00:00')
+  const sunday = new Date('2026-09-20T12:00:00')
+
+  it('is the week of now for one column', () => {
+    expect(getStretch({ width: 15, cell, gap }, friday)).toEqual({
+      from: '2026-09-14',
+      to: '2026-09-20',
+    })
+  })
+
+  it('ends on the last week of the columns for two', () => {
+    expect(getStretch({ width: 30, cell, gap }, friday)).toEqual({
+      from: '2026-09-14',
+      to: '2026-09-27',
+    })
+  })
+
+  it('reaches back from four weeks ahead once there are more columns than weeks to come', () => {
+    expect(getStretch({ width: 70, cell, gap }, friday)).toEqual({
+      from: '2026-09-07',
+      to: '2026-10-25',
+    })
+  })
+
+  it('counts a Sunday as the last day of its own week', () => {
+    expect(getStretch({ width: 15, cell, gap }, sunday)).toEqual({
+      from: '2026-09-14',
+      to: '2026-09-20',
+    })
+  })
+})

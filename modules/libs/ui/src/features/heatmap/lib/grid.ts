@@ -73,6 +73,7 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   // The grid running back from now: the Sunday ending the last week kept for
   // what is still to come, and the columns before it.
   const last = new Date(now)
+  // Stryker disable next-line MethodExpression: the mutant calls setMinutes(12, 0, 0, 0), which keeps the hour of the instant; every result is a calendar day name and both calls leave the day unchanged
   last.setHours(12, 0, 0, 0)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
   const behind = new Date(last)
@@ -93,6 +94,7 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
 /** The Monday of the week a day stands in, which is the column it opens. */
 function monday(at: Date): Date {
   const out = new Date(at)
+  // Stryker disable next-line MethodExpression: the mutant calls setMinutes(12, 0, 0, 0), which keeps the hour of the instant; every result is a calendar day name and both calls leave the day unchanged
   out.setHours(12, 0, 0, 0)
   out.setDate(out.getDate() - (weekday(out) - 1))
   return out

@@ -143,6 +143,12 @@ describe('how long something said stands to be read', () => {
     expect(dwellOf('Links repaired in', list)).toBe(Infinity)
   })
 
+  it('stands for as long as twenty words, which is not too much to read in passing', () => {
+    const list = Array.from({ length: 20 }, (_, at) => `Note${at}.md`).join(' ')
+
+    expect(dwellOf(list)).toBe(SETTLE + 20 * PER_WORD)
+  })
+
   it('is drawn the moment it arrives and goes once it has been read', () => {
     const said: Notice = { id: 'renamed', text: 'Renamed', stay: 'read' }
     const arrived = getArrivalTimes(new Map(), [said], 1000)
@@ -201,6 +207,19 @@ describe('how many cards stand at once', () => {
       shown: [work('a'), word('b')],
       over: 0,
     })
+  })
+
+  it('folds nothing while there is room, even when everything in it could fold', () => {
+    const drawn = [word('a'), word('b'), word('c')]
+
+    expect(foldNotices(drawn, 4)).toEqual({ shown: drawn, over: 0 })
+  })
+
+  it('never folds a notice that holds', () => {
+    const holds = (id: string): Notice => ({ id, text: 'Indexing', stay: 'holds' })
+    const drawn = [holds('a'), holds('b'), holds('c')]
+
+    expect(foldNotices(drawn, 1)).toEqual({ shown: drawn, over: 0 })
   })
 
   it('folds the oldest of what has been said, and counts them', () => {

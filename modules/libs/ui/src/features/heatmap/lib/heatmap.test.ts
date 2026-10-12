@@ -202,3 +202,69 @@ describe('where the days are drawn', () => {
     for (const cell of getCells(grid, days)) expect(cell.size).toBe(10)
   })
 })
+
+describe('the first day a grid draws', () => {
+  // A Friday and a Sunday.
+  const friday = new Date('2026-09-18T12:00:00')
+  const sunday = new Date('2026-09-20T12:00:00')
+  const none = new Map<string, Tally>()
+
+  it('is the Monday of this week for a vault with no history, however wide the grid', () => {
+    const shown = getDays(10, friday, none)
+
+    expect(shown).toHaveLength(10 * ROWS)
+    expect(shown[0]!.day).toBe('2026-09-14')
+  })
+
+  it('reaches back from four weeks ahead once the history is older than the grid', () => {
+    const shown = getDays(3, friday, createTallies([['2026-01-05', 1]]))
+
+    expect(shown[0]!.day).toBe('2026-09-14')
+    expect(shown[shown.length - 1]!.day).toBe('2026-10-04')
+  })
+
+  it('keeps one week ahead for a grid of two columns', () => {
+    const shown = getDays(2, friday, createTallies([['2026-01-05', 1]]))
+
+    expect(shown[0]!.day).toBe('2026-09-14')
+    expect(shown[shown.length - 1]!.day).toBe('2026-09-27')
+  })
+
+  it('opens on the Monday before a Sunday that is now', () => {
+    expect(getDays(3, sunday, none)[0]!.day).toBe('2026-09-14')
+  })
+
+  it('opens on the Monday before a Sunday that began the history', () => {
+    const shown = getDays(10, sunday, createTallies([['2026-09-13', 1]]))
+
+    expect(shown[0]!.day).toBe('2026-09-07')
+  })
+
+  it('opens on this week where the only days are still to come', () => {
+    const shown = getDays(10, friday, none, new Map([['2026-10-01', 3]]))
+
+    expect(shown[0]!.day).toBe('2026-09-14')
+  })
+
+  it('opens on the week of the earliest day answered on, wherever it is held', () => {
+    const did = createTallies([
+      ['2026-09-10', 1],
+      ['2026-09-01', 1],
+      ['2026-09-05', 1],
+    ])
+    const shown = getDays(10, friday, did, new Map([['2026-09-20', 2]]))
+
+    expect(shown[0]!.day).toBe('2026-08-31')
+  })
+
+  it('opens on the week of the earliest day among those still coming', () => {
+    const shown = getDays(
+      10,
+      friday,
+      createTallies([['2026-09-16', 1]]),
+      new Map([['2026-09-02', 2]]),
+    )
+
+    expect(shown[0]!.day).toBe('2026-08-31')
+  })
+})
