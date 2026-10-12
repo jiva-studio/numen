@@ -34,6 +34,7 @@ type failingLinks struct {
 	backlinksErr error
 	linksErr     error
 	isLinksEmpty bool
+	emptyFor     string
 }
 
 func (f failingLinks) Backlinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
@@ -47,7 +48,7 @@ func (f failingLinks) Links(ctx context.Context, id domain.VaultID, from string)
 	if f.linksErr != nil {
 		return nil, f.linksErr
 	}
-	if f.isLinksEmpty {
+	if f.isLinksEmpty || from == f.emptyFor {
 		return nil, nil
 	}
 	return f.LinkQueries.Links(ctx, id, from)
@@ -59,11 +60,6 @@ type failingNames struct{ err error }
 func (f failingNames) GetNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, f.err
 }
-
-// failingReaders is a vault that cannot be opened for reading.
-type failingReaders struct{ err error }
-
-func (f failingReaders) Open(domain.Vault) (port.VaultReader, error) { return nil, f.err }
 
 // failingWriters writes as the filesystem does, except where it is told to
 // fail: to be held, to be opened for the nth time, or to write a file.
@@ -288,7 +284,7 @@ func TestAMoveThatFailsAfterTheFileLandedSaysWhatFailed(t *testing.T) {
 			want: boom,
 		},
 		"the vault cannot be read": {
-			parts: func(changing) moveParts { return moveParts{readers: failingReaders{err: boom}} },
+			parts: func(changing) moveParts { return moveParts{readers: brokenReaders{open: boom}} },
 			want:  boom,
 		},
 		"the vault cannot be opened again for the repair": {
@@ -450,5 +446,81 @@ func TestANoteNoLinkReachesCanStillBeMoved(t *testing.T) {
 	}
 	if got := c.read(t, "physics/Heat.md"); got != heatLinkedToEntropy {
 		t.Errorf("the note was written:\n%s", got)
+	}
+}
+
+// A link that is gone from one note does not stop the notes after it from
+// being repaired.
+func TestALinkTheNoteNoLongerHoldsDoesNotStopTheNextRepair(t *testing.T) {
+	isolate(t)
+	c := openChanging(t, map[string]string{
+		"physics/Entropy.md": "A measure of disorder.\n",
+		"physics/Cold.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Cold\n",
+		"physics/Heat.md":    heatLinkedToEntropy,
+	})
+	parts := moveParts{links: failingLinks{LinkQueries: c.db.Links(), emptyFor: "physics/Cold.md"}}
+
+	res, err := c.moveOf(parts).Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(res.Repaired, []string{"physics/Heat.md"}) {
+		t.Errorf("the notes written again are %v", res.Repaired)
+	}
+}
+
+// A note that cannot be read is named in the error, and the reason stays in it.
+func TestAMoveNamesTheNoteItCouldNotRead(t *testing.T) {
+	c := openLinked(t)
+	boom := errors.New("the disk would not answer")
+
+	_, err := c.moveOf(moveParts{readers: brokenReaders{read: boom}}).Execute(
+		t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
+	if !errors.Is(err, boom) {
+		t.Fatalf("got %v", err)
+	}
+	if !strings.Contains(err.Error(), "physics/Heat.md") {
+		t.Errorf("the note is not named: %v", err)
+	}
+}
+
+// A note whose frontmatter is written on one line cannot be repaired a key at a
+// time, and is not written.
+func TestANoteWithInlineFrontmatterIsReportedAndNotWritten(t *testing.T) {
+	c := openLinked(t)
+	inline := "---\n{title: Heat, links: []}\n---\n# Heat\n"
+	c.overwrite(t, "physics/Heat.md", inline)
+
+	_, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
+	if !errors.Is(err, markdown.ErrInline) {
+		t.Fatalf("got %v", err)
+	}
+	if got := c.read(t, "physics/Heat.md"); got != inline {
+		t.Errorf("the note was written:\n%s", got)
+	}
+}
+
+// The collaborators of a move are replaced one at a time, and each is given
+// back as it was set.
+func TestAMoveHandsBackTheCollaboratorsItWasGiven(t *testing.T) {
+	c := openLinked(t)
+	readers, writers := brokenReaders{}, failingWriters{VaultWriters: filesystem.VaultWriters{}, opened: new(int)}
+	sources := sulking{SourceRepository: c.db.Sources()}
+
+	moving := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)
+	if moving.Readers() != port.VaultReaders(readers) {
+		t.Error("the readers are not the ones set")
+	}
+	if moving.Writers() != port.VaultWriters(writers) {
+		t.Error("the writers are not the ones set")
+	}
+	if moving.Sources() != port.SourceRepository(sources) {
+		t.Error("the sources are not the ones set")
+	}
+}
+
+func TestAFolderKeepsTheNameOfTheNoteFiledUnderIt(t *testing.T) {
+	if got := note.GetPathUnder("archive", "physics/Entropy.md"); got != "archive/Entropy.md" {
+		t.Errorf("got %q", got)
 	}
 }
