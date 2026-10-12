@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writer"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlwrite"
 )
 
 // DatabaseMaintenance keeps the database's picture of its own contents current,
@@ -26,6 +26,6 @@ const measure = "PRAGMA optimize = 0x10012"
 
 // ReportChanges says what the database knows about itself is out of date.
 func (m DatabaseMaintenance) ReportChanges(ctx context.Context) error {
-	_, err := writer.Exec(ctx, m.db, measure)
+	_, err := sqlwrite.Exec(ctx, m.db, measure)
 	return err
 }

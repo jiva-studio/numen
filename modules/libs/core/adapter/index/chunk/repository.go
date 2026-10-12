@@ -19,7 +19,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writer"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -113,7 +113,7 @@ func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 // SaveSource records one file of one kind and what reading it produced.
 func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s Source) error {
-	tx, err := writer.Begin(ctx, r.db)
+	tx, err := sqlwrite.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -140,7 +140,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 // One write, because a recipe names the sizes a source's chunks were cut into:
 // the recipe and the chunks it describes are recorded together.
 func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID, s Source, chunks []Chunk) error {
-	tx, err := writer.Begin(ctx, r.db)
+	tx, err := sqlwrite.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -168,7 +168,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 // its chunks, in a transaction of its own. The source is already recorded or
 // there is nothing to replace the chunks of.
 func (r *Repository) ReplaceChunks(ctx context.Context, vaultID domain.VaultID, kind, path string, chunks []Chunk) error {
-	tx, err := writer.Begin(ctx, r.db)
+	tx, err := sqlwrite.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -223,7 +223,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 
 		// Checkpoint the WAL passively after every batch to keep the file size bounded.
 		// A passive checkpoint does not wait for readers and leaves the database unlocked.
-		if _, err := writer.Exec(ctx, r.db, "PRAGMA wal_checkpoint(PASSIVE)"); err != nil {
+		if _, err := sqlwrite.Exec(ctx, r.db, "PRAGMA wal_checkpoint(PASSIVE)"); err != nil {
 			return fmt.Errorf("checkpoint wal: %w", err)
 		}
 	}
@@ -231,7 +231,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 }
 
 func (r *Repository) saveBatch(ctx context.Context, vectors []Vector) error {
-	tx, err := writer.Begin(ctx, r.db)
+	tx, err := sqlwrite.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -262,7 +262,7 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 	if len(paths) == 0 {
 		return nil
 	}
-	tx, err := writer.Begin(ctx, r.db)
+	tx, err := sqlwrite.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -300,7 +300,7 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 // Only the file at the path itself can be called something else afterwards;
 // everything under a folder keeps the name it has.
 func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
-	tx, err := writer.Begin(ctx, r.db)
+	tx, err := sqlwrite.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -341,7 +341,7 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 //
 // The rows that are moving stand still: a folder moved inside itself holds
 // them, and they are the ones about to be filed.
-func deleteMoveTarget(ctx context.Context, tx *writer.Transaction, vault int64, from, to string) error {
+func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
 	first, past := getRangeUnder(to)
 	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
 	if err != nil {
@@ -387,7 +387,7 @@ func deleteMoveTarget(ctx context.Context, tx *writer.Transaction, vault int64, 
 //
 // The name goes into the title index with it: that is what a search by name
 // ranks and highlights against.
-func updateNoteName(ctx context.Context, tx *writer.Transaction, vault int64, from, to string) error {
+func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
 	name := domain.Basename(to)
 	if name == domain.Basename(from) {
 		return nil
@@ -425,7 +425,7 @@ func getRangeUnder(folder string) (first, past string) {
 // The rows in the three virtual tables go first, by the chunk's own number.
 // Nothing cascades into a virtual table, and a chunk's number is handed to the
 // next chunk that wants one, so a row left behind answers for that one.
-func Clear(ctx context.Context, tx *writer.Transaction, source int64) error {
+func Clear(ctx context.Context, tx *sqlwrite.Transaction, source int64) error {
 	for _, name := range []string{"clear_fts", "clear_vec", "clear_sections"} {
 		if err := exec(ctx, tx, name, source); err != nil {
 			return err
@@ -450,7 +450,7 @@ func Clear(ctx context.Context, tx *writer.Transaction, source int64) error {
 //
 // Only leaf chunks are indexed for the words they hold, so that a search asked
 // by words finds the smallest enclosing passage.
-func Replace(ctx context.Context, tx *writer.Transaction, source, vault int64, chunks []Chunk) error {
+func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64, chunks []Chunk) error {
 	held, err := chunksOf(ctx, tx, source)
 	if err != nil {
 		return err
@@ -483,7 +483,7 @@ func Replace(ctx context.Context, tx *writer.Transaction, source, vault int64, c
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent_id` becomes.
 func upsertChunk(
-	ctx context.Context, tx *writer.Transaction, held *rows,
+	ctx context.Context, tx *sqlwrite.Transaction, held *rows,
 	source, vault int64, c Chunk, parent any, isLeaf bool,
 ) (int64, error) {
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
@@ -517,7 +517,7 @@ func upsertChunk(
 
 // writeSectionNames keeps the names of the sections one chunk begins, so a section can be
 // found by its name and answer with the chunk it opens.
-func writeSectionNames(ctx context.Context, tx *writer.Transaction, row int64, c Chunk) error {
+func writeSectionNames(ctx context.Context, tx *sqlwrite.Transaction, row int64, c Chunk) error {
 	if len(c.Opens) == 0 {
 		return nil
 	}
@@ -544,7 +544,7 @@ type rows struct {
 	hash map[int64]string
 }
 
-func chunksOf(ctx context.Context, tx *writer.Transaction, source int64) (*rows, error) {
+func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (*rows, error) {
 	cursor, err := tx.QueryContext(ctx, stmt.Get("chunks_of"), source)
 	if err != nil {
 		return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
@@ -596,7 +596,7 @@ func (h *rows) getUnusedRows() []int64 {
 // search with a chunk that no longer exists. A large chunk takes the chunks
 // inside it, so a row here may already be gone from `chunks` by the time it is
 // reached.
-func deleteRows(ctx context.Context, tx *writer.Transaction, rows []int64) error {
+func deleteRows(ctx context.Context, tx *sqlwrite.Transaction, rows []int64) error {
 	for _, row := range rows {
 		for _, name := range []string{"delete_fts", "delete_vec", "delete_chunk"} {
 			if err := exec(ctx, tx, name, row); err != nil {
@@ -615,7 +615,7 @@ func computeHash(s string) string {
 }
 
 // exec runs a named statement and says which one failed.
-func exec(ctx context.Context, tx *writer.Transaction, name string, args ...any) error {
+func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
@@ -674,7 +674,7 @@ func (h *rows) getRemovedHashes() []string {
 // replaced. A source the vault no longer offers takes nothing with it: a folder
 // that could not be read looks the same from here as one whose files were
 // deleted, and a vector was bought.
-func deleteOrphanVectors(ctx context.Context, tx *writer.Transaction, texts []string) error {
+func deleteOrphanVectors(ctx context.Context, tx *sqlwrite.Transaction, texts []string) error {
 	for _, hash := range texts {
 		if err := exec(ctx, tx, "forget_vector", hash, hash); err != nil {
 			return err

@@ -1,5 +1,5 @@
-// Package writer runs writes on the index database and retries them while another process holds the lock.
-package writer
+// Package sqlwrite runs writes on the index database and retries them while another process holds the lock.
+package sqlwrite
 
 import (
 	"context"

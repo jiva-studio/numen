@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writer"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlwrite"
 )
 
 // SQL lives in .sql files: it is a language of its own, and anything that
@@ -43,18 +43,18 @@ func resetIndex(ctx context.Context, db *sql.DB) error {
 	// A reference to a table already dropped holds nothing back while every
 	// table is going. The index writes over one connection, so the setting and
 	// the drops meet on it.
-	if _, err := writer.Exec(ctx, db, "PRAGMA foreign_keys = off"); err != nil {
+	if _, err := sqlwrite.Exec(ctx, db, "PRAGMA foreign_keys = off"); err != nil {
 		return fmt.Errorf("emptying the index: %w", err)
 	}
 	dropped := dropEverything(ctx, db)
-	_, back := writer.Exec(ctx, db, "PRAGMA foreign_keys = on")
+	_, back := sqlwrite.Exec(ctx, db, "PRAGMA foreign_keys = on")
 	if dropped != nil {
 		return dropped
 	}
 	if back != nil {
 		return fmt.Errorf("putting the index's references back: %w", back)
 	}
-	if _, err := writer.Exec(ctx, db, "PRAGMA user_version = 0"); err != nil {
+	if _, err := sqlwrite.Exec(ctx, db, "PRAGMA user_version = 0"); err != nil {
 		return fmt.Errorf("putting the index back to no schema: %w", err)
 	}
 	return nil
@@ -76,7 +76,7 @@ func dropEverything(ctx context.Context, db *sql.DB) error {
 			}
 			// An identifier is not a parameter, and this one is the catalogue's
 			// own.
-			if _, err := writer.Exec(ctx, db,
+			if _, err := sqlwrite.Exec(ctx, db,
 				fmt.Sprintf("DROP %s IF EXISTS %q", one.kind, name)); err != nil {
 				return fmt.Errorf("dropping %s: %w", name, err)
 			}
@@ -150,7 +150,7 @@ func migrate(ctx context.Context, db *sql.DB) error {
 // A table carrying a column this build does not write is brought to the shape
 // this build writes, which is the one thing the bookkeeping owes itself.
 func createBookkeeping(ctx context.Context, db *sql.DB) error {
-	if _, err := writer.Exec(ctx, db, `CREATE TABLE IF NOT EXISTS schema_migrations (
+	if _, err := sqlwrite.Exec(ctx, db, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY,
 		name    TEXT NOT NULL
 	)`); err != nil {
@@ -168,7 +168,7 @@ func createBookkeeping(ctx context.Context, db *sql.DB) error {
 	}
 	// The drop and the rename are two statements apart, so all four run as one
 	// transaction: either both happen or neither does.
-	tx, err := writer.Begin(ctx, db)
+	tx, err := sqlwrite.Begin(ctx, db)
 	if err != nil {
 		return fmt.Errorf("what this index was migrated by: %w", err)
 	}
@@ -193,7 +193,7 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	if err := createBookkeeping(ctx, db); err != nil {
 		return err
 	}
-	tx, err := writer.Begin(ctx, db)
+	tx, err := sqlwrite.Begin(ctx, db)
 	if err != nil {
 		return err
 	}

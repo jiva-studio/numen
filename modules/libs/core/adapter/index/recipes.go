@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writer"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlwrite"
 )
 
 // DeleteOtherRecipeVectors takes out every vector kept under a recipe other than the
@@ -18,7 +18,7 @@ func (d *DB) DeleteOtherRecipeVectors(ctx context.Context, recipe string) (int64
 	if recipe == "" {
 		return 0, nil
 	}
-	res, err := writer.Exec(ctx, d.write, `DELETE FROM vectors WHERE recipe <> ?`, recipe)
+	res, err := sqlwrite.Exec(ctx, d.write, `DELETE FROM vectors WHERE recipe <> ?`, recipe)
 	if err != nil {
 		return 0, fmt.Errorf("forget the vectors of every other recipe: %w", err)
 	}
@@ -32,7 +32,7 @@ func (d *DB) DeleteOtherRecipeVectors(ctx context.Context, recipe string) (int64
 // VACUUM is that writing out, and it is the whole file: it is asked where a
 // person has already asked for the index to be built again.
 func (d *DB) Compact(ctx context.Context) error {
-	if _, err := writer.Exec(ctx, d.write, `VACUUM`); err != nil {
+	if _, err := sqlwrite.Exec(ctx, d.write, `VACUUM`); err != nil {
 		return fmt.Errorf("give back the space the index no longer holds: %w", err)
 	}
 	return nil

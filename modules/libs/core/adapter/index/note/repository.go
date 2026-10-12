@@ -14,7 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/writer"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/chunking"
@@ -54,7 +54,7 @@ func (r *Repository) WithChunkSizes(sizes chunking.Sizes, reads chunking.Legibil
 // exec runs a named statement and says which one failed. A bare driver error
 // from one of the many statements in a transaction is a schema mistake nobody
 // can locate.
-func exec(ctx context.Context, tx *writer.Transaction, name string, args ...any) error {
+func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
@@ -71,7 +71,7 @@ func (r *Repository) Save(
 	if len(notes) == 0 {
 		return nil
 	}
-	tx, err := writer.Begin(ctx, r.db)
+	tx, err := sqlwrite.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -93,7 +93,7 @@ func (r *Repository) Save(
 }
 
 func saveNote(
-	ctx context.Context, tx *writer.Transaction, vault int64, indexed domain.Note,
+	ctx context.Context, tx *sqlwrite.Transaction, vault int64, indexed domain.Note,
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) error {
 	n := indexed
@@ -139,7 +139,7 @@ func saveNote(
 // saveSourceAndNote stores the source and note rows and gives the source row,
 // clearing the derived rows of a source that already existed.
 func saveSourceAndNote(
-	ctx context.Context, tx *writer.Transaction, vault int64, n domain.Note,
+	ctx context.Context, tx *sqlwrite.Transaction, vault int64, n domain.Note,
 ) (int64, error) {
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
@@ -175,7 +175,7 @@ func saveSourceAndNote(
 }
 
 // insertLinks stores what a note points at, in the order it names them.
-func insertLinks(ctx context.Context, tx *writer.Transaction, row int64, links []domain.Link) error {
+func insertLinks(ctx context.Context, tx *sqlwrite.Transaction, row int64, links []domain.Link) error {
 	for i, l := range links {
 		if _, err := tx.ExecContext(ctx, stmt.Get("insert_link"), row, i,
 			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
@@ -304,7 +304,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 	if len(paths) == 0 {
 		return nil
 	}
-	tx, err := writer.Begin(ctx, r.db)
+	tx, err := sqlwrite.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
 	}
@@ -326,7 +326,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 }
 
 // removeNote deletes the note at a path, and its rows in the virtual tables.
-func removeNote(ctx context.Context, tx *writer.Transaction, vault int64, path string) error {
+func removeNote(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) error {
 	var row int64
 	err := tx.QueryRowContext(ctx, stmt.Get("identify"), vault, path).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
