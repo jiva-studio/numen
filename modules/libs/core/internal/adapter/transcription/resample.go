@@ -38,28 +38,8 @@ func resample(ctx context.Context, in []float32, from, to, workers int) ([]float
 		end := (worker + 1) * len(out) / workers
 		go func(start, end int) {
 			defer wg.Done()
-			for i := start; i < end; i++ {
-				// An hour of sound is tens of millions of these, and a person closing
-				// the window waits for whichever one it is on.
-				if (i-start)%(1<<16) == 0 {
-					if ctx.Err() != nil {
-						return
-					}
-				}
-				centre := float64(i) / ratio
-				first := max(int(math.Ceil(centre-reach)), 0)
-				last := min(int(math.Floor(centre+reach)), len(in)-1)
-
-				var sum, weight float64
-				for j := first; j <= last; j++ {
-					w := kernel.getValueAt(centre - float64(j))
-					sum += w * float64(in[j])
-					weight += w
-				}
-				if weight != 0 {
-					out[i] = float32(sum / weight)
-				}
-			}
+			span := resampleSpan{in: in, out: out, ratio: ratio, reach: reach, kernel: kernel}
+			span.fill(ctx, start, end)
 		}(start, end)
 	}
 	wg.Wait()
@@ -68,6 +48,38 @@ func resample(ctx context.Context, in []float32, from, to, workers int) ([]float
 		return nil, err
 	}
 	return out, nil
+}
+
+// resampleSpan is the signal read at one rate and written at another.
+type resampleSpan struct {
+	in, out []float32
+	ratio   float64
+	reach   float64
+	kernel  kernel
+}
+
+// fill works out the output samples from start up to end, and stops early when
+// the context ends. An hour of sound is tens of millions of these, and a person
+// closing the window waits for whichever one it is on.
+func (s resampleSpan) fill(ctx context.Context, start, end int) {
+	for i := start; i < end; i++ {
+		if (i-start)%(1<<16) == 0 && ctx.Err() != nil {
+			return
+		}
+		centre := float64(i) / s.ratio
+		first := max(int(math.Ceil(centre-s.reach)), 0)
+		last := min(int(math.Floor(centre+s.reach)), len(s.in)-1)
+
+		var sum, weight float64
+		for j := first; j <= last; j++ {
+			w := s.kernel.getValueAt(centre - float64(j))
+			sum += w * float64(s.in[j])
+			weight += w
+		}
+		if weight != 0 {
+			s.out[i] = float32(sum / weight)
+		}
+	}
 }
 
 // The kernel is read off a table this many steps to the input sample. An hour

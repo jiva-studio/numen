@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 	"runtime"
-	"sync"
 	"unsafe"
 
-	"github.com/ebitengine/purego"
 	ort "github.com/getcharzp/onnxruntime_purego"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -30,103 +27,6 @@ var (
 	speechScoreCStr = []byte("output\x00")
 	speechAfterCStr = []byte("stateN\x00")
 )
-
-var (
-	runnerMu sync.Mutex
-	ortRun   func(
-		session, runOptions, inputNames, inputValues, inputCount, outputNames, outputCount, outputValues uintptr,
-	) uintptr
-	ortGetTensorMutableData func(value, out uintptr) uintptr
-	ortReleaseValue         func(value uintptr)
-	ortReleaseStatus        func(status uintptr)
-	ortGetErrorCode         func(status uintptr) int32
-	ortGetErrorMessage      func(status uintptr) unsafe.Pointer
-)
-
-type ortAPIBase struct {
-	GetAPI           uintptr
-	GetVersionString uintptr
-}
-
-type ortAPITable struct {
-	_                    uintptr
-	GetErrorCode         uintptr
-	GetErrorMessage      uintptr
-	_                    [6]uintptr
-	Run                  uintptr
-	_                    [41]uintptr
-	GetTensorMutableData uintptr
-	_                    [41]uintptr
-	ReleaseStatus        uintptr
-	_                    [2]uintptr
-	ReleaseValue         uintptr
-}
-
-func init() {
-	onnxruntime.Register(func(at string) {
-		_ = initRunner(at)
-	})
-}
-
-func initRunner(at string) error {
-	runnerMu.Lock()
-	defer runnerMu.Unlock()
-	if ortRun != nil {
-		return nil
-	}
-	if at == "" {
-		return fmt.Errorf("onnx runtime not loaded")
-	}
-
-	handle, err := onnxruntime.OpenLibrary(at)
-	if err != nil {
-		return err
-	}
-
-	var ortGetAPIBase func() *ortAPIBase
-	purego.RegisterLibFunc(&ortGetAPIBase, handle, "OrtGetApiBase")
-	if ortGetAPIBase == nil {
-		return fmt.Errorf("symbol OrtGetApiBase not found")
-	}
-
-	apiBase := ortGetAPIBase()
-	if apiBase == nil {
-		return fmt.Errorf("OrtGetApiBase returned nil")
-	}
-
-	var getAPI func(uint32) *ortAPITable
-	purego.RegisterFunc(&getAPI, apiBase.GetAPI)
-	api := getAPI(23)
-	if api == nil || api.Run == 0 {
-		return fmt.Errorf("failed to get OrtApi")
-	}
-
-	purego.RegisterFunc(&ortRun, api.Run)
-	purego.RegisterFunc(&ortGetTensorMutableData, api.GetTensorMutableData)
-	purego.RegisterFunc(&ortReleaseValue, api.ReleaseValue)
-	purego.RegisterFunc(&ortReleaseStatus, api.ReleaseStatus)
-	purego.RegisterFunc(&ortGetErrorCode, api.GetErrorCode)
-	purego.RegisterFunc(&ortGetErrorMessage, api.GetErrorMessage)
-	return nil
-}
-
-func checkStatus(status uintptr) error {
-	if status == 0 {
-		return nil
-	}
-	defer ortReleaseStatus(status)
-	code := ortGetErrorCode(status)
-	msgPtr := ortGetErrorMessage(status)
-	var msg string
-	if msgPtr != nil {
-		var b []byte
-		for p := (*byte)(msgPtr); *p != 0; p = (*byte)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + 1)) {
-			b = append(b, *p)
-		}
-		msg = string(b)
-	}
-	return fmt.Errorf("onnxruntime error [code %d]: %s", code, msg)
-}
 
 // The model takes the recording in windows of this many samples, and carries
 // this much state from one to the next. At 16 kHz a window is 32 milliseconds,
@@ -198,130 +98,192 @@ func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	state := make([]float32, speechMemory)
-	rate := []int64{sampleRate}
-	window := make([]float32, speechWindow)
-
-	inputTensor, err := ort.NewTensor([]int64{1, speechWindow}, window)
+	pass, err := newSpeechPass(sound)
 	if err != nil {
 		return nil, err
 	}
-	defer inputTensor.Destroy()
+	defer pass.destroy()
 
-	stateTensor, err := ort.NewTensor([]int64{2, 1, speechMemory / 2}, state)
+	var out []float32
+	if calls, ok := getRawCalls(); ok && t.getSessionHandle() != 0 {
+		out, err = t.scoreNative(ctx, pass, calls)
+	} else {
+		out, err = t.scoreManaged(ctx, pass)
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer stateTensor.Destroy()
+	pass.keepAlive()
+	return out, nil
+}
 
-	rateTensor, err := ort.NewTensor(nil, rate)
-	if err != nil {
+// getSessionHandle is the runtime's handle of the speech model, or nothing when
+// there is none. A Session begins with its runtime handle.
+func (t *Transcriber) getSessionHandle() uintptr {
+	if t.segmenter == nil {
+		return 0
+	}
+	return *(*uintptr)(unsafe.Pointer(t.segmenter))
+}
+
+// speechPass is the buffers and tensors the speech model reads while one
+// recording is scored: the window being scored, the state carried from one
+// window to the next, and the rate.
+type speechPass struct {
+	sound  []float32
+	window []float32
+	state  []float32
+	rate   []int64
+	count  int
+
+	input, memory, sampling *ort.Value
+}
+
+// newSpeechPass makes the tensors over the buffers of a recording.
+func newSpeechPass(sound []float32) (*speechPass, error) {
+	p := &speechPass{
+		sound:  sound,
+		window: make([]float32, speechWindow),
+		state:  make([]float32, speechMemory),
+		rate:   []int64{sampleRate},
+		count:  (len(sound) + speechWindow - 1) / speechWindow,
+	}
+	var err error
+	if p.input, err = ort.NewTensor([]int64{1, speechWindow}, p.window); err != nil {
 		return nil, err
 	}
-	defer rateTensor.Destroy()
-
-	count := (len(sound) + speechWindow - 1) / speechWindow
-	out := make([]float32, 0, count)
-
-	var sessionHandle uintptr
-	if t.segmenter != nil {
-		sessionHandle = *(*uintptr)(unsafe.Pointer(t.segmenter))
+	if p.memory, err = ort.NewTensor([]int64{2, 1, speechMemory / 2}, p.state); err != nil {
+		p.destroy()
+		return nil, err
 	}
+	if p.sampling, err = ort.NewTensor(nil, p.rate); err != nil {
+		p.destroy()
+		return nil, err
+	}
+	return p, nil
+}
 
-	runnerMu.Lock()
-	runFn := ortRun
-	getMutableDataFn := ortGetTensorMutableData
-	releaseValFn := ortReleaseValue
-	runnerMu.Unlock()
+// destroy releases the tensors that were made.
+func (p *speechPass) destroy() {
+	for _, tensor := range []*ort.Value{p.input, p.memory, p.sampling} {
+		if tensor != nil {
+			tensor.Destroy()
+		}
+	}
+}
 
-	if runFn != nil && sessionHandle != 0 {
-		inputNames := [3]unsafe.Pointer{
+// load puts the samples of one window into the window buffer, filled out with
+// silence where the recording ends short of it.
+func (p *speechPass) load(i int) {
+	clear(p.window)
+	copy(p.window, p.sound[i*speechWindow:min((i+1)*speechWindow, len(p.sound))])
+}
+
+// keepAlive holds the buffers until the runs over them are done: the runtime
+// keeps a pointer into each of them and nothing else does.
+func (p *speechPass) keepAlive() {
+	runtime.KeepAlive(p.window)
+	runtime.KeepAlive(p.state)
+	runtime.KeepAlive(p.rate)
+}
+
+// scoreNative scores every window by calling the runtime directly.
+func (t *Transcriber) scoreNative(ctx context.Context, pass *speechPass, calls rawCalls) ([]float32, error) {
+	run := &speechRun{
+		calls:   calls,
+		session: t.getSessionHandle(),
+		inNames: [3]unsafe.Pointer{
 			unsafe.Pointer(&speechInputCStr[0]),
 			unsafe.Pointer(&speechStateCStr[0]),
 			unsafe.Pointer(&speechRateCStr[0]),
-		}
-		outputNames := [2]unsafe.Pointer{
+		},
+		outNames: [2]unsafe.Pointer{
 			unsafe.Pointer(&speechScoreCStr[0]),
 			unsafe.Pointer(&speechAfterCStr[0]),
-		}
-		inputHandles := [3]uintptr{
-			*(*uintptr)(unsafe.Pointer(inputTensor)),
-			*(*uintptr)(unsafe.Pointer(stateTensor)),
-			*(*uintptr)(unsafe.Pointer(rateTensor)),
-		}
-		var outputHandles [2]uintptr
-
-		for i := 0; i < count; i++ {
-			if err := ctx.Err(); err != nil {
-				return nil, err
-			}
-			clear(window)
-			copy(window, sound[i*speechWindow:min((i+1)*speechWindow, len(sound))])
-
-			outputHandles[0] = 0
-			outputHandles[1] = 0
-
-			status := runFn(
-				sessionHandle,
-				0,
-				uintptr(unsafe.Pointer(&inputNames[0])),
-				uintptr(unsafe.Pointer(&inputHandles[0])),
-				3,
-				uintptr(unsafe.Pointer(&outputNames[0])),
-				2,
-				uintptr(unsafe.Pointer(&outputHandles[0])),
-			)
-			if err := checkStatus(status); err != nil {
-				return nil, err
-			}
-
-			var scorePtr, statePtr unsafe.Pointer
-			status = getMutableDataFn(outputHandles[0], uintptr(unsafe.Pointer(&scorePtr)))
-			if err := checkStatus(status); err != nil {
-				releaseValFn(outputHandles[0])
-				releaseValFn(outputHandles[1])
-				return nil, err
-			}
-			status = getMutableDataFn(outputHandles[1], uintptr(unsafe.Pointer(&statePtr)))
-			if err := checkStatus(status); err != nil {
-				releaseValFn(outputHandles[0])
-				releaseValFn(outputHandles[1])
-				return nil, err
-			}
-
-			score := *(*float32)(scorePtr)
-			copy(state, unsafe.Slice((*float32)(statePtr), speechMemory))
-
-			releaseValFn(outputHandles[0])
-			releaseValFn(outputHandles[1])
-
-			out = append(out, score)
-		}
-	} else {
-		inputs := map[string]*ort.Value{
-			speechInput: inputTensor,
-			speechState: stateTensor,
-			speechRate:  rateTensor,
-		}
-		for i := 0; i < count; i++ {
-			if err := ctx.Err(); err != nil {
-				return nil, err
-			}
-			clear(window)
-			copy(window, sound[i*speechWindow:min((i+1)*speechWindow, len(sound))])
-
-			score, err := t.scoreWindow(inputs, state)
-			if err != nil {
-				return nil, err
-			}
-			out = append(out, score)
-		}
+		},
+		inputs: [3]uintptr{
+			*(*uintptr)(unsafe.Pointer(pass.input)),
+			*(*uintptr)(unsafe.Pointer(pass.memory)),
+			*(*uintptr)(unsafe.Pointer(pass.sampling)),
+		},
 	}
-
-	runtime.KeepAlive(window)
-	runtime.KeepAlive(state)
-	runtime.KeepAlive(rate)
+	out := make([]float32, 0, pass.count)
+	for i := range pass.count {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		pass.load(i)
+		score, err := run.score(pass.state)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, score)
+	}
 	return out, nil
+}
+
+// scoreManaged scores every window through the runtime's own binding.
+func (t *Transcriber) scoreManaged(ctx context.Context, pass *speechPass) ([]float32, error) {
+	inputs := map[string]*ort.Value{
+		speechInput: pass.input,
+		speechState: pass.memory,
+		speechRate:  pass.sampling,
+	}
+	out := make([]float32, 0, pass.count)
+	for i := range pass.count {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		pass.load(i)
+		score, err := t.scoreWindow(inputs, pass.state)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, score)
+	}
+	return out, nil
+}
+
+// speechRun is the speech model run window after window by the runtime's own
+// entry points, over the same inputs.
+type speechRun struct {
+	calls    rawCalls
+	session  uintptr
+	inNames  [3]unsafe.Pointer
+	outNames [2]unsafe.Pointer
+	inputs   [3]uintptr
+	outputs  [2]uintptr
+}
+
+// score runs the model once over the window in its input, and gives how sure
+// it is. The state it leaves behind is copied into state.
+func (r *speechRun) score(state []float32) (float32, error) {
+	r.outputs = [2]uintptr{}
+	status := r.calls.run(
+		r.session,
+		0,
+		uintptr(unsafe.Pointer(&r.inNames[0])),
+		uintptr(unsafe.Pointer(&r.inputs[0])),
+		3,
+		uintptr(unsafe.Pointer(&r.outNames[0])),
+		2,
+		uintptr(unsafe.Pointer(&r.outputs[0])),
+	)
+	if err := r.calls.check(status); err != nil {
+		return 0, err
+	}
+	defer r.calls.release(r.outputs[0])
+	defer r.calls.release(r.outputs[1])
+
+	var scorePtr, statePtr unsafe.Pointer
+	if err := r.calls.check(r.calls.getData(r.outputs[0], uintptr(unsafe.Pointer(&scorePtr)))); err != nil {
+		return 0, err
+	}
+	if err := r.calls.check(r.calls.getData(r.outputs[1], uintptr(unsafe.Pointer(&statePtr)))); err != nil {
+		return 0, err
+	}
+	copy(state, unsafe.Slice((*float32)(statePtr), speechMemory))
+	return *(*float32)(scorePtr), nil
 }
 
 // scoreWindow is one window: how sure the model is, and the state it leaves behind.
@@ -330,45 +292,32 @@ func (t *Transcriber) scoreWindow(inputs map[string]*ort.Value, dst []float32) (
 	if err != nil {
 		return 0, err
 	}
-
-	said, ok := out[speechScore]
-	if !ok {
+	defer func() {
 		for _, v := range out {
 			v.Destroy()
 		}
+	}()
+
+	said, ok := out[speechScore]
+	if !ok {
 		return 0, fmt.Errorf("the speech model answered with %v and not %s", getNames(out), speechScore)
 	}
 	score, err := ort.GetTensorData[float32](said)
 	if err != nil {
-		for _, v := range out {
-			v.Destroy()
-		}
 		return 0, err
 	}
 	if len(score) == 0 {
-		for _, v := range out {
-			v.Destroy()
-		}
 		return 0, fmt.Errorf("the speech model answered with no score")
 	}
 	after, ok := out[speechAfter]
 	if !ok {
-		for _, v := range out {
-			v.Destroy()
-		}
 		return 0, fmt.Errorf("the speech model answered with %v and not %s", getNames(out), speechAfter)
 	}
 	raw, err := ort.GetTensorData[float32](after)
 	if err != nil {
-		for _, v := range out {
-			v.Destroy()
-		}
 		return 0, err
 	}
 	copy(dst, raw)
-	for _, v := range out {
-		v.Destroy()
-	}
 	return score[0], nil
 }
 
@@ -385,6 +334,26 @@ type span struct {
 // cut a sentence in half. Each is then widened by pad at both ends, and two
 // that now meet are one.
 func getSpans(scores []float32, threshold float32, silence, pad, longest, shortest int) []span {
+	out := findSpeechSpans(scores, threshold, silence)
+	wider := widenSpans(out, pad, len(scores))
+
+	var cut []span
+	for _, one := range wider {
+		cut = append(cut, splitLongSpan(one, scores, longest)...)
+	}
+
+	out = out[:0]
+	for _, one := range cut {
+		if one.To-one.From >= shortest {
+			out = append(out, one)
+		}
+	}
+	return out
+}
+
+// findSpeechSpans are the runs of windows scored at the threshold or above,
+// each closed by more than silence quiet windows after it.
+func findSpeechSpans(scores []float32, threshold float32, silence int) []span {
 	var out []span
 	open, last := -1, -1
 	for i, score := range scores {
@@ -403,30 +372,23 @@ func getSpans(scores []float32, threshold float32, silence, pad, longest, shorte
 	if open >= 0 {
 		out = append(out, span{open, last + 1})
 	}
+	return out
+}
 
+// widenSpans widens each span by pad at both ends, within the count of
+// windows, and joins two that now meet.
+func widenSpans(found []span, pad, count int) []span {
 	var wider []span
-	for _, one := range out {
+	for _, one := range found {
 		one.From = max(one.From-pad, 0)
-		one.To = min(one.To+pad, len(scores))
+		one.To = min(one.To+pad, count)
 		if n := len(wider); n > 0 && one.From <= wider[n-1].To {
 			wider[n-1].To = one.To
 			continue
 		}
 		wider = append(wider, one)
 	}
-
-	var cut []span
-	for _, one := range wider {
-		cut = append(cut, splitLongSpan(one, scores, longest)...)
-	}
-
-	out = out[:0]
-	for _, one := range cut {
-		if one.To-one.From >= shortest {
-			out = append(out, one)
-		}
-	}
-	return out
+	return wider
 }
 
 // splitLongSpan cuts a span that runs on too long into pieces the model is given
