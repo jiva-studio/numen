@@ -97,7 +97,7 @@ func saveNote(
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) error {
 	n := indexed
-	row, err := saveNoteRow(ctx, tx, vault, n)
+	row, err := saveSourceAndNote(ctx, tx, vault, n)
 	if err != nil {
 		return err
 	}
@@ -136,19 +136,16 @@ func saveNote(
 	return nil
 }
 
-// saveNoteRow stores the source and the note rows, and gives the row of the
-// source. A source row that survives a re-save has its derived rows cleared by
-// hand, because nothing cascades.
-func saveNoteRow(
+// saveSourceAndNote stores the source and note rows and gives the source row,
+// clearing the derived rows of a source that already existed.
+func saveSourceAndNote(
 	ctx context.Context, tx *writing.Transaction, vault int64, n domain.Note,
 ) (int64, error) {
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
-		// The parser promises that a file which cannot be understood is still
-		// indexed. Frontmatter that cannot be stored is the same case: the note
-		// goes in without it, and the reason is recorded beside the note rather
-		// than ending the scan of the whole vault.
+		// Frontmatter that cannot be stored leaves the note indexed without it,
+		// and the reason is recorded as a problem of the note.
 		problem = strings.TrimSpace(problem + "\n" + storeErr)
 	}
 
@@ -328,9 +325,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 	return nil
 }
 
-// removeNote deletes the note at a path, and nothing where there is none. The
-// full-text index, the index of names and the vector index are all virtual
-// tables, and a cascade reaches none of them.
+// removeNote deletes the note at a path, and its rows in the virtual tables.
 func removeNote(ctx context.Context, tx *writing.Transaction, vault int64, path string) error {
 	var row int64
 	err := tx.QueryRowContext(ctx, stmt.Get("identify"), vault, path).Scan(&row)

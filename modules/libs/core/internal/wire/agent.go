@@ -48,16 +48,16 @@ func StreamAgentTask(
 			if !working {
 				return nil
 			}
-			if done, err := relayStep(stream, step); err != nil || done {
+			if done, err := sendStep(stream, step); err != nil || done {
 				return err
 			}
 		}
 	}
 }
 
-// relayStep writes a step to the stream in the schema's words, and says whether
+// sendStep writes a step to the stream in the schema's words, and says whether
 // the step was the last of the work.
-func relayStep(stream *connect.ServerStream[v1.AskAgentResponse], step port.Step) (bool, error) {
+func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step port.Step) (bool, error) {
 	for _, out := range convertSteps(step) {
 		if err := stream.Send(out); err != nil {
 			return false, err

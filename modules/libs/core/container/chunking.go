@@ -60,7 +60,7 @@ func (c Config) ReadWholeVault(
 	ctx context.Context, db *Index, embedder port.Embedder, v domain.Vault,
 ) (vault.ReadWholeVault, error) {
 	if embedder != nil {
-		if err := c.fitVectors(ctx, db, embedder.GetModel()); err != nil {
+		if err := c.syncVectorIndex(ctx, db, embedder.GetModel()); err != nil {
 			return vault.ReadWholeVault{}, err
 		}
 	}
@@ -75,13 +75,9 @@ func (c Config) ReadWholeVault(
 	return vault.NewReadWholeVault(c.Scan(db), books, vectors), nil
 }
 
-// fitVectors makes the vector index hold what the model makes. The coarse
-// index is built for one width, and the width is the model's.
-//
-// Building the index again is where the vectors of a recipe nobody asks for any
-// more go. Every other run keeps them, so a model set back is a model whose
-// vectors are all still here.
-func (c Config) fitVectors(ctx context.Context, db *Index, model port.EmbeddingModel) error {
+// syncVectorIndex fits the vector index to the model's width, and on a rebuild
+// drops the vectors of other recipes.
+func (c Config) syncVectorIndex(ctx context.Context, db *Index, model port.EmbeddingModel) error {
 	if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
 		return err
 	}
@@ -91,8 +87,7 @@ func (c Config) fitVectors(ctx context.Context, db *Index, model port.EmbeddingM
 	if _, err := db.DeleteVectorsOfOtherRecipes(ctx, model.Recipe()); err != nil {
 		return err
 	}
-	// The rows are gone whether or not the file gives its pages back, so a
-	// vacuum that could not run is said and not waited for.
+	// A failed compaction is reported and the rows stay deleted.
 	if err := db.Compact(ctx); err != nil {
 		c.handleError(err)
 	}

@@ -157,16 +157,15 @@ func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 
 	for _, one := range held.pairs {
 		if one.key == at[0] {
-			return renamePair(object, held, one, at, to)
+			return renameInMember(object, held, one, at, to)
 		}
 	}
 
 	return object, false
 }
 
-// renamePair renames the member at the end of the path, inside the section the
-// path leads through, and says whether it did.
-func renamePair(object []byte, held shape, one member, at []string, to string) ([]byte, bool) {
+// renameInMember renames the member the path ends at, and says whether it did.
+func renameInMember(object []byte, held shape, one member, at []string, to string) ([]byte, bool) {
 	if len(at) > 1 {
 		section, done := renameMember(object[one.from:one.to], at[1:], to)
 		if !done {
@@ -302,10 +301,7 @@ func parseObjectShape(object []byte) (shape, error) {
 	return held, nil
 }
 
-// readMember reads the next member of the object the decoder stands in. A name
-// is read up to its closing quote, so the quoted name ends where the decoder
-// now stands, and it is the file's own bytes only where they are the plain
-// quoting of it.
+// readMember reads the next member of the object the decoder is in.
 func readMember(decoder *json.Decoder, object []byte, held shape) (member, error) {
 	name, err := decoder.Token()
 	if err != nil {
