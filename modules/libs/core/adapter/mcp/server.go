@@ -12,7 +12,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
@@ -103,19 +102,19 @@ type Vaults struct {
 	Opens func(context.Context, domain.Vault) error
 }
 
-// Cards is the decks and stencils a vault is arranged into. Read takes a deck
-// or a stencil, List the stencils the vault holds, Write puts a deck back,
-// Create makes a stencil and RenameField gives one of a stencil's fields a
-// different name in every card it cuts.
+// Cards is the use cases that read and change the decks and stencils of a vault.
 type Cards struct {
-	Read        cards.Read
-	List        cards.List
-	Write       cards.Write
-	Create      cards.Create
-	RenameField cards.RenameField
-	// DeckEdit holds a deck's body open so that one card can be changed and every
-	// other byte left as it arrived.
-	DeckEdit func(body string) *format.DeckFile
+	GetCardPage     cards.GetCardPage
+	AddCard         cards.AddCard
+	EditCard        cards.EditCard
+	RemoveCardValue cards.RemoveCardValue
+	RemoveCard      cards.RemoveCard
+	AddSection      cards.AddSection
+	RenameSection   cards.RenameSection
+	RemoveSection   cards.RemoveSection
+	List            cards.List
+	Create          cards.Create
+	RenameField     cards.RenameField
 }
 
 // Sources holds the use cases of the tools for the documents a vault keeps beside its

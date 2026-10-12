@@ -7,7 +7,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
@@ -124,56 +123,24 @@ func readCards(ctx context.Context, core Core, in cardReadInput) (cardReadOutput
 	if in.Mark == "" && in.Limit > maxCards {
 		return cardReadOutput{}, fmt.Errorf("read at most %d cards at a time", maxCards)
 	}
-	deckContents, err := readDeck(ctx, core, in.Path)
+	limit := in.Limit
+	if limit <= 0 {
+		limit = maxCards
+	}
+	read, err := core.Cards.GetCardPage.Execute(ctx, core.getCurrentVault().Vault, cards.Query{
+		Path: in.Path, From: in.From, Limit: limit, Mark: in.Mark, Fields: in.Fields,
+	})
 	if err != nil {
 		return cardReadOutput{}, err
 	}
 	res := cardReadOutput{
-		Total:       len(deckContents.Body.Cards),
-		Faults:      faults(deckContents.Body.Problems),
-		Fingerprint: fingerprintOf(deckContents.Fingerprint),
+		Sections:    read.Sections,
+		Total:       read.Total,
+		Faults:      faults(read.Problems),
+		Fingerprint: fingerprintOf(read.Fingerprint),
 	}
-	for _, s := range deckContents.Body.Sections {
-		res.Sections = append(res.Sections, s.Name)
-	}
-	if in.Mark != "" {
-		at, err := index(deckContents.Body.Cards, in.Mark)
-		if err != nil {
-			return cardReadOutput{}, err
-		}
-		res.Cards = append(res.Cards, keepFields(newCard(deckContents.Body.Cards[at]), in.Fields))
-		return res, nil
-	}
-	for _, card := range getCardRange(deckContents.Body.Cards, in.From, in.Limit) {
-		res.Cards = append(res.Cards, keepFields(newCard(card), in.Fields))
+	for _, card := range read.Cards {
+		res.Cards = append(res.Cards, newCard(card))
 	}
 	return res, nil
-}
-
-// getCardRange returns at most limit cards starting at from, clamped to the deck.
-// A limit of zero or less means the maximum one call may read.
-func getCardRange(deck []format.Card, from, limit int) []format.Card {
-	if limit <= 0 {
-		limit = maxCards
-	}
-	from = min(max(from, 0), len(deck))
-	return deck[from:min(from+limit, len(deck))]
-}
-
-// readDeck reads the deck at path in the current vault, and refuses a file
-// that is not a deck.
-func readDeck(ctx context.Context, core Core, path string) (cards.DeckContents, error) {
-	return readDeckIn(ctx, core, core.getCurrentVault().Vault, path)
-}
-
-// readDeckIn reads the deck at path in v, and refuses a file that is not a deck.
-func readDeckIn(ctx context.Context, core Core, v domain.Vault, path string) (cards.DeckContents, error) {
-	contents, err := core.Cards.Read.Deck(ctx, v, path)
-	if err != nil {
-		return cards.DeckContents{}, err
-	}
-	if why := whyNotADeck(contents); why != "" {
-		return cards.DeckContents{}, fmt.Errorf("%s: %s", path, why)
-	}
-	return contents, nil
 }

@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
@@ -86,17 +85,22 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 		return err
 	}
 	queries := db.Queries()
-	cutting := cfg.Cards(queries, db.Links(), index)
+	cards := cfg.Cards(queries, db.Links(), index)
 	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 
 	core := mcp.Core{
 		Cards: mcp.Cards{
-			Read:        cutting.Read,
-			List:        cutting.List,
-			Write:       cutting.Write,
-			Create:      cutting.Create,
-			RenameField: cutting.Rename.WithMaxDecksPerRename(deckcases.MaxDecksPerRename),
-			DeckEdit:    format.OpenDeckBody,
+			GetCardPage:     cards.GetCardPage,
+			List:            cards.List,
+			Create:          cards.Create,
+			RenameField:     cards.Rename.WithMaxDecksPerRename(deckcases.MaxDecksPerRename),
+			AddCard:         cards.AddCard,
+			EditCard:        cards.EditCard,
+			RemoveCardValue: cards.RemoveCardValue,
+			RemoveCard:      cards.RemoveCard,
+			AddSection:      cards.AddSection,
+			RenameSection:   cards.RenameSection,
+			RemoveSection:   cards.RemoveSection,
 		},
 
 		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,

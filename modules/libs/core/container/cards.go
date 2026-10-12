@@ -29,11 +29,23 @@ func (c Config) Cards(
 	writers := c.VaultWriters()
 	now := c.Clock()
 
+	read := cards.NewRead(readers, links)
+	write := cards.NewWrite(readers, writers, links, index, now)
+
 	return cards.Scenarios{
-		Read:   cards.NewRead(readers, links),
+		Read:   read,
 		List:   cards.NewList(readers, notes),
-		Write:  cards.NewWrite(readers, writers, links, index, now),
+		Write:  write,
 		Create: cards.NewCreate(writers, index, now),
 		Rename: cards.NewRenameField(readers, writers, notes, links, index, now),
+
+		GetCardPage:     cards.NewGetCardPage(read),
+		AddCard:         cards.NewAddCard(read, write),
+		EditCard:        cards.NewEditCard(read, write),
+		RemoveCardValue: cards.NewRemoveCardValue(read, write),
+		RemoveCard:      cards.NewRemoveCard(read, write),
+		AddSection:      cards.NewAddSection(read, write),
+		RenameSection:   cards.NewRenameSection(read, write),
+		RemoveSection:   cards.NewRemoveSection(read, write),
 	}
 }

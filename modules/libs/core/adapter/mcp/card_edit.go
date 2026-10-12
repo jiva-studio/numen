@@ -7,7 +7,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
@@ -28,6 +27,21 @@ func checkCardSize(vs []FieldValue) error {
 		return fmt.Errorf("a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 	}
 	return nil
+}
+
+// writeDeck presents the fingerprint the caller read to one edit of the deck at path.
+func writeDeck(
+	core Core, path, fingerprint string, edit func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error),
+) (WriteOutcome, error) {
+	read, err := parseFingerprint(fingerprint)
+	if err != nil {
+		return WriteOutcome{}, err
+	}
+	edited, err := edit(core.getCurrentVault().Vault, cards.DeckVersion{Path: path, Fingerprint: read})
+	if err != nil {
+		return WriteOutcome{}, err
+	}
+	return newWriteOutcome(path, edited), nil
 }
 
 type cardAddInput struct {
@@ -61,33 +75,17 @@ func writeCardAdd(ctx context.Context, core Core, in cardAddInput) (WriteOutcome
 	if err := checkCardSize(in.Values); err != nil {
 		return WriteOutcome{}, err
 	}
-	// position is the index of the new card in the deck.
-	position := 0
-	written, given, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-		func(contents cards.DeckContents, file *format.DeckFile) error {
-			at, err := insertCard(contents, file, in)
-			position = at
-			return err
-		})
+	var added cards.AddedCard
+	written, err := writeDeck(core, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+		var err error
+		added, err = core.Cards.AddCard.Execute(ctx, v, at, in.Stencil, values(in.Values), in.Section)
+		return added.EditResult, err
+	})
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	written.Mark = getMark(given, position)
+	written.Mark = added.Mark
 	return written, nil
-}
-
-// insertCard writes the card at the end of the deck, or at the end of the
-// section the input names, and returns its index.
-func insertCard(contents cards.DeckContents, file *format.DeckFile, in cardAddInput) (int, error) {
-	card := format.Card{StencilLink: in.Stencil, Values: values(in.Values)}
-	if in.Section == nil {
-		return len(contents.Body.Cards), file.AddCard(card)
-	}
-	at, err := findSectionEnd(contents.Body, *in.Section)
-	if err != nil {
-		return 0, err
-	}
-	return at, file.AddCardUnder(*in.Section, card)
 }
 
 type cardEditInput struct {
@@ -121,31 +119,9 @@ func writeCardEdit(ctx context.Context, core Core, in cardEditInput) (WriteOutco
 	if err := checkCardSize(in.Values); err != nil {
 		return WriteOutcome{}, err
 	}
-	written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-		func(contents cards.DeckContents, file *format.DeckFile) error {
-			return setCardValues(contents, file, in)
-		})
-	return written, err
-}
-
-// setCardValues sets the stencil and values from the input on the card with the given mark.
-func setCardValues(contents cards.DeckContents, file *format.DeckFile, in cardEditInput) error {
-	card := domain.CardID(in.Mark)
-	// The card must exist even when no value changes.
-	if _, err := index(contents.Body.Cards, in.Mark); err != nil {
-		return err
-	}
-	if in.Stencil != "" {
-		if err := file.SetStencil(card, in.Stencil); err != nil {
-			return err
-		}
-	}
-	for _, v := range in.Values {
-		if err := file.SetValue(card, v.Field, v.Text); err != nil {
-			return err
-		}
-	}
-	return nil
+	return writeDeck(core, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+		return core.Cards.EditCard.Execute(ctx, v, at, in.Mark, in.Stencil, values(in.Values))
+	})
 }
 
 type cardValueRemoveInput struct {
@@ -169,11 +145,9 @@ func addCardValueRemove(server *sdk.Server, core Core) {
 			"mark `card_read` gives it, the fingerprint from `card_read` is required, and " +
 			"a write lands only on the deck that fingerprint names.",
 	}, newHandler(func(ctx context.Context, in cardValueRemoveInput) (WriteOutcome, error) {
-		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-			func(_ cards.DeckContents, file *format.DeckFile) error {
-				return file.RemoveValue(domain.CardID(in.Mark), in.Field)
-			})
-		return written, err
+		return writeDeck(core, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+			return core.Cards.RemoveCardValue.Execute(ctx, v, at, in.Mark, in.Field)
+		})
 	}))
 }
 
@@ -196,11 +170,9 @@ func addCardRemove(server *sdk.Server, core Core) {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, newHandler(func(ctx context.Context, in cardRemoveInput) (WriteOutcome, error) {
-		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-			func(_ cards.DeckContents, file *format.DeckFile) error {
-				return file.RemoveCard(domain.CardID(in.Mark))
-			})
-		return written, err
+		return writeDeck(core, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+			return core.Cards.RemoveCard.Execute(ctx, v, at, in.Mark)
+		})
 	}))
 }
 
@@ -221,11 +193,9 @@ func addCardSectionAdd(server *sdk.Server, core Core) {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, newHandler(func(ctx context.Context, in cardSectionAddInput) (WriteOutcome, error) {
-		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-			func(_ cards.DeckContents, file *format.DeckFile) error {
-				return file.AddSection(format.Section{Name: in.Name})
-			})
-		return written, err
+		return writeDeck(core, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+			return core.Cards.AddSection.Execute(ctx, v, at, in.Name)
+		})
 	}))
 }
 
@@ -248,11 +218,9 @@ func addCardSectionRename(server *sdk.Server, core Core) {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, newHandler(func(ctx context.Context, in cardSectionRenameInput) (WriteOutcome, error) {
-		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-			func(_ cards.DeckContents, file *format.DeckFile) error {
-				return file.RenameSection(in.Section, in.Name)
-			})
-		return written, err
+		return writeDeck(core, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+			return core.Cards.RenameSection.Execute(ctx, v, at, in.Section, in.Name)
+		})
 	}))
 }
 
@@ -275,10 +243,8 @@ func addCardSectionRemove(server *sdk.Server, core Core) {
 			"`sections`. The fingerprint from `card_read` is required, and a write lands " +
 			"only on the deck that fingerprint names.",
 	}, newHandler(func(ctx context.Context, in cardSectionRemoveInput) (WriteOutcome, error) {
-		written, _, err := changeDeck(ctx, core, in.Path, in.Fingerprint,
-			func(_ cards.DeckContents, file *format.DeckFile) error {
-				return file.RemoveSection(in.Section)
-			})
-		return written, err
+		return writeDeck(core, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+			return core.Cards.RemoveSection.Execute(ctx, v, at, in.Section)
+		})
 	}))
 }
