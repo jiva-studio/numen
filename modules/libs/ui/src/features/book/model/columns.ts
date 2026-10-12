@@ -17,7 +17,7 @@ import {
   clamp,
   columnHeight,
   columnWidth,
-  columnsIn,
+  countColumns,
   countSpreads,
   type Flow,
 } from '../lib/spread'
@@ -29,18 +29,18 @@ import type { SettledBookProps } from '../lib/props'
  * box holding it is set in another. A line height the browser will put no
  * number to leaves the column at the height of the area.
  */
-const lineOf = (text: HTMLElement): number => {
+const getLine = (text: HTMLElement): number => {
   const run = text.querySelector<HTMLElement>('p') ?? text
   const parsedHeight = Number.parseFloat(getComputedStyle(run).lineHeight)
   return Number.isFinite(parsedHeight) ? parsedHeight : 0
 }
 
-/** `edgeOf` is handed on to the marks, which is what reads it. */
+/** `getEdge` is handed on to the marks, which is what reads it. */
 export function useBookColumns(
   area: Readonly<ShallowRef<HTMLElement | null>>,
   paper: Readonly<ShallowRef<HTMLElement | null>>,
   props: SettledBookProps,
-  edgeOf: (of: HTMLElement) => number,
+  getEdge: (of: HTMLElement) => number,
 ) {
   /** How large the text is set, held inside what a book may be read at. */
   const textSize = computed(() => clamp(props.textSize, SMALLEST, LARGEST))
@@ -51,7 +51,7 @@ export function useBookColumns(
   /** How far the columns run, taken once they have been laid out. */
   const along = ref(0)
 
-  const { marks, gather, placeAt, markRuns } = useBookMarks(paper, props, edgeOf)
+  const { marks, gather, findFragmentOffset, markRuns } = useBookMarks(paper, props, getEdge)
 
   /**
    * Whether the reading area has been measured. A book is turned and never
@@ -59,7 +59,7 @@ export function useBookColumns(
    */
   const isMeasured = computed(() => viewport.value.width > 0 && viewport.value.height > 0)
 
-  const columns = computed(() => columnsIn(viewport.value.width, textSize.value))
+  const columns = computed(() => countColumns(viewport.value.width, textSize.value))
 
   const flow = computed<Flow>(() => ({
     along: along.value,
@@ -92,7 +92,7 @@ export function useBookColumns(
    * reaches, so the length is asked of the box the columns are set in.
    */
   const readColumns = (box: HTMLElement, text: HTMLElement): void => {
-    text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, lineOf(text))}px`)
+    text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)
     along.value = text.scrollWidth
     gather()
   }
@@ -107,7 +107,7 @@ export function useBookColumns(
     marks,
     measure,
     readColumns,
-    placeAt,
+    findFragmentOffset,
     markRuns,
   }
 }

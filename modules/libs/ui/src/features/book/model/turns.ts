@@ -12,7 +12,7 @@ import {
   getSpreadStart,
   inFront,
   leftInDocument,
-  pagesOf,
+  createPages,
   type Flow,
   type Mark,
 } from '../lib/spread'
@@ -34,7 +34,7 @@ export function useBookTurns(
 
   /** The spread in front, as a page of the book, and how many there are. */
   const front = computed(() =>
-    pagesOf(props.book, props.span, flow.value, standing.value, marks.value),
+    createPages(props.book, props.span, flow.value, standing.value, marks.value),
   )
 
   /** How much of the chapter in front is still to come, which is measured exactly. */

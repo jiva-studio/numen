@@ -3,7 +3,7 @@
 const encoder = new TextEncoder()
 
 /** How many bytes a text comes to. */
-export function bytesIn(text: string): number {
+export function countBytes(text: string): number {
   return encoder.encode(text).length
 }
 
@@ -14,7 +14,7 @@ export function bytesIn(text: string): number {
  * character of Devanagari is three bytes and one of Cyrillic is two, so the two
  * numbers part company on the first word of the corpus this reads.
  */
-export function unitsIn(text: string, bytes: number): number {
+export function getUnitOffset(text: string, bytes: number): number {
   let counted = 0
   let units = 0
   for (const character of text) {

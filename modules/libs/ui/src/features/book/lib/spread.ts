@@ -48,7 +48,7 @@ export const NARROWEST = 448
  * How many columns a reading area holds. Two once each of them can be set at
  * the narrowest a column is read at, and one until then.
  */
-export function columnsIn(width: number, size: number): number {
+export function countColumns(width: number, size: number): number {
   return width >= 2 * (NARROWEST * size + GAP) ? 2 : 1
 }
 
@@ -93,7 +93,7 @@ export function columnsInAll(flow: Flow): number {
  * columns out in whole device pixels, so that half gap is also what a run
  * measured a fraction of a pixel short of its own column is read against.
  */
-export function columnAt(flow: Flow, x: number): number {
+export function getColumn(flow: Flow, x: number): number {
   const pitch = columnPitch(flow)
   if (pitch <= 0) return 0
   return Math.max(Math.floor(x / pitch), 0)
@@ -107,7 +107,7 @@ export function columnAt(flow: Flow, x: number): number {
 export function countFilledColumns(marks: readonly Mark[], flow: Flow): number {
   if (columnWidth(flow) <= 0 || marks.length === 0) return 0
   let last = 0
-  for (const mark of marks) last = Math.max(last, columnAt(flow, mark.x))
+  for (const mark of marks) last = Math.max(last, getColumn(flow, mark.x))
   return last + 1
 }
 
@@ -135,7 +135,7 @@ export function leftInDocument(flow: Flow, spread: number, marks: readonly Mark[
  * carried over it — an estimate, and the only one that costs nothing. It moves
  * when the reading area does, which is what a page measured on the screen does.
  */
-export function pagesOf(
+export function createPages(
   book: Span,
   document: Span,
   flow: Flow,
@@ -172,10 +172,10 @@ export function getSpreadStart(flow: Flow, spread: number): number {
 }
 
 /** Which spread a place along the columns falls in. */
-export function spreadAt(flow: Flow, x: number): number {
+export function getSpread(flow: Flow, x: number): number {
   if (columnWidth(flow) <= 0) return 0
   const last = Math.max(countSpreads(flow) - 1, 0)
-  return Math.min(Math.floor(columnAt(flow, x) / flow.columns), last)
+  return Math.min(Math.floor(getColumn(flow, x) / flow.columns), last)
 }
 
 /**
@@ -184,7 +184,7 @@ export function spreadAt(flow: Flow, x: number): number {
  */
 export function inFront(marks: readonly Mark[], flow: Flow, spread: number): number | undefined {
   for (const mark of marks) {
-    if (spreadAt(flow, mark.x) === spread) return mark.at
+    if (getSpread(flow, mark.x) === spread) return mark.at
   }
   return undefined
 }
@@ -196,7 +196,7 @@ export function findSpreadAt(marks: readonly Mark[], flow: Flow, at: number): nu
     if (mark.at > at) break
     found = mark
   }
-  return found ? spreadAt(flow, found.x) : 0
+  return found ? getSpread(flow, found.x) : 0
 }
 
 /** How large the text may be set. */

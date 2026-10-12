@@ -83,7 +83,7 @@ const reading =
     `,
   })
 
-const listOf = (canvasElement: HTMLElement) =>
+const getList = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.contents__list') as HTMLElement
 
 const getStandingLine = (canvasElement: HTMLElement) =>
@@ -103,7 +103,7 @@ export const ANameLongerThanThePanel: Story = {
   decorators: [panel],
   render: reading(NAMED),
   play: async ({ canvasElement }) => {
-    const list = listOf(canvasElement)
+    const list = getList(canvasElement)
     const long = within(canvasElement).getByText(/Кхандавы/)
 
     await expect(long.scrollWidth).toBeGreaterThan(long.clientWidth)
@@ -119,7 +119,7 @@ export const AllTheWayThrough: Story = {
   decorators: [panel],
   render: reading(PAGES),
   play: async ({ canvasElement }) => {
-    const list = listOf(canvasElement)
+    const list = getList(canvasElement)
 
     await expect(list.scrollHeight).toBeGreaterThan(list.clientHeight)
     await expect(list.getBoundingClientRect().height).toBeLessThanOrEqual(
@@ -136,7 +136,7 @@ export const BroughtToWhereTheReadingIs: Story = {
   decorators: [panel],
   render: reading(PAGES, 1_200 * 1_024),
   play: async ({ canvasElement }) => {
-    const list = listOf(canvasElement)
+    const list = getList(canvasElement)
     await expect(getStandingLine(canvasElement)?.textContent?.trim()).toBe('Page 1')
 
     await userEvent.click(within(canvasElement).getByText('Read on'))

@@ -7,7 +7,7 @@
  * Cyrillic carries the numbers such a book really carries. Storybook's
  * furniture; it ships to nobody.
  */
-import { bytesIn } from '../lib/bytes'
+import { countBytes } from '../lib/bytes'
 import type { Span } from '@/shared/lib/span'
 
 /** One run of a document. */
@@ -34,7 +34,7 @@ const escapeHtml = (text: string): string =>
  * with no text of its own — a picture, a table — carries the offset the run
  * after it begins at and adds nothing to the stream.
  */
-export function chapterOf(runs: readonly Run[], from = 0): Chapter {
+export function createChapter(runs: readonly Run[], from = 0): Chapter {
   let at = from
   const written: string[] = []
   for (const run of runs) {
@@ -42,7 +42,7 @@ export function chapterOf(runs: readonly Run[], from = 0): Chapter {
     written.push(
       `<${run.tag} data-offset="${at}">${escapeHtml(text)}${run.inside ?? ''}</${run.tag}>`,
     )
-    at += bytesIn(text)
+    at += countBytes(text)
   }
   return { markup: written.join('\n'), span: { from, to: at } }
 }

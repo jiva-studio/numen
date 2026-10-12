@@ -49,20 +49,20 @@ const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
 
 /** The near edge of a box, which every place across the columns is read from. */
-const edgeOf = (of: HTMLElement) => of.getBoundingClientRect().left
+const getEdge = (of: HTMLElement) => of.getBoundingClientRect().left
 
 const links = createBookLinks(props, {
   reportMove: (at) => emit('move', at),
   reportFollow: (path) => emit('follow', path),
 })
 
-const layout = useBookLayout(area, paper, props, (at) => emit('move', at), links.takeLed, edgeOf)
+const layout = useBookLayout(area, paper, props, (at) => emit('move', at), links.takeLed, getEdge)
 const { isMeasured, setting, spreadCount, front, leftInChapter } = layout
 
-const hand = useBookHand(area, paper, layout.turn, edgeOf)
+const hand = useBookHand(area, paper, layout.turn, getEdge)
 
 /* -------------------------------- Handlers -------------------------------- */
-const follow = (press: MouseEvent) => links.follow(press, layout.placeAt)
+const follow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)
 
 /**
  * A key the tab caught. Turning belongs to whatever holds the book, so the

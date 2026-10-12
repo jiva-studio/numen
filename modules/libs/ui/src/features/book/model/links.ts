@@ -6,7 +6,7 @@
  * A link to another document of the book names a place inside markup that has
  * not been drawn yet, so where it led is held until that document is there.
  */
-import { isOutwardHref, placeIn, type BookLink } from '../lib/link'
+import { isOutwardHref, parseBookLink, type BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
 /** What the reader says when a link is followed. */
@@ -27,8 +27,11 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
     return place
   }
 
-  /** `placeAt` is the offset a place named inside the drawn document stands at. */
-  const follow = (press: MouseEvent, placeAt: (fragment: string) => number | undefined) => {
+  /** `findFragmentOffset` is the offset a place named inside the drawn document stands at. */
+  const follow = (
+    press: MouseEvent,
+    findFragmentOffset: (fragment: string) => number | undefined,
+  ) => {
     const link = (press.target as Element | null)?.closest?.('a[href]')
     if (!link) return
     // `a[href]` matches only anchors that carry the attribute.
@@ -37,13 +40,13 @@ export function createBookLinks(props: SettledBookProps, listeners: BookLinkSaid
     press.preventDefault()
     if (isOutwardHref(href)) return
 
-    const place = placeIn(href)
+    const place = parseBookLink(href)
     if (place.path !== '' && place.path !== props.path) {
       led = place
       listeners.reportFollow(place.path)
       return
     }
-    listeners.reportMove(placeAt(place.fragment) ?? props.span.from)
+    listeners.reportMove(findFragmentOffset(place.fragment) ?? props.span.from)
   }
 
   return { takeLed, follow }
