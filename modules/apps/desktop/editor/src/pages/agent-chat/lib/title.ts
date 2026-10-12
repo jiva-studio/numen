@@ -1,7 +1,7 @@
 /**
  * Title formatting for agent tabs.
  */
-export const firstLine = (question: string, most = 24): string => {
+export const createTabTitle = (question: string, most = 24): string => {
   const line =
     question
       .split('\n')

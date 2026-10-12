@@ -33,7 +33,7 @@ describe('createPlexKind with linked tabs', () => {
     const settingsMock: any = {
       nesting: {
         isNesting: ref(false),
-        parts: ref(0),
+        headings: ref(0),
       },
     }
 
@@ -115,7 +115,7 @@ describe('createPlexKind with linked tabs', () => {
     const settingsMock: any = {
       nesting: {
         isNesting: ref(false),
-        parts: ref(0),
+        headings: ref(0),
       },
     }
 

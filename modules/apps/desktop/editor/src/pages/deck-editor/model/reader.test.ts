@@ -18,7 +18,7 @@ const card = (id: string, name: string): BufferCard => ({
   values: [{ field: 'Name', text: name }],
 })
 
-const deckOf = (...cards: BufferCard[]): BufferDeck => ({
+const createDeck = (...cards: BufferCard[]): BufferDeck => ({
   preamble: '',
   cards,
   sections: [],
@@ -47,97 +47,100 @@ const open = (problems: () => readonly DeckProblem[] = () => []) => {
 describe('the deck a tab shows', () => {
   it('is read out of the string the store holds', () => {
     const { bodies, reader } = open()
-    bodies.set('a', serializeBufferDeckToString(deckOf(card('c1', 'Llama'))))
+    bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
 
-    expect(reader.deckAt('a').cards.map((one) => one.heading)).toStrictEqual(['Llama'])
+    expect(reader.getDeck('a').cards.map((one) => one.heading)).toStrictEqual(['Llama'])
   })
 
   it('stands as the same deck while the string stands', () => {
     const { bodies, reader } = open()
-    bodies.set('a', serializeBufferDeckToString(deckOf(card('c1', 'Llama'))))
+    bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
 
-    expect(reader.deckAt('a')).toBe(reader.deckAt('a'))
+    expect(reader.getDeck('a')).toBe(reader.getDeck('a'))
   })
 
   it('is the deck it was set for, under the string it was set with', () => {
     const { bodies, reader } = open()
-    const body = serializeBufferDeckToString(deckOf(card('c1', 'Llama')))
-    const turned = deckOf(card('c2', 'Alpaca'))
+    const body = serializeBufferDeckToString(createDeck(card('c1', 'Llama')))
+    const turned = createDeck(card('c2', 'Alpaca'))
     bodies.set('a', body)
 
     reader.setParsed('a', body, turned)
 
-    expect(reader.deckAt('a')).toBe(turned)
+    expect(reader.getDeck('a')).toBe(turned)
   })
 
   it('is read again once the tab is forgotten', () => {
     const { bodies, reader } = open()
-    const body = serializeBufferDeckToString(deckOf(card('c1', 'Llama')))
+    const body = serializeBufferDeckToString(createDeck(card('c1', 'Llama')))
     bodies.set('a', body)
-    const turned = deckOf(card('c2', 'Alpaca'))
+    const turned = createDeck(card('c2', 'Alpaca'))
     reader.setParsed('a', body, turned)
 
     reader.forgetTab('a')
 
-    expect(reader.deckAt('a')).not.toBe(turned)
-    expect(reader.deckAt('a').cards.map((one) => one.id)).toStrictEqual(['c1'])
+    expect(reader.getDeck('a')).not.toBe(turned)
+    expect(reader.getDeck('a').cards.map((one) => one.id)).toStrictEqual(['c1'])
   })
 })
 
 describe('the marks on a deck', () => {
   it('stand against the card the problem counts', () => {
     const { bodies, reader } = open(() => [problem({ card: 1, text: 'Bad card' })])
-    bodies.set('a', serializeBufferDeckToString(deckOf(card('c1', 'Llama'), card('c2', 'Alpaca'))))
+    bodies.set(
+      'a',
+      serializeBufferDeckToString(createDeck(card('c1', 'Llama'), card('c2', 'Alpaca'))),
+    )
 
-    expect(reader.marksAt('a').at.get('c2')).toStrictEqual(['Bad card'])
-    expect(reader.marksAt('a').whole).toStrictEqual([])
+    expect(reader.getMarks('a').at.get('c2')).toStrictEqual(['Bad card'])
+    expect(reader.getMarks('a').whole).toStrictEqual([])
   })
 
   it('stand against the file where the problem counts a face, since no face is drawn', () => {
     const { bodies, reader } = open(() => [problem({ face: 0, text: 'Bad face' })])
-    bodies.set('a', serializeBufferDeckToString(deckOf(card('c1', 'Llama'))))
+    bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
 
-    expect(reader.marksAt('a').whole).toStrictEqual(['Bad face'])
-    expect(reader.marksAt('a').at.size).toBe(0)
+    expect(reader.getMarks('a').whole).toStrictEqual(['Bad face'])
+    expect(reader.getMarks('a').at.size).toBe(0)
   })
 
   it('stand as the same marks while the problems are the same list', () => {
     const { bodies, reader } = open(() => [problem({ card: 0 })])
-    bodies.set('a', serializeBufferDeckToString(deckOf(card('c1', 'Llama'))))
+    bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
 
-    expect(reader.marksAt('a')).toBe(reader.marksAt('a'))
+    expect(reader.getMarks('a')).toBe(reader.getMarks('a'))
   })
 
   it('are made again once the vault reports other problems', () => {
     let problems: readonly DeckProblem[] = [problem({ card: 0, text: 'First' })]
     const { bodies, reader } = open(() => problems)
-    bodies.set('a', serializeBufferDeckToString(deckOf(card('c1', 'Llama'))))
-    reader.marksAt('a')
+    bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
+    reader.getMarks('a')
 
     problems = [problem({ card: 0, text: 'Second' })]
 
-    expect(reader.marksAt('a').at.get('c1')).toStrictEqual(['Second'])
+    expect(reader.getMarks('a').at.get('c1')).toStrictEqual(['Second'])
   })
 
   it('stand as they were where the new problems say the same', () => {
     let problems: readonly DeckProblem[] = [problem({ card: 0, text: 'Same' })]
     const { bodies, reader } = open(() => problems)
-    bodies.set('a', serializeBufferDeckToString(deckOf(card('c1', 'Llama'))))
-    const first = reader.marksAt('a')
+    bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
+    const first = reader.getMarks('a')
 
     problems = [problem({ card: 0, text: 'Same' })]
 
-    expect(reader.marksAt('a')).toBe(first)
+    expect(reader.getMarks('a')).toBe(first)
   })
 
   it('are made again once the tab is forgotten', () => {
     const problems = [problem({ card: 0 })]
     const { bodies, reader } = open(() => problems)
-    bodies.set('a', serializeBufferDeckToString(deckOf(card('c1', 'Llama'))))
-    const first = reader.marksAt('a')
+    bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
+    const first = reader.getMarks('a')
 
     reader.forgetTab('a')
 
-    expect(reader.marksAt('a')).not.toBe(first)
+    expect(reader.getMarks('a')).not.toBe(first)
   })
 })

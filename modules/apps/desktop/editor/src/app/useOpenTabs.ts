@@ -2,7 +2,7 @@
  * What the person has open, told to the application, and the icon each tab carries.
  */
 import { computed, watch } from 'vue'
-import { iconOfKind } from '@/entities/tab'
+import { findTabKindIcon } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
 import type { OpenTabs } from '@/entities/tab'
 import type { VaultPort } from '@/app/ports/vault'
@@ -61,11 +61,11 @@ export function useOpenTabs({ core, windowTabs }: OpenTabsDeps) {
   )
 
   // Stryker disable next-line StringLiteral: no kind and the empty kind both map to no icon
-  const tabIcon = (id: string) => iconOfKind(windowTabs.getTab(id)?.kind.kind ?? '')
+  const getTabIcon = (id: string) => findTabKindIcon(windowTabs.getTab(id)?.kind.kind ?? '')
 
   return {
     open,
     getActiveTabId,
-    tabIcon,
+    getTabIcon,
   }
 }

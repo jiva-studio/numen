@@ -40,7 +40,7 @@ import {
 } from '@/pages/document-viewer'
 import { FilesTab, ROOT, useFilesTab, useFileTree } from '@/pages/file-manager'
 import type { Entry } from '@/entities/file'
-import { iconOfKind } from '@/entities/tab'
+import { findTabKindIcon } from '@/entities/tab'
 import { DECK, DOCUMENT, FILES, PRESET, RECORDING, SETTINGS, STENCIL } from '@/entities/tab'
 
 /** Every tab this file draws, under the identity the window opens it at. */
@@ -55,7 +55,7 @@ const TABS: readonly Tab[] = [
 ]
 
 /** A tab is drawn as its kind, which is what stands before the identity. */
-const iconOfTab = (id: string) => iconOfKind(id.split(':')[0] ?? id)
+const getTabIcon = (id: string) => findTabKindIcon(id.split(':')[0] ?? id)
 
 /** One tab filling the window, drawn in the chrome the window draws it in. */
 const window = (tab: string, tabPane: Component, state: unknown) => ({
@@ -70,7 +70,7 @@ const window = (tab: string, tabPane: Component, state: unknown) => ({
       axis: 'horizontal',
       focus: 'main',
     })
-    return { layout, TABS, tab, tabPane, state, iconOfTab }
+    return { layout, TABS, tab, tabPane, state, getTabIcon }
   },
   template: `
     <div style="height: 100vh">
@@ -78,8 +78,8 @@ const window = (tab: string, tabPane: Component, state: unknown) => ({
         <!-- Lucide draws on a 24 grid, and the stroke is given in those units. -->
         <template #icon="{ id }">
           <component
-            :is="iconOfTab(id)"
-            v-if="iconOfTab(id)"
+            :is="getTabIcon(id)"
+            v-if="getTabIcon(id)"
             style="inline-size: 100%; block-size: 100%; stroke-width: 1.75; opacity: 0.75"
           />
         </template>
@@ -166,7 +166,7 @@ const GRID = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
  * What stands overdue at the end of each day, one entry a day. A longer day
  * pays the debt off sooner, and a day too short never pays it off at all.
  */
-const backlogAt = (rate: number): readonly number[] =>
+const createBacklog = (rate: number): readonly number[] =>
   Array.from({ length: 60 }, (_, day) =>
     Math.max(0, Math.round(96 - day * rate + day * day * rate * 0.004)),
   )
@@ -180,7 +180,7 @@ const AT: readonly Point[] = GRID.map((minutes, at) =>
     learned: 140 + Math.round(210 * Math.sqrt(at)),
     clears: at < 2 ? -1 : Math.max(4, Math.round(140 / at)),
     through: Math.min(1, 0.18 + at * 0.075),
-    backlog: backlogAt(0.4 + at * 0.55),
+    backlog: createBacklog(0.4 + at * 0.55),
   }),
 )
 
@@ -681,7 +681,7 @@ const LINES: readonly (readonly string[])[] = [
 const escapeXml = (line: string) =>
   line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-const pageAt = (page: number): string => {
+const createPage = (page: number): string => {
   const lines = LINES[page - OPENS_AT] ?? []
   const set = lines
     .map((line, at) => {
@@ -715,7 +715,7 @@ const BOOK: Documents = {
     pages: Array.from({ length: LEAVES }, () => PAGE),
     fingerprint: '1024 1700000000000000000 book.pdf',
   }),
-  getPageUrl: (_path, at) => pageAt(at),
+  getPageUrl: (_path, at) => createPage(at),
   getHighlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],
 }
 
@@ -751,15 +751,15 @@ const createMenuStory = (
       const box = row?.getBoundingClientRect()
       state.openMenu({ path, at: { x: (box?.left ?? 0) + 24, y: box?.bottom ?? 0 } })
     })
-    return { layout, TABS, state, file, FILES, iconOfTab }
+    return { layout, TABS, state, file, FILES, getTabIcon }
   },
   template: `
     <div style="height: 100vh">
       <WorkspaceLayout v-model="layout" :tabs="TABS">
         <template #icon="{ id }">
           <component
-            :is="iconOfTab(id)"
-            v-if="iconOfTab(id)"
+            :is="getTabIcon(id)"
+            v-if="getTabIcon(id)"
             style="inline-size: 100%; block-size: 100%; stroke-width: 1.75; opacity: 0.75"
           />
         </template>

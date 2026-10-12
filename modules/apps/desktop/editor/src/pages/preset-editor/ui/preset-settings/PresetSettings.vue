@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import type { PresetTabState } from '../../types'
-import { fieldsUnder } from '../../lib/fields'
+import { getGoalFields } from '../../lib/fields'
 import { WORDS as words } from '../../words'
 import PresetSettingControl from './PresetSettingControl.vue'
 
@@ -20,7 +20,7 @@ const props = defineProps<{ state: PresetTabState }>()
 const { settings } = props.state
 
 /** The rows the chosen goal schedules by, which are the ones drawn. */
-const fields = computed(() => fieldsUnder(settings.value.goal, settings.value.learned))
+const fields = computed(() => getGoalFields(settings.value.goal, settings.value.learned))
 
 // --- Handlers ---
 

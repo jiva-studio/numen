@@ -46,14 +46,14 @@ describe('WORDS.buys', () => {
 
 describe('WORDS axis units', () => {
   it('reads a height in cards under minutes and in minutes under the other goals', () => {
-    expect(WORDS.heightAt('minutes', 5)).toBe(many(5, 'card'))
-    expect(WORDS.heightAt('date', 5)).toBe('5 min')
+    expect(WORDS.formatGoalCost('minutes', 5)).toBe(many(5, 'card'))
+    expect(WORDS.formatGoalCost('date', 5)).toBe('5 min')
   })
 
   it('reads a width as a share, a day count or minutes', () => {
-    expect(WORDS.widthAt('retention', 90)).toBe(percent(90))
-    expect(WORDS.widthAt('date', 7)).toBe('7 d')
-    expect(WORDS.widthAt('minutes', 7)).toBe('7 min')
+    expect(WORDS.formatGoalValue('retention', 90)).toBe(percent(90))
+    expect(WORDS.formatGoalValue('date', 7)).toBe('7 d')
+    expect(WORDS.formatGoalValue('minutes', 7)).toBe('7 min')
   })
 
   it('names the mark under each goal', () => {

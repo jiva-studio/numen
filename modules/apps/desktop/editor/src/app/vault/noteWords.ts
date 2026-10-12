@@ -1,13 +1,18 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
-import { NameSource, NoteType as NoteTypes, Role as Roles, Relation as Relations } from '@numen/protocol'
+import {
+  NameSource,
+  NoteType as NoteTypes,
+  Role as Roles,
+  Relation as Relations,
+} from '@numen/protocol'
 import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
 } from '@numen/protocol'
 import { asFailure, asValue, namesOf } from '@numen/wire'
-import { parseFingerprint, errorIn, staleIn, formatFingerprint } from '@/shared/answers'
+import { parseFingerprint, findErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
 import type { Link, Neighbourhood, NoteResult, Role, Seat, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 
@@ -51,7 +56,7 @@ const typed: Record<NoteTypes, NoteType> = {
   [NoteTypes.PRESET]: 'preset',
 }
 
-export const noteType = (of: NoteTypes): NoteType => typed[of] ?? 'note'
+export const mapNoteType = (of: NoteTypes): NoteType => typed[of] ?? 'note'
 
 /** A run of text, kept as the plain pair the window carries it as. */
 export const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
@@ -75,7 +80,7 @@ export const mapNoteResult = (from: {
   url?: string | undefined
   embed?: string | undefined
 }): NoteResult => {
-  const error = errorIn(from)
+  const error = findErrorCode(from)
   if (error) return asFailure(error)
   const at = formatFingerprint(from.at)
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
@@ -93,14 +98,14 @@ export const mapWriteResult = (from: {
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   url?: string | undefined
   embed?: string | undefined
-}): WriteResult => (staleIn(from) ? asFailure('changed') : mapNoteResult(from))
+}): WriteResult => (isStaleAnswer(from) ? asFailure('changed') : mapNoteResult(from))
 
 /**
  * A neighbourhood in the words the window uses.
  */
 export const mapNeighbourhood = (answer: NeighbourhoodMessage): Neighbourhood => ({
   focus: { path: answer.focus?.path ?? '', title: answer.focus?.title ?? '' },
-  focusType: noteType(answer.focusType),
+  focusType: mapNoteType(answer.focusType),
   related: answer.related.flatMap((one) => {
     const seat = seated[one.relation] ?? null
     if (seat === null || one.note === undefined) return []
@@ -108,7 +113,7 @@ export const mapNeighbourhood = (answer: NeighbourhoodMessage): Neighbourhood =>
       {
         path: one.note.path,
         title: one.note.title,
-        type: noteType(one.type),
+        type: mapNoteType(one.type),
         seat,
         label: one.label,
         reverseLabel: one.reverseLabel,

@@ -402,13 +402,13 @@ describe('the box a plex measures its type against', () => {
   })
 })
 
-describe('what a part needs', () => {
+describe('what a heading needs', () => {
   it('is its words with the padding on both sides', () => {
     stubCanvas()
     stubStyles()
     setTheme()
 
-    expect(widths()!.part('abc')).toBe(3 * PER_CHARACTER + 20)
+    expect(widths()!.heading('abc')).toBe(3 * PER_CHARACTER + 20)
   })
 
   it('is measured in the size a label is set at, in whole pixels', () => {
@@ -418,7 +418,7 @@ describe('what a part needs', () => {
     context.measureText = (text: string) => ({ width: text.length * 6.4 }) as TextMetrics
     const measures = widths()!
 
-    expect(measures.part('abc')).toBe(Math.ceil(3 * 6.4 + 20))
+    expect(measures.heading('abc')).toBe(Math.ceil(3 * 6.4 + 20))
     expect(context.font).toBe('10px Test Sans, sans-serif')
   })
 })

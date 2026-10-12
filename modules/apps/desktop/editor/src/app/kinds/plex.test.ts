@@ -36,11 +36,11 @@ interface HeldTab {
   readonly state: PlexTabState
 }
 
-const stateOf = (name: string) => ({ name }) as unknown as PlexTabState
+const createPlexState = (name: string) => ({ name }) as unknown as PlexTabState
 
-const first = stateOf('first')
-const second = stateOf('second')
-const third = stateOf('third')
+const first = createPlexState('first')
+const second = createPlexState('second')
+const third = createPlexState('third')
 
 /** Three plex tabs, the last of them in front. */
 const THREE: readonly HeldTab[] = [
@@ -93,7 +93,7 @@ const plexKind = (
         },
       },
     },
-    settings: { nesting: { isNesting: ref(true), parts: ref(6) } },
+    settings: { nesting: { isNesting: ref(true), headings: ref(6) } },
     window: {
       failure: ref(''),
       opening: ref(''),
@@ -140,7 +140,7 @@ describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to the plex tab in front where no tab holds that state', () => {
     const one = plexKind()
 
-    one.deps.openNote('Compost.md', 'Compost', 'here', undefined, stateOf('gone'))
+    one.deps.openNote('Compost.md', 'Compost', 'here', undefined, createPlexState('gone'))
 
     expect(one.synced).toStrictEqual([['plex:3', 'Compost.md', 'Compost']])
   })

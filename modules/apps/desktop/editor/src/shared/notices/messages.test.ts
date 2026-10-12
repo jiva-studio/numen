@@ -2,11 +2,11 @@
  * What the window has to say, and for how long it holds on to it.
  */
 import { describe, expect, it } from 'vitest'
-import { messageLog } from './messages'
+import { createMessageLog } from './messages'
 
 describe('a writer under a name', () => {
   it('holds one message at a time, and the second replaces the first', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     const command = log.getWriter('command')
 
     command('The note is in the trash')
@@ -21,14 +21,14 @@ describe('a writer under a name', () => {
   })
 
   it('writes a report where no kind is given', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     log.getWriter('command')('Renamed')
 
     expect(log.messages.value[0]?.kind).toBe('report')
   })
 
   it('replaces what stands where only its kind differs', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     const command = log.getWriter('command')
 
     command('Renamed', 'report')
@@ -39,7 +39,7 @@ describe('a writer under a name', () => {
   })
 
   it('numbers the identities upward from one, across every name', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     log.getWriter('command')('One')
     log.getWriter('made')('Two')
     log.getWriter('command')('Three')
@@ -48,7 +48,7 @@ describe('a writer under a name', () => {
   })
 
   it('gives every message an identity of its own', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     const command = log.getWriter('command')
 
     command('One')
@@ -61,7 +61,7 @@ describe('a writer under a name', () => {
   it('writes nothing where the same text already stands', () => {
     // A stream that is down says so every second, and a card that arrived
     // again is a card read out again.
-    const log = messageLog()
+    const log = createMessageLog()
     const worn = log.getWriter('worn')
 
     worn('the themes stopped arriving', 'state')
@@ -72,7 +72,7 @@ describe('a writer under a name', () => {
   })
 
   it('clears what it wrote when it writes nothing', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     log.getWriter('command')('Renamed')
     log.getWriter('made')('a note of that name is filed there', 'error')
 
@@ -82,7 +82,7 @@ describe('a writer under a name', () => {
   })
 
   it('leaves the list alone where it had nothing to clear', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     log.getWriter('made')('Renamed')
     const was = log.messages.value
 
@@ -94,7 +94,7 @@ describe('a writer under a name', () => {
 
 describe('a message the person is finished with', () => {
   it('is dropped by the identity it was given, and nothing else is', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     log.getWriter('command')('Renamed')
     log.getWriter('made')('Filed there already', 'error')
     const first = log.messages.value[0]!
@@ -105,7 +105,7 @@ describe('a message the person is finished with', () => {
   })
 
   it('is nothing at all where no message carries that identity', () => {
-    const log = messageLog()
+    const log = createMessageLog()
     log.getWriter('command')('Renamed')
 
     log.dismiss('extracting the books')

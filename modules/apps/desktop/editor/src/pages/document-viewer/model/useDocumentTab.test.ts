@@ -47,7 +47,7 @@ const createDocumentTabAt = (path: string, page: number, pageCount: number) =>
     pages: ref(Array.from({ length: pageCount })),
   }) as unknown as DocumentTabState
 
-const kindOver = (tab: DocumentTabState) =>
+const createKind = (tab: DocumentTabState) =>
   createDocumentKind(createMockDocumentWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
 /** The pages drawn in a tab, which record what was asked of them. */
@@ -86,14 +86,14 @@ describe('what a document tab holds', () => {
 })
 
 describe('a document tab', () => {
-  const kindOf = () => {
+  const createDefaultKind = () => {
     const { handle } = createMockDocumentWindow()
     const { tabOpeners } = openers()
     return createDocumentKind(handle, (path) => useDocumentTab(read(path)), tabOpeners)
   }
 
   it('is called by the file and not by the folders above it', () => {
-    const { kind } = kindOf()
+    const { kind } = createDefaultKind()
     expect(kind.getTitle?.(useDocumentTab(read('physics/heat/Boltzmann 1877.pdf')))).toBe(
       'Boltzmann 1877.pdf',
     )
@@ -101,13 +101,13 @@ describe('a document tab', () => {
   })
 
   it('is one tab per document', () => {
-    const { kind } = kindOf()
+    const { kind } = createDefaultKind()
     expect(kind.kind).toBe(DOCUMENT)
     expect(kind.identity?.('physics/Boltzmann.pdf')).toBe('physics/Boltzmann.pdf')
   })
 
   it('measures the page when the tab comes on screen', () => {
-    const { kind } = kindOf()
+    const { kind } = createDefaultKind()
     const page = createPages()
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
     held.setPageHandle(page)
@@ -117,7 +117,7 @@ describe('a document tab', () => {
   })
 
   it('lets go of the document it was reading, and goes', () => {
-    const { kind } = kindOf()
+    const { kind } = createDefaultKind()
     const close = vi.fn()
     const held = useDocumentTab(read('physics/Boltzmann.pdf', close))
 
@@ -150,7 +150,7 @@ describe('what a command asked over a document tab is over', () => {
   it('is the file it reads, which is what a run is asked over', () => {
     const held = createDocumentTabAt('Ants.epub', 3, 40)
 
-    expect(kindOver(held).getTarget!(held)).toStrictEqual({ file: 'Ants.epub', source: 'book' })
+    expect(createKind(held).getTarget!(held)).toStrictEqual({ file: 'Ants.epub', source: 'book' })
   })
 })
 
@@ -158,7 +158,7 @@ describe('what a document tab holds, as whoever answers for the person is told i
   it('is the file, the page in front of them, and how many pages there are', () => {
     const held = createDocumentTabAt('Ants.epub', 3, 40)
 
-    expect(kindOver(held).getOpenTab!(held)).toStrictEqual({
+    expect(createKind(held).getOpenTab!(held)).toStrictEqual({
       path: 'Ants.epub',
       document: { page: 4, pageCount: 40 },
     })
@@ -173,16 +173,18 @@ describe('a key struck while a document tab is the one the person is in', () => 
     held.setPageHandle(page)
 
     expect(
-      kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })),
+      createKind(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })),
     ).toBe(true)
-    expect(kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'k' }))).toBe(false)
+    expect(createKind(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'k' }))).toBe(
+      false,
+    )
   })
 
   it('is taken by nobody where the tab draws no pages yet', () => {
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
 
     expect(
-      kindOver(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })),
+      createKind(held).onKeyPress!(held, new KeyboardEvent('keydown', { key: 'ArrowRight' })),
     ).toBe(false)
   })
 
@@ -191,7 +193,7 @@ describe('a key struck while a document tab is the one the person is in', () => 
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
     held.setPageHandle(page)
 
-    kindOver(held).onShow!(held, 'a tab')
+    createKind(held).onShow!(held, 'a tab')
 
     expect(page.focusPages).toHaveBeenCalledTimes(1)
   })
@@ -202,7 +204,7 @@ describe('a document tab that draws no pages yet', () => {
     const held = useDocumentTab(read('physics/Boltzmann.pdf'))
 
     expect(() => held.focusTab()).not.toThrow()
-    expect(() => kindOver(held).onShow!(held, 'a tab')).not.toThrow()
+    expect(() => createKind(held).onShow!(held, 'a tab')).not.toThrow()
   })
 })
 

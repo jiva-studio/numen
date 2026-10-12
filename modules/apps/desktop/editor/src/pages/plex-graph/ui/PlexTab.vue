@@ -26,19 +26,19 @@ const {
   menu,
   quickLink,
   linkInspector,
-  mostParts,
+  maxHeadings,
   picture: neighbourhood,
 } = props.state
 
 /**
- * How large the picture is drawn, and how many parts a node hangs at once. A
+ * How large the picture is drawn, and how many headings a node hangs at once. A
  * node's label is set in the window's type, so the boxes and the clearances
  * between them are handed in to hold it.
  */
 const type = useTypeSize()
 const options = computed(() => ({
   ...optionsForType(type.value),
-  maxParts: mostParts.value,
+  maxHeadings: maxHeadings.value,
 }))
 
 /** What the menu offers: on a node, or off every node. */
@@ -115,8 +115,8 @@ function onShowNode(node: string, how: PlexDestination) {
   props.state.openNode(node, how)
 }
 
-function onEnterPart(node: string, part: string) {
-  props.state.openPart(node, part)
+function onEnterHeading(node: string, heading: string) {
+  props.state.openHeading(node, heading)
 }
 
 function onDismissPicture() {
@@ -255,14 +255,14 @@ function getSourceHandlePosition(
       :creatable="props.state.creatable"
       :dragged="dragged"
       :drop-name="words.dropName"
-      :parts="props.state.partsOf"
+      :headings="props.state.headingsOf"
       @activate="onActivateNode"
       @create="onCreateNode"
       @link="onLinkNodes"
       @bring="onBringNodes"
       @menu="onOpenMenu"
       @show="onShowNode"
-      @enter="onEnterPart"
+      @enter="onEnterHeading"
       @edge-menu="onEdgeMenu"
       @dismiss="onDismissPicture"
     >

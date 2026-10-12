@@ -7,7 +7,7 @@
  */
 import type { Neighbourhood, NoteHeading, Seat } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
-import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexPart } from '@numen/ui'
+import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '@numen/ui'
 
 /**
  * Which of three each note on a neighbourhood is, by the path it stands at. A
@@ -117,12 +117,12 @@ export function asPlex(
 }
 
 /**
- * The headings of a note as the parts its node hangs.
+ * The headings of a note as the lines its node hangs.
  *
- * A part is named by the line it stands on: that is what taking someone to it
+ * A heading is named by the line it stands on: that is what taking someone to it
  * needs, and it tells two headings of one wording apart.
  */
-export function asParts(headings: readonly NoteHeading[]): PlexPart[] {
+export function asHeadings(headings: readonly NoteHeading[]): PlexHeading[] {
   return headings.map((heading) => ({
     id: `${heading.line}`,
     text: heading.text,

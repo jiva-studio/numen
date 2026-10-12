@@ -69,8 +69,8 @@ export function useDocumentReader(documents: Documents, path: string) {
     () => open,
   )
 
-  const nextPage = async () => goToPage(navigation.pageNumber.value + 1)
-  const prevPage = async () => goToPage(navigation.pageNumber.value - 1)
+  const goToNextPage = async () => goToPage(navigation.pageNumber.value + 1)
+  const goToPreviousPage = async () => goToPage(navigation.pageNumber.value - 1)
 
   const focusSpans = async (...spans: readonly Span[]) => {
     await layoutPromise
@@ -95,8 +95,8 @@ export function useDocumentReader(documents: Documents, path: string) {
     error,
     isLoading,
     goToPage,
-    nextPage,
-    prevPage,
+    goToNextPage,
+    goToPreviousPage,
     widen: viewport.widen,
     applyHighlights: highlights.applyHighlights,
     focusSpans,

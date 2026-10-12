@@ -7,7 +7,7 @@ import { core } from './vault'
 import { presets } from '@/entities/deck'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
 import { AGENT, FILES, PLEX, createWorkspace, fileOpeners, useWindowTabs } from '@/entities/tab'
-import { messageLog } from '@/shared/notices/messages'
+import { createMessageLog } from '@/shared/notices/messages'
 import { createMediaTypeProbe } from '@/entities/media'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
@@ -27,7 +27,7 @@ import { useAppBootstrap } from './useAppBootstrap'
 
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
-  const log = messageLog()
+  const log = createMessageLog()
   const writeMessage = log.getWriter('command')
   const held = useWindowTabs()
   const tabLinks = useTabLinks()
@@ -237,7 +237,7 @@ export const useWindow = () => {
     palette: commandsModule.palette,
     destinations: kinds.destinations,
     closeTab,
-    tabIcon: openTabs.tabIcon,
+    getTabIcon: openTabs.getTabIcon,
     getTitle: editing.getTitle,
     getTarget,
     tabLinks,

@@ -69,11 +69,11 @@ func (u Write) Deck(
 	if err := note.CheckSize(path, len(body), MaxBytes); err != nil {
 		return WriteResult{}, err
 	}
-	whole, given, err := u.whole(ctx, v, path, body)
+	whole, given, err := u.completeDeckBody(ctx, v, path, body)
 	if err != nil {
 		return WriteResult{}, err
 	}
-	at, err := u.note().Execute(ctx, v, path, whole, fingerprint)
+	at, err := u.createNoteWriter().Execute(ctx, v, path, whole, fingerprint)
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return WriteResult{}, err
 	}
@@ -82,10 +82,10 @@ func (u Write) Deck(
 	return WriteResult{Fingerprint: at, Given: given}, err
 }
 
-// whole is the body every card of which has been made whole, and the marks that
+// completeDeckBody returns the body with every card made whole, and the marks that
 // took. The stencils are read against the body being written, so a card whose
 // wikilink the caller has just changed is cut by the stencil it now names.
-func (u Write) whole(
+func (u Write) completeDeckBody(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardMark, error) {
 	read := NewRead(u.readers, u.links)
@@ -131,9 +131,9 @@ func (u Write) Stencil(
 	})
 }
 
-// note is the writer a deck goes to disk through, held to the size a deck is
+// createNoteWriter returns the writer a deck goes to disk through, held to the size a deck is
 // read at.
-func (u Write) note() note.Write {
+func (u Write) createNoteWriter() note.Write {
 	writing := note.NewWrite(u.readers, u.writers, u.index, u.now)
 	writing.Bound = MaxBytes
 	return writing
