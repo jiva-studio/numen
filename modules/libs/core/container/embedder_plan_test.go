@@ -5,7 +5,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 func TestTheEmbedderIsGivenTheThreadBudgetAndWorkersOfThePlan(t *testing.T) {
@@ -64,7 +66,7 @@ func TestTheEmbedderMayHoldAShareOfTheAvailableMemory(t *testing.T) {
 	} {
 		plan := settings.ResolveCompute(settings.ProfileMaximum, hw, settings.PerformanceCustom{})
 		local := Config{ResolvedCompute: plan, Hardware: hw}.planLocalModel(embed.LocalModel{})
-		want := hw.AvailableRAMMB * bytesPerMB / 100 * embedderMemoryPercent
+		want := hw.AvailableRAMMB * bytesPerMB / 100 * 25
 		if local.PassMemory != want {
 			t.Errorf("%s: the passes may hold %d bytes, want %d", name, local.PassMemory, want)
 		}
@@ -78,5 +80,56 @@ func TestAContainerThatKnowsNoMemoryBoundsNothing(t *testing.T) {
 	local := Config{ResolvedCompute: settings.ResolvedCompute{Workers: 8}}.planLocalModel(embed.LocalModel{})
 	if local.PassMemory != 0 {
 		t.Errorf("the passes may hold %d bytes", local.PassMemory)
+	}
+}
+
+func TestTheBatchOfThePlanReachesAModelThatNamedNone(t *testing.T) {
+	for _, batch := range []int{1, 2, 64} {
+		local := Config{ResolvedCompute: settings.ResolvedCompute{EmbeddingBatchSize: batch}}.planLocalModel(embed.LocalModel{})
+		if local.BatchTexts != batch {
+			t.Errorf("a plan of %d texts a pass gave the model %d", batch, local.BatchTexts)
+		}
+	}
+}
+
+func TestABatchThePlanCannotMeanLeavesTheModelItsOwn(t *testing.T) {
+	local := Config{ResolvedCompute: settings.ResolvedCompute{EmbeddingBatchSize: -1}}.planLocalModel(embed.LocalModel{})
+	if local.BatchTexts != 0 {
+		t.Errorf("the model was given %d texts a pass", local.BatchTexts)
+	}
+}
+
+func TestAServiceIsAskedAsManyAtOnceAsThePlanAllows(t *testing.T) {
+	t.Setenv(embed.KeyEnvVar, "sk-test")
+	is := port.EmbeddingModel{Name: "m", Dimensions: 8}
+	service := embed.ServiceModel{Name: "m", BaseURL: "http://127.0.0.1:1/v1"}
+	own, err := openai.New(is, service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, allowed := range []int{1, 2, 9} {
+		client, err := Config{ResolvedCompute: settings.ResolvedCompute{LlmConcurrency: allowed}}.openServiceClient(is, service)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if client.InFlight != allowed {
+			t.Errorf("a plan of %d at once gave the client %d", allowed, client.InFlight)
+		}
+	}
+	client, err := Config{}.openServiceClient(is, service)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.InFlight != own.InFlight {
+		t.Errorf("a container without a plan gave the client %d, and it asks %d at once of its own", client.InFlight, own.InFlight)
+	}
+}
+
+func TestAServiceThatCannotBeBuiltIsNotAskedAnything(t *testing.T) {
+	t.Setenv(embed.KeyEnvVar, "sk-test")
+	client, err := Config{}.openServiceClient(port.EmbeddingModel{Name: "m", Dimensions: 8}, embed.ServiceModel{Name: "m"})
+	if err == nil || client != nil {
+		t.Errorf("got %v: %v", client, err)
 	}
 }

@@ -1,6 +1,8 @@
 package check_test
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -178,5 +181,36 @@ func TestAnIdentifierFromAnotherVaultIsNotDangling(t *testing.T) {
 
 	if found := run(t, l, v, domain.CheckDangling); len(found) != 0 {
 		t.Errorf("a link to another vault was called broken: %+v", found)
+	}
+}
+
+// brokenQueries is a store that cannot answer any question put to it.
+type brokenQueries struct {
+	port.ProblemQueries
+	err error
+}
+
+func (b brokenQueries) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+	return nil, b.err
+}
+
+func (b brokenQueries) GetUnreadable(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+	return nil, b.err
+}
+
+// A store that cannot answer is a check that cannot say, and nothing is
+// reported as though the vault were clean.
+func TestAStoreThatCannotAnswerIsAFailedCheck(t *testing.T) {
+	broken := errors.New("the store is gone")
+	l := check.Standard(brokenQueries{err: broken})
+
+	for _, name := range []domain.Check{domain.CheckParse, domain.CheckFrontmatter} {
+		found, err := l.Run(t.Context(), domain.Vault{ID: "v"}, name)
+		if !errors.Is(err, broken) {
+			t.Errorf("%s: got %v", name, err)
+		}
+		if found != nil {
+			t.Errorf("%s: reported %v", name, found)
+		}
 	}
 }
