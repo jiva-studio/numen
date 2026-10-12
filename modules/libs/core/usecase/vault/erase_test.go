@@ -231,3 +231,18 @@ func TestAFolderThatCannotBeTrashedStaysOnTheList(t *testing.T) {
 		t.Errorf("the vault left the list: %v %v", found, err)
 	}
 }
+
+func TestEraseKeepsTheCauseWhenTheFolderCannotBeRead(t *testing.T) {
+	t.Parallel()
+	_, gone, registry := twoVaults(t)
+	erase := vaults.NewErase(
+		refusingIdentity{checkReadable: errRefused},
+		&bin{},
+		vaults.NewForget(registry, &indexRows{}),
+	)
+
+	_, err := erase.Execute(t.Context(), gone)
+	if !errors.Is(err, vaults.ErrUnreadable) || !errors.Is(err, errRefused) {
+		t.Fatalf("want both the sentinel and the cause, got %v", err)
+	}
+}

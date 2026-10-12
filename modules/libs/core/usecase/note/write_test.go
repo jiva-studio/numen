@@ -3,8 +3,10 @@ package note_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -166,5 +168,40 @@ func TestARefusedWriteTellsNothing(t *testing.T) {
 	}
 	if len(told) != 0 {
 		t.Errorf("told %+v of a change that was refused", told)
+	}
+}
+
+func TestAWriterWithASmallerBoundRefusesWhatTheDefaultAllows(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
+	small := c.newWrite()
+	small.Bound = 100
+
+	_, err := small.Execute(t.Context(), c.vault, "Mammals.md", strings.Repeat("x", 200), domain.Fingerprint{})
+	if !errors.Is(err, note.ErrTooLarge) {
+		t.Fatalf("want ErrTooLarge, got %v", err)
+	}
+}
+
+func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	levelled := 0
+	w := note.NewWrite(brokenReaders{open: errDiskGone}, brokenWriters{hold: errDiskGone}, nil, time.Now).
+		WithReaders(filesystem.VaultReaders{}).
+		WithWriters(filesystem.VaultWriters{}).
+		WithIndex(func(context.Context, domain.Vault, []string) error {
+			levelled++
+			return nil
+		})
+
+	if _, err := w.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", domain.Fingerprint{}); err != nil {
+		t.Fatal(err)
+	}
+	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Mine.") {
+		t.Errorf("the note was not written:\n%s", body)
+	}
+	if levelled != 1 {
+		t.Errorf("the replaced index was called %d times, want 1", levelled)
 	}
 }

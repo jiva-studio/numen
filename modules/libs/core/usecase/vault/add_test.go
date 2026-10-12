@@ -278,3 +278,50 @@ func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
 		t.Fatalf("want the refusal back, got %v", err)
 	}
 }
+
+func TestAnUnreadableFolderKeepsTheCauseInTheError(t *testing.T) {
+	t.Parallel()
+	add := vaults.NewAdd(refusingIdentity{checkReadable: errRefused}, registryAt(t), time.Now)
+
+	_, err := add.Execute(folder(t, "notes"), "")
+	if !errors.Is(err, vaults.ErrUnreadable) || !errors.Is(err, errRefused) {
+		t.Fatalf("want both the sentinel and the cause, got %v", err)
+	}
+}
+
+// Only an old location that still carries this very identity makes a copy.
+func TestAnOldLocationThatIsNotThisVaultAnyMoreIsAMove(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name string
+		does bool
+		id   domain.VaultID
+	}{
+		{"carries another identity", true, "01OTHER"},
+		{"carries none", false, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			registry := registryAt(t)
+			first, err := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now).Execute(folder(t, "old"), "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			identity := refusingIdentity{
+				ensureAs: first.ID,
+				vaultID: func(string) (domain.VaultID, bool, error) {
+					return tc.id, tc.does, nil
+				},
+			}
+			moved := folder(t, "moved")
+
+			v, err := vaults.NewAdd(identity, registry, time.Now).Execute(moved, "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if v.Path != moved || v.ID != first.ID {
+				t.Errorf("got %+v, want the vault at %s", v, moved)
+			}
+		})
+	}
+}
