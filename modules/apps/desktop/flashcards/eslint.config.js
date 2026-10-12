@@ -20,27 +20,27 @@ const lifetimes = [
   { name: 'matchMedia', port: 'a prop, or CSS where the browser already knows' },
 ]
 
-const layers = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
-const sliced = ['entities', 'features', 'widgets', 'pages']
+const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
+const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
 const layerElements = [
   { type: 'shared', pattern: 'src/shared' },
-  ...sliced.map((type) => ({ type, pattern: `src/${type}/*`, capture: ['slice'] })),
+  ...sliceLayers.map((type) => ({ type, pattern: `src/${type}/*`, capture: ['slice'] })),
   { type: 'app', pattern: 'src/app' },
 ]
 
 const layerPolicies = [
   { allow: { to: { module: { origin: ['external', 'core'] } } } },
-  { from: { file: { categories: 'entry' } }, allow: { to: { element: { type: layers } } } },
-  ...layers.map((layer, i) => ({
+  { from: { file: { categories: 'entry' } }, allow: { to: { element: { type: layerOrder } } } },
+  ...layerOrder.map((layer, index) => ({
     from: { element: { type: layer } },
-    allow: { to: { element: { type: layers.slice(0, i) } } },
+    allow: { to: { element: { type: layerOrder.slice(0, index) } } },
   })),
   ...['shared', 'app'].map((layer) => ({
     from: { element: { type: layer } },
     allow: { to: { element: { type: layer } } },
   })),
-  ...sliced.flatMap((layer) => [
+  ...sliceLayers.flatMap((layer) => [
     {
       from: { element: { type: layer } },
       allow: {
@@ -49,7 +49,7 @@ const layerPolicies = [
     },
     {
       from: { element: { type: layer } },
-      allow: { to: { element: { type: layer }, file: { categories: 'x' } } },
+      allow: { to: { element: { type: layer }, file: { categories: 'crossImport' } } },
     },
   ]),
 ]
@@ -239,8 +239,7 @@ export default tseslint.config(
   //
   // Tests and stories sit in their layer and are held to the rule.
   //
-  // A file under `src` that no element claims fails, so the rule cannot go
-  // quiet by matching nothing.
+  // A file under `src` that no element claims fails.
   {
     files: ['src/**/*.{ts,vue}'],
     plugins: { boundaries },
@@ -248,7 +247,7 @@ export default tseslint.config(
       'import/resolver': { typescript: { alwaysTryTypes: true } },
       'boundaries/elements': layerElements,
       'boundaries/files': [
-        { category: 'x', pattern: 'src/*/*/@x/*' },
+        { category: 'crossImport', pattern: 'src/*/*/@x/*' },
         { category: 'entry', pattern: 'src/main.ts' },
       ],
     },
