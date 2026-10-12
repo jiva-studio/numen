@@ -33,7 +33,8 @@ const paperOf = (markup: string, left: readonly number[] = []): HTMLElement => {
 }
 
 const setUp = (paper: HTMLElement | null, highlights: Span[] = [], others: Span[] = []) => {
-  const props = reactive({ highlights, otherHighlights: others }) as unknown as SettledBookProps
+  const state = reactive({ highlights, otherHighlights: others })
+  const props = state as unknown as SettledBookProps
   let marks!: ReturnType<typeof useBookMarks>
   const wrapper = mount(
     defineComponent({
@@ -43,7 +44,7 @@ const setUp = (paper: HTMLElement | null, highlights: Span[] = [], others: Span[
       },
     }),
   )
-  return { props, wrapper, marks }
+  return { props, state, wrapper, marks }
 }
 
 const textOf = (call: unknown[]): string[] => (call[2] as Range[]).map((range) => range.toString())
@@ -122,10 +123,10 @@ describe('the runs marked', () => {
   })
 
   it('are marked again when the highlights change', async () => {
-    const { marks, props } = setUp(paperOf(MARKUP))
+    const { marks, state } = setUp(paperOf(MARKUP))
     marks.gather()
 
-    ;(props as { highlights: Span[] }).highlights = [{ from: 0, to: 2 }]
+    state.highlights = [{ from: 0, to: 2 }]
     await nextTick()
 
     expect(vi.mocked(highlight).mock.calls.map((call) => [call[0], ...textOf(call)])).toStrictEqual([
@@ -135,10 +136,10 @@ describe('the runs marked', () => {
   })
 
   it('are marked again when the other highlights change', async () => {
-    const { marks, props } = setUp(paperOf(MARKUP))
+    const { marks, state } = setUp(paperOf(MARKUP))
     marks.gather()
 
-    ;(props as { otherHighlights: Span[] }).otherHighlights = [{ from: 6, to: 8 }]
+    state.otherHighlights = [{ from: 6, to: 8 }]
     await nextTick()
 
     expect(vi.mocked(highlight).mock.calls.map((call) => [call[0], ...textOf(call)])).toStrictEqual([
