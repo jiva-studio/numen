@@ -7,7 +7,8 @@ import type { PlexFrame } from '../frame'
 import type { PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, PlexNode } from '../node'
 import type { PlexRelatedSeat, PlexSeat } from '../seat'
-import type { Placement } from './placement'
+import { rowsAndColumns, type Placement } from './placement'
+import { build } from '../../fixtures/build'
 
 const every = Object.entries(neighbourhoods)
 
@@ -532,6 +533,22 @@ describe('the arrangement is a strategy, not a shape baked in', () => {
     const { maxPerLine, maxLines } = DEFAULT_OPTIONS
     const frame = arrangePlex(neighbourhoods.overcrowded, { placement: counting })
     expect(frame.overflow.child).toBe(200 - maxPerLine * maxLines)
+  })
+
+  it('hands a strategy only the seats that have nodes in them', () => {
+    const handed: string[][] = []
+    const recording: Placement = {
+      name: 'recording',
+      place: (seating, focus, options, limits, width) => {
+        handed.push(Object.keys(seating))
+        return rowsAndColumns.place(seating, focus, options, limits, width)
+      },
+    }
+
+    const frame = arrangePlex(build('A node', { child: 2, jump: 1 }), { placement: recording })
+
+    expect(handed.map((seats) => [...seats].sort())).toStrictEqual([['child', 'jump']])
+    expect(frame.overflow).toStrictEqual({})
   })
 })
 
