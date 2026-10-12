@@ -4,8 +4,8 @@ package onnxruntime
 
 import "syscall"
 
-// support is nothing where the runtime carries what it needs beside it.
-func support() {}
+// preloadCppRuntime is nothing where the runtime carries what it needs beside it.
+func preloadCppRuntime() {}
 
 func loadLibrary(name string) (uintptr, error) {
 	h, err := syscall.LoadLibrary(name)

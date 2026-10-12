@@ -51,7 +51,7 @@ func TestTheCandidatesAreTheLibrariesThisMachineHolds(t *testing.T) {
 	held := writeFile(t, installed, runtimeName()+".1.23", "installed")
 	t.Setenv("LD_LIBRARY_PATH", installed)
 
-	got := candidates(Settings{Dir: fetched})
+	got := getLibraryCandidates(Settings{Dir: fetched})
 	if len(got) < 6 {
 		t.Fatalf("offered %q", got)
 	}
@@ -107,7 +107,7 @@ func TestEveryLibraryThatDoesNotOpenIsRefused(t *testing.T) {
 	garbage := writeFile(t, dir, "garbage.so", "not a library")
 	missing := filepath.Join(dir, "missing.so")
 
-	engine, at, refused := load([]string{garbage, missing})
+	engine, at, refused := loadFirstLibrary([]string{garbage, missing})
 	if engine != nil || at != "" {
 		t.Fatalf("opened %q", at)
 	}
@@ -115,7 +115,7 @@ func TestEveryLibraryThatDoesNotOpenIsRefused(t *testing.T) {
 		t.Errorf("refused %q", refused)
 	}
 
-	if engine, at, refused := load(nil); engine != nil || at != "" || len(refused) != 0 {
+	if engine, at, refused := loadFirstLibrary(nil); engine != nil || at != "" || len(refused) != 0 {
 		t.Errorf("with nothing to open: %v, %q, %q", engine, at, refused)
 	}
 }
@@ -154,7 +154,7 @@ func TestTheDirectoriesStartWithTheLoadersOwnPathAndTheUsersProfile(t *testing.T
 	first, second := t.TempDir(), t.TempDir()
 	t.Setenv("LD_LIBRARY_PATH", first+string(os.PathListSeparator)+second)
 
-	got := directories()
+	got := getLibraryDirectories()
 	head := []string{first, second, filepath.Join(home, ".nix-profile", "lib")}
 	if len(got) < len(head)+2 || !slices.Equal(got[:3], head) {
 		t.Fatalf("directories %q", got)
@@ -168,7 +168,7 @@ func TestTheDirectoriesHoldNoProfileWhereThereIsNoHome(t *testing.T) {
 	t.Setenv("HOME", "")
 	t.Setenv("USERPROFILE", "")
 	t.Setenv("LD_LIBRARY_PATH", "")
-	for _, dir := range directories() {
+	for _, dir := range getLibraryDirectories() {
 		if strings.Contains(dir, ".nix-profile") {
 			t.Errorf("directories hold %q", dir)
 		}

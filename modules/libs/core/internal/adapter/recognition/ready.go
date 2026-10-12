@@ -11,7 +11,7 @@ import (
 // reading is fetching what it needs.
 func Ready(cfg Config) bool {
 	cfg.ShouldDownload = false
-	if !onnxruntime.IsHere(cfg.settings()) {
+	if !onnxruntime.IsAvailable(cfg.settings()) {
 		return false
 	}
 	for _, one := range []struct{ path, name, what string }{

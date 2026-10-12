@@ -17,7 +17,7 @@ func getSettings() Settings { return Settings{Section: "indexing.recognition"} }
 // A file that is there is not a library that loads, and every way of getting one
 // ends in the same question: does it open.
 func TestTheRuntimeThisMachineHoldsOpens(t *testing.T) {
-	engine, at, refused := load(candidates(getSettings()))
+	engine, at, refused := loadFirstLibrary(getLibraryCandidates(getSettings()))
 	if engine == nil {
 		t.Skip("this machine holds none:", refused)
 	}
@@ -38,7 +38,7 @@ func TestTheRuntimeFetchedForThisPlatformOpens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	support()
+	preloadCppRuntime()
 	engine, err := ort.NewEngine(at)
 	if err != nil {
 		t.Fatal(err)
@@ -115,7 +115,7 @@ func TestHereAnswersWhileTheRuntimeIsBeingOpened(t *testing.T) {
 	defer halfOpen(t)()
 
 	said := make(chan bool, 1)
-	go func() { said <- IsHere(getSettings()) }()
+	go func() { said <- IsAvailable(getSettings()) }()
 
 	select {
 	case <-said:

@@ -82,8 +82,8 @@ func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
 	return nil
 }
 
-// ortAPIKeyed reaches the runtime's keyed execution-provider entry point.
-type ortAPIKeyed struct {
+// ortAPIProviderTable reaches the runtime's keyed execution-provider entry point.
+type ortAPIProviderTable struct {
 	_                                     [216]uintptr
 	SessionOptionsAppendExecutionProvider uintptr
 }
@@ -106,7 +106,7 @@ func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits) bool {
 	if base == nil {
 		return false
 	}
-	var getAPI func(uint32) *ortAPIKeyed
+	var getAPI func(uint32) *ortAPIProviderTable
 	purego.RegisterFunc(&getAPI, base.GetAPI)
 	api := getAPI(23)
 	if api == nil || api.SessionOptionsAppendExecutionProvider == 0 {
