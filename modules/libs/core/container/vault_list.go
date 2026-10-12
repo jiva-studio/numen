@@ -10,8 +10,8 @@ func (c Config) KnownVaults(registry port.VaultRegistry) *vault.KnownVaults {
 	return &known
 }
 
-func (c Config) ResolveVault(registry port.VaultRegistry) *vault.ResolveVault {
-	return vault.NewResolveVault(vault.NewFind(registry))
+func (c Config) GetVault(registry port.VaultRegistry) *vault.GetVault {
+	return vault.NewGetVault(vault.NewFind(registry))
 }
 
 func (c Config) PickFolder(dialog port.FolderDialog) *vault.PickFolder {

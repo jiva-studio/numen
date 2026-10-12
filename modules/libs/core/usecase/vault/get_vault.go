@@ -13,19 +13,19 @@ var ErrNoName = errors.New("name the vault, as vault_list gives it")
 // be another.
 var ErrShowing = errors.New("this is the vault the window is showing")
 
-// ResolveVault finds the vault a name, a folder or an identity reaches on the
+// GetVault finds the vault a name, a folder or an identity reaches on the
 // list, and refuses the one being shown where that is asked.
-type ResolveVault struct {
+type GetVault struct {
 	find Find
 }
 
-func NewResolveVault(find Find) *ResolveVault {
-	return &ResolveVault{find: find}
+func NewGetVault(find Find) *GetVault {
+	return &GetVault{find: find}
 }
 
 // Execute returns the vault. A showing of the empty identity refuses nothing,
 // and otherwise the vault of that identity is returned with ErrShowing.
-func (u *ResolveVault) Execute(nameOrPath string, showing domain.VaultID) (domain.Vault, error) {
+func (u *GetVault) Execute(nameOrPath string, showing domain.VaultID) (domain.Vault, error) {
 	if nameOrPath == "" {
 		return domain.Vault{}, ErrNoName
 	}

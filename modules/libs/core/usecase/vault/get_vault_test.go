@@ -12,7 +12,7 @@ import (
 func TestAVaultIsResolvedByNameFolderOrIdentity(t *testing.T) {
 	t.Parallel()
 	first, second, registry := twoVaults(t)
-	resolve := vaults.NewResolveVault(vaults.NewFind(registry))
+	resolve := vaults.NewGetVault(vaults.NewFind(registry))
 
 	for _, ask := range []string{second.Name, second.Path, string(second.ID)} {
 		got, err := resolve.Execute(ask, first.ID)
@@ -29,7 +29,7 @@ func TestNamingNoVaultIsRefused(t *testing.T) {
 	t.Parallel()
 	_, _, registry := twoVaults(t)
 
-	if _, err := vaults.NewResolveVault(vaults.NewFind(registry)).Execute("", ""); !errors.Is(err, vaults.ErrNoName) {
+	if _, err := vaults.NewGetVault(vaults.NewFind(registry)).Execute("", ""); !errors.Is(err, vaults.ErrNoName) {
 		t.Errorf("no name resolved: %v", err)
 	}
 }
@@ -37,7 +37,7 @@ func TestNamingNoVaultIsRefused(t *testing.T) {
 func TestTheVaultBeingShownIsRefusedAndStillReturned(t *testing.T) {
 	t.Parallel()
 	first, _, registry := twoVaults(t)
-	resolve := vaults.NewResolveVault(vaults.NewFind(registry))
+	resolve := vaults.NewGetVault(vaults.NewFind(registry))
 
 	got, err := resolve.Execute(first.Name, first.ID)
 	if !errors.Is(err, vaults.ErrShowing) || got.ID != first.ID {

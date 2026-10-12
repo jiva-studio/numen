@@ -144,7 +144,7 @@ func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput,
 }
 
 func addVaultRename(server *sdk.Server, core Core) {
-	if core.Vaults.ResolveVault == nil || core.Vaults.Rename == nil {
+	if core.Vaults.GetVault == nil || core.Vaults.Rename == nil {
 		return
 	}
 
@@ -167,7 +167,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 			Name   string `json:"name"`
 			Folder string `json:"folder"`
 		}
-		v, err := core.Vaults.ResolveVault.Execute(in.Vault, "")
+		v, err := core.Vaults.GetVault.Execute(in.Vault, "")
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -180,7 +180,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 }
 
 func addVaultForget(server *sdk.Server, core Core) {
-	if core.Vaults.ResolveVault == nil || core.Vaults.Unregister == nil {
+	if core.Vaults.GetVault == nil || core.Vaults.Unregister == nil {
 		return
 	}
 
@@ -203,7 +203,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 			IsForgotten bool   `json:"forgotten"`
 			Folder      string `json:"folder" jsonschema:"where the folder still is; vault_add on it brings the vault back"`
 		}
-		v, err := core.Vaults.ResolveVault.Execute(in.Vault, core.getCurrentVault().Vault.ID)
+		v, err := core.Vaults.GetVault.Execute(in.Vault, core.getCurrentVault().Vault.ID)
 		if errors.Is(err, vaults.ErrShowing) {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
 		}
@@ -218,7 +218,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 }
 
 func addVaultOpen(server *sdk.Server, core Core) {
-	if core.Vaults.ResolveVault == nil || core.Vaults.Opens == nil {
+	if core.Vaults.GetVault == nil || core.Vaults.Opens == nil {
 		return
 	}
 
@@ -245,7 +245,7 @@ func addVaultOpen(server *sdk.Server, core Core) {
 			IsOpening bool   `json:"opening"`
 			Status    string `json:"status" jsonschema:"what is happening now, in words to say back to the person"`
 		}
-		v, err := core.Vaults.ResolveVault.Execute(in.Vault, core.getCurrentVault().Vault.ID)
+		v, err := core.Vaults.GetVault.Execute(in.Vault, core.getCurrentVault().Vault.ID)
 		if errors.Is(err, vaults.ErrShowing) {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is already showing", v.Name)
 		}

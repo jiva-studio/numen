@@ -111,12 +111,12 @@ func onTheList(t *testing.T) *installation {
 		Showing: mcp.ShowOneVault(f.first, f.first.Path),
 		Readers: filesystem.VaultReaders{},
 		Vaults: mcp.Vaults{
-			KnownVaults:  container.Config{}.KnownVaults(registry),
-			ResolveVault: container.Config{}.ResolveVault(registry),
-			PickFolder:   container.Config{}.PickFolder(f.dialog),
-			Add:          &adding,
-			Rename:       &renaming,
-			Unregister:   &forgetting,
+			KnownVaults: container.Config{}.KnownVaults(registry),
+			GetVault:    container.Config{}.GetVault(registry),
+			PickFolder:  container.Config{}.PickFolder(f.dialog),
+			Add:         &adding,
+			Rename:      &renaming,
+			Unregister:  &forgetting,
 			Opens: func(_ context.Context, v domain.Vault) error {
 				f.swapped <- v
 				return nil
@@ -487,9 +487,9 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 		{"vault_rename", func(c *mcp.Core) { c.Vaults.Rename = nil }},
 		{"vault_remove", func(c *mcp.Core) { c.Vaults.Unregister = nil }},
 		{"vault_open", func(c *mcp.Core) { c.Vaults.Opens = nil }},
-		{"vault_rename", func(c *mcp.Core) { c.Vaults.ResolveVault = nil }},
-		{"vault_remove", func(c *mcp.Core) { c.Vaults.ResolveVault = nil }},
-		{"vault_open", func(c *mcp.Core) { c.Vaults.ResolveVault = nil }},
+		{"vault_rename", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
+		{"vault_remove", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
+		{"vault_open", func(c *mcp.Core) { c.Vaults.GetVault = nil }},
 	} {
 		t.Run(one.tool, func(t *testing.T) {
 			f := onTheList(t)
