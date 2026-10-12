@@ -4,8 +4,8 @@
  * nothing, a row named as open that cannot hold, and a drag let go past the
  * last row.
  */
-import { describe, expect, it } from 'vitest'
-import { flatten, type Row, type RowId } from './row'
+import { describe, expect, it, vi } from 'vitest'
+import { flatten, getMarkOf, type Row, type RowId, type RowMarker } from './row'
 import {
   everyRow,
   getRowsBetween,
@@ -100,6 +100,49 @@ describe('what is drawn', () => {
   it('draws nothing from nothing', () => {
     expect(flatten([], new Set())).toStrictEqual([])
   })
+
+  it('tells a row that is holding', () => {
+    expect(getShownRows('work').map((row) => row.hasRows)).toStrictEqual([
+      true,
+      false,
+      false,
+      false,
+      false,
+    ])
+  })
+})
+
+describe('what a row is marked with', () => {
+  const marker = (answer: string | null | undefined): RowMarker => ({
+    attribute: 'data-place',
+    valueFor: () => answer as string | null,
+  })
+
+  it('is the attribute set to what the row is answered with', () => {
+    expect(getMarkOf(marker('work'), 'notes')).toStrictEqual({ 'data-place': 'work' })
+  })
+
+  it('is the attribute set to an empty answer', () => {
+    expect(getMarkOf(marker(''), null)).toStrictEqual({ 'data-place': '' })
+  })
+
+  it('is asked about the row it marks', () => {
+    const valueFor = vi.fn<(row: RowId | null) => string | null>(() => 'x')
+    getMarkOf({ attribute: 'data-place', valueFor }, 'notes')
+    expect(valueFor).toHaveBeenCalledWith('notes')
+  })
+
+  it('is nothing where the row is answered with null', () => {
+    expect(getMarkOf(marker(null), 'notes')).toStrictEqual({})
+  })
+
+  it('is nothing where the row is answered with nothing', () => {
+    expect(getMarkOf(marker(undefined), 'notes')).toStrictEqual({})
+  })
+
+  it('is nothing where there is no marker', () => {
+    expect(getMarkOf(undefined, 'notes')).toStrictEqual({})
+  })
 })
 
 describe('the keys a tree answers', () => {
@@ -170,6 +213,11 @@ describe('where a key takes the keyboard', () => {
 
   it('stays at the top level, where there is nothing to climb to', () => {
     expect(step('loose', 'ArrowLeft')).toStrictEqual({ at: 'loose', turn: null })
+  })
+
+  it('lands on the first row from no row at all, whichever key is pressed', () => {
+    expect(step(null, 'ArrowDown')).toStrictEqual({ at: 'work', turn: null })
+    expect(step(null, 'ArrowRight')).toStrictEqual({ at: 'work', turn: null })
   })
 
   it('lands nowhere while nothing is drawn', () => {
@@ -305,6 +353,15 @@ describe('the rows between two rows', () => {
 
   it('are none at all where the row reached is not drawn', () => {
     expect(getRowsBetween(shown, 'work', 'friday')).toStrictEqual([])
+  })
+})
+
+describe('the rows between two rows, one of them not drawn', () => {
+  const shown = getShownRows('work')
+
+  it('is none where the row reached is not drawn', () => {
+    expect(getRowsBetween(shown, 'work', 'gone')).toStrictEqual([])
+    expect(getRowsBetween(shown, 'gone', 'gone')).toStrictEqual([])
   })
 })
 

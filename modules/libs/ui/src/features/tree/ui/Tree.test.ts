@@ -220,7 +220,9 @@ describe('a press', () => {
   it('says the selection once for a press with a modifier', async () => {
     const held = mountTree({ selected: ['work'] })
     await press(held, 'notes', { ctrlKey: true })
-    expect(held.emitted('select')).toHaveLength(1)
+    expect(held.emitted('select')?.[0]).toStrictEqual([
+      ['work', 'plans', 'notes', 'empty', 'loose'],
+    ])
   })
 
   it('twice on a row that holds turns it', async () => {
@@ -666,5 +668,214 @@ describe('the attribute rows are marked with', () => {
 
     expect(markIn(held, 'empty')).toBe('empty')
     expect(markIn(held, 'plans')).toBeUndefined()
+  })
+})
+
+/** A cancelable key press: the tree took it where it is prevented. */
+const sendKey = (target: Element, key: string, over: KeyboardEventInit = {}): KeyboardEvent => {
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...over })
+  target.dispatchEvent(event)
+  return event
+}
+
+describe('the keys the tree takes', () => {
+  const sendKeyOn = (wrapper: Tree, row: string, key: string, over: KeyboardEventInit = {}) =>
+    sendKey(rowIn(wrapper, row).element, key, over)
+
+  it('takes Ctrl and A, in either case, to select every row', () => {
+    const held = mountTree()
+    const lower = sendKeyOn(held, 'notes', 'a', { ctrlKey: true })
+    const upper = sendKeyOn(held, 'notes', 'A', { ctrlKey: true })
+
+    expect(lower.defaultPrevented).toBe(true)
+    expect(upper.defaultPrevented).toBe(true)
+    expect(held.emitted('select')).toHaveLength(1)
+  })
+
+  it('takes Meta and A to select every row', () => {
+    const held = mountTree()
+    const taken = sendKeyOn(held, 'notes', 'a', { metaKey: true })
+
+    expect(taken.defaultPrevented).toBe(true)
+    expect(held.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
+  })
+
+  it('leaves A alone while nothing is held down', () => {
+    const held = mountTree()
+    const left = sendKeyOn(held, 'notes', 'a')
+
+    expect(left.defaultPrevented).toBe(false)
+    expect(held.emitted('select')).toBeUndefined()
+  })
+
+  it('leaves another key alone with Ctrl held down', () => {
+    const held = mountTree()
+    const left = sendKeyOn(held, 'notes', 'b', { ctrlKey: true })
+
+    expect(left.defaultPrevented).toBe(false)
+    expect(held.emitted('select')).toBeUndefined()
+  })
+
+  it('takes Delete and Backspace', () => {
+    const held = mountTree({ selected: ['notes'] })
+
+    expect(sendKeyOn(held, 'notes', 'Delete').defaultPrevented).toBe(true)
+    expect(sendKeyOn(held, 'notes', 'Backspace').defaultPrevented).toBe(true)
+  })
+
+  it('takes Delete where nothing is selected', () => {
+    const held = mountTree()
+    expect(sendKeyOn(held, 'notes', 'Delete').defaultPrevented).toBe(true)
+  })
+
+  it('takes Enter', () => {
+    const held = mountTree({ selected: ['notes'] })
+    expect(sendKeyOn(held, 'notes', 'Enter').defaultPrevented).toBe(true)
+  })
+
+  it('takes the menu key, and reaches the menu the pointer reaches', () => {
+    const held = mountTree({ selected: ['notes'] })
+    const taken = sendKeyOn(held, 'notes', 'ContextMenu')
+
+    expect(taken.defaultPrevented).toBe(true)
+    expect(held.emitted('menu')).toStrictEqual([['notes', { x: 0, y: 3 * HEIGHT }]])
+  })
+
+  it('takes F10 only with Shift', () => {
+    const held = mountTree({ selected: ['notes'] })
+    const left = sendKeyOn(held, 'notes', 'F10')
+
+    expect(left.defaultPrevented).toBe(false)
+    expect(held.emitted('menu')).toBeUndefined()
+  })
+
+  it('takes the arrows, the Home key and the End key', () => {
+    const held = mountTree({ selected: ['notes'] })
+    const keys = ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End']
+
+    expect(keys.map((key) => sendKeyOn(held, 'notes', key).defaultPrevented)).toStrictEqual(
+      keys.map(() => true),
+    )
+  })
+
+  it('leaves any other key alone', () => {
+    const held = mountTree({ selected: ['notes'] })
+    const left = sendKeyOn(held, 'notes', 'x')
+
+    expect(left.defaultPrevented).toBe(false)
+    expect(held.emitted('select')).toBeUndefined()
+  })
+
+  it('leaves the arrows alone while there is nothing to draw', () => {
+    const held = mountTree({ rows: [] })
+    const left = sendKey(held.get('[role="tree"]').element, 'ArrowDown')
+
+    expect(left.defaultPrevented).toBe(false)
+    expect(held.emitted('select')).toBeUndefined()
+  })
+
+  it('leaves Enter alone while there is nothing to draw', () => {
+    const held = mountTree({ rows: [] })
+    const left = sendKey(held.get('[role="tree"]').element, 'Enter')
+
+    expect(left.defaultPrevented).toBe(false)
+    expect(held.emitted('activate')).toBeUndefined()
+  })
+})
+
+describe('a press on a row', () => {
+  /** A press of its own making: it can be cancelled, and the button is the one given. */
+  const sendPress = (wrapper: Tree, row: string, button: number): MouseEvent => {
+    const event = new MouseEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      button,
+      clientX: 10,
+      clientY: middleOf(wrapper, row),
+    })
+    rowIn(wrapper, row).element.dispatchEvent(event)
+    return event
+  }
+
+  it('is taken with the primary button, and puts the keyboard on the row', () => {
+    const held = mountTree()
+    const taken = sendPress(held, 'notes', 0)
+
+    expect(taken.defaultPrevented).toBe(true)
+    expect(document.activeElement).toBe(rowIn(held, 'notes').element)
+    expect(held.emitted('select')).toStrictEqual([[['notes']]])
+  })
+
+  it('is left alone with any other button', () => {
+    const held = mountTree()
+    const left = sendPress(held, 'notes', 2)
+
+    expect(left.defaultPrevented).toBe(false)
+    expect(document.activeElement).not.toBe(rowIn(held, 'notes').element)
+    expect(held.emitted('select')).toBeUndefined()
+  })
+})
+
+describe('where a drop would land, shown on the tree', () => {
+  const lift = (wrapper: Tree, row: string, y: number): void => {
+    pointer('pointerdown', middleOf(wrapper, row), rowIn(wrapper, row).element)
+    pointer('pointermove', y)
+  }
+
+  const marked = (wrapper: Tree, attribute: string) =>
+    wrapper.findAll(`[data-tree-row][${attribute}]`).map((row) => row.attributes('data-tree-row'))
+
+  it('marks the row a drop would land inside, and no row above', async () => {
+    const held = mountTree()
+    lift(held, 'loose', 12)
+    await held.vm.$nextTick()
+
+    expect(marked(held, 'data-into')).toStrictEqual(['work'])
+    expect(marked(held, 'data-before')).toStrictEqual([])
+    expect(held.get('.tree').attributes('data-into')).toBeUndefined()
+  })
+
+  it('marks the row a drop would land above, and no row inside', async () => {
+    const held = mountTree()
+    lift(held, 'loose', 2)
+    await held.vm.$nextTick()
+
+    expect(marked(held, 'data-before')).toStrictEqual(['work'])
+    expect(marked(held, 'data-into')).toStrictEqual([])
+  })
+
+  it('marks the whole tree where a drop would land at the top level', async () => {
+    const held = mountTree()
+    lift(held, 'work', 5 * HEIGHT - 2)
+    await held.vm.$nextTick()
+
+    expect(held.get('.tree').attributes('data-into')).toBe('')
+    expect(marked(held, 'data-into')).toStrictEqual([])
+    expect(marked(held, 'data-before')).toStrictEqual([])
+  })
+
+  it('marks no row where a drop would land nowhere', async () => {
+    const held = mountTree()
+    lift(held, 'loose', 9 * HEIGHT)
+    await held.vm.$nextTick()
+
+    expect(marked(held, 'data-into')).toStrictEqual([])
+    expect(marked(held, 'data-before')).toStrictEqual([])
+  })
+
+  it('marks the rows being dragged while they are, and no other', async () => {
+    const held = mountTree({ selected: ['notes', 'loose'] })
+    lift(held, 'loose', 12)
+    await held.vm.$nextTick()
+
+    expect(marked(held, 'data-dragged')).toStrictEqual(['notes', 'loose'])
+  })
+
+  it('marks no row once the rows have been let go of', async () => {
+    const held = mountTree({ selected: ['notes', 'loose'] })
+    await dragTo(held, 'loose', 12)
+
+    expect(marked(held, 'data-dragged')).toStrictEqual([])
+    expect(marked(held, 'data-into')).toStrictEqual([])
   })
 })
