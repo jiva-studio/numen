@@ -36,7 +36,7 @@ type ImportOutcome struct {
 
 // addImportTool serves the one tool that makes a file out of an address.
 func addImportTool(server *sdk.Server, core Core) {
-	if core.Sources.Import == nil || core.Sources.URLs == nil {
+	if core.Sources.CreateAndImportURL == nil {
 		return
 	}
 	addTool(server, &sdk.Tool{
@@ -58,36 +58,24 @@ func addImportTool(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, ImportOutcome{}, err
 		}
-		v := core.getCurrentVault().Vault
-		// It is named by the address until what is there says what it is
-		// called, which is what the import does next.
-		made, err := core.Sources.URLs.Execute(ctx, v, source.NewURL{
-			Address: at, Path: in.Folder,
-		})
-		if err != nil {
-			return nil, ImportOutcome{Path: made.Path, Refused: sayError(err)}, nil
-		}
-
-		out := ImportOutcome{Path: made.Path}
-		fetched, err := core.Sources.Import.Execute(ctx, v, made.Path)
-		if err != nil {
+		imported, err := core.Sources.CreateAndImportURL.Execute(
+			ctx, core.getCurrentVault().Vault, source.NewURL{Address: at, Path: in.Folder}, in.ShouldCopy)
+		out := ImportOutcome{Path: imported.Path}
+		var copyFailed *source.CopyError
+		if err != nil && !errors.As(err, &copyFailed) {
 			out.Refused = sayError(err)
 			return nil, out, nil
 		}
-		out.Path, out.Producer = fetched.Path, fetched.Producer
-		out.Bytes, out.IsNothing = fetched.Bytes, fetched.IsNothing
+		out.Producer, out.Bytes, out.IsNothing = imported.Producer, imported.Bytes, imported.IsNothing
 		if in.ShouldCopy {
-			out.CopiedBytes, out.CopyRefused = copyFiles(ctx, core, v, out.Path)
+			out.CopiedBytes, out.CopyRefused = describeCopy(imported.Copy, err)
 		}
 		return nil, out, nil
 	})
 }
 
-// copyFiles fetches the video at an address, and says why where it did not.
-func copyFiles(
-	ctx context.Context, core Core, v domain.Vault, path string,
-) (int64, string) {
-	got, err := core.Sources.Import.Copy(ctx, v, path)
+// describeCopy says how large the copy of a video is, and why where there is none.
+func describeCopy(got source.CopyResult, err error) (int64, string) {
 	switch {
 	case errors.Is(err, source.ErrNotAURL):
 		return 0, "there is nothing to copy at that address"

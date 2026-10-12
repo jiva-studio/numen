@@ -12,7 +12,8 @@ import (
 // CreateURL makes the file a web address is kept in.
 //
 // It holds the address and nothing else, so what a person writes about what is
-// there is a note of their own, pointing at this file.
+// there is a note of their own, pointing at this file. Until a download says what
+// is there, the file is named by its address.
 type CreateURL struct {
 	Writers port.VaultWriters
 
