@@ -99,7 +99,9 @@ describe('the markdown the editor is written in', () => {
   it('reads a fenced block in the language named after the fence', async () => {
     const javascript = LANGUAGES.find((language) => language.name === 'javascript')
     await javascript?.load()
-    expect(getNames(createProse('```js\nlet total = 1\n```\n'))).toEqual([])
+    const doc = '```js\nlet total = 1\n```\n'
+    const state = createProse(doc)
+    expect(syntaxTree(state).resolveInner(doc.indexOf('total'), 1).name).toBe('VariableDefinition')
   })
 })
 
