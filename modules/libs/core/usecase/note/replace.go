@@ -111,7 +111,8 @@ func (u Replace) Execute(
 		where, plainly := markdown.Where(body, stood)
 		switch {
 		case len(where) == 1:
-		case len(where) > 1:
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the mutated operator is >=: a length of one is taken by the case above, so the two agree for every length"
+		case len(where) > 1: // gomutants:disable INTEGER_DECREMENT reason="the mutated value is 0: a length of one is taken by the case above, so > 0 selects the same lengths"
 			return AmbiguousSpan{Places: len(where)}
 		case becomes != "" && strings.Contains(body, becomes):
 			return ErrAlreadyWritten
