@@ -806,7 +806,7 @@ func TestWhatThePortMethodRuleRefuses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range []string{"NoteQueries.Names", "Transcriber.Transcription"} {
+	for _, one := range []string{"NoteQueries.GetNameMatches", "Transcriber.GetTranscriptionModel"} {
 		if !slices.Contains(uncalled, one) {
 			t.Errorf("nothing outside calls %s and the rule does not refuse it", one)
 		}
