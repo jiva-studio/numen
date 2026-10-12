@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"io"
 	"net/http"
 	"net/url"
@@ -13,6 +11,9 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 
 	"connectrpc.com/connect"
 
@@ -34,7 +35,7 @@ import (
 const widestPage = 4096
 
 // errNoDocuments is what a build that serves no documents answers.
-var errNoDocuments = connect.NewError(connect.CodeUnimplemented, errors.New("this build serves no documents"))
+var errNoDocuments = errors.New("this build serves no documents")
 
 // viewer holds what the window is looking at: the documents open and the pages
 // already drawn.
@@ -44,7 +45,7 @@ var errNoDocuments = connect.NewError(connect.CodeUnimplemented, errors.New("thi
 type viewer struct {
 	// open holds a document open for drawing. It is pdf.OpenReader in the
 	// application, and a test puts its own in.
-	open          func(file io.ReadSeekCloser) (pool.Scan, error)
+	open          func(file io.ReadSeekCloser) (port.OpenDocument, error)
 	docs          atomic.Pointer[pool.Documents]
 	renderedPages atomic.Pointer[pagecache.Memory]
 	// books holds the books open. A book is an archive unpacked and parsed, and
@@ -91,8 +92,8 @@ const (
 )
 
 // newDocumentOpener holds a document open with what the application draws with.
-func newDocumentOpener(docs port.PageRenderer) func(io.ReadSeekCloser) (pool.Scan, error) {
-	return func(file io.ReadSeekCloser) (pool.Scan, error) {
+func newDocumentOpener(docs port.PageRenderer) func(io.ReadSeekCloser) (port.OpenDocument, error) {
+	return func(file io.ReadSeekCloser) (port.OpenDocument, error) {
 		return docs.OpenDocument(context.Background(), file)
 	}
 }
@@ -146,7 +147,7 @@ func (v *viewer) UseDocument(
 	file func(context.Context) (io.ReadSeekCloser, error),
 	use func(document.Scan) error,
 ) error {
-	return v.docs.Load().Use(ctx, mark, func() (pool.Scan, error) {
+	return v.docs.Load().Use(ctx, mark, func() (port.OpenDocument, error) {
 		opened, err := file(context.WithoutCancel(ctx))
 		if err != nil {
 			return nil, err
@@ -193,7 +194,7 @@ func (a *API) GetDocument(
 	r *connect.Request[v1.GetDocumentRequest],
 ) (*connect.Response[v1.GetDocumentResponse], error) {
 	if a.Documents.GetDocument == nil {
-		return nil, errNoDocuments
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
 	showing, err := a.getShownVault()
 	if err != nil {
@@ -209,7 +210,7 @@ func (a *API) GetDocument(
 	out := &v1.GetDocumentResponse{Fingerprint: newWireFingerprint(got.Fingerprint)}
 	out.Pages = make([]*v1.Page, len(got.Pages))
 	for i, size := range got.Pages {
-		out.Pages[i] = &v1.Page{Width: size.Width, Height: size.Height}
+		out.Pages[i] = &v1.Page{Width: size[0], Height: size[1]}
 	}
 	return connect.NewResponse(out), nil
 }
@@ -312,22 +313,22 @@ func (a *API) getBackgroundContext() context.Context {
 // parsePageQuery is which page the window asks for and how wide, in the pixels of the
 // device it draws on. A document is asked for a page of it and no other place
 // in it.
-func parsePageQuery(where string, query url.Values) (at, width int, named pool.Fingerprint, err error) {
+func parsePageQuery(where string, query url.Values) (at, width int, named document.Fingerprint, err error) {
 	asked, found := strings.CutPrefix(where, pagesName+"/")
 	if !found {
-		return 0, 0, pool.Fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
+		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
 	}
 	at, err = strconv.Atoi(asked)
 	if err != nil || at < 0 {
-		return 0, 0, pool.Fingerprint{}, fmt.Errorf("%q is not a page", asked)
+		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a page", asked)
 	}
 	width, err = strconv.Atoi(query.Get("wide"))
 	if err != nil || width < 1 || width > widestPage {
-		return 0, 0, pool.Fingerprint{}, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
+		return 0, 0, document.Fingerprint{}, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
 	}
 	named, err = parseFingerprint(query)
 	if err != nil {
-		return 0, 0, pool.Fingerprint{}, err
+		return 0, 0, document.Fingerprint{}, err
 	}
 	return at, width, named, nil
 }

@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,6 +13,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 
 	"connectrpc.com/connect"
 
@@ -148,7 +150,7 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 
 // markupOf is the markup of one document of a book, asked as the schema asks it
 // with the bytes it was given out for.
-func markupOf(t *testing.T, api *API, path, document string, mark pool.Fingerprint) string {
+func markupOf(t *testing.T, api *API, path, document string, mark document.Fingerprint) string {
 	t.Helper()
 	out, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
 		Path: path, Document: document, Baseline: newWireFingerprint(mark),
@@ -276,7 +278,7 @@ func TestABookIsReadOnceHoweverManyChaptersAreTurned(t *testing.T) {
 		reads++
 		return epub.Read(bookOf(t))
 	}
-	mark := pool.Fingerprint{Path: reflowed, Size: 1, Mtime: 2}
+	mark := document.Fingerprint{Path: reflowed, Size: 1, Mtime: 2}
 	for range 3 {
 		if _, err := held.Acquire(t.Context(), mark, read); err != nil {
 			t.Fatalf("take the book: %v", err)
@@ -295,7 +297,7 @@ func TestOnlyTheBooksInFrontOfThePersonAreHeld(t *testing.T) {
 
 	raw := bookOf(t)
 	for at := range pool.MaxOpenBooks + 1 {
-		mark := pool.Fingerprint{Path: fmt.Sprintf("library/%d.epub", at), Size: int64(at)}
+		mark := document.Fingerprint{Path: fmt.Sprintf("library/%d.epub", at), Size: int64(at)}
 		if _, err := held.Acquire(t.Context(), mark, func() (*epub.Book, error) { return epub.Read(raw) }); err != nil {
 			t.Fatalf("take the book: %v", err)
 		}
@@ -318,7 +320,7 @@ func TestABookThatIsStillBeingReadIsBusy(t *testing.T) {
 		<-gate
 		return epub.Read(bookOf(t))
 	}
-	mark := pool.Fingerprint{Path: reflowed, Size: 1}
+	mark := document.Fingerprint{Path: reflowed, Size: 1}
 
 	waited, cancel := context.WithTimeout(t.Context(), time.Millisecond)
 	defer cancel()
@@ -340,7 +342,7 @@ func TestABookNobodyIsReadingIsLetGo(t *testing.T) {
 	held := pool.NewBooks(pool.MaxOpenBooks, time.Millisecond)
 	t.Cleanup(held.Close)
 
-	mark := pool.Fingerprint{Path: reflowed, Size: 1}
+	mark := document.Fingerprint{Path: reflowed, Size: 1}
 	if _, err := held.Acquire(t.Context(), mark, func() (*epub.Book, error) { return epub.Read(bookOf(t)) }); err != nil {
 		t.Fatalf("take the book: %v", err)
 	}
@@ -387,7 +389,7 @@ func readFrom(t *testing.T) (*API, http.Handler) {
 
 // pictureOf is where a picture a book carries is asked for: the place it has in
 // the archive, each segment of it escaped on its own.
-func pictureOf(path, entry string, mark pool.Fingerprint) string {
+func pictureOf(path, entry string, mark document.Fingerprint) string {
 	parts := strings.Split(entry, "/")
 	for at, one := range parts {
 		parts[at] = url.PathEscape(one)

@@ -1,13 +1,14 @@
 package editor
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // newDiskCache gives a window a folder of its own to keep its drawings in.
@@ -131,7 +132,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	}
 
 	// Older than the rest, the way a page nobody has turned back to is.
-	first := cache.GetPath(pagecache.ID{Document: getFingerprint(t, api), Page: 0, Width: 400})
+	first := cache.GetPath(document.PageKey{Document: getFingerprint(t, api), Page: 0, Width: 400})
 	old := time.Now().Add(-time.Hour)
 	if err := os.Chtimes(first, old, old); err != nil {
 		t.Fatal(err)
@@ -149,7 +150,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 
 // getFingerprint is what the vault says the book is, which is what a drawing is named
 // from.
-func getFingerprint(t *testing.T, api *API) pool.Fingerprint {
+func getFingerprint(t *testing.T, api *API) document.Fingerprint {
 	t.Helper()
 	_, said, err := api.stat(t.Context(), book)
 	if err != nil {

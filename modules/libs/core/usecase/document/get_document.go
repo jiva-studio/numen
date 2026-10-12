@@ -6,19 +6,17 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/docfile"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// PageSize is how big a page is in the page's own units.
-type PageSize struct {
-	Width  float64
-	Height float64
-}
-
-// Document is which bytes a document is and the shape of each of its pages.
+// Document is what GetDocument and GetBook read: which bytes they came from, and
+// either the size of each page, wide and high in the page's own units, or the
+// book.
 type Document struct {
 	Fingerprint Fingerprint
-	Pages       []PageSize
+	Pages       [][2]float64
+	Book        *epub.Book
 }
 
 // GetDocument finds how many pages a document has and how big each of them is.
@@ -40,10 +38,10 @@ func (u GetDocument) Execute(ctx context.Context, v domain.Vault, path string) (
 	}
 	out := Document{Fingerprint: mark}
 	err = u.documents.UseDocument(ctx, mark, openFile(reader, mark.Path), func(scan Scan) error {
-		out.Pages = make([]PageSize, scan.GetPageCount())
+		out.Pages = make([][2]float64, scan.GetPageCount())
 		for i := range out.Pages {
 			if wide, high, err := scan.GetPageSize(i); err == nil {
-				out.Pages[i] = PageSize{Width: wide, Height: high}
+				out.Pages[i] = [2]float64{wide, high}
 			}
 		}
 		return nil

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"image/jpeg"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -25,7 +26,7 @@ func TestGetDocumentAnswersTheShapeOfEachPage(t *testing.T) {
 	if got.Fingerprint.Path != scanPath || got.Fingerprint.Size != int64(len("the bytes of a scan")) {
 		t.Errorf("the document was read from %+v", got.Fingerprint)
 	}
-	want := []document.PageSize{{Width: 600, Height: 800}, {}, {Width: 300, Height: 400}}
+	want := [][2]float64{{600, 800}, {}, {300, 400}}
 	if len(got.Pages) != len(want) {
 		t.Fatalf("the document has %d pages, want %d", len(got.Pages), len(want))
 	}
@@ -123,8 +124,8 @@ func TestGetBookAnswersWhatTheBookIsAndWhereItWasRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got.Title != "A Reflowed Book" || got.Fingerprint.Path != bookPath || got.Fingerprint.Size == 0 {
-		t.Errorf("the book is %q read from %+v", got.Title, got.Fingerprint)
+	if got.Book.Title != "A Reflowed Book" || got.Fingerprint.Path != bookPath || got.Fingerprint.Size == 0 {
+		t.Errorf("the book is %q read from %+v", got.Book.Title, got.Fingerprint)
 	}
 }
 
@@ -158,7 +159,7 @@ func TestGetBookPictureSettlesTheTypeByTheBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	get := document.NewGetBookPicture(readers, kept{})
+	get := document.NewGetBookPicture(readers, kept{}, http.DetectContentType)
 
 	got, err := get.Execute(t.Context(), v, bookPath, book.Fingerprint, "OEBPS/pictures/plate.png")
 	if err != nil {

@@ -1,7 +1,6 @@
 package document
 
 import (
-	"bytes"
 	"context"
 	"errors"
 
@@ -19,14 +18,25 @@ type Picture struct {
 	Body []byte
 }
 
+// pictured are the types an entry may be served as. SVG is a document, with
+// script, style and addresses of its own, and is not among them.
+var pictured = map[string]bool{
+	"image/png":  true,
+	"image/jpeg": true,
+	"image/gif":  true,
+	"image/webp": true,
+}
+
 // GetBookPicture reads one picture out of a book's archive.
 type GetBookPicture struct {
 	readers port.VaultReaders
 	books   Books
+	detect  func([]byte) string
 }
 
-func NewGetBookPicture(readers port.VaultReaders, books Books) GetBookPicture {
-	return GetBookPicture{readers: readers, books: books}
+// NewGetBookPicture settles the type of an entry by detect, which reads the bytes.
+func NewGetBookPicture(readers port.VaultReaders, books Books, detect func([]byte) string) GetBookPicture {
+	return GetBookPicture{readers: readers, books: books, detect: detect}
 }
 
 // Execute answers while the file at the path is the bytes the named fingerprint
@@ -44,27 +54,9 @@ func (u GetBookPicture) Execute(
 	if err != nil {
 		return Picture{}, err
 	}
-	drawn := getPictureType(body)
-	if drawn == "" {
+	kind := u.detect(body)
+	if !pictured[kind] {
 		return Picture{}, ErrNotAPicture
 	}
-	return Picture{Type: drawn, Body: body}, nil
-}
-
-// getPictureType is the type the leading bytes of a picture settle, and nothing
-// for any other. SVG is a document, with script, style and addresses of its own,
-// and is none of them.
-func getPictureType(body []byte) string {
-	switch {
-	case bytes.HasPrefix(body, []byte("\x89PNG\r\n\x1a\n")):
-		return "image/png"
-	case bytes.HasPrefix(body, []byte("\xff\xd8\xff")):
-		return "image/jpeg"
-	case bytes.HasPrefix(body, []byte("GIF87a")), bytes.HasPrefix(body, []byte("GIF89a")):
-		return "image/gif"
-	case len(body) >= 12 && bytes.HasPrefix(body, []byte("RIFF")) && bytes.Equal(body[8:12], []byte("WEBP")):
-		return "image/webp"
-	default:
-		return ""
-	}
+	return Picture{Type: kind, Body: body}, nil
 }

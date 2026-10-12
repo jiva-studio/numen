@@ -15,16 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
-// Scan is a document held open for its pages to be drawn. A test puts its own
-// in.
-type Scan = port.OpenDocument
-
-// Fingerprint is which bytes a document is. Both caches key on it, so a
-// document rewritten under the same name is drawn again. The stamp is
-// nanoseconds since the epoch: this is a cache key, and a time.Time compares by
-// zone and monotonic reading as well as by instant.
-type Fingerprint = document.Fingerprint
-
 // ErrBusy is a document that could not be reached inside the bound: a worker of
 // the library's pool is held elsewhere, or the document is answering somebody
 // else. It is an answer and not a failure, and the window asks again.
@@ -40,7 +30,7 @@ type Document struct {
 	// ready is closed once the document is open or the reason it is not is
 	// known. Whoever asked for it while it was opening waits here.
 	ready chan struct{}
-	Scan  Scan
+	Scan  port.OpenDocument
 	why   error
 
 	// points is how wide each page is in its own units, measured when the page
@@ -89,9 +79,9 @@ func (d *Document) Close() {
 // nobody has looked at for a while is closed.
 type Documents struct {
 	mu   sync.Mutex
-	open map[Fingerprint]*Document
+	open map[document.Fingerprint]*Document
 	// order is what is held, least recently asked for first.
-	order []Fingerprint
+	order []document.Fingerprint
 	// limit is how many are held open at once, and idleFor how long one nobody
 	// is looking at is kept.
 	limit   int
@@ -116,7 +106,7 @@ const (
 // open at once, and how long one nobody is looking at is kept.
 func NewDocuments(limit int, idleFor time.Duration) *Documents {
 	return &Documents{
-		open:    map[Fingerprint]*Document{},
+		open:    map[document.Fingerprint]*Document{},
 		limit:   limit,
 		idleFor: idleFor,
 		empty:   make(chan struct{}),
@@ -132,8 +122,8 @@ func NewDocuments(limit int, idleFor time.Duration) *Documents {
 // callers asking at once open it once.
 func (d *Documents) Acquire(
 	ctx context.Context,
-	mark Fingerprint,
-	open func() (Scan, error),
+	mark document.Fingerprint,
+	open func() (port.OpenDocument, error),
 ) (*Document, func(), error) {
 	d.mu.Lock()
 	if d.isClosing {
@@ -177,8 +167,8 @@ func (d *Documents) Acquire(
 // told ErrBusy.
 func (d *Documents) Use(
 	ctx context.Context,
-	mark Fingerprint,
-	open func() (Scan, error),
+	mark document.Fingerprint,
+	open func() (port.OpenDocument, error),
 	use func(document.Scan) error,
 ) error {
 	doc, give, err := d.Acquire(ctx, mark, open)
@@ -195,7 +185,7 @@ func (d *Documents) Use(
 }
 
 // Load opens the document and tells whoever is waiting.
-func (d *Documents) Load(mark Fingerprint, doc *Document, open func() (Scan, error)) {
+func (d *Documents) Load(mark document.Fingerprint, doc *Document, open func() (port.OpenDocument, error)) {
 	doc.Scan, doc.why = open()
 	close(doc.ready)
 	if doc.why == nil {
@@ -212,7 +202,7 @@ func (d *Documents) Load(mark Fingerprint, doc *Document, open func() (Scan, err
 }
 
 // Release puts a document back and starts the clock on closing it.
-func (d *Documents) Release(mark Fingerprint, doc *Document) {
+func (d *Documents) Release(mark document.Fingerprint, doc *Document) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	doc.uses--
@@ -235,7 +225,7 @@ func (d *Documents) Release(mark Fingerprint, doc *Document) {
 }
 
 // CloseIfIdle closes a document nobody has asked about for a while.
-func (d *Documents) CloseIfIdle(mark Fingerprint, doc *Document) {
+func (d *Documents) CloseIfIdle(mark document.Fingerprint, doc *Document) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.open[mark] != doc || doc.uses > 0 {
@@ -301,12 +291,12 @@ func (d *Documents) Evict() {
 
 // Touch puts a fingerprint at the end of the order, which is the most recently
 // asked for.
-func (d *Documents) Touch(mark Fingerprint) {
+func (d *Documents) Touch(mark document.Fingerprint) {
 	d.RemoveFromOrder(mark)
 	d.order = append(d.order, mark)
 }
 
-func (d *Documents) RemoveFromOrder(mark Fingerprint) {
+func (d *Documents) RemoveFromOrder(mark document.Fingerprint) {
 	for i, held := range d.order {
 		if held == mark {
 			d.order = append(d.order[:i], d.order[i+1:]...)
@@ -315,10 +305,8 @@ func (d *Documents) RemoveFromOrder(mark Fingerprint) {
 	}
 }
 
-// GetPageCount is how many pages the document has.
 func (d *Document) GetPageCount() int { return d.Scan.GetPageCount() }
 
-// GetPageSize is how big a page is in the page's own units.
 func (d *Document) GetPageSize(index int) (wide, high float64, err error) {
 	return d.Scan.GetPageSize(index)
 }

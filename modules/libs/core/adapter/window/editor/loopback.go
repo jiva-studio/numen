@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"net"
 	"net/http"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 )
 
 // A Loopback is a socket on the loopback address that answers with the vault's
@@ -140,7 +140,7 @@ func (l *Loopback) Address(vault domain.Vault, ref domain.Fingerprint) string {
 	}
 	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) +
 		"/" + url.PathEscape(ref.Path) +
-		"?" + formatFingerprint(pool.Fingerprint{Size: ref.Size, Mtime: stamp(ref.ModTime)})
+		"?" + formatFingerprint(document.Fingerprint{Size: ref.Size, Mtime: stamp(ref.ModTime)})
 }
 
 // Close stops answering.
@@ -194,7 +194,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		return
 	}
 	if named.Size != ref.Size || named.Mtime != stamp(ref.ModTime) {
-		refuse(w, errChanged)
+		refuse(w, document.ErrChanged)
 		return
 	}
 	file, err := reader.Open(r.Context(), ref.Path)
@@ -218,7 +218,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 // The size the address carries is the copy's own: a copy fetched again under
 // the same name is a different address.
 func (a *API) serveCopy(
-	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named pool.Fingerprint,
+	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named document.Fingerprint,
 ) bool {
 	points := a.getArtifactAddress(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
 	if getPlayerURL(points) == "" {
@@ -230,7 +230,7 @@ func (a *API) serveCopy(
 	}
 	defer video.File.Close()
 	if named.Size != video.Size {
-		refuse(w, errChanged)
+		refuse(w, document.ErrChanged)
 		return true
 	}
 	w.Header().Set("Cache-Control", immutable)

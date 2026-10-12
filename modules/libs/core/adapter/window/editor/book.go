@@ -32,7 +32,7 @@ func (a *API) GetBook(
 	r *connect.Request[v1.GetBookRequest],
 ) (*connect.Response[v1.GetBookResponse], error) {
 	if a.Documents.GetBook == nil {
-		return nil, errNoDocuments
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
 	showing, err := a.getShownVault()
 	if err != nil {
@@ -47,27 +47,27 @@ func (a *API) GetBook(
 	}
 
 	out := &v1.GetBookResponse{
-		Title:       read.Title,
-		PageCount:   int32(read.PageCount()),
-		TextBytes:   int32(len(read.Text)),
-		PageBytes:   int32(read.PageBytes()),
+		Title:       read.Book.Title,
+		PageCount:   int32(read.Book.PageCount()),
+		TextBytes:   int32(len(read.Book.Text)),
+		PageBytes:   int32(read.Book.PageBytes()),
 		Fingerprint: newWireFingerprint(read.Fingerprint),
 	}
-	for _, doc := range read.Documents[:min(len(read.Documents), mostListed)] {
+	for _, doc := range read.Book.Documents[:min(len(read.Book.Documents), mostListed)] {
 		out.Documents = append(out.Documents, &v1.SpineDocument{
 			Path:   doc.Path,
 			Offset: int32(doc.Offset),
 			Length: int32(doc.Length),
 		})
 	}
-	for _, part := range read.Parts[:min(len(read.Parts), mostListed)] {
+	for _, part := range read.Book.Parts[:min(len(read.Book.Parts), mostListed)] {
 		out.Parts = append(out.Parts, &v1.BookPart{
 			Title:  part.Title,
 			Offset: int32(part.Offset),
 			Level:  int32(part.Level),
 		})
 	}
-	for _, page := range read.Pages[:min(len(read.Pages), mostListed)] {
+	for _, page := range read.Book.Pages[:min(len(read.Book.Pages), mostListed)] {
 		out.PrintedPages = append(out.PrintedPages, &v1.PrintedPage{Label: page.Label, Offset: int32(page.Offset)})
 	}
 	return connect.NewResponse(out), nil
@@ -83,7 +83,7 @@ func (a *API) ReadBookMarkup(
 	r *connect.Request[v1.ReadBookMarkupRequest],
 ) (*connect.Response[v1.ReadBookMarkupResponse], error) {
 	if a.Documents.GetBookMarkup == nil {
-		return nil, errNoDocuments
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDocuments)
 	}
 	showing, err := a.getShownVault()
 	if err != nil {

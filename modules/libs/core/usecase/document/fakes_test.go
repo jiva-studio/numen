@@ -34,7 +34,7 @@ func (s scan) GetPageSize(index int) (wide, high float64, err error) {
 	return s.leaves[index].wide, s.leaves[index].high, nil
 }
 
-func (s scan) Render(index, width int) (image.Image, error) {
+func (s scan) Render(_, width int) (image.Image, error) {
 	return image.NewRGBA(image.Rect(0, 0, width, width)), nil
 }
 

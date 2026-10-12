@@ -79,8 +79,9 @@ type API struct {
 	// pages it was read from. They are bound by every build that serves what a
 	// file of the vault is.
 	Viewer    *viewer
-	Documents Documents
 	Highlight *source.Highlight
+	// Documents reads the pages and books of the vault through the viewer.
+	Documents DocumentScenarios
 	// Texts reads and writes what was made from a file of the vault.
 	Texts source.Texts
 	// Playing is the socket a recording is played from. A build without one

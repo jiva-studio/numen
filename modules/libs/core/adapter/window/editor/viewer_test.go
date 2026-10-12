@@ -3,8 +3,6 @@ package editor
 import (
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -17,6 +15,10 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pagecache"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/pool"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 
 	"connectrpc.com/connect"
 
@@ -61,7 +63,7 @@ func sheets(pages int) *paper {
 }
 
 // openScan is what the viewer is given in place of pdf.Open.
-func (p *paper) openScan(file io.ReadSeekCloser) (pool.Scan, error) {
+func (p *paper) openScan(file io.ReadSeekCloser) (port.OpenDocument, error) {
 	defer file.Close()
 	if p.gate != nil {
 		<-p.gate
@@ -125,20 +127,20 @@ func newViewingAPI(readers port.VaultReaders, v *viewer) *API {
 }
 
 // stat is what the vault says about the file at a path, as an address names it.
-func (a *API) stat(ctx context.Context, path string) (port.VaultReader, pool.Fingerprint, error) {
+func (a *API) stat(ctx context.Context, path string) (port.VaultReader, document.Fingerprint, error) {
 	showing := a.GetCurrentVault()
 	if showing.ID == "" {
-		return nil, pool.Fingerprint{}, errNoVault
+		return nil, document.Fingerprint{}, errNoVault
 	}
 	reader, err := a.Readers.Open(showing)
 	if err != nil {
-		return nil, pool.Fingerprint{}, err
+		return nil, document.Fingerprint{}, err
 	}
 	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
-		return nil, pool.Fingerprint{}, err
+		return nil, document.Fingerprint{}, err
 	}
-	return reader, pool.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}, nil
+	return reader, document.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}, nil
 }
 
 // openViewerWindow is a window looking at one document, with the pages drawn by the
@@ -183,7 +185,7 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 }
 
 // printOf is which bytes the file at a path is, as an address names them.
-func printOf(t *testing.T, api *API, path string) pool.Fingerprint {
+func printOf(t *testing.T, api *API, path string) document.Fingerprint {
 	t.Helper()
 	_, mark, err := api.stat(t.Context(), path)
 	if err != nil {
@@ -275,7 +277,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 
 			for _, url := range []string{
 				getAssetRoute(path),
-				getPageRoute(path, 0, 400, pool.Fingerprint{}),
+				getPageRoute(path, 0, 400, document.Fingerprint{}),
 			} {
 				out := ask(handler, url)
 				if out.Code == http.StatusOK {
