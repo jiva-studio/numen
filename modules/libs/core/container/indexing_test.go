@@ -1,6 +1,7 @@
 package container_test
 
 import (
+	"math"
 	"reflect"
 	"testing"
 
@@ -55,5 +56,48 @@ func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
 	// left about what it says.
 	if held := reflect.TypeOf(container.Settings{}).NumField(); held != 9 {
 		t.Errorf("the settings hold %d sections; carry the new one in Config.SetSettings", held)
+	}
+}
+
+// A section naming nothing listens to recordings; one naming a choice follows it.
+func TestARecordingIsListenedToUnlessTheSettingsSayNot(t *testing.T) {
+	yes, no := true, false
+	for _, one := range []struct {
+		what string
+		set  *bool
+		want bool
+	}{
+		{"nothing named", nil, true},
+		{"yes", &yes, true},
+		{"no", &no, false},
+	} {
+		if got := (container.Indexing{TranscribeRecordings: one.set}).CanTranscribe(); got != one.want {
+			t.Errorf("%s: %v, want %v", one.what, got, one.want)
+		}
+	}
+}
+
+// The size a recording may run to is read in megabytes: none named is 300, a
+// negative number is none at all, and a number too large to count in bytes is
+// no limit.
+func TestTheLimitOnARecordingIsReadInMegabytes(t *testing.T) {
+	const largest = int(math.MaxInt64 >> 20)
+	for _, one := range []struct {
+		what string
+		mb   int
+		want int64
+	}{
+		{"none named", 0, 300 * 1024 * 1024},
+		{"negative", -1, 0},
+		{"very negative", -500, 0},
+		{"one", 1, 1024 * 1024},
+		{"ten", 10, 10 * 1024 * 1024},
+		{"the most that is counted", largest, int64(largest) * 1024 * 1024},
+		{"one past the most", largest + 1, math.MaxInt64},
+	} {
+		got := container.Indexing{TranscribeUnderMB: one.mb}.GetTranscribeLimit()
+		if got != one.want {
+			t.Errorf("%s: %d bytes, want %d", one.what, got, one.want)
+		}
 	}
 }
