@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { ErrorCode, GetNeighbourhoodResponseSchema, NoteType, Seat } from '@numen/protocol'
+import { ErrorCode, GetNeighbourhoodResponseSchema, NoteType, Relation } from '@numen/protocol'
 import { asFailure, asValue } from '@numen/wire'
 import { mapNeighbourhood, mapNoteResult, mapWriteResult } from './noteWords'
 
@@ -64,14 +64,14 @@ describe('mapNeighbourhood', () => {
         {
           note: { path: 'Up.md', title: 'Up' },
           type: NoteType.PRESET,
-          seat: Seat.PARENT,
+          relation: Relation.PARENT,
           label: 'part of',
           reverseLabel: 'holds',
           through: 'Mid.md',
           isMutual: true,
         },
-        { note: { path: 'NoSeat.md', title: 'NoSeat' }, seat: Seat.UNSPECIFIED },
-        { seat: Seat.CHILD },
+        { note: { path: 'NoSeat.md', title: 'NoSeat' }, relation: Relation.UNSPECIFIED },
+        { relation: Relation.CHILD },
       ],
     })
 
