@@ -134,9 +134,8 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		behind.Run()
 	}()
 
-	// The window is taken out of sight before the settling begins, and put back
-	// where a page calls the close off: the question is asked on the screen the
-	// person is looking at.
+	// The window is hidden before the vault is flushed and shown again when a
+	// page calls the close off.
 	var window *application.WebviewWindow
 	seen := visibility{
 		hide: func() { window.Hide() },
@@ -197,8 +196,7 @@ func loadThemes(cfg container.Config, opened *editor.Installation) {
 	opened.API.Themes = themes
 }
 
-// makeEndpoint is the agents' endpoint on the vault in the window, let in once
-// the window is built.
+// makeEndpoint is the agents' endpoint on the vault in the window.
 func makeEndpoint(
 	ctx context.Context, cfg container.Config, opened *editor.Installation, mcp agentOptions,
 ) *agents.Endpoint {
@@ -213,9 +211,8 @@ func makeEndpoint(
 	}
 }
 
-// makeShutdown is everything behind the settling, in the order each part needs
-// the next: the agents are let go of, then the scan and the follower stop and
-// the database closes, then what they ran under ends.
+// makeShutdown stops the agents, closes the installation, then ends the context
+// they ran under.
 func makeShutdown(
 	reachable *agents.Endpoint, opened *editor.Installation, stop func(),
 ) *shutdown.Sequence {
@@ -244,15 +241,12 @@ func makeApplication(
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		// Run on the thread the window is drawn on, once the application has
-		// stopped dispatching. The door on the vault's questions is shut in the
-		// step that closes it, and a request arriving after that is refused.
+		// Runs on the thread the window is drawn on, after the application has
+		// stopped dispatching.
 		PostShutdown: behind.Run,
-		// A quit that does not come through the window is answered on the
-		// thread the page is served on, so the settling happens off it and the
-		// quit is asked for again once it is over. A settling that ended with a
-		// question standing asks for nothing: the person is answering it, and
-		// this refusal is the whole of what a stale goroutine may do.
+		// A quit that does not come through the window flushes the vault off the
+		// serving thread, then asks for the quit again. A flush that ended with a
+		// question open does not ask.
 		ShouldQuit: func() bool {
 			return requestQuit(going, seen, func() { application.Get().Quit() })
 		},
@@ -266,8 +260,7 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
-		// Files a person drags off their desktop reach the page, which marks
-		// the places one may be let go of.
+		// Files dragged from the desktop reach the page, which marks the drop targets.
 		EnableFileDrop: true,
 	})
 }
@@ -308,9 +301,8 @@ func connectWindow(
 	reachable.Start()
 }
 
-// importDroppedFiles copies files let go of over the window into the folder the
-// mark under the pointer names. A drop that landed on no mark is not this
-// window's.
+// importDroppedFiles copies files dropped on the window into the folder the
+// drop target names, and ignores a drop on no target.
 func importDroppedFiles(ctx context.Context, opened *editor.Installation, event *application.WindowEvent) {
 	landed := event.Context().DropTargetDetails()
 	if landed == nil {
@@ -324,8 +316,7 @@ func importDroppedFiles(ctx context.Context, opened *editor.Installation, event 
 }
 
 // droppedInto is the attribute a page marks a drop target with. Its value is
-// the folder of the vault a file let go of there is filed in, the root being
-// the empty path. The name is the one the window's own drag and drop looks for.
+// the vault folder a dropped file is filed in, the root being the empty path.
 const droppedInto = "data-file-drop-target"
 
 // getWindowTitle is what the window is called: the application, and the file

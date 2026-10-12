@@ -105,9 +105,8 @@ func run(cfg container.Config, noAgent bool) error {
 	api := makeWindowAPI(cfg, registry, db, notes, vaults)
 	bindVaultIndexer(ctx, api, vaults)
 
-	// A card is asked about through tools on a port this window opens for
-	// itself. The agent works the vault the person sat down to, so it is
-	// started and stopped around a session.
+	// The agent reaches the cards through tools on a port this window opens, and
+	// is started and stopped around a session.
 	away := serveAgents(ctx, cfg, db, notes, cutting, api, noAgent, os.Stderr)
 
 	held := makeShutdown(away, stop, vaults, db)
@@ -156,9 +155,8 @@ func bindVaultIndexer(ctx context.Context, api *window.API, vaults *openVaults) 
 	api.SetVaultIndexer(ctx, vaults.indexVault)
 }
 
-// makeShutdown is what the window holds, in the order each part needs the next:
-// the agents are let go of, then the walk and the watch, which write to the
-// index, and then the index itself.
+// makeShutdown stops the agents, then the walk and the watch, then closes the
+// index they write to.
 func makeShutdown(
 	away func() error, stop func(), vaults *openVaults, db *container.Index,
 ) *shutdown.Sequence {

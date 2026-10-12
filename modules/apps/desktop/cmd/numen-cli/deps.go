@@ -30,37 +30,37 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 		}
 
 		return cli.Deps{
-			Vaults: func() (cli.Vaults, error) { return openVaults(cfg) },
-			Links:  func(ctx context.Context) (cli.Links, error) { return openLinks(ctx, cfg) },
+			Vaults: func() (cli.Vaults, error) { return createVaults(cfg) },
+			Links:  func(ctx context.Context) (cli.Links, error) { return createLinks(ctx, cfg) },
 			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
-				return openScan(ctx, cfg, v, rebuild)
+				return createScan(ctx, cfg, v, rebuild)
 			},
 			Recognise: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Recognise, error) {
-				return openRecognise(ctx, cfg, v, fetching)
+				return createRecognition(ctx, cfg, v, fetching)
 			},
 			Transcribe: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Transcribe, error) {
-				return openTranscribe(ctx, cfg, v, fetching)
+				return createTranscription(ctx, cfg, v, fetching)
 			},
 			ImportURL: func(ctx context.Context, _ domain.Vault) (cli.ImportURL, error) {
-				return openImportURL(ctx, cfg)
+				return createImportURL(ctx, cfg)
 			},
 			ProofreadRecognition: func(ctx context.Context, v domain.Vault) (cli.ProofreadRecognition, error) {
-				return openProofreadRecognition(ctx, cfg, v)
+				return createProofreadRecognition(ctx, cfg, v)
 			},
 			ProofreadTranscript: func(ctx context.Context, v domain.Vault) (cli.ProofreadTranscript, error) {
-				return openProofreadTranscript(ctx, cfg, v)
+				return createProofreadTranscript(ctx, cfg, v)
 			},
 			Search: func(ctx context.Context, errorHandler port.ErrorHandler) (cli.Search, error) {
-				return openSearch(ctx, cfg, errorHandler)
+				return createSearch(ctx, cfg, errorHandler)
 			},
-			Problems: func(ctx context.Context) (cli.Problems, error) { return openProblems(ctx, cfg) },
+			Problems: func(ctx context.Context) (cli.Problems, error) { return createProblems(ctx, cfg) },
 		}
 	}
 }
 
-// openVaults is the registry of vaults with the readers over them. The index
+// createVaults is the registry of vaults with the readers over them. The index
 // behind the rows is opened only when the rows are asked for.
-func openVaults(cfg container.Config) (cli.Vaults, error) {
+func createVaults(cfg container.Config) (cli.Vaults, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
 		return cli.Vaults{}, err
@@ -81,8 +81,8 @@ func openVaults(cfg container.Config) (cli.Vaults, error) {
 	}, nil
 }
 
-// openLinks is the links of a note, read from the index.
-func openLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
+// createLinks is the links of a note, read from the index.
+func createLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		return cli.Links{}, err
@@ -92,9 +92,9 @@ func openLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 	return cli.Links{Show: notes.Links, Close: db.Close}, nil
 }
 
-// openScan is the walk of a vault into the index. A terminal waits for the
-// model, and a vault is read whether or not one arrives.
-func openScan(
+// createScan is the walk of a vault into the index. The vault is read whether
+// or not the embedding model arrives.
+func createScan(
 	ctx context.Context, cfg container.Config, v domain.Vault, rebuild bool,
 ) (cli.Scan, error) {
 	indexing := cfg
@@ -130,9 +130,9 @@ func closeIfOpen(closeFn func() error) {
 	}
 }
 
-// openRecognise is the reading of scans with the models on this machine. The
+// createRecognition is the reading of scans with the models on this machine. The
 // person is told through fetching when the models have to be downloaded first.
-func openRecognise(
+func createRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Recognise, error) {
 	//nolint:contextcheck // whether a model is on this machine is asked of the disk, and waits for nothing
@@ -143,7 +143,7 @@ func openRecognise(
 	if why != nil {
 		return cli.Recognise{}, why
 	}
-	db, cut, err := openCut(ctx, cfg, v, cfg.Extract)
+	db, cut, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		_ = closeModels()
 		return cli.Recognise{}, err
@@ -158,10 +158,10 @@ func openRecognise(
 	}, nil
 }
 
-// openTranscribe is the transcription of recordings with the models on this
+// createTranscription is the transcription of recordings with the models on this
 // machine. The person is told through fetching when the models have to be
 // downloaded first.
-func openTranscribe(
+func createTranscription(
 	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
 ) (cli.Transcribe, error) {
 	//nolint:contextcheck // whether a model is on this machine is asked of the disk, and waits for nothing
@@ -172,7 +172,7 @@ func openTranscribe(
 	if why != nil {
 		return cli.Transcribe{}, why
 	}
-	db, cut, err := openCut(ctx, cfg, v, cfg.Extract)
+	db, cut, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		_ = closeModels()
 		return cli.Transcribe{}, err
@@ -187,9 +187,9 @@ func openTranscribe(
 	}, nil
 }
 
-// openCut is the index with the extraction of a vault's sources over it. The
+// createCut is the index with the extraction of a vault's sources over it. The
 // index is closed when the extraction cannot be made.
-func openCut[C any](
+func createCut[C any](
 	ctx context.Context, cfg container.Config, v domain.Vault,
 	extract func(port.SourceRepository, port.SourceQueries, domain.Vault) (C, error),
 ) (*container.Index, C, error) {
@@ -206,8 +206,8 @@ func openCut[C any](
 	return db, cut, nil
 }
 
-// openImportURL is the download of an address into the vault.
-func openImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, error) {
+// createImportURL is the download of an address into the vault.
+func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, error) {
 	by := cfg.Downloader(ctx)
 	if by == nil {
 		return cli.ImportURL{}, errNoTools
@@ -219,9 +219,9 @@ func openImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, er
 	return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, by), Close: db.Close}, nil
 }
 
-// openProofreadRecognition is the proofreading of recognised scans, when it is
+// createProofreadRecognition is the proofreading of recognized scans, when it is
 // configured.
-func openProofreadRecognition(
+func createProofreadRecognition(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadRecognition, error) {
 	proofread, held, err := cfg.GetScanProofreading().
@@ -229,7 +229,7 @@ func openProofreadRecognition(
 	if err != nil || !held {
 		return cli.ProofreadRecognition{}, err
 	}
-	db, cut, err := openCut(ctx, cfg, v, cfg.Extract)
+	db, cut, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		return cli.ProofreadRecognition{}, err
 	}
@@ -238,9 +238,9 @@ func openProofreadRecognition(
 	}, nil
 }
 
-// openProofreadTranscript is the proofreading of transcripts, when it is
+// createProofreadTranscript is the proofreading of transcripts, when it is
 // configured.
-func openProofreadTranscript(
+func createProofreadTranscript(
 	ctx context.Context, cfg container.Config, v domain.Vault,
 ) (cli.ProofreadTranscript, error) {
 	proofread, held, err := cfg.GetSpeechProofreading().
@@ -248,7 +248,7 @@ func openProofreadTranscript(
 	if err != nil || !held {
 		return cli.ProofreadTranscript{}, err
 	}
-	db, cut, err := openCut(ctx, cfg, v, cfg.Extract)
+	db, cut, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		return cli.ProofreadTranscript{}, err
 	}
@@ -257,9 +257,9 @@ func openProofreadTranscript(
 	}, nil
 }
 
-// openSearch is the search over the index. Only the provider that embeds
+// createSearch is the search over the index. Only the provider that embeds
 // questions is opened, because nothing a search does fills an index.
-func openSearch(
+func createSearch(
 	ctx context.Context, cfg container.Config, errorHandler port.ErrorHandler,
 ) (cli.Search, error) {
 	db, err := cfg.OpenIndex(ctx)
@@ -277,8 +277,8 @@ func openSearch(
 	}, nil
 }
 
-// openProblems is the problems the index holds.
-func openProblems(ctx context.Context, cfg container.Config) (cli.Problems, error) {
+// createProblems is the problems the index holds.
+func createProblems(ctx context.Context, cfg container.Config) (cli.Problems, error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		return cli.Problems{}, err
