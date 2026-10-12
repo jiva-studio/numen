@@ -346,7 +346,7 @@ func getDrawCode(err error) connect.Code {
 	case errors.Is(err, document.ErrNoPage), errors.Is(err, document.ErrChanged),
 		errors.Is(err, epub.ErrNoDocument), errors.Is(err, epub.ErrNoEntry):
 		return connect.CodeNotFound
-	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), isMisnamed(err):
+	case errors.Is(err, document.ErrNotADocument), errors.Is(err, document.ErrEncrypted), isMisnamed(err):
 		return connect.CodeFailedPrecondition
 	default:
 		return getReachCode(err)
@@ -365,7 +365,7 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, port.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted), isMisnamed(err):
+	case errors.Is(err, document.ErrNotADocument), errors.Is(err, document.ErrEncrypted), isMisnamed(err):
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)

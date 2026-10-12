@@ -279,7 +279,7 @@ func connectWindow(
 	reachable *agents.Endpoint,
 ) {
 	// Choosing a folder is the machine's own, and it opens over this window.
-	opened.API.Vaults.FolderDialog = &folderDialog{window: window}
+	opened.API.Vaults.SetFolderDialog(&folderDialog{window: window})
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.

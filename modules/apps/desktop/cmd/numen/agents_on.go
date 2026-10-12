@@ -125,7 +125,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		Vaults: mcp.Vaults{
 			GetKnownVaults: cfg.GetKnownVaults(opened.API.Vaults.Registry),
 			Find:           opened.API.Vaults.Find,
-			PickFolder:     cfg.PickFolder(opened.API.Vaults.FolderDialog),
+			PickFolder:     opened.API.Vaults.GetPickFolder(),
 			Add:            opened.API.Vaults.Add,
 			CheckRoot:      cfg.CheckRoot(),
 			Rename:         opened.API.Vaults.Rename,

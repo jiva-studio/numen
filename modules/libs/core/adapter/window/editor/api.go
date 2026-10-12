@@ -205,8 +205,25 @@ type Vaults struct {
 	Remove      *vaults.Remove
 	Unregister  *vaults.Unregister
 
-	// FolderDialog is nil where the application has no window to put one in.
-	FolderDialog port.FolderDialog
+	// ChooseFolder is nil where the application has no window to put a dialog in.
+	ChooseFolder *vaults.ChooseFolder
+}
+
+// SetFolderDialog puts the machine's folder dialog in front of the person when a
+// client asks for one.
+func (v *Vaults) SetFolderDialog(dialog port.FolderDialog) {
+	choose := vaults.NewChooseFolder(dialog)
+	v.ChooseFolder = &choose
+}
+
+// GetPickFolder is the use case that lets an agent put the same dialog in front
+// of the person, or nil where the window has none.
+func (v *Vaults) GetPickFolder() *vaults.PickFolder {
+	if v.ChooseFolder == nil {
+		return nil
+	}
+	pick := v.ChooseFolder.GetPickFolder()
+	return &pick
 }
 
 // Cards is the decks and stencils a vault is arranged into. Read takes a deck

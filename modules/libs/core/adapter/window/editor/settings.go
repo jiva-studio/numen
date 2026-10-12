@@ -8,7 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
 // errNoSettings is what a build that serves no settings answers.
@@ -48,12 +48,12 @@ func (a *API) WriteSettings(
 	if a.Settings.Write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	written := make([]port.Setting, 0, len(r.Msg.GetSettings()))
+	written := make([]settings.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
-		written = append(written, port.Setting{Path: one.GetAt(), JSON: one.GetValue()})
+		written = append(written, settings.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
 	if err := a.Settings.Write.Execute(written); err != nil {
-		if errors.Is(err, port.ErrNotASetting) {
+		if errors.Is(err, settings.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -88,11 +88,11 @@ func (a *API) WriteSettingsFile(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	if err := a.Settings.WriteFile.Execute(r.Msg.GetWritten(), r.Msg.Baseline); err != nil {
-		if errors.Is(err, port.ErrStale) {
+		if errors.Is(err, settings.ErrStale) {
 			stale := v1.ErrorCode_ERROR_CODE_STALE
 			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &stale}), nil
 		}
-		if errors.Is(err, port.ErrNotASetting) {
+		if errors.Is(err, settings.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -101,7 +101,7 @@ func (a *API) WriteSettingsFile(
 }
 
 // newWireModels is the models as the wire carries them.
-func newWireModels(held []port.Model) []*v1.Model {
+func newWireModels(held []settings.Model) []*v1.Model {
 	models := make([]*v1.Model, 0, len(held))
 	for _, one := range held {
 		models = append(models, &v1.Model{
@@ -119,14 +119,14 @@ func newWireModels(held []port.Model) []*v1.Model {
 
 // presences is what a model's files are on this machine, as the wire carries
 // it.
-var presences = map[port.Presence]v1.Presence{
-	port.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
-	port.Present:        v1.Presence_PRESENCE_PRESENT,
-	port.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
+var presences = map[settings.Presence]v1.Presence{
+	settings.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
+	settings.Present:        v1.Presence_PRESENCE_PRESENT,
+	settings.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
 }
 
 // newWireSettings is what choosing a model writes, as the wire carries it.
-func newWireSettings(held []port.Setting) []*v1.Setting {
+func newWireSettings(held []settings.Setting) []*v1.Setting {
 	written := make([]*v1.Setting, 0, len(held))
 	for _, one := range held {
 		written = append(written, &v1.Setting{At: one.Path, Value: one.JSON})

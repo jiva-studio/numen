@@ -9,7 +9,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -45,15 +44,18 @@ func (s vaultsService) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
 ) (*connect.Response[v1.ChooseFolderResponse], error) {
-	path, chose, err := s.api.Vaults.FolderDialog.ChooseFolder(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
-	if errors.Is(err, port.ErrChoosing) || errors.Is(err, port.ErrNoFolderDialog) {
+	if s.api.Vaults.ChooseFolder == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
+	}
+	chosen, err := s.api.Vaults.ChooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	if vaults.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	// A person who closed the dialog chose nothing, and that is an answer.
-	return connect.NewResponse(&v1.ChooseFolderResponse{Path: path, IsChosen: chose}), nil
+	return connect.NewResponse(&v1.ChooseFolderResponse{Path: chosen.Path, IsChosen: chosen.IsChosen}), nil
 }
 
 // AddVault turns a folder into a vault on the list. A name another vault has
@@ -174,7 +176,7 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING, true
 	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true
-	case errors.Is(err, port.ErrNoTrash):
+	case errors.Is(err, vaults.ErrNoTrash):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH, true
 	case errors.Is(err, errAnswerPending):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_ASKING, true

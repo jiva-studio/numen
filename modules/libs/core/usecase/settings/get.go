@@ -13,7 +13,7 @@ type Bounds struct{ Least, Most float64 }
 type Current struct {
 	Written                  string
 	Path                     string
-	Models                   []port.Model
+	Models                   []Model
 	NestedHeadingLimitBounds Bounds
 	LatestDayStarts          string
 	Day                      string
@@ -23,7 +23,7 @@ type Current struct {
 // settings are refused outside.
 type Get struct {
 	read                     func() (written, path string, err error)
-	models                   func() []port.Model
+	models                   func() []Model
 	nestedHeadingLimitBounds Bounds
 	latestDayStarts          string
 	day                      review.Day
@@ -32,7 +32,7 @@ type Get struct {
 
 func NewGet(
 	read func() (written, path string, err error),
-	models func() []port.Model,
+	models func() []Model,
 	nestedHeadingLimitBounds Bounds,
 	latestDayStarts string,
 	day review.Day,
@@ -53,7 +53,7 @@ func (u *Get) Execute() (Current, error) {
 	if err != nil {
 		return Current{}, err
 	}
-	var models []port.Model
+	var models []Model
 	if u.models != nil {
 		models = u.models()
 	}
