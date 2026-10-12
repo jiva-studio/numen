@@ -148,8 +148,48 @@ describe('the keyboard in the stack', () => {
   it('is let go when focus leaves the stack', () => {
     card.focus()
     state.onFocusIn()
-    outside.focus()
     state.onFocusOut(focusEvent('focusout', outside))
+    advanceTo(2000)
+    expect(state.read.value).toBe(2000)
+  })
+
+  it('is let go when focus leaves for nowhere', () => {
+    card.focus()
+    state.onFocusIn()
+    state.onFocusOut(focusEvent('focusout'))
+    advanceTo(2000)
+    expect(state.read.value).toBe(2000)
+  })
+
+  it('keeps holding when focus is reported moving to another part of the stack', () => {
+    card.focus()
+    state.onFocusIn()
+    state.onFocusOut(focusEvent('focusout', sibling))
+    advanceTo(2000)
+    expect(state.read.value).toBe(START)
+  })
+})
+
+describe('a stack that is not on the page', () => {
+  beforeEach(() => {
+    state = useNoticeStack(
+      shallowRef<HTMLElement | null>(null),
+      () => time,
+      () => isHidden,
+    )
+  })
+
+  it('lets go of the keyboard whenever it is asked', () => {
+    state.onFocusIn()
+    advanceTo(2000)
+    expect(state.read.value).toBe(2000)
+  })
+
+  it('lets go of the keyboard and the pointer when they leave for an element', () => {
+    state.onFocusIn()
+    state.onFocusOut(focusEvent('focusout', outside))
+    pointOver()
+    state.onPointerOut(pointerEvent('pointerout', outside))
     advanceTo(2000)
     expect(state.read.value).toBe(2000)
   })
