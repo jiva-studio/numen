@@ -163,13 +163,13 @@ describe('spacingFor', () => {
     )
   })
 
-  it('asks nothing beyond the settings at a spread of one', () => {
+  it('asks nothing at all at a spread of one', () => {
     let asked = 0
     spacingFor({ ...options, spread: 1 }, () => {
       asked++
       return true
     })
-    expect(asked).toBe(1)
+    expect(asked).toBe(0)
   })
 
   describe('how closely the widest opening is found', () => {
