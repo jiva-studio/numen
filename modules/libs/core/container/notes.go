@@ -32,6 +32,7 @@ func (c Config) Notes(
 	moving.Sync = c.SyncSetting()
 
 	linking := note.NewEditLinks(readers, writers, index, now)
+	remove := note.NewRemove(writers, links, known, index)
 
 	return note.Scenarios{
 		Read:     note.NewRead(readers),
@@ -42,9 +43,14 @@ func (c Config) Notes(
 		AddLinks: note.NewAddLinks(linking),
 		Move:     moving,
 		Rename:   note.NewRename(moving),
-		Remove:   note.NewRemove(writers, links, known, index),
+		Remove:   remove,
 
 		Links:         note.NewShowLinks(links),
 		Neighbourhood: note.NewShowNeighbourhood(links, queries),
+
+		GetTitles:     note.NewGetTitles(queries),
+		GetNamedPaths: note.NewGetNamedPaths(queries),
+		RemoveNote:    note.NewRemoveNote(remove, readers),
+		MoveInto:      note.NewMoveInto(moving),
 	}
 }

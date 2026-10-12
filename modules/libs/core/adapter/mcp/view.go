@@ -2,23 +2,22 @@ package mcp
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // addViewTools adds the tools that move the person's window to a note or a source passage.
-// They are added only when the core has a view.
+// Each is added only when the core can put that in front of the person.
 func addViewTools(server *sdk.Server, core Core) {
-	if core.View == nil {
-		return
+	if core.Notes.FocusNote != nil {
+		addNoteFocus(server, core)
 	}
-	addNoteFocus(server, core)
-	addSourceFocus(server, core)
+	if core.Sources.FocusPassage != nil {
+		addSourceFocus(server, core)
+	}
 }
 
 type noteFocusInput struct {
@@ -44,19 +43,8 @@ func addNoteFocus(server *sdk.Server, core Core) {
 }
 
 func focusNote(ctx context.Context, core Core, in noteFocusInput) (noteFocusOutput, error) {
-	if in.Path == "" {
-		return noteFocusOutput{}, errors.New("name the note to put in focus")
-	}
-
-	found, err := core.Notes.Queries.GetNotes(ctx, core.getCurrentVault().Vault.ID, []string{in.Path})
+	ref, err := core.Notes.FocusNote.Execute(ctx, core.getCurrentVault().Vault, in.Path)
 	if err != nil {
-		return noteFocusOutput{}, err
-	}
-	ref, known := found[in.Path]
-	if !known {
-		return noteFocusOutput{}, fmt.Errorf("no note at %s", in.Path)
-	}
-	if err := core.View.FocusPlace(ctx, domain.Place{Path: in.Path}); err != nil {
 		return noteFocusOutput{}, err
 	}
 	return noteFocusOutput{Focused: noteOf(ref)}, nil
@@ -97,73 +85,15 @@ func addSourceFocus(server *sdk.Server, core Core) {
 }
 
 func focusSource(ctx context.Context, core Core, in sourceFocusInput) (sourceFocusOutput, error) {
-	if err := checkSourceFocus(in); err != nil {
-		return sourceFocusOutput{}, err
-	}
-	ref, err := getFingerprint(ctx, core, in.Path)
-	if err != nil {
-		return sourceFocusOutput{}, err
-	}
-	at, err := newPlace(in)
-	if err != nil {
-		return sourceFocusOutput{}, err
-	}
-	if err := core.View.FocusPlace(ctx, at); err != nil {
-		return sourceFocusOutput{}, err
-	}
-	return sourceFocusOutput{IsShown: true, Summary: describeFocus(ref.Kind, in.Length)}, nil
-}
-
-// checkSourceFocus returns an error for an input with no document, a passage that
-// starts before the text, or more passages than a document may highlight.
-func checkSourceFocus(in sourceFocusInput) error {
-	if in.Path == "" {
-		return errors.New("name the document to show")
-	}
-	if in.Start < 0 || in.Length < 0 {
-		return errors.New(
-			"a passage begins at or after the start of the text, and its length is zero or more")
-	}
-	if 1+len(in.Also) > domain.MostHighlights {
-		return fmt.Errorf("light at most %d places of one document", domain.MostHighlights)
-	}
-	return nil
-}
-
-// newPlace returns the place for the document and passages named in the input.
-func newPlace(in sourceFocusInput) (domain.Place, error) {
-	at := domain.Place{Path: in.Path}
-	if in.Length > 0 {
-		at.Spans = append(at.Spans, domain.ByteSpan{From: in.Start, To: in.Start + in.Length})
-	}
+	passage := source.Passage{Path: in.Path, Start: in.Start, Length: in.Length}
 	for _, one := range in.Also {
-		if one.Start < 0 || one.Length <= 0 {
-			return domain.Place{}, errors.New(
-				"a passage begins at or after the start of the text, and is longer than nothing")
-		}
-		at.Spans = append(at.Spans, domain.ByteSpan{From: one.Start, To: one.Start + one.Length})
+		passage.Also = append(passage.Also, domain.ByteSpan{From: one.Start, To: one.Start + one.Length})
 	}
-	return at, nil
-}
-
-// getFingerprint returns the fingerprint of the file at path, and an error when the vault
-// holds no file there.
-func getFingerprint(ctx context.Context, core Core, path string) (domain.Fingerprint, error) {
-	if core.Readers == nil {
-		return domain.Fingerprint{}, errors.New("this vault's files are not open")
-	}
-	reader, err := core.Readers.Open(core.getCurrentVault().Vault)
+	kind, err := core.Sources.FocusPassage.Execute(ctx, core.getCurrentVault().Vault, passage)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return sourceFocusOutput{}, err
 	}
-	ref, err := reader.GetFingerprint(ctx, path)
-	if port.IsNoNote(err) {
-		return domain.Fingerprint{}, fmt.Errorf("this vault holds nothing at %s", path)
-	}
-	if err != nil {
-		return domain.Fingerprint{}, err
-	}
-	return ref, nil
+	return sourceFocusOutput{IsShown: true, Summary: describeFocus(kind, in.Length)}, nil
 }
 
 // describeFocus returns a sentence describing what the person now sees.

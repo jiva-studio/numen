@@ -110,7 +110,7 @@ func makeEditPreview(opened *editor.Installation) claudecode.EditPreview {
 // as the stretch that changed, and a note the person writes is not, because
 // they are looking at the text they typed.
 func makeAgentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
-	notes := opened.Notes().Drawing(opened.API.GetWindow())
+	notes := opened.Notes().Drawing(opened.API.GetWindow()).Focusing(opened.Queries(), opened.API.GetWindow())
 	cutting := opened.Cards()
 
 	return mcp.Core{
@@ -119,7 +119,6 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		GetProblems: cfg.GetProblems(opened.Queries()),
 		Readers:     cfg.VaultReaders(),
 		Read:        cfg.Read(),
-		View:        opened.API.GetWindow(),
 		Attending:   opened.API.GetOpenTabs,
 
 		// The list is the window's own, and an agent does not erase a vault:
@@ -145,6 +144,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			GetArtifactList:           cfg.GetArtifactList(opened.SourcesKnown()),
 			GetArtifactText:           cfg.GetArtifactText(opened.SourcesKnown()),
 			WriteCorrections:          cfg.WriteCorrections(opened.SourcesKnown(), opened.API.ReportArtifactChange),
+			FocusPassage:              cfg.FocusPassage(opened.API.GetWindow()),
 		},
 
 		Cards: mcp.Cards{
@@ -171,6 +171,13 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			Remove:   notes.Remove,
 			Linking:  notes.Linking,
 			AddLinks: notes.AddLinks,
+
+			ReadNote:      notes.Read,
+			GetTitles:     notes.GetTitles,
+			GetNamedPaths: notes.GetNamedPaths,
+			RemoveNote:    notes.RemoveNote,
+			MoveInto:      notes.MoveInto,
+			FocusNote:     notes.FocusNote,
 		},
 	}
 }
