@@ -82,7 +82,7 @@ export function useDeckTabs(
         bound: answer.ok ? 0 : answer.error.bound,
       })
       if (!answer.ok) return asFailure(answer.error.code)
-      return asValue({ body: '', at: answer.value.at })
+      return asValue({ at: answer.value.at })
     },
   })
 
@@ -184,7 +184,7 @@ export function useDeckTabs(
     createDeckTabState,
   })
 
-  const openDeckTab = (path: string, title = '', how: PlexDestination = 'here'): void => {
+  const openDeckTab = (path: string, title: string, how: PlexDestination): void => {
     const id = getOrCreateTabId(path)
     if (title) vaultAnswers.setTitle(path, title)
     void (how === 'beside' ? handle.openTabBeside(DECK, id) : handle.openTab(DECK, id))

@@ -94,7 +94,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     return around ? typesIn(around) : new Map()
   })
 
-  const typeOf = (node: string): NoteType => types.value.get(map.getNodePath(node) ?? '') ?? 'note'
+  const typeOf = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
 
   const drawn = computed<readonly string[]>(() => {
     const around = view.neighbourhood.value
@@ -220,7 +220,6 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   const openLinkInspector = (pair: string, at: { x: number; y: number }) => {
     const parts = pair.split(' ')
-    if (parts.length < 2) return
     const idA = parts[0]!
     const idB = parts[1]!
     const pathA = map.getNodePath(idA)
@@ -280,7 +279,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
       } else {
         linkDirections.value.set(pairKey, `${row.from}->${row.to}`)
       }
-    } else if (payload.rows.length > 1) {
+    } else {
       const row = payload.rows[0]!
       const pairKey = [row.from, row.to].sort().join(' ')
       linkDirections.value.delete(pairKey)

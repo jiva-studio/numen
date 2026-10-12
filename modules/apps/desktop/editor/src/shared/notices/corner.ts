@@ -84,11 +84,9 @@ const isSameReason = (outer: string, inner: string): boolean =>
  */
 const keepDistinct = (tasks: readonly Task[]): readonly Task[] =>
   tasks.filter((at, index) => {
-    if (at.error === '') return true
     return !tasks.some(
       (other, was) =>
         other.error !== '' &&
-        other !== at &&
         isSameReason(at.error, other.error) &&
         (other.error.length < at.error.length || was < index),
     )

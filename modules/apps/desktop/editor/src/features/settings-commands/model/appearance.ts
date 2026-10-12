@@ -26,7 +26,7 @@ export function createWindowAppearance(
 ) {
   const dressed = getStyleElements(sheet)
   /** What the page was served wearing, which is the applied theme's file. */
-  const served = dressed.theme.textContent ?? ''
+  const served = dressed.theme.textContent
   /** What the sizes' element holds, once the window knows what it was served at. */
   // Stryker disable next-line StringLiteral: no size css is empty, so any other starting text compares the same
   let appliedSizesCss = ''
