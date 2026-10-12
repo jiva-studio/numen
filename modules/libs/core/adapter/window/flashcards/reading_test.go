@@ -141,28 +141,28 @@ func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
 // begins nothing and is not underway.
 func TestAVaultIsClaimedForOneReadingAtATime(t *testing.T) {
 	r := &readings{}
-	r.start(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	r.setIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 	v := domain.Vault{ID: "one"}
 
-	read, under, underway, reason := r.claim(v)
+	read, under, underway, reason := r.tryStart(v)
 	if read == nil || under == nil || !underway || reason != "" {
 		t.Fatalf("the first claim came back %v %v %v %q", read != nil, under != nil, underway, reason)
 	}
 
-	read, _, underway, reason = r.claim(v)
+	read, _, underway, reason = r.tryStart(v)
 	if read != nil || !underway || reason != "" {
 		t.Errorf("a claim while it ran came back %v %v %q", read != nil, underway, reason)
 	}
 
-	r.finish(v, errors.New("the folder is not there"))
-	read, _, underway, reason = r.claim(v)
+	r.record(v, errors.New("the folder is not there"))
+	read, _, underway, reason = r.tryStart(v)
 	if read != nil || underway || reason != "the folder is not there" {
 		t.Errorf("a claim after a failure came back %v %v %q", read != nil, underway, reason)
 	}
 
-	r.forget(v.ID)
-	r.finish(v, nil)
-	read, _, underway, reason = r.claim(v)
+	r.clear(v.ID)
+	r.record(v, nil)
+	read, _, underway, reason = r.tryStart(v)
 	if read != nil || underway || reason != "" {
 		t.Errorf("a claim after a clean reading came back %v %v %q", read != nil, underway, reason)
 	}
@@ -171,7 +171,7 @@ func TestAVaultIsClaimedForOneReadingAtATime(t *testing.T) {
 // A window that reads nothing claims nothing.
 func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
 	r := &readings{}
-	read, _, underway, reason := r.claim(domain.Vault{ID: "one"})
+	read, _, underway, reason := r.tryStart(domain.Vault{ID: "one"})
 	if read != nil || underway || reason != "" {
 		t.Errorf("the claim came back %v %v %q", read != nil, underway, reason)
 	}
@@ -213,7 +213,7 @@ func TestAVaultReadWakesTheListeners(t *testing.T) {
 	api.Registry = registry{held: []domain.Vault{unread}}
 	api.Reading(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
-	heard, stop := api.listeners.listen()
+	heard, stop := api.subscribers.subscribe()
 	t.Cleanup(stop)
 	api.countVault(t.Context(), unread)
 
