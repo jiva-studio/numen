@@ -212,17 +212,11 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	running := made.OpenFlashcards(pool.level)
 	api.Presets = &running.Presets
 	api.Curves = &running.Curves
-	least, most := made.GetNestedHeadingLimitBounds()
-	api.Configuring = SettingsPorts{
-		Configured:               made.ReadSettings,
-		Models:                   made.GetModels,
-		ChoosesSetting:           made.TurnSettings,
-		ConfiguredFile:           made.ReadSettingsFile,
-		WritesFile:               made.WriteSettingsFile,
-		NestedHeadingLimitBounds: Bounds{Least: least, Most: most},
-		LatestDayStarts:          made.GetLatestDayStart(),
-		Day:                      running.Day,
-		Now:                      made.GetClock(),
+	api.Settings = Settings{
+		Get:       made.OpenGetSettings(running.Day),
+		Write:     made.OpenWriteSettings(),
+		GetFile:   made.OpenGetSettingsFile(),
+		WriteFile: made.OpenWriteSettingsFile(),
 	}
 
 	held := &pool.vaults

@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"errors"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -12,36 +11,32 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
+// errNoSettings is what a build that serves no settings answers.
+var errNoSettings = errors.New("this build serves no settings")
+
 // GetSettings is every setting of the file a person configures this
 // installation in, and the models the settings that name one can be set to.
 func (a *API) GetSettings(
 	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
-	written, path, err := a.Configuring.Configured()
+	if a.Settings.Get == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	got, err := a.Settings.Get.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	var models []port.Model
-	if a.Configuring.Models != nil {
-		models = a.Configuring.Models()
-	}
-	held := a.Configuring.NestedHeadingLimitBounds
 	return connect.NewResponse(&v1.GetSettingsResponse{
-		Written:                  written,
-		Path:                     path,
-		Models:                   newWireModels(models),
-		NestedHeadingLimitBounds: &v1.Bounds{Least: held.Least, Most: held.Most},
-		LatestDayStarts:          a.Configuring.LatestDayStarts,
-		Day:                      a.Configuring.Day.GetName(a.Configuring.now()),
+		Written: got.Written,
+		Path:    got.Path,
+		Models:  newWireModels(got.Models),
+		NestedHeadingLimitBounds: &v1.Bounds{
+			Least: got.NestedHeadingLimitBounds.Least,
+			Most:  got.NestedHeadingLimitBounds.Most,
+		},
+		LatestDayStarts: got.LatestDayStarts,
+		Day:             got.Day,
 	}), nil
-}
-
-// now is when this is happening, by the clock the settings were handed.
-func (s SettingsPorts) now() time.Time {
-	if s.Now == nil {
-		return time.Now()
-	}
-	return s.Now()
 }
 
 // WriteSettings writes settings into that file. A value the settings could not
@@ -50,11 +45,14 @@ func (s SettingsPorts) now() time.Time {
 func (a *API) WriteSettings(
 	_ context.Context, r *connect.Request[v1.WriteSettingsRequest],
 ) (*connect.Response[v1.WriteSettingsResponse], error) {
+	if a.Settings.Write == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
 	written := make([]port.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
 		written = append(written, port.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	if err := a.Configuring.ChoosesSetting(written); err != nil {
+	if err := a.Settings.Write.Execute(written); err != nil {
 		if errors.Is(err, port.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
@@ -67,11 +65,14 @@ func (a *API) WriteSettings(
 func (a *API) ReadSettingsFile(
 	_ context.Context, _ *connect.Request[v1.ReadSettingsFileRequest],
 ) (*connect.Response[v1.ReadSettingsFileResponse], error) {
-	written, path, err := a.Configuring.ConfiguredFile()
+	if a.Settings.GetFile == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	got, err := a.Settings.GetFile.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.ReadSettingsFileResponse{Written: written, Path: path}), nil
+	return connect.NewResponse(&v1.ReadSettingsFileResponse{Written: got.Written, Path: got.Path}), nil
 }
 
 // WriteSettingsFile replaces that file whole. A file the settings could not be
@@ -83,7 +84,10 @@ func (a *API) ReadSettingsFile(
 func (a *API) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
-	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Baseline); err != nil {
+	if a.Settings.WriteFile == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	if err := a.Settings.WriteFile.Execute(r.Msg.GetWritten(), r.Msg.Baseline); err != nil {
 		if errors.Is(err, port.ErrStale) {
 			stale := v1.ErrorCode_ERROR_CODE_STALE
 			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &stale}), nil

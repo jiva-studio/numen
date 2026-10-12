@@ -15,6 +15,7 @@ import (
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
+	setting "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
 
 // One in the morning, with a day that begins at four: the calendar says the
@@ -39,11 +40,10 @@ func TestBothWindowsAreToldTheSameDay(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts}
 	clock := func() time.Time { return morning }
 
-	editing := &editor.API{Configuring: editor.SettingsPorts{
-		Configured: func() (string, string, error) { return "{}", "", nil },
-		Day:        day,
-		Now:        clock,
-	}}
+	getting := setting.NewGet(
+		func() (string, string, error) { return "{}", "", nil }, nil, setting.Bounds{}, "", day, clock,
+	)
+	editing := &editor.API{Settings: editor.Settings{Get: getting}}
 	said, err := editing.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
 		t.Fatal(err)

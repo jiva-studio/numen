@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -54,22 +56,12 @@ type Assembly interface {
 	GetPassageQueries() port.PassageQueries
 	CloseIndex() error
 
-	// ReadSettings reads every setting as JSON and the file it stands in,
-	// ReadSettingsFile that file as its person wrote it, and WriteSettingsFile
-	// replaces it whole against the copy the caller last read. GetModels are
-	// the models a setting that names one can be set to, and TurnSettings
-	// writes settings into the file.
-	ReadSettings() (written string, at string, err error)
-	ReadSettingsFile() (written string, at string, err error)
-	WriteSettingsFile(written string, baseline *string) error
-	GetModels() []port.Model
-	TurnSettings(written []port.Setting) error
-
-	// GetNestedHeadingLimitBounds is how many headings may nest under a note,
-	// at each end, and GetLatestDayStart how late in the day a day of review
-	// may be made to begin.
-	GetNestedHeadingLimitBounds() (least, most float64)
-	GetLatestDayStart() string
+	// The use cases that read and write the settings and the file they stand in.
+	// The day is where one day of review gives way to the next.
+	OpenGetSettings(day review.Day) *settings.Get
+	OpenWriteSettings() *settings.Write
+	OpenGetSettingsFile() *settings.GetFile
+	OpenWriteSettingsFile() *settings.WriteFile
 
 	// IsRebuildingIndex is whether this launch was asked to read every file
 	// into the cache again. It belongs to the vault the window opened on and to
