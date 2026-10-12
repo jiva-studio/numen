@@ -42,6 +42,44 @@ describe('what does not draw is cleared away', () => {
     expect(isPane(after.root) && after.root.tabs).toStrictEqual([])
   })
 
+  it('keeps the first pane of a branch that holds nothing at all, so there is a root', () => {
+    const after = normalize(workspaceOf(split('root', [pane('x', []), pane('y', [])])))
+
+    expect(after.root).toStrictEqual(pane('x', []))
+  })
+
+  it('keeps a branch without children as a pane under its own id', () => {
+    const after = normalize(workspaceOf(split('root', [])))
+
+    expect(after.root).toStrictEqual(pane('root', []))
+  })
+
+  it('keeps the shares of a child that is reduced to one pane', () => {
+    const before = workspaceOf(
+      split(
+        'root',
+        [split('lone', [stack('a', 'one'), pane('gone', [])]), stack('b', 'two')],
+        [0.3, 0.7],
+      ),
+    )
+    const after = normalize(before)
+
+    expect(isBranch(after.root) && after.root.sizes).toStrictEqual([0.3, 0.7])
+  })
+
+  it('keeps the shares of a child that stays a branch', () => {
+    const before = workspaceOf(
+      split(
+        'root',
+        [split('pair', [stack('a', 'one'), stack('b', 'two')]), stack('c', 'three')],
+        [0.4, 0.6],
+      ),
+    )
+    const after = normalize(before)
+
+    expect(isBranch(after.root) && after.root.sizes).toStrictEqual([0.4, 0.6])
+  })
+
   it('is idempotent', () => {
     const once = normalize(
       workspaceOf(split('root', [stack('a', 'one'), pane('gone', [])]), 'horizontal', 'a'),

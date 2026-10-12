@@ -24,6 +24,15 @@ describe('fit', () => {
     expect(fit([0, -1, Number.NaN], 3)).toStrictEqual(even(3))
   })
 
+  it('treats a negative or infinite share as missing', () => {
+    expect(fit([-1, 3], 2)).toStrictEqual([0.5, 0.5])
+    expect(fit([Number.POSITIVE_INFINITY, 1], 2)).toStrictEqual([0.5, 0.5])
+  })
+
+  it('gives every missing child the average of the given ones', () => {
+    expect(fit([1, 3, 0], 3)).toStrictEqual([1 / 6, 3 / 6, 2 / 6])
+  })
+
   it('has nothing to divide among no children', () => {
     expect(fit([1], 0)).toStrictEqual([])
   })
@@ -53,6 +62,10 @@ describe('atLeast', () => {
   it('never asks for more than an equal share', () => {
     expect(atLeast(400, 1000, 3)).toBeCloseTo(1 / 3)
     expect(atLeast(900, 1000, 2)).toBeCloseTo(0.5)
+  })
+
+  it('asks for nothing for a negative minimum', () => {
+    expect(atLeast(-200, 1000, 2)).toBe(0)
   })
 
   it('asks for nothing before the branch has been measured', () => {
