@@ -8,7 +8,7 @@ import type { Field } from './fields'
 import type { SettingValue } from '../types'
 
 /** How far off the day a goal of a date opens on, where the file names none. */
-export const AHEAD = 30
+export const DATE_GOAL_OFFSET_DAYS = 30
 
 /** Whether the value is a valid load record with daily numeric shares. */
 export const isLoad = (value: SettingValue): value is Load =>
@@ -30,11 +30,11 @@ type MutableSettings = { -readonly [field in keyof Settings]: Settings[field] }
 export const reconcileSettings = (
   read: Settings,
   was: Settings,
-  theirs: ReadonlySet<keyof Settings>,
+  dirtyFields: ReadonlySet<keyof Settings>,
 ): Settings => {
-  if (theirs.size === 0) return read
+  if (dirtyFields.size === 0) return read
   const out: MutableSettings = { ...read }
-  for (const field of theirs) {
+  for (const field of dirtyFields) {
     ;(out as Record<keyof Settings, unknown>)[field] = was[field]
   }
   return out
@@ -116,7 +116,7 @@ export const findGridIndex = (
 }
 
 /** Sets a date goal and defaults byDate when empty. */
-export const aimGoal = (settings: Settings, goal: Goal, today: string): Settings =>
+export const applyGoal = (settings: Settings, goal: Goal, today: string): Settings =>
   goal === 'date' && settings.byDate === ''
-    ? { ...settings, goal, byDate: dayAfter(today, AHEAD) }
+    ? { ...settings, goal, byDate: dayAfter(today, DATE_GOAL_OFFSET_DAYS) }
     : { ...settings, goal }

@@ -20,17 +20,17 @@ export function getErrorMessage(tab: Tab | undefined): string {
 }
 
 export function createConflictCoordinator(
-  turn: (id: string, event: Event) => void,
+  dispatch: (id: string, event: Event) => void,
   getTab: (id: string) => Tab | undefined,
 ) {
-  const keep = (id: string): void => turn(id, { kind: 'keeping' })
-  const take = (id: string): void => turn(id, { kind: 'taking' })
+  const keep = (id: string): void => dispatch(id, { kind: 'keepLocal' })
+  const take = (id: string): void => dispatch(id, { kind: 'takeFile' })
   const notifyChanged = (
     allIds: () => readonly string[],
     paths: readonly string[],
     renames: readonly PathRename[] = [],
   ): void => {
-    for (const id of allIds()) turn(id, { kind: 'changed', paths, renamed: renames })
+    for (const id of allIds()) dispatch(id, { kind: 'changed', paths, renamed: renames })
   }
 
   return {

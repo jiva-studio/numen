@@ -172,7 +172,7 @@ describe('what the tab says went wrong', () => {
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {
     const one = tabAt()
-    const state: PresetTabState = { ...one.state, hasChanged: ref(true) }
+    const state: PresetTabState = { ...one.state, hasExternalChange: ref(true) }
     const tab = mount(PresetTab, { props: { state } })
     const said = tab.get('[role="status"].preset__answering')
     expect(said.text()).toContain(words.changed)

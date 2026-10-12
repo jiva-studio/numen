@@ -124,7 +124,7 @@ defineExpose({
     :name="name"
     has-groups
     open
-    opening="keyboard"
+    trigger="keyboard"
     @choose="onChoose"
     @dismiss="asking = null"
   >

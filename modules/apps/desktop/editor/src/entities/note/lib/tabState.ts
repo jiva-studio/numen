@@ -112,19 +112,19 @@ export type WriteResult =
 /** What a tab is told about. */
 export type Event =
   | { readonly kind: 'read'; readonly generation: number; readonly answer: ReadResult }
-  | { readonly kind: 'typed'; readonly body: string; readonly at: number }
-  | { readonly kind: 'fired' }
+  | { readonly kind: 'edited'; readonly body: string; readonly at: number }
+  | { readonly kind: 'timerFired' }
   | { readonly kind: 'written'; readonly answer: WriteResult }
   | {
       readonly kind: 'changed'
       readonly paths: readonly string[]
       readonly renamed: readonly Move[]
     }
-  | { readonly kind: 'saving' }
-  | { readonly kind: 'flushing' }
-  | { readonly kind: 'keeping' }
-  | { readonly kind: 'taking' }
-  | { readonly kind: 'closing' }
+  | { readonly kind: 'save' }
+  | { readonly kind: 'flush' }
+  | { readonly kind: 'keepLocal' }
+  | { readonly kind: 'takeFile' }
+  | { readonly kind: 'close' }
 
 /** What should be done. */
 export type Effect =
@@ -135,11 +135,11 @@ export type Effect =
       readonly body: string
       readonly seen: NoteBaseline | null
     }
-  | { readonly kind: 'arm'; readonly after: number }
-  | { readonly kind: 'disarm' }
+  | { readonly kind: 'startTimer'; readonly after: number }
+  | { readonly kind: 'cancelTimer' }
   | { readonly kind: 'replace'; readonly body: string }
-  | { readonly kind: 'hold' }
-  | { readonly kind: 'say'; readonly error: NoteErrorCode }
+  | { readonly kind: 'keepOpen' }
+  | { readonly kind: 'reportError'; readonly error: NoteErrorCode }
   | { readonly kind: 'close' }
 
 export interface Transition {
@@ -153,7 +153,7 @@ export interface WriteLimits {
   readonly bound: number
 }
 
-export const waiting: WriteLimits = { quiet: 800, bound: 5000 }
+export const DEFAULT_WRITE_LIMITS: WriteLimits = { quiet: 800, bound: 5000 }
 
 /** A tab as it opens: nothing read yet, and the first read issued. */
 export const openTab = (path: string): Transition => ({

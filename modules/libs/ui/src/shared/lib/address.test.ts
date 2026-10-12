@@ -31,6 +31,20 @@ describe('an address', () => {
     expect(writeAddress(addressOf('[[Entropy]]'))).toBe('name://Entropy')
     expect(addressOf(writeAddress(addressOf('[[Entropy]]')))).toStrictEqual(addressOf('Entropy'))
   })
+
+  it('has no name where only an alias or a fragment was written', () => {
+    expect(addressOf('[[|the other way]]').value).toBe('')
+    expect(addressOf('[[#Heading]]').value).toBe('')
+  })
+
+  it('is a name where what stands before the colons is no scheme', () => {
+    expect(addressOf('[[two words://x]]')).toStrictEqual({ scheme: 'name', value: 'two words://x' })
+    expect(addressOf('[[://x]]')).toStrictEqual({ scheme: 'name', value: '://x' })
+  })
+
+  it('is a scheme and a value where a scheme stands before the colons', () => {
+    expect(addressOf('[[note://01J8]]')).toStrictEqual({ scheme: 'note', value: '01J8' })
+  })
 })
 
 describe('what points at a note', () => {
@@ -70,6 +84,11 @@ describe('the wikilinks in a text', () => {
     expect(wikilinksIn('[[Entropy]]')[0]?.text).toBe('Entropy')
   })
 
+  it('are read in the sentence without the spaces around the text', () => {
+    expect(wikilinksIn('[[Entropy| the other way ]]')[0]?.text).toBe('the other way')
+    expect(wikilinksIn('[[ Entropy ]]')[0]?.text).toBe('Entropy')
+  })
+
   it('carry the name whole, dots, dashes and diacritics alike', () => {
     const name = 'Seminar 1.2–1.3 — Lisbon, 9 July 1973'
 
@@ -86,6 +105,10 @@ describe('the wikilinks in a text', () => {
     const text = 'Under [[Thermodynamics]] it sits.'
 
     expect(wikilinkAt(text, 10)?.address).toBe('name://Thermodynamics')
+    expect(wikilinkAt(text, 6)?.address).toBe('name://Thermodynamics')
+    expect(wikilinkAt(text, 24)?.address).toBe('name://Thermodynamics')
+    expect(wikilinkAt(text, 5)).toBeNull()
+    expect(wikilinkAt(text, 25)).toBeNull()
     expect(wikilinkAt(text, 2)).toBeNull()
     expect(wikilinkAt(text, 30)).toBeNull()
   })

@@ -92,7 +92,7 @@ type ProofreadTranscriptResult struct {
 	Left               int    // lines asked about that stand as they were heard
 	UncorrectedBatches int    // batches replied to without a correction, left as heard
 	IsNone             bool   // there is no transcript to put right, and nothing was done
-	IsEdited           bool   // somebody else wrote what stands, and it is left as they left it
+	IsEdited           bool   // somebody else wrote what textPath, and it is left as they left it
 	IsBusy             bool   // the recording is held by another run
 	IsAlready          bool   // this proofreader has been over every line, and nothing was asked
 }
@@ -121,17 +121,9 @@ type putting struct {
 // Execute puts one recording's transcript right.
 func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadTranscriptResult, error) {
 	res := ProofreadTranscriptResult{Path: path}
-	hash := u.Hash
-	if hash == "" {
-		reader, err := u.readers.Open(v)
-		if err != nil {
-			return res, err
-		}
-		raw, err := reader.Read(ctx, path)
-		if err != nil {
-			return res, fmt.Errorf("read %s: %w", path, err)
-		}
-		hash = text.Fingerprint(raw)
+	hash, err := u.getHash(ctx, v, path)
+	if err != nil {
+		return res, err
 	}
 	store, err := u.derived.Open(v)
 	if err != nil {
@@ -139,7 +131,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	}
 
 	area := u.area()
-	stands, far := text.Corrections(area, hash), text.Proofread(area, hash)
+	textPath, progressPath := text.Corrections(area, hash), text.Proofread(area, hash)
 
 	// One run to a recording. The name a transcription holds is the name held
 	// here, so a run listening to a recording and a run putting its transcript
@@ -164,7 +156,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		return res, nil
 	}
 
-	stood, err := u.readCheckpoint(ctx, store, far)
+	stood, err := u.readCheckpoint(ctx, store, progressPath)
 	if err != nil {
 		return res, err
 	}
@@ -179,31 +171,15 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 		stood = putting{}
 	}
 
-	// The transcript is asked about batch by batch, and then once more around
-	// the cuts a sentence was answered for past the end of. What the whole
-	// recording holds stands on every batch of it.
-	about := proofread.Describe(cues)
-	spoken := setContext(proofread.GetSpeechBatches(cues, u.batchSize(), u.overlap()), about)
-	batches := spoken
-	// The batchesAcrossCuts are cut from the transcript as this run found it, so the batch
-	// a line falls in does not move as sentences are put back together.
-	asHeard := slices.Clone(cues)
+	job := u.newTranscriptJob(v, store, path, textPath, progressPath, cues, stood)
 	// A batch reaches back over the lines it shares with the one before it, so
 	// what this run counts as read begins where the run before it stopped.
-	from := getFirstUnasked(cues, stood.At)
 	res.Lines = linesBefore(cues, len(cues))
-	res.Resumed = linesBefore(cues, from)
+	res.Resumed = linesBefore(cues, job.from)
 	res.Read, res.Left = res.Resumed, 0
 
-	at := getFirstUnaskedBatch(spoken, cues, stood.At)
-	if at >= len(spoken) {
-		// A run taking up after the first pass holds no reply saying which cuts
-		// a sentence was answered for past the end of, and asks about every
-		// batch over a cut standing past the count.
-		batches = slices.Concat(spoken, u.batchesAcrossCuts(asHeard, everyCut(len(spoken)), about))
-		at = len(spoken) + getFirstUnaskedBatch(batches[len(spoken):], cues, stood.AtCut)
-	}
-	if at >= len(batches) {
+	at := u.getFirstBatch(job, stood)
+	if at >= len(job.batches) {
 		// This proofreader has been over every line and every batch over a cut.
 		res.IsAlready = true
 		return res, nil
@@ -214,92 +190,201 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	// Who is putting this transcript right stands before the first words do,
 	// and the count of what they have asked about stands after the lines it
 	// claims.
-	if err := u.writeCheckpoint(ctx, store, far, stood); err != nil {
+	if err := u.writeCheckpoint(ctx, store, progressPath, stood); err != nil {
 		return res, err
 	}
+	err = u.askBatches(ctx, job, at, &res)
+	return res, err
+}
 
-	// together is every cue a run of lines has been put together into, and every
+// getHash is the fingerprint of the recording's bytes.
+func (u ProofreadTranscript) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
+	if u.Hash != "" {
+		return u.Hash, nil
+	}
+	reader, err := u.readers.Open(v)
+	if err != nil {
+		return "", err
+	}
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return "", fmt.Errorf("read %s: %w", path, err)
+	}
+	return text.Fingerprint(raw), nil
+}
+
+// transcriptProofreadJob is the state of proofreading one transcript: what it asks about, and which
+// lines it has asked about and put right so far.
+type transcriptProofreadJob struct {
+	v     domain.Vault
+	store port.DerivedStore
+	path  string
+	// textPath is where the corrected words are kept, and progressPath where the
+	// count of what has been asked about is kept.
+	textPath, progressPath string
+
+	cues []transcript.Cue
+	// original is the transcript as this run found it, so the batch a line falls
+	// in does not move as sentences are put back together.
+	original []transcript.Cue
+	about    string
+	// mainBatches covers the whole transcript, and batches is mainBatches and,
+	// after it, the batches over the cuts a sentence was answered for past the end
+	// of.
+	mainBatches, batches []proofread.Batch
+	from                 int
+
+	asked, fixed map[int]bool
+	// merged is every cue a run of lines has been put together into, and every
 	// cue such a run swallowed.
-	asked, fixed, together := map[int]bool{}, map[int]bool{}, map[int]bool{}
+	merged map[int]bool
 	// cuts is every cut a sentence was answered for past the end of.
-	var cuts []int
-	for ; at < len(batches); at += u.inFlight() {
+	cuts []int
+}
+
+// newTranscriptJob lays out the batches a transcript is asked about: batch by batch, and
+// then once more around the cuts. What the whole recording holds stands on every
+// batch of it.
+func (u ProofreadTranscript) newTranscriptJob(
+	v domain.Vault,
+	store port.DerivedStore,
+	path, textPath, progressPath string,
+	cues []transcript.Cue,
+	stood putting,
+) *transcriptProofreadJob {
+	about := proofread.Describe(cues)
+	mainBatches := setContext(proofread.GetSpeechBatches(cues, u.batchSize(), u.overlap()), about)
+	return &transcriptProofreadJob{
+		v: v, store: store, path: path, textPath: textPath, progressPath: progressPath,
+		cues: cues, original: slices.Clone(cues), about: about,
+		mainBatches: mainBatches, batches: mainBatches, from: getFirstUnasked(cues, stood.At),
+		asked: map[int]bool{}, fixed: map[int]bool{}, merged: map[int]bool{},
+	}
+}
+
+// getFirstBatch is the index of the first batch a run taking up from stood asks
+// about.
+func (u ProofreadTranscript) getFirstBatch(p *transcriptProofreadJob, stood putting) int {
+	at := getFirstUnaskedBatch(p.mainBatches, p.cues, stood.At)
+	if at < len(p.mainBatches) {
+		return at
+	}
+	// A run taking up after the first pass holds no reply saying which cuts a
+	// sentence was answered for past the end of, and asks about every batch over
+	// a cut standing past the count.
+	p.batches = slices.Concat(p.mainBatches, u.batchesAcrossCuts(p.original, everyCut(len(p.mainBatches)), p.about))
+	return len(p.mainBatches) + getFirstUnaskedBatch(p.batches[len(p.mainBatches):], p.cues, stood.AtCut)
+}
+
+// askBatches asks about the batches from at onwards, a group at a time.
+func (u ProofreadTranscript) askBatches(
+	ctx context.Context,
+	p *transcriptProofreadJob,
+	at int,
+	res *ProofreadTranscriptResult,
+) error {
+	for ; at < len(p.batches); at += u.inFlight() {
 		if err := ctx.Err(); err != nil {
 			// What came back is on disk already, and the next run begins at the
 			// line this one stopped on.
-			return res, err
+			return err
 		}
-		end := min(at+u.inFlight(), len(batches))
-		group := batches[at:end]
+		end := min(at+u.inFlight(), len(p.batches))
+		group := p.batches[at:end]
 
 		replies, err := u.by.Proofread(ctx, group)
 		if err != nil {
-			return res, fmt.Errorf("proofread %s: %w", path, err)
+			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
 		res.UncorrectedBatches += countUncorrected(group, replies, unbounded)
-		for _, batch := range group {
-			for _, line := range batch.Lines {
-				if line.Number >= from {
-					asked[line.Number] = true
-				}
-			}
-		}
+		p.markAskedLines(group)
+		wrote := p.applyReplies(group, replies)
+		res.Fixed, res.Left = len(p.fixed), countUnchanged(p.asked, p.fixed)
+		res.Read = res.Resumed + len(p.asked)
 
-		wrote := false
-		put, past := proofread.GetGatheredLines(group, replies, unbounded)
-		// A batch over a cut is asked about once, so a run past the end of one names no
-		// further cut.
-		for _, batch := range past {
-			if batch < len(spoken) {
-				cuts = append(cuts, batch)
-			}
+		if err := u.saveGroup(ctx, p, wrote, end); err != nil {
+			return err
 		}
-		// The corrections go in by the line, so what a transcript ends as does
-		// not turn on the order a map hands them back in.
-		for _, line := range slices.Sorted(maps.Keys(put)) {
-			gathered := put[line]
-			if isJoined(together, gathered) {
-				continue
-			}
-			cues[line].Text = gathered.Text
-			wrote = true
-			fixed[line] = true
-			if !gathered.IsJoined() {
-				continue
-			}
-			// A sentence put back together is one cue, from the first moment of
-			// the run to the last. The cues it swallowed say nothing, and
-			// nothing is what a transcript writes them as.
-			together[line] = true
-			for gone := line + 1; gone <= gathered.Last; gone++ {
-				cues[line].To = max(cues[line].To, cues[gone].To)
-				cues[gone].Text = ""
-				together[gone] = true
-				fixed[gone] = true
-			}
-		}
-		res.Fixed, res.Left = len(fixed), countUnchanged(asked, fixed)
-
-		// The words are written, the source is cut, and the count stands after
-		// both: a batch no count claims is one the next run asks about again.
-		if wrote {
-			if err := store.Write(ctx, stands, transcript.Marshal(cues)); err != nil {
-				return res, err
-			}
-		}
-		res.Read = res.Resumed + len(asked)
-		if err := u.cut(ctx, v, path); err != nil {
-			return res, err
-		}
-		if end == len(spoken) {
-			batches = slices.Concat(spoken, u.batchesAcrossCuts(asHeard, cuts, about))
-		}
-		if err := u.writeCheckpoint(ctx, store, far, getProgress(batches, len(spoken), end, cues)); err != nil {
-			return res, err
-		}
-		u.progress(res)
+		u.progress(*res)
 	}
-	return res, nil
+	return nil
+}
+
+// saveGroup writes the words, cuts the source, and writes the count after both:
+// a batch no count claims is one the next run asks about again.
+func (u ProofreadTranscript) saveGroup(ctx context.Context, p *transcriptProofreadJob, wrote bool, end int) error {
+	if wrote {
+		if err := p.store.Write(ctx, p.textPath, transcript.Marshal(p.cues)); err != nil {
+			return err
+		}
+	}
+	if err := u.cut(ctx, p.v, p.path); err != nil {
+		return err
+	}
+	if end == len(p.mainBatches) {
+		p.batches = slices.Concat(p.mainBatches, u.batchesAcrossCuts(p.original, p.cuts, p.about))
+	}
+	return u.writeCheckpoint(ctx, p.store, p.progressPath, getProgress(p.batches, len(p.mainBatches), end, p.cues))
+}
+
+// markAskedLines records the lines of the group from where this run began.
+func (p *transcriptProofreadJob) markAskedLines(group []proofread.Batch) {
+	for _, batch := range group {
+		for _, line := range batch.Lines {
+			if line.Number >= p.from {
+				p.asked[line.Number] = true
+			}
+		}
+	}
+}
+
+// applyReplies puts the group's corrections into the cues, and says whether any
+// cue changed. A batch over a cut is asked about once, so a run past the end of
+// one names no further cut.
+func (p *transcriptProofreadJob) applyReplies(group []proofread.Batch, replies map[int]string) bool {
+	put, past := proofread.GetGatheredLines(group, replies, unbounded)
+	for _, batch := range past {
+		if batch < len(p.mainBatches) {
+			p.cuts = append(p.cuts, batch)
+		}
+	}
+	// The corrections go in by the line, so what a transcript ends as does not
+	// turn on the order a map hands them back in.
+	wrote := false
+	for _, line := range slices.Sorted(maps.Keys(put)) {
+		if p.putLine(line, put[line]) {
+			wrote = true
+		}
+	}
+	return wrote
+}
+
+// putLine puts one correction into the cues, and says whether it did. Words
+// answered about a line already put together with another no longer stand on
+// their own.
+func (p *transcriptProofreadJob) putLine(line int, gathered proofread.Line) bool {
+	if isJoined(p.merged, gathered) {
+		return false
+	}
+	p.cues[line].Text = gathered.Text
+	p.fixed[line] = true
+	if gathered.IsJoined() {
+		p.joinCues(line, gathered.Last)
+	}
+	return true
+}
+
+// joinCues makes a sentence put back together one cue, from the first moment of
+// the run to the last. The cues it swallowed say nothing, and nothing is what a
+// transcript writes them as.
+func (p *transcriptProofreadJob) joinCues(line, last int) {
+	p.merged[line] = true
+	for gone := line + 1; gone <= last; gone++ {
+		p.cues[line].To = max(p.cues[line].To, p.cues[gone].To)
+		p.cues[gone].Text = ""
+		p.merged[gone] = true
+		p.fixed[gone] = true
+	}
 }
 
 // current is the transcript as it now stands, and whether it is the file that
@@ -329,8 +414,8 @@ func (u ProofreadTranscript) current(
 
 // readCheckpoint is who put this transcript right and how far they got. A
 // record nothing here can read names nobody.
-func (u ProofreadTranscript) readCheckpoint(ctx context.Context, store port.DerivedStore, far string) (putting, error) {
-	raw, err := store.Read(ctx, far)
+func (u ProofreadTranscript) readCheckpoint(ctx context.Context, store port.DerivedStore, progressPath string) (putting, error) {
+	raw, err := store.Read(ctx, progressPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return putting{}, nil
 	}
@@ -347,13 +432,13 @@ func (u ProofreadTranscript) readCheckpoint(ctx context.Context, store port.Deri
 
 // writeCheckpoint writes down who is putting this transcript right and how far
 // they have got.
-func (u ProofreadTranscript) writeCheckpoint(ctx context.Context, store port.DerivedStore, far string, stood putting) error {
+func (u ProofreadTranscript) writeCheckpoint(ctx context.Context, store port.DerivedStore, progressPath string, stood putting) error {
 	stood.By = u.by.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
 		return err
 	}
-	return store.Write(ctx, far, append(raw, '\n'))
+	return store.Write(ctx, progressPath, append(raw, '\n'))
 }
 
 // countUncorrected is how many of a run's batches answered with what is no
@@ -396,9 +481,9 @@ func getFirstUnasked(cues []transcript.Cue, ms int) int {
 
 // isJoined says whether a correction answers about a line already put together
 // with another. Those words no longer stand on their own.
-func isJoined(together map[int]bool, said proofread.Line) bool {
+func isJoined(merged map[int]bool, said proofread.Line) bool {
 	for at := said.Number; at <= said.Last; at++ {
-		if together[at] {
+		if merged[at] {
 			return true
 		}
 	}
@@ -409,9 +494,9 @@ func isJoined(together map[int]bool, said proofread.Line) bool {
 // answered. The first spoken of them are the pass over the whole transcript and
 // the rest the pass over its batchesAcrossCuts, and each batch of a pass reaches further
 // into the transcript than the one before it.
-func getProgress(batches []proofread.Batch, spoken, end int, cues []transcript.Cue) putting {
+func getProgress(batches []proofread.Batch, mainBatches, end int, cues []transcript.Cue) putting {
 	var stood putting
-	if done := min(end, spoken); done > 0 {
+	if done := min(end, mainBatches); done > 0 {
 		stood.At = cues[last(batches[done-1])].To
 	}
 	// Every batch is answered and no batch over a cut is left, so both counts stand at the
@@ -420,7 +505,7 @@ func getProgress(batches []proofread.Batch, spoken, end int, cues []transcript.C
 		stood.AtCut = stood.At
 		return stood
 	}
-	if end > spoken {
+	if end > mainBatches {
 		stood.AtCut = cues[last(batches[end-1])].To
 	}
 	return stood

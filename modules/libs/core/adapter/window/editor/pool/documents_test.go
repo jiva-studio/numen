@@ -46,12 +46,12 @@ func (h *held) Close() {
 // drawn on it, it is taken from under the drawing.
 func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 	one := &held{drawing: make(chan struct{}), let: make(chan struct{})}
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	mark := Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
 
 	drawn := make(chan error, 1)
 	go func() {
-		doc, give, err := docs.Take(t.Context(), mark, func() (Scan, error) { return one, nil })
+		doc, give, err := docs.Acquire(t.Context(), mark, func() (Scan, error) { return one, nil })
 		if err != nil {
 			drawn <- err
 			return
@@ -90,7 +90,7 @@ func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 
 // A window with nothing open goes at once.
 func TestGoingWithNothingOpenIsNotAWait(t *testing.T) {
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	done := make(chan struct{})
 	go func() { docs.Close(); close(done) }()
 	select {
@@ -105,12 +105,12 @@ func TestGoingWithNothingOpenIsNotAWait(t *testing.T) {
 // A document taken after the last one was given back would be a document
 // nobody is left to close, and the going would wait on it for ever.
 func TestAWindowGoingOpensNothingMore(t *testing.T) {
-	docs := NewDocuments(MostOpen, OpenIdleFor)
+	docs := NewDocuments(MaxOpenDocuments, DocumentIdleTimeout)
 	docs.Close()
 
 	mark := Fingerprint{Path: "library/a.pdf", Size: 1, Mtime: 1}
 	opens := 0
-	_, _, err := docs.Take(t.Context(), mark, func() (Scan, error) {
+	_, _, err := docs.Acquire(t.Context(), mark, func() (Scan, error) {
 		opens++
 		return &held{drawing: make(chan struct{}), let: make(chan struct{})}, nil
 	})

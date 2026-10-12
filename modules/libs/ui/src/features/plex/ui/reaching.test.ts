@@ -8,9 +8,9 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import { byHandle, byHolding } from '../model/reaching'
+import { byHandle, byLongPress } from '../model/reaching'
 import { APART, byDoubleClick, byDoubleTap, TAP } from '../model/showing'
-import { HOLD } from '../model/holding'
+import { LONG_PRESS_DELAY } from '../model/longPress'
 import { build } from '../fixtures/build'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
@@ -33,7 +33,7 @@ function stubMatrix(element: SVGSVGElement) {
 
 const mountPlex = (props: Record<string, unknown> = {}) => {
   const plex = mount(Plex, {
-    props: { neighbourhood: NEIGHBOURHOOD, duration: 0, reaching: byHolding(), ...props },
+    props: { neighbourhood: NEIGHBOURHOOD, duration: 0, reaching: byLongPress(), ...props },
     attachTo: document.body,
   })
   const svg = plex.find('svg').element as SVGSVGElement
@@ -68,7 +68,7 @@ describe('resting on a node', () => {
     plex
       .get('[aria-label^="A node"]')
       .element.dispatchEvent(pointer('pointerdown', 600, 400, { pointerType: 'touch' }))
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
     await plex.vm.$nextTick()
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
@@ -85,7 +85,7 @@ describe('resting on a node', () => {
 
     node.element.dispatchEvent(pointer('pointerdown', 600, 400, { pointerType: 'touch' }))
     node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
-    vi.advanceTimersByTime(HOLD)
+    vi.advanceTimersByTime(LONG_PRESS_DELAY)
     await plex.vm.$nextTick()
 
     expect(plex.emitted('create')).toBeUndefined()

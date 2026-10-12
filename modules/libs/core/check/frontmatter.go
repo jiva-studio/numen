@@ -15,9 +15,9 @@ import (
 type frontmatterCheck struct{ queries port.ProblemQueries }
 
 func (frontmatterCheck) Name() domain.Check { return domain.CheckFrontmatter }
-func (frontmatterCheck) IsQuiet() bool      { return false }
+func (frontmatterCheck) IsOptIn() bool      { return false }
 
-func (c frontmatterCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
+func (c frontmatterCheck) FindProblems(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
 	unreadable, err := c.queries.GetUnreadable(ctx, v.ID)
 	if err != nil {
 		return nil, err

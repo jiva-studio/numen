@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NOWHERE, STOP_REASONS, type Curve } from '../types'
+import { NO_PLACE, STOP_REASONS, type Curve } from '../types'
 import { mountPresetTab, point, rows, tabAt } from '../fixtures'
 import { WORDS as words } from '../words'
 
@@ -61,8 +61,8 @@ describe('a preset that schedules nothing', () => {
 describe('a goal with nothing to work on', () => {
   const nothing: Partial<Curve> = {
     at: [point(), point(), point(), point()],
-    now: NOWHERE,
-    suggested: NOWHERE,
+    now: NO_PLACE,
+    suggested: NO_PLACE,
     decks: 0,
     cards: 0,
     overdue: 0,

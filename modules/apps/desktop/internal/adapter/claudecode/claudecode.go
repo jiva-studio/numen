@@ -41,12 +41,12 @@ type Agent struct {
 	// from the allowance is refused. It names this vault's tools; the search
 	// the agent brings is allowed wherever the arguments are written.
 	Allowed []string
-	// Words are how the tools this vault serves are spoken about, by the name
+	// ToolDeclarations are how the tools this vault serves are spoken about, by the name
 	// the agent calls them. A tool that is not here is named as it named
 	// itself.
-	Words map[string]ToolDeclaration
-	// Drafting is how a change this agent is making is drawn before it lands.
-	Drafting Drafting
+	ToolDeclarations map[string]ToolDeclaration
+	// Preview is how a change this agent is making is drawn before it lands.
+	Preview EditPreview
 	// Model is which model answers, by the name the command line knows it as.
 	// Empty leaves the choice to the installation the agent belongs to.
 	Model string
@@ -54,8 +54,8 @@ type Agent struct {
 	// hooks, skills, standing instructions, plugins. What a vault carries is
 	// refused whether this is set or not.
 	ShouldReadHooksAndSkills bool
-	// Turns is how many times the agent may go to the model before it is stopped.
-	Turns int
+	// MaxTurns is how many times the agent may go to the model before it is stopped.
+	MaxTurns int
 	// ErrorHandler is told what the agent wrote to its error output when
 	// something went wrong.
 	ErrorHandler func(error)
@@ -78,8 +78,8 @@ type Agent struct {
 	}
 }
 
-// hold keeps the work so that closing can reach it.
-func (a *Agent) hold(w *work) bool {
+// registerWork keeps the work so that closing can reach it.
+func (a *Agent) registerWork(w *work) bool {
 	a.taken.Lock()
 	defer a.taken.Unlock()
 
@@ -93,7 +93,7 @@ func (a *Agent) hold(w *work) bool {
 	return true
 }
 
-func (a *Agent) letGo(w *work) {
+func (a *Agent) unregisterWork(w *work) {
 	a.taken.Lock()
 	defer a.taken.Unlock()
 	delete(a.taken.running, w)
@@ -114,7 +114,7 @@ func (a *Agent) Close() error {
 	a.taken.running = nil
 	a.taken.Unlock()
 
-	return stopWorks(running)
+	return stopWork(running)
 }
 
 // Finish ends a conversation: everything still being answered in it stops, and
@@ -133,7 +133,7 @@ func (a *Agent) Finish(_ context.Context, conversation string) error {
 	}
 	a.taken.Unlock()
 
-	err := stopWorks(answering)
+	err := stopWork(answering)
 
 	a.carried.Lock()
 	defer a.carried.Unlock()
@@ -141,8 +141,8 @@ func (a *Agent) Finish(_ context.Context, conversation string) error {
 	return err
 }
 
-// stopWorks cancels each running task and waits for its reader to finish.
-func stopWorks(works []*work) error {
+// stopWork cancels each running task and waits for its reader to finish.
+func stopWork(works []*work) error {
 	for _, w := range works {
 		w.once.Do(w.stop)
 	}
@@ -163,9 +163,9 @@ func (a *Agent) getSession(conversation string) string {
 	return a.carried.sessions[conversation]
 }
 
-// makeSessionKeeper is what one run tells the session it is on to. It is kept
+// makeSessionRecorder is what one run tells the session it is on to. It is kept
 // under that run's conversation, and a run that named none is kept nowhere.
-func (a *Agent) makeSessionKeeper(conversation string) func(string) {
+func (a *Agent) makeSessionRecorder(conversation string) func(string) {
 	if conversation == "" {
 		return func(string) {}
 	}
@@ -179,8 +179,8 @@ func (a *Agent) makeSessionKeeper(conversation string) func(string) {
 	}
 }
 
-// DefaultTurns is how many times an agent may go round on one task.
-const DefaultTurns = 100
+// DefaultMaxTurns is how many times an agent may go round on one task.
+const DefaultMaxTurns = 100
 
 // Take starts the agent on a task.
 func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
@@ -202,10 +202,10 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 	}()
 
 	running, stop := context.WithCancel(ctx)
-	name, rest := a.command()
+	name, rest := a.getCommand()
 	cmd := exec.CommandContext(running, name, append(rest, a.buildArguments(task, configuration)...)...)
 	cmd.Dir = a.Root
-	cmd.Env = environment(os.Environ())
+	cmd.Env = buildEnvironment(os.Environ())
 	detach(cmd)
 
 	// The whole group goes, and the pipes are let go of shortly after: a
@@ -233,12 +233,12 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 		conversation: task.Conversation,
 		steps:        make(chan port.Step, 16),
 	}
-	if !a.hold(w) {
+	if !a.registerWork(w) {
 		stop()
 		return nil, errors.New("this agent is closing")
 	}
 	if err := cmd.Start(); err != nil {
-		a.letGo(w)
+		a.unregisterWork(w)
 		stop()
 		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
@@ -246,11 +246,11 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 	w.reader.Add(1)
 	go func() {
 		defer w.reader.Done()
-		defer a.letGo(w)
+		defer a.unregisterWork(w)
 		defer close(w.steps)
 		defer os.Remove(configuration)
 
-		failed := read(running, out, w.steps, a.Words, a.makeSessionKeeper(task.Conversation), a.Drafting)
+		failed := readStream(running, out, w.steps, a.ToolDeclarations, a.makeSessionRecorder(task.Conversation), a.Preview)
 
 		err := cmd.Wait()
 		if running.Err() != nil {
@@ -258,7 +258,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 			return
 		}
 		if failed == "" {
-			failed = reason(err, said.String())
+			failed = getFailureMessage(err, said.String())
 		}
 		select {
 		case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
@@ -271,7 +271,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
 	return w, nil
 }
 
-func (a *Agent) command() (string, []string) {
+func (a *Agent) getCommand() (string, []string) {
 	if len(a.Command) == 0 {
 		return findCommand(), nil
 	}
@@ -291,9 +291,9 @@ const externalTool = "WebSearch"
 
 // buildArguments returns what the command line is started with.
 func (a *Agent) buildArguments(task port.Task, configuration string) []string {
-	turns := a.Turns
+	turns := a.MaxTurns
 	if turns <= 0 {
-		turns = DefaultTurns
+		turns = DefaultMaxTurns
 	}
 
 	args := []string{
@@ -431,23 +431,23 @@ func (w *work) Steps() <-chan port.Step { return w.steps }
 // Cancelling is the one way the child is ended, here and wherever the context
 // this work was taken with is cancelled.
 func (w *work) Stop() error {
-	return stopWorks([]*work{w})
+	return stopWork([]*work{w})
 }
 
-// reason is what to tell the person when the agent stopped.
-func reason(err error, said string) string {
+// getFailureMessage is what to tell the person when the agent stopped.
+func getFailureMessage(err error, said string) string {
 	if err == nil {
 		return ""
 	}
 	if trimmed := strings.TrimSpace(said); trimmed != "" {
-		return lastLine(trimmed)
+		return getLastLine(trimmed)
 	}
 	return err.Error()
 }
 
-// lastLine is the part of the error output worth showing: what a command line
+// getLastLine is the part of the error output worth showing: what a command line
 // says last is what went wrong.
-func lastLine(said string) string {
+func getLastLine(said string) string {
 	lines := strings.Split(said, "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
 		if line := strings.TrimSpace(lines[i]); line != "" {
@@ -457,23 +457,23 @@ func lastLine(said string) string {
 	return said
 }
 
-// Drafting is how a change is drawn while the call making it is still being
+// EditPreview is how a change is drawn while the call making it is still being
 // written. Nothing here is a write: the vault is what changes a note, and this
 // only says what is on its way.
-type Drafting struct {
-	// Report is told each time more of the change has arrived.
-	Report func(ctx context.Context, said domain.Edit)
-	// Location says where a stretch stands in a note, and whether it stands in
+type EditPreview struct {
+	// Emit is told each time more of the change has arrived.
+	Emit func(ctx context.Context, said domain.Edit)
+	// Locate says where a stretch stands in a note, and whether it stands in
 	// exactly one place. A stretch that stands nowhere or twice is not drawn.
-	Location func(ctx context.Context, path, stood string) (from, to int, unique bool)
+	Locate func(ctx context.Context, path, stood string) (from, to int, unique bool)
 	// Now is the clock the pace is kept by.
 	Now func() time.Time
 }
 
-// drawing reports whether anything can be drawn at all.
-func (d Drafting) drawing() bool { return d.Report != nil && d.Location != nil }
+// isEnabled reports whether anything can be drawn at all.
+func (d EditPreview) isEnabled() bool { return d.Emit != nil && d.Locate != nil }
 
-func (d Drafting) now() time.Time {
+func (d EditPreview) getNow() time.Time {
 	if d.Now == nil {
 		return time.Now()
 	}

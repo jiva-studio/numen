@@ -32,7 +32,11 @@ export function orderNames(
  * card the stencil cuts, so it stays first: it does not move, and nothing lands
  * above it. A field let go where it stands moves nothing either.
  */
-export function landing(fields: readonly string[], dragEntry: string, at: InsertionPoint): boolean {
+export function canDropField(
+  fields: readonly string[],
+  dragEntry: string,
+  at: InsertionPoint,
+): boolean {
   const first = fields[0]
   if (first === undefined) return false
   if (dragEntry === first || at === first) return false
@@ -57,7 +61,7 @@ export const STEP_KEYS = 'ArrowUp ArrowDown'
  * there is no place that way. Landing before the entry past the next one is
  * what puts it one place further down, the entry being taken out first.
  */
-export function getStepLanding(
+export function getStepInsertionPoint(
   names: readonly string[],
   dragEntry: string,
   direction: StepDirection,
@@ -75,7 +79,7 @@ export const reorderFields = (
   dragEntry: string,
   at: InsertionPoint,
 ): readonly string[] =>
-  landing(fields, dragEntry, at) ? orderNames(fields, dragEntry, at) : fields
+  canDropField(fields, dragEntry, at) ? orderNames(fields, dragEntry, at) : fields
 
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'

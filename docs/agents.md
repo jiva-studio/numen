@@ -89,17 +89,17 @@ These stand under a word other than the service that owns them:
 | `note_focus`, `source_focus`, `window_tab_list` | where in the vault the person stands |
 | `link_*` | the addresses written in a note |
 | `card_*` | the cards, in the plural the service is named in |
-| `card_showing` | a session of review |
+| `card_current` | a session of review |
 | `source_list`, `source_read` | a document |
 | `source_recognise`, `source_transcribe` | an artifact being made |
 | `artifact_read`, `artifact_write` | a transcript, an article or a reading, by which of them is asked for |
-| `vault_list`, `vault_add`, `vault_rename`, `vault_forget`, `vault_open` | the vaults the installation holds |
+| `vault_list`, `vault_add`, `vault_rename`, `vault_remove`, `vault_open` | the vaults the installation holds |
 
 `file_read` and `url_import` stand under no service at all: nothing owns the bytes of a file that is neither a note nor a document, and nothing owns a url.
 
 ## The reviewer's surface
 
-The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_value_remove`, `card_remove`, `card_section_add`, `card_section_rename` and `card_section_remove`. It also serves `card_showing`, which answers with the card in front of the person and is on no other surface. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either.
+The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_value_remove`, `card_remove`, `card_section_add`, `card_section_rename` and `card_section_remove`. It also serves `card_current`, which answers with the card in front of the person and is on no other surface. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either.
 
 The reading half of it is a surface in its own right, with no writer on it at all.
 

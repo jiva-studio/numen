@@ -2,7 +2,7 @@
  * What the drawing is told, and what it says back: the picture between the
  * nodes, and one node inside it.
  */
-import type { MenuOpening } from '@/shared/ui/menu'
+import type { MenuTrigger } from '@/shared/ui/menu'
 import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeParts } from '../../lib/inside'
@@ -77,7 +77,7 @@ export interface PlexViewEvents {
   /** A handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask', id: string): void
   /** A menu was asked for on a node: which, where, and by what. */
-  (event: 'menu', id: string, at: Position, opening: MenuOpening): void
+  (event: 'menu', id: string, at: Position, trigger: MenuTrigger): void
   /** A part of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, part: string): void
   /** A menu or inspector was asked for on an edge. */
@@ -125,7 +125,7 @@ export interface PlexNodeEvents {
    * it. A keypress carries no point of its own, so the middle of the box is
    * where it is asked.
    */
-  (event: 'menu', at: Position, opening: MenuOpening): void
+  (event: 'menu', at: Position, trigger: MenuTrigger): void
   /**
    * The attention has settled on this node, or has left it. A widened box is
    * drawn last of all, and which box that is only the whole picture knows.

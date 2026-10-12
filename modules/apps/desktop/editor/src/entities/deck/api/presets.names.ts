@@ -4,19 +4,19 @@ import { namesOf } from '@numen/wire'
 import type { BudgetUnit, Rule } from '../lib/presets'
 
 /** What counts as learned. */
-export const LEARNED: Record<Rules, Rule | null> = {
+export const RULE_BY_WIRE: Record<Rules, Rule | null> = {
   [Rules.UNSPECIFIED]: null,
   [Rules.INTERVAL]: 'interval',
   [Rules.RETENTION]: 'retention',
 }
 
-export const RULING = namesOf<Rule, Rules>(LEARNED)
+export const WIRE_BY_RULE = namesOf<Rule, Rules>(RULE_BY_WIRE)
 
 /** The unit a budget is spent in. */
-export const COUNTED: Record<BudgetUnits, BudgetUnit | null> = {
+export const BUDGET_UNIT_BY_WIRE: Record<BudgetUnits, BudgetUnit | null> = {
   [BudgetUnits.UNSPECIFIED]: null,
   [BudgetUnits.CARDS]: 'cards',
   [BudgetUnits.SHOWS]: 'shows',
 }
 
-export const COUNTING = namesOf<BudgetUnit, BudgetUnits>(COUNTED)
+export const WIRE_BY_BUDGET_UNIT = namesOf<BudgetUnit, BudgetUnits>(BUDGET_UNIT_BY_WIRE)

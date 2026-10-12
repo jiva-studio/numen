@@ -29,7 +29,7 @@ import type { PlexNode, Position } from '../lib/node'
 import type { PlexRelatedSeat } from '../lib/seat'
 import type { PlexDestination } from '../model/showing'
 import type { Clock } from '../model/transition'
-import type { MenuOpening } from '@/shared/ui/menu'
+import type { MenuTrigger } from '@/shared/ui/menu'
 
 interface Knobs {
   neighbourhood: PlexNeighbourhood
@@ -42,7 +42,7 @@ interface Knobs {
   onCreate: (from: string, seat: PlexRelatedSeat) => void
   onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
   onBring: (dragged: readonly string[], seat: PlexRelatedSeat) => void
-  onMenu: (id: string, at: Position, opening: MenuOpening) => void
+  onMenu: (id: string, at: Position, trigger: MenuTrigger) => void
   onDismiss: () => void
   parts: (id: string) => readonly PlexPart[]
   onEnter: (id: string, part: string) => void

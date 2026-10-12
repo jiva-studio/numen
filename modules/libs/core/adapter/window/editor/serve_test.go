@@ -179,8 +179,8 @@ func openingWith(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	read := note.NewRead(filesystem.VaultReaders{})
 	api := &API{
-		Listeners: newChangeAudience(),
-		Places:    newPlaceAudience(),
+		ChangeEvents: newChangeBroadcaster(),
+		Places:       newPlaceBroadcaster(),
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),
@@ -196,7 +196,7 @@ func openingWith(
 		api.Indexing.Model.Store(embedder.Model().String())
 		api.Indexing.Progress = db.Progress()
 	}
-	line, done := api.Listeners.listen()
+	line, done := api.ChangeEvents.subscribe()
 	t.Cleanup(done)
 
 	wake := newIndexTriggers(still)
@@ -517,10 +517,10 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	readers := filesystem.VaultReaders{}
 	watcher := byHand()
 	api := &API{
-		Listeners: newChangeAudience(),
-		Places:    newPlaceAudience(),
-		Window:    &wire.Window{Named: wire.Editor, Tasking: task.New()},
-		Notes:     Notes{Queries: db.Queries(), Links: db.Links()},
+		ChangeEvents: newChangeBroadcaster(),
+		Places:       newPlaceBroadcaster(),
+		Window:       &wire.Window{Named: wire.Editor, Tasking: task.New()},
+		Notes:        Notes{Queries: db.Queries(), Links: db.Links()},
 	}
 	api.setVault(v)
 

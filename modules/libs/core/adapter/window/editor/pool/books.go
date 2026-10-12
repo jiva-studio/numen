@@ -41,8 +41,8 @@ type Volume struct {
 
 // How many books are held at once, and how long one nobody is reading is kept.
 const (
-	MostRead    = 2
-	ReadIdleFor = 2 * time.Minute
+	MaxOpenBooks    = 2
+	BookIdleTimeout = 2 * time.Minute
 )
 
 // NewBooks is a window with no book open yet: how many books it keeps at once,
@@ -51,13 +51,13 @@ func NewBooks(limit int, idleFor time.Duration) *Books {
 	return &Books{open: map[Fingerprint]*Volume{}, limit: limit, idleFor: idleFor}
 }
 
-// Take hands over the book at a fingerprint, reading it if it is not held.
+// Acquire hands over the book at a fingerprint, reading it if it is not held.
 //
 // Reading unpacks and parses the whole archive, so it happens on a goroutine of
 // its own: a caller whose ctx ends first is told the book is busy, and the
 // reading goes on and is there for the next ask. Two callers asking at once
 // read it once.
-func (b *Books) Take(
+func (b *Books) Acquire(
 	ctx context.Context,
 	mark Fingerprint,
 	read func() (*epub.Book, error),
@@ -67,12 +67,12 @@ func (b *Books) Take(
 	if !open {
 		held = &Volume{ready: make(chan struct{})}
 		b.open[mark] = held
-		go b.Fill(mark, held, read)
+		go b.Load(mark, held, read)
 	}
 	if held.idle != nil {
 		held.idle.Stop()
 	}
-	held.idle = time.AfterFunc(b.idleFor, func() { b.Retire(mark, held) })
+	held.idle = time.AfterFunc(b.idleFor, func() { b.CloseIfIdle(mark, held) })
 	b.Touch(mark)
 	b.Evict()
 	b.mu.Unlock()
@@ -85,8 +85,8 @@ func (b *Books) Take(
 	}
 }
 
-// Fill reads the book and tells whoever is waiting.
-func (b *Books) Fill(mark Fingerprint, held *Volume, read func() (*epub.Book, error)) {
+// Load reads the book and tells whoever is waiting.
+func (b *Books) Load(mark Fingerprint, held *Volume, read func() (*epub.Book, error)) {
 	held.book, held.why = read()
 	close(held.ready)
 	if held.why == nil {
@@ -96,27 +96,27 @@ func (b *Books) Fill(mark Fingerprint, held *Volume, read func() (*epub.Book, er
 	// again.
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.Drop(mark, held)
+	b.Remove(mark, held)
 }
 
-// Retire lets go of a book nobody has asked about for a while.
-func (b *Books) Retire(mark Fingerprint, held *Volume) {
+// CloseIfIdle lets go of a book nobody has asked about for a while.
+func (b *Books) CloseIfIdle(mark Fingerprint, held *Volume) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.Drop(mark, held)
+	b.Remove(mark, held)
 }
 
 // Evict lets go of what is over the bound, oldest first.
 func (b *Books) Evict() {
 	for len(b.order) > b.limit {
 		mark := b.order[0]
-		b.Drop(mark, b.open[mark])
+		b.Remove(mark, b.open[mark])
 	}
 }
 
-// Drop takes one book out, which is the whole of letting one go: what a book
+// Remove takes one book out, which is the whole of letting one go: what a book
 // holds is memory.
-func (b *Books) Drop(mark Fingerprint, held *Volume) {
+func (b *Books) Remove(mark Fingerprint, held *Volume) {
 	if held == nil || b.open[mark] != held {
 		return
 	}
@@ -124,18 +124,18 @@ func (b *Books) Drop(mark Fingerprint, held *Volume) {
 		held.idle.Stop()
 	}
 	delete(b.open, mark)
-	b.Forget(mark)
+	b.RemoveFromOrder(mark)
 }
 
 // Touch puts a fingerprint at the end of the order, which is the most recently
 // asked for.
 func (b *Books) Touch(mark Fingerprint) {
-	b.Forget(mark)
+	b.RemoveFromOrder(mark)
 	b.order = append(b.order, mark)
 }
 
-// Forget takes a fingerprint out of the order, wherever it stands in it.
-func (b *Books) Forget(mark Fingerprint) {
+// RemoveFromOrder takes a fingerprint out of the order, wherever it stands in it.
+func (b *Books) RemoveFromOrder(mark Fingerprint) {
 	for i, held := range b.order {
 		if held == mark {
 			b.order = append(b.order[:i], b.order[i+1:]...)
@@ -149,7 +149,7 @@ func (b *Books) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	for _, print := range append([]Fingerprint(nil), b.order...) {
-		b.Drop(print, b.open[print])
+		b.Remove(print, b.open[print])
 	}
 }
 

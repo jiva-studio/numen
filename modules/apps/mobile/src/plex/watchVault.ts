@@ -14,7 +14,7 @@ import type { Core } from '../core'
  * The stream ends when the vault is closed, and an error is the same thing
  * seen from here: there is nothing to follow any more.
  */
-export function follow(core: Core, redraw: () => void): void {
+export function watchVault(core: Core, redraw: () => void): void {
   const stop = new AbortController()
   onScopeDispose(() => stop.abort())
 

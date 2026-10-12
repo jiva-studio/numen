@@ -72,7 +72,5 @@ Architecture conventions and technical constraints live in [`AGENTS.md`](AGENTS.
 1. **Fork and branch**: Create a feature branch from `main`.
 2. **Commit conventions**: Use [Conventional Commits](https://www.conventionalcommits.org) format (`<type>(<scope>): <subject>`).
 3. **Run checks locally**:
-   - `make lint` — run linters across Go and TypeScript.
-   - `make test` — run unit and integration test suites.
    - `make desktop` — build the desktop application locally.
 4. **Submit Pull Request**: Open a pull request against `main` with a clear description of the problem solved and testing steps performed.

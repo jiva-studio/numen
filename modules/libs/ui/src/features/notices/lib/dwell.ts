@@ -8,10 +8,10 @@ import { getReadable, type Notice } from './notice'
  * Most passes are over before a person could read what they were called. A
  * notice somebody asked for does not wait: they are waiting for it.
  */
-export const WAIT = 10_000
+export const CARD_DELAY = 10_000
 
 /** How long the shortest thing worth saying stands, in milliseconds. */
-export const SETTLE = 4_000
+export const MIN_DWELL = 4_000
 
 /** How much longer it stands for each word it carries, in milliseconds. */
 export const PER_WORD = 400
@@ -28,7 +28,7 @@ export const TOO_MUCH = 20
 export const dwellOf = (text: string, about = ''): number => {
   const words = `${text} ${about}`.split(/\s+/).filter((word) => word !== '')
   if (words.length > TOO_MUCH) return Infinity
-  return SETTLE + words.length * PER_WORD
+  return MIN_DWELL + words.length * PER_WORD
 }
 
 /**
@@ -52,7 +52,7 @@ export const getShownNotices = (
   firstSeen: ReadonlyMap<string, number>,
   away: ReadonlySet<string>,
   at: number,
-  wait: number = WAIT,
+  wait: number = CARD_DELAY,
 ): readonly Notice[] =>
   getReadable(notices).filter((notice) => {
     if (away.has(notice.id)) return false

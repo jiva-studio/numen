@@ -12,16 +12,16 @@ type Open = (address: string) => void
 type Save = () => void
 
 /** What an address in the text becomes before the window loads it. */
-export const resolving = Facet.define<Resolve, Resolve>({
+export const addressResolver = Facet.define<Resolve, Resolve>({
   combine: (all) => all[0] ?? ((address) => address),
 })
 
 /** Where a drawn link goes when it is clicked. */
-export const opening = Facet.define<Open, Open>({
+export const addressOpener = Facet.define<Open, Open>({
   combine: (all) => all[0] ?? (() => {}),
 })
 
 /** Who is told that the person asked for the text to be kept now. */
-export const saving = Facet.define<Save, Save>({
+export const saveHandler = Facet.define<Save, Save>({
   combine: (all) => all[0] ?? (() => {}),
 })

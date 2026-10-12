@@ -258,7 +258,7 @@ func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 		"card_section_add", "card_section_rename", "card_section_remove",
 		"card_deck_create", "card_stencil_create", "card_field_rename",
 		"vault_get", "vault_problems",
-		"vault_list", "vault_add", "vault_rename", "vault_forget", "vault_open",
+		"vault_list", "vault_add", "vault_rename", "vault_remove", "vault_open",
 		"source_list", "source_read", "source_recognise", "source_transcribe",
 		"source_focus",
 		"window_tab_list",

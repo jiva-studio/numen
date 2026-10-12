@@ -134,7 +134,7 @@ func openViewerWindow(t *testing.T, from *paper) (*API, http.Handler) {
 
 // stopReadAhead turns off the page drawn ahead, for a test counting what was drawn: a
 // slot with no room in it is a drawing that never starts.
-func stopReadAhead(api *API) { api.Viewer.ahead.reading = make(chan struct{}) }
+func stopReadAhead(api *API) { api.Viewer.prefetch.slot = make(chan struct{}) }
 
 // fromTheLibrary is a window looking at a file the library itself draws.
 //
@@ -366,7 +366,7 @@ func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
-	api.Viewer.drawn.Store(pagecache.NewMemory(1))
+	api.Viewer.renderedPages.Store(pagecache.NewMemory(1))
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
@@ -492,7 +492,7 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 
 	// The opening went on, so the ask after it finds the document open.
 	letIn()
-	api.Viewer.patience = patience
+	api.Viewer.patience = openTimeout
 	waitFor(t, "the document never opened", func() bool {
 		_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 		return err == nil
@@ -508,7 +508,7 @@ func TestADocumentNobodyIsLookingAtIsClosed(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
-	api.Viewer.docs.Store(pool.NewDocuments(pool.MostOpen, 10*time.Millisecond))
+	api.Viewer.docs.Store(pool.NewDocuments(pool.MaxOpenDocuments, 10*time.Millisecond))
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
@@ -532,7 +532,7 @@ func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 	from := sheets(4)
 	api, handler := openViewerWindow(t, from)
 	stopReadAhead(api)
-	api.Viewer.docs.Store(pool.NewDocuments(1, pool.OpenIdleFor))
+	api.Viewer.docs.Store(pool.NewDocuments(1, pool.DocumentIdleTimeout))
 
 	for _, path := range []string{book, another} {
 		if out := ask(handler, getPageAddress(t, api, path, 0, 400)); out.Code != http.StatusOK {
@@ -636,7 +636,7 @@ func TestAFileReplacedWhileOpenIsOpenedAgainAndTheOldOneReleased(t *testing.T) {
 	api.setVault(vault)
 	api.Viewer.open = from.openScan
 	const idleFor = 20 * time.Millisecond
-	api.Viewer.docs.Store(pool.NewDocuments(pool.MostOpen, idleFor))
+	api.Viewer.docs.Store(pool.NewDocuments(pool.MaxOpenDocuments, idleFor))
 	t.Cleanup(api.Viewer.close)
 	handler := api.NewHandler(http.NotFoundHandler())
 	stopReadAhead(api)

@@ -118,17 +118,15 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 		return res, nil
 	}
 
-	if u.Derived != nil {
-		release, err := u.Derived.Claim(ctx, text.IndexClaim)
-		if errors.Is(err, port.ErrClaimed) {
-			res.IsBusy = true
-			return res, nil
-		}
-		if err != nil {
-			return res, err
-		}
-		defer release()
+	release, isBusy, err := u.claim(ctx)
+	if isBusy {
+		res.IsBusy = true
+		return res, nil
 	}
+	if err != nil {
+		return res, err
+	}
+	defer func() { _ = release() }()
 
 	model := u.Embedder.Model()
 	reader, err := u.readers.Open(v)
@@ -154,10 +152,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 		u.progress(snapshot)
 	}
 
-	workers := u.inferWorkers()
-	if workers < 1 {
-		workers = 1
-	}
+	workers := max(u.inferWorkers(), 1)
 
 	g, gctx := errgroup.WithContext(ctx)
 	bufferSize := max(pipelineBufferSize, workers*2)
@@ -166,131 +161,200 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 
 	g.Go(func() error {
 		defer close(preparedChan)
-		var after port.ChunkCursor
-		for {
-			if err := gctx.Err(); err != nil {
-				return err
-			}
-			owing, next, err := u.chunks.GetUnembeddedChunks(gctx, v.ID, model, after, chunksPerQuery)
-			if err != nil {
-				return fmt.Errorf("what owes a vector from %s: %w", model, err)
-			}
-			if len(owing) == 0 {
-				return nil
-			}
-			if next == after {
-				return fmt.Errorf("what owes a vector from %s does not carry on past %d chunks", model, len(owing))
-			}
-			mu.Lock()
-			res.Owing += len(owing)
-			mu.Unlock()
-			after = next
-
-			chunks, texts, err := u.read(gctx, &source, owing, &res, &mu)
-			if err != nil {
-				return err
-			}
-
-			if len(chunks) > 1 {
-				sourceOrder := make(map[string]int)
-				for _, c := range chunks {
-					if _, ok := sourceOrder[c.Source]; !ok {
-						sourceOrder[c.Source] = len(sourceOrder)
-					}
-				}
-				type passageItem struct {
-					chunk       domain.Passage
-					text        string
-					sourceIndex int
-				}
-				items := make([]passageItem, len(chunks))
-				for i := range chunks {
-					items[i] = passageItem{
-						chunk:       chunks[i],
-						text:        texts[i],
-						sourceIndex: sourceOrder[chunks[i].Source],
-					}
-				}
-				slices.SortStableFunc(items, func(a, b passageItem) int {
-					if a.sourceIndex != b.sourceIndex {
-						return cmp.Compare(a.sourceIndex, b.sourceIndex)
-					}
-					return cmp.Compare(len(a.text), len(b.text))
-				})
-				for i, item := range items {
-					chunks[i] = item.chunk
-					texts[i] = item.text
-				}
-			}
-
-			at := 0
-			for _, batch := range embedding.Batches(texts, u.BatchCharacters) {
-				prep, err := u.prepareBatch(gctx, model, chunks[at:at+len(batch)], batch)
-				if err != nil {
-					return err
-				}
-				at += len(batch)
-				select {
-				case <-gctx.Done():
-					return gctx.Err()
-				case preparedChan <- prep:
-				}
-			}
-		}
+		return u.produceBatches(gctx, v, model, &source, &res, &mu, preparedChan)
 	})
-
 	g.Go(func() error {
 		defer close(completedChan)
-		ig, igctx := errgroup.WithContext(gctx)
-		for range workers {
-			ig.Go(func() error {
-				for {
-					select {
-					case <-igctx.Done():
-						return igctx.Err()
-					case prep, ok := <-preparedChan:
-						if !ok {
-							return nil
-						}
-						completed, err := u.inferBatch(igctx, prep)
-						if err != nil {
-							return err
-						}
-						select {
-						case <-igctx.Done():
-							return igctx.Err()
-						case completedChan <- completed:
-						}
-					}
-				}
-			})
-		}
-		return ig.Wait()
+		return u.inferBatches(gctx, workers, preparedChan, completedChan)
 	})
-
 	g.Go(func() error {
-		for {
-			select {
-			case <-gctx.Done():
-				return gctx.Err()
-			case comp, ok := <-completedChan:
-				if !ok {
-					return nil
-				}
-				if len(comp.vectors) > 0 {
-					if err := u.vectors.SaveVectors(gctx, comp.vectors); err != nil {
-						return fmt.Errorf("write %d vectors: %w", len(comp.vectors), err)
-					}
-				}
-				updateProgress(comp.reading, len(comp.vectors), comp.reused)
-			}
-		}
+		return u.storeBatches(gctx, completedChan, updateProgress)
 	})
 
 	if err := g.Wait(); err != nil {
 		return res, err
 	}
 	return res, nil
+}
+
+// claim takes the index claim when a derived store is present, and reports
+// isBusy when another process holds it.
+func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
+	if u.Derived == nil {
+		return func() error { return nil }, false, nil
+	}
+	release, err := u.Derived.Claim(ctx, text.IndexClaim)
+	if errors.Is(err, port.ErrClaimed) {
+		return nil, true, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return release, false, nil
+}
+
+// produceBatches reads every owing chunk of the vault and sends them on out as
+// prepared batches.
+func (u Embed) produceBatches(
+	ctx context.Context,
+	v domain.Vault,
+	model port.EmbeddingModel,
+	source *extracted,
+	res *EmbedResult,
+	mu *sync.Mutex,
+	out chan<- preparedBatch,
+) error {
+	var after port.ChunkCursor
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		owing, next, err := u.chunks.GetUnembeddedChunks(ctx, v.ID, model, after, chunksPerQuery)
+		if err != nil {
+			return fmt.Errorf("what owes a vector from %s: %w", model, err)
+		}
+		if len(owing) == 0 {
+			return nil
+		}
+		if next == after {
+			return fmt.Errorf("what owes a vector from %s does not carry on past %d chunks", model, len(owing))
+		}
+		mu.Lock()
+		res.Owing += len(owing)
+		mu.Unlock()
+		after = next
+
+		chunks, texts, err := u.read(ctx, source, owing, res, mu)
+		if err != nil {
+			return err
+		}
+		sortBySource(chunks, texts)
+		if err := u.sendBatches(ctx, model, chunks, texts, out); err != nil {
+			return err
+		}
+	}
+}
+
+// sendBatches splits the texts into batches by size and sends each one prepared.
+func (u Embed) sendBatches(
+	ctx context.Context,
+	model port.EmbeddingModel,
+	chunks []domain.Passage,
+	texts []string,
+	out chan<- preparedBatch,
+) error {
+	at := 0
+	for _, batch := range embedding.Batches(texts, u.BatchCharacters) {
+		prep, err := u.prepareBatch(ctx, model, chunks[at:at+len(batch)], batch)
+		if err != nil {
+			return err
+		}
+		at += len(batch)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case out <- prep:
+		}
+	}
+	return nil
+}
+
+// sortBySource orders chunks and their texts in place: sources in order of first
+// appearance, and within a source by ascending text length.
+func sortBySource(chunks []domain.Passage, texts []string) {
+	if len(chunks) < 2 {
+		return
+	}
+	type passageItem struct {
+		chunk       domain.Passage
+		text        string
+		sourceIndex int
+	}
+	sourceOrder := make(map[string]int)
+	for _, c := range chunks {
+		if _, ok := sourceOrder[c.Source]; !ok {
+			sourceOrder[c.Source] = len(sourceOrder)
+		}
+	}
+	items := make([]passageItem, len(chunks))
+	for i := range chunks {
+		items[i] = passageItem{
+			chunk:       chunks[i],
+			text:        texts[i],
+			sourceIndex: sourceOrder[chunks[i].Source],
+		}
+	}
+	slices.SortStableFunc(items, func(a, b passageItem) int {
+		if a.sourceIndex != b.sourceIndex {
+			return cmp.Compare(a.sourceIndex, b.sourceIndex)
+		}
+		return cmp.Compare(len(a.text), len(b.text))
+	})
+	for i, item := range items {
+		chunks[i] = item.chunk
+		texts[i] = item.text
+	}
+}
+
+// inferBatches runs workers that turn prepared batches into completed ones.
+func (u Embed) inferBatches(
+	ctx context.Context,
+	workers int,
+	in <-chan preparedBatch,
+	out chan<- completedBatch,
+) error {
+	g, gctx := errgroup.WithContext(ctx)
+	for range workers {
+		g.Go(func() error { return u.runInferWorker(gctx, in, out) })
+	}
+	return g.Wait()
+}
+
+// runInferWorker infers batches from in until it closes or ctx ends.
+func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out chan<- completedBatch) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case prep, ok := <-in:
+			if !ok {
+				return nil
+			}
+			completed, err := u.inferBatch(ctx, prep)
+			if err != nil {
+				return err
+			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case out <- completed:
+			}
+		}
+	}
+}
+
+// storeBatches writes the vectors of each completed batch and reports progress.
+func (u Embed) storeBatches(
+	ctx context.Context,
+	in <-chan completedBatch,
+	updateProgress func(reading string, embedded, reused int),
+) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case comp, ok := <-in:
+			if !ok {
+				return nil
+			}
+			if len(comp.vectors) > 0 {
+				if err := u.vectors.SaveVectors(ctx, comp.vectors); err != nil {
+					return fmt.Errorf("write %d vectors: %w", len(comp.vectors), err)
+				}
+			}
+			updateProgress(comp.reading, len(comp.vectors), comp.reused)
+		}
+	}
 }
 
 // read recovers what each chunk holds by opening its source again. The index
@@ -386,15 +450,7 @@ func (u Embed) prepareBatch(
 			if key == "" {
 				key = texts[i]
 			}
-			if deduplicated != nil {
-				if pos, ok := deduplicated[key]; ok {
-					prep.askingMap[i] = pos
-					continue
-				}
-				deduplicated[key] = len(prep.asking)
-			}
-			prep.askingMap[i] = len(prep.asking)
-			prep.asking = append(prep.asking, texts[i])
+			prep.queueText(i, key, texts[i], deduplicated)
 			continue
 		}
 		prep.askingMap[i] = -1
@@ -409,6 +465,20 @@ func (u Embed) prepareBatch(
 		prep.reusedCount++
 	}
 	return prep, nil
+}
+
+// queueText queues the text at index i for inference. A nil seen queues every
+// text; otherwise a key already in seen shares the position of its first text.
+func (p *preparedBatch) queueText(i int, key, value string, seen map[string]int) {
+	if seen != nil {
+		if pos, ok := seen[key]; ok {
+			p.askingMap[i] = pos
+			return
+		}
+		seen[key] = len(p.asking)
+	}
+	p.askingMap[i] = len(p.asking)
+	p.asking = append(p.asking, value)
 }
 
 type uniqueVector struct {

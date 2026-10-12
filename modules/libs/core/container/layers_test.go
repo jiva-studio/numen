@@ -46,13 +46,15 @@ var driving = map[string]bool{
 	"internal/adapter/theme":    true,
 }
 
-// pure are the packages holding what is true of a note or a card, and the
-// arithmetic over it. Nothing they answer waits on a disk, a database or a
+// pure are the packages holding what is true of a note or a card, of a
+// highlight, a recognised page, a transcript or a proofread line, and the
+// arithmetic over them. Nothing they answer waits on a disk, a database or a
 // clock, and the way that is held is that a pure package reaches only another
 // pure one: naming no port and no scenario is not enough on its own, because a
 // sibling of the core carries goroutines, channels and a schema.
 var pure = []string{
 	"domain", "flashcards", "markdown", "internal/cardid", "internal/ulid",
+	"internal/highlight", "internal/ocr", "internal/transcript", "proofread",
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is
@@ -1307,6 +1309,12 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"flashcards/review", "port", true},
 		{"flashcards/review", "internal/chunking", true},
 		{"domain", "markdown", false},
+		{"internal/highlight", "internal/epub", true},
+		{"internal/ocr", "internal/highlight", false},
+		{"internal/ocr", "internal/correction", true},
+		{"internal/transcript", "port", true},
+		{"proofread", "internal/transcript", false},
+		{"proofread", "usecase/source", true},
 		{"flashcards/format", "domain", false},
 
 		// The composition root does none of the core's work.

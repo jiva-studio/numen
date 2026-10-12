@@ -91,9 +91,9 @@ func readingInstructions(core Core) string {
 	return b.String()
 }
 
-// getReviewingInstructions is what the window a person runs their cards in tells
+// getReviewInstructions is what the window a person runs their cards in tells
 // its agent.
-func getReviewingInstructions(core Core) string {
+func getReviewInstructions(core Core) string {
 	var b strings.Builder
 	opening(&b, core)
 
@@ -102,8 +102,8 @@ func getReviewingInstructions(core Core) string {
 	b.WriteString("note, a link or a document, makes a deck or a stencil, or moves the ")
 	b.WriteString("person's window.\n\n")
 
-	if core.Reviewing != nil {
-		b.WriteString("Which card they are on is `card_showing`: the deck, the card's mark ")
+	if core.GetCurrentCard != nil {
+		b.WriteString("Which card they are on is `card_current`: the deck, the card's mark ")
 		b.WriteString("and the face it is shown through. A question that says \"this card\" ")
 		b.WriteString("means the one it names, and nothing else here says which that is.\n\n")
 	}

@@ -120,9 +120,9 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	highlighting.Documents = made.GetTextExtractor()
 
 	api := &API{
-		Listeners:         newChangeAudience(),
-		Places:            newPlaceAudience(),
-		Edits:             drawing(),
+		ChangeEvents:      newChangeBroadcaster(),
+		Places:            newPlaceBroadcaster(),
+		Edits:             newEditBroadcaster(),
 		Window:            &wire.Window{Named: wire.Editor, Tasking: tasks},
 		NotifyNoteWritten: func() { fire(wake.notes) },
 		Readers:           made.GetVaultReaders(),

@@ -483,6 +483,17 @@ describe('the marks drawn for the lines on screen', () => {
     view.destroy()
   })
 
+  it('are no places the caret cannot be put once the plugin has crashed', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    vi.spyOn(EditorView.prototype, 'visibleRanges', 'get').mockImplementation(() => {
+      throw new Error('no ranges')
+    })
+    const { view } = open(DOC, [])
+    const sizes = view.state.facet(EditorView.atomicRanges).map((get) => get(view).size)
+    expect(sizes.every((size) => size === 0)).toBe(true)
+    view.destroy()
+  })
+
   it('are none while nothing is on screen', () => {
     const { view } = open(DOC, [])
     expect(getPlugin(view).decorations.size).toBe(0)

@@ -13,7 +13,7 @@ const props = defineProps<{ state: PresetTabState }>()
 // --- State ---
 // The tab's state outlives this component, so what it holds is bound once here
 // and the template unwraps it.
-const { hasChanged, problems, errorMessage } = props.state
+const { hasExternalChange, problems, errorMessage } = props.state
 
 // --- Handlers ---
 function onRefresh() {
@@ -34,7 +34,7 @@ function onRefresh() {
       </button>
     </p>
 
-    <p v-if="hasChanged" role="status" class="preset__warning preset__answering">
+    <p v-if="hasExternalChange" role="status" class="preset__warning preset__answering">
       {{ words.changed }}
       <button type="button" class="answer" @click="onRefresh">
         {{ words.reads }}

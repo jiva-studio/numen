@@ -45,7 +45,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 
 	imported, err := api.Files.Import.Execute(ctx, showing, into, paths)
 	if direct := getDirectChildren(into, imported.Landed); len(direct) > 0 {
-		api.Listeners.tell(change{paths: direct})
+		api.ChangeEvents.publish(change{paths: direct})
 	}
 	if err != nil {
 		at.Error = err.Error()

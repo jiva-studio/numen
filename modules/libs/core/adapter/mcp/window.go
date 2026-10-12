@@ -40,14 +40,14 @@ func addWindowTools(server *sdk.Server, core Core) {
 			"read with source_read, as a document is.",
 	}, func(_ context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
 		Tabs    []Tab  `json:"tabs"`
-		Looking string `json:"looking" jsonschema:"the tab the person is looking at, in words to say back to them"`
+		Summary string `json:"summary" jsonschema:"the tab the person is looking at, in words to say back to them"`
 	}, error) {
 		type out = struct {
 			Tabs    []Tab  `json:"tabs"`
-			Looking string `json:"looking" jsonschema:"the tab the person is looking at, in words to say back to them"`
+			Summary string `json:"summary" jsonschema:"the tab the person is looking at, in words to say back to them"`
 		}
 		open := core.Attending()
-		res := out{Tabs: make([]Tab, 0, len(open.Tabs)), Looking: "the window has nothing open"}
+		res := out{Tabs: make([]Tab, 0, len(open.Tabs)), Summary: "the window has nothing open"}
 		for _, one := range open.Tabs {
 			front := one.ID != "" && one.ID == open.FrontID
 			res.Tabs = append(res.Tabs, Tab{
@@ -58,7 +58,7 @@ func addWindowTools(server *sdk.Server, core Core) {
 				IsFront: front,
 			})
 			if front {
-				res.Looking = describeTab(one)
+				res.Summary = describeTab(one)
 			}
 		}
 		return nil, res, nil

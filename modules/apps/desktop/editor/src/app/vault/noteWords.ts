@@ -7,7 +7,7 @@ import type {
   GetNeighbourhoodResponse as NeighbourhoodMessage,
 } from '@numen/protocol'
 import { asFailure, asValue, namesOf } from '@numen/wire'
-import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
+import { parseFingerprint, errorIn, staleIn, formatFingerprint } from '@/shared/answers'
 import type { Link, Neighbourhood, NoteResult, Role, Seat, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 
@@ -65,7 +65,7 @@ export const mapLink = (link: Link) => ({
 
 export const mapBaseline = (baseline: { prose: string; fingerprint: string }) => ({
   prose: baseline.prose,
-  at: fingerprint(baseline.fingerprint),
+  at: parseFingerprint(baseline.fingerprint),
 })
 
 export const mapNoteResult = (from: {
@@ -77,7 +77,7 @@ export const mapNoteResult = (from: {
 }): NoteResult => {
   const error = errorIn(from)
   if (error) return asFailure(error)
-  const at = stamp(from.at)
+  const at = formatFingerprint(from.at)
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
   return asValue({
     body: from.body ?? '',

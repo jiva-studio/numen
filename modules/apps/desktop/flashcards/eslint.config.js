@@ -10,6 +10,7 @@ import js from '@eslint/js'
 import globals from 'globals'
 import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
+import boundaries from 'eslint-plugin-boundaries'
 import prettier from 'eslint-config-prettier'
 
 /** The globals a pure core is not allowed to reach for, and the port for each. */
@@ -17,6 +18,40 @@ const lifetimes = [
   { name: 'requestAnimationFrame', port: 'the schedule a Clock carries' },
   { name: 'cancelAnimationFrame', port: 'the cancel a Clock carries' },
   { name: 'matchMedia', port: 'a prop, or CSS where the browser already knows' },
+]
+
+const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
+const sliceLayers = ['entities', 'features', 'widgets', 'pages']
+
+const layerElements = [
+  { type: 'shared', pattern: 'src/shared' },
+  ...sliceLayers.map((type) => ({ type, pattern: `src/${type}/*`, capture: ['slice'] })),
+  { type: 'app', pattern: 'src/app' },
+]
+
+const layerPolicies = [
+  { allow: { to: { module: { origin: ['external', 'core'] } } } },
+  { from: { file: { categories: 'entry' } }, allow: { to: { element: { type: layerOrder } } } },
+  ...layerOrder.map((layer, index) => ({
+    from: { element: { type: layer } },
+    allow: { to: { element: { type: layerOrder.slice(0, index) } } },
+  })),
+  ...['shared', 'app'].map((layer) => ({
+    from: { element: { type: layer } },
+    allow: { to: { element: { type: layer } } },
+  })),
+  ...sliceLayers.flatMap((layer) => [
+    {
+      from: { element: { type: layer } },
+      allow: {
+        to: { element: { type: layer, captured: { slice: '{{ from.element.captured.slice }}' } } },
+      },
+    },
+    {
+      from: { element: { type: layer } },
+      allow: { to: { element: { type: layer }, file: { categories: 'crossImport' } } },
+    },
+  ]),
 ]
 
 export default tseslint.config(
@@ -193,6 +228,32 @@ export default tseslint.config(
           ],
         },
       ],
+    },
+  },
+
+  // The layers of modules/apps/desktop/AGENTS.md: shared, entities, features,
+  // widgets, pages, app, each reaching only what stands below it. A slice
+  // reaches a sibling of its own layer only through the sibling's `@x`. Every
+  // import is resolved to the file it names, so `../../pages/x` is held to the
+  // same rule as `@/pages/x`.
+  //
+  // Tests and stories sit in their layer and are held to the rule.
+  //
+  // A file under `src` that no element claims fails.
+  {
+    files: ['src/**/*.{ts,vue}'],
+    plugins: { boundaries },
+    settings: {
+      'import/resolver': { typescript: { alwaysTryTypes: true } },
+      'boundaries/elements': layerElements,
+      'boundaries/files': [
+        { category: 'crossImport', pattern: 'src/*/*/@x/*' },
+        { category: 'entry', pattern: 'src/main.ts' },
+      ],
+    },
+    rules: {
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
     },
   },
 

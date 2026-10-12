@@ -111,7 +111,7 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 
 | Check | Status | Details |
 | :--- | :---: | :--- |
-| **gofmt / go vet** | `PASS / FAIL / N/A` | <details or '0 errors'> |
+| **gofmt / Prettier / go vet** | `PASS / FAIL / N/A` | <details or '0 errors'> |
 | **go test -race** | `PASS / FAIL / N/A` | <per module, or why it did not run> |
 | **buf lint** | `PASS / FAIL / N/A` | <details or 'clean'> |
 | **vue-tsc typecheck** | `PASS / FAIL / N/A` | <details or '0 errors'> |

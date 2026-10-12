@@ -59,42 +59,42 @@ describe('the queue of an open note', () => {
     it('fires once, after the time it was armed for', () => {
       const { queue, turned } = setup()
 
-      queue.arm('a', 100)
+      queue.startTimer('a', 100)
       vi.advanceTimersByTime(99)
       expect(turned).toEqual([])
       vi.advanceTimersByTime(1)
 
-      expect(turned).toEqual([['a', { kind: 'fired' }]])
+      expect(turned).toEqual([['a', { kind: 'timerFired' }]])
     })
 
     it('is replaced where the note is armed again', () => {
       const { queue, turned } = setup()
 
-      queue.arm('a', 100)
-      queue.arm('a', 300)
+      queue.startTimer('a', 100)
+      queue.startTimer('a', 300)
       vi.advanceTimersByTime(150)
       expect(turned).toEqual([])
       vi.advanceTimersByTime(150)
 
-      expect(turned).toEqual([['a', { kind: 'fired' }]])
+      expect(turned).toEqual([['a', { kind: 'timerFired' }]])
     })
 
     it('is kept apart from the timer of another note', () => {
       const { queue, turned } = setup()
 
-      queue.arm('a', 100)
-      queue.arm('b', 100)
-      queue.disarm('a')
+      queue.startTimer('a', 100)
+      queue.startTimer('b', 100)
+      queue.cancelTimer('a')
       vi.advanceTimersByTime(100)
 
-      expect(turned).toEqual([['b', { kind: 'fired' }]])
+      expect(turned).toEqual([['b', { kind: 'timerFired' }]])
     })
 
     it('does not fire once disarmed', () => {
       const { queue, turned } = setup()
 
-      queue.arm('a', 100)
-      queue.disarm('a')
+      queue.startTimer('a', 100)
+      queue.cancelTimer('a')
       vi.advanceTimersByTime(500)
 
       expect(turned).toEqual([])
@@ -114,12 +114,12 @@ describe('the queue of an open note', () => {
       const { queue, turned } = setup()
       let done = false
 
-      const waiting = queue.flushPending('a').then(() => (done = true))
+      const flushed = queue.flushPending('a').then(() => (done = true))
       await Promise.resolve()
-      expect(turned).toEqual([['a', { kind: 'flushing' }]])
+      expect(turned).toEqual([['a', { kind: 'flush' }]])
       expect(done).toBe(false)
       queue.resolveFlush('a')
-      await waiting
+      await flushed
 
       expect(done).toBe(true)
     })
@@ -148,16 +148,16 @@ describe('the queue of an open note', () => {
   describe('forgetting a note', () => {
     it('stops its timer and resolves its flush', async () => {
       const { queue, turned } = setup()
-      queue.arm('a', 100)
+      queue.startTimer('a', 100)
       let done = false
-      const waiting = queue.flushPending('a').then(() => (done = true))
+      const flushed = queue.flushPending('a').then(() => (done = true))
 
-      queue.forget('a')
-      await waiting
+      queue.discard('a')
+      await flushed
       vi.advanceTimersByTime(500)
 
       expect(done).toBe(true)
-      expect(turned).toEqual([['a', { kind: 'flushing' }]])
+      expect(turned).toEqual([['a', { kind: 'flush' }]])
     })
   })
 
@@ -223,7 +223,9 @@ describe('the queue of an open note', () => {
 
   describe('a write', () => {
     it('hands the file it wrote to the tab and lets a closing tab go on', async () => {
-      const { queue, turned, resumed } = setup({ write: async () => asValue({ body: '', at: 'v2' }) })
+      const { queue, turned, resumed } = setup({
+        write: async () => asValue({ body: '', at: 'v2' }),
+      })
 
       await queue.write('a', 'Note.md', 'text', null)
 

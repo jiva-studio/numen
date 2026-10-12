@@ -18,6 +18,18 @@ import (
 var errNotCorrectable = errors.New(
 	"only a transcript is written here; a reading is put right by a proofreading run")
 
+type artifactWriteInput struct {
+	Path   string `json:"path" jsonschema:"the file it was made from"`
+	Kind   string `json:"kind" jsonschema:"which of them to write: transcript"`
+	Words  string `json:"words" jsonschema:"the span as it should read, as WebVTT with the times each cue was said between"`
+	Start  int    `json:"start,omitempty" jsonschema:"where the span begins, in milliseconds; the first cue sent by default"`
+	Length int    `json:"length,omitempty" jsonschema:"how long the span is, in milliseconds; what the cues sent cover by default"`
+}
+
+type artifactWriteOutput struct {
+	Cues int `json:"cues" jsonschema:"how many cues the transcript now holds"`
+}
+
 func addArtifactWriteTool(server *sdk.Server, core Core) {
 	if core.Sources.Queries == nil || core.Sources.Derived == nil {
 		return
@@ -37,42 +49,35 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 			"in the tab lands on. Only `transcript` is written here — a reading off a " +
 			"scan is corrected by a proofreading run, whose corrections are keyed to " +
 			"the printed line.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path   string `json:"path" jsonschema:"the file it was made from"`
-		Kind   string `json:"kind" jsonschema:"which of them to write: transcript"`
-		Words  string `json:"words" jsonschema:"the span as it should read, as WebVTT with the times each cue was said between"`
-		Start  int    `json:"start,omitempty" jsonschema:"where the span begins, in milliseconds; the first cue sent by default"`
-		Length int    `json:"length,omitempty" jsonschema:"how long the span is, in milliseconds; what the cues sent cover by default"`
-	}) (*sdk.CallToolResult, struct {
-		Cues int `json:"cues" jsonschema:"how many cues the transcript now holds"`
-	}, error) {
-		type out = struct {
-			Cues int `json:"cues" jsonschema:"how many cues the transcript now holds"`
-		}
-		if in.Kind != kindTranscript {
-			return nil, out{}, errNotCorrectable
-		}
-		_, put := transcript.Parse([]byte(in.Words))
-		if len(put) == 0 {
-			return nil, out{}, errors.New("no cue was read out of those words")
-		}
+	}, newHandler(func(ctx context.Context, in artifactWriteInput) (artifactWriteOutput, error) {
+		return writeArtifact(ctx, core, in)
+	}))
+}
 
-		held, err := artifactsOf(ctx, core, in.Path)
+func writeArtifact(ctx context.Context, core Core, in artifactWriteInput) (artifactWriteOutput, error) {
+	if in.Kind != kindTranscript {
+		return artifactWriteOutput{}, errNotCorrectable
+	}
+	_, put := transcript.Parse([]byte(in.Words))
+	if len(put) == 0 {
+		return artifactWriteOutput{}, errors.New("no cue was read out of those words")
+	}
+
+	held, err := artifactsOf(ctx, core, in.Path)
+	if err != nil {
+		return artifactWriteOutput{}, err
+	}
+	for _, one := range held {
+		if one.Kind != kindTranscript {
+			continue
+		}
+		cues, err := writeCorrections(ctx, core, in.Path, one.Producer, put, in.Start, in.Length)
 		if err != nil {
-			return nil, out{}, err
+			return artifactWriteOutput{}, err
 		}
-		for _, one := range held {
-			if one.Kind != kindTranscript {
-				continue
-			}
-			cues, err := writeCorrections(ctx, core, in.Path, one.Producer, put, in.Start, in.Length)
-			if err != nil {
-				return nil, out{}, err
-			}
-			return nil, out{Cues: cues}, nil
-		}
-		return nil, out{}, fmt.Errorf("nothing of the kind %q was made from %s", in.Kind, in.Path)
-	})
+		return artifactWriteOutput{Cues: cues}, nil
+	}
+	return artifactWriteOutput{}, fmt.Errorf("nothing of the kind %q was made from %s", in.Kind, in.Path)
 }
 
 // writeCorrections writes the transcript with those cues standing in place of

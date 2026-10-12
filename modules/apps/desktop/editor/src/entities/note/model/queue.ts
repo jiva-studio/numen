@@ -14,7 +14,7 @@ export const errorOf = (from: ErrorCode): NoteErrorCode => {
 
 export function createNoteQueue(
   core: Notes,
-  turn: (id: string, event: Event) => void,
+  dispatch: (id: string, event: Event) => void,
   hasTab: (id: string) => boolean,
   setAddress: (id: string, address: LinkAddress | null) => void,
   resumeClosing: (id: string) => void,
@@ -22,19 +22,19 @@ export function createNoteQueue(
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   const flushWaiters = new Map<string, () => void>()
 
-  const arm = (id: string, after: number): void => {
+  const startTimer = (id: string, after: number): void => {
     clearTimeout(timers.get(id))
     timers.set(
       id,
       setTimeout(() => {
         // Stryker disable next-line CallExpression: clearTimeout on a handle already fired does nothing, so a stale entry is never observed
         timers.delete(id)
-        turn(id, { kind: 'fired' })
+        dispatch(id, { kind: 'timerFired' })
       }, after),
     )
   }
 
-  const disarm = (id: string): void => {
+  const cancelTimer = (id: string): void => {
     clearTimeout(timers.get(id))
     // Stryker disable next-line CallExpression: clearTimeout on a handle already cleared does nothing, so a stale entry is never observed
     timers.delete(id)
@@ -50,7 +50,7 @@ export function createNoteQueue(
     new Promise((done) => {
       if (!hasTab(id)) return done()
       flushWaiters.set(id, done)
-      turn(id, { kind: 'flushing' })
+      dispatch(id, { kind: 'flush' })
     })
 
   const read = async (id: string, path: string, generation: number): Promise<void> => {
@@ -59,7 +59,7 @@ export function createNoteQueue(
       answered = await core.read(path)
     } catch {
       // Core read failed.
-      turn(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
+      dispatch(id, { kind: 'read', generation, answer: { kind: 'error', error: 'unreachable' } })
       return
     }
     setAddress(id, answered.ok ? (answered.value.link ?? null) : null)
@@ -71,7 +71,7 @@ export function createNoteQueue(
     } else {
       answer = { kind: 'error', error: errorOf(answered.error) }
     }
-    turn(id, { kind: 'read', generation, answer })
+    dispatch(id, { kind: 'read', generation, answer })
   }
 
   const write = async (
@@ -85,7 +85,7 @@ export function createNoteQueue(
       answered = await core.write(path, body, baseline)
     } catch {
       // Core write failed.
-      turn(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
+      dispatch(id, { kind: 'written', answer: { kind: 'error', error: 'unreachable' } })
       return
     }
     let writeAnswer: WriteResult
@@ -96,22 +96,22 @@ export function createNoteQueue(
     } else {
       writeAnswer = { kind: 'error', error: errorOf(answered.error) }
     }
-    turn(id, { kind: 'written', answer: writeAnswer })
+    dispatch(id, { kind: 'written', answer: writeAnswer })
     resumeClosing(id)
   }
 
-  const forget = (id: string): void => {
-    disarm(id)
+  const discard = (id: string): void => {
+    cancelTimer(id)
     resolveFlush(id)
   }
 
   return {
-    arm,
-    disarm,
+    startTimer,
+    cancelTimer,
     resolveFlush,
     flushPending,
     read,
     write,
-    forget,
+    discard,
   }
 }

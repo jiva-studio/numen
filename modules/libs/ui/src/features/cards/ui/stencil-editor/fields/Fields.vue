@@ -15,7 +15,7 @@ import { useDrag } from '../../../model/drag'
 import { useNameEntry } from '../../../model/naming'
 import { Button } from '@/shared/ui/button'
 import {
-  landing,
+  canDropField,
   getFreeName,
   checkFieldName,
   type Problems,
@@ -69,7 +69,7 @@ const naming = useNameEntry<Objection>({
 const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
-  isMoved: (held, lands) => landing(props.fields, held, lands),
+  isMoved: (held, lands) => canDropField(props.fields, held, lands),
   move: (held, lands) => emit('move', held, lands),
 })
 

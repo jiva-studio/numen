@@ -10,7 +10,7 @@ import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Tree from './Tree.vue'
 import type { Row, RowId } from '../lib/row'
-import type { RowLanding } from '../lib/drop'
+import type { RowDropTarget } from '../lib/drop'
 
 /** A row taken out of wherever it stands. */
 const removeRow = (rows: readonly Row[], id: RowId): readonly Row[] =>
@@ -27,8 +27,8 @@ const found = (rows: readonly Row[], id: RowId): Row | null => {
   return null
 }
 
-/** Rows put where a landing says, in the order they were dragged. */
-const put = (rows: readonly Row[], at: RowLanding, dragRows: readonly Row[]): readonly Row[] =>
+/** Rows put where a drop target says, in the order they were dragged. */
+const put = (rows: readonly Row[], at: RowDropTarget, dragRows: readonly Row[]): readonly Row[] =>
   rows.flatMap((row) => {
     const below = row.rows ? { ...row, rows: put(row.rows, at, dragRows) } : row
     if ('before' in at && row.id === at.before) return [...dragRows, below]
@@ -42,7 +42,7 @@ const put = (rows: readonly Row[], at: RowLanding, dragRows: readonly Row[]): re
 const moveRows = (
   rows: readonly Row[],
   dragIds: readonly RowId[],
-  at: RowLanding,
+  at: RowDropTarget,
 ): readonly Row[] => {
   const held = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
   const left = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
@@ -231,7 +231,7 @@ const meta: Meta<Knobs> = {
         onSelect: (picked: readonly RowId[]) => {
           selected.value = picked
         },
-        onMove: (dragged: readonly RowId[], at: RowLanding) => {
+        onMove: (dragged: readonly RowId[], at: RowDropTarget) => {
           rows.value = moveRows(rows.value, dragged, at)
         },
         onRemove: (dragged: readonly RowId[]) => {

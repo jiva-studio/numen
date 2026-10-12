@@ -2,45 +2,45 @@ package editor
 
 import "sync"
 
-// audience is everyone listening for one kind of message.
+// broadcaster delivers one kind of message to its subscribers.
 //
-// A listener that is not keeping up is not waited for: one slow listener does
+// A subscriber that is not keeping up is not waited for: one slow subscriber does
 // not hold up the vault. What it is given when it falls behind is `fallback`'s
-// answer, and how much it may be owed before it is behind is `room`.
-type audience[T any] struct {
-	// fallback makes the message for a listener that has not read the last one.
+// answer, and how much it may be owed before it is behind is `capacity`.
+type broadcaster[T any] struct {
+	// fallback makes the message for a subscriber that has not read the last one.
 	fallback func(latest T) T
-	// isLatest hands a listener what has just happened in place of what it has
+	// isLatest hands a subscriber what has just happened in place of what it has
 	// not read yet about the same thing.
 	isLatest bool
-	// about says what a message is about. Two messages about one thing are that
+	// getTopic says what a message is about. Two messages about one thing are that
 	// thing said twice, and only the newer is worth reading; messages about
 	// different things each wait their turn. Nil makes every message about the
 	// same thing.
-	about func(T) string
-	// keep says a message is one a listener has to be given. A message waiting
+	getTopic func(T) string
+	// isRequired says a message is one a subscriber has to be given. A message waiting
 	// under it stays where it is, and what replaces it waits.
-	keep func(T) bool
-	// room is how many messages a listener may be owed before it is behind.
-	room int
+	isRequired func(T) bool
+	// capacity is how many messages a subscriber may be owed before it is behind.
+	capacity int
 
-	mu        sync.Mutex
-	next      int
-	listeners map[int]*listener[T]
+	mu          sync.Mutex
+	next        int
+	subscribers map[int]*subscriber[T]
 }
 
-// listener is one of the audience, and whether it is owed a message it never
+// subscriber is one of the broadcaster's subscribers, and whether it is owed a message it never
 // received.
 //
 // What it has not been handed is a slice, read and written only under the
-// audience's lock. out is the channel listen gave out, and is written only by
-// deliver: a listener's own goroutine, carrying the slice to out one message
+// broadcaster's lock. out is the channel subscribe returned, and is written only by
+// deliver: a subscriber's own goroutine, carrying the slice to out one message
 // at a time. frontSeq counts how many times the first entry has been
 // replaced, so deliver can tell whether the one it is offering is still the
 // one at the front or has since been overtaken.
-type listener[T any] struct {
-	out      chan T
-	isBehind bool
+type subscriber[T any] struct {
+	out       chan T
+	isLagging bool
 
 	waiting  []T
 	frontSeq uint64
@@ -48,67 +48,67 @@ type listener[T any] struct {
 	done     chan struct{}
 }
 
-// getRoom is how many messages one listener may have waiting.
-func (a *audience[T]) getRoom() int { return max(a.room, 1) }
+// getCapacity is how many messages one subscriber may have waiting.
+func (a *broadcaster[T]) getCapacity() int { return max(a.capacity, 1) }
 
-func (a *audience[T]) listen() (<-chan T, func()) {
+func (a *broadcaster[T]) subscribe() (<-chan T, func()) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	if a.listeners == nil {
-		a.listeners = map[int]*listener[T]{}
+	if a.subscribers == nil {
+		a.subscribers = map[int]*subscriber[T]{}
 	}
 	id := a.next
 	a.next++
-	l := &listener[T]{
+	l := &subscriber[T]{
 		out:    make(chan T),
 		notify: make(chan struct{}, 1),
 		done:   make(chan struct{}),
 	}
-	a.listeners[id] = l
+	a.subscribers[id] = l
 	go a.deliver(l)
 
 	return l.out, func() {
 		a.mu.Lock()
 		defer a.mu.Unlock()
-		if l, open := a.listeners[id]; open {
-			delete(a.listeners, id)
+		if l, open := a.subscribers[id]; open {
+			delete(a.subscribers, id)
 			close(l.done)
 		}
 	}
 }
 
-func (a *audience[T]) tell(what T) {
+func (a *broadcaster[T]) publish(what T) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	for _, l := range a.listeners {
+	for _, l := range a.subscribers {
 		message := what
-		if l.isBehind && a.fallback != nil {
+		if l.isLagging && a.fallback != nil {
 			message = a.fallback(what)
 		}
-		l.isBehind = !a.queue(l, message)
+		l.isLagging = !a.queue(l, message)
 	}
 }
 
-// queue puts a message where a listener will read it, and says whether there
+// queue puts a message where a subscriber will read it, and says whether there
 // was anywhere for it to go.
 //
-// What the listener has not read is taken out of the slice and looked at: the
+// What the subscriber has not read is taken out of the slice and looked at: the
 // message takes the place of one waiting about the same thing, and otherwise
 // joins the end of the line. A line with no room left keeps what it holds.
-func (a *audience[T]) queue(l *listener[T], message T) bool {
+func (a *broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	wasEmpty := len(l.waiting) == 0
 
 	fitted := false
-	switch at := a.findReplaced(l.waiting, message); {
+	switch at := a.findSupersededIndex(l.waiting, message); {
 	case at >= 0:
 		l.waiting[at] = message
 		fitted = true
 		if at == 0 {
 			l.frontSeq++
 		}
-	case len(l.waiting) < a.getRoom():
+	case len(l.waiting) < a.getCapacity():
 		l.waiting = append(l.waiting, message)
 		fitted = true
 		if wasEmpty {
@@ -125,17 +125,17 @@ func (a *audience[T]) queue(l *listener[T], message T) bool {
 	return fitted
 }
 
-// findReplaced is where in the line a message stands that this one says again, or
+// findSupersededIndex is where in the line a message stands that this one says again, or
 // -1 when this message replaces nothing.
-func (a *audience[T]) findReplaced(waiting []T, message T) int {
+func (a *broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 	if !a.isLatest {
 		return -1
 	}
 	for at, held := range waiting {
-		if a.keep != nil && a.keep(held) {
+		if a.isRequired != nil && a.isRequired(held) {
 			continue
 		}
-		if a.about == nil || a.about(held) == a.about(message) {
+		if a.getTopic == nil || a.getTopic(held) == a.getTopic(message) {
 			return at
 		}
 	}
@@ -149,7 +149,7 @@ func (a *audience[T]) findReplaced(waiting []T, message T) int {
 // handed to out: a replacement that lands on the front while one is offered
 // there is picked up in its place, and what was offered before it is dropped
 // from the slice only once nothing has overtaken it.
-func (a *audience[T]) deliver(l *listener[T]) {
+func (a *broadcaster[T]) deliver(l *subscriber[T]) {
 	defer close(l.out)
 
 outer:

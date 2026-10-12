@@ -154,21 +154,21 @@ func isListening(addr string) bool {
 
 // readAnnouncement is what an agent would be configured from, and whether the
 // file is there at all.
-func readAnnouncement(t *testing.T, cfg container.Config) (agents.Announcement, bool) {
+func readAnnouncement(t *testing.T, cfg container.Config) (agents.Discovery, bool) {
 	t.Helper()
 
-	path, err := agents.AnnouncementPath(cfg)
+	path, err := agents.DiscoveryPath(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return agents.Announcement{}, false
+		return agents.Discovery{}, false
 	}
 	if err != nil {
 		t.Fatal(err)
 	}
-	var said agents.Announcement
+	var said agents.Discovery
 	if err := json.Unmarshal(raw, &said); err != nil {
 		t.Fatal(err)
 	}

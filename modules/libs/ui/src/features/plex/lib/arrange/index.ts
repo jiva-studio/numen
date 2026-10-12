@@ -17,7 +17,7 @@ export { rowsAndColumns, type Placement, type Seating, type Widths } from './pla
 export { spacingAsSet, spacingFor, type Spacing } from './spacing'
 export { routeEdge, routeEdges, routingFor, type Axis, type Routing } from './routing'
 export { arrowTransformOf, pathOf, readingPathOf, threadOf, ARROWHEAD_PATH } from './paths'
-export { settleTitles } from './titles'
+export { separateTitles } from './titles'
 export { clamp01, easeOut, lerp, lerpExtent } from './math'
 export {
   DEFAULT_DIRECTION,

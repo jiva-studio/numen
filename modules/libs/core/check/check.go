@@ -27,11 +27,11 @@ import (
 type Checker interface {
 	// Name is what it is called, and what a person asks for by.
 	Name() domain.Check
-	// Look reports what it found, each finding against the note somebody would
+	// FindProblems reports what it found, each finding against the note somebody would
 	// open to settle it.
-	Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error)
-	// IsQuiet reports whether this check is left out unless it is asked for.
-	IsQuiet() bool
+	FindProblems(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error)
+	// IsOptIn reports whether this check is left out unless it is asked for.
+	IsOptIn() bool
 }
 
 // Checks is the set of checks run over one vault.
@@ -67,7 +67,7 @@ func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) 
 
 	var out []domain.VaultProblem
 	for _, check := range wanted {
-		found, err := check.Look(ctx, v)
+		found, err := check.FindProblems(ctx, v)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", check.Name(), err)
 		}
@@ -96,7 +96,7 @@ func (c Checks) Names() []domain.Check {
 
 func (c Checks) getWanted(named []domain.Check) ([]Checker, error) {
 	if len(named) == 0 {
-		return c.loud(), nil
+		return c.getDefaultCheckers(), nil
 	}
 
 	var out []Checker
@@ -126,17 +126,17 @@ func list(names []domain.Check) string {
 // Loud is the name of every check that runs when none is named.
 func (c Checks) Loud() []domain.Check {
 	var out []domain.Check
-	for _, check := range c.loud() {
+	for _, check := range c.getDefaultCheckers() {
 		out = append(out, check.Name())
 	}
 	return out
 }
 
-// loud is every check that does not wait to be asked for.
-func (c Checks) loud() []Checker {
+// getDefaultCheckers is every check that does not wait to be asked for.
+func (c Checks) getDefaultCheckers() []Checker {
 	var out []Checker
 	for _, check := range c.List {
-		if !check.IsQuiet() {
+		if !check.IsOptIn() {
 			out = append(out, check)
 		}
 	}
