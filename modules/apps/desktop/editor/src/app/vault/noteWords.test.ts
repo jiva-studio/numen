@@ -20,14 +20,14 @@ describe('mapNoteResult', () => {
   })
 
   it('leaves an absent embed empty', () => {
-    expect(mapNoteResult({ url: 'https://a.example' })).toEqual(
+    expect(mapNoteResult({ url: 'https://a.example' })).toStrictEqual(
       asValue({ body: '', link: { url: 'https://a.example', embed: '' } }),
     )
   })
 
   it('leaves out the file and the page an answer does not name', () => {
-    expect(mapNoteResult({ body: 'text' })).toEqual(asValue({ body: 'text' }))
-    expect(mapNoteResult({})).toEqual(asValue({ body: '' }))
+    expect(mapNoteResult({ body: 'text' })).toStrictEqual(asValue({ body: 'text' }))
+    expect(mapNoteResult({})).toStrictEqual(asValue({ body: '' }))
   })
 
   it('fails with the error the answer names', () => {
@@ -43,7 +43,7 @@ describe('mapWriteResult', () => {
   })
 
   it('maps any other answer as a note result', () => {
-    expect(mapWriteResult({ at: file })).toEqual(asValue({ body: '', at: '12 34 Note.md' }))
+    expect(mapWriteResult({ at: file })).toStrictEqual(asValue({ body: '', at: '12 34 Note.md' }))
   })
 })
 
