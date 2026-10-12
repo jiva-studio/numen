@@ -39,33 +39,52 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		scores, err := d.joint(d.encoder(at, frame), upto)
+		chosen, err := d.choose(d.encoder(at, frame), upto)
 		if err != nil {
 			return nil, err
 		}
-		if len(scores) <= d.blank+1 {
-			return nil, fmt.Errorf("the joiner answered with %d scores and the blank is %d", len(scores), d.blank)
-		}
-		token := findLargest(scores[:d.blank+1])
-		step := findLargest(scores[d.blank+1:])
-		if token != d.blank {
-			tokens = append(tokens, token)
-			if upto, err = d.predictor(token); err != nil {
+		if chosen.token != d.blank {
+			tokens = append(tokens, chosen.token)
+			if upto, err = d.predictor(chosen.token); err != nil {
 				return nil, err
 			}
 			tokensInFrame++
 		}
-		// The blank moves on whatever it says, and a frame that has given all
-		// the words one frame may give moves on too.
-		if step < 1 && (token == d.blank || tokensInFrame >= mostPerFrame) {
-			step = 1
-		}
+		step := d.getStep(chosen, tokensInFrame)
 		if step > 0 {
 			tokensInFrame = 0
 		}
 		at += step
 	}
 	return tokens, nil
+}
+
+// choice is the token the joiner names for a frame and how many frames it
+// covers.
+type choice struct {
+	token, step int
+}
+
+// choose is the choice the joiner makes for a frame.
+func (d transducer) choose(frame, upto []float32) (choice, error) {
+	scores, err := d.joint(frame, upto)
+	if err != nil {
+		return choice{}, err
+	}
+	if len(scores) <= d.blank+1 {
+		return choice{}, fmt.Errorf("the joiner answered with %d scores and the blank is %d", len(scores), d.blank)
+	}
+	return choice{token: findLargest(scores[:d.blank+1]), step: findLargest(scores[d.blank+1:])}, nil
+}
+
+// getStep is how far the decoding moves on. The blank moves on whatever it
+// says, and a frame that has given all the words one frame may give moves on
+// too.
+func (d transducer) getStep(c choice, tokensInFrame int) int {
+	if c.step < 1 && (c.token == d.blank || tokensInFrame >= mostPerFrame) {
+		return 1
+	}
+	return c.step
 }
 
 // mostPerFrame is how many words one frame may give before the decoding moves

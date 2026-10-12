@@ -205,96 +205,18 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 // otherwise. The first position of each graph always runs through the library,
 // which checks the size of what the graph answers.
 func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value, useRaw bool) ([]int, error) {
-	frames, ok := out[outputFrames]
-	if !ok {
-		return nil, fmt.Errorf("the encoder answered with %v and not %s", getNames(out), outputFrames)
-	}
-	shape, err := frames.GetShape()
+	frames, err := readFrames(out)
 	if err != nil {
 		return nil, err
 	}
-	if len(shape) != 3 || shape[1] != encoded {
-		return nil, fmt.Errorf("the encoder answered with frames of %v", shape)
-	}
-	width := int(shape[2])
-	data, err := ort.GetTensorData[float32](frames)
+	buf, err := newDecodeBuffers()
 	if err != nil {
 		return nil, err
 	}
+	defer buf.destroy()
 
-	// The encoder says how many of the frames it wrote carry the stretch; the
-	// rest are what the batch was padded to.
-	if counted, ok := out[outputLength]; ok {
-		if lengths, err := ort.GetTensorData[int64](counted); err == nil && len(lengths) > 0 {
-			if n := int(lengths[0]); n >= 0 && n < width {
-				width = n
-			}
-		}
-	}
-
-	target := []int32{0}
-	count := []int32{1}
-	state := make([]float32, layers*hidden)
-	cell := make([]float32, layers*hidden)
-	said := make([]float32, hidden)
-	frame := make([]float32, encoded)
-	var scores []float32
-
-	targetTensor, err := ort.NewTensor([]int64{1, 1}, target)
-	if err != nil {
-		return nil, err
-	}
-	defer targetTensor.Destroy()
-
-	countTensor, err := ort.NewTensor([]int64{1}, count)
-	if err != nil {
-		return nil, err
-	}
-	defer countTensor.Destroy()
-
-	stateTensor, err := ort.NewTensor([]int64{layers, 1, hidden}, state)
-	if err != nil {
-		return nil, err
-	}
-	defer stateTensor.Destroy()
-
-	cellTensor, err := ort.NewTensor([]int64{layers, 1, hidden}, cell)
-	if err != nil {
-		return nil, err
-	}
-	defer cellTensor.Destroy()
-
-	frameTensor, err := ort.NewTensor([]int64{1, encoded, 1}, frame)
-	if err != nil {
-		return nil, err
-	}
-	defer frameTensor.Destroy()
-
-	saidTensor, err := ort.NewTensor([]int64{1, hidden, 1}, said)
-	if err != nil {
-		return nil, err
-	}
-	defer saidTensor.Destroy()
-
-	decoderInputs := map[string]*ort.Value{
-		inputTargets: targetTensor,
-		inputTargetN: countTensor,
-		inputState:   stateTensor,
-		inputCell:    cellTensor,
-	}
-
-	joinerInputs := map[string]*ort.Value{
-		inputEncoded: frameTensor,
-		inputDecoded: saidTensor,
-	}
-
-	var decoderRun, joinerRun *rawRun
-	if calls, ok := getRawCalls(); ok && useRaw {
-		decoderRun, _ = newRawRun(calls, t.decoder, decoderInputNames, decoderOutputs,
-			[]*ort.Value{targetTensor, countTensor, stateTensor, cellTensor})
-		joinerRun, _ = newRawRun(calls, t.joiner, joinerInputNames, joinerOutputs,
-			[]*ort.Value{frameTensor, saidTensor})
-	}
+	decoderInputs, joinerInputs := buf.getDecoderInputs(), buf.getJoinerInputs()
+	decoderRun, joinerRun := t.makeRawRuns(buf, useRaw)
 	if decoderRun != nil {
 		defer decoderRun.close()
 	}
@@ -302,46 +224,187 @@ func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value,
 		defer joinerRun.close()
 	}
 	predicted, joined := false, false
+	var scores []float32
 
 	result, err := transducer{
-		frames:  width,
+		frames:  frames.width,
 		blank:   t.blank,
 		encoded: encoded,
 		encoder: func(at int, dst []float32) []float32 {
-			// The frames are channel after channel, each holding every frame.
-			for c := range dst {
-				dst[c] = data[c*int(shape[2])+at]
-			}
+			frames.copyFrame(at, dst)
 			return dst
 		},
 		predictor: func(token int) ([]float32, error) {
-			target[0] = int32(token)
+			buf.target[0] = int32(token)
 			if decoderRun == nil || !predicted {
 				predicted = true
-				return t.predict(decoderInputs, said, state, cell)
+				return t.predict(decoderInputs, buf.prediction, buf.state, buf.cell)
 			}
-			return t.predictRaw(decoderRun, said, state, cell)
+			return t.predictRaw(decoderRun, buf.prediction, buf.state, buf.cell)
 		},
 		joint: func(encodedFrame, _ []float32) ([]float32, error) {
 			var err error
 			if joinerRun == nil || !joined {
 				joined = true
-				scores, err = t.computeJoint(joinerInputs, frame, encodedFrame, scores)
+				scores, err = t.computeJoint(joinerInputs, buf.frame, encodedFrame, scores)
 			} else {
-				scores, err = t.computeJointRaw(joinerRun, frame, encodedFrame, scores)
+				scores, err = t.computeJointRaw(joinerRun, buf.frame, encodedFrame, scores)
 			}
 			return scores, err
 		},
 	}.decode(ctx)
 
-	runtime.KeepAlive(target)
-	runtime.KeepAlive(count)
-	runtime.KeepAlive(state)
-	runtime.KeepAlive(cell)
-	runtime.KeepAlive(said)
-	runtime.KeepAlive(frame)
-
+	buf.keepAlive()
 	return result, err
+}
+
+// encodedFrames are the frames the encoder wrote, channel after channel, each
+// holding every frame, and how many of them carry the stretch.
+type encodedFrames struct {
+	data   []float32
+	stride int
+	width  int
+}
+
+// readFrames reads the frames of the encoder's answer and how many carry the stretch.
+func readFrames(out map[string]*ort.Value) (encodedFrames, error) {
+	frames, ok := out[outputFrames]
+	if !ok {
+		return encodedFrames{}, fmt.Errorf("the encoder answered with %v and not %s", getNames(out), outputFrames)
+	}
+	shape, err := frames.GetShape()
+	if err != nil {
+		return encodedFrames{}, err
+	}
+	if len(shape) != 3 || shape[1] != encoded {
+		return encodedFrames{}, fmt.Errorf("the encoder answered with frames of %v", shape)
+	}
+	data, err := ort.GetTensorData[float32](frames)
+	if err != nil {
+		return encodedFrames{}, err
+	}
+	width := int(shape[2])
+	if counted, ok := out[outputLength]; ok {
+		if n, ok := readFrameCount(counted); ok && n < width {
+			width = n
+		}
+	}
+	return encodedFrames{data: data, stride: int(shape[2]), width: width}, nil
+}
+
+// readFrameCount is the count of frames the encoder reports, where it reports
+// one that makes sense.
+func readFrameCount(counted *ort.Value) (int, bool) {
+	lengths, err := ort.GetTensorData[int64](counted)
+	if err != nil || len(lengths) == 0 || lengths[0] < 0 {
+		return 0, false
+	}
+	return int(lengths[0]), true
+}
+
+// copyFrame writes the frame at a position into dst, one value from each
+// channel.
+func (f encodedFrames) copyFrame(at int, dst []float32) {
+	for c := range dst {
+		dst[c] = f.data[c*f.stride+at]
+	}
+}
+
+// decodeBuffers are the buffers and tensors the predictor and the joiner read
+// and write while one stretch is decoded.
+type decodeBuffers struct {
+	target     []int32
+	count      []int32
+	state      []float32
+	cell       []float32
+	prediction []float32
+	frame      []float32
+
+	targetTensor, countTensor, stateTensor, cellTensor, frameTensor, saidTensor *ort.Value
+}
+
+// newDecodeBuffers makes the buffers and the tensors over them.
+func newDecodeBuffers() (*decodeBuffers, error) {
+	b := &decodeBuffers{
+		target:     []int32{0},
+		count:      []int32{1},
+		state:      make([]float32, layers*hidden),
+		cell:       make([]float32, layers*hidden),
+		prediction: make([]float32, hidden),
+		frame:      make([]float32, encoded),
+	}
+	for _, one := range []struct {
+		into   **ort.Value
+		create func() (*ort.Value, error)
+	}{
+		{&b.targetTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, 1}, b.target) }},
+		{&b.countTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1}, b.count) }},
+		{&b.stateTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{layers, 1, hidden}, b.state) }},
+		{&b.cellTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{layers, 1, hidden}, b.cell) }},
+		{&b.frameTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, encoded, 1}, b.frame) }},
+		{&b.saidTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, hidden, 1}, b.prediction) }},
+	} {
+		tensor, err := one.create()
+		if err != nil {
+			b.destroy()
+			return nil, err
+		}
+		*one.into = tensor
+	}
+	return b, nil
+}
+
+// destroy releases the tensors that were made.
+func (b *decodeBuffers) destroy() {
+	for _, tensor := range []*ort.Value{
+		b.targetTensor, b.countTensor, b.stateTensor, b.cellTensor, b.frameTensor, b.saidTensor,
+	} {
+		if tensor != nil {
+			tensor.Destroy()
+		}
+	}
+}
+
+// keepAlive holds the buffers until the runs over them are done.
+func (b *decodeBuffers) keepAlive() {
+	runtime.KeepAlive(b.target)
+	runtime.KeepAlive(b.count)
+	runtime.KeepAlive(b.state)
+	runtime.KeepAlive(b.cell)
+	runtime.KeepAlive(b.prediction)
+	runtime.KeepAlive(b.frame)
+}
+
+// getDecoderInputs are the tensors the predictor is run over, by name.
+func (b *decodeBuffers) getDecoderInputs() map[string]*ort.Value {
+	return map[string]*ort.Value{
+		inputTargets: b.targetTensor,
+		inputTargetN: b.countTensor,
+		inputState:   b.stateTensor,
+		inputCell:    b.cellTensor,
+	}
+}
+
+// getJoinerInputs are the tensors the joiner is run over, by name.
+func (b *decodeBuffers) getJoinerInputs() map[string]*ort.Value {
+	return map[string]*ort.Value{
+		inputEncoded: b.frameTensor,
+		inputDecoded: b.saidTensor,
+	}
+}
+
+// makeRawRuns are the predictor and the joiner run through the raw runtime, or
+// nothing for each where useRaw does not hold or the runtime does not offer it.
+func (t *Transcriber) makeRawRuns(b *decodeBuffers, useRaw bool) (decoderRun, joinerRun *rawRun) {
+	calls, ok := getRawCalls()
+	if !ok || !useRaw {
+		return nil, nil
+	}
+	decoderRun, _ = newRawRun(calls, t.decoder, decoderInputNames, decoderOutputs,
+		[]*ort.Value{b.targetTensor, b.countTensor, b.stateTensor, b.cellTensor})
+	joinerRun, _ = newRawRun(calls, t.joiner, joinerInputNames, joinerOutputs,
+		[]*ort.Value{b.frameTensor, b.saidTensor})
+	return decoderRun, joinerRun
 }
 
 // predict is one position of the predictor: the token that was said and the
@@ -351,6 +414,11 @@ func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		for _, v := range out {
+			v.Destroy()
+		}
+	}()
 
 	for _, one := range [...]struct {
 		into []float32
@@ -360,32 +428,29 @@ func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []
 		{state, outputState},
 		{cell, outputCell},
 	} {
-		value, ok := out[one.name]
-		if !ok {
-			for _, v := range out {
-				v.Destroy()
-			}
-			return nil, fmt.Errorf("the predictor answered with %v and not %s", getNames(out), one.name)
-		}
-		raw, err := ort.GetTensorData[float32](value)
-		if err != nil {
-			for _, v := range out {
-				v.Destroy()
-			}
+		if err := copyPrediction(out, one.name, one.into); err != nil {
 			return nil, err
 		}
-		if len(raw) < len(one.into) {
-			for _, v := range out {
-				v.Destroy()
-			}
-			return nil, fmt.Errorf("the predictor answered %s with %d values and not %d", one.name, len(raw), len(one.into))
-		}
-		copy(one.into, raw)
-	}
-	for _, v := range out {
-		v.Destroy()
 	}
 	return said, nil
+}
+
+// copyPrediction copies the output of the predictor with the given name into
+// dst, which it must fill.
+func copyPrediction(out map[string]*ort.Value, name string, dst []float32) error {
+	value, ok := out[name]
+	if !ok {
+		return fmt.Errorf("the predictor answered with %v and not %s", getNames(out), name)
+	}
+	raw, err := ort.GetTensorData[float32](value)
+	if err != nil {
+		return err
+	}
+	if len(raw) < len(dst) {
+		return fmt.Errorf("the predictor answered %s with %d values and not %d", name, len(raw), len(dst))
+	}
+	copy(dst, raw)
+	return nil
 }
 
 // predictRaw is predict run on the outputs the run owns. The three are copied

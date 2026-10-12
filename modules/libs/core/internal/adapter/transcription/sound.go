@@ -212,17 +212,8 @@ func parseWav(raw []byte) (riffWave, error) {
 
 		switch kind {
 		case "fmt ":
-			if len(body) < 16 {
-				return out, fmt.Errorf("the wav recording's header is %d bytes", len(body))
-			}
-			out.format = int(binary.LittleEndian.Uint16(body[0:2]))
-			out.channels = int(binary.LittleEndian.Uint16(body[2:4]))
-			out.rate = int(binary.LittleEndian.Uint32(body[4:8]))
-			out.bits = int(binary.LittleEndian.Uint16(body[14:16]))
-			// An extended header says what the samples really are in its own
-			// tail, where the first two bytes stand for the whole format.
-			if out.format == wavExtended && len(body) >= 26 {
-				out.format = int(binary.LittleEndian.Uint16(body[24:26]))
+			if err := out.readFormat(body); err != nil {
+				return out, err
 			}
 			seen = true
 		case "data":
@@ -239,6 +230,23 @@ func parseWav(raw []byte) (riffWave, error) {
 			out.channels, out.bits, out.rate)
 	}
 	return out, nil
+}
+
+// readFormat reads the body of the format chunk.
+func (w *riffWave) readFormat(body []byte) error {
+	if len(body) < 16 {
+		return fmt.Errorf("the wav recording's header is %d bytes", len(body))
+	}
+	w.format = int(binary.LittleEndian.Uint16(body[0:2]))
+	w.channels = int(binary.LittleEndian.Uint16(body[2:4]))
+	w.rate = int(binary.LittleEndian.Uint32(body[4:8]))
+	w.bits = int(binary.LittleEndian.Uint16(body[14:16]))
+	// An extended header says what the samples really are in its own tail,
+	// where the first two bytes stand for the whole format.
+	if w.format == wavExtended && len(body) >= 26 {
+		w.format = int(binary.LittleEndian.Uint16(body[24:26]))
+	}
+	return nil
 }
 
 // readSound is a wav file's samples as floating point, one channel after another as
