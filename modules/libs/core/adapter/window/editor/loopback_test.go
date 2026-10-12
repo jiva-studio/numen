@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // heldVaults is the vaults an installation holds, for an address naming one the
@@ -132,7 +133,8 @@ func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
 func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	held := api.GetCurrentVault()
-	api.Vaults.Registry = heldVaults{held}
+	find := vaults.NewFind(heldVaults{held})
+	api.Vaults.Find = &find
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.
