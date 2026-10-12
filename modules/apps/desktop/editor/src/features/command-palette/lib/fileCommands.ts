@@ -1,32 +1,32 @@
 /**
  * The commands offered over the file in front, on what has been made from it.
  */
-import { getOfferOnEvidence, isUnmade } from './offered'
+import { createArtifactOffer, isArtifactMissing } from './offered'
 import type { Command, CommandTarget, RunSupport } from '../types'
 import type { Words } from '../words'
 
-const isRecordingProofreadOffered = getOfferOnEvidence(
+const isRecordingProofreadOffered = createArtifactOffer(
   'proofread',
   'recording',
-  (made) => made.transcript === 'done' && isUnmade(made['transcript.corrected']),
+  (made) => made.transcript === 'done' && isArtifactMissing(made['transcript.corrected']),
 )
 
-const isBookProofreadOffered = getOfferOnEvidence(
+const isBookProofreadOffered = createArtifactOffer(
   'proofread',
   'book',
-  (made) => made.ocr === 'done' && isUnmade(made['ocr.corrected']),
+  (made) => made.ocr === 'done' && isArtifactMissing(made['ocr.corrected']),
 )
 
 const isProofreadOffered = (at: CommandTarget, runs: RunSupport): boolean =>
   isRecordingProofreadOffered(at, runs) || isBookProofreadOffered(at, runs)
 
-const isRecordingDeleteTextOffered = getOfferOnEvidence(
+const isRecordingDeleteTextOffered = createArtifactOffer(
   'deleteText',
   'recording',
   (made) => made.transcript !== 'none',
 )
 
-const isUrlDeleteTextOffered = getOfferOnEvidence(
+const isUrlDeleteTextOffered = createArtifactOffer(
   'deleteText',
   'url',
   (made) => made.transcript !== 'none',
@@ -40,19 +40,21 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
     id: 'transcribe',
     text: words.transcribe,
     group: 'file',
-    isOffered: getOfferOnEvidence('transcribe', 'recording', (made) => isUnmade(made.transcript)),
+    isOffered: createArtifactOffer('transcribe', 'recording', (made) =>
+      isArtifactMissing(made.transcript),
+    ),
   },
   {
     id: 'recognise',
     text: words.recognise,
     group: 'file',
-    isOffered: getOfferOnEvidence('recognise', 'book', (made) => isUnmade(made.ocr)),
+    isOffered: createArtifactOffer('recognise', 'book', (made) => isArtifactMissing(made.ocr)),
   },
   {
     id: 'downloadText',
     text: words.downloadText,
     group: 'file',
-    isOffered: getOfferOnEvidence(
+    isOffered: createArtifactOffer(
       'downloadText',
       'url',
       (made) => made.transcript !== undefined || made.article !== undefined,
@@ -69,7 +71,7 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
       at.isReady &&
       runs.canRun('downloadCopy') &&
       at.made.copy !== undefined &&
-      isUnmade(at.made.copy),
+      isArtifactMissing(at.made.copy),
   },
   {
     id: 'proofread',
@@ -101,7 +103,7 @@ export const fileCommandsOf = (words: Words): readonly Command[] => [
     group: 'file',
     needs: 'asking',
     // Only a url carries a copy, and only one that stands has anything to take.
-    isOffered: getOfferOnEvidence('deleteCopy', 'url', (made) => made.copy === 'done'),
+    isOffered: createArtifactOffer('deleteCopy', 'url', (made) => made.copy === 'done'),
     answers: {
       keeps: words.keepsCopy,
       kept: words.kept,
