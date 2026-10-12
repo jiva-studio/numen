@@ -12,14 +12,13 @@ type GetTitle struct {
 	queries port.NoteQueries
 }
 
-func NewGetTitle(queries port.NoteQueries) GetTitle {
-	return GetTitle{queries: queries}
+func NewGetTitle(queries port.NoteQueries) *GetTitle {
+	return &GetTitle{queries: queries}
 }
 
-// Execute returns no title for an empty path, a path naming no note and an
-// index that cannot answer.
-func (u GetTitle) Execute(ctx context.Context, v domain.Vault, path string) string {
-	if path == "" {
+// Execute returns "" for an empty path, an unknown note or an index error.
+func (u *GetTitle) Execute(ctx context.Context, v domain.Vault, path string) string {
+	if u == nil || u.queries == nil || path == "" {
 		return ""
 	}
 	found, err := u.queries.GetNotes(ctx, v.ID, []string{path})

@@ -24,15 +24,10 @@ type Scenarios struct {
 	Links         ShowLinks
 	Neighbourhood ShowNeighbourhood
 
-	GetTitles            GetTitles
-	GetTitle             GetTitle
-	GetOpeningNote       GetOpeningNote
-	GetTypes             GetTypes
-	GetNameMatches       GetNameMatches
-	GetHeadings          GetHeadings
-	GetResolvedAddresses GetResolvedAddresses
-	GetLinkAddress       GetLinkAddress
-	RemoveNote           RemoveNote
+	GetTitles      GetTitles
+	GetTitle       *GetTitle
+	GetLinkAddress *GetLinkAddress
+	RemoveNote     RemoveNote
 }
 
 // FollowMoves tells a window where each note went, so whoever is showing one at

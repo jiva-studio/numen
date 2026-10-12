@@ -162,28 +162,22 @@ type API struct {
 // Notes is a vault's notes: what is asked of them, and what changes them.
 //
 // Read and Write are how the window opens a note and puts it back, Create makes
-// one and Linking writes a relationship into one, Rename gives one a different
+// one and EditLinks writes a relationship into one, Rename gives one a different
 // name and Remove takes it out of the vault. They are bound by every build that
 // serves a note.
 type Notes struct {
-	Read    *note.Read
-	Write   *note.Write
-	Create  *note.Create
-	Linking *note.EditLinks
-	Rename  *note.Rename
-	Remove  *note.Remove
+	Queries port.NoteQueries
+	Links   port.LinkQueries
 
-	// What is asked of the index about the notes. A build with no index binds
-	// none of them.
-	GetOpeningNote       *note.GetOpeningNote
-	Neighbourhood        *note.ShowNeighbourhood
-	GetTypes             *note.GetTypes
-	GetTitles            *note.GetTitles
-	GetTitle             *note.GetTitle
-	GetNameMatches       *note.GetNameMatches
-	GetHeadings          *note.GetHeadings
-	GetResolvedAddresses *note.GetResolvedAddresses
-	GetLinkAddress       *note.GetLinkAddress
+	Read              *note.Read
+	Write             *note.Write
+	Create            *note.Create
+	EditLinks         *note.EditLinks
+	Rename            *note.Rename
+	Remove            *note.Remove
+	ShowNeighbourhood *note.ShowNeighbourhood
+	GetTitle          *note.GetTitle
+	GetLinkAddress    *note.GetLinkAddress
 }
 
 // Files is the vault's tree: what a folder holds, and what a person does to it.

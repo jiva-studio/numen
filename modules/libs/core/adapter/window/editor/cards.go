@@ -172,7 +172,7 @@ func (a *API) ReadStencil(
 		out.Error = &code
 		return connect.NewResponse(out), nil
 	}
-	title := a.getTitle(ctx, showing, found.Path)
+	title := a.Notes.GetTitle.Execute(ctx, showing, found.Path)
 	out.Stencil = cardwire.NewWireStencil(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
@@ -203,7 +203,7 @@ func (a *API) ReadDeck(
 		}
 		return connect.NewResponse(out), nil
 	}
-	title := a.getTitle(ctx, showing, found.Path)
+	title := a.Notes.GetTitle.Execute(ctx, showing, found.Path)
 	out.Deck = cardwire.NewWireDeck(found.Path, title, found.Body, found.Stencils)
 	out.At = convertFingerprintToWire(found.Fingerprint)
 	return connect.NewResponse(out), nil
