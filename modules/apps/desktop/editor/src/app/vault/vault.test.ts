@@ -214,7 +214,7 @@ describe('notes domain', () => {
     asked.renameNote.mockResolvedValue({
       path: 'b.md',
       title: 'B',
-      by: 1,
+      nameSource: 1,
       moved: { path: 'b.md' },
     })
     const renamed = await core.rename('a.md', 'B')
