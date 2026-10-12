@@ -268,7 +268,7 @@ func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
 	}
 	identity := refusingIdentity{
 		ensureAs: first.ID,
-		vaultID: func(root string) (domain.VaultID, bool, error) {
+		vaultID: func(string) (domain.VaultID, bool, error) {
 			return "", false, errRefused
 		},
 	}
