@@ -87,6 +87,7 @@ export function usePresetTab(
 
   const applyPathChanges = (
     paths: readonly string[],
+    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
     renames: readonly PathRename[] = [],
   ): void => {
     for (const went of renames) {

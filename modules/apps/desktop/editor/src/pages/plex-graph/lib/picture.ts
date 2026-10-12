@@ -69,6 +69,7 @@ export function asPlex(
   }
 
   const nodes: PlexNode[] = [focus]
+  // Stryker disable ArrayDeclaration: an entry that is not a seated note has no seat, and no edge is drawn for it.
   const seated: {
     id: string
     seat: Seat
@@ -77,6 +78,7 @@ export function asPlex(
     isMutual: boolean
     path: string
   }[] = []
+  // Stryker restore ArrayDeclaration
   /** The path of every note this picture draws, the note in focus included. */
   const shown = new Set<string>([neighbourhood.focus.path])
   for (const related of neighbourhood.related) {
