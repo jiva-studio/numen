@@ -46,8 +46,12 @@ func Bytes(v []float32) []int8 {
 	for i, x := range v {
 		q := math.Round(float64(x) / port.Int8Scale * 127)
 		switch {
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a rounded q equal to 127 is assigned 127"
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="the mutated value is 126: a rounded q equal to 127 is assigned 127"
 		case q > 127:
 			q = 127
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a rounded q equal to -127 is assigned -127"
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="the mutated value is -126: a rounded q equal to -127 is assigned -127"
 		case q < -127:
 			q = -127
 		}
