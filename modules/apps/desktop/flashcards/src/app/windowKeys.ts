@@ -134,7 +134,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
     const asked = getSessionKeyIntent(press, {
       isShown: deps.isShown(),
       isAsking: deps.getShowing() === 'asking',
-      isReading: deps.getShowing() === 'reading',
+      isNotesOpen: deps.getShowing() === 'reading',
     })
     if (!asked) return
     if (shouldConsumeKey(asked)) press.preventDefault()

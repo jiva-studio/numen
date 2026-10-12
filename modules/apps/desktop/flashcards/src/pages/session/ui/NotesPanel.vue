@@ -31,7 +31,7 @@ watch(
     if (!open || !at || !notes.length) return
     void nextTick(() => {
       const found = notes.find((one) => one.written === at || one.path === at)
-      if (found) drawn.get(keyOf(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
+      if (found) drawn.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
       props.held.read()
     })
   },
@@ -40,7 +40,7 @@ watch(
 
 /* -------------------------------- Helpers --------------------------------- */
 /** A note is keyed by what its article is keyed by. */
-const keyOf = (one: Neighbour) => one.path || one.written
+const getNoteKey = (one: Neighbour) => one.path || one.written
 
 /**
  * Where each note was drawn, so the one a link named can be scrolled to. Read
@@ -49,8 +49,8 @@ const keyOf = (one: Neighbour) => one.path || one.written
 const drawn = new Map<string, HTMLElement>()
 
 const registerNoteElement = (one: Neighbour, element: unknown): void => {
-  if (element) drawn.set(keyOf(one), element as HTMLElement)
-  else drawn.delete(keyOf(one))
+  if (element) drawn.set(getNoteKey(one), element as HTMLElement)
+  else drawn.delete(getNoteKey(one))
 }
 
 /** How much of the panel one press of space moves it. */
@@ -76,7 +76,7 @@ function scrollPage(back = false) {
 
       <article
         v-for="one in props.held.notes.value"
-        :key="keyOf(one)"
+        :key="getNoteKey(one)"
         :ref="(element) => registerNoteElement(one, element)"
         class="reading__note"
       >

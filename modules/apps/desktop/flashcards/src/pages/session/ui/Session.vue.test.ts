@@ -35,7 +35,8 @@ const session = (more: { at?: PanelPlace; isShown?: boolean } = {}) =>
   })
 
 /** The way into the panel, wherever it stands. */
-const wayIn = (one: VueWrapper) => one.findAll('button').filter((it) => it.text().includes('Ask'))
+const getAskButtons = (one: VueWrapper) =>
+  one.findAll('button').filter((it) => it.text().includes('Ask'))
 
 /** The way into the reading, wherever it stands. */
 const wayBack = (one: VueWrapper) =>
@@ -44,8 +45,8 @@ const wayBack = (one: VueWrapper) =>
 describe('the way into the panel', () => {
   // A person asks about the card they are on, turned or not.
   it('is to be pressed on either side of the card', () => {
-    expect(wayIn(session({ isShown: false }))[0]?.attributes('disabled')).toBeUndefined()
-    expect(wayIn(session({ isShown: true }))[0]?.attributes('disabled')).toBeUndefined()
+    expect(getAskButtons(session({ isShown: false }))[0]?.attributes('disabled')).toBeUndefined()
+    expect(getAskButtons(session({ isShown: true }))[0]?.attributes('disabled')).toBeUndefined()
   })
 
   // The two panels stand in the order they stand in the strip.
@@ -74,7 +75,7 @@ describe('the way into the panel', () => {
 
   it('asks about the card when it is pressed', async () => {
     const one = session({ isShown: true })
-    await wayIn(one)[0]?.trigger('click')
+    await getAskButtons(one)[0]?.trigger('click')
     expect(one.emitted('ask')).toHaveLength(1)
   })
 
@@ -82,7 +83,7 @@ describe('the way into the panel', () => {
   // same whichever of the three the window is on, and the window decides.
   it('asks for the panel in the same words while the panel is up', async () => {
     const one = session({ at: 'after' })
-    await wayIn(one)[0]?.trigger('click')
+    await getAskButtons(one)[0]?.trigger('click')
     expect(one.emitted('ask')).toHaveLength(1)
   })
 })

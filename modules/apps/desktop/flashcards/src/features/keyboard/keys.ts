@@ -26,7 +26,7 @@ export interface ScreenState {
   /** Whether the panel a card is asked about in is up. */
   isAsking?: boolean
   /** Whether the panel the deck's notes are read in is up. */
-  isReading?: boolean
+  isNotesOpen?: boolean
 }
 
 /** The letter the panel a card is asked about in is brought in with. */
@@ -67,7 +67,7 @@ const getPanelKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
 /** The keys the card itself is turned over, answered and left by. */
 const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
   if (press.key === 'Escape') {
-    return screen.isAsking || screen.isReading ? { does: 'shut' } : { does: 'leave' }
+    return screen.isAsking || screen.isNotesOpen ? { does: 'shut' } : { does: 'leave' }
   }
   if (press.key === 'u' || press.key === 'U') return { does: 'takeBack' }
   if (press.key === ' ') return getSpaceKeyIntent(press, screen)
@@ -79,7 +79,7 @@ const getCardKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKey
  * answer is still shown by the control standing under both panes.
  */
 const getSpaceKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKeyIntent | null => {
-  if (screen.isReading) return { does: 'scroll', back: press.shiftKey }
+  if (screen.isNotesOpen) return { does: 'scroll', back: press.shiftKey }
   return screen.isShown ? null : { does: 'show' }
 }
 
@@ -112,7 +112,7 @@ export const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
  * vault of thirty decks is a vault where the last four are picked with the
  * hand.
  */
-export const letterOf = (at: number): string => LETTERS[at] ?? ''
+export const getLetter = (at: number): string => LETTERS[at] ?? ''
 
 /**
  * The keys the decks are chosen with: enter sits down to the whole vault, a

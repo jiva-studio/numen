@@ -8,7 +8,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { StopReason } from '@numen/protocol'
 
-import { deckName } from '@/entities/vault'
+import { getDeckName } from '@/entities/vault'
 import type { DeckCardsDue, PresetCardsDue, VaultCardsDue } from '@/entities/vault'
 
 import { readDeckPreset, PRESET_UNREADABLE_MESSAGE } from '../api/presets'
@@ -96,7 +96,7 @@ interface PresetTally {
 }
 
 /** What the day holds under a preset the application counted nothing for. */
-const budgetOf = (settings: Settings): Budget => ({
+const getBudget = (settings: Settings): Budget => ({
   new: settings.newADay,
   reviews: settings.reviewsADay,
   minutes: settings.minutesADay,
@@ -168,7 +168,7 @@ const getPresetFromDecks = (
   day: PresetCardsDue | undefined,
   today: string,
 ): Preset => {
-  const budget = day ?? budgetOf(one.settings)
+  const budget = day ?? getBudget(one.settings)
   return {
     path: one.path,
     name: one.name,
@@ -203,7 +203,7 @@ const getDayAnswered = (day: PresetCardsDue | undefined) => ({
 /** A preset no deck answered for, standing on the count alone. */
 const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Preset => ({
   path: one.preset,
-  name: one.title || deckName(one.preset),
+  name: one.title || getDeckName(one.preset),
   settings: null,
   decks: [],
   named: one.decks,
