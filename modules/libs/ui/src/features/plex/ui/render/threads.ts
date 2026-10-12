@@ -27,7 +27,7 @@ export function getReachThread(
   const source = frame.nodes.find((node) => node.id === from)
   if (!source || !to) return null
   const offset = handleIn(source)
-  return threadOf({ x: source.x + offset.x, y: source.y + offset.y }, to)
+  return threadOf({ x: source.x + offset.x, y: source.y }, to)
 }
 
 /**

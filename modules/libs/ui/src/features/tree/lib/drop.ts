@@ -30,7 +30,7 @@ export function getRowDropTarget(
   if (!found) return null
 
   const on = getTargetRow(found)
-  return on !== null && dragIds.includes(on) ? null : found
+  return dragIds.some((id) => id === on) ? null : found
 }
 
 /** The band a height falls in, as a drop target. */
@@ -64,9 +64,7 @@ export function isRefused(
   dragIds: readonly RowId[],
   into: RowId | null,
 ): boolean {
-  if (into === null) return false
-
-  const lifted = new Set(dragIds)
+  const lifted = new Set<RowId | null>(dragIds)
   if (lifted.has(into)) return true
 
   const isInsideLifted = (children: readonly Row[], within: boolean): boolean =>

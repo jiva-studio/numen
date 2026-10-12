@@ -67,13 +67,12 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
    * What the drag was handed, held for the life of the gesture. Whoever is
    * dragging them may put them down on the same release this commits on.
    */
-  let activeDragIds: readonly string[] = []
+  let activeDragIds: readonly string[]
 
   const stop = () => {
     detach?.()
     detach = null
     at.value = null
-    activeDragIds = []
   }
 
   const move = (event: PointerEvent) => {
@@ -86,11 +85,10 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
     const dragged = activeDragIds
     const resolved = seat.value
     stop()
-    if (dragged.length > 0 && resolved) drag.commit(dragged, resolved)
+    if (resolved) drag.commit(dragged, resolved)
   }
 
   const follow = () => {
-    if (detach) return
     activeDragIds = drag.getDragged()
 
     const onMove = (event: PointerEvent) => move(event)

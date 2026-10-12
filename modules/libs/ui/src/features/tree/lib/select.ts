@@ -37,8 +37,7 @@ export function getRowsBetween(
   const first = visibleRows.findIndex((row) => row.id === from)
   if (first === -1) return [to]
 
-  const [start, end] = first <= last ? [first, last] : [last, first]
-  return visibleRows.slice(start, end + 1).map((row) => row.id)
+  return visibleRows.slice(Math.min(first, last), Math.max(first, last) + 1).map((row) => row.id)
 }
 
 /** The rows of a set, in the order they are drawn. */

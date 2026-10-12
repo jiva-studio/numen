@@ -120,48 +120,33 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
     renamingPath.value = null
   }
 
-  /** The keys that act on the selection, told apart from the rows. Tells whether the key was taken. */
-  function takeSelectionKey(event: KeyboardEvent): boolean {
+  /** The keys that act on the selection, told apart from the rows. */
+  function takeSelectionKey(event: KeyboardEvent): void {
     const chorded = event.ctrlKey || event.metaKey
 
     if (chorded && event.key.toLowerCase() === 'a') {
       event.preventDefault()
       selection.selectEveryRow()
-      return true
-    }
-
-    if (event.key === 'Delete' || event.key === 'Backspace') {
+    } else if (event.key === 'Delete' || event.key === 'Backspace') {
       event.preventDefault()
       if (getSelected().length > 0) tell('remove', getSelected())
-      return true
     }
-
-    return false
   }
 
-  /** The keys that act on the row the keyboard stands on. Tells whether the key was taken. */
-  function takeRowKey(event: KeyboardEvent, on: ShownRow): boolean {
+  /** The keys that act on the row the keyboard stands on. */
+  function takeRowKey(event: KeyboardEvent, on: ShownRow): void {
     if (event.key === 'Enter') {
       event.preventDefault()
       activateRow(on)
-      return true
-    }
-
-    // The row the keyboard stands on joins the selection, or leaves it.
-    if (event.key === ' ') {
+    } else if (event.key === ' ') {
+      // The row the keyboard stands on joins the selection, or leaves it.
       event.preventDefault()
       selection.selectRow(on.id, { isJoining: true, isExtending: false })
-      return true
-    }
-
-    if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+    } else if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
       event.preventDefault()
       const at = options.getMenuAt(on.id)
       if (at) requestMenu(on, at)
-      return true
     }
-
-    return false
   }
 
   /** The turn a step asks for, and the row it lands on. */
@@ -173,11 +158,11 @@ export function useTreeGestures(options: TreeGesturesOptions): TreeGesturesState
   }
 
   function onKeyDown(event: KeyboardEvent): void {
-    if (takeSelectionKey(event)) return
+    takeSelectionKey(event)
 
     const on = getShownRows().find((row) => row.id === rows.tabbed.value)
     if (!on) return
-    if (takeRowKey(event, on)) return
+    takeRowKey(event, on)
 
     if (!isTreeKey(event.key)) return
     event.preventDefault()

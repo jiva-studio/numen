@@ -8,7 +8,7 @@
 
 /** Equal shares for a branch of this many children. */
 export const even = (count: number): readonly number[] =>
-  count > 0 ? Array.from({ length: count }, () => 1 / count) : []
+  Array.from({ length: count }, () => 1 / count)
 
 /**
  * The same shares, one per child and summing to one.
@@ -17,8 +17,6 @@ export const even = (count: number): readonly number[] =>
  * ones that are, so a child brought in without a size is given room.
  */
 export function fit(sizes: readonly number[], count: number): readonly number[] {
-  if (count <= 0) return []
-
   const given: number[] = []
   for (let i = 0; i < count; i++) {
     const size = sizes[i]

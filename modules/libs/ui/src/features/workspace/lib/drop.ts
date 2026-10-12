@@ -82,9 +82,7 @@ export function overlayFor(side: Side, box: Rect): Rect {
  * is passed once the point is beyond its middle.
  */
 export function slotAt(x: number, tabs: readonly Rect[]): number {
-  for (let i = 0; i < tabs.length; i++) {
-    const tab = tabs[i]
-    if (!tab) continue
+  for (const [i, tab] of tabs.entries()) {
     if (x < tab.x + tab.width / 2) return i
   }
   return tabs.length

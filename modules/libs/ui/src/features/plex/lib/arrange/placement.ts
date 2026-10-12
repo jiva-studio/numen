@@ -174,20 +174,17 @@ function inColumns(
  * `perLine` is the longest a line may be, and the lines a seat runs to share
  * its nodes out evenly: every line is within one node of every other.
  */
-function* lines(
+function lines(
   nodes: readonly PlexNode[],
   perLine: number,
-): Generator<{ ofLine: readonly PlexNode[]; depth: number; first: number }> {
+): { ofLine: readonly PlexNode[]; depth: number; first: number }[] {
   const count = Math.ceil(nodes.length / perLine)
   const each = Math.ceil(nodes.length / count)
 
-  for (let first = 0; first < nodes.length; first += each) {
-    yield {
-      ofLine: nodes.slice(first, first + each),
-      depth: first / each,
-      first,
-    }
-  }
+  return Array.from({ length: count }, (_, depth) => {
+    const first = depth * each
+    return { ofLine: nodes.slice(first, first + each), depth, first }
+  })
 }
 
 /** How far above and below the focus a column of `count` nodes reaches. */

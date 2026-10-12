@@ -45,7 +45,7 @@ export function createWorkLine(
   // the text of a source is reported again every time more of it is written, so
   // the count is what moves while it is being written.
   let says = waitWords
-  let subject = ''
+  let subject: string
 
   // Whether the line is up. It comes down when the answer begins, and a tool
   // answering does not put it back: what a tool did belongs above the answer it

@@ -9,23 +9,17 @@
 /** A turn of the page, and the two ends of what is read. */
 export type PageTurn = 'back' | 'next' | 'first' | 'last'
 
+const KEY_TURNS = new Map<string, PageTurn>([
+  ['ArrowRight', 'next'],
+  ['ArrowDown', 'next'],
+  ['PageDown', 'next'],
+  [' ', 'next'],
+  ['ArrowLeft', 'back'],
+  ['ArrowUp', 'back'],
+  ['PageUp', 'back'],
+  ['Home', 'first'],
+  ['End', 'last'],
+])
+
 /** Which way a key turns the page, and nothing for a key that turns none. */
-export function keyTurn(key: string): PageTurn | undefined {
-  switch (key) {
-    case 'ArrowRight':
-    case 'ArrowDown':
-    case 'PageDown':
-    case ' ':
-      return 'next'
-    case 'ArrowLeft':
-    case 'ArrowUp':
-    case 'PageUp':
-      return 'back'
-    case 'Home':
-      return 'first'
-    case 'End':
-      return 'last'
-    default:
-      return undefined
-  }
-}
+export const keyTurn = (key: string): PageTurn | undefined => KEY_TURNS.get(key)

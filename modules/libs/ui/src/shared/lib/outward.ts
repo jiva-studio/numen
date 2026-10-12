@@ -31,7 +31,7 @@ export const interceptOutwardLinks = (
   const onPress = (press: MouseEvent) => {
     const link = (press.target as Element | null)?.closest?.('a[href]')
     const href = link?.getAttribute('href')
-    if (href === null || href === undefined) return
+    if (!href) return
 
     const here = new URL(root.location.href)
     let at: URL

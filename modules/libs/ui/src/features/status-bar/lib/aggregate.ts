@@ -14,8 +14,9 @@ function accumulateTask(task: StatusBarTask, acc: ActiveAccumulator): void {
     acc.determinateSum += task.progress
     acc.determinateCount++
   }
-  if (task.etaSeconds && task.etaSeconds > 0) {
-    acc.maxEta = acc.maxEta === undefined ? task.etaSeconds : Math.max(acc.maxEta, task.etaSeconds)
+  const eta = task.etaSeconds ?? 0
+  if (eta > 0) {
+    acc.maxEta = acc.maxEta === undefined ? eta : Math.max(acc.maxEta, eta)
   }
 }
 

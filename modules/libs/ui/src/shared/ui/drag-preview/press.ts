@@ -47,7 +47,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   const at = shallowRef<At | null>(null)
   const position = shallowRef<Position | null>(null)
 
-  let start: Position = { x: 0, y: 0 }
+  let start: Position
 
   const detach = (): void => {
     window.removeEventListener('pointermove', drag)
@@ -56,8 +56,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function drag(event: PointerEvent): void {
-    const held = dragging.value
-    if (!held) return
+    const held = dragging.value!
 
     const now: Position = { x: event.clientX, y: event.clientY }
     const hasMoved =
@@ -73,13 +72,13 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function drop(): void {
-    const held = dragging.value
+    const held = dragging.value!
     const found = at.value
 
     detach()
     at.value = null
     position.value = null
-    if (held?.hasMoved) press.commit(held.item, found)
+    if (held.hasMoved) press.commit(held.item, found)
     // Held one frame longer: the click that follows the release reads it and
     // stands down.
     press.getClock().schedule(() => {
