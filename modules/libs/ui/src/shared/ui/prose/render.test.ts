@@ -158,4 +158,12 @@ describe('prose', () => {
     const image = mountProse('![a chart](https://example.com/chart.png)').find('img')
     expect(image.attributes('src')).toBe('https://example.com/chart.png')
   })
+
+  it('keeps the alt text of an image', () => {
+    expect(mountProse('![a cat](cat.png)').find('img').attributes('alt')).toBe('a cat')
+  })
+
+  it('writes the alt text of an image without its marks', () => {
+    expect(mountProse('![a *big* cat](x.png)').find('img').attributes('alt')).toBe('a big cat')
+  })
 })
