@@ -127,7 +127,7 @@ func (u Extract) discover(
 	if err != nil {
 		return err
 	}
-	found, err := u.recordWalk(ctx, v, reader, known, res)
+	found, err := u.walkAndRecord(ctx, v, reader, known, res)
 	if err != nil {
 		return err
 	}
@@ -147,9 +147,9 @@ func (u Extract) readKnown(ctx context.Context, v domain.Vault) (map[domain.Sour
 	return known, nil
 }
 
-// recordWalk walks the vault, records each file the index does not already hold
+// walkAndRecord walks the vault, records each file the index does not already hold
 // as it is, and returns the paths it found.
-func (u Extract) recordWalk(
+func (u Extract) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,
@@ -256,7 +256,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	if u.Derived == nil || len(went) == 0 {
 		return nil
 	}
-	stood, named, err := u.readStanding(ctx, v)
+	stood, named, err := u.readReferencedReadings(ctx, v)
 	if err != nil {
 		return err
 	}
@@ -277,9 +277,9 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	return nil
 }
 
-// readStanding returns the readings some source stands on and the hashes some
+// readReferencedReadings returns the readings some source stands on and the hashes some
 // source names.
-func (u Extract) readStanding(ctx context.Context, v domain.Vault) (map[port.SourceText]bool, map[string]bool, error) {
+func (u Extract) readReferencedReadings(ctx context.Context, v domain.Vault) (map[port.SourceText]bool, map[string]bool, error) {
 	stood := make(map[port.SourceText]bool)
 	named := make(map[string]bool)
 	for _, kind := range u.kinds() {
@@ -326,7 +326,7 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			if err := u.forgetIfMissing(ctx, v, reader, r, res); err != nil {
+			if err := u.recordIfTextMissing(ctx, v, reader, r, res); err != nil {
 				return err
 			}
 		}
@@ -334,9 +334,9 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader por
 	return nil
 }
 
-// forgetIfMissing records the source afresh when the store holds no text for its
+// recordIfTextMissing records the source afresh when the store holds no text for its
 // reading.
-func (u Extract) forgetIfMissing(
+func (u Extract) recordIfTextMissing(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,
@@ -400,7 +400,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 			if err != nil {
 				return err
 			}
-			fresh, err := u.cutUntried(ctx, v, reader, paths, tried, sizes, res)
+			fresh, err := u.cutNewPaths(ctx, v, reader, paths, tried, sizes, res)
 			if err != nil {
 				return err
 			}
@@ -412,9 +412,9 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	return nil
 }
 
-// cutUntried cuts each path not yet in tried, marks it tried, and returns how
+// cutNewPaths cuts each path not yet in tried, marks it tried, and returns how
 // many it cut.
-func (u Extract) cutUntried(
+func (u Extract) cutNewPaths(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,

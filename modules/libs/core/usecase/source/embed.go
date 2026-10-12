@@ -450,7 +450,7 @@ func (u Embed) prepareBatch(
 			if key == "" {
 				key = texts[i]
 			}
-			prep.addAsking(i, key, texts[i], deduplicated)
+			prep.queueText(i, key, texts[i], deduplicated)
 			continue
 		}
 		prep.askingMap[i] = -1
@@ -467,9 +467,9 @@ func (u Embed) prepareBatch(
 	return prep, nil
 }
 
-// addAsking queues the text at index i for inference. A nil seen queues every
+// queueText queues the text at index i for inference. A nil seen queues every
 // text; otherwise a key already in seen shares the position of its first text.
-func (p *preparedBatch) addAsking(i int, key, value string, seen map[string]int) {
+func (p *preparedBatch) queueText(i int, key, value string, seen map[string]int) {
 	if seen != nil {
 		if pos, ok := seen[key]; ok {
 			p.askingMap[i] = pos
