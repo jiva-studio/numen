@@ -41,6 +41,27 @@ describe('renderCardHtml', () => {
     expect(renderCardHtml('<pre>  one\n\n  two\n</pre>')).toBe('<pre>  one\n\n  two\n</pre>')
   })
 
+  it('keeps the break between two inline tags', () => {
+    expect(renderCardHtml('<b>one</b>\n<b>two</b>')).toBe('<b>one</b>\n<b>two</b>')
+  })
+
+  it('keeps the break standing beside a comment', () => {
+    expect(renderCardHtml('<p>one</p><!-- c -->\n<p>two</p>')).toBe(
+      '<p>one</p><!-- c -->\n<p>two</p>',
+    )
+  })
+
+  it('keeps a tag with no text between two blocks', () => {
+    expect(renderCardHtml('<p>one</p><hr><p>two</p>')).toBe('<p>one</p><hr><p>two</p>')
+    expect(renderCardHtml('<p>one</p><p> </p><p>two</p>')).toBe('<p>one</p><p> </p><p>two</p>')
+  })
+
+  it('keeps the break between two blocks inside preformatted text', () => {
+    expect(renderCardHtml('<pre><div>one</div>\n<div>two</div></pre>')).toBe(
+      '<pre><div>one</div>\n<div>two</div></pre>',
+    )
+  })
+
   it('draws nothing a card may not be drawn with', () => {
     expect(renderCardHtml('<p>a</p>\n<script>alert(1)</script>')).toBe('<p>a</p>')
   })

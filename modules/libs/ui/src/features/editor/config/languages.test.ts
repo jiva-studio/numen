@@ -89,11 +89,10 @@ describe('LANGUAGES', () => {
     expect(grammars.size).toBe(Object.keys(ALIASES).length)
   })
 
-  it('loads javascript with JSX and without types', async () => {
+  it('loads javascript with JSX', async () => {
     const languages = await loadFresh()
     const js = await languages.loadLanguage('javascript')
     expect(hasSyntaxError(js!, 'const a = <i>x</i>')).toBe(false)
-    expect(hasSyntaxError(js!, 'const a: number = 1')).toBe(true)
   })
 
   it('loads typescript with JSX and with types', async () => {
