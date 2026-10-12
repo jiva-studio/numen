@@ -77,3 +77,41 @@ func TestABudgetOfZeroFallsBackToTheDefault(t *testing.T) {
 		t.Errorf("got %v", sizes(got))
 	}
 }
+
+func TestTheDefaultBudgetHoldsExactlyItsCharacters(t *testing.T) {
+	half := embedding.DefaultBatchCharacters / 2
+	fits := []string{strings.Repeat("a", half), strings.Repeat("b", half)}
+	if got := embedding.Batches(fits, 0); !slices.Equal(sizes(got), []int{2}) {
+		t.Errorf("at the budget: got %v", sizes(got))
+	}
+	over := []string{strings.Repeat("a", half), strings.Repeat("b", half+1)}
+	if got := embedding.Batches(over, 0); !slices.Equal(sizes(got), []int{1, 1}) {
+		t.Errorf("one past the budget: got %v", sizes(got))
+	}
+}
+
+func TestANegativeBudgetFallsBackToTheDefault(t *testing.T) {
+	if got := embedding.Batches([]string{"a", "b", "c"}, -1); !slices.Equal(sizes(got), []int{3}) {
+		t.Errorf("got %v", sizes(got))
+	}
+}
+
+func TestABudgetOfOneCharacterHoldsOneCharacter(t *testing.T) {
+	if got := embedding.Batches([]string{"a", "b", "c"}, 1); !slices.Equal(sizes(got), []int{1, 1, 1}) {
+		t.Errorf("got %v", sizes(got))
+	}
+}
+
+func TestAFirstTextOverTheBudgetIsNotPrecededByAnEmptyGroup(t *testing.T) {
+	got := embedding.Batches([]string{"aaaaaa", "b"}, 3)
+	if !slices.Equal(sizes(got), []int{1, 1}) {
+		t.Errorf("got %v", sizes(got))
+	}
+}
+
+func TestATextThatFillsTheBudgetExactlyStaysInTheGroup(t *testing.T) {
+	got := embedding.Batches([]string{"aa", "bb", "c"}, 4)
+	if !slices.Equal(sizes(got), []int{2, 1}) {
+		t.Errorf("got %v", sizes(got))
+	}
+}

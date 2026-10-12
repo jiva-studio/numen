@@ -187,3 +187,138 @@ func TestAPassStoppedWhileTheModelArrivesIsStopped(t *testing.T) {
 		t.Errorf("got %v", err)
 	}
 }
+
+// failing is a model whose closing fails.
+type failing struct{ landed }
+
+var errCloseFailed = errors.New("close failed")
+
+func (failing) Close() error { return errCloseFailed }
+
+// sized is a model that runs several batches at once.
+type sized struct{ landed }
+
+func (sized) Concurrency() int { return 3 }
+
+// closesPromptly fails the test when Close does not return, which is what a
+// lock left held does to it.
+func closesPromptly(t *testing.T, e *embedding.Embedder) {
+	t.Helper()
+	done := make(chan struct{})
+	go func() {
+		_ = e.Close()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close did not return")
+	}
+}
+
+func TestTheEmbedderSaysWhatItIs(t *testing.T) {
+	if got := embedding.NewDeferredEmbedder(bge).GetModel(); got != bge {
+		t.Errorf("got %v", got)
+	}
+}
+
+func TestAnEmbedderClosedAfterTheModelLandedIsNotReady(t *testing.T) {
+	e := embedding.NewDeferredEmbedder(bge)
+	e.SetModel(landed{}, nil)
+	if err := e.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.Wait(t.Context()); !errors.Is(err, embedding.ErrModelNotReady) {
+		t.Errorf("Wait: got %v", err)
+	}
+	if _, err := e.GetImpatientEmbedder().Embed(t.Context(), []string{"a"}); !errors.Is(err, embedding.ErrModelNotReady) {
+		t.Errorf("Embed: got %v", err)
+	}
+	if _, err := e.GetWaitingEmbedder().Embed(t.Context(), []string{"a"}); !errors.Is(err, embedding.ErrModelNotReady) {
+		t.Errorf("waiting Embed: got %v", err)
+	}
+}
+
+func TestAskingForVectorsLeavesTheEmbedderFreeToClose(t *testing.T) {
+	for name, get := range map[string]func(*embedding.Embedder) port.Embedder{
+		"waiting":   (*embedding.Embedder).GetWaitingEmbedder,
+		"impatient": (*embedding.Embedder).GetImpatientEmbedder,
+	} {
+		t.Run(name, func(t *testing.T) {
+			e := embedding.NewDeferredEmbedder(bge)
+			e.SetModel(landed{}, nil)
+			if _, err := get(e).Embed(t.Context(), []string{"a"}); err != nil {
+				t.Fatal(err)
+			}
+			closesPromptly(t, e)
+		})
+	}
+}
+
+func TestAnUnreadyEmbedderAskedForVectorsLeavesItselfFreeToClose(t *testing.T) {
+	e := embedding.NewDeferredEmbedder(bge)
+	e.SetModel(landed{}, nil)
+	_ = e.Close()
+	_, _ = e.GetImpatientEmbedder().Embed(t.Context(), []string{"a"})
+	closesPromptly(t, e)
+}
+
+func TestAWaitingEmbedderSaysWhatStoppedTheModel(t *testing.T) {
+	why := errors.New("download failed")
+	e := embedding.NewDeferredEmbedder(bge)
+	e.SetModel(nil, why)
+	waiting, ok := e.GetWaitingEmbedder().(embedding.WaitingEmbedder)
+	if !ok {
+		t.Fatal("the waiting embedder cannot be waited on")
+	}
+	if err := waiting.Wait(t.Context()); !errors.Is(err, why) {
+		t.Errorf("got %v", err)
+	}
+}
+
+func TestEitherEmbedderSaysWhatClosingTheModelSaid(t *testing.T) {
+	for name, get := range map[string]func(*embedding.Embedder) port.Embedder{
+		"waiting":   (*embedding.Embedder).GetWaitingEmbedder,
+		"impatient": (*embedding.Embedder).GetImpatientEmbedder,
+	} {
+		t.Run(name, func(t *testing.T) {
+			e := embedding.NewDeferredEmbedder(bge)
+			e.SetModel(failing{}, nil)
+			if err := get(e).Close(); !errors.Is(err, errCloseFailed) {
+				t.Errorf("got %v", err)
+			}
+		})
+	}
+}
+
+func TestConcurrencyIsWhatTheModelRunsAndOneUntilItArrives(t *testing.T) {
+	for name, get := range map[string]func(*embedding.Embedder) port.Embedder{
+		"embedder":  func(e *embedding.Embedder) port.Embedder { return e },
+		"waiting":   (*embedding.Embedder).GetWaitingEmbedder,
+		"impatient": (*embedding.Embedder).GetImpatientEmbedder,
+	} {
+		t.Run(name, func(t *testing.T) {
+			counted := func(e port.Embedder) int {
+				c, ok := e.(interface{ Concurrency() int })
+				if !ok {
+					t.Fatal("no Concurrency")
+				}
+				return c.Concurrency()
+			}
+			arriving := embedding.NewDeferredEmbedder(bge)
+			if got := counted(get(arriving)); got != 1 {
+				t.Errorf("before the model: got %d, want 1", got)
+			}
+			arriving.SetModel(sized{}, nil)
+			if got := counted(get(arriving)); got != 3 {
+				t.Errorf("sized model: got %d, want 3", got)
+			}
+			plain := embedding.NewDeferredEmbedder(bge)
+			plain.SetModel(landed{}, nil)
+			if got := counted(get(plain)); got != 1 {
+				t.Errorf("model without a count: got %d, want 1", got)
+			}
+			closesPromptly(t, arriving)
+		})
+	}
+}
