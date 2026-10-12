@@ -238,9 +238,9 @@ func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value,
 			buf.target[0] = int32(token)
 			if decoderRun == nil || !predicted {
 				predicted = true
-				return t.predict(decoderInputs, buf.said, buf.state, buf.cell)
+				return t.predict(decoderInputs, buf.prediction, buf.state, buf.cell)
 			}
-			return t.predictRaw(decoderRun, buf.said, buf.state, buf.cell)
+			return t.predictRaw(decoderRun, buf.prediction, buf.state, buf.cell)
 		},
 		joint: func(encodedFrame, _ []float32) ([]float32, error) {
 			var err error
@@ -266,9 +266,7 @@ type encodedFrames struct {
 	width  int
 }
 
-// readFrames reads the frames out of the encoder's answer. The encoder says how
-// many of the frames it wrote carry the stretch; the rest are what the batch
-// was padded to.
+// readFrames reads the frames of the encoder's answer and how many carry the stretch.
 func readFrames(out map[string]*ort.Value) (encodedFrames, error) {
 	frames, ok := out[outputFrames]
 	if !ok {
@@ -315,12 +313,12 @@ func (f encodedFrames) copyFrame(at int, dst []float32) {
 // decodeBuffers are the buffers and tensors the predictor and the joiner read
 // and write while one stretch is decoded.
 type decodeBuffers struct {
-	target []int32
-	count  []int32
-	state  []float32
-	cell   []float32
-	said   []float32
-	frame  []float32
+	target     []int32
+	count      []int32
+	state      []float32
+	cell       []float32
+	prediction []float32
+	frame      []float32
 
 	targetTensor, countTensor, stateTensor, cellTensor, frameTensor, saidTensor *ort.Value
 }
@@ -328,12 +326,12 @@ type decodeBuffers struct {
 // newDecodeBuffers makes the buffers and the tensors over them.
 func newDecodeBuffers() (*decodeBuffers, error) {
 	b := &decodeBuffers{
-		target: []int32{0},
-		count:  []int32{1},
-		state:  make([]float32, layers*hidden),
-		cell:   make([]float32, layers*hidden),
-		said:   make([]float32, hidden),
-		frame:  make([]float32, encoded),
+		target:     []int32{0},
+		count:      []int32{1},
+		state:      make([]float32, layers*hidden),
+		cell:       make([]float32, layers*hidden),
+		prediction: make([]float32, hidden),
+		frame:      make([]float32, encoded),
 	}
 	for _, one := range []struct {
 		into   **ort.Value
@@ -344,7 +342,7 @@ func newDecodeBuffers() (*decodeBuffers, error) {
 		{&b.stateTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{layers, 1, hidden}, b.state) }},
 		{&b.cellTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{layers, 1, hidden}, b.cell) }},
 		{&b.frameTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, encoded, 1}, b.frame) }},
-		{&b.saidTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, hidden, 1}, b.said) }},
+		{&b.saidTensor, func() (*ort.Value, error) { return ort.NewTensor([]int64{1, hidden, 1}, b.prediction) }},
 	} {
 		tensor, err := one.create()
 		if err != nil {
@@ -367,14 +365,13 @@ func (b *decodeBuffers) destroy() {
 	}
 }
 
-// keepAlive holds the buffers until the runs over them are done: the library
-// keeps a pointer into each of them and nothing else does.
+// keepAlive holds the buffers until the runs over them are done.
 func (b *decodeBuffers) keepAlive() {
 	runtime.KeepAlive(b.target)
 	runtime.KeepAlive(b.count)
 	runtime.KeepAlive(b.state)
 	runtime.KeepAlive(b.cell)
-	runtime.KeepAlive(b.said)
+	runtime.KeepAlive(b.prediction)
 	runtime.KeepAlive(b.frame)
 }
 

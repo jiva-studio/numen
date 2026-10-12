@@ -179,8 +179,7 @@ func (p *speechPass) load(i int) {
 	copy(p.window, p.sound[i*speechWindow:min((i+1)*speechWindow, len(p.sound))])
 }
 
-// keepAlive holds the buffers until the runs over them are done: the runtime
-// keeps a pointer into each of them and nothing else does.
+// keepAlive holds the buffers until the runs over them are done.
 func (p *speechPass) keepAlive() {
 	runtime.KeepAlive(p.window)
 	runtime.KeepAlive(p.state)

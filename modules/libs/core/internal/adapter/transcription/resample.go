@@ -59,8 +59,7 @@ type resampleSpan struct {
 }
 
 // fill works out the output samples from start up to end, and stops early when
-// the context ends. An hour of sound is tens of millions of these, and a person
-// closing the window waits for whichever one it is on.
+// the context ends.
 func (s resampleSpan) fill(ctx context.Context, start, end int) {
 	for i := start; i < end; i++ {
 		if (i-start)%(1<<16) == 0 && ctx.Err() != nil {
