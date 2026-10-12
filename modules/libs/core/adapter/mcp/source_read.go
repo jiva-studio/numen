@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 func addSourceReadTools(server *sdk.Server, core Core) {
@@ -43,18 +45,19 @@ func listSources(ctx context.Context, core Core) (sourceListOutput, error) {
 	for _, one := range listed {
 		documents = append(documents, Source{Path: one.Path, ShouldRead: one.IsRead})
 	}
-	return sourceListOutput{Documents: documents, Recognition: getRecognitionBlocker(core.Sources.Recognise)}, nil
+	return sourceListOutput{Documents: documents, Recognition: getRecognitionBlocker(core.Sources.GetRecognitionStatus)}, nil
 }
 
 // getRecognitionBlocker returns the reason a scan cannot be recognised now, empty when none.
-func getRecognitionBlocker(r Recogniser) string {
-	if r == nil {
+func getRecognitionBlocker(getStatus *source.GetRecognitionStatus) string {
+	if getStatus == nil {
 		return ""
 	}
+	status := getStatus.Execute()
 	switch {
-	case r.IsRunning():
+	case status.IsRunning:
 		return "one document is being read now"
-	case !r.Ready():
+	case !status.IsReady:
 		return "what is needed to read scans is not here yet, and is fetched when one is asked for"
 	}
 	return ""

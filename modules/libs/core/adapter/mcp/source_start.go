@@ -43,25 +43,25 @@ func addSourceRecognise(server *sdk.Server, core Core) {
 			"while another is being read waits its turn and is never refused, so this " +
 			"is asked once and no more.",
 	}, newHandler(func(_ context.Context, in sourceStartInput) (sourceStartOutput, error) {
+		//nolint:contextcheck // a recognition runs under the application and goes on after the request that began it
 		return startRecognition(core, in)
 	}))
 }
 
 // startRecognition queues scan recognition and returns without waiting for it to finish.
 func startRecognition(core Core, in sourceStartInput) (sourceStartOutput, error) {
-	if core.Sources.Recognise == nil {
+	if core.Sources.StartRecognition == nil || core.Sources.GetRecognitionStatus == nil {
 		return sourceStartOutput{}, fmt.Errorf("this installation cannot read scans")
 	}
 	status := "started; it runs in the background, the pages it has read are searchable " +
 		"as it goes, and the window shows how far it has got"
-	switch core.Sources.Recognise.Start(core.getCurrentVault().Vault, in.Path) {
-	case port.Queued:
+	started := core.Sources.StartRecognition.Execute(core.getCurrentVault().Vault, in.Path)
+	switch {
+	case started == port.Queued:
 		status = "queued; another document is being read and this one is in line behind " +
 			"it — nothing more is needed, it begins when that recognition is over"
-	default:
-		if !core.Sources.Recognise.Ready() {
-			status = "started; what is needed to read scans is being fetched first, about 160 MB"
-		}
+	case !core.Sources.GetRecognitionStatus.Execute().IsReady:
+		status = "started; what is needed to read scans is being fetched first, about 160 MB"
 	}
 	return sourceStartOutput{IsStarted: true, Status: status}, nil
 }
@@ -82,25 +82,25 @@ func addSourceTranscribe(server *sdk.Server, core Core) {
 			"installation does on its own, and waits behind nothing but the recordings " +
 			"asked for before it, so this is asked once and no more.",
 	}, newHandler(func(_ context.Context, in sourceTranscribeInput) (sourceStartOutput, error) {
+		//nolint:contextcheck // a transcription runs under the application and goes on after the request that began it
 		return startTranscription(core, in)
 	}))
 }
 
 // startTranscription queues transcription and returns without waiting for it to finish.
 func startTranscription(core Core, in sourceTranscribeInput) (sourceStartOutput, error) {
-	if core.Sources.Transcribe == nil {
+	if core.Sources.StartTranscription == nil || core.Sources.GetTranscriptionReadiness == nil {
 		return sourceStartOutput{}, fmt.Errorf("this installation cannot hear recordings")
 	}
 	status := "started; it runs in the background, and what has been transcribed is " +
 		"searchable as it goes"
-	switch core.Sources.Transcribe.Start(core.getCurrentVault().Vault, in.Path) {
-	case port.Queued:
+	started := core.Sources.StartTranscription.Execute(core.getCurrentVault().Vault, in.Path)
+	switch {
+	case started == port.Queued:
 		status = "queued; another recording is being transcribed and this one is in line " +
 			"behind it — nothing more is needed, it begins when that one is over"
-	default:
-		if !core.Sources.Transcribe.Ready() {
-			status = "started; what is needed to transcribe recordings is being fetched first"
-		}
+	case !core.Sources.GetTranscriptionReadiness.Execute():
+		status = "started; what is needed to transcribe recordings is being fetched first"
 	}
 	return sourceStartOutput{IsStarted: true, Status: status}, nil
 }
