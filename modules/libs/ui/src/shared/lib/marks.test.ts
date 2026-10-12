@@ -46,9 +46,15 @@ describe('a wikilink in markdown', () => {
     expect(md.renderInline('[[a [[b]]')).toBe('[[a <a href="name://b">b</a>')
   })
 
-  it('is one link inside the text of another', () => {
-    expect(md.renderInline('[x [[b]] y](https://example.com)')).toBe(
-      '<a href="https://example.com">x <a href="name://b">b</a> y</a>',
-    )
+  it('pushes no token while only being skipped over', () => {
+    const plain = new MarkdownIt()
+    const known = new Set(plain.inline.ruler.getRules(''))
+    const rule = md.inline.ruler.getRules('').find((each) => !known.has(each))
+    const src = '[[Entropy]]'
+    const state = new md.inline.State(src, md, {}, [])
+
+    expect(rule?.(state, true)).toBe(true)
+    expect(state.tokens).toHaveLength(0)
+    expect(state.pos).toBe(src.length)
   })
 })
