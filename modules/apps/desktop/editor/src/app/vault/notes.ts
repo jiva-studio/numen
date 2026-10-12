@@ -14,7 +14,7 @@ import {
   run,
   writes,
 } from './words'
-import { errorIn, staleIn } from '@/shared/answers'
+import { findErrorCode, isStaleAnswer } from '@/shared/answers'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
 
@@ -58,16 +58,16 @@ export const notesCore: NoteOperations = {
       path: note.folder,
       links: note.links.map(mapLink),
     })
-    const error = errorIn(answer)
+    const error = findErrorCode(answer)
     return error ? asFailure(error) : asValue({ path: answer.path })
   },
-  join: async (path, link) => errorIn(await notes.writeLink({ path, link: mapLink(link) })),
+  join: async (path, link) => findErrorCode(await notes.writeLink({ path, link: mapLink(link) })),
   removeLink: async (path, to, role) =>
-    errorIn(await notes.removeLink({ path, to, ...(role ? { role: roles[role] } : {}) })),
+    findErrorCode(await notes.removeLink({ path, to, ...(role ? { role: roles[role] } : {}) })),
   rename: async (path, title) => {
     const answer = await notes.renameNote({ path, title })
-    if (staleIn(answer)) return asFailure('changed')
-    const error = errorIn(answer)
+    if (isStaleAnswer(answer)) return asFailure('changed')
+    const error = findErrorCode(answer)
     if (error) return asFailure(error)
     return asValue({
       path: answer.path,

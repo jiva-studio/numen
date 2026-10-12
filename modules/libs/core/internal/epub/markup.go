@@ -59,7 +59,7 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 
 	x := newExtractor()
 	x.markup = newBuilder(path.Dir(docPath))
-	read := x.document(docPath, raw)
+	read := x.readDocument(docPath, raw)
 	nodes := x.markup.finish(string(x.out), read.Length)
 
 	// A spine document the manifest calls an SVG is a cover drawn around a
@@ -95,9 +95,9 @@ func (b *Book) findSVGImage(base string, raw []byte) (string, bool) {
 			if a.Name.Local != "href" {
 				continue
 			}
-			switch at := picture(base, a.Value); {
+			switch at := resolveImageSource(base, a.Value); {
 			case at == "":
-			case inlineImage(at), b.files[at] != nil:
+			case isInlineImage(at), b.files[at] != nil:
 				return at, true
 			}
 		}
@@ -131,7 +131,7 @@ func (b *builder) openElement(n *html.Node, offset int) bool {
 	if !drawn[n.DataAtom] {
 		return false
 	}
-	opening := Node{Name: n.Data, Offset: offset, Attributes: b.attributes(n)}
+	opening := Node{Name: n.Data, Offset: offset, Attributes: b.convertAttributes(n)}
 	if cells[opening.Name] && len(b.waiting) > 0 {
 		opening.Children, opening.Offset = b.waiting, b.waiting[0].Offset
 		b.waiting = nil
@@ -163,7 +163,7 @@ func (b *builder) run(offset int) {
 		return
 	}
 	top := &b.stack[len(b.stack)-1]
-	switch cell := lastCell(top); {
+	switch cell := findLastCell(top); {
 	case cell != nil:
 		cell.Children = append(cell.Children, Node{Offset: offset})
 	case tabular[top.Name]:
@@ -173,9 +173,9 @@ func (b *builder) run(offset int) {
 	}
 }
 
-// lastCell is the last cell opened under an element, and nil where the element
-// is no part of a table or holds no cell yet.
-func lastCell(in *Node) *Node {
+// findLastCell returns the last cell opened under an element, and nil where the
+// element is no part of a table or holds no cell yet.
+func findLastCell(in *Node) *Node {
 	for tabular[in.Name] && len(in.Children) > 0 {
 		last := &in.Children[len(in.Children)-1]
 		if cells[last.Name] {
@@ -207,7 +207,7 @@ func (b *builder) appendChild(n Node) {
 // said once and in one place.
 func (b *builder) finish(text string, end int) []Node {
 	nodes := b.stack[0].Children
-	found := nodesIn(nodes, nil)
+	found := collectNodes(nodes, nil)
 
 	// The line a block ends takes back the space before it, and an element
 	// standing on that space stands where the line ends instead.
@@ -234,11 +234,11 @@ func (b *builder) finish(text string, end int) []Node {
 	return nodes
 }
 
-// nodesIn are the nodes of a finished document, in reading order.
-func nodesIn(nodes []Node, into []*Node) []*Node {
+// collectNodes appends the nodes of a finished document to the list, in reading order.
+func collectNodes(nodes []Node, into []*Node) []*Node {
 	for i := range nodes {
 		into = append(into, &nodes[i])
-		into = nodesIn(nodes[i].Children, into)
+		into = collectNodes(nodes[i].Children, into)
 	}
 	return into
 }
@@ -251,9 +251,9 @@ func shift(nodes []Node, by int) {
 	}
 }
 
-// attributes are the attributes of an element that survive. A book's own styling
-// is not among them: how a book looks belongs to the window it is read in.
-func (b *builder) attributes(n *html.Node) []Attribute {
+// convertAttributes returns the attributes of an element that survive, with href
+// and src resolved. A book's own styling is not among them.
+func (b *builder) convertAttributes(n *html.Node) []Attribute {
 	var out []Attribute
 	for _, a := range n.Attr {
 		name := strings.ToLower(a.Key)
@@ -263,11 +263,11 @@ func (b *builder) attributes(n *html.Node) []Attribute {
 		value := a.Val
 		switch name {
 		case "href":
-			if value = address(b.base, value); value == "" {
+			if value = resolveLinkAddress(b.base, value); value == "" {
 				continue
 			}
 		case "src":
-			if value = picture(b.base, value); value == "" {
+			if value = resolveImageSource(b.base, value); value == "" {
 				continue
 			}
 		}
@@ -276,16 +276,16 @@ func (b *builder) attributes(n *html.Node) []Attribute {
 	return out
 }
 
-// address is where a link points: inside the book, the archive entry it names
-// and the place in it; outward, an address in one of the few schemes a person
-// may be sent to. Anything else leads nowhere and the attribute goes.
+// resolveLinkAddress resolves a link to the archive entry it names and the place
+// in it, or to an address in one of the reachable schemes. Anything else
+// resolves to empty and the attribute goes.
 //
 // An href naming no document names a place in the document being read, and
 // crosses as the fragment it is.
-func address(base, url string) string {
-	if named := scheme(bare(url)); named != "" {
+func resolveLinkAddress(base, url string) string {
+	if named := parseScheme(removeSpacesAndControls(url)); named != "" {
 		if reachable[named] {
-			return bare(url)
+			return removeSpacesAndControls(url)
 		}
 		return ""
 	}
@@ -295,19 +295,17 @@ func address(base, url string) string {
 		}
 		return "#" + fragment
 	}
-	return hrefIn(base, url)
+	return resolveHref(base, url)
 }
 
-// picture is what an img draws: a file the book carries, or the bytes written
-// into the markup itself. An address off the machine is a request made the
-// moment the book is opened, which tells whoever wrote the book that it was
-// read, and from where.
-func picture(base, url string) string {
-	if scheme(bare(url)) == "" {
-		return hrefIn(base, url)
+// resolveImageSource resolves an img source to a file the book carries or to an
+// inline base64 image. An address off the machine resolves to empty.
+func resolveImageSource(base, url string) string {
+	if parseScheme(removeSpacesAndControls(url)) == "" {
+		return resolveHref(base, url)
 	}
-	if inlineImage(bare(url)) {
-		return bare(url)
+	if isInlineImage(removeSpacesAndControls(url)) {
+		return removeSpacesAndControls(url)
 	}
 	return ""
 }
@@ -320,15 +318,15 @@ var reachable = map[string]bool{
 	"tel":    true,
 }
 
-// inlineImage is whether an address is a picture written into the markup itself.
-func inlineImage(url string) bool {
+// isInlineImage reports whether an address is a base64 image written into the markup.
+func isInlineImage(url string) bool {
 	head, _, written := strings.Cut(strings.ToLower(url), ",")
 	return written && strings.HasPrefix(head, "data:image/") && strings.HasSuffix(head, ";base64")
 }
 
-// bare is an address with the spaces and control characters a scheme can be
-// hidden behind taken out. A browser reads one out of them all the same.
-func bare(url string) string {
+// removeSpacesAndControls returns an address with its spaces and control
+// characters removed.
+func removeSpacesAndControls(url string) string {
 	return strings.Map(func(r rune) rune {
 		if r <= ' ' {
 			// gomutants:disable-next-line INTEGER_INCREMENT reason="strings.Map drops a rune for any negative result, -2 included"
@@ -338,8 +336,8 @@ func bare(url string) string {
 	}, url)
 }
 
-// scheme is the scheme a URL names, and empty for one that names none.
-func scheme(url string) string {
+// parseScheme returns the scheme a URL names, and empty when it names none.
+func parseScheme(url string) string {
 	for i := 0; i < len(url); i++ {
 		c := url[i]
 		switch {

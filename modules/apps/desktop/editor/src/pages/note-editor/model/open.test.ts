@@ -26,7 +26,7 @@ type Keyboard = ReturnType<typeof createNoteKeyboard>
 type Titles = ReturnType<typeof createNoteTitles>
 
 /** A tab for the note `id`, standing at `Deep/Heat.md`, and everything it was asked to do. */
-const tabFor = (options: { isClosing?: boolean; landed?: Map<string, string> } = {}) => {
+const createTab = (options: { isClosing?: boolean; landed?: Map<string, string> } = {}) => {
   const isClosing = options.isClosing ?? true
   const calls: string[] = []
   const notes = {
@@ -110,26 +110,26 @@ const tabFor = (options: { isClosing?: boolean; landed?: Map<string, string> } =
 
 describe('a note tab', () => {
   it('shows the note it stands for', () => {
-    const { tab } = tabFor()
+    const { tab } = createTab()
 
     expect(tab.id).toBe('Heat.md')
     expect(tab.note.value).toMatchObject({ id: 'Heat.md', path: 'Deep/Heat.md' })
   })
 
   it('shows the error its note ran into', () => {
-    const { tab } = tabFor()
+    const { tab } = createTab()
 
     expect(tab.errorMessage.value).toBe('error of Heat.md')
   })
 
   it('shows the change decided for the file its note stands at', () => {
-    const { tab } = tabFor()
+    const { tab } = createTab()
 
     expect(tab.change.value).toStrictEqual({ path: 'Deep/Heat.md' })
   })
 
   it('writes what is typed into its own note', () => {
-    const { tab, calls } = tabFor()
+    const { tab, calls } = createTab()
 
     tab.updateBody('Some words')
 
@@ -137,7 +137,7 @@ describe('a note tab', () => {
   })
 
   it('saves, keeps and takes for its own note', () => {
-    const { tab, calls } = tabFor()
+    const { tab, calls } = createTab()
 
     tab.save()
     tab.keepMine()
@@ -147,7 +147,7 @@ describe('a note tab', () => {
   })
 
   it('hands its editor to the keyboard under its own note', () => {
-    const { tab, calls } = tabFor()
+    const { tab, calls } = createTab()
 
     tab.setEditor('the editor')
 
@@ -155,7 +155,7 @@ describe('a note tab', () => {
   })
 
   it('has the keyboard measure its own note', () => {
-    const { tab, calls } = tabFor()
+    const { tab, calls } = createTab()
 
     tab.measure()
 
@@ -165,7 +165,7 @@ describe('a note tab', () => {
 
 describe('the links a note tab completes', () => {
   it('are written from the file its note stands at', () => {
-    const { tab } = tabFor()
+    const { tab } = createTab()
 
     const [, getCurrentPath] = vi.mocked(createNoteWikilinkExtension).mock.lastCall ?? []
 
@@ -176,7 +176,7 @@ describe('the links a note tab completes', () => {
 
 describe('a note tab being closed', () => {
   it('lets go of the focus owed, the change, the note, the name, and then the tab', async () => {
-    const { tab, calls } = tabFor()
+    const { tab, calls } = createTab()
 
     tab.close('tab-1')
     await vi.waitFor(() => expect(calls).toContain('closeTab:tab-1'))
@@ -191,7 +191,7 @@ describe('a note tab being closed', () => {
   })
 
   it('stays, with its name, when the note refuses to close', async () => {
-    const { tab, calls } = tabFor({ isClosing: false })
+    const { tab, calls } = createTab({ isClosing: false })
 
     tab.close('tab-1')
     await vi.waitFor(() => expect(calls).toContain('close:Heat.md'))
@@ -204,7 +204,9 @@ describe('a note tab being closed', () => {
 
 describe('a link followed from a note tab', () => {
   it('opens the note it resolves to beside the tab, under no title of its own', async () => {
-    const { tab, opened } = tabFor({ landed: new Map([['name://Entropy', 'physics/Entropy.md']]) })
+    const { tab, opened } = createTab({
+      landed: new Map([['name://Entropy', 'physics/Entropy.md']]),
+    })
 
     tab.followLink('name://Entropy')
 
@@ -212,7 +214,7 @@ describe('a link followed from a note tab', () => {
   })
 
   it('asks the vault from the file of its own note', async () => {
-    const { tab, calls } = tabFor()
+    const { tab, calls } = createTab()
 
     tab.followLink('note://Entropy')
 
@@ -220,7 +222,7 @@ describe('a link followed from a note tab', () => {
   })
 
   it('opens nothing where the address leads to no note', async () => {
-    const { tab, calls, opened } = tabFor()
+    const { tab, calls, opened } = createTab()
 
     tab.followLink('name://Nowhere')
     await vi.waitFor(() => expect(calls).toHaveLength(1))
@@ -230,7 +232,7 @@ describe('a link followed from a note tab', () => {
   })
 
   it('does not ask for an address that is not a note', async () => {
-    const { tab, calls } = tabFor()
+    const { tab, calls } = createTab()
 
     tab.followLink('https://example.com')
     await new Promise((done) => setTimeout(done, 0))

@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 
-import { createAgentPort } from './agent'
+import { createCardAgentPort } from './agent'
 import type { CardFace } from '@/entities/card'
 
 const { askAgent, finishConversation } = vi.hoisted(() => ({
@@ -34,7 +34,7 @@ describe('the agent a card is asked about', () => {
   it('sends the mark and the face of the card beside the question, and reads the answer', async () => {
     const signal = new AbortController().signal
     const steps = []
-    for await (const step of createAgentPort(card).ask(
+    for await (const step of createCardAgentPort(card).ask(
       'why is it called that',
       'decks/Words.md',
       'card-0',
@@ -57,7 +57,7 @@ describe('the agent a card is asked about', () => {
   })
 
   it('ends the conversation under the name it was held by', async () => {
-    await createAgentPort(card).finish('card-0')
+    await createCardAgentPort(card).finish('card-0')
     expect(finishConversation).toHaveBeenCalledWith({ conversation: 'card-0' })
   })
 })

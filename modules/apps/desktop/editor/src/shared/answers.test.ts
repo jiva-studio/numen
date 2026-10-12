@@ -11,11 +11,11 @@ import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import {
   getAssetUrl,
   ERROR_CODE,
-  errorIn,
+  findErrorCode,
   parseFingerprint,
   getBytesQuery,
   retryWhileBusy,
-  staleIn,
+  isStaleAnswer,
   formatFingerprint,
 } from './answers'
 
@@ -50,23 +50,23 @@ describe('what an error is called', () => {
   })
 
   it('reads a file that moved past the caller off the answer that says so', () => {
-    expect(staleIn({ error: ProtoErrorCode.STALE })).toBe(true)
-    expect(staleIn({ error: ProtoErrorCode.MISSING })).toBe(false)
-    expect(staleIn({})).toBe(false)
+    expect(isStaleAnswer({ error: ProtoErrorCode.STALE })).toBe(true)
+    expect(isStaleAnswer({ error: ProtoErrorCode.MISSING })).toBe(false)
+    expect(isStaleAnswer({})).toBe(false)
   })
 
   it('reads an error off an answer that carries one', () => {
-    expect(errorIn({ error: ProtoErrorCode.MISSING })).toBe('missing')
-    expect(errorIn({ error: ProtoErrorCode.TOO_LARGE })).toBe('tooLarge')
+    expect(findErrorCode({ error: ProtoErrorCode.MISSING })).toBe('missing')
+    expect(findErrorCode({ error: ProtoErrorCode.TOO_LARGE })).toBe('tooLarge')
   })
 
   it('says nothing about an answer with no error', () => {
-    expect(errorIn({})).toBeNull()
-    expect(errorIn({ error: undefined })).toBeNull()
+    expect(findErrorCode({})).toBeNull()
+    expect(findErrorCode({ error: undefined })).toBeNull()
   })
 
   it('calls an error it has no word of its own for unreadable', () => {
-    expect(errorIn({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
+    expect(findErrorCode({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
   })
 })
 

@@ -2,7 +2,7 @@
  * The name a row is given, as the path the file is filed under from now on.
  */
 import { getFolderPath, ROOT } from './useFileTree'
-import { fileOf } from '@/shared/paths'
+import { getFileName } from '@/shared/paths'
 
 /**
  * Where a name's ending begins, and nowhere for a name carrying none.
@@ -28,8 +28,8 @@ export const resolveRenamePath = (path: string, name: string, isFolder = false):
   if (!typed || typed.includes('/')) return ''
 
   const hasExtension = findExtensionStart(typed) >= 0
-  const targetName = isFolder || hasExtension ? typed : `${typed}${getExtension(fileOf(path))}`
-  if (targetName === fileOf(path)) return ''
+  const targetName = isFolder || hasExtension ? typed : `${typed}${getExtension(getFileName(path))}`
+  if (targetName === getFileName(path)) return ''
 
   const under = getFolderPath(path)
   return under === ROOT ? targetName : `${under}/${targetName}`

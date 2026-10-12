@@ -1,5 +1,5 @@
 /** The tabs a window keeps: what kinds there are, what opens one, and what each is called. */
-export { iconOfKind } from './lib/icons'
+export { findTabKindIcon } from './lib/icons'
 export { createFileCreators } from './model/makers'
 export { fileOpeners } from './model/openers'
 export type { EditorKind, FileOpeners, SourceReader } from './model/openers'
