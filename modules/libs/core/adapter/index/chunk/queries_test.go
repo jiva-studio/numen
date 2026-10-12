@@ -371,7 +371,7 @@ func searchFixture(t *testing.T) *index.DB {
 	db := openIndex(t)
 	source{
 		path: "lib/zebra.epub", kind: "book", producer: "ocr", hash: "h-zebra", location: "chapter 4",
-		large: "umbrella zebra stripes at dawn", smalls: []string{"zebra", "stripes at dawn and padding words around them"},
+		large: "umbrella zebra stripes at dawn", smalls: []string{"zebra", "zebra stripes at dawn and padding words around them"},
 	}.save(t, db)
 	source{
 		path: "notes/zebra.md", kind: "note",
@@ -391,8 +391,8 @@ func TestASearchByWordsAnswersWithWhereEachHitStands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 2 {
-		t.Fatalf("got %d hits, want the large chunk and the small one", len(got))
+	if len(got) != 1 {
+		t.Fatalf("got %d hits, want the one small chunk", len(got))
 	}
 	for _, p := range got {
 		if p.Source != "lib/zebra.epub" || p.Kind != domain.KindBook || p.Producer != "ocr" ||
@@ -404,10 +404,8 @@ func TestASearchByWordsAnswersWithWhereEachHitStands(t *testing.T) {
 			t.Errorf("a hit is named %q: %d, %v", p.ChunkID, row, err)
 		}
 	}
-	hitAt := []int{got[0].HitAt, got[1].HitAt}
-	slices.Sort(hitAt)
-	if !slices.Equal(hitAt, []int{0, 50}) {
-		t.Errorf("the hits begin at %v inside the passage, want the large chunk's own 0 and the small chunk's 50", hitAt)
+	if got[0].HitAt != 50 {
+		t.Errorf("the hit begins at %d inside the passage, want the small chunk's 50", got[0].HitAt)
 	}
 }
 
@@ -420,20 +418,20 @@ func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 		t.Fatal(err)
 	}
 	sources := getSources(all)
-	if len(all) != 5 || slices.Contains(sources, "lib/other.epub") {
-		t.Errorf("a search of every kind answered %v, want the 3 chunks of the book and 2 of the note, none of the other vault", sources)
+	if len(all) != 3 || slices.Contains(sources, "lib/other.epub") {
+		t.Errorf("a search of every kind answered %v, want the 2 chunks of the book and the note, none of the other vault", sources)
 	}
 
 	notes, err := queries.FindLexical(t.Context(), vaultA, "zebra", []domain.SourceKind{domain.KindNote}, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(notes) != 2 || slices.ContainsFunc(notes, func(p domain.Passage) bool { return p.Kind != domain.KindNote }) {
+	if len(notes) != 1 || notes[0].Kind != domain.KindNote {
 		t.Errorf("a search of notes answered %v", getSources(notes))
 	}
 
 	both, err := queries.FindLexical(t.Context(), vaultA, "zebra", []domain.SourceKind{domain.KindNote, domain.KindBook}, 10, false)
-	if err != nil || len(both) != 5 {
+	if err != nil || len(both) != 3 {
 		t.Errorf("a search of two kinds answered %d, %v", len(both), err)
 	}
 }
@@ -451,12 +449,12 @@ func TestASearchByWordsKeepsNoMoreThanItIsAskedFor(t *testing.T) {
 
 func TestASearchByWordsAnswersBestFirst(t *testing.T) {
 	db := searchFixture(t)
-	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, "stripes", nil, 10, false)
+	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, "zebra", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) < 2 || got[0].HitAt != 0 {
-		t.Errorf("the large chunk repeats the word in fewer words around it and comes first: %+v", got)
+	if len(got) != 3 || got[0].Source != "lib/zebra.epub" || got[0].HitAt != 0 || got[2].HitAt != 50 {
+		t.Errorf("the shortest text with the word comes first and the longest last: %+v", got)
 	}
 }
 
@@ -710,7 +708,7 @@ func TestASearchByMeaningStaysInItsKindsRecipeAndVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(notes) != 2 || slices.ContainsFunc(notes, func(p domain.Passage) bool { return p.Kind != domain.KindNote }) {
+	if len(notes) != 1 || notes[0].Kind != domain.KindNote {
 		t.Errorf("a search of notes answered %v", getSources(notes))
 	}
 	other, err := queries.FindNearest(t.Context(), vaultA, "another model", seedVector(0xF0), nil, 10, -1)
@@ -1190,7 +1188,7 @@ func TestRecognisedSourcesAreTheOnesAProducerMadeTheTextOf(t *testing.T) {
 	want := []chunk.SourceText{
 		{Path: "lib/a.pdf", Producer: "asr", Hash: "h-a"},
 		{Path: "lib/b.pdf", Producer: "ocr", Hash: "h-b"},
-		{Path: "lib/c.pdf", Producer: "ocr"},
+		{Path: "lib/c.pdf", Producer: "ocr", Hash: "hash-lib/c.pdf"},
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
