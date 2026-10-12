@@ -43,3 +43,49 @@ func TestTheCodexModelsAreReadFromItsCache(t *testing.T) {
 	}
 	checkWrites(t, models, []string{"codex", "model"})
 }
+
+// With no home folder to look in, the Codex models are the ones the adapter
+// offers itself, whatever cache the current folder holds.
+func TestNoHomeFolderLeavesTheDefaultCodexModels(t *testing.T) {
+	t.Setenv("HOME", "")
+	t.Setenv("USERPROFILE", "")
+	if _, err := os.UserHomeDir(); err == nil {
+		t.Skip("this platform finds a home without any environment")
+	}
+	here := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(here, ".codex"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cache := `{"models":[{"slug":"local-only","display_name":"Local","visibility":"list"}]}`
+	if err := os.WriteFile(filepath.Join(here, ".codex", "models_cache.json"), []byte(cache), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(here)
+
+	held := agent.Defaults()
+	held.Use = agent.UseCodex
+	if got := getNames(agent.GetModels(held)); !slices.Contains(got, "gpt-5.6-terra") || slices.Contains(got, "local-only") {
+		t.Errorf("listed %q", got)
+	}
+}
+
+// A cache whose fields are of the wrong type is no cache: the models are the
+// ones the adapter offers itself.
+func TestACodexCacheOfTheWrongShapeLeavesTheDefaultModels(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	if err := os.MkdirAll(filepath.Join(home, ".codex"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cache := `{"models":[{"slug":"alpha","display_name":"Alpha","visibility":"list","priority":"first"}]}`
+	if err := os.WriteFile(filepath.Join(home, ".codex", "models_cache.json"), []byte(cache), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	held := agent.Defaults()
+	held.Use = agent.UseCodex
+	if got := getNames(agent.GetModels(held)); !slices.Contains(got, "gpt-5.6-terra") || slices.Contains(got, "alpha") {
+		t.Errorf("listed %q", got)
+	}
+}
