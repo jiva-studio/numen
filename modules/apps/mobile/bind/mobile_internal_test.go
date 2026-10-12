@@ -15,9 +15,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
 // startIn starts the core under dir and stops it when the test ends. The
@@ -441,5 +444,256 @@ func checkNoIndexOpened(t *testing.T, dir string) {
 	t.Helper()
 	if _, err := os.Stat(filepath.Join(dir, "index.db")); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("a start that failed before the index was opened left it behind: %v", err)
+	}
+}
+
+func TestStartAnswersTheErrorOfANoteItCannotSeedAndLeavesNothingStanding(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("a superuser writes into any folder")
+	}
+	keepEnvironment(t)
+	dir := t.TempDir()
+	root := filepath.Join(dir, "vault")
+	if err := os.Mkdir(root, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(root, 0o700) })
+	port, err := Start(dir)
+	if err == nil || !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "seeding ") || port != 0 {
+		_ = Stop()
+		t.Fatalf("Start answered %d, %v for a vault folder it cannot write into, want 0 and the error of seeding", port, err)
+	}
+	checkNoIndexOpened(t, dir)
+	if Port() != 0 {
+		t.Errorf("a start that failed listens on %d", Port())
+	}
+}
+
+// feedVaultList stands a pipe in place of the vault list. Every read of it is
+// answered with the list as it was while the index is not yet there, and with
+// text that is no JSON once it is.
+func feedVaultList(t *testing.T, dir string, list []byte) {
+	t.Helper()
+	path := filepath.Join(dir, "vaults.json")
+	index := filepath.Join(dir, "index.db")
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := syscall.Mkfifo(path, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			default:
+			}
+			pipe, err := os.OpenFile(path, os.O_WRONLY, 0)
+			if err != nil {
+				return
+			}
+			body := list
+			if _, err := os.Stat(index); err == nil {
+				body = []byte("{not json")
+			}
+			_, _ = pipe.Write(body)
+			_ = pipe.Close()
+		}
+	}()
+	t.Cleanup(func() {
+		close(done)
+		if release, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NONBLOCK, 0); err == nil {
+			_ = release.Close()
+		}
+	})
+}
+
+func TestStartAnswersTheErrorOfAVaultListThatCannotBeReadOnceTheIndexIsOpen(t *testing.T) {
+	dir := t.TempDir()
+	startIn(t, dir)
+	if err := Stop(); err != nil {
+		t.Fatalf("Stop() = %v", err)
+	}
+	list, err := os.ReadFile(filepath.Join(dir, "vaults.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	indexes, err := filepath.Glob(filepath.Join(dir, "index.db*"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range indexes {
+		if err := os.Remove(name); err != nil {
+			t.Fatal(err)
+		}
+	}
+	feedVaultList(t, dir, list)
+
+	port, err := Start(dir)
+	var failed *json.SyntaxError
+	if !errors.As(err, &failed) || port != 0 {
+		_ = Stop()
+		t.Fatalf("Start answered %d, %v for a vault list that stopped being JSON, want 0 and the error of reading it", port, err)
+	}
+	if Port() != 0 {
+		t.Errorf("a start that failed listens on %d", Port())
+	}
+}
+
+func countOpenFiles(t *testing.T) int {
+	t.Helper()
+	held, err := os.ReadDir("/dev/fd")
+	if err != nil {
+		t.Skipf("the open files cannot be counted: %v", err)
+	}
+	return len(held)
+}
+
+func TestStartAnswersTheErrorOfAMachineThatGivesNoSocketAndLeavesNothingStanding(t *testing.T) {
+	keepEnvironment(t)
+	var before syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &before); err != nil {
+		t.Skipf("the open files limit cannot be read: %v", err)
+	}
+	restore := func() { _ = syscall.Setrlimit(syscall.RLIMIT_NOFILE, &before) }
+	t.Cleanup(restore)
+	for extra := 0; extra < 200; extra++ {
+		dir := t.TempDir()
+		limit := before
+		limit.Cur = uint64(countOpenFiles(t) + extra)
+		if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &limit); err != nil {
+			t.Skipf("the open files limit cannot be lowered: %v", err)
+		}
+		port, err := Start(dir)
+		restore()
+		if err == nil {
+			_ = Stop()
+			t.Fatalf("Start answered %d with %d files to spare, and was never refused a socket", port, extra)
+		}
+		var failed *net.OpError
+		if !errors.As(err, &failed) || failed.Op != "listen" {
+			continue
+		}
+		if !errors.Is(err, syscall.EMFILE) || port != 0 {
+			t.Fatalf("Start answered %d, %v, want 0 and the error of listening", port, err)
+		}
+		if Port() != 0 {
+			t.Errorf("a start that failed listens on %d", Port())
+		}
+		return
+	}
+	t.Fatal("no limit on open files left Start refused at the socket alone")
+}
+
+func TestStopCancelsWhatTheCoreRunsUnder(t *testing.T) {
+	startIn(t, t.TempDir())
+	mu.Lock()
+	cancel := running.stop
+	cancelled := false
+	running.stop = func() {
+		cancelled = true
+		cancel()
+	}
+	mu.Unlock()
+	if err := Stop(); err != nil {
+		t.Fatalf("Stop() = %v", err)
+	}
+	if !cancelled {
+		t.Error("stopping left what the core runs under standing")
+	}
+}
+
+// refusingListener is a listener that reports its close as failed, once the
+// server using it is accepting on it.
+type refusingListener struct {
+	net.Listener
+	err      error
+	accepted chan struct{}
+	once     *sync.Once
+}
+
+func (l refusingListener) Accept() (net.Conn, error) {
+	l.once.Do(func() { close(l.accepted) })
+	return l.Listener.Accept()
+}
+
+func (l refusingListener) Close() error {
+	_ = l.Listener.Close()
+	return l.err
+}
+
+func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
+	startIn(t, t.TempDir())
+	inner, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	refusal := errors.New("the listener will not close")
+	accepted := make(chan struct{})
+	stubborn := &http.Server{}
+	go func() { _ = stubborn.Serve(refusingListener{inner, refusal, accepted, &sync.Once{}}) }()
+	<-accepted
+
+	mu.Lock()
+	live := running.server
+	running.server = stubborn
+	mu.Unlock()
+	t.Cleanup(func() { _ = live.Close() })
+
+	if err := Stop(); !errors.Is(err, refusal) {
+		t.Errorf("Stop() = %v, want the error of closing the server", err)
+	}
+	if Port() != 0 {
+		t.Errorf("a core that was stopped listens on %d", Port())
+	}
+}
+
+func TestRegisterVaultFilesAVaultReachedByALinkOnceWhicheverWayItIsAskedFor(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target")
+	if err := os.Mkdir(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "link")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	cfg := makeConfig(dir, io.Discard)
+	first, err := registerVault(cfg, link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := registerVault(cfg, link)
+	if err != nil {
+		t.Fatalf("registering the same link again: %v", err)
+	}
+	if second != first {
+		t.Errorf("registering the same link again filed it under %q, want %q", second, first)
+	}
+}
+
+func TestRegisterVaultAnswersTheErrorOfAListItCannotReadBeforeItLooksAtTheFolder(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "vaults.json"), []byte("{not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	filed, err := registerVault(makeConfig(dir, io.Discard), filepath.Join(dir, "missing"))
+	var failed *json.SyntaxError
+	if !errors.As(err, &failed) || filed != "" {
+		t.Errorf("registerVault answered %q, %v for a list that is not JSON, want no path and the error of reading it", filed, err)
+	}
+}
+
+func TestRegisterVaultAnswersTheErrorOfAMachineWithNoPlaceForTheList(t *testing.T) {
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	filed, err := registerVault(container.Config{}, t.TempDir())
+	if err == nil || filed != "" {
+		t.Errorf("registerVault answered %q, %v for a machine with no configuration folder, want no path and an error", filed, err)
 	}
 }
