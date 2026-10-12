@@ -3,6 +3,7 @@ package vault_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -227,5 +228,40 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 
 	if counted.opened == 0 {
 		t.Error("the vectors were not tried after the books were read whole")
+	}
+}
+
+// unreadable is a set of readers that open no vault, with the error they were
+// given.
+type unreadable struct{ err error }
+
+func (u unreadable) Open(domain.Vault) (port.VaultReader, error) { return nil, u.err }
+
+// One source is cut again from its text, and a source that cannot be cut is an
+// error naming it and carrying what stopped it.
+func TestOneSourceIsCutAgain(t *testing.T) {
+	isolateHome(t)
+	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	db := openIndex(t)
+	making := newWholeVaultRead(readers, db)
+	if _, err := making.Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+	if err := making.CutOne(t.Context(), v, "library/A Book.epub"); err != nil {
+		t.Errorf("a source that can be cut was refused: %v", err)
+	}
+
+	stopped := errors.New("the vault cannot be read")
+	cutting := vaults.NewReadWholeVault(
+		scanner(readers, db),
+		source.NewExtract(unreadable{err: stopped}, db.Sources(), db.SourcesKnown()),
+		source.NewEmbed(readers, db.VectorsOwing(), db.Vectors()),
+	)
+	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
+	if !errors.Is(err, stopped) {
+		t.Fatalf("got %v", err)
+	}
+	if !strings.Contains(err.Error(), "library/A Book.epub") {
+		t.Errorf("the source is not named in %v", err)
 	}
 }

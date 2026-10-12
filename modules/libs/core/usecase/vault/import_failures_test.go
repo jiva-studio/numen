@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -39,9 +40,13 @@ type flawed struct {
 	listFails map[string]error
 	openFails map[string]error
 	onList    func()
+	neither   map[string]bool
 }
 
 func (f flawed) Stat(ctx context.Context, handle string) (port.ImportedFile, error) {
+	if f.neither[handle] {
+		return port.ImportedFile{Name: f.names[handle], Handle: handle}, nil
+	}
 	if err := f.statFails[handle]; err != nil {
 		return port.ImportedFile{}, err
 	}
@@ -261,5 +266,77 @@ func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 	}
 	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Kelvin.md" || !errors.Is(brought.Errors[0].Why, gone) {
 		t.Errorf("what stayed outside: %+v", brought.Errors)
+	}
+}
+
+// ignoringContext is a set of writers that finish a copy whatever the context
+// says.
+type ignoringContext struct{ port.VaultWriters }
+
+func (i ignoringContext) Open(v domain.Vault) (port.VaultWriter, error) {
+	w, err := i.VaultWriters.Open(v)
+	return deaf{w}, err
+}
+
+type deaf struct{ port.VaultWriter }
+
+func (d deaf) Bring(ctx context.Context, to string, r io.Reader) error {
+	return d.VaultWriter.Bring(context.WithoutCancel(ctx), to, r)
+}
+
+// Files under a folder are not brought once the drop is cancelled, whatever the
+// vault would do with them.
+func TestNothingUnderAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
+	isolateHome(t)
+	v := testsupport.NewVault(t, nil)
+	ctx, cancel := context.WithCancel(t.Context())
+	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
+	bring := vaults.NewImport(ignoringContext{filesystem.VaultWriters{}}, machine)
+
+	brought, _ := bring.Execute(ctx, v, "", []string{"content://held/1"})
+
+	if len(brought.Landed) != 1 {
+		t.Errorf("what landed: %v", brought.Landed)
+	}
+}
+
+// A drop cancelled after one handle ended keeps what that one brought, and the
+// rest is not tried.
+func TestADropCancelledAfterOneHandleReportsWhatArrived(t *testing.T) {
+	isolateHome(t)
+	v := testsupport.NewVault(t, nil)
+	ctx, cancel := context.WithCancel(t.Context())
+	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
+	bring := vaults.NewImport(filesystem.VaultWriters{}, machine)
+
+	brought, err := bring.Execute(ctx, v, "", []string{"content://held/1", "content://held/3"})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("got %v", err)
+	}
+	if len(brought.Landed) != 1 || brought.Landed[0] != "scans" {
+		t.Errorf("what landed: %v", brought.Landed)
+	}
+}
+
+// Something that is neither a file nor a folder stays outside, and says so.
+func TestSomethingNeitherFileNorFolderStaysOutside(t *testing.T) {
+	isolateHome(t)
+	v := testsupport.NewVault(t, nil)
+	machine := flawed{
+		handedOver: handedOver{names: map[string]string{"content://held/7": "Socket"}},
+		neither:    map[string]bool{"content://held/7": true},
+	}
+	bring := vaults.NewImport(filesystem.VaultWriters{}, machine)
+
+	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/7"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(brought.Errors) != 1 || brought.Errors[0].Why == nil ||
+		!strings.Contains(brought.Errors[0].Why.Error(), "neither a file nor a folder") {
+		t.Errorf("what stayed outside: %+v", brought.Errors)
+	}
+	if len(brought.Landed) != 0 {
+		t.Errorf("what landed: %v", brought.Landed)
 	}
 }

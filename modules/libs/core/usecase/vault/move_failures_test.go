@@ -67,6 +67,7 @@ type wiring struct {
 	queries port.SourceQueries
 	sources port.SourceRepository
 	writers port.VaultWriters
+	index   func(context.Context, domain.Vault, []string) error
 }
 
 func (f filing) wiring() wiring {
@@ -75,6 +76,7 @@ func (f filing) wiring() wiring {
 		queries: f.db.SourcesKnown(),
 		sources: f.db.Sources(),
 		writers: filesystem.VaultWriters{},
+		index:   f.index,
 	}
 }
 
@@ -83,7 +85,7 @@ func (f filing) wiring() wiring {
 func (f filing) moveOver(w wiring) vaults.Move {
 	notes := note.NewMove(
 		f.readers, filesystem.VaultWriters{},
-		w.links, f.db.Queries(), f.db.Sources(), f.index, time.Now,
+		w.links, f.db.Queries(), f.db.Sources(), w.index, time.Now,
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return true }
 	notes.Drawing = func(_ context.Context, went domain.Move) {
@@ -116,6 +118,9 @@ func TestAMoveOntoItselfIsNothingDone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if moved.From != "physics/Entropy.md" || moved.To != "physics/Entropy.md" {
+		t.Errorf("the answer names the move as %q to %q", moved.From, moved.To)
+	}
 	if moved.IsLanded {
 		t.Error("a move onto itself says it landed")
 	}
@@ -132,9 +137,12 @@ func TestAMoveThatCannotAskWhatTravelsMovesNothing(t *testing.T) {
 	w := f.wiring()
 	w.queries = unknowing{SourceQueries: w.queries, err: cannot}
 
-	_, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
+	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
+	}
+	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
+		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
 	}
 	if !f.exists("physics/Entropy.md") {
 		t.Error("the note moved")
@@ -210,9 +218,12 @@ func TestAMoveThatCannotAskWhatPointsAtANoteMovesNothing(t *testing.T) {
 	w := f.wiring()
 	w.links = &watchedLinks{LinkQueries: f.db.Links(), backlinksErr: cannot}
 
-	_, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
+	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
+	}
+	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
+		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
 	}
 	if !f.exists("physics/Entropy.md") {
 		t.Error("the note moved")
@@ -227,9 +238,12 @@ func TestAMoveInAVaultThatCannotBeWrittenIsAnError(t *testing.T) {
 	w := f.wiring()
 	w.writers = unwritable{err: cannot}
 
-	_, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
+	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
+	}
+	if moved.From != "physics/Entropy.md" || moved.To != "archive/Entropy.md" {
+		t.Errorf("the refusal names the move as %q to %q", moved.From, moved.To)
 	}
 }
 
@@ -386,6 +400,42 @@ func TestANoteThatCannotBeSettledIsAnErrorAfterTheFileLanded(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	if !moved.IsLanded {
+		t.Error("the file is not where it was sent")
+	}
+}
+
+// A Move given another index files through that index, and says which.
+func TestAMoveGivenAnotherIndexFilesThroughIt(t *testing.T) {
+	isolateHome(t)
+	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
+	cannot := errors.New("the other index cannot be written")
+	other := unfiling{SourceRepository: f.db.Sources(), err: cannot}
+
+	given := f.move().WithSources(other)
+	if _, ok := given.Sources().(unfiling); !ok {
+		t.Fatalf("the move files through %T", given.Sources())
+	}
+	if _, err := given.Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md"); !errors.Is(err, cannot) {
+		t.Errorf("got %v", err)
+	}
+}
+
+// A title that could not be written on a rename is reported once the file is
+// where it was sent.
+func TestATitleThatCouldNotBeWrittenOnARenameIsAnError(t *testing.T) {
+	isolateHome(t)
+	f := openFiling(t, map[string]string{
+		"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
+	})
+	cannot := errors.New("the index cannot be levelled")
+	w := f.wiring()
+	w.index = func(context.Context, domain.Vault, []string) error { return cannot }
+
+	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "physics/Thermo.md")
+	if !errors.Is(err, cannot) {
+		t.Fatalf("got %v", err)
+	}
+	if !moved.IsLanded || !f.exists("physics/Thermo.md") {
 		t.Error("the file is not where it was sent")
 	}
 }

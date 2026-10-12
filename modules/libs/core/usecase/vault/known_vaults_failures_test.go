@@ -13,6 +13,7 @@ func TestAListThatCannotBeReadIsAnError(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 	list.fails = errors.New("the list cannot be read")
+	list.rows = nil
 
 	known, err := vaults.NewKnownVaults(list, there).Execute("")
 	if !errors.Is(err, list.fails) {
