@@ -9,7 +9,7 @@ import { fileOf } from '@/shared/paths'
  */
 const findExtensionStart = (name: string): number => {
   const cut = name.lastIndexOf('.')
-  return cut >= 0 && !/\s/u.test(name.slice(cut)) ? cut : -1
+  return !/\s/u.test(name.slice(cut)) ? cut : -1
 }
 
 /**

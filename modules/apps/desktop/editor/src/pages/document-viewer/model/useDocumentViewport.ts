@@ -11,7 +11,7 @@ export function useDocumentViewport(
   path: string,
   pages: ShallowRef<readonly Page[]>,
   pageNumber: Ref<number>,
-  fingerprint: Ref<string>,
+  fingerprint: Ref<string | undefined>,
   isOpen: () => boolean,
 ) {
   const wide = ref(0)
@@ -23,7 +23,7 @@ export function useDocumentViewport(
 
   const getPageImageUrl = (page: number): string =>
     pages.value.length > 0 && wide.value > 0
-      ? documents.getPageUrl(path, page, wide.value, fingerprint.value)
+      ? documents.getPageUrl(path, page, wide.value, fingerprint.value!)
       : ''
 
   const picture = computed(() => getPageImageUrl(pageNumber.value))

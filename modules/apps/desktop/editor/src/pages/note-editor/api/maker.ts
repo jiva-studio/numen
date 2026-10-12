@@ -28,27 +28,22 @@ export interface NoteMaker {
   removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
 }
 
-/**
- * The role a link carries to seat a note where the gesture put it. A seat and
- * the role that seats a note in it are one relationship named twice, so they
- * carry the same word; a seat there is no role of that name for is written
- * nowhere, and a sibling is one.
- */
-const seatRoles: Partial<Record<PlexRelatedSeat, Role>> = {
-  parent: 'parent',
-  child: 'child',
-  jump: 'jump',
-}
+/** The seats a link can seat a note in. Each is also the role the link carries. */
+type CreatableSeat = 'parent' | 'child' | 'jump'
 
 /** Seats a person may make a note in: exactly those a link can write. */
-export const CREATABLE = Object.keys(seatRoles) as readonly PlexRelatedSeat[]
+export const CREATABLE: readonly CreatableSeat[] = ['parent', 'child', 'jump']
+
+/** The role a link carries to seat a note in that seat, and nothing for a sibling. */
+const getRole = (seat: PlexRelatedSeat): CreatableSeat | undefined =>
+  CREATABLE.find((one) => one === seat)
 
 /**
  * What a new note writes about the note it was made from. The new one takes the
  * seat the gesture named, so from where it stands the other one takes the
  * opposite seat.
  */
-const opposites: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
+const opposites: Partial<Record<PlexRelatedSeat, CreatableSeat>> = {
   parent: 'child',
   child: 'parent',
   jump: 'jump',
@@ -60,8 +55,7 @@ const opposites: Partial<Record<PlexRelatedSeat, PlexRelatedSeat>> = {
  */
 const resolveSeatLinks = (from: string, seat: PlexRelatedSeat | null): readonly Link[] | null => {
   if (!seat) return []
-  const opposite = opposites[seat]
-  const role = opposite && seatRoles[opposite]
+  const role = opposites[seat]
   return role ? [{ to: from, role }] : null
 }
 
@@ -168,7 +162,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     seat: PlexRelatedSeat,
     label?: string,
   ): Promise<boolean> {
-    const role = seatRoles[seat]
+    const role = getRole(seat)
     if (!role) return false
     try {
       const joinError = await core.join(from, {
@@ -192,7 +186,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
    * Remove a relationship from one note.
    */
   async function removeLink(from: string, to: string, seat?: PlexRelatedSeat): Promise<boolean> {
-    const role = seat ? seatRoles[seat] : undefined
+    const role = seat ? getRole(seat) : undefined
     try {
       const removeError = await core.removeLink(from, to, role)
       if (removeError !== null) {

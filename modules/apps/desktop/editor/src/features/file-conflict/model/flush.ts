@@ -107,9 +107,6 @@ export function useFileFlush(core: FlushDeps, wait: (ms: number) => Promise<unkn
     const token = under
     if (token === null) return
     const all = [...outstanding]
-    for (const note of [...put]) {
-      if (!all.some((one) => one.note === note)) put.delete(note)
-    }
     conflicts.value = all.filter((one) => !put.has(one.note)).map(prompt)
     // A write still in the air is not something a person answers, and it is
     // not an answer either.

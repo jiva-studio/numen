@@ -389,6 +389,26 @@ describe('the conflicts a person put off', () => {
   })
 })
 
+describe('a conflict put off and settled', () => {
+  it('is drawn again when the same note raises another', async () => {
+    const mockStream = createMockStream()
+    const fakeCore = createFakeCore(mockStream.read)
+    const going = useFileFlush(fakeCore.core, async () => {})
+    const first = createConflict('Again.md')
+    first.raise(going.raise)
+    void going.start()
+    mockStream.send({ token: '1', flush: true })
+    await settle()
+    going.conflicts.value[0]?.later()
+    first.answered()
+
+    createConflict('Again.md').raise(going.raise)
+    await settle()
+
+    expect(going.conflicts.value.map((one) => one.note)).toEqual(['Again.md'])
+  })
+})
+
 describe('the handlers of a page', () => {
   it('are no longer waited for once removed', async () => {
     const mockStream = createMockStream()

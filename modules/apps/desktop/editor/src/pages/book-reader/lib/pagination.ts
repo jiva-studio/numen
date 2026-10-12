@@ -5,7 +5,7 @@ import type { ContentsEntry } from '@numen/ui'
 import type { Book, BookWords, SpineDocument } from '../types'
 
 export function getPageNumber(pageBytes: number, pages: number, offset: number): number {
-  if (pages <= 0 || pageBytes <= 0) return 0
+  if (pages < 0 || pageBytes <= 0) return 0
   return Math.min(Math.max(Math.floor(offset / pageBytes) + 1, 1), pages)
 }
 

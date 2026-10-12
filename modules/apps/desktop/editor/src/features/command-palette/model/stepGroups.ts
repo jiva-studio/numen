@@ -140,7 +140,7 @@ export function createStepGroups(state: ViewState) {
   const getVaultsGroup = (text: string, step: PendingStep): PaletteGroup => {
     const word = text.trim().toLowerCase()
     const items: PaletteItem[] = known.value
-      .filter((one) => word === '' || one.name.toLowerCase().includes(word))
+      .filter((one) => one.name.toLowerCase().includes(word))
       .map((one) => {
         const why = getVaultAside(one)
         return {
@@ -173,26 +173,32 @@ export function createStepGroups(state: ViewState) {
       action = '',
       then = '',
     }: Partial<ConfirmWords> = step.command.answers ?? {}
-    const items: PaletteItem[] = [
-      {
-        id: NO,
-        title: keeps,
-        detail: kept,
-        actions: [{ id: NO, text: keeps }],
-      },
-      {
-        id: YES,
-        title: `${action} ${getStepLabel(step)}`,
-        detail: then,
-        actions: [{ id: YES, text: action }],
-      },
+    const answers: readonly (readonly [string, PaletteItem])[] = [
+      [
+        keeps,
+        {
+          id: NO,
+          title: keeps,
+          detail: kept,
+          actions: [{ id: NO, text: keeps }],
+        },
+      ],
+      [
+        action,
+        {
+          id: YES,
+          title: `${action} ${getStepLabel(step)}`,
+          detail: then,
+          actions: [{ id: YES, text: action }],
+        },
+      ],
     ]
     return {
       id: 'asking',
       title: words.asking,
-      items: word
-        ? items.filter((one) => (one.actions?.[0]?.text ?? '').toLowerCase().includes(word))
-        : items,
+      items: answers
+        .filter(([text]) => text.toLowerCase().includes(word))
+        .map(([, item]) => item),
       silence: words.answer,
     }
   }

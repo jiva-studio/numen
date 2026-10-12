@@ -76,7 +76,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const meanings = shallowRef<readonly Passage[]>([])
 
   const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
-  const failureMessages = ref<Record<SearchGroup, string>>({ names: '', text: '', meaning: '' })
+  const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
 
   const asks = createAnswerGuard()
 
@@ -85,7 +85,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     texts.value = []
     meanings.value = []
     isWorking.value = { names: false, text: false, meaning: false }
-    failureMessages.value = { names: '', text: '', meaning: '' }
+    failureMessages.value = {}
   }
 
   const fill = async <T>(
@@ -110,7 +110,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
 
   const ask = async (mine: Question, query: string) => {
     isWorking.value = { names: true, text: true, meaning: true }
-    failureMessages.value = { names: '', text: '', meaning: '' }
+    failureMessages.value = {}
     await Promise.all([
       fill(
         mine,

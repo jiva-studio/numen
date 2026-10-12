@@ -150,7 +150,6 @@ export function fileOpeners(vault: FileOpenerDeps) {
 
 /** The kind of tab a file opens in. */
 const targetKindOf = (kind: FileKind): string => {
-  if (kind.kind === 'note') return kind.type
   if (kind.kind === 'book') {
     return kind.format === 'epub' ? 'book' : 'document'
   }
