@@ -1,6 +1,7 @@
 package flashcards_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -42,8 +43,8 @@ func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
-	if _, err := s.run(t, time.Now()).TakeBack(t.Context(), ""); err == nil {
-		t.Error("an answer taken back without naming one was written")
+	if _, err := s.run(t, time.Now()).TakeBack(t.Context(), ""); !errors.Is(err, flashcards.ErrNoAnswer) {
+		t.Errorf("an answer taken back without naming one came back with %v", err)
 	}
 }
 

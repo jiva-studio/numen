@@ -15,6 +15,9 @@ import (
 // what a person meant to say about their own recall.
 var ErrNoRating = errors.New("not one of the four ratings")
 
+// ErrNoAnswer is a taking back that names no answer.
+var ErrNoAnswer = errors.New("an answer taken back names the one it takes back")
+
 // Record writes down what a person answered.
 //
 // A line is appended and nothing is ever rewritten, so what was recorded stands
@@ -56,7 +59,7 @@ func (u Record) Answer(
 // key, and the record of that is what says so.
 func (u Record) TakeBack(ctx context.Context, id string) (review.Answer, error) {
 	if id == "" {
-		return review.Answer{}, errors.New("an answer taken back names the one it takes back")
+		return review.Answer{}, ErrNoAnswer
 	}
 	at := u.now()
 	own := ulid.New(at)
