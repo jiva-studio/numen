@@ -337,3 +337,63 @@ func TestAnIndexThatCannotBeLevelledIsSaidAlongsideTheRemoval(t *testing.T) {
 		t.Errorf("the destroy that landed is not reported: %+v", destroyed)
 	}
 }
+
+func TestAFailureToOpenTheVaultForWritingKeepsThePathInTheAnswer(t *testing.T) {
+	t.Parallel()
+	tr := newTrashing()
+	tr.writers.openErr = errors.New("the vault is read-only")
+
+	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
+	if err == nil || got.Path != "Entropy.md" {
+		t.Errorf("want an error beside the path, got %+v and %v", got, err)
+	}
+	got, err = tr.remove().Destroy(t.Context(), domain.Vault{}, "Entropy.md")
+	if err == nil || got.Path != "Entropy.md" {
+		t.Errorf("want an error beside the path, got %+v and %v", got, err)
+	}
+}
+
+func TestAMoveThatFailsKeepsThePathInTheAnswer(t *testing.T) {
+	t.Parallel()
+	tr := newTrashing()
+	tr.writers.writer.move = func(string, string) error { return errors.New("the disk is gone") }
+
+	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
+	if err == nil || got.Path != "Entropy.md" {
+		t.Errorf("want an error beside the path, got %+v and %v", got, err)
+	}
+}
+
+func TestDestroyingStopsWhenTheLinksCannotBeAskedAbout(t *testing.T) {
+	t.Parallel()
+	tr := newTrashing()
+	broken := errors.New("the index is gone")
+	tr.links.err = broken
+	removed := false
+	tr.writers.writer.remove = func(string) error {
+		removed = true
+		return nil
+	}
+
+	got, err := tr.remove().Destroy(t.Context(), domain.Vault{}, "Entropy.md")
+	if !errors.Is(err, broken) || got.Path != "Entropy.md" {
+		t.Errorf("want the index's error beside the path, got %+v and %v", got, err)
+	}
+	if removed {
+		t.Error("the file was destroyed before its links were known")
+	}
+}
+
+func TestDestroyingReportsAFileThatCannotBeRemoved(t *testing.T) {
+	t.Parallel()
+	tr := newTrashing()
+	tr.writers.writer.remove = func(string) error { return fs.ErrNotExist }
+
+	got, err := tr.remove().Destroy(t.Context(), domain.Vault{}, "Entropy.md")
+	if !errors.Is(err, note.ErrNoNote) || got.Path != "Entropy.md" {
+		t.Errorf("want ErrNoNote beside the path, got %+v and %v", got, err)
+	}
+	if len(*tr.levelled) != 0 {
+		t.Errorf("the index was levelled for a file that is still there: %v", *tr.levelled)
+	}
+}

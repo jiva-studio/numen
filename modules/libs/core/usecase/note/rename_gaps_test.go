@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -78,5 +79,36 @@ func TestAFilenameCannotBeWrittenIntoANoteThatIsNotThere(t *testing.T) {
 	err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Missing.md")
 	if !errors.Is(err, note.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)
+	}
+}
+
+func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
+
+	renaming := note.NewRename(c.move())
+	if _, err := renaming.Execute(t.Context(), c.vault, "Old.md", "Entropy"); err != nil {
+		t.Fatal(err)
+	}
+	if body := c.read(t, "Entropy.md"); body != "# Old\n" {
+		t.Errorf("the note did not move:\n%s", body)
+	}
+}
+
+func TestARenameHandsOutTheDependenciesItWasGiven(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, nil)
+	sources, writers, readers := &sulking{}, &trashWriters{}, &statedReaders{}
+
+	renaming := note.NewRename(c.move()).WithSources(sources).WithWriters(writers)
+	renaming.Move = renaming.WithReaders(readers)
+	if renaming.Sources() != port.SourceRepository(sources) {
+		t.Error("the source repository is not the one given")
+	}
+	if renaming.Writers() != port.VaultWriters(writers) {
+		t.Error("the vault writers are not the ones given")
+	}
+	if renaming.Readers() != port.VaultReaders(readers) {
+		t.Error("the vault readers are not the ones given")
 	}
 }

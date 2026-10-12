@@ -114,3 +114,32 @@ func TestAReadThatFailsAfterAMissingStatIsAnError(t *testing.T) {
 		t.Errorf("the error does not say which note: %v", err)
 	}
 }
+
+type unopenableReaders struct{ err error }
+
+func (r unopenableReaders) Open(domain.Vault) (port.VaultReader, error) { return nil, r.err }
+
+func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
+	t.Parallel()
+	broken := errors.New("the vault is gone")
+
+	got, err := note.NewRead(unopenableReaders{err: broken}).Execute(t.Context(), domain.Vault{}, "Entropy.md")
+	if !errors.Is(err, broken) {
+		t.Fatalf("want the vault's own error, got %v", err)
+	}
+	if got != (note.Contents{}) {
+		t.Errorf("an error came back with contents: %+v", got)
+	}
+}
+
+func TestAPathTheVaultRefusesAsANoteIsNotANote(t *testing.T) {
+	t.Parallel()
+
+	got, err := readStated(t, statedReader{statErr: port.ErrNotANote, raw: []byte("# Entropy\n")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Outcome != note.NotANote || got.Path != "Entropy.md" || got.Body != "" {
+		t.Errorf("want not a note at Entropy.md with no prose, got %+v", got)
+	}
+}

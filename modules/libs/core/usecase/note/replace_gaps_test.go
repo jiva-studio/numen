@@ -205,3 +205,46 @@ func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
 		})
 	}
 }
+
+func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
+
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.Fingerprint{})
+	var nowhere note.MissingSpan
+	if err == nil || errors.As(err, &nowhere) || !strings.Contains(err.Error(), "name the text to replace") {
+		t.Errorf("want the refusal to name the text, got %v", err)
+	}
+}
+
+// A refused replacement draws nothing and names the note it was refused in.
+func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
+	var told []domain.Edit
+	replacing := c.replace()
+	replacing.Drawing = func(_ context.Context, said domain.Edit) { told = append(told, said) }
+
+	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.Fingerprint{})
+	if err == nil || !strings.HasPrefix(err.Error(), "Aggressor.md: ") {
+		t.Errorf("want the error to name the note, got %v", err)
+	}
+	if len(told) != 0 {
+		t.Errorf("a refused change was drawn: %+v", told)
+	}
+}
+
+// A rune of three bytes puts the middle of the search inside it.
+func TestAMissingSpanAfterAThreeByteRuneNamesWhereItStopped(t *testing.T) {
+	t.Parallel()
+	c := openChanging(t, map[string]string{"Aggressor.md": "x\n"})
+
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "x€y", "q", domain.Fingerprint{})
+	var nowhere note.MissingSpan
+	if !errors.As(err, &nowhere) {
+		t.Fatalf("want MissingSpan, got %v", err)
+	}
+	if nowhere.Matched != "x" || nowhere.Instead != "x\n" {
+		t.Errorf("matched %q and instead %q", nowhere.Matched, nowhere.Instead)
+	}
+}
