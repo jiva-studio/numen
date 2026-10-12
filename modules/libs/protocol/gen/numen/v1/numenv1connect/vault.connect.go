@@ -49,7 +49,7 @@ const (
 
 // VaultServiceClient is a client for the numen.v1.VaultService service.
 type VaultServiceClient interface {
-	// GetVaultState is what the vault is and how far reading it has got.
+	// GetVaultState is what the vault is and how far indexing it has got.
 	GetVaultState(context.Context, *connect.Request[v1.GetVaultStateRequest]) (*connect.Response[v1.GetVaultStateResponse], error)
 	// WatchVaultChanges reports the notes that changed on disk, for as long as
 	// the caller listens. It says which notes, and nothing about them: the caller
@@ -101,7 +101,7 @@ func (c *vaultServiceClient) WatchVaultChanges(ctx context.Context, req *connect
 
 // VaultServiceHandler is an implementation of the numen.v1.VaultService service.
 type VaultServiceHandler interface {
-	// GetVaultState is what the vault is and how far reading it has got.
+	// GetVaultState is what the vault is and how far indexing it has got.
 	GetVaultState(context.Context, *connect.Request[v1.GetVaultStateRequest]) (*connect.Response[v1.GetVaultStateResponse], error)
 	// WatchVaultChanges reports the notes that changed on disk, for as long as
 	// the caller listens. It says which notes, and nothing about them: the caller

@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   PER_WORD,
-  SETTLE,
+  MIN_DWELL,
   getArrivalTimes,
   dwellOf,
   getFinishedNotices,
@@ -108,7 +108,7 @@ describe('how long work runs before it is worth a card', () => {
 })
 
 describe('a notice somebody asked for', () => {
-  const asked: Notice = { id: 'reading', text: 'Reading a scan', isAsked: true }
+  const asked: Notice = { id: 'reading', text: 'Recognising a scan', isAsked: true }
   const behind: Notice = { id: 'indexing', text: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {
@@ -133,8 +133,8 @@ describe('a notice somebody asked for', () => {
 
 describe('how long something said stands to be read', () => {
   it('gives more time to more words', () => {
-    expect(dwellOf('Renamed')).toBe(SETTLE + PER_WORD)
-    expect(dwellOf('Renamed', 'One.md')).toBe(SETTLE + 2 * PER_WORD)
+    expect(dwellOf('Renamed')).toBe(MIN_DWELL + PER_WORD)
+    expect(dwellOf('Renamed', 'One.md')).toBe(MIN_DWELL + 2 * PER_WORD)
   })
 
   it('never runs out for a notice too long to be read in passing', () => {
@@ -146,7 +146,7 @@ describe('how long something said stands to be read', () => {
   it('stands for as long as twenty words, which is not too much to read in passing', () => {
     const list = Array.from({ length: 20 }, (_, at) => `Note${at}.md`).join(' ')
 
-    expect(dwellOf(list)).toBe(SETTLE + 20 * PER_WORD)
+    expect(dwellOf(list)).toBe(MIN_DWELL + 20 * PER_WORD)
   })
 
   it('is drawn the moment it arrives and goes once it has been read', () => {
@@ -156,10 +156,10 @@ describe('how long something said stands to be read', () => {
     expect(getShownNotices([said], arrived, new Set(), 1000).map((each) => each.id)).toEqual([
       'renamed',
     ])
-    expect(getShownNotices([said], arrived, new Set(), 1000 + SETTLE + PER_WORD - 1)).toHaveLength(
-      1,
-    )
-    expect(getShownNotices([said], arrived, new Set(), 1000 + SETTLE + PER_WORD)).toEqual([])
+    expect(
+      getShownNotices([said], arrived, new Set(), 1000 + MIN_DWELL + PER_WORD - 1),
+    ).toHaveLength(1)
+    expect(getShownNotices([said], arrived, new Set(), 1000 + MIN_DWELL + PER_WORD)).toEqual([])
   })
 
   it('stands until it is put away where it was not asked to be read in passing', () => {
@@ -295,7 +295,7 @@ describe('measuring how fast a count moves', () => {
   })
 
   it('measures nothing for work with no total to count against', () => {
-    const nothing: Notice = { id: 'scan', text: 'Reading a scan', isWorking: true }
+    const nothing: Notice = { id: 'scan', text: 'Recognising a scan', isWorking: true }
 
     expect(measureMovement(new Map(), [nothing], 1000).size).toBe(0)
   })

@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
-// A change is one box put right: which box of the reading, the run of prose it
+// A change is one box put right: which box of the recognition, the run of prose it
 // covers, and what that run should say.
 type change struct {
 	index  int
@@ -21,7 +21,7 @@ type change struct {
 // delta is how much the prose grows for this correction.
 func (c change) delta() int { return len(c.text) - c.length }
 
-// A walk is a reading's corrections in reading order, with the growth of the
+// A walk is a recognition's corrections in reading order, with the growth of the
 // prose accumulated across them. Where the boxes land and where the prose, the
 // marks and the parts land are all read off it.
 type walk struct {
@@ -30,7 +30,7 @@ type walk struct {
 	grown []int
 }
 
-// plan is the corrections a reading's boxes answer to, in reading order. A
+// plan is the corrections a recognition's boxes answer to, in reading order. A
 // number no box answers to is dropped, a line named twice keeps what came last,
 // and a box reaching back into the one before it is left as it was.
 func plan(boxes []highlight.Box, lines []Line) walk {
@@ -108,7 +108,7 @@ func (w walk) getGrowthInside(start, length int) int {
 	return w.grown[to] - w.grown[from]
 }
 
-// Boxes are where the runs of a reading sit once its corrections are in it.
+// Boxes are where the runs of a recognition sit once its corrections are in it.
 func Boxes(boxes []highlight.Box, lines []Line) []highlight.Box {
 	w := plan(boxes, lines)
 	if len(w.changes) == 0 {
@@ -129,7 +129,7 @@ func Boxes(boxes []highlight.Box, lines []Line) []highlight.Box {
 	return out
 }
 
-// Prose is a reading's text with its corrections in it, and the pages and the
+// Prose is a recognition's text with its corrections in it, and the pages and the
 // parts where they now stand.
 func Prose(prose string, marks []ocr.PageStart, boxes []highlight.Box, parts []ocr.Part, lines []Line) (string, []ocr.PageStart, []ocr.Part) {
 	w := plan(boxes, lines)

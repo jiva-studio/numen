@@ -126,7 +126,7 @@ const tabAt = (
     problems: shallowRef([]),
     stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
-    hasChanged: ref(false),
+    hasExternalChange: ref(false),
     reload: () => void done.push('reload'),
     chooseGoal: (goal) => void done.push(`choose ${goal}`),
     moveSlider: (at) => {

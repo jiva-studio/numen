@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
 )
 
-// benchReading is a reading of n printed lines, with the corrections for
+// benchRecognition is a recognition of n printed lines, with the corrections for
 // every step-th line, a third of them lengthened and a third shortened.
-func benchReading(n, step int) (string, []ocr.PageStart, []highlight.Box, []ocr.Part, []correction.Line) {
+func benchRecognition(n, step int) (string, []ocr.PageStart, []highlight.Box, []ocr.Part, []correction.Line) {
 	lines := make([]string, n)
 	for i := range lines {
 		lines[i] = strings.Repeat(fmt.Sprintf("word%d ", i), 12)
@@ -65,7 +65,7 @@ var benchCases = []struct {
 
 func BenchmarkBoxes(b *testing.B) {
 	for _, c := range benchCases {
-		_, _, boxes, _, put := benchReading(c.n, c.step)
+		_, _, boxes, _, put := benchRecognition(c.n, c.step)
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
@@ -77,7 +77,7 @@ func BenchmarkBoxes(b *testing.B) {
 
 func BenchmarkProse(b *testing.B) {
 	for _, c := range benchCases {
-		prose, marks, boxes, parts, put := benchReading(c.n, c.step)
+		prose, marks, boxes, parts, put := benchRecognition(c.n, c.step)
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {

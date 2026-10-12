@@ -52,36 +52,36 @@ var errNoPage = errors.New("no such page in this document")
 type viewer struct {
 	// open holds a document open for drawing. It is pdf.OpenReader in the
 	// application, and a test puts its own in.
-	open  func(file io.ReadSeekCloser) (pool.Scan, error)
-	docs  atomic.Pointer[pool.Documents]
-	drawn atomic.Pointer[pagecache.Memory]
-	// read holds the books open. A book is an archive unpacked and parsed, and
+	open          func(file io.ReadSeekCloser) (pool.Scan, error)
+	docs          atomic.Pointer[pool.Documents]
+	renderedPages atomic.Pointer[pagecache.Memory]
+	// books holds the books open. A book is an archive unpacked and parsed, and
 	// what it costs is memory.
-	read atomic.Pointer[pool.Books]
-	// onDisk is the same pages on disk, so a document opened again is not drawn
+	books atomic.Pointer[pool.Books]
+	// disk is the same pages on disk, so a document opened again is not drawn
 	// again. It is nothing where this machine names no cache folder.
-	onDisk *pagecache.Disk
+	disk *pagecache.Disk
 
 	// patience is how long a request waits for the document before it answers
 	// that the document is busy. The library's own wait is minutes, which is
 	// not an answer to a person turning a page.
 	patience time.Duration
 
-	ahead ahead
+	prefetch prefetchSlot
 }
 
-// ahead is the page drawn before it is asked for: the one slot that drawing
+// prefetchSlot is the page drawn before it is asked for: the one slot that drawing
 // runs in, and how long it has, being nobody's request.
-type ahead struct {
-	reading chan struct{}
-	within  time.Duration
+type prefetchSlot struct {
+	slot    chan struct{}
+	timeout time.Duration
 }
 
-// take holds the slot for one drawing ahead, and answers false where one is
+// tryAcquire holds the slot for one drawing ahead, and answers false where one is
 // already running: an ask being answered now comes first.
-func (a *ahead) take() bool {
+func (a *prefetchSlot) tryAcquire() bool {
 	select {
-	case a.reading <- struct{}{}:
+	case a.slot <- struct{}{}:
 		return true
 	default:
 		return false
@@ -89,13 +89,13 @@ func (a *ahead) take() bool {
 }
 
 // release gives the slot back.
-func (a *ahead) release() { <-a.reading }
+func (a *prefetchSlot) release() { <-a.slot }
 
 const (
-	// patience is what a request waits for the document it is about.
-	patience = 5 * time.Second
-	// drawnAhead is what the page drawn before it is asked for has.
-	drawnAhead = 30 * time.Second
+	// openTimeout is what a request waits for the document it is about.
+	openTimeout = 5 * time.Second
+	// prefetchTimeout is what the page drawn before it is asked for has.
+	prefetchTimeout = 30 * time.Second
 )
 
 // newDocumentOpener holds a document open with what the application draws with.
@@ -111,12 +111,12 @@ func newDocumentOpener(docs port.PageRenderer) func(io.ReadSeekCloser) (pool.Sca
 func newViewer(docs port.PageRenderer) *viewer {
 	v := &viewer{
 		open:     newDocumentOpener(docs),
-		patience: patience,
-		ahead:    ahead{reading: make(chan struct{}, 1), within: drawnAhead},
+		patience: openTimeout,
+		prefetch: prefetchSlot{slot: make(chan struct{}, 1), timeout: prefetchTimeout},
 	}
-	v.docs.Store(pool.NewDocuments(pool.MostOpen, pool.OpenIdleFor))
-	v.drawn.Store(pagecache.NewMemory(pagecache.MostDrawn))
-	v.read.Store(pool.NewBooks(pool.MostRead, pool.ReadIdleFor))
+	v.docs.Store(pool.NewDocuments(pool.MaxOpenDocuments, pool.DocumentIdleTimeout))
+	v.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
+	v.books.Store(pool.NewBooks(pool.MaxOpenBooks, pool.BookIdleTimeout))
 	return v
 }
 
@@ -124,16 +124,16 @@ func newViewer(docs port.PageRenderer) *viewer {
 // folder they were kept in ended and waited for.
 func (v *viewer) close() {
 	v.docs.Load().Close()
-	v.read.Load().Close()
-	v.onDisk.Close()
+	v.books.Load().Close()
+	v.disk.Close()
 }
 
-// empty closes the documents the window has open, lets go of the books, and
+// reset closes the documents the window has open, lets go of the books, and
 // drops the pages drawn. It goes on looking, at whatever it is given next.
-func (v *viewer) empty() {
-	v.docs.Swap(pool.NewDocuments(pool.MostOpen, pool.OpenIdleFor)).Close()
-	v.read.Swap(pool.NewBooks(pool.MostRead, pool.ReadIdleFor)).Close()
-	v.drawn.Store(pagecache.NewMemory(pagecache.MostDrawn))
+func (v *viewer) reset() {
+	v.docs.Swap(pool.NewDocuments(pool.MaxOpenDocuments, pool.DocumentIdleTimeout)).Close()
+	v.books.Swap(pool.NewBooks(pool.MaxOpenBooks, pool.BookIdleTimeout)).Close()
+	v.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
 }
 
 // GetDocument answers what the document at a path in the vault is: how many
@@ -153,16 +153,16 @@ func (a *API) GetDocument(
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	doc, give, err := a.opening(ctx, reader, mark)
+	doc, give, err := a.openDocument(ctx, reader, mark)
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
 	defer give()
 
-	if !doc.Hold(ctx) {
+	if !doc.Lock(ctx) {
 		return nil, connect.NewError(connect.CodeUnavailable, pool.ErrBusy)
 	}
-	defer doc.Release()
+	defer doc.Unlock()
 
 	out := &v1.GetDocumentResponse{
 		Fingerprint: &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime},
@@ -210,13 +210,13 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, where string) {
 	}
 
 	key := pagecache.ID{Document: mark, Page: at, Width: wide}
-	body, err := a.picture(ctx, reader, key)
+	body, err := a.getPage(ctx, reader, key)
 	if err != nil {
 		refuse(w, err)
 		return
 	}
 	//nolint:contextcheck // the page drawn ahead is nobody's request, and runs under a.getBackgroundContext()
-	a.readAhead(reader, key)
+	a.prefetchNextPage(reader, key)
 
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
@@ -248,17 +248,17 @@ func (a *API) stat(ctx context.Context, path string) (port.VaultReader, pool.Fin
 	return reader, pool.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}, nil
 }
 
-// opening hands over the document at a fingerprint, held open.
+// openDocument hands over the document at a fingerprint, held open.
 //
 // The file is opened where the document is not open already, and the open
 // outlives the request that asked for it: a caller that ran out of patience is
 // told the document is busy, and the document is there for the next ask.
-func (a *API) opening(
+func (a *API) openDocument(
 	ctx context.Context,
 	reader port.VaultReader,
 	mark pool.Fingerprint,
 ) (*pool.Document, func(), error) {
-	return a.Viewer.docs.Load().Take(ctx, mark, func() (pool.Scan, error) {
+	return a.Viewer.docs.Load().Acquire(ctx, mark, func() (pool.Scan, error) {
 		file, err := docfile.Open(context.WithoutCancel(ctx), reader, mark.Path)
 		if err != nil {
 			return nil, err
@@ -267,65 +267,65 @@ func (a *API) opening(
 	})
 }
 
-// picture is one page as the bytes that cross to the window: the one held in
+// getPage is one page as the bytes that cross to the window: the one held in
 // memory, or the one on disk, or the page drawn.
 //
 // Several asks for one page draw it once and are answered with the one drawing.
-func (a *API) picture(ctx context.Context, reader port.VaultReader, key pagecache.ID) ([]byte, error) {
-	return a.Viewer.drawn.Load().Draw(ctx, key, func() ([]byte, error) {
-		if body := a.Viewer.onDisk.Get(key); body != nil {
+func (a *API) getPage(ctx context.Context, reader port.VaultReader, key pagecache.ID) ([]byte, error) {
+	return a.Viewer.renderedPages.Load().GetOrRender(ctx, key, func() ([]byte, error) {
+		if body := a.Viewer.disk.Get(key); body != nil {
 			return body, nil
 		}
-		body, err := a.drawing(ctx, reader, key)
+		body, err := a.renderPage(ctx, reader, key)
 		if err != nil {
 			return nil, err
 		}
-		a.Viewer.onDisk.Put(key, body)
+		a.Viewer.disk.Put(key, body)
 		return body, nil
 	})
 }
 
-// drawing is one page of a document, drawn and encoded.
-func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pagecache.ID) ([]byte, error) {
-	doc, give, err := a.opening(ctx, reader, key.Document)
+// renderPage is one page of a document, drawn and encoded.
+func (a *API) renderPage(ctx context.Context, reader port.VaultReader, key pagecache.ID) ([]byte, error) {
+	doc, give, err := a.openDocument(ctx, reader, key.Document)
 	if err != nil {
 		return nil, err
 	}
 	defer give()
 
-	if !doc.Hold(ctx) {
+	if !doc.Lock(ctx) {
 		return nil, pool.ErrBusy
 	}
-	defer doc.Release()
+	defer doc.Unlock()
 
 	if key.Page >= doc.Scan.Pages() {
 		return nil, fmt.Errorf("%w: page %d of %d", errNoPage, key.Page, doc.Scan.Pages())
 	}
-	drawn, err := doc.Draw(key.Page, key.Width)
+	drawn, err := doc.Render(key.Page, key.Width)
 	if err != nil {
 		return nil, err
 	}
 	return encodePage(drawn)
 }
 
-// readAhead draws the page after this one, so that turning to it finds it
+// prefetchNextPage draws the page after this one, so that turning to it finds it
 // drawn. One page is drawn ahead at a time, and an ask being answered now comes
 // first.
-func (a *API) readAhead(reader port.VaultReader, key pagecache.ID) {
+func (a *API) prefetchNextPage(reader port.VaultReader, key pagecache.ID) {
 	next := pagecache.ID{Document: key.Document, Page: key.Page + 1, Width: key.Width}
-	if a.Viewer.drawn.Load().Has(next) {
+	if a.Viewer.renderedPages.Load().Has(next) {
 		return
 	}
-	if !a.Viewer.ahead.take() {
+	if !a.Viewer.prefetch.tryAcquire() {
 		return
 	}
 	go func() {
-		defer a.Viewer.ahead.release()
-		ctx, cancel := context.WithTimeout(a.getBackgroundContext(), a.Viewer.ahead.within)
+		defer a.Viewer.prefetch.release()
+		ctx, cancel := context.WithTimeout(a.getBackgroundContext(), a.Viewer.prefetch.timeout)
 		defer cancel()
 		// Nobody asked for this page. One that would not draw is drawn again
 		// when somebody turns to it, and says so then.
-		_, _ = a.picture(ctx, reader, next)
+		_, _ = a.getPage(ctx, reader, next)
 	}()
 }
 
@@ -334,8 +334,8 @@ func (a *API) readAhead(reader port.VaultReader, key pagecache.ID) {
 // ends it, so a window that is closing is not held open by a page nobody has
 // turned to. A window standing on no vault has no passes, and nothing to end.
 func (a *API) getBackgroundContext() context.Context {
-	if on := a.showing.Load(); on != nil {
-		return on.under
+	if on := a.session.Load(); on != nil {
+		return on.ctx
 	}
 	return context.Background()
 }
@@ -417,6 +417,6 @@ func refuse(w http.ResponseWriter, err error) {
 // keeps what it can make again.
 func newCachingViewer(docs port.PageRenderer) *viewer {
 	v := newViewer(docs)
-	v.onDisk = pagecache.NewDisk()
+	v.disk = pagecache.NewDisk()
 	return v
 }

@@ -9,11 +9,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/vault"
 )
 
-// impatient is a write pool that waits a fifth of a second for the lock instead
+// openWithShortBusyTimeout is a write pool that waits a fifth of a second for the lock instead
 // of the five seconds an installation waits, so a test can meet a locked
 // database without spending a minute on it. Everything else about it is what
 // Open builds.
-func impatient(t *testing.T, path string) *sql.DB {
+func openWithShortBusyTimeout(t *testing.T, path string) *sql.DB {
 	t.Helper()
 	dsn := dsnOf(path, []string{"journal_mode(WAL)", "foreign_keys(1)", "busy_timeout(200)", shipped})
 	db, err := sql.Open("sqlite", dsn+"&_txlock=immediate")
@@ -51,7 +51,7 @@ func TestAWriteWaitsOutAWriterInAnotherProcess(t *testing.T) {
 	let := time.AfterFunc(350*time.Millisecond, func() { tx.Rollback() })
 	defer let.Stop()
 
-	if err := vault.NewRepository(impatient(t, path)).Register(ctx, "01WAITED"); err != nil {
+	if err := vault.NewRepository(openWithShortBusyTimeout(t, path)).Register(ctx, "01WAITED"); err != nil {
 		t.Fatalf("a write that met the lock was not asked again: %v", err)
 	}
 }

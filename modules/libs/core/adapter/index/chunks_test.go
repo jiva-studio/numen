@@ -37,10 +37,10 @@ func bits(seed byte) []byte {
 	return b
 }
 
-// direction is the vector a seed stands for: dimension i takes the sign of the
+// getVectorForSeed is the vector a seed stands for: dimension i takes the sign of the
 // bit the coarse vector keeps it in. Quantising it gives back `bits(seed)`, so
 // the two representations of a chunk agree.
-func direction(seed byte) []float32 {
+func getVectorForSeed(seed byte) []float32 {
 	v := make([]float32, 1024)
 	for i := range v {
 		v[i] = -1
@@ -51,8 +51,8 @@ func direction(seed byte) []float32 {
 	return v
 }
 
-// precise is the full-precision half of a vector, one signed byte per dimension.
-func precise(v []float32) []byte {
+// getPreciseBytes is the full-precision half of a vector, one signed byte per dimension.
+func getPreciseBytes(v []float32) []byte {
 	q := embedding.Bytes(embedding.Normalise(v))
 	out := make([]byte, len(q))
 	for i, x := range q {
@@ -99,7 +99,7 @@ func openDBAt(t *testing.T, path string) *DB {
 func book(t *testing.T, db *DB, vault domain.Vault, path string, seed byte) {
 	t.Helper()
 	cutBook(t, db, vault, path)
-	vectorise(t, db, vault, seed)
+	saveSeededVectors(t, db, vault, seed)
 }
 
 // cutBook puts one source in and cuts it into a large chunk with two small ones
@@ -134,8 +134,8 @@ func cutBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 // the recipe that made it, so a question about one names it.
 const testRecipe = "model"
 
-// vectorise gives every chunk of a vault that has no vector one at the seed given.
-func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
+// saveSeededVectors gives every chunk of a vault that has no vector one at the seed given.
+func saveSeededVectors(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	t.Helper()
 	ctx := t.Context()
 
@@ -147,7 +147,7 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
-			Value: precise(direction(seed)), Coarse: bits(seed),
+			Value: getPreciseBytes(getVectorForSeed(seed)), Coarse: bits(seed),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
@@ -197,7 +197,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	near := func(vault domain.Vault, seed byte) []domain.Passage {
-		matches, err := queries.FindNearest(ctx, vault.ID, "model", direction(seed), nil, 10, search.DefaultFloor)
+		matches, err := queries.FindNearest(ctx, vault.ID, "model", getVectorForSeed(seed), nil, 10, search.DefaultFloor)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -264,7 +264,7 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
-	dense, err := queries.FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	dense, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +305,7 @@ func TestAPassageSaysWhatItWasReadOutOf(t *testing.T) {
 	source(t, db, first, "library/talk.epub", domain.KindBook, "opening words")
 	source(t, db, first, "talks/lecture.mp3", domain.KindRecording, "opening words")
 	source(t, db, first, "Entropy.md", domain.KindNote, "opening words")
-	vectorise(t, db, first, 0x00)
+	saveSeededVectors(t, db, first, 0x00)
 
 	queries := db.ChunkQueries()
 	want := map[string]domain.SourceKind{
@@ -322,7 +322,7 @@ func TestAPassageSaysWhatItWasReadOutOf(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dense, err := queries.FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	dense, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -415,7 +415,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NOT NULL`); got == 0 {
 		t.Fatal("a note has no small chunks, so nothing about it can be embedded")
 	}
-	vectorise(t, db, first, 0x00)
+	saveSeededVectors(t, db, first, 0x00)
 	was := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 	if was == 0 {
 		t.Fatal("the note was not embedded, so this test would pass either way")
@@ -504,7 +504,7 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	matches, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -548,7 +548,7 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	vectorise(t, db, first, 0x00)
+	saveSeededVectors(t, db, first, 0x00)
 
 	if err := db.Notes().Remove(ctx, first.ID, []string{note.Fingerprint.Path}); err != nil {
 		t.Fatal(err)
@@ -813,7 +813,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 		t.Errorf("%d held is not %d embedded and %d owing", held, embedded, len(owing))
 	}
 
-	vectorise(t, db, vault, 1)
+	saveSeededVectors(t, db, vault, 1)
 
 	held, embedded, err = db.ChunkQueries().Progress(ctx, vault.ID, "model")
 	if err != nil {
@@ -923,7 +923,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 	queries := db.ChunkQueries()
 
-	far, err := queries.FindNearest(ctx, first.ID, "model", direction(0xff), nil, 10, search.DefaultFloor)
+	far, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0xff), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -932,7 +932,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	}
 
 	// The same vault, asked what it does hold.
-	near, err := queries.FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	near, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -963,12 +963,12 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		if p.Path == "library/coarse.epub" {
 			vec = chunk.Vector{
 				Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
-				Coarse: bits(0xff), Value: precise(direction(0xfe)),
+				Coarse: bits(0xff), Value: getPreciseBytes(getVectorForSeed(0xfe)),
 			}
 		} else {
 			vec = chunk.Vector{
 				Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
-				Coarse: bits(0xfe), Value: precise(direction(0xff)),
+				Coarse: bits(0xfe), Value: getPreciseBytes(getVectorForSeed(0xff)),
 			}
 		}
 		if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{vec}); err != nil {
@@ -976,7 +976,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		}
 	}
 
-	near, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", direction(0xff), nil, 1, search.DefaultFloor)
+	near, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", getVectorForSeed(0xff), nil, 1, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1008,7 +1008,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 
 	text := "the passage that was paid for"
 	sum := sha256.Sum256([]byte(text))
-	value := precise(direction(0x11))
+	value := getPreciseBytes(getVectorForSeed(0x11))
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
 		Chunk: owing[0].Chunk, Hash: sum[:], Recipe: "a recipe",
 		Coarse: bits(0x11), Value: value,
@@ -1069,7 +1069,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	for _, p := range owing {
 		made = append(made, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "another-model",
-			Coarse: bits(0x00), Value: precise(direction(0x00)),
+			Coarse: bits(0x00), Value: getPreciseBytes(getVectorForSeed(0x00)),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
@@ -1078,7 +1078,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 	// The coarse pass answers, because the bits are there. What is asked of it
 	// afterwards is the model's own, and this vector is another model's.
-	near, err := queries.FindNearest(ctx, first.ID, "model", direction(0x00), nil, 10, 0.5)
+	near, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1087,7 +1087,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	}
 
 	// Asked of the model that made them, the same rows answer.
-	its, err := queries.FindNearest(ctx, first.ID, "another-model", direction(0x00), nil, 10, 0.5)
+	its, err := queries.FindNearest(ctx, first.ID, "another-model", getVectorForSeed(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1129,7 +1129,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 		}
 		made = append(made, chunk.Vector{
 			Chunk: p.Chunk, Hash: raw, Recipe: "model",
-			Coarse: bits(0x00), Value: precise(direction(0x00)),
+			Coarse: bits(0x00), Value: getPreciseBytes(getVectorForSeed(0x00)),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
@@ -1185,7 +1185,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 		}
 		made = append(made, chunk.Vector{
 			Chunk: p.Chunk, Hash: raw, Recipe: "model",
-			Coarse: bits(0x00), Value: precise(direction(0x00)),
+			Coarse: bits(0x00), Value: getPreciseBytes(getVectorForSeed(0x00)),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, made); err != nil {

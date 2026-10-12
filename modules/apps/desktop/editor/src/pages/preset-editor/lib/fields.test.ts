@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, type Settings } from '../types'
-import { FIELDS, fieldsUnder, shapeOf, steer } from './fields'
+import { FIELDS, fieldsUnder, getShapeKey, getGoalField } from './fields'
 
 const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
 
@@ -103,8 +103,8 @@ describe('the rule for what is learned', () => {
   // these move it: what is learned is counted off the run.
   it('gives the curve its shape, both the rule and the days it reads', () => {
     const one = settings({ learned: 'interval', interval: 21 })
-    expect(shapeOf(one)).not.toBe(shapeOf({ ...one, interval: 30 }))
-    expect(shapeOf(one)).not.toBe(shapeOf({ ...one, learned: 'retention' }))
+    expect(getShapeKey(one)).not.toBe(getShapeKey({ ...one, interval: 30 }))
+    expect(getShapeKey(one)).not.toBe(getShapeKey({ ...one, learned: 'retention' }))
   })
 })
 
@@ -115,36 +115,36 @@ describe('the one word that says the shape of the settings', () => {
   })
 
   it('names the goal, then every setting the goal steers by its value', () => {
-    expect(shapeOf({ ...every, goal: 'date' })).toBe(
+    expect(getShapeKey({ ...every, goal: 'date' })).toBe(
       'date newADay=10 reviewsADay=200 learned=interval interval=21 retention=0.9 ' +
         'minutesADay=20 byDate=2026-09-30 counts=cards backlog=100 load=mon=25,tue=50 evenLoad=true',
     )
   })
 
-  it('leaves the day out under a goal that does not steer by it', () => {
-    expect(shapeOf({ ...every, goal: 'minutes' })).toBe(
+  it('leaves the day out under a goal that does not getGoalField by it', () => {
+    expect(getShapeKey({ ...every, goal: 'minutes' })).toBe(
       'minutes newADay=10 reviewsADay=200 learned=interval interval=21 retention=0.9 ' +
         'minutesADay=20 counts=cards backlog=100 load=mon=25,tue=50 evenLoad=true',
     )
   })
 
   it('differs where the reviews of a day, the backlog or the even load differ', () => {
-    const shape = shapeOf(every)
+    const shape = getShapeKey(every)
 
-    expect(shapeOf({ ...every, reviewsADay: 300 })).not.toBe(shape)
-    expect(shapeOf({ ...every, backlog: 50 })).not.toBe(shape)
-    expect(shapeOf({ ...every, evenLoad: false })).not.toBe(shape)
+    expect(getShapeKey({ ...every, reviewsADay: 300 })).not.toBe(shape)
+    expect(getShapeKey({ ...every, backlog: 50 })).not.toBe(shape)
+    expect(getShapeKey({ ...every, evenLoad: false })).not.toBe(shape)
   })
 
   it('is the same wherever the days of the load were written first', () => {
-    expect(shapeOf({ ...every, load: { mon: 25, tue: 50 } })).toBe(shapeOf(every))
+    expect(getShapeKey({ ...every, load: { mon: 25, tue: 50 } })).toBe(getShapeKey(every))
   })
 })
 
 describe('the field a goal steers', () => {
   it('is the minutes under a goal of minutes, the target under retention, the day under a date', () => {
-    expect(steer('minutes')).toBe('minutesADay')
-    expect(steer('retention')).toBe('retention')
-    expect(steer('date')).toBe('byDate')
+    expect(getGoalField('minutes')).toBe('minutesADay')
+    expect(getGoalField('retention')).toBe('retention')
+    expect(getGoalField('date')).toBe('byDate')
   })
 })

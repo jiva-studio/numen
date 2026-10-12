@@ -45,7 +45,7 @@ type Recogniser struct {
 // Open loads the models and compiles them. It is expensive — the weights are
 // read — and the result is reusable for the life of the process.
 func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
-	opened, found, err := locate(ctx, cfg)
+	opened, found, err := locateModels(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		DictPath:            dict,
 		RecModelNumClasses:  classes,
 		DetMaxSideLen:       cfg.Detect.maxSide(),
-		DetOutsideExpandPix: cfg.Detect.expand(),
+		DetOutsideExpandPix: cfg.Detect.getExpansion(),
 		HeatmapThreshold:    cfg.Detect.minimum(),
 		RecHeight:           cfg.Recognise.height(),
 		NumThreads:          cfg.threads(),
@@ -91,8 +91,8 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		lines:  lines,
 		layout: layout.Regions,
 		read:   lines.RunOCR,
-		body:   set(cfg.Regions.body()),
-		head:   depths(cfg.Regions.head()),
+		body:   toSet(cfg.Regions.body()),
+		head:   getDepths(cfg.Regions.head()),
 		margin: cfg.Layout.margin(),
 		jobs:   cfg.jobs(),
 		model: port.RecognitionModel{
@@ -106,7 +106,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 
 func (r *Recogniser) Recognition() port.RecognitionModel { return r.model }
 
-// Close lets go of the models this reading loaded. The runtime they ran on is
+// Close lets go of the models this recognition loaded. The runtime they ran on is
 // the process's and stays.
 func (r *Recogniser) Close() error {
 	r.lines.Destroy()
@@ -118,7 +118,7 @@ func (r *Recogniser) Close() error {
 //
 // A part whose kind the configuration does not ask for is not read at all. A
 // running head and a page ornament are printed on every page and are not what
-// the page says, and reading them costs as much as reading a paragraph.
+// the page says, and recognising them costs as much as recognising a paragraph.
 //
 // A part the configuration calls a head opens a part of the document, and
 // carries how deep that part sits.
@@ -229,9 +229,9 @@ func cropRegion(page image.Image, rect image.Rectangle, margin int) (image.Image
 	return out, wider.Min
 }
 
-// depths is how deep the part each name opens sits: where it stands in the
+// getDepths is how deep the part each name opens sits: where it stands in the
 // list, outermost first.
-func depths(names []string) map[string]int {
+func getDepths(names []string) map[string]int {
 	out := make(map[string]int, len(names))
 	for i, n := range names {
 		out[n] = i
@@ -239,7 +239,7 @@ func depths(names []string) map[string]int {
 	return out
 }
 
-func set(names []string) map[string]bool {
+func toSet(names []string) map[string]bool {
 	out := make(map[string]bool, len(names))
 	for _, n := range names {
 		out[n] = true

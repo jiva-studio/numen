@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Config is the core's configuration with what this machine supplies already in
+// GetConfig is the core's configuration with what this machine supplies already in
 // it. What a settings file says is read over it.
-func Config() container.Config {
+func GetConfig() container.Config {
 	return container.Config{AgentProofreader: openProofreader}
 }
 

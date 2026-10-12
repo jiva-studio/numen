@@ -14,7 +14,7 @@ import { useCommandPalette } from './palette'
 import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch } from './search'
 import { WORDS as words } from '@/shared/words'
-import { later, type Deferred } from '@/testing/later'
+import { createDeferred, type Deferred } from '@/testing/deferred'
 
 /** What is in front, which a test moves under the commands. */
 const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -1270,12 +1270,12 @@ const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) =>
   const core = {
     names: (query: string) => {
       asked.push(query)
-      const one = later<readonly NameMatch[]>()
+      const one = createDeferred<readonly NameMatch[]>()
       names.push(one)
       return one.promise
     },
     vaults: () => {
-      const one = later<VaultList>()
+      const one = createDeferred<VaultList>()
       lists.push(one)
       return one.promise
     },
@@ -1283,7 +1283,7 @@ const createSlowPalette = (offers: Record<string, readonly StepGroup[]> = {}) =>
   const hold = { isOn: false }
   const wait = () => {
     if (!hold.isOn) return Promise.resolve()
-    const one = later<void>()
+    const one = createDeferred<void>()
     holds.push(one)
     return one.promise
   }

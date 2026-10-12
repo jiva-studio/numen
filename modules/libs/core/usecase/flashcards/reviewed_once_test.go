@@ -5,7 +5,7 @@ import (
 )
 
 // The history screen opens each run file once. The days behind and the days
-// ahead are two questions of one reading.
+// ahead are two questions of one read.
 func TestTheHistoryOpensEachRunFileOnce(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)

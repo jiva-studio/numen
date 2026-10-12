@@ -106,79 +106,110 @@ func addTool[In, Out any](
 	handler func(ctx context.Context, req *sdk.CallToolRequest, in In) (*sdk.CallToolResult, Out, error),
 ) {
 	inType := reflect.TypeFor[In]()
-
-	// Generate input schema if not explicitly provided.
 	if tool.InputSchema == nil {
-		if inType.Kind() == reflect.Struct {
-			schema, err := jsonschema.ForType(inType, &jsonschema.ForOptions{})
-			if err != nil {
-				schema = &jsonschema.Schema{Type: "object"}
-			}
-			tool.InputSchema = schema
-		} else {
-			tool.InputSchema = &jsonschema.Schema{Type: "object"}
-		}
+		tool.InputSchema = buildInputSchema(inType)
 	}
-
-	// Generate output schema if Out is not any and not explicitly provided.
-	outType := reflect.TypeFor[Out]()
-	if tool.OutputSchema == nil && outType != reflect.TypeFor[any]() {
-		if outType.Kind() == reflect.Struct || (outType.Kind() == reflect.Pointer && outType.Elem().Kind() == reflect.Struct) {
-			targetOut := outType
-			if targetOut.Kind() == reflect.Pointer {
-				targetOut = targetOut.Elem()
-			}
-			schema, err := jsonschema.ForType(targetOut, &jsonschema.ForOptions{})
-			if err == nil {
-				tool.OutputSchema = schema
-			}
-		}
+	if tool.OutputSchema == nil {
+		tool.OutputSchema = buildOutputSchema(reflect.TypeFor[Out]())
 	}
 
 	canonMap := buildCanonicalMap(inType)
 
 	server.AddTool(tool, func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
-		var in In
-
-		if req.Params != nil && len(req.Params.Arguments) > 0 {
-			normalizedJSON, err := normalizeArguments(req.Params.Arguments, canonMap)
-			if err != nil {
-				var errRes sdk.CallToolResult
-				errRes.SetError(fmt.Errorf("normalizing arguments: %w", err))
-				return &errRes, nil
-			}
-
-			if err := json.Unmarshal(normalizedJSON, &in); err != nil {
-				var errRes sdk.CallToolResult
-				errRes.SetError(fmt.Errorf("unmarshaling arguments: %w", err))
-				return &errRes, nil
-			}
+		in, err := parseArguments[In](req, canonMap)
+		if err != nil {
+			return newErrorResult(err), nil
 		}
 
 		res, out, err := handler(ctx, req, in)
 		if err != nil {
-			var errRes sdk.CallToolResult
-			errRes.SetError(err)
-			return &errRes, nil
+			return newErrorResult(err), nil
 		}
-
-		if res == nil {
-			res = &sdk.CallToolResult{}
-		}
-
-		if len(res.Content) == 0 && res.StructuredContent == nil {
-			outJSON, err := json.Marshal(out)
-			if err == nil {
-				if isObjectJSON(outJSON) {
-					res.StructuredContent = out
-				} else {
-					res.Content = append(res.Content, &sdk.TextContent{
-						Text: string(outJSON),
-					})
-				}
-			}
-		}
-
-		return res, nil
+		return fillResult(res, out), nil
 	})
+}
+
+// newHandler returns the tool handler that calls run with the parsed input and
+// builds the result from run's output.
+func newHandler[In, Out any](
+	run func(ctx context.Context, in In) (Out, error),
+) func(context.Context, *sdk.CallToolRequest, In) (*sdk.CallToolResult, Out, error) {
+	return func(ctx context.Context, _ *sdk.CallToolRequest, in In) (*sdk.CallToolResult, Out, error) {
+		out, err := run(ctx, in)
+		return nil, out, err
+	}
+}
+
+// buildInputSchema returns the schema of a struct input type, and an empty
+// object schema for any other type or when no schema can be derived.
+func buildInputSchema(inType reflect.Type) *jsonschema.Schema {
+	if inType.Kind() != reflect.Struct {
+		return &jsonschema.Schema{Type: "object"}
+	}
+	schema, err := jsonschema.ForType(inType, &jsonschema.ForOptions{})
+	if err != nil {
+		return &jsonschema.Schema{Type: "object"}
+	}
+	return schema
+}
+
+// buildOutputSchema returns the schema of a struct output type or a pointer to
+// one, and nil for any other type or when no schema can be derived.
+func buildOutputSchema(outType reflect.Type) *jsonschema.Schema {
+	if outType.Kind() == reflect.Pointer {
+		outType = outType.Elem()
+	}
+	if outType.Kind() != reflect.Struct {
+		return nil
+	}
+	schema, err := jsonschema.ForType(outType, &jsonschema.ForOptions{})
+	if err != nil {
+		return nil
+	}
+	return schema
+}
+
+// parseArguments decodes the call's arguments into In after re-keying them
+// with canonMap. A call without arguments yields the zero In.
+func parseArguments[In any](req *sdk.CallToolRequest, canonMap map[string]string) (In, error) {
+	var in In
+	if req.Params == nil || len(req.Params.Arguments) == 0 {
+		return in, nil
+	}
+	normalizedJSON, err := normalizeArguments(req.Params.Arguments, canonMap)
+	if err != nil {
+		return in, fmt.Errorf("normalizing arguments: %w", err)
+	}
+	if err := json.Unmarshal(normalizedJSON, &in); err != nil {
+		return in, fmt.Errorf("unmarshaling arguments: %w", err)
+	}
+	return in, nil
+}
+
+func newErrorResult(err error) *sdk.CallToolResult {
+	var res sdk.CallToolResult
+	res.SetError(err)
+	return &res
+}
+
+// fillResult returns res, or an empty result when res is nil. A result with no
+// content is filled with structured content when the output encodes to an object and
+// with text otherwise.
+func fillResult(res *sdk.CallToolResult, out any) *sdk.CallToolResult {
+	if res == nil {
+		res = &sdk.CallToolResult{}
+	}
+	if len(res.Content) != 0 || res.StructuredContent != nil {
+		return res
+	}
+	outJSON, err := json.Marshal(out)
+	if err != nil {
+		return res
+	}
+	if isObjectJSON(outJSON) {
+		res.StructuredContent = out
+		return res
+	}
+	res.Content = append(res.Content, &sdk.TextContent{Text: string(outJSON)})
+	return res
 }

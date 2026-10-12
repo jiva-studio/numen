@@ -84,9 +84,9 @@ func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
 	}
 }
 
-// A vault already read is not read again, so the names a reading is kept under
+// A vault already read is not read again, so the names a recognition is kept under
 // are the ones it was written under.
-func TestAReadingIsKeptUnderTheNamesItAlwaysWas(t *testing.T) {
+func TestARecognitionIsKeptUnderTheNamesItAlwaysWas(t *testing.T) {
 	want := []string{
 		"ocr/abc123.txt",
 		"ocr/abc123.partial",
@@ -97,7 +97,7 @@ func TestAReadingIsKeptUnderTheNamesItAlwaysWas(t *testing.T) {
 		"ocr/abc123.json",
 	}
 	if got := text.Names("ocr", "abc123"); !slices.Equal(got, want) {
-		t.Errorf("a reading is kept under %v, want %v", got, want)
+		t.Errorf("a recognition is kept under %v, want %v", got, want)
 	}
 }
 
@@ -122,7 +122,7 @@ func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
 	if strings.Contains(doc.Text, middle) {
 		t.Errorf("what was heard is still the text:\n%s", doc.Text)
 	}
-	if strings.Contains(doc.Text, transcript.ByHand) {
+	if strings.Contains(doc.Text, transcript.HandWrittenNote) {
 		t.Errorf("the mark of a person's own words is in the text:\n%s", doc.Text)
 	}
 }

@@ -17,7 +17,7 @@ import (
 // A source a person named is never turned away for want of a turn. It waits in
 // line and is taken up before anything the vault set itself.
 
-// A Runner reads a source a model has to produce the text of. Reading a scan
+// A Runner reads a source a model has to produce the text of. Recognising a scan
 // and hearing a recording are one shape here, and one at a time of each.
 type Runner interface {
 	// Start takes on one source a person named, and says whether it began now
@@ -26,62 +26,62 @@ type Runner interface {
 	Start(v domain.Vault, path string) port.StartOutcome
 }
 
-// reached is how far a run over one source has got: the one thing a source
+// runProgress is how far a run over one source has got: the one state a source
 // stands at, what the run wrote about a source it got no words out of, and how
 // many bytes stand under whichever name it has reached, which is what tells a
 // caller that what it read has moved on.
-type reached struct {
-	stands stand
-	why    string
-	size   int
+type runProgress struct {
+	state runState
+	why   string
+	size  int
 }
 
-// A stand is what a source stands at. One holds at a time: a source is not both
+// A runState is what a source stands at. One holds at a time: a source is not both
 // being read and read through.
-type stand int
+type runState int
 
 const (
-	// untouched is a source no run has left anything of.
-	untouched stand = iota
-	// done is the whole of the text a model produced already standing.
-	done
-	// under is a run holding this very source now.
-	under
-	// stopped is part of the text on disk with no run behind it.
-	stopped
-	// silent is a run that got no words out of it because it holds no speech,
+	// runNone is a source no run has left anything of.
+	runNone runState = iota
+	// runComplete is the whole of the text a model produced already standing.
+	runComplete
+	// runActive is a run holding this very source now.
+	runActive
+	// runStopped is part of the text on disk with no run behind it.
+	runStopped
+	// runNoSpeech is a run that got no words out of it because it holds no speech,
 	// and unopened one that got none because nothing here opens the bytes.
-	silent
-	unopened
+	runNoSpeech
+	runUnopened
 )
 
-// getReached says how getReached a run over the source at a path has got.
+// getRunProgress says how far a run over the source at a path has got.
 //
 // A build that cannot say which model produced a text answers nothing, and the
 // run itself then decides what is left to do.
-func (a *API) getReached(
+func (a *API) getRunProgress(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
 	kind domain.SourceKind,
-) (reached, error) {
+) (runProgress, error) {
 	meta, store, produced, err := a.getSourceText(ctx, v, path)
 	if err != nil {
-		return reached{}, err
+		return runProgress{}, err
 	}
 	if produced {
-		return farUnder(ctx, store, meta.Producer, meta.Hash)
+		return readRunProgress(ctx, store, meta.Producer, meta.Hash)
 	}
-	return a.byBytes(ctx, v, path, getDefaultProducer(kind))
+	return a.getRunProgressByContent(ctx, v, path, getDefaultProducer(kind))
 }
 
-// farUnder says how far the run keeping its files under a name has got.
-func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (reached, error) {
-	var got reached
+// readRunProgress says how far the run keeping its files under a name has got.
+func readRunProgress(ctx context.Context, store port.DerivedStore, from, hash string) (runProgress, error) {
+	var got runProgress
 	whole, err := store.Read(ctx, derived.Artifact(from, hash))
 	switch {
 	case err == nil:
-		got.stands, got.size = done, len(whole)
+		got.state, got.size = runComplete, len(whole)
 		return got, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return got, err
@@ -90,9 +90,9 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 	case err == nil:
 		switch answer, why := derived.ReadAnswer(payload); answer {
 		case derived.Silent:
-			got.stands = silent
+			got.state = runNoSpeech
 		case derived.Unopened:
-			got.stands, got.why = unopened, why
+			got.state, got.why = runUnopened, why
 		}
 		return got, nil
 	case !errors.Is(err, fs.ErrNotExist):
@@ -108,40 +108,40 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 	}
 	got.size = len(part)
 	switch {
-	case !free(ctx, store, derived.Partial(from, hash)):
-		got.stands = under
+	case !isUnclaimed(ctx, store, derived.Partial(from, hash)):
+		got.state = runActive
 	// A run that stopped left what it reached behind it. It is not a source
 	// nothing has touched, and asking again begins afresh.
 	case got.size > 0:
-		got.stands = stopped
+		got.state = runStopped
 	}
 	return got, nil
 }
 
-// byBytes says how far a run over a source the index names no producer for has
+// getRunProgressByContent says how far a run over a source the index names no producer for has
 // got. A source a run got no words out of is one of those, and what the run
 // wrote is kept under the fingerprint of the bytes.
 //
 // The file is read and fingerprinted here, which is what a run does before
 // anything else.
-func (a *API) byBytes(ctx context.Context, v domain.Vault, path, from string) (reached, error) {
+func (a *API) getRunProgressByContent(ctx context.Context, v domain.Vault, path, from string) (runProgress, error) {
 	_, stores, ok := a.getSourceStores()
 	if !ok || from == "" {
-		return reached{}, nil
+		return runProgress{}, nil
 	}
 	reader, err := a.Readers.Open(v)
 	if err != nil {
-		return reached{}, err
+		return runProgress{}, err
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return reached{}, err
+		return runProgress{}, err
 	}
 	store, err := stores.Open(v)
 	if err != nil {
-		return reached{}, err
+		return runProgress{}, err
 	}
-	return farUnder(ctx, store, from, derived.Fingerprint(raw))
+	return readRunProgress(ctx, store, from, derived.Fingerprint(raw))
 }
 
 // getDefaultProducer is the producer whose files stand for a source the index names none

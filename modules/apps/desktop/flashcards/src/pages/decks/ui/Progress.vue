@@ -8,7 +8,7 @@
 import { Heatmap, heatmapDayName } from '@numen/ui'
 import type { HeatmapTally, HeatmapWords } from '@numen/ui'
 
-import { called } from '@/entities/card'
+import { GRADE_LABELS } from '@/entities/card'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
@@ -24,10 +24,10 @@ const words: HeatmapWords = {
   answered: 'answered',
   nothing: 'Nothing answered',
   toCome: 'to come',
-  again: called.again,
-  hard: called.hard,
-  good: called.good,
-  easy: called.easy,
+  again: GRADE_LABELS.again,
+  hard: GRADE_LABELS.hard,
+  good: GRADE_LABELS.good,
+  easy: GRADE_LABELS.easy,
   recalled: 'of cards you are reviewing came back',
 }
 </script>

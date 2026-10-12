@@ -14,13 +14,13 @@ import (
 // downloaded with. The settings name where each of them is.
 var errNoTools = errors.New("neither yt-dlp nor ffmpeg is on this machine")
 
-// deps is what the terminal works through, built for the places one run was
+// makeDeps is what the terminal works through, built for the places one run was
 // pointed at. An installation is assembled by the application, so the openers
 // are made here and the terminal is handed them.
 //
 // Each one opens when its command asks and not before: a person listing vaults
 // waits for no index, and one asking about a scan waits for no transcriber.
-func deps(cfg container.Config) func(cli.Locations) cli.Deps {
+func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 	return func(where cli.Locations) cli.Deps {
 		cfg.IndexPath = where.Index
 		cfg.RegistryPath = where.Registry
@@ -62,16 +62,16 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 			},
 
 			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
-				reading := cfg
-				reading.ShouldRebuildIndex = rebuild
-				db, err := reading.OpenIndex(ctx)
+				indexing := cfg
+				indexing.ShouldRebuildIndex = rebuild
+				db, err := indexing.OpenIndex(ctx)
 				if err != nil {
 					return cli.Scan{}, err
 				}
 				// A terminal waits for the model, and a vault is read whether
 				// or not one arrives.
-				embedder, closeEmbedder, why := reading.Embedder(ctx)
-				read, err := reading.ReadWholeVault(ctx, db, embedder, v)
+				embedder, closeEmbedder, why := indexing.Embedder(ctx)
+				read, err := indexing.ReadWholeVault(ctx, db, embedder, v)
 				if err != nil {
 					if closeEmbedder != nil {
 						_ = closeEmbedder()
@@ -170,24 +170,24 @@ func deps(cfg container.Config) func(cli.Locations) cli.Deps {
 				return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, by), Close: db.Close}, nil
 			},
 
-			ProofreadReading: func(
+			ProofreadRecognition: func(
 				ctx context.Context, v domain.Vault,
-			) (cli.ProofreadReading, error) {
+			) (cli.ProofreadRecognition, error) {
 				proofread, held, err := cfg.GetScanProofreading().
-					Reading(cfg.VaultReaders(), cfg.GetDerivedStores())
+					Recognition(cfg.VaultReaders(), cfg.GetDerivedStores())
 				if err != nil || !held {
-					return cli.ProofreadReading{}, err
+					return cli.ProofreadRecognition{}, err
 				}
 				db, err := cfg.OpenIndex(ctx)
 				if err != nil {
-					return cli.ProofreadReading{}, err
+					return cli.ProofreadRecognition{}, err
 				}
 				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
 				if err != nil {
 					_ = db.Close()
-					return cli.ProofreadReading{}, err
+					return cli.ProofreadRecognition{}, err
 				}
-				return cli.ProofreadReading{
+				return cli.ProofreadRecognition{
 					Proofread: proofread, Cut: cut, IsHeld: true, Close: db.Close,
 				}, nil
 			},

@@ -51,7 +51,7 @@ func (c Config) Level(db *Index) note.Levels {
 	refresh := vault.NewRefresh(
 		c.VaultReaders(),
 		db.Vaults(),
-		db.NotesCutAt(c.GetChunkSizes(), c.Legibility()),
+		db.NotesWithChunking(c.GetChunkSizes(), c.Legibility()),
 		db.SourcesKnown(),
 		db.Sources(),
 		c.Clock(),
@@ -80,10 +80,10 @@ func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {
 	return i.db.FitVectors(ctx, dims, recipe)
 }
 
-// ForgetOtherRecipes takes out the vectors kept under any recipe but the one in
+// DeleteVectorsOfOtherRecipes takes out the vectors kept under any recipe but the one in
 // use, and says how many went.
-func (i *Index) ForgetOtherRecipes(ctx context.Context, recipe string) (int64, error) {
-	return i.db.ForgetOtherRecipes(ctx, recipe)
+func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) (int64, error) {
+	return i.db.DeleteOtherRecipeVectors(ctx, recipe)
 }
 
 // Compact hands back the space the index no longer holds.

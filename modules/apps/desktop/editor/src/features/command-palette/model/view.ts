@@ -7,7 +7,7 @@
  * application for anything: `palette.ts` holds the steps and does that.
  */
 import type { PaletteGroup, PaletteItem } from '@numen/ui'
-import { inGroup } from '../lib/commands'
+import { getGroupCommands } from '../lib/commands'
 import type { PendingStep } from '../lib/step'
 import type { Command, CommandGroup, CommandTarget } from '../types'
 import { createStepGroups } from './stepGroups'
@@ -47,7 +47,7 @@ export function getPaletteView(state: ViewState) {
   const getCommandGroups = (over: CommandTarget, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
     const items = (group: CommandGroup): readonly PaletteItem[] =>
-      inGroup(commands, group)
+      getGroupCommands(commands, group)
         .filter((one) => one.isOffered(over, runs))
         .map((one) => renderItem(one, over, word))
         .filter((item) => item !== null)
@@ -57,7 +57,12 @@ export function getPaletteView(state: ViewState) {
     const overFile = items('file')
 
     return [
-      { id: 'note', title: words.overNote, items: items('note'), silence: getSilenceMessage(over) },
+      {
+        id: 'note',
+        title: words.noteGroupTitle,
+        items: items('note'),
+        silence: getSilenceMessage(over),
+      },
       ...(overFile.length === 0 ? [] : [{ id: 'file', title: words.overFile, items: overFile }]),
       { id: 'window', title: words.overWindow, items: items('window'), silence: words.noneFound },
       { id: 'vault', title: words.overVault, items: items('vault'), silence: words.noneFound },

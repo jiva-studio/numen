@@ -6,7 +6,7 @@ An installation holds a list of vaults. The window shows one of them at a time, 
 
 The process holds two halves, and they have different lifetimes.
 
-**The installation is made once**: the index, the embedder, the list of what is being done, and everyone listening to it. **One vault is made and unmade**: the scan, the watch, the reading of documents, the documents held open, and what each of those has in flight.
+**The installation is made once**: the index, the embedder, the list of what is being done, and everyone listening to it. **One vault is made and unmade**: the scan, the watch, the extraction of documents, the documents held open, and what each of those has in flight.
 
 Opening another vault unmakes the second half and makes it again. One database holds every vault and the embedder is the installation's, so neither is touched.
 
@@ -48,7 +48,7 @@ sequenceDiagram
             Window-->>Person: the swap is called off, and the question stands
         else every page has written
             Pages-->>Window: written
-            Window->>Old: stop the scan, the watch and the reading
+            Window->>Old: stop the scan, the watch and the extraction
             Window->>New: scan, watch, read
             alt the new vault will not come up
                 Window->>Old: bring it back
@@ -106,7 +106,7 @@ Five tools:
 | `vault_list` | every vault this installation holds, and which one the person is looking at. A vault whose folder is gone is marked and stays on the list. |
 | `vault_add` | put a folder on the list. With no path, this machine's own picker goes up in front of the person and what they choose is added; a person who closes it has chosen nothing, and the answer says so. With a path, the folder at that path becomes a vault. Nothing already in the folder is moved or rewritten, and the vault's identity is written into it. |
 | `vault_rename` | call a vault something else. |
-| `vault_forget` | take a vault off the list and out of the index. |
+| `vault_remove` | take a vault off the list and out of the index. |
 | `vault_open` | put another vault in front of the person. The agent's session ends with the vault it was serving. |
 
 Every other tool works the vault marked `showing`, and no other.
@@ -121,4 +121,4 @@ Every other tool works the vault marked `showing`, and no other.
 - **The macOS trash is unverified.** It compiles and has never run: the selectors, the boolean return and the error out-parameter are untested until somebody runs it on a Mac.
 - **`vault_open` answers before the swap happens.** The endpoint the answer travels over is what the swap closes, so the call cannot wait for it. Whether the answer arrives before the transport goes is a race, and the tool says so.
 - **The registry is not locked between processes.** Each write rewrites the whole file, so a window and a command line writing at once lose one of the two entirely. Inside one process it is locked.
-- **A failed reading left in the list of what is being done survives a swap.** A cancelled one takes itself out; one that failed stays until it is dismissed, and it outlives the vault it was about.
+- **A failed task left in the list of what is being done survives a swap.** A cancelled one takes itself out; one that failed stays until it is dismissed, and it outlives the vault it was about.

@@ -171,7 +171,7 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 			continue
 		}
 		// The source says which text its chunks are places in, as the query
-		// does: a chunk of a source standing on a reading is read from that
+		// does: a chunk of a source standing on a recognition is read from that
 		// reading and not from the file.
 		out = append(out, domain.Passage{
 			ChunkID: chunkID(c.id), Source: c.path, Start: c.start, Length: c.length, Location: c.location,
@@ -698,7 +698,7 @@ func words(vocabulary []string, n int) string {
 	return strings.Join(out, " ")
 }
 
-func (s *store) Reading(_ context.Context, vaultID domain.VaultID, path string) (port.SourceText, bool, error) {
+func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path string) (port.SourceText, bool, error) {
 	src, held := s.sources[vaultID][path]
 	if !held {
 		return port.SourceText{}, false, nil

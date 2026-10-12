@@ -37,7 +37,7 @@ func openEditor(t *testing.T, notes map[string]string) *API {
 			Write: &writing,
 		},
 	}
-	api.show(testsupport.NewVault(t, notes))
+	api.setVault(testsupport.NewVault(t, notes))
 	return api
 }
 

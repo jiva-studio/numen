@@ -35,8 +35,7 @@ type Passage struct {
 	// Producer is what made the text this chunk is a place in. Empty where the
 	// source's own bytes are the text, which is the ordinary case.
 	Producer string
-	// Hash addresses the content of the source, and is what the files of a
-	// reading of it are kept under.
+	// Hash addresses the content of the source, and is what the 	// recognition of it are kept under.
 	Hash string
 	// ChunkHash addresses the text this chunk held when the index cut it.
 	ChunkHash string
@@ -241,7 +240,7 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 		return nil, err
 	}
 
-	near, err := q.coarse(ctx, vault, query, limit*coarseCandidates)
+	near, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
 	if err != nil {
 		return nil, err
 	}
@@ -255,9 +254,9 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 	return q.getEnclosingPassages(ctx, vault, ranked)
 }
 
-// coarse is the pass over the bit vectors: the chunks of one vault whose signs
+// findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs
 // stand nearest the query's, by Hamming distance, k of them.
-func (q *Queries) coarse(ctx context.Context, vault int64, query []float32, k int) ([]int64, error) {
+func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) ([]int64, error) {
 	rows, err := q.db.QueryContext(ctx, stmt.Get("coarse"), embedding.Bits(query), vault, k)
 	if err != nil {
 		return nil, err
@@ -480,7 +479,7 @@ func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte
 }
 
 // SourceText is one source whose text a producer made: where the file is, what
-// made the text, and the hash the files of that reading are kept under.
+// made the text, and the hash the files of that recognition are kept under.
 type SourceText struct {
 	Path     string
 	Producer string
@@ -489,9 +488,9 @@ type SourceText struct {
 	MTime    int64
 }
 
-// Reading is what one source's text came from, and false where the index holds
+// GetSourceText is what one source's text came from, and false where the index holds
 // no source at that path.
-func (q *Queries) Reading(ctx context.Context, vaultID domain.VaultID, path string) (SourceText, bool, error) {
+func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (SourceText, bool, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return SourceText{}, false, nil
@@ -500,7 +499,7 @@ func (q *Queries) Reading(ctx context.Context, vaultID domain.VaultID, path stri
 		return SourceText{}, false, err
 	}
 	found := SourceText{Path: path}
-	err = q.db.QueryRowContext(ctx, stmt.Get("reading"), vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
+	err = q.db.QueryRowContext(ctx, stmt.Get("source_text"), vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
 	if errors.Is(err, sql.ErrNoRows) {
 		return SourceText{}, false, nil
 	}

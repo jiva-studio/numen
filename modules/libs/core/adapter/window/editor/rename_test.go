@@ -483,7 +483,7 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
-	if !f.installation.Settle(ctx) {
+	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault did not settle with nobody holding anything")
 	}
 

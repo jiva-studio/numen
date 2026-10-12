@@ -34,7 +34,7 @@ const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
     },
   ],
   unread: '',
-  isReading: false,
+  isIndexing: false,
   ...fields,
 })
 
@@ -188,11 +188,11 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.sendCount(createVaultList(vault('01A')))
-    front.sendCount(count(vault('01A', { isReading: true, faces: 0, due: 0, new: 0 })))
+    front.sendCount(count(vault('01A', { isIndexing: true, faces: 0, due: 0, new: 0 })))
     front.endCounts()
     await flushPromises()
 
-    expect(one.vaults.value[0]).toMatchObject({ isCounted: false, isReading: true, unread: '' })
+    expect(one.vaults.value[0]).toMatchObject({ isCounted: false, isIndexing: true, unread: '' })
   })
 
   it('no longer says a vault is being read once its count has arrived', async () => {
@@ -201,12 +201,12 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.sendCount(createVaultList(vault('01A')))
-    front.sendCount(count(vault('01A', { isReading: true })))
+    front.sendCount(count(vault('01A', { isIndexing: true })))
     front.sendCount(count(vault('01A', { due: 5 })))
     front.endCounts()
     await flushPromises()
 
-    expect(one.vaults.value[0]).toMatchObject({ isCounted: true, isReading: false, due: 5 })
+    expect(one.vaults.value[0]).toMatchObject({ isCounted: true, isIndexing: false, due: 5 })
   })
 
   it('is still counting until the last of them has arrived', async () => {
@@ -266,10 +266,10 @@ describe('counting what every vault owes', () => {
 
     const first = one.count()
     front.sendCount(createVaultList(vault('01A')))
-    front.sendCount(count(vault('01A', { isReading: true })))
+    front.sendCount(count(vault('01A', { isIndexing: true })))
     await flushPromises()
 
-    // The reading finished and woke the counting while the first was still on.
+    // The indexing finished and woke the counting while the first was still on.
     void one.count()
     front.endCounts()
     await flushPromises()

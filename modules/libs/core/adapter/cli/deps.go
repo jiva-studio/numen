@@ -24,7 +24,7 @@ type Locations struct {
 // command, and nothing opened until the command that needs it asks.
 //
 // A command pays only for its own machinery: listing vaults opens no index, a
-// search opens no provider that fills one, and reading a scan opens no
+// search opens no provider that fills one, and recognising a scan opens no
 // transcriber.
 type Deps struct {
 	// Vaults is the list of vaults this installation keeps and what the vault
@@ -33,7 +33,7 @@ type Deps struct {
 	Vaults func() (Vaults, error)
 
 	// Scan opens the walk that brings the index level with one vault, the
-	// reading of its books and the making of its vectors. rebuild reads every
+	// extraction of its books and the making of its vectors. rebuild reads every
 	// file, whatever the index remembers.
 	Scan func(ctx context.Context, v domain.Vault, rebuild bool) (Scan, error)
 
@@ -59,12 +59,12 @@ type Deps struct {
 	// holding neither of the tools that reach one opens nothing.
 	ImportURL func(ctx context.Context, v domain.Vault) (ImportURL, error)
 
-	// ProofreadReading opens what puts a document's reading right, and
+	// ProofreadRecognition opens what puts a document's recognition right, and
 	// ProofreadTranscript what puts a recording's transcript right. They are
 	// two openers because a file is one or the other and nothing opens for the
 	// kind it is not.
-	ProofreadReading    func(ctx context.Context, v domain.Vault) (ProofreadReading, error)
-	ProofreadTranscript func(ctx context.Context, v domain.Vault) (ProofreadTranscript, error)
+	ProofreadRecognition func(ctx context.Context, v domain.Vault) (ProofreadRecognition, error)
+	ProofreadTranscript  func(ctx context.Context, v domain.Vault) (ProofreadTranscript, error)
 }
 
 // Vaults is what the vault commands work on: the list this installation keeps,
@@ -149,7 +149,7 @@ type Recognise struct {
 // Transcribe is one recording listened to with a model.
 type Transcribe struct {
 	Transcribe source.Transcribe
-	// Cut is what it is for a reading: the speech already written down is
+	// Cut is what it is for a recognition: the speech already written down is
 	// searchable while the rest is still being heard.
 	Cut   source.Extract
 	Close func() error
@@ -162,9 +162,9 @@ type ImportURL struct {
 	Close     func() error
 }
 
-// ProofreadReading is one document's reading put right with a model.
-type ProofreadReading struct {
-	Proofread source.ProofreadReading
+// ProofreadRecognition is one document's recognition put right with a model.
+type ProofreadRecognition struct {
+	Proofread source.ProofreadRecognition
 	Cut       source.Extract
 	// IsHeld says whether anything is configured to proofread with. Nothing else
 	// here is opened where nothing is.

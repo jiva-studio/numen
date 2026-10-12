@@ -24,8 +24,8 @@ import (
 const (
 	// ASR is a model here, listening to a recording.
 	ASR = "asr"
-	// Reading is a model here, reading the pages of a scan.
-	Reading = "ocr"
+	// OCR is a model here, recognising the text of a scan's pages.
+	OCR = "ocr"
 )
 
 // The producers that bring back what is at an address a link note points at.
@@ -221,10 +221,10 @@ func ReadDownloaded(
 	return "", "", nil
 }
 
-// ReadComposed is a reading and everything kept beside it, as the text a
+// ReadComposed is a recognition and everything kept beside it, as the text a
 // source's chunks are places in.
 //
-// The corrections are read before the coordinates, and a reading nothing
+// The corrections are read before the coordinates, and a recognition nothing
 // proofread is composed from its own bytes alone. A transcript is composed from
 // what it was put right to, and from its own bytes where nothing put it right.
 func ReadComposed(
@@ -282,7 +282,7 @@ func readOptional(ctx context.Context, store port.DerivedStore, name string) ([]
 // artifact when it was read. A recognition that names none is a document with
 // no parts, and is located by its pages alone.
 //
-// A reading that was proofread is composed with its corrections in it, and the
+// A recognition that was proofread is composed with its corrections in it, and the
 // pages and the parts stand where they now are.
 func ReadRecognition(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
@@ -384,7 +384,7 @@ func Partial(from, hash string) string {
 //
 // The artifact stays what was read or heard, so deleting this file gives that
 // back. A transcript's corrections are the words as they now stand, WebVTT
-// under the extension that format is opened by; a reading's are one record to
+// under the extension that format is opened by; a recognition's are one record to
 // a line put right, keyed by the box the line was read from.
 func Corrections(from, hash string) string {
 	if isTimed(from) {
@@ -393,7 +393,7 @@ func Corrections(from, hash string) string {
 	return getName(from, hash, ".corrected")
 }
 
-// Parts is the name the parts of a reading are kept under. A reading whose
+// Parts is the name the parts of a recognition are kept under. A recognition whose
 // layout model named none has no such file.
 func Parts(from, hash string) string { return getName(from, hash, ".parts") }
 
@@ -401,7 +401,7 @@ func Parts(from, hash string) string { return getName(from, hash, ".parts") }
 // kept because no machine here remakes them cheaply.
 func Boxes(from, hash string) string { return getName(from, hash, ".boxes") }
 
-// Proofread is the name of what says who put a reading right and how far they
+// Proofread is the name of what says who put a recognition right and how far they
 // got. A run stopped part way is taken up again at the page it names.
 func Proofread(from, hash string) string { return getName(from, hash, ".proofread") }
 
@@ -421,7 +421,7 @@ const (
 // ReadAnswer is which of the two a recording gave and what the run said about
 // it, read from what is kept under Answer. Bytes opening with neither word are
 // nothing this wrote.
-func ReadAnswer(raw []byte) (gave, said string) {
+func ReadAnswer(raw []byte) (kind, detail string) {
 	line := strings.TrimSpace(string(raw))
 	for _, one := range []string{Silent, Unopened} {
 		if line == one {

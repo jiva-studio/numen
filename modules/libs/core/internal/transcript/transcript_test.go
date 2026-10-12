@@ -129,11 +129,11 @@ func TestStampIsWhatTheFormatWrites(t *testing.T) {
 // spoken in a cue are speech, and a proofreader is not stopped by them.
 func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 	spoken := transcript.Marshal([]transcript.Cue{
-		{Text: transcript.ByHand, From: 0, To: 2000},
+		{Text: transcript.HandWrittenNote, From: 0, To: 2000},
 		{Text: "and then he said it again", From: 2000, To: 4000},
 	})
 	if transcript.IsWrittenByHand(spoken) {
-		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.ByHand, spoken)
+		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.HandWrittenNote, spoken)
 	}
 
 	own := slices.Concat(spoken, transcript.Hand())
@@ -143,7 +143,7 @@ func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 
 	// The note is passed over, and the words are the ones that were spoken.
 	said, cues := transcript.Parse(own)
-	if len(cues) != 2 || said != transcript.ByHand+"\nand then he said it again" {
+	if len(cues) != 2 || said != transcript.HandWrittenNote+"\nand then he said it again" {
 		t.Errorf("the words read back as %q in %d cues", said, len(cues))
 	}
 }

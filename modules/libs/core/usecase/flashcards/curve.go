@@ -90,43 +90,22 @@ func (u ProjectCurve) Execute(
 	}
 	// A deck is asked once which preset schedules it, however many card faces
 	// it holds, and a preset note is opened once however many decks name it.
-	reading := u.presets.Reading()
-	asks, err := u.schedules.getAssignmentFrom(ctx, v, reading, faces)
+	reads := u.presets.OpenReads()
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
 	if err != nil {
 		return review.Curve{}, err
 	}
 	schedules := u.schedules.getSchedules(held, asks)
 
-	decks := make(map[string]bool)
-	at := make(map[review.CardFaceID]review.Schedule)
-	// The card faces this preset schedules, which is what it is costed from.
-	under := make(map[review.CardFaceID]string)
-	unseen := 0
-	for _, one := range faces {
-		mine, asked := decks[one.Deck]
-		if !asked {
-			held, err := reading.GetForDeck(ctx, v, one.Deck)
-			if err != nil {
-				return review.Curve{}, err
-			}
-			mine = held.Path == path
-			decks[one.Deck] = mine
-		}
-		if !mine {
-			continue
-		}
-		under[one.ID] = path
-		s, answered := schedules[one.ID]
-		if !answered {
-			unseen++
-			continue
-		}
-		at[one.ID] = s
+	mine, err := u.readScheduledFaces(ctx, v, reads, path, faces, schedules)
+	if err != nil {
+		return review.Curve{}, err
 	}
+	decks, at, under, unseen := mine.decks, mine.at, mine.under, mine.unseen
 
 	// How many decks this preset schedules, counted over every deck that could
 	// name it: a deck of no cards points at its preset like any other.
-	mine, err := u.countPointingDecks(ctx, v, reading, path, scheduled, decks)
+	pointing, err := u.countPointingDecks(ctx, v, reads, path, scheduled, decks)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -149,10 +128,56 @@ func (u ProjectCurve) Execute(
 		return review.Curve{}, err
 	}
 	out.Stops = p.GetOverallStopReason(u.day, now)
-	out.Decks = mine
+	out.Decks = pointing
 	out.Cards = len(under)
 	out.Overdue = review.CountOverdue(u.day, at, now)
 	out.Unbegun = unseen
+	return out, nil
+}
+
+// scheduledFaces is the card faces a preset schedules.
+type scheduledFaces struct {
+	// decks says for each deck asked whether the preset schedules it.
+	decks map[string]bool
+	// at is the schedule of each face that has been answered.
+	at map[review.CardFaceID]review.Schedule
+	// under is the faces the preset is costed from.
+	under map[review.CardFaceID]string
+	// unseen is how many of the faces have not been answered.
+	unseen int
+}
+
+// readScheduledFaces picks out of faces the ones the preset at path schedules.
+func (u ProjectCurve) readScheduledFaces(
+	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
+	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
+) (scheduledFaces, error) {
+	out := scheduledFaces{
+		decks: make(map[string]bool),
+		at:    make(map[review.CardFaceID]review.Schedule),
+		under: make(map[review.CardFaceID]string),
+	}
+	for _, one := range faces {
+		mine, asked := out.decks[one.Deck]
+		if !asked {
+			held, err := reads.GetForDeck(ctx, v, one.Deck)
+			if err != nil {
+				return scheduledFaces{}, err
+			}
+			mine = held.Path == path
+			out.decks[one.Deck] = mine
+		}
+		if !mine {
+			continue
+		}
+		out.under[one.ID] = path
+		s, answered := schedules[one.ID]
+		if !answered {
+			out.unseen++
+			continue
+		}
+		out.at[one.ID] = s
+	}
 	return out, nil
 }
 
@@ -160,7 +185,7 @@ func (u ProjectCurve) Execute(
 //
 // A deck names its preset with an entry of its `links:` block, so what points
 // at that note is what the preset could schedule, and the rest of the vault is
-// left unread. Which of them the preset does schedule is the reading's answer:
+// left unread. Which of them the preset does schedule is the answer of the reads:
 // a deck naming two presets is scheduled by the first.
 //
 // A preset standing in no note is the defaults, and nothing points at those.
@@ -196,14 +221,14 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 // countPointingDecks is how many of these decks name the preset at path. Asked
 // is what has already been worked out from the cards standing.
 func (u ProjectCurve) countPointingDecks(
-	ctx context.Context, v domain.Vault, reading *PresetReads, path string,
+	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
 	decks []string, asked map[string]bool,
 ) (int, error) {
 	out := 0
 	for _, deck := range decks {
 		points, held := asked[deck]
 		if !held {
-			p, err := reading.GetForDeck(ctx, v, deck)
+			p, err := reads.GetForDeck(ctx, v, deck)
 			if err != nil {
 				return 0, err
 			}

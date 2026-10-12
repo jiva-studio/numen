@@ -228,7 +228,7 @@ func (h heard) ByOtherRecipe(
 	return nil, nil
 }
 
-func (h heard) Reading(context.Context, domain.VaultID, string) (port.SourceText, bool, error) {
+func (h heard) GetSourceText(context.Context, domain.VaultID, string) (port.SourceText, bool, error) {
 	return port.SourceText{}, false, nil
 }
 
@@ -246,7 +246,7 @@ func (h recognised) ByOtherRecipe(
 	return nil, nil
 }
 
-func (h recognised) Reading(context.Context, domain.VaultID, string) (port.SourceText, bool, error) {
+func (h recognised) GetSourceText(context.Context, domain.VaultID, string) (port.SourceText, bool, error) {
 	return port.SourceText{}, false, nil
 }
 

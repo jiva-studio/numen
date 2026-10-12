@@ -60,7 +60,7 @@ type Recognitions struct {
 	// A worker given none holds one of its own, and takes its turn with nobody.
 	Models *Lock
 
-	// Proofreading is what a reading is put right with.
+	// Proofreading is what a recognition is put right with.
 	Proofreading ProofreadingConfig
 }
 
@@ -195,7 +195,7 @@ func (r *RecognitionWorker) drain(ctx context.Context) {
 // recogniseOne is a single document recognised, put right, and reported.
 func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, path string) {
 	id := recognitionID(path)
-	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
+	r.say(task.Task{ID: id, Doing: "Recognising a scan", About: path})
 
 	err := r.recognise(ctx, v, id, path)
 	if err == nil {
@@ -208,7 +208,7 @@ func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, pa
 		r.finishTask(id)
 	default:
 		// A failure stands in the list until whoever is shown it takes it out.
-		r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Error: err.Error()})
+		r.say(task.Task{ID: id, Doing: "Recognising a scan", About: path, Error: err.Error()})
 	}
 }
 
@@ -273,13 +273,13 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 		return errLateRuntime
 	}
 
-	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
+	r.say(task.Task{ID: id, Doing: "Recognising a scan", About: path})
 	read := NewRecognise(r.with.Readers, r.with.Sources, r.with.Derived, r.with.Documents, by)
 	read.Cut = r.Cut
 	read.OnProgress = func(res RecogniseResult) {
 		r.say(task.Task{
 			ID:    id,
-			Doing: "Reading a scan",
+			Doing: "Recognising a scan",
 			About: path,
 			Count: int64(res.Read),
 			Total: int64(res.Pages),
@@ -298,76 +298,76 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 }
 
 // ProofreaderReady says whether this installation has anything to put a
-// reading right with. A person is offered the run where it has.
+// recognition right with. A person is offered the run where it has.
 func (r *RecognitionWorker) ProofreaderReady() bool { return r.with.Proofreading.IsNamed }
 
-// Proofread puts one reading right for a person who asked for it and says
-// what came of asking: the run began, or the reading needed nothing of it.
+// Proofread puts one recognition right for a person who asked for it and says
+// what came of asking: the run began, or the recognition needed nothing of it.
 func (r *RecognitionWorker) Proofread(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-) (ProofreadReadingResult, error) {
-	outcomes := make(chan readingOutcome, 2)
+) (ProofreadRecognitionResult, error) {
+	outcomes := make(chan proofreadOutcome, 2)
 	r.going.Add(1)
 	//nolint:contextcheck // the run outlives the caller and carries r.context()
 	go func() {
 		defer r.going.Done()
-		res, err := r.proofreadReading(r.context(), v, path, func(began ProofreadReadingResult) {
-			outcomes <- readingOutcome{res: began}
+		res, err := r.proofreadRecognition(r.context(), v, path, func(began ProofreadRecognitionResult) {
+			outcomes <- proofreadOutcome{res: began}
 		})
-		outcomes <- readingOutcome{res: res, err: err}
+		outcomes <- proofreadOutcome{res: res, err: err}
 	}()
 
 	select {
 	case one := <-outcomes:
 		return one.res, one.err
 	case <-ctx.Done():
-		return ProofreadReadingResult{Path: path}, ctx.Err()
+		return ProofreadRecognitionResult{Path: path}, ctx.Err()
 	}
 }
 
-type readingOutcome struct {
-	res ProofreadReadingResult
+type proofreadOutcome struct {
+	res ProofreadRecognitionResult
 	err error
 }
 
-// proofread puts a reading right, where a person configured something to
+// proofread puts a recognition right, where a person configured something to
 // proofread it with. An installation that named no profile, or asked for a
-// reading to be put right by hand, does nothing here.
+// recognition to be put right by hand, does nothing here.
 func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path string) {
 	if !r.with.Proofreading.IsAutomatic {
 		return
 	}
-	_, _ = r.proofreadReading(ctx, v, path, nil)
+	_, _ = r.proofreadRecognition(ctx, v, path, nil)
 }
 
-func (r *RecognitionWorker) proofreadReading(
+func (r *RecognitionWorker) proofreadRecognition(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-	onBegan func(ProofreadReadingResult),
-) (ProofreadReadingResult, error) {
+	onBegan func(ProofreadRecognitionResult),
+) (ProofreadRecognitionResult, error) {
 	proofreading := r.with.Proofreading
-	right, held, err := proofreading.Reading(r.with.Readers, r.with.Derived)
+	right, held, err := proofreading.Recognition(r.with.Readers, r.with.Derived)
 	if err != nil {
-		r.say(task.Task{ID: proofreadID(path), Doing: "Proofreading a reading", About: path, Error: err.Error()})
-		return ProofreadReadingResult{Path: path}, err
+		r.say(task.Task{ID: proofreadID(path), Doing: "Proofreading a recognition", About: path, Error: err.Error()})
+		return ProofreadRecognitionResult{Path: path}, err
 	}
 	if !held {
-		return ProofreadReadingResult{Path: path, IsNone: true}, nil
+		return ProofreadRecognitionResult{Path: path, IsNone: true}, nil
 	}
 
 	id := proofreadID(path)
-	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
+	r.say(task.Task{ID: id, Doing: "Proofreading a recognition", About: path})
 
 	right.Cut = r.Cut
 	right.Pages = proofreading.Batch
 	right.MaxEditDistance = proofreading.MaxEditDistance
-	right.OnProgress = func(res ProofreadReadingResult) {
+	right.OnProgress = func(res ProofreadRecognitionResult) {
 		r.say(task.Task{
 			ID:    id,
-			Doing: "Proofreading a reading",
+			Doing: "Proofreading a recognition",
 			About: path,
 			Count: int64(res.Read),
 			Total: int64(res.Pages),
@@ -383,7 +383,7 @@ func (r *RecognitionWorker) proofreadReading(
 	case err == nil, errors.Is(err, context.Canceled):
 		r.finishTask(id)
 	default:
-		r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path, Error: err.Error()})
+		r.say(task.Task{ID: id, Doing: "Proofreading a recognition", About: path, Error: err.Error()})
 	}
 	return res, err
 }
@@ -452,11 +452,11 @@ func (r *RecognitionWorker) runRounds(
 	}
 }
 
-// TakeUp puts right the readings of these vaults that stand short of
+// TakeUp puts right the recognitions of these vaults that stand short of
 // their last page, once, behind the caller.
 //
 // A proofreading stands at the page it reached, so a run that ended among the
-// batches is taken up at that page. A reading no proofreader has been over
+// batches is taken up at that page. A recognition no proofreader has been over
 // stands at its first page and is put right whole. A proofreader with a queue
 // leaves a batch behind it and is taken up by CollectBatches.
 func (r *RecognitionWorker) TakeUp(
@@ -485,7 +485,7 @@ func (r *RecognitionWorker) TakeUp(
 	}()
 }
 
-// collect takes up every reading of one vault that stands short of its last
+// collect takes up every recognition of one vault that stands short of its last
 // page.
 func (r *RecognitionWorker) collect(
 	ctx context.Context,
@@ -504,10 +504,10 @@ func (r *RecognitionWorker) collect(
 			return
 		}
 		id := proofreadID(one.Path)
-		right, err := NewProofreadReading(r.with.Readers, r.with.Derived, by)
+		right, err := NewProofreadRecognition(r.with.Readers, r.with.Derived, by)
 		if err != nil {
 			r.report(task.Task{
-				ID: id, Doing: "Proofreading a reading",
+				ID: id, Doing: "Proofreading a recognition",
 				About: one.Path, Error: err.Error(),
 			}, true)
 			continue
@@ -517,9 +517,9 @@ func (r *RecognitionWorker) collect(
 		right.Pages = proofreading.Batch
 		right.MaxEditDistance = proofreading.MaxEditDistance
 		right.Cut = r.Cut
-		right.OnProgress = func(res ProofreadReadingResult) {
+		right.OnProgress = func(res ProofreadRecognitionResult) {
 			r.report(task.Task{
-				ID: id, Doing: "Proofreading a reading", About: one.Path,
+				ID: id, Doing: "Proofreading a recognition", About: one.Path,
 				Count: int64(res.Read), Total: int64(res.Pages),
 			}, false)
 		}
@@ -528,19 +528,19 @@ func (r *RecognitionWorker) collect(
 		switch {
 		case err != nil:
 			r.report(task.Task{
-				ID: id, Doing: "Proofreading a reading",
+				ID: id, Doing: "Proofreading a recognition",
 				About: one.Path, Error: err.Error(),
 			}, false)
 		case res.IsBusy:
-			// The reading is held by another run, and that run is the one
+			// The recognition is held by another run, and that run is the one
 			// whose progress the list carries.
 		case res.IsNone, res.Read >= res.Pages:
-			// A reading with nothing left to put right is a run nobody is
+			// A recognition with nothing left to put right is a run nobody is
 			// waiting on.
 			r.finishTask(id)
 		default:
 			r.report(task.Task{
-				ID: id, Doing: "Proofreading a reading", About: one.Path,
+				ID: id, Doing: "Proofreading a recognition", About: one.Path,
 				Count: int64(res.Read), Total: int64(res.Pages),
 			}, false)
 		}

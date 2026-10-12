@@ -117,7 +117,7 @@ func TestWhatASettingsFileLeavesOutIsTheDefaultOfTheModel(t *testing.T) {
 	if got := (DetectModel{}).maxSide(); got != 1600 {
 		t.Errorf("a part is read at %d", got)
 	}
-	if got := (DetectModel{}).expand(); got != 18 {
+	if got := (DetectModel{}).getExpansion(); got != 18 {
 		t.Errorf("a line is widened by %d", got)
 	}
 	if got := (DetectModel{}).minimum(); got != 0.3 {
@@ -144,7 +144,7 @@ func TestWhatASettingsFileNamesStands(t *testing.T) {
 	if got := (DetectModel{MaxSide: 1}).maxSide(); got != 1 {
 		t.Errorf("a part is read at %d", got)
 	}
-	if got := (DetectModel{Expand: 1}).expand(); got != 1 {
+	if got := (DetectModel{Expand: 1}).getExpansion(); got != 1 {
 		t.Errorf("a line is widened by %d", got)
 	}
 	if got := (DetectModel{Minimum: 0.5}).minimum(); got != 0.5 {
@@ -171,7 +171,7 @@ func TestANegativeNumberIsNoNumberAtAll(t *testing.T) {
 	if got := (DetectModel{MaxSide: -1}).maxSide(); got != 1600 {
 		t.Errorf("a part is read at %d", got)
 	}
-	if got := (DetectModel{Expand: -1}).expand(); got != 18 {
+	if got := (DetectModel{Expand: -1}).getExpansion(); got != 18 {
 		t.Errorf("a line is widened by %d", got)
 	}
 	if got := (DetectModel{Minimum: -1}).minimum(); got != 0.3 {

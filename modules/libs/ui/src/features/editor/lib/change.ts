@@ -77,12 +77,12 @@ export const revealOf = (text: string, part: number): Reveal => {
 const timeOf = (text: string) => (boundaries(text).length + 1) * PACE
 
 /** The change the editor is drawing over, and nothing when there is none. */
-export const changing = Facet.define<EditorChange | null, EditorChange | null>({
+export const pendingChange = Facet.define<EditorChange | null, EditorChange | null>({
   combine: (all) => all[0] ?? null,
 })
 
 /** How far the showing of the text has got. */
-export const stepped = StateEffect.define<Reveal>()
+export const setReveal = StateEffect.define<Reveal>()
 
 const waiting = Decoration.mark({ class: 'cm-changing' })
 const arriving = Decoration.mark({ class: 'cm-arriving' })
@@ -131,7 +131,7 @@ const hasArrived = (state: EditorState, change: EditorChange, from: number) =>
   change.text.length > 0 && state.doc.sliceString(from, from + change.text.length) === change.text
 
 const start = (state: EditorState): Mark => {
-  const change = state.facet(changing)
+  const change = state.facet(pendingChange)
   if (!change) return NOTHING
 
   const from = Math.max(0, Math.min(change.from, state.doc.length))
@@ -146,7 +146,7 @@ const start = (state: EditorState): Mark => {
 /** How far a transaction says the showing has got, and nothing where it says nothing. */
 const getStepped = (transaction: Transaction): Reveal | null => {
   let stepping: Reveal | null = null
-  for (const effect of transaction.effects) if (effect.is(stepped)) stepping = effect.value
+  for (const effect of transaction.effects) if (effect.is(setReveal)) stepping = effect.value
   return stepping
 }
 
@@ -165,10 +165,10 @@ const getReveal = (
  * Every range maps through the document's own changes, so typing beside a
  * change moves the overlay with the text under it.
  */
-export const marked = StateField.define<Mark>({
+export const changeMarks = StateField.define<Mark>({
   create: start,
   update: (was, transaction) => {
-    if (transaction.state.facet(changing) !== transaction.startState.facet(changing))
+    if (transaction.state.facet(pendingChange) !== transaction.startState.facet(pendingChange))
       return start(transaction.state)
 
     const change = was.change
@@ -201,8 +201,8 @@ class Pace {
   }
 
   update(update: ViewUpdate) {
-    const was = update.startState.field(marked)
-    const now = update.state.field(marked)
+    const was = update.startState.field(changeMarks)
+    const now = update.state.field(changeMarks)
     if (now.change !== was.change || (now.reveal === null) !== (was.reveal === null)) this.take()
   }
 
@@ -212,7 +212,7 @@ class Pace {
 
   private take() {
     this.stop()
-    const at = this.view.state.field(marked)
+    const at = this.view.state.field(changeMarks)
     if (!at.change || !at.reveal) return
     this.handle = this.clock.schedule(this.step)
   }
@@ -226,7 +226,7 @@ class Pace {
   // Elapsed time comes from the timestamp each callback is handed.
   private readonly step = (now: number) => {
     this.handle = null
-    const at = this.view.state.field(marked)
+    const at = this.view.state.field(changeMarks)
     if (!at.change || !at.reveal) return
 
     this.started ??= now
@@ -234,7 +234,7 @@ class Pace {
     const part = ms <= 0 ? 1 : Math.min(1, (now - this.started) / ms)
     const reveal = revealOf(at.change.text, part)
     if (reveal.shown !== at.reveal.shown || reveal.fading !== at.reveal.fading)
-      this.view.dispatch({ effects: stepped.of(reveal) })
+      this.view.dispatch({ effects: setReveal.of(reveal) })
     if (part < 1) this.handle = this.clock.schedule(this.step)
   }
 }

@@ -60,7 +60,7 @@ func TestARawRunKeepsItsOutputsAcrossRunsAndReleasesEachOnce(t *testing.T) {
 	run := newFakeRun(f, 2)
 
 	for range 3 {
-		if err := run.call(); err != nil {
+		if err := run.run(); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -78,7 +78,7 @@ func TestARawRunKeepsItsOutputsAcrossRunsAndReleasesEachOnce(t *testing.T) {
 func TestARawRunCopiesAnOutputOutBeforeTheNextRun(t *testing.T) {
 	f := &fakeRuntime{output: []float32{1, 2, 3}}
 	run := newFakeRun(f, 1)
-	if err := run.call(); err != nil {
+	if err := run.run(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -99,7 +99,7 @@ func TestAFailedRawRunStillReleasesWhatItCreated(t *testing.T) {
 	f := &fakeRuntime{status: 1, output: []float32{1}}
 	run := newFakeRun(f, 3)
 
-	if err := run.call(); err == nil {
+	if err := run.run(); err == nil {
 		t.Fatal("a failed run was taken for a good one")
 	}
 	run.close()

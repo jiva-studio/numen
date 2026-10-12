@@ -15,7 +15,7 @@ import {
   type SearchMode,
   type Words,
 } from './search'
-import { later, type Deferred } from '@/testing/later'
+import { createDeferred, type Deferred } from '@/testing/deferred'
 
 const WORDS: Words = {
   names: 'Names',
@@ -40,13 +40,13 @@ function createVault() {
   const core: SearchDeps = {
     names: (query) => {
       queries.push(query)
-      const one = later<readonly NameMatch[]>()
+      const one = createDeferred<readonly NameMatch[]>()
       names.push(one)
       return one.promise
     },
     search: (query, mode) => {
       queries.push(query)
-      const one = later<readonly Passage[]>()
+      const one = createDeferred<readonly Passage[]>()
       searched.push({ mode, answer: one })
       return one.promise
     },
@@ -546,7 +546,7 @@ describe('a group landing under the keyboard', () => {
 function createHolds() {
   const holds: Deferred<void>[] = []
   const wait = () => {
-    const one = later<void>()
+    const one = createDeferred<void>()
     holds.push(one)
     return one.promise
   }

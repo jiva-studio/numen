@@ -1,0 +1,294 @@
+package wire
+
+import (
+	"testing"
+	"time"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+)
+
+// isClosed reports whether a channel has been closed, without waiting on it.
+func isClosed(c <-chan struct{}) bool {
+	select {
+	case <-c:
+		return true
+	default:
+		return false
+	}
+}
+
+// TestAVaultNothingIsDrawnFromOwesNothing.
+func TestAVaultNothingIsDrawnFromOwesNothing(t *testing.T) {
+	var pages flushCoordinator
+
+	request := pages.startRequest()
+	if !isClosed(request.allWritten) {
+		t.Error("a vault with no page open was owed something")
+	}
+	if request.isPending() {
+		t.Error("a vault with no page open raised a question")
+	}
+}
+
+// TestAPageSaysNothingUntilItIsAsked.
+func TestAPageSaysNothingUntilItIsAsked(t *testing.T) {
+	var pages flushCoordinator
+
+	token, told, done := pages.registerClient()
+	defer done()
+
+	select {
+	case asked := <-told:
+		t.Errorf("the page was told to flush %q before anything asked", asked)
+	default:
+	}
+
+	request := pages.startRequest()
+	if isClosed(request.allWritten) {
+		t.Error("a page that has said nothing was counted as having written")
+	}
+	select {
+	case asked := <-told:
+		if asked != token {
+			t.Errorf("the page was told to flush under %q and listens under %q", asked, token)
+		}
+	default:
+		t.Fatal("the page was never told to flush")
+	}
+
+	pages.recordFlush(token, flushWritten)
+	if !isClosed(request.allWritten) {
+		t.Error("a page that wrote what it owed is still owed")
+	}
+	if request.isPending() {
+		t.Error("a page that wrote what it owed raised a question")
+	}
+}
+
+// TestAQuestionEndsTheRoundAndNotTheWait. A page raising a question has
+// answered, so nothing is waited for; and it has not written, so the window has
+// no reason to go.
+func TestAQuestionEndsTheRoundAndNotTheWait(t *testing.T) {
+	var pages flushCoordinator
+
+	token, told, done := pages.registerClient()
+	defer done()
+
+	request := pages.startRequest()
+	<-told
+	pages.recordFlush(token, flushAsking)
+
+	if !request.isPending() {
+		t.Error("a question was raised and the request does not say so")
+	}
+	if isClosed(request.allWritten) {
+		t.Fatal("a page with a question standing was counted as having written")
+	}
+
+	pages.recordFlush(token, flushWritten)
+	if !isClosed(request.allWritten) {
+		t.Error("the question was answered and the request is still owed something")
+	}
+}
+
+// TestOneQuestionAmongManyPagesKeepsTheWindow.
+func TestOneQuestionAmongManyPagesKeepsTheWindow(t *testing.T) {
+	var pages flushCoordinator
+
+	first, toldFirst, doneFirst := pages.registerClient()
+	defer doneFirst()
+	second, toldSecond, doneSecond := pages.registerClient()
+	defer doneSecond()
+
+	request := pages.startRequest()
+	<-toldFirst
+	<-toldSecond
+	pages.recordFlush(first, flushWritten)
+	pages.recordFlush(second, flushAsking)
+
+	if !request.isPending() {
+		t.Error("a question was raised and the request does not say so")
+	}
+	if isClosed(request.allWritten) {
+		t.Fatal("the window went with a question standing")
+	}
+
+	pages.recordFlush(second, flushWritten)
+	if !isClosed(request.allWritten) {
+		t.Error("every page has written and the request is still owed something")
+	}
+}
+
+// TestASecondRoundAsksEveryPageAgain. What a page said about the request before
+// is not an answer to this one.
+func TestASecondRoundAsksEveryPageAgain(t *testing.T) {
+	var pages flushCoordinator
+
+	token, told, done := pages.registerClient()
+	defer done()
+
+	first := pages.startRequest()
+	<-told
+	pages.recordFlush(token, flushWritten)
+	if !isClosed(first.allWritten) {
+		t.Fatal("the page wrote what it owed and the request is still owed something")
+	}
+
+	second := pages.startRequest()
+	if !isClosed(first.superseded) {
+		t.Error("the request before was left running")
+	}
+	if isClosed(second.allWritten) {
+		t.Error("the second request took the first request's answer for its own")
+	}
+	select {
+	case asked := <-told:
+		if asked != token {
+			t.Errorf("the page was told to flush under %q and listens under %q", asked, token)
+		}
+	default:
+		t.Fatal("the second request never told the page to flush")
+	}
+
+	pages.recordFlush(token, flushWritten)
+	if !isClosed(second.allWritten) {
+		t.Error("the page wrote what it owed and the second request is still owed it")
+	}
+}
+
+// TestAPageThatOpensWhileTheWindowIsGoingIsAsked.
+func TestAPageThatOpensWhileTheWindowIsGoingIsAsked(t *testing.T) {
+	var pages flushCoordinator
+
+	request := pages.startRequest()
+	if !isClosed(request.allWritten) {
+		t.Fatal("a vault with no page open was owed something")
+	}
+
+	token, told, done := pages.registerClient()
+	defer done()
+
+	select {
+	case asked := <-told:
+		if asked != token {
+			t.Errorf("the page was told to flush under %q and listens under %q", asked, token)
+		}
+	default:
+		t.Error("a page that opened while the window was going was never asked")
+	}
+}
+
+// TestAPageThatGoesWithNothingStandingStopsBeingOwed.
+func TestAPageThatGoesWithNothingStandingStopsBeingOwed(t *testing.T) {
+	var pages flushCoordinator
+
+	_, _, done := pages.registerClient()
+
+	request := pages.startRequest()
+	if isClosed(request.allWritten) {
+		t.Fatal("a page that has said nothing was counted as having written")
+	}
+
+	done()
+	if !isClosed(request.allWritten) {
+		t.Error("a page that stopped listening is still owed")
+	}
+}
+
+// TestAPageThatGoesWithAQuestionStandingIsStillOwed. The text is in that
+// webview's buffer and nowhere else, and the stream ending says nothing about
+// where it should end up.
+func TestAPageThatGoesWithAQuestionStandingIsStillOwed(t *testing.T) {
+	var pages flushCoordinator
+
+	token, told, done := pages.registerClient()
+	first := pages.startRequest()
+	<-told
+	pages.recordFlush(token, flushAsking)
+
+	done()
+
+	if isClosed(first.allWritten) {
+		t.Fatal("the window went with the buffer of a page that had a question standing")
+	}
+
+	// The client comes back under a token of its own, and is asked afresh.
+	second := pages.startRequest()
+	if isClosed(second.allWritten) {
+		t.Fatal("a request with the question still standing was owed nothing")
+	}
+	again, toldAgain, doneAgain := pages.registerClient()
+	defer doneAgain()
+	if again == token {
+		t.Fatalf("the page that came back listens under the token that went, %q", again)
+	}
+	select {
+	case asked := <-toldAgain:
+		if asked != again {
+			t.Errorf("the page was told to flush under %q and listens under %q", asked, again)
+		}
+	default:
+		t.Fatal("the page that came back was never asked")
+	}
+
+	pages.recordFlush(again, flushAsking)
+	if !second.isPending() {
+		t.Error("the page raised its question again and the request does not say so")
+	}
+	pages.recordFlush(again, flushWritten)
+	if !isClosed(second.allWritten) {
+		t.Error("the question was answered and the request is still owed something")
+	}
+}
+
+// TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence. Silence is
+// what a request waits its bound for, so the window is not held for ever by a
+// webview that will not answer again.
+func TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence(t *testing.T) {
+	var pages flushCoordinator
+
+	token, told, done := pages.registerClient()
+	pages.startRequest()
+	<-told
+	pages.recordFlush(token, flushAsking)
+	done()
+
+	request := pages.startRequest()
+	if isClosed(request.allWritten) {
+		t.Error("a request took a page that went with a question standing as written")
+	}
+	if request.isPending() {
+		t.Error("a page that is no longer there was counted as raising a question")
+	}
+
+	// A page that says nothing is what the bound is for, and nothing here ends
+	// the request before it.
+	select {
+	case <-request.allWritten:
+		t.Error("the request ended without the page saying anything")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+// TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo.
+func TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo(t *testing.T) {
+	for name, said := range map[string]flushState{
+		"nothing owed":       parseFlushResult(v1.FlushResult_FLUSH_RESULT_NOTHING),
+		"everything written": parseFlushResult(v1.FlushResult_FLUSH_RESULT_WRITTEN),
+	} {
+		t.Run(name, func(t *testing.T) {
+			var pages flushCoordinator
+
+			token, told, done := pages.registerClient()
+			defer done()
+
+			request := pages.startRequest()
+			<-told
+			pages.recordFlush(token, said)
+
+			if !isClosed(request.allWritten) {
+				t.Error("the window was held by a page that had nothing left")
+			}
+		})
+	}
+}

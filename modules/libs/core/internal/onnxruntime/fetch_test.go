@@ -28,7 +28,7 @@ func TestPatienceGrowsWithTheLengthAnnounced(t *testing.T) {
 		{"a negative length", -1, 2*time.Minute + 5461*time.Second},
 	}
 	for _, c := range cases {
-		if got := patience(c.size); got != c.want {
+		if got := getDownloadTimeout(c.size); got != c.want {
 			t.Errorf("%s: patience(%d) = %v, want %v", c.name, c.size, got, c.want)
 		}
 	}

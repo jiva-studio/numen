@@ -33,7 +33,7 @@ type recording struct {
 
 // Open is a recording, ready to be listened to.
 func (t *Transcriber) Open(ctx context.Context, raw []byte) (port.Recording, error) {
-	length, err := duration(raw)
+	length, err := getDuration(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (r *recording) Segments(ctx context.Context, from, count int) ([]port.Audio
 	defer r.mu.Unlock()
 
 	if !r.isCut {
-		sound, rate, err := samples(r.raw)
+		sound, rate, err := readSamples(r.raw)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func (r *recording) Segments(ctx context.Context, from, count int) ([]port.Audio
 		if err != nil {
 			return nil, err
 		}
-		if r.segments, err = r.owner.segments(ctx, at); err != nil {
+		if r.segments, err = r.owner.splitIntoSegments(ctx, at); err != nil {
 			return nil, err
 		}
 		r.raw, r.isCut = nil, true
@@ -96,16 +96,16 @@ var (
 	id3  = []byte("ID3")
 )
 
-// duration is how long a recording is, in milliseconds, out of its header
+// getDuration is how long a recording is, in milliseconds, out of its header
 // alone.
-func duration(raw []byte) (int, error) {
+func getDuration(raw []byte) (int, error) {
 	switch {
 	case isWav(raw):
-		found, err := wav(raw)
+		found, err := parseWav(raw)
 		if err != nil {
 			return 0, err
 		}
-		return millis(len(found.samples)/(found.channels*found.bits/8), found.rate), nil
+		return getMillis(len(found.samples)/(found.channels*found.bits/8), found.rate), nil
 
 	case bytes.HasPrefix(raw, fLaC):
 		stream, err := flac.New(bytes.NewReader(raw))
@@ -113,7 +113,7 @@ func duration(raw []byte) (int, error) {
 			return 0, fmt.Errorf("the flac recording: %w", err)
 		}
 		defer stream.Close()
-		return millis(int(stream.Info.NSamples), int(stream.Info.SampleRate)), nil
+		return getMillis(int(stream.Info.NSamples), int(stream.Info.SampleRate)), nil
 
 	case isMP3(raw):
 		decoder, err := mp3.NewDecoder(bytes.NewReader(raw))
@@ -122,21 +122,21 @@ func duration(raw []byte) (int, error) {
 		}
 		// Every mp3 comes out as two channels of sixteen bits, whatever it was
 		// recorded as.
-		return millis(int(decoder.Length()/4), decoder.SampleRate()), nil
+		return getMillis(int(decoder.Length()/4), decoder.SampleRate()), nil
 	}
 	return 0, fmt.Errorf("the recording is in no container this reads: wav, mp3 and flac are")
 }
 
-// samples is a whole recording as one channel of floating point, at whatever
+// readSamples is a whole recording as one channel of floating point, at whatever
 // rate it was recorded at.
-func samples(raw []byte) ([]float32, int, error) {
+func readSamples(raw []byte) ([]float32, int, error) {
 	switch {
 	case isWav(raw):
-		found, err := wav(raw)
+		found, err := parseWav(raw)
 		if err != nil {
 			return nil, 0, err
 		}
-		sound, err := found.sound()
+		sound, err := found.readSound()
 		if err != nil {
 			return nil, 0, err
 		}
@@ -164,8 +164,8 @@ func isMP3(raw []byte) bool {
 	return len(raw) >= 2 && raw[0] == 0xFF && raw[1]&0xE0 == 0xE0
 }
 
-// millis is how long a count of samples at one rate lasts.
-func millis(count, rate int) int {
+// getMillis is how long a count of samples at one rate lasts.
+func getMillis(count, rate int) int {
 	if rate <= 0 {
 		return 0
 	}
@@ -190,11 +190,11 @@ const (
 	wavExtended = 0xFFFE
 )
 
-// wav reads a wav file's header and finds its samples.
+// parseWav reads a parseWav file's header and finds its samples.
 //
 // A file is a run of chunks, and only two of them are wanted, so the rest are
 // stepped over by their length. Each chunk sits on an even byte.
-func wav(raw []byte) (riffWave, error) {
+func parseWav(raw []byte) (riffWave, error) {
 	var out riffWave
 	var seen bool
 	for at := 12; at+8 <= len(raw); {
@@ -241,9 +241,9 @@ func wav(raw []byte) (riffWave, error) {
 	return out, nil
 }
 
-// sound is a wav file's samples as floating point, one channel after another as
+// readSound is a wav file's samples as floating point, one channel after another as
 // the file interleaves them.
-func (w riffWave) sound() ([]float32, error) {
+func (w riffWave) readSound() ([]float32, error) {
 	width := w.bits / 8
 	if width == 0 {
 		return nil, fmt.Errorf("the wav recording is %d bits a sample", w.bits)

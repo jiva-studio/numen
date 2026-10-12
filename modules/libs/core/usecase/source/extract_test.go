@@ -435,9 +435,9 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 	}
 }
 
-// A source the vault no longer holds takes the files of its reading with it.
+// A source the vault no longer holds takes the files of its recognition with it.
 // One run made them and none of them means anything without the others.
-func TestABookTakenOutTakesTheFilesOfItsReading(t *testing.T) {
+func TestABookTakenOutTakesTheFilesOfItsRecognition(t *testing.T) {
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
 
@@ -460,7 +460,7 @@ func TestABookTakenOutTakesTheFilesOfItsReading(t *testing.T) {
 		t.Fatal(err)
 	}
 	if index.sources[first.ID]["library/gone.epub"].Producer == "" {
-		t.Fatal("the book was not cut from its reading, so its removal proves nothing")
+		t.Fatal("the book was not cut from its recognition, so its removal proves nothing")
 	}
 
 	delete(shelf.files, "library/gone.epub")
@@ -484,9 +484,9 @@ func TestABookTakenOutTakesTheFilesOfItsReading(t *testing.T) {
 	}
 }
 
-func TestARenamedBookKeepsItsReading(t *testing.T) {
-	// A reading is named by the hash of what was read, so a document renamed is
-	// the same reading at another path. Renaming is a path gone and a path
+func TestARenamedBookKeepsItsRecognition(t *testing.T) {
+	// A recognition is named by the hash of what was read, so a document renamed is
+	// the same recognition at another path. Renaming is a path gone and a path
 	// found, and an hour of a model's work stands on the one that went.
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
@@ -505,7 +505,7 @@ func TestARenamedBookKeepsItsReading(t *testing.T) {
 		t.Fatal(err)
 	}
 	if index.sources[first.ID]["library/before.epub"].Producer == "" {
-		t.Fatal("the book was not cut from its reading, so renaming it proves nothing")
+		t.Fatal("the book was not cut from its recognition, so renaming it proves nothing")
 	}
 
 	delete(shelf.files, "library/before.epub")
@@ -520,12 +520,12 @@ func TestARenamedBookKeepsItsReading(t *testing.T) {
 		}
 	}
 	if from := index.sources[first.ID]["library/after.epub"].Producer; from == "" {
-		t.Error("the renamed book does not stand on its reading")
+		t.Error("the renamed book does not stand on its recognition")
 	}
 }
 
-func TestOneOfTwoCopiesTakenOutLeavesTheOtherReading(t *testing.T) {
-	// Two copies of one document are one reading, because the name is the hash
+func TestOneOfTwoCopiesTakenOutLeavesTheOtherRecognition(t *testing.T) {
+	// Two copies of one document are one recognition, because the name is the hash
 	// of the bytes. Taking one copy out leaves the other standing on it.
 	ctx := t.Context()
 	index, shelf, made := newStore(), newLibrary(), newShelf()
@@ -556,7 +556,7 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherReading(t *testing.T) {
 		}
 	}
 	if from := index.sources[first.ID]["shelf/two.epub"].Producer; from == "" {
-		t.Error("the copy that stayed lost its reading")
+		t.Error("the copy that stayed lost its recognition")
 	}
 }
 
@@ -669,7 +669,7 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 }
 
 // A vault already read is not read again: what a book is cut by, and where its
-// reading is kept, are what they were before recordings were a kind of their
+// recognition is kept, are what they were before recordings were a kind of their
 // own.
 func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
 	ctx := t.Context()
@@ -691,9 +691,9 @@ func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
 		t.Errorf("the book was cut by %q", got)
 	}
 	if got := extract.producer(domain.Fingerprint{Kind: domain.KindBook}); got != "ocr" {
-		t.Errorf("a book's reading is kept under %q, want ocr", got)
+		t.Errorf("a book's recognition is kept under %q, want ocr", got)
 	}
 	if got := text.Artifact("ocr", "abc123"); got != "ocr/abc123.txt" {
-		t.Errorf("a reading is kept under %q", got)
+		t.Errorf("a recognition is kept under %q", got)
 	}
 }

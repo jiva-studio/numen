@@ -59,7 +59,7 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
   "something_this_build_knows_nothing_about": 7
 }`)
 
-	err := cfg.TurnsSetting()([]port.Setting{
+	err := cfg.GetSettingsWriter()([]port.Setting{
 		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
@@ -91,7 +91,7 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := cfg.TurnsSetting()([]port.Setting{
+	err := cfg.GetSettingsWriter()([]port.Setting{
 		{Path: []string{"agent", "use"}, JSON: `"claude"`},
 		{Path: []string{"agent", "claude", "max_steps"}, JSON: `12`},
 	})

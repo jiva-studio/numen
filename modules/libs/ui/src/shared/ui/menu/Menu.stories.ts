@@ -9,7 +9,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, ref, type Component } from 'vue'
 import { Copy, CornerDownRight, FileText } from '@lucide/vue'
 import Menu from './Menu.vue'
-import { MENU_OPENINGS_ALL, type MenuItem, type MenuOpening } from './item'
+import { MENU_TRIGGERS_ALL, type MenuItem, type MenuTrigger } from './item'
 import {
   ARABIC,
   DEVANAGARI,
@@ -25,7 +25,7 @@ interface Knobs {
   /** What each item is drawn with, by identity. Nothing named draws nothing. */
   icons?: Readonly<Record<string, Component>>
   at: { x: number; y: number }
-  opening: MenuOpening
+  trigger: MenuTrigger
   /** Which item is the one in force, if the menu names one. */
   current: string | null
   /** Whether the name of a group is drawn over it. */
@@ -84,7 +84,7 @@ const renderMenu = (args: Knobs) => ({
         :at="at"
         :open="open"
         :from="from"
-        :opening="args.opening"
+        :trigger="args.trigger"
         :current="args.current"
         :has-groups="args.hasGroups"
         :margin="args.margin"
@@ -121,7 +121,7 @@ const meta = {
     },
   },
   argTypes: {
-    opening: { control: 'inline-radio', options: MENU_OPENINGS_ALL },
+    trigger: { control: 'inline-radio', options: MENU_TRIGGERS_ALL },
     current: { control: 'text' },
     margin: { control: { type: 'range', min: 0, max: 48, step: 2 } },
     name: { control: 'text' },
@@ -134,7 +134,7 @@ const meta = {
   args: {
     items: ITEMS,
     at: { x: 480, y: 300 },
-    opening: 'pointer',
+    trigger: 'pointer',
     current: null,
     hasGroups: false,
     margin: 8,
@@ -197,7 +197,7 @@ export const OpenedByHand: Story = {
  * finds its way back to an element the menu never contained.
  */
 export const GivingItBack: Story = {
-  args: { opening: 'keyboard' },
+  args: { trigger: 'keyboard' },
   play: async ({ canvasElement }) => {
     const node = within(canvasElement).getByRole('button', { name: 'A node' })
     const getItem = (name: string) => within(menuElement()!).getByRole('menuitem', { name })
@@ -289,7 +289,7 @@ export const NotClipped: Story = {
  * the one, and the keyboard opens on it.
  */
 export const TheOneInForce: Story = {
-  args: { opening: 'keyboard', current: 'child' },
+  args: { trigger: 'keyboard', current: 'child' },
   play: async () => {
     const chosen = within(menuElement()!).getAllByRole('menuitemradio')
     await expect(chosen).toHaveLength(4)
@@ -414,7 +414,7 @@ export const NoTextAtAll: Story = {
 /** An item that is drawn and announced, and cannot be chosen. */
 export const NotChoosable: Story = {
   args: {
-    opening: 'keyboard',
+    trigger: 'keyboard',
     items: [
       { id: 'open', text: 'Open' },
       { id: 'ask', text: 'Ask the agent about this note', disabled: true },

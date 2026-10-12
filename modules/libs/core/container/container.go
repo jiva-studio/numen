@@ -90,7 +90,7 @@ type Config struct {
 	// is embedded.
 	Embedding embed.Config
 
-	// Proofreading is what puts a reading right. It arrives the way Embedding
+	// Proofreading is what puts a recognition right. It arrives the way Embedding
 	// does, and naming no profile here is naming no proofreader.
 	Proofreading proofreading.Config
 
@@ -216,10 +216,10 @@ func (Config) GetLatestDayStart() string {
 	return review.Clock(settings.LatestDayStarts)
 }
 
-// TurnsSetting writes settings into the file. The file is patched as an object,
+// GetSettingsWriter writes settings into the file. The file is patched as an object,
 // so every key a person typed stays where it was, and a value the settings
 // could not be read out of again is refused before anything is written.
-func (c Config) TurnsSetting() func(written []port.Setting) error {
+func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 	return func(written []port.Setting) error {
 		held := make([]settings.Setting, 0, len(written))
 		for _, one := range written {
@@ -316,7 +316,7 @@ func (c Config) vaultOptions() filesystem.Options {
 // writers because it is a third right: reading a person's vault, changing it,
 // and keeping something of our own in it are not the same permission.
 //
-// It answers for what a reading wrote and for what a transcription wrote, since
+// It answers for what a recognition wrote and for what a transcription wrote, since
 // a use case that places a passage reads both.
 func (c Config) GetDerivedStores() port.DerivedStores {
 	return filesystem.DerivedStores{

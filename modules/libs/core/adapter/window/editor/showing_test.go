@@ -537,7 +537,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	go func() {
 		ctx, cancel := context.WithTimeout(t.Context(), 20*time.Second)
 		defer cancel()
-		settled <- f.installation.Settle(ctx)
+		settled <- f.installation.FlushPending(ctx)
 	}()
 
 	select {

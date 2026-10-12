@@ -1,7 +1,7 @@
-// Package proofreading is what a person configured to put a reading right.
+// Package proofreading is what a person configured to put a text right.
 //
 // Nothing here is reached unless a person named a profile. An installation that
-// named none uses a reading exactly as it was read, and asks for no key and no
+// named none uses a text exactly as it was read, and asks for no key and no
 // network.
 package proofreading
 
@@ -52,7 +52,7 @@ const (
 const DefaultAgentBatchSize = 60
 
 // Config is the proofreading section of this installation's settings: the
-// profiles a reading may be put right at, and the one threshold they are all
+// profiles a text may be put right at, and the one threshold they are all
 // held to.
 type Config struct {
 	// MaxEditDistance is how far a correction may stand from the line as read
@@ -61,7 +61,7 @@ type Config struct {
 	// profile, being a property of the text and not of a transport.
 	MaxEditDistance float64 `json:"max_edit_distance"`
 
-	// Profiles are the places a reading is put right at, by the name a
+	// Profiles are the places a text is put right at, by the name a
 	// consumer asks for one under. An installation naming none proofreads
 	// nothing.
 	Profiles map[string]Profile `json:"profiles"`
@@ -79,14 +79,14 @@ type Profile struct {
 	// BatchURL is a queue the batches are left in and collected from later, at
 	// half the price. Empty asks a batch at a time and waits.
 	BatchURL string `json:"batch_url"`
-	// Name is which model corrects a reading at a service. It stands beside
+	// Name is which model corrects a text at a service. It stands beside
 	// every line it corrected.
 	Name string `json:"name"`
 	// KeyEnv names the environment variable holding the key, for an
 	// installation that keeps it out of the file.
 	KeyEnv string `json:"key_env"`
 
-	// Model is which model corrects a reading at the command line, by the name
+	// Model is which model corrects a text at the command line, by the name
 	// the command line knows it as.
 	Model string `json:"model"`
 	// Command starts the command line. Empty means `claude` from the path.
@@ -116,13 +116,13 @@ type Profile struct {
 	key string
 }
 
-// Proofread is how one kind of reading is put right: the profile that does it,
+// Proofread is how one kind of text is put right: the profile that does it,
 // and whether that happens without anybody asking.
 type Proofread struct {
 	// Profile is the profile, by the name the profiles carry it under. Empty
 	// names none, and nothing is put right.
 	Profile string `json:"with"`
-	// IsAutomatic is whether a reading already written down is put right
+	// IsAutomatic is whether a text already written down is put right
 	// without anybody asking for it.
 	IsAutomatic bool `json:"automatically"`
 }
@@ -169,7 +169,7 @@ func (c Config) Distance() float64 {
 	return c.MaxEditDistance
 }
 
-// HasModel says whether this profile carries a model to correct a reading with.
+// HasModel says whether this profile carries a model to correct a text with.
 func (p Profile) HasModel() bool {
 	switch p.Use {
 	case UseService:

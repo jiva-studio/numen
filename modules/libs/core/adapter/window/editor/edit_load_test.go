@@ -51,8 +51,8 @@ func TestEditLoad(t *testing.T) {
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	read := note.NewRead(filesystem.VaultReaders{})
 	api := &API{
-		Listeners: newChangeAudience(),
-		Places:    newPlaceAudience(),
+		ChangeEvents: newChangeBroadcaster(),
+		Places:       newPlaceBroadcaster(),
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),
@@ -61,11 +61,11 @@ func TestEditLoad(t *testing.T) {
 		},
 	}
 	api.Indexing.Progress = db.Progress()
-	api.show(v)
+	api.setVault(v)
 
 	reading := time.Now()
-	_, wait := begin(t.Context(), v, container.NewEditorAssembly(cfg, nil, db),
-		api, false, nil, newNudges(time.Hour), &pending{}, io.Discard)
+	_, wait := startIndexing(t.Context(), v, container.NewEditorAssembly(cfg, nil, db),
+		api, false, nil, newIndexTriggers(time.Hour), &pendingSources{}, io.Discard)
 	t.Cleanup(wait)
 	for !api.Ready.Load() && api.Error.Why() == "" {
 		time.Sleep(50 * time.Millisecond)
@@ -75,7 +75,7 @@ func TestEditLoad(t *testing.T) {
 	}
 	t.Logf("read %d notes in %s", notes, time.Since(reading).Round(time.Millisecond))
 
-	line, done := api.Listeners.listen()
+	line, done := api.ChangeEvents.subscribe()
 	t.Cleanup(done)
 
 	// One save, the way a quiet interval makes it, and then the wait until the

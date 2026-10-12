@@ -5,14 +5,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   directionOf,
-  landing,
+  canDropField,
   getFreeName,
   checkFieldName,
   checkHeadingName,
   createSealedMap,
   orderNames,
   reorderFields,
-  getStepLanding,
+  getStepInsertionPoint,
 } from './order'
 
 describe('orderNames', () => {
@@ -51,36 +51,36 @@ describe('orderNames', () => {
   })
 })
 
-describe('landing', () => {
+describe('canDropField', () => {
   const FIELDS = ['Name', 'Height', 'Weight']
 
   it('lands a field below the first before another below the first', () => {
-    expect(landing(FIELDS, 'Weight', 'Height')).toBe(true)
+    expect(canDropField(FIELDS, 'Weight', 'Height')).toBe(true)
   })
 
   it('lands a field below the first at the end', () => {
-    expect(landing(FIELDS, 'Height', null)).toBe(true)
+    expect(canDropField(FIELDS, 'Height', null)).toBe(true)
   })
 
   it('does not move the first field, which names every card', () => {
-    expect(landing(FIELDS, 'Name', 'Weight')).toBe(false)
-    expect(landing(FIELDS, 'Name', null)).toBe(false)
+    expect(canDropField(FIELDS, 'Name', 'Weight')).toBe(false)
+    expect(canDropField(FIELDS, 'Name', null)).toBe(false)
   })
 
   it('lands nothing above the first field', () => {
-    expect(landing(FIELDS, 'Weight', 'Name')).toBe(false)
+    expect(canDropField(FIELDS, 'Weight', 'Name')).toBe(false)
   })
 
   it('moves nothing let go where it stands', () => {
-    expect(landing(FIELDS, 'Height', 'Height')).toBe(false)
+    expect(canDropField(FIELDS, 'Height', 'Height')).toBe(false)
   })
 
   it('moves nothing among no fields', () => {
-    expect(landing([], 'Height', null)).toBe(false)
+    expect(canDropField([], 'Height', null)).toBe(false)
   })
 
   it('does not move the one field a stencil names', () => {
-    expect(landing(['Only'], 'Only', null)).toBe(false)
+    expect(canDropField(['Only'], 'Only', null)).toBe(false)
   })
 })
 
@@ -100,12 +100,12 @@ describe('reorderFields', () => {
   })
 })
 
-describe('getStepLanding', () => {
+describe('getStepInsertionPoint', () => {
   const NAMES = ['a', 'b', 'c']
 
   it('lands what is dragged up before the one above it', () => {
-    expect(getStepLanding(NAMES, 'c', 'up')).toBe('b')
-    expect(orderNames(NAMES, 'c', getStepLanding(NAMES, 'c', 'up') ?? null)).toEqual([
+    expect(getStepInsertionPoint(NAMES, 'c', 'up')).toBe('b')
+    expect(orderNames(NAMES, 'c', getStepInsertionPoint(NAMES, 'c', 'up') ?? null)).toEqual([
       'a',
       'c',
       'b',
@@ -113,8 +113,8 @@ describe('getStepLanding', () => {
   })
 
   it('lands what is dragged down before the one below the one below it', () => {
-    expect(getStepLanding(NAMES, 'a', 'down')).toBe('c')
-    expect(orderNames(NAMES, 'a', getStepLanding(NAMES, 'a', 'down') ?? null)).toEqual([
+    expect(getStepInsertionPoint(NAMES, 'a', 'down')).toBe('c')
+    expect(orderNames(NAMES, 'a', getStepInsertionPoint(NAMES, 'a', 'down') ?? null)).toEqual([
       'b',
       'a',
       'c',
@@ -122,23 +122,23 @@ describe('getStepLanding', () => {
   })
 
   it('lands the last but one at the end', () => {
-    expect(getStepLanding(NAMES, 'b', 'down')).toBeNull()
+    expect(getStepInsertionPoint(NAMES, 'b', 'down')).toBeNull()
     expect(orderNames(NAMES, 'b', null)).toEqual(['a', 'c', 'b'])
   })
 
   it('lands nothing above the first, and nothing below the last', () => {
-    expect(getStepLanding(NAMES, 'a', 'up')).toBeUndefined()
-    expect(getStepLanding(NAMES, 'c', 'down')).toBeUndefined()
+    expect(getStepInsertionPoint(NAMES, 'a', 'up')).toBeUndefined()
+    expect(getStepInsertionPoint(NAMES, 'c', 'down')).toBeUndefined()
   })
 
   it('lands nothing that is not there', () => {
-    expect(getStepLanding(NAMES, 'z', 'up')).toBeUndefined()
+    expect(getStepInsertionPoint(NAMES, 'z', 'up')).toBeUndefined()
   })
 })
 
-describe('getStepLanding, a name that is not there', () => {
+describe('getStepInsertionPoint, a name that is not there', () => {
   it('lands nothing in either direction', () => {
-    expect(getStepLanding(['a', 'b', 'c'], 'z', 'down')).toBeUndefined()
+    expect(getStepInsertionPoint(['a', 'b', 'c'], 'z', 'down')).toBeUndefined()
   })
 })
 

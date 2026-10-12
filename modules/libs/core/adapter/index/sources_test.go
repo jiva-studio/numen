@@ -59,8 +59,8 @@ func numberRowsPast2To62(t *testing.T, db *DB) {
 	}
 }
 
-// getOwed is every chunk of a vault that owes a vector, asked in one page.
-func getOwed(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
+// getUnembeddedPassages is every chunk of a vault that owes a vector, asked in one page.
+func getUnembeddedPassages(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
 	t.Helper()
 	owed, _, err := db.Sources().GetUnembeddedChunks(t.Context(), vault.ID, benchModel, "", 1000)
 	if err != nil {
@@ -69,10 +69,10 @@ func getOwed(t *testing.T, db *DB, vault domain.Vault) []domain.Passage {
 	return owed
 }
 
-// walkOwed is every chunk of a vault that owes a vector, asked a page of the
+// getUnembeddedPassagesPaged is every chunk of a vault that owes a vector, asked a page of the
 // size given at a time, each page carrying on from the cursor the last handed
 // back.
-func walkOwed(t *testing.T, db *DB, vault domain.Vault, limit int) []domain.Passage {
+func getUnembeddedPassagesPaged(t *testing.T, db *DB, vault domain.Vault, limit int) []domain.Passage {
 	t.Helper()
 	var visited []domain.Passage
 	cursor := port.ChunkCursor("")
@@ -120,7 +120,7 @@ func TestAWalkInPagesVisitsEveryOwedChunkOfItsVaultOnce(t *testing.T) {
 	saveThroughPort(t, db, first, "library/old.epub", longAgo, "glaciers carve", "moraines remain")
 	saveThroughPort(t, db, second, "library/second.epub", thisYear, "violins tune", "cellos answer")
 
-	owed := getOwed(t, db, first)
+	owed := getUnembeddedPassages(t, db, first)
 	want := []string{
 		"library/last.epub", "library/last.epub",
 		"library/far.epub", "library/far.epub",
@@ -133,13 +133,13 @@ func TestAWalkInPagesVisitsEveryOwedChunkOfItsVaultOnce(t *testing.T) {
 	}
 
 	for _, limit := range []int{1, 2, 5} {
-		visited := walkOwed(t, db, first, limit)
+		visited := getUnembeddedPassagesPaged(t, db, first, limit)
 		if got := getChunkIDs(visited); !slices.Equal(got, getChunkIDs(owed)) {
 			t.Errorf("a walk in pages of %d visited %v, want %v", limit, got, getChunkIDs(owed))
 		}
 	}
 
-	if got := getSourcePaths(walkOwed(t, db, second, 1)); !slices.Equal(got, []string{"library/second.epub", "library/second.epub"}) {
+	if got := getSourcePaths(getUnembeddedPassagesPaged(t, db, second, 1)); !slices.Equal(got, []string{"library/second.epub", "library/second.epub"}) {
 		t.Errorf("a walk of the second vault visited chunks of %v", got)
 	}
 }
@@ -216,7 +216,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	read, held, err := sources.Reading(ctx, first.ID, "library/scan.pdf")
+	read, held, err := sources.GetSourceText(ctx, first.ID, "library/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestAPathWithNoSourceIsNotHeld(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, second, "library/a.epub", thisYear, "violins tune")
 
-	read, held, err := db.Sources().Reading(t.Context(), first.ID, "library/a.epub")
+	read, held, err := db.Sources().GetSourceText(t.Context(), first.ID, "library/a.epub")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,7 +256,7 @@ func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, first, "library/a.epub", thisYear, "bread rises", "yeast ferments")
 
-	owed := getOwed(t, db, first)
+	owed := getUnembeddedPassages(t, db, first)
 	if len(owed) != 2 {
 		t.Fatalf("%d chunks owe a vector, want 2", len(owed))
 	}
@@ -268,24 +268,24 @@ func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 		}
 		vectors = append(vectors, port.Vector{
 			ChunkID: p.ChunkID, Hash: hashOf(t, db, row), Model: benchModel,
-			Value: precise(direction(0x0f)), Coarse: bits(0x0f),
+			Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f),
 		})
 	}
 	if err := db.Sources().SaveVectors(ctx, vectors); err != nil {
 		t.Fatal(err)
 	}
-	if left := getOwed(t, db, first); len(left) != 0 {
+	if left := getUnembeddedPassages(t, db, first); len(left) != 0 {
 		t.Errorf("%d chunks still owe a vector", len(left))
 	}
 
-	stranger := port.Vector{ChunkID: "x", Hash: []byte{1}, Model: benchModel, Value: precise(direction(0x0f)), Coarse: bits(0x0f)}
+	stranger := port.Vector{ChunkID: "x", Hash: []byte{1}, Model: benchModel, Value: getPreciseBytes(getVectorForSeed(0x0f)), Coarse: bits(0x0f)}
 	if err := db.Sources().SaveVectors(ctx, []port.Vector{stranger}); err == nil {
 		t.Error("a vector for chunk \"x\" was saved")
 	}
 }
 
 // The sources a producer made the text of are listed with the producer and the
-// hash their reading is kept under.
+// hash their recognition is kept under.
 func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -321,7 +321,7 @@ func TestReadingASourceOfAClosedIndexFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := db.Sources().Reading(t.Context(), first.ID, "library/a.epub"); err == nil {
+	if _, _, err := db.Sources().GetSourceText(t.Context(), first.ID, "library/a.epub"); err == nil {
 		t.Error("reading a closed index reported the source as not held")
 	}
 }

@@ -50,7 +50,7 @@ const press = useNodePress(props, getMiddle, {
   activate: () => emit('activate'),
   show: (showing) => emit('show', showing),
   reach: (pointer) => emit('reach', pointer),
-  menu: (at, opening) => emit('menu', at, opening),
+  menu: (at, trigger) => emit('menu', at, trigger),
 })
 
 const { isGhost, canStop, isAnnounced, listening } = press

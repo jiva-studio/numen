@@ -52,7 +52,7 @@ func TestOpeningWithoutAnAlphabetFails(t *testing.T) {
 	}
 }
 
-// The reading library that cannot load the detector is the recogniser's
+// The recognition library that cannot load the detector is the recogniser's
 // failure, and its cause is kept.
 func TestOpeningWithoutADetectorThatLoadsFails(t *testing.T) {
 	recognise := onnxModel(pbString(2, "rec"), map[string]string{alphabetKey: "a\nb"})
@@ -73,7 +73,7 @@ func TestLocatingNamesTheModelsAndWhereTheyCameFrom(t *testing.T) {
 	dir := t.TempDir()
 	cfg := openConfig(t, dir, nil, nil, nil)
 
-	opened, found, err := locate(t.Context(), cfg)
+	opened, found, err := locateModels(t.Context(), cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestLocatingNamesTheModelsAndWhereTheyCameFrom(t *testing.T) {
 	}
 
 	cfg.Dir = dir
-	if _, found, err = locate(t.Context(), cfg); err != nil || found.from != dir {
+	if _, found, err = locateModels(t.Context(), cfg); err != nil || found.from != dir {
 		t.Errorf("from = %q, %v; want %q", found.from, err, dir)
 	}
 }
@@ -120,7 +120,7 @@ func TestARecogniserSaysWhichModelsItReadsWith(t *testing.T) {
 }
 
 func TestDepthsAreWhereANameStandsInTheList(t *testing.T) {
-	got := depths([]string{"title", "section", "subsection"})
+	got := getDepths([]string{"title", "section", "subsection"})
 	want := map[string]int{"title": 0, "section": 1, "subsection": 2}
 	if len(got) != len(want) {
 		t.Fatalf("depths = %v", got)
@@ -133,7 +133,7 @@ func TestDepthsAreWhereANameStandsInTheList(t *testing.T) {
 }
 
 func TestASetHoldsEveryName(t *testing.T) {
-	got := set([]string{"text", "title"})
+	got := toSet([]string{"text", "title"})
 	if len(got) != 2 || !got["text"] || !got["title"] || got["other"] {
 		t.Errorf("set = %v", got)
 	}

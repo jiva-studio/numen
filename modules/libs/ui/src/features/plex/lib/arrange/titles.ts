@@ -46,7 +46,7 @@ const getSpanLength = (span: Span): number => span.to - span.from
  * Where nothing measured the words there is no extent to keep clear of, and
  * every title stays where it was put.
  */
-export function settleTitles(
+export function separateTitles(
   edges: readonly PlacedEdge[],
   nodes: readonly PlacedNode[],
   routing: Routing,

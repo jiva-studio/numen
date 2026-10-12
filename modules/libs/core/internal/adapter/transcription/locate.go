@@ -13,10 +13,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
-// through is the ONNX Runtime this run listens through, and where it came
+// onnxRuntime is the ONNX Runtime this run listens onnxRuntime, and where it came
 // from. It is the process's, opened once and held for as long as the process
 // lives, so nothing here closes it.
-type through struct {
+type onnxRuntime struct {
 	engine *ort.Engine
 	at     string
 }
@@ -32,22 +32,22 @@ type paths struct {
 	from      string
 }
 
-// locate opens the runtime and finds the models.
+// locateModels opens the runtime and finds the models.
 //
 // Three places are tried in order and each is a setting: a path written down,
 // the folder the application was installed into, and what was downloaded. A
 // path that is written down is used as given, and its absence is an error.
-func locate(ctx context.Context, cfg Config) (through, paths, error) {
-	var opened through
+func locateModels(ctx context.Context, cfg Config) (onnxRuntime, paths, error) {
+	var opened onnxRuntime
 	var err error
 	if opened.engine, opened.at, err = onnxruntime.Open(ctx, cfg.settings()); err != nil {
-		return through{}, paths{}, err
+		return onnxRuntime{}, paths{}, err
 	}
 
 	found := paths{from: "settings"}
 	for _, one := range getWantedFiles(cfg, &found) {
 		if *one.dst, err = model(ctx, cfg, one.path, one.name, one.kind); err != nil {
-			return through{}, paths{}, err
+			return onnxRuntime{}, paths{}, err
 		}
 	}
 	if cfg.Dir != "" {

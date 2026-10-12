@@ -63,7 +63,7 @@ func TestSequenceLengthsRoundUpToAStep(t *testing.T) {
 		{256, 256},
 		{9000, 256},
 	} {
-		if got := bucket(c.tokens, 64, 256); got != c.want {
+		if got := roundUpToBucket(c.tokens, 64, 256); got != c.want {
 			t.Errorf("%d tokens gave %d, want %d", c.tokens, got, c.want)
 		}
 	}
@@ -115,7 +115,7 @@ func TestARunMeetsOneShapePerSequenceLength(t *testing.T) {
 			for i := range batch {
 				batch[i] = make([]int, tokens)
 			}
-			in := padBatch(batch, rows, bucket(tokens, step, limit), 1)
+			in := padBatch(batch, rows, roundUpToBucket(tokens, step, limit), 1)
 			seen[[2]int{rows, len(in.ids) / rows}] = true
 			releasePadding(in)
 		}
@@ -185,7 +185,7 @@ func TestEachTextTakesItsOwnFirstTokenWhateverItsPlace(t *testing.T) {
 
 func TestAnEmptyTextIsHeldToOneStep(t *testing.T) {
 	for _, tokens := range []int{0, -3} {
-		if got := bucket(tokens, 64, 256); got != 64 {
+		if got := roundUpToBucket(tokens, 64, 256); got != 64 {
 			t.Errorf("%d tokens gave %d, want 64", tokens, got)
 		}
 	}
@@ -200,7 +200,7 @@ func TestALimitThatIsNoStepIsNeverPassed(t *testing.T) {
 		{200, 200},
 		{500, 200},
 	} {
-		if got := bucket(c.tokens, 64, 200); got != c.want {
+		if got := roundUpToBucket(c.tokens, 64, 200); got != c.want {
 			t.Errorf("%d tokens gave %d, want %d", c.tokens, got, c.want)
 		}
 	}

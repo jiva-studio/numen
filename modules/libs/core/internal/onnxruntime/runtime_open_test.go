@@ -43,13 +43,13 @@ func useGate(t *testing.T, g *gate) {
 	t.Helper()
 	isolateCache(t)
 	t.Setenv("LD_LIBRARY_PATH", t.TempDir())
-	if engine, _, _ := load(candidates(getSettings())); engine != nil {
+	if engine, _, _ := loadFirstLibrary(getLibraryCandidates(getSettings())); engine != nil {
 		engine.Destroy()
 		t.Skip("this machine holds a runtime, and nothing is fetched")
 	}
-	previous := fetching.Transport
-	fetching.Transport = g
-	t.Cleanup(func() { fetching.Transport = previous })
+	previous := httpsClient.Transport
+	httpsClient.Transport = g
+	t.Cleanup(func() { httpsClient.Transport = previous })
 
 	runtimeState.mu.Lock()
 	engine, at, opening := runtimeState.engine, runtimeState.at, runtimeState.opening
@@ -182,12 +182,12 @@ func TestKeepHandsTheRuntimeToEveryRegisteredLibrary(t *testing.T) {
 	registered := len(runtimeState.also)
 	engine, at, stood := runtimeState.engine, runtimeState.at, runtimeState.also
 	runtimeState.mu.Unlock()
-	wasHere := here.Load()
+	wasHere := isLoaded.Load()
 	t.Cleanup(func() {
 		runtimeState.mu.Lock()
 		runtimeState.engine, runtimeState.at, runtimeState.also = engine, at, stood
 		runtimeState.mu.Unlock()
-		here.Store(wasHere)
+		isLoaded.Store(wasHere)
 	})
 	if registered == 0 {
 		t.Error("the graph optimization setting is not registered to be made on the runtime")
@@ -196,13 +196,13 @@ func TestKeepHandsTheRuntimeToEveryRegisteredLibrary(t *testing.T) {
 	var got []string
 	Register(func(at string) { got = append(got, at) })
 	runtimeState.mu.Lock()
-	keep(nil, "/runtime/libonnxruntime")
+	recordRuntime(nil, "/runtime/libonnxruntime")
 	runtimeState.mu.Unlock()
 
 	if len(got) != 1 || got[0] != "/runtime/libonnxruntime" {
 		t.Errorf("registered library was handed %v", got)
 	}
-	if !here.Load() {
+	if !isLoaded.Load() {
 		t.Error("a settled runtime is not here")
 	}
 }
@@ -212,39 +212,39 @@ func TestIsHereKnowsWhatTheMachineHolds(t *testing.T) {
 	libraries := t.TempDir()
 	t.Setenv("LD_LIBRARY_PATH", libraries)
 	settings := Settings{Section: "indexing.recognition", Dir: t.TempDir()}
-	wasHere := here.Swap(false)
-	t.Cleanup(func() { here.Store(wasHere) })
+	wasHere := isLoaded.Swap(false)
+	t.Cleanup(func() { isLoaded.Store(wasHere) })
 
-	for _, at := range candidates(settings) {
+	for _, at := range getLibraryCandidates(settings) {
 		if filepath.IsAbs(at) {
 			t.Skip("this machine holds a runtime file")
 		}
 	}
-	if IsHere(settings) {
+	if IsAvailable(settings) {
 		t.Error("a machine with no runtime file is here")
 	}
 
 	if err := os.WriteFile(filepath.Join(libraries, runtimeName()), []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if !IsHere(settings) {
+	if !IsAvailable(settings) {
 		t.Error("a machine holding a runtime file is not here")
 	}
 }
 
 func TestIsHereChecksTheFileTheSettingsName(t *testing.T) {
 	isolateCache(t)
-	wasHere := here.Swap(false)
-	t.Cleanup(func() { here.Store(wasHere) })
+	wasHere := isLoaded.Swap(false)
+	t.Cleanup(func() { isLoaded.Store(wasHere) })
 	named := filepath.Join(t.TempDir(), "libonnxruntime-named")
 
-	if IsHere(Settings{Runtime: named}) {
+	if IsAvailable(Settings{Runtime: named}) {
 		t.Error("a name with no file is here")
 	}
 	if err := os.WriteFile(named, []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if !IsHere(Settings{Runtime: named}) {
+	if !IsAvailable(Settings{Runtime: named}) {
 		t.Error("a name with a file is not here")
 	}
 }
@@ -252,10 +252,10 @@ func TestIsHereChecksTheFileTheSettingsName(t *testing.T) {
 func TestIsHereIsTrueOnceTheProcessHasItsRuntime(t *testing.T) {
 	isolateCache(t)
 	t.Setenv("LD_LIBRARY_PATH", t.TempDir())
-	wasHere := here.Swap(true)
-	t.Cleanup(func() { here.Store(wasHere) })
+	wasHere := isLoaded.Swap(true)
+	t.Cleanup(func() { isLoaded.Store(wasHere) })
 
-	if !IsHere(Settings{Runtime: filepath.Join(t.TempDir(), "nothing")}) {
+	if !IsAvailable(Settings{Runtime: filepath.Join(t.TempDir(), "nothing")}) {
 		t.Error("a process holding its runtime is not here")
 	}
 }

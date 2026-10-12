@@ -50,10 +50,10 @@ func makeWindow(
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
 	vaults := &openVaults{
-		cfg: cfg, db: db, under: t.Context(),
+		cfg: cfg, db: db, lifetime: t.Context(),
 		recordVault: func(domain.Vault) {}, out: io.Discard,
 	}
-	t.Cleanup(vaults.wait)
+	t.Cleanup(vaults.closeAndWait)
 	return cfg, db, vaults, &window.API{}, held
 }
 
@@ -94,7 +94,7 @@ func hasWrittenSecrets(t *testing.T, cfg container.Config) (token bool, announce
 		}
 		return err == nil
 	}
-	return there(agents.TokenPath), there(agents.AnnouncementPath)
+	return there(agents.TokenPath), there(agents.DiscoveryPath)
 }
 
 // An installation that names no agent lets nothing be asked, and says so.

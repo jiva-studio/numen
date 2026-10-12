@@ -79,16 +79,16 @@ type API struct {
 	// answers that it has none, and the rest of it works as it did.
 	agent atomic.Pointer[port.Agent]
 
-	// showing is the card the last question was asked about, which the tools
+	// currentCard is the card the last question was asked about, which the tools
 	// answer with. It is held here, and the question carries none of it: a
 	// tool's answer is data where a question is read as instruction.
-	showing atomic.Pointer[CurrentCard]
+	currentCard atomic.Pointer[CurrentCard]
 
-	runs     sessions
-	readings readings
+	runs      sessions
+	indexRuns indexRuns
 
-	// listeners is everyone waiting to hear that a vault moved.
-	listeners following
+	// subscribers is everyone waiting to hear that a vault moved.
+	subscribers changeSubscribers
 }
 
 // sessions is the run open on each vault, by the vault's identity. One session
@@ -99,7 +99,7 @@ type sessions struct {
 	run map[domain.VaultID]*flashcards.LogWriter
 }
 
-func (s *sessions) remember(v domain.Vault, run *flashcards.LogWriter) {
+func (s *sessions) store(v domain.Vault, run *flashcards.LogWriter) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.run == nil {
@@ -135,9 +135,9 @@ type CurrentCard struct {
 	Face string
 }
 
-// Current is that card, for whatever answers about it.
-func (a *API) Current() CurrentCard {
-	if on := a.showing.Load(); on != nil {
+// GetCurrentCard is that card, for whatever answers about it.
+func (a *API) GetCurrentCard() CurrentCard {
+	if on := a.currentCard.Load(); on != nil {
 		return *on
 	}
 	return CurrentCard{}
@@ -162,18 +162,18 @@ func (a *API) SetAgent(taking port.Agent) {
 	a.agent.Store(&taking)
 }
 
-// Vault is the vault of an identity, as the list holds it.
-func (a *API) Vault(id string) (domain.Vault, error) {
+// GetVault is the vault of an identity, as the list holds it.
+func (a *API) GetVault(id string) (domain.Vault, error) {
 	return vaults.NewFind(a.Registry).Execute(id)
 }
 
 // openRun starts a run and remembers it under its own name.
 func (a *API) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
-	run, err := a.Log.Open(ctx, v, a.now())
+	run, err := a.Log.Open(ctx, v, a.getNow())
 	if err != nil {
 		return nil, err
 	}
-	a.runs.remember(v, run)
+	a.runs.store(v, run)
 	// The agent works the vault the person's session is on, and it is told
 	// which once, when the session opens.
 	if a.Opened != nil {
@@ -192,23 +192,23 @@ func NewWindow(tasks *task.Tasks) *wire.Window {
 	return &wire.Window{Named: wire.Review, Tasking: tasks}
 }
 
-// say puts one piece of work in the list of what is being done behind the
+// reportTask puts one piece of work in the list of what is being done behind the
 // window, for a window that keeps one.
-func (a *API) say(at task.Task) { a.Window.Say(at) }
+func (a *API) reportTask(at task.Task) { a.Window.Say(at) }
 
 // finishTask takes one piece of work out of that list.
 func (a *API) finishTask(id string) { a.Window.Finish(id) }
 
-func (a *API) now() time.Time {
+func (a *API) getNow() time.Time {
 	if a.Now == nil {
 		return time.Now()
 	}
 	return a.Now()
 }
 
-// stamp is how an instant reaches the page: the one shape everything here
+// formatTime is how an instant reaches the page: the one shape everything here
 // writes, so the page parses one.
-func stamp(t time.Time) string {
+func formatTime(t time.Time) string {
 	if t.IsZero() {
 		return ""
 	}

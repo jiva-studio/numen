@@ -186,7 +186,7 @@ type sourced struct {
 	known map[string]port.SourceText
 }
 
-func (s *sourced) Reading(
+func (s *sourced) GetSourceText(
 	_ context.Context, _ domain.VaultID, path string,
 ) (port.SourceText, bool, error) {
 	one, held := s.known[path]

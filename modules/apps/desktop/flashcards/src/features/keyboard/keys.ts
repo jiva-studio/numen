@@ -30,10 +30,10 @@ export interface ScreenState {
 }
 
 /** The letter the panel a card is asked about in is brought in with. */
-export const ASKS = 'a'
+export const ASK_KEY = 'a'
 
 /** The letter the panel the deck's notes are read in is brought in with. */
-export const READS = 'r'
+export const READ_KEY = 'r'
 
 /**
  * The keys a whole session is done with: space turns a card over, the four
@@ -59,8 +59,8 @@ export function getSessionKeyIntent(
 /** The letters the two panels beside the card are brought in and taken away by. */
 const getPanelKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
   const letter = press.key.toLowerCase()
-  if (letter === ASKS) return { does: 'ask' }
-  if (letter === READS) return { does: 'read' }
+  if (letter === ASK_KEY) return { does: 'ask' }
+  if (letter === READ_KEY) return { does: 'read' }
   return null
 }
 
@@ -97,7 +97,7 @@ const getGradeKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
  * keyboard, and the letter would be the first thing typed into it. So is space
  * over the reading, which the page would otherwise scroll instead.
  */
-export const isSwallowed = (intent: SessionKeyIntent | null): boolean =>
+export const shouldConsumeKey = (intent: SessionKeyIntent | null): boolean =>
   intent?.does === 'show' ||
   intent?.does === 'ask' ||
   intent?.does === 'read' ||

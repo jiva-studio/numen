@@ -132,7 +132,7 @@ func (u Schedules) opening() string {
 }
 
 // getAssignment is the scheduler each card face is worked out by, over a
-// reading of this vault's presets of its own.
+// run of reads of this vault's presets of its own.
 //
 // A card face whose deck names no preset is worked out at the defaults, and so
 // is every card of a vault nothing has read yet.
@@ -147,16 +147,16 @@ func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignmen
 	if err != nil {
 		return assignment{}, err
 	}
-	return u.getAssignmentFrom(ctx, v, u.presets.Reading(), faces)
+	return u.getAssignmentFrom(ctx, v, u.presets.OpenReads(), faces)
 }
 
-// getAssignmentFrom is the same, from the cards and the reading of the presets a
+// getAssignmentFrom is the same, from the cards and the run of reads of the presets a
 // caller already holds.
 func (u Schedules) getAssignmentFrom(
-	ctx context.Context, v domain.Vault, reading *PresetReads, faces []CardFace,
+	ctx context.Context, v domain.Vault, reads *PresetReads, faces []CardFace,
 ) (assignment, error) {
 	out := u.plain()
-	if reading == nil || reading.links == nil {
+	if reads == nil || reads.links == nil {
 		return out, nil
 	}
 
@@ -166,7 +166,7 @@ func (u Schedules) getAssignmentFrom(
 	for _, one := range faces {
 		path, known := asked[one.Deck]
 		if !known {
-			p, err := reading.GetForDeck(ctx, v, one.Deck)
+			p, err := reads.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
 				return assignment{}, err
 			}

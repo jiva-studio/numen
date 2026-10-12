@@ -157,7 +157,7 @@ func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
 
 	watcher.lost <- struct{}{}
 
-	if got := next(t, f.moved); !got.ShouldReload || !got.Reading() {
+	if got := next(t, f.moved); !got.ShouldReload || !got.ShouldReadAssets() {
 		t.Errorf("reported %+v", got)
 	}
 }
@@ -258,8 +258,8 @@ func TestWhatAVaultChangedAsksForAReadWhenAnythingMayHaveChanged(t *testing.T) {
 		{"two assets", vaults.VaultChanges{Assets: []string{"A.pdf", "B.pdf"}}, true},
 		{"a reload", vaults.VaultChanges{ShouldReload: true}, true},
 	} {
-		if got := tc.changes.Reading(); got != tc.want {
-			t.Errorf("%s: Reading is %v, want %v", tc.name, got, tc.want)
+		if got := tc.changes.ShouldReadAssets(); got != tc.want {
+			t.Errorf("%s: ShouldReadAssets is %v, want %v", tc.name, got, tc.want)
 		}
 	}
 }

@@ -32,7 +32,7 @@ const vaultClient = (port: number) => createClient(VaultService, createTransport
 const noteClient = (port: number) => createClient(NoteService, createTransport(port))
 
 /** Start the core and answer with clients onto the vault it opened. */
-export async function reach(): Promise<Core> {
+export async function startCore(): Promise<Core> {
   const { port, dir } = await NumenCore.start()
   return { port, dir, vault: vaultClient(port), notes: noteClient(port) }
 }

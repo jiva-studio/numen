@@ -133,7 +133,7 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	}
 
 	// The window reads a vault the index does not carry, over the same scan.
-	api.Reading(ctx, func(ctx context.Context, v domain.Vault) error {
+	api.SetVaultIndexer(ctx, func(ctx context.Context, v domain.Vault) error {
 		_, err := scan.Execute(ctx, v)
 		return err
 	})
@@ -162,8 +162,8 @@ func newWindowClient(t *testing.T, api *API) numenv1connect.WindowServiceClient 
 // opens on, each count filled into its row, and the vaults read before they are
 // counted.
 //
-// A row saying it is being read is a row the page asks about again when the
-// reading wakes it, so the asking is done here until nothing is being read.
+// A row saying it is being indexed is a row the page asks about again when the
+// indexing wakes it, so the asking is done here until nothing is being indexed.
 func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	t.Helper()
 	client := newFlashcardsClient(t, api)
@@ -171,7 +171,7 @@ func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	var out *v1.WatchCardsDueResponse
 	for at := time.Now(); time.Since(at) < 30*time.Second; {
 		out = readCardsDue(t, client)
-		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultCardsDue).GetIsReading) {
+		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultCardsDue).GetIsIndexing) {
 			return out
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -409,9 +409,9 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	}
 }
 
-// Every vault the window opens is read before it is counted, and its numbers
-// arrive with the count the finished reading wakes.
-func TestAVaultIsReadBeforeItIsCounted(t *testing.T) {
+// Every vault the window opens is indexed before it is counted, and its numbers
+// arrive with the count the finished indexing wakes.
+func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 	api, held := newAPI(t, deck)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: append(held, unread)}
@@ -419,12 +419,12 @@ func TestAVaultIsReadBeforeItIsCounted(t *testing.T) {
 	// Nothing is counted from a walk half done, so the first opening finds every
 	// row waiting on one.
 	for _, one := range readCardsDue(t, newFlashcardsClient(t, api)).GetVaults() {
-		if !one.GetIsReading() || one.GetUnread() != "" {
+		if !one.GetIsIndexing() || one.GetUnread() != "" {
 			t.Errorf("a vault came back %+v", one)
 		}
 	}
 
-	// The readings finish and the count that follows them holds the cards, for
+	// The indexing finishes and the count that follows it holds the cards, for
 	// the vault the index carried and for the one it did not.
 	out := front(t, api).GetVaults()
 	if len(out) != 2 {
@@ -444,7 +444,7 @@ func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
 	v := held[0]
 
 	var read atomic.Int64
-	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		read.Add(1)
 		return nil
 	})
@@ -466,13 +466,13 @@ func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
 // and says why nothing could be counted.
 func TestAVaultTheIndexDoesNotCarryIsUncountedWhereNothingReadsIt(t *testing.T) {
 	api, _ := newAPI(t)
-	api.Reading(t.Context(), nil)
+	api.SetVaultIndexer(t.Context(), nil)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
 
 	out := front(t, api)
 	one := out.GetVaults()[0]
-	if one.GetIsReading() || one.GetUnread() == "" {
+	if one.GetIsIndexing() || one.GetUnread() == "" {
 		t.Errorf("a vault nothing reads came back %+v", one)
 	}
 }
@@ -480,7 +480,7 @@ func TestAVaultTheIndexDoesNotCarryIsUncountedWhereNothingReadsIt(t *testing.T) 
 // A session opened on a vault the index does not carry is refused, and says so.
 func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	api, _ := newAPI(t)
-	api.Reading(t.Context(), nil)
+	api.SetVaultIndexer(t.Context(), nil)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
 
@@ -572,11 +572,11 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 		v1.Rating_RATING_GOOD:  review.Good,
 		v1.Rating_RATING_EASY:  review.Easy,
 	} {
-		if got := newRating(said); got != want {
+		if got := parseRating(said); got != want {
 			t.Errorf("%v came across as %v", said, got)
 		}
 	}
-	if got := newRating(v1.Rating_RATING_UNSPECIFIED); got.Valid() {
+	if got := parseRating(v1.Rating_RATING_UNSPECIFIED); got.Valid() {
 		t.Errorf("nothing said came across as %v", got)
 	}
 }

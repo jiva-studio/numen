@@ -34,8 +34,8 @@ type entry struct {
 	// isReadable is whether the application could act on this entry at all. One
 	// it could not is still somebody's writing and is never rewritten.
 	isReadable bool
-	// isOurs is whether every key in it is one the application owns.
-	isOurs bool
+	// isOwned is whether every key in it is one the application owns.
+	isOwned bool
 	// address is the node holding where the link goes, so changing it is a
 	// change to that scalar.
 	address *yaml.Node
@@ -72,7 +72,7 @@ func (d *Document) block() (block, error) {
 	// down. Anything under `links:` but a block sequence, or a key holding
 	// nothing, is refused and the note is left as it stands.
 	switch {
-	case items == nil || empty(items):
+	case items == nil || isNullValue(items):
 		return b, nil
 	case items.Kind != yaml.SequenceNode || hasFlowStyle(items):
 		return block{}, ErrInline
@@ -104,7 +104,7 @@ func (d *Document) block() (block, error) {
 			start:      lines[at-1],
 			end:        lines[last],
 			isReadable: isReadable(item),
-			isOurs:     isOurs(item),
+			isOwned:    hasOnlyOwnedKeys(item),
 			address:    valueOf(item, "to"),
 		})
 		if i == 0 {
@@ -204,7 +204,7 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 			kept++
 			continue
 		}
-		if !e.isOurs {
+		if !e.isOwned {
 			return fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		carrying = append(carrying, i)
@@ -265,7 +265,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 		if e.link.Target != to {
 			continue
 		}
-		if !e.isOurs {
+		if !e.isOwned {
 			return 0, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
 		}
 		// What was not sent is kept, and every field here behaves the same way.
@@ -314,7 +314,7 @@ func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
 	moved := 0
 	for i := len(b.entries) - 1; i >= 0; i-- {
 		e := b.entries[i]
-		if e.link.Target != from || !e.isReadable || !e.isOurs {
+		if e.link.Target != from || !e.isReadable || !e.isOwned {
 			continue
 		}
 		if e.address == nil {
@@ -324,7 +324,7 @@ func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
 		if !ok {
 			continue
 		}
-		written, err := scalarLike(asItWasWritten(e.address.Value, to), e.address.Style)
+		written, err := scalarLike(keepLinkNotation(e.address.Value, to), e.address.Style)
 		if err != nil {
 			return moved, err
 		}
@@ -400,8 +400,8 @@ func isReadable(item *yaml.Node) bool {
 	return l.Target.Value != "" && domain.IsKnownRole(l.Role)
 }
 
-// isOurs is whether every key in an entry is one the application owns.
-func isOurs(item *yaml.Node) bool {
+// hasOnlyOwnedKeys is whether every key in an entry is one the application owns.
+func hasOnlyOwnedKeys(item *yaml.Node) bool {
 	if item.Kind != yaml.MappingNode {
 		return false
 	}
@@ -413,14 +413,14 @@ func isOurs(item *yaml.Node) bool {
 	return true
 }
 
-// asItWasWritten is a name in the notation the name it replaces was in. Double
+// keepLinkNotation is a name in the notation the name it replaces was in. Double
 // brackets are how a person writes a link, and an alias after `|` or a place
 // after `#` is theirs: the target is what moved, and the rest is left standing.
-func asItWasWritten(was, to string) string {
+func keepLinkNotation(was, to string) string {
 	if !strings.HasPrefix(was, "[[") || !strings.HasSuffix(was, "]]") || len(was) < 4 {
 		return to
 	}
-	return "[[" + to + getAfterTarget(was[2:len(was)-2]) + "]]"
+	return "[[" + to + getWikilinkSuffix(was[2:len(was)-2]) + "]]"
 }
 
 // Links are the relationships written in the `links:` block. Links written in

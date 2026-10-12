@@ -200,7 +200,7 @@ func TestAnAssetOwesAReadWhenOneChangedOrEverythingDid(t *testing.T) {
 		{"everything", container.VaultChanges{ShouldReload: true}, true},
 		{"both", container.VaultChanges{ShouldReload: true, Assets: []string{"a.png"}}, true},
 	} {
-		if got := one.got.Reading(); got != one.want {
+		if got := one.got.ShouldReadAssets(); got != one.want {
 			t.Errorf("%s: %v", one.what, got)
 		}
 	}

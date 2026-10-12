@@ -48,15 +48,15 @@ func findCommand() string {
 	if err != nil {
 		home = ""
 	}
-	if found := found(home, places); found != "" {
+	if found := findInPlaces(home, places); found != "" {
 		return found
 	}
 	return "claude"
 }
 
-// found is the first of places that is a program this machine can run. Empty
+// findInPlaces is the first of places that is a program this machine can run. Empty
 // says none of them is.
-func found(home string, places []string) string {
+func findInPlaces(home string, places []string) string {
 	for _, place := range places {
 		if strings.HasPrefix(place, "~/") {
 			if home == "" {

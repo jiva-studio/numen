@@ -10,7 +10,7 @@ import { ref, shallowRef, watch } from 'vue'
 import { createFollower } from '@numen/ui'
 import { createAnswerGuard } from '@/shared/questions'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { DESIGNED, NOWHERE, SCHEMES } from '@/entities/settings'
+import { DESIGNED, EMPTY_RANGE, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
 import type { AppearanceWords } from '../words'
 import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
@@ -38,7 +38,7 @@ export function createWindowAppearance(
 
   /** The two sizes the settings name, and how far each of them goes. */
   const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
-  const bounds = ref<Ranges>({ interfaceScale: NOWHERE, textScale: NOWHERE })
+  const bounds = ref<Ranges>({ interfaceScale: EMPTY_RANGE, textScale: EMPTY_RANGE })
 
   /**
    * What the appearance lost touch with, said until it has it back.

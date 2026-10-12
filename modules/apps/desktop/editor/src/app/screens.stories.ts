@@ -226,7 +226,7 @@ const PRESET_STATE: PresetTabState = {
   problems: shallowRef([]),
   stopped: ref(StopReason.NOTHING),
   errorMessage: ref(''),
-  hasChanged: ref(false),
+  hasExternalChange: ref(false),
   reload: () => {},
   chooseGoal: () => {},
   moveSlider: () => {},

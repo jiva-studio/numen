@@ -92,8 +92,8 @@ export interface VaultCardsDue {
   /** Why nothing was counted, where nothing was. */
   readonly unread: string
   /**
-   * Whether the vault is being read into the index now. Its counts follow when
-   * the reading is done.
+   * Whether the vault is being indexed now. Its counts follow when
+   * the indexing is done.
    */
-  readonly isReading: boolean
+  readonly isIndexing: boolean
 }

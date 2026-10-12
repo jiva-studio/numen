@@ -81,7 +81,7 @@ func checkLocation(t *testing.T, doc *text.Document, passage, want string) {
 	}
 }
 
-func TestAReadingWithPartsLocatesAPassageBySectionAndPage(t *testing.T) {
+func TestARecognitionWithPartsLocatesAPassageBySectionAndPage(t *testing.T) {
 	raw, parts := writeRecognition(t)
 	doc := text.ReadRecognition(raw, parts, nil, nil)
 
@@ -90,7 +90,7 @@ func TestAReadingWithPartsLocatesAPassageBySectionAndPage(t *testing.T) {
 	checkLocation(t, doc, birth, docTitle+", page 2 of the file")
 }
 
-func TestAReadingWithPartsNamesThem(t *testing.T) {
+func TestARecognitionWithPartsNamesThem(t *testing.T) {
 	raw, parts := writeRecognition(t)
 	doc := text.ReadRecognition(raw, parts, nil, nil)
 
@@ -104,14 +104,14 @@ func TestAReadingWithPartsNamesThem(t *testing.T) {
 	}
 }
 
-func TestAReadingWithNoPartsLocatesAPassageByPageAlone(t *testing.T) {
+func TestARecognitionWithNoPartsLocatesAPassageByPageAlone(t *testing.T) {
 	raw, _ := writeRecognition(t)
 	doc := text.ReadRecognition(raw, nil, nil, nil)
 
 	checkLocation(t, doc, ganges, "page 3 of the file")
 	checkLocation(t, doc, padmavati, "page 4 of the file")
 	if len(doc.Parts) != 0 {
-		t.Errorf("a reading with no parts names %+v", doc.Parts)
+		t.Errorf("a recognition with no parts names %+v", doc.Parts)
 	}
 }
 

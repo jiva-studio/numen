@@ -134,7 +134,7 @@ func (d *Document) entries(node *yaml.Node, key string) *yaml.Node {
 	}
 	held := valueOf(node, key)
 	switch {
-	case held == nil || empty(held):
+	case held == nil || isNullValue(held):
 		return &yaml.Node{Kind: yaml.MappingNode}
 	case held.Kind != yaml.MappingNode:
 		return nil
@@ -172,7 +172,7 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 			continue
 		}
 		name := &yaml.Node{Kind: yaml.ScalarNode, Value: one.Key}
-		was.carry(name, held)
+		was.copyLineComment(name, held)
 		mapping.Content = append(mapping.Content, name, held)
 	}
 	if len(mapping.Content) == 0 {

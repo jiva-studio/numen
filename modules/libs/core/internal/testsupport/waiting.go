@@ -16,10 +16,10 @@ import (
 const Patience = 10 * time.Second
 
 // WaitFor holds until something is so, and fails the test if it never is.
-func WaitFor(t *testing.T, so func() bool) {
+func WaitFor(t *testing.T, condition func() bool) {
 	t.Helper()
 	for at := time.Now(); time.Since(at) < Patience; {
-		if so() {
+		if condition() {
 			return
 		}
 		time.Sleep(10 * time.Millisecond)

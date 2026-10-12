@@ -2,6 +2,7 @@ package flashcards
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -97,7 +98,7 @@ func TestWhatIsAskedAboutACardReachesTheAgent(t *testing.T) {
 
 // A deck, a card's mark and a face are all named by whoever synced the vault,
 // and the question is the model's first user message, where a name is read as
-// instruction. The card is held for `card_showing` to answer with instead,
+// instruction. The card is held for `card_current` to answer with instead,
 // which is a tool's answer and so data.
 func TestTheCardsNameIsNotInTheQuestion(t *testing.T) {
 	agent := &asking{took: make(chan port.Task, 1)}
@@ -125,7 +126,7 @@ func TestTheCardsNameIsNotInTheQuestion(t *testing.T) {
 	if strings.Contains(task.Question, planted) {
 		t.Errorf("the card's name is in the question: %q", task.Question)
 	}
-	if on := api.Current(); on.Deck != planted || on.Card != planted || on.Face != planted {
+	if on := api.GetCurrentCard(); on.Deck != planted || on.Card != planted || on.Face != planted {
 		t.Errorf("the card in front of them is %+v", on)
 	}
 }
@@ -319,5 +320,37 @@ func TestTheAgentIsToldWhichVaultTheSessionIsOn(t *testing.T) {
 
 	if strings.Join(told, "|") != strings.Join(opened, "|") {
 		t.Errorf("sessions opened on %v and the agent was told %v", opened, told)
+	}
+}
+
+// refusingAgent is an agent that cannot end a conversation.
+type refusingAgent struct{ port.Agent }
+
+func (refusingAgent) Finish(context.Context, string) error { return errors.New("the agent went away") }
+
+// An agent that cannot end a conversation is an internal failure, and the page
+// is told so.
+func TestAConversationTheAgentCannotEndIsAnInternalFailure(t *testing.T) {
+	api := &API{}
+	api.SetAgent(refusingAgent{})
+
+	_, err := api.FinishConversation(t.Context(),
+		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "one"}))
+	if code := connect.CodeOf(err); code != connect.CodeInternal {
+		t.Errorf("finishing answered %v", err)
+	}
+}
+
+// Naming no agent takes the window's agent away.
+func TestNamingNoAgentLeavesTheWindowWithNone(t *testing.T) {
+	api := &API{}
+	api.SetAgent(&asking{})
+	if api.GetAgent() == nil {
+		t.Fatal("the agent that was named is not there")
+	}
+
+	api.SetAgent(nil)
+	if api.GetAgent() != nil {
+		t.Error("the window still has an agent")
 	}
 }

@@ -53,7 +53,7 @@ func batches(n int) []proofread.Batch {
 
 // A person's own model is left most of itself: no more runs stand at once than
 // the profile allows.
-func TestNoMoreRunsStandAtOnceThanWereAllowed(t *testing.T) {
+func TestRunsNeverExceedInFlightLimit(t *testing.T) {
 	for _, allowed := range []int{1, 2, 3} {
 		command, most := makeCounter(t)
 		by := &Proofreader{Command: command, Instruction: "put it right", InFlight: allowed}

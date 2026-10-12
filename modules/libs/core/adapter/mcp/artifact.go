@@ -22,10 +22,10 @@ import (
 // prose a page is written around carries no such thing, so they are two kinds
 // and not one.
 const (
-	kindReading    = text.Reading
-	kindTranscript = text.Transcript
-	kindArticle    = text.Article
-	kindCopy       = text.Copies
+	kindRecognition = text.OCR
+	kindTranscript  = text.Transcript
+	kindArticle     = text.Article
+	kindCopy        = text.Copies
 )
 
 // Artifact is one thing made from a file of the vault, as an agent is told
@@ -39,7 +39,7 @@ type Artifact struct {
 	Kind     string `json:"kind" jsonschema:"what it is: transcript for words with times, article for a page.s prose, ocr for the text off a scan, copy for the bytes of what is at an address"`
 	Producer string `json:"producer" jsonschema:"what made it: ocr, asr, captions, article"`
 	Bytes    int64  `json:"bytes" jsonschema:"how large it is"`
-	Format   string `json:"format" jsonschema:"what artifact_read gives back, as a media type: text/vtt for a transcript, application/json for a reading off a scan, text/plain for a page.s prose. A copy is not read, and says what it is played as"`
+	Format   string `json:"format" jsonschema:"what artifact_read gives back, as a media type: text/vtt for a transcript, application/json for a recognition off a scan, text/plain for a page.s prose. A copy is not read, and says what it is played as"`
 }
 
 // IsReadable says whether artifact_read hands this back. A copy is bytes to play
@@ -47,13 +47,13 @@ type Artifact struct {
 func (a Artifact) IsReadable() bool { return a.Kind != kindCopy }
 
 // formatOf is what a producer's artifact is written as, which is what a caller
-// reading it parses. A transcript is a subtitle file, a reading off a scan is
+// reading it parses. A transcript is a subtitle file, a recognition off a scan is
 // the boxes each word stood in, and prose is prose.
 func formatOf(producer string) string {
 	switch producer {
 	case text.ASR, text.Captions:
 		return "text/vtt"
-	case text.Reading:
+	case text.OCR:
 		return "application/json"
 	default:
 		return "text/plain"
@@ -68,7 +68,7 @@ func kindOf(producer string) string {
 	case text.Article:
 		return kindArticle
 	default:
-		return kindReading
+		return kindRecognition
 	}
 }
 
@@ -155,7 +155,7 @@ func addArtifactTools(server *sdk.Server, core Core) {
 // hashOf is the hash everything made from one file stands under. A url stands
 // under its address, and the index recorded that when it walked past.
 func hashOf(ctx context.Context, core Core, path string) (string, error) {
-	said, held, err := core.Sources.Queries.Reading(ctx, core.getCurrentVault().Vault.ID, path)
+	said, held, err := core.Sources.Queries.GetSourceText(ctx, core.getCurrentVault().Vault.ID, path)
 	if err != nil || !held {
 		return "", err
 	}

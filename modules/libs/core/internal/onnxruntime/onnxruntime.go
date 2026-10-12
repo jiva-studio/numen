@@ -27,8 +27,8 @@ type Settings struct {
 	Fetching func(what string, done, total int64)
 }
 
-// say reports how far a download has got, and does nothing when nobody asked.
-func (s Settings) say(what string, done, total int64) {
+// reportProgress reports how far a download has got, and does nothing when nobody asked.
+func (s Settings) reportProgress(what string, done, total int64) {
 	if s.Fetching != nil {
 		s.Fetching(what, done, total)
 	}
@@ -72,7 +72,7 @@ func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 
 		runtimeState.mu.Lock()
 		if err == nil {
-			keep(engine, at)
+			recordRuntime(engine, at)
 		}
 		runtimeState.opening = nil
 		runtimeState.mu.Unlock()
@@ -92,8 +92,8 @@ func open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 		return engine, s.Runtime, nil
 	}
 
-	support()
-	engine, at, refused := load(candidates(s))
+	preloadCppRuntime()
+	engine, at, refused := loadFirstLibrary(getLibraryCandidates(s))
 	if engine != nil {
 		return engine, at, nil
 	}
@@ -143,33 +143,33 @@ func Register(also func(at string)) {
 	runtimeState.also = append(runtimeState.also, also)
 }
 
-// here says whether this process has its runtime. It is read without the lock,
+// isLoaded says whether this process has its runtime. It is read without the lock,
 // so it is answered while another caller is opening one.
-var here atomic.Bool
+var isLoaded atomic.Bool
 
-// keep is the runtime this process has settled on, and the one moment every
+// recordRuntime is the runtime this process has settled on, and the one moment every
 // library that makes an engine of its own makes it. The lock is the caller's.
-func keep(engine *ort.Engine, at string) {
+func recordRuntime(engine *ort.Engine, at string) {
 	runtimeState.engine, runtimeState.at = engine, at
 	for _, also := range runtimeState.also {
 		also(at)
 	}
-	here.Store(true)
+	isLoaded.Store(true)
 }
 
-// IsHere says whether this process has its runtime, or this machine holds a file
+// IsAvailable says whether this process has its runtime, or this machine holds a file
 // to make one from. It opens nothing, so it is answered while another caller is
 // opening one. A name the loader would search for on its own is not a file
 // anything here can find.
-func IsHere(s Settings) bool {
-	if here.Load() {
+func IsAvailable(s Settings) bool {
+	if isLoaded.Load() {
 		return true
 	}
 	if s.Runtime != "" {
 		_, err := os.Stat(s.Runtime)
 		return err == nil
 	}
-	for _, at := range candidates(s) {
+	for _, at := range getLibraryCandidates(s) {
 		if filepath.IsAbs(at) {
 			return true
 		}

@@ -61,7 +61,7 @@ export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & 
   path: string;
 
   /**
-   * How far reading the vault has got.
+   * How far indexing the vault has got.
    *
    * @generated from field: numen.v1.Scan scan = 4;
    */
@@ -83,7 +83,7 @@ export const GetVaultStateResponseSchema: GenMessage<GetVaultStateResponse> = /*
   messageDesc(file_numen_v1_vault, 1);
 
 /**
- * Scan is how far reading a vault has got, and what stopped it.
+ * Scan is how far indexing a vault has got, and what stopped it.
  *
  * @generated from message numen.v1.Scan
  */
@@ -246,7 +246,7 @@ export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
  */
 export const VaultService: GenService<{
   /**
-   * GetVaultState is what the vault is and how far reading it has got.
+   * GetVaultState is what the vault is and how far indexing it has got.
    *
    * @generated from rpc numen.v1.VaultService.GetVaultState
    */

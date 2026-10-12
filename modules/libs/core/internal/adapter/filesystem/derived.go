@@ -27,7 +27,7 @@ import (
 // holds both.
 const (
 	// OCRDir is text with the place on the page each word stands at.
-	OCRDir = text.Reading
+	OCRDir = text.OCR
 	// TranscriptDir is text with the times each stretch of it was said at.
 	TranscriptDir = text.Transcript
 	// ArticleDir is the prose a page is written around.
@@ -84,8 +84,8 @@ func (p *places) isInside(resolved, area string) bool {
 	return named && isUnderRoot(resolved, bound)
 }
 
-// current says the store's folder still resolves to the place found.
-func (d *DerivedStore) current(p *places) bool {
+// isCurrent says the store's folder still resolves to the place found.
+func (d *DerivedStore) isCurrent(p *places) bool {
 	found, err := os.Lstat(p.root)
 	if err != nil {
 		return false
@@ -195,7 +195,7 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 	defer root.Close()
 	raw, err := root.ReadFile(at)
 	if err != nil {
-		return nil, asHeld(err)
+		return nil, wrapHeldByAnother(err)
 	}
 	return raw, nil
 }
@@ -245,7 +245,7 @@ func (d *DerivedStore) Take(ctx context.Context, name string, from io.Reader) (i
 	if err != nil {
 		return 0, err
 	}
-	return written.Size, settle(root, filepath.Dir(at))
+	return written.Size, syncDirectory(root, filepath.Dir(at))
 }
 
 func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) error {
@@ -264,14 +264,14 @@ func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) e
 	if _, err := replace(ctx, root, at, bytes.NewReader(content), 0o644); err != nil {
 		return err
 	}
-	return settle(root, filepath.Dir(at))
+	return syncDirectory(root, filepath.Dir(at))
 }
 
 // Append adds to the end of what is there, in place. What it is given lands
-// whole or does not land at all: a write that stopped partway is cut back to
+// whole or does not land at all: a write that stopped partway is truncated back to
 // where it began, so the next append begins where this one found it.
 //
-// A name two callers append to is held under a claim, because the cut reaches
+// A name two callers append to is held under a claim, because the truncation reaches
 // whatever was written after this append's own bytes.
 //
 // A machine that stopped mid-write leaves a torn tail all the same, and what
@@ -294,7 +294,7 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 		return err
 	}
 	if n, err := file.Write(content); err != nil || n != len(content) {
-		return errors.Join(short(name, n, len(content), err), closeAndCut(root, file, at, n))
+		return errors.Join(newShortAppendError(name, n, len(content), err), closeAndTruncate(root, file, at, n))
 	}
 	if err := file.Sync(); err != nil {
 		file.Close()
@@ -303,22 +303,22 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 	return file.Close()
 }
 
-// short is what an append that did not land says.
-func short(name string, written, wanted int, why error) error {
+// newShortAppendError is what an append that did not land says.
+func newShortAppendError(name string, written, wanted int, why error) error {
 	if why == nil {
 		why = io.ErrShortWrite
 	}
 	return fmt.Errorf("%s: %d of %d bytes: %w", name, written, wanted, why)
 }
 
-// closeAndCut cuts the bytes an append left behind and closes the file. What it
-// wrote ends where the offset now stands, so the cut is that offset less what
+// closeAndTruncate removes the bytes an append left behind and closes the file. What it
+// wrote ends where the offset now stands, so the truncation is that offset less what
 // landed, and a write that landed nothing leaves the file as it found it.
 //
-// The cut is made by name, once the file is closed: a file opened to append
+// The truncation is made by name, once the file is closed: a file opened to append
 // carries the right to add to the end and not the right to move it. The name is
-// the store's own, so the cut lands where the write did.
-func closeAndCut(root *os.Root, file *os.File, name string, wrote int) error {
+// the store's own, so the truncation lands where the write did.
+func closeAndTruncate(root *os.Root, file *os.File, name string, wrote int) error {
 	if wrote <= 0 {
 		return file.Close()
 	}
@@ -329,11 +329,11 @@ func closeAndCut(root *os.Root, file *os.File, name string, wrote int) error {
 	if err := file.Close(); err != nil {
 		return err
 	}
-	return cut(root, name, at-int64(wrote))
+	return truncateFile(root, name, at-int64(wrote))
 }
 
-// cut takes a file back to a length and flushes it there.
-func cut(root *os.Root, name string, to int64) error {
+// truncateFile takes a file back to a length and flushes it there.
+func truncateFile(root *os.Root, name string, to int64) error {
 	file, err := root.OpenFile(name, os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
@@ -367,7 +367,7 @@ func (d *DerivedStore) Claim(_ context.Context, name string) (func() error, erro
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return nil, err
 	}
-	return claim(target)
+	return acquireFileLock(target)
 }
 
 // List reports the files directly under a name, as names of this store, sorted.
@@ -469,7 +469,7 @@ func (d *DerivedStore) checkVaultIdentity() error {
 
 // readIdentity is the identity a folder holds, and nothing where it holds
 // none. The file it was read from comes back with it, stamped before the
-// reading, so a file that changed under the reading is read again at the next
+// reading, so a file that changed under the recognition is read again at the next
 // asking.
 func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 	if serviceDir == "" {
@@ -514,9 +514,9 @@ func (d *DerivedStore) createRoot(target string) (*os.Root, string, error) {
 	return d.openRoot(target)
 }
 
-// area is the one of this store's areas a cleaned name is in, and whether it is
+// findArea is the one of this store's areas a cleaned name is in, and whether it is
 // in any of them.
-func (d *DerivedStore) area(clean string) (string, bool) {
+func (d *DerivedStore) findArea(clean string) (string, bool) {
 	for _, area := range d.areas {
 		if clean == area || strings.HasPrefix(clean, area+"/") {
 			return area, true
@@ -531,7 +531,7 @@ func (d *DerivedStore) area(clean string) (string, bool) {
 //
 // The name is joined under the area it names and checked against it with every
 // link on the way resolved. Without that check a name stored here could be a
-// link to a note, and a reading would be read back as what a person wrote —
+// link to a note, and a recognition would be read back as what a person wrote —
 // or would be written over it.
 //
 // The store's folder need not exist: as much of each path as does exist is
@@ -546,7 +546,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 	}
 	// A name says which area it belongs to, and a store answers for its own
 	// only.
-	area, held := d.area(clean)
+	area, held := d.findArea(clean)
 	if !held {
 		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.Area(), ErrOutside)
 	}
@@ -574,7 +574,7 @@ func (d *DerivedStore) getPath(name string) (string, error) {
 // stands only while the store's folder is still that one. A name it refuses,
 // and a folder that has moved, are judged against where the folder is now.
 func (d *DerivedStore) isEnclosedBy(resolved, area string) (bool, error) {
-	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.current(where) {
+	if where := d.where.Load(); where != nil && where.isInside(resolved, area) && d.isCurrent(where) {
 		return true, nil
 	}
 	where, err := d.locate()

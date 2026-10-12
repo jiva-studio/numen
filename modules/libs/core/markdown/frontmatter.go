@@ -37,7 +37,7 @@ func (d *Document) put(key string, value *yaml.Node) error {
 		return err
 	}
 	name := &yaml.Node{Kind: yaml.ScalarNode, Value: key}
-	pair(node, key).carry(name, value)
+	pair(node, key).copyLineComment(name, value)
 	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{name, value}})
 	if err != nil {
 		return err
@@ -75,10 +75,10 @@ func valueOf(item *yaml.Node, key string) *yaml.Node {
 	return nil
 }
 
-// carry puts the comment written on a key's own line onto the nodes replacing
+// copyLineComment puts the comment written on a key's own line onto the nodes replacing
 // it. A mapping or a list carries it on the key and a scalar on the value, so
 // both are read off both.
-func (p nodePair) carry(name, value *yaml.Node) {
+func (p nodePair) copyLineComment(name, value *yaml.Node) {
 	if p.name == nil {
 		return
 	}
@@ -307,7 +307,7 @@ func (d *Document) getWritableNode() (*yaml.Node, error) {
 	if hasAnchor(node) {
 		return nil, ErrAnchored
 	}
-	if flow(node) {
+	if isFlowCollection(node) {
 		return nil, ErrInline
 	}
 	return node, nil
@@ -350,9 +350,9 @@ func hasAnchor(node *yaml.Node) bool {
 // Nothing is changed in it.
 var ErrUnterminated = errors.New("this note opens a frontmatter block that is never closed")
 
-// flow reports whether a collection is written on one line, which is what puts
+// isFlowCollection reports whether a collection is written on one line, which is what puts
 // two keys in one span.
-func flow(node *yaml.Node) bool {
+func isFlowCollection(node *yaml.Node) bool {
 	if node == nil {
 		return false
 	}
@@ -360,10 +360,10 @@ func flow(node *yaml.Node) bool {
 		(node.Kind == yaml.MappingNode || node.Kind == yaml.SequenceNode)
 }
 
-// empty reports whether a key holds nothing at all, which is a key a first
+// isNullValue reports whether a key holds nothing at all, which is a key a first
 // entry is written under. A null somebody wrote out stands on the line and is
 // not one.
-func empty(node *yaml.Node) bool {
+func isNullValue(node *yaml.Node) bool {
 	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == ""
 }
 
@@ -371,7 +371,7 @@ func empty(node *yaml.Node) bool {
 // entry of the `links:` block is replaced on its own, and that is a line at a
 // time all the way down.
 func hasFlowStyle(node *yaml.Node) bool {
-	if flow(node) {
+	if isFlowCollection(node) {
 		return true
 	}
 	for _, child := range node.Content {

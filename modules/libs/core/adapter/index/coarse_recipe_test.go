@@ -11,9 +11,9 @@ import (
 
 const otherRecipe = "other-model"
 
-// vectoriseUnder gives every chunk of a vault that owes a vector under the
+// saveSeededVectorsUnder gives every chunk of a vault that owes a vector under the
 // recipe one at the seed given.
-func vectoriseUnder(t *testing.T, db *DB, vault domain.Vault, recipe string, seed byte) int {
+func saveSeededVectorsUnder(t *testing.T, db *DB, vault domain.Vault, recipe string, seed byte) int {
 	t.Helper()
 	ctx := t.Context()
 
@@ -25,7 +25,7 @@ func vectoriseUnder(t *testing.T, db *DB, vault domain.Vault, recipe string, see
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: recipe,
-			Value: precise(direction(seed)), Coarse: bits(seed),
+			Value: getPreciseBytes(getVectorForSeed(seed)), Coarse: bits(seed),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
@@ -68,10 +68,10 @@ func TestSwitchingBetweenTwoModelsOfOneWidthAndBackRestoresTheFirstModelsBits(t 
 	db := openDB(t)
 	cutBook(t, db, first, "library/tale.epub")
 	fit(t, db, testRecipe)
-	small := vectoriseUnder(t, db, first, testRecipe, 0x0f)
+	small := saveSeededVectorsUnder(t, db, first, testRecipe, 0x0f)
 
 	fit(t, db, otherRecipe)
-	if got := vectoriseUnder(t, db, first, otherRecipe, 0xf0); got != small {
+	if got := saveSeededVectorsUnder(t, db, first, otherRecipe, 0xf0); got != small {
 		t.Fatalf("%d of %d chunks were owed under the other recipe", got, small)
 	}
 	for id, got := range storedBits(t, db) {
@@ -90,7 +90,7 @@ func TestSwitchingBetweenTwoModelsOfOneWidthAndBackRestoresTheFirstModelsBits(t 
 			t.Errorf("chunk %d holds %x, want the bits of the recipe in use", id, got[:2])
 		}
 	}
-	if owed := vectoriseUnder(t, db, first, testRecipe, 0xaa); owed != 0 {
+	if owed := saveSeededVectorsUnder(t, db, first, testRecipe, 0xaa); owed != 0 {
 		t.Errorf("%d chunks are owed under a recipe that holds every vector", owed)
 	}
 }

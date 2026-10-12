@@ -3,7 +3,13 @@
  * The backlog run, drawn against the rules it is read off. It carries
  * `data-backlog` for its two parts: `picture` and `line`.
  */
-import { BACKLOG_HIGH, BACKLOG_PLOT, LEFT, RIGHT, WIDE } from '../../../../lib/plot'
+import {
+  BACKLOG_PLOT_HEIGHT,
+  BACKLOG_PLOT,
+  PLOT_LEFT,
+  PLOT_RIGHT,
+  PLOT_WIDTH,
+} from '../../../../lib/plot'
 import '../../curve-slider.css'
 
 // --- Props & Emits ---
@@ -24,22 +30,22 @@ defineProps<{
     class="curve-slider__picture backlog__picture"
     data-backlog="picture"
     aria-hidden="true"
-    :viewBox="`0 0 ${WIDE} ${BACKLOG_HIGH}`"
+    :viewBox="`0 0 ${PLOT_WIDTH} ${BACKLOG_PLOT_HEIGHT}`"
   >
     <!-- The foot is nothing overdue, which is what the extent is read up from. -->
     <line
       class="curve-slider__rule"
       data-control="rule"
-      :x1="LEFT"
-      :x2="LEFT"
+      :x1="PLOT_LEFT"
+      :x2="PLOT_LEFT"
       :y1="BACKLOG_PLOT.top"
       :y2="BACKLOG_PLOT.foot"
     />
     <line
       class="curve-slider__rule"
       data-control="rule"
-      :x1="LEFT"
-      :x2="RIGHT"
+      :x1="PLOT_LEFT"
+      :x2="PLOT_RIGHT"
       :y1="BACKLOG_PLOT.foot"
       :y2="BACKLOG_PLOT.foot"
     />

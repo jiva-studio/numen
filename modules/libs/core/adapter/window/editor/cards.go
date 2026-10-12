@@ -97,8 +97,8 @@ func (a *API) createCardNote(
 
 	made, err := cut(showing, cards.New{Title: title, Path: folder})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
-		if a.Wrote != nil {
-			a.Wrote()
+		if a.NotifyNoteWritten != nil {
+			a.NotifyNoteWritten()
 		}
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
@@ -135,8 +135,8 @@ func (a *API) RenameStencilField(
 		Fingerprint: refOf(r.Msg.GetSeen()),
 	})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
-		if a.Wrote != nil {
-			a.Wrote()
+		if a.NotifyNoteWritten != nil {
+			a.NotifyNoteWritten()
 		}
 		out := cardwire.NewRenameResponse(renamed, fingerprintOf(renamed.Stencil))
 		out.IsUnlevelled = a.isUnlevelled(err)
@@ -234,8 +234,8 @@ func (a *API) WriteDeck(
 	// index did not follow.
 	behind := a.isUnlevelled(err)
 	if err == nil || behind {
-		if a.Wrote != nil {
-			a.Wrote()
+		if a.NotifyNoteWritten != nil {
+			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteDeckResponse{
 			At: fingerprintOf(wrote.Fingerprint), IsUnlevelled: behind,
@@ -281,8 +281,8 @@ func (a *API) WriteStencil(
 	// index did not follow.
 	behind := a.isUnlevelled(err)
 	if err == nil || behind {
-		if a.Wrote != nil {
-			a.Wrote()
+		if a.NotifyNoteWritten != nil {
+			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteStencilResponse{
 			At: fingerprintOf(at), IsUnlevelled: behind,

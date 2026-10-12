@@ -2,7 +2,7 @@
  * The commands offered over the vaults an installation holds.
  */
 import { keysOf } from './chords'
-import { isOnAnything, isOnVault } from './offered'
+import { isAlwaysOffered, isVaultOpen } from './offered'
 import type { Command } from '../types'
 import type { Words } from '../words'
 
@@ -21,21 +21,21 @@ export const vaultCommandsOf = (words: Words, agent: string): readonly Command[]
     text: words.openVault,
     group: 'vault',
     needs: 'vaults',
-    isOffered: isOnAnything,
+    isOffered: isAlwaysOffered,
   },
   {
     id: 'newVault',
     text: words.newVault,
     ...keysOf('newVault', agent),
     group: 'vault',
-    isOffered: isOnAnything,
+    isOffered: isAlwaysOffered,
   },
   {
     id: 'renameVault',
     text: words.renameVault,
     group: 'vault',
     needs: 'naming',
-    isOffered: isOnVault,
+    isOffered: isVaultOpen,
     getFieldText: (at) => at.vault.name,
   },
   {
@@ -44,7 +44,7 @@ export const vaultCommandsOf = (words: Words, agent: string): readonly Command[]
     group: 'vault',
     needs: 'vaults',
     next: 'asking',
-    isOffered: isOnAnything,
+    isOffered: isAlwaysOffered,
     answers: {
       keeps: words.keepsVault,
       kept: words.kept,
@@ -58,7 +58,7 @@ export const vaultCommandsOf = (words: Words, agent: string): readonly Command[]
     group: 'vault',
     needs: 'vaults',
     next: 'exactly',
-    isOffered: isOnAnything,
+    isOffered: isAlwaysOffered,
     warns: { action: words.erases, then: words.binned, back: words.typeVaultBack },
   },
 ]

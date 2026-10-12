@@ -78,7 +78,7 @@ func (e EditorAssembly) WriteSettingsFile(written string, seen *string) error {
 }
 
 func (e EditorAssembly) TurnSettings(written []port.Setting) error {
-	return e.cfg.TurnsSetting()(written)
+	return e.cfg.GetSettingsWriter()(written)
 }
 
 func (e EditorAssembly) GetPartsUnderANodeBounds() (least, most float64) {
@@ -143,7 +143,7 @@ func (e EditorAssembly) OpenTranscriptionWorker(
 
 func (e EditorAssembly) GetRefresh() vault.Refresh {
 	return makeRefresh(e.cfg, e.db,
-		e.db.NotesCutAt(e.cfg.GetChunkSizes(), e.cfg.Legibility()))
+		e.db.NotesWithChunking(e.cfg.GetChunkSizes(), e.cfg.Legibility()))
 }
 
 // ReadWholeVault reads the vault the one way, with this launch's answer about

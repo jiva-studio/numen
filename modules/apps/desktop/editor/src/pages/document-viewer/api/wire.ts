@@ -2,7 +2,7 @@
  * Wire adapter for DocumentService and OcrService.
  */
 import type { Box as BoxMessage, Run as RunMessage } from '@numen/protocol'
-import { asset, getBytesQuery, stamp, retryWhileBusy } from '@/shared/answers'
+import { getAssetUrl, getBytesQuery, formatFingerprint, retryWhileBusy } from '@/shared/answers'
 import * as clients from '@/shared/clients'
 import type { Documents, PageHighlight, Rect } from '../types'
 
@@ -38,11 +38,11 @@ export const documents: Documents = {
     const answer = await retryWhileBusy(() => served.documents.getDocument({ path }))
     return {
       pages: answer.pages.map((one) => ({ width: one.width, height: one.height })),
-      fingerprint: stamp(answer.fingerprint) ?? '',
+      fingerprint: formatFingerprint(answer.fingerprint) ?? '',
     }
   },
   getPageUrl: (path, pageNumber, wide, fingerprint = '') =>
-    `${asset(path)}/pages/${pageNumber}?wide=${wide}&${getBytesQuery(fingerprint)}`,
+    `${getAssetUrl(path)}/pages/${pageNumber}?wide=${wide}&${getBytesQuery(fingerprint)}`,
   getHighlights: async (path, spans) => {
     const answer = await retryWhileBusy(() => served.ocr.readOcr({ path, spans: [...spans] }))
     return spans.map((_, at) => {

@@ -136,12 +136,12 @@ const (
 	speechMemory = 2 * 128
 )
 
-// segments cuts one recording into the segments that carry speech.
+// splitIntoSegments cuts one recording into the splitIntoSegments that carry speech.
 //
 // The model answers for one window at a time, carrying what it made of the
 // windows before. A run of windows it is sure enough about is a segment, closed
 // by the quiet after it and widened a little at each end.
-func (t *Transcriber) segments(ctx context.Context, sound []float32) ([]port.Audio, error) {
+func (t *Transcriber) splitIntoSegments(ctx context.Context, sound []float32) ([]port.Audio, error) {
 	scores, err := t.scoreSpeech(ctx, sound)
 	if err != nil {
 		return nil, err
@@ -149,8 +149,8 @@ func (t *Transcriber) segments(ctx context.Context, sound []float32) ([]port.Aud
 
 	windows := func(ms int) int { return ms * sampleRate / (1000 * speechWindow) }
 	found := joinShortSpans(
-		getSpans(scores, t.cutting.threshold(),
-			windows(t.cutting.silence()), windows(t.cutting.pad()),
+		getSpans(scores, t.cutting.getThreshold(),
+			windows(t.cutting.getSilenceLength()), windows(t.cutting.getPadding()),
 			windows(t.cutting.getLongestSegment()), windows(t.cutting.getShortestSegment())),
 		windows(t.cutting.getShortestPause()), windows(t.cutting.getLongestSegment()),
 	)
@@ -161,8 +161,8 @@ func (t *Transcriber) segments(ctx context.Context, sound []float32) ([]port.Aud
 		to := min(one.To*speechWindow, len(sound))
 		out = append(out, port.Audio{
 			Samples: sound[from:to],
-			From:    millis(from, sampleRate),
-			To:      millis(to, sampleRate),
+			From:    getMillis(from, sampleRate),
+			To:      getMillis(to, sampleRate),
 		})
 	}
 	return out, nil
@@ -310,7 +310,7 @@ func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float
 			clear(window)
 			copy(window, sound[i*speechWindow:min((i+1)*speechWindow, len(sound))])
 
-			score, err := t.listen(inputs, state)
+			score, err := t.scoreWindow(inputs, state)
 			if err != nil {
 				return nil, err
 			}
@@ -324,8 +324,8 @@ func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float
 	return out, nil
 }
 
-// listen is one window: how sure the model is, and the state it leaves behind.
-func (t *Transcriber) listen(inputs map[string]*ort.Value, dst []float32) (float32, error) {
+// scoreWindow is one window: how sure the model is, and the state it leaves behind.
+func (t *Transcriber) scoreWindow(inputs map[string]*ort.Value, dst []float32) (float32, error) {
 	out, err := t.segmenter.Run(inputs)
 	if err != nil {
 		return 0, err
@@ -336,7 +336,7 @@ func (t *Transcriber) listen(inputs map[string]*ort.Value, dst []float32) (float
 		for _, v := range out {
 			v.Destroy()
 		}
-		return 0, fmt.Errorf("the speech model answered with %v and not %s", names(out), speechScore)
+		return 0, fmt.Errorf("the speech model answered with %v and not %s", getNames(out), speechScore)
 	}
 	score, err := ort.GetTensorData[float32](said)
 	if err != nil {
@@ -356,7 +356,7 @@ func (t *Transcriber) listen(inputs map[string]*ort.Value, dst []float32) (float
 		for _, v := range out {
 			v.Destroy()
 		}
-		return 0, fmt.Errorf("the speech model answered with %v and not %s", names(out), speechAfter)
+		return 0, fmt.Errorf("the speech model answered with %v and not %s", getNames(out), speechAfter)
 	}
 	raw, err := ort.GetTensorData[float32](after)
 	if err != nil {

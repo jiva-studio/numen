@@ -85,50 +85,60 @@ func addVaultProblems(server *sdk.Server, core Core) {
 			"reaches several notes. `dangling` — a link that reaches nothing — is left " +
 			"out unless you ask for it by name, because a vault being written is full " +
 			"of them. This is the work list for tidying a vault up.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Checks []string `json:"checks,omitempty" jsonschema:"run only these checks: parse, frontmatter, ambiguous, dangling"`
-	}) (*sdk.CallToolResult, struct {
-		Problems []Problem `json:"problems"`
-		Ran      []string  `json:"ran" jsonschema:"the checks this answer covers"`
-	}, error) {
-		type out = struct {
-			Problems []Problem `json:"problems"`
-			Ran      []string  `json:"ran" jsonschema:"the checks this answer covers"`
-		}
-		named := make([]domain.Check, 0, len(in.Checks))
-		for _, name := range in.Checks {
-			named = append(named, domain.Check(name))
-		}
-		problems := core.Notes.Problems
-		if len(problems.List) == 0 {
-			if pq, ok := core.Notes.Queries.(port.ProblemQueries); ok && pq != nil {
-				problems = check.Standard(pq)
-			}
-		}
-		found, err := problems.Run(ctx, core.getCurrentVault().Vault, named...)
-		if err != nil {
-			return nil, out{}, err
-		}
+	}, newHandler(func(ctx context.Context, in vaultProblemsInput) (vaultProblemsOutput, error) {
+		return listVaultProblems(ctx, core, in)
+	}))
+}
 
-		res := out{Problems: make([]Problem, 0, len(found)), Ran: in.Checks}
-		if len(res.Ran) == 0 {
-			// Saying which checks an empty answer covers is the difference
-			// between "nothing is wrong" and "nothing I looked at is wrong".
-			for _, name := range problems.Loud() {
-				res.Ran = append(res.Ran, string(name))
-			}
+type vaultProblemsInput struct {
+	Checks []string `json:"checks,omitempty" jsonschema:"run only these checks: parse, frontmatter, ambiguous, dangling"`
+}
+
+type vaultProblemsOutput struct {
+	Problems []Problem `json:"problems"`
+	Ran      []string  `json:"ran" jsonschema:"the checks this answer covers"`
+}
+
+func listVaultProblems(ctx context.Context, core Core, in vaultProblemsInput) (vaultProblemsOutput, error) {
+	named := make([]domain.Check, 0, len(in.Checks))
+	for _, name := range in.Checks {
+		named = append(named, domain.Check(name))
+	}
+	problems := getProblemChecks(core)
+	found, err := problems.Run(ctx, core.getCurrentVault().Vault, named...)
+	if err != nil {
+		return vaultProblemsOutput{}, err
+	}
+
+	res := vaultProblemsOutput{Problems: make([]Problem, 0, len(found)), Ran: in.Checks}
+	if len(res.Ran) == 0 {
+		// The checks that ran are reported so an empty result states what it covers.
+		for _, name := range problems.Loud() {
+			res.Ran = append(res.Ran, string(name))
 		}
-		for _, p := range found {
-			res.Problems = append(res.Problems, Problem{
-				Path:       p.Path,
-				Check:      string(p.Kind),
-				Detail:     p.Detail,
-				Address:    p.Target.String(),
-				Candidates: p.Candidates,
-			})
+	}
+	for _, p := range found {
+		res.Problems = append(res.Problems, Problem{
+			Path:       p.Path,
+			Check:      string(p.Kind),
+			Detail:     p.Detail,
+			Address:    p.Target.String(),
+			Candidates: p.Candidates,
+		})
+	}
+	return res, nil
+}
+
+// getProblemChecks returns the checks configured on the core, or the standard checks
+// over the notes' queries when none are configured.
+func getProblemChecks(core Core) check.Checks {
+	problems := core.Notes.Problems
+	if len(problems.List) == 0 {
+		if pq, ok := core.Notes.Queries.(port.ProblemQueries); ok && pq != nil {
+			problems = check.Standard(pq)
 		}
-		return nil, res, nil
-	})
+	}
+	return problems
 }
 
 // Problem is one thing worth a person's attention, and which check noticed it.

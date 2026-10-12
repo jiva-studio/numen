@@ -23,14 +23,14 @@ func NewRootedHandler(handler http.Handler, entered, returned chan<- struct{}) h
 type SilentAgent struct{}
 
 func (SilentAgent) Take(context.Context, port.Task) (port.Run, error) {
-	return SilentWork{steps: make(chan port.Step)}, nil
+	return NoopRun{steps: make(chan port.Step)}, nil
 }
 
 func (SilentAgent) Finish(context.Context, string) error { return nil }
 
-// SilentWork is a run of a SilentAgent: a step never arrives, and stopping it
+// NoopRun is a run of a SilentAgent: a step never arrives, and stopping it
 // costs nothing.
-type SilentWork struct{ steps chan port.Step }
+type NoopRun struct{ steps chan port.Step }
 
-func (w SilentWork) Steps() <-chan port.Step { return w.steps }
-func (w SilentWork) Stop() error             { return nil }
+func (w NoopRun) Steps() <-chan port.Step { return w.steps }
+func (w NoopRun) Stop() error             { return nil }

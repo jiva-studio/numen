@@ -484,7 +484,7 @@ describe('chunks with nothing to embed them', () => {
 describe('what the application is doing', () => {
   const reading = (count: number): Task => ({
     id: 'reading:library/scan.pdf',
-    label: 'Reading a scan',
+    label: 'Recognising a scan',
     about: 'library/scan.pdf',
     done: count,
     total: 400,

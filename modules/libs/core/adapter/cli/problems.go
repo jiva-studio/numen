@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-func problemsCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) < 1 {
 		return errors.New("usage: numen-cli problems <vault> [<check>...]")
 	}

@@ -46,9 +46,9 @@ func TestSupportChild(t *testing.T) {
 		fmt.Println("RESULT:unmapped")
 		return
 	case "support":
-		support()
+		preloadCppRuntime()
 	case "open":
-		fetching.Transport = failingTransport{}
+		httpsClient.Transport = failingTransport{}
 		_, _, _ = Open(t.Context(), Settings{Section: "indexing.recognition", Dir: t.TempDir(), ShouldDownload: true})
 	}
 	if isCppRuntimeMapped() {

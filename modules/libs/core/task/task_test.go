@@ -13,7 +13,7 @@ import (
 
 func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", About: "book.pdf"})
+	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan", About: "book.pdf"})
 	tasks.Set(task.Task{ID: "indexing", Doing: "Indexing"})
 
 	list := tasks.List()
@@ -22,11 +22,11 @@ func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
 	}
 	// The order they were first seen in, so a list does not rearrange itself
 	// under somebody reading it.
-	if list[0].ID != "reading" || list[1].ID != "indexing" {
+	if list[0].ID != "recognition" || list[1].ID != "indexing" {
 		t.Errorf("listed %s then %s", list[0].ID, list[1].ID)
 	}
 
-	tasks.Remove("reading")
+	tasks.Remove("recognition")
 	if list := tasks.List(); len(list) != 1 || list[0].ID != "indexing" {
 		t.Errorf("after finishing one: %+v", list)
 	}
@@ -34,8 +34,8 @@ func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
 
 func TestWorkReportedAgainReplacesItself(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Count: 1, Total: 9})
-	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Count: 4, Total: 9})
+	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan", Count: 1, Total: 9})
+	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan", Count: 4, Total: 9})
 
 	list := tasks.List()
 	if len(list) != 1 {
@@ -56,7 +56,7 @@ func TestFinishingWhatIsNotThereIsTheOutcomeAskedFor(t *testing.T) {
 
 func TestClearTakesAllTasksOut(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan"})
+	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan"})
 	tasks.Set(task.Task{ID: "indexing", Doing: "Indexing"})
 
 	if len(tasks.List()) != 2 {
@@ -71,7 +71,7 @@ func TestClearTakesAllTasksOut(t *testing.T) {
 
 func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan"})
+	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan"})
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -88,7 +88,7 @@ func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 		t.Errorf("after one more: %+v", list)
 	}
 
-	tasks.Remove("reading")
+	tasks.Remove("recognition")
 	if list := next(t, watching); len(list) != 1 || list[0].ID != "fetching" {
 		t.Errorf("after one finished: %+v", list)
 	}
@@ -103,7 +103,7 @@ func TestAListenerBehindIsGivenTheNewestAndNotAQueue(t *testing.T) {
 	watching := tasks.Watch(ctx)
 
 	for i := int64(1); i <= 5; i++ {
-		tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Count: i, Total: 5})
+		tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan", Count: i, Total: 5})
 	}
 	if list := next(t, watching); len(list) != 1 || list[0].Count != 5 {
 		t.Errorf("said %+v, want the newest", list)
@@ -159,9 +159,9 @@ func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
 		reporting.Add(1)
 		go func() {
 			defer reporting.Done()
-			id := fmt.Sprintf("reading-%d", which)
+			id := fmt.Sprintf("recognition-%d", which)
 			for page := int64(1); page <= 200; page++ {
-				tasks.Set(task.Task{ID: id, Doing: "Reading a scan", Count: page, Total: 200})
+				tasks.Set(task.Task{ID: id, Doing: "Recognising a scan", Count: page, Total: 200})
 			}
 		}()
 	}
@@ -204,7 +204,7 @@ func TestWorkWithNoNameIsNotListed(t *testing.T) {
 	watching := tasks.Watch(ctx)
 	next(t, watching)
 
-	tasks.Set(task.Task{Doing: "Reading a scan"})
+	tasks.Set(task.Task{Doing: "Recognising a scan"})
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
 	}
@@ -218,7 +218,7 @@ func TestFinishingWhatIsNotThereTellsNobody(t *testing.T) {
 	watching := tasks.Watch(ctx)
 	next(t, watching)
 
-	tasks.Remove("reading")
+	tasks.Remove("recognition")
 	quiet(t, watching, "a task that was not there was finished")
 }
 

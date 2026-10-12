@@ -36,7 +36,7 @@ func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
 		return cfg.Classes, cfg.Dict, nil
 	}
 
-	characters, err := metadata(model, alphabetKey)
+	characters, err := readMetadata(model, alphabetKey)
 	if err != nil {
 		return 0, "", fmt.Errorf("%s carries no alphabet, and none was configured: %w", model, err)
 	}
@@ -62,24 +62,24 @@ func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
 	return classes, file.Name(), nil
 }
 
-// metadata is one entry of a model's metadata.
+// readMetadata is one entry of a model's readMetadata.
 //
 // Only the top level of the message is walked, and every field but the one
 // wanted is stepped over by its length — including the graph, which is all of
 // the weights.
-func metadata(path, key string) (string, error) {
+func readMetadata(path, key string) (string, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
 	for at := 0; at < len(raw); {
-		field, wire, size, ok := tag(raw[at:])
+		field, wire, size, ok := parseTag(raw[at:])
 		if !ok {
 			return "", fmt.Errorf("%s is not a model this can read", path)
 		}
 		at += size
 
-		body, size, ok := payload(raw[at:], wire)
+		body, size, ok := readPayload(raw[at:], wire)
 		if !ok {
 			return "", fmt.Errorf("%s is not a model this can read", path)
 		}
@@ -88,22 +88,22 @@ func metadata(path, key string) (string, error) {
 		if field != metadataField {
 			continue
 		}
-		if k, v, ok := entry(body); ok && k == key {
+		if k, v, ok := parseEntry(body); ok && k == key {
 			return v, nil
 		}
 	}
 	return "", fmt.Errorf("no %q in the model's metadata", key)
 }
 
-// entry is one key and value of a metadata property.
-func entry(raw []byte) (key, value string, ok bool) {
+// parseEntry is one key and value of a metadata property.
+func parseEntry(raw []byte) (key, value string, ok bool) {
 	for at := 0; at < len(raw); {
-		field, wire, size, good := tag(raw[at:])
+		field, wire, size, good := parseTag(raw[at:])
 		if !good {
 			return "", "", false
 		}
 		at += size
-		body, size, good := payload(raw[at:], wire)
+		body, size, good := readPayload(raw[at:], wire)
 		if !good {
 			return "", "", false
 		}
@@ -119,8 +119,8 @@ func entry(raw []byte) (key, value string, ok bool) {
 	return key, value, key != ""
 }
 
-// tag is a field's number and how it is encoded.
-func tag(raw []byte) (field int, wire byte, size int, ok bool) {
+// parseTag is a field's number and how it is encoded.
+func parseTag(raw []byte) (field int, wire byte, size int, ok bool) {
 	n, size := binary.Uvarint(raw)
 	if size <= 0 {
 		return 0, 0, 0, false
@@ -128,9 +128,9 @@ func tag(raw []byte) (field int, wire byte, size int, ok bool) {
 	return int(n >> 3), byte(n & 7), size, true
 }
 
-// payload is one field's bytes, and how many bytes it took to say them. A field
+// readPayload is one field's bytes, and how many bytes it took to say them. A field
 // this does not want is stepped over the same way as one it does.
-func payload(raw []byte, wire byte) (body []byte, size int, ok bool) {
+func readPayload(raw []byte, wire byte) (body []byte, size int, ok bool) {
 	switch wire {
 	case 0: // a varint
 		_, n := binary.Uvarint(raw)

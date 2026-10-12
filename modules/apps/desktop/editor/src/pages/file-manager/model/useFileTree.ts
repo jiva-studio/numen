@@ -139,7 +139,7 @@ export function useFileTree(core: Folders): FileTree {
 
   const getDrawnInFolder = (path: string): string | null => {
     let folder = getFolderPath(path)
-    while (folder !== ROOT && !isFolderOpen(folder) && !getEntryAt(folder)) {
+    while (!isFolderOpen(folder) && !getEntryAt(folder)) {
       folder = getFolderPath(folder)
     }
     return isFolderOpen(folder) ? folder : null

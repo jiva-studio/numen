@@ -97,9 +97,9 @@ func getValueHandles(values []*ort.Value) []uintptr {
 	return out
 }
 
-// call runs the graph once. The outputs it writes stay valid until the next call
+// run runs the graph once. The outputs it writes stay valid until the next run
 // or close.
-func (r *rawRun) call() error {
+func (r *rawRun) run() error {
 	// The name and handle arrays and the name bytes are kept alive by r for the call.
 	status := r.calls.run(
 		r.session,

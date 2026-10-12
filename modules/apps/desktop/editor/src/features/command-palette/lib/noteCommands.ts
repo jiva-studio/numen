@@ -2,19 +2,19 @@
  * The commands offered over the note in front.
  */
 import { keysOf } from './chords'
-import { isOnNote } from './offered'
+import { isNoteOpen } from './offered'
 import type { Command } from '../types'
 import type { Words } from '../words'
 
 export const noteCommandsOf = (words: Words, agent: string): readonly Command[] => [
-  { id: 'read', text: words.read, group: 'note', isOffered: isOnNote, also: 'beside' },
-  { id: 'beside', text: words.beside, group: 'note', isOffered: isOnNote },
+  { id: 'read', text: words.read, group: 'note', isOffered: isNoteOpen, also: 'beside' },
+  { id: 'beside', text: words.beside, group: 'note', isOffered: isNoteOpen },
   {
     id: 'travel',
     text: words.travel,
     ...keysOf('travel', agent),
     group: 'note',
-    isOffered: isOnNote,
+    isOffered: isNoteOpen,
   },
   {
     id: 'child',
@@ -22,31 +22,31 @@ export const noteCommandsOf = (words: Words, agent: string): readonly Command[] 
     ...keysOf('child', agent),
     group: 'note',
     needs: 'naming',
-    isOffered: isOnNote,
+    isOffered: isNoteOpen,
   },
-  { id: 'parent', text: words.parent, group: 'note', needs: 'naming', isOffered: isOnNote },
-  { id: 'jump', text: words.jump, group: 'note', needs: 'naming', isOffered: isOnNote },
+  { id: 'parent', text: words.parent, group: 'note', needs: 'naming', isOffered: isNoteOpen },
+  { id: 'jump', text: words.jump, group: 'note', needs: 'naming', isOffered: isNoteOpen },
   {
     id: 'title',
     text: words.title,
     group: 'note',
     needs: 'naming',
-    isOffered: isOnNote,
+    isOffered: isNoteOpen,
     getFieldText: (at) => at.title,
   },
   // The note goes to the vault's .trash folder, and putting it back is a move.
   // Destroy is the one that asks.
-  { id: 'remove', text: words.remove, group: 'note', isOffered: isOnNote, also: 'destroy' },
+  { id: 'remove', text: words.remove, group: 'note', isOffered: isNoteOpen, also: 'destroy' },
   {
     id: 'destroy',
     text: words.destroy,
     group: 'note',
     needs: 'exactly',
-    isOffered: isOnNote,
+    isOffered: isNoteOpen,
     warns: { action: words.destroys, then: words.forever, back: words.typeBack },
   },
-  { id: 'ask', text: words.ask, group: 'note', isOffered: isOnNote },
-  { id: 'copy', text: words.copy, group: 'note', isOffered: isOnNote },
-  { id: 'reveal', text: words.reveal, group: 'note', isOffered: isOnNote },
-  { id: 'preset', text: words.preset, group: 'note', isOffered: isOnNote },
+  { id: 'ask', text: words.ask, group: 'note', isOffered: isNoteOpen },
+  { id: 'copy', text: words.copy, group: 'note', isOffered: isNoteOpen },
+  { id: 'reveal', text: words.reveal, group: 'note', isOffered: isNoteOpen },
+  { id: 'preset', text: words.preset, group: 'note', isOffered: isNoteOpen },
 ]

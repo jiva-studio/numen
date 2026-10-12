@@ -20,8 +20,8 @@ type Indexing struct {
 	// Nothing here runs on its own.
 	Recognition Recognition `json:"recognition"`
 
-	// Proofreading is what puts a reading right. Naming no profile here is
-	// naming no proofreader, and a reading is used as it was read.
+	// Proofreading is what puts a recognition right. Naming no profile here is
+	// naming no proofreader, and a recognition is used as it was read.
 	Proofreading proofreading.Config `json:"proofreading"`
 
 	// Transcription is how a recording is listened to: which models hear it,
@@ -45,12 +45,12 @@ type Indexing struct {
 }
 
 // Recognition is how a scanned document is read, and which profile puts that
-// reading right afterwards.
+// recognition right afterwards.
 type Recognition struct {
 	recognition.Config
 
-	// Proofread names the profile a reading is put right at. Automatically
-	// there says whether a reading just made is put right without anybody
+	// Proofread names the profile a recognition is put right at. Automatically
+	// there says whether a recognition just made is put right without anybody
 	// asking.
 	Proofread proofreading.Proofread `json:"proofread"`
 }

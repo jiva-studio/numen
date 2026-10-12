@@ -8,9 +8,9 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NOWHERE, type Point } from '../types'
+import { NO_PLACE, type Point } from '../types'
 import { clearBacklog } from '../lib/curve'
-import { FOOT } from '../lib/plot'
+import { PLOT_BOTTOM } from '../lib/plot'
 import { mountPresetTab, heights, point, tabAt } from '../fixtures'
 import { WORDS as words } from '../words'
 
@@ -283,17 +283,17 @@ describe('the one slider', () => {
   // value it stands at and what that figure means. Nothing is captioned.
   it('draws and says nothing where the curve answers no suggestion', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
-      const { tab } = mountPresetTab({ goal, suggested: NOWHERE }, { goal })
+      const { tab } = mountPresetTab({ goal, suggested: NO_PLACE }, { goal })
       expect(tab.findAll('[data-control="suggested"]')).toHaveLength(0)
       expect(tab.findAll('[data-control="label"]')).toHaveLength(0)
       expect(tab.text()).not.toContain(words.markName(goal))
     }
     // The knob and its number are the person's own and stand either way.
     expect(
-      mountPresetTab({ suggested: NOWHERE }).tab.findAll('[data-control="knob"]'),
+      mountPresetTab({ suggested: NO_PLACE }).tab.findAll('[data-control="knob"]'),
     ).toHaveLength(1)
     expect(
-      mountPresetTab({ suggested: NOWHERE }).tab.findAll('[data-control="number"][data-at-knob]'),
+      mountPresetTab({ suggested: NO_PLACE }).tab.findAll('[data-control="number"][data-at-knob]'),
     ).toHaveLength(1)
   })
 })
@@ -431,7 +431,7 @@ describe('what the control stands at', () => {
   })
 
   // The window's own arithmetic never reaches the eye as a figure now: until
-  // the first answer lands the picture says it is reading the vault, and no
+  // the first answer lands the picture says it is indexing the vault, and no
   // tile, no axis number and no readout is drawn.
   it('draws no figure at all until the answer lands', () => {
     const { tab } = mountPresetTab({ isHonest: false })
@@ -480,7 +480,7 @@ describe('what the control stands at', () => {
 
   // A caption promising work in progress is a promise, and there is nothing
   // behind it once the vault has refused the picture.
-  it('says nothing of reading the vault where no answer is coming', () => {
+  it('says nothing of indexing the vault where no answer is coming', () => {
     const { tab } = mountPresetTab({ isHonest: false }, {}, false)
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(0)
     expect(tab.text()).not.toContain(words.waiting)
@@ -556,7 +556,7 @@ describe('what the control stands at', () => {
       const { tab } = mountPresetTab({ goal, at: [point(), point(), point(), point()] }, { goal })
       const drawnAt = heights(tab.get('[data-control="line"]').attributes('d') ?? '')
       expect(new Set(drawnAt).size).toBe(1)
-      expect(drawnAt[0]).toBe(FOOT)
+      expect(drawnAt[0]).toBe(PLOT_BOTTOM)
     }
   })
 
@@ -566,13 +566,15 @@ describe('what the control stands at', () => {
     const touching = mountPresetTab({
       at: [point(), point({ reviews: 40 }), point({ reviews: 80 })],
     })
-    expect(heights(touching.tab.get('[data-control="line"]').attributes('d') ?? '')[0]).toBe(FOOT)
+    expect(heights(touching.tab.get('[data-control="line"]').attributes('d') ?? '')[0]).toBe(
+      PLOT_BOTTOM,
+    )
 
     const clear = mountPresetTab({
       at: [point({ reviews: 40 }), point({ reviews: 45 }), point({ reviews: 41 })],
     })
     const away = heights(clear.tab.get('[data-control="line"]').attributes('d') ?? '')
-    expect(away.every((one) => one < FOOT)).toBe(true)
+    expect(away.every((one) => one < PLOT_BOTTOM)).toBe(true)
   })
 
   // The knob's value rides a line of its own, so a knob at either end cannot

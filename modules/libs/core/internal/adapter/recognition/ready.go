@@ -6,12 +6,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
-// Ready says whether everything reading a page needs is already on this
+// Ready says whether everything recognising a page needs is already on this
 // machine. It opens nothing and fetches nothing, so it is answered while a
-// reading is fetching what it needs.
+// recognition is fetching what it needs.
 func Ready(cfg Config) bool {
 	cfg.ShouldDownload = false
-	if !onnxruntime.IsHere(cfg.settings()) {
+	if !onnxruntime.IsAvailable(cfg.settings()) {
 		return false
 	}
 	for _, one := range []struct{ path, name, what string }{

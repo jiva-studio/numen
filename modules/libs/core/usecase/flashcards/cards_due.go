@@ -132,7 +132,7 @@ func (u CountCardsDue) WithNow(now port.Clock) CountCardsDue {
 // Execute counts one vault.
 //
 // The log is read once here and the schedules worked out from it, so the count
-// and the session it stands for are the one reading. Nothing is written into
+// and the session it stands for are the one read. Nothing is written into
 // the vault: the person is shown every vault they hold, and none of them is
 // written for that. What a replay came to is kept, because this is the path
 // every launch waits on.
@@ -140,92 +140,138 @@ func (u CountCardsDue) WithNow(now port.Clock) CountCardsDue {
 // A count nobody is waiting for is dropped at the next phase: reading the
 // decks, reading the log and replaying it each run to their end.
 func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, error) {
-	if err := ctx.Err(); err != nil {
-		return CardsDue{}, err
-	}
-	faces, err := u.cardFaces.Execute(ctx, v)
+	in, err := u.readInputs(ctx, v)
 	if err != nil {
 		return CardsDue{}, err
 	}
-	if err := ctx.Err(); err != nil {
-		return CardsDue{}, err
-	}
-	log, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
-	if err != nil {
-		return CardsDue{}, err
-	}
-	// One reading of this vault's presets answers the schedulers, the budgets
-	// and how many decks name each preset.
-	reading := u.presets.Reading()
-	asks, err := u.schedules.getAssignmentFrom(ctx, v, reading, faces)
-	if err != nil {
-		return CardsDue{}, err
-	}
-	schedules := u.schedules.getSchedulesCached(ctx, v, log, asks)
-	if err := ctx.Err(); err != nil {
-		return CardsDue{}, err
-	}
+	holds := in.day.getAsking(in.faces, in.schedules, u.day, in.now, Scope{})
 
-	now := u.now()
-	day, err := getBudgets(
-		ctx, v, reading, u.day, faces, schedules, log,
-		u.schedules.by, u.schedules.getScheduler, now,
-	)
-	if err != nil {
-		return CardsDue{}, err
+	out := CardsDue{Faces: len(in.faces)}
+	rows := make(deckRows)
+	rows.countFaces(in)
+	for deck, one := range in.day.spentUnder {
+		rows.get(deck).Answered = one.Answered
 	}
-	holds := day.getAsking(faces, schedules, u.day, now, Scope{})
-
-	out := CardsDue{Faces: len(faces)}
-	decks := make(map[string]*DeckCardsDue)
-	at := func(deck string) *DeckCardsDue {
-		one, held := decks[deck]
-		if !held {
-			one = &DeckCardsDue{Deck: deck}
-			decks[deck] = one
-		}
-		return one
-	}
-	// The schedules and the presets are both in hand, so what stands learned is
-	// counted off the reading that is already here.
-	for _, one := range faces {
-		row := at(one.Deck)
-		row.Faces++
-		if schedules[one.ID].IsNew() {
-			row.Unbegun++
-		}
-		if asks.under(one.ID).Preset.IsLearned(schedules[one.ID], now) {
-			row.Learned++
-		}
-	}
-	for deck, one := range day.spentUnder {
-		at(deck).Answered = one.Answered
-	}
-	// What each preset leaves is counted from the same pass the deck rows are,
-	// so the tile over a preset and the session it opens are one number.
-	due, fresh := make(map[string]int), make(map[string]int)
-	for _, one := range holds.owed {
-		out.Due++
-		at(one.Deck).Due++
-		due[day.under[one.ID]]++
-	}
-	for _, one := range holds.fresh {
-		out.New++
-		at(one.Deck).New++
-		fresh[day.under[one.ID]]++
-	}
-
-	for _, deck := range decks {
-		out.Decks = append(out.Decks, *deck)
-	}
-	slices.SortFunc(out.Decks, func(a, b DeckCardsDue) int {
-		return strings.Compare(a.Deck, b.Deck)
-	})
-	out.Presets, err = u.getPresets(ctx, v, reading, day, due, fresh)
+	due, fresh := rows.countDueAndNew(in.day, holds, &out)
+	out.Decks = rows.getSorted()
+	out.Presets, err = u.getPresets(ctx, v, in.reads, in.day, due, fresh)
 	if err != nil {
 		return CardsDue{}, err
 	}
 	return out, nil
+}
+
+// dueInputs is what one vault's count is worked out from.
+type dueInputs struct {
+	faces     []CardFace
+	schedules map[review.CardFaceID]review.Schedule
+	asks      assignment
+	reads     *PresetReads
+	day       *budgets
+	now       time.Time
+}
+
+// readInputs reads the cards, the log and the presets of a vault, and works out
+// the schedules and the budgets from them. One run of reads of the presets answers
+// the schedulers, the budgets and how many decks name each preset.
+func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInputs, error) {
+	if err := ctx.Err(); err != nil {
+		return dueInputs{}, err
+	}
+	faces, err := u.cardFaces.Execute(ctx, v)
+	if err != nil {
+		return dueInputs{}, err
+	}
+	if err := ctx.Err(); err != nil {
+		return dueInputs{}, err
+	}
+	log, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
+	if err != nil {
+		return dueInputs{}, err
+	}
+	reads := u.presets.OpenReads()
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
+	if err != nil {
+		return dueInputs{}, err
+	}
+	schedules := u.schedules.getSchedulesCached(ctx, v, log, asks)
+	if err := ctx.Err(); err != nil {
+		return dueInputs{}, err
+	}
+
+	now := u.now()
+	day, err := getBudgets(
+		ctx, v, reads, u.day, faces, schedules, log,
+		u.schedules.by, u.schedules.getScheduler, now,
+	)
+	if err != nil {
+		return dueInputs{}, err
+	}
+	return dueInputs{
+		faces: faces, schedules: schedules, asks: asks,
+		reads: reads, day: day, now: now,
+	}, nil
+}
+
+// deckRows is the count of each deck, by the deck's name.
+type deckRows map[string]*DeckCardsDue
+
+// get is the row of a deck, created when it is new.
+func (r deckRows) get(deck string) *DeckCardsDue {
+	one, held := r[deck]
+	if !held {
+		one = &DeckCardsDue{Deck: deck}
+		r[deck] = one
+	}
+	return one
+}
+
+// countFaces counts the faces each deck holds, the ones not begun and the ones
+// that stand learned, off the schedules and the presets already in hand.
+func (r deckRows) countFaces(in dueInputs) {
+	for _, one := range in.faces {
+		row := r.get(one.Deck)
+		row.Faces++
+		if in.schedules[one.ID].IsNew() {
+			row.Unbegun++
+		}
+		if in.asks.under(one.ID).Preset.IsLearned(in.schedules[one.ID], in.now) {
+			row.Learned++
+		}
+	}
+}
+
+// countDueAndNew counts what the session is opened over into the deck rows and
+// the totals, and returns what is due and what is new under each preset. The
+// presets are counted from the same pass the deck rows are, so the tile over a
+// preset and the session it opens are one number.
+func (r deckRows) countDueAndNew(
+	day *budgets, holds asking, out *CardsDue,
+) (due, fresh map[string]int) {
+	due, fresh = make(map[string]int), make(map[string]int)
+	for _, one := range holds.owed {
+		out.Due++
+		r.get(one.Deck).Due++
+		due[day.under[one.ID]]++
+	}
+	for _, one := range holds.fresh {
+		out.New++
+		r.get(one.Deck).New++
+		fresh[day.under[one.ID]]++
+	}
+	return due, fresh
+}
+
+// getSorted is the rows ordered by the name of the deck.
+func (r deckRows) getSorted() []DeckCardsDue {
+	var out []DeckCardsDue
+	for _, deck := range r {
+		out = append(out, *deck)
+	}
+	slices.SortFunc(out, func(a, b DeckCardsDue) int {
+		return strings.Compare(a.Deck, b.Deck)
+	})
+	return out
 }
 
 // getPresets is every preset the vault holds: the ones its decks point at, and
@@ -235,7 +281,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 // deck of no cards points at its preset like any other. A preset no deck names
 // stands at nothing.
 func (u CountCardsDue) getPresets(
-	ctx context.Context, v domain.Vault, reading *PresetReads, day *budgets,
+	ctx context.Context, v domain.Vault, reads *PresetReads, day *budgets,
 	due, fresh map[string]int,
 ) ([]PresetCardsDue, error) {
 	out := day.getCardsDue(due, fresh)
@@ -249,7 +295,7 @@ func (u CountCardsDue) getPresets(
 	}
 	naming := make(map[string]int, len(decks))
 	for _, deck := range decks {
-		p, err := reading.GetForDeck(ctx, v, deck)
+		p, err := reads.GetForDeck(ctx, v, deck)
 		if err != nil {
 			return nil, err
 		}
@@ -272,7 +318,7 @@ func (u CountCardsDue) getPresets(
 		}
 		// A preset no deck names has no day worked out for it, and its own
 		// settings are what say whether it would schedule anything.
-		one, err := reading.read(ctx, v, path)
+		one, err := reads.read(ctx, v, path)
 		if err != nil {
 			return nil, err
 		}

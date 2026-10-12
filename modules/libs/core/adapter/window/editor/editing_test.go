@@ -15,8 +15,8 @@ import (
 // A change reaches everyone drawing the vault the way a note put in front of
 // the person does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
-	api := &API{Edits: drawing()}
-	line, done := api.Edits.listen()
+	api := &API{Edits: newEditBroadcaster()}
+	line, done := api.Edits.subscribe()
 	t.Cleanup(done)
 
 	said := domain.Edit{
@@ -34,12 +34,12 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 // Every report carries the whole of what a change is doing, so a listener that
 // has not read one is given the newest instead of the backlog.
 func TestTheLastChangeDrawnIsTheOneWaiting(t *testing.T) {
-	drawing := drawing()
-	line, done := drawing.listen()
+	drawing := newEditBroadcaster()
+	line, done := drawing.subscribe()
 	t.Cleanup(done)
 
-	drawing.tell(domain.Edit{Change: "one", Text: "first"})
-	drawing.tell(domain.Edit{Change: "one", Text: "second"})
+	drawing.publish(domain.Edit{Change: "one", Text: "first"})
+	drawing.publish(domain.Edit{Change: "one", Text: "second"})
 
 	if got := <-line; got.Text != "second" {
 		t.Errorf("what waited is %q", got.Text)
@@ -49,12 +49,12 @@ func TestTheLastChangeDrawnIsTheOneWaiting(t *testing.T) {
 // The report that ends a change is not one a listener may be spared: a drawing
 // that is never ended stays on the screen.
 func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
-	drawing := drawing()
-	line, done := drawing.listen()
+	drawing := newEditBroadcaster()
+	line, done := drawing.subscribe()
 	t.Cleanup(done)
 
-	drawing.tell(domain.Edit{Change: "one", IsDone: true})
-	drawing.tell(domain.Edit{Change: "one", Text: "more of it"})
+	drawing.publish(domain.Edit{Change: "one", IsDone: true})
+	drawing.publish(domain.Edit{Change: "one", Text: "more of it"})
 
 	got := <-line
 	if got.Change != "one" || !got.IsDone {
@@ -70,13 +70,13 @@ func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 // report about one note may not take the place of an unread report about
 // another.
 func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
-	drawing := drawing()
-	line, done := drawing.listen()
+	drawing := newEditBroadcaster()
+	line, done := drawing.subscribe()
 	t.Cleanup(done)
 
-	drawing.tell(domain.Edit{Change: "one", Path: "Aggressor.md", Text: "An axe"})
-	drawing.tell(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme"})
-	drawing.tell(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
+	drawing.publish(domain.Edit{Change: "one", Path: "Aggressor.md", Text: "An axe"})
+	drawing.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme"})
+	drawing.publish(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
 
 	if got := <-line; got.Change != "one" || got.Text != "An axe" {
 		t.Errorf("the first report waiting is %+v, want change one saying %q", got, "An axe")

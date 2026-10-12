@@ -4,7 +4,7 @@ import {
   getBlanks,
   DECK_WORDS,
   getCardFieldValues,
-  NOTHING_WRONG,
+  NO_DECK_PROBLEMS,
   type DeckSection,
   type DeckCard,
 } from './deck'
@@ -326,19 +326,19 @@ describe('DECK_WORDS', () => {
   })
 })
 
-describe('NOTHING_WRONG', () => {
+describe('NO_DECK_PROBLEMS', () => {
   it('holds nothing against any card and nothing against any value', () => {
-    expect(NOTHING_WRONG.at.size).toBe(0)
-    expect(NOTHING_WRONG.under.size).toBe(0)
+    expect(NO_DECK_PROBLEMS.at.size).toBe(0)
+    expect(NO_DECK_PROBLEMS.under.size).toBe(0)
   })
 
   it('stands for every caller at once, so nothing can be put into it', () => {
-    const at = NOTHING_WRONG.at as Map<string, readonly string[]>
+    const at = NO_DECK_PROBLEMS.at as Map<string, readonly string[]>
     expect(() => at.set('llama', ['put here by one caller'])).toThrow()
-    expect(NOTHING_WRONG.at.size).toBe(0)
+    expect(NO_DECK_PROBLEMS.at.size).toBe(0)
 
-    const under = NOTHING_WRONG.under as Map<string, ReadonlyMap<string, readonly string[]>>
+    const under = NO_DECK_PROBLEMS.under as Map<string, ReadonlyMap<string, readonly string[]>>
     expect(() => under.set('llama', new Map())).toThrow()
-    expect(NOTHING_WRONG.under.size).toBe(0)
+    expect(NO_DECK_PROBLEMS.under.size).toBe(0)
   })
 })

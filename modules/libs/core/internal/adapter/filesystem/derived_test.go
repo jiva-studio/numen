@@ -108,7 +108,7 @@ func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsGone(t *testing.T) {
 }
 
 // The identity is read out of a file, and a store that has read it once goes on
-// answering from that reading. A file written again is another reading.
+// answering from that recognition. A file written again is another recognition.
 func TestAStoreNoticesTheIdentityChangingUnderIt(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()

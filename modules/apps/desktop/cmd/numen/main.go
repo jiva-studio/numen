@@ -33,32 +33,32 @@ import (
 
 func main() {
 	cfg := makeConfig(os.Stderr)
-	var letting agentOptions
-	var said sizes
+	var agentFlags agentOptions
+	var scaleFlags scaleSettings
 	var vault string
-	var telling bool
+	var showVersion bool
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	flag.StringVar(&vault, "vault", "",
 		"the vault to open: a name, a path or an identity; the one opened last by default")
-	flag.StringVar(&letting.addr, "mcp-addr", defaultAgentAddr,
+	flag.StringVar(&agentFlags.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
-	flag.BoolVar(&letting.isOff, "no-mcp", false, "do not let agents reach this vault")
-	flag.Float64Var(&said.interfaceScale, "interface-scale", 0,
+	flag.BoolVar(&agentFlags.isOff, "no-mcp", false, "do not let agents reach this vault")
+	flag.Float64Var(&scaleFlags.interfaceScale, "interface-scale", 0,
 		"how large the interface is drawn, 1 being as designed; this launch alone")
-	flag.Float64Var(&said.textScale, "text-scale", 0,
+	flag.Float64Var(&scaleFlags.textScale, "text-scale", 0,
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.ShouldRebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
-	flag.BoolVar(&telling, "version", false, "say what this build is and stop")
+	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
 	flag.Parse()
 
-	if telling {
+	if showVersion {
 		fmt.Println(version.GetVersionLine("numen"))
 		return
 	}
 
-	if err := run(cfg, letting, vault, said); err != nil {
+	if err := run(cfg, agentFlags, vault, scaleFlags); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
 		refuse(cfg, err)
 		os.Exit(1)
@@ -69,18 +69,18 @@ func main() {
 // core, and where the core says what it went wrong at and carried on past. That
 // is the same place everything else this binary could not do is said.
 func makeConfig(out io.Writer) container.Config {
-	cfg := platform.Config()
+	cfg := platform.GetConfig()
 	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen:", err) }
 	return cfg
 }
 
-// sizes are what the command line said about size: how large the interface is
+// scaleSettings are what the command line said about size: how large the interface is
 // drawn, and how large the text a person reads is set. Zero is not said, and
 // the settings file stands.
-type sizes struct{ interfaceScale, textScale float64 }
+type scaleSettings struct{ interfaceScale, textScale float64 }
 
-// check is what is wrong with a number the setting it says does not take.
-func (s sizes) check() error {
+// validate is what is wrong with a number the setting it says does not take.
+func (s scaleSettings) validate() error {
 	if s.interfaceScale > 0 {
 		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.interfaceScale); err != nil {
 			return err
@@ -92,14 +92,14 @@ func (s sizes) check() error {
 	return nil
 }
 
-func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) error {
-	if err := sizes.check(); err != nil {
+func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleSettings) error {
+	if err := scaleFlags.validate(); err != nil {
 		return err
 	}
 
 	// Before anything draws: the settings a folder dialog reads are looked for
 	// once, the first time something asks for one.
-	findSchemas()
+	setSchemasDir()
 
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
@@ -110,11 +110,11 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	}
 	cfg = cfg.SetSettings(chosen)
 	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
-	cfg.InterfaceScale, cfg.TextScale = sizes.interfaceScale, sizes.textScale
+	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
 
 	// Before the window: every page this process reads is read through the
 	// runtime made here, and one made after the window reads a page as nothing.
-	// A machine holding no runtime yet is told so by the first reading.
+	// A machine holding no runtime yet is told so by the first recognition.
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}
@@ -151,18 +151,18 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		Serve: func() (func() error, error) {
 			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
-		Showing:      opened.GetCurrentVault,
-		Handler:      opened.API.SetAgent,
-		Unreachable:  func(said string) { opened.API.Unreachable.Store(said) },
-		ErrorHandler: func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
+		GetVault:       opened.GetCurrentVault,
+		SetAgent:       opened.API.SetAgent,
+		SetUnreachable: func(said string) { opened.API.Unreachable.Store(said) },
+		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
 
-	going := &going{settle: opened.Settle}
+	going := &vaultFlush{flush: opened.FlushPending}
 
 	// Everything behind the settling, in the order each part needs the next: the
 	// agents are let go of, then the scan and the follower stop and the database
 	// closes, then what they ran under ends.
-	behind := shutdown.InOrder(
+	behind := shutdown.NewSequence(
 		reachable.Stop,
 		func() {
 			if err := opened.Close(); err != nil {
@@ -175,8 +175,8 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// The vault settles before a quit is let through, so the steps behind it are
 	// asked for here with nothing left owed.
 	defer func() {
-		going.wait()
-		behind.Go()
+		going.flushVault()
+		behind.Run()
 	}()
 
 	// The window is taken out of sight before the settling begins, and put back
@@ -200,7 +200,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		// Run on the thread the window is drawn on, once the application has
 		// stopped dispatching. The door on the vault's questions is shut in the
 		// step that closes it, and a request arriving after that is refused.
-		PostShutdown: behind.Go,
+		PostShutdown: behind.Run,
 		// A quit that does not come through the window is answered on the
 		// thread the page is served on, so the settling happens off it and the
 		// quit is asked for again once it is over. A settling that ended with a
@@ -227,7 +227,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
 	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
-	opened.API.Attends = naming
+	opened.API.NotifyOpenTabs = naming
 
 	// Files let go of over the window, copied into the folder the mark under
 	// the pointer names. A drop that landed on no mark is not this window's.
@@ -246,8 +246,8 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	// Opening another vault, as a person asks for it. The agents are told which
 	// vault they are working when their session opens, so the endpoint they
 	// reach it through is stopped and started again around the swap.
-	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
-		err := reachable.RunSwap(func() error { return opened.Show(ctx, v) })
+	opened.API.OpenVault = func(ctx context.Context, v domain.Vault) error {
+		err := reachable.RunWhileStopped(func() error { return opened.Show(ctx, v) })
 		naming(opened.API.GetOpenTabs())
 		return err
 	}

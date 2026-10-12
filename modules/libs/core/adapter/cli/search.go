@@ -13,7 +13,7 @@ import (
 // excerptRunes is how much of a passage one line of terminal output carries.
 const excerptRunes = 160
 
-func searchCommand(
+func runSearchCommand(
 	ctx context.Context, out, errOut io.Writer, deps Deps, args []string,
 ) error {
 	if len(args) < 2 {
@@ -49,14 +49,14 @@ func searchCommand(
 		if p.Location != "" {
 			where += " · " + p.Location
 		}
-		fmt.Fprintf(out, "%s\n  %s\n", where, excerpt(p.Text))
+		fmt.Fprintf(out, "%s\n  %s\n", where, getExcerpt(p.Text))
 	}
 	return nil
 }
 
-// excerpt is a passage on one line: the words, with the shape of the file taken
+// getExcerpt is a passage on one line: the words, with the shape of the file taken
 // out of them.
-func excerpt(text string) string {
+func getExcerpt(text string) string {
 	words := strings.Join(strings.Fields(text), " ")
 	runes := []rune(words)
 	if len(runes) <= excerptRunes {

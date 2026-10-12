@@ -132,7 +132,7 @@ export const getSizeGroups = (
     title: percent(size),
     ...(size === now ? { detail: words.current, isCurrent: true } : {}),
   })
-  const scaleValues = [...ladder(range), now, ...(parsedSize === null ? [] : [parsedSize])]
+  const scaleValues = [...ladder(range), now, parsedSize ?? 0]
     .filter((size) => isInBounds(range, size))
     .sort((first, second) => first - second)
   const title = which === INTERFACE_SCALE ? words.drawing : words.setting

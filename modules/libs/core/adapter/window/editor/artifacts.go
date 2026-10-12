@@ -29,12 +29,12 @@ import (
 const (
 	// An artifact is named by what it is. What made it is the store's to say,
 	// and a caller asking for one asks for a kind and not for a producer.
-	readingID             = derived.Reading
-	readingCorrectedID    = derived.Reading + ".corrected"
-	transcriptID          = derived.Transcript
-	transcriptCorrectedID = derived.Transcript + ".corrected"
-	articleID             = derived.Article
-	copiedID              = derived.Copies
+	recognitionID          = derived.OCR
+	recognitionCorrectedID = derived.OCR + ".corrected"
+	transcriptID           = derived.Transcript
+	transcriptCorrectedID  = derived.Transcript + ".corrected"
+	articleID              = derived.Article
+	copiedID               = derived.Copies
 )
 
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
@@ -111,13 +111,13 @@ func (a *API) getProducer(at domain.URL) string {
 func getArtifactID(of v1.ArtifactKind) (string, bool) {
 	switch of {
 	case v1.ArtifactKind_ARTIFACT_KIND_OCR:
-		return readingID, true
+		return recognitionID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT:
 		return transcriptID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
 		return transcriptCorrectedID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED:
-		return readingCorrectedID, true
+		return recognitionCorrectedID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
 		return articleID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
@@ -156,11 +156,11 @@ func (a *API) getLinkedArtifact(
 	}
 	hash := derived.Fingerprint([]byte(string(at)))
 	for _, from := range derived.Producers() {
-		got, err := farUnder(ctx, store, from, hash)
+		got, err := readRunProgress(ctx, store, from, hash)
 		if err != nil {
 			return nil, err
 		}
-		if got.stands != untouched {
+		if got.state != runNone {
 			return newArtifact(textOf(a.getProducer(at)), got), nil
 		}
 	}
@@ -229,7 +229,7 @@ func (a *API) fetchCopy(
 	// arrives.
 	asked := *a.Imports
 	asked.Progress = func(done, total int64) {
-		a.say(task.Task{
+		a.reportTask(task.Task{
 			ID: copying + ref.Path, Doing: "Downloading a copy", About: ref.Path,
 			Count: done, Total: total, Unit: task.Bytes, IsAsked: true,
 		})
@@ -266,7 +266,7 @@ const (
 // outside the window, so a tab drawing it reads what now stands. It is the same
 // channel a run reports itself through, and a tab follows both the same way.
 func (a *API) ReportArtifactChange(path string) {
-	a.say(task.Task{ID: fetching + path, Doing: "Correcting a transcript", About: path})
+	a.reportTask(task.Task{ID: fetching + path, Doing: "Correcting a transcript", About: path})
 	a.finishTask(fetching + path)
 }
 
@@ -332,7 +332,7 @@ func (a *API) CreateArtifact(
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
 		made, err = a.proofreadTranscript(ctx, showing, ref)
 	case v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED:
-		made, err = a.proofreadReading(ctx, showing, ref)
+		made, err = a.proofreadRecognition(ctx, showing, ref)
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
 		// A recording's transcript is heard by a model here; a note's is
 		// fetched from the address it points at.
@@ -388,7 +388,7 @@ func (a *API) DeleteArtifact(
 	// The queue told about it is the one behind the vault the recording was
 	// found in.
 	drops := *a.Drops
-	drops.Forgets = a.getForgetter()
+	drops.Forgets = a.getRecordingForgetter()
 
 	res, err := drops.Execute(ctx, showing, ref.Path)
 	switch {
@@ -414,13 +414,13 @@ func (a *API) run(
 	if by == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
+	got, err := a.getRunProgress(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// What stands is what the ask comes to. A source a run already answered
 	// about is answered the same until that record is taken away.
-	if got.stands == done || got.stands == under || got.stands == silent || got.stands == unopened {
+	if got.state == runComplete || got.state == runActive || got.state == runNoSpeech || got.state == runUnopened {
 		return newArtifact(of, got), nil
 	}
 
@@ -479,7 +479,7 @@ func (a *API) fetchArtifact(
 	// before goes, and the site is read again.
 	asked := *a.Imports
 	asked.IsRepeat = true
-	a.say(task.Task{ID: fetching + ref.Path, Doing: "Downloading an address", About: ref.Path})
+	a.reportTask(task.Task{ID: fetching + ref.Path, Doing: "Downloading an address", About: ref.Path})
 	_, err := asked.Execute(ctx, v, ref.Path)
 	a.finishTask(fetching + ref.Path)
 	if err != nil {
@@ -545,25 +545,25 @@ func getProofreadState(res source.ProofreadTranscriptResult) v1.State {
 	return v1.State_STATE_RUNNING
 }
 
-// proofreadReading begins putting the reading of a scanned document right, and
+// proofreadRecognition begins putting the recognition of a scanned document right, and
 // answers with what the corrections now are.
-func (a *API) proofreadReading(
+func (a *API) proofreadRecognition(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
-	puts := a.getReadingProofreader()
+	puts := a.getRecognitionProofreader()
 	if puts == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	if !puts.ProofreaderReady() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
 	}
-	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
+	got, err := a.getRunProgress(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	if got.stands != done {
+	if got.state != runComplete {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNotRead)
 	}
 
@@ -573,11 +573,11 @@ func (a *API) proofreadReading(
 	}
 	return &v1.Artifact{
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED,
-		State: getReadingProofreadState(res),
+		State: getRecognitionProofreadState(res),
 	}, nil
 }
 
-func getReadingProofreadState(res source.ProofreadReadingResult) v1.State {
+func getRecognitionProofreadState(res source.ProofreadRecognitionResult) v1.State {
 	switch {
 	case res.IsBusy, res.IsWaiting:
 		return v1.State_STATE_RUNNING
@@ -601,7 +601,7 @@ func (a *API) artifact(
 		return a.corrections(ctx, v, ref)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED {
-		return a.readingCorrections(ctx, v, ref)
+		return a.recognitionCorrections(ctx, v, ref)
 	}
 	// A url's transcript is the text at the address it holds, and a
 	// recording's is what a model heard: the same kind, made two ways.
@@ -613,15 +613,15 @@ func (a *API) artifact(
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
 		return a.copyOf(ctx, v, ref.Path, at), nil
 	}
-	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
+	got, err := a.getRunProgress(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, err
 	}
 	return newArtifact(of, got), nil
 }
 
-// readingCorrections is what putting a document's reading right has come to.
-func (a *API) readingCorrections(
+// recognitionCorrections is what putting a document's recognition right has come to.
+func (a *API) recognitionCorrections(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
@@ -634,14 +634,14 @@ func (a *API) readingCorrections(
 	if err != nil || !hasReading {
 		return out, err
 	}
-	switch _, err := store.Read(ctx, derived.Proofread(derived.Reading, said.Hash)); {
+	switch _, err := store.Read(ctx, derived.Proofread(derived.OCR, said.Hash)); {
 	case err == nil:
 		out.State = v1.State_STATE_DONE
 		return out, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return nil, err
 	}
-	switch _, err := store.Read(ctx, derived.Corrections(derived.Reading, said.Hash)); {
+	switch _, err := store.Read(ctx, derived.Corrections(derived.OCR, said.Hash)); {
 	case err == nil:
 		out.State = v1.State_STATE_RUNNING
 		return out, nil
@@ -676,25 +676,25 @@ func (a *API) corrections(
 	case !errors.Is(err, fs.ErrNotExist):
 		return nil, err
 	}
-	if !free(ctx, store, derived.Partial(said.Producer, said.Hash)) {
+	if !isUnclaimed(ctx, store, derived.Partial(said.Producer, said.Hash)) {
 		out.State = v1.State_STATE_RUNNING
 	}
 	return out, nil
 }
 
 // newArtifact is how far a run got, as the artifact a client reads.
-func newArtifact(of v1.ArtifactKind, got reached) *v1.Artifact {
+func newArtifact(of v1.ArtifactKind, got runProgress) *v1.Artifact {
 	out := &v1.Artifact{Kind: of, Bytes: int64(got.size)}
-	switch got.stands {
-	case done:
+	switch got.state {
+	case runComplete:
 		out.State = v1.State_STATE_DONE
-	case silent:
+	case runNoSpeech:
 		out.State = v1.State_STATE_EMPTY
-	case unopened:
+	case runUnopened:
 		out.State, out.Error = v1.State_STATE_FAILED, got.why
-	case under:
+	case runActive:
 		out.State = v1.State_STATE_RUNNING
-	case stopped:
+	case runStopped:
 		out.State = v1.State_STATE_STOPPED
 	default:
 		out.State = v1.State_STATE_NONE

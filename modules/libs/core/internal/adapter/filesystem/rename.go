@@ -17,7 +17,7 @@ var waits = []time.Duration{10 * time.Millisecond, 40 * time.Millisecond, 160 * 
 func rename(ctx context.Context, root *os.Root, from, to string) error {
 	err := root.Rename(from, to)
 	for _, wait := range waits {
-		if !transient(err) {
+		if !isFileInUse(err) {
 			return err
 		}
 		rest := time.NewTimer(wait)

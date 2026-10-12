@@ -154,7 +154,7 @@ func TestAVolumeThatTakesNoTrash(t *testing.T) {
 	}
 	t.Cleanup(func() { os.Chmod(top, 0o700) })
 
-	if _, err := volume(top, os.Getuid()); !errors.Is(err, port.ErrNoTrash) {
+	if _, err := getVolumeTrashDir(top, os.Getuid()); !errors.Is(err, port.ErrNoTrash) {
 		t.Errorf("a volume root that takes no trash gave %v, want %v", err, port.ErrNoTrash)
 	}
 }
@@ -166,7 +166,7 @@ func TestNowhereToPutIt(t *testing.T) {
 		t.Skip("root makes a trash directory at the root of any volume")
 	}
 	at := folder(t, "Vault")
-	top, err := topdir(at)
+	top, err := getVolumeRoot(at)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func TestNowhereToPutIt(t *testing.T) {
 
 	// No trash of this login, so the volume's own is the only one there could
 	// be, and its root refuses one.
-	if err := sendTo(at, ""); !errors.Is(err, port.ErrNoTrash) {
+	if err := moveToUserOrVolumeTrash(at, ""); !errors.Is(err, port.ErrNoTrash) {
 		t.Errorf("trashing %s gave %v, want %v", at, err, port.ErrNoTrash)
 	}
 	if _, err := os.Lstat(filepath.Join(at, "note.md")); err != nil {

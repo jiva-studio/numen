@@ -4,7 +4,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
-// Config is what a person may change about reading a scanned page: which
+// Config is what a person may change about recognising a scanned page: which
 // models, where they came from, how the page is read, and which of a page's
 // parts are wanted.
 //
@@ -123,7 +123,7 @@ type RegionKinds struct {
 	Head []string `json:"head"`
 }
 
-// Defaults read a scanned page with the smallest models measured to be the best
+// Defaults recognise a scanned page with the smallest models measured to be the best
 // on one, and ask for the parts that carry prose.
 func Defaults() Config {
 	return Config{
@@ -141,7 +141,7 @@ func Defaults() Config {
 			DPI:  300,
 		},
 
-		// What a reading needs is fetched when it is wanted.
+		// What a recognition needs is fetched when it is wanted.
 		ShouldDownload: true,
 	}
 }
@@ -193,7 +193,7 @@ func (d DetectModel) maxSide() int {
 // The boundary the detector draws falls inside the letters by a share of the
 // line's own height. One number serves a heading and a paragraph because a part
 // is read scaled to MaxSide, which brings the two to nearly one size.
-func (d DetectModel) expand() int {
+func (d DetectModel) getExpansion() int {
 	if d.Expand <= 0 {
 		return 18
 	}

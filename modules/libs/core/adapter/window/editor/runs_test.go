@@ -29,7 +29,7 @@ const (
 const idea = "notes/idea.md"
 
 // A link note stands there too, pointing at a video. What is at an address is
-// made from the note the way a reading is made from a scan.
+// made from the note the way a recognition is made from a scan.
 const (
 	pointed  = "notes/talk.url"
 	pointsAt = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
@@ -93,8 +93,8 @@ func openRunWindow(
 	// What a url carries follows from what fetches it, so a window that reaches
 	// no address at all says a url carries nothing.
 	api.Imports = &source.ImportURL{By: reachingASite{}}
-	api.show(vault)
-	setPasses(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
+	api.setVault(vault)
+	modifySession(api, func(on *vaultSession) { on.recognitionRunner, on.transcriptionRunner = scans, hears })
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 

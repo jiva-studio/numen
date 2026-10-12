@@ -617,7 +617,7 @@ describe('DeckEditor', () => {
         { id: 'yak', section: 'leaves', stencil: 'Animal', filled: [] },
       ]
 
-      it('take a landing of their own where no card stands there', () => {
+      it('take a drop target of their own where no card stands there', () => {
         expect(mountSectioned({ cards: INSIDE }).find('[data-head]').exists()).toBe(true)
       })
 

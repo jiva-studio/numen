@@ -13,7 +13,7 @@ import { StopReason } from '@numen/protocol'
 import { goalValue, findNearest } from './lib/curve'
 import { asFailure, asValue } from '@numen/wire'
 import type { CardsFailure } from '@/entities/deck'
-import { fieldsUnder, steer, type Field } from './lib/fields'
+import { fieldsUnder, getGoalField, type Field } from './lib/fields'
 import {
   DEFAULTS,
   NO_BOUNDS,
@@ -522,7 +522,7 @@ describe('what the tab says it encountered as an error', () => {
   })
 })
 
-// A picture that says it is reading the vault says an answer is on its way.
+// A picture that says it is indexing the vault says an answer is on its way.
 // Where none is coming, the tab says what happened and stops saying it.
 describe('a curve nobody answers', () => {
   it('leaves the tab saying why, and not saying it is reading', async () => {
@@ -598,7 +598,7 @@ describe('what a tab still owes the file', () => {
     state.close('Steady.md')
     await flushPromises()
     expect(closed).toStrictEqual([])
-    expect(state.hasChanged.value).toBe(true)
+    expect(state.hasExternalChange.value).toBe(true)
   })
 
   it('is written when the window goes', async () => {
@@ -787,7 +787,7 @@ const createRangedCurve = (settings: Settings): Curve => {
 
 // Nothing but the field a person types in may change, and the budget the goal
 // steers least of all: it is what the picture is scaled to.
-describe('a field the goal does not steer, typed', () => {
+describe('a field the goal does not getGoalField, typed', () => {
   // A curve asked for under a new share of the day comes back over a range of
   // its own, and a place of the old grid stands at another value on it. The
   // knob goes back to where the preset stands, so the picture and the file say
@@ -820,7 +820,7 @@ describe('a field the goal does not steer, typed', () => {
     for (const goal of ['minutes', 'retention'] as const) {
       for (const field of fieldsUnder(goal, DEFAULTS.learned)) {
         const value = NEW_VALUES[field]
-        if (field === steer(goal) || value === undefined) continue
+        if (field === getGoalField(goal) || value === undefined) continue
 
         const { state, written } = await openPresetTab({ goal, minutesADay: 23 }, createRangedCurve)
         const was = state.settings.value

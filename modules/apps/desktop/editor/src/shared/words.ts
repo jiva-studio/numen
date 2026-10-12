@@ -15,7 +15,7 @@ export const WORDS = {
   /** What the corner says while something about the vault is wrong. */
   unwatched: 'not following the vault',
   unread: 'the vault could not be read',
-  reading: 'reading the vault…',
+  indexing: 'indexing the vault…',
   nothingRead: 'nothing was read',
   going: 'These notes stopped saving because their files changed. The window waits.',
   later: 'Not yet',
@@ -32,7 +32,7 @@ export const WORDS = {
   notAsked: 'The vault could not answer',
   notEmbedded: 'This vault has not been read for meaning yet',
   /** The commands, and the groups they are drawn in. */
-  overNote: 'This note',
+  noteGroupTitle: 'This note',
   overFile: 'This file',
   overWindow: 'This window',
   overVault: 'This vault',

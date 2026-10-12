@@ -15,10 +15,10 @@ flowchart TD
     VerifyRed --> Implement["3. Implement Changes
     (Write domain, adapters, or UI components)"]
     Implement --> InnerTDD["3.1 Fast Inner Loop
-    (vitest related / go test ./pkg)"]
+    (vitest related --run / go test ./pkg)"]
     InnerTDD -->|Fails| Implement
     InnerTDD -->|Passes| RunChecks["4. Run Local Gate Checks
-    (go test ./..., vue-tsc, vitest unit)"]
+    (go test ./..., typecheck, lint, vitest unit, format:check)"]
     RunChecks -->|Errors| Implement
     RunChecks -->|All Pass| Handover["5. Handover: Suggest `/review`"]
 ```
@@ -30,7 +30,7 @@ flowchart TD
 1. **Never edit acceptance test files**: The acceptance tests are the independent verification contract. If a test is failing unexpectedly, find the bug in your code or ask the human.
 2. **Frozen contracts**: Domain models, wire protocols, ports, and migrations are frozen. Do not alter them without human consent.
 3. **Internal unit tests**: You may write narrow unit tests for your internal helper functions and unexported logic.
-4. **Targeted testing first (Inner Loop)**: While iterating on code, run only tests related to the changed files (`vitest related` or `go test ./pkg`). Do not run blanket heavy suites or `-race` until final verification.
+4. **Targeted testing first (Inner Loop)**: While iterating on code, run only tests related to the changed files (`vitest related --run` or `go test ./pkg`). Do not run blanket heavy suites or `-race` until final verification.
 5. **Follow language rules**:
    - Backend (Go): [`.agents/rules/coding-style-backend.md`](../../rules/coding-style-backend.md)
    - Frontend (Vue/TS): [`.agents/rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md)
@@ -50,7 +50,7 @@ flowchart TD
 - Place files on their correct architectural layer.
 - Use imperative verb phrases for function names and predicate phrases (`is...`, `has...`) for booleans.
 - **Fast feedback loop during edits:**
-  - **Frontend:** `npx vitest related <changed-file>` or `npx vitest --changed`
+  - **Frontend:** `npx vitest related <changed-file> --run --project unit` or `npx vitest run --changed --project unit` (without `--run`, vitest waits in watch mode)
   - **Backend:** `go test ./path/to/package` (or `go test -run TestName ./path/to/package`)
 
 ### Step 3: Run Local Validation Gates (Final check before handover)
@@ -66,8 +66,10 @@ go test ./container/...        # in modules/libs/core (architecture check)
 
 **Frontend modules (`modules/apps/desktop/*`, `modules/libs/ui`):**
 ```bash
-npx vue-tsc --noEmit
-npx vitest run --project unit
+npm run lint
+npm run typecheck
+npm run test:unit
+cd modules && npm run format:check   # a change that is not Prettier-clean is rejected
 ```
 
 *(Note: If touching `@numen/ui`, run `npm run build` in `modules/libs/ui` before running desktop window suites).*

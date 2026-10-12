@@ -122,30 +122,13 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	if u.IsRepeat {
 		// Somebody asked for this recording to be heard afresh. What a run
 		// before this one made goes, and the listening starts from the top.
-		for _, name := range []string{final, partial, text.Answer(area, hash)} {
-			if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-				return res, err
-			}
+		if err := removeAllNames(ctx, store, final, partial, text.Answer(area, hash)); err != nil {
+			return res, err
 		}
 	}
 
-	// A recording already listened to is not listened to again. The name is the
-	// hash of what was heard, so this holds however the file was renamed or
-	// moved since.
-	if held, err := store.Read(ctx, final); err == nil {
-		if _, cues := transcript.Parse(held); len(cues) > 0 {
-			res.Heard = cues[len(cues)-1].To
-			res.Length = res.Heard
-		}
-		return res, u.stand(ctx, v, ref, hash, area)
-	}
-	// A recording that gave no words gave an answer all the same, and it is
-	// recorded. Taking the record away is how a person asks for it again.
-	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
-		gave, _ := text.ReadAnswer(held)
-		res.IsSilent = gave == text.Silent
-		res.IsUnopened = gave == text.Unopened
-		return res, u.stand(ctx, v, ref, hash, "")
+	if done, err := u.recordSource(ctx, v, store, ref, hash, area, &res); done {
+		return res, err
 	}
 
 	recording, err := u.by.Open(ctx, raw)
@@ -156,91 +139,166 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	defer recording.Close()
 	res.Length = recording.Length()
 
-	from, size, err := leftOff(ctx, store, partial)
-	if err != nil {
+	if err := u.transcribeSegments(ctx, v, store, recording, path, partial, &res); err != nil {
 		return res, err
 	}
-	res.Resumed, res.Heard = from, from
-	u.progress(res)
 
-	// write puts a run of cues down and cuts the source from everything the
-	// recording has said so far.
-	//
-	// The note stands after the cues it claims, so a batch that did not land
-	// whole is one no note claims, and the next run transcribes those stretches
-	// again.
-	opened := size > 0
-	write := func(cues []transcript.Cue, transcribed int) error {
-		body := trimHeader(transcript.Marshal(cues), opened)
-		if err := store.Append(ctx, partial, append(body, transcript.GetReachMarker(transcribed)...)); err != nil {
-			return err
-		}
-		opened = true
-		return u.cut(ctx, v, path)
-	}
+	err = u.saveTranscript(ctx, v, store, ref, hash, area, &res)
+	return res, err
+}
 
-	for {
-		if err := ctx.Err(); err != nil {
-			// What has been heard is on disk already. Stopping is a thing a
-			// person did, and the next run begins where this one stopped.
-			return res, err
-		}
-		segments, err := recording.Segments(ctx, from, u.batch())
-		if err != nil {
-			return res, fmt.Errorf("transcribe %s at %s: %w", path, transcript.Stamp(from), err)
-		}
-		if len(segments) == 0 {
-			break
-		}
-
-		reached := from
-		cues := make([]transcript.Cue, 0, len(segments))
-		for _, audio := range segments {
-			words, err := u.by.Transcribe(ctx, audio)
-			if err != nil {
-				return res, fmt.Errorf("hear %s at %s: %w", path, transcript.Stamp(audio.From), err)
-			}
-			cues = append(cues, transcript.Cue{Text: words, From: audio.From, To: audio.To})
-			if audio.To > reached {
-				reached = audio.To
-			}
-		}
-		// A batch reaching no further than the last one is a recording that has
-		// stopped moving, and there is nothing after it to ask for.
-		if reached <= from {
-			break
-		}
-
-		from = reached
-		if err := write(cues, from); err != nil {
-			return res, err
-		}
-		res.Heard = from
-		u.progress(res)
-	}
-
+// saveTranscript stands the source on the artifact made from the partial, or answers
+// that the recording carries no speech.
+func (u Transcribe) saveTranscript(
+	ctx context.Context,
+	v domain.Vault,
+	store port.DerivedStore,
+	ref domain.Fingerprint,
+	hash, area string,
+	res *TranscribeResult,
+) error {
+	partial := text.Partial(area, hash)
 	whole, err := store.Read(ctx, partial)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return res, err
+		return err
 	}
 	if words, _ := transcript.Parse(whole); strings.TrimSpace(words) == "" {
 		// A recording carrying no speech says so, and nothing stands as its
 		// text. An artifact with no cues in it is a transcription that worked.
 		res.IsSilent = true
-		return res, u.answer(ctx, v, ref, hash, area, store, text.Silent)
+		return u.answer(ctx, v, ref, hash, area, store, text.Silent)
 	}
 
-	if err := store.Write(ctx, final, whole); err != nil {
-		return res, err
+	if err := store.Write(ctx, text.Artifact(area, hash), whole); err != nil {
+		return err
 	}
 	if err := u.record(ctx, store, area, hash); err != nil {
-		return res, err
+		return err
 	}
 	// The source stands on the artifact before the partial goes.
 	if err := u.stand(ctx, v, ref, hash, area); err != nil {
-		return res, err
+		return err
 	}
-	return res, store.Remove(ctx, partial)
+	return store.Remove(ctx, partial)
+}
+
+// removeAllNames removes each name from the store and passes over names that
+// are already absent.
+func removeAllNames(ctx context.Context, store port.DerivedStore, names ...string) error {
+	for _, name := range names {
+		if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+	}
+	return nil
+}
+
+// recordSource stands the source on a transcript or answer an earlier run
+// stored for these bytes, and says whether one was there.
+//
+// The name is the hash of what was heard, so a recording is not listened to
+// again however the file was renamed or moved since. A recording that gave no
+// words gave an answer all the same, and taking the record away is how a person
+// asks for it again.
+func (u Transcribe) recordSource(
+	ctx context.Context,
+	v domain.Vault,
+	store port.DerivedStore,
+	ref domain.Fingerprint,
+	hash, area string,
+	res *TranscribeResult,
+) (bool, error) {
+	if held, err := store.Read(ctx, text.Artifact(area, hash)); err == nil {
+		if _, cues := transcript.Parse(held); len(cues) > 0 {
+			res.Heard = cues[len(cues)-1].To
+			res.Length = res.Heard
+		}
+		return true, u.stand(ctx, v, ref, hash, area)
+	}
+	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
+		gave, _ := text.ReadAnswer(held)
+		res.IsSilent = gave == text.Silent
+		res.IsUnopened = gave == text.Unopened
+		return true, u.stand(ctx, v, ref, hash, "")
+	}
+	return false, nil
+}
+
+// transcribeSegments transcribes the recording from where the partial left off until it
+// stops moving, writing each batch of cues as it is heard.
+//
+// The note stands after the cues it claims, so a batch that did not land whole
+// is one no note claims, and the next run transcribes those stretches again.
+func (u Transcribe) transcribeSegments(
+	ctx context.Context,
+	v domain.Vault,
+	store port.DerivedStore,
+	recording port.Recording,
+	path, partial string,
+	res *TranscribeResult,
+) error {
+	from, size, err := leftOff(ctx, store, partial)
+	if err != nil {
+		return err
+	}
+	res.Resumed, res.Heard = from, from
+	u.progress(*res)
+
+	opened := size > 0
+	for {
+		if err := ctx.Err(); err != nil {
+			// What has been heard is on disk already, and the next run begins
+			// where this one stopped.
+			return err
+		}
+		cues, reached, err := u.transcribeBatch(ctx, recording, path, from)
+		if err != nil {
+			return err
+		}
+		// A batch reaching no further than the last one is a recording that has
+		// stopped moving, and there is nothing after it to ask for.
+		if reached <= from {
+			return nil
+		}
+
+		from = reached
+		body := trimHeader(transcript.Marshal(cues), opened)
+		if err := store.Append(ctx, partial, append(body, transcript.GetReachMarker(from)...)); err != nil {
+			return err
+		}
+		opened = true
+		if err := u.cut(ctx, v, path); err != nil {
+			return err
+		}
+		res.Heard = from
+		u.progress(*res)
+	}
+}
+
+// transcribeBatch transcribes the next segments after from, and returns their cues
+// with the furthest point they reach. A recording with nothing after from
+// returns no cues and from itself.
+func (u Transcribe) transcribeBatch(
+	ctx context.Context,
+	recording port.Recording,
+	path string,
+	from int,
+) ([]transcript.Cue, int, error) {
+	segments, err := recording.Segments(ctx, from, u.batch())
+	if err != nil {
+		return nil, from, fmt.Errorf("transcribe %s at %s: %w", path, transcript.Stamp(from), err)
+	}
+	reached := from
+	cues := make([]transcript.Cue, 0, len(segments))
+	for _, audio := range segments {
+		words, err := u.by.Transcribe(ctx, audio)
+		if err != nil {
+			return nil, from, fmt.Errorf("hear %s at %s: %w", path, transcript.Stamp(audio.From), err)
+		}
+		cues = append(cues, transcript.Cue{Text: words, From: audio.From, To: audio.To})
+		reached = max(reached, audio.To)
+	}
+	return cues, reached, nil
 }
 
 // answer records what a recording with no words to give gave, takes away what

@@ -155,7 +155,7 @@ func (b *builder) close() {
 		done.Children, done.Offset = append(b.waiting, done.Children...), b.waiting[0].Offset
 		b.waiting = nil
 	}
-	b.hold(done)
+	b.appendChild(done)
 }
 
 // run marks a run of text written at an offset, whether it was written from the
@@ -175,7 +175,7 @@ func (b *builder) run(offset int) {
 	case tabular[top.Name]:
 		b.waiting = append(b.waiting, Node{Offset: offset})
 	default:
-		b.hold(Node{Offset: offset})
+		b.appendChild(Node{Offset: offset})
 	}
 }
 
@@ -201,7 +201,7 @@ var (
 	cells = map[string]bool{"td": true, "th": true}
 )
 
-func (b *builder) hold(n Node) {
+func (b *builder) appendChild(n Node) {
 	top := &b.stack[len(b.stack)-1]
 	top.Children = append(top.Children, n)
 }

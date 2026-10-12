@@ -10,16 +10,16 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Ref, ShallowRef } from 'vue'
 
 /** How long a strip taken somewhere by a key has to get there. */
-const TAKES = 600
+const SLIDE_DURATION_MS = 600
 
 /** How long a strip left alone has to have stopped before it is settled. */
-const SETTLES = 140
+const SNAP_DELAY_MS = 140
 
 /** The three the strip stops at, in the order they stand. */
-const PLACES = ['before', 'here', 'after'] as const
+const PANEL_PLACES = ['before', 'here', 'after'] as const
 
 /** Which of the three is in the window. */
-export type PanelPlace = (typeof PLACES)[number]
+export type PanelPlace = (typeof PANEL_PLACES)[number]
 
 /** What the strip's movement is given: the elements it measures, and the answer. */
 export interface CarouselStripDeps {
@@ -67,7 +67,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const findNearest = (left: number): PanelPlace => {
     const all = getStops()
     let best: PanelPlace = 'before'
-    for (const where of PLACES) {
+    for (const where of PANEL_PLACES) {
       if (Math.abs(all[where] - left) < Math.abs(all[best] - left)) best = where
     }
     return best
@@ -84,7 +84,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     sending = window.setTimeout(() => {
       sending = 0
       aim = null
-    }, TAKES)
+    }, SLIDE_DURATION_MS)
     aim = where
     at.scrollLeft = getStops()[where]
   }
@@ -142,7 +142,7 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     if (taking.value) return
     window.clearTimeout(snapTimer)
     const going = aim
-    snapTimer = window.setTimeout(() => slideTo(going ?? shown.value), SETTLES)
+    snapTimer = window.setTimeout(() => slideTo(going ?? shown.value), SNAP_DELAY_MS)
   }
 
   /** Where the hand went down, and where the strip was under it. */

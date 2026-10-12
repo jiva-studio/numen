@@ -34,7 +34,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
-	api.show(v)
+	api.setVault(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
@@ -61,7 +61,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
-	api.show(v)
+	api.setVault(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
@@ -85,7 +85,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
-	api.show(v)
+	api.setVault(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 	watching.tasks = api.Window.Tasking
@@ -114,7 +114,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
-	api.show(v)
+	api.setVault(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 
 	// The weights are still coming down, and in this test they never land.
@@ -146,7 +146,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
-	api.show(v)
+	api.setVault(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
@@ -213,7 +213,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	made, db := reading(t)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
-	api.show(v)
+	api.setVault(v)
 	// The index the pass asks what owes its text is gone, which is what it
 	// looks like from here when the answer cannot be had.
 	if err := db.Close(); err != nil {
@@ -222,7 +222,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 
 	readSources(t.Context(), made, api, v, nil, false, nil, io.Discard)
 
-	at := findTask(t, api, readingBooks)
+	at := findTask(t, api, extractingBooks)
 	if at == nil {
 		t.Fatal("the pass that could not read the books took itself out of the list")
 	}
@@ -289,7 +289,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
-	api.show(v)
+	api.setVault(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
@@ -364,7 +364,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
-	api.show(v)
+	api.setVault(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
@@ -417,7 +417,7 @@ type nudging struct {
 func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	stopped := false
 	n.once.Do(func() {
-		raise(n.nudge)
+		fire(n.nudge)
 		<-ctx.Done()
 		stopped = true
 	})

@@ -46,10 +46,10 @@ type Core struct {
 	// of what is in front of anybody.
 	Attending func() domain.OpenTabs
 
-	// Reviewing is the card the person is looking at, asked at every call for
+	// GetCurrentCard returns the card the person is looking at, asked at every call for
 	// the same reason. Without it an agent is told nothing of what card anybody
 	// is on.
-	Reviewing func() AskedCard
+	GetCurrentCard func() CurrentCard
 
 	Notes   Notes
 	Vaults  Vaults
@@ -118,7 +118,7 @@ type Sources struct {
 	// Transcribe hears a recording. Without it the tool that asks for one is
 	// served and answers that this installation cannot.
 	Transcribe Transcriber
-	// Derived is where a reading of a document is kept. Without it a document
+	// Derived is where a recognition of a document is kept. Without it a document
 	// stands on its own bytes, which for a scan is nothing.
 	Derived port.DerivedStores
 	// Documents reads a format that needs a library, for a document standing on
@@ -172,20 +172,20 @@ func NewReading(core Core) *sdk.Server {
 		&sdk.ServerOptions{Instructions: readingInstructions(core)},
 	)
 
-	addNoteReadingTools(server, core)
-	addCardReadingTools(server, core)
-	addLinkReadingTools(server, core)
-	addSourceReadingTools(server, core)
+	addNoteReadTools(server, core)
+	addCardReadTools(server, core)
+	addLinkReadTools(server, core)
+	addSourceReadTools(server, core)
 	addVaultGet(server, core)
 	return server
 }
 
-// NewReviewing builds the server the window a person runs their cards in
+// NewReviewServer builds the server the window a person runs their cards in
 // serves: everything that reads, and the cards of a deck.
 //
 // A deck and a stencil are what a vault is arranged into, and nothing here
 // makes one. Nothing here writes a note, a link or a document either.
-func NewReviewing(core Core) *sdk.Server {
+func NewReviewServer(core Core) *sdk.Server {
 	server := sdk.NewServer(
 		&sdk.Implementation{
 			Name:        "numen",
@@ -193,15 +193,15 @@ func NewReviewing(core Core) *sdk.Server {
 			Description: "Notes with typed links and spaced repetition.",
 			Version:     Version,
 		},
-		&sdk.ServerOptions{Instructions: getReviewingInstructions(core)},
+		&sdk.ServerOptions{Instructions: getReviewInstructions(core)},
 	)
 
-	addNoteReadingTools(server, core)
-	addCardReadingTools(server, core)
-	addCardEditingTools(server, core)
-	addCardShowing(server, core)
-	addLinkReadingTools(server, core)
-	addSourceReadingTools(server, core)
+	addNoteReadTools(server, core)
+	addCardReadTools(server, core)
+	addCardEditTools(server, core)
+	addCardFocus(server, core)
+	addLinkReadTools(server, core)
+	addSourceReadTools(server, core)
 	addVaultGet(server, core)
 	return server
 }

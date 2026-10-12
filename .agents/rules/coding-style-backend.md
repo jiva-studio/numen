@@ -108,11 +108,6 @@ Delete each clause in turn: if what remains still describes the code, the delete
 
 ## 6. Formatting & verification
 
-```bash
-make lint    # generate-check, gofmt -l, go vet, buf lint, and every window's typecheck
-make test    # go test -race in core and desktop, then the interface suites
-```
-
 Per module, from its own directory:
 
 ```bash

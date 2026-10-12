@@ -46,7 +46,7 @@ func (a *API) WatchCardsDue(
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	standing := func() *v1.WatchCardsDueResponse {
-		return &v1.WatchCardsDueResponse{Day: a.Day.GetName(a.now()), Vaults: listed}
+		return &v1.WatchCardsDueResponse{Day: a.Day.GetName(a.getNow()), Vaults: listed}
 	}
 	if err := out.Send(standing()); err != nil {
 		return err
@@ -66,7 +66,7 @@ func (a *API) WatchCardsDue(
 	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
-	counted := a.countVaults(ctx, orderVaults(known))
+	counted := a.countVaults(ctx, sortVaults(known))
 	for counted != nil {
 		select {
 		case one, open := <-counted:
@@ -87,10 +87,10 @@ func (a *API) WatchCardsDue(
 	return nil
 }
 
-// orderVaults is the order the vaults are counted in: the current one, then the
+// sortVaults is the order the vaults are counted in: the current one, then the
 // rest as the list holds them. A person coming back to this window is most
 // often coming back to the vault they were last in.
-func orderVaults(known []vaults.KnownVault) []domain.Vault {
+func sortVaults(known []vaults.KnownVault) []domain.Vault {
 	order := make([]domain.Vault, 0, len(known))
 	for _, one := range known {
 		if one.IsCurrent {
@@ -142,8 +142,8 @@ func (a *API) countVault(ctx context.Context, v domain.Vault) *v1.VaultCardsDue 
 	// The vault is brought up to date before it is counted. Nothing is counted
 	// from a walk half done, and the numbers arrive with the count that the
 	// finished walk wakes.
-	if underway, reason := a.reading(ctx, v); underway || reason != "" {
-		one.IsReading, one.Unread = underway, reason
+	if underway, reason := a.startIndexing(ctx, v); underway || reason != "" {
+		one.IsIndexing, one.Unread = underway, reason
 		return one
 	}
 
@@ -199,7 +199,7 @@ func (a *API) countVault(ctx context.Context, v domain.Vault) *v1.VaultCardsDue 
 func (a *API) StartSession(
 	ctx context.Context, r *connect.Request[v1.StartSessionRequest],
 ) (*connect.Response[v1.StartSessionResponse], error) {
-	v, err := a.Vault(r.Msg.GetVault())
+	v, err := a.GetVault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -231,12 +231,12 @@ func (a *API) StartSession(
 		Skipped:   int32(session.Skipped),
 	}
 	for _, one := range session.Queue {
-		out.Asked = append(out.Asked, newAsked(one))
+		out.Asked = append(out.Asked, newWireAsked(one))
 	}
 	return connect.NewResponse(out), nil
 }
 
-func newAsked(one flashcards.QueuedCardFace) *v1.Asked {
+func newWireAsked(one flashcards.QueuedCardFace) *v1.Asked {
 	front, back := one.Lay()
 	return &v1.Asked{
 		Deck:    one.Deck,
@@ -247,13 +247,13 @@ func newAsked(one flashcards.QueuedCardFace) *v1.Asked {
 		Front:   front,
 		Back:    back,
 		IsNew:   one.Schedule.IsNew(),
-		Due:     stamp(one.Schedule.Due),
-		Ahead:   newAhead(one.Ahead),
+		Due:     formatTime(one.Schedule.Due),
+		Ahead:   newWireAhead(one.Ahead),
 	}
 }
 
-// newAhead is where each of the four would leave the card, in seconds.
-func newAhead(ahead map[review.Rating]time.Duration) *v1.Ahead {
+// newWireAhead is where each of the four would leave the card, in seconds.
+func newWireAhead(ahead map[review.Rating]time.Duration) *v1.Ahead {
 	if ahead == nil {
 		return nil
 	}
@@ -269,7 +269,7 @@ func newAhead(ahead map[review.Rating]time.Duration) *v1.Ahead {
 func (a *API) AnswerCard(
 	ctx context.Context, r *connect.Request[v1.AnswerCardRequest],
 ) (*connect.Response[v1.AnswerCardResponse], error) {
-	v, err := a.Vault(r.Msg.GetVault())
+	v, err := a.GetVault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -279,8 +279,8 @@ func (a *API) AnswerCard(
 	}
 
 	on := review.CardFaceID{Card: r.Msg.GetMark(), Face: r.Msg.GetFace()}
-	record := flashcards.NewRecord(run, a.now)
-	given, err := record.Answer(ctx, on, newRating(r.Msg.GetRating()),
+	record := flashcards.NewRecord(run, a.getNow)
+	given, err := record.Answer(ctx, on, parseRating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)
 	if err != nil {
 		if errors.Is(err, flashcards.ErrNoRating) {
@@ -292,9 +292,9 @@ func (a *API) AnswerCard(
 	return connect.NewResponse(&v1.AnswerCardResponse{Answer: given.ID}), nil
 }
 
-// newRating is the four a person may say. Anything else is refused by the use
+// parseRating is the four a person may say. Anything else is refused by the use
 // case, which is where the rule is.
-func newRating(r v1.Rating) review.Rating {
+func parseRating(r v1.Rating) review.Rating {
 	switch r {
 	case v1.Rating_RATING_AGAIN:
 		return review.Again
@@ -313,7 +313,7 @@ func newRating(r v1.Rating) review.Rating {
 func (a *API) TakeBackAnswer(
 	ctx context.Context, r *connect.Request[v1.TakeBackAnswerRequest],
 ) (*connect.Response[v1.TakeBackAnswerResponse], error) {
-	v, err := a.Vault(r.Msg.GetVault())
+	v, err := a.GetVault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -321,7 +321,7 @@ func (a *API) TakeBackAnswer(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	record := flashcards.NewRecord(run, a.now)
+	record := flashcards.NewRecord(run, a.getNow)
 	if _, err := record.TakeBack(ctx, r.Msg.GetAnswer()); err != nil {
 		// An answer with no identifier is the caller's mistake; a line that
 		// could not be written is not.

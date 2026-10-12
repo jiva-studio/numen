@@ -11,12 +11,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// recogniseCommand reads one scanned document with a model.
+// runRecogniseCommand reads one scanned document with a model.
 //
 // Nothing starts this on its own. Whether a document's own text layer is any
 // good cannot be told from the text, so the layer is used until a person says
 // otherwise, and this is how they say it.
-func recogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runRecogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli recognise <vault> <file>")
 	}
@@ -39,7 +39,7 @@ func recogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []stri
 	defer closeIfOpen(open.Close)
 
 	recognise, cut := open.Recognise, open.Cut
-	fmt.Fprintf(out, "reading %s with %s\n", args[1], recognise.By().Recognition())
+	fmt.Fprintf(out, "recognising %s with %s\n", args[1], recognise.By().Recognition())
 	started := time.Now()
 
 	// The line of pages is closed once it stops, so what follows it stands on a

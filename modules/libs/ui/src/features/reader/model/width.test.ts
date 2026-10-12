@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref, nextTick, type Ref } from 'vue'
 import { usePageWidth, type PageWidthState } from './width'
-import { SETTLED, STAGE, type Row } from '../lib/strip'
+import { WIDTH_DEBOUNCE, WIDTH_STEP, type Row } from '../lib/strip'
 
 const createRow = (...widths: number[]): Row => ({
   height: 100,
@@ -37,9 +37,9 @@ describe('the width pages are asked for at', () => {
   })
 
   it('is the widest page, staged upward', () => {
-    expect(setup(100, 200).state.needed.value).toBe(2 * STAGE)
-    expect(setup(STAGE).state.needed.value).toBe(STAGE)
-    expect(setup(STAGE + 1).state.needed.value).toBe(2 * STAGE)
+    expect(setup(100, 200).state.needed.value).toBe(2 * WIDTH_STEP)
+    expect(setup(WIDTH_STEP).state.needed.value).toBe(WIDTH_STEP)
+    expect(setup(WIDTH_STEP + 1).state.needed.value).toBe(2 * WIDTH_STEP)
   })
 
   it('is nothing for a row with no pages', () => {
@@ -48,12 +48,12 @@ describe('the width pages are asked for at', () => {
 
   it('scales by the device pixel ratio before staging', () => {
     vi.stubGlobal('devicePixelRatio', 2)
-    expect(setup(100, 200).state.needed.value).toBe(4 * STAGE)
+    expect(setup(100, 200).state.needed.value).toBe(4 * WIDTH_STEP)
   })
 
   it('takes a ratio that is not a number as one', () => {
     vi.stubGlobal('devicePixelRatio', Number.NaN)
-    expect(setup(200).state.needed.value).toBe(2 * STAGE)
+    expect(setup(200).state.needed.value).toBe(2 * WIDTH_STEP)
   })
 
   it('takes one where there is no window', () => {
@@ -62,15 +62,15 @@ describe('the width pages are asked for at', () => {
     row.value = createRow(300)
     const needed = state.needed.value
     vi.unstubAllGlobals()
-    expect(needed).toBe(3 * STAGE)
+    expect(needed).toBe(3 * WIDTH_STEP)
   })
 
   it('asks at once for the first width', async () => {
     const { row, atWidth, state } = setup()
     row.value = createRow(200)
     await nextTick()
-    expect(atWidth).toHaveBeenCalledExactlyOnceWith(2 * STAGE)
-    expect(state.drawnWidth.value).toBe(2 * STAGE)
+    expect(atWidth).toHaveBeenCalledExactlyOnceWith(2 * WIDTH_STEP)
+    expect(state.drawnWidth.value).toBe(2 * WIDTH_STEP)
   })
 
   it('asks for a changed width only once it has stood still', async () => {
@@ -79,29 +79,29 @@ describe('the width pages are asked for at', () => {
     await nextTick()
     expect(atWidth).not.toHaveBeenCalled()
     expect(state.drawnWidth.value).toBe(0)
-    vi.advanceTimersByTime(SETTLED)
-    expect(atWidth).toHaveBeenCalledExactlyOnceWith(3 * STAGE)
-    expect(state.drawnWidth.value).toBe(3 * STAGE)
+    vi.advanceTimersByTime(WIDTH_DEBOUNCE)
+    expect(atWidth).toHaveBeenCalledExactlyOnceWith(3 * WIDTH_STEP)
+    expect(state.drawnWidth.value).toBe(3 * WIDTH_STEP)
   })
 
   it('asks only for the last of widths that follow one another', async () => {
     const { row, atWidth } = setup(200)
     row.value = createRow(300)
     await nextTick()
-    vi.advanceTimersByTime(SETTLED - 1)
+    vi.advanceTimersByTime(WIDTH_DEBOUNCE - 1)
     row.value = createRow(500)
     await nextTick()
-    vi.advanceTimersByTime(SETTLED - 1)
+    vi.advanceTimersByTime(WIDTH_DEBOUNCE - 1)
     expect(atWidth).not.toHaveBeenCalled()
     vi.advanceTimersByTime(1)
-    expect(atWidth).toHaveBeenCalledExactlyOnceWith(4 * STAGE)
+    expect(atWidth).toHaveBeenCalledExactlyOnceWith(4 * WIDTH_STEP)
   })
 
   it('does not ask for no width', async () => {
     const { row, atWidth } = setup(200)
     row.value = createRow()
     await nextTick()
-    vi.advanceTimersByTime(SETTLED * 2)
+    vi.advanceTimersByTime(WIDTH_DEBOUNCE * 2)
     expect(atWidth).not.toHaveBeenCalled()
   })
 
@@ -110,7 +110,7 @@ describe('the width pages are asked for at', () => {
     row.value = createRow(300)
     await nextTick()
     wrapper.unmount()
-    vi.advanceTimersByTime(SETTLED * 2)
+    vi.advanceTimersByTime(WIDTH_DEBOUNCE * 2)
     expect(atWidth).not.toHaveBeenCalled()
   })
 })

@@ -146,8 +146,8 @@ describe('being put away', () => {
 })
 
 describe('where the keyboard is while it is open', () => {
-  /** Opened from the keyboard, which is the opening that lands on an item. */
-  const openMenu = (props: Partial<MenuProps> = {}) => mountMenu({ opening: 'keyboard', ...props })
+  /** Opened from the keyboard, which is the trigger that lands on an item. */
+  const openMenu = (props: Partial<MenuProps> = {}) => mountMenu({ trigger: 'keyboard', ...props })
 
   it('is on the first item that can be chosen', async () => {
     openMenu({ items: [{ id: 'open', text: 'Open', disabled: true }, ...ITEMS] })

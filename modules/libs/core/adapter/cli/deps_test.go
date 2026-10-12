@@ -23,7 +23,7 @@ import (
 )
 
 // getDerived is the shelf this installation keeps its own files on inside a
-// vault: what a reading wrote, and what a transcription wrote.
+// vault: what a recognition wrote, and what a transcription wrote.
 func getDerived(options filesystem.Options) filesystem.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: options,
@@ -76,7 +76,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			}
 
 			notes := vaults.NewScan(readers, db.Vaults(),
-				db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}),
+				db.Notes().WithChunkSizes(chunking.Sizes{}, chunking.Legibility{}),
 				db.NoteQueries(), db.Maintenance())
 			notes.ShouldRebuildIndex = rebuild
 
@@ -121,36 +121,36 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 	}
 }
 
-// oneVault is a list holding a single vault, answering nothing about any other.
-type oneVault struct{ held domain.Vault }
+// singleVaultList is a list holding a single vault, answering nothing about any other.
+type singleVaultList struct{ held domain.Vault }
 
-func (o oneVault) List() ([]domain.Vault, error)   { return []domain.Vault{o.held}, nil }
-func (oneVault) Save(domain.Vault) error           { return nil }
-func (oneVault) Remove(domain.VaultID) error       { return nil }
-func (oneVault) RecordOpened(domain.VaultID) error { return nil }
+func (o singleVaultList) List() ([]domain.Vault, error)   { return []domain.Vault{o.held}, nil }
+func (singleVaultList) Save(domain.Vault) error           { return nil }
+func (singleVaultList) Remove(domain.VaultID) error       { return nil }
+func (singleVaultList) RecordOpened(domain.VaultID) error { return nil }
 
-func (o oneVault) Find(nameOrPath string) (domain.Vault, bool, error) {
+func (o singleVaultList) Find(nameOrPath string) (domain.Vault, bool, error) {
 	if nameOrPath == o.held.Name {
 		return o.held, true, nil
 	}
 	return domain.Vault{}, false, nil
 }
 
-func (o oneVault) Last() (domain.Vault, bool, error) { return o.held, true, nil }
+func (o singleVaultList) Last() (domain.Vault, bool, error) { return o.held, true, nil }
 
-// joined answers what one note points at and what points at it, out of what the
+// fixedLinkQueries answers what one note points at and what points at it, out of what the
 // test wrote down.
-type joined struct{ links, backlinks []domain.ResolvedLink }
+type fixedLinkQueries struct{ links, backlinks []domain.ResolvedLink }
 
-func (j joined) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (j fixedLinkQueries) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return j.links, nil
 }
 
-func (j joined) Backlinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (j fixedLinkQueries) Backlinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return j.backlinks, nil
 }
 
-func (joined) Resolve(
+func (fixedLinkQueries) Resolve(
 	context.Context, domain.VaultID, string, []string,
 ) (map[string]domain.ResolvedLink, error) {
 	return nil, nil
@@ -164,10 +164,10 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 	held := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 	given := cli.Deps{
 		Vaults: func() (cli.Vaults, error) {
-			return cli.Vaults{Registry: oneVault{held}}, nil
+			return cli.Vaults{Registry: singleVaultList{held}}, nil
 		},
 		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: note.NewShowLinks(joined{
+			return cli.Links{Show: note.NewShowLinks(fixedLinkQueries{
 				links: []domain.ResolvedLink{{
 					Link: domain.Link{
 						Target: domain.Address{Scheme: domain.SchemeName, Value: "Hives"},

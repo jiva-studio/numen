@@ -123,7 +123,7 @@ func (a *API) ReadTranscript(
 	}
 	_, cues := transcript.Parse(raw)
 	if at := r.Msg.GetSpan(); at != nil {
-		if cues, err = cutToSpan(at)(cues); err != nil {
+		if cues, err = selectSpan(at)(cues); err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
@@ -232,9 +232,9 @@ func (a *API) WriteTranscript(
 	// The chunks in the index hold the words as they were heard, so the source
 	// is cut again from what it now says. A write that landed is not refused
 	// for a cut that could not be asked for.
-	if cut := a.cuts(); cut != nil {
+	if cut := a.getRechunker(); cut != nil {
 		if err := cut(ctx, showing, ref.Path); err != nil {
-			a.say(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Error: err.Error()})
+			a.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", About: ref.Path, Error: err.Error()})
 		}
 	}
 	return connect.NewResponse(&v1.WriteTranscriptResponse{Cues: newWireCues(cues)}), nil
@@ -309,12 +309,12 @@ func parseCues(cues []*v1.Cue) ([]transcript.Cue, error) {
 	return out, nil
 }
 
-// cutToSpan cuts the cues down to the run of the words a request named.
+// selectSpan cuts the cues down to the run of the words a request named.
 //
 // The run is a span of the words, which is how a passage is addressed
 // everywhere else, and what comes back is the speech those bytes were said in.
 // A search hit is played from the first of them.
-func cutToSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
+func selectSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 	return func(cues []transcript.Cue) ([]transcript.Cue, error) {
 		span := domain.ByteSpan{From: int(at.GetFrom()), To: int(at.GetTo())}
 		if span.From < 0 {
@@ -328,7 +328,7 @@ func cutToSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 }
 
 // getShownFile is the vault the window is showing and what it holds at a path. It is
-// the one reading of the vault a request gets, and everything the request goes
+// the one read of the vault a request gets, and everything the request goes
 // on to do is done to that vault.
 //
 // Everything from outside reaches the vault through a reader, so a path leaving
@@ -362,7 +362,7 @@ func (a *API) getSourceStores() (port.SourceQueries, port.DerivedStores, bool) {
 // getSourceText is what was made from the file at a path, and the store holding it. It
 // answers false for a file nothing has been made from.
 //
-// A document's reading is named by the bytes that were read, which the index
+// A document's recognition is named by the bytes that were read, which the index
 // holds. What a link note points at was never in the note's bytes: it is named
 // by the address, so it is looked for under that name and a walk that has not
 // reached the note yet takes nothing away from it.
@@ -378,7 +378,7 @@ func (a *API) getSourceText(
 	if at := a.getNoteURL(ctx, v, path); string(at) != "" {
 		return a.getFetchedText(ctx, v, at)
 	}
-	said, held, err := sources.Reading(ctx, v.ID, path)
+	said, held, err := sources.GetSourceText(ctx, v.ID, path)
 	if err != nil || !held || said.Producer == "" {
 		return port.SourceText{}, nil, false, err
 	}
@@ -423,11 +423,11 @@ func (a *API) getFetchedText(
 	}
 	hash := derived.Fingerprint([]byte(string(at)))
 	for _, from := range derived.Producers() {
-		got, err := farUnder(ctx, store, from, hash)
+		got, err := readRunProgress(ctx, store, from, hash)
 		if err != nil {
 			return port.SourceText{}, nil, false, err
 		}
-		if got.stands != untouched {
+		if got.state != runNone {
 			return port.SourceText{Producer: from, Hash: hash}, store, true, nil
 		}
 	}
@@ -475,9 +475,9 @@ func readFirst(ctx context.Context, store port.DerivedStore, names ...string) ([
 	return nil, nil
 }
 
-// free says whether a name is one nobody holds. It is taken and let go, so what
+// isUnclaimed says whether a name is one nobody holds. It is taken and let go, so what
 // it answers is what stood a moment ago.
-func free(ctx context.Context, store port.DerivedStore, name string) bool {
+func isUnclaimed(ctx context.Context, store port.DerivedStore, name string) bool {
 	release, err := store.Claim(ctx, name)
 	if err != nil {
 		return false

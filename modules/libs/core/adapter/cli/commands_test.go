@@ -28,42 +28,42 @@ var errRefused = errors.New("refused on purpose")
 // notebook is the vault every command here is asked about.
 var notebook = domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 
-// runWith runs the terminal on the values it is handed.
-func runWith(given cli.Deps, args ...string) (string, error) {
+// runWithDeps runs the terminal on the values it is handed.
+func runWithDeps(given cli.Deps, args ...string) (string, error) {
 	var out bytes.Buffer
 	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Deps { return given })
 	return out.String(), err
 }
 
-func listing(held domain.Vault) func() (cli.Vaults, error) {
-	return func() (cli.Vaults, error) { return cli.Vaults{Registry: oneVault{held}}, nil }
+func createVaultList(held domain.Vault) func() (cli.Vaults, error) {
+	return func() (cli.Vaults, error) { return cli.Vaults{Registry: singleVaultList{held}}, nil }
 }
 
-// unwilling answers every question about links with an error.
-type unwilling struct{}
+// failingLinkQueries answers every question about links with an error.
+type failingLinkQueries struct{}
 
-func (unwilling) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (failingLinkQueries) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
-func (unwilling) Backlinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (failingLinkQueries) Backlinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
-func (unwilling) Resolve(context.Context, domain.VaultID, string, []string) (map[string]domain.ResolvedLink, error) {
+func (failingLinkQueries) Resolve(context.Context, domain.VaultID, string, []string) (map[string]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
-func linksOf(links, backlinks []domain.ResolvedLink) cli.Deps {
+func createLinkDeps(links, backlinks []domain.ResolvedLink) cli.Deps {
 	return cli.Deps{
-		Vaults: listing(notebook),
+		Vaults: createVaultList(notebook),
 		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: note.NewShowLinks(joined{links: links, backlinks: backlinks})}, nil
+			return cli.Links{Show: note.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks})}, nil
 		},
 	}
 }
 
-func link(role domain.LinkRole, scheme, value, to string) domain.ResolvedLink {
+func newResolvedLink(role domain.LinkRole, scheme, value, to string) domain.ResolvedLink {
 	return domain.ResolvedLink{
 		Link: domain.Link{Target: domain.Address{Scheme: scheme, Value: value}, Role: role},
 		From: "Bees.md",
@@ -78,19 +78,19 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 			Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
 		},
 		"the links cannot be opened": {
-			Vaults: listing(notebook),
+			Vaults: createVaultList(notebook),
 			Links:  func(context.Context) (cli.Links, error) { return cli.Links{}, errRefused },
 		},
 		"the index cannot say what a note points at": {
-			Vaults: listing(notebook),
+			Vaults: createVaultList(notebook),
 			Links: func(context.Context) (cli.Links, error) {
-				return cli.Links{Show: note.NewShowLinks(unwilling{})}, nil
+				return cli.Links{Show: note.NewShowLinks(failingLinkQueries{})}, nil
 			},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			out, err := runWith(given, "links", "notebook", "Bees.md")
+			out, err := runWithDeps(given, "links", "notebook", "Bees.md")
 			if !errors.Is(err, errRefused) {
 				t.Errorf("links answered %v", err)
 			}
@@ -104,7 +104,7 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 func TestLinksWithoutAVaultAndANoteSaysHowToAsk(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{{"links"}, {"links", "notebook"}, {"links", "notebook", "a.md", "b.md"}} {
-		_, err := runWith(linksOf(nil, nil), args...)
+		_, err := runWithDeps(createLinkDeps(nil, nil), args...)
 		if err == nil || !strings.Contains(err.Error(), "usage: numen-cli links <vault> <note>") {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -113,8 +113,8 @@ func TestLinksWithoutAVaultAndANoteSaysHowToAsk(t *testing.T) {
 
 func TestLinksSaysWhichDirectionsAreEmpty(t *testing.T) {
 	t.Parallel()
-	pointing := []domain.ResolvedLink{link(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")}
-	pointed := []domain.ResolvedLink{link(domain.RoleRef, domain.SchemeName, "Bees", "Bees.md")}
+	pointing := []domain.ResolvedLink{newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")}
+	pointed := []domain.ResolvedLink{newResolvedLink(domain.RoleRef, domain.SchemeName, "Bees", "Bees.md")}
 	pointed[0].From = "Honey.md"
 
 	for name, c := range map[string]struct {
@@ -126,7 +126,7 @@ func TestLinksSaysWhichDirectionsAreEmpty(t *testing.T) {
 		"in only":   {nil, pointed, "pointed at by:\n  ref        Honey.md\n"},
 		"both ways": {pointing, pointed, "points at:\n  child      Hives.md\npointed at by:\n  ref        Honey.md\n"},
 	} {
-		out, err := runWith(linksOf(c.links, c.backlinks), "links", "notebook", "Bees.md")
+		out, err := runWithDeps(createLinkDeps(c.links, c.backlinks), "links", "notebook", "Bees.md")
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -138,17 +138,17 @@ func TestLinksSaysWhichDirectionsAreEmpty(t *testing.T) {
 
 func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 	t.Parallel()
-	ambiguous := link(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
+	ambiguous := newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
 	ambiguous.IsAmbiguous = true
-	crossed := link(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
+	crossed := newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
 	crossed.ToVault = "vlt-02"
-	home := link(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
+	home := newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
 	home.ToVault = notebook.ID
-	typed := link(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
+	typed := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
 	typed.Type = "kin"
-	reasoned := link(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
+	reasoned := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
 	reasoned.Why = "they share a queen"
-	both := link(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
+	both := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
 	both.Type, both.Why = "kin", "they share a queen"
 
 	for name, c := range map[string]struct {
@@ -156,20 +156,20 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 		want string
 	}{
 		"a name nothing answers to": {
-			link(domain.RoleRef, domain.SchemeName, "Ghost", ""),
+			newResolvedLink(domain.RoleRef, domain.SchemeName, "Ghost", ""),
 			"ref        Ghost  (nothing by that name)",
 		},
 		"a note no connected vault holds": {
-			link(domain.RoleRef, domain.SchemeNote, "abc", ""),
+			newResolvedLink(domain.RoleRef, domain.SchemeNote, "abc", ""),
 			"ref        note://abc  (no connected vault holds this note)",
 		},
 		"an address of another kind": {
-			link(domain.RoleRef, domain.SchemeAsset, "bee.png", ""),
+			newResolvedLink(domain.RoleRef, domain.SchemeAsset, "bee.png", ""),
 			"ref        asset://bee.png",
 		},
-		"a name that resolved":               {link(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md"), "child      Hives.md"},
-		"a note address that resolved":       {link(domain.RoleChild, domain.SchemeNote, "abc", "Hives.md"), "child      Hives.md"},
-		"an asset address that resolved":     {link(domain.RoleChild, domain.SchemeAsset, "bee.png", "bee.png"), "child      bee.png"},
+		"a name that resolved":               {newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md"), "child      Hives.md"},
+		"a note address that resolved":       {newResolvedLink(domain.RoleChild, domain.SchemeNote, "abc", "Hives.md"), "child      Hives.md"},
+		"an asset address that resolved":     {newResolvedLink(domain.RoleChild, domain.SchemeAsset, "bee.png", "bee.png"), "child      bee.png"},
 		"a name several notes answer to":     {ambiguous, "child      Hives.md  (several notes answer to that name)"},
 		"a note in another vault":            {crossed, "child      Hives.md  (in another vault: vlt-02)"},
 		"a note in the vault it was written": {home, "child      Hives.md"},
@@ -177,7 +177,7 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 		"a reason":                           {reasoned, "ref        Hives.md  — they share a queen"},
 		"a type and a reason":                {both, "ref        Hives.md  [kin]  — they share a queen"},
 	} {
-		out, err := runWith(linksOf([]domain.ResolvedLink{c.link}, nil), "links", "notebook", "Bees.md")
+		out, err := runWithDeps(createLinkDeps([]domain.ResolvedLink{c.link}, nil), "links", "notebook", "Bees.md")
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -187,28 +187,28 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 	}
 }
 
-// problemsOf answers the two stored questions with what the test wrote down.
-type problemsOf struct{ parse, unreadable []domain.VaultProblem }
+// fixedProblemQueries answers the two stored questions with what the test wrote down.
+type fixedProblemQueries struct{ parse, unreadable []domain.VaultProblem }
 
-func (p problemsOf) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+func (p fixedProblemQueries) GetParseProblems(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
 	return p.parse, nil
 }
 
-func (p problemsOf) GetUnreadable(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
+func (p fixedProblemQueries) GetUnreadable(context.Context, domain.VaultID) ([]domain.VaultProblem, error) {
 	return p.unreadable, nil
 }
 
-func (problemsOf) Ambiguous(context.Context, domain.VaultID) ([]domain.AmbiguousLink, error) {
+func (fixedProblemQueries) Ambiguous(context.Context, domain.VaultID) ([]domain.AmbiguousLink, error) {
 	return nil, nil
 }
 
-func (problemsOf) GetDanglingLinks(context.Context, domain.VaultID) ([]domain.ResolvedLink, error) {
+func (fixedProblemQueries) GetDanglingLinks(context.Context, domain.VaultID) ([]domain.ResolvedLink, error) {
 	return nil, nil
 }
 
 func problemsDeps(queries port.ProblemQueries) cli.Deps {
 	return cli.Deps{
-		Vaults: listing(notebook),
+		Vaults: createVaultList(notebook),
 		Problems: func(context.Context) (cli.Problems, error) {
 			return cli.Problems{Problems: queries}, nil
 		},
@@ -217,7 +217,7 @@ func problemsDeps(queries port.ProblemQueries) cli.Deps {
 
 func TestProblemsNamesTheChecksItRuns(t *testing.T) {
 	t.Parallel()
-	given := problemsDeps(problemsOf{
+	given := problemsDeps(fixedProblemQueries{
 		parse:      []domain.VaultProblem{{Path: "a.md", Detail: "no role"}},
 		unreadable: []domain.VaultProblem{{Path: "b.md", Detail: "bad yaml"}},
 	})
@@ -251,7 +251,7 @@ func TestProblemsNamesTheChecksItRuns(t *testing.T) {
 			"nothing to report\n",
 		},
 	} {
-		out, err := runWith(given, c.args...)
+		out, err := runWithDeps(given, c.args...)
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -263,7 +263,7 @@ func TestProblemsNamesTheChecksItRuns(t *testing.T) {
 
 func TestProblemsNeedsAVault(t *testing.T) {
 	t.Parallel()
-	_, err := runWith(problemsDeps(problemsOf{}), "problems")
+	_, err := runWithDeps(problemsDeps(fixedProblemQueries{}), "problems")
 	if err == nil || !strings.Contains(err.Error(), "usage: numen-cli problems <vault>") {
 		t.Errorf("problems with no vault answered %v", err)
 	}
@@ -281,17 +281,17 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 		},
 		"the problems cannot be opened": {
 			cli.Deps{
-				Vaults:   listing(notebook),
+				Vaults:   createVaultList(notebook),
 				Problems: func(context.Context) (cli.Problems, error) { return cli.Problems{}, errRefused },
 			},
 			[]string{"problems", "notebook"},
 		},
 		"a check is not one there is": {
-			problemsDeps(problemsOf{}),
+			problemsDeps(fixedProblemQueries{}),
 			[]string{"problems", "notebook", "nonsense"},
 		},
 	} {
-		out, err := runWith(c.given, c.args...)
+		out, err := runWithDeps(c.given, c.args...)
 		if err == nil {
 			t.Errorf("%s: problems succeeded", name)
 		}
@@ -299,7 +299,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 			t.Errorf("%s: problems said something before it failed:\n%s", name, out)
 		}
 	}
-	if _, err := runWith(cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }},
+	if _, err := runWithDeps(cli.Deps{Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused }},
 		"problems", "notebook"); !errors.Is(err, errRefused) {
 		t.Errorf("the refusal was lost: %v", err)
 	}
@@ -308,14 +308,14 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 func TestACommandGivesBackWhatItOpened(t *testing.T) {
 	t.Parallel()
 	closed := 0
-	given := linksOf(nil, nil)
+	given := createLinkDeps(nil, nil)
 	given.Links = func(context.Context) (cli.Links, error) {
 		return cli.Links{
-			Show:  note.NewShowLinks(joined{}),
+			Show:  note.NewShowLinks(fixedLinkQueries{}),
 			Close: func() error { closed++; return nil },
 		}, nil
 	}
-	if _, err := runWith(given, "links", "notebook", "Bees.md"); err != nil {
+	if _, err := runWithDeps(given, "links", "notebook", "Bees.md"); err != nil {
 		t.Fatal(err)
 	}
 	if closed != 1 {
@@ -327,9 +327,9 @@ func TestACommandGivesBackWhatItOpened(t *testing.T) {
 func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 	t.Parallel()
 	given := cli.Deps{Vaults: func() (cli.Vaults, error) {
-		return cli.Vaults{Registry: brokenList{}}, nil
+		return cli.Vaults{Registry: brokenVaultList{}}, nil
 	}}
-	_, err := runWith(given, "links", "notebook", "Bees.md")
+	_, err := runWithDeps(given, "links", "notebook", "Bees.md")
 	if !errors.Is(err, errRefused) {
 		t.Errorf("the list's reason was lost: %v", err)
 	}
@@ -338,9 +338,11 @@ func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 	}
 }
 
-type brokenList struct{ oneVault }
+type brokenVaultList struct{ singleVaultList }
 
-func (brokenList) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, errRefused }
+func (brokenVaultList) Find(string) (domain.Vault, bool, error) {
+	return domain.Vault{}, false, errRefused
+}
 
 func TestAMistypedFlagIsAnErrorAndNothingElse(t *testing.T) {
 	// Not parallel: the standard flag package reports on the process's stderr.
@@ -391,7 +393,7 @@ func TestAFlagMistypedAfterTheCommandIsAnError(t *testing.T) {
 		{"vault", "erase", "--no-such-flag"},
 		{"vault", "erase", "notebook", "--no-such-flag"},
 	} {
-		_, err := runWith(cli.Deps{Vaults: listing(notebook)}, args...)
+		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, args...)
 		if err == nil || !strings.Contains(err.Error(), "no-such-flag") {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -418,16 +420,16 @@ func TestDescribeSources(t *testing.T) {
 	}
 }
 
-// pointing answers every text with one direction.
-type pointing struct{}
+// constantEmbedder answers every text with one direction.
+type constantEmbedder struct{}
 
 const width = 1024
 
-func (pointing) Model() port.EmbeddingModel {
+func (constantEmbedder) Model() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
-func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
+func (constantEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
 	for i := range out {
 		out[i] = make([]float32, width)
@@ -436,22 +438,22 @@ func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
-func (pointing) Close() error { return nil }
+func (constantEmbedder) Close() error { return nil }
 
-// scanning is a scan of a vault on a real index, with what the test chooses to
+// scanFixture is a scan of a vault on a real index, with what the test chooses to
 // put in place of an installation's model.
-type scanning struct {
+type scanFixture struct {
 	embedder   port.Embedder
 	unembedded error
 	summary    error
 	rebuilt    bool
 }
 
-func (s *scanning) deps(t *testing.T, held domain.Vault) cli.Deps {
+func (s *scanFixture) deps(t *testing.T, held domain.Vault) cli.Deps {
 	t.Helper()
 	indexPath := filepath.Join(t.TempDir(), "index.db")
 	return cli.Deps{
-		Vaults: listing(held),
+		Vaults: createVaultList(held),
 		Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 			s.rebuilt = rebuild
 			db, err := index.Open(ctx, indexPath)
@@ -466,7 +468,7 @@ func (s *scanning) deps(t *testing.T, held domain.Vault) cli.Deps {
 				return cli.Scan{}, err
 			}
 			notes := vaults.NewScan(readers, db.Vaults(),
-				db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}),
+				db.Notes().WithChunkSizes(chunking.Sizes{}, chunking.Legibility{}),
 				db.NoteQueries(), db.Maintenance())
 			books := source.NewExtract(readers, db.Sources(), db.Sources())
 			books.Derived, books.Documents = store, pdf.Documents{}
@@ -493,16 +495,16 @@ func (s *scanning) deps(t *testing.T, held domain.Vault) cli.Deps {
 	}
 }
 
-func oneNote(t *testing.T) domain.Vault {
+func createNoteVault(t *testing.T) domain.Vault {
 	t.Helper()
 	return testsupport.NewVault(t, map[string]string{"Bees.md": "# Bees\n\nBees make honey.\n"})
 }
 
 func TestScanReportsTheNotesItIndexed(t *testing.T) {
 	t.Parallel()
-	held := oneNote(t)
-	s := &scanning{unembedded: errors.New("no model here")}
-	out, err := runWith(s.deps(t, held), "scan", held.Name)
+	held := createNoteVault(t)
+	s := &scanFixture{unembedded: errors.New("no model here")}
+	out, err := runWithDeps(s.deps(t, held), "scan", held.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -514,7 +516,7 @@ func TestScanReportsTheNotesItIndexed(t *testing.T) {
 			t.Errorf("scan did not say %q:\n%q", want, out)
 		}
 	}
-	for _, not := range []string{"sources:", "embedded", "vectors made", "reading "} {
+	for _, not := range []string{"sources:", "embedded", "vectors made", "extracting "} {
 		if strings.Contains(out, not) {
 			t.Errorf("scan of one note and no model said %q:\n%q", not, out)
 		}
@@ -526,9 +528,9 @@ func TestScanReportsTheNotesItIndexed(t *testing.T) {
 
 func TestScanReportsTheVectorsItMade(t *testing.T) {
 	t.Parallel()
-	held := oneNote(t)
-	s := &scanning{embedder: pointing{}}
-	out, err := runWith(s.deps(t, held), "scan", held.Name)
+	held := createNoteVault(t)
+	s := &scanFixture{embedder: constantEmbedder{}}
+	out, err := runWithDeps(s.deps(t, held), "scan", held.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -546,31 +548,31 @@ func TestScanReportsTheBooksItRead(t *testing.T) {
 	t.Parallel()
 	held := testsupport.NewVault(t, nil)
 	testsupport.WriteBook(t, held.Path, "bee.epub")
-	s := &scanning{}
-	out, err := runWith(s.deps(t, held), "scan", held.Name)
+	s := &scanFixture{}
+	out, err := runWithDeps(s.deps(t, held), "scan", held.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"  reading bee.epub\r", "1 sources: 1 read, 0 unchanged, "} {
+	for _, want := range []string{"  extracting bee.epub\r", "1 sources: 1 read, 0 unchanged, "} {
 		if !strings.Contains(out, want) {
 			t.Errorf("scan did not say %q:\n%q", want, out)
 		}
 	}
-	if strings.Contains(out, "reading \r") {
+	if strings.Contains(out, "extracting \r") {
 		t.Errorf("scan named a book when none was open:\n%q", out)
 	}
 }
 
 func TestScanRebuildsTheIndexWhenAsked(t *testing.T) {
 	t.Parallel()
-	held := oneNote(t)
-	s := &scanning{}
+	held := createNoteVault(t)
+	s := &scanFixture{}
 	for _, args := range [][]string{
 		{"scan", held.Name, "--rebuild-index"},
 		{"scan", "--rebuild-index", held.Name},
 	} {
 		s.rebuilt = false
-		if _, err := runWith(s.deps(t, held), args...); err != nil {
+		if _, err := runWithDeps(s.deps(t, held), args...); err != nil {
 			t.Fatalf("%v: %v", args, err)
 		}
 		if !s.rebuilt {
@@ -581,16 +583,16 @@ func TestScanRebuildsTheIndexWhenAsked(t *testing.T) {
 
 func TestScanReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
-	held := oneNote(t)
+	held := createNoteVault(t)
 
-	opening := (&scanning{}).deps(t, held)
+	opening := (&scanFixture{}).deps(t, held)
 	opening.Scan = func(context.Context, domain.Vault, bool) (cli.Scan, error) { return cli.Scan{}, errRefused }
-	if _, err := runWith(opening, "scan", held.Name); !errors.Is(err, errRefused) {
+	if _, err := runWithDeps(opening, "scan", held.Name); !errors.Is(err, errRefused) {
 		t.Errorf("a scan that cannot open answered %v", err)
 	}
 
-	summing := &scanning{summary: errRefused}
-	out, err := runWith(summing.deps(t, held), "scan", held.Name)
+	summing := &scanFixture{summary: errRefused}
+	out, err := runWithDeps(summing.deps(t, held), "scan", held.Name)
 	if !errors.Is(err, errRefused) {
 		t.Errorf("a scan that cannot count answered %v", err)
 	}
@@ -599,21 +601,21 @@ func TestScanReturnsWhatWentWrong(t *testing.T) {
 	}
 
 	gone := domain.Vault{ID: held.ID, Name: held.Name, Path: filepath.Join(t.TempDir(), "not-there")}
-	if _, err := runWith((&scanning{}).deps(t, gone), "scan", gone.Name); err == nil {
+	if _, err := runWithDeps((&scanFixture{}).deps(t, gone), "scan", gone.Name); err == nil {
 		t.Error("a scan of a folder that is not there succeeded")
 	}
 }
 
 // failing is a model that answers nothing.
-type failing struct{ pointing }
+type failing struct{ constantEmbedder }
 
 func (failing) Embed(context.Context, []string) ([][]float32, error) { return nil, errRefused }
 
 func TestScanReturnsWhyTheVectorsWereNotMade(t *testing.T) {
 	t.Parallel()
-	held := oneNote(t)
-	s := &scanning{embedder: failing{}}
-	out, err := runWith(s.deps(t, held), "scan", held.Name)
+	held := createNoteVault(t)
+	s := &scanFixture{embedder: failing{}}
+	out, err := runWithDeps(s.deps(t, held), "scan", held.Name)
 	if !errors.Is(err, errRefused) {
 		t.Errorf("a scan whose model failed answered %v", err)
 	}
@@ -624,9 +626,9 @@ func TestScanReturnsWhyTheVectorsWereNotMade(t *testing.T) {
 
 func TestScanNeedsExactlyOneVault(t *testing.T) {
 	t.Parallel()
-	held := oneNote(t)
+	held := createNoteVault(t)
 	for _, args := range [][]string{{"scan"}, {"scan", held.Name, "other"}, {"scan", "--rebuild-index"}} {
-		_, err := runWith((&scanning{}).deps(t, held), args...)
+		_, err := runWithDeps((&scanFixture{}).deps(t, held), args...)
 		if err == nil || !strings.Contains(err.Error(), "usage: numen-cli scan <vault> [--rebuild-index]") {
 			t.Errorf("%v answered %v", args, err)
 		}

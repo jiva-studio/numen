@@ -29,12 +29,12 @@ func newSessionWithTabs(t *testing.T, open domain.OpenTabs) *sdk.ClientSession {
 // tabs is what window_tab_list answers.
 func tabs(t *testing.T, session *sdk.ClientSession) struct {
 	Tabs    []tabbed `json:"tabs"`
-	Looking string   `json:"looking"`
+	Summary string   `json:"summary"`
 } {
 	t.Helper()
 	return call[struct {
 		Tabs    []tabbed `json:"tabs"`
-		Looking string   `json:"looking"`
+		Summary string   `json:"summary"`
 	}](t, session, "window_tab_list", map[string]any{})
 }
 
@@ -59,8 +59,8 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 	}
 	want := `the recording "730707BG.LON.mp3" at 730707BG.LON.mp3 is in front of them, ` +
 		`with 12:34 of its 58:14 written down`
-	if out.Looking != want {
-		t.Errorf("says %q", out.Looking)
+	if out.Summary != want {
+		t.Errorf("says %q", out.Summary)
 	}
 }
 
@@ -77,8 +77,8 @@ func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 
 	want := `the document "A Book.pdf" at library/A Book.pdf is in front of them, ` +
 		`open at page 3 of 40`
-	if out.Looking != want {
-		t.Errorf("says %q", out.Looking)
+	if out.Summary != want {
+		t.Errorf("says %q", out.Summary)
 	}
 }
 
@@ -98,8 +98,8 @@ func TestWindowTabsSaysWhereInABookThePersonIs(t *testing.T) {
 
 	want := `the book "The Adi Parva" at library/Adi.epub is in front of them, ` +
 		`open at page 142 of 960, at byte 145203`
-	if out.Looking != want {
-		t.Errorf("says %q", out.Looking)
+	if out.Summary != want {
+		t.Errorf("says %q", out.Summary)
 	}
 }
 
@@ -116,8 +116,8 @@ func TestWindowTabsNamesAKindItHasNoWordsForAndNoNote(t *testing.T) {
 
 	out := tabs(t, session)
 
-	if out.Looking != `a tab of kind "kaleidoscope" is in front of them` {
-		t.Errorf("says %q", out.Looking)
+	if out.Summary != `a tab of kind "kaleidoscope" is in front of them` {
+		t.Errorf("says %q", out.Summary)
 	}
 }
 
@@ -126,8 +126,8 @@ func TestWindowTabsSaysSoWhereNothingIsOpen(t *testing.T) {
 
 	out := tabs(t, session)
 
-	if len(out.Tabs) != 0 || out.Looking != "the window has nothing open" {
-		t.Errorf("answered with %+v, saying %q", out.Tabs, out.Looking)
+	if len(out.Tabs) != 0 || out.Summary != "the window has nothing open" {
+		t.Errorf("answered with %+v, saying %q", out.Tabs, out.Summary)
 	}
 }
 

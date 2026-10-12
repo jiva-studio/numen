@@ -11,7 +11,7 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	// `--rebuild-index` reads every file, whatever the index remembers.
 	rebuild := false
 	rest := make([]string, 0, len(args))
@@ -49,8 +49,8 @@ func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) e
 		fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
 	}
 	making.OnBooksProgress = func(res source.ExtractResult) {
-		if res.Reading != "" {
-			fmt.Fprintf(out, "  reading %s\r", res.Reading)
+		if res.CurrentSource != "" {
+			fmt.Fprintf(out, "  extracting %s\r", res.CurrentSource)
 		}
 	}
 	making.OnVectorsProgress = func(res source.EmbedResult) {
@@ -81,7 +81,7 @@ func scanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) e
 	return nil
 }
 
-// describeSources puts the reading of what nobody typed here into words: the
+// describeSources puts the extraction of what nobody typed here into words: the
 // books of a vault and the recordings in it. Nothing is said about a vault
 // holding none.
 func describeSources(r source.ExtractResult) string {

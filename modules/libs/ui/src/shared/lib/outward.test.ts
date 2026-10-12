@@ -3,7 +3,7 @@
  * address bar.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { holdWindow, isOutward } from './outward'
+import { interceptOutwardLinks, isOutward } from './outward'
 
 let stop: (() => void) | undefined
 
@@ -16,7 +16,7 @@ afterEach(() => {
 /** One link on the page, and what happened when it was pressed. */
 const pressLink = (href: string, inside = '', kind = 'click') => {
   const openLink = vi.fn()
-  stop = holdWindow(openLink)
+  stop = interceptOutwardLinks(openLink)
   document.body.innerHTML = `<a href="${href}">${inside || 'press'}</a>`
   const link = document.querySelector('a')!
   const target = inside === '' ? link : link.firstElementChild!
@@ -84,7 +84,7 @@ describe('a press on a link', () => {
 
   it('is left alone once the window is no longer held', () => {
     const openLink = vi.fn()
-    holdWindow(openLink)()
+    interceptOutwardLinks(openLink)()
     document.body.innerHTML = '<a href="https://evil.example/">press</a>'
     const press = new MouseEvent('click', { bubbles: true, cancelable: true })
     document.querySelector('a')!.dispatchEvent(press)
@@ -99,7 +99,7 @@ describe('a press that reaches the held window without a link', () => {
     const root = document.implementation.createHTMLDocument('')
     const add = vi.spyOn(root, 'addEventListener')
     const openLink = vi.fn<(href: string) => void>()
-    stop = holdWindow(openLink, root)
+    stop = interceptOutwardLinks(openLink, root)
     const listener = add.mock.calls[0]![1] as (press: MouseEvent) => void
     return { root, openLink, listener }
   }
@@ -138,7 +138,7 @@ describe('a press that reaches the held window without a link', () => {
 describe('a press that is answered before the page sees it', () => {
   it.each(['click', 'auxclick'])('takes the window nowhere from a %s the link stops', (kind) => {
     const openLink = vi.fn<(href: string) => void>()
-    stop = holdWindow(openLink)
+    stop = interceptOutwardLinks(openLink)
     document.body.innerHTML = '<a href="https://evil.example/">press</a>'
     const link = document.querySelector('a')!
     link.addEventListener(kind, (event) => event.stopPropagation())
@@ -152,7 +152,7 @@ describe('a press that is answered before the page sees it', () => {
 
   it('is left alone from a middle button once the window is no longer held', () => {
     const openLink = vi.fn<(href: string) => void>()
-    holdWindow(openLink)()
+    interceptOutwardLinks(openLink)()
     document.body.innerHTML = '<a href="https://evil.example/">press</a>'
     const press = new MouseEvent('auxclick', { bubbles: true, cancelable: true })
     document.querySelector('a')!.dispatchEvent(press)

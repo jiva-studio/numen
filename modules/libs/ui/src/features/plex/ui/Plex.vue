@@ -164,7 +164,7 @@ defineExpose({
       @show="(id, showing) => emit('show', id, showing)"
       @reach="gesture.begin"
       @ask="gesture.ask"
-      @menu="(id, at, opening) => emit('menu', id, at, opening)"
+      @menu="(id, at, trigger) => emit('menu', id, at, trigger)"
       @enter="(id, part) => emit('enter', id, part)"
       @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >

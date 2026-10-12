@@ -10,15 +10,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// claim takes a lock on the first byte of the file and returns what lets it go.
+// acquireFileLock takes a lock on the first byte of the file and returns what lets it go.
 //
 // Windows holds the lock against the open handle and drops it when the handle
 // closes, which the system does for every handle a process leaves behind. The
 // file is somewhere for the lock to live and says nothing on its own.
 //
 // The handle shares the file for deletion, so a name is taken out of the store
-// with the claim on it still held.
-func claim(path string) (func() error, error) {
+// with the acquireFileLock on it still held.
+func acquireFileLock(path string) (func() error, error) {
 	name, err := windows.UTF16PtrFromString(path)
 	if err != nil {
 		return nil, &os.PathError{Op: "open", Path: path, Err: err}

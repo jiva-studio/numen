@@ -93,7 +93,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.Fingerprint) erro
 		if ignored.MatchesPath(rel) {
 			return nil
 		}
-		found, err := info(p, d)
+		found, err := getEntryInfo(p, d)
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
@@ -169,7 +169,7 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 			if s.ignored.MatchesPath(rel) {
 				continue
 			}
-			if found, err := info(filepath.Join(target, d.Name()), d); err == nil && found.Mode().IsRegular() {
+			if found, err := getEntryInfo(filepath.Join(target, d.Name()), d); err == nil && found.Mode().IsRegular() {
 				kind, _ = s.opts.kind(d.Name())
 			}
 		}
@@ -184,10 +184,10 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 	return entries, nil
 }
 
-// info is what a walk knows about one entry, with a link followed: a note kept
+// getEntryInfo is what a walk knows about one entry, with a link followed: a note kept
 // as a link to a file elsewhere in the vault is that file. A link nothing is at
 // the end of, or one that leads round in a circle, is nothing to read.
-func info(path string, d fs.DirEntry) (fs.FileInfo, error) {
+func getEntryInfo(path string, d fs.DirEntry) (fs.FileInfo, error) {
 	if d.Type()&fs.ModeSymlink == 0 {
 		return d.Info()
 	}
@@ -337,14 +337,14 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.Fingerprint
 	}
 	kind, held := s.getKind(path)
 	if !held {
-		return domain.Fingerprint{}, s.leftAlone(path)
+		return domain.Fingerprint{}, s.getNotANoteError(path)
 	}
 	info, err := os.Stat(filepath.Join(s.root, filepath.FromSlash(path)))
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
 	if !info.Mode().IsRegular() {
-		return domain.Fingerprint{}, s.leftAlone(path)
+		return domain.Fingerprint{}, s.getNotANoteError(path)
 	}
 	return domain.Fingerprint{
 		Path:    path,
@@ -354,12 +354,12 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.Fingerprint
 	}, nil
 }
 
-// leftAlone is what a path the vault does not hold as a note is answered with.
+// getNotANoteError is what a path the vault does not hold as a note is answered with.
 // Something at that path is ErrNotANote; nothing at it is fs.ErrNotExist.
 //
 // It costs a look at the file's metadata and never its bytes, which is what a
 // caller deciding whether to open a 400 MB export has to be able to ask.
-func (s *VaultReader) leftAlone(path string) error {
+func (s *VaultReader) getNotANoteError(path string) error {
 	target, err := getContainedPath(s.root, path, s.opts.serviceDir())
 	if err != nil {
 		return fs.ErrNotExist

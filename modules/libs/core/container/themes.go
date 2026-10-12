@@ -14,7 +14,7 @@ import (
 // folder, a folder that could not be made — and what the binary ships is
 // offered either way. Whatever a person is told is told through say.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
-	catalogue, err := c.catalogue()
+	catalogue, err := c.getCatalogue()
 	return &theme.Service{
 		Catalogue: catalogue,
 		Settings: appearances{
@@ -41,7 +41,9 @@ type appearances struct {
 
 func (a appearances) Read() (theme.Appearance, error) { return a.cfg.readAppearance(a.scales) }
 
-func (a appearances) Write(chosen theme.Appearance) error { return a.cfg.wear(chosen, a.scales) }
+func (a appearances) Write(chosen theme.Appearance) error {
+	return a.cfg.writeAppearance(chosen, a.scales)
+}
 
 func (a appearances) Warn(why string) {
 	if a.say != nil {
@@ -79,7 +81,7 @@ func (l *scales) clearSizes(chosen theme.Appearance) {
 	}
 }
 
-func (c Config) catalogue() (theme.Catalogue, error) {
+func (c Config) getCatalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
 		return theme.OpenAt(c.ThemesPath)
 	}
@@ -110,17 +112,17 @@ func (c Config) readAppearance(scales *scales) (theme.Appearance, error) {
 	return worn, nil
 }
 
-// wear writes a choice into the file. Both sizes are checked before any of it
+// writeAppearance writes a choice into the file. Both sizes are checked before any of it
 // is written, so a number outside what its setting goes to leaves the file as
 // it stands.
-func (c Config) wear(chosen theme.Appearance, scales *scales) error {
+func (c Config) writeAppearance(chosen theme.Appearance, scales *scales) error {
 	path, err := c.settingsFile()
 	if err != nil {
 		return err
 	}
 	writing := []settings.Setting{
 		{At: []string{"appearance", "theme"}, Written: chosen.ThemeName},
-		{At: []string{"appearance", "mode"}, Written: settings.Word(chosen.Mode)},
+		{At: []string{"appearance", "mode"}, Written: settings.GetModeName(chosen.Mode)},
 	}
 	if chosen.InterfaceScale > 0 {
 		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)

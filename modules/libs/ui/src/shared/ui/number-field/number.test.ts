@@ -9,7 +9,7 @@ import {
   isAllowed,
   clamp,
   numberOf,
-  onItsWay,
+  isPartialNumber,
   snapToBounds,
   isTextForValue,
   stepBy,
@@ -40,7 +40,7 @@ describe('what the text comes to', () => {
   // it as the point would turn a thousand two hundred into one and a fifth.
   it('comes to nothing where a comma stands before a group of three', () => {
     expect(numberOf('1,200')).toBeNull()
-    expect(onItsWay('1,200')).toBe(false)
+    expect(isPartialNumber('1,200')).toBe(false)
     expect(numberOf('12,000')).toBeNull()
   })
 
@@ -62,13 +62,13 @@ describe('what the text comes to', () => {
 describe('text a number could still be typed out of', () => {
   it('lets a half-typed number stand', () => {
     for (const said of ['', '-', '1', '1.', '1,', '.5', '12.30']) {
-      expect(onItsWay(said)).toBe(true)
+      expect(isPartialNumber(said)).toBe(true)
     }
   })
 
   it('says so where nothing further would make a number of it', () => {
     for (const said of ['x', '12x', '1.2.3', '1 2', '--1']) {
-      expect(onItsWay(said)).toBe(false)
+      expect(isPartialNumber(said)).toBe(false)
     }
   })
 })
@@ -182,8 +182,8 @@ describe('whether what is typed stands for the number in force', () => {
 
 describe('text with spaces around it', () => {
   it('is on its way as long as the trimmed text is', () => {
-    expect(onItsWay(' 12 ')).toBe(true)
-    expect(onItsWay(' 1,200 ')).toBe(false)
+    expect(isPartialNumber(' 12 ')).toBe(true)
+    expect(isPartialNumber(' 1,200 ')).toBe(false)
   })
 })
 

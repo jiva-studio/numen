@@ -41,10 +41,10 @@ func (a *API) AskAgent(
 		return connect.NewError(connect.CodeFailedPrecondition, ErrNoAgent)
 	}
 
-	// The card is what `card_showing` answers with, not part of the question. A
+	// The card is what `card_current` answers with, not part of the question. A
 	// deck in a synced vault is named by whoever synced it, and a name written
 	// into the question is read as instruction where a tool's answer is data.
-	a.showing.Store(&CurrentCard{
+	a.currentCard.Store(&CurrentCard{
 		Deck: r.Msg.GetFocus(),
 		Card: r.Msg.GetMark(),
 		Face: r.Msg.GetFace(),

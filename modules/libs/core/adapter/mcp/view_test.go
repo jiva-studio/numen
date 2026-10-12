@@ -132,7 +132,7 @@ func TestShowPutsAPlaceInFrontOfThePerson(t *testing.T) {
 
 	out := call[struct {
 		IsShown bool   `json:"shown"`
-		Looking string `json:"looking"`
+		Summary string `json:"summary"`
 	}](t, session, "source_focus", map[string]any{
 		"path": "library/A Book.epub", "start": 1200, "length": 80,
 	})

@@ -3,7 +3,7 @@ import { ErrorCode, StopReason } from '@numen/protocol'
 import { goalNames } from '@numen/wire'
 
 import { useVaultPresets } from './presets'
-import { UNREAD } from '../api/presets'
+import { PRESET_UNREADABLE_MESSAGE } from '../api/presets'
 import type { PresetsClient } from '../api/presets'
 import { canStart, getSpentShare, isSpent } from '../lib/progress'
 import { CLOSES_NOTHING } from '../types'
@@ -101,7 +101,7 @@ const vault = (
   })),
   presets,
   unread: '',
-  isReading: false,
+  isIndexing: false,
 })
 
 /** An application answering one preset for each deck named here. */
@@ -907,7 +907,7 @@ describe('what is wrong with a preset no deck answered for', () => {
       '2026-09-05',
     )
 
-    expect(one.presets.value[0]?.wrong).toBe(UNREAD)
+    expect(one.presets.value[0]?.wrong).toBe(PRESET_UNREADABLE_MESSAGE)
   })
 
   it('is nothing for a preset no deck names, whatever the other decks gave', async () => {

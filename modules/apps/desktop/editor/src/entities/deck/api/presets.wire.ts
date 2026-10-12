@@ -11,9 +11,9 @@ import {
   type SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
 import { goalNames, goalOf } from '@numen/wire'
-import { fingerprint, errorIn, staleIn, stamp } from '@/shared/answers'
+import { parseFingerprint, errorIn, staleIn, formatFingerprint } from '@/shared/answers'
 import { presetsService } from '@/shared/clients'
-import { DEFAULTS, NOWHERE } from '../lib/presets'
+import { DEFAULTS, NO_PLACE } from '../lib/presets'
 import type {
   Bounds,
   Curve,
@@ -25,7 +25,12 @@ import type {
   Settings,
   SettingsBounds,
 } from '../lib/presets'
-import { COUNTED, COUNTING, LEARNED, RULING } from './presets.names'
+import {
+  BUDGET_UNIT_BY_WIRE,
+  WIRE_BY_BUDGET_UNIT,
+  RULE_BY_WIRE,
+  WIRE_BY_RULE,
+} from './presets.names'
 
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {
@@ -45,21 +50,21 @@ export const presets: Presets = {
     const answer = await presetsService.scheduleDeck({
       deck,
       preset,
-      ...(seen === '' ? {} : { seen: fingerprint(seen) }),
+      ...(seen === '' ? {} : { seen: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure(code)
-    return asValue({ at: stamp(answer.at) ?? '' })
+    return asValue({ at: formatFingerprint(answer.at) ?? '' })
   },
   write: async (path, settings, seen) => {
     const answer = await presetsService.writePreset({
       path,
       settings: toSettingsMessage(settings),
-      ...(seen === '' ? {} : { seen: fingerprint(seen) }),
+      ...(seen === '' ? {} : { seen: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure(code)
-    return asValue({ at: stamp(answer.at) ?? '' })
+    return asValue({ at: formatFingerprint(answer.at) ?? '' })
   },
   curve: async (path, settings) => {
     const answer = await presetsService.computeCurve({
@@ -81,7 +86,7 @@ const parseRead = (answer: {
   if (error) return asFailure(error)
   return asValue({
     preset: answer.preset ? parsePreset(answer.preset) : null,
-    at: stamp(answer.at) ?? '',
+    at: formatFingerprint(answer.at) ?? '',
     bounds: parseSettingsBounds(answer.bounds),
   })
 }
@@ -127,11 +132,11 @@ const settingsOf = (settings: SettingsMessage | undefined): Settings =>
         newADay: settings.newADay,
         reviewsADay: settings.reviewsADay,
         retention: settings.retention,
-        counts: COUNTED[settings.counts] ?? DEFAULTS.counts,
+        counts: BUDGET_UNIT_BY_WIRE[settings.counts] ?? DEFAULTS.counts,
         backlog: settings.backlog,
         load: settings.load,
         evenLoad: settings.hasEvenLoad,
-        learned: LEARNED[settings.learned] ?? DEFAULTS.learned,
+        learned: RULE_BY_WIRE[settings.learned] ?? DEFAULTS.learned,
         interval: settings.interval,
       }
 
@@ -143,11 +148,11 @@ const toSettingsMessage = (settings: Settings) => ({
   newADay: settings.newADay,
   reviewsADay: settings.reviewsADay,
   retention: settings.retention,
-  counts: COUNTING[settings.counts],
+  counts: WIRE_BY_BUDGET_UNIT[settings.counts],
   backlog: settings.backlog,
   load: { ...settings.load },
   evenLoad: settings.evenLoad,
-  learned: RULING[settings.learned],
+  learned: WIRE_BY_RULE[settings.learned],
   interval: settings.interval,
 })
 
@@ -173,8 +178,8 @@ const NO_CURVE: Curve = {
   grid: [],
   days: [],
   at: [],
-  now: NOWHERE,
-  suggested: NOWHERE,
+  now: NO_PLACE,
+  suggested: NO_PLACE,
   decks: 0,
   cards: 0,
   overdue: 0,
@@ -203,4 +208,4 @@ const parseCurve = (curve: CurveMessage | undefined): Curve =>
       }
 
 const parsePlace = (place: PlaceMessage | undefined): Place =>
-  place === undefined ? NOWHERE : { at: place.at, value: place.value, day: place.day }
+  place === undefined ? NO_PLACE : { at: place.at, value: place.value, day: place.day }

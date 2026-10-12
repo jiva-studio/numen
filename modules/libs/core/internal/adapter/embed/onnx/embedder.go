@@ -254,7 +254,7 @@ func embedTokens(
 // isWithinBudget says a pass of rows, the longest of them longest tokens, stays
 // within the budget of batchTexts rows at the length it is padded to.
 func isWithinBudget(rows, longest, limit, batchTexts int) bool {
-	seq := bucket(longest, limit)
+	seq := roundUpToBucket(longest, limit)
 	return rows*seq*seq <= getAttentionBudget(batchTexts)
 }
 
@@ -368,7 +368,7 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 	// answers one a token, and the tokens the mask drops are not part of what a
 	// text says.
 	if len(out) == 2 {
-		return split(flat, rows, e.dimensions)
+		return splitRows(flat, rows, e.dimensions)
 	}
 	if want := rows * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %v", e.name, len(flat), out)
@@ -379,7 +379,7 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 	return meanPool(flat, padded.mask, rows, seq, e.dimensions), nil
 }
 
-func split(flat []float32, rows, dimensions int) ([][]float32, error) {
+func splitRows(flat []float32, rows, dimensions int) ([][]float32, error) {
 	if len(flat) != rows*dimensions {
 		return nil, fmt.Errorf("got %d values for %d vectors of %d dimensions", len(flat), rows, dimensions)
 	}

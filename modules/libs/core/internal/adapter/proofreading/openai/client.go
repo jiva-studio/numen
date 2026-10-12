@@ -1,4 +1,4 @@
-// Package openai puts a reading right with a hosted model, over the
+// Package openai puts a text right with a hosted model, over the
 // /chat/completions request shape. Several services speak it, so an
 // installation points at one by changing a base URL.
 package openai
@@ -70,8 +70,8 @@ func New(cfg proofreading.Profile, instruction string) (*Client, error) {
 // GetName is the model, recorded beside every correction it made.
 func (c *Client) GetName() string { return c.service.Name }
 
-// inFlight is how many batches this service is asked about at once.
-func (c *Client) inFlight() int {
+// getInFlight is how many batches this service is asked about at once.
+func (c *Client) getInFlight() int {
 	return c.service.GetInFlight(0)
 }
 
@@ -105,12 +105,12 @@ func (c *Client) Proofread(ctx context.Context, pages []proofread.Batch) (map[in
 		failed error
 		wg     sync.WaitGroup
 	)
-	for range min(c.inFlight(), len(pages)) {
+	for range min(c.getInFlight(), len(pages)) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for page := range queue {
-				reply, err := c.ask(ctx, page)
+				reply, err := c.sendWithRetry(ctx, page)
 				mu.Lock()
 				switch {
 				case err != nil:
@@ -153,10 +153,10 @@ type response struct {
 	} `json:"choices"`
 }
 
-// ask sends one page and returns what the service said about it. A 429, a 408,
+// sendWithRetry sends one page and returns what the service said about it. A 429, a 408,
 // a 5xx or a timeout is sent again after a wait, up to the profile's attempts;
 // any other failure is returned at once.
-func (c *Client) ask(ctx context.Context, page proofread.Batch) (string, error) {
+func (c *Client) sendWithRetry(ctx context.Context, page proofread.Batch) (string, error) {
 	body, err := json.Marshal(request{
 		Model:       c.service.Name,
 		Temperature: 0,
@@ -174,29 +174,29 @@ func (c *Client) ask(ctx context.Context, page proofread.Batch) (string, error) 
 		if err == nil {
 			return reply, nil
 		}
-		if !next.ok || attempt >= c.attempts() || ctx.Err() != nil {
+		if !next.ok || attempt >= c.getAttempts() || ctx.Err() != nil {
 			return "", err
 		}
-		if err := c.sleep(ctx, c.backoff(attempt, next.after)); err != nil {
+		if err := c.sleep(ctx, c.getBackoff(attempt, next.after)); err != nil {
 			return "", fmt.Errorf("page %d: %w", page.Number, err)
 		}
 	}
 }
 
-// again says whether a failed request may be sent again, and how long the
+// retryDecision says whether a failed request may be sent retryDecision, and how long the
 // service asked to wait first.
-type again struct {
+type retryDecision struct {
 	ok    bool
 	after time.Duration
 }
 
 // send makes one request. The response body is drained and closed on every
 // path.
-func (c *Client) send(ctx context.Context, page proofread.Batch, body []byte) (string, again, error) {
+func (c *Client) send(ctx context.Context, page proofread.Batch, body []byte) (string, retryDecision, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		strings.TrimSuffix(c.service.BaseURL, "/")+"/chat/completions", bytes.NewReader(body))
 	if err != nil {
-		return "", again{}, err
+		return "", retryDecision{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.service.Key())
@@ -205,7 +205,7 @@ func (c *Client) send(ctx context.Context, page proofread.Batch, body []byte) (s
 	if err != nil {
 		var netErr net.Error
 		timedOut := errors.As(err, &netErr) && netErr.Timeout() && ctx.Err() == nil
-		return "", again{ok: timedOut}, fmt.Errorf("page %d: %w", page.Number, err)
+		return "", retryDecision{ok: timedOut}, fmt.Errorf("page %d: %w", page.Number, err)
 	}
 	defer func() {
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxDrain))
@@ -214,19 +214,19 @@ func (c *Client) send(ctx context.Context, page proofread.Batch, body []byte) (s
 
 	if resp.StatusCode != http.StatusOK {
 		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		next := again{ok: isTransient(resp.StatusCode), after: retry.ParseAfter(resp.Header.Get("Retry-After"), c.now())}
+		next := retryDecision{ok: isTransient(resp.StatusCode), after: retry.ParseAfter(resp.Header.Get("Retry-After"), c.now())}
 		return "", next, fmt.Errorf("page %d: %d %s: %s", page.Number,
-			resp.StatusCode, http.StatusText(resp.StatusCode), c.detail(detail))
+			resp.StatusCode, http.StatusText(resp.StatusCode), c.getErrorDetail(detail))
 	}
 
 	var parsed response
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return "", again{}, fmt.Errorf("page %d: %w", page.Number, err)
+		return "", retryDecision{}, fmt.Errorf("page %d: %w", page.Number, err)
 	}
 	if len(parsed.Choices) == 0 {
-		return "", again{}, nil
+		return "", retryDecision{}, nil
 	}
-	return strings.TrimSpace(parsed.Choices[0].Message.Content), again{}, nil
+	return strings.TrimSpace(parsed.Choices[0].Message.Content), retryDecision{}, nil
 }
 
 // isTransient is whether a status is one the service recovers from.
@@ -236,47 +236,47 @@ func isTransient(status int) bool {
 		status >= http.StatusInternalServerError
 }
 
-// attempts is how many times one page is sent.
-func (c *Client) attempts() int {
+// getAttempts is how many times one page is sent.
+func (c *Client) getAttempts() int {
 	if c.service.Attempts <= 0 {
 		return proofreading.DefaultAttempts
 	}
 	return c.service.Attempts
 }
 
-// delay is the ceiling of the wait after the first failure.
-func (c *Client) delay() time.Duration {
+// getDelay is the ceiling of the wait after the first failure.
+func (c *Client) getDelay() time.Duration {
 	if c.service.DelayMS <= 0 {
 		return proofreading.DefaultDelayMS * time.Millisecond
 	}
 	return time.Duration(c.service.DelayMS) * time.Millisecond
 }
 
-// maxDelay is the longest any wait is.
-func (c *Client) maxDelay() time.Duration {
+// getMaxDelay is the longest any wait is.
+func (c *Client) getMaxDelay() time.Duration {
 	if c.service.MaxDelayMS <= 0 {
 		return proofreading.DefaultMaxDelayMS * time.Millisecond
 	}
 	return time.Duration(c.service.MaxDelayMS) * time.Millisecond
 }
 
-// backoff is the wait after the given failed attempt. A wait the service asked
+// getBackoff is the wait after the given failed attempt. A wait the service asked
 // for is used up to c.maxDelay(); otherwise it is drawn below a ceiling that
 // doubles with each failure.
-func (c *Client) backoff(attempt int, asked time.Duration) time.Duration {
+func (c *Client) getBackoff(attempt int, asked time.Duration) time.Duration {
 	if asked > 0 {
-		return min(asked, c.maxDelay())
+		return min(asked, c.getMaxDelay())
 	}
-	ceiling := c.delay()
-	for i := 1; i < attempt && ceiling < c.maxDelay(); i++ {
+	ceiling := c.getDelay()
+	for i := 1; i < attempt && ceiling < c.getMaxDelay(); i++ {
 		ceiling *= 2
 	}
-	return c.jitter(min(ceiling, c.maxDelay()))
+	return c.jitter(min(ceiling, c.getMaxDelay()))
 }
 
-// detail is a short piece of what the service said, with the key struck out of
+// getErrorDetail is a short piece of what the service said, with the key struck out of
 // it. A service that quotes the request back quotes the key back.
-func (c *Client) detail(body []byte) string {
+func (c *Client) getErrorDetail(body []byte) string {
 	text := strings.TrimSpace(string(body))
 	if key := c.service.Key(); key != "" {
 		text = strings.ReplaceAll(text, key, "…")

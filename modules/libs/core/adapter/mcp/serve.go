@@ -124,10 +124,10 @@ func ServeReadingHTTP(ctx context.Context, addr, token string, core Core, errorH
 	return serve(ctx, addr, token, NewReading(core), errorHandler)
 }
 
-// ServeReviewingHTTP starts the server the window a person runs their cards in
+// ServeReviewHTTP starts the server the window a person runs their cards in
 // serves: everything that reads, and the cards of a deck.
-func ServeReviewingHTTP(ctx context.Context, addr, token string, core Core, errorHandler func(error)) (*Endpoint, error) {
-	return serve(ctx, addr, token, NewReviewing(core), errorHandler)
+func ServeReviewHTTP(ctx context.Context, addr, token string, core Core, errorHandler func(error)) (*Endpoint, error) {
+	return serve(ctx, addr, token, NewReviewServer(core), errorHandler)
 }
 
 func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHandler func(error)) (*Endpoint, error) {
@@ -143,10 +143,7 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHan
 	handler := sdk.NewStreamableHTTPHandler(
 		func(*http.Request) *sdk.Server { return server },
 		&sdk.StreamableHTTPOptions{
-			// A page open in a browser can reach a port on this machine, and is
-			// the one caller that arrives without being invited.
-			CrossOriginProtection: &http.CrossOriginProtection{},
-			SessionTimeout:        30 * time.Minute,
+			SessionTimeout: 30 * time.Minute,
 		},
 	)
 
@@ -157,7 +154,9 @@ func serve(ctx context.Context, addr, token string, server *sdk.Server, errorHan
 
 	endpoint.URL = "http://" + listener.Addr().String() + "/mcp"
 	endpoint.server = &http.Server{
-		Handler:           requireToken(token, handler),
+		// A page open in a browser can reach a port on this machine, and is
+		// the one caller that arrives without being invited.
+		Handler:           requireToken(token, http.NewCrossOriginProtection().Handler(handler)),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	go func() {

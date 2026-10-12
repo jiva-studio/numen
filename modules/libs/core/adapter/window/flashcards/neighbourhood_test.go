@@ -1,6 +1,7 @@
 package flashcards
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -8,6 +9,11 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
@@ -81,5 +87,65 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 	}
 	if found.GetBody() != "" {
 		t.Errorf("a note that could not be read came with prose: %q", found.GetBody())
+	}
+}
+
+// brokenLinks is an index that cannot say what a note points at.
+type brokenLinks struct{ port.LinkQueries }
+
+func (brokenLinks) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+	return nil, errors.New("the index is out of reach")
+}
+
+// backlinked is a vault whose deck points at one note and is pointed at by
+// another.
+var backlinked = map[string]string{
+	"Term.md": deck["Term.md"],
+	"Mould.md": "---\ntype: note\n---\n" +
+		"\n# Leaf mould\n\nLeaves left in a heap for two winters, and nothing else.\n",
+	"Mention.md": "---\ntype: note\n---\n" +
+		"\n# Mention\n\nSee [[Words]] for the cards.\n",
+	"decks/Words.md": joined["decks/Words.md"],
+}
+
+// The index being out of reach is an internal failure and not an empty
+// neighbourhood.
+func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
+	api, held := newAPI(t, joined)
+	api.Neighbourhood = flashcards.NewShowNeighbourhood(
+		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(filesystem.VaultReaders{}))
+
+	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
+		Vault: string(held[0].ID), Deck: "decks/Words.md",
+	}))
+	if code := connect.CodeOf(err); code != connect.CodeInternal {
+		t.Errorf("reading around answered %v", err)
+	}
+}
+
+// A note the deck points at is said to be pointed at, and a note pointing at
+// the deck is not. Every entry is a note of the vault.
+func TestANoteIsSaidToBePointedAtOnlyWhereTheDeckPointsAtIt(t *testing.T) {
+	api, held := newAPI(t, backlinked)
+
+	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
+		Vault: string(held[0].ID), Deck: "decks/Words.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pointed := map[string]bool{}
+	for _, one := range out.Msg.GetNotes() {
+		if one.GetPath() == "" {
+			t.Errorf("an entry stands for no note: %+v", one)
+		}
+		pointed[one.GetPath()] = one.GetIsPointedAt()
+	}
+	if is, found := pointed["Mould.md"]; !found || !is {
+		t.Errorf("the note the deck points at came back as %v (found %v)", is, found)
+	}
+	if is, found := pointed["Mention.md"]; !found || is {
+		t.Errorf("the note pointing at the deck came back as %v (found %v)", is, found)
 	}
 }

@@ -93,7 +93,7 @@ func TestTheSetOfLengthsIsFiniteAndBounded(t *testing.T) {
 	for _, limit := range []int{256, 512, 700, 8192} {
 		lengths := map[int]bool{}
 		for length := range limit + 1 {
-			seq := bucket(length, limit)
+			seq := roundUpToBucket(length, limit)
 			if seq < length {
 				t.Fatalf("window %d: length %d was bucketed below itself, to %d", limit, length, seq)
 			}
