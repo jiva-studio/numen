@@ -1,6 +1,8 @@
 package note_test
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -8,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -392,5 +395,52 @@ func TestANameMatchesWhateverCaseItWasTypedIn(t *testing.T) {
 	c := links(t, db, v, "source.md")
 	if c.Links[0].To != "Entropy.md" {
 		t.Errorf("resolved to %q — people type lowercase", c.Links[0].To)
+	}
+}
+
+// failingLinks answers one of the two questions with an error.
+type failingLinks struct {
+	port.LinkQueries
+	links, backlinks error
+}
+
+func (f failingLinks) Links(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+	if f.links != nil {
+		return nil, f.links
+	}
+	return f.LinkQueries.Links(ctx, id, from)
+}
+
+func (f failingLinks) Backlinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+	if f.backlinks != nil {
+		return nil, f.backlinks
+	}
+	return f.LinkQueries.Backlinks(ctx, id, to)
+}
+
+func TestLinksThatCannotBeAskedForAreAnError(t *testing.T) {
+	t.Parallel()
+	db, v := newIndexedVault(t, map[string]string{
+		"source.md":        "Points at [[Entropy]].\n",
+		"notes/Entropy.md": "# Entropy\n",
+	})
+	errOutgoing := errors.New("the index cannot say what a note points at")
+	errIncoming := errors.New("the index cannot say what points at a note")
+
+	for _, tc := range []struct {
+		name string
+		with failingLinks
+		want error
+	}{
+		{"outgoing", failingLinks{LinkQueries: db.Links(), links: errOutgoing}, errOutgoing},
+		{"incoming", failingLinks{LinkQueries: db.Links(), backlinks: errIncoming}, errIncoming},
+	} {
+		got, err := note.NewShowLinks(tc.with).Execute(t.Context(), v, "source.md")
+		if !errors.Is(err, tc.want) {
+			t.Errorf("%s: want %v, got %v", tc.name, tc.want, err)
+		}
+		if len(got.Links) != 0 || len(got.Backlinks) != 0 {
+			t.Errorf("%s: an error came back with %+v", tc.name, got)
+		}
 	}
 }

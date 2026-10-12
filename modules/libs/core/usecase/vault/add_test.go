@@ -154,3 +154,177 @@ func TestAFolderReachedThroughASymlinkIsTheFolderItself(t *testing.T) {
 		t.Errorf("the list holds %v, want one vault", known)
 	}
 }
+
+func TestAPathThatIsNotAbsoluteIsRefused(t *testing.T) {
+	t.Parallel()
+	add, registry := newAdd(t)
+
+	if _, err := add.Execute(".", ""); err == nil {
+		t.Fatal("a relative path was taken for a vault")
+	}
+	known, err := registry.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(known) != 0 {
+		t.Errorf("the list holds %v", known)
+	}
+}
+
+func TestAFolderThatIsNotThereIsUnreadable(t *testing.T) {
+	t.Parallel()
+	add, registry := newAdd(t)
+
+	_, err := add.Execute(filepath.Join(t.TempDir(), "missing"), "")
+	if !errors.Is(err, vaults.ErrUnreadable) {
+		t.Fatalf("want ErrUnreadable, got %v", err)
+	}
+	if known, _ := registry.List(); len(known) != 0 {
+		t.Errorf("the list holds %v", known)
+	}
+}
+
+func TestAVaultTheMachineCannotBeAskedAboutIsNotAdded(t *testing.T) {
+	t.Parallel()
+	root := folder(t, "notes")
+	for _, tc := range []struct {
+		name     string
+		identity refusingIdentity
+		registry func(*appstate.VaultRegistry) refusingRegistry
+	}{
+		{"the list cannot be read", refusingIdentity{}, func(r *appstate.VaultRegistry) refusingRegistry {
+			return refusingRegistry{VaultRegistry: r, list: errRefused}
+		}},
+		{"the identity cannot be given", refusingIdentity{ensure: errRefused}, func(r *appstate.VaultRegistry) refusingRegistry {
+			return refusingRegistry{VaultRegistry: r}
+		}},
+		{"the list cannot be searched", refusingIdentity{}, func(r *appstate.VaultRegistry) refusingRegistry {
+			return refusingRegistry{VaultRegistry: r, find: errRefused}
+		}},
+		{"the list cannot be written", refusingIdentity{}, func(r *appstate.VaultRegistry) refusingRegistry {
+			return refusingRegistry{VaultRegistry: r, save: errRefused}
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			inner := registryAt(t)
+			add := vaults.NewAdd(tc.identity, tc.registry(inner), time.Now)
+
+			_, err := add.Execute(root, "")
+			if !errors.Is(err, errRefused) {
+				t.Fatalf("want the refusal back, got %v", err)
+			}
+			if known, _ := inner.List(); len(known) != 0 {
+				t.Errorf("the list holds %v", known)
+			}
+		})
+	}
+}
+
+// A folder copied with the identity inside it is a second folder claiming the
+// first one's identity.
+func TestACopyOfAVaultIsRefusedAndAMoveIsFollowed(t *testing.T) {
+	t.Parallel()
+	add, registry := newAdd(t)
+	original := folder(t, "notes")
+	first, err := add.Execute(original, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	copied := filepath.Join(t.TempDir(), "copy")
+	if err := os.CopyFS(copied, os.DirFS(original)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := add.Execute(copied, ""); !errors.Is(err, vaults.ErrCopy) {
+		t.Fatalf("want ErrCopy, got %v", err)
+	}
+	if known, _ := registry.List(); len(known) != 1 || known[0].Path != first.Path {
+		t.Errorf("the list holds %v, want the original only", known)
+	}
+
+	moved := filepath.Join(t.TempDir(), "moved")
+	if err := os.Rename(original, moved); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(copied); err != nil {
+		t.Fatal(err)
+	}
+	v, err := add.Execute(moved, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v.ID != first.ID {
+		t.Errorf("the moved folder is %s, want %s", v.ID, first.ID)
+	}
+}
+
+func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
+	t.Parallel()
+	registry := registryAt(t)
+	first, err := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now).Execute(folder(t, "old"), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	identity := refusingIdentity{
+		ensureAs: first.ID,
+		vaultID: func(string) (domain.VaultID, bool, error) {
+			return "", false, errRefused
+		},
+	}
+
+	_, err = vaults.NewAdd(identity, registry, time.Now).Execute(folder(t, "moved"), "")
+	if !errors.Is(err, errRefused) {
+		t.Fatalf("want the refusal back, got %v", err)
+	}
+}
+
+func TestAnUnreadableFolderKeepsTheCauseInTheError(t *testing.T) {
+	t.Parallel()
+	add := vaults.NewAdd(refusingIdentity{checkReadable: errRefused}, registryAt(t), time.Now)
+
+	_, err := add.Execute(folder(t, "notes"), "")
+	if !errors.Is(err, vaults.ErrUnreadable) || !errors.Is(err, errRefused) {
+		t.Fatalf("want both the sentinel and the cause, got %v", err)
+	}
+}
+
+// Only an old location that still carries this very identity makes a copy.
+func TestAnOldLocationThatIsNotThisVaultAnyMoreIsAMove(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name string
+		does bool
+		id   domain.VaultID
+	}{
+		{"carries another identity", true, "01OTHER"},
+		{"carries none", false, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			registry := registryAt(t)
+			first, err := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now).Execute(folder(t, "old"), "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			identity := refusingIdentity{
+				ensureAs: first.ID,
+				vaultID: func(string) (domain.VaultID, bool, error) {
+					return tc.id, tc.does, nil
+				},
+			}
+			moved, err := filepath.EvalSymlinks(folder(t, "moved"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			v, err := vaults.NewAdd(identity, registry, time.Now).Execute(moved, "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if v.Path != moved || v.ID != first.ID {
+				t.Errorf("got %+v, want the vault at %s", v, moved)
+			}
+		})
+	}
+}
