@@ -26,10 +26,16 @@ func (s artifactShelf) getHash(ctx context.Context, v domain.Vault, path string)
 	return said.Hash, nil
 }
 
-// getFileName is the file one producer's artifact stands in, and its size.
-func getFileName(
+// artifactFile is the file one producer's artifact stands in, and its size.
+type artifactFile struct {
+	Name string
+	Size int64
+}
+
+// getArtifactFile returns the file of one producer's artifact, or nil when the store holds none.
+func getArtifactFile(
 	ctx context.Context, store port.DerivedStore, producer, hash string,
-) (name string, size int64, held bool, err error) {
+) (*artifactFile, error) {
 	for _, one := range []string{
 		text.Corrections(producer, hash),
 		text.Artifact(producer, hash),
@@ -40,41 +46,47 @@ func getFileName(
 			continue
 		}
 		if err != nil {
-			return "", 0, false, err
+			return nil, err
 		}
 		_ = reader.Close()
-		return one, size, true, nil
+		return &artifactFile{Name: one, Size: size}, nil
 	}
-	return "", 0, false, nil
+	return nil, nil
 }
 
-// getArtifacts is what the store holds for one file, with the store and the
-// hash it was found under. An empty hash is a file the index does not hold.
-func (s artifactShelf) getArtifacts(
-	ctx context.Context, v domain.Vault, path string,
-) ([]Artifact, port.DerivedStore, string, error) {
+// artifactSet is what the store holds for one file, with the store and the
+// hash it was found under.
+type artifactSet struct {
+	Artifacts []Artifact
+	Store     port.DerivedStore
+	Hash      string
+}
+
+// getArtifacts is what the store holds for one file. An empty hash is a file
+// the index does not hold.
+func (s artifactShelf) getArtifacts(ctx context.Context, v domain.Vault, path string) (artifactSet, error) {
 	hash, err := s.getHash(ctx, v, path)
 	if err != nil || hash == "" {
-		return nil, nil, "", err
+		return artifactSet{}, err
 	}
 	store, err := s.derived.Open(v)
 	if err != nil {
-		return nil, nil, "", err
+		return artifactSet{}, err
 	}
 	out := make([]Artifact, 0, 2)
 	for _, producer := range text.Producers() {
-		_, size, held, err := getFileName(ctx, store, producer, hash)
+		found, err := getArtifactFile(ctx, store, producer, hash)
 		if err != nil {
-			return nil, nil, "", err
+			return artifactSet{}, err
 		}
-		if !held {
+		if found == nil {
 			continue
 		}
 		out = append(out, Artifact{
 			Path:     path,
 			Kind:     getArtifactKind(producer),
 			Producer: producer,
-			Bytes:    size,
+			Bytes:    found.Size,
 			Format:   getArtifactFormat(producer),
 		})
 	}
@@ -82,18 +94,18 @@ func (s artifactShelf) getArtifacts(
 		_ = file.Close()
 		out = append(out, Artifact{Path: path, Kind: KindCopy, Bytes: size, Format: text.CopyType})
 	} else if !errors.Is(err, fs.ErrNotExist) {
-		return nil, nil, "", err
+		return artifactSet{}, err
 	}
-	return out, store, hash, nil
+	return artifactSet{Artifacts: out, Store: store, Hash: hash}, nil
 }
 
 // getArtifactWords is the artifact as it stands on disk. A transcript is the WebVTT it
 // is written in, times and all.
 func getArtifactWords(ctx context.Context, store port.DerivedStore, producer, hash string) (string, error) {
-	name, _, held, err := getFileName(ctx, store, producer, hash)
-	if err != nil || !held {
+	found, err := getArtifactFile(ctx, store, producer, hash)
+	if err != nil || found == nil {
 		return "", err
 	}
-	raw, err := store.Read(ctx, name)
+	raw, err := store.Read(ctx, found.Name)
 	return string(raw), err
 }

@@ -20,6 +20,6 @@ func NewGetArtifactList(queries port.SourceQueries, derived port.DerivedStores) 
 
 // Execute returns the artifacts of one file, none for a file the index does not hold.
 func (u *GetArtifactList) Execute(ctx context.Context, v domain.Vault, path string) ([]Artifact, error) {
-	held, _, _, err := u.shelf.getArtifacts(ctx, v, path)
-	return held, err
+	set, err := u.shelf.getArtifacts(ctx, v, path)
+	return set.Artifacts, err
 }

@@ -36,15 +36,15 @@ func NewGetArtifactText(queries port.SourceQueries, derived port.DerivedStores) 
 func (u *GetArtifactText) Execute(
 	ctx context.Context, v domain.Vault, path, kind string, start, length int,
 ) (ArtifactText, error) {
-	held, store, hash, err := u.shelf.getArtifacts(ctx, v, path)
+	set, err := u.shelf.getArtifacts(ctx, v, path)
 	if err != nil {
 		return ArtifactText{}, err
 	}
-	for _, one := range held {
+	for _, one := range set.Artifacts {
 		if one.Kind != kind || !one.IsReadable() {
 			continue
 		}
-		words, err := getArtifactWords(ctx, store, one.Producer, hash)
+		words, err := getArtifactWords(ctx, set.Store, one.Producer, set.Hash)
 		if err != nil {
 			return ArtifactText{}, err
 		}
