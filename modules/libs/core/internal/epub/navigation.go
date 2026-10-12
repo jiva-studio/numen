@@ -85,7 +85,7 @@ func readNCXPageList(raw []byte, base string) []entry {
 		if name == "" {
 			name = target.Label
 		}
-		out = append(out, entry{title: name, href: resolveNavHref(base, target.Content.Src)})
+		out = append(out, entry{title: name, href: resolveHref(base, target.Content.Src)})
 	}
 	return out
 }
@@ -93,7 +93,7 @@ func readNCXPageList(raw []byte, base string) []entry {
 func appendPoint(out []entry, point ncxPoint, base string) []entry {
 	// A navPoint may have no content element, and then it points nowhere.
 	if point.Content != nil {
-		out = append(out, entry{title: point.Label, href: resolveNavHref(base, point.Content.Src)})
+		out = append(out, entry{title: point.Label, href: resolveHref(base, point.Content.Src)})
 	}
 	for _, child := range point.Children {
 		out = appendPoint(out, child, base)
@@ -116,7 +116,8 @@ func readNavDocument(raw []byte, base string) []entry {
 	return appendLinks(nil, from, base)
 }
 
-// findTableOfContents is the nav element that says it is the table of contents.
+// findTableOfContents returns the nav element marked as the table of contents,
+// and nil when there is none.
 func findTableOfContents(n *html.Node) *html.Node {
 	if n.DataAtom == atom.Nav {
 		if hasToken(getAttribute(n, "epub:type"), "toc") || hasToken(getAttribute(n, "role"), "doc-toc") {
@@ -134,7 +135,7 @@ func findTableOfContents(n *html.Node) *html.Node {
 func appendLinks(out []entry, n *html.Node, base string) []entry {
 	if n.DataAtom == atom.A {
 		if href := getAttribute(n, "href"); href != "" {
-			out = append(out, entry{title: getText(n), href: resolveNavHref(base, href)})
+			out = append(out, entry{title: collectText(n), href: resolveHref(base, href)})
 		}
 	}
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
@@ -143,8 +144,8 @@ func appendLinks(out []entry, n *html.Node, base string) []entry {
 	return out
 }
 
-// getText is the text a node holds, whatever markup it is wrapped in.
-func getText(n *html.Node) string {
+// collectText returns the text a node holds, whatever markup it is wrapped in.
+func collectText(n *html.Node) string {
 	var b bytes.Buffer
 	var walk func(*html.Node)
 	walk = func(n *html.Node) {
@@ -159,9 +160,9 @@ func getText(n *html.Node) string {
 	return b.String()
 }
 
-// resolveNavHref resolves an href against the directory of the navigation document
-// holding it, keeping the fragment.
-func resolveNavHref(base, href string) string {
+// resolveHref resolves an href against the directory of the document holding it,
+// keeping the fragment.
+func resolveHref(base, href string) string {
 	target, fragment := splitHref(href)
 	at := resolve(base, target)
 	if at == "" {

@@ -129,7 +129,7 @@ func (x *extractor) write(text string) {
 	} else {
 		for _, r := range text {
 			if unicode.IsSpace(r) {
-				if last, ok := x.getLastByte(); ok && last != ' ' && last != '\n' {
+				if last, ok := x.findLastByte(); ok && last != ' ' && last != '\n' {
 					x.out = append(x.out, ' ')
 				}
 				continue
@@ -150,7 +150,7 @@ func (x *extractor) writeBytes(b []byte) {
 	for i := 0; i < len(b); {
 		r, size := utf8.DecodeRune(b[i:])
 		if unicode.IsSpace(r) {
-			if last, ok := x.getLastByte(); ok && last != ' ' && last != '\n' {
+			if last, ok := x.findLastByte(); ok && last != ' ' && last != '\n' {
 				x.out = append(x.out, ' ')
 			}
 		} else {
@@ -283,7 +283,7 @@ func (x *extractor) tokenize(markup []byte) {
 				x.writeBytes([]byte(" "))
 			}
 
-			level := getHeadingLevel(a)
+			level := parseHeadingLevel(a)
 
 			if isVoidTag(a) {
 				x.closeFrame(frame{start: start, isPagebreak: isPagebreak, pageLabel: pageLabel})
@@ -398,17 +398,17 @@ func isVoidTag(a atom.Atom) bool {
 
 // breakLine ends the line one block of text sits on.
 func (x *extractor) breakLine() {
-	if last, ok := x.getLastByte(); ok && last == ' ' {
+	if last, ok := x.findLastByte(); ok && last == ' ' {
 		x.out = x.out[:len(x.out)-1]
 	}
-	if last, ok := x.getLastByte(); ok && last != '\n' {
+	if last, ok := x.findLastByte(); ok && last != '\n' {
 		start := len(x.out)
 		x.out = append(x.out, '\n')
 		x.markup.run(start)
 	}
 }
 
-func (x *extractor) getLastByte() (byte, bool) {
+func (x *extractor) findLastByte() (byte, bool) {
 	if len(x.out) == 0 {
 		// gomutants:disable-next-line INTEGER_INCREMENT reason="the byte is read only when the second result is true"
 		return 0, false
@@ -425,7 +425,7 @@ func (x *extractor) getParts(entries []entry) []Part {
 		if title == "" {
 			continue
 		}
-		offset, ok := x.getOffset(e.href)
+		offset, ok := x.findOffset(e.href)
 		if !ok {
 			continue
 		}
@@ -443,7 +443,7 @@ func (x *extractor) getPages(entries []entry) []Page {
 		if label == "" {
 			continue
 		}
-		offset, ok := x.getOffset(e.href)
+		offset, ok := x.findOffset(e.href)
 		if !ok {
 			continue
 		}
@@ -455,9 +455,9 @@ func (x *extractor) getPages(entries []entry) []Page {
 	return out
 }
 
-// getOffset is where an href lands in the text: the place its fragment marks, or
-// the start of the document it names.
-func (x *extractor) getOffset(href string) (int, bool) {
+// findOffset returns the text offset an href names: its fragment's anchor, or
+// the start of its document. The result is false when neither is known.
+func (x *extractor) findOffset(href string) (int, bool) {
 	target, fragment := splitHref(href)
 	if fragment != "" {
 		if offset, ok := x.anchors[target+"#"+fragment]; ok {
@@ -480,10 +480,8 @@ func getAttribute(n *html.Node, name string) string {
 	return ""
 }
 
-// getHeadingLevel is the level of a heading element, and 0 for anything else. The
-// level a book chose carries no meaning of its own: a book whose sections are
-// h4 has sections.
-func getHeadingLevel(a atom.Atom) int {
+// parseHeadingLevel returns the level of a heading element, and 0 for anything else.
+func parseHeadingLevel(a atom.Atom) int {
 	switch a {
 	case atom.H1:
 		return 1

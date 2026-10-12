@@ -175,7 +175,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 	read := packageDoc{
 		base:      path.Dir(opfPath),
 		layout:    Reflowable,
-		direction: getDirection(document.Spine.Direction),
+		direction: parseDirection(document.Spine.Direction),
 	}
 	for _, entry := range document.Metadata.Entries {
 		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] &&
@@ -186,7 +186,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 		// `rendition` is a reserved prefix, read as it is written.
 		if entry.XMLName.Local == "meta" && entry.Refines == "" &&
 			entry.Property == "rendition:layout" {
-			read.layout = getLayout(entry.Value, read.layout)
+			read.layout = parseLayout(entry.Value, read.layout)
 		}
 	}
 
@@ -221,15 +221,15 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 			path:      named.path,
 			mediaType: named.mediaType,
 			isLinear:  !strings.EqualFold(strings.TrimSpace(ref.Linear), "no"),
-			layout:    getItemLayout(ref.Properties, read.layout),
+			layout:    parseItemLayout(ref.Properties, read.layout),
 		})
 	}
 	return read, nil
 }
 
-// getLayout is the layout a rendition:layout value names, and the one already in
-// force for a value that names neither.
-func getLayout(value string, inForce Layout) Layout {
+// parseLayout returns the layout a rendition:layout value names, and inForce
+// for a value that names neither.
+func parseLayout(value string, inForce Layout) Layout {
 	switch Layout(strings.ToLower(strings.TrimSpace(value))) {
 	case PrePaginated:
 		return PrePaginated
@@ -239,9 +239,9 @@ func getLayout(value string, inForce Layout) Layout {
 	return inForce
 }
 
-// getItemLayout is the layout one spine document is laid out under: the book's,
-// unless the itemref overrides it.
-func getItemLayout(properties string, book Layout) Layout {
+// parseItemLayout returns the layout an itemref's properties name, and the
+// book's when they name none.
+func parseItemLayout(properties string, book Layout) Layout {
 	switch {
 	case hasToken(properties, "rendition:layout-pre-paginated"):
 		return PrePaginated
@@ -251,8 +251,8 @@ func getItemLayout(properties string, book Layout) Layout {
 	return book
 }
 
-// getDirection is the direction a page-progression-direction attribute names.
-func getDirection(value string) Direction {
+// parseDirection returns the direction a page-progression-direction value names.
+func parseDirection(value string) Direction {
 	named := Direction(strings.ToLower(strings.TrimSpace(value)))
 	if named == LeftToRight || named == RightToLeft {
 		return named

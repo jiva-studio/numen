@@ -206,7 +206,7 @@ func Read(raw []byte) (*Book, error) {
 		}
 	}
 	book.Text = string(text.out)
-	book.pageBytes = countPageBytes(book.Text)
+	book.pageBytes = computePageBytes(book.Text)
 
 	named := readNavigationParts(files, pkg, text)
 	switch {
