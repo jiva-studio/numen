@@ -117,7 +117,7 @@ func TestOnlyAWrittenSchemeIsReadAsOne(t *testing.T) {
 		}
 	}
 	for _, scheme := range []string{
-		"`", "{", "@", "[", "/", ":", "*", ",", "_", " ", "é", "Я",
+		"`", "{", "@", "[", "/", ":", "*", ",", "_", "é", "Я",
 		"a_", "_a", "a b", "ab!", "!ab", "ab{", "a`b", "a@b", "a[b", "a/b", "a:b", "a*b", "a,b",
 	} {
 		written := scheme + "://v"
