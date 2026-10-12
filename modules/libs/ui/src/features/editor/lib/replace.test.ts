@@ -216,3 +216,21 @@ describe('a pair of halves standing for one character', () => {
     expect(applyChange('abc', 'aXc')).toEqual([[1, 2, 'X']])
   })
 })
+
+describe('the edges of the halves of a pair', () => {
+  it('cuts after the highest leading half where that half stands alone', () => {
+    expect(applyChange('a\uDBFFb', 'a\uDBFFc')).toEqual([[1, 3, '\uDBFFc']])
+  })
+
+  it('does not take the first unit after the leading halves for one', () => {
+    expect(applyChange('a\uDC00x', 'a\uDC00y')).toEqual([[2, 3, 'y']])
+  })
+
+  it('cuts before the highest trailing half where that half stands alone', () => {
+    expect(applyChange('x\uDFFFb', 'y\uDFFFb')).toEqual([[0, 2, 'y\uDFFF']])
+  })
+
+  it('does not take the first unit after the trailing halves for one', () => {
+    expect(applyChange('xb', 'yb')).toEqual([[0, 1, 'y']])
+  })
+})

@@ -159,3 +159,41 @@ describe('Tab', () => {
     expect(changes.reduce((sum, count) => sum + count, 0)).toBe(0)
   })
 })
+
+describe('Shift-Tab', () => {
+  const dedent = (view: EditorView) => indenting.shift?.(view) ?? false
+
+  it('takes an indent back while the editor holds Tab', () => {
+    const view = open({}, '  one')
+    expect(dedent(view)).toBe(true)
+    expect(view.state.doc.toString()).toBe('one')
+  })
+
+  it('walks on after Escape handed Tab to the page', () => {
+    const view = open({}, '  one')
+    leaving.run?.(view)
+    expect(dedent(view)).toBe(false)
+    expect(view.state.doc.toString()).toBe('  one')
+  })
+})
+
+describe('Escape', () => {
+  it('hands Tab over once however often it is pressed', () => {
+    const handed: number[] = []
+    const view = open({
+      extensions: EditorView.updateListener.of((update) => {
+        handed.push(update.transactions.filter((one) => one.effects.length > 0).length)
+      }),
+    })
+    leaving.run?.(view)
+    leaving.run?.(view)
+    expect(handed.reduce((sum, count) => sum + count, 0)).toBe(1)
+  })
+})
+
+describe('an editor with no placeholder', () => {
+  it('shows nothing in its place', () => {
+    const view = open({}, '')
+    expect(view.contentDOM.querySelector('.cm-placeholder')?.textContent).toBe('')
+  })
+})

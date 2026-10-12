@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest'
-import { addressAt } from './address'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { StateEffect } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
+import { addressAt, follow } from './address'
+import { opening } from './outside'
 import { createState } from '../fixtures/state'
 
 describe('the address under a position in the text', () => {
@@ -44,5 +47,83 @@ describe('the address under a position on a later line', () => {
   it('is nothing inside an indented block of code', () => {
     const doc = '    [[Thermodynamics]]\n'
     expect(addressAt(createState(doc), doc.indexOf('Thermo') + 1)).toBeNull()
+  })
+})
+
+describe('a link followed with the pointer', () => {
+  const SOURCE = 'go [there](https://example.invalid) now'
+
+  const open = (at: number | null, doc = SOURCE) => {
+    const opened = vi.fn<(address: string) => void>()
+    const view = new EditorView({
+      parent: document.body,
+      state: createState(doc).update({
+        effects: StateEffect.appendConfig.of([follow, opening.of(opened)]),
+      }).state,
+    })
+    const coordinates = vi.spyOn(view, 'posAtCoords').mockReturnValue(at)
+    views.push(view)
+    return { view, opened, coordinates }
+  }
+
+  const press = (view: EditorView, modifiers: MouseEventInit) => {
+    const event = new MouseEvent('mousedown', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 12,
+      clientY: 34,
+      ...modifiers,
+    })
+    view.contentDOM.dispatchEvent(event)
+    return event
+  }
+
+  const views: EditorView[] = []
+  afterEach(() => {
+    views.splice(0).forEach((view) => view.destroy())
+  })
+
+  it('is opened with the meta key held', () => {
+    const { view, opened, coordinates } = open(SOURCE.indexOf('there') + 1)
+    const event = press(view, { metaKey: true })
+    expect(opened).toHaveBeenCalledWith('https://example.invalid')
+    expect(event.defaultPrevented).toBe(true)
+    expect(coordinates).toHaveBeenCalledWith({ x: 12, y: 34 })
+  })
+
+  it('is opened with the control key held', () => {
+    const { view, opened } = open(SOURCE.indexOf('there') + 1)
+    const event = press(view, { ctrlKey: true })
+    expect(opened).toHaveBeenCalledWith('https://example.invalid')
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('is left alone with no key held', () => {
+    const { view, opened, coordinates } = open(SOURCE.indexOf('there') + 1)
+    const event = press(view, {})
+    expect(opened).not.toHaveBeenCalled()
+    expect(coordinates).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+  })
+
+  it('is left alone where the pointer is over no text', () => {
+    const { view, opened } = open(null)
+    const event = press(view, { metaKey: true })
+    expect(opened).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+  })
+
+  it('is left alone where the pointer is over no link', () => {
+    const { view, opened } = open(1)
+    const event = press(view, { metaKey: true })
+    expect(opened).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+  })
+})
+
+describe('the address of a link written in brackets alone', () => {
+  it('is what is between the brackets', () => {
+    const doc = 'see [thermodynamics] now'
+    expect(addressAt(createState(doc), doc.indexOf('thermo') + 1)).toBe('thermodynamics')
   })
 })
