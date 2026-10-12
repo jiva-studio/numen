@@ -11,14 +11,15 @@ import (
 // tools an agent calls are served the same set, so what one of them refuses the
 // other refuses, and a dependency named once is named for both.
 type Scenarios struct {
-	Read    Read
-	Write   Write
-	Create  Create
-	Replace Replace
-	Linking EditLinks
-	Move    Move
-	Rename  Rename
-	Remove  Remove
+	Read     Read
+	Write    Write
+	Create   Create
+	Replace  Replace
+	Linking  EditLinks
+	AddLinks AddLinks
+	Move     Move
+	Rename   Rename
+	Remove   Remove
 
 	Links         ShowLinks
 	Neighbourhood ShowNeighbourhood

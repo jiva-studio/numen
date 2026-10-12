@@ -113,6 +113,7 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			Rename:        note.NewRename(moving),
 			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
 			Linking:       note.NewEditLinks(readers, writers, index, time.Now),
+			AddLinks:      note.NewAddLinks(note.NewEditLinks(readers, writers, index, time.Now)),
 		},
 	}
 	return v, core

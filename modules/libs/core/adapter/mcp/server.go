@@ -65,13 +65,14 @@ type Notes struct {
 	Links         note.ShowLinks
 	Problems      check.Checks
 
-	Create  note.Create
-	Write   note.Write
-	Replace note.Replace
-	Move    note.Move
-	Rename  note.Rename
-	Remove  note.Remove
-	Linking note.EditLinks
+	Create   note.Create
+	Write    note.Write
+	Replace  note.Replace
+	Move     note.Move
+	Rename   note.Rename
+	Remove   note.Remove
+	Linking  note.EditLinks
+	AddLinks note.AddLinks
 }
 
 // Vaults is the list of vaults this installation holds, and what a person does

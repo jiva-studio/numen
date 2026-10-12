@@ -31,15 +31,18 @@ func (c Config) Notes(
 	moving := note.NewMove(readers, writers, links, queries, sources, index, now)
 	moving.Sync = c.SyncSetting()
 
+	linking := note.NewEditLinks(readers, writers, index, now)
+
 	return note.Scenarios{
-		Read:    note.NewRead(readers),
-		Write:   note.NewWrite(readers, writers, index, now),
-		Create:  note.NewCreate(writers, queries, index, now),
-		Replace: note.NewReplace(readers, writers, index, now),
-		Linking: note.NewEditLinks(readers, writers, index, now),
-		Move:    moving,
-		Rename:  note.NewRename(moving),
-		Remove:  note.NewRemove(writers, links, known, index),
+		Read:     note.NewRead(readers),
+		Write:    note.NewWrite(readers, writers, index, now),
+		Create:   note.NewCreate(writers, queries, index, now),
+		Replace:  note.NewReplace(readers, writers, index, now),
+		Linking:  linking,
+		AddLinks: note.NewAddLinks(linking),
+		Move:     moving,
+		Rename:   note.NewRename(moving),
+		Remove:   note.NewRemove(writers, links, known, index),
 
 		Links:         note.NewShowLinks(links),
 		Neighbourhood: note.NewShowNeighbourhood(links, queries),

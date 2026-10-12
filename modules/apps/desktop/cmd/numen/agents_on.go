@@ -157,13 +157,14 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			Neighbourhood: notes.Neighbourhood,
 			Links:         notes.Links,
 
-			Create:  notes.Create,
-			Write:   notes.Write,
-			Replace: notes.Replace,
-			Move:    notes.Move,
-			Rename:  notes.Rename,
-			Remove:  notes.Remove,
-			Linking: notes.Linking,
+			Create:   notes.Create,
+			Write:    notes.Write,
+			Replace:  notes.Replace,
+			Move:     notes.Move,
+			Rename:   notes.Rename,
+			Remove:   notes.Remove,
+			Linking:  notes.Linking,
+			AddLinks: notes.AddLinks,
 		},
 	}
 }
