@@ -223,7 +223,7 @@ func TestAFitThatCannotReadTheVectorsLeavesTheVectorIndexAsItWas(t *testing.T) {
 			if err == nil || !strings.Contains(err.Error(), "the vectors the recipe holds") {
 				t.Fatalf("fitting answered %v", err)
 			}
-			if !c.unreadable && !errors.Is(err, errBroken) {
+			if errors.Unwrap(err) == nil || (!c.unreadable && !errors.Is(err, errBroken)) {
 				t.Errorf("the cause was lost: %v", err)
 			}
 			width, recipe := readWidth(t, db)

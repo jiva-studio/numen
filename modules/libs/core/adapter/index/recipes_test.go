@@ -102,7 +102,10 @@ func TestForgettingAndCompactingReportTheirFailure(t *testing.T) {
 		run    func(db *DB) error
 	}{
 		{"forgetting", "DELETE FROM vectors", func(db *DB) error {
-			_, err := db.ForgetOtherRecipes(t.Context(), "current")
+			n, err := db.ForgetOtherRecipes(t.Context(), "current")
+			if n != 0 {
+				t.Errorf("a deletion that failed counted %d", n)
+			}
 			return err
 		}},
 		{"compacting", "VACUUM", func(db *DB) error { return db.Compact(t.Context()) }},
