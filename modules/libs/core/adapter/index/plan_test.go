@@ -39,7 +39,7 @@ var expectedPlans = []struct {
 
 	{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "fingerprints", []any{1, "book"}, []string{"sources_by_fingerprint"}},
-	{chunk.Statements(), "reading", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
+	{chunk.Statements(), "source_text", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
 	{chunk.Statements(), "fingerprints_under", []any{1, "folder", 1, "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
 	{chunk.Statements(), "sources_under", []any{1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
 	// A folder and everything under it are filed at their new paths through the

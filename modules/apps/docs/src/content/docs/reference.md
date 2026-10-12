@@ -107,12 +107,12 @@ How a vault is made searchable.
 | `recognition.regions` |  | says what the parts of a page are for. A part the model names that `body` does not carry is not read. |
 | `recognition.regions.body` | a list of words | carry what the document says. |
 | `recognition.regions.head` | a list of words | open a part of the document, outermost first: where a name stands in the list is how deep the part it opens sits. |
-| `recognition.proofread` |  | names the profile a reading is put right at. Automatically there says whether a reading just made is put right without anybody asking. |
+| `recognition.proofread` |  | names the profile a recognition is put right at. Automatically there says whether a recognition just made is put right without anybody asking. |
 | `recognition.proofread.with` | text | the profile, by the name the profiles carry it under. |
-| `recognition.proofread.automatically` | yes or no | whether a reading already written down is put right without anybody asking for it. |
-| `proofreading` |  | what puts a reading right. Naming no profile here is naming no proofreader, and a reading is used as it was read. |
+| `recognition.proofread.automatically` | yes or no | whether a recognition already written down is put right without anybody asking for it. |
+| `proofreading` |  | what puts a recognition right. Naming no profile here is naming no proofreader, and a recognition is used as it was read. |
 | `proofreading.max_edit_distance` | a number | how far a correction may stand from the line as read and still be a correction: the Levenshtein distance between their letters, as a share of the longer of the two. |
-| `proofreading.profiles` |  | the places a reading is put right at, by the name a consumer asks for one under. |
+| `proofreading.profiles` |  | the places a recognition is put right at, by the name a consumer asks for one under. |
 | `transcription` |  | how a recording is listened to: which models hear it, where they came from, and how the speech in it is found. |
 | `transcription.runtime` | text | the ONNX shared library. Empty means the one beside the application, and then the one the platform holds. |
 | `transcription.dir` | text | a folder holding the models. Empty means the folder beside the application, and then the download cache. |
@@ -137,7 +137,7 @@ How a vault is made searchable.
 | `transcription.segmenter.least` | a number | how many milliseconds a segment runs to before it stands as a line of its own. |
 | `transcription.proofread` |  | names the profile a transcript is put right at. |
 | `transcription.proofread.with` | text | the profile, by the name the profiles carry it under. |
-| `transcription.proofread.automatically` | yes or no | whether a reading already written down is put right without anybody asking for it. |
+| `transcription.proofread.automatically` | yes or no | whether a transcript already written down is put right without anybody asking for it. |
 | `transcribe_recordings` | yes or no | whether a recording the vault holds no transcript for is listened to without anybody asking. |
 | `transcribe_under_mb` | a number | how large a recording may be and still be listened to without anybody asking, in megabytes. |
 

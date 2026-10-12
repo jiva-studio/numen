@@ -108,7 +108,7 @@ describe('a message the person is finished with', () => {
     const log = messageLog()
     log.getWriter('command')('Renamed')
 
-    log.dismiss('reading the books')
+    log.dismiss('extracting the books')
 
     expect(log.messages.value).toHaveLength(1)
   })

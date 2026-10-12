@@ -74,7 +74,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	}
 	defer release()
 
-	// A store the person emptied leaves the index standing on a reading, and
+	// A store the person emptied leaves the index standing on a recognition, and
 	// those rows are this use case's to take away as well.
 	names := text.Names(from, hash)
 	held, err := u.hasAnyName(ctx, store, names)
@@ -116,7 +116,7 @@ func (u DropTranscript) getProducer(
 	reader port.VaultReader,
 	path string,
 ) (from, hash string, stood bool, err error) {
-	said, held, err := u.Queries.Reading(ctx, v.ID, path)
+	said, held, err := u.Queries.GetSourceText(ctx, v.ID, path)
 	if err != nil {
 		return "", "", false, fmt.Errorf("read index: %w", err)
 	}

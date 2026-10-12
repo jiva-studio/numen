@@ -15,7 +15,7 @@ export const WORDS = {
   /** What the corner says while something about the vault is wrong. */
   unwatched: 'not following the vault',
   unread: 'the vault could not be read',
-  reading: 'reading the vault…',
+  indexing: 'indexing the vault…',
   nothingRead: 'nothing was read',
   going: 'These notes stopped saving because their files changed. The window waits.',
   later: 'Not yet',

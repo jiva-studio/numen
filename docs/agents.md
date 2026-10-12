@@ -92,7 +92,7 @@ These stand under a word other than the service that owns them:
 | `card_current` | a session of review |
 | `source_list`, `source_read` | a document |
 | `source_recognise`, `source_transcribe` | an artifact being made |
-| `artifact_read`, `artifact_write` | a transcript, an article or a reading, by which of them is asked for |
+| `artifact_read`, `artifact_write` | a transcript, an article or a recognition, by which of them is asked for |
 | `vault_list`, `vault_add`, `vault_rename`, `vault_remove`, `vault_open` | the vaults the installation holds |
 
 `file_read` and `url_import` stand under no service at all: nothing owns the bytes of a file that is neither a note nor a document, and nothing owns a url.

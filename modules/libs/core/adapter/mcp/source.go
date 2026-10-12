@@ -12,7 +12,7 @@ import (
 type Source struct {
 	Path string `json:"path"`
 	// ShouldRead says whether this document stands on what a model read in it. A
-	// reading still running stands on the pages it has reached, so this is true
+	// recognition still running stands on the pages it has reached, so this is true
 	// from the first of them.
 	//
 	// A scan that carries its own text says nothing about whether that text is
@@ -35,13 +35,13 @@ func addSourceTools(server *sdk.Server, core Core) {
 // A server built without one serves the tool that would read anyway, and it
 // answers that this installation cannot read scans.
 type Recogniser interface {
-	// Ready says whether reading could begin now without waiting for anything
+	// Ready says whether recognition could begin now without waiting for anything
 	// to arrive.
 	Ready() bool
 	// IsRunning says whether a document is being read.
 	IsRunning() bool
 	// Start reads one document behind whoever asked, and says whether it began
-	// now or waits behind the reading already going. A document is never
+	// now or waits behind the recognition already going. A document is never
 	// refused, and what it starts runs under the application.
 	Start(v domain.Vault, path string) port.StartOutcome
 }

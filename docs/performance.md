@@ -664,7 +664,7 @@ Nothing is laid out to count the pages, which is why the last row is nanoseconds
 
 Reading the file is paid once when the book is opened and not again while it is held; a chapter turned to is the second row.
 
-## Reading a scanned page with a model
+## Recognising a scanned page with a model
 
 The same machine, ONNX Runtime through `purego`, one page at 300 dpi: layout by PP-DocLayoutV3, lines by PP-OCRv5 detection, text by PP-OCRv6 tiny.
 
@@ -787,7 +787,7 @@ What the words half was doing is visible in one query. Asked for `Madhavendra Pu
 
 **The name in every chunk was left.** It is worth two points on top of the other, and it changes the text a vector is made from: the recipe changes, and every chunk of every recognised document is embedded again. Only the words half was measured here — what a vector that knows its chapter is worth cannot be known without buying those vectors. The number to beat is 346 and 346.
 
-## Putting a reading right
+## Putting a recognition right
 
 Recorded 2026-08-21 over the same 546-page scan, through a hosted model.
 
@@ -891,7 +891,7 @@ What was counted, per warm request:
 
 A session and the history screen each worked the whole log out again and wrote what it came to, whatever the cache held; both now ask it first. The history screen read the log twice — once for the days behind and once for the days ahead — and now reads it once and hands the reading on.
 
-**A reading of the answers is put in order once.** De-duplicating the log and sorting it by when is what every question of a history begins with, and four of them were each doing it: where the answers leave each card face, how much came back, what a day spent, and how long an answer takes. A reading now carries that order, worked out at the first asking. Two of the four read it. The other two are `SpentUnder` and `Faced` in `usecase/flashcards/budget.go` and `usecase/flashcards/curve.go`, and `Costed` and `CostedUnder` in `flashcards/review/cost.go`, which still put the answers in order for themselves; each is a one-line change to the reading's order, and 27 000 answers sorted is what each of them costs.
+**A loaded log is put in order once.** De-duplicating the log and sorting it by when is what every question of a history begins with, and four of them were each doing it: where the answers leave each card face, how much came back, what a day spent, and how long an answer takes. A reading now carries that order, worked out at the first asking. Two of the four read it. The other two are `SpentUnder` and `Faced` in `usecase/flashcards/budget.go` and `usecase/flashcards/curve.go`, and `Costed` and `CostedUnder` in `flashcards/review/cost.go`, which still put the answers in order for themselves; each is a one-line change to the reading's order, and 27 000 answers sorted is what each of them costs.
 
 **Nothing is shared between two requests.** Opening the window and then one preset tab walks the whole vault twice and reads the whole log twice: what a vault holds is read from its deck and stencil files at every request, and so are its answers. That is most of what the table above measures and none of what it changed.
 

@@ -17,42 +17,42 @@ import (
 
 // A vault being read is work the window reports, named by the vault it is on
 // and by how far it has got. A window session on a blank frame reads as broken.
-func TestReadingAVaultIsReportedAsWork(t *testing.T) {
+func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
 	unread.Name = "Sanskrit"
 	api.Registry = registry{held: []domain.Vault{unread}}
 
 	holding := make(chan struct{})
-	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		<-holding
 		return nil
 	})
 
-	if one := api.countVault(t.Context(), unread); !one.GetIsReading() || one.GetUnread() != "" {
+	if one := api.countVault(t.Context(), unread); !one.GetIsIndexing() || one.GetUnread() != "" {
 		t.Fatalf("the vault came back %+v", one)
 	}
 	testsupport.WaitFor(t, func() bool {
 		for _, at := range api.Window.Tasking.List() {
-			if at.Doing == "Reading the vault" && at.About == "Sanskrit" && at.IsAsked {
+			if at.Doing == "Indexing the vault" && at.About == "Sanskrit" && at.IsAsked {
 				return true
 			}
 		}
 		return false
 	})
 
-	// The reading ends, and the work goes with it.
+	// The indexing ends, and the work goes with it.
 	close(holding)
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 0 })
 }
 
-// A vault the index already carries is drawn from what it holds, so reading it
+// A vault the index already carries is drawn from what it holds, so indexing it
 // again is work drawn only once it has lasted. An instant walk says nothing.
-func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
+func TestIndexingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	api, held := newAPI(t, deck)
 
 	holding := make(chan struct{})
-	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		<-holding
 		return nil
 	})
@@ -61,12 +61,12 @@ func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
 
 	if at := api.Window.Tasking.List()[0]; at.IsAsked {
-		t.Errorf("reading a vault the index carries came back as work asked for: %+v", at)
+		t.Errorf("indexing a vault the index carries came back as work asked for: %+v", at)
 	}
 	close(holding)
 }
 
-// A reading that failed says why in the vault's own row, and is not begun over
+// An indexing that failed says why in the vault's own row, and is not begun over
 // and over by the counts that follow.
 func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	api, _ := newAPI(t)
@@ -74,7 +74,7 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	api.Registry = registry{held: []domain.Vault{unread}}
 
 	var tried atomic.Int64
-	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		tried.Add(1)
 		return errors.New("the folder is not there")
 	})
@@ -94,22 +94,22 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
 }
 
-// A vault forgotten after a clean reading is claimable again.
+// A vault forgotten after a clean indexing is claimable again.
 func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
-	r := &readings{}
+	r := &indexRuns{}
 	v := testsupport.NewVault(t, deck)
 	r.setIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
 	r.record(v, nil)
 	if read, _, _, _ := r.tryStart(v); read != nil {
-		t.Fatalf("a vault read clean was claimed before it was forgotten")
+		t.Fatalf("a vault indexed clean was claimed before it was forgotten")
 	}
 
 	r.clear(v.ID)
 
 	read, _, _, _ := r.tryStart(v)
 	if read == nil {
-		t.Fatalf("a vault forgotten after a clean reading was not claimable again")
+		t.Fatalf("a vault forgotten after a clean indexing was not claimable again")
 	}
 }
 
@@ -135,12 +135,12 @@ func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
 	}
 }
 
-// A vault is claimed by one reader at a time: the claim that begins a reading
-// says it is underway, a claim while it runs says so and begins nothing, a
-// reading that failed hands back why and begins nothing, and a vault read clean
+// A vault is claimed by one indexer at a time: the claim that begins an indexing
+// says it is underway, a claim while it runs says so and begins nothing, an
+// indexing that failed hands back why and begins nothing, and a vault indexed clean
 // begins nothing and is not underway.
-func TestAVaultIsClaimedForOneReadingAtATime(t *testing.T) {
-	r := &readings{}
+func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
+	r := &indexRuns{}
 	r.setIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 	v := domain.Vault{ID: "one"}
 
@@ -164,13 +164,13 @@ func TestAVaultIsClaimedForOneReadingAtATime(t *testing.T) {
 	r.record(v, nil)
 	read, _, underway, reason = r.tryStart(v)
 	if read != nil || underway || reason != "" {
-		t.Errorf("a claim after a clean reading came back %v %v %q", read != nil, underway, reason)
+		t.Errorf("a claim after a clean indexing came back %v %v %q", read != nil, underway, reason)
 	}
 }
 
 // A window that reads nothing claims nothing.
 func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
-	r := &readings{}
+	r := &indexRuns{}
 	read, _, underway, reason := r.tryStart(domain.Vault{ID: "one"})
 	if read != nil || underway || reason != "" {
 		t.Errorf("the claim came back %v %v %q", read != nil, underway, reason)
@@ -184,20 +184,20 @@ func TestAWindowWithNoIndexHoldsNoVault(t *testing.T) {
 	}
 }
 
-// A reading that failed stays in the list of work with why it failed.
-func TestAReadingThatFailedStaysAsWorkWithWhy(t *testing.T) {
+// An indexing that failed stays in the list of work with why it failed.
+func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 	isolate(t)
 	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
-	api.Reading(t.Context(), func(context.Context, domain.Vault) error {
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		return errors.New("the folder is not there")
 	})
 
 	api.countVault(t.Context(), unread)
 	testsupport.WaitFor(t, func() bool {
 		for _, at := range api.Window.Tasking.List() {
-			if at.Doing == "Reading the vault" && at.Error == "the folder is not there" {
+			if at.Doing == "Indexing the vault" && at.Error == "the folder is not there" {
 				return true
 			}
 		}
@@ -211,7 +211,7 @@ func TestAVaultReadWakesTheListeners(t *testing.T) {
 	api, _ := newAPI(t)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
-	api.Reading(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
 	heard, stop := api.subscribers.subscribe()
 	t.Cleanup(stop)

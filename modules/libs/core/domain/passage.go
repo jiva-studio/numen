@@ -33,8 +33,7 @@ type Passage struct {
 	// source's own bytes are the text.
 	Producer string
 
-	// SourceHash addresses the content of the source, and is what the files of a
-	// reading of it are kept under. Reading a passage back composes the name
+	// SourceHash addresses the content of the source, and is what the 	// recognition of it are kept under. Reading a passage back composes the name
 	// from this and Producer.
 	SourceHash string
 

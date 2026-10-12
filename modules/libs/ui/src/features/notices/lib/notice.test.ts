@@ -108,7 +108,7 @@ describe('how long work runs before it is worth a card', () => {
 })
 
 describe('a notice somebody asked for', () => {
-  const asked: Notice = { id: 'reading', text: 'Reading a scan', isAsked: true }
+  const asked: Notice = { id: 'reading', text: 'Recognising a scan', isAsked: true }
   const behind: Notice = { id: 'indexing', text: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {
@@ -295,7 +295,7 @@ describe('measuring how fast a count moves', () => {
   })
 
   it('measures nothing for work with no total to count against', () => {
-    const nothing: Notice = { id: 'scan', text: 'Reading a scan', isWorking: true }
+    const nothing: Notice = { id: 'scan', text: 'Recognising a scan', isWorking: true }
 
     expect(measureMovement(new Map(), [nothing], 1000).size).toBe(0)
   })

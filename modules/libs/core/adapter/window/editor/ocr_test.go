@@ -24,7 +24,7 @@ import (
 // the others.
 type indexed map[string]port.SourceText
 
-func (i indexed) Reading(_ context.Context, _ domain.VaultID, path string) (port.SourceText, bool, error) {
+func (i indexed) GetSourceText(_ context.Context, _ domain.VaultID, path string) (port.SourceText, bool, error) {
 	found, held := i[path]
 	return found, held, nil
 }

@@ -89,7 +89,7 @@ func TestARecordingNamedAsDrainAndReleaseEndsIsTranscribed(t *testing.T) {
 	if got := listening.Start(v, "talks/a.mp3"); got != port.Began {
 		t.Fatalf("the first recording was not transcribed: %v", got)
 	}
-	if n := waitForReading(t, hearing); n != 1 {
+	if n := waitForRecognition(t, hearing); n != 1 {
 		t.Fatalf("the first transcription is the %dth", n)
 	}
 	close(first)
@@ -97,7 +97,7 @@ func TestARecordingNamedAsDrainAndReleaseEndsIsTranscribed(t *testing.T) {
 	if taken := crossed.getOutcome(t); taken != port.Began {
 		t.Fatalf("the recording named as the line emptied was told %v", taken)
 	}
-	if n := waitForReading(t, hearing); n != 2 {
+	if n := waitForRecognition(t, hearing); n != 2 {
 		t.Fatalf("the recording named as the line emptied is the %dth transcription", n)
 	}
 

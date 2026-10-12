@@ -11,10 +11,10 @@ import (
 )
 
 // The binding stamps onto a tensor the engine that stood when it was made, and
-// the reading library makes an engine of its own. A transcription that made a
-// tensor and a reading opened after it are the two halves of that: this asks
+// the recognition library makes an engine of its own. A transcription that made a
+// tensor and a recognition opened after it are the two halves of that: this asks
 // that the second does not move what the first was built through.
-func TestATensorKeepsItsEngineWhenAReadingIsOpened(t *testing.T) {
+func TestATensorKeepsItsEngineWhenARecognitionIsOpened(t *testing.T) {
 	cfg := Defaults()
 	cfg.ShouldDownload = false
 	_, at, err := onnxruntime.Open(t.Context(), cfg.settings())
@@ -28,7 +28,7 @@ func TestATensorKeepsItsEngineWhenAReadingIsOpened(t *testing.T) {
 	}
 	defer before.Destroy()
 
-	// What opening a recogniser does with the runtime: the reading library is
+	// What opening a recogniser does with the runtime: the recognition library is
 	// asked for a reader, and makes its engine to answer.
 	_, _ = paddle.NewEngine(paddle.Config{OnnxRuntimeLibPath: at})
 
@@ -39,7 +39,7 @@ func TestATensorKeepsItsEngineWhenAReadingIsOpened(t *testing.T) {
 	defer after.Destroy()
 
 	if boundTo(before) != boundTo(after) {
-		t.Errorf("a tensor made before the reading was opened runs on %x, and one made after on %x",
+		t.Errorf("a tensor made before the recognition was opened runs on %x, and one made after on %x",
 			boundTo(before), boundTo(after))
 	}
 }

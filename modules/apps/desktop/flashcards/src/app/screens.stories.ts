@@ -187,7 +187,7 @@ const VAULT: VaultCardsDue = {
   new: 29,
   decks: DECKS,
   presets: [],
-  isReading: false,
+  isIndexing: false,
   unread: '',
 }
 

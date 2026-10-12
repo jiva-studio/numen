@@ -20,7 +20,7 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   decks: [],
   presets: [],
   unread: '',
-  isReading: false,
+  isIndexing: false,
   ...fields,
 })
 
@@ -140,9 +140,9 @@ describe('the front door once the counts are in', () => {
   // A vault the index does not carry is being read into it, which is what its
   // row says while that runs.
   it('says a vault is being read, and prints no shape for it', () => {
-    const one = mountVaults(false, [vault({ isCounted: false, isReading: true })])
+    const one = mountVaults(false, [vault({ isCounted: false, isIndexing: true })])
 
-    expect(one.find('.welcome-page__row--vault').text()).toContain('Reading the vault')
+    expect(one.find('.welcome-page__row--vault').text()).toContain('Indexing the vault')
     expect(one.findComponent(Skeleton).exists()).toBe(false)
   })
 })

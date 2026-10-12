@@ -27,7 +27,7 @@ import (
 // holds both.
 const (
 	// OCRDir is text with the place on the page each word stands at.
-	OCRDir = text.Reading
+	OCRDir = text.OCR
 	// TranscriptDir is text with the times each stretch of it was said at.
 	TranscriptDir = text.Transcript
 	// ArticleDir is the prose a page is written around.
@@ -469,7 +469,7 @@ func (d *DerivedStore) checkVaultIdentity() error {
 
 // readIdentity is the identity a folder holds, and nothing where it holds
 // none. The file it was read from comes back with it, stamped before the
-// reading, so a file that changed under the reading is read again at the next
+// reading, so a file that changed under the recognition is read again at the next
 // asking.
 func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 	if serviceDir == "" {
@@ -531,7 +531,7 @@ func (d *DerivedStore) findArea(clean string) (string, bool) {
 //
 // The name is joined under the area it names and checked against it with every
 // link on the way resolved. Without that check a name stored here could be a
-// link to a note, and a reading would be read back as what a person wrote —
+// link to a note, and a recognition would be read back as what a person wrote —
 // or would be written over it.
 //
 // The store's folder need not exist: as much of each path as does exist is

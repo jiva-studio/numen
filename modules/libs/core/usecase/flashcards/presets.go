@@ -147,7 +147,7 @@ func Default() PresetContents {
 // so against it. A deck naming two presets is scheduled by the first and carries
 // a problem: two presets are two answers to one question.
 func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
-	return u.Reading().GetForDeck(ctx, v, deck)
+	return u.OpenReads().GetForDeck(ctx, v, deck)
 }
 
 // PresetReads is a run of reads over one vault, holding each preset note it
@@ -166,8 +166,8 @@ type PresetReads struct {
 	parseProblems map[string][]string
 }
 
-// Reading opens a run of reads sharing the notes they open.
-func (u Presets) Reading() *PresetReads {
+// OpenReads opens a run of reads sharing the notes they open.
+func (u Presets) OpenReads() *PresetReads {
 	return &PresetReads{
 		Presets:    u,
 		held:       make(map[string]PresetContents),

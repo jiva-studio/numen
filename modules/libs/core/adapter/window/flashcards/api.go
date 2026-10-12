@@ -84,8 +84,8 @@ type API struct {
 	// tool's answer is data where a question is read as instruction.
 	currentCard atomic.Pointer[CurrentCard]
 
-	runs     sessions
-	readings readings
+	runs      sessions
+	indexRuns indexRuns
 
 	// subscribers is everyone waiting to hear that a vault moved.
 	subscribers changeSubscribers

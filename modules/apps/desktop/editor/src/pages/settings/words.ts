@@ -55,7 +55,7 @@ export const WORDS = {
   transcriptProofreadAlways: 'Proofread every transcript',
   transcriptProofreadAlwaysDetail:
     'Whether a transcript is put right as it is made, without being asked.',
-  /** Reading a scanned page, and putting the reading right. */
+  /** Recognising a scanned page, and putting the recognition right. */
   ocrModel: 'OCR model',
   ocrModelDetail: 'The model a scanned page is read by.',
   ocrProofread: 'Proofreading a scanned reading',

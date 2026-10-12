@@ -4,7 +4,7 @@
 --
 -- All three are set by every write, so a source recorded from a walk alone —
 -- which knows none of them — clears what an earlier reading believed. A file
--- that changed is a file whose reading was of other bytes.
+-- that changed is a file whose recognition was of other bytes.
 INSERT INTO sources (vault_id, path, kind, size, modified_at, hash, recipe, producer)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (vault_id, path) DO UPDATE SET

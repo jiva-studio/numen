@@ -15,25 +15,25 @@ import (
 // that cannot ask has only one way to find out whether a book has been read: to
 // ask for it to be read again and be refused.
 
-// A book nothing has read carries a reading all the same, and it is nothing.
+// A book nothing has read carries a recognition all the same, and it is nothing.
 // The row is the answer, and its absence would be a build that makes no
-// readings at all.
-func TestABookNothingHasReadCarriesAReadingThatIsNothing(t *testing.T) {
+// recognitions at all.
+func TestABookNothingHasReadCarriesARecognitionThatIsNothing(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 
-	// A scan carries its reading and that reading put right: what a proofreader
+	// A scan carries its recognition and that recognition put right: what a proofreader
 	// writes is another thing to ask about, and is asked about here.
 	held := getArtifactStates(t, api, book)
 	if len(held) != 2 {
 		t.Fatalf("a book carries %v", held)
 	}
 	if held[readingOf] != v1.State_STATE_NONE {
-		t.Errorf("the reading of a book nothing read is %s", held[readingOf])
+		t.Errorf("the recognition of a book nothing read is %s", held[readingOf])
 	}
 }
 
-// A book a model has read carries that reading, and how long it is.
-func TestABookAModelHasReadCarriesTheReading(t *testing.T) {
+// A book a model has read carries that recognition, and how long it is.
+func TestABookAModelHasReadCarriesTheRecognition(t *testing.T) {
 	const wrote = "what the model read off the pages"
 	api, _ := openRunWindow(t,
 		stored{derived.Artifact(reader, scanned): []byte(wrote)},
@@ -53,7 +53,7 @@ func TestABookAModelHasReadCarriesTheReading(t *testing.T) {
 		t.Errorf("a book a model read is %s", held[0].GetState())
 	}
 	if held[0].GetKind() != v1.ArtifactKind_ARTIFACT_KIND_OCR {
-		t.Errorf("the reading is a %s", held[0].GetKind())
+		t.Errorf("the recognition is a %s", held[0].GetKind())
 	}
 }
 

@@ -82,11 +82,11 @@ type EmbedResult struct {
 	Embedded int // chunks that now carry one
 	// Reused counts the chunks whose vector was already made for their text and
 	// was claimed rather than bought.
-	Reused    int
-	Vanished  int    // whose source the vault no longer holds
-	Displaced int    // whose place is not in the text their source holds now
-	Reading   string // the source open now
-	IsBusy    bool   // somebody else is embedding this vault, and nothing was done
+	Reused        int
+	Vanished      int    // whose source the vault no longer holds
+	Displaced     int    // whose place is not in the text their source holds now
+	CurrentSource string // the source open now
+	IsBusy        bool   // somebody else is embedding this vault, and nothing was done
 }
 
 // pipelineBufferSize is the number of batches buffered between pipeline stages.
@@ -101,14 +101,14 @@ type preparedBatch struct {
 	reusedCount int
 	asking      []string
 	askingMap   []int
-	reading     string
+	source      string
 }
 
 // completedBatch is one batch whose vectors are ready to be stored.
 type completedBatch struct {
 	vectors []port.Vector
 	reused  int
-	reading string
+	source  string
 }
 
 // Execute embeds what one vault owes, in groups, until nothing owes anything.
@@ -140,10 +140,10 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	source := extracted{of: text.Reader{Vault: reader, Derived: store, Documents: u.Documents}}
 
 	var mu sync.Mutex
-	updateProgress := func(reading string, embedded, reused int) {
+	updateProgress := func(source string, embedded, reused int) {
 		mu.Lock()
-		if reading != "" {
-			res.Reading = reading
+		if source != "" {
+			res.CurrentSource = source
 		}
 		res.Embedded += embedded
 		res.Reused += reused
@@ -337,7 +337,7 @@ func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out 
 func (u Embed) storeBatches(
 	ctx context.Context,
 	in <-chan completedBatch,
-	updateProgress func(reading string, embedded, reused int),
+	updateProgress func(source string, embedded, reused int),
 ) error {
 	for {
 		select {
@@ -352,7 +352,7 @@ func (u Embed) storeBatches(
 					return fmt.Errorf("write %d vectors: %w", len(comp.vectors), err)
 				}
 			}
-			updateProgress(comp.reading, len(comp.vectors), comp.reused)
+			updateProgress(comp.source, len(comp.vectors), comp.reused)
 		}
 	}
 }
@@ -375,8 +375,8 @@ func (u Embed) read(
 
 	for _, p := range owing {
 		mu.Lock()
-		if p.Source != res.Reading {
-			res.Reading = p.Source
+		if p.Source != res.CurrentSource {
+			res.CurrentSource = p.Source
 			snapshot := *res
 			mu.Unlock()
 			u.progress(snapshot)
@@ -437,7 +437,7 @@ func (u Embed) prepareBatch(
 		reused:    make(map[int]port.Vector),
 		asking:    make([]string, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
-		reading:   owing[len(owing)-1].Source,
+		source:    owing[len(owing)-1].Source,
 	}
 	var deduplicated map[string]int
 	if len(texts) > 1 {
@@ -532,7 +532,7 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 	return completedBatch{
 		vectors: out,
 		reused:  prep.reusedCount,
-		reading: prep.reading,
+		source:  prep.source,
 	}, nil
 }
 

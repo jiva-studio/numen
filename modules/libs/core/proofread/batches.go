@@ -5,15 +5,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 )
 
-// GetScanBatches is the printed lines of a reading, gathered by the page they
+// GetScanBatches is the printed lines of a recognition, gathered by the page they
 // were read from.
 //
-// A line is known by the index of its box in the reading, so the number a
+// A line is known by the index of its box in the recognition, so the number a
 // correction is keyed by counts through the whole book. Boxes come in reading
 // order, so batches and their lines come back in it.
 //
-// A box reaching past the prose was written for other bytes, and the reading is
-// refused whole. So is a box on a page the reading has already left behind: a
+// A box reaching past the prose was written for other bytes, and the recognition is
+// refused whole. So is a box on a page the recognition has already left behind: a
 // batch is asked about and answered for by its page, and two batches under one
 // page would take one reply between them, writing one page's corrections onto
 // the other's lines.

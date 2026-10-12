@@ -378,9 +378,9 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 { "indexing": { "embedding": { "indexing": { "use": "" } } } }
 ```
 
-## Reading a scanned document
+## Recognising a scanned document
 
-`indexing.recognition` is how a scanned page is read. Nothing here runs on its own: a person asks for a reading, and what one is and where it is kept is in [Recognising a document](recognising.md).
+`indexing.recognition` is how a scanned page is read. Nothing here runs on its own: a person asks for a recognition, and what one is and where it is kept is in [Recognising a document](recognising.md).
 
 ```json
 {
@@ -396,8 +396,8 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 | | |
 | --- | --- |
 | `detect.expand` | how many pixels a found line is widened by, in the image the detector reads: the part of the page scaled to the longest side it is read at. One number serves a heading and a paragraph, because that scaling brings the two to nearly one size. |
-| `proofread.with` | which profile under `indexing.proofreading.profiles` puts a reading right. Empty proofreads nothing, and a reading is used exactly as it was read. A name no profile carries is an error at startup. |
-| `proofread.automatically` | whether a reading is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the book in front of them. |
+| `proofread.with` | which profile under `indexing.proofreading.profiles` puts a recognition right. Empty proofreads nothing, and a recognition is used exactly as it was read. A name no profile carries is an error at startup. |
+| `proofread.automatically` | whether a recognition is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the book in front of them. |
 
 The boundary the detector answers with is the text's own outline drawn inside the letters, short by a share of the line's height, and the widening is a flat number of pixels. At 10 the top of every capital and the last letter of every line were cut away. 18 is the middle of where it stops mattering, and it is a setting because it was measured on one book at one resolution — the sweep is in [Performance](performance.md).
 
@@ -445,13 +445,13 @@ The boundary the detector answers with is the text's own outline drawn inside th
 
 `transcribe_recordings` and `transcription.proofread.automatically` are two flags about two things. The first decides whether a recording nobody asked about is listened to at all. The second decides whether a transcript that already exists is put right by itself. An installation can hear every recording unasked and proofread none of them, and it can proofread every transcript it has while listening to nothing new.
 
-Reading a scan and transcribing a recording each hold the models and the processor, so they take turns: a person who asked for a scan to be read waits for it before a recording is transcribed, and the one waiting says so in the list of what is being done.
+Recognising a scan and transcribing a recording each hold the models and the processor, so they take turns: a person who asked for a scan to be read waits for it before a recording is transcribed, and the one waiting says so in the list of what is being done.
 
 Every recording handed over ends in an answer, and only one of them is "later". Words are an answer, a recording carrying no speech is an answer, and a file nothing here can open is an answer; all three are written down and the recording is not listened to again. Bytes another run holds are the one ending that means come back later. Asking for a recording to be tried again is taking its answer away.
 
 ## Putting a text right
 
-`indexing.proofreading` is what corrects a text a model produced — a reading of a scan, a transcript of a recording. It stands beside `recognition` and `transcription` because a text put right is a text searched, and it holds the profiles both of them name. What a correction may change, and what refuses one, is in [Proofreading](proofreading.md).
+`indexing.proofreading` is what corrects a text a model produced — a recognition of a scan, a transcript of a recording. It stands beside `recognition` and `transcription` because a text put right is a text searched, and it holds the profiles both of them name. What a correction may change, and what refuses one, is in [Proofreading](proofreading.md).
 
 An installation naming no profile proofreads nothing, and nothing asks for a key or a network.
 

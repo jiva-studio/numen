@@ -516,7 +516,7 @@ func TestScanReportsTheNotesItIndexed(t *testing.T) {
 			t.Errorf("scan did not say %q:\n%q", want, out)
 		}
 	}
-	for _, not := range []string{"sources:", "embedded", "vectors made", "reading "} {
+	for _, not := range []string{"sources:", "embedded", "vectors made", "extracting "} {
 		if strings.Contains(out, not) {
 			t.Errorf("scan of one note and no model said %q:\n%q", not, out)
 		}
@@ -553,12 +553,12 @@ func TestScanReportsTheBooksItRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"  reading bee.epub\r", "1 sources: 1 read, 0 unchanged, "} {
+	for _, want := range []string{"  extracting bee.epub\r", "1 sources: 1 read, 0 unchanged, "} {
 		if !strings.Contains(out, want) {
 			t.Errorf("scan did not say %q:\n%q", want, out)
 		}
 	}
-	if strings.Contains(out, "reading \r") {
+	if strings.Contains(out, "extracting \r") {
 		t.Errorf("scan named a book when none was open:\n%q", out)
 	}
 }

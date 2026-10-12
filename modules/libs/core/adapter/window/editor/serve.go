@@ -46,7 +46,7 @@ type Installation struct {
 	registry port.VaultRegistry
 	tasks    *task.Tasks
 	out      io.Writer
-	// models is this machine's models and processor. Reading a scan and
+	// models is this machine's models and processor. Recognising a scan and
 	// listening to a recording each hold them, one run at a time.
 	models *source.Lock
 	// under is what every vault's passes run under.
@@ -241,7 +241,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		api.Imports = &fetching
 	}
 
-	// Reading every file again is what this launch was asked for, and is not
+	// Indexing every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
 	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands
 	if err := pool.startVault(first, made.IsRebuildingIndex()); err != nil {
@@ -363,9 +363,9 @@ func (o *Installation) level(ctx context.Context, v domain.Vault, paths []string
 // What each pass behind the window is called in the list of what is being done.
 // One name each, so a pass that reports itself again replaces itself.
 const (
-	walkingNotes  = "walking the notes"
-	readingBooks  = "reading the books"
-	makingVectors = "making the vectors"
+	walkingNotes    = "walking the notes"
+	extractingBooks = "extracting the books"
+	makingVectors   = "making the vectors"
 	// wordsAlone is a search answered short of the half that asks by meaning.
 	wordsAlone = "answering by words alone"
 	// wearingATheme is a theme the settings name that the catalogue has not.

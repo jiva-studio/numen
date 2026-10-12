@@ -68,7 +68,7 @@ enum ArtifactKind {
   // kept under `ocr`.
   ARTIFACT_KIND_OCR = 1;
 
-  // That reading put right by a person, under `.corrected` beside it.
+  // That recognised text put right by a person, under `.corrected` beside it.
   ARTIFACT_KIND_OCR_CORRECTED = 2;
 
   // Text with the times each stretch of it was said at, under the name of what
@@ -77,7 +77,7 @@ enum ArtifactKind {
   ARTIFACT_KIND_TRANSCRIPT = 3;
 
   // A transcript put right by a person, under `.corrected` beside the one it
-  // corrects. It says which it is: a reading put right is another kind, and a
+  // corrects. It says which it is: recognised text put right is another kind, and a
   // caller editing one has to know which of them it holds.
   ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 4;
 

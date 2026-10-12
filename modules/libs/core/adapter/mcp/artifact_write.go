@@ -13,10 +13,10 @@ import (
 )
 
 // errNotCorrectable is a kind whose corrections are not the text itself. A
-// reading's are records keyed to the printed line each one puts right, and the
+// recognition's are records keyed to the printed line each one puts right, and the
 // coordinates on the page hang off those numbers.
 var errNotCorrectable = errors.New(
-	"only a transcript is written here; a reading is put right by a proofreading run")
+	"only a transcript is written here; a recognition is put right by a proofreading run")
 
 type artifactWriteInput struct {
 	Path   string `json:"path" jsonschema:"the file it was made from"`
@@ -46,7 +46,7 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 			"one. Name `start` and `length`, in milliseconds, only to replace a span " +
 			"wider than what you send — to take words out, say. Send WebVTT, times and all: a transcript " +
 			"without its times is not one, and the times are what a person's click " +
-			"in the tab lands on. Only `transcript` is written here — a reading off a " +
+			"in the tab lands on. Only `transcript` is written here — a recognition off a " +
 			"scan is corrected by a proofreading run, whose corrections are keyed to " +
 			"the printed line.",
 	}, newHandler(func(ctx context.Context, in artifactWriteInput) (artifactWriteOutput, error) {

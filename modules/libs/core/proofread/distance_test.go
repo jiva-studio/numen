@@ -20,7 +20,7 @@ func oneLine(text string) proofread.Batch {
 // right.
 func TestACorrectionHeldToNoDistanceStandsHoweverFar(t *testing.T) {
 	if apart := proofread.EditDistance(asHeard, asSaid); apart <= proofread.MaxEditDistance {
-		t.Fatalf("the two stand %.2f apart, which the reading's own limit allows", apart)
+		t.Fatalf("the two stand %.2f apart, which the recognition's own limit allows", apart)
 	}
 
 	put, _, ok := proofread.GetFixedLines(oneLine(asHeard), "7 | "+asSaid, 0)
@@ -32,7 +32,7 @@ func TestACorrectionHeldToNoDistanceStandsHoweverFar(t *testing.T) {
 	}
 }
 
-// The reading's own limit still holds where it is given.
+// The recognition's own limit still holds where it is given.
 func TestACorrectionBeyondTheLimitGivenIsDropped(t *testing.T) {
 	put, _, ok := proofread.GetFixedLines(oneLine(asHeard), "7 | "+asSaid, proofread.MaxEditDistance)
 	if !ok {

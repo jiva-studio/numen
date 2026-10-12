@@ -29,12 +29,12 @@ import (
 const (
 	// An artifact is named by what it is. What made it is the store's to say,
 	// and a caller asking for one asks for a kind and not for a producer.
-	readingID             = derived.Reading
-	readingCorrectedID    = derived.Reading + ".corrected"
-	transcriptID          = derived.Transcript
-	transcriptCorrectedID = derived.Transcript + ".corrected"
-	articleID             = derived.Article
-	copiedID              = derived.Copies
+	recognitionID          = derived.OCR
+	recognitionCorrectedID = derived.OCR + ".corrected"
+	transcriptID           = derived.Transcript
+	transcriptCorrectedID  = derived.Transcript + ".corrected"
+	articleID              = derived.Article
+	copiedID               = derived.Copies
 )
 
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
@@ -111,13 +111,13 @@ func (a *API) getProducer(at domain.URL) string {
 func getArtifactID(of v1.ArtifactKind) (string, bool) {
 	switch of {
 	case v1.ArtifactKind_ARTIFACT_KIND_OCR:
-		return readingID, true
+		return recognitionID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT:
 		return transcriptID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
 		return transcriptCorrectedID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED:
-		return readingCorrectedID, true
+		return recognitionCorrectedID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
 		return articleID, true
 	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
@@ -634,14 +634,14 @@ func (a *API) recognitionCorrections(
 	if err != nil || !hasReading {
 		return out, err
 	}
-	switch _, err := store.Read(ctx, derived.Proofread(derived.Reading, said.Hash)); {
+	switch _, err := store.Read(ctx, derived.Proofread(derived.OCR, said.Hash)); {
 	case err == nil:
 		out.State = v1.State_STATE_DONE
 		return out, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return nil, err
 	}
-	switch _, err := store.Read(ctx, derived.Corrections(derived.Reading, said.Hash)); {
+	switch _, err := store.Read(ctx, derived.Corrections(derived.OCR, said.Hash)); {
 	case err == nil:
 		out.State = v1.State_STATE_RUNNING
 		return out, nil

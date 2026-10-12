@@ -143,8 +143,8 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 	if len(progress) < len(index.groups) {
 		t.Errorf("progress was reported %d times for %d groups", len(progress), len(index.groups))
 	}
-	if last := progress[len(progress)-1]; last.Reading != bookPath {
-		t.Errorf("progress says it is reading %q", last.Reading)
+	if last := progress[len(progress)-1]; last.CurrentSource != bookPath {
+		t.Errorf("progress says it is extracting %q", last.CurrentSource)
 	}
 }
 
@@ -283,7 +283,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	}
 }
 
-func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
+func TestASourceStandingOnARecognitionIsEmbeddedFromIt(t *testing.T) {
 	// A source that stands on what a model read in it holds no text of its own
 	// that a chunk is a place in. Reaching that text is the store's, and an
 	// embedder without one passes the chunk over and says nothing.
@@ -303,7 +303,7 @@ func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	if index.sources[first.ID][bookPath].Producer == "" {
-		t.Fatal("the source does not stand on a reading, so embedding it proves nothing")
+		t.Fatal("the source does not stand on a recognition, so embedding it proves nothing")
 	}
 	small := index.small(first.ID)
 	if len(small) == 0 {

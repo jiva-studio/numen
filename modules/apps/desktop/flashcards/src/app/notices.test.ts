@@ -96,8 +96,8 @@ describe('what the window has to say', () => {
     one.setTasks([reads()])
 
     expect(one.notices.value[0]).toMatchObject({
-      id: 'reading\t01A',
-      text: 'Reading the vault',
+      id: 'indexing\t01A',
+      text: 'Indexing the vault',
       about: 'Sanskrit',
       isWorking: true,
       isAsked: true,
@@ -130,8 +130,8 @@ describe('what the window has to say', () => {
 
 /** One vault being read, as the answer holds it. */
 const reads = (fields: Partial<Task> = {}): Task => ({
-  id: 'reading\t01A',
-  label: 'Reading the vault',
+  id: 'indexing\t01A',
+  label: 'Indexing the vault',
   about: 'Sanskrit',
   error: '',
   isAsked: true,

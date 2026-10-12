@@ -75,7 +75,7 @@ type GetVaultStateResponse struct {
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Where the vault stands on this disk.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// How far reading the vault has got.
+	// How far indexing the vault has got.
 	Scan *Scan `protobuf:"bytes,4,opt,name=scan,proto3" json:"scan,omitempty"`
 	// How far searching it by meaning has got.
 	Coverage      *IndexCoverage `protobuf:"bytes,5,opt,name=coverage,proto3" json:"coverage,omitempty"`
@@ -148,7 +148,7 @@ func (x *GetVaultStateResponse) GetCoverage() *IndexCoverage {
 	return nil
 }
 
-// Scan is how far reading a vault has got, and what stopped it.
+// Scan is how far indexing a vault has got, and what stopped it.
 type Scan struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// IsReady is set when the scan has finished.

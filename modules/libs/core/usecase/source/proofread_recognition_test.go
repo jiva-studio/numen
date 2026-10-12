@@ -93,7 +93,7 @@ func newProofreadRecognition(t *testing.T, says map[int]string) (ProofreadRecogn
 // right.
 func newProofreadable(t *testing.T) proofreadable {
 	t.Helper()
-	read, v, _, shelved, _ := reading(t, "the words", outline)
+	read, v, _, shelved, _ := createRecognise(t, "the words", outline)
 	if _, err := read.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestNoProofreadingIsMadeWithNothingToProofreadWith(t *testing.T) {
 	}
 }
 
-func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T) {
+func TestTheCorrectionsGoBesideTheRecognitionAndTheRecognitionIsNotTouched(t *testing.T) {
 	put, v, shelved, _ := newProofreadRecognition(t, map[int]string{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
@@ -164,7 +164,7 @@ func TestTheCorrectionsGoBesideTheReadingAndTheReadingIsNotTouched(t *testing.T)
 	}
 }
 
-func TestACorrectedReadingIsTheTextTheSourceIsCutFrom(t *testing.T) {
+func TestACorrectedRecognitionIsTheTextTheSourceIsCutFrom(t *testing.T) {
 	put, v, shelved, _ := newProofreadRecognition(t, map[int]string{0: corrects(0, "the WORDS 1")})
 
 	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
@@ -281,7 +281,7 @@ func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 	}
 }
 
-func TestOneRunToAReading(t *testing.T) {
+func TestOneRunToARecognition(t *testing.T) {
 	put, v, shelved, by := newProofreadRecognition(t, nil)
 	shelved.hold(textNames(t, shelved).corrections)
 
@@ -297,7 +297,7 @@ func TestOneRunToAReading(t *testing.T) {
 	}
 }
 
-func TestAReadingThatIsNotThereIsNothingToProofread(t *testing.T) {
+func TestARecognitionThatIsNotThereIsNothingToProofread(t *testing.T) {
 	put, v, shelved, _ := newProofreadRecognition(t, nil)
 	names := textNames(t, shelved)
 	if err := shelved.Remove(t.Context(), names.artifact); err != nil {
@@ -530,7 +530,7 @@ func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
 
 // A recognition nothing is left to be asked about is not work, and nothing is told
 // about it.
-func TestAReadingAtItsLastPageReportsNoProgress(t *testing.T) {
+func TestARecognitionAtItsLastPageReportsNoProgress(t *testing.T) {
 	held := newProofreadable(t)
 	v := held.vault
 	first := held.put(t, &corrector{says: map[int]string{0: corrects(0, "the WORDS 1")}})

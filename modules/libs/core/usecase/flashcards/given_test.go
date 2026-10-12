@@ -4,8 +4,8 @@ import (
 	"testing"
 )
 
-// A reading works its order out once, however many callers ask for it.
-func TestAReadingIsPutInOrderOnce(t *testing.T) {
+// A loaded log works its order out once, however many callers ask for it.
+func TestALoadedLogIsPutInOrderOnce(t *testing.T) {
 	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 
@@ -15,10 +15,10 @@ func TestAReadingIsPutInOrderOnce(t *testing.T) {
 	}
 	first, again := held.History(), held.History()
 	if len(first) != loadDays*loadPerDay {
-		t.Fatalf("the reading came to %d answers where the vault holds %d",
+		t.Fatalf("the log came to %d answers where the vault holds %d",
 			len(first), loadDays*loadPerDay)
 	}
 	if &first[0] != &again[0] {
-		t.Error("the reading was put in order twice")
+		t.Error("the log was put in order twice")
 	}
 }

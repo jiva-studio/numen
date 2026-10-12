@@ -27,7 +27,7 @@ func (a *API) ReadOcr(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
-	// A reading is read off the disk, and a layer is asked of the document,
+	// A recognition is read off the disk, and a layer is asked of the document,
 	// which waits for one of the pool. A caller is answered or told to ask
 	// again; it is not held while a recognition has every worker.
 	ctx, cancel := context.WithTimeout(ctx, openTimeout)

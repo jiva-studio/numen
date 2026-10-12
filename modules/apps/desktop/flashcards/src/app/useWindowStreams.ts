@@ -66,7 +66,7 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
       },
     )
     // What is being done behind the window, which is a vault read into the index.
-    // It is a stream because a reading begins without the page asking for one.
+    // It is a stream because an indexing begins without the page asking for one.
     void follows(
       () => itself.watchTasks({ window: WINDOW }, { signal: listening.signal }),
       (said) => {

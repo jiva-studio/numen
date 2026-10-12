@@ -44,7 +44,7 @@ type allowance struct {
 // What has been answered since the day opened is off it, so a second session
 // takes up where the first left off.
 func getBudgets(
-	ctx context.Context, v domain.Vault, reading *PresetReads, day review.Day,
+	ctx context.Context, v domain.Vault, reads *PresetReads, day review.Day,
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 	log ReviewLog, by review.Scheduler, at func(retention float64) review.Scheduler,
 	now time.Time,
@@ -54,7 +54,7 @@ func getBudgets(
 		allowances: make(map[string]*allowance),
 		cards:      make(map[string]int),
 	}
-	survey, err := readPresetSurvey(ctx, v, reading, faces, schedules, out)
+	survey, err := readPresetSurvey(ctx, v, reads, faces, schedules, out)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ type presetSurvey struct {
 // preset holds. A deck is asked once however many faces it holds, and a preset
 // note is opened once however many decks name it.
 func readPresetSurvey(
-	ctx context.Context, v domain.Vault, reading *PresetReads, faces []CardFace,
+	ctx context.Context, v domain.Vault, reads *PresetReads, faces []CardFace,
 	schedules map[review.CardFaceID]review.Schedule, out *budgets,
 ) (presetSurvey, error) {
 	sv := presetSurvey{
@@ -125,7 +125,7 @@ func readPresetSurvey(
 	for _, one := range faces {
 		path, known := sv.asked[one.Deck]
 		if !known {
-			p, err := reading.GetForDeck(ctx, v, one.Deck)
+			p, err := reads.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
 				return presetSurvey{}, err
 			}

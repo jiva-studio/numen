@@ -431,7 +431,7 @@ describe('what the control stands at', () => {
   })
 
   // The window's own arithmetic never reaches the eye as a figure now: until
-  // the first answer lands the picture says it is reading the vault, and no
+  // the first answer lands the picture says it is indexing the vault, and no
   // tile, no axis number and no readout is drawn.
   it('draws no figure at all until the answer lands', () => {
     const { tab } = mountPresetTab({ isHonest: false })
@@ -480,7 +480,7 @@ describe('what the control stands at', () => {
 
   // A caption promising work in progress is a promise, and there is nothing
   // behind it once the vault has refused the picture.
-  it('says nothing of reading the vault where no answer is coming', () => {
+  it('says nothing of indexing the vault where no answer is coming', () => {
     const { tab } = mountPresetTab({ isHonest: false }, {}, false)
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(0)
     expect(tab.text()).not.toContain(words.waiting)

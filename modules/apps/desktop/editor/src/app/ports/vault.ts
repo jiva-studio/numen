@@ -12,7 +12,7 @@ export interface VaultPort {
     name: string
     /** The folder the vault sits in, absolute on this machine. */
     path: string
-    /** How far reading the vault has got. */
+    /** How far indexing the vault has got. */
     scan: {
       isReady: boolean
       error: string

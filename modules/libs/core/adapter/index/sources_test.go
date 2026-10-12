@@ -216,7 +216,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	read, held, err := sources.Reading(ctx, first.ID, "library/scan.pdf")
+	read, held, err := sources.GetSourceText(ctx, first.ID, "library/scan.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestAPathWithNoSourceIsNotHeld(t *testing.T) {
 	db := openDB(t)
 	saveThroughPort(t, db, second, "library/a.epub", thisYear, "violins tune")
 
-	read, held, err := db.Sources().Reading(t.Context(), first.ID, "library/a.epub")
+	read, held, err := db.Sources().GetSourceText(t.Context(), first.ID, "library/a.epub")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +285,7 @@ func TestVectorsSavedThroughThePortSettleWhatWasOwed(t *testing.T) {
 }
 
 // The sources a producer made the text of are listed with the producer and the
-// hash their reading is kept under.
+// hash their recognition is kept under.
 func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -321,7 +321,7 @@ func TestReadingASourceOfAClosedIndexFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := db.Sources().Reading(t.Context(), first.ID, "library/a.epub"); err == nil {
+	if _, _, err := db.Sources().GetSourceText(t.Context(), first.ID, "library/a.epub"); err == nil {
 		t.Error("reading a closed index reported the source as not held")
 	}
 }

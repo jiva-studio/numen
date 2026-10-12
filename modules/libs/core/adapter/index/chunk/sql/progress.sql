@@ -1,4 +1,4 @@
--- How far reading a vault for meaning has got: small chunks held, and how many
+-- How far indexing a vault for meaning has got: small chunks held, and how many
 -- of them owe nothing under the recipe now in use.
 --
 -- Only the chunks that carry vectors are counted. A large chunk is text to

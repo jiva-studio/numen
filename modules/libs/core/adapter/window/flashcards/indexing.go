@@ -11,14 +11,14 @@ import (
 // IndexVault is a vault walked into the index.
 type IndexVault func(ctx context.Context, v domain.Vault) error
 
-// readings is which vaults this window has read into the index: the ones read
-// since it opened, the ones being read now, and why the last reading of one
+// indexRuns is which vaults this window has indexed: the ones indexed
+// since it opened, the ones being indexed now, and why the last indexing of one
 // failed.
-type readings struct {
+type indexRuns struct {
 	mu sync.Mutex
 
 	// indexVault is how a vault is brought up to date in the index, and ctx is the
-	// life those readings run for.
+	// life those runs have.
 	indexVault IndexVault
 	ctx        context.Context
 
@@ -27,27 +27,26 @@ type readings struct {
 	failures map[domain.VaultID]string
 }
 
-// setIndexer is how a vault is read from now on, and the life those readings run
-// for.
-func (r *readings) setIndexer(ctx context.Context, read IndexVault) {
+// setIndexer is how a vault is indexed from now on, and the life those runs have.
+func (r *indexRuns) setIndexer(ctx context.Context, read IndexVault) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.ctx, r.indexVault = ctx, read
 }
 
-// clear lets go of why a vault could not be read, and that it was read at all.
-func (r *readings) clear(id domain.VaultID) {
+// clear lets go of why a vault could not be indexed, and that it was indexed at all.
+func (r *indexRuns) clear(id domain.VaultID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.failures, id)
 	delete(r.indexed, id)
 }
 
-// tryStart claims a vault for reading. It hands back the reader and the life to
-// run it under where this call is the one that begins it, and no reader where
-// the vault has been read, is being read, could not be read, or where this
-// window reads nothing.
-func (r *readings) tryStart(
+// tryStart claims a vault for indexing. It hands back the indexer and the life to
+// run it under where this call is the one that begins it, and no indexer where
+// the vault has been indexed, is being indexed, could not be indexed, or where this
+// window indexes nothing.
+func (r *indexRuns) tryStart(
 	v domain.Vault,
 ) (read IndexVault, under context.Context, underway bool, reason string) {
 	r.mu.Lock()
@@ -71,8 +70,8 @@ func (r *readings) tryStart(
 	return r.indexVault, r.ctx, true, ""
 }
 
-// record is what one reading came to: the vault is read, or it is why it is not.
-func (r *readings) record(v domain.Vault, err error) {
+// record is what one indexing came to: the vault is indexed, or it is why it is not.
+func (r *indexRuns) record(v domain.Vault, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.running, v.ID)
@@ -89,25 +88,25 @@ func (r *readings) record(v domain.Vault, err error) {
 	r.indexed[v.ID] = true
 }
 
-// Reading is how a vault is brought up to date in the index, and the life those
-// readings run for. A window naming none counts a vault from the index as it
+// SetVaultIndexer is how a vault is brought up to date in the index, and the life those
+// runs have. A window naming none counts a vault from the index as it
 // stands.
-func (a *API) Reading(ctx context.Context, read IndexVault) {
-	a.readings.setIndexer(ctx, read)
+func (a *API) SetVaultIndexer(ctx context.Context, read IndexVault) {
+	a.indexRuns.setIndexer(ctx, read)
 }
 
-// reading brings a vault up to date in the index. It says whether a reading of
+// startIndexing brings a vault up to date in the index. It says whether an indexing of
 // that vault is running now, and why the last one failed, when one did.
 //
-// A vault is read once for the life of the window, and the watcher carries it
-// from there. One vault is read once at a time however many counts ask for it,
-// and a reading that failed is not begun again until the vault moves.
-func (a *API) reading(ctx context.Context, v domain.Vault) (underway bool, reason string) {
-	read, behind, running, reason := a.readings.tryStart(v)
+// A vault is indexed once for the life of the window, and the watcher carries it
+// from there. One vault is indexed once at a time however many counts ask for it,
+// and an indexing that failed is not begun again until the vault moves.
+func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool, reason string) {
+	read, behind, running, reason := a.indexRuns.tryStart(v)
 	if read == nil {
 		return running, reason
 	}
-	//nolint:contextcheck // a vault is read for the life of the window, under behind, not under the count that asked
+	//nolint:contextcheck // a vault is indexed for the life of the window, under behind, not under the count that asked
 	go a.runIndexing(behind, read, v, a.hasVault(ctx, v))
 	return true, ""
 }
@@ -121,7 +120,7 @@ func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
 	return err == nil && held
 }
 
-// runIndexing is one vault read, reported as work for as long as it runs. A reading
+// runIndexing is one vault indexed, reported as work for as long as it runs. An indexing
 // that finished wakes the counts, which is what puts the vault's numbers on the
 // page.
 //
@@ -131,8 +130,8 @@ func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
 // has lasted.
 func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, held bool) {
 	at := task.Task{
-		ID:      "reading\t" + string(v.ID),
-		Doing:   "Reading the vault",
+		ID:      "indexing\t" + string(v.ID),
+		Doing:   "Indexing the vault",
 		About:   v.Name,
 		IsAsked: !held,
 	}
@@ -140,7 +139,7 @@ func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, 
 
 	err := read(ctx, v)
 
-	a.readings.record(v, err)
+	a.indexRuns.record(v, err)
 
 	if err != nil {
 		at.Error = err.Error()
@@ -151,8 +150,8 @@ func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, 
 	a.ReportChange()
 }
 
-// ClearIndexFailure lets go of why a vault could not be read. A vault that moved
-// underneath the window is read again.
+// ClearIndexFailure lets go of why a vault could not be indexed. A vault that moved
+// underneath the window is indexed again.
 func (a *API) ClearIndexFailure(vaultID domain.VaultID) {
-	a.readings.clear(vaultID)
+	a.indexRuns.clear(vaultID)
 }

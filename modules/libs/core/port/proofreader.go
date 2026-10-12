@@ -10,7 +10,7 @@ import (
 // would put right. The core asks for one and does not know whether a model on
 // this machine or a service answered.
 //
-// An installation that configured none has no proofreader, and a reading is
+// An installation that configured none has no proofreader, and a recognition is
 // used exactly as it was read.
 type Proofreader interface {
 	// GetName is what made a correction, recorded beside it.

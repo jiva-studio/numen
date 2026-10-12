@@ -73,7 +73,7 @@ const vault: VaultCardsDue = {
     },
   ],
   unread: '',
-  isReading: false,
+  isIndexing: false,
 }
 
 const mountDecks = (presets: readonly Preset[], over: VaultCardsDue = vault) =>

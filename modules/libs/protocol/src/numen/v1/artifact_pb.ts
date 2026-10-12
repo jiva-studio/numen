@@ -218,7 +218,7 @@ export enum ArtifactKind {
   OCR = 1,
 
   /**
-   * That reading put right by a person, under `.corrected` beside it.
+   * That recognised text put right by a person, under `.corrected` beside it.
    *
    * @generated from enum value: ARTIFACT_KIND_OCR_CORRECTED = 2;
    */
@@ -235,7 +235,7 @@ export enum ArtifactKind {
 
   /**
    * A transcript put right by a person, under `.corrected` beside the one it
-   * corrects. It says which it is: a reading put right is another kind, and a
+   * corrects. It says which it is: recognised text put right is another kind, and a
    * caller editing one has to know which of them it holds.
    *
    * @generated from enum value: ARTIFACT_KIND_TRANSCRIPT_CORRECTED = 4;

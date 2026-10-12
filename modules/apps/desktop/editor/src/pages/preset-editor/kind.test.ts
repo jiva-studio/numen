@@ -522,7 +522,7 @@ describe('what the tab says it encountered as an error', () => {
   })
 })
 
-// A picture that says it is reading the vault says an answer is on its way.
+// A picture that says it is indexing the vault says an answer is on its way.
 // Where none is coming, the tab says what happened and stops saying it.
 describe('a curve nobody answers', () => {
   it('leaves the tab saying why, and not saying it is reading', async () => {

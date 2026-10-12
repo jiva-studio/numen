@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
-// The reading library makes an engine of its own and takes none. It is made
-// with the process's runtime, so which of a reading and a transcription opens
+// The recognition library makes an engine of its own and takes none. It is made
+// with the process's runtime, so which of a recognition and a transcription opens
 // first settles nothing.
 func init() {
 	onnxruntime.Register(func(at string) {
@@ -32,7 +32,7 @@ func IsPrepared() bool { return prepared.Load() }
 // window is. Every page this process reads is read through it, and one made
 // after a window says nothing about every page it is given.
 //
-// Nothing is fetched: a machine that holds no runtime says so, and reading is
+// Nothing is fetched: a machine that holds no runtime says so, and recognition is
 // what fetches one.
 func Prepare(ctx context.Context, cfg Config) error {
 	cfg.ShouldDownload = false

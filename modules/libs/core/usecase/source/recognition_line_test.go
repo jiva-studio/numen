@@ -50,15 +50,15 @@ func (c *instant) getOutcome(t *testing.T) port.StartOutcome {
 	}
 }
 
-// waitForReading waits for the next reading to reach the models, and says which
-// reading it is.
-func waitForReading(t *testing.T, reading <-chan int) int {
+// waitForRecognition waits for the next reading to reach the models, and says which
+// recognition it is.
+func waitForRecognition(t *testing.T, reading <-chan int) int {
 	t.Helper()
 	select {
 	case n := <-reading:
 		return n
 	case <-time.After(10 * time.Second):
-		t.Fatal("no reading reached the models")
+		t.Fatal("no recognition reached the models")
 		return 0
 	}
 }
@@ -103,7 +103,7 @@ func TestADocumentInLineOutlivesTheContext(t *testing.T) {
 func TestADocumentNamedAsTheLineEmptiesIsRead(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
-	// The first reading is held until this test lets it end, and every reading
+	// The first recognition is held until this test lets it end, and every recognition
 	// after it until this test is over.
 	first, rest := make(chan struct{}), make(chan struct{})
 	releaseRest := sync.OnceFunc(func() { close(rest) })
@@ -133,16 +133,16 @@ func TestADocumentNamedAsTheLineEmptiesIsRead(t *testing.T) {
 	if got := w.Start(somewhere, "a.pdf"); got != port.Began {
 		t.Fatalf("the first document was not read: %v", got)
 	}
-	if n := waitForReading(t, reading); n != 1 {
-		t.Fatalf("the first reading is the %dth", n)
+	if n := waitForRecognition(t, reading); n != 1 {
+		t.Fatalf("the first recognition is the %dth", n)
 	}
 	close(first)
 
 	if taken := crossed.getOutcome(t); taken != port.Began {
 		t.Fatalf("the document named as the line emptied was told %v", taken)
 	}
-	if n := waitForReading(t, reading); n != 2 {
-		t.Fatalf("the document named as the line emptied is the %dth reading", n)
+	if n := waitForRecognition(t, reading); n != 2 {
+		t.Fatalf("the document named as the line emptied is the %dth recognition", n)
 	}
 
 	// The run that emptied the line ends now. Its end stands anywhere after it

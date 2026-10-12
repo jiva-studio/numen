@@ -144,7 +144,7 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 }
 
 // The answers are read once at a launch: what is owed and the schedules it is
-// counted from come out of the one reading.
+// counted from come out of the one read.
 func TestTheAnswerLogIsReadOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{

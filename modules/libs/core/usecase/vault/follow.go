@@ -47,9 +47,9 @@ type VaultChanges struct {
 	Assets []string
 }
 
-// Reading says whether an asset owes a read: one changed, or the whole vault is
+// ShouldReadAssets says whether an asset owes a read: one changed, or the whole vault is
 // being looked at again and every asset with it.
-func (m VaultChanges) Reading() bool { return m.ShouldReload || len(m.Assets) > 0 }
+func (m VaultChanges) ShouldReadAssets() bool { return m.ShouldReload || len(m.Assets) > 0 }
 
 // Begin starts watching. Acting on what it collects is Run, and the two are
 // separate because they belong at different moments.
