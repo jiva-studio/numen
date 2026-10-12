@@ -209,7 +209,7 @@ const window = (
         return answers.added ?? asValue(createVault(id, name))
       },
       remove: async (id, trash) => {
-        done.push(trash ? `erases ${id}` : `forgets ${id}`)
+        done.push(trash ? `erases ${id}` : `removes ${id}`)
         return turnedDown
       },
       open: async (id) => {
@@ -233,8 +233,8 @@ const window = (
     settings: {
       chooseAppearance: async (chosen) => void done.push(`appearance ${chosen}`),
       chooseSync: async (chosen) => void done.push(`syncing ${chosen}`),
-      chooseHanging: async (chosen) => void done.push(`hanging ${chosen}`),
-      chooseParts: async (chosen) => void done.push(`parts ${chosen}`),
+      chooseNesting: async (chosen) => void done.push(`nesting ${chosen}`),
+      chooseHeadings: async (chosen) => void done.push(`headings ${chosen}`),
       choosePerformance: async (chosen) => void done.push(`performance ${chosen}`),
       chooseIndexingModel: async (chosen) => void done.push(`indexingModel ${chosen}`),
     },
@@ -1027,15 +1027,15 @@ describe('a vault taken off the list', () => {
   it('is forgotten, and its folder left where it is', async () => {
     const one = window()
 
-    await carry(invocationOf('forgetVault', heat()), one.on)
+    await carry(invocationOf('removeVault', heat()), one.on)
 
-    expect(one.done).toStrictEqual(['forgets heat'])
+    expect(one.done).toStrictEqual(['removes heat'])
   })
 
   it('says the only vault this installation has stays on it', async () => {
     const one = window({ turnedDown: 'lastVault' })
 
-    await carry(invocationOf('forgetVault', heat()), one.on)
+    await carry(invocationOf('removeVault', heat()), one.on)
 
     expect(one.notices).toStrictEqual([words.vaultErrors.lastVault])
   })
@@ -1059,7 +1059,7 @@ describe('a vault taken off the list', () => {
   it('says the vault in front of the person, which the window stands on', async () => {
     const one = window({ turnedDown: 'showing' })
 
-    await carry(invocationOf('forgetVault', front()), one.on)
+    await carry(invocationOf('removeVault', front()), one.on)
 
     expect(one.notices).toStrictEqual([words.vaultErrors.showing])
   })

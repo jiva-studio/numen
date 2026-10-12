@@ -25,7 +25,7 @@ const createDeps = (
     removeLink: async () => false,
   },
   isReady: ref(true),
-  isHanging: ref(true),
+  isNesting: ref(true),
   parts: ref(6),
   openNote: () => {},
   readHeadings,

@@ -27,12 +27,12 @@ export interface Installation {
   choose(item: string): void
   /** The two switches, which are read and written as the one value. */
   readonly isSyncing: Ref<boolean>
-  readonly isHanging: Ref<boolean>
-  /** How many parts a day is hung in. A field offers no number as well. */
-  readonly parts: Readonly<Ref<number>>
+  readonly isNesting: Ref<boolean>
+  /** How many headings a day is nested in. A field offers no number as well. */
+  readonly headings: Readonly<Ref<number>>
   /** How many the vault takes, which it says when it is asked what it holds. */
-  readonly partsBounds: Readonly<Ref<Bounds>>
-  chooseParts(count: number): void
+  readonly headingsBounds: Readonly<Ref<Bounds>>
+  chooseHeadings(count: number): void
   /** The hour a day of review begins at, written as `04:00`. */
   readonly dayStarts: Readonly<Ref<string>>
   /** The latest hour the vault takes. One past it is refused. */

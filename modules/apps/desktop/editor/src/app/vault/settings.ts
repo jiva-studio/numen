@@ -4,27 +4,28 @@
 import { settingsService } from '@/shared/clients'
 import { fetched } from './words'
 import { staleIn } from '@/shared/answers'
-import { DEFAULT_PARTS } from '@/entities/settings'
+import { DEFAULT_HEADINGS } from '@/entities/settings'
 import { DEFAULT_STARTS } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
 import { formatErrorMessage } from '@numen/wire'
 import type { Configuration } from '@/entities/settings'
-import type { HangingSettings } from '@/entities/settings'
+import type { NestingSettings } from '@/entities/settings'
 import type { ReviewSettings } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
 const SYNCS = ['naming', 'sync_title_and_filename']
-const HANGS = ['appearance', 'nest_headings_under_notes']
-const PARTS = ['appearance', 'nested_heading_limit']
+const NESTING = ['appearance', 'nest_headings_under_notes']
+const HEADINGS = ['appearance', 'nested_heading_limit']
 const STARTS = ['review', 'day_starts']
 
 /** Every setting as it stands, with the defaults under what the file leaves out. */
 const readSettings = async (): Promise<unknown> =>
   JSON.parse((await settingsService.getSettings({})).written)
 
-/** How many parts a node hangs, and the default where the settings name none. */
-const partsIn = (value: unknown): number => (typeof value === 'number' ? value : DEFAULT_PARTS)
+/** How many headings nest under a note, and the default where the settings name none. */
+const getNestedHeadingLimit = (value: unknown): number =>
+  typeof value === 'number' ? value : DEFAULT_HEADINGS
 
 /**
  * Settings written into the file, together or not at all. What could not be
@@ -46,21 +47,21 @@ const writeSettings = async (
 export const settingsCore: SettingsPort = {
   getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
   setSyncEnabled: (kept) => writeSettings([{ at: SYNCS, value: kept }]),
-  getHangingSettings: async () => {
+  getNestingSettings: async () => {
     const answer = await settingsService.getSettings({})
     const written = JSON.parse(answer.written)
     const held = answer.nestedHeadingLimitBounds
     return {
-      isHanging: getSettingAt(written, HANGS) !== false,
-      parts: partsIn(getSettingAt(written, PARTS)),
-      least: held?.least ?? DEFAULT_PARTS,
-      most: held?.most ?? DEFAULT_PARTS,
-    } satisfies HangingSettings
+      isNesting: getSettingAt(written, NESTING) !== false,
+      headings: getNestedHeadingLimit(getSettingAt(written, HEADINGS)),
+      least: held?.least ?? DEFAULT_HEADINGS,
+      most: held?.most ?? DEFAULT_HEADINGS,
+    } satisfies NestingSettings
   },
-  setHangingSettings: (isHanging, parts) =>
+  setNestingSettings: (isNesting, headings) =>
     writeSettings([
-      { at: HANGS, value: isHanging },
-      ...(parts === undefined ? [] : [{ at: PARTS, value: parts }]),
+      { at: NESTING, value: isNesting },
+      ...(headings === undefined ? [] : [{ at: HEADINGS, value: headings }]),
     ]),
   getSettings: async () => {
     const answer = await settingsService.getSettings({})

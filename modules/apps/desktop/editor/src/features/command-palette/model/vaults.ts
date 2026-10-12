@@ -51,7 +51,7 @@ export const renameVault = async (
 
 /**
  * A vault taken off the list. Erasing it puts the folder in the trash this
- * machine keeps; forgetting it leaves the folder where it is.
+ * machine keeps; removing it leaves the folder where it is.
  */
 export const removeVault = async (
   invocation: CommandInvocation,

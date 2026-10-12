@@ -62,15 +62,15 @@ describe('keeping a title and its file name in line', () => {
   })
 })
 
-describe('the parts a node hangs', () => {
-  it('reads whether they hang, how many, and the bounds the vault holds', async () => {
+describe('the headings a node nests', () => {
+  it('reads whether they nest, how many, and the bounds the vault holds', async () => {
     asked.getSettings.mockResolvedValue(
       answer({ appearance: { nest_headings_under_notes: false, nested_heading_limit: 3 } }),
     )
 
-    expect(await core.getHangingSettings()).toStrictEqual({
-      isHanging: false,
-      parts: 3,
+    expect(await core.getNestingSettings()).toStrictEqual({
+      isNesting: false,
+      headings: 3,
       least: 2,
       most: 9,
     })
@@ -78,20 +78,20 @@ describe('the parts a node hangs', () => {
 
   it('hangs the default count where the file names none, or names no number', async () => {
     asked.getSettings.mockResolvedValue(answer({}))
-    expect((await core.getHangingSettings()).parts).toBe(6)
+    expect((await core.getNestingSettings()).headings).toBe(6)
 
     asked.getSettings.mockResolvedValue(answer({ appearance: { nested_heading_limit: '3' } }))
-    expect((await core.getHangingSettings()).parts).toBe(6)
+    expect((await core.getNestingSettings()).headings).toBe(6)
   })
 
   it('bounds the count at the default where the vault names no bounds', async () => {
     asked.getSettings.mockResolvedValue(answer({}, { nestedHeadingLimitBounds: undefined }))
 
-    expect(await core.getHangingSettings()).toMatchObject({ isHanging: true, least: 6, most: 6 })
+    expect(await core.getNestingSettings()).toMatchObject({ isNesting: true, least: 6, most: 6 })
   })
 
-  it('writes whether they hang and leaves the count where none is given', async () => {
-    await core.setHangingSettings(true)
+  it('writes whether they nest and leaves the count where none is given', async () => {
+    await core.setNestingSettings(true)
 
     expect(writtenLast()).toStrictEqual({
       settings: [{ at: ['appearance', 'nest_headings_under_notes'], value: 'true' }],
@@ -99,7 +99,7 @@ describe('the parts a node hangs', () => {
   })
 
   it('writes the count beside it where one is given', async () => {
-    await core.setHangingSettings(false, 4)
+    await core.setNestingSettings(false, 4)
 
     expect(writtenLast()).toStrictEqual({
       settings: [

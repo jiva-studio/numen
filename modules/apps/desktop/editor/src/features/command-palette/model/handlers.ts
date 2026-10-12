@@ -92,8 +92,8 @@ const HANDLERS: Record<string, CommandHandler> = {
   interfaceScale: (invocation, on) => on.settings.chooseAppearance(invocation.name),
   textScale: (invocation, on) => on.settings.chooseAppearance(invocation.name),
   syncing: (invocation, on) => on.settings.chooseSync(invocation.name),
-  hanging: (invocation, on) => on.settings.chooseHanging(invocation.name),
-  parts: (invocation, on) => on.settings.chooseParts(invocation.name),
+  nesting: (invocation, on) => on.settings.chooseNesting(invocation.name),
+  headings: (invocation, on) => on.settings.chooseHeadings(invocation.name),
   performanceProfile: (invocation, on) => on.settings.choosePerformance(invocation.name),
   indexingModel: (invocation, on) => on.settings.chooseIndexingModel(invocation.name),
   first: (_, on, words) => navigateToPath(on.goes.getOpeningNote(), on, words),
@@ -101,7 +101,7 @@ const HANDLERS: Record<string, CommandHandler> = {
   openVault: (invocation, on, words) => showVault(invocation.vault.id, on, words),
   newVault: (_, on, words) => addVault(on, words),
   renameVault: (invocation, on, words) => renameVault(invocation, on, words),
-  forgetVault: (invocation, on, words) => removeVault(invocation, false, on, words),
+  removeVault: (invocation, on, words) => removeVault(invocation, false, on, words),
   eraseVault: (invocation, on, words) => removeVault(invocation, true, on, words),
 }
 

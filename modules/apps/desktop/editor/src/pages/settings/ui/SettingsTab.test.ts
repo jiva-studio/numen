@@ -69,7 +69,7 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
   const done: string[] = []
   const written: SettingEdit[] = []
   const isSyncing = ref(true)
-  const isHanging = ref(true)
+  const isNesting = ref(true)
   const installation: Installation = {
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
@@ -96,16 +96,16 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
         done.push(`syncing ${on}`)
       },
     }),
-    isHanging: computed({
-      get: () => isHanging.value,
+    isNesting: computed({
+      get: () => isNesting.value,
       set: (on) => {
-        isHanging.value = on
-        done.push(`hanging ${on}`)
+        isNesting.value = on
+        done.push(`nesting ${on}`)
       },
     }),
-    parts: ref(6),
-    partsBounds: ref({ least: 2, most: 9 }),
-    chooseParts: (count) => void done.push(`parts ${count}`),
+    headings: ref(6),
+    headingsBounds: ref({ least: 2, most: 9 }),
+    chooseHeadings: (count) => void done.push(`headings ${count}`),
     dayStarts: ref('04:00'),
     latestDayStarts: ref('12:00'),
     chooseDayStarts: (hour) => void done.push(`day starts ${hour}`),
@@ -192,9 +192,9 @@ describe('the settings tab', () => {
 
   it('turns the two switches the window keeps', async () => {
     const { tab, done } = createTab()
-    await tab.get(control('settings-hanging')).trigger('click')
+    await tab.get(control('settings-nesting')).trigger('click')
     await tab.get(control('settings-syncing')).trigger('click')
-    expect(done).toStrictEqual(['hanging false', 'syncing false'])
+    expect(done).toStrictEqual(['nesting false', 'syncing false'])
   })
 
   it('names the file the settings stand in, and opens it whole', async () => {
@@ -219,12 +219,12 @@ describe('the settings tab', () => {
     expect(tab.text()).toContain(words.agentUse)
   })
 
-  it('holds the number of parts inside what the vault says it takes', () => {
+  it('holds the number of headings inside what the vault says it takes', () => {
     const { tab } = createTab()
-    const parts = tab.get(control('settings-parts'))
+    const headings = tab.get(control('settings-headings'))
 
-    expect(parts.attributes('aria-valuemin')).toBe('2')
-    expect(parts.attributes('aria-valuemax')).toBe('9')
+    expect(headings.attributes('aria-valuemin')).toBe('2')
+    expect(headings.attributes('aria-valuemax')).toBe('9')
   })
 
   it('draws each of the two proofreadings beside the thing it puts right', () => {

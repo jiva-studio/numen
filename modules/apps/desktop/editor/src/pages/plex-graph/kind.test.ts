@@ -27,8 +27,8 @@ const window = (opening = 'Opening.md', isListening = true) => {
   const views: ReturnType<typeof viewOn>[] = []
   /** Every time the vault was asked where it opens, and what it answered then. */
   const asked: string[] = []
-  /** Whether a node hangs the parts of its note, which a test turns. */
-  const isHanging = ref(true)
+  /** Whether a node nests the headings of its note, which a test turns. */
+  const isNesting = ref(true)
   /** Every question the vault was asked about what the notes hold. */
   const headingsAsked: (readonly string[])[] = []
   const openingPath = ref(opening)
@@ -49,7 +49,7 @@ const window = (opening = 'Opening.md', isListening = true) => {
   const plexes = createPlexKind(held.handle, createView, {
     editor: createVault().editor,
     isReady: ref(true),
-    isHanging,
+    isNesting,
     parts: ref(6),
     openNote: () => {},
     ...(isListening
@@ -106,7 +106,7 @@ const window = (opening = 'Opening.md', isListening = true) => {
     elsewhere,
     views,
     asked,
-    isHanging,
+    isNesting,
     headingsAsked,
     selected,
     closed,
@@ -339,12 +339,12 @@ describe('a plex tab the person has closed', () => {
   it('asks the vault nothing when a setting it once answered turns', async () => {
     const one = window()
     const plex = await one.openTab('One.md')
-    one.isHanging.value = false
+    one.isNesting.value = false
     await settle()
 
     one.closeTab(plex.id)
     one.headingsAsked.length = 0
-    one.isHanging.value = true
+    one.isNesting.value = true
     await settle()
 
     expect(one.headingsAsked).toStrictEqual([])

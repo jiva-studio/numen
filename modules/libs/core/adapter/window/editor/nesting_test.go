@@ -52,10 +52,10 @@ func turnsHanging(t *testing.T, f *going, hangs bool, count *int) error {
 	return err
 }
 
-// TestTurningTheHangingIsAnsweredByTheNextQuestion. The palette turns it, the
+// TestTurningTheNestingIsAnsweredByTheNextQuestion. The palette turns it, the
 // file is written, and the window reads what was written. Nothing is launched
 // again in between.
-func TestTurningTheHangingIsAnsweredByTheNextQuestion(t *testing.T) {
+func TestTurningTheNestingIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	if !isHanging(t, f) {
@@ -114,7 +114,7 @@ func TestACountOfPartsOutsideWhatItGoesToIsNotWritten(t *testing.T) {
 
 // The setting a person turns is written where they will read it, and every
 // other byte of the file is left as they typed it.
-func TestTurningTheHangingLeavesTheRestOfTheFileAlone(t *testing.T) {
+func TestTurningTheNestingLeavesTheRestOfTheFileAlone(t *testing.T) {
 	f := opening(t, nil, nil, true)
 	path := filepath.Join(filepath.Dir(f.settings), "numen.json")
 	if err := os.WriteFile(path, []byte("{\n  \"appearance\": {\"text_scale\": 1.5}\n}\n"), 0o644); err != nil {

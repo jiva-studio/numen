@@ -77,10 +77,10 @@ with its own identity, and its notes are its own from then on.
 
 ## Taking one off the list
 
-**Forget** takes the vault off the list and out of the search index. The folder stays exactly
+**Remove** takes the vault off the list and out of the search index. The folder stays exactly
 where it is, and adding it again brings back the same vault.
 
-**Erase** forgets it and moves the folder to wherever your machine puts deleted things, so you
+**Erase** removes it and moves the folder to wherever your machine puts deleted things, so you
 can still fetch it back from there.
 
 Neither can take away the vault you are looking at, and neither can take the last one you have —

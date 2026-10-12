@@ -870,7 +870,7 @@ export const Mapping: Story = {
  * The map with a hand left on a node, which hangs the headings of its note
  * under the box.
  */
-export const Hanging: Story = {
+export const Nesting: Story = {
   render: () =>
     screen({
       workspace: () => ({

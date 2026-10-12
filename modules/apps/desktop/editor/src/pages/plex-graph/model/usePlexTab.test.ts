@@ -43,14 +43,14 @@ const tab = (
   const entered: [string, number][] = []
   /** What the vault says each note is divided into, which a test sets. */
   const divides = ref<ReadonlyMap<string, readonly NoteHeading[]>>(new Map())
-  /** Whether a node hangs the parts of its note, which a test turns. */
-  const isHanging = ref(true)
+  /** Whether a node nests the headings of its note, which a test turns. */
+  const isNesting = ref(true)
   /** Every question the vault was asked about what the notes hold. */
   const headingsAsked: (readonly string[])[] = []
   const deps: PlexTabDeps = {
     editor: vault.editor,
     isReady: ref(true),
-    isHanging,
+    isNesting,
     parts: ref(6),
     openNote: (path, title, showing, line) => {
       opened.push([path, title, showing])
@@ -87,7 +87,7 @@ const tab = (
     opened,
     entered,
     divides,
-    isHanging,
+    isNesting,
     headingsAsked,
     asked,
     ran,
@@ -212,7 +212,7 @@ describe('a plex drawing nothing', () => {
     return usePlexTab(view as unknown as PlexView, {
       editor: createVault().editor,
       isReady: ref(true),
-      isHanging: ref(true),
+      isNesting: ref(true),
       parts: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
@@ -303,7 +303,7 @@ describe('the picture', () => {
     const state = usePlexTab(plex.view, {
       editor: createVault().editor,
       isReady: ref(false),
-      isHanging: ref(true),
+      isNesting: ref(true),
       parts: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
@@ -421,7 +421,7 @@ describe('what the picture draws a line to', () => {
   })
 })
 
-describe('the parts a node hangs', () => {
+describe('the headings a node nests', () => {
   /** One heading of a note, as the vault answers one. */
   const heading = (text: string, line: number, level = 1): NoteHeading => ({ text, level, line })
 
@@ -475,7 +475,7 @@ describe('the parts a node hangs', () => {
     const plex = usePlexTab(one.state.view, {
       editor: createVault().editor,
       isReady: ref(true),
-      isHanging: ref(true),
+      isNesting: ref(true),
       parts: ref(6),
       openNote: () => {},
       readHeadings: () => new Promise((done) => answers.push(done)),
@@ -505,7 +505,7 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
     await one.state.readParts()
-    one.isHanging.value = false
+    one.isNesting.value = false
 
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([])
     expect(one.state.partsOf(one.node('Root.md'))).toStrictEqual([])
@@ -513,7 +513,7 @@ describe('the parts a node hangs', () => {
 
   it('are not asked of the vault at all while the setting is off', async () => {
     const one = tab('Root.md', ['Child.md'])
-    one.isHanging.value = false
+    one.isNesting.value = false
     one.headingsAsked.length = 0
 
     await one.state.readParts()
@@ -572,11 +572,11 @@ describe('the parts a node hangs', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
-    one.isHanging.value = false
+    one.isNesting.value = false
     await settle()
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([])
 
-    one.isHanging.value = true
+    one.isNesting.value = true
     await settle()
 
     expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([
@@ -670,7 +670,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
   const state = usePlexTab(view, {
     editor: vault.editor,
     isReady: ref(true),
-    isHanging: ref(true),
+    isNesting: ref(true),
     parts: ref(6),
     openNote: (path, title, showing) => opened.push([path, title, showing]),
     readHeadings: async () => new Map(),
@@ -1072,7 +1072,7 @@ describe('quick-link popover from a node handle', () => {
     const stateWithSearch = usePlexTab(plex.view, {
       editor: vault.editor,
       isReady: ref(true),
-      isHanging: ref(true),
+      isNesting: ref(true),
       parts: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
@@ -1094,7 +1094,7 @@ describe('quick-link popover from a node handle', () => {
     const stateNoSearch = usePlexTab(plex.view, {
       editor: vault.editor,
       isReady: ref(true),
-      isHanging: ref(true),
+      isNesting: ref(true),
       parts: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),

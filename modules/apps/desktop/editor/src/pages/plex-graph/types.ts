@@ -80,7 +80,7 @@ export interface PlexEditor {
 export interface PlexTabDeps {
   readonly editor: PlexEditor
   readonly isReady: Readonly<Ref<boolean>>
-  readonly isHanging: Readonly<Ref<boolean>>
+  readonly isNesting: Readonly<Ref<boolean>>
   readonly parts: Readonly<Ref<number>>
   openNote(
     path: string,

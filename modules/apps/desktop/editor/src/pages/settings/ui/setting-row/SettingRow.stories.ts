@@ -25,7 +25,7 @@ const rows = () => ({
     <div class="numen" style="inline-size:40rem;padding:1rem;background:var(--numen-surface)">
       <SettingRow
         v-slot="{ labelledBy }"
-        at="hanging"
+        at="nesting"
         name="Nest headings under notes"
         detail="The headings of a note, under the box that draws it"
       >

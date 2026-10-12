@@ -104,10 +104,10 @@ export interface SettingsWriter {
   chooseAppearance(chosen: string): Promise<void>
   /** Whether a note's title and the name of its file are kept as one name. */
   chooseSync(chosen: string): Promise<void>
-  /** Whether a node hangs the parts of its note under it. */
-  chooseHanging(chosen: string): Promise<void>
-  /** How many parts a node hangs at once. */
-  chooseParts(chosen: string): Promise<void>
+  /** Whether a node nests the headings of its note under it. */
+  chooseNesting(chosen: string): Promise<void>
+  /** How many headings nest under a note at once. */
+  chooseHeadings(chosen: string): Promise<void>
   /** The performance workload profile chosen. */
   choosePerformance(chosen: string): Promise<void>
   /** The indexing model chosen. */

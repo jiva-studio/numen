@@ -92,8 +92,8 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['interfaceScale', Ruler],
   ['textScale', ALargeSmall],
   ['syncing', RefreshCw],
-  ['hanging', ListTree],
-  ['parts', Rows3],
+  ['nesting', ListTree],
+  ['headings', Rows3],
   ['performanceProfile', Gauge],
   ['indexingModel', Cpu],
   ['settings', SlidersHorizontal],
@@ -102,7 +102,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['openVault', FolderRoot],
   ['newVault', Plus],
   ['renameVault', PenLine],
-  ['forgetVault', X],
+  ['removeVault', X],
   ['eraseVault', Trash2],
 ])
 

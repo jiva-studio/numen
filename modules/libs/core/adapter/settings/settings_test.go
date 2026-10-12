@@ -940,7 +940,7 @@ func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
 
 // An installation nobody has configured is written down as what it is doing, so
 // the setting a person turns off is in front of them.
-func TestAnUntouchedInstallationWritesTheHangingDown(t *testing.T) {
+func TestAnUntouchedInstallationWritesTheNestingDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if _, err := openAt(path); err != nil {
 		t.Fatal(err)
