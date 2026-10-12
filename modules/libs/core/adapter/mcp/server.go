@@ -12,7 +12,6 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -36,6 +35,9 @@ type Core struct {
 	// added where it is here.
 	GetProblems *vaults.GetProblems
 
+	// GetSummary answers vault_get. Without it the tool is not added.
+	GetSummary *vaults.GetSummary
+
 	// Read reads a range of any file of the vault.
 	Read file.Read
 
@@ -57,8 +59,8 @@ type Core struct {
 
 // Notes is a vault's notes: what is asked of them, and what changes them.
 type Notes struct {
-	// Queries answers note_resolve and vault_get, which are added where it is here.
-	Queries       port.NoteQueries
+	// GetNamedPaths answers note_resolve. Without it the tool is not added.
+	GetNamedPaths *note.GetNamedPaths
 	Search        search.Search
 	Neighbourhood note.ShowNeighbourhood
 	Links         note.ShowLinks

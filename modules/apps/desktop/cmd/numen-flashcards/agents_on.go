@@ -148,6 +148,7 @@ func makeReviewCore(
 	return mcp.Core{
 		Showing:     mcp.ShowOneVault(v, root),
 		GetProblems: cfg.GetProblems(db.Problems()),
+		GetSummary:  cfg.GetSummary(db.Queries()),
 		Read:        cfg.Read(),
 		// Which card the person is on is a tool's answer and never part of the
 		// question, so a deck named by whoever synced it is data and not
@@ -158,7 +159,7 @@ func makeReviewCore(
 		},
 
 		Notes: mcp.Notes{
-			Queries:       db.Queries(),
+			GetNamedPaths: cfg.GetNamedPaths(db.Queries()),
 			Neighbourhood: notes.Neighbourhood,
 			Links:         notes.Links,
 			Read:          notes.Read,

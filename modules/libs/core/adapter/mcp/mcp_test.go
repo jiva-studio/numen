@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -64,6 +65,13 @@ func newCore(t *testing.T) (domain.Vault, mcp.Core) {
 
 func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	t.Helper()
+	v, core, _ := newCoreWithQueries(t, notes)
+	return v, core
+}
+
+// newCoreWithQueries is newCoreWithNotes and the index its tools read.
+func newCoreWithQueries(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core, port.NoteQueries) {
+	t.Helper()
 
 	v := testsupport.NewVault(t, notes)
 	cfg := container.Config{IndexPath: indexfile.Path(t)}
@@ -105,8 +113,9 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 		Showing:     mcp.ShowOneVault(v, v.Path),
 		Read:        file.Read{Readers: readers},
 		GetProblems: cfg.GetProblems(db.Problems()),
+		GetSummary:  cfg.GetSummary(queries),
 		Notes: mcp.Notes{
-			Queries:       queries,
+			GetNamedPaths: cfg.GetNamedPaths(queries),
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
 			Links:         note.NewShowLinks(db.Links()),
@@ -122,7 +131,7 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			AddLinks:      note.NewAddLinks(note.NewEditLinks(readers, writers, index, time.Now)),
 		},
 	}
-	return v, core
+	return v, core, queries
 }
 
 // call runs one tool and decodes what it answered.
@@ -249,9 +258,9 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 // what the other two windows serve. The set is exact, so a tool added to the
 // server is a tool this window is knowingly given.
 func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
-	_, core := newCoreWithNotes(t, nil)
+	_, core, queries := newCoreWithQueries(t, nil)
 	core.Vaults = onTheList(t).core.Vaults
-	lookAt(&core, &window{})
+	lookAt(&core, queries, &window{})
 	core.Attending = func() domain.OpenTabs { return domain.OpenTabs{} }
 
 	checkToolNames(t, getServedTools(t, newSessionOver(t, core)), []string{
