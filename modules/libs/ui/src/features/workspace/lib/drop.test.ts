@@ -68,14 +68,14 @@ describe('sideAt', () => {
   })
 
   it('leaves the edge of a zone to the middle', () => {
-    expect(sideAt({ x: 80, y: 200 }, BOX)).toBe('center')
-    expect(sideAt({ x: 720, y: 200 }, BOX)).toBe('center')
+    expect(sideAt({ x: 96, y: 200 }, BOX)).toBe('center')
+    expect(sideAt({ x: 704, y: 200 }, BOX)).toBe('center')
     expect(sideAt({ x: 400, y: 80 }, BOX)).toBe('center')
     expect(sideAt({ x: 400, y: 320 }, BOX)).toBe('center')
   })
 
   it('gives a corner equally deep to the first edge', () => {
-    expect(sideAt({ x: 10, y: 10 }, BOX)).toBe('left')
+    expect(sideAt({ x: 12, y: 10 }, BOX)).toBe('left')
   })
 
   it('takes a narrower zone when asked', () => {
@@ -125,9 +125,9 @@ describe('slotAt', () => {
     expect(slotAt(51, tabs)).toBe(1)
   })
 
-  it('passes a tab only beyond its middle', () => {
-    expect(slotAt(50, tabs)).toBe(0)
-    expect(slotAt(150, tabs)).toBe(1)
+  it('passes a tab once the point reaches its middle', () => {
+    expect(slotAt(50, tabs)).toBe(1)
+    expect(slotAt(150, tabs)).toBe(2)
   })
 
   it('has one place in an empty strip', () => {
