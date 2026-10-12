@@ -4,7 +4,7 @@
  */
 export { default as CommandPalette } from './ui/CommandPalette.vue'
 export { isChord, findChordCommand, findChordKeys, createRowKeys } from './lib/chords'
-export { commandsOf } from './lib/table'
+export { createCommands } from './lib/table'
 export { getNoteCommands } from './lib/commands'
 export { createInvocation } from './lib/invocation'
 export { createNotes } from './lib/notes'

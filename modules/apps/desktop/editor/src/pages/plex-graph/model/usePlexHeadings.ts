@@ -5,7 +5,7 @@ import { shallowRef, watch, type Ref } from 'vue'
 import type { PlexHeading } from '@numen/ui'
 import { createAnswerGuard } from '@/shared/questions'
 import type { NoteType } from '@/entities/file'
-import { asHeadings } from '../lib/picture'
+import { convertHeadings } from '../lib/picture'
 import type { PlexTabDeps } from '../types'
 import type { NodeIdMap } from '../lib/nodeIdMap'
 
@@ -28,7 +28,7 @@ export function usePlexHeadings(
     try {
       const found = await deps.readHeadings(notes)
       if (!mine.isCurrent) return
-      headings.value = new Map([...found].map(([path, held]) => [path, asHeadings(held)]))
+      headings.value = new Map([...found].map(([path, held]) => [path, convertHeadings(held)]))
     } catch {
       // Reading headings failed.
       if (mine.isCurrent) headings.value = new Map()

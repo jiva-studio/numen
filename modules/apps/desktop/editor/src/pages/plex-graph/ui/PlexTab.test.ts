@@ -14,7 +14,7 @@ import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { MenuRequest, PlexTabState } from '../types'
 import { WORDS as words } from '../words'
 import type { NoteType } from '@/entities/file'
-import { iconFor } from '@/shared/icons'
+import { findIcon } from '@/shared/icons'
 
 /** A tab standing on one note, with a child beside it and no menu open. */
 const createTabState = () =>
@@ -34,7 +34,7 @@ const createTabState = () =>
     isNavigatingOnCreate: ref(true),
     creatable: ['child'],
     maxHeadings: ref(6),
-    typeOf: () => 'note',
+    getType: () => 'note',
     activate: () => {},
     createNode: async () => {},
     joinNodes: async () => {},
@@ -72,7 +72,7 @@ const drawing = (type: number) => {
 }
 
 /** The width of the box a node is drawn in, by what the node says. */
-const widthOf = (view: ReturnType<typeof mount>, name: string) =>
+const getWidth = (view: ReturnType<typeof mount>, name: string) =>
   Number(view.get(`[aria-label^="${name}"] rect`).attributes('width'))
 
 afterEach(() => {
@@ -83,22 +83,22 @@ describe('the box a node is drawn in', () => {
   it('is the size it was designed at when nothing multiplies the type', () => {
     drawing(13)
     const view = mount(PlexTab, { props: { state: createTabState() } })
-    expect(widthOf(view, 'Root')).toBe(176)
-    expect(widthOf(view, 'Child')).toBe(144)
+    expect(getWidth(view, 'Root')).toBe(176)
+    expect(getWidth(view, 'Child')).toBe(144)
   })
 
   it('is half again as large where the label is', () => {
     drawing(19.5)
     const view = mount(PlexTab, { props: { state: createTabState() } })
-    expect(widthOf(view, 'Root')).toBe(264)
-    expect(widthOf(view, 'Child')).toBe(216)
+    expect(getWidth(view, 'Root')).toBe(264)
+    expect(getWidth(view, 'Child')).toBe(216)
   })
 
   it('is smaller where the label is', () => {
     drawing(9.75)
     const view = mount(PlexTab, { props: { state: createTabState() } })
-    expect(widthOf(view, 'Root')).toBe(132)
-    expect(widthOf(view, 'Child')).toBe(108)
+    expect(getWidth(view, 'Root')).toBe(132)
+    expect(getWidth(view, 'Child')).toBe(108)
   })
 })
 
@@ -157,21 +157,21 @@ describe('what a node is drawn before its title', () => {
   const createTypedTab = (types: Record<string, NoteType>) =>
     ({
       ...createTabState(),
-      typeOf: (node: string) => types[node] ?? 'note',
+      getType: (node: string) => types[node] ?? 'note',
     }) as unknown as PlexTabState
 
   it('is the icon the tree draws a deck under', () => {
     drawing(13)
     const view = mount(PlexTab, { props: { state: createTypedTab({ 'Root.md': 'deck' }) } })
 
-    expect(view.findComponent(iconFor('deck')!).exists()).toBe(true)
+    expect(view.findComponent(findIcon('deck')!).exists()).toBe(true)
   })
 
   it('is the icon the tree draws a stencil under', () => {
     drawing(13)
     const view = mount(PlexTab, { props: { state: createTypedTab({ 'Root.md': 'stencil' }) } })
 
-    expect(view.findComponent(iconFor('stencil')!).exists()).toBe(true)
+    expect(view.findComponent(findIcon('stencil')!).exists()).toBe(true)
   })
 
   it('is nothing at all for an ordinary note, which keeps no room for one', () => {

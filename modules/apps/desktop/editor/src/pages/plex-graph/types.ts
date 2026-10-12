@@ -120,8 +120,8 @@ export interface PlexMenuState {
 
 export interface PlexHeadingsState {
   readonly maxHeadings: Readonly<Ref<number>>
-  typeOf(node: string): NoteType
-  headingsOf(node: string): readonly PlexHeading[]
+  getType(node: string): NoteType
+  getHeadings(node: string): readonly PlexHeading[]
   readHeadings(): Promise<void>
   openHeading(node: string, heading: string): void
 }

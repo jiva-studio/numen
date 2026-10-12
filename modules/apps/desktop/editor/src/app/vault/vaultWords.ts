@@ -10,7 +10,7 @@ import {
 } from '@numen/protocol'
 import type { Vault as VaultMessage } from '@numen/protocol'
 import type { TallyUnit } from '@numen/ui'
-import { asFailure, asValue, namesOf } from '@numen/wire'
+import { asFailure, asValue, getNames } from '@numen/wire'
 import type { SearchMode } from '@/features/command-palette'
 import type { Presence } from '@/entities/settings'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
@@ -38,7 +38,7 @@ const asked: Record<Modes, SearchMode | null> = {
 }
 
 /** How a search is asked, as the schema names it. */
-export const modes = namesOf<SearchMode, Modes>(asked)
+export const modes = getNames<SearchMode, Modes>(asked)
 
 /** What a model's files are on this machine, in the words the window uses. */
 export const fetched: Record<Presences, Presence> = {
@@ -75,7 +75,7 @@ const left: Record<FlushResult, 'nothing' | 'written' | 'asking' | null> = {
   [FlushResult.ASKING]: 'asking',
 }
 
-export const flushResults = namesOf<NonNullable<(typeof left)[FlushResult]>, FlushResult>(left)
+export const flushResults = getNames<NonNullable<(typeof left)[FlushResult]>, FlushResult>(left)
 
 /** One vault of the list, kept as the plain value the window carries it as. */
 export const mapVault = (one: VaultMessage): Vault => ({

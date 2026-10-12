@@ -1,6 +1,6 @@
 /** How well a card came back, in this window's words and in the schema's. */
 import { Rating } from '@numen/protocol'
-import { namesOf } from '@numen/wire'
+import { getNames } from '@numen/wire'
 
 /** How well a card came back. A person says which of the four. */
 export type Grade = 'again' | 'hard' | 'good' | 'easy'
@@ -29,6 +29,6 @@ const GRADE_BY_RATING: Readonly<Record<Rating, Grade | null>> = {
 }
 
 /** What the schema calls each of them, read off the words above. */
-export const RATING_BY_GRADE: Readonly<Record<Grade, Rating>> = namesOf<Grade, Rating>(
+export const RATING_BY_GRADE: Readonly<Record<Grade, Rating>> = getNames<Grade, Rating>(
   GRADE_BY_RATING,
 )

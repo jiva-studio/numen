@@ -15,7 +15,7 @@ import type { Words } from '../words'
  * A command reached by Shift and Enter on another one's row is offered here
  * too and drawn nowhere: the row it belongs to is the one that names it.
  */
-export const commandsOf = (
+export const createCommands = (
   words: Words,
   agent: string = navigator.userAgent,
 ): readonly Command[] => [
