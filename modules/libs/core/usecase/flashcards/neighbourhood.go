@@ -100,7 +100,7 @@ func (u ShowNeighbourhood) Execute(
 
 	var out Neighbourhood
 	for _, one := range found {
-		titled, isShown := getTitled(one, notes, kinds)
+		titled, isShown := getNeighbourTitle(one, notes, kinds)
 		if isShown {
 			out.Notes = append(out.Notes, titled)
 		}
@@ -166,10 +166,10 @@ func getLinkedNeighbour(v domain.Vault, l domain.ResolvedLink, seen map[string]b
 	return one, true
 }
 
-// getTitled is the neighbour with its title, and whether it is one to show.
+// getNeighbourTitle is the neighbour with its title, and whether it is one to show.
 // A neighbour with a path is shown when the index still holds a note there and
 // the note is one the cards were written from.
-func getTitled(
+func getNeighbourTitle(
 	one Neighbour, notes map[string]domain.NoteRef, kinds map[string]domain.NoteType,
 ) (Neighbour, bool) {
 	if one.Path == "" {

@@ -481,7 +481,7 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 // over, and the deck picks up where its share left off.
 func (b *budgets) deal(share *allowance, q *deckShare, owed, fresh []CardFace, out *budgetAllocation) {
 	for {
-		q.skipTaken(*out)
+		q.advancePastOthers(*out)
 		debt, begun := q.owedIndex < len(q.owed), q.freshIndex < len(q.fresh)
 		if !debt && !begun {
 			return
@@ -504,8 +504,8 @@ func (b *budgets) deal(share *allowance, q *deckShare, owed, fresh []CardFace, o
 	}
 }
 
-// skipTaken moves both walks past the cards another share has taken.
-func (q *deckShare) skipTaken(out budgetAllocation) {
+// advancePastOthers moves both walks past the cards another share has taken.
+func (q *deckShare) advancePastOthers(out budgetAllocation) {
 	for q.owedIndex < len(q.owed) && out.owed[q.owed[q.owedIndex]] {
 		q.owedIndex++
 	}

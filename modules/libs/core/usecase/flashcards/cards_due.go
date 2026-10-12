@@ -152,7 +152,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	for deck, one := range in.day.spentUnder {
 		rows.get(deck).Answered = one.Answered
 	}
-	due, fresh := rows.countAsking(in.day, holds, &out)
+	due, fresh := rows.countDueAndNew(in.day, holds, &out)
 	out.Decks = rows.getSorted()
 	out.Presets, err = u.getPresets(ctx, v, in.reading, in.day, due, fresh)
 	if err != nil {
@@ -241,11 +241,11 @@ func (r deckRows) countFaces(in dueInputs) {
 	}
 }
 
-// countAsking counts what the session is opened over into the deck rows and
+// countDueAndNew counts what the session is opened over into the deck rows and
 // the totals, and returns what is due and what is new under each preset. The
 // presets are counted from the same pass the deck rows are, so the tile over a
 // preset and the session it opens are one number.
-func (r deckRows) countAsking(
+func (r deckRows) countDueAndNew(
 	day *budgets, holds asking, out *CardsDue,
 ) (due, fresh map[string]int) {
 	due, fresh = make(map[string]int), make(map[string]int)
