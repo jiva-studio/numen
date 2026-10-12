@@ -1,0 +1,124 @@
+/**
+ * What a press on a node comes to: when the node takes a gesture, and what the
+ * keyboard does with the keys it answers.
+ */
+import { describe, expect, it, vi } from 'vitest'
+import { useNodePress, type NodePressProps, type NodePressSaid } from './press'
+import { byDoubleClick } from './showing'
+import type { ReachSite, ReachStrategy } from './reaching'
+import type { GestureRole, PlacedNode, Position } from '../lib/node'
+
+const NODE: PlacedNode = {
+  id: 'one',
+  title: 'A node',
+  seat: 'child',
+  x: 0,
+  y: 0,
+  width: 144,
+  height: 36,
+  order: 0,
+  opacity: 1,
+}
+
+/** A press on a node, and the site its reaching strategy was handed. */
+function createPress(gestureRole: GestureRole = 'open', middle: Position | null = { x: 5, y: 7 }) {
+  const said = {
+    activate: vi.fn<NodePressSaid['activate']>(),
+    show: vi.fn<NodePressSaid['show']>(),
+    reach: vi.fn<NodePressSaid['reach']>(),
+    menu: vi.fn<NodePressSaid['menu']>(),
+  }
+  let site!: ReachSite
+  const reaching: ReachStrategy = {
+    hasHandle: false,
+    listeners: (given) => {
+      site = given
+      return {}
+    },
+  }
+  const props: NodePressProps = { node: NODE, gestureRole, reaching, showing: byDoubleClick }
+  const press = useNodePress(props, () => middle, said)
+  return { press, said, site }
+}
+
+const key = (name: string, over: KeyboardEventInit = {}) =>
+  new KeyboardEvent('keydown', { key: name, cancelable: true, ...over })
+
+describe('a node that takes a gesture', () => {
+  it('is ready where it is open', () => {
+    expect(createPress('open').site.ready()).toBe(true)
+  })
+
+  it.each<GestureRole>(['closed', 'source', 'target'])('is not ready where it is %s', (role) => {
+    expect(createPress(role).site.ready()).toBe(false)
+  })
+
+  it('is not ready where it is not a node yet', () => {
+    expect(createPress('ghost').site.ready()).toBe(false)
+  })
+
+  it('hands the press that began the gesture on', () => {
+    const { site, said } = createPress()
+    const event = new PointerEvent('pointerdown')
+    site.reach(event)
+    expect(said.reach).toHaveBeenCalledWith(event)
+  })
+})
+
+describe('the menu key', () => {
+  it('opens the menu at the middle of the node and keeps the browser from acting on it', () => {
+    const { press, said } = createPress()
+    const event = key('ContextMenu')
+    press.onKeyDown(event)
+    expect(said.menu).toHaveBeenCalledWith({ x: 5, y: 7 }, 'keyboard')
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('opens nothing where the node has no middle to open at', () => {
+    const { press, said } = createPress('open', null)
+    const event = key('ContextMenu')
+    press.onKeyDown(event)
+    expect(said.menu).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('is left alone by a node that is not there yet', () => {
+    const { press, said } = createPress('ghost')
+    const event = key('ContextMenu')
+    press.onKeyDown(event)
+    expect(said.menu).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+  })
+})
+
+describe('the keys that choose and show', () => {
+  it('asks for the node on its own on Shift and Enter, and keeps the browser from acting', () => {
+    const { press, said } = createPress()
+    const event = key('Enter', { shiftKey: true })
+    press.onKeyDown(event)
+    expect(said.show).toHaveBeenCalledWith('here')
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('asks for it beside the reader with Alt held', () => {
+    const { press, said } = createPress()
+    press.onKeyDown(key('Enter', { shiftKey: true, altKey: true }))
+    expect(said.show).toHaveBeenCalledWith('beside')
+  })
+
+  it('chooses the node on Enter, and keeps the browser from acting', () => {
+    const { press, said } = createPress()
+    const event = key('Enter')
+    press.onKeyDown(event)
+    expect(said.activate).toHaveBeenCalledTimes(1)
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('leaves every other key to the browser', () => {
+    const { press, said } = createPress()
+    const event = key('a')
+    press.onKeyDown(event)
+    expect(said.activate).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+  })
+})
