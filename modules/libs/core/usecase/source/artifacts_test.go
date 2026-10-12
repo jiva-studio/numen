@@ -42,7 +42,7 @@ func getCueTexts(cues []transcript.Cue) []string {
 func TestListingArtifactsNamesWhatWasMadeFromAFile(t *testing.T) {
 	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
 
-	held, err := NewListArtifacts(index, shelves{kept}).Execute(t.Context(), first, recordingPath)
+	held, err := NewGetArtifactList(index, shelves{kept}).Execute(t.Context(), first, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestListingArtifactsNamesWhatWasMadeFromAFile(t *testing.T) {
 func TestListingArtifactsOfAFileTheIndexDoesNotHoldIsEmpty(t *testing.T) {
 	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
 
-	held, err := NewListArtifacts(index, shelves{kept}).Execute(t.Context(), first, "library/other.mp3")
+	held, err := NewGetArtifactList(index, shelves{kept}).Execute(t.Context(), first, "library/other.mp3")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,21 +73,21 @@ func TestACopyIsListedAndIsNotReadable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := NewListArtifacts(index, shelves{kept}).Execute(t.Context(), first, recordingPath)
+	held, err := NewGetArtifactList(index, shelves{kept}).Execute(t.Context(), first, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(held) != 2 || held[1].Kind != KindCopy || held[1].IsReadable() || held[1].Bytes != 5 {
 		t.Fatalf("the copy was listed as %+v", held)
 	}
-	if _, err := NewReadArtifact(index, shelves{kept}).Execute(t.Context(), first, recordingPath, KindCopy, 0, 0); err == nil {
+	if _, err := NewGetArtifactText(index, shelves{kept}).Execute(t.Context(), first, recordingPath, KindCopy, 0, 0); err == nil {
 		t.Error("a copy was read as words")
 	}
 }
 
 func TestReadingAnArtifactGivesTheRangeAsItStandsOnDisk(t *testing.T) {
 	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
-	read := NewReadArtifact(index, shelves{kept})
+	read := NewGetArtifactText(index, shelves{kept})
 
 	whole, err := read.Execute(t.Context(), first, recordingPath, KindTranscript, 0, 0)
 	if err != nil {
@@ -109,7 +109,7 @@ func TestReadingAnArtifactGivesTheRangeAsItStandsOnDisk(t *testing.T) {
 func TestReadingAKindNothingWasMadeAsIsRefused(t *testing.T) {
 	index, kept := newArtifactShelf(t, transcript.Cue{Text: "one", From: 0, To: 1000})
 
-	_, err := NewReadArtifact(index, shelves{kept}).Execute(t.Context(), first, recordingPath, KindArticle, 0, 0)
+	_, err := NewGetArtifactText(index, shelves{kept}).Execute(t.Context(), first, recordingPath, KindArticle, 0, 0)
 	if err == nil || !strings.Contains(err.Error(), "nothing of the kind") {
 		t.Errorf("an article that was never made read as %v", err)
 	}

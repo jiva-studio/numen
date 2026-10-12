@@ -1,0 +1,25 @@
+package source
+
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// GetArtifactList lists what was made from one file of the vault: the text read
+// out of a scan, a recording transcribed, the words a site published with a
+// video, the prose of a page and a copy of a video.
+type GetArtifactList struct {
+	shelf artifactShelf
+}
+
+func NewGetArtifactList(queries port.SourceQueries, derived port.DerivedStores) *GetArtifactList {
+	return &GetArtifactList{shelf: artifactShelf{queries: queries, derived: derived}}
+}
+
+// Execute returns the artifacts of one file, none for a file the index does not hold.
+func (u *GetArtifactList) Execute(ctx context.Context, v domain.Vault, path string) ([]Artifact, error) {
+	held, _, _, err := u.shelf.getArtifacts(ctx, v, path)
+	return held, err
+}

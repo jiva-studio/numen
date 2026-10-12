@@ -38,7 +38,7 @@ func newArtifacts(held []source.Artifact) []Artifact {
 }
 
 func addArtifactTools(server *sdk.Server, core Core) {
-	if core.Sources.Artifacts.List == nil || core.Sources.Artifacts.Read == nil {
+	if core.Sources.GetArtifactList == nil || core.Sources.GetArtifactText == nil {
 		return
 	}
 
@@ -64,7 +64,7 @@ func addArtifactTools(server *sdk.Server, core Core) {
 		type out = struct {
 			Artifacts []Artifact `json:"artifacts"`
 		}
-		held, err := core.Sources.Artifacts.List.Execute(ctx, core.getCurrentVault().Vault, in.Path)
+		held, err := core.Sources.GetArtifactList.Execute(ctx, core.getCurrentVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -98,7 +98,7 @@ func addArtifactTools(server *sdk.Server, core Core) {
 			Start  int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the text"`
 			Length int    `json:"length" jsonschema:"how long the range is"`
 		}
-		read, err := core.Sources.Artifacts.Read.Execute(
+		read, err := core.Sources.GetArtifactText.Execute(
 			ctx, core.getCurrentVault().Vault, in.Path, in.Kind, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err
