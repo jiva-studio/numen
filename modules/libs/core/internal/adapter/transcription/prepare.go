@@ -12,7 +12,7 @@ import (
 // transcription is fetching what it needs.
 func Ready(cfg Config) bool {
 	cfg.ShouldDownload = false
-	if !onnxruntime.IsHere(cfg.settings()) {
+	if !onnxruntime.IsAvailable(cfg.settings()) {
 		return false
 	}
 	var resolved paths

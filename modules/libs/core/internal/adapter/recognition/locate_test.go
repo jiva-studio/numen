@@ -44,7 +44,7 @@ func runInFreshProcess(t *testing.T, test string) {
 // isFreshProcess says whether this process has opened no runtime, so that the
 // test asking is the first to.
 func isFreshProcess() bool {
-	return !onnxruntime.IsHere(onnxruntime.Settings{Runtime: filepath.Join(os.TempDir(), "numen-no-such-runtime")})
+	return !onnxruntime.IsAvailable(onnxruntime.Settings{Runtime: filepath.Join(os.TempDir(), "numen-no-such-runtime")})
 }
 
 // A runtime that cannot be opened stops the search for models.
