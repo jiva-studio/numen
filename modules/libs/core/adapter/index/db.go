@@ -35,7 +35,7 @@ import (
 //
 // Several processes open the one file. Their writers queue in SQLite, under the
 // busy timeout, and a writer still waiting when it runs out asks again — see
-// the writing package, which every write on this pool goes through.
+// the sqlwrite package, which every write on this pool goes through.
 type DB struct {
 	write *sql.DB
 	read  *sql.DB
