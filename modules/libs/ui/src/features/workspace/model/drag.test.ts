@@ -190,7 +190,7 @@ describe('a tab being dragged', () => {
       dragTo('plex', [350, 300], [x, y])
       expect(drag.landing.value?.kind).toBe('edge')
     }
-    dragTo('plex', [350, 300], [350, 50])
+    dragTo('plex', [350, 300], [150, 50])
     expect(drag.landing.value?.kind).toBe('strip')
   })
 
