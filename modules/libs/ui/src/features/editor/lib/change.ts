@@ -120,6 +120,7 @@ const getDecorations = (
 
   const end = from + change.text.length
   if (end > from + reveal.shown) found.push(covered.range(from + reveal.shown, end))
+  // Stryker disable next-line BooleanLiteral: the marks are collected in document order, which is sorted
   return Decoration.set(found, true)
 }
 
