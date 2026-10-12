@@ -209,11 +209,7 @@ describe('PlexLinkInspectorPopover component', () => {
     expect(payload.rows[0]?.to).toBe('notes/parent.md')
     expect(payload.rows[0]?.role).toBe('parent')
     expect(payload.rows[0]?.direction).toBe('reverse')
-    expect(payload.removedLinks).toContainEqual({
-      from: 'notes/parent.md',
-      to: 'notes/child.md',
-      role: 'child',
-    })
+    expect(payload.removedLinks).toEqual([])
 
     wrapper.unmount()
   })
@@ -485,11 +481,7 @@ describe('PlexLinkInspectorPopover component', () => {
     expect(payload.rows[0]?.direction).toBe('undirected')
     expect(payload.rows[0]?.from).toBe('notes/alpha.md')
     expect(payload.rows[0]?.to).toBe('notes/beta.md')
-    expect(payload.removedLinks).toContainEqual({
-      from: 'notes/beta.md',
-      to: 'notes/alpha.md',
-      role: 'jump',
-    })
+    expect(payload.removedLinks).toEqual([])
     wrapper.unmount()
   })
 

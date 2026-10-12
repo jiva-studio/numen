@@ -126,9 +126,7 @@ function onToggleDirection(row: DirectionalLinkItem) {
     row,
     props.request.nodeA.path,
     props.request.nodeB.path,
-    initialLinkIds,
   )
-  if (res.removedLink) removedLinks.value.push(res.removedLink)
   const target = row as {
     direction: string
     from: string
