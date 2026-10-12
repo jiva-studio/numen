@@ -1,4 +1,4 @@
-// Package openai puts a reading right with a hosted model, over the
+// Package openai puts a text right with a hosted model, over the
 // /chat/completions request shape. Several services speak it, so an
 // installation points at one by changing a base URL.
 package openai

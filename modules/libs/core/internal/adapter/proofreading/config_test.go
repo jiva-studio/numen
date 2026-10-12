@@ -131,7 +131,7 @@ func TestAProfileIsReadBackAsWhatItWas(t *testing.T) {
 	}
 }
 
-// A profile says which model corrects a reading, by the name the thing reaching
+// A profile says which model corrects a text, by the name the thing reaching
 // it knows a model under.
 func TestAProfileWithNoModelNamesNone(t *testing.T) {
 	for _, one := range []struct {
