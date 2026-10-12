@@ -66,16 +66,11 @@ type Read struct {
 func (u Read) Execute(
 	ctx context.Context, v domain.Vault, path string, start, length int,
 ) (ReadResult, error) {
+	length, err := checkRange(path, start, length)
+	if err != nil {
+		return ReadResult{}, err
+	}
 	out := ReadResult{Start: start}
-	if start < 0 {
-		return ReadResult{}, fmt.Errorf("a range of %s begins at %d", path, start)
-	}
-	if length < 0 || length > MostRead {
-		return ReadResult{}, fmt.Errorf("read between 1 and %d bytes of a file at a time", MostRead)
-	}
-	if length == 0 {
-		length = MostRead
-	}
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
@@ -101,6 +96,28 @@ func (u Read) Execute(
 		return out, nil
 	}
 
+	return readRange(file, path, start, length)
+}
+
+// checkRange is the length a read asks for, with zero standing for as much as
+// one read carries, or the error of a range no read can serve.
+func checkRange(path string, start, length int) (int, error) {
+	if start < 0 {
+		return 0, fmt.Errorf("a range of %s begins at %d", path, start)
+	}
+	if length < 0 || length > MostRead {
+		return 0, fmt.Errorf("read between 1 and %d bytes of a file at a time", MostRead)
+	}
+	if length == 0 {
+		return MostRead, nil
+	}
+	return length, nil
+}
+
+// readRange reads length bytes of file from start, held within the file and cut
+// at whole characters.
+func readRange(file io.ReadSeeker, path string, start, length int) (ReadResult, error) {
+	var out ReadResult
 	whole, err := file.Seek(0, io.SeekEnd)
 	if err != nil {
 		return ReadResult{}, fmt.Errorf("read %s: %w", path, err)

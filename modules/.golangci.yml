@@ -377,12 +377,7 @@ linters:
       - path: (^|/)proofread/
         linters: [cyclop, gocognit, nestif]
 
-      # Business use cases coordinate multi-step workflows, port calls,
-      # and error recovery for a scenario.
-      - path: (^|/)usecase/
-        linters: [cyclop, gocognit, nestif, funlen]
-
       # Adapters and application entry points wire external technologies,
       # drivers, CLI flags, and window lifecycles.
-      - path: (^|/)(adapter/([^m]|m[^c]|mc[^p]|mcp[^/])|internal/adapter/|cmd/|bind/|container/|internal/agents/|internal/wire/)
+      - path: (^|/)(adapter/([^m]|m[^c]|mc[^p]|mcp[^/])|cmd/|bind/|container/|internal/agents/|internal/wire/)
         linters: [cyclop, gocognit, nestif, funlen]

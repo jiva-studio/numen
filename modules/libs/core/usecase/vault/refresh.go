@@ -207,71 +207,15 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		ref, err := reader.Stat(ctx, path)
-		// A file the vault leaves alone is at this path — an attachment, an
-		// export, a note somebody renamed out of the vault's sight. It is not
-		// a note that vanished: nothing was lost, so nobody is told to look
-		// again, and the index holds nothing at a path that is not a note.
-		if errors.Is(err, port.ErrNotANote) {
-			res.LeftAlone = append(res.LeftAlone, path)
-			continue
-		}
-		if errors.Is(err, fs.ErrNotExist) {
-			res.Removed = append(res.Removed, path)
-			continue
-		}
-		if err != nil {
-			// One file nobody can read — a permission, a broken link, a device
-			// that went away — must not cost the others. A watcher's event
-			// arrives once, so anything dropped here is dropped until the next
-			// scan.
-			res.Unreadable = append(res.Unreadable, path)
-			continue
-		}
-		if ref.Kind != domain.KindNote {
-			// The vault holds it, so it is not gone and its row stays where it
-			// is. Reading it is the business of whatever extracts its text.
-			res.Assets = append(res.Assets, path)
-			continue
-		}
-		if !u.Force && u.isCurrent(ctx, reader, v, ref) {
-			res.Indexed = append(res.Indexed, path)
-			continue
-		}
-		raw, err := reader.Read(ctx, path)
-		if errors.Is(err, fs.ErrNotExist) {
-			// It was there a moment ago, when it was looked at. A file that
-			// briefly disappears between the two is what an editor saving
-			// through a temporary file looks like, and taking the note out of
-			// the index would take it out of search until something put it
-			// back. The save that follows arrives as its own event.
-			continue
-		}
-		if err != nil {
-			res.Unreadable = append(res.Unreadable, path)
-			continue
-		}
-		if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
-			return res, fmt.Errorf("index: %w", err)
-		}
-		res.Indexed = append(res.Indexed, path)
-		if u.isRecent(ref.ModTime) {
-			recorded[path] = &ledgerEntry{fingerprint: ref, hash: sha256.Sum256(raw)}
-		} else {
-			recorded[path] = nil
+		if err := u.refreshPath(ctx, v, reader, path, &group, recorded, &res); err != nil {
+			return res, err
 		}
 	}
 
 	if err := group.flush(ctx); err != nil {
 		return res, fmt.Errorf("index: %w", err)
 	}
-	for path, entry := range recorded {
-		if entry == nil {
-			u.Ledger.drop(v.ID, path)
-			continue
-		}
-		u.Ledger.put(u.now(), v.ID, path, *entry)
-	}
+	u.writeLedger(v, recorded)
 	// Both leave the index, and they leave it for different reasons: one path
 	// has nothing at it, the other has something that is not a note.
 	gone := append(append([]string(nil), res.Removed...), res.LeftAlone...)
@@ -282,6 +226,96 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 		return res, fmt.Errorf("remove: %w", err)
 	}
 	return res, nil
+}
+
+// refreshPath files one path under the list of res it belongs to, and adds the
+// note it holds to the group when the index is behind the file. A note indexed
+// is recorded for the ledger: its entry when it is recent, nil when it is not.
+func (u Refresh) refreshPath(
+	ctx context.Context,
+	v domain.Vault,
+	reader port.VaultReader,
+	path string,
+	group *grouping,
+	recorded map[string]*ledgerEntry,
+	res *RefreshResult,
+) error {
+	ref, isNote := u.statNote(ctx, reader, path, res)
+	if !isNote {
+		return nil
+	}
+	if !u.Force && u.isCurrent(ctx, reader, v, ref) {
+		res.Indexed = append(res.Indexed, path)
+		return nil
+	}
+	raw, isRead := readListedFile(ctx, reader, path, res)
+	if !isRead {
+		return nil
+	}
+	if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
+		return fmt.Errorf("index: %w", err)
+	}
+	res.Indexed = append(res.Indexed, path)
+	if u.isRecent(ref.ModTime) {
+		recorded[path] = &ledgerEntry{fingerprint: ref, hash: sha256.Sum256(raw)}
+	} else {
+		recorded[path] = nil
+	}
+	return nil
+}
+
+// readListedFile is the bytes of the note at path and whether they were read. A
+// file gone since it was looked at is an editor saving through a temporary
+// file, and the save that follows arrives as its own event; any other failure is
+// filed as unreadable.
+func readListedFile(ctx context.Context, reader port.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
+	raw, err := reader.Read(ctx, path)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+	case err != nil:
+		res.Unreadable = append(res.Unreadable, path)
+	default:
+		return raw, true
+	}
+	return nil, false
+}
+
+// statNote is the fingerprint of the file at path and whether it is a note. A
+// path that is not one is filed in res under the list that says why, and nothing
+// is lost by it: one file nobody can read costs that file and not the others.
+func (u Refresh) statNote(
+	ctx context.Context, reader port.VaultReader, path string, res *RefreshResult,
+) (domain.Fingerprint, bool) {
+	ref, err := reader.Stat(ctx, path)
+	switch {
+	case errors.Is(err, port.ErrNotANote):
+		// An attachment, an export or a note renamed out of the vault's sight is
+		// not a note that vanished, and the index holds nothing at its path.
+		res.LeftAlone = append(res.LeftAlone, path)
+	case errors.Is(err, fs.ErrNotExist):
+		res.Removed = append(res.Removed, path)
+	case err != nil:
+		res.Unreadable = append(res.Unreadable, path)
+	case ref.Kind != domain.KindNote:
+		// The vault holds it, so its row stays where it is. Reading it is the
+		// business of whatever extracts its text.
+		res.Assets = append(res.Assets, path)
+	default:
+		return ref, true
+	}
+	return domain.Fingerprint{}, false
+}
+
+// writeLedger puts the recorded entries in the ledger and drops the paths
+// recorded as nil.
+func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
+	for path, entry := range recorded {
+		if entry == nil {
+			u.Ledger.drop(v.ID, path)
+			continue
+		}
+		u.Ledger.put(u.now(), v.ID, path, *entry)
+	}
 }
 
 // dropSources takes out the rows of every source at a path the vault no longer
