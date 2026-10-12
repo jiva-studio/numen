@@ -59,26 +59,9 @@ func (c Config) Scan(db *Index) vault.Scan {
 func (c Config) ReadWholeVault(
 	ctx context.Context, db *Index, embedder port.Embedder, v domain.Vault,
 ) (vault.ReadWholeVault, error) {
-	// The coarse index is built for one width, and the width is the model's. A
-	// vault made searchable is a vault whose vector index holds what the model
-	// makes, whichever entry point is doing the making.
 	if embedder != nil {
-		model := embedder.GetModel()
-		if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
+		if err := c.syncVectorIndex(ctx, db, embedder.GetModel()); err != nil {
 			return vault.ReadWholeVault{}, err
-		}
-		// Building the index again is where the vectors of a recipe nobody asks
-		// for any more go. Every other run keeps them, so a model set back is a
-		// model whose vectors are all still here.
-		if c.ShouldRebuildIndex {
-			if _, err := db.DeleteVectorsOfOtherRecipes(ctx, model.Recipe()); err != nil {
-				return vault.ReadWholeVault{}, err
-			}
-			// The rows are gone whether or not the file gives its pages back,
-			// so a vacuum that could not run is said and not waited for.
-			if err := db.Compact(ctx); err != nil {
-				c.handleError(err)
-			}
 		}
 	}
 	books, err := c.Extract(db.Sources(), db.SourcesKnown(), v)
@@ -90,6 +73,25 @@ func (c Config) ReadWholeVault(
 		return vault.ReadWholeVault{}, err
 	}
 	return vault.NewReadWholeVault(c.Scan(db), books, vectors), nil
+}
+
+// syncVectorIndex fits the vector index to the model's width, and on a rebuild
+// drops the vectors of other recipes.
+func (c Config) syncVectorIndex(ctx context.Context, db *Index, model port.EmbeddingModel) error {
+	if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
+		return err
+	}
+	if !c.ShouldRebuildIndex {
+		return nil
+	}
+	if _, err := db.DeleteVectorsOfOtherRecipes(ctx, model.Recipe()); err != nil {
+		return err
+	}
+	// A failed compaction is reported and the rows stay deleted.
+	if err := db.Compact(ctx); err != nil {
+		c.handleError(err)
+	}
+	return nil
 }
 
 // Embed gives a vault's chunks the vectors they owe.

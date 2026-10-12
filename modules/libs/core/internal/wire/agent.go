@@ -48,16 +48,22 @@ func StreamAgentTask(
 			if !working {
 				return nil
 			}
-			for _, out := range convertSteps(step) {
-				if err := stream.Send(out); err != nil {
-					return err
-				}
-			}
-			if step.Kind == port.StepStopped {
-				return nil
+			if done, err := sendStep(stream, step); err != nil || done {
+				return err
 			}
 		}
 	}
+}
+
+// sendStep writes a step to the stream in the schema's words, and says whether
+// the step was the last of the work.
+func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step port.Step) (bool, error) {
+	for _, out := range convertSteps(step) {
+		if err := stream.Send(out); err != nil {
+			return false, err
+		}
+	}
+	return step.Kind == port.StepStopped, nil
 }
 
 // convertSteps says a step of an agent's work in the schema's words.

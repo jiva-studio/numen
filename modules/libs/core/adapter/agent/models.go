@@ -147,33 +147,44 @@ type codexCache struct {
 	} `json:"models"`
 }
 
+// readCodexCache is the visible models in the cache the codex program keeps in
+// the home folder, and none where there is no readable cache.
+func readCodexCache(modelAt []string) []port.Model {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+	data, err := os.ReadFile(filepath.Join(home, ".codex", "models_cache.json"))
+	if err != nil {
+		return nil
+	}
+	var cache codexCache
+	if err := json.Unmarshal(data, &cache); err != nil {
+		return nil
+	}
+	var models []port.Model
+	for _, m := range cache.Models {
+		if m.Visibility == "hide" || m.Slug == "" {
+			continue
+		}
+		title := m.DisplayName
+		if title == "" {
+			title = m.Slug
+		}
+		models = append(models, port.Model{
+			Path:     modelAt,
+			Name:     m.Slug,
+			Title:    title,
+			Group:    groupInFull,
+			Presence: port.NothingToFetch,
+		})
+	}
+	return models
+}
+
 func getCodexModels(held Config) []port.Model {
 	modelAt := []string{"codex", "model"}
-	var models []port.Model
-
-	if home, err := os.UserHomeDir(); err == nil {
-		cachePath := filepath.Join(home, ".codex", "models_cache.json")
-		if data, err := os.ReadFile(cachePath); err == nil {
-			var cache codexCache
-			if err := json.Unmarshal(data, &cache); err == nil {
-				for _, m := range cache.Models {
-					if m.Visibility != "hide" && m.Slug != "" {
-						title := m.DisplayName
-						if title == "" {
-							title = m.Slug
-						}
-						models = append(models, port.Model{
-							Path:     modelAt,
-							Name:     m.Slug,
-							Title:    title,
-							Group:    groupInFull,
-							Presence: port.NothingToFetch,
-						})
-					}
-				}
-			}
-		}
-	}
+	models := readCodexCache(modelAt)
 
 	if len(models) == 0 {
 		models = []port.Model{

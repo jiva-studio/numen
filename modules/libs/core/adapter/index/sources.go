@@ -93,11 +93,11 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 }
 
 func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after port.ChunkCursor, limit int) ([]domain.Passage, port.ChunkCursor, error) {
-	fromMTime, fromSource, fromChunk, err := parseCursor(after)
+	from, err := parseCursor(after)
 	if err != nil {
 		return nil, "", err
 	}
-	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), fromMTime, fromSource, fromChunk, limit)
+	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from.MTime, from.Source, from.Chunk, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -122,47 +122,53 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	return out, next, nil
 }
 
-// parseCursor is the point in the ordering a walk carries on after. The empty
+// Cursor is the point in the ordering a walk carries on after.
+type Cursor struct {
+	MTime, Source, Chunk int64
+}
+
+// parseCursor is the Cursor a chunk cursor names. The empty
 // cursor starts from the beginning.
-func parseCursor(after port.ChunkCursor) (int64, int64, int64, error) {
+func parseCursor(after port.ChunkCursor) (Cursor, error) {
 	if after == "" {
-		return math.MaxInt64, math.MaxInt64, 0, nil
+		return Cursor{MTime: math.MaxInt64, Source: math.MaxInt64}, nil
 	}
 	parts := strings.Split(string(after), ":")
 	if len(parts) == 1 {
 		row, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
-			return 0, 0, 0, fmt.Errorf("%q is no chunk of this index", after)
+			return Cursor{}, fmt.Errorf("%q is no chunk of this index", after)
 		}
-		return math.MaxInt64, math.MaxInt64, row, nil
+		return Cursor{MTime: math.MaxInt64, Source: math.MaxInt64, Chunk: row}, nil
 	}
-	if len(parts) == 2 {
-		mtime, err := strconv.ParseInt(parts[0], 10, 64)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
-		}
-		chunkRow, err := strconv.ParseInt(parts[1], 10, 64)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
-		}
-		return mtime, math.MaxInt64, chunkRow, nil
+	numbers, err := parseCursorNumbers(after, parts)
+	if err != nil {
+		return Cursor{}, err
 	}
-	if len(parts) == 3 {
-		mtime, err := strconv.ParseInt(parts[0], 10, 64)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
-		}
-		sourceRow, err := strconv.ParseInt(parts[1], 10, 64)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
-		}
-		chunkRow, err := strconv.ParseInt(parts[2], 10, 64)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
-		}
-		return mtime, sourceRow, chunkRow, nil
+	switch len(numbers) {
+	case 2:
+		return Cursor{MTime: numbers[0], Source: math.MaxInt64, Chunk: numbers[1]}, nil
+	case 3:
+		return Cursor{MTime: numbers[0], Source: numbers[1], Chunk: numbers[2]}, nil
 	}
-	return 0, 0, 0, fmt.Errorf("%q is no cursor of this index", after)
+	return Cursor{}, fmt.Errorf("%q is no cursor of this index", after)
+}
+
+// parseCursorNumbers is the numbers of a cursor of two or three parts, and an
+// error where it has another count or a part that is no number.
+func parseCursorNumbers(after port.ChunkCursor, parts []string) ([]int64, error) {
+	if len(parts) != 2 && len(parts) != 3 {
+		return nil, fmt.Errorf("%q is no cursor of this index", after)
+	}
+	numbers := make([]int64, len(parts))
+	for i, part := range parts {
+		number, err := strconv.ParseInt(part, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("%q is no cursor of this index", after)
+		}
+		numbers[i] = number
+	}
+	return numbers, nil
 }
 
 func newChunkSource(s domain.Source) chunk.Source {
