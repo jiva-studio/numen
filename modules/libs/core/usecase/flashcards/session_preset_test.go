@@ -28,7 +28,7 @@ func (s vaulted) openSessionByPreset(
 	t *testing.T, day review.Day, now time.Time, preset string,
 ) flashcards.SessionResult {
 	t.Helper()
-	sat, err := s.openSession(t, day, now, flashcards.NewPresetScope(preset))
+	sat, err := s.openSession(t, day, now, flashcards.CreatePresetScope(preset))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestASessionOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 		"decks/Birds.md": deckOf("Steady", 3, 0),
 	})
 
-	_, err := s.openSession(t, today, saturday, flashcards.NewPresetScope("Lonely.md"))
+	_, err := s.openSession(t, today, saturday, flashcards.CreatePresetScope("Lonely.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a preset nothing points at was answered with %v", err)
 	}
@@ -162,7 +162,7 @@ func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 		"decks/Paused.md": deckOf("Paused", 6, 0),
 	})
 
-	_, err := s.openSession(t, today, saturday, flashcards.NewPresetScope("Paused.md"))
+	_, err := s.openSession(t, today, saturday, flashcards.CreatePresetScope("Paused.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a paused preset was answered with %v", err)
 	}
@@ -191,7 +191,7 @@ func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 		answer(t, morning, mark(i), 6*time.Second)
 	}
 
-	_, err := s.openSession(t, today, saturday.Add(2*time.Hour), flashcards.NewPresetScope("Two.md"))
+	_, err := s.openSession(t, today, saturday.Add(2*time.Hour), flashcards.CreatePresetScope("Two.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a spent day was answered with %v", err)
 	}
