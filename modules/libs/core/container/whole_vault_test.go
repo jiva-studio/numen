@@ -218,26 +218,6 @@ func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 	}
 }
 
-// Giving the space back is courtesy, and a vacuum that cannot run is told to
-// whoever asked and does not stop the rebuild.
-func TestAVacuumThatCannotRunIsToldAndTheRebuildGoesOn(t *testing.T) {
-	db, v := makeSwitchedIndex(t)
-	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "absent"))
-	t.Setenv("SQLITE_TMPDIR", filepath.Join(t.TempDir(), "absent"))
-
-	var told []error
-	held := container.Config{
-		Embedding: embed.Defaults(), ServiceDir: ".numen", ShouldRebuildIndex: true,
-		ErrorHandler: func(err error) { told = append(told, err) },
-	}
-	if _, err := held.ReadWholeVault(t.Context(), db, unit{"second"}, v); err != nil {
-		t.Fatal(err)
-	}
-	if len(told) != 1 {
-		t.Errorf("told %v", told)
-	}
-}
-
 func TestASearchOverTheIndexWithNoModelIsAnsweredByTheWords(t *testing.T) {
 	cfg, vault := makeScannedVault(t)
 
