@@ -27,7 +27,7 @@ describe('the room a node takes', () => {
     const node: PlacedNode = {
       id: 'n',
       title: 'N',
-      seat: 'child',
+      relation: 'child',
       x: 100,
       y: 50,
       width: 40,

@@ -173,7 +173,7 @@ describe('a file the settings cannot be read out of', () => {
 })
 
 describe('a file that moved past what the tab read', () => {
-  const MOVED = '{\n  "agent": { "use": "claude" },\n  "review": { "day_starts": "05:00" }\n}\n'
+  const MOVED = '{\n  "agent": { "use": "claude" },\n  "review": { "day_start_time": "05:00" }\n}\n'
   const TYPED = '{\n  "agent": { "use": "gemini" }\n}\n'
 
   /**

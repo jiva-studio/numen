@@ -104,7 +104,7 @@ describe('what a screen reader and a keyboard are given', () => {
     expect(plex.findAll('.plex__node[tabindex="-1"]')).toHaveLength(0)
   })
 
-  it('names a node by its title and its seat', () => {
+  it('names a node by its title and its relation', () => {
     const plex = mountPlex()
     expect(plex.find('[aria-label="Domain, child"]').exists()).toBe(true)
     expect(plex.find('[aria-label="Software architecture, parent"]').exists()).toBe(true)
@@ -130,9 +130,10 @@ describe('what did not fit', () => {
 
     // How much fits depends on the window, so the sentence is read against
     // what was actually drawn rather than against a number written here.
-    const countDrawn = (seat: string) =>
-      plex.findAll('.plex__node').filter((n) => n.attributes('aria-label')?.endsWith(`, ${seat}`))
-        .length
+    const countDrawn = (relation: string) =>
+      plex
+        .findAll('.plex__node')
+        .filter((n) => n.attributes('aria-label')?.endsWith(`, ${relation}`)).length
 
     expect(status).toContain(`${200 - countDrawn('child')} children`)
     expect(status).toContain(`${40 - countDrawn('jump')} jumps`)

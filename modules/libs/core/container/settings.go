@@ -82,8 +82,8 @@ func (s Settings) Sync() bool { return s.Titles.Sync() }
 func (s Settings) HasNestedHeadings() bool    { return s.Appearance.HasNestedHeadings() }
 func (s Settings) GetNestedHeadingLimit() int { return s.Appearance.NestedHeadingLimit }
 
-// DayStarts is how long past midnight a day of review begins.
-func (s Settings) DayStarts() time.Duration {
+// GetDayStartTime is how long past midnight a day of review begins.
+func (s Settings) GetDayStartTime() time.Duration {
 	starts, _ := s.Review.DayStart()
 	return starts
 }

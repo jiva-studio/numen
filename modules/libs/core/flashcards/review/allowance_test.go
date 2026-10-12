@@ -15,7 +15,7 @@ import (
 // and the share decides nothing. A goal of a date carries the whole material by
 // its own reckoning.
 func TestWhichSettingsAGoalReads(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts}
+	day := review.Day{Starts: review.DayStartTime}
 	for _, one := range []struct {
 		goal       review.Goal
 		shouldRead bool
@@ -45,7 +45,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 // What the day has already gone through is off what it still admits, so a
 // second session takes up where the first left off.
 func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts}
+	day := review.Day{Starts: review.DayStartTime}
 	p := review.Defaults()
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1
 	p.NewADay, p.ReviewsADay = 20, 20
@@ -71,7 +71,7 @@ func getBudget(p review.Preset, day time.Weekday) review.Budget {
 	for at.Weekday() != day {
 		at = at.AddDate(0, 0, 1)
 	}
-	return p.GetAllowance(review.Day{Starts: review.DayStarts}, at, review.Spent{}, 0, 0).Keeps
+	return p.GetAllowance(review.Day{Starts: review.DayStartTime}, at, review.Spent{}, 0, 0).Keeps
 }
 
 // The budget a preset keeps on one day is that day of the week's share of it,

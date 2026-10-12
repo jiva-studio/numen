@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// seatsOf renders a neighbourhood as `seat path` lines, which is what these
+// relationsOf renders a neighbourhood as `relation path` lines, which is what these
 // tests are about: who is shown, and where.
-func seatsOf(n domain.Neighbourhood) []string {
+func relationsOf(n domain.Neighbourhood) []string {
 	out := make([]string, 0, len(n.Related))
 	for _, r := range n.Related {
 		out = append(out, string(r.Relation)+" "+r.Path)
@@ -41,7 +41,7 @@ func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 		"Idea.md":  "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Idea\n",
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
 	}, "Area.md")
-	if got := seatsOf(written); !slices.Equal(got, []string{"child Idea.md"}) {
+	if got := relationsOf(written); !slices.Equal(got, []string{"child Idea.md"}) {
 		t.Errorf("a note that names Area its parent is not Area's child: %v", got)
 	}
 
@@ -49,13 +49,13 @@ func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"[[Idea]]\"\n    role: child\n---\n\n# Area\n",
 		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
 	}, "Area.md")
-	if got := seatsOf(reversed); !slices.Equal(got, []string{"child Idea.md"}) {
+	if got := relationsOf(reversed); !slices.Equal(got, []string{"child Idea.md"}) {
 		t.Errorf("the same edge written from the other end: %v", got)
 	}
 }
 
 // describeEdge renders the line between two notes as it is seen from one of
-// them: the seat, the label where there is one, and whether the edge is mutual.
+// them: the relation, the label where there is one, and whether the edge is mutual.
 func describeEdge(t *testing.T, files map[string]string, from, to string) string {
 	t.Helper()
 	for _, r := range neighbourhoodOf(t, files, from).Related {
@@ -145,7 +145,7 @@ func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 }
 
 // TestEndsThatDisagreeAnswerNothing. A pair who are each other's parent name
-// two relationships, and the one drawn is the one whose seat wins.
+// two relationships, and the one drawn is the one whose relation wins.
 func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
 	t.Parallel()
 	mutualParents := map[string]string{
@@ -153,23 +153,23 @@ func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: came out of one\n---\n\n# Egg\n",
 	}
 	if got := describeEdge(t, mutualParents, "Chicken.md", "Egg.md"); got != "parent lays them" {
-		t.Errorf("got %q, want the parent seat and the word written here", got)
+		t.Errorf("got %q, want the parent relation and the word written here", got)
 	}
 	if got := describeEdge(t, mutualParents, "Egg.md", "Chicken.md"); got != "parent came out of one" {
-		t.Errorf("got %q, want the parent seat and the word written here", got)
+		t.Errorf("got %q, want the parent relation and the word written here", got)
 	}
 
-	// Each calls the other its child, so the parent seat is earned from the far
+	// Each calls the other its child, so the parent relation is earned from the far
 	// end and carries the word written there.
 	mutualChildren := map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n    label: was laid\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n    label: hatched\n---\n\n# Egg\n",
 	}
 	if got := describeEdge(t, mutualChildren, "Chicken.md", "Egg.md"); got != "parent hatched" {
-		t.Errorf("got %q, want the parent seat and the word written at the end it came from", got)
+		t.Errorf("got %q, want the parent relation and the word written at the end it came from", got)
 	}
 	if got := describeEdge(t, mutualChildren, "Egg.md", "Chicken.md"); got != "parent was laid" {
-		t.Errorf("got %q, want the parent seat and the word written at the end it came from", got)
+		t.Errorf("got %q, want the parent relation and the word written at the end it came from", got)
 	}
 }
 
@@ -185,40 +185,40 @@ func TestSiblingsAreTheOtherChildrenOfAParent(t *testing.T) {
 	}, "One.md")
 
 	want := []string{"parent Area.md", "sibling Three.md", "sibling Two.md"}
-	if got := seatsOf(n); !slices.Equal(got, want) {
+	if got := relationsOf(n); !slices.Equal(got, want) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 }
 
-// TestANoteTakesOneSeat. A pair that are each other's parent is a contradiction
+// TestANoteTakesOneRelation. A pair that are each other's parent is a contradiction
 // the vault is allowed to contain, and a picture that draws one note twice is
 // not a picture.
-func TestANoteTakesOneSeat(t *testing.T) {
+func TestANoteTakesOneRelation(t *testing.T) {
 	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n---\n\n# Egg\n",
 	}, "Chicken.md")
 
-	if got := seatsOf(n); !slices.Equal(got, []string{"parent Egg.md"}) {
-		t.Errorf("got %v, want the first seat it qualifies for and no second one", got)
+	if got := relationsOf(n); !slices.Equal(got, []string{"parent Egg.md"}) {
+		t.Errorf("got %v, want the first relation it qualifies for and no second one", got)
 	}
 }
 
-// TestTheHigherSeatWins is the other half of taking one seat: which one.
+// TestTheHigherRelationWins is the other half of taking one relation: which one.
 //
 // Written from the mirrored end, so the child arrives first and the parent
-// second. Keeping whichever was seen first would seat it as a child; the rule
+// second. Keeping whichever was seen first would make it a child; the rule
 // is that a parent outranks one.
-func TestTheHigherSeatWins(t *testing.T) {
+func TestTheHigherRelationWins(t *testing.T) {
 	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n---\n\n# Egg\n",
 	}, "Chicken.md")
 
-	if got := seatsOf(n); !slices.Equal(got, []string{"parent Egg.md"}) {
-		t.Errorf("got %v, want parent — it outranks the child seat the same pair also earns", got)
+	if got := relationsOf(n); !slices.Equal(got, []string{"parent Egg.md"}) {
+		t.Errorf("got %v, want parent — it outranks the child relation the same pair also earns", got)
 	}
 }
 
@@ -242,14 +242,14 @@ func TestANeighbourhoodStaysInsideItsVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := seatsOf(n); len(got) != 0 {
+	if got := relationsOf(n); len(got) != 0 {
 		t.Errorf("got %v — the note that identifier names is in another vault", got)
 	}
 }
 
-// TestOnlyNavigableLinksTakeASeat. A wikilink in prose and an attachment are
+// TestOnlyNavigableLinksTakeARelation. A wikilink in prose and an attachment are
 // links, and neither is a place in the hierarchy.
-func TestOnlyNavigableLinksTakeASeat(t *testing.T) {
+func TestOnlyNavigableLinksTakeARelation(t *testing.T) {
 	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"https://example.org/paper\"\n    role: attachment\n" +
@@ -258,19 +258,19 @@ func TestOnlyNavigableLinksTakeASeat(t *testing.T) {
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
 	}, "Area.md")
 
-	if got := seatsOf(n); !slices.Equal(got, []string{"jump Idea.md"}) {
-		t.Errorf("got %v — prose links and attachments are not seats", got)
+	if got := relationsOf(n); !slices.Equal(got, []string{"jump Idea.md"}) {
+		t.Errorf("got %v — prose links and attachments are not relations", got)
 	}
 }
 
-// TestADanglingLinkHasNoSeat: there is nothing to draw and nowhere to go.
-func TestADanglingLinkHasNoSeat(t *testing.T) {
+// TestADanglingLinkHasNoRelation: there is nothing to draw and nowhere to go.
+func TestADanglingLinkHasNoRelation(t *testing.T) {
 	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"[[Nothing by that name]]\"\n    role: child\n---\n\n# Area\n",
 	}, "Area.md")
 
-	if got := seatsOf(n); len(got) != 0 {
+	if got := relationsOf(n); len(got) != 0 {
 		t.Errorf("got %v, want nothing", got)
 	}
 	if n.Focus.Title != "Area" {
@@ -292,9 +292,9 @@ func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
 			"---\ntitle: Notes\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Notes %02d\n", i)
 	}
 
-	first := seatsOf(neighbourhoodOf(t, files, "Area.md"))
+	first := relationsOf(neighbourhoodOf(t, files, "Area.md"))
 	for range 8 {
-		if again := seatsOf(neighbourhoodOf(t, files, "Area.md")); !slices.Equal(first, again) {
+		if again := relationsOf(neighbourhoodOf(t, files, "Area.md")); !slices.Equal(first, again) {
 			t.Fatalf("two runs disagree:\n  %v\n  %v", first, again)
 		}
 	}
@@ -398,7 +398,7 @@ func TestMutualChildParentLinksCarryBothLabels(t *testing.T) {
 		t.Errorf("expected IsMutual to be true")
 	}
 	if relParent.Relation != domain.RelationChild {
-		t.Errorf("expected Seat to be child, got %v", relParent.Relation)
+		t.Errorf("expected Relation to be child, got %v", relParent.Relation)
 	}
 	if relParent.Label != "child of parent" {
 		t.Errorf("expected Label to be 'child of parent', got %q", relParent.Label)
@@ -416,7 +416,7 @@ func TestMutualChildParentLinksCarryBothLabels(t *testing.T) {
 		t.Errorf("expected IsMutual to be true")
 	}
 	if relChild.Relation != domain.RelationParent {
-		t.Errorf("expected Seat to be parent, got %v", relChild.Relation)
+		t.Errorf("expected Relation to be parent, got %v", relChild.Relation)
 	}
 	if relChild.Label != "parent of child" {
 		t.Errorf("expected Label to be 'parent of child', got %q", relChild.Label)

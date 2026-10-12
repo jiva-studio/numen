@@ -65,14 +65,14 @@ On, a node in the plex nests the headings of the note it stands for under its bo
 ```json
 {
   "review": {
-    "day_starts": "04:00"
+    "day_start_time": "04:00"
   }
 }
 ```
 
 | | |
 | --- | --- |
-| `day_starts` | the hour a day of review begins at, on the clock on the wall. `04:00`, and it goes from `00:00` to `12:00`. |
+| `day_start_time` | the hour a day of review begins at, on the clock on the wall. `04:00`, and it goes from `00:00` to `12:00`. |
 
 An answer given before that hour is written into the day before: a person answering at one in the morning is finishing the evening they sat down in, and a boundary at midnight would cut one session in two. The hour is an hour on the wall, so a day is read where a person reads it — [Flashcards](flashcards.md).
 

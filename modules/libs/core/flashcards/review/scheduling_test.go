@@ -24,7 +24,7 @@ func makeDueByDay(d review.Day, at time.Time, on map[int]int) *review.DueByDay {
 // away for: the day whose share of the load stands highest over what already
 // falls on it. A day at none of the load weighs nothing and takes no card.
 func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
 	if at.Weekday() != time.Sunday {
 		t.Fatalf("%s is a %s", at.Format(review.DayLayout), at.Weekday())
@@ -63,7 +63,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 // A table of the days of review says how many card faces fall on the day
 // holding an instant.
 func TestHowLoadedADayOfReviewIs(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
 	on := makeDueByDay(day, at, map[int]int{0: 2, 1: 1})
 
@@ -125,7 +125,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	if err != nil {
 		t.Skipf("this machine holds no zone whose clock changes: %v", err)
 	}
-	day := review.Day{Starts: review.DayStarts, In: in}
+	day := review.Day{Starts: review.DayStartTime, In: in}
 	by := review.NewFSRS()
 	p := review.Defaults()
 

@@ -4,10 +4,10 @@
  */
 import { computed, nextTick, onMounted, onScopeDispose, ref, useTemplateRef, watch } from 'vue'
 import { ArrowLeftRight, X } from '@lucide/vue'
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import type { DirectionalLinkItem, LinkInspectorRequest, LinkInspectorSavePayload } from '../types'
 import {
-  getInverseSeat,
+  getInverseRelation,
   resolveInspectorDirectionToggle,
   resolveInspectorDonePayload,
   resolvePopoverPosition,
@@ -29,7 +29,7 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const popover = useTemplateRef<HTMLDivElement>('popover')
 const localRows = ref<DirectionalLinkItem[]>(props.request.links.map((link) => ({ ...link })))
-const removedLinks = ref<{ from: string; to: string; role?: PlexRelatedSeat }[]>([])
+const removedLinks = ref<{ from: string; to: string; role?: PlexRelation }[]>([])
 const initialLinkIds = new Set(props.request.links.map((link) => link.id))
 
 const placedPosition = ref<{ left: number; top: number }>(
@@ -131,7 +131,7 @@ function onToggleDirection(row: DirectionalLinkItem) {
     direction: string
     from: string
     to: string
-    role: PlexRelatedSeat
+    role: PlexRelation
   }
   target.direction = res.direction
   target.from = res.from
@@ -154,7 +154,8 @@ function onAddReverseRow() {
     return
   }
   const first = localRows.value[0]!
-  const baseRole = first.from === props.request.nodeA.path ? first.role : getInverseSeat(first.role)
+  const baseRole =
+    first.from === props.request.nodeA.path ? first.role : getInverseRelation(first.role)
 
   localRows.value = [
     {
@@ -169,7 +170,7 @@ function onAddReverseRow() {
       id: `${props.request.nodeB.path}->${props.request.nodeA.path}`,
       from: props.request.nodeB.path,
       to: props.request.nodeA.path,
-      role: getInverseSeat(baseRole),
+      role: getInverseRelation(baseRole),
       direction: 'reverse',
       description: '',
     },

@@ -46,7 +46,7 @@ export function useNodePress(
 
   /** The focus is announced although it cannot be chosen: it is where you are. */
   const isAnnounced = computed(
-    () => canReach.value || (!isGhost.value && props.node.seat === 'focus'),
+    () => canReach.value || (!isGhost.value && props.node.relation === 'focus'),
   )
 
   const activateNode = (): void => {

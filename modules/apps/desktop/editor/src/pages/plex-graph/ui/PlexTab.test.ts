@@ -8,7 +8,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import PlexTab from './PlexTab.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { MenuRequest, PlexTabState } from '../types'
@@ -22,8 +22,8 @@ const createTabState = () =>
     view: { error: ref(''), isLoading: ref(false) },
     picture: ref({
       nodes: [
-        { id: 'Root.md', title: 'Root', seat: 'focus' },
-        { id: 'Child.md', title: 'Child', seat: 'child' },
+        { id: 'Root.md', title: 'Root', relation: 'focus' },
+        { id: 'Child.md', title: 'Child', relation: 'child' },
       ],
       edges: [{ from: 'Root.md', to: 'Child.md' }],
     }),
@@ -194,7 +194,7 @@ describe('quick link popover rendering', () => {
   it('renders popover when state.quickLink is present', () => {
     drawing(13)
     const tabState = createTabState()
-    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+    tabState.quickLink.value = { from: 'Root.md', relation: 'child', at: { x: 300, y: 250 } }
 
     const view = mount(PlexTab, { props: { state: tabState } })
 
@@ -204,7 +204,7 @@ describe('quick link popover rendering', () => {
   it('computes handle position and draws thread using getScreenCTM', async () => {
     drawing(13)
     const tabState = createTabState()
-    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+    tabState.quickLink.value = { from: 'Root.md', relation: 'child', at: { x: 300, y: 250 } }
 
     const originalGetScreenCTM = SVGSVGElement.prototype.getScreenCTM
     SVGSVGElement.prototype.getScreenCTM = function () {
@@ -232,7 +232,7 @@ describe('quick link popover rendering', () => {
   it('draws thread using DOMRect fallback when CTM returns null', async () => {
     drawing(13)
     const tabState = createTabState()
-    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+    tabState.quickLink.value = { from: 'Root.md', relation: 'child', at: { x: 300, y: 250 } }
 
     const originalGetScreenCTM = SVGSVGElement.prototype.getScreenCTM
     SVGSVGElement.prototype.getScreenCTM = () => null
@@ -259,7 +259,7 @@ describe('quick link popover rendering', () => {
         confirmed = [name, isExisting]
       },
     } as unknown as PlexTabState
-    tabState.quickLink.value = { from: 'Root.md', seat: 'child', at: { x: 300, y: 250 } }
+    tabState.quickLink.value = { from: 'Root.md', relation: 'child', at: { x: 300, y: 250 } }
 
     const view = mount(PlexTab, { props: { state: tabState } })
     const popover = view.findComponent({ name: 'PlexQuickLinkPopover' })
@@ -296,14 +296,14 @@ describe('interaction events forwarded from Plex component', () => {
       activate: (node: string) => {
         activated = node
       },
-      createNode: async (from: string, seat: PlexRelatedSeat, at: { x: number; y: number }) => {
-        created = [from, seat, at]
+      createNode: async (from: string, relation: PlexRelation, at: { x: number; y: number }) => {
+        created = [from, relation, at]
       },
-      joinNodes: async (from: string, to: string, seat: PlexRelatedSeat) => {
-        linked = [from, to, seat]
+      joinNodes: async (from: string, to: string, relation: PlexRelation) => {
+        linked = [from, to, relation]
       },
-      dropNodes: async (nodes: readonly string[], seat: PlexRelatedSeat) => {
-        brought = [nodes, seat]
+      dropNodes: async (nodes: readonly string[], relation: PlexRelation) => {
+        brought = [nodes, relation]
       },
       openMenu: (req: unknown) => {
         openedMenu = req

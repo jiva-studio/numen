@@ -6,7 +6,7 @@
  * image, so every value here is approximate.
  *
  * The greys are the ground lightened and darkened; the muted text is the cream
- * carried down towards the grey. The four seats and the alarm keep the
+ * carried down towards the grey. The four relations and the alarm keep the
  * accent's chroma with its hue turned, so they tell four relations apart and
  * still read as this palette. Their hues stay clear of the amber, which the
  * focused node is painted in.
@@ -29,10 +29,10 @@
   --numen-accent: #d6870f;
   --numen-accent-ink: #2b2b2b;
 
-  --numen-seat-parent: #649bc4;
-  --numen-seat-child: #77ac53;
-  --numen-seat-jump: #cc6688;
-  --numen-seat-sibling: #b877c5;
+  --numen-relation-parent: #649bc4;
+  --numen-relation-child: #77ac53;
+  --numen-relation-jump: #cc6688;
+  --numen-relation-sibling: #b877c5;
 
   --numen-edge: #4a4a4a;
   --numen-edge-label: #948d7a;

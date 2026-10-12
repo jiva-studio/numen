@@ -12,11 +12,11 @@ export interface PlexNeighbourhood {
  * breaks either is a caller with a bug, not a state to be rendered.
  */
 export function assertNeighbourhood(neighbourhood: PlexNeighbourhood): PlexNode {
-  const focused = neighbourhood.nodes.filter((node) => node.seat === 'focus')
+  const focused = neighbourhood.nodes.filter((node) => node.relation === 'focus')
   const focus = focused[0]
 
   if (focus === undefined) {
-    throw new Error('A plex neighbourhood needs a node with the focus seat')
+    throw new Error('A plex neighbourhood needs a node with the focus relation')
   }
   if (focused.length > 1) {
     throw new Error(
@@ -26,7 +26,7 @@ export function assertNeighbourhood(neighbourhood: PlexNeighbourhood): PlexNode 
   }
 
   // A hierarchy with several parents can reach the same node two ways. Which
-  // seat it takes is the caller's decision; drawn twice, the edges would route
+  // relation it takes is the caller's decision; drawn twice, the edges would route
   // to whichever copy was placed last, and a movement matched by identifier
   // would be ambiguous.
   const seen = new Set<string>()

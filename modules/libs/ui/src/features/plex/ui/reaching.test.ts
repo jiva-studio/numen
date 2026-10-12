@@ -61,7 +61,7 @@ describe('resting on a node', () => {
     expect(plex.find('.plex__handle').exists()).toBe(true)
   })
 
-  it('reaches out into the seat the finger then travels to', async () => {
+  it('reaches out into the relation the finger then travels to', async () => {
     vi.useFakeTimers()
     const { plex, svg } = mountPlex()
 

@@ -32,7 +32,7 @@ const stencil = (over: Partial<VaultStencil> = {}): VaultStencil => ({
 
 /** One thing wrong with a stencil, in the shape the vault names it. */
 const problem: DeckProblem = {
-  fault: 'fieldNotRenamed',
+  kind: 'fieldNotRenamed',
   card: null,
   face: null,
   field: 'Front',

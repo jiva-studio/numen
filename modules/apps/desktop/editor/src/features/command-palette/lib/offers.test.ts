@@ -69,7 +69,7 @@ describe('a search that turned up nothing', () => {
     })
   })
 
-  it('offers the seats of the note in front, and says which note that is', () => {
+  it('offers the relations of the note in front, and says which note that is', () => {
     const item = appendCreateOffer(createGroups(0), 'Entropy', words, front()).at(-1)?.items[0]
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([
@@ -81,7 +81,7 @@ describe('a search that turned up nothing', () => {
     expect(item?.detail).toBe(front().title)
   })
 
-  it('offers no seat where nothing in front is a note', () => {
+  it('offers no relation where nothing in front is a note', () => {
     const item = appendCreateOffer(
       createGroups(0),
       'Entropy',
@@ -93,7 +93,7 @@ describe('a search that turned up nothing', () => {
     expect(item?.detail).toBeUndefined()
   })
 
-  it('hangs the note off the one in front when a seat was chosen', () => {
+  it('hangs the note off the one in front when a relation was chosen', () => {
     expect(createNoteInvocation('child', 'Entropy', front())).toMatchObject({
       id: 'child',
       path: front().path,
@@ -101,7 +101,7 @@ describe('a search that turned up nothing', () => {
     })
   })
 
-  it('stands the note on its own where a seat has no note to hang it off', () => {
+  it('stands the note on its own where a relation has no note to hang it off', () => {
     expect(createNoteInvocation('child', 'Entropy', front({ path: '', title: '' }))).toMatchObject({
       id: 'note',
       path: '',

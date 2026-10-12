@@ -14,7 +14,7 @@ import (
 // hour of it and stops when the next one opens.
 func TestADateIsABudget(t *testing.T) {
 	p, _ := review.ReadPreset(front(t, "goal: by_date\nby_date: 2026-09-30\n"))
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 
 	for _, one := range []struct {
 		hour   time.Time
@@ -54,7 +54,7 @@ func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
 		if len(problems) != 0 {
 			t.Fatalf("problems = %v", problems)
 		}
-		got := p.IsPaused(review.Day{Starts: review.DayStarts}, time.Now())
+		got := p.IsPaused(review.Day{Starts: review.DayStartTime}, time.Now())
 		if got != one.isPaused {
 			t.Errorf("%q is paused %v, want %v", one.front, got, one.isPaused)
 		}
@@ -196,7 +196,7 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 // The budget the goal names decides it, and a budget the goal does not name
 // takes no part whatever it holds.
 func TestWhatAPresetSchedules(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	// A Thursday, and the two days a preset may aim at from it.
 	now := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
 	ahead := time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC)
@@ -312,7 +312,7 @@ func TestWhatAPresetSchedules(t *testing.T) {
 // A day of the week carrying none of the load is a fact about that one day. The
 // preset schedules, and it schedules again on the next day that carries some.
 func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	thursday := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
 	if thursday.Weekday() != time.Thursday {
 		t.Fatalf("%v is a %v", thursday, thursday.Weekday())
@@ -344,7 +344,7 @@ func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
 // A week no day of which carries any of the load stops the preset itself: there
 // is no next day for the cards to be picked up on.
 func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
-	day := review.Day{Starts: review.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	at := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
 
 	dead := map[time.Weekday]int{}

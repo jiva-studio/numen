@@ -13,7 +13,14 @@ import type {
 } from '@numen/protocol'
 import { asFailure, asValue, namesOf } from '@numen/wire'
 import { parseFingerprint, findErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
-import type { Link, Neighbourhood, NoteResult, Role, Seat, WriteResult } from '@/entities/note'
+import type {
+  Link,
+  Neighbourhood,
+  NoteResult,
+  NoteRelation,
+  Role,
+  WriteResult,
+} from '@/entities/note'
 import type { NoteType } from '@/entities/file'
 
 /**
@@ -40,7 +47,7 @@ const called: Record<Roles, Role | null> = {
 export const roles = namesOf<Role, Roles>(called)
 
 /** Where a note sits around the note in focus, in the words the window uses. */
-export const seated: Record<Relations, Seat | null> = {
+export const relationByWire: Record<Relations, NoteRelation | null> = {
   [Relations.UNSPECIFIED]: null,
   [Relations.PARENT]: 'parent',
   [Relations.CHILD]: 'child',
@@ -107,14 +114,14 @@ export const mapNeighbourhood = (answer: NeighbourhoodMessage): Neighbourhood =>
   focus: { path: answer.focus?.path ?? '', title: answer.focus?.title ?? '' },
   focusType: mapNoteType(answer.focusType),
   related: answer.related.flatMap((one) => {
-    const seat = seated[one.relation] ?? null
-    if (seat === null || one.note === undefined) return []
+    const relation = relationByWire[one.relation] ?? null
+    if (relation === null || one.note === undefined) return []
     return [
       {
         path: one.note.path,
         title: one.note.title,
         type: mapNoteType(one.type),
-        seat,
+        relation,
         label: one.label,
         reverseLabel: one.reverseLabel,
         through: one.through,

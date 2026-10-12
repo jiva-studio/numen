@@ -1,6 +1,6 @@
 import type { PlexFrame } from '../frame'
 import type { PlacedNode, Position } from '../node'
-import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
+import { RELATION_NAMES, type PlexRelation } from '../relation'
 import type { Direction, PlexOptions, Size } from './options'
 
 /**
@@ -12,24 +12,25 @@ import type { Direction, PlexOptions, Size } from './options'
  * — is the application's. This reports.
  */
 export type Drop =
-  | { readonly kind: 'create'; readonly from: string; readonly seat: PlexRelatedSeat }
+  | { readonly kind: 'create'; readonly from: string; readonly relation: PlexRelation }
   | {
       readonly kind: 'link'
       readonly from: string
       readonly to: string
-      readonly seat: PlexRelatedSeat
+      readonly relation: PlexRelation
     }
 
 /**
- * The seat a gesture that went nowhere asks for.
+ * The relation a gesture that went nowhere asks for.
  *
  * One more child, because that is what anyone reaches for; failing that, the
- * first seat the caller allows. A gesture goes nowhere when it is a press
+ * first relation the caller allows. A gesture goes nowhere when it is a press
  * rather than a drag — from a trackpad, from a hand that cannot hold a button
  * down, or from the keyboard, where there is no direction to read at all.
  */
-export const seatWithoutDirection = (seats: readonly PlexRelatedSeat[]): PlexRelatedSeat | null =>
-  seats.includes('child') ? 'child' : (seats[0] ?? null)
+export const getRelationWithoutDirection = (
+  relations: readonly PlexRelation[],
+): PlexRelation | null => (relations.includes('child') ? 'child' : (relations[0] ?? null))
 
 /**
  * Which way a point lies from another.
@@ -49,18 +50,18 @@ function getDropDirection(dx: number, dy: number, bias: number): Direction | nul
 }
 
 /**
- * The seat a direction stands for — the inverse of the arrangement's own map.
+ * The relation a direction stands for — the inverse of the arrangement's own map.
  *
- * It is read off `direction`, which is what put the seats where they are: with
+ * It is read off `direction`, which is what put the relations where they are: with
  * parents sent down, dragging down means a parent.
  */
-export function seatTowards(
+export function getRelationTowards(
   from: Position,
   to: Position,
   options: PlexOptions,
-): PlexRelatedSeat | null {
+): PlexRelation | null {
   const heading = getDropDirection(to.x - from.x, to.y - from.y, options.gesture.verticalBias)
-  return RELATED_SEATS.find((seat) => options.direction[seat] === heading) ?? null
+  return RELATION_NAMES.find((relation) => options.direction[relation] === heading) ?? null
 }
 
 /**
@@ -90,26 +91,28 @@ export interface DropInput {
   readonly from: string
   /** Where it was let go, in the plex's own coordinates. */
   readonly at: Position
-  /** Seats a gesture is allowed to produce. */
-  readonly seats: readonly PlexRelatedSeat[]
+  /** Relations a gesture is allowed to produce. */
+  readonly relations: readonly PlexRelation[]
 }
 
 /**
  * Landing on another node makes a link; landing on nothing makes a node. That
  * one rule is also what keeps a gesture from a node other than the focus
- * workable: the seats around a child overlap the rest of the picture, and
+ * workable: the relations around a child overlap the rest of the picture, and
  * whatever the gesture crosses, only where it stops decides.
  */
-export function resolveDrop({ frame, options, from, at, seats }: DropInput): Drop | null {
+export function resolveDrop({ frame, options, from, at, relations }: DropInput): Drop | null {
   const source = frame.nodes.find((node) => node.id === from)
   if (!source) return null
 
   const landedOn = findNode(at, frame)
   const target = landedOn ? { x: landedOn.x, y: landedOn.y } : at
-  const seat = seatTowards(source, target, options)
-  if (!seat || !seats.includes(seat)) return null
+  const relation = getRelationTowards(source, target, options)
+  if (!relation || !relations.includes(relation)) return null
 
-  return landedOn ? { kind: 'link', from, to: landedOn.id, seat } : { kind: 'create', from, seat }
+  return landedOn
+    ? { kind: 'link', from, to: landedOn.id, relation }
+    : { kind: 'create', from, relation }
 }
 
 export interface DroppedInput {
@@ -119,28 +122,28 @@ export interface DroppedInput {
   readonly viewport: Size
   /** Where the pointer is, in the plex's own coordinates. */
   readonly at: Position
-  /** Seats a gesture is allowed to produce. */
-  readonly seats: readonly PlexRelatedSeat[]
+  /** Relations a gesture is allowed to produce. */
+  readonly relations: readonly PlexRelation[]
   /** How far from the focus the pointer stands before it names a direction. */
   readonly threshold: number
 }
 
 /**
- * The seat something dragged in from outside comes to.
+ * The relation something dragged in from outside comes to.
  *
  * Measured from the focus, which is what the arrangement is built around. A
- * node the pointer crosses is not a landing: the seat is read off the
+ * node the pointer crosses is not a landing: the relation is read off the
  * direction, and letting go anywhere in the window is answered the same way.
  */
-export function getDropSeat({
+export function getDropRelation({
   frame,
   options,
   viewport,
   at,
-  seats,
+  relations,
   threshold,
-}: DroppedInput): PlexRelatedSeat | null {
-  const focus = frame.nodes.find((node) => node.seat === 'focus')
+}: DroppedInput): PlexRelation | null {
+  const focus = frame.nodes.find((node) => node.relation === 'focus')
   if (!focus) return null
 
   // Past the edge of the window is over whatever is drawn beside the plex.
@@ -149,6 +152,6 @@ export function getDropSeat({
   // Close enough to the focus that the direction is the tremor of a hand.
   if (Math.hypot(at.x - focus.x, at.y - focus.y) < threshold) return null
 
-  const seat = seatTowards(focus, at, options)
-  return seat && seats.includes(seat) ? seat : null
+  const relation = getRelationTowards(focus, at, options)
+  return relation && relations.includes(relation) ? relation : null
 }

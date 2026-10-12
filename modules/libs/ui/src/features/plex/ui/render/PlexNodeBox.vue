@@ -13,7 +13,7 @@ const props = defineProps<{
   node: PlacedNode
   /** The box as it is drawn: its width, and how far its middle has slid. */
   box: WideBox
-  /** Not a node yet, so its title is the seat it would take. */
+  /** Not a node yet, so its title is the relation it would take. */
   isGhost: boolean
 }>()
 
@@ -67,13 +67,13 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
 </template>
 
 <style scoped>
-/* The hue comes from the node's own seat, so a new seat needs a token and
+/* The hue comes from the node's own relation, so a new relation needs a token and
    nothing here. The outline changes over the length of the move that changes
-   the seat; the fill answers the pointer at the speed a pointer is answered. */
+   the relation; the fill answers the pointer at the speed a pointer is answered. */
 .plex__box {
   rx: var(--radius);
   fill: var(--numen-raised);
-  stroke: var(--numen-seat-hue, var(--numen-rule));
+  stroke: var(--numen-relation-hue, var(--numen-rule));
   stroke-width: var(--numen-stroke);
   transition:
     fill var(--numen-motion-hover) var(--numen-easing),
@@ -104,7 +104,7 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
   flex: none;
   display: flex;
   align-items: center;
-  color: var(--numen-seat-hue, var(--numen-ink));
+  color: var(--numen-relation-hue, var(--numen-ink));
 }
 
 /* One line, then an ellipsis. A box stands at the height the arrangement gave

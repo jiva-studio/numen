@@ -19,7 +19,7 @@ const createDeps = (
   },
 ): PlexTabDeps => ({
   editor: {
-    createInSeat: async () => null,
+    createInRelation: async () => null,
     createWithTitle: async () => null,
     join: async () => false,
     removeLink: async () => false,

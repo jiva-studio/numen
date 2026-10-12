@@ -221,11 +221,11 @@ func TestAMachineWithNoCacheFolderReportsEachStoreItLacks(t *testing.T) {
 func TestTheDayOfReviewBeginsWhereTheSettingsSayIt(t *testing.T) {
 	isolate(t)
 	file := filepath.Join(t.TempDir(), "numen.json")
-	if err := os.WriteFile(file, []byte(`{"review": {"day_starts": "06:15"}}`), 0o600); err != nil {
+	if err := os.WriteFile(file, []byte(`{"review": {"day_start_time": "06:15"}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	got := container.Config{SettingsPath: file}.DayStarts()
+	got := container.Config{SettingsPath: file}.GetDayStartTime()
 	if want := 6*time.Hour + 15*time.Minute; got != want {
 		t.Errorf("the day begins %v past midnight, want %v", got, want)
 	}

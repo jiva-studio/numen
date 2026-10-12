@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NO_PLACE, type Point } from '../types'
+import { NO_CURVE_POINT, type Point } from '../types'
 import { clearBacklog } from '../lib/curve'
 import { PLOT_BOTTOM } from '../lib/plot'
 import { mountPresetTab, heights, point, createTab } from '../fixtures'
@@ -283,17 +283,19 @@ describe('the one slider', () => {
   // value it stands at and what that figure means. Nothing is captioned.
   it('draws and says nothing where the curve answers no suggestion', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
-      const { tab } = mountPresetTab({ goal, suggested: NO_PLACE }, { goal })
+      const { tab } = mountPresetTab({ goal, suggested: NO_CURVE_POINT }, { goal })
       expect(tab.findAll('[data-control="suggested"]')).toHaveLength(0)
       expect(tab.findAll('[data-control="label"]')).toHaveLength(0)
       expect(tab.text()).not.toContain(words.markName(goal))
     }
     // The knob and its number are the person's own and stand either way.
     expect(
-      mountPresetTab({ suggested: NO_PLACE }).tab.findAll('[data-control="knob"]'),
+      mountPresetTab({ suggested: NO_CURVE_POINT }).tab.findAll('[data-control="knob"]'),
     ).toHaveLength(1)
     expect(
-      mountPresetTab({ suggested: NO_PLACE }).tab.findAll('[data-control="number"][data-at-knob]'),
+      mountPresetTab({ suggested: NO_CURVE_POINT }).tab.findAll(
+        '[data-control="number"][data-at-knob]',
+      ),
     ).toHaveLength(1)
   })
 })

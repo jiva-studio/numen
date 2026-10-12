@@ -10,18 +10,18 @@ import (
 )
 
 func TestEveryFaultIsWrittenFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Fault]format.Fault{
-		v1.Fault_FAULT_FIELD_DECLARED_TWICE:   format.FaultTwoFields,
-		v1.Fault_FAULT_STENCIL_WITHOUT_FIELDS: format.FaultNoFields,
-		v1.Fault_FAULT_FACE_MISSING_A_SIDE:    format.FaultFaceSide,
-		v1.Fault_FAULT_PLACEHOLDER_UNDECLARED: format.FaultPlaceholder,
-		v1.Fault_FAULT_CARD_WITHOUT_A_STENCIL: format.FaultNoStencil,
-		v1.Fault_FAULT_STENCIL_IS_NOT_ONE:     format.FaultNotAStencil,
-		v1.Fault_FAULT_FIELD_WRITTEN_TWICE:    format.FaultTwoValues,
-		v1.Fault_FAULT_FIELD_NOT_RENAMED:      format.FaultNotWritten,
-		v1.Fault_FAULT_MARK_CARRIED_TWICE:     format.FaultTwoMarks,
-	}, func(fault format.Fault) v1.Fault {
-		named, isNamed := newWireFault(fault)
+	testsupport.CheckProduced(t, map[v1.ProblemKind]format.Fault{
+		v1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE:   format.FaultTwoFields,
+		v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS: format.FaultNoFields,
+		v1.ProblemKind_PROBLEM_KIND_FACE_MISSING_A_SIDE:    format.FaultFaceSide,
+		v1.ProblemKind_PROBLEM_KIND_PLACEHOLDER_UNDECLARED: format.FaultPlaceholder,
+		v1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL: format.FaultNoStencil,
+		v1.ProblemKind_PROBLEM_KIND_STENCIL_IS_NOT_ONE:     format.FaultNotAStencil,
+		v1.ProblemKind_PROBLEM_KIND_FIELD_WRITTEN_TWICE:    format.FaultTwoValues,
+		v1.ProblemKind_PROBLEM_KIND_FIELD_NOT_RENAMED:      format.FaultNotWritten,
+		v1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE:     format.FaultTwoMarks,
+	}, func(fault format.Fault) v1.ProblemKind {
+		named, isNamed := newWireProblemKind(fault)
 		if !isNamed {
 			t.Errorf("the schema names no fault for %q", fault)
 		}
@@ -30,15 +30,15 @@ func TestEveryFaultIsWrittenFromOne(t *testing.T) {
 }
 
 func TestAFaultTheSchemaDoesNotNameIsLeftOut(t *testing.T) {
-	named, isNamed := newWireFault(format.FaultTooLarge)
-	if isNamed || named != v1.Fault_FAULT_UNSPECIFIED {
+	named, isNamed := newWireProblemKind(format.FaultTooLarge)
+	if isNamed || named != v1.ProblemKind_PROBLEM_KIND_UNSPECIFIED {
 		t.Errorf("a fault with no name in the schema was answered %v, %v", named, isNamed)
 	}
 	got := newWireProblems([]format.Problem{
 		{Fault: format.FaultTooLarge, Card: format.NoPosition, Face: format.NoPosition},
 		{Fault: format.FaultNoFields, Card: 3, Face: format.NoPosition, Detail: "d"},
 	})
-	if len(got) != 1 || got[0].GetFault() != v1.Fault_FAULT_STENCIL_WITHOUT_FIELDS {
+	if len(got) != 1 || got[0].GetKind() != v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS {
 		t.Fatalf("got %v", got)
 	}
 	if got[0].Card == nil || *got[0].Card != 3 || got[0].Face != nil {

@@ -108,8 +108,8 @@ func TestOnlyTheOtherChildrenOfAParentAreSiblings(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{"child C.md", "parent P.md", "sibling S.md"}
-	if seats := seatsOf(got); !slices.Equal(seats, want) {
-		t.Errorf("got %v, want %v", seats, want)
+	if relations := relationsOf(got); !slices.Equal(relations, want) {
+		t.Errorf("got %v, want %v", relations, want)
 	}
 	if want := []string{"F.md", "C.md", "P.md", "S.md"}; !slices.Equal(refs.paths, want) {
 		t.Errorf("the notes asked for are %v, want %v", refs.paths, want)
@@ -165,9 +165,9 @@ func TestANoteTheVaultDoesNotKnowHasNoNeighbourhood(t *testing.T) {
 	}
 }
 
-// A link that is no place in the hierarchy seats nobody, whichever end finds it,
+// A link that is no place in the hierarchy relates nobody, whichever end finds it,
 // and a note that both ends name does not hide the notes after it.
-func TestOnlyPlacesInTheHierarchyAreSeatedFromTheNotesPointingAtANote(t *testing.T) {
+func TestOnlyPlacesInTheHierarchyAreRelatedFromTheNotesPointingAtANote(t *testing.T) {
 	t.Parallel()
 	g := graph{
 		out: map[string][]domain.ResolvedLink{
@@ -189,8 +189,8 @@ func TestOnlyPlacesInTheHierarchyAreSeatedFromTheNotesPointingAtANote(t *testing
 		t.Fatal(err)
 	}
 	want := []string{"parent P1.md", "child X.md"}
-	if seats := seatsOf(got); !slices.Equal(seats, want) {
-		t.Errorf("got %v, want %v", seats, want)
+	if relations := relationsOf(got); !slices.Equal(relations, want) {
+		t.Errorf("got %v, want %v", relations, want)
 	}
 	if !got.Related[0].IsMutual {
 		t.Error("both ends name the edge and it is not drawn as mutual")

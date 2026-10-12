@@ -86,8 +86,8 @@ const boxAround = (node: PlacedNode): Box => ({
 /** One line, with room along it for whatever words it is given. */
 const createOneLine = (label: string): PlexNeighbourhood => ({
   nodes: [
-    { id: 'focus', title: 'Here', seat: 'focus' },
-    { id: 'aside', title: 'Aside', seat: 'jump' },
+    { id: 'focus', title: 'Here', relation: 'focus' },
+    { id: 'aside', title: 'Aside', relation: 'jump' },
   ],
   edges: [{ from: 'aside', to: 'focus', label }],
 })
@@ -145,7 +145,7 @@ describe('a title finds room on its line', () => {
     const blanket: PlacedNode = {
       id: 'blanket',
       title: 'Blanket',
-      seat: 'sibling',
+      relation: 'sibling',
       x: 0,
       y: 0,
       width: 2000,
@@ -198,7 +198,7 @@ describe('a title finds room on its line', () => {
     const far: PlacedNode = {
       id: 'far',
       title: 'Far',
-      seat: 'jump',
+      relation: 'jump',
       x: -300,
       y: 0,
       width: 100,
@@ -206,12 +206,12 @@ describe('a title finds room on its line', () => {
       order: 0,
       opacity: 1,
     }
-    const here: PlacedNode = { ...far, id: 'here', title: 'Here', seat: 'focus', x: 300 }
+    const here: PlacedNode = { ...far, id: 'here', title: 'Here', relation: 'focus', x: 300 }
     const covering: PlacedNode = {
       ...far,
       id: 'covering',
       title: 'Covering',
-      seat: 'sibling',
+      relation: 'sibling',
       x: 0,
       y: 40,
       width: 100,
@@ -332,7 +332,7 @@ describe('a title set on a straight line', () => {
   const createBlocker = (id: string, left: number, right: number, y = 0): PlacedNode => ({
     id,
     title: id,
-    seat: 'sibling',
+    relation: 'sibling',
     x: (left + right) / 2,
     y,
     width: right - left - 2 * 3,

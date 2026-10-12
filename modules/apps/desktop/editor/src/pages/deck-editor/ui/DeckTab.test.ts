@@ -11,7 +11,13 @@ import { StopReason } from '@numen/protocol'
 import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultCard, DeckProblem, Preset } from '@/entities/deck'
-import { DEFAULTS, NO_PLACE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
+import {
+  DEFAULTS,
+  NO_CURVE_POINT,
+  NO_BOUNDS,
+  type PresetChoice,
+  type Presets,
+} from '@/entities/deck'
 import { fileOpeners } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
@@ -150,8 +156,8 @@ const mountDeck = async (
       grid: [],
       days: [],
       at: [],
-      now: NO_PLACE,
-      suggested: NO_PLACE,
+      now: NO_CURVE_POINT,
+      suggested: NO_CURVE_POINT,
       decks: 0,
       cards: 0,
       overdue: 0,
@@ -178,7 +184,7 @@ const getTile = (window: Awaited<ReturnType<typeof mountDeck>>['window'], card: 
   window.find(`[data-card="${card}"]`)
 
 const stencilless: DeckProblem = {
-  fault: 'cardWithoutAStencil',
+  kind: 'cardWithoutAStencil',
   card: 1,
   face: null,
   field: '',
@@ -279,7 +285,7 @@ describe('a mark on a tile', () => {
 describe('what is wrong with the file itself', () => {
   it('is drawn above the grid, standing on no tile', async () => {
     const { window } = await mountDeck([
-      { fault: 'unknown', card: null, face: null, field: '', text: 'the whole file' },
+      { kind: 'unknown', card: null, face: null, field: '', text: 'the whole file' },
     ])
 
     expect(window.find(`[aria-label="${words.problems}"]`).text()).toBe('the whole file')

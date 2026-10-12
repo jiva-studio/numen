@@ -14,12 +14,12 @@ import { awkwardLabels } from '../../fixtures/neighbourhoods'
 import { hoverOver, lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 import type { GestureRole, PlacedNode } from '../../lib/node'
-import { RELATED_SEATS, type PlexSeat } from '../../lib/seat'
+import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
 import type { PlexDestination } from '../../model/showing'
 
 interface Knobs {
   title: string
-  seat: PlexSeat
+  relation: PlexNodeRelation
   width: number
   height: number
   /** Below one, a node is on its way in or out and cannot be chosen. */
@@ -52,7 +52,7 @@ const GLYPH = `
 const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: a.title,
-  seat: a.seat,
+  relation: a.relation,
   x: 0,
   y: 0,
   width: a.width,
@@ -130,7 +130,7 @@ const meta: Meta<Knobs> = {
 
   argTypes: {
     title: { control: 'text' },
-    seat: { control: 'inline-radio', options: ['focus', ...RELATED_SEATS] },
+    relation: { control: 'inline-radio', options: ['focus', ...RELATION_NAMES] },
     width: range(64, 320, 4),
     height: range(20, 96, 2),
     opacity: range(0, 1, 0.05),
@@ -145,7 +145,7 @@ const meta: Meta<Knobs> = {
 
   args: {
     title: 'A node',
-    seat: 'child',
+    relation: 'child',
     width: 144,
     height: 36,
     opacity: 1,
@@ -167,26 +167,26 @@ type Story = StoryObj<Knobs>
 export const Playground: Story = {}
 
 /**
- * All five seats at once, each where it would sit around a focus.
+ * All five relations at once, each where it would sit around a focus.
  *
  * Not a knob turned five times: what is being judged is whether the hues tell
- * one seat from another and whether the focus reads as somewhere the reader
+ * one relation from another and whether the focus reads as somewhere the reader
  * already is, and neither question can be asked of one node at a time.
  */
-export const EverySeat: Story = {
+export const EveryRelation: Story = {
   render: renderScene(
     (args) => [
       createNode(args, {
         id: 'focus',
         title: 'Where you are',
-        seat: 'focus',
+        relation: 'focus',
         width: 176,
         height: 44,
       }),
-      createNode(args, { id: 'parent', title: 'Above it', seat: 'parent', y: -72 }),
-      createNode(args, { id: 'child', title: 'Below it', seat: 'child', y: 72 }),
-      createNode(args, { id: 'jump', title: 'Off to the left', seat: 'jump', x: -190 }),
-      createNode(args, { id: 'sibling', title: 'Off to the right', seat: 'sibling', x: 190 }),
+      createNode(args, { id: 'parent', title: 'Above it', relation: 'parent', y: -72 }),
+      createNode(args, { id: 'child', title: 'Below it', relation: 'child', y: 72 }),
+      createNode(args, { id: 'jump', title: 'Off to the left', relation: 'jump', x: -190 }),
+      createNode(args, { id: 'sibling', title: 'Off to the right', relation: 'sibling', x: 190 }),
     ],
     { width: 560, height: 240 },
   ),
@@ -201,7 +201,7 @@ export const EverySeat: Story = {
       return [getComputedStyle(icon).color, getComputedStyle(title).color]
     }
 
-    // A node carries its seat's hue before its title. The focused one is
+    // A node carries its relation's hue before its title. The focused one is
     // painted from that hue, so there the icon takes the title's own ink.
     const [child, childTitle] = ink('Below it')
     expect(child).not.toBe(childTitle)
@@ -321,8 +321,14 @@ export const AwkwardLabels: Story = {
 export const TheCornersAreAsDesigned: Story = {
   render: renderScene(
     (args) => [
-      createNode(args, { id: 'child', title: 'Below it', seat: 'child', x: -130 }),
-      createNode(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: 130, width: 176 }),
+      createNode(args, { id: 'child', title: 'Below it', relation: 'child', x: -130 }),
+      createNode(args, {
+        id: 'focus',
+        title: 'Where you are',
+        relation: 'focus',
+        x: 130,
+        width: 176,
+      }),
     ],
     { width: 560, height: 200 },
   ),
@@ -363,8 +369,14 @@ export const Dark: Story = {
   globals: DARK,
   render: renderScene(
     (args) => [
-      createNode(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: -130, width: 176 }),
-      createNode(args, { id: 'child', title: 'Below it', seat: 'child', x: 130 }),
+      createNode(args, {
+        id: 'focus',
+        title: 'Where you are',
+        relation: 'focus',
+        x: -130,
+        width: 176,
+      }),
+      createNode(args, { id: 'child', title: 'Below it', relation: 'child', x: 130 }),
     ],
     { width: 560, height: 200 },
   ),

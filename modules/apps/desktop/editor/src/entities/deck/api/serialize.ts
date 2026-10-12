@@ -1,4 +1,4 @@
-import { Fault as Faults } from '@numen/protocol'
+import { ProblemKind as ProblemKinds } from '@numen/protocol'
 import type {
   Card as CardMessage,
   Deck as DeckMessage,
@@ -6,7 +6,7 @@ import type {
   Stencil as StencilMessage,
 } from '@numen/protocol'
 import type {
-  Fault,
+  ProblemKind,
   DeckProblem,
   StencilSummary,
   VaultCard,
@@ -14,23 +14,23 @@ import type {
   VaultStencil,
 } from '../types'
 
-/** What a problem is, in the words the window uses. */
-const faulted: Record<Faults, Fault> = {
-  [Faults.UNSPECIFIED]: 'unknown',
-  [Faults.FIELD_DECLARED_TWICE]: 'fieldDeclaredTwice',
-  [Faults.STENCIL_WITHOUT_FIELDS]: 'stencilWithoutFields',
-  [Faults.FACE_MISSING_A_SIDE]: 'faceMissingASide',
-  [Faults.PLACEHOLDER_UNDECLARED]: 'placeholderUndeclared',
-  [Faults.CARD_WITHOUT_A_STENCIL]: 'cardWithoutAStencil',
-  [Faults.STENCIL_IS_NOT_ONE]: 'stencilIsNotOne',
-  [Faults.MARK_CARRIED_TWICE]: 'markCarriedTwice',
-  [Faults.FIELD_WRITTEN_TWICE]: 'fieldWrittenTwice',
-  [Faults.FIELD_NOT_RENAMED]: 'fieldNotRenamed',
+/** What kind of problem it is, in the words the window uses. */
+const kinds: Record<ProblemKinds, ProblemKind> = {
+  [ProblemKinds.UNSPECIFIED]: 'unknown',
+  [ProblemKinds.FIELD_DECLARED_TWICE]: 'fieldDeclaredTwice',
+  [ProblemKinds.STENCIL_WITHOUT_FIELDS]: 'stencilWithoutFields',
+  [ProblemKinds.FACE_MISSING_A_SIDE]: 'faceMissingASide',
+  [ProblemKinds.PLACEHOLDER_UNDECLARED]: 'placeholderUndeclared',
+  [ProblemKinds.CARD_WITHOUT_A_STENCIL]: 'cardWithoutAStencil',
+  [ProblemKinds.STENCIL_IS_NOT_ONE]: 'stencilIsNotOne',
+  [ProblemKinds.MARK_CARRIED_TWICE]: 'markCarriedTwice',
+  [ProblemKinds.FIELD_WRITTEN_TWICE]: 'fieldWrittenTwice',
+  [ProblemKinds.FIELD_NOT_RENAMED]: 'fieldNotRenamed',
 }
 
 /** One problem, with where it stands kept as a number or as nothing. */
 export const deserializeDeckProblem = (one: ProblemMessage): DeckProblem => ({
-  fault: faulted[one.fault],
+  kind: kinds[one.kind],
   card: one.card ?? null,
   face: one.face ?? null,
   field: one.field,

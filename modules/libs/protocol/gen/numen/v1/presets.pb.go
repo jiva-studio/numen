@@ -619,8 +619,8 @@ type Curve struct {
 	// What the preset comes to at each place of the grid, one for one with it.
 	At []*Point `protobuf:"bytes,4,rep,name=at,proto3" json:"at,omitempty"`
 	// Where the preset stands, and what is suggested.
-	Now       *Place `protobuf:"bytes,5,opt,name=now,proto3" json:"now,omitempty"`
-	Suggested *Place `protobuf:"bytes,6,opt,name=suggested,proto3" json:"suggested,omitempty"`
+	Now       *CurvePoint `protobuf:"bytes,5,opt,name=now,proto3" json:"now,omitempty"`
+	Suggested *CurvePoint `protobuf:"bytes,6,opt,name=suggested,proto3" json:"suggested,omitempty"`
 	// How many decks are scheduled by this preset. Zero is a preset no deck
 	// points at, and every place of the curve stands at zero with it.
 	Decks int32 `protobuf:"varint,7,opt,name=decks,proto3" json:"decks,omitempty"`
@@ -698,14 +698,14 @@ func (x *Curve) GetAt() []*Point {
 	return nil
 }
 
-func (x *Curve) GetNow() *Place {
+func (x *Curve) GetNow() *CurvePoint {
 	if x != nil {
 		return x.Now
 	}
 	return nil
 }
 
-func (x *Curve) GetSuggested() *Place {
+func (x *Curve) GetSuggested() *CurvePoint {
 	if x != nil {
 		return x.Suggested
 	}
@@ -920,8 +920,8 @@ func (x *Point) GetShort() int32 {
 	return 0
 }
 
-// Place is one place on the curve worth pointing at.
-type Place struct {
+// CurvePoint is one point on the curve worth pointing at.
+type CurvePoint struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where on the grid it stands, and -1 for a value that falls outside it.
 	At int32 `protobuf:"varint,1,opt,name=at,proto3" json:"at,omitempty"`
@@ -934,20 +934,20 @@ type Place struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Place) Reset() {
-	*x = Place{}
+func (x *CurvePoint) Reset() {
+	*x = CurvePoint{}
 	mi := &file_numen_v1_presets_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Place) String() string {
+func (x *CurvePoint) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Place) ProtoMessage() {}
+func (*CurvePoint) ProtoMessage() {}
 
-func (x *Place) ProtoReflect() protoreflect.Message {
+func (x *CurvePoint) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -959,26 +959,26 @@ func (x *Place) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Place.ProtoReflect.Descriptor instead.
-func (*Place) Descriptor() ([]byte, []int) {
+// Deprecated: Use CurvePoint.ProtoReflect.Descriptor instead.
+func (*CurvePoint) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Place) GetAt() int32 {
+func (x *CurvePoint) GetAt() int32 {
 	if x != nil {
 		return x.At
 	}
 	return 0
 }
 
-func (x *Place) GetValue() float64 {
+func (x *CurvePoint) GetValue() float64 {
 	if x != nil {
 		return x.Value
 	}
 	return 0
 }
 
-func (x *Place) GetDay() string {
+func (x *CurvePoint) GetDay() string {
 	if x != nil {
 		return x.Day
 	}
@@ -1968,14 +1968,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\bsettings\x18\x03 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12\x1a\n" +
 	"\bproblems\x18\x04 \x03(\tR\bproblems\x12*\n" +
 	"\x05stops\x18\x05 \x01(\x0e2\x14.numen.v1.StopReasonR\x05stops\x12/\n" +
-	"\bstops_on\x18\x06 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"\xa6\x02\n" +
+	"\bstops_on\x18\x06 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"\xb0\x02\n" +
 	"\x05Curve\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x12\n" +
 	"\x04grid\x18\x02 \x03(\x01R\x04grid\x12\x12\n" +
 	"\x04days\x18\x03 \x03(\tR\x04days\x12\x1f\n" +
-	"\x02at\x18\x04 \x03(\v2\x0f.numen.v1.PointR\x02at\x12!\n" +
-	"\x03now\x18\x05 \x01(\v2\x0f.numen.v1.PlaceR\x03now\x12-\n" +
-	"\tsuggested\x18\x06 \x01(\v2\x0f.numen.v1.PlaceR\tsuggested\x12\x14\n" +
+	"\x02at\x18\x04 \x03(\v2\x0f.numen.v1.PointR\x02at\x12&\n" +
+	"\x03now\x18\x05 \x01(\v2\x14.numen.v1.CurvePointR\x03now\x122\n" +
+	"\tsuggested\x18\x06 \x01(\v2\x14.numen.v1.CurvePointR\tsuggested\x12\x14\n" +
 	"\x05decks\x18\a \x01(\x05R\x05decks\x12\x14\n" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
@@ -1995,8 +1995,9 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	" \x01(\x05R\alearned\x12\x1b\n" +
 	"\x06learns\x18\v \x01(\x05H\x00R\x06learns\x88\x01\x01\x12\x14\n" +
 	"\x05short\x18\f \x01(\x05R\x05shortB\t\n" +
-	"\a_learns\"?\n" +
-	"\x05Place\x12\x0e\n" +
+	"\a_learns\"D\n" +
+	"\n" +
+	"CurvePoint\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
 	"\x03day\x18\x03 \x01(\tR\x03day\"*\n" +
@@ -2136,7 +2137,7 @@ var file_numen_v1_presets_proto_goTypes = []any{
 	(*Preset)(nil),                // 6: numen.v1.Preset
 	(*Curve)(nil),                 // 7: numen.v1.Curve
 	(*Point)(nil),                 // 8: numen.v1.Point
-	(*Place)(nil),                 // 9: numen.v1.Place
+	(*CurvePoint)(nil),            // 9: numen.v1.CurvePoint
 	(*GetDeckPresetRequest)(nil),  // 10: numen.v1.GetDeckPresetRequest
 	(*GetDeckPresetResponse)(nil), // 11: numen.v1.GetDeckPresetResponse
 	(*ListPresetsRequest)(nil),    // 12: numen.v1.ListPresetsRequest
@@ -2168,8 +2169,8 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	3,  // 6: numen.v1.Preset.stops_on:type_name -> numen.v1.StopReason
 	0,  // 7: numen.v1.Curve.goal:type_name -> numen.v1.Goal
 	8,  // 8: numen.v1.Curve.at:type_name -> numen.v1.Point
-	9,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Place
-	9,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Place
+	9,  // 9: numen.v1.Curve.now:type_name -> numen.v1.CurvePoint
+	9,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.CurvePoint
 	4,  // 11: numen.v1.Point.closed:type_name -> numen.v1.BudgetName
 	6,  // 12: numen.v1.GetDeckPresetResponse.preset:type_name -> numen.v1.Preset
 	27, // 13: numen.v1.GetDeckPresetResponse.error:type_name -> numen.v1.ErrorCode

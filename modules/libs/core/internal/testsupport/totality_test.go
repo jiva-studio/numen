@@ -23,7 +23,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.BudgetName":      "internal/wire: answered one by one against BudgetOf",
 	"numen.v1.BudgetUnit":      "internal/wire: round trip through BudgetUnitIn and BudgetUnitOf",
 	"numen.v1.ErrorCode":       "adapter/mcp: worded by said",
-	"numen.v1.Fault":           "adapter/window/editor: written by faultOf",
+	"numen.v1.ProblemKind":     "adapter/window/editor: written by faultOf",
 	"numen.v1.FlushResult":     "internal/wire: read by left",
 	"numen.v1.Goal":            "internal/wire: round trip through GoalIn and GoalOf",
 	"numen.v1.Mode":            "internal/wire: round trip through ConvertModeFromWire and ConvertModeToWire",

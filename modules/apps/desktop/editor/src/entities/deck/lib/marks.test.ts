@@ -7,7 +7,7 @@ import type { DeckProblem } from '../types'
 
 /** One problem as the vault reports one, against nothing in particular. */
 const problem = (over: Partial<DeckProblem> = {}): DeckProblem => ({
-  fault: 'cardWithoutAStencil',
+  kind: 'cardWithoutAStencil',
   card: null,
   face: null,
   field: '',
@@ -25,8 +25,8 @@ describe('where a problem is drawn', () => {
   it('is the identity the card was drawn under, so two of one mark are told apart', () => {
     const marks = createMarks(
       [
-        problem({ fault: 'markCarriedTwice', card: 1, text: 'a mark carried twice' }),
-        problem({ fault: 'markCarriedTwice', card: 2, text: 'a mark carried twice' }),
+        problem({ kind: 'markCarriedTwice', card: 1, text: 'a mark carried twice' }),
+        problem({ kind: 'markCarriedTwice', card: 2, text: 'a mark carried twice' }),
       ],
       ['c1', 'c2', 'c3'],
       [],
@@ -45,7 +45,7 @@ describe('where a problem is drawn', () => {
 
   it('is the face it was read against', () => {
     const marks = createMarks(
-      [problem({ fault: 'faceMissingASide', face: 0, text: 'no back' })],
+      [problem({ kind: 'faceMissingASide', face: 0, text: 'no back' })],
       [],
       ['f1', 'f2'],
     )
@@ -54,7 +54,7 @@ describe('where a problem is drawn', () => {
 
   it('is the field of the card where it names both, so it is said under that value', () => {
     const marks = createMarks(
-      [problem({ fault: 'fieldWrittenTwice', card: 1, field: 'Name', text: 'twice' })],
+      [problem({ kind: 'fieldWrittenTwice', card: 1, field: 'Name', text: 'twice' })],
       ['c1', 'c2'],
       [],
     )
@@ -64,7 +64,7 @@ describe('where a problem is drawn', () => {
 
   it('is the field where it stands against no card and no face', () => {
     const marks = createMarks(
-      [problem({ fault: 'fieldDeclaredTwice', field: 'Height', text: 'declared twice' })],
+      [problem({ kind: 'fieldDeclaredTwice', field: 'Height', text: 'declared twice' })],
       [],
       [],
     )
