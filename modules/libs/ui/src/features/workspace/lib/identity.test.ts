@@ -4,7 +4,7 @@
  * A machine with no randomness of its own still lays out a workspace, and the
  * names it gives are its own count and not the clock.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { browserRandomness, createNodeIdFactory } from './identity'
 
 describe('the identities a workspace gives its nodes', () => {
@@ -32,5 +32,35 @@ describe('the identities a workspace gives its nodes', () => {
     const made = browserRandomness.uuid()
 
     expect(made === null || made.length > 0).toBe(true)
+  })
+})
+
+describe('the randomness of the window', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('hands over what the window makes', () => {
+    vi.stubGlobal('crypto', { randomUUID: () => 'from-the-window' })
+
+    expect(browserRandomness.uuid()).toBe('from-the-window')
+  })
+
+  it('makes nothing where the window has no way to make an identifier', () => {
+    vi.stubGlobal('crypto', {})
+
+    expect(browserRandomness.uuid()).toBeNull()
+  })
+
+  it('makes nothing where the window has no randomness at all', () => {
+    vi.stubGlobal('crypto', undefined)
+
+    expect(browserRandomness.uuid()).toBeNull()
+  })
+
+  it('makes nothing where the identifier maker is no function', () => {
+    vi.stubGlobal('crypto', { randomUUID: 'not-callable' })
+
+    expect(browserRandomness.uuid()).toBeNull()
   })
 })
