@@ -197,7 +197,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 	}
 
 	addTool(server, &sdk.Tool{
-		Name:  "vault_forget",
+		Name:  "vault_remove",
 		Title: "Forget a vault",
 		Description: "Take a vault off the list and out of the index. Its folder stays " +
 			"where it is with everything in it, and adding it again brings back the same " +
@@ -253,11 +253,11 @@ func addVaultOpen(server *sdk.Server, core Core) {
 		Vault string `json:"vault" jsonschema:"the vault to show, addressed by its name, its folder, or the identity vault_list gives it"`
 	}) (*sdk.CallToolResult, struct {
 		IsOpening bool   `json:"opening"`
-		Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+		Status    string `json:"status" jsonschema:"what is happening now, in words to say back to the person"`
 	}, error) {
 		type out = struct {
 			IsOpening bool   `json:"opening"`
-			Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+			Status    string `json:"status" jsonschema:"what is happening now, in words to say back to the person"`
 		}
 		v, err := core.Vaults.found(in.Vault)
 		if err != nil {
@@ -276,7 +276,7 @@ func addVaultOpen(server *sdk.Server, core Core) {
 		go func() { _ = core.Vaults.Opens(context.WithoutCancel(ctx), v) }()
 		return nil, out{
 			IsOpening: true,
-			Doing: fmt.Sprintf(
+			Status: fmt.Sprintf(
 				"the window is moving to %s, and this session ends with the vault it was serving",
 				v.Name),
 		}, nil

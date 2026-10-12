@@ -97,7 +97,7 @@ func TestWhatIsAskedAboutACardReachesTheAgent(t *testing.T) {
 
 // A deck, a card's mark and a face are all named by whoever synced the vault,
 // and the question is the model's first user message, where a name is read as
-// instruction. The card is held for `card_showing` to answer with instead,
+// instruction. The card is held for `card_current` to answer with instead,
 // which is a tool's answer and so data.
 func TestTheCardsNameIsNotInTheQuestion(t *testing.T) {
 	agent := &asking{took: make(chan port.Task, 1)}

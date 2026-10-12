@@ -76,7 +76,7 @@ type sourceFocusInput struct {
 
 type sourceFocusOutput struct {
 	IsShown bool   `json:"shown"`
-	Looking string `json:"looking" jsonschema:"what the person is now looking at, in words to say back to them"`
+	Summary string `json:"summary" jsonschema:"what the person is now looking at, in words to say back to them"`
 }
 
 func addSourceFocus(server *sdk.Server, core Core) {
@@ -111,7 +111,7 @@ func focusSource(ctx context.Context, core Core, in sourceFocusInput) (sourceFoc
 	if err := core.View.Focus(ctx, at); err != nil {
 		return sourceFocusOutput{}, err
 	}
-	return sourceFocusOutput{IsShown: true, Looking: describeFocus(ref.Kind, in.Length)}, nil
+	return sourceFocusOutput{IsShown: true, Summary: describeFocus(ref.Kind, in.Length)}, nil
 }
 
 // checkSourceFocus returns an error for an input with no document, a passage that

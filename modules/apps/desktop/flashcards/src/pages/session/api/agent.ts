@@ -13,7 +13,7 @@ import { agentService } from '@/shared/clients'
  *
  * Which card that is travels beside the question and never inside it. A deck in
  * a synced vault is named by whoever synced it, and a name in the question is
- * read as instruction; `card_showing` gives the agent the same name as a tool's
+ * read as instruction; `card_current` gives the agent the same name as a tool's
  * answer, which is data.
  */
 export const createAgentPort = (card: CardFace) =>

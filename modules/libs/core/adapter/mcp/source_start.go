@@ -24,7 +24,7 @@ type sourceTranscribeInput struct {
 
 type sourceStartOutput struct {
 	IsStarted bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
-	Doing     string `json:"doing" jsonschema:"what is happening now, in words to say back to the person"`
+	Status    string `json:"status" jsonschema:"what is happening now, in words to say back to the person"`
 }
 
 func addSourceRecognise(server *sdk.Server, core Core) {
@@ -63,7 +63,7 @@ func startRecognition(core Core, in sourceStartInput) (sourceStartOutput, error)
 			status = "started; what is needed to read scans is being fetched first, about 160 MB"
 		}
 	}
-	return sourceStartOutput{IsStarted: true, Doing: status}, nil
+	return sourceStartOutput{IsStarted: true, Status: status}, nil
 }
 
 func addSourceTranscribe(server *sdk.Server, core Core) {
@@ -102,5 +102,5 @@ func startTranscription(core Core, in sourceTranscribeInput) (sourceStartOutput,
 			status = "started; what is needed to transcribe recordings is being fetched first"
 		}
 	}
-	return sourceStartOutput{IsStarted: true, Doing: status}, nil
+	return sourceStartOutput{IsStarted: true, Status: status}, nil
 }

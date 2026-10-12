@@ -20,12 +20,12 @@ func addCardReadTools(server *sdk.Server, core Core) {
 //
 // It is added only when the core has a reviewing session.
 func addCardFocus(server *sdk.Server, core Core) {
-	if core.Reviewing == nil {
+	if core.GetCurrentCard == nil {
 		return
 	}
 
 	addTool(server, &sdk.Tool{
-		Name:  "card_showing",
+		Name:  "card_current",
 		Title: "Show the card in front",
 		Description: "The card in front of the person: the deck it stands in, the mark " +
 			"`card_read` addresses it by, and the face it is being shown through. Ask it " +
@@ -35,8 +35,8 @@ func addCardFocus(server *sdk.Server, core Core) {
 			"back empty.",
 	}, func(
 		_ context.Context, _ *sdk.CallToolRequest, _ struct{},
-	) (*sdk.CallToolResult, AskedCard, error) {
-		return nil, core.Reviewing(), nil
+	) (*sdk.CallToolResult, CurrentCard, error) {
+		return nil, core.GetCurrentCard(), nil
 	})
 }
 

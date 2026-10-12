@@ -263,7 +263,7 @@ export const CardsDue: Story = {
 }
 
 /** One card, answered: the four ways of saying it, and where each leaves it. */
-export const Reviewing: Story = {
+export const GetCurrentCard: Story = {
   render: () =>
     frame(
       h(Session, {
