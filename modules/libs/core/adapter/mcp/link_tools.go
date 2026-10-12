@@ -1,0 +1,234 @@
+package mcp
+
+import (
+	"context"
+	"fmt"
+
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+)
+
+func addLinkReadingTools(server *sdk.Server, core Core) {
+	addLinkList(server, core)
+}
+
+type linkListInput struct {
+	Path string `json:"path" jsonschema:"the note to ask about"`
+}
+
+type linkListOutput struct {
+	Links     []ResolvedLink `json:"links"`
+	Backlinks []ResolvedLink `json:"backlinks"`
+}
+
+func addLinkList(server *sdk.Server, core Core) {
+	addTool(server, &sdk.Tool{
+		Name:  "link_list",
+		Title: "List links",
+		Description: "What one note points at and what points at it. A link is a " +
+			"backlink because it resolves here, whichever end wrote it.",
+	}, newHandler(func(ctx context.Context, in linkListInput) (linkListOutput, error) {
+		found, err := core.Notes.Links.Execute(ctx, core.getCurrentVault().Vault, in.Path)
+		if err != nil {
+			return linkListOutput{}, err
+		}
+		return linkListOutput{Links: linksOf(found.Links), Backlinks: linksOf(found.Backlinks)}, nil
+	}))
+}
+
+func addLinkWritingTools(server *sdk.Server, core Core) {
+	addLinkAdd(server, core)
+	addLinkUpdate(server, core)
+	addLinkRemove(server, core)
+}
+
+type linkAddInput struct {
+	Links []Addition `json:"links" jsonschema:"the relationships to write"`
+}
+
+type linkAddOutput struct {
+	Added []AddOutcome `json:"added"`
+}
+
+func addLinkAdd(server *sdk.Server, core Core) {
+	addTool(server, &sdk.Tool{
+		Name:  "link_add",
+		Title: "Add links",
+		Description: "Join notes to other notes. A link is written in the note it goes " +
+			"from and shows at both ends. `parent` and `child` are the hierarchy the " +
+			"product draws; `jump` is a shortcut across it; `ref` is a plain mention. " +
+			"Write the target as the other note's name — a name follows a note that " +
+			"moves. Links going into the same note are written together, in one change " +
+			"the person sees once, so every link of one note carries the same " +
+			"fingerprint. The fingerprint from `note_read` is required, and a write " +
+			"lands only on the note that fingerprint names. A note being made takes " +
+			"its links in note_create instead, so that it never exists unjoined.",
+	}, newHandler(func(ctx context.Context, in linkAddInput) (linkAddOutput, error) {
+		return addLinks(ctx, core, in)
+	}))
+}
+
+func addLinks(ctx context.Context, core Core, in linkAddInput) (linkAddOutput, error) {
+	if len(in.Links) > maxRefs {
+		return linkAddOutput{}, fmt.Errorf("write at most %d links at a time", maxRefs)
+	}
+	// Asked of the whole call, before a file is opened.
+	size := 0
+	for _, add := range in.Links {
+		size += countLinkBytes(add.Link)
+	}
+	if size > maxBytes {
+		return linkAddOutput{}, fmt.Errorf(
+			"a call writing %d bytes is more than this carries at once, which is %d", size, maxBytes)
+	}
+
+	outcomes := make([]AddOutcome, 0, len(in.Links))
+	// A malformed link is set aside before the grouping, so it costs only
+	// itself. What is left is grouped: links sharing a note share a write.
+	groups := newLinkGroups()
+	for i, add := range in.Links {
+		outcomes = append(outcomes, AddOutcome{From: add.From, To: add.To})
+		outcomes[i].Refused = groups.add(i, add)
+	}
+	if err := writeLinkGroups(ctx, core, groups, outcomes); err != nil {
+		return linkAddOutput{}, err
+	}
+	return linkAddOutput{Added: outcomes}, nil
+}
+
+// linkGroups holds the links of one call by the note each is written into, in
+// the order the notes first appear.
+type linkGroups struct {
+	order        []string
+	links        map[string][]domain.Link
+	fingerprints map[string]domain.Fingerprint
+	positions    map[string][]int
+}
+
+func newLinkGroups() *linkGroups {
+	return &linkGroups{
+		links:        map[string][]domain.Link{},
+		fingerprints: map[string]domain.Fingerprint{},
+		positions:    map[string][]int{},
+	}
+}
+
+// add groups the i-th addition under its note and returns the reason it was
+// set aside, which is empty when it was grouped.
+func (g *linkGroups) add(i int, add Addition) string {
+	link := newDomainLink(add.Link)
+	if err := note.CheckWritable(link); err != nil {
+		return sayError(err)
+	}
+	seen, err := parseFingerprint(add.Fingerprint)
+	if err != nil {
+		return sayError(err)
+	}
+	// One note's links are one write, so the note they are written
+	// against is one note as one caller read it.
+	if first, grouped := g.fingerprints[add.From]; grouped && first != seen {
+		return "the links written into " + add.From +
+			" name two different fingerprints, and they are one write"
+	}
+	if _, grouped := g.links[add.From]; !grouped {
+		g.order = append(g.order, add.From)
+	}
+	g.fingerprints[add.From] = seen
+	g.links[add.From] = append(g.links[add.From], link)
+	g.positions[add.From] = append(g.positions[add.From], i)
+	return ""
+}
+
+// writeLinkGroups writes each note's links as one change, and records the
+// result on the outcome of every link in it.
+//
+// One note's links are one write: they land or fail together, and each
+// carries the same reason. Another note's write is untouched by it.
+func writeLinkGroups(ctx context.Context, core Core, groups *linkGroups, outcomes []AddOutcome) error {
+	for _, from := range groups.order {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		group := groups.links[from]
+		written, err := core.Notes.Linking.Add(
+			ctx, core.getCurrentVault().Vault, from, groups.fingerprints[from], group[0], group[1:]...)
+		for _, i := range groups.positions[from] {
+			if err != nil {
+				outcomes[i].Refused = sayError(err)
+			} else {
+				outcomes[i].Fingerprint = fingerprintOf(written)
+			}
+		}
+	}
+	return nil
+}
+
+type linkUpdateInput struct {
+	From        string `json:"from" jsonschema:"the path of the note the link is written in"`
+	To          string `json:"to" jsonschema:"the target as it is written now"`
+	Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses a write over somebody else's edit"`
+	Role        string `json:"role,omitempty" jsonschema:"the role it should carry: parent, child, jump, ref or attachment"`
+	Type        string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
+	Label       string `json:"label,omitempty" jsonschema:"a few words naming the relationship"`
+	Why         string `json:"note,omitempty" jsonschema:"why the link exists"`
+}
+
+func addLinkUpdate(server *sdk.Server, core Core) {
+	addTool(server, &sdk.Tool{
+		Name:  "link_update",
+		Title: "Update links",
+		Description: "Change what an existing link says about itself — its role, its " +
+			"type, its label, why it exists — without changing where it goes. Fields " +
+			"left out are cleared; role left out is kept. Because a field left out is " +
+			"cleared, what this writes is decided from what you read: the fingerprint " +
+			"from `note_read` is required, and the change lands only on the note that " +
+			"fingerprint names.",
+	}, newHandler(func(ctx context.Context, in linkUpdateInput) (ChangeOutcome, error) {
+		seen, err := parseFingerprint(in.Fingerprint)
+		if err != nil {
+			return ChangeOutcome{}, err
+		}
+		written, err := core.Notes.Linking.Update(
+			ctx, core.getCurrentVault().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
+				Role:  domain.LinkRole(in.Role),
+				Type:  in.Type,
+				Label: in.Label,
+				Why:   in.Why,
+			}, seen)
+		if err != nil {
+			return ChangeOutcome{}, err
+		}
+		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
+	}))
+}
+
+type linkRemoveInput struct {
+	From        string `json:"from" jsonschema:"the path of the note the link is written in"`
+	To          string `json:"to" jsonschema:"the target as it is written"`
+	Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses a write over somebody else's edit"`
+	Role        string `json:"role,omitempty" jsonschema:"only remove the link carrying this role; every role by default"`
+}
+
+func addLinkRemove(server *sdk.Server, core Core) {
+	addTool(server, &sdk.Tool{
+		Name:  "link_remove",
+		Title: "Remove links",
+		Description: "Take a link out of the note it is written in. The note at the " +
+			"other end is untouched: what goes is one end's account of the " +
+			"relationship. The fingerprint from `note_read` is required, and the " +
+			"removal lands only on the note that fingerprint names.",
+	}, newHandler(func(ctx context.Context, in linkRemoveInput) (ChangeOutcome, error) {
+		seen, err := parseFingerprint(in.Fingerprint)
+		if err != nil {
+			return ChangeOutcome{}, err
+		}
+		written, err := core.Notes.Linking.Remove(ctx, core.getCurrentVault().Vault, in.From,
+			domain.ParseAddress(in.To), domain.LinkRole(in.Role), seen)
+		if err != nil {
+			return ChangeOutcome{}, err
+		}
+		return ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
+	}))
+}
