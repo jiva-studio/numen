@@ -27,7 +27,7 @@ const replyWith = (answer: unknown) => {
   )
 }
 
-const { DEFAULTS, NO_PLACE } = await import('../lib/presets')
+const { DEFAULTS, NO_CURVE_POINT } = await import('../lib/presets')
 const { presets } = await import('./presets.wire')
 
 describe('the settings of a preset', () => {
@@ -218,8 +218,8 @@ describe('what a preset comes to over the range of its goal', () => {
 
     const curve = await presets.curve('Daily.md', DEFAULTS)
 
-    expect(curve.now).toEqual(NO_PLACE)
-    expect(curve.suggested).toEqual(NO_PLACE)
+    expect(curve.now).toEqual(NO_CURVE_POINT)
+    expect(curve.suggested).toEqual(NO_CURVE_POINT)
   })
 
   it('is an empty one where the answer carries no curve at all', async () => {

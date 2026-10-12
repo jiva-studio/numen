@@ -12,10 +12,10 @@ export interface StencilSummary {
 }
 
 /**
- * What is wrong with a stencil or a deck. The list is closed: a mark is drawn
+ * What kind of problem a stencil or a deck has. The list is closed: a mark is drawn
  * by what is wrong with the card or the face it stands against.
  */
-export type Fault =
+export type ProblemKind =
   | 'fieldDeclaredTwice'
   | 'stencilWithoutFields'
   | 'faceMissingASide'
@@ -31,7 +31,7 @@ export type Fault =
  * Something in a file that could not be acted on and was not guessed at.
  */
 export interface DeckProblem {
-  readonly fault: Fault
+  readonly kind: ProblemKind
   /** The card it stands against, counted from the first, or nothing. */
   readonly card: number | null
   /** The face it stands against, counted from the first, or nothing. */

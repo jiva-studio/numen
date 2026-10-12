@@ -31,92 +31,92 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Fault is what a problem is. The list is closed: an interface marks a card and
-// a face by what is wrong with them, so a fault nobody decided on is drawn
-// nowhere.
-type Fault int32
+// ProblemKind is what kind of problem it is. The list is closed: an interface
+// marks a card and a face by what is wrong with them, so a kind nobody decided
+// on is drawn nowhere.
+type ProblemKind int32
 
 const (
-	Fault_FAULT_UNSPECIFIED Fault = 0
+	ProblemKind_PROBLEM_KIND_UNSPECIFIED ProblemKind = 0
 	// `fields` declares a name twice. The first stands.
-	Fault_FAULT_FIELD_DECLARED_TWICE Fault = 1
+	ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE ProblemKind = 1
 	// `fields` is absent or empty, so a card cut by this stencil has no field to
 	// fill in.
-	Fault_FAULT_STENCIL_WITHOUT_FIELDS Fault = 2
+	ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS ProblemKind = 2
 	// A face carries no front or no back. It lays out nothing.
-	Fault_FAULT_FACE_MISSING_A_SIDE Fault = 3
+	ProblemKind_PROBLEM_KIND_FACE_MISSING_A_SIDE ProblemKind = 3
 	// A `{{Field}}` names a field outside `fields`. The rest of the face is read
 	// as usual.
-	Fault_FAULT_PLACEHOLDER_UNDECLARED Fault = 4
+	ProblemKind_PROBLEM_KIND_PLACEHOLDER_UNDECLARED ProblemKind = 4
 	// The first paragraph under a card's heading is not a lone wikilink. The
 	// values are read.
-	Fault_FAULT_CARD_WITHOUT_A_STENCIL Fault = 5
+	ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL ProblemKind = 5
 	// A card's wikilink reaches a note that is not a stencil. The values are
 	// read.
-	Fault_FAULT_STENCIL_IS_NOT_ONE Fault = 6
+	ProblemKind_PROBLEM_KIND_STENCIL_IS_NOT_ONE ProblemKind = 6
 	// One card writes a field's heading twice. The first stands, and the second
 	// is kept in the file.
-	Fault_FAULT_FIELD_WRITTEN_TWICE Fault = 7
+	ProblemKind_PROBLEM_KIND_FIELD_WRITTEN_TWICE ProblemKind = 7
 	// A field renamed in a stencil did not reach this deck, so a card holds a
 	// heading the stencil no longer declares.
-	Fault_FAULT_FIELD_NOT_RENAMED Fault = 8
+	ProblemKind_PROBLEM_KIND_FIELD_NOT_RENAMED ProblemKind = 8
 	// Two cards of one deck carry the same mark. Both are read and both are
 	// shown marked, and neither is given another.
-	Fault_FAULT_MARK_CARRIED_TWICE Fault = 9
+	ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE ProblemKind = 9
 )
 
-// Enum value maps for Fault.
+// Enum value maps for ProblemKind.
 var (
-	Fault_name = map[int32]string{
-		0: "FAULT_UNSPECIFIED",
-		1: "FAULT_FIELD_DECLARED_TWICE",
-		2: "FAULT_STENCIL_WITHOUT_FIELDS",
-		3: "FAULT_FACE_MISSING_A_SIDE",
-		4: "FAULT_PLACEHOLDER_UNDECLARED",
-		5: "FAULT_CARD_WITHOUT_A_STENCIL",
-		6: "FAULT_STENCIL_IS_NOT_ONE",
-		7: "FAULT_FIELD_WRITTEN_TWICE",
-		8: "FAULT_FIELD_NOT_RENAMED",
-		9: "FAULT_MARK_CARRIED_TWICE",
+	ProblemKind_name = map[int32]string{
+		0: "PROBLEM_KIND_UNSPECIFIED",
+		1: "PROBLEM_KIND_FIELD_DECLARED_TWICE",
+		2: "PROBLEM_KIND_STENCIL_WITHOUT_FIELDS",
+		3: "PROBLEM_KIND_FACE_MISSING_A_SIDE",
+		4: "PROBLEM_KIND_PLACEHOLDER_UNDECLARED",
+		5: "PROBLEM_KIND_CARD_WITHOUT_A_STENCIL",
+		6: "PROBLEM_KIND_STENCIL_IS_NOT_ONE",
+		7: "PROBLEM_KIND_FIELD_WRITTEN_TWICE",
+		8: "PROBLEM_KIND_FIELD_NOT_RENAMED",
+		9: "PROBLEM_KIND_MARK_CARRIED_TWICE",
 	}
-	Fault_value = map[string]int32{
-		"FAULT_UNSPECIFIED":            0,
-		"FAULT_FIELD_DECLARED_TWICE":   1,
-		"FAULT_STENCIL_WITHOUT_FIELDS": 2,
-		"FAULT_FACE_MISSING_A_SIDE":    3,
-		"FAULT_PLACEHOLDER_UNDECLARED": 4,
-		"FAULT_CARD_WITHOUT_A_STENCIL": 5,
-		"FAULT_STENCIL_IS_NOT_ONE":     6,
-		"FAULT_FIELD_WRITTEN_TWICE":    7,
-		"FAULT_FIELD_NOT_RENAMED":      8,
-		"FAULT_MARK_CARRIED_TWICE":     9,
+	ProblemKind_value = map[string]int32{
+		"PROBLEM_KIND_UNSPECIFIED":            0,
+		"PROBLEM_KIND_FIELD_DECLARED_TWICE":   1,
+		"PROBLEM_KIND_STENCIL_WITHOUT_FIELDS": 2,
+		"PROBLEM_KIND_FACE_MISSING_A_SIDE":    3,
+		"PROBLEM_KIND_PLACEHOLDER_UNDECLARED": 4,
+		"PROBLEM_KIND_CARD_WITHOUT_A_STENCIL": 5,
+		"PROBLEM_KIND_STENCIL_IS_NOT_ONE":     6,
+		"PROBLEM_KIND_FIELD_WRITTEN_TWICE":    7,
+		"PROBLEM_KIND_FIELD_NOT_RENAMED":      8,
+		"PROBLEM_KIND_MARK_CARRIED_TWICE":     9,
 	}
 )
 
-func (x Fault) Enum() *Fault {
-	p := new(Fault)
+func (x ProblemKind) Enum() *ProblemKind {
+	p := new(ProblemKind)
 	*p = x
 	return p
 }
 
-func (x Fault) String() string {
+func (x ProblemKind) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Fault) Descriptor() protoreflect.EnumDescriptor {
+func (ProblemKind) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_cards_proto_enumTypes[0].Descriptor()
 }
 
-func (Fault) Type() protoreflect.EnumType {
+func (ProblemKind) Type() protoreflect.EnumType {
 	return &file_numen_v1_cards_proto_enumTypes[0]
 }
 
-func (x Fault) Number() protoreflect.EnumNumber {
+func (x ProblemKind) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Fault.Descriptor instead.
-func (Fault) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ProblemKind.Descriptor instead.
+func (ProblemKind) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_cards_proto_rawDescGZIP(), []int{0}
 }
 
@@ -528,7 +528,7 @@ func (x *Section) GetPreamble() string {
 // the interface marks the card or the face it is against.
 type Problem struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Fault Fault                  `protobuf:"varint,1,opt,name=fault,proto3,enum=numen.v1.Fault" json:"fault,omitempty"`
+	Kind  ProblemKind            `protobuf:"varint,1,opt,name=kind,proto3,enum=numen.v1.ProblemKind" json:"kind,omitempty"`
 	// The card it stands against, counted from the first card the deck answers
 	// with. Absent for a problem against no card, and for every problem of a
 	// stencil.
@@ -575,11 +575,11 @@ func (*Problem) Descriptor() ([]byte, []int) {
 	return file_numen_v1_cards_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *Problem) GetFault() Fault {
+func (x *Problem) GetKind() ProblemKind {
 	if x != nil {
-		return x.Fault
+		return x.Kind
 	}
-	return Fault_FAULT_UNSPECIFIED
+	return ProblemKind_PROBLEM_KIND_UNSPECIFIED
 }
 
 func (x *Problem) GetCard() int32 {
@@ -1949,9 +1949,9 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04tail\x18\a \x01(\tR\x04tail\"9\n" +
 	"\aSection\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
-	"\bpreamble\x18\x02 \x01(\tR\bpreamble\"\x9e\x01\n" +
-	"\aProblem\x12%\n" +
-	"\x05fault\x18\x01 \x01(\x0e2\x0f.numen.v1.FaultR\x05fault\x12\x17\n" +
+	"\bpreamble\x18\x02 \x01(\tR\bpreamble\"\xa2\x01\n" +
+	"\aProblem\x12)\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x15.numen.v1.ProblemKindR\x04kind\x12\x17\n" +
 	"\x04card\x18\x02 \x01(\x05H\x00R\x04card\x88\x01\x01\x12\x17\n" +
 	"\x04face\x18\x03 \x01(\x05H\x01R\x04face\x88\x01\x01\x12\x14\n" +
 	"\x05field\x18\x04 \x01(\tR\x05field\x12\x12\n" +
@@ -2059,18 +2059,18 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05bound\x18\x03 \x01(\x03R\x05bound\x12#\n" +
 	"\ris_unlevelled\x18\x04 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at*\xbb\x02\n" +
-	"\x05Fault\x12\x15\n" +
-	"\x11FAULT_UNSPECIFIED\x10\x00\x12\x1e\n" +
-	"\x1aFAULT_FIELD_DECLARED_TWICE\x10\x01\x12 \n" +
-	"\x1cFAULT_STENCIL_WITHOUT_FIELDS\x10\x02\x12\x1d\n" +
-	"\x19FAULT_FACE_MISSING_A_SIDE\x10\x03\x12 \n" +
-	"\x1cFAULT_PLACEHOLDER_UNDECLARED\x10\x04\x12 \n" +
-	"\x1cFAULT_CARD_WITHOUT_A_STENCIL\x10\x05\x12\x1c\n" +
-	"\x18FAULT_STENCIL_IS_NOT_ONE\x10\x06\x12\x1d\n" +
-	"\x19FAULT_FIELD_WRITTEN_TWICE\x10\a\x12\x1b\n" +
-	"\x17FAULT_FIELD_NOT_RENAMED\x10\b\x12\x1c\n" +
-	"\x18FAULT_MARK_CARRIED_TWICE\x10\t2\xfd\x04\n" +
+	"\x03_at*\x87\x03\n" +
+	"\vProblemKind\x12\x1c\n" +
+	"\x18PROBLEM_KIND_UNSPECIFIED\x10\x00\x12%\n" +
+	"!PROBLEM_KIND_FIELD_DECLARED_TWICE\x10\x01\x12'\n" +
+	"#PROBLEM_KIND_STENCIL_WITHOUT_FIELDS\x10\x02\x12$\n" +
+	" PROBLEM_KIND_FACE_MISSING_A_SIDE\x10\x03\x12'\n" +
+	"#PROBLEM_KIND_PLACEHOLDER_UNDECLARED\x10\x04\x12'\n" +
+	"#PROBLEM_KIND_CARD_WITHOUT_A_STENCIL\x10\x05\x12#\n" +
+	"\x1fPROBLEM_KIND_STENCIL_IS_NOT_ONE\x10\x06\x12$\n" +
+	" PROBLEM_KIND_FIELD_WRITTEN_TWICE\x10\a\x12\"\n" +
+	"\x1ePROBLEM_KIND_FIELD_NOT_RENAMED\x10\b\x12#\n" +
+	"\x1fPROBLEM_KIND_MARK_CARRIED_TWICE\x10\t2\xfd\x04\n" +
 	"\fCardsService\x12M\n" +
 	"\fListStencils\x12\x1d.numen.v1.ListStencilsRequest\x1a\x1e.numen.v1.ListStencilsResponse\x12P\n" +
 	"\rCreateStencil\x12\x1e.numen.v1.CreateStencilRequest\x1a\x1f.numen.v1.CreateStencilResponse\x12J\n" +
@@ -2097,7 +2097,7 @@ func file_numen_v1_cards_proto_rawDescGZIP() []byte {
 var file_numen_v1_cards_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_cards_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_numen_v1_cards_proto_goTypes = []any{
-	(Fault)(0),                         // 0: numen.v1.Fault
+	(ProblemKind)(0),                   // 0: numen.v1.ProblemKind
 	(*Stencil)(nil),                    // 1: numen.v1.Stencil
 	(*StencilSummary)(nil),             // 2: numen.v1.StencilSummary
 	(*Face)(nil),                       // 3: numen.v1.Face
@@ -2132,7 +2132,7 @@ var file_numen_v1_cards_proto_depIdxs = []int32{
 	7,  // 2: numen.v1.Deck.cards:type_name -> numen.v1.Card
 	5,  // 3: numen.v1.Deck.sections:type_name -> numen.v1.Section
 	6,  // 4: numen.v1.Deck.problems:type_name -> numen.v1.Problem
-	0,  // 5: numen.v1.Problem.fault:type_name -> numen.v1.Fault
+	0,  // 5: numen.v1.Problem.kind:type_name -> numen.v1.ProblemKind
 	8,  // 6: numen.v1.Card.values:type_name -> numen.v1.Value
 	2,  // 7: numen.v1.ListStencilsResponse.stencils:type_name -> numen.v1.StencilSummary
 	26, // 8: numen.v1.CreateStencilResponse.error:type_name -> numen.v1.ErrorCode

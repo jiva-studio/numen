@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { NO_PLACE, type Curve, type Point } from '../types'
+import { NO_CURVE_POINT, type Curve, type Point } from '../types'
 import {
   getExtent,
   getBacklogExtent,
@@ -47,8 +47,8 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
   grid: cards.map((_, at) => at * 10),
   days: [],
   at: cards.map((one, at) => point({ reviews: one, canLearnEveryCard: enough[at] ?? true })),
-  now: NO_PLACE,
-  suggested: NO_PLACE,
+  now: NO_CURVE_POINT,
+  suggested: NO_CURVE_POINT,
   decks: 1,
   cards: 400,
   overdue: 0,
