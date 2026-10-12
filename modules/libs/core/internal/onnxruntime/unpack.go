@@ -69,9 +69,7 @@ func verify(at, sum string) error {
 	defer file.Close()
 
 	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return err
-	}
+	_, _ = io.Copy(hash, file)
 	if found := hex.EncodeToString(hash.Sum(nil)); found != sum {
 		return fmt.Errorf("%s carries %s, and %s is published", at, found, sum)
 	}
@@ -134,12 +132,9 @@ func write(at string, from io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if _, err := io.Copy(file, from); err != nil {
-		file.Close()
-		os.Remove(part)
-		return err
-	}
-	if err := file.Close(); err != nil {
+	_, err = io.Copy(file, from)
+	file.Close()
+	if err != nil {
 		os.Remove(part)
 		return err
 	}
@@ -157,7 +152,6 @@ func isLibrary(found, name string) bool {
 		return true
 	}
 	ext := path.Ext(name)
-	return ext != "" &&
-		strings.HasPrefix(found, strings.TrimSuffix(name, ext)+".") &&
+	return strings.HasPrefix(found, strings.TrimSuffix(name, ext)+".") &&
 		strings.HasSuffix(found, ext)
 }

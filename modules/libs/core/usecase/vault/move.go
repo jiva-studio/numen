@@ -164,17 +164,11 @@ func isRename(travelling []domain.Fingerprint, from, to string) bool {
 	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
 		return false
 	}
-	if domain.Basename(from) == domain.Basename(to) {
-		return false
-	}
 	return len(travelling) == 1 &&
 		travelling[0].Path == from && travelling[0].Kind == domain.KindNote
 }
 
 // getMovedPath is where a path under from is once from is at to.
 func getMovedPath(from, to, path string) string {
-	if path == from {
-		return to
-	}
 	return to + path[len(from):]
 }

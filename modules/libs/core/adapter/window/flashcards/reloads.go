@@ -113,10 +113,7 @@ func (a *API) WatchReloads(
 			if err := out.Send(&v1.WatchReloadsResponse{}); err != nil {
 				return err
 			}
-		case _, open := <-line:
-			if !open {
-				return nil
-			}
+		case <-line:
 			if err := out.Send(&v1.WatchReloadsResponse{Reload: true}); err != nil {
 				return err
 			}

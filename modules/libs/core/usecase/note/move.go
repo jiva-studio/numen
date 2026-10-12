@@ -194,25 +194,25 @@ func (u Move) rewriteLink(
 	if lands != "" {
 		return nil
 	}
-	repaired, dangling, err := u.repair(ctx, v, was.From, was.Target, address)
+	left, err := u.repair(ctx, v, was.From, was.Target, address)
 	switch {
 	case err != nil:
 		return err
-	case repaired:
+	case left == linkRepaired:
 		res.Repaired = append(res.Repaired, was.From)
-	case dangling:
+	case left == linkDangling:
 		res.Dangling = append(res.Dangling, was.From)
 	}
 	return nil
 }
 
 // getAddress is how a link reaches the note at this path, asked of the vault
-// now that the file is there. A name no link reaches comes back as it stands,
+// now that the file is there. A name no link reaches comes back empty,
 // and the repair that writes it changes nothing.
 func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (string, error) {
 	to, err := GetAddress(ctx, u.names, v.ID, path)
 	if errors.Is(err, ErrUnaddressable) {
-		return domain.Basename(path), nil
+		return "", nil
 	}
 	if err != nil {
 		return "", err
@@ -239,6 +239,19 @@ func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.Resolve
 	return "", false, nil
 }
 
+// linkState is what became of a link that stopped resolving.
+type linkState int
+
+const (
+	// linkUntouched is a link nothing was written for.
+	linkUntouched linkState = iota
+	// linkRepaired is a link written again.
+	linkRepaired
+	// linkDangling is a link left reaching nothing in a note that could not be
+	// written.
+	linkDangling
+)
+
 // repair writes `reaches` in place of an address that no longer reaches
 // anything. Only the address changes, and only in the note that wrote it.
 //
@@ -250,51 +263,53 @@ func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.Resolve
 // vault's write lock across both.
 func (u Move) repair(
 	ctx context.Context, v domain.Vault, in string, address domain.Address, reaches string,
-) (repaired, dangling bool, err error) {
+) (linkState, error) {
 	release, err := u.writers.Hold(ctx, v)
 	if err != nil {
-		return false, false, err
+		return linkUntouched, err
 	}
 	defer release()
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
-		return false, false, err
+		return linkUntouched, err
 	}
 	raw, err := reader.Read(ctx, in)
 	if errors.Is(err, fs.ErrNotExist) {
 		// The note that wrote the link went between the backlinks being read
 		// and this. Its link went with it.
-		return false, false, nil
+		return linkUntouched, nil
 	}
 	if err != nil {
-		return false, false, fmt.Errorf("read %s: %w", in, err)
+		return linkUntouched, fmt.Errorf("read %s: %w", in, err)
 	}
 	doc, err := markdown.Open(raw)
 	if err != nil {
 		// A note whose frontmatter cannot be read is never written, and the
 		// link it holds is left reaching nothing.
-		return false, true, nil
+		return linkDangling, nil
 	}
 	inBlock, err := doc.PointLinksAt(address, reaches)
 	if err != nil {
-		return false, false, err
+		return linkUntouched, err
 	}
 	inProse, err := doc.PointProseAt(address, reaches)
 	if err != nil {
-		return false, false, err
+		return linkUntouched, err
 	}
 	moved := inBlock + inProse
 	if moved == 0 {
-		return false, false, nil
+		return linkUntouched, nil
 	}
 
 	writer, err := u.writers.Open(v)
 	if err != nil {
-		return false, false, err
+		return linkUntouched, err
 	}
-	_, err = writer.Write(ctx, in, doc.Bytes(), domain.Fingerprint{})
-	return true, false, err
+	if _, err := writer.Write(ctx, in, doc.Bytes(), domain.Fingerprint{}); err != nil {
+		return linkUntouched, err
+	}
+	return linkRepaired, nil
 }
 
 func (u Move) level(ctx context.Context, v domain.Vault, paths ...string) error {

@@ -16,19 +16,25 @@ func getIndexLaneLimit(passes int) int {
 	return max(passes-1, 1)
 }
 
+// countingEmbedder is an embedder that says how many batches it runs at once.
+type countingEmbedder interface {
+	port.Embedder
+	Concurrency() int
+}
+
 // indexLane is the index side of one model that questions are asked of too. It
 // holds at most getIndexLaneLimit calls in flight, and the question side is not
 // held by it.
 type indexLane struct {
 	held    *embedding.Embedder
-	waiting port.Embedder
+	waiting countingEmbedder
 
 	once  sync.Once
 	slots chan struct{}
 }
 
 func newIndexLane(held *embedding.Embedder) *indexLane {
-	return &indexLane{held: held, waiting: held.GetWaitingEmbedder()}
+	return &indexLane{held: held, waiting: held.GetWaitingEmbedder().(countingEmbedder)}
 }
 
 func (l *indexLane) Model() port.EmbeddingModel { return l.held.Model() }
@@ -38,11 +44,7 @@ func (l *indexLane) Close() error { return l.held.Close() }
 
 // Concurrency is how many calls the index side runs at once.
 func (l *indexLane) Concurrency() int {
-	passes := 1
-	if counted, ok := l.waiting.(interface{ Concurrency() int }); ok {
-		passes = counted.Concurrency()
-	}
-	return getIndexLaneLimit(passes)
+	return getIndexLaneLimit(l.waiting.Concurrency())
 }
 
 // Wait blocks until the model turns up, and says what stopped it.

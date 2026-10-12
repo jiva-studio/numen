@@ -11,10 +11,7 @@ import (
 func TestAnIdentifierIsTenCharactersOfTheAlphabet(t *testing.T) {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 
-	minted, err := cardid.New()
-	if err != nil {
-		t.Fatalf("mint: %v", err)
-	}
+	minted := cardid.New()
 	if len(minted) != cardid.Length {
 		t.Errorf("id = %q, %d characters, want %d", minted, len(minted), cardid.Length)
 	}
@@ -32,10 +29,7 @@ func TestAnIdentifierIsTenCharactersOfTheAlphabet(t *testing.T) {
 func TestTwoIdentifiersDiffer(t *testing.T) {
 	seen := map[domain.CardID]bool{}
 	for range 100 {
-		minted, err := cardid.New()
-		if err != nil {
-			t.Fatalf("mint: %v", err)
-		}
+		minted := cardid.New()
 		if seen[minted] {
 			t.Fatalf("%q was minted twice", minted)
 		}
@@ -93,10 +87,7 @@ func TestEveryCharacterOfTheAlphabetIsMinted(t *testing.T) {
 
 	seen := map[rune]bool{}
 	for range 3000 {
-		minted, err := cardid.New()
-		if err != nil {
-			t.Fatalf("mint: %v", err)
-		}
+		minted := cardid.New()
 		for _, c := range minted {
 			seen[c] = true
 		}

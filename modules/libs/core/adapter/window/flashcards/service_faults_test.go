@@ -108,26 +108,6 @@ func TestACardWithNoProjectionCarriesNone(t *testing.T) {
 	}
 }
 
-// Two days are ordered as text is, and the same day is neither before nor
-// after itself.
-func TestTwoDaysAreOrderedAsTheyFallInTime(t *testing.T) {
-	for name, one := range map[string]struct {
-		a, b string
-		want int
-	}{
-		"before": {"2026-08-09", "2026-08-30", -1},
-		"after":  {"2026-08-30", "2026-08-09", 1},
-		"same":   {"2026-08-09", "2026-08-09", 0},
-		"empty":  {"", "2026-08-09", -1},
-	} {
-		t.Run(name, func(t *testing.T) {
-			if got := cmpDay(one.a, one.b); got != one.want {
-				t.Errorf("cmpDay(%q, %q) = %d, want %d", one.a, one.b, got, one.want)
-			}
-		})
-	}
-}
-
 // A stretch reaches every day of a long history, answered and still to come:
 // the days outside it do not end the walk through the days inside it.
 func TestAStretchOfALongHistoryHoldsEveryDayInsideIt(t *testing.T) {

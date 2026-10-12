@@ -109,10 +109,8 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	if err := doc.SetScalar(typeKey, string(kind)); err != nil {
 		return CreateNoteResult{}, err
 	}
-	if len(in.Fields) > 0 {
-		if err := doc.SetList(fieldsKey, in.Fields); err != nil {
-			return CreateNoteResult{}, err
-		}
+	if err := doc.SetList(fieldsKey, in.Fields); err != nil {
+		return CreateNoteResult{}, err
 	}
 	// A note is shown by its `title`, else by its filename, so the key is
 	// written only where the filename cannot carry the whole name.

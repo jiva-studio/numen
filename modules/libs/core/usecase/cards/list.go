@@ -52,8 +52,8 @@ func (u List) Execute(
 		return nil, 0, err
 	}
 	held := all
-	if limit > 0 && limit < len(held) {
-		held = held[:limit]
+	if limit > 0 {
+		held = all[:min(limit, len(all))]
 	}
 
 	// A stencil holds no cards, so nothing here asks where a wikilink lands.

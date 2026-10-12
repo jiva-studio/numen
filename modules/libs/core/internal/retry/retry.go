@@ -14,14 +14,13 @@ import (
 // is zero.
 func ParseAfter(value string, now time.Time) time.Duration {
 	value = strings.TrimSpace(value)
-	if value == "" {
-		return 0
+	if seconds, err := strconv.Atoi(value); err == nil {
+		return max(0, time.Duration(seconds)*time.Second)
 	}
-	if seconds, err := strconv.Atoi(value); err == nil && seconds >= 0 {
-		return time.Duration(seconds) * time.Second
-	}
-	if at, ok := parseDate(value); ok {
-		return max(0, at.Sub(now))
+	for _, layout := range dateLayouts {
+		if at, err := time.Parse(layout, value); err == nil {
+			return max(0, at.Sub(now))
+		}
 	}
 	return 0
 }
@@ -48,13 +47,4 @@ var dateLayouts = []string{
 	"Mon, 02 Jan 2006 15:04:05 GMT",
 	time.RFC850,
 	time.ANSIC,
-}
-
-func parseDate(value string) (time.Time, bool) {
-	for _, layout := range dateLayouts {
-		if at, err := time.Parse(layout, value); err == nil {
-			return at, true
-		}
-	}
-	return time.Time{}, false
 }

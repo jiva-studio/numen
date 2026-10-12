@@ -1,7 +1,6 @@
 package format
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -32,8 +31,8 @@ type CardMark struct {
 // The body is text whose line endings are normalised, and so is what comes
 // back. The endings the file keeps are put on when it is written.
 func Whole(
-	body string, stencils map[string]Stencil, createID func() (domain.CardID, error),
-) (string, []CardMark, error) {
+	body string, stencils map[string]Stencil, createID func() domain.CardID,
+) (string, []CardMark) {
 	raw := []byte(body)
 	deck, spans := readDeck(domain.Fingerprint{}, raw)
 
@@ -44,11 +43,7 @@ func Whole(
 
 		carried := card.Mark
 		if carried == "" {
-			id, err := createID()
-			if err != nil {
-				return "", nil, fmt.Errorf("create a mark for the card standing at %d: %w", i, err)
-			}
-			carried = id
+			carried = createID()
 			given = append(given, CardMark{Card: i, Mark: carried})
 		}
 		text := card.Heading
@@ -72,5 +67,5 @@ func Whole(
 		raw = append(out, raw[span.from:]...)
 	}
 	slices.Reverse(given)
-	return string(raw), given, nil
+	return string(raw), given
 }

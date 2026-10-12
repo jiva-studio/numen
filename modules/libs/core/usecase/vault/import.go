@@ -58,21 +58,22 @@ func (u Import) Execute(
 	into string,
 	handles []string,
 ) (ImportResult, error) {
-	var result ImportResult
 	if len(handles) == 0 {
-		return result, nil
+		return ImportResult{}, nil
 	}
 	writer, err := u.writers.Open(v)
 	if err != nil {
-		return result, err
+		return ImportResult{}, err
 	}
+
+	var result ImportResult
 
 	for _, handle := range handles {
 		if err := ctx.Err(); err != nil {
 			return result, err
 		}
 		name := u.files.GetName(handle)
-		if err := u.bring(ctx, writer, v, handle, joinPath(into, name), &result); err != nil {
+		if err := u.bring(ctx, writer, v, handle, path.Join(into, name), &result); err != nil {
 			result.Errors = append(result.Errors, ImportFailure{Name: name, Why: err})
 		}
 	}
@@ -129,7 +130,7 @@ func (u Import) importFolder(
 		return err
 	}
 	for _, one := range entries {
-		if err := u.bring(ctx, writer, v, one.Handle, joinPath(to, one.Name), result); err != nil {
+		if err := u.bring(ctx, writer, v, one.Handle, path.Join(to, one.Name), result); err != nil {
 			result.Errors = append(result.Errors, ImportFailure{Name: one.Name, Why: err})
 		}
 	}
@@ -159,12 +160,3 @@ var errHoldsTheVault = errors.New("the vault is inside it")
 // errNotAFile is a device, a socket or a link handed to the window. The vault
 // holds files and folders.
 var errNotAFile = errors.New("it is neither a file nor a folder")
-
-// joinPath is where a name goes in a folder of the vault. The root is the empty
-// path, and a name at the root is the whole of it.
-func joinPath(folder, name string) string {
-	if folder == "" {
-		return name
-	}
-	return path.Join(folder, name)
-}

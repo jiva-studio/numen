@@ -11,9 +11,10 @@
 package check
 
 import (
+	"cmp"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -76,11 +77,8 @@ func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) 
 
 	// By note, so that what a person has to open is together, and by check
 	// within it, so that the order does not move between two runs.
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].Path != out[j].Path {
-			return out[i].Path < out[j].Path
-		}
-		return out[i].Kind < out[j].Kind
+	slices.SortStableFunc(out, func(a, b domain.VaultProblem) int {
+		return cmp.Or(cmp.Compare(a.Path, b.Path), cmp.Compare(a.Kind, b.Kind))
 	})
 	return out, nil
 }
