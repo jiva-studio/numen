@@ -8,6 +8,8 @@ import {
   landing,
   getFreeName,
   checkFieldName,
+  checkHeadingName,
+  createSealedMap,
   orderNames,
   reorderFields,
   getStepLanding,
@@ -38,6 +40,10 @@ describe('orderNames', () => {
 
   it('leaves the order alone where what is dragged is not there', () => {
     expect(orderNames(NAMES, 'z', 'a')).toEqual(NAMES)
+  })
+
+  it('leaves the order alone where the first name lands on a name that is not there', () => {
+    expect(orderNames(NAMES, 'a', 'z')).toEqual(NAMES)
   })
 
   it('keeps one name alone where it is', () => {
@@ -130,6 +136,12 @@ describe('getStepLanding', () => {
   })
 })
 
+describe('getStepLanding, a name that is not there', () => {
+  it('lands nothing in either direction', () => {
+    expect(getStepLanding(['a', 'b', 'c'], 'z', 'down')).toBeUndefined()
+  })
+})
+
 describe('directionOf', () => {
   it('reads the two arrows along the order', () => {
     expect(directionOf('ArrowUp')).toBe('up')
@@ -170,6 +182,35 @@ describe('checkFieldName', () => {
 
   it('answers with the name as it would be written, without the space around it', () => {
     expect(checkFieldName(' Weight ', ['Height']).name).toBe('Weight')
+  })
+})
+
+describe('names written with space around them', () => {
+  it('answers a braced name as it would be written', () => {
+    expect(checkFieldName(' a{b ', []).name).toBe('a{b')
+  })
+
+  it('objects to a name taken by one written with space around it', () => {
+    expect(checkHeadingName('Height', ['Height ']).objection).toBe('taken')
+  })
+
+  it('numbers past a name taken with space around it', () => {
+    expect(getFreeName(['Field 1 '], 'Field')).toBe('Field 2')
+  })
+})
+
+describe('createSealedMap', () => {
+  it('is a map of nothing', () => {
+    expect(createSealedMap<string, string>().size).toBe(0)
+  })
+
+  it('refuses every way of putting something into it or taking something out', () => {
+    const sealed = createSealedMap<string, string>() as Map<string, string>
+    expect(() => sealed.set('a', 'b')).toThrow(TypeError)
+    expect(() => sealed.delete('a')).toThrow(TypeError)
+    expect(() => sealed.clear()).toThrow(TypeError)
+    expect(() => sealed.set('a', 'b')).toThrow('an empty default holds nothing')
+    expect(sealed.size).toBe(0)
   })
 })
 

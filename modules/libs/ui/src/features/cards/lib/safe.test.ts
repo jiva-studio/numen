@@ -118,6 +118,27 @@ describe('safe, what does not survive', () => {
     expect(cleanHtml('<img src="\\\\tracker.example/pixel.png">')).toBe('<img>')
   })
 
+  it('drops a comment standing inside a tag', () => {
+    expect(cleanHtml('<p>a<!--x-->b<span>c<!--y--></span></p>')).toBe('<p>ab<span>c</span></p>')
+  })
+
+  it('keeps a link and an image whose path holds a colon after a slash', () => {
+    expect(safe('<a href="notes/to:do.md">a</a>')).toBe('<a href="notes/to:do.md">a</a>')
+    expect(safe('<img src="img/a:b.png">')).toBe('<img src="img/a:b.png">')
+  })
+
+  it('keeps an image served from a path of this window, however many slashes it holds', () => {
+    expect(safe('<img src="/files/a.png">')).toBe('<img src="/files/a.png">')
+    expect(safe('<img src="files//a.png">')).toBe('<img src="files//a.png">')
+  })
+
+  it('reads an address only where it is a link or a source', () => {
+    expect(safe('<img src="a.png" alt="note: a llama">')).toBe(
+      '<img src="a.png" alt="note: a llama">',
+    )
+    expect(safe('<p title="//a llama">a</p>')).toBe('<p title="//a llama">a</p>')
+  })
+
   it('drops a comment, which is read differently by every parser', () => {
     expect(cleanHtml('a<!--[if IE]><script>alert(1)</script><![endif]-->b')).toBe('ab')
   })
@@ -162,6 +183,22 @@ describe('safe, the styles a card may carry', () => {
     expect(cleanHtml('<table><tr><td style="text-align:right">a</td></tr></table>')).toContain(
       '<td style="text-align:right">a</td>',
     )
+  })
+
+  it('keeps every declaration, one after the other', () => {
+    expect(cleanHtml('<span style="color: red; font-weight: bold">a</span>')).toBe(
+      '<span style="color: red; font-weight: bold">a</span>',
+    )
+  })
+
+  it('keeps a declaration with space before its colon', () => {
+    expect(cleanHtml('<span style="color : red">a</span>')).toBe(
+      '<span style="color : red">a</span>',
+    )
+  })
+
+  it('drops a declaration with no colon, whatever it is written as', () => {
+    expect(cleanHtml('<span style="colorx">a</span>')).toBe('<span>a</span>')
   })
 
   it('drops a declaration that would fetch something', () => {

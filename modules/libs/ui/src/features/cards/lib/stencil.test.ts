@@ -43,6 +43,23 @@ describe('fieldRows', () => {
   })
 })
 
+describe('STENCIL_WORDS', () => {
+  it('says what is wrong with a field name', () => {
+    expect(STENCIL_WORDS.objection('blank')).toBe('A field needs a name')
+    expect(STENCIL_WORDS.objection('taken')).toBe('That name is taken')
+    expect(STENCIL_WORDS.objection('braced')).toBe('A name cannot hold a brace')
+  })
+
+  it('says what is wrong with a face name', () => {
+    expect(STENCIL_WORDS.faceObjection('blank')).toBe('A face needs a name')
+    expect(STENCIL_WORDS.faceObjection('taken')).toBe('That name is taken')
+  })
+
+  it('names every stray field, separated by commas', () => {
+    expect(STENCIL_WORDS.stray(['A', 'B'])).toBe('Not a field: A, B')
+  })
+})
+
 describe('faceRows', () => {
   const FIELDS = ['Name', 'Height']
   const FACES: readonly StencilFace[] = [
@@ -91,6 +108,13 @@ describe('faceRows', () => {
     const face = faceRows(FACES, FIELDS, SAMPLE)[0]
     expect(face?.frontStray).toEqual([])
     expect(face?.backStray).toEqual([])
+  })
+
+  it('hands each face the names of the other faces', () => {
+    expect(faceRows(FACES, FIELDS, SAMPLE).map((each) => each.taken)).toEqual([
+      ['Name it'],
+      ['Recognise'],
+    ])
   })
 
   it('draws nothing for a stencil with no faces', () => {

@@ -151,6 +151,10 @@ describe('renderPreview', () => {
     expect(renderPreview('{{<img src=x>}}', [], [])).toBe('<mark>{{&lt;img src=x&gt;}}</mark>')
   })
 
+  it('stands an ampersand in a marked slot as text', () => {
+    expect(renderPreview('{{A&B}}', [], [])).toBe('<mark>{{A&amp;B}}</mark>')
+  })
+
   it('marks a slot whose name is written with space around it', () => {
     expect(renderPreview('{{ Height }}', VALUES, ['Height'])).toBe('<mark>{{ Height }}</mark>')
   })
