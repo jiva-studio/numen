@@ -22,6 +22,7 @@ var alone = map[string]bool{"br": true, "col": true, "hr": true, "img": true}
 // down to, and escaping is the last thing between a book and the window's DOM.
 func (m *Markup) HTML() string {
 	var out strings.Builder
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Grow sets capacity only; the page is the same at any size"
 	out.Grow(2 * m.Length)
 	write(&out, m.Nodes)
 	return out.String()

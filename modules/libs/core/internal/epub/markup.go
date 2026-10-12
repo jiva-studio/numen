@@ -228,6 +228,7 @@ func (b *builder) finish(text string, end int) []Node {
 
 	var last *Node
 	for _, node := range found {
+		// gomutants:disable-next-line BRANCH_IF reason="an element stands at the offset of the run that follows it, so reading it as a run assigns the same text"
 		if node.Name != "" {
 			continue
 		}
@@ -339,6 +340,7 @@ func inlineImage(url string) bool {
 func bare(url string) string {
 	return strings.Map(func(r rune) rune {
 		if r <= ' ' {
+			// gomutants:disable-next-line INTEGER_INCREMENT reason="strings.Map drops a rune for any negative result, -2 included"
 			return -1
 		}
 		return r

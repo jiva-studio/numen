@@ -186,6 +186,7 @@ func Read(raw []byte) (*Book, error) {
 	left := int64(mostPerBook)
 	for _, item := range pkg.spine {
 		if left <= 0 {
+			// gomutants:disable-next-line INVERT_LOOP_CTRL reason="left never grows, so every later document also ends the iteration"
 			break
 		}
 		markup, ok := readBounded(files[item.path], min(int64(mostPerDocument), left))
