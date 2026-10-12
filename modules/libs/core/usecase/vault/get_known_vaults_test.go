@@ -56,7 +56,7 @@ func TestEveryVaultOnTheListIsKnown(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 
-	known, err := vaults.NewKnownVaults(list, there).Execute("")
+	known, err := vaults.NewGetKnownVaults(list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +80,7 @@ func TestTheVaultOpenedLastIsTheCurrentOne(t *testing.T) {
 	list, there := twoRows()
 	list.last, list.isKept = list.rows[1], true
 
-	known, err := vaults.NewKnownVaults(list, there).Execute("")
+	known, err := vaults.NewGetKnownVaults(list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func TestTheVaultBeingWorkedStandsOverWhatTheListRemembers(t *testing.T) {
 	list, there := twoRows()
 	list.last, list.isKept = list.rows[1], true
 
-	known, err := vaults.NewKnownVaults(list, there).Execute("wren")
+	known, err := vaults.NewGetKnownVaults(list, there).Execute("wren")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestAListNobodyHasOpenedHasNoCurrentVault(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 
-	known, err := vaults.NewKnownVaults(list, there).Execute("")
+	known, err := vaults.NewGetKnownVaults(list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestAVaultWhoseFolderHasGoneIsMarkedAndStays(t *testing.T) {
 	t.Parallel()
 	list, _ := twoRows()
 
-	known, err := vaults.NewKnownVaults(list, folders{"wren": true}).Execute("")
+	known, err := vaults.NewGetKnownVaults(list, folders{"wren": true}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestABuildThatCannotOpenAVaultMarksNoFolderMissing(t *testing.T) {
 	t.Parallel()
 	list, _ := twoRows()
 
-	known, err := vaults.NewKnownVaults(list, nil).Execute("")
+	known, err := vaults.NewGetKnownVaults(list, nil).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +173,7 @@ func TestAnEmptyListIsNoVaults(t *testing.T) {
 	t.Parallel()
 	list := &theList{}
 
-	known, err := vaults.NewKnownVaults(list, folders{}).Execute("")
+	known, err := vaults.NewGetKnownVaults(list, folders{}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func TestAListThatCannotBeReadIsTheAnswer(t *testing.T) {
 	broken := errors.New("the list is not readable")
 	list := &theList{rows: []domain.Vault{{ID: "wren"}}, fails: broken}
 
-	known, err := vaults.NewKnownVaults(list, folders{}).Execute("")
+	known, err := vaults.NewGetKnownVaults(list, folders{}).Execute("")
 	if !errors.Is(err, broken) {
 		t.Fatalf("got %v", err)
 	}

@@ -33,7 +33,7 @@ func (a *API) WatchCardsDue(
 	ctx context.Context, _ *connect.Request[v1.WatchCardsDueRequest],
 	out *connect.ServerStream[v1.WatchCardsDueResponse],
 ) error {
-	known, err := vaults.NewKnownVaults(a.Registry, nil).Execute("")
+	known, err := vaults.NewGetKnownVaults(a.Registry, nil).Execute("")
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, err)
 	}

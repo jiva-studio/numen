@@ -18,28 +18,28 @@ type KnownVault struct {
 	IsCurrent bool
 }
 
-// KnownVaults is every vault this installation holds, each with what is true of
+// GetKnownVaults is every vault this installation holds, each with what is true of
 // it now.
 //
 // The list remembers where a vault was last seen and which one was opened last;
 // whether the folder is still there is a question for the machine. Every screen
 // showing the vaults asks both, and asking them together is what keeps one
 // screen from marking a vault another leaves unmarked.
-type KnownVaults struct {
+type GetKnownVaults struct {
 	registry port.VaultRegistry
 	folders  FolderCheck
 }
 
-// NewKnownVaults is what the list is read out of and what a vault's folder is
+// NewGetKnownVaults is what the list is read out of and what a vault's folder is
 // opened through.
-func NewKnownVaults(registry port.VaultRegistry, readers port.VaultReaders) KnownVaults {
-	return KnownVaults{registry: registry, folders: NewFolderCheck(readers)}
+func NewGetKnownVaults(registry port.VaultRegistry, readers port.VaultReaders) GetKnownVaults {
+	return GetKnownVaults{registry: registry, folders: NewFolderCheck(readers)}
 }
 
 // Execute is the list. showing is the vault being worked; the empty identity
 // asks the list which vault the next window opens, which is the answer where
 // nobody is sitting in front of one.
-func (u KnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
+func (u GetKnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 	held, err := u.registry.List()
 	if err != nil {
 		return nil, err

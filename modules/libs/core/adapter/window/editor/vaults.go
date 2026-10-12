@@ -172,7 +172,7 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
 	case errors.Is(err, vaults.ErrShowing):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING, true
-	case errors.Is(err, vaults.ErrUnknown):
+	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true
 	case errors.Is(err, port.ErrNoTrash):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH, true

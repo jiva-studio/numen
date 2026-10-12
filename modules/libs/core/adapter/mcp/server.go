@@ -83,10 +83,11 @@ type Notes struct {
 // to it. Without a list an agent is told of the vault it is working and of no
 // other, and each tool is served where what it works through is here.
 type Vaults struct {
-	KnownVaults *vaults.KnownVaults
-	GetVault    *vaults.GetVault
+	GetKnownVaults *vaults.GetKnownVaults
+	Find           *vaults.Find
 	// PickFolder puts this machine's own folder dialog in front of the person,
-	// for a vault added without a path.
+	// for a vault added without a path. Without it a folder is named or nothing
+	// is added.
 	PickFolder *vaults.PickFolder
 	// Add turns a folder into a vault, Rename is what a person calls one, and
 	// Unregister takes one off the list.
