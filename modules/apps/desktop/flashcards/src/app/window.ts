@@ -169,7 +169,6 @@ export const useWindow = () => {
   const refresh = async () => {
     if (on.value === 'session') return
     await count()
-    if (!vault.value) return
     await done.read(vault.value)
     await schedules.read(chosen.value, today.value)
   }

@@ -62,7 +62,10 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
     of.value = due.vault
 
     const held = await Promise.all(
-      due.decks.map((deck) => readDeckPreset(deps.presets, due.vault, deck.deck)),
+      due.decks.map(async (deck) => ({
+        deck,
+        result: await readDeckPreset(deps.presets, due.vault, deck.deck),
+      })),
     )
     if (of.value !== due.vault) return
 
@@ -71,6 +74,12 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
   }
 
   return { presets, byDeck, of, known, read, forget }
+}
+
+/** One deck of a vault, with the preset it is scheduled by or why that could not be read. */
+interface DeckRead {
+  deck: DeckCardsDue
+  result: DeckPresetResult
 }
 
 /** One preset while its decks are still being counted into it. */
@@ -101,19 +110,18 @@ const budgetOf = (settings: Settings): Budget => ({
  */
 const groupDecksIntoPresets = (
   vault: VaultCardsDue,
-  results: readonly DeckPresetResult[],
+  reads: readonly DeckRead[],
   today: string,
 ): Preset[] => {
-  const owed = new Map(vault.decks.map((one) => [one.deck, one]))
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
-  const at = countDecksIntoPresets(results, owed)
+  const at = countDecksIntoPresets(reads)
 
   const out = [...at.values()].map((one) => getPresetFromDecks(one, came.get(one.path), today))
 
   // A preset every one of whose decks is empty is answered for no deck, and so
   // is one whose settings could not be read, so both stand here on the count
   // alone, beside the presets nothing points at.
-  const why = getCommonError(results)
+  const why = getCommonError(reads.map((one) => one.result))
   for (const one of vault.presets) {
     if (at.has(one.preset)) continue
     out.push(getPresetFromCount(one, why, today))
@@ -123,23 +131,21 @@ const groupDecksIntoPresets = (
 
 /** The decks each preset schedules, counted into it, by the path it is filed under. */
 const countDecksIntoPresets = (
-  results: readonly DeckPresetResult[],
-  dueByDeck: ReadonlyMap<string, DeckCardsDue>,
+  reads: readonly DeckRead[],
 ): Map<string, PresetTally> => {
   const at = new Map<string, PresetTally>()
-  for (const one of results) {
-    if (!one.ok) continue
-    const { deck: named, held } = one.value
+  for (const { deck, result } of reads) {
+    if (!result.ok) continue
+    const { held } = result.value
     let into = at.get(held.path)
     if (!into) {
       into = createTally(held)
       at.set(held.path, into)
     }
-    into.decks.push(named)
+    into.decks.push(deck.deck)
     for (const problem of held.problems) into.problems.add(problem)
-    const deck = dueByDeck.get(named)
-    into.due += deck?.due ?? 0
-    into.fresh += deck?.new ?? 0
+    into.due += deck.due
+    into.fresh += deck.new
   }
   return at
 }
@@ -222,7 +228,9 @@ const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Pr
  * read; where they gave several, none of them is that preset's.
  */
 const getCommonError = (results: readonly DeckPresetResult[]): string => {
-  const errors = new Set(results.filter((one) => !one.ok).map((one) => (one.ok ? '' : one.error)))
-  if (errors.size === 0) return ''
-  return errors.size === 1 ? ([...errors][0] ?? '') : PRESET_UNREADABLE_MESSAGE
+  const errors = new Set<string>()
+  for (const one of results) if (!one.ok) errors.add(one.error)
+  const [first, second] = errors
+  if (first === undefined) return ''
+  return second === undefined ? first : PRESET_UNREADABLE_MESSAGE
 }

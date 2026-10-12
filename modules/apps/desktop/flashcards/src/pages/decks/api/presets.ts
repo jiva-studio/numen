@@ -29,7 +29,6 @@ export interface PresetsClient {
 
 /** What was answered about one deck's preset. */
 export interface DeckPreset {
-  readonly deck: string
   readonly held: {
     path: string
     name: string
@@ -58,7 +57,6 @@ export const readDeckPreset = async (
       return asFailure(formatErrorCodeMessage(answer.error) || PRESET_UNREADABLE_MESSAGE)
     }
     return asValue({
-      deck,
       held: {
         path: answer.preset.path,
         name: answer.preset.title,

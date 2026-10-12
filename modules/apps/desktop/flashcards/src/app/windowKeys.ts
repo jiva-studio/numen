@@ -67,8 +67,8 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
   const onVaultKey = (press: KeyboardEvent) => {
     const vaults = deps.getVaults()
     const at = getVaultForKey(press, vaults.length)
-    const one = at === null ? undefined : vaults[at]
-    if (!one || !one.isCounted) return
+    const one = vaults[at ?? -1]
+    if (!one?.isCounted) return
     press.preventDefault()
     deps.choose(one.vault)
   }
@@ -148,7 +148,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
       const vault = deps.getChosenVault()
       return vault ? onDeckKey(press, vault) : undefined
     }
-    if (on === 'session') onSessionKey(press)
+    onSessionKey(press)
   }
 
   return { onKeyDown }

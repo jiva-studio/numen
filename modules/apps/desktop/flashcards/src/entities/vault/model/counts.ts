@@ -97,10 +97,10 @@ export function useReviewCounter(deps: CountsDeps) {
   let taking: AbortController | null = null
 
   /** Whether the count on its way has begun handing back what it worked out. */
-  let sampled = false
+  let sampled: boolean
 
   /** Whether it was asked for again after it had. */
-  let again = false
+  let again: boolean
 
   const count = (): Promise<void> => {
     if (underway) {
@@ -233,7 +233,7 @@ export function useReviewCounter(deps: CountsDeps) {
       // A count the window ended is not something to tell a person about.
       if (!ends.signal.aborted) deps.reportError(why)
     } finally {
-      if (taking === ends) taking = null
+      taking = null
       isCounting.value = false
     }
     return !ends.signal.aborted

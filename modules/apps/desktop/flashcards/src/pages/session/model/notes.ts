@@ -45,18 +45,18 @@ export function useNotesPanel(deps: NotesPanelDeps) {
 
   const isWorking = ref(false)
 
-  /** The deck the notes in hand belong to, empty while none are. */
-  const activeDeck = ref('')
+  /** The deck the notes in hand belong to, and nothing while none are. */
+  let activeDeck: string | null = null
 
   /** The note the panel is to be opened on, where a link named one. */
   const at = ref('')
 
   /** The deck the answer being waited for was asked about. */
-  let pendingDeck = ''
+  let pendingDeck: string | null = null
 
   /** What the deck is joined to, asked for once and kept until the deck changes. */
   const fetchNotes = async (vault: string, deck: string) => {
-    if (activeDeck.value === deck) return
+    if (activeDeck === deck) return
     // What is in hand belongs to the deck behind this one, and a person must
     // never read one deck's notes under another deck's card.
     clearNotes()
@@ -69,14 +69,14 @@ export function useNotesPanel(deps: NotesPanelDeps) {
       if (pendingDeck !== deck) return
       notes.value = around.notes
       unread.value = around.unread
-      activeDeck.value = deck
+      activeDeck = deck
     } catch {
       // The deck could not be reached, and the window says so: the panel holds
       // nothing until it is asked again.
       if (pendingDeck !== deck) return
       notes.value = []
       unread.value = 0
-      activeDeck.value = ''
+      activeDeck = null
       deps.showNotice(words.unreached)
     } finally {
       if (pendingDeck === deck) isWorking.value = false
@@ -108,8 +108,8 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   const clearNotes = () => {
     notes.value = []
     unread.value = 0
-    activeDeck.value = ''
-    pendingDeck = ''
+    activeDeck = null
+    pendingDeck = null
   }
 
   /** The session is over: the panel holds nothing and is put away. */
