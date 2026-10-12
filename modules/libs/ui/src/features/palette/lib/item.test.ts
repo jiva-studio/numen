@@ -20,7 +20,7 @@ import {
   type PaletteGroup,
 } from './item'
 import {
-  getAction,
+  getActionId,
   commandKeyChord,
   getShortcuts,
   isActionsChord,
@@ -170,17 +170,17 @@ describe('a group arriving under the keyboard', () => {
 describe('what a key reaches', () => {
   it('reaches the first action, and the second with Shift', () => {
     const both = item('one', { actions: BOTH })
-    expect(getAction(both, false)).toBe('travel')
-    expect(getAction(both, true)).toBe('open')
+    expect(getActionId(both, false)).toBe('travel')
+    expect(getActionId(both, true)).toBe('open')
   })
 
   it('reaches nothing with Shift when only one action is offered', () => {
-    expect(getAction(item('one'), true)).toBe('')
+    expect(getActionId(item('one'), true)).toBe('')
   })
 
   it('reaches nothing on an item that cannot be chosen', () => {
-    expect(getAction(item('one', { disabled: true, actions: BOTH }), false)).toBe('')
-    expect(getAction(undefined, false)).toBe('')
+    expect(getActionId(item('one', { disabled: true, actions: BOTH }), false)).toBe('')
+    expect(getActionId(undefined, false)).toBe('')
   })
 
   it('hands out a key each, in the order the actions are offered', () => {

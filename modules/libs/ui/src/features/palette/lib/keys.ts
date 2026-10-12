@@ -26,7 +26,7 @@ export const getShortcuts = (item: PaletteItem | undefined): readonly PaletteSho
 }
 
 /** What the action Enter reaches is, and Shift and Enter the second. */
-export const getAction = (item: PaletteItem | undefined, second: boolean): string => {
+export const getActionId = (item: PaletteItem | undefined, second: boolean): string => {
   const actions = item && canChoose(item) ? item.actions : undefined
   return actions?.[second ? 1 : 0]?.id ?? ''
 }

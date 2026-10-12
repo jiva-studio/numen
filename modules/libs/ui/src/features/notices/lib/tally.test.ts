@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { activity, percentWord, getRate, getRemainingWord, getShare, SMOOTHING } from './tally'
+import { activity, percentWord, getRate, getRemainingWord, findShare, SMOOTHING } from './tally'
 
-describe('getShare', () => {
+describe('findShare', () => {
   it.each([
     { done: 0, total: 0, want: undefined, why: 'nothing to do has no share' },
     { done: 0, total: 10, want: 0, why: 'nothing done' },
@@ -11,7 +11,7 @@ describe('getShare', () => {
     { done: -1, total: 10, want: 0, why: 'a count below nothing is nothing' },
     { done: 1, total: -3, want: undefined, why: 'a total below nothing is no total' },
   ])('$why', ({ done, total, want }) => {
-    expect(getShare({ done, total })).toBe(want)
+    expect(findShare({ done, total })).toBe(want)
   })
 })
 

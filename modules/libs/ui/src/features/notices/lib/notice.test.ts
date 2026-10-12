@@ -12,7 +12,7 @@ import {
 } from './dwell'
 import { foldNotices } from './fold'
 import { measureMovement, type Movement } from './movement'
-import { getStillAway, getReadable, getTally, type Notice } from './notice'
+import { getStillAway, getReadable, findTally, type Notice } from './notice'
 
 const createNotice = (over: Partial<Notice> = {}): Notice => ({
   id: 'embedding',
@@ -42,19 +42,19 @@ describe('which notices stand in the corner', () => {
 
 describe('what a notice counts against', () => {
   it('counts where both halves of the count are known', () => {
-    expect(getTally(createNotice({ done: 3, total: 8 }))).toEqual({ done: 3, total: 8 })
+    expect(findTally(createNotice({ done: 3, total: 8 }))).toEqual({ done: 3, total: 8 })
   })
 
   it('counts nothing where either half is missing', () => {
     // A pass that has not said what it found has no total to draw against, and
     // a bar drawn against a total nobody gave means nothing.
-    expect(getTally(createNotice({ done: 3 }))).toBeUndefined()
-    expect(getTally(createNotice({ total: 8 }))).toBeUndefined()
-    expect(getTally(createNotice())).toBeUndefined()
+    expect(findTally(createNotice({ done: 3 }))).toBeUndefined()
+    expect(findTally(createNotice({ total: 8 }))).toBeUndefined()
+    expect(findTally(createNotice())).toBeUndefined()
   })
 
   it('counts a total of nothing, and leaves the share to whoever draws it', () => {
-    expect(getTally(createNotice({ done: 0, total: 0 }))).toEqual({ done: 0, total: 0 })
+    expect(findTally(createNotice({ done: 0, total: 0 }))).toEqual({ done: 0, total: 0 })
   })
 })
 

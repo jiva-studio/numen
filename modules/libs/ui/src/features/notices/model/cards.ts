@@ -21,7 +21,7 @@ import {
 import { getArrivalTimes, getDwell, getFinishedNotices, getShownNotices } from '../lib/dwell'
 import { foldNotices } from '../lib/fold'
 import { measureMovement, type Movement } from '../lib/movement'
-import { getStillAway, getReadable, getTally, type Notice } from '../lib/notice'
+import { getStillAway, getReadable, findTally, type Notice } from '../lib/notice'
 import { getRemainingWord } from '../lib/tally'
 import { useNoticeStack } from './stack'
 
@@ -108,7 +108,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   )
 
   const leftOn = (one: Notice): string => {
-    const tally = getTally(one)
+    const tally = findTally(one)
     if (tally === undefined) return ''
     return getRemainingWord(tally.total - tally.done, moving.value.get(one.id)?.rate ?? 0)
   }
@@ -142,7 +142,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   )
 
   /** Whether anything drawn is counting, and so has a rate to be read. */
-  const counting = computed(() => drawn.value.some((one) => getTally(one) !== undefined))
+  const counting = computed(() => drawn.value.some((one) => findTally(one) !== undefined))
 
   // The corner changes by itself while nothing else changes, so the moment is
   // watched for as long as something is waiting on it.
