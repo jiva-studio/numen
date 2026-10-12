@@ -313,7 +313,10 @@ func TestAnOldLocationThatIsNotThisVaultAnyMoreIsAMove(t *testing.T) {
 					return tc.id, tc.does, nil
 				},
 			}
-			moved := folder(t, "moved")
+			moved, err := filepath.EvalSymlinks(folder(t, "moved"))
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			v, err := vaults.NewAdd(identity, registry, time.Now).Execute(moved, "")
 			if err != nil {
