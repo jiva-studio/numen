@@ -88,52 +88,73 @@ func (c *Client) Proofread(ctx context.Context, pages []proofread.Batch) (map[in
 	defer stop()
 
 	queue := make(chan proofread.Batch)
-	go func() {
-		defer close(queue)
-		for _, page := range pages {
-			select {
-			case queue <- page:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
+	go queuePages(ctx, queue, pages)
 
-	var (
-		mu     sync.Mutex
-		out    = make(map[int]string, len(pages))
-		failed error
-		wg     sync.WaitGroup
-	)
+	run := &proofreadRun{out: make(map[int]string, len(pages)), stop: stop}
+	var wg sync.WaitGroup
 	for range min(c.getInFlight(), len(pages)) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for page := range queue {
-				reply, err := c.sendWithRetry(ctx, page)
-				mu.Lock()
-				switch {
-				case err != nil:
-					if failed == nil {
-						failed = err
-						stop()
-					}
-				case reply != "":
-					out[page.Number] = reply
-				}
-				mu.Unlock()
-				if err != nil {
-					return
-				}
-			}
+			c.work(ctx, queue, run)
 		}()
 	}
 	wg.Wait()
 
-	if failed != nil {
-		return nil, failed
+	if run.failed != nil {
+		return nil, run.failed
 	}
-	return out, nil
+	return run.out, nil
+}
+
+// queuePages hands the pages on until they are all taken or the context ends,
+// and closes the queue.
+func queuePages(ctx context.Context, queue chan<- proofread.Batch, pages []proofread.Batch) {
+	defer close(queue)
+	for _, page := range pages {
+		select {
+		case queue <- page:
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+// proofreadRun is what the workers of one run share: the replies by page, and
+// the first failure, which stops the run.
+type proofreadRun struct {
+	mu     sync.Mutex
+	out    map[int]string
+	failed error
+	stop   context.CancelFunc
+}
+
+// record keeps what came back about a page. The first failure is kept and stops
+// the run.
+func (r *proofreadRun) record(page proofread.Batch, reply string, err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	switch {
+	case err != nil:
+		if r.failed == nil {
+			r.failed = err
+			r.stop()
+		}
+	case reply != "":
+		r.out[page.Number] = reply
+	}
+}
+
+// work asks about the pages of the queue one at a time, and ends at the first
+// page that fails.
+func (c *Client) work(ctx context.Context, queue <-chan proofread.Batch, run *proofreadRun) {
+	for page := range queue {
+		reply, err := c.sendWithRetry(ctx, page)
+		run.record(page, reply, err)
+		if err != nil {
+			return
+		}
+	}
 }
 
 type message struct {

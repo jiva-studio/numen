@@ -61,18 +61,14 @@ func (c Catalogue) debounce(
 	raw <-chan notify.EventInfo,
 	changed chan<- []string,
 ) {
-	pending := map[string]bool{}
-	// ready is what a hold has already closed over, waiting to be taken. It
-	// keeps growing while nobody takes it: one batch, never two.
-	var ready []string
-	inReady := map[string]bool{}
+	batch := newThemeBatch()
 	var held <-chan time.Time
 
 	for {
 		// The delivery arm is only in the select when there is something to
 		// deliver; a nil channel is never chosen.
 		var out chan<- []string
-		if len(ready) > 0 {
+		if len(batch.ready) > 0 {
 			out = changed
 		}
 
@@ -80,9 +76,8 @@ func (c Catalogue) debounce(
 		case <-ctx.Done():
 			return
 
-		case out <- ready:
-			ready = nil
-			clear(inReady)
+		case out <- batch.ready:
+			batch.clearReady()
 
 		case event, open := <-raw:
 			if !open {
@@ -92,7 +87,7 @@ func (c Catalogue) debounce(
 			if !is {
 				continue
 			}
-			pending[name] = true
+			batch.pending[name] = true
 			// Measured from the first event of a batch, so a folder being
 			// written to continuously is still reported.
 			if held == nil {
@@ -101,15 +96,40 @@ func (c Catalogue) debounce(
 
 		case <-held:
 			held = nil
-			for name := range pending {
-				if !inReady[name] {
-					inReady[name] = true
-					ready = append(ready, name)
-				}
-			}
-			clear(pending)
+			batch.closeHold()
 		}
 	}
+}
+
+// themeBatch is the themes an event named, and the themes a hold has closed
+// over.
+type themeBatch struct {
+	pending map[string]bool
+	// ready is what a hold has already closed over, waiting to be taken. It
+	// keeps growing while nobody takes it: one batch, never two.
+	ready   []string
+	inReady map[string]bool
+}
+
+func newThemeBatch() *themeBatch {
+	return &themeBatch{pending: map[string]bool{}, inReady: map[string]bool{}}
+}
+
+// clearReady empties the ready themes once they are taken.
+func (b *themeBatch) clearReady() {
+	b.ready = nil
+	clear(b.inReady)
+}
+
+// closeHold moves the pending themes to the ready ones, each once.
+func (b *themeBatch) closeHold() {
+	for name := range b.pending {
+		if !b.inReady[name] {
+			b.inReady[name] = true
+			b.ready = append(b.ready, name)
+		}
+	}
+	clear(b.pending)
 }
 
 // getThemeName is the theme an event is about, where it is about one. A file one level

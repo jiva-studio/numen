@@ -25,43 +25,60 @@ const (
 // starts is where each page's text begins, so an entry pointing past the pages
 // that were read names nothing and is dropped.
 func (d *document) outline(starts []int) []Part {
-	var parts []Part
-	seen := map[references.FPDF_BOOKMARK]bool{}
+	w := &outlineWalk{doc: d, starts: starts, seen: map[references.FPDF_BOOKMARK]bool{}}
+	w.walk(nil, 1)
+	return w.parts
+}
 
-	var walk func(bookmark *references.FPDF_BOOKMARK, level int)
-	walk = func(bookmark *references.FPDF_BOOKMARK, level int) {
-		if level > mostDepth {
-			return
-		}
-		child, err := d.worker.FPDFBookmark_GetFirstChild(&requests.FPDFBookmark_GetFirstChild{
-			Document: d.ref, Bookmark: bookmark,
-		})
-		if err != nil || child.Bookmark == nil {
-			return
-		}
-		for at := child.Bookmark; at != nil; {
-			if len(parts) >= mostEntries || seen[*at] {
-				// An outline that points back at itself is read once.
-				return
-			}
-			seen[*at] = true
+// outlineWalk is the reading of an outline: the parts found, and the entries
+// already read.
+type outlineWalk struct {
+	doc    *document
+	starts []int
+	parts  []Part
+	seen   map[references.FPDF_BOOKMARK]bool
+}
 
-			if part, ok := d.readPart(*at, level, starts); ok {
-				parts = append(parts, part)
-			}
-			walk(at, level+1)
-
-			next, err := d.worker.FPDFBookmark_GetNextSibling(&requests.FPDFBookmark_GetNextSibling{
-				Document: d.ref, Bookmark: *at,
-			})
-			if err != nil {
-				return
-			}
-			at = next.Bookmark
-		}
+// walk reads the children of a bookmark, each with what lies under it, down to
+// the deepest level the outline is read to.
+func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
+	if level > mostDepth {
+		return
 	}
-	walk(nil, 1)
-	return parts
+	d := w.doc
+	child, err := d.worker.FPDFBookmark_GetFirstChild(&requests.FPDFBookmark_GetFirstChild{
+		Document: d.ref, Bookmark: bookmark,
+	})
+	if err != nil || child.Bookmark == nil {
+		return
+	}
+	for at := child.Bookmark; at != nil; {
+		if !w.visit(at, level) {
+			return
+		}
+		next, err := d.worker.FPDFBookmark_GetNextSibling(&requests.FPDFBookmark_GetNextSibling{
+			Document: d.ref, Bookmark: *at,
+		})
+		if err != nil {
+			return
+		}
+		at = next.Bookmark
+	}
+}
+
+// visit reads one entry and what lies under it, and says whether the walk
+// goes on. An outline that points back at itself is read once.
+func (w *outlineWalk) visit(at *references.FPDF_BOOKMARK, level int) bool {
+	if len(w.parts) >= mostEntries || w.seen[*at] {
+		return false
+	}
+	w.seen[*at] = true
+
+	if part, ok := w.doc.readPart(*at, level, w.starts); ok {
+		w.parts = append(w.parts, part)
+	}
+	w.walk(at, level+1)
+	return true
 }
 
 // readPart is one outline entry, as a name and the offset of the page it leads to.

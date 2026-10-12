@@ -92,28 +92,32 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 	}
 
 	moved := make(chan struct{}, 1)
-	go func() {
-		defer notify.Stop(raw)
-		defer close(moved)
-		for {
-			select {
-			case <-ctx.Done():
+	go relayFileEvents(ctx, raw, name, moved)
+	return moved, nil
+}
+
+// relayFileEvents reports each event under the file's name until the context
+// ends, then stops the watch and closes the report. One waiting message is as
+// much as this says: a listener that has not read the last one is a listener
+// about to ask anyway.
+func relayFileEvents(ctx context.Context, raw chan notify.EventInfo, name string, moved chan<- struct{}) {
+	defer notify.Stop(raw)
+	defer close(moved)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, open := <-raw:
+			if !open {
 				return
-			case event, open := <-raw:
-				if !open {
-					return
-				}
-				if !strings.HasPrefix(filepath.Base(event.Path()), name) {
-					continue
-				}
-				// One waiting message is as much as this says: a listener that
-				// has not read the last one is a listener about to ask anyway.
-				select {
-				case moved <- struct{}{}:
-				default:
-				}
+			}
+			if !strings.HasPrefix(filepath.Base(event.Path()), name) {
+				continue
+			}
+			select {
+			case moved <- struct{}{}:
+			default:
 			}
 		}
-	}()
-	return moved, nil
+	}
 }

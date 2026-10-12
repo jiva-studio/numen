@@ -71,17 +71,8 @@ type Embedder struct {
 // identity is what the vectors this model returns are kept under, which the
 // settings decide.
 func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalModel, progress embed.FetchProgress) (*Embedder, error) {
-	if identity.Dimensions <= 0 {
-		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
-	}
-	// Where a text is cut off is part of what a vector is, and this machine is
-	// what does the cutting. A model run here says where.
-	if identity.MaxTokens <= 0 {
-		return nil, fmt.Errorf("%s: where a text is cut off must be known before a vector is stored", cfg.Name)
-	}
-	if identity.Pooling != "" && identity.Pooling != embed.PoolMean && identity.Pooling != embed.PoolHead {
-		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
-			identity.Name, identity.Pooling, embed.PoolMean, embed.PoolHead)
+	if err := embed.CheckIdentity(identity, cfg.Name); err != nil {
+		return nil, err
 	}
 	paths, err := embed.Locate(ctx, cfg, progress)
 	if err != nil {
@@ -112,18 +103,11 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	}
 
 	names, _ := net.Inputs()
-	for _, name := range names {
-		switch name {
-		case inputIDs, attentionMask:
-		case tokenTypeIDs:
-			e.isTyped = true
-		default:
-			return nil, fmt.Errorf("%s asks for an input this adapter does not have: %s", cfg.Name, name)
-		}
+	isTyped, err := checkInputs(cfg.Name, names)
+	if err != nil {
+		return nil, err
 	}
-	if !slices.Contains(names, inputIDs) || !slices.Contains(names, attentionMask) {
-		return nil, fmt.Errorf("%s takes %v, and a sentence encoder takes tokens and a mask", cfg.Name, names)
-	}
+	e.isTyped = isTyped
 
 	output, pooled, err := e.chooseOutput()
 	if err != nil {
@@ -152,6 +136,25 @@ func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalMode
 	// One entry per sequence length the buckets allow, and two to spare.
 	e.exec = exec.SetMaxCache(e.maxTokens/tokenStep + 2)
 	return e, nil
+}
+
+// checkInputs says whether the model takes token types, and an error where it
+// asks for an input this adapter does not have or lacks the tokens or the mask.
+func checkInputs(model string, names []string) (bool, error) {
+	isTyped := false
+	for _, name := range names {
+		switch name {
+		case inputIDs, attentionMask:
+		case tokenTypeIDs:
+			isTyped = true
+		default:
+			return false, fmt.Errorf("%s asks for an input this adapter does not have: %s", model, name)
+		}
+	}
+	if !slices.Contains(names, inputIDs) || !slices.Contains(names, attentionMask) {
+		return false, fmt.Errorf("%s takes %v, and a sentence encoder takes tokens and a mask", model, names)
+	}
+	return isTyped, nil
 }
 
 // Close releases the model.
