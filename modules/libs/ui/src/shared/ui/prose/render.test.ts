@@ -135,4 +135,28 @@ describe('prose', () => {
     expect(gone!.attributes('data-reaches')).toBe('nothing')
     expect(here!.attributes('data-reaches')).toBeUndefined()
   })
+
+  it('draws a rule', () => {
+    expect(mountProse('above\n\n---\n\nbelow').find('hr').exists()).toBe(true)
+  })
+
+  it('keeps an indented block whole', () => {
+    expect(mountProse('    let a = 1\n    let b = 2').find('pre code').text()).toBe(
+      'let a = 1\nlet b = 2',
+    )
+  })
+
+  it('joins the lines of a paragraph with a space', () => {
+    expect(mountProse('first line\nsecond line').find('p').text()).toBe('first line second line')
+  })
+
+  it('breaks the line where two spaces end it', () => {
+    expect(mountProse('first  \nsecond').find('p br').exists()).toBe(true)
+  })
+
+  it('draws an image with its address and its words', () => {
+    const image = mountProse('![a chart](https://example.com/chart.png)').find('img')
+    expect(image.attributes('src')).toBe('https://example.com/chart.png')
+    expect(image.attributes('alt')).toBe('a chart')
+  })
 })
