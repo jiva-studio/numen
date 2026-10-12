@@ -224,13 +224,12 @@ function submitHighlighted() {
 .plex-quick-link {
   position: absolute;
   z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transform: translate(-50%, -50%);
+  inline-size: 0;
+  block-size: 0;
   pointer-events: auto;
   font-family: var(--numen-font-sans);
   --plex-quick-link-width: 14rem;
+  --plex-quick-link-height: 2rem;
 }
 .plex-quick-link__node,
 .plex-quick-link__dropdown {
@@ -239,8 +238,11 @@ function submitHighlighted() {
   border-radius: var(--radius, 0.375rem);
 }
 .plex-quick-link__node {
+  position: absolute;
+  margin-inline-start: calc(var(--plex-quick-link-width) / -2);
+  margin-block-start: calc(var(--plex-quick-link-height) / -2);
   inline-size: var(--plex-quick-link-width);
-  block-size: 2rem;
+  block-size: var(--plex-quick-link-height);
   padding-inline: var(--numen-node-padding, 0.625rem);
   display: flex;
   align-items: center;
@@ -265,7 +267,7 @@ function submitHighlighted() {
 }
 .plex-quick-link__dropdown {
   position: absolute;
-  top: calc(100% + 0.375rem);
+  top: calc(var(--plex-quick-link-height) / 2 + 0.375rem);
   inset-inline-start: 50%;
   margin-inline-start: calc(var(--plex-quick-link-width) / -2);
   inline-size: var(--plex-quick-link-width);
