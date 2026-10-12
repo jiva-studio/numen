@@ -80,3 +80,20 @@ func TestTheStampIsAnInstant(t *testing.T) {
 		t.Errorf("the stamp is %v, and a file's modification time is an instant", held.Type)
 	}
 }
+
+func TestAFingerprintIsZeroOnlyWhenItNamesNothing(t *testing.T) {
+	if !(domain.Fingerprint{}).IsZero() {
+		t.Error("an empty fingerprint is not zero")
+	}
+	at := time.Date(2026, 9, 3, 11, 4, 5, 0, time.UTC)
+	for name, f := range map[string]domain.Fingerprint{
+		"path": {Path: "a.md"},
+		"kind": {Kind: domain.KindNote},
+		"size": {Size: 1},
+		"time": {ModTime: at},
+	} {
+		if f.IsZero() {
+			t.Errorf("a fingerprint with only its %s set is zero", name)
+		}
+	}
+}

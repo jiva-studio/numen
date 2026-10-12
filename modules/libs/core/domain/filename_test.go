@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -161,6 +162,91 @@ func TestAFilenameKeepsWhatALinkCanBeWrittenWith(t *testing.T) {
 	} {
 		if name, _ := domain.GetReducedFilename(title); name != want {
 			t.Errorf("%q is filed as %q, want %q", title, name, want)
+		}
+	}
+}
+
+func TestFilenameAnswersForATitleThatCanBeFiled(t *testing.T) {
+	name, exact, err := domain.Filename("Entropy")
+	if err != nil || name != "Entropy" || !exact {
+		t.Errorf("got %q, exact %v, err %v", name, exact, err)
+	}
+
+	name, exact, err = domain.Filename("a/b")
+	if err != nil || name != "a-b" || exact {
+		t.Errorf("got %q, exact %v, err %v", name, exact, err)
+	}
+}
+
+func TestFilenameRefusesATitleThatLeavesNoFilename(t *testing.T) {
+	for _, title := range []string{"", "   ", "...", "\x00"} {
+		name, exact, err := domain.Filename(title)
+		if !errors.Is(err, domain.ErrUnnameable) {
+			t.Errorf("%q: err %v", title, err)
+		}
+		if name != "" || exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+		if err != nil && !strings.Contains(err.Error(), "nothing a file can be named after") {
+			t.Errorf("%q: the reason is lost: %v", title, err)
+		}
+	}
+}
+
+func TestFilenameRefusesATitleOfMoreThanOneLine(t *testing.T) {
+	for _, title := range []string{"first\nsecond", "first\rsecond", "first\r\nsecond"} {
+		name, exact, err := domain.Filename(title)
+		if !errors.Is(err, domain.ErrUnnameable) {
+			t.Errorf("%q: err %v", title, err)
+		}
+		if name != "" || exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+		if err != nil && !strings.Contains(err.Error(), "more than one line") {
+			t.Errorf("%q: the reason is lost: %v", title, err)
+		}
+	}
+}
+
+func TestATitleOfTheLongestLengthIsFiledUnderItself(t *testing.T) {
+	longest := strings.Repeat("x", 120)
+	name, exact := domain.GetReducedFilename(longest)
+	if name != longest || !exact {
+		t.Errorf("%d bytes were filed as %d bytes, exact %v", len(longest), len(name), exact)
+	}
+
+	name, exact = domain.GetReducedFilename(longest + "x")
+	if name != longest || exact {
+		t.Errorf("121 bytes were filed as %d bytes, exact %v", len(name), exact)
+	}
+}
+
+// The cut lands after the last character that fits whole, whatever width the
+// characters are and wherever in one the limit falls.
+func TestATitleTooLongIsCutAfterTheLastCharacterThatFits(t *testing.T) {
+	for _, char := range []string{"é", "ṛ", "😀"} {
+		for pad := 0; pad < 4; pad++ {
+			title := strings.Repeat("a", pad) + strings.Repeat(char, 150)
+			name, exact := domain.GetReducedFilename(title)
+			if exact || !utf8.ValidString(name) || !strings.HasPrefix(title, name) {
+				t.Fatalf("%d+%q: got %d bytes, exact %v", pad, char, len(name), exact)
+			}
+			if len(name) > 120 || len(name)+len(char) <= 120 {
+				t.Errorf("pad %d, %q: cut at %d bytes", pad, char, len(name))
+			}
+		}
+	}
+}
+
+func TestOnlyTheFourCharacterDeviceNamesAreDevices(t *testing.T) {
+	for title, device := range map[string]bool{
+		"COM1": true, "COM9": true, "LPT1": true, "LPT9": true,
+		"COM0": false, "LPT0": false, "COM:": false, "COMA": false,
+		"COM12": false, "COM": false, "XYZ1": false, "CO1": false,
+	} {
+		name, _ := domain.GetReducedFilename(title)
+		if got := name != title; got != device {
+			t.Errorf("%q: filed as %q, device %v", title, name, got)
 		}
 	}
 }
