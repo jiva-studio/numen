@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -177,6 +178,9 @@ func TestRerankReportsARowThatCannotBeRead(t *testing.T) {
 	if err == nil {
 		t.Fatalf("got %v and no error", got)
 	}
+	if strings.Contains(err.Error(), "dimensions") {
+		t.Errorf("the failure is the width of a vector that was never read: %v", err)
+	}
 	if got != nil {
 		t.Errorf("an error came with %v", got)
 	}
@@ -226,7 +230,7 @@ func TestFormatInt64s(t *testing.T) {
 
 func TestFormatInt64sFillsItsBufferOnce(t *testing.T) {
 	for _, nums := range [][]int64{
-		{100000000000},
+		{10000000000, 10000000000, 100000000000},
 		{10000000000, 20000000000, 30000000000, 40000000000, 50000000000},
 	} {
 		if n := testing.AllocsPerRun(20, func() { _ = formatInt64s(nums) }); n > 2 {
