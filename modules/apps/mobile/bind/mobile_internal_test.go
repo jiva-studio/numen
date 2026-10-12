@@ -18,9 +18,9 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"unsafe"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
@@ -709,6 +709,9 @@ func closeListenersOf(t *testing.T, server *http.Server) {
 	t.Helper()
 	field := reflect.ValueOf(server).Elem().FieldByName("listeners")
 	held := reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+	for until := time.Now().Add(5 * time.Second); held.Len() == 0 && time.Now().Before(until); {
+		time.Sleep(10 * time.Millisecond)
+	}
 	if held.Len() == 0 {
 		t.Fatal("the server is accepting on no listener")
 	}
