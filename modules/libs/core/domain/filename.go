@@ -60,7 +60,7 @@ func GetReducedFilename(title string) (name string, exact bool) {
 
 	name = trimEnds(b.String())
 	if len(name) > maxFilename {
-		name = trimEnds(cutRunes(name, maxFilename))
+		name = trimEnds(truncateAtRuneBoundary(name, maxFilename))
 	}
 	if name == "" {
 		return "", false
@@ -97,8 +97,8 @@ func trimEnds(name string) string {
 	})
 }
 
-// cutRunes shortens to at most n bytes without splitting a character in half.
-func cutRunes(s string, n int) string {
+// truncateAtRuneBoundary shortens to at most n bytes without splitting a character in half.
+func truncateAtRuneBoundary(s string, n int) string {
 	if len(s) <= n {
 		return s
 	}

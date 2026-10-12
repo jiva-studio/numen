@@ -87,7 +87,7 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, 
 		// A line opening with the digits the row opens with, and no bar to tell
 		// the two apart, is a row whose number was left out: the line's own
 		// first word reads as the number, and the batch is refused.
-		if !barred && strings.HasPrefix(strings.TrimSpace(was), opening(row)) {
+		if !barred && strings.HasPrefix(strings.TrimSpace(was), readLeadingDigits(row)) {
 			return nil, false, false
 		}
 		// An answer of nothing, or of marks that are not words, over a line that
@@ -103,7 +103,7 @@ func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, 
 		// What is dropped is a correction that changes nothing. A run changes
 		// the lines whatever it says: they become one.
 		if through == at {
-			if isFronted(was, text) {
+			if isPrefixedBySymbols(was, text) {
 				continue
 			}
 			if maxDistance > 0 && EditDistance(was, text) > maxDistance {
@@ -161,7 +161,7 @@ func GetGatheredLines(asked []Batch, replies map[int]string, maxDistance float64
 // A row opens with the number, and a bar, spaces, or both stand between the
 // number and the line.
 func readRow(row string) (at, through int, text string, barred, ok bool) {
-	digits := opening(row)
+	digits := readLeadingDigits(row)
 	if digits == "" || len(digits) == len(row) {
 		return 0, 0, "", false, false
 	}
@@ -174,7 +174,7 @@ func readRow(row string) (at, through int, text string, barred, ok bool) {
 
 	// A run of lines put together is written as the first and the last of them.
 	if rest[0] == '-' {
-		last := opening(rest[1:])
+		last := readLeadingDigits(rest[1:])
 		if last == "" {
 			return 0, 0, "", false, false
 		}
@@ -195,9 +195,9 @@ func readRow(row string) (at, through int, text string, barred, ok bool) {
 	return at, through, strings.TrimSpace(strings.TrimPrefix(rest, "|")), barred, true
 }
 
-// opening is the run of digits a row opens with, and nothing for a row opening
+// readLeadingDigits is the run of digits a row opens with, and nothing for a row readLeadingDigits
 // with anything else.
-func opening(row string) string {
+func readLeadingDigits(row string) string {
 	digits := 0
 	for digits < len(row) && row[digits] >= '0' && row[digits] <= '9' {
 		digits++
@@ -205,13 +205,13 @@ func opening(row string) string {
 	return row[:digits]
 }
 
-// isFronted is a correction that says what the line says with something
+// isPrefixedBySymbols is a correction that says what the line says with something
 // wordless put in front of it.
 //
 // A separator this does not know — a dash, an arrow, a colon — stands where the
 // line begins, and the letters either side of it are the same, so nothing that
 // counts letters sees it.
-func isFronted(was, text string) bool {
+func isPrefixedBySymbols(was, text string) bool {
 	was = strings.TrimSpace(was)
 	if was == "" || !strings.HasSuffix(text, was) {
 		return false

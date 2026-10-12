@@ -83,7 +83,7 @@ func (t *Tasks) Set(task Task) {
 		t.order = append(t.order, task.ID)
 	}
 	t.held[task.ID] = task
-	t.tell()
+	t.notifyWatchers()
 }
 
 // Remove takes one task out. A task that is not there is the outcome asked for.
@@ -95,7 +95,7 @@ func (t *Tasks) Remove(id string) {
 	}
 	delete(t.held, id)
 	t.order = slices.DeleteFunc(t.order, func(at string) bool { return at == id })
-	t.tell()
+	t.notifyWatchers()
 }
 
 // Clear takes all tasks out.
@@ -107,7 +107,7 @@ func (t *Tasks) Clear() {
 	}
 	t.held = map[string]Task{}
 	t.order = nil
-	t.tell()
+	t.notifyWatchers()
 }
 
 // List is what is being done now.
@@ -154,12 +154,12 @@ func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 	return told
 }
 
-// tell hands the list to everybody watching, dropping what a listener has not
+// notifyWatchers hands the list to everybody watching, dropping what a listener has not
 // read yet.
 //
 // The caller holds the lock from the change through the telling, so the last
 // list a listener is left holding is the newest one.
-func (t *Tasks) tell() {
+func (t *Tasks) notifyWatchers() {
 	list := t.list()
 	for _, told := range t.waiting {
 		select {

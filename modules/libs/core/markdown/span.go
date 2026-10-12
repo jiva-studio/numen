@@ -33,7 +33,7 @@ func Where(text, wanted string) (at []Span, plainly bool) {
 	if found := occurrences(text, wanted); len(found) > 0 {
 		return found, false
 	}
-	for _, read := range []func(string) reading{plain, loose} {
+	for _, read := range []func(string) mappedText{foldPunctuation, foldSpacing} {
 		held, sought := read(text), read(wanted)
 		if sought.text == "" {
 			continue
@@ -66,16 +66,16 @@ func occurrences(text, wanted string) []Span {
 	return at
 }
 
-// A reading is text as one of the readings has it, and where each of its bytes
+// A mappedText is text as one of the readings has it, and where each of its bytes
 // came from. There is one more offset than there are bytes, so the end of a
 // span reads back as well as its beginning.
-type reading struct {
+type mappedText struct {
 	text string
 	at   []int
 }
 
-// plain reads typographic punctuation and spacing as the marks they stand for.
-func plain(text string) reading {
+// foldPunctuation reads typographic punctuation and spacing as the marks they stand for.
+func foldPunctuation(text string) mappedText {
 	var out strings.Builder
 	at := make([]int, 0, len(text)+1)
 	for from, r := range text {
@@ -85,12 +85,12 @@ func plain(text string) reading {
 			at = append(at, from)
 		}
 	}
-	return reading{text: out.String(), at: append(at, len(text))}
+	return mappedText{text: out.String(), at: append(at, len(text))}
 }
 
-// loose reads a run of spacing inside a line as one space. A break between
+// foldSpacing reads a run of spacing inside a line as one space. A break between
 // lines is spacing of its own and is left where it is.
-func loose(text string) reading {
+func foldSpacing(text string) mappedText {
 	var out strings.Builder
 	at := make([]int, 0, len(text)+1)
 	spacing := false
@@ -113,7 +113,7 @@ func loose(text string) reading {
 			at = append(at, from)
 		}
 	}
-	return reading{text: out.String(), at: append(at, len(text))}
+	return mappedText{text: out.String(), at: append(at, len(text))}
 }
 
 // getPlainRune is the mark a rune stands for, or the rune itself. Dashes, quotes and
@@ -179,7 +179,7 @@ func canSpanBeginAt(text string, at int) bool {
 	if at < len(text) && !utf8.RuneStart(text[at]) {
 		return false
 	}
-	return spacing(text[at-1])
+	return isSpace(text[at-1])
 }
 
 // canSpanEndAt reports whether a span may end at `at`: at the end of the text, or
@@ -191,10 +191,10 @@ func canSpanEndAt(text string, at int) bool {
 	if !utf8.RuneStart(text[at]) {
 		return false
 	}
-	return spacing(text[at])
+	return isSpace(text[at])
 }
 
-func spacing(b byte) bool {
+func isSpace(b byte) bool {
 	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }
 

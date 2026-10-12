@@ -21,9 +21,9 @@ import (
 type danglingCheck struct{ queries port.ProblemQueries }
 
 func (danglingCheck) Name() domain.Check { return domain.CheckDangling }
-func (danglingCheck) IsQuiet() bool      { return true }
+func (danglingCheck) IsOptIn() bool      { return true }
 
-func (c danglingCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
+func (c danglingCheck) FindProblems(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
 	found, err := c.queries.GetDanglingLinks(ctx, v.ID)
 	if err != nil {
 		return nil, err
