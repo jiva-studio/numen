@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -21,7 +22,7 @@ func TestAFolderInsideAVaultHasNoRoom(t *testing.T) {
 	if !errors.Is(err, domain.ErrOverlaps) {
 		t.Fatalf("CheckRoom error = %v, want ErrOverlaps", err)
 	}
-	if got := err.Error(); !contains(got, "Vault /notes") || !contains(got, "is inside") {
+	if got := err.Error(); !strings.Contains(got, "Vault /notes") || !strings.Contains(got, "is inside") {
 		t.Errorf("CheckRoom error = %q, want it to name the vault it lies inside", got)
 	}
 }
@@ -32,7 +33,7 @@ func TestAFolderHoldingAVaultHasNoRoom(t *testing.T) {
 	if !errors.Is(err, domain.ErrOverlaps) {
 		t.Fatalf("CheckRoom error = %v, want ErrOverlaps", err)
 	}
-	if got := err.Error(); !contains(got, "Vault /notes/deep") || !contains(got, "holds") {
+	if got := err.Error(); !strings.Contains(got, "Vault /notes/deep") || !strings.Contains(got, "holds") {
 		t.Errorf("CheckRoom error = %q, want it to name the vault it holds", got)
 	}
 }
