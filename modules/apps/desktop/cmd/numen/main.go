@@ -14,6 +14,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path"
 	"runtime/debug"
@@ -112,65 +113,19 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
 
-	// Before the window: every page this process reads is read through the
-	// runtime made here, and one made after the window reads a page as nothing.
-	// A machine holding no runtime yet is told so by the first recognition.
-	if err := cfg.PrepareRecogniser(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
-	}
-	pages, err := editor.Pages()
+	pages, opened, err := openInstallation(ctx, cfg, vault)
 	if err != nil {
 		return err
 	}
-
-	made, err := cfg.GetEditorAssembly(ctx)
-	if err != nil {
-		return err
-	}
-	opened, err := editor.Open(ctx, made, vault, os.Stdout)
-	if err != nil {
-		return err
-	}
-
-	// The themes are the installation's, and a folder that could not be made
-	// leaves the ones this binary ships. A theme the settings name that the
-	// catalogue has not is said where the person is.
-	themes, wrong := cfg.Themes(opened.SayTheme)
-	if wrong != nil {
-		fmt.Fprintf(os.Stdout, "themes: %v\n", wrong)
-	}
-	opened.API.Themes = themes
+	loadThemes(cfg, opened)
 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.
 	opened.Report(chosen.Notices)
 
-	// The agents' endpoint on the vault in the window, let in once the window is
-	// built.
-	reachable := &agents.Endpoint{
-		Serve: func() (func() error, error) {
-			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
-		},
-		GetVault:       opened.GetCurrentVault,
-		SetAgent:       opened.API.SetAgent,
-		SetUnreachable: func(said string) { opened.API.Unreachable.Store(said) },
-		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
-	}
-
+	reachable := makeEndpoint(ctx, cfg, opened, mcp)
 	going := &vaultFlush{flush: opened.FlushPending}
-
-	// Everything behind the settling, in the order each part needs the next: the
-	// agents are let go of, then the scan and the follower stop and the database
-	// closes, then what they ran under ends.
-	behind := shutdown.NewSequence(
-		reachable.Stop,
-		func() {
-			if err := opened.Close(); err != nil {
-				fmt.Fprintln(os.Stderr, "numen:", err)
-			}
-		},
-		stop,
-	)
+	behind := makeShutdown(reachable, opened, stop)
 
 	// The vault settles before a quit is let through, so the steps behind it are
 	// asked for here with nothing left owed.
@@ -188,12 +143,104 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		show: func() { window.Show() },
 	}
 
-	app := application.New(application.Options{
+	app := makeApplication(opened, pages, behind, going, seen)
+	window = makeWindow(app, opened)
+	connectWindow(ctx, window, opened, reachable)
+
+	// A hook runs before the window is destroyed and on a thread of its own, so
+	// the page is still drawn and still answered while what it owes is written.
+	// A cancelled event is where the hooks stop, and the destroy the window
+	// registered for itself is one of the listeners after them.
+	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		if !closeWindow(ctx, going, seen, opened.WaitForFlush, window.Close) {
+			event.Cancel()
+		}
+	})
+
+	return app.Run()
+}
+
+// openInstallation reads the pages and opens the vault the window shows.
+func openInstallation(
+	ctx context.Context, cfg container.Config, vault string,
+) (http.Handler, *editor.Installation, error) {
+	// Before the window: every page this process reads is read through the
+	// runtime made here, and one made after the window reads a page as nothing.
+	// A machine holding no runtime yet is told so by the first recognition.
+	if err := cfg.PrepareRecogniser(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
+	}
+	pages, err := editor.Pages()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	made, err := cfg.GetEditorAssembly(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	opened, err := editor.Open(ctx, made, vault, os.Stdout)
+	if err != nil {
+		return nil, nil, err
+	}
+	return pages, opened, nil
+}
+
+// loadThemes gives the API the installation's themes. A folder that could not
+// be made leaves the ones this binary ships, and a theme the settings name that
+// the catalogue has not is said where the person is.
+func loadThemes(cfg container.Config, opened *editor.Installation) {
+	themes, wrong := cfg.Themes(opened.SayTheme)
+	if wrong != nil {
+		fmt.Fprintf(os.Stdout, "themes: %v\n", wrong)
+	}
+	opened.API.Themes = themes
+}
+
+// makeEndpoint is the agents' endpoint on the vault in the window, let in once
+// the window is built.
+func makeEndpoint(
+	ctx context.Context, cfg container.Config, opened *editor.Installation, mcp agentOptions,
+) *agents.Endpoint {
+	return &agents.Endpoint{
+		Serve: func() (func() error, error) {
+			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
+		},
+		GetVault:       opened.GetCurrentVault,
+		SetAgent:       opened.API.SetAgent,
+		SetUnreachable: func(said string) { opened.API.Unreachable.Store(said) },
+		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
+	}
+}
+
+// makeShutdown is everything behind the settling, in the order each part needs
+// the next: the agents are let go of, then the scan and the follower stop and
+// the database closes, then what they ran under ends.
+func makeShutdown(
+	reachable *agents.Endpoint, opened *editor.Installation, stop func(),
+) *shutdown.Sequence {
+	return shutdown.NewSequence(
+		reachable.Stop,
+		func() {
+			if err := opened.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, "numen:", err)
+			}
+		},
+		stop,
+	)
+}
+
+// makeApplication is the application serving the page. It ends when its last
+// window closes.
+func makeApplication(
+	opened *editor.Installation, pages http.Handler, behind *shutdown.Sequence,
+	going *vaultFlush, seen visibility,
+) *application.App {
+	return application.New(application.Options{
 		Name: "numen",
 		Assets: application.AssetOptions{
 			Handler: opened.API.NewHandler(pages),
 		},
-		// The application ends when its last window closes.
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
@@ -210,8 +257,11 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 			return requestQuit(going, seen, func() { application.Get().Quit() })
 		},
 	})
+}
 
-	window = app.Window.NewWithOptions(application.WebviewWindowOptions{
+// makeWindow is the window the vault is shown in.
+func makeWindow(app *application.App, opened *editor.Installation) *application.WebviewWindow {
+	return app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  getWindowTitle(opened.GetCurrentVault(), opened.API.GetOpenTabs()),
 		Width:  1280,
 		Height: 860,
@@ -220,7 +270,14 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 		// the places one may be let go of.
 		EnableFileDrop: true,
 	})
+}
 
+// connectWindow wires what the window owns into the installation: the folder
+// dialog, the title, dropped files and opening another vault.
+func connectWindow(
+	ctx context.Context, window *application.WebviewWindow, opened *editor.Installation,
+	reachable *agents.Endpoint,
+) {
 	// Choosing a folder is the machine's own, and it opens over this window.
 	opened.API.Vaults.FolderDialog = &folderDialog{window: window}
 
@@ -229,18 +286,8 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
 	opened.API.NotifyOpenTabs = naming
 
-	// Files let go of over the window, copied into the folder the mark under
-	// the pointer names. A drop that landed on no mark is not this window's.
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
-		landed := event.Context().DropTargetDetails()
-		if landed == nil {
-			return
-		}
-		into, marked := landed.Attributes[droppedInto]
-		if !marked {
-			return
-		}
-		opened.Imports(ctx, into, event.Context().DroppedFiles())
+		importDroppedFiles(ctx, opened, event)
 	})
 
 	// Opening another vault, as a person asks for it. The agents are told which
@@ -259,18 +306,21 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	// not open. Everything else the window does is the vault, and the vault is
 	// here.
 	reachable.Start()
+}
 
-	// A hook runs before the window is destroyed and on a thread of its own, so
-	// the page is still drawn and still answered while what it owes is written.
-	// A cancelled event is where the hooks stop, and the destroy the window
-	// registered for itself is one of the listeners after them.
-	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !closeWindow(ctx, going, seen, opened.WaitForFlush, window.Close) {
-			event.Cancel()
-		}
-	})
-
-	return app.Run()
+// importDroppedFiles copies files let go of over the window into the folder the
+// mark under the pointer names. A drop that landed on no mark is not this
+// window's.
+func importDroppedFiles(ctx context.Context, opened *editor.Installation, event *application.WindowEvent) {
+	landed := event.Context().DropTargetDetails()
+	if landed == nil {
+		return
+	}
+	into, marked := landed.Attributes[droppedInto]
+	if !marked {
+		return
+	}
+	opened.Imports(ctx, into, event.Context().DroppedFiles())
 }
 
 // droppedInto is the attribute a page marks a drop target with. Its value is

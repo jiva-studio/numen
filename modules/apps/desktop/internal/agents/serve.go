@@ -82,13 +82,9 @@ func (s *Server) Close() error {
 // Serve puts the tools on a port and starts the agent the settings name
 // against them.
 func Serve(ctx context.Context, opts Options) (*Server, error) {
-	secret := opts.Token
-	if secret == "" {
-		token, err := GetToken(opts.Config)
-		if err != nil {
-			return nil, err
-		}
-		secret = token
+	secret, err := getSecret(opts)
+	if err != nil {
+		return nil, err
 	}
 	addr := opts.Addr
 	if addr == "" {
@@ -96,14 +92,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	}
 
 	errorHandler := func(err error) { fmt.Fprintln(opts.Out, "agents:", err) }
-	serving := mcp.ServeHTTP
-	switch {
-	case opts.ShouldRead:
-		serving = mcp.ServeReadingHTTP
-	case opts.ShouldReview:
-		serving = mcp.ServeReviewHTTP
-	}
-	endpoint, err := serving(ctx, addr, secret, opts.Core, errorHandler)
+	endpoint, err := getServeFunc(opts)(ctx, addr, secret, opts.Core, errorHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -123,14 +112,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		fmt.Fprintf(opts.Out, "agents: %s is reachable from the network, not only from this machine\n", addr)
 	}
 
-	vocabulary := mcp.Vocabulary
-	switch {
-	case opts.ShouldRead:
-		vocabulary = mcp.ReadingVocabulary
-	case opts.ShouldReview:
-		vocabulary = mcp.GetReviewVocabulary
-	}
-	words, err := vocabulary(ctx, opts.Core)
+	words, err := getVocabularyFunc(opts)(ctx, opts.Core)
 	if err != nil {
 		fmt.Fprintln(opts.Out, "agents:", err)
 	}
@@ -161,6 +143,39 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 		return stopped
 	}
 	return served, nil
+}
+
+// getSecret is the token the endpoint is guarded with: the one given, or the
+// one the configuration holds.
+func getSecret(opts Options) (string, error) {
+	if opts.Token != "" {
+		return opts.Token, nil
+	}
+	return GetToken(opts.Config)
+}
+
+// getServeFunc is the function that serves the tools the options select.
+func getServeFunc(
+	opts Options,
+) func(context.Context, string, string, mcp.Core, func(error)) (*mcp.Endpoint, error) {
+	switch {
+	case opts.ShouldRead:
+		return mcp.ServeReadingHTTP
+	case opts.ShouldReview:
+		return mcp.ServeReviewHTTP
+	}
+	return mcp.ServeHTTP
+}
+
+// getVocabularyFunc is the function that lists the tools the options select.
+func getVocabularyFunc(opts Options) func(context.Context, mcp.Core) (map[string]mcp.Tool, error) {
+	switch {
+	case opts.ShouldRead:
+		return mcp.ReadingVocabulary
+	case opts.ShouldReview:
+		return mcp.GetReviewVocabulary
+	}
+	return mcp.Vocabulary
 }
 
 // Router routes tasks to the configured agent dynamically.

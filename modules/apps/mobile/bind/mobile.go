@@ -52,12 +52,8 @@ func Start(dir string) (int, error) {
 		return running.port, nil
 	}
 
-	// The libraries that look for a person's own folders are told where this
-	// application's are, so nothing is looked for outside the sandbox.
-	for _, named := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"} {
-		if err := os.Setenv(named, dir); err != nil {
-			return 0, err
-		}
+	if err := setHomeFolders(dir); err != nil {
+		return 0, err
 	}
 
 	root := filepath.Join(dir, "vault")
@@ -97,20 +93,11 @@ func Start(dir string) (int, error) {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	opened.API.Themes = themes
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, addr, err := listenLocal()
 	if err != nil {
 		stop()
 		_ = opened.Close()
 		return 0, err
-	}
-	// The port is the whole of what Start answers, so a listener holding no TCP
-	// address leaves the caller nothing to reach and this ends here.
-	addr, ok := listener.Addr().(*net.TCPAddr)
-	if !ok {
-		stop()
-		_ = listener.Close()
-		_ = opened.Close()
-		return 0, fmt.Errorf("listening on %s, which is no TCP address", listener.Addr())
 	}
 
 	// The phone draws the vault it is showing, the notes in it and the tree they
@@ -147,6 +134,33 @@ func Start(dir string) (int, error) {
 		cfg.ErrorHandler(err)
 	}()
 	return running.port, nil
+}
+
+// setHomeFolders tells the libraries that look for a person's own folders where
+// this application's are, so nothing is looked for outside the sandbox.
+func setHomeFolders(dir string) error {
+	for _, named := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"} {
+		if err := os.Setenv(named, dir); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// listenLocal is a listener on a free port of the loopback address, with its
+// TCP address. The port is the whole of what Start answers, so a listener
+// holding no TCP address leaves the caller nothing to reach.
+func listenLocal() (net.Listener, *net.TCPAddr, error) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return nil, nil, err
+	}
+	addr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		_ = listener.Close()
+		return nil, nil, fmt.Errorf("listening on %s, which is no TCP address", listener.Addr())
+	}
+	return listener, addr, nil
 }
 
 // Stop closes the server and the vault behind it. Stopping what is not running

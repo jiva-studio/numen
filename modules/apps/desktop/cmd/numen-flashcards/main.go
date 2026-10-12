@@ -16,6 +16,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	window "github.com/jiva-studio/numen/modules/libs/core/adapter/window/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 func main() {
@@ -100,9 +102,34 @@ func run(cfg container.Config, noAgent bool) error {
 	vaults := &openVaults{cfg: cfg, db: db, lifetime: ctx, out: os.Stderr}
 
 	notes, cutting := makeNotesAndCards(cfg, db, vaults)
+	api := makeWindowAPI(cfg, registry, db, notes, vaults)
+	bindVaultIndexer(ctx, api, vaults)
 
+	// A card is asked about through tools on a port this window opens for
+	// itself. The agent works the vault the person sat down to, so it is
+	// started and stopped around a session.
+	away := serveAgents(ctx, cfg, db, notes, cutting, api, noAgent, os.Stderr)
+
+	held := makeShutdown(away, stop, vaults, db)
+	defer held.Run()
+
+	followChanges(ctx, cfg, api)
+	loadThemes(cfg, api)
+
+	pages, err := window.Pages()
+	if err != nil {
+		return err
+	}
+	return runApplication(api, pages, held)
+}
+
+// makeWindowAPI is the page's API over the cards, the notes and the registry.
+func makeWindowAPI(
+	cfg container.Config, registry port.VaultRegistry, db *container.Index,
+	notes container.Notes, vaults *openVaults,
+) *window.API {
 	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.updateIndex)
-	api := &window.API{
+	return &window.API{
 		Registry:      registry,
 		CardsDue:      running.CardsDue,
 		Session:       running.Session,
@@ -116,27 +143,26 @@ func run(cfg container.Config, noAgent bool) error {
 		Day:           running.Day,
 		Now:           time.Now,
 	}
+}
 
-	// A vault is walked into the index before it is counted. The walk outlives
-	// the count that asked for it, so it runs for the life of the window.
-	//
-	// A vault that moved is counted again, and is one whose walk is worth trying
-	// again where the last one failed.
+// bindVaultIndexer connects the walk of a vault into the index to the API.
+// The walk outlives the count that asked for it, and a vault that moved is
+// counted again and walked again where the last walk failed.
+func bindVaultIndexer(ctx context.Context, api *window.API, vaults *openVaults) {
 	vaults.recordVault = func(v domain.Vault) {
 		api.ClearIndexFailure(v.ID)
 		api.ReportChange()
 	}
 	api.SetVaultIndexer(ctx, vaults.indexVault)
+}
 
-	// A card is asked about through tools on a port this window opens for
-	// itself. The agent works the vault the person sat down to, so it is
-	// started and stopped around a session.
-	away := serveAgents(ctx, cfg, db, notes, cutting, api, noAgent, os.Stderr)
-
-	// What the window holds, in the order each part needs the next: the agents
-	// are let go of, then the walk and the watch, which write to the index, and
-	// then the index itself.
-	held := shutdown.NewSequence(
+// makeShutdown is what the window holds, in the order each part needs the next:
+// the agents are let go of, then the walk and the watch, which write to the
+// index, and then the index itself.
+func makeShutdown(
+	away func() error, stop func(), vaults *openVaults, db *container.Index,
+) *shutdown.Sequence {
+	return shutdown.NewSequence(
 		func() {
 			if err := away(); err != nil {
 				fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
@@ -150,34 +176,33 @@ func run(cfg container.Config, noAgent bool) error {
 			}
 		},
 	)
-	defer held.Run()
+}
 
-	// What the window draws from is followed while it is open, so a card changed
-	// or a deck written is counted again without a person asking. The vaults are
-	// followed by the openings they were opened through.
-	//
-	// The index is followed here, for which files are decks. That answer is the
-	// index's, and another window writing it changes it.
+// followChanges counts again what the window draws from when it changes, so a
+// card changed or a deck written is counted without a person asking. The index
+// is followed for which files are decks, and another window writing it changes
+// that answer.
+func followChanges(ctx context.Context, cfg container.Config, api *window.API) {
 	moves, err := cfg.Moves(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards: the index is not being followed:", err)
-	} else {
-		api.ReportChangesFrom(ctx, moves)
+		return
 	}
+	api.ReportChangesFrom(ctx, moves)
+}
 
-	// The themes are the installation's, and a folder that could not be made
-	// leaves the ones this binary ships.
+// loadThemes gives the API the installation's themes. A folder that could not
+// be made leaves the ones this binary ships.
+func loadThemes(cfg container.Config, api *window.API) {
 	themes, why := cfg.Themes(func(said string) { fmt.Fprintln(os.Stderr, "themes:", said) })
 	if why != nil {
 		fmt.Fprintf(os.Stderr, "themes: %v\n", why)
 	}
 	api.Themes = themes
+}
 
-	pages, err := window.Pages()
-	if err != nil {
-		return err
-	}
-
+// runApplication opens the window and runs until it closes.
+func runApplication(api *window.API, pages http.Handler, held *shutdown.Sequence) error {
 	app := application.New(application.Options{
 		Name: "numen-flashcards",
 		Assets: application.AssetOptions{
