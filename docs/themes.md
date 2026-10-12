@@ -93,10 +93,10 @@ Forty-three, each a colour except where it says otherwise.
 
 | | |
 | --- | --- |
-| `--numen-seat-parent` | the hue of the seat a parent stands in. |
-| `--numen-seat-child` | the hue of a child's seat. |
-| `--numen-seat-jump` | the hue of a jump's seat. |
-| `--numen-seat-sibling` | the hue of a sibling's seat. |
+| `--numen-relation-parent` | the hue of the relation a parent stands in. |
+| `--numen-relation-child` | the hue of a child's relation. |
+| `--numen-relation-jump` | the hue of a jump's relation. |
+| `--numen-relation-sibling` | the hue of a sibling's relation. |
 | `--numen-edge` | the line drawn between two nodes. |
 | `--numen-edge-label` | the words on that line, which are said in the hushed voice unless a theme sets them apart. |
 

@@ -23,10 +23,10 @@ func fileAt(t *testing.T, root, path string) string {
 	return string(raw)
 }
 
-// TestANoteIsMadeCarryingTheLinkThatSeatsIt. A note made in a seat of another
+// TestANoteIsMadeCarryingTheLinkThatRelatesIt. A note made in a relation of another
 // says so itself: the link is in the note that was made, so one write leaves it
 // joined.
-func TestANoteIsMadeCarryingTheLinkThatSeatsIt(t *testing.T) {
+func TestANoteIsMadeCarryingTheLinkThatRelatesIt(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
@@ -50,17 +50,17 @@ func TestANoteIsMadeCarryingTheLinkThatSeatsIt(t *testing.T) {
 		t.Errorf("the note carries no link to the note it was made from:\n%s", made)
 	}
 	if !strings.Contains(made, "role: parent") {
-		t.Errorf("the link does not seat the note it was made from as its parent:\n%s", made)
+		t.Errorf("the link does not relate the note it was made from as its parent:\n%s", made)
 	}
 	if !strings.Contains(made, "id: ") {
 		t.Errorf("a note the application made carries no identifier:\n%s", made)
 	}
 }
 
-// TestANoteMadeInTheChildSeatIsTheParentsChild. The seat travels as the link the
+// TestANoteMadeInTheChildRelationIsTheParentsChild. The relation travels as the link the
 // new note writes, so the role is the one that puts each of the two where the
 // person put them.
-func TestANoteMadeInTheChildSeatIsTheParentsChild(t *testing.T) {
+func TestANoteMadeInTheChildRelationIsTheParentsChild(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\n---\n\n# Ontology\n",
 	})
@@ -75,7 +75,7 @@ func TestANoteMadeInTheChildSeatIsTheParentsChild(t *testing.T) {
 
 	made := fileAt(t, f.root, answer.Msg.GetPath())
 	if !strings.Contains(made, "role: child") {
-		t.Errorf("the link does not seat the note it was made from as its child:\n%s", made)
+		t.Errorf("the link does not relate the note it was made from as its child:\n%s", made)
 	}
 	if !strings.Contains(made, "label: follows from") {
 		t.Errorf("what the person wrote on the link is not in the note:\n%s", made)

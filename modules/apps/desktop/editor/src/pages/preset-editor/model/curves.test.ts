@@ -4,7 +4,7 @@
  * answer to a question nobody is waiting for is not drawn.
  */
 import { describe, expect, it } from 'vitest'
-import { DEFAULTS, NO_PLACE, type Curve, type Presets, type Settings } from '../types'
+import { DEFAULTS, NO_CURVE_POINT, type Curve, type Presets, type Settings } from '../types'
 import { estimateCurve } from '../lib/sketch'
 import { getShapeKey } from '../lib/fields'
 import { WORDS as words } from '../words'
@@ -37,7 +37,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   days: [],
   at: [],
   now: { at: 1, value: 10, day: '' },
-  suggested: NO_PLACE,
+  suggested: NO_CURVE_POINT,
   decks: 2,
   cards: 40,
   overdue: 3,

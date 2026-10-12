@@ -1,22 +1,22 @@
 /**
  * Helper functions for building and resolving link items in the Plex link inspector.
  */
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import type { DirectionalLinkItem, LinkDirectionMode } from '../types'
 
 /**
- * Returns the opposite hierarchy seat for a relationship.
- * Note: 'sibling' is a graph placement seat derived from a shared parent, not an authored link role.
+ * Returns the opposite hierarchy relation for a relationship.
+ * Note: 'sibling' is a graph placement relation derived from a shared parent, not an authored link role.
  */
-export function getInverseSeat(seat: PlexRelatedSeat): PlexRelatedSeat {
-  switch (seat) {
+export function getInverseRelation(relation: PlexRelation): PlexRelation {
+  switch (relation) {
     case 'parent':
       return 'child'
     case 'child':
       return 'parent'
     case 'jump':
     case 'sibling':
-      return seat
+      return relation
   }
 }
 
@@ -26,7 +26,7 @@ export function getInverseSeat(seat: PlexRelatedSeat): PlexRelatedSeat {
  */
 export function resolveSingleDirection(
   savedDirection: string | undefined,
-  role: PlexRelatedSeat,
+  role: PlexRelation,
   isFocusA: boolean,
   pathA: string,
   pathB: string,
@@ -53,13 +53,13 @@ function getDefaultMutualDescriptions(
 export function createMutualInspectorLinks(
   pathA: string,
   pathB: string,
-  related: { seat: string; directLabel?: string; label?: string; reverseLabel?: string },
+  related: { relation: string; directLabel?: string; label?: string; reverseLabel?: string },
   isFocusA: boolean,
   descriptions: Map<string, string>,
 ): DirectionalLinkItem[] {
-  const baseSeat = (related.seat as PlexRelatedSeat) || 'jump'
-  const roleAtoB = isFocusA ? baseSeat : getInverseSeat(baseSeat)
-  const roleBtoA = getInverseSeat(roleAtoB)
+  const baseRelation = (related.relation as PlexRelation) || 'jump'
+  const roleAtoB = isFocusA ? baseRelation : getInverseRelation(baseRelation)
+  const roleBtoA = getInverseRelation(roleAtoB)
   const defaults = getDefaultMutualDescriptions(related, isFocusA)
 
   const descAB = descriptions.get(`${pathA}->${pathB}`) ?? defaults.directDesc
@@ -85,19 +85,19 @@ export function createMutualInspectorLinks(
   ]
 }
 
-function getSingleRole(baseRole: PlexRelatedSeat, isReverse: boolean): PlexRelatedSeat {
-  return isReverse ? getInverseSeat(baseRole) : baseRole
+function getSingleRole(baseRole: PlexRelation, isReverse: boolean): PlexRelation {
+  return isReverse ? getInverseRelation(baseRole) : baseRole
 }
 
 export function createSingleInspectorLink(
   pathA: string,
   pathB: string,
-  related: { seat?: string; directLabel?: string; label?: string } | undefined,
+  related: { relation?: string; directLabel?: string; label?: string } | undefined,
   isFocusA: boolean,
   directions: Map<string, string>,
   descriptions: Map<string, string>,
 ): DirectionalLinkItem[] {
-  const baseRole = (related?.seat as PlexRelatedSeat) || 'jump'
+  const baseRole = (related?.relation as PlexRelation) || 'jump'
   const pairKey = [pathA, pathB].sort().join(' ')
   const direction = resolveSingleDirection(
     directions.get(pairKey),
@@ -125,8 +125,8 @@ export function resolveInspectorDirectionToggle(
   direction: LinkDirectionMode
   from: string
   to: string
-  role: PlexRelatedSeat
-  removedLink?: { from: string; to: string; role?: PlexRelatedSeat } | undefined
+  role: PlexRelation
+  removedLink?: { from: string; to: string; role?: PlexRelation } | undefined
 } {
   const nextDirection: Record<LinkDirectionMode, LinkDirectionMode> = {
     undirected: 'forward',
@@ -144,13 +144,13 @@ export function resolveInspectorDirectionToggle(
     }
   }
 
-  const baseRole = row.from === nodeAPath ? row.role : getInverseSeat(row.role)
+  const baseRole = row.from === nodeAPath ? row.role : getInverseRelation(row.role)
   if (next === 'reverse') {
     return {
       direction: next,
       from: nodeBPath,
       to: nodeAPath,
-      role: getInverseSeat(baseRole),
+      role: getInverseRelation(baseRole),
       removedLink: undefined,
     }
   }
@@ -169,7 +169,7 @@ function pruneEmptyDualRows(
   initialLinkIds: Set<string>,
 ): {
   rows: DirectionalLinkItem[]
-  removed: { from: string; to: string; role?: PlexRelatedSeat }[]
+  removed: { from: string; to: string; role?: PlexRelation }[]
 } {
   if (rows.length !== 2) return { rows: [...rows], removed: [] }
   const r0Blank = !rows[0]!.description.trim()
@@ -191,8 +191,8 @@ function pruneEmptyDualRows(
 function collectOmittedInitialLinks(
   initialLinks: readonly DirectionalLinkItem[],
   finalRows: readonly DirectionalLinkItem[],
-  alreadyRemoved: readonly { from: string; to: string; role?: PlexRelatedSeat }[],
-): { from: string; to: string; role?: PlexRelatedSeat }[] {
+  alreadyRemoved: readonly { from: string; to: string; role?: PlexRelation }[],
+): { from: string; to: string; role?: PlexRelation }[] {
   const isPresent = (link: DirectionalLinkItem) => finalRows.some((r) => r.id === link.id)
   const isRemoved = (link: DirectionalLinkItem) =>
     alreadyRemoved.some((r) => r.from === link.from && r.to === link.to && r.role === link.role)
@@ -207,11 +207,11 @@ export function resolveInspectorDonePayload(
   initialLinks: readonly DirectionalLinkItem[],
   initialLinkIds: Set<string>,
   pairKey: string,
-  existingRemoved: readonly { from: string; to: string; role?: PlexRelatedSeat }[],
+  existingRemoved: readonly { from: string; to: string; role?: PlexRelation }[],
 ): {
   pairKey: string
   rows: DirectionalLinkItem[]
-  removedLinks: { from: string; to: string; role?: PlexRelatedSeat }[]
+  removedLinks: { from: string; to: string; role?: PlexRelation }[]
 } {
   const pruned = pruneEmptyDualRows(localRows, initialLinkIds)
   const allRemoved = [...existingRemoved, ...pruned.removed]

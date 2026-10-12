@@ -60,7 +60,7 @@ func line(lines []string, i int) string {
 
 // goldenDay is the day of review the projections are counted in. It stands in
 // UTC so that the file reads the same on every machine.
-var goldenDay = review.Day{Starts: review.DayStarts, In: time.UTC}
+var goldenDay = review.Day{Starts: review.DayStartTime, In: time.UTC}
 
 // goldenNow is the instant the projections open on.
 var goldenNow = time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)

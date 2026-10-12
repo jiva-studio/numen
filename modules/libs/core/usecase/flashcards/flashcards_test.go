@@ -183,7 +183,7 @@ func (s vaulted) session(day review.Day) flashcards.Session {
 }
 
 // today is the day a session is counted in, on this machine.
-var today = review.Day{Starts: review.DayStarts}
+var today = review.Day{Starts: review.DayStartTime}
 
 // A card stands once for each face of the stencil that cuts it, because each
 // face asks a different thing.

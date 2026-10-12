@@ -19,11 +19,11 @@
   --numen-accent-ink: light-dark(#fdf6e3, #002b36);
 
   /* Blue is what the node in hand is painted, so a parent takes cyan and the
-     four seats stand apart from it. */
-  --numen-seat-parent: light-dark(#2aa198, #2aa198);
-  --numen-seat-child: light-dark(#859900, #859900);
-  --numen-seat-jump: light-dark(#cb4b16, #cb4b16);
-  --numen-seat-sibling: light-dark(#6c71c4, #6c71c4);
+     four relations stand apart from it. */
+  --numen-relation-parent: light-dark(#2aa198, #2aa198);
+  --numen-relation-child: light-dark(#859900, #859900);
+  --numen-relation-jump: light-dark(#cb4b16, #cb4b16);
+  --numen-relation-sibling: light-dark(#6c71c4, #6c71c4);
 
   --numen-edge: light-dark(#d3cbb7, #0f4653);
   --numen-edge-label: light-dark(#93a1a1, #586e75);

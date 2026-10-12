@@ -2,14 +2,14 @@
  * A neighbourhood of a vault, as something the plex can draw.
  *
  * This is the only file that knows both. The plex is told about nodes with a
- * seat and edges between them; it is not told what a note is, and the schema
+ * relation and edges between them; it is not told what a note is, and the schema
  * says nothing about drawing.
  */
 import { Relation } from '@numen/protocol'
 import type { GetNeighbourhoodResponse } from '@numen/protocol'
-import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@numen/ui'
+import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexRelation } from '@numen/ui'
 
-const SEAT_BY_WIRE: Record<Relation, PlexRelatedSeat | null> = {
+const RELATION_BY_WIRE: Record<Relation, PlexRelation | null> = {
   [Relation.UNSPECIFIED]: null,
   [Relation.PARENT]: 'parent',
   [Relation.CHILD]: 'child',
@@ -33,17 +33,17 @@ export function asPlex(neighbourhood: GetNeighbourhoodResponse): PlexNeighbourho
   const hanging: { id: string; label: string; through: string }[] = []
 
   for (const related of neighbourhood.related) {
-    const seat = SEAT_BY_WIRE[related.relation]
-    if (!seat || !related.note) continue
+    const relation = RELATION_BY_WIRE[related.relation]
+    if (!relation || !related.note) continue
     const id = related.note.path
     shown.add(id)
-    nodes.push({ id, title: related.note.title, seat })
+    nodes.push({ id, title: related.note.title, relation })
 
-    if (seat === 'sibling') {
+    if (relation === 'sibling') {
       hanging.push({ id, label: related.label, through: related.through })
       continue
     }
-    edges.push(getEdge(id, focus.id, seat, related))
+    edges.push(getEdge(id, focus.id, relation, related))
   }
 
   for (const { id, label, through } of hanging) {
@@ -60,16 +60,21 @@ type RelatedNote = GetNeighbourhoodResponse['related'][number]
 const getFocusNode = (focus: GetNeighbourhoodResponse['focus']): PlexNode => ({
   id: focus?.path ?? '',
   title: focus?.title ?? '',
-  seat: 'focus',
+  relation: 'focus',
 })
 
 /**
  * A parent and a jump run into the focus, and a child runs out of it. A
  * relationship both notes named carries an arrow at the end away from the focus.
  */
-const getEdge = (id: string, focus: string, seat: PlexRelatedSeat, note: RelatedNote): PlexEdge => {
+const getEdge = (
+  id: string,
+  focus: string,
+  relation: PlexRelation,
+  note: RelatedNote,
+): PlexEdge => {
   const line = note.label ? { label: note.label } : {}
   const getArrow = (end: EdgeArrow) => (note.isMutual ? { arrow: end } : {})
-  if (seat === 'child') return { from: focus, to: id, ...line, ...getArrow('to') }
+  if (relation === 'child') return { from: focus, to: id, ...line, ...getArrow('to') }
   return { from: id, to: focus, ...line, ...getArrow('from') }
 }

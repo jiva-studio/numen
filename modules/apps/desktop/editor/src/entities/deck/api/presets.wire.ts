@@ -4,7 +4,7 @@ import {
   type Bounds as BoundsMessage,
   type Curve as CurveMessage,
   type ErrorCode as ProtoErrorCode,
-  type Place as PlaceMessage,
+  type CurvePoint as CurvePointMessage,
   type Point as PointMessage,
   type Preset as PresetMessage,
   type Settings as SettingsMessage,
@@ -13,11 +13,11 @@ import {
 import { goalNames, goalOf } from '@numen/wire'
 import { parseFingerprint, findErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
 import { presetsService } from '@/shared/clients'
-import { DEFAULTS, NO_PLACE } from '../lib/presets'
+import { DEFAULTS, NO_CURVE_POINT } from '../lib/presets'
 import type {
   Bounds,
   Curve,
-  Place,
+  CurvePoint,
   Point,
   Preset,
   Presets,
@@ -178,8 +178,8 @@ const NO_CURVE: Curve = {
   grid: [],
   days: [],
   at: [],
-  now: NO_PLACE,
-  suggested: NO_PLACE,
+  now: NO_CURVE_POINT,
+  suggested: NO_CURVE_POINT,
   decks: 0,
   cards: 0,
   overdue: 0,
@@ -197,8 +197,8 @@ const parseCurve = (curve: CurveMessage | undefined): Curve =>
         grid: curve.grid,
         days: curve.days,
         at: curve.at.map(parsePoint),
-        now: parsePlace(curve.now),
-        suggested: parsePlace(curve.suggested),
+        now: parseCurvePoint(curve.now),
+        suggested: parseCurvePoint(curve.suggested),
         decks: curve.decks,
         cards: curve.cards,
         overdue: curve.overdue,
@@ -207,5 +207,5 @@ const parseCurve = (curve: CurveMessage | undefined): Curve =>
         isHonest: true,
       }
 
-const parsePlace = (place: PlaceMessage | undefined): Place =>
-  place === undefined ? NO_PLACE : { at: place.at, value: place.value, day: place.day }
+const parseCurvePoint = (place: CurvePointMessage | undefined): CurvePoint =>
+  place === undefined ? NO_CURVE_POINT : { at: place.at, value: place.value, day: place.day }

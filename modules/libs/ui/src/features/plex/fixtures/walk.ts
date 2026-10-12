@@ -13,7 +13,7 @@ import type { PlexNode } from '../lib/node'
 interface GraphNode {
   readonly title: string
   readonly parents?: readonly string[]
-  /** Untyped by seat: an association, not a place in the hierarchy. */
+  /** Untyped by relation: an association, not a place in the hierarchy. */
   readonly jumps?: readonly string[]
 }
 
@@ -72,20 +72,20 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
   const focus = GRAPH[id]
   if (!focus) throw new Error(`no such node: ${id}`)
 
-  const seat = (ids: readonly string[], seat: PlexNode['seat']): PlexNode[] =>
+  const createRelated = (ids: readonly string[], relation: PlexNode['relation']): PlexNode[] =>
     ids
       .filter((other) => other !== id && GRAPH[other] !== undefined)
-      .map((other) => ({ id: other, title: GRAPH[other]!.title, seat }))
+      .map((other) => ({ id: other, title: GRAPH[other]!.title, relation }))
 
-  // A node reachable two ways takes one seat, first match wins. The plex
-  // refuses a neighbourhood that seats the same node twice.
+  // A node reachable two ways takes one relation, first match wins. The plex
+  // refuses a neighbourhood that holds the same node twice.
   const related: PlexNode[] = []
   const taken = new Set<string>([id])
   for (const group of [
-    seat(getParents(id), 'parent'),
-    seat(getChildren(id), 'child'),
-    seat(getJumps(id), 'jump'),
-    seat(getSiblings(id), 'sibling'),
+    createRelated(getParents(id), 'parent'),
+    createRelated(getChildren(id), 'child'),
+    createRelated(getJumps(id), 'jump'),
+    createRelated(getSiblings(id), 'sibling'),
   ]) {
     for (const node of group) {
       if (taken.has(node.id)) continue
@@ -95,11 +95,11 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
   }
 
   return {
-    nodes: [{ id, title: focus.title, seat: 'focus' }, ...related],
+    nodes: [{ id, title: focus.title, relation: 'focus' }, ...related],
     edges: related.flatMap((node): PlexEdge[] => {
-      if (node.seat === 'parent') return [{ from: node.id, to: id, label: 'is a' }]
-      if (node.seat === 'jump') return [{ from: node.id, to: id, label: 'see also' }]
-      if (node.seat === 'child') return [{ from: id, to: node.id, label: 'contains' }]
+      if (node.relation === 'parent') return [{ from: node.id, to: id, label: 'is a' }]
+      if (node.relation === 'jump') return [{ from: node.id, to: id, label: 'see also' }]
+      if (node.relation === 'child') return [{ from: id, to: node.id, label: 'contains' }]
 
       // A sibling hangs off the parent it shares with the focus, not off the
       // focus. Working out which parent is a question about relationships, so

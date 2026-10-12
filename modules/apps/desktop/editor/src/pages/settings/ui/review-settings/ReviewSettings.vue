@@ -15,8 +15,8 @@ const props = defineProps<{ state: SettingsTabState }>()
 const installation = computed(() => props.state.installation)
 
 // --- Handlers ---
-function onDayStartsChange(hour: string) {
-  installation.value.chooseDayStarts(hour)
+function onDayStartTimeChange(hour: string) {
+  installation.value.chooseDayStartTime(hour)
 }
 </script>
 
@@ -27,15 +27,15 @@ function onDayStartsChange(hour: string) {
     <SettingRow
       v-slot="{ labelledBy }"
       at="day-starts"
-      :name="words.dayStarts"
-      :detail="words.dayStartsDetail"
+      :name="words.dayStartTime"
+      :detail="words.dayStartTimeDetail"
     >
       <TimeField
-        :model-value="installation.dayStarts.value"
-        :max="installation.latestDayStarts.value"
+        :model-value="installation.dayStartTime.value"
+        :max="installation.latestDayStartTime.value"
         :aria-labelledby="labelledBy"
         class="settings__number"
-        @commit="onDayStartsChange"
+        @commit="onDayStartTimeChange"
       />
     </SettingRow>
   </section>

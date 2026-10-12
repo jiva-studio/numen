@@ -1,10 +1,10 @@
-import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
+import { RELATION_NAMES, type PlexRelation } from '../relation'
 import { getLimits } from './limits'
 import { lerp } from './math'
 import type { PlexOptions } from './options'
 
-/** How many of each seat arrived. */
-export type SeatCounts = Readonly<Record<PlexRelatedSeat, number>>
+/** How many of each relation arrived. */
+export type RelationCounts = Readonly<Record<PlexRelation, number>>
 
 /** How finely the loosest packing is found, as halvings of the range. */
 const HALVINGS = 7
@@ -34,29 +34,31 @@ export function packOptions(options: PlexOptions, tightness: number): PlexOption
 
 /**
  * How closely this neighbourhood has to be packed for the window to hold all
- * of it: the loosest packing that seats every node, and the closest one when
+ * of it: the loosest packing that fits every node, and the closest one when
  * no packing does.
  *
- * A box narrows and a gap closes before a seat is given up. What a reader can
+ * A box narrows and a gap closes before a relation is given up. What a reader can
  * act on is a node drawn small; a node that is not drawn says only that there
  * were more.
  */
-export function measureCrowding(options: PlexOptions, counts: SeatCounts): PlexOptions {
+export function measureCrowding(options: PlexOptions, counts: RelationCounts): PlexOptions {
   if (!options.viewport || options.squeeze >= 1) return options
-  if (canSeatAll(options, counts)) return options
+  if (canRelationAll(options, counts)) return options
 
   let tight = 0
   let loose = 1
   for (let halving = 0; halving < HALVINGS; halving++) {
     const middle = (tight + loose) / 2
-    if (canSeatAll(packOptions(options, middle), counts)) tight = middle
+    if (canRelationAll(packOptions(options, middle), counts)) tight = middle
     else loose = middle
   }
   return packOptions(options, tight)
 }
 
-/** Whether the window holds every node of every seat. */
-function canSeatAll(options: PlexOptions, counts: SeatCounts): boolean {
+/** Whether the window holds every node of every relation. */
+function canRelationAll(options: PlexOptions, counts: RelationCounts): boolean {
   const limits = getLimits(options, counts)
-  return RELATED_SEATS.every((seat) => limits[seat].perLine * limits[seat].lines >= counts[seat])
+  return RELATION_NAMES.every(
+    (relation) => limits[relation].perLine * limits[relation].lines >= counts[relation],
+  )
 }

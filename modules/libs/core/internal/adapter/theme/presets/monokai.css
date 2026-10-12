@@ -26,10 +26,10 @@
   --numen-accent: #75715e;
   --numen-accent-ink: #f8f8f2;
 
-  --numen-seat-parent: #66d9ef;
-  --numen-seat-child: #a6e22e;
-  --numen-seat-jump: #fd971f;
-  --numen-seat-sibling: #ae81ff;
+  --numen-relation-parent: #66d9ef;
+  --numen-relation-child: #a6e22e;
+  --numen-relation-jump: #fd971f;
+  --numen-relation-sibling: #ae81ff;
 
   --numen-edge: #414339;
   --numen-edge-label: #90908a;

@@ -77,7 +77,7 @@ const mountStencil = async (problems: readonly DeckProblem[] = []) => {
 }
 
 const missing: DeckProblem = {
-  fault: 'faceMissingASide',
+  kind: 'faceMissingASide',
   card: null,
   face: 1,
   field: '',
@@ -85,7 +85,7 @@ const missing: DeckProblem = {
 }
 
 const twice: DeckProblem = {
-  fault: 'fieldDeclaredTwice',
+  kind: 'fieldDeclaredTwice',
   card: null,
   face: null,
   field: 'Height',

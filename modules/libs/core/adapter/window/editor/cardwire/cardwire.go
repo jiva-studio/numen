@@ -134,12 +134,12 @@ func newWireProblems(problems []format.Problem) []*v1.Problem {
 // newWireProblem is one problem as the schema carries it, and nothing for a fault
 // the schema does not name.
 func newWireProblem(p format.Problem) *v1.Problem {
-	fault, isNamed := newWireFault(p.Fault)
+	kind, isNamed := newWireProblemKind(p.Fault)
 	if !isNamed {
 		return nil
 	}
 	return &v1.Problem{
-		Fault: fault,
+		Kind:  kind,
 		Card:  position(p.Card),
 		Face:  position(p.Face),
 		Field: p.Field,
@@ -157,30 +157,30 @@ func position(at int) *int32 {
 	return &stands
 }
 
-// newWireFault is what a problem is, as the schema names it, and whether the schema
+// newWireProblemKind is what kind of problem it is, as the schema names it, and whether the schema
 // names it at all.
-func newWireFault(fault format.Fault) (v1.Fault, bool) {
+func newWireProblemKind(fault format.Fault) (v1.ProblemKind, bool) {
 	switch fault {
 	case format.FaultTwoFields:
-		return v1.Fault_FAULT_FIELD_DECLARED_TWICE, true
+		return v1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE, true
 	case format.FaultNoFields:
-		return v1.Fault_FAULT_STENCIL_WITHOUT_FIELDS, true
+		return v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, true
 	case format.FaultFaceSide:
-		return v1.Fault_FAULT_FACE_MISSING_A_SIDE, true
+		return v1.ProblemKind_PROBLEM_KIND_FACE_MISSING_A_SIDE, true
 	case format.FaultPlaceholder:
-		return v1.Fault_FAULT_PLACEHOLDER_UNDECLARED, true
+		return v1.ProblemKind_PROBLEM_KIND_PLACEHOLDER_UNDECLARED, true
 	case format.FaultNoStencil:
-		return v1.Fault_FAULT_CARD_WITHOUT_A_STENCIL, true
+		return v1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL, true
 	case format.FaultNotAStencil:
-		return v1.Fault_FAULT_STENCIL_IS_NOT_ONE, true
+		return v1.ProblemKind_PROBLEM_KIND_STENCIL_IS_NOT_ONE, true
 	case format.FaultTwoMarks:
-		return v1.Fault_FAULT_MARK_CARRIED_TWICE, true
+		return v1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE, true
 	case format.FaultTwoValues:
-		return v1.Fault_FAULT_FIELD_WRITTEN_TWICE, true
+		return v1.ProblemKind_PROBLEM_KIND_FIELD_WRITTEN_TWICE, true
 	case format.FaultNotWritten:
-		return v1.Fault_FAULT_FIELD_NOT_RENAMED, true
+		return v1.ProblemKind_PROBLEM_KIND_FIELD_NOT_RENAMED, true
 	default:
-		return v1.Fault_FAULT_UNSPECIFIED, false
+		return v1.ProblemKind_PROBLEM_KIND_UNSPECIFIED, false
 	}
 }
 

@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
-import type { PlexRelatedSeat } from '../lib/seat'
+import type { PlexRelation } from '../lib/relation'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
 
@@ -61,10 +61,10 @@ async function letGo(plex: ReturnType<typeof mountPlex>, x: number, y: number) {
   await plex.vm.$nextTick()
 }
 
-/** Where a node of this seat is drawn, in the page's own coordinates. */
-const getNode = (plex: ReturnType<typeof mountPlex>, seat: string) => {
+/** Where a node of this relation is drawn, in the page's own coordinates. */
+const getNode = (plex: ReturnType<typeof mountPlex>, relation: string) => {
   const at = plex
-    .get(`[aria-label$=", ${seat}"]`)
+    .get(`[aria-label$=", ${relation}"]`)
     .attributes('transform')!
     .match(/-?[\d.]+/g)!
     .map(Number)
@@ -74,7 +74,7 @@ const getNode = (plex: ReturnType<typeof mountPlex>, seat: string) => {
 const findDragged = (plex: ReturnType<typeof mountPlex>) => plex.find('.plex__dragged')
 
 describe('letting go of something dragged in', () => {
-  it('joins it to the focus in the seat the drag went towards', async () => {
+  it('joins it to the focus in the relation the drag went towards', async () => {
     const plex = mountPlex()
     await letGo(plex, 600, 40)
 
@@ -93,7 +93,7 @@ describe('letting go of something dragged in', () => {
     expect(beside.emitted('bring')).toStrictEqual([[DRAGGED, 'jump']])
   })
 
-  it('reads which way a seat lies off the arrangement', async () => {
+  it('reads which way a relation lies off the arrangement', async () => {
     const plex = mountPlex({
       options: { direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' } },
     })
@@ -136,7 +136,7 @@ describe('letting go of something dragged in', () => {
     expect(further.emitted('bring')).toStrictEqual([[DRAGGED, 'child']])
   })
 
-  it('joins nothing towards a seat the caller left out', async () => {
+  it('joins nothing towards a relation the caller left out', async () => {
     // Rightwards is where siblings sit, and a sibling is not made directly.
     const plex = mountPlex()
     await letGo(plex, 1100, 400)
@@ -144,7 +144,7 @@ describe('letting go of something dragged in', () => {
     expect(plex.emitted('bring')).toBeUndefined()
   })
 
-  it('hands every one of them back, in the one seat', async () => {
+  it('hands every one of them back, in the one relation', async () => {
     const plex = mountPlex({ dragged: SEVERAL })
     await letGo(plex, 600, 760)
 
@@ -215,7 +215,7 @@ describe('letting go of something dragged in', () => {
 })
 
 describe('while something is being dragged over the plex', () => {
-  it('draws the line under the hand and says which seat', async () => {
+  it('draws the line under the hand and says which relation', async () => {
     const plex = mountPlex()
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
@@ -225,7 +225,7 @@ describe('while something is being dragged over the plex', () => {
   })
 
   it('says it in the words it was given, not in its own', async () => {
-    const plex = mountPlex({ dropName: (seat: PlexRelatedSeat) => `as ${seat}` })
+    const plex = mountPlex({ dropName: (relation: PlexRelation) => `as ${relation}` })
     window.dispatchEvent(pointer('pointermove', 600, 40))
     await plex.vm.$nextTick()
 
@@ -238,7 +238,7 @@ describe('while something is being dragged over the plex', () => {
     await plex.vm.$nextTick()
     expect(findDragged(plex).exists()).toBe(true)
 
-    // Past the edge, and towards a seat the caller left out: the picture
+    // Past the edge, and towards a relation the caller left out: the picture
     // promises only what letting go would actually do.
     window.dispatchEvent(pointer('pointermove', 600, 1400))
     await plex.vm.$nextTick()

@@ -22,7 +22,7 @@ const cut: VaultStencil = {
 }
 
 const lacking = (face: number, text: string): DeckProblem => ({
-  fault: 'faceMissingASide',
+  kind: 'faceMissingASide',
   card: null,
   face,
   field: '',

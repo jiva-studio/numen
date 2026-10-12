@@ -1,11 +1,11 @@
 /**
  * Making a note from the picture, and joining two that are already on it.
  *
- * A note is made in a seat of another one, and the link that puts it there is
- * written into it as it is made. What a seat means for what gets written is
+ * A note is made in a relation of another one, and the link that puts it there is
+ * written into it as it is made. What a relation means for what gets written is
  * decided here: the plex reports the shape of a gesture and nothing else.
  */
-import type { PlexRelatedSeat } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
 import type { Link, NewNote, Role } from '@/entities/note'
 import type { CreateResult } from '@/entities/file'
@@ -28,34 +28,37 @@ export interface NoteMaker {
   removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
 }
 
-/** The seats a link can seat a note in. Each is also the role the link carries. */
-type CreatableSeat = 'parent' | 'child' | 'jump'
+/** The relations a link can put a note in. Each is also the role the link carries. */
+type CreatableRelation = 'parent' | 'child' | 'jump'
 
-/** Seats a person may make a note in: exactly those a link can write. */
-export const CREATABLE: readonly CreatableSeat[] = ['parent', 'child', 'jump']
+/** Relations a person may make a note in: exactly those a link can write. */
+export const CREATABLE: readonly CreatableRelation[] = ['parent', 'child', 'jump']
 
-/** The role a link carries to seat a note in that seat, and nothing for a sibling. */
-const getRole = (seat: PlexRelatedSeat): CreatableSeat | undefined =>
-  CREATABLE.find((one) => one === seat)
+/** The role a link carries to put a note in that relation, and nothing for a sibling. */
+const getRole = (relation: PlexRelation): CreatableRelation | undefined =>
+  CREATABLE.find((one) => one === relation)
 
 /**
  * What a new note writes about the note it was made from. The new one takes the
- * seat the gesture named, so from where it stands the other one takes the
- * opposite seat.
+ * relation the gesture named, so from where it stands the other one takes the
+ * opposite relation.
  */
-const opposites: Partial<Record<PlexRelatedSeat, CreatableSeat>> = {
+const opposites: Partial<Record<PlexRelation, CreatableRelation>> = {
   parent: 'child',
   child: 'parent',
   jump: 'jump',
 }
 
 /**
- * What a new note writes to sit in that seat of another one. A note in no seat
- * writes nothing, and a seat nothing faces is not a seat to make one in.
+ * What a new note writes to sit in that relation of another one. A note in no relation
+ * writes nothing, and a relation nothing faces is not a relation to make one in.
  */
-const resolveSeatLinks = (from: string, seat: PlexRelatedSeat | null): readonly Link[] | null => {
-  if (!seat) return []
-  const role = opposites[seat]
+const resolveRelationLinks = (
+  from: string,
+  relation: PlexRelation | null,
+): readonly Link[] | null => {
+  if (!relation) return []
+  const role = opposites[relation]
   return role ? [{ to: from, role }] : null
 }
 
@@ -121,22 +124,22 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
   }
 
   /**
-   * A note under the name a person gave it: in a seat of another note, filed
+   * A note under the name a person gave it: in a relation of another note, filed
    * beside it, or on its own at the top of the vault.
    */
   async function createWithTitle(
     title: string,
     from: string,
-    seat: PlexRelatedSeat | null,
+    relation: PlexRelation | null,
   ): Promise<NoteRef | null> {
-    const links = resolveSeatLinks(from, seat)
+    const links = resolveRelationLinks(from, relation)
     if (!links) return null
     return reportNoteResult(await createNote(title, from ? getParentFolder(from) : '', links))
   }
 
-  /** Create a note in a seat of another one, filed in the folder that one is in. */
-  async function createInSeat(from: string, seat: PlexRelatedSeat): Promise<NoteRef | null> {
-    const links = resolveSeatLinks(from, seat)
+  /** Create a note in a relation of another one, filed in the folder that one is in. */
+  async function createInRelation(from: string, relation: PlexRelation): Promise<NoteRef | null> {
+    const links = resolveRelationLinks(from, relation)
     if (!links) return null
     return createUntitled(getParentFolder(from), links)
   }
@@ -159,10 +162,10 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
   async function join(
     from: string,
     to: string,
-    seat: PlexRelatedSeat,
+    relation: PlexRelation,
     label?: string,
   ): Promise<boolean> {
-    const role = getRole(seat)
+    const role = getRole(relation)
     if (!role) return false
     try {
       const joinError = await core.join(from, {
@@ -185,8 +188,8 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
   /**
    * Remove a relationship from one note.
    */
-  async function removeLink(from: string, to: string, seat?: PlexRelatedSeat): Promise<boolean> {
-    const role = seat ? getRole(seat) : undefined
+  async function removeLink(from: string, to: string, relation?: PlexRelation): Promise<boolean> {
+    const role = relation ? getRole(relation) : undefined
     try {
       const removeError = await core.removeLink(from, to, role)
       if (removeError !== null) {
@@ -202,7 +205,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
   }
 
   return {
-    createInSeat,
+    createInRelation,
     createUntitled,
     createWithTitle,
     join,
