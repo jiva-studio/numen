@@ -128,9 +128,9 @@ type Sources struct {
 	// at that address. Without both, the tool that imports one is not added.
 	URLs   *source.CreateURL
 	Import *source.ImportURL
-	// Changed says an artifact of a file was written, so that whatever draws
-	// that file reads what now stands. Without it a window is told nothing.
-	Changed func(path string)
+	// Artifacts lists, reads and corrects what was made from a file. Without
+	// them the tools for those artifacts are not added.
+	Artifacts source.Artifacts
 }
 
 // New builds the server an agent connects to.

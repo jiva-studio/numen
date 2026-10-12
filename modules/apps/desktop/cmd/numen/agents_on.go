@@ -138,7 +138,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			Documents:  cfg.TextExtractor(),
 			URLs:       opened.API.Files.URLs,
 			Import:     opened.API.Imports,
-			Changed:    opened.API.ReportArtifactChange,
+			Artifacts:  cfg.Artifacts(opened.SourcesKnown(), opened.API.ReportArtifactChange),
 		},
 
 		Cards: mcp.Cards{

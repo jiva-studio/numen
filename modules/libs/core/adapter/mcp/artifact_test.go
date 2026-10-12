@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // closeTrackingStores wraps a store so a test can tell whether what it opened
@@ -72,6 +73,10 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 	}
 	queries := &sourced{known: map[string]port.SourceText{}}
 	core.Sources.Queries = queries
+	core.Sources.Artifacts = source.Artifacts{
+		List: source.NewListArtifacts(queries, core.Sources.Derived),
+		Read: source.NewReadArtifact(queries, core.Sources.Derived),
+	}
 	session := sessionOf(t, mcp.New(core))
 
 	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{

@@ -1,0 +1,130 @@
+package source
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+)
+
+// ErrNotCorrectable is a kind whose corrections are not the text itself. A
+// recognition's are records keyed to the printed line each one puts right, and the
+// coordinates on the page hang off those numbers.
+var ErrNotCorrectable = errors.New(
+	"only a transcript is written here; a recognition is put right by a proofreading run")
+
+// ErrNoCue is words with no cue in them.
+var ErrNoCue = errors.New("no cue was read out of those words")
+
+// ErrTranscriptBusy is a transcript a run is writing down.
+var ErrTranscriptBusy = errors.New("a run is writing this transcript down")
+
+// Correction is a span of a transcript as it should read. Words is WebVTT, and
+// the span is Length milliseconds from Start; a Length of zero or less takes the
+// span the cues cover.
+type Correction struct {
+	Path   string
+	Kind   string
+	Words  string
+	Start  int
+	Length int
+}
+
+// WriteCorrections writes a span of a transcript as it should read. What was
+// transcribed stays as it was and the corrections are kept beside it.
+type WriteCorrections struct {
+	shelf   artifactShelf
+	changed func(path string)
+}
+
+// NewWriteCorrections writes corrections through the index that knows each
+// file's hash and the store the transcripts are kept in. Changed, when it is
+// not nil, is told the path of each file whose transcript was written.
+func NewWriteCorrections(
+	queries port.SourceQueries, derived port.DerivedStores, changed func(path string),
+) *WriteCorrections {
+	return &WriteCorrections{shelf: artifactShelf{queries: queries, derived: derived}, changed: changed}
+}
+
+// Execute writes the cues in place of every cue beginning inside the span they
+// cover, and returns how many cues the transcript now holds.
+func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Correction) (int, error) {
+	if in.Kind != KindTranscript {
+		return 0, ErrNotCorrectable
+	}
+	_, put := transcript.Parse([]byte(in.Words))
+	if len(put) == 0 {
+		return 0, ErrNoCue
+	}
+
+	held, store, hash, err := u.shelf.getArtifacts(ctx, v, in.Path)
+	if err != nil {
+		return 0, err
+	}
+	for _, one := range held {
+		if one.Kind != KindTranscript {
+			continue
+		}
+		return u.write(ctx, store, in, one.Producer, hash, put)
+	}
+	return 0, fmt.Errorf("nothing of the kind %q was made from %s", in.Kind, in.Path)
+}
+
+func (u *WriteCorrections) write(
+	ctx context.Context, store port.DerivedStore, in Correction, producer, hash string, put []transcript.Cue,
+) (int, error) {
+	words, err := getArtifactText(ctx, store, producer, hash)
+	if err != nil {
+		return 0, err
+	}
+
+	// A run appends to what it is writing down, and what is being appended to is
+	// not corrected underneath.
+	release, err := store.ClaimName(ctx, text.Partial(producer, hash))
+	if errors.Is(err, port.ErrClaimed) {
+		return 0, ErrTranscriptBusy
+	}
+	if err != nil {
+		return 0, err
+	}
+	defer release()
+
+	_, stood := transcript.Parse([]byte(words))
+	whole := spliceCues(stood, put, in.Start, in.Length)
+	written := append(transcript.Marshal(whole), transcript.GetHandWrittenMark()...)
+	if err := store.Write(ctx, text.Corrections(producer, hash), written); err != nil {
+		return 0, err
+	}
+	if u.changed != nil {
+		u.changed(in.Path)
+	}
+	return len(whole), nil
+}
+
+// spliceCues is the cues as they now read: the ones outside the span as they
+// were, and the ones sent in place of every cue beginning inside it.
+func spliceCues(stood, put []transcript.Cue, start, length int) []transcript.Cue {
+	// The cues sent are what they cover: a call naming no span replaces what
+	// stands between the first of them and the last, and never the whole of it.
+	if length <= 0 {
+		start, length = put[0].From, put[len(put)-1].To-put[0].From
+	}
+	end := start + length
+	out := make([]transcript.Cue, 0, len(stood)+len(put))
+	for _, one := range stood {
+		if one.From < start {
+			out = append(out, one)
+		}
+	}
+	out = append(out, put...)
+	for _, one := range stood {
+		if one.From >= end {
+			out = append(out, one)
+		}
+	}
+	return out
+}
