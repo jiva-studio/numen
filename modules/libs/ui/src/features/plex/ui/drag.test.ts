@@ -7,7 +7,7 @@
  * arithmetic, which is `arrange/drop.test.ts` and needs none of this.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
 import type { PlexRelatedSeat } from '../lib/seat'
@@ -280,5 +280,101 @@ describe('while something is being dragged over the plex', () => {
     expect(shape.attributes('aria-label')).toBeUndefined()
     expect(shape.attributes('tabindex')).toBe('-1')
     expect(shape.attributes('aria-hidden')).toBe('true')
+  })
+})
+
+describe('what a drag leaves on the window', () => {
+  const TYPES = ['keydown', 'pointercancel', 'pointermove', 'pointerup']
+
+  /** The drag's listeners still on the window, by type, once spied on from before the mount. */
+  function spyOnWindowListeners() {
+    const added = vi.spyOn(window, 'addEventListener')
+    const removed = vi.spyOn(window, 'removeEventListener')
+    return () => {
+      const gone = removed.mock.calls
+      return added.mock.calls
+        .filter(([type]) => TYPES.includes(type))
+        .filter(([type, listener]) => !gone.some(([t, l]) => t === type && l === listener))
+        .map(([type]) => type)
+        .sort()
+    }
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('is four listeners while the drag is followed', () => {
+    const left = spyOnWindowListeners()
+    mountPlex()
+
+    expect(left()).toStrictEqual(TYPES)
+  })
+
+  it('is nothing once the drag is let go of', async () => {
+    const left = spyOnWindowListeners()
+    const plex = mountPlex()
+    await letGo(plex, 600, 40)
+
+    expect(left()).toStrictEqual([])
+  })
+
+  it('is nothing after Escape', () => {
+    const left = spyOnWindowListeners()
+    mountPlex()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+
+    expect(left()).toStrictEqual([])
+  })
+
+  it('is nothing after the pointer is taken away', () => {
+    const left = spyOnWindowListeners()
+    mountPlex()
+    window.dispatchEvent(pointer('pointercancel', 600, 40))
+
+    expect(left()).toStrictEqual([])
+  })
+
+  it('is nothing once the plex has gone', () => {
+    const left = spyOnWindowListeners()
+    const plex = mountPlex()
+    plex.unmount()
+
+    expect(left()).toStrictEqual([])
+  })
+
+  it('draws nothing for a pointer that moves after the release', async () => {
+    const plex = mountPlex()
+    await letGo(plex, 600, 40)
+
+    window.dispatchEvent(pointer('pointermove', 600, 40))
+    await plex.vm.$nextTick()
+    expect(findDragged(plex).exists()).toBe(false)
+
+    window.dispatchEvent(pointer('pointerup', 600, 40))
+    await plex.vm.$nextTick()
+    expect(findDragged(plex).exists()).toBe(false)
+  })
+})
+
+describe('a drag followed from the window', () => {
+  it('joins at the place of a release that no move came before', async () => {
+    const plex = mountPlex()
+    window.dispatchEvent(pointer('pointerup', 600, 40))
+    await plex.vm.$nextTick()
+
+    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'parent']])
+  })
+
+  it('goes on after a key that is not Escape', async () => {
+    const plex = mountPlex()
+    window.dispatchEvent(pointer('pointermove', 600, 40))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }))
+    await plex.vm.$nextTick()
+    expect(findDragged(plex).exists()).toBe(true)
+
+    window.dispatchEvent(pointer('pointerup', 600, 40))
+    await plex.vm.$nextTick()
+    expect(plex.emitted('bring')).toStrictEqual([[DRAGGED, 'parent']])
   })
 })

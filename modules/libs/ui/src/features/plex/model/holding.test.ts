@@ -93,6 +93,62 @@ describe('a rest on a node', () => {
     expect(reached).not.toHaveBeenCalled()
   })
 
+  it('waits the default time before it reaches out, and not a moment less', () => {
+    vi.useFakeTimers()
+    const { held, reached } = createHolding()
+
+    held.onPointerDown(press())
+    vi.advanceTimersByTime(HOLD - 1)
+    expect(reached).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(1)
+    expect(reached).toHaveBeenCalledOnce()
+  })
+
+  it('reports that it is resting from the press until it is over', () => {
+    vi.useFakeTimers()
+    const { held } = createHolding()
+    expect(held.isResting()).toBe(false)
+
+    held.onPointerDown(press())
+    expect(held.isResting()).toBe(true)
+
+    held.letGo()
+    expect(held.isResting()).toBe(false)
+  })
+
+  it('follows the latest press when a second one comes before the wait is out', () => {
+    vi.useFakeTimers()
+    const { held, reached } = createHolding()
+    const second = press({ clientX: 140 })
+
+    held.onPointerDown(press())
+    vi.advanceTimersByTime(HOLD / 2)
+    held.onPointerDown(second)
+    vi.advanceTimersByTime(HOLD)
+
+    expect(reached).toHaveBeenCalledOnce()
+    expect(reached).toHaveBeenCalledWith(second)
+  })
+
+  it('is kept by a finger that strays exactly as far as is allowed', () => {
+    vi.useFakeTimers()
+    const { held, reached } = createHolding()
+
+    held.onPointerDown(press())
+    held.onPointerMove(press({ clientX: 100 + STRAY }))
+    vi.advanceTimersByTime(HOLD)
+
+    expect(reached).toHaveBeenCalledOnce()
+  })
+
+  it('takes a move with no press before it as nothing', () => {
+    const { held } = createHolding()
+
+    expect(() => held.onPointerMove(press())).not.toThrow()
+    expect(held.isResting()).toBe(false)
+  })
+
   it('goes with the scope it was made in', () => {
     vi.useFakeTimers()
     const { held, reached, scope } = createHolding()

@@ -58,6 +58,10 @@ describe('a box with more of its title to show', () => {
 })
 
 describe('a box with nothing more to show', () => {
+  it('stays as it was placed when its title needs exactly the room it has', () => {
+    expect(getWideBox(nodeAt(), 144, WINDOW, MARGIN)).toBeNull()
+  })
+
   it('stays as it was placed when its title is already in it', () => {
     expect(getWideBox(nodeAt(), 120, WINDOW, MARGIN)).toBeNull()
   })
@@ -171,5 +175,100 @@ describe('a box opening under the attention', () => {
     await vi.advanceTimersByTimeAsync(WAIT)
     expect(world.pending).toBe(false)
     expect(open.value).toBe(0)
+  })
+
+  it('cancels the frame in flight when the attention leaves mid-opening', async () => {
+    const on = ref<string | null>('a box')
+    const { open, world } = createDwell(() => on.value)
+
+    await vi.advanceTimersByTimeAsync(WAIT)
+    world.tick(0)
+    world.tick(OPENING / 4)
+    expect(world.cancelled).toStrictEqual([])
+
+    on.value = null
+    await nextTick()
+    expect(world.cancelled).toStrictEqual([3])
+    expect(open.value).toBeGreaterThan(0)
+  })
+
+  it('cancels nothing while no frame is in flight', async () => {
+    const on = ref<string | null>(null)
+    const { world } = createDwell(() => on.value)
+
+    on.value = 'a box'
+    await nextTick()
+    on.value = 'another box'
+    await nextTick()
+
+    expect(world.cancelled).toStrictEqual([])
+  })
+
+  it('stops drawing frames when its scope goes mid-opening', async () => {
+    const on = ref<string | null>('a box')
+    const { world, stop } = createDwell(() => on.value)
+
+    await vi.advanceTimersByTimeAsync(WAIT)
+    world.tick(0)
+    expect(world.pending).toBe(true)
+
+    stop()
+    expect(world.pending).toBe(false)
+    expect(world.cancelled).toStrictEqual([2])
+  })
+
+  it('begins the wait again when what the attention is on changes mid-wait', async () => {
+    const on = ref<string | null>('a box')
+    const { world } = createDwell(() => on.value)
+
+    await vi.advanceTimersByTimeAsync(WAIT - 100)
+    on.value = 'another box'
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(world.pending).toBe(false)
+
+    await vi.advanceTimersByTimeAsync(WAIT - 100)
+    expect(world.pending).toBe(true)
+  })
+
+  it('times a frame from the first one it is given, whenever that is', async () => {
+    const on = ref<string | null>('a box')
+    const { open, world } = createDwell(() => on.value)
+
+    await vi.advanceTimersByTimeAsync(WAIT)
+    world.tick(1000)
+    expect(open.value).toBe(0)
+
+    world.tick(1000 + OPENING / 2)
+    expect(open.value).toBeGreaterThan(0)
+    expect(open.value).toBeLessThan(1)
+
+    world.tick(1000 + OPENING)
+    expect(open.value).toBe(1)
+  })
+
+  it('takes the rest of the way in the share of the time that is left', async () => {
+    const on = ref<string | null>('a box')
+    const { open, world } = createDwell(() => on.value)
+
+    await vi.advanceTimersByTimeAsync(WAIT)
+    world.tick(0)
+    world.tick(OPENING / 4)
+    const reached = open.value
+    expect(reached).toBeGreaterThan(0)
+    expect(reached).toBeLessThan(1)
+
+    on.value = null
+    await nextTick()
+    on.value = 'a box'
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(WAIT)
+    expect(open.value).toBe(reached)
+
+    world.tick(0)
+    world.tick(OPENING * (1 - reached))
+    expect(open.value).toBe(1)
+    expect(world.pending).toBe(false)
   })
 })
