@@ -1,17 +1,10 @@
 package mcp
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"slices"
-
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // How much one call may ask about the cards of a vault. A deck is a file
@@ -76,99 +69,8 @@ type WriteOutcome struct {
 	Mark        string `json:"mark,omitempty" jsonschema:"the mark the card just written is addressed by, for as long as it exists"`
 }
 
-// changeDeck reads a deck, opens its body for splicing, hands it to change, and
-// puts back what comes out, with the mark every card that carried none was
-// given.
-//
-// A change is a splice: the run one card, one value or one heading occupies is
-// replaced. The preamble, the tail, and every section and card the change did
-// not name are written as the bytes they arrived as, down to the blank lines
-// and the whitespace the person left at the ends of their lines.
-func changeDeck(
-	ctx context.Context, core Core, path, fingerprint string,
-	change func(read cards.DeckContents, file *format.DeckFile) error,
-) (WriteOutcome, []format.CardMark, error) {
-	baseline, err := parseFingerprint(fingerprint)
-	if err != nil {
-		return WriteOutcome{}, nil, err
-	}
-	v := core.getCurrentVault().Vault
-	read, err := readDeckIn(ctx, core, v, path)
-	if err != nil {
-		return WriteOutcome{}, nil, err
-	}
-
-	deckEdit := core.Cards.DeckEdit
-	if deckEdit == nil {
-		deckEdit = format.OpenDeckBody
-	}
-	file := deckEdit(read.Raw)
-	if err := change(read, file); err != nil {
-		return WriteOutcome{}, nil, err
-	}
-	body := file.Body()
-	wrote, err := core.Cards.Write.Deck(ctx, v, path, body, baseline)
-	// A write that reached the vault is a write that happened, so the caller is
-	// handed the fingerprint it presents at its next write.
-	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
-		return WriteOutcome{}, nil, err
-	}
-	return WriteOutcome{
-		Path:        path,
-		Fingerprint: fingerprintOf(wrote.Fingerprint),
-		Cards:       len(file.Deck(domain.Fingerprint{}).Cards),
-	}, wrote.Given, nil
-}
-
-// index is where the card of a mark stands. A deck holding no card of it is
-// ErrNoSuchCard — a card typed in by hand carries none until the deck is
-// written, and no mark reaches it — and a deck holding two is ErrTwoCards:
-// both are read and both are shown, and choosing between them would be choosing
-// which of the two the person meant.
-func index(held []format.Card, carried string) (int, error) {
-	at := -1
-	if carried != "" {
-		for i, card := range held {
-			if string(card.Mark) != carried {
-				continue
-			}
-			if at >= 0 {
-				return 0, fmt.Errorf("%w: %s", format.ErrTwoCards, carried)
-			}
-			at = i
-		}
-	}
-	if at < 0 {
-		return 0, fmt.Errorf("%w: %s", format.ErrNoSuchCard, carried)
-	}
-	return at, nil
-}
-
-// getMark is the mark the card standing at one place was given, and nothing
-// where it carried one already.
-func getMark(given []format.CardMark, at int) string {
-	for _, one := range given {
-		if one.Card == at {
-			return string(one.Mark)
-		}
-	}
-	return ""
-}
-
-// findSectionEnd is where a card written at the end of one of a deck's sections
-// stands, counted from the deck's first card. A card goes at the end of its
-// section, which is in front of the first card of a later one.
-func findSectionEnd(d format.Deck, section int) (int, error) {
-	if section < 0 || section >= len(d.Sections) {
-		return 0, fmt.Errorf(
-			"this deck has %d sections, so there is none standing at %d", len(d.Sections), section)
-	}
-	for i, card := range d.Cards {
-		if card.Section > section {
-			return i, nil
-		}
-	}
-	return len(d.Cards), nil
+func newWriteOutcome(path string, edited cards.EditResult) WriteOutcome {
+	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.Fingerprint), Cards: edited.Cards}
 }
 
 func newCard(card format.Card) Card {
@@ -177,24 +79,6 @@ func newCard(card format.Card) Card {
 		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
 	}
 	return out
-}
-
-// keepFields is the card holding the named fields alone, matched by the name the card
-// writes over the value, which is not always the name its stencil declares: a
-// deck a rename did not reach writes the old one. A call naming no field asks
-// for the whole card.
-func keepFields(card Card, fields []string) Card {
-	if len(fields) == 0 {
-		return card
-	}
-	kept := card
-	kept.Values = nil
-	for _, v := range card.Values {
-		if slices.Contains(fields, v.Field) {
-			kept.Values = append(kept.Values, v)
-		}
-	}
-	return kept
 }
 
 func values(vs []FieldValue) []format.Value {

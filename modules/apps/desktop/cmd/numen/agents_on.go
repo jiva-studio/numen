@@ -111,7 +111,7 @@ func makeEditPreview(opened *editor.Installation) claudecode.EditPreview {
 // they are looking at the text they typed.
 func makeAgentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
 	notes := opened.Notes().ShowEdits(opened.API.GetWindow())
-	cutting := opened.Cards()
+	cards := opened.Cards()
 
 	return mcp.Core{
 		Showing:     mcp.ShowOneVault(opened.GetCurrentVault(), root),
@@ -149,11 +149,17 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		},
 
 		Cards: mcp.Cards{
-			Read:        cutting.Read,
-			List:        cutting.List,
-			Write:       cutting.Write,
-			Create:      cutting.Create,
-			RenameField: cutting.Rename.WithMaxDecksPerRename(container.MaxDecksPerRename),
+			GetCardPage:     cards.GetCardPage,
+			AddCard:         cards.AddCard,
+			EditCard:        cards.EditCard,
+			RemoveCardValue: cards.RemoveCardValue,
+			RemoveCard:      cards.RemoveCard,
+			AddSection:      cards.AddSection,
+			RenameSection:   cards.RenameSection,
+			RemoveSection:   cards.RemoveSection,
+			List:            cards.List,
+			Create:          cards.Create,
+			RenameField:     cards.Rename.WithMaxDecksPerRename(container.MaxDecksPerRename),
 		},
 
 		Notes: mcp.Notes{

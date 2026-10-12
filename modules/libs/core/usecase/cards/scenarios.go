@@ -9,4 +9,13 @@ type Scenarios struct {
 	Write  Write
 	Create Create
 	Rename RenameField
+
+	GetCardPage     GetCardPage
+	AddCard         AddCard
+	EditCard        EditCard
+	RemoveCardValue RemoveCardValue
+	RemoveCard      RemoveCard
+	AddSection      AddSection
+	RenameSection   RenameSection
+	RemoveSection   RemoveSection
 }

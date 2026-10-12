@@ -257,7 +257,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 	queries := db.Queries()
 	// Only the tools that read are served here, and none of them writes, so
 	// nothing is ever brought level.
-	cutting := cfg.Cards(queries, db.Links(), levelNothing)
+	cards := cfg.Cards(queries, db.Links(), levelNothing)
 
 	return mcp.Core{
 		Showing:     mcp.ShowOneVault(v, v.Path),
@@ -273,7 +273,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 			GetTitles:     note.NewGetTitles(queries),
 			Links:         note.NewShowLinks(db.Links()),
 		},
-		Cards:   mcp.Cards{Read: cutting.Read, List: cutting.List},
+		Cards:   mcp.Cards{GetCardPage: cards.GetCardPage, List: cards.List},
 		Sources: mcp.Sources{GetDocumentList: source.NewGetDocumentList(db.SourcesKnown()), GetDocumentText: source.NewGetDocumentText(readers, db.SourcesKnown(), nil, nil)},
 	}
 }

@@ -68,7 +68,7 @@ func serveAgents(
 	cfg container.Config,
 	db *container.Index,
 	notes container.Notes,
-	cutting container.Cards,
+	cards container.Cards,
 	api *window.API,
 	off bool,
 	out io.Writer,
@@ -100,7 +100,7 @@ func serveAgents(
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:       cfg,
-				Core:         makeReviewCore(cfg, db, notes, cutting, api, v, root, out),
+				Core:         makeReviewCore(cfg, db, notes, cards, api, v, root, out),
 				ShouldReview: true,
 				Token:        secret,
 				Root:         root,
@@ -139,7 +139,7 @@ func makeReviewCore(
 	cfg container.Config,
 	db *container.Index,
 	notes container.Notes,
-	cutting container.Cards,
+	cards container.Cards,
 	api *window.API,
 	v domain.Vault,
 	root string,
@@ -175,9 +175,15 @@ func makeReviewCore(
 		},
 
 		Cards: mcp.Cards{
-			Read:  cutting.Read,
-			List:  cutting.List,
-			Write: cutting.Write,
+			GetCardPage:     cards.GetCardPage,
+			AddCard:         cards.AddCard,
+			EditCard:        cards.EditCard,
+			RemoveCardValue: cards.RemoveCardValue,
+			RemoveCard:      cards.RemoveCard,
+			AddSection:      cards.AddSection,
+			RenameSection:   cards.RenameSection,
+			RemoveSection:   cards.RemoveSection,
+			List:            cards.List,
 		},
 	}
 }
