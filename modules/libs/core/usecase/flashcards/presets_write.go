@@ -175,14 +175,8 @@ func (u Presets) save(
 // byte for byte. A key the read could not make out and the person has since
 // moved is a setting that differs, and is written.
 func settle(doc *markdown.Document, p, was review.Preset) error {
-	if !p.By.Equal(was.By) {
-		if p.By.IsZero() {
-			if err := doc.SetScalar(byDateKey, ""); err != nil {
-				return err
-			}
-		} else if err := doc.SetDay(byDateKey, p.By); err != nil {
-			return err
-		}
+	if err := writeByDate(doc, p, was); err != nil {
+		return err
 	}
 	for _, one := range []struct {
 		key        string
@@ -215,6 +209,18 @@ func settle(doc *markdown.Document, p, was review.Preset) error {
 		return nil
 	}
 	return doc.SetMapping(loadKey, readShares(entries, p.Load, was.Load))
+}
+
+// writeByDate writes the day the goal aims at when it differs from the one the
+// note was read with, and empties the key when the preset names no day.
+func writeByDate(doc *markdown.Document, p, was review.Preset) error {
+	if p.By.Equal(was.By) {
+		return nil
+	}
+	if p.By.IsZero() {
+		return doc.SetScalar(byDateKey, "")
+	}
+	return doc.SetDay(byDateKey, p.By)
 }
 
 // readShares is the `load` block a save puts down: a day the read made out
@@ -309,18 +315,21 @@ func checkBounds(p review.Preset) error {
 				ErrOutOfBounds, one.key, one.value, one.bounds.Least, one.bounds.Most)
 		}
 	}
+	return checkLoad(p.Load)
+}
+
+// checkLoad is what in the week's load may not be written, and is nil when all
+// of it may.
+func checkLoad(load map[time.Weekday]int) error {
 	for _, weekday := range week {
-		share, named := p.Load[weekday]
-		if !named {
-			continue
-		}
-		if !review.LoadBounds.Contains(float64(share)) {
+		share, named := load[weekday]
+		if named && !review.LoadBounds.Contains(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
 				ErrOutOfBounds, review.DayName(weekday), share,
 				review.LoadBounds.Least, review.LoadBounds.Most)
 		}
 	}
-	for weekday := range p.Load {
+	for weekday := range load {
 		if weekday < time.Sunday || weekday > time.Saturday {
 			return fmt.Errorf("%w: a load is kept on a day of the week", ErrOutOfBounds)
 		}
