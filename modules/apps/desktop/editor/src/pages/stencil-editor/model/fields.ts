@@ -11,7 +11,7 @@ import {
   removeField,
   renameFace,
   areStencilsEqual,
-  getStencilBody,
+  serializeStencil,
   parseStencil,
   writeFace,
   type BufferStencil,
@@ -52,7 +52,7 @@ export function createStencilFields(
   }
 
   const applyStencil = (id: string, stencil: BufferStencil): void => {
-    const body = getStencilBody(stencil)
+    const body = serializeStencil(stencil)
     parsed.set(id, { body, stencil })
     onTyped(id, body)
   }

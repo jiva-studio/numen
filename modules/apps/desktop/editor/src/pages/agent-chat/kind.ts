@@ -5,7 +5,7 @@ import type { TabKind, WindowHandle } from '@/entities/tab'
 import { AGENT } from '@/entities/tab'
 import AgentTab from './ui/AgentTab.vue'
 import { WORDS as words } from './words'
-import { getFirstLine } from './lib/title'
+import { createTabTitle } from './lib/title'
 import type { AgentTabState } from './model/useAgentConversation'
 import type { NoteRef } from './types'
 
@@ -24,7 +24,7 @@ export function createAgentKind(
   about: () => NoteRef,
 ) {
   const getTitle = (state: AgentTabState) =>
-    getFirstLine(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') ||
+    createTabTitle(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') ||
     words.agent
 
   const kind: TabKind<AgentTabState, typeof AGENT> = {

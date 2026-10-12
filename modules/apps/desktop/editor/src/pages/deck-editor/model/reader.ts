@@ -9,8 +9,8 @@
 import type { DeckProblem } from '@/entities/deck'
 import {
   deserializeBufferDeckFromString,
-  applyHeadings,
-  applyIds,
+  applyReadHeadings,
+  applyScreenIds,
   areDecksEqual,
   type BufferDeck,
 } from '../lib/deck'
@@ -44,8 +44,8 @@ export function createDeckReader(
     let deck = read
     if (held) {
       deck = areDecksEqual(held.deck, read)
-        ? applyHeadings(held.deck, read)
-        : applyIds(held.deck, read)
+        ? applyReadHeadings(held.deck, read)
+        : applyScreenIds(held.deck, read)
     }
     parsed.set(id, { body, deck })
     return deck

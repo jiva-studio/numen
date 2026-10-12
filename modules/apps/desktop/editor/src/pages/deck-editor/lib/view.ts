@@ -9,13 +9,13 @@ import {
   serializeBufferSectionsToVaultSections,
 } from './serialize'
 
-export const getSections = (deck: BufferDeck): readonly DeckSection[] =>
+export const createDeckSections = (deck: BufferDeck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
 
 /**
  * The cards as the grid draws them, each under the stencil its wikilink resolves to.
  */
-export const getCards = (
+export const createDeckCards = (
   deck: BufferDeck,
   offers: readonly StencilSummary[],
 ): readonly DeckCard[] => {
@@ -31,7 +31,7 @@ export const getCards = (
 /**
  * The stencils a card may be cut by, under the word a card names one by.
  */
-export const getStencils = (offers: readonly StencilSummary[]): readonly Stencil[] => {
+export const createStencilChoices = (offers: readonly StencilSummary[]): readonly Stencil[] => {
   const seenTitles = new Set<string>()
   const stencils: Stencil[] = []
   for (const offer of offers) {
@@ -59,7 +59,7 @@ export const areDecksEqual = (one: BufferDeck, other: BufferDeck): boolean =>
 /**
  * The deck on screen under the headings the file now carries.
  */
-export const applyHeadings = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
+export const applyReadHeadings = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
   const getHeading = (at: number): string => read.cards[at]?.heading ?? ''
   if (screen.cards.every((card, at) => card.heading === getHeading(at))) return screen
   return {
@@ -71,7 +71,7 @@ export const applyHeadings = (screen: BufferDeck, read: BufferDeck): BufferDeck 
 /**
  * A reading of a deck under the identities the window already drew it by.
  */
-export const applyIds = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
+export const applyScreenIds = (screen: BufferDeck, read: BufferDeck): BufferDeck => {
   const seat = (deck: BufferDeck, section: string | null): number =>
     section === null ? -1 : deck.sections.findIndex((each) => each.id === section)
 
@@ -126,5 +126,5 @@ export const areOffersEqual = (
   })
 
 /** Where the stencil of that title is filed, and nowhere where none is. */
-export const getCutPath = (offers: readonly StencilSummary[], name: string): string =>
+export const findStencilPath = (offers: readonly StencilSummary[], name: string): string =>
   offers.find((offer) => offer.title === name)?.path ?? ''

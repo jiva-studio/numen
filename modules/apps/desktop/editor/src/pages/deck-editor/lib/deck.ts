@@ -11,14 +11,14 @@ export {
   serializeBufferSectionsToVaultSections,
 } from './serialize'
 export {
-  applyHeadings,
-  applyIds,
-  getCards,
-  getCutPath,
+  applyReadHeadings,
+  applyScreenIds,
+  createDeckCards,
+  findStencilPath,
   areDecksEqual,
   areOffersEqual,
-  getSections,
-  getStencils,
+  createDeckSections,
+  createStencilChoices,
 } from './view'
-export { addCard, dropCard, setCardValue, removeCard } from './cards'
+export { addCard, dropCard, replaceCardValue, removeCard } from './cards'
 export { addSection, removeSection, renameSection } from './sections'

@@ -4,15 +4,15 @@ import type { VaultStencil } from '@/entities/deck'
 import {
   addFace,
   addField,
-  getFaces,
+  createVaultFaces,
   moveField,
   removeFace,
   removeField,
   renameFace,
   areStencilsEqual,
-  getStencilBody,
+  serializeStencil,
   parseStencil,
-  createStencil,
+  createBufferStencil,
   writeFace,
   type BufferStencil,
 } from './stencil'
@@ -38,7 +38,7 @@ const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
 })
 
 const stencil = (over: Partial<VaultStencil> = {}): BufferStencil =>
-  createStencil(cut(over), createIds())
+  createBufferStencil(cut(over), createIds())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {
@@ -47,7 +47,7 @@ describe('a stencil as the window holds it', () => {
 
   it('is the same string read out and written back', () => {
     const held = stencil()
-    expect(parseStencil(getStencilBody(held))).toStrictEqual(held)
+    expect(parseStencil(serializeStencil(held))).toStrictEqual(held)
   })
 
   it('is a stencil of no fields where nothing has been read', () => {
@@ -55,7 +55,7 @@ describe('a stencil as the window holds it', () => {
   })
 
   it('hands the vault the faces without the identities it minted', () => {
-    expect(getFaces(stencil())[0]).toStrictEqual({
+    expect(createVaultFaces(stencil())[0]).toStrictEqual({
       name: 'Recognise',
       preamble: '',
       front: '{{Height}}',

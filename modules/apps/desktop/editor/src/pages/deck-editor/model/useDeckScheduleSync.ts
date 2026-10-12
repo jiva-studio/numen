@@ -7,7 +7,7 @@ import type { Cards, StencilSummary } from '@/entities/deck'
 import type { openNotes } from '@/entities/note'
 import type { Presets } from '@/entities/deck'
 import { useDeckSchedule } from './useDeckSchedule'
-import { areOffersEqual, getStencils } from '../lib/deck'
+import { areOffersEqual, createStencilChoices } from '../lib/deck'
 
 export function useDeckScheduleSync(
   cards: Cards,
@@ -17,7 +17,7 @@ export function useDeckScheduleSync(
   const offers = shallowRef<readonly StencilSummary[]>([])
   let listedOk = true
 
-  const stencils = computed(() => getStencils(offers.value))
+  const stencils = computed(() => createStencilChoices(offers.value))
 
   const listStencils = async (): Promise<void> => {
     try {

@@ -49,7 +49,7 @@ interface Line {
 }
 
 /** The lines written out as one document, each carrying where it begins. */
-const getDocument = (lines: readonly Line[], from: number) => {
+const createDocument = (lines: readonly Line[], from: number) => {
   let at = from
   const written: string[] = []
   const offsets: number[] = []
@@ -63,7 +63,7 @@ const getDocument = (lines: readonly Line[], from: number) => {
 }
 
 /** The paragraphs written out as one document, each carrying where it begins. */
-const document_ = getDocument(
+const document_ = createDocument(
   PARAGRAPHS.map((text) => ({ text })),
   0,
 )
@@ -107,7 +107,7 @@ const ONWARD = 'the second parva'
 const BACK = 'the note below'
 const ELSEWHERE = 'elsewhere'
 
-const FIRST = getDocument(
+const FIRST = createDocument(
   [
     { text: 'Ādi Parva' },
     { text: 'Onward to ', inside: `<a href="${SECOND_PATH}#alpha">${ONWARD}</a>` },
@@ -119,7 +119,7 @@ const FIRST = getDocument(
   0,
 )
 
-const SECOND = getDocument(
+const SECOND = createDocument(
   [
     { text: 'Sabhā Parva' },
     { text: 'The place the first parva points on to.', id: 'alpha' },
@@ -183,7 +183,7 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-const getArea = (canvasElement: HTMLElement) =>
+const findArea = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.book__area') as HTMLElement
 
 /** Every run of the text, in the order the document sets them. */
@@ -220,7 +220,7 @@ export const TheListComesOverTheText: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitForLayout(canvasElement)
-    const before = getArea(canvasElement).getBoundingClientRect()
+    const before = findArea(canvasElement).getBoundingClientRect()
     const spreads = countSpreadsIn(canvasElement)
 
     await userEvent.click(canvas.getByLabelText(words.showContents))
@@ -230,7 +230,7 @@ export const TheListComesOverTheText: Story = {
       async () => await expect(list.getBoundingClientRect().height).toBeGreaterThan(0),
       { timeout: ITS_OWN_PACE },
     )
-    const after = getArea(canvasElement).getBoundingClientRect()
+    const after = findArea(canvasElement).getBoundingClientRect()
     await expect(after.width).toBe(before.width)
     await expect(countSpreadsIn(canvasElement)).toBe(spreads)
 
@@ -279,7 +279,7 @@ export const APlaceChosenIsTurnedTo: Story = {
           (one) => Number(one.dataset['offset']) === wanted.offset,
         )!
         const box = run.getClientRects()[0]!
-        const area = getArea(canvasElement).getBoundingClientRect()
+        const area = findArea(canvasElement).getBoundingClientRect()
         await expect(box.left).toBeGreaterThanOrEqual(area.left - 1)
         await expect(box.left).toBeLessThan(area.right)
       },
@@ -337,7 +337,7 @@ export const DrawnOutOfSight: Story = {
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    const area = getArea(canvasElement)
+    const area = findArea(canvasElement)
     await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight + 1)
   },
 }
@@ -369,13 +369,13 @@ const clickLink = async (link: HTMLElement) => {
 }
 
 /** The run standing at an offset, and nothing where the document holds none. */
-const getRun = (canvasElement: HTMLElement, at: number) =>
+const findRun = (canvasElement: HTMLElement, at: number) =>
   getRunsOf(canvasElement).find((one) => Number(one.dataset['offset']) === at)
 
 /** Whether a run stands in the spread the person is looking at. */
 const isInFront = (canvasElement: HTMLElement, run: HTMLElement) => {
   const box = run.getClientRects()[0]
-  const area = getArea(canvasElement).getBoundingClientRect()
+  const area = findArea(canvasElement).getBoundingClientRect()
   return box !== undefined && box.left >= area.left - 1 && box.left < area.right
 }
 
@@ -395,7 +395,7 @@ export const ALinkIntoTheSameDocument: Story = {
 
     const note = FIRST.offsets[FIRST.offsets.length - 1]!
     await waitFor(
-      async () => await expect(isInFront(canvasElement, getRun(canvasElement, note)!)).toBe(true),
+      async () => await expect(isInFront(canvasElement, findRun(canvasElement, note)!)).toBe(true),
       {
         timeout: ITS_OWN_PACE,
       },
@@ -419,7 +419,7 @@ export const ALinkIntoAnotherDocument: Story = {
     const alpha = SECOND.offsets[1]!
     await waitFor(
       async () => {
-        const run = getRun(canvasElement, alpha)
+        const run = findRun(canvasElement, alpha)
         await expect(run).toBeDefined()
         await expect(isInFront(canvasElement, run!)).toBe(true)
       },

@@ -6,8 +6,8 @@ import {
   addCard,
   addSection,
   dropCard,
-  setCardValue,
-  getCutPath,
+  replaceCardValue,
+  findStencilPath,
   removeCard,
   removeSection,
   renameSection,
@@ -24,12 +24,12 @@ export function createDeckTabActions(
     addCard: (stencil: string, values: readonly Value[], section: string | null = null) =>
       updateDeck(
         id,
-        addCard(getDeck(id), stencil, getCutPath(getOffers(), stencil), values, section),
+        addCard(getDeck(id), stencil, findStencilPath(getOffers(), stencil), values, section),
       ),
     removeCard: (card: string) => updateDeck(id, removeCard(getDeck(id), card)),
     moveCard: (card: string, at: string | null) => updateDeck(id, dropCard(getDeck(id), card, at)),
     writeCardField: (card: string, field: string, nth: number, text: string) =>
-      updateDeck(id, setCardValue(getDeck(id), card, field, nth, text)),
+      updateDeck(id, replaceCardValue(getDeck(id), card, field, nth, text)),
     addSection: (name: string) => updateDeck(id, addSection(getDeck(id), name)),
     renameSection: (section: string, name: string) =>
       updateDeck(id, renameSection(getDeck(id), section, name)),

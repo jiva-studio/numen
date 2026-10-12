@@ -32,7 +32,7 @@ export interface BufferStencil extends Surrounds {
 export const NO_STENCIL: BufferStencil = { fields: [], preamble: '', faces: [], tail: '' }
 
 /** A stencil as the vault read it, each face under an identity this window mints. */
-export const createStencil = (
+export const createBufferStencil = (
   read: VaultStencil,
   generateFaceId: IdMaker = generateId,
 ): BufferStencil => ({
@@ -53,7 +53,7 @@ export const createStencil = (
  * The parts are written in a settled order, so a stencil that came back
  * unchanged reads as the string it went in as.
  */
-export const getStencilBody = (stencil: BufferStencil): string =>
+export const serializeStencil = (stencil: BufferStencil): string =>
   JSON.stringify({
     fields: stencil.fields,
     preamble: stencil.preamble,
@@ -72,7 +72,7 @@ export const parseStencil = (body: string): BufferStencil =>
   body ? (JSON.parse(body) as BufferStencil) : NO_STENCIL
 
 /** The faces of a stencil, in the shape the vault takes them. */
-export const getFaces = (stencil: BufferStencil): readonly VaultFace[] =>
+export const createVaultFaces = (stencil: BufferStencil): readonly VaultFace[] =>
   stencil.faces.map(({ name, preamble, front, back }) => ({ name, preamble, front, back }))
 
 /** Whether two stencils read the same, the identities left out the same way. */
@@ -80,7 +80,7 @@ export const areStencilsEqual = (one: BufferStencil, other: BufferStencil): bool
   one.preamble === other.preamble &&
   one.tail === other.tail &&
   JSON.stringify(one.fields) === JSON.stringify(other.fields) &&
-  JSON.stringify(getFaces(one)) === JSON.stringify(getFaces(other))
+  JSON.stringify(createVaultFaces(one)) === JSON.stringify(createVaultFaces(other))
 
 /** Name a field at the end of the order. */
 export const addField = (stencil: BufferStencil, name: string): BufferStencil => ({

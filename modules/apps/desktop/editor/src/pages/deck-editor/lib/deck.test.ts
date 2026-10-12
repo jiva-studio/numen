@@ -7,12 +7,12 @@ import {
   serializeBufferDeckToString,
   serializeBufferCardsToVaultCards,
   dropCard,
-  getStencils,
+  createStencilChoices,
   deserializeBufferDeckFromString,
   deserializeVaultDeck,
-  getCards,
-  setCardValue,
-  getCutPath,
+  createDeckCards,
+  replaceCardValue,
+  findStencilPath,
   removeCard,
   areDecksEqual,
   addSection,
@@ -200,7 +200,7 @@ describe('the cards as the grid draws them', () => {
     })
 
   it('carries the identity, the section, what cuts it, and the values under it', () => {
-    expect(getCards(deck(), OFFERS)[0]).toStrictEqual({
+    expect(createDeckCards(deck(), OFFERS)[0]).toStrictEqual({
       id: LLAMA,
       section: null,
       stencil: 'Animal',
@@ -213,29 +213,31 @@ describe('the cards as the grid draws them', () => {
   })
 
   it('says nothing of the preamble, which nothing lays out', () => {
-    expect(JSON.stringify(getCards(deck(), OFFERS))).not.toContain('a note in the middle')
+    expect(JSON.stringify(createDeckCards(deck(), OFFERS))).not.toContain('a note in the middle')
   })
 
   it('draws a card the stencil its link reached, whatever stood in the brackets', () => {
     const written = ['cards/Animal', 'Animal|животное', 'Animal#Recognise', 'stencils/Animal.md']
     for (const one of written) {
-      expect(getCards(createCutDeck(one, 'stencils/Animal.md'), OFFERS)[0]?.stencil).toBe('Animal')
+      expect(createDeckCards(createCutDeck(one, 'stencils/Animal.md'), OFFERS)[0]?.stencil).toBe(
+        'Animal',
+      )
     }
   })
 
   it('draws a card whose link reached nothing under what the file wrote', () => {
-    expect(getCards(createCutDeck('Gone', ''), OFFERS)[0]?.stencil).toBe('Gone')
+    expect(createDeckCards(createCutDeck('Gone', ''), OFFERS)[0]?.stencil).toBe('Gone')
   })
 
   it('draws a card that wrote no brackets at all as cut by nothing', () => {
-    expect(getCards(createCutDeck('', ''), OFFERS)[0]?.stencil).toBeNull()
+    expect(createDeckCards(createCutDeck('', ''), OFFERS)[0]?.stencil).toBeNull()
   })
 })
 
 describe('the stencils a card may be cut by', () => {
   it('are named by what each stencil is called', () => {
     expect(
-      getStencils([
+      createStencilChoices([
         { path: 'stencils/Animal.md', title: 'Animal', fields: ['Height'] },
         { path: 'Term.md', title: 'Term', fields: ['Meaning'] },
       ]),
@@ -247,7 +249,7 @@ describe('the stencils a card may be cut by', () => {
 
   it('name one stencil where two are called one name, and the first stands', () => {
     expect(
-      getStencils([
+      createStencilChoices([
         { path: 'a/Animal.md', title: 'Animal', fields: ['Height'] },
         { path: 'b/Animal.md', title: 'Animal', fields: ['Weight'] },
       ]),
@@ -255,13 +257,13 @@ describe('the stencils a card may be cut by', () => {
   })
 
   it('leave out a stencil called nothing', () => {
-    expect(getStencils([{ path: 'Animal.md', title: '', fields: [] }])).toStrictEqual([])
+    expect(createStencilChoices([{ path: 'Animal.md', title: '', fields: [] }])).toStrictEqual([])
   })
 
   it('are filed where the list said, and nowhere for a name no stencil carries', () => {
     const offers = [{ path: 'stencils/Animal.md', title: 'Animal', fields: [] }]
-    expect(getCutPath(offers, 'Animal')).toBe('stencils/Animal.md')
-    expect(getCutPath(offers, 'Term')).toBe('')
+    expect(findStencilPath(offers, 'Animal')).toBe('stencils/Animal.md')
+    expect(findStencilPath(offers, 'Term')).toBe('')
   })
 })
 
@@ -569,7 +571,7 @@ describe('a section of a deck', () => {
 
 describe('a value written into a card', () => {
   it('stands where the field already was', () => {
-    const held = setCardValue(deck(), LLAMA, 'Height', 1, 'about 46"')
+    const held = replaceCardValue(deck(), LLAMA, 'Height', 1, 'about 46"')
     expect(held.cards[0]?.values).toStrictEqual([
       { field: 'Name', text: 'Llama' },
       { field: 'Height', text: 'about 46"' },
@@ -581,7 +583,7 @@ describe('a value written into a card', () => {
     const twice = deck()
     const card = twice.cards[0]
     if (!card) throw new Error('the fixture holds no card')
-    const held = setCardValue(
+    const held = replaceCardValue(
       {
         ...twice,
         cards: [{ ...card, values: [...card.values, { field: 'Height', text: 'about 46"' }] }],
@@ -600,7 +602,7 @@ describe('a value written into a card', () => {
   })
 
   it('is written after the rest where the card had no such field', () => {
-    const held = setCardValue(deck(), LLAMA, 'Weight', 1, '130 kg')
+    const held = replaceCardValue(deck(), LLAMA, 'Weight', 1, '130 kg')
     expect(held.cards[0]?.values.map((value) => value.field)).toStrictEqual([
       'Name',
       'Height',
@@ -610,16 +612,16 @@ describe('a value written into a card', () => {
   })
 
   it('keeps the heading of a field the card has, emptied', () => {
-    const held = setCardValue(deck(), LLAMA, 'Height', 1, '')
+    const held = replaceCardValue(deck(), LLAMA, 'Height', 1, '')
     expect(held.cards[0]?.values[1]).toStrictEqual({ field: 'Height', text: '' })
   })
 
   it('writes no heading for a field the card does not have and nothing was typed into', () => {
-    expect(setCardValue(deck(), ALPACA, 'Height', 1, '').cards[1]?.values).toStrictEqual([])
+    expect(replaceCardValue(deck(), ALPACA, 'Height', 1, '').cards[1]?.values).toStrictEqual([])
   })
 
   it('leaves every other card as it was', () => {
-    expect(setCardValue(deck(), LLAMA, 'Height', 1, 'taller').cards[1]).toStrictEqual(
+    expect(replaceCardValue(deck(), LLAMA, 'Height', 1, 'taller').cards[1]).toStrictEqual(
       deck().cards[1],
     )
   })

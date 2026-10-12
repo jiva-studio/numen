@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { DeckProblem, VaultStencil } from '@/entities/deck'
-import { getStencilBody, createStencil } from '../lib/stencil'
+import { serializeStencil, createBufferStencil } from '../lib/stencil'
 import { createStencilFields } from './fields'
 
 const cut: VaultStencil = {
@@ -33,7 +33,7 @@ const lacking = (face: number, text: string): DeckProblem => ({
 const create = () => {
   let at = 0
   const state = {
-    body: getStencilBody(createStencil(cut, () => `f${(at += 1)}`)),
+    body: serializeStencil(createBufferStencil(cut, () => `f${(at += 1)}`)),
     problems: [] as readonly DeckProblem[],
   }
   const typed = vi.fn((_id: string, body: string) => {
@@ -69,7 +69,7 @@ describe('the stencil a body reads as', () => {
     const { fields, state } = create()
     const was = fields.getStencil('a')
 
-    state.body = getStencilBody({ ...was, fields: ['Height'] })
+    state.body = serializeStencil({ ...was, fields: ['Height'] })
 
     expect(fields.getStencil('a').fields).toStrictEqual(['Height'])
   })

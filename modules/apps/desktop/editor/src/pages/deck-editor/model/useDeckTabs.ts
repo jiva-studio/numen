@@ -19,12 +19,12 @@ import type { WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
 import {
-  getSections,
+  createDeckSections,
   serializeBufferDeckToString,
   serializeBufferCardsToVaultCards,
   deserializeBufferDeckFromString,
   deserializeVaultDeck,
-  getCards,
+  createDeckCards,
   serializeBufferSectionsToVaultSections,
   type BufferDeck,
 } from '../lib/deck'
@@ -108,8 +108,8 @@ export function useDeckTabs(
       id,
       note: computed(() => store.getOpenNote(id)),
       deck,
-      drawn: computed(() => getCards(deck.value, offers.value)),
-      sections: computed(() => getSections(deck.value)),
+      drawn: computed(() => createDeckCards(deck.value, offers.value)),
+      sections: computed(() => createDeckSections(deck.value)),
       stencils,
       marks: computed(() => getMarks(id)),
       errorMessage: computed(() =>

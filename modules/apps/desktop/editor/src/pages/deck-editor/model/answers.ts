@@ -78,7 +78,7 @@ export function createDeckAnswers() {
   /** What is wrong with a file, as the marks against its cards are made from. */
   const getProblems = (path: string): readonly DeckProblem[] => getAnswer(path).problems
 
-  const getFailureReason = (errorCode: ErrorCode | null, bound: number): string | null => {
+  const findFailureReason = (errorCode: ErrorCode | null, bound: number): string | null => {
     if (errorCode === 'deckTooLarge') return words.tooLarge(bound)
     if (errorCode === 'notADeck') return words.notADeck
     return null
@@ -91,9 +91,9 @@ export function createDeckAnswers() {
     if (!hasError) return ''
     const currentAnswer = getAnswer(path)
     if (currentAnswer.reading !== null)
-      return getFailureReason(currentAnswer.reading, currentAnswer.bound) ?? words.notRead
+      return findFailureReason(currentAnswer.reading, currentAnswer.bound) ?? words.notRead
     if (currentAnswer.writing !== null)
-      return getFailureReason(currentAnswer.writing, currentAnswer.bound) ?? words.notSaved
+      return findFailureReason(currentAnswer.writing, currentAnswer.bound) ?? words.notSaved
     return words.unreachable
   }
 
