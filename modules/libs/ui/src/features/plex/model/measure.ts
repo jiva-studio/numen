@@ -63,7 +63,7 @@ interface Probe {
 }
 
 /** A resolved length, which a document writes in pixels. */
-const getPixels = (value: string): number => {
+const parsePixels = (value: string): number => {
   const parsed = Number.parseFloat(value)
   return Number.isFinite(parsed) ? parsed : 0
 }
@@ -99,7 +99,7 @@ export function useTitleWidths(icon: () => number): Ref<PlexMetrics | undefined>
     }, true)
   }
 
-  return computed(() => getMeasures(type.value, icon()))
+  return computed(() => createMetrics(type.value, icon()))
 }
 
 /** A box of the plex's own type, standing in the page. */
@@ -135,8 +135,8 @@ function getType(probe: Probe): PlexType {
   return {
     font: `${box.fontSize} ${family}`,
     labelFont: `${label.fontSize} ${family}`,
-    padding: getPixels(box.paddingInlineStart),
-    gap: getPixels(box.columnGap),
+    padding: parsePixels(box.paddingInlineStart),
+    gap: parsePixels(box.columnGap),
   }
 }
 
@@ -146,7 +146,7 @@ const sameType = (one: PlexType, other: PlexType): boolean =>
   one.padding === other.padding &&
   one.gap === other.gap
 
-function getMeasures(type: PlexType, icon: number): PlexMetrics | undefined {
+function createMetrics(type: PlexType, icon: number): PlexMetrics | undefined {
   const context = getMeasuringContext()
   if (!context) return undefined
 
@@ -173,7 +173,7 @@ function lineDepth(context: CanvasRenderingContext2D, font: string): number {
   context.font = font
   const line = context.measureText(SAMPLE)
   const deep = line.fontBoundingBoxAscent + line.fontBoundingBoxDescent
-  return Math.ceil(deep) || getPixels(font)
+  return Math.ceil(deep) || parsePixels(font)
 }
 
 /** Text in one type, each distinct string measured once. */

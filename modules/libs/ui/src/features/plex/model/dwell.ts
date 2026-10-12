@@ -53,7 +53,7 @@ export function getWideBox(
  * one it opens to as far as it has got. A node with nothing more of its title
  * to show is drawn as it was placed, however long the attention rests on it.
  */
-export function getDrawnBox(node: PlacedNode, wide: WideBox | null, open: number): WideBox {
+export function interpolateBox(node: PlacedNode, wide: WideBox | null, open: number): WideBox {
   if (!wide) return { width: node.width, offset: 0 }
   return {
     width: lerp(node.width, wide.width, open),
@@ -143,7 +143,7 @@ export function useOpenBox(
   clock: Clock = browserClock,
 ) {
   const open = useDwell(on, delay, clock)
-  const box = computed(() => getDrawnBox(node(), wide(), open.value))
+  const box = computed(() => interpolateBox(node(), wide(), open.value))
 
   const handle = computed(() => {
     const at = getHandle({ ...node(), width: box.value.width })

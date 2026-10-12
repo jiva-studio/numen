@@ -10,12 +10,12 @@ import type { PlexFrame } from '../frame'
 import type { PlacedNode, Position } from '../node'
 import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
-import { routeEdges, getRouting, type Routing } from './routing'
+import { routeEdges, createRouting, type Routing } from './routing'
 
 /** What a settled arrangement says about the title an edge carries. */
 type Title = Pick<PlacedEdge, 'heading' | 'words' | 'wordsAt'>
 
-const getTitle = (edge: PlacedEdge): Title => ({
+const createTitle = (edge: PlacedEdge): Title => ({
   heading: edge.heading,
   words: edge.words,
   wordsAt: edge.wordsAt,
@@ -107,8 +107,8 @@ function tweenEdges(
   // edge is going, or from where it is leaving for an edge that only rests
   // there. A title held this way stays put for the length of a movement.
   const settled = new Map<string, Title>()
-  for (const edge of from.edges) settled.set(edgeKey(edge), getTitle(edge))
-  for (const edge of to.edges) settled.set(edgeKey(edge), getTitle(edge))
+  for (const edge of from.edges) settled.set(edgeKey(edge), createTitle(edge))
+  for (const edge of to.edges) settled.set(edgeKey(edge), createTitle(edge))
 
   return routeEdges(both, byId, routing, edgeOpacity).map((edge) => ({
     ...edge,
@@ -136,7 +136,7 @@ export function interpolatePlex(
 
   return {
     nodes,
-    edges: tweenEdges(from, to, byId, getRouting(resolved), arriving, leaving),
+    edges: tweenEdges(from, to, byId, createRouting(resolved), arriving, leaving),
     extent: lerpExtent(from.extent, to.extent, t),
     overflow: to.overflow,
   }

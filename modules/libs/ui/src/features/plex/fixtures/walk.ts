@@ -68,7 +68,7 @@ const getJumps = (id: string): string[] => {
 
 export const walkStart = 'hexagonal'
 
-export function getNeighbourhood(id: string): PlexNeighbourhood {
+export function createNeighbourhood(id: string): PlexNeighbourhood {
   const focus = GRAPH[id]
   if (!focus) throw new Error(`no such node: ${id}`)
 

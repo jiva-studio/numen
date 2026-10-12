@@ -81,7 +81,8 @@ export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
 export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 
 /** A title may be empty; an accessible name may not. */
-export const getName = (node: PlexNode): string => `${node.title || 'Untitled'}, ${node.seat}`
+export const createAriaLabel = (node: PlexNode): string =>
+  `${node.title || 'Untitled'}, ${node.seat}`
 
 /**
  * Where the handle sits within a node: on its trailing edge, halfway down.

@@ -20,7 +20,7 @@ const findEscaped = (frame: PlexFrame, viewport: { width: number; height: number
       Math.abs(node.y) + node.height / 2 > viewport.height / 2 - margin,
   )
 
-const getBox = (frame: PlexFrame) => frame.nodes.find((node) => node.seat === 'child')!.width
+const getChildWidth = (frame: PlexFrame) => frame.nodes.find((node) => node.seat === 'child')!.width
 
 describe('a box narrows and a gap closes before a seat is given up', () => {
   const NARROW = [
@@ -43,7 +43,7 @@ describe('a box narrows and a gap closes before a seat is given up', () => {
 
   it('draws a narrower box the less room the window has', () => {
     const boxes = NARROW.map((viewport) =>
-      getBox(arrangePlex(build('A node', COUNTS), { options: { viewport } })),
+      getChildWidth(arrangePlex(build('A node', COUNTS), { options: { viewport } })),
     )
     for (let i = 1; i < boxes.length; i++) {
       expect(boxes[i]!).toBeGreaterThanOrEqual(boxes[i - 1]!)
@@ -62,7 +62,7 @@ describe('no closer than the window needs', () => {
     const frame = arrangePlex(build('A node', COUNTS), {
       options: { viewport: { width: 2000, height: 1400 } },
     })
-    expect(getBox(frame)).toBe(nodeSize.width)
+    expect(getChildWidth(frame)).toBe(nodeSize.width)
   })
 
   it('leaves a plex with no window alone', () => {

@@ -1,6 +1,6 @@
 /** An edge with what the drawing asks of it, worked out once for both layers. */
 import { computed, ref, watch } from 'vue'
-import { getArrowTransform, getPath, getReadingPath } from '../../lib/arrange'
+import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
 import { edgeKey, type PlacedEdge } from '../../lib/edge'
 import type { PlexFrame } from '../../lib/frame'
 
@@ -33,10 +33,10 @@ export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly Ed
     edge,
     key: `${edge.from}->${edge.to}`,
     pair: edgeKey(edge),
-    d: getPath(edge),
-    arrow: edge.arrowhead ? getArrowTransform(edge.arrowhead) : null,
+    d: createPath(edge),
+    arrow: edge.arrowhead ? createArrowTransform(edge.arrowhead) : null,
     titlePath: edge.words ? `${uid}-title-${at}` : null,
-    titleLine: getReadingPath(edge),
+    titleLine: createReadingPath(edge),
     titleAt: `${100 * edge.wordsAt}%`,
   }))
 

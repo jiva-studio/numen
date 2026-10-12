@@ -1,6 +1,12 @@
 /** The curves as they are written down, read back out of the strings. */
 import { describe, expect, it } from 'vitest'
-import { getArrowTransform, getPath, getReadingPath, getThread, ARROWHEAD_PATH } from './paths'
+import {
+  createArrowTransform,
+  createPath,
+  createReadingPath,
+  createThreadPath,
+  ARROWHEAD_PATH,
+} from './paths'
 import { ARROW_LENGTH, type EdgeCurve, type PlacedEdge } from '../edge'
 
 const CURVE: EdgeCurve = {
@@ -25,25 +31,25 @@ const getNumbers = (path: string): number[] =>
 
 describe('a curve as a path', () => {
   it('leaves at one end, arrives at the other, and takes both controls on the way', () => {
-    expect(getNumbers(getPath(CURVE))).toEqual([0, 0, 10, 0, 20, 30, 30, 30])
+    expect(getNumbers(createPath(CURVE))).toEqual([0, 0, 10, 0, 20, 30, 30, 30])
   })
 
   it('is one move and one cubic', () => {
-    expect(getPath(CURVE)).toMatch(/^M [-\d. ]+ C [-\d. ]+$/)
+    expect(createPath(CURVE)).toMatch(/^M [-\d. ]+ C [-\d. ]+$/)
   })
 })
 
 describe('the line a title is set along', () => {
   it('runs the way the curve does where the words read along it', () => {
-    expect(getReadingPath(edge('along'))).toBe(getPath(CURVE))
+    expect(createReadingPath(edge('along'))).toBe(createPath(CURVE))
   })
 
   it('runs the other way where the words would be upside down', () => {
-    expect(getNumbers(getReadingPath(edge('against')))).toEqual([30, 30, 20, 30, 10, 0, 0, 0])
+    expect(getNumbers(createReadingPath(edge('against')))).toEqual([30, 30, 20, 30, 10, 0, 0, 0])
   })
 
   it('ends where the curve begins where it is taken the other way', () => {
-    const reversed = getNumbers(getReadingPath(edge('against')))
+    const reversed = getNumbers(createReadingPath(edge('against')))
     expect(reversed.slice(-2)).toEqual([CURVE.fromPoint.x, CURVE.fromPoint.y])
   })
 })
@@ -58,36 +64,40 @@ describe('the arrowhead', () => {
   })
 
   it('is moved onto its point and turned along the line there', () => {
-    expect(getArrowTransform({ at: { x: 7, y: -3 }, angle: 45 })).toBe('translate(7 -3) rotate(45)')
+    expect(createArrowTransform({ at: { x: 7, y: -3 }, angle: 45 })).toBe(
+      'translate(7 -3) rotate(45)',
+    )
   })
 })
 
 describe('a thread between two loose points', () => {
   it('leaves the first and arrives at the second', () => {
-    const numbers = getNumbers(getThread({ x: 0, y: 0 }, { x: 100, y: 40 }))
+    const numbers = getNumbers(createThreadPath({ x: 0, y: 0 }, { x: 100, y: 40 }))
     expect(numbers.slice(0, 2)).toEqual([0, 0])
     expect(numbers.slice(-2)).toEqual([100, 40])
   })
 
   it('leaves and arrives square-on, each control level with its own end', () => {
-    const [, , , firstY, , secondY] = getNumbers(getThread({ x: 0, y: 0 }, { x: 100, y: 40 }))
+    const [, , , firstY, , secondY] = getNumbers(
+      createThreadPath({ x: 0, y: 0 }, { x: 100, y: 40 }),
+    )
     expect(firstY).toBe(0)
     expect(secondY).toBe(40)
   })
 
   it('reaches half the sideways distance from each end', () => {
-    const [, , firstX, , secondX] = getNumbers(getThread({ x: 0, y: 0 }, { x: 100, y: 40 }))
+    const [, , firstX, , secondX] = getNumbers(createThreadPath({ x: 0, y: 0 }, { x: 100, y: 40 }))
     expect(firstX).toBe(50)
     expect(secondX).toBe(50)
   })
 
   it('reaches the same way for a point behind it as for one ahead', () => {
-    const [, , firstX] = getNumbers(getThread({ x: 100, y: 0 }, { x: 0, y: 40 }))
+    const [, , firstX] = getNumbers(createThreadPath({ x: 100, y: 0 }, { x: 0, y: 40 }))
     expect(firstX).toBe(150)
   })
 
   it('is straight between two points standing one above the other', () => {
-    const [, , firstX, , secondX] = getNumbers(getThread({ x: 20, y: 0 }, { x: 20, y: 60 }))
+    const [, , firstX, , secondX] = getNumbers(createThreadPath({ x: 20, y: 0 }, { x: 20, y: 60 }))
     expect(firstX).toBe(20)
     expect(secondX).toBe(20)
   })

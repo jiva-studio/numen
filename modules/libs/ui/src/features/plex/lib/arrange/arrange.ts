@@ -13,8 +13,8 @@ import { measureCrowding } from './crowding'
 import { getLimits, type Limits } from './limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
 import { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
-import { routeEdges, getRouting } from './routing'
-import { getSpacing, type Spacing } from './spacing'
+import { routeEdges, createRouting } from './routing'
+import { findSpacing, type Spacing } from './spacing'
 import { separateTitles } from './titles'
 
 export interface ArrangeInput {
@@ -51,7 +51,7 @@ export function arrangePlex(
   // Packed as closely as this window needs and no closer, so a box narrows
   // and a gap closes before a seat is given up.
   const resolved = measureCrowding(asked, counts)
-  const getWidth = getWidths(resolved, measure)
+  const getWidth = createWidthLookup(resolved, measure)
 
   const focus: PlacedNode = {
     ...focusNode,
@@ -72,14 +72,14 @@ export function arrangePlex(
   // arrangement itself, so a placement of any shape keeps the window.
   const lay = (spacing: Spacing) =>
     placement.place(seating, focus, { ...resolved, ...spacing }, limits, getWidth)
-  const spacing = getSpacing(resolved, (candidate, viewport) =>
+  const spacing = findSpacing(resolved, (candidate, viewport) =>
     isInsideViewport(lay(candidate), viewport, resolved.margin),
   )
 
   const nodes = [focus, ...lay(spacing)]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
-  const routing = getRouting(resolved, measureLabel, labelDepth)
+  const routing = createRouting(resolved, measureLabel, labelDepth)
   const edges = separateTitles(routeEdges(neighbourhood.edges, byId, routing), nodes, routing)
 
   return { nodes, edges, extent: getExtent(nodes), overflow }
@@ -90,7 +90,7 @@ export function arrangePlex(
  * minimum and the widest the node's seat allows. The focus is measured as
  * every other node is, against its own width.
  */
-function getWidths(
+function createWidthLookup(
   options: PlexOptions,
   measure: ((node: PlexNode) => number) | undefined,
 ): Widths {

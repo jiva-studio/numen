@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
-import { MIDDLE, routeEdges, getRouting } from './routing'
+import { MIDDLE, routeEdges, createRouting } from './routing'
 import { separateTitles } from './titles'
 import { build } from '../../fixtures/build'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
@@ -138,7 +138,7 @@ describe('a title finds room on its line', () => {
     const pair = createOneLine('see also')
     const placed = arrangePlex(pair, measured)
     const byId = new Map(placed.nodes.map((node) => [node.id, node]))
-    const routing = getRouting(DEFAULT_OPTIONS, measureLabel, labelDepth)
+    const routing = createRouting(DEFAULT_OPTIONS, measureLabel, labelDepth)
     const routed = routeEdges(pair.edges, byId, routing)
 
     // A box over the whole picture, so no place on the line is clear of it.
@@ -219,7 +219,7 @@ describe('a title finds room on its line', () => {
     }
 
     const byId = new Map([far, here].map((node) => [node.id, node]))
-    const routing = getRouting(DEFAULT_OPTIONS, measureLabel, labelDepth)
+    const routing = createRouting(DEFAULT_OPTIONS, measureLabel, labelDepth)
     const routed = routeEdges([{ from: 'here', to: 'far', label: 'see also' }], byId, routing)
     expect(getHeading(routed[0]!, MIDDLE)).toBe('against')
 
@@ -297,7 +297,7 @@ describe('a title finds room on its line', () => {
  */
 describe('a title set on a straight line', () => {
   const TEN = perLetter(10)
-  const routing = getRouting(DEFAULT_OPTIONS, TEN, labelDepth)
+  const routing = createRouting(DEFAULT_OPTIONS, TEN, labelDepth)
 
   /** One step of the scan a line is looked at by, along the line. */
   const A_STEP = 3
@@ -432,7 +432,7 @@ describe('a title set on a straight line', () => {
     const [settled] = separateTitles(
       [placed],
       [],
-      getRouting(DEFAULT_OPTIONS, () => 0, labelDepth),
+      createRouting(DEFAULT_OPTIONS, () => 0, labelDepth),
     )
 
     expect(settled!.words).toBe('abcde')

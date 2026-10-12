@@ -31,7 +31,7 @@ const HALVINGS = 8
  * inside the window it is given. It is asked, not worked out here, so a
  * placement of any shape is measured by the arrangement it produces.
  */
-export function getSpacing(
+export function findSpacing(
   options: PlexOptions,
   canFit: (spacing: Spacing, viewport: Size) => boolean,
 ): Spacing {

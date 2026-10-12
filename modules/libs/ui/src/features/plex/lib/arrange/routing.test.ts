@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
-import { cutToFit, routeEdge, routeEdges, getRouting } from './routing'
+import { cutToFit, routeEdge, routeEdges, createRouting } from './routing'
 import { neighbourhoods } from '../../fixtures/neighbourhoods'
 import { ARROW_LENGTH, getArrow, getLength, createPointOnCurve, type EdgeArrow } from '../edge'
 import type { PlexNeighbourhood } from '../neighbourhood'
@@ -176,7 +176,7 @@ describe('a title cut to the line it is set on', () => {
   const arc = getLength(curve)
 
   const routeWithLabel = (measureLabel?: (label: string) => number) =>
-    routeEdges(sideways.edges, byId, getRouting(DEFAULT_OPTIONS, measureLabel))[0]!
+    routeEdges(sideways.edges, byId, createRouting(DEFAULT_OPTIONS, measureLabel))[0]!
 
   it('estimates the curve between its chord and the way round its controls', () => {
     const step = (a: { x: number; y: number }, b: { x: number; y: number }) =>
@@ -239,7 +239,7 @@ describe('a title cut to the line it is set on', () => {
     routeEdges(
       [{ from: 'aside', to: 'focus', label }],
       byId,
-      getRouting(DEFAULT_OPTIONS, (words) => {
+      createRouting(DEFAULT_OPTIONS, (words) => {
         asked.push(words)
         return [...words].length
       }),
@@ -346,7 +346,7 @@ describe('the arrowhead a line carries', () => {
           },
         ],
         byId,
-        getRouting(DEFAULT_OPTIONS, measure),
+        createRouting(DEFAULT_OPTIONS, measure),
       )[0]!.words!
 
     const room = getLength(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowRoom
@@ -356,7 +356,7 @@ describe('the arrowhead a line carries', () => {
 })
 
 describe('the axis a seat is routed along', () => {
-  const getAxis = getRouting(DEFAULT_OPTIONS).getAxis
+  const getAxis = createRouting(DEFAULT_OPTIONS).getAxis
 
   it('is left to the geometry for the focus', () => {
     expect(getAxis({ seat: 'focus' })).toBe('auto')
@@ -373,7 +373,7 @@ describe('the axis a seat is routed along', () => {
   })
 
   it('follows the direction a seat has been given', () => {
-    const turned = getRouting({
+    const turned = createRouting({
       ...DEFAULT_OPTIONS,
       direction: { ...DEFAULT_OPTIONS.direction, child: 'left', jump: 'up' },
     })
@@ -411,7 +411,7 @@ describe('the run of a line between two boxes', () => {
     opacity: 1,
   })
 
-  const routing = getRouting(DEFAULT_OPTIONS)
+  const routing = createRouting(DEFAULT_OPTIONS)
 
   const route = (from: PlacedNode, to: PlacedNode, using = routing) =>
     routeEdge(

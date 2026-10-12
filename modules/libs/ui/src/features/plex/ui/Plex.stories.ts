@@ -19,7 +19,7 @@ import { optionsForType, useTypeSize } from '../model/sizing'
 import { DWELL } from '../model/dwell'
 import { type PlexPart } from '../lib/inside'
 import { neighbourhoods } from '../fixtures/neighbourhoods'
-import { getNeighbourhood, walkStart } from '../fixtures/walk'
+import { createNeighbourhood, walkStart } from '../fixtures/walk'
 import { build, buildAround, type TitledNode } from '../fixtures/build'
 import { nameNow } from '../fixtures/names'
 import { ring } from '../lib/arrange/ring'
@@ -131,7 +131,7 @@ const range = (min: number, max: number, step = 1, category = 'Layout') => ({
   table: { category },
 })
 
-const getCounts = (a: Knobs) => ({
+const createCounts = (a: Knobs) => ({
   parent: a.parents,
   child: a.children,
   jump: a.jumps,
@@ -159,7 +159,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
 
     const neighbourhood = computed<PlexNeighbourhood>(() => {
       const base = focus.value
-        ? buildAround(focus.value, cameFrom.value, getCounts(args))
+        ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
       const here = focus.value?.id ?? base.nodes.find((n) => n.seat === 'focus')?.id
       const mine = made.value.filter((node) =>
@@ -272,7 +272,7 @@ const renderWalk = (args: Knobs) => ({
     return {
       args,
       focused,
-      neighbourhood: computed(() => getNeighbourhood(focused.value)),
+      neighbourhood: computed(() => createNeighbourhood(focused.value)),
       options: computed(() => createOptions(args, type.value)),
     }
   },
@@ -434,7 +434,7 @@ type Story = StoryObj<typeof meta>
  */
 const invented = {
   args: { neighbourhood: neighbourhoods.typical, maxPerLine: 9 },
-  render: createNavigable((args: Knobs) => build(args.title, getCounts(args))),
+  render: createNavigable((args: Knobs) => build(args.title, createCounts(args))),
 }
 
 export const Playground: Story = invented
@@ -1167,7 +1167,7 @@ export const RestingOnATitle: Story = {
 export const Walk: Story = {
   render: renderWalk,
   args: {
-    neighbourhood: getNeighbourhood(walkStart),
+    neighbourhood: createNeighbourhood(walkStart),
     gap: 18,
   },
   play: async ({ args, canvasElement }) => {

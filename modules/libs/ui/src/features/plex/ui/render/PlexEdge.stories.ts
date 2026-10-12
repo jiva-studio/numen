@@ -13,7 +13,7 @@ import { expect } from 'storybook/test'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import type { EdgeLine } from './lines'
-import { getArrowTransform, getPath, getReadingPath } from '../../lib/arrange'
+import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
 import type { PlacedEdge } from '../../lib/edge'
 import { lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
@@ -50,10 +50,10 @@ const createLine = (edge: PlacedEdge): EdgeLine => ({
   edge,
   key: `${edge.from}->${edge.to}`,
   pair: `${edge.from}|${edge.to}`,
-  d: getPath(edge),
-  arrow: edge.arrowhead ? getArrowTransform(edge.arrowhead) : null,
+  d: createPath(edge),
+  arrow: edge.arrowhead ? createArrowTransform(edge.arrowhead) : null,
   titlePath: edge.words ? 'edge-title' : null,
-  titleLine: getReadingPath(edge),
+  titleLine: createReadingPath(edge),
   titleAt: `${100 * edge.wordsAt}%`,
 })
 

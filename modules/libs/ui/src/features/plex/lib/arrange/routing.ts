@@ -33,7 +33,7 @@ export interface Routing extends RoutingOptions {
  * last child in a wide row is further sideways than it is down, and measuring
  * would send its edge out of the focus's side.
  */
-export function getRouting(
+export function createRouting(
   options: PlexOptions,
   measureLabel?: (label: string) => number,
   labelDepth = 0,

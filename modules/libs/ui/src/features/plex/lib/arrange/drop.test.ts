@@ -188,7 +188,7 @@ describe('the seat something dragged in comes to', () => {
   const VIEWPORT = { width: 1200, height: 800 }
   const THRESHOLD = 8
 
-  const getDropResult = (
+  const getSeatAt = (
     at: { x: number; y: number },
     over: Partial<Parameters<typeof getDropSeat>[0]> = {},
   ) =>
@@ -203,17 +203,17 @@ describe('the seat something dragged in comes to', () => {
     })
 
   it('is a parent above the focus, a child below it, and a jump to the side', () => {
-    expect(getDropResult({ x: focus.x, y: focus.y - 300 })).toBe('parent')
-    expect(getDropResult({ x: focus.x, y: focus.y + 300 })).toBe('child')
-    expect(getDropResult({ x: focus.x - 500, y: focus.y })).toBe('jump')
+    expect(getSeatAt({ x: focus.x, y: focus.y - 300 })).toBe('parent')
+    expect(getSeatAt({ x: focus.x, y: focus.y + 300 })).toBe('child')
+    expect(getSeatAt({ x: focus.x - 500, y: focus.y })).toBe('jump')
   })
 
   it('reads which way a seat lies off the arrangement', () => {
     const upside = resolveOptions({
       direction: { parent: 'down', child: 'up', jump: 'left', sibling: 'right' },
     })
-    expect(getDropResult({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
-    expect(getDropResult({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
+    expect(getSeatAt({ x: focus.x, y: focus.y - 300 }, { options: upside })).toBe('child')
+    expect(getSeatAt({ x: focus.x, y: focus.y + 300 }, { options: upside })).toBe('parent')
   })
 
   it('counts a wide row as down, though it reaches further sideways', () => {
@@ -224,16 +224,16 @@ describe('the seat something dragged in comes to', () => {
       .filter((n) => n.seat === 'child')
       .reduce((a, b) => (a.x <= b.x ? a : b))
     expect(Math.abs(leftmost.x)).toBeGreaterThan(Math.abs(leftmost.y))
-    expect(getDropResult(leftmost)).toBe('child')
+    expect(getSeatAt(leftmost)).toBe('child')
 
     const flat = resolveOptions({ gesture: { verticalBias: 1 } })
-    expect(getDropResult(leftmost, { options: flat })).toBe('jump')
+    expect(getSeatAt(leftmost, { options: flat })).toBe('jump')
   })
 
   it('is nothing towards a seat the caller did not allow', () => {
     const beside = { x: focus.x + 500, y: focus.y }
-    expect(getDropResult(beside)).toBeNull()
-    expect(getDropResult(beside, { seats: [...ALLOWED, 'sibling'] })).toBe('sibling')
+    expect(getSeatAt(beside)).toBeNull()
+    expect(getSeatAt(beside, { seats: [...ALLOWED, 'sibling'] })).toBe('sibling')
   })
 
   it('is measured from the focus, wherever the focus is drawn', () => {
@@ -243,8 +243,8 @@ describe('the seat something dragged in comes to', () => {
       ...frame,
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300 })),
     }
-    expect(getDropResult({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
-    expect(getDropResult({ x: 0, y: 0 })).toBeNull()
+    expect(getSeatAt({ x: 0, y: 0 }, { frame: shifted })).toBe('jump')
+    expect(getSeatAt({ x: 0, y: 0 })).toBeNull()
   })
 
   it('is nothing until the pointer stands clear of a focus drawn off the middle', () => {
@@ -253,20 +253,20 @@ describe('the seat something dragged in comes to', () => {
       nodes: frame.nodes.map((node) => ({ ...node, x: node.x + 300, y: node.y + 200 })),
     }
     const where = { x: 300, y: 200 }
-    expect(getDropResult({ x: where.x, y: where.y + THRESHOLD - 1 }, { frame: shifted })).toBeNull()
-    expect(getDropResult({ x: where.x, y: where.y + THRESHOLD }, { frame: shifted })).toBe('child')
+    expect(getSeatAt({ x: where.x, y: where.y + THRESHOLD - 1 }, { frame: shifted })).toBeNull()
+    expect(getSeatAt({ x: where.x, y: where.y + THRESHOLD }, { frame: shifted })).toBe('child')
   })
 
   it('is nothing past the edge of the window, and a seat on it', () => {
-    expect(getDropResult({ x: focus.x, y: 400 })).toBe('child')
-    expect(getDropResult({ x: focus.x, y: 401 })).toBeNull()
-    expect(getDropResult({ x: -600, y: focus.y })).toBe('jump')
-    expect(getDropResult({ x: -601, y: focus.y })).toBeNull()
+    expect(getSeatAt({ x: focus.x, y: 400 })).toBe('child')
+    expect(getSeatAt({ x: focus.x, y: 401 })).toBeNull()
+    expect(getSeatAt({ x: -600, y: focus.y })).toBe('jump')
+    expect(getSeatAt({ x: -601, y: focus.y })).toBeNull()
   })
 
   it('is nothing until the pointer stands clear of the focus', () => {
-    expect(getDropResult({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
-    expect(getDropResult({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
+    expect(getSeatAt({ x: focus.x, y: focus.y + THRESHOLD - 1 })).toBeNull()
+    expect(getSeatAt({ x: focus.x, y: focus.y + THRESHOLD })).toBe('child')
   })
 
   it('is nothing where there is no focus to measure from', () => {
@@ -274,6 +274,6 @@ describe('the seat something dragged in comes to', () => {
       ...frame,
       nodes: frame.nodes.filter((node) => node.seat !== 'focus'),
     }
-    expect(getDropResult({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
+    expect(getSeatAt({ x: focus.x, y: focus.y + 300 }, { frame: nowhere })).toBeNull()
   })
 })

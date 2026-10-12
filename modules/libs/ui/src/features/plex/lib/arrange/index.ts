@@ -14,9 +14,15 @@ export {
 } from './drop'
 export { interpolatePlex } from './interpolate'
 export { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
-export { spacingAsSet, getSpacing, type Spacing } from './spacing'
-export { routeEdge, routeEdges, getRouting, type Axis, type Routing } from './routing'
-export { getArrowTransform, getPath, getReadingPath, getThread, ARROWHEAD_PATH } from './paths'
+export { spacingAsSet, findSpacing, type Spacing } from './spacing'
+export { routeEdge, routeEdges, createRouting, type Axis, type Routing } from './routing'
+export {
+  createArrowTransform,
+  createPath,
+  createReadingPath,
+  createThreadPath,
+  ARROWHEAD_PATH,
+} from './paths'
 export { separateTitles } from './titles'
 export { clamp01, easeOut, lerp, lerpExtent } from './math'
 export {
