@@ -11,6 +11,7 @@ describe('where the week starts', () => {
   it('starts on Monday where it is asked for nothing else', () => {
     expect(ids(WEEK)).toEqual(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])
     expect(ids(weekFrom('mon', WEEK))).toEqual(ids(WEEK))
+    expect(weekFrom('mon', WEEK)).toBe(WEEK)
   })
 
   it('turns to the day it is given, keeping the days in order', () => {

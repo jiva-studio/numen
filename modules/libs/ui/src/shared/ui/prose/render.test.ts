@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { h } from 'vue'
+import { h, type VNode } from 'vue'
 import { WORD, render } from './render'
 
 /** What the marks come out as, drawn. */
@@ -90,5 +90,72 @@ describe('prose', () => {
 
   it('has nothing to draw for nothing', () => {
     expect(render('')).toEqual([])
+  })
+
+  it('draws the paragraph of a tight list item as the item itself', () => {
+    const prose = mountProse('- one\n- two')
+    expect(prose.find('li').text()).toBe('one')
+    expect(prose.find('li p').exists()).toBe(false)
+  })
+
+  it('draws the blocks of a text side by side', () => {
+    const blocks = render('# Title\n\nfirst\n\nsecond')
+    expect(blocks.map((block) => block.type)).toEqual(['h1', 'p', 'p'])
+  })
+
+  it('writes no attribute on an element the marks gave none', () => {
+    expect(mountProse('plain words').find('p').attributes()).toEqual({})
+  })
+
+  it('keys each word and each inline code by where it falls in the answer', () => {
+    const [paragraph] = render('one `two` three')
+    const nodes = (paragraph!.children as (VNode | string)[]).filter(
+      (child): child is VNode => typeof child !== 'string',
+    )
+    expect(nodes.map((node) => node.key)).toEqual([0, 1, 2])
+  })
+
+  it('makes no word of the space around a mark', () => {
+    const words = mountProse('**bold** after').findAll(`.${WORD}`)
+    expect(words.map((word) => word.text())).toEqual(['bold', 'after'])
+  })
+
+  it('keeps a run of spaces as one piece of space between two words', () => {
+    const [paragraph] = render('one   two')
+    const pieces = paragraph!.children as (VNode | string)[]
+    expect(pieces).toHaveLength(3)
+    expect(pieces[1]).toBe('   ')
+  })
+
+  it('marks a link to an address that reaches nothing', () => {
+    const text = '[gone](https://example.com/gone) and [here](https://example.com/here)'
+    const dead = new Set(['https://example.com/gone'])
+    const prose = mount({ render: () => h('div', render(text, dead)) })
+    const [gone, here] = prose.findAll('a')
+    expect(gone!.attributes('data-reaches')).toBe('nothing')
+    expect(here!.attributes('data-reaches')).toBeUndefined()
+  })
+
+  it('draws a rule', () => {
+    expect(mountProse('above\n\n---\n\nbelow').find('hr').exists()).toBe(true)
+  })
+
+  it('keeps an indented block whole', () => {
+    expect(mountProse('    let a = 1\n    let b = 2').find('pre code').text()).toBe(
+      'let a = 1\nlet b = 2',
+    )
+  })
+
+  it('joins the lines of a paragraph with a space', () => {
+    expect(mountProse('first line\nsecond line').find('p').text()).toBe('first line second line')
+  })
+
+  it('breaks the line where two spaces end it', () => {
+    expect(mountProse('first  \nsecond').find('p br').exists()).toBe(true)
+  })
+
+  it('draws an image from its address', () => {
+    const image = mountProse('![a chart](https://example.com/chart.png)').find('img')
+    expect(image.attributes('src')).toBe('https://example.com/chart.png')
   })
 })
