@@ -15,7 +15,7 @@ func newDiskCache(t *testing.T, api *API) *pagecache.Disk {
 	t.Helper()
 	cache := pagecache.NewDiskIn(t.TempDir())
 	t.Cleanup(cache.Close)
-	api.Viewer.onDisk = cache
+	api.Viewer.disk = cache
 	return cache
 }
 
@@ -47,7 +47,7 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	}
 
 	// Nothing in memory, the way a window opened again begins.
-	api.Viewer.drawn.Store(pagecache.NewMemory(pagecache.MostDrawn))
+	api.Viewer.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
 
 	out := ask(handler, getPageAddress(t, api, book, 0, 400))
 	if out.Code != http.StatusOK {
@@ -100,7 +100,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	if err := os.Chtimes(at, later, later); err != nil {
 		t.Fatal(err)
 	}
-	api.Viewer.drawn.Store(pagecache.NewMemory(pagecache.MostDrawn))
+	api.Viewer.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
 
 	if out := ask(handler, getPageAddress(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
@@ -137,7 +137,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cache.SweepTo(countBytes(t, cache) - 1)
+	cache.TrimTo(countBytes(t, cache) - 1)
 
 	if _, err := os.Stat(first); !os.IsNotExist(err) {
 		t.Errorf("the oldest drawing is still there: %v", err)

@@ -178,7 +178,7 @@ func (a *API) book(
 	reader port.VaultReader,
 	mark pool.Fingerprint,
 ) (*epub.Book, error) {
-	return a.Viewer.read.Load().Take(ctx, mark, func() (*epub.Book, error) {
+	return a.Viewer.books.Load().Acquire(ctx, mark, func() (*epub.Book, error) {
 		raw, err := reader.Read(context.WithoutCancel(ctx), mark.Path)
 		if err != nil {
 			return nil, err

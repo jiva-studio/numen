@@ -9,21 +9,21 @@ import (
 
 // A listener that fell behind is told to read everything again.
 func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
-	following := newChangeAudience()
-	line, done := following.listen()
+	following := newChangeBroadcaster()
+	line, done := following.subscribe()
 	defer done()
 
 	// Fill what it may be owed, then one more it cannot take.
-	room := following.getRoom()
+	room := following.getCapacity()
 	for range room {
-		following.tell(change{paths: []string{"notes/one.md"}})
+		following.publish(change{paths: []string{"notes/one.md"}})
 	}
-	following.tell(change{paths: []string{"notes/missed.md"}})
+	following.publish(change{paths: []string{"notes/missed.md"}})
 
 	for range room {
 		<-line
 	}
-	following.tell(change{paths: []string{"notes/two.md"}})
+	following.publish(change{paths: []string{"notes/two.md"}})
 
 	if last := <-line; !last.shouldReload {
 		t.Errorf("a listener that missed one was handed %+v", last)
@@ -33,13 +33,13 @@ func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
 // What matters is the last place asked for: one asked for while a listener is
 // busy replaces the one it has not read.
 func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
-	focusing := newPlaceAudience()
-	line, done := focusing.listen()
+	focusing := newPlaceBroadcaster()
+	line, done := focusing.subscribe()
 	defer done()
 
-	focusing.tell(domain.Place{Path: "notes/one.md"})
-	focusing.tell(domain.Place{Path: "notes/two.md"})
-	focusing.tell(domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}})
+	focusing.publish(domain.Place{Path: "notes/one.md"})
+	focusing.publish(domain.Place{Path: "notes/two.md"})
+	focusing.publish(domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}})
 
 	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}}
 	if waiting := <-line; !reflect.DeepEqual(waiting, want) {
@@ -53,11 +53,11 @@ func TestTheLastPlaceAskedForIsTheOneWaiting(t *testing.T) {
 }
 
 func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
-	focusing := newPlaceAudience()
-	line, done := focusing.listen()
+	focusing := newPlaceBroadcaster()
+	line, done := focusing.subscribe()
 	done()
 
-	focusing.tell(domain.Place{Path: "notes/one.md"})
+	focusing.publish(domain.Place{Path: "notes/one.md"})
 
 	if _, open := <-line; open {
 		t.Error("a closed line was written to")
@@ -67,8 +67,8 @@ func TestNobodyIsToldAfterTheyStopListening(t *testing.T) {
 // A listener reading while tell runs on another goroutine is handed numbers
 // in the order they were told, never out of order and never twice.
 func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
-	counting := audience[int]{room: 16}
-	line, done := counting.listen()
+	counting := broadcaster[int]{capacity: 16}
+	line, done := counting.subscribe()
 
 	const total = 20000
 
@@ -82,7 +82,7 @@ func TestConcurrentTellsReachAConcurrentReaderInOrder(t *testing.T) {
 	}()
 
 	for n := range total {
-		counting.tell(n)
+		counting.publish(n)
 	}
 	done()
 	<-read
