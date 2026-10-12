@@ -10,7 +10,7 @@ import { onMounted, ref } from 'vue'
 import { IonContent, IonPage, IonProgressBar, IonToast } from '@ionic/vue'
 import {
   byDoubleTap,
-  byHolding,
+  byLongPress,
   Plex,
   type PlexNeighbourhood,
   type PlexRelatedSeat,
@@ -28,7 +28,7 @@ const at = ref(SEEDED)
 const errorMessage = ref('')
 
 /** A finger has no hover, so a node is reached out of by resting on it. */
-const reaching = byHolding()
+const reaching = byLongPress()
 
 /** And asked for on its own by tapping it twice. */
 const showing = byDoubleTap()

@@ -36,7 +36,7 @@ func ParseURL(raw string) (URL, error) {
 		return "", ErrNotAURL
 	}
 	address.Host = strings.ToLower(address.Host)
-	if address.Hostname() == "" || thisMachine(address.Hostname()) {
+	if address.Hostname() == "" || isLocalHost(address.Hostname()) {
 		return "", ErrNotAURL
 	}
 	if port := address.Port(); port == "80" && address.Scheme == "http" ||
@@ -45,14 +45,14 @@ func ParseURL(raw string) (URL, error) {
 	}
 	address.Fragment, address.RawFragment = "", ""
 	address.User = nil
-	address.RawQuery = dropCampaign(address.Query()).Encode()
+	address.RawQuery = removeTrackingParams(address.Query()).Encode()
 	return URL(address.String()), nil
 }
 
-// thisMachine says whether a host is this machine. A file points somewhere a
+// isLocalHost says whether a host is this machine. A file points somewhere a
 // browser would go, and what listens on this machine is not that: an index, a
 // window's own socket and whatever else is running answer nobody's paste.
-func thisMachine(host string) bool {
+func isLocalHost(host string) bool {
 	if host == "localhost" || strings.HasSuffix(host, ".localhost") {
 		return true
 	}
@@ -63,10 +63,10 @@ func thisMachine(host string) bool {
 	return address.IsLoopback() || address.IsUnspecified()
 }
 
-// campaign are the parameters that say where a visitor came from, beside every
+// trackingParams are the parameters that say where a visitor came from, beside every
 // name beginning `utm_`. They are the same page whatever they hold, and a
 // person who pastes one link from two places holds one file about it.
-var campaign = map[string]bool{
+var trackingParams = map[string]bool{
 	"fbclid":  true,
 	"gclid":   true,
 	"mc_cid":  true,
@@ -76,11 +76,11 @@ var campaign = map[string]bool{
 	"ref_url": true,
 }
 
-// dropCampaign is the query without them.
-func dropCampaign(query url.Values) url.Values {
+// removeTrackingParams is the query without them.
+func removeTrackingParams(query url.Values) url.Values {
 	for name := range query {
 		folded := strings.ToLower(name)
-		if campaign[folded] || strings.HasPrefix(folded, "utm_") {
+		if trackingParams[folded] || strings.HasPrefix(folded, "utm_") {
 			delete(query, name)
 		}
 	}

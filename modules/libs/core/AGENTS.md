@@ -18,6 +18,7 @@ carries a table of what it refuses and a guard against passing vacuously.
 | A package stands on the layer its path says, and reaches only downward | `TestTheLayersAreWhatTheyAre` |
 | Nothing the core is compiled from reaches an adapter | `TestNothingTheCoreIsCompiledFromReachesOutward` |
 | A pure package is tested without an adapter | `TestNoPurePackageIsTestedThroughAnAdapter` |
+| A use case builds only on the use cases `useCaseEdges` declares for it | `TestNoUseCaseReachesAnotherExceptAsDeclared` |
 | An adapter does not name the port it answers | `TestNoAdapterNamesThePortItSatisfies` |
 | The composition root hands out no adapter type | `TestTheRootHandsOutNoAdapterTheCompilerHolds` |
 | A package is imported under the name its layer gives it | `TestNoPackageIsImportedUnderItsLayer` |
@@ -52,8 +53,8 @@ outside `port/`.
 |---|---|
 | An identity is a word of the core's own, in a field and in a signature alike | `TestTheCoresIdentitiesAreItsOwn`, `TestTheIdentitiesAPortAsksForAreTheCoresOwn` |
 | An instant is a `time.Time` | `TestEveryInstantTheCoreCarriesIsATime` |
-| No type is named by a gerund or a participle | `TestNoTypeOfTheCoreIsNamedByAGerundOrParticiple` |
-| Every word of the glossary names a type | `TestEveryWordOfTheDictionaryNamesAType` |
+
+No type is named by a gerund or a participle.
 
 The vocabulary itself is [`docs/glossary.md`](../../../docs/glossary.md), and
 its preamble is what a rename is judged against: a concept takes the word its

@@ -55,7 +55,7 @@ type API struct {
 	// changed.
 	showing atomic.Pointer[passes]
 
-	Listeners audience[change]
+	ChangeEvents broadcaster[change]
 
 	// Opens puts another vault in the window: the agents are stopped, the vault
 	// is swapped, and the agents are started again against the one that
@@ -111,11 +111,11 @@ type API struct {
 
 	// Edits is everyone drawing this vault, for a change to a note being made
 	// while they may be showing it.
-	Edits audience[domain.Edit]
+	Edits broadcaster[domain.Edit]
 
 	// Places is everyone drawing this vault, for when something asks that a
 	// place be put in front of the person.
-	Places audience[domain.Place]
+	Places broadcaster[domain.Place]
 
 	// openTabs is what the person has open, as the window last said. It is
 	// replaced while requests are being served, so every reader takes it
@@ -442,7 +442,7 @@ func (a *API) WatchVaultChanges(
 	_ *connect.Request[v1.WatchVaultChangesRequest],
 	out *connect.ServerStream[v1.WatchVaultChangesResponse],
 ) error {
-	line, done := a.Listeners.listen()
+	line, done := a.ChangeEvents.subscribe()
 	defer done()
 
 	// Named as following before anything has changed. A stream that says

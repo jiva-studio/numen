@@ -33,16 +33,16 @@ func startAgent(t *testing.T, prints string) port.Run {
 		Command: []string{script},
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
-		Words: map[string]claudecode.ToolDeclaration{
-			claudecode.Tool("note_search"): {
+		ToolDeclarations: map[string]claudecode.ToolDeclaration{
+			claudecode.ToolName("note_search"): {
 				Title:     "Search notes",
 				Arguments: claudecode.Arguments{About: "query"},
 			},
-			claudecode.Tool("note_create"): {
+			claudecode.ToolName("note_create"): {
 				Title:     "Create a note",
 				Arguments: claudecode.Arguments{About: "notes", Element: "title"},
 			},
-			claudecode.Tool("note_rewrite"): {
+			claudecode.ToolName("note_rewrite"): {
 				Title:     "Write a note",
 				Kind:      port.StepEdit,
 				Arguments: claudecode.Arguments{About: "path"},
@@ -304,7 +304,7 @@ func runAgent(t *testing.T, change func(*claudecode.Agent)) run {
 		Command: []string{script},
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
-		Allowed: []string{claudecode.Tool("*")},
+		Allowed: []string{claudecode.ToolName("*")},
 	}
 	change(&claude)
 	work, err := claude.Take(t.Context(), port.Task{Question: "what is here?"})
@@ -348,7 +348,7 @@ func TestTheMaxTurnsCommandLineArgument(t *testing.T) {
 		t.Errorf("default --max-turns is %q, want %q", got, "100")
 	}
 
-	customArgv := getArgvWith(t, func(a *claudecode.Agent) { a.Turns = 50 })
+	customArgv := getArgvWith(t, func(a *claudecode.Agent) { a.MaxTurns = 50 })
 	if got := getFlagValue(t, customArgv, "--max-turns"); got != "50" {
 		t.Errorf("custom --max-turns is %q, want %q", got, "50")
 	}
@@ -392,7 +392,7 @@ func TestTheAgentBringsOnlyTheToolsItIsNamed(t *testing.T) {
 // called.
 func TestTheAllowanceNamesTheSearchAndThisVaultsTools(t *testing.T) {
 	argv := getArgvWith(t, func(a *claudecode.Agent) {
-		a.Allowed = []string{claudecode.Tool("note_read"), claudecode.Tool("note_edit")}
+		a.Allowed = []string{claudecode.ToolName("note_read"), claudecode.ToolName("note_edit")}
 	})
 
 	if mode := getFlagValue(t, argv, "--permission-mode"); mode != "dontAsk" {
@@ -586,7 +586,7 @@ func TestReportsACallWhileItIsStillBeingWritten(t *testing.T) {
 	lines := []string{
 		connected,
 		`{"type":"stream_event","event":{"type":"content_block_start",` +
-			`"content_block":{"type":"tool_use","name":"` + claudecode.Tool("note_create") + `"}}}`,
+			`"content_block":{"type":"tool_use","name":"` + claudecode.ToolName("note_create") + `"}}}`,
 		delta(`{"notes":[{"title":"Bram Doyle's warning","body":"`),
 		delta(body),
 		delta(body),
@@ -629,9 +629,9 @@ func delta(partial string) string {
 // wrote is one message carrying a call that writes a note and a call that looks
 // for one.
 var wrote = `{"type":"assistant","message":{"content":[` +
-	`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.Tool("note_rewrite") + `",` +
+	`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.ToolName("note_rewrite") + `",` +
 	`"input":{"path":"physics/entropy.md","body":"Two words."}},` +
-	`{"type":"tool_use","id":"toolu_8","name":"` + claudecode.Tool("note_search") + `",` +
+	`{"type":"tool_use","id":"toolu_8","name":"` + claudecode.ToolName("note_search") + `",` +
 	`"input":{"query":"entropy"}}]}}`
 
 // One call is reported as it is reached for and again as it is written, and what
@@ -642,7 +642,7 @@ func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
 	lines := []string{
 		connected,
 		`{"type":"stream_event","event":{"type":"content_block_start","content_block":` +
-			`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.Tool("note_rewrite") + `"}}}`,
+			`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.ToolName("note_rewrite") + `"}}}`,
 		delta(`{"path":"physics/entropy.md","body":"` + body),
 		delta(`"}`),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,

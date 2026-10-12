@@ -103,51 +103,57 @@ func addVaultAdd(server *sdk.Server, core Core) {
 			"Say which folder you are adding and why. A vault does not lie inside " +
 			"another, and neither a filesystem root nor the person's home directory is a " +
 			"folder somebody keeps notes in.",
-	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path string `json:"path,omitempty" jsonschema:"the folder to add, as an absolute path on this machine; left out, the person picks one"`
-		Name string `json:"name,omitempty" jsonschema:"what to call it; the folder's own name by default, numbered when another vault has that name"`
-	}) (*sdk.CallToolResult, struct {
-		IsAdded bool   `json:"added"`
-		ID      string `json:"id,omitempty"`
-		Name    string `json:"name,omitempty"`
-		Folder  string `json:"folder,omitempty"`
-		Why     string `json:"why,omitempty" jsonschema:"why nothing was added, for an answer that added nothing"`
-	}, error) {
-		type out = struct {
-			IsAdded bool   `json:"added"`
-			ID      string `json:"id,omitempty"`
-			Name    string `json:"name,omitempty"`
-			Folder  string `json:"folder,omitempty"`
-			Why     string `json:"why,omitempty" jsonschema:"why nothing was added, for an answer that added nothing"`
-		}
-		root := in.Path
-		if root == "" {
-			if core.Vaults.FolderDialog == nil {
-				return nil, out{}, errors.New(
-					"there is nobody here to pick a folder: name the one to add")
-			}
-			chosen, chose, err := core.Vaults.FolderDialog.Choose(ctx, "Choose a folder for a vault", "")
-			if err != nil {
-				return nil, out{}, err
-			}
-			if !chose {
-				return nil, out{Why: "the person closed the picker and chose no folder"}, nil
-			}
-			root = chosen
-		}
-		if !filepath.IsAbs(root) {
-			return nil, out{}, fmt.Errorf("%s is not an absolute path, and a vault is named by one", root)
-		}
-		if err := checkVaultRoot(root); err != nil {
-			return nil, out{}, err
-		}
+	}, newHandler(func(ctx context.Context, in vaultAddInput) (vaultAddOutput, error) {
+		return addVault(ctx, core, in)
+	}))
+}
 
-		added, err := core.Vaults.Add.Execute(root, in.Name)
-		if err != nil {
-			return nil, out{}, err
-		}
-		return nil, out{IsAdded: true, ID: string(added.ID), Name: added.Name, Folder: added.Path}, nil
-	})
+type vaultAddInput struct {
+	Path string `json:"path,omitempty" jsonschema:"the folder to add, as an absolute path on this machine; left out, the person picks one"`
+	Name string `json:"name,omitempty" jsonschema:"what to call it; the folder's own name by default, numbered when another vault has that name"`
+}
+
+type vaultAddOutput struct {
+	IsAdded bool   `json:"added"`
+	ID      string `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Folder  string `json:"folder,omitempty"`
+	Why     string `json:"why,omitempty" jsonschema:"why nothing was added, for an answer that added nothing"`
+}
+
+func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput, error) {
+	root, chose, err := getVaultRoot(ctx, core, in.Path)
+	if err != nil {
+		return vaultAddOutput{}, err
+	}
+	if !chose {
+		return vaultAddOutput{Why: "the person closed the picker and chose no folder"}, nil
+	}
+	if !filepath.IsAbs(root) {
+		return vaultAddOutput{}, fmt.Errorf("%s is not an absolute path, and a vault is named by one", root)
+	}
+	if err := checkVaultRoot(root); err != nil {
+		return vaultAddOutput{}, err
+	}
+
+	added, err := core.Vaults.Add.Execute(root, in.Name)
+	if err != nil {
+		return vaultAddOutput{}, err
+	}
+	return vaultAddOutput{IsAdded: true, ID: string(added.ID), Name: added.Name, Folder: added.Path}, nil
+}
+
+// getVaultRoot is the folder to add: the path the call named, or the one the
+// person picks when it named none. It reports false when the person picked
+// nothing.
+func getVaultRoot(ctx context.Context, core Core, path string) (string, bool, error) {
+	if path != "" {
+		return path, true, nil
+	}
+	if core.Vaults.FolderDialog == nil {
+		return "", false, errors.New("there is nobody here to pick a folder: name the one to add")
+	}
+	return core.Vaults.FolderDialog.Choose(ctx, "Choose a folder for a vault", "")
 }
 
 func addVaultRename(server *sdk.Server, core Core) {

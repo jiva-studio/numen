@@ -6,7 +6,7 @@
  * Which of the two a plex offers is the caller's, so neither is written into
  * the node.
  */
-import { useHold, HOLD } from './holding'
+import { useLongPress, LONG_PRESS_DELAY } from './longPress'
 
 /** The node a strategy is watching, in the only two terms it needs. */
 export interface ReachSite {
@@ -30,10 +30,10 @@ export const byHandle: ReachStrategy = {
 }
 
 /** A finger left still on the node. Milliseconds, if the wait is to be another. */
-export const byHolding = (after: number = HOLD): ReachStrategy => ({
+export const byLongPress = (after: number = LONG_PRESS_DELAY): ReachStrategy => ({
   hasHandle: false,
   listeners: (site) => {
-    const held = useHold(site.ready, site.reach, () => after)
+    const held = useLongPress(site.ready, site.reach, () => after)
     return {
       pointerdown: held.onPointerDown,
       pointermove: held.onPointerMove,

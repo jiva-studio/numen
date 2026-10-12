@@ -120,14 +120,14 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	highlighting.Documents = made.GetTextExtractor()
 
 	api := &API{
-		Listeners: newChangeAudience(),
-		Places:    newPlaceAudience(),
-		Edits:     drawing(),
-		Window:    &wire.Window{Named: wire.Editor, Tasking: tasks},
-		Wrote:     func() { raise(wake.notes) },
-		Readers:   made.GetVaultReaders(),
-		Viewer:    newCachingViewer(made.GetPageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
-		Highlight: &highlighting,
+		ChangeEvents: newChangeBroadcaster(),
+		Places:       newPlaceBroadcaster(),
+		Edits:        newEditBroadcaster(),
+		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
+		Wrote:        func() { raise(wake.notes) },
+		Readers:      made.GetVaultReaders(),
+		Viewer:       newCachingViewer(made.GetPageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
+		Highlight:    &highlighting,
 		Notes: Notes{
 			Queries: made.GetNoteQueries(),
 			Links:   made.GetLinkQueries(),

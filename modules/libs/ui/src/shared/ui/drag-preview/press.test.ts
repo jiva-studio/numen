@@ -36,7 +36,7 @@ function createPress(threshold = 4, withBegin = true) {
     usePressDrag<string, Position>({
       getThreshold: () => threshold,
       getClock: () => clock,
-      getLandingAt: (_item, at) => (at.x < 500 ? at : null),
+      getDropTargetAt: (_item, at) => (at.x < 500 ? at : null),
       commit,
       ...(withBegin ? { begin } : {}),
     }),

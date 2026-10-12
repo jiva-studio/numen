@@ -19,18 +19,18 @@ func (s *Endpoint) isServing() bool {
 // newEndpoint is a window on a vault, serving tools that do nothing.
 func newEndpoint() *Endpoint {
 	return &Endpoint{
-		Serve:        func() (func() error, error) { return func() error { return nil }, nil },
-		Showing:      func() domain.Vault { return domain.Vault{ID: "one"} },
-		Handler:      func(port.Agent) {},
-		Unreachable:  func(string) {},
-		ErrorHandler: func(error) {},
+		Serve:          func() (func() error, error) { return func() error { return nil }, nil },
+		GetVault:       func() domain.Vault { return domain.Vault{ID: "one"} },
+		SetAgent:       func(port.Agent) {},
+		SetUnreachable: func(string) {},
+		ErrorHandler:   func(error) {},
 	}
 }
 
-// TestOneSwapHoldsTheAgentsUntilItIsOver. The tools are served for the vault in
+// TestRunWhileStoppedKeepsAgentsStoppedUntilDone. The tools are served for the vault in
 // the window, so a second swap arriving while one runs does not put them back
 // in front of the agents on the vault that is going.
-func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
+func TestRunWhileStoppedKeepsAgentsStoppedUntilDone(t *testing.T) {
 	s := newEndpoint()
 	s.Start()
 	if !s.isServing() {
@@ -44,7 +44,7 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	swaps.Add(1)
 	go func() {
 		defer swaps.Done()
-		_ = s.RunSwap(func() error {
+		_ = s.RunWhileStopped(func() error {
 			close(running)
 			<-release
 			return nil
@@ -57,7 +57,7 @@ func TestOneSwapHoldsTheAgentsUntilItIsOver(t *testing.T) {
 	go func() {
 		defer swaps.Done()
 		defer close(second)
-		_ = s.RunSwap(func() error { return nil })
+		_ = s.RunWhileStopped(func() error { return nil })
 	}()
 	// The second swap has this long to reach the endpoint the first is holding.
 	select {

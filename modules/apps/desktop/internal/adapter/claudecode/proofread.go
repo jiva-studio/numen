@@ -34,18 +34,18 @@ type Proofreader struct {
 
 	// turns is how many runs may stand at once, taken before one starts and
 	// given back after it ends.
-	once  sync.Once
-	turns chan struct{}
+	once      sync.Once
+	semaphore chan struct{}
 }
 
-// take waits for a turn at the command line, and hands back what gives it up.
-func (p *Proofreader) take(ctx context.Context) (func(), error) {
+// acquire waits for a turn at the command line, and hands back what gives it up.
+func (p *Proofreader) acquire(ctx context.Context) (func(), error) {
 	p.once.Do(func() {
-		p.turns = make(chan struct{}, max(p.InFlight, 1))
+		p.semaphore = make(chan struct{}, max(p.InFlight, 1))
 	})
 	select {
-	case p.turns <- struct{}{}:
-		return func() { <-p.turns }, nil
+	case p.semaphore <- struct{}{}:
+		return func() { <-p.semaphore }, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
@@ -98,7 +98,7 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []proofread.Batch) 
 		wg     sync.WaitGroup
 	)
 	for _, batch := range batches {
-		turn, err := p.take(ctx)
+		turn, err := p.acquire(ctx)
 		if err != nil {
 			break
 		}
@@ -106,7 +106,7 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []proofread.Batch) 
 		go func() {
 			defer wg.Done()
 			defer turn()
-			reply, err := p.ask(ctx, empty, batch)
+			reply, err := p.runBatch(ctx, empty, batch)
 			mu.Lock()
 			defer mu.Unlock()
 			switch {
@@ -128,12 +128,12 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []proofread.Batch) 
 	return out, ctx.Err()
 }
 
-// ask sends one batch and returns what the command line said about it.
-func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch) (string, error) {
+// runBatch sends one batch and returns what the command line said about it.
+func (p *Proofreader) runBatch(ctx context.Context, dir string, batch proofread.Batch) (string, error) {
 	name, rest := p.getCommand()
 	cmd := exec.CommandContext(ctx, name, append(rest, p.buildArguments()...)...)
 	cmd.Dir = dir
-	cmd.Env = environment(os.Environ())
+	cmd.Env = buildEnvironment(os.Environ())
 	detach(cmd)
 
 	// The whole group goes, and the pipes are let go of shortly after: a
@@ -149,7 +149,7 @@ func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("batch %d: %w: %s", batch.Number, err, lastLine(stderr.String()))
+		return "", fmt.Errorf("batch %d: %w: %s", batch.Number, err, getLastLine(stderr.String()))
 	}
 	return strings.TrimSpace(said.String()), nil
 }

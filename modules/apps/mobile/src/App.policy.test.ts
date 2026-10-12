@@ -11,7 +11,12 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import NoteSheet from './note/NoteSheet.vue'
+import { reach } from './core'
 import type { Core } from './core'
+
+vi.mock('@capacitor/core', () => ({
+  registerPlugin: () => ({ start: async () => ({ port: 45123, dir: '/data' }) }),
+}))
 
 /** The origin the platform serves the page from: `androidScheme` and nothing. */
 const PAGE = 'http://localhost'
@@ -119,11 +124,7 @@ describe('what the page asks for', () => {
       asked.push(input instanceof Request ? input.url : String(input))
       throw new Error('this test serves nothing')
     })
-    vi.doMock('@capacitor/core', () => ({
-      registerPlugin: () => ({ start: async () => ({ port: 45123, dir: '/data' }) }),
-    }))
 
-    const { reach } = await import('./core')
     const core = await reach()
     await expect(core.notes.getNeighbourhood({ path: 'Physics.md' })).rejects.toThrow()
 
@@ -162,6 +163,9 @@ describe('a picture written into a note', () => {
 
     const sheet = mount(NoteSheet, { props: { core, path: 'Synced.md' }, attachTo: document.body })
     await flushPromises()
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll('.cm-picture img')).toHaveLength(1)
+    })
 
     // The editor draws a picture where one was written, at the address written,
     // and a note came from wherever it was synced from.

@@ -24,20 +24,20 @@ import {
   rectangularSelection,
 } from '@codemirror/view'
 import { follow } from './address'
-import { changing, marked, createPacePlugin, type EditorChange } from './change'
+import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from './change'
 import { highlighting } from '../config/highlight'
 import { LANGUAGES } from '../config/languages'
 import { live, wholeLines } from './live'
 import { GFM } from '@lezer/markdown'
-import { saving } from './outside'
+import { saveHandler } from './outside'
 import { monospaced, theme } from '../config/theme'
 
 /** What can be changed without the editor being built again. */
-export const drawing = new Compartment()
-export const editing = new Compartment()
-export const showing = new Compartment()
-export const adding = new Compartment()
-export const written = new Compartment()
+export const previewCompartment = new Compartment()
+export const editableCompartment = new Compartment()
+export const changeCompartment = new Compartment()
+export const extensionsCompartment = new Compartment()
+export const languageCompartment = new Compartment()
 
 export interface Settings {
   /** Marks are drawn as what they mean, away from the caret. */
@@ -59,7 +59,7 @@ export interface Settings {
 
 export const preview = (isOn: boolean): Extension => (isOn ? [wholeLines, live, follow] : [])
 
-export const showChange = (change: EditorChange | null): Extension => changing.of(change)
+export const showChange = (change: EditorChange | null): Extension => pendingChange.of(change)
 
 export const createEditable = (isOn: boolean): Extension => [
   EditorView.editable.of(isOn),
@@ -71,10 +71,10 @@ export const createEditable = (isOn: boolean): Extension => [
  * editor on the screen. It is handled here, so the letter is not inserted and
  * the page's own answer to the chord does not run.
  */
-export const keeping: KeyBinding = {
+export const saveKeyBinding: KeyBinding = {
   key: 'Mod-s',
   run: (view) => {
-    view.state.facet(saving)()
+    view.state.facet(saveHandler)()
     return true
   },
 }
@@ -84,36 +84,36 @@ export const keeping: KeyBinding = {
  * Escape hands it to the page, and the keyboard arriving takes it back, so
  * every visit begins the same way.
  */
-const releasing = StateEffect.define<boolean>()
+const setTabCapture = StateEffect.define<boolean>()
 
-const holding = StateField.define<boolean>({
+const tabCapture = StateField.define<boolean>({
   create: () => true,
   update: (held, change) =>
-    change.effects.reduce((now, effect) => (effect.is(releasing) ? effect.value : now), held),
+    change.effects.reduce((now, effect) => (effect.is(setTabCapture) ? effect.value : now), held),
 })
 
-const rearming = EditorView.domEventHandlers({
+const restoreTabCapture = EditorView.domEventHandlers({
   focus: (_press, view) => {
-    if (!view.state.field(holding)) view.dispatch({ effects: releasing.of(true) })
+    if (!view.state.field(tabCapture)) view.dispatch({ effects: setTabCapture.of(true) })
     return false
   },
 })
 
 /** Tab indents while the editor holds it, and walks on once it does not. */
-export const indenting: KeyBinding = {
+export const tabKeyBinding: KeyBinding = {
   key: 'Tab',
-  run: (view) => view.state.field(holding) && indentMore(view),
-  shift: (view) => view.state.field(holding) && indentLess(view),
+  run: (view) => view.state.field(tabCapture) && indentMore(view),
+  shift: (view) => view.state.field(tabCapture) && indentLess(view),
 }
 
 /**
  * Escape hands Tab to the page and is passed on, so what else answers Escape
  * around the editor still answers it.
  */
-export const leaving: KeyBinding = {
+export const escapeKeyBinding: KeyBinding = {
   key: 'Escape',
   run: (view) => {
-    if (view.state.field(holding)) view.dispatch({ effects: releasing.of(false) })
+    if (view.state.field(tabCapture)) view.dispatch({ effects: setTabCapture.of(false) })
     return false
   },
 }
@@ -130,10 +130,10 @@ export const setup = (settings: Settings = {}): Extension => [
   rectangularSelection(),
   bracketMatching(),
   EditorView.lineWrapping,
-  holding,
-  rearming,
-  keymap.of([keeping, leaving, ...defaultKeymap, ...historyKeymap, indenting]),
-  written.of(prose()),
+  tabCapture,
+  restoreTabCapture,
+  keymap.of([saveKeyBinding, escapeKeyBinding, ...defaultKeymap, ...historyKeymap, tabKeyBinding]),
+  languageCompartment.of(prose()),
   syntaxHighlighting(highlighting),
   theme,
   placeholder(settings.placeholder ?? ''),
@@ -141,10 +141,10 @@ export const setup = (settings: Settings = {}): Extension => [
     'aria-label': settings.name ?? 'Editor',
     ...(settings.describedBy ? { 'aria-describedby': settings.describedBy } : {}),
   }),
-  marked,
+  changeMarks,
   createPacePlugin(),
-  drawing.of(preview(settings.isLivePreview ?? true)),
-  editing.of(createEditable(!settings.readonly)),
-  showing.of(showChange(settings.change ?? null)),
-  adding.of(settings.extensions ?? []),
+  previewCompartment.of(preview(settings.isLivePreview ?? true)),
+  editableCompartment.of(createEditable(!settings.readonly)),
+  changeCompartment.of(showChange(settings.change ?? null)),
+  extensionsCompartment.of(settings.extensions ?? []),
 ]

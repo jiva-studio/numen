@@ -9,7 +9,15 @@ import { computed, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Clock } from '@/shared/lib/clock'
 import { usePressDrag } from '@/shared/ui/drag-preview'
 import type { Position } from '@/shared/lib/geometry'
-import { caretAt, edgeOf, overlayFor, rectOf, sideAt, slotAt, type TabLanding } from '../lib/drop'
+import {
+  caretAt,
+  edgeOf,
+  overlayFor,
+  rectOf,
+  sideAt,
+  slotAt,
+  type TabDropTarget,
+} from '../lib/drop'
 import { dropOnEdge, dropTab, moveTabWithin, type NodeIdFactory } from '../lib/edit'
 import type { NodeId, Tab, TabId, Workspace } from '../lib/node'
 import type { Rect } from '../lib/rect'
@@ -46,7 +54,7 @@ export interface TabDragState {
   /** Where the pointer is. */
   readonly position: Readonly<Ref<Position | null>>
   /** Where the tab would land. */
-  readonly landing: Readonly<Ref<TabLanding | null>>
+  readonly dropTarget: Readonly<Ref<TabDropTarget | null>>
   /** A press on a tab, which a move turns into a drag. */
   readonly press: (tab: TabId, at: PointerEvent) => void
 }
@@ -54,13 +62,13 @@ export interface TabDragState {
 export function useTabDrag(options: TabDragOptions): TabDragState {
   const {
     dragging,
-    at: landing,
+    at: dropTarget,
     position,
     lift,
-  } = usePressDrag<Drag, TabLanding>({
+  } = usePressDrag<Drag, TabDropTarget>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
-    getLandingAt: (_item, at) => landingAt(at.x, at.y),
+    getDropTargetAt: (_item, at) => getTabDropTargetAt(at.x, at.y),
     commit: (item, at) => {
       if (at) land(item, at)
     },
@@ -68,7 +76,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
 
   const hasMoved = computed(() => dragging.value?.hasMoved === true)
 
-  const overlay = computed(() => (hasMoved.value ? (landing.value?.box ?? null) : null))
+  const overlay = computed(() => (hasMoved.value ? (dropTarget.value?.box ?? null) : null))
 
   const label = computed(() => {
     const held = dragging.value
@@ -87,7 +95,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     lift({ tab, from }, at)
   }
 
-  function land(drag: Drag, at: TabLanding): void {
+  function land(drag: Drag, at: TabDropTarget): void {
     const ids = options.getIdFactory()
     const workspace = options.workspace
 
@@ -119,7 +127,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
    * neighbours; then the outer edge, which divides the whole workspace; then the
    * pane, which divides itself.
    */
-  function landingAt(x: number, y: number): TabLanding | null {
+  function getTabDropTargetAt(x: number, y: number): TabDropTarget | null {
     const held = options.frame.value
     if (!held) return null
 
@@ -133,17 +141,17 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     const pane = getClosest(under, '[data-workspace-pane]')
     const id = pane?.getAttribute('data-workspace-pane')
 
-    if (strip && id) return landOnStrip(x, strip, id, local)
+    if (strip && id) return getStripDropTarget(x, strip, id, local)
 
     const side = edgeOf({ x, y }, outer, options.getEdge())
     if (side) return { kind: 'edge', side, box: local(overlayFor(side, outer)) }
 
     if (!pane || !id) return null
 
-    return landOnPane({ x, y }, pane, id, local)
+    return getPaneDropTarget({ x, y }, pane, id, local)
   }
 
-  return { hasMoved, overlay, label, position, landing, press }
+  return { hasMoved, overlay, label, position, dropTarget, press }
 }
 
 /** A box put in the coordinates of the frame. */
@@ -156,7 +164,12 @@ const getClosest = (under: Element | null, selector: string): Element | null =>
   under?.closest(selector) ?? null
 
 /** A tab put in order among the tabs already drawn on a strip. */
-function landOnStrip(x: number, strip: Element, pane: NodeId, local: ToLocal): TabLanding {
+function getStripDropTarget(
+  x: number,
+  strip: Element,
+  pane: NodeId,
+  local: ToLocal,
+): TabDropTarget {
   // A strip holds tabs and nothing else, in the order they are drawn.
   const tabs = [...strip.children].map((tab) => rectOf(tab))
   const slot = slotAt(x, tabs)
@@ -164,7 +177,7 @@ function landOnStrip(x: number, strip: Element, pane: NodeId, local: ToLocal): T
 }
 
 /** A pane divided along the side the pointer is nearest. */
-function landOnPane(at: Position, pane: Element, id: NodeId, local: ToLocal): TabLanding {
+function getPaneDropTarget(at: Position, pane: Element, id: NodeId, local: ToLocal): TabDropTarget {
   const box = rectOf(pane)
   const side = sideAt(at, box)
   return { kind: 'pane', pane: id, side, box: local(overlayFor(side, box)) }

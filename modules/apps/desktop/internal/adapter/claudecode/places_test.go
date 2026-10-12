@@ -13,7 +13,7 @@ func TestTheCommandLineIsFoundWhereAnInstallerPutIt(t *testing.T) {
 	program(t, filepath.Join(home, ".local", "bin", "claude"))
 
 	want := filepath.Join(home, ".local", "bin", "claude")
-	if got := found(home, places); got != want {
+	if got := findInPlaces(home, places); got != want {
 		t.Errorf("found %q, want %q", got, want)
 	}
 }
@@ -34,7 +34,7 @@ func TestTheCommandLineIsFoundInsideAnApplicationBundle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := found(home, places); got != want {
+	if got := findInPlaces(home, places); got != want {
 		t.Errorf("found %q, want %q", got, want)
 	}
 }
@@ -46,7 +46,7 @@ func TestAVersionFolderIsExpanded(t *testing.T) {
 	want := filepath.Join(home, ".nvm", "versions", "node", "v20.0.0", "bin", "claude")
 	program(t, want)
 
-	if got := found(home, places); got != want {
+	if got := findInPlaces(home, places); got != want {
 		t.Errorf("found %q, want %q", got, want)
 	}
 }
@@ -67,7 +67,7 @@ func TestWhatCannotBeRunIsNotTheCommandLine(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := found(home, places); got != "" {
+	if got := findInPlaces(home, places); got != "" {
 		t.Errorf("found %q, want nothing", got)
 	}
 }
@@ -79,14 +79,14 @@ func TestAProgramUnderAnotherCaseIsNotTheCommandLine(t *testing.T) {
 	home := t.TempDir()
 	program(t, filepath.Join(home, "Applications", "Claude.app", "Contents", "MacOS", "Claude"))
 
-	if got := found(home, places); got != "" {
+	if got := findInPlaces(home, places); got != "" {
 		t.Errorf("found %q, want nothing", got)
 	}
 }
 
 // Nothing is looked up under a home that is not known.
 func TestNoHomeMeansNoHomePlaces(t *testing.T) {
-	if got := found("", []string{"~/.local/bin/claude"}); got != "" {
+	if got := findInPlaces("", []string{"~/.local/bin/claude"}); got != "" {
 		t.Errorf("found %q, want nothing", got)
 	}
 }

@@ -6,14 +6,14 @@ import (
 	"unicode/utf8"
 )
 
-// glimpsed is the value of a named field in JSON that has not finished
+// getPartialJSONField is the value of a named field in JSON that has not finished
 // arriving.
 //
 // Nothing here decodes: half a document does not parse, and waiting for the
 // whole of it is waiting for the thing being watched. The first field of that
 // name is taken, since the first element of a collection is the one being
 // written when there is nothing else to show yet.
-func getGlimpse(arguments, field string) string {
+func getPartialJSONField(arguments, field string) string {
 	if field == "" {
 		return ""
 	}
@@ -49,14 +49,14 @@ func getGlimpse(arguments, field string) string {
 		}
 		out.WriteByte(rest[i])
 	}
-	return unquote(whole(out.String()))
+	return unquote(trimPartialRune(out.String()))
 }
 
-// whole is the text without a character that has half arrived.
+// trimPartialRune is the text without a character that has half arrived.
 //
 // Pieces are cut where the stream cut them, which for anything outside ASCII is
 // as likely to be the middle of a character as the end of one.
-func whole(text string) string {
+func trimPartialRune(text string) string {
 	for len(text) > 0 {
 		last, size := utf8.DecodeLastRuneInString(text)
 		if last != utf8.RuneError || size > 1 {

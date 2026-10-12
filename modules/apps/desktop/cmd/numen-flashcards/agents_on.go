@@ -21,16 +21,16 @@ import (
 // `nomcp`, its counterpart takes its place and nothing of the tools — nor of
 // what serves them — is linked in at all.
 
-// unnamed is what the panel is told where the settings name no agent.
-const unnamed = "no agent is named in the settings"
+// errNoAgentNamed is what the panel is told where the settings name no agent.
+const errNoAgentNamed = "no agent is named in the settings"
 
-// reaching is the agent on the vault a person's session is on.
+// vaultTracker is the agent on the vault a person's session is on.
 //
 // A session is on one vault and an agent is told which vault it works when it
 // starts, so the endpoint is stopped and served again when a session opens on
 // another one.
-type reaching struct {
-	swapping *agents.Endpoint
+type vaultTracker struct {
+	endpoint *agents.Endpoint
 
 	mu    sync.Mutex
 	vault domain.Vault
@@ -38,7 +38,7 @@ type reaching struct {
 
 // SetSessionVault is a session opening on a vault. A session opened on the same
 // vault again leaves the agent where it is.
-func (r *reaching) SetSessionVault(_ context.Context, v domain.Vault) {
+func (r *vaultTracker) SetSessionVault(_ context.Context, v domain.Vault) {
 	r.mu.Lock()
 	again := r.vault.ID == v.ID
 	r.vault = v
@@ -47,10 +47,10 @@ func (r *reaching) SetSessionVault(_ context.Context, v domain.Vault) {
 	if again {
 		return
 	}
-	_ = r.swapping.RunSwap(func() error { return nil })
+	_ = r.endpoint.RunWhileStopped(func() error { return nil })
 }
 
-func (r *reaching) getVault() domain.Vault {
+func (r *vaultTracker) getVault() domain.Vault {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.vault
@@ -74,7 +74,7 @@ func serveAgents(
 	out io.Writer,
 ) func() error {
 	if off || cfg.Agent.Use != agent.UseClaude {
-		api.Unreachable.Store(unnamed)
+		api.Unreachable.Store(errNoAgentNamed)
 		return func() error { return nil }
 	}
 
@@ -90,8 +90,8 @@ func serveAgents(
 	// this window can reach one.
 	api.Unreachable.Store("")
 
-	held := &reaching{}
-	held.swapping = &agents.Endpoint{
+	held := &vaultTracker{}
+	held.endpoint = &agents.Endpoint{
 		Serve: func() (func() error, error) {
 			v := held.getVault()
 			root, err := filepath.Abs(v.Path)
@@ -112,15 +112,15 @@ func serveAgents(
 			api.SetAgent(served.Agent)
 			return served.Close, nil
 		},
-		Showing:      held.getVault,
-		Handler:      api.SetAgent,
-		Unreachable:  func(why string) { api.Unreachable.Store(why) },
-		ErrorHandler: func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
+		GetVault:       held.getVault,
+		SetAgent:       api.SetAgent,
+		SetUnreachable: func(why string) { api.Unreachable.Store(why) },
+		ErrorHandler:   func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
 	api.Opened = held.SetSessionVault
 	return func() error {
-		held.swapping.Stop()
+		held.endpoint.Stop()
 		return nil
 	}
 }

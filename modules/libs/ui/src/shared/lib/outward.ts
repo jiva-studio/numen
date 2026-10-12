@@ -24,7 +24,10 @@ export const isOutward = (at: URL, here: URL): boolean =>
  * can carry the window off. What a link inside the application means is still
  * the application's, and is left alone.
  */
-export const holdWindow = (openLink: LinkOpener, root: Document = document): (() => void) => {
+export const interceptOutwardLinks = (
+  openLink: LinkOpener,
+  root: Document = document,
+): (() => void) => {
   const onPress = (press: MouseEvent) => {
     const link = (press.target as Element | null)?.closest?.('a[href]')
     const href = link?.getAttribute('href')

@@ -23,7 +23,7 @@ func (a *API) GetWindow() port.Window { return view{a} }
 type view struct{ *API }
 
 func (v view) Focus(_ context.Context, at domain.Place) error {
-	v.Places.tell(at)
+	v.Places.publish(at)
 	return nil
 }
 
@@ -34,7 +34,7 @@ func (a *API) WatchFocus(
 	_ *connect.Request[v1.WatchFocusRequest],
 	out *connect.ServerStream[v1.WatchFocusResponse],
 ) error {
-	line, done := a.Places.listen()
+	line, done := a.Places.subscribe()
 	defer done()
 
 	repeat := time.NewTicker(wire.Again)
@@ -65,12 +65,12 @@ func (a *API) WatchFocus(
 }
 
 func (v view) ShowMove(_ context.Context, went domain.Move) error {
-	v.Listeners.tell(change{renamed: []domain.Move{went}})
+	v.ChangeEvents.publish(change{renamed: []domain.Move{went}})
 	return nil
 }
 
 func (v view) ShowEdit(_ context.Context, said domain.Edit) error {
-	v.Edits.tell(said)
+	v.Edits.publish(said)
 	return nil
 }
 
@@ -81,7 +81,7 @@ func (a *API) WatchEdits(
 	_ *connect.Request[v1.WatchEditsRequest],
 	out *connect.ServerStream[v1.WatchEditsResponse],
 ) error {
-	line, done := a.Edits.listen()
+	line, done := a.Edits.subscribe()
 	defer done()
 
 	// A stream that says nothing until a note is changed is indistinguishable

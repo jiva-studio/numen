@@ -8,7 +8,7 @@
  * nothing to seek.
  */
 import { computed, watch } from 'vue'
-import { Editor, timing, Waiting } from '@numen/ui'
+import { Editor, createTimeGutter, Waiting } from '@numen/ui'
 import { WORDS as words } from '../words'
 import type { MediaTabState } from '../kind'
 
@@ -34,7 +34,7 @@ const {
 } = props.state
 
 /** The times in the editor's gutter, and the line being said. */
-const times = timing((line) => props.state.goToLine(line))
+const times = createTimeGutter((line) => props.state.goToLine(line))
 
 /* --------------------------------- Hooks ---------------------------------- */
 // The words move under what is played: the line being said is drawn in the

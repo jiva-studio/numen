@@ -1,4 +1,4 @@
-/** Where a card lands, and which runs draw a landing of their own. */
+/** Where a card lands, and which runs draw a drop target of their own. */
 import { describe, expect, it } from 'vitest'
 import type { Stencil } from './card'
 import { endOf, HEAD, type DeckCard, type DeckSection } from './deck'
@@ -16,22 +16,22 @@ const card = (id: string, section: string | null): DeckCard => ({
   filled: [],
 })
 
-describe('getGrid, the landing a run draws', () => {
-  it('draws no landing for the cards before the first section where there is no section', () => {
-    expect(getGrid([], [], CUTS, null).runs.map((run) => run.isLanding)).toEqual([false])
+describe('getGrid, the drop target a run draws', () => {
+  it('draws no drop target for the cards before the first section where there is no section', () => {
+    expect(getGrid([], [], CUTS, null).runs.map((run) => run.isDropTarget)).toEqual([false])
   })
 
-  it('draws a landing for the empty head of a deck that has sections', () => {
-    expect(getGrid([], SECTIONS, CUTS, null).runs[0]?.isLanding).toBe(true)
+  it('draws a drop target for the empty head of a deck that has sections', () => {
+    expect(getGrid([], SECTIONS, CUTS, null).runs[0]?.isDropTarget).toBe(true)
   })
 
   it('draws none for a head holding cards, the first of them being landed on', () => {
-    expect(getGrid([card('a', null)], SECTIONS, CUTS, null).runs[0]?.isLanding).toBe(false)
+    expect(getGrid([card('a', null)], SECTIONS, CUTS, null).runs[0]?.isDropTarget).toBe(false)
   })
 
   it('draws none for a run under a section, its heading being landed on', () => {
     const runs = getGrid([card('a', 'roots')], SECTIONS, CUTS, null).runs
-    expect(runs.slice(1).map((run) => run.isLanding)).toEqual([false, false])
+    expect(runs.slice(1).map((run) => run.isDropTarget)).toEqual([false, false])
   })
 
   it('stands a card naming a section that is not there before the first section', () => {

@@ -9,7 +9,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import MenuRow from './MenuRow.vue'
-import { groupItems, getLandingIndex, type MenuItem, type MenuOpening } from './item'
+import { groupItems, getInitialIndex, type MenuItem, type MenuTrigger } from './item'
 import { useMenuGround } from './ground'
 import { useMenuKeys } from './keys'
 import { useMenuPlacement } from './place'
@@ -24,7 +24,7 @@ const props = withDefaults(
     /** Whether it is drawn at all. */
     open?: boolean
     /** What opened it. Opened by hand it appears with nothing chosen. */
-    opening?: MenuOpening
+    trigger?: MenuTrigger
     /**
      * Which item is the one in force, by the caller's identifier. A menu
      * naming one offers a choice between its items: each says whether it is
@@ -56,7 +56,7 @@ const props = withDefaults(
   }>(),
   {
     open: false,
-    opening: 'pointer',
+    trigger: 'pointer',
     current: null,
     from: null,
     viewport: null,
@@ -124,7 +124,7 @@ const enter = async () => {
 
   await nextTick()
   measure()
-  goTo(getLandingIndex(props.opening, props.items, props.current))
+  goTo(getInitialIndex(props.trigger, props.items, props.current))
 }
 
 const leave = () => {
