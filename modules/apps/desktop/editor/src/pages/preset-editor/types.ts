@@ -45,7 +45,7 @@ export {
   setLoadOn,
   DEFAULTS,
   NO_BOUNDS,
-  NOWHERE,
+  NO_PLACE,
 } from '@/entities/deck'
 
 export type { Field }
@@ -60,7 +60,7 @@ export interface PresetSettingsData {
   readonly problems: Readonly<Ref<readonly string[]>>
   readonly stopped: Readonly<Ref<StopReason>>
   readonly errorMessage: Readonly<Ref<string>>
-  readonly hasChanged: Readonly<Ref<boolean>>
+  readonly hasExternalChange: Readonly<Ref<boolean>>
   readonly material: Readonly<Ref<PresetCounts | null>>
 }
 

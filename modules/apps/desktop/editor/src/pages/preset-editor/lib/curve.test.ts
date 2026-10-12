@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from '../types'
+import { DEFAULTS, NO_PLACE, type Curve, type Point, type Settings } from '../types'
 import { BOUNDS, curve as drawnCurve } from '../fixtures'
 import {
   clamp,
@@ -13,7 +13,7 @@ import {
   costOf,
   findNearest,
   goalValue,
-  idle,
+  getIdleReason,
   produceSchedule,
   round,
   valueAt,
@@ -71,7 +71,7 @@ describe('the value the knob stands at', () => {
 
   it('is the place itself anywhere else, and where the preset falls outside the grid', () => {
     expect(valueAt(riding, 3)).toBe(30)
-    expect(valueAt(drawnCurve({ now: NOWHERE }), 2)).toBe(20)
+    expect(valueAt(drawnCurve({ now: NO_PLACE }), 2)).toBe(20)
   })
 
   it('is nothing at all where the grid has no such place', () => {
@@ -108,7 +108,7 @@ describe('what one place of the curve produces', () => {
       point({ reviews: 120, retained: 0.93 }),
     ],
     now: { at: 2, value: 20, day: '' },
-    suggested: NOWHERE,
+    suggested: NO_PLACE,
     decks: 1,
     cards: 400,
     overdue: 0,
@@ -166,8 +166,8 @@ describe('a goal with nothing to work on', () => {
     grid: [0, 10, 20],
     days: [],
     at: [point(), point(), point()],
-    now: NOWHERE,
-    suggested: NOWHERE,
+    now: NO_PLACE,
+    suggested: NO_PLACE,
     decks: 0,
     cards: 0,
     overdue: 0,
@@ -176,42 +176,44 @@ describe('a goal with nothing to work on', () => {
   }
 
   it('is a preset no deck points at, where the curve carries no deck', () => {
-    expect(idle(nothing)).toBe('unpointed')
+    expect(getIdleReason(nothing)).toBe('unpointed')
   })
 
   it('is decks holding nothing between them, where they do point here', () => {
-    expect(idle({ ...nothing, decks: 1 })).toBe('noCards')
-    expect(idle({ ...nothing, decks: 4 })).toBe('noCards')
+    expect(getIdleReason({ ...nothing, decks: 1 })).toBe('noCards')
+    expect(getIdleReason({ ...nothing, decks: 4 })).toBe('noCards')
   })
 
   // A curve of zeros is a day behind us, a range of nothing, or a question the
   // application would not answer. None of those is an empty preset: the count
   // of cards says that and nothing else does.
   it('is not a preset holding cards, whatever its curve comes to', () => {
-    expect(idle({ ...nothing, decks: 4, cards: 900 })).toBe('')
-    expect(idle({ ...nothing, decks: 4, cards: 900, goal: 'date', grid: [1, 2, 3] })).toBe('')
+    expect(getIdleReason({ ...nothing, decks: 4, cards: 900 })).toBe('')
+    expect(getIdleReason({ ...nothing, decks: 4, cards: 900, goal: 'date', grid: [1, 2, 3] })).toBe(
+      '',
+    )
   })
 
   it('is not the line the window guessed, which is nobody’s answer', () => {
-    expect(idle({ ...nothing, isHonest: false })).toBe('')
-    expect(idle({ ...nothing, decks: 4, isHonest: false })).toBe('')
+    expect(getIdleReason({ ...nothing, isHonest: false })).toBe('')
+    expect(getIdleReason({ ...nothing, decks: 4, isHonest: false })).toBe('')
   })
 
   // The preset is not stopped: it schedules reviews, and nothing here can ever
   // become one.
   it('is a material nobody has begun that no place of the range begins', () => {
     const all = { ...nothing, decks: 1, cards: 900, unbegun: 900 }
-    expect(idle(all)).toBe('beginsNothing')
+    expect(getIdleReason(all)).toBe('beginsNothing')
   })
 
   it('is not a material a place of the range asks for', () => {
     const all = { ...nothing, decks: 1, cards: 900, unbegun: 900 }
-    expect(idle({ ...all, at: [point(), point({ reviews: 12 }), point()] })).toBe('')
+    expect(getIdleReason({ ...all, at: [point(), point({ reviews: 12 }), point()] })).toBe('')
   })
 
   it('is not a material some of which somebody has begun', () => {
     const some = { ...nothing, decks: 1, cards: 900, unbegun: 899 }
-    expect(idle(some)).toBe('')
+    expect(getIdleReason(some)).toBe('')
   })
 })
 
@@ -280,8 +282,8 @@ describe('a material nobody has begun, where the range has no place', () => {
       grid: [],
       days: [],
       at: [],
-      now: NOWHERE,
-      suggested: NOWHERE,
+      now: NO_PLACE,
+      suggested: NO_PLACE,
       decks: 1,
       cards: 900,
       overdue: 0,
@@ -289,7 +291,7 @@ describe('a material nobody has begun, where the range has no place', () => {
       isHonest: true,
     }
 
-    expect(idle(none)).toBe('')
+    expect(getIdleReason(none)).toBe('')
   })
 })
 
@@ -299,8 +301,8 @@ describe('the day a place of a curve of a date produces', () => {
     grid: [0, 10, 20, 30],
     days: ['2027-01-01', '2027-01-02', '2027-01-03', '2027-01-04'],
     at: [point(), point(), point(), point()],
-    now: NOWHERE,
-    suggested: NOWHERE,
+    now: NO_PLACE,
+    suggested: NO_PLACE,
     decks: 1,
     cards: 400,
     overdue: 0,
