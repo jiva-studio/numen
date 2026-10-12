@@ -332,7 +332,7 @@ func (a *API) CreateArtifact(
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
 		made, err = a.proofreadTranscript(ctx, showing, ref)
 	case v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED:
-		made, err = a.proofreadReading(ctx, showing, ref)
+		made, err = a.proofreadRecognition(ctx, showing, ref)
 	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT, v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
 		// A recording's transcript is heard by a model here; a note's is
 		// fetched from the address it points at.
@@ -545,14 +545,14 @@ func getProofreadState(res source.ProofreadTranscriptResult) v1.State {
 	return v1.State_STATE_RUNNING
 }
 
-// proofreadReading begins putting the reading of a scanned document right, and
+// proofreadRecognition begins putting the recognition of a scanned document right, and
 // answers with what the corrections now are.
-func (a *API) proofreadReading(
+func (a *API) proofreadRecognition(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
 ) (*v1.Artifact, error) {
-	puts := a.getReadingProofreader()
+	puts := a.getRecognitionProofreader()
 	if puts == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
@@ -573,11 +573,11 @@ func (a *API) proofreadReading(
 	}
 	return &v1.Artifact{
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED,
-		State: getReadingProofreadState(res),
+		State: getRecognitionProofreadState(res),
 	}, nil
 }
 
-func getReadingProofreadState(res source.ProofreadReadingResult) v1.State {
+func getRecognitionProofreadState(res source.ProofreadRecognitionResult) v1.State {
 	switch {
 	case res.IsBusy, res.IsWaiting:
 		return v1.State_STATE_RUNNING
@@ -601,7 +601,7 @@ func (a *API) artifact(
 		return a.corrections(ctx, v, ref)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED {
-		return a.readingCorrections(ctx, v, ref)
+		return a.recognitionCorrections(ctx, v, ref)
 	}
 	// A url's transcript is the text at the address it holds, and a
 	// recording's is what a model heard: the same kind, made two ways.
@@ -620,8 +620,8 @@ func (a *API) artifact(
 	return newArtifact(of, got), nil
 }
 
-// readingCorrections is what putting a document's reading right has come to.
-func (a *API) readingCorrections(
+// recognitionCorrections is what putting a document's recognition right has come to.
+func (a *API) recognitionCorrections(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,

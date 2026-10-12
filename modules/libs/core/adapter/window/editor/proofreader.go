@@ -23,19 +23,19 @@ type Proofreader interface {
 	Proofread(ctx context.Context, v domain.Vault, path string) (source.ProofreadTranscriptResult, error)
 }
 
-// ReadingProofreader puts a document's reading right, for a person who asked
+// RecognitionProofreader puts a document's recognition right, for a person who asked
 // for it.
-type ReadingProofreader interface {
+type RecognitionProofreader interface {
 	// ProofreaderReady says whether this installation has anything to put a
-	// reading right with.
+	// recognition right with.
 	ProofreaderReady() bool
-	// Proofread puts one reading right and says what came of asking. It
+	// Proofread puts one recognition right and says what came of asking. It
 	// answers before the work is over.
-	Proofread(ctx context.Context, v domain.Vault, path string) (source.ProofreadReadingResult, error)
+	Proofread(ctx context.Context, v domain.Vault, path string) (source.ProofreadRecognitionResult, error)
 }
 
 // errNoProofreading is an installation the settings name nothing to put a
-// transcript or reading right with.
+// transcript or recognition right with.
 var errNoProofreading = errors.New("this installation has no proofreader")
 
 // errNotRead is a document nothing has read yet.

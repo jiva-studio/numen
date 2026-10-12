@@ -32,7 +32,7 @@ type ProofreadingConfig struct {
 	MaxEditDistance float64
 }
 
-// Reading is what puts a document's reading right, at the sizes this
+// Recognition is what puts a document's recognition right, at the sizes this
 // installation proofreads at and against the profile it names for a scan.
 //
 // held is false with no error where the installation named no profile, and the
@@ -41,15 +41,15 @@ type ProofreadingConfig struct {
 //
 // Cut and OnProgress are the caller's: what a run says about itself while it
 // goes belongs to whoever asked for it.
-func (c ProofreadingConfig) Reading(
+func (c ProofreadingConfig) Recognition(
 	readers port.VaultReaders, derived port.DerivedStores,
-) (right ProofreadReading, held bool, err error) {
+) (right ProofreadRecognition, held bool, err error) {
 	by, err := openProofreader(c.By, proofread.ScanInstruction)
 	if err != nil {
-		return ProofreadReading{}, false, fmt.Errorf("nothing to proofread with: %w", err)
+		return ProofreadRecognition{}, false, fmt.Errorf("nothing to proofread with: %w", err)
 	}
 	if by == nil {
-		return ProofreadReading{}, false, nil
+		return ProofreadRecognition{}, false, nil
 	}
 
 	// A proofreader with a queue is left the pages and answers later, and the
@@ -57,14 +57,14 @@ func (c ProofreadingConfig) Reading(
 	var queue port.ProofreadQueue
 	if c.Queue != nil {
 		if queue, err = c.Queue(proofread.ScanInstruction); err != nil {
-			return ProofreadReading{}, false,
+			return ProofreadRecognition{}, false,
 				fmt.Errorf("nothing to leave the pages with: %w", err)
 		}
 	}
 
-	right, err = NewProofreadReading(readers, derived, by)
+	right, err = NewProofreadRecognition(readers, derived, by)
 	if err != nil {
-		return ProofreadReading{}, false, err
+		return ProofreadRecognition{}, false, err
 	}
 	right.Queue = queue
 	right.Pages = c.Batch

@@ -9,7 +9,7 @@ import (
 )
 
 // proofreadCommand puts one file right with a model, by what the file is: a
-// recording's transcript, or a document's reading.
+// recording's transcript, or a document's recognition.
 func proofreadCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli proofread <vault> <file>")
@@ -21,5 +21,5 @@ func proofreadCommand(ctx context.Context, out io.Writer, deps Deps, args []stri
 	if domain.MediaType(args[1]) != "" {
 		return proofreadTranscriptCommand(ctx, out, deps, v, args[1])
 	}
-	return proofreadReadingCommand(ctx, out, deps, v, args[1])
+	return proofreadRecognitionCommand(ctx, out, deps, v, args[1])
 }

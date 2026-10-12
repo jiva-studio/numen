@@ -307,13 +307,13 @@ func (r *RecognitionWorker) Proofread(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-) (ProofreadReadingResult, error) {
+) (ProofreadRecognitionResult, error) {
 	outcomes := make(chan readingOutcome, 2)
 	r.going.Add(1)
 	//nolint:contextcheck // the run outlives the caller and carries r.context()
 	go func() {
 		defer r.going.Done()
-		res, err := r.proofreadReading(r.context(), v, path, func(began ProofreadReadingResult) {
+		res, err := r.proofreadRecognition(r.context(), v, path, func(began ProofreadRecognitionResult) {
 			outcomes <- readingOutcome{res: began}
 		})
 		outcomes <- readingOutcome{res: res, err: err}
@@ -323,12 +323,12 @@ func (r *RecognitionWorker) Proofread(
 	case one := <-outcomes:
 		return one.res, one.err
 	case <-ctx.Done():
-		return ProofreadReadingResult{Path: path}, ctx.Err()
+		return ProofreadRecognitionResult{Path: path}, ctx.Err()
 	}
 }
 
 type readingOutcome struct {
-	res ProofreadReadingResult
+	res ProofreadRecognitionResult
 	err error
 }
 
@@ -339,23 +339,23 @@ func (r *RecognitionWorker) proofread(ctx context.Context, v domain.Vault, path 
 	if !r.with.Proofreading.IsAutomatic {
 		return
 	}
-	_, _ = r.proofreadReading(ctx, v, path, nil)
+	_, _ = r.proofreadRecognition(ctx, v, path, nil)
 }
 
-func (r *RecognitionWorker) proofreadReading(
+func (r *RecognitionWorker) proofreadRecognition(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-	onBegan func(ProofreadReadingResult),
-) (ProofreadReadingResult, error) {
+	onBegan func(ProofreadRecognitionResult),
+) (ProofreadRecognitionResult, error) {
 	proofreading := r.with.Proofreading
-	right, held, err := proofreading.Reading(r.with.Readers, r.with.Derived)
+	right, held, err := proofreading.Recognition(r.with.Readers, r.with.Derived)
 	if err != nil {
 		r.say(task.Task{ID: proofreadID(path), Doing: "Proofreading a reading", About: path, Error: err.Error()})
-		return ProofreadReadingResult{Path: path}, err
+		return ProofreadRecognitionResult{Path: path}, err
 	}
 	if !held {
-		return ProofreadReadingResult{Path: path, IsNone: true}, nil
+		return ProofreadRecognitionResult{Path: path, IsNone: true}, nil
 	}
 
 	id := proofreadID(path)
@@ -364,7 +364,7 @@ func (r *RecognitionWorker) proofreadReading(
 	right.Cut = r.Cut
 	right.Pages = proofreading.Batch
 	right.MaxEditDistance = proofreading.MaxEditDistance
-	right.OnProgress = func(res ProofreadReadingResult) {
+	right.OnProgress = func(res ProofreadRecognitionResult) {
 		r.say(task.Task{
 			ID:    id,
 			Doing: "Proofreading a reading",
@@ -504,7 +504,7 @@ func (r *RecognitionWorker) collect(
 			return
 		}
 		id := proofreadID(one.Path)
-		right, err := NewProofreadReading(r.with.Readers, r.with.Derived, by)
+		right, err := NewProofreadRecognition(r.with.Readers, r.with.Derived, by)
 		if err != nil {
 			r.report(task.Task{
 				ID: id, Doing: "Proofreading a reading",
@@ -517,7 +517,7 @@ func (r *RecognitionWorker) collect(
 		right.Pages = proofreading.Batch
 		right.MaxEditDistance = proofreading.MaxEditDistance
 		right.Cut = r.Cut
-		right.OnProgress = func(res ProofreadReadingResult) {
+		right.OnProgress = func(res ProofreadRecognitionResult) {
 			r.report(task.Task{
 				ID: id, Doing: "Proofreading a reading", About: one.Path,
 				Count: int64(res.Read), Total: int64(res.Pages),
