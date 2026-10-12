@@ -7,14 +7,14 @@ import { normalize } from './normalize'
 import { pane } from './node'
 import { isBranch, isPane } from './tree'
 import { arrangeWorkspace } from './arrange'
-import { split, stack, workspaceOf } from '../fixtures/build'
+import { split, stack, createWorkspace } from '../fixtures/build'
 import { getFaults } from '../fixtures/invariants'
 
 const SCREEN = { x: 0, y: 0, width: 1280, height: 800 }
 
 describe('what does not draw is cleared away', () => {
   it('takes out a pane holding nothing', () => {
-    const before = workspaceOf(
+    const before = createWorkspace(
       split('root', [stack('a', 'one'), pane('gone', []), stack('b', 'two')]),
       'horizontal',
       'a',
@@ -30,12 +30,12 @@ describe('what does not draw is cleared away', () => {
   })
 
   it('replaces a branch left with one pane by that pane', () => {
-    const before = workspaceOf(split('root', [stack('only', 'one')]), 'horizontal', 'only')
+    const before = createWorkspace(split('root', [stack('only', 'one')]), 'horizontal', 'only')
     expect(normalize(before).root.id).toBe('only')
   })
 
   it('keeps a root that holds nothing, so there is always one', () => {
-    const before = workspaceOf(pane('main', []))
+    const before = createWorkspace(pane('main', []))
     const after = normalize(before)
 
     expect(after.root).toSatisfy(isPane)
@@ -43,19 +43,19 @@ describe('what does not draw is cleared away', () => {
   })
 
   it('keeps the first pane of a branch that holds nothing at all, so there is a root', () => {
-    const after = normalize(workspaceOf(split('root', [pane('x', []), pane('y', [])])))
+    const after = normalize(createWorkspace(split('root', [pane('x', []), pane('y', [])])))
 
     expect(after.root).toStrictEqual(pane('x', []))
   })
 
   it('keeps a branch without children as a pane under its own id', () => {
-    const after = normalize(workspaceOf(split('root', [])))
+    const after = normalize(createWorkspace(split('root', [])))
 
     expect(after.root).toStrictEqual(pane('root', []))
   })
 
   it('keeps the shares of a child that is reduced to one pane', () => {
-    const before = workspaceOf(
+    const before = createWorkspace(
       split(
         'root',
         [split('lone', [stack('a', 'one'), pane('gone', [])]), stack('b', 'two')],
@@ -68,7 +68,7 @@ describe('what does not draw is cleared away', () => {
   })
 
   it('keeps the shares of a child that stays a branch', () => {
-    const before = workspaceOf(
+    const before = createWorkspace(
       split(
         'root',
         [split('pair', [stack('a', 'one'), stack('b', 'two')]), stack('c', 'three')],
@@ -82,7 +82,7 @@ describe('what does not draw is cleared away', () => {
 
   it('is idempotent', () => {
     const once = normalize(
-      workspaceOf(split('root', [stack('a', 'one'), pane('gone', [])]), 'horizontal', 'a'),
+      createWorkspace(split('root', [stack('a', 'one'), pane('gone', [])]), 'horizontal', 'a'),
     )
     expect(normalize(once)).toStrictEqual(once)
   })
@@ -90,7 +90,7 @@ describe('what does not draw is cleared away', () => {
 
 /** Grandchildren rise two levels at once, and keep the way they divide. */
 describe('a branch that keeps one child hands its grandchildren up', () => {
-  const withEmpty = workspaceOf(
+  const withEmpty = createWorkspace(
     split(
       'root',
       [
@@ -138,7 +138,7 @@ describe('a branch that keeps one child hands its grandchildren up', () => {
 })
 
 describe('a root left with one child turns the axis with it', () => {
-  const workspace = workspaceOf(
+  const workspace = createWorkspace(
     split('root', [split('down', [stack('c', 'three'), stack('d', 'four')])]),
     'horizontal',
     'c',

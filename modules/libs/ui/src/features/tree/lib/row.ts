@@ -29,7 +29,7 @@ export interface Row {
 export interface RowMarker {
   readonly attribute: string
   /** What the attribute says on a row, and nothing for a row left unmarked. */
-  readonly valueFor: (row: RowId | null) => string | null
+  readonly getValue: (row: RowId | null) => string | null
 }
 
 /** What a row is marked with, and nothing where it is marked with nothing. */
@@ -37,7 +37,7 @@ export const getMarkOf = (
   mark: RowMarker | undefined,
   row: RowId | null,
 ): Record<string, string> => {
-  const value = mark?.valueFor(row)
+  const value = mark?.getValue(row)
   return mark && value !== null && value !== undefined ? { [mark.attribute]: value } : {}
 }
 

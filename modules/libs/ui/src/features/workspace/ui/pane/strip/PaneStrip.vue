@@ -36,10 +36,10 @@ defineSlots<{
 const workspace = inject(WORKSPACE_CONTEXT)
 
 /** What a tab is called. A tab with no title is shown by its identity. */
-const titleOf = (tab: TabId): string => workspace?.value.tabOf(tab)?.title ?? tab
+const getTitle = (tab: TabId): string => workspace?.value.findTab(tab)?.title ?? tab
 
 /** What a tab is carrying, and nothing for a tab carrying nothing. */
-const getMarkOf = (tab: TabId): string | undefined => workspace?.value.tabOf(tab)?.mark
+const getMarkOf = (tab: TabId): string | undefined => workspace?.value.findTab(tab)?.mark
 
 const tabName = (at: number): string => getTabName(props.pane.id, at)
 const panelName = (at: number): string => getPanelName(props.pane.id, at)
@@ -87,7 +87,7 @@ defineExpose({ reach })
       :key="tab"
       :aria-controls="panelName(at)"
       :tab="tab"
-      :title="titleOf(tab)"
+      :title="getTitle(tab)"
       :mark="getMarkOf(tab)"
       :showing="tab === pane.active"
       :is-focused="tab === pane.active && isFocused"

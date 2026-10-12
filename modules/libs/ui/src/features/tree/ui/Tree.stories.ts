@@ -304,7 +304,7 @@ export const Several: Story = { args: { selected: ['work', 'notes', 'loose'] } }
 /** A selection running from inside a folder out past the end of it. */
 export const AcrossAFolder: Story = { args: { selected: ['plans', 'notes', 'empty'] } }
 
-const rowIn = (canvas: HTMLElement, row: string) => {
+const getRow = (canvas: HTMLElement, row: string) => {
   const held = canvas.querySelector<HTMLElement>(`[data-tree-row="${row}"]`)
   if (!held) throw new Error(`no row called ${row}`)
   return held
@@ -319,14 +319,14 @@ const getSelected = (canvas: HTMLElement) =>
     row.getAttribute('data-tree-row'),
   )
 
-const middleOf = (element: Element) => {
+const getMiddle = (element: Element) => {
   const box = element.getBoundingClientRect()
   return { clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 }
 }
 
 /** A row picked up and let go somewhere, in as many steps as a hand takes. */
 async function dragTo(from: Element, to: { clientX: number; clientY: number }): Promise<void> {
-  const at = middleOf(from)
+  const at = getMiddle(from)
   await userEvent.pointer([
     { keys: '[MouseLeft>]', target: from, coords: at },
     { coords: { clientX: (at.clientX + to.clientX) / 2, clientY: (at.clientY + to.clientY) / 2 } },
@@ -339,19 +339,19 @@ async function dragTo(from: Element, to: { clientX: number; clientY: number }): 
 export const WalksWithTheKeyboard: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    rowIn(canvasElement, 'plans').focus()
+    getRow(canvasElement, 'plans').focus()
 
     await userEvent.keyboard('{ArrowRight}')
     await expect(getDrawnRows(canvasElement)).toContain('friday')
-    await expect(rowIn(canvasElement, 'plans').getAttribute('aria-expanded')).toBe('true')
+    await expect(getRow(canvasElement, 'plans').getAttribute('aria-expanded')).toBe('true')
 
     await userEvent.keyboard('{ArrowRight}')
-    await expect(document.activeElement).toBe(rowIn(canvasElement, 'friday'))
-    await expect(rowIn(canvasElement, 'friday').getAttribute('aria-selected')).toBe('true')
+    await expect(document.activeElement).toBe(getRow(canvasElement, 'friday'))
+    await expect(getRow(canvasElement, 'friday').getAttribute('aria-selected')).toBe('true')
 
     await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
     await expect(getDrawnRows(canvasElement)).not.toContain('friday')
-    await expect(document.activeElement).toBe(rowIn(canvasElement, 'plans'))
+    await expect(document.activeElement).toBe(getRow(canvasElement, 'plans'))
   },
 }
 
@@ -359,9 +359,9 @@ export const WalksWithTheKeyboard: Story = {
 export const DragsIntoARow: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    await dragTo(rowIn(canvasElement, 'loose'), middleOf(rowIn(canvasElement, 'work')))
+    await dragTo(getRow(canvasElement, 'loose'), getMiddle(getRow(canvasElement, 'work')))
 
-    await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
+    await expect(getRow(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
     await expect(getDrawnRows(canvasElement)).toStrictEqual([
       'work',
       'plans',
@@ -376,9 +376,9 @@ export const DragsIntoARow: Story = {
 export const DragsBetweenRows: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const first = rowIn(canvasElement, 'work').getBoundingClientRect()
+    const first = getRow(canvasElement, 'work').getBoundingClientRect()
 
-    await dragTo(rowIn(canvasElement, 'loose'), {
+    await dragTo(getRow(canvasElement, 'loose'), {
       clientX: first.x + first.width / 2,
       clientY: first.y + 1,
     })
@@ -390,7 +390,7 @@ export const DragsBetweenRows: Story = {
       'notes',
       'empty',
     ])
-    await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('1')
+    await expect(getRow(canvasElement, 'loose').getAttribute('aria-level')).toBe('1')
   },
 }
 
@@ -400,13 +400,13 @@ export const JoinsARow: Story = {
   play: async ({ canvasElement }) => {
     // One hand, so what it holds down is still held down at the press.
     const hand = userEvent.setup()
-    await hand.click(rowIn(canvasElement, 'work'))
+    await hand.click(getRow(canvasElement, 'work'))
 
     await hand.keyboard('{Control>}')
-    await hand.click(rowIn(canvasElement, 'loose'))
+    await hand.click(getRow(canvasElement, 'loose'))
     await expect(getSelected(canvasElement)).toStrictEqual(['work', 'loose'])
 
-    await hand.click(rowIn(canvasElement, 'loose'))
+    await hand.click(getRow(canvasElement, 'loose'))
     await expect(getSelected(canvasElement)).toStrictEqual(['work'])
     await hand.keyboard('{/Control}')
   },
@@ -417,13 +417,13 @@ export const ReachesToARow: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const hand = userEvent.setup()
-    await hand.click(rowIn(canvasElement, 'plans'))
+    await hand.click(getRow(canvasElement, 'plans'))
 
     await hand.keyboard('{Shift>}')
-    await hand.click(rowIn(canvasElement, 'empty'))
+    await hand.click(getRow(canvasElement, 'empty'))
     await expect(getSelected(canvasElement)).toStrictEqual(['plans', 'notes', 'empty'])
 
-    await hand.click(rowIn(canvasElement, 'work'))
+    await hand.click(getRow(canvasElement, 'work'))
     await expect(getSelected(canvasElement)).toStrictEqual(['work', 'plans'])
     await hand.keyboard('{/Shift}')
   },
@@ -433,9 +433,9 @@ export const ReachesToARow: Story = {
 export const DraggingSeveral: Story = {
   args: { selected: ['notes', 'loose'] },
   play: async ({ canvasElement }) => {
-    const from = rowIn(canvasElement, 'loose')
-    const at = middleOf(from)
-    const to = middleOf(rowIn(canvasElement, 'work'))
+    const from = getRow(canvasElement, 'loose')
+    const at = getMiddle(from)
+    const to = getMiddle(getRow(canvasElement, 'work'))
 
     await userEvent.pointer([
       { keys: '[MouseLeft>]', target: from, coords: at },
@@ -444,7 +444,7 @@ export const DraggingSeveral: Story = {
     ])
 
     await expect(canvasElement.querySelector('.tree__dragged')?.textContent?.trim()).toBe('2 rows')
-    await expect(rowIn(canvasElement, 'work').getAttribute('data-into')).toBe('true')
+    await expect(getRow(canvasElement, 'work').getAttribute('data-into')).toBe('true')
   },
 }
 
@@ -453,7 +453,7 @@ export const DragsSeveralIntoARow: Story = {
   tags: ['!dev'],
   args: { selected: ['notes', 'loose'] },
   play: async ({ canvasElement }) => {
-    await dragTo(rowIn(canvasElement, 'loose'), middleOf(rowIn(canvasElement, 'work')))
+    await dragTo(getRow(canvasElement, 'loose'), getMiddle(getRow(canvasElement, 'work')))
 
     await expect(getDrawnRows(canvasElement)).toStrictEqual([
       'work',
@@ -462,7 +462,7 @@ export const DragsSeveralIntoARow: Story = {
       'loose',
       'empty',
     ])
-    await expect(rowIn(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
+    await expect(getRow(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
     await expect(canvasElement.querySelector('.tree__dragged')).toBeNull()
   },
 }
@@ -473,10 +473,10 @@ export const RefusesWhatItHolds: Story = {
   play: async ({ canvasElement }) => {
     const before = getDrawnRows(canvasElement)
 
-    await dragTo(rowIn(canvasElement, 'work'), middleOf(rowIn(canvasElement, 'plans')))
+    await dragTo(getRow(canvasElement, 'work'), getMiddle(getRow(canvasElement, 'plans')))
 
     await expect(getDrawnRows(canvasElement)).toStrictEqual(before)
-    await expect(rowIn(canvasElement, 'work').getAttribute('aria-level')).toBe('1')
+    await expect(getRow(canvasElement, 'work').getAttribute('aria-level')).toBe('1')
   },
 }
 
@@ -492,7 +492,7 @@ export const TakesAName: Story = {
     await userEvent.type(field, 'Грядки{Enter}')
 
     await expect(canvasElement.querySelector('.tree__field')).toBeNull()
-    await expect(rowIn(canvasElement, 'notes').textContent).toContain('Грядки')
+    await expect(getRow(canvasElement, 'notes').textContent).toContain('Грядки')
   },
 }
 
@@ -508,6 +508,6 @@ export const AbandonsAName: Story = {
     await userEvent.type(field, 'Something else{Escape}')
 
     await expect(canvasElement.querySelector('.tree__field')).toBeNull()
-    await expect(rowIn(canvasElement, 'notes').textContent).toContain('Notes')
+    await expect(getRow(canvasElement, 'notes').textContent).toContain('Notes')
   },
 }

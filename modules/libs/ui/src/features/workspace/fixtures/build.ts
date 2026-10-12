@@ -7,7 +7,7 @@ import {
   type Workspace,
   type WorkspaceNode,
 } from '../lib/node'
-import { panesOf } from '../lib/tree'
+import { getPanes } from '../lib/tree'
 import { even } from '../lib/shares'
 import type { NodeIdFactory } from '../lib/edit'
 
@@ -21,14 +21,14 @@ export const split = (
   sizes?: readonly number[],
 ): WorkspaceNode => branch(id, children, sizes ?? even(children.length))
 
-export const workspaceOf = (
+export const createWorkspace = (
   root: WorkspaceNode,
   axis: Orientation = 'horizontal',
   focus?: NodeId,
 ): Workspace => ({
   root,
   axis,
-  focus: focus ?? panesOf(root)[0]?.id ?? root.id,
+  focus: focus ?? getPanes(root)[0]?.id ?? root.id,
 })
 
 /** Identities that count up, so a test can name what a gesture made. */
@@ -39,18 +39,20 @@ export function createIdFactory(prefix = 'made'): NodeIdFactory {
 
 /** What the desktop opens with: the plex, and the agent beside it. */
 export const sideBySide = (): Workspace =>
-  workspaceOf(split('root', [stack('main', 'plex'), stack('aside', 'chat')], [0.72, 0.28]))
+  createWorkspace(split('root', [stack('main', 'plex'), stack('aside', 'chat')], [0.72, 0.28]))
 
 /** One stack holding both, so that only one shows at a time. */
-export const oneStack = (): Workspace => workspaceOf(stack('main', 'plex', 'chat'))
+export const oneStack = (): Workspace => createWorkspace(stack('main', 'plex', 'chat'))
 
 /** Two stacks, the second with a tab to spare, so that neither empties. */
 export const withSpare = (): Workspace =>
-  workspaceOf(split('root', [stack('main', 'plex'), stack('aside', 'chat', 'notes')], [0.7, 0.3]))
+  createWorkspace(
+    split('root', [stack('main', 'plex'), stack('aside', 'chat', 'notes')], [0.7, 0.3]),
+  )
 
 /** Four levels, each turning a quarter from the one above. */
 export const deep = (): Workspace =>
-  workspaceOf(
+  createWorkspace(
     split('root', [
       stack('a', 'one'),
       split('down', [
@@ -65,7 +67,7 @@ export const deep = (): Workspace =>
 
 /** A stack with more tabs than a narrow strip can show. */
 export const manyTabs = (): Workspace =>
-  workspaceOf(
+  createWorkspace(
     split(
       'root',
       [
@@ -77,4 +79,4 @@ export const manyTabs = (): Workspace =>
   )
 
 /** Nothing open. */
-export const empty = (): Workspace => workspaceOf(pane('main', []))
+export const empty = (): Workspace => createWorkspace(pane('main', []))

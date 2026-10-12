@@ -108,15 +108,15 @@ const TEMPLATE = `
 `
 
 /** One page of the strip, by where it stands in the document. */
-const sheetAt = (canvasElement: HTMLElement, page: number) =>
+const getSheet = (canvasElement: HTMLElement, page: number) =>
   canvasElement.querySelector(`.reader__page[data-page="${page}"]`) as HTMLElement | null
 
 /** The picture on one page, where it has been drawn. */
-const pictureAt = (canvasElement: HTMLElement, page: number) =>
-  sheetAt(canvasElement, page)?.querySelector('.reader__picture') as HTMLImageElement | null
+const getPicture = (canvasElement: HTMLElement, page: number) =>
+  getSheet(canvasElement, page)?.querySelector('.reader__picture') as HTMLImageElement | null
 
 /** The room the strip is scrolled in. */
-const roomOf = (canvasElement: HTMLElement) =>
+const getRoom = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('.reader__viewport') as HTMLElement
 
 /**
@@ -127,8 +127,8 @@ const roomOf = (canvasElement: HTMLElement) =>
 const waitForPage = async (canvasElement: HTMLElement, page: number) =>
   await waitFor(
     async () => {
-      const room = roomOf(canvasElement).getBoundingClientRect()
-      const sheet = sheetAt(canvasElement, page)!.getBoundingClientRect()
+      const room = getRoom(canvasElement).getBoundingClientRect()
+      const sheet = getSheet(canvasElement, page)!.getBoundingClientRect()
       await expect(Math.abs(sheet.x - room.x - GAP)).toBeLessThan(2)
     },
     { timeout: ITS_OWN_PACE },
@@ -147,10 +147,10 @@ export const Playground: Story = {
 export const Opened: Story = {
   render: book(),
   play: async ({ canvasElement }) => {
-    await waitFor(async () => await expect(pictureAt(canvasElement, 0)).toBeInTheDocument())
+    await waitFor(async () => await expect(getPicture(canvasElement, 0)).toBeInTheDocument())
 
-    const room = roomOf(canvasElement).getBoundingClientRect()
-    const box = sheetAt(canvasElement, 0)!.getBoundingClientRect()
+    const room = getRoom(canvasElement).getBoundingClientRect()
+    const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
     await expect(box.height).toBeLessThanOrEqual(room.height)
 
     const asked = Number(canvasElement.querySelector('[data-wide]')?.getAttribute('data-wide'))
@@ -165,10 +165,10 @@ export const Opened: Story = {
 export const OnlyWhatIsInTheRoom: Story = {
   render: book([], MANY),
   play: async ({ canvasElement }) => {
-    await waitFor(async () => await expect(pictureAt(canvasElement, 0)).toBeInTheDocument())
+    await waitFor(async () => await expect(getPicture(canvasElement, 0)).toBeInTheDocument())
 
-    const room = roomOf(canvasElement).getBoundingClientRect()
-    const box = sheetAt(canvasElement, 0)!.getBoundingClientRect()
+    const room = getRoom(canvasElement).getBoundingClientRect()
+    const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
     const across = Math.ceil(room.width / box.width)
 
     const drawnNow = canvasElement.querySelectorAll('.reader__page').length
@@ -177,7 +177,7 @@ export const OnlyWhatIsInTheRoom: Story = {
 
     // The strip is as long as the whole book, so the scrollbar says how much of
     // it there is even though only a few pages are drawn.
-    const room2 = roomOf(canvasElement)
+    const room2 = getRoom(canvasElement)
     await expect(room2.scrollWidth).toBeGreaterThan(box.width * MANY * 0.9)
   },
 }
@@ -187,7 +187,7 @@ export const Turning: Story = {
   render: book(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(async () => await expect(pictureAt(canvasElement, 0)).toBeInTheDocument())
+    await waitFor(async () => await expect(getPicture(canvasElement, 0)).toBeInTheDocument())
 
     // The row travels to the page turned to, and what the controls say is
     // where the row stands, so each is pressed once the last one has arrived.
@@ -217,10 +217,10 @@ export const Scrolling: Story = {
   render: book(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(async () => await expect(pictureAt(canvasElement, 0)).toBeInTheDocument())
+    await waitFor(async () => await expect(getPicture(canvasElement, 0)).toBeInTheDocument())
 
-    const room = roomOf(canvasElement)
-    const box = sheetAt(canvasElement, 0)!.getBoundingClientRect()
+    const room = getRoom(canvasElement)
+    const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
     room.scrollLeft = box.width * 3
     room.dispatchEvent(new Event('scroll'))
 
@@ -248,7 +248,7 @@ export const HighlightedOver: Story = {
 
     /** Every highlighted rectangle, as a share of the page it is drawn over. */
     const expectHighlights = async () => {
-      const picture = sheetAt(canvasElement, 0)!.getBoundingClientRect()
+      const picture = getSheet(canvasElement, 0)!.getBoundingClientRect()
       const drawn = [
         ...canvasElement.querySelectorAll('.reader__page[data-page="0"] .reader__highlight'),
       ]
@@ -265,11 +265,11 @@ export const HighlightedOver: Story = {
 
     await expectHighlights()
 
-    const before = sheetAt(canvasElement, 0)!.getBoundingClientRect().width
+    const before = getSheet(canvasElement, 0)!.getBoundingClientRect().width
     await userEvent.click(canvas.getByLabelText('Closer'))
     await waitFor(
       async () =>
-        await expect(sheetAt(canvasElement, 0)!.getBoundingClientRect().width).toBeGreaterThan(
+        await expect(getSheet(canvasElement, 0)!.getBoundingClientRect().width).toBeGreaterThan(
           before,
         ),
     )
@@ -328,7 +328,7 @@ export const HighlightedOnlyOnceThePageIsThere: Story = {
     await expect(canvasElement.querySelectorAll('.reader__highlight')).toHaveLength(0)
 
     await waitFor(async () => {
-      const picture = pictureAt(canvasElement, 0)
+      const picture = getPicture(canvasElement, 0)
       await expect(picture).toBeInTheDocument()
       await expect(picture!.complete).toBe(true)
     })
@@ -349,9 +349,9 @@ export const HighlightedOnlyOnceThePageIsThere: Story = {
 export const Pulled: Story = {
   render: book([], MANY),
   play: async ({ canvasElement }) => {
-    await waitFor(async () => await expect(pictureAt(canvasElement, 0)).toBeInTheDocument())
+    await waitFor(async () => await expect(getPicture(canvasElement, 0)).toBeInTheDocument())
 
-    const room = roomOf(canvasElement)
+    const room = getRoom(canvasElement)
     const box = room.getBoundingClientRect()
     const from = { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
 

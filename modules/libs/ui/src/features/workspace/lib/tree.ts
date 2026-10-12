@@ -10,11 +10,11 @@ export const isBranch = (node: WorkspaceNode): node is Branch => node.kind === '
 export const isPane = (node: WorkspaceNode): node is Pane => node.kind === 'pane'
 
 /** Every pane in the tree, in the order they are drawn. */
-export function panesOf(node: WorkspaceNode): readonly Pane[] {
-  return isPane(node) ? [node] : node.children.flatMap(panesOf)
+export function getPanes(node: WorkspaceNode): readonly Pane[] {
+  return isPane(node) ? [node] : node.children.flatMap(getPanes)
 }
 
-export function nodeAt(root: WorkspaceNode, path: Path): WorkspaceNode | null {
+export function findNode(root: WorkspaceNode, path: Path): WorkspaceNode | null {
   let node: WorkspaceNode | undefined = root
   for (const index of path) {
     if (!node || !isBranch(node)) return null
@@ -35,11 +35,11 @@ export function pathTo(root: WorkspaceNode, id: NodeId): Path | null {
 }
 
 export function paneById(root: WorkspaceNode, id: NodeId): Pane | null {
-  return panesOf(root).find((pane) => pane.id === id) ?? null
+  return getPanes(root).find((pane) => pane.id === id) ?? null
 }
 
 export function paneWithTab(root: WorkspaceNode, tab: TabId): Pane | null {
-  return panesOf(root).find((pane) => pane.tabs.includes(tab)) ?? null
+  return getPanes(root).find((pane) => pane.tabs.includes(tab)) ?? null
 }
 
 /** A branch with different children, its shares made to sum to one. */

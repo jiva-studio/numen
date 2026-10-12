@@ -13,7 +13,7 @@ import {
   Editor,
   openTabBeside,
   Palette,
-  panesOf,
+  getPanes,
   Plex,
   Reader,
   Tree,
@@ -418,7 +418,7 @@ describe('a book carried into another group of tabs', () => {
 
     const workspace = window.findComponent(WorkspaceLayout)
     const was = layoutOf(window)
-    const book = panesOf(was.root)
+    const book = getPanes(was.root)
       .flatMap((one) => one.tabs)
       .find((tab) => tab.startsWith('book:'))!
     workspace.vm.$emit(
@@ -449,7 +449,9 @@ describe('a book beside the pane the person is in', () => {
 
     const workspace = window.findComponent(WorkspaceLayout)
     const was = layoutOf(window)
-    const other = panesOf(was.root).find((one) => !one.tabs.some((tab) => tab.startsWith('book:')))!
+    const other = getPanes(was.root).find(
+      (one) => !one.tabs.some((tab) => tab.startsWith('book:')),
+    )!
     workspace.vm.$emit('update:modelValue', { ...was, focus: other.id })
     await settle()
 

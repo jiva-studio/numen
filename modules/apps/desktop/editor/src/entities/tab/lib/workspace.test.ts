@@ -6,7 +6,7 @@
  * the two: a question lands in a talk nobody can see.
  */
 import { describe, expect, it } from 'vitest'
-import { panesOf } from '@numen/ui'
+import { getPanes } from '@numen/ui'
 import {
   AGENT,
   BOOK,
@@ -82,7 +82,7 @@ describe('the layout the window opens with', () => {
 
   it('holds two panes, the plex alone and the agent over the files', () => {
     const layout = createLayout()
-    expect(panesOf(layout.root).map((one) => one.tabs)).toStrictEqual([
+    expect(getPanes(layout.root).map((one) => one.tabs)).toStrictEqual([
       ['plex:one'],
       ['agent:one', 'files:tree'],
     ])
@@ -90,7 +90,7 @@ describe('the layout the window opens with', () => {
 
   it('stands the agent in front of the two the trailing pane holds', () => {
     const layout = createLayout()
-    expect(panesOf(layout.root).find((one) => one.id === 'aside')?.active).toBe('agent:one')
+    expect(getPanes(layout.root).find((one) => one.id === 'aside')?.active).toBe('agent:one')
   })
 
   it('gives the plex the room, and the pane beside it the rest', () => {
@@ -109,12 +109,12 @@ describe('the layout the window opens with', () => {
   it('names the root after what it divides, and the panes after their places', () => {
     const layout = createLayout()
     expect(layout.root.id).toBe('root')
-    expect(panesOf(layout.root).map((one) => one.id)).toStrictEqual(['main', 'aside'])
+    expect(getPanes(layout.root).map((one) => one.id)).toStrictEqual(['main', 'aside'])
   })
 
   it('leaves the person in the plex', () => {
     const layout = createLayout()
     expect(layout.focus).toBe('main')
-    expect(panesOf(layout.root).find((one) => one.id === 'main')?.tabs).toStrictEqual(['plex:one'])
+    expect(getPanes(layout.root).find((one) => one.id === 'main')?.tabs).toStrictEqual(['plex:one'])
   })
 })

@@ -18,9 +18,9 @@ export interface ScrollMetrics {
 export const SLACK = 16
 
 /** How far down an area stands with its foot in view. */
-export const footOf = ({ scrollHeight, clientHeight }: ScrollMetrics): number =>
+export const getFoot = ({ scrollHeight, clientHeight }: ScrollMetrics): number =>
   Math.max(0, scrollHeight - clientHeight)
 
 /** Whether the foot is in view, within the slack. */
 export const atFoot = (area: ScrollMetrics, slack = SLACK): boolean =>
-  footOf(area) - area.scrollTop <= slack
+  getFoot(area) - area.scrollTop <= slack

@@ -97,7 +97,7 @@ export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
   const widths: number[] = []
   let along = GAP
   for (let page = 0; page < pages.length; page++) {
-    const size = sizeOf(pages, page)
+    const size = getSize(pages, page)
     const width = Math.max(Math.round((height * size.width) / size.height), 1)
     starts.push(along)
     widths.push(width)
@@ -107,7 +107,7 @@ export function row(pages: readonly Page[], viewport: Size, zoom: number): Row {
 }
 
 /** The size of one page, and the nearest thing to it that is known. */
-function sizeOf(pages: readonly Page[], page: number): Page {
+function getSize(pages: readonly Page[], page: number): Page {
   const targetPage = pages[page]
   if (targetPage && targetPage.width > 0 && targetPage.height > 0) return targetPage
   const first = pages[0]
@@ -146,7 +146,7 @@ export function inFront(row: Row, viewport: Size, along: number): number {
 }
 
 /** How far the row is scrolled to put one page against the left edge. */
-export function standAt(row: Row, page: number): number | undefined {
+export function getPageScroll(row: Row, page: number): number | undefined {
   const begins = row.starts[page]
   return begins === undefined ? undefined : begins - GAP
 }

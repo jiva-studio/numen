@@ -7,7 +7,7 @@
  * about it twice.
  */
 import { computed, effectScope, ref, shallowRef, type EffectScope, type Ref } from 'vue'
-import { closeTab, openTab, openTabBeside, pane, paneById, panesOf } from '@numen/ui'
+import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import { generateId } from '../lib/workspace'
@@ -172,7 +172,7 @@ export function useWindowTabs() {
    * reads is one the tab in front of them would have.
    */
   const onKeyPress = (event: KeyboardEvent): boolean => {
-    const drawn = panesOf(layout.value.root).map((one) => one.active)
+    const drawn = getPanes(layout.value.root).map((one) => one.active)
     const front = paneById(layout.value.root, layout.value.focus)?.active
     const offered = new Set<string>()
     for (const id of [front, ...[...open.value.keys()].reverse()]) {

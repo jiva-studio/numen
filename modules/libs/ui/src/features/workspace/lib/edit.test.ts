@@ -13,7 +13,7 @@ import {
 } from './edit'
 import { arrangeWorkspace } from './arrange'
 import type { Side, Workspace } from './node'
-import { isBranch, isPane, paneWithTab, panesOf } from './tree'
+import { isBranch, isPane, paneWithTab, getPanes } from './tree'
 import {
   deep,
   empty,
@@ -23,7 +23,7 @@ import {
   split,
   stack,
   withSpare,
-  workspaceOf,
+  createWorkspace,
 } from '../fixtures/build'
 import { getFaults } from '../fixtures/invariants'
 
@@ -32,8 +32,8 @@ const SCREEN = { x: 0, y: 0, width: 1000, height: 600 }
 const ids = (workspace: Workspace) =>
   isBranch(workspace.root) ? workspace.root.children.map((child) => child.id) : [workspace.root.id]
 
-const tabsOf = (workspace: Workspace, pane: string) =>
-  panesOf(workspace.root).find((each) => each.id === pane)?.tabs
+const getTabs = (workspace: Workspace, pane: string) =>
+  getPanes(workspace.root).find((each) => each.id === pane)?.tabs
 
 describe('focusing', () => {
   it('moves the focus to a pane of the tree', () => {
@@ -49,26 +49,26 @@ describe('focusing', () => {
 describe('opening and showing', () => {
   it('puts a new tab in the focused pane', () => {
     const after = openTab(sideBySide(), 'notes', 'aside')
-    expect(tabsOf(after, 'aside')).toStrictEqual(['chat', 'notes'])
+    expect(getTabs(after, 'aside')).toStrictEqual(['chat', 'notes'])
     expect(after.focus).toBe('aside')
     expect(getFaults(after)).toStrictEqual([])
   })
 
   it('shows a tab that is already open where it is', () => {
     const after = openTab(sideBySide(), 'chat', 'main')
-    expect(tabsOf(after, 'main')).toStrictEqual(['plex'])
+    expect(getTabs(after, 'main')).toStrictEqual(['plex'])
     expect(after.focus).toBe('aside')
   })
 
   it('moves the focus to whatever is shown', () => {
     const after = activateTab(oneStack(), 'chat')
-    expect(panesOf(after.root)[0]?.active).toBe('chat')
+    expect(getPanes(after.root)[0]?.active).toBe('chat')
     expect(after.focus).toBe('main')
   })
 })
 
 describe('a gesture asking for what the tree does not hold', () => {
-  const nowhere = () => workspaceOf(split('root', []))
+  const nowhere = () => createWorkspace(split('root', []))
 
   it('shows no tab that is not open', () => {
     const before = sideBySide()
@@ -113,7 +113,7 @@ describe('opening a tab in a pane of its own', () => {
     const after = openTabBeside(sideBySide(), 'notes', 'right', createIdFactory())
 
     expect(ids(after)).toStrictEqual(['main', 'made-1', 'aside'])
-    expect(tabsOf(after, 'made-1')).toStrictEqual(['notes'])
+    expect(getTabs(after, 'made-1')).toStrictEqual(['notes'])
     expect(after.focus).toBe('made-1')
     expect(getFaults(after)).toStrictEqual([])
   })
@@ -122,13 +122,13 @@ describe('opening a tab in a pane of its own', () => {
     const after = openTabBeside(sideBySide(), 'chat', 'right', createIdFactory())
 
     expect(paneWithTab(after.root, 'chat')?.id).toBe('made-1')
-    expect(panesOf(after.root).map((each) => each.id)).toStrictEqual(['main', 'made-1'])
+    expect(getPanes(after.root).map((each) => each.id)).toStrictEqual(['main', 'made-1'])
     expect(after.focus).toBe('made-1')
     expect(getFaults(after)).toStrictEqual([])
   })
 
   it('leaves one that is alone in the pane it would open beside where it is', () => {
-    const before = workspaceOf(stack('main', 'plex'))
+    const before = createWorkspace(stack('main', 'plex'))
     const ids = createIdFactory()
 
     const after = openTabBeside(before, 'plex', 'left', ids)
@@ -188,7 +188,7 @@ describe('opening a tab in a pane of its own', () => {
   })
 
   it('opens beside the pane a tab opens into when told no other', () => {
-    const focused = workspaceOf(sideBySide().root, 'horizontal', 'aside')
+    const focused = createWorkspace(sideBySide().root, 'horizontal', 'aside')
     const after = openTabBeside(focused, 'notes', 'right', createIdFactory())
 
     expect(ids(after)).toStrictEqual(['main', 'aside', 'made-1'])
@@ -199,7 +199,7 @@ describe('opening a tab in a pane of its own', () => {
     const after = openTabBeside(empty(), 'notes', 'bottom', createIdFactory())
 
     expect(isPane(after.root) && after.root.id).toBe('made-1')
-    expect(tabsOf(after, 'made-1')).toStrictEqual(['notes'])
+    expect(getTabs(after, 'made-1')).toStrictEqual(['notes'])
     expect(getFaults(after)).toStrictEqual([])
   })
 
@@ -216,8 +216,8 @@ describe('opening a tab in a pane of its own', () => {
   it('leaves the tree canonical when the pane it opened beside empties', () => {
     const after = openTabBeside(oneStack(), 'plex', 'left', createIdFactory(), 'main')
 
-    expect(panesOf(after.root)).toHaveLength(2)
-    expect(tabsOf(after, 'made-1')).toStrictEqual(['plex'])
+    expect(getPanes(after.root)).toHaveLength(2)
+    expect(getTabs(after, 'made-1')).toStrictEqual(['plex'])
     expect(getFaults(after)).toStrictEqual([])
   })
 })
@@ -288,8 +288,8 @@ describe('a tab let go in the middle of a pane', () => {
       createIdFactory(),
     )
 
-    expect(tabsOf(after, 'main')).toStrictEqual(['plex', 'chat'])
-    expect(panesOf(after.root)).toHaveLength(1)
+    expect(getTabs(after, 'main')).toStrictEqual(['plex', 'chat'])
+    expect(getPanes(after.root)).toHaveLength(1)
     expect(after.root.id).toBe('main')
     expect(getFaults(after)).toStrictEqual([])
   })
@@ -300,7 +300,7 @@ describe('a tab let go in the middle of a pane', () => {
       { tab: 'plex', onto: 'aside', side: 'center' },
       createIdFactory(),
     )
-    expect(panesOf(after.root).map((each) => each.id)).toStrictEqual(['aside'])
+    expect(getPanes(after.root).map((each) => each.id)).toStrictEqual(['aside'])
   })
 })
 
@@ -320,8 +320,8 @@ describe('a tab let go where it started', () => {
       createIdFactory(),
     )
 
-    expect(tabsOf(after, 'main')).toStrictEqual(['plex', 'chat'])
-    expect(panesOf(after.root)[0]?.active).toBe('plex')
+    expect(getTabs(after, 'main')).toStrictEqual(['plex', 'chat'])
+    expect(getPanes(after.root)[0]?.active).toBe('plex')
   })
 
   it('splits its own pane when there are others with it', () => {
@@ -331,8 +331,8 @@ describe('a tab let go where it started', () => {
       createIdFactory(),
     )
 
-    expect(tabsOf(after, 'main')).toStrictEqual(['plex'])
-    expect(panesOf(after.root)).toHaveLength(2)
+    expect(getTabs(after, 'main')).toStrictEqual(['plex'])
+    expect(getPanes(after.root)).toHaveLength(2)
     expect(getFaults(after)).toStrictEqual([])
   })
 })
@@ -355,7 +355,7 @@ describe('a tab let go on the outer edge', () => {
 describe('closing', () => {
   it('shows the next tab along', () => {
     const after = closeTab(oneStack(), 'plex')
-    expect(panesOf(after.root)[0]?.active).toBe('chat')
+    expect(getPanes(after.root)[0]?.active).toBe('chat')
     expect(getFaults(after)).toStrictEqual([])
   })
 
@@ -385,22 +385,22 @@ describe('closing', () => {
 })
 
 describe('moving a tab along its own strip', () => {
-  const three = workspaceOf(stack('main', 'one', 'two', 'three'))
+  const three = createWorkspace(stack('main', 'one', 'two', 'three'))
 
   it.each([
     [0, ['three', 'one', 'two']],
     [1, ['one', 'three', 'two']],
     [3, ['one', 'two', 'three']],
   ])('to slot %i', (slot, expected) => {
-    expect(tabsOf(moveTabWithin(three, 'three', slot), 'main')).toStrictEqual(expected)
+    expect(getTabs(moveTabWithin(three, 'three', slot), 'main')).toStrictEqual(expected)
   })
 
   it('leaves a tab where it is when its own slot is asked for', () => {
-    expect(tabsOf(moveTabWithin(three, 'two', 1), 'main')).toStrictEqual(['one', 'two', 'three'])
+    expect(getTabs(moveTabWithin(three, 'two', 1), 'main')).toStrictEqual(['one', 'two', 'three'])
   })
 
   it('counts the slot as it stands before the tab is lifted', () => {
-    expect(tabsOf(moveTabWithin(three, 'one', 2), 'main')).toStrictEqual(['two', 'one', 'three'])
+    expect(getTabs(moveTabWithin(three, 'one', 2), 'main')).toStrictEqual(['two', 'one', 'three'])
   })
 })
 
@@ -427,7 +427,7 @@ describe('every gesture keeps the tree canonical', () => {
 
   it('through a run of them', () => {
     const made = createIdFactory()
-    let workspace = workspaceOf(start, 'horizontal', 'a')
+    let workspace = createWorkspace(start, 'horizontal', 'a')
 
     const run: readonly ((current: Workspace) => Workspace)[] = [
       (current) => dropTab(current, { tab: 'two', onto: 'c', side: 'bottom' }, made),

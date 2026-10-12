@@ -8,7 +8,7 @@ import './vaultMock'
 import './moduleMocks'
 import { afterEach } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { panesOf, WorkspaceLayout, type Workspace } from '@numen/ui'
+import { getPanes, WorkspaceLayout, type Workspace } from '@numen/ui'
 import { requests, forgetRequests } from './requests'
 import {
   folders,
@@ -115,7 +115,7 @@ const layoutOf = (window: VueWrapper): Workspace =>
 
 /** What each pane holds, by the kind each of its tabs is filed under. */
 const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
-  panesOf(layoutOf(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
+  getPanes(layoutOf(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
 
 /** What each tab of the window is called, in the order the strip has them. */
 const tabsOf = (window: VueWrapper): readonly { id: string; title: string }[] =>

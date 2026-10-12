@@ -1,6 +1,6 @@
 /** What is true of every workspace an edit produces. */
 import type { Workspace, WorkspaceNode } from '../lib/node'
-import { isBranch, panesOf } from '../lib/tree'
+import { isBranch, getPanes } from '../lib/tree'
 
 /** Anything that does not hold about a workspace, said in words. */
 export function getFaults(workspace: Workspace): readonly string[] {
@@ -30,7 +30,7 @@ export function getFaults(workspace: Workspace): readonly string[] {
 
   walk(workspace.root)
 
-  const panes = panesOf(workspace.root)
+  const panes = getPanes(workspace.root)
   const bare = panes.filter((each) => each.tabs.length === 0)
   if (bare.length > 0 && panes.length > 1) {
     faults.push(`${bare.length} pane(s) hold nothing while others do`)

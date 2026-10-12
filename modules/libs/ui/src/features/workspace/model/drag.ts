@@ -10,12 +10,12 @@ import type { Clock } from '@/shared/lib/clock'
 import { usePressDrag } from '@/shared/ui/drag-preview'
 import type { Position } from '@/shared/lib/geometry'
 import {
-  caretAt,
-  edgeOf,
-  overlayFor,
-  rectOf,
-  sideAt,
-  slotAt,
+  getCaret,
+  findEdgeSide,
+  getOverlay,
+  getRect,
+  getSide,
+  getSlot,
   type TabDropTarget,
 } from '../lib/drop'
 import { dropOnEdge, dropTab, moveTabWithin, type NodeIdFactory } from '../lib/edit'
@@ -131,7 +131,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     const held = options.frame.value
     if (!held) return null
 
-    const outer = rectOf(held)
+    const outer = getRect(held)
     if (!isInside({ x, y }, outer)) return null
 
     const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
@@ -143,8 +143,8 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
 
     if (strip && id) return getStripDropTarget(x, strip, id, local)
 
-    const side = edgeOf({ x, y }, outer, options.getEdge())
-    if (side) return { kind: 'edge', side, box: local(overlayFor(side, outer)) }
+    const side = findEdgeSide({ x, y }, outer, options.getEdge())
+    if (side) return { kind: 'edge', side, box: local(getOverlay(side, outer)) }
 
     if (!pane || !id) return null
 
@@ -171,14 +171,14 @@ function getStripDropTarget(
   local: ToLocal,
 ): TabDropTarget {
   // A strip holds tabs and nothing else, in the order they are drawn.
-  const tabs = [...strip.children].map((tab) => rectOf(tab))
-  const slot = slotAt(x, tabs)
-  return { kind: 'strip', pane, slot, box: local(caretAt(slot, tabs, rectOf(strip))) }
+  const tabs = [...strip.children].map((tab) => getRect(tab))
+  const slot = getSlot(x, tabs)
+  return { kind: 'strip', pane, slot, box: local(getCaret(slot, tabs, getRect(strip))) }
 }
 
 /** A pane divided along the side the pointer is nearest. */
 function getPaneDropTarget(at: Position, pane: Element, id: NodeId, local: ToLocal): TabDropTarget {
-  const box = rectOf(pane)
-  const side = sideAt(at, box)
-  return { kind: 'pane', pane: id, side, box: local(overlayFor(side, box)) }
+  const box = getRect(pane)
+  const side = getSide(at, box)
+  return { kind: 'pane', pane: id, side, box: local(getOverlay(side, box)) }
 }

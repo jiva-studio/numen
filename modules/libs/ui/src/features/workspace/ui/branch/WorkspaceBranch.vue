@@ -20,7 +20,7 @@ import {
 import { SplitterGroup } from 'reka-ui'
 import { BranchPanel } from './panel'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
-import { orientationAt, type Branch, type Orientation, type TabId } from '../../lib/node'
+import { getOrientation, type Branch, type Orientation, type TabId } from '../../lib/node'
 import { atLeast, fit } from '../../lib/shares'
 import { browserViewport } from '@/shared/lib/viewport'
 
@@ -51,7 +51,7 @@ const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
 /** What a slot was given, handed on as it came. */
 const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
-const direction = computed(() => orientationAt(props.axis, props.depth))
+const direction = computed(() => getOrientation(props.axis, props.depth))
 
 const sizes = computed(() => fit(props.node.sizes, props.node.children.length))
 

@@ -155,7 +155,7 @@ interface Position {
 }
 
 /** The middle of a word, in the coordinates of the page it is drawn on. */
-const wordAt = (root: Element, word: string): Position => {
+const getWordPosition = (root: Element, word: string): Position => {
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   for (let node = walk.nextNode(); node; node = walk.nextNode()) {
     const at = (node.nodeValue ?? '').indexOf(word)
@@ -218,7 +218,10 @@ export const Selecting: Story = {
   ]),
   play: async ({ canvasElement }) => {
     const turns = canvasElement.querySelectorAll('.thread__turn')
-    const taken = await dragAcross(wordAt(turns[1]!, 'damped'), wordAt(turns[3]!, 'vault'))
+    const taken = await dragAcross(
+      getWordPosition(turns[1]!, 'damped'),
+      getWordPosition(turns[3]!, 'vault'),
+    )
     if (taken === null) return
 
     await expect(taken).toContain('the driven one')

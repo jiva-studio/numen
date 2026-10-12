@@ -1,26 +1,29 @@
 /** Finding a node in a workspace, and putting one back. */
 import { describe, expect, it } from 'vitest'
-import { nodeAt, pathTo, replaceAt } from './tree'
+import { findNode, pathTo, replaceAt } from './tree'
 import { split, stack } from '../fixtures/build'
 
-const root = split('root', [stack('a', 'one'), split('down', [stack('b', 'two'), stack('c', 'three')])])
+const root = split('root', [
+  stack('a', 'one'),
+  split('down', [stack('b', 'two'), stack('c', 'three')]),
+])
 
-describe('nodeAt', () => {
+describe('findNode', () => {
   it('finds the root by the empty path', () => {
-    expect(nodeAt(root, [])).toBe(root)
+    expect(findNode(root, [])).toBe(root)
   })
 
   it('finds a node by the indices down to it', () => {
-    expect(nodeAt(root, [1, 1])?.id).toBe('c')
+    expect(findNode(root, [1, 1])?.id).toBe('c')
   })
 
   it('finds nothing below a pane', () => {
-    expect(nodeAt(root, [0, 0])).toBeNull()
+    expect(findNode(root, [0, 0])).toBeNull()
   })
 
   it('finds nothing at an index no child has', () => {
-    expect(nodeAt(root, [5])).toBeNull()
-    expect(nodeAt(root, [5, 0])).toBeNull()
+    expect(findNode(root, [5])).toBeNull()
+    expect(findNode(root, [5, 0])).toBeNull()
   })
 })
 
@@ -39,8 +42,8 @@ describe('pathTo', () => {
 describe('replaceAt', () => {
   it('puts the replacement where the path ends', () => {
     const after = replaceAt(root, [1, 0], stack('x', 'new'))
-    expect(nodeAt(after, [1, 0])?.id).toBe('x')
-    expect(nodeAt(after, [0])?.id).toBe('a')
+    expect(findNode(after, [1, 0])?.id).toBe('x')
+    expect(findNode(after, [0])?.id).toBe('a')
   })
 
   it('replaces the root for the empty path', () => {

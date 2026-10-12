@@ -2,8 +2,8 @@
 import {
   branch,
   isLeading,
-  orientationAt,
-  orientationOf,
+  getOrientation,
+  getSideOrientation,
   pane,
   type Branch,
   type NodeId,
@@ -15,7 +15,7 @@ import {
   type WorkspaceNode,
 } from './node'
 import { normalize } from './normalize'
-import { isPane, nodeAt, paneWithTab, panesOf, pathTo, replaceAt, withChildren } from './tree'
+import { isPane, findNode, paneWithTab, getPanes, pathTo, replaceAt, withChildren } from './tree'
 import { insert } from './shares'
 
 /** Where an identity for a pane or a branch a gesture makes comes from. */
@@ -43,7 +43,7 @@ export function putBeside(
   axis: Orientation,
   id: NodeIdFactory,
 ): SplitResult {
-  const wanted = orientationOf(side)
+  const wanted = getSideOrientation(side)
   const path = pathTo(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }
 
@@ -59,9 +59,9 @@ export function putBeside(
     }
   }
 
-  const parent = nodeAt(root, above) as Branch
+  const parent = findNode(root, above) as Branch
 
-  if (orientationAt(axis, above.length) === wanted) {
+  if (getOrientation(axis, above.length) === wanted) {
     return {
       root: replaceAt(root, above, joinBeside(parent, made, index, side)),
       axis,
@@ -69,7 +69,7 @@ export function putBeside(
     }
   }
 
-  const target = nodeAt(root, path) as WorkspaceNode
+  const target = findNode(root, path) as WorkspaceNode
 
   return {
     root: replaceAt(root, path, branch(id(), orderPair(made, target, side), [0.5, 0.5])),
@@ -109,7 +109,7 @@ export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
 /** The canonical tree, with the focus on a pane that survived it. */
 export function commit(workspace: Workspace, focus: NodeId): Workspace {
   const normalized = normalize(workspace)
-  const panes = panesOf(normalized.root)
+  const panes = getPanes(normalized.root)
   const kept =
     panes.find((each) => each.id === focus) ??
     panes.find((each) => each.id === workspace.focus) ??
@@ -126,7 +126,7 @@ export function mapPane(
   const path = pathTo(root, id)
   if (!path) return root
 
-  const node = nodeAt(root, path)
+  const node = findNode(root, path)
   if (!node || !isPane(node)) return root
 
   return replaceAt(root, path, change(node))

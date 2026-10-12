@@ -10,7 +10,7 @@ import type { Clock } from '@/shared/lib/clock'
 import type { Position } from '@/shared/lib/geometry'
 import { usePressDrag } from '@/shared/ui/drag-preview'
 import { dragLabel, type DragLabel } from '../lib/drag'
-import { holderOf, isRefused, getRowDropTarget, type RowDropTarget } from '../lib/drop'
+import { getHolder, isRefused, getRowDropTarget, type RowDropTarget } from '../lib/drop'
 import type { Row, RowId, ShownRow } from '../lib/row'
 
 /** The tree as it stands on screen, which only the drawing knows. */
@@ -107,7 +107,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     const found = getRowDropTarget(shown, rows, where.y - drawn.top, drawn.height)
     if (!found) return null
 
-    return isRefused(options.getRows(), rows, holderOf(shown, found)) ? null : found
+    return isRefused(options.getRows(), rows, getHolder(shown, found)) ? null : found
   }
 
   return { into, before, lifted, label, hasMoved, at, lift }

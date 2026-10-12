@@ -16,7 +16,7 @@ import {
 } from './select'
 import { isTreeKey, stepTo, TREE_KEYS } from './step'
 import { getDraggedRows, dragLabel } from './drag'
-import { holderOf, isRefused, getRowDropTarget } from './drop'
+import { getHolder, isRefused, getRowDropTarget } from './drop'
 
 const ROWS: readonly Row[] = [
   {
@@ -115,7 +115,7 @@ describe('what is drawn', () => {
 describe('what a row is marked with', () => {
   const marker = (answer: string | null | undefined): RowMarker => ({
     attribute: 'data-place',
-    valueFor: () => answer as string | null,
+    getValue: () => answer as string | null,
   })
 
   it('is the attribute set to what the row is answered with', () => {
@@ -127,9 +127,9 @@ describe('what a row is marked with', () => {
   })
 
   it('is asked about the row it marks', () => {
-    const valueFor = vi.fn<(row: RowId | null) => string | null>(() => 'x')
-    getMarkOf({ attribute: 'data-place', valueFor }, 'notes')
-    expect(valueFor).toHaveBeenCalledWith('notes')
+    const getValue = vi.fn<(row: RowId | null) => string | null>(() => 'x')
+    getMarkOf({ attribute: 'data-place', getValue }, 'notes')
+    expect(getValue).toHaveBeenCalledWith('notes')
   })
 
   it('is nothing where the row is answered with null', () => {
@@ -284,16 +284,16 @@ describe('the row a drop target puts what is held inside', () => {
   const shown = getShownRows('work')
 
   it('is the row itself, going into one', () => {
-    expect(holderOf(shown, { into: 'work' })).toBe('work')
+    expect(getHolder(shown, { into: 'work' })).toBe('work')
   })
 
   it('is what holds the row it comes before', () => {
-    expect(holderOf(shown, { before: 'notes' })).toBe('work')
+    expect(getHolder(shown, { before: 'notes' })).toBe('work')
   })
 
   it('is nothing at the top level', () => {
-    expect(holderOf(shown, { before: 'empty' })).toBeNull()
-    expect(holderOf(shown, { before: 'gone' })).toBeNull()
+    expect(getHolder(shown, { before: 'empty' })).toBeNull()
+    expect(getHolder(shown, { before: 'gone' })).toBeNull()
   })
 })
 

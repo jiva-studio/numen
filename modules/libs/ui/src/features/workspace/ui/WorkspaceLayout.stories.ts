@@ -11,8 +11,16 @@ import { ref, watch } from 'vue'
 import WorkspaceLayout from './WorkspaceLayout.vue'
 import TabStub from '../fixtures/TabStub.vue'
 import type { Tab, Workspace as State } from '../lib/node'
-import { panesOf } from '../lib/tree'
-import { manyTabs, deep, empty, oneStack, sideBySide, stack, workspaceOf } from '../fixtures/build'
+import { getPanes } from '../lib/tree'
+import {
+  manyTabs,
+  deep,
+  empty,
+  oneStack,
+  sideBySide,
+  stack,
+  createWorkspace,
+} from '../fixtures/build'
 
 const TITLES: Readonly<Record<string, string>> = {
   plex: 'Plex',
@@ -29,7 +37,7 @@ const TITLES: Readonly<Record<string, string>> = {
 }
 
 const createTabs = (state: State, marks: Readonly<Record<string, string>>): readonly Tab[] =>
-  panesOf(state.root)
+  getPanes(state.root)
     .flatMap((pane) => pane.tabs)
     .map((id) => ({ id, title: TITLES[id] ?? id, ...(marks[id] ? { mark: marks[id] } : {}) }))
 
@@ -40,7 +48,7 @@ const ARRANGEMENTS = {
   nested: deep,
   crowded: manyTabs,
   empty,
-  alone: () => workspaceOf(stack('main', 'plex')),
+  alone: () => createWorkspace(stack('main', 'plex')),
 } satisfies Record<string, () => State>
 
 type Arrangement = keyof typeof ARRANGEMENTS
@@ -131,9 +139,9 @@ export const Marked: Story = {
 /** One tab left in the workspace. */
 export const Alone: Story = { args: { arrangement: 'alone' } }
 
-const rectOf = (element: Element) => element.getBoundingClientRect()
+const getRect = (element: Element) => element.getBoundingClientRect()
 
-const tabIn = (canvas: HTMLElement, tab: string) => {
+const getTab = (canvas: HTMLElement, tab: string) => {
   const found = canvas.querySelector(`[data-workspace-tab="${tab}"]`)
   if (!found) throw new Error(`no tab called ${tab}`)
   return found
@@ -142,7 +150,7 @@ const tabIn = (canvas: HTMLElement, tab: string) => {
 const paneBox = (canvas: HTMLElement, pane: string) => {
   const found = canvas.querySelector(`[data-workspace-pane="${pane}"]`)
   if (!found) throw new Error(`no pane called ${pane}`)
-  return rectOf(found)
+  return getRect(found)
 }
 
 interface Position {
@@ -221,7 +229,7 @@ const AWAY = [-10, -6, -3, 0, 3, 6, 10]
  * handle, clear of the handles a branch further in lays across this one.
  */
 async function measureAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<readonly Caught[]> {
-  const box = rectOf(handle)
+  const box = getRect(handle)
   const found: Caught[] = []
 
   for (const away of AWAY) {
@@ -249,7 +257,7 @@ function getFurthest(places: readonly Caught[]): Position {
 
 /** A tab picked up and let go somewhere, in as many steps as a hand takes. */
 async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {
-  const start = rectOf(from)
+  const start = getRect(from)
   const at = { clientX: start.x + start.width / 2, clientY: start.y + start.height / 2 }
 
   await userEvent.pointer([
@@ -267,7 +275,7 @@ export const DividesOnAnEdge: Story = {
     const before = paneBox(canvasElement, 'aside')
     const main = paneBox(canvasElement, 'main')
 
-    await dragTo(tabIn(canvasElement, 'chat'), {
+    await dragTo(getTab(canvasElement, 'chat'), {
       x: main.right - main.width * 0.05,
       y: main.y + main.height / 2,
     })
@@ -282,7 +290,7 @@ export const DividesOnAnEdge: Story = {
     await expect(named).not.toContain('aside')
 
     // The two share the room the two before them had, and evenly.
-    const boxes = now.map(rectOf)
+    const boxes = now.map(getRect)
     expect(boxes.reduce((wide, box) => wide + box.width, 0)).toBeCloseTo(
       main.width + before.width,
       0,
@@ -297,7 +305,7 @@ export const JoinsAStack: Story = {
   play: async ({ canvasElement }) => {
     const main = paneBox(canvasElement, 'main')
 
-    await dragTo(tabIn(canvasElement, 'chat'), {
+    await dragTo(getTab(canvasElement, 'chat'), {
       x: main.x + main.width / 2,
       y: main.y + main.height / 2,
     })
@@ -314,18 +322,18 @@ export const StaysPut: Story = {
   play: async ({ canvasElement }) => {
     const before = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) => [
       pane.getAttribute('data-workspace-pane'),
-      rectOf(pane).width,
+      getRect(pane).width,
     ])
 
     const aside = paneBox(canvasElement, 'aside')
-    await dragTo(tabIn(canvasElement, 'chat'), {
+    await dragTo(getTab(canvasElement, 'chat'), {
       x: aside.x + aside.width / 2,
       y: aside.y + aside.height / 2,
     })
 
     const after = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) => [
       pane.getAttribute('data-workspace-pane'),
-      rectOf(pane).width,
+      getRect(pane).width,
     ])
     await expect(after).toStrictEqual(before)
   },
@@ -336,14 +344,14 @@ export const DividesTheWorkspace: Story = {
   tags: ['!dev'],
   args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
-    const frame = rectOf(canvasElement.querySelector('.workspace') as Element)
+    const frame = getRect(canvasElement.querySelector('.workspace') as Element)
 
-    await dragTo(tabIn(canvasElement, 'two'), {
+    await dragTo(getTab(canvasElement, 'two'), {
       x: frame.x + frame.width / 2,
       y: frame.bottom - 6,
     })
 
-    const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(rectOf)
+    const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(getRect)
     await expect(panes).toHaveLength(3)
 
     // One of them runs the whole width along the foot.
@@ -357,9 +365,9 @@ export const ReordersInAStrip: Story = {
   tags: ['!dev'],
   args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
-    const first = rectOf(tabIn(canvasElement, 'one'))
+    const first = getRect(getTab(canvasElement, 'one'))
 
-    await dragTo(tabIn(canvasElement, 'three'), { x: first.x + 2, y: first.y + first.height / 2 })
+    await dragTo(getTab(canvasElement, 'three'), { x: first.x + 2, y: first.y + first.height / 2 })
 
     const strip = canvasElement.querySelector('[data-workspace-strip="main"]') as HTMLElement
     const order = [...strip.querySelectorAll('[data-workspace-tab]')].map((tab) =>
@@ -374,13 +382,13 @@ export const ClosesAPane: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const main = paneBox(canvasElement, 'main')
-    const close = within(tabIn(canvasElement, 'chat') as HTMLElement).getByRole('button')
+    const close = within(getTab(canvasElement, 'chat') as HTMLElement).getByRole('button')
 
     await userEvent.click(close)
 
     const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')]
     await expect(panes).toHaveLength(1)
-    await expect(rectOf(panes[0] as Element).width).toBeGreaterThan(main.width)
+    await expect(getRect(panes[0] as Element).width).toBeGreaterThan(main.width)
   },
 }
 
@@ -389,7 +397,7 @@ export const ClosesTheLastTab: Story = {
   tags: ['!dev'],
   args: { arrangement: 'alone' },
   play: async ({ canvasElement }) => {
-    const close = within(tabIn(canvasElement, 'plex') as HTMLElement).getByRole('button')
+    const close = within(getTab(canvasElement, 'plex') as HTMLElement).getByRole('button')
 
     await userEvent.click(close)
 
@@ -405,17 +413,17 @@ export const WalksWithTheKeyboard: Story = {
   tags: ['!dev'],
   args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
-    const first = tabIn(canvasElement, 'one') as HTMLElement
+    const first = getTab(canvasElement, 'one') as HTMLElement
     first.focus()
 
     await userEvent.keyboard('{ArrowRight}{ArrowRight}')
 
     const showing = canvasElement.querySelector('[data-workspace-tab][aria-selected="true"]')
     await expect(showing?.getAttribute('data-workspace-tab')).toBe('three')
-    await expect(document.activeElement).toBe(tabIn(canvasElement, 'three'))
+    await expect(document.activeElement).toBe(getTab(canvasElement, 'three'))
 
     await userEvent.keyboard('{Home}')
-    await expect(document.activeElement).toBe(tabIn(canvasElement, 'one'))
+    await expect(document.activeElement).toBe(getTab(canvasElement, 'one'))
   },
 }
 
@@ -434,14 +442,14 @@ export const WalksOnFromAPress: Story = {
     const panel = canvasElement.querySelector('[role="tabpanel"][data-showing]') as HTMLElement
     panel.focus()
 
-    await userEvent.click(tabIn(canvasElement, 'three'))
-    await expect(document.activeElement).toBe(tabIn(canvasElement, 'three'))
+    await userEvent.click(getTab(canvasElement, 'three'))
+    await expect(document.activeElement).toBe(getTab(canvasElement, 'three'))
 
     await userEvent.keyboard('{ArrowRight}')
 
     const showing = canvasElement.querySelector('[data-workspace-tab][aria-selected="true"]')
     await expect(showing?.getAttribute('data-workspace-tab')).toBe('four')
-    await expect(document.activeElement).toBe(tabIn(canvasElement, 'four'))
+    await expect(document.activeElement).toBe(getTab(canvasElement, 'four'))
   },
 }
 
@@ -454,7 +462,7 @@ export const LeavesAPanel: Story = {
 
     await userEvent.keyboard('{Escape}')
 
-    await expect(document.activeElement).toBe(tabIn(canvasElement, 'plex'))
+    await expect(document.activeElement).toBe(getTab(canvasElement, 'plex'))
   },
 }
 
@@ -462,7 +470,7 @@ export const LeavesAPanel: Story = {
 export const FollowsTheModel: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const drawn = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(rectOf)
+    const drawn = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(getRect)
     const total = drawn.reduce((wide, box) => wide + box.width, 0)
     await expect((drawn[0]?.width ?? 0) / total).toBeCloseTo(0.72, 1)
   },
@@ -479,7 +487,7 @@ export const SelectsNothingWhileResizing: Story = {
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle')
     if (!handle) throw new Error('no handle')
-    const at = rectOf(handle)
+    const at = getRect(handle)
     const from = { clientX: at.x + at.width / 2, clientY: at.y + at.height / 2 }
 
     /** The branch being resized, while the pointer is on its way. */
@@ -522,7 +530,7 @@ export const CatchesAPressOnEitherSideOfTheLine: Story = {
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle')
     if (!handle) throw new Error('no handle')
-    const at = rectOf(handle)
+    const at = getRect(handle)
     const middle = at.y + at.height / 2
 
     for (const away of [-4, 4]) {

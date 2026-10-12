@@ -2,7 +2,7 @@
 import { effectScope, shallowRef } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useTabDrag, type TabDragState } from './drag'
-import { panesOf } from '../lib/tree'
+import { getPanes } from '../lib/tree'
 import type { Tab, Workspace } from '../lib/node'
 import type { Clock } from '@/shared/lib/clock'
 import { createIdFactory, withSpare } from '../fixtures/build'
@@ -87,7 +87,7 @@ function createDrag(options: { getTab?: typeof getTab; hasFrame?: boolean } = {}
   return { drag, workspace, scope, frame, state, main, dragTo, release }
 }
 
-const tabsOf = (workspace: Workspace) => panesOf(workspace.root).map((each) => each.tabs)
+const getTabs = (workspace: Workspace) => getPanes(workspace.root).map((each) => each.tabs)
 
 let held: ReturnType<typeof createDrag> | null = null
 
@@ -249,7 +249,7 @@ describe('letting go of a tab', () => {
     dragTo('plex', [350, 300], [850, 300])
     release(850, 300)
 
-    expect(tabsOf(workspace.value)).toStrictEqual([['chat', 'notes', 'plex']])
+    expect(getTabs(workspace.value)).toStrictEqual([['chat', 'notes', 'plex']])
   })
 
   it('divides the pane it is over, where it is over a side', () => {
@@ -257,7 +257,7 @@ describe('letting go of a tab', () => {
     dragTo('chat', [650, 60], [620, 300])
     release(620, 300)
 
-    expect(tabsOf(workspace.value)).toStrictEqual([['plex'], ['chat'], ['notes']])
+    expect(getTabs(workspace.value)).toStrictEqual([['plex'], ['chat'], ['notes']])
   })
 
   it('divides the whole workspace, where it is over an outer edge', () => {
@@ -265,7 +265,7 @@ describe('letting go of a tab', () => {
     dragTo('chat', [650, 60], [105, 300])
     release(105, 300)
 
-    expect(tabsOf(workspace.value)).toStrictEqual([['chat'], ['plex'], ['notes']])
+    expect(getTabs(workspace.value)).toStrictEqual([['chat'], ['plex'], ['notes']])
   })
 
   it('puts it in order among the tabs of its own strip', () => {
@@ -273,7 +273,7 @@ describe('letting go of a tab', () => {
     dragTo('chat', [650, 60], [790, 60])
     release(790, 60)
 
-    expect(tabsOf(workspace.value)).toStrictEqual([['plex'], ['notes', 'chat']])
+    expect(getTabs(workspace.value)).toStrictEqual([['plex'], ['notes', 'chat']])
   })
 
   it('puts it in order among the tabs of another strip, which it joins', () => {
@@ -281,7 +281,7 @@ describe('letting go of a tab', () => {
     dragTo('plex', [150, 60], [610, 60])
     release(610, 60)
 
-    expect(tabsOf(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
+    expect(getTabs(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
   })
 
   it('counts the pane it was pressed in from the pointer, not from the focus', () => {
@@ -290,7 +290,7 @@ describe('letting go of a tab', () => {
     dragTo('chat', [650, 60], [790, 60])
     release(790, 60)
 
-    expect(tabsOf(workspace.value)).toStrictEqual([['plex'], ['notes', 'chat']])
+    expect(getTabs(workspace.value)).toStrictEqual([['plex'], ['notes', 'chat']])
   })
 
   it('counts the pane it was pressed in as the focus where the press is over no pane', () => {
@@ -302,7 +302,7 @@ describe('letting go of a tab', () => {
     window.dispatchEvent(pointer('pointermove', 610, 60))
     release(610, 60)
 
-    expect(tabsOf(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
+    expect(getTabs(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
   })
 
   it('counts the pane it was pressed in from the pointer where the focus is elsewhere', () => {
@@ -311,7 +311,7 @@ describe('letting go of a tab', () => {
     dragTo('plex', [150, 60], [610, 60])
     release(610, 60)
 
-    expect(tabsOf(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
+    expect(getTabs(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
   })
 
   it('leaves the shown tab of a pane as it was when a tab is put in order within it', () => {
@@ -319,7 +319,7 @@ describe('letting go of a tab', () => {
     dragTo('notes', [750, 60], [610, 60])
     release(610, 60)
 
-    const aside = panesOf(workspace.value.root).find((each) => each.id === 'aside')
+    const aside = getPanes(workspace.value.root).find((each) => each.id === 'aside')
     expect(aside?.tabs).toStrictEqual(['notes', 'chat'])
     expect(aside?.active).toBe('chat')
   })
