@@ -4,7 +4,7 @@ export {
   getPickerKeyIntent,
   getSessionKeyIntent,
   shouldConsumeKey,
-  letterOf,
+  getLetter,
   READ_KEY,
 } from './keys'
 export type { SessionKeyIntent } from './keys'
