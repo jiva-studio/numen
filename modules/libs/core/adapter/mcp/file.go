@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -40,7 +41,10 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 			Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
 			Refused string `json:"refused,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 		}
-		contents, err := file.Read{Readers: core.Readers}.Execute(
+		if core.Read.Readers == nil {
+			return nil, out{}, fmt.Errorf("this vault's files are not open")
+		}
+		contents, err := core.Read.Execute(
 			ctx, core.getCurrentVault().Vault, in.Path, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err

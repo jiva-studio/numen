@@ -171,7 +171,7 @@ func (u *ListArtifacts) Execute(ctx context.Context, v domain.Vault, path string
 }
 
 // MostArtifactRead is how much of an artifact one read carries.
-const MostArtifactRead = MostRead
+const MostArtifactRead = MostDocumentText
 
 // ArtifactRange is a range of an artifact's text. Start is what was asked for
 // held within the text, and Length is how long the range is.

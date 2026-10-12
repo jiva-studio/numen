@@ -150,6 +150,7 @@ func makeReviewCore(
 		GetSummary:  cfg.GetSummary(db.Queries()),
 		GetProblems: cfg.GetProblems(db.Queries()),
 		Readers:     cfg.VaultReaders(),
+		Read:        cfg.Read(),
 		// Which card the person is on is a tool's answer and never part of the
 		// question, so a deck named by whoever synced it is data and not
 		// instruction.
@@ -167,9 +168,8 @@ func makeReviewCore(
 		},
 
 		Sources: mcp.Sources{
-			Queries:   db.SourcesKnown(),
-			Derived:   cfg.GetDerivedStores(),
-			Documents: cfg.TextExtractor(),
+			GetDocumentList: cfg.GetDocumentList(db.SourcesKnown()),
+			GetDocumentText: cfg.GetDocumentText(db.SourcesKnown()),
 		},
 
 		Cards: mcp.Cards{

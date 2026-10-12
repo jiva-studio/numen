@@ -10,24 +10,26 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Read is a run of one source's text, as the reader that made that text wrote
-// it.
-//
-// A search answers with a chunk, and a chunk ends where it was cut, which is
-// mid-sentence as often as not. This is what stands around it: the same text a
-// chunk is a place in, so an offset means one thing to both.
-type Read struct {
-	Readers port.VaultReaders
-	Sources port.SourceQueries
-	Derived port.DerivedStores
-	// Documents reads a format that needs a library, for a source standing on
-	// its own bytes.
-	Documents port.TextExtractor
+// GetDocumentText reads a run of one document's text, in the same text a search chunk is a place in.
+type GetDocumentText struct {
+	readers   port.VaultReaders
+	sources   port.SourceQueries
+	derived   port.DerivedStores
+	documents port.TextExtractor
 }
 
-// ReadResult is a run of a source's text, where it begins, and how much of the
-// source stands around it.
-type ReadResult struct {
+func NewGetDocumentText(
+	readers port.VaultReaders,
+	sources port.SourceQueries,
+	derived port.DerivedStores,
+	documents port.TextExtractor,
+) *GetDocumentText {
+	return &GetDocumentText{readers: readers, sources: sources, derived: derived, documents: documents}
+}
+
+// DocumentText is a run of a document's text, where it begins, and how much of the
+// document stands around it.
+type DocumentText struct {
 	Path string
 	Text string
 	// Start and Length are the run that was read, which is what was asked for
@@ -41,31 +43,31 @@ type ReadResult struct {
 	Whole int
 }
 
-// MostRead is how much of a source one question carries.
-const MostRead = 16000
+// MostDocumentText is how much of a document one question carries.
+const MostDocumentText = 16000
 
-// Execute reads a run of one source's text.
-func (u Read) Execute(
+// Execute reads a run of one document's text.
+func (u GetDocumentText) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
 	start, length int,
-) (ReadResult, error) {
-	res := ReadResult{Path: path, Start: start, Length: length}
+) (DocumentText, error) {
+	res := DocumentText{Path: path, Start: start, Length: length}
 	if start < 0 || length <= 0 {
 		return res, fmt.Errorf("a run of %s begins at %d and is %d long", path, start, length)
 	}
-	if length > MostRead {
-		return res, fmt.Errorf("read at most %d bytes of a source at a time", MostRead)
+	if length > MostDocumentText {
+		return res, fmt.Errorf("read at most %d bytes of a source at a time", MostDocumentText)
 	}
 
-	reader, err := u.Readers.Open(v)
+	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
 	}
 	var store port.DerivedStore
-	if u.Derived != nil {
-		if store, err = u.Derived.Open(v); err != nil {
+	if u.derived != nil {
+		if store, err = u.derived.Open(v); err != nil {
 			return res, err
 		}
 	}
@@ -73,8 +75,8 @@ func (u Read) Execute(
 	// Which producer made this source's text is what the index says, and it is
 	// the same answer a search sliced its passage at.
 	var from, hash string
-	if u.Sources != nil {
-		said, held, err := u.Sources.GetSourceText(ctx, v.ID, path)
+	if u.sources != nil {
+		said, held, err := u.sources.GetSourceText(ctx, v.ID, path)
 		if err != nil {
 			return res, err
 		}
@@ -83,7 +85,7 @@ func (u Read) Execute(
 		}
 	}
 
-	doc, err := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}.GetDocument(ctx, path, from, hash)
+	doc, err := text.Reader{Vault: reader, Derived: store, Documents: u.documents}.GetDocument(ctx, path, from, hash)
 	if err != nil {
 		return res, err
 	}

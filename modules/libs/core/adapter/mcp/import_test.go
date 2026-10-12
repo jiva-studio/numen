@@ -140,14 +140,13 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 		{Text: "what was said", From: 1500, To: 4200},
 	}}
 	v, core := newCoreWithImport(t, from)
-	core.Sources.Derived = filesystem.DerivedStores{
+	stores := filesystem.DerivedStores{
 		Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
 	}
 	queries := &sourced{known: map[string]port.SourceText{}}
-	core.Sources.Queries = queries
 	core.Sources.Artifacts = source.Artifacts{
-		List: source.NewListArtifacts(queries, core.Sources.Derived),
-		Read: source.NewReadArtifact(queries, core.Sources.Derived),
+		List: source.NewListArtifacts(queries, stores),
+		Read: source.NewReadArtifact(queries, stores),
 	}
 	session := sessionOf(t, mcp.New(core))
 	_ = v

@@ -14,8 +14,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -260,6 +262,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 	return mcp.Core{
 		Showing:     mcp.ShowOneVault(v, v.Path),
 		Readers:     readers,
+		Read:        file.Read{Readers: readers},
 		GetSummary:  cfg.GetSummary(queries),
 		GetProblems: cfg.GetProblems(queries),
 		Notes: mcp.Notes{
@@ -269,7 +272,7 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 			Links:         note.NewShowLinks(db.Links()),
 		},
 		Cards:   mcp.Cards{Read: cutting.Read, List: cutting.List},
-		Sources: mcp.Sources{Queries: db.SourcesKnown()},
+		Sources: mcp.Sources{GetDocumentList: source.NewGetDocumentList(db.SourcesKnown()), GetDocumentText: source.NewGetDocumentText(readers, db.SourcesKnown(), nil, nil)},
 	}
 }
 

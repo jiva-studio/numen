@@ -65,17 +65,16 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 	_, core := newCoreWithImport(t, from)
 
 	closed := map[string]bool{}
-	core.Sources.Derived = closeTrackingStores{
+	stores := closeTrackingStores{
 		inner: filesystem.DerivedStores{
 			Area: derived.Transcript, Areas: []string{derived.Article, derived.Copies},
 		},
 		closed: closed,
 	}
 	queries := &sourced{known: map[string]port.SourceText{}}
-	core.Sources.Queries = queries
 	core.Sources.Artifacts = source.Artifacts{
-		List: source.NewListArtifacts(queries, core.Sources.Derived),
-		Read: source.NewReadArtifact(queries, core.Sources.Derived),
+		List: source.NewListArtifacts(queries, stores),
+		Read: source.NewReadArtifact(queries, stores),
 	}
 	session := sessionOf(t, mcp.New(core))
 
