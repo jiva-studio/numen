@@ -102,14 +102,55 @@ func startIndexing(
 	owed *pendingSources,
 	out io.Writer,
 ) (vaults.Refresh, func()) {
-	handleError := func(err error) {
+	// Said before the goroutine starts, so a window that opens on a fresh vault
+	// is shown the walk from its first moment.
+	api.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
+
+	var running sync.WaitGroup
+
+	read, run, refresh, unwatched := made.StartVault(
+		ctx, v, rebuild, newChangeReporter(api, wake), newErrorReporter(api))
+	if unwatched != nil {
+		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, unwatched)
+		api.WatchError.Store(unwatched.Error())
+	}
+	running.Add(1)
+	go func() {
+		defer running.Done()
+		watchVault(ctx, api, run, unwatched)
+	}()
+
+	pass := indexer{
+		made: made, api: api, v: v, embedder: embedder, wake: wake, owed: owed, out: out,
+		// Indexing every file again is what this launch was asked for, and one
+		// pass makes it. Every pass after it indexes what changed.
+		owes: rebuild,
+	}
+	running.Add(1)
+	go func() {
+		defer running.Done()
+		pass.run(ctx, read)
+	}()
+
+	return refresh, running.Wait
+}
+
+// newErrorReporter tells the window what went wrong along the way, and tells it
+// that nothing does once a later attempt succeeds.
+func newErrorReporter(api *API) port.ErrorHandler {
+	return func(err error) {
 		if err == nil {
 			api.Error.Store("")
 			return
 		}
 		api.Error.Store(err.Error())
 	}
-	told := func(paths, assets []string, reload bool) {
+}
+
+// newChangeReporter tells the window what changed, and wakes the passes that owe
+// work for it.
+func newChangeReporter(api *API, wake indexTriggers) func(paths, assets []string, reload bool) {
+	return func(paths, assets []string, reload bool) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.
 		api.ChangeEvents.publish(change{paths: slices.Concat(paths, assets), shouldReload: reload})
@@ -123,112 +164,111 @@ func startIndexing(
 			fire(wake.notes)
 		}
 	}
+}
 
-	// Said before the goroutine starts, so a window that opens on a fresh vault
-	// is shown the walk from its first moment.
-	api.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
-
-	var running sync.WaitGroup
-
-	read, run, refresh, unwatched := made.StartVault(ctx, v, rebuild, told, handleError)
-	if unwatched != nil {
-		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, unwatched)
-		api.WatchError.Store(unwatched.Error())
+// watchVault runs the watch until it stops.
+func watchVault(ctx context.Context, api *API, run func(context.Context), unwatched error) {
+	run(ctx)
+	// Nothing reaches the window once the watch stops, so from here on the
+	// vault is one that is not being followed.
+	if unwatched == nil && ctx.Err() == nil {
+		api.WatchError.Store("the watch stopped")
 	}
-	running.Add(1)
-	go func() {
-		defer running.Done()
+}
 
-		run(ctx)
-		// Nothing reaches the window once the watch stops, so from here on the
-		// vault is one that is not being followed.
-		if unwatched == nil && ctx.Err() == nil {
-			api.WatchError.Store("the watch stopped")
-		}
-	}()
+// indexer brings the index of one vault level with it: its notes first, then its
+// books, then the vectors both owe.
+type indexer struct {
+	made     Assembly
+	api      *API
+	v        domain.Vault
+	embedder port.Embedder
+	wake     indexTriggers
+	owed     *pendingSources
+	out      io.Writer
+	// owes is whether the next pass indexes every file again. The ask is spent
+	// on the one goroutine that runs the indexer, so it is read and written in
+	// one place.
+	owes bool
+}
 
-	// first is the vault's first indexing: the walk, and the notes written while
-	// it ran read once more. It answers whether the vault was read.
-	first := func() bool {
-		defer api.finishTask(walkingNotes)
-
-		// The walk runs behind the window, which answers from what it has
-		// reached. A later one is the index being brought level with a vault
-		// that moved under it.
-		api.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
-		notes, err := read(ctx, nil)
-
-		switch {
-		case err == nil:
-		case errors.Is(err, context.Canceled):
-			// Asked to stop. What it stored is correct as far as it got, and
-			// there is nothing to report.
-			return false
-		default:
-			api.Error.Store(err.Error())
-			return false
-		}
-
-		fmt.Fprintf(out, "%s: %d notes\n", v.Name, notes)
-		api.Ready.Store(true)
-		return true
+// run is the vault's first indexing, and then every indexing that arrives while
+// the window is open: one at a time, and never while another is running.
+func (p *indexer) run(ctx context.Context, read func(ctx context.Context, during func()) (int, error)) {
+	// Indexing the sources comes after the notes: a vault is useful the moment
+	// its notes answer, and a library takes minutes to cut and hours to embed.
+	// Neither stops the window, and neither has to finish: an index is a cache.
+	if p.readNotes(ctx, read) {
+		p.indexSources(ctx)
 	}
 
-	// Indexing every file again is what this launch was asked for, and one pass
-	// makes it. Every pass after it indexes what changed. The ask is spent on the
-	// one goroutine below, so it is read and written in one place.
-	owes := rebuild
-	index := func() {
-		asked := owes
-		owes = false
-		readSources(ctx, made, api, v, embedder, asked, wake.read, out)
+	// A vault whose first indexing failed is one somebody goes on writing in, so
+	// the waiting stands whatever that indexing did.
+	var quiet <-chan time.Time
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-p.wake.sources:
+			p.indexSources(ctx)
+		case <-p.wake.read:
+			p.embedRecognisedPages(ctx)
+		case <-p.wake.notes:
+			// Every write puts the pass off again: what was typed is embedded
+			// once the vault has been still.
+			quiet = time.After(p.wake.still)
+		case <-quiet:
+			quiet = nil
+			embedSources(ctx, p.made, p.api, p.v, p.embedder, p.wake.read)
+		}
+	}
+}
+
+// readNotes is the vault's first indexing: the walk, and the notes written while
+// it ran read once more. It answers whether the vault was read.
+func (p *indexer) readNotes(ctx context.Context, read func(ctx context.Context, during func()) (int, error)) bool {
+	defer p.api.finishTask(walkingNotes)
+
+	// The walk runs behind the window, which answers from what it has reached. A
+	// later one is the index being brought level with a vault that moved under
+	// it.
+	p.api.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
+	notes, err := read(ctx, nil)
+
+	switch {
+	case err == nil:
+	case errors.Is(err, context.Canceled):
+		// Asked to stop. What it stored is correct as far as it got, and there
+		// is nothing to report.
+		return false
+	default:
+		p.api.Error.Store(err.Error())
+		return false
 	}
 
-	running.Add(1)
-	go func() {
-		defer running.Done()
+	fmt.Fprintf(p.out, "%s: %d notes\n", p.v.Name, notes)
+	p.api.Ready.Store(true)
+	return true
+}
 
-		// Indexing the sources comes after the notes: a vault is useful the
-		// moment its notes answer, and a library takes minutes to cut and hours
-		// to embed. Neither stops the window, and neither has to finish: an
-		// index is a cache.
-		if first() {
-			index()
-		}
+// indexSources indexes the books, again in full where this launch asked for it.
+func (p *indexer) indexSources(ctx context.Context) {
+	asked := p.owes
+	p.owes = false
+	readSources(ctx, p.made, p.api, p.v, p.embedder, asked, p.wake.read, p.out)
+}
 
-		// What arrives while the window is open is indexed where the first indexing
-		// was: one at a time, and never while another is running. A vault whose
-		// first indexing failed is one somebody goes on writing in, so the
-		// waiting stands whatever that indexing did.
-		var quiet <-chan time.Time
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-wake.sources:
-				index()
-			case <-wake.read:
-				// A batch of pages is on disk. What has been read of the
-				// document is cut and embedded while the rest of it is still
-				// being read.
-				if held := owed.drain(); len(held) > 0 {
-					for path, of := range held {
-						rechunkSource(ctx, made, api, embedder, of, path)
-					}
-					embedSources(ctx, made, api, v, embedder, wake.read)
-				}
-			case <-wake.notes:
-				// Every write puts the pass off again: what was typed is
-				// embedded once the vault has been still.
-				quiet = time.After(wake.still)
-			case <-quiet:
-				quiet = nil
-				embedSources(ctx, made, api, v, embedder, wake.read)
-			}
-		}
-	}()
-
-	return refresh, running.Wait
+// embedRecognisedPages cuts and embeds what has been read of a document while the
+// rest of it is still being read, once a batch of pages is on disk.
+func (p *indexer) embedRecognisedPages(ctx context.Context) {
+	held := p.owed.drain()
+	if len(held) == 0 {
+		return
+	}
+	for path, of := range held {
+		rechunkSource(ctx, p.made, p.api, p.embedder, of, path)
+	}
+	embedSources(ctx, p.made, p.api, p.v, p.embedder, p.wake.read)
 }
 
 // readSources takes the text out of every book in the vault and then embeds what
@@ -333,28 +373,51 @@ func embedSources(
 	if embedder == nil {
 		return
 	}
-
-	// What this pass owes, asked once before it starts: the chunks that can
-	// carry a vector and do not. The pass finds them a few hundred at a time,
-	// and a total that grows as it goes is a count that never settles.
-	//
-	// It is asked before the model is waited for. Every path into this pass runs
-	// on the one goroutine that also reads the books and cuts what a recognition
-	// wrote, and a vault owing no vector holds that goroutine for nothing.
-	owing := int64(0)
-	if api.Indexing.Progress != nil {
-		held, embedded, err := api.Indexing.Progress.GetProgress(ctx, v.ID, text(&api.Indexing.Recipe))
-		if err == nil {
-			owing = max(0, held-embedded)
-			if owing == 0 {
-				return
-			}
-		}
+	owing, owes := getOwedVectors(ctx, api, v)
+	if !owes {
+		return
 	}
 
-	// The nudge is put back where it was found, so the loop that reads it next
-	// still has it. Nothing else takes from it while this pass runs: the loop is
-	// inside this call.
+	under, stop := stopOnNudge(ctx, nudge)
+	defer stop()
+
+	// Fetching the model and preparing it is a step of its own, and it stands in
+	// the list under its own name. Nothing is indexed until it is over, and a
+	// model that never arrived is said under that name.
+	if arrival, ok := embedder.(embedding.WaitingEmbedder); ok {
+		if err := arrival.Wait(under); err != nil {
+			return
+		}
+	}
+	makeVectors(ctx, under, made, api, v, embedder, owing)
+}
+
+// getOwedVectors is what a pass owes, asked once before it starts: the chunks
+// that can carry a vector and do not. The pass finds them a few hundred at a
+// time, and a total that grows as it goes is a count that never settles.
+//
+// It is asked before the model is waited for. Every path into the pass runs on
+// the one goroutine that also reads the books and cuts what a recognition
+// wrote, and a vault owing no vector holds that goroutine for nothing.
+func getOwedVectors(ctx context.Context, api *API, v domain.Vault) (owing int64, owes bool) {
+	if api.Indexing.Progress == nil {
+		return 0, true
+	}
+	held, embedded, err := api.Indexing.Progress.GetProgress(ctx, v.ID, text(&api.Indexing.Recipe))
+	if err != nil {
+		return 0, true
+	}
+	owing = max(0, held-embedded)
+	return owing, owing > 0
+}
+
+// stopOnNudge is the context a pass runs under, which ends when somebody is
+// waiting for the loop that called it, and the function that ends the pass.
+//
+// The nudge is put back where it was found, so the loop that reads it next
+// still has it. Nothing else takes from it while the pass runs: the loop is
+// inside this call.
+func stopOnNudge(ctx context.Context, nudge chan struct{}) (context.Context, func()) {
 	under, aside := context.WithCancel(ctx)
 	nudged := make(chan struct{})
 	go func() {
@@ -366,20 +429,22 @@ func embedSources(
 			aside()
 		}
 	}()
-	defer func() {
+	return under, func() {
 		aside()
 		<-nudged
-	}()
-
-	// Fetching the model and preparing it is a step of its own, and it stands in
-	// the list under its own name. Nothing is indexed until it is over, and a
-	// model that never arrived is said under that name.
-	if arrival, ok := embedder.(embedding.WaitingEmbedder); ok {
-		if err := arrival.Wait(under); err != nil {
-			return
-		}
 	}
+}
 
+// makeVectors makes the vectors a vault owes, reporting the source it is
+// embedding as it goes.
+func makeVectors(
+	ctx, under context.Context,
+	made Assembly,
+	api *API,
+	v domain.Vault,
+	embedder port.Embedder,
+	owing int64,
+) {
 	indexing := func(err error) {
 		api.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: err.Error()})
 	}
