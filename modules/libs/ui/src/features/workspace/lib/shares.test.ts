@@ -47,6 +47,13 @@ describe('insert', () => {
     expect(insert([0.5, 0.5], 1, true)).toStrictEqual([0.5, 0.25, 0.25])
   })
 
+  it('gives an index past the end an equal share of half', () => {
+    const after = insert([0.5, 0.5], 2, false)
+    expect(after).toHaveLength(4)
+    expect(after[2]).toBeCloseTo(1 / 6)
+    expect(after[3]).toBeCloseTo(1 / 6)
+  })
+
   it('leaves the others where they were', () => {
     const after = insert([0.2, 0.8], 1, false)
     expect(after[0]).toBeCloseTo(0.2)
