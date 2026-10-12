@@ -1,7 +1,7 @@
 /**
  * The commands offered over the vaults an installation holds.
  */
-import { getRowKeys } from './chords'
+import { createRowKeys } from './chords'
 import { isAlwaysOffered, isVaultOpen } from './offered'
 import type { Command } from '../types'
 import type { Words } from '../words'
@@ -11,7 +11,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
   {
     id: 'goto',
     text: words.goto,
-    ...getRowKeys('goto', agent),
+    ...createRowKeys('goto', agent),
     group: 'vault',
     needs: 'picking',
     isOffered: (at) => at.isReady,
@@ -26,7 +26,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
   {
     id: 'newVault',
     text: words.newVault,
-    ...getRowKeys('newVault', agent),
+    ...createRowKeys('newVault', agent),
     group: 'vault',
     isOffered: isAlwaysOffered,
   },

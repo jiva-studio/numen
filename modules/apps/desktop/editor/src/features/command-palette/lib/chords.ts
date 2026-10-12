@@ -47,7 +47,7 @@ export const isChord = (event: {
 }): boolean => !event.altKey && (event.ctrlKey || event.metaKey)
 
 /** What a letter asks for, and nothing where no command answers to it. */
-export const getChordCommand = (letter: string, hasShift: boolean): string =>
+export const findChordCommand = (letter: string, hasShift: boolean): string =>
   CHORDS.find((one) => one.letter === letter.toLowerCase() && one.hasShift === hasShift)?.command ??
   ''
 
@@ -55,13 +55,13 @@ export const getChordCommand = (letter: string, hasShift: boolean): string =>
  * How a command's keystroke is drawn on the keyboard in hand, and nothing for
  * a command no keystroke reaches.
  */
-export const getChordKeys = (command: string, agent: string): PaletteKeys | undefined => {
+export const findChordKeys = (command: string, agent: string): PaletteKeys | undefined => {
   const chord = CHORDS.find((one) => one.command === command)
   return chord ? keyChord(chord.letter, agent, chord.hasShift) : undefined
 }
 
 /** That keystroke as a row of the palette takes it. */
-export const getRowKeys = (command: string, agent: string): { keys?: PaletteKeys } => {
-  const drawn = getChordKeys(command, agent)
+export const createRowKeys = (command: string, agent: string): { keys?: PaletteKeys } => {
+  const drawn = findChordKeys(command, agent)
   return drawn ? { keys: drawn } : {}
 }

@@ -6,7 +6,7 @@
  * command the window does not have would draw a cap over silence.
  */
 import { describe, expect, it } from 'vitest'
-import { isChord, getChordCommand, getChordKeys, getRowKeys, CHORDS } from './chords'
+import { isChord, findChordCommand, findChordKeys, createRowKeys, CHORDS } from './chords'
 import { commandsOf } from './commands'
 import { WORDS as words } from '@/shared/words'
 
@@ -35,57 +35,60 @@ describe('a keystroke the window answers', () => {
 
 describe('the command a letter asks for', () => {
   it('is the one the chord beside it names', () => {
-    expect(getChordCommand('n', false)).toBe('note')
-    expect(getChordCommand('g', false)).toBe('goto')
+    expect(findChordCommand('n', false)).toBe('note')
+    expect(findChordCommand('g', false)).toBe('goto')
   })
 
   it('is the same command in either case', () => {
-    expect(getChordCommand('N', false)).toBe('note')
+    expect(findChordCommand('N', false)).toBe('note')
   })
 
   it('is another command entirely when Shift is held with the letter', () => {
-    expect(getChordCommand('p', true)).toBe('travel')
-    expect(getChordCommand('c', true)).toBe('child')
-    expect(getChordCommand('a', true)).toBe('agent')
-    expect(getChordCommand('w', true)).toBe('close')
-    expect(getChordCommand('n', true)).toBe('newVault')
+    expect(findChordCommand('p', true)).toBe('travel')
+    expect(findChordCommand('c', true)).toBe('child')
+    expect(findChordCommand('a', true)).toBe('agent')
+    expect(findChordCommand('w', true)).toBe('close')
+    expect(findChordCommand('n', true)).toBe('newVault')
   })
 
   it('is nothing when a letter is held with the wrong half of the chord', () => {
-    expect(getChordCommand('g', true)).toBe('')
-    expect(getChordCommand('c', false)).toBe('')
-    expect(getChordCommand('w', false)).toBe('')
+    expect(findChordCommand('g', true)).toBe('')
+    expect(findChordCommand('c', false)).toBe('')
+    expect(findChordCommand('w', false)).toBe('')
   })
 
   it('is nothing where no command answers to the letter', () => {
-    expect(getChordCommand('q', false)).toBe('')
-    expect(getChordCommand('q', true)).toBe('')
+    expect(findChordCommand('q', false)).toBe('')
+    expect(findChordCommand('q', true)).toBe('')
   })
 
   it('is nothing for the two letters the window keeps for itself', () => {
-    expect(getChordCommand('k', false)).toBe('')
-    expect(getChordCommand('p', false)).toBe('')
+    expect(findChordCommand('k', false)).toBe('')
+    expect(findChordCommand('p', false)).toBe('')
   })
 })
 
 describe('how a keystroke is drawn on the row that names it', () => {
   it('is the key the keyboard in hand holds, and the letter in capitals', () => {
-    expect(getChordKeys('note', 'MacIntel')).toEqual({ icons: ['command'], letter: 'N' })
-    expect(getChordKeys('note', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'N' })
-    expect(getChordKeys('goto', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'G' })
+    expect(findChordKeys('note', 'MacIntel')).toEqual({ icons: ['command'], letter: 'N' })
+    expect(findChordKeys('note', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'N' })
+    expect(findChordKeys('goto', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('carries Shift where the chord holds it', () => {
-    expect(getChordKeys('travel', 'MacIntel')).toEqual({ icons: ['command', 'shift'], letter: 'P' })
-    expect(getChordKeys('close', 'Linux x86_64')).toEqual({
+    expect(findChordKeys('travel', 'MacIntel')).toEqual({
+      icons: ['command', 'shift'],
+      letter: 'P',
+    })
+    expect(findChordKeys('close', 'Linux x86_64')).toEqual({
       icons: ['control', 'shift'],
       letter: 'W',
     })
   })
 
   it('is nothing for a command no keystroke reaches', () => {
-    expect(getChordKeys('destroy', 'Linux x86_64')).toBeUndefined()
-    expect(getRowKeys('destroy', 'Linux x86_64')).toEqual({})
+    expect(findChordKeys('destroy', 'Linux x86_64')).toBeUndefined()
+    expect(createRowKeys('destroy', 'Linux x86_64')).toEqual({})
   })
 })
 
@@ -103,7 +106,7 @@ describe('every keystroke the table holds', () => {
     const commands = createCommands()
     for (const held of CHORDS) {
       const command = commands.find((one) => one.id === held.command)
-      expect(command?.keys).toEqual(getChordKeys(held.command, APPLE))
+      expect(command?.keys).toEqual(findChordKeys(held.command, APPLE))
     }
   })
 

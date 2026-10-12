@@ -11,9 +11,9 @@ import { iconOfNote } from '@/entities/note'
 import { findTabKindIcon } from '@/entities/tab'
 import { PRESET } from '@/entities/tab'
 import { commandsOf } from '@/features/command-palette'
-import { getMenuItems } from '@/pages/file-manager'
+import { createMenuItems } from '@/pages/file-manager'
 import { ITEMS, NONE } from '@/pages/plex-graph'
-import { getWelcomeActions } from '@/pages/welcome'
+import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
 import type { NoteType, Source } from '@/entities/file'
 
@@ -22,12 +22,12 @@ const canRunAnything = () => true
 
 /** Every menu the tree draws: off every row, and on a row of each kind. */
 const inTheTree = [
-  getMenuItems(null, false, canRunAnything),
+  createMenuItems(null, false, canRunAnything),
   ...(['note', 'book', 'recording', 'other'] as Source[]).flatMap((source) => [
-    getMenuItems({ source, isFolder: false }, false, canRunAnything),
-    getMenuItems({ source, isFolder: true }, false, canRunAnything),
+    createMenuItems({ source, isFolder: false }, false, canRunAnything),
+    createMenuItems({ source, isFolder: true }, false, canRunAnything),
   ]),
-  getMenuItems({ source: 'note', isFolder: false }, true, canRunAnything),
+  createMenuItems({ source: 'note', isFolder: false }, true, canRunAnything),
 ].flat()
 
 describe('the icon a command is drawn with', () => {
@@ -52,7 +52,7 @@ describe('the icon a command is drawn with', () => {
   })
 
   it('is there for every way into a vault the welcome screen offers', () => {
-    const ways = getWelcomeActions({ vault: 'physics', isReady: true }, words, 'Linux')
+    const ways = createWelcomeActions({ vault: 'physics', isReady: true }, words, 'Linux')
     for (const one of ways) expect(iconFor(one.id), one.id).not.toBeNull()
   })
 

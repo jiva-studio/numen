@@ -1,7 +1,7 @@
 /**
  * The commands offered over the window: what it opens, and how it is drawn.
  */
-import { getRowKeys } from './chords'
+import { createRowKeys } from './chords'
 import { isAlwaysOffered } from './offered'
 import type { Command } from '../types'
 import type { Words } from '../words'
@@ -10,7 +10,7 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
   {
     id: 'note',
     text: words.newNote,
-    ...getRowKeys('note', agent),
+    ...createRowKeys('note', agent),
     group: 'window',
     needs: 'naming',
     isOffered: (at) => at.isReady,
@@ -46,7 +46,7 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
   {
     id: 'plex',
     text: words.newPlex,
-    ...getRowKeys('plex', agent),
+    ...createRowKeys('plex', agent),
     group: 'window',
     isOffered: isAlwaysOffered,
   },
@@ -54,14 +54,14 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
   {
     id: 'agent',
     text: words.newAgent,
-    ...getRowKeys('agent', agent),
+    ...createRowKeys('agent', agent),
     group: 'window',
     isOffered: isAlwaysOffered,
   },
   {
     id: 'close',
     text: words.close,
-    ...getRowKeys('close', agent),
+    ...createRowKeys('close', agent),
     group: 'window',
     isOffered: (at) => at.tab !== '',
   },

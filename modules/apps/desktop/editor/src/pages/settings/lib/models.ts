@@ -23,7 +23,7 @@ export interface Words {
  * What a model is called, read off the value where the build names none: the
  * last segment of a path, a repository or an address.
  */
-export const getLastSegment = (value: string): string => {
+export const getLastPathSegment = (value: string): string => {
   const basePath = value.split(/[?#]/, 1)[0] ?? ''
   const last = basePath
     .split('/')
@@ -53,7 +53,7 @@ const getDetail = (parts: readonly string[]): string => parts.filter(Boolean).jo
  * segment of it, which is the part that says which model it is.
  */
 const getModelName = (model: Model): string =>
-  model.title && !isAddress(model.title) ? model.title : getLastSegment(model.name)
+  model.title && !isAddress(model.title) ? model.title : getLastPathSegment(model.name)
 
 /** One preset, as the list offers it. */
 const getModelChoice = (model: Model, words: Words): SelectChoice => {
@@ -77,7 +77,7 @@ const getModelChoice = (model: Model, words: Words): SelectChoice => {
  * offers. A value the presets do not name stands first, under the group that
  * says it is the person's own.
  */
-export const getChoices = (
+export const createChoices = (
   models: readonly Model[],
   now: string,
   words: Words,
@@ -86,7 +86,7 @@ export const getChoices = (
   if (!now || presets.some((one) => one.id === now)) return presets
   const own: SelectChoice = {
     id: now,
-    text: getLastSegment(now),
+    text: getLastPathSegment(now),
     ...(isAddress(now) ? { detail: now } : {}),
     group: words.owned,
   }

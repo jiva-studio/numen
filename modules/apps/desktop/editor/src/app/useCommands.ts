@@ -4,7 +4,7 @@
 
 import {
   isChord,
-  getChordCommand,
+  findChordCommand,
   runInvocation,
   useCommandPalette,
   useSearch,
@@ -94,7 +94,7 @@ export function useCommands(options: CommandsDepsOptions) {
     if (event.defaultPrevented) return
     if (held.onKeyPress(event)) return event.preventDefault()
     if (!isChord(event)) return
-    const command = getChordCommand(event.key.toLowerCase(), event.shiftKey)
+    const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)
     if (!command) return
     event.preventDefault()
     runCommand(command, getTarget())

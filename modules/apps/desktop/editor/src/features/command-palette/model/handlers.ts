@@ -14,7 +14,7 @@ import type { AnswerWords } from '../words'
 import { joinAll, formatNames } from '../lib/voice'
 export type { CommandDeps }
 import {
-  resolveNotePath,
+  withCurrentNotePath,
   createNoteCommand,
   createFolderCommand,
   moveFileCommand,
@@ -116,7 +116,7 @@ export async function runInvocation(
   if (!handler) return
   on.writeMessage('')
   try {
-    await handler(resolveNotePath(invocation, on), on, words)
+    await handler(withCurrentNotePath(invocation, on), on, words)
   } catch (error) {
     on.writeMessage(formatErrorMessage(error), 'error')
   }

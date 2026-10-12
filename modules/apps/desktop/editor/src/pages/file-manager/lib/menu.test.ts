@@ -9,7 +9,7 @@ import { groupItems } from '@numen/ui'
 import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
 import {
-  getMenuItems,
+  createMenuItems,
   type RunGuard,
   NEW_DECK,
   NEW_FOLDER,
@@ -27,11 +27,11 @@ const getItemIds = (
   source: Source,
   isFolder = false,
   canRun: RunGuard = canRunAnything,
-): readonly string[] => getMenuItems({ source, isFolder }, false, canRun).map((one) => one.id)
+): readonly string[] => createMenuItems({ source, isFolder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const getGroupedIds = (source: Source): readonly string[] =>
-  groupItems(getMenuItems({ source, isFolder: false }, false, canRunAnything)).map(
+  groupItems(createMenuItems({ source, isFolder: false }, false, canRunAnything)).map(
     (one) => `${one.isRule ? '— ' : ''}${one.id}`,
   )
 
@@ -98,7 +98,7 @@ describe('the menu on a row standing for anything else', () => {
   })
 
   it('offers neither off every row, where there is nothing to run it over', () => {
-    const made = getMenuItems(null, false, canRunAnything).map((one) => one.id)
+    const made = createMenuItems(null, false, canRunAnything).map((one) => one.id)
     expect(made).not.toContain('transcribe')
     expect(made).not.toContain('recognise')
   })
@@ -136,7 +136,7 @@ describe('where a run stands in the menu', () => {
 
 describe('disabling of runs based on artifact states', () => {
   it('disables transcribe and enables proofread when transcript is done', () => {
-    const items = getMenuItems(
+    const items = createMenuItems(
       { source: 'recording', isFolder: false, made: { transcript: 'done' } },
       false,
       canRunAnything,
@@ -148,7 +148,7 @@ describe('disabling of runs based on artifact states', () => {
   })
 
   it('disables both when transcript and proofread are done', () => {
-    const items = getMenuItems(
+    const items = createMenuItems(
       {
         source: 'recording',
         isFolder: false,
@@ -164,7 +164,7 @@ describe('disabling of runs based on artifact states', () => {
   })
 
   it('disables recognise and enables proofread when OCR is done on a PDF', () => {
-    const items = getMenuItems(
+    const items = createMenuItems(
       { source: 'book', isFolder: false, format: 'pdf', made: { ocr: 'done' } },
       false,
       canRunAnything,
@@ -176,7 +176,7 @@ describe('disabling of runs based on artifact states', () => {
   })
 
   it('disables both when OCR and reading proofread are done on a PDF', () => {
-    const items = getMenuItems(
+    const items = createMenuItems(
       {
         source: 'book',
         isFolder: false,
@@ -193,7 +193,7 @@ describe('disabling of runs based on artifact states', () => {
   })
 
   it('offers no scan runs on an EPUB book', () => {
-    const items = getMenuItems(
+    const items = createMenuItems(
       { source: 'book', isFolder: false, format: 'epub' },
       false,
       canRunAnything,
@@ -215,7 +215,7 @@ describe('the menu where this build cannot do a run at all', () => {
 
 describe('the four files the menu makes', () => {
   it('offers a preset off every row, beside the note, the deck and the stencil', () => {
-    expect(getMenuItems(null, false, canRunAnything).map((one) => one.id)).toStrictEqual([
+    expect(createMenuItems(null, false, canRunAnything).map((one) => one.id)).toStrictEqual([
       NEW_NOTE,
       NEW_DECK,
       NEW_STENCIL,
@@ -254,7 +254,7 @@ describe('a run that is under way or finished', () => {
     made: ArtifactStates,
     id: string,
   ): boolean | undefined =>
-    getMenuItems({ source, isFolder: false, format: 'pdf', made }, false, canRunAnything).find(
+    createMenuItems({ source, isFolder: false, format: 'pdf', made }, false, canRunAnything).find(
       (one) => one.id === id,
     )?.disabled
 
@@ -307,7 +307,7 @@ describe('a run that is under way or finished', () => {
 
 describe('the menu on a book that is an EPUB', () => {
   it('offers exactly what a file offers', () => {
-    const epub = getMenuItems(
+    const epub = createMenuItems(
       { source: 'book', isFolder: false, format: 'epub' },
       false,
       canRunAnything,

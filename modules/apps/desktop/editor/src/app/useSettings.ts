@@ -20,7 +20,7 @@ import {
 } from '@/features/settings-commands'
 import { createReviewSetting } from '@/entities/settings'
 import { createSettingsStore } from '@/entities/settings'
-import { useSettingsTab, paths, getChoices } from '@/pages/settings'
+import { useSettingsTab, paths, createChoices } from '@/pages/settings'
 import type { SelectChoice } from '@numen/ui'
 import { createTextEditorTabKind } from '@/pages/text-editor'
 import type { PaletteLists } from '@/features/command-palette'
@@ -57,7 +57,7 @@ function getPerformanceStepGroups(words: Words) {
 function getIndexingModelStepGroups(rest: ReturnType<typeof createSettingsStore>, words: Words) {
   const models = rest.getModelsAt(paths.indexingModel)
   const current = rest.getSetting(paths.indexingModel)
-  const choices = getChoices(models, typeof current === 'string' ? current : '', words)
+  const choices = createChoices(models, typeof current === 'string' ? current : '', words)
 
   const groups: Record<string, SelectChoice[]> = {}
   for (const choice of choices) {

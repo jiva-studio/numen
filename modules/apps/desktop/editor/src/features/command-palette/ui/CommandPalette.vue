@@ -139,13 +139,13 @@ onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
 // --- Helpers ---
 function getRowIcon(id: string) {
   if (props.commands.open.value) {
-    const picked = props.commands.getNoteType(id)
+    const picked = props.commands.findNoteType(id)
     return picked ? iconOfNote(picked) : iconFor(id)
   }
   if (id === CREATE_NOTE_ID) return iconFor('note')
-  const type = props.search.getNoteType(id)
+  const type = props.search.findNoteType(id)
   if (type) return iconOfNote(type)
-  const kind = props.search.getSource(id)
+  const kind = props.search.findHitSource(id)
   return kind ? findSourceIcon(kind) : null
 }
 </script>

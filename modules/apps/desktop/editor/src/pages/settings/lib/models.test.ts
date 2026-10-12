@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Model } from '@/entities/settings'
-import { getChoices, getLastSegment } from './models'
+import { createChoices, getLastPathSegment } from './models'
 
 const WORDS = {
   byDefault: 'the default',
@@ -28,26 +28,26 @@ const model = (one: Partial<Model> & { name: string }): Model => ({
 
 describe('what a model is called', () => {
   it('is the value itself where it is one word', () => {
-    expect(getLastSegment('opus')).toBe('opus')
+    expect(getLastPathSegment('opus')).toBe('opus')
   })
 
   it('is the last segment of a repository', () => {
-    expect(getLastSegment('somewhere/tiny-e5-small')).toBe('tiny-e5-small')
+    expect(getLastPathSegment('somewhere/tiny-e5-small')).toBe('tiny-e5-small')
   })
 
   it('is the last segment of an address, without what is asked of it', () => {
-    expect(getLastSegment('https://models.example/held/v1/rec/Tiny_rec.onnx?download=1')).toBe(
+    expect(getLastPathSegment('https://models.example/held/v1/rec/Tiny_rec.onnx?download=1')).toBe(
       'Tiny_rec.onnx',
     )
   })
 
   it('is the last segment of a path, whatever it ends with', () => {
-    expect(getLastSegment('/held/models/Tiny_rec.onnx')).toBe('Tiny_rec.onnx')
-    expect(getLastSegment('/held/models/')).toBe('models')
+    expect(getLastPathSegment('/held/models/Tiny_rec.onnx')).toBe('Tiny_rec.onnx')
+    expect(getLastPathSegment('/held/models/')).toBe('models')
   })
 
   it('is nothing where the value is nothing', () => {
-    expect(getLastSegment('')).toBe('')
+    expect(getLastPathSegment('')).toBe('')
   })
 })
 
@@ -59,7 +59,7 @@ describe('the choices a setting offers', () => {
   })
 
   it('name a preset by its own words and address it underneath', () => {
-    const [one] = getChoices([PRESET], PRESET.name, WORDS)
+    const [one] = createChoices([PRESET], PRESET.name, WORDS)
     expect(one?.text).toBe('Tiny, small — the default')
     expect(one?.detail).toBe(PRESET.name)
   })
@@ -68,21 +68,21 @@ describe('the choices a setting offers', () => {
     const own = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'
     // What the vault answers with for a value standing in the settings: the
     // address in the place a name would be.
-    const [one] = getChoices([model({ name: own, title: own })], own, WORDS)
+    const [one] = createChoices([model({ name: own, title: own })], own, WORDS)
 
     expect(one?.text).toBe('eslav_rec_mobile.onnx')
     expect(one?.detail).toContain(own)
   })
 
   it('leave a preset named by one word without an address under it', () => {
-    const [one] = getChoices([model({ name: 'opus', title: 'Opus' })], 'opus', WORDS)
+    const [one] = createChoices([model({ name: 'opus', title: 'Opus' })], 'opus', WORDS)
     expect(one?.text).toBe('Opus')
     expect(one?.detail).toBeUndefined()
   })
 
   it('put a value the presets do not name first, as the person’s own', () => {
     const own = 'https://models.example/mine/Other_rec.onnx'
-    const offered = getChoices([PRESET], own, WORDS)
+    const offered = createChoices([PRESET], own, WORDS)
 
     expect(offered.map((one) => one.id)).toStrictEqual([own, PRESET.name])
     expect(offered[0]).toStrictEqual({
@@ -94,18 +94,18 @@ describe('the choices a setting offers', () => {
   })
 
   it('say nothing about a value being missing, wrong or not found', () => {
-    const said = getChoices([PRESET], 'somewhere/mine', WORDS)
+    const said = createChoices([PRESET], 'somewhere/mine', WORDS)
       .map((one) => `${one.text} ${one.detail ?? ''}`)
       .join(' ')
     expect(said).not.toMatch(/not found|missing|unknown/i)
   })
 
   it('offer the presets alone where the file names one of them', () => {
-    expect(getChoices([PRESET], PRESET.name, WORDS)).toHaveLength(1)
+    expect(createChoices([PRESET], PRESET.name, WORDS)).toHaveLength(1)
   })
 
   it('offer the presets alone where the file names nothing', () => {
-    expect(getChoices([PRESET], '', WORDS)).toHaveLength(1)
+    expect(createChoices([PRESET], '', WORDS)).toHaveLength(1)
   })
 
   it('say what a model’s files are on this machine, where that means anything', () => {
@@ -113,7 +113,7 @@ describe('the choices a setting offers', () => {
     const coming = model({ name: 'somewhere/large', title: 'Large', presence: 'not fetched' })
     const reached = model({ name: 'opus', title: 'Opus', presence: 'nothing to fetch' })
 
-    const offered = getChoices([here, coming, reached], 'opus', WORDS)
+    const offered = createChoices([here, coming, reached], 'opus', WORDS)
     expect(offered.map((one) => one.detail)).toStrictEqual([
       'on this machine · somewhere/tiny',
       'not fetched yet · somewhere/large',
@@ -122,7 +122,7 @@ describe('the choices a setting offers', () => {
   })
 
   it('say nothing about presence for a model reached over the network', () => {
-    const [one] = getChoices(
+    const [one] = createChoices(
       [model({ name: 'https://held.example/one', title: 'One', presence: 'nothing to fetch' })],
       '',
       WORDS,
@@ -131,7 +131,7 @@ describe('the choices a setting offers', () => {
   })
 
   it('stand each preset on the group it names', () => {
-    const offered = getChoices(
+    const offered = createChoices(
       [
         model({ name: 'opus', title: 'Opus', group: 'By how large it is' }),
         model({ name: 'held/claude-opus-5', title: 'claude-opus-5', group: 'In full' }),

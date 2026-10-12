@@ -1,7 +1,7 @@
 /**
  * The commands offered over the note in front.
  */
-import { getRowKeys } from './chords'
+import { createRowKeys } from './chords'
 import { isNoteOpen } from './offered'
 import type { Command } from '../types'
 import type { Words } from '../words'
@@ -12,14 +12,14 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
   {
     id: 'travel',
     text: words.travel,
-    ...getRowKeys('travel', agent),
+    ...createRowKeys('travel', agent),
     group: 'note',
     isOffered: isNoteOpen,
   },
   {
     id: 'child',
     text: words.child,
-    ...getRowKeys('child', agent),
+    ...createRowKeys('child', agent),
     group: 'note',
     needs: 'naming',
     isOffered: isNoteOpen,

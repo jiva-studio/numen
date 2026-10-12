@@ -5,7 +5,7 @@
 import { computed } from 'vue'
 import { StencilEditor } from '@numen/ui'
 import type { InsertionPoint, Half } from '@numen/ui'
-import { getFileConflict, FileConflictPrompt } from '@/features/file-conflict'
+import { parseFileConflict, FileConflictPrompt } from '@/features/file-conflict'
 import type { StencilTabState } from '../types'
 import { WORDS as words } from '@/entities/deck'
 
@@ -68,7 +68,7 @@ function onWriteFace(id: string, half: Half, text: string) {
   <div class="stencil-tab">
     <FileConflictPrompt
       :error-message="props.state.errorMessage.value"
-      :conflict="getFileConflict(props.state.note.value.state)"
+      :conflict="parseFileConflict(props.state.note.value.state)"
       :words="words"
       @keep="onKeep"
       @take="onTake"

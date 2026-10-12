@@ -1524,7 +1524,7 @@ describe('a step that asks for a note, as the vault answers', () => {
     names[0]?.answer([name('physics/Entropy.md', 'Entropy')])
     await settle()
 
-    expect(commands.getNoteType('physics/Entropy.md')).toBeNull()
+    expect(commands.findNoteType('physics/Entropy.md')).toBeNull()
   })
 
   it('asks the vault nothing at a step that does not pick a note', async () => {
@@ -1688,9 +1688,9 @@ describe('what a step draws', () => {
 
     await commands.setTyped('en')
 
-    expect(commands.getNoteType('physics/Heat.md')).toBe('stencil')
-    expect(commands.getNoteType('physics/Entropy.md')).toBe('deck')
-    expect(commands.getNoteType('Order.md')).toBeNull()
+    expect(commands.findNoteType('physics/Heat.md')).toBe('stencil')
+    expect(commands.findNoteType('physics/Entropy.md')).toBe('deck')
+    expect(commands.findNoteType('Order.md')).toBeNull()
   })
 
   it('asks for a note where only spaces are typed', async () => {

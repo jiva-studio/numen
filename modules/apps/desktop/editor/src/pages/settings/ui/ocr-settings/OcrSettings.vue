@@ -8,7 +8,7 @@ import type { SelectChoice } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import type { SettingsTabState } from '../../types'
 import paths from '../../paths.json'
-import { getChoices } from '../../lib/models'
+import { createChoices } from '../../lib/models'
 import { write } from '@/entities/settings'
 import { WORDS as words } from '../../words'
 
@@ -52,7 +52,7 @@ function isSettingEnabled(at: readonly string[]): boolean {
 }
 
 function getModels(at: readonly string[]): readonly SelectChoice[] {
-  return getChoices(installation.value.getModels(at), getSettingString(at), words)
+  return createChoices(installation.value.getModels(at), getSettingString(at), words)
 }
 
 function setSetting(at: readonly string[], value: unknown): void {

@@ -169,7 +169,7 @@ export function useCommandPalette(
     getStepLabel: steps.getStepLabel,
   })
 
-  const groups = computed(() => draws.getGroups(steps.here.value, on.value, typed.value))
+  const groups = computed(() => draws.createGroups(steps.here.value, on.value, typed.value))
 
   const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
     const command = byId.get(id)
@@ -214,7 +214,7 @@ export function useCommandPalette(
     chooseItem,
     leaveStep: steps.leaveStep,
     goBack: steps.goBack,
-    getNoteType: draws.getNoteType,
+    findNoteType: draws.findNoteType,
   }
 }
 

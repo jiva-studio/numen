@@ -3,7 +3,7 @@
  * search that stands behind them.
  */
 export { default as CommandPalette } from './ui/CommandPalette.vue'
-export { isChord, getChordCommand, getChordKeys, getRowKeys } from './lib/chords'
+export { isChord, findChordCommand, findChordKeys, createRowKeys } from './lib/chords'
 export { commandsOf } from './lib/table'
 export { getNoteCommands } from './lib/commands'
 export { createInvocation } from './lib/invocation'

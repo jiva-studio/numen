@@ -420,7 +420,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
-    expect(items.map((one) => palette.getNoteType(one.id))).toEqual([
+    expect(items.map((one) => palette.findNoteType(one.id))).toEqual([
       'note',
       'deck',
       'stencil',
@@ -446,7 +446,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
-    expect(palette.getNoteType(item.id)).toBe('deck')
+    expect(palette.findNoteType(item.id)).toBe('deck')
   })
 
   it('draws a passage as the note it was read out of', async () => {
@@ -468,7 +468,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.getNoteType(one.id))).toEqual(['preset', null])
+    expect(items.map((one) => palette.findNoteType(one.id))).toEqual(['preset', null])
   })
 
   it('says what the vault holds where a passage was read out of', async () => {
@@ -487,7 +487,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.getSource(one.id))).toEqual(['note', 'book', 'recording'])
+    expect(items.map((one) => palette.findHitSource(one.id))).toEqual(['note', 'book', 'recording'])
   })
 
   it('says a name stands in a note, whatever kind of note it is', async () => {
@@ -503,14 +503,14 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
-    expect(items.map((one) => palette.getSource(one.id))).toEqual(['note', 'note'])
+    expect(items.map((one) => palette.findHitSource(one.id))).toEqual(['note', 'note'])
   })
 
   it('says nothing about an item it is not drawing', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, { wait: now })
-    expect(palette.getNoteType('notes/entropy.md')).toBeNull()
-    expect(palette.getSource('notes/entropy.md')).toBeNull()
+    expect(palette.findNoteType('notes/entropy.md')).toBeNull()
+    expect(palette.findHitSource('notes/entropy.md')).toBeNull()
   })
 })
 
