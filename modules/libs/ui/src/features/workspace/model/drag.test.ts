@@ -229,7 +229,7 @@ describe('a tab being dragged', () => {
     const { drag, dragTo, state, main } = start()
     main.setAttribute('data-workspace-pane', '')
     state.under = () => main
-    dragTo('plex', [350, 300], [350, 300])
+    dragTo('plex', [350, 300], [360, 300])
 
     expect(drag.landing.value).toBeNull()
   })
@@ -306,7 +306,26 @@ describe('letting go of a tab', () => {
     expect(tabsOf(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
   })
 
-  it('changes nothing where the pointer is let go over no landing', () => {
+  it('counts the pane it was pressed in from the pointer where the focus is elsewhere', () => {
+    const { workspace, dragTo, release } = start()
+    workspace.value = { ...workspace.value, focus: 'aside' }
+    dragTo('plex', [150, 60], [610, 60])
+    release(610, 60)
+
+    expect(tabsOf(workspace.value)).toStrictEqual([['plex', 'chat', 'notes']])
+  })
+
+  it('leaves the shown tab of a pane as it was when a tab is put in order within it', () => {
+    const { workspace, dragTo, release } = start()
+    dragTo('notes', [750, 60], [610, 60])
+    release(610, 60)
+
+    const aside = panesOf(workspace.value.root).find((each) => each.id === 'aside')
+    expect(aside?.tabs).toStrictEqual(['notes', 'chat'])
+    expect(aside?.active).toBe('chat')
+  })
+
+    it('changes nothing where the pointer is let go over no landing', () => {
     const { workspace, dragTo, release } = start()
     const before = workspace.value
     dragTo('plex', [350, 300], [20, 300])
