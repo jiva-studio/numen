@@ -425,12 +425,14 @@ describe('the marks of whole lines when the parser finds other blocks in the sam
   })
 
   it('are drawn again when a rule is found to start later', () => {
-    const { nodes } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 1))
+    const { was, now, nodes } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 1))
+    expect(now[0]?.deco).not.toBe(was[0]?.deco)
     expect(nodes).toEqual([{ name: 'HorizontalRule', from: 4, to: 6 }])
   })
 
   it('are drawn again when a rule is found to end earlier', () => {
-    const { nodes } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 0, 1))
+    const { was, now, nodes } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 0, 1))
+    expect(now[0]?.deco).not.toBe(was[0]?.deco)
     expect(nodes).toEqual([{ name: 'HorizontalRule', from: 3, to: 5 }])
   })
 
