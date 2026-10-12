@@ -124,3 +124,9 @@ func TestAFreeNameIsKeptAndATakenOneIsNumberedFromTwo(t *testing.T) {
 		t.Errorf("FreeName(Notes, one) = %q, want Notes", got)
 	}
 }
+
+func TestTheSameFolderWrittenTwoWaysIsNotInsideItself(t *testing.T) {
+	if err := vaultsAt("/notes/").CheckRoom("/notes"); err != nil {
+		t.Errorf("CheckRoom(/notes) = %v, want room", err)
+	}
+}
