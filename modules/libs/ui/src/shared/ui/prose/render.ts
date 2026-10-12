@@ -37,6 +37,7 @@ interface Frame {
 
 const nodes = (tokens: readonly Token[], deadAddresses: BrokenAddresses): VNode[] => {
   const root: VNode[] = []
+  // Stryker disable next-line ArrayDeclaration: a first entry of the stack is never read, as every closing token has its opener.
   const stack: Frame[] = []
   const top = (): (VNode | string)[] => stack.at(-1)?.children ?? root
   let placed = 0
@@ -89,6 +90,7 @@ const inline = (
   next: () => number,
 ): (VNode | string)[] => {
   const root: (VNode | string)[] = []
+  // Stryker disable next-line ArrayDeclaration: a first entry of the stack is never read, as every closing token has its opener.
   const stack: Frame[] = []
   const top = (): (VNode | string)[] => stack.at(-1)?.children ?? root
 
