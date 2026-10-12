@@ -24,7 +24,7 @@ const readSettings = async (): Promise<unknown> =>
   JSON.parse((await settingsService.getSettings({})).written)
 
 /** How many headings a node hangs, and the default where the settings name none. */
-const headingsIn = (value: unknown): number => (typeof value === 'number' ? value : DEFAULT_HEADINGS)
+const getNestedHeadingLimit = (value: unknown): number => (typeof value === 'number' ? value : DEFAULT_HEADINGS)
 
 /**
  * Settings written into the file, together or not at all. What could not be
@@ -52,7 +52,7 @@ export const settingsCore: SettingsPort = {
     const held = answer.nestedHeadingLimitBounds
     return {
       isNesting: getSettingAt(written, NESTING) !== false,
-      headings: headingsIn(getSettingAt(written, HEADINGS)),
+      headings: getNestedHeadingLimit(getSettingAt(written, HEADINGS)),
       least: held?.least ?? DEFAULT_HEADINGS,
       most: held?.most ?? DEFAULT_HEADINGS,
     } satisfies NestingSettings
