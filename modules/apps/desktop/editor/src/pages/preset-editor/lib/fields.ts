@@ -81,7 +81,7 @@ const LEARNS: Record<Rule, readonly Field[]> = {
 const ALWAYS: readonly Field[] = ['load', 'evenLoad']
 
 /** The settings a goal schedules by, which are the rows the receipt draws. */
-export const fieldsUnder = (goal: Goal, rule: Rule): readonly Field[] => {
+export const getFields = (goal: Goal, rule: Rule): readonly Field[] => {
   const drawn = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...LEARNS[rule], ...ALWAYS])
   return FIELDS.filter((field) => drawn.has(field))
 }

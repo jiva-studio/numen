@@ -107,7 +107,7 @@ const getCounts = (one: Curve): PresetCounts | null =>
     : null
 
 /** A tab standing at those settings, and everything it was asked to do. */
-const tabAt = (
+const createTab = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   isWaiting = true,
@@ -146,8 +146,8 @@ const mountPresetTab = (
   isWaiting = true,
   counts?: PresetCounts | null,
 ) => {
-  const one = tabAt(over, settings, isWaiting, counts)
+  const one = createTab(over, settings, isWaiting, counts)
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 
-export { getCounts, curve, mountPresetTab, heights, point, rows, tabAt }
+export { getCounts, curve, mountPresetTab, heights, point, rows, createTab }

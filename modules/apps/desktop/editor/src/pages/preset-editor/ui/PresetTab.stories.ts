@@ -129,11 +129,11 @@ const bothWays = (args: Knobs) => ({
 })
 
 /** The two tabs of that pair, in the order they are drawn. */
-const tabsIn = (canvas: HTMLElement): readonly HTMLElement[] =>
+const getTabs = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[data-tab]'))
 
 /** The rooms a tab holds its two plots in: the picture's, then the backlog's. */
-const roomsIn = (tab: HTMLElement): readonly HTMLElement[] =>
+const getRooms = (tab: HTMLElement): readonly HTMLElement[] =>
   Array.from(tab.querySelectorAll<HTMLElement>('[data-control="room"]'))
 
 /** The tab in the room a window gives it. */
@@ -168,7 +168,7 @@ type Story = StoryObj<Knobs>
 export const APreset: Story = {}
 
 /** The picture, which is the control the knob is walked along. */
-const pictureIn = (canvas: HTMLElement): SVGSVGElement =>
+const getPicture = (canvas: HTMLElement): SVGSVGElement =>
   within(canvas).getByRole('slider', { name: words.knob }) as unknown as SVGSVGElement
 
 /** The first line of the bubble over the knob, which is the value being held. */
@@ -251,13 +251,13 @@ export const TheRowsShareTheirColumns: Story = {
  */
 export const TheReadoutStaysUnderThePicture: Story = {
   play: async ({ canvasElement }) => {
-    const picture = pictureIn(canvasElement)
+    const picture = getPicture(canvasElement)
     const frame = picture.getBoundingClientRect()
     picture.focus()
     expect(picture).toHaveFocus()
 
-    const readingOf = (value: number) =>
-      within(canvasElement).getByText(words.widthAt('minutes', value))
+    const getValueText = (value: number) =>
+      within(canvasElement).getByText(words.getWidthLabel('minutes', value))
 
     // At either end, and in the middle: the value stands within the picture it
     // is read off, and it is drawn at all.
@@ -268,7 +268,7 @@ export const TheReadoutStaysUnderThePicture: Story = {
       await userEvent.keyboard(key)
       await waitFor(() => expect(picture).toHaveAttribute('aria-valuenow', String(value)))
 
-      const box = readingOf(value).getBoundingClientRect()
+      const box = getValueText(value).getBoundingClientRect()
       expect(box.width).toBeGreaterThan(0)
       expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)
       expect(box.right).toBeLessThanOrEqual(frame.right + 1)
@@ -285,7 +285,7 @@ export const TheReadoutStaysUnderThePicture: Story = {
  */
 export const TheBubbleStandsOverTheKnob: Story = {
   play: async ({ canvasElement }) => {
-    const picture = pictureIn(canvasElement)
+    const picture = getPicture(canvasElement)
     const frame = picture.getBoundingClientRect()
     picture.focus()
 
@@ -317,22 +317,22 @@ export const TheBubbleStandsOverTheKnob: Story = {
 export const TheBacklogKeepsItsRoom: Story = {
   render: bothWays,
   play: async ({ canvasElement }) => {
-    const [answered, waiting] = tabsIn(canvasElement)
-    const backlogRoom = (tab: HTMLElement): DOMRect => roomsIn(tab)[1]!.getBoundingClientRect()
+    const [answered, waiting] = getTabs(canvasElement)
+    const backlogRoom = (tab: HTMLElement): DOMRect => getRooms(tab)[1]!.getBoundingClientRect()
 
     // The backlog's own two axes are named, and it is drawn under the picture it
     // belongs to rather than beside it.
     const canvas = within(answered!)
     const backlog = canvas.getByText(words.backlogY)
     const along = canvas.getByText(words.backlogX)
-    const picture = pictureIn(answered!).getBoundingClientRect()
+    const picture = getPicture(answered!).getBoundingClientRect()
     expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
     expect(along.getBoundingClientRect().top).toBeGreaterThan(backlog.getBoundingClientRect().top)
 
     // It runs from the first day to the last of the run at this place, and the
     // two ends stand at the two ends of it.
-    const first = canvas.getByText(words.backlogWidthAt(1))
-    const last = canvas.getByText(words.backlogWidthAt(7))
+    const first = canvas.getByText(words.getBacklogWidthLabel(1))
+    const last = canvas.getByText(words.getBacklogWidthLabel(7))
     expect(first.getBoundingClientRect().left).toBeLessThan(last.getBoundingClientRect().left)
 
     // One tab has a backlog drawn in the backlog and the other has none, which is
@@ -365,7 +365,7 @@ export const WaitingForAnAnswer: Story = {
 
     // The room the picture will be drawn in is standing there empty, in the
     // picture's own proportion, so nothing below it moves when the line lands.
-    const empty = roomsIn(canvasElement)[0]!.getBoundingClientRect()
+    const empty = getRooms(canvasElement)[0]!.getBoundingClientRect()
     expect(empty.width).toBeGreaterThan(0)
     expect(empty.width / empty.height).toBeCloseTo(PLOT_WIDTH / PLOT_HEIGHT, 1)
 
@@ -384,7 +384,7 @@ export const WaitingForAnAnswer: Story = {
  */
 export const TheRingStandsOnTheKnob: Story = {
   play: async ({ canvasElement }) => {
-    const picture = pictureIn(canvasElement)
+    const picture = getPicture(canvasElement)
     const knob = picture.querySelector<SVGCircleElement>('[data-control="knob"]')!
     const resting = getComputedStyle(knob)
     const before = { stroke: resting.stroke, width: resting.strokeWidth }
@@ -415,7 +415,7 @@ export const TheRingStandsOnTheKnob: Story = {
 export const TheKnobFollowsThePointer: Story = {
   args: { place: 3 },
   play: async ({ canvasElement }) => {
-    const picture = pictureIn(canvasElement)
+    const picture = getPicture(canvasElement)
     const was = picture.getAttribute('aria-valuenow')
     const box = picture.getBoundingClientRect()
 

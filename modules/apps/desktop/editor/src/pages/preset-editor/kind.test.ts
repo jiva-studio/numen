@@ -10,10 +10,10 @@ import { describe, expect, it } from 'vitest'
 import { usePresetTab } from './kind'
 import type { SettingValue } from './types'
 import { StopReason } from '@numen/protocol'
-import { goalValue, findNearest } from './lib/curve'
+import { getGoalValue, findNearest } from './lib/curve'
 import { asFailure, asValue } from '@numen/wire'
 import type { CardsFailure } from '@/entities/deck'
-import { fieldsUnder, getGoalField, type Field } from './lib/fields'
+import { getFields, getGoalField, type Field } from './lib/fields'
 import {
   DEFAULTS,
   NO_BOUNDS,
@@ -737,7 +737,7 @@ describe('what the control writes', () => {
 describe('a setting the goal on screen does not name', () => {
   it('is not drawn, and keeps its value in the file across a write', async () => {
     const { state, written } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
-    expect(fieldsUnder(state.settings.value.goal, state.settings.value.learned)).not.toContain(
+    expect(getFields(state.settings.value.goal, state.settings.value.learned)).not.toContain(
       'reviewsADay',
     )
 
@@ -759,7 +759,7 @@ describe('a setting the goal on screen does not name', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(fieldsUnder('retention', DEFAULTS.learned)).toContain('reviewsADay')
+    expect(getFields('retention', DEFAULTS.learned)).toContain('reviewsADay')
     expect(state.settings.value.reviewsADay).toBe(7)
     expect(state.settings.value.newADay).toBe(12)
     expect(written.at(-1)?.reviewsADay).toBe(7)
@@ -774,7 +774,7 @@ describe('a setting the goal on screen does not name', () => {
 const createRangedCurve = (settings: Settings): Curve => {
   const top = 60 + settings.backlog
   const grid = Array.from({ length: 7 }, (_, at) => Math.round((top * (at + 1)) / 7))
-  const value = goalValue(settings, NOW)
+  const value = getGoalValue(settings, NOW)
   return {
     ...curve,
     goal: settings.goal,
@@ -818,7 +818,7 @@ describe('a field the goal does not getGoalField, typed', () => {
 
   it('leaves every other setting exactly as it stood, under every goal', async () => {
     for (const goal of ['minutes', 'retention'] as const) {
-      for (const field of fieldsUnder(goal, DEFAULTS.learned)) {
+      for (const field of getFields(goal, DEFAULTS.learned)) {
         const value = NEW_VALUES[field]
         if (field === getGoalField(goal) || value === undefined) continue
 
@@ -935,7 +935,7 @@ describe('a control dragged across its range', () => {
 })
 
 /** A read answering a preset that stands at these settings, under this title. */
-const presetWith = (settings: Settings, title = 'Steady'): ReadOver => ({
+const createPresetRead = (settings: Settings, title = 'Steady'): ReadOver => ({
   preset: {
     path: 'Steady.md',
     title,
@@ -977,7 +977,7 @@ describe('the tab a preset is drawn in', () => {
 
   it('keeps the title it was read under where a later read names none', async () => {
     const { state, kind } = await openPresetTab({}, curve, (time) =>
-      time === 0 ? {} : presetWith(STEADY, ''),
+      time === 0 ? {} : createPresetRead(STEADY, ''),
     )
     state.reload()
     await flushPromises()
@@ -1018,7 +1018,7 @@ describe('a tab before its first read lands', () => {
 describe('a tab read again', () => {
   it('reads the file again when asked to', async () => {
     const { state } = await openPresetTab({}, curve, (time) =>
-      time === 0 ? {} : presetWith({ ...STEADY, newADay: 7 }),
+      time === 0 ? {} : createPresetRead({ ...STEADY, newADay: 7 }),
     )
     state.reload()
     await flushPromises()
@@ -1064,7 +1064,7 @@ describe('a choice not yet written, across a read', () => {
     const { state, applyPathChanges } = await openPresetTab(
       { byDate: '2026-12-25' },
       dated,
-      (time) => (time === 0 ? {} : presetWith({ ...STEADY, byDate: '2027-01-01' })),
+      (time) => (time === 0 ? {} : createPresetRead({ ...STEADY, byDate: '2027-01-01' })),
       neverWritten,
     )
     state.chooseGoal('date')
@@ -1084,7 +1084,7 @@ describe('a choice not yet written, across a read', () => {
 
   it('takes up the file’s value where what was typed changed nothing', async () => {
     const { state, applyPathChanges } = await openPresetTab({}, curve, (time) =>
-      time === 0 ? {} : presetWith({ ...STEADY, counts: 'shows' }),
+      time === 0 ? {} : createPresetRead({ ...STEADY, counts: 'shows' }),
     )
     state.updateSetting('counts', 'hours')
     applyPathChanges(['Steady.md'])

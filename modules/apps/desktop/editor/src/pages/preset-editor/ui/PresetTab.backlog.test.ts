@@ -103,13 +103,13 @@ describe('the plot of what stands overdue', () => {
     const said = createClimbingTab()
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
-    expect(said).toContain(words.backlogHeightAt(78))
+    expect(said).toContain(words.getBacklogHeightLabel(78))
     // A number the line stands on gives way to it, so the foot is read off a
     // run that leaves the left edge of the backlog clear.
     const falling = createClimbingTab([78, 60, 40, 20, 5, 0])
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
-    expect(falling).toContain(words.backlogHeightAt(0))
+    expect(falling).toContain(words.getBacklogHeightLabel(0))
   })
 
   it('names both its axes, in the same voice as the picture over it', () => {
@@ -124,7 +124,7 @@ describe('the plot of what stands overdue', () => {
   it('carries the days at either end, which the goal’s grid says nothing about', () => {
     const { tab } = createClimbingTab()
     const ends = tab.findAll('[data-control="ends"]').map((one) => one.text())
-    expect(ends[1]).toContain(words.backlogWidthAt(6))
+    expect(ends[1]).toContain(words.getBacklogWidthLabel(6))
   })
 
   // The backlog is read and never dragged, so it is no stop on the way round the
@@ -181,7 +181,7 @@ describe('the plot of what stands overdue', () => {
     const said = createClimbingTab([0, 0, 0, 0, 0, 0])
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
-    expect(said).toContain(words.backlogHeightAt(0))
+    expect(said).toContain(words.getBacklogHeightLabel(0))
   })
 
   // The backlog is read off the place the knob stands at, so walking the grid

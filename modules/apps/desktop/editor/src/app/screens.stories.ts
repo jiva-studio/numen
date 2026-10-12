@@ -166,7 +166,7 @@ const GRID = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
  * What stands overdue at the end of each day, one entry a day. A longer day
  * pays the debt off sooner, and a day too short never pays it off at all.
  */
-const backlogAt = (rate: number): readonly number[] =>
+const createBacklog = (rate: number): readonly number[] =>
   Array.from({ length: 60 }, (_, day) =>
     Math.max(0, Math.round(96 - day * rate + day * day * rate * 0.004)),
   )
@@ -180,7 +180,7 @@ const AT: readonly Point[] = GRID.map((minutes, at) =>
     learned: 140 + Math.round(210 * Math.sqrt(at)),
     clears: at < 2 ? -1 : Math.max(4, Math.round(140 / at)),
     through: Math.min(1, 0.18 + at * 0.075),
-    backlog: backlogAt(0.4 + at * 0.55),
+    backlog: createBacklog(0.4 + at * 0.55),
   }),
 )
 

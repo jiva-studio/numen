@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
 import { NO_PLACE, STOP_REASONS, type Curve } from '../types'
-import { mountPresetTab, point, rows, tabAt } from '../fixtures'
+import { mountPresetTab, point, rows, createTab } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('a preset that schedules nothing', () => {
@@ -19,7 +19,7 @@ describe('a preset that schedules nothing', () => {
 
   /** The tab drawn for a preset stopped for that reason. */
   const mountStoppedTab = (why: StopReason) => {
-    const { state } = tabAt()
+    const { state } = createTab()
     return mount(PresetTab, { props: { state: { ...state, stopped: ref(why) } } })
   }
 

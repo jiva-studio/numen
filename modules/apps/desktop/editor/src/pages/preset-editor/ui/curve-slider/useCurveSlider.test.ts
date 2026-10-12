@@ -97,7 +97,7 @@ describe('the marks on the picture', () => {
     expect(state.marks.value).toStrictEqual([])
     expect(state.callout.value).toBeNull()
     expect(state.heights.value.map((one) => one.text)).toStrictEqual([
-      words.heightAt('minutes', 120),
+      words.getHeightLabel('minutes', 120),
     ])
   })
 
@@ -145,7 +145,7 @@ describe('what the control says beside the picture', () => {
   it('reads the near end of the range off the first place', () => {
     const { state } = slider()
     expect(state.least.value).toBe(10)
-    expect(state.atLeast.value).toBe(words.widthAt('minutes', 10))
+    expect(state.atLeast.value).toBe(words.getWidthLabel('minutes', 10))
   })
 })
 
@@ -177,7 +177,7 @@ describe('the picture the pointer is read against', () => {
 })
 
 /** A picture the pointer is read against, scaled and shifted as the test says. */
-const pictureAt = (a: number, e: number, isCaptured = false) => {
+const createPicture = (a: number, e: number, isCaptured = false) => {
   const done: string[] = []
   const element = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {
     getScreenCTM: () => ({ a, e }),
@@ -197,7 +197,7 @@ const pointer = (clientX: number, button = 0) =>
 describe('the pointer on the picture', () => {
   it('takes the knob to the place under it, and holds the pointer', () => {
     const { state, emitted } = slider()
-    const { element, done } = pictureAt(2, 100)
+    const { element, done } = createPicture(2, 100)
     state.setPicture(element)
     const down = pointer(481)
     state.onPointerDown(down)
@@ -208,7 +208,7 @@ describe('the pointer on the picture', () => {
 
   it('leaves a button other than the first to the window', () => {
     const { state, emitted } = slider()
-    const { element, done } = pictureAt(2, 100)
+    const { element, done } = createPicture(2, 100)
     state.setPicture(element)
     const down = pointer(481, 2)
     state.onPointerDown(down)
@@ -219,7 +219,7 @@ describe('the pointer on the picture', () => {
 
   it('leaves the knob where it stands where the picture has no scale', () => {
     const { state, emitted } = slider()
-    state.setPicture(pictureAt(0, 100).element)
+    state.setPicture(createPicture(0, 100).element)
     state.onPointerDown(pointer(481))
     expect(emitted).toStrictEqual([['move', 2]])
   })
@@ -238,7 +238,7 @@ describe('the pointer on the picture', () => {
 
   it('walks the knob while the pointer is held, and writes once it is let go', () => {
     const { state, emitted } = slider()
-    const { element, done } = pictureAt(2, 100, true)
+    const { element, done } = createPicture(2, 100, true)
     state.setPicture(element)
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))
@@ -250,7 +250,7 @@ describe('the pointer on the picture', () => {
     const { state, emitted } = slider()
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))
-    const { element, done } = pictureAt(2, 100, false)
+    const { element, done } = createPicture(2, 100, false)
     state.setPicture(element)
     state.onPointerMove(pointer(481))
     state.onPointerUp(pointer(481))

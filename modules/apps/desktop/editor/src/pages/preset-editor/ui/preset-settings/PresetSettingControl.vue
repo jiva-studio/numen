@@ -38,7 +38,7 @@ const week = computed<readonly Day[]>(() =>
 
 const levels = LOADS.map((one) => one / WHOLE_LOAD)
 
-const fieldBounds = computed(() => boundsOf(props.field, bounds.value))
+const fieldBounds = computed(() => getControlBounds(props.field, bounds.value))
 const fieldCount = computed(() => getFieldCount(props.field))
 
 // --- Handlers ---
@@ -83,17 +83,17 @@ function onDateChange(event: Event) {
 // --- Helpers ---
 type ControlBounds = { min: number; max: number } | Record<string, never>
 
-function minMaxOf(one: Bounds | undefined, per = 1): ControlBounds {
+function getMinMax(one: Bounds | undefined, per = 1): ControlBounds {
   return one ? { min: one.least * per, max: one.most * per } : {}
 }
 
-function boundsOf(field: Field, within: typeof bounds.value): ControlBounds {
-  if (field === 'newADay') return minMaxOf(within.newADay)
-  if (field === 'reviewsADay') return minMaxOf(within.reviewsADay)
-  if (field === 'minutesADay') return minMaxOf(within.minutesADay)
-  if (field === 'backlog') return minMaxOf(within.backlog)
-  if (field === 'interval') return minMaxOf(within.interval)
-  if (field === 'retention') return minMaxOf(within.retention, 100)
+function getControlBounds(field: Field, within: typeof bounds.value): ControlBounds {
+  if (field === 'newADay') return getMinMax(within.newADay)
+  if (field === 'reviewsADay') return getMinMax(within.reviewsADay)
+  if (field === 'minutesADay') return getMinMax(within.minutesADay)
+  if (field === 'backlog') return getMinMax(within.backlog)
+  if (field === 'interval') return getMinMax(within.interval)
+  if (field === 'retention') return getMinMax(within.retention, 100)
   return {}
 }
 

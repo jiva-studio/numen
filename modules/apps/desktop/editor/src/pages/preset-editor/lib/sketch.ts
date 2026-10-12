@@ -5,7 +5,7 @@
 import { dayAfter, daysBetween } from '@numen/ui'
 import { DEFAULTS, NO_PLACE } from '../types'
 import type { Curve, Place, Point, Settings, SettingsBounds } from '../types'
-import { goalValue, findNearest } from './curve'
+import { getGoalValue, findNearest } from './curve'
 
 /** How many places the line drawn in the answer's place is worked out at. */
 const PLACES = 25
@@ -38,10 +38,10 @@ const MIDDLE = 0.9
  * answer stand over one range.
  */
 export const estimateCurve = (settings: Settings, today: string, within: SettingsBounds): Curve => {
-  const grid = gridFor(settings, today, within)
+  const grid = getGrid(settings, today, within)
   const at = grid.map((value) => estimatePoint(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
-  const value = goalValue(settings, today)
+  const value = getGoalValue(settings, today)
   const place = findNearest(grid, value)
   const now: Place = { at: place, value, day: days[place] ?? '' }
   return {
@@ -65,7 +65,7 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
  * nothing about is no range at all: the sketch draws no places, and the answer
  * brings the honest ones.
  */
-const gridFor = (settings: Settings, today: string, within: SettingsBounds): readonly number[] => {
+const getGrid = (settings: Settings, today: string, within: SettingsBounds): readonly number[] => {
   if (settings.goal === 'retention') {
     const span = within.retention
     if (span === undefined) return []

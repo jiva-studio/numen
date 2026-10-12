@@ -8,21 +8,21 @@ import { describe, expect, it } from 'vitest'
 
 import { NO_PLACE, type Curve, type Point } from '../types'
 import {
-  extentOf,
-  extentOfBacklog,
+  getExtent,
+  getBacklogExtent,
   PLOT_BOTTOM,
   PLOT_LEFT,
-  lineOf,
+  getLine,
   getPlaceAtX,
-  positionsOf,
+  getPositions,
   PLOT_RIGHT,
   getBacklogRun,
-  seriesOf,
+  getSeries,
   getShortPath,
   PLOT_TOP,
   getKeyPlace,
   PLOT_WIDTH,
-  xOf,
+  getX,
   yOfGridline,
 } from './plot'
 
@@ -58,12 +58,12 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
 
 describe('where a place of the grid stands across the picture', () => {
   it('puts the first at one edge of the room and the last at the other', () => {
-    expect(xOf(0, 4)).toBe(PLOT_LEFT)
-    expect(xOf(3, 4)).toBe(PLOT_RIGHT)
+    expect(getX(0, 4)).toBe(PLOT_LEFT)
+    expect(getX(3, 4)).toBe(PLOT_RIGHT)
   })
 
   it('puts a single place at the edge it begins at', () => {
-    expect(xOf(0, 1)).toBe(PLOT_LEFT)
+    expect(getX(0, 1)).toBe(PLOT_LEFT)
   })
 
   it('draws its faint lines between the foot and the top', () => {
@@ -75,8 +75,8 @@ describe('where a place of the grid stands across the picture', () => {
 describe('the curve as it is drawn', () => {
   it('is scaled to the extent it is given, between the foot and the top', () => {
     const one = curve([0, 0.5, 1])
-    expect(extentOf(one)).toStrictEqual({ least: 0, most: 1 })
-    const positions = positionsOf(one, extentOf(one))
+    expect(getExtent(one)).toStrictEqual({ least: 0, most: 1 })
+    const positions = getPositions(one, getExtent(one))
     expect(positions[0]?.y).toBe(PLOT_BOTTOM)
     expect(positions[2]?.y).toBe(PLOT_TOP)
   })
@@ -84,12 +84,12 @@ describe('the curve as it is drawn', () => {
   // The extent is the goal's and not this answer's, so an answer that moves
   // little inside it is drawn as the little it moves.
   it('draws a curve that is flat within its extent flat', () => {
-    const positions = positionsOf(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
+    const positions = getPositions(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
     expect(positions.every((at) => at.y === positions[0]?.y)).toBe(true)
   })
 
   it('keeps a curve past either end of its extent inside the picture', () => {
-    const positions = positionsOf(curve([-1, 0.5, 2]), { least: 0, most: 1 })
+    const positions = getPositions(curve([-1, 0.5, 2]), { least: 0, most: 1 })
     expect(positions[0]?.y).toBe(PLOT_BOTTOM)
     expect(positions[2]?.y).toBe(PLOT_TOP)
   })
@@ -97,15 +97,15 @@ describe('the curve as it is drawn', () => {
   // A count does not go below nothing, so nothing is the foot of the picture
   // and a run of it lies along that foot.
   it('lies along the floor where the extent has no width', () => {
-    const positions = positionsOf(curve([0, 0, 0]), { least: 0, most: 0 })
+    const positions = getPositions(curve([0, 0, 0]), { least: 0, most: 0 })
     expect(positions.every((one) => one.y === PLOT_BOTTOM)).toBe(true)
   })
 
   it('stands an extent on nothing, whatever the run it holds comes to', () => {
-    expect(extentOf(curve([0, 0, 0]))).toStrictEqual({ least: 0, most: 0 })
-    expect(extentOf(curve([40, 45, 41]))).toStrictEqual({ least: 0, most: 45 })
-    expect(extentOf(curve([0, 20, 5]))).toStrictEqual({ least: 0, most: 20 })
-    expect(extentOf(curve([]))).toStrictEqual({ least: 0, most: 0 })
+    expect(getExtent(curve([0, 0, 0]))).toStrictEqual({ least: 0, most: 0 })
+    expect(getExtent(curve([40, 45, 41]))).toStrictEqual({ least: 0, most: 45 })
+    expect(getExtent(curve([0, 20, 5]))).toStrictEqual({ least: 0, most: 20 })
+    expect(getExtent(curve([]))).toStrictEqual({ least: 0, most: 0 })
   })
 
   // Whatever the run holds, the height read as nothing is the foot line.
@@ -116,7 +116,7 @@ describe('the curve as it is drawn', () => {
       [40, 45, 41],
     ]) {
       const one = curve(run)
-      const positions = positionsOf(one, extentOf(one))
+      const positions = getPositions(one, getExtent(one))
       for (const [at, value] of run.entries()) {
         if (value === 0) expect(positions[at]?.y).toBe(PLOT_BOTTOM)
         expect(positions[at]?.y).toBeLessThanOrEqual(PLOT_BOTTOM)
@@ -125,30 +125,30 @@ describe('the curve as it is drawn', () => {
   })
 
   it('is one line through every place', () => {
-    const positions = positionsOf(curve([0, 0.5, 1]), { least: 0, most: 1 })
-    expect(lineOf(positions).startsWith('M')).toBe(true)
-    expect(lineOf(positions).split('L')).toHaveLength(3)
+    const positions = getPositions(curve([0, 0.5, 1]), { least: 0, most: 1 })
+    expect(getLine(positions).startsWith('M')).toBe(true)
+    expect(getLine(positions).split('L')).toHaveLength(3)
   })
 
   it('is nothing at all where the curve holds no place', () => {
-    expect(lineOf([])).toBe('')
+    expect(getLine([])).toBe('')
   })
 })
 
 describe('the stretch a budget does not get through', () => {
   it('is a line of its own over the places the budget falls short at', () => {
     const one = curve([0, 0.4, 0.7, 1], [true, false, false, true])
-    expect(getShortPath(one, positionsOf(one, extentOf(one))).startsWith('M')).toBe(true)
+    expect(getShortPath(one, getPositions(one, getExtent(one))).startsWith('M')).toBe(true)
   })
 
   it('is nothing where the budget gets through all of it', () => {
     const one = curve([0, 0.4, 1])
-    expect(getShortPath(one, positionsOf(one, extentOf(one)))).toBe('')
+    expect(getShortPath(one, getPositions(one, getExtent(one)))).toBe('')
   })
 
   it('is nothing where it falls short at one place alone, which draws no line', () => {
     const one = curve([0, 0.4, 1], [true, false, true])
-    expect(getShortPath(one, positionsOf(one, extentOf(one)))).toBe('')
+    expect(getShortPath(one, getPositions(one, getExtent(one)))).toBe('')
   })
 })
 
@@ -165,7 +165,7 @@ describe('the place a pointer stands over', () => {
 
   it('reads back the place a point was drawn at', () => {
     const one = curve([0, 0.25, 0.5, 0.75, 1])
-    const positions = positionsOf(one, extentOf(one))
+    const positions = getPositions(one, getExtent(one))
     positions.forEach((at, place) => expect(getPlaceAtX(at.x, positions.length)).toBe(place))
   })
 
@@ -204,17 +204,17 @@ describe('where a keystroke takes the knob', () => {
 
 describe('the extent a backlog is drawn against', () => {
   it('stands on nothing and reaches the most the pace ever stands at', () => {
-    expect(extentOfBacklog([3, 7, 2])).toStrictEqual({ least: 0, most: 7 })
+    expect(getBacklogExtent([3, 7, 2])).toStrictEqual({ least: 0, most: 7 })
   })
 
   it('is nothing at all for a pace holding no days', () => {
-    expect(extentOfBacklog([])).toStrictEqual({ least: 0, most: 0 })
+    expect(getBacklogExtent([])).toStrictEqual({ least: 0, most: 0 })
   })
 })
 
 describe('a series drawn against an extent that does not begin at nothing', () => {
   it('measures each value up from the least of the extent', () => {
-    const at = seriesOf([10, 15, 20], { least: 10, most: 20 })
+    const at = getSeries([10, 15, 20], { least: 10, most: 20 })
     expect(at.map((one) => one.y)).toStrictEqual([
       PLOT_BOTTOM,
       PLOT_BOTTOM - (PLOT_BOTTOM - PLOT_TOP) / 2,
@@ -226,7 +226,7 @@ describe('a series drawn against an extent that does not begin at nothing', () =
 describe('the line through places', () => {
   it('writes each place as its two figures, rounded to two places, after M and then L', () => {
     expect(
-      lineOf([
+      getLine([
         { x: 1.234, y: 5.678 },
         { x: 10, y: 20 },
         { x: 30, y: 40.5 },
