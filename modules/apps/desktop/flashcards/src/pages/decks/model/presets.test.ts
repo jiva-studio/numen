@@ -187,8 +187,7 @@ describe('what a goal comes to in words', () => {
   })
 
   it('says only the day once it is today or has passed', () => {
-    const said = (byDate: string) =>
-      getGoalWords(settings({ goal: 'date', byDate }), '2026-09-12')
+    const said = (byDate: string) => getGoalWords(settings({ goal: 'date', byDate }), '2026-09-12')
     expect(said('2026-09-12')).toMatch(/^by \S/)
     expect(said('2026-09-10')).toMatch(/^by \S/)
     expect(said('2026-09-13')).toMatch(/^1 day to /)
