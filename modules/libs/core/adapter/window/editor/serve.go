@@ -227,11 +227,14 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	api.Files.Import = &held.Import
 	api.Files.URLs = &source.CreateURL{Writers: made.GetVaultWriters(), Index: pool.level}
 	api.Vaults = Vaults{
-		Registry:   held.Registry,
-		Add:        &held.Add,
-		Rename:     &held.Rename,
-		Unregister: &held.Unregister,
-		Erase:      &held.Erase,
+		Registry:    held.Registry,
+		List:        &held.List,
+		Find:        &held.Find,
+		FolderCheck: &held.FolderCheck,
+		Add:         &held.Add,
+		Rename:      &held.Rename,
+		Remove:      &held.Remove,
+		Unregister:  &held.Unregister,
 	}
 
 	api.Drops = &source.DropTranscript{

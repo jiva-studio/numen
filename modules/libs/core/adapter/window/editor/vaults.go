@@ -13,6 +13,9 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
+// errNoVaults is what a build that serves no list of vaults answers.
+var errNoVaults = errors.New("this build serves no list of vaults")
+
 // vaultsService answers about the vaults this installation holds, over the API
 // this window serves.
 type vaultsService struct{ api *API }
@@ -23,13 +26,16 @@ func (s vaultsService) ListVaults(
 	_ context.Context,
 	_ *connect.Request[v1.ListVaultsRequest],
 ) (*connect.Response[v1.ListVaultsResponse], error) {
-	held, err := vaults.NewList(s.api.Vaults.Registry).Execute()
+	if s.api.Vaults.List == nil || s.api.Vaults.FolderCheck == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
+	}
+	held, err := s.api.Vaults.List.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(held))}
 	for _, v := range held {
-		out.Vaults = append(out.Vaults, convertVaultToWire(v, s.api.Readers))
+		out.Vaults = append(out.Vaults, s.convertVaultToWire(v))
 	}
 	return connect.NewResponse(out), nil
 }
@@ -56,6 +62,9 @@ func (s vaultsService) AddVault(
 	_ context.Context,
 	r *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
+	if s.api.Vaults.Add == nil || s.api.Vaults.FolderCheck == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
+	}
 	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetName())
 	if err != nil {
 		reason, refused := vaultsErrorCodeBy(err)
@@ -64,7 +73,7 @@ func (s vaultsService) AddVault(
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
 	}
-	return connect.NewResponse(&v1.AddVaultResponse{Vault: convertVaultToWire(added, s.api.Readers)}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Vault: s.convertVaultToWire(added)}), nil
 }
 
 // RenameVault is what a person calls a vault. The folder keeps the name the
@@ -73,7 +82,10 @@ func (s vaultsService) RenameVault(
 	ctx context.Context,
 	r *connect.Request[v1.RenameVaultRequest],
 ) (*connect.Response[v1.RenameVaultResponse], error) {
-	v, err := s.found(r.Msg.GetId())
+	if s.api.Vaults.Find == nil || s.api.Vaults.Rename == nil || s.api.Vaults.FolderCheck == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
+	}
+	v, err := s.api.Vaults.Find.Execute(r.Msg.GetId())
 	if err == nil {
 		v, err = s.api.Vaults.Rename.Execute(ctx, v, r.Msg.GetName())
 	}
@@ -84,7 +96,7 @@ func (s vaultsService) RenameVault(
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
 	}
-	return connect.NewResponse(&v1.RenameVaultResponse{Vault: convertVaultToWire(v, s.api.Readers)}), nil
+	return connect.NewResponse(&v1.RenameVaultResponse{Vault: s.convertVaultToWire(v)}), nil
 }
 
 // RemoveVault takes a vault off the list and out of the index, and its folder
@@ -93,10 +105,10 @@ func (s vaultsService) RemoveVault(
 	ctx context.Context,
 	r *connect.Request[v1.RemoveVaultRequest],
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
-	v, err := s.offTheList(r.Msg.GetId())
-	if err == nil {
-		err = s.removal(ctx, v, r.Msg.GetTrash())
+	if s.api.Vaults.Remove == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
+	err := s.api.Vaults.Remove.Execute(ctx, r.Msg.GetId(), s.api.GetCurrentVault().ID, r.Msg.GetTrash())
 	if err != nil {
 		reason, refused := vaultsErrorCodeBy(err)
 		if !refused {
@@ -107,21 +119,15 @@ func (s vaultsService) RemoveVault(
 	return connect.NewResponse(&v1.RemoveVaultResponse{}), nil
 }
 
-// removal is the two ways a vault leaves the list.
-func (s vaultsService) removal(ctx context.Context, v domain.Vault, trash bool) error {
-	if trash {
-		_, err := s.api.Vaults.Erase.Execute(ctx, v)
-		return err
-	}
-	return s.api.Vaults.Unregister.Execute(ctx, v)
-}
-
 // OpenVault shows another vault in this window.
 func (s vaultsService) OpenVault(
 	ctx context.Context,
 	r *connect.Request[v1.OpenVaultRequest],
 ) (*connect.Response[v1.OpenVaultResponse], error) {
-	v, err := s.found(r.Msg.GetId())
+	if s.api.Vaults.Find == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
+	}
+	v, err := s.api.Vaults.Find.Execute(r.Msg.GetId())
 	if err == nil {
 		err = s.api.OpenVault(ctx, v)
 	}
@@ -140,34 +146,12 @@ func (s vaultsService) OpenVault(
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }
 
-// offTheList is the vault an identity names, asked to leave. The vault the
-// window has in front of the person stays: the use cases are not told which one
-// that is, and this is.
-func (s vaultsService) offTheList(id string) (domain.Vault, error) {
-	v, err := s.found(id)
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	if v.ID == s.api.GetCurrentVault().ID {
-		return domain.Vault{}, errShowing
-	}
-	return v, nil
-}
-
-// errShowing is the vault the window has in front of the person, asked to go.
-var errShowing = errors.New("this vault is the one the window is showing")
-
-// found is the vault an identity names.
-func (s vaultsService) found(id string) (domain.Vault, error) {
-	return vaults.NewFind(s.api.Vaults.Registry).Execute(id)
-}
-
-// convertVaultToWire is one vault as the schema carries it. A folder that is not there to
-// be found is marked, and the vault stays on the list.
-func convertVaultToWire(v domain.Vault, readers port.VaultReaders) *v1.Vault {
+// convertVaultToWire is one vault as the schema carries it. A folder that is not
+// there to be found is marked, and the vault stays on the list.
+func (s vaultsService) convertVaultToWire(v domain.Vault) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
-		IsMissing: vaults.NewFolderCheck(readers).Execute(v),
+		IsMissing: s.api.Vaults.FolderCheck.Execute(v),
 	}
 }
 
@@ -186,7 +170,7 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN, true
 	case errors.Is(err, vaults.ErrLastVault):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
-	case errors.Is(err, errShowing):
+	case errors.Is(err, vaults.ErrShowing):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING, true
 	case errors.Is(err, vaults.ErrUnknown):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN, true

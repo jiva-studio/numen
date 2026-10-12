@@ -144,15 +144,21 @@ func onAList(t *testing.T) *onTheList {
 	}
 	rename := vaults.NewRename(registry, rows)
 	erase := vaults.NewErase(identity, f.bin, forget)
+	list := vaults.NewList(registry)
+	find := vaults.NewFind(registry)
+	folderCheck := vaults.NewFolderCheck(filesystem.VaultReaders{})
+	remove := vaults.NewRemove(find, forget, erase)
 	f.api = &API{
 		Readers: filesystem.VaultReaders{},
 		Vaults: Vaults{
 			Registry:     registry,
+			List:         &list,
+			Find:         &find,
+			FolderCheck:  &folderCheck,
 			FolderDialog: f.dialog,
 			Add:          &adding,
 			Rename:       &rename,
-			Unregister:   &forget,
-			Erase:        &erase,
+			Remove:       &remove,
 		},
 	}
 	f.api.OpenVault = func(_ context.Context, v domain.Vault) error {

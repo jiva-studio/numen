@@ -21,12 +21,18 @@ type Vaults = vault.Scenarios
 func (c Config) Vaults(registry port.VaultRegistry, db *Index, notes note.Move) vault.Scenarios {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vault.NewUnregister(registry, db.Vaults())
+	erase := vault.NewErase(c.VaultIdentity(), c.Trash(), unregister)
+	find := vault.NewFind(registry)
 	return vault.Scenarios{
-		Registry:   registry,
-		Add:        vault.NewAdd(c.VaultIdentity(), registry, time.Now),
-		Rename:     vault.NewRename(registry, db.Vaults()),
-		Unregister: unregister,
-		Erase:      vault.NewErase(c.VaultIdentity(), c.Trash(), unregister),
+		Registry:    registry,
+		List:        vault.NewList(registry),
+		Find:        find,
+		FolderCheck: vault.NewFolderCheck(c.VaultReaders()),
+		Remove:      vault.NewRemove(find, unregister, erase),
+		Add:         vault.NewAdd(c.VaultIdentity(), registry, time.Now),
+		Rename:      vault.NewRename(registry, db.Vaults()),
+		Unregister:  unregister,
+		Erase:       erase,
 		Move: vault.NewMove(
 			c.VaultWriters(), db.Links(), db.SourcesKnown(), db.Sources(), notes),
 		Import: vault.NewImport(c.VaultWriters(), c.GetImportedFiles()),

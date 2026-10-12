@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // A Loopback is a socket on the loopback address that answers with the vault's
@@ -246,10 +245,10 @@ func (a *API) findVault(id string) (domain.Vault, bool) {
 	if showing := a.GetCurrentVault(); string(showing.ID) == id {
 		return showing, true
 	}
-	if a.Vaults.Registry == nil {
+	if a.Vaults.Find == nil {
 		return domain.Vault{}, false
 	}
-	one, err := vaults.NewFind(a.Vaults.Registry).Execute(id)
+	one, err := a.Vaults.Find.Execute(id)
 	if err != nil {
 		return domain.Vault{}, false
 	}
