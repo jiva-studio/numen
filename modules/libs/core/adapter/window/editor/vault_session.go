@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -62,7 +61,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if v.ID == o.API.GetCurrentVault().ID {
 		return nil
 	}
-	if err := checkReadable(o.made.GetVaultIdentity(), v); err != nil {
+	if err := o.checkIdentity.Execute(v); err != nil {
 		return err
 	}
 	if err := o.shutdown.tryBegin(); err != nil {
@@ -242,48 +241,6 @@ func (o *Installation) resetStatus() {
 	if o.embedderError != nil {
 		o.API.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
 	}
-}
-
-// chooseVault is the vault this window opens: the one a person named, else the one
-// shown last, else the first this installation holds. An installation holding
-// none answers with no vault at all.
-//
-// A vault named and not on the list is refused, and the window does not open.
-func chooseVault(registry port.VaultRegistry, asked string) (domain.Vault, error) {
-	if asked != "" {
-		return vaults.NewFind(registry).Execute(asked)
-	}
-	last, found, err := registry.GetLastVault()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	if found {
-		return last, nil
-	}
-	held, err := vaults.NewList(registry).Execute()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	if len(held) > 0 {
-		return held[0], nil
-	}
-	return domain.Vault{}, nil
-}
-
-// checkReadable is the vault being one this window can show: the folder reads as a
-// vault, and it carries the identity the list has for it.
-func checkReadable(identity port.VaultIdentity, v domain.Vault) error {
-	if err := identity.CheckReadable(v.Path); err != nil {
-		return fmt.Errorf("%w: %w", vaults.ErrUnreadable, err)
-	}
-	carried, found, err := identity.GetVaultID(v.Path)
-	if err != nil {
-		return err
-	}
-	if !found || carried != v.ID {
-		return fmt.Errorf("%w: %s is no longer the vault %s", vaults.ErrUnreadable, v.Path, v.Name)
-	}
-	return nil
 }
 
 // collectedEvery is how often the batches left with a proofreader are asked

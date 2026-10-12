@@ -47,6 +47,8 @@ type Installation struct {
 	registry port.VaultRegistry
 	tasks    *task.Tasks
 	out      io.Writer
+	// checkIdentity refuses a vault whose folder no longer carries its identity.
+	checkIdentity vaults.CheckIdentity
 	// models is this machine's models and processor. Recognising a scan and
 	// listening to a recording each hold them, one run at a time.
 	models *source.Lock
@@ -87,7 +89,7 @@ var errNoVault = errors.New("the window has no vault")
 func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Installation, error) {
 	registry := made.GetRegistry()
 
-	first, err := chooseVault(registry, asked)
+	first, err := vaults.NewGetVaultToShow(registry).Execute(asked)
 	if err != nil {
 		_ = made.CloseIndex()
 		return nil, err
@@ -117,9 +119,9 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 
 	// Where a passage sits on the page is asked of whichever producer made the
 	// text it is a place in, which is what the index records.
-	highlighting := source.NewHighlight(
+	highlight := source.NewHighlight(
 		made.GetVaultReaders(), made.GetSourceQueries(), made.GetDerivedStores())
-	highlighting.Documents = made.GetTextExtractor()
+	highlight.Documents = made.GetTextExtractor()
 
 	api := &API{
 		ChangeEvents:      newChangeBroadcaster(),
@@ -129,7 +131,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		NotifyNoteWritten: func() { fire(wake.notes) },
 		Readers:           made.GetVaultReaders(),
 		Viewer:            newCachingViewer(made.GetPageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
-		Highlight:         &highlighting,
+		Highlight:         &highlight,
 		Texts:             made.OpenSourceTexts(),
 		Notes: Notes{
 			Queries: made.GetNoteQueries(),
@@ -169,6 +171,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		Embedder:      embedder,
 		Asking:        asking,
 		made:          made,
+		checkIdentity: vaults.NewCheckIdentity(made.GetVaultIdentity()),
 		registry:      registry,
 		tasks:         tasks,
 		models:        &source.Lock{},
