@@ -3,7 +3,7 @@
  * address bar.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { holdWindow } from './outward'
+import { holdWindow, isOutward } from './outward'
 
 let stop: (() => void) | undefined
 
@@ -56,6 +56,17 @@ describe('a press on a link', () => {
     expect(openLink).not.toHaveBeenCalled()
   })
 
+  it('leaves an href that is no address to the page', () => {
+    const faults: unknown[] = []
+    const onError = (event: ErrorEvent) => void faults.push(event.error)
+    window.addEventListener('error', onError)
+    const { openLink, prevented } = pressLink('http://')
+    window.removeEventListener('error', onError)
+    expect(faults).toStrictEqual([])
+    expect(prevented).toBe(false)
+    expect(openLink).not.toHaveBeenCalled()
+  })
+
   it('hands a letter to whatever writes one', () => {
     const { openLink, prevented } = pressLink('mailto:someone@example.com')
     expect(prevented).toBe(true)
@@ -79,5 +90,90 @@ describe('a press on a link', () => {
     document.querySelector('a')!.dispatchEvent(press)
     expect(press.defaultPrevented).toBe(false)
     expect(openLink).not.toHaveBeenCalled()
+  })
+})
+
+describe('a press that reaches the held window without a link', () => {
+  /** The listener the window is held with, and the page it listens on. */
+  const hold = () => {
+    const root = document.implementation.createHTMLDocument('')
+    const add = vi.spyOn(root, 'addEventListener')
+    const openLink = vi.fn<(href: string) => void>()
+    stop = holdWindow(openLink, root)
+    const listener = add.mock.calls[0]![1] as (press: MouseEvent) => void
+    return { root, openLink, listener }
+  }
+
+  const press = (target: unknown) =>
+    ({ target, preventDefault: vi.fn<() => void>() }) as unknown as MouseEvent
+
+  it('is left alone when it has no target', () => {
+    const { listener, openLink } = hold()
+    const event = press(null)
+
+    expect(() => listener(event)).not.toThrow()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(openLink).not.toHaveBeenCalled()
+  })
+
+  it('is left alone when its target cannot hold a link', () => {
+    const { listener, root, openLink } = hold()
+    const event = press(root)
+
+    expect(() => listener(event)).not.toThrow()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(openLink).not.toHaveBeenCalled()
+  })
+
+  it('is left alone when it is not on a link', () => {
+    const { listener, root, openLink } = hold()
+    const event = press(root.createElement('p'))
+
+    expect(() => listener(event)).not.toThrow()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(openLink).not.toHaveBeenCalled()
+  })
+})
+
+describe('a press that is answered before the page sees it', () => {
+  it.each(['click', 'auxclick'])('takes the window nowhere from a %s the link stops', (kind) => {
+    const openLink = vi.fn<(href: string) => void>()
+    stop = holdWindow(openLink)
+    document.body.innerHTML = '<a href="https://evil.example/">press</a>'
+    const link = document.querySelector('a')!
+    link.addEventListener(kind, (event) => event.stopPropagation())
+    const press = new MouseEvent(kind, { bubbles: true, cancelable: true })
+
+    link.dispatchEvent(press)
+
+    expect(press.defaultPrevented).toBe(true)
+    expect(openLink).toHaveBeenCalledWith('https://evil.example/')
+  })
+
+  it('is left alone from a middle button once the window is no longer held', () => {
+    const openLink = vi.fn<(href: string) => void>()
+    holdWindow(openLink)()
+    document.body.innerHTML = '<a href="https://evil.example/">press</a>'
+    const press = new MouseEvent('auxclick', { bubbles: true, cancelable: true })
+    document.querySelector('a')!.dispatchEvent(press)
+    expect(press.defaultPrevented).toBe(false)
+    expect(openLink).not.toHaveBeenCalled()
+  })
+})
+
+describe('whether an address leads out', () => {
+  const here = new URL('https://notes.example:8080/a')
+
+  it('does when the scheme differs and nothing else', () => {
+    expect(isOutward(new URL('http://notes.example:8080/a'), here)).toBe(true)
+  })
+
+  it('does when the host differs and nothing else', () => {
+    expect(isOutward(new URL('https://other.example:8080/a'), here)).toBe(true)
+    expect(isOutward(new URL('https://notes.example:9090/a'), here)).toBe(true)
+  })
+
+  it('does not when scheme and host are the same', () => {
+    expect(isOutward(new URL('https://notes.example:8080/b?c#d'), here)).toBe(false)
   })
 })

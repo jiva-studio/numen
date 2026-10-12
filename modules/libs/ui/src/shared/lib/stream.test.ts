@@ -155,3 +155,49 @@ describe('what a follower holds for one reading of a stream', () => {
     expect(order).toStrictEqual(['lost', 'resets'])
   })
 })
+
+describe('a window that closes while a stream is read', () => {
+  it('waits for nothing and lets go of nothing once it closed on an item', async () => {
+    let open = true
+    const waits: number[] = []
+    const resets: number[] = []
+    const follows = createFollower({
+      isOpen: () => open,
+      setLost: () => {},
+      wait: async (ms) => void waits.push(ms),
+      reset: () => void resets.push(1),
+    })
+
+    await follows(createStream('one', 'two'), () => {
+      open = false
+    })
+
+    expect(waits).toStrictEqual([])
+    expect(resets).toStrictEqual([])
+  })
+
+  it('says nothing, waits for nothing and lets go of nothing when the stream fails after it closed', async () => {
+    let open = true
+    const lost: string[] = []
+    const waits: number[] = []
+    const resets: number[] = []
+    const follows = createFollower({
+      isOpen: () => open,
+      setLost: (said) => lost.push(said),
+      wait: async (ms) => void waits.push(ms),
+      reset: () => void resets.push(1),
+    })
+
+    await follows(
+      async function* (): AsyncIterable<string> {
+        open = false
+        throw new Error('the connection went')
+      },
+      () => {},
+    )
+
+    expect(lost).toStrictEqual([])
+    expect(waits).toStrictEqual([])
+    expect(resets).toStrictEqual([])
+  })
+})

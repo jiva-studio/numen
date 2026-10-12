@@ -12,15 +12,17 @@ const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, bubbles: true })
 
 /** A press under way, with the frame held until the test lets it come. */
-function createPress(threshold = 4) {
+function createPress(threshold = 4, withBegin = true) {
   const commit = vi.fn<(item: string, at: Position | null) => void>()
   const begin = vi.fn<(item: string) => void>()
   let next: ((now: number) => void) | null = null
+  let scheduled = 0
 
   /** A clock whose next frame comes when the test says so. */
   const clock: Clock = {
     now: () => 0,
     schedule: (run) => {
+      scheduled++
       next = run
       return 0
     },
@@ -36,7 +38,7 @@ function createPress(threshold = 4) {
       getClock: () => clock,
       getLandingAt: (_item, at) => (at.x < 500 ? at : null),
       commit,
-      begin,
+      ...(withBegin ? { begin } : {}),
     }),
   )!
 
@@ -45,6 +47,7 @@ function createPress(threshold = 4) {
     commit,
     begin,
     scope,
+    getScheduled: () => scheduled,
     frame: () => {
       const run = next
       next = null
@@ -154,5 +157,84 @@ describe('usePressDrag', () => {
     window.dispatchEvent(pointer('pointermove', 40, 60))
     expect(press.dragging.value).toBeNull()
     expect(press.begin).not.toHaveBeenCalled()
+  })
+
+  it('stays a press at exactly the threshold, along either axis', () => {
+    const press = createPress()
+    press.lift('a row', pointer('pointerdown', 10, 10))
+
+    window.dispatchEvent(pointer('pointermove', 14, 10))
+    expect(press.dragging.value?.hasMoved).toBe(false)
+
+    window.dispatchEvent(pointer('pointermove', 10, 14))
+    expect(press.dragging.value?.hasMoved).toBe(false)
+
+    window.dispatchEvent(pointer('pointermove', 10, 15))
+    expect(press.dragging.value?.hasMoved).toBe(true)
+    press.scope.stop()
+  })
+
+  it('becomes a drag from a pointer that only moved sideways', () => {
+    const press = createPress()
+    press.lift('a row', pointer('pointerdown', 10, 10))
+
+    window.dispatchEvent(pointer('pointermove', 15, 10))
+
+    expect(press.dragging.value?.hasMoved).toBe(true)
+    press.scope.stop()
+  })
+
+  it('becomes a drag when nobody asked to hear of it', () => {
+    const press = createPress(4, false)
+    const faults: unknown[] = []
+    const onError = (event: ErrorEvent) => void faults.push(event.error)
+    window.addEventListener('error', onError)
+    press.lift('a row', pointer('pointerdown', 10, 10))
+
+    window.dispatchEvent(pointer('pointermove', 40, 10))
+    window.removeEventListener('error', onError)
+
+    expect(faults).toStrictEqual([])
+    expect(press.dragging.value?.hasMoved).toBe(true)
+    press.scope.stop()
+  })
+
+  it.each(['pointerup', 'pointercancel'])('commits what was carried when the pointer ends in a %s', (kind) => {
+    const press = createPress()
+    press.lift('a row', pointer('pointerdown', 10, 10))
+    window.dispatchEvent(pointer('pointermove', 40, 60))
+    window.dispatchEvent(pointer(kind, 40, 60))
+
+    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 })
+    press.scope.stop()
+  })
+
+  it.each(['pointermove', 'pointerup', 'pointercancel'])(
+    'ignores a %s that comes after the release, before the frame',
+    (kind) => {
+      const press = createPress()
+      press.lift('a row', pointer('pointerdown', 10, 10))
+      window.dispatchEvent(pointer('pointermove', 40, 60))
+      window.dispatchEvent(pointer('pointerup', 40, 60))
+
+      window.dispatchEvent(pointer(kind, 90, 90))
+
+      expect(press.commit).toHaveBeenCalledTimes(1)
+      expect(press.position.value).toBeNull()
+      expect(press.at.value).toBeNull()
+      expect(press.getScheduled()).toBe(1)
+      press.scope.stop()
+    },
+  )
+
+  it.each(['pointerup', 'pointercancel'])('ignores a %s that comes after the scope went', (kind) => {
+    const press = createPress()
+    press.lift('a row', pointer('pointerdown', 10, 10))
+    press.scope.stop()
+
+    window.dispatchEvent(pointer(kind, 40, 60))
+
+    expect(press.getScheduled()).toBe(0)
+    expect(press.commit).not.toHaveBeenCalled()
   })
 })
