@@ -24,7 +24,7 @@ const END = 'the end of '
  */
 export const endOf = (run: string): InsertionPoint => `${END}${run}`
 
-/** Which run's end a landing is, and nothing for a landing that is not one. */
+/** Which run's end a drop target is, and nothing for a drop target that is not one. */
 export const getRunEnd = (at: InsertionPoint): string | null =>
   typeof at === 'string' && at.startsWith(END) ? at.slice(END.length) : null
 

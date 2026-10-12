@@ -120,7 +120,7 @@ const getFillStyle = (level: number) => {
     :from="asking.from"
     :current="current"
     open
-    opening="keyboard"
+    trigger="keyboard"
     @choose="onChoose"
     @dismiss="asking = null"
   />

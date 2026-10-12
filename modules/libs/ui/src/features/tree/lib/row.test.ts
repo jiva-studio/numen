@@ -16,7 +16,7 @@ import {
 } from './select'
 import { isTreeKey, stepTo, TREE_KEYS } from './step'
 import { getDraggedRows, dragLabel } from './drag'
-import { holderOf, isRefused, landing } from './drop'
+import { holderOf, isRefused, getRowDropTarget } from './drop'
 
 const ROWS: readonly Row[] = [
   {
@@ -230,57 +230,57 @@ describe('where a drag lands', () => {
   // work, plans, notes, empty, loose — one row every 24.
   const shown = getShownRows('work')
   const HEIGHT = 24
-  const getLandingAt = (y: number, ...dragging: readonly RowId[]) =>
-    landing(shown, dragging.length ? dragging : ['friday'], y, HEIGHT)
+  const getDropTargetAt = (y: number, ...dragging: readonly RowId[]) =>
+    getRowDropTarget(shown, dragging.length ? dragging : ['friday'], y, HEIGHT)
 
   it('goes into a row that holds, over the middle of it', () => {
-    expect(getLandingAt(12)).toStrictEqual({ into: 'work' })
+    expect(getDropTargetAt(12)).toStrictEqual({ into: 'work' })
   })
 
   it('goes between, at either end of a row', () => {
-    expect(getLandingAt(2)).toStrictEqual({ before: 'work' })
-    expect(getLandingAt(20)).toStrictEqual({ before: 'plans' })
+    expect(getDropTargetAt(2)).toStrictEqual({ before: 'work' })
+    expect(getDropTargetAt(20)).toStrictEqual({ before: 'plans' })
   })
 
   it('has no middle over a row that cannot hold', () => {
-    expect(getLandingAt(52)).toStrictEqual({ before: 'notes' })
-    expect(getLandingAt(60)).toStrictEqual({ before: 'empty' })
-    expect(getLandingAt(71)).toStrictEqual({ before: 'empty' })
+    expect(getDropTargetAt(52)).toStrictEqual({ before: 'notes' })
+    expect(getDropTargetAt(60)).toStrictEqual({ before: 'empty' })
+    expect(getDropTargetAt(71)).toStrictEqual({ before: 'empty' })
   })
 
   it('lands at the top level past the last row, which is the tree’s own area', () => {
-    expect(getLandingAt(118)).toStrictEqual({ into: null })
-    expect(getLandingAt(200)).toStrictEqual({ into: null })
+    expect(getDropTargetAt(118)).toStrictEqual({ into: null })
+    expect(getDropTargetAt(200)).toStrictEqual({ into: null })
   })
 
   it('lands at the top level under the last row, where nothing comes after it', () => {
-    expect(getLandingAt(112)).toStrictEqual({ into: null })
+    expect(getDropTargetAt(112)).toStrictEqual({ into: null })
   })
 
   it('lands nowhere above the first row', () => {
-    expect(getLandingAt(-4)).toBeNull()
+    expect(getDropTargetAt(-4)).toBeNull()
   })
 
   it('lands before the first row at its very top', () => {
-    expect(getLandingAt(0)).toStrictEqual({ before: 'work' })
+    expect(getDropTargetAt(0)).toStrictEqual({ before: 'work' })
   })
 
   it('lands nowhere while the rows have no height', () => {
-    expect(landing(shown, ['friday'], 12, 0)).toBeNull()
+    expect(getRowDropTarget(shown, ['friday'], 12, 0)).toBeNull()
   })
 
   it('lands nowhere where it would name a row being dragged', () => {
-    expect(getLandingAt(12, 'work')).toBeNull()
-    expect(getLandingAt(20, 'plans')).toBeNull()
+    expect(getDropTargetAt(12, 'work')).toBeNull()
+    expect(getDropTargetAt(20, 'plans')).toBeNull()
   })
 
   it('lands nowhere where it would name any of several being dragged', () => {
-    expect(getLandingAt(12, 'notes', 'work')).toBeNull()
-    expect(getLandingAt(20, 'loose', 'plans')).toBeNull()
+    expect(getDropTargetAt(12, 'notes', 'work')).toBeNull()
+    expect(getDropTargetAt(20, 'loose', 'plans')).toBeNull()
   })
 })
 
-describe('the row a landing puts what is held inside', () => {
+describe('the row a drop target puts what is held inside', () => {
   const shown = getShownRows('work')
 
   it('is the row itself, going into one', () => {

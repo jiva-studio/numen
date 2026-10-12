@@ -9,7 +9,7 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import { flatten, getMarkOf, type Row, type RowMarker, type RowId } from '../lib/row'
-import type { RowLanding } from '../lib/drop'
+import type { RowDropTarget } from '../lib/drop'
 import { useRowDrag } from '../model/drag'
 import { useTreeGestures } from '../model/gestures'
 import { useDrawnRows } from '../model/rows'
@@ -68,8 +68,8 @@ const emit = defineEmits<{
   (event: 'activate', row: RowId): void
   /** A name typed and committed. */
   (event: 'rename', row: RowId, name: string): void
-  /** The rows let go somewhere, all of them landing in the one place. */
-  (event: 'move', rows: readonly RowId[], at: RowLanding): void
+  /** The rows let go somewhere, all of them drop target in the one place. */
+  (event: 'move', rows: readonly RowId[], at: RowDropTarget): void
   /**
    * The rows lifted clear of the tree, on their way across whatever is drawn
    * beside it. Where they end up there is not the tree's to say.

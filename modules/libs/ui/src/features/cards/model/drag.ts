@@ -2,28 +2,28 @@
  * Something dragged from one place in an order to another, by the pointer or
  * by the keyboard.
  *
- * Everything that knows about events is here; where a landing is allowed and
- * what a landing comes to are the caller's, and each is stated once.
+ * Everything that knows about events is here; where a drop is allowed and
+ * what a drop comes to are the caller's, and each is stated once.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import { getStepLanding, type InsertionPoint, type StepDirection } from '../lib/order'
+import { getStepInsertionPoint, type InsertionPoint, type StepDirection } from '../lib/order'
 
 /**
  * What following a drag takes: the order it runs along, and the rules.
  *
  * `At` is where letting go may put the thing dragged. Where a place in the
  * order takes nothing — a row that is pinned — it is
- * `InsertionPoint | undefined`, and `nowhere` is the landing that stands for
+ * `InsertionPoint | undefined`, and `nowhere` is the drop target that stands for
  * that.
  */
 export interface DragDeps<At extends InsertionPoint | undefined> {
   /** The order, as the thing dragged is stepped along it. */
   readonly order: () => readonly string[]
-  /** Where a landing stands while the pointer is over nothing that takes one. */
+  /** Where a drop target stands while the pointer is over nothing that takes one. */
   readonly nowhere: At
   /** Whether letting the thing dragged go there moves it. */
   readonly isMoved: (dragged: string, at: InsertionPoint) => boolean
-  /** What a landing that is allowed comes to. */
+  /** What a drop that is allowed comes to. */
   readonly move: (dragged: string, at: InsertionPoint) => void
 }
 
@@ -74,7 +74,7 @@ export function useDrag<At extends InsertionPoint | undefined>(drag: DragDeps<At
   }
 
   const step = (what: string, direction: StepDirection, press: KeyboardEvent): void => {
-    const lands = getStepLanding(drag.order(), what, direction)
+    const lands = getStepInsertionPoint(drag.order(), what, direction)
     if (lands === undefined || !drag.isMoved(what, lands)) return
     press.preventDefault()
     drag.move(what, lands)
