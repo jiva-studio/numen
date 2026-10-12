@@ -72,10 +72,8 @@ func TestListingClosesTheFileItOpensForACopy(t *testing.T) {
 		closed: closed,
 	}
 	queries := &sourced{known: map[string]port.SourceText{}}
-	core.Sources.Artifacts = source.Artifacts{
-		List: source.NewListArtifacts(queries, stores),
-		Read: source.NewReadArtifact(queries, stores),
-	}
+	core.Sources.GetArtifactList = source.NewGetArtifactList(queries, stores)
+	core.Sources.GetArtifactText = source.NewGetArtifactText(queries, stores)
 	session := sessionOf(t, mcp.New(core))
 
 	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{

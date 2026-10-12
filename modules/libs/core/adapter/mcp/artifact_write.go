@@ -21,7 +21,7 @@ type artifactWriteOutput struct {
 }
 
 func addArtifactWriteTool(server *sdk.Server, core Core) {
-	if core.Sources.Artifacts.Write == nil {
+	if core.Sources.WriteCorrections == nil {
 		return
 	}
 
@@ -40,9 +40,11 @@ func addArtifactWriteTool(server *sdk.Server, core Core) {
 			"scan is corrected by a proofreading run, whose corrections are keyed to " +
 			"the printed line.",
 	}, newHandler(func(ctx context.Context, in artifactWriteInput) (artifactWriteOutput, error) {
-		cues, err := core.Sources.Artifacts.Write.Execute(ctx, core.getCurrentVault().Vault, source.Correction{
-			Path: in.Path, Kind: in.Kind, Words: in.Words, Start: in.Start, Length: in.Length,
-		})
+		cues, err := core.Sources.WriteCorrections.Execute(
+			ctx, core.getCurrentVault().Vault, source.Correction{
+				Path: in.Path, Kind: in.Kind, Words: in.Words, Start: in.Start, Length: in.Length,
+			},
+		)
 		if err != nil {
 			return artifactWriteOutput{}, err
 		}

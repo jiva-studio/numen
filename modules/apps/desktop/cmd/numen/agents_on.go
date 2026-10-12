@@ -142,7 +142,9 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			GetTranscriptionReadiness: cfg.GetTranscriptionReadiness(opened.GetTranscriptionWorker()),
 			URLs:                      opened.API.Files.URLs,
 			Import:                    opened.API.Imports,
-			Artifacts:                 cfg.Artifacts(opened.SourcesKnown(), opened.API.ReportArtifactChange),
+			GetArtifactList:           cfg.GetArtifactList(opened.SourcesKnown()),
+			GetArtifactText:           cfg.GetArtifactText(opened.SourcesKnown()),
+			WriteCorrections:          cfg.WriteCorrections(opened.SourcesKnown(), opened.API.ReportArtifactChange),
 		},
 
 		Cards: mcp.Cards{

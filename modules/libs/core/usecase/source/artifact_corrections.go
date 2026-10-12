@@ -74,7 +74,7 @@ func (u *WriteCorrections) Execute(ctx context.Context, v domain.Vault, in Corre
 func (u *WriteCorrections) write(
 	ctx context.Context, store port.DerivedStore, in Correction, producer, hash string, put []transcript.Cue,
 ) (int, error) {
-	words, err := getArtifactText(ctx, store, producer, hash)
+	words, err := getArtifactWords(ctx, store, producer, hash)
 	if err != nil {
 		return 0, err
 	}
