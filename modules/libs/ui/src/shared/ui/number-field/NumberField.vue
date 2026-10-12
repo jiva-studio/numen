@@ -11,7 +11,7 @@ import { cn } from '@/shared/lib/classes'
 import {
   isAllowed,
   clamp,
-  numberOf,
+  parseNumber,
   isPartialNumber,
   snapToBounds,
   isTextForValue,
@@ -67,7 +67,7 @@ const isInvalid = computed(() => {
   const raw = typed.value.trim()
   if (raw === '') return false
   if (!isPartialNumber(raw)) return true
-  const value = numberOf(raw)
+  const value = parseNumber(raw)
   return value !== null && value !== clamp(value, bounds.value)
 })
 
@@ -101,7 +101,7 @@ watch(model, (now) => {
 const onInput = (event: Event) => {
   typed.value = (event.target as HTMLInputElement).value
   if (typed.value.trim() === '') model.value = null
-  else if (isAllowed(typed.value, bounds.value)) model.value = numberOf(typed.value)
+  else if (isAllowed(typed.value, bounds.value)) model.value = parseNumber(typed.value)
 }
 
 /**
@@ -112,7 +112,7 @@ const onInput = (event: Event) => {
  * whatever the caller holds once it has answered.
  */
 const commit = async () => {
-  const value = numberOf(typed.value)
+  const value = parseNumber(typed.value)
   const now = value === null ? null : snapToBounds(value, bounds.value)
   model.value = now
   typed.value = formatNumber(now)
@@ -136,7 +136,7 @@ const onKeyDown = (event: KeyboardEvent) => {
     void commit()
     return
   }
-  const steppedValue = stepForKey(event.key, numberOf(typed.value) ?? model.value, bounds.value)
+  const steppedValue = stepForKey(event.key, parseNumber(typed.value) ?? model.value, bounds.value)
   if (steppedValue === null) return
   event.preventDefault()
   if (props.disabled) return

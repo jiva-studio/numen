@@ -9,7 +9,7 @@ import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
-import { wikilinkAt } from '@/shared/lib/address'
+import { findWikilink } from '@/shared/lib/address'
 import { addressOpener } from './outside'
 
 /** The first child of a node under that name, and nothing where it has none. */
@@ -38,7 +38,7 @@ export const addressAt = (state: EditorState, at: number): string | null => {
   const innermost = syntaxTree(state).resolveInner(at, 1)
   if (!isCode(innermost)) {
     const line = state.doc.lineAt(at)
-    const wiki = wikilinkAt(line.text, at - line.from)
+    const wiki = findWikilink(line.text, at - line.from)
     if (wiki) return wiki.address
   }
 

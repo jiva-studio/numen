@@ -1,7 +1,7 @@
 /** What this screen says of a preset: its goal, its day, and why it asks nothing. */
 // Stryker disable StringLiteral: interface copy
 import { StopReason } from '@numen/protocol'
-import { dayOf, daysBetween, many, percent } from '@numen/ui'
+import { parseDay, daysBetween, many, percent } from '@numen/ui'
 
 import { isSpent } from './lib/progress'
 import type { Preset, Settings } from './types'
@@ -102,9 +102,9 @@ export const getGoalWords = (settings: Settings, today: string): string => {
 /** A day as a person reads one, without the year they are already in. */
 const short = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' })
 
-const getDayWords = (day: string): string => short.format(dayOf(day))
+const getDayWords = (day: string): string => short.format(parseDay(day))
 
 /** The day of the week a day falls on, by its name. */
 const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'long' })
 
-const getWeekdayWords = (day: string): string => weekday.format(dayOf(day))
+const getWeekdayWords = (day: string): string => weekday.format(parseDay(day))

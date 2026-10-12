@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import {
   isAllowed,
   clamp,
-  numberOf,
+  parseNumber,
   isPartialNumber,
   snapToBounds,
   isTextForValue,
@@ -25,37 +25,37 @@ const FINE: Bounds = { min: 0.7, max: 0.99, step: 0.01 }
 
 describe('what the text comes to', () => {
   it('reads a number out of the digits', () => {
-    expect(numberOf('20')).toBe(20)
-    expect(numberOf(' 20 ')).toBe(20)
-    expect(numberOf('-3')).toBe(-3)
-    expect(numberOf('0.5')).toBe(0.5)
+    expect(parseNumber('20')).toBe(20)
+    expect(parseNumber(' 20 ')).toBe(20)
+    expect(parseNumber('-3')).toBe(-3)
+    expect(parseNumber('0.5')).toBe(0.5)
   })
 
   it('reads a comma as the point, wherever it is typed that way', () => {
-    expect(numberOf('0,5')).toBe(0.5)
-    expect(numberOf('12,25')).toBe(12.25)
+    expect(parseNumber('0,5')).toBe(0.5)
+    expect(parseNumber('12,25')).toBe(12.25)
   })
 
   // A comma before a group of three is how a thousand is written, and reading
   // it as the point would turn a thousand two hundred into one and a fifth.
   it('comes to nothing where a comma stands before a group of three', () => {
-    expect(numberOf('1,200')).toBeNull()
+    expect(parseNumber('1,200')).toBeNull()
     expect(isPartialNumber('1,200')).toBe(false)
-    expect(numberOf('12,000')).toBeNull()
+    expect(parseNumber('12,000')).toBeNull()
   })
 
   it('comes to nothing where the text is no number', () => {
-    expect(numberOf('')).toBeNull()
-    expect(numberOf('   ')).toBeNull()
-    expect(numberOf('twenty')).toBeNull()
-    expect(numberOf('12x')).toBeNull()
-    expect(numberOf('1 2')).toBeNull()
+    expect(parseNumber('')).toBeNull()
+    expect(parseNumber('   ')).toBeNull()
+    expect(parseNumber('twenty')).toBeNull()
+    expect(parseNumber('12x')).toBeNull()
+    expect(parseNumber('1 2')).toBeNull()
   })
 
   it('refuses the words that read as numbers to a machine and to nobody else', () => {
-    expect(numberOf('Infinity')).toBeNull()
-    expect(numberOf('0x10')).toBeNull()
-    expect(numberOf('1e3')).toBeNull()
+    expect(parseNumber('Infinity')).toBeNull()
+    expect(parseNumber('0x10')).toBeNull()
+    expect(parseNumber('1e3')).toBeNull()
   })
 })
 

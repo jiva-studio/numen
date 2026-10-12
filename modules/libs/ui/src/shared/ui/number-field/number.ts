@@ -31,7 +31,7 @@ export const isPartialNumber = (text: string): boolean => {
  * The number the text stands for; nothing where it stands for none. The shape
  * is what a person types: no exponent, no hexadecimal, no word for infinity.
  */
-export const numberOf = (text: string): number | null => {
+export const parseNumber = (text: string): number | null => {
   const trimmed = text.trim()
   if (trimmed === '' || !isPartialNumber(trimmed)) return null
   const value = Number(trimmed.replace(',', '.'))
@@ -62,7 +62,7 @@ export const snapToBounds = (value: number, bounds: Bounds): number =>
 
 /** Whether the text is a number the bounds allow. An empty field is neither. */
 export const isAllowed = (text: string, bounds: Bounds): boolean => {
-  const value = numberOf(text)
+  const value = parseNumber(text)
   return value !== null && value === snapToBounds(value, bounds)
 }
 
@@ -89,4 +89,4 @@ export const formatNumber = (value: number | null): string => (value === null ? 
 
 /** Whether what is typed stands for the number in force. An empty field holds none. */
 export const isTextForValue = (text: string, value: number | null): boolean =>
-  value === null ? text.trim() === '' : numberOf(text) === value
+  value === null ? text.trim() === '' : parseNumber(text) === value

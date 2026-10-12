@@ -23,7 +23,7 @@ export const getDayName = (at: Date): string => {
  * from both its ends so that a clock moved an hour either way leaves it the day
  * it was.
  */
-export const dayOf = (day: string): Date => {
+export const parseDay = (day: string): Date => {
   const [year, month, at] = day.split('-').map(Number)
   return new Date(year ?? 2000, (month ?? 1) - 1, at ?? 1, 12)
 }

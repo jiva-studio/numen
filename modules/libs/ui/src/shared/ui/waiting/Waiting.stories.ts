@@ -54,12 +54,12 @@ export const OneSizeInEveryRoom: Story = {
   play: async ({ canvasElement }) => {
     const [wide, narrow] = within(canvasElement).getAllByRole('status')
 
-    const ringOf = (element: HTMLElement) =>
+    const getRing = (element: HTMLElement) =>
       element.querySelector<HTMLElement>('.spinner')!.getBoundingClientRect().height
-    const wordOf = (element: HTMLElement) =>
+    const getWord = (element: HTMLElement) =>
       getComputedStyle(element.querySelector<HTMLElement>('span')!).fontSize
 
-    expect(ringOf(wide!)).toBeCloseTo(ringOf(narrow!), 1)
-    expect(wordOf(wide!)).toBe(wordOf(narrow!))
+    expect(getRing(wide!)).toBeCloseTo(getRing(narrow!), 1)
+    expect(getWord(wide!)).toBe(getWord(narrow!))
   },
 }

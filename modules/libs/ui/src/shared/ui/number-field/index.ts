@@ -2,7 +2,7 @@ export { default as NumberField } from './NumberField.vue'
 export {
   isAllowed,
   clamp,
-  numberOf,
+  parseNumber,
   isPartialNumber,
   snapToBounds,
   isTextForValue,
