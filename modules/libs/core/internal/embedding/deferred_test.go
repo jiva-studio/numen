@@ -323,3 +323,20 @@ func TestConcurrencyIsWhatTheModelRunsAndOneUntilItArrives(t *testing.T) {
 		})
 	}
 }
+
+func TestOnlyTheFirstModelToLandCounts(t *testing.T) {
+	first, second := &shut{}, &shut{}
+	e := embedding.NewDeferredEmbedder(bge)
+	e.SetModel(first, nil)
+	e.SetModel(second, nil)
+	if first.isClosed {
+		t.Error("the model that landed first was let go of")
+	}
+	if !second.isClosed {
+		t.Error("the model that landed second was kept")
+	}
+	e.SetModel(nil, errors.New("late failure"))
+	if err := e.Wait(t.Context()); err != nil {
+		t.Errorf("a later failure replaced the model: %v", err)
+	}
+}
