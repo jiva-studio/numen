@@ -147,9 +147,7 @@ func setHomeFolders(dir string) error {
 	return nil
 }
 
-// listenLocal is a listener on a free port of the loopback address, with its
-// TCP address. The port is the whole of what Start answers, so a listener
-// holding no TCP address leaves the caller nothing to reach.
+// listenLocal is a listener on a free loopback port, with its TCP address.
 func listenLocal() (net.Listener, *net.TCPAddr, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
