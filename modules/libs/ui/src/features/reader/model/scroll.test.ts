@@ -135,3 +135,225 @@ describe('whether the row is standing still', () => {
     expect(scroll.isStill()).toBe(false)
   })
 })
+
+interface Captured {
+  readonly has: ReturnType<typeof vi.fn<(id: number) => boolean>>
+  readonly set: ReturnType<typeof vi.fn<(id: number) => void>>
+  readonly release: ReturnType<typeof vi.fn<(id: number) => void>>
+}
+
+/** Pointer capture on the element, which jsdom does not have. */
+const createCapture = (element: HTMLElement, holds = false): Captured => {
+  const has = vi.fn<(id: number) => boolean>(() => holds)
+  const set = vi.fn<(id: number) => void>()
+  const release = vi.fn<(id: number) => void>()
+  element.hasPointerCapture = has
+  element.setPointerCapture = set
+  element.releasePointerCapture = release
+  return { has, set, release }
+}
+
+const createPointer = (clientX: number, clientY: number, button = 0): PointerEvent =>
+  ({ clientX, clientY, button, pointerId: 7 }) as unknown as PointerEvent
+
+const createWheel = (deltaX: number, deltaY: number) => {
+  const preventDefault = vi.fn<() => void>()
+  const event = { deltaX, deltaY, preventDefault } as unknown as WheelEvent
+  return { event, preventDefault }
+}
+
+const createPressed = (scrollLeft = 500, scrollTop = 300) => {
+  const subject = createScroll(scrollLeft)
+  subject.element.scrollTop = scrollTop
+  const capture = createCapture(subject.element)
+  return { ...subject, capture }
+}
+
+describe('a hand dragging the row', () => {
+  it('moves the row against the hand and takes the pointer', () => {
+    const { scroll, element, capture } = createPressed()
+    scroll.send(900, 'smooth')
+
+    scroll.onPointerDown(createPointer(200, 100))
+    scroll.onPointerMove(createPointer(150, 60))
+
+    expect(element.scrollLeft).toBe(550)
+    expect(element.scrollTop).toBe(340)
+    expect(scroll.isDragging.value).toBe(true)
+    expect(capture.set).toHaveBeenCalledWith(7)
+    expect(scroll.getScrollOffset()).toBe(550)
+  })
+
+  it('does not drag before the hand has travelled', () => {
+    const { scroll, element, capture } = createPressed()
+
+    scroll.onPointerDown(createPointer(200, 100))
+    scroll.onPointerMove(createPointer(201, 100))
+
+    expect(element.scrollLeft).toBe(500)
+    expect(scroll.isDragging.value).toBe(false)
+    expect(capture.set).not.toHaveBeenCalled()
+  })
+
+  it('ignores a move when nothing has been pressed', () => {
+    const { scroll, element } = createPressed()
+
+    scroll.onPointerMove(createPointer(100, 100))
+
+    expect(element.scrollLeft).toBe(500)
+    expect(scroll.isDragging.value).toBe(false)
+  })
+
+  it('ignores a press with another button', () => {
+    const { scroll, element } = createPressed()
+
+    scroll.onPointerDown(createPointer(200, 100, 2))
+    scroll.onPointerMove(createPointer(100, 100))
+
+    expect(element.scrollLeft).toBe(500)
+  })
+
+  it('ignores a press and a move without an element', () => {
+    const { scroll, area } = createPressed()
+    area.value = null
+
+    expect(() => {
+      scroll.onPointerDown(createPointer(200, 100))
+      scroll.onPointerMove(createPointer(100, 100))
+    }).not.toThrow()
+    expect(scroll.isDragging.value).toBe(false)
+  })
+
+  it('ignores a move after the element is gone', () => {
+    const { scroll, area } = createPressed()
+    scroll.onPointerDown(createPointer(200, 100))
+    area.value = null
+
+    expect(() => scroll.onPointerMove(createPointer(100, 100))).not.toThrow()
+    expect(scroll.isDragging.value).toBe(false)
+  })
+
+  it('does not take a pointer the element already holds', () => {
+    const { scroll, element } = createPressed()
+    const capture = createCapture(element, true)
+
+    scroll.onPointerDown(createPointer(200, 100))
+    scroll.onPointerMove(createPointer(100, 100))
+
+    expect(capture.set).not.toHaveBeenCalled()
+    expect(element.scrollLeft).toBe(600)
+  })
+
+  it('keeps dragging when the pointer cannot be taken', () => {
+    const { scroll, element, capture } = createPressed()
+    capture.set.mockImplementation(() => {
+      throw new Error('no such pointer')
+    })
+
+    scroll.onPointerDown(createPointer(200, 100))
+
+    expect(() => scroll.onPointerMove(createPointer(100, 100))).not.toThrow()
+    expect(element.scrollLeft).toBe(600)
+    expect(scroll.isDragging.value).toBe(true)
+  })
+
+  it('lets go of the row and the pointer', () => {
+    const { scroll, element, capture } = createPressed()
+    capture.has.mockReturnValue(true)
+    scroll.onPointerDown(createPointer(200, 100))
+    scroll.onPointerMove(createPointer(100, 100))
+
+    scroll.letGo(createPointer(100, 100))
+    scroll.onPointerMove(createPointer(0, 100))
+
+    expect(scroll.isDragging.value).toBe(false)
+    expect(capture.release).toHaveBeenCalledWith(7)
+    expect(element.scrollLeft).toBe(600)
+  })
+
+  it('does not release a pointer it does not hold', () => {
+    const { scroll, capture } = createPressed()
+
+    scroll.letGo(createPointer(100, 100))
+
+    expect(capture.release).not.toHaveBeenCalled()
+  })
+
+  it('lets go without an element', () => {
+    const { scroll, area } = createPressed()
+    area.value = null
+
+    expect(() => scroll.letGo(createPointer(100, 100))).not.toThrow()
+  })
+})
+
+describe('a wheel turned over the row', () => {
+  const setTall = (element: HTMLElement, scrollHeight: number, clientHeight: number) => {
+    Object.defineProperty(element, 'scrollHeight', { value: scrollHeight })
+    Object.defineProperty(element, 'clientHeight', { value: clientHeight })
+  }
+
+  it('moves the row sideways where nothing is below', () => {
+    const { scroll, element } = createScroll(500)
+    setTall(element, 100, 100)
+    const { event, preventDefault } = createWheel(0, 120)
+
+    scroll.onWheel(event)
+
+    expect(element.scrollLeft).toBe(620)
+    expect(element.scrollTop).toBe(0)
+    expect(preventDefault).toHaveBeenCalled()
+  })
+
+  it('moves the row down where there is something below', () => {
+    const { scroll, element } = createScroll(500)
+    setTall(element, 200, 100)
+    const { event } = createWheel(0, 120)
+
+    scroll.onWheel(event)
+
+    expect(element.scrollLeft).toBe(500)
+    expect(element.scrollTop).toBe(120)
+  })
+
+  it('moves along either axis alone', () => {
+    const { scroll, element } = createScroll(500)
+    setTall(element, 200, 100)
+
+    scroll.onWheel(createWheel(40, 0).event)
+    expect(element.scrollLeft).toBe(540)
+
+    scroll.onWheel(createWheel(0, 30).event)
+    expect(element.scrollTop).toBe(30)
+  })
+
+  it('leaves a wheel that said nothing to the browser', () => {
+    const { scroll, element } = createScroll(500)
+    setTall(element, 200, 100)
+    const { event, preventDefault } = createWheel(0, 0)
+
+    scroll.onWheel(event)
+
+    expect(preventDefault).not.toHaveBeenCalled()
+    expect(element.scrollLeft).toBe(500)
+  })
+
+  it('takes the row from wherever it was sent', () => {
+    const { scroll, element } = createScroll(500)
+    setTall(element, 100, 100)
+    scroll.send(900, 'smooth')
+
+    scroll.onWheel(createWheel(10, 0).event)
+
+    expect(scroll.getScrollOffset()).toBe(510)
+  })
+
+  it('does nothing without an element', () => {
+    const { scroll, area } = createScroll(0)
+    area.value = null
+    const { event, preventDefault } = createWheel(0, 120)
+
+    expect(() => scroll.onWheel(event)).not.toThrow()
+    expect(preventDefault).not.toHaveBeenCalled()
+  })
+})
