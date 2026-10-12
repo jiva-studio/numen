@@ -91,7 +91,10 @@ type Vaults struct {
 	PickFolder *vaults.PickFolder
 	// Add turns a folder into a vault, Rename is what a person calls one, and
 	// Unregister takes one off the list.
-	Add        *vaults.Add
+	Add *vaults.Add
+	// CheckRoot refuses a folder that is not one to keep notes in. Without it
+	// the tool that adds a vault is not added.
+	CheckRoot  *vaults.CheckRoot
 	Rename     *vaults.Rename
 	Unregister *vaults.Unregister
 	// Opens puts another vault in the window. The tools are served for the vault
