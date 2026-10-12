@@ -99,7 +99,8 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 		},
 
 		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,
-		Overview: cfg.Overview(queries),
+		GetSummary:   cfg.GetSummary(queries),
+		ListProblems: cfg.ListProblems(queries),
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),

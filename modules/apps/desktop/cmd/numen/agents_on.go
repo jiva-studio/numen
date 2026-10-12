@@ -114,11 +114,12 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 	cutting := opened.Cards()
 
 	return mcp.Core{
-		Showing:   mcp.ShowOneVault(opened.GetCurrentVault(), root),
-		Overview:  cfg.Overview(opened.Queries()),
-		Readers:   cfg.VaultReaders(),
-		View:      opened.API.GetWindow(),
-		Attending: opened.API.GetOpenTabs,
+		Showing:      mcp.ShowOneVault(opened.GetCurrentVault(), root),
+		GetSummary:   cfg.GetSummary(opened.Queries()),
+		ListProblems: cfg.ListProblems(opened.Queries()),
+		Readers:      cfg.VaultReaders(),
+		View:         opened.API.GetWindow(),
+		Attending:    opened.API.GetOpenTabs,
 
 		// The list is the window's own, and an agent does not erase a vault:
 		// the folder that goes is a person's to ask for.

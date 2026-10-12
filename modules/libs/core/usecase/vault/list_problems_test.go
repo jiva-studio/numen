@@ -8,10 +8,12 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/check"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 type sized struct {
+	port.NoteQueries
 	summary domain.VaultSummary
 	err     error
 	asked   domain.VaultID
@@ -22,7 +24,6 @@ func (s *sized) GetSummary(_ context.Context, id domain.VaultID) (domain.VaultSu
 	return s.summary, s.err
 }
 
-// fixed is a check that finds the same problem every time.
 type fixed struct {
 	name  domain.Check
 	quiet bool
@@ -52,34 +53,44 @@ func TestTheSummaryIsAskedOfTheVaultItIsGiven(t *testing.T) {
 	}
 }
 
-func TestProblemsNamingNoCheckRunTheLoudOnesAndSayWhichRan(t *testing.T) {
-	checks := check.Checks{List: []check.Checker{
+func newChecks() *vault.ListProblems {
+	return vault.NewListProblems(check.Checks{List: []check.Checker{
 		fixed{name: "parse"}, fixed{name: "dangling", quiet: true},
-	}}
+	}})
+}
 
-	got, err := vault.NewListProblems(checks).Execute(t.Context(), domain.Vault{})
+func TestProblemsNamingNoCheckRunTheLoudOnes(t *testing.T) {
+	list := newChecks()
+
+	found, err := list.Execute(t.Context(), domain.Vault{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(got.Ran, []domain.Check{"parse"}) || len(got.Problems) != 1 {
-		t.Errorf("an unnamed look found %+v", got)
+	if len(found) != 1 || found[0].Kind != "parse" || !slices.Equal(list.GetDefaultChecks(), []domain.Check{"parse"}) {
+		t.Errorf("an unnamed look found %+v", found)
 	}
 }
 
-func TestProblemsNamingAQuietCheckRunItAndSayWhichRan(t *testing.T) {
-	checks := check.Checks{List: []check.Checker{
-		fixed{name: "parse"}, fixed{name: "dangling", quiet: true},
-	}}
+func TestProblemsNamingAQuietCheckRunIt(t *testing.T) {
+	list := newChecks()
 
-	got, err := vault.NewListProblems(checks).Execute(t.Context(), domain.Vault{}, "dangling")
+	found, err := list.Execute(t.Context(), domain.Vault{}, "dangling")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(got.Ran, []domain.Check{"dangling"}) || len(got.Problems) != 1 || got.Problems[0].Kind != "dangling" {
-		t.Errorf("a look at the quiet check found %+v", got)
+	if len(found) != 1 || found[0].Kind != "dangling" {
+		t.Errorf("a look at the quiet check found %+v", found)
 	}
-
-	if _, err := vault.NewListProblems(checks).Execute(t.Context(), domain.Vault{}, "nonsense"); err == nil {
+	if _, err := list.Execute(t.Context(), domain.Vault{}, "nonsense"); err == nil {
 		t.Error("a check nobody has was run")
+	}
+}
+
+func TestQueriesThatAnswerNoCheckRunNone(t *testing.T) {
+	list := vault.NewStandardListProblems(&sized{})
+
+	found, err := list.Execute(t.Context(), domain.Vault{})
+	if err != nil || len(found) != 0 || len(list.GetDefaultChecks()) != 0 {
+		t.Errorf("found %+v, %v, with checks %v", found, err, list.GetDefaultChecks())
 	}
 }

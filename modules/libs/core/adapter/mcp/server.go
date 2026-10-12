@@ -32,9 +32,10 @@ type Core struct {
 	// follow the window.
 	Showing func() CurrentVault
 
-	// Overview says how much of the vault has been read and what in it could
-	// not be acted on.
-	Overview vaults.Overview
+	// GetSummary says how much of the vault has been read, and ListProblems what
+	// in it could not be acted on. A tool is added where its use case is here.
+	GetSummary   *vaults.GetSummary
+	ListProblems *vaults.ListProblems
 
 	// Readers is the vault's files, which the notes, the documents and the
 	// window are all read out of.

@@ -146,9 +146,10 @@ func makeReviewCore(
 	out io.Writer,
 ) mcp.Core {
 	return mcp.Core{
-		Showing:  mcp.ShowOneVault(v, root),
-		Overview: cfg.Overview(db.Queries()),
-		Readers:  cfg.VaultReaders(),
+		Showing:      mcp.ShowOneVault(v, root),
+		GetSummary:   cfg.GetSummary(db.Queries()),
+		ListProblems: cfg.ListProblems(db.Queries()),
+		Readers:      cfg.VaultReaders(),
 		// Which card the person is on is a tool's answer and never part of the
 		// question, so a deck named by whoever synced it is data and not
 		// instruction.
