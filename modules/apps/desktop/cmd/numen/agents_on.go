@@ -147,7 +147,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			List:        cutting.List,
 			Write:       cutting.Write,
 			Create:      cutting.Create,
-			RenameField: cutting.Rename.WithMostDecks(cards.MostDecksRenamed),
+			RenameField: cutting.Rename.WithMaxDecksPerRename(cards.MaxDecksPerRename),
 		},
 
 		Notes: mcp.Notes{

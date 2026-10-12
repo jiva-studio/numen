@@ -1,7 +1,6 @@
 package cards_test
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -11,13 +10,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
-// A vault past the bound is refused before the stencil is touched, and the same
-// rename with no bound goes through.
 func TestRenamingAFieldIsRefusedWhereTheVaultHoldsMoreDecksThanTheBound(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "Animal.md")
 
-	_, err := newRenameField(t, vs).WithMostDecks(1).Execute(t.Context(), vs.first, cards.Rename{
+	_, err := newRenameField(t, vs).WithMaxDecksPerRename(1).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err == nil || !strings.Contains(err.Error(), "there are 2 of them") || !strings.Contains(err.Error(), "more than the 1") {
@@ -27,7 +24,7 @@ func TestRenamingAFieldIsRefusedWhereTheVaultHoldsMoreDecksThanTheBound(t *testi
 		t.Error("the stencil was written")
 	}
 
-	if _, err := newRenameField(t, vs).WithMostDecks(2).Execute(t.Context(), vs.first, cards.Rename{
+	if _, err := newRenameField(t, vs).WithMaxDecksPerRename(2).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	}); err != nil {
 		t.Errorf("a vault at the bound was refused: %v", err)
@@ -38,8 +35,10 @@ func TestAStencilIsMadeWithItsFacesLaidDown(t *testing.T) {
 	v := newCreateVault(t)
 	u := cards.NewCreate(filesystem.VaultWriters{}, nil, time.Now)
 
-	made, err := u.StencilWithFaces(t.Context(), v, cards.New{Title: "Bird", Fields: []string{"Name", "Call"}},
-		[]format.FaceTemplate{{Name: "Recognise", Front: "{{Name}}", Back: "{{Call}}"}})
+	made, err := u.Stencil(t.Context(), v, cards.New{
+		Title: "Bird", Fields: []string{"Name", "Call"},
+		Faces: []format.FaceTemplate{{Name: "Recognise", Front: "{{Name}}", Back: "{{Call}}"}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,9 +52,11 @@ func TestAStencilWithFacesLargerThanANoteIsRefused(t *testing.T) {
 	v := newCreateVault(t)
 	u := cards.NewCreate(filesystem.VaultWriters{}, nil, time.Now)
 
-	_, err := u.StencilWithFaces(t.Context(), v, cards.New{Title: "Bird", Fields: []string{"Name"}},
-		[]format.FaceTemplate{{Name: "Big", Front: strings.Repeat("x", 1<<20), Back: "{{Name}}"}})
-	if err == nil || !strings.Contains(err.Error(), fmt.Sprint("more than this writes at once")) {
+	_, err := u.Stencil(t.Context(), v, cards.New{
+		Title: "Bird", Fields: []string{"Name"},
+		Faces: []format.FaceTemplate{{Name: "Big", Front: strings.Repeat("x", 1<<20), Back: "{{Name}}"}},
+	})
+	if err == nil || !strings.Contains(err.Error(), "more than this writes at once") {
 		t.Errorf("an oversized stencil was made: %v", err)
 	}
 }

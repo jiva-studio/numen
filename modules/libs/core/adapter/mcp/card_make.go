@@ -68,9 +68,9 @@ func addCardStencilCreate(server *sdk.Server, core Core) {
 }
 
 func createCardStencil(ctx context.Context, core Core, in stencilCreateInput) (cards.CreateNoteResult, error) {
-	return core.Cards.Create.StencilWithFaces(ctx, core.getCurrentVault().Vault, cards.New{
-		Title: in.Title, Path: in.Folder, Fields: in.Fields,
-	}, newFaceTemplates(in.Faces))
+	return core.Cards.Create.Stencil(ctx, core.getCurrentVault().Vault, cards.New{
+		Title: in.Title, Path: in.Folder, Fields: in.Fields, Faces: newFaceTemplates(in.Faces),
+	})
 }
 
 type fieldRenameInput struct {
@@ -98,7 +98,7 @@ func addCardFieldRename(server *sdk.Server, core Core) {
 			"the first included, so renaming any of them reaches the decks. A " +
 			"deck it could not be written to comes back under `notWritten` and keeps the " +
 			"old heading. Every deck of the vault is read for this, so a vault holding " +
-			"more than " + fmt.Sprint(cards.MostDecksRenamed) + " of them is refused whole and the " +
+			"more than " + fmt.Sprint(cards.MaxDecksPerRename) + " of them is refused whole and the " +
 			"person renames the field in the window.",
 	}, newHandler(func(ctx context.Context, in fieldRenameInput) (fieldRenameOutput, error) {
 		return renameCardField(ctx, core, in)

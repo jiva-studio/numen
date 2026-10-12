@@ -95,7 +95,7 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			List:        cutting.List,
 			Write:       cutting.Write,
 			Create:      cutting.Create,
-			RenameField: cutting.Rename.WithMostDecks(deckcases.MostDecksRenamed),
+			RenameField: cutting.Rename.WithMaxDecksPerRename(deckcases.MaxDecksPerRename),
 			DeckEdit:    format.OpenDeckBody,
 		},
 

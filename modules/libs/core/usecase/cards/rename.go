@@ -53,10 +53,7 @@ type RenameResult struct {
 //
 // Every field a stencil declares is written this way, the first included.
 type RenameField struct {
-	// MostDecks is how many decks a vault may hold and still have a field
-	// renamed. A vault past it is refused before the stencil is written. Zero
-	// puts no bound on it.
-	MostDecks int
+	maxDecksPerRename int
 
 	readers port.VaultReaders
 	writers port.VaultWriters
@@ -135,33 +132,30 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 	return out, note.WrapUnlevelled(u.index(ctx, v, written), written...)
 }
 
-// MostDecksRenamed is how many decks a vault may hold and still have a
-// field renamed through an agent's tools. A field's name is a heading in every
-// card of every deck its stencil cuts, so the rename reads and writes every
-// deck the vault holds, one behind the other under the write lock.
-const MostDecksRenamed = 200
+// MaxDecksPerRename is the most decks a vault may hold and still have a field
+// renamed through WithMaxDecksPerRename.
+const MaxDecksPerRename = 200
 
-// WithMostDecks returns a copy of RenameField refusing a vault that holds more
-// than n decks.
-func (u RenameField) WithMostDecks(n int) RenameField {
-	u.MostDecks = n
+// WithMaxDecksPerRename returns a copy of RenameField that refuses a vault
+// holding more than n decks before it writes the stencil.
+func (u RenameField) WithMaxDecksPerRename(n int) RenameField {
+	u.maxDecksPerRename = n
 	return u
 }
 
-// checkDeckCount returns an error when the vault holds more decks than MostDecks.
 func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
-	if u.MostDecks <= 0 {
+	if u.maxDecksPerRename <= 0 {
 		return nil
 	}
 	held, err := u.decks(ctx, v)
 	if err != nil {
 		return err
 	}
-	if len(held) > u.MostDecks {
+	if len(held) > u.maxDecksPerRename {
 		return fmt.Errorf(
 			"this rename reads and writes every deck in the vault, and there are %d of them, "+
 				"which is more than the %d this does at once: rename the field in the window",
-			len(held), u.MostDecks)
+			len(held), u.maxDecksPerRename)
 	}
 	return nil
 }
