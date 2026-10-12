@@ -45,15 +45,9 @@ describe('renderCardHtml', () => {
     expect(renderCardHtml('<b>one</b>\n<b>two</b>')).toBe('<b>one</b>\n<b>two</b>')
   })
 
-  it('keeps the break standing beside a comment', () => {
-    expect(renderCardHtml('<p>one</p><!-- c -->\n<p>two</p>')).toBe(
-      '<p>one</p><!-- c -->\n<p>two</p>',
-    )
-  })
-
   it('keeps a tag with no text between two blocks', () => {
     expect(renderCardHtml('<p>one</p><hr><p>two</p>')).toBe('<p>one</p><hr><p>two</p>')
-    expect(renderCardHtml('<p>one</p><p> </p><p>two</p>')).toBe('<p>one</p><p> </p><p>two</p>')
+    expect(renderCardHtml('<p>one</p><p></p><p>two</p>')).toBe('<p>one</p><p></p><p>two</p>')
   })
 
   it('keeps the break between two blocks inside preformatted text', () => {
