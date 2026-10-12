@@ -113,11 +113,11 @@ func listVaultProblems(ctx context.Context, core Core, in vaultProblemsInput) (v
 		return vaultProblemsOutput{}, err
 	}
 
-	res := vaultProblemsOutput{Problems: make([]Problem, 0, len(report.Problems)), Ran: make([]string, 0, len(report.Ran))}
+	res := vaultProblemsOutput{Problems: make([]Problem, 0, len(report.Found)), Ran: make([]string, 0, len(report.Ran))}
 	for _, name := range report.Ran {
 		res.Ran = append(res.Ran, string(name))
 	}
-	for _, p := range report.Problems {
+	for _, p := range report.Found {
 		res.Problems = append(res.Problems, Problem{
 			Path:       p.Path,
 			Check:      string(p.Kind),

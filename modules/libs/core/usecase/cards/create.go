@@ -59,8 +59,7 @@ type New struct {
 	// Fields is what a stencil declares, in the order a person is asked for
 	// them. A deck declares none.
 	Fields []string
-	// Faces are the ways a card cut by a stencil is shown. A stencil's body is
-	// made from them and from nothing else.
+	// Faces are the ways a card cut by a stencil is shown, laid down as its body.
 	Faces []format.FaceTemplate
 }
 
@@ -87,7 +86,6 @@ func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (CreateNote
 	if len(in.Fields) == 0 {
 		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
-	in.Body = ""
 	if len(in.Faces) > 0 {
 		body, err := format.StencilBody("", in.Faces, "")
 		if err != nil {

@@ -156,7 +156,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			RemoveSection:   cards.RemoveSection,
 			List:            cards.List,
 			Create:          cards.Create,
-			RenameField:     cards.BoundedRename,
+			RenameField:     cards.BoundedRenameField,
 		},
 
 		Notes: mcp.Notes{

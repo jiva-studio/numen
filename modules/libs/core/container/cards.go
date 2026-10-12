@@ -29,12 +29,12 @@ func (c Config) Cards(
 	write := cards.NewWrite(readers, writers, links, index, now)
 
 	return cards.Scenarios{
-		Read:   read,
-		List:   cards.NewList(readers, notes),
-		Write:  write,
-		Create: cards.NewCreate(writers, index, now),
-		Rename: cards.NewRenameField(readers, writers, notes, links, index, now, cards.UnboundedDecks),
-		BoundedRename: cards.NewRenameField(
+		Read:        read,
+		List:        cards.NewList(readers, notes),
+		Write:       write,
+		Create:      cards.NewCreate(writers, index, now),
+		RenameField: cards.NewRenameField(readers, writers, notes, links, index, now, cards.UnboundedDecks),
+		BoundedRenameField: cards.NewRenameField(
 			readers, writers, notes, links, index, now, cards.MaxDecksPerRename),
 
 		GetCardPage:     cards.NewGetCardPage(read),

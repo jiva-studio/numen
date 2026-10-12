@@ -35,13 +35,13 @@ func (r *eventReader) handle(rawMap map[string]any) {
 	r.rememberSession(rawMap)
 
 	if thinking, ok := rawMap["thinking"].(string); ok && thinking != "" {
-		r.send(port.Step{Kind: domain.StepThinking})
+		r.send(port.Step{Kind: domain.StepModelStart})
 	}
 	r.handleCodexEvent(rawMap)
 	r.handleToolCalls(rawMap)
 
 	if content, ok := rawMap["content"].(string); ok && content != "" {
-		r.send(port.Step{Kind: domain.StepSaying, Text: content})
+		r.send(port.Step{Kind: domain.StepSay, Text: content})
 	}
 	r.handleStepUpdate(rawMap)
 	r.handleSessionUpdate(rawMap)
@@ -111,10 +111,10 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 	switch deltaType {
 	case "text_delta":
 		if t, _ := delta["text"].(string); t != "" {
-			r.send(port.Step{Kind: domain.StepSaying, Text: t})
+			r.send(port.Step{Kind: domain.StepSay, Text: t})
 		}
 	case "thinking_delta":
-		r.send(port.Step{Kind: domain.StepThinking})
+		r.send(port.Step{Kind: domain.StepModelStart})
 	case "input_json_delta":
 		if partial, _ := delta["partial_json"].(string); partial != "" {
 			r.currentArgs.WriteString(partial)
@@ -133,7 +133,7 @@ func (r *eventReader) handleCodexEvent(rawMap map[string]any) {
 	item, _ := rawMap["item"].(map[string]any)
 	switch evType {
 	case "turn.started":
-		r.send(port.Step{Kind: domain.StepThinking})
+		r.send(port.Step{Kind: domain.StepModelStart})
 	case "item.started":
 		r.handleItemStarted(item)
 	case "item.updated":
@@ -143,7 +143,7 @@ func (r *eventReader) handleCodexEvent(rawMap map[string]any) {
 	case "error", "turn.failed":
 		r.handleCodexError(rawMap)
 	case "GENERIC", "user":
-		r.send(port.Step{Kind: domain.StepAnswered})
+		r.send(port.Step{Kind: domain.StepToolDone})
 	}
 }
 
@@ -178,7 +178,7 @@ func (r *eventReader) handleItemUpdated(item map[string]any) {
 		return
 	}
 	if delta, ok := item["delta"].(string); ok && delta != "" {
-		r.send(port.Step{Kind: domain.StepSaying, Text: delta})
+		r.send(port.Step{Kind: domain.StepSay, Text: delta})
 	}
 }
 
@@ -192,10 +192,10 @@ func (r *eventReader) handleItemCompleted(item map[string]any) {
 	switch iType {
 	case "agent_message":
 		if text, ok := item["text"].(string); ok && text != "" {
-			r.send(port.Step{Kind: domain.StepSaying, Text: text})
+			r.send(port.Step{Kind: domain.StepSay, Text: text})
 		}
 	case "mcp_tool_call", "command_execution", "file_read":
-		r.send(port.Step{Kind: domain.StepAnswered})
+		r.send(port.Step{Kind: domain.StepToolDone})
 	}
 }
 
@@ -203,9 +203,9 @@ func (r *eventReader) handleItemCompleted(item map[string]any) {
 func (r *eventReader) handleCodexError(rawMap map[string]any) {
 	if errObj, ok := rawMap["error"].(map[string]any); ok {
 		msg, _ := errObj["message"].(string)
-		r.send(port.Step{Kind: domain.StepStopped, Detail: msg})
+		r.send(port.Step{Kind: domain.StepStop, Detail: msg})
 	} else if msg, ok := rawMap["message"].(string); ok && msg != "" {
-		r.send(port.Step{Kind: domain.StepStopped, Detail: msg})
+		r.send(port.Step{Kind: domain.StepStop, Detail: msg})
 	}
 }
 
@@ -241,15 +241,15 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 	switch stepType {
 	case "agent_response":
 		if delta, ok := suMap["text_delta"].(string); ok && delta != "" {
-			r.send(port.Step{Kind: domain.StepSaying, Text: delta})
+			r.send(port.Step{Kind: domain.StepSay, Text: delta})
 		}
 	case "thinking":
-		r.send(port.Step{Kind: domain.StepThinking})
+		r.send(port.Step{Kind: domain.StepModelStart})
 	case "tool_call":
 		toolName, argsVal := getStepTool(suMap)
 		r.send(port.Step{Kind: domain.StepToolCall, Tool: toolName, About: formatToolArgs(argsVal)})
 	case "tool_result":
-		r.send(port.Step{Kind: domain.StepAnswered})
+		r.send(port.Step{Kind: domain.StepToolDone})
 	}
 }
 
@@ -286,15 +286,15 @@ func (r *eventReader) handleSessionUpdate(rawMap map[string]any) {
 	switch uType {
 	case "agent_message":
 		if text, _ := update["text"].(string); text != "" {
-			r.send(port.Step{Kind: domain.StepSaying, Text: text})
+			r.send(port.Step{Kind: domain.StepSay, Text: text})
 		}
 	case "agent_thought":
-		r.send(port.Step{Kind: domain.StepThinking})
+		r.send(port.Step{Kind: domain.StepModelStart})
 	case "tool_call":
 		toolName, _ := update["tool"].(string)
 		r.send(port.Step{Kind: domain.StepToolCall, Tool: toolName, About: formatToolArgs(update["arguments"])})
 	case "tool_result":
-		r.send(port.Step{Kind: domain.StepAnswered})
+		r.send(port.Step{Kind: domain.StepToolDone})
 	}
 }
 
@@ -306,7 +306,7 @@ func (r *eventReader) handleResult(rawMap map[string]any) {
 	}
 	if st, _ := resMap["status"].(string); st == "ERROR" {
 		errMsg, _ := resMap["error"].(string)
-		r.send(port.Step{Kind: domain.StepStopped, Detail: errMsg})
+		r.send(port.Step{Kind: domain.StepStop, Detail: errMsg})
 	}
 }
 

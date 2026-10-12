@@ -205,7 +205,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		List:        &cutting.List,
 		Write:       &cutting.Write,
 		Create:      &cutting.Create,
-		RenameField: &cutting.Rename,
+		RenameField: &cutting.RenameField,
 	}
 	// A preset is a note the editor writes key by key, and the curve beside its
 	// one control is the same simulator the flashcards window runs on.

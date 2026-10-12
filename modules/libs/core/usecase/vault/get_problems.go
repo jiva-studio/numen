@@ -18,27 +18,30 @@ func NewGetProblems(checks check.Checks) *GetProblems {
 	return &GetProblems{checks: checks}
 }
 
-// NewStandardGetProblems holds the vault to the standard checks.
+// NewStandardGetProblems holds the vault to the standard checks, and to none where there are no problem queries.
 func NewStandardGetProblems(problems port.ProblemQueries) *GetProblems {
+	if problems == nil {
+		return NewGetProblems(check.Checks{})
+	}
 	return NewGetProblems(check.Standard(problems))
 }
 
-// ProblemReport is the problems found and the checks that ran to find them.
-type ProblemReport struct {
-	Ran      []domain.Check
-	Problems []domain.VaultProblem
+// Problems is what the checks found and the checks that ran.
+type Problems struct {
+	Ran   []domain.Check
+	Found []domain.VaultProblem
 }
 
 // Execute runs the named checks, or every check that is not quiet when none is
 // named.
-func (u *GetProblems) Execute(ctx context.Context, v domain.Vault, named ...domain.Check) (ProblemReport, error) {
+func (u *GetProblems) Execute(ctx context.Context, v domain.Vault, named ...domain.Check) (Problems, error) {
 	found, err := u.checks.Run(ctx, v, named...)
 	if err != nil {
-		return ProblemReport{}, err
+		return Problems{}, err
 	}
 	ran := named
 	if len(ran) == 0 {
 		ran = u.checks.Loud()
 	}
-	return ProblemReport{Ran: ran, Problems: found}, nil
+	return Problems{Ran: ran, Found: found}, nil
 }

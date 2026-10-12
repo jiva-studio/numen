@@ -98,7 +98,7 @@ func getSteps(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.As
 // the question, the note in front of the person, and which conversation they
 // asked it in.
 func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
-	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{{Kind: domain.StepStopped}}}
+	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{{Kind: domain.StepStop}}}
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	getSteps(t, client, &v1.AskAgentRequest{
@@ -123,11 +123,11 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 // and in the order they were taken.
 func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{
-		{Kind: domain.StepThinking},
+		{Kind: domain.StepModelStart},
 		{Kind: domain.StepToolCall, Tool: "note_rewrite", About: "notes/Fugue.md", Count: 240},
-		{Kind: domain.StepAnswered},
-		{Kind: domain.StepSaying, Text: "Rewritten."},
-		{Kind: domain.StepStopped, Detail: "out of turns"},
+		{Kind: domain.StepToolDone},
+		{Kind: domain.StepSay, Text: "Rewritten."},
+		{Kind: domain.StepStop, Detail: "out of turns"},
 	}}
 	client := newAgentClient(t, newAgentAPI(taking))
 
@@ -163,7 +163,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 			About: "library/A Book.epub",
 			Place: domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}},
 		},
-		{Kind: domain.StepStopped},
+		{Kind: domain.StepStop},
 	}}
 	client := newAgentClient(t, newAgentAPI(taking))
 

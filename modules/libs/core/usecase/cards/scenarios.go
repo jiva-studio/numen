@@ -4,13 +4,13 @@ package cards
 // Both the window and the tools an agent calls are served the same set, so what
 // one of them refuses the other refuses.
 type Scenarios struct {
-	Read   Read
-	List   List
-	Write  Write
-	Create Create
-	Rename RenameField
-	// BoundedRename refuses a vault holding more than MaxDecksPerRename decks.
-	BoundedRename RenameField
+	Read        Read
+	List        List
+	Write       Write
+	Create      Create
+	RenameField RenameField
+	// BoundedRenameField refuses a vault holding more than MaxDecksPerRename decks.
+	BoundedRenameField RenameField
 
 	GetCardPage     GetCardPage
 	AddCard         AddCard

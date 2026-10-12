@@ -92,7 +92,7 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			GetCardPage:     cards.GetCardPage,
 			List:            cards.List,
 			Create:          cards.Create,
-			RenameField:     cards.BoundedRename,
+			RenameField:     cards.BoundedRenameField,
 			AddCard:         cards.AddCard,
 			EditCard:        cards.EditCard,
 			RemoveCardValue: cards.RemoveCardValue,

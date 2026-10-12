@@ -78,11 +78,7 @@ type TypeQueries interface {
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
-// NewRenameField is what a stencil's field is renamed through: the vault the
-// stencil and every deck are read and written through, what says which notes
-// are decks, where each card's wikilink lands, what brings every file the
-// rename touched level in the index, what time it is, and the most decks a
-// vault may hold for the rename to run.
+// NewRenameField renames a stencil's field across its decks, refusing a vault of more than maxDecks decks.
 func NewRenameField(
 	readers port.VaultReaders,
 	writers port.VaultWriters,
@@ -142,7 +138,7 @@ const MaxDecksPerRename = 200
 const UnboundedDecks = math.MaxInt
 
 func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
-	if u.maxDecks == UnboundedDecks {
+	if u.maxDecks <= 0 || u.maxDecks == UnboundedDecks {
 		return nil
 	}
 	held, err := u.decks(ctx, v)

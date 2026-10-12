@@ -81,10 +81,10 @@ func TestSaysWhatTheAgentSaid(t *testing.T) {
 	if len(steps) != 2 {
 		t.Fatalf("expected saying and stopping, got %d steps: %+v", len(steps), steps)
 	}
-	if steps[0].Kind != domain.StepSaying || steps[0].Text != "Two notes." {
+	if steps[0].Kind != domain.StepSay || steps[0].Text != "Two notes." {
 		t.Errorf("first step is %+v", steps[0])
 	}
-	if steps[1].Kind != domain.StepStopped || steps[1].Detail != "" {
+	if steps[1].Kind != domain.StepStop || steps[1].Detail != "" {
 		t.Errorf("last step is %+v", steps[1])
 	}
 }
@@ -132,7 +132,7 @@ func TestReadsWordsAndCallsAsTheyAreWritten(t *testing.T) {
 	var calls []port.Step
 	for _, step := range steps {
 		switch step.Kind {
-		case domain.StepSaying:
+		case domain.StepSay:
 			said = append(said, step.Text)
 		case domain.StepToolCall:
 			calls = append(calls, step)
@@ -160,7 +160,7 @@ func TestPassesOverALineItCannotRead(t *testing.T) {
 		`{"type":"result","subtype":"success","is_error":false}`)
 
 	steps := getSteps(t, work)
-	if steps[0].Kind != domain.StepSaying || steps[0].Text != "still here" {
+	if steps[0].Kind != domain.StepSay || steps[0].Text != "still here" {
 		t.Errorf("a line it could not read stopped the work: %+v", steps)
 	}
 }
@@ -171,7 +171,7 @@ func TestSaysWhyItStopped(t *testing.T) {
 
 	steps := getSteps(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != domain.StepStopped || last.Detail != "went round too many times" {
+	if last.Kind != domain.StepStop || last.Detail != "went round too many times" {
 		t.Errorf("last step is %+v", last)
 	}
 }
@@ -182,7 +182,7 @@ func TestTranslatesMaxTurnsErrorSubtype(t *testing.T) {
 
 	steps := getSteps(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != domain.StepStopped || last.Detail != "the agent reached the limit of steps without finishing" {
+	if last.Kind != domain.StepStop || last.Detail != "the agent reached the limit of steps without finishing" {
 		t.Errorf("last step is %+v, want 'the agent reached the limit of steps without finishing'", last)
 	}
 }
@@ -193,7 +193,7 @@ func TestTranslatesContextLengthErrorSubtype(t *testing.T) {
 
 	steps := getSteps(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != domain.StepStopped || last.Detail != "the conversation is too long for the model" {
+	if last.Kind != domain.StepStop || last.Detail != "the conversation is too long for the model" {
 		t.Errorf("last step is %+v, want 'the conversation is too long for the model'", last)
 	}
 }
@@ -204,7 +204,7 @@ func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
 
 	steps := getSteps(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != domain.StepStopped || !strings.Contains(last.Detail, "without this vault") {
+	if last.Kind != domain.StepStop || !strings.Contains(last.Detail, "without this vault") {
 		t.Errorf("an agent that never got the tools answered anyway: %+v", last)
 	}
 }
@@ -218,7 +218,7 @@ func TestReadsPastAMessageOfAnotherShape(t *testing.T) {
 		`{"type":"result","subtype":"success","is_error":false}`)
 
 	steps := getSteps(t, work)
-	if steps[0].Kind != domain.StepSaying || steps[0].Text != "after" {
+	if steps[0].Kind != domain.StepSay || steps[0].Text != "after" {
 		t.Errorf("steps are %+v", steps)
 	}
 }
@@ -249,7 +249,7 @@ func TestSaysNothingWhenTheLineSaysNothingAboutServers(t *testing.T) {
 
 	steps := getSteps(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != domain.StepStopped || last.Detail != "" {
+	if last.Kind != domain.StepStop || last.Detail != "" {
 		t.Errorf("last step is %+v", last)
 	}
 }
@@ -565,7 +565,7 @@ const (
 func TestSaysWhenTheModelWasAskedSomething(t *testing.T) {
 	steps := getSteps(t, startAgent(t, strings.Join([]string{connected, requesting}, "\n")))
 
-	if !slices.Contains(kinds(steps), domain.StepThinking) {
+	if !slices.Contains(kinds(steps), domain.StepModelStart) {
 		t.Errorf("nothing says the model was asked: %+v", steps)
 	}
 }
@@ -574,7 +574,7 @@ func TestSaysWhenTheModelWasAskedSomething(t *testing.T) {
 func TestSaysWhenTheToolAnswered(t *testing.T) {
 	steps := getSteps(t, startAgent(t, strings.Join([]string{connected, answered}, "\n")))
 
-	if !slices.Contains(kinds(steps), domain.StepAnswered) {
+	if !slices.Contains(kinds(steps), domain.StepToolDone) {
 		t.Errorf("nothing says the tool finished: %+v", steps)
 	}
 }
@@ -1145,7 +1145,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	var said []string
 	for step := range right.GetSteps() {
-		if step.Kind == domain.StepSaying {
+		if step.Kind == domain.StepSay {
 			said = append(said, step.Text)
 		}
 	}

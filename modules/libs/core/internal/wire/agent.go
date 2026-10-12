@@ -63,7 +63,7 @@ func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step port.Step)
 			return false, err
 		}
 	}
-	return step.Kind == domain.StepStopped, nil
+	return step.Kind == domain.StepStop, nil
 }
 
 // convertSteps says a step of an agent's work in the schema's words.
@@ -83,11 +83,11 @@ func convertSteps(step port.Step) []*v1.AskAgentResponse {
 				Span:    convertSpan(step.Place.Spans),
 			},
 		}}}
-	case domain.StepAnswered:
+	case domain.StepToolDone:
 		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_ToolFinished{ToolFinished: &v1.ToolFinished{}}}}
-	case domain.StepThinking:
+	case domain.StepModelStart:
 		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_ModelStarted{ModelStarted: &v1.ModelStarted{}}}}
-	case domain.StepStopped:
+	case domain.StepStop:
 		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Stopped{Stopped: step.Detail}}}
 	default:
 		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Said{Said: step.Text}}}

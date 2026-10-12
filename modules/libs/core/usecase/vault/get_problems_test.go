@@ -32,7 +32,7 @@ func TestProblemsNamingNoCheckRunTheLoudOnes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Problems) != 1 || report.Problems[0].Kind != "parse" || !slices.Equal(report.Ran, []domain.Check{"parse"}) {
+	if len(report.Found) != 1 || report.Found[0].Kind != "parse" || !slices.Equal(report.Ran, []domain.Check{"parse"}) {
 		t.Errorf("an unnamed look found %+v", report)
 	}
 }
@@ -44,7 +44,7 @@ func TestProblemsNamingAQuietCheckRunIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Problems) != 1 || report.Problems[0].Kind != "dangling" || !slices.Equal(report.Ran, []domain.Check{"dangling"}) {
+	if len(report.Found) != 1 || report.Found[0].Kind != "dangling" || !slices.Equal(report.Ran, []domain.Check{"dangling"}) {
 		t.Errorf("a look at the quiet check found %+v", report)
 	}
 	if _, err := list.Execute(t.Context(), domain.Vault{}, "nonsense"); err == nil {

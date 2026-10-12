@@ -1,15 +1,10 @@
 package domain
 
-// StepKind is what a step is.
-//
-// A step naming a call says what that call does to the vault. A call whose kind
-// is not known is StepToolCall.
+// StepKind is what a step is. A call whose kind is not known is StepToolCall.
 type StepKind int
 
 const (
-	// StepToolCall names a tool the agent is using. It arrives more than once for
-	// one call: the tool is named as soon as it is reached for, and again as its
-	// arguments are written, because writing them is most of the wait.
+	// StepToolCall names a tool the agent is using, once as it is reached for and again as its arguments are written.
 	StepToolCall StepKind = iota
 	// StepRead names a call that reads the vault and leaves it as it was.
 	StepRead
@@ -21,14 +16,12 @@ const (
 	StepMove
 	// StepSearch names a call that looks for notes.
 	StepSearch
-	// StepSaying carries a piece of what the agent is telling the person.
-	StepSaying
-	// StepAnswered says the tool is finished. What follows is not this
-	// application's and is not quick.
-	StepAnswered
-	// StepThinking says a request to the model has begun. It is the moment a
-	// wait starts, and the only step that says nothing is being done here.
-	StepThinking
-	// StepStopped is the last step of any work.
-	StepStopped
+	// StepSay carries a piece of what the agent is telling the person.
+	StepSay
+	// StepToolDone says the tool is finished.
+	StepToolDone
+	// StepModelStart says a request to the model has begun.
+	StepModelStart
+	// StepStop is the last step of any work.
+	StepStop
 )
