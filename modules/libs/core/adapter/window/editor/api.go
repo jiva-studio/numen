@@ -166,15 +166,24 @@ type API struct {
 // name and Remove takes it out of the vault. They are bound by every build that
 // serves a note.
 type Notes struct {
-	Queries port.NoteQueries
-	Links   port.LinkQueries
-
 	Read    *note.Read
 	Write   *note.Write
 	Create  *note.Create
 	Linking *note.EditLinks
 	Rename  *note.Rename
 	Remove  *note.Remove
+
+	// What is asked of the index about the notes. A build with no index binds
+	// none of them.
+	GetOpeningNote       *note.GetOpeningNote
+	Neighbourhood        *note.ShowNeighbourhood
+	GetTypes             *note.GetTypes
+	GetTitles            *note.GetTitles
+	GetTitle             *note.GetTitle
+	GetNameMatches       *note.GetNameMatches
+	GetHeadings          *note.GetHeadings
+	GetResolvedAddresses *note.GetResolvedAddresses
+	GetLinkAddress       *note.GetLinkAddress
 }
 
 // Files is the vault's tree: what a folder holds, and what a person does to it.

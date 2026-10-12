@@ -26,6 +26,31 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
+// askingNotes is the questions a window asks of the index in db about the notes.
+func askingNotes(db *container.Index) Notes {
+	queries, links := db.Queries(), db.Links()
+	opening := note.NewGetOpeningNote(queries)
+	neighbourhood := note.NewShowNeighbourhood(links, queries)
+	types := note.NewGetTypes(queries)
+	titles := note.NewGetTitles(queries)
+	title := note.NewGetTitle(queries)
+	matches := note.NewGetNameMatches(queries)
+	headings := note.NewGetHeadings(queries)
+	resolved := note.NewGetResolvedAddresses(links)
+	address := note.NewGetLinkAddress(queries)
+	return Notes{
+		GetOpeningNote:       &opening,
+		Neighbourhood:        &neighbourhood,
+		GetTypes:             &types,
+		GetTitles:            &titles,
+		GetTitle:             &title,
+		GetNameMatches:       &matches,
+		GetHeadings:          &headings,
+		GetResolvedAddresses: &resolved,
+		GetLinkAddress:       &address,
+	}
+}
+
 // hand is a watch a test drives itself, so what a window is told while a vault
 // is being read can be asked without a filesystem or a timer.
 type hand struct {
@@ -178,15 +203,12 @@ func openingWith(
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	read := note.NewRead(filesystem.VaultReaders{})
+	asking := askingNotes(db)
+	asking.Read, asking.Write = &read, &writing
 	api := &API{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
-		Notes: Notes{
-			Queries: db.Queries(),
-			Links:   db.Links(),
-			Read:    &read,
-			Write:   &writing,
-		},
+		Notes:        asking,
 	}
 	api.setVault(v)
 	if embedder != nil {
@@ -520,7 +542,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: task.New()},
-		Notes:        Notes{Queries: db.Queries(), Links: db.Links()},
+		Notes:        askingNotes(db),
 	}
 	api.setVault(v)
 

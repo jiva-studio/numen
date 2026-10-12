@@ -39,7 +39,10 @@ func (a *API) SearchNames(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
-	found, err := a.Notes.Queries.GetNameMatches(ctx, showing.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+	if a.Notes.GetNameMatches == nil {
+		return nil, errNoIndex
+	}
+	found, err := a.Notes.GetNameMatches.Execute(ctx, showing, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -73,7 +76,10 @@ func (a *API) ListHeadings(
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.Queries.GetHeadings(ctx, showing.ID, paths)
+	if a.Notes.GetHeadings == nil {
+		return nil, errNoIndex
+	}
+	found, err := a.Notes.GetHeadings.Execute(ctx, showing, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -129,13 +135,20 @@ func (a *API) SearchPassages(
 	// source that is not a note is absent, and a window offering to open notes
 	// offers nothing for it.
 	sources := getPassageSources(found)
-	titles, err := a.Notes.Queries.GetNotes(ctx, showing.ID, sources)
+	if a.Notes.GetTitles == nil || a.Notes.GetTypes == nil {
+		return nil, errNoIndex
+	}
+	got, err := a.Notes.GetTitles.Execute(ctx, showing, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	titles := make(map[string]domain.NoteRef, len(got.Notes))
+	for _, ref := range got.Notes {
+		titles[ref.Path] = ref
+	}
 	// Which of four each of those notes is, so a passage is drawn with the mark
 	// of the note it was read out of.
-	types, err := a.Notes.Queries.GetTypes(ctx, showing.ID, sources)
+	types, err := a.Notes.GetTypes.Execute(ctx, showing, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

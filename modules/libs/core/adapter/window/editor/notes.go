@@ -14,6 +14,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
+// errNoIndex is what a build that keeps no index of the notes answers.
+var errNoIndex = connect.NewError(connect.CodeUnimplemented, errors.New("this build keeps no index of the notes"))
+
 // ReadNote hands the client the prose of a note.
 func (a *API) ReadNote(
 	ctx context.Context, r *connect.Request[v1.ReadNoteRequest],
@@ -192,13 +195,16 @@ func (a *API) GetOpeningNote(
 		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
 	}
 
-	ref, found, err := a.Notes.Queries.GetOpeningNote(ctx, showing.ID)
+	if a.Notes.GetOpeningNote == nil {
+		return nil, errNoIndex
+	}
+	ref, err := a.Notes.GetOpeningNote.Execute(ctx, showing)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.GetOpeningNoteResponse{}
-	if found {
-		out.Note = convertNoteToWire(ref)
+	if ref != nil {
+		out.Note = convertNoteToWire(*ref)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -210,8 +216,10 @@ func (a *API) GetNeighbourhood(
 	if err != nil {
 		return nil, err
 	}
-	found, err := note.NewShowNeighbourhood(a.Notes.Links, a.Notes.Queries).
-		Execute(ctx, showing, r.Msg.GetPath())
+	if a.Notes.Neighbourhood == nil || a.Notes.GetTypes == nil {
+		return nil, errNoIndex
+	}
+	found, err := a.Notes.Neighbourhood.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -222,7 +230,7 @@ func (a *API) GetNeighbourhood(
 	for _, related := range found.Related {
 		paths = append(paths, related.Path)
 	}
-	types, err := a.Notes.Queries.GetTypes(ctx, showing.ID, paths)
+	types, err := a.Notes.GetTypes.Execute(ctx, showing, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -254,7 +262,10 @@ func (a *API) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.Links.ResolveLinks(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	if a.Notes.GetResolvedAddresses == nil {
+		return nil, errNoIndex
+	}
+	found, err := a.Notes.GetResolvedAddresses.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetWritten())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -318,13 +329,21 @@ func (a *API) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error)
 	return domain.Link{Target: target, Role: role, Label: l.GetLabel()}, nil
 }
 
+// getTitle is what the note at a path is called. A build with no index names none.
+func (a *API) getTitle(ctx context.Context, v domain.Vault, path string) string {
+	if a.Notes.GetTitle == nil {
+		return ""
+	}
+	return a.Notes.GetTitle.Execute(ctx, v, path)
+}
+
 // getAddress is the note at the other end as a link carries it. A build with no
 // index cannot ask what else is filed under the name, and writes the name.
 func (a *API) getAddress(ctx context.Context, to string) (domain.Address, error) {
-	if a.Notes.Queries == nil {
+	if a.Notes.GetLinkAddress == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
 	}
-	return note.GetAddress(ctx, a.Notes.Queries, a.GetCurrentVault().ID, to)
+	return a.Notes.GetLinkAddress.Execute(ctx, a.GetCurrentVault(), to)
 }
 
 // convertRoleFromWire is the role a link carries, in the core's words. A link is written

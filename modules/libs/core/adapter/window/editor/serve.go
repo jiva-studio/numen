@@ -133,10 +133,6 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		Viewer:            newCachingViewer(made.GetPageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
 		Highlight:         &highlight,
 		Texts:             made.OpenSourceTexts(),
-		Notes: Notes{
-			Queries: made.GetNoteQueries(),
-			Links:   made.GetLinkQueries(),
-		},
 		Files: Files{
 			GetFolderEntries: file.NewGetFolderEntries(made.GetVaultReaders(), made.GetNoteQueries()),
 			GetFileKinds:     file.NewGetFileKinds(made.GetVaultReaders(), made.GetNoteQueries()),
@@ -198,6 +194,15 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	api.Notes.Linking = &notes.Linking
 	api.Notes.Rename = &notes.Rename
 	api.Notes.Remove = &notes.Remove
+	api.Notes.GetOpeningNote = &notes.GetOpeningNote
+	api.Notes.Neighbourhood = &notes.Neighbourhood
+	api.Notes.GetTypes = &notes.GetTypes
+	api.Notes.GetTitles = &notes.GetTitles
+	api.Notes.GetTitle = &notes.GetTitle
+	api.Notes.GetNameMatches = &notes.GetNameMatches
+	api.Notes.GetHeadings = &notes.GetHeadings
+	api.Notes.GetResolvedAddresses = &notes.GetResolvedAddresses
+	api.Notes.GetLinkAddress = &notes.GetLinkAddress
 
 	cutting := &pool.cards
 	api.Cards = Cards{

@@ -50,15 +50,12 @@ func TestEditLoad(t *testing.T) {
 	writing := note.NewWrite(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
 	read := note.NewRead(filesystem.VaultReaders{})
+	asking := askingNotes(db)
+	asking.Read, asking.Write = &read, &writing
 	api := &API{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
-		Notes: Notes{
-			Queries: db.Queries(),
-			Links:   db.Links(),
-			Read:    &read,
-			Write:   &writing,
-		},
+		Notes:        asking,
 	}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
