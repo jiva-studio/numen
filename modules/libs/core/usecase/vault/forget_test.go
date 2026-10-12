@@ -136,3 +136,63 @@ func TestAVaultTheIndexCouldNotForgetStaysOnTheList(t *testing.T) {
 		t.Errorf("the vault left the list with its rows still in the index: %v %v", found, err)
 	}
 }
+
+func TestForgetKeepsTheCauseWhenTheIndexRefuses(t *testing.T) {
+	t.Parallel()
+	_, gone, registry := twoVaults(t)
+	index := &indexRows{fails: errRefused}
+
+	if err := vaults.NewForget(registry, index).Execute(t.Context(), gone); !errors.Is(err, errRefused) {
+		t.Fatalf("want the index's refusal inside the error, got %v", err)
+	}
+}
+
+func TestForgetStopsWhenTheListCannotBeRead(t *testing.T) {
+	t.Parallel()
+	_, gone, registry := twoVaults(t)
+	index := &indexRows{}
+
+	err := vaults.NewForget(refusingRegistry{VaultRegistry: registry, list: errRefused}, index).Execute(t.Context(), gone)
+	if !errors.Is(err, errRefused) {
+		t.Fatalf("want the refusal back, got %v", err)
+	}
+	if len(index.forgot) != 0 {
+		t.Errorf("the index was told to forget %v", index.forgot)
+	}
+}
+
+func TestEitherVaultOfTwoMayBeForgotten(t *testing.T) {
+	t.Parallel()
+	first, second, registry := twoVaults(t)
+
+	if err := vaults.NewForget(registry, &indexRows{}).Execute(t.Context(), first); err != nil {
+		t.Fatalf("the vault listed first was refused: %v", err)
+	}
+	known, err := registry.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(known) != 1 || known[0].ID != second.ID {
+		t.Errorf("the list holds %v, want only %s", known, second.Name)
+	}
+}
+
+// A vault the list no longer holds is not the last one, whatever else is left.
+func TestAVaultNotOnTheListIsNotTheLastVault(t *testing.T) {
+	t.Parallel()
+	first, _, registry := twoVaults(t)
+	if err := registry.Remove(first.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := vaults.NewForget(registry, &indexRows{}).Execute(t.Context(), first); err != nil {
+		t.Fatalf("a vault that is not on the list was refused: %v", err)
+	}
+	known, err := registry.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(known) != 1 {
+		t.Errorf("the list holds %v, want the other vault still on it", known)
+	}
+}

@@ -138,3 +138,96 @@ func TestEraseRefusesTheOnlyVaultBeforeTouchingItsFolder(t *testing.T) {
 		t.Errorf("the folder is gone: %v", err)
 	}
 }
+
+func TestEraseTouchesNothingWhenTheFolderCannotBeRead(t *testing.T) {
+	t.Parallel()
+	_, gone, registry := twoVaults(t)
+	index := &indexRows{}
+	trash := &bin{}
+	erase := vaults.NewErase(
+		refusingIdentity{checkReadable: errors.New("permission denied")},
+		trash,
+		vaults.NewForget(registry, index),
+	)
+
+	res, err := erase.Execute(t.Context(), gone)
+	if !errors.Is(err, vaults.ErrUnreadable) {
+		t.Fatalf("want ErrUnreadable, got %v", err)
+	}
+	if res.IsTrashed || len(trash.moved) != 0 || len(index.forgot) != 0 {
+		t.Errorf("trashed %v, forgot %v, result %+v", trash.moved, index.forgot, res)
+	}
+}
+
+func TestEraseTouchesNothingWhenTheIdentityCannotBeRead(t *testing.T) {
+	t.Parallel()
+	_, gone, registry := twoVaults(t)
+	index := &indexRows{}
+	trash := &bin{}
+	erase := vaults.NewErase(
+		refusingIdentity{vaultID: func(string) (domain.VaultID, bool, error) { return "", false, errRefused }},
+		trash,
+		vaults.NewForget(registry, index),
+	)
+
+	_, err := erase.Execute(t.Context(), gone)
+	if !errors.Is(err, errRefused) || errors.Is(err, vaults.ErrUnreadable) {
+		t.Fatalf("want the refusal itself back, got %v", err)
+	}
+	if len(trash.moved) != 0 || len(index.forgot) != 0 {
+		t.Errorf("trashed %v, forgot %v", trash.moved, index.forgot)
+	}
+}
+
+// Both halves of what a folder must carry are checked: that it carries an
+// identity, and that it is this vault's.
+func TestEraseRefusesAFolderWhoseIdentityIsNotThisVaults(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name    string
+		answers func(gone domain.Vault) (domain.VaultID, bool)
+	}{
+		{"carries none", func(gone domain.Vault) (domain.VaultID, bool) { return gone.ID, false }},
+		{"carries another", func(domain.Vault) (domain.VaultID, bool) { return "01OTHER", true }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			_, gone, registry := twoVaults(t)
+			index := &indexRows{}
+			trash := &bin{}
+			erase := vaults.NewErase(
+				refusingIdentity{vaultID: func(string) (domain.VaultID, bool, error) {
+					id, does := tc.answers(gone)
+					return id, does, nil
+				}},
+				trash,
+				vaults.NewForget(registry, index),
+			)
+
+			if _, err := erase.Execute(t.Context(), gone); !errors.Is(err, vaults.ErrUnreadable) {
+				t.Fatalf("want ErrUnreadable, got %v", err)
+			}
+			if len(trash.moved) != 0 || len(index.forgot) != 0 {
+				t.Errorf("trashed %v, forgot %v", trash.moved, index.forgot)
+			}
+		})
+	}
+}
+
+func TestAFolderThatCannotBeTrashedStaysOnTheList(t *testing.T) {
+	t.Parallel()
+	_, gone, registry := twoVaults(t)
+	erase, trash, index, _ := newErase(registry)
+	trash.fails = errRefused
+
+	res, err := erase.Execute(t.Context(), gone)
+	if !errors.Is(err, errRefused) {
+		t.Fatalf("want the refusal back, got %v", err)
+	}
+	if res.IsTrashed || len(index.forgot) != 0 {
+		t.Errorf("result %+v, forgot %v", res, index.forgot)
+	}
+	if _, found, err := registry.Find(string(gone.ID)); err != nil || !found {
+		t.Errorf("the vault left the list: %v %v", found, err)
+	}
+}

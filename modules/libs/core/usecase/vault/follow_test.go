@@ -244,3 +244,99 @@ func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 		t.Fatal("a watcher that could not start was taken for one that did")
 	}
 }
+
+func TestWhatAVaultChangedAsksForAReadWhenAnythingMayHaveChanged(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name    string
+		changes vaults.VaultChanges
+		want    bool
+	}{
+		{"nothing", vaults.VaultChanges{}, false},
+		{"notes only", vaults.VaultChanges{Paths: []string{"Note.md"}}, false},
+		{"one asset", vaults.VaultChanges{Assets: []string{"Book.pdf"}}, true},
+		{"two assets", vaults.VaultChanges{Assets: []string{"A.pdf", "B.pdf"}}, true},
+		{"a reload", vaults.VaultChanges{ShouldReload: true}, true},
+	} {
+		if got := tc.changes.Reading(); got != tc.want {
+			t.Errorf("%s: Reading is %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
+	t.Parallel()
+	watcher := newHand()
+	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
+	db := openIndex(t)
+	follow := vaults.NewFollow(
+		watcher,
+		vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		scanner(filesystem.VaultReaders{}, db),
+	)
+	started, err := follow.Begin(t.Context(), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan struct{})
+	go func() {
+		started.Run(t.Context())
+		close(done)
+	}()
+
+	close(watcher.changes)
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the watch went on after its watcher stopped")
+	}
+}
+
+// A walk that fails reports the failure and not a vault that is level again,
+// and the report clears once a walk succeeds.
+func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
+	t.Parallel()
+	watcher := newHand()
+	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
+	db := openIndex(t)
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+
+	reported := make(chan error, 8)
+	moved := make(chan vaults.VaultChanges, 8)
+	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
+	follow := vaults.NewFollow(
+		watcher,
+		vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		scanner(readers, db),
+	)
+	follow.ErrorHandler = func(err error) { reported <- err }
+	follow.Changed = func(m vaults.VaultChanges) { moved <- m }
+	started, err := follow.Begin(t.Context(), v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	go started.Run(t.Context())
+
+	readers.refuse.Store(true)
+	watcher.lost <- struct{}{}
+	if err := next(t, reported); err == nil {
+		t.Fatal("a walk that could not open the vault was reported as working")
+	}
+	select {
+	case m := <-moved:
+		t.Fatalf("a failed walk reported %+v", m)
+	default:
+	}
+
+	readers.refuse.Store(false)
+	watcher.lost <- struct{}{}
+	if err := next(t, reported); err != nil {
+		t.Errorf("still reporting %v after the walk worked", err)
+	}
+	if got := next(t, moved); !got.ShouldReload {
+		t.Errorf("reported %+v, want the whole picture asked for again", got)
+	}
+}
