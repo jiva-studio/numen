@@ -137,6 +137,9 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasDone(t *testing.T) {
 		source.NewEmbed(readers, db.VectorsOwing(), db.Vectors()),
 	)
 
+	if _, err := scanner(readers, db).Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
 	read, err := making.ReadBooks(t.Context(), v)
 	if !errors.Is(err, stopped) {
 		t.Fatalf("got %v", err)
