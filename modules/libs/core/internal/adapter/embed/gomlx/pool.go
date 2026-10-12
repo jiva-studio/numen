@@ -87,7 +87,7 @@ func releasePadding(p *padding) {
 // rows a batch does not fill carry the padding token, and each is marked at one
 // token so that what pools a row divides by something.
 func padBatch(batch [][]int, rows, seq, pad int) *padding {
-	in := paddings.Get().(*padding)
+	in, _ := paddings.Get().(*padding)
 	size := rows * seq
 	in.ids = resize(in.ids, size)
 	in.mask = resize(in.mask, size)
