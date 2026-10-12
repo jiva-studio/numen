@@ -36,7 +36,7 @@ func Read(path string) ([]byte, error) {
 // arrived late. Nil is a caller that compares nothing, and its bytes land.
 // into says what shape the whole file takes, so bytes the settings cannot be
 // read out of are refused before any of them land.
-func Write(path string, raw []byte, seen *string, into Document) error {
+func Write(path string, raw []byte, baseline *string, into Document) error {
 	if err := checkObject(raw); err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func Write(path string, raw []byte, seen *string, into Document) error {
 	}
 
 	return runOnFile(path, func(path string) error {
-		if err := checkUnchanged(path, seen); err != nil {
+		if err := checkUnchanged(path, baseline); err != nil {
 			return err
 		}
 		return writeFileAtomically(path, raw)
@@ -59,15 +59,15 @@ func Write(path string, raw []byte, seen *string, into Document) error {
 // nothing where the caller presents nothing. It is read the way Read reads it,
 // so a file that is not there checkUnchanged at the empty object a caller was
 // given.
-func checkUnchanged(path string, seen *string) error {
-	if seen == nil {
+func checkUnchanged(path string, baseline *string) error {
+	if baseline == nil {
 		return nil
 	}
 	held, err := Read(path)
 	if err != nil {
 		return err
 	}
-	if string(held) != *seen {
+	if string(held) != *baseline {
 		return port.ErrStale
 	}
 	return nil

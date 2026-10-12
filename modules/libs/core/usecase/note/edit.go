@@ -60,10 +60,10 @@ type Edit struct {
 	ShouldOverwrite bool
 	// Bound is the most the file may be. Zero holds it to nothing.
 	Bound int
-	// Seen is what the caller last saw of the note, and is what a file that is
+	// Baseline is what the caller last saw of the note, and is what a file that is
 	// there is compared with. Nil for a caller that puts its text down whatever
 	// the note now holds.
-	Seen *LastRead
+	Baseline *Baseline
 }
 
 // NewEdit is what a change to an existing note is made through: the vault it
@@ -125,7 +125,7 @@ func (e Edit) splice(
 
 	// A note that is not there cannot hold anything the caller has not read, so
 	// it is made.
-	if looked == nil && e.Seen.stale(on, markdown.Normalise(doc.Body())) {
+	if looked == nil && e.Baseline.isStale(on, markdown.Normalise(doc.Body())) {
 		return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrStale)
 	}
 
@@ -153,7 +153,7 @@ func (e Edit) splice(
 // statNote is the fingerprint of the file on disk, and the error of asking, for
 // a caller that holds the note to what it last saw or to what is there now.
 func (e Edit) statNote(ctx context.Context, reader port.VaultReader, path string) (domain.Fingerprint, error) {
-	if e.Seen != nil || (e.Fingerprint.IsZero() && !e.ShouldOverwrite) {
+	if e.Baseline != nil || (e.Fingerprint.IsZero() && !e.ShouldOverwrite) {
 		return reader.GetFingerprint(ctx, path)
 	}
 	return domain.Fingerprint{}, nil

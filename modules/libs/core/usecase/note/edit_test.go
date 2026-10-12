@@ -152,7 +152,7 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 		name      string
 		known     bool
 		overwrite bool
-		seen      bool
+		baseline  bool
 		wantStat  bool
 	}{
 		{"a caller that said nothing", false, false, false, true},
@@ -174,8 +174,8 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 				edit.Fingerprint = current.Fingerprint
 			}
 			edit.ShouldOverwrite = tc.overwrite
-			if tc.seen {
-				edit.Seen = current
+			if tc.baseline {
+				edit.Baseline = current
 			}
 
 			if _, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat); err != nil {

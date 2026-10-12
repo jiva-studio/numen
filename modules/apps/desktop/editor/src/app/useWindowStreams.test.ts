@@ -47,7 +47,7 @@ const task = (id: string): Task => ({
   total: 0,
   counting: 'things',
   error: '',
-  isAsked: false,
+  isUserStarted: false,
 })
 
 describe('following the vault', () => {

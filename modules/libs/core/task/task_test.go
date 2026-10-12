@@ -13,8 +13,8 @@ import (
 
 func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan", About: "book.pdf"})
-	tasks.Set(task.Task{ID: "indexing", Doing: "Indexing"})
+	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan", About: "book.pdf"})
+	tasks.Set(task.Task{ID: "indexing", Title: "Indexing"})
 
 	list := tasks.List()
 	if len(list) != 2 {
@@ -34,8 +34,8 @@ func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
 
 func TestWorkReportedAgainReplacesItself(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan", Count: 1, Total: 9})
-	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan", Count: 4, Total: 9})
+	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan", Count: 1, Total: 9})
+	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan", Count: 4, Total: 9})
 
 	list := tasks.List()
 	if len(list) != 1 {
@@ -56,8 +56,8 @@ func TestFinishingWhatIsNotThereIsTheOutcomeAskedFor(t *testing.T) {
 
 func TestClearTakesAllTasksOut(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan"})
-	tasks.Set(task.Task{ID: "indexing", Doing: "Indexing"})
+	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan"})
+	tasks.Set(task.Task{ID: "indexing", Title: "Indexing"})
 
 	if len(tasks.List()) != 2 {
 		t.Fatalf("listed %d, want 2", len(tasks.List()))
@@ -71,7 +71,7 @@ func TestClearTakesAllTasksOut(t *testing.T) {
 
 func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan"})
+	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan"})
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -83,7 +83,7 @@ func TestWatchingSaysWhatIsBeingDoneAndThenWhatChanges(t *testing.T) {
 		t.Fatalf("first said %+v", list)
 	}
 
-	tasks.Set(task.Task{ID: "fetching", Doing: "Fetching"})
+	tasks.Set(task.Task{ID: "fetching", Title: "Fetching"})
 	if list := next(t, watching); len(list) != 2 {
 		t.Errorf("after one more: %+v", list)
 	}
@@ -103,7 +103,7 @@ func TestAListenerBehindIsGivenTheNewestAndNotAQueue(t *testing.T) {
 	watching := tasks.Watch(ctx)
 
 	for i := int64(1); i <= 5; i++ {
-		tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan", Count: i, Total: 5})
+		tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan", Count: i, Total: 5})
 	}
 	if list := next(t, watching); len(list) != 1 || list[0].Count != 5 {
 		t.Errorf("said %+v, want the newest", list)
@@ -161,7 +161,7 @@ func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
 			defer reporting.Done()
 			id := fmt.Sprintf("recognition-%d", which)
 			for page := int64(1); page <= 200; page++ {
-				tasks.Set(task.Task{ID: id, Doing: "Recognising a scan", Count: page, Total: 200})
+				tasks.Set(task.Task{ID: id, Title: "Recognising a scan", Count: page, Total: 200})
 			}
 		}()
 	}
@@ -204,7 +204,7 @@ func TestWorkWithNoNameIsNotListed(t *testing.T) {
 	watching := tasks.Watch(ctx)
 	next(t, watching)
 
-	tasks.Set(task.Task{Doing: "Recognising a scan"})
+	tasks.Set(task.Task{Title: "Recognising a scan"})
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
 	}
@@ -227,10 +227,10 @@ func TestWorkTakenOutCanBeReportedAgain(t *testing.T) {
 	tasks.Set(task.Task{ID: "a"})
 	tasks.Set(task.Task{ID: "b"})
 	tasks.Remove("a")
-	tasks.Set(task.Task{ID: "a", Doing: "again"})
+	tasks.Set(task.Task{ID: "a", Title: "again"})
 
 	list := tasks.List()
-	if len(list) != 2 || list[0].ID != "b" || list[1].ID != "a" || list[1].Doing != "again" {
+	if len(list) != 2 || list[0].ID != "b" || list[1].ID != "a" || list[1].Title != "again" {
 		t.Errorf("listed %+v, want b and then a", list)
 	}
 }
@@ -249,8 +249,8 @@ func TestClearingTakesAllTasksOutAndTellsListeners(t *testing.T) {
 		t.Errorf("told %+v after the list was cleared", list)
 	}
 
-	tasks.Set(task.Task{ID: "a", Doing: "again"})
-	if list := tasks.List(); len(list) != 1 || list[0].Doing != "again" {
+	tasks.Set(task.Task{ID: "a", Title: "again"})
+	if list := tasks.List(); len(list) != 1 || list[0].Title != "again" {
 		t.Errorf("listed %+v after reporting the work again", list)
 	}
 }

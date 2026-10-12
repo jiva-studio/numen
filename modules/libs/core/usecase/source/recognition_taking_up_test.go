@@ -224,14 +224,14 @@ func TestARecognitionAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	}
 	defer release()
 	w.tasks.Set(task.Task{
-		ID: proofreadID(scan), Doing: "Proofreading a recognition", About: scan,
+		ID: proofreadID(scan), Title: "Proofreading a recognition", About: scan,
 		Count: 1, Total: 2,
 	})
 
 	w.TakeUp(t.Context(), books{}, v)
 	w.Wait()
 
-	if at, held := w.getTask(t); !held || at.Doing != "Proofreading a recognition" {
+	if at, held := w.getTask(t); !held || at.Title != "Proofreading a recognition" {
 		t.Errorf("the run holding the recognition is in the list as %+v", at)
 	}
 	if got := by.lines(); len(got) != 0 {

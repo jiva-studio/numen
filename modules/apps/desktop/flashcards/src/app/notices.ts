@@ -35,7 +35,7 @@ export function useNotices() {
         // A person pressed something and is waiting to hear. A card that waits
         // for the work to be worth drawing is a card they read ten seconds
         // late.
-        isAsked: true,
+        isUserStarted: true,
       },
     ]
   }

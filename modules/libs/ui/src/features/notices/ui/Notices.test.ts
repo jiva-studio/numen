@@ -20,8 +20,8 @@ function wound(at = 0) {
 const draw = (notices: readonly Notice[], clock: () => number) =>
   mount(Notices, { props: { notices, wait: 0, clock, hidden: () => false } })
 
-const report: Notice = { id: 'renamed', text: 'Renamed', stay: 'read', isAsked: true }
-const error: Notice = { id: 'occupied', text: 'Filed there', stay: 'kept', isAsked: true }
+const report: Notice = { id: 'renamed', text: 'Renamed', stay: 'read', isUserStarted: true }
+const error: Notice = { id: 'occupied', text: 'Filed there', stay: 'kept', isUserStarted: true }
 const work: Notice = { id: 'embedding', text: 'Indexing', isWorking: true }
 
 describe('a card the person is finished with', () => {
@@ -101,8 +101,8 @@ describe('the keyboard on a card that goes', () => {
   it('is left on the card that takes its place', async () => {
     const { clock } = wound()
     const kept: readonly Notice[] = [
-      { id: 'first', text: 'Filed there', stay: 'kept', isAsked: true },
-      { id: 'second', text: 'Filed here', stay: 'kept', isAsked: true },
+      { id: 'first', text: 'Filed there', stay: 'kept', isUserStarted: true },
+      { id: 'second', text: 'Filed here', stay: 'kept', isUserStarted: true },
     ]
     const corner = mount(Notices, {
       attachTo: document.body,
@@ -136,7 +136,7 @@ describe('the corner as a place', () => {
       id: `said-${at}`,
       text: `Renamed ${at}`,
       stay: 'read' as const,
-      isAsked: true,
+      isUserStarted: true,
     }))
     const corner = mount(Notices, {
       props: { notices: many, wait: 0, room: 2, clock, hidden: () => false },

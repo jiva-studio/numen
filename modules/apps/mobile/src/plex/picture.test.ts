@@ -4,19 +4,19 @@
  */
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { GetNeighbourhoodResponseSchema, Seat } from '@numen/protocol'
+import { GetNeighbourhoodResponseSchema, Relation } from '@numen/protocol'
 import { asPlex } from './picture'
 
 /** A note and what sits around it: seat, label, the note it comes through, and
  *  whether the other note names the relationship too. */
-type Neighbour = [string, Seat, string, string, boolean?]
+type Neighbour = [string, Relation, string, string, boolean?]
 
 const createNeighbourhood = (focus: string, neighbours: Neighbour[]) =>
   create(GetNeighbourhoodResponseSchema, {
     focus: { path: focus, title: focus, identifier: '' },
     related: neighbours.map(([path, seat, label, through, mutual]) => ({
       note: { path, title: path, identifier: '' },
-      seat,
+      relation: seat,
       label,
       through,
       isMutual: mutual ?? false,
@@ -36,9 +36,9 @@ describe('what the plex is handed', () => {
     expect(
       getEdges(
         createNeighbourhood('Here', [
-          ['Above', Seat.PARENT, 'part of', ''],
-          ['Below', Seat.CHILD, '', ''],
-          ['Across', Seat.JUMP, 'see also', ''],
+          ['Above', Relation.PARENT, 'part of', ''],
+          ['Below', Relation.CHILD, '', ''],
+          ['Across', Relation.JUMP, 'see also', ''],
         ]),
       ),
     ).toEqual(['Above -> Here (part of)', 'Here -> Below', 'Across -> Here (see also)'])
@@ -47,8 +47,8 @@ describe('what the plex is handed', () => {
   it('draws the focus and everything seated around it, under the path each holds', () => {
     const { nodes } = asPlex(
       createNeighbourhood('Here', [
-        ['Above', Seat.PARENT, '', ''],
-        ['Below', Seat.CHILD, '', ''],
+        ['Above', Relation.PARENT, '', ''],
+        ['Below', Relation.CHILD, '', ''],
       ]),
     )
     expect(nodes.map((node) => [node.id, node.seat])).toEqual([
@@ -59,7 +59,7 @@ describe('what the plex is handed', () => {
   })
 
   it('writes nothing on a line the person wrote nothing on', () => {
-    const [line] = asPlex(createNeighbourhood('Here', [['Below', Seat.CHILD, '', '']])).edges
+    const [line] = asPlex(createNeighbourhood('Here', [['Below', Relation.CHILD, '', '']])).edges
     expect(line?.label).toBeUndefined()
   })
 
@@ -69,15 +69,15 @@ describe('what the plex is handed', () => {
     expect(
       getEdges(
         createNeighbourhood('Here', [
-          ['Above', Seat.PARENT, '', '', true],
-          ['Below', Seat.CHILD, '', '', true],
+          ['Above', Relation.PARENT, '', '', true],
+          ['Below', Relation.CHILD, '', '', true],
         ]),
       ),
     ).toEqual(['Above -> Here [from]', 'Here -> Below [to]'])
   })
 
   it('leaves a one-sided link without an arrow', () => {
-    expect(getEdges(createNeighbourhood('Here', [['Below', Seat.CHILD, '', '']]))).toEqual([
+    expect(getEdges(createNeighbourhood('Here', [['Below', Relation.CHILD, '', '']]))).toEqual([
       'Here -> Below',
     ])
   })
@@ -86,8 +86,8 @@ describe('what the plex is handed', () => {
     expect(
       getEdges(
         createNeighbourhood('Here', [
-          ['Above', Seat.PARENT, 'part of', ''],
-          ['Beside', Seat.SIBLING, '', 'Above'],
+          ['Above', Relation.PARENT, 'part of', ''],
+          ['Beside', Relation.SIBLING, '', 'Above'],
         ]),
       ),
     ).toEqual(['Above -> Here (part of)', 'Above -> Beside'])
@@ -97,9 +97,9 @@ describe('what the plex is handed', () => {
     expect(
       getEdges(
         createNeighbourhood('Here', [
-          ['Above', Seat.PARENT, '', ''],
-          ['Beyond', Seat.PARENT, '', ''],
-          ['Beside', Seat.SIBLING, '', 'Beyond'],
+          ['Above', Relation.PARENT, '', ''],
+          ['Beyond', Relation.PARENT, '', ''],
+          ['Beside', Relation.SIBLING, '', 'Beyond'],
         ]),
       ),
     ).toEqual(['Above -> Here', 'Beyond -> Here', 'Beyond -> Beside'])
@@ -108,7 +108,7 @@ describe('what the plex is handed', () => {
   // A line to a note nobody drew runs off the picture.
   it('drops a sibling whose parent is not drawn', () => {
     const { nodes, edges } = asPlex(
-      createNeighbourhood('Here', [['Beside', Seat.SIBLING, '', 'Elsewhere']]),
+      createNeighbourhood('Here', [['Beside', Relation.SIBLING, '', 'Elsewhere']]),
     )
     expect(nodes.map((node) => node.id)).toEqual(['Here', 'Beside'])
     expect(edges).toEqual([])
@@ -116,7 +116,7 @@ describe('what the plex is handed', () => {
 
   it('draws nothing for a seat it does not know', () => {
     const { nodes, edges } = asPlex(
-      createNeighbourhood('Here', [['Below', Seat.UNSPECIFIED, '', '']]),
+      createNeighbourhood('Here', [['Below', Relation.UNSPECIFIED, '', '']]),
     )
     expect(nodes.map((node) => node.id)).toEqual(['Here'])
     expect(edges).toEqual([])
@@ -124,7 +124,7 @@ describe('what the plex is handed', () => {
 
   it('hangs a sibling off the focus when the focus is the parent they share', () => {
     expect(
-      getEdges(createNeighbourhood('Here', [['Beside', Seat.SIBLING, 'next to', 'Here']])),
+      getEdges(createNeighbourhood('Here', [['Beside', Relation.SIBLING, 'next to', 'Here']])),
     ).toEqual(['Here -> Beside (next to)'])
   })
 

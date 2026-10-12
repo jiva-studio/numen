@@ -132,7 +132,7 @@ describe('putting a deck on a preset', () => {
 
     const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
 
-    expect(asked[0]?.seen).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
+    expect(asked[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
     expect(answer.ok && answer.value.at).toBe('12 34 Deck.md')
   })
 
@@ -141,7 +141,7 @@ describe('putting a deck on a preset', () => {
 
     await presets.scheduleDeck('Deck.md', '', '')
 
-    expect(asked[0]?.seen).toBeUndefined()
+    expect(asked[0]?.baseline).toBeUndefined()
   })
 
   it('says the file moved past what the window read', async () => {
@@ -310,7 +310,7 @@ describe('writing into a preset the window read', () => {
 
     expect(asked[0]).toMatchObject({
       path: 'Daily.md',
-      seen: { path: 'Daily.md', size: '12', mtime: '34' },
+      baseline: { path: 'Daily.md', size: '12', mtime: '34' },
     })
   })
 
@@ -319,7 +319,7 @@ describe('writing into a preset the window read', () => {
 
     await presets.write('Daily.md', DEFAULTS, '')
 
-    expect(asked[0]?.seen).toBeUndefined()
+    expect(asked[0]?.baseline).toBeUndefined()
   })
 
   it('says the file moved past what the window read', async () => {

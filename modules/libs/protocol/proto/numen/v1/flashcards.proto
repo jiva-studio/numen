@@ -200,10 +200,10 @@ message PresetCardsDue {
   StopReason stops_on = 18;
 }
 
-// Ahead is how long each of the four answers would leave this card, in seconds
+// Intervals is how long each of the four answers would leave this card, in seconds
 // from the moment it was asked. A person choosing between them is choosing
 // between these.
-message Ahead {
+message Intervals {
   int64 again = 1;
   int64 hard = 2;
   int64 good = 3;
@@ -237,7 +237,7 @@ message SessionCard {
   string due = 9;
 
   // Where each of the four would leave it.
-  Ahead ahead = 10;
+  Intervals intervals = 10;
 }
 
 message WatchCardsDueRequest {}

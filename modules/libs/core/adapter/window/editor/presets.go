@@ -94,7 +94,7 @@ func (a *API) ScheduleDeck(
 	defer a.Writing.finish()
 
 	at, err := a.Presets.Point(
-		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), convertFingerprintFromWire(r.Msg.GetSeen()))
+		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), convertFingerprintFromWire(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
@@ -160,7 +160,7 @@ func (a *API) WritePreset(
 	}
 	defer a.Writing.finish()
 
-	at, err := a.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, convertFingerprintFromWire(r.Msg.GetSeen()))
+	at, err := a.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, convertFingerprintFromWire(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.

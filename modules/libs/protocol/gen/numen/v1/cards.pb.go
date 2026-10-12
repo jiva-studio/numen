@@ -1134,7 +1134,7 @@ type WriteStencilRequest struct {
 	Faces []*Face `protobuf:"bytes,3,rep,name=faces,proto3" json:"faces,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the stencil now holds.
-	Seen *Fingerprint `protobuf:"bytes,4,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Baseline *Fingerprint `protobuf:"bytes,4,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	// The prose to stand below the frontmatter and above the first face, with
 	// line endings as LF.
 	Preamble string `protobuf:"bytes,5,opt,name=preamble,proto3" json:"preamble,omitempty"`
@@ -1195,9 +1195,9 @@ func (x *WriteStencilRequest) GetFaces() []*Face {
 	return nil
 }
 
-func (x *WriteStencilRequest) GetSeen() *Fingerprint {
+func (x *WriteStencilRequest) GetBaseline() *Fingerprint {
 	if x != nil {
-		return x.Seen
+		return x.Baseline
 	}
 	return nil
 }
@@ -1293,7 +1293,7 @@ type RenameStencilFieldRequest struct {
 	To   string `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
 	// The stencil this caller last read. Absent for a rename that lands on
 	// whatever the stencil now holds.
-	Seen          *Fingerprint `protobuf:"bytes,4,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Baseline      *Fingerprint `protobuf:"bytes,4,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1349,9 +1349,9 @@ func (x *RenameStencilFieldRequest) GetTo() string {
 	return ""
 }
 
-func (x *RenameStencilFieldRequest) GetSeen() *Fingerprint {
+func (x *RenameStencilFieldRequest) GetBaseline() *Fingerprint {
 	if x != nil {
-		return x.Seen
+		return x.Baseline
 	}
 	return nil
 }
@@ -1758,7 +1758,7 @@ type WriteDeckRequest struct {
 	Sections []*Section `protobuf:"bytes,4,rep,name=sections,proto3" json:"sections,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the deck now holds.
-	Seen *Fingerprint `protobuf:"bytes,5,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Baseline *Fingerprint `protobuf:"bytes,5,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	// What the file is to end with, below the last value, with line endings as
 	// LF.
 	Tail          string `protobuf:"bytes,6,opt,name=tail,proto3" json:"tail,omitempty"`
@@ -1824,9 +1824,9 @@ func (x *WriteDeckRequest) GetSections() []*Section {
 	return nil
 }
 
-func (x *WriteDeckRequest) GetSeen() *Fingerprint {
+func (x *WriteDeckRequest) GetBaseline() *Fingerprint {
 	if x != nil {
-		return x.Seen
+		return x.Baseline
 	}
 	return nil
 }
@@ -1993,27 +1993,27 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\n" +
 	"\b_stencilB\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"\xd0\x01\n" +
+	"\x03_at\"\xdc\x01\n" +
 	"\x13WriteStencilRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
 	"\x06fields\x18\x02 \x03(\tR\x06fields\x12$\n" +
-	"\x05faces\x18\x03 \x03(\v2\x0e.numen.v1.FaceR\x05faces\x12.\n" +
-	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x1a\n" +
+	"\x05faces\x18\x03 \x03(\v2\x0e.numen.v1.FaceR\x05faces\x126\n" +
+	"\bbaseline\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\bbaseline\x88\x01\x01\x12\x1a\n" +
 	"\bpreamble\x18\x05 \x01(\tR\bpreamble\x12\x12\n" +
-	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xa8\x01\n" +
+	"\x04tail\x18\x06 \x01(\tR\x04tailB\v\n" +
+	"\t_baseline\"\xa8\x01\n" +
 	"\x14WriteStencilResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
 	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"\x8c\x01\n" +
+	"\x03_at\"\x98\x01\n" +
 	"\x19RenameStencilFieldRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x03 \x01(\tR\x02to\x12.\n" +
-	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\x94\x02\n" +
+	"\x02to\x18\x03 \x01(\tR\x02to\x126\n" +
+	"\bbaseline\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"\x94\x02\n" +
 	"\x1aRenameStencilFieldResponse\x12\x14\n" +
 	"\x05decks\x18\x01 \x03(\tR\x05decks\x12\x14\n" +
 	"\x05cards\x18\x02 \x01(\x05R\x05cards\x128\n" +
@@ -2044,15 +2044,15 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05bound\x18\x04 \x01(\x03R\x05boundB\a\n" +
 	"\x05_deckB\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"\xe4\x01\n" +
+	"\x03_at\"\xf0\x01\n" +
 	"\x10WriteDeckRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
 	"\bpreamble\x18\x02 \x01(\tR\bpreamble\x12$\n" +
 	"\x05cards\x18\x03 \x03(\v2\x0e.numen.v1.CardR\x05cards\x12-\n" +
-	"\bsections\x18\x04 \x03(\v2\x11.numen.v1.SectionR\bsections\x12.\n" +
-	"\x04seen\x18\x05 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x12\n" +
-	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xbb\x01\n" +
+	"\bsections\x18\x04 \x03(\v2\x11.numen.v1.SectionR\bsections\x126\n" +
+	"\bbaseline\x18\x05 \x01(\v2\x15.numen.v1.FingerprintH\x00R\bbaseline\x88\x01\x01\x12\x12\n" +
+	"\x04tail\x18\x06 \x01(\tR\x04tailB\v\n" +
+	"\t_baseline\"\xbb\x01\n" +
 	"\x11WriteDeckResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x14\n" +
@@ -2140,10 +2140,10 @@ var file_numen_v1_cards_proto_depIdxs = []int32{
 	26, // 10: numen.v1.ReadStencilResponse.error:type_name -> numen.v1.ErrorCode
 	27, // 11: numen.v1.ReadStencilResponse.at:type_name -> numen.v1.Fingerprint
 	3,  // 12: numen.v1.WriteStencilRequest.faces:type_name -> numen.v1.Face
-	27, // 13: numen.v1.WriteStencilRequest.seen:type_name -> numen.v1.Fingerprint
+	27, // 13: numen.v1.WriteStencilRequest.baseline:type_name -> numen.v1.Fingerprint
 	26, // 14: numen.v1.WriteStencilResponse.error:type_name -> numen.v1.ErrorCode
 	27, // 15: numen.v1.WriteStencilResponse.at:type_name -> numen.v1.Fingerprint
-	27, // 16: numen.v1.RenameStencilFieldRequest.seen:type_name -> numen.v1.Fingerprint
+	27, // 16: numen.v1.RenameStencilFieldRequest.baseline:type_name -> numen.v1.Fingerprint
 	19, // 17: numen.v1.RenameStencilFieldResponse.not_written:type_name -> numen.v1.UnwrittenDeck
 	26, // 18: numen.v1.RenameStencilFieldResponse.error:type_name -> numen.v1.ErrorCode
 	27, // 19: numen.v1.RenameStencilFieldResponse.at:type_name -> numen.v1.Fingerprint
@@ -2154,7 +2154,7 @@ var file_numen_v1_cards_proto_depIdxs = []int32{
 	27, // 24: numen.v1.ReadDeckResponse.at:type_name -> numen.v1.Fingerprint
 	7,  // 25: numen.v1.WriteDeckRequest.cards:type_name -> numen.v1.Card
 	5,  // 26: numen.v1.WriteDeckRequest.sections:type_name -> numen.v1.Section
-	27, // 27: numen.v1.WriteDeckRequest.seen:type_name -> numen.v1.Fingerprint
+	27, // 27: numen.v1.WriteDeckRequest.baseline:type_name -> numen.v1.Fingerprint
 	26, // 28: numen.v1.WriteDeckResponse.error:type_name -> numen.v1.ErrorCode
 	27, // 29: numen.v1.WriteDeckResponse.at:type_name -> numen.v1.Fingerprint
 	9,  // 30: numen.v1.CardsService.ListStencils:input_type -> numen.v1.ListStencilsRequest

@@ -139,7 +139,7 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 	// A document the book was not read from is not one to ask for.
 	_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
 		Path: reflowed, Document: "OEBPS/gone.xhtml",
-		Seen: newWireFingerprint(mark),
+		Baseline: newWireFingerprint(mark),
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeNotFound {
 		t.Errorf("a document the book does not hold was answered %v", got)
@@ -151,7 +151,7 @@ func TestOneDocumentOfABookIsAnsweredAsMarkup(t *testing.T) {
 func markupOf(t *testing.T, api *API, path, document string, mark pool.Fingerprint) string {
 	t.Helper()
 	out, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
-		Path: path, Document: document, Seen: newWireFingerprint(mark),
+		Path: path, Document: document, Baseline: newWireFingerprint(mark),
 	}))
 	if err != nil {
 		t.Fatalf("asked for %s of %s and was refused: %v", document, path, err)
@@ -237,7 +237,7 @@ func TestAnAddressIntoABookThatChanged(t *testing.T) {
 	stale.Size++
 
 	_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
-		Path: reflowed, Document: firstDoc, Seen: newWireFingerprint(stale),
+		Path: reflowed, Document: firstDoc, Baseline: newWireFingerprint(stale),
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeNotFound {
 		t.Errorf("the markup of a book that changed was answered %v", got)
@@ -256,7 +256,7 @@ func TestAPathTheVaultDoesNotHoldIsNoBook(t *testing.T) {
 	for _, path := range []string{"../outside.epub", "/etc/passwd", "library/nothing.epub"} {
 		t.Run(path, func(t *testing.T) {
 			_, err := api.ReadBookMarkup(t.Context(), connect.NewRequest(&v1.ReadBookMarkupRequest{
-				Path: path, Document: firstDoc, Seen: newWireFingerprint(mark),
+				Path: path, Document: firstDoc, Baseline: newWireFingerprint(mark),
 			}))
 			if err == nil {
 				t.Errorf("the markup of %s was answered", path)

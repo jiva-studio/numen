@@ -182,7 +182,7 @@ describe('the settings file written whole', () => {
   it('presents the file as it was last read', async () => {
     await core.saveSettingsFile('{}', 'fingerprint')
 
-    expect(asked.writeSettingsFile).toHaveBeenCalledWith({ written: '{}', seen: 'fingerprint' })
+    expect(asked.writeSettingsFile).toHaveBeenCalledWith({ written: '{}', baseline: 'fingerprint' })
   })
 
   it('presents nothing where nothing was read', async () => {

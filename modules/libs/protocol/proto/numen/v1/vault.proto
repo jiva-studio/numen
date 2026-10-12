@@ -53,7 +53,7 @@ message Scan {
 
   // Why the vault is not being followed, when it is not. Changes will only
   // appear when something asks for them again.
-  string unwatched = 3;
+  string watch_error = 3;
 }
 
 // IndexCoverage is how far searching a vault by meaning has got.

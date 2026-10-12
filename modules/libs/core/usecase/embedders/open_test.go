@@ -226,8 +226,8 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 
 	// Nothing is known yet: the line is in the list from the moment it starts.
 	at := getOnlyTask(t, tasks)
-	if at.Doing != "Preparing the model" || at.About != "a/model" {
-		t.Errorf("the line is shown as %q about %q", at.Doing, at.About)
+	if at.Title != "Preparing the model" || at.About != "a/model" {
+		t.Errorf("the line is shown as %q about %q", at.Title, at.About)
 	}
 	if at.Total != 0 {
 		t.Errorf("a line that has counted nothing is drawn against %d", at.Total)

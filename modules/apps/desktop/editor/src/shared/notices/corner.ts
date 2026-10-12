@@ -51,7 +51,7 @@ const manner: Record<MessageKind, { tone: Tone; stay: Stay }> = {
 const createStateNotices = (
   id: string,
   text: string,
-  how: { about?: string; tone?: Tone; isAsked?: boolean } = {},
+  how: { about?: string; tone?: Tone; isUserStarted?: boolean } = {},
 ): readonly Notice[] =>
   text === ''
     ? []
@@ -62,7 +62,7 @@ const createStateNotices = (
           about: how.about ?? '',
           tone: how.tone ?? 'plain',
           isWorking: false,
-          isAsked: how.isAsked ?? true,
+          isUserStarted: how.isUserStarted ?? true,
           stay: 'holds',
         },
       ]
@@ -126,7 +126,7 @@ export const getCornerNotices = (
     ),
     // Said once and quietly, and it is so whether or not anything is running.
     ...createStateNotices('wordsOnly', isTextSearchOnly(vault) ? words.wordsOnly : '', {
-      isAsked: false,
+      isUserStarted: false,
     }),
   ]
 
@@ -134,7 +134,7 @@ export const getCornerNotices = (
     id: one.id,
     text: one.text,
     isWorking: false,
-    isAsked: true,
+    isUserStarted: true,
     ...manner[one.kind],
   }))
 

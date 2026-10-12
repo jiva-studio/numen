@@ -282,8 +282,8 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 
 	said, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
 		&v1.WriteSettingsFileRequest{
-			Written: "{\n  \"agent\": { \"use\": \"claude\" }\n}\n",
-			Seen:    newString(was.Msg.GetWritten()),
+			Written:  "{\n  \"agent\": { \"use\": \"claude\" }\n}\n",
+			Baseline: newString(was.Msg.GetWritten()),
 		},
 	))
 	if err != nil {
@@ -312,7 +312,7 @@ func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 	written := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 
 	said, err := f.configuring.WriteSettingsFile(t.Context(), connect.NewRequest(
-		&v1.WriteSettingsFileRequest{Written: written, Seen: newString(was.Msg.GetWritten())},
+		&v1.WriteSettingsFileRequest{Written: written, Baseline: newString(was.Msg.GetWritten())},
 	))
 	if err != nil {
 		t.Fatal(err)

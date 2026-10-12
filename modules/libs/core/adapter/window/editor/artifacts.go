@@ -230,8 +230,8 @@ func (a *API) fetchCopy(
 	asked := *a.Imports
 	asked.Progress = func(done, total int64) {
 		a.reportTask(task.Task{
-			ID: copying + ref.Path, Doing: "Downloading a copy", About: ref.Path,
-			Count: done, Total: total, Unit: task.Bytes, IsAsked: true,
+			ID: copying + ref.Path, Title: "Downloading a copy", About: ref.Path,
+			Count: done, Total: total, Unit: task.Bytes, IsUserStarted: true,
 		})
 	}
 	got, err := asked.Copy(ctx, v, ref.Path)
@@ -266,7 +266,7 @@ const (
 // outside the window, so a tab drawing it reads what now stands. It is the same
 // channel a run reports itself through, and a tab follows both the same way.
 func (a *API) ReportArtifactChange(path string) {
-	a.reportTask(task.Task{ID: fetching + path, Doing: "Correcting a transcript", About: path})
+	a.reportTask(task.Task{ID: fetching + path, Title: "Correcting a transcript", About: path})
 	a.finishTask(fetching + path)
 }
 
@@ -479,7 +479,7 @@ func (a *API) fetchArtifact(
 	// before goes, and the site is read again.
 	asked := *a.Imports
 	asked.IsRepeat = true
-	a.reportTask(task.Task{ID: fetching + ref.Path, Doing: "Downloading an address", About: ref.Path})
+	a.reportTask(task.Task{ID: fetching + ref.Path, Title: "Downloading an address", About: ref.Path})
 	_, err := asked.Execute(ctx, v, ref.Path)
 	a.finishTask(fetching + ref.Path)
 	if err != nil {

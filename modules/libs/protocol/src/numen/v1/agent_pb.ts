@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIoABCg9Bc2tBZ2VudFJlcXVlc3QSDgoGcHJvbXB0GAEgASgJEg0KBWZvY3VzGAIgASgJEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRIMCgRtYXJrGAQgASgJEgwKBGZhY2UYBSABKAkSDQoFYWdlbnQYBiABKAkSDQoFbW9kZWwYByABKAkiMQoZRmluaXNoQ29udmVyc2F0aW9uUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiHAoaRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2UitgEKEEFza0FnZW50UmVzcG9uc2USDgoEc2FpZBgBIAEoCUgAEicKCXRvb2xfY2FsbBgCIAEoCzISLm51bWVuLnYxLlRvb2xDYWxsSAASEQoHc3RvcHBlZBgDIAEoCUgAEiYKCGFuc3dlcmVkGAQgASgLMhIubnVtZW4udjEuQW5zd2VyZWRIABImCgh0aGlua2luZxgFIAEoCzISLm51bWVuLnYxLlRoaW5raW5nSABCBgoEc3RlcCIKCghBbnN3ZXJlZCIKCghUaGlua2luZyJkCghUb29sQ2FsbBIMCgR0b29sGAEgASgJEg0KBWFib3V0GAIgASgJEg8KB3dyaXR0ZW4YAyABKAUSDAoEcGF0aBgEIAEoCRIcCgRzcGFuGAUgASgLMg4ubnVtZW4udjEuU3BhbjKGAgoMQWdlbnRTZXJ2aWNlEkMKCEFza0FnZW50EhkubnVtZW4udjEuQXNrQWdlbnRSZXF1ZXN0GhoubnVtZW4udjEuQXNrQWdlbnRSZXNwb25zZTABEl8KEkZpbmlzaENvbnZlcnNhdGlvbhIjLm51bWVuLnYxLkZpbmlzaENvbnZlcnNhdGlvblJlcXVlc3QaJC5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXNwb25zZRJQCg1HZXRBZ2VudFN0YXRlEh4ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRBZ2VudFN0YXRlUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIoABCg9Bc2tBZ2VudFJlcXVlc3QSDgoGcHJvbXB0GAEgASgJEg0KBWZvY3VzGAIgASgJEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRIMCgRtYXJrGAQgASgJEgwKBGZhY2UYBSABKAkSDQoFYWdlbnQYBiABKAkSDQoFbW9kZWwYByABKAkiMQoZRmluaXNoQ29udmVyc2F0aW9uUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiHAoaRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2UiyAEKEEFza0FnZW50UmVzcG9uc2USDgoEc2FpZBgBIAEoCUgAEicKCXRvb2xfY2FsbBgCIAEoCzISLm51bWVuLnYxLlRvb2xDYWxsSAASEQoHc3RvcHBlZBgDIAEoCUgAEi8KDXRvb2xfZmluaXNoZWQYBCABKAsyFi5udW1lbi52MS5Ub29sRmluaXNoZWRIABIvCg1tb2RlbF9zdGFydGVkGAUgASgLMhYubnVtZW4udjEuTW9kZWxTdGFydGVkSABCBgoEc3RlcCIOCgxUb29sRmluaXNoZWQiDgoMTW9kZWxTdGFydGVkImQKCFRvb2xDYWxsEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkSDwoHd3JpdHRlbhgDIAEoBRIMCgRwYXRoGAQgASgJEhwKBHNwYW4YBSABKAsyDi5udW1lbi52MS5TcGFuMoYCCgxBZ2VudFNlcnZpY2USQwoIQXNrQWdlbnQSGS5udW1lbi52MS5Bc2tBZ2VudFJlcXVlc3QaGi5udW1lbi52MS5Bc2tBZ2VudFJlc3BvbnNlMAESXwoSRmluaXNoQ29udmVyc2F0aW9uEiMubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVxdWVzdBokLm51bWVuLnYxLkZpbmlzaENvbnZlcnNhdGlvblJlc3BvbnNlElAKDUdldEFnZW50U3RhdGUSHi5udW1lbi52MS5HZXRBZ2VudFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetAgentStateRequest
@@ -189,22 +189,22 @@ export type AskAgentResponse = Message<"numen.v1.AskAgentResponse"> & {
     case: "stopped";
   } | {
     /**
-     * The tool the agent was using has answered. Nothing of this application's
+     * The tool the agent was using has finished. Nothing of this application's
      * is running from here until the next step arrives.
      *
-     * @generated from field: numen.v1.Answered answered = 4;
+     * @generated from field: numen.v1.ToolFinished tool_finished = 4;
      */
-    value: Answered;
-    case: "answered";
+    value: ToolFinished;
+    case: "toolFinished";
   } | {
     /**
      * A request to the model has begun. This is where a wait starts, and the
      * agent says so itself.
      *
-     * @generated from field: numen.v1.Thinking thinking = 5;
+     * @generated from field: numen.v1.ModelStarted model_started = 5;
      */
-    value: Thinking;
-    case: "thinking";
+    value: ModelStarted;
+    case: "modelStarted";
   } | { case: undefined; value?: undefined };
 };
 
@@ -216,32 +216,31 @@ export const AskAgentResponseSchema: GenMessage<AskAgentResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_agent, 5);
 
 /**
- * Answered and Thinking carry nothing: each is a moment, and what it means is
- * its name. A client that does not know one ignores the step it names.
+ * ToolFinished and ModelStarted carry no fields.
  *
- * @generated from message numen.v1.Answered
+ * @generated from message numen.v1.ToolFinished
  */
-export type Answered = Message<"numen.v1.Answered"> & {
+export type ToolFinished = Message<"numen.v1.ToolFinished"> & {
 };
 
 /**
- * Describes the message numen.v1.Answered.
- * Use `create(AnsweredSchema)` to create a new message.
+ * Describes the message numen.v1.ToolFinished.
+ * Use `create(ToolFinishedSchema)` to create a new message.
  */
-export const AnsweredSchema: GenMessage<Answered> = /*@__PURE__*/
+export const ToolFinishedSchema: GenMessage<ToolFinished> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 6);
 
 /**
- * @generated from message numen.v1.Thinking
+ * @generated from message numen.v1.ModelStarted
  */
-export type Thinking = Message<"numen.v1.Thinking"> & {
+export type ModelStarted = Message<"numen.v1.ModelStarted"> & {
 };
 
 /**
- * Describes the message numen.v1.Thinking.
- * Use `create(ThinkingSchema)` to create a new message.
+ * Describes the message numen.v1.ModelStarted.
+ * Use `create(ModelStartedSchema)` to create a new message.
  */
-export const ThinkingSchema: GenMessage<Thinking> = /*@__PURE__*/
+export const ModelStartedSchema: GenMessage<ModelStarted> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 7);
 
 /**

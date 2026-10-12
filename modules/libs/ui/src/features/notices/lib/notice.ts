@@ -44,7 +44,7 @@ export interface Notice {
    * Whether a person asked for this and is waiting to be told it began. One of
    * these is drawn the moment it arrives.
    */
-  readonly isAsked?: boolean
+  readonly isUserStarted?: boolean
 }
 
 /** One piece of work a window is doing behind itself, as it is answered for. */
@@ -53,7 +53,7 @@ export interface Task {
   readonly label: string
   readonly about: string
   readonly error: string
-  readonly isAsked: boolean
+  readonly isUserStarted: boolean
   /** How far it has got, where there is a total to count against. */
   readonly done?: number
   readonly total?: number
@@ -77,7 +77,7 @@ export const createNotice = (task: Task): Notice => {
     text: error || task.label,
     about: task.about,
     isWorking: error === '',
-    isAsked: task.isAsked || error !== '',
+    isUserStarted: task.isUserStarted || error !== '',
     ...(error ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
     ...(completed !== undefined && total !== undefined && total > 0
       ? { done: completed, total: total, ...(task.counting ? { counting: task.counting } : {}) }

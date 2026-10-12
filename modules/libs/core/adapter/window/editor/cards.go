@@ -132,7 +132,7 @@ func (a *API) RenameStencilField(
 
 	renamed, err := a.Cards.RenameField.Execute(ctx, showing, cards.Rename{
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
-		Fingerprint: convertFingerprintFromWire(r.Msg.GetSeen()),
+		Fingerprint: convertFingerprintFromWire(r.Msg.GetBaseline()),
 	})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		if a.NotifyNoteWritten != nil {
@@ -228,7 +228,7 @@ func (a *API) WriteDeck(
 	}
 	defer a.Writing.finish()
 
-	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, convertFingerprintFromWire(r.Msg.GetSeen()))
+	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, convertFingerprintFromWire(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
@@ -275,7 +275,7 @@ func (a *API) WriteStencil(
 	defer a.Writing.finish()
 
 	at, err := a.Cards.Write.Stencil(
-		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), convertFingerprintFromWire(r.Msg.GetSeen()))
+		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), convertFingerprintFromWire(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.

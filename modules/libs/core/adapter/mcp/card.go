@@ -97,7 +97,7 @@ func changeDeck(
 	ctx context.Context, core Core, path, fingerprint string,
 	change func(read cards.DeckContents, file *format.DeckFile) error,
 ) (WriteOutcome, []format.CardMark, error) {
-	seen, err := parseFingerprint(fingerprint)
+	baseline, err := parseFingerprint(fingerprint)
 	if err != nil {
 		return WriteOutcome{}, nil, err
 	}
@@ -116,7 +116,7 @@ func changeDeck(
 		return WriteOutcome{}, nil, err
 	}
 	body := file.Body()
-	wrote, err := core.Cards.Write.Deck(ctx, v, path, body, seen)
+	wrote, err := core.Cards.Write.Deck(ctx, v, path, body, baseline)
 	// A write that reached the vault is a write that happened, so the caller is
 	// handed the fingerprint it presents at its next write.
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {

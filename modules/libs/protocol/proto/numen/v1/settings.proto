@@ -141,7 +141,7 @@ message WriteSettingsFileRequest {
 
   // The file as this caller last read it. Absent for a write that lands on
   // whatever the file now holds.
-  optional string seen = 2;
+  optional string baseline = 2;
 }
 
 message WriteSettingsFileResponse {

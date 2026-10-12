@@ -42,7 +42,7 @@ export const books: Books = {
       served.books.readBookMarkup({
         path,
         document,
-        ...(fingerprint === '' ? {} : { seen: answers.parseFingerprint(fingerprint) }),
+        ...(fingerprint === '' ? {} : { baseline: answers.parseFingerprint(fingerprint) }),
       }),
     )
     return answer.markup

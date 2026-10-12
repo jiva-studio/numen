@@ -42,7 +42,7 @@ func TestAStencilIsWrittenWithItsFacesAndItsFields(t *testing.T) {
 		Faces:    faces,
 		Preamble: read.GetStencil().GetPreamble(),
 		Tail:     read.GetStencil().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +77,7 @@ func TestAStencilIsWrittenWithTheFieldsItNowDeclares(t *testing.T) {
 		Faces:    read.GetStencil().GetFaces(),
 		Preamble: read.GetStencil().GetPreamble(),
 		Tail:     read.GetStencil().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -119,7 +119,7 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 		Faces:    faces,
 		Preamble: read.GetStencil().GetPreamble(),
 		Tail:     read.GetStencil().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)

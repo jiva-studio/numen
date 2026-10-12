@@ -41,7 +41,7 @@ func openEditor(t *testing.T, notes map[string]string) *API {
 	return api
 }
 
-func readNote(t *testing.T, api *API, path string) *v1.LastRead {
+func readNote(t *testing.T, api *API, path string) *v1.ReadBaseline {
 	t.Helper()
 	out, err := api.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: path}))
 	if err != nil {
@@ -50,7 +50,7 @@ func readNote(t *testing.T, api *API, path string) *v1.LastRead {
 	if out.Msg.GetAt() == nil {
 		t.Fatalf("the read of %s carried no fingerprint", path)
 	}
-	return &v1.LastRead{Prose: out.Msg.GetBody(), At: out.Msg.GetAt()}
+	return &v1.ReadBaseline{Prose: out.Msg.GetBody(), At: out.Msg.GetAt()}
 }
 
 // A note holding prose the client has not read is its own answer. An error is
@@ -58,7 +58,7 @@ func readNote(t *testing.T, api *API, path string) *v1.LastRead {
 // person.
 func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	seen := readNote(t, api, "Entropy.md")
+	baseline := readNote(t, api, "Entropy.md")
 
 	theirs := "# Entropy\n\nTheirs.\n"
 	on := filepath.Join(api.GetCurrentVault().Path, "Entropy.md")
@@ -67,9 +67,9 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	}
 
 	out, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
-		Path: "Entropy.md",
-		Body: "# Entropy\n\nMine.\n",
-		Seen: seen,
+		Path:     "Entropy.md",
+		Body:     "# Entropy\n\nMine.\n",
+		Baseline: baseline,
 	}))
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
@@ -94,12 +94,12 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 // write, and it is what lets a session hold more than one save.
 func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	seen := readNote(t, api, "Entropy.md")
+	baseline := readNote(t, api, "Entropy.md")
 
 	first, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
-		Path: "Entropy.md",
-		Body: "# Entropy\n\nOne.\n",
-		Seen: seen,
+		Path:     "Entropy.md",
+		Body:     "# Entropy\n\nOne.\n",
+		Baseline: baseline,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -112,9 +112,9 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	}
 
 	second, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
-		Path: "Entropy.md",
-		Body: "# Entropy\n\nTwo.\n",
-		Seen: &v1.LastRead{Prose: seen.GetProse(), At: first.Msg.GetAt()},
+		Path:     "Entropy.md",
+		Body:     "# Entropy\n\nTwo.\n",
+		Baseline: &v1.ReadBaseline{Prose: baseline.GetProse(), At: first.Msg.GetAt()},
 	}))
 	if err != nil {
 		t.Fatal(err)

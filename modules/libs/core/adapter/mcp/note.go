@@ -91,7 +91,7 @@ type ReadFailure struct {
 // Neighbour is a note in the picture around another one.
 type Neighbour struct {
 	Note     Note   `json:"note"`
-	Seat     string `json:"seat" jsonschema:"parent, child, sibling or jump"`
+	Relation string `json:"relation" jsonschema:"parent, child, sibling or jump"`
 	Label    string `json:"label,omitempty" jsonschema:"what the person calls this relationship"`
 	Through  string `json:"through,omitempty" jsonschema:"the note they share, when they are siblings"`
 	IsMutual bool   `json:"mutual,omitempty" jsonschema:"set when both notes name this relationship, the label being then the word the note in focus wrote"`

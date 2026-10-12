@@ -73,10 +73,10 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
         deps.setTasks(
           said.tasks.map((at) => ({
             id: at.id,
-            label: at.doing,
+            label: at.title,
             about: at.about,
             error: at.error,
-            isAsked: at.isAsked,
+            isUserStarted: at.isUserStarted,
           })),
         )
       },

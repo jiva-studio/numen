@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIowBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSEAoIaXNfYXNrZWQYByABKAgSHAoEdW5pdBgIIAEoDjIOLm51bWVuLnYxLlVuaXQiIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIigKFkdldEN1cnJlbnRWYXVsdFJlcXVlc3QSDgoGd2luZG93GAEgASgJIigKF0dldEN1cnJlbnRWYXVsdFJlc3BvbnNlEg0KBXZhdWx0GAEgASgJKk8KBFVuaXQSFAoQVU5JVF9VTlNQRUNJRklFRBAAEg8KC1VOSVRfVEhJTkdTEAESDgoKVU5JVF9CWVRFUxACEhAKDFVOSVRfU0VDT05EUxADKngKC0ZsdXNoUmVzdWx0EhwKGEZMVVNIX1JFU1VMVF9VTlNQRUNJRklFRBAAEhgKFEZMVVNIX1JFU1VMVF9OT1RISU5HEAESGAoURkxVU0hfUkVTVUxUX1dSSVRURU4QAhIXChNGTFVTSF9SRVNVTFRfQVNLSU5HEAMyxgIKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESRgoJV2F0Y2hRdWl0EhoubnVtZW4udjEuV2F0Y2hRdWl0UmVxdWVzdBobLm51bWVuLnYxLldhdGNoUXVpdFJlc3BvbnNlMAESSgoLUmVwb3J0Rmx1c2gSHC5udW1lbi52MS5SZXBvcnRGbHVzaFJlcXVlc3QaHS5udW1lbi52MS5SZXBvcnRGbHVzaFJlc3BvbnNlElYKD0dldEN1cnJlbnRWYXVsdBIgLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlcXVlc3QaIS5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpMBCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0IiIKEFdhdGNoUXVpdFJlcXVlc3QSDgoGd2luZG93GAEgASgJIjEKEVdhdGNoUXVpdFJlc3BvbnNlEg0KBXRva2VuGAEgASgJEg0KBWZsdXNoGAIgASgIIloKElJlcG9ydEZsdXNoUmVxdWVzdBIOCgZ3aW5kb3cYASABKAkSDQoFdG9rZW4YAiABKAkSJQoGcmVzdWx0GAMgASgOMhUubnVtZW4udjEuRmx1c2hSZXN1bHQiFQoTUmVwb3J0Rmx1c2hSZXNwb25zZSIoChZHZXRDdXJyZW50VmF1bHRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIoChdHZXRDdXJyZW50VmF1bHRSZXNwb25zZRINCgV2YXVsdBgBIAEoCSpPCgRVbml0EhQKEFVOSVRfVU5TUEVDSUZJRUQQABIPCgtVTklUX1RISU5HUxABEg4KClVOSVRfQllURVMQAhIQCgxVTklUX1NFQ09ORFMQAyp4CgtGbHVzaFJlc3VsdBIcChhGTFVTSF9SRVNVTFRfVU5TUEVDSUZJRUQQABIYChRGTFVTSF9SRVNVTFRfTk9USElORxABEhgKFEZMVVNIX1JFU1VMVF9XUklUVEVOEAISFwoTRkxVU0hfUkVTVUxUX0FTS0lORxADMsYCCg1XaW5kb3dTZXJ2aWNlEkkKCldhdGNoVGFza3MSGy5udW1lbi52MS5XYXRjaFRhc2tzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoVGFza3NSZXNwb25zZTABEkYKCVdhdGNoUXVpdBIaLm51bWVuLnYxLldhdGNoUXVpdFJlcXVlc3QaGy5udW1lbi52MS5XYXRjaFF1aXRSZXNwb25zZTABEkoKC1JlcG9ydEZsdXNoEhwubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXF1ZXN0Gh0ubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXNwb25zZRJWCg9HZXRDdXJyZW50VmF1bHQSIC5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXF1ZXN0GiEubnVtZW4udjEuR2V0Q3VycmVudFZhdWx0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -79,12 +79,12 @@ export type Task = Message<"numen.v1.Task"> & {
   id: string;
 
   /**
-   * Doing is the work, in the words to show. About is what it is on, and is
+   * Title is the work, in the words to show. About is what it is on, and is
    * empty for work that is on nothing in particular.
    *
-   * @generated from field: string doing = 2;
+   * @generated from field: string title = 2;
    */
-  doing: string;
+  title: string;
 
   /**
    * @generated from field: string about = 3;
@@ -113,13 +113,11 @@ export type Task = Message<"numen.v1.Task"> & {
   error: string;
 
   /**
-   * Asked is set for work a person started and is waiting to be told about.
-   * Work nobody asked for is drawn once it has lasted, and most of it is over
-   * before that.
+   * Set for work a person started and is waiting to be told about.
    *
-   * @generated from field: bool is_asked = 7;
+   * @generated from field: bool is_user_started = 7;
    */
-  isAsked: boolean;
+  isUserStarted: boolean;
 
   /**
    * Unit is what done and total are counted in.

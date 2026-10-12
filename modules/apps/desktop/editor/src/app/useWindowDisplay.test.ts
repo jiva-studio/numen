@@ -490,7 +490,7 @@ describe('what the application is doing', () => {
     total: 400,
     counting: 'things',
     error: '',
-    isAsked: true,
+    isUserStarted: true,
   })
 
   it('is what the stream last said, whole', async () => {

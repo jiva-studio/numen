@@ -22,7 +22,7 @@ describe('useWindowStatusBar', () => {
         total: 100,
         counting: 'things',
         error: '',
-        isAsked: false,
+        isUserStarted: false,
       },
       {
         id: 'task-2',
@@ -32,7 +32,7 @@ describe('useWindowStatusBar', () => {
         total: 0,
         counting: 'seconds',
         error: '',
-        isAsked: false,
+        isUserStarted: false,
       },
     ])
 
@@ -65,7 +65,7 @@ describe('useWindowStatusBar', () => {
         total: 10,
         counting: 'things',
         error: 'File is corrupted',
-        isAsked: false,
+        isUserStarted: false,
       },
     ])
 
@@ -91,7 +91,7 @@ describe('useWindowStatusBar detail and unit', () => {
     total: 4,
     counting: 'things',
     error: '',
-    isAsked: false,
+    isUserStarted: false,
   }
   const first = (task: Task) => useWindowStatusBar({ tasks: ref([task]) }).tasks.value[0]!
 
@@ -127,7 +127,7 @@ describe('useWindowStatusBar groups and handlers', () => {
     total: 0,
     counting: 'things',
     error: '',
-    isAsked: false,
+    isUserStarted: false,
   }
 
   it('groups a task that matches no pattern under its label, or under a general name without one', () => {

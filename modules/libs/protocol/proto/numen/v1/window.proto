@@ -63,9 +63,9 @@ message Task {
   // replaces itself rather than appearing twice.
   string id = 1;
 
-  // Doing is the work, in the words to show. About is what it is on, and is
+  // Title is the work, in the words to show. About is what it is on, and is
   // empty for work that is on nothing in particular.
-  string doing = 2;
+  string title = 2;
   string about = 3;
 
   // Done and total are how far it has got, when there is a total to count
@@ -77,10 +77,8 @@ message Task {
   // Error is why the work stopped, when it stopped badly.
   string error = 6;
 
-  // Asked is set for work a person started and is waiting to be told about.
-  // Work nobody asked for is drawn once it has lasted, and most of it is over
-  // before that.
-  bool is_asked = 7;
+  // Set for work a person started and is waiting to be told about.
+  bool is_user_started = 7;
 
   // Unit is what done and total are counted in.
   Unit unit = 8;

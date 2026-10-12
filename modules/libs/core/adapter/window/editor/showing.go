@@ -234,13 +234,13 @@ func (o *Installation) stopVault() {
 func (o *Installation) resetStatus() {
 	o.API.Ready.Store(false)
 	o.API.Error.Store("")
-	o.API.Unwatched.Store("")
+	o.API.WatchError.Store("")
 
 	for _, pass := range []string{walkingNotes, extractingBooks, makingVectors, wordsAlone} {
 		o.API.finishTask(pass)
 	}
 	if o.embedderError != nil {
-		o.API.reportTask(task.Task{ID: makingVectors, Doing: "Indexing", Error: o.embedderError.Error()})
+		o.API.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
 	}
 }
 

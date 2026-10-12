@@ -195,7 +195,7 @@ func (r *RecognitionWorker) drain(ctx context.Context) {
 // recogniseOne is a single document recognised, put right, and reported.
 func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, path string) {
 	id := recognitionID(path)
-	r.say(task.Task{ID: id, Doing: "Recognising a scan", About: path})
+	r.reportTask(task.Task{ID: id, Title: "Recognising a scan", About: path})
 
 	err := r.recognise(ctx, v, id, path)
 	if err == nil {
@@ -208,7 +208,7 @@ func (r *RecognitionWorker) recogniseOne(ctx context.Context, v domain.Vault, pa
 		r.finishTask(id)
 	default:
 		// A failure stands in the list until whoever is shown it takes it out.
-		r.say(task.Task{ID: id, Doing: "Recognising a scan", About: path, Error: err.Error()})
+		r.reportTask(task.Task{ID: id, Title: "Recognising a scan", About: path, Error: err.Error()})
 	}
 }
 
@@ -236,7 +236,7 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 	// them, and this waits for it.
 	// A scan is recognised only where somebody asked for it.
 	release, err := r.with.Models.acquire(ctx, true, func() {
-		r.say(task.Task{ID: id, Doing: "Waiting for the models", About: path})
+		r.reportTask(task.Task{ID: id, Title: "Waiting for the models", About: path})
 	})
 	if err != nil {
 		return err
@@ -245,12 +245,12 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
-	r.say(task.Task{ID: id, Doing: "Fetching models"})
+	r.reportTask(task.Task{ID: id, Title: "Fetching models"})
 	by, letGo, err := r.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
-		r.say(task.Task{
-			ID: id, Doing: "Fetching models", About: what,
+		r.reportTask(task.Task{
+			ID: id, Title: "Fetching models", About: what,
 			Count: done, Total: total, Unit: task.Bytes,
 		})
 	})
@@ -273,13 +273,13 @@ func (r *RecognitionWorker) recognise(ctx context.Context, v domain.Vault, id, p
 		return errLateRuntime
 	}
 
-	r.say(task.Task{ID: id, Doing: "Recognising a scan", About: path})
+	r.reportTask(task.Task{ID: id, Title: "Recognising a scan", About: path})
 	read := NewRecognise(r.with.Readers, r.with.Sources, r.with.Derived, r.with.Documents, by)
 	read.Cut = r.Cut
 	read.OnProgress = func(res RecogniseResult) {
-		r.say(task.Task{
+		r.reportTask(task.Task{
 			ID:    id,
-			Doing: "Recognising a scan",
+			Title: "Recognising a scan",
 			About: path,
 			Count: int64(res.Read),
 			Total: int64(res.Pages),
@@ -351,7 +351,7 @@ func (r *RecognitionWorker) proofreadRecognition(
 	proofreading := r.with.Proofreading
 	right, held, err := proofreading.Recognition(r.with.Readers, r.with.Derived)
 	if err != nil {
-		r.say(task.Task{ID: proofreadID(path), Doing: "Proofreading a recognition", About: path, Error: err.Error()})
+		r.reportTask(task.Task{ID: proofreadID(path), Title: "Proofreading a recognition", About: path, Error: err.Error()})
 		return ProofreadRecognitionResult{Path: path}, err
 	}
 	if !held {
@@ -359,15 +359,15 @@ func (r *RecognitionWorker) proofreadRecognition(
 	}
 
 	id := proofreadID(path)
-	r.say(task.Task{ID: id, Doing: "Proofreading a recognition", About: path})
+	r.reportTask(task.Task{ID: id, Title: "Proofreading a recognition", About: path})
 
 	right.Cut = r.Cut
 	right.Pages = proofreading.Batch
 	right.MaxEditDistance = proofreading.MaxEditDistance
 	right.OnProgress = func(res ProofreadRecognitionResult) {
-		r.say(task.Task{
+		r.reportTask(task.Task{
 			ID:    id,
-			Doing: "Proofreading a recognition",
+			Title: "Proofreading a recognition",
 			About: path,
 			Count: int64(res.Read),
 			Total: int64(res.Pages),
@@ -383,19 +383,19 @@ func (r *RecognitionWorker) proofreadRecognition(
 	case err == nil, errors.Is(err, context.Canceled):
 		r.finishTask(id)
 	default:
-		r.say(task.Task{ID: id, Doing: "Proofreading a recognition", About: path, Error: err.Error()})
+		r.reportTask(task.Task{ID: id, Title: "Proofreading a recognition", About: path, Error: err.Error()})
 	}
 	return res, err
 }
 
-// say puts this recognition in the list of what is being done. A person asked
+// reportTask puts this recognition in the list of what is being done. A person asked
 // for it and is waiting to be told it began.
-func (r *RecognitionWorker) say(at task.Task) { r.report(at, true) }
+func (r *RecognitionWorker) reportTask(at task.Task) { r.report(at, true) }
 
 // report puts one piece of work in the list. Work a person started is shown at
 // once, and work nobody asked for is shown once it has lasted.
-func (r *RecognitionWorker) report(at task.Task, asked bool) {
-	at.IsAsked = asked
+func (r *RecognitionWorker) report(at task.Task, isUserStarted bool) {
+	at.IsUserStarted = isUserStarted
 	if r.with.Tasks != nil {
 		r.with.Tasks.Set(at)
 	}
@@ -507,7 +507,7 @@ func (r *RecognitionWorker) collect(
 		right, err := NewProofreadRecognition(r.with.Readers, r.with.Derived, by)
 		if err != nil {
 			r.report(task.Task{
-				ID: id, Doing: "Proofreading a recognition",
+				ID: id, Title: "Proofreading a recognition",
 				About: one.Path, Error: err.Error(),
 			}, true)
 			continue
@@ -519,7 +519,7 @@ func (r *RecognitionWorker) collect(
 		right.Cut = r.Cut
 		right.OnProgress = func(res ProofreadRecognitionResult) {
 			r.report(task.Task{
-				ID: id, Doing: "Proofreading a recognition", About: one.Path,
+				ID: id, Title: "Proofreading a recognition", About: one.Path,
 				Count: int64(res.Read), Total: int64(res.Pages),
 			}, false)
 		}
@@ -528,7 +528,7 @@ func (r *RecognitionWorker) collect(
 		switch {
 		case err != nil:
 			r.report(task.Task{
-				ID: id, Doing: "Proofreading a recognition",
+				ID: id, Title: "Proofreading a recognition",
 				About: one.Path, Error: err.Error(),
 			}, false)
 		case res.IsBusy:
@@ -540,7 +540,7 @@ func (r *RecognitionWorker) collect(
 			r.finishTask(id)
 		default:
 			r.report(task.Task{
-				ID: id, Doing: "Proofreading a recognition", About: one.Path,
+				ID: id, Title: "Proofreading a recognition", About: one.Path,
 				Count: int64(res.Read), Total: int64(res.Pages),
 			}, false)
 		}

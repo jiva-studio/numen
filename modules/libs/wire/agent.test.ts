@@ -100,8 +100,8 @@ describe('agentPort', () => {
 
   it('reads the moments that carry nothing', async () => {
     const moments = [
-      create(AskAgentResponseSchema, { step: { case: 'thinking', value: {} } }),
-      create(AskAgentResponseSchema, { step: { case: 'answered', value: {} } }),
+      create(AskAgentResponseSchema, { step: { case: 'modelStarted', value: {} } }),
+      create(AskAgentResponseSchema, { step: { case: 'toolFinished', value: {} } }),
     ]
     expect(await steps(moments)).toEqual([{ kind: 'thinking' }, { kind: 'answered' }])
   })

@@ -305,8 +305,8 @@ type AskAgentResponse struct {
 	//	*AskAgentResponse_Said
 	//	*AskAgentResponse_ToolCall
 	//	*AskAgentResponse_Stopped
-	//	*AskAgentResponse_Answered
-	//	*AskAgentResponse_Thinking
+	//	*AskAgentResponse_ToolFinished
+	//	*AskAgentResponse_ModelStarted
 	Step          isAskAgentResponse_Step `protobuf_oneof:"step"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -376,19 +376,19 @@ func (x *AskAgentResponse) GetStopped() string {
 	return ""
 }
 
-func (x *AskAgentResponse) GetAnswered() *Answered {
+func (x *AskAgentResponse) GetToolFinished() *ToolFinished {
 	if x != nil {
-		if x, ok := x.Step.(*AskAgentResponse_Answered); ok {
-			return x.Answered
+		if x, ok := x.Step.(*AskAgentResponse_ToolFinished); ok {
+			return x.ToolFinished
 		}
 	}
 	return nil
 }
 
-func (x *AskAgentResponse) GetThinking() *Thinking {
+func (x *AskAgentResponse) GetModelStarted() *ModelStarted {
 	if x != nil {
-		if x, ok := x.Step.(*AskAgentResponse_Thinking); ok {
-			return x.Thinking
+		if x, ok := x.Step.(*AskAgentResponse_ModelStarted); ok {
+			return x.ModelStarted
 		}
 	}
 	return nil
@@ -414,16 +414,16 @@ type AskAgentResponse_Stopped struct {
 	Stopped string `protobuf:"bytes,3,opt,name=stopped,proto3,oneof"`
 }
 
-type AskAgentResponse_Answered struct {
-	// The tool the agent was using has answered. Nothing of this application's
+type AskAgentResponse_ToolFinished struct {
+	// The tool the agent was using has finished. Nothing of this application's
 	// is running from here until the next step arrives.
-	Answered *Answered `protobuf:"bytes,4,opt,name=answered,proto3,oneof"`
+	ToolFinished *ToolFinished `protobuf:"bytes,4,opt,name=tool_finished,json=toolFinished,proto3,oneof"`
 }
 
-type AskAgentResponse_Thinking struct {
+type AskAgentResponse_ModelStarted struct {
 	// A request to the model has begun. This is where a wait starts, and the
 	// agent says so itself.
-	Thinking *Thinking `protobuf:"bytes,5,opt,name=thinking,proto3,oneof"`
+	ModelStarted *ModelStarted `protobuf:"bytes,5,opt,name=model_started,json=modelStarted,proto3,oneof"`
 }
 
 func (*AskAgentResponse_Said) isAskAgentResponse_Step() {}
@@ -432,32 +432,31 @@ func (*AskAgentResponse_ToolCall) isAskAgentResponse_Step() {}
 
 func (*AskAgentResponse_Stopped) isAskAgentResponse_Step() {}
 
-func (*AskAgentResponse_Answered) isAskAgentResponse_Step() {}
+func (*AskAgentResponse_ToolFinished) isAskAgentResponse_Step() {}
 
-func (*AskAgentResponse_Thinking) isAskAgentResponse_Step() {}
+func (*AskAgentResponse_ModelStarted) isAskAgentResponse_Step() {}
 
-// Answered and Thinking carry nothing: each is a moment, and what it means is
-// its name. A client that does not know one ignores the step it names.
-type Answered struct {
+// ToolFinished and ModelStarted carry no fields.
+type ToolFinished struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Answered) Reset() {
-	*x = Answered{}
+func (x *ToolFinished) Reset() {
+	*x = ToolFinished{}
 	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Answered) String() string {
+func (x *ToolFinished) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Answered) ProtoMessage() {}
+func (*ToolFinished) ProtoMessage() {}
 
-func (x *Answered) ProtoReflect() protoreflect.Message {
+func (x *ToolFinished) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -469,31 +468,31 @@ func (x *Answered) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Answered.ProtoReflect.Descriptor instead.
-func (*Answered) Descriptor() ([]byte, []int) {
+// Deprecated: Use ToolFinished.ProtoReflect.Descriptor instead.
+func (*ToolFinished) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
 }
 
-type Thinking struct {
+type ModelStarted struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Thinking) Reset() {
-	*x = Thinking{}
+func (x *ModelStarted) Reset() {
+	*x = ModelStarted{}
 	mi := &file_numen_v1_agent_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Thinking) String() string {
+func (x *ModelStarted) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Thinking) ProtoMessage() {}
+func (*ModelStarted) ProtoMessage() {}
 
-func (x *Thinking) ProtoReflect() protoreflect.Message {
+func (x *ModelStarted) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_agent_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -505,8 +504,8 @@ func (x *Thinking) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Thinking.ProtoReflect.Descriptor instead.
-func (*Thinking) Descriptor() ([]byte, []int) {
+// Deprecated: Use ModelStarted.ProtoReflect.Descriptor instead.
+func (*ModelStarted) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{7}
 }
 
@@ -618,18 +617,16 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x05model\x18\a \x01(\tR\x05model\"?\n" +
 	"\x19FinishConversationRequest\x12\"\n" +
 	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x1c\n" +
-	"\x1aFinishConversationResponse\"\xe3\x01\n" +
+	"\x1aFinishConversationResponse\"\xfd\x01\n" +
 	"\x10AskAgentResponse\x12\x14\n" +
 	"\x04said\x18\x01 \x01(\tH\x00R\x04said\x121\n" +
 	"\ttool_call\x18\x02 \x01(\v2\x12.numen.v1.ToolCallH\x00R\btoolCall\x12\x1a\n" +
-	"\astopped\x18\x03 \x01(\tH\x00R\astopped\x120\n" +
-	"\banswered\x18\x04 \x01(\v2\x12.numen.v1.AnsweredH\x00R\banswered\x120\n" +
-	"\bthinking\x18\x05 \x01(\v2\x12.numen.v1.ThinkingH\x00R\bthinkingB\x06\n" +
-	"\x04step\"\n" +
-	"\n" +
-	"\bAnswered\"\n" +
-	"\n" +
-	"\bThinking\"\x86\x01\n" +
+	"\astopped\x18\x03 \x01(\tH\x00R\astopped\x12=\n" +
+	"\rtool_finished\x18\x04 \x01(\v2\x16.numen.v1.ToolFinishedH\x00R\ftoolFinished\x12=\n" +
+	"\rmodel_started\x18\x05 \x01(\v2\x16.numen.v1.ModelStartedH\x00R\fmodelStartedB\x06\n" +
+	"\x04step\"\x0e\n" +
+	"\fToolFinished\"\x0e\n" +
+	"\fModelStarted\"\x86\x01\n" +
 	"\bToolCall\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
 	"\x05about\x18\x02 \x01(\tR\x05about\x12\x18\n" +
@@ -661,15 +658,15 @@ var file_numen_v1_agent_proto_goTypes = []any{
 	(*FinishConversationRequest)(nil),  // 3: numen.v1.FinishConversationRequest
 	(*FinishConversationResponse)(nil), // 4: numen.v1.FinishConversationResponse
 	(*AskAgentResponse)(nil),           // 5: numen.v1.AskAgentResponse
-	(*Answered)(nil),                   // 6: numen.v1.Answered
-	(*Thinking)(nil),                   // 7: numen.v1.Thinking
+	(*ToolFinished)(nil),               // 6: numen.v1.ToolFinished
+	(*ModelStarted)(nil),               // 7: numen.v1.ModelStarted
 	(*ToolCall)(nil),                   // 8: numen.v1.ToolCall
 	(*Span)(nil),                       // 9: numen.v1.Span
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
 	8, // 0: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
-	6, // 1: numen.v1.AskAgentResponse.answered:type_name -> numen.v1.Answered
-	7, // 2: numen.v1.AskAgentResponse.thinking:type_name -> numen.v1.Thinking
+	6, // 1: numen.v1.AskAgentResponse.tool_finished:type_name -> numen.v1.ToolFinished
+	7, // 2: numen.v1.AskAgentResponse.model_started:type_name -> numen.v1.ModelStarted
 	9, // 3: numen.v1.ToolCall.span:type_name -> numen.v1.Span
 	2, // 4: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
 	3, // 5: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
@@ -694,8 +691,8 @@ func file_numen_v1_agent_proto_init() {
 		(*AskAgentResponse_Said)(nil),
 		(*AskAgentResponse_ToolCall)(nil),
 		(*AskAgentResponse_Stopped)(nil),
-		(*AskAgentResponse_Answered)(nil),
-		(*AskAgentResponse_Thinking)(nil),
+		(*AskAgentResponse_ToolFinished)(nil),
+		(*AskAgentResponse_ModelStarted)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

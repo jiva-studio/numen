@@ -1368,7 +1368,7 @@ type ScheduleDeckRequest struct {
 	Preset string `protobuf:"bytes,2,opt,name=preset,proto3" json:"preset,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the deck now holds.
-	Seen          *Fingerprint `protobuf:"bytes,3,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Baseline      *Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1417,9 +1417,9 @@ func (x *ScheduleDeckRequest) GetPreset() string {
 	return ""
 }
 
-func (x *ScheduleDeckRequest) GetSeen() *Fingerprint {
+func (x *ScheduleDeckRequest) GetBaseline() *Fingerprint {
 	if x != nil {
-		return x.Seen
+		return x.Baseline
 	}
 	return nil
 }
@@ -1716,7 +1716,7 @@ type WritePresetRequest struct {
 	Settings *Settings `protobuf:"bytes,2,opt,name=settings,proto3" json:"settings,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the note now holds.
-	Seen          *Fingerprint `protobuf:"bytes,3,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Baseline      *Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1765,9 +1765,9 @@ func (x *WritePresetRequest) GetSettings() *Settings {
 	return nil
 }
 
-func (x *WritePresetRequest) GetSeen() *Fingerprint {
+func (x *WritePresetRequest) GetBaseline() *Fingerprint {
 	if x != nil {
-		return x.Seen
+		return x.Baseline
 	}
 	return nil
 }
@@ -2023,12 +2023,12 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
 	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
-	"\x06_error\"z\n" +
+	"\x06_error\"\x86\x01\n" +
 	"\x13ScheduleDeckRequest\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x16\n" +
-	"\x06preset\x18\x02 \x01(\tR\x06preset\x12.\n" +
-	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa8\x01\n" +
+	"\x06preset\x18\x02 \x01(\tR\x06preset\x126\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"\xa8\x01\n" +
 	"\x14ScheduleDeckResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
@@ -2052,12 +2052,12 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\tretention\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\tretention\x12*\n" +
 	"\abacklog\x18\x05 \x01(\v2\x10.numen.v1.BoundsR\abacklog\x12,\n" +
 	"\binterval\x18\x06 \x01(\v2\x10.numen.v1.BoundsR\binterval\x12$\n" +
-	"\x04load\x18\a \x01(\v2\x10.numen.v1.BoundsR\x04load\"\x91\x01\n" +
+	"\x04load\x18\a \x01(\v2\x10.numen.v1.BoundsR\x04load\"\x9d\x01\n" +
 	"\x12WritePresetRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12.\n" +
-	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa7\x01\n" +
+	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x126\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"\xa7\x01\n" +
 	"\x13WritePresetResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
@@ -2177,7 +2177,7 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	21, // 15: numen.v1.GetDeckPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
 	14, // 16: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.PresetSummary
 	27, // 17: numen.v1.CreatePresetResponse.error:type_name -> numen.v1.ErrorCode
-	28, // 18: numen.v1.ScheduleDeckRequest.seen:type_name -> numen.v1.Fingerprint
+	28, // 18: numen.v1.ScheduleDeckRequest.baseline:type_name -> numen.v1.Fingerprint
 	27, // 19: numen.v1.ScheduleDeckResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 20: numen.v1.ScheduleDeckResponse.at:type_name -> numen.v1.Fingerprint
 	6,  // 21: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
@@ -2192,7 +2192,7 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	29, // 30: numen.v1.SettingsBounds.interval:type_name -> numen.v1.Bounds
 	29, // 31: numen.v1.SettingsBounds.load:type_name -> numen.v1.Bounds
 	5,  // 32: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
-	28, // 33: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
+	28, // 33: numen.v1.WritePresetRequest.baseline:type_name -> numen.v1.Fingerprint
 	27, // 34: numen.v1.WritePresetResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 35: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
 	5,  // 36: numen.v1.ComputeCurveRequest.settings:type_name -> numen.v1.Settings

@@ -120,7 +120,7 @@ describe('a neighbourhood the vault answers with', () => {
       related: [
         {
           note: { path: 'Allotments.md', title: 'Allotments' },
-          seat: 'SEAT_PARENT',
+          relation: 'RELATION_PARENT',
           label: 'part of',
           reverseLabel: 'contains rota',
           isMutual: true,
@@ -149,8 +149,8 @@ describe('a neighbourhood the vault answers with', () => {
     answerWith({
       focus: { path: 'Rota.md', title: 'The rota' },
       related: [
-        { note: { path: 'Odd.md', title: 'Odd' }, seat: 'SEAT_UNSPECIFIED' },
-        { seat: 'SEAT_CHILD' },
+        { note: { path: 'Odd.md', title: 'Odd' }, relation: 'RELATION_UNSPECIFIED' },
+        { relation: 'RELATION_CHILD' },
       ],
     })
 

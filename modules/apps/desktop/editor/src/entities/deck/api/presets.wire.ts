@@ -50,7 +50,7 @@ export const presets: Presets = {
     const answer = await presetsService.scheduleDeck({
       deck,
       preset,
-      ...(seen === '' ? {} : { seen: parseFingerprint(seen) }),
+      ...(seen === '' ? {} : { baseline: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure(code)
@@ -60,7 +60,7 @@ export const presets: Presets = {
     const answer = await presetsService.writePreset({
       path,
       settings: toSettingsMessage(settings),
-      ...(seen === '' ? {} : { seen: parseFingerprint(seen) }),
+      ...(seen === '' ? {} : { baseline: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure(code)

@@ -13,7 +13,7 @@ const createCard = (mark: string) => ({
   front: `<p>${mark}</p>`,
   back: '<p>and back</p>',
   isNew: true,
-  ahead: undefined,
+  intervals: undefined,
 })
 
 /** opening is what starting a session comes back with. */
@@ -385,7 +385,7 @@ describe('the cards a session opens on', () => {
               front: '<p>Leaf mould</p>',
               back: '<p>Compost made of fallen leaves alone</p>',
               isNew: false,
-              ahead: { again: 60n, hard: 600n, good: 86400n, easy: 345600n },
+              intervals: { again: 60n, hard: 600n, good: 86400n, easy: 345600n },
             },
           ],
           unwritten: [],

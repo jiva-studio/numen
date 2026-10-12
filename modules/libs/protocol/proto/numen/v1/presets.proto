@@ -441,7 +441,7 @@ message ScheduleDeckRequest {
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the deck now holds.
-  optional Fingerprint seen = 3;
+  optional Fingerprint baseline = 3;
 }
 
 message ScheduleDeckResponse {
@@ -506,7 +506,7 @@ message WritePresetRequest {
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the note now holds.
-  optional Fingerprint seen = 3;
+  optional Fingerprint baseline = 3;
 }
 
 message WritePresetResponse {

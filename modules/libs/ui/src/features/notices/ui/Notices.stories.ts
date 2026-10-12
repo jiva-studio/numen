@@ -54,7 +54,7 @@ const RENAMED: Notice = {
   id: 'renamed',
   text: 'Renamed',
   stay: 'read',
-  isAsked: true,
+  isUserStarted: true,
 }
 
 const OCCUPIED: Notice = {
@@ -62,7 +62,7 @@ const OCCUPIED: Notice = {
   text: 'A note of that name is filed there already',
   tone: 'alarm',
   stay: 'kept',
-  isAsked: true,
+  isUserStarted: true,
 }
 
 /**
@@ -269,15 +269,15 @@ export const MoreThanThereIsRoomFor: Story = {
   args: {
     room: 3,
     notices: [
-      { id: 'a', text: 'Renamed', stay: 'read', isAsked: true },
-      { id: 'b', text: 'Links repaired in One.md', stay: 'kept', isAsked: true },
-      { id: 'c', text: 'The note is in the trash', stay: 'kept', isAsked: true },
+      { id: 'a', text: 'Renamed', stay: 'read', isUserStarted: true },
+      { id: 'b', text: 'Links repaired in One.md', stay: 'kept', isUserStarted: true },
+      { id: 'c', text: 'The note is in the trash', stay: 'kept', isUserStarted: true },
       {
         id: 'd',
         text: 'A theme by that name is not in the catalogue',
         tone: 'alarm',
         stay: 'kept',
-        isAsked: true,
+        isUserStarted: true,
       },
       READING,
       EMBEDDING,
@@ -331,7 +331,7 @@ export const TooMuchToSay: Story = {
     notices: [
       { id: 'one', text: RUSSIAN, about: LONG, done: 1, total: 2, isWorking: true },
       { id: 'two', text: UNBREAKABLE, about: UNBREAKABLE, isWorking: true },
-      { id: 'three', text: RUSSIAN, about: LONG, tone: 'alarm', stay: 'kept', isAsked: true },
+      { id: 'three', text: RUSSIAN, about: LONG, tone: 'alarm', stay: 'kept', isUserStarted: true },
       { id: 'brief', text: 'Reading', isWorking: true },
     ],
   },

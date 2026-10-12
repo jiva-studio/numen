@@ -243,7 +243,7 @@ func TestANoteIsMadeUnderTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	}
 	var children []string
 	for _, related := range around.Msg.GetRelated() {
-		if related.GetSeat() == v1.Seat_SEAT_CHILD {
+		if related.GetRelation() == v1.Relation_RELATION_CHILD {
 			children = append(children, related.GetNote().GetPath())
 		}
 	}

@@ -189,14 +189,14 @@ func (c Config) ReadSettingsFile() func() (string, string, error) {
 //
 // Seen is the file as the window last read it. A file standing at anything else
 // is left alone with port.ErrStale.
-func (c Config) WriteConfiguredFile() func(written string, seen *string) error {
-	return func(written string, seen *string) error {
+func (c Config) WriteConfiguredFile() func(written string, baseline *string) error {
+	return func(written string, baseline *string) error {
 		path, err := c.settingsFile()
 		if err != nil {
 			return err
 		}
 		held := DefaultSettings()
-		return settings.Write(path, []byte(written), seen, &held)
+		return settings.Write(path, []byte(written), baseline, &held)
 	}
 }
 

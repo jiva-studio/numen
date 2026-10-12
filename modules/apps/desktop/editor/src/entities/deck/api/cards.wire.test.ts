@@ -178,7 +178,7 @@ describe('writing a deck', () => {
       read,
     )
 
-    expect(asked[0]?.seen).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
+    expect(asked[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
     expect(asked[0]?.cards).toEqual([{ mark: 'a1', heading: 'Entropy', stencilLink: 'Word' }])
   })
 
@@ -187,7 +187,7 @@ describe('writing a deck', () => {
 
     await cards.writeDeck('Deck.md', { preamble: '', tail: '', cards: [], sections: [] }, null)
 
-    expect(asked[0]?.seen).toBeUndefined()
+    expect(asked[0]?.baseline).toBeUndefined()
   })
 
   it('says the file moved past what the window read', async () => {

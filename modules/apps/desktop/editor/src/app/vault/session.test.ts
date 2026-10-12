@@ -45,7 +45,7 @@ describe('the state of the vault', () => {
       id: 'v1',
       name: 'Zoo',
       path: '/zoo',
-      scan: { isReady: true, error: 'permission denied', unwatched: '/zoo/deep' },
+      scan: { isReady: true, error: 'permission denied', watchError: '/zoo/deep' },
       coverage: { chunkCount: 12n, embeddedCount: 5n, isEmbedding: true },
     })
 
@@ -135,23 +135,23 @@ describe('the streams a window follows', () => {
         tasks: [
           {
             id: 'scan',
-            doing: 'Recognising a scan',
+            title: 'Recognising a scan',
             about: 'library/scan.pdf',
             done: 3n,
             total: 10n,
             unit: Unit.BYTES,
             error: '',
-            isAsked: true,
+            isUserStarted: true,
           },
           {
             id: 'later',
-            doing: 'Later',
+            title: 'Later',
             about: '',
             done: 0n,
             total: 0n,
             unit: 99,
             error: 'stopped',
-            isAsked: false,
+            isUserStarted: false,
           },
         ],
       }
@@ -167,7 +167,7 @@ describe('the streams a window follows', () => {
           total: 10,
           counting: 'bytes',
           error: '',
-          isAsked: true,
+          isUserStarted: true,
         },
         {
           id: 'later',
@@ -177,7 +177,7 @@ describe('the streams a window follows', () => {
           total: 0,
           counting: 'things',
           error: 'stopped',
-          isAsked: false,
+          isUserStarted: false,
         },
       ],
     ])

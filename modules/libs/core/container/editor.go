@@ -15,7 +15,7 @@ import (
 )
 
 // EditorAssembly is this installation as the window a person writes in asks it:
-// the vault list, the cache seen as the ports the window reaches it through,
+// the vault list, the cache baseline as the ports the window reaches it through,
 // and the scenarios and passes a vault is opened with.
 //
 // It is what the window is handed. The window declares what it asks for and is
@@ -73,8 +73,8 @@ func (e EditorAssembly) ReadSettings() (string, string, error)     { return e.cf
 func (e EditorAssembly) ReadSettingsFile() (string, string, error) { return e.cfg.ReadSettingsFile()() }
 func (e EditorAssembly) GetModels() []port.Model                   { return e.cfg.Models()() }
 
-func (e EditorAssembly) WriteSettingsFile(written string, seen *string) error {
-	return e.cfg.WriteConfiguredFile()(written, seen)
+func (e EditorAssembly) WriteSettingsFile(written string, baseline *string) error {
+	return e.cfg.WriteConfiguredFile()(written, baseline)
 }
 
 func (e EditorAssembly) TurnSettings(written []port.Setting) error {

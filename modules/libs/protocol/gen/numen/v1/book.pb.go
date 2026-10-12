@@ -202,7 +202,7 @@ type ReadBookMarkupRequest struct {
 	// Which bytes the ask was given out for. A file that is other bytes now is
 	// not answered: the book is asked for again, and the new answer is asked
 	// with what that says.
-	Seen          *Fingerprint `protobuf:"bytes,3,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Baseline      *Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -251,9 +251,9 @@ func (x *ReadBookMarkupRequest) GetDocument() string {
 	return ""
 }
 
-func (x *ReadBookMarkupRequest) GetSeen() *Fingerprint {
+func (x *ReadBookMarkupRequest) GetBaseline() *Fingerprint {
 	if x != nil {
-		return x.Seen
+		return x.Baseline
 	}
 	return nil
 }
@@ -504,12 +504,12 @@ const file_numen_v1_book_proto_rawDesc = "" +
 	"text_bytes\x18\x06 \x01(\x05R\ttextBytes\x12\x1d\n" +
 	"\n" +
 	"page_bytes\x18\a \x01(\x05R\tpageBytes\x127\n" +
-	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"\x80\x01\n" +
+	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"\x8c\x01\n" +
 	"\x15ReadBookMarkupRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
-	"\bdocument\x18\x02 \x01(\tR\bdocument\x12.\n" +
-	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"0\n" +
+	"\bdocument\x18\x02 \x01(\tR\bdocument\x126\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"0\n" +
 	"\x16ReadBookMarkupResponse\x12\x16\n" +
 	"\x06markup\x18\x01 \x01(\tR\x06markup\"S\n" +
 	"\rSpineDocument\x12\x12\n" +
@@ -555,7 +555,7 @@ var file_numen_v1_book_proto_depIdxs = []int32{
 	5, // 1: numen.v1.GetBookResponse.parts:type_name -> numen.v1.BookPart
 	6, // 2: numen.v1.GetBookResponse.printed_pages:type_name -> numen.v1.PrintedPage
 	7, // 3: numen.v1.GetBookResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	7, // 4: numen.v1.ReadBookMarkupRequest.seen:type_name -> numen.v1.Fingerprint
+	7, // 4: numen.v1.ReadBookMarkupRequest.baseline:type_name -> numen.v1.Fingerprint
 	0, // 5: numen.v1.BookService.GetBook:input_type -> numen.v1.GetBookRequest
 	2, // 6: numen.v1.BookService.ReadBookMarkup:input_type -> numen.v1.ReadBookMarkupRequest
 	1, // 7: numen.v1.BookService.GetBook:output_type -> numen.v1.GetBookResponse

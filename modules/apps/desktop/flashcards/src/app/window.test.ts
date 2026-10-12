@@ -146,7 +146,7 @@ vi.mock('@/shared/clients', async (original) => ({
             front: '-ness',
             back: 'the state of being',
             seen: false,
-            ahead: undefined,
+            intervals: undefined,
           },
         ],
         ...wire.opened,

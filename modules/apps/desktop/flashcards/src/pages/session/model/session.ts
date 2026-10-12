@@ -42,7 +42,7 @@ export interface SessionStart {
     front: string
     back: string
     isNew: boolean
-    ahead?: { again: bigint; hard: bigint; good: bigint; easy: bigint } | undefined
+    intervals?: { again: bigint; hard: bigint; good: bigint; easy: bigint } | undefined
   }[]
   unwritten: readonly string[]
   skipped: number
@@ -220,12 +220,12 @@ const createCardFace = (one: SessionStart['cards'][number]): CardFace => ({
   front: one.front,
   back: one.back,
   isNew: one.isNew,
-  ahead: one.ahead
+  ahead: one.intervals
     ? ({
-        again: Number(one.ahead.again),
-        hard: Number(one.ahead.hard),
-        good: Number(one.ahead.good),
-        easy: Number(one.ahead.easy),
+        again: Number(one.intervals.again),
+        hard: Number(one.intervals.hard),
+        good: Number(one.intervals.good),
+        easy: Number(one.intervals.easy),
       } satisfies Intervals)
     : null,
 })

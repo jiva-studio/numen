@@ -106,7 +106,7 @@ func (a *API) ReadBookMarkup(
 	if err != nil {
 		return nil, connect.NewError(getDrawCode(err), err)
 	}
-	if seen := r.Msg.GetSeen(); seen != nil && (seen.GetSize() != mark.Size || seen.GetMtime() != mark.Mtime) {
+	if baseline := r.Msg.GetBaseline(); baseline != nil && (baseline.GetSize() != mark.Size || baseline.GetMtime() != mark.Mtime) {
 		return nil, connect.NewError(connect.CodeNotFound, errChanged)
 	}
 	read, err := a.book(ctx, reader, mark)
