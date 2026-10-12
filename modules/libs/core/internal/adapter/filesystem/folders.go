@@ -37,9 +37,9 @@ func (f *folders) isKnownFolder(path string) bool {
 	return f.known[path]
 }
 
-// learn remembers a path as a folder, which is the one moment the question is
+// addFolder remembers a path as a folder, which is the one moment the question is
 // answerable.
-func (f *folders) learn(path string) {
+func (f *folders) addFolder(path string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.known[path] = true
@@ -70,7 +70,7 @@ func readShape(reader *VaultReader) (*folders, error) {
 		if p != reader.Root() && reader.isSkipped(path, d.Name()) {
 			return fs.SkipDir
 		}
-		f.learn(path)
+		f.addFolder(path)
 		return nil
 	})
 	if why == nil {
@@ -79,18 +79,18 @@ func readShape(reader *VaultReader) (*folders, error) {
 	return f, why
 }
 
-// rereadShape reads the shape from the vault as it stands now. It answers for events
+// reloadShape reads the shape from the vault as it stands now. It answers for events
 // that were dropped, some of which may have made folders or taken them away.
 // A folder the walk could not enter is missing from the shape it returns; the
 // rescan that goes with this call already answers for it.
-func (f *folders) rereadShape() {
+func (f *folders) reloadShape() {
 	fresh, _ := readShape(f.reader)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.known = fresh.known
 }
 
-func (f *folders) forget(path string) {
+func (f *folders) removeFolder(path string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	delete(f.known, path)
@@ -133,11 +133,11 @@ func (f *folders) getConcernedPaths(absolute string) (paths []string, whole bool
 		}
 		// Remembered before the walk, so a second event about the same folder
 		// does not ask for it a second time.
-		f.learn(path)
+		f.addFolder(path)
 		return nil, false, absolute
 
 	case err != nil && f.isKnownFolder(path):
-		f.forget(path)
+		f.removeFolder(path)
 		return nil, true, ""
 	}
 
@@ -181,7 +181,7 @@ func (f *folders) getPathsUnder(ctx context.Context, absolute string) (paths []s
 			if p != absolute && f.reader.isSkipped(path, d.Name()) {
 				return fs.SkipDir
 			}
-			f.learn(path)
+			f.addFolder(path)
 			return nil
 		}
 		if _, holds := f.reader.getKind(path); holds {

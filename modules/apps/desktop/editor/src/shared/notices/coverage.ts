@@ -17,4 +17,5 @@ export interface IndexCoverage {
 }
 
 /** Whether the vault is searched by its words alone. */
-export const wordsOnly = (read: IndexCoverage): boolean => read.chunks > 0 && !read.isEmbedding
+export const isTextSearchOnly = (read: IndexCoverage): boolean =>
+  read.chunks > 0 && !read.isEmbedding

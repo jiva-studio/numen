@@ -113,7 +113,7 @@ func removeNotes(ctx context.Context, core Core, in noteRemoveInput) (noteRemove
 	return res, nil
 }
 
-// removeNote removes the note at path, or deletes it outright when
+// removeNote removes the note at path, or deletes it permanently when
 // shouldDestroy is set. A refusal is reported in the outcome.
 func removeNote(
 	ctx context.Context, core Core, reader port.VaultReader, path string, shouldDestroy bool,
@@ -140,8 +140,7 @@ func removeNote(
 	return outcome
 }
 
-// isFolder reports whether the vault holds a folder at the path. A folder is
-// listed; a path holding a file is not.
+// isFolder reports whether the vault holds a folder at the path.
 func isFolder(ctx context.Context, reader port.VaultReader, path string) bool {
 	_, err := reader.List(ctx, path)
 	return err == nil

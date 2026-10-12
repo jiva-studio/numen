@@ -103,8 +103,8 @@ func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	waiting := newQueue(64)
-	go drain(ctx, raw, waiting)
-	go debounce(ctx, shape, Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
+	go forwardEvents(ctx, raw, waiting)
+	go debounce(ctx, shape, Options{DebounceDelay: 10 * time.Millisecond}, waiting, changes, lost)
 
 	raw <- event{path: at}
 

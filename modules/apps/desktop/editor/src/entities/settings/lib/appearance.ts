@@ -28,7 +28,7 @@ export const SCHEMES: Record<Mode, string> = {
 }
 
 /** A range until the application has said what one is. */
-export const NOWHERE: Bounds = { least: 0, most: 0 }
+export const EMPTY_RANGE: Bounds = { least: 0, most: 0 }
 
 /** Whether a range reaches a size. A range holding nothing reaches none. */
 export const isInBounds = (range: Bounds, size: number): boolean =>

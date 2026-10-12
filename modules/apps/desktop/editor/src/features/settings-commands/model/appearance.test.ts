@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { StepGroup } from '@/features/command-palette/@x/settings-commands'
-import { DESIGNED, NOWHERE } from '@/entities/settings'
+import { DESIGNED, EMPTY_RANGE } from '@/entities/settings'
 import type { Appearance, Themes } from '@/entities/settings'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '../lib/head'
 import { INTERFACE_SCALE, TEXT_SCALE } from '../lib/appearanceValues'
@@ -841,7 +841,7 @@ describe('the window before it has been told anything', () => {
     expect(worn.applied.value).toBe('')
     expect(worn.mode.value).toBe('system')
     expect(worn.sized.value).toStrictEqual({ interfaceScale: DESIGNED, textScale: DESIGNED })
-    expect(worn.bounds.value).toStrictEqual({ interfaceScale: NOWHERE, textScale: NOWHERE })
+    expect(worn.bounds.value).toStrictEqual({ interfaceScale: EMPTY_RANGE, textScale: EMPTY_RANGE })
   })
 
   it('writes nothing over the page it was served, whatever the keyboard stands on', async () => {

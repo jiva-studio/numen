@@ -176,7 +176,7 @@ export interface Place {
 }
 
 /** A place that falls outside the grid. */
-export const NOWHERE: Place = { at: -1, value: 0, day: '' }
+export const NO_PLACE: Place = { at: -1, value: 0, day: '' }
 
 /**
  * What a preset schedules, as the figures over the picture count it.

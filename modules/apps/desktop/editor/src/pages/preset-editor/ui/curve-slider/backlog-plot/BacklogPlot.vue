@@ -8,15 +8,15 @@
  * above; the run itself is drawn by `BacklogPicture`.
  */
 import { computed } from 'vue'
-import { clearAt, getAxisNumber } from '../../../lib/label'
+import { isAxisLabelClear, getAxisNumber } from '../../../lib/label'
 import {
-  BACKLOG_HIGH,
+  BACKLOG_PLOT_HEIGHT,
   BACKLOG_PLOT,
   backlogPositionsOf,
   extentOfBacklog,
   lineOf,
-  runAt,
-  WIDE,
+  getBacklogRun,
+  PLOT_WIDTH,
   type Extent,
 } from '../../../lib/plot'
 import type { Curve } from '../../../types'
@@ -35,7 +35,7 @@ const props = defineProps<{
 
 // --- State ---
 /** The backlog at the place the knob stands, one figure a day. */
-const backlog = computed<readonly number[]>(() => runAt(props.curve, props.place))
+const backlog = computed<readonly number[]>(() => getBacklogRun(props.curve, props.place))
 
 /**
  * The extent it is drawn against, which is the most any place of the curve ever
@@ -44,7 +44,7 @@ const backlog = computed<readonly number[]>(() => runAt(props.curve, props.place
  * the same height as the rest.
  */
 const extent = computed<Extent>(() =>
-  extentOfBacklog(props.curve.at.flatMap((_, place) => [...runAt(props.curve, place)])),
+  extentOfBacklog(props.curve.at.flatMap((_, place) => [...getBacklogRun(props.curve, place)])),
 )
 
 const positions = computed(() => backlogPositionsOf(backlog.value, extent.value))
@@ -62,7 +62,7 @@ const heights = computed(() => {
   const { least, most } = extent.value
   const formatValue = (value: number) => words.backlogHeightAt(value)
   const heightsAt = (y: number, lift: string, value: number) =>
-    clearAt(y, positions.value, [])
+    isAxisLabelClear(y, positions.value, [])
       ? [{ at: getAxisNumber(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
       : []
   if (most === least) {
@@ -78,7 +78,7 @@ const heights = computed(() => {
 
 /** The days at either end of the extent, which the grid says nothing about. */
 const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backlog.value.length)])
-const roomStyle = { aspectRatio: `${WIDE} / ${BACKLOG_HIGH}` }
+const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${BACKLOG_PLOT_HEIGHT}` }
 
 // --- Handlers ---
 

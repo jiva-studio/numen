@@ -11,7 +11,7 @@ import type { CommandInvocation, CommandTarget } from '../types'
 import type { Words } from '../words'
 
 /** The group and the item that offer to make the note a search did not find. */
-export const MAKING = 'creating'
+export const CREATE_NOTE_ID = 'creating'
 
 /**
  * The note a search did not find, made under the words that were looked for.
@@ -22,12 +22,12 @@ export const createNoteInvocation = (
   name: string,
   at: CommandTarget,
 ): CommandInvocation =>
-  SEATED.includes(seat) && at.path
+  NOTE_PLACEMENTS.includes(seat) && at.path
     ? invocationOf(seat, at, name)
     : invocationOf('note', { ...at, path: '', title: '' }, name)
 
 /** The seats a note the search did not find can be made in. */
-const SEATED: readonly string[] = ['child', 'parent', 'jump']
+const NOTE_PLACEMENTS: readonly string[] = ['child', 'parent', 'jump']
 
 /**
  * The groups of a search, and the offer to make a note where every one of them
@@ -54,14 +54,14 @@ export const appendCreateOffer = (
   return [
     ...groups,
     {
-      id: MAKING,
+      id: CREATE_NOTE_ID,
       title: words.creating,
       items: [
         {
-          id: MAKING,
+          id: CREATE_NOTE_ID,
           title: `${words.creates} “${name}”`,
           ...(at.path ? { detail: at.title || at.path } : {}),
-          actions: [{ id: MAKING, text: words.creates }, ...seats],
+          actions: [{ id: CREATE_NOTE_ID, text: words.creates }, ...seats],
         },
       ],
     },

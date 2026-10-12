@@ -87,7 +87,7 @@ export const fieldsUnder = (goal: Goal, rule: Rule): readonly Field[] => {
 }
 
 /** The field the goal steers, which is the knob under another name. */
-export const steer = (goal: Goal): Field => {
+export const getGoalField = (goal: Goal): Field => {
   if (goal === 'minutes') return 'minutesADay'
   if (goal === 'retention') return 'retention'
   return 'byDate'
@@ -100,8 +100,8 @@ export const steer = (goal: Goal): Field => {
  * choosing a date and coming back does not make their curves worth asking for
  * again.
  */
-export const shapeOf = (settings: Settings): string => {
-  const own = new Set<Field>(steer(settings.goal) === 'byDate' ? [] : ['byDate'])
+export const getShapeKey = (settings: Settings): string => {
+  const own = new Set<Field>(getGoalField(settings.goal) === 'byDate' ? [] : ['byDate'])
   const values: Record<Field, string> = {
     newADay: `${settings.newADay}`,
     reviewsADay: `${settings.reviewsADay}`,

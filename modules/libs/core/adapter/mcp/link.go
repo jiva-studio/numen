@@ -7,8 +7,8 @@ import (
 )
 
 func addLinkTools(server *sdk.Server, core Core) {
-	addLinkReadingTools(server, core)
-	addLinkWritingTools(server, core)
+	addLinkReadTools(server, core)
+	addLinkWriteTools(server, core)
 }
 
 // ResolvedLink is one relationship as a tool reports it: what was written, and

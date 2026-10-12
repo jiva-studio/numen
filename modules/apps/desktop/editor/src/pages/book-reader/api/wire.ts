@@ -34,7 +34,7 @@ export const books: Books = {
       })),
       pages: answer.pageCount,
       pageBytes: answer.pageBytes,
-      fingerprint: answers.stamp(answer.fingerprint) ?? '',
+      fingerprint: answers.formatFingerprint(answer.fingerprint) ?? '',
     } satisfies Book
   },
   readMarkup: async (path, document, fingerprint) => {
@@ -42,11 +42,11 @@ export const books: Books = {
       served.books.readBookMarkup({
         path,
         document,
-        ...(fingerprint === '' ? {} : { seen: answers.fingerprint(fingerprint) }),
+        ...(fingerprint === '' ? {} : { seen: answers.parseFingerprint(fingerprint) }),
       }),
     )
     return answer.markup
   },
   getEntryUrl: (path, name, fingerprint) =>
-    `${answers.asset(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${answers.getBytesQuery(fingerprint)}`,
+    `${answers.getAssetUrl(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${answers.getBytesQuery(fingerprint)}`,
 }

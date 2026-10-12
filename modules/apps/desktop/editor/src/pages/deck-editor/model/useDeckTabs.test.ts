@@ -7,7 +7,7 @@ import { StopReason } from '@numen/protocol'
 import { asFailure, asValue } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 import type { Cards, VaultCard, DeckProblem, Preset } from '@/entities/deck'
-import { DEFAULTS, NOWHERE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
+import { DEFAULTS, NO_PLACE, NO_BOUNDS, type PresetChoice, type Presets } from '@/entities/deck'
 import { fileOpeners, type WindowHandle } from '@/entities/tab'
 import { useWindowTabs } from '@/entities/tab'
 import { DECK } from '@/entities/tab'
@@ -182,8 +182,8 @@ const vault = (
       grid: [],
       days: [],
       at: [],
-      now: NOWHERE,
-      suggested: NOWHERE,
+      now: NO_PLACE,
+      suggested: NO_PLACE,
       decks: 0,
       cards: 0,
       overdue: 0,

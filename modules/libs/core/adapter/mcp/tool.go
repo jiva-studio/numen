@@ -130,7 +130,7 @@ func addTool[In, Out any](
 }
 
 // newHandler returns the tool handler that calls run with the parsed input and
-// leaves the result to be built from run's output.
+// builds the result from run's output.
 func newHandler[In, Out any](
 	run func(ctx context.Context, in In) (Out, error),
 ) func(context.Context, *sdk.CallToolRequest, In) (*sdk.CallToolResult, Out, error) {
@@ -193,8 +193,8 @@ func newErrorResult(err error) *sdk.CallToolResult {
 }
 
 // fillResult returns res, or an empty result when res is nil. A result with no
-// content carries out as structured content when it encodes to an object and
-// as text otherwise.
+// content is filled with structured content when the output encodes to an object and
+// with text otherwise.
 func fillResult(res *sdk.CallToolResult, out any) *sdk.CallToolResult {
 	if res == nil {
 		res = &sdk.CallToolResult{}

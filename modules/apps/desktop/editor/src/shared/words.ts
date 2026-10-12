@@ -32,7 +32,7 @@ export const WORDS = {
   notAsked: 'The vault could not answer',
   notEmbedded: 'This vault has not been read for meaning yet',
   /** The commands, and the groups they are drawn in. */
-  overNote: 'This note',
+  noteGroupTitle: 'This note',
   overFile: 'This file',
   overWindow: 'This window',
   overVault: 'This vault',

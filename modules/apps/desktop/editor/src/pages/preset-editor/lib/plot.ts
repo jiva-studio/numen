@@ -10,14 +10,14 @@ import { costOf } from './curve'
 import type { Curve } from '../types'
 
 /** The picture's own units. It is scaled whole, so a circle stays one. */
-export const WIDE = 560
-export const HIGH = 190
+export const PLOT_WIDTH = 560
+export const PLOT_HEIGHT = 190
 
 /** The room the line is drawn in, inside the picture. */
-export const LEFT = 12
-export const RIGHT = WIDE - 12
-export const TOP = 16
-export const FOOT = HIGH - 16
+export const PLOT_LEFT = 12
+export const PLOT_RIGHT = PLOT_WIDTH - 12
+export const PLOT_TOP = 16
+export const PLOT_BOTTOM = PLOT_HEIGHT - 16
 
 /** The height a plot's line is drawn between, and the picture it stands in. */
 export interface Plot {
@@ -27,11 +27,15 @@ export interface Plot {
 }
 
 /** The curve's own plot, which is the picture. */
-export const CURVE_PLOT: Plot = { high: HIGH, top: TOP, foot: FOOT }
+export const CURVE_PLOT: Plot = { high: PLOT_HEIGHT, top: PLOT_TOP, foot: PLOT_BOTTOM }
 
 /** The backlog's plot under it, which is short and shares the picture's width. */
-export const BACKLOG_HIGH = 76
-export const BACKLOG_PLOT: Plot = { high: BACKLOG_HIGH, top: 12, foot: BACKLOG_HIGH - 12 }
+export const BACKLOG_PLOT_HEIGHT = 76
+export const BACKLOG_PLOT: Plot = {
+  high: BACKLOG_PLOT_HEIGHT,
+  top: 12,
+  foot: BACKLOG_PLOT_HEIGHT - 12,
+}
 
 /** The faint lines drawn across the picture, as shares of the plot's height. */
 export const GRIDLINES: readonly number[] = [0.25, 0.5, 0.75]
@@ -41,10 +45,10 @@ export type { Position }
 
 /** Where one place of a grid stands across the picture. */
 export const xOf = (place: number, places: number): number =>
-  places <= 1 ? LEFT : LEFT + ((RIGHT - LEFT) * place) / (places - 1)
+  places <= 1 ? PLOT_LEFT : PLOT_LEFT + ((PLOT_RIGHT - PLOT_LEFT) * place) / (places - 1)
 
 /** The height of one of the faint lines. */
-export const yOfGridline = (share: number): number => FOOT - (FOOT - TOP) * share
+export const yOfGridline = (share: number): number => PLOT_BOTTOM - (PLOT_BOTTOM - PLOT_TOP) * share
 
 /** The stretch of cost the picture is scaled to. */
 export interface Extent {
@@ -128,7 +132,7 @@ export const lineOf = (places: readonly Position[]): string =>
  * The stretch the budget the preset keeps does not get through, drawn as a
  * line of its own. A goal that keeps no such account leaves it empty.
  */
-export const shortOf = (curve: Curve, places: readonly Position[]): string => {
+export const getShortPath = (curve: Curve, places: readonly Position[]): string => {
   const runs: string[] = []
   let run: Position[] = []
   curve.at.forEach((point, place) => {
@@ -154,14 +158,14 @@ const daysAt = (curve: Curve, place: number): number =>
   curve.goal === 'date' ? Math.max(Math.round(curve.grid[place] ?? 0), 0) : -1
 
 /** What stands overdue day by day at one place, cut at that place's own day. */
-export const runAt = (curve: Curve, place: number): readonly number[] => {
+export const getBacklogRun = (curve: Curve, place: number): readonly number[] => {
   const run = curve.at[place]?.backlog ?? []
   const days = daysAt(curve, place)
   return days < 0 ? run : run.slice(0, days)
 }
 
 /** Where a keystroke takes the knob, and nothing for a keystroke of somebody else's. */
-export const walkGrid = (key: string, place: number, places: number): number | null => {
+export const getKeyPlace = (key: string, place: number, places: number): number | null => {
   const last = places - 1
   if (key === 'ArrowLeft' || key === 'ArrowDown') return Math.max(place - 1, 0)
   if (key === 'ArrowRight' || key === 'ArrowUp') return Math.min(place + 1, last)
@@ -175,8 +179,8 @@ export const walkGrid = (key: string, place: number, places: number): number | n
  * the picture's own units. A pointer outside the room the line is drawn in
  * stands at the nearer end.
  */
-export const placeUnder = (x: number, places: number): number => {
-  const inside = (x - LEFT) / (RIGHT - LEFT)
+export const getPlaceAtX = (x: number, places: number): number => {
+  const inside = (x - PLOT_LEFT) / (PLOT_RIGHT - PLOT_LEFT)
   return Math.max(Math.min(Math.round(inside * (places - 1)), places - 1), 0)
 }
 

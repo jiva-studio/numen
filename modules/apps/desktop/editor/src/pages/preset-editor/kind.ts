@@ -12,7 +12,7 @@ import { NO_BOUNDS, type Presets, type SettingsBounds } from './types'
 import { WORDS as words } from './words'
 import type { PresetTabState, SettingValue } from './types'
 import { createOpenPreset, createPresetState, readPreset, type OpenPreset } from './model/open'
-import { flushWrites } from './model/flight'
+import { flushWrites } from './model/writeQueue'
 import PresetTab from './ui/PresetTab.vue'
 
 export type { PresetTabState, SettingValue }
@@ -108,7 +108,7 @@ export function usePresetTab(
   const flush = async (): Promise<void> => {
     await Promise.all(
       [...open.values()].map((one) =>
-        flushWrites(one.flight, one.path.value, one.settings.value, core, writeMessage),
+        flushWrites(one.writeQueue, one.path.value, one.settings.value, core, writeMessage),
       ),
     )
   }

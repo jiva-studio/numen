@@ -4,7 +4,7 @@
 import {
   isDirty,
   stateOf,
-  waiting,
+  DEFAULT_WRITE_LIMITS,
   MENDABLE_ERRORS,
   type Event,
   type Move,
@@ -19,13 +19,17 @@ import {
 export * from './tabState'
 
 /** An event that asks for something and carries nothing with it. */
-type AskedKind = Exclude<Event['kind'], 'read' | 'typed' | 'written' | 'changed'>
+type AskedKind = Exclude<Event['kind'], 'read' | 'edited' | 'written' | 'changed'>
 
-export const tabAfter = (tab: Tab, event: Event, limits: WriteLimits = waiting): Transition => {
+export const transitionTab = (
+  tab: Tab,
+  event: Event,
+  limits: WriteLimits = DEFAULT_WRITE_LIMITS,
+): Transition => {
   switch (event.kind) {
     case 'read':
       return applyRead(tab, event.generation, event.answer)
-    case 'typed':
+    case 'edited':
       return applyEdit(tab, event.body, event.at, limits)
     case 'written':
       return applyWrite(tab, event.answer)
@@ -38,17 +42,17 @@ export const tabAfter = (tab: Tab, event: Event, limits: WriteLimits = waiting):
 
 const applyAsked = (tab: Tab, kind: AskedKind): Transition => {
   switch (kind) {
-    case 'fired':
+    case 'timerFired':
       return applyTimer(tab)
-    case 'saving':
+    case 'save':
       return applySave(tab)
-    case 'flushing':
+    case 'flush':
       return applyFlush(tab)
-    case 'keeping':
+    case 'keepLocal':
       return applyKeep(tab)
-    case 'taking':
+    case 'takeFile':
       return applyTake(tab)
-    case 'closing':
+    case 'close':
       return applyClose(tab)
   }
 }
@@ -121,7 +125,7 @@ const applyEdit = (tab: Tab, body: string, at: number, limits: WriteLimits): Tra
   const since = tab.since ?? at
   const next: Tab = { ...tab, shown: body, since, error }
   if (state === 'stale') return keepTab(next)
-  return { tab: next, effects: [{ kind: 'arm', after: armFor(since, at, limits) }] }
+  return { tab: next, effects: [{ kind: 'startTimer', after: armFor(since, at, limits) }] }
 }
 
 const applyTimer = (tab: Tab): Transition => {
@@ -187,12 +191,12 @@ const applyFlush = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (state === 'unsaved') {
     const going = beginWrite(tab, getBaseline(tab))
-    return { tab: going.tab, effects: [{ kind: 'disarm' }, ...going.effects] }
+    return { tab: going.tab, effects: [{ kind: 'cancelTimer' }, ...going.effects] }
   }
   if (state === 'saving') {
-    return { tab: { ...tab, hasPendingWrite: isDirty(tab) }, effects: [{ kind: 'disarm' }] }
+    return { tab: { ...tab, hasPendingWrite: isDirty(tab) }, effects: [{ kind: 'cancelTimer' }] }
   }
-  return { tab, effects: [{ kind: 'disarm' }] }
+  return { tab, effects: [{ kind: 'cancelTimer' }] }
 }
 
 /** Keep: what is on screen goes to the file. */
@@ -220,18 +224,18 @@ const applyClose = (tab: Tab): Transition => {
   const state = stateOf(tab)
   if (tab.error && state === 'stuck') {
     if (tab.written !== null && isDirty(tab) && MENDABLE_ERRORS.includes(tab.error)) {
-      return { tab, effects: [{ kind: 'say', error: tab.error }, { kind: 'hold' }] }
+      return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'keepOpen' }] }
     }
-    return { tab, effects: [{ kind: 'say', error: tab.error }, { kind: 'close' }] }
+    return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'close' }] }
   }
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
-  if (state === 'stale') return { tab, effects: [{ kind: 'hold' }] }
+  if (state === 'stale') return { tab, effects: [{ kind: 'keepOpen' }] }
   if (state === 'unsaved') {
     const going = beginWrite(tab, getBaseline(tab))
-    return { tab: going.tab, effects: [...going.effects, { kind: 'hold' }] }
+    return { tab: going.tab, effects: [...going.effects, { kind: 'keepOpen' }] }
   }
   if (state === 'saving') {
-    return { tab: { ...tab, hasPendingWrite: isDirty(tab) }, effects: [{ kind: 'hold' }] }
+    return { tab: { ...tab, hasPendingWrite: isDirty(tab) }, effects: [{ kind: 'keepOpen' }] }
   }
   return { tab, effects: [{ kind: 'close' }] }
 }

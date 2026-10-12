@@ -12,8 +12,8 @@ import {
   type SettingsBounds,
 } from '../types'
 import { goalValue, findNearest } from '../lib/curve'
-import { shapeOf } from '../lib/fields'
-import { approximate } from '../lib/sketch'
+import { getShapeKey } from '../lib/fields'
+import { estimateCurve } from '../lib/sketch'
 import { WORDS as words } from '../words'
 
 /** Reactive state for preset curve calculations. */
@@ -36,7 +36,7 @@ export function createCurveState(
   bounds: SettingsBounds,
 ): CurveState {
   return {
-    curve: shallowRef<Curve>(approximate(initialSettings, today, bounds)),
+    curve: shallowRef<Curve>(estimateCurve(initialSettings, today, bounds)),
     material: shallowRef<PresetCounts | null>(null),
     place: ref(0),
     isWaiting: ref(true),
@@ -84,7 +84,7 @@ const fetchCurve = async (
 ): Promise<void> => {
   const mine = state.asks.ask()
   const settings = getSettings()
-  const shape = shapeOf(settings)
+  const shape = getShapeKey(settings)
   state.shape = shape
   const riding = state.curve.value.grid
 
@@ -92,7 +92,7 @@ const fetchCurve = async (
   if (standsAlready) {
     state.curve.value = { ...state.curve.value, isHonest: false }
   } else {
-    const meanwhile = approximate(settings, today, bounds)
+    const meanwhile = estimateCurve(settings, today, bounds)
     state.curve.value = meanwhile
     state.place.value = Math.max(meanwhile.now.at, 0)
   }
@@ -127,7 +127,7 @@ export const updateCurves = async (
   setErrorMessage: (msg: string) => void,
 ): Promise<void> => {
   const settings = getSettings()
-  const shape = shapeOf(settings)
+  const shape = getShapeKey(settings)
   const heldCurve = state.answers.get(shape)
   if (heldCurve) {
     state.asks.drop()

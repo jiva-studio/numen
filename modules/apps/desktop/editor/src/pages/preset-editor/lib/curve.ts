@@ -54,7 +54,7 @@ export const valueAt = (curve: Curve, place: number): number =>
   curve.now.at >= 0 && place === curve.now.at ? curve.now.value : (curve.grid[place] ?? 0)
 
 /** Why a preset's goal has nothing to work on, and empty where it has. */
-export type IdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
+export type GoalIdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
 
 /**
  * Whether the goal has nothing to work on, and why. The counts the curve
@@ -65,7 +65,7 @@ export type IdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
  * card face here is one nobody has begun, and no place of the range begins one.
  * It is a fact about the material, and not a reason the preset is stopped.
  */
-export const idle = (curve: Curve): IdleReason => {
+export const getIdleReason = (curve: Curve): GoalIdleReason => {
   if (!curve.isHonest) return ''
   if (curve.decks === 0) return 'unpointed'
   if (curve.cards === 0) return 'noCards'

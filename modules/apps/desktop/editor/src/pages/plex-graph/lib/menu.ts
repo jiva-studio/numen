@@ -10,7 +10,7 @@
  * note.
  */
 import type { MenuItem } from '@numen/ui'
-import { commandsOf, overNote } from '@/features/command-palette'
+import { commandsOf, getNoteCommands } from '@/features/command-palette'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as own } from '../words'
 
@@ -28,7 +28,7 @@ const BAND = {
 
 /** The commands over a note, in the words the palette offers each of them by. */
 const NOTED: ReadonlyMap<string, string> = new Map(
-  overNote(commandsOf(words)).map((one) => [one.id, one.text]),
+  getNoteCommands(commandsOf(words)).map((one) => [one.id, one.text]),
 )
 
 /** One command over a note, in the group it stands in. */

@@ -101,7 +101,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	case opts.ShouldRead:
 		serving = mcp.ServeReadingHTTP
 	case opts.ShouldReview:
-		serving = mcp.ServeReviewingHTTP
+		serving = mcp.ServeReviewHTTP
 	}
 	endpoint, err := serving(ctx, addr, secret, opts.Core, errorHandler)
 	if err != nil {

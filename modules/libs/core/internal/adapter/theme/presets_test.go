@@ -14,17 +14,17 @@ import (
 // and the rest of the file is what a theme leaves alone.
 const contract = "../../../../../libs/ui/src/shared/tokens/tokens.css"
 
-// takes is the shape a value has. Each is read off the contract, so a token
+// valueKind is the shape a value has. Each is read off the contract, so a token
 // given a different shape there holds every preset to the new one.
-type takes int
+type valueKind int
 
 const (
-	colour takes = iota
+	colour valueKind = iota
 	length
 	shadow
 )
 
-func (t takes) String() string { return [...]string{"a colour", "a length", "a shadow"}[t] }
+func (t valueKind) String() string { return [...]string{"a colour", "a length", "a shadow"}[t] }
 
 type declaration struct {
 	property string
@@ -62,7 +62,7 @@ func TestAPresetGivesEachTokenTheShapeItTakes(t *testing.T) {
 			if !is {
 				continue
 			}
-			if !hasShape(one.value, want) {
+			if !hasValueKind(one.value, want) {
 				t.Errorf("%s gives %s %q, and it takes %s", name, one.property, one.value, want)
 			}
 		}
@@ -72,7 +72,7 @@ func TestAPresetGivesEachTokenTheShapeItTakes(t *testing.T) {
 // readPresets is every preset's text, under the name it is asked for.
 func readPresets(t *testing.T) map[string]string {
 	t.Helper()
-	catalogue := folder(t)
+	catalogue := createThemeFolder(t)
 	texts := map[string]string{}
 	for _, one := range catalogue.Themes() {
 		if one.Shelf != theme.Preset {
@@ -91,14 +91,14 @@ func readPresets(t *testing.T) map[string]string {
 }
 
 // getThemeFields is what a theme sets, and the shape each of them takes.
-func getThemeFields(t *testing.T) map[string]takes {
+func getThemeFields(t *testing.T) map[string]valueKind {
 	t.Helper()
 	css, err := os.ReadFile(contract)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, block := range blocks(stripComments(string(css))) {
-		sets := map[string]takes{}
+	for _, block := range splitBlocks(stripComments(string(css))) {
+		sets := map[string]valueKind{}
 		held := map[string]string{}
 		for _, one := range getDeclarations(block) {
 			if strings.HasPrefix(one.property, "--") {
@@ -108,7 +108,7 @@ func getThemeFields(t *testing.T) map[string]takes {
 		for property, value := range held {
 			// A token given as another token takes the shape that one takes:
 			// two names for one value are one value.
-			sets[property] = shapeOf(resolveToken(value, held))
+			sets[property] = getValueKind(resolveToken(value, held))
 		}
 		if len(sets) > 0 {
 			return sets
@@ -139,9 +139,9 @@ func resolveToken(value string, held map[string]string) string {
 	return value
 }
 
-// shapeOf reads a value as the shape it is. A colour and a length say what they
+// getValueKind reads a value as the shape it is. A colour and a length say what they
 // are, and a shadow is what is left.
-func shapeOf(value string) takes {
+func getValueKind(value string) valueKind {
 	switch {
 	case isColour(value):
 		return colour
@@ -152,7 +152,7 @@ func shapeOf(value string) takes {
 	}
 }
 
-func hasShape(value string, want takes) bool {
+func hasValueKind(value string, want valueKind) bool {
 	switch want {
 	case colour:
 		return isColour(value)
@@ -168,7 +168,7 @@ var hex = regexp.MustCompile(`^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})
 // isColour is a hex colour, or the pair of them the mode chooses between.
 func isColour(value string) bool {
 	if inner, is := getLightDarkPair(value); is {
-		halves := pieces(inner, ',')
+		halves := splitOn(inner, ',')
 		return len(halves) == 2 &&
 			isColour(strings.TrimSpace(halves[0])) && isColour(strings.TrimSpace(halves[1]))
 	}
@@ -182,8 +182,8 @@ func isLength(value string) bool { return value == "0" || measure.MatchString(va
 // isShadow is one layer or several, each of them the offsets and the spread a
 // shadow is cast at, with the colour it is cast in after them.
 func isShadow(value string) bool {
-	for _, layer := range pieces(value, ',') {
-		parts := words(layer)
+	for _, layer := range splitOn(value, ',') {
+		parts := splitWords(layer)
 		if len(parts) < 3 || !isColour(parts[len(parts)-1]) {
 			return false
 		}
@@ -208,7 +208,7 @@ func getLightDarkPair(value string) (string, bool) {
 // setBy is every property a stylesheet sets, whichever of its rules sets it.
 func setBy(css string) []declaration {
 	var found []declaration
-	for _, block := range blocks(stripComments(css)) {
+	for _, block := range splitBlocks(stripComments(css)) {
 		found = append(found, getDeclarations(block)...)
 	}
 	return found
@@ -218,9 +218,9 @@ func setBy(css string) []declaration {
 // outside brackets, so a pair written over two lines stays whole.
 func getDeclarations(block string) []declaration {
 	var found []declaration
-	for _, part := range pieces(block, ';') {
+	for _, part := range splitOn(block, ';') {
 		name, value, is := strings.Cut(part, ":")
-		name, value = strings.TrimSpace(name), strings.Join(words(value), " ")
+		name, value = strings.TrimSpace(name), strings.Join(splitWords(value), " ")
 		if !is || name == "" || value == "" {
 			continue
 		}
@@ -229,8 +229,8 @@ func getDeclarations(block string) []declaration {
 	return found
 }
 
-// blocks is the inside of every rule in a stylesheet.
-func blocks(css string) []string {
+// splitBlocks is the inside of every rule in a stylesheet.
+func splitBlocks(css string) []string {
 	var found []string
 	for {
 		open := strings.Index(css, "{")
@@ -264,8 +264,8 @@ func stripComments(css string) string {
 	}
 }
 
-// pieces splits on the separators standing outside brackets.
-func pieces(text string, on byte) []string {
+// splitOn splits on the separators standing outside brackets.
+func splitOn(text string, on byte) []string {
 	var parts []string
 	depth, start := 0, 0
 	for at := range len(text) {
@@ -284,9 +284,9 @@ func pieces(text string, on byte) []string {
 	return append(parts, text[start:])
 }
 
-// words splits on the spaces standing outside brackets, so a pair is one word
+// splitWords splits on the spaces standing outside brackets, so a pair is one word
 // however it is laid out.
-func words(text string) []string {
+func splitWords(text string) []string {
 	var found []string
 	depth, start := 0, 0
 	keep := func(end int) {
