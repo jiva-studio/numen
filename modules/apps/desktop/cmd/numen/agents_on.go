@@ -118,7 +118,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		GetProblems: cfg.GetProblems(opened.Problems()),
 		GetSummary:  cfg.GetSummary(opened.Queries()),
 		Read:        cfg.Read(),
-		Attending:  opened.API.GetOpenTabs,
+		Attending:   opened.API.GetOpenTabs,
 
 		// The list is the window's own, and an agent does not erase a vault:
 		// the folder that goes is a person's to ask for.
