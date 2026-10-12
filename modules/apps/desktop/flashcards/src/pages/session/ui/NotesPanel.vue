@@ -48,7 +48,7 @@ const keyOf = (one: Neighbour) => one.path || one.written
  */
 const drawn = new Map<string, HTMLElement>()
 
-const holdNote = (one: Neighbour, element: unknown): void => {
+const registerNoteElement = (one: Neighbour, element: unknown): void => {
   if (element) drawn.set(keyOf(one), element as HTMLElement)
   else drawn.delete(keyOf(one))
 }
@@ -77,7 +77,7 @@ function scrollPage(back = false) {
       <article
         v-for="one in props.held.notes.value"
         :key="keyOf(one)"
-        :ref="(element) => holdNote(one, element)"
+        :ref="(element) => registerNoteElement(one, element)"
         class="reading__note"
       >
         <NoteHead :note="one" />

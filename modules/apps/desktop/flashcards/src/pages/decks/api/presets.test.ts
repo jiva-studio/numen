@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorCode, Goal, StopReason } from '@numen/protocol'
 
-import { readDeckPreset, UNREAD } from './presets'
+import { readDeckPreset, PRESET_UNREADABLE_MESSAGE } from './presets'
 import type { PresetsClient } from './presets'
 import type { SettingsMessage } from '../types'
 
@@ -63,6 +63,6 @@ describe('the preset one deck is scheduled by', () => {
   it('is refused as unread where no preset and no error came', async () => {
     const one = await readDeckPreset(answering({}), '01A', 'decks/Words.md')
 
-    expect(one).toMatchObject({ ok: false, error: UNREAD })
+    expect(one).toMatchObject({ ok: false, error: PRESET_UNREADABLE_MESSAGE })
   })
 })

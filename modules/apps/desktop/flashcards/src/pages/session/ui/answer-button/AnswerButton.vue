@@ -5,7 +5,7 @@
  */
 import { Button, KeyCap } from '@numen/ui'
 
-import { called, getTimeAhead } from '@/entities/card'
+import { GRADE_LABELS, getTimeAhead } from '@/entities/card'
 import type { Grade, Intervals } from '@/entities/card'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -26,7 +26,7 @@ defineEmits<{
 <template>
   <Button variant="outline" @click="$emit('answer')">
     <KeyCap :keys="{ icons: [], letter: String(at) }" />
-    {{ called[how] }}
+    {{ GRADE_LABELS[how] }}
     <!-- What the answer does to the card, said where the answer is chosen: a
          person picking between the four is picking between these. It is read off
          the screen and not out of the button's own name, which is the word a

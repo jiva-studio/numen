@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { Rating } from '@numen/protocol'
 
-import { called, grades, rated } from './grades'
+import { GRADE_LABELS, grades, RATING_BY_GRADE } from './grades'
 
 describe('the four answers', () => {
   it('are asked in the order they get harder to say', () => {
@@ -13,16 +13,16 @@ describe('the four answers', () => {
   // tell one rating from another, so a pair crossed here is a card sent away
   // for a week because a person said they had forgotten it.
   it('are written down as the four they name', () => {
-    expect(rated.again).toBe(Rating.AGAIN)
-    expect(rated.hard).toBe(Rating.HARD)
-    expect(rated.good).toBe(Rating.GOOD)
-    expect(rated.easy).toBe(Rating.EASY)
+    expect(RATING_BY_GRADE.again).toBe(Rating.AGAIN)
+    expect(RATING_BY_GRADE.hard).toBe(Rating.HARD)
+    expect(RATING_BY_GRADE.good).toBe(Rating.GOOD)
+    expect(RATING_BY_GRADE.easy).toBe(Rating.EASY)
   })
 
   it('each have a word to press', () => {
-    expect(called.again).toBe('Again')
-    expect(called.hard).toBe('Hard')
-    expect(called.good).toBe('Good')
-    expect(called.easy).toBe('Easy')
+    expect(GRADE_LABELS.again).toBe('Again')
+    expect(GRADE_LABELS.hard).toBe('Hard')
+    expect(GRADE_LABELS.good).toBe('Good')
+    expect(GRADE_LABELS.easy).toBe('Easy')
   })
 })

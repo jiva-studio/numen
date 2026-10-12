@@ -71,7 +71,7 @@ vi.mock('@/shared/clients', async (original) => ({
       return { run: 'run', asked: [], unwritten: [], skipped: 0 }
     },
   },
-  itself: { watchTasks: () => waits() },
+  windowService: { watchTasks: () => waits() },
 }))
 
 const { default: App } = await import('./App.vue')

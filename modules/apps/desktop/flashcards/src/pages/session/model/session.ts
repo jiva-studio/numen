@@ -9,7 +9,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
-import { rated } from '@/entities/card'
+import { RATING_BY_GRADE } from '@/entities/card'
 import type { CardFace, Grade, Intervals } from '@/entities/card'
 
 /** What a session asks of the application, and no more of it than that. */
@@ -153,7 +153,7 @@ export function useReviewSession(deps: SessionDeps) {
         run: run.value,
         mark: one.mark,
         face: one.face,
-        rating: rated[how],
+        rating: RATING_BY_GRADE[how],
         tookMs: BigInt(elapsedMs),
       })
       answers.value.push(response.answer)
