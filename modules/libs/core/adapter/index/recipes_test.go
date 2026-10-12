@@ -2,6 +2,7 @@ package index
 
 import (
 	"encoding/hex"
+	"errors"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
@@ -90,5 +91,33 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	}
 	if held, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes); err != nil || len(held) != len(hashes) {
 		t.Errorf("%d vectors survived the vacuum, want %d: %v", len(held), len(hashes), err)
+	}
+}
+
+// A deletion or a compaction that fails is reported.
+func TestForgettingAndCompactingReportTheirFailure(t *testing.T) {
+	for _, step := range []struct {
+		name   string
+		breaks string
+		run    func(db *DB) error
+	}{
+		{"forgetting", "DELETE FROM vectors", func(db *DB) error {
+			n, err := db.ForgetOtherRecipes(t.Context(), "current")
+			if n != 0 {
+				t.Errorf("a deletion that failed counted %d", n)
+			}
+			return err
+		}},
+		{"compacting", "VACUUM", func(db *DB) error { return db.Compact(t.Context()) }},
+	} {
+		t.Run(step.name, func(t *testing.T) {
+			db := openBreakingDB(t)
+			breakOn(t, step.breaks)
+			err := step.run(db)
+			mend()
+			if !errors.Is(err, errBroken) {
+				t.Errorf("answered %v", err)
+			}
+		})
 	}
 }

@@ -418,7 +418,23 @@ func (c breakingConn) BeginTx(ctx context.Context, opts driver.TxOptions) (drive
 	if isBroken("BEGIN") {
 		return nil, fmt.Errorf("%w: BEGIN", errBroken)
 	}
-	return c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+	tx, err := c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return breakingTx{tx}, nil
+}
+
+// breakingTx fails a commit while "COMMIT" is broken, and leaves the transaction
+// rolled back.
+type breakingTx struct{ driver.Tx }
+
+func (t breakingTx) Commit() error {
+	if isBroken("COMMIT") {
+		_ = t.Tx.Rollback()
+		return fmt.Errorf("%w: COMMIT", errBroken)
+	}
+	return t.Tx.Commit()
 }
 
 type breakingStmt struct {
@@ -440,7 +456,48 @@ func (s breakingStmt) QueryContext(ctx context.Context, args []driver.NamedValue
 	if isBroken(s.query) {
 		return nil, fmt.Errorf("%w: %s", errBroken, strings.TrimSpace(s.query))
 	}
-	return s.Stmt.(driver.StmtQueryContext).QueryContext(ctx, args)
+	rows, err := s.Stmt.(driver.StmtQueryContext).QueryContext(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	if fault := rowsBreak.Load(); fault != nil && strings.Contains(s.query, fault.text) {
+		return breakingRows{rows, fault.unreadable}, nil
+	}
+	return rows, nil
+}
+
+// rowFault fails the reading of the rows a statement containing text answers
+// with: the first row holds a value no destination takes when unreadable is set,
+// and the iteration ends in an error otherwise.
+type rowFault struct {
+	text       string
+	unreadable bool
+}
+
+var rowsBreak atomic.Pointer[rowFault]
+
+// breakRows fails the reading of the rows of every statement containing text,
+// until the test ends.
+func breakRows(t *testing.T, text string, unreadable bool) {
+	t.Helper()
+	rowsBreak.Store(&rowFault{text: text, unreadable: unreadable})
+	t.Cleanup(func() { rowsBreak.Store(nil) })
+}
+
+type breakingRows struct {
+	driver.Rows
+	unreadable bool
+}
+
+func (r breakingRows) Next(dest []driver.Value) error {
+	if !r.unreadable {
+		return errBroken
+	}
+	if err := r.Rows.Next(dest); err != nil {
+		return err
+	}
+	dest[0] = complex128(1)
+	return nil
 }
 
 // remember's rename runs as one transaction: a statement that fails partway
