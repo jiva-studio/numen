@@ -45,7 +45,7 @@ Eight builds in each and what they hold beside them, one name each in `latest/` 
 
 The `PKGBUILD` and the flake are recipes: they are read rather than fetched by a machine, so they stand on the shelf under their own names and are not in the manifest. Each is written by the run that made the build it names, and carries that build's address and hash.
 
-The repository is closed, which is why the flake is handed out as a file at all — `nix run tarball+https://dl.numen.md/latest/numen-nix.tar.gz` is what a stranger has instead of a git address. It holds `flake.nix`, `nix/numen.nix`, the desktop entries and the icons, a `nix/release.json` written by the run, and the lock: a flake taken as a file cannot write itself one.
+The repository is closed, which is why the flake is handed out as a file at all — `nix run tarball+https://dl.numen.md/latest/numen-nix.tar.gz` is what a stranger has instead of a git address. It holds `flake.nix`, `modules/tools/nix/numen.nix`, the desktop entries and the icons, a `modules/tools/nix/release.json` written by the run, and the lock: a flake taken as a file cannot write itself one.
 
 What an Arch user installs is the AUR package `numen-bin`. Pushing the `PKGBUILD` to the AUR is a person's own doing; the AUR repository holds this file and nothing else of ours.
 
