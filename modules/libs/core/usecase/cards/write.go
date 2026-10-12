@@ -69,7 +69,7 @@ func (u Write) Deck(
 	if err := note.CheckSize(path, len(body), MaxBytes); err != nil {
 		return WriteResult{}, err
 	}
-	whole, given, err := u.completeDeckBody(ctx, v, path, body)
+	whole, given, err := u.createWholeBody(ctx, v, path, body)
 	if err != nil {
 		return WriteResult{}, err
 	}
@@ -82,10 +82,10 @@ func (u Write) Deck(
 	return WriteResult{Fingerprint: at, Given: given}, err
 }
 
-// completeDeckBody returns the body with every card made whole, and the marks that
+// createWholeBody returns the body with every card made whole, and the marks that
 // took. The stencils are read against the body being written, so a card whose
 // wikilink the caller has just changed is cut by the stencil it now names.
-func (u Write) completeDeckBody(
+func (u Write) createWholeBody(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardMark, error) {
 	read := NewRead(u.readers, u.links)

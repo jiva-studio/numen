@@ -64,7 +64,7 @@ func TestWhatIsNotAnIdentifier(t *testing.T) {
 	}
 }
 
-func TestValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
+func TestIsValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 	for name, s := range map[string]string{
 		"upper case": "012345678A",
 		"letter i":   "012345678i",
