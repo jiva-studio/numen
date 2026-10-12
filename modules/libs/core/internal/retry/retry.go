@@ -29,6 +29,7 @@ func ParseAfter(value string, now time.Time) time.Duration {
 // Wait sleeps for d, or returns the context's error as soon as it ends. A d of
 // zero or less only reports the context.
 func Wait(ctx context.Context, d time.Duration) error {
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 1: a wait of one nanosecond is over before the select runs, so both paths end the same"
 	if d <= 0 {
 		return ctx.Err()
 	}

@@ -136,6 +136,7 @@ func (t *Tasks) list() []Task {
 // A listener that is not keeping up is given the newest list and not a queue of
 // old ones: what the work was doing a second ago is of no interest to anybody.
 func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 2: tell drains before it sends, so the channel never holds more than one list"
 	told := make(chan []Task, 1)
 
 	t.mu.Lock()

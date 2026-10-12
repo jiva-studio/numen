@@ -186,3 +186,116 @@ func next(t *testing.T, watching <-chan []task.Task) []task.Task {
 	}
 	return nil
 }
+
+// quiet fails when a listener has been told of anything.
+func quiet(t *testing.T, watching <-chan []task.Task, why string) {
+	t.Helper()
+	select {
+	case list := <-watching:
+		t.Errorf("%s: a listener was told %+v", why, list)
+	default:
+	}
+}
+
+func TestWorkWithNoNameIsNotListed(t *testing.T) {
+	tasks := task.New()
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	watching := tasks.Watch(ctx)
+	next(t, watching)
+
+	tasks.Set(task.Task{Doing: "Reading a scan"})
+	if list := tasks.List(); len(list) != 0 {
+		t.Errorf("listed %+v", list)
+	}
+	quiet(t, watching, "work with no name was reported")
+}
+
+func TestFinishingWhatIsNotThereTellsNobody(t *testing.T) {
+	tasks := task.New()
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	watching := tasks.Watch(ctx)
+	next(t, watching)
+
+	tasks.Remove("reading")
+	quiet(t, watching, "a task that was not there was finished")
+}
+
+func TestWorkTakenOutCanBeReportedAgain(t *testing.T) {
+	tasks := task.New()
+	tasks.Set(task.Task{ID: "a"})
+	tasks.Set(task.Task{ID: "b"})
+	tasks.Remove("a")
+	tasks.Set(task.Task{ID: "a", Doing: "again"})
+
+	list := tasks.List()
+	if len(list) != 2 || list[0].ID != "b" || list[1].ID != "a" || list[1].Doing != "again" {
+		t.Errorf("listed %+v, want b and then a", list)
+	}
+}
+
+func TestClearingTakesAllTasksOutAndTellsListeners(t *testing.T) {
+	tasks := task.New()
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	watching := tasks.Watch(ctx)
+	next(t, watching)
+
+	tasks.Set(task.Task{ID: "a"})
+	next(t, watching)
+	tasks.Clear()
+	if list := next(t, watching); len(list) != 0 {
+		t.Errorf("told %+v after the list was cleared", list)
+	}
+
+	tasks.Set(task.Task{ID: "a", Doing: "again"})
+	if list := tasks.List(); len(list) != 1 || list[0].Doing != "again" {
+		t.Errorf("listed %+v after reporting the work again", list)
+	}
+}
+
+func TestClearingWhatIsEmptyTellsNobody(t *testing.T) {
+	tasks := task.New()
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	watching := tasks.Watch(ctx)
+	next(t, watching)
+
+	tasks.Clear()
+	quiet(t, watching, "an empty list was cleared")
+}
+
+func TestClearingASingleTaskTakesItOut(t *testing.T) {
+	tasks := task.New()
+	tasks.Set(task.Task{ID: "a"})
+	tasks.Clear()
+	if list := tasks.List(); len(list) != 0 {
+		t.Errorf("listed %+v", list)
+	}
+}
+
+func TestAListenerThatEndedDoesNotStopTheOthersBeingTold(t *testing.T) {
+	tasks := task.New()
+	endingCtx, end := context.WithCancel(t.Context())
+	ending := tasks.Watch(endingCtx)
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+	staying := tasks.Watch(ctx)
+	next(t, staying)
+
+	end()
+	for open := true; open; {
+		select {
+		case _, open = <-ending:
+		case <-time.After(time.Second):
+			t.Fatal("the stream did not end with its context")
+		}
+	}
+
+	// Telling the ended listener would send on a closed channel.
+	tasks.Set(task.Task{ID: "a"})
+	if list := next(t, staying); len(list) != 1 {
+		t.Errorf("the listener that stayed was told %+v", list)
+	}
+}
