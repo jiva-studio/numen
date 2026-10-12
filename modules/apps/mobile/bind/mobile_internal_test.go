@@ -703,20 +703,37 @@ func TestRegisterVaultAnswersTheErrorOfAMachineWithNoPlaceForTheList(t *testing.
 	}
 }
 
+// getListenersOf is the listeners a server is accepting on. The server holds
+// them in an unexported set, under an unexported lock.
+func getListenersOf(server *http.Server) []net.Listener {
+	elem := reflect.ValueOf(server).Elem()
+	lockField := elem.FieldByName("mu")
+	lock := reflect.NewAt(lockField.Type(), unsafe.Pointer(lockField.UnsafeAddr())).Interface().(*sync.Mutex)
+	setField := elem.FieldByName("listeners")
+	held := reflect.NewAt(setField.Type(), unsafe.Pointer(setField.UnsafeAddr())).Elem()
+	lock.Lock()
+	defer lock.Unlock()
+	var found []net.Listener
+	for _, key := range held.MapKeys() {
+		found = append(found, *(*net.Listener)(key.UnsafePointer()))
+	}
+	return found
+}
+
 // closeListenersOf closes the listeners a server is accepting on, without the
-// server being told to stop. The server holds them in an unexported set.
+// server being told to stop.
 func closeListenersOf(t *testing.T, server *http.Server) {
 	t.Helper()
-	field := reflect.ValueOf(server).Elem().FieldByName("listeners")
-	held := reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
-	for until := time.Now().Add(5 * time.Second); held.Len() == 0 && time.Now().Before(until); {
+	var found []net.Listener
+	for until := time.Now().Add(5 * time.Second); len(found) == 0 && time.Now().Before(until); {
+		found = getListenersOf(server)
 		time.Sleep(10 * time.Millisecond)
 	}
-	if held.Len() == 0 {
+	if len(found) == 0 {
 		t.Fatal("the server is accepting on no listener")
 	}
-	for _, key := range held.MapKeys() {
-		if err := (*(*net.Listener)(key.UnsafePointer())).Close(); err != nil {
+	for _, one := range found {
+		if err := one.Close(); err != nil {
 			t.Fatalf("closing the listener: %v", err)
 		}
 	}
