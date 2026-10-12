@@ -1,6 +1,6 @@
 /** The side a point asks for, and the slot in a strip of tabs. */
 import { describe, expect, it } from 'vitest'
-import { caretAt, edgeOf, overlayFor, sideAt, slotAt, DEFAULT_DROP } from './drop'
+import { caretAt, edgeOf, overlayFor, rectOf, sideAt, slotAt, DEFAULT_DROP } from './drop'
 
 const BOX = { x: 0, y: 0, width: 800, height: 400 }
 
@@ -39,6 +39,45 @@ describe('sideAt', () => {
     expect(sideAt({ x: 500, y: 250 }, offset)).toBe('center')
   })
 
+  it('measures the zone down from the box, up to the limit', () => {
+    const tall = { x: 0, y: 0, width: 400, height: 4000 }
+
+    expect(sideAt({ x: 200, y: DEFAULT_DROP.limit + 1 }, tall)).toBe('center')
+    expect(sideAt({ x: 200, y: DEFAULT_DROP.limit - 1 }, tall)).toBe('top')
+  })
+
+  it('takes a fifth of the height for the zone down', () => {
+    expect(sideAt({ x: 400, y: 85 }, BOX)).toBe('center')
+    expect(sideAt({ x: 400, y: 75 }, BOX)).toBe('top')
+  })
+
+  it('takes a fifth of a small box for the zone', () => {
+    const small = { x: 0, y: 0, width: 40, height: 40 }
+
+    expect(sideAt({ x: 20, y: 20 }, small)).toBe('center')
+    expect(sideAt({ x: 20, y: 7 }, small)).toBe('top')
+  })
+
+  it('catches nothing in a zone of no size', () => {
+    const none = { share: 0 }
+
+    expect(sideAt({ x: -5, y: 200 }, BOX, none)).toBe('center')
+    expect(sideAt({ x: 805, y: 200 }, BOX, none)).toBe('center')
+    expect(sideAt({ x: 400, y: -5 }, BOX, none)).toBe('center')
+    expect(sideAt({ x: 400, y: 405 }, BOX, none)).toBe('center')
+  })
+
+  it('leaves the edge of a zone to the middle', () => {
+    expect(sideAt({ x: 96, y: 200 }, BOX)).toBe('center')
+    expect(sideAt({ x: 704, y: 200 }, BOX)).toBe('center')
+    expect(sideAt({ x: 400, y: 80 }, BOX)).toBe('center')
+    expect(sideAt({ x: 400, y: 320 }, BOX)).toBe('center')
+  })
+
+  it('gives a corner equally deep to the first edge', () => {
+    expect(sideAt({ x: 12, y: 10 }, BOX)).toBe('left')
+  })
+
   it('takes a narrower zone when asked', () => {
     expect(sideAt({ x: 20, y: 200 }, BOX, { share: 0.01 })).toBe('center')
   })
@@ -48,6 +87,18 @@ describe('overlayFor', () => {
   it('shows the half a side would take', () => {
     expect(overlayFor('right', BOX)).toStrictEqual({ x: 400, y: 0, width: 400, height: 400 })
     expect(overlayFor('bottom', BOX)).toStrictEqual({ x: 0, y: 200, width: 800, height: 200 })
+  })
+
+  it('shows the half a side on the leading edge would take', () => {
+    expect(overlayFor('left', BOX)).toStrictEqual({ x: 0, y: 0, width: 400, height: 400 })
+    expect(overlayFor('top', BOX)).toStrictEqual({ x: 0, y: 0, width: 800, height: 200 })
+  })
+
+  it('starts from the box it is given', () => {
+    const offset = { x: 100, y: 50, width: 800, height: 400 }
+
+    expect(overlayFor('left', offset)).toStrictEqual({ x: 100, y: 50, width: 400, height: 400 })
+    expect(overlayFor('top', offset)).toStrictEqual({ x: 100, y: 50, width: 800, height: 200 })
   })
 
   it('shows the whole pane for the middle', () => {
@@ -72,6 +123,11 @@ describe('slotAt', () => {
   it('passes a tab at its middle', () => {
     expect(slotAt(49, tabs)).toBe(0)
     expect(slotAt(51, tabs)).toBe(1)
+  })
+
+  it('passes a tab once the point reaches its middle', () => {
+    expect(slotAt(50, tabs)).toBe(1)
+    expect(slotAt(150, tabs)).toBe(2)
   })
 
   it('has one place in an empty strip', () => {
@@ -110,6 +166,11 @@ describe('edgeOf', () => {
     expect(edgeOf(point, BOX, 22)).toBe(side)
   })
 
+  it('measures the top edge from the box', () => {
+    const box = { x: 100, y: 50, width: 200, height: 100 }
+    expect(edgeOf({ x: 200, y: 54 }, box, 22)).toBe('top')
+  })
+
   it('reaches no edge from the middle', () => {
     expect(edgeOf({ x: 400, y: 200 }, BOX, 22)).toBeNull()
   })
@@ -127,5 +188,15 @@ describe('edgeOf', () => {
 
   it('reaches nothing at no reach at all', () => {
     expect(edgeOf({ x: 0, y: 200 }, BOX, 0)).toBeNull()
+  })
+})
+
+describe('rectOf', () => {
+  it('reads what an element takes up on screen', () => {
+    const element = {
+      getBoundingClientRect: () => ({ left: 10, top: 20, width: 30, height: 40 }),
+    } as unknown as Element
+
+    expect(rectOf(element)).toStrictEqual({ x: 10, y: 20, width: 30, height: 40 })
   })
 })

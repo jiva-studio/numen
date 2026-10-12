@@ -4,6 +4,7 @@ import {
   activateTab,
   closeTab,
   dropOnEdge,
+  focusPane,
   dropTab,
   moveTabWithin,
   openTab,
@@ -34,6 +35,17 @@ const ids = (workspace: Workspace) =>
 const tabsOf = (workspace: Workspace, pane: string) =>
   panesOf(workspace.root).find((each) => each.id === pane)?.tabs
 
+describe('focusing', () => {
+  it('moves the focus to a pane of the tree', () => {
+    expect(focusPane(sideBySide(), 'aside').focus).toBe('aside')
+  })
+
+  it('leaves the focus where it is for a pane the tree does not hold', () => {
+    const before = sideBySide()
+    expect(focusPane(before, 'nothing')).toStrictEqual(before)
+  })
+})
+
 describe('opening and showing', () => {
   it('puts a new tab in the focused pane', () => {
     const after = openTab(sideBySide(), 'notes', 'aside')
@@ -52,6 +64,47 @@ describe('opening and showing', () => {
     const after = activateTab(oneStack(), 'chat')
     expect(panesOf(after.root)[0]?.active).toBe('chat')
     expect(after.focus).toBe('main')
+  })
+})
+
+describe('a gesture asking for what the tree does not hold', () => {
+  const nowhere = () => workspaceOf(split('root', []))
+
+  it('shows no tab that is not open', () => {
+    const before = sideBySide()
+    expect(activateTab(before, 'nothing')).toStrictEqual(before)
+  })
+
+  it('opens no tab where there is no pane to open it in', () => {
+    const before = nowhere()
+    expect(openTab(before, 'notes')).toStrictEqual(before)
+  })
+
+  it('opens no tab beside a pane when there is no pane', () => {
+    const before = nowhere()
+    expect(openTabBeside(before, 'notes', 'left', createIdFactory())).toStrictEqual(before)
+  })
+
+  it('moves no tab that is not open', () => {
+    const before = sideBySide()
+    expect(moveTabWithin(before, 'nothing', 0)).toStrictEqual(before)
+  })
+
+  it('drops no tab that is not open', () => {
+    const before = sideBySide()
+    const drop = { tab: 'nothing', onto: 'main', side: 'left' } as const
+    expect(dropTab(before, drop, createIdFactory())).toStrictEqual(before)
+  })
+
+  it('drops a tab onto no pane that exists', () => {
+    const before = sideBySide()
+    const drop = { tab: 'chat', onto: 'nothing', side: 'left' } as const
+    expect(dropTab(before, drop, createIdFactory())).toStrictEqual(before)
+  })
+
+  it('resizes no branch that does not exist', () => {
+    const before = sideBySide()
+    expect(resizeBranch(before, 'nothing', [0.5, 0.5])).toStrictEqual(before)
   })
 })
 
@@ -155,6 +208,11 @@ describe('opening a tab in a pane of its own', () => {
     expect(openTabBeside(before, 'notes', 'center', createIdFactory())).toStrictEqual(before)
   })
 
+  it('leaves a tab that is open where it is when asked for the middle', () => {
+    const before = sideBySide()
+    expect(openTabBeside(before, 'chat', 'center', createIdFactory())).toStrictEqual(before)
+  })
+
   it('leaves the tree canonical when the pane it opened beside empties', () => {
     const after = openTabBeside(oneStack(), 'plex', 'left', createIdFactory(), 'main')
 
@@ -255,6 +313,17 @@ describe('a tab let go where it started', () => {
     expect(after.focus).toBe('aside')
   })
 
+  it('only shows a tab let go in the middle of its own pane, where it was', () => {
+    const after = dropTab(
+      oneStack(),
+      { tab: 'plex', onto: 'main', side: 'center' },
+      createIdFactory(),
+    )
+
+    expect(tabsOf(after, 'main')).toStrictEqual(['plex', 'chat'])
+    expect(panesOf(after.root)[0]?.active).toBe('plex')
+  })
+
   it('splits its own pane when there are others with it', () => {
     const after = dropTab(
       oneStack(),
@@ -324,6 +393,10 @@ describe('moving a tab along its own strip', () => {
     [3, ['one', 'two', 'three']],
   ])('to slot %i', (slot, expected) => {
     expect(tabsOf(moveTabWithin(three, 'three', slot), 'main')).toStrictEqual(expected)
+  })
+
+  it('leaves a tab where it is when its own slot is asked for', () => {
+    expect(tabsOf(moveTabWithin(three, 'two', 1), 'main')).toStrictEqual(['one', 'two', 'three'])
   })
 
   it('counts the slot as it stands before the tab is lifted', () => {

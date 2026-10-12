@@ -49,6 +49,7 @@ function place(
     const childBox: Rect = across
       ? { x: along, y: box.y, width: taken, height: box.height }
       : { x: box.x, y: along, width: box.width, height: taken }
+    // Stryker disable next-line ArithmeticOperator: depth - 1 has the parity of depth + 1, and only parity is read.
     place(child, childBox, workspace, depth + 1, gap, into)
     along += taken + gap
   })

@@ -58,6 +58,8 @@ describe('a letter pressed over the list', () => {
     expect(getVaultForKey(createPress('Enter'), 2)).toBeNull()
     expect(getVaultForKey(createPress('Escape'), 2)).toBeNull()
     expect(getVaultForKey(createPress(' '), 2)).toBeNull()
+    expect(getVaultForKey(createPress(''), 2)).toBeNull()
+    expect(getVaultForKey(createPress('ab'), 2)).toBeNull()
   })
 
   it('opens nothing while the key is held down', () => {
