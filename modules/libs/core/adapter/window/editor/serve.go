@@ -136,7 +136,6 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 			Links:   made.GetLinkQueries(),
 		},
 		Files: Files{
-			Writers:          made.GetVaultWriters(),
 			GetFolderEntries: file.NewGetFolderEntries(made.GetVaultReaders(), made.GetNoteQueries()),
 			GetFileKinds:     file.NewGetFileKinds(made.GetVaultReaders(), made.GetNoteQueries()),
 			CreateFolder:     file.NewCreateFolder(made.GetVaultWriters()),

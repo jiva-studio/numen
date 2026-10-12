@@ -179,7 +179,6 @@ type Notes struct {
 
 // Files is the vault's tree: what a folder holds, and what a person does to it.
 type Files struct {
-	Writers          port.VaultWriters
 	GetFolderEntries *file.GetFolderEntries
 	GetFileKinds     *file.GetFileKinds
 	CreateFolder     *file.CreateFolder
