@@ -29,7 +29,7 @@ func TestAMarkedNameIsReadBackAsTheNameAndTheRunsInIt(t *testing.T) {
 		{"👋 \x02Entropy\x03", "👋 Entropy", []domain.UnitSpan{{From: 3, To: 10}}},
 		{"\x02👋\x03 Entropy", "👋 Entropy", []domain.UnitSpan{{From: 0, To: 2}}},
 	} {
-		name, at := split(c.marked)
+		name, at := parseMarkedName(c.marked)
 		if name != c.name {
 			t.Errorf("split(%q) read %q, want %q", c.marked, name, c.name)
 		}
@@ -56,7 +56,7 @@ func BenchmarkSplit(b *testing.B) {
 		b.Run(c.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for b.Loop() {
-				split(c.marked)
+				parseMarkedName(c.marked)
 			}
 		})
 	}
@@ -98,7 +98,7 @@ func TestSplitReadsEveryMarkedNameAsTheReferenceDoes(t *testing.T) {
 		marked := string(runes)
 
 		wantName, wantAt := splitReference(marked)
-		gotName, gotAt := split(marked)
+		gotName, gotAt := parseMarkedName(marked)
 		if gotName != wantName {
 			t.Fatalf("split(%q) read %q, want %q", marked, gotName, wantName)
 		}

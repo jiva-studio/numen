@@ -72,7 +72,7 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		hashes = append(hashes, hash)
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hash, Recipe: before,
-			Value: precise(direction(9)), Coarse: bits(9),
+			Value: getPreciseBytes(getVectorForSeed(9)), Coarse: bits(9),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {

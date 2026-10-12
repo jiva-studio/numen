@@ -44,10 +44,10 @@ type Repository struct {
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// Cut is the repository, cutting a note at the sizes given and keeping what
+// WithChunkSizes is the repository, cutting a note at the sizes given and keeping what
 // reads as text. The settings decide both, and what has read the settings
 // passes them in here.
-func (r *Repository) Cut(sizes chunking.Sizes, reads chunking.Legibility) *Repository {
+func (r *Repository) WithChunkSizes(sizes chunking.Sizes, reads chunking.Legibility) *Repository {
 	return &Repository{db: r.db, sizes: sizes, reads: reads}
 }
 
@@ -131,12 +131,12 @@ func saveNote(
 			}
 		}
 	}
-	kept := outline(n)
+	kept := getIndexedHeadings(n)
 
 	// The note goes in as its own large chunk, so the words in it are findable
 	// as soon as it is indexed. A chunk whose text is what it was keeps its
 	// row, and the vector made from it.
-	if err := chunk.Replace(ctx, tx, row, vault, cut(n, kept, sizes, reads)); err != nil {
+	if err := chunk.Replace(ctx, tx, row, vault, splitIntoChunks(n, kept, sizes, reads)); err != nil {
 		return err
 	}
 	for _, h := range kept {
@@ -171,8 +171,8 @@ func saveNote(
 	return nil
 }
 
-// cut is how a note is cut: one large chunk over the whole of it, and the small
-// chunks inside that carry the vectors. The small chunks are cut at the sizes a
+// splitIntoChunks is how a note is splitIntoChunks: one large chunk over the whole of it, and the small
+// chunks inside that carry the vectors. The small chunks are splitIntoChunks at the sizes a
 // book's are, and a mixed vault ranks by what a passage says.
 //
 // The large chunk is the note itself. The sizes decide the small chunks inside
@@ -184,10 +184,10 @@ func saveNote(
 // Offsets are into the file. The body begins after the frontmatter, and every
 // chunk is moved out by as much.
 //
-// A deck and a stencil are cut into nothing. A card is found by its heading,
+// A deck and a stencil are splitIntoChunks into nothing. A card is found by its heading,
 // which is its question, and a stencil by its title, which is its file name.
 // The vectors hang off the chunks, so neither is embedded either.
-func cut(
+func splitIntoChunks(
 	n domain.Note, headings []domain.Heading,
 	sizes chunking.Sizes, reads chunking.Legibility,
 ) []chunk.Chunk {
@@ -200,7 +200,7 @@ func cut(
 		at = 0
 	}
 	sizes.Large = chunking.Whole
-	body, divisions := n.Body, parts(headings)
+	body, divisions := n.Body, getPartStarts(headings)
 
 	out := make([]chunk.Chunk, 0, 1)
 	for _, large := range chunking.Cut(body, divisions, sizes, reads) {
@@ -229,13 +229,13 @@ func cut(
 	return out
 }
 
-// parts is where a note names the section that follows. A heading carries the
+// getPartStarts is where a note names the section that follows. A heading carries the
 // byte its line begins at in the body, which is the offset a chunk is cut
 // against, and the heading's own text is what the section is called.
 //
 // They are the headings the index keeps, so a passage is announced under a name
 // somebody wrote.
-func parts(headings []domain.Heading) []domain.PartStart {
+func getPartStarts(headings []domain.Heading) []domain.PartStart {
 	if len(headings) == 0 {
 		return nil
 	}
@@ -254,13 +254,13 @@ const (
 	cardLevel    = 2
 )
 
-// outline is the headings of a note as the index keeps them.
+// getIndexedHeadings is the headings of a note as the index keeps them.
 //
 // A deck keeps its sections and its cards, and a card's heading is kept without
 // the mark it ends in. A card whose first field is empty is named by nothing,
 // and a heading of no text is not kept. A stencil keeps none: its headings are
 // its faces and their two sides. Every other note keeps every heading it has.
-func outline(n domain.Note) []domain.Heading {
+func getIndexedHeadings(n domain.Note) []domain.Heading {
 	switch n.Type {
 	case domain.TypeStencil:
 		return nil

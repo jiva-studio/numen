@@ -478,16 +478,16 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 }
 
-// asLocal and asService are the halves a provider carries, whichever of them is
+// getLocalModel and asService are the halves a provider carries, whichever of them is
 // in force. The word is what puts one there, and a test reading the other says
 // so before it does.
-func asLocal(where embed.Provider) embed.LocalModel {
+func getLocalModel(where embed.Provider) embed.LocalModel {
 	where.Use = embed.UseLocal
 	m, _ := where.Local()
 	return m
 }
 
-func asService(where embed.Provider) embed.ServiceModel {
+func getServiceModel(where embed.Provider) embed.ServiceModel {
 	where.Use = embed.UseService
 	m, _ := where.Service()
 	return m
@@ -513,12 +513,12 @@ func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
 		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
 	}
 	service, _ := e.Indexing.Service()
-	if service.BaseURL != asService(embed.Defaults().Indexing).BaseURL {
+	if service.BaseURL != getServiceModel(embed.Defaults().Indexing).BaseURL {
 		t.Errorf("base URL is %q", service.BaseURL)
 	}
 	// The half the file is not on keeps the defaults as well, and the word is
 	// all that stands between the two.
-	if local := asLocal(e.Indexing); local.Name != asLocal(embed.Defaults().Indexing).Name {
+	if local := getLocalModel(e.Indexing); local.Name != getLocalModel(embed.Defaults().Indexing).Name {
 		t.Errorf("local model is %q", local.Name)
 	}
 	// A question is asked the way the vault was indexed.
@@ -563,7 +563,7 @@ func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
 		t.Errorf("asked by %+v", e.GetQueryProvider())
 	}
 	// The section nobody wrote about keeps its default.
-	if indexing.BatchCharacters != asService(embed.Defaults().Indexing).BatchCharacters {
+	if indexing.BatchCharacters != getServiceModel(embed.Defaults().Indexing).BatchCharacters {
 		t.Errorf("batch is %d", indexing.BatchCharacters)
 	}
 }
@@ -589,7 +589,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := asService(cfg.Indexing.Embedding.Indexing).Key(); got != "from-the-file" {
+	if got := getServiceModel(cfg.Indexing.Embedding.Indexing).Key(); got != "from-the-file" {
 		t.Errorf("got %q", got)
 	}
 
@@ -597,7 +597,7 @@ func TestTheKeyComesFromTheFileOrTheEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := asService(cfg.Indexing.Embedding.Indexing).Key(); got != "from-the-environment" {
+	if got := getServiceModel(cfg.Indexing.Embedding.Indexing).Key(); got != "from-the-environment" {
 		t.Errorf("got %q", got)
 	}
 }
@@ -608,7 +608,7 @@ func TestAnInstallationMayNameItsOwnEnvironmentVariable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := asService(cfg.Indexing.Embedding.Indexing).Key(); got != "from-openrouter" {
+	if got := getServiceModel(cfg.Indexing.Embedding.Indexing).Key(); got != "from-openrouter" {
 		t.Errorf("got %q", got)
 	}
 }

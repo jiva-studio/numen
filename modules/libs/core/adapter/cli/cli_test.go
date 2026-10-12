@@ -27,7 +27,7 @@ type session struct {
 	base  []string
 	// bin is where an erased folder goes. A test sends nothing to the trash of
 	// the machine it runs on.
-	bin *bin
+	bin *fakeTrash
 	// said is what the commands run here wrote beside their answers.
 	said bytes.Buffer
 }
@@ -38,7 +38,7 @@ func newSession(t *testing.T) *session {
 	return &session{
 		t:     t,
 		vault: testsupport.CopyVault(t),
-		bin:   &bin{into: t.TempDir()},
+		bin:   &fakeTrash{into: t.TempDir()},
 		base: []string{
 			"--registry", filepath.Join(dir, "vaults.json"),
 			"--index", filepath.Join(dir, "index.db"),
@@ -89,15 +89,15 @@ func (s *session) types(answer string) {
 	s.t.Cleanup(func() { os.Stdin = was; read.Close() })
 }
 
-// bin is a trash of this test's own: it moves what it is given into a folder the
+// fakeTrash is a trash of this test's own: it moves what it is given into a folder the
 // test made, and answers refuse where that is set.
-type bin struct {
+type fakeTrash struct {
 	into   string
 	refuse error
 	took   []string
 }
 
-func (b *bin) Trash(path string) error {
+func (b *fakeTrash) Trash(path string) error {
 	if b.refuse != nil {
 		return fmt.Errorf("%s: %w", path, b.refuse)
 	}
@@ -107,14 +107,14 @@ func (b *bin) Trash(path string) error {
 
 // trash is the bin an erased folder goes to, answering refuse where one is
 // given.
-func (s *session) trash(refuse error) *bin {
+func (s *session) trash(refuse error) *fakeTrash {
 	s.t.Helper()
 	s.bin.refuse = refuse
 	return s.bin
 }
 
-// marks is the two characters vault list puts before a vault's name.
-func marks(listing, name string) string {
+// getListMarks is the two characters vault list puts before a vault's name.
+func getListMarks(listing, name string) string {
 	for _, line := range strings.Split(listing, "\n") {
 		if len(line) > 2 && strings.HasPrefix(strings.TrimLeft(line, " *?"), name) {
 			return line[:2]
@@ -232,12 +232,12 @@ func TestReaddingAVaultKeepsItsIdentity(t *testing.T) {
 	s := newSession(t)
 	first := s.mustRun("vault", "add", s.vault, "--name", "demo")
 	second := s.mustRun("vault", "add", s.vault, "--name", "demo")
-	if identity(first) != identity(second) {
+	if parseIdentity(first) != parseIdentity(second) {
 		t.Errorf("identity changed on re-adding:\n%s\n%s", first, second)
 	}
 }
 
-func identity(output string) string {
+func parseIdentity(output string) string {
 	for _, line := range strings.Split(output, "\n") {
 		if id, ok := strings.CutPrefix(strings.TrimSpace(line), "id "); ok {
 			return strings.TrimSpace(id)
@@ -278,7 +278,7 @@ func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
 	s := newSession(t)
 	s.mustRun("vault", "add", s.vault, "--name", "moved")
 	s.mustRun("scan", "moved")
-	was := identityOf(t, s.vault)
+	was := readIdentity(t, s.vault)
 
 	moved := filepath.Join(filepath.Dir(s.vault), "somewhere-else")
 	if err := os.Rename(s.vault, moved); err != nil {
@@ -300,13 +300,13 @@ func TestAMovedVaultIsRecognisedRatherThanRefused(t *testing.T) {
 
 	// The identity travelled with the folder, so the index it already built is
 	// still the right one.
-	if now := identityOf(t, moved); now != was {
+	if now := readIdentity(t, moved); now != was {
 		t.Errorf("the moved vault is %s, and was %s", now, was)
 	}
 }
 
-// identityOf is what a vault calls itself, read out of the folder.
-func identityOf(t *testing.T, path string) string {
+// readIdentity is what a vault calls itself, read out of the folder.
+func readIdentity(t *testing.T, path string) string {
 	t.Helper()
 
 	raw, err := os.ReadFile(filepath.Join(path, ".numen", "config.json"))
@@ -389,7 +389,7 @@ func TestForgettingKeepsTheFolderAndSaysSo(t *testing.T) {
 	// The identity stayed in the folder, so the vault that comes back is the one
 	// that left.
 	again := s.mustRun("vault", "add", s.vault, "--name", "leaving")
-	if identity(again) != identity(added) {
+	if parseIdentity(again) != parseIdentity(added) {
 		t.Errorf("adding it again made another vault:\n%s\n%s", added, again)
 	}
 }
@@ -466,7 +466,7 @@ func TestOpenRecordsTheVaultTheNextWindowOpens(t *testing.T) {
 	s.mustRun("vault", "add", s.vault, "--name", "first")
 	s.addVault("second")
 
-	if mark := marks(s.mustRun("vault", "list"), "second"); mark != "  " {
+	if mark := getListMarks(s.mustRun("vault", "list"), "second"); mark != "  " {
 		t.Errorf("a vault is marked %q before any was opened", mark)
 	}
 
@@ -476,10 +476,10 @@ func TestOpenRecordsTheVaultTheNextWindowOpens(t *testing.T) {
 	}
 
 	listed := s.mustRun("vault", "list")
-	if mark := marks(listed, "second"); mark != "* " {
+	if mark := getListMarks(listed, "second"); mark != "* " {
 		t.Errorf("the vault opened last is marked %q:\n%s", mark, listed)
 	}
-	if mark := marks(listed, "first"); mark != "  " {
+	if mark := getListMarks(listed, "first"); mark != "  " {
 		t.Errorf("a vault that was not opened is marked %q:\n%s", mark, listed)
 	}
 
@@ -488,7 +488,7 @@ func TestOpenRecordsTheVaultTheNextWindowOpens(t *testing.T) {
 	if err := os.Rename(s.vault, filepath.Join(filepath.Dir(s.vault), "elsewhere")); err != nil {
 		t.Fatal(err)
 	}
-	if mark := marks(s.mustRun("vault", "list"), "first"); mark != " ?" {
+	if mark := getListMarks(s.mustRun("vault", "list"), "first"); mark != " ?" {
 		t.Errorf("a vault whose folder is gone is marked %q", mark)
 	}
 }

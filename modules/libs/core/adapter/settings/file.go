@@ -37,21 +37,21 @@ func Read(path string) ([]byte, error) {
 // into says what shape the whole file takes, so bytes the settings cannot be
 // read out of are refused before any of them land.
 func Write(path string, raw []byte, seen *string, into Document) error {
-	if err := object(raw); err != nil {
+	if err := checkObject(raw); err != nil {
 		return err
 	}
-	if err := distinct(raw); err != nil {
-		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
+	if err := checkNoDuplicateNames(raw); err != nil {
+		return fmt.Errorf("%w: %s", port.ErrNotASetting, describeErrorLocation(err))
 	}
 	if err := checkSettings(raw, into); err != nil {
-		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
+		return fmt.Errorf("%w: %s", port.ErrNotASetting, describeErrorLocation(err))
 	}
 
 	return runOnFile(path, func(path string) error {
 		if err := checkUnchanged(path, seen); err != nil {
 			return err
 		}
-		return replace(path, raw)
+		return writeFileAtomically(path, raw)
 	})
 }
 
@@ -73,15 +73,15 @@ func checkUnchanged(path string, seen *string) error {
 	return nil
 }
 
-// object says what is wrong with bytes that are not the one object the
+// checkObject says what is wrong with bytes that are not the one checkObject the
 // settings are the fields of, and nothing where they are it.
 //
 // A bare `null` unmarshals into anything and leaves it alone, so it is refused
 // by name.
-func object(raw []byte) error {
+func checkObject(raw []byte) error {
 	var whole map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &whole); err != nil {
-		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
+		return fmt.Errorf("%w: %s", port.ErrNotASetting, describeErrorLocation(err))
 	}
 	if whole == nil {
 		return fmt.Errorf("%w: the settings are the fields of one object", port.ErrNotASetting)
@@ -89,9 +89,9 @@ func object(raw []byte) error {
 	return nil
 }
 
-// where says what is wrong with a settings file by the place it goes wrong at,
+// describeErrorLocation says what is wrong with a settings file by the place it goes wrong at,
 // and by the field it goes wrong in.
-func where(err error) string {
+func describeErrorLocation(err error) string {
 	var syntax *json.SyntaxError
 	if errors.As(err, &syntax) {
 		return fmt.Sprintf("it does not read as JSON, at byte %d", syntax.Offset)

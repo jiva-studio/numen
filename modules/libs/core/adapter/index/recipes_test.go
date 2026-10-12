@@ -48,7 +48,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 			}
 			vectors = append(vectors, chunk.Vector{
 				Chunk: p.Chunk, Hash: hash, Recipe: recipe,
-				Value: precise(direction(9)), Coarse: bits(9),
+				Value: getPreciseBytes(getVectorForSeed(9)), Coarse: bits(9),
 			})
 		}
 		if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
@@ -56,7 +56,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		}
 	}
 
-	gone, err := db.ForgetOtherRecipes(ctx, now)
+	gone, err := db.DeleteOtherRecipeVectors(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 
 	// A recipe nobody named takes nothing out: the store is not emptied by a
 	// run that has no model to say what it is holding vectors for.
-	if gone, err := db.ForgetOtherRecipes(ctx, ""); err != nil || gone != 0 {
+	if gone, err := db.DeleteOtherRecipeVectors(ctx, ""); err != nil || gone != 0 {
 		t.Errorf("forgetting under no recipe took %d vectors out: %v", gone, err)
 	}
 	if err := db.Compact(ctx); err != nil {
@@ -102,7 +102,7 @@ func TestForgettingAndCompactingReportTheirFailure(t *testing.T) {
 		run    func(db *DB) error
 	}{
 		{"forgetting", "DELETE FROM vectors", func(db *DB) error {
-			n, err := db.ForgetOtherRecipes(t.Context(), "current")
+			n, err := db.DeleteOtherRecipeVectors(t.Context(), "current")
 			if n != 0 {
 				t.Errorf("a deletion that failed counted %d", n)
 			}
@@ -114,7 +114,7 @@ func TestForgettingAndCompactingReportTheirFailure(t *testing.T) {
 			db := openBreakingDB(t)
 			breakOn(t, step.breaks)
 			err := step.run(db)
-			mend()
+			stopBreaking()
 			if !errors.Is(err, errBroken) {
 				t.Errorf("answered %v", err)
 			}

@@ -66,7 +66,7 @@ func Mode(word string) appearance.ColorScheme {
 	return appearance.System
 }
 
-func Word(mode appearance.ColorScheme) string {
+func GetModeName(mode appearance.ColorScheme) string {
 	switch mode {
 	case appearance.Light:
 		return ModeLight
@@ -97,9 +97,9 @@ var (
 	PartsUnderANodeBounds = Bounds{Least: 1, Most: 12}
 )
 
-// Outsides is every number the section holds that its setting does not take,
+// GetOutsideBounds is every number the section holds that its setting does not take,
 // in the order the section names them.
-func (a Appearance) Outsides() []*OutsideBounds {
+func (a Appearance) GetOutsideBounds() []*OutsideBounds {
 	var found []*OutsideBounds
 	for _, err := range []error{
 		InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale),
@@ -117,7 +117,7 @@ func (a Appearance) Outsides() []*OutsideBounds {
 // Check is what is wrong with the two sizes and the count, and nothing where
 // each is a number its setting takes.
 func (a Appearance) Check() error {
-	if found := a.Outsides(); len(found) > 0 {
+	if found := a.GetOutsideBounds(); len(found) > 0 {
 		return found[0]
 	}
 	return nil
@@ -127,13 +127,13 @@ func (a Appearance) Check() error {
 // nobody has dressed wears.
 const DefaultTheme = "preset:numen"
 
-// fromDesktop is how large the interface is drawn where the file names no size.
+// getDesktopScale is how large the interface is drawn where the file names no size.
 //
 // A screen says how many pixels it has and not how large they are, so the
 // desktop is asked: GDK_DPI_SCALE is what a person told their session text
 // should be scaled by, and the interface is drawn to match. A number outside
 // InterfaceScaleBounds is not one the setting is seeded with.
-func fromDesktop() float64 {
+func getDesktopScale() float64 {
 	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
 	if err != nil || !InterfaceScaleBounds.Contains(scale) {
 		return AsDesigned

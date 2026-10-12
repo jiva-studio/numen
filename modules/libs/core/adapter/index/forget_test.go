@@ -60,7 +60,7 @@ func fillVault(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte)
 	}); err != nil {
 		t.Fatal(err)
 	}
-	vectorise(t, db, vault, seed)
+	saveSeededVectors(t, db, vault, seed)
 }
 
 // contents is what one vault holds, as the numbers its rows in the virtual
