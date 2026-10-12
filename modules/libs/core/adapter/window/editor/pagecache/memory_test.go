@@ -14,13 +14,13 @@ import (
 // Draw and Has on other keys. None of index, order, or bytes may be touched
 // outside p.mu by any of the three.
 func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
-	cache := NewMemory(MostDrawn)
+	cache := NewMemory(MaxMemoryBytes)
 	drawn := func() ([]byte, error) { return make([]byte, 100), nil }
 
 	held := make([]ID, 10)
 	for at := range held {
 		held[at] = newTestID(at)
-		cache.Draw(t.Context(), held[at], drawn)
+		cache.GetOrRender(t.Context(), held[at], drawn)
 	}
 
 	var wg sync.WaitGroup
@@ -28,13 +28,13 @@ func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
 		wg.Add(2)
 		go func(at int) {
 			defer wg.Done()
-			cache.Draw(t.Context(), newTestID(1000+at), drawn)
+			cache.GetOrRender(t.Context(), newTestID(1000+at), drawn)
 		}(at)
 		go func(at int) {
 			defer wg.Done()
 			key := held[at%len(held)]
 			cache.Has(key)
-			cache.Drop(key)
+			cache.Remove(key)
 		}(at)
 	}
 	wg.Wait()
@@ -46,14 +46,14 @@ func newTestID(at int) ID {
 }
 
 func TestMemoryHoldsSixtyFourMebibytes(t *testing.T) {
-	if MostDrawn != 64<<20 {
-		t.Errorf("MostDrawn is %d bytes, want %d", MostDrawn, 64<<20)
+	if MaxMemoryBytes != 64<<20 {
+		t.Errorf("MaxMemoryBytes is %d bytes, want %d", MaxMemoryBytes, 64<<20)
 	}
 }
 
 // A page asked for again is answered from what is held, and drawn once.
 func TestAPageDrawnIsHeldAndNotDrawnAgain(t *testing.T) {
-	cache := NewMemory(MostDrawn)
+	cache := NewMemory(MaxMemoryBytes)
 	calls := 0
 	draw := func() ([]byte, error) {
 		calls++
@@ -61,7 +61,7 @@ func TestAPageDrawnIsHeldAndNotDrawnAgain(t *testing.T) {
 	}
 
 	for range 2 {
-		got, err := cache.Draw(t.Context(), newTestID(0), draw)
+		got, err := cache.GetOrRender(t.Context(), newTestID(0), draw)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -80,15 +80,15 @@ func TestAPageDrawnIsHeldAndNotDrawnAgain(t *testing.T) {
 // A drawing that fails is not held: the failure is answered once and the next
 // ask draws the page again.
 func TestAFailedDrawingIsNotHeld(t *testing.T) {
-	cache := NewMemory(MostDrawn)
+	cache := NewMemory(MaxMemoryBytes)
 	failure := errors.New("the page did not draw")
-	if _, err := cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) { return nil, failure }); !errors.Is(err, failure) {
+	if _, err := cache.GetOrRender(t.Context(), newTestID(0), func() ([]byte, error) { return nil, failure }); !errors.Is(err, failure) {
 		t.Fatalf("got %v, want %v", err, failure)
 	}
 	if cache.Has(newTestID(0)) {
 		t.Error("a failed drawing is held")
 	}
-	got, err := cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) { return []byte("page"), nil })
+	got, err := cache.GetOrRender(t.Context(), newTestID(0), func() ([]byte, error) { return []byte("page"), nil })
 	if err != nil || string(got) != "page" {
 		t.Errorf("the next ask answered %q, %v", got, err)
 	}
@@ -96,15 +96,15 @@ func TestAFailedDrawingIsNotHeld(t *testing.T) {
 
 func TestDropTakesThePageOutAndFreesItsRoom(t *testing.T) {
 	cache := NewMemory(100)
-	cache.Draw(t.Context(), newTestID(0), newDrawing(60))
-	cache.Draw(t.Context(), newTestID(1), newDrawing(30))
+	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(60))
+	cache.GetOrRender(t.Context(), newTestID(1), newDrawing(30))
 
-	cache.Drop(newTestID(0))
+	cache.Remove(newTestID(0))
 	if cache.Has(newTestID(0)) {
 		t.Error("a page dropped is still held")
 	}
 
-	cache.Draw(t.Context(), newTestID(2), newDrawing(60))
+	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(60))
 	for _, at := range []int{1, 2} {
 		if !cache.Has(newTestID(at)) {
 			t.Errorf("page %d was dropped, though what is held is inside the bound", at)
@@ -116,17 +116,17 @@ func TestDropTakesThePageOutAndFreesItsRoom(t *testing.T) {
 // until it is inside the bound again, and no more.
 func TestTheLeastRecentlyAskedForGoFirst(t *testing.T) {
 	cache := NewMemory(100)
-	cache.Draw(t.Context(), newTestID(0), newDrawing(40))
-	cache.Draw(t.Context(), newTestID(1), newDrawing(40))
-	cache.Draw(t.Context(), newTestID(2), newDrawing(20))
+	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(1), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(20))
 	for at := range 3 {
 		if !cache.Has(newTestID(at)) {
 			t.Fatalf("page %d was dropped with what is held exactly at the bound", at)
 		}
 	}
 
-	cache.Draw(t.Context(), newTestID(0), newDrawing(40))
-	cache.Draw(t.Context(), newTestID(3), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(3), newDrawing(40))
 
 	for at, isHeld := range []bool{true, false, true, true} {
 		if got := cache.Has(newTestID(at)); got != isHeld {
@@ -139,12 +139,12 @@ func TestTheLeastRecentlyAskedForGoFirst(t *testing.T) {
 // take the new one out when room is made.
 func TestAPageDrawnAgainAfterADropIsHeldOnce(t *testing.T) {
 	cache := NewMemory(100)
-	cache.Draw(t.Context(), newTestID(0), newDrawing(40))
-	cache.Drop(newTestID(0))
-	cache.Draw(t.Context(), newTestID(0), newDrawing(40))
-	cache.Draw(t.Context(), newTestID(1), newDrawing(40))
-	cache.Draw(t.Context(), newTestID(0), newDrawing(40))
-	cache.Draw(t.Context(), newTestID(2), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
+	cache.Remove(newTestID(0))
+	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(1), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(40))
 
 	for at, isHeld := range []bool{true, false, true} {
 		if got := cache.Has(newTestID(at)); got != isHeld {
@@ -157,8 +157,8 @@ func TestAPageDrawnAgainAfterADropIsHeldOnce(t *testing.T) {
 // and neither held nor counted against the bound.
 func TestAPageDroppedWhileBeingDrawnIsAnsweredAndNotHeld(t *testing.T) {
 	cache := NewMemory(100)
-	got, err := cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) {
-		cache.Drop(newTestID(0))
+	got, err := cache.GetOrRender(t.Context(), newTestID(0), func() ([]byte, error) {
+		cache.Remove(newTestID(0))
 		return make([]byte, 100), nil
 	})
 	if err != nil || len(got) != 100 {
@@ -168,8 +168,8 @@ func TestAPageDroppedWhileBeingDrawnIsAnsweredAndNotHeld(t *testing.T) {
 		t.Error("a page dropped while being drawn is held")
 	}
 
-	cache.Draw(t.Context(), newTestID(1), newDrawing(60))
-	cache.Draw(t.Context(), newTestID(2), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(1), newDrawing(60))
+	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(40))
 	for _, at := range []int{1, 2} {
 		if !cache.Has(newTestID(at)) {
 			t.Errorf("page %d was dropped, though what is held is inside the bound", at)
@@ -183,10 +183,10 @@ func newDrawing(size int) func() ([]byte, error) {
 }
 
 func TestAFailedPageDroppedWhileBeingDrawnAnswersItsFailure(t *testing.T) {
-	cache := NewMemory(MostDrawn)
+	cache := NewMemory(MaxMemoryBytes)
 	failure := errors.New("the page did not draw")
-	_, err := cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) {
-		cache.Drop(newTestID(0))
+	_, err := cache.GetOrRender(t.Context(), newTestID(0), func() ([]byte, error) {
+		cache.Remove(newTestID(0))
 		return nil, failure
 	})
 	if !errors.Is(err, failure) {
@@ -197,9 +197,9 @@ func TestAFailedPageDroppedWhileBeingDrawnAnswersItsFailure(t *testing.T) {
 // Room is made for as many pages as it takes, oldest first.
 func TestRoomIsMadeForAPageLargerThanTheOldest(t *testing.T) {
 	cache := NewMemory(100)
-	cache.Draw(t.Context(), newTestID(0), newDrawing(40))
-	cache.Draw(t.Context(), newTestID(1), newDrawing(40))
-	cache.Draw(t.Context(), newTestID(2), newDrawing(90))
+	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(1), newDrawing(40))
+	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(90))
 
 	for at, isHeld := range []bool{false, false, true} {
 		if got := cache.Has(newTestID(at)); got != isHeld {
@@ -212,21 +212,21 @@ func TestRoomIsMadeForAPageLargerThanTheOldest(t *testing.T) {
 // answered with its failure.
 func TestAnAskWaitingOnAFailedDrawingIsAnsweredWithItsFailure(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		cache := NewMemory(MostDrawn)
+		cache := NewMemory(MaxMemoryBytes)
 		failure := errors.New("the page did not draw")
 		release := make(chan struct{})
 		answers := make([]error, 2)
 		var wg sync.WaitGroup
 
 		wg.Go(func() {
-			_, answers[0] = cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) {
+			_, answers[0] = cache.GetOrRender(t.Context(), newTestID(0), func() ([]byte, error) {
 				<-release
 				return nil, failure
 			})
 		})
 		synctest.Wait()
 		wg.Go(func() {
-			_, answers[1] = cache.Draw(t.Context(), newTestID(0), newDrawing(10))
+			_, answers[1] = cache.GetOrRender(t.Context(), newTestID(0), newDrawing(10))
 		})
 		synctest.Wait()
 		close(release)
@@ -241,12 +241,12 @@ func TestAnAskWaitingOnAFailedDrawingIsAnsweredWithItsFailure(t *testing.T) {
 }
 
 func TestAnAskThatStopsWaitingIsAnsweredBusy(t *testing.T) {
-	cache := NewMemory(MostDrawn)
+	cache := NewMemory(MaxMemoryBytes)
 	stopped, stop := context.WithCancel(t.Context())
 	stop()
 	var waited error
-	cache.Draw(t.Context(), newTestID(0), func() ([]byte, error) {
-		_, waited = cache.Draw(stopped, newTestID(0), newDrawing(10))
+	cache.GetOrRender(t.Context(), newTestID(0), func() ([]byte, error) {
+		_, waited = cache.GetOrRender(stopped, newTestID(0), newDrawing(10))
 		return make([]byte, 10), nil
 	})
 	if !errors.Is(waited, pool.ErrBusy) {

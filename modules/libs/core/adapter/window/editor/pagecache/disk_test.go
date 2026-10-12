@@ -121,7 +121,7 @@ func TestNoDiskKeepsNothing(t *testing.T) {
 	if got := cache.Get(newDrawingID(0)); got != nil {
 		t.Errorf("no disk read back %q", got)
 	}
-	cache.SweepTo(0)
+	cache.TrimTo(0)
 	cache.Close()
 }
 
@@ -206,7 +206,7 @@ func TestASweepDropsWhatWasLookedAtLongestAgo(t *testing.T) {
 		}
 	}
 
-	cache.SweepTo(2 * int64(len(page)))
+	cache.TrimTo(2 * int64(len(page)))
 
 	for at, isKept := range []bool{true, false, false, true} {
 		_, err := os.Stat(names[at])

@@ -100,7 +100,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	o.API.Window.EndRound()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
-	o.API.Listeners.tell(change{shouldReload: true})
+	o.API.ChangeEvents.publish(change{shouldReload: true})
 	return err
 }
 
@@ -221,7 +221,7 @@ func (o *Installation) leave() {
 	// The documents held open go with the vault, and each gives back the worker
 	// it was holding.
 	if o.API.Viewer != nil {
-		o.API.Viewer.empty()
+		o.API.Viewer.reset()
 	}
 }
 

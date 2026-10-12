@@ -74,7 +74,7 @@ func (a *API) RemoveFile(
 	}
 	// The watcher reports only the paths the vault holds a source for. What
 	// went is said here, so the tree drops the row whatever stood on it.
-	a.Listeners.tell(change{paths: []string{removed.Path}})
+	a.ChangeEvents.publish(change{paths: []string{removed.Path}})
 	return connect.NewResponse(&v1.RemoveFileResponse{
 		Trashed:      removed.Trashed,
 		Dangling:     removed.Dangling,

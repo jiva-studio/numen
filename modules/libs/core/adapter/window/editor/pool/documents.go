@@ -58,9 +58,9 @@ type Document struct {
 	idle *time.Timer
 }
 
-// Hold takes the document for one call into the library, and answers false
+// Lock takes the document for one call into the library, and answers false
 // where the caller ran out of time.
-func (d *Document) Hold(ctx context.Context) bool {
+func (d *Document) Lock(ctx context.Context) bool {
 	select {
 	case d.lock <- struct{}{}:
 		return true
@@ -69,10 +69,10 @@ func (d *Document) Hold(ctx context.Context) bool {
 	}
 }
 
-func (d *Document) Release() { <-d.lock }
+func (d *Document) Unlock() { <-d.lock }
 
-// Shut closes the document once whatever is opening it has finished.
-func (d *Document) Shut() {
+// Close closes the document once whatever is opening it has finished.
+func (d *Document) Close() {
 	select {
 	case <-d.ready:
 		if d.Scan != nil {
@@ -115,8 +115,8 @@ type Documents struct {
 // How many documents are held open at once, and how long one nobody is looking
 // at is kept.
 const (
-	MostOpen    = 2
-	OpenIdleFor = 2 * time.Minute
+	MaxOpenDocuments    = 2
+	DocumentIdleTimeout = 2 * time.Minute
 )
 
 // NewDocuments is a window with nothing open yet: how many documents it keeps
@@ -130,14 +130,14 @@ func NewDocuments(limit int, idleFor time.Duration) *Documents {
 	}
 }
 
-// Take hands over the document at a fingerprint, opening it if it is not open.
+// Acquire hands over the document at a fingerprint, opening it if it is not open.
 // The function returned gives it back.
 //
 // Opening reads and parses the whole file and waits for a worker of the pool,
 // so it happens on a goroutine of its own: a caller whose ctx ends first is told
 // the document is busy, and the open goes on and is there for the next ask. Two
 // callers asking at once open it once.
-func (d *Documents) Take(
+func (d *Documents) Acquire(
 	ctx context.Context,
 	mark Fingerprint,
 	open func() (Scan, error),
@@ -155,7 +155,7 @@ func (d *Documents) Take(
 			points: map[int]int{},
 		}
 		d.open[mark] = doc
-		go d.Fill(mark, doc, open)
+		go d.Load(mark, doc, open)
 	}
 	doc.uses++
 	if doc.idle != nil {
@@ -169,18 +169,18 @@ func (d *Documents) Take(
 	select {
 	case <-doc.ready:
 	case <-ctx.Done():
-		d.Give(mark, doc)
+		d.Release(mark, doc)
 		return nil, nil, ErrBusy
 	}
 	if doc.why != nil {
-		d.Give(mark, doc)
+		d.Release(mark, doc)
 		return nil, nil, doc.why
 	}
-	return doc, func() { d.Give(mark, doc) }, nil
+	return doc, func() { d.Release(mark, doc) }, nil
 }
 
-// Fill opens the document and tells whoever is waiting.
-func (d *Documents) Fill(mark Fingerprint, doc *Document, open func() (Scan, error)) {
+// Load opens the document and tells whoever is waiting.
+func (d *Documents) Load(mark Fingerprint, doc *Document, open func() (Scan, error)) {
 	doc.Scan, doc.why = open()
 	close(doc.ready)
 	if doc.why == nil {
@@ -192,12 +192,12 @@ func (d *Documents) Fill(mark Fingerprint, doc *Document, open func() (Scan, err
 	defer d.mu.Unlock()
 	if d.open[mark] == doc {
 		delete(d.open, mark)
-		d.Forget(mark)
+		d.RemoveFromOrder(mark)
 	}
 }
 
-// Give puts a document back and starts the clock on closing it.
-func (d *Documents) Give(mark Fingerprint, doc *Document) {
+// Release puts a document back and starts the clock on closing it.
+func (d *Documents) Release(mark Fingerprint, doc *Document) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	doc.uses--
@@ -206,29 +206,29 @@ func (d *Documents) Give(mark Fingerprint, doc *Document) {
 	}
 	if d.isClosing {
 		delete(d.open, mark)
-		doc.Shut()
+		doc.Close()
 		if len(d.open) == 0 {
 			d.done.Do(func() { close(d.empty) })
 		}
 		return
 	}
 	if d.open[mark] != doc {
-		doc.Shut()
+		doc.Close()
 		return
 	}
-	doc.idle = time.AfterFunc(d.idleFor, func() { d.Retire(mark, doc) })
+	doc.idle = time.AfterFunc(d.idleFor, func() { d.CloseIfIdle(mark, doc) })
 }
 
-// Retire closes a document nobody has asked about for a while.
-func (d *Documents) Retire(mark Fingerprint, doc *Document) {
+// CloseIfIdle closes a document nobody has asked about for a while.
+func (d *Documents) CloseIfIdle(mark Fingerprint, doc *Document) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.open[mark] != doc || doc.uses > 0 {
 		return
 	}
 	delete(d.open, mark)
-	d.Forget(mark)
-	doc.Shut()
+	d.RemoveFromOrder(mark)
+	doc.Close()
 }
 
 // Close closes every document held open, once nobody is drawing from one.
@@ -247,7 +247,7 @@ func (d *Documents) Close() {
 			continue
 		}
 		delete(d.open, print)
-		doc.Shut()
+		doc.Close()
 	}
 	d.order = nil
 	held := len(d.open)
@@ -280,18 +280,18 @@ func (d *Documents) Evict() {
 		}
 		delete(d.open, mark)
 		d.order = append(d.order[:oldest], d.order[oldest+1:]...)
-		doc.Shut()
+		doc.Close()
 	}
 }
 
 // Touch puts a fingerprint at the end of the order, which is the most recently
 // asked for.
 func (d *Documents) Touch(mark Fingerprint) {
-	d.Forget(mark)
+	d.RemoveFromOrder(mark)
 	d.order = append(d.order, mark)
 }
 
-func (d *Documents) Forget(mark Fingerprint) {
+func (d *Documents) RemoveFromOrder(mark Fingerprint) {
 	for i, held := range d.order {
 		if held == mark {
 			d.order = append(d.order[:i], d.order[i+1:]...)
@@ -304,7 +304,7 @@ func (d *Documents) Forget(mark Fingerprint) {
 // page's size is measured in.
 const PointsDPI = 72
 
-// Draw is one page drawn as wide as was asked for. It is called with the
+// Render is one page drawn as wide as was asked for. It is called with the
 // document held.
 //
 // The library draws at a resolution, so the resolution is worked back from the
@@ -315,7 +315,7 @@ const PointsDPI = 72
 // window lays the page out at the width it asked for, so the browser takes those
 // pixels off; resampling them off here is a pass over every pixel of the page to
 // change nothing anybody sees.
-func (d *Document) Draw(at, width int) (image.Image, error) {
+func (d *Document) Render(at, width int) (image.Image, error) {
 	points, measured := d.points[at]
 	if !measured {
 		across, _, err := d.Scan.Size(at)
