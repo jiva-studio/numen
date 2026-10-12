@@ -22,8 +22,7 @@ const setUp = (edge = 0) => {
 
   const turn = vi.fn<(way: PageTurn) => void>()
   const areaRef = shallowRef<HTMLElement | null>(area)
-  const hand = useBookHand(areaRef, shallowRef<HTMLElement | null>(paper), turn, () => edge)
-  return { area, areaRef, paper, turn, hand }
+  XX
 }
 
 const pointer = (clientX: number, target: unknown = null, button = 0): PointerEvent =>
@@ -189,6 +188,17 @@ describe('words taken up in the text', () => {
     outside.textContent = 'elsewhere'
     area.parentElement?.append(outside)
     select({ isCollapsed: false, text: 'elsewhere', anchorNode: outside.firstChild })
+
+    hand.takeDown(pointer(600))
+    hand.letGo(pointer(300))
+
+    expect(turn).toHaveBeenCalledExactlyOnceWith('next')
+  })
+
+  it('do not stop a turn where no text is drawn', () => {
+    const { hand, paper, paperRef, turn } = setUp()
+    select({ isCollapsed: false, text: 'words', anchorNode: paper.firstChild })
+    paperRef.value = null
 
     hand.takeDown(pointer(600))
     hand.letGo(pointer(300))
