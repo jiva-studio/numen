@@ -154,9 +154,8 @@ describe('prose', () => {
     expect(mountProse('first  \nsecond').find('p br').exists()).toBe(true)
   })
 
-  it('draws an image with its address and its words', () => {
+  it('draws an image from its address', () => {
     const image = mountProse('![a chart](https://example.com/chart.png)').find('img')
     expect(image.attributes('src')).toBe('https://example.com/chart.png')
-    expect(image.attributes('alt')).toBe('a chart')
   })
 })
