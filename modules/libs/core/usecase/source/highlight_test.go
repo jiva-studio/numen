@@ -73,7 +73,7 @@ func run(t *testing.T, book document, word string) (start, length int) {
 }
 
 // litOn is where one run of a source's text sits, asked about on its own. A
-// source with no reading and no layer is lit nowhere.
+// source with no recognition and no layer is lit nowhere.
 func litOn(t *testing.T, u Highlight, path string, start, length int) []highlight.Box {
 	t.Helper()
 	found, err := u.Execute(t.Context(), first, path, []domain.ByteSpan{{From: start, To: start + length}})
@@ -105,7 +105,7 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	u, index, store, _, shelved := newHighlight(t, tiny)
 	recordSource(t, index, shelved, "ocr", "abc123")
 	u = setPlacer(u, func([]byte, []int) ([]highlight.Box, error) {
-		t.Error("the document's own layer was read for a source standing on a reading")
+		t.Error("the document's own layer was read for a source standing on a recognition")
 		return nil, nil
 	})
 
@@ -132,7 +132,7 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 
 // The same source before anything read it is lit from the document's own text
 // layer, over the page the word is printed on.
-func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
+func TestASourceWithNoRecognitionIsLitFromItsOwnLayer(t *testing.T) {
 	u, index, _, book, shelved := newHighlight(t, tiny)
 	recordSource(t, index, shelved, "", "abc123")
 
@@ -308,7 +308,7 @@ func TestASourceTheIndexDoesNotHoldIsLitNowhere(t *testing.T) {
 	}
 }
 
-// A run past the end of the text is lit nowhere, and a reading that is not
+// A run past the end of the text is lit nowhere, and a recognition that is not
 // there says nothing.
 func TestNothingIsLitWhereThereIsNothingToLight(t *testing.T) {
 	t.Run("past the end", func(t *testing.T) {
@@ -320,25 +320,25 @@ func TestNothingIsLitWhereThereIsNothingToLight(t *testing.T) {
 		}
 	})
 
-	t.Run("a reading that is gone", func(t *testing.T) {
+	t.Run("a recognition that is gone", func(t *testing.T) {
 		u, index, _, _, shelved := newHighlight(t, tiny)
 		recordSource(t, index, shelved, "ocr", "abc123")
 
 		if found := litOn(t, u, documentPath, 0, 10); len(found) != 0 {
-			t.Errorf("a reading nothing kept was lit at %+v", found)
+			t.Errorf("a recognition nothing kept was lit at %+v", found)
 		}
 	})
 }
 
 func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
-	// A reading is of the bytes that were there when it was made, and its
+	// A recognition is of the bytes that were there when it was made, and its
 	// coordinates describe those. Put against a file rewritten since, they fall
 	// where those words no longer are, and nothing on the page says so.
 	ctx := t.Context()
 	u, index, store, book, shelved := newHighlight(t, outline)
 	recordSource(t, index, shelved, "ocr", "abc123")
 
-	// A reading whose words sit at the top of the first page.
+	// A recognition whose words sit at the top of the first page.
 	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), highlight.Pack([]highlight.Box{
 		testsupport.Box(0, 0, 400, highlight.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}),
 	})); err != nil {
@@ -348,7 +348,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 
 	lit := litOn(t, u, documentPath, start, length)
 	if len(lit) == 0 {
-		t.Fatal("the reading lit nothing, so rewriting the file proves nothing")
+		t.Fatal("the recognition lit nothing, so rewriting the file proves nothing")
 	}
 
 	// The same document, written again.
@@ -356,7 +356,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 
 	after := litOn(t, u, documentPath, start, length)
 	if len(after) == 1 && after[0].MinY == 0.1 {
-		t.Error("the reading of other bytes was lit on the file that is there now")
+		t.Error("the recognition of other bytes was lit on the file that is there now")
 	}
 }
 

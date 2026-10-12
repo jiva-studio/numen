@@ -14,13 +14,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
 
-// Proofreader puts a reading right through the command line a person already
+// Proofreader puts a recognition right through the command line a person already
 // has installed. It is a child process and nothing more: a batch on its input,
 // the lines it would put right on its output.
 type Proofreader struct {
 	// Command starts it. Empty means `claude` from the path.
 	Command []string
-	// Model is which model corrects a reading, by the name the command line
+	// Model is which model corrects a recognition, by the name the command line
 	// knows it as. Empty leaves the choice to the installation.
 	Model string
 	// Instruction is what the proofreader is told it is doing. A scan and

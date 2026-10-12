@@ -132,7 +132,7 @@ func (u CountCardsDue) WithNow(now port.Clock) CountCardsDue {
 // Execute counts one vault.
 //
 // The log is read once here and the schedules worked out from it, so the count
-// and the session it stands for are the one reading. Nothing is written into
+// and the session it stands for are the one read. Nothing is written into
 // the vault: the person is shown every vault they hold, and none of them is
 // written for that. What a replay came to is kept, because this is the path
 // every launch waits on.
@@ -154,7 +154,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	}
 	due, fresh := rows.countDueAndNew(in.day, holds, &out)
 	out.Decks = rows.getSorted()
-	out.Presets, err = u.getPresets(ctx, v, in.reading, in.day, due, fresh)
+	out.Presets, err = u.getPresets(ctx, v, in.reads, in.day, due, fresh)
 	if err != nil {
 		return CardsDue{}, err
 	}
@@ -166,13 +166,13 @@ type dueInputs struct {
 	faces     []CardFace
 	schedules map[review.CardFaceID]review.Schedule
 	asks      assignment
-	reading   *PresetReads
+	reads     *PresetReads
 	day       *budgets
 	now       time.Time
 }
 
 // readInputs reads the cards, the log and the presets of a vault, and works out
-// the schedules and the budgets from them. One reading of the presets answers
+// the schedules and the budgets from them. One run of reads of the presets answers
 // the schedulers, the budgets and how many decks name each preset.
 func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInputs, error) {
 	if err := ctx.Err(); err != nil {
@@ -189,8 +189,8 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 	if err != nil {
 		return dueInputs{}, err
 	}
-	reading := u.presets.Reading()
-	asks, err := u.schedules.getAssignmentFrom(ctx, v, reading, faces)
+	reads := u.presets.OpenReads()
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
 	if err != nil {
 		return dueInputs{}, err
 	}
@@ -201,7 +201,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 
 	now := u.now()
 	day, err := getBudgets(
-		ctx, v, reading, u.day, faces, schedules, log,
+		ctx, v, reads, u.day, faces, schedules, log,
 		u.schedules.by, u.schedules.getScheduler, now,
 	)
 	if err != nil {
@@ -209,7 +209,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 	}
 	return dueInputs{
 		faces: faces, schedules: schedules, asks: asks,
-		reading: reading, day: day, now: now,
+		reads: reads, day: day, now: now,
 	}, nil
 }
 
@@ -281,7 +281,7 @@ func (r deckRows) getSorted() []DeckCardsDue {
 // deck of no cards points at its preset like any other. A preset no deck names
 // stands at nothing.
 func (u CountCardsDue) getPresets(
-	ctx context.Context, v domain.Vault, reading *PresetReads, day *budgets,
+	ctx context.Context, v domain.Vault, reads *PresetReads, day *budgets,
 	due, fresh map[string]int,
 ) ([]PresetCardsDue, error) {
 	out := day.getCardsDue(due, fresh)
@@ -295,7 +295,7 @@ func (u CountCardsDue) getPresets(
 	}
 	naming := make(map[string]int, len(decks))
 	for _, deck := range decks {
-		p, err := reading.GetForDeck(ctx, v, deck)
+		p, err := reads.GetForDeck(ctx, v, deck)
 		if err != nil {
 			return nil, err
 		}
@@ -318,7 +318,7 @@ func (u CountCardsDue) getPresets(
 		}
 		// A preset no deck names has no day worked out for it, and its own
 		// settings are what say whether it would schedule anything.
-		one, err := reading.read(ctx, v, path)
+		one, err := reads.read(ctx, v, path)
 		if err != nil {
 			return nil, err
 		}

@@ -58,7 +58,7 @@ export interface VaultCounts {
     stopsOn: StopReason
   }[]
   unread: string
-  isReading: boolean
+  isIndexing: boolean
 }
 
 /** One message of the count. */
@@ -148,7 +148,7 @@ export function useReviewCounter(deps: CountsDeps) {
     decks: [],
     presets: [],
     unread: one.unread,
-    isReading: one.isReading,
+    isIndexing: one.isIndexing,
   })
 
   /** A vault as its own count leaves it. */
@@ -189,7 +189,7 @@ export function useReviewCounter(deps: CountsDeps) {
       stopsOn: preset.stopsOn,
     })),
     unread: one.unread,
-    isReading: false,
+    isIndexing: false,
   })
 
   /**
@@ -210,7 +210,7 @@ export function useReviewCounter(deps: CountsDeps) {
    * index has no count yet, and its row goes on waiting for one.
    */
   const setVaultCount = (one: VaultCounts) => {
-    const now = one.isReading ? createUncountedVault(one) : createCountedVault(one)
+    const now = one.isIndexing ? createUncountedVault(one) : createCountedVault(one)
     vaults.value = vaults.value.map((row) => (row.vault === one.id ? now : row))
   }
 

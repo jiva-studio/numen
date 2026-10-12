@@ -5,9 +5,9 @@ description: How a scan of paper becomes text you can search, and the settings t
 
 A PDF that is scans of paper carries no text. Right-click it in the [files](/files/) and choose **Recognise** — or ask the [agent](/agent/) to read it — and the pages are read here, on your machine: three small models, one that divides a page into its parts, one that finds the lines in a part, one that reads what a line says. Nothing is uploaded and no account is involved.
 
-What comes out is kept in the vault's own `.numen/` folder, named after the bytes of the document, so a book that moves keeps its reading and two copies of one book share it.
+What comes out is kept in the vault's own `.numen/` folder, named after the bytes of the document, so a book that moves keeps its recognition and two copies of one book share it.
 
-The models are fetched the first time a reading is asked for, and the corner of the window shows how far that has got.
+The models are fetched the first time a recognition is asked for, and the corner of the window shows how far that has got.
 
 Everything here is `indexing.recognition` in [the settings file](/settings/).
 
@@ -50,7 +50,7 @@ The text OCR read off the pages can be corrected afterwards by a model that spea
 }
 ```
 
-A profile is a way of reaching a proofreader, under a name you choose, and `recognition.proofread.with` names the one that corrects a reading. `automatically` off leaves it to the hand: you ask for it on the book in front of you.
+A profile is a way of reaching a proofreader, under a name you choose, and `recognition.proofread.with` names the one that corrects a recognition. `automatically` off leaves it to the hand: you ask for it on the book in front of you.
 
 `batch_url` leaves the batches in a queue and collects them later at half the price. A batch outlives the run that left it, so one left before you closed the application is collected the next time you open it. Leave it empty and a batch is asked for at a time, and waited for.
 

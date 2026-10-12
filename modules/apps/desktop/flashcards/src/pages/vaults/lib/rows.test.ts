@@ -18,7 +18,7 @@ const vault = (over: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   decks: [],
   presets: [],
   unread: '',
-  isReading: false,
+  isIndexing: false,
   ...over,
 })
 
@@ -33,9 +33,9 @@ describe('a vault as a row', () => {
   })
 
   it('says it is being read, in the screen own words', () => {
-    const row = getVaultRows([vault({ isCounted: false, isReading: true })], VAULTS_WORDS)[0]
+    const row = getVaultRows([vault({ isCounted: false, isIndexing: true })], VAULTS_WORDS)[0]
 
-    expect(row?.detail).toBe(VAULTS_WORDS.reading)
+    expect(row?.detail).toBe(VAULTS_WORDS.indexing)
     expect(row?.isWorking).toBe(true)
   })
 
@@ -59,7 +59,7 @@ describe('how many cards a vault has waiting', () => {
   })
 
   it('is absent for a vault being read, which says why in its row instead', () => {
-    expect(getDueByVault([vault({ isReading: true })]).has('01A')).toBe(false)
+    expect(getDueByVault([vault({ isIndexing: true })]).has('01A')).toBe(false)
   })
 
   it('is absent for a vault that could not be read', () => {

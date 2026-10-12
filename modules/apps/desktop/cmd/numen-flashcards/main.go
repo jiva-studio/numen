@@ -126,7 +126,7 @@ func run(cfg container.Config, noAgent bool) error {
 		api.ClearIndexFailure(v.ID)
 		api.ReportChange()
 	}
-	api.Reading(ctx, vaults.readVault)
+	api.SetVaultIndexer(ctx, vaults.indexVault)
 
 	// A card is asked about through tools on a port this window opens for
 	// itself. The agent works the vault the person sat down to, so it is

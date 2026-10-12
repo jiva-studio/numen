@@ -90,14 +90,14 @@ func (u ProjectCurve) Execute(
 	}
 	// A deck is asked once which preset schedules it, however many card faces
 	// it holds, and a preset note is opened once however many decks name it.
-	reading := u.presets.Reading()
-	asks, err := u.schedules.getAssignmentFrom(ctx, v, reading, faces)
+	reads := u.presets.OpenReads()
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
 	if err != nil {
 		return review.Curve{}, err
 	}
 	schedules := u.schedules.getSchedules(held, asks)
 
-	mine, err := u.readScheduledFaces(ctx, v, reading, path, faces, schedules)
+	mine, err := u.readScheduledFaces(ctx, v, reads, path, faces, schedules)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -105,7 +105,7 @@ func (u ProjectCurve) Execute(
 
 	// How many decks this preset schedules, counted over every deck that could
 	// name it: a deck of no cards points at its preset like any other.
-	pointing, err := u.countPointingDecks(ctx, v, reading, path, scheduled, decks)
+	pointing, err := u.countPointingDecks(ctx, v, reads, path, scheduled, decks)
 	if err != nil {
 		return review.Curve{}, err
 	}
@@ -149,7 +149,7 @@ type scheduledFaces struct {
 
 // readScheduledFaces picks out of faces the ones the preset at path schedules.
 func (u ProjectCurve) readScheduledFaces(
-	ctx context.Context, v domain.Vault, reading *PresetReads, path string,
+	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 ) (scheduledFaces, error) {
 	out := scheduledFaces{
@@ -160,7 +160,7 @@ func (u ProjectCurve) readScheduledFaces(
 	for _, one := range faces {
 		mine, asked := out.decks[one.Deck]
 		if !asked {
-			held, err := reading.GetForDeck(ctx, v, one.Deck)
+			held, err := reads.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
 				return scheduledFaces{}, err
 			}
@@ -185,7 +185,7 @@ func (u ProjectCurve) readScheduledFaces(
 //
 // A deck names its preset with an entry of its `links:` block, so what points
 // at that note is what the preset could schedule, and the rest of the vault is
-// left unread. Which of them the preset does schedule is the reading's answer:
+// left unread. Which of them the preset does schedule is the answer of the reads:
 // a deck naming two presets is scheduled by the first.
 //
 // A preset standing in no note is the defaults, and nothing points at those.
@@ -221,14 +221,14 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 // countPointingDecks is how many of these decks name the preset at path. Asked
 // is what has already been worked out from the cards standing.
 func (u ProjectCurve) countPointingDecks(
-	ctx context.Context, v domain.Vault, reading *PresetReads, path string,
+	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
 	decks []string, asked map[string]bool,
 ) (int, error) {
 	out := 0
 	for _, deck := range decks {
 		points, held := asked[deck]
 		if !held {
-			p, err := reading.GetForDeck(ctx, v, deck)
+			p, err := reads.GetForDeck(ctx, v, deck)
 			if err != nil {
 				return 0, err
 			}

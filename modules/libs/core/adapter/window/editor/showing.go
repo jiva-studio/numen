@@ -131,7 +131,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 }
 
 // buildSession builds the half of the window that belongs to one vault: the scan
-// and the watch behind it, the reading of the documents it holds, and the
+// and the watch behind it, the extraction of the documents it holds, and the
 // batches left with a proofreader.
 func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession, error) {
 	known, err := vaults.NewList(o.registry).Execute()
@@ -176,7 +176,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 	// Every vault this installation holds is asked after.
 	transcribing.TakeUp(watching, sources, known...)
 
-	// Reading every file again belongs to the vault this window was opened on,
+	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
 	refresh, ended := startIndexing(watching, v, o.made, o.API, rebuild, o.Embedder, o.triggers, owed, o.out)
 
@@ -214,7 +214,7 @@ func (o *Installation) stopVault() {
 	}
 	on.cancel()
 	on.wait()
-	// A reading and a transcription both write to the index, so they end before
+	// A recognition and a transcription both write to the index, so they end before
 	// anything reads what they wrote.
 	on.recognitionWorker.Wait()
 	on.transcriptionWorker.Wait()
@@ -226,7 +226,7 @@ func (o *Installation) stopVault() {
 }
 
 // resetStatus clears what the previous vault left behind: what was said
-// about reading it, and the entries its passes left in the list of what is
+// about indexing it, and the entries its passes left in the list of what is
 // being done.
 //
 // What stopped this installation from embedding at all is put back. It stands
@@ -236,7 +236,7 @@ func (o *Installation) resetStatus() {
 	o.API.Error.Store("")
 	o.API.Unwatched.Store("")
 
-	for _, pass := range []string{walkingNotes, readingBooks, makingVectors, wordsAlone} {
+	for _, pass := range []string{walkingNotes, extractingBooks, makingVectors, wordsAlone} {
 		o.API.finishTask(pass)
 	}
 	if o.embedderError != nil {

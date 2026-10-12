@@ -33,7 +33,7 @@ const createVault = (more: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   decks: [{ deck: 'decks/Leaves.md', faces: 4, due: 2, new: 2, learned: 0, unbegun: 0 }],
   presets: [],
   unread: '',
-  isReading: false,
+  isIndexing: false,
   ...more,
 })
 

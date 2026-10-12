@@ -34,7 +34,7 @@ export function useWindowNotices({
         unwatched: window.unwatched.value,
         unread: window.error.value,
         lost: window.lost.value || settings.dressed.lost.value,
-        isReading: window.isIndexing.value,
+        isIndexing: window.isIndexing.value,
         hasNote: window.hasNote.value,
       },
       vaults.coverage(),

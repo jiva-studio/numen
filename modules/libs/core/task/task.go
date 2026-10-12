@@ -20,7 +20,7 @@ type Task struct {
 	// replaces itself rather than appearing twice.
 	ID string
 
-	// Doing is the work, in the words to show: "Reading a scan".
+	// Doing is the work, in the words to show: "Recognising a scan".
 	Doing string
 	// About is what it is on, and is empty for work that is on nothing in
 	// particular.

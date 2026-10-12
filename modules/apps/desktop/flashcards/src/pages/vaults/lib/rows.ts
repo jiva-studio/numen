@@ -14,7 +14,7 @@ export function getVaultRows(
   words: VaultsWords,
 ): readonly VaultRow[] {
   return vaults.map((one) => {
-    const detail = one.isReading ? words.reading : one.unread
+    const detail = one.isIndexing ? words.indexing : one.unread
     return {
       id: one.vault,
       name: one.name,
@@ -37,7 +37,7 @@ export function getDueByVault(
 ): ReadonlyMap<string, number | null> {
   return new Map(
     vaults
-      .filter((one) => !one.unread && !one.isReading)
+      .filter((one) => !one.unread && !one.isIndexing)
       .map((one) => [one.vault, one.isCounted ? one.due + one.new : null]),
   )
 }

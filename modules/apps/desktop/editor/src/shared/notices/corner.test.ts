@@ -14,7 +14,7 @@ import type { WindowMessage } from './messages'
 const words: Words = {
   unwatched: 'not following the vault',
   unread: 'the vault could not be read',
-  reading: 'reading the vault…',
+  indexing: 'indexing the vault…',
   nothingRead: 'nothing was read',
   wordsOnly: 'Searching by words only — no model set',
 }
@@ -23,7 +23,7 @@ const well = (over: Partial<State> = {}): State => ({
   unwatched: '',
   unread: '',
   lost: '',
-  isReading: false,
+  isIndexing: false,
   hasNote: true,
   ...over,
 })
@@ -35,9 +35,9 @@ const vault = (over: Partial<IndexCoverage> = {}): IndexCoverage => ({
   ...over,
 })
 
-const reading = (over: Partial<Task> = {}): Task => ({
-  id: 'reading-1',
-  label: 'Reading a scan',
+const createTask = (over: Partial<Task> = {}): Task => ({
+  id: 'indexing-1',
+  label: 'Recognising a scan',
   about: 'library/Sabhaparva.pdf',
   done: 42,
   total: 400,
@@ -64,20 +64,24 @@ const corner = (
 
 describe('a document being read', () => {
   it('draws one card, whatever else the vault says about itself', () => {
-    const drawn = corner([reading()], [], well(), vault({ chunks: 65261 }))
+    const drawn = corner([createTask()], [], well(), vault({ chunks: 65261 }))
 
     expect(drawn).toHaveLength(1)
-    expect(drawn[0]?.text).toBe('Reading a scan')
+    expect(drawn[0]?.text).toBe('Recognising a scan')
     expect(drawn[0]?.about).toBe('library/Sabhaparva.pdf')
     expect(drawn[0]).toMatchObject({ done: 42, total: 400 })
   })
 
   it('is drawn the moment it arrives, since a person asked for it', () => {
-    expect(corner([reading()])[0]?.isAsked).toBe(true)
+    expect(corner([createTask()])[0]?.isAsked).toBe(true)
   })
 
   it('waits to be drawn when nobody asked, since most such work is soon over', () => {
-    const pass = reading({ id: 'reading the books', label: 'Reading books', isAsked: false })
+    const pass = createTask({
+      id: 'extracting the books',
+      label: 'Extracting books',
+      isAsked: false,
+    })
 
     expect(corner([pass])[0]?.isAsked).toBe(false)
   })
@@ -85,14 +89,14 @@ describe('a document being read', () => {
 
 describe('work that stopped badly', () => {
   it('is drawn as alarm and not as something still running', () => {
-    const drawn = corner([reading({ error: 'nothing to read with' })])
+    const drawn = corner([createTask({ error: 'nothing to read with' })])
 
     expect(drawn[0]?.tone).toBe('alarm')
     expect(drawn[0]?.isWorking).toBe(false)
   })
 
   it('is called by what stopped it, which is the sentence a person acts on', () => {
-    const drawn = corner([reading({ error: 'nothing to read with' })])
+    const drawn = corner([createTask({ error: 'nothing to read with' })])
 
     expect(drawn[0]?.text).toBe('nothing to read with')
     expect(drawn[0]?.about).toBe('library/Sabhaparva.pdf')
@@ -101,8 +105,12 @@ describe('work that stopped badly', () => {
   it('is one card where one failure stopped several passes', () => {
     const error = 'intfloat/multilingual-e5-small is not on this machine'
     const drawn = corner([
-      reading({ id: 'getting ready', label: 'Preparing the model', error }),
-      reading({ id: 'making the vectors', label: 'Indexing', error: `embedding demo: ${error}` }),
+      createTask({ id: 'getting ready', label: 'Preparing the model', error }),
+      createTask({
+        id: 'making the vectors',
+        label: 'Indexing',
+        error: `embedding demo: ${error}`,
+      }),
     ])
 
     expect(drawn.map((one) => one.text)).toStrictEqual([error])
@@ -111,8 +119,8 @@ describe('work that stopped badly', () => {
   it('is one card where two passes stopped with the very same words', () => {
     const error = 'the model is not on this machine'
     const drawn = corner([
-      reading({ id: 'getting ready', label: 'Preparing the model', error }),
-      reading({ id: 'making the vectors', label: 'Indexing', error }),
+      createTask({ id: 'getting ready', label: 'Preparing the model', error }),
+      createTask({ id: 'making the vectors', label: 'Indexing', error }),
     ])
 
     expect(drawn.map((one) => one.id)).toStrictEqual(['getting ready'])
@@ -120,8 +128,8 @@ describe('work that stopped badly', () => {
 
   it('keeps two failures that only happen to end in the same word', () => {
     const drawn = corner([
-      reading({ id: 'one', error: 'the disk is full' }),
-      reading({ id: 'two', error: 'the index says the disk is full' }),
+      createTask({ id: 'one', error: 'the disk is full' }),
+      createTask({ id: 'two', error: 'the index says the disk is full' }),
     ])
 
     expect(drawn).toHaveLength(2)
@@ -130,8 +138,12 @@ describe('work that stopped badly', () => {
   it('is one card where the longer sentence arrived first', () => {
     const error = 'the model is not on this machine'
     const drawn = corner([
-      reading({ id: 'making the vectors', label: 'Indexing', error: `embedding demo: ${error}` }),
-      reading({ id: 'getting ready', label: 'Preparing the model', error }),
+      createTask({
+        id: 'making the vectors',
+        label: 'Indexing',
+        error: `embedding demo: ${error}`,
+      }),
+      createTask({ id: 'getting ready', label: 'Preparing the model', error }),
     ])
 
     expect(drawn.map((one) => one.id)).toStrictEqual(['getting ready'])
@@ -139,8 +151,8 @@ describe('work that stopped badly', () => {
 
   it('keeps a failure whose sentence ends where a pass running has no sentence yet', () => {
     const drawn = corner([
-      reading({ id: 'one', error: 'could not read: ' }),
-      reading({ id: 'two', error: '' }),
+      createTask({ id: 'one', error: 'could not read: ' }),
+      createTask({ id: 'two', error: '' }),
     ])
 
     expect(drawn.map((one) => one.id)).toStrictEqual(['one', 'two'])
@@ -148,15 +160,15 @@ describe('work that stopped badly', () => {
 
   it('keeps two failures that are two different things', () => {
     const drawn = corner([
-      reading({ id: 'one', error: 'nothing to read with' }),
-      reading({ id: 'two', error: 'the disk is full' }),
+      createTask({ id: 'one', error: 'nothing to read with' }),
+      createTask({ id: 'two', error: 'the disk is full' }),
     ])
 
     expect(drawn).toHaveLength(2)
   })
 
   it('stands until it is put away, and is drawn at once even where nobody asked', () => {
-    const drawn = corner([reading({ isAsked: false, error: 'nothing to read with' })])
+    const drawn = corner([createTask({ isAsked: false, error: 'nothing to read with' })])
 
     expect(drawn[0]?.stay).toBe('kept')
     expect(drawn[0]?.isAsked).toBe(true)
@@ -165,7 +177,7 @@ describe('work that stopped badly', () => {
 
 describe('work with nothing to count', () => {
   it('carries no tally, which is an ordinary state and not an unknown one', () => {
-    const drawn = corner([reading({ done: 0, total: 0 })])
+    const drawn = corner([createTask({ done: 0, total: 0 })])
 
     expect(drawn[0]?.done).toBeUndefined()
     expect(drawn[0]?.total).toBeUndefined()
@@ -174,7 +186,7 @@ describe('work with nothing to count', () => {
 
   it('draws no share for a model of a size nobody has been told', () => {
     const drawn = corner([
-      reading({
+      createTask({
         id: 'getting ready',
         label: 'Fetching models',
         about: 'inference.onnx',
@@ -190,7 +202,7 @@ describe('work with nothing to count', () => {
 
 describe('a step of a run', () => {
   const step = (what: string, about: string, count = 0, total = 0) =>
-    reading({ id: 'making the vectors', label: what, about, done: count, total, isAsked: false })
+    createTask({ id: 'making the vectors', label: what, about, done: count, total, isAsked: false })
 
   it('is called by what it is, and names what it is on', () => {
     const drawn = corner([step('Indexing', 'library/Sabhaparva.epub', 300, 1200)])
@@ -221,14 +233,14 @@ describe('what is so about the window', () => {
     expect(drawn[0]?.tone).toBe('caution')
   })
 
-  it('says nothing was read only once the reading is over', () => {
+  it('says nothing was read only once the indexing is over', () => {
     const drawn = corner(
       [],
       [],
-      well({ isReading: true, hasNote: false, unread: 'no such folder' }),
+      well({ isIndexing: true, hasNote: false, unread: 'no such folder' }),
     )
 
-    expect(drawn.map((one) => one.text)).toStrictEqual([words.unread, words.reading])
+    expect(drawn.map((one) => one.text)).toStrictEqual([words.unread, words.indexing])
   })
 
   it('says the vault could not be read, and that nothing was read from it', () => {
@@ -244,9 +256,9 @@ describe('what is so about the window', () => {
   })
 
   it('says the vault is still being read for the first time', () => {
-    const drawn = corner([], [], well({ isReading: true }))
+    const drawn = corner([], [], well({ isIndexing: true }))
 
-    expect(drawn.map((one) => one.text)).toStrictEqual([words.reading])
+    expect(drawn.map((one) => one.text)).toStrictEqual([words.indexing])
   })
 
   it('says what the window lost touch with, in the words it was given', () => {
@@ -299,11 +311,11 @@ describe('each state of the window', () => {
     ])
   })
 
-  it('draws the first reading plainly under its own identity', () => {
-    expect(corner([], [], well({ isReading: true }))).toStrictEqual([
+  it('draws the first indexing plainly under its own identity', () => {
+    expect(corner([], [], well({ isIndexing: true }))).toStrictEqual([
       {
-        id: 'reading',
-        text: words.reading,
+        id: 'indexing',
+        text: words.indexing,
         about: '',
         tone: 'plain',
         isWorking: false,
@@ -395,9 +407,9 @@ describe('what the window said', () => {
 
 describe('the order the corner draws in', () => {
   it('puts work first, so a state or a word arriving does not shift a moving count', () => {
-    const drawn = corner([reading()], [createMessage()], well({ unwatched: '/home/vault' }))
+    const drawn = corner([createTask()], [createMessage()], well({ unwatched: '/home/vault' }))
 
-    expect(drawn.map((one) => one.id)).toStrictEqual(['reading-1', 'unwatched', 'command#1'])
+    expect(drawn.map((one) => one.id)).toStrictEqual(['indexing-1', 'unwatched', 'command#1'])
   })
 })
 

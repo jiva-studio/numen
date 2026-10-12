@@ -222,7 +222,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 
 	readSources(t.Context(), made, api, v, nil, false, nil, io.Discard)
 
-	at := findTask(t, api, readingBooks)
+	at := findTask(t, api, extractingBooks)
 	if at == nil {
 		t.Fatal("the pass that could not read the books took itself out of the list")
 	}

@@ -18,7 +18,7 @@ type ProofreaderSpec struct {
 	InFlight    int
 }
 
-// getProfile is the place a reading is put right at, by the name a consumer
+// getProfile is the place a recognition is put right at, by the name a consumer
 // names it under. A name no getProfile carries is an error: a person who named one
 // is owed the news that it is not there.
 //
@@ -51,10 +51,10 @@ func (c Config) resolveInFlight(profile proofreading.Profile) proofreading.Profi
 	return profile
 }
 
-// Proofreader is what puts a reading right at the profile named, told what it
+// Proofreader is what puts a recognition right at the profile named, told what it
 // is proofreading.
 //
-// Naming no profile is naming no proofreader: nothing comes back and a reading
+// Naming no profile is naming no proofreader: nothing comes back and a recognition
 // is used exactly as it was read. A profile that is named and cannot be opened
 // — no key — is an error, and the reason travels in it.
 func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) {
@@ -86,7 +86,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 }
 
 // GetScanProofreading is what a document's reading is put right with: the
-// profile the settings name for a scan, and the sizes a reading is asked about
+// profile the settings name for a scan, and the sizes a recognition is asked about
 // at.
 func (c Config) GetScanProofreading() source.ProofreadingConfig {
 	return c.getProofreading(c.ScanProofreading)
@@ -97,7 +97,7 @@ func (c Config) GetSpeechProofreading() source.ProofreadingConfig {
 	return c.getProofreading(c.TranscriptProofreading)
 }
 
-// getProofreading is what a reading of one kind is put right with: the profile
+// getProofreading is what a recognition of one kind is put right with: the profile
 // the settings name for it, opened when there is something to put right.
 func (c Config) getProofreading(config proofreading.Proofread) source.ProofreadingConfig {
 	profile := c.resolveInFlight(c.Proofreading.Profiles[config.Profile])

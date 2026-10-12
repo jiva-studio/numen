@@ -113,8 +113,8 @@ func (o *openVaults) openVault(v domain.Vault, one *openedVault) {
 	}
 }
 
-// readVault walks a vault into the index.
-func (o *openVaults) readVault(ctx context.Context, v domain.Vault) error {
+// indexVault walks a vault into the index.
+func (o *openVaults) indexVault(ctx context.Context, v domain.Vault) error {
 	if !o.tryBeginWork() {
 		return errClosing
 	}

@@ -56,7 +56,7 @@ type Recognise struct {
 }
 
 // NewRecognise is what a scan is read through: the vault it is read out of,
-// where what the vault holds is recorded, the store the reading is written
+// where what the vault holds is recorded, the store the recognition is written
 // into, what draws a page for the model, and the model itself.
 func NewRecognise(
 	readers port.VaultReaders,
@@ -80,7 +80,7 @@ type RecogniseResult struct {
 	Read    int    // how many have been read, this run and before it
 	Resumed int    // how many a run before this one had already read
 	IsEmpty bool   // it says nothing, and nothing was written
-	IsBusy  bool   // somebody else is reading these bytes, and nothing was done
+	IsBusy  bool   // somebody else is recognising these bytes, and nothing was done
 }
 
 // DefaultBatch is how many pages are read before they are written down.
@@ -112,7 +112,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	boxes, parts := text.Boxes(area, hash), text.Parts(area, hash)
 
 	// One run to a document. The name is the hash of its bytes, and it is held for
-	// as long as the reading takes.
+	// as long as the recognition takes.
 	release, err := store.Claim(ctx, partial)
 	if err != nil {
 		file.Close()
@@ -329,7 +329,7 @@ func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.Fingerp
 }
 
 // forget puts a document that said nothing back on its own text layer, and takes
-// away what reading it produced.
+// away what recognising it produced.
 func (u Recognise) forget(
 	ctx context.Context,
 	v domain.Vault,

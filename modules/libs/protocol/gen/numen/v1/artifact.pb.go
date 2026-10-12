@@ -41,14 +41,14 @@ const (
 	// Text with the place on the page each word stands at, read off a scan and
 	// kept under `ocr`.
 	ArtifactKind_ARTIFACT_KIND_OCR ArtifactKind = 1
-	// That reading put right by a person, under `.corrected` beside it.
+	// That recognised text put right by a person, under `.corrected` beside it.
 	ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED ArtifactKind = 2
 	// Text with the times each stretch of it was said at, under the name of what
 	// made it: `asr` where a model heard it, `captions` where a site published
 	// it with a video.
 	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ArtifactKind = 3
 	// A transcript put right by a person, under `.corrected` beside the one it
-	// corrects. It says which it is: a reading put right is another kind, and a
+	// corrects. It says which it is: recognised text put right is another kind, and a
 	// caller editing one has to know which of them it holds.
 	ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED ArtifactKind = 4
 	// The prose a page is written around, under `article`. It carries no times

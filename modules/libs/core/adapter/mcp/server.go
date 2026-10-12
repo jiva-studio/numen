@@ -118,7 +118,7 @@ type Sources struct {
 	// Transcribe hears a recording. Without it the tool that asks for one is
 	// served and answers that this installation cannot.
 	Transcribe Transcriber
-	// Derived is where a reading of a document is kept. Without it a document
+	// Derived is where a recognition of a document is kept. Without it a document
 	// stands on its own bytes, which for a scan is nothing.
 	Derived port.DerivedStores
 	// Documents reads a format that needs a library, for a document standing on

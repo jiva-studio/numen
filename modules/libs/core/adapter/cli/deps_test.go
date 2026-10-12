@@ -23,7 +23,7 @@ import (
 )
 
 // getDerived is the shelf this installation keeps its own files on inside a
-// vault: what a reading wrote, and what a transcription wrote.
+// vault: what a recognition wrote, and what a transcription wrote.
 func getDerived(options filesystem.Options) filesystem.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: options,

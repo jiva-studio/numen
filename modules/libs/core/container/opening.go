@@ -43,9 +43,9 @@ type VaultChanges struct {
 	ShouldReload bool
 }
 
-// Reading says whether an asset owes a read: one changed, or the whole vault is
+// ShouldReadAssets says whether an asset owes a read: one changed, or the whole vault is
 // being looked at again and every asset with it.
-func (m VaultChanges) Reading() bool { return m.ShouldReload || len(m.Assets) > 0 }
+func (m VaultChanges) ShouldReadAssets() bool { return m.ShouldReload || len(m.Assets) > 0 }
 
 // VaultOpener is how this installation opens a vault, the way the settings say
 // one is read and watched.

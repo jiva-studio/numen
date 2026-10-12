@@ -161,9 +161,9 @@ export const RectSchema: GenMessage<Rect> = /*@__PURE__*/
   messageDesc(file_numen_v1_ocr, 4);
 
 /**
- * OcrService reads what was read off a document's pages.
+ * OcrService serves the text recognised from a document's pages.
  *
- * Whether a file carries a reading at all is ListArtifacts.
+ * Whether a file carries recognised text at all is ListArtifacts.
  *
  * @generated from service numen.v1.OcrService
  */

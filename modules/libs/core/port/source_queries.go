@@ -35,13 +35,13 @@ type SourceQueries interface {
 	// other format on every run.
 	ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error)
 
-	// Reading is what one source's text came from. It answers false where the
+	// GetSourceText is what one source's text came from. It answers false where the
 	// index holds no source at that path.
 	//
 	// Producer is empty for a source whose own bytes are the text, which is the
 	// ordinary case, and a caller acts on the difference: it decides which
 	// producer the offsets a chunk carries belong to.
-	Reading(ctx context.Context, vaultID domain.VaultID, path string) (SourceText, bool, error)
+	GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (SourceText, bool, error)
 
 	// GetRecognisedSources is the sources of one kind whose text a producer
 	// made, by path.
@@ -52,9 +52,9 @@ type SourceQueries interface {
 }
 
 // SourceText is one source whose text a producer made: where the file is, what
-// made the text, and the hash the files of that reading are kept under.
+// made the text, and the hash the files of that recognition are kept under.
 type SourceText struct {
-	// The fingerprint is the file as the index last saw it. A reading is of the
+	// The fingerprint is the file as the index last saw it. A recognition is of the
 	// bytes that were there then, and a file rewritten since is one those
 	// coordinates no longer describe. It is embedded so that the file's
 	// coordinates are declared once, in the domain, and carry their units here.

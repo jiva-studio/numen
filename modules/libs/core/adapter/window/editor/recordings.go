@@ -234,7 +234,7 @@ func (a *API) WriteTranscript(
 	// for a cut that could not be asked for.
 	if cut := a.getRechunker(); cut != nil {
 		if err := cut(ctx, showing, ref.Path); err != nil {
-			a.reportTask(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Error: err.Error()})
+			a.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", About: ref.Path, Error: err.Error()})
 		}
 	}
 	return connect.NewResponse(&v1.WriteTranscriptResponse{Cues: newWireCues(cues)}), nil
@@ -328,7 +328,7 @@ func selectSpan(at *v1.Span) func([]transcript.Cue) ([]transcript.Cue, error) {
 }
 
 // getShownFile is the vault the window is showing and what it holds at a path. It is
-// the one reading of the vault a request gets, and everything the request goes
+// the one read of the vault a request gets, and everything the request goes
 // on to do is done to that vault.
 //
 // Everything from outside reaches the vault through a reader, so a path leaving
@@ -362,7 +362,7 @@ func (a *API) getSourceStores() (port.SourceQueries, port.DerivedStores, bool) {
 // getSourceText is what was made from the file at a path, and the store holding it. It
 // answers false for a file nothing has been made from.
 //
-// A document's reading is named by the bytes that were read, which the index
+// A document's recognition is named by the bytes that were read, which the index
 // holds. What a link note points at was never in the note's bytes: it is named
 // by the address, so it is looked for under that name and a walk that has not
 // reached the note yet takes nothing away from it.
@@ -378,7 +378,7 @@ func (a *API) getSourceText(
 	if at := a.getNoteURL(ctx, v, path); string(at) != "" {
 		return a.getFetchedText(ctx, v, at)
 	}
-	said, held, err := sources.Reading(ctx, v.ID, path)
+	said, held, err := sources.GetSourceText(ctx, v.ID, path)
 	if err != nil || !held || said.Producer == "" {
 		return port.SourceText{}, nil, false, err
 	}

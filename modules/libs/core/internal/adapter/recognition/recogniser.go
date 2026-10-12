@@ -106,7 +106,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 
 func (r *Recogniser) Recognition() port.RecognitionModel { return r.model }
 
-// Close lets go of the models this reading loaded. The runtime they ran on is
+// Close lets go of the models this recognition loaded. The runtime they ran on is
 // the process's and stays.
 func (r *Recogniser) Close() error {
 	r.lines.Destroy()
@@ -118,7 +118,7 @@ func (r *Recogniser) Close() error {
 //
 // A part whose kind the configuration does not ask for is not read at all. A
 // running head and a page ornament are printed on every page and are not what
-// the page says, and reading them costs as much as reading a paragraph.
+// the page says, and recognising them costs as much as recognising a paragraph.
 //
 // A part the configuration calls a head opens a part of the document, and
 // carries how deep that part sits.

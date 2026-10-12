@@ -57,7 +57,7 @@ func startRecognition(core Core, in sourceStartInput) (sourceStartOutput, error)
 	switch core.Sources.Recognise.Start(core.getCurrentVault().Vault, in.Path) {
 	case port.Queued:
 		status = "queued; another document is being read and this one is in line behind " +
-			"it — nothing more is needed, it begins when that reading is over"
+			"it — nothing more is needed, it begins when that recognition is over"
 	default:
 		if !core.Sources.Recognise.Ready() {
 			status = "started; what is needed to read scans is being fetched first, about 160 MB"

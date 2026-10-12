@@ -135,7 +135,7 @@ describe('the streams a window follows', () => {
         tasks: [
           {
             id: 'scan',
-            doing: 'Reading a scan',
+            doing: 'Recognising a scan',
             about: 'library/scan.pdf',
             done: 3n,
             total: 10n,
@@ -161,7 +161,7 @@ describe('the streams a window follows', () => {
       [
         {
           id: 'scan',
-          label: 'Reading a scan',
+          label: 'Recognising a scan',
           about: 'library/scan.pdf',
           done: 3,
           total: 10,

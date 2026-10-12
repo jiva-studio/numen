@@ -11,9 +11,9 @@ import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
-// OcrService reads what was read off a document's pages.
+// OcrService serves the text recognised from a document's pages.
 //
-// Whether a file carries a reading at all is ListArtifacts.
+// Whether a file carries recognised text at all is ListArtifacts.
 service OcrService {
   // ReadOcr is the runs of the text asked about, each as it reads and with the
   // boxes covering it. The answers stand in the order the runs were asked

@@ -166,8 +166,8 @@ describe('what the window follows', () => {
       sends({
         tasks: [
           {
-            id: 'reading\t01A',
-            doing: 'Reading the vault',
+            id: 'indexing\t01A',
+            doing: 'Indexing the vault',
             about: 'Garden',
             error: 'no such folder',
             isAsked: true,
@@ -179,8 +179,8 @@ describe('what the window follows', () => {
 
     expect(deps.setTasks).toHaveBeenCalledWith([
       {
-        id: 'reading\t01A',
-        label: 'Reading the vault',
+        id: 'indexing\t01A',
+        label: 'Indexing the vault',
         about: 'Garden',
         error: 'no such folder',
         isAsked: true,

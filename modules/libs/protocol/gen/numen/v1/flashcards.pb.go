@@ -113,12 +113,12 @@ type VaultCardsDue struct {
 	// scheduled by.
 	Presets []*PresetCardsDue `protobuf:"bytes,8,rep,name=presets,proto3" json:"presets,omitempty"`
 	// Set when the vault could not be counted: its files could not be reached, or
-	// reading it into the index failed. The three numbers are then zero and this
+	// indexing it failed. The three numbers are then zero and this
 	// says why, in the person's own words.
 	Unread string `protobuf:"bytes,9,opt,name=unread,proto3" json:"unread,omitempty"`
-	// Set while the vault is being read into the index. The three numbers are not
-	// in yet, and a further count follows when the reading is done.
-	IsReading     bool `protobuf:"varint,10,opt,name=is_reading,json=isReading,proto3" json:"is_reading,omitempty"`
+	// Set while the vault is being indexed. The three numbers are not
+	// in yet, and a further count follows when indexing is done.
+	IsIndexing    bool `protobuf:"varint,10,opt,name=is_indexing,json=isIndexing,proto3" json:"is_indexing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -216,9 +216,9 @@ func (x *VaultCardsDue) GetUnread() string {
 	return ""
 }
 
-func (x *VaultCardsDue) GetIsReading() bool {
+func (x *VaultCardsDue) GetIsIndexing() bool {
 	if x != nil {
-		return x.IsReading
+		return x.IsIndexing
 	}
 	return false
 }
@@ -1882,7 +1882,7 @@ var File_numen_v1_flashcards_proto protoreflect.FileDescriptor
 
 const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\x9a\x02\n" +
+	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\x9c\x02\n" +
 	"\rVaultCardsDue\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1892,10 +1892,10 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03new\x18\x06 \x01(\x05R\x03new\x12,\n" +
 	"\x05decks\x18\a \x03(\v2\x16.numen.v1.DeckCardsDueR\x05decks\x122\n" +
 	"\apresets\x18\b \x03(\v2\x18.numen.v1.PresetCardsDueR\apresets\x12\x16\n" +
-	"\x06unread\x18\t \x01(\tR\x06unread\x12\x1d\n" +
-	"\n" +
-	"is_reading\x18\n" +
-	" \x01(\bR\tisReading\"\xac\x01\n" +
+	"\x06unread\x18\t \x01(\tR\x06unread\x12\x1f\n" +
+	"\vis_indexing\x18\n" +
+	" \x01(\bR\n" +
+	"isIndexing\"\xac\x01\n" +
 	"\fDeckCardsDue\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x14\n" +
 	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +

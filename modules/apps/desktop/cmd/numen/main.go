@@ -114,7 +114,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	// Before the window: every page this process reads is read through the
 	// runtime made here, and one made after the window reads a page as nothing.
-	// A machine holding no runtime yet is told so by the first reading.
+	// A machine holding no runtime yet is told so by the first recognition.
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}

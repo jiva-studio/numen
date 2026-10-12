@@ -18,7 +18,7 @@ func box(page, start, length int) highlight.Box {
 	return highlight.Box{Page: page, ByteSpan: domain.ByteSpan{From: start, To: start + length}}
 }
 
-func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
+func TestALineIsKnownByItsPlaceInTheWholeRecognition(t *testing.T) {
 	prose := "one two three four "
 	boxes := []highlight.Box{
 		box(4, 0, 4), box(4, 4, 4),
@@ -43,7 +43,7 @@ func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
 	}
 	for i, want := range []int{0, 1, 2, 3} {
 		if numbers[i] != want {
-			t.Errorf("line %d is numbered %d, want its place in the reading %d", i, numbers[i], want)
+			t.Errorf("line %d is numbered %d, want its place in the recognition %d", i, numbers[i], want)
 		}
 	}
 	for i, want := range []string{"one ", "two ", "three ", "four "} {
@@ -58,7 +58,7 @@ func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
 	boxes := []highlight.Box{box(1, 0, 4), box(1, 4, 90)}
 
 	if batches := proofread.GetScanBatches(prose, boxes); batches != nil {
-		t.Errorf("a reading of other bytes came back as %v", batches)
+		t.Errorf("a recognition of other bytes came back as %v", batches)
 	}
 }
 
@@ -71,7 +71,7 @@ func TestBoxesOutOfReadingOrderGiveNothing(t *testing.T) {
 
 	batches := proofread.GetScanBatches(prose, boxes)
 	if batches != nil {
-		t.Errorf("a reading that went back a page came back as %v", batches)
+		t.Errorf("a recognition that went back a page came back as %v", batches)
 	}
 	seen := map[int]bool{}
 	for _, batch := range batches {
@@ -94,7 +94,7 @@ func TestABoxWithNoLengthCarriesNoLine(t *testing.T) {
 		t.Errorf("%d lines, want the two that say something", len(batches[0].Lines))
 	}
 	if batches[0].Lines[1].Number != 2 {
-		t.Errorf("line numbered %d, want its place in the reading 2", batches[0].Lines[1].Number)
+		t.Errorf("line numbered %d, want its place in the recognition 2", batches[0].Lines[1].Number)
 	}
 }
 

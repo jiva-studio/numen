@@ -16,7 +16,7 @@ func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
 		walks.Add(1)
 		go func() {
 			defer walks.Done()
-			if err := vaults.readVault(t.Context(), v); err != nil {
+			if err := vaults.indexVault(t.Context(), v); err != nil {
 				t.Error(err)
 			}
 		}()
@@ -36,7 +36,7 @@ func TestClosingWindowReadsNothing(t *testing.T) {
 
 	vaults.closeAndWait()
 
-	if err := vaults.readVault(t.Context(), held[0]); !errors.Is(err, errClosing) {
+	if err := vaults.indexVault(t.Context(), held[0]); !errors.Is(err, errClosing) {
 		t.Errorf("a walk asked for while closing came back with %v", err)
 	}
 }
@@ -61,7 +61,7 @@ func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 	_, _, vaults, _, held := makeWindow(t)
 	v := held[0]
 
-	if err := vaults.readVault(t.Context(), v); err != nil {
+	if err := vaults.indexVault(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	if err := vaults.updateIndex(t.Context(), v, []string{"decks/Words.md"}); err != nil {

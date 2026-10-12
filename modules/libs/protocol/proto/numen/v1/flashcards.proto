@@ -28,8 +28,8 @@ service FlashcardsService {
   // Counting a vault reads every deck in it and replays its whole answer log,
   // so the list stands while that runs.
   //
-  // A vault the index does not carry is read into it here, and its counts
-  // follow when the reading is done. What that reading is doing is the window's
+  // A vault the index does not carry is indexed here, and its counts
+  // follow when indexing is done. What that indexing is doing is the window's
   // own WatchTasks.
   rpc WatchCardsDue(WatchCardsDueRequest) returns (stream WatchCardsDueResponse);
 
@@ -112,13 +112,13 @@ message VaultCardsDue {
   repeated PresetCardsDue presets = 8;
 
   // Set when the vault could not be counted: its files could not be reached, or
-  // reading it into the index failed. The three numbers are then zero and this
+  // indexing it failed. The three numbers are then zero and this
   // says why, in the person's own words.
   string unread = 9;
 
-  // Set while the vault is being read into the index. The three numbers are not
-  // in yet, and a further count follows when the reading is done.
-  bool is_reading = 10;
+  // Set while the vault is being indexed. The three numbers are not
+  // in yet, and a further count follows when indexing is done.
+  bool is_indexing = 10;
 }
 
 message DeckCardsDue {

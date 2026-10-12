@@ -705,7 +705,7 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 	}
 }
 
-// Nothing proofreads a reading unless a person named something to proofread it
+// Nothing proofreads a recognition unless a person named something to proofread it
 // with. This is what an untouched installation does, and a model that rewrites
 // a person's books does not arrive by default.
 func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
@@ -799,9 +799,9 @@ func TestTheEditDistanceIsReadFromAboveTheProfiles(t *testing.T) {
 	}
 }
 
-// Which profile puts each kind of reading right, and whether it happens without
-// anybody asking, is said where the reading is configured.
-func TestEachReadingNamesTheProfileThatPutsItRight(t *testing.T) {
+// Which profile puts each kind of text right, and whether it happens without
+// anybody asking, is said where the text is configured.
+func TestEachKindOfTextNamesTheProfileThatPutsItRight(t *testing.T) {
 	cfg, err := openAt(write(t, `{"indexing":{
 		"recognition":   {"proofread":{"with":"openrouter","automatically":true}},
 		"transcription": {"proofread":{"with":"agent","automatically":false}}

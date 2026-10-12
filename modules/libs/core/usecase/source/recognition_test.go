@@ -88,7 +88,7 @@ func (w *watched) opening(t *testing.T) task.Task {
 	return w.while[0]
 }
 
-// waitUntilDone waits for the reading to be over.
+// waitUntilDone waits for the recognition to be over.
 func (w *watched) waitUntilDone(t *testing.T) {
 	t.Helper()
 	for range 200 {
@@ -97,7 +97,7 @@ func (w *watched) waitUntilDone(t *testing.T) {
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	t.Fatal("the reading never ended")
+	t.Fatal("the recognition never ended")
 }
 
 // getTask is the one task in the list, or nothing.
@@ -158,7 +158,7 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 }
 
 // A failure nobody was shown is a failure nobody can act on.
-func TestAReadingThatFailedStaysInTheList(t *testing.T) {
+func TestARecognitionThatFailedStaysInTheList(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -177,7 +177,7 @@ func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 
 // Getting the models is a step of its own, and it is named for what it is. A
 // row that calls it by the name of the work that follows leaves a person
-// watching a reading that has not begun.
+// watching a recognition that has not begun.
 func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
@@ -196,9 +196,9 @@ func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
 	}
 }
 
-// Retrying a failed reading replaces the failure with progress and removes the
+// Retrying a failed recognition replaces the failure with progress and removes the
 // task upon success.
-func TestRetryingAFailedReadingClearsTheTaskOnSuccess(t *testing.T) {
+func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -231,7 +231,7 @@ func TestRetryingAFailedReadingClearsTheTaskOnSuccess(t *testing.T) {
 }
 
 // Each document's failure is tracked under its own name.
-func TestMultipleFailedReadingsAreTrackedIndependently(t *testing.T) {
+func TestMultipleFailedRecognitionsAreTrackedIndependently(t *testing.T) {
 	w := newWatched(t, errors.New("no models on this machine"))
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -253,9 +253,9 @@ func TestMultipleFailedReadingsAreTrackedIndependently(t *testing.T) {
 	}
 }
 
-// A reading whoever asked for it stopped is a reading that is over, and not one
+// A recognition whoever asked for it stopped is a recognition that is over, and not one
 // that failed.
-func TestAReadingStoppedIsNotAFailure(t *testing.T) {
+func TestARecognitionStoppedIsNotAFailure(t *testing.T) {
 	w := newWatched(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	w.under = ctx
@@ -270,16 +270,16 @@ func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 	w.waitUntilDone(t)
 
 	if at, held := w.getTask(t); held {
-		t.Errorf("a reading that was stopped is in the list: %+v", at)
+		t.Errorf("a recognition that was stopped is in the list: %+v", at)
 	}
 }
 
-// A reading that ends where nothing expected it to holds nothing afterwards:
+// A recognition that ends where nothing expected it to holds nothing afterwards:
 // the next document is taken.
-func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
+func TestARecognitionThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 	w := newWatched(t, nil)
 
-	// The first reading leaves its goroutine partway down, as a panic under the
+	// The first recognition leaves its goroutine partway down, as a panic under the
 	// reading does.
 	abrupt := make(chan struct{}, 1)
 	abrupt <- struct{}{}
@@ -298,13 +298,13 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 	w.waitUntilDone(t)
 
 	if w.Start(somewhere, "b.pdf") != port.Began {
-		t.Fatal("nothing was read after a reading that ended where nothing expected it to")
+		t.Fatal("nothing was read after a recognition that ended where nothing expected it to")
 	}
 	w.waitUntilDone(t)
 }
 
 // Every page is read through the runtime the process made before its window. A
-// reading through one made afterwards writes down a blank page for every page of
+// recognition through one made afterwards writes down a blank page for every page of
 // the document, so what was missing is fetched and nothing is read.
 func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	w := newWatched(t, nil)
@@ -322,9 +322,9 @@ func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	}
 }
 
-// A reading writes to the index, and the application waits for it before what
+// A recognition writes to the index, and the application waits for it before what
 // it writes to is closed.
-func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
+func TestTheApplicationWaitsForARecognitionItStarted(t *testing.T) {
 	w := newWatched(t, nil)
 
 	holding := make(chan struct{})
@@ -341,7 +341,7 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 
 	select {
 	case <-waited:
-		t.Fatal("the wait ended while the reading was still running")
+		t.Fatal("the wait ended while the recognition was still running")
 	case <-time.After(50 * time.Millisecond):
 	}
 

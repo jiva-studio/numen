@@ -16,8 +16,8 @@ func addSourceReadTools(server *sdk.Server, core Core) {
 }
 
 type sourceListOutput struct {
-	Documents []Source `json:"documents"`
-	Reading   string   `json:"reading,omitempty" jsonschema:"what stands in the way of having a scan read now, when anything does"`
+	Documents   []Source `json:"documents"`
+	Recognition string   `json:"recognition,omitempty" jsonschema:"what stands in the way of having a scan read now, when anything does"`
 }
 
 func addSourceList(server *sdk.Server, core Core) {
@@ -55,7 +55,7 @@ func listSources(ctx context.Context, core Core) (sourceListOutput, error) {
 	for path := range known {
 		documents = append(documents, Source{Path: path, ShouldRead: isRecognised[path]})
 	}
-	return sourceListOutput{Documents: documents, Reading: getRecognitionBlocker(core.Sources.Recognise)}, nil
+	return sourceListOutput{Documents: documents, Recognition: getRecognitionBlocker(core.Sources.Recognise)}, nil
 }
 
 // getRecognitionBlocker returns the reason a scan cannot be recognised now, empty when none.

@@ -221,11 +221,11 @@ const documentPath = "library/scan.pdf"
 // needs — what the pages say comes from the model, and the model here is a fake.
 func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
 	t.Helper()
-	return reading(t, says, outline)
+	return createRecognise(t, says, outline)
 }
 
-// reading is a Recognise over a vault holding a document printed as these pages.
-func reading(t *testing.T, says string, pages [][]string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
+// createRecognise is a Recognise over a vault holding a document printed as these pages.
+func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
 	t.Helper()
 	raw := printPages(pages)
 	shelved := newLibrary()
@@ -379,9 +379,9 @@ func TestWhatReadItIsKeptBesideWhatItRead(t *testing.T) {
 	}
 }
 
-func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
+func TestARecognitionDeletedByHandIsNoticed(t *testing.T) {
 	// The store is a folder on the person's disk and they may empty it. A source
-	// standing on a reading that is gone answers a search with nothing, and
+	// standing on a recognition that is gone answers a search with nothing, and
 	// would go on doing so: its recipe is the one in use, so nothing else asks
 	// after it.
 	u, v, index, shelf, _ := recogniser(t, "Something.")
@@ -390,7 +390,7 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 	}
 	stood := index.sources[v.ID][documentPath]
 	if stood.Producer == "" {
-		t.Fatal("the source does not stand on a reading")
+		t.Fatal("the source does not stand on a recognition")
 	}
 
 	// Cut it once, so it is a source that owes nothing.
@@ -411,14 +411,14 @@ func TestAReadingDeletedByHandIsNoticed(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res.Forgotten != 1 {
-		t.Errorf("noticed %d readings gone, want 1", res.Forgotten)
+		t.Errorf("noticed %d recognitions gone, want 1", res.Forgotten)
 	}
 	if got := index.sources[v.ID][documentPath].Producer; got != "" {
 		t.Errorf("the source still stands on %q", got)
 	}
 }
 
-// documentHash is the hash a reading of the document under test is kept under.
+// documentHash is the hash a recognition of the document under test is kept under.
 func documentHash() string { return text.Fingerprint(printPages(outline)) }
 
 // reads checks that every coordinate names the words it was read from, in the
@@ -455,7 +455,7 @@ func TestADocumentAnotherRunHoldsIsLeftAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !res.IsBusy {
-		t.Error("a document another run is reading was read again")
+		t.Error("a document another run is recognising was read again")
 	}
 	if model.pages != 0 {
 		t.Errorf("the model was shown %d pages", model.pages)
@@ -722,7 +722,7 @@ func artifact(t *testing.T, v domain.Vault, index *store, written *shelf) []byte
 	return raw
 }
 
-func TestAReadingNamesItsParts(t *testing.T) {
+func TestARecognitionNamesItsParts(t *testing.T) {
 	// The layout model names the headings and a sidecar keeps them, so a
 	// recognised document divides into parts exactly as a book with an outline
 	// does. What the scan made of the words does not matter: the part carries the
@@ -746,7 +746,7 @@ func TestAReadingNamesItsParts(t *testing.T) {
 
 	doc := text.ReadRecognition(raw, parts, nil, nil)
 	if len(doc.Parts) != res.Pages {
-		t.Fatalf("the reading names %d parts over %d pages", len(doc.Parts), res.Pages)
+		t.Fatalf("the recognition names %d parts over %d pages", len(doc.Parts), res.Pages)
 	}
 	for i, part := range doc.Parts {
 		want := fmt.Sprintf("IAYADEVA GOSVAMI %d", i+1)
@@ -797,7 +797,7 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 
 	doc := text.ReadRecognition(raw, parts, nil, nil)
 	if len(doc.Parts) != res.Pages {
-		t.Fatalf("the reading names %d parts over %d pages", len(doc.Parts), res.Pages)
+		t.Fatalf("the recognition names %d parts over %d pages", len(doc.Parts), res.Pages)
 	}
 	// A part carries a run of the prose, so the one thing every part has to be
 	// is where its heading stands.

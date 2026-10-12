@@ -1,5 +1,5 @@
-// Package correction is a reading put right: the printed lines a proofreader
-// corrected, and where every coordinate of the reading stands once they are in
+// Package correction is a recognition put right: the printed lines a proofreader
+// corrected, and where every coordinate of the recognition stands once they are in
 // it.
 //
 // It is pure: no filesystem, no clock, no model. A correction replaces the text
@@ -9,7 +9,7 @@ package correction
 import "encoding/binary"
 
 // A Line is one printed line put right: the number the line is known by in the
-// reading, and what it should say.
+// recognition, and what it should say.
 type Line struct {
 	Number int
 	Text   string

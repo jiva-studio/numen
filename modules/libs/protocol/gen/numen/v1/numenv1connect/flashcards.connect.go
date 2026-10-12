@@ -80,8 +80,8 @@ type FlashcardsServiceClient interface {
 	// Counting a vault reads every deck in it and replays its whole answer log,
 	// so the list stands while that runs.
 	//
-	// A vault the index does not carry is read into it here, and its counts
-	// follow when the reading is done. What that reading is doing is the window's
+	// A vault the index does not carry is indexed here, and its counts
+	// follow when indexing is done. What that indexing is doing is the window's
 	// own WatchTasks.
 	WatchCardsDue(context.Context, *connect.Request[v1.WatchCardsDueRequest]) (*connect.ServerStreamForClient[v1.WatchCardsDueResponse], error)
 	// StartSession opens a run and hands over what to ask, in order. A run writes
@@ -245,8 +245,8 @@ type FlashcardsServiceHandler interface {
 	// Counting a vault reads every deck in it and replays its whole answer log,
 	// so the list stands while that runs.
 	//
-	// A vault the index does not carry is read into it here, and its counts
-	// follow when the reading is done. What that reading is doing is the window's
+	// A vault the index does not carry is indexed here, and its counts
+	// follow when indexing is done. What that indexing is doing is the window's
 	// own WatchTasks.
 	WatchCardsDue(context.Context, *connect.Request[v1.WatchCardsDueRequest], *connect.ServerStream[v1.WatchCardsDueResponse]) error
 	// StartSession opens a run and hands over what to ask, in order. A run writes

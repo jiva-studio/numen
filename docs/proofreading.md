@@ -8,10 +8,10 @@ A machine that read a page and a machine that transcribed an hour both produce t
 
 | Proofread | What it came out of | The unit | Where the corrections go |
 | --- | --- | --- | --- |
-| a reading | a document's pages, read by a model | one printed line | `ocr/<hash>.corrected` |
+| a recognition | a document's pages, read by a model | one printed line | `ocr/<hash>.corrected` |
 | a transcript | a recording, heard by a model | one cue | `transcript/<hash>.asr.corrected.vtt` |
 
-What a reading is and how its files hold together is [Recognising a document](recognising.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md).
+What a recognition is and how its files hold together is [Recognising a document](recognising.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md).
 
 ## The model is never shown a coordinate
 
@@ -76,7 +76,7 @@ Words recurring through it, as the machine transcribed them: Kenduvilva, Gaudiya
 
 It is drawn from the transcript and from nothing else — the opening words as they were transcribed, and the words standing capitalised somewhere other than where a sentence opens, said more than once. A recording of any subject is described in the terms it uses itself, and no coordinate, path or name from the vault is in it. The model is told the digest is read and answered for by nothing, and that a word listed there is put right the same way every time it is said.
 
-A reading carries no digest: a page of a book is proofread against the page.
+A recognition carries no digest: a page of a book is proofread against the page.
 
 ## The gates
 
@@ -147,11 +147,11 @@ A run claims the text for as long as the proofreading takes, and a second run ag
 
 After each batch a run writes the corrections, cuts the source again, and writes the count last. The count is what makes the batch before it count, so a batch no count claims is one the next run asks about again, and a run trims the corrections back to the count before it starts. A run stopped part way is taken up where it stopped. A text whose record names another proofreader is taken up from the beginning, with what that proofreader wrote taken away.
 
-What takes a run up is a vault opening. Where `automatically` is on, every reading and every transcript standing short of its end is asked about again, and one no proofreader has been over is put right whole. Where the profile has a queue, the batch out is collected instead, and one run collects one batch and leaves the next.
+What takes a run up is a vault opening. Where `automatically` is on, every recognition and every transcript standing short of its end is asked about again, and one no proofreader has been over is put right whole. Where the profile has a queue, the batch out is collected instead, and one run collects one batch and leaves the next.
 
 One model proofreads, and no chain of them. A chunk whose text did not change keeps the vector already made for it.
 
-Neither artifact is rewritten: what the model read or transcribed stays on disk under its own name, and the corrections go beside it. What a reading's corrections are kept in and how a corrected reading is composed is [Recognising a document](recognising.md); what a transcript's are kept in is [Transcribing](transcribing.md).
+Neither artifact is rewritten: what the model read or transcribed stays on disk under its own name, and the corrections go beside it. What a recognition's corrections are kept in and how a corrected reading is composed is [Recognising a document](recognising.md); what a transcript's are kept in is [Transcribing](transcribing.md).
 
 ## What a person sees
 

@@ -18,7 +18,7 @@ export interface Words {
   /** The vault itself could not be read. */
   readonly unread: string
   /** The vault is still being read for the first time. */
-  readonly reading: string
+  readonly indexing: string
   /** The vault could not be read, so there is nothing on screen. */
   readonly nothingRead: string
   /** One way of asking is missing and nothing is going to bring it. */
@@ -34,7 +34,7 @@ export interface State {
   /** What the window lost touch with. */
   readonly lost: string
   /** The vault is still being read for the first time. */
-  readonly isReading: boolean
+  readonly isIndexing: boolean
   /** Whether the vault holds a note to show at all. */
   readonly hasNote: boolean
 }
@@ -120,11 +120,11 @@ export const getCornerNotices = (
       tone: 'caution',
     }),
     ...createStateNotices('lost', state.lost, { tone: 'caution' }),
-    ...createStateNotices('reading', state.isReading ? words.reading : ''),
-    // One at a time: a vault still being read has not finished reading nothing.
+    ...createStateNotices('indexing', state.isIndexing ? words.indexing : ''),
+    // One at a time: a vault still being indexed has not finished indexing nothing.
     ...createStateNotices(
       'nothingRead',
-      !state.isReading && !state.hasNote && state.unread ? words.nothingRead : '',
+      !state.isIndexing && !state.hasNote && state.unread ? words.nothingRead : '',
     ),
     // Said once and quietly, and it is so whether or not anything is running.
     ...createStateNotices('wordsOnly', isTextSearchOnly(vault) ? words.wordsOnly : '', {

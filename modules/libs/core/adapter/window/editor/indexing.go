@@ -23,7 +23,7 @@ import (
 // person goes on typing.
 const quietPeriod = 8 * time.Second
 
-// indexTriggers are the two ways work reaches the reading behind the window once the
+// indexTriggers are the two ways work reaches the indexing behind the window once the
 // first pass is over: a book, which is found and cut before anything is
 // embedded, and a note, which arrives already cut and owes only its vectors.
 type indexTriggers struct {
@@ -126,7 +126,7 @@ func startIndexing(
 
 	// Said before the goroutine starts, so a window that opens on a fresh vault
 	// is shown the walk from its first moment.
-	api.reportTask(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
+	api.reportTask(task.Task{ID: walkingNotes, Doing: "Indexing the vault"})
 
 	var running sync.WaitGroup
 
@@ -147,7 +147,7 @@ func startIndexing(
 		}
 	}()
 
-	// first is the vault's first reading: the walk, and the notes written while
+	// first is the vault's first indexing: the walk, and the notes written while
 	// it ran read once more. It answers whether the vault was read.
 	first := func() bool {
 		defer api.finishTask(walkingNotes)
@@ -155,7 +155,7 @@ func startIndexing(
 		// The walk runs behind the window, which answers from what it has
 		// reached. A later one is the index being brought level with a vault
 		// that moved under it.
-		api.reportTask(task.Task{ID: walkingNotes, Doing: "Reading the vault"})
+		api.reportTask(task.Task{ID: walkingNotes, Doing: "Indexing the vault"})
 		notes, err := read(ctx, nil)
 
 		switch {
@@ -174,11 +174,11 @@ func startIndexing(
 		return true
 	}
 
-	// Reading every file again is what this launch was asked for, and one pass
-	// makes it. Every pass after it reads what changed. The ask is spent on the
+	// Indexing every file again is what this launch was asked for, and one pass
+	// makes it. Every pass after it indexes what changed. The ask is spent on the
 	// one goroutine below, so it is read and written in one place.
 	owes := rebuild
-	reading := func() {
+	index := func() {
 		asked := owes
 		owes = false
 		readSources(ctx, made, api, v, embedder, asked, wake.read, out)
@@ -188,25 +188,25 @@ func startIndexing(
 	go func() {
 		defer running.Done()
 
-		// Reading the sources comes after the notes: a vault is useful the
+		// Indexing the sources comes after the notes: a vault is useful the
 		// moment its notes answer, and a library takes minutes to cut and hours
 		// to embed. Neither stops the window, and neither has to finish: an
 		// index is a cache.
 		if first() {
-			reading()
+			index()
 		}
 
-		// What arrives while the window is open is read where the first reading
+		// What arrives while the window is open is indexed where the first indexing
 		// was: one at a time, and never while another is running. A vault whose
-		// first reading failed is one somebody goes on writing in, so the
-		// waiting stands whatever that reading did.
+		// first indexing failed is one somebody goes on writing in, so the
+		// waiting stands whatever that indexing did.
 		var quiet <-chan time.Time
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-wake.sources:
-				reading()
+				index()
 			case <-wake.read:
 				// A batch of pages is on disk. What has been read of the
 				// document is cut and embedded while the rest of it is still
@@ -232,7 +232,7 @@ func startIndexing(
 }
 
 // readSources takes the text out of every book in the vault and then embeds what
-// was cut, reporting what it is reading as it goes.
+// was cut, reporting what it is extracting as it goes.
 //
 // Every way is allowed to fail without the window minding. A book that will
 // not parse is one book; an embedder that is not configured is the ordinary case,
@@ -249,12 +249,12 @@ func readSources(
 ) {
 	making, err := made.ReadWholeVault(ctx, embedder, v, rebuild)
 	if err != nil {
-		api.reportTask(task.Task{ID: readingBooks, Doing: "Reading books", Error: err.Error()})
+		api.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", Error: err.Error()})
 		return
 	}
 	making.OnBooksProgress = func(res source.ExtractResult) {
 		api.reportTask(task.Task{
-			ID: readingBooks, Doing: "Reading books", About: res.Reading,
+			ID: extractingBooks, Doing: "Extracting books", About: res.CurrentSource,
 			// Every book the walk found leaves this pass one of several ways, and
 			// all four count as done.
 			Count: int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
@@ -262,21 +262,21 @@ func readSources(
 		})
 	}
 
-	api.reportTask(task.Task{ID: readingBooks, Doing: "Reading books"})
+	api.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books"})
 	res, read := making.ReadBooks(ctx, v)
 	switch {
 	case read == nil:
 		if res.Extracted > 0 {
 			fmt.Fprintf(out, "%s: %d books, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 		}
-		api.finishTask(readingBooks)
+		api.finishTask(extractingBooks)
 	case errors.Is(read, context.Canceled):
 		// Asked to stop. What it cut is correct as far as it got.
-		api.finishTask(readingBooks)
+		api.finishTask(extractingBooks)
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it
 		// out.
-		api.reportTask(task.Task{ID: readingBooks, Doing: "Reading books", Error: read.Error()})
+		api.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", Error: read.Error()})
 	}
 
 	embedSources(ctx, made, api, v, embedder, nudge)
@@ -296,7 +296,7 @@ func rechunkSource(
 	path string,
 ) {
 	cut := func(err error) {
-		api.reportTask(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Error: err.Error()})
+		api.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", About: path, Error: err.Error()})
 	}
 
 	making, err := made.ReadWholeVault(ctx, embedder, v, false)
@@ -308,7 +308,7 @@ func rechunkSource(
 	case err == nil:
 		// The pages that were read are cut, and a cut that failed before this
 		// one is over.
-		api.finishTask(readingBooks)
+		api.finishTask(extractingBooks)
 	case !errors.Is(err, context.Canceled):
 		cut(err)
 	}
@@ -394,7 +394,7 @@ func embedSources(
 	// never a word with nothing under it. A share is drawn once a vector has
 	// been made, counted over the work in hand and not the size of the vault.
 	making.OnVectorsProgress = func(res source.EmbedResult) {
-		at := task.Task{ID: makingVectors, Doing: "Indexing", About: res.Reading}
+		at := task.Task{ID: makingVectors, Doing: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
 			at.Count, at.Total = int64(res.Embedded), owing
 		}

@@ -46,8 +46,8 @@ type ReviewLog struct {
 // History is the answers in the order they were given: nothing a line takes
 // back, one line to an identifier, earliest first.
 //
-// One request asks several things of one reading, and each of them reads this
-// order. It is worked out once for the reading and handed to all of them.
+// One request asks several things of one loaded log, and each of them reads this
+// order. It is worked out once for the log and handed to all of them.
 func (h ReviewLog) History() review.History {
 	if h.order == nil {
 		return review.Give(h.Answers)
@@ -55,7 +55,7 @@ func (h ReviewLog) History() review.History {
 	return h.order()
 }
 
-// newHistory is a reading that works its order out at the first asking.
+// newHistory is a function that works its order out at the first asking.
 func newHistory(answers []review.Answer) func() review.History {
 	return sync.OnceValue(func() review.History { return review.Give(answers) })
 }

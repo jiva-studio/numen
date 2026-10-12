@@ -135,16 +135,16 @@ func (u Session) Execute(
 	}
 
 	// The log is read once here and the schedules worked out from it, so that
-	// what a person is told about lines that could not be read is the reading
+	// what a person is told about lines that could not be read is the log
 	// their own cards were laid out from.
 	held, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}
-	// One reading of this vault's presets answers both the schedulers the cards
+	// One run of reads of this vault's presets answers both the schedulers the cards
 	// are worked out by and the budgets they are held to.
-	reading := u.presets.Reading()
-	asks, err := u.schedules.getAssignmentFrom(ctx, v, reading, faces)
+	reads := u.presets.OpenReads()
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
 	if err != nil {
 		return SessionResult{}, err
 	}
@@ -152,7 +152,7 @@ func (u Session) Execute(
 
 	now := u.now()
 	day, err := getBudgets(
-		ctx, v, reading, u.day, faces, schedules, held,
+		ctx, v, reads, u.day, faces, schedules, held,
 		u.schedules.by, u.schedules.getScheduler, now,
 	)
 	if err != nil {

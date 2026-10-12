@@ -62,16 +62,16 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 			},
 
 			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
-				reading := cfg
-				reading.ShouldRebuildIndex = rebuild
-				db, err := reading.OpenIndex(ctx)
+				indexing := cfg
+				indexing.ShouldRebuildIndex = rebuild
+				db, err := indexing.OpenIndex(ctx)
 				if err != nil {
 					return cli.Scan{}, err
 				}
 				// A terminal waits for the model, and a vault is read whether
 				// or not one arrives.
-				embedder, closeEmbedder, why := reading.Embedder(ctx)
-				read, err := reading.ReadWholeVault(ctx, db, embedder, v)
+				embedder, closeEmbedder, why := indexing.Embedder(ctx)
+				read, err := indexing.ReadWholeVault(ctx, db, embedder, v)
 				if err != nil {
 					if closeEmbedder != nil {
 						_ = closeEmbedder()

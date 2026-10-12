@@ -52,7 +52,7 @@ func TestOpeningWithoutAnAlphabetFails(t *testing.T) {
 	}
 }
 
-// The reading library that cannot load the detector is the recogniser's
+// The recognition library that cannot load the detector is the recogniser's
 // failure, and its cause is kept.
 func TestOpeningWithoutADetectorThatLoadsFails(t *testing.T) {
 	recognise := onnxModel(pbString(2, "rec"), map[string]string{alphabetKey: "a\nb"})

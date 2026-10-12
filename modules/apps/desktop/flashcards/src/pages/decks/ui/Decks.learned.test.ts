@@ -61,7 +61,7 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   decks: [deck()],
   presets: [],
   unread: '',
-  isReading: false,
+  isIndexing: false,
   ...fields,
 })
 

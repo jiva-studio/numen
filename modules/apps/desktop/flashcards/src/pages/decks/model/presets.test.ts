@@ -101,7 +101,7 @@ const vault = (
   })),
   presets,
   unread: '',
-  isReading: false,
+  isIndexing: false,
 })
 
 /** An application answering one preset for each deck named here. */

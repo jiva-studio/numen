@@ -16,13 +16,13 @@ import (
 // Highlight is what runs of a source's text say and where they sit on the pages
 // they were read from.
 //
-// Two things place a word — a model reading a scan, and the document's own text
+// Two things place a word — a model recognising a scan, and the document's own text
 // layer — and which of them made the text the chunks are places in is the one
 // question asked here. It is the question extraction asks when it cuts a source,
 // answered by the same column: an offset belongs to one producer's text, and the
 // other producer's rectangles cover other words.
 //
-// A source with no reading and no layer is lit nowhere, and that is an answer.
+// A source with no recognition and no layer is lit nowhere, and that is an answer.
 type Highlight struct {
 	readers port.VaultReaders
 	sources port.SourceQueries
@@ -82,7 +82,7 @@ func (u Highlight) Execute(
 	if len(runs) == 0 {
 		return nil, nil
 	}
-	reading, stands, err := u.sources.Reading(ctx, v.ID, path)
+	sourceText, stands, err := u.sources.GetSourceText(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -98,20 +98,20 @@ func (u Highlight) Execute(
 		}
 	}
 
-	// A reading is of the bytes the index last saw, and its text and
+	// A recognition is of the bytes the index last saw, and its text and
 	// coordinates describe those. A file rewritten since is read from its own
 	// layer, which is the words that are there now.
 	var boxes []highlight.Box
-	if reading.Producer != "" && ref.IsUnchanged(reading.Fingerprint) {
-		boxes, err = u.read(ctx, store, reading)
+	if sourceText.Producer != "" && ref.IsUnchanged(sourceText.Fingerprint) {
+		boxes, err = u.read(ctx, store, sourceText)
 	} else {
-		reading = port.SourceText{}
+		sourceText = port.SourceText{}
 		boxes, err = u.layer(ctx, reader, ref, runs)
 	}
 	if err != nil {
 		return nil, err
 	}
-	prose, err := u.prose(ctx, reader, store, path, reading)
+	prose, err := u.prose(ctx, reader, store, path, sourceText)
 	if err != nil {
 		return nil, err
 	}
@@ -119,17 +119,17 @@ func (u Highlight) Execute(
 }
 
 // prose is the text the runs are places in: what the producer wrote, or the
-// file's own words where no reading of these bytes stands. A source nothing
+// file's own words where no recognition of these bytes stands. A source nothing
 // here reads says nothing, and that is an answer.
 func (u Highlight) prose(
 	ctx context.Context,
 	reader port.VaultReader,
 	store port.DerivedStore,
 	path string,
-	reading port.SourceText,
+	sourceText port.SourceText,
 ) (string, error) {
 	of := text.Reader{Vault: reader, Derived: store, Documents: u.Documents}
-	doc, err := of.GetDocument(ctx, path, reading.Producer, reading.Hash)
+	doc, err := of.GetDocument(ctx, path, sourceText.Producer, sourceText.Hash)
 	if errors.Is(err, text.ErrUnreadable) {
 		return "", nil
 	}
@@ -160,12 +160,12 @@ func getRuns(prose string, boxes []highlight.Box, runs []domain.ByteSpan) []Run 
 func (u Highlight) read(
 	ctx context.Context,
 	store port.DerivedStore,
-	reading port.SourceText,
+	sourceText port.SourceText,
 ) ([]highlight.Box, error) {
 	if store == nil {
 		return nil, nil
 	}
-	raw, err := store.Read(ctx, text.Boxes(reading.Producer, reading.Hash))
+	raw, err := store.Read(ctx, text.Boxes(sourceText.Producer, sourceText.Hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		// The store is a folder on the person's disk and they may empty it.
 		return nil, nil
@@ -175,10 +175,10 @@ func (u Highlight) read(
 	}
 	boxes := highlight.Unpack(raw)
 
-	// A reading that was proofread is read with its corrections in it, so a run
+	// A recognition that was proofread is read with its corrections in it, so a run
 	// of its text is a run of the corrected prose and the coordinates say where
 	// those words stand.
-	corrections, err := store.Read(ctx, text.Corrections(reading.Producer, reading.Hash))
+	corrections, err := store.Read(ctx, text.Corrections(sourceText.Producer, sourceText.Hash))
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}

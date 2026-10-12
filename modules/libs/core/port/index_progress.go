@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// IndexProgress is how far reading a vault for meaning has got.
+// IndexProgress is how far indexing a vault for meaning has got.
 //
 // It is asked for while the work is still running, which is the only time the
 // answer is interesting: cutting a vault finishes long before embedding it does,

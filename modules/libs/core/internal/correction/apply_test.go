@@ -14,11 +14,11 @@ import (
 // perPage is how many printed lines a page of the little book holds.
 const perPage = 3
 
-// reading is a book read into printed lines: the prose, a mark where each page
+// createRecognition is a book recognised into printed lines: the prose, a mark where each page
 // begins, one box for each line, and the two parts it divides into. The
 // rectangle follows the line's number, so a box that keeps its place keeps its
 // rectangle too.
-func reading(lines []string) (string, []ocr.PageStart, []highlight.Box, []ocr.Part) {
+func createRecognition(lines []string) (string, []ocr.PageStart, []highlight.Box, []ocr.Part) {
 	var marks []ocr.PageStart
 	var boxes []highlight.Box
 	at := 0
@@ -73,7 +73,7 @@ var put = []correction.Line{
 }
 
 func TestEveryBoxStillNamesItsWords(t *testing.T) {
-	prose, marks, boxes, parts := reading(read)
+	prose, marks, boxes, parts := createRecognition(read)
 
 	moved := correction.Boxes(boxes, put)
 	said, _, _ := correction.Prose(prose, marks, boxes, parts, put)
@@ -91,9 +91,9 @@ func TestEveryBoxStillNamesItsWords(t *testing.T) {
 	}
 }
 
-func TestACorrectedReadingIsTheReadingItShouldHaveBeen(t *testing.T) {
-	prose, marks, boxes, parts := reading(read)
-	wantProse, wantMarks, wantBoxes, wantParts := reading(right)
+func TestACorrectedRecognitionIsTheRecognitionItShouldHaveBeen(t *testing.T) {
+	prose, marks, boxes, parts := createRecognition(read)
+	wantProse, wantMarks, wantBoxes, wantParts := createRecognition(right)
 
 	if got := correction.Boxes(boxes, put); !reflect.DeepEqual(got, wantBoxes) {
 		t.Errorf("boxes %+v, want %+v", got, wantBoxes)
@@ -111,9 +111,9 @@ func TestACorrectedReadingIsTheReadingItShouldHaveBeen(t *testing.T) {
 }
 
 func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
-	prose, marks, boxes, parts := reading(read)
+	prose, marks, boxes, parts := createRecognition(read)
 
-	// Only the second heading, which the reading had a letter short.
+	// Only the second heading, which the recognition had a letter short.
 	_, _, named := correction.Prose(prose, marks, boxes, parts, []correction.Line{{Number: 3, Text: right[3]}})
 
 	if named[0].Length != parts[0].Length {
@@ -128,7 +128,7 @@ func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
 }
 
 func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
-	prose, marks, boxes, parts := reading(read)
+	prose, marks, boxes, parts := createRecognition(read)
 	stray := []correction.Line{{Number: -1, Text: "before the book"}, {Number: 99, Text: "after it"}}
 
 	if got := correction.Boxes(boxes, stray); !reflect.DeepEqual(got, boxes) {
@@ -144,7 +144,7 @@ func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
 }
 
 func TestTheLastWordOnALineWins(t *testing.T) {
-	prose, marks, boxes, parts := reading(read)
+	prose, marks, boxes, parts := createRecognition(read)
 	twice := []correction.Line{{Number: 1, Text: "a first thought"}, {Number: 1, Text: right[1]}}
 
 	said, _, _ := correction.Prose(prose, marks, boxes, parts, twice)
@@ -159,7 +159,7 @@ func TestTheLastWordOnALineWins(t *testing.T) {
 }
 
 func TestNoCorrectionsChangesNothing(t *testing.T) {
-	prose, marks, boxes, parts := reading(read)
+	prose, marks, boxes, parts := createRecognition(read)
 
 	for _, lines := range [][]correction.Line{nil, {}} {
 		if got := correction.Boxes(boxes, lines); !reflect.DeepEqual(got, boxes) {
@@ -176,9 +176,9 @@ func TestNoCorrectionsChangesNothing(t *testing.T) {
 }
 
 func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
-	// A .corrected file kept beside a reading it was not made from: the boxes reach
+	// A .corrected file kept beside a recognition it was not made from: the boxes reach
 	// past the prose, and one of them reaches backwards.
-	prose, marks, boxes, parts := reading(read)
+	prose, marks, boxes, parts := createRecognition(read)
 	boxes[2].ByteSpan = domain.ByteSpan{From: len(prose) + 100, To: len(prose) + 140}
 	boxes[4].From = 0
 
@@ -198,7 +198,7 @@ func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
 }
 
 func TestLinesNamedOutOfOrderAndTwiceReadAsIfInOrder(t *testing.T) {
-	prose, marks, boxes, parts := reading(read)
+	prose, marks, boxes, parts := createRecognition(read)
 	shuffled := []correction.Line{put[3], {Number: 1, Text: "first"}, put[1], put[0], put[2], {Number: 3, Text: "A Second Heading"}}
 	ordered := []correction.Line{put[0], {Number: 3, Text: "A Second Heading"}, put[2], put[3]}
 	ordered[0] = correction.Line{Number: 1, Text: right[1]}

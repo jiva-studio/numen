@@ -13,7 +13,7 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // VaultService answers what the one vault a client is looking at is, and what
 // has changed in it.
 service VaultService {
-  // GetVaultState is what the vault is and how far reading it has got.
+  // GetVaultState is what the vault is and how far indexing it has got.
   rpc GetVaultState(GetVaultStateRequest) returns (GetVaultStateResponse);
 
   // WatchVaultChanges reports the notes that changed on disk, for as long as
@@ -36,14 +36,14 @@ message GetVaultStateResponse {
   // Where the vault stands on this disk.
   string path = 3;
 
-  // How far reading the vault has got.
+  // How far indexing the vault has got.
   Scan scan = 4;
 
   // How far searching it by meaning has got.
   IndexCoverage coverage = 5;
 }
 
-// Scan is how far reading a vault has got, and what stopped it.
+// Scan is how far indexing a vault has got, and what stopped it.
 message Scan {
   // IsReady is set when the scan has finished.
   bool is_ready = 1;
