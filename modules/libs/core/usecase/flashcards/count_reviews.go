@@ -105,7 +105,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 		return ReviewCounts{}, err
 	}
 
-	run := runCount{
+	run := reviewCounter{
 		was:    u.readRemembered(ctx, v),
 		now:    countCache{V: countedVersion},
 		out:    ReviewCounts{Days: make(map[string]review.Tally)},
@@ -133,8 +133,8 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	return run.out, nil
 }
 
-// runCount is the state of one counting over the runs of a log.
-type runCount struct {
+// reviewCounter is the state of one counting over the runs of a log.
+type reviewCounter struct {
 	// was is what was counted last time, by the name of the run.
 	was map[string]cachedRun
 	// now is what this counting remembers.
@@ -152,7 +152,7 @@ type runCount struct {
 
 // countFile adds one run of the log to the counting.
 func (u CountReviews) countFile(
-	ctx context.Context, log Log, store port.DerivedStore, file port.Entry, run *runCount,
+	ctx context.Context, log Log, store port.DerivedStore, file port.Entry, run *reviewCounter,
 ) error {
 	var ran LogFile
 	var opened bool
@@ -197,7 +197,7 @@ func (u CountReviews) countFile(
 // addDays puts the days a run adds to the counting into it and marks the run's
 // lines as counted. What a run came to on its own is what is kept, and what
 // the run adds is what no other run has been counted for.
-func (run *runCount) addDays(ids []string, days map[string]review.Tally) {
+func (run *reviewCounter) addDays(ids []string, days map[string]review.Tally) {
 	for _, id := range ids {
 		run.seen[id] = true
 	}
