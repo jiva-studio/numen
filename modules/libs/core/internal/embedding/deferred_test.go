@@ -292,14 +292,15 @@ func TestEitherEmbedderSaysWhatClosingTheModelSaid(t *testing.T) {
 }
 
 func TestConcurrencyIsWhatTheModelRunsAndOneUntilItArrives(t *testing.T) {
-	for name, get := range map[string]func(*embedding.Embedder) port.Embedder{
-		"embedder":  func(e *embedding.Embedder) port.Embedder { return e },
-		"waiting":   (*embedding.Embedder).GetWaitingEmbedder,
-		"impatient": (*embedding.Embedder).GetImpatientEmbedder,
+	type counter = interface{ Concurrency() int }
+	for name, get := range map[string]func(*embedding.Embedder) any{
+		"embedder":  func(e *embedding.Embedder) any { return e },
+		"waiting":   func(e *embedding.Embedder) any { return e.GetWaitingEmbedder() },
+		"impatient": func(e *embedding.Embedder) any { return e.GetImpatientEmbedder() },
 	} {
 		t.Run(name, func(t *testing.T) {
-			counted := func(e port.Embedder) int {
-				c, ok := e.(interface{ Concurrency() int })
+			counted := func(e any) int {
+				c, ok := e.(counter)
 				if !ok {
 					t.Fatal("no Concurrency")
 				}
