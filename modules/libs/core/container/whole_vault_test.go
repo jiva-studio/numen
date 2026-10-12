@@ -2,7 +2,9 @@ package container_test
 
 import (
 	"context"
+	"database/sql"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -10,6 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
+	_ "modernc.org/sqlite"
 )
 
 // makeIndex is an index in a folder of its own.
@@ -175,5 +179,73 @@ func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 	}
 	if got := owingAfterAModelSwitch(t, true); got == 0 {
 		t.Error("a rebuild kept the vectors of a model nobody asked for")
+	}
+}
+
+// makeSwitchedIndex is an index whose vault was made searchable by one model,
+// and the vault, ready to be made searchable by another.
+func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
+	t.Helper()
+	db := makeIndex(t)
+	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
+	whole, err := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}.ReadWholeVault(t.Context(), db, unit{"first"}, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := whole.Execute(t.Context(), v); err != nil {
+		t.Fatal(err)
+	}
+	return db, v
+}
+
+// A rebuild that cannot forget the vectors of the other model has not rebuilt,
+// and says so.
+func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
+	db, v := makeSwitchedIndex(t)
+	raw, err := sql.Open("sqlite", db.Path())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { raw.Close() })
+	if _, err := raw.ExecContext(t.Context(),
+		`CREATE TRIGGER keep_vectors BEFORE DELETE ON vectors BEGIN SELECT RAISE(ABORT, 'kept'); END`); err != nil {
+		t.Fatal(err)
+	}
+
+	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen", ShouldRebuildIndex: true}
+	if _, err := held.ReadWholeVault(t.Context(), db, unit{"second"}, v); err == nil || !strings.Contains(err.Error(), "kept") {
+		t.Errorf("got %v", err)
+	}
+}
+
+// Giving the space back is courtesy, and a vacuum that cannot run is told to
+// whoever asked and does not stop the rebuild.
+func TestAVacuumThatCannotRunIsToldAndTheRebuildGoesOn(t *testing.T) {
+	db, v := makeSwitchedIndex(t)
+	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "absent"))
+	t.Setenv("SQLITE_TMPDIR", filepath.Join(t.TempDir(), "absent"))
+
+	var told []error
+	held := container.Config{
+		Embedding: embed.Defaults(), ServiceDir: ".numen", ShouldRebuildIndex: true,
+		ErrorHandler: func(err error) { told = append(told, err) },
+	}
+	if _, err := held.ReadWholeVault(t.Context(), db, unit{"second"}, v); err != nil {
+		t.Fatal(err)
+	}
+	if len(told) != 1 {
+		t.Errorf("told %v", told)
+	}
+}
+
+func TestASearchOverTheIndexWithNoModelIsAnsweredByTheWords(t *testing.T) {
+	cfg, vault := makeScannedVault(t)
+
+	found, err := cfg.NewSearch(read(t, cfg), nil, nil).Execute(t.Context(), vault, "disorder", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Source != "Entropy.md" {
+		t.Errorf("the words answered with %+v", found)
 	}
 }

@@ -423,3 +423,26 @@ func TestAModelRunOnAnEngineNobodyWroteIsARefusal(t *testing.T) {
 		t.Errorf("got %v", why)
 	}
 }
+
+// The backend written in Go is an engine the settings may ask for by name.
+func TestAModelMayBeRunOnTheBackendWrittenInGo(t *testing.T) {
+	cfg := embed.Defaults()
+	cfg.Indexing = makeMissingProvider(t)
+	local, _ := cfg.Indexing.Local()
+	local.Engine = embed.EnginePureGo
+	cfg.Indexing = cfg.Indexing.SetLocal(local)
+
+	embedder, closer, why := container.Config{Embedding: cfg}.Embedder(t.Context())
+	if why != nil {
+		t.Fatal(why)
+	}
+	if closer != nil {
+		defer func() { _ = closer() }()
+	}
+	if embedder == nil {
+		t.Fatal("no embedder")
+	}
+	if _, err := embedder.Embed(t.Context(), []string{"anything"}); err == nil {
+		t.Error("a model that is not on this machine embedded something")
+	}
+}

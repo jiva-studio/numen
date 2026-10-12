@@ -120,6 +120,7 @@ const embedderMemoryPercent = 25
 // passes at once and the memory they may hold. A container without a plan leaves all three to
 // the model's own fallbacks.
 func (c Config) planLocalModel(local embed.LocalModel) embed.LocalModel {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a plan of zero texts a pass copies zero over the zero the model already holds"
 	if c.ResolvedCompute.EmbeddingBatchSize > 0 && local.BatchTexts == 0 {
 		local.BatchTexts = c.ResolvedCompute.EmbeddingBatchSize
 	}

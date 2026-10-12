@@ -1,12 +1,17 @@
 package container
 
 import (
+	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -189,5 +194,157 @@ func TestAnIndexIsNotMadeWhereTheCacheFolderCannotBeMade(t *testing.T) {
 	isolateWithNoHome(t)
 	if got, err := (Config{}).IndexPathOrDefault(); err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)
+	}
+}
+
+func TestWhatWentWrongIsToldToWhoeverAskedToBeTold(t *testing.T) {
+	var told []error
+	problem := errors.New("a vacuum that could not run")
+
+	Config{ErrorHandler: func(err error) { told = append(told, err) }}.handleError(problem)
+	if len(told) != 1 || !errors.Is(told[0], problem) {
+		t.Errorf("told %v", told)
+	}
+	Config{}.handleError(problem)
+}
+
+func TestTheSettingsFileIsReadOutAsItsPersonWroteIt(t *testing.T) {
+	const typed = `{"appearance": {"theme": "mine:sea"}}`
+	cfg, path := writeSettings(t, typed)
+
+	raw, said, err := cfg.ReadSettingsFile()()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if raw != typed || said != path {
+		t.Errorf("read %q at %q", raw, said)
+	}
+}
+
+func TestASettingsFileThatCannotBeReadIsSaidWithWhereItStands(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "numen.json")
+	if err := os.Mkdir(path, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, said, err := Config{SettingsPath: path}.ReadSettingsFile()()
+	if err == nil || raw != "" || said != path {
+		t.Errorf("read %q at %q: %v", raw, said, err)
+	}
+}
+
+func TestTheSettingsFileIsReplacedWholeByWhatWasTyped(t *testing.T) {
+	cfg, path := writeSettings(t, `{"appearance": {"theme": "mine:sea"}}`)
+	const typed = `{"appearance": {"theme": "mine:sand"}}`
+
+	if err := cfg.WriteConfiguredFile()(typed, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := os.ReadFile(path); err != nil || string(got) != typed {
+		t.Errorf("the file holds %q: %v", got, err)
+	}
+}
+
+func TestTheSettingsFileIsLeftAloneWhenItMovedSinceItWasRead(t *testing.T) {
+	const standing = `{"appearance": {"theme": "mine:sea"}}`
+	cfg, path := writeSettings(t, standing)
+	seen := `{"appearance": {"theme": "mine:forest"}}`
+
+	err := cfg.WriteConfiguredFile()(`{"appearance": {"theme": "mine:sand"}}`, &seen)
+	if !errors.Is(err, port.ErrStale) {
+		t.Errorf("got %v", err)
+	}
+	if got, _ := os.ReadFile(path); string(got) != standing {
+		t.Errorf("the file holds %q", got)
+	}
+}
+
+func TestSettingsTheFileCannotBeReadOutOfAreRefusedAndTheFileIsKept(t *testing.T) {
+	const standing = `{"appearance": {"theme": "mine:sea"}}`
+	cfg, path := writeSettings(t, standing)
+
+	if err := cfg.WriteConfiguredFile()(`{not json`, nil); err == nil {
+		t.Error("bytes that are not JSON were written")
+	}
+	if got, _ := os.ReadFile(path); string(got) != standing {
+		t.Errorf("the file holds %q", got)
+	}
+}
+
+func TestWithNoFolderForSettingsTheFileIsNotWritten(t *testing.T) {
+	isolateWithNoHome(t)
+
+	err := Config{}.WriteConfiguredFile()(`{}`, nil)
+	if err == nil || !strings.Contains(err.Error(), "HOME") {
+		t.Errorf("got %v", err)
+	}
+	err = Config{}.TurnsSetting()([]port.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
+	if err == nil || !strings.Contains(err.Error(), "HOME") {
+		t.Errorf("got %v", err)
+	}
+}
+
+func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
+	cfg, path := writeSettings(t, `{}`)
+
+	err := cfg.TurnsSetting()([]port.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `opus`}})
+	if !errors.Is(err, port.ErrNotASetting) {
+		t.Errorf("got %v", err)
+	}
+	var syntax *json.SyntaxError
+	if !errors.As(err, &syntax) {
+		t.Errorf("what was wrong with it is not said: %v", err)
+	}
+	if got, _ := os.ReadFile(path); string(got) != `{}` {
+		t.Errorf("the file holds %q", got)
+	}
+}
+
+func TestTheBoundsOnPartsUnderANodeAreTheSettingsOwn(t *testing.T) {
+	got := Config{}.PartsUnderANodeBounds()
+	if got != settings.PartsUnderANodeBounds || got == (settings.Bounds{}) {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestTheLatestStartOfADayIsSaidAsAClockTime(t *testing.T) {
+	if got, want := (Config{}).GetLatestDayStart(), review.Clock(settings.LatestDayStarts); got == "" || got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestTheRegistryIsWhereTheInstallationPointedItAndOtherwiseInTheConfigFolder(t *testing.T) {
+	isolate(t)
+	named := filepath.Join(t.TempDir(), "vaults.json")
+	type placed interface{ Path() string }
+
+	got, err := Config{RegistryPath: named}.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if at, ok := got.(placed); !ok || at.Path() != named {
+		t.Errorf("the registry is %#v, and it was pointed at %q", got, named)
+	}
+
+	got, err = Config{}.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	config, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if at, ok := got.(placed); !ok || at.Path() != filepath.Join(config, "numen", "vaults.json") {
+		t.Errorf("the registry is %#v", got)
+	}
+}
+
+func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
+	isolate(t)
+	if (Config{}).VaultIdentity() == nil {
+		t.Error("folders are given no identity")
+	}
+	if (Config{}).Trash() == nil {
+		t.Error("what is deleted has nowhere to go")
 	}
 }
