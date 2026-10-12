@@ -178,7 +178,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	res.Resumed = linesBefore(cues, pass.from)
 	res.Read, res.Left = res.Resumed, 0
 
-	at := u.planBatches(pass, stood)
+	at := u.getFirstBatch(pass, stood)
 	if at >= len(pass.batches) {
 		// This proofreader has been over every line and every batch over a cut.
 		res.IsAlready = true
@@ -262,9 +262,9 @@ func (u ProofreadTranscript) newPass(
 	}
 }
 
-// planBatches is the index of the first batch a run taking up from stood asks
+// getFirstBatch is the index of the first batch a run taking up from stood asks
 // about.
-func (u ProofreadTranscript) planBatches(p *transcriptPass, stood putting) int {
+func (u ProofreadTranscript) getFirstBatch(p *transcriptPass, stood putting) int {
 	at := getFirstUnaskedBatch(p.spoken, p.cues, stood.At)
 	if at < len(p.spoken) {
 		return at
@@ -297,7 +297,7 @@ func (u ProofreadTranscript) askBatches(
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
 		res.UncorrectedBatches += countUncorrected(group, replies, unbounded)
-		p.markAsked(group)
+		p.markAskedLines(group)
 		wrote := p.applyReplies(group, replies)
 		res.Fixed, res.Left = len(p.fixed), countUnchanged(p.asked, p.fixed)
 		res.Read = res.Resumed + len(p.asked)
@@ -327,8 +327,8 @@ func (u ProofreadTranscript) saveGroup(ctx context.Context, p *transcriptPass, w
 	return u.writeCheckpoint(ctx, p.store, p.far, getProgress(p.batches, len(p.spoken), end, p.cues))
 }
 
-// markAsked records the lines of the group from where this run began.
-func (p *transcriptPass) markAsked(group []proofread.Batch) {
+// markAskedLines records the lines of the group from where this run began.
+func (p *transcriptPass) markAskedLines(group []proofread.Batch) {
 	for _, batch := range group {
 		for _, line := range batch.Lines {
 			if line.Number >= p.from {

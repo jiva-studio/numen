@@ -143,7 +143,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err := u.readPages(ctx, scan, &out, &res); err != nil {
 		return res, err
 	}
-	err = u.finish(ctx, v, store, ref, hash, area, out, &res)
+	err = u.saveRecognition(ctx, v, store, ref, hash, area, out, &res)
 	return res, err
 }
 
@@ -274,9 +274,9 @@ func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, pa
 	return ocr.Page{Index: index, Size: drawn.Bounds().Size(), Blocks: blocks}, nil
 }
 
-// finish stands the source on the artifact made from the partial, or forgets a
+// saveRecognition stands the source on the artifact made from the partial, or forgets a
 // document that said nothing.
-func (u Recognise) finish(
+func (u Recognise) saveRecognition(
 	ctx context.Context,
 	v domain.Vault,
 	store port.DerivedStore,

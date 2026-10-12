@@ -223,17 +223,17 @@ func (u ProofreadReading) askPages(
 		if err != nil {
 			return fmt.Errorf("proofread %s: %w", p.path, err)
 		}
-		if err := u.land(ctx, p, asked, replies, end, res); err != nil {
+		if err := u.writeCorrections(ctx, p, asked, replies, end, res); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// land writes the corrections a batch came back with, cuts the source, and
+// writeCorrections writes the corrections a batch came back with, cuts the source, and
 // writes the count after both: a batch no count claims is one the next run asks
 // about again, and it trims the corrections back to the count first.
-func (u ProofreadReading) land(
+func (u ProofreadReading) writeCorrections(
 	ctx context.Context,
 	p readingPass,
 	asked []proofread.Batch,
@@ -350,7 +350,7 @@ func (u ProofreadReading) await(
 	res *ProofreadReadingResult,
 ) error {
 	if stood.Batch != "" {
-		next, ready, err := u.collectBatch(ctx, p, stood, res)
+		next, ready, err := u.fetchBatch(ctx, p, stood, res)
 		if err != nil {
 			return err
 		}
@@ -363,13 +363,13 @@ func (u ProofreadReading) await(
 	if stood.Pages >= len(p.pages) {
 		return nil
 	}
-	return u.leaveBatch(ctx, p, stood.Pages, res)
+	return u.submitBatch(ctx, p, stood.Pages, res)
 }
 
-// collectBatch collects the batch left for the proofreader and lands its
+// fetchBatch collects the batch left for the proofreader and lands its
 // corrections. It returns the checkpoint the reading now stands at, and whether
 // the batch was ready.
-func (u ProofreadReading) collectBatch(
+func (u ProofreadReading) fetchBatch(
 	ctx context.Context,
 	p readingPass,
 	stood checkpoint,
@@ -389,15 +389,15 @@ func (u ProofreadReading) collectBatch(
 		return stood, false, nil
 	}
 	end := min(stood.Pages+stood.Left, len(p.pages))
-	if err := u.land(ctx, p, p.pages[stood.Pages:end], replies, end, res); err != nil {
+	if err := u.writeCorrections(ctx, p, p.pages[stood.Pages:end], replies, end, res); err != nil {
 		return stood, false, err
 	}
 	return checkpoint{Pages: end}, true, nil
 }
 
-// leaveBatch leaves the batch of pages from at for the proofreader, and writes
+// submitBatch leaves the batch of pages from at for the proofreader, and writes
 // down the name it is collected under.
-func (u ProofreadReading) leaveBatch(
+func (u ProofreadReading) submitBatch(
 	ctx context.Context,
 	p readingPass,
 	at int,

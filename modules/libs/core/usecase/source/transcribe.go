@@ -127,7 +127,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		}
 	}
 
-	if done, err := u.standOnRecorded(ctx, v, store, ref, hash, area, &res); done {
+	if done, err := u.recordSource(ctx, v, store, ref, hash, area, &res); done {
 		return res, err
 	}
 
@@ -139,17 +139,17 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	defer recording.Close()
 	res.Length = recording.Length()
 
-	if err := u.listen(ctx, v, store, recording, path, partial, &res); err != nil {
+	if err := u.transcribeSegments(ctx, v, store, recording, path, partial, &res); err != nil {
 		return res, err
 	}
 
-	err = u.finish(ctx, v, store, ref, hash, area, &res)
+	err = u.saveTranscript(ctx, v, store, ref, hash, area, &res)
 	return res, err
 }
 
-// finish stands the source on the artifact made from the partial, or answers
+// saveTranscript stands the source on the artifact made from the partial, or answers
 // that the recording carries no speech.
-func (u Transcribe) finish(
+func (u Transcribe) saveTranscript(
 	ctx context.Context,
 	v domain.Vault,
 	store port.DerivedStore,
@@ -193,14 +193,14 @@ func removeAllNames(ctx context.Context, store port.DerivedStore, names ...strin
 	return nil
 }
 
-// standOnRecorded stands the source on a transcript or answer an earlier run
+// recordSource stands the source on a transcript or answer an earlier run
 // stored for these bytes, and says whether one was there.
 //
 // The name is the hash of what was heard, so a recording is not listened to
 // again however the file was renamed or moved since. A recording that gave no
 // words gave an answer all the same, and taking the record away is how a person
 // asks for it again.
-func (u Transcribe) standOnRecorded(
+func (u Transcribe) recordSource(
 	ctx context.Context,
 	v domain.Vault,
 	store port.DerivedStore,
@@ -224,12 +224,12 @@ func (u Transcribe) standOnRecorded(
 	return false, nil
 }
 
-// listen transcribes the recording from where the partial left off until it
+// transcribeSegments transcribes the recording from where the partial left off until it
 // stops moving, writing each batch of cues as it is heard.
 //
 // The note stands after the cues it claims, so a batch that did not land whole
 // is one no note claims, and the next run transcribes those stretches again.
-func (u Transcribe) listen(
+func (u Transcribe) transcribeSegments(
 	ctx context.Context,
 	v domain.Vault,
 	store port.DerivedStore,
@@ -251,7 +251,7 @@ func (u Transcribe) listen(
 			// where this one stopped.
 			return err
 		}
-		cues, reached, err := u.hearBatch(ctx, recording, path, from)
+		cues, reached, err := u.transcribeBatch(ctx, recording, path, from)
 		if err != nil {
 			return err
 		}
@@ -275,10 +275,10 @@ func (u Transcribe) listen(
 	}
 }
 
-// hearBatch transcribes the next segments after from, and returns their cues
+// transcribeBatch transcribes the next segments after from, and returns their cues
 // with the furthest point they reach. A recording with nothing after from
 // returns no cues and from itself.
-func (u Transcribe) hearBatch(
+func (u Transcribe) transcribeBatch(
 	ctx context.Context,
 	recording port.Recording,
 	path string,
