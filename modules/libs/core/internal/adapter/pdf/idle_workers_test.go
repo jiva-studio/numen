@@ -167,12 +167,12 @@ func TestAReleaseCannotCloseAPoolADocumentHasAcquired(t *testing.T) {
 	}
 	releasePool()
 	if !hasPool() {
-		finishWorker()
+		markDocumentClosed()
 		t.Fatal("the pool was released while a document had acquired it")
 	}
 	worker, err := p.GetInstance(time.Minute)
 	if err != nil {
-		finishWorker()
+		markDocumentClosed()
 		t.Fatal(err)
 	}
 	putWorker(worker)

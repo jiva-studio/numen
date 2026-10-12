@@ -69,7 +69,7 @@ func getOrderedPages(pages []int, most int) []int {
 // its words are.
 func (d *document) words(index, offset int) []highlight.Box {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}}
-	sheet, ok := d.paper(page)
+	sheet, ok := d.getSheet(page)
 	if !ok {
 		return nil
 	}
@@ -88,7 +88,7 @@ func (d *document) words(index, offset int) []highlight.Box {
 	start, length := 0, 0
 	done := func() {
 		if length > 0 {
-			boxes = append(boxes, sheet.box(index, start, length, word))
+			boxes = append(boxes, sheet.getWordBox(index, start, length, word))
 		}
 		length = 0
 	}
@@ -112,7 +112,7 @@ func (d *document) words(index, offset int) []highlight.Box {
 		if length == 0 {
 			start, word = at, mark
 		} else {
-			word = widen(word, mark)
+			word = extendWord(word, mark)
 		}
 		length += len(text)
 		at += len(text)
@@ -132,8 +132,8 @@ func isWordContinued(word, mark responses.CharPosition) bool {
 	return mark.Left-word.Right <= wordGap*high && mark.Right > word.Right
 }
 
-// widen is the word with one more character in it.
-func widen(word, mark responses.CharPosition) responses.CharPosition {
+// extendWord is the word with one more character in it.
+func extendWord(word, mark responses.CharPosition) responses.CharPosition {
 	return responses.CharPosition{
 		Left:   min(word.Left, mark.Left),
 		Right:  max(word.Right, mark.Right),
@@ -142,57 +142,57 @@ func widen(word, mark responses.CharPosition) responses.CharPosition {
 	}
 }
 
-// sheet is one page in the space its text is written in: how wide and how high
+// pageGeometry is one page in the space its text is written in: how wide and how high
 // it is, in points, and the quarter turns clockwise it is drawn with.
-type sheet struct {
+type pageGeometry struct {
 	width, height float64
-	turn          int
+	rotation      int
 }
 
-// paper measures one page. The size the library reports is of the page as it is
+// getSheet measures one page. The size the library reports is of the page as it is
 // drawn, and a page drawn a quarter turn from the way its text is written is as
 // wide as its text is high.
-func (d *document) paper(page requests.Page) (sheet, bool) {
+func (d *document) getSheet(page requests.Page) (pageGeometry, bool) {
 	size, err := d.worker.GetPageSize(&requests.GetPageSize{Page: page})
 	if err != nil || size.Width <= 0 || size.Height <= 0 {
-		return sheet{}, false
+		return pageGeometry{}, false
 	}
 	turned, err := d.worker.FPDFPage_GetRotation(&requests.FPDFPage_GetRotation{Page: page})
 	if err != nil {
-		return sheet{}, false
+		return pageGeometry{}, false
 	}
-	sheet := sheet{width: size.Width, height: size.Height, turn: int(turned.PageRotation)}
-	if sheet.turn%2 == 1 {
+	sheet := pageGeometry{width: size.Width, height: size.Height, rotation: int(turned.PageRotation)}
+	if sheet.rotation%2 == 1 {
 		sheet.width, sheet.height = sheet.height, sheet.width
 	}
 	return sheet, true
 }
 
-// box is one word of a page, over the fraction of it the word covers.
-func (p sheet) box(page, start, length int, word responses.CharPosition) highlight.Box {
-	x0, y0 := p.getDrawnPoint(word.Left, word.Top)
-	x1, y1 := p.getDrawnPoint(word.Right, word.Bottom)
+// getWordBox is one word of a page, over the fraction of it the word covers.
+func (p pageGeometry) getWordBox(page, start, length int, word responses.CharPosition) highlight.Box {
+	x0, y0 := p.getPagePoint(word.Left, word.Top)
+	x1, y1 := p.getPagePoint(word.Right, word.Bottom)
 	return highlight.Box{
 		Page:     page,
 		ByteSpan: domain.ByteSpan{From: start, To: start + length},
 		Rect: highlight.Rect{
-			MinX: onPage(min(x0, x1)),
-			MinY: onPage(min(y0, y1)),
-			MaxX: onPage(max(x0, x1)),
-			MaxY: onPage(max(y0, y1)),
+			MinX: clampToPage(min(x0, x1)),
+			MinY: clampToPage(min(y0, y1)),
+			MaxX: clampToPage(max(x0, x1)),
+			MaxY: clampToPage(max(y0, y1)),
 		},
 	}
 }
 
-// getDrawnPoint is where a point of the page falls on the page as it is drawn: a
+// getPagePoint is where a point of the page falls on the page as it is drawn: a
 // fraction of it, measured from its top left corner.
 //
 // A page's text is written with the origin at the bottom left corner, and the
 // page is drawn with the origin at the top left and turned by however much it
 // asks to be.
-func (p sheet) getDrawnPoint(x, y float64) (float32, float32) {
+func (p pageGeometry) getPagePoint(x, y float64) (float32, float32) {
 	wide, high := p.width, p.height
-	switch p.turn {
+	switch p.rotation {
 	case 1:
 		x, y, wide, high = y, x, high, wide
 	case 2:
@@ -205,8 +205,8 @@ func (p sheet) getDrawnPoint(x, y float64) (float32, float32) {
 	return float32(x / wide), float32(y / high)
 }
 
-// onPage holds a rectangle to the page it is on. A character set past the edge
+// clampToPage holds a rectangle to the page it is on. A character set past the edge
 // of the paper is drawn at the edge.
-func onPage(f float32) float32 {
+func clampToPage(f float32) float32 {
 	return min(max(f, 0), 1)
 }

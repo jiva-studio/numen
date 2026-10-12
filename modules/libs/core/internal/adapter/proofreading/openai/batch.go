@@ -84,7 +84,7 @@ func (c *Client) Leave(ctx context.Context, pages []proofread.Batch) (string, er
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.queue(""), bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getBatchURL(""), bytes.NewReader(body))
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +120,7 @@ func (c *Client) Collect(ctx context.Context, name string) (map[int]string, bool
 		return nil, false, errors.New("no batch queue for the proofreading service")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.queue("/"+name), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.getBatchURL("/"+name), nil)
 	if err != nil {
 		return nil, false, err
 	}
@@ -166,8 +166,8 @@ func (c *Client) Collect(ctx context.Context, name string) (map[int]string, bool
 	return out, true, nil
 }
 
-// queue is the batch service, with a path appended.
-func (c *Client) queue(path string) string {
+// getBatchURL is the batch service, with a path appended.
+func (c *Client) getBatchURL(path string) string {
 	return strings.TrimSuffix(c.service.BatchURL, "/") + path
 }
 
@@ -175,5 +175,5 @@ func (c *Client) queue(path string) string {
 // of it.
 func (c *Client) readDetail(body io.Reader) string {
 	read, _ := io.ReadAll(io.LimitReader(body, 512))
-	return c.detail(read)
+	return c.getErrorDetail(read)
 }

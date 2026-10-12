@@ -221,7 +221,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	for _, ids := range batch {
 		longest = max(longest, len(ids))
 	}
-	seq := bucket(longest, tokenStep, e.maxTokens)
+	seq := roundUpToBucket(longest, tokenStep, e.maxTokens)
 	rows := max(e.batchTexts, len(batch))
 
 	padded := padBatch(batch, rows, seq, e.pad)
@@ -259,7 +259,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 		return nil, err
 	}
 	if e.isPooled {
-		vectors, err := split(flat, rows, e.dimensions)
+		vectors, err := splitRows(flat, rows, e.dimensions)
 		if err != nil {
 			return nil, err
 		}
@@ -274,7 +274,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	return meanPool(flat, padded.mask, rows, seq, e.dimensions)[:len(batch)], nil
 }
 
-func split(flat []float32, rows, dimensions int) ([][]float32, error) {
+func splitRows(flat []float32, rows, dimensions int) ([][]float32, error) {
 	if len(flat) != rows*dimensions {
 		return nil, fmt.Errorf("got %d values for %d vectors of %d dimensions", len(flat), rows, dimensions)
 	}

@@ -23,7 +23,7 @@ func (Documents) Read(ctx context.Context, raw []byte) (out domain.TextLayer, er
 	}
 	book, err := Read(raw)
 	if err != nil {
-		return domain.TextLayer{}, wrapError(err)
+		return domain.TextLayer{}, mapReadError(err)
 	}
 	out = domain.TextLayer{Text: book.Text}
 	for _, p := range book.Parts {
@@ -47,7 +47,7 @@ func (Documents) Highlights(ctx context.Context, raw []byte, starts []int, pages
 	}
 	found, err := book.Highlights(raw, pages)
 	if err != nil {
-		return nil, wrapError(err)
+		return nil, mapReadError(err)
 	}
 	return found, nil
 }
@@ -62,7 +62,7 @@ func (Documents) Draw(ctx context.Context, file io.ReadSeekCloser) (open port.Op
 	}
 	scan, err := OpenReader(file)
 	if err != nil {
-		return nil, wrapError(err)
+		return nil, mapReadError(err)
 	}
 	return scan, nil
 }
@@ -82,9 +82,9 @@ func recoverPanic[T any](what string, answer *T, err *error) {
 	}
 }
 
-// wrapError says which of the two ways a document could not be read, in the words
+// mapReadError says which of the two ways a document could not be read, in the words
 // the core knows them by.
-func wrapError(err error) error {
+func mapReadError(err error) error {
 	switch {
 	case errors.Is(err, ErrEncrypted):
 		return fmt.Errorf("%w: %w", port.ErrEncrypted, err)

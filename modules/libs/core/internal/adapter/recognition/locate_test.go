@@ -63,14 +63,14 @@ func TestLocateStopsWhenTheRuntimeCannotBeOpened(t *testing.T) {
 		Recognise: RecogniserModel{Path: writeFile(t, dir, "inference.onnx")},
 	}
 
-	opened, found, err := locate(t.Context(), cfg)
+	opened, found, err := locateModels(t.Context(), cfg)
 	if err == nil {
 		t.Fatal("located models on a runtime that cannot be opened")
 	}
 	if !strings.Contains(err.Error(), missing) {
 		t.Errorf("error = %v, want it to name %s", err, missing)
 	}
-	if opened != (through{}) || found != (paths{}) {
+	if opened != (onnxRuntime{}) || found != (paths{}) {
 		t.Errorf("located %+v, %+v", opened, found)
 	}
 }

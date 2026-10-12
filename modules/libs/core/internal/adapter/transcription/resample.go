@@ -87,7 +87,7 @@ func buildKernel(cutoff, reach float64) kernel {
 	held := make([]float64, int(reach*step)+2)
 	for i := range held {
 		d := float64(i) / step
-		held[i] = sinc(cutoff*d) * blackman(d/reach)
+		held[i] = getSinc(cutoff*d) * getBlackmanWindow(d/reach)
 	}
 	return kernel{held: held, step: step}
 }
@@ -105,16 +105,16 @@ func (w kernel) getValueAt(d float64) float64 {
 	return w.held[i]*(1-part) + w.held[i+1]*part
 }
 
-// sinc is the interpolating kernel, one at nothing.
-func sinc(x float64) float64 {
+// getSinc is the interpolating kernel, one at nothing.
+func getSinc(x float64) float64 {
 	if x == 0 {
 		return 1
 	}
 	return math.Sin(math.Pi*x) / (math.Pi * x)
 }
 
-// blackman brings the kernel to nothing at the edge of its reach.
-func blackman(t float64) float64 {
+// getBlackmanWindow brings the kernel to nothing at the edge of its reach.
+func getBlackmanWindow(t float64) float64 {
 	if t < -1 || t > 1 {
 		return 0
 	}

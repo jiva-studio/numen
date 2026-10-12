@@ -56,9 +56,9 @@ type Tool struct {
 	Environment map[string]string `json:"environment"`
 }
 
-// env is what a run of this tool is started with: this process's own, and what
+// getEnvironment is what a run of this tool is started with: this process's own, and what
 // the settings name over it. Naming none is this process's own.
-func (t Tool) env() []string {
+func (t Tool) getEnvironment() []string {
 	if len(t.Environment) == 0 {
 		return nil
 	}
