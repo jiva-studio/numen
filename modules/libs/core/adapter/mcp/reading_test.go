@@ -261,10 +261,8 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 
 	return mcp.Core{
 		Showing:     mcp.ShowOneVault(v, v.Path),
-		Readers:     readers,
 		Read:        file.Read{Readers: readers},
-		GetSummary:  cfg.GetSummary(queries),
-		GetProblems: cfg.GetProblems(queries),
+		GetProblems: cfg.GetProblems(db.Problems()),
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),

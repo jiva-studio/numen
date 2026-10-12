@@ -36,7 +36,7 @@ func TestARenameWhoseContextEndsSaysWhatTheStencilStandsAt(t *testing.T) {
 	u := cards.NewRenameField(
 		filesystem.VaultReaders{}, filesystem.VaultWriters{},
 		decksOf{paths: []string{"decks/Birds.md"}, cancel: cancel},
-		vs.db.NoteQueries(), indexNothing, time.Now,
+		vs.db.NoteQueries(), indexNothing, time.Now, cards.UnboundedDecks,
 	)
 
 	got, err := u.Execute(ctx, vs.first, cards.Rename{

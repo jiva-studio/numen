@@ -80,9 +80,12 @@ func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (CreateNoteRes
 // first field is what a card cut by the stencil is named by.
 var ErrNoFields = errors.New("a stencil declares at least one field")
 
-// Stencil makes a stencil declaring the fields it was given. Faces, when given,
-// are laid down as its body.
+// Stencil makes a stencil declaring the fields it was given, with its faces laid
+// down as its body.
 func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
+	if len(in.Fields) == 0 {
+		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
+	}
 	if len(in.Faces) > 0 {
 		body, err := format.StencilBody("", in.Faces, "")
 		if err != nil {
@@ -93,9 +96,6 @@ func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (CreateNote
 				"a stencil of %d bytes is more than this writes at once, which is %d", len(body), note.MaxBytes)
 		}
 		in.Body = body
-	}
-	if len(in.Fields) == 0 {
-		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
 	return u.make(ctx, v, domain.TypeStencil, in)
 }

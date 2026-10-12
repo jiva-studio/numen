@@ -278,7 +278,7 @@ func (a *Agent) follow(running context.Context, w *work, c child, conversation s
 		failed = getFailureMessage(err, c.said.String())
 	}
 	select {
-	case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
+	case w.steps <- port.Step{Kind: domain.StepStop, Detail: failed}:
 	case <-running.Done():
 	}
 	if err != nil && a.ErrorHandler != nil {

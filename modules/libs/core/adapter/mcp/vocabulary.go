@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // Tool is how one tool is spoken about to a person: what it is called, and
@@ -22,7 +22,7 @@ type Tool struct {
 	// titles, and the collection itself is about nothing a person can read.
 	Inside string
 	// Kind is what this call does to the vault.
-	Kind port.StepKind
+	Kind domain.StepKind
 	// Match and Text name the arguments carrying the text a call replaces and
 	// what it puts in that text's place. Both are empty for a call that
 	// replaces no span.
@@ -36,57 +36,57 @@ type Tool struct {
 // The tools are written out by hand and so is this. A schema says what a call
 // takes and cannot say what taking it means.
 var doing = map[string]Tool{
-	"note_search":         {Kind: port.StepSearch},
-	"note_titles":         {Kind: port.StepRead},
-	"note_read":           {Kind: port.StepRead},
-	"note_resolve":        {Kind: port.StepRead},
-	"note_neighbourhood":  {Kind: port.StepRead},
-	"note_create":         {Kind: port.StepEdit},
-	"note_import":         {Kind: port.StepEdit},
-	"note_rewrite":        {Kind: port.StepEdit},
-	"note_edit":           {Kind: port.StepEdit, Match: "match", Text: "text"},
-	"note_rename":         {Kind: port.StepMove},
-	"note_move":           {Kind: port.StepMove},
-	"note_remove":         {Kind: port.StepRemove},
-	"note_focus":          {Kind: port.StepRead},
-	"file_read":           {Kind: port.StepRead},
-	"card_stencil_list":   {Kind: port.StepRead},
-	"card_read":           {Kind: port.StepRead},
-	"card_current":        {Kind: port.StepRead},
-	"card_add":            {Kind: port.StepEdit},
-	"card_edit":           {Kind: port.StepEdit},
-	"card_value_remove":   {Kind: port.StepRemove},
-	"card_remove":         {Kind: port.StepRemove},
-	"card_section_add":    {Kind: port.StepEdit},
-	"card_section_rename": {Kind: port.StepMove},
-	"card_section_remove": {Kind: port.StepRemove},
-	"card_deck_create":    {Kind: port.StepEdit},
-	"card_stencil_create": {Kind: port.StepEdit},
+	"note_search":         {Kind: domain.StepSearch},
+	"note_titles":         {Kind: domain.StepRead},
+	"note_read":           {Kind: domain.StepRead},
+	"note_resolve":        {Kind: domain.StepRead},
+	"note_neighbourhood":  {Kind: domain.StepRead},
+	"note_create":         {Kind: domain.StepEdit},
+	"note_import":         {Kind: domain.StepEdit},
+	"note_rewrite":        {Kind: domain.StepEdit},
+	"note_edit":           {Kind: domain.StepEdit, Match: "match", Text: "text"},
+	"note_rename":         {Kind: domain.StepMove},
+	"note_move":           {Kind: domain.StepMove},
+	"note_remove":         {Kind: domain.StepRemove},
+	"note_focus":          {Kind: domain.StepRead},
+	"file_read":           {Kind: domain.StepRead},
+	"card_stencil_list":   {Kind: domain.StepRead},
+	"card_read":           {Kind: domain.StepRead},
+	"card_current":        {Kind: domain.StepRead},
+	"card_add":            {Kind: domain.StepEdit},
+	"card_edit":           {Kind: domain.StepEdit},
+	"card_value_remove":   {Kind: domain.StepRemove},
+	"card_remove":         {Kind: domain.StepRemove},
+	"card_section_add":    {Kind: domain.StepEdit},
+	"card_section_rename": {Kind: domain.StepMove},
+	"card_section_remove": {Kind: domain.StepRemove},
+	"card_deck_create":    {Kind: domain.StepEdit},
+	"card_stencil_create": {Kind: domain.StepEdit},
 	// A field's name stands in the stencil that declares it and in every card
 	// that stencil cuts, so renaming it is a write to as many files as hold one.
-	"card_field_rename": {Kind: port.StepMove},
-	"link_add":          {Kind: port.StepEdit},
-	"link_update":       {Kind: port.StepEdit},
-	"link_remove":       {Kind: port.StepEdit},
-	"link_list":         {Kind: port.StepRead},
-	"window_tab_list":   {Kind: port.StepRead},
-	"vault_get":         {Kind: port.StepRead},
-	"vault_problems":    {Kind: port.StepRead},
-	"vault_list":        {Kind: port.StepRead},
-	"vault_add":         {Kind: port.StepEdit},
-	"vault_rename":      {Kind: port.StepMove},
-	"vault_remove":      {Kind: port.StepRemove},
-	"vault_open":        {Kind: port.StepRead},
-	"source_list":       {Kind: port.StepRead},
-	"source_read":       {Kind: port.StepRead},
-	"artifact_list":     {Kind: port.StepRead},
-	"artifact_read":     {Kind: port.StepRead},
-	"source_focus":      {Kind: port.StepRead},
+	"card_field_rename": {Kind: domain.StepMove},
+	"link_add":          {Kind: domain.StepEdit},
+	"link_update":       {Kind: domain.StepEdit},
+	"link_remove":       {Kind: domain.StepEdit},
+	"link_list":         {Kind: domain.StepRead},
+	"window_tab_list":   {Kind: domain.StepRead},
+	"vault_get":         {Kind: domain.StepRead},
+	"vault_problems":    {Kind: domain.StepRead},
+	"vault_list":        {Kind: domain.StepRead},
+	"vault_add":         {Kind: domain.StepEdit},
+	"vault_rename":      {Kind: domain.StepMove},
+	"vault_remove":      {Kind: domain.StepRemove},
+	"vault_open":        {Kind: domain.StepRead},
+	"source_list":       {Kind: domain.StepRead},
+	"source_read":       {Kind: domain.StepRead},
+	"artifact_list":     {Kind: domain.StepRead},
+	"artifact_read":     {Kind: domain.StepRead},
+	"source_focus":      {Kind: domain.StepRead},
 	// Reading a document changes what the vault holds — it writes down what a
 	// model saw — so it is shown as a change and not as a look. Listening to a
 	// recording writes down what a model heard, and is shown the same way.
-	"source_recognise":  {Kind: port.StepEdit},
-	"source_transcribe": {Kind: port.StepEdit},
+	"source_recognise":  {Kind: domain.StepEdit},
+	"source_transcribe": {Kind: domain.StepEdit},
 }
 
 // Vocabulary asks the server what it serves, and reads the answer.

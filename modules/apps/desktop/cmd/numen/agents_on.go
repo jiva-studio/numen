@@ -115,9 +115,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 
 	return mcp.Core{
 		Showing:     mcp.ShowOneVault(opened.GetCurrentVault(), root),
-		GetSummary:  cfg.GetSummary(opened.Queries()),
-		GetProblems: cfg.GetProblems(opened.Queries()),
-		Readers:     cfg.VaultReaders(),
+		GetProblems: cfg.GetProblems(opened.Problems()),
 		Read:        cfg.Read(),
 		Attending:   opened.API.GetOpenTabs,
 
@@ -158,7 +156,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			RemoveSection:   cards.RemoveSection,
 			List:            cards.List,
 			Create:          cards.Create,
-			RenameField:     cards.Rename.WithMaxDecksPerRename(container.MaxDecksPerRename),
+			RenameField:     cards.BoundedRenameField,
 		},
 
 		Notes: mcp.Notes{

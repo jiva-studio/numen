@@ -89,10 +89,9 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	queries := db.Queries()
 	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 	core := mcp.Core{
-		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,
+		Showing:     mcp.ShowOneVault(v, v.Path),
 		Read:        file.Read{Readers: readers},
-		GetSummary:  container.Config{}.GetSummary(queries),
-		GetProblems: container.Config{}.GetProblems(queries),
+		GetProblems: container.Config{}.GetProblems(db.Problems()),
 		Notes: mcp.Notes{
 			Queries:       queries,
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),

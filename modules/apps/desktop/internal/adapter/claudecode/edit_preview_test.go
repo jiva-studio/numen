@@ -49,7 +49,7 @@ func startDrafting(t *testing.T, window *fakePreviewWindow, prints string) port.
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 		ToolDeclarations: map[string]claudecode.ToolDeclaration{
 			claudecode.ToolName("note_edit"): {
-				Title: "Edit a note", Kind: port.StepEdit,
+				Title: "Edit a note", Kind: domain.StepEdit,
 				Arguments: claudecode.Arguments{
 					About: "path", Match: "stood", Text: "becomes",
 				},

@@ -109,7 +109,6 @@ func onTheList(t *testing.T) *installation {
 	}
 	f.core = mcp.Core{
 		Showing: mcp.ShowOneVault(f.first, f.first.Path),
-		Readers: filesystem.VaultReaders{},
 		Vaults: mcp.Vaults{
 			KnownVaults: container.Config{}.KnownVaults(registry),
 			GetVault:    container.Config{}.GetVault(registry),

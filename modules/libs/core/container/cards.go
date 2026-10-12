@@ -10,10 +10,6 @@ import (
 // called where it is built. An application is handed the set and names it here.
 type Cards = cards.Scenarios
 
-// MaxDecksPerRename is the most decks a vault may hold and still have a field
-// renamed through an agent's tools.
-const MaxDecksPerRename = cards.MaxDecksPerRename
-
 // Cards builds everything that acts on the two notes a flashcard is made of,
 // against this installation's vault readers and writers.
 //
@@ -33,11 +29,13 @@ func (c Config) Cards(
 	write := cards.NewWrite(readers, writers, links, index, now)
 
 	return cards.Scenarios{
-		Read:   read,
-		List:   cards.NewList(readers, notes),
-		Write:  write,
-		Create: cards.NewCreate(writers, index, now),
-		Rename: cards.NewRenameField(readers, writers, notes, links, index, now),
+		Read:        read,
+		List:        cards.NewList(readers, notes),
+		Write:       write,
+		Create:      cards.NewCreate(writers, index, now),
+		RenameField: cards.NewRenameField(readers, writers, notes, links, index, now, cards.UnboundedDecks),
+		BoundedRenameField: cards.NewRenameField(
+			readers, writers, notes, links, index, now, cards.MaxDecksPerRename),
 
 		GetCardPage:     cards.NewGetCardPage(read),
 		AddCard:         cards.NewAddCard(read, write),
