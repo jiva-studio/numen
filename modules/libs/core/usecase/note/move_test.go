@@ -183,7 +183,7 @@ func TestAMoveThatStopsBeforeTheFileMovedSaysSo(t *testing.T) {
 		},
 		"the vault cannot be opened for writing": {
 			from: "physics/Entropy.md",
-			parts: func(c changing) moveParts {
+			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
 					VaultWriters: filesystem.VaultWriters{}, openErr: boom, failOpen: 1, opened: new(int),
 				}}
