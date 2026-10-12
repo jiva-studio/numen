@@ -1,6 +1,7 @@
 package flashcards
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"testing"
@@ -165,5 +166,51 @@ func TestAStretchOfALongHistoryHoldsEveryDayInsideIt(t *testing.T) {
 	coming := list(ahead[1], ahead[len(ahead)-2])
 	if got, want := names(coming.GetDue()), ahead[1:len(ahead)-1]; !slices.Equal(got, want) {
 		t.Errorf("the days ahead came back as %v, want %v", got, want)
+	}
+}
+
+// appendRefusing is a store whose file takes no answer.
+type appendRefusing struct{ port.DerivedStore }
+
+func (appendRefusing) Append(context.Context, string, []byte) error { return errNothingRead }
+
+type refusingStores struct{}
+
+func (refusingStores) Open(domain.Vault) (port.DerivedStore, error) { return appendRefusing{}, nil }
+
+// An answer the run's file would not take is an internal error, and so is the
+// taking back of one.
+func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
+	api, held := newAPI(t, deck)
+	api.Log = flashcards.Log{Stores: refusingStores{}}
+	v := held[0]
+	session := startSession(t, api, v)
+	card := session.GetAsked()[0]
+
+	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+		Vault: string(v.ID), Run: session.GetRun(),
+		Mark: card.GetMark(), Face: card.GetFace(), Rating: v1.Rating_RATING_GOOD,
+	}))
+	if connect.CodeOf(err) != connect.CodeInternal || out != nil {
+		t.Errorf("answering came back with %+v and %v, want an internal error", out, err)
+	}
+
+	back, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+		Vault: string(v.ID), Run: session.GetRun(), Answer: "01J8F3K2M9QRSTVWXYZ012",
+	}))
+	if connect.CodeOf(err) != connect.CodeInternal || back != nil {
+		t.Errorf("taking back came back with %+v and %v, want an internal error", back, err)
+	}
+}
+
+// A session that cannot be worked out is an internal error and opens no run.
+func TestASessionThatCannotBeWorkedOutIsRefused(t *testing.T) {
+	api, held := newAPI(t, deck)
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	out, err := api.StartSession(ctx, connect.NewRequest(&v1.StartSessionRequest{Vault: string(held[0].ID)}))
+	if connect.CodeOf(err) != connect.CodeInternal || out != nil {
+		t.Errorf("a session that could not be worked out came back with %+v and %v", out, err)
 	}
 }

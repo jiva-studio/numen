@@ -320,3 +320,55 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 		t.Errorf("%d vaults were counted, want 6: %v", counted, stream.Err())
 	}
 }
+
+// A stream whose client has gone waits for the counts already running before
+// it ends, so no count outlives the call that asked for it.
+func TestTheFrontDoorEndsOnlyWhenTheCountsRunningHaveEnded(t *testing.T) {
+	api, held := newAPI(t, deck, deck, deck, deck, deck, deck)
+	front(t, api)
+
+	until := make(chan struct{})
+	gates := map[domain.VaultID]<-chan struct{}{}
+	for _, v := range held {
+		gates[v.ID] = until
+	}
+	entered := make(chan domain.VaultID, 64)
+	api.CardsDue = api.CardsDue.WithCardFaces(api.CardsDue.CardFaces().WithReaders(
+		gated{until: gates, entered: entered}))
+	openAll := sync.OnceFunc(func() { close(until) })
+	t.Cleanup(openAll)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	returned := make(chan error, 1)
+	client := newBreakingClient(t, api, breaking{
+		fails: func(int, any) bool { return false }, ctx: ctx, returned: returned,
+	})
+	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { stream.Close() })
+
+	running := map[domain.VaultID]bool{}
+	for len(running) < 4 {
+		select {
+		case id := <-entered:
+			running[id] = true
+		case <-time.After(testsupport.Patience):
+			t.Fatalf("%d vaults are being counted, want 4", len(running))
+		}
+	}
+
+	cancel()
+	select {
+	case <-returned:
+		t.Fatal("the stream ended while four counts were still running")
+	case <-time.After(300 * time.Millisecond):
+	}
+
+	openAll()
+	if err := awaitReturn(t, returned); err != nil {
+		t.Errorf("the stream ended with %v", err)
+	}
+}

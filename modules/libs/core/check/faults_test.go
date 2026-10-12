@@ -157,3 +157,25 @@ func TestAnUnknownCheckIsRefusedWithTheNamesThereAre(t *testing.T) {
 		t.Errorf("the error is %q, want %q", err, want)
 	}
 }
+
+// Problems of one note and one check keep the order they were found in.
+func TestProblemsOfOneNoteAndOneCheckKeepTheirOrder(t *testing.T) {
+	l := check.Checks{List: []check.Checker{fixed{name: "first", found: []domain.VaultProblem{
+		{Path: "a.md", Kind: "first", Detail: "one"},
+		{Path: "a.md", Kind: "first", Detail: "two"},
+		{Path: "a.md", Kind: "second", Detail: "three"},
+		{Path: "a.md", Kind: "second", Detail: "four"},
+	}}}}
+
+	found, err := l.Run(t.Context(), domain.Vault{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, p := range found {
+		got = append(got, p.Detail)
+	}
+	if want := []string{"one", "two", "three", "four"}; !slices.Equal(got, want) {
+		t.Errorf("the problems stand as %v, want %v", got, want)
+	}
+}
