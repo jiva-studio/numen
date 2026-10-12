@@ -78,7 +78,7 @@ describe('what the window has to say', () => {
     const one = useNotices()
     one.showNotice('the first', 'caution')
 
-    expect(one.notices.value[0]).toMatchObject({ tone: 'caution', isAsked: true })
+    expect(one.notices.value[0]).toMatchObject({ tone: 'caution', isUserStarted: true })
   })
 
   it('puts away nothing when the name is not one it holds', () => {
@@ -100,7 +100,7 @@ describe('what the window has to say', () => {
       text: 'Indexing the vault',
       about: 'Sanskrit',
       isWorking: true,
-      isAsked: true,
+      isUserStarted: true,
     })
   })
 
@@ -134,6 +134,6 @@ const reads = (fields: Partial<Task> = {}): Task => ({
   label: 'Indexing the vault',
   about: 'Sanskrit',
   error: '',
-  isAsked: true,
+  isUserStarted: true,
   ...fields,
 })

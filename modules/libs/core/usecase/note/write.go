@@ -136,7 +136,7 @@ func (u Write) Execute(
 	})
 }
 
-// LastRead is what a caller last saw of the note it is saving.
+// ReadBaseline is what a caller last saw of the note it is saving.
 //
 // Prose answers first: text that is still what the caller was given is the text
 // it read, whatever the file's size and time say. A synchroniser, a checkout
@@ -146,7 +146,7 @@ func (u Write) Execute(
 // Fingerprint answers for text that did move, and is what makes a save that
 // follows a save land: the note is at the fingerprint the last write produced,
 // so it is the note this caller put there.
-type LastRead struct {
+type ReadBaseline struct {
 	// Prose is what a read gave this caller, with every line break as one \n.
 	Prose string
 	// Fingerprint is the file that read came out of.
@@ -155,7 +155,7 @@ type LastRead struct {
 
 // stale reports whether the note in front of the writer holds prose this caller
 // has not read.
-func (s *LastRead) stale(on domain.Fingerprint, prose string) bool {
+func (s *ReadBaseline) stale(on domain.Fingerprint, prose string) bool {
 	if s == nil {
 		return false
 	}
@@ -177,7 +177,7 @@ func (s *LastRead) stale(on domain.Fingerprint, prose string) bool {
 // What comes back is the fingerprint of the file the save produced, which is
 // what the caller presents at its next save.
 func (u Write) Save(
-	ctx context.Context, v domain.Vault, path, body string, seen *LastRead,
+	ctx context.Context, v domain.Vault, path, body string, seen *ReadBaseline,
 ) (domain.Fingerprint, error) {
 	if markdown.IsFrontmatterStart(body) {
 		return domain.Fingerprint{}, ErrBodyUnwritable

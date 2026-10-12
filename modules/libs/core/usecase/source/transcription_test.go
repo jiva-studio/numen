@@ -144,8 +144,8 @@ func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 	if len(while) != 1 {
 		t.Fatalf("the list holds %d pieces of work while the models arrive: %+v", len(while), while)
 	}
-	if while[0].Doing != "Fetching models" {
-		t.Errorf("getting the models is shown as %q", while[0].Doing)
+	if while[0].Title != "Fetching models" {
+		t.Errorf("getting the models is shown as %q", while[0].Title)
 	}
 	// Nothing has come down, so there is no share of it to draw.
 	if while[0].Total != 0 {
@@ -373,7 +373,7 @@ func TestARecordingWaitsForTheModelsAScanHolds(t *testing.T) {
 	waited := false
 	for range 200 {
 		for _, at := range listening.with.Tasks.List() {
-			if at.Doing == "Waiting for the models" {
+			if at.Title == "Waiting for the models" {
 				waited = true
 			}
 		}

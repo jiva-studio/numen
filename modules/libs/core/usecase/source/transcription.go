@@ -355,7 +355,7 @@ func (t *TranscriptionWorker) drainAndRelease(ctx context.Context) {
 // bytes somebody else holds mean come back later.
 func (t *TranscriptionWorker) transcribeOne(ctx context.Context, v domain.Vault, path string, asked bool) error {
 	id := transcriptionID(path)
-	t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path}, asked)
+	t.say(task.Task{ID: id, Title: "Transcribing a recording", About: path}, asked)
 
 	res, err := t.transcribe(ctx, v, id, path, asked)
 	switch {
@@ -367,7 +367,7 @@ func (t *TranscriptionWorker) transcribeOne(ctx context.Context, v domain.Vault,
 		// The recording is left where the next round finds it. A store that
 		// would not write and an index that would not answer are the machine,
 		// and the recording has said nothing about itself.
-		t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path, Error: err.Error()}, asked)
+		t.say(task.Task{ID: id, Title: "Transcribing a recording", About: path, Error: err.Error()}, asked)
 	case res.IsBusy:
 		t.finishTask(id)
 	default:
@@ -453,11 +453,11 @@ func (t *TranscriptionWorker) proofreadTranscript(
 	id := proofreadID(path)
 	fail := func(err error) {
 		t.say(task.Task{
-			ID: id, Doing: "Proofreading a transcript", About: path, Error: err.Error(),
+			ID: id, Title: "Proofreading a transcript", About: path, Error: err.Error(),
 		}, isUserRequested)
 	}
 	if isUserRequested {
-		t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, isUserRequested)
+		t.say(task.Task{ID: id, Title: "Proofreading a transcript", About: path}, isUserRequested)
 	}
 
 	right, held, err := proofreading.Transcript(t.with.Readers, t.with.Derived)
@@ -483,7 +483,7 @@ func (t *TranscriptionWorker) proofreadTranscript(
 		})
 		t.say(task.Task{
 			ID:    id,
-			Doing: "Proofreading a transcript",
+			Title: "Proofreading a transcript",
 			About: path,
 			Count: int64(res.Read),
 			Total: int64(res.Lines),
@@ -550,13 +550,13 @@ func (t *TranscriptionWorker) transcribe(
 	}
 	defer func() { err = errors.Join(err, finish(err)) }()
 
-	t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path}, isUserRequested)
+	t.say(task.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserRequested)
 	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
 	listen.Cut = t.Cut
 	listen.OnProgress = func(res TranscribeResult) {
 		t.say(task.Task{
 			ID:    id,
-			Doing: "Transcribing a recording",
+			Title: "Transcribing a recording",
 			About: path,
 			Count: int64(res.Heard / 1000),
 			Total: int64(res.Length / 1000),
@@ -582,7 +582,7 @@ func (t *TranscriptionWorker) lendModels(
 	}
 
 	release, err := t.with.Models.acquire(ctx, isUserRequested, func() {
-		t.say(task.Task{ID: id, Doing: "Waiting for the models", About: path}, isUserRequested)
+		t.say(task.Task{ID: id, Title: "Waiting for the models", About: path}, isUserRequested)
 	})
 	if err != nil {
 		return nil, nil, err
@@ -590,12 +590,12 @@ func (t *TranscriptionWorker) lendModels(
 
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
-	t.say(task.Task{ID: id, Doing: "Fetching models"}, isUserRequested)
+	t.say(task.Task{ID: id, Title: "Fetching models"}, isUserRequested)
 	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		t.say(task.Task{
-			ID: id, Doing: "Fetching models", About: what,
+			ID: id, Title: "Fetching models", About: what,
 			Count: done, Total: total, Unit: task.Bytes,
 		}, isUserRequested)
 	})
@@ -660,7 +660,7 @@ func (t *TranscriptionWorker) context() context.Context {
 // asked for is shown once it has lasted, and work a person started is shown at
 // once.
 func (t *TranscriptionWorker) say(at task.Task, asked bool) {
-	at.IsAsked = asked
+	at.IsUserStarted = asked
 	if t.with.Tasks != nil {
 		t.with.Tasks.Set(at)
 	}

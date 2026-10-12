@@ -24,13 +24,13 @@ func (c changing) newWrite() note.Write {
 
 // openNote is a tab that has just read a note: the prose it was given, and the
 // file it came out of.
-func (c changing) openNote(t *testing.T, path string) *note.LastRead {
+func (c changing) openNote(t *testing.T, path string) *note.ReadBaseline {
 	t.Helper()
 	found, err := note.NewRead(filesystem.VaultReaders{}).Execute(t.Context(), c.vault, path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &note.LastRead{Prose: found.Body, Fingerprint: found.Fingerprint}
+	return &note.ReadBaseline{Prose: found.Body, Fingerprint: found.Fingerprint}
 }
 
 // A flow sequence is the commonest frontmatter line there is, and an identifier
@@ -221,7 +221,7 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n",
-		&note.LastRead{Prose: seen.Prose, Fingerprint: at}); err != nil {
+		&note.ReadBaseline{Prose: seen.Prose, Fingerprint: at}); err != nil {
 		t.Fatalf("the save after a save was stopped: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
@@ -255,7 +255,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nMine, and more.\n",
-		&note.LastRead{Prose: mine, Fingerprint: at}); err != nil {
+		&note.ReadBaseline{Prose: mine, Fingerprint: at}); err != nil {
 		t.Fatalf("a link written into the frontmatter stopped a save: %v", err)
 	}
 

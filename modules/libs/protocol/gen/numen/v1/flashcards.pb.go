@@ -532,10 +532,10 @@ func (x *PresetCardsDue) GetStopsOn() StopReason {
 	return StopReason_STOP_REASON_UNSPECIFIED
 }
 
-// Ahead is how long each of the four answers would leave this card, in seconds
+// Intervals is how long each of the four answers would leave this card, in seconds
 // from the moment it was asked. A person choosing between them is choosing
 // between these.
-type Ahead struct {
+type Intervals struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Again         int64                  `protobuf:"varint,1,opt,name=again,proto3" json:"again,omitempty"`
 	Hard          int64                  `protobuf:"varint,2,opt,name=hard,proto3" json:"hard,omitempty"`
@@ -545,20 +545,20 @@ type Ahead struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Ahead) Reset() {
-	*x = Ahead{}
+func (x *Intervals) Reset() {
+	*x = Intervals{}
 	mi := &file_numen_v1_flashcards_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Ahead) String() string {
+func (x *Intervals) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Ahead) ProtoMessage() {}
+func (*Intervals) ProtoMessage() {}
 
-func (x *Ahead) ProtoReflect() protoreflect.Message {
+func (x *Intervals) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_flashcards_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -570,33 +570,33 @@ func (x *Ahead) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Ahead.ProtoReflect.Descriptor instead.
-func (*Ahead) Descriptor() ([]byte, []int) {
+// Deprecated: Use Intervals.ProtoReflect.Descriptor instead.
+func (*Intervals) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *Ahead) GetAgain() int64 {
+func (x *Intervals) GetAgain() int64 {
 	if x != nil {
 		return x.Again
 	}
 	return 0
 }
 
-func (x *Ahead) GetHard() int64 {
+func (x *Intervals) GetHard() int64 {
 	if x != nil {
 		return x.Hard
 	}
 	return 0
 }
 
-func (x *Ahead) GetGood() int64 {
+func (x *Intervals) GetGood() int64 {
 	if x != nil {
 		return x.Good
 	}
 	return 0
 }
 
-func (x *Ahead) GetEasy() int64 {
+func (x *Intervals) GetEasy() int64 {
 	if x != nil {
 		return x.Easy
 	}
@@ -626,7 +626,7 @@ type SessionCard struct {
 	IsNew bool   `protobuf:"varint,8,opt,name=is_new,json=isNew,proto3" json:"is_new,omitempty"`
 	Due   string `protobuf:"bytes,9,opt,name=due,proto3" json:"due,omitempty"`
 	// Where each of the four would leave it.
-	Ahead         *Ahead `protobuf:"bytes,10,opt,name=ahead,proto3" json:"ahead,omitempty"`
+	Intervals     *Intervals `protobuf:"bytes,10,opt,name=intervals,proto3" json:"intervals,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -724,9 +724,9 @@ func (x *SessionCard) GetDue() string {
 	return ""
 }
 
-func (x *SessionCard) GetAhead() *Ahead {
+func (x *SessionCard) GetIntervals() *Intervals {
 	if x != nil {
-		return x.Ahead
+		return x.Intervals
 	}
 	return nil
 }
@@ -1924,12 +1924,12 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x0ecloses_reviews\x18\x0f \x01(\tR\rclosesReviews\x12%\n" +
 	"\x0ecloses_minutes\x18\x10 \x01(\tR\rclosesMinutes\x12%\n" +
 	"\x0ecloses_backlog\x18\x11 \x01(\tR\rclosesBacklog\x12/\n" +
-	"\bstops_on\x18\x12 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"Y\n" +
-	"\x05Ahead\x12\x14\n" +
+	"\bstops_on\x18\x12 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"]\n" +
+	"\tIntervals\x12\x14\n" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
 	"\x04good\x18\x03 \x01(\x03R\x04good\x12\x12\n" +
-	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\xf7\x01\n" +
+	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\x83\x02\n" +
 	"\vSessionCard\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x18\n" +
 	"\asection\x18\x02 \x01(\tR\asection\x12\x12\n" +
@@ -1939,9 +1939,9 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05front\x18\x06 \x01(\tR\x05front\x12\x12\n" +
 	"\x04back\x18\a \x01(\tR\x04back\x12\x15\n" +
 	"\x06is_new\x18\b \x01(\bR\x05isNew\x12\x10\n" +
-	"\x03due\x18\t \x01(\tR\x03due\x12%\n" +
-	"\x05ahead\x18\n" +
-	" \x01(\v2\x0f.numen.v1.AheadR\x05ahead\"\x16\n" +
+	"\x03due\x18\t \x01(\tR\x03due\x121\n" +
+	"\tintervals\x18\n" +
+	" \x01(\v2\x13.numen.v1.IntervalsR\tintervals\"\x16\n" +
 	"\x14WatchCardsDueRequest\"\x8d\x01\n" +
 	"\x15WatchCardsDueResponse\x12/\n" +
 	"\x06vaults\x18\x01 \x03(\v2\x17.numen.v1.VaultCardsDueR\x06vaults\x12\x10\n" +
@@ -2052,7 +2052,7 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*VaultCardsDue)(nil),                // 1: numen.v1.VaultCardsDue
 	(*DeckCardsDue)(nil),                 // 2: numen.v1.DeckCardsDue
 	(*PresetCardsDue)(nil),               // 3: numen.v1.PresetCardsDue
-	(*Ahead)(nil),                        // 4: numen.v1.Ahead
+	(*Intervals)(nil),                    // 4: numen.v1.Intervals
 	(*SessionCard)(nil),                  // 5: numen.v1.SessionCard
 	(*WatchCardsDueRequest)(nil),         // 6: numen.v1.WatchCardsDueRequest
 	(*WatchCardsDueResponse)(nil),        // 7: numen.v1.WatchCardsDueResponse
@@ -2080,7 +2080,7 @@ var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultCardsDue.decks:type_name -> numen.v1.DeckCardsDue
 	3,  // 1: numen.v1.VaultCardsDue.presets:type_name -> numen.v1.PresetCardsDue
 	24, // 2: numen.v1.PresetCardsDue.stops_on:type_name -> numen.v1.StopReason
-	4,  // 3: numen.v1.SessionCard.ahead:type_name -> numen.v1.Ahead
+	4,  // 3: numen.v1.SessionCard.intervals:type_name -> numen.v1.Intervals
 	1,  // 4: numen.v1.WatchCardsDueResponse.vaults:type_name -> numen.v1.VaultCardsDue
 	1,  // 5: numen.v1.WatchCardsDueResponse.counted:type_name -> numen.v1.VaultCardsDue
 	5,  // 6: numen.v1.StartSessionResponse.cards:type_name -> numen.v1.SessionCard

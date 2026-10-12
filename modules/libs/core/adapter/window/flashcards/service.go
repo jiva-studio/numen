@@ -239,25 +239,25 @@ func (a *API) StartSession(
 func newWireSessionCard(one flashcards.QueuedCardFace) *v1.SessionCard {
 	front, back := one.Lay()
 	return &v1.SessionCard{
-		Deck:    one.Deck,
-		Section: one.Section,
-		Mark:    one.ID.Card,
-		Face:    one.ID.Face,
-		Heading: one.Heading,
-		Front:   front,
-		Back:    back,
-		IsNew:   one.Schedule.IsNew(),
-		Due:     formatTime(one.Schedule.Due),
-		Ahead:   newWireAhead(one.Ahead),
+		Deck:      one.Deck,
+		Section:   one.Section,
+		Mark:      one.ID.Card,
+		Face:      one.ID.Face,
+		Heading:   one.Heading,
+		Front:     front,
+		Back:      back,
+		IsNew:     one.Schedule.IsNew(),
+		Due:       formatTime(one.Schedule.Due),
+		Intervals: newWireIntervals(one.Ahead),
 	}
 }
 
-// newWireAhead is where each of the four would leave the card, in seconds.
-func newWireAhead(ahead map[review.Rating]time.Duration) *v1.Ahead {
+// newWireIntervals is where each of the four would leave the card, in seconds.
+func newWireIntervals(ahead map[review.Rating]time.Duration) *v1.Intervals {
 	if ahead == nil {
 		return nil
 	}
-	return &v1.Ahead{
+	return &v1.Intervals{
 		Again: int64(ahead[review.Again].Seconds()),
 		Hard:  int64(ahead[review.Hard].Seconds()),
 		Good:  int64(ahead[review.Good].Seconds()),

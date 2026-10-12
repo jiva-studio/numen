@@ -100,20 +100,20 @@ message GetNeighbourhoodResponse {
   NoteType focus_type = 3;
 }
 
-// Seat is where a note sits relative to the one in focus. A sibling is written
+// Relation is where a note sits relative to the one in focus. A sibling is written
 // nowhere: it is another child of a shared parent.
-enum Seat {
-  SEAT_UNSPECIFIED = 0;
-  SEAT_PARENT = 1;
-  SEAT_CHILD = 2;
-  SEAT_JUMP = 3;
-  SEAT_SIBLING = 4;
+enum Relation {
+  RELATION_UNSPECIFIED = 0;
+  RELATION_PARENT = 1;
+  RELATION_CHILD = 2;
+  RELATION_JUMP = 3;
+  RELATION_SIBLING = 4;
 }
 
 // Neighbour is one note joined to the one in focus, and what joins them.
 message Neighbour {
   Note note = 1;
-  Seat seat = 2;
+  Relation relation = 2;
   // What the person wrote on the link, when they wrote anything.
   string label = 3;
 
@@ -218,10 +218,10 @@ message ReadNoteResponse {
   optional Fingerprint at = 3;
 }
 
-// LastRead is what a caller last saw of a note: the prose a read gave it, and
+// ReadBaseline is what a caller last saw of a note: the prose a read gave it, and
 // the file that read came out of. A note still holding either is the note this
 // caller read.
-message LastRead {
+message ReadBaseline {
   // The prose below the frontmatter, with line endings as LF, as the read gave
   // it.
   string prose = 1;
@@ -238,7 +238,7 @@ message WriteNoteRequest {
 
   // What this caller last saw of the note. Absent for a write that lands on
   // whatever the note now holds.
-  optional LastRead seen = 3;
+  optional ReadBaseline baseline = 3;
 }
 
 message WriteNoteResponse {

@@ -146,7 +146,7 @@ func addNoteNeighbourhood(server *sdk.Server, core Core) {
 		for _, related := range found.Related {
 			res.Related = append(res.Related, Neighbour{
 				Note:     noteOf(related.NoteRef),
-				Seat:     string(related.Relation),
+				Relation: string(related.Relation),
 				Label:    related.Label,
 				Through:  related.Parent,
 				IsMutual: related.IsMutual,

@@ -11,18 +11,18 @@ import type { Notice } from '../lib/notice'
 import { getRemainingWord } from '../lib/tally'
 
 const work = (id: string): Notice => ({ id, text: `Indexing ${id}`, isWorking: true })
-const asked = (id: string): Notice => ({ id, text: `Filed ${id}`, stay: 'kept', isAsked: true })
+const asked = (id: string): Notice => ({ id, text: `Filed ${id}`, stay: 'kept', isUserStarted: true })
 const report = (id: string, text = `Renamed ${id}`): Notice => ({
   id,
   text,
   stay: 'read',
-  isAsked: true,
+  isUserStarted: true,
 })
 const counting = (id: string, done: number): Notice => ({
   id,
   text: `Learning ${id}`,
   isWorking: true,
-  isAsked: true,
+  isUserStarted: true,
   done,
   total: 100,
   counting: 'things',
@@ -119,7 +119,7 @@ describe('the clock behind the corner', () => {
   })
 
   it('does not run for work a person has put away', async () => {
-    const { state } = stand([{ ...work('a'), isAsked: true }])
+    const { state } = stand([{ ...work('a'), isUserStarted: true }])
     expect(vi.getTimerCount()).toBe(0)
 
     await state.dismissByHand('a')

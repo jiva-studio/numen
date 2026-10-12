@@ -22,7 +22,7 @@ import (
 func getTask(held *TranscriptionWorker, path string) (doing, failed string) {
 	for _, at := range held.with.Tasks.List() {
 		if at.ID == proofreadID(path) {
-			return at.Doing, at.Error
+			return at.Title, at.Error
 		}
 	}
 	return "", ""
@@ -261,7 +261,7 @@ func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	}
 	defer release()
 	held.with.Tasks.Set(task.Task{
-		ID: proofreadID(recording), Doing: "Proofreading a transcript", About: recording,
+		ID: proofreadID(recording), Title: "Proofreading a transcript", About: recording,
 		Count: 1, Total: 2,
 	})
 

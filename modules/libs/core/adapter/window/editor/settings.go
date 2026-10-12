@@ -83,7 +83,7 @@ func (a *API) ReadSettingsFile(
 func (a *API) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
-	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
+	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Baseline); err != nil {
 		if errors.Is(err, port.ErrStale) {
 			stale := v1.ErrorCode_ERROR_CODE_STALE
 			return connect.NewResponse(&v1.WriteSettingsFileResponse{Error: &stale}), nil

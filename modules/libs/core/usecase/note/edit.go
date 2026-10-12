@@ -63,7 +63,7 @@ type Edit struct {
 	// Seen is what the caller last saw of the note, and is what a file that is
 	// there is compared with. Nil for a caller that puts its text down whatever
 	// the note now holds.
-	Seen *LastRead
+	Seen *ReadBaseline
 }
 
 // NewEdit is what a change to an existing note is made through: the vault it

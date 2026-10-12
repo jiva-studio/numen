@@ -126,14 +126,14 @@ func startIndexing(
 
 	// Said before the goroutine starts, so a window that opens on a fresh vault
 	// is shown the walk from its first moment.
-	api.reportTask(task.Task{ID: walkingNotes, Doing: "Indexing the vault"})
+	api.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
 
 	var running sync.WaitGroup
 
 	read, run, refresh, unwatched := made.StartVault(ctx, v, rebuild, told, handleError)
 	if unwatched != nil {
 		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, unwatched)
-		api.Unwatched.Store(unwatched.Error())
+		api.WatchError.Store(unwatched.Error())
 	}
 	running.Add(1)
 	go func() {
@@ -143,7 +143,7 @@ func startIndexing(
 		// Nothing reaches the window once the watch stops, so from here on the
 		// vault is one that is not being followed.
 		if unwatched == nil && ctx.Err() == nil {
-			api.Unwatched.Store("the watch stopped")
+			api.WatchError.Store("the watch stopped")
 		}
 	}()
 
@@ -155,7 +155,7 @@ func startIndexing(
 		// The walk runs behind the window, which answers from what it has
 		// reached. A later one is the index being brought level with a vault
 		// that moved under it.
-		api.reportTask(task.Task{ID: walkingNotes, Doing: "Indexing the vault"})
+		api.reportTask(task.Task{ID: walkingNotes, Title: "Indexing the vault"})
 		notes, err := read(ctx, nil)
 
 		switch {
@@ -249,12 +249,12 @@ func readSources(
 ) {
 	making, err := made.ReadWholeVault(ctx, embedder, v, rebuild)
 	if err != nil {
-		api.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", Error: err.Error()})
+		api.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", Error: err.Error()})
 		return
 	}
 	making.OnBooksProgress = func(res source.ExtractResult) {
 		api.reportTask(task.Task{
-			ID: extractingBooks, Doing: "Extracting books", About: res.CurrentSource,
+			ID: extractingBooks, Title: "Extracting books", About: res.CurrentSource,
 			// Every book the walk found leaves this pass one of several ways, and
 			// all four count as done.
 			Count: int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
@@ -262,7 +262,7 @@ func readSources(
 		})
 	}
 
-	api.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books"})
+	api.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books"})
 	res, read := making.ReadBooks(ctx, v)
 	switch {
 	case read == nil:
@@ -276,7 +276,7 @@ func readSources(
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it
 		// out.
-		api.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", Error: read.Error()})
+		api.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", Error: read.Error()})
 	}
 
 	embedSources(ctx, made, api, v, embedder, nudge)
@@ -296,7 +296,7 @@ func rechunkSource(
 	path string,
 ) {
 	cut := func(err error) {
-		api.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", About: path, Error: err.Error()})
+		api.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", About: path, Error: err.Error()})
 	}
 
 	making, err := made.ReadWholeVault(ctx, embedder, v, false)
@@ -381,7 +381,7 @@ func embedSources(
 	}
 
 	indexing := func(err error) {
-		api.reportTask(task.Task{ID: makingVectors, Doing: "Indexing", Error: err.Error()})
+		api.reportTask(task.Task{ID: makingVectors, Title: "Indexing", Error: err.Error()})
 	}
 
 	making, err := made.ReadWholeVault(ctx, embedder, v, false)
@@ -394,7 +394,7 @@ func embedSources(
 	// never a word with nothing under it. A share is drawn once a vector has
 	// been made, counted over the work in hand and not the size of the vault.
 	making.OnVectorsProgress = func(res source.EmbedResult) {
-		at := task.Task{ID: makingVectors, Doing: "Indexing", About: res.CurrentSource}
+		at := task.Task{ID: makingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
 			at.Count, at.Total = int64(res.Embedded), owing
 		}

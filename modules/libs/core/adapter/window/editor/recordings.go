@@ -234,7 +234,7 @@ func (a *API) WriteTranscript(
 	// for a cut that could not be asked for.
 	if cut := a.getRechunker(); cut != nil {
 		if err := cut(ctx, showing, ref.Path); err != nil {
-			a.reportTask(task.Task{ID: extractingBooks, Doing: "Extracting books", About: ref.Path, Error: err.Error()})
+			a.reportTask(task.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: err.Error()})
 		}
 	}
 	return connect.NewResponse(&v1.WriteTranscriptResponse{Cues: newWireCues(cues)}), nil

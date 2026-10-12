@@ -2,12 +2,12 @@
  * The seats a gesture may produce, and what each seat writes into a note.
  */
 import { describe, expect, it } from 'vitest'
-import { Role, Seat } from '@numen/protocol'
+import { Role, Relation } from '@numen/protocol'
 import type { PlexRelatedSeat } from '@numen/ui'
 import { CREATABLE_SEATS, isCreatable, ROLE_BY_SEAT } from './seats'
 
 /** Every seat the schema names, in the words the picture uses for them. */
-const SEATS = Object.keys(Seat)
+const SEATS = Object.keys(Relation)
   .filter((name) => Number.isNaN(Number(name)) && name !== 'UNSPECIFIED')
   .map((name) => name.toLowerCase() as PlexRelatedSeat)
 

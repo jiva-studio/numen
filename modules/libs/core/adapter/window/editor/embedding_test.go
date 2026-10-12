@@ -258,7 +258,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	}, unwatchable{}, newWalking(), model, 20*time.Millisecond)
 
 	waitFor(t, "the model was never asked at all", func() bool { return model.getTurnedDown() > 0 })
-	if why := f.api.Unwatched.Why(); why == "" {
+	if why := f.api.WatchError.Why(); why == "" {
 		t.Fatal("a vault whose watch never started is shown as followed")
 	}
 	held, embedded := getVectorProgress(t, f, model)

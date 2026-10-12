@@ -78,7 +78,7 @@ describe('the markup of one document', () => {
     expect(asked.readBookMarkup).toHaveBeenCalledWith({
       path: 'Anabasis.epub',
       document: 'one.xhtml',
-      seen: { path: 'Anabasis.epub', size: 12n, mtime: 34n },
+      baseline: { path: 'Anabasis.epub', size: 12n, mtime: 34n },
     })
   })
 

@@ -244,9 +244,9 @@ type Task struct {
 	// Id is what this work is called, so that the same work reported again
 	// replaces itself rather than appearing twice.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Doing is the work, in the words to show. About is what it is on, and is
+	// Title is the work, in the words to show. About is what it is on, and is
 	// empty for work that is on nothing in particular.
-	Doing string `protobuf:"bytes,2,opt,name=doing,proto3" json:"doing,omitempty"`
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	About string `protobuf:"bytes,3,opt,name=about,proto3" json:"about,omitempty"`
 	// Done and total are how far it has got, when there is a total to count
 	// against. Both zero is work running with nothing to count, which is an
@@ -255,10 +255,10 @@ type Task struct {
 	Total int64 `protobuf:"varint,5,opt,name=total,proto3" json:"total,omitempty"`
 	// Error is why the work stopped, when it stopped badly.
 	Error string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
-	// Asked is set for work a person started and is waiting to be told about.
-	// Work nobody asked for is drawn once it has lasted, and most of it is over
+	// IsUserStarted is set for work a person started and is waiting to be told about.
+	// Work nobody started is drawn once it has lasted, and most of it is over
 	// before that.
-	IsAsked bool `protobuf:"varint,7,opt,name=is_asked,json=isAsked,proto3" json:"is_asked,omitempty"`
+	IsUserStarted bool `protobuf:"varint,7,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
 	// Unit is what done and total are counted in.
 	Unit          Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -302,9 +302,9 @@ func (x *Task) GetId() string {
 	return ""
 }
 
-func (x *Task) GetDoing() string {
+func (x *Task) GetTitle() string {
 	if x != nil {
-		return x.Doing
+		return x.Title
 	}
 	return ""
 }
@@ -337,9 +337,9 @@ func (x *Task) GetError() string {
 	return ""
 }
 
-func (x *Task) GetIsAsked() bool {
+func (x *Task) GetIsUserStarted() bool {
 	if x != nil {
-		return x.IsAsked
+		return x.IsUserStarted
 	}
 	return false
 }
@@ -654,15 +654,15 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11WatchTasksRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xc1\x01\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xce\x01\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05doing\x18\x02 \x01(\tR\x05doing\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
 	"\x05about\x18\x03 \x01(\tR\x05about\x12\x12\n" +
 	"\x04done\x18\x04 \x01(\x03R\x04done\x12\x14\n" +
 	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x14\n" +
-	"\x05error\x18\x06 \x01(\tR\x05error\x12\x19\n" +
-	"\bis_asked\x18\a \x01(\bR\aisAsked\x12\"\n" +
+	"\x05error\x18\x06 \x01(\tR\x05error\x12&\n" +
+	"\x0fis_user_started\x18\a \x01(\bR\risUserStarted\x12\"\n" +
 	"\x04unit\x18\b \x01(\x0e2\x0e.numen.v1.UnitR\x04unit\"*\n" +
 	"\x10WatchQuitRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +

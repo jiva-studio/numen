@@ -147,7 +147,7 @@ describe('writing a deck', () => {
       cards: [],
       sections: [{ name: 'Physics', preamble: 'on motion' }],
       tail: 'after',
-      seen: seenAt,
+      baseline: seenAt,
     })
   })
 
@@ -200,7 +200,7 @@ describe('renaming a field', () => {
       path: 'Word.md',
       from: 'Front',
       to: 'Face',
-      seen: seenAt,
+      baseline: seenAt,
     })
   })
 
@@ -311,7 +311,7 @@ describe('writing a stencil', () => {
       preamble: 'about',
       faces: [{ name: 'Reading', preamble: 'p', front: '{{Front}}', back: '{{Back}}' }],
       tail: 'after',
-      seen: seenAt,
+      baseline: seenAt,
     })
   })
 

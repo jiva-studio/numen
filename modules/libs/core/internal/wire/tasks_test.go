@@ -56,7 +56,7 @@ func TestOneChangeIsSaidTwice(t *testing.T) {
 		t.Fatalf("a window that opened with nothing running was told of %d", len(first))
 	}
 
-	tasks.Set(task.Task{ID: "recognition", Doing: "Recognising a scan"})
+	tasks.Set(task.Task{ID: "recognition", Title: "Recognising a scan"})
 	for telling := range 2 {
 		list := receiveTasks(t, stream)
 		if len(list) != 1 || list[0].GetId() != "recognition" {

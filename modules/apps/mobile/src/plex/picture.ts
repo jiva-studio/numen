@@ -5,16 +5,16 @@
  * seat and edges between them; it is not told what a note is, and the schema
  * says nothing about drawing.
  */
-import { Seat } from '@numen/protocol'
+import { Relation } from '@numen/protocol'
 import type { GetNeighbourhoodResponse } from '@numen/protocol'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@numen/ui'
 
-const SEAT_BY_WIRE: Record<Seat, PlexRelatedSeat | null> = {
-  [Seat.UNSPECIFIED]: null,
-  [Seat.PARENT]: 'parent',
-  [Seat.CHILD]: 'child',
-  [Seat.JUMP]: 'jump',
-  [Seat.SIBLING]: 'sibling',
+const SEAT_BY_WIRE: Record<Relation, PlexRelatedSeat | null> = {
+  [Relation.UNSPECIFIED]: null,
+  [Relation.PARENT]: 'parent',
+  [Relation.CHILD]: 'child',
+  [Relation.JUMP]: 'jump',
+  [Relation.SIBLING]: 'sibling',
 }
 
 /**
@@ -33,7 +33,7 @@ export function asPlex(neighbourhood: GetNeighbourhoodResponse): PlexNeighbourho
   const hanging: { id: string; label: string; through: string }[] = []
 
   for (const related of neighbourhood.related) {
-    const seat = SEAT_BY_WIRE[related.seat]
+    const seat = SEAT_BY_WIRE[related.relation]
     if (!seat || !related.note) continue
     const id = related.note.path
     shown.add(id)

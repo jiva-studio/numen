@@ -504,7 +504,7 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 		Focus   mcp.Note        `json:"focus"`
 		Related []mcp.Neighbour `json:"related"`
 	}](t, session, "note_neighbourhood", map[string]any{"path": "Entropy.md"})
-	if len(around.Related) != 1 || around.Related[0].Seat != "child" {
+	if len(around.Related) != 1 || around.Related[0].Relation != "child" {
 		t.Errorf("the other end does not see it: %+v", around.Related)
 	}
 

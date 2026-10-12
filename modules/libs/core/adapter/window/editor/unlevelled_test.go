@@ -92,7 +92,7 @@ func TestADeckWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 		Sections: read.GetDeck().GetSections(),
 		Cards:    read.GetDeck().GetCards()[:1],
 		Tail:     read.GetDeck().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +124,7 @@ func TestAStencilWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 		Faces:    faces,
 		Preamble: read.GetStencil().GetPreamble(),
 		Tail:     read.GetStencil().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)

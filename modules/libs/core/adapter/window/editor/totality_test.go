@@ -34,12 +34,12 @@ func TestEveryRoleIsRead(t *testing.T) {
 	})
 }
 
-func TestEverySeatIsWrittenFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Seat]domain.Relation{
-		v1.Seat_SEAT_PARENT:  domain.RelationParent,
-		v1.Seat_SEAT_CHILD:   domain.RelationChild,
-		v1.Seat_SEAT_JUMP:    domain.RelationJump,
-		v1.Seat_SEAT_SIBLING: domain.RelationSibling,
+func TestEveryRelationIsWrittenFromOne(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.Relation]domain.Relation{
+		v1.Relation_RELATION_PARENT:  domain.RelationParent,
+		v1.Relation_RELATION_CHILD:   domain.RelationChild,
+		v1.Relation_RELATION_JUMP:    domain.RelationJump,
+		v1.Relation_RELATION_SIBLING: domain.RelationSibling,
 	}, convertRelationToWire)
 }
 

@@ -135,14 +135,14 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	if len(steps) != 5 {
 		t.Fatalf("got %d steps, want 5: %+v", len(steps), steps)
 	}
-	if steps[0].GetThinking() == nil {
+	if steps[0].GetModelStarted() == nil {
 		t.Errorf("the first step is %+v, want a wait beginning", steps[0])
 	}
 	doing := steps[1].GetToolCall()
 	if doing.GetTool() != "note_rewrite" || doing.GetAbout() != "notes/Fugue.md" || doing.GetWritten() != 240 {
 		t.Errorf("the tool in hand is %+v, want note_rewrite over notes/Fugue.md at 240", doing)
 	}
-	if steps[2].GetAnswered() == nil {
+	if steps[2].GetToolFinished() == nil {
 		t.Errorf("the third step is %+v, want the tool answering", steps[2])
 	}
 	if said := steps[3].GetSaid(); said != "Rewritten." {

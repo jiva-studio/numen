@@ -29,60 +29,60 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Seat is where a note sits relative to the one in focus. A sibling is written
+// Relation is where a note sits relative to the one in focus. A sibling is written
 // nowhere: it is another child of a shared parent.
-type Seat int32
+type Relation int32
 
 const (
-	Seat_SEAT_UNSPECIFIED Seat = 0
-	Seat_SEAT_PARENT      Seat = 1
-	Seat_SEAT_CHILD       Seat = 2
-	Seat_SEAT_JUMP        Seat = 3
-	Seat_SEAT_SIBLING     Seat = 4
+	Relation_RELATION_UNSPECIFIED Relation = 0
+	Relation_RELATION_PARENT      Relation = 1
+	Relation_RELATION_CHILD       Relation = 2
+	Relation_RELATION_JUMP        Relation = 3
+	Relation_RELATION_SIBLING     Relation = 4
 )
 
-// Enum value maps for Seat.
+// Enum value maps for Relation.
 var (
-	Seat_name = map[int32]string{
-		0: "SEAT_UNSPECIFIED",
-		1: "SEAT_PARENT",
-		2: "SEAT_CHILD",
-		3: "SEAT_JUMP",
-		4: "SEAT_SIBLING",
+	Relation_name = map[int32]string{
+		0: "RELATION_UNSPECIFIED",
+		1: "RELATION_PARENT",
+		2: "RELATION_CHILD",
+		3: "RELATION_JUMP",
+		4: "RELATION_SIBLING",
 	}
-	Seat_value = map[string]int32{
-		"SEAT_UNSPECIFIED": 0,
-		"SEAT_PARENT":      1,
-		"SEAT_CHILD":       2,
-		"SEAT_JUMP":        3,
-		"SEAT_SIBLING":     4,
+	Relation_value = map[string]int32{
+		"RELATION_UNSPECIFIED": 0,
+		"RELATION_PARENT":      1,
+		"RELATION_CHILD":       2,
+		"RELATION_JUMP":        3,
+		"RELATION_SIBLING":     4,
 	}
 )
 
-func (x Seat) Enum() *Seat {
-	p := new(Seat)
+func (x Relation) Enum() *Relation {
+	p := new(Relation)
 	*p = x
 	return p
 }
 
-func (x Seat) String() string {
+func (x Relation) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Seat) Descriptor() protoreflect.EnumDescriptor {
+func (Relation) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_note_proto_enumTypes[0].Descriptor()
 }
 
-func (Seat) Type() protoreflect.EnumType {
+func (Relation) Type() protoreflect.EnumType {
 	return &file_numen_v1_note_proto_enumTypes[0]
 }
 
-func (x Seat) Number() protoreflect.EnumNumber {
+func (x Relation) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Seat.Descriptor instead.
-func (Seat) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use Relation.Descriptor instead.
+func (Relation) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{0}
 }
 
@@ -454,9 +454,9 @@ func (x *GetNeighbourhoodResponse) GetFocusType() NoteType {
 
 // Neighbour is one note joined to the one in focus, and what joins them.
 type Neighbour struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
-	Seat  Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=numen.v1.Seat" json:"seat,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Note     *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
+	Relation Relation               `protobuf:"varint,2,opt,name=relation,proto3,enum=numen.v1.Relation" json:"relation,omitempty"`
 	// What the person wrote on the link, when they wrote anything.
 	Label string `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
 	// The note the relationship runs from, when that is not the one in focus: a
@@ -512,11 +512,11 @@ func (x *Neighbour) GetNote() *Note {
 	return nil
 }
 
-func (x *Neighbour) GetSeat() Seat {
+func (x *Neighbour) GetRelation() Relation {
 	if x != nil {
-		return x.Seat
+		return x.Relation
 	}
-	return Seat_SEAT_UNSPECIFIED
+	return Relation_RELATION_UNSPECIFIED
 }
 
 func (x *Neighbour) GetLabel() string {
@@ -1058,10 +1058,10 @@ func (x *ReadNoteResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-// LastRead is what a caller last saw of a note: the prose a read gave it, and
+// ReadBaseline is what a caller last saw of a note: the prose a read gave it, and
 // the file that read came out of. A note still holding either is the note this
 // caller read.
-type LastRead struct {
+type ReadBaseline struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The prose below the frontmatter, with line endings as LF, as the read gave
 	// it.
@@ -1072,20 +1072,20 @@ type LastRead struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LastRead) Reset() {
-	*x = LastRead{}
+func (x *ReadBaseline) Reset() {
+	*x = ReadBaseline{}
 	mi := &file_numen_v1_note_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LastRead) String() string {
+func (x *ReadBaseline) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LastRead) ProtoMessage() {}
+func (*ReadBaseline) ProtoMessage() {}
 
-func (x *LastRead) ProtoReflect() protoreflect.Message {
+func (x *ReadBaseline) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1097,19 +1097,19 @@ func (x *LastRead) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LastRead.ProtoReflect.Descriptor instead.
-func (*LastRead) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReadBaseline.ProtoReflect.Descriptor instead.
+func (*ReadBaseline) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *LastRead) GetProse() string {
+func (x *ReadBaseline) GetProse() string {
 	if x != nil {
 		return x.Prose
 	}
 	return ""
 }
 
-func (x *LastRead) GetAt() *Fingerprint {
+func (x *ReadBaseline) GetAt() *Fingerprint {
 	if x != nil {
 		return x.At
 	}
@@ -1123,7 +1123,7 @@ type WriteNoteRequest struct {
 	Body string `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
 	// What this caller last saw of the note. Absent for a write that lands on
 	// whatever the note now holds.
-	Seen          *LastRead `protobuf:"bytes,3,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Baseline      *ReadBaseline `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1172,9 +1172,9 @@ func (x *WriteNoteRequest) GetBody() string {
 	return ""
 }
 
-func (x *WriteNoteRequest) GetSeen() *LastRead {
+func (x *WriteNoteRequest) GetBaseline() *ReadBaseline {
 	if x != nil {
-		return x.Seen
+		return x.Baseline
 	}
 	return nil
 }
@@ -1935,10 +1935,10 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
 	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x121\n" +
 	"\n" +
-	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xed\x01\n" +
+	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xf9\x01\n" +
 	"\tNeighbour\x12\"\n" +
-	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
-	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
+	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12.\n" +
+	"\brelation\x18\x02 \x01(\x0e2\x12.numen.v1.RelationR\brelation\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
 	"\athrough\x18\x04 \x01(\tR\athrough\x12\x1b\n" +
 	"\tis_mutual\x18\x05 \x01(\bR\bisMutual\x12&\n" +
@@ -1974,15 +1974,15 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"G\n" +
-	"\bLastRead\x12\x14\n" +
+	"\x03_at\"K\n" +
+	"\fReadBaseline\x12\x14\n" +
 	"\x05prose\x18\x01 \x01(\tR\x05prose\x12%\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\"p\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\"\x80\x01\n" +
 	"\x10WriteNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04body\x18\x02 \x01(\tR\x04body\x12+\n" +
-	"\x04seen\x18\x03 \x01(\v2\x12.numen.v1.LastReadH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa5\x01\n" +
+	"\x04body\x18\x02 \x01(\tR\x04body\x127\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x16.numen.v1.ReadBaselineH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"\xa5\x01\n" +
 	"\x11WriteNoteResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12#\n" +
@@ -2034,14 +2034,13 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\"\n" +
 	"\x04span\x18\x03 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
 	"\x04text\x18\x04 \x01(\tR\x04text\x12\x19\n" +
-	"\bis_final\x18\x05 \x01(\bR\aisFinal*^\n" +
-	"\x04Seat\x12\x14\n" +
-	"\x10SEAT_UNSPECIFIED\x10\x00\x12\x0f\n" +
-	"\vSEAT_PARENT\x10\x01\x12\x0e\n" +
-	"\n" +
-	"SEAT_CHILD\x10\x02\x12\r\n" +
-	"\tSEAT_JUMP\x10\x03\x12\x10\n" +
-	"\fSEAT_SIBLING\x10\x04*o\n" +
+	"\bis_final\x18\x05 \x01(\bR\aisFinal*v\n" +
+	"\bRelation\x12\x18\n" +
+	"\x14RELATION_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fRELATION_PARENT\x10\x01\x12\x12\n" +
+	"\x0eRELATION_CHILD\x10\x02\x12\x11\n" +
+	"\rRELATION_JUMP\x10\x03\x12\x14\n" +
+	"\x10RELATION_SIBLING\x10\x04*o\n" +
 	"\x04Role\x12\x14\n" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vROLE_PARENT\x10\x01\x12\x0e\n" +
@@ -2087,7 +2086,7 @@ func file_numen_v1_note_proto_rawDescGZIP() []byte {
 var file_numen_v1_note_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_numen_v1_note_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_numen_v1_note_proto_goTypes = []any{
-	(Seat)(0),                        // 0: numen.v1.Seat
+	(Relation)(0),                    // 0: numen.v1.Relation
 	(Role)(0),                        // 1: numen.v1.Role
 	(NameSource)(0),                  // 2: numen.v1.NameSource
 	(*Note)(nil),                     // 3: numen.v1.Note
@@ -2105,7 +2104,7 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*Heading)(nil),                  // 15: numen.v1.Heading
 	(*ReadNoteRequest)(nil),          // 16: numen.v1.ReadNoteRequest
 	(*ReadNoteResponse)(nil),         // 17: numen.v1.ReadNoteResponse
-	(*LastRead)(nil),                 // 18: numen.v1.LastRead
+	(*ReadBaseline)(nil),             // 18: numen.v1.ReadBaseline
 	(*WriteNoteRequest)(nil),         // 19: numen.v1.WriteNoteRequest
 	(*WriteNoteResponse)(nil),        // 20: numen.v1.WriteNoteResponse
 	(*Link)(nil),                     // 21: numen.v1.Link
@@ -2131,15 +2130,15 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	8,  // 2: numen.v1.GetNeighbourhoodResponse.related:type_name -> numen.v1.Neighbour
 	32, // 3: numen.v1.GetNeighbourhoodResponse.focus_type:type_name -> numen.v1.NoteType
 	3,  // 4: numen.v1.Neighbour.note:type_name -> numen.v1.Note
-	0,  // 5: numen.v1.Neighbour.seat:type_name -> numen.v1.Seat
+	0,  // 5: numen.v1.Neighbour.relation:type_name -> numen.v1.Relation
 	32, // 6: numen.v1.Neighbour.type:type_name -> numen.v1.NoteType
 	11, // 7: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
 	14, // 8: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
 	15, // 9: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
 	33, // 10: numen.v1.ReadNoteResponse.error:type_name -> numen.v1.ErrorCode
 	34, // 11: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.Fingerprint
-	34, // 12: numen.v1.LastRead.at:type_name -> numen.v1.Fingerprint
-	18, // 13: numen.v1.WriteNoteRequest.seen:type_name -> numen.v1.LastRead
+	34, // 12: numen.v1.ReadBaseline.at:type_name -> numen.v1.Fingerprint
+	18, // 13: numen.v1.WriteNoteRequest.baseline:type_name -> numen.v1.ReadBaseline
 	33, // 14: numen.v1.WriteNoteResponse.error:type_name -> numen.v1.ErrorCode
 	34, // 15: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.Fingerprint
 	1,  // 16: numen.v1.Link.role:type_name -> numen.v1.Role

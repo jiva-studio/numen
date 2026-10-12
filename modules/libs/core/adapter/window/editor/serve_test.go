@@ -422,7 +422,7 @@ func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, unwatchable{}, filesystem.VaultReaders{})
 
-	if why := f.api.Unwatched.Why(); why == "" {
+	if why := f.api.WatchError.Why(); why == "" {
 		t.Error("a vault whose watch never started is shown as followed")
 	}
 }
@@ -437,7 +437,7 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 	close(watcher.changes)
 
 	waitFor(t, "a vault whose watch stopped is shown as followed", func() bool {
-		return f.api.Unwatched.Why() != ""
+		return f.api.WatchError.Why() != ""
 	})
 }
 

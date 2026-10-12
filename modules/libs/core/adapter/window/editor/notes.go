@@ -53,7 +53,7 @@ func (a *API) WriteNote(
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.finish()
-	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newLastRead(r.Msg.GetSeen()))
+	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newReadBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save. It is told in the
 	// same breath where the index did not follow, because the prose is on disk
@@ -234,7 +234,7 @@ func (a *API) GetNeighbourhood(
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
 			Note:         convertNoteToWire(related.NoteRef),
-			Seat:         convertRelationToWire(related.Relation),
+			Relation:     convertRelationToWire(related.Relation),
 			Label:        related.Label,
 			ReverseLabel: related.ReverseLabel,
 			Through:      related.Parent,
@@ -350,18 +350,18 @@ func convertNoteToWire(n domain.NoteRef) *v1.Note {
 	return &v1.Note{Path: n.Path, Title: n.Title, Identifier: n.ID}
 }
 
-func convertRelationToWire(s domain.Relation) v1.Seat {
+func convertRelationToWire(s domain.Relation) v1.Relation {
 	switch s {
 	case domain.RelationParent:
-		return v1.Seat_SEAT_PARENT
+		return v1.Relation_RELATION_PARENT
 	case domain.RelationChild:
-		return v1.Seat_SEAT_CHILD
+		return v1.Relation_RELATION_CHILD
 	case domain.RelationJump:
-		return v1.Seat_SEAT_JUMP
+		return v1.Relation_RELATION_JUMP
 	case domain.RelationSibling:
-		return v1.Seat_SEAT_SIBLING
+		return v1.Relation_RELATION_SIBLING
 	default:
-		return v1.Seat_SEAT_UNSPECIFIED
+		return v1.Relation_RELATION_UNSPECIFIED
 	}
 }
 
@@ -375,13 +375,13 @@ func convertFingerprintToWire(ref domain.Fingerprint) *v1.Fingerprint {
 	return &v1.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
-// newLastRead is what a client says it last saw of a note. Nothing said is nothing
+// newReadBaseline is what a client says it last saw of a note. Nothing said is nothing
 // compared, and the write lands on whatever the note now holds.
-func newLastRead(seen *v1.LastRead) *note.LastRead {
+func newReadBaseline(seen *v1.ReadBaseline) *note.ReadBaseline {
 	if seen == nil {
 		return nil
 	}
-	return &note.LastRead{Prose: seen.GetProse(), Fingerprint: convertFingerprintFromWire(seen.GetAt())}
+	return &note.ReadBaseline{Prose: seen.GetProse(), Fingerprint: convertFingerprintFromWire(seen.GetAt())}
 }
 
 // convertFingerprintFromWire is a fingerprint as the core holds one. The kind is left empty: what

@@ -34,7 +34,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	}
 	testsupport.WaitFor(t, func() bool {
 		for _, at := range api.Window.Tasking.List() {
-			if at.Doing == "Indexing the vault" && at.About == "Sanskrit" && at.IsAsked {
+			if at.Title == "Indexing the vault" && at.About == "Sanskrit" && at.IsUserStarted {
 				return true
 			}
 		}
@@ -60,7 +60,7 @@ func TestIndexingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	api.countVault(t.Context(), held[0])
 	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
 
-	if at := api.Window.Tasking.List()[0]; at.IsAsked {
+	if at := api.Window.Tasking.List()[0]; at.IsUserStarted {
 		t.Errorf("indexing a vault the index carries came back as work asked for: %+v", at)
 	}
 	close(holding)
@@ -197,7 +197,7 @@ func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 	api.countVault(t.Context(), unread)
 	testsupport.WaitFor(t, func() bool {
 		for _, at := range api.Window.Tasking.List() {
-			if at.Doing == "Indexing the vault" && at.Error == "the folder is not there" {
+			if at.Title == "Indexing the vault" && at.Error == "the folder is not there" {
 				return true
 			}
 		}

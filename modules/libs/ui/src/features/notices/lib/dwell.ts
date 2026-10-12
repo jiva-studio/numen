@@ -57,7 +57,7 @@ export const getShownNotices = (
   getReadable(notices).filter((notice) => {
     if (away.has(notice.id)) return false
     if (notice.stay === 'read') return !isRead(notice, firstSeen, at)
-    return notice.isAsked || at - (firstSeen.get(notice.id) ?? at) >= wait
+    return notice.isUserStarted || at - (firstSeen.get(notice.id) ?? at) >= wait
   })
 
 /** The notices that have been read, and whose caller may dismiss them. */

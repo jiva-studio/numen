@@ -43,7 +43,7 @@ const createTask = (over: Partial<Task> = {}): Task => ({
   total: 400,
   counting: 'things',
   error: '',
-  isAsked: true,
+  isUserStarted: true,
   ...over,
 })
 
@@ -73,17 +73,17 @@ describe('a document being read', () => {
   })
 
   it('is drawn the moment it arrives, since a person asked for it', () => {
-    expect(corner([createTask()])[0]?.isAsked).toBe(true)
+    expect(corner([createTask()])[0]?.isUserStarted).toBe(true)
   })
 
   it('waits to be drawn when nobody asked, since most such work is soon over', () => {
     const pass = createTask({
       id: 'extracting the books',
       label: 'Extracting books',
-      isAsked: false,
+      isUserStarted: false,
     })
 
-    expect(corner([pass])[0]?.isAsked).toBe(false)
+    expect(corner([pass])[0]?.isUserStarted).toBe(false)
   })
 })
 
@@ -168,10 +168,10 @@ describe('work that stopped badly', () => {
   })
 
   it('stands until it is put away, and is drawn at once even where nobody asked', () => {
-    const drawn = corner([createTask({ isAsked: false, error: 'nothing to read with' })])
+    const drawn = corner([createTask({ isUserStarted: false, error: 'nothing to read with' })])
 
     expect(drawn[0]?.stay).toBe('kept')
-    expect(drawn[0]?.isAsked).toBe(true)
+    expect(drawn[0]?.isUserStarted).toBe(true)
   })
 })
 
@@ -202,7 +202,7 @@ describe('work with nothing to count', () => {
 
 describe('a step of a run', () => {
   const step = (what: string, about: string, count = 0, total = 0) =>
-    createTask({ id: 'making the vectors', label: what, about, done: count, total, isAsked: false })
+    createTask({ id: 'making the vectors', label: what, about, done: count, total, isUserStarted: false })
 
   it('is called by what it is, and names what it is on', () => {
     const drawn = corner([step('Indexing', 'library/Sabhaparva.epub', 300, 1200)])
@@ -268,7 +268,7 @@ describe('what is so about the window', () => {
   })
 
   it('is drawn at once, since nothing about it is going to last ten seconds first', () => {
-    expect(corner([], [], well({ unwatched: '/home/vault' }))[0]?.isAsked).toBe(true)
+    expect(corner([], [], well({ unwatched: '/home/vault' }))[0]?.isUserStarted).toBe(true)
   })
 })
 
@@ -287,7 +287,7 @@ describe('each state of the window', () => {
         about: '/home/vault',
         tone: 'caution',
         isWorking: false,
-        isAsked: true,
+        isUserStarted: true,
         stay: 'holds',
       },
       {
@@ -296,7 +296,7 @@ describe('each state of the window', () => {
         about: 'no such folder',
         tone: 'caution',
         isWorking: false,
-        isAsked: true,
+        isUserStarted: true,
         stay: 'holds',
       },
       {
@@ -305,7 +305,7 @@ describe('each state of the window', () => {
         about: '',
         tone: 'caution',
         isWorking: false,
-        isAsked: true,
+        isUserStarted: true,
         stay: 'holds',
       },
     ])
@@ -319,7 +319,7 @@ describe('each state of the window', () => {
         about: '',
         tone: 'plain',
         isWorking: false,
-        isAsked: true,
+        isUserStarted: true,
         stay: 'holds',
       },
     ])
@@ -334,7 +334,7 @@ describe('each state of the window', () => {
       about: '',
       tone: 'plain',
       isWorking: false,
-      isAsked: true,
+      isUserStarted: true,
       stay: 'holds',
     })
   })
@@ -349,7 +349,7 @@ describe('each state of the window', () => {
         about: '',
         tone: 'plain',
         isWorking: false,
-        isAsked: false,
+        isUserStarted: false,
         stay: 'holds',
       },
     ])

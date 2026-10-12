@@ -78,7 +78,7 @@ message ReadBookMarkupRequest {
   // Which bytes the ask was given out for. A file that is other bytes now is
   // not answered: the book is asked for again, and the new answer is asked
   // with what that says.
-  optional Fingerprint seen = 3;
+  optional Fingerprint baseline = 3;
 }
 
 message ReadBookMarkupResponse {

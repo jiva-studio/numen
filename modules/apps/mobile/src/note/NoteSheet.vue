@@ -44,7 +44,7 @@ async function keep() {
   const answer = await props.core.notes.writeNote({
     path: props.path,
     body: prose.value,
-    seen: seen.value ?? undefined,
+    baseline: seen.value ?? undefined,
   })
   if (answer.error) {
     emit('error', formatErrorCodeMessage(answer.error))

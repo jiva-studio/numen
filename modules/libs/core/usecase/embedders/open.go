@@ -184,7 +184,7 @@ func newProgressReport(tasks *task.Tasks, at arrival) func(done, total int64) {
 		return func(int64, int64) {}
 	}
 	return func(done, total int64) {
-		held := task.Task{ID: at.id, Doing: "Preparing the model", About: at.name}
+		held := task.Task{ID: at.id, Title: "Preparing the model", About: at.name}
 		if done > 0 {
 			held.Count, held.Total, held.Unit = done, total, task.Bytes
 		}
@@ -202,7 +202,7 @@ func ready(tasks *task.Tasks, at arrival) {
 func reportError(tasks *task.Tasks, at arrival, why error) {
 	if tasks != nil {
 		tasks.Set(task.Task{
-			ID: at.id, Doing: "Preparing the model", About: at.name,
+			ID: at.id, Title: "Preparing the model", About: at.name,
 			Error: why.Error(),
 		})
 	}

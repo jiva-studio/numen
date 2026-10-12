@@ -512,7 +512,7 @@ func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
 func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 	api, held := newAPI(t, deck)
 	session := startSession(t, api, held[0])
-	ahead := session.GetCards()[0].GetAhead()
+	ahead := session.GetCards()[0].GetIntervals()
 
 	if ahead == nil {
 		t.Fatal("the card was asked without saying where the four would leave it")

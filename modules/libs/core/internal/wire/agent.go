@@ -78,9 +78,9 @@ func convertSteps(step port.Step) []*v1.AskAgentResponse {
 			},
 		}}}
 	case port.StepAnswered:
-		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Answered{Answered: &v1.Answered{}}}}
+		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_ToolFinished{ToolFinished: &v1.ToolFinished{}}}}
 	case port.StepThinking:
-		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Thinking{Thinking: &v1.Thinking{}}}}
+		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_ModelStarted{ModelStarted: &v1.ModelStarted{}}}}
 	case port.StepStopped:
 		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Stopped{Stopped: step.Detail}}}
 	default:

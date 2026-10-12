@@ -189,8 +189,8 @@ func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
 	w.waitUntilDone(t)
 
 	at := w.opening(t)
-	if at.Doing != "Fetching models" {
-		t.Errorf("getting the models is shown as %q", at.Doing)
+	if at.Title != "Fetching models" {
+		t.Errorf("getting the models is shown as %q", at.Title)
 	}
 	// Nothing has come down, so there is no share of it to draw.
 	if at.Total != 0 {

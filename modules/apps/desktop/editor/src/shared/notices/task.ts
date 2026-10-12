@@ -24,5 +24,5 @@ export interface Task {
   /** Why it stopped, when it stopped with an error. */
   readonly error: string
   /** Whether a person asked for this and is waiting to be told it began. */
-  readonly isAsked: boolean
+  readonly isUserStarted: boolean
 }

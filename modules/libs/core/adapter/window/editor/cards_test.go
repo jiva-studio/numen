@@ -225,7 +225,7 @@ func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 		Preamble: read.GetDeck().GetPreamble(),
 		Cards:    read.GetDeck().GetCards()[:1],
 		Tail:     read.GetDeck().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -254,7 +254,7 @@ func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
 		Sections: read.GetDeck().GetSections(),
 		Cards:    read.GetDeck().GetCards(),
 		Tail:     read.GetDeck().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -286,7 +286,7 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 		Sections: sections,
 		Cards:    cards,
 		Tail:     read.GetDeck().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -321,7 +321,7 @@ func TestACardUnderASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 		Sections: read.GetDeck().GetSections(),
 		Cards:    cards,
 		Tail:     read.GetDeck().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("the write answered %v", err)
@@ -351,7 +351,7 @@ func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
 		Sections: read.GetDeck().GetSections(),
 		Cards:    read.GetDeck().GetCards(),
 		Tail:     read.GetDeck().GetTail(),
-		Seen:     read.GetAt(),
+		Baseline: read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -502,7 +502,7 @@ func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 		t.Fatal(err)
 	}
 	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&v1.RenameStencilFieldRequest{
-		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Seen: read.Msg.GetAt(),
+		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Baseline: read.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -558,7 +558,7 @@ func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T
 	deckBefore := onDisk(t, f.root, "Animals.md")
 
 	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&v1.RenameStencilFieldRequest{
-		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Seen: read.Msg.GetAt(),
+		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Baseline: read.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)

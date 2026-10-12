@@ -1,7 +1,7 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
-import { NameSource, NoteType as NoteTypes, Role as Roles, Seat as Seats } from '@numen/protocol'
+import { NameSource, NoteType as NoteTypes, Role as Roles, Relation as Relations } from '@numen/protocol'
 import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
@@ -35,12 +35,12 @@ const called: Record<Roles, Role | null> = {
 export const roles = namesOf<Role, Roles>(called)
 
 /** Where a note sits around the note in focus, in the words the window uses. */
-export const seated: Record<Seats, Seat | null> = {
-  [Seats.UNSPECIFIED]: null,
-  [Seats.PARENT]: 'parent',
-  [Seats.CHILD]: 'child',
-  [Seats.JUMP]: 'jump',
-  [Seats.SIBLING]: 'sibling',
+export const seated: Record<Relations, Seat | null> = {
+  [Relations.UNSPECIFIED]: null,
+  [Relations.PARENT]: 'parent',
+  [Relations.CHILD]: 'child',
+  [Relations.JUMP]: 'jump',
+  [Relations.SIBLING]: 'sibling',
 }
 
 /** Which of four a note is, in the words the window uses. */
@@ -102,7 +102,7 @@ export const mapNeighbourhood = (answer: NeighbourhoodMessage): Neighbourhood =>
   focus: { path: answer.focus?.path ?? '', title: answer.focus?.title ?? '' },
   focusType: noteType(answer.focusType),
   related: answer.related.flatMap((one) => {
-    const seat = seated[one.seat] ?? null
+    const seat = seated[one.relation] ?? null
     if (seat === null || one.note === undefined) return []
     return [
       {

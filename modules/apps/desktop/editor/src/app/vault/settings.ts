@@ -90,7 +90,7 @@ export const settingsCore: SettingsPort = {
   saveSettingsFile: async (text, seen) => {
     const answer = await settingsService.writeSettingsFile({
       written: text,
-      ...(seen === null ? {} : { seen }),
+      ...(seen === null ? {} : { baseline: seen }),
     })
     return { isChanged: staleIn(answer) }
   },

@@ -40,7 +40,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	defer api.Writing.finish()
 
-	at := task.Task{ID: importingFiles + " " + into, Doing: "Bringing files in", About: into}
+	at := task.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
 	api.reportTask(at)
 
 	imported, err := api.Files.Import.Execute(ctx, showing, into, paths)

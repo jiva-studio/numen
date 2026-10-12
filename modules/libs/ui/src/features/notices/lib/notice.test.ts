@@ -108,7 +108,7 @@ describe('how long work runs before it is worth a card', () => {
 })
 
 describe('a notice somebody asked for', () => {
-  const asked: Notice = { id: 'reading', text: 'Recognising a scan', isAsked: true }
+  const asked: Notice = { id: 'reading', text: 'Recognising a scan', isUserStarted: true }
   const behind: Notice = { id: 'indexing', text: 'Indexing' }
 
   it('is drawn the moment it arrives', () => {

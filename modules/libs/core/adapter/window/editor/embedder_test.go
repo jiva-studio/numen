@@ -99,8 +99,8 @@ func TestAVaultSaysWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	}
 	// Nobody asked for it, so it is drawn once it has lasted.
 	for _, at := range list {
-		if at.IsAsked {
-			t.Errorf("%q says a person asked for it", at.Doing)
+		if at.IsUserStarted {
+			t.Errorf("%q says a person asked for it", at.Title)
 		}
 	}
 

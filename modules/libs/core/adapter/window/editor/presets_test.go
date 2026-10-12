@@ -115,7 +115,7 @@ func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	targetSettings := settings()
 	targetSettings.MinutesADay = 35
 	answer, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
-		Path: "Sanskrit.md", Settings: targetSettings, Seen: read.Msg.GetAt(),
+		Path: "Sanskrit.md", Settings: targetSettings, Baseline: read.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -201,7 +201,7 @@ func TestWhatABudgetCountsSurvivesAReadAndAWrite(t *testing.T) {
 	}
 
 	if _, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
-		Path: "Shows.md", Settings: presetSettings, Seen: read.Msg.GetAt(),
+		Path: "Shows.md", Settings: presetSettings, Baseline: read.Msg.GetAt(),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestChangingWhatABudgetCountsIsWritten(t *testing.T) {
 	presetSettings.Counts = v1.BudgetUnit_BUDGET_UNIT_SHOWS
 
 	if _, err := f.client.WritePreset(t.Context(), connect.NewRequest(&v1.WritePresetRequest{
-		Path: "Shows.md", Settings: presetSettings, Seen: read.Msg.GetAt(),
+		Path: "Shows.md", Settings: presetSettings, Baseline: read.Msg.GetAt(),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -447,7 +447,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 
 	// The fingerprint the write answered with is what the next write presents.
 	off, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
-		Deck: "decks/Terms.md", Seen: put.Msg.GetAt(),
+		Deck: "decks/Terms.md", Baseline: put.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -530,7 +530,7 @@ func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	}
 
 	answer, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
-		Deck: "decks/Roots.md", Seen: read.Msg.GetAt(),
+		Deck: "decks/Roots.md", Baseline: read.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)

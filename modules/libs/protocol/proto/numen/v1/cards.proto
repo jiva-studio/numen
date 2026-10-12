@@ -363,7 +363,7 @@ message WriteStencilRequest {
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the stencil now holds.
-  optional Fingerprint seen = 4;
+  optional Fingerprint baseline = 4;
 
   // The prose to stand below the frontmatter and above the first face, with
   // line endings as LF.
@@ -399,7 +399,7 @@ message RenameStencilFieldRequest {
 
   // The stencil this caller last read. Absent for a rename that lands on
   // whatever the stencil now holds.
-  optional Fingerprint seen = 4;
+  optional Fingerprint baseline = 4;
 }
 
 message RenameStencilFieldResponse {
@@ -495,7 +495,7 @@ message WriteDeckRequest {
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the deck now holds.
-  optional Fingerprint seen = 5;
+  optional Fingerprint baseline = 5;
 
   // What the file is to end with, below the last value, with line endings as
   // LF.

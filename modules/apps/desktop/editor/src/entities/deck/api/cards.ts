@@ -40,7 +40,7 @@ export const deckService: DeckService = {
         preamble: section.preamble,
       })),
       tail: deck.tail,
-      ...(seen === null ? {} : { seen: parseFingerprint(seen) }),
+      ...(seen === null ? {} : { baseline: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure({ code, bound: Number(answer.bound) })
@@ -64,7 +64,7 @@ export const stencilService: StencilService = {
       path,
       from,
       to,
-      ...(seen === null ? {} : { seen: parseFingerprint(seen) }),
+      ...(seen === null ? {} : { baseline: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure(code)
@@ -99,7 +99,7 @@ export const stencilService: StencilService = {
         back: face.back,
       })),
       tail: stencil.tail,
-      ...(seen === null ? {} : { seen: parseFingerprint(seen) }),
+      ...(seen === null ? {} : { baseline: parseFingerprint(seen) }),
     })
     const code = staleIn(answer) ? 'changed' : errorIn(answer)
     if (code) return asFailure(code)

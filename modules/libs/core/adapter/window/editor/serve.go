@@ -106,7 +106,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		// A provider that made no model is an installation with no vectors for
 		// as long as the window is open. It stands in the list under what
 		// stopped it.
-		tasks.Set(task.Task{ID: makingVectors, Doing: "Indexing", Error: why.Error()})
+		tasks.Set(task.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
@@ -153,7 +153,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// A search short of a half is said where the person is. A window opened
 	// from a desktop entry has no terminal to write to.
 	finds := made.NewSearch(asking, func(err error) {
-		api.reportTask(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Error: err.Error()})
+		api.reportTask(task.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
 	})
 	api.Finds = &finds
 
@@ -383,7 +383,7 @@ const (
 // what is being done. A theme the settings name that the catalogue has not is
 // said there.
 func (o *Installation) SayTheme(said string) {
-	o.API.reportTask(task.Task{ID: wearingATheme, Doing: "Wearing a theme", Error: said})
+	o.API.reportTask(task.Task{ID: wearingATheme, Title: "Wearing a theme", Error: said})
 }
 
 // Report puts what reading the settings had to tell a person in the list of
@@ -392,7 +392,7 @@ func (o *Installation) Report(said []string) {
 	for at, one := range said {
 		o.API.reportTask(task.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, at),
-			Doing: "Reading the settings",
+			Title: "Reading the settings",
 			Error: one,
 		})
 	}

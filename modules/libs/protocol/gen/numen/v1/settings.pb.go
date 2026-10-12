@@ -558,7 +558,7 @@ type WriteSettingsFileRequest struct {
 	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
 	// The file as this caller last read it. Absent for a write that lands on
 	// whatever the file now holds.
-	Seen          *string `protobuf:"bytes,2,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Baseline      *string `protobuf:"bytes,2,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -600,9 +600,9 @@ func (x *WriteSettingsFileRequest) GetWritten() string {
 	return ""
 }
 
-func (x *WriteSettingsFileRequest) GetSeen() string {
-	if x != nil && x.Seen != nil {
-		return *x.Seen
+func (x *WriteSettingsFileRequest) GetBaseline() string {
+	if x != nil && x.Baseline != nil {
+		return *x.Baseline
 	}
 	return ""
 }
@@ -685,11 +685,11 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x17ReadSettingsFileRequest\"H\n" +
 	"\x18ReadSettingsFileResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"V\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"b\n" +
 	"\x18WriteSettingsFileRequest\x12\x18\n" +
-	"\awritten\x18\x01 \x01(\tR\awritten\x12\x17\n" +
-	"\x04seen\x18\x02 \x01(\tH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"U\n" +
+	"\awritten\x18\x01 \x01(\tR\awritten\x12\x1f\n" +
+	"\bbaseline\x18\x02 \x01(\tH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"U\n" +
 	"\x19WriteSettingsFileResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
 	"\x06_error*s\n" +

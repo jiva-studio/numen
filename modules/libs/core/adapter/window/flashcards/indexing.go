@@ -130,10 +130,10 @@ func (a *API) hasVault(ctx context.Context, v domain.Vault) bool {
 // has lasted.
 func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, held bool) {
 	at := task.Task{
-		ID:      "indexing\t" + string(v.ID),
-		Doing:   "Indexing the vault",
-		About:   v.Name,
-		IsAsked: !held,
+		ID:            "indexing\t" + string(v.ID),
+		Title:         "Indexing the vault",
+		About:         v.Name,
+		IsUserStarted: !held,
 	}
 	a.reportTask(at)
 

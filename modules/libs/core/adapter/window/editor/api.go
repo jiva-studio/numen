@@ -133,8 +133,8 @@ type API struct {
 	// Ready is set when the scan finished, and Error says why it could not.
 	Ready atomic.Bool
 	Error wire.Reason
-	// Unwatched is why the vault is not being followed, when it is not.
-	Unwatched wire.Reason
+	// WatchError is why the vault is not being followed, when it is not.
+	WatchError wire.Reason
 	// Unreachable is why an agent cannot be reached, when one cannot.
 	Unreachable wire.Reason
 
@@ -362,7 +362,7 @@ func (a *API) isUnlevelled(err error) bool {
 	if !errors.Is(err, note.ErrUnlevelled) {
 		return false
 	}
-	a.reportTask(task.Task{ID: levellingTheIndex, Doing: "Bringing the index level", Error: err.Error()})
+	a.reportTask(task.Task{ID: levellingTheIndex, Title: "Bringing the index level", Error: err.Error()})
 	return true
 }
 
@@ -419,9 +419,9 @@ func (a *API) GetVaultState(
 		Name: showing.Name,
 		Path: showing.Path,
 		Scan: &v1.Scan{
-			IsReady:   a.Ready.Load(),
-			Error:     a.Error.Why(),
-			Unwatched: a.Unwatched.Why(),
+			IsReady:    a.Ready.Load(),
+			Error:      a.Error.Why(),
+			WatchError: a.WatchError.Why(),
 		},
 		Coverage: &v1.IndexCoverage{IsEmbedding: text(&a.Indexing.Model) != ""},
 	}

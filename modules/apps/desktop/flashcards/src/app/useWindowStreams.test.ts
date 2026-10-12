@@ -167,10 +167,10 @@ describe('what the window follows', () => {
         tasks: [
           {
             id: 'indexing\t01A',
-            doing: 'Indexing the vault',
+            title: 'Indexing the vault',
             about: 'Garden',
             error: 'no such folder',
-            isAsked: true,
+            isUserStarted: true,
           },
         ],
       })
@@ -183,7 +183,7 @@ describe('what the window follows', () => {
         label: 'Indexing the vault',
         about: 'Garden',
         error: 'no such folder',
-        isAsked: true,
+        isUserStarted: true,
       },
     ])
     window.unmount()

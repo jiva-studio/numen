@@ -157,7 +157,7 @@ type Scan struct {
 	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	// Why the vault is not being followed, when it is not. Changes will only
 	// appear when something asks for them again.
-	Unwatched     string `protobuf:"bytes,3,opt,name=unwatched,proto3" json:"unwatched,omitempty"`
+	WatchError    string `protobuf:"bytes,3,opt,name=watch_error,json=watchError,proto3" json:"watch_error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -206,9 +206,9 @@ func (x *Scan) GetError() string {
 	return ""
 }
 
-func (x *Scan) GetUnwatched() string {
+func (x *Scan) GetWatchError() string {
 	if x != nil {
-		return x.Unwatched
+		return x.WatchError
 	}
 	return ""
 }
@@ -454,11 +454,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\"\n" +
 	"\x04scan\x18\x04 \x01(\v2\x0e.numen.v1.ScanR\x04scan\x123\n" +
-	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\"U\n" +
+	"\bcoverage\x18\x05 \x01(\v2\x17.numen.v1.IndexCoverageR\bcoverage\"X\n" +
 	"\x04Scan\x12\x19\n" +
 	"\bis_ready\x18\x01 \x01(\bR\aisReady\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1c\n" +
-	"\tunwatched\x18\x03 \x01(\tR\tunwatched\"z\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1f\n" +
+	"\vwatch_error\x18\x03 \x01(\tR\n" +
+	"watchError\"z\n" +
 	"\rIndexCoverage\x12\x1f\n" +
 	"\vchunk_count\x18\x01 \x01(\x03R\n" +
 	"chunkCount\x12%\n" +

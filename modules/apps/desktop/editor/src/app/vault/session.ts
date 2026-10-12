@@ -11,7 +11,7 @@ import type { VaultPort } from '@/app/ports/vault'
 const parseScan = (scan: Scan | undefined) => ({
   isReady: scan?.isReady ?? false,
   error: scan?.error ?? '',
-  unwatchedPath: scan?.unwatched ?? '',
+  unwatchedPath: scan?.watchError ?? '',
 })
 
 /** How much of the vault the index holds. */
@@ -62,13 +62,13 @@ export const sessionCore: SessionCore = {
     for await (const update of windowService.watchTasks({ window: WINDOW }, { signal })) {
       yield update.tasks.map((at) => ({
         id: at.id,
-        label: at.doing,
+        label: at.title,
         about: at.about,
         done: Number(at.done),
         total: Number(at.total),
         counting: counted[at.unit] ?? 'things',
         error: at.error,
-        isAsked: at.isAsked,
+        isUserStarted: at.isUserStarted,
       }))
     }
   },

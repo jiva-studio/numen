@@ -50,10 +50,10 @@ export const agentPort = (agent: AgentClient): AgentPort => ({
           }
           break
         }
-        case 'answered':
+        case 'toolFinished':
           yield { kind: 'answered' }
           break
-        case 'thinking':
+        case 'modelStarted':
           yield { kind: 'thinking' }
           break
         case 'stopped':

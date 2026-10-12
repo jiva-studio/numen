@@ -20,8 +20,8 @@ type Task struct {
 	// replaces itself rather than appearing twice.
 	ID string
 
-	// Doing is the work, in the words to show: "Recognising a scan".
-	Doing string
+	// Title is the work, in the words to show: "Recognising a scan".
+	Title string
 	// About is what it is on, and is empty for work that is on nothing in
 	// particular.
 	About string
@@ -35,10 +35,10 @@ type Task struct {
 	// badly stays in the list until whoever put it there takes it out.
 	Error string
 
-	// IsAsked is set for work a person started and is waiting to be told about.
+	// IsUserStarted is set for work a person started and is waiting to be told about.
 	// Work nobody asked for is shown once it has lasted, and most of it ends
 	// before that.
-	IsAsked bool
+	IsUserStarted bool
 
 	// Unit is what Count and Total are counted in.
 	Unit Unit
