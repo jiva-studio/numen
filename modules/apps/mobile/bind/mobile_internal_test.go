@@ -757,7 +757,7 @@ func TestPortIsZeroAndTheErrorIsSaidOnceTheServerStopsAcceptingOnItsOwn(t *testi
 	if err := Stop(); err != nil {
 		t.Logf("Stop() = %v", err)
 	}
-	if said := read(); !strings.Contains(said, "numen: ") {
+	if said := read(); !strings.Contains(said, "numen: accept") {
 		t.Errorf("nothing said the server stopped accepting: %q", said)
 	}
 }
