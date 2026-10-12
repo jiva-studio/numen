@@ -8,7 +8,7 @@ on:
       - "!docs/**"
       - ".github/workflows/protocol.yml"
       # The rules the linter is held to, and the ones written here in Go.
-      - ".golangci.yml"
+      - "modules/.golangci.yml"
       - "**/gorules/**"
   push:
     branches: [main]
@@ -18,7 +18,7 @@ on:
       - "!docs/**"
       - ".github/workflows/protocol.yml"
       # The rules the linter is held to, and the ones written here in Go.
-      - ".golangci.yml"
+      - "modules/.golangci.yml"
       - "**/gorules/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
