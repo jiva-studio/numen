@@ -2,30 +2,10 @@ package mcp
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"io/fs"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
-)
-
-// The kinds an artifact is asked for by, which are the kinds the store files
-// them under.
-//
-// A kind says what a thing is, and a producer says what made it. Words with the
-// times they were said at are a transcript whether a model heard them or a site
-// published them. An ocr carries where on which page each word stands, and the
-// prose a page is written around carries no such thing, so they are two kinds
-// and not one.
-const (
-	kindRecognition = text.OCR
-	kindTranscript  = text.Transcript
-	kindArticle     = text.Article
-	kindCopy        = text.Copies
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // Artifact is one thing made from a file of the vault, as an agent is told
@@ -42,38 +22,23 @@ type Artifact struct {
 	Format   string `json:"format" jsonschema:"what artifact_read gives back, as a media type: text/vtt for a transcript, application/json for a recognition off a scan, text/plain for a page.s prose. A copy is not read, and says what it is played as"`
 }
 
-// IsReadable says whether artifact_read hands this back. A copy is bytes to play
-// and not words to read.
-func (a Artifact) IsReadable() bool { return a.Kind != kindCopy }
-
-// formatOf is what a producer's artifact is written as, which is what a caller
-// reading it parses. A transcript is a subtitle file, a recognition off a scan is
-// the boxes each word stood in, and prose is prose.
-func formatOf(producer string) string {
-	switch producer {
-	case text.ASR, text.Captions:
-		return "text/vtt"
-	case text.OCR:
-		return "application/json"
-	default:
-		return "text/plain"
-	}
+func newArtifact(one source.Artifact) Artifact {
+	return Artifact{Path: one.Path, Kind: one.Kind, Producer: one.Producer, Bytes: one.Bytes, Format: one.Format}
 }
 
-// kindOf is which of them a producer.s text is.
-func kindOf(producer string) string {
-	switch producer {
-	case text.ASR, text.Captions:
-		return kindTranscript
-	case text.Article:
-		return kindArticle
-	default:
-		return kindRecognition
+func newArtifacts(held []source.Artifact) []Artifact {
+	if held == nil {
+		return nil
 	}
+	out := make([]Artifact, 0, len(held))
+	for _, one := range held {
+		out = append(out, newArtifact(one))
+	}
+	return out
 }
 
 func addArtifactTools(server *sdk.Server, core Core) {
-	if core.Sources.Queries == nil || core.Sources.Derived == nil {
+	if core.Sources.Artifacts.List == nil || core.Sources.Artifacts.Read == nil {
 		return
 	}
 
@@ -99,11 +64,11 @@ func addArtifactTools(server *sdk.Server, core Core) {
 		type out = struct {
 			Artifacts []Artifact `json:"artifacts"`
 		}
-		held, err := artifactsOf(ctx, core, in.Path)
+		held, err := core.Sources.Artifacts.List.Execute(ctx, core.getCurrentVault().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{Artifacts: held}, nil
+		return nil, out{Artifacts: newArtifacts(held)}, nil
 	})
 
 	addTool(server, &sdk.Tool{
@@ -133,124 +98,11 @@ func addArtifactTools(server *sdk.Server, core Core) {
 			Start  int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the text"`
 			Length int    `json:"length" jsonschema:"how long the range is"`
 		}
-		held, err := artifactsOf(ctx, core, in.Path)
+		read, err := core.Sources.Artifacts.Read.Execute(
+			ctx, core.getCurrentVault().Vault, in.Path, in.Kind, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err
 		}
-		for _, one := range held {
-			if one.Kind != in.Kind || !one.IsReadable() {
-				continue
-			}
-			words, err := wordsOf(ctx, core, in.Path, one.Producer)
-			if err != nil {
-				return nil, out{}, err
-			}
-			start, held := rangeOf(words, in.Start, in.Length)
-			return nil, out{Artifact: one, Words: held, Start: start, Length: len(held)}, nil
-		}
-		return nil, out{}, fmt.Errorf("nothing of the kind %q was made from %s", in.Kind, in.Path)
+		return nil, out{Artifact: newArtifact(read.Artifact), Words: read.Words, Start: read.Start, Length: read.Length}, nil
 	})
-}
-
-// hashOf is the hash everything made from one file stands under. A url stands
-// under its address, and the index recorded that when it walked past.
-func hashOf(ctx context.Context, core Core, path string) (string, error) {
-	said, held, err := core.Sources.Queries.GetSourceText(ctx, core.getCurrentVault().Vault.ID, path)
-	if err != nil || !held {
-		return "", err
-	}
-	return said.Hash, nil
-}
-
-// artifactsOf is what the store holds for one file.
-func artifactsOf(ctx context.Context, core Core, path string) ([]Artifact, error) {
-	hash, err := hashOf(ctx, core, path)
-	if err != nil || hash == "" {
-		return nil, err
-	}
-	store, err := core.Sources.Derived.Open(core.getCurrentVault().Vault)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]Artifact, 0, 2)
-	for _, producer := range text.Producers() {
-		_, size, held, err := fileOf(ctx, store, producer, hash)
-		if err != nil {
-			return nil, err
-		}
-		if !held {
-			continue
-		}
-		out = append(out, Artifact{
-			Path:     path,
-			Kind:     kindOf(producer),
-			Producer: producer,
-			Bytes:    size,
-			Format:   formatOf(producer),
-		})
-	}
-	// A copy of a video is bytes and no producer's text, so it is asked for by
-	// name rather than found by what wrote it.
-	if file, size, err := store.Open(ctx, text.Copy(hash)); err == nil {
-		_ = file.Close()
-		out = append(out, Artifact{
-			Path: path, Kind: kindCopy, Bytes: size, Format: text.CopyType,
-		})
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return nil, err
-	}
-	return out, nil
-}
-
-// rangeOf is the range of a text a call asked for, held within it and cut on whole
-// characters. A call naming no length takes as much as one answer carries.
-func rangeOf(words string, start, length int) (int, string) {
-	if length <= 0 || length > file.MostRead {
-		length = file.MostRead
-	}
-	start = max(0, min(start, len(words)))
-	length = min(length, len(words)-start)
-	at, raw := file.WholeCharacters(start, []byte(words[start:start+length]), len(words))
-	return at, string(raw)
-}
-
-// fileOf is the file one producer's artifact stands in, and its size.
-func fileOf(
-	ctx context.Context, store port.DerivedStore, producer, hash string,
-) (name string, size int64, held bool, err error) {
-	for _, one := range []string{
-		text.Corrections(producer, hash),
-		text.Artifact(producer, hash),
-		text.Partial(producer, hash),
-	} {
-		reader, size, err := store.Open(ctx, one)
-		if errors.Is(err, fs.ErrNotExist) {
-			continue
-		}
-		if err != nil {
-			return "", 0, false, err
-		}
-		_ = reader.Close()
-		return one, size, true, nil
-	}
-	return "", 0, false, nil
-}
-
-// wordsOf is the artifact as it stands on disk. A transcript is the WebVTT it
-// is written in, times and all.
-func wordsOf(ctx context.Context, core Core, path, producer string) (string, error) {
-	hash, err := hashOf(ctx, core, path)
-	if err != nil || hash == "" {
-		return "", err
-	}
-	store, err := core.Sources.Derived.Open(core.getCurrentVault().Vault)
-	if err != nil {
-		return "", err
-	}
-	name, _, held, err := fileOf(ctx, store, producer, hash)
-	if err != nil || !held {
-		return "", err
-	}
-	raw, err := store.Read(ctx, name)
-	return string(raw), err
 }

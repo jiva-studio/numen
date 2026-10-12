@@ -145,6 +145,10 @@ func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
 	}
 	queries := &sourced{known: map[string]port.SourceText{}}
 	core.Sources.Queries = queries
+	core.Sources.Artifacts = source.Artifacts{
+		List: source.NewListArtifacts(queries, core.Sources.Derived),
+		Read: source.NewReadArtifact(queries, core.Sources.Derived),
+	}
 	session := sessionOf(t, mcp.New(core))
 	_ = v
 
