@@ -205,8 +205,8 @@ type Vaults struct {
 	Remove      *vaults.Remove
 	Unregister  *vaults.Unregister
 
-	// FolderDialog is nil where the application has no window to put one in.
-	FolderDialog port.FolderDialog
+	// ChooseFolder is nil where the application has no window to put a dialog in.
+	ChooseFolder *vaults.ChooseFolder
 }
 
 // Cards is the decks and stencils a vault is arranged into. Read takes a deck

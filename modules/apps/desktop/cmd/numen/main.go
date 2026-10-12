@@ -30,6 +30,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 func main() {
@@ -279,7 +280,8 @@ func connectWindow(
 	reachable *agents.Endpoint,
 ) {
 	// Choosing a folder is the machine's own, and it opens over this window.
-	opened.API.Vaults.FolderDialog = &folderDialog{window: window}
+	choose := vault.NewChooseFolder(&folderDialog{window: window})
+	opened.API.Vaults.ChooseFolder = &choose
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.

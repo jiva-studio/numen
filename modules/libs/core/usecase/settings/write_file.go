@@ -1,7 +1,7 @@
 package settings
 
 // WriteFile replaces the file whole. A file left standing at anything but the
-// baseline is refused with port.ErrStale.
+// baseline is refused with ErrStale.
 type WriteFile struct {
 	write func(written string, baseline *string) error
 }

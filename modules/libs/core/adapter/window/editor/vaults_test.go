@@ -146,6 +146,7 @@ func onAList(t *testing.T) *onTheList {
 	erase := vaults.NewErase(identity, f.bin, forget)
 	list := vaults.NewList(registry)
 	find := vaults.NewFind(registry)
+	chooseFolder := vaults.NewChooseFolder(f.dialog)
 	folderCheck := vaults.NewFolderCheck(filesystem.VaultReaders{})
 	remove := vaults.NewRemove(find, forget, erase)
 	f.api = &API{
@@ -155,7 +156,7 @@ func onAList(t *testing.T) *onTheList {
 			List:         &list,
 			Find:         &find,
 			FolderCheck:  &folderCheck,
-			FolderDialog: f.dialog,
+			ChooseFolder: &chooseFolder,
 			Add:          &adding,
 			Rename:       &rename,
 			Remove:       &remove,
