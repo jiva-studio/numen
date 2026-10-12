@@ -22,6 +22,7 @@ func TestAnEntryThatMisdeclaresItsSizeIsLeftUnread(t *testing.T) {
 		{"declared shorter than the content", uint32(len(chapter)) - 10},
 		{"declared longer than the content", uint32(len(chapter)) + 10},
 		{"declared larger than any chapter", 1 << 30},
+		{"declared empty", 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -55,6 +56,9 @@ func TestAnEntryThatMisdeclaresItsSizeIsLeftUnread(t *testing.T) {
 			}
 			if strings.Contains(book.Text, "lying") {
 				t.Error("the entry that misdeclares its size was read")
+			}
+			if len(book.Documents) != 1 {
+				t.Errorf("documents = %d, want only the chapter beside it", len(book.Documents))
 			}
 		})
 	}
