@@ -1,0 +1,116 @@
+package note_test
+
+import (
+	"context"
+	"errors"
+	"io/fs"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+)
+
+// statedReader is a vault that answers a stat and a read with whatever it was
+// told to.
+type statedReader struct {
+	port.VaultReader
+	ref     domain.Fingerprint
+	statErr error
+	raw     []byte
+	readErr error
+}
+
+func (r statedReader) Stat(context.Context, string) (domain.Fingerprint, error) {
+	return r.ref, r.statErr
+}
+
+func (r statedReader) Read(context.Context, string) ([]byte, error) {
+	return r.raw, r.readErr
+}
+
+type statedReaders struct{ reader statedReader }
+
+func (r statedReaders) Open(domain.Vault) (port.VaultReader, error) { return r.reader, nil }
+
+func readStated(t *testing.T, reader statedReader) (note.Contents, error) {
+	t.Helper()
+	return note.NewRead(statedReaders{reader: reader}).Execute(t.Context(), domain.Vault{}, "Entropy.md")
+}
+
+const ceiling = 1048576
+
+// A note of exactly the ceiling is read, and one byte more is refused.
+func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
+	t.Parallel()
+	body := []byte("# Entropy\n")
+
+	atCeiling, err := readStated(t, statedReader{
+		ref: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling},
+		raw: body,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if atCeiling.Outcome != note.Ok {
+		t.Errorf("a note of exactly the ceiling is %q", atCeiling.Outcome)
+	}
+
+	over, err := readStated(t, statedReader{
+		ref: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling + 1},
+		raw: body,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if over.Outcome != note.TooLarge {
+		t.Errorf("a note one byte over the ceiling is %q", over.Outcome)
+	}
+	if over.Body != "" {
+		t.Errorf("a note over the ceiling came back with prose: %q", over.Body)
+	}
+}
+
+func TestAVaultThatCannotSayWhatIsAtAPathIsAnError(t *testing.T) {
+	t.Parallel()
+	broken := errors.New("the disk is gone")
+
+	got, err := readStated(t, statedReader{statErr: broken, raw: []byte("# Entropy\n")})
+	if !errors.Is(err, broken) {
+		t.Fatalf("want the vault's own error, got %v", err)
+	}
+	if got != (note.Contents{}) {
+		t.Errorf("an error came back with contents: %+v", got)
+	}
+}
+
+// A file that appears between the question and the read is answered by its
+// bytes, and the vault is not held to its earlier answer.
+func TestAFileThatAppearsAfterItWasAskedAboutIsNotANote(t *testing.T) {
+	t.Parallel()
+
+	got, err := readStated(t, statedReader{statErr: fs.ErrNotExist, raw: []byte("# Entropy\n")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Outcome != note.NotANote {
+		t.Errorf("want not a note, got %q", got.Outcome)
+	}
+	if got.Body != "" {
+		t.Errorf("a file the vault does not hold as a note came back with prose: %q", got.Body)
+	}
+}
+
+func TestAReadThatFailsAfterAMissingStatIsAnError(t *testing.T) {
+	t.Parallel()
+	broken := errors.New("the disk is gone")
+
+	_, err := readStated(t, statedReader{statErr: fs.ErrNotExist, readErr: broken})
+	if !errors.Is(err, broken) {
+		t.Fatalf("want the vault's own error, got %v", err)
+	}
+	if err != nil && !strings.Contains(err.Error(), "Entropy.md") {
+		t.Errorf("the error does not say which note: %v", err)
+	}
+}
