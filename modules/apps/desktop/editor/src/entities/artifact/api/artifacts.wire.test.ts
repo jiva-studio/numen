@@ -75,6 +75,12 @@ describe('what a file carries', () => {
 
     expect(await running.getArtifactStates('Scan.pdf')).toEqual({ ocr: 'none' })
   })
+
+  it('is nothing made where the answer names a state this window has no word for', async () => {
+    answerWith({ artifacts: [{ kind: 'ARTIFACT_KIND_OCR', state: 99 }] })
+
+    expect(await running.getArtifactStates('Scan.pdf')).toEqual({ ocr: 'none' })
+  })
 })
 
 describe('beginning a run', () => {

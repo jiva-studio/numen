@@ -31,7 +31,6 @@ export function createStencilFields(
   const getStencil = (id: string): BufferStencil => {
     const body = getBody(id)
     const held = parsed.get(id)
-    if (held && held.body === body) return held.stencil
     const read = stencilIn(body)
     const stencil = held && sameStencil(held.stencil, read) ? held.stencil : read
     parsed.set(id, { body, stencil })

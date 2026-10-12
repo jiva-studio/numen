@@ -59,7 +59,7 @@ export interface Extent {
  */
 export const extentOf = (curve: Curve): Extent => {
   const costs = curve.at.map((point) => costOf(curve.goal, point))
-  return { least: 0, most: costs.length === 0 ? 0 : Math.max(0, ...costs) }
+  return { least: 0, most: Math.max(0, ...costs) }
 }
 
 /**
@@ -176,9 +176,8 @@ export const walkGrid = (key: string, place: number, places: number): number | n
  * stands at the nearer end.
  */
 export const placeUnder = (x: number, places: number): number => {
-  if (places <= 1) return 0
   const inside = (x - LEFT) / (RIGHT - LEFT)
-  return Math.min(Math.max(Math.round(inside * (places - 1)), 0), places - 1)
+  return Math.max(Math.min(Math.round(inside * (places - 1)), places - 1), 0)
 }
 
 /** Two places past the picture's units, which is as fine as a path needs. */

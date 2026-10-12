@@ -103,6 +103,4 @@ const become: Record<States, ArtifactState> = {
 }
 
 /** A state this window has no word for is an artifact nothing has made. */
-const parseState = (state: States | undefined): ArtifactState =>
-  // Stryker disable next-line ConditionalExpression: an absent state indexes the table to undefined, which falls to 'none' as well
-  (state === undefined ? undefined : become[state]) ?? 'none'
+const parseState = (state: States = States.UNSPECIFIED): ArtifactState => become[state] ?? 'none'
