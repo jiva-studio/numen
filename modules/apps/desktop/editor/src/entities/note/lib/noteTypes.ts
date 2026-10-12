@@ -3,7 +3,7 @@
  */
 import type { NoteResult, WriteResult } from './note'
 import type { ErrorCode } from '@/shared/errors'
-import type { NoteBaseline, State, waiting } from './tabState'
+import type { NoteBaseline, State, DEFAULT_WRITE_LIMITS } from './tabState'
 
 /** One open note as the window draws it. */
 export interface OpenNote {
@@ -31,7 +31,7 @@ export interface ConflictWords {
 /** What the window hands the store of open notes, beside the vault itself. */
 export interface OpenNotesOptions {
   /** How long the typing settles for, and how long a note may go unwritten. */
-  limits?: typeof waiting
+  limits?: typeof DEFAULT_WRITE_LIMITS
   /** What hears that a note on screen was replaced by what its file holds. */
   onReplaced?(path: string): void
   /** When it is now. */

@@ -70,7 +70,7 @@ beforeEach(() => {
   h.calls = { raised: [] }
   const flush = (name: string) => ({ name: `${name}.flush` })
   h.parts = {
-    changes: { handleNoteChange: vi.fn(), close: vi.fn() },
+    changes: { reportNoteChange: vi.fn(), close: vi.fn() },
     notes: { flush: flush('notes') },
     making: { name: 'making' },
     noted: { kept: store('note'), kind: 'noteKind' },
@@ -100,8 +100,8 @@ describe('the note editors', () => {
     const { core } = create()
 
     expect(h.calls.openNotes[0]).toBe(core)
-    expect(h.calls.openNotes[1]).toEqual({ onReplaced: h.parts.changes.handleNoteChange })
-    expect(h.calls.openNotes[1].onReplaced).toBe(h.parts.changes.handleNoteChange)
+    expect(h.calls.openNotes[1]).toEqual({ onReplaced: h.parts.changes.reportNoteChange })
+    expect(h.calls.openNotes[1].onReplaced).toBe(h.parts.changes.reportNoteChange)
   })
 
   it('writes each editor message through the writer of its own name', () => {
