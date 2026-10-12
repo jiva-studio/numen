@@ -421,7 +421,7 @@ const (
 // ReadAnswer is which of the two a recording gave and what the run said about
 // it, read from what is kept under Answer. Bytes opening with neither word are
 // nothing this wrote.
-func ReadAnswer(raw []byte) (gave, said string) {
+func ReadAnswer(raw []byte) (kind, detail string) {
 	line := strings.TrimSpace(string(raw))
 	for _, one := range []string{Silent, Unopened} {
 		if line == one {

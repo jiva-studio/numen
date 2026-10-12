@@ -121,7 +121,7 @@ func Cut(text string, parts []domain.PartStart, sizes Sizes, reads Legibility) [
 	}
 	var out []Chunk
 	for _, d := range divisions {
-		out = append(out, cutDivision(text, d, s, l)...)
+		out = append(out, splitDivision(text, d, s, l)...)
 	}
 	return out
 }
@@ -155,16 +155,16 @@ func divisionsOf(text string, parts []domain.PartStart) []division {
 	return append(divisions, division{from: at, to: len(text), location: location})
 }
 
-// cutDivision tiles one division twice and puts each small chunk under the large
+// splitDivision tiles one division twice and puts each small chunk under the large
 // one its middle falls in.
-func cutDivision(text string, d division, s Sizes, l Legibility) []Chunk {
+func splitDivision(text string, d division, s Sizes, l Legibility) []Chunk {
 	words := wordsIn(text, d.from, d.to)
 	if len(words) == 0 {
 		return nil
 	}
 	var large []Chunk
-	for _, at := range tile(len(words), s.Large, s.LargeOverlap) {
-		c := extent(words, at, d.location)
+	for _, at := range getOverlappingRanges(len(words), s.Large, s.LargeOverlap) {
+		c := getRangeChunk(words, at, d.location)
 		if !isLegible(c.Slice(text), l) {
 			continue
 		}
@@ -180,7 +180,7 @@ func whole(text string, divisions []division, s Sizes, l Legibility) []Chunk {
 	if len(words) == 0 {
 		return nil
 	}
-	large := extent(words, [2]int{0, len(words)}, "")
+	large := getRangeChunk(words, [2]int{0, len(words)}, "")
 	if !isLegible(large.Slice(text), l) {
 		return nil
 	}
@@ -206,9 +206,9 @@ func whole(text string, divisions []division, s Sizes, l Legibility) []Chunk {
 // that is still over it after that is a single word and is dropped.
 func smallChunks(text string, words []word, location string, s Sizes, l Legibility) []Chunk {
 	var out []Chunk
-	for _, at := range tile(len(words), s.Small, s.SmallOverlap) {
-		for _, piece := range cutToLimit(text, words, at, s.Limit) {
-			c := extent(words, piece, location)
+	for _, at := range getOverlappingRanges(len(words), s.Small, s.SmallOverlap) {
+		for _, piece := range splitAtLimit(text, words, at, s.Limit) {
+			c := getRangeChunk(words, piece, location)
 			body := c.Slice(text)
 			if utf8.RuneCountInString(body) > s.Limit || !isLegible(body, l) {
 				continue
@@ -277,9 +277,9 @@ func wordsIn(text string, from, to int) []word {
 	return words
 }
 
-// tile covers n words with ranges of size words sharing overlap of them. The
+// getOverlappingRanges covers n words with ranges of size words sharing overlap of them. The
 // last range ends at n, so a division shorter than one chunk is one chunk.
-func tile(n, size, overlap int) [][2]int {
+func getOverlappingRanges(n, size, overlap int) [][2]int {
 	step := size - overlap
 	var out [][2]int
 	for i := 0; i < n; i += step {
@@ -292,10 +292,10 @@ func tile(n, size, overlap int) [][2]int {
 	return out
 }
 
-// cutToLimit breaks a range of words into pieces of at most limit characters,
+// splitAtLimit breaks a range of words into pieces of at most limit characters,
 // counting the space between words. A word of its own is a piece however long it
 // is.
-func cutToLimit(text string, words []word, at [2]int, limit int) [][2]int {
+func splitAtLimit(text string, words []word, at [2]int, limit int) [][2]int {
 	from, to := at[0], at[1]
 	if utf8.RuneCountInString(text[words[from].start:words[to-1].end]) <= limit {
 		return [][2]int{at}
@@ -313,8 +313,8 @@ func cutToLimit(text string, words []word, at [2]int, limit int) [][2]int {
 	return append(out, [2]int{start, to})
 }
 
-// extent is the chunk covering a range of words.
-func extent(words []word, at [2]int, location string) Chunk {
+// getRangeChunk is the chunk covering a range of words.
+func getRangeChunk(words []word, at [2]int, location string) Chunk {
 	start, end := words[at[0]].start, words[at[1]-1].end
 	return Chunk{Start: start, Length: end - start, Location: location}
 }
