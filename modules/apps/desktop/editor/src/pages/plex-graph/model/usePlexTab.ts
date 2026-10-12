@@ -4,7 +4,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import type { PlexNeighbourhood, PlexRelatedSeat, PlexDestination } from '@numen/ui'
 import type { NoteType } from '@/entities/file'
-import { fileOf, type PathRename } from '@/shared/paths'
+import { getFileName, type PathRename } from '@/shared/paths'
 import { NEW_NOTE, OFFERED } from '../lib/menu'
 import { asPlex, typesIn } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
@@ -180,7 +180,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     const around = view.neighbourhood.value
     if (around?.focus.path === path && around.focus.title) return around.focus.title
     const near = around?.related.find((one) => one.path === path)
-    return near?.title || fileOf(path).replace(/\.md$/, '')
+    return near?.title || getFileName(path).replace(/\.md$/, '')
   }
 
   const dropNodes = async (nodes: readonly string[], seat: PlexRelatedSeat) => {

@@ -38,7 +38,7 @@ describe('a draft told nothing more is typed here', () => {
 })
 
 const refusal = new Error('disk full')
-const QUIET = 100
+const TEST_WRITE_IDLE_MS = 100
 const EDITED = 'The first thing meant.\nThe second thing said.'
 const EDITED_AGAIN = 'The first thing meant twice.\nThe second thing said.'
 
@@ -70,7 +70,7 @@ const createDraft = (
     cues,
     isEditable,
     error,
-    quiet: QUIET,
+    quiet: TEST_WRITE_IDLE_MS,
     isOpen: () => state.open,
     write:
       how.write ??
@@ -94,7 +94,7 @@ describe('a draft whose words are typed over', () => {
     const { draft, cues, written } = createDraft()
 
     draft.setProse(EDITED)
-    await vi.advanceTimersByTimeAsync(QUIET - 1)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS - 1)
     expect(written).toStrictEqual([])
     await vi.advanceTimersByTimeAsync(1)
 
@@ -107,11 +107,11 @@ describe('a draft whose words are typed over', () => {
     const { draft, written } = createDraft()
 
     draft.setProse(EDITED)
-    await vi.advanceTimersByTimeAsync(QUIET - 1)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS - 1)
     draft.setProse(EDITED_AGAIN)
     await vi.advanceTimersByTimeAsync(2)
     expect(written).toStrictEqual([])
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
     expect(written).toHaveLength(1)
     expect(written[0]![0]!.text).toBe('The first thing meant twice.')
@@ -123,11 +123,11 @@ describe('a draft whose words are typed over', () => {
     expect(draft.typing.value).toBe(false)
     draft.setProse(EDITED)
     expect(draft.typing.value).toBe(true)
-    await vi.advanceTimersByTimeAsync(QUIET - 1)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS - 1)
     draft.setProse(EDITED_AGAIN)
     await vi.advanceTimersByTimeAsync(2)
     expect(draft.typing.value).toBe(true)
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
     expect(draft.typing.value).toBe(false)
   })
@@ -137,7 +137,7 @@ describe('a draft whose words are typed over', () => {
     state.open = false
 
     draft.setProse(EDITED)
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
     expect(draft.prose.value).toBe(getText(CUES))
     expect(draft.typing.value).toBe(false)
@@ -253,10 +253,10 @@ describe('a draft whose words are typed over', () => {
     draft.setProse(EDITED)
     const first = draft.keep()
     draft.setProse(EDITED_AGAIN)
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
     pending.answers[0]!.resolve()
     await first
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
     expect(pending.calls).toHaveLength(2)
     expect(pending.calls[1]![0]!.text).toBe('The first thing meant twice.')
@@ -269,12 +269,12 @@ describe('a draft whose words are typed over', () => {
     draft.setProse(EDITED)
     const first = draft.keep()
     draft.setProse(EDITED_AGAIN)
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
     state.open = false
     pending.answers[0]!.resolve()
     await first
     state.open = true
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
     expect(pending.calls).toHaveLength(1)
   })
@@ -325,7 +325,7 @@ describe('a draft whose words are typed over', () => {
     const first = draft.keep()
     pending.answers[0]!.reject(refusal)
     await first
-    await vi.advanceTimersByTimeAsync(QUIET * 3)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS * 3)
 
     expect(pending.calls).toHaveLength(1)
   })
@@ -351,7 +351,7 @@ describe('a draft whose words are typed over', () => {
 
     draft.setProse(EDITED)
     draft.drop()
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
     await draft.keep()
 
     expect(written).toStrictEqual([])
@@ -371,7 +371,7 @@ describe('a draft whose words are typed over', () => {
     await vi.advanceTimersByTimeAsync(10)
     pending.answers[0]!.reject(refusal)
     await first
-    await vi.advanceTimersByTimeAsync(QUIET - 15)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS - 15)
 
     expect(pending.calls).toHaveLength(1)
   })
@@ -381,7 +381,7 @@ describe('a draft whose words are typed over', () => {
 
     draft.setProse(EDITED)
     draft.stop()
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
     expect(draft.prose.value).toBe('')
     expect(written).toStrictEqual([])
@@ -392,7 +392,7 @@ describe('a draft whose words are typed over', () => {
 
     draft.setProse(EDITED)
     draft.stop()
-    await vi.advanceTimersByTimeAsync(QUIET)
+    await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
     expect(draft.typing.value).toBe(true)
   })

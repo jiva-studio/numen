@@ -20,7 +20,7 @@ vi.mock('@/entities/deck', () => ({ presets: { getDeckPreset: h.getDeckPreset } 
 vi.mock('@/features/command-palette', () => ({ runSupport: () => ({ name: 'runs' }) }))
 vi.mock('@/entities/media', () => ({ createMediaTypeProbe: () => ({ name: 'plays' }) }))
 vi.mock('@/features/tab-linking', () => ({ useTabLinks: () => h.f.tabLinks }))
-vi.mock('@/shared/notices/messages', () => ({ messageLog: () => h.f.log }))
+vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
 vi.mock('@/entities/tab', () => ({
   AGENT: 'agent',
   FILES: 'files',
@@ -145,7 +145,7 @@ beforeEach(() => {
       loadVaults: vi.fn(),
       listed: {},
     },
-    openTabs: { tabIcon: vi.fn() },
+    openTabs: { getTabIcon: vi.fn() },
     commands: {
       commands: { applyRenames: vi.fn() },
       runCommand: vi.fn(),

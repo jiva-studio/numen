@@ -11,7 +11,7 @@ import type { TabKind, WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
 import { STENCIL } from '@/entities/tab'
 import StencilTab from './ui/StencilTab.vue'
-import { fileOf, type PathRename } from '@/shared/paths'
+import { getFileName, type PathRename } from '@/shared/paths'
 import type { StencilTabState } from './types'
 import { createStencilWire, type VaultAnswer } from './api/wire'
 import { createStencilFields } from './model/fields'
@@ -69,7 +69,7 @@ export function useStencilTabs(
   }
 
   /** What a stencil tab is called: the title the file carries, or the file itself. */
-  const getTitle = (path: string): string => wire.getTitle(path) || fileOf(path)
+  const getTitle = (path: string): string => wire.getTitle(path) || getFileName(path)
 
   /** The tab holding a stencil lets go of it, wherever the window draws it. */
   const closeTab = (id: string): void => {

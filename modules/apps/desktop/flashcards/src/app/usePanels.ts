@@ -8,7 +8,7 @@
 import { computed, ref } from 'vue'
 
 import {
-  createAgentPort as agent,
+  createCardAgentPort as agent,
   getDeckNeighbourhood,
   useAgentPanel,
   useNotesPanel,

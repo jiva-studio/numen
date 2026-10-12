@@ -517,7 +517,7 @@ describe('what a note is called under the identity it opened under', () => {
 })
 
 /** What the one note tab of a window holds. */
-const stateOf = (one: ReturnType<typeof window>): NoteTabState =>
+const getState = (one: ReturnType<typeof window>): NoteTabState =>
   one.held.getTabStateIn<NoteTabState>(one.held.tabs.value[0]?.id ?? '', NOTE)!
 
 describe('what a command asked over a note tab is over', () => {
@@ -526,7 +526,7 @@ describe('what a command asked over a note tab is over', () => {
     one.openNote('Note.md', 'A note')
     await nextTick()
 
-    expect(one.noted.kind.getTarget!(stateOf(one))).toStrictEqual({
+    expect(one.noted.kind.getTarget!(getState(one))).toStrictEqual({
       path: 'Note.md',
       title: 'A note',
     })
@@ -539,7 +539,7 @@ describe('what a command asked over a note tab is over', () => {
     one.moveNote('Note.md', 'Moved.md')
     await nextTick()
 
-    expect(one.noted.kind.getTarget!(stateOf(one)).path).toBe('Moved.md')
+    expect(one.noted.kind.getTarget!(getState(one)).path).toBe('Moved.md')
   })
 })
 
@@ -549,7 +549,7 @@ describe('what a note tab holds, as whoever answers for the person is told it', 
     one.openNote('Note.md', 'A note')
     await nextTick()
 
-    expect(one.noted.kind.getOpenTab!(stateOf(one))).toStrictEqual({ path: 'Note.md' })
+    expect(one.noted.kind.getOpenTab!(getState(one))).toStrictEqual({ path: 'Note.md' })
   })
 
   it('updates path and title when loadInTab is called on an existing tab', async () => {
@@ -561,7 +561,7 @@ describe('what a note tab holds, as whoever answers for the person is told it', 
     await one.noted.loadInTab(tabId, 'Note2.md', 'Note 2')
     await nextTick()
 
-    expect(one.noted.kind.getOpenTab!(stateOf(one))).toStrictEqual({ path: 'Note2.md' })
+    expect(one.noted.kind.getOpenTab!(getState(one))).toStrictEqual({ path: 'Note2.md' })
     expect(one.noted.kept.getTitle(tabId)).toBe('Note 2')
   })
 })
@@ -588,7 +588,7 @@ describe('loadInTab and kind methods edge cases', () => {
 
     await one.noted.loadInTab(tabId, 'Note2.md')
     await nextTick()
-    expect(one.noted.kind.getOpenTab!(stateOf(one))).toStrictEqual({ path: 'Note2.md' })
+    expect(one.noted.kind.getOpenTab!(getState(one))).toStrictEqual({ path: 'Note2.md' })
   })
 
   it('flushes unsaved edits before reloading the tab onto a new path', async () => {
@@ -606,7 +606,7 @@ describe('loadInTab and kind methods edge cases', () => {
     const one = window()
     one.openNote('Note.md', 'A note')
     await nextTick()
-    const state = stateOf(one)
+    const state = getState(one)
 
     const measureSpy = vi.spyOn(state, 'measure')
     one.noted.kind.onShow?.(state, one.held.tabs.value[0]?.id ?? '')
@@ -657,7 +657,7 @@ describe('a note put in front of the person', () => {
     const one = window()
     one.openNote('Note.md')
     const drew = editor()
-    stateOf(one).setEditor(drew.drawn)
+    getState(one).setEditor(drew.drawn)
     await nextTick()
 
     one.openNote('Note.md')
@@ -671,7 +671,7 @@ describe('a note put in front of the person', () => {
     await one.tabOpeners.openFile('Note.md', '', 'here', 7)
     const drew = editor()
 
-    stateOf(one).setEditor(drew.drawn)
+    getState(one).setEditor(drew.drawn)
     await nextTick()
 
     expect(drew.focused).toEqual([7])
@@ -683,7 +683,7 @@ describe('a note tab whose note the store has let go of', () => {
     const one = window()
     one.openNote('Note.md', 'A note')
     await nextTick()
-    const state = stateOf(one)
+    const state = getState(one)
     await one.store.close(one.idOf('Note.md'))
 
     expect(one.noted.kind.getTarget!(state)).toStrictEqual({ path: '', title: '' })

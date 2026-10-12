@@ -11,7 +11,7 @@ import {
   type SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
 import { goalNames, goalOf } from '@numen/wire'
-import { parseFingerprint, errorIn, staleIn, formatFingerprint } from '@/shared/answers'
+import { parseFingerprint, findErrorCode, isStaleAnswer, formatFingerprint } from '@/shared/answers'
 import { presetsService } from '@/shared/clients'
 import { DEFAULTS, NO_PLACE } from '../lib/presets'
 import type {
@@ -43,7 +43,7 @@ export const presets: Presets = {
     })),
   createPreset: async (title, folder) => {
     const answer = await presetsService.createPreset({ title, path: folder })
-    const error = errorIn(answer)
+    const error = findErrorCode(answer)
     return error ? asFailure(error) : asValue({ path: answer.path })
   },
   scheduleDeck: async (deck, preset, seen) => {
@@ -52,7 +52,7 @@ export const presets: Presets = {
       preset,
       ...(seen === '' ? {} : { baseline: parseFingerprint(seen) }),
     })
-    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure(code)
     return asValue({ at: formatFingerprint(answer.at) ?? '' })
   },
@@ -62,7 +62,7 @@ export const presets: Presets = {
       settings: toSettingsMessage(settings),
       ...(seen === '' ? {} : { baseline: parseFingerprint(seen) }),
     })
-    const code = staleIn(answer) ? 'changed' : errorIn(answer)
+    const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure(code)
     return asValue({ at: formatFingerprint(answer.at) ?? '' })
   },
@@ -82,7 +82,7 @@ const parseRead = (answer: {
   at?: { path: string; size: bigint; mtime: bigint } | undefined
   bounds?: SettingsBoundsMessage | undefined
 }): PresetReadResult => {
-  const error = errorIn(answer)
+  const error = findErrorCode(answer)
   if (error) return asFailure(error)
   return asValue({
     preset: answer.preset ? parsePreset(answer.preset) : null,
@@ -115,14 +115,14 @@ const parseBounds = (bounds: BoundsMessage): Bounds => ({
 const parsePreset = (one: PresetMessage): Preset => ({
   path: one.path,
   title: one.title,
-  settings: settingsOf(one.settings),
+  settings: parseSettings(one.settings),
   problems: one.problems,
   stops: one.stops,
   stopsOn: one.stopsOn,
 })
 
 /** The settings in the window's own words. A preset carrying none is the defaults. */
-const settingsOf = (settings: SettingsMessage | undefined): Settings =>
+const parseSettings = (settings: SettingsMessage | undefined): Settings =>
   settings === undefined
     ? DEFAULTS
     : {

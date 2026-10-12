@@ -14,7 +14,7 @@ import {
 } from '@numen/ui'
 import type { Day } from '@numen/ui'
 import type { PresetTabState, SettingValue } from '../../types'
-import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, loadOn, setLoadOn } from '../../types'
+import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, getLoadOn, setLoadOn } from '../../types'
 import type { Bounds, BudgetUnit } from '../../types'
 import { round } from '../../lib/curve'
 import type { Field } from '../../lib/fields'
@@ -33,7 +33,7 @@ const budgetUnits = BUDGET_UNITS.map((one) => ({ id: one, text: words.budgetUnit
 const rules = RULES.map((one) => ({ id: one, text: words.ruleName(one) }))
 
 const week = computed<readonly Day[]>(() =>
-  WEEK.map((one) => ({ ...one, level: loadOn(settings.value.load, one.id) / WHOLE_LOAD })),
+  WEEK.map((one) => ({ ...one, level: getLoadOn(settings.value.load, one.id) / WHOLE_LOAD })),
 )
 
 const levels = LOADS.map((one) => one / WHOLE_LOAD)
