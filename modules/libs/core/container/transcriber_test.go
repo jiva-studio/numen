@@ -89,7 +89,10 @@ func TestTheTranscriberStaysLoadedOnlyWhereTheFilesFitInTheMemoryAvailable(t *te
 
 	availableMB := settings.DetectHardware().AvailableRAMMB
 	if availableMB <= 0 {
-		t.Skip("this machine does not say how much memory is free")
+		if (Config{}).CanKeepTranscriberLoaded() {
+			t.Error("models stay loaded where the memory available is not known")
+		}
+		return
 	}
 	available := availableMB * (1 << 20)
 
@@ -155,5 +158,68 @@ func TestTheHeadroomIsAShareOfTheFilesCountedInHundredths(t *testing.T) {
 				t.Errorf("canHoldResident(%d, %d) = %v", c.available, c.models, got)
 			}
 		})
+	}
+}
+
+// makeTranscriptionFiles lays down every file a transcription reads, and
+// the configuration pointing at them.
+func makeTranscriptionFiles(t *testing.T) Config {
+	t.Helper()
+	dir := t.TempDir()
+	cfg := Config{}
+	files := []*string{
+		&cfg.Transcription.Runtime,
+		&cfg.Transcription.Model.Encoder, &cfg.Transcription.Model.Decoder,
+		&cfg.Transcription.Model.Joiner, &cfg.Transcription.Model.Tokens,
+		&cfg.Transcription.Segmenter.Path,
+	}
+	for i, file := range files {
+		*file = filepath.Join(dir, "file"+string(rune('a'+i)))
+		if err := os.WriteFile(*file, []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return cfg
+}
+
+func TestATranscriberIsReadyOnlyWhereEverythingItReadsIsHere(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	cfg := makeTranscriptionFiles(t)
+	if !cfg.TranscriberReady() {
+		t.Error("everything is here and the transcriber is not ready")
+	}
+	if err := os.Remove(cfg.Transcription.Model.Joiner); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.TranscriberReady() {
+		t.Error("a model is missing and the transcriber is ready")
+	}
+}
+
+func TestATranscriberThatCannotBeOpenedGivesTheReasonAndNothingElse(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	cfg := Config{}
+	cfg.Transcription.Runtime = filepath.Join(t.TempDir(), "missing")
+	transcriber, closer, why := cfg.Transcriber(t.Context())
+	if why == nil {
+		t.Fatal("no reason")
+	}
+	if transcriber != nil || closer != nil {
+		t.Errorf("got a transcriber %v and a closer", transcriber)
+	}
+}
+
+// A transcription is made with the transcriber it is given.
+func TestATranscriptionUsesTheTranscriberItIsGiven(t *testing.T) {
+	by := &struct{ port.Transcriber }{}
+
+	if got := (Config{}).Transcribe(nil, by).By(); got != port.Transcriber(by) {
+		t.Errorf("the transcriber is %v", got)
 	}
 }

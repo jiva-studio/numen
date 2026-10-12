@@ -341,3 +341,38 @@ func TestAProfileWithNeitherWayOfReachingItIsRefusedAsAQueue(t *testing.T) {
 		t.Errorf("got a queue: %v", queue.GetName())
 	}
 }
+
+// The reason for a name nobody carries says that, and not that the profile is
+// reached some other way.
+func TestTheReasonForAMissingProfileSaysItIsMissing(t *testing.T) {
+	held := makeConfig("openrouter", proofreading.ServiceDefaults())
+
+	for name, ask := range map[string]func() error{
+		"proofreader": func() error { _, why := held.Proofreader("agent", proofread.ScanInstruction); return why },
+		"queue":       func() error { _, why := held.ProofreadQueue("agent", proofread.ScanInstruction); return why },
+	} {
+		why := ask()
+		if why == nil || !strings.Contains(why.Error(), "no proofreading profile named") {
+			t.Errorf("the %s is refused with %v", name, why)
+		}
+	}
+}
+
+// A command line profile naming no model is refused before the platform is
+// asked to start anything.
+func TestAnAgentProfileWithoutAModelIsNotStarted(t *testing.T) {
+	started := false
+	held := makeConfig("agent", proofreading.AgentDefaults())
+	held.AgentProofreader = func(container.ProofreaderSpec) (port.Proofreader, error) {
+		started = true
+		return spelling{}, nil
+	}
+
+	_, why := held.Proofreader("agent", proofread.ScanInstruction)
+	if why == nil || !strings.Contains(why.Error(), "names no model") {
+		t.Errorf("the reason is %v", why)
+	}
+	if started {
+		t.Error("the platform was asked to start a profile naming no model")
+	}
+}

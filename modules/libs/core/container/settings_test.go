@@ -187,3 +187,72 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 		t.Errorf("the compute plan is %+v", got.ResolvedCompute)
 	}
 }
+
+// A line said is kept for whoever read the settings to put in front of a person.
+func TestWhatIsSaidWhileReadingIsKept(t *testing.T) {
+	var held Settings
+	held.Say("first")
+	held.Say("second")
+	if !slices.Equal(held.Said, []string{"first", "second"}) {
+		t.Errorf("said %v", held.Said)
+	}
+}
+
+func TestPartsUnderANodeAreWhatTheAppearanceSays(t *testing.T) {
+	held := DefaultSettings()
+	if !held.HasPartsUnderNode() {
+		t.Error("untouched settings hang no parts under a node")
+	}
+	off := false
+	held.Appearance.HangPartsUnderANode = &off
+	if held.HasPartsUnderNode() {
+		t.Error("settings turning it off still hang parts under a node")
+	}
+	held.Appearance.PartsUnderANode = 7
+	if held.Parts() != 7 {
+		t.Errorf("%d parts stand under a node", held.Parts())
+	}
+}
+
+// Settings that cannot be read are answered with the defaults, and ones that
+// can are answered as they stand.
+func TestSettingsOrDefaultsAnswerWhatIsReadableAndTheDefaultsOtherwise(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+
+	cfg, _ := writeSettings(t, `{"agent": {"use": "claude"}}`)
+	if got := cfg.getSettingsOrDefaults().Agent.Use; got != "claude" {
+		t.Errorf("the agent is %q", got)
+	}
+
+	cfg, _ = writeSettings(t, `{"agent": `)
+	if got := cfg.getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
+		t.Errorf("an unreadable file gave %+v", got)
+	}
+
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	if got := (Config{}).getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
+		t.Errorf("a machine with nowhere for settings gave %+v", got)
+	}
+}
+
+// The models a setting can be set to are asked for as the window asks, against
+// the settings in force.
+func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	cfg, _ := writeSettings(t, `{}`)
+
+	models := cfg.Models()()
+	if len(models) == 0 {
+		t.Fatal("no models are listed")
+	}
+	for _, one := range models {
+		if len(one.Path) == 0 {
+			t.Errorf("a model stands nowhere: %+v", one)
+		}
+	}
+}

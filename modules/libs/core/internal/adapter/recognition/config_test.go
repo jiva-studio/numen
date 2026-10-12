@@ -2,6 +2,7 @@ package recognition
 
 import (
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 
@@ -100,5 +101,129 @@ func TestOneThreadAndOneJobAreCountsToo(t *testing.T) {
 	}
 	if got := cfg.jobs(); got != 1 {
 		t.Errorf("a profile of one job gave %d", got)
+	}
+}
+
+func TestWhatASettingsFileLeavesOutIsTheDefaultOfTheModel(t *testing.T) {
+	if got := (LayoutModel{}).minimum(); got != 0.4 {
+		t.Errorf("a part scores at least %v", got)
+	}
+	if got := (LayoutModel{}).overlap(); got != 0.6 {
+		t.Errorf("two parts overlap by at most %v", got)
+	}
+	if got := (LayoutModel{}).margin(); got != 10 {
+		t.Errorf("a part is widened by %d", got)
+	}
+	if got := (DetectModel{}).maxSide(); got != 1600 {
+		t.Errorf("a part is read at %d", got)
+	}
+	if got := (DetectModel{}).expand(); got != 18 {
+		t.Errorf("a line is widened by %d", got)
+	}
+	if got := (DetectModel{}).minimum(); got != 0.3 {
+		t.Errorf("a pixel is hot from %v", got)
+	}
+	if got := (RecogniserModel{}).dpi(); got != 300 {
+		t.Errorf("a page is rendered at %d", got)
+	}
+	if got := (RecogniserModel{}).height(); got != 48 {
+		t.Errorf("a line is scaled to %d", got)
+	}
+}
+
+func TestWhatASettingsFileNamesStands(t *testing.T) {
+	if got := (LayoutModel{Minimum: 0.5}).minimum(); got != 0.5 {
+		t.Errorf("a part scores at least %v", got)
+	}
+	if got := (LayoutModel{Overlap: 0.5}).overlap(); got != 0.5 {
+		t.Errorf("two parts overlap by at most %v", got)
+	}
+	if got := (LayoutModel{Margin: 1}).margin(); got != 1 {
+		t.Errorf("a part is widened by %d", got)
+	}
+	if got := (DetectModel{MaxSide: 1}).maxSide(); got != 1 {
+		t.Errorf("a part is read at %d", got)
+	}
+	if got := (DetectModel{Expand: 1}).expand(); got != 1 {
+		t.Errorf("a line is widened by %d", got)
+	}
+	if got := (DetectModel{Minimum: 0.5}).minimum(); got != 0.5 {
+		t.Errorf("a pixel is hot from %v", got)
+	}
+	if got := (RecogniserModel{DPI: 1}).dpi(); got != 1 {
+		t.Errorf("a page is rendered at %d", got)
+	}
+	if got := (RecogniserModel{Height: 1}).height(); got != 1 {
+		t.Errorf("a line is scaled to %d", got)
+	}
+}
+
+func TestANegativeNumberIsNoNumberAtAll(t *testing.T) {
+	if got := (LayoutModel{Minimum: -1}).minimum(); got != 0.4 {
+		t.Errorf("a part scores at least %v", got)
+	}
+	if got := (LayoutModel{Overlap: -1}).overlap(); got != 0.6 {
+		t.Errorf("two parts overlap by at most %v", got)
+	}
+	if got := (LayoutModel{Margin: -1}).margin(); got != 10 {
+		t.Errorf("a part is widened by %d", got)
+	}
+	if got := (DetectModel{MaxSide: -1}).maxSide(); got != 1600 {
+		t.Errorf("a part is read at %d", got)
+	}
+	if got := (DetectModel{Expand: -1}).expand(); got != 18 {
+		t.Errorf("a line is widened by %d", got)
+	}
+	if got := (DetectModel{Minimum: -1}).minimum(); got != 0.3 {
+		t.Errorf("a pixel is hot from %v", got)
+	}
+	if got := (RecogniserModel{DPI: -1}).dpi(); got != 300 {
+		t.Errorf("a page is rendered at %d", got)
+	}
+	if got := (RecogniserModel{Height: -1}).height(); got != 48 {
+		t.Errorf("a line is scaled to %d", got)
+	}
+}
+
+func TestThePartsOfAPageAreTheOnesTheModelKnowsUnlessTheFileSaysOtherwise(t *testing.T) {
+	labels := (LayoutModel{}).labels()
+	if len(labels) != 25 || labels[0] != "abstract" || labels[24] != "vision_footnote" {
+		t.Errorf("the model knows %v", labels)
+	}
+	if got := (LayoutModel{Labels: []string{"only"}}).labels(); !slices.Equal(got, []string{"only"}) {
+		t.Errorf("the file names %v", got)
+	}
+
+	body := (RegionKinds{}).body()
+	if !slices.Contains(body, "text") || !slices.Contains(body, "footnote") || len(body) != 9 {
+		t.Errorf("a page carries what it says in %v", body)
+	}
+	if got := (RegionKinds{Body: []string{"only"}}).body(); !slices.Equal(got, []string{"only"}) {
+		t.Errorf("the file names %v", got)
+	}
+
+	if got := (RegionKinds{}).head(); !slices.Equal(got, []string{"doc_title", "paragraph_title"}) {
+		t.Errorf("a part is opened by %v", got)
+	}
+	if got := (RegionKinds{Head: []string{"only"}}).head(); !slices.Equal(got, []string{"only"}) {
+		t.Errorf("the file names %v", got)
+	}
+}
+
+func TestTheModelsAreFoundWhereTheConfigurationSays(t *testing.T) {
+	var told string
+	cfg := Config{
+		Runtime:        "lib.so",
+		Dir:            "models",
+		ShouldDownload: true,
+		Progress:       func(what string, _, _ int64) { told = what },
+	}
+	got := cfg.settings()
+	if got.Section != "indexing.recognition" || got.Runtime != "lib.so" || got.Dir != "models" || !got.ShouldDownload {
+		t.Errorf("got %+v", got)
+	}
+	got.Fetching("a model", 1, 2)
+	if told != "a model" {
+		t.Error("a download does not reach whoever is listening")
 	}
 }
