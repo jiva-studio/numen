@@ -1,7 +1,7 @@
 /**
  * What the keyboard asks of a row whose place on screen is not known.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { flatten, type Row } from '../lib/row'
 import type { RowDragState } from './drag'
@@ -38,7 +38,7 @@ const create = () => {
   const gestures = useTreeGestures({
     getShownRows: () => shown,
     getSelected: () => [],
-    renamingPath: { value: null },
+    renamingPath: ref<string | null>(null),
     rows,
     selection,
     drag,
