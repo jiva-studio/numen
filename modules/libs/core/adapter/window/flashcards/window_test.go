@@ -89,7 +89,7 @@ func setNow(api *API, now time.Time) {
 	api.Day = reviewDay
 	api.CardsDue = api.CardsDue.WithDay(reviewDay).WithNow(at)
 	api.Session = api.Session.WithDay(reviewDay).WithNow(at)
-	api.Counted = api.Counted.WithDay(reviewDay).WithNow(at)
+	api.GetReviewDays = api.GetReviewDays.WithDay(reviewDay).WithNow(at)
 }
 
 // runDays sits down to the vault on each of as many days running.

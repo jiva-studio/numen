@@ -149,15 +149,16 @@ func (c Config) Flashcards(
 	curves.Cores = c.getCores()
 
 	return flashcards.Scenarios{
-		CardFaces: faces,
-		Marks:     marking,
-		Schedules: schedules,
-		CardsDue:  flashcards.NewCountCardsDue(faces, schedules, presets, day, now),
-		Session:   flashcards.NewSession(marking, faces, schedules, presets, day, now),
-		Log:       flashcards.Log{Stores: logs},
-		Counted:   counted,
-		Presets:   presets,
-		Curves:    curves,
-		Day:       day,
+		CardFaces:     faces,
+		Marks:         marking,
+		Schedules:     schedules,
+		CardsDue:      flashcards.NewCountCardsDue(faces, schedules, presets, day, now),
+		Session:       flashcards.NewSession(marking, faces, schedules, presets, day, now),
+		Log:           flashcards.Log{Stores: logs},
+		Counted:       counted,
+		GetReviewDays: flashcards.NewGetReviewDays(counted),
+		Presets:       presets,
+		Curves:        curves,
+		Day:           day,
 	}
 }
