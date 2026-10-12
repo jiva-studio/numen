@@ -106,7 +106,7 @@ export const DECK_WORDS: DeckWords = {
  * heading and a value's stands under that value, so nothing is said in a place
  * that leaves a person guessing what it is about.
  */
-export interface Wrong {
+export interface DeckProblems {
   /** What is wrong with each card, under the identity it was drawn by. */
   readonly at: Problems
   /**
@@ -117,7 +117,7 @@ export interface Wrong {
 }
 
 /** Nothing wrong with anything. */
-export const NOTHING_WRONG: Wrong = Object.freeze({
+export const NO_DECK_PROBLEMS: DeckProblems = Object.freeze({
   at: createSealedMap<string, readonly string[]>(),
   under: createSealedMap<string, Problems>(),
 })

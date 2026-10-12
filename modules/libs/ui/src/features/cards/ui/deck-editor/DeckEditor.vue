@@ -16,11 +16,11 @@ import { Button } from '@/shared/ui/button'
 import {
   DECK_WORDS,
   HEAD,
-  NOTHING_WRONG,
+  NO_DECK_PROBLEMS,
   type DeckSection,
   type DeckWords,
   type DeckCard,
-  type Wrong,
+  type DeckProblems,
 } from '../../lib/deck'
 import { getGrid, isMoved, type Run } from '../../lib/grid'
 import { getFreeName, type InsertionPoint, type StepDirection } from '../../lib/order'
@@ -38,11 +38,11 @@ const props = withDefaults(
     /** What the grid is announced as. */
     name?: string
     /** What the caller found wrong with the cards it handed in. */
-    wrong?: Wrong
+    wrong?: DeckProblems
     /** The words it is drawn with. */
     words?: DeckWords
   }>(),
-  { sections: () => [], name: 'Deck', wrong: () => NOTHING_WRONG, words: () => DECK_WORDS },
+  { sections: () => [], name: 'Deck', wrong: () => NO_DECK_PROBLEMS, words: () => DECK_WORDS },
 )
 
 const emit = defineEmits<{

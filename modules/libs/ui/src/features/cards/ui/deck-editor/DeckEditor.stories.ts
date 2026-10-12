@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import DeckEditor from './DeckEditor.vue'
-import { getBlanks, HEAD, type DeckSection, type DeckCard, type Wrong } from '../../lib/deck'
+import { getBlanks, HEAD, type DeckSection, type DeckCard, type DeckProblems } from '../../lib/deck'
 import { getDeclaredFields, type InsertionPoint } from '../../lib/order'
 import type { Stencil } from '../../lib/card'
 
@@ -25,7 +25,7 @@ interface Corpus {
 }
 
 /** What a corpus says is wrong, as the grid takes it. */
-const wrongOf = (corpus: Corpus): Wrong => ({
+const wrongOf = (corpus: Corpus): DeckProblems => ({
   at: new Map(Object.entries(corpus.wrong?.at ?? {})),
   under: new Map(
     Object.entries(corpus.wrong?.under ?? {}).map(([card, fields]) => [
@@ -320,7 +320,7 @@ const meta: Meta<Knobs> = {
       const cards = ref<readonly DeckCard[]>(CORPORA[args.corpus].cards)
       const cuts = ref<readonly Stencil[]>(CORPORA[args.corpus].cuts)
       const sections = ref<readonly DeckSection[]>(sectionsOf(CORPORA[args.corpus]))
-      const wrong = ref<Wrong>(wrongOf(CORPORA[args.corpus]))
+      const wrong = ref<DeckProblems>(wrongOf(CORPORA[args.corpus]))
 
       watch(
         () => args.corpus,
