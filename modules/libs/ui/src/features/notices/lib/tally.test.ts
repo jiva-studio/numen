@@ -80,6 +80,7 @@ describe('percentWord', () => {
     { share: 0.999, want: '99%', why: 'nothing reads as finished until it is' },
     { share: 1, want: '100%' },
     { share: -1, want: '0%' },
+    { share: 1.5, want: '100%', why: 'a share beyond whole reads as whole' },
   ])('reads $share as $want', ({ share, want }) => {
     expect(percentWord(share)).toBe(want)
   })
