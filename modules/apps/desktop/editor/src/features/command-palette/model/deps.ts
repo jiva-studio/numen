@@ -107,7 +107,7 @@ export interface SettingsWriter {
   /** Whether a node nests the headings of its note under it. */
   chooseNesting(chosen: string): Promise<void>
   /** How many headings nest under a note at once. */
-  chooseParts(chosen: string): Promise<void>
+  chooseHeadings(chosen: string): Promise<void>
   /** The performance workload profile chosen. */
   choosePerformance(chosen: string): Promise<void>
   /** The indexing model chosen. */

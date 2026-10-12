@@ -35,7 +35,7 @@ export interface NestingWords {
   readonly on: string
   readonly off: string
   /** The group the counts are drawn in. */
-  readonly partsGroup: string
+  readonly headingsGroup: string
   /** The row a list of values opens on, which is the value in force. */
   readonly current: string
   /** The setting could not be written. */

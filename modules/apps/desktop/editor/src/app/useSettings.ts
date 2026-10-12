@@ -11,7 +11,7 @@ import {
   MODE,
   OFF,
   ON,
-  PARTS,
+  HEADINGS,
   SYNCING,
   syncSetting,
   TEXT_SCALE,
@@ -80,7 +80,7 @@ function getIndexingModelStepGroups(rest: ReturnType<typeof createSettingsStore>
 
 export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
   const dayBegins = createReviewSetting(core, words, log.getWriter('reviewed'))
-  const nestedHeadings = useNestingSetting(core, words, log.getWriter('nesting'))
+  const nesting = useNestingSetting(core, words, log.getWriter('nesting'))
   const dressed = createWindowAppearance(themes, words, log.getWriter('worn'))
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
@@ -100,12 +100,12 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
       set: (on) => void sync.choose(on ? ON : OFF),
     }),
     isNesting: computed({
-      get: () => nestedHeadings.isNesting.value,
-      set: (on) => void nestedHeadings.choose(on ? ON : OFF),
+      get: () => nesting.isNesting.value,
+      set: (on) => void nesting.choose(on ? ON : OFF),
     }),
-    parts: nestedHeadings.parts,
-    partsBounds: nestedHeadings.ends,
-    chooseParts: (count) => void nestedHeadings.chooseCount(`${count}`),
+    headings: nesting.headings,
+    headingsBounds: nesting.ends,
+    chooseHeadings: (count) => void nesting.chooseCount(`${count}`),
     dayStarts: dayBegins.starts,
     latestDayStarts: dayBegins.latest,
     chooseDayStarts: (hour) => void dayBegins.choose(hour),
@@ -125,8 +125,8 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
       if (command === INTERFACE_SCALE || command === TEXT_SCALE)
         return dressed.getSizeGroups(command, typed)
       if (command === SYNCING) return sync.getSyncingGroups()
-      if (command === NESTING) return nestedHeadings.getNestingGroups()
-      if (command === PARTS) return nestedHeadings.getPartsGroups()
+      if (command === NESTING) return nesting.getNestingGroups()
+      if (command === HEADINGS) return nesting.getHeadingsGroups()
       if (command === 'performanceProfile') return getPerformanceStepGroups(words)
       if (command === 'indexingModel') return getIndexingModelStepGroups(rest, words)
       return []
@@ -142,7 +142,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     await dayBegins.start()
     void dressed.start()
     void sync.start()
-    void nestedHeadings.start()
+    void nesting.start()
     void rest.start()
   }
 
@@ -152,7 +152,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   return {
     dayBegins,
-    nestedHeadings,
+    nesting,
     dressed,
     sync,
     oneName: sync,

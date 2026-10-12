@@ -61,7 +61,7 @@ describe('the commands that ask for a choice among a few', () => {
       'textScale',
       'syncing',
       'nesting',
-      'parts',
+      'headings',
       'performanceProfile',
       'indexingModel',
     ])

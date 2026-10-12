@@ -93,7 +93,7 @@ const plexKind = (
         },
       },
     },
-    settings: { nestedHeadings: { isNesting: ref(true), parts: ref(6) } },
+    settings: { nesting: { isNesting: ref(true), parts: ref(6) } },
     window: {
       failure: ref(''),
       opening: ref(''),

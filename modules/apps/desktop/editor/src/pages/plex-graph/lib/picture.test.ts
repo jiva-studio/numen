@@ -337,7 +337,7 @@ describe('the ends of a line the person turned', () => {
   })
 })
 
-describe('a sibling hung off the note in focus', () => {
+describe('a sibling nested under the note in focus', () => {
   it('runs its line from the focus, which the picture draws', () => {
     expect(edgesOf(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Here']]))).toEqual([
       'Here -> Beside',

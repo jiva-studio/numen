@@ -8,13 +8,13 @@
 import { ref } from 'vue'
 import type { StepGroup, StepRow } from '@/features/command-palette/@x/settings-commands'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { DEFAULT_PARTS, nestingLadder as ladder } from '@/entities/settings'
+import { DEFAULT_HEADINGS, nestingLadder as ladder } from '@/entities/settings'
 import type { NestingSettings } from '@/entities/settings'
 import type { NestingWords } from '../words'
 
 /** The command whose step offers the two, and the one that offers the counts. */
 export const NESTING = 'nesting'
-export const PARTS = 'parts'
+export const HEADINGS = 'headings'
 
 /** The two rows, by the name each is chosen under. */
 export const ON = 'on'
@@ -28,7 +28,7 @@ export interface NestingDeps {
    * The settings written. What could not be written, and nothing where it was.
    * A count left out stands as it is.
    */
-  setNestingSettings(isNesting: boolean, parts?: number): Promise<string | null>
+  setNestingSettings(isNesting: boolean, headings?: number): Promise<string | null>
 }
 
 export function useNestingSetting(core: NestingDeps, words: NestingWords, write: MessageWriter) {
@@ -37,13 +37,13 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
    * does, and are asked of the vault as the window opens.
    */
   const isNesting = ref(true)
-  const parts = ref(DEFAULT_PARTS)
+  const headings = ref(DEFAULT_HEADINGS)
 
   /**
    * How many the vault takes, which it says when it is asked what it holds.
    * Nothing is offered until it has, so no count is offered that is refused.
    */
-  const ends = ref({ least: DEFAULT_PARTS, most: DEFAULT_PARTS })
+  const ends = ref({ least: DEFAULT_HEADINGS, most: DEFAULT_HEADINGS })
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {
@@ -55,7 +55,7 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
       return
     }
     isNesting.value = settings.isNesting
-    parts.value = settings.parts
+    headings.value = settings.headings
     ends.value = { least: settings.least, most: settings.most }
   }
 
@@ -76,12 +76,12 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
   ]
 
   /** The counts, in one group of their own. */
-  const getPartsGroups = (): readonly StepGroup[] => [
+  const getHeadingsGroups = (): readonly StepGroup[] => [
     {
-      id: PARTS,
-      title: words.partsGroup,
+      id: HEADINGS,
+      title: words.headingsGroup,
       items: ladder(ends.value.least, ends.value.most).map((count) =>
-        row(`${count}`, `${count}`, count === parts.value),
+        row(`${count}`, `${count}`, count === headings.value),
       ),
     },
   ]
@@ -111,17 +111,17 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
    */
   const chooseCount = async (item: string): Promise<void> => {
     const now = Number(item)
-    const was = parts.value
+    const was = headings.value
     const { least, most } = ends.value
     if (!Number.isInteger(now) || now < least || now > most || now === was) return
     write('')
-    parts.value = now
+    headings.value = now
 
     const failed = await core.setNestingSettings(isNesting.value, now)
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
-    parts.value = was
+    headings.value = was
   }
 
-  return { isNesting, parts, ends, start, getNestingGroups, getPartsGroups, choose, chooseCount }
+  return { isNesting, headings, ends, start, getNestingGroups, getHeadingsGroups, choose, chooseCount }
 }

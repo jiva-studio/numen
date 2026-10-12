@@ -51,8 +51,8 @@ export function createPlexKind({
   return buildPlexKind(held.handle, () => usePlexView(core), {
     editor: editing.making,
     isReady: computed(() => !window.failure.value),
-    isNesting: settings.nestedHeadings.isNesting,
-    parts: settings.nestedHeadings.parts,
+    isNesting: settings.nesting.isNesting,
+    parts: settings.nesting.headings,
     openNote: (path, title, showing, line, state) => {
       const tabId = findPlexTabId(held, state)
       if (tabId && tabSync?.syncPathFromTab(tabId, path, title)) {

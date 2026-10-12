@@ -175,7 +175,7 @@ describe('the commands as they open', () => {
         'textScale',
         'syncing',
         'nesting',
-        'parts',
+        'headings',
         'performanceProfile',
         'indexingModel',
         'settings',
@@ -258,7 +258,7 @@ describe('what is in front', () => {
         'textScale',
         'syncing',
         'nesting',
-        'parts',
+        'headings',
         'performanceProfile',
         'indexingModel',
         'settings',
@@ -1715,7 +1715,7 @@ describe('what a step draws', () => {
 
     expect(commands.groups.value[0]?.items.map((item) => item.actions)).toStrictEqual([
       [{ id: 'no', text: words.keepsVault }],
-      [{ id: 'yes', text: words.removeAction }],
+      [{ id: 'yes', text: words.removeVaultAction }],
     ])
 
     void commands.setTyped('  remo  ')

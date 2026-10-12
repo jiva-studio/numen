@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
-import { NESTING, OFF, ON, PARTS, useNestingSetting } from './nesting'
+import { NESTING, OFF, ON, HEADINGS, useNestingSetting } from './nesting'
 import { writer } from '@/testing/writer'
 import { WORDS as words } from '@/shared/words'
-import { DEFAULT_PARTS } from '@/entities/settings'
+import { DEFAULT_HEADINGS } from '@/entities/settings'
 
 /** The vault, answering what the settings hold and keeping what was written. */
-const vault = (isOn: boolean, parts = 6, error: string | null = null, most = 12) => {
+const vault = (isOn: boolean, headings = 6, error: string | null = null, most = 12) => {
   const wrote: boolean[] = []
   const counted: (number | undefined)[] = []
   return {
     wrote,
     counted,
-    getNestingSettings: async () => ({ isNesting: isOn, parts, least: 1, most }),
+    getNestingSettings: async () => ({ isNesting: isOn, headings, least: 1, most }),
     setNestingSettings: async (isNesting: boolean, count?: number) => {
       wrote.push(isNesting)
       counted.push(count)
@@ -46,7 +46,7 @@ describe('whether a node nests the headings of its note', () => {
     await held.start()
 
     expect(held.isNesting.value).toBe(true)
-    expect(held.parts.value).toBe(6)
+    expect(held.headings.value).toBe(6)
   })
 
   it('says which of the two is the one in force, and nothing beside the other', async () => {
@@ -103,13 +103,13 @@ describe('whether a node nests the headings of its note', () => {
   })
 })
 
-describe('how many parts stand under a node', () => {
+describe('how many headings stand under a node', () => {
   it('offers a ladder from one end of the setting to the other', async () => {
     const held = useNestingSetting(vault(true, 4), words, writer().write)
     await held.start()
 
-    const groups = held.getPartsGroups()
-    expect(groups.map((group) => group.id)).toStrictEqual([PARTS])
+    const groups = held.getHeadingsGroups()
+    expect(groups.map((group) => group.id)).toStrictEqual([HEADINGS])
     const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual(
       Array.from({ length: 12 }, (_, at) => `${at + 1}`),
@@ -120,7 +120,7 @@ describe('how many parts stand under a node', () => {
     const held = useNestingSetting(vault(true, 4), words, writer().write)
     await held.start()
 
-    const items = held.getPartsGroups().flatMap((group) => group.items)
+    const items = held.getHeadingsGroups().flatMap((group) => group.items)
     expect(items.filter((one) => one.isCurrent).map((one) => one.id)).toStrictEqual(['4'])
     expect(items.find((one) => one.id === '4')?.detail).toBe(words.current)
     expect(items.find((one) => one.id === '5')?.detail).toBeUndefined()
@@ -135,7 +135,7 @@ describe('how many parts stand under a node', () => {
 
     expect(core.wrote).toStrictEqual([false])
     expect(core.counted).toStrictEqual([3])
-    expect(held.parts.value).toBe(3)
+    expect(held.headings.value).toBe(3)
   })
 
   it('writes nothing for the count in force, or for one it does not offer', async () => {
@@ -148,7 +148,7 @@ describe('how many parts stand under a node', () => {
     await held.chooseCount('on')
 
     expect(core.counted).toStrictEqual([])
-    expect(held.parts.value).toBe(6)
+    expect(held.headings.value).toBe(6)
   })
 
   it('goes back to what the settings hold where the count could not be written', async () => {
@@ -159,7 +159,7 @@ describe('how many parts stand under a node', () => {
 
     await held.chooseCount('3')
 
-    expect(held.parts.value).toBe(6)
+    expect(held.headings.value).toBe(6)
     expect(told.said.at(-1)).toContain(words.unturned)
   })
 
@@ -171,7 +171,7 @@ describe('how many parts stand under a node', () => {
     await held.choose(OFF)
 
     expect(core.counted).toStrictEqual([undefined])
-    expect(held.parts.value).toBe(4)
+    expect(held.headings.value).toBe(4)
   })
 
   it('writes the row chosen when the settings hold the other', async () => {
@@ -211,15 +211,15 @@ describe('how many parts stand under a node', () => {
   it('offers only the default count before the vault has said how far the counts go', () => {
     const held = useNestingSetting(vault(true), words, writer().write)
 
-    const items = held.getPartsGroups().flatMap((group) => group.items)
-    expect(items.map((one) => one.id)).toStrictEqual([`${DEFAULT_PARTS}`])
+    const items = held.getHeadingsGroups().flatMap((group) => group.items)
+    expect(items.map((one) => one.id)).toStrictEqual([`${DEFAULT_HEADINGS}`])
   })
 
   it('titles each count with the number itself', async () => {
     const held = useNestingSetting(vault(true, 4), words, writer().write)
     await held.start()
 
-    const items = held.getPartsGroups().flatMap((group) => group.items)
+    const items = held.getHeadingsGroups().flatMap((group) => group.items)
     expect(items.map((one) => one.title)).toStrictEqual(
       Array.from({ length: 12 }, (_, at) => `${at + 1}`),
     )
@@ -236,7 +236,7 @@ describe('how many parts stand under a node', () => {
     await held.chooseCount('13')
 
     expect(core.counted).toStrictEqual([1, 12])
-    expect(held.parts.value).toBe(12)
+    expect(held.headings.value).toBe(12)
   })
 
   it('clears the message line before it writes a count', async () => {

@@ -48,7 +48,7 @@ export const vaultCommandsOf = (words: Words, agent: string): readonly Command[]
     answers: {
       keeps: words.keepsVault,
       kept: words.kept,
-      action: words.removeAction,
+      action: words.removeVaultAction,
       then: words.stays,
     },
   },

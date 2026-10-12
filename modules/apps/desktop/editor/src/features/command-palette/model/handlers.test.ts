@@ -234,7 +234,7 @@ const window = (
       chooseAppearance: async (chosen) => void done.push(`appearance ${chosen}`),
       chooseSync: async (chosen) => void done.push(`syncing ${chosen}`),
       chooseNesting: async (chosen) => void done.push(`nesting ${chosen}`),
-      chooseParts: async (chosen) => void done.push(`parts ${chosen}`),
+      chooseHeadings: async (chosen) => void done.push(`headings ${chosen}`),
       choosePerformance: async (chosen) => void done.push(`performance ${chosen}`),
       chooseIndexingModel: async (chosen) => void done.push(`indexingModel ${chosen}`),
     },

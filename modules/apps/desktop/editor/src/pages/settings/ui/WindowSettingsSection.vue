@@ -63,7 +63,7 @@ function onTextScaleChange(size: number | null) {
 
 function onPartsChange(count: number | null) {
   if (count !== null) {
-    installation.value.chooseParts(count)
+    installation.value.chooseHeadings(count)
   }
 }
 
@@ -143,11 +143,11 @@ function onPartsChange(count: number | null) {
       <Switch v-model="installation.isNesting.value" :aria-labelledby="labelledBy" />
     </SettingRow>
 
-    <SettingRow v-slot="{ labelledBy }" at="parts" :name="words.parts" :detail="words.partsDetail">
+    <SettingRow v-slot="{ labelledBy }" at="headings" :name="words.headings" :detail="words.headingsDetail">
       <NumberField
-        :model-value="installation.parts.value"
-        :min="installation.partsBounds.value.least"
-        :max="installation.partsBounds.value.most"
+        :model-value="installation.headings.value"
+        :min="installation.headingsBounds.value.least"
+        :max="installation.headingsBounds.value.most"
         :step="1"
         :aria-labelledby="labelledBy"
         class="settings__number"

@@ -4,12 +4,12 @@
  */
 
 /** How many headings a node nests where the settings name no number. */
-export const DEFAULT_PARTS = 6
+export const DEFAULT_HEADINGS = 6
 
 /** Whether a node nests the headings of its note, and how many stand at once. */
 export interface NestingSettings {
   readonly isNesting: boolean
-  readonly parts: number
+  readonly headings: number
   /** How many the vault takes, at each end. A count outside them is refused. */
   readonly least: number
   readonly most: number

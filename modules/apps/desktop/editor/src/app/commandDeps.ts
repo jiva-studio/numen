@@ -20,7 +20,7 @@ export interface CommandDepsOptions {
   openPreset: (path: string) => Promise<void>
   dressed: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
-  nestedHeadings: {
+  nesting: {
     choose: (item: string) => Promise<void> | void
     chooseCount: (item: string) => Promise<void> | void
   }
@@ -55,7 +55,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     openPreset,
     dressed,
     oneName,
-    nestedHeadings,
+    nesting,
     recorded,
     pointed,
     files,
@@ -140,10 +140,10 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
         await oneName.choose(chosen)
       },
       chooseNesting: async (chosen) => {
-        await nestedHeadings.choose(chosen)
+        await nesting.choose(chosen)
       },
-      chooseParts: async (chosen) => {
-        await nestedHeadings.chooseCount(chosen)
+      chooseHeadings: async (chosen) => {
+        await nesting.chooseCount(chosen)
       },
       choosePerformance: async (chosen) => {
         await options.rest.writeSettings([{ at: ['performance', 'profile'], value: write(chosen) }])

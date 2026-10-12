@@ -63,14 +63,14 @@ describe('keeping a title and its file name in line', () => {
 })
 
 describe('the headings a node nests', () => {
-  it('reads whether they hang, how many, and the bounds the vault holds', async () => {
+  it('reads whether they nest, how many, and the bounds the vault holds', async () => {
     asked.getSettings.mockResolvedValue(
       answer({ appearance: { nest_headings_under_notes: false, nested_heading_limit: 3 } }),
     )
 
     expect(await core.getNestingSettings()).toStrictEqual({
       isNesting: false,
-      parts: 3,
+      headings: 3,
       least: 2,
       most: 9,
     })
@@ -78,10 +78,10 @@ describe('the headings a node nests', () => {
 
   it('hangs the default count where the file names none, or names no number', async () => {
     asked.getSettings.mockResolvedValue(answer({}))
-    expect((await core.getNestingSettings()).parts).toBe(6)
+    expect((await core.getNestingSettings()).headings).toBe(6)
 
     asked.getSettings.mockResolvedValue(answer({ appearance: { nested_heading_limit: '3' } }))
-    expect((await core.getNestingSettings()).parts).toBe(6)
+    expect((await core.getNestingSettings()).headings).toBe(6)
   })
 
   it('bounds the count at the default where the vault names no bounds', async () => {
@@ -90,7 +90,7 @@ describe('the headings a node nests', () => {
     expect(await core.getNestingSettings()).toMatchObject({ isNesting: true, least: 6, most: 6 })
   })
 
-  it('writes whether they hang and leaves the count where none is given', async () => {
+  it('writes whether they nest and leaves the count where none is given', async () => {
     await core.setNestingSettings(true)
 
     expect(writtenLast()).toStrictEqual({

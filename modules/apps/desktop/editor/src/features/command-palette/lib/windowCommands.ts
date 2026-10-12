@@ -109,8 +109,8 @@ export const windowCommandsOf = (words: Words, agent: string): readonly Command[
     isOffered: isAlwaysOffered,
   },
   {
-    id: 'parts',
-    text: words.parts,
+    id: 'headings',
+    text: words.headings,
     group: 'window',
     needs: 'choosing',
     isOffered: isAlwaysOffered,

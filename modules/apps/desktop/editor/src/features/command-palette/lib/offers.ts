@@ -3,7 +3,7 @@
  *
  * A search that turned up nothing holds the words that were looked for and
  * nowhere to put them, so the palette offers a note under them. What is in
- * front is what the note can be hung off as it is made.
+ * front is what the note can be nested under as it is made.
  */
 import type { PaletteGroup } from '@numen/ui'
 import { invocationOf } from './invocation'

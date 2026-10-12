@@ -177,9 +177,9 @@ describe('settings domain', () => {
     expect(await core.getSyncEnabled()).toBe(true)
     expect(await core.setSyncEnabled(false)).toBeNull()
 
-    const hung = await core.getNestingSettings()
-    expect(hung.isNesting).toBe(true)
-    expect(hung.parts).toBe(3)
+    const nested = await core.getNestingSettings()
+    expect(nested.isNesting).toBe(true)
+    expect(nested.headings).toBe(3)
     expect(await core.setNestingSettings(false, 2)).toBeNull()
 
     const config = await core.getSettings()

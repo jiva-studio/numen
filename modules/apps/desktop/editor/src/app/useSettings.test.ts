@@ -156,10 +156,10 @@ describe('the lists the palette offers for a setting', () => {
       settings.sync.getSyncingGroups(),
     )
     expect(settings.kept.getStepGroups('nesting', '')).toStrictEqual(
-      settings.nestedHeadings.getNestingGroups(),
+      settings.nesting.getNestingGroups(),
     )
-    expect(settings.kept.getStepGroups('parts', '')).toStrictEqual(
-      settings.nestedHeadings.getPartsGroups(),
+    expect(settings.kept.getStepGroups('headings', '')).toStrictEqual(
+      settings.nesting.getHeadingsGroups(),
     )
     expect(settings.kept.getStepGroups('syncing', '')[0]?.items).toHaveLength(2)
   })
@@ -201,9 +201,9 @@ describe('the settings tab', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
     const sync = vi.spyOn(settings.sync, 'choose').mockResolvedValue()
-    const hang = vi.spyOn(settings.nestedHeadings, 'choose').mockResolvedValue()
+    const nest = vi.spyOn(settings.nesting, 'choose').mockResolvedValue()
     settings.sync.isEnabled.value = false
-    settings.nestedHeadings.isNesting.value = false
+    settings.nesting.isNesting.value = false
 
     expect(installation.isSyncing.value).toBe(false)
     expect(installation.isNesting.value).toBe(false)
@@ -214,16 +214,16 @@ describe('the settings tab', () => {
     installation.isNesting.value = false
 
     expect(sync.mock.calls).toStrictEqual([['on'], ['off']])
-    expect(hang.mock.calls).toStrictEqual([['on'], ['off']])
+    expect(nest.mock.calls).toStrictEqual([['on'], ['off']])
   })
 
-  it('chooses a count of parts and the hour a day begins through the palette’s own choices', () => {
+  it('chooses a count of headings and the hour a day begins through the palette’s own choices', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
-    const count = vi.spyOn(settings.nestedHeadings, 'chooseCount').mockResolvedValue()
+    const count = vi.spyOn(settings.nesting, 'chooseCount').mockResolvedValue()
     const hour = vi.spyOn(settings.dayBegins, 'choose').mockResolvedValue()
 
-    installation.chooseParts(4)
+    installation.chooseHeadings(4)
     installation.chooseDayStarts('05:30')
 
     expect(count).toHaveBeenCalledWith('4')

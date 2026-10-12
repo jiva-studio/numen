@@ -9,7 +9,7 @@ export {
   SCHEMES,
 } from './lib/appearance'
 export type { Configuration, Model, Presence, SettingEdit } from './lib/configuration'
-export { DEFAULT_PARTS, ladder as nestingLadder } from './lib/nesting'
+export { DEFAULT_HEADINGS, ladder as nestingLadder } from './lib/nesting'
 export type { NestingSettings } from './lib/nesting'
 export { DEFAULT_STARTS, createReviewSetting } from './model/review'
 export type { ReviewSettings } from './model/review'
