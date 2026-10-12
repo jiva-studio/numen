@@ -15,15 +15,7 @@ import {
   type WorkspaceNode,
 } from './node'
 import { normalize } from './normalize'
-import {
-  isPane,
-  nodeAt,
-  paneWithTab,
-  panesOf,
-  pathTo,
-  replaceAt,
-  withChildren,
-} from './tree'
+import { isPane, nodeAt, paneWithTab, panesOf, pathTo, replaceAt, withChildren } from './tree'
 import { insert } from './shares'
 
 /** Where an identity for a pane or a branch a gesture makes comes from. */
