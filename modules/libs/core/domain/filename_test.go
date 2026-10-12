@@ -241,7 +241,7 @@ func TestATitleTooLongIsCutAfterTheLastCharacterThatFits(t *testing.T) {
 func TestOnlyTheFourCharacterDeviceNamesAreDevices(t *testing.T) {
 	for title, device := range map[string]bool{
 		"COM1": true, "COM9": true, "LPT1": true, "LPT9": true,
-		"COM0": false, "LPT0": false, "COM:": false, "COMA": false,
+		"COM0": false, "LPT0": false, "COM!": false, "COMA": false,
 		"COM12": false, "COM": false, "XYZ1": false, "CO1": false,
 	} {
 		name, _ := domain.GetReducedFilename(title)
