@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The plex: one node in focus, everything else placed by its seat.
+ * The plex: one node in focus, everything else placed by its relation.
  *
  * Takes a neighbourhood, gives back an identifier when one is chosen. It does
  * not fetch, does not know what an identifier addresses, and does not work out
@@ -16,7 +16,7 @@ import { byDoubleClick } from '../model/showing'
 import { useRoom } from '../model/room'
 import { usePlexTransition, browserClock } from '../model/transition'
 import { browserViewport } from '@/shared/lib/viewport'
-import { formatCount, seatWord, type PlexRelatedSeat } from '../lib/seat'
+import { formatCount, getRelationName, type PlexRelation } from '../lib/relation'
 import { usePlexDrag } from '../model/drag'
 import { usePlexGesture } from '../model/gesture'
 
@@ -30,9 +30,9 @@ const props = withDefaults(defineProps<PlexProps>(), {
   dwell: DWELL,
   reaching: () => byHandle,
   showing: () => byDoubleClick,
-  seatName: seatWord,
+  relationName: getRelationName,
   dragged: () => [],
-  dropName: seatWord,
+  dropName: getRelationName,
 })
 
 const emit = defineEmits<PlexEvents>()
@@ -61,7 +61,7 @@ const { frame, isMoving } = usePlexTransition(
 )
 
 /**
- * A caller that allows no seat at all has turned the gesture off, and a handle
+ * A caller that allows no relation at all has turned the gesture off, and a handle
  * that can come to nothing is a lie. Where a pointer happens to be is the
  * node's own affair, and never reaches this far.
  */
@@ -80,15 +80,15 @@ const gesture = usePlexGesture(
   () => props.creatable,
   () => props.dragThreshold,
   (drop) => {
-    if (drop.kind === 'create') emit('create', drop.from, drop.seat)
-    else emit('link', drop.from, drop.to, drop.seat)
+    if (drop.kind === 'create') emit('create', drop.from, drop.relation)
+    else emit('link', drop.from, drop.to, drop.relation)
   },
 )
 
 /**
  * Something dragged across the picture from outside it.
  *
- * The plex works out which seat letting go comes to, measured from the focus,
+ * The plex works out which relation letting go comes to, measured from the focus,
  * and says so. What is being dragged it never looks at.
  */
 const dragging = usePlexDrag({
@@ -97,14 +97,14 @@ const dragging = usePlexDrag({
   getFrame: () => frame.value,
   getOptions: () => options.value,
   getViewport: () => room.value,
-  getAllowedSeats: () => props.creatable,
+  getAllowedRelations: () => props.creatable,
   getThreshold: () => props.dragThreshold,
-  commit: (dragged, seat) => emit('bring', dragged, seat),
+  commit: (dragged, relation) => emit('bring', dragged, relation),
 })
 
 /**
  * A neighbourhood is drawn from the node it is seen from, so every node walks
- * to a new seat when another one arrives. A menu is anchored where one of them
+ * to a new relation when another one arrives. A menu is anchored where one of them
  * was.
  */
 watch(
@@ -113,11 +113,11 @@ watch(
 )
 
 /**
- * What did not fit, as `[seat, count]` pairs. The words belong to whoever
+ * What did not fit, as `[relation, count]` pairs. The words belong to whoever
  * renders the plex, through the `overflow` slot.
  */
 const overflow = computed(() =>
-  (Object.entries(frame.value.overflow) as [PlexRelatedSeat, number][]).filter(
+  (Object.entries(frame.value.overflow) as [PlexRelation, number][]).filter(
     ([, count]) => count > 0,
   ),
 )
@@ -147,7 +147,7 @@ defineExpose({
       :node-size="options.nodeSize"
       :show-edge-labels="showEdgeLabels"
       :can-reach="canReach"
-      :seat-name="seatName"
+      :relation-name="relationName"
       :widen="widen"
       :hung="hung"
       :dwell="dwell"
@@ -158,7 +158,7 @@ defineExpose({
       :gesture-at="gesture.at.value"
       :gesture-outcome="gesture.outcome.value"
       :dragged-at="dragging.at.value"
-      :drop-seat="dragging.seat.value"
+      :drop-relation="dragging.relation.value"
       :drop-name="dropName"
       @activate="emit('activate', $event)"
       @show="(id, showing) => emit('show', id, showing)"
@@ -172,7 +172,7 @@ defineExpose({
     </PlexView>
     <div v-if="overflow.length" class="plex-frame__overflow" role="status">
       <slot name="overflow" :overflow="overflow">
-        {{ overflow.map(([seat, count]) => formatCount(seat, count)).join(', ') }} not shown
+        {{ overflow.map(([relation, count]) => formatCount(relation, count)).join(', ') }} not shown
       </slot>
     </div>
   </div>

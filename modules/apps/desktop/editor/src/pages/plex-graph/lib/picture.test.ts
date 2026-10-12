@@ -1,20 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import type { Neighbourhood, Seat } from '@/entities/note'
+import type { Neighbourhood, NoteRelation } from '@/entities/note'
 import { areNeighbourhoodsEqual, asPlex, typesIn } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
-/** A note and what sits around it: seat, label, the note it comes through, and
+/** A note and what sits around it: relation, label, the note it comes through, and
  *  whether the other note names the relationship too. */
-type NeighbourRow = [string, Seat, string, string, boolean?]
+type NeighbourRow = [string, NoteRelation, string, string, boolean?]
 
 const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood => ({
   focus: { path: focus, title: focus },
   focusType: 'note',
-  related: rows.map(([path, seat, label, through, mutual]) => ({
+  related: rows.map(([path, relation, label, through, mutual]) => ({
     path,
     title: path,
     type: 'note',
-    seat,
+    relation,
     label,
     through,
     isMutual: mutual ?? false,
@@ -98,7 +98,7 @@ describe('what the plex is handed', () => {
     expect(edgesOf(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual([])
   })
 
-  it('seats every note it was given', () => {
+  it('places every note it was given', () => {
     const { plex, note } = drawing(
       createNeighbourhood('Here', [
         ['Above', 'parent', 'part of', ''],
@@ -106,7 +106,7 @@ describe('what the plex is handed', () => {
         ['Beside', 'sibling', '', 'Above'],
       ]),
     )
-    expect(plex.nodes.map((node) => `${node.seat} ${note(node.id)}`)).toEqual([
+    expect(plex.nodes.map((node) => `${node.relation} ${note(node.id)}`)).toEqual([
       'focus Here',
       'parent Above',
       'child Below',
@@ -169,7 +169,7 @@ const arrows = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
 
 describe('whose wording is on the line', () => {
   it('points the arrow out of the focus, down a line into a child', () => {
-    // Marrowfield allotments seats Alice Fenn below it and writes a word on the
+    // Marrowfield allotments relations Alice Fenn below it and writes a word on the
     // link; Alice Fenn names the same relationship back.
     expect(
       arrows(
@@ -275,14 +275,14 @@ describe('whose wording is on the line', () => {
     // Forward direction: Parent -> Child
     const forwardMap = new Map([[pairKey, 'Parent.md->Child.md']])
 
-    // From Parent's perspective (Child is child seat)
+    // From Parent's perspective (Child is child relation)
     const nhFromParent = createNeighbourhood('Parent.md', [['Child.md', 'child', '', '', false]])
     const plexFromParent = asPlex(nhFromParent, map.getNodeId, forwardMap)
     expect(plexFromParent.edges[0]?.from).toBe(map.getNodeId('Parent.md'))
     expect(plexFromParent.edges[0]?.to).toBe(map.getNodeId('Child.md'))
     expect(plexFromParent.edges[0]?.arrow).toBe('to') // points into Child.md (downwards)
 
-    // From Child's perspective (Parent is parent seat)
+    // From Child's perspective (Parent is parent relation)
     const nhFromChild = createNeighbourhood('Child.md', [['Parent.md', 'parent', '', '', false]])
     const plexFromChild = asPlex(nhFromChild, map.getNodeId, forwardMap)
     expect(plexFromChild.edges[0]?.from).toBe(map.getNodeId('Parent.md'))
@@ -355,7 +355,7 @@ describe('what each note of a neighbourhood is', () => {
           path: 'Faces.md',
           title: 'Faces',
           type: 'stencil',
-          seat: 'child',
+          relation: 'child',
           label: '',
           through: '',
           isMutual: false,
@@ -388,7 +388,7 @@ describe('two neighbourhoods drawing one picture', () => {
         path: 'Above.md',
         title: 'Above',
         type: 'note',
-        seat: 'parent',
+        relation: 'parent',
         label: 'part of',
         through: '',
         isMutual: false,
@@ -397,7 +397,7 @@ describe('two neighbourhoods drawing one picture', () => {
         path: 'Beside.md',
         title: 'Beside',
         type: 'note',
-        seat: 'sibling',
+        relation: 'sibling',
         label: 'next to',
         through: 'Above.md',
         isMutual: true,
@@ -450,7 +450,7 @@ describe('two neighbourhoods drawing one picture', () => {
     ['path', { path: 'Across.md' }],
     ['title', { title: 'Across' }],
     ['type', { type: 'deck' }],
-    ['seat', { seat: 'child' }],
+    ['relation', { relation: 'child' }],
     ['label', { label: 'far from' }],
     ['through', { through: 'Here.md' }],
     ['isMutual', { isMutual: false }],

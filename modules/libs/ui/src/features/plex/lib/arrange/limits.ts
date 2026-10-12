@@ -1,13 +1,13 @@
-import { RELATED_SEATS, type PlexRelatedSeat } from '../seat'
+import { RELATION_NAMES, type PlexRelation } from '../relation'
 import { isVertical, type PlexOptions } from './options'
 
-/** How one seat wraps: how many along a line, and how many lines. */
+/** How one relation wraps: how many along a line, and how many lines. */
 export interface RoleLimits {
   readonly perLine: number
   readonly lines: number
 }
 
-export type Limits = Readonly<Record<PlexRelatedSeat, RoleLimits>>
+export type Limits = Readonly<Record<PlexRelation, RoleLimits>>
 
 const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value))
 
@@ -16,7 +16,7 @@ const countAlong = (room: number, size: number, gap: number) =>
   Math.floor((room + gap) / (size + gap))
 
 /**
- * How each seat wraps, given the window.
+ * How each relation wraps, given the window.
  *
  * What gives is how many go on a line, not how many are shown: a row too wide
  * wraps sooner and runs deeper, into the space above and below. Rows are
@@ -25,12 +25,12 @@ const countAlong = (room: number, size: number, gap: number) =>
  */
 export function getLimits(
   options: PlexOptions,
-  counts: Readonly<Record<PlexRelatedSeat, number>>,
+  counts: Readonly<Record<PlexRelation, number>>,
 ): Limits {
   const roleLimits: RoleLimits = { perLine: options.maxPerLine, lines: options.maxLines }
   const { viewport } = options
   if (!viewport)
-    return getSeatLimits(
+    return getRelationLimits(
       options,
       () => roleLimits,
       () => roleLimits,
@@ -40,8 +40,13 @@ export function getLimits(
   const halfHeight = viewport.height / 2 - options.margin
   const { width, height } = options.nodeSize
 
-  const columnSeats = RELATED_SEATS.filter((seat) => !isVertical(options.direction[seat]))
-  const longestColumn = columnSeats.reduce((most, seat) => Math.max(most, counts[seat]), 0)
+  const columnRelations = RELATION_NAMES.filter(
+    (relation) => !isVertical(options.direction[relation]),
+  )
+  const longestColumn = columnRelations.reduce(
+    (most, relation) => Math.max(most, counts[relation]),
+    0,
+  )
   const hasColumns = longestColumn > 0
 
   // What a column has to clear, which is the row *or the focus*, whichever
@@ -76,19 +81,19 @@ export function getLimits(
   const getColumnClearance = (perLine: number) =>
     columnsMeetRows ? rowHalf(perLine) : options.focusSize.width / 2
 
-  // Whether the window has any row width at all that seats a column beside it.
+  // Whether the window has any row width at all that fits a column beside it.
   // A narrower row leaves more room, so the narrowest is the one that answers.
-  const seatsColumn = columnsMeetRows && columnsBeside(1) >= 1
+  const canFitColumn = columnsMeetRows && columnsBeside(1) >= 1
 
   // The widest row that still leaves the window able to hold it — and, where a
-  // column can be seated, room for one beyond it. It is measured from what the
+  // column can be placed, room for one beyond it. It is measured from what the
   // window holds at the settings, which are the closest the gaps ever pack.
   const row = getWidestRow(countAlong(2 * halfWidth, width, options.gap), (perLine) => {
     if (rowHalf(perLine) > halfWidth) return false
-    return !seatsColumn || columnsBeside(perLine) >= 1
+    return !canFitColumn || columnsBeside(perLine) >= 1
   })
 
-  return getSeatLimits(
+  return getRelationLimits(
     options,
     () => ({
       perLine: row,
@@ -122,15 +127,15 @@ function getWidestRow(most: number, fits: (perLine: number) => boolean): number 
   return 1
 }
 
-function getSeatLimits(
+function getRelationLimits(
   options: PlexOptions,
   forRows: () => RoleLimits,
   forColumns: () => RoleLimits,
 ): Limits {
   return Object.fromEntries(
-    RELATED_SEATS.map((seat) => [
-      seat,
-      isVertical(options.direction[seat]) ? forRows() : forColumns(),
+    RELATION_NAMES.map((relation) => [
+      relation,
+      isVertical(options.direction[relation]) ? forRows() : forColumns(),
     ]),
   ) as Limits
 }

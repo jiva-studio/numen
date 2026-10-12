@@ -7,16 +7,16 @@ import { create } from '@bufbuild/protobuf'
 import { GetNeighbourhoodResponseSchema, Relation } from '@numen/protocol'
 import { asPlex } from './picture'
 
-/** A note and what sits around it: seat, label, the note it comes through, and
+/** A note and what sits around it: relation, label, the note it comes through, and
  *  whether the other note names the relationship too. */
 type Neighbour = [string, Relation, string, string, boolean?]
 
 const createNeighbourhood = (focus: string, neighbours: Neighbour[]) =>
   create(GetNeighbourhoodResponseSchema, {
     focus: { path: focus, title: focus, identifier: '' },
-    related: neighbours.map(([path, seat, label, through, mutual]) => ({
+    related: neighbours.map(([path, relation, label, through, mutual]) => ({
       note: { path, title: path, identifier: '' },
-      relation: seat,
+      relation: relation,
       label,
       through,
       isMutual: mutual ?? false,
@@ -44,14 +44,14 @@ describe('what the plex is handed', () => {
     ).toEqual(['Above -> Here (part of)', 'Here -> Below', 'Across -> Here (see also)'])
   })
 
-  it('draws the focus and everything seated around it, under the path each holds', () => {
+  it('draws the focus and everything related to it, under the path each holds', () => {
     const { nodes } = asPlex(
       createNeighbourhood('Here', [
         ['Above', Relation.PARENT, '', ''],
         ['Below', Relation.CHILD, '', ''],
       ]),
     )
-    expect(nodes.map((node) => [node.id, node.seat])).toEqual([
+    expect(nodes.map((node) => [node.id, node.relation])).toEqual([
       ['Here', 'focus'],
       ['Above', 'parent'],
       ['Below', 'child'],
@@ -114,7 +114,7 @@ describe('what the plex is handed', () => {
     expect(edges).toEqual([])
   })
 
-  it('draws nothing for a seat it does not know', () => {
+  it('draws nothing for a relation it does not know', () => {
     const { nodes, edges } = asPlex(
       createNeighbourhood('Here', [['Below', Relation.UNSPECIFIED, '', '']]),
     )
@@ -128,15 +128,15 @@ describe('what the plex is handed', () => {
     ).toEqual(['Here -> Beside (next to)'])
   })
 
-  it('draws only the focus, and no edge, around a note with nothing seated near it', () => {
+  it('draws only the focus, and no edge, around a note with nothing related to it', () => {
     const { nodes, edges } = asPlex(createNeighbourhood('Here', []))
-    expect(nodes).toEqual([{ id: 'Here', title: 'Here', seat: 'focus' }])
+    expect(nodes).toEqual([{ id: 'Here', title: 'Here', relation: 'focus' }])
     expect(edges).toEqual([])
   })
 
   it('draws the focus under an empty path and title when the neighbourhood has none', () => {
     const { nodes, edges } = asPlex(create(GetNeighbourhoodResponseSchema, {}))
-    expect(nodes).toEqual([{ id: '', title: '', seat: 'focus' }])
+    expect(nodes).toEqual([{ id: '', title: '', relation: 'focus' }])
     expect(edges).toEqual([])
   })
 
@@ -146,6 +146,6 @@ describe('what the plex is handed', () => {
         focus: { path: 'here.md', title: 'Here', identifier: '' },
       }),
     )
-    expect(nodes[0]).toEqual({ id: 'here.md', title: 'Here', seat: 'focus' })
+    expect(nodes[0]).toEqual({ id: 'here.md', title: 'Here', relation: 'focus' })
   })
 })

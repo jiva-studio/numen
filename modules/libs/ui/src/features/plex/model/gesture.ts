@@ -3,11 +3,11 @@
  * what a gesture *means* is worked out in `arrange/drop.ts`, as a value.
  */
 import { computed, onScopeDispose, ref, type Ref } from 'vue'
-import { resolveDrop, seatWithoutDirection, type Drop } from '../lib/arrange'
+import { resolveDrop, getRelationWithoutDirection, type Drop } from '../lib/arrange'
 import type { PlexOptions } from '../lib/arrange'
 import type { PlexFrame } from '../lib/frame'
 import type { Position } from '../lib/node'
-import type { PlexRelatedSeat } from '../lib/seat'
+import type { PlexRelation } from '../lib/relation'
 
 export interface Gesture {
   /** The node it started from, while one is under way. */
@@ -55,7 +55,7 @@ export function getPosition(svg: SVGSVGElement, event: PointerEvent): Position |
 export function usePlexGesture(
   frame: () => PlexFrame,
   options: () => PlexOptions,
-  getSeats: () => readonly PlexRelatedSeat[],
+  getRelations: () => readonly PlexRelation[],
   threshold: () => number,
   commit: (drop: Drop) => void,
 ): Gesture & GestureHandlers {
@@ -80,8 +80,8 @@ export function usePlexGesture(
 
     // A gesture that has not travelled is a press, and a press has a rule.
     if (!hasTravelled(now)) {
-      const seat = seatWithoutDirection(getSeats())
-      return seat ? { kind: 'create', from: source, seat } : null
+      const relation = getRelationWithoutDirection(getRelations())
+      return relation ? { kind: 'create', from: source, relation } : null
     }
 
     return resolveDrop({
@@ -89,7 +89,7 @@ export function usePlexGesture(
       options: options(),
       from: source,
       at: now,
-      seats: getSeats(),
+      relations: getRelations(),
     })
   })
 
@@ -130,8 +130,8 @@ export function usePlexGesture(
   const cancel = () => stop(svg())
 
   const ask = (source: string) => {
-    const seat = seatWithoutDirection(getSeats())
-    if (seat) commit({ kind: 'create', from: source, seat })
+    const relation = getRelationWithoutDirection(getRelations())
+    if (relation) commit({ kind: 'create', from: source, relation })
   }
 
   const begin = (source: string, event: PointerEvent) => {

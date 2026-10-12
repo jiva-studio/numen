@@ -14,7 +14,7 @@ export type {
   RenamedNote,
   RenameResult,
   Role,
-  Seat,
+  NoteRelation,
   WriteResult,
 } from './lib/note'
 export { openNotes } from './model/notes'

@@ -63,7 +63,7 @@ describe('the space above and below is used before anything is dropped', () => {
     const frame = arrangePlex(many, { options: { viewport, maxPerLine: 9 } })
 
     expect(frame.overflow.child).toBeUndefined()
-    const rows = new Set(frame.nodes.filter((n) => n.seat === 'child').map((n) => n.y))
+    const rows = new Set(frame.nodes.filter((n) => n.relation === 'child').map((n) => n.y))
     expect(rows.size).toBeGreaterThan(1)
   })
 
@@ -75,13 +75,13 @@ describe('the space above and below is used before anything is dropped', () => {
     const frame = arrangePlex(sideHeavy, { options: { viewport, maxPerLine: 5 } })
 
     expect(frame.overflow.jump).toBeUndefined()
-    const columns = new Set(frame.nodes.filter((n) => n.seat === 'jump').map((n) => n.x))
+    const columns = new Set(frame.nodes.filter((n) => n.relation === 'jump').map((n) => n.x))
     expect(columns.size).toBe(1)
   })
 })
 
 describe('the two sides are read as a pair', () => {
-  it('seats a short column as far out as a tall one', () => {
+  it('fits a short column as far out as a tall one', () => {
     // Worked out on its own reach, two jumps would sit nearer the focus than
     // seven siblings, and the plex would lean for a reason nobody can see.
     const lopsided = build('A node', { child: 6, jump: 2, sibling: 7 })
@@ -89,8 +89,8 @@ describe('the two sides are read as a pair', () => {
       options: { viewport: { width: 1600, height: 1000 } },
     })
 
-    const getNearest = (seat: string) =>
-      Math.min(...frame.nodes.filter((n) => n.seat === seat).map((n) => Math.abs(n.x)))
+    const getNearest = (relation: string) =>
+      Math.min(...frame.nodes.filter((n) => n.relation === relation).map((n) => Math.abs(n.x)))
     expect(getNearest('jump')).toBe(getNearest('sibling'))
   })
 })
@@ -110,7 +110,7 @@ describe('the row is measured against the window either way', () => {
 })
 
 describe('the rows keep the room when it runs out', () => {
-  it('narrows a row only as far as it must to seat a column beside it', () => {
+  it('narrows a row only as far as it must to fit a column beside it', () => {
     const viewport = { width: 1000, height: 800 }
     const limits = getLimits(
       { ...DEFAULT_OPTIONS, viewport },
@@ -120,7 +120,7 @@ describe('the rows keep the room when it runs out', () => {
     expect(limits.jump.lines).toBeGreaterThanOrEqual(1)
   })
 
-  it('keeps the room when no row width seats a column at all', () => {
+  it('keeps the room when no row width fits a column at all', () => {
     // A window this narrow has nowhere to put a jump or a sibling, and the
     // room a column cannot use is the room the children are read in.
     const viewport = { width: 600, height: 1400 }
@@ -203,8 +203,8 @@ describe('given no window', () => {
       jump: 3,
       sibling: 3,
     })
-    for (const seat of ['parent', 'child', 'jump', 'sibling'] as const) {
-      expect(limits[seat]).toStrictEqual({
+    for (const relation of ['parent', 'child', 'jump', 'sibling'] as const) {
+      expect(limits[relation]).toStrictEqual({
         perLine: DEFAULT_OPTIONS.maxPerLine,
         lines: DEFAULT_OPTIONS.maxLines,
       })
@@ -235,7 +235,7 @@ describe('what a column asks of the rows', () => {
     expect(getRows(3, { focusGap: 47 })).toBeLessThan(6)
   })
 
-  it('keeps the widest row the window holds when no row width seats a column beside it', () => {
+  it('keeps the widest row the window holds when no row width fits a column beside it', () => {
     const narrow = getLimits(
       { ...DEFAULT_OPTIONS, viewport: { width: 600, height: 1400 } },
       { parent: 0, child: 6, jump: 4, sibling: 0 },

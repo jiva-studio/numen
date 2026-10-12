@@ -4,7 +4,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { Menu, optionsForType, Plex, createThreadPath, useTypeSize, Waiting } from '@numen/ui'
-import type { MenuTrigger, PlexRelatedSeat, PlexDestination } from '@numen/ui'
+import type { MenuTrigger, PlexRelation, PlexDestination } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
@@ -95,16 +95,16 @@ function onPointerUp(event: PointerEvent) {
   }
 }
 
-function onCreateNode(from: string, seat: PlexRelatedSeat, at?: { x: number; y: number }) {
-  void props.state.createNode(from, seat, at ?? lastPointer.value)
+function onCreateNode(from: string, relation: PlexRelation, at?: { x: number; y: number }) {
+  void props.state.createNode(from, relation, at ?? lastPointer.value)
 }
 
-function onLinkNodes(from: string, to: string, seat: PlexRelatedSeat) {
-  void props.state.joinNodes(from, to, seat)
+function onLinkNodes(from: string, to: string, relation: PlexRelation) {
+  void props.state.joinNodes(from, to, relation)
 }
 
-function onBringNodes(nodes: readonly string[], seat: PlexRelatedSeat) {
-  void props.state.dropNodes(nodes, seat)
+function onBringNodes(nodes: readonly string[], relation: PlexRelation) {
+  void props.state.dropNodes(nodes, relation)
 }
 
 function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuTrigger) {
@@ -299,7 +299,7 @@ function getSourceHandlePosition(
     <PlexQuickLinkPopover
       v-if="quickLink"
       :at="quickLink.at"
-      :seat="quickLink.seat"
+      :relation="quickLink.relation"
       :search="props.state.searchNotes"
       @select-note="onSelectQuickLinkNote"
       @create-note="onCreateQuickLinkNote"

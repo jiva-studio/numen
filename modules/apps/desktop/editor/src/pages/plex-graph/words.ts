@@ -1,6 +1,6 @@
 // Stryker disable StringLiteral: interface copy
-import { seatWord } from '@numen/ui'
-import type { PlexRelatedSeat } from '@numen/ui'
+import { getRelationName } from '@numen/ui'
+import type { PlexRelation } from '@numen/ui'
 
 /** What a plex tab is called, on its own and after the note it stands on. */
 export const WORDS = {
@@ -10,7 +10,7 @@ export const WORDS = {
   /** What the menu offers where the picture stands on nothing. */
   newNote: 'New note',
   /** What the shape under the pointer says while notes are dragged over the picture. */
-  dropName: (seat: PlexRelatedSeat) => `as ${seatWord(seat)}`,
+  dropName: (relation: PlexRelation) => `as ${getRelationName(relation)}`,
   /** The notes that stayed unjoined, because the vault would not write the link. */
   notJoined: 'These were not joined:',
   /** The input placeholder in the quick-link popover. */

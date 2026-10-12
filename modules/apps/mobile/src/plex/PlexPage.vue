@@ -3,7 +3,7 @@
  * The vault as a picture, and what a gesture over it does to the vault.
  *
  * The picture is the whole page. A tap travels to the node tapped; holding a
- * node reaches out of it, and letting go in a seat makes a note there or joins
+ * node reaches out of it, and letting go in a relation makes a note there or joins
  * the node it was let go on.
  */
 import { onMounted, ref } from 'vue'
@@ -13,14 +13,14 @@ import {
   byLongPress,
   Plex,
   type PlexNeighbourhood,
-  type PlexRelatedSeat,
+  type PlexRelation,
 } from '@numen/ui'
 import { formatErrorCodeMessage, formatErrorMessage } from '@numen/wire'
 import NoteSheet from '../note/NoteSheet.vue'
 import { startCore, type Core } from '../core'
 import { watchVault } from './watchVault'
 import { asPlex } from './picture'
-import { CREATABLE_SEATS, isCreatable, ROLE_BY_SEAT, SEED_NOTE_PATH } from './seats'
+import { CREATABLE_RELATIONS, isCreatable, ROLE_BY_RELATION, SEED_NOTE_PATH } from './relations'
 
 const core = ref<Core | null>(null)
 const picture = ref<PlexNeighbourhood | null>(null)
@@ -43,26 +43,26 @@ async function loadPicture(path: string) {
   picture.value = asPlex(answer)
 }
 
-async function createRelatedNote(from: string, seat: PlexRelatedSeat) {
+async function createRelatedNote(from: string, relation: PlexRelation) {
   if (!core.value) return
-  const title = window.prompt(`A new ${seat}`)
+  const title = window.prompt(`A new ${relation}`)
   if (!title?.trim()) return
   const created = await core.value.notes.createNote({ title: title.trim(), path: '' })
   if (!created.path) {
     errorMessage.value = formatErrorCodeMessage(created.error)
     return
   }
-  await linkNotes(from, created.path, seat)
+  await linkNotes(from, created.path, relation)
 }
 
-async function linkNotes(from: string, to: string, seat: PlexRelatedSeat) {
+async function linkNotes(from: string, to: string, relation: PlexRelation) {
   if (!core.value) return
-  // The picture is only ever asked for a seat it offers, and it offers no
+  // The picture is only ever asked for a relation it offers, and it offers no
   // sibling: no link writes one.
-  if (!isCreatable(seat)) return
+  if (!isCreatable(relation)) return
   const answer = await core.value.notes.writeLink({
     path: from,
-    link: { to, role: ROLE_BY_SEAT[seat] },
+    link: { to, role: ROLE_BY_RELATION[relation] },
   })
   if (answer.error) {
     errorMessage.value = formatErrorCodeMessage(answer.error)
@@ -97,13 +97,15 @@ onMounted(async () => {
         class="plex"
         data-testid="plex"
         :neighbourhood="picture"
-        :creatable="CREATABLE_SEATS"
+        :creatable="CREATABLE_RELATIONS"
         :reaching="reaching"
         :showing="showing"
         @activate="(node: string) => void loadPicture(node)"
         @show="(node: string) => (editingPath = node)"
-        @create="(from: string, seat: PlexRelatedSeat) => void createRelatedNote(from, seat)"
-        @link="(from: string, to: string, seat: PlexRelatedSeat) => void linkNotes(from, to, seat)"
+        @create="(from: string, relation: PlexRelation) => void createRelatedNote(from, relation)"
+        @link="
+          (from: string, to: string, relation: PlexRelation) => void linkNotes(from, to, relation)
+        "
       />
       <IonToast
         :is-open="!!errorMessage"

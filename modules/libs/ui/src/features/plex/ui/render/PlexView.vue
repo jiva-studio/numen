@@ -15,7 +15,7 @@ import { useEdgeLines } from './lines'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import { getDraggedShape, getReachGhost, getReachThread } from './threads'
 import type { GestureRole, PlacedNode } from '../../lib/node'
-import { seatWord } from '../../lib/seat'
+import { getRelationName } from '../../lib/relation'
 import { DWELL } from '../../model/dwell'
 import { byHandle } from '../../model/reaching'
 import { byDoubleClick } from '../../model/showing'
@@ -25,7 +25,7 @@ import { browserClock } from '../../model/transition'
 const props = withDefaults(defineProps<PlexViewProps>(), {
   showEdgeLabels: true,
   canReach: true,
-  seatName: seatWord,
+  relationName: getRelationName,
   dwell: DWELL,
   reaching: () => byHandle,
   showing: () => byDoubleClick,
@@ -34,8 +34,8 @@ const props = withDefaults(defineProps<PlexViewProps>(), {
   gestureAt: null,
   gestureOutcome: null,
   draggedAt: null,
-  dropSeat: null,
-  dropName: seatWord,
+  dropRelation: null,
+  dropName: getRelationName,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -72,7 +72,7 @@ defineExpose({ svg, focusNode: (id: string) => views.get(id)?.focus() })
  *
  * The viewBox is a fixed window on the drawing, centred on the focus, so a box
  * and a letter are one size however many neighbours arrive. A neighbourhood
- * too wide is clipped, and the per-seat limits and the overflow count say how
+ * too wide is clipped, and the per-relation limits and the overflow count say how
  * much.
  */
 const viewBox = computed(() => {
@@ -103,12 +103,12 @@ const thread = computed(() => getReachThread(props.frame, props.gestureFrom, pro
 
 /** The node a gesture would make, drawn where it would appear. */
 const ghost = computed(() =>
-  getReachGhost(props.gestureOutcome, props.gestureAt, props.seatName, props.nodeSize),
+  getReachGhost(props.gestureOutcome, props.gestureAt, props.relationName, props.nodeSize),
 )
 
 /** What is dragged in from outside, and the shape letting go would leave. */
 const dragging = computed(() =>
-  getDraggedShape(props.frame, props.dropSeat, props.draggedAt, props.dropName, props.nodeSize),
+  getDraggedShape(props.frame, props.dropRelation, props.draggedAt, props.dropName, props.nodeSize),
 )
 
 /* -------------------------------- Handlers -------------------------------- */

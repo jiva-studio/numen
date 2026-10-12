@@ -6,8 +6,8 @@ import type { Placement } from './placement'
  */
 export const ring: Placement = {
   name: 'ring',
-  place(seating) {
-    const around = Object.values(seating).flat()
+  place(nodesByRelation) {
+    const around = Object.values(nodesByRelation).flat()
     return around.map((node, index) => {
       const angle = (index / around.length) * Math.PI * 2 - Math.PI / 2
       return {

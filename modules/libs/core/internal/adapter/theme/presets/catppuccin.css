@@ -22,10 +22,10 @@
   --numen-accent: light-dark(#8839ef, #cba6f7);
   --numen-accent-ink: light-dark(#eff1f5, #1e1e2e);
 
-  --numen-seat-parent: light-dark(#1e66f5, #89b4fa);
-  --numen-seat-child: light-dark(#40a02b, #a6e3a1);
-  --numen-seat-jump: light-dark(#fe640b, #fab387);
-  --numen-seat-sibling: light-dark(#7287fd, #b4befe);
+  --numen-relation-parent: light-dark(#1e66f5, #89b4fa);
+  --numen-relation-child: light-dark(#40a02b, #a6e3a1);
+  --numen-relation-jump: light-dark(#fe640b, #fab387);
+  --numen-relation-sibling: light-dark(#7287fd, #b4befe);
 
   --numen-edge: light-dark(#bcc0cc, #45475a);
   --numen-edge-label: light-dark(#6c6f85, #9399b2);

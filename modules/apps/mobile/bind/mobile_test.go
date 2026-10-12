@@ -66,26 +66,26 @@ func TestStartAnswers(t *testing.T) {
 		t.Fatal("the vault it seeded lists nothing")
 	}
 
-	// The note it opens on stands in every seat at once, which is what makes a
-	// picture worth drawing. The vault is read behind the caller, so the seats
+	// The note it opens on stands in every relation at once, which is what makes a
+	// picture worth drawing. The vault is read behind the caller, so the relations
 	// arrive rather than being there.
 	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING"}
-	seats := map[string]int{}
+	relations := map[string]int{}
 	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
-		seats = map[string]int{}
+		relations = map[string]int{}
 		around, _ := ask("NoteService", "GetNeighbourhood",
 			map[string]any{"path": bind.Seeded})["related"].([]any)
 		for _, one := range around {
-			seats[one.(map[string]any)["relation"].(string)]++
+			relations[one.(map[string]any)["relation"].(string)]++
 		}
-		if len(seats) == len(wanted) {
+		if len(relations) == len(wanted) {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	for _, seat := range wanted {
-		if seats[seat] == 0 {
-			t.Errorf("%s has no %s: %v", bind.Seeded, seat, seats)
+	for _, relation := range wanted {
+		if relations[relation] == 0 {
+			t.Errorf("%s has no %s: %v", bind.Seeded, relation, relations)
 		}
 	}
 

@@ -39,7 +39,7 @@ const OPTIONS = { iconWidth: 20, margin: 10, headingHeight: 20 }
 const NODE: PlacedNode = {
   id: 'one',
   title: 'A node',
-  seat: 'child',
+  relation: 'child',
   x: 0,
   y: 0,
   width: 100,

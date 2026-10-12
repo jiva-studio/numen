@@ -113,7 +113,7 @@ describe('a passage the vault answers with', () => {
 })
 
 describe('a neighbourhood the vault answers with', () => {
-  it('is drawn around the note in focus, with each note seated where it sits', async () => {
+  it('is drawn around the note in focus, with each note in the relation it holds', async () => {
     answerWith({
       focus: { path: 'Rota.md', title: 'The rota' },
       focusType: 'NOTE_TYPE_DECK',
@@ -136,7 +136,7 @@ describe('a neighbourhood the vault answers with', () => {
         path: 'Allotments.md',
         title: 'Allotments',
         type: 'note',
-        seat: 'parent',
+        relation: 'parent',
         label: 'part of',
         reverseLabel: 'contains rota',
         through: '',
@@ -145,7 +145,7 @@ describe('a neighbourhood the vault answers with', () => {
     ])
   })
 
-  it('leaves out a note it has no seat for, and one the answer names no note at', async () => {
+  it('leaves out a note it has no relation for, and one the answer names no note at', async () => {
     answerWith({
       focus: { path: 'Rota.md', title: 'The rota' },
       related: [

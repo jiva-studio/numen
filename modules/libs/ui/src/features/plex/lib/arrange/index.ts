@@ -1,19 +1,19 @@
 /** The decisions, as values: no DOM, no Vue, no clock. */
 export { arrangePlex, type ArrangeInput } from './arrange'
-export { measureCrowding, packOptions, type SeatCounts } from './crowding'
+export { measureCrowding, packOptions, type RelationCounts } from './crowding'
 export { getLimits, type Limits, type RoleLimits } from './limits'
 export {
-  getDropSeat,
+  getDropRelation,
   findNode,
   resolveDrop,
-  seatTowards,
-  seatWithoutDirection,
+  getRelationTowards,
+  getRelationWithoutDirection,
   type Drop,
   type DropInput,
   type DroppedInput,
 } from './drop'
 export { interpolatePlex } from './interpolate'
-export { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
+export { rowsAndColumns, type Placement, type NodesByRelation, type Widths } from './placement'
 export { spacingAsSet, findSpacing, type Spacing } from './spacing'
 export { routeEdge, routeEdges, createRouting, type Axis, type Routing } from './routing'
 export {
