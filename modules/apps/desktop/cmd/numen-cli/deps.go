@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // errNoTools is a machine holding neither of the programs an address is
@@ -144,7 +143,7 @@ func openRecognise(
 	if why != nil {
 		return cli.Recognise{}, why
 	}
-	db, cut, err := openCut(ctx, cfg, v)
+	db, cut, err := openCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		_ = closeModels()
 		return cli.Recognise{}, err
@@ -173,7 +172,7 @@ func openTranscribe(
 	if why != nil {
 		return cli.Transcribe{}, why
 	}
-	db, cut, err := openCut(ctx, cfg, v)
+	db, cut, err := openCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		_ = closeModels()
 		return cli.Transcribe{}, err
@@ -190,17 +189,19 @@ func openTranscribe(
 
 // openCut is the index with the extraction of a vault's sources over it. The
 // index is closed when the extraction cannot be made.
-func openCut(
+func openCut[C any](
 	ctx context.Context, cfg container.Config, v domain.Vault,
-) (*container.Index, source.Extract, error) {
+	extract func(port.SourceRepository, port.SourceQueries, domain.Vault) (C, error),
+) (*container.Index, C, error) {
+	var none C
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
-		return nil, source.Extract{}, err
+		return nil, none, err
 	}
-	cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+	cut, err := extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		_ = db.Close()
-		return nil, source.Extract{}, err
+		return nil, none, err
 	}
 	return db, cut, nil
 }
@@ -228,7 +229,7 @@ func openProofreadRecognition(
 	if err != nil || !held {
 		return cli.ProofreadRecognition{}, err
 	}
-	db, cut, err := openCut(ctx, cfg, v)
+	db, cut, err := openCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		return cli.ProofreadRecognition{}, err
 	}
@@ -247,7 +248,7 @@ func openProofreadTranscript(
 	if err != nil || !held {
 		return cli.ProofreadTranscript{}, err
 	}
-	db, cut, err := openCut(ctx, cfg, v)
+	db, cut, err := openCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		return cli.ProofreadTranscript{}, err
 	}
