@@ -48,11 +48,8 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
-			api := &API{
-				Registry: registry{},
-				Now:      time.Now,
-				Window:   NewWindow(task.New()),
-			}
+			api := newAPIOver(registry{})
+			api.Window = NewWindow(task.New())
 			api.SetAgent(testsupport.SilentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)

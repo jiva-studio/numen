@@ -129,18 +129,20 @@ func makeWindowAPI(
 ) *window.API {
 	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), vaults.updateIndex)
 	return &window.API{
-		Registry:      registry,
-		CardsDue:      running.CardsDue,
-		Session:       running.Session,
-		Schedules:     running.Schedules,
-		Log:           running.Log,
-		Counted:       running.Counted,
-		Neighbourhood: cfg.ShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
-		Presets:       running.Presets,
-		Notes:         db.Queries(),
-		Window:        window.NewWindow(nil),
-		Day:           running.Day,
-		Now:           time.Now,
+		Find:           cfg.Vaults(registry, db, notes.Move).Find,
+		GetKnownVaults: cfg.GetKnownVaults(registry),
+		CardsDue:       running.CardsDue,
+		Session:        running.Session,
+		Schedules:      running.Schedules,
+		Log:            running.Log,
+		Counted:        running.Counted,
+		Neighbourhood:  cfg.ShowNeighbourhood(notes.Links, db.Queries(), notes.Read),
+		Presets:        running.Presets,
+		GetTitle:       notes.GetTitle,
+		IsVaultIndexed: notes.IsVaultIndexed,
+		Window:         window.NewWindow(nil),
+		Day:            running.Day,
+		Now:            time.Now,
 	}
 }
 

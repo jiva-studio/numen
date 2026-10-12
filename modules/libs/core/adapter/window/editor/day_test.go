@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	setting "github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // One in the morning, with a day that begins at four: the calendar says the
@@ -49,7 +50,8 @@ func TestBothWindowsAreToldTheSameDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reviewing := newFlashcardsClient(t, &window.API{Registry: none{}, Day: day, Now: clock})
+	known := vaults.NewGetKnownVaults(none{}, nil)
+	reviewing := newFlashcardsClient(t, &window.API{GetKnownVaults: &known, Day: day, Now: clock})
 	stream, err := reviewing.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)

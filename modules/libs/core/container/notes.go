@@ -50,6 +50,7 @@ func (c Config) Notes(
 
 		GetTitles:      note.NewGetTitles(queries),
 		GetTitle:       note.NewGetTitle(queries),
+		IsVaultIndexed: note.NewIsVaultIndexed(queries),
 		GetLinkAddress: note.NewGetLinkAddress(queries),
 		RemoveNote:     note.NewRemoveNote(remove, readers),
 	}

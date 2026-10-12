@@ -26,6 +26,7 @@ type Scenarios struct {
 
 	GetTitles      GetTitles
 	GetTitle       *GetTitle
+	IsVaultIndexed *IsVaultIndexed
 	GetLinkAddress *GetLinkAddress
 	RemoveNote     RemoveNote
 }

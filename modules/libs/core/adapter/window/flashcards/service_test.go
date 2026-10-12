@@ -148,7 +148,7 @@ func (unreadable) List() ([]domain.Vault, error) {
 // would read as an installation holding none, which is a person told their
 // vaults are gone.
 func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
-	api := &API{Registry: unreadable{}, Now: time.Now}
+	api := newAPIOver(unreadable{})
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(t.Context(),
 		connect.NewRequest(&v1.WatchCardsDueRequest{}))

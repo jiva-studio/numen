@@ -59,7 +59,7 @@ func TestAListenerThatStoppedIsNotSpokenTo(t *testing.T) {
 // Something moving underneath the window reaches the page, so a deck written
 // while a person is looking at the list is a deck they are shown.
 func TestSomethingMovingReachesThePage(t *testing.T) {
-	api := &API{Registry: registry{}, Now: time.Now}
+	api := newAPIOver(registry{})
 	moved := make(chan struct{}, 1)
 	api.ReportChangesFrom(t.Context(), moved)
 

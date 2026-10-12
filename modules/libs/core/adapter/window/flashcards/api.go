@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -38,7 +39,10 @@ var ErrNoRun = errors.New("no run of that name is open")
 // when another session opens on that vault or the window closes: what was
 // written stands, and the next session opens a file of its own.
 type API struct {
-	Registry port.VaultRegistry
+	// Find is the vault of a name, a path or an identity, and GetKnownVaults is
+	// every vault the installation holds.
+	Find           vaults.Find
+	GetKnownVaults *vaults.GetKnownVaults
 	// What this window does, one scenario to a field: what a vault owes, what to
 	// ask next, where the answers leave a card, the run they are appended to,
 	// what each day of them came to, and what the deck being sat to is joined
@@ -51,9 +55,10 @@ type API struct {
 	Neighbourhood flashcards.ShowNeighbourhood
 	// Presets is which preset each deck of a vault is scheduled by.
 	Presets flashcards.Presets
-	// Notes is what a vault calls the note a preset stands in. A build with none
-	// names a preset by nothing.
-	Notes port.NoteQueries
+	// GetTitle is what a vault calls the note a preset stands in, and
+	// IsVaultIndexed is whether the index already carries a vault.
+	GetTitle       *note.GetTitle
+	IsVaultIndexed *note.IsVaultIndexed
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
@@ -164,7 +169,7 @@ func (a *API) SetAgent(taking port.Agent) {
 
 // GetVault is the vault of an identity, as the list holds it.
 func (a *API) GetVault(id string) (domain.Vault, error) {
-	return vaults.NewFind(a.Registry).Execute(id)
+	return a.Find.Execute(id)
 }
 
 // openRun starts a run and remembers it under its own name.

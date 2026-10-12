@@ -29,6 +29,6 @@ func (a *API) GetVaultDeckPreset(
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.ConvertPresetToWire(found, wire.GetTitle(ctx, a.Notes, v.ID, found.Path))
+	out.Preset = wire.ConvertPresetToWire(found, a.GetTitle.Execute(ctx, v, found.Path))
 	return connect.NewResponse(out), nil
 }

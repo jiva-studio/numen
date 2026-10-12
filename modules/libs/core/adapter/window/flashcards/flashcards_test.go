@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -30,6 +31,19 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
+
+// useRegistry makes the vaults the window knows the ones the registry holds.
+func (a *API) useRegistry(r port.VaultRegistry) {
+	known := vaults.NewGetKnownVaults(r, nil)
+	a.Find, a.GetKnownVaults = vaults.NewFind(r), &known
+}
+
+// newAPIOver is an API over a registry and nothing else.
+func newAPIOver(r port.VaultRegistry) *API {
+	api := &API{Now: time.Now}
+	api.useRegistry(r)
+	return api
+}
 
 // deck is one vault of one stencil and one deck, whose single card stands
 // through one face.
@@ -114,7 +128,6 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	// question is answered from.
 	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), cfg.Level(db))
 	api := &API{
-		Registry:  registry{held: held},
 		CardsDue:  running.CardsDue,
 		Session:   running.Session,
 		Schedules: running.Schedules,
@@ -125,12 +138,14 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 			db.Queries(),
 			note.NewRead(filesystem.VaultReaders{}),
 		),
-		Presets: running.Presets,
-		Notes:   db.Queries(),
-		Window:  NewWindow(task.New()),
-		Day:     running.Day,
-		Now:     time.Now,
+		Presets:        running.Presets,
+		GetTitle:       note.NewGetTitle(db.Queries()),
+		IsVaultIndexed: note.NewIsVaultIndexed(db.Queries()),
+		Window:         NewWindow(task.New()),
+		Day:            running.Day,
+		Now:            time.Now,
 	}
+	api.useRegistry(registry{held: held})
 
 	// The window reads a vault the index does not carry, over the same scan.
 	api.SetVaultIndexer(ctx, func(ctx context.Context, v domain.Vault) error {
@@ -414,7 +429,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 	api, held := newAPI(t, deck)
 	unread := testsupport.NewVault(t, deck)
-	api.Registry = registry{held: append(held, unread)}
+	api.useRegistry(registry{held: append(held, unread)})
 
 	// Nothing is counted from a walk half done, so the first opening finds every
 	// row waiting on one.
@@ -468,7 +483,7 @@ func TestAVaultTheIndexDoesNotCarryIsUncountedWhereNothingReadsIt(t *testing.T) 
 	api, _ := newAPI(t)
 	api.SetVaultIndexer(t.Context(), nil)
 	unread := testsupport.NewVault(t, deck)
-	api.Registry = registry{held: []domain.Vault{unread}}
+	api.useRegistry(registry{held: []domain.Vault{unread}})
 
 	out := front(t, api)
 	one := out.GetVaults()[0]
@@ -482,7 +497,7 @@ func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	api, _ := newAPI(t)
 	api.SetVaultIndexer(t.Context(), nil)
 	unread := testsupport.NewVault(t, deck)
-	api.Registry = registry{held: []domain.Vault{unread}}
+	api.useRegistry(registry{held: []domain.Vault{unread}})
 
 	_, err := api.StartSession(t.Context(),
 		connect.NewRequest(&v1.StartSessionRequest{Vault: string(unread.ID)}))
