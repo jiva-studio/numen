@@ -84,7 +84,6 @@ describe('the keys the handle walks under', () => {
     expect(stepForKey('a', 40, bounds(), false)).toBeNull()
     expect(stepForKey('Enter', 40, bounds(), false)).toBeNull()
   })
-
 })
 
 describe('a step far from the floor', () => {
