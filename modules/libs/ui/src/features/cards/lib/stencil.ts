@@ -83,7 +83,7 @@ export const STENCIL_WORDS: StencilWords = {
  * What the caller found wrong with a stencil. A face's stands beside its name
  * and a field's stands under that field's row.
  */
-export interface StencilWrong {
+export interface StencilProblems {
   /** What is wrong with each face, under the identity it was drawn by. */
   readonly at: Problems
   /** What is wrong with each field, under the name it is declared by. */
@@ -91,7 +91,7 @@ export interface StencilWrong {
 }
 
 /** Nothing wrong with any face and nothing wrong with any field. */
-export const NOTHING_AMISS: StencilWrong = Object.freeze({
+export const NO_STENCIL_PROBLEMS: StencilProblems = Object.freeze({
   at: createSealedMap<string, readonly string[]>(),
   fields: createSealedMap<string, readonly string[]>(),
 })

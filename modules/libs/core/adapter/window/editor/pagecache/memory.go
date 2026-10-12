@@ -20,15 +20,15 @@ type ID struct {
 	Width    int
 }
 
-// picture is one page drawn and encoded, or the drawing of it under way.
-type picture struct {
+// renderedPage is one page drawn and encoded, or the drawing of it under way.
+type renderedPage struct {
 	ready chan struct{}
 	body  []byte
 	why   error
 }
 
 // wait is the drawing, once it is done.
-func (p *picture) wait(ctx context.Context) ([]byte, error) {
+func (p *renderedPage) wait(ctx context.Context) ([]byte, error) {
 	select {
 	case <-p.ready:
 		return p.body, p.why
@@ -40,7 +40,7 @@ func (p *picture) wait(ctx context.Context) ([]byte, error) {
 // entry is one picture in the order it was last asked for.
 type entry struct {
 	key ID
-	pic *picture
+	pic *renderedPage
 }
 
 // Memory are the pages already drawn, the least recently asked for dropped
@@ -58,17 +58,17 @@ type Memory struct {
 	limit int
 }
 
-// MostDrawn is how many bytes of drawn pages are held.
-const MostDrawn = 64 << 20
+// MaxMemoryBytes is how many bytes of drawn pages are held.
+const MaxMemoryBytes = 64 << 20
 
 // NewMemory is a window with nothing drawn yet, holding up to this many bytes.
 func NewMemory(limit int) *Memory {
 	return &Memory{index: map[ID]*list.Element{}, order: list.New(), limit: limit}
 }
 
-// Draw hands over one drawn page, drawing it where it is not held. Several asks
+// GetOrRender hands over one drawn page, drawing it where it is not held. Several asks
 // for the same page draw it once and are answered with the one drawing.
-func (p *Memory) Draw(ctx context.Context, key ID, drawn func() ([]byte, error)) ([]byte, error) {
+func (p *Memory) GetOrRender(ctx context.Context, key ID, drawn func() ([]byte, error)) ([]byte, error) {
 	p.mu.Lock()
 	if el, ok := p.index[key]; ok {
 		p.order.MoveToFront(el)
@@ -76,7 +76,7 @@ func (p *Memory) Draw(ctx context.Context, key ID, drawn func() ([]byte, error))
 		p.mu.Unlock()
 		return pic.wait(ctx)
 	}
-	pic := &picture{ready: make(chan struct{})}
+	pic := &renderedPage{ready: make(chan struct{})}
 	p.index[key] = p.order.PushFront(&entry{key: key, pic: pic})
 	p.mu.Unlock()
 
@@ -91,7 +91,7 @@ func (p *Memory) Draw(ctx context.Context, key ID, drawn func() ([]byte, error))
 		return pic.body, pic.why
 	}
 	if pic.why != nil {
-		p.drop(key)
+		p.remove(key)
 		return nil, pic.why
 	}
 	p.bytes += len(pic.body)
@@ -108,15 +108,15 @@ func (p *Memory) Has(key ID) bool {
 	return ok
 }
 
-// Drop takes one drawing out.
-func (p *Memory) Drop(key ID) {
+// Remove takes one drawing out.
+func (p *Memory) Remove(key ID) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.drop(key)
+	p.remove(key)
 }
 
-// drop takes one drawing out. The caller holds p.mu.
-func (p *Memory) drop(key ID) {
+// remove takes one drawing out. The caller holds p.mu.
+func (p *Memory) remove(key ID) {
 	el, ok := p.index[key]
 	if !ok {
 		return
@@ -137,7 +137,7 @@ func (p *Memory) trim() {
 		oldest := el.Value.(*entry)
 		select {
 		case <-oldest.pic.ready:
-			p.drop(oldest.key)
+			p.remove(oldest.key)
 		default:
 		}
 		el = before

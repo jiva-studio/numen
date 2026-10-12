@@ -6,10 +6,10 @@ import type { Row, RowId, ShownRow } from './row'
  * Where held rows would land: inside a row, or above one. Into no row at all
  * is the top level.
  */
-export type RowLanding = { readonly into: RowId | null } | { readonly before: RowId }
+export type RowDropTarget = { readonly into: RowId | null } | { readonly before: RowId }
 
-/** The row a landing names, and nothing for the top level. */
-const getLandingRow = (at: RowLanding): RowId | null => ('into' in at ? at.into : at.before)
+/** The row a drop target names, and nothing for the top level. */
+const getTargetRow = (at: RowDropTarget): RowId | null => ('into' in at ? at.into : at.before)
 
 /**
  * What letting go at a height comes to.
@@ -17,24 +17,24 @@ const getLandingRow = (at: RowLanding): RowId | null => ('into' in at ? at.into 
  * A row that holds is read in three bands: the middle half means into it, and
  * the quarter at either end means between. Every other row is halved, and each
  * half means between. Past the last row is the top level, which is what the
- * tree's own empty area comes to. A landing naming one of the rows being
+ * tree's own empty area comes to. A drop target naming one of the rows being
  * dragged moves nothing and answers nothing.
  */
-export function landing(
+export function getRowDropTarget(
   visibleRows: readonly ShownRow[],
   dragIds: readonly RowId[],
   y: number,
   height: number,
-): RowLanding | null {
+): RowDropTarget | null {
   const found = bandAt(visibleRows, y, height)
   if (!found) return null
 
-  const on = getLandingRow(found)
+  const on = getTargetRow(found)
   return on !== null && dragIds.includes(on) ? null : found
 }
 
-/** The band a height falls in, as a landing. */
-function bandAt(visibleRows: readonly ShownRow[], y: number, height: number): RowLanding | null {
+/** The band a height falls in, as a drop target. */
+function bandAt(visibleRows: readonly ShownRow[], y: number, height: number): RowDropTarget | null {
   if (height <= 0 || y < 0) return null
 
   const at = Math.floor(y / height)
@@ -51,8 +51,8 @@ function bandAt(visibleRows: readonly ShownRow[], y: number, height: number): Ro
   return next ? { before: next.id } : { into: null }
 }
 
-/** The row a landing puts what is held inside. Null at the top level. */
-export const holderOf = (visibleRows: readonly ShownRow[], at: RowLanding): RowId | null =>
+/** The row a drop target puts what is held inside. Null at the top level. */
+export const holderOf = (visibleRows: readonly ShownRow[], at: RowDropTarget): RowId | null =>
   'into' in at ? at.into : (visibleRows.find((row) => row.id === at.before)?.parent ?? null)
 
 /**

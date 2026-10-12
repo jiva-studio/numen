@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue'
 import type { Extension } from '@numen/ui'
-import type { Change } from './model/hold'
+import type { Change } from './model/changeTracker'
 import type { CreateResult } from '@/entities/file'
 import type { NewNote, NoteHeading, OpenNote } from '@/entities/note'
 import type { SearchDeps } from '@/features/command-palette'

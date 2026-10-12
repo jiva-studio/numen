@@ -5,25 +5,25 @@
  * and which of them another command's row reaches.
  */
 import { describe, expect, it } from 'vitest'
-import { commandsOf, isCommandsTyped, overNote } from './commands'
+import { commandsOf, isCommandPrefixTyped, getNoteCommands } from './commands'
 import { WORDS as words } from '@/shared/words'
 
 describe('the character that means the commands', () => {
   it('is one typed into a field holding nothing', () => {
-    expect(isCommandsTyped('', '>')).toBe(true)
+    expect(isCommandPrefixTyped('', '>')).toBe(true)
   })
 
   it('is not one typed into a field holding words, so a search for one stands', () => {
-    expect(isCommandsTyped('foo', '>foo')).toBe(false)
-    expect(isCommandsTyped('', '>foo')).toBe(false)
-    expect(isCommandsTyped('foo', '>')).toBe(false)
-    expect(isCommandsTyped('>', '>>')).toBe(false)
+    expect(isCommandPrefixTyped('foo', '>foo')).toBe(false)
+    expect(isCommandPrefixTyped('', '>foo')).toBe(false)
+    expect(isCommandPrefixTyped('foo', '>')).toBe(false)
+    expect(isCommandPrefixTyped('>', '>>')).toBe(false)
   })
 })
 
 describe('the commands over a note', () => {
   it('leave out the ones another command reaches on its own row', () => {
-    const over = overNote(commandsOf(words)).map((one) => one.id)
+    const over = getNoteCommands(commandsOf(words)).map((one) => one.id)
 
     expect(over).not.toContain('beside')
     expect(over).not.toContain('destroy')

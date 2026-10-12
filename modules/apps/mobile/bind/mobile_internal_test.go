@@ -281,7 +281,7 @@ func TestSeedLeavesAVaultThatHoldsANoteAsItIs(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := seed(root); err != nil {
+	if err := seedVault(root); err != nil {
 		t.Fatal(err)
 	}
 	held, err := os.ReadDir(root)
@@ -294,7 +294,7 @@ func TestSeedLeavesAVaultThatHoldsANoteAsItIs(t *testing.T) {
 }
 
 func TestSeedAnswersTheErrorOfAFolderItCannotList(t *testing.T) {
-	err := seed(filepath.Join(t.TempDir(), "missing"))
+	err := seedVault(filepath.Join(t.TempDir(), "missing"))
 	if !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("seed answered %v, want the folder's own error", err)
 	}
@@ -434,7 +434,7 @@ func TestSeedAnswersTheErrorOfANoteItCannotWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.Chmod(root, 0o700) })
-	err := seed(root)
+	err := seedVault(root)
 	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "seeding ") {
 		t.Errorf("seed answered %v, want the permission error naming the note it was writing", err)
 	}

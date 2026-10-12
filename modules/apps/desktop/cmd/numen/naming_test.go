@@ -62,7 +62,7 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			// walk that first reads the file files it at two paths at once.
 			waitForIndex(t, opened, v, "Entropy.md")
 
-			core := agentCore(cfg, opened, v.Path, io.Discard)
+			core := makeAgentCore(cfg, opened, v.Path, io.Discard)
 			renamed, err := core.Notes.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
 			if err != nil {
 				t.Fatal(err)

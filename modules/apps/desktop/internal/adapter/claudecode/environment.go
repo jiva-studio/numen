@@ -23,9 +23,9 @@ var dropped = []string{
 	"CLAUDE_EFFORT",
 }
 
-// environment is what the agent is started with: everything the machine holds,
+// buildEnvironment is what the agent is started with: everything the machine holds,
 // less what belongs to a session it is not part of.
-func environment(held []string) []string {
+func buildEnvironment(held []string) []string {
 	out := make([]string, 0, len(held))
 	for _, entry := range held {
 		name, _, found := strings.Cut(entry, "=")

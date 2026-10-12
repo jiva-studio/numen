@@ -1,7 +1,7 @@
 /**
  * What the plex is told, and what it says back.
  */
-import type { MenuOpening } from '@/shared/ui/menu'
+import type { MenuTrigger } from '@/shared/ui/menu'
 import type { Viewport } from '@/shared/lib/viewport'
 import type { Placement, PlexOptionsInput } from '../lib/arrange'
 import type { PlexPart } from '../lib/inside'
@@ -95,7 +95,7 @@ export interface PlexEvents {
    * Every node answers this, the focus included. What the menu holds and what
    * choosing an item does are the caller's.
    */
-  (event: 'menu', id: string, at: Position, opening: MenuOpening): void
+  (event: 'menu', id: string, at: Position, trigger: MenuTrigger): void
   /** A menu asked for on a node has nothing left to stand on. */
   (event: 'dismiss'): void
   /**

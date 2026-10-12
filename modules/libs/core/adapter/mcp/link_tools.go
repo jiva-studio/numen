@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-func addLinkReadingTools(server *sdk.Server, core Core) {
+func addLinkReadTools(server *sdk.Server, core Core) {
 	addLinkList(server, core)
 }
 
@@ -38,7 +38,7 @@ func addLinkList(server *sdk.Server, core Core) {
 	}))
 }
 
-func addLinkWritingTools(server *sdk.Server, core Core) {
+func addLinkWriteTools(server *sdk.Server, core Core) {
 	addLinkAdd(server, core)
 	addLinkUpdate(server, core)
 	addLinkRemove(server, core)
@@ -74,7 +74,7 @@ func addLinks(ctx context.Context, core Core, in linkAddInput) (linkAddOutput, e
 	if len(in.Links) > maxRefs {
 		return linkAddOutput{}, fmt.Errorf("write at most %d links at a time", maxRefs)
 	}
-	// Asked of the whole call, before a file is opened.
+	// The count is checked for the whole call before any file is opened.
 	size := 0
 	for _, add := range in.Links {
 		size += countLinkBytes(add.Link)
@@ -85,8 +85,7 @@ func addLinks(ctx context.Context, core Core, in linkAddInput) (linkAddOutput, e
 	}
 
 	outcomes := make([]AddOutcome, 0, len(in.Links))
-	// A malformed link is set aside before the grouping, so it costs only
-	// itself. What is left is grouped: links sharing a note share a write.
+	// A malformed link is rejected on its own; the remaining links are grouped by note, one write per note.
 	groups := newLinkGroups()
 	for i, add := range in.Links {
 		outcomes = append(outcomes, AddOutcome{From: add.From, To: add.To})
@@ -98,8 +97,7 @@ func addLinks(ctx context.Context, core Core, in linkAddInput) (linkAddOutput, e
 	return linkAddOutput{Added: outcomes}, nil
 }
 
-// linkGroups holds the links of one call by the note each is written into, in
-// the order the notes first appear.
+// linkGroups holds the links of one call grouped by target note, in order of first appearance.
 type linkGroups struct {
 	order        []string
 	links        map[string][]domain.Link
@@ -115,8 +113,7 @@ func newLinkGroups() *linkGroups {
 	}
 }
 
-// add groups the i-th addition under its note and returns the reason it was
-// set aside, which is empty when it was grouped.
+// add groups the i-th addition under its note and returns the rejection reason, empty when grouped.
 func (g *linkGroups) add(i int, add Addition) string {
 	link := newDomainLink(add.Link)
 	if err := note.CheckWritable(link); err != nil {
@@ -126,8 +123,7 @@ func (g *linkGroups) add(i int, add Addition) string {
 	if err != nil {
 		return sayError(err)
 	}
-	// One note's links are one write, so the note they are written
-	// against is one note as one caller read it.
+	// All links of a note are written together against one fingerprint of that note.
 	if first, grouped := g.fingerprints[add.From]; grouped && first != seen {
 		return "the links written into " + add.From +
 			" name two different fingerprints, and they are one write"
@@ -142,10 +138,7 @@ func (g *linkGroups) add(i int, add Addition) string {
 }
 
 // writeLinkGroups writes each note's links as one change, and records the
-// result on the outcome of every link in it.
-//
-// One note's links are one write: they land or fail together, and each
-// carries the same reason. Another note's write is untouched by it.
+// result on the outcome of every link in it. The links of a note succeed or fail together with the same reason.
 func writeLinkGroups(ctx context.Context, core Core, groups *linkGroups, outcomes []AddOutcome) error {
 	for _, from := range groups.order {
 		if err := ctx.Err(); err != nil {

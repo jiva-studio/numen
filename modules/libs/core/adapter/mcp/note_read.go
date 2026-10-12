@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-func addNoteReadingTools(server *sdk.Server, core Core) {
+func addNoteReadTools(server *sdk.Server, core Core) {
 	addNoteSearch(server, core)
 	addNoteTitles(server, core)
 	addNoteRead(server, core)
@@ -35,11 +35,11 @@ func addNoteTitles(server *sdk.Server, core Core) {
 			"one. Paths that name nothing come back under `missing` rather than as an " +
 			"error: a note may have been removed since you last saw it.",
 	}, newHandler(func(ctx context.Context, in noteTitlesInput) (noteTitlesOutput, error) {
-		return lookUpNoteTitles(ctx, core, in)
+		return getNoteTitles(ctx, core, in)
 	}))
 }
 
-func lookUpNoteTitles(ctx context.Context, core Core, in noteTitlesInput) (noteTitlesOutput, error) {
+func getNoteTitles(ctx context.Context, core Core, in noteTitlesInput) (noteTitlesOutput, error) {
 	if len(in.Paths) > maxRefs {
 		return noteTitlesOutput{}, fmt.Errorf("ask about at most %d notes at a time", maxRefs)
 	}
@@ -104,17 +104,15 @@ func readNotes(ctx context.Context, core Core, in noteReadInput) (noteReadOutput
 	return res, nil
 }
 
-// addNoteContents files what reading the note at path returned under the list
-// that its outcome belongs to.
+// addNoteContents adds the contents read from the note at path to the result.
 func addNoteContents(res *noteReadOutput, path string, contents note.Contents) {
 	switch contents.Outcome {
 	case note.Ok:
 		res.Notes = append(res.Notes, Contents{
 			Path: path,
 			Body: contents.Body,
-			// What the file was when it was asked about, which is
-			// before its bytes were read. A write landing in between
-			// makes this stale, and the next write is refused.
+			// The fingerprint is taken before the bytes are read; a write in between
+			// makes it stale and the next write is refused.
 			Fingerprint: fingerprintOf(contents.Fingerprint),
 		})
 	case note.Missing:

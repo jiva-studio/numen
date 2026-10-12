@@ -359,7 +359,7 @@ func TestTheVaultTheWindowIsShowingIsNotForgotten(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_forget", map[string]any{"vault": f.first.ID})
+	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
 	if !strings.Contains(why, "showing") {
 		t.Errorf("the vault in front was refused with %q", why)
 	}
@@ -377,7 +377,7 @@ func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
 	out := call[struct {
 		IsForgotten bool   `json:"forgotten"`
 		Folder      string `json:"folder"`
-	}](t, session, "vault_forget", map[string]any{"vault": f.second.ID})
+	}](t, session, "vault_remove", map[string]any{"vault": f.second.ID})
 	if !out.IsForgotten || out.Folder != f.second.Path {
 		t.Fatalf("the vault forgotten is %+v", out)
 	}
@@ -402,9 +402,9 @@ func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 
 	call[struct {
 		IsForgotten bool `json:"forgotten"`
-	}](t, session, "vault_forget", map[string]any{"vault": f.second.ID})
+	}](t, session, "vault_remove", map[string]any{"vault": f.second.ID})
 
-	why := getRefusal(t, session, "vault_forget", map[string]any{"vault": f.first.ID})
+	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": f.first.ID})
 	if !strings.Contains(why, "only vault") {
 		t.Errorf("the last vault was refused with %q", why)
 	}
@@ -418,7 +418,7 @@ func TestForgettingAVaultTheListDoesNotHoldSaysSo(t *testing.T) {
 	f := onTheList(t)
 	session := newSessionOver(t, f.core)
 
-	why := getRefusal(t, session, "vault_forget", map[string]any{"vault": "nowhere"})
+	why := getRefusal(t, session, "vault_remove", map[string]any{"vault": "nowhere"})
 	if !strings.Contains(why, "no such vault") {
 		t.Errorf("a vault nothing answers to was refused with %q", why)
 	}
@@ -430,9 +430,9 @@ func TestOpeningAVaultMovesTheWindowToIt(t *testing.T) {
 
 	out := call[struct {
 		IsOpening bool   `json:"opening"`
-		Doing     string `json:"doing"`
+		Status    string `json:"status"`
 	}](t, session, "vault_open", map[string]any{"vault": f.second.Name})
-	if !out.IsOpening || !strings.Contains(out.Doing, f.second.Name) {
+	if !out.IsOpening || !strings.Contains(out.Status, f.second.Name) {
 		t.Fatalf("the answer is %+v", out)
 	}
 
@@ -483,10 +483,10 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 		{"vault_list", func(c *mcp.Core) { c.Vaults.Registry = nil }},
 		{"vault_add", func(c *mcp.Core) { c.Vaults.Add = nil }},
 		{"vault_rename", func(c *mcp.Core) { c.Vaults.Rename = nil }},
-		{"vault_forget", func(c *mcp.Core) { c.Vaults.Forget = nil }},
+		{"vault_remove", func(c *mcp.Core) { c.Vaults.Forget = nil }},
 		{"vault_open", func(c *mcp.Core) { c.Vaults.Opens = nil }},
 		{"vault_rename", func(c *mcp.Core) { c.Vaults.Registry = nil }},
-		{"vault_forget", func(c *mcp.Core) { c.Vaults.Registry = nil }},
+		{"vault_remove", func(c *mcp.Core) { c.Vaults.Registry = nil }},
 		{"vault_open", func(c *mcp.Core) { c.Vaults.Registry = nil }},
 	} {
 		t.Run(one.tool, func(t *testing.T) {

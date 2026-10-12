@@ -3,7 +3,7 @@
  * one out. It is arithmetic over the settings alone, and it says so.
  */
 import { dayAfter, daysBetween } from '@numen/ui'
-import { DEFAULTS, NOWHERE } from '../types'
+import { DEFAULTS, NO_PLACE } from '../types'
 import type { Curve, Place, Point, Settings, SettingsBounds } from '../types'
 import { goalValue, findNearest } from './curve'
 
@@ -37,7 +37,7 @@ const MIDDLE = 0.9
  * sketch of a target is drawn across the span it says, so the guess and the
  * answer stand over one range.
  */
-export const approximate = (settings: Settings, today: string, within: SettingsBounds): Curve => {
+export const estimateCurve = (settings: Settings, today: string, within: SettingsBounds): Curve => {
   const grid = gridFor(settings, today, within)
   const at = grid.map((value) => estimatePoint(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
@@ -50,7 +50,7 @@ export const approximate = (settings: Settings, today: string, within: SettingsB
     days,
     at,
     now,
-    suggested: NOWHERE,
+    suggested: NO_PLACE,
     decks: 0,
     cards: 0,
     overdue: 0,

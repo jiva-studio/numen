@@ -15,7 +15,7 @@ import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } fr
 import { rowsAndColumns, type Placement, type Seating, type Widths } from './placement'
 import { routeEdges, routingFor } from './routing'
 import { spacingFor, type Spacing } from './spacing'
-import { settleTitles } from './titles'
+import { separateTitles } from './titles'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -80,7 +80,7 @@ export function arrangePlex(
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const routing = routingFor(resolved, measureLabel, labelDepth)
-  const edges = settleTitles(routeEdges(neighbourhood.edges, byId, routing), nodes, routing)
+  const edges = separateTitles(routeEdges(neighbourhood.edges, byId, routing), nodes, routing)
 
   return { nodes, edges, extent: extentOf(nodes), overflow }
 }

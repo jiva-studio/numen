@@ -4,7 +4,7 @@ import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { LANGUAGES } from '../config/languages'
 import { live } from './live'
-import { indenting, leaving, preview, prose, setup, type Settings } from './setup'
+import { tabKeyBinding, escapeKeyBinding, preview, prose, setup, type Settings } from './setup'
 
 // Nothing here has a size, and the editor measures anyway.
 Range.prototype.getClientRects = () =>
@@ -106,7 +106,7 @@ describe('the markdown the editor is written in', () => {
 })
 
 describe('Tab', () => {
-  const tab = (view: EditorView) => indenting.run?.(view) ?? false
+  const tab = (view: EditorView) => tabKeyBinding.run?.(view) ?? false
 
   it('indents while the editor holds it', () => {
     const view = open({}, 'one')
@@ -122,21 +122,21 @@ describe('Tab', () => {
 
   it('walks on after Escape handed it to the page', () => {
     const view = open({}, 'one')
-    expect(leaving.run?.(view)).toBe(false)
+    expect(escapeKeyBinding.run?.(view)).toBe(false)
     expect(tab(view)).toBe(false)
     expect(view.state.doc.toString()).toBe('one')
   })
 
   it('stays with the page through changes to the text', () => {
     const view = open({}, 'one')
-    leaving.run?.(view)
+    escapeKeyBinding.run?.(view)
     view.dispatch({ changes: { from: 3, insert: ' two' } })
     expect(tab(view)).toBe(false)
   })
 
   it('goes back to the editor when the keyboard arrives', () => {
     const view = open({}, 'one')
-    leaving.run?.(view)
+    escapeKeyBinding.run?.(view)
     focus(view)
     expect(tab(view)).toBe(true)
   })
@@ -161,7 +161,7 @@ describe('Tab', () => {
 })
 
 describe('Shift-Tab', () => {
-  const dedent = (view: EditorView) => indenting.shift?.(view) ?? false
+  const dedent = (view: EditorView) => tabKeyBinding.shift?.(view) ?? false
 
   it('takes an indent back while the editor holds Tab', () => {
     const view = open({}, '  one')
@@ -171,7 +171,7 @@ describe('Shift-Tab', () => {
 
   it('walks on after Escape handed Tab to the page', () => {
     const view = open({}, '  one')
-    leaving.run?.(view)
+    escapeKeyBinding.run?.(view)
     expect(dedent(view)).toBe(false)
     expect(view.state.doc.toString()).toBe('  one')
   })
@@ -185,8 +185,8 @@ describe('Escape', () => {
         handed.push(update.transactions.filter((one) => one.effects.length > 0).length)
       }),
     })
-    leaving.run?.(view)
-    leaving.run?.(view)
+    escapeKeyBinding.run?.(view)
+    escapeKeyBinding.run?.(view)
     expect(handed.reduce((sum, count) => sum + count, 0)).toBe(1)
   })
 })

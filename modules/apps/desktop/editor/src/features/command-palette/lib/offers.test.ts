@@ -3,7 +3,7 @@
  * the note it offers is made as.
  */
 import { describe, expect, it } from 'vitest'
-import { appendCreateOffer, createNoteInvocation, MAKING } from './offers'
+import { appendCreateOffer, createNoteInvocation, CREATE_NOTE_ID } from './offers'
 import type { CommandTarget } from '../types'
 import { WORDS as words } from '@/shared/words'
 
@@ -34,7 +34,7 @@ describe('a search that turned up nothing', () => {
   it('offers to make the note that was looked for', () => {
     const offered = appendCreateOffer(createGroups(0), 'Entropy', words, front())
 
-    expect(offered.at(-1)?.id).toBe(MAKING)
+    expect(offered.at(-1)?.id).toBe(CREATE_NOTE_ID)
     expect(offered.at(-1)?.items[0]?.title).toBe('Create a note called “Entropy”')
   })
 
@@ -72,7 +72,12 @@ describe('a search that turned up nothing', () => {
   it('offers the seats of the note in front, and says which note that is', () => {
     const item = appendCreateOffer(createGroups(0), 'Entropy', words, front()).at(-1)?.items[0]
 
-    expect(item?.actions?.map((one) => one.id)).toStrictEqual([MAKING, 'child', 'parent', 'jump'])
+    expect(item?.actions?.map((one) => one.id)).toStrictEqual([
+      CREATE_NOTE_ID,
+      'child',
+      'parent',
+      'jump',
+    ])
     expect(item?.detail).toBe(front().title)
   })
 
@@ -84,7 +89,7 @@ describe('a search that turned up nothing', () => {
       front({ path: '', title: '' }),
     ).at(-1)?.items[0]
 
-    expect(item?.actions?.map((one) => one.id)).toStrictEqual([MAKING])
+    expect(item?.actions?.map((one) => one.id)).toStrictEqual([CREATE_NOTE_ID])
     expect(item?.detail).toBeUndefined()
   })
 

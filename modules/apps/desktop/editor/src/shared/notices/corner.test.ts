@@ -6,7 +6,7 @@
  * nothing to do with each other.
  */
 import { describe, expect, it } from 'vitest'
-import { cornerOf, type State, type Words } from './corner'
+import { getCornerNotices, type State, type Words } from './corner'
 import type { Task } from './task'
 import type { IndexCoverage } from './coverage'
 import type { WindowMessage } from './messages'
@@ -60,7 +60,7 @@ const corner = (
   messages: readonly WindowMessage[] = [],
   state: State = well(),
   coverage: IndexCoverage = vault(),
-) => cornerOf(tasks, messages, state, coverage, words)
+) => getCornerNotices(tasks, messages, state, coverage, words)
 
 describe('a document being read', () => {
   it('draws one card, whatever else the vault says about itself', () => {

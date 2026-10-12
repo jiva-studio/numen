@@ -9,7 +9,7 @@ import { Seat } from '@numen/protocol'
 import type { GetNeighbourhoodResponse } from '@numen/protocol'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@numen/ui'
 
-const seats: Record<Seat, PlexRelatedSeat | null> = {
+const SEAT_BY_WIRE: Record<Seat, PlexRelatedSeat | null> = {
   [Seat.UNSPECIFIED]: null,
   [Seat.PARENT]: 'parent',
   [Seat.CHILD]: 'child',
@@ -33,7 +33,7 @@ export function asPlex(neighbourhood: GetNeighbourhoodResponse): PlexNeighbourho
   const hanging: { id: string; label: string; through: string }[] = []
 
   for (const related of neighbourhood.related) {
-    const seat = seats[related.seat]
+    const seat = SEAT_BY_WIRE[related.seat]
     if (!seat || !related.note) continue
     const id = related.note.path
     shown.add(id)

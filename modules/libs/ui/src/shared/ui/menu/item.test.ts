@@ -4,7 +4,7 @@
  * area it has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { groupItems, getLandingIndex, placeMenu, stepTo, type MenuItem } from './item'
+import { groupItems, getInitialIndex, placeMenu, stepTo, type MenuItem } from './item'
 
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }
@@ -99,16 +99,16 @@ describe('where the keyboard lands as a menu opens', () => {
   ]
 
   it('is the first item that can be chosen, for one opened from the keyboard', () => {
-    expect(getLandingIndex('keyboard', items)).toBe(1)
+    expect(getInitialIndex('keyboard', items)).toBe(1)
   })
 
   it('is no item at all, for one opened by hand', () => {
-    expect(getLandingIndex('pointer', items)).toBe(-1)
+    expect(getInitialIndex('pointer', items)).toBe(-1)
   })
 
   it('is no item at all either way when there is nothing to land on', () => {
-    expect(getLandingIndex('keyboard', [])).toBe(-1)
-    expect(getLandingIndex('pointer', [])).toBe(-1)
+    expect(getInitialIndex('keyboard', [])).toBe(-1)
+    expect(getInitialIndex('pointer', [])).toBe(-1)
   })
 
   it('is the item in force where the menu names one', () => {
@@ -117,13 +117,13 @@ describe('where the keyboard lands as a menu opens', () => {
       { id: 'two', text: 'Two' },
       { id: 'three', text: 'Three' },
     ]
-    expect(getLandingIndex('keyboard', three, 'three')).toBe(2)
-    expect(getLandingIndex('pointer', three, 'three')).toBe(-1)
+    expect(getInitialIndex('keyboard', three, 'three')).toBe(2)
+    expect(getInitialIndex('pointer', three, 'three')).toBe(-1)
   })
 
   it('is the first that can be chosen where the one in force is not among them', () => {
-    expect(getLandingIndex('keyboard', items, 'gone')).toBe(1)
-    expect(getLandingIndex('keyboard', items, 'one')).toBe(1)
+    expect(getInitialIndex('keyboard', items, 'gone')).toBe(1)
+    expect(getInitialIndex('keyboard', items, 'one')).toBe(1)
   })
 })
 

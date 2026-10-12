@@ -3,7 +3,7 @@
  */
 import { computed, type ComputedRef } from 'vue'
 import type { Notice } from '@numen/ui'
-import { cornerOf } from '@/shared/notices/corner'
+import { getCornerNotices } from '@/shared/notices/corner'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowDisplay } from './useWindowDisplay'
 import type { useSettings } from './useSettings'
@@ -27,7 +27,7 @@ export function useWindowNotices({
   vaults,
 }: WindowNoticesDeps): ComputedRef<readonly Notice[]> {
   return computed<readonly Notice[]>(() =>
-    cornerOf(
+    getCornerNotices(
       [],
       log.messages.value,
       {

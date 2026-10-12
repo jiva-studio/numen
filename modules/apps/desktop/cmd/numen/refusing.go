@@ -57,11 +57,11 @@ func refuse(cfg container.Config, why error) {
 type refusal struct {
 	Heading  string
 	Sentence string
-	Facts    []fact
+	Facts    []detail
 	Remedy   string
 }
 
-type fact struct{ Name, Content string }
+type detail struct{ Name, Content string }
 
 // The headings a refusal is drawn under. Each names the thing that could not be
 // opened, which is the index or the person's own settings file.
@@ -79,11 +79,11 @@ func (refusal) page(cfg container.Config, why error) ([]byte, error) {
 
 	if built, ok := debug.ReadBuildInfo(); ok {
 		if version := built.Main.Version; version != "" && version != "(devel)" {
-			said.Facts = append(said.Facts, fact{"this build", version})
+			said.Facts = append(said.Facts, detail{"this build", version})
 		}
 		for _, setting := range built.Settings {
 			if setting.Key == "vcs.revision" {
-				said.Facts = append(said.Facts, fact{"revision", setting.Value})
+				said.Facts = append(said.Facts, detail{"revision", setting.Value})
 			}
 		}
 	}
@@ -116,7 +116,7 @@ func getRefusal(cfg container.Config, why error) refusal {
 		return refusal{
 			Heading:  readingTheSettings,
 			Sentence: "This settings file is not JSON, so numen cannot tell what it was asked for.",
-			Facts:    []fact{{"settings", settingsAt(cfg)}, {"what was read", why.Error()}},
+			Facts:    []detail{{"settings", getSettingsPath(cfg)}, {"what was read", why.Error()}},
 			Remedy: "Put the file right, or move it aside: " +
 				"numen writes a new one holding what it is doing.",
 		}
@@ -125,7 +125,7 @@ func getRefusal(cfg container.Config, why error) refusal {
 	return refusal{
 		Heading:  startingAtAll,
 		Sentence: why.Error(),
-		Facts:    []fact{{"index", indexAt(cfg)}, {"settings", settingsAt(cfg)}},
+		Facts:    []detail{{"index", getIndexPath(cfg)}, {"settings", getSettingsPath(cfg)}},
 		Remedy:   "Start numen again, and report what this window says if it stops here every time.",
 	}
 }
@@ -140,7 +140,7 @@ func getSizeRefusal(cfg container.Config, outside *settings.OutsideBounds) refus
 		return refusal{
 			Heading:  startingAtAll,
 			Sentence: fmt.Sprintf("%s was given a number the size does not take.", outside.At),
-			Facts: []fact{
+			Facts: []detail{
 				{"on the command line", outside.At},
 				{"given", written},
 				{"as far as the size goes", far},
@@ -151,8 +151,8 @@ func getSizeRefusal(cfg container.Config, outside *settings.OutsideBounds) refus
 	return refusal{
 		Heading:  readingTheSettings,
 		Sentence: fmt.Sprintf("%s is a number the size does not take.", outside.At),
-		Facts: []fact{
-			{"settings", settingsAt(cfg)},
+		Facts: []detail{
+			{"settings", getSettingsPath(cfg)},
 			{"field", outside.At},
 			{"written", written},
 			{"as far as the size goes", far},
@@ -172,8 +172,8 @@ const (
 // getIndexRefusal is the index refusing to open, which is one fault for each
 // way a path can fail to be an index.
 func getIndexRefusal(cfg container.Config, code int, why error) refusal {
-	at := indexAt(cfg)
-	said := refusal{Heading: openingTheIndex, Facts: []fact{{"index", at}}}
+	at := getIndexPath(cfg)
+	said := refusal{Heading: openingTheIndex, Facts: []detail{{"index", at}}}
 
 	folder := false
 	if info, err := os.Stat(at); err == nil {
@@ -190,7 +190,7 @@ func getIndexRefusal(cfg container.Config, code int, why error) refusal {
 		said.Remedy = "Point -index at a file, or move the folder out of the way."
 	case code == cannotOpen:
 		said.Sentence = "numen could neither open an index here nor make one."
-		said.Facts = append(said.Facts, fact{"folder", filepath.Dir(at)})
+		said.Facts = append(said.Facts, detail{"folder", filepath.Dir(at)})
 		said.Remedy = "Give yourself permission to write in the folder, " +
 			"or point -index somewhere you can write."
 	default:
@@ -200,8 +200,8 @@ func getIndexRefusal(cfg container.Config, code int, why error) refusal {
 	return said
 }
 
-// indexAt is the file the index is kept in, whether or not one was named.
-func indexAt(cfg container.Config) string {
+// getIndexPath is the file the index is kept in, whether or not one was named.
+func getIndexPath(cfg container.Config) string {
 	path, err := cfg.IndexPathOrDefault()
 	if err != nil {
 		return cfg.IndexPath
@@ -209,9 +209,9 @@ func indexAt(cfg container.Config) string {
 	return path
 }
 
-// settingsAt is the file a person configures this installation in. A registry
+// getSettingsPath is the file a person configures this installation in. A registry
 // pointed somewhere chosen takes the settings with it.
-func settingsAt(cfg container.Config) string {
+func getSettingsPath(cfg container.Config) string {
 	if cfg.SettingsPath != "" {
 		return cfg.SettingsPath
 	}

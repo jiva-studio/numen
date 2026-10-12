@@ -155,7 +155,7 @@ function formatValue(val: string) { ... }
 
 ## 10. Code formatting (Prettier & gofmt)
 
-*TypeScript, Vue, JSON and CSS are formatted with Prettier.* Prettier is configured in `modules/prettier.config.mjs`. Format with `npm run format`.
+*TypeScript, Vue, JSON and CSS are formatted with Prettier.* Prettier is configured in `modules/prettier.config.mjs`. Format with `npm run format` in `modules/`; the check is `npm run format:check`. Prettier's use is mandatory, and a change that is not Prettier-clean is rejected. Today `format:check` runs by hand and through the pre-commit hook, which runs `npx prettier --check` on the staged files; no CI workflow and no make target runs it.
 
 Go code is formatted with `gofmt` (`gofmt -l .`).
 
@@ -178,8 +178,8 @@ cd modules/libs/ui
 npm run typecheck
 npm run test:unit
 npm run build                                   # the windows reach @numen/ui through its build
-vitest run --project 'stories (chromium)'
-vitest run --project 'stories (webkit)'
+npx vitest run --project 'stories (chromium)'
+npx vitest run --project 'stories (webkit)'
 ```
 
 Take the `modules/libs/ui` suites **one at a time**. `npm test` there starts both story instances at once and the run dies before any test executes.

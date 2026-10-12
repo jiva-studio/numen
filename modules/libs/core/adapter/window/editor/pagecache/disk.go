@@ -44,12 +44,12 @@ type Disk struct {
 }
 
 const (
-	// mostKept is what the drawn pages may come to on disk. A book of five
+	// maxDiskBytes is what the drawn pages may come to on disk. A book of five
 	// hundred pages at one width is under this, so reading one through does not
 	// throw away its own beginning.
-	mostKept = 512 << 20
-	// sweptEvery is how much is written between sweeps.
-	sweptEvery = mostKept / 8
+	maxDiskBytes = 512 << 20
+	// trimInterval is how much is written between sweeps.
+	trimInterval = maxDiskBytes / 8
 )
 
 // NewDisk is where this machine keeps pages already drawn, and nothing where it
@@ -69,7 +69,7 @@ func NewDisk() *Disk {
 // NewDiskIn is a Disk in one folder, with nothing written to it yet and no sweep
 // running.
 func NewDiskIn(dir string) *Disk {
-	return &Disk{dir: dir, limit: mostKept, every: sweptEvery}
+	return &Disk{dir: dir, limit: maxDiskBytes, every: trimInterval}
 }
 
 // Close waits for the sweep that is running, and starts no more.
@@ -146,14 +146,14 @@ func (s *Disk) Put(key ID, body []byte) {
 	if due {
 		go func() {
 			defer s.going.Done()
-			s.sweep()
+			s.trim()
 		}()
 	}
 }
 
-// sweep drops the pages that have gone longest without being looked at, until
+// trim drops the pages that have gone longest without being looked at, until
 // what is kept is under the bound.
-func (s *Disk) sweep() {
+func (s *Disk) trim() {
 	if s == nil {
 		return
 	}
@@ -208,13 +208,13 @@ func (s *Disk) GetDir() string { return s.dir }
 // GetPath is where one drawing is kept, whether or not it has been drawn yet.
 func (s *Disk) GetPath(key ID) string { return filepath.Join(s.dir, s.getFileName(key)) }
 
-// SweepTo brings what is kept down to this many bytes, oldest first, and waits
+// TrimTo brings what is kept down to this many bytes, oldest first, and waits
 // for the sweep. What is kept is a cache, so a folder emptied further than the
 // bound is a folder whose pages are drawn again.
-func (s *Disk) SweepTo(bytes int64) {
+func (s *Disk) TrimTo(bytes int64) {
 	if s == nil {
 		return
 	}
 	s.limit = bytes
-	s.sweep()
+	s.trim()
 }
