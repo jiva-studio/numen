@@ -50,16 +50,16 @@ type Installation struct {
 	// listening to a recording each hold them, one run at a time.
 	models *source.Lock
 	// under is what every vault's passes run under.
-	under context.Context
-	wake  nudges
-	// why says why this installation embeds nothing, when it does not. It
+	under    context.Context
+	triggers indexTriggers
+	// embedderError says why this installation embeds nothing, when it does not. It
 	// stands in the list of what is being done, and is put back there when a
 	// vault going takes its own entries out.
-	why error
+	embedderError error
 	// stopEmbedder gives back the models the installation is holding.
 	stopEmbedder func() error
 
-	shutting shutting
+	shutdown shutdownState
 }
 
 // errNoVault is a question about a vault, asked of a window standing on
@@ -111,7 +111,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 		closeEmbedder = func() error { return nil }
 	}
 
-	wake := newNudges(settled)
+	wake := newIndexTriggers(quietPeriod)
 
 	// Where a passage sits on the page is asked of whichever producer made the
 	// text it is a place in, which is what the index records.
@@ -120,14 +120,14 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	highlighting.Documents = made.GetTextExtractor()
 
 	api := &API{
-		ChangeEvents: newChangeBroadcaster(),
-		Places:       newPlaceBroadcaster(),
-		Edits:        newEditBroadcaster(),
-		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
-		Wrote:        func() { raise(wake.notes) },
-		Readers:      made.GetVaultReaders(),
-		Viewer:       newCachingViewer(made.GetPageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
-		Highlight:    &highlighting,
+		ChangeEvents:      newChangeBroadcaster(),
+		Places:            newPlaceBroadcaster(),
+		Edits:             newEditBroadcaster(),
+		Window:            &wire.Window{Named: wire.Editor, Tasking: tasks},
+		NotifyNoteWritten: func() { fire(wake.notes) },
+		Readers:           made.GetVaultReaders(),
+		Viewer:            newCachingViewer(made.GetPageRenderer()), //nolint:contextcheck // a document stays open for the window, not for the request that opened it
+		Highlight:         &highlighting,
 		Notes: Notes{
 			Queries: made.GetNoteQueries(),
 			Links:   made.GetLinkQueries(),
@@ -152,23 +152,23 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// A search short of a half is said where the person is. A window opened
 	// from a desktop entry has no terminal to write to.
 	finds := made.NewSearch(asking, func(err error) {
-		api.say(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Error: err.Error()})
+		api.reportTask(task.Task{ID: wordsAlone, Doing: "Answering by words alone", Error: err.Error()})
 	})
 	api.Finds = &finds
 
 	pool := &Installation{
-		API:          api,
-		Embedder:     embedder,
-		Asking:       asking,
-		made:         made,
-		registry:     registry,
-		tasks:        tasks,
-		models:       &source.Lock{},
-		out:          out,
-		under:        ctx,
-		wake:         wake,
-		why:          why,
-		stopEmbedder: closeEmbedder,
+		API:           api,
+		Embedder:      embedder,
+		Asking:        asking,
+		made:          made,
+		registry:      registry,
+		tasks:         tasks,
+		models:        &source.Lock{},
+		out:           out,
+		under:         ctx,
+		triggers:      wake,
+		embedderError: why,
+		stopEmbedder:  closeEmbedder,
 	}
 
 	// Everything that acts on this installation's notes, cards and vaults, built
@@ -244,7 +244,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// Reading every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
 	//nolint:contextcheck // the passes behind a vault run under o.under, for as long as the window stands
-	if err := pool.arrive(first, made.IsRebuildingIndex()); err != nil {
+	if err := pool.startVault(first, made.IsRebuildingIndex()); err != nil {
 		_ = closeEmbedder()
 		_ = made.CloseIndex()
 		return nil, err
@@ -267,8 +267,8 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 func (o *Installation) Close() error {
 	// First: a search, a note and a link are answered straight from the index,
 	// and the index closes here. This stands until the last of them is off it.
-	o.API.Shut()
-	o.leave()
+	o.API.Close()
+	o.stopVault()
 	if o.API.Viewer != nil {
 		o.API.Viewer.close()
 	}
@@ -325,7 +325,7 @@ func (o *Installation) DraftingLocation(ctx context.Context, path, stood string)
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.
 func (o *Installation) Refresh() vaults.Refresh {
-	if on := o.API.showing.Load(); on != nil {
+	if on := o.API.session.Load(); on != nil {
 		return on.refresh
 	}
 	return o.made.GetRefresh()
@@ -335,8 +335,8 @@ func (o *Installation) Refresh() vaults.Refresh {
 // for the window and for an agent alike, so that what a person started through
 // one of them is shown by the other. Nothing while the window has no vault.
 func (o *Installation) GetRecognitionWorker() *source.RecognitionWorker {
-	if on := o.API.showing.Load(); on != nil {
-		return on.recognising
+	if on := o.API.session.Load(); on != nil {
+		return on.recognitionWorker
 	}
 	return nil
 }
@@ -346,8 +346,8 @@ func (o *Installation) GetRecognitionWorker() *source.RecognitionWorker {
 // that what a person started through one of them is shown by the other. Nothing
 // while the window has no vault.
 func (o *Installation) GetTranscriptionWorker() *source.TranscriptionWorker {
-	if on := o.API.showing.Load(); on != nil {
-		return on.transcribing
+	if on := o.API.session.Load(); on != nil {
+		return on.transcriptionWorker
 	}
 	return nil
 }
@@ -382,14 +382,14 @@ const (
 // what is being done. A theme the settings name that the catalogue has not is
 // said there.
 func (o *Installation) SayTheme(said string) {
-	o.API.say(task.Task{ID: wearingATheme, Doing: "Wearing a theme", Error: said})
+	o.API.reportTask(task.Task{ID: wearingATheme, Doing: "Wearing a theme", Error: said})
 }
 
 // Report puts what reading the settings had to tell a person in the list of
 // what is being done, which is where a person is.
 func (o *Installation) Report(said []string) {
 	for at, one := range said {
-		o.API.say(task.Task{
+		o.API.reportTask(task.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, at),
 			Doing: "Reading the settings",
 			Error: one,

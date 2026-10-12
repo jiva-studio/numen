@@ -98,7 +98,7 @@ func TestAFileThatIsNoBook(t *testing.T) {
 		reflowed: "this is not an archive at all",
 	})
 	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
-	api.show(vault)
+	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 
 	for _, one := range []struct {
@@ -213,7 +213,7 @@ func TestAnEntryThatIsNotAPictureIsNotServed(t *testing.T) {
 func TestACoverIsDrawnFromThePictureItWraps(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(newCoveredBook(t))})
 	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
-	api.show(vault)
+	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 	handler := api.NewHandler(http.NotFoundHandler())
 	mark := printOf(t, api, reflowed)
@@ -385,7 +385,7 @@ func readFrom(t *testing.T) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{reflowed: string(bookOf(t))})
 	api := &API{Readers: filesystem.VaultReaders{}, Viewer: newViewer(pdf.Documents{})}
-	api.show(vault)
+	api.setVault(vault)
 	t.Cleanup(api.Viewer.close)
 	return api, api.NewHandler(http.NotFoundHandler())
 }

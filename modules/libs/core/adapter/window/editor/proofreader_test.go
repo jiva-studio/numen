@@ -46,7 +46,7 @@ func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*AP
 	t.Helper()
 	api, handler := openRunWindow(t, held, read, willRun(), willRun())
 	by := &proofreads{isReady: true}
-	setPasses(api, func(on *passes) { on.proofreads = by })
+	modifySession(api, func(on *vaultSession) { on.transcriptProofreader = by })
 	return api, handler, by
 }
 
@@ -137,7 +137,7 @@ func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 // to ask.
 func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
 	api, _, _ := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
-	setPasses(api, func(on *passes) { on.proofreads = &proofreads{} })
+	modifySession(api, func(on *vaultSession) { on.transcriptProofreader = &proofreads{} })
 
 	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
 		t.Fatalf("it was refused %s", code)
@@ -148,7 +148,7 @@ func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
 // with, and the caller asks again.
 func TestAProofreadingAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 	api, _, _ := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
-	setPasses(api, func(on *passes) { on.proofreads = nil })
+	modifySession(api, func(on *vaultSession) { on.transcriptProofreader = nil })
 
 	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeUnavailable {
 		t.Fatalf("it was refused %s", code)

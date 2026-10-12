@@ -156,11 +156,11 @@ func (a *API) getLinkedArtifact(
 	}
 	hash := derived.Fingerprint([]byte(string(at)))
 	for _, from := range derived.Producers() {
-		got, err := farUnder(ctx, store, from, hash)
+		got, err := readRunProgress(ctx, store, from, hash)
 		if err != nil {
 			return nil, err
 		}
-		if got.stands != untouched {
+		if got.state != runNone {
 			return newArtifact(textOf(a.getProducer(at)), got), nil
 		}
 	}
@@ -229,7 +229,7 @@ func (a *API) fetchCopy(
 	// arrives.
 	asked := *a.Imports
 	asked.Progress = func(done, total int64) {
-		a.say(task.Task{
+		a.reportTask(task.Task{
 			ID: copying + ref.Path, Doing: "Downloading a copy", About: ref.Path,
 			Count: done, Total: total, Unit: task.Bytes, IsAsked: true,
 		})
@@ -266,7 +266,7 @@ const (
 // outside the window, so a tab drawing it reads what now stands. It is the same
 // channel a run reports itself through, and a tab follows both the same way.
 func (a *API) ReportArtifactChange(path string) {
-	a.say(task.Task{ID: fetching + path, Doing: "Correcting a transcript", About: path})
+	a.reportTask(task.Task{ID: fetching + path, Doing: "Correcting a transcript", About: path})
 	a.finishTask(fetching + path)
 }
 
@@ -388,7 +388,7 @@ func (a *API) DeleteArtifact(
 	// The queue told about it is the one behind the vault the recording was
 	// found in.
 	drops := *a.Drops
-	drops.Forgets = a.getForgetter()
+	drops.Forgets = a.getRecordingForgetter()
 
 	res, err := drops.Execute(ctx, showing, ref.Path)
 	switch {
@@ -414,13 +414,13 @@ func (a *API) run(
 	if by == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
+	got, err := a.getRunProgress(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	// What stands is what the ask comes to. A source a run already answered
 	// about is answered the same until that record is taken away.
-	if got.stands == done || got.stands == under || got.stands == silent || got.stands == unopened {
+	if got.state == runComplete || got.state == runActive || got.state == runNoSpeech || got.state == runUnopened {
 		return newArtifact(of, got), nil
 	}
 
@@ -479,7 +479,7 @@ func (a *API) fetchArtifact(
 	// before goes, and the site is read again.
 	asked := *a.Imports
 	asked.IsRepeat = true
-	a.say(task.Task{ID: fetching + ref.Path, Doing: "Downloading an address", About: ref.Path})
+	a.reportTask(task.Task{ID: fetching + ref.Path, Doing: "Downloading an address", About: ref.Path})
 	_, err := asked.Execute(ctx, v, ref.Path)
 	a.finishTask(fetching + ref.Path)
 	if err != nil {
@@ -559,11 +559,11 @@ func (a *API) proofreadReading(
 	if !puts.ProofreaderReady() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
 	}
-	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
+	got, err := a.getRunProgress(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	if got.stands != done {
+	if got.state != runComplete {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNotRead)
 	}
 
@@ -613,7 +613,7 @@ func (a *API) artifact(
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
 		return a.copyOf(ctx, v, ref.Path, at), nil
 	}
-	got, err := a.getReached(ctx, v, ref.Path, ref.Kind)
+	got, err := a.getRunProgress(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
 		return nil, err
 	}
@@ -676,25 +676,25 @@ func (a *API) corrections(
 	case !errors.Is(err, fs.ErrNotExist):
 		return nil, err
 	}
-	if !free(ctx, store, derived.Partial(said.Producer, said.Hash)) {
+	if !isUnclaimed(ctx, store, derived.Partial(said.Producer, said.Hash)) {
 		out.State = v1.State_STATE_RUNNING
 	}
 	return out, nil
 }
 
 // newArtifact is how far a run got, as the artifact a client reads.
-func newArtifact(of v1.ArtifactKind, got reached) *v1.Artifact {
+func newArtifact(of v1.ArtifactKind, got runProgress) *v1.Artifact {
 	out := &v1.Artifact{Kind: of, Bytes: int64(got.size)}
-	switch got.stands {
-	case done:
+	switch got.state {
+	case runComplete:
 		out.State = v1.State_STATE_DONE
-	case silent:
+	case runNoSpeech:
 		out.State = v1.State_STATE_EMPTY
-	case unopened:
+	case runUnopened:
 		out.State, out.Error = v1.State_STATE_FAILED, got.why
-	case under:
+	case runActive:
 		out.State = v1.State_STATE_RUNNING
-	case stopped:
+	case runStopped:
 		out.State = v1.State_STATE_STOPPED
 	default:
 		out.State = v1.State_STATE_NONE

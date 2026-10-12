@@ -170,7 +170,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 		}
 	}
 
-	api.Shut()
+	api.Close()
 
 	for _, path := range asked {
 		if code := getResponse(handler, path).Code; code != http.StatusServiceUnavailable {
@@ -399,7 +399,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 		file.Close()
 		return nil, errNoPage
 	}
-	api.show(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
+	api.setVault(testsupport.NewVault(t, map[string]string{"Note.pdf": "# Note\n"}))
 	handler := api.NewHandler(http.NotFoundHandler())
 
 	answered := make(chan struct{})
@@ -413,7 +413,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	shut := make(chan struct{})
 	go func() {
 		defer close(shut)
-		api.Shut()
+		api.Close()
 	}()
 
 	select {

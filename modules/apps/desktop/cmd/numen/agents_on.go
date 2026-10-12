@@ -174,11 +174,11 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 // it, so what went wrong is said here. A window that cannot be moved serves no
 // tool that would move it.
 func makeOpenVault(opened *editor.Installation, out io.Writer) func(context.Context, domain.Vault) error {
-	if opened.API.Opens == nil {
+	if opened.API.OpenVault == nil {
 		return nil
 	}
 	return func(ctx context.Context, v domain.Vault) error {
-		err := opened.API.Opens(ctx, v)
+		err := opened.API.OpenVault(ctx, v)
 		if err != nil {
 			fmt.Fprintln(out, "agents:", err)
 		}
