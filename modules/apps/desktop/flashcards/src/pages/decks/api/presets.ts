@@ -43,7 +43,7 @@ export interface DeckPreset {
 export type DeckPresetResult = Result<DeckPreset, string>
 
 /** What is shown of a preset the window has no other reason to give for. */
-export const UNREAD = 'the settings of this preset could not be read'
+export const PRESET_UNREADABLE_MESSAGE = 'the settings of this preset could not be read'
 
 /** The preset one deck is scheduled by, or why it could not be read. */
 export const readDeckPreset = async (
@@ -55,7 +55,7 @@ export const readDeckPreset = async (
     const answer = await presets.getVaultDeckPreset({ vault, deck })
     const settings = answer.preset?.settings
     if (!answer.preset || !settings) {
-      return asFailure(formatErrorCodeMessage(answer.error) || UNREAD)
+      return asFailure(formatErrorCodeMessage(answer.error) || PRESET_UNREADABLE_MESSAGE)
     }
     return asValue({
       deck,
@@ -70,6 +70,6 @@ export const readDeckPreset = async (
   } catch {
     // A preset that could not be asked for is refused in the same words as one
     // whose settings would not read, and that is what is drawn.
-    return asFailure(UNREAD)
+    return asFailure(PRESET_UNREADABLE_MESSAGE)
   }
 }

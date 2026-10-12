@@ -13,12 +13,14 @@ import type { Ref } from 'vue'
  * What each screen holds, by the screen it belongs to. A screen holding nothing
  * says nothing here.
  */
-export type Holdings<Name extends string> = Readonly<Partial<Record<Name, readonly (() => void)[]>>>
+export type ScreenCleanups<Name extends string> = Readonly<
+  Partial<Record<Name, readonly (() => void)[]>>
+>
 
 /** Order is the screens from the first one in to the last, and never empty. */
 export function useScreens<Name extends string>(
   order: readonly [Name, ...Name[]],
-  holds: Holdings<Name>,
+  cleanups: ScreenCleanups<Name>,
 ) {
   const on = ref<Name>(order[0]) as Ref<Name>
 
@@ -28,7 +30,7 @@ export function useScreens<Name extends string>(
    */
   const goTo = (to: Name) => {
     for (const name of order.slice(order.indexOf(to) + 1)) {
-      for (const forget of holds[name] ?? []) forget()
+      for (const cleanup of cleanups[name] ?? []) cleanup()
     }
     on.value = to
   }

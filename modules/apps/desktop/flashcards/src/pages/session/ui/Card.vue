@@ -24,7 +24,7 @@ const emit = defineEmits<{
 }>()
 
 /** A hand that moved less than this across was pressing and not dragging. */
-const STILL = 4
+const MAX_TAP_DISTANCE = 4
 
 /* --------------------------------- State ---------------------------------- */
 /** Where the hand went down, for telling a press from a drag across the card. */
@@ -67,7 +67,7 @@ const onClick = (press: MouseEvent) => {
   // press that went nowhere is a person asking for the answer.
   const distanceX = from.value === null ? 0 : Math.abs(press.clientX - from.value)
   from.value = null
-  if (distanceX <= STILL && !props.isShown) emit('show')
+  if (distanceX <= MAX_TAP_DISTANCE && !props.isShown) emit('show')
 }
 </script>
 

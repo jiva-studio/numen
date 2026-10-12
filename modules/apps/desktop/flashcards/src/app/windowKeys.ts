@@ -8,7 +8,7 @@
  */
 import { getVaultForKey } from '@numen/ui'
 
-import { getPickerKeyIntent, getSessionKeyIntent, isSwallowed } from '@/features/keyboard'
+import { getPickerKeyIntent, getSessionKeyIntent, shouldConsumeKey } from '@/features/keyboard'
 import { canStart } from '@/pages/decks'
 import type { Grade } from '@/entities/card'
 import type { VaultCardsDue } from '@/entities/vault'
@@ -137,7 +137,7 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
       isReading: deps.getShowing() === 'reading',
     })
     if (!asked) return
-    if (isSwallowed(asked)) press.preventDefault()
+    if (shouldConsumeKey(asked)) press.preventDefault()
     onSessionIntent(asked)
   }
 

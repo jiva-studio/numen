@@ -50,21 +50,22 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   /** The card the open conversation is about, and nothing while none is. */
   const about = shallowRef<CardFace | null>(null)
 
-  /** The talk itself, made when a card is first asked about. */
-  const talk = shallowRef<Conversation | null>(null)
+  /** The conversation itself, made when a card is first asked about. */
+  const conversation = shallowRef<Conversation | null>(null)
 
   /** How many conversations this window has opened, which names the next. */
   let opened = 0
 
-  const turns = computed<Turn[]>(() => talk.value?.turns.value ?? [])
-  const isWorking = computed(() => talk.value?.isWorking.value ?? false)
+  const turns = computed<Turn[]>(() => conversation.value?.turns.value ?? [])
+  const isWorking = computed(() => conversation.value?.isWorking.value ?? false)
 
-  /** The talk about one card, made once and let go of with the card. */
+  /** The conversation about one card, made once and let go of with the card. */
   const startTalk = (card: CardFace) => {
-    if (talk.value && about.value?.mark === card.mark && about.value?.face === card.face) return
+    if (conversation.value && about.value?.mark === card.mark && about.value?.face === card.face)
+      return
     endConversation()
     about.value = card
-    talk.value = useConversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
+    conversation.value = useConversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
   }
 
   /**
@@ -104,15 +105,15 @@ export function useAgentPanel(deps: AgentPanelDeps) {
     const card = about.value
     if (!card || !text) return
     written.value = ''
-    await talk.value?.ask(text, card.deck)
+    await conversation.value?.ask(text, card.deck)
   }
 
-  const stop = () => talk.value?.stop()
+  const stop = () => conversation.value?.stop()
 
   /** The conversation is over: the agent is told, and the panel holds nothing. */
   const endConversation = () => {
-    talk.value?.finish()
-    talk.value = null
+    conversation.value?.finish()
+    conversation.value = null
     about.value = null
     written.value = ''
     deps.showPanel(false)

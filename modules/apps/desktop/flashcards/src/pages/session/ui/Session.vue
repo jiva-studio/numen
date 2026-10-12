@@ -13,7 +13,7 @@ import { AnswerButton } from './answer-button'
 import type { PanelPlace } from '../model/carousel'
 import { grades } from '@/entities/card'
 import { deckName } from '@/entities/vault'
-import { ASKS, READS } from '@/features/keyboard'
+import { ASK_KEY, READ_KEY } from '@/features/keyboard'
 import type { CardFace, Grade } from '@/entities/card'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -64,11 +64,11 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
       <!-- The two panels stand in the order they stand in the strip: what is
            read is to the left of the card, and what is asked to the right. -->
       <Button variant="ghost" size="small" @click="$emit('read', '')">
-        <KeyCap :keys="chord(READS)" />
+        <KeyCap :keys="chord(READ_KEY)" />
         Read
       </Button>
       <Button variant="ghost" size="small" @click="$emit('ask')">
-        <KeyCap :keys="chord(ASKS)" />
+        <KeyCap :keys="chord(ASK_KEY)" />
         Ask
       </Button>
       <Button variant="ghost" size="small" @click="$emit('leave')">
