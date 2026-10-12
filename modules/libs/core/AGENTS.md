@@ -52,8 +52,8 @@ outside `port/`.
 |---|---|
 | An identity is a word of the core's own, in a field and in a signature alike | `TestTheCoresIdentitiesAreItsOwn`, `TestTheIdentitiesAPortAsksForAreTheCoresOwn` |
 | An instant is a `time.Time` | `TestEveryInstantTheCoreCarriesIsATime` |
-| No type is named by a gerund or a participle | `TestNoTypeOfTheCoreIsNamedByAGerundOrParticiple` |
-| Every word of the glossary names a type | `TestEveryWordOfTheDictionaryNamesAType` |
+
+No type is named by a gerund or a participle.
 
 The vocabulary itself is [`docs/glossary.md`](../../../docs/glossary.md), and
 its preamble is what a rename is judged against: a concept takes the word its
