@@ -284,6 +284,7 @@ func TestLettingGoOfTwoProvidersLetsGoOfBothAndSaysWhyOnce(t *testing.T) {
 				embedders.NewReached(first.model, "first", closing{saying: first, why: c.first}),
 				embedders.NewReached(second.model, "second", closing{saying: second, why: c.second}))
 
+			waitForComparison(t, first, second)
 			err := letGo()
 			if !errors.Is(err, c.want) || (c.want == nil && err != nil) {
 				t.Errorf("let go = %v, want %v", err, c.want)
