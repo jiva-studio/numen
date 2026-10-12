@@ -68,7 +68,7 @@ vi.mock('@/shared/clients', async (original) => ({
     getVaultDeckPreset: async () => ({ preset: undefined }),
     startSession: async (said: { deck: string }) => {
       started.push(said)
-      return { run: 'run', asked: [], unwritten: [], skipped: 0 }
+      return { run: 'run', cards: [], unwritten: [], skipped: 0 }
     },
   },
   windowService: { watchTasks: () => waits() },

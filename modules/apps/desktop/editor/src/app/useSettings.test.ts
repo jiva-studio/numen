@@ -36,7 +36,7 @@ const model = (over: Partial<Model> = {}): Model => ({
   namedAt: ['indexing', 'embedding', 'model', 'name'],
   name: 'e5-small-int8',
   title: 'E5 small',
-  shelf: 'On this machine',
+  group: 'On this machine',
   isDefault: false,
   presence: 'present',
   writes: [],
@@ -99,12 +99,12 @@ describe('the lists the palette offers for a setting', () => {
     ])
   })
 
-  it('offers the indexing models by shelf, with a model the file names first', () => {
+  it('offers the indexing models by group, with a model the file names first', () => {
     const { settings } = createSettings()
     const at = vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
     vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([
       model(),
-      model({ name: 'bge-small', title: 'BGE small', shelf: '', presence: 'nothing to fetch' }),
+      model({ name: 'bge-small', title: 'BGE small', group: '', presence: 'nothing to fetch' }),
     ])
 
     expect(settings.kept.getStepGroups('indexingModel', '')).toStrictEqual([

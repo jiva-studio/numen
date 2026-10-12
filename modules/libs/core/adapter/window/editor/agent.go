@@ -29,7 +29,7 @@ func (a *API) AskAgent(
 	}
 
 	return wire.Ask(ctx, taking, port.Task{
-		Question:     r.Msg.GetAsked(),
+		Question:     r.Msg.GetPrompt(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
 		Agent:        r.Msg.GetAgent(),

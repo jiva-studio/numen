@@ -12,7 +12,7 @@ import type { SelectChoice } from '@numen/ui'
 export interface Words {
   /** Said on the row an installation nobody has configured runs on. */
   readonly byDefault: string
-  /** The shelf a person's own value stands on. */
+  /** The group a person's own value stands on. */
   readonly owned: string
   /** What a model's files are on this machine, where that means anything. */
   readonly present: string
@@ -68,13 +68,13 @@ const getModelChoice = (model: Model, words: Words): SelectChoice => {
     id: model.name,
     text: model.isDefault ? `${name} — ${words.byDefault}` : name,
     ...(detail ? { detail } : {}),
-    ...(model.shelf ? { group: model.shelf } : {}),
+    ...(model.group ? { group: model.group } : {}),
   }
 }
 
 /**
  * The choices for one setting: what the file holds, then the presets this build
- * offers. A value the presets do not name stands first, under the shelf that
+ * offers. A value the presets do not name stands first, under the group that
  * says it is the person's own.
  */
 export const choicesFor = (

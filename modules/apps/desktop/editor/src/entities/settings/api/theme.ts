@@ -6,7 +6,7 @@
  * its name, the text of its file, and which of them is chosen. A size is one
  * multiplier, and how far it goes is the application's to say.
  */
-import { Mode as Modes, Shelf } from '@numen/protocol'
+import { Mode as Modes, Origin } from '@numen/protocol'
 import { namesOf } from '@numen/wire'
 import { theme } from '@/shared/clients'
 
@@ -15,9 +15,9 @@ export type Mode = 'system' | 'light' | 'dark'
 
 /** One theme as the list refers to it. */
 export interface Theme {
-  /** The shelf and the filename, which is how the theme is asked for again. */
+  /** The origin and the filename, which is how the theme is asked for again. */
   readonly name: string
-  /** What the file is called, without the shelf. */
+  /** What the file is called, without the origin. */
   readonly title: string
   /** Whether it ships inside the application. Every other theme is a file of the person's. */
   readonly isBuiltIn: boolean
@@ -80,7 +80,7 @@ export const themes: Themes = {
       themes: answer.themes.map((one) => ({
         name: one.name,
         title: one.title,
-        isBuiltIn: ships[one.shelf],
+        isBuiltIn: ships[one.origin],
         isPinned: one.isPinned,
       })),
       applied: answer.applied,
@@ -114,13 +114,13 @@ const parseBounds = (bounds: { least: number; most: number } | undefined): Bound
 })
 
 /**
- * Whether a theme ships inside the application. Keyed by the schema, so a shelf
+ * Whether a theme ships inside the application. Keyed by the schema, so an origin
  * added to it has to be answered here before this compiles.
  */
-const ships: Record<Shelf, boolean> = {
-  [Shelf.UNSPECIFIED]: false,
-  [Shelf.PRESET]: true,
-  [Shelf.MINE]: false,
+const ships: Record<Origin, boolean> = {
+  [Origin.UNSPECIFIED]: false,
+  [Origin.PRESET]: true,
+  [Origin.MINE]: false,
 }
 
 /**

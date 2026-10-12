@@ -63,7 +63,7 @@ describe('agentPort', () => {
     }
     expect(requests).toEqual([
       {
-        request: { asked: 'why?', focus: 'notes/Leaf mould.md', conversation: 'one' },
+        request: { prompt: 'why?', focus: 'notes/Leaf mould.md', conversation: 'one' },
         signal: abort.signal,
       },
     ])

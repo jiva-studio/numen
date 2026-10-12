@@ -913,13 +913,13 @@ func TestANodeHangsThePartsOfItsNoteUntilTheFileSaysOtherwise(t *testing.T) {
 			file: `{"appearance":{"text_scale":1.5}}`, isHanging: true, wasWritten: true,
 		},
 		"a field hanging them": {
-			file: `{"appearance":{"hang_parts_under_a_node":true}}`, isHanging: true, wasWritten: true,
+			file: `{"appearance":{"nest_headings_under_notes":true}}`, isHanging: true, wasWritten: true,
 		},
 		"a field naming nothing": {
-			file: `{"appearance":{"hang_parts_under_a_node":null}}`, isHanging: true, wasWritten: true,
+			file: `{"appearance":{"nest_headings_under_notes":null}}`, isHanging: true, wasWritten: true,
 		},
 		"a field leaving the box alone": {
-			file: `{"appearance":{"hang_parts_under_a_node":false}}`, isHanging: false, wasWritten: true,
+			file: `{"appearance":{"nest_headings_under_notes":false}}`, isHanging: false, wasWritten: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -949,10 +949,10 @@ func TestAnUntouchedInstallationWritesTheHangingDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(raw), `"hang_parts_under_a_node": true`) {
+	if !strings.Contains(string(raw), `"nest_headings_under_notes": true`) {
 		t.Errorf("the hanging is not in the file it wrote:\n%s", raw)
 	}
-	if !strings.Contains(string(raw), `"parts_under_a_node": 6`) {
+	if !strings.Contains(string(raw), `"nested_heading_limit": 6`) {
 		t.Errorf("the count is not in the file it wrote:\n%s", raw)
 	}
 }
@@ -971,10 +971,10 @@ func TestANodeStandsAsManyPartsAsTheFileNames(t *testing.T) {
 			file: `{"appearance":{"text_scale":1.5}}`, parts: 6, wasWritten: true,
 		},
 		"a field naming a number": {
-			file: `{"appearance":{"parts_under_a_node":3}}`, parts: 3, wasWritten: true,
+			file: `{"appearance":{"nested_heading_limit":3}}`, parts: 3, wasWritten: true,
 		},
 		"a field at either end": {
-			file: `{"appearance":{"parts_under_a_node":12}}`, parts: 12, wasWritten: true,
+			file: `{"appearance":{"nested_heading_limit":12}}`, parts: 12, wasWritten: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -997,28 +997,28 @@ func TestANodeStandsAsManyPartsAsTheFileNames(t *testing.T) {
 // drawn at a number nobody asked for, and the file says what a person wrote.
 func TestACountOfPartsOutsideWhatItGoesToIsRefused(t *testing.T) {
 	for _, body := range []string{
-		`{"appearance":{"parts_under_a_node":0}}`,
-		`{"appearance":{"parts_under_a_node":-1}}`,
-		`{"appearance":{"parts_under_a_node":13}}`,
+		`{"appearance":{"nested_heading_limit":0}}`,
+		`{"appearance":{"nested_heading_limit":-1}}`,
+		`{"appearance":{"nested_heading_limit":13}}`,
 	} {
 		if _, err := openAt(write(t, body)); err == nil {
 			t.Errorf("%s was read", body)
 		}
 	}
 
-	_, err := openAt(write(t, `{"appearance":{"parts_under_a_node":20}}`))
+	_, err := openAt(write(t, `{"appearance":{"nested_heading_limit":20}}`))
 	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
 	}
-	if outside.At != "appearance.parts_under_a_node" || outside.Number != 20 {
+	if outside.At != "appearance.nested_heading_limit" || outside.Number != 20 {
 		t.Errorf("refused %+v", outside)
 	}
-	if outside.Least != settings.PartsUnderANodeBounds.Least ||
-		outside.Most != settings.PartsUnderANodeBounds.Most {
+	if outside.Least != settings.NestedHeadingLimitBounds.Least ||
+		outside.Most != settings.NestedHeadingLimitBounds.Most {
 		t.Errorf("said the setting goes from %v to %v", outside.Least, outside.Most)
 	}
-	if said := outside.Error(); !strings.Contains(said, "appearance.parts_under_a_node is 20") {
+	if said := outside.Error(); !strings.Contains(said, "appearance.nested_heading_limit is 20") {
 		t.Errorf("says %q", said)
 	}
 }

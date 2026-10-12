@@ -20,7 +20,7 @@ const vaultUsage = `usage:
   numen-cli vault add <path> [--name <name>]
   numen-cli vault list
   numen-cli vault rename <vault> <new name>
-  numen-cli vault forget <vault>
+  numen-cli vault remove <vault>
   numen-cli vault erase <vault> [--yes]
   numen-cli vault open <vault>`
 
@@ -35,7 +35,7 @@ func runVaultCommand(ctx context.Context, out io.Writer, deps Deps, args []strin
 		return listVaults(out, deps)
 	case "rename":
 		return renameVault(ctx, out, deps, args[1:])
-	case "forget":
+	case "remove":
 		return removeVaultFromList(ctx, out, deps, args[1:])
 	case "erase":
 		return eraseVault(ctx, out, deps, args[1:])
@@ -133,7 +133,7 @@ func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) e
 
 func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []string) error {
 	if len(args) != 1 {
-		return errors.New("usage: numen-cli vault forget <vault>")
+		return errors.New("usage: numen-cli vault remove <vault>")
 	}
 	vaults, err := deps.Vaults()
 	if err != nil {
@@ -192,7 +192,7 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	)
 	res, err := erase.Execute(ctx, v)
 	if errors.Is(err, port.ErrNoTrash) {
-		return fmt.Errorf("%w — take it off the list with: numen-cli vault forget %s", err, v.Name)
+		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, v.Name)
 	}
 	if err != nil {
 		return err

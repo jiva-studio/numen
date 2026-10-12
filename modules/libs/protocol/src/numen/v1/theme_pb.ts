@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/theme.proto.
  */
 export const file_numen_v1_theme: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVwoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEhEKCWlzX3Bpbm5lZBgEIAEoCCITChFMaXN0VGhlbWVzUmVxdWVzdCLwAQoSTGlzdFRoZW1lc1Jlc3BvbnNlEh8KBnRoZW1lcxgBIAMoCzIPLm51bWVuLnYxLlRoZW1lEg8KB2FwcGxpZWQYAiABKAkSHAoEbW9kZRgDIAEoDjIOLm51bWVuLnYxLk1vZGUSFwoPaW50ZXJmYWNlX3NjYWxlGAQgASgBEhIKCnRleHRfc2NhbGUYBSABKAESMAoWaW50ZXJmYWNlX3NjYWxlX2JvdW5kcxgGIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIrChF0ZXh0X3NjYWxlX2JvdW5kcxgHIAEoCzIQLm51bWVuLnYxLkJvdW5kcyIgChBSZWFkVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiIAoRUmVhZFRoZW1lUmVzcG9uc2USCwoDY3NzGAEgASgJIp4BChZXcml0ZUFwcGVhcmFuY2VSZXF1ZXN0EgwKBG5hbWUYASABKAkSHAoEbW9kZRgCIAEoDjIOLm51bWVuLnYxLk1vZGUSHAoPaW50ZXJmYWNlX3NjYWxlGAMgASgBSACIAQESFwoKdGV4dF9zY2FsZRgEIAEoAUgBiAEBQhIKEF9pbnRlcmZhY2Vfc2NhbGVCDQoLX3RleHRfc2NhbGUiKAoXV3JpdGVBcHBlYXJhbmNlUmVzcG9uc2USDQoFZXJyb3IYASABKAkiFAoSV2F0Y2hUaGVtZXNSZXF1ZXN0IiQKE1dhdGNoVGhlbWVzUmVzcG9uc2USDQoFbmFtZXMYASADKAkqQAoFU2hlbGYSFQoRU0hFTEZfVU5TUEVDSUZJRUQQABIQCgxTSEVMRl9QUkVTRVQQARIOCgpTSEVMRl9NSU5FEAIqTAoETW9kZRIUChBNT0RFX1VOU1BFQ0lGSUVEEAASDwoLTU9ERV9TWVNURU0QARIOCgpNT0RFX0xJR0hUEAISDQoJTU9ERV9EQVJLEAMywwIKDFRoZW1lU2VydmljZRJHCgpMaXN0VGhlbWVzEhsubnVtZW4udjEuTGlzdFRoZW1lc1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VGhlbWVzUmVzcG9uc2USRAoJUmVhZFRoZW1lEhoubnVtZW4udjEuUmVhZFRoZW1lUmVxdWVzdBobLm51bWVuLnYxLlJlYWRUaGVtZVJlc3BvbnNlElYKD1dyaXRlQXBwZWFyYW5jZRIgLm51bWVuLnYxLldyaXRlQXBwZWFyYW5jZVJlcXVlc3QaIS5udW1lbi52MS5Xcml0ZUFwcGVhcmFuY2VSZXNwb25zZRJMCgtXYXRjaFRoZW1lcxIcLm51bWVuLnYxLldhdGNoVGhlbWVzUmVxdWVzdBodLm51bWVuLnYxLldhdGNoVGhlbWVzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiWQoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIgCgZvcmlnaW4YAyABKA4yEC5udW1lbi52MS5PcmlnaW4SEQoJaXNfcGlubmVkGAQgASgIIhMKEUxpc3RUaGVtZXNSZXF1ZXN0IvABChJMaXN0VGhlbWVzUmVzcG9uc2USHwoGdGhlbWVzGAEgAygLMg8ubnVtZW4udjEuVGhlbWUSDwoHYXBwbGllZBgCIAEoCRIcCgRtb2RlGAMgASgOMg4ubnVtZW4udjEuTW9kZRIXCg9pbnRlcmZhY2Vfc2NhbGUYBCABKAESEgoKdGV4dF9zY2FsZRgFIAEoARIwChZpbnRlcmZhY2Vfc2NhbGVfYm91bmRzGAYgASgLMhAubnVtZW4udjEuQm91bmRzEisKEXRleHRfc2NhbGVfYm91bmRzGAcgASgLMhAubnVtZW4udjEuQm91bmRzIiAKEFJlYWRUaGVtZVJlcXVlc3QSDAoEbmFtZRgBIAEoCSIgChFSZWFkVGhlbWVSZXNwb25zZRILCgNjc3MYASABKAkingEKFldyaXRlQXBwZWFyYW5jZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIcCgRtb2RlGAIgASgOMg4ubnVtZW4udjEuTW9kZRIcCg9pbnRlcmZhY2Vfc2NhbGUYAyABKAFIAIgBARIXCgp0ZXh0X3NjYWxlGAQgASgBSAGIAQFCEgoQX2ludGVyZmFjZV9zY2FsZUINCgtfdGV4dF9zY2FsZSIoChdXcml0ZUFwcGVhcmFuY2VSZXNwb25zZRINCgVlcnJvchgBIAEoCSIUChJXYXRjaFRoZW1lc1JlcXVlc3QiJAoTV2F0Y2hUaGVtZXNSZXNwb25zZRINCgVuYW1lcxgBIAMoCSpECgZPcmlnaW4SFgoST1JJR0lOX1VOU1BFQ0lGSUVEEAASEQoNT1JJR0lOX1BSRVNFVBABEg8KC09SSUdJTl9NSU5FEAIqTAoETW9kZRIUChBNT0RFX1VOU1BFQ0lGSUVEEAASDwoLTU9ERV9TWVNURU0QARIOCgpNT0RFX0xJR0hUEAISDQoJTU9ERV9EQVJLEAMywwIKDFRoZW1lU2VydmljZRJHCgpMaXN0VGhlbWVzEhsubnVtZW4udjEuTGlzdFRoZW1lc1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VGhlbWVzUmVzcG9uc2USRAoJUmVhZFRoZW1lEhoubnVtZW4udjEuUmVhZFRoZW1lUmVxdWVzdBobLm51bWVuLnYxLlJlYWRUaGVtZVJlc3BvbnNlElYKD1dyaXRlQXBwZWFyYW5jZRIgLm51bWVuLnYxLldyaXRlQXBwZWFyYW5jZVJlcXVlc3QaIS5udW1lbi52MS5Xcml0ZUFwcGVhcmFuY2VSZXNwb25zZRJMCgtXYXRjaFRoZW1lcxIcLm51bWVuLnYxLldhdGNoVGhlbWVzUmVxdWVzdBodLm51bWVuLnYxLldhdGNoVGhlbWVzUmVzcG9uc2UwAUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * Theme is one theme as the list refers to it. Its text is asked for by the
@@ -29,7 +29,7 @@ export const file_numen_v1_theme: GenFile = /*@__PURE__*/
  */
 export type Theme = Message<"numen.v1.Theme"> & {
   /**
-   * Name is the shelf and the filename, `preset:dracula` or `mine:dracula`,
+   * Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
    * and it is how the theme is asked for again.
    *
    * @generated from field: string name = 1;
@@ -37,19 +37,19 @@ export type Theme = Message<"numen.v1.Theme"> & {
   name: string;
 
   /**
-   * Title is what the file is called, without the shelf.
+   * Title is what the file is called, without the origin.
    *
    * @generated from field: string title = 2;
    */
   title: string;
 
   /**
-   * Which shelf it stands on: what this installation ships, and what a person
+   * Which origin it comes from: what this installation ships, and what a person
    * put in their own folder.
    *
-   * @generated from field: numen.v1.Shelf shelf = 3;
+   * @generated from field: numen.v1.Origin origin = 3;
    */
-  shelf: Shelf;
+  origin: Origin;
 
   /**
    * Set for a theme that declares `color-scheme` itself. Light and dark are
@@ -85,7 +85,7 @@ export const ListThemesRequestSchema: GenMessage<ListThemesRequest> = /*@__PURE_
  */
 export type ListThemesResponse = Message<"numen.v1.ListThemesResponse"> & {
   /**
-   * Every theme, the shipped ones first and each shelf by name.
+   * Every theme, the shipped ones first and each origin by name.
    *
    * @generated from field: repeated numen.v1.Theme themes = 1;
    */
@@ -272,37 +272,37 @@ export const WatchThemesResponseSchema: GenMessage<WatchThemesResponse> = /*@__P
   messageDesc(file_numen_v1_theme, 8);
 
 /**
- * Shelf is where a theme came off: this application, or the person's themes
- * folder. A theme carries its shelf in its name, and two themes on different
- * shelves can share a filename.
+ * Origin is where a theme comes from: this application, or the person's themes
+ * folder. A theme carries its origin in its name, and two themes on different
+ * origins can share a filename.
  *
- * @generated from enum numen.v1.Shelf
+ * @generated from enum numen.v1.Origin
  */
-export enum Shelf {
+export enum Origin {
   /**
-   * @generated from enum value: SHELF_UNSPECIFIED = 0;
+   * @generated from enum value: ORIGIN_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
 
   /**
    * Ships inside the application.
    *
-   * @generated from enum value: SHELF_PRESET = 1;
+   * @generated from enum value: ORIGIN_PRESET = 1;
    */
   PRESET = 1,
 
   /**
    * A `.css` file in the person's themes folder.
    *
-   * @generated from enum value: SHELF_MINE = 2;
+   * @generated from enum value: ORIGIN_MINE = 2;
    */
   MINE = 2,
 }
 
 /**
- * Describes the enum numen.v1.Shelf.
+ * Describes the enum numen.v1.Origin.
  */
-export const ShelfSchema: GenEnum<Shelf> = /*@__PURE__*/
+export const OriginSchema: GenEnum<Origin> = /*@__PURE__*/
   enumDesc(file_numen_v1_theme, 0);
 
 /**

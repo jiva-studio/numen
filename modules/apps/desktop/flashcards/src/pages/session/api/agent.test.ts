@@ -45,7 +45,7 @@ describe('the agent a card is asked about', () => {
 
     expect(askAgent).toHaveBeenCalledWith(
       {
-        asked: 'why is it called that',
+        prompt: 'why is it called that',
         focus: 'decks/Words.md',
         conversation: 'card-0',
         mark: '3f4g5h6j7k',

@@ -25,14 +25,14 @@ func (a *API) GetSettings(
 	if a.Configuring.Models != nil {
 		models = a.Configuring.Models()
 	}
-	held := a.Configuring.PartsUnderANode
+	held := a.Configuring.NestedHeadingLimitBounds
 	return connect.NewResponse(&v1.GetSettingsResponse{
-		Written:               written,
-		Path:                  path,
-		Models:                newWireModels(models),
-		PartsUnderANodeBounds: &v1.Bounds{Least: held.Least, Most: held.Most},
-		LatestDayStarts:       a.Configuring.LatestDayStarts,
-		Day:                   a.Configuring.Day.GetName(a.Configuring.now()),
+		Written:                  written,
+		Path:                     path,
+		Models:                   newWireModels(models),
+		NestedHeadingLimitBounds: &v1.Bounds{Least: held.Least, Most: held.Most},
+		LatestDayStarts:          a.Configuring.LatestDayStarts,
+		Day:                      a.Configuring.Day.GetName(a.Configuring.now()),
 	}), nil
 }
 
@@ -104,7 +104,7 @@ func newWireModels(held []port.Model) []*v1.Model {
 			NamedAt:   one.Path,
 			Name:      one.Name,
 			Title:     one.Title,
-			Shelf:     one.Shelf,
+			Group:     one.Group,
 			IsDefault: one.IsDefault,
 			Writes:    newWireSettings(one.Writes),
 			Presence:  presences[one.Presence],

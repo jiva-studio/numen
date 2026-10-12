@@ -26,7 +26,7 @@ const rows = () => ({
       <SettingRow
         v-slot="{ labelledBy }"
         at="hanging"
-        name="Hang the parts of a note"
+        name="Nest headings under notes"
         detail="The headings of a note, under the box that draws it"
       >
         <Switch :aria-labelledby="labelledBy" />
@@ -74,7 +74,7 @@ export const EveryControlAtTheOneEdge: Story = {
     const list = canvas.getByRole('button')
 
     // Each control is announced by the name on its own row.
-    await expect(switches[0]).toHaveAccessibleName('Hang the parts of a note')
+    await expect(switches[0]).toHaveAccessibleName('Nest headings under notes')
     await expect(list).toHaveAccessibleName('Put a transcript right')
 
     // A switch and a list far wider than it end at the same edge.
@@ -93,7 +93,7 @@ export const EveryControlAtTheOneEdge: Story = {
 export const TheNameStandsOutFromWhatItMeans: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const name = canvas.getByText('Hang the parts of a note')
+    const name = canvas.getByText('Nest headings under notes')
     const detail = canvas.getByText('The headings of a note, under the box that draws it')
 
     await expect(getComputedStyle(name).fontWeight).toBe('500')

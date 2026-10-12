@@ -86,7 +86,7 @@ func (s *Service) ListThemes(
 		listed = append(listed, &v1.Theme{
 			Name:     one.Name,
 			Title:    one.Title,
-			Shelf:    encodeShelf(one.Shelf),
+			Origin:   encodeOrigin(one.Origin),
 			IsPinned: one.IsPinned,
 		})
 	}
@@ -241,12 +241,12 @@ func (s *Service) warn(why string) {
 	}
 }
 
-func encodeShelf(shelf Shelf) v1.Shelf {
-	switch shelf {
+func encodeOrigin(origin Origin) v1.Origin {
+	switch origin {
 	case Preset:
-		return v1.Shelf_SHELF_PRESET
+		return v1.Origin_ORIGIN_PRESET
 	case Mine:
-		return v1.Shelf_SHELF_MINE
+		return v1.Origin_ORIGIN_MINE
 	}
-	return v1.Shelf_SHELF_UNSPECIFIED
+	return v1.Origin_ORIGIN_UNSPECIFIED
 }

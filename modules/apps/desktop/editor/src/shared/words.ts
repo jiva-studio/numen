@@ -84,8 +84,8 @@ export const WORDS = {
   interfaceScale: 'Interface size',
   textScale: 'Reading font size',
   syncing: 'Sync title and filename',
-  hanging: 'Hang the parts of a note under its node',
-  parts: 'How many parts a node hangs',
+  hanging: 'Nest headings under notes',
+  parts: 'How many headings nest under a note',
   performanceProfile: 'Set performance profile',
   performance: 'Performance Profile',
   eco: 'Eco',
@@ -139,7 +139,7 @@ export const WORDS = {
   unlistedVaults: 'The vaults could not be listed',
   /** The row a list of values opens on, which is the value in force. */
   current: 'Current',
-  /** The two shelves the themes are drawn in, and where a person's own go. */
+  /** The two origins the themes are drawn in, and where a person's own go. */
   shipping: 'Ships with numen',
   owned: 'Your own themes',
   noneOwned: 'A .css file in numen/themes/, beside numen.json, is one of these',
@@ -159,11 +159,11 @@ export const WORDS = {
   /** The group the setting is drawn in, and the two it is. */
   syncingGroup: 'Sync title and filename',
   /** The group the setting is drawn in, and the two it is. */
-  hangingGroup: 'Hang the parts of a note under its node',
+  hangingGroup: 'Nest headings under notes',
   on: 'On',
   off: 'Off',
   /** The group the counts are drawn in. */
-  partsGroup: 'How many parts stand under a node at once',
+  partsGroup: 'How many headings nest under a note at once',
   unturned: 'That setting could not be written:',
   /** The settings the vault answered with could not be read. */
   unreadSettings: 'The settings could not be read, so what is drawn is what they last held.',

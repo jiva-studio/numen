@@ -17,8 +17,8 @@ usage:
   numen-cli vault add <path> [--name <name>]   give a folder an identity and remember it
   numen-cli vault list                         show the vaults this installation knows
   numen-cli vault rename <vault> <new name>    call a vault something else
-  numen-cli vault forget <vault>               take a vault off the list, leaving its folder
-  numen-cli vault erase <vault> [--yes]        forget it, and put its folder in the trash
+  numen-cli vault remove <vault>               take a vault off the list, leaving its folder
+  numen-cli vault erase <vault> [--yes]        remove it, and put its folder in the trash
   numen-cli vault open <vault>                 the vault the next window opens
   numen-cli scan <vault> [--rebuild-index]      bring the index up to date with a vault
                                                --rebuild-index reads every file again, forgets

@@ -36,7 +36,7 @@ export const WORDS = {
   textScaleDetail: 'How large the text a person reads is set. 1 is as designed.',
   hanging: 'Parts under a node',
   hangingDetail: 'Whether a node hangs the headings of its note under its box.',
-  parts: 'How many parts',
+  parts: 'How many headings',
   partsDetail: 'How many of them stand under a node at once.',
   syncing: 'Sync title and filename',
   syncingDetail: 'Whether renaming either of the two brings the other into line.',

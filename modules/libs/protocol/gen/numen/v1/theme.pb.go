@@ -28,57 +28,57 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Shelf is where a theme came off: this application, or the person's themes
-// folder. A theme carries its shelf in its name, and two themes on different
-// shelves can share a filename.
-type Shelf int32
+// Origin is where a theme comes from: this application, or the person's themes
+// folder. A theme carries its origin in its name, and two themes on different
+// origins can share a filename.
+type Origin int32
 
 const (
-	Shelf_SHELF_UNSPECIFIED Shelf = 0
+	Origin_ORIGIN_UNSPECIFIED Origin = 0
 	// Ships inside the application.
-	Shelf_SHELF_PRESET Shelf = 1
+	Origin_ORIGIN_PRESET Origin = 1
 	// A `.css` file in the person's themes folder.
-	Shelf_SHELF_MINE Shelf = 2
+	Origin_ORIGIN_MINE Origin = 2
 )
 
-// Enum value maps for Shelf.
+// Enum value maps for Origin.
 var (
-	Shelf_name = map[int32]string{
-		0: "SHELF_UNSPECIFIED",
-		1: "SHELF_PRESET",
-		2: "SHELF_MINE",
+	Origin_name = map[int32]string{
+		0: "ORIGIN_UNSPECIFIED",
+		1: "ORIGIN_PRESET",
+		2: "ORIGIN_MINE",
 	}
-	Shelf_value = map[string]int32{
-		"SHELF_UNSPECIFIED": 0,
-		"SHELF_PRESET":      1,
-		"SHELF_MINE":        2,
+	Origin_value = map[string]int32{
+		"ORIGIN_UNSPECIFIED": 0,
+		"ORIGIN_PRESET":      1,
+		"ORIGIN_MINE":        2,
 	}
 )
 
-func (x Shelf) Enum() *Shelf {
-	p := new(Shelf)
+func (x Origin) Enum() *Origin {
+	p := new(Origin)
 	*p = x
 	return p
 }
 
-func (x Shelf) String() string {
+func (x Origin) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Shelf) Descriptor() protoreflect.EnumDescriptor {
+func (Origin) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_theme_proto_enumTypes[0].Descriptor()
 }
 
-func (Shelf) Type() protoreflect.EnumType {
+func (Origin) Type() protoreflect.EnumType {
 	return &file_numen_v1_theme_proto_enumTypes[0]
 }
 
-func (x Shelf) Number() protoreflect.EnumNumber {
+func (x Origin) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Shelf.Descriptor instead.
-func (Shelf) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use Origin.Descriptor instead.
+func (Origin) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{0}
 }
 
@@ -142,14 +142,14 @@ func (Mode) EnumDescriptor() ([]byte, []int) {
 // name here.
 type Theme struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Name is the shelf and the filename, `preset:dracula` or `mine:dracula`,
+	// Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
 	// and it is how the theme is asked for again.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Title is what the file is called, without the shelf.
+	// Title is what the file is called, without the origin.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// Which shelf it stands on: what this installation ships, and what a person
+	// Which origin it comes from: what this installation ships, and what a person
 	// put in their own folder.
-	Shelf Shelf `protobuf:"varint,3,opt,name=shelf,proto3,enum=numen.v1.Shelf" json:"shelf,omitempty"`
+	Origin Origin `protobuf:"varint,3,opt,name=origin,proto3,enum=numen.v1.Origin" json:"origin,omitempty"`
 	// Set for a theme that declares `color-scheme` itself. Light and dark are
 	// the theme's own, and the mode has nothing left to choose.
 	IsPinned      bool `protobuf:"varint,4,opt,name=is_pinned,json=isPinned,proto3" json:"is_pinned,omitempty"`
@@ -201,11 +201,11 @@ func (x *Theme) GetTitle() string {
 	return ""
 }
 
-func (x *Theme) GetShelf() Shelf {
+func (x *Theme) GetOrigin() Origin {
 	if x != nil {
-		return x.Shelf
+		return x.Origin
 	}
-	return Shelf_SHELF_UNSPECIFIED
+	return Origin_ORIGIN_UNSPECIFIED
 }
 
 func (x *Theme) GetIsPinned() bool {
@@ -253,7 +253,7 @@ func (*ListThemesRequest) Descriptor() ([]byte, []int) {
 
 type ListThemesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Every theme, the shipped ones first and each shelf by name.
+	// Every theme, the shipped ones first and each origin by name.
 	Themes []*Theme `protobuf:"bytes,1,rep,name=themes,proto3" json:"themes,omitempty"`
 	// The theme that is applied, by its name.
 	Applied string `protobuf:"bytes,2,opt,name=applied,proto3" json:"applied,omitempty"`
@@ -646,11 +646,11 @@ var File_numen_v1_theme_proto protoreflect.FileDescriptor
 
 const file_numen_v1_theme_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/theme.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"u\n" +
+	"\x14numen/v1/theme.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"x\n" +
 	"\x05Theme\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12%\n" +
-	"\x05shelf\x18\x03 \x01(\x0e2\x0f.numen.v1.ShelfR\x05shelf\x12\x1b\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12(\n" +
+	"\x06origin\x18\x03 \x01(\x0e2\x10.numen.v1.OriginR\x06origin\x12\x1b\n" +
 	"\tis_pinned\x18\x04 \x01(\bR\bisPinned\"\x13\n" +
 	"\x11ListThemesRequest\"\xc9\x02\n" +
 	"\x12ListThemesResponse\x12'\n" +
@@ -678,12 +678,11 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\x05error\x18\x01 \x01(\tR\x05error\"\x14\n" +
 	"\x12WatchThemesRequest\"+\n" +
 	"\x13WatchThemesResponse\x12\x14\n" +
-	"\x05names\x18\x01 \x03(\tR\x05names*@\n" +
-	"\x05Shelf\x12\x15\n" +
-	"\x11SHELF_UNSPECIFIED\x10\x00\x12\x10\n" +
-	"\fSHELF_PRESET\x10\x01\x12\x0e\n" +
-	"\n" +
-	"SHELF_MINE\x10\x02*L\n" +
+	"\x05names\x18\x01 \x03(\tR\x05names*D\n" +
+	"\x06Origin\x12\x16\n" +
+	"\x12ORIGIN_UNSPECIFIED\x10\x00\x12\x11\n" +
+	"\rORIGIN_PRESET\x10\x01\x12\x0f\n" +
+	"\vORIGIN_MINE\x10\x02*L\n" +
 	"\x04Mode\x12\x14\n" +
 	"\x10MODE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vMODE_SYSTEM\x10\x01\x12\x0e\n" +
@@ -712,7 +711,7 @@ func file_numen_v1_theme_proto_rawDescGZIP() []byte {
 var file_numen_v1_theme_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_theme_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_theme_proto_goTypes = []any{
-	(Shelf)(0),                      // 0: numen.v1.Shelf
+	(Origin)(0),                     // 0: numen.v1.Origin
 	(Mode)(0),                       // 1: numen.v1.Mode
 	(*Theme)(nil),                   // 2: numen.v1.Theme
 	(*ListThemesRequest)(nil),       // 3: numen.v1.ListThemesRequest
@@ -726,7 +725,7 @@ var file_numen_v1_theme_proto_goTypes = []any{
 	(*Bounds)(nil),                  // 11: numen.v1.Bounds
 }
 var file_numen_v1_theme_proto_depIdxs = []int32{
-	0,  // 0: numen.v1.Theme.shelf:type_name -> numen.v1.Shelf
+	0,  // 0: numen.v1.Theme.origin:type_name -> numen.v1.Origin
 	2,  // 1: numen.v1.ListThemesResponse.themes:type_name -> numen.v1.Theme
 	1,  // 2: numen.v1.ListThemesResponse.mode:type_name -> numen.v1.Mode
 	11, // 3: numen.v1.ListThemesResponse.interface_scale_bounds:type_name -> numen.v1.Bounds

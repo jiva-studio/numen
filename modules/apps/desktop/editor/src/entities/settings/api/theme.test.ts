@@ -6,7 +6,7 @@
  * those look like.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { Mode as Modes, Shelf } from '@numen/protocol'
+import { Mode as Modes, Origin } from '@numen/protocol'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -38,8 +38,8 @@ describe('every theme there is', () => {
     asked.listThemes.mockResolvedValue(
       createAnswer({
         themes: [
-          { name: 'preset/Numen.css', title: 'Numen', shelf: Shelf.PRESET, isPinned: false },
-          { name: 'own/Dusk.css', title: 'Dusk', shelf: Shelf.MINE, isPinned: true },
+          { name: 'preset/Numen.css', title: 'Numen', origin: Origin.PRESET, isPinned: false },
+          { name: 'own/Dusk.css', title: 'Dusk', origin: Origin.MINE, isPinned: true },
         ],
       }),
     )

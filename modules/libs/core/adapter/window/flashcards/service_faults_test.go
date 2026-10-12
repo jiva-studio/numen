@@ -185,7 +185,7 @@ func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 	api.Log = flashcards.Log{Stores: refusingStores{}}
 	v := held[0]
 	session := startSession(t, api, v)
-	card := session.GetAsked()[0]
+	card := session.GetCards()[0]
 
 	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),

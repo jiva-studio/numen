@@ -23,7 +23,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IrIBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBIzChlwYXJ0c191bmRlcl9hX25vZGVfYm91bmRzGAQgASgLMhAubnVtZW4udjEuQm91bmRzEhkKEWxhdGVzdF9kYXlfc3RhcnRzGAUgASgJEgsKA2RheRgGIAEoCSKiAQoFTW9kZWwSEAoIbmFtZWRfYXQYASADKAkSDAoEbmFtZRgCIAEoCRINCgV0aXRsZRgDIAEoCRINCgVzaGVsZhgEIAEoCRISCgppc19kZWZhdWx0GAUgASgIEiEKBndyaXRlcxgGIAMoCzIRLm51bWVuLnYxLlNldHRpbmcSJAoIcHJlc2VuY2UYByABKA4yEi5udW1lbi52MS5QcmVzZW5jZSIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIjsKFFdyaXRlU2V0dGluZ3NSZXF1ZXN0EiMKCHNldHRpbmdzGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyIXChVXcml0ZVNldHRpbmdzUmVzcG9uc2UiGQoXUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QiOQoYUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCSJHChhXcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QSDwoHd3JpdHRlbhgBIAEoCRIRCgRzZWVuGAIgASgJSACIAQFCBwoFX3NlZW4iTgoZV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvcipzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzLoAgoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USWQoQUmVhZFNldHRpbmdzRmlsZRIhLm51bWVuLnYxLlJlYWRTZXR0aW5nc0ZpbGVSZXF1ZXN0GiIubnVtZW4udjEuUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlElwKEVdyaXRlU2V0dGluZ3NGaWxlEiIubnVtZW4udjEuV3JpdGVTZXR0aW5nc0ZpbGVSZXF1ZXN0GiMubnVtZW4udjEuV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IrQBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBI1ChtuZXN0ZWRfaGVhZGluZ19saW1pdF9ib3VuZHMYBCABKAsyEC5udW1lbi52MS5Cb3VuZHMSGQoRbGF0ZXN0X2RheV9zdGFydHMYBSABKAkSCwoDZGF5GAYgASgJIqIBCgVNb2RlbBIQCghuYW1lZF9hdBgBIAMoCRIMCgRuYW1lGAIgASgJEg0KBXRpdGxlGAMgASgJEg0KBWdyb3VwGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSIQoGd3JpdGVzGAYgAygLMhEubnVtZW4udjEuU2V0dGluZxIkCghwcmVzZW5jZRgHIAEoDjISLm51bWVuLnYxLlByZXNlbmNlIiQKB1NldHRpbmcSCgoCYXQYASADKAkSDQoFdmFsdWUYAiABKAkiOwoUV3JpdGVTZXR0aW5nc1JlcXVlc3QSIwoIc2V0dGluZ3MYASADKAsyES5udW1lbi52MS5TZXR0aW5nIhcKFVdyaXRlU2V0dGluZ3NSZXNwb25zZSIZChdSZWFkU2V0dGluZ3NGaWxlUmVxdWVzdCI5ChhSZWFkU2V0dGluZ3NGaWxlUmVzcG9uc2USDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJIkcKGFdyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBIPCgd3cml0dGVuGAEgASgJEhEKBHNlZW4YAiABKAlIAIgBAUIHCgVfc2VlbiJOChlXcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yKnMKCFByZXNlbmNlEhgKFFBSRVNFTkNFX1VOU1BFQ0lGSUVEEAASFAoQUFJFU0VOQ0VfUFJFU0VOVBABEhgKFFBSRVNFTkNFX05PVF9GRVRDSEVEEAISHQoZUFJFU0VOQ0VfTk9USElOR19UT19GRVRDSBADMugCCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBSZWFkU2V0dGluZ3NGaWxlEiEubnVtZW4udjEuUmVhZFNldHRpbmdzRmlsZVJlcXVlc3QaIi5udW1lbi52MS5SZWFkU2V0dGluZ3NGaWxlUmVzcG9uc2USXAoRV3JpdGVTZXR0aW5nc0ZpbGUSIi5udW1lbi52MS5Xcml0ZVNldHRpbmdzRmlsZVJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVNldHRpbmdzRmlsZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -65,12 +65,12 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
   models: Model[];
 
   /**
-   * How many parts a node may be asked to hang, at each end. A number outside
+   * How many headings may nest under a note, at each end. A number outside
    * it is refused. A client asking a person for one says these.
    *
-   * @generated from field: numen.v1.Bounds parts_under_a_node_bounds = 4;
+   * @generated from field: numen.v1.Bounds nested_heading_limit_bounds = 4;
    */
-  partsUnderANodeBounds?: Bounds | undefined;
+  nestedHeadingLimitBounds?: Bounds | undefined;
 
   /**
    * How late in the day a day of review may be made to begin, on the clock on
@@ -120,16 +120,16 @@ export type Model = Message<"numen.v1.Model"> & {
   name: string;
 
   /**
-   * What is drawn on the row, and the shelf the rows around it stand under.
+   * What is drawn on the row, and the group the rows around it stand under.
    *
    * @generated from field: string title = 3;
    */
   title: string;
 
   /**
-   * @generated from field: string shelf = 4;
+   * @generated from field: string group = 4;
    */
-  shelf: string;
+  group: string;
 
   /**
    * Set on the model an installation nobody has configured runs on.

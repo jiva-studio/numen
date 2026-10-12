@@ -46,8 +46,8 @@ func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
 	if held.Appearance.Theme != "mine:sea" {
 		t.Errorf("the theme reads %q", held.Appearance.Theme)
 	}
-	if held.Appearance.PartsUnderANode != settings.DefaultParts {
-		t.Errorf("the count reads %d", held.Appearance.PartsUnderANode)
+	if held.Appearance.NestedHeadingLimit != settings.DefaultParts {
+		t.Errorf("the count reads %d", held.Appearance.NestedHeadingLimit)
 	}
 }
 
@@ -198,17 +198,17 @@ func TestWhatIsSaidWhileReadingIsKept(t *testing.T) {
 	}
 }
 
-func TestPartsUnderANodeAreWhatTheAppearanceSays(t *testing.T) {
+func TestNestedHeadingLimitIsWhatTheAppearanceSays(t *testing.T) {
 	held := DefaultSettings()
 	if !held.HasPartsUnderNode() {
 		t.Error("untouched settings hang no parts under a node")
 	}
 	off := false
-	held.Appearance.HangPartsUnderANode = &off
+	held.Appearance.NestHeadingsUnderNotes = &off
 	if held.HasPartsUnderNode() {
 		t.Error("settings turning it off still hang parts under a node")
 	}
-	held.Appearance.PartsUnderANode = 7
+	held.Appearance.NestedHeadingLimit = 7
 	if held.Parts() != 7 {
 		t.Errorf("%d parts stand under a node", held.Parts())
 	}

@@ -25,8 +25,8 @@ export interface Model {
   readonly name: string
   /** Display title shown in settings rows. */
   readonly title: string
-  /** Grouping category/shelf for settings navigation. */
-  readonly shelf: string
+  /** Grouping category/group for settings navigation. */
+  readonly group: string
   /** Whether this is the default model for fresh installations. */
   readonly isDefault: boolean
   /** Setting edits applied when this model is selected. */

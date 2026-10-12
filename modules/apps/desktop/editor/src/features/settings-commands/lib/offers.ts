@@ -1,5 +1,5 @@
 /**
- * The lists the appearance commands offer: the themes on their two shelves, the
+ * The lists the appearance commands offer: the themes on their two origins, the
  * three modes, and the sizes the window can be drawn at.
  *
  * Each list is the state as it stands, read again, so a row says only what is
@@ -29,10 +29,10 @@ const once = (rows: readonly StepRow[]): readonly StepRow[] => {
 }
 
 /**
- * The themes off one shelf, the one the settings name first. Where a theme came
- * off is said by the group it stands in.
+ * The themes of one origin, the one the settings name first. Where a theme comes
+ * from is said by the group it stands in.
  */
-const shelf = (
+const getThemesOfOrigin = (
   themes: readonly Theme[],
   themeName: string,
   isBuiltIn: boolean,
@@ -62,12 +62,12 @@ export const getThemeGroups = (
   const shipping = {
     id: 'shipping',
     title: words.shipping,
-    items: shelf(themes, themeName, true, words),
+    items: getThemesOfOrigin(themes, themeName, true, words),
   }
   const own = {
     id: 'owned',
     title: words.owned,
-    items: shelf(themes, themeName, false, words),
+    items: getThemesOfOrigin(themes, themeName, false, words),
     silence: words.noneOwned,
   }
   const worn = themes.find((one) => one.name === themeName)

@@ -76,15 +76,15 @@ func TestTheListSaysWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
 		t.Errorf("wears %q, read as %v", answer.GetApplied(), answer.GetMode())
 	}
 
-	shelves := map[string]v1.Shelf{}
+	origins := map[string]v1.Origin{}
 	for _, one := range answer.GetThemes() {
-		shelves[one.GetName()] = one.GetShelf()
+		origins[one.GetName()] = one.GetOrigin()
 	}
-	if shelves["preset:dracula"] != v1.Shelf_SHELF_PRESET {
-		t.Errorf("preset:dracula came off %v", shelves["preset:dracula"])
+	if origins["preset:dracula"] != v1.Origin_ORIGIN_PRESET {
+		t.Errorf("preset:dracula came off %v", origins["preset:dracula"])
 	}
-	if shelves["mine:mine"] != v1.Shelf_SHELF_MINE {
-		t.Errorf("the person's theme came off %v", shelves["mine:mine"])
+	if origins["mine:mine"] != v1.Origin_ORIGIN_MINE {
+		t.Errorf("the person's theme came off %v", origins["mine:mine"])
 	}
 	for _, one := range answer.GetThemes() {
 		if one.GetName() == "preset:dracula" && !one.GetIsPinned() {

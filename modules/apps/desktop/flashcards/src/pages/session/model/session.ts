@@ -33,7 +33,7 @@ export interface SessionClient {
 /** What opening a session comes back with. */
 export interface SessionStart {
   run: string
-  asked: readonly {
+  cards: readonly {
     deck: string
     section: string
     mark: string
@@ -121,7 +121,7 @@ export function useReviewSession(deps: SessionDeps) {
       )
       vault.value = id
       run.value = opened.run
-      asked.value = opened.asked.map(createCardFace)
+      asked.value = opened.cards.map(createCardFace)
       at.value = 0
       shown.value = false
       answers.value = []
@@ -211,7 +211,7 @@ export function useReviewSession(deps: SessionDeps) {
 }
 
 /** One card as the window holds it: the seconds come across as numbers. */
-const createCardFace = (one: SessionStart['asked'][number]): CardFace => ({
+const createCardFace = (one: SessionStart['cards'][number]): CardFace => ({
   deck: one.deck,
   section: one.section,
   mark: one.mark,

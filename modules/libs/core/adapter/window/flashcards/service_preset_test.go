@@ -55,7 +55,7 @@ func TestASessionIsOpenedOverOnePreset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	asked := out.Msg.GetAsked()
+	asked := out.Msg.GetCards()
 	if len(asked) != 2 {
 		t.Fatalf("a preset of two cards a day offered %d", len(asked))
 	}

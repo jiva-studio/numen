@@ -32,7 +32,7 @@ func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
 	// alone and not by what was done to them.
 	session := startSession(t, api, v)
 	answered := map[string]bool{}
-	for _, one := range session.GetAsked() {
+	for _, one := range session.GetCards() {
 		if answered[one.GetDeck()] {
 			continue
 		}

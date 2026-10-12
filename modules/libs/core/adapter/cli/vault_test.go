@@ -88,7 +88,7 @@ func TestAVaultCommandNeedsItsArguments(t *testing.T) {
 	for usage, args := range map[string][]string{
 		"usage: numen-cli vault add <path> [--name <name>]": {"vault", "add"},
 		"usage: numen-cli vault rename <vault> <new name>":  {"vault", "rename", "notebook"},
-		"usage: numen-cli vault forget <vault>":             {"vault", "forget"},
+		"usage: numen-cli vault remove <vault>":             {"vault", "remove"},
 		"usage: numen-cli vault erase <vault> [--yes]":      {"vault", "erase"},
 		"usage: numen-cli vault open <vault>":               {"vault", "open"},
 	} {
@@ -109,7 +109,7 @@ func TestAVaultCommandReturnsWhatWentWrongOpeningTheList(t *testing.T) {
 		{"vault", "add", "somewhere"},
 		{"vault", "list"},
 		{"vault", "rename", "notebook", "other"},
-		{"vault", "forget", "notebook"},
+		{"vault", "remove", "notebook"},
 		{"vault", "erase", "notebook", "--yes"},
 		{"vault", "open", "notebook"},
 	} {
@@ -163,11 +163,11 @@ func TestAVaultCommandReturnsWhatTheListRefuses(t *testing.T) {
 	}{
 		"listing the vaults":            {"List", []string{"vault", "list"}},
 		"renaming a vault":              {"Save", []string{"vault", "rename", "first", "renamed"}},
-		"forgetting a vault":            {"Remove", []string{"vault", "forget", "first"}},
+		"forgetting a vault":            {"Remove", []string{"vault", "remove", "first"}},
 		"erasing a vault":               {"Remove", []string{"vault", "erase", "first", "--yes"}},
 		"recording the vault to open":   {"RecordOpened", []string{"vault", "open", "first"}},
 		"listing the vaults to rename":  {"List", []string{"vault", "rename", "first", "renamed"}},
-		"listing the vaults to forget":  {"List", []string{"vault", "forget", "first"}},
+		"listing the vaults to forget":  {"List", []string{"vault", "remove", "first"}},
 		"listing the vaults to erase":   {"List", []string{"vault", "erase", "first", "--yes"}},
 		"listing the vaults to add one": {"List", []string{"vault", "add", t.TempDir()}},
 	} {
@@ -195,7 +195,7 @@ func TestAVaultCommandReturnsWhatTheIndexRefuses(t *testing.T) {
 	isolate(t)
 	for _, args := range [][]string{
 		{"vault", "rename", "first", "renamed"},
-		{"vault", "forget", "first"},
+		{"vault", "remove", "first"},
 		{"vault", "erase", "first", "--yes"},
 	} {
 		s := newSession(t)
@@ -228,7 +228,7 @@ func TestAnIndexThatRefusesToForgetKeepsTheListAndTheFolder(t *testing.T) {
 	s.addVault("second")
 	s.trash(nil)
 
-	for _, args := range [][]string{{"vault", "forget", "first"}, {"vault", "erase", "first", "--yes"}} {
+	for _, args := range [][]string{{"vault", "remove", "first"}, {"vault", "erase", "first", "--yes"}} {
 		out, err := s.runBroken(func(v *cli.Vaults) {
 			open := v.Rows
 			v.Rows = func(ctx context.Context) (cli.VaultRows, error) {
@@ -299,7 +299,7 @@ func TestAMachineWithNowhereToPutItSaysHowToForgetTheVault(t *testing.T) {
 	s.trash(port.ErrNoTrash)
 
 	_, err := s.run("vault", "erase", "kept", "--yes")
-	if err == nil || !strings.HasSuffix(err.Error(), " — take it off the list with: numen-cli vault forget kept") {
+	if err == nil || !strings.HasSuffix(err.Error(), " — take it off the list with: numen-cli vault remove kept") {
 		t.Errorf("erasing answered %v", err)
 	}
 }

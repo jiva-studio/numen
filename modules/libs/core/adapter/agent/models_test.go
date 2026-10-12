@@ -134,8 +134,8 @@ func TestAConfiguredModelIsListedOnceAfterTheOnesTheAgentOffers(t *testing.T) {
 			if added.Title != "house-model" || added.IsDefault || added.Presence != port.NothingToFetch {
 				t.Errorf("the model the settings name is listed as %+v", added)
 			}
-			if added.Shelf == "" || added.Shelf == models[len(models)-2].Shelf {
-				t.Errorf("the model the settings name stands on shelf %q, beside %q", added.Shelf, models[len(models)-2].Shelf)
+			if added.Group == "" || added.Group == models[len(models)-2].Group {
+				t.Errorf("the model the settings name stands on group %q, beside %q", added.Group, models[len(models)-2].Group)
 			}
 			checkWrites(t, models, c.at)
 		})
@@ -149,28 +149,28 @@ func TestTheClaudeModelsStandOnTheirShelves(t *testing.T) {
 	if !models[0].IsDefault || models[0].Name != "" {
 		t.Errorf("the first model is %+v, want the default", models[0])
 	}
-	shelves := map[string][]string{}
+	groups := map[string][]string{}
 	for _, m := range models[1:] {
-		shelves[m.Shelf] = append(shelves[m.Shelf], m.Name)
-		if m.Title != m.Name || m.IsDefault || m.Shelf == "" {
+		groups[m.Group] = append(groups[m.Group], m.Name)
+		if m.Title != m.Name || m.IsDefault || m.Group == "" {
 			t.Errorf("model %q is listed as %+v", m.Name, m)
 		}
 	}
-	if len(shelves) != 2 {
-		t.Fatalf("models stand on %d shelves, want 2: %v", len(shelves), shelves)
+	if len(groups) != 2 {
+		t.Fatalf("models stand on %d groups, want 2: %v", len(groups), groups)
 	}
-	for _, names := range shelves {
+	for _, names := range groups {
 		switch names[0] {
 		case "opus":
 			if !slices.Equal(names, []string{"opus", "sonnet", "haiku"}) {
-				t.Errorf("shelf of sizes holds %q", names)
+				t.Errorf("group of sizes holds %q", names)
 			}
 		case "claude-opus-5":
 			if !slices.Equal(names, []string{"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"}) {
-				t.Errorf("shelf of full names holds %q", names)
+				t.Errorf("group of full names holds %q", names)
 			}
 		default:
-			t.Errorf("unexpected shelf %q", names)
+			t.Errorf("unexpected group %q", names)
 		}
 	}
 }

@@ -226,19 +226,19 @@ func (a *API) StartSession(
 
 	out := &v1.StartSessionResponse{
 		Run:       run.GetName(),
-		Asked:     make([]*v1.Asked, 0, len(session.Queue)),
+		Cards:     make([]*v1.SessionCard, 0, len(session.Queue)),
 		Unwritten: session.Unwritten,
 		Skipped:   int32(session.Skipped),
 	}
 	for _, one := range session.Queue {
-		out.Asked = append(out.Asked, newWireAsked(one))
+		out.Cards = append(out.Cards, newWireSessionCard(one))
 	}
 	return connect.NewResponse(out), nil
 }
 
-func newWireAsked(one flashcards.QueuedCardFace) *v1.Asked {
+func newWireSessionCard(one flashcards.QueuedCardFace) *v1.SessionCard {
 	front, back := one.Lay()
-	return &v1.Asked{
+	return &v1.SessionCard{
 		Deck:    one.Deck,
 		Section: one.Section,
 		Mark:    one.ID.Card,

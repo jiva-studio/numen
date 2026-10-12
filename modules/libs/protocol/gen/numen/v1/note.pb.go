@@ -146,57 +146,57 @@ func (Role) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{1}
 }
 
-// NamedBy is which of the two a note is shown by, and so which one a rename
+// NameSource is which of the two a note is shown by, and so which one a rename
 // brings into line.
-type NamedBy int32
+type NameSource int32
 
 const (
 	// Nothing named the note.
-	NamedBy_NAMED_BY_UNSPECIFIED NamedBy = 0
+	NameSource_NAME_SOURCE_UNSPECIFIED NameSource = 0
 	// The `title` key of the frontmatter.
-	NamedBy_NAMED_BY_FRONTMATTER NamedBy = 1
+	NameSource_NAME_SOURCE_FRONTMATTER NameSource = 1
 	// The filename, which a rename moves and does not write.
-	NamedBy_NAMED_BY_FILENAME NamedBy = 2
+	NameSource_NAME_SOURCE_FILENAME NameSource = 2
 )
 
-// Enum value maps for NamedBy.
+// Enum value maps for NameSource.
 var (
-	NamedBy_name = map[int32]string{
-		0: "NAMED_BY_UNSPECIFIED",
-		1: "NAMED_BY_FRONTMATTER",
-		2: "NAMED_BY_FILENAME",
+	NameSource_name = map[int32]string{
+		0: "NAME_SOURCE_UNSPECIFIED",
+		1: "NAME_SOURCE_FRONTMATTER",
+		2: "NAME_SOURCE_FILENAME",
 	}
-	NamedBy_value = map[string]int32{
-		"NAMED_BY_UNSPECIFIED": 0,
-		"NAMED_BY_FRONTMATTER": 1,
-		"NAMED_BY_FILENAME":    2,
+	NameSource_value = map[string]int32{
+		"NAME_SOURCE_UNSPECIFIED": 0,
+		"NAME_SOURCE_FRONTMATTER": 1,
+		"NAME_SOURCE_FILENAME":    2,
 	}
 )
 
-func (x NamedBy) Enum() *NamedBy {
-	p := new(NamedBy)
+func (x NameSource) Enum() *NameSource {
+	p := new(NameSource)
 	*p = x
 	return p
 }
 
-func (x NamedBy) String() string {
+func (x NameSource) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (NamedBy) Descriptor() protoreflect.EnumDescriptor {
+func (NameSource) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_note_proto_enumTypes[2].Descriptor()
 }
 
-func (NamedBy) Type() protoreflect.EnumType {
+func (NameSource) Type() protoreflect.EnumType {
 	return &file_numen_v1_note_proto_enumTypes[2]
 }
 
-func (x NamedBy) Number() protoreflect.EnumNumber {
+func (x NameSource) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use NamedBy.Descriptor instead.
-func (NamedBy) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use NameSource.Descriptor instead.
+func (NameSource) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{2}
 }
 
@@ -1706,8 +1706,8 @@ type RenameNoteResponse struct {
 	// What the note is called. Empty when the note was never opened.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	// Which of the three names the note, and so which the rename brought into
-	// line. NAMED_BY_UNSPECIFIED when the note was never opened.
-	By NamedBy `protobuf:"varint,3,opt,name=by,proto3,enum=numen.v1.NamedBy" json:"by,omitempty"`
+	// line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
+	NameSource NameSource `protobuf:"varint,3,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
 	// What the file did. Absent when it stayed where it was.
 	Moved *MoveResult `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
@@ -1766,11 +1766,11 @@ func (x *RenameNoteResponse) GetTitle() string {
 	return ""
 }
 
-func (x *RenameNoteResponse) GetBy() NamedBy {
+func (x *RenameNoteResponse) GetNameSource() NameSource {
 	if x != nil {
-		return x.By
+		return x.NameSource
 	}
-	return NamedBy_NAMED_BY_UNSPECIFIED
+	return NameSource_NAME_SOURCE_UNSPECIFIED
 }
 
 func (x *RenameNoteResponse) GetMoved() *MoveResult {
@@ -2017,11 +2017,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x06_error\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xfb\x01\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\x8f\x02\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
-	"\x02by\x18\x03 \x01(\x0e2\x11.numen.v1.NamedByR\x02by\x12/\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x125\n" +
+	"\vname_source\x18\x03 \x01(\x0e2\x14.numen.v1.NameSourceR\n" +
+	"nameSource\x12/\n" +
 	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
 	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12#\n" +
 	"\ris_unlevelled\x18\x06 \x01(\bR\fisUnlevelledB\b\n" +
@@ -2048,11 +2049,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"ROLE_CHILD\x10\x02\x12\r\n" +
 	"\tROLE_JUMP\x10\x03\x12\f\n" +
 	"\bROLE_REF\x10\x04\x12\x13\n" +
-	"\x0fROLE_ATTACHMENT\x10\x05*T\n" +
-	"\aNamedBy\x12\x18\n" +
-	"\x14NAMED_BY_UNSPECIFIED\x10\x00\x12\x18\n" +
-	"\x14NAMED_BY_FRONTMATTER\x10\x01\x12\x15\n" +
-	"\x11NAMED_BY_FILENAME\x10\x022\xdc\x06\n" +
+	"\x0fROLE_ATTACHMENT\x10\x05*`\n" +
+	"\n" +
+	"NameSource\x12\x1b\n" +
+	"\x17NAME_SOURCE_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17NAME_SOURCE_FRONTMATTER\x10\x01\x12\x18\n" +
+	"\x14NAME_SOURCE_FILENAME\x10\x022\xdc\x06\n" +
 	"\vNoteService\x12S\n" +
 	"\x0eGetOpeningNote\x12\x1f.numen.v1.GetOpeningNoteRequest\x1a .numen.v1.GetOpeningNoteResponse\x12Y\n" +
 	"\x10GetNeighbourhood\x12!.numen.v1.GetNeighbourhoodRequest\x1a\".numen.v1.GetNeighbourhoodResponse\x12Y\n" +
@@ -2087,7 +2089,7 @@ var file_numen_v1_note_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_numen_v1_note_proto_goTypes = []any{
 	(Seat)(0),                        // 0: numen.v1.Seat
 	(Role)(0),                        // 1: numen.v1.Role
-	(NamedBy)(0),                     // 2: numen.v1.NamedBy
+	(NameSource)(0),                  // 2: numen.v1.NameSource
 	(*Note)(nil),                     // 3: numen.v1.Note
 	(*GetOpeningNoteRequest)(nil),    // 4: numen.v1.GetOpeningNoteRequest
 	(*GetOpeningNoteResponse)(nil),   // 5: numen.v1.GetOpeningNoteResponse
@@ -2147,7 +2149,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	33, // 20: numen.v1.WriteLinkResponse.error:type_name -> numen.v1.ErrorCode
 	1,  // 21: numen.v1.RemoveLinkRequest.role:type_name -> numen.v1.Role
 	33, // 22: numen.v1.RemoveLinkResponse.error:type_name -> numen.v1.ErrorCode
-	2,  // 23: numen.v1.RenameNoteResponse.by:type_name -> numen.v1.NamedBy
+	2,  // 23: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
 	35, // 24: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
 	33, // 25: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
 	36, // 26: numen.v1.WatchEditsResponse.span:type_name -> numen.v1.Span

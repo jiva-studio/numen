@@ -239,10 +239,10 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	one, two := held[0], held[1]
 
 	session := startSession(t, api, one)
-	if len(session.GetAsked()) == 0 {
+	if len(session.GetCards()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
-	card := session.GetAsked()[0]
+	card := session.GetCards()[0]
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(two.ID),
@@ -293,7 +293,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 		t.Fatal("a second session wrote to the file the first opened")
 	}
 
-	card := now.GetAsked()[0]
+	card := now.GetCards()[0]
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(v.ID),
 		Run:    was.GetRun(),
@@ -319,7 +319,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 	was := findVaultCount(t, front(t, api), string(two.ID))
 
 	session := startSession(t, api, one)
-	for _, card := range session.GetAsked() {
+	for _, card := range session.GetCards() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(one.ID), Run: session.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
@@ -362,7 +362,7 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	v := held[0]
 
 	session := startSession(t, api, v)
-	card := session.GetAsked()[0]
+	card := session.GetCards()[0]
 
 	given, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(v.ID),
@@ -397,7 +397,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	api, held := newAPI(t, deck)
 	v := held[0]
 	session := startSession(t, api, v)
-	card := session.GetAsked()[0]
+	card := session.GetCards()[0]
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
@@ -512,7 +512,7 @@ func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
 func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 	api, held := newAPI(t, deck)
 	session := startSession(t, api, held[0])
-	ahead := session.GetAsked()[0].GetAhead()
+	ahead := session.GetCards()[0].GetAhead()
 
 	if ahead == nil {
 		t.Fatal("the card was asked without saying where the four would leave it")
@@ -600,8 +600,8 @@ func TestASessionSaysWhichDecksItCouldNotMark(t *testing.T) {
 	if len(session.GetUnwritten()) != 1 || session.GetUnwritten()[0] != "decks/Own.md" {
 		t.Errorf("the session says %v could not be marked", session.GetUnwritten())
 	}
-	if len(session.GetAsked()) != 0 {
-		t.Errorf("a card with no mark was asked: %+v", session.GetAsked())
+	if len(session.GetCards()) != 0 {
+		t.Errorf("a card with no mark was asked: %+v", session.GetCards())
 	}
 }
 
@@ -664,10 +664,10 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 	v := held[0]
 
 	session := startSession(t, api, v)
-	if len(session.GetAsked()) == 0 {
+	if len(session.GetCards()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
-	card := session.GetAsked()[0]
+	card := session.GetCards()[0]
 	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
@@ -733,7 +733,7 @@ func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 	api, held := newAPI(t, twoPresets)
 
 	got := make(map[string]int)
-	for _, one := range startSession(t, api, held[0]).GetAsked() {
+	for _, one := range startSession(t, api, held[0]).GetCards() {
 		got[one.GetDeck()]++
 	}
 	want := map[string]int{"decks/Roots.md": 1, "decks/Mantras.md": 2}
@@ -1070,7 +1070,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := len(sat.Msg.GetAsked()); got != want {
+		if got := len(sat.Msg.GetCards()); got != want {
 			t.Errorf("the tile over %q says %d and the session it opens asks %d",
 				one.GetPreset(), want, got)
 		}
@@ -1287,8 +1287,8 @@ func session(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := sat{asked: len(out.Msg.GetAsked())}
-	for _, one := range out.Msg.GetAsked() {
+	held := sat{asked: len(out.Msg.GetCards())}
+	for _, one := range out.Msg.GetCards() {
 		if one.GetIsNew() {
 			held.fresh++
 			continue

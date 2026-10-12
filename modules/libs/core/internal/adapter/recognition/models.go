@@ -6,10 +6,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// The shelves the models stand on.
+// The groups the models stand on.
 const (
-	shelfMachine    = "On this machine"
-	shelfConfigured = "Named in the settings"
+	groupMachine    = "On this machine"
+	groupConfigured = "Named in the settings"
 )
 
 // ModelAt is where the model a scanned page is read by stands inside this
@@ -28,7 +28,7 @@ func GetModels(held Config, isFetched func(Config, RecogniserModel) bool) []port
 		Path:      ModelAt,
 		Name:      offered.Recognise.Name,
 		Title:     "PP-OCRv6, small",
-		Shelf:     shelfMachine,
+		Group:     groupMachine,
 		IsDefault: true,
 		Presence:  getPresence(isFetched(held, offered.Recognise)),
 		Writes:    []port.Setting{newSetting(ModelAt, offered.Recognise.Name)},
@@ -41,7 +41,7 @@ func GetModels(held Config, isFetched func(Config, RecogniserModel) bool) []port
 		Path:     ModelAt,
 		Name:     name,
 		Title:    name,
-		Shelf:    shelfConfigured,
+		Group:    groupConfigured,
 		Presence: getPresence(isFetched(held, held.Recognise)),
 		Writes:   []port.Setting{newSetting(ModelAt, name)},
 	})

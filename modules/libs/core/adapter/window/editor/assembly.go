@@ -65,10 +65,10 @@ type Assembly interface {
 	GetModels() []port.Model
 	TurnSettings(written []port.Setting) error
 
-	// GetPartsUnderANodeBounds is how many parts a node may be asked to hang,
+	// GetNestedHeadingLimitBounds is how many headings may nest under a note,
 	// at each end, and GetLatestDayStart how late in the day a day of review
 	// may be made to begin.
-	GetPartsUnderANodeBounds() (least, most float64)
+	GetNestedHeadingLimitBounds() (least, most float64)
 	GetLatestDayStart() string
 
 	// IsRebuildingIndex is whether this launch was asked to read every file

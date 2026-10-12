@@ -26,7 +26,7 @@ const MODELS: readonly Model[] = [
     namedAt: ['agent', 'claude', 'model'],
     name: '',
     title: 'Whatever this machine answers with',
-    shelf: '',
+    group: '',
     isDefault: true,
     writes: [{ at: ['agent', 'claude', 'model'], value: '""' }],
     presence: 'nothing to fetch',
@@ -35,7 +35,7 @@ const MODELS: readonly Model[] = [
     namedAt: ['agent', 'claude', 'model'],
     name: 'opus',
     title: 'opus',
-    shelf: 'By how large it is',
+    group: 'By how large it is',
     isDefault: false,
     writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
     presence: 'nothing to fetch',
@@ -44,7 +44,7 @@ const MODELS: readonly Model[] = [
     namedAt: ['indexing', 'recognition', 'recognise', 'name'],
     name: 'https://models.example/held/Tiny_rec.onnx',
     title: 'Tiny, small',
-    shelf: '',
+    group: '',
     isDefault: true,
     writes: [
       { at: ['indexing', 'recognition', 'recognise', 'name'], value: '"held/Tiny_rec.onnx"' },
@@ -57,7 +57,7 @@ const MODELS: readonly Model[] = [
     namedAt: ['indexing', 'recognition', 'recognise', 'name'],
     name: OWN,
     title: OWN,
-    shelf: 'Named in the settings',
+    group: 'Named in the settings',
     isDefault: false,
     writes: [{ at: ['indexing', 'recognition', 'recognise', 'name'], value: `"${OWN}"` }],
     presence: 'not fetched',
@@ -170,7 +170,7 @@ describe('the settings tab', () => {
     ])
   })
 
-  it('opens on the theme the settings name, off both shelves', async () => {
+  it('opens on the theme the settings name, off both groups', async () => {
     const { tab } = createTab()
     expect(tab.get(control('settings-theme')).text()).toContain('numen')
 

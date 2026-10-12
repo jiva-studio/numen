@@ -102,7 +102,7 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	getSteps(t, client, &v1.AskAgentRequest{
-		Asked:        "rewrite this note",
+		Prompt:       "rewrite this note",
 		Focus:        "notes/Fugue.md",
 		Conversation: "8f2c1e",
 	})
@@ -131,7 +131,7 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	}}
 	client := newAgentClient(t, newAgentAPI(taking))
 
-	steps := getSteps(t, client, &v1.AskAgentRequest{Asked: "rewrite this note"})
+	steps := getSteps(t, client, &v1.AskAgentRequest{Prompt: "rewrite this note"})
 	if len(steps) != 5 {
 		t.Fatalf("got %d steps, want 5: %+v", len(steps), steps)
 	}
@@ -167,7 +167,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 	}}
 	client := newAgentClient(t, newAgentAPI(taking))
 
-	steps := getSteps(t, client, &v1.AskAgentRequest{Asked: "show me where that is"})
+	steps := getSteps(t, client, &v1.AskAgentRequest{Prompt: "show me where that is"})
 	doing := steps[0].GetToolCall()
 	if doing.GetPath() != "library/A Book.epub" ||
 		doing.GetSpan().GetFrom() != 1200 || doing.GetSpan().GetTo() != 1280 {
@@ -222,7 +222,7 @@ func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
 func TestAVaultWithNoAgentSaysSo(t *testing.T) {
 	client := newAgentClient(t, &editor.API{})
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{Asked: "anyone?"}))
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{Prompt: "anyone?"}))
 	if err != nil {
 		t.Fatal(err)
 	}

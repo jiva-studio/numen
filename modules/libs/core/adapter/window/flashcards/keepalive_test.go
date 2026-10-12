@@ -41,7 +41,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		},
 		"ask": func(ctx context.Context, http connect.HTTPClient, at string) error {
 			_, err := numenv1connect.NewAgentServiceClient(http, at).
-				AskAgent(ctx, connect.NewRequest(&v1.AskAgentRequest{Asked: "what is this card"}))
+				AskAgent(ctx, connect.NewRequest(&v1.AskAgentRequest{Prompt: "what is this card"}))
 			return err
 		},
 	}

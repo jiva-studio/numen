@@ -72,7 +72,7 @@ export const notesCore: NoteOperations = {
     return asValue({
       path: answer.path,
       title: answer.title,
-      hasFrontmatter: writes[answer.by],
+      hasFrontmatter: writes[answer.nameSource],
       moved: answer.moved ? mapMoveResult(answer.moved) : null,
     })
   },

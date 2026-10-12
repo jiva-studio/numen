@@ -19,7 +19,7 @@ import (
 // parts how many of them stand there at once, as the settings hold the two.
 func isHanging(t *testing.T, f *going) bool {
 	t.Helper()
-	held, is := getSetting(t, f, "appearance", "hang_parts_under_a_node").(bool)
+	held, is := getSetting(t, f, "appearance", "nest_headings_under_notes").(bool)
 	if !is {
 		t.Fatal("the setting is not written as a switch")
 	}
@@ -28,7 +28,7 @@ func isHanging(t *testing.T, f *going) bool {
 
 func parts(t *testing.T, f *going) int {
 	t.Helper()
-	held, is := getSetting(t, f, "appearance", "parts_under_a_node").(float64)
+	held, is := getSetting(t, f, "appearance", "nested_heading_limit").(float64)
 	if !is {
 		t.Fatal("the count is not written as a number")
 	}
@@ -40,11 +40,11 @@ func parts(t *testing.T, f *going) int {
 func turnsHanging(t *testing.T, f *going, hangs bool, count *int) error {
 	t.Helper()
 	written := []*v1.Setting{
-		{At: []string{"appearance", "hang_parts_under_a_node"}, Value: fmt.Sprint(hangs)},
+		{At: []string{"appearance", "nest_headings_under_notes"}, Value: fmt.Sprint(hangs)},
 	}
 	if count != nil {
 		written = append(written, &v1.Setting{
-			At: []string{"appearance", "parts_under_a_node"}, Value: fmt.Sprint(*count),
+			At: []string{"appearance", "nested_heading_limit"}, Value: fmt.Sprint(*count),
 		})
 	}
 	_, err := f.configuring.WriteSettings(t.Context(),
@@ -132,7 +132,7 @@ func TestTurningTheHangingLeavesTheRestOfTheFileAlone(t *testing.T) {
 	if !strings.Contains(string(raw), `"text_scale": 1.5`) {
 		t.Errorf("what the person typed was rewritten:\n%s", raw)
 	}
-	if !strings.Contains(string(raw), `"hang_parts_under_a_node": false`) {
+	if !strings.Contains(string(raw), `"nest_headings_under_notes": false`) {
 		t.Errorf("the setting is not in the file:\n%s", raw)
 	}
 }

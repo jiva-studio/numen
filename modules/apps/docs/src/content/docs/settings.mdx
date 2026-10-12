@@ -33,12 +33,12 @@ At the head of the page is the path of the file the page is a face onto, and **O
 
 | | |
 | --- | --- |
-| **Theme** | the stylesheet the window wears, in two shelves: the ones that ship with numen, and yours. See [themes](/themes/). |
+| **Theme** | the stylesheet the window wears, in two origins: the ones that ship with numen, and yours. See [themes](/themes/). |
 | **Light or dark** | follow the system, or pin one. A theme that declares light and dark itself leaves nothing to choose here, and the control says so. |
 | **Interface size** | how large the chrome, the controls and the type in them are drawn. 1 is as designed. |
 | **Reading size** | how large the text you read is set, over the size above. |
 | **Parts under a node** | whether a node on the map brings out the note's headings. See [the plex](/plex/#what-is-inside-a-note). |
-| **How many parts** | how many of those headings stand at once, from one to twelve. |
+| **How many headings** | how many of those headings stand at once, from one to twelve. |
 
 The two sizes are multipliers over what was designed. The interface goes from **0.8 to 2** and
 the text you read from **0.8 to 1.75**; hairlines, borders and focus rings stay one physical
@@ -75,7 +75,7 @@ The profiles themselves are written in the file, under `indexing.proofreading.pr
 
 ## In the commands
 
-Some of the same settings are in the commands as well — <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd>, under **This window**: **Change the theme**, **Light or dark**, **Interface size**, **Reading font size**, **Sync title and filename**, **Hang the parts of a note under its node**, **How many parts a node hangs**.
+Some of the same settings are in the commands as well — <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd>, under **This window**: **Change the theme**, **Light or dark**, **Interface size**, **Reading font size**, **Sync title and filename**, **Nest headings under notes**, **How many headings nest under a note**.
 
 A row on the page and the command of the same name go through one piece of code, so it makes no difference which you use.
 
@@ -96,8 +96,8 @@ parse is never written over — numen says so and leaves it alone.
     "theme": "preset:numen",
     "interface_scale": 1,
     "text_scale": 1,
-    "hang_parts_under_a_node": true,
-    "parts_under_a_node": 6
+    "nest_headings_under_notes": true,
+    "nested_heading_limit": 6
   }
 }
 ```

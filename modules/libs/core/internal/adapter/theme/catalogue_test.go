@@ -63,7 +63,7 @@ func TestTheFolderIsMadeEmptyOnTheFirstRun(t *testing.T) {
 		t.Errorf("the folder was made holding %d files", len(entries))
 	}
 	for _, one := range catalogue.Themes() {
-		if one.Shelf == theme.Mine {
+		if one.Origin == theme.Mine {
 			t.Errorf("an empty folder offers %q", one.Name)
 		}
 	}
@@ -141,7 +141,7 @@ func TestOnlyACssFileInTheFolderIsATheme(t *testing.T) {
 	writeTheme(t, catalogue, filepath.Join("kept.css", "nord.css"), ":root {}")
 
 	for _, one := range catalogue.Themes() {
-		if one.Shelf == theme.Mine {
+		if one.Origin == theme.Mine {
 			t.Errorf("the folder offers %q", one.Name)
 		}
 	}
@@ -166,7 +166,7 @@ func TestANameThatWouldLeaveTheFolderIsRefused(t *testing.T) {
 		"mine:",
 		"preset:../../../../etc/passwd",
 		"dracula",
-		"shelfless:dracula",
+		"originless:dracula",
 	} {
 		if text, err := catalogue.Text(name); err == nil {
 			t.Errorf("%s was read as %q", name, text)
@@ -226,7 +226,7 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 		t.Errorf("nothing to wear: %v", getNames(themes))
 	}
 	for _, one := range themes {
-		if one.Shelf == theme.Mine {
+		if one.Origin == theme.Mine {
 			t.Errorf("a folder that cannot be read offered %q", one.Name)
 		}
 	}

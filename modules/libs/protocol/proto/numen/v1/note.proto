@@ -326,17 +326,17 @@ message RemoveLinkResponse {
   optional ErrorCode error = 1;
 }
 
-// NamedBy is which of the two a note is shown by, and so which one a rename
+// NameSource is which of the two a note is shown by, and so which one a rename
 // brings into line.
-enum NamedBy {
+enum NameSource {
   // Nothing named the note.
-  NAMED_BY_UNSPECIFIED = 0;
+  NAME_SOURCE_UNSPECIFIED = 0;
 
   // The `title` key of the frontmatter.
-  NAMED_BY_FRONTMATTER = 1;
+  NAME_SOURCE_FRONTMATTER = 1;
 
   // The filename, which a rename moves and does not write.
-  NAMED_BY_FILENAME = 2;
+  NAME_SOURCE_FILENAME = 2;
 }
 
 message RenameNoteRequest {
@@ -357,8 +357,8 @@ message RenameNoteResponse {
   string title = 2;
 
   // Which of the three names the note, and so which the rename brought into
-  // line. NAMED_BY_UNSPECIFIED when the note was never opened.
-  NamedBy by = 3;
+  // line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
+  NameSource name_source = 3;
 
   // What the file did. Absent when it stayed where it was.
   optional MoveResult moved = 4;

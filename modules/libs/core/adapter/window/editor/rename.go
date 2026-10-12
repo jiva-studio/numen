@@ -27,9 +27,9 @@ func (a *API) RenameNote(
 
 	renamed, err := a.Notes.Rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
 	out := &v1.RenameNoteResponse{
-		Path:  renamed.Path,
-		Title: renamed.Title,
-		By:    newNamedBy(renamed.By),
+		Path:       renamed.Path,
+		Title:      renamed.Title,
+		NameSource: newWireNameSource(renamed.By),
 	}
 	if renamed.Moved != nil {
 		out.Moved = newMoveResult(*renamed.Moved)
@@ -95,15 +95,15 @@ func (a *API) removal(
 	return a.Notes.Remove.Execute(ctx, v, path)
 }
 
-// newNamedBy is which of the two a rename wrote, as the schema carries it.
-func newNamedBy(by note.NameSource) v1.NamedBy {
+// newWireNameSource is which of the two a rename wrote, as the schema carries it.
+func newWireNameSource(by note.NameSource) v1.NameSource {
 	switch by {
 	case note.ByFrontmatter:
-		return v1.NamedBy_NAMED_BY_FRONTMATTER
+		return v1.NameSource_NAME_SOURCE_FRONTMATTER
 	case note.ByFilename:
-		return v1.NamedBy_NAMED_BY_FILENAME
+		return v1.NameSource_NAME_SOURCE_FILENAME
 	default:
-		return v1.NamedBy_NAMED_BY_UNSPECIFIED
+		return v1.NameSource_NAME_SOURCE_UNSPECIFIED
 	}
 }
 

@@ -42,7 +42,7 @@ const settle = async () => {
 const line = (control: ReturnType<typeof mountSelect>) => control.get('button[data-slot="select"]')
 const rows = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
 const words = () => rows().map((one) => one.querySelector('.menu__text')?.textContent?.trim())
-const shelves = () =>
+const groups = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('.menu__group-name')).map((one) =>
     one.textContent?.trim(),
   )
@@ -98,7 +98,7 @@ describe('the choices offered', () => {
     expect(words()).toStrictEqual(['Small', 'Medium', 'Large'])
   })
 
-  it('stand on the shelves they name, in the runs they arrive in', async () => {
+  it('stand on the groups they name, in the runs they arrive in', async () => {
     const control = mountSelect({
       choices: [
         { id: 'numen', text: 'numen', group: 'Ships with numen' },
@@ -107,12 +107,12 @@ describe('the choices offered', () => {
       modelValue: 'numen',
     })
     await openSelect(control)
-    expect(shelves()).toStrictEqual(['Ships with numen', 'Yours'])
+    expect(groups()).toStrictEqual(['Ships with numen', 'Yours'])
   })
 
-  it('stand on no shelf where they name none', async () => {
+  it('stand on no group where they name none', async () => {
     await openSelect(mountSelect())
-    expect(shelves()).toStrictEqual([])
+    expect(groups()).toStrictEqual([])
   })
 
   it('carry the second line a choice was given', async () => {

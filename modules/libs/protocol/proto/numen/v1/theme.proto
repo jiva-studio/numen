@@ -37,17 +37,17 @@ service ThemeService {
   rpc WatchThemes(WatchThemesRequest) returns (stream WatchThemesResponse);
 }
 
-// Shelf is where a theme came off: this application, or the person's themes
-// folder. A theme carries its shelf in its name, and two themes on different
-// shelves can share a filename.
-enum Shelf {
-  SHELF_UNSPECIFIED = 0;
+// Origin is where a theme comes from: this application, or the person's themes
+// folder. A theme carries its origin in its name, and two themes on different
+// origins can share a filename.
+enum Origin {
+  ORIGIN_UNSPECIFIED = 0;
 
   // Ships inside the application.
-  SHELF_PRESET = 1;
+  ORIGIN_PRESET = 1;
 
   // A `.css` file in the person's themes folder.
-  SHELF_MINE = 2;
+  ORIGIN_MINE = 2;
 }
 
 // Mode is what chooses between the two halves of a `light-dark()` pair. The
@@ -66,16 +66,16 @@ enum Mode {
 // Theme is one theme as the list refers to it. Its text is asked for by the
 // name here.
 message Theme {
-  // Name is the shelf and the filename, `preset:dracula` or `mine:dracula`,
+  // Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
   // and it is how the theme is asked for again.
   string name = 1;
 
-  // Title is what the file is called, without the shelf.
+  // Title is what the file is called, without the origin.
   string title = 2;
 
-  // Which shelf it stands on: what this installation ships, and what a person
+  // Which origin it comes from: what this installation ships, and what a person
   // put in their own folder.
-  Shelf shelf = 3;
+  Origin origin = 3;
 
   // Set for a theme that declares `color-scheme` itself. Light and dark are
   // the theme's own, and the mode has nothing left to choose.
@@ -85,7 +85,7 @@ message Theme {
 message ListThemesRequest {}
 
 message ListThemesResponse {
-  // Every theme, the shipped ones first and each shelf by name.
+  // Every theme, the shipped ones first and each origin by name.
   repeated Theme themes = 1;
 
   // The theme that is applied, by its name.

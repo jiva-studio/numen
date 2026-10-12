@@ -16,7 +16,7 @@ import Select from './Select.vue'
 const UNBROKEN = 'supercalifragilisticexpialidocious'
 
 interface Knobs {
-  /** What each row says, one to a line. A line after a tab names its shelf. */
+  /** What each row says, one to a line. A line after a tab names its group. */
   words: string
   chosen: string
   disabled: boolean
@@ -24,7 +24,7 @@ interface Knobs {
   width: string
 }
 
-/** One line of the knob: the words on the row, and the shelf after a tab. */
+/** One line of the knob: the words on the row, and the group after a tab. */
 const choiceOf = (line: string, at: number) => {
   const [text = '', group] = line.split('\t')
   const id = text.trim().toLowerCase().replace(/\s+/g, '-') || `at-${at}`
@@ -79,7 +79,7 @@ const rows = (): readonly HTMLElement[] =>
 const words = (): readonly string[] =>
   rows().map((one) => one.querySelector('.menu__text')?.textContent?.trim() ?? '')
 
-const shelves = (): readonly string[] =>
+const groups = (): readonly string[] =>
   Array.from(document.body.querySelectorAll<HTMLElement>('.menu__group-name')).map(
     (one) => one.textContent?.trim() ?? '',
   )
@@ -89,10 +89,10 @@ const openSelect = async (canvas: HTMLElement) => {
   await userEvent.click(control(canvas))
 }
 
-/** Three choices, none of them on a shelf. */
+/** Three choices, none of them on a group. */
 export const ASelect: Story = {}
 
-/** The choices on the two shelves they come off, named over each run. */
+/** The choices on the two groups they come off, named over each run. */
 export const OnShelves: Story = {
   args: {
     words: 'numen\tShips with numen\npaper\tShips with numen\nsea\tYours',
@@ -100,7 +100,7 @@ export const OnShelves: Story = {
   },
   play: async ({ canvasElement }) => {
     await openSelect(canvasElement)
-    expect(shelves()).toEqual(['Ships with numen', 'Yours'])
+    expect(groups()).toEqual(['Ships with numen', 'Yours'])
   },
 }
 

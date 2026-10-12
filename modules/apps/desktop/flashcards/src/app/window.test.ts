@@ -136,7 +136,7 @@ vi.mock('@/shared/clients', async (original) => ({
       }
       return {
         run: 'run-1',
-        asked: [
+        cards: [
           {
             deck: 'decks/Suffixes.md',
             section: 'Suffixes',
