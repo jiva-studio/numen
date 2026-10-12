@@ -29,6 +29,7 @@ export function asPlex(neighbourhood: GetNeighbourhoodResponse): PlexNeighbourho
   const nodes: PlexNode[] = [focus]
   const shown = new Set<string>([focus.id])
   const edges: PlexEdge[] = []
+  // Stryker disable next-line ArrayDeclaration: the mutated value is a string element; destructuring it gives an undefined through, which is in no shown set, so the loop adds nothing
   const hanging: { id: string; label: string; through: string }[] = []
 
   for (const related of neighbourhood.related) {
