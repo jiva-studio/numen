@@ -110,7 +110,7 @@ func makeEditPreview(opened *editor.Installation) claudecode.EditPreview {
 // as the stretch that changed, and a note the person writes is not, because
 // they are looking at the text they typed.
 func makeAgentCore(cfg container.Config, opened *editor.Installation, root string, out io.Writer) mcp.Core {
-	notes := opened.Notes().Drawing(opened.API.GetWindow()).Focusing(opened.Queries(), opened.API.GetWindow())
+	notes := opened.Notes().ShowEdits(opened.API.GetWindow())
 	cutting := opened.Cards()
 
 	return mcp.Core{
@@ -168,16 +168,13 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			Replace:  notes.Replace,
 			Move:     notes.Move,
 			Rename:   notes.Rename,
-			Remove:   notes.Remove,
 			Linking:  notes.Linking,
 			AddLinks: notes.AddLinks,
 
-			ReadNote:      notes.Read,
-			GetTitles:     notes.GetTitles,
-			GetNamedPaths: notes.GetNamedPaths,
-			RemoveNote:    notes.RemoveNote,
-			MoveInto:      notes.MoveInto,
-			FocusNote:     notes.FocusNote,
+			Read:       notes.Read,
+			GetTitles:  notes.GetTitles,
+			RemoveNote: notes.RemoveNote,
+			FocusNote:  cfg.FocusNote(opened.Queries(), opened.API.GetWindow()),
 		},
 	}
 }

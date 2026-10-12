@@ -11,11 +11,11 @@ import (
 
 // FocusNote makes a note the one the person is looking at.
 type FocusNote struct {
-	queries TitleQueries
+	queries port.NoteQueries
 	view    port.Window
 }
 
-func NewFocusNote(queries TitleQueries, view port.Window) *FocusNote {
+func NewFocusNote(queries port.NoteQueries, view port.Window) *FocusNote {
 	return &FocusNote{queries: queries, view: view}
 }
 

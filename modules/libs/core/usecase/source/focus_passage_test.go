@@ -29,15 +29,15 @@ func newFocus(t *testing.T) (*FocusPassage, *glancing) {
 func TestAPassageIsPutInFrontOfThePersonWithTheOthersLit(t *testing.T) {
 	focus, view := newFocus(t)
 
-	kind, err := focus.Execute(t.Context(), first, Passage{
+	summary, err := focus.Execute(t.Context(), first, Passage{
 		Path: recordingPath, Start: 10, Length: 5, Also: []domain.ByteSpan{{From: 40, To: 50}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := domain.Place{Path: recordingPath, Spans: []domain.ByteSpan{{From: 10, To: 15}, {From: 40, To: 50}}}
-	if kind != domain.KindRecording || len(view.asked) != 1 || !samePlace(view.asked[0], want) {
-		t.Errorf("kind %q, window asked %+v, want %+v", kind, view.asked, want)
+	if !strings.Contains(summary, "that passage") || len(view.asked) != 1 || !samePlace(view.asked[0], want) {
+		t.Errorf("summary %q, window asked %+v, want %+v", summary, view.asked, want)
 	}
 }
 

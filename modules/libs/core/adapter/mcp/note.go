@@ -62,7 +62,7 @@ func addNoteResolve(server *sdk.Server, core Core) {
 			"and reaches the nearest of them, which can change when either note is " +
 			"moved. Nothing back means no note answers to the name.",
 	}, newHandler(func(ctx context.Context, in noteResolveInput) (noteResolveOutput, error) {
-		paths, err := core.Notes.GetNamedPaths.Execute(ctx, core.getCurrentVault().Vault, in.Name)
+		paths, err := core.Notes.Queries.GetNamedPaths(ctx, core.getCurrentVault().Vault.ID, domain.LinkName(in.Name))
 		if err != nil {
 			return noteResolveOutput{}, err
 		}

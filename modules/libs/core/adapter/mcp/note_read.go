@@ -85,7 +85,7 @@ func readNotes(ctx context.Context, core Core, in noteReadInput) (noteReadOutput
 	if len(in.Paths) > maxBodies {
 		return noteReadOutput{}, fmt.Errorf("read at most %d notes at a time", maxBodies)
 	}
-	read := core.Notes.ReadNote
+	read := core.Notes.Read
 	res := noteReadOutput{Notes: make([]Contents, 0, len(in.Paths))}
 	for _, path := range in.Paths {
 		if err := ctx.Err(); err != nil {

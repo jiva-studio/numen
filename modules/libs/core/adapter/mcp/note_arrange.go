@@ -58,7 +58,7 @@ func moveNotes(ctx context.Context, core Core, in noteMoveInput) (noteMoveOutput
 		if err := ctx.Err(); err != nil {
 			return noteMoveOutput{}, err
 		}
-		moved, err := core.Notes.MoveInto.Execute(ctx, core.getCurrentVault().Vault, path, in.Folder)
+		moved, err := core.Notes.Move.Execute(ctx, core.getCurrentVault().Vault, path, note.GetPathUnder(in.Folder, path))
 		outcome := MoveOutcome{MoveResult: moved}
 		if err != nil {
 			outcome.MoveResult = note.MoveResult{From: path}

@@ -24,19 +24,8 @@ type Scenarios struct {
 	Links         ShowLinks
 	Neighbourhood ShowNeighbourhood
 
-	GetTitles     GetTitles
-	GetNamedPaths GetNamedPaths
-	RemoveNote    RemoveNote
-	MoveInto      MoveInto
-	// FocusNote puts a note in front of the person. It is nil until a window is
-	// bound with Focusing.
-	FocusNote *FocusNote
-}
-
-// Focusing binds the window that notes are put in front of the person in.
-func (n Scenarios) Focusing(queries TitleQueries, view port.Window) Scenarios {
-	n.FocusNote = NewFocusNote(queries, view)
-	return n
+	GetTitles  GetTitles
+	RemoveNote RemoveNote
 }
 
 // FollowMoves tells a window where each note went, so whoever is showing one at
@@ -47,16 +36,16 @@ func (n Scenarios) FollowMoves(view port.Window) Scenarios {
 	moving.Drawing = func(ctx context.Context, went domain.Move) {
 		_ = view.ShowMove(ctx, went)
 	}
-	n.Move, n.Rename, n.MoveInto = moving, NewRename(moving), NewMoveInto(moving)
+	n.Move, n.Rename = moving, NewRename(moving)
 	return n
 }
 
-// Drawing tells a window what each write is doing while it is being made, so a
+// ShowEdits tells a window what each write is doing while it is being made, so a
 // person watching the note sees the stretch that is changing.
 //
 // Only a caller that is not the person binds it. The window's own writes draw
 // nothing, because the person is looking at the text they typed.
-func (n Scenarios) Drawing(view port.Window) Scenarios {
+func (n Scenarios) ShowEdits(view port.Window) Scenarios {
 	tell := TellEdit(func(ctx context.Context, said domain.Edit) {
 		_ = view.ShowEdit(ctx, said)
 	})

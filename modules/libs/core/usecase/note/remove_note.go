@@ -26,6 +26,9 @@ func NewRemoveNote(remove Remove, readers port.VaultReaders) RemoveNote {
 func (u RemoveNote) Execute(
 	ctx context.Context, v domain.Vault, path string, shouldDestroy bool,
 ) (RemoveResult, error) {
+	if u.readers == nil {
+		return RemoveResult{}, errNotOpen
+	}
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return RemoveResult{}, err
@@ -37,18 +40,4 @@ func (u RemoveNote) Execute(
 		return u.remove.Destroy(ctx, v, path)
 	}
 	return u.remove.Execute(ctx, v, path)
-}
-
-// MoveInto files notes under a folder, keeping their names.
-type MoveInto struct {
-	move Move
-}
-
-func NewMoveInto(move Move) MoveInto {
-	return MoveInto{move: move}
-}
-
-// Execute files the note at path under the folder, which is empty for the root.
-func (u MoveInto) Execute(ctx context.Context, v domain.Vault, path, folder string) (MoveResult, error) {
-	return u.move.Execute(ctx, v, path, GetPathUnder(folder, path))
 }

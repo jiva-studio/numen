@@ -48,9 +48,7 @@ func (c Config) Notes(
 		Links:         note.NewShowLinks(links),
 		Neighbourhood: note.NewShowNeighbourhood(links, queries),
 
-		GetTitles:     note.NewGetTitles(queries),
-		GetNamedPaths: note.NewGetNamedPaths(queries),
-		RemoveNote:    note.NewRemoveNote(remove, readers),
-		MoveInto:      note.NewMoveInto(moving),
+		GetTitles:  note.NewGetTitles(queries),
+		RemoveNote: note.NewRemoveNote(remove, readers),
 	}
 }

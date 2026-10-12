@@ -89,20 +89,9 @@ func focusSource(ctx context.Context, core Core, in sourceFocusInput) (sourceFoc
 	for _, one := range in.Also {
 		passage.Also = append(passage.Also, domain.ByteSpan{From: one.Start, To: one.Start + one.Length})
 	}
-	kind, err := core.Sources.FocusPassage.Execute(ctx, core.getCurrentVault().Vault, passage)
+	summary, err := core.Sources.FocusPassage.Execute(ctx, core.getCurrentVault().Vault, passage)
 	if err != nil {
 		return sourceFocusOutput{}, err
 	}
-	return sourceFocusOutput{IsShown: true, Summary: describeFocus(kind, in.Length)}, nil
-}
-
-// describeFocus returns a sentence describing what the person now sees.
-func describeFocus(kind domain.SourceKind, length int) string {
-	switch {
-	case kind == domain.KindNote:
-		return "the note is in front of them, and a note is shown whole"
-	case length == 0:
-		return "the document is open at its beginning"
-	}
-	return "the document is open at that passage, with the words of it lit"
+	return sourceFocusOutput{IsShown: true, Summary: summary}, nil
 }

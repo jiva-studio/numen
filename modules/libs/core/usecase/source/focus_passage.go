@@ -9,15 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Passage is where in a document to look. A Length of zero opens the document
-// at its beginning, and Also is the other passages of the document to light.
-type Passage struct {
-	Path   string
-	Start  int
-	Length int
-	Also   []domain.ByteSpan
-}
-
 // FocusPassage opens one of the vault's documents in front of the person at a
 // passage, with the words of it lit.
 type FocusPassage struct {
@@ -29,12 +20,13 @@ func NewFocusPassage(readers port.VaultReaders, view port.Window) *FocusPassage 
 	return &FocusPassage{readers: readers, view: view}
 }
 
-// Execute puts the passage in front of the person and returns the kind of the
-// file it opened. A file the vault does not hold, a passage that starts before
-// the text and more passages than a document may highlight are refused.
-func (u *FocusPassage) Execute(ctx context.Context, v domain.Vault, in Passage) (domain.SourceKind, error) {
+// Execute puts the passage in front of the person and returns a sentence saying what they now see.
+func (u *FocusPassage) Execute(ctx context.Context, v domain.Vault, in Passage) (string, error) {
 	if err := checkPassage(in); err != nil {
 		return "", err
+	}
+	if u.readers == nil {
+		return "", errors.New("this vault's files are not open")
 	}
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -54,7 +46,18 @@ func (u *FocusPassage) Execute(ctx context.Context, v domain.Vault, in Passage) 
 	if err := u.view.FocusPlace(ctx, at); err != nil {
 		return "", err
 	}
-	return ref.Kind, nil
+	return getFocusSummary(ref.Kind, in.Length), nil
+}
+
+// getFocusSummary returns a sentence describing what the person now sees.
+func getFocusSummary(kind domain.SourceKind, length int) string {
+	switch {
+	case kind == domain.KindNote:
+		return "the note is in front of them, and a note is shown whole"
+	case length == 0:
+		return "the document is open at its beginning"
+	}
+	return "the document is open at that passage, with the words of it lit"
 }
 
 // checkPassage returns an error for an input with no document, a passage that

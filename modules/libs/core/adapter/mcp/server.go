@@ -73,15 +73,12 @@ type Notes struct {
 	Replace  note.Replace
 	Move     note.Move
 	Rename   note.Rename
-	Remove   note.Remove
 	Linking  note.EditLinks
 	AddLinks note.AddLinks
 
-	ReadNote      note.Read
-	GetTitles     note.GetTitles
-	GetNamedPaths note.GetNamedPaths
-	RemoveNote    note.RemoveNote
-	MoveInto      note.MoveInto
+	Read       note.Read
+	GetTitles  note.GetTitles
+	RemoveNote note.RemoveNote
 	// FocusNote puts a note in front of the person. Without it the tool that does is
 	// not added.
 	FocusNote *note.FocusNote
