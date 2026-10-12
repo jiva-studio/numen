@@ -215,7 +215,7 @@ describe('a grid drawn', () => {
       const before = getCells(frame, '.cm-cell')
       const next = createStateIn(`x\n\n${SOURCE.replace('| e |', '| z |')}`)
 
-      expect(createGridIn(next).updateDOM(frame, frame as unknown as EditorView)).toBe(true)
+      expect(createGridIn(next).updateDOM(frame)).toBe(true)
 
       const after = getCells(frame, '.cm-cell')
       expect(after).toEqual(before)
@@ -232,10 +232,7 @@ describe('a grid drawn', () => {
       const cells = getCells(frame, '.cm-cell')
       vi.spyOn(Document.prototype, 'activeElement', 'get').mockReturnValue(cells[3] ?? null)
 
-      createGridIn(createStateIn(SOURCE.replace('| e |', '| z |'))).updateDOM(
-        frame,
-        frame as unknown as EditorView,
-      )
+      createGridIn(createStateIn(SOURCE.replace('| e |', '| z |'))).updateDOM(frame)
 
       expect(cells[3]?.textContent).toBe('e')
       expect(cells[4]?.textContent).toBe('f')
@@ -244,10 +241,7 @@ describe('a grid drawn', () => {
     it('puts the places to type where the editor takes typing now', () => {
       const frame = draw(createGridIn(createStateIn(SOURCE)))
 
-      createGridIn(createStateIn(SOURCE, EditorState.readOnly.of(true))).updateDOM(
-        frame,
-        frame as unknown as EditorView,
-      )
+      createGridIn(createStateIn(SOURCE, EditorState.readOnly.of(true))).updateDOM(frame)
 
       expect(
         getCells(frame, '.cm-cell').some((cell) => cell.hasAttribute('contenteditable')),
@@ -257,7 +251,7 @@ describe('a grid drawn', () => {
     it('leaves a column nothing was written in without a place to type', () => {
       const frame = draw(createGridIn(createStateIn(SOURCE)))
 
-      createGridIn(createStateIn(SOURCE)).updateDOM(frame, frame as unknown as EditorView)
+      createGridIn(createStateIn(SOURCE)).updateDOM(frame)
 
       const cell = getCells(frame, 'tbody tr .cm-cell')[2]
       expect(cell?.hasAttribute('contenteditable')).toBe(false)
@@ -268,7 +262,7 @@ describe('a grid drawn', () => {
       const frame = draw(createGridIn(createStateIn(SOURCE)))
       const next = createStateIn('| a | b |\n|---|---|\n| c | d |\n')
 
-      expect(createGridIn(next).updateDOM(frame, frame as unknown as EditorView)).toBe(true)
+      expect(createGridIn(next).updateDOM(frame)).toBe(true)
 
       expect(getCells(frame, '.cm-cell').map((cell) => cell.textContent)).toEqual([
         'a',
