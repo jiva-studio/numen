@@ -18,15 +18,16 @@ func (m *mockTranscriber) GetTranscriptionModel() port.TranscriptionModel {
 	return port.TranscriptionModel{
 		Model:     "mock-asr",
 		Segmenter: "mock-vad",
+		Cutting:   "mock-threshold",
 		From:      "test",
 	}
 }
 
-func (m *mockTranscriber) Open(ctx context.Context, raw []byte) (port.Recording, error) {
-	return &mockRecording{duration: 2000}, nil
+func (m *mockTranscriber) Open(_ context.Context, _ []byte) (port.Recording, error) {
+	return &mockRecording{duration: 2000, hasServed: false}, nil
 }
 
-func (m *mockTranscriber) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
+func (m *mockTranscriber) Transcribe(_ context.Context, _ port.Audio) (string, error) {
 	return "Mock transcribed text for automated test.", nil
 }
 
@@ -43,7 +44,7 @@ func (r *mockRecording) GetDuration() int {
 	return r.duration
 }
 
-func (r *mockRecording) GetSegments(ctx context.Context, from, count int) ([]port.Audio, error) {
+func (r *mockRecording) GetSegments(_ context.Context, _, _ int) ([]port.Audio, error) {
 	if r.hasServed {
 		return nil, nil
 	}
