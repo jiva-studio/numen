@@ -203,24 +203,24 @@ func (w *Window) checkWindowName(named string) error {
 	return connect.NewError(connect.CodeNotFound, ErrAnotherWindow)
 }
 
-// Say puts one piece of work in the list.
-func (w *Window) Say(at task.Task) {
+// AddTask puts one piece of work in the list.
+func (w *Window) AddTask(at task.Task) {
 	if w != nil && w.Tasking != nil {
 		w.Tasking.Set(at)
 	}
 }
 
-// Finish takes one piece of work out of the list.
-func (w *Window) Finish(id string) {
+// RemoveTask takes one piece of work out of the list.
+func (w *Window) RemoveTask(id string) {
 	if w != nil && w.Tasking != nil {
 		w.Tasking.Remove(id)
 	}
 }
 
-// Settle asks every page to write what it owes and waits for the request to
+// RequestFlush asks every page to write what it owes and waits for the request to
 // end. It answers false where a page is holding work a person is being asked
 // about, and where another request has taken this one's place.
-func (w *Window) Settle(ctx context.Context) bool {
+func (w *Window) RequestFlush(ctx context.Context) bool {
 	request := w.clients.startRequest()
 	select {
 	case <-request.allWritten:
@@ -231,9 +231,9 @@ func (w *Window) Settle(ctx context.Context) bool {
 	return !request.isPending() && w.clients.getRunning() == request
 }
 
-// WaitForAnswers waits for the request in progress to end with every page having
+// WaitForFlush waits for the request in progress to end with every page having
 // written what it owes.
-func (w *Window) WaitForAnswers(ctx context.Context) bool {
+func (w *Window) WaitForFlush(ctx context.Context) bool {
 	request := w.clients.getRunning()
 	if request == nil {
 		return false
@@ -248,9 +248,9 @@ func (w *Window) WaitForAnswers(ctx context.Context) bool {
 	}
 }
 
-// EndRound ends the request that was running, and lets go of whoever was waiting
+// CancelFlush ends the request that was running, and lets go of whoever was waiting
 // on it. What the pages hold from here belongs to the vault in front of them.
-func (w *Window) EndRound() { w.clients.endRequest() }
+func (w *Window) CancelFlush() { w.clients.endRequest() }
 
 // describeTasks is the work as the schema says it.
 func describeTasks(list []task.Task) []*v1.Task {
@@ -264,14 +264,14 @@ func describeTasks(list []task.Task) []*v1.Task {
 			Total:   at.Total,
 			Error:   at.Error,
 			IsAsked: at.IsAsked,
-			Unit:    unitOf(at.Unit),
+			Unit:    convertUnit(at.Unit),
 		})
 	}
 	return out
 }
 
-// unitOf is what a task counts, as the schema says it.
-func unitOf(in task.Unit) v1.Unit {
+// convertUnit is what a task counts, as the schema says it.
+func convertUnit(in task.Unit) v1.Unit {
 	switch in {
 	case task.Bytes:
 		return v1.Unit_UNIT_BYTES

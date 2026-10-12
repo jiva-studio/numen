@@ -57,15 +57,15 @@ func TestADocumentOpenedByPathIsDrawnAsTheSameBytesAre(t *testing.T) {
 			}
 			defer fromPath.Close()
 
-			if fromPath.Pages() != fromBytes.Pages() {
-				t.Fatalf("%d pages, want %d", fromPath.Pages(), fromBytes.Pages())
+			if fromPath.GetPageCount() != fromBytes.GetPageCount() {
+				t.Fatalf("%d pages, want %d", fromPath.GetPageCount(), fromBytes.GetPageCount())
 			}
-			for page := range fromBytes.Pages() {
-				want, err := fromBytes.Image(page, 72)
+			for page := range fromBytes.GetPageCount() {
+				want, err := fromBytes.RenderPage(page, 72)
 				if err != nil {
 					t.Fatal(err)
 				}
-				got, err := fromPath.Image(page, 72)
+				got, err := fromPath.RenderPage(page, 72)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -107,8 +107,8 @@ func TestADocumentOpenedByPathKeepsNoCopyOfTheFile(t *testing.T) {
 	if during.HeapAlloc > before.HeapAlloc && during.HeapAlloc-before.HeapAlloc > size/2 {
 		t.Errorf("the open document retains %d bytes of a %d byte file", during.HeapAlloc-before.HeapAlloc, size)
 	}
-	if held.Pages() != 2 {
-		t.Errorf("%d pages, want 2", held.Pages())
+	if held.GetPageCount() != 2 {
+		t.Errorf("%d pages, want 2", held.GetPageCount())
 	}
 }
 
@@ -196,19 +196,19 @@ func TestADocumentDrawnFromAFileIsDrawnAsTheSameBytesAre(t *testing.T) {
 			}
 			defer want.Close()
 			file := openCounted(t, copyFixture(t, name))
-			drawn, err := pdf.Documents{}.Draw(t.Context(), file)
+			drawn, err := pdf.Documents{}.OpenDocument(t.Context(), file)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if drawn.Pages() != want.Pages() {
-				t.Fatalf("%d pages, want %d", drawn.Pages(), want.Pages())
+			if drawn.GetPageCount() != want.GetPageCount() {
+				t.Fatalf("%d pages, want %d", drawn.GetPageCount(), want.GetPageCount())
 			}
-			for page := range want.Pages() {
-				expected, err := want.Image(page, 72)
+			for page := range want.GetPageCount() {
+				expected, err := want.RenderPage(page, 72)
 				if err != nil {
 					t.Fatal(err)
 				}
-				got, err := drawn.Image(page, 72)
+				got, err := drawn.RenderPage(page, 72)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -235,7 +235,7 @@ func TestAFileThatDoesNotDrawIsRefusedAndClosed(t *testing.T) {
 	for name, path := range map[string]string{"empty": empty, "prose": copyFixture(t, prose)} {
 		t.Run(name, func(t *testing.T) {
 			file := openCounted(t, path)
-			_, err := pdf.Documents{}.Draw(t.Context(), file)
+			_, err := pdf.Documents{}.OpenDocument(t.Context(), file)
 			if !errors.Is(err, port.ErrNotADocument) || !errors.Is(err, pdf.ErrNotPDF) {
 				t.Errorf("drawing it gave %v", err)
 			}
@@ -250,7 +250,7 @@ func TestAFileIsClosedWhenDrawingIsCancelled(t *testing.T) {
 	file := openCounted(t, copyFixture(t, tiny))
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := (pdf.Documents{}).Draw(ctx, file); !errors.Is(err, context.Canceled) {
+	if _, err := (pdf.Documents{}).OpenDocument(ctx, file); !errors.Is(err, context.Canceled) {
 		t.Errorf("drawing gave %v", err)
 	}
 	if file.closes != 1 {

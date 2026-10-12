@@ -96,7 +96,7 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 func (e Edit) splice(
 	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
 ) (domain.Fingerprint, error) {
-	release, err := e.writers.Hold(ctx, v)
+	release, err := e.writers.Lock(ctx, v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -154,7 +154,7 @@ func (e Edit) splice(
 // a caller that holds the note to what it last saw or to what is there now.
 func (e Edit) statNote(ctx context.Context, reader port.VaultReader, path string) (domain.Fingerprint, error) {
 	if e.Seen != nil || (e.Fingerprint.IsZero() && !e.ShouldOverwrite) {
-		return reader.Stat(ctx, path)
+		return reader.GetFingerprint(ctx, path)
 	}
 	return domain.Fingerprint{}, nil
 }

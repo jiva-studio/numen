@@ -22,15 +22,15 @@ func NewRootedHandler(handler http.Handler, entered, returned chan<- struct{}) h
 // waiting on a model looks like.
 type SilentAgent struct{}
 
-func (SilentAgent) Take(context.Context, port.Task) (port.Run, error) {
+func (SilentAgent) StartRun(context.Context, port.Task) (port.Run, error) {
 	return NoopRun{steps: make(chan port.Step)}, nil
 }
 
-func (SilentAgent) Finish(context.Context, string) error { return nil }
+func (SilentAgent) EndConversation(context.Context, string) error { return nil }
 
 // NoopRun is a run of a SilentAgent: a step never arrives, and stopping it
 // costs nothing.
 type NoopRun struct{ steps chan port.Step }
 
-func (w NoopRun) Steps() <-chan port.Step { return w.steps }
-func (w NoopRun) Stop() error             { return nil }
+func (w NoopRun) GetSteps() <-chan port.Step { return w.steps }
+func (w NoopRun) Stop() error                { return nil }

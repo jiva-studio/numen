@@ -41,8 +41,8 @@ func (r RecognitionModel) Recipe() string {
 // for one and does not know whether the models run on this machine or a service
 // answered.
 type Recogniser interface {
-	// Recognition is what every page this recogniser reads was read by.
-	Recognition() RecognitionModel
+	// GetRecognitionModel is what every page this recogniser reads was read by.
+	GetRecognitionModel() RecognitionModel
 
 	// Recognise is one page: its parts, in the order the page is read, and what
 	// each of them says. A page that carries nothing readable is an empty page

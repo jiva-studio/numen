@@ -54,7 +54,7 @@ func TestAClientHoldingOneDimensionIsOpened(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := c.Model().Dimensions; got != 1 {
+	if got := c.GetModel().Dimensions; got != 1 {
 		t.Errorf("the client holds %d dimensions", got)
 	}
 }

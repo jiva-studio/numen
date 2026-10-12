@@ -2,9 +2,9 @@ package review
 
 import "time"
 
-// Named is a day as it is written down and read back: the year, the month and
+// DayLayout is a day as it is written down and read back: the year, the month and
 // the day it began on, in the zone the days are counted in.
-const Named = "2006-01-02"
+const DayLayout = "2006-01-02"
 
 // GetName is the name of the day an answer given at this instant falls in.
 //
@@ -12,7 +12,7 @@ const Named = "2006-01-02"
 // review day began — an answer given at one in the morning belongs to the day
 // before, and is named for it.
 func (d Day) GetName(at time.Time) string {
-	return d.GetDate(at).Format(Named)
+	return d.GetDate(at).Format(DayLayout)
 }
 
 // Tally is one day's answers: how many were given, and how each of the four was
@@ -97,7 +97,7 @@ func GetSpentUnder(
 	d Day, day string, answers []Answer,
 	under map[CardFaceID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
-	return Give(answers).GetSpentUnder(d, day, under, counts)
+	return OrderAnswers(answers).GetSpentUnder(d, day, under, counts)
 }
 
 // GetSpentUnder is the same over a history already in order.
@@ -142,7 +142,7 @@ func (h History) GetSpentUnder(
 // GetFaced is the card faces answered in the day named. An answer taken back is
 // not one, and a card face answered again in the day is the one face.
 func GetFaced(d Day, day string, answers []Answer) map[CardFaceID]bool {
-	return Give(answers).GetFaced(d, day)
+	return OrderAnswers(answers).GetFaced(d, day)
 }
 
 // GetFaced is the same over a history already in order.

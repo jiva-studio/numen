@@ -110,7 +110,7 @@ func (r Reader) GetDocument(ctx context.Context, path, producer, hash string) (*
 		}
 		return r.readRecognition(ctx, producer, hash)
 	}
-	ref, err := r.Vault.Stat(ctx, path)
+	ref, err := r.Vault.GetFingerprint(ctx, path)
 	if err != nil {
 		return nil, err
 	}

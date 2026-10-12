@@ -43,8 +43,8 @@ type provider interface {
 	CanHandle(at domain.URL) bool
 
 	GetDownloadModel(at domain.URL) port.DownloadModel
-	Metadata(ctx context.Context, at domain.URL) (port.Metadata, error)
-	Text(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error)
+	GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error)
+	GetText(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error)
 }
 
 // A player is a provider that also reaches the bytes a person plays. A site
@@ -88,25 +88,25 @@ func (f *Downloader) GetDownloadModel(at domain.URL) port.DownloadModel {
 	return by.GetDownloadModel(at)
 }
 
-// Metadata is what stands at the address, taking none of it.
-func (f *Downloader) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+// GetMetadata is what stands at the address, taking none of it.
+func (f *Downloader) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return port.Metadata{}, err
 	}
-	return by.Metadata(ctx, at)
+	return by.GetMetadata(ctx, at)
 }
 
-// Text is what the address publishes as words, as whichever provider answers
+// GetText is what the address publishes as words, as whichever provider answers
 // for it produces them.
-func (f *Downloader) Text(
+func (f *Downloader) GetText(
 	ctx context.Context, at domain.URL, want port.PreferredCaptions,
 ) (port.Text, error) {
 	by, err := f.providerFor(at)
 	if err != nil {
 		return port.Text{}, err
 	}
-	return by.Text(ctx, at, want)
+	return by.GetText(ctx, at, want)
 }
 
 // Download is what is at the address as a person plays it.

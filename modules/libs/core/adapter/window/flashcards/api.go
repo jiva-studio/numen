@@ -194,10 +194,10 @@ func NewWindow(tasks *task.Tasks) *wire.Window {
 
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a window that keeps one.
-func (a *API) reportTask(at task.Task) { a.Window.Say(at) }
+func (a *API) reportTask(at task.Task) { a.Window.AddTask(at) }
 
 // finishTask takes one piece of work out of that list.
-func (a *API) finishTask(id string) { a.Window.Finish(id) }
+func (a *API) finishTask(id string) { a.Window.RemoveTask(id) }
 
 func (a *API) getNow() time.Time {
 	if a.Now == nil {
@@ -212,5 +212,5 @@ func formatTime(t time.Time) string {
 	if t.IsZero() {
 		return ""
 	}
-	return t.UTC().Format(review.Stamp)
+	return t.UTC().Format(review.TimestampLayout)
 }

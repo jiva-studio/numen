@@ -17,13 +17,13 @@ type held struct {
 	isShut  bool
 }
 
-func (h *held) Pages() int       { return 1 }
-func (h *held) Label(int) string { return "1" }
-func (h *held) Size(int) (float64, float64, error) {
+func (h *held) GetPageCount() int { return 1 }
+func (h *held) Label(int) string  { return "1" }
+func (h *held) GetPageSize(int) (float64, float64, error) {
 	return 612, 792, nil
 }
 
-func (h *held) Image(int, int) (image.Image, error) {
+func (h *held) RenderPage(int, int) (image.Image, error) {
 	close(h.drawing)
 	<-h.let
 	h.mu.Lock()
@@ -57,7 +57,7 @@ func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 			return
 		}
 		defer give()
-		_, err = doc.Scan.Image(0, 72)
+		_, err = doc.Scan.RenderPage(0, 72)
 		drawn <- err
 	}()
 

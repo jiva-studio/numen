@@ -26,11 +26,11 @@ func (s *site) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "a test", Version: "1", Producer: derived.Captions}
 }
 
-func (s *site) Metadata(context.Context, domain.URL) (port.Metadata, error) {
+func (s *site) GetMetadata(context.Context, domain.URL) (port.Metadata, error) {
 	return port.Metadata{Title: s.title, Length: 83_500, Captions: []string{"en"}}, nil
 }
 
-func (s *site) Text(
+func (s *site) GetText(
 	context.Context, domain.URL, port.PreferredCaptions,
 ) (port.Text, error) {
 	if len(s.cues) == 0 {

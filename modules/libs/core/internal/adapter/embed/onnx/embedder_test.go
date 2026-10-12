@@ -96,7 +96,7 @@ func TestAPoolingNobodyImplementsIsRefused(t *testing.T) {
 
 func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 	e := open(t, modelDir(t))
-	if got := e.Model(); got.Dimensions != embed.Defaults().Model.Dimensions {
+	if got := e.GetModel(); got.Dimensions != embed.Defaults().Model.Dimensions {
 		t.Errorf("got %s", got)
 	}
 
@@ -113,7 +113,7 @@ func TestTheModelEmbedsAndReportsItself(t *testing.T) {
 		t.Fatalf("got %d vectors for %d texts", len(vectors), len(texts))
 	}
 	for i, v := range vectors {
-		if len(v) != e.Model().Dimensions {
+		if len(v) != e.GetModel().Dimensions {
 			t.Fatalf("vector %d has %d dimensions", i, len(v))
 		}
 		if length := math.Abs(float64(dot(v, v)) - 1); length > 1e-5 {
@@ -276,7 +276,7 @@ func openInt8(t testing.TB, dir string) *onnx.Embedder {
 
 func TestINT8ModelEmbedsAndReportsItself(t *testing.T) {
 	e := openInt8(t, modelDirInt8(t))
-	if got := e.Model(); got.Dimensions != embed.Defaults().Model.Dimensions {
+	if got := e.GetModel(); got.Dimensions != embed.Defaults().Model.Dimensions {
 		t.Errorf("got %s", got)
 	}
 
@@ -287,7 +287,7 @@ func TestINT8ModelEmbedsAndReportsItself(t *testing.T) {
 	if len(vectors) != 1 {
 		t.Fatalf("got %d vectors", len(vectors))
 	}
-	if len(vectors[0]) != e.Model().Dimensions {
+	if len(vectors[0]) != e.GetModel().Dimensions {
 		t.Errorf("got %d dimensions", len(vectors[0]))
 	}
 }
@@ -334,7 +334,7 @@ func TestMultiGoroutineConcurrentEmbedBatch(t *testing.T) {
 					return
 				}
 				for _, v := range vectors {
-					if len(v) != e.Model().Dimensions {
+					if len(v) != e.GetModel().Dimensions {
 						errChan <- fmt.Errorf("goroutine %d: invalid dimensions %d", id, len(v))
 						return
 					}

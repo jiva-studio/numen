@@ -152,7 +152,7 @@ func getVaultRoot(ctx context.Context, core Core, path string) (string, bool, er
 	if core.Vaults.FolderDialog == nil {
 		return "", false, errors.New("there is nobody here to pick a folder: name the one to add")
 	}
-	return core.Vaults.FolderDialog.Choose(ctx, "Choose a folder for a vault", "")
+	return core.Vaults.FolderDialog.ChooseFolder(ctx, "Choose a folder for a vault", "")
 }
 
 func addVaultRename(server *sdk.Server, core Core) {
@@ -192,7 +192,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 }
 
 func addVaultForget(server *sdk.Server, core Core) {
-	if core.Vaults.Registry == nil || core.Vaults.Forget == nil {
+	if core.Vaults.Registry == nil || core.Vaults.Unregister == nil {
 		return
 	}
 
@@ -224,7 +224,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 		if v.ID == core.getCurrentVault().Vault.ID {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
 		}
-		if err := core.Vaults.Forget.Execute(ctx, v); err != nil {
+		if err := core.Vaults.Unregister.Execute(ctx, v); err != nil {
 			return nil, out{}, err
 		}
 		return nil, out{IsForgotten: true, Folder: v.Path}, nil

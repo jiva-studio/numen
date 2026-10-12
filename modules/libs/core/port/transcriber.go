@@ -53,13 +53,13 @@ type Audio struct {
 // The length is answered before anything is listened to, so a person watching a
 // transcription is told how much of it is left.
 type Recording interface {
-	// Length is how long the recording is, in milliseconds.
-	Length() int
+	// GetDuration is how long the recording is, in milliseconds.
+	GetDuration() int
 
-	// Segments is what the segmenter cut the recording into, from a millisecond
+	// GetSegments is what the segmenter cut the recording into, from a millisecond
 	// onward, at most count of them. A recording with nothing further to say
 	// answers with none, and that is how a run knows it is done.
-	Segments(ctx context.Context, from, count int) ([]Audio, error)
+	GetSegments(ctx context.Context, from, count int) ([]Audio, error)
 
 	Close() error
 }
@@ -67,9 +67,9 @@ type Recording interface {
 // Transcriber turns speech into the words it carries. The core asks for one and
 // does not know whether the models run on this machine or a service answered.
 type Transcriber interface {
-	// Transcription is what every recording this transcriber hears was heard
+	// GetTranscriptionModel is what every recording this transcriber hears was heard
 	// by.
-	Transcription() TranscriptionModel
+	GetTranscriptionModel() TranscriptionModel
 
 	// Open is a recording, ready to be listened to. The bytes are the file as
 	// the vault holds it, in whatever container it was recorded in.

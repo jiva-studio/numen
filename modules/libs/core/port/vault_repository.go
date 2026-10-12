@@ -12,7 +12,7 @@ type VaultRepository interface {
 	// index already knows keeps the row it has; there is nothing else here for
 	// it to write.
 	Register(ctx context.Context, vaultID domain.VaultID) error
-	// Forget takes everything the index holds for one vault, and the vault's own
+	// Unregister takes everything the index holds for one vault, and the vault's own
 	// row with it.
-	Forget(ctx context.Context, vaultID domain.VaultID) error
+	Unregister(ctx context.Context, vaultID domain.VaultID) error
 }

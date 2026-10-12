@@ -26,7 +26,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.Fault":           "adapter/window/editor: written by faultOf",
 	"numen.v1.FlushResult":     "internal/wire: read by left",
 	"numen.v1.Goal":            "internal/wire: round trip through GoalIn and GoalOf",
-	"numen.v1.Mode":            "internal/wire: round trip through ModeIn and ModeOf",
+	"numen.v1.Mode":            "internal/wire: round trip through ConvertModeFromWire and ConvertModeToWire",
 	"numen.v1.NameSource":      "adapter/window/editor: written by newWireNameSource",
 	"numen.v1.NoteType":        "adapter/window/editor: written by typeOf",
 	"numen.v1.Presence":        "adapter/window/editor: written by the presences table",

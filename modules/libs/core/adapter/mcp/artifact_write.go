@@ -101,7 +101,7 @@ func writeCorrections(
 
 	// A run appends to what it is writing down, and what is being appended to is
 	// not corrected underneath.
-	release, err := store.Claim(ctx, text.Partial(producer, hash))
+	release, err := store.ClaimName(ctx, text.Partial(producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return 0, errors.New("a run is writing this transcript down")
 	}
@@ -112,7 +112,7 @@ func writeCorrections(
 
 	_, stood := transcript.Parse([]byte(words))
 	whole := spliceCues(stood, put, start, length)
-	written := append(transcript.Marshal(whole), transcript.Hand()...)
+	written := append(transcript.Marshal(whole), transcript.GetHandWrittenMark()...)
 	if err := store.Write(ctx, text.Corrections(producer, hash), written); err != nil {
 		return 0, err
 	}

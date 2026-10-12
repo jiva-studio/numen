@@ -278,7 +278,7 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 		said  []byte
 		stood putting
 	}{
-		{"a person wrote it in the window", append(own, transcript.Hand()...), putting{By: "a proofreader", At: getSpan(1).To}},
+		{"a person wrote it in the window", append(own, transcript.GetHandWrittenMark()...), putting{By: "a proofreader", At: getSpan(1).To}},
 		{"nobody here wrote it", own, putting{}},
 		{"another proofreader wrote it", own, putting{By: "somebody else", At: getSpan(1).To}},
 	} {

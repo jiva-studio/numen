@@ -27,7 +27,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	// answering looks like from here.
 	model := newSulking(64, math.MaxInt)
 	made, db := reading(t)
-	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -35,7 +35,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
-	api.Indexing.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.GetModel().Recipe())
 	cut(t, db, api)
 
 	embedSources(t.Context(), made, api, v, model, nil)
@@ -54,7 +54,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	model := &asked{dims: 64}
 	made, db := reading(t)
-	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -62,7 +62,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
-	api.Indexing.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.GetModel().Recipe())
 	cut(t, db, api)
 
 	embedSources(t.Context(), made, api, v, model, nil)
@@ -78,7 +78,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	model := &asked{dims: 64}
 	watching := &peeking{asked: model}
 	made, db := reading(t)
-	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,7 +86,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
-	api.Indexing.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.GetModel().Recipe())
 	cut(t, db, api)
 	watching.tasks = api.Window.Tasking
 
@@ -115,10 +115,10 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
-	api.Indexing.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.GetModel().Recipe())
 
 	// The weights are still coming down, and in this test they never land.
-	arriving := embedding.NewArriving(model.Model())
+	arriving := embedding.NewDeferredEmbedder(model.GetModel())
 
 	over := make(chan struct{})
 	go func() {
@@ -139,7 +139,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	model := &asked{dims: 64}
 	made, db := reading(t)
-	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -147,10 +147,10 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
-	api.Indexing.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.GetModel().Recipe())
 	cut(t, db, api)
 
-	arriving := embedding.NewArriving(model.Model())
+	arriving := embedding.NewDeferredEmbedder(model.GetModel())
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
@@ -164,7 +164,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 
-	arriving.ReportArrival(model, nil)
+	arriving.SetModel(model, nil)
 	<-over
 
 	if at := findTask(t, api, makingVectors); at != nil {
@@ -282,7 +282,7 @@ func findTask(t *testing.T, api *API, id string) *task.Task {
 func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	model := &asked{dims: 64}
 	made, db := reading(t)
-	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -290,14 +290,14 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
-	api.Indexing.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.GetModel().Recipe())
 	cut(t, db, api)
 
 	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
 	over := &overheard{asked: model, tasks: api.Window.Tasking}
-	held := embedding.NewArriving(model.Model())
-	held.ReportArrival(over, nil)
+	held := embedding.NewDeferredEmbedder(model.GetModel())
+	held.SetModel(over, nil)
 
 	embedSources(t.Context(), made, api, v, held.GetWaitingEmbedder(), nil)
 
@@ -327,10 +327,10 @@ type overheard struct {
 	seen [][]task.Task
 }
 
-// Model is asked at the head of every pass, before a source has been opened.
-func (o *overheard) Model() port.EmbeddingModel {
+// GetModel is asked at the head of every pass, before a source has been opened.
+func (o *overheard) GetModel() port.EmbeddingModel {
 	o.keep()
-	return o.asked.Model()
+	return o.asked.GetModel()
 }
 
 func (o *overheard) Embed(ctx context.Context, texts []string) ([][]float32, error) {
@@ -357,7 +357,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	nudge := make(chan struct{}, 1)
 	model := &nudging{asked: &asked{dims: 64}, nudge: nudge}
 	made, db := reading(t)
-	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -365,12 +365,12 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.setVault(v)
-	api.Indexing.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.GetModel().Recipe())
 	cut(t, db, api)
 
 	embedSources(t.Context(), made, api, v, model, nudge)
 
-	held, embedded, err := db.Progress().Progress(t.Context(), v.ID, model.Model().Recipe())
+	held, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -396,7 +396,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	// Taken up again, the pass asks the index what still owes a vector.
 	embedSources(t.Context(), made, api, v, model.asked, nil)
 
-	held, embedded, err = db.Progress().Progress(t.Context(), v.ID, model.Model().Recipe())
+	held, embedded, err = db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}

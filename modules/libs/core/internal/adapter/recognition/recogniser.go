@@ -104,7 +104,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	}, nil
 }
 
-func (r *Recogniser) Recognition() port.RecognitionModel { return r.model }
+func (r *Recogniser) GetRecognitionModel() port.RecognitionModel { return r.model }
 
 // Close lets go of the models this recognition loaded. The runtime they ran on is
 // the process's and stays.

@@ -116,9 +116,9 @@ func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
 				if at.Hour() < hour {
 					want = want.AddDate(0, 0, -1)
 				}
-				if got := day.GetName(at); got != want.Format(review.Named) {
+				if got := day.GetName(at); got != want.Format(review.DayLayout) {
 					t.Fatalf("in %s, %v under a day beginning at %02d:00 is named %s, want %s",
-						name, at, hour, got, want.Format(review.Named))
+						name, at, hour, got, want.Format(review.DayLayout))
 				}
 			}
 		}

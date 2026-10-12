@@ -343,7 +343,7 @@ func embedSources(
 	// wrote, and a vault owing no vector holds that goroutine for nothing.
 	owing := int64(0)
 	if api.Indexing.Progress != nil {
-		held, embedded, err := api.Indexing.Progress.Progress(ctx, v.ID, text(&api.Indexing.Recipe))
+		held, embedded, err := api.Indexing.Progress.GetProgress(ctx, v.ID, text(&api.Indexing.Recipe))
 		if err == nil {
 			owing = max(0, held-embedded)
 			if owing == 0 {

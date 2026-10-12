@@ -79,9 +79,10 @@ var errNoVault = errors.New("the window has no vault")
 // The scan is started and left running, and a note is answerable before it
 // ends.
 //
-// Going takes two steps. Settle is called while the window is still drawn: the
-// clients write what only they hold and the writes in the air land. Closing
-// then stops the scan, waits for it, and closes the database, in that order.
+// Going takes two steps. RequestFlush is called while the window is still open:
+// the clients write what only they hold and the writes in the air land.
+// Closing then stops the scan, waits for it, and closes the database, in that
+// order.
 func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Installation, error) {
 	registry := made.GetRegistry()
 
@@ -141,7 +142,7 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	// carries a vector, and what tells the window that something is going to
 	// embed what was cut.
 	if embedder != nil {
-		model := embedder.Model()
+		model := embedder.GetModel()
 		api.Indexing.Model.Store(model.String())
 		api.Indexing.Recipe.Store(model.Recipe())
 	}
@@ -220,11 +221,11 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	api.Files.Import = &held.Import
 	api.Files.URLs = &source.CreateURL{Writers: made.GetVaultWriters(), Index: pool.level}
 	api.Vaults = Vaults{
-		Registry: held.Registry,
-		Add:      &held.Add,
-		Rename:   &held.Rename,
-		Forget:   &held.Forget,
-		Erase:    &held.Erase,
+		Registry:   held.Registry,
+		Add:        &held.Add,
+		Rename:     &held.Rename,
+		Unregister: &held.Unregister,
+		Erase:      &held.Erase,
 	}
 
 	api.Drops = &source.DropTranscript{
@@ -314,7 +315,7 @@ func (o *Installation) DraftingLocation(ctx context.Context, path, stood string)
 	if err != nil || contents.Outcome != note.Ok {
 		return 0, 0, false
 	}
-	at, _ := markdown.Where(contents.Body, stood)
+	at, _ := markdown.FindSpans(contents.Body, stood)
 	if len(at) != 1 {
 		return 0, 0, false
 	}

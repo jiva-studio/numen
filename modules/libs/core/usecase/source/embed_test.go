@@ -129,7 +129,7 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 			if want := (dimensions + 7) / 8; len(v.Coarse) != want {
 				t.Errorf("chunk %s holds %d coarse bytes, want %d", v.ChunkID, len(v.Coarse), want)
 			}
-			if v.Model != model.Model() {
+			if v.Model != model.GetModel() {
 				t.Errorf("chunk %s was stored under %s", v.ChunkID, v.Model)
 			}
 		}

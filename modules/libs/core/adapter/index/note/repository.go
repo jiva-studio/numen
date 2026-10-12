@@ -110,7 +110,7 @@ func saveNote(
 	var row int64
 	var updated bool
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.Stamp(n.Fingerprint.ModTime),
+		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.ConvertTimeToNanos(n.Fingerprint.ModTime),
 		nil, nil, nil,
 	).Scan(&row, &updated); err != nil {
 		return fmt.Errorf("record the source this note is: %w", err)

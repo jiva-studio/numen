@@ -37,21 +37,21 @@ type staleLinks struct {
 	emptyFor     string
 }
 
-func (f staleLinks) Backlinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (f staleLinks) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	if f.backlinksErr != nil {
 		return nil, f.backlinksErr
 	}
-	return f.LinkQueries.Backlinks(ctx, id, to)
+	return f.LinkQueries.GetBacklinks(ctx, id, to)
 }
 
-func (f staleLinks) Links(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (f staleLinks) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if f.linksErr != nil {
 		return nil, f.linksErr
 	}
 	if f.isLinksEmpty || from == f.emptyFor {
 		return nil, nil
 	}
-	return f.LinkQueries.Links(ctx, id, from)
+	return f.LinkQueries.GetLinks(ctx, id, from)
 }
 
 // failingNames is a vault that cannot say which notes share a name.
@@ -72,11 +72,11 @@ type failingWriters struct {
 	opened   *int
 }
 
-func (f failingWriters) Hold(ctx context.Context, v domain.Vault) (func(), error) {
+func (f failingWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 	if f.holdErr != nil {
 		return nil, f.holdErr
 	}
-	return f.VaultWriters.Hold(ctx, v)
+	return f.VaultWriters.Lock(ctx, v)
 }
 
 func (f failingWriters) Open(v domain.Vault) (port.VaultWriter, error) {

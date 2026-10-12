@@ -43,13 +43,13 @@ type VaultWriter interface {
 	// answers it once.
 	Create(ctx context.Context, path string, content []byte) error
 
-	// Bring puts a file from this machine at a path, creating the folders above
+	// Import puts a file from this machine at a path, creating the folders above
 	// it. The file is whatever a person handed the window, so it is any kind of
 	// file and not a note alone.
 	//
 	// A path something occupies is refused with ErrOccupied. The file appears
 	// whole: whoever is watching the vault never reads half of one.
-	Bring(ctx context.Context, path string, content io.Reader) error
+	Import(ctx context.Context, path string, content io.Reader) error
 
 	// Move renames a file or a folder, creating the folders above its
 	// destination. The bytes do not change, so a note that carried no
@@ -74,11 +74,11 @@ type VaultWriter interface {
 type VaultWriters interface {
 	Open(v domain.Vault) (VaultWriter, error)
 
-	// Hold takes one vault's write lock and answers with what gives it back.
+	// Lock takes one vault's write lock and answers with what gives it back.
 	// One write to a vault happens at a time, and a read-modify-write holds
 	// the lock from its read to its rename.
 	//
 	// A context that ends while the lock is waited for is answered with its
 	// error, and nothing is held.
-	Hold(ctx context.Context, v domain.Vault) (release func(), err error)
+	Lock(ctx context.Context, v domain.Vault) (release func(), err error)
 }

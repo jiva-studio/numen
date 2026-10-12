@@ -93,7 +93,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, err
 	}
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return res, fmt.Errorf("stat %s: %w", path, err)
 	}
@@ -101,7 +101,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 	if err != nil {
 		return res, err
 	}
-	// The scan owns the file once Draw is called, and every return before that
+	// The scan owns the file once OpenDocument is called, and every return before that
 	// closes it.
 	file, hash, err := openDocument(ctx, reader, path)
 	if err != nil {
@@ -113,7 +113,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 
 	// One run to a document. The name is the hash of its bytes, and it is held for
 	// as long as the recognition takes.
-	release, err := store.Claim(ctx, partial)
+	release, err := store.ClaimName(ctx, partial)
 	if err != nil {
 		file.Close()
 		if errors.Is(err, port.ErrClaimed) {
@@ -132,12 +132,12 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		return res, u.stand(ctx, v, ref, hash, area)
 	}
 
-	scan, err := u.documents.Draw(ctx, file)
+	scan, err := u.documents.OpenDocument(ctx, file)
 	if err != nil {
 		return res, fmt.Errorf("%s: %w", path, err)
 	}
 	defer scan.Close()
-	res.Pages = scan.Pages()
+	res.Pages = scan.GetPageCount()
 
 	out := pageWriter{u: u, v: v, store: store, path: path, partial: partial, boxes: boxes, parts: parts}
 	if err := u.readPages(ctx, scan, &out, &res); err != nil {
@@ -234,7 +234,7 @@ func (u Recognise) readPages(
 	u.progress(*res)
 
 	pages := make([]ocr.Page, 0, u.batch())
-	for index := done; index < scan.Pages(); index++ {
+	for index := done; index < scan.GetPageCount(); index++ {
 		if err := ctx.Err(); err != nil {
 			// What has been read is on disk already, and the next run begins
 			// where this one stopped.
@@ -263,7 +263,7 @@ func (u Recognise) readPages(
 
 // recognisePage draws one page and reads its blocks.
 func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, path string, index int) (ocr.Page, error) {
-	drawn, err := scan.Image(index, u.by.Recognition().DPI)
+	drawn, err := scan.RenderPage(index, u.by.GetRecognitionModel().DPI)
 	if err != nil {
 		return ocr.Page{}, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 	}
@@ -409,7 +409,7 @@ func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.Fingerp
 // produced a text, and so that everything a recogniser now known to be bad
 // produced can be found again.
 func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
-	named := u.by.Recognition()
+	named := u.by.GetRecognitionModel()
 	raw, err := json.MarshalIndent(struct {
 		Layout     string `json:"layout"`
 		Recogniser string `json:"recogniser"`

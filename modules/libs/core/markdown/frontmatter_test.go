@@ -261,11 +261,11 @@ func TestPointingALinkSomewhereElseChangesOnlyTheAddress(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	from := domain.ParseAddress("notes/Entropy")
-	inBlock, err := d.PointLinksAt(from, "Entropy")
+	inBlock, err := d.RedirectLinks(from, "Entropy")
 	if err != nil {
 		t.Fatalf("point links: %v", err)
 	}
-	inProse, err := d.PointProseAt(from, "Entropy")
+	inProse, err := d.RedirectProse(from, "Entropy")
 	if err != nil {
 		t.Fatalf("point prose: %v", err)
 	}
@@ -300,7 +300,7 @@ func TestARenameCannotBreakTheNoteThatPointedAtIt(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err := d.PointLinksAt(domain.ParseAddress("notes/Old"), name); err != nil {
+			if _, err := d.RedirectLinks(domain.ParseAddress("notes/Old"), name); err != nil {
 				t.Fatalf("point links: %v", err)
 			}
 
@@ -334,7 +334,7 @@ func TestOnlyTheAddressKeyIsRewritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	moved, err := d.PointLinksAt(domain.ParseAddress("A"), "B")
+	moved, err := d.RedirectLinks(domain.ParseAddress("A"), "B")
 	if err != nil {
 		t.Fatalf("point links: %v", err)
 	}
@@ -419,11 +419,11 @@ func TestANameNoAddressCanSpellIsNotWrittenIn(t *testing.T) {
 				t.Fatal(err)
 			}
 			from := domain.ParseAddress("notes/Old")
-			inBlock, err := d.PointLinksAt(from, name)
+			inBlock, err := d.RedirectLinks(from, name)
 			if err != nil {
 				t.Fatalf("point links: %v", err)
 			}
-			inProse, err := d.PointProseAt(from, name)
+			inProse, err := d.RedirectProse(from, name)
 			if err != nil {
 				t.Fatalf("point prose: %v", err)
 			}
@@ -466,9 +466,9 @@ func TestANoteWithAnUnclosedBlockRefusesABodyWrite(t *testing.T) {
 	if err := d.SetBody("mine\n"); !errors.Is(err, ErrUnterminated) {
 		t.Fatalf("SetBody: want ErrUnterminated, got %v", err)
 	}
-	moved, err := d.PointProseAt(domain.ParseAddress("notes/Old"), "New")
+	moved, err := d.RedirectProse(domain.ParseAddress("notes/Old"), "New")
 	if !errors.Is(err, ErrUnterminated) {
-		t.Fatalf("PointProseAt: want ErrUnterminated, got %v", err)
+		t.Fatalf("RedirectProse: want ErrUnterminated, got %v", err)
 	}
 	if moved != 0 {
 		t.Errorf("it moved %d links", moved)
@@ -503,7 +503,7 @@ func TestARenameReachesALinkHoweverItIsQuoted(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			moved, err := d.PointLinksAt(domain.ParseAddress(one.target), "Marrowfield")
+			moved, err := d.RedirectLinks(domain.ParseAddress(one.target), "Marrowfield")
 			if err != nil {
 				t.Fatalf("point links: %v", err)
 			}
@@ -553,7 +553,7 @@ func TestARenameReadsPastAQuoteInsideTheName(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			moved, err := d.PointLinksAt(domain.ParseAddress(one.target), "Marrowfield")
+			moved, err := d.RedirectLinks(domain.ParseAddress(one.target), "Marrowfield")
 			if err != nil {
 				t.Fatalf("point links: %v", err)
 			}
@@ -583,7 +583,7 @@ func TestARenameLeavesABlockScalarAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	moved, err := d.PointLinksAt(domain.ParseAddress("The far corner"), "Marrowfield")
+	moved, err := d.RedirectLinks(domain.ParseAddress("The far corner"), "Marrowfield")
 	if err != nil {
 		t.Fatalf("point links: %v", err)
 	}
@@ -617,7 +617,7 @@ func TestARenameKeepsTheNotationItFound(t *testing.T) {
 				t.Fatal(err)
 			}
 			target := strings.Trim(one.written, `"'`)
-			if _, err := d.PointLinksAt(domain.ParseAddress(target), "Marrowfield"); err != nil {
+			if _, err := d.RedirectLinks(domain.ParseAddress(target), "Marrowfield"); err != nil {
 				t.Fatalf("point links: %v", err)
 			}
 

@@ -35,7 +35,7 @@ func getSpan(n int) port.Audio {
 	return port.Audio{From: n * 1000, To: n*1000 + 800}
 }
 
-func (s *voice) Transcription() port.TranscriptionModel {
+func (s *voice) GetTranscriptionModel() port.TranscriptionModel {
 	return port.TranscriptionModel{Model: "ear", Segmenter: "pauses", Cutting: "0.50/500/200/30000/100/2500", From: "a test"}
 }
 
@@ -63,9 +63,9 @@ func (s *voice) Close() error { return nil }
 // played is the voice's recording, opened.
 type played struct{ *voice }
 
-func (p played) Length() int { return len(p.words) * 1000 }
+func (p played) GetDuration() int { return len(p.words) * 1000 }
 
-func (p played) Segments(_ context.Context, from, count int) ([]port.Audio, error) {
+func (p played) GetSegments(_ context.Context, from, count int) ([]port.Audio, error) {
 	var out []port.Audio
 	for n := range p.words {
 		if at := getSpan(n); at.From >= from {
@@ -362,7 +362,7 @@ func TestWhatListenedIsKeptBesideWhatItHeard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nothing says what listened: %v", err)
 	}
-	if !bytes.Contains(raw, []byte(model.Transcription().Recipe())) {
+	if !bytes.Contains(raw, []byte(model.GetTranscriptionModel().Recipe())) {
 		t.Errorf("what is kept beside the artifact says %q", raw)
 	}
 }

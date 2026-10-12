@@ -23,7 +23,7 @@ type deaf struct {
 	opened int
 }
 
-func (d *deaf) Transcription() port.TranscriptionModel {
+func (d *deaf) GetTranscriptionModel() port.TranscriptionModel {
 	return port.TranscriptionModel{Model: "deaf", Segmenter: "none"}
 }
 
@@ -51,9 +51,9 @@ func (d *deaf) times() int {
 // quiet is a recording that carries no speech.
 type quiet struct{}
 
-func (quiet) Length() int { return 60_000 }
+func (quiet) GetDuration() int { return 60_000 }
 
-func (quiet) Segments(context.Context, int, int) ([]port.Audio, error) { return nil, nil }
+func (quiet) GetSegments(context.Context, int, int) ([]port.Audio, error) { return nil, nil }
 
 func (quiet) Close() error { return nil }
 
@@ -89,7 +89,7 @@ type unheard struct {
 	recordings []string
 }
 
-func (h unheard) Fingerprints(
+func (h unheard) GetFingerprints(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	out := map[string]domain.Fingerprint{}
@@ -181,7 +181,7 @@ func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
 // recognised is an index holding one recording that stands on what a model wrote.
 type recognised struct{ path string }
 
-func (h recognised) Fingerprints(
+func (h recognised) GetFingerprints(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	return map[string]domain.Fingerprint{h.path: {Path: h.path}}, nil
@@ -200,7 +200,7 @@ type heard struct {
 	hash string
 }
 
-func (h heard) Fingerprints(
+func (h heard) GetFingerprints(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	return map[string]domain.Fingerprint{h.path: {Path: h.path}}, nil
@@ -222,7 +222,7 @@ func (h heard) GetUnchunkedSources(context.Context, domain.VaultID, domain.Sourc
 	return nil, nil
 }
 
-func (h heard) ByOtherRecipe(
+func (h heard) GetSourcesWithOtherRecipe(
 	context.Context, domain.VaultID, domain.SourceKind, []string, int,
 ) ([]string, error) {
 	return nil, nil
@@ -240,7 +240,7 @@ func (h recognised) GetUnchunkedSources(context.Context, domain.VaultID, domain.
 	return nil, nil
 }
 
-func (h recognised) ByOtherRecipe(
+func (h recognised) GetSourcesWithOtherRecipe(
 	context.Context, domain.VaultID, domain.SourceKind, []string, int,
 ) ([]string, error) {
 	return nil, nil
@@ -399,7 +399,7 @@ type sized struct {
 	recordings map[string]int64
 }
 
-func (s sized) Fingerprints(
+func (s sized) GetFingerprints(
 	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	out := map[string]domain.Fingerprint{}

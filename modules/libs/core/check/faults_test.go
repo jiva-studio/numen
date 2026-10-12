@@ -24,7 +24,7 @@ func (failingQueries) GetUnreadable(context.Context, domain.VaultID) ([]domain.V
 	return nil, errUnreachable
 }
 
-func (failingQueries) Ambiguous(context.Context, domain.VaultID) ([]domain.AmbiguousLink, error) {
+func (failingQueries) GetAmbiguousLinks(context.Context, domain.VaultID) ([]domain.AmbiguousLink, error) {
 	return nil, errUnreachable
 }
 

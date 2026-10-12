@@ -22,14 +22,14 @@ func TestAFileIsOnePartOfItsAddress(t *testing.T) {
 		path  string
 		where string
 	}{
-		{"a file", assetOf("library/a.pdf"), "library/a.pdf", ""},
-		{"a page of it", pageOf("library/a.pdf", 3, 800, pool.Fingerprint{}),
+		{"a file", getAssetRoute("library/a.pdf"), "library/a.pdf", ""},
+		{"a page of it", getPageRoute("library/a.pdf", 3, 800, pool.Fingerprint{}),
 			"library/a.pdf", "pages/3"},
-		{"a file in a folder named for a page", pageOf("pages/pages/x.pdf", 2, 400, pool.Fingerprint{}),
+		{"a file in a folder named for a page", getPageRoute("pages/pages/x.pdf", 2, 400, pool.Fingerprint{}),
 			"pages/pages/x.pdf", "pages/2"},
 		{"a picture of a book", pictureOf("library/a.epub", "OEBPS/pictures/plate.png", pool.Fingerprint{}),
 			"library/a.epub", "OEBPS/pictures/plate.png"},
-		{"a name with a space in it", assetOf("library/A Book.pdf"), "library/A Book.pdf", ""},
+		{"a name with a space in it", getAssetRoute("library/A Book.pdf"), "library/A Book.pdf", ""},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			got, ok := parseAssetAddress(httptest.NewRequest("GET", one.url, nil))
@@ -61,8 +61,8 @@ func TestAnAssetNoReaderReadsIsNotAnswered(t *testing.T) {
 		url  string
 		want int
 	}{
-		{"a file with no place named", assetOf("library/a.pdf"), http.StatusBadRequest},
-		{"a file of no reader", pageOf("library/a.md", 0, 800, pool.Fingerprint{}), http.StatusNotFound},
+		{"a file with no place named", getAssetRoute("library/a.pdf"), http.StatusBadRequest},
+		{"a file of no reader", getPageRoute("library/a.md", 0, 800, pool.Fingerprint{}), http.StatusNotFound},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			if out := ask(handler, one.url); out.Code != one.want {

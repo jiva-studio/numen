@@ -281,7 +281,7 @@ func TestAskingAboutAFileTheVaultLeavesAloneOpensNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch _, err := reader.Stat(t.Context(), "export.iso"); {
+	switch _, err := reader.GetFingerprint(t.Context(), "export.iso"); {
 	case !errors.Is(err, port.ErrNotANote):
 		t.Errorf("want ErrNotANote, got %v", err)
 	case errors.Is(err, fs.ErrNotExist):
@@ -289,7 +289,7 @@ func TestAskingAboutAFileTheVaultLeavesAloneOpensNothing(t *testing.T) {
 	}
 
 	// Nothing at a path is the other answer, and it is not this one.
-	switch _, err := reader.Stat(t.Context(), "Entropy.md"); {
+	switch _, err := reader.GetFingerprint(t.Context(), "Entropy.md"); {
 	case !errors.Is(err, fs.ErrNotExist):
 		t.Errorf("want fs.ErrNotExist, got %v", err)
 	case errors.Is(err, port.ErrNotANote):
@@ -304,24 +304,24 @@ func TestOneVaultIsHeldByOneWriterAtATime(t *testing.T) {
 	here := testsupport.NewVault(t, nil)
 	elsewhere := testsupport.NewVault(t, nil)
 
-	release, err := writers.Hold(t.Context(), here)
+	release, err := writers.Lock(t.Context(), here)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	waiting, stop := context.WithTimeout(t.Context(), 50*time.Millisecond)
 	defer stop()
-	if _, err := writers.Hold(waiting, here); !errors.Is(err, context.DeadlineExceeded) {
+	if _, err := writers.Lock(waiting, here); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("a second hold on a held vault: %v", err)
 	}
-	if other, err := writers.Hold(t.Context(), elsewhere); err != nil {
+	if other, err := writers.Lock(t.Context(), elsewhere); err != nil {
 		t.Fatalf("another vault was held with this one: %v", err)
 	} else {
 		other()
 	}
 
 	release()
-	again, err := writers.Hold(t.Context(), here)
+	again, err := writers.Lock(t.Context(), here)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -407,7 +407,7 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 	w, root := openWriter(t)
 	ctx := t.Context()
 
-	if err := w.Bring(ctx, "scans/Cover.png", strings.NewReader("PNG")); err != nil {
+	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("PNG")); err != nil {
 		t.Fatalf("the file was refused: %v", err)
 	}
 	held, err := os.ReadFile(filepath.Join(root, "scans", "Cover.png"))
@@ -418,13 +418,13 @@ func TestAFileIsBroughtInFromOutside(t *testing.T) {
 		t.Errorf("the file arrived as %q", held)
 	}
 
-	if err := w.Bring(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, port.ErrOccupied) {
+	if err := w.Import(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, port.ErrOccupied) {
 		t.Errorf("a file over a file: want ErrOccupied, got %v", err)
 	}
-	if err := w.Bring(ctx, "../outside.png", strings.NewReader("PNG")); !errors.Is(err, filesystem.ErrOutside) {
+	if err := w.Import(ctx, "../outside.png", strings.NewReader("PNG")); !errors.Is(err, filesystem.ErrOutside) {
 		t.Errorf("a file outside the vault: want ErrOutside, got %v", err)
 	}
-	if err := w.Bring(ctx, ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh")); err == nil {
+	if err := w.Import(ctx, ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh")); err == nil {
 		t.Error("a file was brought into a folder another tool acts on")
 	}
 
@@ -481,7 +481,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	refused := map[string]error{
 		"write":  errorOf(w.Write(ctx, "link/ocr/note.md", []byte("# Mine\n"), domain.Fingerprint{})),
 		"create": w.Create(ctx, "link/ocr/note.md", []byte("# Mine\n")),
-		"bring":  w.Bring(ctx, "link/ocr/brought.txt", strings.NewReader("brought\n")),
+		"bring":  w.Import(ctx, "link/ocr/brought.txt", strings.NewReader("brought\n")),
 		"folder": w.MakeFolder(ctx, "link/sneak"),
 		"remove": w.Remove(ctx, "link/ocr/abc.txt"),
 		"move":   w.Move(ctx, "link/ocr/abc.txt", "Stolen.md"),
@@ -564,7 +564,7 @@ func TestANoteWithALongNameIsSaved(t *testing.T) {
 	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), held); err != nil {
 		t.Fatalf("the note could not be saved: %v", err)
 	}
-	if err := w.Bring(ctx, stem+".png", strings.NewReader("PNG")); err != nil {
+	if err := w.Import(ctx, stem+".png", strings.NewReader("PNG")); err != nil {
 		t.Fatalf("the file could not be brought in: %v", err)
 	}
 

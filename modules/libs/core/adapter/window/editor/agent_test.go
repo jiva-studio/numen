@@ -29,7 +29,7 @@ type asking struct {
 	refuses error
 }
 
-func (a *asking) Take(_ context.Context, task port.Task) (port.Run, error) {
+func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
 	a.took <- task
 	steps := make(chan port.Step, len(a.takes))
 	for _, step := range a.takes {
@@ -39,7 +39,7 @@ func (a *asking) Take(_ context.Context, task port.Task) (port.Run, error) {
 	return answering{steps}, nil
 }
 
-func (a *asking) Finish(_ context.Context, conversation string) error {
+func (a *asking) EndConversation(_ context.Context, conversation string) error {
 	a.over <- conversation
 	return a.refuses
 }
@@ -47,8 +47,8 @@ func (a *asking) Finish(_ context.Context, conversation string) error {
 // answering is work that has already been done.
 type answering struct{ steps chan port.Step }
 
-func (a answering) Steps() <-chan port.Step { return a.steps }
-func (a answering) Stop() error             { return nil }
+func (a answering) GetSteps() <-chan port.Step { return a.steps }
+func (a answering) Stop() error                { return nil }
 
 // newAgentAPI is a vault whose panel one agent answers.
 func newAgentAPI(taking port.Agent) *editor.API {

@@ -265,7 +265,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	switch last, found, err := registry.Last(); {
+	switch last, found, err := registry.GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case !found || last.ID != f.second.ID:

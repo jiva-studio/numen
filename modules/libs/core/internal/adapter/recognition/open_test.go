@@ -114,7 +114,7 @@ func TestAModelIsNamedByItsFileWithoutItsExtension(t *testing.T) {
 func TestARecogniserSaysWhichModelsItReadsWith(t *testing.T) {
 	want := port.RecognitionModel{Layout: "layout", Recogniser: "rec", DPI: 300, From: "settings"}
 	r := &Recogniser{model: want}
-	if got := r.Recognition(); got != want {
+	if got := r.GetRecognitionModel(); got != want {
 		t.Errorf("recognition = %+v, want %+v", got, want)
 	}
 }

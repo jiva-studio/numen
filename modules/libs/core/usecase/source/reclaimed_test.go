@@ -74,7 +74,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 // leans is what the two coarse forms have to agree about.
 type faint struct{ dims int }
 
-func (f *faint) Model() port.EmbeddingModel {
+func (f *faint) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "faint", Dimensions: f.dims}
 }
 

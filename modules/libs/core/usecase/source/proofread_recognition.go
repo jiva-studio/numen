@@ -130,7 +130,7 @@ func (u ProofreadRecognition) Execute(ctx context.Context, v domain.Vault, path 
 
 	// One run to a recognition. The name is the one the corrections are kept under,
 	// and it is held for as long as the proofreading takes.
-	release, err := store.Claim(ctx, corrections)
+	release, err := store.ClaimName(ctx, corrections)
 	if errors.Is(err, port.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
@@ -375,7 +375,7 @@ func (u ProofreadRecognition) fetchBatch(
 	stood checkpoint,
 	res *ProofreadRecognitionResult,
 ) (checkpoint, bool, error) {
-	replies, ready, err := u.Queue.Collect(ctx, stood.Batch)
+	replies, ready, err := u.Queue.GetReplies(ctx, stood.Batch)
 	if err != nil {
 		// The batch is forgotten, and the pages it covered are left again by the
 		// next run.
@@ -404,7 +404,7 @@ func (u ProofreadRecognition) submitBatch(
 	res *ProofreadRecognitionResult,
 ) error {
 	end := min(at+u.batch(), len(p.pages))
-	name, err := u.Queue.Leave(ctx, p.pages[at:end])
+	name, err := u.Queue.Submit(ctx, p.pages[at:end])
 	if err != nil {
 		return fmt.Errorf("leave the pages of %s: %w", p.path, err)
 	}

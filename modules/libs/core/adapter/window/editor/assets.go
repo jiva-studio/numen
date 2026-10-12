@@ -88,13 +88,13 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// assetOf is where a file of the vault is asked about, and pageOf one page of
-// it. A path is escaped whole, so a file in a folder is one segment and what is
+// getAssetRoute is where a file of the vault is asked about, and getPageRoute
+// one page of it. A path is escaped whole, so a file in a folder is one segment and what is
 // asked of it is the next.
-func assetOf(path string) string { return assetsRoute + url.PathEscape(path) }
+func getAssetRoute(path string) string { return assetsRoute + url.PathEscape(path) }
 
-func pageOf(path string, at, wide int, mark pool.Fingerprint) string {
-	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesName, at, wide, formatFingerprint(mark))
+func getPageRoute(path string, at, wide int, mark pool.Fingerprint) string {
+	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", getAssetRoute(path), pagesName, at, wide, formatFingerprint(mark))
 }
 
 // An address that names which bytes it is about answers those bytes or nothing,

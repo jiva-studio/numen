@@ -67,8 +67,8 @@ func (s countingStore) Open(ctx context.Context, name string) (io.ReadSeekCloser
 	return s.inner.Open(ctx, name)
 }
 
-func (s countingStore) Take(ctx context.Context, name string, from io.Reader) (int64, error) {
-	return s.inner.Take(ctx, name, from)
+func (s countingStore) WriteStream(ctx context.Context, name string, from io.Reader) (int64, error) {
+	return s.inner.WriteStream(ctx, name, from)
 }
 
 func (s countingStore) Write(ctx context.Context, name string, content []byte) error {
@@ -83,8 +83,8 @@ func (s countingStore) Remove(ctx context.Context, name string) error {
 	return s.inner.Remove(ctx, name)
 }
 
-func (s countingStore) Claim(ctx context.Context, name string) (func() error, error) {
-	return s.inner.Claim(ctx, name)
+func (s countingStore) ClaimName(ctx context.Context, name string) (func() error, error) {
+	return s.inner.ClaimName(ctx, name)
 }
 
 // countingKept counts what a use case asks of the cache.

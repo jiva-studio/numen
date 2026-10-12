@@ -39,7 +39,7 @@ func (a *API) SearchNames(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
-	found, err := a.Notes.Queries.Names(ctx, showing.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+	found, err := a.Notes.Queries.GetNameMatches(ctx, showing.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -48,8 +48,8 @@ func (a *API) SearchNames(
 	for _, m := range found {
 		titled := &v1.NameMatch{
 			Note:  &v1.Note{Path: m.Path, Title: m.Title},
-			Spans: unitSpansOf(m.Spans),
-			Type:  typeOf(m.Type),
+			Spans: convertUnitSpansToWire(m.Spans),
+			Type:  convertNoteTypeToWire(m.Type),
 		}
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
@@ -73,7 +73,7 @@ func (a *API) ListHeadings(
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.Queries.Headings(ctx, showing.ID, paths)
+	found, err := a.Notes.Queries.GetHeadings(ctx, showing.ID, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -114,7 +114,7 @@ func (a *API) SearchPassages(
 		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
 	}
 
-	mode, named := modeOf(r.Msg.GetMode())
+	mode, named := convertSearchModeFromWire(r.Msg.GetMode())
 	if !named {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoMode)
 	}
@@ -128,14 +128,14 @@ func (a *API) SearchPassages(
 	// The note each passage was read out of, asked once for the whole answer. A
 	// source that is not a note is absent, and a window offering to open notes
 	// offers nothing for it.
-	sources := sourcesOf(found)
-	titles, err := a.Notes.Queries.Notes(ctx, showing.ID, sources)
+	sources := getPassageSources(found)
+	titles, err := a.Notes.Queries.GetNotes(ctx, showing.ID, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	// Which of four each of those notes is, so a passage is drawn with the mark
 	// of the note it was read out of.
-	types, err := a.Notes.Queries.Types(ctx, showing.ID, sources)
+	types, err := a.Notes.Queries.GetTypes(ctx, showing.ID, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -150,24 +150,24 @@ func (a *API) SearchPassages(
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,
-			Spans:    unitSpansOf(at),
+			Spans:    convertUnitSpansToWire(at),
 			Location: p.Location,
 			Span:     &v1.Span{From: int32(p.Start), To: int32(p.Start + p.Length)},
 			Line:     int32(p.Line),
-			Kind:     kindOf(p.Kind),
+			Kind:     convertSourceKindToWire(p.Kind),
 		}
 		if note, held := titles[p.Source]; held {
-			passage.Note = noteOf(note)
-			passage.Type = typeOf(types[p.Source])
+			passage.Note = convertNoteToWire(note)
+			passage.Type = convertNoteTypeToWire(types[p.Source])
 		}
 		out.Found = append(out.Found, passage)
 	}
 	return connect.NewResponse(out), nil
 }
 
-// modeOf is the mode the client named, as the use case names it, and whether it
+// convertSearchModeFromWire is the mode the client named, as the use case names it, and whether it
 // named one at all.
-func modeOf(mode v1.SearchMode) (search.Mode, bool) {
+func convertSearchModeFromWire(mode v1.SearchMode) (search.Mode, bool) {
 	switch mode {
 	case v1.SearchMode_SEARCH_MODE_WORDS:
 		return search.Lexical, true
@@ -209,8 +209,8 @@ func eachOnce(paths []string) ([]string, error) {
 	return out, nil
 }
 
-// sourcesOf is every file the passages came out of, each named once.
-func sourcesOf(found []domain.Passage) []string {
+// getPassageSources is every file the passages came out of, each named once.
+func getPassageSources(found []domain.Passage) []string {
 	seen := make(map[string]bool, len(found))
 	out := make([]string, 0, len(found))
 	for _, p := range found {
@@ -223,10 +223,10 @@ func sourcesOf(found []domain.Passage) []string {
 	return out
 }
 
-// byteSpansOf and unitSpansOf both write runs onto the wire. They are two
-// functions because the runs are counted in two different things, and the field
-// the answer carries them in says which.
-func byteSpansOf(at []domain.ByteSpan) []*v1.Span {
+// convertByteSpansToWire and convertUnitSpansToWire both write runs onto the
+// wire. They are two functions because the runs are counted in two different
+// things, and the field the answer carries them in says which.
+func convertByteSpansToWire(at []domain.ByteSpan) []*v1.Span {
 	out := make([]*v1.Span, 0, len(at))
 	for _, span := range at {
 		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})
@@ -234,7 +234,7 @@ func byteSpansOf(at []domain.ByteSpan) []*v1.Span {
 	return out
 }
 
-func unitSpansOf(at []domain.UnitSpan) []*v1.Span {
+func convertUnitSpansToWire(at []domain.UnitSpan) []*v1.Span {
 	out := make([]*v1.Span, 0, len(at))
 	for _, span := range at {
 		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})

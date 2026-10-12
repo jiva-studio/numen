@@ -457,7 +457,7 @@ func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
 // the order they are filed under.
 func getPointingDecks(t *testing.T, s vaulted, path string) []string {
 	t.Helper()
-	found, err := s.links.Backlinks(t.Context(), s.vault.ID, path)
+	found, err := s.links.GetBacklinks(t.Context(), s.vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
 	}

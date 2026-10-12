@@ -18,8 +18,8 @@ import (
 // not write one, names the reason the same way: the translation is written once
 // and not one per window.
 
-// ErrorCodeOf says which error code an outcome is, and whether it is one at all.
-func ErrorCodeOf(o note.ReadOutcome) (v1.ErrorCode, bool) {
+// ConvertOutcomeToErrorCode says which error code an outcome is, and whether it is one at all.
+func ConvertOutcomeToErrorCode(o note.ReadOutcome) (v1.ErrorCode, bool) {
 	switch o {
 	case note.Missing:
 		return v1.ErrorCode_ERROR_CODE_MISSING, true
@@ -36,9 +36,9 @@ func ErrorCodeOf(o note.ReadOutcome) (v1.ErrorCode, bool) {
 	}
 }
 
-// ErrorCodeBy says which error code a write's error is, and whether it is one at
+// GetErrorCode says which error code a write's error is, and whether it is one at
 // all. Anything else is the vault being out of reach.
-func ErrorCodeBy(err error) (v1.ErrorCode, bool) {
+func GetErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, port.ErrStale):
 		return v1.ErrorCode_ERROR_CODE_STALE, true

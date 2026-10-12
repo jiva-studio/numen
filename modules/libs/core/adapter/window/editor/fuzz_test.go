@@ -50,7 +50,7 @@ func FuzzAssetAddress(f *testing.F) {
 			return
 		}
 		mark := pool.Fingerprint{Size: size, Mtime: mtime}
-		url := pageOf(path, page, 800, mark)
+		url := getPageRoute(path, page, 800, mark)
 
 		at, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil))
 		if !ok {

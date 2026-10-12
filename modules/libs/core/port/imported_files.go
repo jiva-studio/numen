@@ -16,7 +16,7 @@ type ImportedFile struct {
 	// IsFolder is whether everything under it comes in with it, and File whether
 	// bytes can be read from it. A device, a socket or a link is neither, and
 	// stays where it is. A listing names what it holds and says neither; what
-	// one of them is comes from Stat.
+	// one of them is comes from GetImportedFile.
 	IsFolder bool
 	IsFile   bool
 }
@@ -31,13 +31,13 @@ type ImportedFiles interface {
 	// GetName is what the machine calls the file at a handle. It reads nothing,
 	// so a handle that cannot be opened still has a name to be refused under.
 	GetName(handle string) string
-	// Stat says what is at a handle.
-	Stat(ctx context.Context, handle string) (ImportedFile, error)
+	// GetImportedFile says what is at a handle.
+	GetImportedFile(ctx context.Context, handle string) (ImportedFile, error)
 	// List is what a folder holds, each by its own handle, without descending.
 	List(ctx context.Context, handle string) ([]ImportedFile, error)
 	// Open reads one file. Whoever opens it closes it.
 	Open(ctx context.Context, handle string) (io.ReadCloser, error)
-	// Contains reports whether a folder handed in is one a vault sits under.
+	// HasHandle reports whether a folder handed in is one a vault sits under.
 	// Such a folder would be copied into itself, and it does not come in.
-	Contains(handle, vault string) bool
+	HasHandle(handle, vault string) bool
 }

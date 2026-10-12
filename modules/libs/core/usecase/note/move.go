@@ -112,7 +112,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 
 	// Asked before the move, because afterwards nothing points at the old path
 	// and there is nothing left to ask about.
-	pointing, err := u.links.Backlinks(ctx, v.ID, from)
+	pointing, err := u.links.GetBacklinks(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}
@@ -128,7 +128,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 	if err := u.moveInIndex(ctx, v, from, to); err != nil {
 		return res, err
 	}
-	return u.Settle(ctx, v, from, to, pointing)
+	return u.RepairLinks(ctx, v, from, to, pointing)
 }
 
 // moveInIndex tells the index that what was at one path is at another. The
@@ -137,13 +137,13 @@ func (u Move) moveInIndex(ctx context.Context, v domain.Vault, from, to string) 
 	return u.sources.MoveSources(ctx, v.ID, from, to)
 }
 
-// Settle is the work a move leaves once the file is where it was sent and the
+// RepairLinks is the work a move leaves once the file is where it was sent and the
 // index is level with it: whoever is drawing the note told, and the links
 // written by the name it had pointed at where it now is.
 //
 // Pointing is what pointed at the note before it went, read while there was
 // still something to read.
-func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (MoveResult, error) {
+func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (MoveResult, error) {
 	res := MoveResult{From: from, To: to, IsLanded: true}
 
 	// The file is where it now is and the index is level with it. Whoever is
@@ -227,7 +227,7 @@ func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (stri
 // has been taken out since the backlinks were read, and saying where it used to
 // go would report a move that nobody made.
 func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, still bool, err error) {
-	links, err := u.links.Links(ctx, v.ID, was.From)
+	links, err := u.links.GetLinks(ctx, v.ID, was.From)
 	if err != nil {
 		return "", false, err
 	}
@@ -264,7 +264,7 @@ const (
 func (u Move) repair(
 	ctx context.Context, v domain.Vault, in string, address domain.Address, reaches string,
 ) (linkState, error) {
-	release, err := u.writers.Hold(ctx, v)
+	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
 		return linkUntouched, err
 	}
@@ -289,11 +289,11 @@ func (u Move) repair(
 		// link it holds is left reaching nothing.
 		return linkDangling, nil
 	}
-	inBlock, err := doc.PointLinksAt(address, reaches)
+	inBlock, err := doc.RedirectLinks(address, reaches)
 	if err != nil {
 		return linkUntouched, err
 	}
-	inProse, err := doc.PointProseAt(address, reaches)
+	inProse, err := doc.RedirectProse(address, reaches)
 	if err != nil {
 		return linkUntouched, err
 	}

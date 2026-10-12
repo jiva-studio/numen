@@ -31,7 +31,7 @@ func makeIndex(t *testing.T) *container.Index {
 // for each text.
 type unit struct{ name string }
 
-func (u unit) Model() port.EmbeddingModel {
+func (u unit) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: u.name, Dimensions: 8, MaxTokens: 256, Pooling: "mean"}
 }
 
@@ -128,7 +128,7 @@ func TestAVaultWhoseFolderIsGoneIsNotMadeSearchable(t *testing.T) {
 // owingTo is how many small chunks of the vault the model has no vector for.
 func owingTo(t *testing.T, db *container.Index, v domain.Vault, model port.Embedder) int {
 	t.Helper()
-	owing, _, err := db.VectorsOwing().GetUnembeddedChunks(t.Context(), v.ID, model.Model(), "", 1000)
+	owing, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

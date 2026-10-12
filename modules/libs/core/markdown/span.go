@@ -14,7 +14,7 @@ type Span struct {
 	To   int
 }
 
-// Where is every place `wanted` stands in `text`.
+// FindSpans returns every place `wanted` stands in `text`.
 //
 // Three readings are tried and the first that finds anything answers: the text
 // as it stands, then punctuation and spacing read as the marks they stand for,
@@ -24,9 +24,9 @@ type Span struct {
 // The offsets are into `text` as it was given, whichever reading found them, so
 // what is replaced is the bytes the person wrote.
 //
-// Plainly says the span was found only once punctuation or spacing were
-// allowed to differ, which is worth saying out loud to whoever asked.
-func Where(text, wanted string) (at []Span, plainly bool) {
+// isApproximate is true when the span was found only once punctuation or
+// spacing were allowed to differ.
+func FindSpans(text, wanted string) (at []Span, isApproximate bool) {
 	if wanted == "" {
 		return nil, false
 	}

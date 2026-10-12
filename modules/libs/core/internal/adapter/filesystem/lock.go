@@ -21,11 +21,11 @@ var locks = struct {
 	held map[string]chan struct{}
 }{held: map[string]chan struct{}{}}
 
-// Hold takes this vault's write lock, waiting for whoever holds it.
+// Lock takes this vault's write lock, waiting for whoever holds it.
 //
 // The lock is a channel, so a context that ends while it is waited for is
 // answered with its error and nothing is held.
-func (w VaultWriters) Hold(ctx context.Context, v domain.Vault) (func(), error) {
+func (w VaultWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

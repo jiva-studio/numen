@@ -173,7 +173,7 @@ func (e *Embedder) Concurrency() int {
 	return e.passes
 }
 
-func (e *Embedder) Model() port.EmbeddingModel {
+func (e *Embedder) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{
 		Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens, Pooling: e.pooling,
 		From: e.origin,

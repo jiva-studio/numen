@@ -136,7 +136,7 @@ func TestARecordingDoneIsDoneWhereTheIndexNamesNoProducer(t *testing.T) {
 // nothing here decodes.
 type deaf struct{}
 
-func (deaf) Transcription() port.TranscriptionModel { return port.TranscriptionModel{} }
+func (deaf) GetTranscriptionModel() port.TranscriptionModel { return port.TranscriptionModel{} }
 
 func (deaf) Open(context.Context, []byte) (port.Recording, error) {
 	return nil, errors.New("mp3: MPEG version 2.5 is not supported")

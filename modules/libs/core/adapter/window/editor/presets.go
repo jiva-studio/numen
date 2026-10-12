@@ -28,15 +28,15 @@ func (a *API) GetDeckPreset(
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
-	out := &v1.GetDeckPresetResponse{Bounds: wire.SettingsBounds()}
-	if reason, refused := wire.ErrorCodeOf(found.Outcome); refused {
+	out := &v1.GetDeckPresetResponse{Bounds: wire.GetSettingsBounds()}
+	if reason, refused := wire.ConvertOutcomeToErrorCode(found.Outcome); refused {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.PresetOf(found, wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path))
+	out.Preset = wire.ConvertPresetToWire(found, wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path))
 	// What the file was when this came out of it, for the client to present
 	// when it writes the settings back.
-	out.At = fingerprintOf(found.Fingerprint)
+	out.At = convertFingerprintToWire(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
 
@@ -94,7 +94,7 @@ func (a *API) ScheduleDeck(
 	defer a.Writing.finish()
 
 	at, err := a.Presets.Point(
-		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), refOf(r.Msg.GetSeen()))
+		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), convertFingerprintFromWire(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
@@ -104,14 +104,14 @@ func (a *API) ScheduleDeck(
 			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.ScheduleDeckResponse{
-			At: fingerprintOf(at), IsUnlevelled: behind,
+			At: convertFingerprintToWire(at), IsUnlevelled: behind,
 		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
 		return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -131,13 +131,13 @@ func (a *API) ReadPreset(
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
 
-	out := &v1.ReadPresetResponse{Bounds: wire.SettingsBounds()}
-	if reason, refused := wire.ErrorCodeOf(found.Outcome); refused {
+	out := &v1.ReadPresetResponse{Bounds: wire.GetSettingsBounds()}
+	if reason, refused := wire.ConvertOutcomeToErrorCode(found.Outcome); refused {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
 	}
-	out.Preset = wire.PresetOf(found, wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path))
-	out.At = fingerprintOf(found.Fingerprint)
+	out.Preset = wire.ConvertPresetToWire(found, wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path))
+	out.At = convertFingerprintToWire(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
 
@@ -151,7 +151,7 @@ func (a *API) WritePreset(
 	if err != nil {
 		return nil, err
 	}
-	settings, err := wire.SettingsIn(r.Msg.GetSettings())
+	settings, err := wire.ConvertSettingsFromWire(r.Msg.GetSettings())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -160,7 +160,7 @@ func (a *API) WritePreset(
 	}
 	defer a.Writing.finish()
 
-	at, err := a.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, refOf(r.Msg.GetSeen()))
+	at, err := a.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, convertFingerprintFromWire(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
@@ -170,7 +170,7 @@ func (a *API) WritePreset(
 			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WritePresetResponse{
-			At: fingerprintOf(at), IsUnlevelled: behind,
+			At: convertFingerprintToWire(at), IsUnlevelled: behind,
 		}), nil
 	}
 	// A value outside what a preset may hold is the client's to correct.
@@ -181,7 +181,7 @@ func (a *API) WritePreset(
 		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
 		return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -198,7 +198,7 @@ func (a *API) ComputeCurve(
 	if err != nil {
 		return nil, err
 	}
-	settings, err := wire.SettingsIn(r.Msg.GetSettings())
+	settings, err := wire.ConvertSettingsFromWire(r.Msg.GetSettings())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
@@ -206,5 +206,5 @@ func (a *API) ComputeCurve(
 	if err != nil {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
-	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: wire.CurveOf(held)}), nil
+	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: wire.ConvertCurveToWire(held)}), nil
 }

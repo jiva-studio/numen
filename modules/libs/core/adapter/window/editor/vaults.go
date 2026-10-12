@@ -29,7 +29,7 @@ func (s vaultsService) ListVaults(
 	}
 	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(held))}
 	for _, v := range held {
-		out.Vaults = append(out.Vaults, vaultOf(v, s.api.Readers))
+		out.Vaults = append(out.Vaults, convertVaultToWire(v, s.api.Readers))
 	}
 	return connect.NewResponse(out), nil
 }
@@ -39,7 +39,7 @@ func (s vaultsService) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
 ) (*connect.Response[v1.ChooseFolderResponse], error) {
-	path, chose, err := s.api.Vaults.FolderDialog.Choose(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	path, chose, err := s.api.Vaults.FolderDialog.ChooseFolder(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
 	if errors.Is(err, port.ErrChoosing) || errors.Is(err, port.ErrNoFolderDialog) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -64,7 +64,7 @@ func (s vaultsService) AddVault(
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
 	}
-	return connect.NewResponse(&v1.AddVaultResponse{Vault: vaultOf(added, s.api.Readers)}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Vault: convertVaultToWire(added, s.api.Readers)}), nil
 }
 
 // RenameVault is what a person calls a vault. The folder keeps the name the
@@ -84,7 +84,7 @@ func (s vaultsService) RenameVault(
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
 	}
-	return connect.NewResponse(&v1.RenameVaultResponse{Vault: vaultOf(v, s.api.Readers)}), nil
+	return connect.NewResponse(&v1.RenameVaultResponse{Vault: convertVaultToWire(v, s.api.Readers)}), nil
 }
 
 // RemoveVault takes a vault off the list and out of the index, and its folder
@@ -113,7 +113,7 @@ func (s vaultsService) removal(ctx context.Context, v domain.Vault, trash bool) 
 		_, err := s.api.Vaults.Erase.Execute(ctx, v)
 		return err
 	}
-	return s.api.Vaults.Forget.Execute(ctx, v)
+	return s.api.Vaults.Unregister.Execute(ctx, v)
 }
 
 // OpenVault shows another vault in this window.
@@ -162,9 +162,9 @@ func (s vaultsService) found(id string) (domain.Vault, error) {
 	return vaults.NewFind(s.api.Vaults.Registry).Execute(id)
 }
 
-// vaultOf is one vault as the schema carries it. A folder that is not there to
+// convertVaultToWire is one vault as the schema carries it. A folder that is not there to
 // be found is marked, and the vault stays on the list.
-func vaultOf(v domain.Vault, readers port.VaultReaders) *v1.Vault {
+func convertVaultToWire(v domain.Vault, readers port.VaultReaders) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
 		IsMissing: vaults.NewFolderCheck(readers).Execute(v),

@@ -24,14 +24,14 @@ type graph struct {
 	err     error
 }
 
-func (g graph) Links(_ context.Context, _ domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (g graph) GetLinks(_ context.Context, _ domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if from == g.failOut {
 		return nil, g.err
 	}
 	return g.out[from], nil
 }
 
-func (g graph) Backlinks(_ context.Context, _ domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (g graph) GetBacklinks(_ context.Context, _ domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	if to == g.failIn {
 		return nil, g.err
 	}
@@ -60,7 +60,7 @@ type asked struct {
 	paths   []string
 }
 
-func (a *asked) Notes(_ context.Context, _ domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
+func (a *asked) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
 	if a.err != nil {
 		return nil, a.err
 	}

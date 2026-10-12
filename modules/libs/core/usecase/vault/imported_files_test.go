@@ -23,7 +23,7 @@ type handedOver struct {
 
 func (h handedOver) GetName(handle string) string { return h.names[handle] }
 
-func (h handedOver) Stat(_ context.Context, handle string) (port.ImportedFile, error) {
+func (h handedOver) GetImportedFile(_ context.Context, handle string) (port.ImportedFile, error) {
 	one := port.ImportedFile{Name: h.names[handle], Handle: handle}
 	if _, held := h.holding[handle]; held {
 		one.IsFolder = true
@@ -52,7 +52,7 @@ func (h handedOver) Open(_ context.Context, handle string) (io.ReadCloser, error
 	return io.NopCloser(strings.NewReader(body)), nil
 }
 
-func (handedOver) Contains(string, string) bool { return false }
+func (handedOver) HasHandle(string, string) bool { return false }
 
 // What a person hands over is read through the port, so a machine that names
 // its files anything but paths can bring them in. A use case reaching the

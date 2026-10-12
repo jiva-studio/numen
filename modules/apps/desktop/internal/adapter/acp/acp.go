@@ -63,7 +63,7 @@ type work struct {
 	cleanup      func()
 }
 
-func (w *work) Steps() <-chan port.Step { return w.steps }
+func (w *work) GetSteps() <-chan port.Step { return w.steps }
 
 func (w *work) Stop() error {
 	w.once.Do(w.stop)
@@ -111,8 +111,8 @@ func (a *Agent) Close() error {
 	return nil
 }
 
-// Finish ends a conversation session.
-func (a *Agent) Finish(_ context.Context, conversation string) error {
+// EndConversation ends a conversation session.
+func (a *Agent) EndConversation(_ context.Context, conversation string) error {
 	if conversation == "" {
 		return nil
 	}
@@ -219,8 +219,8 @@ func setupAntigravityHome(tools Endpoint) (string, func(), error) {
 	return tempHome, cleanup, nil
 }
 
-// Take starts the agent on a task.
-func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
+// StartRun starts the agent on a task.
+func (a *Agent) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
 	if a.Tools.URL == "" || a.Tools.Token == "" {
 		return nil, errors.New("no tools to give an agent")
 	}

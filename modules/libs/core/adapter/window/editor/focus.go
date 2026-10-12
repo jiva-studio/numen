@@ -22,7 +22,7 @@ func (a *API) GetWindow() port.Window { return view{a} }
 // nobody sees.
 type view struct{ *API }
 
-func (v view) Focus(_ context.Context, at domain.Place) error {
+func (v view) FocusPlace(_ context.Context, at domain.Place) error {
 	v.Places.publish(at)
 	return nil
 }
@@ -56,7 +56,7 @@ func (a *API) WatchFocus(
 			}
 			if err := out.Send(&v1.WatchFocusResponse{
 				Path:  at.Path,
-				Spans: byteSpansOf(at.Spans),
+				Spans: convertByteSpansToWire(at.Spans),
 			}); err != nil {
 				return err
 			}

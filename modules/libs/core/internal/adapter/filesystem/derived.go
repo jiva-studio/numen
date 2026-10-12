@@ -225,10 +225,10 @@ func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, 
 	return file, about.Size(), nil
 }
 
-// Take puts what a reader gives under a name, through the same rename every
+// WriteStream puts what a reader gives under a name, through the same rename every
 // other write here lands by: what a fetch was still writing when a machine
 // stopped is not a file anything reads afterwards.
-func (d *DerivedStore) Take(ctx context.Context, name string, from io.Reader) (int64, error) {
+func (d *DerivedStore) WriteStream(ctx context.Context, name string, from io.Reader) (int64, error) {
 	target, err := d.getPath(name)
 	if err != nil {
 		return 0, err
@@ -352,14 +352,14 @@ func truncateFile(root *os.Root, name string, to int64) error {
 // make another at the same path and hold it too.
 const claimSuffix = ".claim"
 
-// Claim holds a name until the returned function is called, and refuses one
+// ClaimName holds a name until the returned function is called, and refuses one
 // another caller holds with port.ErrClaimed.
 //
 // What is held is a lock the kernel keeps on `<name>.claim` beside the
 // artifact, so the claim crosses processes and a run that was killed leaves the
 // name free. A claim file lying on disk with no lock on it is a name free to
 // take.
-func (d *DerivedStore) Claim(_ context.Context, name string) (func() error, error) {
+func (d *DerivedStore) ClaimName(_ context.Context, name string) (func() error, error) {
 	target, err := d.getPath(name + claimSuffix)
 	if err != nil {
 		return nil, err

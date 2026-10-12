@@ -287,7 +287,7 @@ func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, err := db.NoteQueries().Types(t.Context(), first.ID, []string{"decks/mammals.md"})
+	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"decks/mammals.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -299,7 +299,7 @@ func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 	                            AND n.identifier = '01HQXMAMMALS'`, first.ID); got != 1 {
 		t.Error("the deck's row does not carry its title and its identifier")
 	}
-	links, err := db.NoteQueries().Links(t.Context(), first.ID, "decks/mammals.md")
+	links, err := db.NoteQueries().GetLinks(t.Context(), first.ID, "decks/mammals.md")
 	if err != nil {
 		t.Fatal(err)
 	}

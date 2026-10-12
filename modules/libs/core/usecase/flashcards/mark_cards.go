@@ -73,7 +73,7 @@ func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult
 	if u.notes == nil {
 		return MarkCardsResult{}, nil
 	}
-	paths, err := u.notes.OfType(ctx, v.ID, domain.TypeDeck)
+	paths, err := u.notes.GetPathsOfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
 		return MarkCardsResult{}, err
 	}

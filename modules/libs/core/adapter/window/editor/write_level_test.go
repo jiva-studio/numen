@@ -69,7 +69,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save was refused: %v", refused)
 	}
 
-	found, err := installation.Passages().Lexical(
+	found, err := installation.Passages().FindLexical(
 		t.Context(), installation.GetCurrentVault().ID, "tetragrammaton",
 		[]domain.SourceKind{domain.KindNote}, 10, false,
 	)

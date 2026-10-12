@@ -93,7 +93,7 @@ func TestALinkMovesInANoteWrittenInAnotherScript(t *testing.T) {
 			if err != nil {
 				t.Fatalf("opening: %v", err)
 			}
-			moved, err := d.PointLinksAt(domain.ParseAddress(one.from), one.to)
+			moved, err := d.RedirectLinks(domain.ParseAddress(one.from), one.to)
 			if err != nil {
 				t.Fatalf("pointing: %v", err)
 			}

@@ -128,7 +128,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	}
 	defer func() { _ = release() }()
 
-	model := u.Embedder.Model()
+	model := u.Embedder.GetModel()
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return res, err
@@ -183,7 +183,7 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 	if u.Derived == nil {
 		return func() error { return nil }, false, nil
 	}
-	release, err := u.Derived.Claim(ctx, text.IndexClaim)
+	release, err := u.Derived.ClaimName(ctx, text.IndexClaim)
 	if errors.Is(err, port.ErrClaimed) {
 		return nil, true, nil
 	}

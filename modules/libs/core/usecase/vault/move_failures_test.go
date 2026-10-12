@@ -28,19 +28,19 @@ type watchedLinks struct {
 	linksErr     error
 }
 
-func (w *watchedLinks) Backlinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (w *watchedLinks) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	w.asked = append(w.asked, to)
 	if w.backlinksErr != nil {
 		return nil, w.backlinksErr
 	}
-	return w.LinkQueries.Backlinks(ctx, id, to)
+	return w.LinkQueries.GetBacklinks(ctx, id, to)
 }
 
-func (w *watchedLinks) Links(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (w *watchedLinks) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if w.linksErr != nil {
 		return nil, w.linksErr
 	}
-	return w.LinkQueries.Links(ctx, id, from)
+	return w.LinkQueries.GetLinks(ctx, id, from)
 }
 
 // unknowing is an index that cannot say what the vault holds under a path.

@@ -41,7 +41,7 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 		{Card: "zpqrstvwxy", Face: "Say it"}: "Sanskrit.md",
 	}
 
-	given := review.Give(answers)
+	given := review.OrderAnswers(answers)
 	if len(given) != 2 {
 		t.Fatalf("the history came to %d answers, want 2", len(given))
 	}

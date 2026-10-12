@@ -220,7 +220,7 @@ func (u Search) searchLexical(ctx context.Context, v domain.Vault, query string,
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	found, err := u.passages.Lexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
+	found, err := u.passages.FindLexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.IsGrowing)
 	if err != nil {
 		return err
 	}
@@ -273,7 +273,7 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	recipe := u.embedder.Model().Recipe()
+	recipe := u.embedder.GetModel().Recipe()
 	var vector []float32
 	if u.cache != nil {
 		if cached, ok := u.cache.Get(recipe, query); ok {

@@ -52,7 +52,7 @@ func BenchmarkDownloadText(b *testing.B) {
 			b.ResetTimer()
 
 			for b.Loop() {
-				article, err := downloader.Text(b.Context(), url, port.PreferredCaptions{})
+				article, err := downloader.GetText(b.Context(), url, port.PreferredCaptions{})
 				if err != nil {
 					b.Fatal(err)
 				}

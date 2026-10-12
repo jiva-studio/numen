@@ -16,7 +16,7 @@ var bge = port.EmbeddingModel{Name: "bge-m3", Dimensions: 2, MaxTokens: 512, Poo
 // landed is a model that has finished arriving.
 type landed struct{}
 
-func (landed) Model() port.EmbeddingModel { return bge }
+func (landed) GetModel() port.EmbeddingModel { return bge }
 
 func (landed) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
@@ -43,27 +43,27 @@ func (s *shut) Close() error {
 // vector index is fitted to its width and a vector is claimed under its recipe
 // while it comes down.
 func TestAModelSaysWhatItIsBeforeItIsHere(t *testing.T) {
-	arriving := embedding.NewArriving(bge)
-	if got := arriving.GetImpatientEmbedder().Model().Recipe(); got != bge.Recipe() {
+	arriving := embedding.NewDeferredEmbedder(bge)
+	if got := arriving.GetImpatientEmbedder().GetModel().Recipe(); got != bge.Recipe() {
 		t.Errorf("got %s", got)
 	}
-	if got := arriving.GetWaitingEmbedder().Model().Recipe(); got != bge.Recipe() {
+	if got := arriving.GetWaitingEmbedder().GetModel().Recipe(); got != bge.Recipe() {
 		t.Errorf("got %s", got)
 	}
 }
 
 func TestAQuestionIsNotMadeToWaitForAModelStillArriving(t *testing.T) {
-	arriving := embedding.NewArriving(bge)
+	arriving := embedding.NewDeferredEmbedder(bge)
 	if _, err := arriving.GetImpatientEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, embedding.ErrModelNotReady) {
 		t.Fatalf("got %v", err)
 	}
 }
 
 func TestAPassFillingTheIndexWaitsForTheModel(t *testing.T) {
-	arriving := embedding.NewArriving(bge)
+	arriving := embedding.NewDeferredEmbedder(bge)
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		arriving.ReportArrival(landed{}, nil)
+		arriving.SetModel(landed{}, nil)
 	}()
 	got, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"})
 	if err != nil {
@@ -76,8 +76,8 @@ func TestAPassFillingTheIndexWaitsForTheModel(t *testing.T) {
 
 func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 	unreachable := errors.New("dial tcp: network is unreachable")
-	arriving := embedding.NewArriving(bge)
-	arriving.ReportArrival(nil, unreachable)
+	arriving := embedding.NewDeferredEmbedder(bge)
+	arriving.SetModel(nil, unreachable)
 
 	if _, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, unreachable) {
 		t.Errorf("got %v", err)
@@ -92,10 +92,10 @@ func TestAPassIsNotLeftWaitingOnAModelThatWillNeverCome(t *testing.T) {
 func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 	wrong := errors.New("not one model")
 	held := &shut{}
-	arriving := embedding.NewArriving(bge)
-	arriving.ReportArrival(held, nil)
+	arriving := embedding.NewDeferredEmbedder(bge)
+	arriving.SetModel(held, nil)
 
-	if err := arriving.Disown(wrong); err != nil {
+	if err := arriving.DiscardModel(wrong); err != nil {
 		t.Fatal(err)
 	}
 	if !held.isClosed {
@@ -112,8 +112,8 @@ func TestADisownedModelIsLetGoOfAndNotAsked(t *testing.T) {
 // A model disowned before it turned up is one nobody waits for.
 func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 	wrong := errors.New("not one model")
-	arriving := embedding.NewArriving(bge)
-	if err := arriving.Disown(wrong); err != nil {
+	arriving := embedding.NewDeferredEmbedder(bge)
+	if err := arriving.DiscardModel(wrong); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := arriving.GetWaitingEmbedder().Embed(t.Context(), []string{"anything"}); !errors.Is(err, wrong) {
@@ -124,26 +124,26 @@ func TestAModelDisownedBeforeItLandsIsNotWaitedFor(t *testing.T) {
 // A model let go of before it arrived is let go of when it does: the weights
 // are compiled by then and nothing else holds them.
 func TestAModelThatLandsAfterItWasDisownedIsLetGoOf(t *testing.T) {
-	arriving := embedding.NewArriving(bge)
-	if err := arriving.Disown(errors.New("not one model")); err != nil {
+	arriving := embedding.NewDeferredEmbedder(bge)
+	if err := arriving.DiscardModel(errors.New("not one model")); err != nil {
 		t.Fatal(err)
 	}
 
 	held := &shut{}
-	arriving.ReportArrival(held, nil)
+	arriving.SetModel(held, nil)
 	if !held.isClosed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
 }
 
 func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
-	arriving := embedding.NewArriving(bge)
+	arriving := embedding.NewDeferredEmbedder(bge)
 	if err := arriving.Close(); err != nil {
 		t.Fatal(err)
 	}
 
 	held := &shut{}
-	arriving.ReportArrival(held, nil)
+	arriving.SetModel(held, nil)
 	if !held.isClosed {
 		t.Error("a model nothing will ask of is still loaded")
 	}
@@ -154,7 +154,7 @@ func TestAModelThatLandsAfterEverythingWasClosedIsLetGoOf(t *testing.T) {
 func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 	wrong := errors.New("not one model")
 	for range 2000 {
-		arriving := embedding.NewArriving(bge)
+		arriving := embedding.NewDeferredEmbedder(bge)
 
 		waiting := make(chan struct{}, 8)
 		waited := make(chan error, cap(waiting))
@@ -168,7 +168,7 @@ func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 			<-waiting
 		}
 
-		if err := arriving.Disown(wrong); err != nil {
+		if err := arriving.DiscardModel(wrong); err != nil {
 			t.Fatal(err)
 		}
 		for range cap(waited) {
@@ -180,7 +180,7 @@ func TestAModelDisownedTellsWhoeverWasWaitingWhy(t *testing.T) {
 }
 
 func TestAPassStoppedWhileTheModelArrivesIsStopped(t *testing.T) {
-	arriving := embedding.NewArriving(bge)
+	arriving := embedding.NewDeferredEmbedder(bge)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := arriving.GetWaitingEmbedder().Embed(ctx, []string{"anything"}); !errors.Is(err, context.Canceled) {

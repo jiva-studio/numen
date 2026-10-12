@@ -69,10 +69,10 @@ type RenameField struct {
 // given: a question per note of the vault is every other write waiting behind
 // it.
 type TypeQueries interface {
-	// OfType is every note of one type the vault holds, by path. A caller after
+	// GetPathsOfType is every note of one type the vault holds, by path. A caller after
 	// the decks or the stencils of a vault asks for them, and opens no file to
 	// find out what each note is.
-	OfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
+	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
 // NewRenameField is what a stencil's field is renamed through: the vault the
@@ -130,7 +130,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 // rename is the whole of the writing, under this vault's write lock from before
 // the stencil is read until after the last deck is replaced.
 func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
-	release, err := u.writers.Hold(ctx, v)
+	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
 		return RenameResult{}, err
 	}
@@ -187,7 +187,7 @@ func (u RenameField) stencil(
 ) (domain.Fingerprint, error) {
 	against := in.Fingerprint
 	if against.IsZero() {
-		on, err := reader.Stat(ctx, in.Stencil)
+		on, err := reader.GetFingerprint(ctx, in.Stencil)
 		if err != nil {
 			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", in.Stencil, err)
 		}
@@ -224,7 +224,7 @@ func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 // This runs under the vault's write lock, so a question per note in the vault
 // is every other write in the application waiting behind it.
 func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error) {
-	return u.notes.OfType(ctx, v.ID, domain.TypeDeck)
+	return u.notes.GetPathsOfType(ctx, v.ID, domain.TypeDeck)
 }
 
 // deckWriter is one deck's read and write, so that what could not be done to it
@@ -250,7 +250,7 @@ type deckWriter struct {
 // whole: it is given an identifier where it carried none, and every card
 // of it is given its mark and its heading.
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
-	on, err := d.reader.Stat(ctx, path)
+	on, err := d.reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return 0, err
 	}

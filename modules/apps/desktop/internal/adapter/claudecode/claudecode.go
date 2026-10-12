@@ -117,9 +117,9 @@ func (a *Agent) Close() error {
 	return stopWork(running)
 }
 
-// Finish ends a conversation: everything still being answered in it stops, and
+// EndConversation ends a conversation: everything still being answered in it stops, and
 // the session it was on is let go of once nothing is left to write one.
-func (a *Agent) Finish(_ context.Context, conversation string) error {
+func (a *Agent) EndConversation(_ context.Context, conversation string) error {
 	if conversation == "" {
 		return nil
 	}
@@ -182,8 +182,8 @@ func (a *Agent) makeSessionRecorder(conversation string) func(string) {
 // DefaultMaxTurns is how many times an agent may go round on one task.
 const DefaultMaxTurns = 100
 
-// Take starts the agent on a task.
-func (a *Agent) Take(ctx context.Context, task port.Task) (port.Run, error) {
+// StartRun starts the agent on a task.
+func (a *Agent) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
 	if a.Tools.URL == "" || a.Tools.Token == "" {
 		return nil, errors.New("no tools to give an agent")
 	}
@@ -423,7 +423,7 @@ type work struct {
 	once         sync.Once
 }
 
-func (w *work) Steps() <-chan port.Step { return w.steps }
+func (w *work) GetSteps() <-chan port.Step { return w.steps }
 
 // Stop ends the child and everything it started, then waits for the reading to
 // finish so that nothing of this work is still running when it returns.

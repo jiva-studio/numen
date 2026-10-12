@@ -27,12 +27,12 @@ func (a *API) ReadNote(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.ReadNoteResponse{Body: found.Body}
-	if reason, refused := wire.ErrorCodeOf(found.Outcome); refused {
+	if reason, refused := wire.ConvertOutcomeToErrorCode(found.Outcome); refused {
 		out.Error = &reason
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
-		out.At = fingerprintOf(found.Fingerprint)
+		out.At = convertFingerprintToWire(found.Fingerprint)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -66,10 +66,10 @@ func (a *API) WriteNote(
 			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: fingerprintOf(at), IsUnlevelled: behind,
+			At: convertFingerprintToWire(at), IsUnlevelled: behind,
 		}), nil
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -114,7 +114,7 @@ func (a *API) CreateNote(
 	if err == nil {
 		return connect.NewResponse(&v1.CreateNoteResponse{}), nil
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -144,7 +144,7 @@ func (a *API) WriteLink(
 	if _, err := a.Notes.Linking.Add(
 		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
 	); err != nil {
-		reason, refused := wire.ErrorCodeBy(err)
+		reason, refused := wire.GetErrorCode(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -166,7 +166,7 @@ func (a *API) RemoveLink(
 	}
 	defer a.Writing.finish()
 
-	role, _ := roleOf(r.Msg.GetRole())
+	role, _ := convertRoleFromWire(r.Msg.GetRole())
 	to, err := a.getAddress(ctx, r.Msg.GetTo())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -174,7 +174,7 @@ func (a *API) RemoveLink(
 	if _, err := a.Notes.Linking.Remove(
 		ctx, showing, r.Msg.GetPath(), to, role, domain.Fingerprint{},
 	); err != nil {
-		reason, refused := wire.ErrorCodeBy(err)
+		reason, refused := wire.GetErrorCode(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -192,13 +192,13 @@ func (a *API) GetOpeningNote(
 		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
 	}
 
-	ref, found, err := a.Notes.Queries.Opening(ctx, showing.ID)
+	ref, found, err := a.Notes.Queries.GetOpeningNote(ctx, showing.ID)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.GetOpeningNoteResponse{}
 	if found {
-		out.Note = noteOf(ref)
+		out.Note = convertNoteToWire(ref)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -228,18 +228,18 @@ func (a *API) GetNeighbourhood(
 	}
 
 	out := &v1.GetNeighbourhoodResponse{
-		Focus:     noteOf(found.Focus),
-		FocusType: typeOf(types[found.Focus.Path]),
+		Focus:     convertNoteToWire(found.Focus),
+		FocusType: convertNoteTypeToWire(types[found.Focus.Path]),
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
-			Note:         noteOf(related.NoteRef),
-			Seat:         seatOf(related.Seat),
+			Note:         convertNoteToWire(related.NoteRef),
+			Seat:         convertRelationToWire(related.Relation),
 			Label:        related.Label,
 			ReverseLabel: related.ReverseLabel,
 			Through:      related.Parent,
 			IsMutual:     related.IsMutual,
-			Type:         typeOf(types[related.Path]),
+			Type:         convertNoteTypeToWire(types[related.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -254,7 +254,7 @@ func (a *API) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.Links.Resolve(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	found, err := a.Notes.Links.ResolveLinks(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -304,7 +304,7 @@ func (a *API) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, er
 // How much of that path the link carries is `note.GetAddress`: a name where it
 // means one note, and the path where it would mean another.
 func (a *API) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
-	role, ok := roleOf(l.GetRole())
+	role, ok := convertRoleFromWire(l.GetRole())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())
 	}
@@ -327,9 +327,9 @@ func (a *API) getAddress(ctx context.Context, to string) (domain.Address, error)
 	return note.GetAddress(ctx, a.Notes.Queries, a.GetCurrentVault().ID, to)
 }
 
-// roleOf is the role a link carries, in the core's words. A link is written
+// convertRoleFromWire is the role a link carries, in the core's words. A link is written
 // only with a role the schema names.
-func roleOf(role v1.Role) (domain.LinkRole, bool) {
+func convertRoleFromWire(role v1.Role) (domain.LinkRole, bool) {
 	switch role {
 	case v1.Role_ROLE_PARENT:
 		return domain.RoleParent, true
@@ -346,29 +346,29 @@ func roleOf(role v1.Role) (domain.LinkRole, bool) {
 	}
 }
 
-func noteOf(n domain.NoteRef) *v1.Note {
+func convertNoteToWire(n domain.NoteRef) *v1.Note {
 	return &v1.Note{Path: n.Path, Title: n.Title, Identifier: n.ID}
 }
 
-func seatOf(s domain.Relation) v1.Seat {
+func convertRelationToWire(s domain.Relation) v1.Seat {
 	switch s {
-	case domain.SeatParent:
+	case domain.RelationParent:
 		return v1.Seat_SEAT_PARENT
-	case domain.SeatChild:
+	case domain.RelationChild:
 		return v1.Seat_SEAT_CHILD
-	case domain.SeatJump:
+	case domain.RelationJump:
 		return v1.Seat_SEAT_JUMP
-	case domain.SeatSibling:
+	case domain.RelationSibling:
 		return v1.Seat_SEAT_SIBLING
 	default:
 		return v1.Seat_SEAT_UNSPECIFIED
 	}
 }
 
-// fingerprintOf is a file as the schema carries it. Nothing is carried for the
+// convertFingerprintToWire is a file as the schema carries it. Nothing is carried for the
 // zero value: a caller is given a fingerprint only where there is a file behind
 // it.
-func fingerprintOf(ref domain.Fingerprint) *v1.Fingerprint {
+func convertFingerprintToWire(ref domain.Fingerprint) *v1.Fingerprint {
 	if ref.IsZero() {
 		return nil
 	}
@@ -381,12 +381,12 @@ func newLastRead(seen *v1.LastRead) *note.LastRead {
 	if seen == nil {
 		return nil
 	}
-	return &note.LastRead{Prose: seen.GetProse(), Fingerprint: refOf(seen.GetAt())}
+	return &note.LastRead{Prose: seen.GetProse(), Fingerprint: convertFingerprintFromWire(seen.GetAt())}
 }
 
-// refOf is a fingerprint as the core holds one. The kind is left empty: what
+// convertFingerprintFromWire is a fingerprint as the core holds one. The kind is left empty: what
 // the file is was decided when it was asked for.
-func refOf(at *v1.Fingerprint) domain.Fingerprint {
+func convertFingerprintFromWire(at *v1.Fingerprint) domain.Fingerprint {
 	if at == nil {
 		return domain.Fingerprint{}
 	}

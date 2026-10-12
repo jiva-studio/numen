@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// Links returns the links written in one note, resolved.
-func (q *Queries) Links(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+// GetLinks returns the links written in one note, resolved.
+func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -89,10 +89,10 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 	return out
 }
 
-// Resolve answers where addresses written in one note land, keyed by what was
+// ResolveLinks answers where addresses written in one note land, keyed by what was
 // written. The priority is the one every name resolves by, so a wikilink
 // nobody recorded as a link is answered as a link is.
-func (q *Queries) Resolve(
+func (q *Queries) ResolveLinks(
 	ctx context.Context, vaultID domain.VaultID, from string, written []string,
 ) (map[string]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
@@ -245,7 +245,7 @@ func countSharedPrefix(a, b string) int {
 	return n
 }
 
-// Backlinks returns the notes that point at one note.
+// GetBacklinks returns the notes that point at one note.
 //
 // A link is a backlink because it *resolves* here, not because its text looks
 // like this note. Those differ in both directions: a link written as a path is
@@ -253,7 +253,7 @@ func countSharedPrefix(a, b string) int {
 // written as a bare name may resolve to a nearer note of the same name. So
 // every candidate goes through the same resolution the forward direction uses,
 // and only the ones that land here are kept.
-func (q *Queries) Backlinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

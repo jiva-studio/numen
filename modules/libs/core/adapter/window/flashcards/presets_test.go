@@ -131,7 +131,7 @@ func TestAQuestionAboutThePresetsOfAVaultNobodyHoldsIsRefused(t *testing.T) {
 // brokenPresetLinks is an index that cannot say what a deck points at.
 type brokenPresetLinks struct{ port.LinkQueries }
 
-func (brokenPresetLinks) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (brokenPresetLinks) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errors.New("the index is out of reach")
 }
 

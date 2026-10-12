@@ -404,18 +404,18 @@ type failingLinks struct {
 	links, backlinks error
 }
 
-func (f failingLinks) Links(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (f failingLinks) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if f.links != nil {
 		return nil, f.links
 	}
-	return f.LinkQueries.Links(ctx, id, from)
+	return f.LinkQueries.GetLinks(ctx, id, from)
 }
 
-func (f failingLinks) Backlinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (f failingLinks) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	if f.backlinks != nil {
 		return nil, f.backlinks
 	}
-	return f.LinkQueries.Backlinks(ctx, id, to)
+	return f.LinkQueries.GetBacklinks(ctx, id, to)
 }
 
 func TestLinksThatCannotBeAskedForAreAnError(t *testing.T) {

@@ -138,7 +138,7 @@ func (u Extract) discover(
 func (u Extract) readKnown(ctx context.Context, v domain.Vault) (map[domain.SourceKind]map[string]domain.Fingerprint, error) {
 	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
-		held, err := u.queries.Fingerprints(ctx, v.ID, kind)
+		held, err := u.queries.GetFingerprints(ctx, v.ID, kind)
 		if err != nil {
 			return nil, fmt.Errorf("read index: %w", err)
 		}
@@ -157,7 +157,7 @@ func (u Extract) walkAndRecord(
 	res *ExtractResult,
 ) (map[string]bool, error) {
 	found := make(map[string]bool)
-	err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
+	err := reader.WalkFiles(ctx, func(ref domain.Fingerprint) error {
 		held, ours := known[ref.Kind]
 		if !ours {
 			return nil
@@ -346,7 +346,7 @@ func (u Extract) recordIfTextMissing(
 	if u.hasAny(ctx, text.Artifact(r.Producer, r.Hash), text.Partial(r.Producer, r.Hash)) {
 		return nil
 	}
-	ref, err := reader.Stat(ctx, r.Path)
+	ref, err := reader.GetFingerprint(ctx, r.Path)
 	if port.IsNoNote(err) {
 		return nil
 	}
@@ -390,7 +390,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 				return u.queries.GetUnchunkedSources(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
-				return u.queries.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
+				return u.queries.GetSourcesWithOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
 			},
 		)
 	}
@@ -472,7 +472,7 @@ func (u Extract) source(
 	res.CurrentSource = path
 	u.progress(*res)
 
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if port.IsNoNote(err) {
 		res.Vanished++
 		return nil

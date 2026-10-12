@@ -148,7 +148,7 @@ func (a *API) NewHandler(files http.Handler, named ...string) http.Handler {
 			defer a.questions.finish()
 			a.Asset(w, r)
 		case slices.Contains(wire.OpenedAt, r.URL.Path):
-			wire.Page(w, r, pages, a.Themes, files)
+			wire.WritePage(w, r, pages, a.Themes, files)
 		default:
 			files.ServeHTTP(w, r)
 		}

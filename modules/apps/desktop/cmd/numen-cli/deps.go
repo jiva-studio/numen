@@ -82,7 +82,7 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 				return cli.Scan{
 					Read: read,
 					Summary: func(ctx context.Context) (domain.VaultSummary, error) {
-						return db.Queries().Summary(ctx, v.ID)
+						return db.Queries().GetSummary(ctx, v.ID)
 					},
 					Unembedded: why,
 					Close: func() error {

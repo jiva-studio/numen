@@ -20,14 +20,14 @@ type folderDialog struct {
 	isOpen bool
 }
 
-// Choose answers with the folder the person chose, and with false where they
+// ChooseFolder answers with the folder the person chose, and with false where they
 // closed the dialog. A dialog ends when the person answers it, and that wait is
 // on a person and is not measured.
 //
 // It is called on a goroutine serving the page. The toolkit puts the dialog up
 // on the thread that owns the window and hands the answer back here, so the
 // wait happens off that thread.
-func (d *folderDialog) Choose(_ context.Context, title, startingAt string) (string, bool, error) {
+func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string) (string, bool, error) {
 	// The library the dialog is built by ends the process where this machine
 	// holds no settings for it to read, taking the window and whatever a person
 	// had not written down with it.

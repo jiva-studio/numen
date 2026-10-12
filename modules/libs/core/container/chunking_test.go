@@ -89,7 +89,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	owing, _, err := db.VectorsOwing().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.Model(), "", 1000)
+	owing, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.GetModel(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 // wide is a model of the width given.
 type wide struct{ dimensions int }
 
-func (w wide) Model() port.EmbeddingModel {
+func (w wide) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "wide", Dimensions: w.dimensions, MaxTokens: 256, Pooling: "mean"}
 }
 

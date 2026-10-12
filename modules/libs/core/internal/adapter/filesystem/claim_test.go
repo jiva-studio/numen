@@ -12,7 +12,7 @@ func TestANameRemovedLeavesNoClaimBehindIt(t *testing.T) {
 	derived, root := store(t)
 	const name = "ocr/abc.txt"
 
-	release, err := derived.Claim(t.Context(), name)
+	release, err := derived.ClaimName(t.Context(), name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestANameIsRemovedWhileItsClaimIsHeld(t *testing.T) {
 	derived, root := store(t)
 	const name = "ocr/abc.partial.txt"
 
-	release, err := derived.Claim(t.Context(), name)
+	release, err := derived.ClaimName(t.Context(), name)
 	if err != nil {
 		t.Fatal(err)
 	}

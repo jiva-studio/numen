@@ -20,14 +20,14 @@ func TestPlaces_FindBinaries(t *testing.T) {
 
 func TestAgent_FinishEmpty(t *testing.T) {
 	agent := &Agent{Program: "antigravity"}
-	if err := agent.Finish(t.Context(), ""); err != nil {
+	if err := agent.EndConversation(t.Context(), ""); err != nil {
 		t.Errorf("unexpected error on empty finish: %v", err)
 	}
 }
 
 func TestAgent_TakeWithoutTools(t *testing.T) {
 	agent := &Agent{Program: "antigravity"}
-	_, err := agent.Take(t.Context(), port.Task{Question: "hello"})
+	_, err := agent.StartRun(t.Context(), port.Task{Question: "hello"})
 	if err == nil {
 		t.Errorf("expected error when no tools provided")
 	}

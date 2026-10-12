@@ -48,7 +48,7 @@ func focusNote(ctx context.Context, core Core, in noteFocusInput) (noteFocusOutp
 		return noteFocusOutput{}, errors.New("name the note to put in focus")
 	}
 
-	found, err := core.Notes.Queries.Notes(ctx, core.getCurrentVault().Vault.ID, []string{in.Path})
+	found, err := core.Notes.Queries.GetNotes(ctx, core.getCurrentVault().Vault.ID, []string{in.Path})
 	if err != nil {
 		return noteFocusOutput{}, err
 	}
@@ -56,7 +56,7 @@ func focusNote(ctx context.Context, core Core, in noteFocusInput) (noteFocusOutp
 	if !known {
 		return noteFocusOutput{}, fmt.Errorf("no note at %s", in.Path)
 	}
-	if err := core.View.Focus(ctx, domain.Place{Path: in.Path}); err != nil {
+	if err := core.View.FocusPlace(ctx, domain.Place{Path: in.Path}); err != nil {
 		return noteFocusOutput{}, err
 	}
 	return noteFocusOutput{Focused: noteOf(ref)}, nil
@@ -108,7 +108,7 @@ func focusSource(ctx context.Context, core Core, in sourceFocusInput) (sourceFoc
 	if err != nil {
 		return sourceFocusOutput{}, err
 	}
-	if err := core.View.Focus(ctx, at); err != nil {
+	if err := core.View.FocusPlace(ctx, at); err != nil {
 		return sourceFocusOutput{}, err
 	}
 	return sourceFocusOutput{IsShown: true, Summary: describeFocus(ref.Kind, in.Length)}, nil
@@ -156,7 +156,7 @@ func getFingerprint(ctx context.Context, core Core, path string) (domain.Fingerp
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if port.IsNoNote(err) {
 		return domain.Fingerprint{}, fmt.Errorf("this vault holds nothing at %s", path)
 	}

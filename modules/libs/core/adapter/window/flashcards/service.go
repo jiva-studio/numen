@@ -185,7 +185,7 @@ func (a *API) countVault(ctx context.Context, v domain.Vault) *v1.VaultCardsDue 
 			ClosesReviews:   string(preset.Limits.Reviews),
 			ClosesMinutes:   string(preset.Limits.Minutes),
 			ClosesBacklog:   string(preset.Limits.Backlog),
-			StopsOn:         wire.StopReasonOf(preset.Stops),
+			StopsOn:         wire.ConvertStopReasonToWire(preset.Stops),
 		})
 	}
 	return one

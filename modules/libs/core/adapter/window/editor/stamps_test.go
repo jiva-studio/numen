@@ -17,7 +17,7 @@ func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
 	const nanos = 1788433445123456789
 
 	ref := domain.Fingerprint{Path: "library/Compost.pdf", Size: 12, ModTime: at}
-	if held := fingerprintOf(ref).GetMtime(); held != nanos {
+	if held := convertFingerprintToWire(ref).GetMtime(); held != nanos {
 		t.Errorf("the schema carries mtime %d, want %d", held, nanos)
 	}
 
@@ -33,7 +33,7 @@ func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
 // that file when the address comes back.
 func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
 	ref := domain.Fingerprint{Path: "recordings/Compost.mp3", Size: 3, ModTime: time.Now()}
-	if back := refOf(fingerprintOf(ref)); !back.IsUnchanged(ref) {
+	if back := convertFingerprintFromWire(convertFingerprintToWire(ref)); !back.IsUnchanged(ref) {
 		t.Errorf("the message carried the file back as %+v, and it is %+v", back, ref)
 	}
 }
@@ -56,7 +56,7 @@ func TestTheWindowsFingerprintIsAKeyOfPlainNumbers(t *testing.T) {
 // Nothing said about a file is not the epoch: a client presenting an empty
 // fingerprint is saying it does not know, and a write is not held to 1970.
 func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
-	if back := refOf(fingerprintOf(domain.Fingerprint{})); !back.IsZero() {
+	if back := convertFingerprintFromWire(convertFingerprintToWire(domain.Fingerprint{})); !back.IsZero() {
 		t.Errorf("nothing said about a file came back as %+v", back)
 	}
 	if held := stamp(time.Time{}); held != 0 {

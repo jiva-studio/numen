@@ -12,11 +12,11 @@ import (
 // them. Only an application with a window can satisfy it; where there is none,
 // nothing asks.
 type Window interface {
-	// Focus puts this place in front of the person: a note becomes the one the
+	// FocusPlace puts this place in front of the person: a note becomes the one the
 	// neighbourhood is seen from, and a document is opened where the place
 	// says. A place already in focus is focused again, which is what asking for
 	// it means.
-	Focus(ctx context.Context, at domain.Place) error
+	FocusPlace(ctx context.Context, at domain.Place) error
 
 	// ShowMove says a note is no longer where it was. Whoever is showing it at
 	// the name it had follows it to the name it now has.

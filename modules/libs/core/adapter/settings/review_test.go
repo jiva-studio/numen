@@ -17,8 +17,8 @@ func TestTheHourADayBeginsAt(t *testing.T) {
 	if cfg.DayStarts() != 3*time.Hour+30*time.Minute {
 		t.Errorf("the day begins %v past midnight", cfg.DayStarts())
 	}
-	if len(cfg.Said) != 0 {
-		t.Errorf("said = %v", cfg.Said)
+	if len(cfg.Notices) != 0 {
+		t.Errorf("said = %v", cfg.Notices)
 	}
 }
 
@@ -49,8 +49,8 @@ func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
 		if cfg.DayStarts() != settings.DefaultDayStart() {
 			t.Errorf("%s: the day begins %v past midnight", written, cfg.DayStarts())
 		}
-		if len(cfg.Said) != 1 || !strings.Contains(cfg.Said[0], "review.day_starts") {
-			t.Errorf("%s: said = %v", written, cfg.Said)
+		if len(cfg.Notices) != 1 || !strings.Contains(cfg.Notices[0], "review.day_starts") {
+			t.Errorf("%s: said = %v", written, cfg.Notices)
 		}
 	}
 }

@@ -397,7 +397,7 @@ func pictureOf(path, entry string, mark pool.Fingerprint) string {
 	for at, one := range parts {
 		parts[at] = url.PathEscape(one)
 	}
-	return fmt.Sprintf("%s/%s?%s", assetOf(path), strings.Join(parts, "/"), formatFingerprint(mark))
+	return fmt.Sprintf("%s/%s?%s", getAssetRoute(path), strings.Join(parts, "/"), formatFingerprint(mark))
 }
 
 // whatBook is what the book is, as the window is told it.

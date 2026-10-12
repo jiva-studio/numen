@@ -12,21 +12,21 @@ import (
 // ErrLastVault is the one vault an installation has left. It stays on the list.
 var ErrLastVault = errors.New("an installation keeps a vault")
 
-// Forget takes a vault off the list this installation keeps, and out of the
+// Unregister takes a vault off the list this installation keeps, and out of the
 // index. The folder stays where it is, with the identity it carries, and adding
 // it again brings back the same vault.
-type Forget struct {
+type Unregister struct {
 	registry port.VaultRegistry
 	index    port.VaultRepository
 }
 
-// NewForget is what takes a vault off the list: the list this installation
+// NewUnregister is what takes a vault off the list: the list this installation
 // keeps, and the index its rows are taken out of.
-func NewForget(registry port.VaultRegistry, index port.VaultRepository) Forget {
-	return Forget{registry: registry, index: index}
+func NewUnregister(registry port.VaultRegistry, index port.VaultRepository) Unregister {
+	return Unregister{registry: registry, index: index}
 }
 
-func (u Forget) Execute(ctx context.Context, v domain.Vault) error {
+func (u Unregister) Execute(ctx context.Context, v domain.Vault) error {
 	if err := keepTheLastVault(u.registry, v); err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (u Forget) Execute(ctx context.Context, v domain.Vault) error {
 	// The index goes first: no entry on the list points at rows that are gone.
 	// Rows a failure here leaves behind belong to a vault the next scan writes
 	// again.
-	if err := u.index.Forget(ctx, v.ID); err != nil {
+	if err := u.index.Unregister(ctx, v.ID); err != nil {
 		return fmt.Errorf("take %s out of the index: %w", v.Name, err)
 	}
 	return u.registry.Remove(v.ID)

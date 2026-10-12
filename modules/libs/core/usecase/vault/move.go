@@ -124,7 +124,7 @@ func (u Move) getBacklinksByPath(
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.links.Backlinks(ctx, v.ID, source.Path)
+		links, err := u.links.GetBacklinks(ctx, v.ID, source.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +147,7 @@ func (u Move) rewriteNoteLinks(
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		settled, err := u.notes.Settle(ctx, v, source.Path, getMovedPath(from, to, source.Path), pointing[source.Path])
+		settled, err := u.notes.RepairLinks(ctx, v, source.Path, getMovedPath(from, to, source.Path), pointing[source.Path])
 		res.Repaired = append(res.Repaired, settled.Repaired...)
 		res.Dangling = append(res.Dangling, settled.Dangling...)
 		if err != nil {

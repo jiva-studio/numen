@@ -16,7 +16,7 @@ import (
 func seatsOf(n domain.Neighbourhood) []string {
 	out := make([]string, 0, len(n.Related))
 	for _, r := range n.Related {
-		out = append(out, string(r.Seat)+" "+r.Path)
+		out = append(out, string(r.Relation)+" "+r.Path)
 	}
 	return out
 }
@@ -62,7 +62,7 @@ func describeEdge(t *testing.T, files map[string]string, from, to string) string
 		if r.Path != to {
 			continue
 		}
-		drawn := []string{string(r.Seat)}
+		drawn := []string{string(r.Relation)}
 		if r.Label != "" {
 			drawn = append(drawn, r.Label)
 		}
@@ -311,7 +311,7 @@ func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
 	})
 
-	opening, found, err := db.Queries().Opening(t.Context(), v.ID)
+	opening, found, err := db.Queries().GetOpeningNote(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -322,7 +322,7 @@ func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 		t.Errorf("opening = %+v", opening)
 	}
 
-	again, _, err := db.Queries().Opening(t.Context(), v.ID)
+	again, _, err := db.Queries().GetOpeningNote(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,7 +335,7 @@ func TestAnEmptyVaultOpensOnNothing(t *testing.T) {
 	t.Parallel()
 	db, v := newIndexedVault(t, map[string]string{})
 
-	_, found, err := db.Queries().Opening(t.Context(), v.ID)
+	_, found, err := db.Queries().GetOpeningNote(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -397,8 +397,8 @@ func TestMutualChildParentLinksCarryBothLabels(t *testing.T) {
 	if !relParent.IsMutual {
 		t.Errorf("expected IsMutual to be true")
 	}
-	if relParent.Seat != domain.SeatChild {
-		t.Errorf("expected Seat to be child, got %v", relParent.Seat)
+	if relParent.Relation != domain.RelationChild {
+		t.Errorf("expected Seat to be child, got %v", relParent.Relation)
 	}
 	if relParent.Label != "child of parent" {
 		t.Errorf("expected Label to be 'child of parent', got %q", relParent.Label)
@@ -415,8 +415,8 @@ func TestMutualChildParentLinksCarryBothLabels(t *testing.T) {
 	if !relChild.IsMutual {
 		t.Errorf("expected IsMutual to be true")
 	}
-	if relChild.Seat != domain.SeatParent {
-		t.Errorf("expected Seat to be parent, got %v", relChild.Seat)
+	if relChild.Relation != domain.RelationParent {
+		t.Errorf("expected Seat to be parent, got %v", relChild.Relation)
 	}
 	if relChild.Label != "parent of child" {
 		t.Errorf("expected Label to be 'parent of child', got %q", relChild.Label)

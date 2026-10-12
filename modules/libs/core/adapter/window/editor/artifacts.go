@@ -143,7 +143,7 @@ func (a *API) getLinkedArtifact(
 	ctx context.Context, v domain.Vault, at domain.URL,
 ) (*v1.Artifact, error) {
 	out := &v1.Artifact{
-		Kind:  textOf(a.getProducer(at)),
+		Kind:  getTextKind(a.getProducer(at)),
 		State: v1.State_STATE_NONE,
 	}
 	_, stores, held := a.getSourceStores()
@@ -161,7 +161,7 @@ func (a *API) getLinkedArtifact(
 			return nil, err
 		}
 		if got.state != runNone {
-			return newArtifact(textOf(a.getProducer(at)), got), nil
+			return newArtifact(getTextKind(a.getProducer(at)), got), nil
 		}
 	}
 	return out, nil
@@ -199,9 +199,9 @@ func (a *API) removeCopy(
 	return connect.NewResponse(&v1.DeleteArtifactResponse{}), nil
 }
 
-// copyOf is whether a copy of the video at an address stands on this disk, and
+// getVideoCopy is whether a copy of the video at an address stands on this disk, and
 // how large it is.
-func (a *API) copyOf(
+func (a *API) getVideoCopy(
 	ctx context.Context, v domain.Vault, path string, at domain.URL,
 ) *v1.Artifact {
 	out := &v1.Artifact{
@@ -236,7 +236,7 @@ func (a *API) fetchCopy(
 	}
 	got, err := asked.Copy(ctx, v, ref.Path)
 	a.finishTask(copying + ref.Path)
-	out := a.copyOf(ctx, v, ref.Path, at)
+	out := a.getVideoCopy(ctx, v, ref.Path, at)
 	if errors.Is(err, source.ErrBeingDownloaded) {
 		out.State = v1.State_STATE_RUNNING
 		return out, nil
@@ -611,7 +611,7 @@ func (a *API) artifact(
 		return a.getLinkedArtifact(ctx, v, at)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
-		return a.copyOf(ctx, v, ref.Path, at), nil
+		return a.getVideoCopy(ctx, v, ref.Path, at), nil
 	}
 	got, err := a.getRunProgress(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
@@ -739,7 +739,7 @@ func (a *API) getCopyLocation(
 		return "", 0, false
 	}
 	if reader, err := a.Readers.Open(v); err == nil {
-		if ref, err := reader.Stat(ctx, source.CopyBeside(path)); err == nil {
+		if ref, err := reader.GetFingerprint(ctx, source.CopyBeside(path)); err == nil {
 			return ref.Path, ref.Size, true
 		}
 	}
@@ -759,9 +759,9 @@ func (a *API) getCopyLocation(
 	return "", size, true
 }
 
-// textOf is what the text at an address is: a video is words with the times
+// getTextKind is what the text at an address is: a video is words with the times
 // they were said at, and every other page is the prose it is written around.
-func textOf(produces string) v1.ArtifactKind {
+func getTextKind(produces string) v1.ArtifactKind {
 	if produces == derived.Captions {
 		return v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT
 	}

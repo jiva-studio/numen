@@ -36,7 +36,7 @@ func newSaying(name string, vector ...float32) *saying {
 	return &saying{model: is(name), vector: vector}
 }
 
-func (s *saying) Model() port.EmbeddingModel { return s.model }
+func (s *saying) GetModel() port.EmbeddingModel { return s.model }
 
 func (s *saying) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
@@ -73,7 +73,7 @@ func TestAnInstallationNamingNoProviderEmbedsWithNothing(t *testing.T) {
 
 	one, letGoOfOne := embedders.OpenOne(t.Context(), embedders.Provider{})
 	if one != nil {
-		t.Errorf("got an embedder: %v", one.Model())
+		t.Errorf("got an embedder: %v", one.GetModel())
 	}
 	if letGoOfOne != nil {
 		t.Error("got something to close")
@@ -87,11 +87,11 @@ func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 	held := newSaying("one-provider", 1, 0, 0)
 
 	filling, asking, letGo := embedders.Open(t.Context(), task.New(),
-		embedders.NewReached(held.Model(), "one-provider", held), embedders.Provider{})
+		embedders.NewReached(held.GetModel(), "one-provider", held), embedders.Provider{})
 	if filling == nil || asking == nil {
 		t.Fatalf("got %v and %v", filling, asking)
 	}
-	if a, b := filling.Model().Recipe(), asking.Model().Recipe(); a != b {
+	if a, b := filling.GetModel().Recipe(), asking.GetModel().Recipe(); a != b {
 		t.Errorf("%s and %s", a, b)
 	}
 	if err := letGo(); err != nil {
@@ -110,8 +110,8 @@ func TestTwoProvidersAnsweringAlikeAreOneModel(t *testing.T) {
 
 	tasks := task.New()
 	filling, asking, letGo := embedders.Open(t.Context(), tasks,
-		embedders.NewReached(first.Model(), "indexed-here", first),
-		embedders.NewReached(second.Model(), "asked-elsewhere", second))
+		embedders.NewReached(first.GetModel(), "indexed-here", first),
+		embedders.NewReached(second.GetModel(), "asked-elsewhere", second))
 	defer func() { _ = letGo() }()
 
 	waitForComparison(t, first, second)
@@ -138,8 +138,8 @@ func TestTwoProvidersThatDisagreeAreNotOneModel(t *testing.T) {
 
 	tasks := task.New()
 	_, asking, letGo := embedders.Open(t.Context(), tasks,
-		embedders.NewReached(first.Model(), "indexed-here", first),
-		embedders.NewReached(second.Model(), "somewhere-else", second))
+		embedders.NewReached(first.GetModel(), "indexed-here", first),
+		embedders.NewReached(second.GetModel(), "somewhere-else", second))
 	defer func() { _ = letGo() }()
 
 	held := waitForFailures(t, tasks, 1)
@@ -165,7 +165,7 @@ func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 	tasks := task.New()
 	_, _, letGo := embedders.Open(t.Context(), tasks,
 		embedders.NewFetched(is("never-arrives"), "never-arrives", refuseFetch),
-		embedders.NewReached(second.Model(), "asked-elsewhere", second))
+		embedders.NewReached(second.GetModel(), "asked-elsewhere", second))
 	defer func() { _ = letGo() }()
 
 	if held := waitForFailures(t, tasks, 2); len(held) != 2 {
@@ -199,7 +199,7 @@ func TestAProviderReachedAtOnceStandsInNoList(t *testing.T) {
 
 	tasks := task.New()
 	_, _, letGo := embedders.Open(t.Context(), tasks,
-		embedders.NewReached(held.Model(), "reached-at-once", held), embedders.Provider{})
+		embedders.NewReached(held.GetModel(), "reached-at-once", held), embedders.Provider{})
 	defer func() { _ = letGo() }()
 
 	if listed := tasks.List(); len(listed) != 0 {
@@ -268,7 +268,7 @@ func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 
 	tasks := task.New()
 	filling, _, letGo := embedders.Open(t.Context(), tasks,
-		embedders.NewFetched(held.Model(), "a/model", opening), embedders.Provider{})
+		embedders.NewFetched(held.GetModel(), "a/model", opening), embedders.Provider{})
 	defer func() { _ = letGo() }()
 
 	if _, err := filling.Embed(t.Context(), []string{"anything"}); err != nil {

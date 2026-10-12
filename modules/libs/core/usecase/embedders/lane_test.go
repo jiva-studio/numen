@@ -32,9 +32,9 @@ func newGated(passes int) *gated {
 	}
 }
 
-func (g *gated) Model() port.EmbeddingModel { return g.model }
-func (g *gated) Concurrency() int           { return g.passes }
-func (g *gated) Close() error               { return nil }
+func (g *gated) GetModel() port.EmbeddingModel { return g.model }
+func (g *gated) Concurrency() int              { return g.passes }
+func (g *gated) Close() error                  { return nil }
 
 func (g *gated) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	now := g.running.Add(1)

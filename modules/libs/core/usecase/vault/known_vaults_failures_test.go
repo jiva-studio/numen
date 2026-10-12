@@ -31,7 +31,7 @@ type forgetful struct {
 	err error
 }
 
-func (f forgetful) Last() (domain.Vault, bool, error) { return domain.Vault{}, false, f.err }
+func (f forgetful) GetLastVault() (domain.Vault, bool, error) { return domain.Vault{}, false, f.err }
 
 // Which vault was opened last that cannot be read is an error, and no vault is
 // answered with.

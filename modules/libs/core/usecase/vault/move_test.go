@@ -79,7 +79,7 @@ func (f filing) newMove(kept note.SyncTitleAndFilename) vaults.Move {
 // resolves is where the one link written in a note reaches.
 func (f filing) resolves(t *testing.T, in string) string {
 	t.Helper()
-	found, err := f.db.Links().Links(t.Context(), f.vault.ID, in)
+	found, err := f.db.Links().GetLinks(t.Context(), f.vault.ID, in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func walkSources(t *testing.T, f filing, path string) []string {
 		t.Fatal(err)
 	}
 	var out []string
-	if err := reader.Walk(t.Context(), func(ref domain.Fingerprint) error {
+	if err := reader.WalkFiles(t.Context(), func(ref domain.Fingerprint) error {
 		if ref.Path == path || strings.HasPrefix(ref.Path, path+"/") {
 			out = append(out, ref.Path)
 		}

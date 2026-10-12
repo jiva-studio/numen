@@ -59,9 +59,9 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		case time.Time:
 			p.By = value
 		case string:
-			day, err := time.Parse(Named, strings.TrimSpace(value))
+			day, err := time.Parse(DayLayout, strings.TrimSpace(value))
 			if err != nil {
-				problems = append(problems, "by_date "+value+" is not a day, written as "+Named)
+				problems = append(problems, "by_date "+value+" is not a day, written as "+DayLayout)
 				break
 			}
 			p.By = day

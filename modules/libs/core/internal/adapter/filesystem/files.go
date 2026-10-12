@@ -16,7 +16,7 @@ type ImportedFiles struct{}
 
 func (ImportedFiles) GetName(handle string) string { return filepath.Base(handle) }
 
-func (ImportedFiles) Stat(_ context.Context, handle string) (port.ImportedFile, error) {
+func (ImportedFiles) GetImportedFile(_ context.Context, handle string) (port.ImportedFile, error) {
 	// A link is not followed: what it points at is not what was handed over.
 	info, err := os.Lstat(handle)
 	if err != nil {
@@ -49,7 +49,7 @@ func (ImportedFiles) Open(_ context.Context, handle string) (io.ReadCloser, erro
 	return os.Open(handle)
 }
 
-func (ImportedFiles) Contains(handle, vault string) bool {
+func (ImportedFiles) HasHandle(handle, vault string) bool {
 	from, err := filepath.Abs(handle)
 	if err != nil {
 		return false

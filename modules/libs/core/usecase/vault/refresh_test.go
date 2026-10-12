@@ -41,7 +41,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 // file a passage names.
 func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
-	found, err := db.Passages().Lexical(
+	found, err := db.Passages().FindLexical(
 		t.Context(), v.ID, query, []domain.SourceKind{domain.KindBook}, 10, false,
 	)
 	if err != nil {
@@ -53,7 +53,7 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
 	paths := searchNotes(t, db, v, query)
-	named, err := db.Queries().Notes(t.Context(), v.ID, paths)
+	named, err := db.Queries().GetNotes(t.Context(), v.ID, paths)
 	if err != nil {
 		t.Fatal(err)
 	}

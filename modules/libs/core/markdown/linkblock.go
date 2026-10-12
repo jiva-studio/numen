@@ -296,11 +296,11 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 	return len(edits), nil
 }
 
-// PointLinksAt sends every entry that goes to one address to another, changing
+// RedirectLinks sends every entry that goes to one address to another, changing
 // the address and not one byte else. An entry the application could not read,
 // or one carrying a key it does not own, is left alone: its link stays as it
 // was written and is visible as a problem.
-func (d *Document) PointLinksAt(from domain.Address, to string) (int, error) {
+func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 	if !domain.IsNameable(to) {
 		// Nothing a link could say reaches it. The link stays as it was
 		// written, and shows as a problem.

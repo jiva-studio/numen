@@ -236,9 +236,9 @@ func indexSpace(b []byte) int {
 	return -1
 }
 
-// Stamp is a millisecond as the format writes it: hours, minutes, seconds and
+// FormatTimestamp is a millisecond as the format writes it: hours, minutes, seconds and
 // thousandths.
-func Stamp(ms int) string {
+func FormatTimestamp(ms int) string {
 	var buf [16]byte
 	b := appendStamp(buf[:0], ms)
 	return string(b)
@@ -398,9 +398,9 @@ func GetReachMarker(ms int) []byte {
 // HandWrittenNote is the note a transcript a person wrote carries.
 const HandWrittenNote = "NOTE by hand"
 
-// Hand marks a transcript as the words a person put there. A transcript
+// GetHandWrittenMark marks a transcript as the words a person put there. A transcript
 // carrying it is left as they left it.
-func Hand() []byte {
+func GetHandWrittenMark() []byte {
 	return []byte("\n" + HandWrittenNote + "\n")
 }
 

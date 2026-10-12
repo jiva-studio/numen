@@ -111,7 +111,7 @@ func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
 	})
 	store := shelf{
 		text.Artifact(text.ASR, "abc123"):    writeTranscript(),
-		text.Corrections(text.ASR, "abc123"): append(put, transcript.Hand()...),
+		text.Corrections(text.ASR, "abc123"): append(put, transcript.GetHandWrittenMark()...),
 	}
 
 	doc, err := text.ReadComposed(t.Context(), store, text.ASR, "abc123", writeTranscript())

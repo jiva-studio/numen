@@ -47,7 +47,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	if err != nil {
 		return res, err
 	}
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return res, fmt.Errorf("stat %s: %w", path, err)
 	}
@@ -64,7 +64,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	// A run holds the recording it is listening to for as long as it takes, by
 	// the name it appends to. Nothing is taken away underneath it.
 	partial := text.Partial(from, hash)
-	release, err := store.Claim(ctx, partial)
+	release, err := store.ClaimName(ctx, partial)
 	if errors.Is(err, port.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil

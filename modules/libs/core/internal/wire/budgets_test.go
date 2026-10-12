@@ -31,14 +31,14 @@ func TestEveryBudgetTheSchemaNamesIsOneTheCoreHolds(t *testing.T) {
 			t.Errorf("the schema names %s and nothing in the core answers to it", named)
 			continue
 		}
-		if got := BudgetOf(one); got != named {
+		if got := ConvertBudgetToWire(one); got != named {
 			t.Errorf("%q is sent as %s, want %s", one, got, named)
 		}
 	}
 }
 
 func TestTheBudgetsThatClosedADayTravelInTheOrderTheyWereNamed(t *testing.T) {
-	got := BudgetsOf(review.BudgetNames{review.ClosedNew, review.ClosedReviews})
+	got := ConvertBudgetsToWire(review.BudgetNames{review.ClosedNew, review.ClosedReviews})
 	want := []v1.BudgetName{
 		v1.BudgetName_BUDGET_NAME_NEW_A_DAY,
 		v1.BudgetName_BUDGET_NAME_REVIEWS_A_DAY,

@@ -63,15 +63,15 @@ type Downloader interface {
 	// brought it.
 	GetDownloadModel(at domain.URL) DownloadModel
 
-	// Metadata is what the site says about the address, taking none of it.
-	Metadata(ctx context.Context, at domain.URL) (Metadata, error)
+	// GetMetadata is what the site says about the address, taking none of it.
+	GetMetadata(ctx context.Context, at domain.URL) (Metadata, error)
 
-	// Text is what the address publishes as words. Which words those are is the
+	// GetText is what the address publishes as words. Which words those are is the
 	// provider's to say and the caller's to keep: a site that publishes them
 	// against a clock answers with cues, one that publishes prose answers with
 	// prose, and the provider names what made them. An address publishing none
 	// of what was asked for is ErrNothingDownloaded.
-	Text(ctx context.Context, at domain.URL, want PreferredCaptions) (Text, error)
+	GetText(ctx context.Context, at domain.URL, want PreferredCaptions) (Text, error)
 
 	// Download is what is at the address as a person plays it, written as it was
 	// published. How large it may be is the caller's to hold to.

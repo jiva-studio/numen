@@ -416,7 +416,7 @@ func newProofreadQueue(says map[int]string) *proofreadQueue {
 	}
 }
 
-func (q *proofreadQueue) Leave(_ context.Context, pages []proofread.Batch) (string, error) {
+func (q *proofreadQueue) Submit(_ context.Context, pages []proofread.Batch) (string, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.Number)
@@ -426,7 +426,7 @@ func (q *proofreadQueue) Leave(_ context.Context, pages []proofread.Batch) (stri
 	return name, nil
 }
 
-func (q *proofreadQueue) Collect(_ context.Context, name string) (map[int]string, bool, error) {
+func (q *proofreadQueue) GetReplies(_ context.Context, name string) (map[int]string, bool, error) {
 	if q.isGone {
 		return nil, false, errors.New("the proofreader has forgotten this batch")
 	}

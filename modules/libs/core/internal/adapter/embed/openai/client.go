@@ -93,7 +93,7 @@ func New(is port.EmbeddingModel, model embed.ServiceModel) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Model() port.EmbeddingModel { return c.identity }
+func (c *Client) GetModel() port.EmbeddingModel { return c.identity }
 
 // Close releases what the model holds on this machine, which is nothing: the
 // weights are the service's.

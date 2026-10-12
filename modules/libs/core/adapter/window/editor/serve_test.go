@@ -37,7 +37,7 @@ func byHand() *hand {
 	return &hand{changes: make(chan []string), lost: make(chan struct{}, 1)}
 }
 
-func (h *hand) Watch(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+func (h *hand) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return h.changes, h.lost, nil
 }
 
@@ -45,7 +45,7 @@ func (h *hand) Watch(context.Context, domain.Vault) (<-chan []string, <-chan str
 // out of watches looks like from here.
 type unwatchable struct{}
 
-func (unwatchable) Watch(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+func (unwatchable) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return nil, nil, errors.New("no watches left")
 }
 
@@ -115,7 +115,7 @@ func (u unwalkable) Open(v domain.Vault) (port.VaultReader, error) {
 
 type unlisted struct{ port.VaultReader }
 
-func (unlisted) Walk(context.Context, func(domain.Fingerprint) error) error {
+func (unlisted) WalkFiles(context.Context, func(domain.Fingerprint) error) error {
 	return errors.New("the vault cannot be listed")
 }
 
@@ -134,7 +134,7 @@ func (u unreadable) Open(v domain.Vault) (port.VaultReader, error) {
 
 type refuses struct{ port.VaultReader }
 
-func (refuses) Walk(context.Context, func(domain.Fingerprint) error) error {
+func (refuses) WalkFiles(context.Context, func(domain.Fingerprint) error) error {
 	return errors.New("the vault cannot be read")
 }
 
@@ -190,10 +190,10 @@ func openingWith(
 	}
 	api.setVault(v)
 	if embedder != nil {
-		if err := db.FitVectors(t.Context(), embedder.Model().Dimensions, embedder.Model().Recipe()); err != nil {
+		if err := db.FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
 			t.Fatal(err)
 		}
-		api.Indexing.Model.Store(embedder.Model().String())
+		api.Indexing.Model.Store(embedder.GetModel().String())
 		api.Indexing.Progress = db.Progress()
 	}
 	line, done := api.ChangeEvents.subscribe()
@@ -271,7 +271,7 @@ func waitFor(t *testing.T, what string, is func() bool) {
 
 func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
 	t.Helper()
-	found, err := db.Queries().Notes(t.Context(), v.ID, []string{path})
+	found, err := db.Queries().GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -50,14 +50,14 @@ type ReviewLog struct {
 // order. It is worked out once for the log and handed to all of them.
 func (h ReviewLog) History() review.History {
 	if h.order == nil {
-		return review.Give(h.Answers)
+		return review.OrderAnswers(h.Answers)
 	}
 	return h.order()
 }
 
 // newHistory is a function that works its order out at the first asking.
 func newHistory(answers []review.Answer) func() review.History {
-	return sync.OnceValue(func() review.History { return review.Give(answers) })
+	return sync.OnceValue(func() review.History { return review.OrderAnswers(answers) })
 }
 
 // Files is what the vault's log is made of, without reading any of it. It is

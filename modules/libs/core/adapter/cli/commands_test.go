@@ -42,15 +42,15 @@ func createVaultList(held domain.Vault) func() (cli.Vaults, error) {
 // failingLinkQueries answers every question about links with an error.
 type failingLinkQueries struct{}
 
-func (failingLinkQueries) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (failingLinkQueries) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
-func (failingLinkQueries) Backlinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (failingLinkQueries) GetBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
-func (failingLinkQueries) Resolve(context.Context, domain.VaultID, string, []string) (map[string]domain.ResolvedLink, error) {
+func (failingLinkQueries) ResolveLinks(context.Context, domain.VaultID, string, []string) (map[string]domain.ResolvedLink, error) {
 	return nil, errRefused
 }
 
@@ -198,7 +198,7 @@ func (p fixedProblemQueries) GetUnreadable(context.Context, domain.VaultID) ([]d
 	return p.unreadable, nil
 }
 
-func (fixedProblemQueries) Ambiguous(context.Context, domain.VaultID) ([]domain.AmbiguousLink, error) {
+func (fixedProblemQueries) GetAmbiguousLinks(context.Context, domain.VaultID) ([]domain.AmbiguousLink, error) {
 	return nil, nil
 }
 
@@ -340,7 +340,7 @@ func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 
 type brokenVaultList struct{ singleVaultList }
 
-func (brokenVaultList) Find(string) (domain.Vault, bool, error) {
+func (brokenVaultList) FindVault(string) (domain.Vault, bool, error) {
 	return domain.Vault{}, false, errRefused
 }
 
@@ -425,7 +425,7 @@ type constantEmbedder struct{}
 
 const width = 1024
 
-func (constantEmbedder) Model() port.EmbeddingModel {
+func (constantEmbedder) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
@@ -474,7 +474,7 @@ func (s *scanFixture) deps(t *testing.T, held domain.Vault) cli.Deps {
 			books.Derived, books.Documents = store, pdf.Documents{}
 			vectors := source.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
-				if err := db.FitVectors(ctx, width, s.embedder.Model().Recipe()); err != nil {
+				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {
 					_ = db.Close()
 					return cli.Scan{}, err
 				}
@@ -486,7 +486,7 @@ func (s *scanFixture) deps(t *testing.T, held domain.Vault) cli.Deps {
 					if s.summary != nil {
 						return domain.VaultSummary{}, s.summary
 					}
-					return db.NoteQueries().Summary(ctx, v.ID)
+					return db.NoteQueries().GetSummary(ctx, v.ID)
 				},
 				Unembedded: s.unembedded,
 				Close:      db.Close,

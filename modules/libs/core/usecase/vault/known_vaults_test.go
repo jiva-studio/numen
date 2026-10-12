@@ -22,15 +22,15 @@ type theList struct {
 
 func (l *theList) List() ([]domain.Vault, error) { return l.rows, l.fails }
 
-func (l *theList) Last() (domain.Vault, bool, error) {
+func (l *theList) GetLastVault() (domain.Vault, bool, error) {
 	l.asked++
 	return l.last, l.isKept, l.fails
 }
 
-func (l *theList) Save(domain.Vault) error                 { return nil }
-func (l *theList) Remove(domain.VaultID) error             { return nil }
-func (l *theList) RecordOpened(domain.VaultID) error       { return nil }
-func (l *theList) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
+func (l *theList) Save(domain.Vault) error                      { return nil }
+func (l *theList) Remove(domain.VaultID) error                  { return nil }
+func (l *theList) RecordOpened(domain.VaultID) error            { return nil }
+func (l *theList) FindVault(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
 
 // folders are the vaults whose folder can be opened. Every other path answers
 // the way a folder that has gone does.

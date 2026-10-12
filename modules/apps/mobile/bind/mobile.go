@@ -199,7 +199,7 @@ func registerVault(cfg container.Config, root string) (string, error) {
 	if resolved, err := filepath.EvalSymlinks(root); err == nil {
 		root = resolved
 	}
-	if held, found, err := registry.Find(root); err != nil {
+	if held, found, err := registry.FindVault(root); err != nil {
 		return "", err
 	} else if found {
 		return held.Path, nil

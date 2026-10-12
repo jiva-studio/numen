@@ -22,7 +22,7 @@ type statedReader struct {
 	readErr error
 }
 
-func (r statedReader) Stat(context.Context, string) (domain.Fingerprint, error) {
+func (r statedReader) GetFingerprint(context.Context, string) (domain.Fingerprint, error) {
 	return r.ref, r.statErr
 }
 

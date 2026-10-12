@@ -18,7 +18,7 @@ type holding struct {
 	let   chan struct{}
 }
 
-func (h *holding) Fingerprints(
+func (h *holding) GetFingerprints(
 	ctx context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	select {

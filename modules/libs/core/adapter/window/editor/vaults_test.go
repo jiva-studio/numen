@@ -38,7 +38,7 @@ func (r *vaultRows) Save(_ context.Context, v domain.Vault) error {
 
 func (r *vaultRows) Register(context.Context, domain.VaultID) error { return nil }
 
-func (r *vaultRows) Forget(_ context.Context, vaultID domain.VaultID) error {
+func (r *vaultRows) Unregister(_ context.Context, vaultID domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.forgot = append(r.forgot, vaultID)
@@ -92,7 +92,7 @@ type folders struct {
 	from     string
 }
 
-func (f *folders) Choose(_ context.Context, title, startingAt string) (string, bool, error) {
+func (f *folders) ChooseFolder(_ context.Context, title, startingAt string) (string, bool, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.title, f.from = title, startingAt
@@ -133,7 +133,7 @@ func onAList(t *testing.T) *onTheList {
 	adding := vaults.NewAdd(identity, registry, time.Now)
 
 	rows := &vaultRows{}
-	forget := vaults.NewForget(registry, rows)
+	forget := vaults.NewUnregister(registry, rows)
 	f := &onTheList{
 		registry: registry,
 		rows:     rows,
@@ -151,7 +151,7 @@ func onAList(t *testing.T) *onTheList {
 			FolderDialog: f.dialog,
 			Add:          &adding,
 			Rename:       &rename,
-			Forget:       &forget,
+			Unregister:   &forget,
 			Erase:        &erase,
 		},
 	}
@@ -485,7 +485,7 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	if got := f.rows.getForgotten(); len(got) != 1 || got[0] != f.second.ID {
 		t.Errorf("the index was told to forget %v, want %s", got, f.second.ID)
 	}
-	if _, found, err := f.registry.Find(string(f.second.ID)); err != nil || found {
+	if _, found, err := f.registry.FindVault(string(f.second.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
 	}
 }

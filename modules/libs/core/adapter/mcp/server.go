@@ -84,10 +84,10 @@ type Vaults struct {
 	// is added.
 	FolderDialog port.FolderDialog
 	// Add turns a folder into a vault, Rename is what a person calls one, and
-	// Forget takes one off the list.
-	Add    *vaults.Add
-	Rename *vaults.Rename
-	Forget *vaults.Forget
+	// Unregister takes one off the list.
+	Add        *vaults.Add
+	Rename     *vaults.Rename
+	Unregister *vaults.Unregister
 	// Opens puts another vault in the window. The tools are served for the vault
 	// that is going, so the session asking for the swap ends with it.
 	Opens func(context.Context, domain.Vault) error

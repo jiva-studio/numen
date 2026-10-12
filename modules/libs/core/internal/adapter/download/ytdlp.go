@@ -129,8 +129,8 @@ func getTarget(ctx context.Context, at domain.URL) []string {
 	return []string{string(at)}
 }
 
-// Metadata is what the site says about the video, taking none of it.
-func (v *ytDLP) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+// GetMetadata is what the site says about the video, taking none of it.
+func (v *ytDLP) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
 	output, err := v.readInfo(ctx, at)
 	if err != nil {
 		return port.Metadata{}, err
@@ -168,18 +168,18 @@ func getLanguages(tracks map[string][]struct{}) []string {
 	return out
 }
 
-// Text is the words published with a video, against the times they were said
+// GetText is the words published with a video, against the times they were said
 // at, beside what it calls itself and how long it runs.
 //
 // They are asked for as the format that carries one stretch of speech to a cue.
 // What a site draws as two lines scrolling is one stretch said once, and asking
 // for the format a player is fed would put every line into the index twice.
-func (v *ytDLP) Text(
+func (v *ytDLP) GetText(
 	ctx context.Context, at domain.URL, want port.PreferredCaptions,
 ) (port.Text, error) {
 	ctx, end := operation.Begin(ctx)
 	defer end()
-	meta, err := v.Metadata(ctx, at)
+	meta, err := v.GetMetadata(ctx, at)
 	if err != nil {
 		return port.Text{}, err
 	}

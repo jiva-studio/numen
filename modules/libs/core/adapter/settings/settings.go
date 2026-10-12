@@ -40,8 +40,8 @@ type Document interface {
 	GetAppearance() *Appearance
 	GetReview() *Review
 
-	// Say leaves a person one line about what the file holds.
-	Say(said string)
+	// AddNotice leaves a person one line about what the file holds.
+	AddNotice(said string)
 }
 
 // Titles is how a note's title and the name of its file are held together.
@@ -190,7 +190,7 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 }
 
 func warn(into Document, said string, about ...any) {
-	into.Say(fmt.Sprintf(said, about...))
+	into.AddNotice(fmt.Sprintf(said, about...))
 }
 
 // write puts the settings where they are read from, beside the file and

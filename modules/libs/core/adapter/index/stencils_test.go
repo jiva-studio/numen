@@ -25,7 +25,7 @@ func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 func stencils(t *testing.T, db *DB, vault domain.Vault) []domain.Stencil {
 	t.Helper()
 
-	found, err := db.NoteQueries().Stencils(t.Context(), vault.ID)
+	found, err := db.NoteQueries().GetStencils(t.Context(), vault.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func TestANoteWhoseFileSaysNothingIsANote(t *testing.T) {
 	if found := stencils(t, db, first); len(found) != 0 {
 		t.Errorf("a note that says nothing about itself answered as %+v", found)
 	}
-	held, err := db.NoteQueries().Types(t.Context(), first.ID, []string{"notes/entropy.md"})
+	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"notes/entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 	saveTypedNote(t, db, first, "cards/reading.md", "Reading", domain.TypeNote)
 	saveTypedNote(t, db, second, "cards/quasars.md", "Quasars", domain.TypeDeck)
 
-	held, err := db.NoteQueries().Types(t.Context(), first.ID, []string{
+	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{
 		"cards/mammals.md", "cards/animal.md", "cards/reading.md",
 		"cards/quasars.md", "cards/llama.jpg",
 	})
@@ -143,7 +143,7 @@ func TestSavingANoteAgainWritesTheTypeItNowCarries(t *testing.T) {
 	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeNote)
 	saveTypedNote(t, db, first, "cards/mammals.md", "Mammals", domain.TypeDeck)
 
-	held, err := db.NoteQueries().Types(t.Context(), first.ID, []string{"cards/mammals.md"})
+	held, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"cards/mammals.md"})
 	if err != nil {
 		t.Fatal(err)
 	}

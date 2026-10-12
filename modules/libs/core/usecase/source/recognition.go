@@ -428,12 +428,12 @@ func (r *RecognitionWorker) CollectBatches(
 	r.going.Add(1)
 	go func() {
 		defer r.going.Done()
-		r.runRounds(ctx, known, queue, every, vaults)
+		r.repeatRounds(ctx, known, queue, every, vaults)
 	}()
 }
 
-// runRounds is the round over every vault, and the wait between rounds.
-func (r *RecognitionWorker) runRounds(
+// repeatRounds is the round over every vault, and the wait between rounds.
+func (r *RecognitionWorker) repeatRounds(
 	ctx context.Context,
 	known port.SourceQueries,
 	queue port.ProofreadQueue,

@@ -168,7 +168,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	held, ok := a.vaultOf(id)
+	held, ok := a.findVault(id)
 	if !ok {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)
 		return
@@ -189,7 +189,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		refuse(w, err)
 		return
 	}
-	ref, err := reader.Stat(r.Context(), at)
+	ref, err := reader.GetFingerprint(r.Context(), at)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -249,9 +249,9 @@ func (a *API) serveCopy(
 	return true
 }
 
-// vaultOf is the vault an address names. The one the window shows is answered
+// findVault is the vault an address names. The one the window shows is answered
 // without asking the list, which is every question but the first.
-func (a *API) vaultOf(id string) (domain.Vault, bool) {
+func (a *API) findVault(id string) (domain.Vault, bool) {
 	if showing := a.GetCurrentVault(); string(showing.ID) == id {
 		return showing, true
 	}

@@ -18,7 +18,7 @@ func TestAContainerNobodyGaveSettingsEmbedsWithNothing(t *testing.T) {
 		t.Fatalf("want no reason, got %v", why)
 	}
 	if embedder != nil {
-		t.Errorf("got an embedder: %v", embedder.Model())
+		t.Errorf("got an embedder: %v", embedder.GetModel())
 	}
 	if closer != nil {
 		t.Error("got something to close")
@@ -62,7 +62,7 @@ func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 	if embedder == nil {
 		t.Fatal("no embedder")
 	}
-	if got := embedder.Model().Name; got != "bge-m3" {
+	if got := embedder.GetModel().Name; got != "bge-m3" {
 		t.Errorf("got %q", got)
 	}
 }
@@ -81,7 +81,7 @@ func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 	if indexing == nil || asking == nil {
 		t.Fatalf("got %v and %v", indexing, asking)
 	}
-	if a, b := indexing.Model().Recipe(), asking.Model().Recipe(); a != b {
+	if a, b := indexing.GetModel().Recipe(), asking.GetModel().Recipe(); a != b {
 		t.Errorf("%s and %s", a, b)
 	}
 }
@@ -102,7 +102,7 @@ func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 		t.Fatal("one embedder for two providers")
 	}
 	// Two providers of one model keep their vectors under one recipe.
-	if a, b := indexing.Model().Recipe(), asking.Model().Recipe(); a != b {
+	if a, b := indexing.GetModel().Recipe(), asking.GetModel().Recipe(); a != b {
 		t.Errorf("%s and %s", a, b)
 	}
 }
@@ -120,7 +120,7 @@ func recipe(t *testing.T, cfg embed.Config) string {
 	if embedder == nil {
 		t.Fatal("no embedder")
 	}
-	return embedder.Model().Recipe()
+	return embedder.GetModel().Recipe()
 }
 
 // Two services answering to one model name are two sets of vectors.
@@ -180,7 +180,7 @@ func TestARunThatOnlyAsksClaimsWhatTheIndexWasFilledWith(t *testing.T) {
 	if asking == nil {
 		t.Fatal("no embedder")
 	}
-	if a, b := recipe(t, cfg), asking.Model().Recipe(); a != b {
+	if a, b := recipe(t, cfg), asking.GetModel().Recipe(); a != b {
 		t.Errorf("the index was filled under %s and is asked under %s", a, b)
 	}
 }
@@ -359,10 +359,10 @@ func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
 	}
 	// Both halves are the provider the settings named, and neither is this
 	// machine's own model.
-	if from := indexing.Model().From; from != cfg.Indexing.GetAddress() {
+	if from := indexing.GetModel().From; from != cfg.Indexing.GetAddress() {
 		t.Errorf("the index is filled from %q", from)
 	}
-	if from := asking.Model().From; from != cfg.Indexing.GetAddress() {
+	if from := asking.GetModel().From; from != cfg.Indexing.GetAddress() {
 		t.Errorf("a question is embedded from %q", from)
 	}
 	if held := tasks.List(); len(held) != 0 {

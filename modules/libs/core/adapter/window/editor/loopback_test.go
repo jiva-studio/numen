@@ -21,7 +21,7 @@ type heldVaults []domain.Vault
 
 func (l heldVaults) List() ([]domain.Vault, error) { return l, nil }
 
-func (l heldVaults) Find(id string) (domain.Vault, bool, error) {
+func (l heldVaults) FindVault(id string) (domain.Vault, bool, error) {
 	for _, v := range l {
 		if string(v.ID) == id {
 			return v, true, nil
@@ -30,7 +30,7 @@ func (l heldVaults) Find(id string) (domain.Vault, bool, error) {
 	return domain.Vault{}, false, nil
 }
 
-func (l heldVaults) Last() (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
+func (l heldVaults) GetLastVault() (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
 
 func (heldVaults) Save(domain.Vault) error { return nil }
 
@@ -58,7 +58,7 @@ func statOf(t *testing.T, api *API, v domain.Vault, path string) domain.Fingerpr
 	if err != nil {
 		return domain.Fingerprint{Path: path}
 	}
-	ref, err := reader.Stat(t.Context(), path)
+	ref, err := reader.GetFingerprint(t.Context(), path)
 	if err != nil {
 		return domain.Fingerprint{Path: path}
 	}

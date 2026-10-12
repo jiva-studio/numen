@@ -488,7 +488,7 @@ func (b *budgets) deal(share *allowance, q *deckShare, owed, fresh []CardFace, o
 		}
 		// The next card comes from the side the share leaves short, and from
 		// whichever side is left when the other is done.
-		if share.admits.IsPayingDebt(q.debt, q.begun, debt, begun) {
+		if share.admits.IsNextCardDebt(q.debt, q.begun, debt, begun) {
 			if card := owed[q.owed[q.owedIndex]]; b.charge(share, card.ID, false) {
 				out.owed[q.owed[q.owedIndex]] = true
 				q.debt++

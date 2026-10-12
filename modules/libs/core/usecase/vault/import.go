@@ -91,7 +91,7 @@ func (u Import) bring(
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	info, err := u.files.Stat(ctx, from)
+	info, err := u.files.GetImportedFile(ctx, from)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (u Import) importFolder(
 ) error {
 	// A folder the vault sits inside does not come in: the vault is where it
 	// would be copied to.
-	if u.files.Contains(from, v.Path) {
+	if u.files.HasHandle(from, v.Path) {
 		return errHoldsTheVault
 	}
 	if err := writer.MakeFolder(ctx, to); err != nil {
@@ -146,7 +146,7 @@ func (u Import) importFile(
 		return err
 	}
 	defer file.Close()
-	if err := writer.Bring(ctx, to, file); err != nil {
+	if err := writer.Import(ctx, to, file); err != nil {
 		return err
 	}
 	result.Landed = append(result.Landed, to)

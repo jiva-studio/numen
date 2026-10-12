@@ -286,10 +286,10 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 	}
 	defer held.Close()
 
-	if _, err := held.Image(0, 300); err == nil {
+	if _, err := held.RenderPage(0, 300); err == nil {
 		t.Error("a page of 3.6 billion pixels was drawn")
 	}
-	drawn, err := held.Image(0, 4)
+	drawn, err := held.RenderPage(0, 4)
 	if err != nil {
 		t.Fatalf("the page was not drawn at 4 DPI: %v", err)
 	}
@@ -310,12 +310,12 @@ func TestAPageSaysHowBigItIs(t *testing.T) {
 			}
 			defer held.Close()
 
-			for page := range held.Pages() {
-				wide, high, err := held.Size(page)
+			for page := range held.GetPageCount() {
+				wide, high, err := held.GetPageSize(page)
 				if err != nil {
 					t.Fatalf("page %d: %v", page, err)
 				}
-				drawn, err := held.Image(page, 72)
+				drawn, err := held.RenderPage(page, 72)
 				if err != nil {
 					t.Fatalf("page %d: %v", page, err)
 				}
@@ -326,7 +326,7 @@ func TestAPageSaysHowBigItIs(t *testing.T) {
 					t.Errorf("page %d says it is %g high and is drawn %g", page, high, got)
 				}
 			}
-			if _, _, err := held.Size(held.Pages()); err == nil {
+			if _, _, err := held.GetPageSize(held.GetPageCount()); err == nil {
 				t.Error("a page the document does not have was measured")
 			}
 		})

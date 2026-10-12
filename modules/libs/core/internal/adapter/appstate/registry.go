@@ -183,9 +183,9 @@ func (r *VaultRegistry) RecordOpened(id domain.VaultID) error {
 	return r.save(f)
 }
 
-// Last is the vault opened most recently. Nothing has been opened until a vault
+// GetLastVault is the vault opened most recently. Nothing has been opened until a vault
 // is recorded, and an identity that names nothing on the list answers the same.
-func (r *VaultRegistry) Last() (domain.Vault, bool, error) {
+func (r *VaultRegistry) GetLastVault() (domain.Vault, bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()
@@ -200,10 +200,10 @@ func (r *VaultRegistry) Last() (domain.Vault, bool, error) {
 	return domain.Vault{}, false, nil
 }
 
-// Find resolves what the user typed: an identity, a name, or a path. Nothing
+// FindVault resolves what the user typed: an identity, a name, or a path. Nothing
 // typed names no vault: an empty path is the folder this process was started
 // in.
-func (r *VaultRegistry) Find(nameOrPath string) (domain.Vault, bool, error) {
+func (r *VaultRegistry) FindVault(nameOrPath string) (domain.Vault, bool, error) {
 	if nameOrPath == "" {
 		return domain.Vault{}, false, nil
 	}

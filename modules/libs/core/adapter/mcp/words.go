@@ -17,7 +17,7 @@ import (
 
 // why is a read's outcome in words an agent can act on.
 func why(c note.Contents) string {
-	reason, refused := wire.ErrorCodeOf(c.Outcome)
+	reason, refused := wire.ConvertOutcomeToErrorCode(c.Outcome)
 	if !refused {
 		return string(c.Outcome)
 	}
@@ -57,7 +57,7 @@ func whyNotADeck(read cards.DeckContents) string {
 // sayError is a write's error in words an agent can act on. An error the schema
 // carries no code for is handed over as it stands.
 func sayError(err error) string {
-	if reason, refused := wire.ErrorCodeBy(err); refused {
+	if reason, refused := wire.GetErrorCode(err); refused {
 		return describeCode(reason)
 	}
 	return err.Error()

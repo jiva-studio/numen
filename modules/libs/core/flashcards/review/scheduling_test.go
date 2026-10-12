@@ -27,7 +27,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
 	if at.Weekday() != time.Sunday {
-		t.Fatalf("%s is a %s", at.Format(review.Named), at.Weekday())
+		t.Fatalf("%s is a %s", at.Format(review.DayLayout), at.Weekday())
 	}
 	// Seven days away, so the window runs from five days off to nine: the
 	// Friday, the Saturday, the Sunday it was sent to, the Monday and the
@@ -130,7 +130,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	p := review.Defaults()
 
 	face := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	stood := review.Give([]review.Answer{
+	stood := review.OrderAnswers([]review.Answer{
 		makeAnswer("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", review.Good),
 		makeAnswer("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", review.Good),
 	}).Replay(day, review.ScheduleBy(by))[face]
@@ -146,7 +146,7 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	}
 
 	// The stamp that answer stands as in the log, read back as a replay reads it.
-	stamp, err := review.Moment(local.UTC().Format(review.Stamp))
+	stamp, err := review.ParseTimestamp(local.UTC().Format(review.TimestampLayout))
 	if err != nil {
 		t.Fatal(err)
 	}

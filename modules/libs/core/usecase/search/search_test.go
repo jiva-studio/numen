@@ -166,7 +166,7 @@ func newNearVector() []float32 {
 // oneWay is an embedder whose vectors all point the same way.
 type oneWay struct{ direction []float32 }
 
-func (o oneWay) Model() port.EmbeddingModel { return model }
+func (o oneWay) GetModel() port.EmbeddingModel { return model }
 
 func (o oneWay) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, 0, len(texts))
@@ -181,7 +181,7 @@ func (oneWay) Close() error { return nil }
 // outOfReach is an embedder on the other side of a network that is not there.
 type outOfReach struct{ why error }
 
-func (outOfReach) Model() port.EmbeddingModel { return model }
+func (outOfReach) GetModel() port.EmbeddingModel { return model }
 
 func (o outOfReach) Embed(context.Context, []string) ([][]float32, error) { return nil, o.why }
 
@@ -228,7 +228,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 
 	// A full-text match runs across the whole table, and "shared" is in both
 	// vaults, so this is where a lost filter shows for a search by words.
-	words, err := dense.Lexical(ctx, c.second.ID, "shared", nil, 20, false)
+	words, err := dense.FindLexical(ctx, c.second.ID, "shared", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -340,7 +340,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once more", "disorder at last")
 
 	// Every small chunk of the note matches.
-	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", nil, 20, false)
+	hits, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, "disorder", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -406,7 +406,7 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")
 
-	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "Madhavendra Puri", nil, 20, false)
+	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, "Madhavendra Puri", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -498,7 +498,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 
 	// A word no note in the vault says, so nothing lexical can match it.
 	const unsaid = "zzqqxx"
-	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, unsaid, nil, 20, false)
+	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, unsaid, nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -592,7 +592,7 @@ func TestEveryModeIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 	queries := c.db.ChunkQueries()
 	books := []domain.SourceKind{domain.KindBook}
 
-	words, err := queries.Lexical(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
+	words, err := queries.FindLexical(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -622,8 +622,8 @@ type countingEmbedder struct {
 	count int
 }
 
-func (e *countingEmbedder) Model() port.EmbeddingModel {
-	return e.inner.Model()
+func (e *countingEmbedder) GetModel() port.EmbeddingModel {
+	return e.inner.GetModel()
 }
 
 func (e *countingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {

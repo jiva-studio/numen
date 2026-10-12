@@ -76,11 +76,11 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 	return flushed
 }
 
-// WaitForAnswers waits for every page to write its pending data. The wait is on
+// WaitForFlush waits for every page to write its pending data. The wait is on
 // a person answering a question and has no time bound. It returns false where
 // ctx ended or the vault was requested again.
-func (o *Installation) WaitForAnswers(ctx context.Context) bool {
-	return o.API.Window.WaitForAnswers(ctx)
+func (o *Installation) WaitForFlush(ctx context.Context) bool {
+	return o.API.Window.WaitForFlush(ctx)
 }
 
 // flushPending has every client write what only it holds, then waits for the
@@ -90,7 +90,7 @@ func (o *Installation) WaitForAnswers(ctx context.Context) bool {
 // flush with false: the vault stays open and the wait is on a person. The
 // writes themselves have no bound.
 func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) bool {
-	if !pages.Settle(ctx) {
+	if !pages.RequestFlush(ctx) {
 		return false
 	}
 	<-writes.seal()

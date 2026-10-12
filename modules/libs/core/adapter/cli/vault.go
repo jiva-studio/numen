@@ -149,7 +149,7 @@ func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []s
 	}
 	defer closeIfOpen(rows.Close)
 
-	forget := vault.NewForget(vaults.Registry, rows.Vaults)
+	forget := vault.NewUnregister(vaults.Registry, rows.Vaults)
 	if err := forget.Execute(ctx, v); err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) er
 	defer closeIfOpen(rows.Close)
 
 	erase := vault.NewErase(
-		vaults.Identity, vaults.Trash, vault.NewForget(vaults.Registry, rows.Vaults),
+		vaults.Identity, vaults.Trash, vault.NewUnregister(vaults.Registry, rows.Vaults),
 	)
 	res, err := erase.Execute(ctx, v)
 	if errors.Is(err, port.ErrNoTrash) {

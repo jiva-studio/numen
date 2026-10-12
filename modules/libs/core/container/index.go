@@ -102,10 +102,10 @@ func (i *Index) Progress() port.IndexProgress { return i.db.ChunkQueries() }
 // Sources holds what has text and what was made from it. One type answers all
 // four ports: they divide the same tables by what asks, not by where the rows
 // are.
-func (i *Index) Sources() port.SourceRepository   { return i.db.Sources() }
-func (i *Index) SourcesKnown() port.SourceQueries { return i.db.Sources() }
-func (i *Index) Vectors() port.VectorRepository   { return i.db.Sources() }
-func (i *Index) VectorsOwing() port.VectorQueries { return i.db.Sources() }
+func (i *Index) Sources() port.SourceRepository    { return i.db.Sources() }
+func (i *Index) SourcesKnown() port.SourceQueries  { return i.db.Sources() }
+func (i *Index) Vectors() port.VectorRepository    { return i.db.Sources() }
+func (i *Index) VectorQueries() port.VectorQueries { return i.db.Sources() }
 
 // Maintenance is how the index is told that it has changed wholesale.
 func (i *Index) Maintenance() port.IndexMaintenance { return i.db.Maintenance() }

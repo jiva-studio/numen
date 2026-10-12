@@ -125,7 +125,7 @@ func (s *store) GetKeptVectors(_ context.Context, recipe string, of [][]byte) (m
 	return out, nil
 }
 
-func (s *store) Fingerprints(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
+func (s *store) GetFingerprints(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	out := map[string]domain.Fingerprint{}
 	for path, src := range s.sources[vaultID] {
 		if src.Fingerprint.Kind != kind {
@@ -143,7 +143,7 @@ func (s *store) GetUnchunkedSources(_ context.Context, vaultID domain.VaultID, k
 	})
 }
 
-func (s *store) ByOtherRecipe(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
+func (s *store) GetSourcesWithOtherRecipe(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
 	return s.paths(vaultID, kind, limit, func(src domain.Source) bool {
 		return !slices.Contains(recipes, src.Recipe)
 	})
@@ -468,13 +468,13 @@ func (documents) Read(_ context.Context, raw []byte) (domain.TextLayer, error) {
 	return domain.TextLayer{Text: read.Text, Pages: read.Pages}, nil
 }
 
-func (documents) Highlights(
+func (documents) GetHighlights(
 	_ context.Context, raw []byte, _ []int, pages []int,
 ) ([]highlight.Box, error) {
 	return documentOf(raw).boxes(pages), nil
 }
 
-func (documents) Draw(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
+func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (port.OpenDocument, error) {
 	defer file.Close()
 	raw, err := io.ReadAll(file)
 	if err != nil {
@@ -487,11 +487,11 @@ func (documents) Draw(_ context.Context, file io.ReadSeekCloser) (port.OpenDocum
 // one is the model's to say.
 type scanned struct{ read document }
 
-func (s scanned) Pages() int { return len(s.read.pages) }
+func (s scanned) GetPageCount() int { return len(s.read.pages) }
 
-func (scanned) Size(int) (wide, high float64, err error) { return pageWide, pageHigh, nil }
+func (scanned) GetPageSize(int) (wide, high float64, err error) { return pageWide, pageHigh, nil }
 
-func (scanned) Image(int, int) (image.Image, error) {
+func (scanned) RenderPage(int, int) (image.Image, error) {
 	return image.NewGray(image.Rect(0, 0, pageWide, pageHigh)), nil
 }
 
@@ -530,7 +530,7 @@ func (l *library) hold(path string, kind domain.SourceKind, raw []byte, mtime in
 	l.files[path] = &shelved{kind: kind, raw: raw, mtime: mtime}
 }
 
-func (l *library) Walk(_ context.Context, fn func(domain.Fingerprint) error) error {
+func (l *library) WalkFiles(_ context.Context, fn func(domain.Fingerprint) error) error {
 	for _, path := range slices.Sorted(maps.Keys(l.files)) {
 		if err := fn(l.ref(path)); err != nil {
 			return err
@@ -562,7 +562,7 @@ type nopCloser struct{ *bytes.Reader }
 
 func (nopCloser) Close() error { return nil }
 
-func (l *library) Stat(_ context.Context, path string) (domain.Fingerprint, error) {
+func (l *library) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
 	if _, ok := l.files[path]; !ok {
 		return domain.Fingerprint{}, fmt.Errorf("stat %s: %w", path, fs.ErrNotExist)
 	}
@@ -601,7 +601,7 @@ type embedder struct {
 	seen  []string // every text handed over, in the order it arrived
 }
 
-func (e *embedder) Model() port.EmbeddingModel {
+func (e *embedder) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "fake", Dimensions: e.dims}
 }
 
@@ -736,7 +736,7 @@ type writing struct {
 	to *library
 }
 
-func (w writing) Bring(_ context.Context, path string, from io.Reader) error {
+func (w writing) Import(_ context.Context, path string, from io.Reader) error {
 	if _, held := w.to.files[path]; held {
 		return port.ErrOccupied
 	}
@@ -759,6 +759,6 @@ func (w writers) Open(vault domain.Vault) (port.VaultWriter, error) {
 	return writing{to: held}, nil
 }
 
-func (w writers) Hold(context.Context, domain.Vault) (func(), error) {
+func (w writers) Lock(context.Context, domain.Vault) (func(), error) {
 	return func() {}, nil
 }

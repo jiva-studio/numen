@@ -70,16 +70,16 @@ func (p *paper) openScan(file io.ReadSeekCloser) (pool.Scan, error) {
 	return p, nil
 }
 
-func (p *paper) Pages() int { return p.pages }
+func (p *paper) GetPageCount() int { return p.pages }
 
 // Label numbers the first two pages as front matter, the way a book does.
 // Size is what the page measures in its own units, which the document answers
 // without drawing anything.
-func (p *paper) Size(int) (wide, high float64, err error) {
+func (p *paper) GetPageSize(int) (wide, high float64, err error) {
 	return float64(p.wide), float64(p.high), nil
 }
 
-func (p *paper) Image(index, dpi int) (image.Image, error) {
+func (p *paper) RenderPage(index, dpi int) (image.Image, error) {
 	p.mu.Lock()
 	p.draws++
 	if p.each == nil {
@@ -170,7 +170,7 @@ func printOf(t *testing.T, api *API, path string) pool.Fingerprint {
 // getPageAddress is where one page of a file of this window's vault is drawn.
 func getPageAddress(t *testing.T, api *API, path string, at, wide int) string {
 	t.Helper()
-	return pageOf(path, at, wide, printOf(t, api, path))
+	return getPageRoute(path, at, wide, printOf(t, api, path))
 }
 
 // A page comes back drawn at least as wide as the window asked for it, and
@@ -249,8 +249,8 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 			stopReadAhead(api)
 
 			for _, url := range []string{
-				assetOf(path),
-				pageOf(path, 0, 400, pool.Fingerprint{}),
+				getAssetRoute(path),
+				getPageRoute(path, 0, 400, pool.Fingerprint{}),
 			} {
 				out := ask(handler, url)
 				if out.Code == http.StatusOK {
@@ -288,7 +288,7 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 			if one.wide == "" {
 				join = "?"
 			}
-			at := assetOf(book) + "/" + pagesName + "/" + asked +
+			at := getAssetRoute(book) + "/" + pagesName + "/" + asked +
 				join + formatFingerprint(printOf(t, api, book))
 			out := ask(handler, at)
 			if out.Code != one.want {
@@ -308,7 +308,7 @@ func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
 	stopReadAhead(api)
 
 	mark := printOf(t, api, book)
-	held := ask(handler, pageOf(book, 0, 400, mark))
+	held := ask(handler, getPageRoute(book, 0, 400, mark))
 	if held.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d: %s", held.Code, held.Body)
 	}
@@ -317,7 +317,7 @@ func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
 	}
 
 	mark.Mtime++
-	if out := ask(handler, pageOf(book, 0, 400, mark)); out.Code != http.StatusNotFound {
+	if out := ask(handler, getPageRoute(book, 0, 400, mark)); out.Code != http.StatusNotFound {
 		t.Errorf("an address naming bytes the file is not was answered %d", out.Code)
 	}
 }
@@ -622,8 +622,8 @@ func TestTheApplicationDrawsWithTheLibrary(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer scan.Close()
-	if drawn.Pages() != scan.Pages() {
-		t.Errorf("the viewer opened %d pages and the library %d", drawn.Pages(), scan.Pages())
+	if drawn.GetPageCount() != scan.GetPageCount() {
+		t.Errorf("the viewer opened %d pages and the library %d", drawn.GetPageCount(), scan.GetPageCount())
 	}
 }
 

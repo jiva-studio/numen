@@ -43,7 +43,7 @@ func getNoteTitles(ctx context.Context, core Core, in noteTitlesInput) (noteTitl
 	if len(in.Paths) > maxRefs {
 		return noteTitlesOutput{}, fmt.Errorf("ask about at most %d notes at a time", maxRefs)
 	}
-	found, err := core.Notes.Queries.Notes(ctx, core.getCurrentVault().Vault.ID, in.Paths)
+	found, err := core.Notes.Queries.GetNotes(ctx, core.getCurrentVault().Vault.ID, in.Paths)
 	if err != nil {
 		return noteTitlesOutput{}, err
 	}
@@ -146,7 +146,7 @@ func addNoteNeighbourhood(server *sdk.Server, core Core) {
 		for _, related := range found.Related {
 			res.Related = append(res.Related, Neighbour{
 				Note:     noteOf(related.NoteRef),
-				Seat:     string(related.Seat),
+				Seat:     string(related.Relation),
 				Label:    related.Label,
 				Through:  related.Parent,
 				IsMutual: related.IsMutual,

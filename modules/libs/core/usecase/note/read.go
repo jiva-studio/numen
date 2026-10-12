@@ -82,7 +82,7 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Content
 
 	// The vault says what is at a path without opening it: a note, a file it
 	// leaves alone, or nothing.
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	held := err == nil
 	switch {
 	case held:

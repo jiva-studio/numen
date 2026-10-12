@@ -353,7 +353,7 @@ func (p Preset) getCapacityToBegin(d Day, now time.Time, daysToLearn int) float6
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	from, err := time.Parse(Named, d.GetName(now))
+	from, err := time.Parse(DayLayout, d.GetName(now))
 	if err != nil {
 		return 0
 	}
@@ -379,7 +379,7 @@ func (p Preset) getReviewDays(d Day, now time.Time) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	from, err := time.Parse(Named, d.GetName(now))
+	from, err := time.Parse(DayLayout, d.GetName(now))
 	if err != nil {
 		return 0
 	}

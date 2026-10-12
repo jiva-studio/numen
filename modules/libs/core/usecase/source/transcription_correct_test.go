@@ -255,7 +255,7 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	by := &puts{}
 	held, v, store, hash := newStoppedWorker(t, by, 1, "first thing", "second thing")
-	release, err := store.Claim(t.Context(), text.Partial(text.ASR, hash))
+	release, err := store.ClaimName(t.Context(), text.Partial(text.ASR, hash))
 	if err != nil {
 		t.Fatal(err)
 	}

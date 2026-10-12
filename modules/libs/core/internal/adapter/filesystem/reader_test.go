@@ -25,7 +25,7 @@ func walkPaths(t *testing.T, root string) []string {
 		t.Fatal(err)
 	}
 	var got []string
-	if err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
+	if err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
 		got = append(got, r.Path)
 		return nil
 	}); err != nil {
@@ -70,7 +70,7 @@ func walkKinds(t *testing.T, root string, opts filesystem.Options) map[string]do
 		t.Fatal(err)
 	}
 	got := map[string]domain.SourceKind{}
-	if err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
+	if err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
 		got[r.Path] = r.Kind
 		return nil
 	}); err != nil {
@@ -123,7 +123,7 @@ func TestAFormatNothingReadsIsNotASource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.Stat(t.Context(), scanned); !errors.Is(err, port.ErrNotANote) {
+	if _, err := src.GetFingerprint(t.Context(), scanned); !errors.Is(err, port.ErrNotANote) {
 		t.Errorf("stat of the image gave %v, want ErrNotANote", err)
 	}
 }
@@ -138,7 +138,7 @@ func TestStatDoesNotSayABookIsGone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ref, err := src.Stat(t.Context(), "library/A Book.epub")
+	ref, err := src.GetFingerprint(t.Context(), "library/A Book.epub")
 	if err != nil {
 		t.Fatalf("stat of a book the vault holds: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.Stat(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, port.ErrNotANote) {
+	if _, err := src.GetFingerprint(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, port.ErrNotANote) {
 		t.Errorf("stat gave %v, want ErrNotANote", err)
 	}
 }
@@ -201,7 +201,7 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
+	if err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
 		if r.Size <= 0 {
 			t.Errorf("%s has size %d", r.Path, r.Size)
 		}
@@ -566,7 +566,7 @@ func walkWithOptions(t *testing.T, root string, opts filesystem.Options) []strin
 		t.Fatal(err)
 	}
 	var got []string
-	if err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
+	if err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
 		got = append(got, r.Path)
 		return nil
 	}); err != nil {
@@ -599,7 +599,7 @@ func TestAPathThatLeavesTheVaultIsRefused(t *testing.T) {
 		if _, err := reader.Read(t.Context(), path); !errors.Is(err, filesystem.ErrOutside) {
 			t.Errorf("read %q: want ErrOutside, got %v", path, err)
 		}
-		if _, err := reader.Stat(t.Context(), path); err == nil {
+		if _, err := reader.GetFingerprint(t.Context(), path); err == nil {
 			t.Errorf("stat %q: want a refusal", path)
 		}
 	}

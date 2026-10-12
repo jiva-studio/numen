@@ -90,7 +90,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	if err != nil {
 		return res, err
 	}
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return res, fmt.Errorf("stat %s: %w", path, err)
 	}
@@ -109,7 +109,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 
 	// One run to a recording. The name is the hash of its bytes, and it is held
 	// for as long as the listening takes.
-	release, err := store.Claim(ctx, partial)
+	release, err := store.ClaimName(ctx, partial)
 	if errors.Is(err, port.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil
@@ -137,7 +137,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+describeFailure(err.Error()))
 	}
 	defer recording.Close()
-	res.Length = recording.Length()
+	res.Length = recording.GetDuration()
 
 	if err := u.transcribeSegments(ctx, v, store, recording, path, partial, &res); err != nil {
 		return res, err
@@ -284,16 +284,16 @@ func (u Transcribe) transcribeBatch(
 	path string,
 	from int,
 ) ([]transcript.Cue, int, error) {
-	segments, err := recording.Segments(ctx, from, u.batch())
+	segments, err := recording.GetSegments(ctx, from, u.batch())
 	if err != nil {
-		return nil, from, fmt.Errorf("transcribe %s at %s: %w", path, transcript.Stamp(from), err)
+		return nil, from, fmt.Errorf("transcribe %s at %s: %w", path, transcript.FormatTimestamp(from), err)
 	}
 	reached := from
 	cues := make([]transcript.Cue, 0, len(segments))
 	for _, audio := range segments {
 		words, err := u.by.Transcribe(ctx, audio)
 		if err != nil {
-			return nil, from, fmt.Errorf("hear %s at %s: %w", path, transcript.Stamp(audio.From), err)
+			return nil, from, fmt.Errorf("hear %s at %s: %w", path, transcript.FormatTimestamp(audio.From), err)
 		}
 		cues = append(cues, transcript.Cue{Text: words, From: audio.From, To: audio.To})
 		reached = max(reached, audio.To)
@@ -349,7 +349,7 @@ func (u Transcribe) cut(ctx context.Context, v domain.Vault, path string) error 
 // ask what produced a text, and so that everything a transcriber now known to
 // be bad produced can be found again.
 func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
-	named := u.by.Transcription()
+	named := u.by.GetTranscriptionModel()
 	raw, err := json.MarshalIndent(struct {
 		Model     string `json:"model"`
 		Segmenter string `json:"segmenter"`

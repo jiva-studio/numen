@@ -3,29 +3,29 @@ package domain
 // Relation is where a note sits relative to the one being looked at.
 //
 // It is not a link role. A role is written in a file and says what one link is
-// for; a seat is worked out from both ends of every link at once, and one of
+// for; a relation is worked out from both ends of every link at once, and one of
 // them — the sibling — is written nowhere at all.
 type Relation string
 
 const (
-	SeatParent  Relation = "parent"
-	SeatChild   Relation = "child"
-	SeatJump    Relation = "jump"
-	SeatSibling Relation = "sibling"
+	RelationParent  Relation = "parent"
+	RelationChild   Relation = "child"
+	RelationJump    Relation = "jump"
+	RelationSibling Relation = "sibling"
 )
 
-// SeatRank orders the seats a note can take. A note can answer to two of them —
-// a pair that are each other's parent, a jump between siblings — and can be
-// shown in only one place, so it takes the first it qualifies for.
-func SeatRank(s Relation) int {
+// GetRelationRank orders the relations a note can have. A note can answer to
+// two of them — a pair that are each other's parent, a jump between siblings —
+// and is shown under only one, so it takes the first it qualifies for.
+func GetRelationRank(s Relation) int {
 	switch s {
-	case SeatParent:
+	case RelationParent:
 		return 0
-	case SeatChild:
+	case RelationChild:
 		return 1
-	case SeatJump:
+	case RelationJump:
 		return 2
-	case SeatSibling:
+	case RelationSibling:
 		return 3
 	default:
 		return 4
@@ -42,10 +42,10 @@ type NoteRef struct {
 	ID string
 }
 
-// Neighbour is a note, where it sits, and what the link that seated it says.
+// Neighbour is a note, where it sits, and what the link that relates it says.
 type Neighbour struct {
 	NoteRef
-	Seat Relation
+	Relation Relation
 
 	// Label is what the person wrote on the link.
 	Label string
@@ -69,11 +69,11 @@ type Neighbourhood struct {
 	Related []Neighbour
 }
 
-// AddNeighbour seats a note. The focus is not related to itself.
-func (n *Neighbourhood) AddNeighbour(note NoteRef, seated Neighbour) {
+// AddNeighbour adds a note under its relation. The focus is not related to itself.
+func (n *Neighbourhood) AddNeighbour(note NoteRef, neighbour Neighbour) {
 	if note.Path == n.Focus.Path {
 		return
 	}
-	seated.NoteRef = note
-	n.Related = append(n.Related, seated)
+	neighbour.NoteRef = note
+	n.Related = append(n.Related, neighbour)
 }

@@ -31,14 +31,14 @@ func (r refusingIdentity) CheckReadable(root string) error {
 	return r.VaultIdentity.CheckReadable(root)
 }
 
-func (r refusingIdentity) Ensure(root string, at time.Time) (domain.VaultID, error) {
+func (r refusingIdentity) EnsureIdentity(root string, at time.Time) (domain.VaultID, error) {
 	if r.ensure != nil {
 		return "", r.ensure
 	}
 	if r.ensureAs != "" {
 		return r.ensureAs, nil
 	}
-	return r.VaultIdentity.Ensure(root, at)
+	return r.VaultIdentity.EnsureIdentity(root, at)
 }
 
 func (r refusingIdentity) GetVaultID(root string) (domain.VaultID, bool, error) {
@@ -62,11 +62,11 @@ func (r refusingRegistry) List() ([]domain.Vault, error) {
 	return r.VaultRegistry.List()
 }
 
-func (r refusingRegistry) Find(nameOrPath string) (domain.Vault, bool, error) {
+func (r refusingRegistry) FindVault(nameOrPath string) (domain.Vault, bool, error) {
 	if r.find != nil {
 		return domain.Vault{}, false, r.find
 	}
-	return r.VaultRegistry.Find(nameOrPath)
+	return r.VaultRegistry.FindVault(nameOrPath)
 }
 
 func (r refusingRegistry) Save(v domain.Vault) error {

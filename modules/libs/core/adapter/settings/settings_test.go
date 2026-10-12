@@ -63,8 +63,8 @@ func TestAnUntouchedInstallationEmbedsLocallyAndIsDrawnAsDesigned(t *testing.T) 
 	if cfg.Appearance.InterfaceScale != 1 || cfg.Appearance.TextScale != 1 {
 		t.Errorf("drawn at %+v", cfg.Appearance)
 	}
-	if len(cfg.Said) != 0 {
-		t.Errorf("a file nobody wrote says %q", cfg.Said)
+	if len(cfg.Notices) != 0 {
+		t.Errorf("a file nobody wrote says %q", cfg.Notices)
 	}
 	if cfg.Appearance.Mode != settings.ModeSystem {
 		t.Errorf("the colours are read as %q", cfg.Appearance.Mode)
@@ -157,8 +157,8 @@ func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
 	}
 	// Nothing to tell a person: the window is the size it was, and the file
 	// says what this build reads.
-	if len(cfg.Said) != 0 {
-		t.Errorf("the person is told %q", cfg.Said)
+	if len(cfg.Notices) != 0 {
+		t.Errorf("the person is told %q", cfg.Notices)
 	}
 }
 
@@ -203,8 +203,8 @@ func TestASecondLaunchRenamesNothingAndSaysNothing(t *testing.T) {
 		if cfg.Appearance.InterfaceScale != 1.5 {
 			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.InterfaceScale)
 		}
-		if len(cfg.Said) != 0 {
-			t.Errorf("launch %d tells the person %q", launch, cfg.Said)
+		if len(cfg.Notices) != 0 {
+			t.Errorf("launch %d tells the person %q", launch, cfg.Notices)
 		}
 		raw, err := os.ReadFile(path)
 		if err != nil {
@@ -235,8 +235,8 @@ func TestAFileNamingBothIsDrawnAtTheOneThisBuildReads(t *testing.T) {
 	if string(raw) != both {
 		t.Errorf("the file is now %s", raw)
 	}
-	if len(cfg.Said) != 0 {
-		t.Errorf("the person is told %q", cfg.Said)
+	if len(cfg.Notices) != 0 {
+		t.Errorf("the person is told %q", cfg.Notices)
 	}
 }
 
@@ -258,8 +258,8 @@ func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
 		if cfg.Appearance.InterfaceScale != 1.5 {
 			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.InterfaceScale)
 		}
-		if len(cfg.Said) != 0 {
-			t.Errorf("launch %d tells the person %q", launch, cfg.Said)
+		if len(cfg.Notices) != 0 {
+			t.Errorf("launch %d tells the person %q", launch, cfg.Notices)
 		}
 	}
 
@@ -282,8 +282,8 @@ func TestAZoomNamingNoSizeCarriesNothingAndSaysNothing(t *testing.T) {
 	if cfg.Appearance.InterfaceScale != 1 {
 		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
 	}
-	if len(cfg.Said) != 0 {
-		t.Errorf("the person is told %q", cfg.Said)
+	if len(cfg.Notices) != 0 {
+		t.Errorf("the person is told %q", cfg.Notices)
 	}
 }
 
@@ -356,12 +356,12 @@ func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
 	// The one thing a person is told, and the only thing here they can do
 	// something about: the field, the setting it would be read as, and how far
 	// that setting goes.
-	if len(cfg.Said) != 1 {
-		t.Fatalf("the person is told %q", cfg.Said)
+	if len(cfg.Notices) != 1 {
+		t.Fatalf("the person is told %q", cfg.Notices)
 	}
 	for _, about := range []string{"appearance.zoom", "interface_scale", "0.8", "2"} {
-		if !strings.Contains(cfg.Said[0], about) {
-			t.Errorf("%q says nothing about %s", cfg.Said[0], about)
+		if !strings.Contains(cfg.Notices[0], about) {
+			t.Errorf("%q says nothing about %s", cfg.Notices[0], about)
 		}
 	}
 }
@@ -388,10 +388,10 @@ func TestWhatIsSaidFitsTheLineItIsShownOn(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", zoom, err)
 		}
-		if len(cfg.Said) != 1 {
-			t.Fatalf("%s: the person is told %q", zoom, cfg.Said)
+		if len(cfg.Notices) != 1 {
+			t.Fatalf("%s: the person is told %q", zoom, cfg.Notices)
 		}
-		if said := cfg.Said[0]; len(said) > 62 {
+		if said := cfg.Notices[0]; len(said) > 62 {
 			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(said), said)
 		}
 	}

@@ -17,10 +17,10 @@ import (
 // Neither half returns the text: a passage is a place in a file, and the file is
 // what holds the words.
 type PassageQueries interface {
-	// Lexical is the chunks of one vault whose text matches the words typed,
+	// FindLexical is the chunks of one vault whose text matches the words typed,
 	// best first, at most `limit` of them. `growing` says the last word may
 	// still be being typed, and is then matched by its opening.
-	Lexical(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
+	FindLexical(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
 
 	// GetNamedPassages is the sections of one vault whose names match the words
 	// typed, best first. A section answers with the chunk it opens, so what

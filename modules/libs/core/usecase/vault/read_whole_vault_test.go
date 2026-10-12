@@ -45,7 +45,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -54,7 +54,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	notes.OnProgress = func(vaults.ScanResult) { order = append(order, "notes") }
 	books := source.NewExtract(readers, db.Sources(), db.SourcesKnown())
 	books.OnProgress = func(source.ExtractResult) { order = append(order, "books") }
-	vectors := source.NewEmbed(readers, db.VectorsOwing(), db.Vectors())
+	vectors := source.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = pointing{}
 	vectors.OnProgress = func(source.EmbedResult) { order = append(order, "vectors") }
 	making := vaults.NewReadWholeVault(notes, books, vectors)
@@ -87,7 +87,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	notes := scanner(refusing{}, db)
 	counted := &counting{VaultReaders: readers}
 	books := source.NewExtract(counted, db.Sources(), db.SourcesKnown())
-	vectors := source.NewEmbed(readers, db.VectorsOwing(), db.Vectors())
+	vectors := source.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	making := vaults.NewReadWholeVault(notes, books, vectors)
 
 	_, err := making.Execute(t.Context(), v)
@@ -106,13 +106,13 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
 	notes := scanner(readers, db)
 	books := source.NewExtract(refusing{}, db.Sources(), db.SourcesKnown())
-	vectors := source.NewEmbed(readers, db.VectorsOwing(), db.Vectors())
+	vectors := source.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = unwilling{}
 	making := vaults.NewReadWholeVault(notes, books, vectors)
 
@@ -136,7 +136,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	if err := db.FitVectors(t.Context(), width, pointing{}.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -144,7 +144,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	notes := scanner(readers, db)
 	books := source.NewExtract(timedOut{limit: over}, db.Sources(), db.SourcesKnown())
 	counted := &counting{VaultReaders: readers}
-	vectors := source.NewEmbed(counted, db.VectorsOwing(), db.Vectors())
+	vectors := source.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = unwilling{}
 	making := vaults.NewReadWholeVault(notes, books, vectors)
 
@@ -169,7 +169,7 @@ const width = 1024
 // pointing answers every text with one direction.
 type pointing struct{}
 
-func (pointing) Model() port.EmbeddingModel {
+func (pointing) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
@@ -188,7 +188,7 @@ func (pointing) Close() error { return nil }
 // not there looks like from here.
 type unwilling struct{}
 
-func (unwilling) Model() port.EmbeddingModel {
+func (unwilling) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
@@ -254,6 +254,6 @@ func newWholeVaultRead(readers port.VaultReaders, db *container.Index) vaults.Re
 	return vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(readers, db.Sources(), db.SourcesKnown()),
-		source.NewEmbed(readers, db.VectorsOwing(), db.Vectors()),
+		source.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 }

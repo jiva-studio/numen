@@ -116,7 +116,7 @@ func TestAChunkWhoseTextWasEmbeddedElsewhereIsStillReachedByTheCoarsePass(t *tes
 			vault, path := tc.put(t, db)
 
 			_, small := coarseRows(t, db, vault, path)
-			held, done, err := db.ChunkQueries().Progress(t.Context(), vault.ID, testRecipe)
+			held, done, err := db.ChunkQueries().GetProgress(t.Context(), vault.ID, testRecipe)
 			if err != nil {
 				t.Fatal(err)
 			}

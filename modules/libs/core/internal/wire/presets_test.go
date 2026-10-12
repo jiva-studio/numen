@@ -26,7 +26,7 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 		Backlog:     68,
 		HasEvenLoad: true,
 	}
-	p, err := SettingsIn(old)
+	p, err := ConvertSettingsFromWire(old)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 // A place with no day to name carries none, and a place whose horizon ended
 // first carries the day it never reached.
 func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
-	got := CurveOf(review.Curve{
+	got := ConvertCurveToWire(review.Curve{
 		Goal: review.GoalRetention,
 		Grid: []float64{0.9},
 		Points: []review.Point{
@@ -56,7 +56,7 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 			{Learns: review.NeverLearns},
 			{Learns: 12},
 		},
-		Now: review.Nowhere, Suggested: review.Nowhere,
+		Now: review.OutsideGrid, Suggested: review.OutsideGrid,
 	})
 
 	if at := got.GetAt()[0]; at.Learns != nil {
@@ -82,7 +82,7 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 		v1.BudgetUnit_BUDGET_UNIT_CARDS, v1.BudgetUnit_BUDGET_UNIT_SHOWS,
 	} {
 		for _, rule := range []v1.Rule{v1.Rule_RULE_INTERVAL, v1.Rule_RULE_RETENTION} {
-			p, err := SettingsIn(&v1.Settings{
+			p, err := ConvertSettingsFromWire(&v1.Settings{
 				Goal: v1.Goal_GOAL_MINUTES_A_DAY, Counts: counts, Learned: rule,
 				MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 				Retention: 0.9, Interval: 21,
@@ -90,14 +90,14 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if p.Counts != BudgetUnitIn(counts) {
+			if p.Counts != ConvertBudgetUnitFromWire(counts) {
 				t.Errorf("%v beside %v was read as a budget spent on %q", counts, rule, p.Counts)
 			}
-			if p.Rule != RuleIn(rule) {
+			if p.Rule != ConvertRuleFromWire(rule) {
 				t.Errorf("%v beside %v was read as a rule of %q", rule, counts, p.Rule)
 			}
 
-			back := SettingsOf(p)
+			back := ConvertSettingsToWire(p)
 			if back.GetCounts() != counts {
 				t.Errorf("%v beside %v came back as %v", counts, rule, back.GetCounts())
 			}
@@ -128,7 +128,7 @@ func TestEverySettingComesBackAsItWentOut(t *testing.T) {
 		IsEvenLoad:  true,
 	}
 
-	got, err := SettingsIn(SettingsOf(was))
+	got, err := ConvertSettingsFromWire(ConvertSettingsToWire(was))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func TestEverySettingComesBackAsItWentOut(t *testing.T) {
 		t.Errorf("goal came back as %q", got.Goal)
 	}
 	if !got.By.Equal(was.By) {
-		t.Errorf("by_date came back as %s", got.By.Format(review.Named))
+		t.Errorf("by_date came back as %s", got.By.Format(review.DayLayout))
 	}
 	if got.MinutesADay != was.MinutesADay {
 		t.Errorf("minutes_a_day came back as %d", got.MinutesADay)
@@ -181,7 +181,7 @@ func TestEverySettingComesBackAsItWentOut(t *testing.T) {
 // A client that names none of them is one that has not said, and the settings
 // are weighed against what a preset may hold before anything is written.
 func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
-	p, err := SettingsIn(&v1.Settings{})
+	p, err := ConvertSettingsFromWire(&v1.Settings{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +215,7 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 		{review.StoppedNoLoad, v1.StopReason_STOP_REASON_NO_LOAD},
 		{review.StoppedNoWeek, v1.StopReason_STOP_REASON_NO_WEEK},
 	} {
-		if got := StopReasonOf(one.why); got != one.said {
+		if got := ConvertStopReasonToWire(one.why); got != one.said {
 			t.Errorf("%q crosses as %v, and it is %v", one.why, got, one.said)
 		}
 	}
@@ -223,7 +223,7 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 	// A verdict nobody has taught this table is not "the preset schedules". A
 	// preset stopped for a reason the schema has no word for would be drawn as
 	// one handing out a day of review.
-	if got := StopReasonOf(review.StopReason("sideways")); got != v1.StopReason_STOP_REASON_UNSPECIFIED {
+	if got := ConvertStopReasonToWire(review.StopReason("sideways")); got != v1.StopReason_STOP_REASON_UNSPECIFIED {
 		t.Errorf("a verdict the schema does not name crosses as %v", got)
 	}
 }
@@ -233,13 +233,13 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 // A note names them in its own words, and a word the reader made nothing of
 // leaves the field where its default stands.
 func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
-	if got := GoalOf(review.Goal("sideways")); got != v1.Goal_GOAL_UNSPECIFIED {
+	if got := ConvertGoalToWire(review.Goal("sideways")); got != v1.Goal_GOAL_UNSPECIFIED {
 		t.Errorf("a goal the schema does not name crosses as %v", got)
 	}
-	if got := RuleOf(review.LearnedRule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
+	if got := ConvertRuleToWire(review.LearnedRule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
 		t.Errorf("a rule the schema does not name crosses as %v", got)
 	}
-	if got := BudgetUnitOf(review.BudgetUnit("sideways")); got != v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED {
+	if got := ConvertBudgetUnitToWire(review.BudgetUnit("sideways")); got != v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED {
 		t.Errorf("a count the schema does not name crosses as %v", got)
 	}
 }
@@ -254,7 +254,7 @@ func TestSettingsTheCoreCannotMakeOutAreRefused(t *testing.T) {
 		{"a day written in no form the core reads", &v1.Settings{ByDate: "30 September"}},
 		{"a load on a name no week carries", &v1.Settings{Load: map[string]int32{"caturday": 50}}},
 	} {
-		p, err := SettingsIn(one.said)
+		p, err := ConvertSettingsFromWire(one.said)
 		if err == nil {
 			t.Errorf("%s is taken", one.named)
 		}

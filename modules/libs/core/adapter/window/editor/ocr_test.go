@@ -29,7 +29,7 @@ func (i indexed) GetSourceText(_ context.Context, _ domain.VaultID, path string)
 	return found, held, nil
 }
 
-func (i indexed) Fingerprints(context.Context, domain.VaultID, domain.SourceKind) (map[string]domain.Fingerprint, error) {
+func (i indexed) GetFingerprints(context.Context, domain.VaultID, domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	return nil, nil
 }
 
@@ -37,7 +37,7 @@ func (i indexed) GetUnchunkedSources(context.Context, domain.VaultID, domain.Sou
 	return nil, nil
 }
 
-func (i indexed) ByOtherRecipe(context.Context, domain.VaultID, domain.SourceKind, []string, int) ([]string, error) {
+func (i indexed) GetSourcesWithOtherRecipe(context.Context, domain.VaultID, domain.SourceKind, []string, int) ([]string, error) {
 	return nil, nil
 }
 

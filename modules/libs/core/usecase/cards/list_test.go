@@ -15,7 +15,7 @@ type stencilsOf struct {
 	err error
 }
 
-func (s stencilsOf) Stencils(context.Context, domain.VaultID) ([]domain.Stencil, error) {
+func (s stencilsOf) GetStencils(context.Context, domain.VaultID) ([]domain.Stencil, error) {
 	return nil, s.err
 }
 

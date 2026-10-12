@@ -116,14 +116,14 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]PresetSummary, err
 	if u.notes == nil {
 		return nil, ErrNoPresets
 	}
-	paths, err := u.notes.OfType(ctx, v.ID, domain.TypePreset)
+	paths, err := u.notes.GetPathsOfType(ctx, v.ID, domain.TypePreset)
 	if err != nil {
 		return nil, fmt.Errorf("the presets of %s: %w", v.ID, err)
 	}
 	if len(paths) == 0 {
 		return nil, nil
 	}
-	titles, err := u.notes.Notes(ctx, v.ID, paths)
+	titles, err := u.notes.GetNotes(ctx, v.ID, paths)
 	if err != nil {
 		return nil, fmt.Errorf("what the presets of %s are called: %w", v.ID, err)
 	}
@@ -196,7 +196,7 @@ func (r *PresetReads) getSchedulingPreset(
 	if r.links == nil {
 		return Default(), nil
 	}
-	links, err := r.links.Links(ctx, v.ID, deck)
+	links, err := r.links.GetLinks(ctx, v.ID, deck)
 	if err != nil {
 		return PresetContents{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
@@ -304,7 +304,7 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 
 	// The vault says what is at a path without opening it: a note, a file it
 	// leaves alone, or nothing.
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	held := err == nil
 	switch {
 	case held:

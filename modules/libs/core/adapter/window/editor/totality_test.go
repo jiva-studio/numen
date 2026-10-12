@@ -22,25 +22,25 @@ import (
 
 func TestEverySearchModeIsRead(t *testing.T) {
 	testsupport.CheckHandled(t, func(mode v1.SearchMode) bool {
-		_, named := modeOf(mode)
+		_, named := convertSearchModeFromWire(mode)
 		return named
 	})
 }
 
 func TestEveryRoleIsRead(t *testing.T) {
 	testsupport.CheckHandled(t, func(role v1.Role) bool {
-		_, named := roleOf(role)
+		_, named := convertRoleFromWire(role)
 		return named
 	})
 }
 
 func TestEverySeatIsWrittenFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Seat]domain.Relation{
-		v1.Seat_SEAT_PARENT:  domain.SeatParent,
-		v1.Seat_SEAT_CHILD:   domain.SeatChild,
-		v1.Seat_SEAT_JUMP:    domain.SeatJump,
-		v1.Seat_SEAT_SIBLING: domain.SeatSibling,
-	}, seatOf)
+		v1.Seat_SEAT_PARENT:  domain.RelationParent,
+		v1.Seat_SEAT_CHILD:   domain.RelationChild,
+		v1.Seat_SEAT_JUMP:    domain.RelationJump,
+		v1.Seat_SEAT_SIBLING: domain.RelationSibling,
+	}, convertRelationToWire)
 }
 
 func TestEveryNoteTypeIsWrittenFromOne(t *testing.T) {
@@ -48,7 +48,7 @@ func TestEveryNoteTypeIsWrittenFromOne(t *testing.T) {
 		v1.NoteType_NOTE_TYPE_DECK:    domain.TypeDeck,
 		v1.NoteType_NOTE_TYPE_STENCIL: domain.TypeStencil,
 		v1.NoteType_NOTE_TYPE_PRESET:  domain.TypePreset,
-	}, typeOf)
+	}, convertNoteTypeToWire)
 }
 
 func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
@@ -57,14 +57,14 @@ func TestEverySourceKindIsWrittenFromOne(t *testing.T) {
 		v1.SourceKind_SOURCE_KIND_BOOK:      domain.KindBook,
 		v1.SourceKind_SOURCE_KIND_RECORDING: domain.KindRecording,
 		v1.SourceKind_SOURCE_KIND_URL:       domain.KindURL,
-	}, kindOf)
+	}, convertSourceKindToWire)
 }
 
 func TestEveryBookFormatIsWrittenFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.BookFormat]string{
 		v1.BookFormat_BOOK_FORMAT_EPUB: "library/a.epub",
 		v1.BookFormat_BOOK_FORMAT_PDF:  "library/a.pdf",
-	}, func(path string) v1.BookFormat { return formatOf(path, domain.KindBook) })
+	}, func(path string) v1.BookFormat { return convertBookFormatToWire(path, domain.KindBook) })
 }
 
 func TestEveryNamingIsWrittenFromOne(t *testing.T) {
@@ -145,7 +145,7 @@ func getStateAt(got runProgress) func() v1.State {
 func TestEveryBookTheVaultNamesOpensInAReader(t *testing.T) {
 	for _, extension := range filesystem.DefaultBookExtensions {
 		path := "library/a" + extension
-		if got := formatOf(path, domain.KindBook); got == v1.BookFormat_BOOK_FORMAT_UNSPECIFIED {
+		if got := convertBookFormatToWire(path, domain.KindBook); got == v1.BookFormat_BOOK_FORMAT_UNSPECIFIED {
 			t.Errorf("%s is a book of the vault and opens in no reader", extension)
 		}
 	}

@@ -198,7 +198,7 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 		return decks, err
 	}
 
-	at, err := u.presets.links.Backlinks(ctx, v.ID, path)
+	at, err := u.presets.links.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, fmt.Errorf("what points at %s: %w", path, err)
 	}

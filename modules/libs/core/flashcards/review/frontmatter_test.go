@@ -127,7 +127,7 @@ func TestTheDayItAimsAt(t *testing.T) {
 		if len(problems) != 0 {
 			t.Fatalf("%q: problems = %v", written, problems)
 		}
-		if p.By.Format(review.Named) != "2026-09-30" {
+		if p.By.Format(review.DayLayout) != "2026-09-30" {
 			t.Errorf("%q: by = %v", written, p.By)
 		}
 	}

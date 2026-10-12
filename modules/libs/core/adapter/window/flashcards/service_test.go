@@ -59,7 +59,7 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 	if card.GetIsNew() {
 		t.Error("a card already answered says it was not seen")
 	}
-	if _, err := time.Parse(review.Stamp, card.GetDue()); err != nil {
+	if _, err := time.Parse(review.TimestampLayout, card.GetDue()); err != nil {
 		t.Errorf("the card is due at %q, which the page cannot read: %v", card.GetDue(), err)
 	}
 }
