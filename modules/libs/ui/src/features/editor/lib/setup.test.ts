@@ -194,6 +194,6 @@ describe('Escape', () => {
 describe('an editor with no placeholder', () => {
   it('shows nothing in its place', () => {
     const view = open({}, '')
-    expect(view.contentDOM.querySelector('.cm-placeholder')?.textContent).toBe('')
+    expect(view.contentDOM.querySelector('.cm-placeholder')).toBeNull()
   })
 })

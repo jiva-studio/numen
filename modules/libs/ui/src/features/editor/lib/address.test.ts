@@ -55,15 +55,20 @@ describe('a link followed with the pointer', () => {
 
   const open = (at: number | null, doc = SOURCE) => {
     const opened = vi.fn<(address: string) => void>()
+    const passed = vi.fn<() => void>()
     const view = new EditorView({
       parent: document.body,
       state: createState(doc).update({
-        effects: StateEffect.appendConfig.of([follow, opening.of(opened)]),
+        effects: StateEffect.appendConfig.of([
+          follow,
+          opening.of(opened),
+          EditorView.domEventHandlers({ mousedown: passed }),
+        ]),
       }).state,
     })
     const coordinates = vi.spyOn(view, 'posAtCoords').mockReturnValue(at)
     views.push(view)
-    return { view, opened, coordinates }
+    return { view, opened, coordinates, passed }
   }
 
   const press = (view: EditorView, modifiers: MouseEventInit) => {
@@ -84,40 +89,42 @@ describe('a link followed with the pointer', () => {
   })
 
   it('is opened with the meta key held', () => {
-    const { view, opened, coordinates } = open(SOURCE.indexOf('there') + 1)
+    const { view, opened, coordinates, passed } = open(SOURCE.indexOf('there') + 1)
     const event = press(view, { metaKey: true })
     expect(opened).toHaveBeenCalledWith('https://example.invalid')
     expect(event.defaultPrevented).toBe(true)
+    expect(passed).not.toHaveBeenCalled()
     expect(coordinates).toHaveBeenCalledWith({ x: 12, y: 34 })
   })
 
   it('is opened with the control key held', () => {
-    const { view, opened } = open(SOURCE.indexOf('there') + 1)
+    const { view, opened, passed } = open(SOURCE.indexOf('there') + 1)
     const event = press(view, { ctrlKey: true })
     expect(opened).toHaveBeenCalledWith('https://example.invalid')
     expect(event.defaultPrevented).toBe(true)
+    expect(passed).not.toHaveBeenCalled()
   })
 
   it('is left alone with no key held', () => {
-    const { view, opened, coordinates } = open(SOURCE.indexOf('there') + 1)
-    const event = press(view, {})
+    const { view, opened, coordinates, passed } = open(SOURCE.indexOf('there') + 1)
+    press(view, {})
     expect(opened).not.toHaveBeenCalled()
     expect(coordinates).not.toHaveBeenCalled()
-    expect(event.defaultPrevented).toBe(false)
+    expect(passed).toHaveBeenCalledTimes(1)
   })
 
   it('is left alone where the pointer is over no text', () => {
-    const { view, opened } = open(null)
-    const event = press(view, { metaKey: true })
+    const { view, opened, passed } = open(null)
+    press(view, { metaKey: true })
     expect(opened).not.toHaveBeenCalled()
-    expect(event.defaultPrevented).toBe(false)
+    expect(passed).toHaveBeenCalledTimes(1)
   })
 
   it('is left alone where the pointer is over no link', () => {
-    const { view, opened } = open(1)
-    const event = press(view, { metaKey: true })
+    const { view, opened, passed } = open(1)
+    press(view, { metaKey: true })
     expect(opened).not.toHaveBeenCalled()
-    expect(event.defaultPrevented).toBe(false)
+    expect(passed).toHaveBeenCalledTimes(1)
   })
 })
 
