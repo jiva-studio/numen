@@ -107,3 +107,25 @@ describe('keys pressed inside the menu', () => {
     expect(keys.here.value).toBe(1)
   })
 })
+
+describe('Tab and the ends', () => {
+  it('walks down on Tab and up on Shift+Tab', () => {
+    const { keys } = setup()
+    keys.goTo(1)
+    keys.onKey(createKey('Tab'))
+    expect(keys.here.value).toBe(2)
+
+    keys.onKey(createKey('Tab', { shiftKey: true }))
+    expect(keys.here.value).toBe(1)
+  })
+
+  it('lands on the first item for Home and the last for End', () => {
+    const { keys } = setup()
+    keys.goTo(1)
+    keys.onKey(createKey('End'))
+    expect(keys.here.value).toBe(2)
+
+    keys.onKey(createKey('Home'))
+    expect(keys.here.value).toBe(0)
+  })
+})
