@@ -156,4 +156,44 @@ describe('spacingFor', () => {
     })
     expect([...windows]).toStrictEqual([options.viewport])
   })
+
+  it('never gives a gap less than its setting, whatever spread it is told', () => {
+    expect(spacingFor({ ...options, spread: 0.5 }, () => true)).toStrictEqual(
+      spacingAsSet(options),
+    )
+  })
+
+  it('asks nothing beyond the settings at a spread of one', () => {
+    let asked = 0
+    spacingFor({ ...options, spread: 1 }, () => {
+      asked++
+      return true
+    })
+    expect(asked).toBe(1)
+  })
+
+  describe('how closely the widest opening is found', () => {
+    const wide = { ...options, spread: 3 }
+    const set = spacingAsSet(wide)
+
+    /** An arrangement that fits while no gap is opened past `limit` times its setting. */
+    const fitsUpTo =
+      (limit: number) =>
+      (spacing: Spacing): boolean =>
+        spacing.gap <= set.gap * limit &&
+        spacing.lineGap <= set.lineGap * limit &&
+        spacing.focusGap <= set.focusGap * limit
+
+    it('lands within a 256th of the range below the limit', () => {
+      const found = spacingFor(wide, fitsUpTo(1.5))
+      for (const key of ['gap', 'lineGap', 'focusGap'] as const) {
+        expect(found[key]).toBeLessThanOrEqual(set[key] * 1.5)
+        expect(found[key]).toBeGreaterThanOrEqual(set[key] * (1.5 - 2 / 256))
+      }
+    })
+
+    it('stops short of a limit that lies inside the last step', () => {
+      expect(spacingFor(wide, fitsUpTo(1 + 1 / 256))).toStrictEqual(set)
+    })
+  })
 })

@@ -151,6 +151,11 @@ describe('how far in a part is set', () => {
     expect(setIn([1, 3])).toStrictEqual([0, 10])
   })
 
+  it('ranks the levels as numbers, whatever order they were given in', () => {
+    expect(setIn([10, 2, 3])).toStrictEqual([20, 0, 10])
+    expect(setIn([3, 2, 1])).toStrictEqual([20, 10, 0])
+  })
+
   it('goes no further in however deep the nesting runs', () => {
     expect(setIn([1, 2, 3, 4, 5, 6])).toStrictEqual([0, 10, 20, 30, 30, 30])
   })
@@ -271,6 +276,23 @@ describe('how wide the parts are drawn', () => {
   })
 })
 
+describe('where the parts slide to at the edges of the window', () => {
+  const held = [{ id: '0', text: 'A heading of some length', level: 1 }]
+  const edge = DEPS.viewport.width / 2 - DEPS.margin
+
+  it('ends flush with the margin on the right', () => {
+    const near = { ...NODE, x: 460 }
+    const settled = getNodeParts(near, held, SIZES, DEPS)!
+    expect(near.x + settled.offset + settled.width / 2).toBe(edge)
+  })
+
+  it('begins flush with the margin on the left', () => {
+    const near = { ...NODE, x: -460 }
+    const settled = getNodeParts(near, held, SIZES, DEPS)!
+    expect(near.x + settled.offset - settled.width / 2).toBe(-edge)
+  })
+})
+
 describe('a node with little room under it', () => {
   /** The same node, dropped so much of the window is left beneath it. */
   const low = (left: number): PlacedNode => ({
@@ -289,6 +311,16 @@ describe('a node with little room under it', () => {
     const settled = hangWithRoom(3 * SIZES.partHeight + 10)!
     expect(settled.shown).toBe(3)
     expect(getFurthest(settled)).toBe(MOST)
+  })
+
+  it('hangs one part where the depth holds exactly one with its ground', () => {
+    const settled = hangWithRoom(30)!
+    expect(settled.shown).toBe(1)
+    expect(settled.height).toBe(SIZES.partHeight + 2 * settled.pad)
+  })
+
+  it('hangs nothing where the depth is one short of that', () => {
+    expect(hangWithRoom(29)).toBeNull()
   })
 
   it('keeps every part it does hang inside the window', () => {
@@ -379,5 +411,94 @@ describe('however many parts stand at once', () => {
 
   it('one alone opens with the whole of the opening to itself', () => {
     expect(getOpenParts(hangWithCeiling(1), 0.5)!.parts[0]!.opacity).toBe(easeOut(0.5))
+  })
+})
+
+describe('when the leads set off', () => {
+  /** The opacity of the last part shown, at a moment of the opening. */
+  const lastAt = (ceiling: number, open: number) => {
+    const settled = getNodeParts(NODE, parts(ceiling), { ...SIZES, maxParts: ceiling }, DEPS)!
+    return getOpenParts(settled, open)!.parts.at(-1)!.opacity
+  }
+
+  it('has the last of a few parts still down while two leads of the opening are taken', () => {
+    expect(lastAt(3, 0.23)).toBe(0)
+    expect(lastAt(3, 0.26)).toBeGreaterThan(0)
+  })
+
+  it('has the leads of many parts take the same share between them', () => {
+    for (const ceiling of [8, 20]) {
+      expect(lastAt(ceiling, 0.59)).toBe(0)
+      expect(lastAt(ceiling, 0.61)).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('where a part sets off from', () => {
+  it('is a fraction of its own height below its place', () => {
+    const settled = hung(parts(3))!
+    const first = getOpenParts(settled, 0.3)!.parts[0]!
+    expect(first.opacity).toBeGreaterThan(0)
+    expect(first.opacity).toBeLessThan(1)
+    expect(first.y).toBeCloseTo((1 - first.opacity) * 0.7 * settled.partHeight, 6)
+  })
+})
+
+describe('the arrows at the edges of the ground', () => {
+  const WIDE = 4
+  const DEEP = 2.5
+  const many = () => hung(parts(MOST + 3))!
+
+  it('points down from the bottom of the ground where there is more below', () => {
+    const settled = many()
+    const { arrows } = getOpenParts(settled, 1, 0)!
+    const y = settled.top + settled.height - settled.pad / 2
+    expect(arrows).toStrictEqual([
+      {
+        at: 'below',
+        points: [
+          { x: -WIDE, y: y - DEEP },
+          { x: 0, y: y + DEEP },
+          { x: WIDE, y: y - DEEP },
+        ],
+      },
+    ])
+  })
+
+  it('points up from the top of the ground where there is more above', () => {
+    const settled = many()
+    const { arrows } = getOpenParts(settled, 1, getFurthest(settled))!
+    const y = settled.top + settled.pad / 2
+    expect(arrows).toStrictEqual([
+      {
+        at: 'above',
+        points: [
+          { x: -WIDE, y: y + DEEP },
+          { x: 0, y: y - DEEP },
+          { x: WIDE, y: y + DEEP },
+        ],
+      },
+    ])
+  })
+
+  it('draws both, the one above first, where the window is scrolled between', () => {
+    const { arrows } = getOpenParts(many(), 1, 1)!
+    expect(arrows.map((arrow) => arrow.at)).toStrictEqual(['above', 'below'])
+  })
+
+  it('draws none where every part stands at once', () => {
+    expect(getOpenParts(hung(parts(3))!, 1)!.arrows).toStrictEqual([])
+  })
+
+  it('is drawn about the middle of what is hung, not of the node', () => {
+    const near = { ...NODE, x: 460 }
+    const heading = { id: 'h', text: 'A heading of some length', level: 1 }
+    const settled = getNodeParts(near, [heading, ...parts(MOST + 3)], SIZES, DEPS)!
+    const [arrow] = getOpenParts(settled, 1, 0)!.arrows
+    expect(arrow!.points.map((point) => point.x)).toStrictEqual([
+      settled.offset - WIDE,
+      settled.offset,
+      settled.offset + WIDE,
+    ])
   })
 })
