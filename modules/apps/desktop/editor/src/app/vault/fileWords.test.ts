@@ -47,7 +47,6 @@ describe('the result of a move', () => {
   it('keeps where the file stood, where it stands and which links were repaired', () => {
     const answer = { from: 'A.md', to: 'B.md', repaired: ['C.md'] } as unknown as MoveResult
 
-
     expect(mapMoveResult(answer)).toStrictEqual({
       from: 'A.md',
       to: 'B.md',
