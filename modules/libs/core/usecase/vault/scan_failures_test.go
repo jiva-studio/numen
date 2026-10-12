@@ -345,6 +345,7 @@ func TestAWalkWaitingForItsTurnStopsWhenCancelled(t *testing.T) {
 	waiting := make(chan error, 1)
 	second := scanner(readers, db)
 	go func() { _, err := second.Execute(ctx, v); waiting <- err }()
+	time.Sleep(200 * time.Millisecond)
 	cancel()
 
 	select {
