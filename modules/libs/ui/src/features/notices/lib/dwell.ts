@@ -26,7 +26,7 @@ export const TOO_MUCH = 20
  * out: a list of names is something a person acts on, and it waits for them.
  */
 export const dwellOf = (text: string, about = ''): number => {
-  const words = `${text} ${about}`.split(/\s+/).filter((word) => word !== '')
+  const words = `${text} ${about}`.split(/\s/).filter((word) => word !== '')
   if (words.length > TOO_MUCH) return Infinity
   return MIN_DWELL + words.length * PER_WORD
 }

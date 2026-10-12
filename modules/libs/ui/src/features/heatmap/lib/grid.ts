@@ -37,7 +37,6 @@ export function measureGrid(metrics: HeatmapMetrics): {
   const cell = Math.max(1, metrics.cell)
   const gap = Math.max(0, metrics.gap)
   const step = cell + gap
-  if (metrics.width <= 0) return { columns: 1, cell, gap }
 
   const columns = Math.max(1, Math.floor((metrics.width + gap) / step))
   if (columns < 2) return { columns, cell, gap }
@@ -73,7 +72,6 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   // The grid running back from now: the Sunday ending the last week kept for
   // what is still to come, and the columns before it.
   const last = new Date(now)
-  last.setHours(12, 0, 0, 0)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
   const behind = new Date(last)
   behind.setDate(behind.getDate() - (columns * ROWS - 1))
@@ -84,16 +82,12 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   const ahead = new Date(opens)
   ahead.setDate(ahead.getDate() + columns * ROWS - 1)
 
-  return {
-    from: getDayName(behind < opens ? behind : opens),
-    to: getDayName(last > ahead ? last : ahead),
-  }
+  return { from: getDayName(behind), to: getDayName(ahead) }
 }
 
 /** The Monday of the week a day stands in, which is the column it opens. */
 function monday(at: Date): Date {
   const out = new Date(at)
-  out.setHours(12, 0, 0, 0)
   out.setDate(out.getDate() - (weekday(out) - 1))
   return out
 }

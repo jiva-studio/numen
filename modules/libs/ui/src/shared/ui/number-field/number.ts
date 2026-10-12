@@ -44,9 +44,8 @@ export const clamp = (value: number, bounds: Bounds): number =>
 
 /** The getDecimalPlaces a step is written to, which is what a number moved by it is kept to. */
 const getDecimalPlaces = (step: number): number => {
-  const str = `${step}`
-  const point = str.indexOf('.')
-  return point < 0 ? 0 : str.length - point - 1
+  const [, fraction] = `${step}`.split('.')
+  return fraction?.length ?? 0
 }
 
 /** The place the step lays nearest a number, counted from the floor. */

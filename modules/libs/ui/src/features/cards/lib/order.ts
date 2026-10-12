@@ -68,7 +68,7 @@ export function getStepInsertionPoint(
 ): InsertionPoint | undefined {
   const at = names.indexOf(dragEntry)
   if (at === -1) return undefined
-  if (direction === 'up') return at === 0 ? undefined : (names[at - 1] ?? undefined)
+  if (direction === 'up') return names[at - 1]
   if (at === names.length - 1) return undefined
   return names[at + 2] ?? null
 }

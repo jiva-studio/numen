@@ -15,7 +15,7 @@ const bare = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
 
 /** The scheme a URL names, and nothing where it names none. */
 export const scheme = (url: string): string | null =>
-  /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(bare(url))?.[0]?.toLowerCase() ?? null
+  /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(bare(url))?.[0].toLowerCase() ?? null
 
 const canLinkTo = (url: string): boolean => {
   const named = scheme(url)
@@ -45,12 +45,12 @@ const filterStyles = (value: string): string =>
       const at = each.indexOf(':')
       if (at === -1) return false
       const property = each.slice(0, at).trim().toLowerCase()
-      const declaredValue = each.slice(at + 1).toLowerCase()
       if (!STYLED.has(property)) return false
+      const declaration = each.toLowerCase()
       return (
-        !declaredValue.includes('url(') &&
-        !declaredValue.includes('expression') &&
-        !declaredValue.includes('\\')
+        !declaration.includes('url(') &&
+        !declaration.includes('expression') &&
+        !declaration.includes('\\')
       )
     })
     .join('; ')
@@ -59,7 +59,7 @@ const filterStyles = (value: string): string =>
 const stripComments = (root: ParentNode & Node): void => {
   const walk = (node: Node): void => {
     for (const child of [...node.childNodes]) {
-      if (child.nodeType === 8) child.parentNode?.removeChild(child)
+      if (child.nodeType === 8) child.remove()
       else walk(child)
     }
   }

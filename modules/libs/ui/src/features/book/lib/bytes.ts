@@ -15,7 +15,6 @@ export function bytesIn(text: string): number {
  * numbers part company on the first word of the corpus this reads.
  */
 export function unitsIn(text: string, bytes: number): number {
-  if (bytes <= 0) return 0
   let counted = 0
   let units = 0
   for (const character of text) {

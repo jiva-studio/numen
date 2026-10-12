@@ -57,9 +57,9 @@ export function jumpTo(
   const first = word[0]!
   const drumming = [...word].every((each) => each === first)
   const prefix = (drumming ? first : word).toLowerCase()
-  const start = from < 0 ? 0 : from + (word.length > 1 && !drumming ? 0 : 1)
+  const start = from < 0 ? 0 : from + (drumming ? 1 : 0)
 
-  for (let step = 0; step < items.length; step += 1) {
+  for (const step of items.keys()) {
     const at = (start + step) % items.length
     const item = items[at]
     if (!item || item.disabled) continue

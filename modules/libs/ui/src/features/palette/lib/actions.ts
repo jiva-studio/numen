@@ -46,12 +46,12 @@ export const placeActions = (
   const word = text.trim().toLowerCase()
   const out: PlacedAction[] = []
   for (const [offered, action] of actions.entries()) {
-    const found = word === '' ? -1 : action.text.toLowerCase().indexOf(word)
-    if (word !== '' && found < 0) continue
+    const found = action.text.toLowerCase().indexOf(word)
+    if (found < 0) continue
     out.push({
       action,
       at: out.length,
-      name: partsOf(action.text, found < 0 ? [] : [{ from: found, to: found + word.length }]),
+      name: partsOf(action.text, [{ from: found, to: found + word.length }]),
       key: PALETTE_KEYS[offered] ?? null,
     })
   }
@@ -65,6 +65,5 @@ export const placeActions = (
  */
 export const findKeptAction = (actions: readonly PlacedAction[], was: string): number => {
   const at = actions.findIndex((one) => one.action.id === was)
-  if (at >= 0) return at
-  return actions.length > 0 ? 0 : -1
+  return Math.max(at, actions.length > 0 ? 0 : -1)
 }

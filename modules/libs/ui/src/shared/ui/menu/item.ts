@@ -34,8 +34,14 @@ export interface GroupedItem extends MenuItem {
  * The items in the order they were given, each saying whether a rule stands
  * above it. The first item begins the menu, and nothing is drawn above it.
  */
-export const groupItems = (items: readonly MenuItem[]): readonly GroupedItem[] =>
-  items.map((item, at) => ({ ...item, isRule: at > 0 && item.group !== items[at - 1]?.group }))
+export const groupItems = (items: readonly MenuItem[]): readonly GroupedItem[] => {
+  let above: MenuItem | undefined
+  return items.map((item) => {
+    const isRule = above !== undefined && item.group !== above.group
+    above = item
+    return { ...item, isRule }
+  })
+}
 
 /** What placing a menu needs to know. */
 export interface MenuPlacement {
@@ -125,5 +131,5 @@ export const getInitialIndex = (
 ): number => {
   if (!MENU_TRIGGERS[trigger].hasInitialFocus) return -1
   const at = items.findIndex((item) => item.id === current && !item.disabled)
-  return at >= 0 ? at : stepTo(items, -1, 1)
+  return stepTo(items, Math.max(at, 0) - 1, 1)
 }
