@@ -109,6 +109,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	// The rows the walk writes point at the vault's own row. What the vault is
 	// called and where it is stay as the list has them.
 	if err := u.vaults.Register(ctx, v.ID); err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before any note is counted"
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 
@@ -125,6 +126,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		found = append(found, ref)
 		return nil
 	}); err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is while the walk is only collecting"
 		return res, err
 	}
 	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return b.ModTime.Compare(a.ModTime) })

@@ -304,3 +304,55 @@ func TestTheIndexIsMeasuredAfterTheSmallestChange(t *testing.T) {
 		}
 	})
 }
+
+func TestAGroupThatFailsWhenFullStopsTheScanWithWhatWasCounted(t *testing.T) {
+	t.Parallel()
+	const perGroup = 500
+	boom := errors.New("disk full")
+	m := &memVault{files: map[string]memFile{}, saveErr: boom, failSaveAt: 1}
+	for i := range perGroup + 1 {
+		m.files[fmt.Sprintf("n%04d.md", i)] = noteFile(epoch.Add(time.Duration(i) * time.Second))
+	}
+
+	res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"})
+	if !errors.Is(err, boom) {
+		t.Fatalf("error = %v, want the one the index gave", err)
+	}
+	if res.Notes != perGroup {
+		t.Errorf("the scan had counted %d notes when its group failed, want %d", res.Notes, perGroup)
+	}
+	if len(m.reads) != perGroup {
+		t.Errorf("read %d files, want the %d that filled the group", len(m.reads), perGroup)
+	}
+}
+
+func TestAWalkWaitingForItsTurnStopsWhenCancelled(t *testing.T) {
+	t.Parallel()
+	held := newHeldWalk()
+	readers := heldWalks{reader: held}
+	db := openIndex(t)
+	v := domain.Vault{ID: "one", Path: t.TempDir()}
+
+	first := scanner(readers, db)
+	done := make(chan error, 1)
+	go func() { _, err := first.Execute(t.Context(), v); done <- err }()
+	if !held.hasWalkBegun() {
+		t.Fatal("the first walk never began")
+	}
+	t.Cleanup(func() { close(held.let); <-done })
+
+	ctx, cancel := context.WithCancel(t.Context())
+	waiting := make(chan error, 1)
+	second := scanner(readers, db)
+	go func() { _, err := second.Execute(ctx, v); waiting <- err }()
+	cancel()
+
+	select {
+	case err := <-waiting:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("error = %v, want the cancellation", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("a walk waiting for its turn kept waiting after it was cancelled")
+	}
+}
