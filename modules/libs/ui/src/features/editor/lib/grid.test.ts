@@ -183,10 +183,24 @@ describe('a grid drawn', () => {
   it('is read where the editor is read-only', () => {
     const frame = draw(createGridIn(createStateIn(SOURCE, EditorState.readOnly.of(true))))
 
+    expect(frame.childNodes).toHaveLength(1)
     expect(getCells(frame, 'button')).toHaveLength(0)
     expect(getCells(frame, '.cm-cell').some((cell) => cell.hasAttribute('contenteditable'))).toBe(
       false,
     )
+  })
+
+  it('is wired to the editor it is drawn for', () => {
+    const state = createStateIn(SOURCE)
+    const view = new EditorView({ parent: document.body, state })
+    views.push(view)
+    const frame = createGridIn(state).toDOM(view)
+    document.body.appendChild(frame)
+
+    frame.querySelector<HTMLElement>('.cm-add-row')?.click()
+
+    expect(view.state.doc.lines).toBe(state.doc.lines + 1)
+    frame.remove()
   })
 
   it('is the same grid as one for the same table in the same editor', () => {
@@ -246,6 +260,8 @@ describe('a grid drawn', () => {
       expect(
         getCells(frame, '.cm-cell').some((cell) => cell.hasAttribute('contenteditable')),
       ).toBe(false)
+      expect(getCells(frame, '.cm-cell').some((cell) => 'from' in cell.dataset)).toBe(false)
+      expect(getCells(frame, '.cm-cell').some((cell) => 'to' in cell.dataset)).toBe(false)
     })
 
     it('leaves a column nothing was written in without a place to type', () => {

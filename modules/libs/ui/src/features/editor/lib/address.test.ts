@@ -114,7 +114,7 @@ describe('a link followed with the pointer', () => {
   })
 
   it('is left alone where the pointer is over no text', () => {
-    const { view, opened, passed } = open(null)
+    const { view, opened, passed } = open(null, '[there](https://example.invalid) now')
     press(view, { metaKey: true })
     expect(opened).not.toHaveBeenCalled()
     expect(passed).toHaveBeenCalledTimes(1)
