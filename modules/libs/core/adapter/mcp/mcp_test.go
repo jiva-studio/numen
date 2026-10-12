@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
+	deckcases "github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -94,9 +95,8 @@ func newCoreWithNotes(t *testing.T, notes map[string]string) (domain.Vault, mcp.
 			List:        cutting.List,
 			Write:       cutting.Write,
 			Create:      cutting.Create,
-			RenameField: cutting.Rename,
+			RenameField: cutting.Rename.WithMaxDecksPerRename(deckcases.MaxDecksPerRename),
 			DeckEdit:    format.OpenDeckBody,
-			StencilBody: format.StencilBody,
 		},
 
 		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,

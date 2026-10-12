@@ -22,15 +22,6 @@ const (
 	maxCards    = 50
 )
 
-// maxDecks is how many decks a vault may hold and still have a field renamed
-// through these tools.
-//
-// A field's name is a heading in every card of every deck its stencil cuts, so
-// the rename reads and writes every deck the vault holds, one behind the other
-// under the write lock. A vault past this is refused before the stencil is
-// written, and the person renames the field in the window.
-const maxDecks = 200
-
 // Stencil is a stencil as the list of them names it.
 type Stencil struct {
 	Path string `json:"path" jsonschema:"the stencil's path relative to the vault folder"`

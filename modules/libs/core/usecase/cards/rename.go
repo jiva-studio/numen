@@ -53,6 +53,8 @@ type RenameResult struct {
 //
 // Every field a stencil declares is written this way, the first included.
 type RenameField struct {
+	maxDecksPerRename int
+
 	readers port.VaultReaders
 	writers port.VaultWriters
 	notes   TypeQueries
@@ -115,6 +117,9 @@ func (u RenameField) createIdentifier() string { return ulid.New(u.now()) }
 // could not be written to keeps the old heading and comes back as a problem
 // against that deck, and the decks after it are written all the same.
 func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
+	if err := u.checkDeckCount(ctx, v); err != nil {
+		return RenameResult{}, err
+	}
 	if in.From == in.To {
 		return RenameResult{Stencil: in.Fingerprint}, nil
 	}
@@ -125,6 +130,34 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 	}
 	written := append([]string{in.Stencil}, out.Decks...)
 	return out, note.WrapUnlevelled(u.index(ctx, v, written), written...)
+}
+
+// MaxDecksPerRename is the most decks a vault may hold and still have a field
+// renamed through WithMaxDecksPerRename.
+const MaxDecksPerRename = 200
+
+// WithMaxDecksPerRename returns a copy of RenameField that refuses a vault
+// holding more than n decks before it writes the stencil.
+func (u RenameField) WithMaxDecksPerRename(n int) RenameField {
+	u.maxDecksPerRename = n
+	return u
+}
+
+func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
+	if u.maxDecksPerRename <= 0 {
+		return nil
+	}
+	held, err := u.decks(ctx, v)
+	if err != nil {
+		return err
+	}
+	if len(held) > u.maxDecksPerRename {
+		return fmt.Errorf(
+			"this rename reads and writes every deck in the vault, and there are %d of them, "+
+				"which is more than the %d this does at once: rename the field in the window",
+			len(held), u.maxDecksPerRename)
+	}
+	return nil
 }
 
 // rename is the whole of the writing, under this vault's write lock from before

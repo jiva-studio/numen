@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -58,6 +59,8 @@ type New struct {
 	// Fields is what a stencil declares, in the order a person is asked for
 	// them. A deck declares none.
 	Fields []string
+	// Faces are the ways a card cut by a stencil is shown, laid down as its body.
+	Faces []format.FaceTemplate
 }
 
 // CreateNoteResult is the file that now exists.
@@ -77,8 +80,20 @@ func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (CreateNoteRes
 // first field is what a card cut by the stencil is named by.
 var ErrNoFields = errors.New("a stencil declares at least one field")
 
-// Stencil makes a stencil declaring the fields it was given.
+// Stencil makes a stencil declaring the fields it was given. Faces, when given,
+// are laid down as its body.
 func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
+	if len(in.Faces) > 0 {
+		body, err := format.StencilBody("", in.Faces, "")
+		if err != nil {
+			return CreateNoteResult{}, err
+		}
+		if len(body) > note.MaxBytes {
+			return CreateNoteResult{}, fmt.Errorf(
+				"a stencil of %d bytes is more than this writes at once, which is %d", len(body), note.MaxBytes)
+		}
+		in.Body = body
+	}
 	if len(in.Fields) == 0 {
 		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
