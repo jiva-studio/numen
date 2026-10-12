@@ -40,8 +40,8 @@ export const WORDS = {
   headingsDetail: 'How many of them stand under a node at once.',
   syncing: 'Sync title and filename',
   syncingDetail: 'Whether renaming either of the two brings the other into line.',
-  dayStarts: 'A day begins at',
-  dayStartsDetail:
+  dayStartTime: 'A day begins at',
+  dayStartTimeDetail:
     'An answer given before this hour is written into the day before. Noon at the latest.',
   /** Transcribing a recording, and putting the transcript right. */
   transcribing: 'Transcribe recordings',

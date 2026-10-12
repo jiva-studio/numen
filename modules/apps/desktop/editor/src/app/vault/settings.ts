@@ -17,7 +17,7 @@ import type { SettingsPort } from '@/app/ports/settings'
 const SYNCS = ['naming', 'sync_title_and_filename']
 const NESTING = ['appearance', 'nest_headings_under_notes']
 const HEADINGS = ['appearance', 'nested_heading_limit']
-const STARTS = ['review', 'day_starts']
+const STARTS = ['review', 'day_start_time']
 
 /** Every setting as it stands, with the defaults under what the file leaves out. */
 const readSettings = async (): Promise<unknown> =>
@@ -100,7 +100,7 @@ export const settingsCore: SettingsPort = {
     const hour = getSettingAt(JSON.parse(answer.written), STARTS)
     return {
       starts: typeof hour === 'string' ? hour : DEFAULT_STARTS,
-      latest: answer.latestDayStarts,
+      latest: answer.latestDayStartTime,
       day: answer.day,
     } satisfies ReviewSettings
   },
