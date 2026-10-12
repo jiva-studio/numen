@@ -13,7 +13,7 @@ func TestALoadedLogIsPutInOrderOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	first, again := held.History(), held.History()
+	first, again := held.GetHistory(), held.GetHistory()
 	if len(first) != loadDays*loadPerDay {
 		t.Fatalf("the log came to %d answers where the vault holds %d",
 			len(first), loadDays*loadPerDay)

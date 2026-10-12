@@ -46,7 +46,7 @@ func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 // pressDeck is how many card faces pressing one deck hands over.
 func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
-	sat, err := s.openSession(t, today, now, flashcards.OverDeck(deck))
+	sat, err := s.openSession(t, today, now, flashcards.NewDeckScope(deck))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func (s vaulted) sitDeck(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	faces := make(map[review.CardFaceID]bool)
 	for range 100 {
-		sat, err := s.openSession(t, today, now, flashcards.OverDeck(deck))
+		sat, err := s.openSession(t, today, now, flashcards.NewDeckScope(deck))
 		if err != nil {
 			t.Fatal(err)
 		}

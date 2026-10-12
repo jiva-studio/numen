@@ -33,12 +33,12 @@ type Scope struct {
 	IsNamed bool
 }
 
-// OverDeck is a session over one deck.
-func OverDeck(path string) Scope { return Scope{Deck: path} }
+// NewDeckScope returns the scope of a session over one deck.
+func NewDeckScope(path string) Scope { return Scope{Deck: path} }
 
-// ByPreset is a session over the cards of every deck pointing at one preset,
+// NewPresetScope returns the scope of a session over the cards of every deck pointing at one preset,
 // held to that preset's budget.
-func ByPreset(preset string) Scope { return Scope{Preset: preset, IsNamed: true} }
+func NewPresetScope(preset string) Scope { return Scope{Preset: preset, IsNamed: true} }
 
 // QueuedCardFace is one card face as the session queues it: where it stands,
 // how it is laid out, and where the answers so far have left it.

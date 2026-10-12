@@ -135,8 +135,8 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]PresetSummary, err
 	return out, nil
 }
 
-// Default is a deck scheduled by no preset.
-func Default() PresetContents {
+// GetDefaultPreset returns the preset of a deck scheduled by no preset.
+func GetDefaultPreset() PresetContents {
 	return PresetContents{Outcome: note.Ok, Settings: review.Defaults()}
 }
 
@@ -194,7 +194,7 @@ func (r *PresetReads) getSchedulingPreset(
 	ctx context.Context, v domain.Vault, deck string,
 ) (PresetContents, error) {
 	if r.links == nil {
-		return Default(), nil
+		return GetDefaultPreset(), nil
 	}
 	links, err := r.links.GetLinks(ctx, v.ID, deck)
 	if err != nil {
@@ -208,8 +208,8 @@ func (r *PresetReads) getSchedulingPreset(
 		}
 	}
 	if len(at) == 0 {
-		out := Default()
-		if out.Problems, err = r.roleless(ctx, v, deck); err != nil {
+		out := GetDefaultPreset()
+		if out.Problems, err = r.getRolelessEntries(ctx, v, deck); err != nil {
 			return PresetContents{}, err
 		}
 		return out, nil
@@ -217,7 +217,7 @@ func (r *PresetReads) getSchedulingPreset(
 
 	first := at[0]
 	by := first.Target.GetWritten()
-	out := Default()
+	out := GetDefaultPreset()
 	if first.To != "" {
 		by = first.To
 		if out, err = r.read(ctx, v, first.To); err != nil {
@@ -238,11 +238,11 @@ func (r *PresetReads) getSchedulingPreset(
 	return out, nil
 }
 
-// roleless is what is shown against a deck that names no preset: every entry of
+// getRolelessEntries returns what is shown against a deck that names no preset: every entry of
 // its `links:` block the parser could not read for want of a role.
 //
 // Such an entry is not a link, so a preset written in one schedules nothing.
-func (r *PresetReads) roleless(ctx context.Context, v domain.Vault, deck string) ([]string, error) {
+func (r *PresetReads) getRolelessEntries(ctx context.Context, v domain.Vault, deck string) ([]string, error) {
 	if r.Problems == nil {
 		return nil, nil
 	}

@@ -43,12 +43,12 @@ type ReviewLog struct {
 	Skipped int
 }
 
-// History is the answers in the order they were given: nothing a line takes
+// GetHistory returns the answers in the order they were given: nothing a line takes
 // back, one line to an identifier, earliest first.
 //
 // One request asks several things of one loaded log, and each of them reads this
 // order. It is worked out once for the log and handed to all of them.
-func (h ReviewLog) History() review.History {
+func (h ReviewLog) GetHistory() review.History {
 	if h.order == nil {
 		return review.OrderAnswers(h.Answers)
 	}
@@ -60,9 +60,9 @@ func newHistory(answers []review.Answer) func() review.History {
 	return sync.OnceValue(func() review.History { return review.OrderAnswers(answers) })
 }
 
-// Files is what the vault's log is made of, without reading any of it. It is
+// ListLogFiles lists what the vault's log is made of, without reading any of it. It is
 // what a cache is measured against, and measuring it costs one listing.
-func (u Log) Files(ctx context.Context, v domain.Vault) ([]port.Entry, error) {
+func (u Log) ListLogFiles(ctx context.Context, v domain.Vault) ([]port.Entry, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
 		return nil, err
