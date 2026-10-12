@@ -88,7 +88,7 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 
 	// The vault moved underneath the window, which is what lets it be tried
 	// again.
-	api.Forget(unread.ID)
+	api.ClearIndexFailure(unread.ID)
 	api.countVault(t.Context(), unread)
 	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
 }
@@ -97,16 +97,16 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
 	r := &readings{}
 	v := testsupport.NewVault(t, deck)
-	r.start(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	r.setIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
-	r.finish(v, nil)
-	if read, _, _, _ := r.claim(v); read != nil {
+	r.record(v, nil)
+	if read, _, _, _ := r.tryStart(v); read != nil {
 		t.Fatalf("a vault read clean was claimed before it was forgotten")
 	}
 
-	r.forget(v.ID)
+	r.clear(v.ID)
 
-	read, _, _, _ := r.claim(v)
+	read, _, _, _ := r.tryStart(v)
 	if read == nil {
 		t.Fatalf("a vault forgotten after a clean reading was not claimable again")
 	}

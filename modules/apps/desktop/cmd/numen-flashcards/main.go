@@ -123,7 +123,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// A vault that moved is counted again, and is one whose walk is worth trying
 	// again where the last one failed.
 	vaults.recordVault = func(v domain.Vault) {
-		api.Forget(v.ID)
+		api.ClearIndexFailure(v.ID)
 		api.ReportChange()
 	}
 	api.Reading(ctx, vaults.readVault)
@@ -162,7 +162,7 @@ func run(cfg container.Config, noAgent bool) error {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards: the index is not being followed:", err)
 	} else {
-		api.Follow(ctx, moves)
+		api.ReportChangesFrom(ctx, moves)
 	}
 
 	// The themes are the installation's, and a folder that could not be made

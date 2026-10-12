@@ -572,11 +572,11 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 		v1.Rating_RATING_GOOD:  review.Good,
 		v1.Rating_RATING_EASY:  review.Easy,
 	} {
-		if got := newRating(said); got != want {
+		if got := parseRating(said); got != want {
 			t.Errorf("%v came across as %v", said, got)
 		}
 	}
-	if got := newRating(v1.Rating_RATING_UNSPECIFIED); got.Valid() {
+	if got := parseRating(v1.Rating_RATING_UNSPECIFIED); got.Valid() {
 		t.Errorf("nothing said came across as %v", got)
 	}
 }

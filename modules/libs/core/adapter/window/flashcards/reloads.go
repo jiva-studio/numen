@@ -12,41 +12,41 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
-// following is everyone listening for something moving underneath the window.
+// changeSubscribers is everyone listening for something moving underneath the window.
 //
 // A listener that is busy is passed over: every message says the same thing,
 // and one lost is one the next says over.
-type following struct {
-	mu        sync.Mutex
-	next      int
-	listeners map[int]chan struct{}
+type changeSubscribers struct {
+	mu          sync.Mutex
+	next        int
+	subscribers map[int]chan struct{}
 }
 
-func (f *following) listen() (<-chan struct{}, func()) {
+func (f *changeSubscribers) subscribe() (<-chan struct{}, func()) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if f.listeners == nil {
-		f.listeners = make(map[int]chan struct{})
+	if f.subscribers == nil {
+		f.subscribers = make(map[int]chan struct{})
 	}
 	line := make(chan struct{}, 1)
 	at := f.next
 	// gomutants:disable-next-line INCREMENT_DECREMENT reason="a counter that steps down hands out distinct keys like one that steps up"
 	f.next++
-	f.listeners[at] = line
+	f.subscribers[at] = line
 	return line, func() {
 		f.mu.Lock()
 		defer f.mu.Unlock()
-		if held, is := f.listeners[at]; is {
-			delete(f.listeners, at)
+		if held, is := f.subscribers[at]; is {
+			delete(f.subscribers, at)
 			close(held)
 		}
 	}
 }
 
-func (f *following) say() {
+func (f *changeSubscribers) notify() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	for _, line := range f.listeners {
+	for _, line := range f.subscribers {
 		select {
 		case line <- struct{}{}:
 		default:
@@ -61,12 +61,12 @@ func (f *following) say() {
 // is the command's: this holds the listeners and nothing else.
 func (a *API) ReportChange() {
 	a.CardsDue.CardFaces().InvalidateAll()
-	a.listeners.say()
+	a.subscribers.notify()
 }
 
-// Follow says ReportChange for everything one channel reports, until it closes
+// ReportChangesFrom says ReportChange for everything one channel reports, until it closes
 // or ctx is done.
-func (a *API) Follow(ctx context.Context, moved <-chan struct{}) {
+func (a *API) ReportChangesFrom(ctx context.Context, moved <-chan struct{}) {
 	go func() {
 		for {
 			select {
@@ -91,7 +91,7 @@ func (a *API) WatchReloads(
 	_ *connect.Request[v1.WatchReloadsRequest],
 	out *connect.ServerStream[v1.WatchReloadsResponse],
 ) error {
-	line, done := a.listeners.listen()
+	line, done := a.subscribers.subscribe()
 	defer done()
 
 	// Named as listening before anything has moved. A stream that says nothing
