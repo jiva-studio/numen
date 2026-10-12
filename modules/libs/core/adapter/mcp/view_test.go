@@ -17,15 +17,15 @@ import (
 )
 
 // lookAt gives the core a person to put notes and passages in front of.
-func lookAt(core *mcp.Core, view port.Window) {
-	core.Notes.FocusNote = note.NewFocusNote(core.Notes.Queries, view)
+func lookAt(core *mcp.Core, queries port.NoteQueries, view port.Window) {
+	core.Notes.FocusNote = note.NewFocusNote(queries, view)
 	core.Sources.FocusPassage = source.NewFocusPassage(filesystem.VaultReaders{}, view)
 }
 
 // lookingCore is a core with nothing but a person to look.
 func lookingCore(view port.Window) mcp.Core {
 	core := mcp.Core{}
-	lookAt(&core, view)
+	lookAt(&core, nil, view)
 	return core
 }
 
@@ -49,9 +49,9 @@ func (w *window) FocusPlace(_ context.Context, at domain.Place) error {
 // looking at the vault.
 func newSessionWithWindow(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window) {
 	t.Helper()
-	_, core := newCoreWithNotes(t, notes)
+	_, core, queries := newCoreWithQueries(t, notes)
 	looking := &window{}
-	lookAt(&core, looking)
+	lookAt(&core, queries, looking)
 	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
 		_ = looking.ShowEdit(ctx, said)
 	})
@@ -104,8 +104,8 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 }
 
 func TestFocusSaysSoWhenTheWindowWouldNot(t *testing.T) {
-	_, core := newCoreWithNotes(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
-	lookAt(&core, &window{fails: errors.New("nobody is looking")})
+	_, core, queries := newCoreWithQueries(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
+	lookAt(&core, queries, &window{fails: errors.New("nobody is looking")})
 	session := newSessionOver(t, core)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{

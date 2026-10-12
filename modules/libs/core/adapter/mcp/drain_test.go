@@ -92,8 +92,9 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		Showing:     mcp.ShowOneVault(v, v.Path),
 		Read:        file.Read{Readers: readers},
 		GetProblems: container.Config{}.GetProblems(db.Problems()),
+		GetSummary:  container.Config{}.GetSummary(queries),
 		Notes: mcp.Notes{
-			Queries:       queries,
+			GetNamedPaths: container.Config{}.GetNamedPaths(queries),
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
 			Links:         note.NewShowLinks(db.Links()),

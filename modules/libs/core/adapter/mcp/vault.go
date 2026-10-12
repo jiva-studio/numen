@@ -38,7 +38,7 @@ func addVaultTools(server *sdk.Server, core Core) {
 }
 
 func addVaultGet(server *sdk.Server, core Core) {
-	if core.Notes.Queries == nil {
+	if core.GetSummary == nil {
 		return
 	}
 	addTool(server, &sdk.Tool{
@@ -61,7 +61,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Headings int    `json:"headings"`
 		}
 		shown := core.getCurrentVault()
-		summary, err := core.Notes.Queries.GetSummary(ctx, shown.Vault.ID)
+		summary, err := core.GetSummary.Execute(ctx, shown.Vault)
 		if err != nil {
 			return nil, out{}, err
 		}

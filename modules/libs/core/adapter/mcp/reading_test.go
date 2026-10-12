@@ -263,8 +263,9 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 		Showing:     mcp.ShowOneVault(v, v.Path),
 		Read:        file.Read{Readers: readers},
 		GetProblems: cfg.GetProblems(db.Problems()),
+		GetSummary:  cfg.GetSummary(queries),
 		Notes: mcp.Notes{
-			Queries:       queries,
+			GetNamedPaths: cfg.GetNamedPaths(queries),
 			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
 			Neighbourhood: note.NewShowNeighbourhood(db.Links(), queries),
 			Read:          note.NewRead(readers),
