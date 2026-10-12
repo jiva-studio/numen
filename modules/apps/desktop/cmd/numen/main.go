@@ -113,10 +113,11 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
 
-	pages, opened, err := openInstallation(ctx, cfg, vault)
+	shown, err := openInstallation(ctx, cfg, vault)
 	if err != nil {
 		return err
 	}
+	pages, opened := shown.pages, shown.opened
 	loadThemes(cfg, opened)
 
 	// What reading the settings had to tell a person goes where they are: a
@@ -159,10 +160,16 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	return app.Run()
 }
 
+// shownInstallation is the pages of the window and the installation they show.
+type shownInstallation struct {
+	pages  http.Handler
+	opened *editor.Installation
+}
+
 // openInstallation reads the pages and opens the vault the window shows.
 func openInstallation(
 	ctx context.Context, cfg container.Config, vault string,
-) (http.Handler, *editor.Installation, error) {
+) (shownInstallation, error) {
 	// Before the window: every page this process reads is read through the
 	// runtime made here, and one made after the window reads a page as nothing.
 	// A machine holding no runtime yet is told so by the first recognition.
@@ -171,18 +178,18 @@ func openInstallation(
 	}
 	pages, err := editor.Pages()
 	if err != nil {
-		return nil, nil, err
+		return shownInstallation{}, err
 	}
 
 	made, err := cfg.GetEditorAssembly(ctx)
 	if err != nil {
-		return nil, nil, err
+		return shownInstallation{}, err
 	}
 	opened, err := editor.Open(ctx, made, vault, os.Stdout)
 	if err != nil {
-		return nil, nil, err
+		return shownInstallation{}, err
 	}
-	return pages, opened, nil
+	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
 // loadThemes gives the API the installation's themes. A folder that could not
