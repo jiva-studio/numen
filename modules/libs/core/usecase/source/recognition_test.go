@@ -18,7 +18,9 @@ import (
 // reads nothing, and says it was closed.
 type blank struct{ isClosed bool }
 
-func (blank) Recognition() port.RecognitionModel { return port.RecognitionModel{Recogniser: "blank"} }
+func (blank) GetRecognitionModel() port.RecognitionModel {
+	return port.RecognitionModel{Recogniser: "blank"}
+}
 
 func (blank) Recognise(context.Context, image.Image) ([]ocr.Block, error) { return nil, nil }
 

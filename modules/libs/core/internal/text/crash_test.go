@@ -21,7 +21,7 @@ func (wild) Read(context.Context, []byte) (domain.TextLayer, error) {
 	panic("page 3 of 2")
 }
 
-func (wild) Highlights(context.Context, []byte, []int, []int) ([]highlight.Box, error) {
+func (wild) GetHighlights(context.Context, []byte, []int, []int) ([]highlight.Box, error) {
 	panic("page 3 of 2")
 }
 

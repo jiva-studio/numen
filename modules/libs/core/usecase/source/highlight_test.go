@@ -21,7 +21,7 @@ type layered struct {
 	where func(raw []byte, pages []int) ([]highlight.Box, error)
 }
 
-func (l layered) Highlights(_ context.Context, raw []byte, _ []int, pages []int) ([]highlight.Box, error) {
+func (l layered) GetHighlights(_ context.Context, raw []byte, _ []int, pages []int) ([]highlight.Box, error) {
 	return l.where(raw, pages)
 }
 
@@ -54,7 +54,7 @@ func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *shelf, do
 // in.
 func recordSource(t *testing.T, index *store, shelved *library, from, hash string) {
 	t.Helper()
-	ref, err := shelved.Stat(t.Context(), documentPath)
+	ref, err := shelved.GetFingerprint(t.Context(), documentPath)
 	if err != nil {
 		t.Fatal(err)
 	}

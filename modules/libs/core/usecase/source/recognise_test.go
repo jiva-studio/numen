@@ -56,8 +56,8 @@ func (s *shelf) closeCount() int {
 	return s.closes
 }
 
-// Take puts what a reader gives under a name.
-func (s *shelf) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+// WriteStream puts what a reader gives under a name.
+func (s *shelf) WriteStream(_ context.Context, name string, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -129,7 +129,7 @@ func (s *shelf) Remove(_ context.Context, name string) error {
 	return nil
 }
 
-func (s *shelf) Claim(_ context.Context, name string) (func() error, error) {
+func (s *shelf) ClaimName(_ context.Context, name string) (func() error, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.held[name] {
@@ -181,7 +181,7 @@ type speaker struct {
 	stop  func(int)
 }
 
-func (s *speaker) Recognition() port.RecognitionModel {
+func (s *speaker) GetRecognitionModel() port.RecognitionModel {
 	return port.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
 }
 

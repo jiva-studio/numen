@@ -35,7 +35,7 @@ func TestWhichErrorCodeAnOutcomeIs(t *testing.T) {
 		"a note that was read": {note.Ok, v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false},
 	} {
 		t.Run(name, func(t *testing.T) {
-			reason, refused := wire.ErrorCodeOf(c.outcome)
+			reason, refused := wire.ConvertOutcomeToErrorCode(c.outcome)
 			if refused != c.is || reason != c.want {
 				t.Errorf("got %v refused=%v, want %v refused=%v",
 					reason, refused, c.want, c.is)
@@ -100,7 +100,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			reason, refused := wire.ErrorCodeBy(c.err)
+			reason, refused := wire.GetErrorCode(c.err)
 			if refused != c.is || reason != c.want {
 				t.Errorf("got %v refused=%v, want %v refused=%v",
 					reason, refused, c.want, c.is)

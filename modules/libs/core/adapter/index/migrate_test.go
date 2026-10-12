@@ -600,7 +600,7 @@ func TestMigrationToPrefixIndex(t *testing.T) {
 	}
 	defer db.Close()
 
-	matches, err := db.NoteQueries().Names(ctx, "01TEST", "thermo", 10)
+	matches, err := db.NoteQueries().GetNameMatches(ctx, "01TEST", "thermo", 10)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -51,7 +51,7 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 		case themes != nil && strings.HasPrefix(r.URL.Path, dressing):
 			themes.ServeHTTP(w, r)
 		case slices.Contains(wire.OpenedAt, r.URL.Path):
-			wire.Page(w, r, pages, a.Themes, files)
+			wire.WritePage(w, r, pages, a.Themes, files)
 		default:
 			files.ServeHTTP(w, r)
 		}

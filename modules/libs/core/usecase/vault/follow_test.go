@@ -29,7 +29,7 @@ func newHand() *hand {
 	return &hand{changes: make(chan []string), lost: make(chan struct{}, 1)}
 }
 
-func (h *hand) Watch(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+func (h *hand) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return h.changes, h.lost, nil
 }
 
@@ -37,7 +37,7 @@ func (h *hand) Watch(context.Context, domain.Vault) (<-chan []string, <-chan str
 // out of watches looks like.
 type refuses struct{}
 
-func (refuses) Watch(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+func (refuses) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return nil, nil, errors.New("no watches left")
 }
 

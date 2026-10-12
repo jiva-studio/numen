@@ -189,7 +189,7 @@ func getCurve(t *testing.T, api *API, v domain.Vault, path string, p review.Pres
 	if err != nil {
 		t.Fatal(err)
 	}
-	return wire.CurveOf(held)
+	return wire.ConvertCurveToWire(held)
 }
 
 // curves is the simulator behind the one control of a preset, standing on the

@@ -9,7 +9,7 @@ import (
 // VaultWatcher follows one vault for changes the application did not make. The
 // filesystem is one implementation; a channel a test writes to is another.
 type VaultWatcher interface {
-	// Watch reports the paths of sources that change, folded, until ctx is
+	// WatchVault reports the paths of sources that change, folded, until ctx is
 	// done. Which kind each is comes from a stat of the path.
 	//
 	// `lost` says the vault has to be read again: more changed at once than
@@ -17,5 +17,5 @@ type VaultWatcher interface {
 	//
 	// Two channels: whoever implements this never has to name the interface,
 	// and Go checks the fit without either side saying so.
-	Watch(ctx context.Context, v domain.Vault) (changes <-chan []string, lost <-chan struct{}, err error)
+	WatchVault(ctx context.Context, v domain.Vault) (changes <-chan []string, lost <-chan struct{}, err error)
 }

@@ -43,14 +43,14 @@ type flawed struct {
 	neither   map[string]bool
 }
 
-func (f flawed) Stat(ctx context.Context, handle string) (port.ImportedFile, error) {
+func (f flawed) GetImportedFile(ctx context.Context, handle string) (port.ImportedFile, error) {
 	if f.neither[handle] {
 		return port.ImportedFile{Name: f.names[handle], Handle: handle}, nil
 	}
 	if err := f.statFails[handle]; err != nil {
 		return port.ImportedFile{}, err
 	}
-	return f.handedOver.Stat(ctx, handle)
+	return f.handedOver.GetImportedFile(ctx, handle)
 }
 
 func (f flawed) List(ctx context.Context, handle string) ([]port.ImportedFile, error) {
@@ -280,8 +280,8 @@ func (i ignoringContext) Open(v domain.Vault) (port.VaultWriter, error) {
 
 type deaf struct{ port.VaultWriter }
 
-func (d deaf) Bring(ctx context.Context, to string, r io.Reader) error {
-	return d.VaultWriter.Bring(context.WithoutCancel(ctx), to, r)
+func (d deaf) Import(ctx context.Context, to string, r io.Reader) error {
+	return d.VaultWriter.Import(context.WithoutCancel(ctx), to, r)
 }
 
 // Files under a folder are not brought once the drop is cancelled, whatever the

@@ -102,7 +102,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	held := csp.Sources{}.Policy()
 
 	handler := (&API{}).NewHandler(http.NotFoundHandler())
-	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetOf("a.pdf")} {
+	for _, path := range []string{"", "/", "/index.html", "/built/index.css", getAssetRoute("a.pdf")} {
 		if said := getResponse(handler, path).Header().Get("Content-Security-Policy"); said != held {
 			t.Errorf("%q is held to %q", path, said)
 		}
@@ -162,7 +162,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	api := &API{}
 	handler := api.NewHandler(http.NotFoundHandler())
 	questions, _ := numenv1connect.NewVaultServiceHandler(api)
-	asked := []string{"", "/", "/index.html", assetOf("a.pdf"), questions + "Find"}
+	asked := []string{"", "/", "/index.html", getAssetRoute("a.pdf"), questions + "Find"}
 
 	for _, path := range asked {
 		if code := getResponse(handler, path).Code; code == http.StatusServiceUnavailable {
@@ -373,13 +373,13 @@ type holdsOpen struct {
 	at holdingOpen
 }
 
-func (h holdsOpen) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
+func (h holdsOpen) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
 	select {
 	case h.at.begun <- struct{}{}:
 	default:
 	}
 	<-h.at.until
-	return h.VaultReader.Stat(ctx, path)
+	return h.VaultReader.GetFingerprint(ctx, path)
 }
 
 // TestTheDoorShutsBehindTheQuestionsAlreadyTaken. A search, a note and a link
@@ -405,7 +405,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	answered := make(chan struct{})
 	go func() {
 		defer close(answered)
-		at := pageOf("Note.pdf", 0, 800, pool.Fingerprint{})
+		at := getPageRoute("Note.pdf", 0, 800, pool.Fingerprint{})
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
 	}()
 	<-readers.begun

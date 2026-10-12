@@ -40,16 +40,16 @@ func (t *Transcriber) Open(ctx context.Context, raw []byte) (port.Recording, err
 	return &recording{owner: t, raw: raw, length: length}, nil
 }
 
-// Length is how long the recording is, in milliseconds.
-func (r *recording) Length() int { return r.length }
+// GetDuration is how long the recording is, in milliseconds.
+func (r *recording) GetDuration() int { return r.length }
 
-// Segments is what the segmenter cut the recording into, from a millisecond
+// GetSegments is what the segmenter cut the recording into, from a millisecond
 // onward, at most count of them. A count of none is all of them.
 //
 // The whole file is cut at once, when the first stretch is asked for. The
 // segmenter reads it from end to end, and where one stretch ends is decided by
 // the silence after it.
-func (r *recording) Segments(ctx context.Context, from, count int) ([]port.Audio, error) {
+func (r *recording) GetSegments(ctx context.Context, from, count int) ([]port.Audio, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

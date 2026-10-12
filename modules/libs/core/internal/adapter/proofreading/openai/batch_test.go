@@ -94,7 +94,7 @@ func TestTheRunIsLeftWithItsFieldsInTheOrderTheServiceReadsThem(t *testing.T) {
 	var raw []byte
 	s := newRunServer(t, "batch_1", &raw)
 
-	if _, err := newBatchClient(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
+	if _, err := newBatchClient(t, s.URL).Submit(t.Context(), []proofread.Batch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -117,7 +117,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 	var raw []byte
 	s := newRunServer(t, "batch_1", &raw)
 
-	if _, err := newBatchClient(t, s.URL).Leave(t.Context(), pages); err != nil {
+	if _, err := newBatchClient(t, s.URL).Submit(t.Context(), pages); err != nil {
 		t.Fatal(err)
 	}
 
@@ -162,7 +162,7 @@ func TestLeaveAnswersWithTheNameTheServiceGave(t *testing.T) {
 	var raw []byte
 	s := newRunServer(t, "batch_1e9f", &raw)
 
-	name, err := newBatchClient(t, s.URL).Leave(t.Context(), []proofread.Batch{page(1, "a line")})
+	name, err := newBatchClient(t, s.URL).Submit(t.Context(), []proofread.Batch{page(1, "a line")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func TestABatchStillWorkingIsNotThereYet(t *testing.T) {
 		t.Run(status, func(t *testing.T) {
 			s := newBatchServer(t, status, nil)
 
-			replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
+			replies, ready, err := newBatchClient(t, s.URL).GetReplies(t.Context(), "batch_1")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -196,7 +196,7 @@ func TestACompletedBatchAnswersAboutEveryPageUnderItsOwnNumber(t *testing.T) {
 		newResult("8", "800|the second line"),
 	})
 
-	replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
+	replies, ready, err := newBatchClient(t, s.URL).GetReplies(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +219,7 @@ func TestABatchThatEndedNamesTheStatus(t *testing.T) {
 		t.Run(status, func(t *testing.T) {
 			s := newBatchServer(t, status, nil)
 
-			replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
+			replies, ready, err := newBatchClient(t, s.URL).GetReplies(t.Context(), "batch_1")
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -244,7 +244,7 @@ func TestAResultNotAboutAPageOrSayingNothingIsLeftOut(t *testing.T) {
 		{"custom_id": "10", "response": map[string]any{"body": map[string]any{}}},
 	})
 
-	replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
+	replies, ready, err := newBatchClient(t, s.URL).GetReplies(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +262,7 @@ func TestAResultNotAboutAPageOrSayingNothingIsLeftOut(t *testing.T) {
 func TestACompletedBatchWithNoResultsAnswersAboutNothing(t *testing.T) {
 	s := newBatchServer(t, "completed", nil)
 
-	replies, ready, err := newBatchClient(t, s.URL).Collect(t.Context(), "batch_1")
+	replies, ready, err := newBatchClient(t, s.URL).GetReplies(t.Context(), "batch_1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,24 +281,24 @@ func TestARefusedBatchNamesTheStatusAndNotTheKey(t *testing.T) {
 	})
 	c := newBatchClient(t, s.URL)
 
-	name, err := c.Leave(t.Context(), []proofread.Batch{page(1, "a line")})
+	name, err := c.Submit(t.Context(), []proofread.Batch{page(1, "a line")})
 	if err == nil {
-		t.Fatal("no error out of Leave")
+		t.Fatal("no error out of Submit")
 	}
 	if !strings.Contains(err.Error(), "401") {
 		t.Errorf("the error does not name the status: %v", err)
 	}
 	if strings.Contains(err.Error(), theKey) {
-		t.Error("the error out of Leave carries the key")
+		t.Error("the error out of Submit carries the key")
 	}
 	if name != "" {
 		t.Errorf("left under %q alongside the error", name)
 	}
 
-	if _, _, err := c.Collect(t.Context(), "batch_1"); err == nil {
-		t.Fatal("no error out of Collect")
+	if _, _, err := c.GetReplies(t.Context(), "batch_1"); err == nil {
+		t.Fatal("no error out of GetReplies")
 	} else if strings.Contains(err.Error(), theKey) {
-		t.Error("the error out of Collect carries the key")
+		t.Error("the error out of GetReplies carries the key")
 	}
 }
 

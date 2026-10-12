@@ -115,7 +115,7 @@ func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.links.Backlinks(ctx, v.ID, source.Path)
+		links, err := u.links.GetBacklinks(ctx, v.ID, source.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +148,7 @@ func moveToTrash(ctx context.Context, writer port.VaultWriter, path string) (str
 func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
-	pointing, err := u.links.Backlinks(ctx, v.ID, path)
+	pointing, err := u.links.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return res, err
 	}

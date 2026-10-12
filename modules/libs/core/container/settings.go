@@ -59,11 +59,11 @@ type Settings struct {
 	// Performance is the workload and resource calibration profile.
 	Performance settings.Performance `json:"performance"`
 
-	// Said is what reading the file leaves a person something to do about: a
+	// Notices is what reading the file leaves a person something to do about: a
 	// number written where a setting does not go that far. Each is one line of
 	// a band, which gives a line about sixty characters, and whoever read the
 	// settings puts it where the person is.
-	Said []string `json:"-"`
+	Notices []string `json:"-"`
 }
 
 // The sections the settings adapter reads and puts right as it reads the file.
@@ -71,8 +71,8 @@ func (s *Settings) GetVersion() *int                    { return &s.Version }
 func (s *Settings) GetAppearance() *settings.Appearance { return &s.Appearance }
 func (s *Settings) GetReview() *settings.Review         { return &s.Review }
 
-// Say leaves a person one line about what the file holds.
-func (s *Settings) Say(said string) { s.Said = append(s.Said, said) }
+// AddNotice leaves a person one line about what the file holds.
+func (s *Settings) AddNotice(said string) { s.Notices = append(s.Notices, said) }
 
 // Sync is whether a note's title and its filename are kept as one name.
 func (s Settings) Sync() bool { return s.Titles.Sync() }

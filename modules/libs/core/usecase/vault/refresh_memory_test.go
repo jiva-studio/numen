@@ -110,7 +110,7 @@ type memReader struct {
 	w *memWorld
 }
 
-func (r memReader) Stat(_ context.Context, path string) (domain.Fingerprint, error) {
+func (r memReader) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
 	f, ok := r.w.files[path]
 	if !ok {
 		return domain.Fingerprint{}, fs.ErrNotExist
@@ -142,7 +142,7 @@ func (r memRows) Register(context.Context, domain.VaultID) error {
 	return r.w.registerErr
 }
 
-func (r memRows) Forget(context.Context, domain.VaultID) error { return nil }
+func (r memRows) Unregister(context.Context, domain.VaultID) error { return nil }
 
 type memNotes struct{ w *memWorld }
 

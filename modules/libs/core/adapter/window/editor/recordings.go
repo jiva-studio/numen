@@ -214,7 +214,7 @@ func (a *API) WriteTranscript(
 
 	// A run holds the recording it is listening to for as long as it takes, by
 	// the name it appends to.
-	release, err := store.Claim(ctx, derived.Partial(said.Producer, said.Hash))
+	release, err := store.ClaimName(ctx, derived.Partial(said.Producer, said.Hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errBeingHeard)
 	}
@@ -224,7 +224,7 @@ func (a *API) WriteTranscript(
 	defer release()
 
 	// The words are a person's, and a proofreader leaves them alone.
-	written := append(transcript.Marshal(cues), transcript.Hand()...)
+	written := append(transcript.Marshal(cues), transcript.GetHandWrittenMark()...)
 	if err := store.Write(ctx, derived.Corrections(said.Producer, said.Hash), written); err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
@@ -342,7 +342,7 @@ func (a *API) getShownFile(ctx context.Context, path string) (domain.Vault, doma
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, err
 	}
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, err
 	}
@@ -478,7 +478,7 @@ func readFirst(ctx context.Context, store port.DerivedStore, names ...string) ([
 // isUnclaimed says whether a name is one nobody holds. It is taken and let go, so what
 // it answers is what stood a moment ago.
 func isUnclaimed(ctx context.Context, store port.DerivedStore, name string) bool {
-	release, err := store.Claim(ctx, name)
+	release, err := store.ClaimName(ctx, name)
 	if err != nil {
 		return false
 	}

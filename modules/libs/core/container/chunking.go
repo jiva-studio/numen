@@ -63,7 +63,7 @@ func (c Config) ReadWholeVault(
 	// vault made searchable is a vault whose vector index holds what the model
 	// makes, whichever entry point is doing the making.
 	if embedder != nil {
-		model := embedder.Model()
+		model := embedder.GetModel()
 		if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
 			return vault.ReadWholeVault{}, err
 		}
@@ -98,7 +98,7 @@ func (c Config) Embed(db *Index, embedder port.Embedder, v domain.Vault) (source
 	if err != nil {
 		return source.Embed{}, err
 	}
-	embed := source.NewEmbed(c.VaultReaders(), db.VectorsOwing(), db.Vectors())
+	embed := source.NewEmbed(c.VaultReaders(), db.VectorQueries(), db.Vectors())
 	embed.Derived = derived
 	embed.Documents = c.TextExtractor()
 	embed.Embedder = embedder

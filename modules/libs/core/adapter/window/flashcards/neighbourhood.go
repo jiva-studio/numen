@@ -39,7 +39,7 @@ func (a *API) GetDeckNeighbourhood(
 			IsPointedAt: !one.IsBacklink,
 			IsAmbiguous: one.IsAmbiguous,
 		}
-		if reason, refused := wire.ErrorCodeOf(one.Outcome); refused {
+		if reason, refused := wire.ConvertOutcomeToErrorCode(one.Outcome); refused {
 			next.Error = &reason
 		}
 		out.Notes = append(out.Notes, next)

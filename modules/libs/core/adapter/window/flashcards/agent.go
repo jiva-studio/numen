@@ -50,7 +50,7 @@ func (a *API) AskAgent(
 		Face: r.Msg.GetFace(),
 	})
 
-	return wire.Ask(ctx, taking, port.Task{
+	return wire.StreamAgentTask(ctx, taking, port.Task{
 		Question:     r.Msg.GetPrompt(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
@@ -67,7 +67,7 @@ func (a *API) FinishConversation(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, ErrNoAgent)
 	}
 
-	if err := taking.Finish(ctx, r.Msg.GetConversation()); err != nil {
+	if err := taking.EndConversation(ctx, r.Msg.GetConversation()); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.FinishConversationResponse{}), nil

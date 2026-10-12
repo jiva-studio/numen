@@ -110,7 +110,7 @@ func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, err
 	if !held {
 		return nil, ErrNotCarried
 	}
-	return u.notes.OfType(ctx, v.ID, domain.TypeDeck)
+	return u.notes.GetPathsOfType(ctx, v.ID, domain.TypeDeck)
 }
 
 // GetFaces reads the decks named and says what stands in them. A caller after the
@@ -184,14 +184,14 @@ func (u ListCardFaces) getCached(
 	if !held {
 		return nil, false
 	}
-	deck, err := reader.Stat(ctx, path)
+	deck, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		u.cache.drop(key)
 		return nil, false
 	}
 	stencils := make(map[string]domain.Fingerprint, len(e.stencils))
 	for stencil := range e.stencils {
-		at, err := reader.Stat(ctx, stencil)
+		at, err := reader.GetFingerprint(ctx, stencil)
 		if err != nil {
 			u.cache.drop(key)
 			return nil, false

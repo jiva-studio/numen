@@ -26,7 +26,7 @@ type asking struct {
 	over  chan string
 }
 
-func (a *asking) Take(_ context.Context, task port.Task) (port.Run, error) {
+func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
 	a.took <- task
 	steps := make(chan port.Step, len(a.takes))
 	for _, step := range a.takes {
@@ -36,7 +36,7 @@ func (a *asking) Take(_ context.Context, task port.Task) (port.Run, error) {
 	return answering{steps}, nil
 }
 
-func (a *asking) Finish(_ context.Context, conversation string) error {
+func (a *asking) EndConversation(_ context.Context, conversation string) error {
 	a.over <- conversation
 	return nil
 }
@@ -44,8 +44,8 @@ func (a *asking) Finish(_ context.Context, conversation string) error {
 // answering is work that has already been done.
 type answering struct{ steps chan port.Step }
 
-func (a answering) Steps() <-chan port.Step { return a.steps }
-func (a answering) Stop() error             { return nil }
+func (a answering) GetSteps() <-chan port.Step { return a.steps }
+func (a answering) Stop() error                { return nil }
 
 // newAgentClient is this window's agent and a client talking to it the way the
 // page does.
@@ -326,7 +326,9 @@ func TestTheAgentIsToldWhichVaultTheSessionIsOn(t *testing.T) {
 // refusingAgent is an agent that cannot end a conversation.
 type refusingAgent struct{ port.Agent }
 
-func (refusingAgent) Finish(context.Context, string) error { return errors.New("the agent went away") }
+func (refusingAgent) EndConversation(context.Context, string) error {
+	return errors.New("the agent went away")
+}
 
 // An agent that cannot end a conversation is an internal failure, and the page
 // is told so.

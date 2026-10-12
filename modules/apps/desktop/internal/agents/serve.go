@@ -263,8 +263,8 @@ func (r *Router) currentConfig() (string, container.Config) {
 	return use, r.opts.Config
 }
 
-// Take starts the task on the active agent.
-func (r *Router) Take(ctx context.Context, task port.Task) (port.Run, error) {
+// StartRun starts the task on the active agent.
+func (r *Router) StartRun(ctx context.Context, task port.Task) (port.Run, error) {
 	r.mu.Lock()
 	if r.closed {
 		r.mu.Unlock()
@@ -281,27 +281,27 @@ func (r *Router) Take(ctx context.Context, task port.Task) (port.Run, error) {
 	if agentRunner == nil {
 		return nil, errors.New("no agent configured")
 	}
-	return agentRunner.Take(ctx, task)
+	return agentRunner.StartRun(ctx, task)
 }
 
-// Finish forwards conversation end to all active agents.
-func (r *Router) Finish(ctx context.Context, conversation string) error {
+// EndConversation forwards conversation end to all active agents.
+func (r *Router) EndConversation(ctx context.Context, conversation string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	var errs []error
 	if r.claude != nil {
-		if err := r.claude.Finish(ctx, conversation); err != nil {
+		if err := r.claude.EndConversation(ctx, conversation); err != nil {
 			errs = append(errs, err)
 		}
 	}
 	if r.anti != nil {
-		if err := r.anti.Finish(ctx, conversation); err != nil {
+		if err := r.anti.EndConversation(ctx, conversation); err != nil {
 			errs = append(errs, err)
 		}
 	}
 	if r.codex != nil {
-		if err := r.codex.Finish(ctx, conversation); err != nil {
+		if err := r.codex.EndConversation(ctx, conversation); err != nil {
 			errs = append(errs, err)
 		}
 	}

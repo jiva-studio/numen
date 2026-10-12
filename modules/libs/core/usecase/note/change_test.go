@@ -123,7 +123,7 @@ func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 		t.Errorf("the exact title is not in the note:\n%s", body)
 	}
 
-	shown, err := c.db.Queries().Notes(t.Context(), c.vault.ID, []string{created.Path})
+	shown, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{created.Path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -565,7 +565,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stale, err := reader.Stat(t.Context(), "Entropy.md")
+	stale, err := reader.GetFingerprint(t.Context(), "Entropy.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -597,7 +597,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	read, err := reader.Stat(t.Context(), "Entropy.md")
+	read, err := reader.GetFingerprint(t.Context(), "Entropy.md")
 	if err != nil {
 		t.Fatal(err)
 	}

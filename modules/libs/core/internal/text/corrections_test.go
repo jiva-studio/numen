@@ -37,8 +37,8 @@ func (b shelf) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, e
 	return readingBytes{bytes.NewReader(raw)}, int64(len(raw)), nil
 }
 
-// Take puts what a reader gives under a name.
-func (b shelf) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+// WriteStream puts what a reader gives under a name.
+func (b shelf) WriteStream(_ context.Context, name string, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -69,7 +69,7 @@ func (b shelf) Remove(_ context.Context, name string) error {
 
 func (b shelf) List(context.Context, string) ([]port.Entry, error) { return nil, nil }
 
-func (b shelf) Claim(context.Context, string) (func() error, error) {
+func (b shelf) ClaimName(context.Context, string) (func() error, error) {
 	return func() error { return nil }, nil
 }
 

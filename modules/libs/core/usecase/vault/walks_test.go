@@ -24,7 +24,7 @@ func newHeldWalk() heldWalk {
 
 func (h heldWalk) Open(context.Context, string) (io.ReadSeekCloser, error) { return nil, nil }
 
-func (h heldWalk) Walk(ctx context.Context, _ func(domain.Fingerprint) error) error {
+func (h heldWalk) WalkFiles(ctx context.Context, _ func(domain.Fingerprint) error) error {
 	h.began <- struct{}{}
 	select {
 	case <-h.let:
@@ -37,7 +37,7 @@ func (h heldWalk) Walk(ctx context.Context, _ func(domain.Fingerprint) error) er
 func (heldWalk) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
 func (heldWalk) Read(context.Context, string) ([]byte, error)         { return nil, nil }
 
-func (heldWalk) Stat(context.Context, string) (domain.Fingerprint, error) {
+func (heldWalk) GetFingerprint(context.Context, string) (domain.Fingerprint, error) {
 	return domain.Fingerprint{}, nil
 }
 

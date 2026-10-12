@@ -76,7 +76,7 @@ func TestFindAcceptsNamePathAndIdentity(t *testing.T) {
 	}
 
 	for _, typed := range []string{"01AAA", "Personal", "personal", dir} {
-		got, found, err := r.Find(typed)
+		got, found, err := r.FindVault(typed)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,7 +89,7 @@ func TestFindAcceptsNamePathAndIdentity(t *testing.T) {
 		}
 	}
 
-	if _, found, err := r.Find("nothing like this"); err != nil || found {
+	if _, found, err := r.FindVault("nothing like this"); err != nil || found {
 		t.Errorf("unknown name matched: %v %v", found, err)
 	}
 }
@@ -106,7 +106,7 @@ func TestNothingNamesNoVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, found, err := r.Find("")
+	got, found, err := r.FindVault("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +168,7 @@ func TestTheVaultOpenedLastSurvivesARoundTrip(t *testing.T) {
 	}
 
 	// A second registry over the same file is the next run of the application.
-	got, found, err := appstate.OpenAt(path).Last()
+	got, found, err := appstate.OpenAt(path).GetLastVault()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestNothingWasOpenedUntilAVaultIs(t *testing.T) {
 	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
 		t.Fatal(err)
 	}
-	if got, found, err := r.Last(); err != nil || found {
+	if got, found, err := r.GetLastVault(); err != nil || found {
 		t.Errorf("last = %v %v %v, want nothing", got, found, err)
 	}
 }
@@ -205,7 +205,7 @@ func TestRemovingTheVaultOpenedLastForgetsThatItWas(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, found, err := r.Last(); err != nil || found {
+	if got, found, err := r.GetLastVault(); err != nil || found {
 		t.Errorf("last = %v %v %v, want nothing", got, found, err)
 	}
 	// The file no longer names it either: an identity nothing on the list
@@ -227,7 +227,7 @@ func TestOpeningAVaultThatIsNotOnTheListIsRefused(t *testing.T) {
 	if err := r.RecordOpened("01NEVERADDED"); err == nil {
 		t.Fatal("an identity nothing on the list carries was recorded")
 	}
-	if got, found, err := r.Last(); err != nil || found {
+	if got, found, err := r.GetLastVault(); err != nil || found {
 		t.Errorf("last = %v %v %v, want nothing", got, found, err)
 	}
 }

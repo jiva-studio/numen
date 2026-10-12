@@ -397,12 +397,12 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 	return syncDirectory(root, filepath.Dir(name))
 }
 
-// Bring copies a file from this machine into the vault.
+// Import copies a file from this machine into the vault.
 //
 // The bytes are streamed, so a recording or an archive crosses in whatever room
 // the machine has. They land beside the destination and are renamed over it, so
 // the watcher reports the file once and reports it whole.
-func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader) error {
+func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}

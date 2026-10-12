@@ -98,7 +98,7 @@ func TestTextExtractsAnAddressOnce(t *testing.T) {
 	command, invocations := recordingTool(t, "echo 2099.01.01")
 	v := newTestYtDLP(command)
 
-	got, err := v.Text(t.Context(), anAddress, port.PreferredCaptions{})
+	got, err := v.GetText(t.Context(), anAddress, port.PreferredCaptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestACopyExtractsAnAddressOnce(t *testing.T) {
 	v := newTestYtDLP(command)
 
 	ctx, end := operation.Begin(t.Context())
-	if _, err := v.Metadata(ctx, anAddress); err != nil {
+	if _, err := v.GetMetadata(ctx, anAddress); err != nil {
 		t.Fatal(err)
 	}
 	var into strings.Builder
@@ -158,7 +158,7 @@ func TestMetadataOutsideAnOperationExtractsEachTime(t *testing.T) {
 	v := newTestYtDLP(command)
 
 	for range 2 {
-		if _, err := v.Metadata(t.Context(), anAddress); err != nil {
+		if _, err := v.GetMetadata(t.Context(), anAddress); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -182,7 +182,7 @@ func TestAFailedExtractionIsReportedAndLeavesNothing(t *testing.T) {
 	}
 	v := newTestYtDLP([]string{at})
 
-	_, err := v.Text(t.Context(), anAddress, port.PreferredCaptions{})
+	_, err := v.GetText(t.Context(), anAddress, port.PreferredCaptions{})
 	if err == nil || !strings.Contains(err.Error(), "not a bot") {
 		t.Errorf("the refusal reads %v", err)
 	}

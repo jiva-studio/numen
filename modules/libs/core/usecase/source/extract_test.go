@@ -210,7 +210,7 @@ func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stale, err := index.ByOtherRecipe(ctx, first.ID, domain.KindBook, recipes(Extract{Sizes: other}.sizes()), 10)
+	stale, err := index.GetSourcesWithOtherRecipe(ctx, first.ID, domain.KindBook, recipes(Extract{Sizes: other}.sizes()), 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -284,7 +284,7 @@ func TestExtractionStaysInsideItsVault(t *testing.T) {
 					t.Fatalf("a chunk of %s holds the other vault's words: %q", c.vault.Name, chunk.text)
 				}
 			}
-			known, err := index.Fingerprints(ctx, c.vault.ID, domain.KindBook)
+			known, err := index.GetFingerprints(ctx, c.vault.ID, domain.KindBook)
 			if err != nil {
 				t.Fatal(err)
 			}

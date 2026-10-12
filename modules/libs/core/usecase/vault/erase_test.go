@@ -37,7 +37,7 @@ func newErase(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows,
 	return vaults.NewErase(
 		filesystem.VaultIdentity{},
 		trash,
-		vaults.NewForget(registry, index),
+		vaults.NewUnregister(registry, index),
 	), trash, index, steps
 }
 
@@ -60,10 +60,10 @@ func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 	if !slices.Equal(trash.moved, []string{gone.Path}) {
 		t.Errorf("trashed %v, want %s", trash.moved, gone.Path)
 	}
-	if !slices.Equal(index.forgot, []domain.VaultID{gone.ID}) {
-		t.Errorf("the index was told to forget %v, want %s", index.forgot, gone.ID)
+	if !slices.Equal(index.unregistered, []domain.VaultID{gone.ID}) {
+		t.Errorf("the index was told to forget %v, want %s", index.unregistered, gone.ID)
 	}
-	if _, found, err := registry.Find(string(gone.ID)); err != nil || found {
+	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
 	}
 }
@@ -84,10 +84,10 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 	if len(trash.moved) != 0 {
 		t.Errorf("trashed %v", trash.moved)
 	}
-	if len(index.forgot) != 0 {
-		t.Errorf("the index was told to forget %v", index.forgot)
+	if len(index.unregistered) != 0 {
+		t.Errorf("the index was told to forget %v", index.unregistered)
 	}
-	if _, found, err := registry.Find(string(gone.ID)); err != nil || !found {
+	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || !found {
 		t.Errorf("the vault left the list: %v %v", found, err)
 	}
 }
@@ -111,10 +111,10 @@ func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 	if len(trash.moved) != 0 {
 		t.Errorf("trashed %v, and there was nothing there", trash.moved)
 	}
-	if !slices.Equal(index.forgot, []domain.VaultID{gone.ID}) {
-		t.Errorf("the index was told to forget %v, want %s", index.forgot, gone.ID)
+	if !slices.Equal(index.unregistered, []domain.VaultID{gone.ID}) {
+		t.Errorf("the index was told to forget %v, want %s", index.unregistered, gone.ID)
 	}
-	if _, found, err := registry.Find(string(gone.ID)); err != nil || found {
+	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
 	}
 }
@@ -147,15 +147,15 @@ func TestEraseTouchesNothingWhenTheFolderCannotBeRead(t *testing.T) {
 	erase := vaults.NewErase(
 		refusingIdentity{checkReadable: errors.New("permission denied")},
 		trash,
-		vaults.NewForget(registry, index),
+		vaults.NewUnregister(registry, index),
 	)
 
 	res, err := erase.Execute(t.Context(), gone)
 	if !errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("want ErrUnreadable, got %v", err)
 	}
-	if res.IsTrashed || len(trash.moved) != 0 || len(index.forgot) != 0 {
-		t.Errorf("trashed %v, forgot %v, result %+v", trash.moved, index.forgot, res)
+	if res.IsTrashed || len(trash.moved) != 0 || len(index.unregistered) != 0 {
+		t.Errorf("trashed %v, unregistered %v, result %+v", trash.moved, index.unregistered, res)
 	}
 }
 
@@ -167,15 +167,15 @@ func TestEraseTouchesNothingWhenTheIdentityCannotBeRead(t *testing.T) {
 	erase := vaults.NewErase(
 		refusingIdentity{vaultID: func(string) (domain.VaultID, bool, error) { return "", false, errRefused }},
 		trash,
-		vaults.NewForget(registry, index),
+		vaults.NewUnregister(registry, index),
 	)
 
 	_, err := erase.Execute(t.Context(), gone)
 	if !errors.Is(err, errRefused) || errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("want the refusal itself back, got %v", err)
 	}
-	if len(trash.moved) != 0 || len(index.forgot) != 0 {
-		t.Errorf("trashed %v, forgot %v", trash.moved, index.forgot)
+	if len(trash.moved) != 0 || len(index.unregistered) != 0 {
+		t.Errorf("trashed %v, unregistered %v", trash.moved, index.unregistered)
 	}
 }
 
@@ -201,14 +201,14 @@ func TestEraseRefusesAFolderWhoseIdentityIsNotThisVaults(t *testing.T) {
 					return id, does, nil
 				}},
 				trash,
-				vaults.NewForget(registry, index),
+				vaults.NewUnregister(registry, index),
 			)
 
 			if _, err := erase.Execute(t.Context(), gone); !errors.Is(err, vaults.ErrUnreadable) {
 				t.Fatalf("want ErrUnreadable, got %v", err)
 			}
-			if len(trash.moved) != 0 || len(index.forgot) != 0 {
-				t.Errorf("trashed %v, forgot %v", trash.moved, index.forgot)
+			if len(trash.moved) != 0 || len(index.unregistered) != 0 {
+				t.Errorf("trashed %v, unregistered %v", trash.moved, index.unregistered)
 			}
 		})
 	}
@@ -224,10 +224,10 @@ func TestAFolderThatCannotBeTrashedStaysOnTheList(t *testing.T) {
 	if !errors.Is(err, errRefused) {
 		t.Fatalf("want the refusal back, got %v", err)
 	}
-	if res.IsTrashed || len(index.forgot) != 0 {
-		t.Errorf("result %+v, forgot %v", res, index.forgot)
+	if res.IsTrashed || len(index.unregistered) != 0 {
+		t.Errorf("result %+v, unregistered %v", res, index.unregistered)
 	}
-	if _, found, err := registry.Find(string(gone.ID)); err != nil || !found {
+	if _, found, err := registry.FindVault(string(gone.ID)); err != nil || !found {
 		t.Errorf("the vault left the list: %v %v", found, err)
 	}
 }
@@ -238,7 +238,7 @@ func TestEraseKeepsTheCauseWhenTheFolderCannotBeRead(t *testing.T) {
 	erase := vaults.NewErase(
 		refusingIdentity{checkReadable: errRefused},
 		&bin{},
-		vaults.NewForget(registry, &indexRows{}),
+		vaults.NewUnregister(registry, &indexRows{}),
 	)
 
 	_, err := erase.Execute(t.Context(), gone)

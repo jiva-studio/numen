@@ -233,7 +233,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	// "opening" is in both vaults, so what separates them is the filter.
-	shared, err := queries.Lexical(ctx, first.ID, "opening", nil, 10, false)
+	shared, err := queries.FindLexical(ctx, first.ID, "opening", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	}
 
 	// A word only the other vault holds is not in this one.
-	leaked, err := queries.Lexical(ctx, first.ID, "second", nil, 10, false)
+	leaked, err := queries.FindLexical(ctx, first.ID, "second", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +273,7 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 	}
 	// The words half finds the small chunks, which is one row per small chunk
 	// of the book.
-	lexical, err := queries.Lexical(ctx, first.ID, "first", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, first.ID, "first", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,7 +314,7 @@ func TestAPassageSaysWhatItWasReadOutOf(t *testing.T) {
 		"Entropy.md":        domain.KindNote,
 	}
 
-	lexical, err := queries.Lexical(ctx, first.ID, "opening", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, first.ID, "opening", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,14 +443,14 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		t.Errorf("%d rows in the vector index describe a note that has been rewritten", got)
 	}
 	// The words of the note as it stands now are what the full-text index holds.
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, "longer", nil, 10, false)
+	found, err := db.ChunkQueries().FindLexical(ctx, first.ID, "longer", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) == 0 || found[0].Source != note.Fingerprint.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
-	if stale, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", nil, 10, false); err != nil {
+	if stale, err := db.ChunkQueries().FindLexical(ctx, first.ID, "first", nil, 10, false); err != nil {
 		t.Fatal(err)
 	} else if len(stale) != 0 {
 		t.Errorf("the words of the note before it was rewritten still answer: %+v", stale)
@@ -511,7 +511,7 @@ func TestRemovingASourceLeavesNothingSearchable(t *testing.T) {
 	if len(matches) != 0 {
 		t.Errorf("a removed book still answers a search: %+v", matches)
 	}
-	words, err := db.ChunkQueries().Lexical(ctx, first.ID, "first", nil, 10, false)
+	words, err := db.ChunkQueries().FindLexical(ctx, first.ID, "first", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -581,14 +581,14 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	known, err := db.NoteQueries().Fingerprints(ctx, first.ID)
+	known, err := db.NoteQueries().GetFingerprints(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(known) != 1 {
 		t.Errorf("a note scan sees %v, want only the note", known)
 	}
-	books, err := db.ChunkQueries().Fingerprints(ctx, first.ID, "book")
+	books, err := db.ChunkQueries().GetFingerprints(ctx, first.ID, "book")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -665,7 +665,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 	}
 
 	// The recipe: the same books read by a reader that has since changed.
-	byOther, err := queries.ByOtherRecipe(ctx, first.ID, "book", []string{"epub-2"}, 10)
+	byOther, err := queries.GetSourcesWithOtherRecipe(ctx, first.ID, "book", []string{"epub-2"}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -677,7 +677,7 @@ func TestWhatIsStaleIsAskedOnThreeKeys(t *testing.T) {
 			t.Errorf("the first vault answered with %s, which belongs to the second", path)
 		}
 	}
-	same, err := queries.ByOtherRecipe(ctx, first.ID, "book", []string{"epub"}, 10)
+	same, err := queries.GetSourcesWithOtherRecipe(ctx, first.ID, "book", []string{"epub"}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -796,7 +796,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held, embedded, err := db.ChunkQueries().Progress(ctx, vault.ID, "model")
+	held, embedded, err := db.ChunkQueries().GetProgress(ctx, vault.ID, "model")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -815,7 +815,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 
 	saveSeededVectors(t, db, vault, 1)
 
-	held, embedded, err = db.ChunkQueries().Progress(ctx, vault.ID, "model")
+	held, embedded, err = db.ChunkQueries().GetProgress(ctx, vault.ID, "model")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1310,7 +1310,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
 	queries := db.ChunkQueries()
 
-	lexical, err := queries.Lexical(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}

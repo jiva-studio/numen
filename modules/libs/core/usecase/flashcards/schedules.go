@@ -321,11 +321,11 @@ func (u Schedules) readRemembered(
 
 	out := make(map[review.CardFaceID]review.Schedule, len(was.Faces))
 	for _, s := range was.Faces {
-		due, err := review.Moment(s.Due)
+		due, err := review.ParseTimestamp(s.Due)
 		if err != nil {
 			return nil, false
 		}
-		last, err := review.Moment(s.Last)
+		last, err := review.ParseTimestamp(s.Last)
 		if err != nil {
 			return nil, false
 		}
@@ -368,8 +368,8 @@ func (u Schedules) remember(
 	for on, s := range out {
 		now.Faces = append(now.Faces, cachedSchedule{
 			Card: on.Card, Face: on.Face,
-			Due:  s.Due.UTC().Format(review.Stamp),
-			Last: s.Last.UTC().Format(review.Stamp),
+			Due:  s.Due.UTC().Format(review.TimestampLayout),
+			Last: s.Last.UTC().Format(review.TimestampLayout),
 			Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		})

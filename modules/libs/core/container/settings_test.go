@@ -191,10 +191,10 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 // A line said is kept for whoever read the settings to put in front of a person.
 func TestWhatIsSaidWhileReadingIsKept(t *testing.T) {
 	var held Settings
-	held.Say("first")
-	held.Say("second")
-	if !slices.Equal(held.Said, []string{"first", "second"}) {
-		t.Errorf("said %v", held.Said)
+	held.AddNotice("first")
+	held.AddNotice("second")
+	if !slices.Equal(held.Notices, []string{"first", "second"}) {
+		t.Errorf("said %v", held.Notices)
 	}
 }
 

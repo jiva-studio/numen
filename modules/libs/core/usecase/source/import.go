@@ -92,7 +92,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 
 	// One run to an address. The name is held for as long as the download takes,
 	// and two urls on one address are one download.
-	release, err := store.Claim(ctx, text.Partial(u.By.GetDownloadModel(at).Producer, hash))
+	release, err := store.ClaimName(ctx, text.Partial(u.By.GetDownloadModel(at).Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
@@ -116,7 +116,7 @@ func (u ImportURL) Execute(ctx context.Context, v domain.Vault, path string) (Im
 		return res, nil
 	}
 
-	extracted, err := u.By.Text(ctx, at, port.PreferredCaptions{
+	extracted, err := u.By.GetText(ctx, at, port.PreferredCaptions{
 		Languages: u.Languages, IsAutomatic: u.IsAutomatic,
 	})
 	switch {
@@ -180,7 +180,7 @@ func (u ImportURL) readURLFile(
 	if err != nil {
 		return none, domain.Fingerprint{}, nil, err
 	}
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return none, domain.Fingerprint{}, nil, fmt.Errorf("stat %s: %w", path, err)
 	}

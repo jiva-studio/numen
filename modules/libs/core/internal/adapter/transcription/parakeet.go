@@ -140,8 +140,8 @@ func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, er
 	return onnxruntime.NewSession(engine, path, options)
 }
 
-// Transcription is what every recording this transcriber hears was heard by.
-func (t *Transcriber) Transcription() port.TranscriptionModel { return t.model }
+// GetTranscriptionModel is what every recording this transcriber hears was heard by.
+func (t *Transcriber) GetTranscriptionModel() port.TranscriptionModel { return t.model }
 
 // Close lets go of the models this transcriber loaded. The runtime they ran on
 // is the process's and stays.

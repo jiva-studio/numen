@@ -16,7 +16,7 @@ func GetTitle(ctx context.Context, notes port.NoteQueries, vault domain.VaultID,
 	if notes == nil || path == "" {
 		return ""
 	}
-	found, err := notes.Notes(ctx, vault, []string{path})
+	found, err := notes.GetNotes(ctx, vault, []string{path})
 	if err != nil {
 		return ""
 	}

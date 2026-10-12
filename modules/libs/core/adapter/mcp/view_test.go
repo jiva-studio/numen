@@ -20,7 +20,7 @@ type window struct {
 	fails error
 }
 
-func (w *window) Focus(_ context.Context, at domain.Place) error {
+func (w *window) FocusPlace(_ context.Context, at domain.Place) error {
 	if w.fails != nil {
 		return w.fails
 	}

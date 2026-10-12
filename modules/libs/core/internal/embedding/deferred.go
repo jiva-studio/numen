@@ -44,16 +44,16 @@ type WaitingEmbedder interface {
 	Wait(ctx context.Context) error
 }
 
-// NewArriving is an embedder being loaded somewhere else, under the identity
+// NewDeferredEmbedder is an embedder being loaded somewhere else, under the identity
 // the settings give it.
-func NewArriving(is port.EmbeddingModel) *Embedder {
+func NewDeferredEmbedder(is port.EmbeddingModel) *Embedder {
 	return &Embedder{model: is, ready: make(chan struct{})}
 }
 
-// ReportArrival is the model turning up, or the reason it never will. It is the
+// SetModel is the model turning up, or the reason it never will. It is the
 // first of these that counts, and a model arriving after the wait is over is
 // let go of where it stands.
-func (e *Embedder) ReportArrival(held port.Embedder, why error) {
+func (e *Embedder) SetModel(held port.Embedder, why error) {
 	e.mu.Lock()
 	late := e.isDone
 	if !late {
@@ -68,11 +68,11 @@ func (e *Embedder) ReportArrival(held port.Embedder, why error) {
 	}
 }
 
-// Disown is the model turning out not to be the one whose vectors are stored.
+// DiscardModel is the model turning out not to be the one whose vectors are stored.
 // It is let go of, and nothing is asked of it again.
 //
 // The reason is in place before anybody can see the wait is over.
-func (e *Embedder) Disown(why error) error {
+func (e *Embedder) DiscardModel(why error) error {
 	e.mu.Lock()
 	held := e.held
 	e.held, e.reason, e.isDone = nil, why, true
@@ -91,8 +91,8 @@ func closeIfPresent(held port.Embedder) error {
 	return held.Close()
 }
 
-// Model is what the settings say this is, known before the weights are here.
-func (e *Embedder) Model() port.EmbeddingModel { return e.model }
+// GetModel is what the settings say this is, known before the weights are here.
+func (e *Embedder) GetModel() port.EmbeddingModel { return e.model }
 
 // Wait blocks until the model turns up, and says what stopped it.
 func (e *Embedder) Wait(ctx context.Context) error {
@@ -143,7 +143,7 @@ func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, erro
 
 type blockingEmbedder struct{ e *Embedder }
 
-func (w blockingEmbedder) Model() port.EmbeddingModel { return w.e.model }
+func (w blockingEmbedder) GetModel() port.EmbeddingModel { return w.e.model }
 
 // Wait blocks until the model turns up, and says what stopped it.
 func (w blockingEmbedder) Wait(ctx context.Context) error { return w.e.Wait(ctx) }
@@ -163,7 +163,7 @@ func (w blockingEmbedder) Concurrency() int { return w.e.Concurrency() }
 
 type nonBlockingEmbedder struct{ e *Embedder }
 
-func (i nonBlockingEmbedder) Model() port.EmbeddingModel { return i.e.model }
+func (i nonBlockingEmbedder) GetModel() port.EmbeddingModel { return i.e.model }
 
 func (i nonBlockingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	select {

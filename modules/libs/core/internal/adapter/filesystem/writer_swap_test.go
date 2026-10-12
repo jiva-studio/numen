@@ -55,7 +55,7 @@ func TestAFolderSwappedForALinkTakesNothingOutOfTheVault(t *testing.T) {
 	// for, many times over.
 	for range 800 {
 		_ = writer.MakeFolder(ctx, "notes/inside")
-		_ = writer.Bring(ctx, "notes/landed.md", strings.NewReader("bytes"))
+		_ = writer.Import(ctx, "notes/landed.md", strings.NewReader("bytes"))
 		_ = writer.Create(ctx, "notes/created.md", []byte("bytes"))
 		_, _ = writer.Write(ctx, "notes/written.md", []byte("bytes"), domain.Fingerprint{})
 		_ = writer.Move(ctx, "notes/landed.md", "notes/moved.md")

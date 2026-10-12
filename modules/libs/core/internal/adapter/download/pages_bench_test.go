@@ -26,7 +26,7 @@ func BenchmarkPagesText_Sequential(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		if _, err := p.Text(b.Context(), at, port.PreferredCaptions{}); err != nil {
+		if _, err := p.GetText(b.Context(), at, port.PreferredCaptions{}); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -46,7 +46,7 @@ func BenchmarkPagesText_Concurrent(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			if _, err := p.Text(b.Context(), at, port.PreferredCaptions{}); err != nil {
+			if _, err := p.GetText(b.Context(), at, port.PreferredCaptions{}); err != nil {
 				b.Fatal(err)
 			}
 		}

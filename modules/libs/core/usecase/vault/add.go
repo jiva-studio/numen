@@ -61,7 +61,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 
-	id, err := u.identity.Ensure(root, u.now())
+	id, err := u.identity.EnsureIdentity(root, u.now())
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("give %s an identity: %w", root, err)
 	}
@@ -73,7 +73,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	//
 	// They are told apart by looking: if the old location still carries this
 	// identity, both exist and it is a copy.
-	existing, found, err := u.registry.Find(string(id))
+	existing, found, err := u.registry.FindVault(string(id))
 	if err != nil {
 		return domain.Vault{}, err
 	}

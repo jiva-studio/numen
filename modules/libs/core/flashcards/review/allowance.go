@@ -171,7 +171,7 @@ func (p Preset) GetAllowance(
 	return out
 }
 
-// IsPayingDebt reports whether the next card of this day comes from the debt
+// IsNextCardDebt reports whether the next card of this day comes from the debt
 // before it. False is a card from the material the preset has not begun.
 //
 // Debt and begun are how many of each the day has taken so far, and owed and
@@ -180,7 +180,7 @@ func (p Preset) GetAllowance(
 // rest of the day to the other, and an odd card goes to the debt.
 //
 // It is the one rule for how a day is spent.
-func (a Allowance) IsPayingDebt(debt, begun int, owed, fresh bool) bool {
+func (a Allowance) IsNextCardDebt(debt, begun int, owed, fresh bool) bool {
 	if !owed {
 		return false
 	}

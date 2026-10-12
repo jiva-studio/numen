@@ -66,7 +66,7 @@ func TestAMachineWithNeitherToolFetchesAPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	article, err := downloader.Text(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
+	article, err := downloader.GetText(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
 	if err != nil {
 		t.Fatalf("a page went unfetched on a machine holding no tool: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestAVideoOnAMachineWithNeitherTool(t *testing.T) {
 		t.Fatal(err)
 	}
 	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
-	if _, err := downloader.Metadata(t.Context(), at); !errors.Is(err, download.ErrNoTool) {
+	if _, err := downloader.GetMetadata(t.Context(), at); !errors.Is(err, download.ErrNoTool) {
 		t.Errorf("a video was looked at without the tool that reaches one: %v", err)
 	}
 	if _, err := downloader.Download(t.Context(), at, io.Discard); !errors.Is(err, download.ErrNoTool) {
@@ -102,7 +102,7 @@ func TestAToolNamedAsACommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	meta, err := downloader.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	meta, err := downloader.GetMetadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func TestWhatTheToolSaidWhenItRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = downloader.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	_, err = downloader.GetMetadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
 	if err == nil || !strings.Contains(err.Error(), "not a bot") {
 		t.Errorf("the refusal reads %v", err)
 	}
@@ -164,7 +164,7 @@ func TestThePageWithoutTheFurnitureAroundIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	article, err := downloader.Text(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
+	article, err := downloader.GetText(t.Context(), address(t, site.URL+"/entropy"), port.PreferredCaptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func TestAPageWithNoArticleInIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := downloader.Text(t.Context(), address(t, site.URL), port.PreferredCaptions{}); !errors.Is(err, port.ErrNothingDownloaded) {
+	if _, err := downloader.GetText(t.Context(), address(t, site.URL), port.PreferredCaptions{}); !errors.Is(err, port.ErrNothingDownloaded) {
 		t.Errorf("a page with nothing in it answered %v", err)
 	}
 }
@@ -222,7 +222,7 @@ func TestAMachineWithFfmpegAndNothingThatReachesAVideo(t *testing.T) {
 		t.Fatal(err)
 	}
 	at := address(t, "https://youtu.be/dQw4w9WgXcQ")
-	if _, err := downloader.Metadata(t.Context(), at); !errors.Is(err, download.ErrNoTool) {
+	if _, err := downloader.GetMetadata(t.Context(), at); !errors.Is(err, download.ErrNoTool) {
 		t.Errorf("a machine holding only ffmpeg looked at a video: %v", err)
 	}
 }
@@ -271,7 +271,7 @@ func TestAToolIsStartedWithTheEnvironmentTheSettingsName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	meta, err := downloader.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	meta, err := downloader.GetMetadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -299,7 +299,7 @@ func TestAToolNamedNoEnvironmentKeepsThisProcessesOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	meta, err := downloader.Metadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
+	meta, err := downloader.GetMetadata(t.Context(), address(t, "https://youtu.be/dQw4w9WgXcQ"))
 	if err != nil {
 		t.Fatal(err)
 	}

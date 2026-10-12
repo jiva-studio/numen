@@ -48,9 +48,9 @@ type DerivedStore interface {
 	// bytes under the same name.
 	Write(ctx context.Context, name string, content []byte) error
 
-	// Take puts what a reader gives under a name, atomically. A copy of a video
+	// WriteStream puts what a reader gives under a name, atomically. A copy of a video
 	// arrives over a network and is not held in memory to be written.
-	Take(ctx context.Context, name string, from io.Reader) (int64, error)
+	WriteStream(ctx context.Context, name string, from io.Reader) (int64, error)
 
 	// Append adds to what is under a name, creating it when there is nothing.
 	// A recognition is written as it is read, over an hour, and reading a
@@ -73,10 +73,10 @@ type DerivedStore interface {
 	// that was asked for.
 	Remove(ctx context.Context, name string) error
 
-	// Claim takes a name for this caller alone and returns what lets it go. A
+	// ClaimName takes a name for this caller alone and returns what lets it go. A
 	// name already claimed is refused with ErrClaimed, so work whose whole
 	// output is one file is done once.
-	Claim(ctx context.Context, name string) (release func() error, err error)
+	ClaimName(ctx context.Context, name string) (release func() error, err error)
 }
 
 // Entry is one thing a store holds: its name in that store, and how many

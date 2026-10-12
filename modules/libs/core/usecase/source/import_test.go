@@ -35,7 +35,7 @@ func (s *site) GetDownloadModel(_ domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}
 }
 
-func (s *site) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+func (s *site) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
 	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
 	s.asked = append(s.asked, "metadata "+string(at))
 	if s.refusing != nil {
@@ -44,7 +44,7 @@ func (s *site) Metadata(ctx context.Context, at domain.URL) (port.Metadata, erro
 	return port.Metadata{Title: s.title, Length: s.length}, nil
 }
 
-func (s *site) Text(
+func (s *site) GetText(
 	_ context.Context, at domain.URL, _ port.PreferredCaptions,
 ) (port.Text, error) {
 	s.asked = append(s.asked, "text "+string(at))

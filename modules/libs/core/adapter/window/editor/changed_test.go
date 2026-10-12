@@ -153,8 +153,8 @@ type beatenReader struct {
 	after func(path string)
 }
 
-func (b beatenReader) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
-	ref, err := b.VaultReader.Stat(ctx, path)
+func (b beatenReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+	ref, err := b.VaultReader.GetFingerprint(ctx, path)
 	b.after(path)
 	return ref, err
 }

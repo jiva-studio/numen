@@ -43,10 +43,10 @@ func (u uncuttable) GetUnchunkedSources(
 	return u.SourceQueries.GetUnchunkedSources(ctx, id, kind, limit)
 }
 
-func (u uncuttable) ByOtherRecipe(
+func (u uncuttable) GetSourcesWithOtherRecipe(
 	ctx context.Context, id domain.VaultID, kind domain.SourceKind, recipes []string, limit int,
 ) ([]string, error) {
-	found, err := u.SourceQueries.ByOtherRecipe(ctx, id, kind, recipes, limit)
+	found, err := u.SourceQueries.GetSourcesWithOtherRecipe(ctx, id, kind, recipes, limit)
 	if u.onRecipe != nil {
 		u.onRecipe()
 	}
@@ -67,10 +67,10 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
-	if err := db.FitVectors(t.Context(), width, pointing{}.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
-	vectors := source.NewEmbed(readers, db.VectorsOwing(), db.Vectors())
+	vectors := source.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
@@ -113,7 +113,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasDone(t *testing.T) {
 	making := vaults.NewReadWholeVault(
 		notes,
 		source.NewExtract(readers, db.Sources(), db.SourcesKnown()),
-		source.NewEmbed(readers, db.VectorsOwing(), db.Vectors()),
+		source.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
 	result, err := making.Execute(t.Context(), v)
@@ -135,7 +135,7 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasDone(t *testing.T) {
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(readers, db.Sources(), uncuttable{SourceQueries: db.SourcesKnown(), err: stopped}),
-		source.NewEmbed(readers, db.VectorsOwing(), db.Vectors()),
+		source.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
 	if _, err := scanner(readers, db).Execute(t.Context(), v); err != nil {
@@ -156,11 +156,11 @@ func TestVectorsThatStoppedAreReportedWithWhatWasDone(t *testing.T) {
 	isolateHome(t)
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
-	if err := db.FitVectors(t.Context(), width, pointing{}.Model().Recipe()); err != nil {
+	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 	stopped := errors.New("the model has stopped")
-	vectors := source.NewEmbed(readers, db.VectorsOwing(), db.Vectors())
+	vectors := source.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = failing{err: stopped}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
@@ -188,7 +188,7 @@ func TestARunThatEndedInTheBooksIsToldWhatTheBooksHadDone(t *testing.T) {
 	stopped := errors.New("the books cannot be cut")
 	cut := uncuttable{SourceQueries: db.SourcesKnown(), err: stopped, onUnchunked: cancel}
 	counted := &counting{VaultReaders: readers}
-	vectors := source.NewEmbed(counted, db.VectorsOwing(), db.Vectors())
+	vectors := source.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
@@ -220,7 +220,7 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	books := source.NewExtract(readers, db.Sources(), cut)
 	books.Kinds = []domain.SourceKind{domain.KindBook}
 	counted := &counting{VaultReaders: readers}
-	vectors := source.NewEmbed(counted, db.VectorsOwing(), db.Vectors())
+	vectors := source.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(scanner(readers, db), books, vectors)
 
@@ -255,7 +255,7 @@ func TestOneSourceIsCutAgain(t *testing.T) {
 	cutting := vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(unreadable{err: stopped}, db.Sources(), db.SourcesKnown()),
-		source.NewEmbed(readers, db.VectorsOwing(), db.Vectors()),
+		source.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
 	if !errors.Is(err, stopped) {

@@ -109,7 +109,7 @@ func (u Replace) Execute(
 	at, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalise(doc.Body())
 
-		where, plainly := markdown.Where(body, stood)
+		where, plainly := markdown.FindSpans(body, stood)
 		if len(where) > 1 {
 			return AmbiguousSpan{Places: len(where)}
 		}
@@ -161,7 +161,7 @@ func newMissingSpan(body, stood string) MissingSpan {
 	}
 	var first markdown.Span
 	count := sort.Search(len(ends), func(i int) bool {
-		at, _ := markdown.Where(body, stood[:ends[i]])
+		at, _ := markdown.FindSpans(body, stood[:ends[i]])
 		if len(at) == 0 {
 			return true
 		}

@@ -10,20 +10,20 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Erase is Forget, and the folder goes to the place this machine keeps what a
+// Erase is Unregister, and the folder goes to the place this machine keeps what a
 // person deleted. The folder is taken away only while it still carries this
 // vault's identity.
 type Erase struct {
-	identity port.VaultIdentity
-	trash    port.Trash
-	forget   Forget
+	identity   port.VaultIdentity
+	trash      port.Trash
+	unregister Unregister
 }
 
 // NewErase is what takes a vault away: what reads the identity the folder
-// carries, where this machine keeps what a person deleted, and the Forget it is
-// taken off the list through — the same one everything else forgets a vault by.
-func NewErase(identity port.VaultIdentity, trash port.Trash, forget Forget) Erase {
-	return Erase{identity: identity, trash: trash, forget: forget}
+// carries, where this machine keeps what a person deleted, and the Unregister it is
+// taken off the list through — the same one everything else unregisters a vault by.
+func NewErase(identity port.VaultIdentity, trash port.Trash, unregister Unregister) Erase {
+	return Erase{identity: identity, trash: trash, unregister: unregister}
 }
 
 // EraseResult says what became of the folder. Whoever asked for the erasure is
@@ -37,7 +37,7 @@ type EraseResult struct {
 
 func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error) {
 	// Asked before the folder is moved.
-	if err := keepTheLastVault(u.forget.registry, v); err != nil {
+	if err := keepTheLastVault(u.unregister.registry, v); err != nil {
 		return EraseResult{}, err
 	}
 
@@ -45,7 +45,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 	if errors.Is(err, fs.ErrNotExist) {
 		// Nothing is at the path any more. What is left of the vault is its
 		// entry and its rows.
-		return EraseResult{}, u.forget.Execute(ctx, v)
+		return EraseResult{}, u.unregister.Execute(ctx, v)
 	}
 	if err != nil {
 		return EraseResult{}, fmt.Errorf("%w: %w", ErrUnreadable, err)
@@ -64,5 +64,5 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 	if err := u.trash.Trash(v.Path); err != nil {
 		return EraseResult{}, fmt.Errorf("move %s to the trash: %w", v.Path, err)
 	}
-	return EraseResult{IsTrashed: true}, u.forget.Execute(ctx, v)
+	return EraseResult{IsTrashed: true}, u.unregister.Execute(ctx, v)
 }

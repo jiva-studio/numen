@@ -64,7 +64,7 @@ func (r registry) Save(domain.Vault) error           { return nil }
 func (r registry) Remove(domain.VaultID) error       { return nil }
 func (r registry) RecordOpened(domain.VaultID) error { return nil }
 
-func (r registry) Find(id string) (domain.Vault, bool, error) {
+func (r registry) FindVault(id string) (domain.Vault, bool, error) {
 	for _, v := range r.held {
 		if string(v.ID) == id {
 			return v, true, nil
@@ -73,7 +73,7 @@ func (r registry) Find(id string) (domain.Vault, bool, error) {
 	return domain.Vault{}, false, nil
 }
 
-func (r registry) Last() (domain.Vault, bool, error) {
+func (r registry) GetLastVault() (domain.Vault, bool, error) {
 	for _, v := range r.held {
 		if v.ID == r.last {
 			return v, true, nil
@@ -867,12 +867,12 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 			if got := int(drawn.GetAt()[at].GetReviews()); one.isSameDay && got != offers {
 				t.Errorf("the deck screen offers %d cards and the tab draws %d", offers, got)
 			}
-			if got := drawn.GetAt()[at].GetClosed(); !slices.Contains(got, wire.BudgetOf(one.closed)) {
+			if got := drawn.GetAt()[at].GetClosed(); !slices.Contains(got, wire.ConvertBudgetToWire(one.closed)) {
 				t.Errorf("the day closed on %v, want %q among them", got, one.closed)
 			}
 			for i, point := range drawn.GetAt() {
 				for _, never := range one.never {
-					if slices.Contains(point.GetClosed(), wire.BudgetOf(never)) {
+					if slices.Contains(point.GetClosed(), wire.ConvertBudgetToWire(never)) {
 						t.Errorf("at %v the day closed on %q, which its goal does not name",
 							drawn.GetGrid()[i], never)
 					}
@@ -930,7 +930,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	}
 	for i := range at {
 		got := drawn.GetAt()[i].GetClosed()
-		if !slices.Contains(got, wire.BudgetOf(review.ClosedMinutes)) {
+		if !slices.Contains(got, wire.ConvertBudgetToWire(review.ClosedMinutes)) {
 			t.Errorf("%v minutes a day closed on %v, and %v is suggested",
 				drawn.GetGrid()[i], got, drawn.GetGrid()[at])
 		}

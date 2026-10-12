@@ -39,7 +39,7 @@ func listSources(ctx context.Context, core Core) (sourceListOutput, error) {
 		return sourceListOutput{}, fmt.Errorf("this vault's sources are not open")
 	}
 	shown := core.getCurrentVault()
-	known, err := core.Sources.Queries.Fingerprints(ctx, shown.Vault.ID, domain.KindBook)
+	known, err := core.Sources.Queries.GetFingerprints(ctx, shown.Vault.ID, domain.KindBook)
 	if err != nil {
 		return sourceListOutput{}, err
 	}

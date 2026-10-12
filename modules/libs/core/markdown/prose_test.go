@@ -27,7 +27,7 @@ func TestProseInsideAFenceIsNotPointedAnywhere(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	moved, err := d.PointProseAt(domain.ParseAddress("Old"), "New")
+	moved, err := d.RedirectProse(domain.ParseAddress("Old"), "New")
 	if err != nil {
 		t.Fatalf("point prose: %v", err)
 	}

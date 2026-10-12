@@ -119,7 +119,7 @@ func TestStampIsWhatTheFormatWrites(t *testing.T) {
 		3723456:  "01:02:03.456",
 		86399999: "23:59:59.999",
 	} {
-		if got := transcript.Stamp(ms); got != want {
+		if got := transcript.FormatTimestamp(ms); got != want {
 			t.Errorf("%d ms is written %q, want %q", ms, got, want)
 		}
 	}
@@ -136,7 +136,7 @@ func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.HandWrittenNote, spoken)
 	}
 
-	own := slices.Concat(spoken, transcript.Hand())
+	own := slices.Concat(spoken, transcript.GetHandWrittenMark())
 	if !transcript.IsWrittenByHand(own) {
 		t.Errorf("the mark was not read:\n%s", own)
 	}

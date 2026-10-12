@@ -16,7 +16,7 @@ type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
-func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error) {
+func (q *Queries) GetFingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return map[string]domain.Fingerprint{}, nil
@@ -38,7 +38,7 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID) (map
 		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
 			return nil, err
 		}
-		ref.ModTime = chunk.Instant(mtime)
+		ref.ModTime = chunk.ConvertNanosToTime(mtime)
 		out[ref.Path] = ref
 	}
 	return out, rows.Err()
@@ -56,7 +56,7 @@ func (q *Queries) Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 	return true, nil
 }
 
-func (q *Queries) Summary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error) {
+func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error) {
 	var s domain.VaultSummary
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -104,8 +104,8 @@ func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, nam
 	return out, rows.Err()
 }
 
-// Stencils is every stencil one vault holds, by path.
-func (q *Queries) Stencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error) {
+// GetStencils is every stencil one vault holds, by path.
+func (q *Queries) GetStencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -134,13 +134,13 @@ func (q *Queries) Stencils(ctx context.Context, vaultID domain.VaultID) ([]domai
 // mostPerNote is how many headings of one note an answer carries.
 const mostPerNote = 2
 
-// Names is the names in a vault that match the words typed: a note's own
+// GetNameMatches is the names in a vault that match the words typed: a note's own
 // title, and the headings inside notes.
 //
 // The two are ranked apart and a title comes first, so what is cut by the limit
 // is a heading of a note already named or a name matched less well. What one
 // note may contribute is settled before the limit is applied.
-func (q *Queries) Names(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NameMatch, error) {
+func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NameMatch, error) {
 	if limit <= 0 {
 		// How many results a person wants is not something a database adapter
 		// knows. The caller decides, and arriving here without one is a

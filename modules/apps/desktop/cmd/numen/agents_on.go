@@ -126,7 +126,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 			FolderDialog: opened.API.Vaults.FolderDialog,
 			Add:          opened.API.Vaults.Add,
 			Rename:       opened.API.Vaults.Rename,
-			Forget:       opened.API.Vaults.Forget,
+			Unregister:   opened.API.Vaults.Unregister,
 			Opens:        makeOpenVault(opened, out),
 		},
 

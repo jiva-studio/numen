@@ -226,7 +226,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	if read.Size != 4321 || !read.ModTime.Equal(thisYear) || read.Hash != "hash-scan" || read.Producer != "ocr" {
 		t.Errorf("the source reads back as %+v", read)
 	}
-	books, err := sources.Fingerprints(ctx, first.ID, domain.KindBook)
+	books, err := sources.GetFingerprints(ctx, first.ID, domain.KindBook)
 	if err != nil {
 		t.Fatal(err)
 	}

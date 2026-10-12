@@ -24,7 +24,7 @@ type fakeSearchIndex struct {
 	err      error
 }
 
-func (a fakeSearchIndex) Lexical(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool) ([]domain.Passage, error) {
+func (a fakeSearchIndex) FindLexical(context.Context, domain.VaultID, string, []domain.SourceKind, int, bool) ([]domain.Passage, error) {
 	return a.passages, a.err
 }
 

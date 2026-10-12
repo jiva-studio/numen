@@ -30,7 +30,7 @@ func newBenchEmbedder(model port.EmbeddingModel) *benchEmbedder {
 	return &benchEmbedder{model: model}
 }
 
-func (e *benchEmbedder) Model() port.EmbeddingModel {
+func (e *benchEmbedder) GetModel() port.EmbeddingModel {
 	return e.model
 }
 
@@ -160,7 +160,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	}
 
 	passages := db.Passages()
-	candidates, err := passages.Lexical(ctx, v.ID, "entropy thermodynamics", nil, 20, false)
+	candidates, err := passages.FindLexical(ctx, v.ID, "entropy thermodynamics", nil, 20, false)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -337,7 +337,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := c.passages.Lexical(ctx, c.vault.ID, queryLexical, nil, 100, false)
+					res, err := c.passages.FindLexical(ctx, c.vault.ID, queryLexical, nil, 100, false)
 					if err != nil {
 						b.Fatal(err)
 					}

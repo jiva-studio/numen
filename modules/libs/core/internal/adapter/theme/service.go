@@ -93,7 +93,7 @@ func (s *Service) ListThemes(
 	return connect.NewResponse(&v1.ListThemesResponse{
 		Themes:               listed,
 		Applied:              applied,
-		Mode:                 wire.ModeOf(worn.Mode),
+		Mode:                 wire.ConvertModeToWire(worn.Mode),
 		InterfaceScale:       worn.InterfaceScale,
 		TextScale:            worn.TextScale,
 		InterfaceScaleBounds: encodeBounds(s.InterfaceScaleBounds),
@@ -149,7 +149,7 @@ func (s *Service) WriteAppearance(
 	}
 	chosen := Appearance{
 		ThemeName:      name,
-		Mode:           wire.ModeIn(req.Msg.GetMode()),
+		Mode:           wire.ConvertModeFromWire(req.Msg.GetMode()),
 		InterfaceScale: req.Msg.GetInterfaceScale(),
 		TextScale:      req.Msg.GetTextScale(),
 	}

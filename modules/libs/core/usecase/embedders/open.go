@@ -77,7 +77,7 @@ func Open(
 	second := open(ctx, tasks, at)
 	go func() {
 		if err := compareModels(ctx, first, second); err != nil {
-			_ = second.Disown(err)
+			_ = second.DiscardModel(err)
 			reportError(tasks, at, err)
 		}
 	}()
@@ -99,9 +99,9 @@ func OpenOne(ctx context.Context, from Provider) (port.Embedder, func() error) {
 // it is is known before it is here, so the index is fitted and a vector claimed
 // under the right recipe while the weights are still coming down.
 func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedder {
-	held := embedding.NewArriving(at.from.model)
+	held := embedding.NewDeferredEmbedder(at.from.model)
 	if at.from.fetch == nil {
-		held.ReportArrival(at.from.held, nil)
+		held.SetModel(at.from.held, nil)
 		return held
 	}
 
@@ -110,11 +110,11 @@ func open(ctx context.Context, tasks *task.Tasks, at arrival) *embedding.Embedde
 	go func() {
 		model, err := at.from.fetch(ctx, tell)
 		if err != nil {
-			held.ReportArrival(nil, err)
+			held.SetModel(nil, err)
 			reportError(tasks, at, err)
 			return
 		}
-		held.ReportArrival(model, nil)
+		held.SetModel(model, nil)
 		ready(tasks, at)
 	}()
 	return held
@@ -133,7 +133,7 @@ func compareModels(ctx context.Context, first, second *embedding.Embedder) error
 			return nil //nolint:nilerr // a run somebody stopped is owed no answer
 		}
 		return fmt.Errorf("%s and %s were not compared as one model: %w",
-			first.Model(), second.Model(), why)
+			first.GetModel(), second.GetModel(), why)
 	}
 
 	if err := first.Wait(ctx); err != nil {
@@ -153,7 +153,7 @@ func compareModels(ctx context.Context, first, second *embedding.Embedder) error
 	}
 	if len(said) != 1 || len(back) != 1 || !embedding.IsAgreed(said[0], back[0]) {
 		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
-			first.Model(), second.Model())
+			first.GetModel(), second.GetModel())
 	}
 	return nil
 }

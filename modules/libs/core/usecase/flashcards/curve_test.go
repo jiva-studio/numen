@@ -133,10 +133,10 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := review.Nowhere
+	want := review.OutsideGrid
 	for i, one := range got.Points {
 		if len(one.Closed) == 0 {
-			want = review.Place{Index: i, Value: got.Grid[i]}
+			want = review.CurvePoint{Index: i, Value: got.Grid[i]}
 			break
 		}
 	}
@@ -182,7 +182,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	}
 	inRange(t, got, "now")
 
-	if got.Suggested != review.Nowhere {
+	if got.Suggested != review.OutsideGrid {
 		t.Errorf("a target of %v is suggested, and this goal points at none",
 			got.Suggested.Value)
 	}
@@ -225,7 +225,7 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	if last := got.Grid[len(got.Grid)-1]; last <= 20 {
 		t.Errorf("the curve runs to %v days off, and the day named is 20 off", last)
 	}
-	if got.Now.Value != 20 || got.Now.Day != p.By.Format(review.Named) {
+	if got.Now.Value != 20 || got.Now.Day != p.By.Format(review.DayLayout) {
 		t.Errorf("the preset stands at %+v, and the day it names is 20 days off", got.Now)
 	}
 	if got.Now.Index <= 0 || got.Now.Index >= len(got.Grid)-1 {
@@ -326,7 +326,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 		t.Errorf("the day it aims at gets through %v of the material, and %d of it stands short",
 			stands.Share, stands.Short)
 	}
-	if got.Suggested == review.Nowhere {
+	if got.Suggested == review.OutsideGrid {
 		t.Error("no day is suggested, and the day it aims at is through the material")
 	}
 }
@@ -345,7 +345,7 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != 0 || got.Now != review.Nowhere || got.Suggested != review.Nowhere {
+	if len(got.Grid) != 0 || got.Now != review.OutsideGrid || got.Suggested != review.OutsideGrid {
 		t.Errorf("curve = %+v, want nothing", got)
 	}
 }
@@ -465,14 +465,14 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 // stands on it at all.
 func inRange(t *testing.T, c review.Curve, stands ...string) {
 	t.Helper()
-	marks := map[string]review.Place{"now": c.Now, "suggested": c.Suggested}
+	marks := map[string]review.CurvePoint{"now": c.Now, "suggested": c.Suggested}
 	for _, name := range stands {
-		if marks[name] == review.Nowhere {
+		if marks[name] == review.OutsideGrid {
 			t.Errorf("the %s mark stands nowhere on a curve of %d places", name, len(c.Grid))
 		}
 	}
 	for name, mark := range marks {
-		if mark == review.Nowhere {
+		if mark == review.OutsideGrid {
 			continue
 		}
 		if mark.Index < 0 || mark.Index >= len(c.Grid) {
@@ -938,7 +938,7 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Suggested == review.Nowhere {
+	if got.Suggested == review.OutsideGrid {
 		t.Fatal("no day is suggested, and the range holds days the material is through by")
 	}
 	stands := got.Points[got.Suggested.Index]
@@ -997,7 +997,7 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	if len(got.Grid) == 0 {
 		t.Fatal("a day twenty years off draws no range at all, as a day already past does")
 	}
-	if got.Now != review.Nowhere {
+	if got.Now != review.OutsideGrid {
 		t.Errorf("a day twenty years off stands at %+v on a range reaching %v days",
 			got.Now, got.Grid[len(got.Grid)-1])
 	}

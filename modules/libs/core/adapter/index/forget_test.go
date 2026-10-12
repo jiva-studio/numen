@@ -190,7 +190,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 		}
 	}
 
-	if err := db.Vaults().Forget(ctx, first.ID); err != nil {
+	if err := db.Vaults().Unregister(ctx, first.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -243,12 +243,12 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 	fillVault(t, db, first, "first", 0x0f)
 	fillVault(t, db, second, "second", 0xf0)
 
-	if err := db.Vaults().Forget(ctx, first.ID); err != nil {
+	if err := db.Vaults().Unregister(ctx, first.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	queries := db.ChunkQueries()
-	lexical, err := queries.Lexical(ctx, second.ID, "second", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, second.ID, "second", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,7 +269,7 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 		t.Error("the vault that was kept answers with none of its sections")
 	}
 
-	names, err := db.NoteQueries().Names(ctx, second.ID, "second", 20)
+	names, err := db.NoteQueries().GetNameMatches(ctx, second.ID, "second", 20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,7 +281,7 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 func TestForgettingAVaultTheIndexDoesNotHold(t *testing.T) {
 	db := openDB(t)
 
-	if err := db.Vaults().Forget(t.Context(), "01NOTHING"); err != nil {
+	if err := db.Vaults().Unregister(t.Context(), "01NOTHING"); err != nil {
 		t.Errorf("forgetting a vault the index never held: %v", err)
 	}
 }

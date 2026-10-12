@@ -28,7 +28,7 @@ func saveNamedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 func getNames(t *testing.T, db *DB, vault domain.Vault, query string) []domain.NameMatch {
 	t.Helper()
 
-	found, err := db.NoteQueries().Names(t.Context(), vault.ID, query, 20)
+	found, err := db.NoteQueries().GetNameMatches(t.Context(), vault.ID, query, 20)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -61,9 +61,9 @@ func Row(id domain.ChunkID) (int64, error) {
 	return row, nil
 }
 
-// Fingerprints is what the index believes about each file of one kind, keyed by
+// GetFingerprints is what the index believes about each file of one kind, keyed by
 // path, so a scan can decide what to read again without opening anything.
-func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind string) (map[string]domain.Fingerprint, error) {
+func (q *Queries) GetFingerprints(ctx context.Context, vaultID domain.VaultID, kind string) (map[string]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return map[string]domain.Fingerprint{}, nil
@@ -85,7 +85,7 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind
 		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
 			return nil, err
 		}
-		ref.ModTime = Instant(mtime)
+		ref.ModTime = ConvertNanosToTime(mtime)
 		out[ref.Path] = ref
 	}
 	return out, rows.Err()
@@ -116,18 +116,18 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 		if err := rows.Scan(&ref.Path, &ref.Kind, &ref.Size, &mtime); err != nil {
 			return nil, err
 		}
-		ref.ModTime = Instant(mtime)
+		ref.ModTime = ConvertNanosToTime(mtime)
 		out = append(out, ref)
 	}
 	return out, rows.Err()
 }
 
-// Lexical is a search asked by words: the chunks of one vault whose text
+// FindLexical is a search asked by words: the chunks of one vault whose text
 // matches what was typed, best first.
 //
 // What comes back is the large chunk enclosing each hit, which is what a
 // result shows.
-func (q *Queries) Lexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
+func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
@@ -341,9 +341,9 @@ func (q *Queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultI
 	})
 }
 
-// ByOtherRecipe is the sources of one kind whose text was not extracted by any
+// GetSourcesWithOtherRecipe is the sources of one kind whose text was not extracted by any
 // of the recipes now in use.
-func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind string, recipes []string, limit int) ([]string, error) {
+func (q *Queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind string, recipes []string, limit int) ([]string, error) {
 	named, err := json.Marshal(recipes)
 	if err != nil {
 		return nil, err
@@ -418,12 +418,12 @@ func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement s
 	return out, rows.Err()
 }
 
-// Progress is how many of a vault's chunks can carry a vector and how many of
+// GetProgress is how many of a vault's chunks can carry a vector and how many of
 // those carry one for the model named. Cutting finishes long before embedding
 // does, so the pair is what says how far there is to go.
 //
 // A vault the index has never heard of has nothing and owes nothing.
-func (q *Queries) Progress(ctx context.Context, vaultID domain.VaultID, recipe string) (held, embedded int64, err error) {
+func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recipe string) (held, embedded int64, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, 0, nil

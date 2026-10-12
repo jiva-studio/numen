@@ -63,7 +63,7 @@ func TestAPresetNamingNothingIsScheduledByWhatTheCorpusSays(t *testing.T) {
 	d := review.Defaults()
 	byDate := ""
 	if !d.By.IsZero() {
-		byDate = d.By.Format(review.Named)
+		byDate = d.By.Format(review.DayLayout)
 	}
 	load := map[string]int{}
 	for day, share := range d.Load {

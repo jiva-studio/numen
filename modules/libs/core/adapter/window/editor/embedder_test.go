@@ -60,7 +60,7 @@ func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
 	if installation.Embedder == nil {
 		t.Fatal("the vault opened with no embedder on hand")
 	}
-	if got := installation.Embedder.Model().Name; got != "asked-for" {
+	if got := installation.Embedder.GetModel().Name; got != "asked-for" {
 		t.Errorf("got %q", got)
 	}
 }
@@ -75,7 +75,7 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	t.Cleanup(func() { _ = installation.Close() })
 
 	if installation.Embedder != nil {
-		t.Errorf("got an embedder: %v", installation.Embedder.Model())
+		t.Errorf("got an embedder: %v", installation.Embedder.GetModel())
 	}
 }
 

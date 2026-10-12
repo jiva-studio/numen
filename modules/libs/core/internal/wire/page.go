@@ -45,13 +45,13 @@ func NewInterfaceServer(pages fs.FS) (http.Handler, error) {
 	return http.FileServerFS(built), nil
 }
 
-// Page writes the document a window opens at, already showing what the settings
+// WritePage writes the document a window opens at, already showing what the settings
 // say. The bytes are written here and kept nowhere, so no frame is drawn in the
 // default colours or at a size nobody asked for.
 //
 // A build carrying no interface, and a page with no head, are served as the
 // file server has them.
-func Page(
+func WritePage(
 	w http.ResponseWriter,
 	r *http.Request,
 	pages fs.FS,
@@ -96,7 +96,7 @@ func readAppearanceSettings(
 		return appearance.Settings{}, false
 	}
 	out := appearance.Settings{
-		Mode:           ModeIn(worn.Msg.GetMode()),
+		Mode:           ConvertModeFromWire(worn.Msg.GetMode()),
 		InterfaceScale: worn.Msg.GetInterfaceScale(),
 		TextScale:      worn.Msg.GetTextScale(),
 	}

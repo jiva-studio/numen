@@ -283,23 +283,23 @@ type byType struct {
 	asked *int
 }
 
-func (q byType) OfType(
+func (q byType) GetPathsOfType(
 	ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType,
 ) ([]string, error) {
 	*q.asked++
-	return q.NoteQueries.OfType(ctx, vaultID, noteType)
+	return q.NoteQueries.GetPathsOfType(ctx, vaultID, noteType)
 }
 
-func (q byType) Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error) {
+func (q byType) GetFingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error) {
 	q.t.Error("a rename asked the index about every file of the vault")
-	return q.NoteQueries.Fingerprints(ctx, vaultID)
+	return q.NoteQueries.GetFingerprints(ctx, vaultID)
 }
 
-func (q byType) Types(
+func (q byType) GetTypes(
 	ctx context.Context, vaultID domain.VaultID, paths []string,
 ) (map[string]domain.NoteType, error) {
 	q.t.Errorf("a rename asked what each of %d notes is", len(paths))
-	return q.NoteQueries.Types(ctx, vaultID, paths)
+	return q.NoteQueries.GetTypes(ctx, vaultID, paths)
 }
 
 // A rename asks the index for the decks of the vault and for nothing else.
@@ -335,14 +335,14 @@ type shut struct {
 	open      error
 }
 
-func (s shut) Hold(ctx context.Context, v domain.Vault) (func(), error) {
+func (s shut) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 	if s.isWatched {
 		s.t.Error("a rename took the write lock")
 	}
 	if s.hold != nil {
 		return nil, s.hold
 	}
-	return s.VaultWriters.Hold(ctx, v)
+	return s.VaultWriters.Lock(ctx, v)
 }
 
 func (s shut) Open(v domain.Vault) (port.VaultWriter, error) {
@@ -363,7 +363,7 @@ type decksOf struct {
 	cancel func()
 }
 
-func (d decksOf) OfType(context.Context, domain.VaultID, domain.NoteType) ([]string, error) {
+func (d decksOf) GetPathsOfType(context.Context, domain.VaultID, domain.NoteType) ([]string, error) {
 	if d.cancel != nil {
 		d.cancel()
 	}

@@ -36,7 +36,7 @@ func (a *API) ListFiles(
 
 	// The folder says which of its entries are notes, and the index says what
 	// each of those notes is. A listing carries both.
-	types, err := a.typesOf(ctx, showing, held)
+	types, err := a.getNoteTypes(ctx, showing, held)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -47,16 +47,16 @@ func (a *API) ListFiles(
 			Path:     entry.Path,
 			Name:     entry.Name,
 			IsFolder: entry.IsFolder,
-			Kind:     kindOf(entry.Kind),
-			Type:     typeOf(types[entry.Path]),
+			Kind:     convertSourceKindToWire(entry.Kind),
+			Type:     convertNoteTypeToWire(types[entry.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil
 }
 
-// typesOf is what each note of a listing is, keyed by the path it is filed
+// getNoteTypes is what each note of a listing is, keyed by the path it is filed
 // under.
-func (a *API) typesOf(ctx context.Context, showing domain.Vault, held []domain.Entry) (map[string]domain.NoteType, error) {
+func (a *API) getNoteTypes(ctx context.Context, showing domain.Vault, held []domain.Entry) (map[string]domain.NoteType, error) {
 	paths := make([]string, 0, len(held))
 	for _, entry := range held {
 		if !entry.IsFolder && entry.Kind == domain.KindNote {
@@ -73,7 +73,7 @@ func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string)
 	if a.Notes.Queries == nil || len(paths) == 0 {
 		return nil, nil
 	}
-	return a.Notes.Queries.Types(ctx, showing.ID, paths)
+	return a.Notes.Queries.GetTypes(ctx, showing.ID, paths)
 }
 
 // ListFileKinds hands the client what the vault holds at each of those paths,
@@ -104,7 +104,7 @@ func (a *API) ListFileKinds(
 	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(paths))}
 	notes := make([]string, 0, len(paths))
 	for _, path := range paths {
-		ref, err := reader.Stat(ctx, path)
+		ref, err := reader.GetFingerprint(ctx, path)
 		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, port.ErrOutside) {
 			continue
 		}
@@ -115,8 +115,8 @@ func (a *API) ListFileKinds(
 		}
 		out.Kinds = append(out.Kinds, &v1.FileKind{
 			Path:   path,
-			Kind:   kindOf(ref.Kind),
-			Format: formatOf(path, ref.Kind),
+			Kind:   convertSourceKindToWire(ref.Kind),
+			Format: convertBookFormatToWire(path, ref.Kind),
 		})
 		if ref.Kind == domain.KindNote {
 			notes = append(notes, path)
@@ -128,7 +128,7 @@ func (a *API) ListFileKinds(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	for _, one := range out.GetKinds() {
-		one.Type = typeOf(types[one.GetPath()])
+		one.Type = convertNoteTypeToWire(types[one.GetPath()])
 	}
 	return connect.NewResponse(out), nil
 }
@@ -153,7 +153,7 @@ func (a *API) MoveFile(
 	}
 	out.IsUnlevelled = a.isUnlevelled(err)
 	if err != nil && !out.GetIsUnlevelled() {
-		reason, refused := wire.ErrorCodeBy(err)
+		reason, refused := wire.GetErrorCode(err)
 		switch {
 		case refused:
 			out.Error = &reason
@@ -185,7 +185,7 @@ func (a *API) CreateFolder(
 	}
 	out := &v1.CreateFolderResponse{}
 	if err := writer.MakeFolder(ctx, r.Msg.GetPath()); err != nil {
-		reason, refused := wire.ErrorCodeBy(err)
+		reason, refused := wire.GetErrorCode(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -223,7 +223,7 @@ func (a *API) CreateURL(
 	if err == nil {
 		return connect.NewResponse(&v1.CreateURLResponse{}), nil
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -242,9 +242,9 @@ func getListCode(err error) connect.Code {
 	}
 }
 
-// typeOf is what a note is, as the schema carries it. A note carrying
+// convertNoteTypeToWire is what a note is, as the schema carries it. A note carrying
 // no type of its own is an ordinary note.
-func typeOf(noteType domain.NoteType) v1.NoteType {
+func convertNoteTypeToWire(noteType domain.NoteType) v1.NoteType {
 	switch noteType {
 	case domain.TypeDeck:
 		return v1.NoteType_NOTE_TYPE_DECK
@@ -257,10 +257,10 @@ func typeOf(noteType domain.NoteType) v1.NoteType {
 	}
 }
 
-// formatOf is which sort of book stands at a path, as the schema carries it.
+// convertBookFormatToWire is which sort of book stands at a path, as the schema carries it.
 // One is drawn as pictures a page at a time and the other reflows, and which
 // reads the file is decided from its name.
-func formatOf(path string, kind domain.SourceKind) v1.BookFormat {
+func convertBookFormatToWire(path string, kind domain.SourceKind) v1.BookFormat {
 	if kind != domain.KindBook {
 		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED
 	}
@@ -274,9 +274,9 @@ func formatOf(path string, kind domain.SourceKind) v1.BookFormat {
 	}
 }
 
-// kindOf is what the vault holds at a path, as the schema carries it. A file
+// convertSourceKindToWire is what the vault holds at a path, as the schema carries it. A file
 // the vault holds no source for is unspecified.
-func kindOf(kind domain.SourceKind) v1.SourceKind {
+func convertSourceKindToWire(kind domain.SourceKind) v1.SourceKind {
 	switch kind {
 	case domain.KindNote:
 		return v1.SourceKind_SOURCE_KIND_NOTE

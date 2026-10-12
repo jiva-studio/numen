@@ -12,9 +12,9 @@ import (
 // A limit bounds every answer that is a list, so that the caller works through a
 // library of any size in pieces.
 type SourceQueries interface {
-	// Fingerprints is what the index believes about each file of one kind, keyed
+	// GetFingerprints is what the index believes about each file of one kind, keyed
 	// by path, so a walk can decide what to read without opening anything.
-	Fingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error)
+	GetFingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error)
 
 	// GetSourcesUnder is every source the vault holds at a path and beneath it:
 	// the one file, or everything a folder holds, by path. The index holds a row
@@ -25,7 +25,7 @@ type SourceQueries interface {
 	// file changed, or nothing has cut it yet.
 	GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error)
 
-	// ByOtherRecipe is the sources of one kind whose text was not produced by
+	// GetSourcesWithOtherRecipe is the sources of one kind whose text was not produced by
 	// any of the recipes given. Their chunks describe text no reader in use
 	// would produce now.
 	//
@@ -33,7 +33,7 @@ type SourceQueries interface {
 	// than one format and what took the text out is part of what produced the
 	// offsets. Asked with one recipe, this would name every source of every
 	// other format on every run.
-	ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error)
+	GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error)
 
 	// GetSourceText is what one source's text came from. It answers false where the
 	// index holds no source at that path.

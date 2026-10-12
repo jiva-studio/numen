@@ -206,9 +206,9 @@ func (leaves) Proofread(context.Context, []proofread.Batch) (map[int]string, err
 	return nil, nil
 }
 
-func (leaves) Leave(context.Context, []proofread.Batch) (string, error) { return "a batch", nil }
+func (leaves) Submit(context.Context, []proofread.Batch) (string, error) { return "a batch", nil }
 
-func (leaves) Collect(context.Context, string) (map[int]string, bool, error) {
+func (leaves) GetReplies(context.Context, string) (map[int]string, bool, error) {
 	return nil, false, nil
 }
 
@@ -218,7 +218,7 @@ func TestARecognitionAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	lines := []string{"the words one", "the words two"}
 	by := &puts{}
 	w, v, store, hash := newHaltedWorker(t, by, 1, lines...)
-	release, err := store.Claim(t.Context(), text.Corrections("ocr", hash))
+	release, err := store.ClaimName(t.Context(), text.Corrections("ocr", hash))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -662,8 +662,8 @@ func (w watchedReader) Read(ctx context.Context, path string) ([]byte, error) {
 	return raw, err
 }
 
-func (w watchedReader) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
-	ref, err := w.VaultReader.Stat(ctx, path)
+func (w watchedReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+	ref, err := w.VaultReader.GetFingerprint(ctx, path)
 	if w.stat != nil {
 		w.stat(path)
 	}
@@ -681,7 +681,7 @@ func (w watchedWriters) Open(v domain.Vault) (port.VaultWriter, error) {
 	return w.inner.Open(v)
 }
 
-func (w watchedWriters) Hold(ctx context.Context, v domain.Vault) (func(), error) {
+func (w watchedWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 	w.hold()
-	return w.inner.Hold(ctx, v)
+	return w.inner.Lock(ctx, v)
 }

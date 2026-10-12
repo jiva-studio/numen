@@ -57,7 +57,7 @@ type claimed struct {
 	name string
 }
 
-func (c claimed) Claim(_ context.Context, name string) (func() error, error) {
+func (c claimed) ClaimName(_ context.Context, name string) (func() error, error) {
 	if name == c.name {
 		return nil, port.ErrClaimed
 	}

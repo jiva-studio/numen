@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// PointProseAt sends every wikilink in the prose that goes to one address to
+// RedirectProse sends every wikilink in the prose that goes to one address to
 // another, and says how many it moved.
 //
 // Only the target inside the brackets changes. An alias after `|` is how the
@@ -19,7 +19,7 @@ import (
 // A note whose frontmatter block is never closed holds no prose of its own —
 // the whole file stands as its body, links in the block included — so this is
 // ErrUnterminated and the file is left as it is.
-func (d *Document) PointProseAt(from domain.Address, to string) (int, error) {
+func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 	if d.isUnterminated {
 		return 0, ErrUnterminated
 	}

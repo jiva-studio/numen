@@ -36,7 +36,7 @@ func (a *API) RenameNote(
 	}
 	out.IsUnlevelled = a.isUnlevelled(err)
 	if err != nil && !out.GetIsUnlevelled() {
-		reason, refused := wire.ErrorCodeBy(err)
+		reason, refused := wire.GetErrorCode(err)
 		switch {
 		case refused:
 			out.Error = &reason
@@ -66,7 +66,7 @@ func (a *API) RemoveFile(
 	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
 	behind := a.isUnlevelled(err)
 	if err != nil && !behind {
-		reason, refused := wire.ErrorCodeBy(err)
+		reason, refused := wire.GetErrorCode(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}

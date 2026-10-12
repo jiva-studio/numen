@@ -21,10 +21,10 @@ type ShowNeighbourhood struct {
 // RefQueries is the one question a neighbourhood asks about the notes it has
 // found: what is needed to show each of them.
 type RefQueries interface {
-	// Notes returns what is needed to show a note, for the paths asked about.
+	// GetNotes returns what is needed to show a note, for the paths asked about.
 	// Paths that name nothing are absent from the answer: a link resolves as
 	// of now, and what it resolved to a moment ago may be gone.
-	Notes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
+	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
 }
 
 // NewShowNeighbourhood is what a picture of one note is drawn from: where its
@@ -36,7 +36,7 @@ func NewShowNeighbourhood(links port.LinkQueries, notes RefQueries) ShowNeighbou
 }
 
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
-	around, err := u.getSeats(ctx, v, path)
+	around, err := u.getNeighbours(ctx, v, path)
 	if err != nil {
 		return domain.Neighbourhood{}, err
 	}
@@ -52,7 +52,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	for _, s := range neighbour {
 		paths = append(paths, s.Path)
 	}
-	notes, err := u.notes.Notes(ctx, v.ID, paths)
+	notes, err := u.notes.GetNotes(ctx, v.ID, paths)
 	if err != nil {
 		return domain.Neighbourhood{}, err
 	}
@@ -70,42 +70,42 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	return out, nil
 }
 
-// addSiblings seats the other children of every parent, which is the whole of
+// addSiblings adds the other children of every parent, which is the whole of
 // what a sibling is. Each parent is asked in turn, and the sibling keeps the
 // parent it came through: that is the note the relationship runs from.
-func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, around *seats) error {
+func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, around *neighbourSet) error {
 	for _, parent := range around.getAll() {
-		if parent.Seat != domain.SeatParent {
+		if parent.Relation != domain.RelationParent {
 			continue
 		}
-		theirs, err := u.getSeats(ctx, v, parent.Path)
+		theirs, err := u.getNeighbours(ctx, v, parent.Path)
 		if err != nil {
 			return err
 		}
 		for _, sibling := range theirs.getAll() {
-			if sibling.Seat != domain.SeatChild {
+			if sibling.Relation != domain.RelationChild {
 				continue
 			}
 			around.add(domain.Neighbour{
-				NoteRef: domain.NoteRef{Path: sibling.Path},
-				Seat:    domain.SeatSibling,
-				Label:   sibling.Label,
-				Parent:  parent.Path,
+				NoteRef:  domain.NoteRef{Path: sibling.Path},
+				Relation: domain.RelationSibling,
+				Label:    sibling.Label,
+				Parent:   parent.Path,
 			})
 		}
 	}
 	return nil
 }
 
-// getSeats seats everything one note is joined to, from both ends of its links.
+// getNeighbours returns everything one note is joined to, from both ends of its links.
 //
 // Which end a link was written at says nothing about the shape of the graph:
 // `parent: B` in A and `child: A` in B are the same edge, so the answer has to
 // read the role together with the direction it was found in.
-func (u ShowNeighbourhood) getSeats(ctx context.Context, v domain.Vault, path string) (*seats, error) {
-	seats := &seats{}
+func (u ShowNeighbourhood) getNeighbours(ctx context.Context, v domain.Vault, path string) (*neighbourSet, error) {
+	found := &neighbourSet{}
 
-	links, err := u.links.Links(ctx, v.ID, path)
+	links, err := u.links.GetLinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -115,53 +115,53 @@ func (u ShowNeighbourhood) getSeats(ctx context.Context, v domain.Vault, path st
 	for _, l := range links {
 		if l.ToVault != v.ID {
 			// A link that is dangling lands in no vault, and one that landed in
-			// another vault has no seat here: there is nothing to draw and nowhere
+			// another vault has no relation here: there is nothing to draw and nowhere
 			// to go.
 			continue
 		}
-		if seat, navigable := seatFor(l.Role); navigable {
+		if relation, navigable := getRelation(l.Role); navigable {
 			named[l.To] = true
-			seats.add(domain.Neighbour{
-				NoteRef: domain.NoteRef{Path: l.To},
-				Seat:    seat,
-				Label:   l.Label,
+			found.add(domain.Neighbour{
+				NoteRef:  domain.NoteRef{Path: l.To},
+				Relation: relation,
+				Label:    l.Label,
 			})
 		}
 	}
 
-	backlinks, err := u.links.Backlinks(ctx, v.ID, path)
+	backlinks, err := u.links.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
 	for _, l := range backlinks {
 		// The role is read from the other end, so it means the opposite: a note
 		// that calls this one its parent is its child.
-		seat, navigable := seatFor(getOppositeRole(l.Role))
+		relation, navigable := getRelation(getOppositeRole(l.Role))
 		if !navigable {
 			continue
 		}
 		neighbour := domain.Neighbour{
-			NoteRef: domain.NoteRef{Path: l.From},
-			Seat:    seat,
-			Label:   l.Label,
+			NoteRef:  domain.NoteRef{Path: l.From},
+			Relation: relation,
+			Label:    l.Label,
 		}
 		if named[l.From] {
-			seats.addMutual(neighbour)
+			found.addMutual(neighbour)
 			continue
 		}
-		seats.add(neighbour)
+		found.add(neighbour)
 	}
-	return seats, nil
+	return found, nil
 }
 
-func seatFor(role domain.LinkRole) (domain.Relation, bool) {
+func getRelation(role domain.LinkRole) (domain.Relation, bool) {
 	switch role {
 	case domain.RoleParent:
-		return domain.SeatParent, true
+		return domain.RelationParent, true
 	case domain.RoleChild:
-		return domain.SeatChild, true
+		return domain.RelationChild, true
 	case domain.RoleJump:
-		return domain.SeatJump, true
+		return domain.RelationJump, true
 	default:
 		// A wikilink in prose and an attachment are links, and neither is a
 		// place in the hierarchy.
@@ -180,12 +180,12 @@ func getOppositeRole(role domain.LinkRole) domain.LinkRole {
 	}
 }
 
-// seats collects notes in the order they were found: the links this note
+// neighbourSet collects notes in the order they were found: the links this note
 // wrote, in the order it wrote them; then the links that point at it, in the
 // order the query returns; then the siblings each parent brings. The order is
 // part of the answer, because it is what the picture is drawn in — and it is
 // total, so the same vault gives the same picture twice.
-type seats struct {
+type neighbourSet struct {
 	order []domain.Neighbour
 	at    map[string]int
 }
@@ -193,7 +193,7 @@ type seats struct {
 // add records a neighbour under the highest-ranked relation it qualifies for,
 // replacing a lesser one recorded earlier: a pair who are each other's parent
 // is drawn once, and always the same way round.
-func (s *seats) add(neighbour domain.Neighbour) {
+func (s *neighbourSet) add(neighbour domain.Neighbour) {
 	if s.at == nil {
 		s.at = map[string]int{}
 	}
@@ -203,7 +203,7 @@ func (s *seats) add(neighbour domain.Neighbour) {
 		s.order = append(s.order, neighbour)
 		return
 	}
-	if domain.SeatRank(neighbour.Seat) < domain.SeatRank(s.order[i].Seat) {
+	if domain.GetRelationRank(neighbour.Relation) < domain.GetRelationRank(s.order[i].Relation) {
 		s.order[i] = neighbour
 	}
 }
@@ -211,10 +211,10 @@ func (s *seats) add(neighbour domain.Neighbour) {
 // addMutual records a neighbour that the note in focus names too, and that is
 // seated already. Both ends naming the same relation is one relationship named
 // twice, and the word for it is the focus's own where it wrote one.
-func (s *seats) addMutual(neighbour domain.Neighbour) {
+func (s *neighbourSet) addMutual(neighbour domain.Neighbour) {
 	i := s.at[neighbour.Path]
 	current := s.order[i]
-	if current.Seat != neighbour.Seat {
+	if current.Relation != neighbour.Relation {
 		s.add(neighbour)
 		return
 	}
@@ -228,8 +228,8 @@ func (s *seats) addMutual(neighbour domain.Neighbour) {
 
 // remove takes a note out of the order the picture is drawn in. Nothing is added to
 // the seats after it.
-func (s *seats) remove(path string) {
+func (s *neighbourSet) remove(path string) {
 	s.order = slices.DeleteFunc(s.order, func(n domain.Neighbour) bool { return n.Path == path })
 }
 
-func (s *seats) getAll() []domain.Neighbour { return s.order }
+func (s *neighbourSet) getAll() []domain.Neighbour { return s.order }

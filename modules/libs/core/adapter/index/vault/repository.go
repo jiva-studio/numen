@@ -38,12 +38,12 @@ var forgetting = []string{
 	"clear_vec", "clear_fts", "clear_sections", "clear_title_names", "clear_heading_names", "delete",
 }
 
-// Forget takes everything the index holds for one vault, and the vault's own
-// row with it. A vault the index does not hold is already forgotten.
+// Unregister takes everything the index holds for one vault, and the vault's
+// own row with it. A vault the index does not hold is already unregistered.
 //
 // The vectors stay. One is addressed by the text it was made from, so chunks of
 // several vaults hold the same vector.
-func (r *Repository) Forget(ctx context.Context, vaultID domain.VaultID) error {
+func (r *Repository) Unregister(ctx context.Context, vaultID domain.VaultID) error {
 	tx, err := writing.Begin(ctx, r.db)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)

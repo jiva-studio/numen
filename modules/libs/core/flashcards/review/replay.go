@@ -18,7 +18,7 @@ import (
 // met a conflict leaves a second copy of a run beside the first, and a person
 // restoring a backup puts one there by hand.
 func Replay(d Day, by Scheduler, answers []Answer) map[CardFaceID]Schedule {
-	return Give(answers).Replay(d, ScheduleBy(by))
+	return OrderAnswers(answers).Replay(d, ScheduleBy(by))
 }
 
 // SchedulingPolicy is what one card face is worked out under: the scheduler
@@ -47,8 +47,8 @@ func ScheduleBy(s Scheduler) Assignment {
 // handed to each of them.
 type History []Answer
 
-// Give puts a vault's answers in the order they were given.
-func Give(answers []Answer) History { return getActiveAnswers(answers) }
+// OrderAnswers puts a vault's answers in the order they were given.
+func OrderAnswers(answers []Answer) History { return getActiveAnswers(answers) }
 
 // Replay works out where this history leaves every card face, each under the
 // scheduler its own preset asks for and on the day its own preset puts it.
@@ -86,7 +86,7 @@ type RecallTally struct {
 // It is worked out with the replay: whether a card face was spaced is a thing
 // only the answers before it can say.
 func GetRetained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
-	return Give(answers).GetRetained(by, d)
+	return OrderAnswers(answers).GetRetained(by, d)
 }
 
 // GetRetained is the same over a history already in order.
@@ -112,7 +112,7 @@ func (h History) GetRetained(by Scheduler, d Day) map[string]RecallTally {
 func walkAnswers(
 	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
-	return Give(answers).walkAnswers(by, each)
+	return OrderAnswers(answers).walkAnswers(by, each)
 }
 
 func (h History) walkAnswers(

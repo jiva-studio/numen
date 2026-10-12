@@ -180,7 +180,7 @@ type waves struct {
 	lost    chan struct{}
 }
 
-func (w *waves) Watch(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+func (w *waves) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return w.changes, w.lost, nil
 }
 
@@ -317,7 +317,7 @@ func (r gating) Read(ctx context.Context, path string) ([]byte, error) {
 // refusing is a watcher on a machine that has no watches left to give.
 type refusing struct{}
 
-func (refusing) Watch(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+func (refusing) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
 	return nil, nil, os.ErrPermission
 }
 
@@ -346,7 +346,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
 	t.Helper()
 
-	held, err := db.Queries().Notes(t.Context(), v.ID, []string{path})
+	held, err := db.Queries().GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -60,16 +60,16 @@ func (s queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, pa
 	return s.read.GetSourcesUnder(ctx, vaultID, path)
 }
 
-func (s queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
-	return s.read.Fingerprints(ctx, vaultID, string(kind))
+func (s queries) GetFingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
+	return s.read.GetFingerprints(ctx, vaultID, string(kind))
 }
 
 func (s queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
 	return s.read.GetUnchunkedSources(ctx, vaultID, string(kind), limit)
 }
 
-func (s queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
-	return s.read.ByOtherRecipe(ctx, vaultID, string(kind), recipes, limit)
+func (s queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
+	return s.read.GetSourcesWithOtherRecipe(ctx, vaultID, string(kind), recipes, limit)
 }
 
 // SaveVectors writes a group: the coarse row of each, and the vector itself
@@ -170,7 +170,7 @@ func newChunkSource(s domain.Source) chunk.Source {
 		Path:     s.Fingerprint.Path,
 		Kind:     string(s.Fingerprint.Kind),
 		Size:     s.Fingerprint.Size,
-		MTime:    chunk.Stamp(s.Fingerprint.ModTime),
+		MTime:    chunk.ConvertTimeToNanos(s.Fingerprint.ModTime),
 		Hash:     s.Hash,
 		Recipe:   s.Recipe,
 		Producer: s.Producer,
@@ -205,7 +205,7 @@ func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path
 		return port.SourceText{}, false, err
 	}
 	return port.SourceText{
-		Fingerprint: domain.Fingerprint{Path: found.Path, Size: found.Size, ModTime: chunk.Instant(found.MTime)},
+		Fingerprint: domain.Fingerprint{Path: found.Path, Size: found.Size, ModTime: chunk.ConvertNanosToTime(found.MTime)},
 		Producer:    found.Producer,
 		Hash:        found.Hash,
 	}, true, nil

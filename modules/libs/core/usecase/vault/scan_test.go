@@ -49,7 +49,7 @@ var notesOnly = []domain.SourceKind{domain.KindNote}
 // of its own is named once.
 func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	found, err := db.Passages().Lexical(t.Context(), v.ID, query, notesOnly, 20, false)
+	found, err := db.Passages().FindLexical(t.Context(), v.ID, query, notesOnly, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 		t.Errorf("first scan: %+v", res)
 	}
 
-	summary, err := db.Queries().Summary(ctx, v.ID)
+	summary, err := db.Queries().GetSummary(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 		t.Errorf("scan of a vault with a book in it: %+v", res)
 	}
 
-	summary, err := db.Queries().Summary(ctx, v.ID)
+	summary, err := db.Queries().GetSummary(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,8 +323,8 @@ type cancellingReader struct {
 	parent *cancellingReaders
 }
 
-func (c *cancellingReader) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
-	err := c.VaultReader.Walk(ctx, fn)
+func (c *cancellingReader) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
+	err := c.VaultReader.WalkFiles(ctx, fn)
 	c.parent.cancel()
 	return err
 }
@@ -420,7 +420,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 
 	queries := db.Queries()
 
-	known, err := queries.Fingerprints(ctx, first.ID)
+	known, err := queries.GetFingerprints(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -431,7 +431,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 		t.Error("the first vault knows a file that belongs to the second")
 	}
 
-	summary, err := queries.Summary(ctx, first.ID)
+	summary, err := queries.GetSummary(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -561,7 +561,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Errorf("removed %d notes, want 0", res.Removed)
 	}
 
-	known, err := db.Queries().Fingerprints(ctx, v.ID)
+	known, err := db.Queries().GetFingerprints(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -643,7 +643,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Notes)
 	}
 
-	known, err := db.Queries().Fingerprints(t.Context(), v.ID)
+	known, err := db.Queries().GetFingerprints(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

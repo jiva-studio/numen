@@ -58,7 +58,7 @@ func (m VaultChanges) ShouldReadAssets() bool { return m.ShouldReload || len(m.A
 // being read is then held. Reading the vault again waits its turn behind a walk
 // already running.
 func (u Follow) Begin(ctx context.Context, v domain.Vault) (*Watch, error) {
-	changes, lost, err := u.watcher.Watch(ctx, v)
+	changes, lost, err := u.watcher.WatchVault(ctx, v)
 	if err != nil {
 		return nil, err
 	}

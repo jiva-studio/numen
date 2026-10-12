@@ -54,9 +54,9 @@ type batchResult struct {
 	} `json:"response"`
 }
 
-// Leave hands the pages to the queue and answers with the id they are collected
+// Submit hands the pages to the queue and answers with the id they are collected
 // under.
-func (c *Client) Leave(ctx context.Context, pages []proofread.Batch) (string, error) {
+func (c *Client) Submit(ctx context.Context, pages []proofread.Batch) (string, error) {
 	if c.service.BatchURL == "" {
 		return "", errors.New("no batch queue for the proofreading service")
 	}
@@ -112,10 +112,10 @@ func (c *Client) Leave(ctx context.Context, pages []proofread.Batch) (string, er
 	return response.ID, nil
 }
 
-// Collect is what came back about the pages left under a name, by the page it
+// GetReplies is what came back about the pages left under a name, by the page it
 // is about, and whether the service is done with them. A result under a name
 // that is not a page number, or carrying nothing, is left out.
-func (c *Client) Collect(ctx context.Context, name string) (map[int]string, bool, error) {
+func (c *Client) GetReplies(ctx context.Context, name string) (map[int]string, bool, error) {
 	if c.service.BatchURL == "" {
 		return nil, false, errors.New("no batch queue for the proofreading service")
 	}

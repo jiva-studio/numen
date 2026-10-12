@@ -28,11 +28,11 @@ func NewShowLinks(links port.LinkQueries) ShowLinks {
 }
 
 func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (NoteLinks, error) {
-	links, err := u.links.Links(ctx, v.ID, path)
+	links, err := u.links.GetLinks(ctx, v.ID, path)
 	if err != nil {
 		return NoteLinks{}, err
 	}
-	backlinks, err := u.links.Backlinks(ctx, v.ID, path)
+	backlinks, err := u.links.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return NoteLinks{}, err
 	}

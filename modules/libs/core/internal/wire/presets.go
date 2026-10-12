@@ -18,10 +18,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
-// SettingsBounds is how far each setting of a preset goes, as the schema
+// GetSettingsBounds is how far each setting of a preset goes, as the schema
 // carries it. They are the domain's own, so a client draws the field a person
 // types into from what the write is held to.
-func SettingsBounds() *v1.SettingsBounds {
+func GetSettingsBounds() *v1.SettingsBounds {
 	return &v1.SettingsBounds{
 		MinutesADay: getBounds(review.MinutesADayBounds),
 		NewADay:     getBounds(review.NewADayBounds),
@@ -38,20 +38,20 @@ func getBounds(b review.Bounds) *v1.Bounds {
 	return &v1.Bounds{Least: b.Least, Most: b.Most}
 }
 
-// PresetOf is one preset as the schema carries it.
-func PresetOf(p flashcards.PresetContents, title string) *v1.Preset {
+// ConvertPresetToWire is one preset as the schema carries it.
+func ConvertPresetToWire(p flashcards.PresetContents, title string) *v1.Preset {
 	return &v1.Preset{
 		Path:     p.Path,
 		Title:    title,
-		Settings: SettingsOf(p.Settings),
+		Settings: ConvertSettingsToWire(p.Settings),
 		Problems: p.Problems,
-		Stops:    StopReasonOf(p.Stops),
-		StopsOn:  StopReasonOf(p.StopsToday),
+		Stops:    ConvertStopReasonToWire(p.Stops),
+		StopsOn:  ConvertStopReasonToWire(p.StopsToday),
 	}
 }
 
-// StopReasonOf is why a preset schedules nothing, as the schema names it.
-func StopReasonOf(s review.StopReason) v1.StopReason {
+// ConvertStopReasonToWire is why a preset schedules nothing, as the schema names it.
+func ConvertStopReasonToWire(s review.StopReason) v1.StopReason {
 	switch s {
 	case review.StoppedNoMinutes:
 		return v1.StopReason_STOP_REASON_NO_MINUTES
@@ -72,23 +72,23 @@ func StopReasonOf(s review.StopReason) v1.StopReason {
 	}
 }
 
-// SettingsOf is how a preset schedules, as the schema carries it.
-func SettingsOf(p review.Preset) *v1.Settings {
+// ConvertSettingsToWire is how a preset schedules, as the schema carries it.
+func ConvertSettingsToWire(p review.Preset) *v1.Settings {
 	out := &v1.Settings{
-		Goal:        GoalOf(p.Goal),
-		Counts:      BudgetUnitOf(p.Counts),
+		Goal:        ConvertGoalToWire(p.Goal),
+		Counts:      ConvertBudgetUnitToWire(p.Counts),
 		MinutesADay: int32(p.MinutesADay),
 		NewADay:     int32(p.NewADay),
 		ReviewsADay: int32(p.ReviewsADay),
 		Retention:   p.Retention,
-		Learned:     RuleOf(p.Rule),
+		Learned:     ConvertRuleToWire(p.Rule),
 		Interval:    int32(p.Interval),
 		Backlog:     int32(p.Backlog),
 		HasEvenLoad: p.IsEvenLoad,
 		Load:        make(map[string]int32, len(p.Load)),
 	}
 	if !p.By.IsZero() {
-		out.ByDate = p.By.Format(review.Named)
+		out.ByDate = p.By.Format(review.DayLayout)
 	}
 	for day, share := range p.Load {
 		out.Load[review.DayName(day)] = int32(share)
@@ -96,24 +96,24 @@ func SettingsOf(p review.Preset) *v1.Settings {
 	return out
 }
 
-// SettingsIn is the settings a client is putting into a preset, in the words
+// ConvertSettingsFromWire is the settings a client is putting into a preset, in the words
 // the core holds them in. A day that is not one and a load kept on something
 // that is not a day of the week are the client's to correct.
-func SettingsIn(s *v1.Settings) (review.Preset, error) {
+func ConvertSettingsFromWire(s *v1.Settings) (review.Preset, error) {
 	out := review.Preset{
-		Goal:        GoalIn(s.GetGoal()),
-		Counts:      BudgetUnitIn(s.GetCounts()),
+		Goal:        ConvertGoalFromWire(s.GetGoal()),
+		Counts:      ConvertBudgetUnitFromWire(s.GetCounts()),
 		MinutesADay: int(s.GetMinutesADay()),
 		NewADay:     int(s.GetNewADay()),
 		ReviewsADay: int(s.GetReviewsADay()),
 		Retention:   s.GetRetention(),
-		Rule:        RuleIn(s.GetLearned()),
+		Rule:        ConvertRuleFromWire(s.GetLearned()),
 		Interval:    int(s.GetInterval()),
 		Backlog:     int(s.GetBacklog()),
 		IsEvenLoad:  s.GetHasEvenLoad(),
 	}
 	if written := strings.TrimSpace(s.GetByDate()); written != "" {
-		day, err := time.Parse(review.Named, written)
+		day, err := time.Parse(review.DayLayout, written)
 		if err != nil {
 			return review.Preset{}, err
 		}
@@ -132,15 +132,15 @@ func SettingsIn(s *v1.Settings) (review.Preset, error) {
 	return out, nil
 }
 
-// CurveOf is a curve as the schema carries it.
-func CurveOf(c review.Curve) *v1.Curve {
+// ConvertCurveToWire is a curve as the schema carries it.
+func ConvertCurveToWire(c review.Curve) *v1.Curve {
 	out := &v1.Curve{
-		Goal:      GoalOf(c.Goal),
+		Goal:      ConvertGoalToWire(c.Goal),
 		Grid:      c.Grid,
 		Days:      c.Days,
 		At:        make([]*v1.Point, 0, len(c.Points)),
-		Now:       convertPlace(c.Now),
-		Suggested: convertPlace(c.Suggested),
+		Now:       convertCurvePoint(c.Now),
+		Suggested: convertCurvePoint(c.Suggested),
 		Decks:     int32(c.Decks),
 		Cards:     int32(c.Cards),
 		Overdue:   int32(c.Overdue),
@@ -154,7 +154,7 @@ func CurveOf(c review.Curve) *v1.Curve {
 			Owed:     int32(one.Owed),
 			Through:  one.Share,
 			IsEnough: one.IsEnough,
-			Closed:   BudgetsOf(one.Closed),
+			Closed:   ConvertBudgetsToWire(one.Closed),
 			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),
 			Learned:  int32(one.Learned),
@@ -165,18 +165,18 @@ func CurveOf(c review.Curve) *v1.Curve {
 	return out
 }
 
-// BudgetsOf are the budgets that closed a day, as the schema names them.
-func BudgetsOf(names review.BudgetNames) []v1.BudgetName {
+// ConvertBudgetsToWire are the budgets that closed a day, as the schema names them.
+func ConvertBudgetsToWire(names review.BudgetNames) []v1.BudgetName {
 	out := make([]v1.BudgetName, 0, len(names))
 	for _, one := range names {
-		out = append(out, BudgetOf(one))
+		out = append(out, ConvertBudgetToWire(one))
 	}
 	return out
 }
 
-// BudgetOf is one budget, as the schema names it. Every budget the core holds
+// ConvertBudgetToWire is one budget, as the schema names it. Every budget the core holds
 // is named here, so a budget added to the core is a case added beside them.
-func BudgetOf(name review.BudgetName) v1.BudgetName {
+func ConvertBudgetToWire(name review.BudgetName) v1.BudgetName {
 	switch name {
 	case review.ClosedNothing:
 		return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
@@ -196,12 +196,12 @@ func BudgetOf(name review.BudgetName) v1.BudgetName {
 	return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
 }
 
-func convertPlace(p review.Place) *v1.Place {
+func convertCurvePoint(p review.CurvePoint) *v1.Place {
 	return &v1.Place{At: int32(p.Index), Value: p.Value, Day: p.Day}
 }
 
-// GoalOf is which value the control steers, as the schema names it.
-func GoalOf(g review.Goal) v1.Goal {
+// ConvertGoalToWire is which value the control steers, as the schema names it.
+func ConvertGoalToWire(g review.Goal) v1.Goal {
 	switch g {
 	case review.GoalMinutes:
 		return v1.Goal_GOAL_MINUTES_A_DAY
@@ -214,9 +214,9 @@ func GoalOf(g review.Goal) v1.Goal {
 	}
 }
 
-// GoalIn is the goal a client named, in the words the core holds it in. A goal
+// ConvertGoalFromWire is the goal a client named, in the words the core holds it in. A goal
 // the schema does not name is refused where the settings are weighed.
-func GoalIn(g v1.Goal) review.Goal {
+func ConvertGoalFromWire(g v1.Goal) review.Goal {
 	switch g {
 	case v1.Goal_GOAL_MINUTES_A_DAY:
 		return review.GoalMinutes
@@ -229,8 +229,8 @@ func GoalIn(g v1.Goal) review.Goal {
 	}
 }
 
-// RuleOf is what counts as learned, as the schema names it.
-func RuleOf(r review.LearnedRule) v1.Rule {
+// ConvertRuleToWire is what counts as learned, as the schema names it.
+func ConvertRuleToWire(r review.LearnedRule) v1.Rule {
 	switch r {
 	case review.RuleInterval:
 		return v1.Rule_RULE_INTERVAL
@@ -241,9 +241,9 @@ func RuleOf(r review.LearnedRule) v1.Rule {
 	}
 }
 
-// RuleIn is the rule a client named, in the words the core holds it in. A rule
+// ConvertRuleFromWire is the rule a client named, in the words the core holds it in. A rule
 // the schema does not name is refused where the settings are weighed.
-func RuleIn(r v1.Rule) review.LearnedRule {
+func ConvertRuleFromWire(r v1.Rule) review.LearnedRule {
 	switch r {
 	case v1.Rule_RULE_INTERVAL:
 		return review.RuleInterval
@@ -254,8 +254,8 @@ func RuleIn(r v1.Rule) review.LearnedRule {
 	}
 }
 
-// BudgetUnitOf is what a day's budget is counted in, as the schema names it.
-func BudgetUnitOf(u review.BudgetUnit) v1.BudgetUnit {
+// ConvertBudgetUnitToWire is what a day's budget is counted in, as the schema names it.
+func ConvertBudgetUnitToWire(u review.BudgetUnit) v1.BudgetUnit {
 	switch u {
 	case review.BudgetUnitCards:
 		return v1.BudgetUnit_BUDGET_UNIT_CARDS
@@ -266,10 +266,10 @@ func BudgetUnitOf(u review.BudgetUnit) v1.BudgetUnit {
 	}
 }
 
-// BudgetUnitIn is what a client said a day's budget is counted in, in the words
+// ConvertBudgetUnitFromWire is what a client said a day's budget is counted in, in the words
 // the core holds it in. A value the schema does not name is refused where the
 // settings are weighed.
-func BudgetUnitIn(u v1.BudgetUnit) review.BudgetUnit {
+func ConvertBudgetUnitFromWire(u v1.BudgetUnit) review.BudgetUnit {
 	switch u {
 	case v1.BudgetUnit_BUDGET_UNIT_CARDS:
 		return review.BudgetUnitCards

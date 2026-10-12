@@ -23,9 +23,9 @@ func (r *replying) Proofread(context.Context, []proofread.Batch) (map[int]string
 // queued is a proofreader with a queue, which is asked nothing either.
 type queued struct{ replying }
 
-func (q *queued) Leave(context.Context, []proofread.Batch) (string, error) { return "", nil }
+func (q *queued) Submit(context.Context, []proofread.Batch) (string, error) { return "", nil }
 
-func (q *queued) Collect(context.Context, string) (map[int]string, bool, error) {
+func (q *queued) GetReplies(context.Context, string) (map[int]string, bool, error) {
 	return nil, false, nil
 }
 

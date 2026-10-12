@@ -21,16 +21,16 @@ type shelf struct {
 	closes   int
 }
 
-func (s *shelf) Pages() int { return 1 }
+func (s *shelf) GetPageCount() int { return 1 }
 
-func (s *shelf) Size(int) (float64, float64, error) {
+func (s *shelf) GetPageSize(int) (float64, float64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.sizes++
 	return s.across, 792, s.sizeErr
 }
 
-func (s *shelf) Image(_, dpi int) (image.Image, error) {
+func (s *shelf) RenderPage(_, dpi int) (image.Image, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dpis = append(s.dpis, dpi)

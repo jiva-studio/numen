@@ -290,19 +290,19 @@ func TestANameIsClaimedByOneCallerAtATime(t *testing.T) {
 	// held for as long as that takes.
 	derived, _ := store(t)
 
-	release, err := derived.Claim(t.Context(), "ocr/abc.txt")
+	release, err := derived.ClaimName(t.Context(), "ocr/abc.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := derived.Claim(t.Context(), "ocr/abc.txt"); !errors.Is(err, port.ErrClaimed) {
+	if _, err := derived.ClaimName(t.Context(), "ocr/abc.txt"); !errors.Is(err, port.ErrClaimed) {
 		t.Errorf("claiming a held name gave %v, want port.ErrClaimed", err)
 	}
 
 	if err := release(); err != nil {
 		t.Fatal(err)
 	}
-	again, err := derived.Claim(t.Context(), "ocr/abc.txt")
+	again, err := derived.ClaimName(t.Context(), "ocr/abc.txt")
 	if err != nil {
 		t.Fatalf("claiming a released name gave %v", err)
 	}
@@ -314,12 +314,12 @@ func TestANameIsClaimedByOneCallerAtATime(t *testing.T) {
 func TestTwoNamesAreClaimedTogether(t *testing.T) {
 	derived, _ := store(t)
 
-	first, err := derived.Claim(t.Context(), "ocr/one.txt")
+	first, err := derived.ClaimName(t.Context(), "ocr/one.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer first()
-	second, err := derived.Claim(t.Context(), "ocr/two.txt")
+	second, err := derived.ClaimName(t.Context(), "ocr/two.txt")
 	if err != nil {
 		t.Fatalf("claiming another name gave %v", err)
 	}
@@ -339,7 +339,7 @@ func TestAClaimCannotLeaveTheStore(t *testing.T) {
 		"config.json",
 		"/etc/passwd",
 	} {
-		if _, err := derived.Claim(t.Context(), name); !errors.Is(err, filesystem.ErrOutside) {
+		if _, err := derived.ClaimName(t.Context(), name); !errors.Is(err, filesystem.ErrOutside) {
 			t.Errorf("claiming %q gave %v, want ErrOutside", name, err)
 		}
 	}
@@ -388,7 +388,7 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 		t.Fatalf("the child never took the claim: %v", said.Err())
 	}
 
-	if _, err := derived.Claim(t.Context(), "ocr/held.txt"); !errors.Is(err, port.ErrClaimed) {
+	if _, err := derived.ClaimName(t.Context(), "ocr/held.txt"); !errors.Is(err, port.ErrClaimed) {
 		t.Errorf("claiming a name another process holds gave %v, want port.ErrClaimed", err)
 	}
 }
@@ -404,7 +404,7 @@ func TestHoldingAClaimForAnotherProcess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	release, err := derived.Claim(t.Context(), "ocr/held.txt")
+	release, err := derived.ClaimName(t.Context(), "ocr/held.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

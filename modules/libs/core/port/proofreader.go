@@ -29,12 +29,12 @@ type Proofreader interface {
 type ProofreadQueue interface {
 	Proofreader
 
-	// Leave hands the batches over and answers with the name what comes back is
+	// Submit hands the batches over and answers with the name what comes back is
 	// collected under.
-	Leave(ctx context.Context, batches []proofread.Batch) (string, error)
+	Submit(ctx context.Context, batches []proofread.Batch) (string, error)
 
-	// Collect is what came back about the batches left under a name, and
+	// GetReplies is what came back about the batches left under a name, and
 	// whether it is there yet. A name the service will never answer about is an
 	// error.
-	Collect(ctx context.Context, name string) (replies map[int]string, ready bool, err error)
+	GetReplies(ctx context.Context, name string) (replies map[int]string, ready bool, err error)
 }

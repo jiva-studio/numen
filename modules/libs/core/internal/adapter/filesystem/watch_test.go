@@ -17,7 +17,7 @@ import (
 // batch of changed paths.
 func watchVault(t *testing.T, root string) func() []string {
 	t.Helper()
-	changes, _, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, _, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func write(t *testing.T, root, name, body string) {
 // it, and nothing behind it.
 func TestOneSaveIsOneReport(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := filesystem.Watcher{Options: filesystem.Options{DebounceDelay: 200 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, _, err := filesystem.Watcher{Options: filesystem.Options{DebounceDelay: 200 * time.Millisecond}}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
 		"projects/Plan.md":   "# Plan\n",
 		"projects/deep/A.md": "# A\n",
 	}, nil)
-	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 		"Note.md":              "# Note\n",
 		"2026.archive/Kept.md": "# Kept\n",
 	}, nil)
-	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 // waited would stop emptying the backlog and lose what came after.
 func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := filesystem.Watcher{Options: filesystem.Options{DebounceDelay: 50 * time.Millisecond}}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, _, err := filesystem.Watcher{Options: filesystem.Options{DebounceDelay: 50 * time.Millisecond}}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +246,7 @@ func TestANewNoteInANewFolderIsReported(t *testing.T) {
 // walk does, so dropping a book into a folder is the whole gesture.
 func TestABookAppearingIsReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, _, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +368,7 @@ func TestAFolderTheVaultIgnoresGoingAwayIsNotALoss(t *testing.T) {
 		"node_modules/left/A.md": "# A\n",
 		"archive/deep/Buried.md": "# Buried\n",
 	}, []string{"node_modules/", "archive/"})
-	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +401,7 @@ func TestAFolderTheVaultIgnoresGoingAwayIsNotALoss(t *testing.T) {
 // folder the walk stops at, so neither half of that is the vault's.
 func TestAFolderTheVaultIgnoresArrivingIsNotRemembered(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -449,7 +449,7 @@ func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: link})
+	changes, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: link})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -474,7 +474,7 @@ func TestAVaultThatIsNeverStillIsStillReported(t *testing.T) {
 	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	changes, _, err := filesystem.Watcher{
 		Options: filesystem.Options{DebounceDelay: 200 * time.Millisecond},
-	}.Watch(t.Context(), domain.Vault{Path: root})
+	}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}

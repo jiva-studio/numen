@@ -905,7 +905,7 @@ type plantedFace struct {
 	Reps int    `json:"reps"`
 }
 
-func formatTime(at time.Time) string { return at.UTC().Format(review.Stamp) }
+func formatTime(at time.Time) string { return at.UTC().Format(review.TimestampLayout) }
 
 // rewrite changes the cache a vault holds, so that a test can say what a cache
 // claims and see whether it was believed.

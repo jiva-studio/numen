@@ -37,7 +37,7 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := two.NoteQueries().Notes(t.Context(), first.ID, []string{"notes/entropy.md"})
+	found, err := two.NoteQueries().GetNotes(t.Context(), first.ID, []string{"notes/entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 			want = append(want, fmt.Sprintf("notes/%s-%d.md", who, i))
 		}
 	}
-	found, err := one.NoteQueries().Notes(t.Context(), first.ID, want)
+	found, err := one.NoteQueries().GetNotes(t.Context(), first.ID, want)
 	if err != nil {
 		t.Fatal(err)
 	}

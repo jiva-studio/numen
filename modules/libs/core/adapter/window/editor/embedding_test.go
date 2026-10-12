@@ -50,7 +50,7 @@ type asked struct {
 	seen  []string
 }
 
-func (a *asked) Model() port.EmbeddingModel {
+func (a *asked) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "fake", Dimensions: a.dims}
 }
 
@@ -160,16 +160,16 @@ type counts struct {
 	at *walking
 }
 
-func (r counts) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
+func (r counts) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
 	r.at.walks.Add(1)
-	return r.VaultReader.Walk(ctx, fn)
+	return r.VaultReader.WalkFiles(ctx, fn)
 }
 
 // getVectorProgress is how many of the vault's chunks can carry a vector and how many
 // carry one from the model in use.
 func getVectorProgress(t *testing.T, f *behind, model port.Embedder) (held, embedded int64) {
 	t.Helper()
-	held, embedded, err := f.index.Progress().Progress(t.Context(), f.vault.ID, model.Model().Recipe())
+	held, embedded, err := f.index.Progress().GetProgress(t.Context(), f.vault.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}

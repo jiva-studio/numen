@@ -75,7 +75,7 @@ func (u Highlight) Execute(
 	}
 	// Everything from outside reaches the vault through a reader, so a path
 	// leaving it is refused there, and so is one the vault holds nothing at.
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (u Highlight) layer(
 	if len(pages) == 0 {
 		return nil, nil
 	}
-	return u.Documents.Highlights(ctx, raw, book.Pages, pages)
+	return u.Documents.GetHighlights(ctx, raw, book.Pages, pages)
 }
 
 // getPagesOfRuns is the pages all the runs fall on, in order and each of them once. Two

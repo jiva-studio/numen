@@ -50,7 +50,7 @@ type scanVault struct {
 
 func (m *scanVault) Open(context.Context, string) (io.ReadSeekCloser, error) { return nil, nil }
 
-func (m *scanVault) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
+func (m *scanVault) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
 	if m.walkErr != nil {
 		return m.walkErr
 	}
@@ -72,7 +72,7 @@ func (m *scanVault) Read(_ context.Context, path string) ([]byte, error) {
 
 func (m *scanVault) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
 
-func (m *scanVault) Stat(context.Context, string) (domain.Fingerprint, error) {
+func (m *scanVault) GetFingerprint(context.Context, string) (domain.Fingerprint, error) {
 	return domain.Fingerprint{}, nil
 }
 
@@ -81,9 +81,9 @@ func (m *scanVault) Register(context.Context, domain.VaultID) error {
 	return m.registerErr
 }
 
-func (m *scanVault) Forget(context.Context, domain.VaultID) error { return nil }
+func (m *scanVault) Unregister(context.Context, domain.VaultID) error { return nil }
 
-func (m *scanVault) Fingerprints(context.Context, domain.VaultID) (map[string]domain.Fingerprint, error) {
+func (m *scanVault) GetFingerprints(context.Context, domain.VaultID) (map[string]domain.Fingerprint, error) {
 	return m.known, m.knownErr
 }
 

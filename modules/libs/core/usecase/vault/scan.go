@@ -78,9 +78,9 @@ type ScanResult struct {
 // scan is handed what says which files have changed and nothing that answers
 // about a note.
 type FingerprintQueries interface {
-	// Fingerprints is what the index believes about each file, keyed by path,
+	// GetFingerprints is what the index believes about each file, keyed by path,
 	// so a scan can decide what to reparse without reading anything.
-	Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
+	GetFingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
 }
 
 // Execute walks the vault once.
@@ -114,7 +114,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 
-	known, err := u.known.Fingerprints(ctx, v.ID)
+	known, err := u.known.GetFingerprints(ctx, v.ID)
 	if err != nil {
 		// gomutants:disable-next-line RETURN_ZERO reason="the mutated value is the zero ScanResult, which res still is before any note is counted"
 		return res, fmt.Errorf("read index: %w", err)
@@ -154,7 +154,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 // touched recently are what the person is looking for while the scan runs.
 func walkVault(ctx context.Context, reader port.VaultReader) ([]domain.Fingerprint, error) {
 	var found []domain.Fingerprint
-	if err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
+	if err := reader.WalkFiles(ctx, func(ref domain.Fingerprint) error {
 		found = append(found, ref)
 		return nil
 	}); err != nil {

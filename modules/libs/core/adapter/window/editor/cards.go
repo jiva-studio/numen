@@ -107,7 +107,7 @@ func (a *API) createCardNote(
 	if errors.Is(err, cards.ErrNoFields) {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return cards.CreateNoteResult{}, nil, false, connect.NewError(wire.GetCode(err), err)
 	}
@@ -132,13 +132,13 @@ func (a *API) RenameStencilField(
 
 	renamed, err := a.Cards.RenameField.Execute(ctx, showing, cards.Rename{
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
-		Fingerprint: refOf(r.Msg.GetSeen()),
+		Fingerprint: convertFingerprintFromWire(r.Msg.GetSeen()),
 	})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		if a.NotifyNoteWritten != nil {
 			a.NotifyNoteWritten()
 		}
-		out := cardwire.NewRenameResponse(renamed, fingerprintOf(renamed.Stencil))
+		out := cardwire.NewRenameResponse(renamed, convertFingerprintToWire(renamed.Stencil))
 		out.IsUnlevelled = a.isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
@@ -147,7 +147,7 @@ func (a *API) RenameStencilField(
 	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -176,7 +176,7 @@ func (a *API) ReadStencil(
 	out.Stencil = cardwire.NewWireStencil(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
-	out.At = fingerprintOf(found.Fingerprint)
+	out.At = convertFingerprintToWire(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
 
@@ -205,7 +205,7 @@ func (a *API) ReadDeck(
 	}
 	title := wire.GetTitle(ctx, a.Notes.Queries, showing.ID, found.Path)
 	out.Deck = cardwire.NewWireDeck(found.Path, title, found.Body, found.Stencils)
-	out.At = fingerprintOf(found.Fingerprint)
+	out.At = convertFingerprintToWire(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
 
@@ -228,7 +228,7 @@ func (a *API) WriteDeck(
 	}
 	defer a.Writing.finish()
 
-	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
+	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, convertFingerprintFromWire(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
@@ -238,7 +238,7 @@ func (a *API) WriteDeck(
 			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteDeckResponse{
-			At: fingerprintOf(wrote.Fingerprint), IsUnlevelled: behind,
+			At: convertFingerprintToWire(wrote.Fingerprint), IsUnlevelled: behind,
 		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
@@ -247,7 +247,7 @@ func (a *API) WriteDeck(
 			Error: &code, Bound: cards.MaxBytes,
 		}), nil
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -275,7 +275,7 @@ func (a *API) WriteStencil(
 	defer a.Writing.finish()
 
 	at, err := a.Cards.Write.Stencil(
-		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), refOf(r.Msg.GetSeen()))
+		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), convertFingerprintFromWire(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
@@ -285,10 +285,10 @@ func (a *API) WriteStencil(
 			a.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteStencilResponse{
-			At: fingerprintOf(at), IsUnlevelled: behind,
+			At: convertFingerprintToWire(at), IsUnlevelled: behind,
 		}), nil
 	}
-	reason, refused := wire.ErrorCodeBy(err)
+	reason, refused := wire.GetErrorCode(err)
 	if !refused {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
@@ -304,7 +304,7 @@ func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (v1.ErrorCode, bool
 	if o == note.Ok && is != domain.TypeDeck {
 		return v1.ErrorCode_ERROR_CODE_NOT_A_DECK, true
 	}
-	return wire.ErrorCodeOf(o)
+	return wire.ConvertOutcomeToErrorCode(o)
 }
 
 // errorCodeOfStencil is why a stencil was not read.
@@ -312,5 +312,5 @@ func errorCodeOfStencil(o note.ReadOutcome, is domain.NoteType) (v1.ErrorCode, b
 	if o == note.Ok && is != domain.TypeStencil {
 		return v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL, true
 	}
-	return wire.ErrorCodeOf(o)
+	return wire.ConvertOutcomeToErrorCode(o)
 }

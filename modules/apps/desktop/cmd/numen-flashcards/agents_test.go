@@ -62,7 +62,7 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := cfg.VaultIdentity().Ensure(root, time.Now()); err != nil {
+	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range deck {

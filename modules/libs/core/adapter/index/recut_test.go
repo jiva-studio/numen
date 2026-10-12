@@ -500,7 +500,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Errorf("%d full-text rows name a chunk that is gone", got)
 	}
 
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, opening, nil, 10, false)
+	found, err := db.ChunkQueries().FindLexical(ctx, first.ID, opening, nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -512,7 +512,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 			t.Errorf("%s answered for a word of %s", p.Source, n.Fingerprint.Path)
 		}
 	}
-	typed, err := db.ChunkQueries().Lexical(ctx, first.ID, "wordzz", nil, 10, false)
+	typed, err := db.ChunkQueries().FindLexical(ctx, first.ID, "wordzz", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -569,7 +569,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 		{second, "quasar", true},
 		{first, "quasar", false},
 	} {
-		found, err := db.ChunkQueries().Lexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
+		found, err := db.ChunkQueries().FindLexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -631,7 +631,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	n := parseNote("notes/Entropy.md", body)
 	save(t, db, first, n)
 
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, "Sectiona", nil, 10, false)
+	found, err := db.ChunkQueries().FindLexical(ctx, first.ID, "Sectiona", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -709,7 +709,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 		{second, "quasar", true},
 		{first, "quasar", false},
 	} {
-		found, err := db.ChunkQueries().Lexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
+		found, err := db.ChunkQueries().FindLexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
 		if err != nil {
 			t.Fatal(err)
 		}

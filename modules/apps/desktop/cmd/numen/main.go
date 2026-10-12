@@ -143,7 +143,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.
-	opened.Report(chosen.Said)
+	opened.Report(chosen.Notices)
 
 	// The agents' endpoint on the vault in the window, let in once the window is
 	// built.
@@ -265,7 +265,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, scaleFlags scaleS
 	// A cancelled event is where the hooks stop, and the destroy the window
 	// registered for itself is one of the listeners after them.
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !closeWindow(ctx, going, seen, opened.WaitForAnswers, window.Close) {
+		if !closeWindow(ctx, going, seen, opened.WaitForFlush, window.Close) {
 			event.Cancel()
 		}
 	})

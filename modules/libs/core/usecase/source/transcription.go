@@ -212,12 +212,12 @@ func (t *TranscriptionWorker) Queue(
 	t.going.Add(1)
 	go func() {
 		defer t.going.Done()
-		t.runRounds(ctx, known, every, v)
+		t.repeatRounds(ctx, known, every, v)
 	}()
 }
 
-// runRounds is the round, and the wait between rounds.
-func (t *TranscriptionWorker) runRounds(
+// repeatRounds is the round, and the wait between rounds.
+func (t *TranscriptionWorker) repeatRounds(
 	ctx context.Context,
 	known port.SourceQueries,
 	every time.Duration,
@@ -271,7 +271,7 @@ func (t *TranscriptionWorker) getUntranscribed(ctx context.Context, known port.S
 	if known == nil {
 		return nil
 	}
-	held, err := known.Fingerprints(ctx, v.ID, domain.KindRecording)
+	held, err := known.GetFingerprints(ctx, v.ID, domain.KindRecording)
 	if err != nil {
 		return nil
 	}
@@ -641,9 +641,9 @@ func (t *TranscriptionWorker) recordAnswer(v domain.Vault, path string) {
 	t.answered[getKey(v, path)] = true
 }
 
-// Forget puts a recording back within the queue's reach. The answer it gave is
+// ClearAnswer puts a recording back within the queue's reach. The answer it gave is
 // gone from the vault, and the queue hands it over again.
-func (t *TranscriptionWorker) Forget(v domain.Vault, path string) {
+func (t *TranscriptionWorker) ClearAnswer(v domain.Vault, path string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	delete(t.answered, getKey(v, path))

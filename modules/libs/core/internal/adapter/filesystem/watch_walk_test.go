@@ -28,7 +28,7 @@ func TestAFolderTooLargeToWalkIsTheWholeVault(t *testing.T) {
 		}
 	}
 
-	_, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	_, lost, err := filesystem.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}

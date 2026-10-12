@@ -289,7 +289,7 @@ func (u CountCardsDue) getPresets(
 		return out, nil
 	}
 
-	decks, err := u.cardFaces.notes.OfType(ctx, v.ID, domain.TypeDeck)
+	decks, err := u.cardFaces.notes.GetPathsOfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func (u CountCardsDue) getPresets(
 		pointed[out[at].Preset] = true
 	}
 
-	paths, err := u.cardFaces.notes.OfType(ctx, v.ID, domain.TypePreset)
+	paths, err := u.cardFaces.notes.GetPathsOfType(ctx, v.ID, domain.TypePreset)
 	if err != nil {
 		return nil, err
 	}

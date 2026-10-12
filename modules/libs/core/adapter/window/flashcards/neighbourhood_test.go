@@ -93,7 +93,7 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 // brokenLinks is an index that cannot say what a note points at.
 type brokenLinks struct{ port.LinkQueries }
 
-func (brokenLinks) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (brokenLinks) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, errors.New("the index is out of reach")
 }
 

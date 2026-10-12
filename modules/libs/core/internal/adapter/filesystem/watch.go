@@ -27,12 +27,12 @@ type Watcher struct {
 	Options Options
 }
 
-// Watch follows one vault and reports the sources that change in it.
+// WatchVault follows one vault and reports the sources that change in it.
 //
 // The watch is on the tree, not on any file: editors save by writing a
 // temporary file and renaming it over the original, so the file a watch was
 // placed on stops existing at the first save.
-func (w Watcher) Watch(
+func (w Watcher) WatchVault(
 	ctx context.Context,
 	v domain.Vault,
 ) (changes <-chan []string, lost <-chan struct{}, err error) {

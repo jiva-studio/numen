@@ -35,8 +35,8 @@ func (Documents) Read(ctx context.Context, raw []byte) (out domain.TextLayer, er
 	return out, nil
 }
 
-// Highlights is where the words of the pages named sit on them.
-func (Documents) Highlights(ctx context.Context, raw []byte, starts []int, pages []int) (boxes []highlight.Box, err error) {
+// GetHighlights is where the words of the pages named sit on them.
+func (Documents) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) (boxes []highlight.Box, err error) {
 	defer recoverPanic("highlighting a page", &boxes, &err)
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -52,9 +52,9 @@ func (Documents) Highlights(ctx context.Context, raw []byte, starts []int, pages
 	return found, nil
 }
 
-// Draw holds a document open for its pages to be drawn. It owns the file from
+// OpenDocument holds a document open for its pages to be drawn. It owns the file from
 // the call on.
-func (Documents) Draw(ctx context.Context, file io.ReadSeekCloser) (open port.OpenDocument, err error) {
+func (Documents) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (open port.OpenDocument, err error) {
 	defer recoverPanic("opening a document to draw", &open, &err)
 	if err := ctx.Err(); err != nil {
 		file.Close()

@@ -19,9 +19,9 @@ type ProblemQueries interface {
 	// parser said about it.
 	GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 
-	// Ambiguous is every link that more than one note answers to, resolved the
+	// GetAmbiguousLinks is every link that more than one note answers to, resolved the
 	// same way a link is resolved anywhere else.
-	Ambiguous(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error)
+	GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error)
 	// GetDanglingLinks is every link that reaches nothing at all.
 	GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.ResolvedLink, error)
 }

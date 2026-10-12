@@ -52,18 +52,19 @@ type Source struct {
 	Producer string
 }
 
-// Instant and Stamp are the source row's modification time either way round.
+// ConvertNanosToTime and ConvertTimeToNanos are the source row's modification
+// time either way round.
 // The column is an INTEGER of nanoseconds since the epoch, and zero is a row
 // that names no time.
 
-func Instant(nanos int64) time.Time {
+func ConvertNanosToTime(nanos int64) time.Time {
 	if nanos == 0 {
 		return time.Time{}
 	}
 	return time.Unix(0, nanos)
 }
 
-func Stamp(t time.Time) int64 {
+func ConvertTimeToNanos(t time.Time) int64 {
 	if t.IsZero() {
 		return 0
 	}

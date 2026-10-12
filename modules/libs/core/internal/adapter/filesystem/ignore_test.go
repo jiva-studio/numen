@@ -102,7 +102,7 @@ func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 	}
 	// Nothing brought into the vault is held to an extension, so a dotfile
 	// folder let back in is somewhere a program's own file lands.
-	err = writer.Bring(t.Context(), ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh\n"))
+	err = writer.Import(t.Context(), ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh\n"))
 	if !errors.Is(err, filesystem.ErrNotANote) {
 		t.Errorf("bringing a file into .git answered %v", err)
 	}

@@ -97,7 +97,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	o.API.Writing.open()
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
-	o.API.Window.EndRound()
+	o.API.Window.CancelFlush()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
 	o.API.ChangeEvents.publish(change{shouldReload: true})
@@ -198,7 +198,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		rechunk: recognising.Cut,
 		// A recording whose answer was dropped is one the queue has had no
 		// answer about.
-		forgetRecording: transcribing.Forget,
+		forgetRecording: transcribing.ClearAnswer,
 		ctx:             watching,
 		cancel:          stop,
 		wait:            ended,
@@ -253,7 +253,7 @@ func chooseVault(registry port.VaultRegistry, asked string) (domain.Vault, error
 	if asked != "" {
 		return vaults.NewFind(registry).Execute(asked)
 	}
-	last, found, err := registry.Last()
+	last, found, err := registry.GetLastVault()
 	if err != nil {
 		return domain.Vault{}, err
 	}

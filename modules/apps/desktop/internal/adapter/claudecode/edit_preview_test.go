@@ -57,7 +57,7 @@ func startDrafting(t *testing.T, window *fakePreviewWindow, prints string) port.
 		},
 		Preview: window.makePreview(),
 	}
-	work, err := claude.Take(t.Context(), port.Task{Question: "change it"})
+	work, err := claude.StartRun(t.Context(), port.Task{Question: "change it"})
 	if err != nil {
 		t.Fatal(err)
 	}

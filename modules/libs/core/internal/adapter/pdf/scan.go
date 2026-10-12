@@ -50,10 +50,10 @@ func OpenReader(file io.ReadSeekCloser) (*Scan, error) {
 
 func (s *Scan) Close() { s.doc.close() }
 
-// Pages is how many pages the document has.
-func (s *Scan) Pages() int { return s.doc.pages }
+// GetPageCount is how many pages the document has.
+func (s *Scan) GetPageCount() int { return s.doc.pages }
 
-// Size is how wide and how high one page is drawn, in the page's own units. A
+// GetPageSize is how wide and how high one page is drawn, in the page's own units. A
 // drawing at a width works its resolution back from it, and the document
 // answers without anything being drawn.
 //
@@ -64,7 +64,7 @@ func (s *Scan) Pages() int { return s.doc.pages }
 // The page is not loaded to be measured. A window laying out a book asks for
 // every page's size before it has drawn any of them, and loading five hundred
 // pages to measure them is seconds before anything is on the screen.
-func (s *Scan) Size(index int) (wide, high float64, err error) {
+func (s *Scan) GetPageSize(index int) (wide, high float64, err error) {
 	if index < 0 || index >= s.doc.pages {
 		return 0, 0, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
 	}
@@ -77,12 +77,12 @@ func (s *Scan) Size(index int) (wide, high float64, err error) {
 	return float64(size.Size.Width), float64(size.Size.Height), nil
 }
 
-// Image is one page drawn at the given resolution.
+// RenderPage is one page drawn at the given resolution.
 //
 // What resolution to draw at is a setting, and it decides what a model sees: a
 // page drawn too small loses the marks over its letters, and one drawn too large
 // is read no better and costs the square of the difference.
-func (s *Scan) Image(index, dpi int) (drawing image.Image, err error) {
+func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	defer recoverPanic("drawing a page", &drawing, &err)
 	if index < 0 || index >= s.doc.pages {
 		return nil, fmt.Errorf("pdf: page %d of %d", index, s.doc.pages)
@@ -90,7 +90,7 @@ func (s *Scan) Image(index, dpi int) (drawing image.Image, err error) {
 	if dpi <= 0 {
 		dpi = 300
 	}
-	wide, high, err := s.Size(index)
+	wide, high, err := s.GetPageSize(index)
 	if err != nil {
 		return nil, err
 	}

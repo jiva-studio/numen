@@ -91,7 +91,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			return cli.Scan{
 				Read: vaults.NewReadWholeVault(notes, books, vectors),
 				Summary: func(ctx context.Context) (domain.VaultSummary, error) {
-					return db.NoteQueries().Summary(ctx, v.ID)
+					return db.NoteQueries().GetSummary(ctx, v.ID)
 				},
 				Close: db.Close,
 			}, nil
@@ -129,28 +129,28 @@ func (singleVaultList) Save(domain.Vault) error           { return nil }
 func (singleVaultList) Remove(domain.VaultID) error       { return nil }
 func (singleVaultList) RecordOpened(domain.VaultID) error { return nil }
 
-func (o singleVaultList) Find(nameOrPath string) (domain.Vault, bool, error) {
+func (o singleVaultList) FindVault(nameOrPath string) (domain.Vault, bool, error) {
 	if nameOrPath == o.held.Name {
 		return o.held, true, nil
 	}
 	return domain.Vault{}, false, nil
 }
 
-func (o singleVaultList) Last() (domain.Vault, bool, error) { return o.held, true, nil }
+func (o singleVaultList) GetLastVault() (domain.Vault, bool, error) { return o.held, true, nil }
 
 // fixedLinkQueries answers what one note points at and what points at it, out of what the
 // test wrote down.
 type fixedLinkQueries struct{ links, backlinks []domain.ResolvedLink }
 
-func (j fixedLinkQueries) Links(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (j fixedLinkQueries) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return j.links, nil
 }
 
-func (j fixedLinkQueries) Backlinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (j fixedLinkQueries) GetBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return j.backlinks, nil
 }
 
-func (fixedLinkQueries) Resolve(
+func (fixedLinkQueries) ResolveLinks(
 	context.Context, domain.VaultID, string, []string,
 ) (map[string]domain.ResolvedLink, error) {
 	return nil, nil

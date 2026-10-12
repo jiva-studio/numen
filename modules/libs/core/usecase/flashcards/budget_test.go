@@ -1020,21 +1020,21 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 		what: "counting cards, on a day already partly spent",
 		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
 			"counts: cards\nnew_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
-			saturday.AddDate(0, 0, day).Format(review.Named)),
+			saturday.AddDate(0, 0, day).Format(review.DayLayout)),
 		cards: 40,
 		gave:  newSpentToday(20),
 	}, {
 		what: "counting showings, on a day already partly spent",
 		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
 			"counts: shows\nnew_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
-			saturday.AddDate(0, 0, day).Format(review.Named)),
+			saturday.AddDate(0, 0, day).Format(review.DayLayout)),
 		cards: 40,
 		gave:  newSpentToday(20),
 	}, {
 		what: "a date",
 		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
 			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
-			saturday.AddDate(0, 0, day).Format(review.Named)),
+			saturday.AddDate(0, 0, day).Format(review.DayLayout)),
 		cards: 40,
 		gave:  answersAt(15, -30, review.Good),
 	}} {

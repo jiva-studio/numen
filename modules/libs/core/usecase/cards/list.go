@@ -29,7 +29,7 @@ type List struct {
 type StencilQueries interface {
 	// Stencils is every stencil one vault holds, by path. A card names the
 	// stencil it is cut by, and this is the list those names are picked from.
-	Stencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error)
+	GetStencils(ctx context.Context, vaultID domain.VaultID) ([]domain.Stencil, error)
 }
 
 // NewList is what the vault's stencils are listed through: what says which
@@ -47,7 +47,7 @@ func NewList(readers port.VaultReaders, notes StencilQueries) List {
 func (u List) Execute(
 	ctx context.Context, v domain.Vault, limit int,
 ) ([]StencilSummary, int, error) {
-	all, err := u.notes.Stencils(ctx, v.ID)
+	all, err := u.notes.GetStencils(ctx, v.ID)
 	if err != nil {
 		return nil, 0, err
 	}

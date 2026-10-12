@@ -30,7 +30,7 @@ func (r *rows) Save(context.Context, domain.VaultID) error { return nil }
 
 func (r *rows) Register(context.Context, domain.VaultID) error { return nil }
 
-func (r *rows) Forget(_ context.Context, vaultID domain.VaultID) error {
+func (r *rows) Unregister(_ context.Context, vaultID domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.forgot = append(r.forgot, vaultID)
@@ -52,7 +52,7 @@ type folders struct {
 	title    string
 }
 
-func (f *folders) Choose(_ context.Context, title, _ string) (string, bool, error) {
+func (f *folders) ChooseFolder(_ context.Context, title, _ string) (string, bool, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.title = title
@@ -96,7 +96,7 @@ func onTheList(t *testing.T) *installation {
 	adding := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now)
 	held := &rows{}
 	renaming := vaults.NewRename(registry, held)
-	forgetting := vaults.NewForget(registry, held)
+	forgetting := vaults.NewUnregister(registry, held)
 
 	f := &installation{
 		registry: registry,
@@ -114,7 +114,7 @@ func onTheList(t *testing.T) *installation {
 			FolderDialog: f.dialog,
 			Add:          &adding,
 			Rename:       &renaming,
-			Forget:       &forgetting,
+			Unregister:   &forgetting,
 			Opens: func(_ context.Context, v domain.Vault) error {
 				f.swapped <- v
 				return nil
@@ -242,7 +242,7 @@ func TestAddingWithNoPathAsksThePersonAndAddsWhatTheyChose(t *testing.T) {
 	if f.dialog.getTitle() == "" {
 		t.Error("the person was shown a dialog with nothing on it")
 	}
-	if _, found, err := f.registry.Find(out.ID); err != nil || !found {
+	if _, found, err := f.registry.FindVault(out.ID); err != nil || !found {
 		t.Errorf("the vault added is not on the list: %v", err)
 	}
 }
@@ -387,7 +387,7 @@ func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
 	if got := f.rows.getForgotten(); len(got) != 1 || got[0] != f.second.ID {
 		t.Errorf("the index was told to forget %v", got)
 	}
-	if _, found, err := f.registry.Find(string(f.second.ID)); err != nil || found {
+	if _, found, err := f.registry.FindVault(string(f.second.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v", err)
 	}
 }
@@ -483,7 +483,7 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 		{"vault_list", func(c *mcp.Core) { c.Vaults.Registry = nil }},
 		{"vault_add", func(c *mcp.Core) { c.Vaults.Add = nil }},
 		{"vault_rename", func(c *mcp.Core) { c.Vaults.Rename = nil }},
-		{"vault_remove", func(c *mcp.Core) { c.Vaults.Forget = nil }},
+		{"vault_remove", func(c *mcp.Core) { c.Vaults.Unregister = nil }},
 		{"vault_open", func(c *mcp.Core) { c.Vaults.Opens = nil }},
 		{"vault_rename", func(c *mcp.Core) { c.Vaults.Registry = nil }},
 		{"vault_remove", func(c *mcp.Core) { c.Vaults.Registry = nil }},

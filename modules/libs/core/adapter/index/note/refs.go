@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// Notes returns what is needed to show each of the paths asked about. A path
+// GetNotes returns what is needed to show each of the paths asked about. A path
 // that names nothing is left out.
-func (q *Queries) Notes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
+func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
 	out := map[string]domain.NoteRef{}
 	if len(paths) == 0 {
 		return out, nil
@@ -46,9 +46,9 @@ func (q *Queries) Notes(ctx context.Context, vaultID domain.VaultID, paths []str
 	return out, nil
 }
 
-// Types is what each of the paths asked about is. A path the index holds no
+// GetTypes is what each of the paths asked about is. A path the index holds no
 // note at is left out, and so a listing draws it as the file it is.
-func (q *Queries) Types(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
+func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
 	out := map[string]domain.NoteType{}
 	if len(paths) == 0 {
 		return out, nil
@@ -83,8 +83,8 @@ func (q *Queries) Types(ctx context.Context, vaultID domain.VaultID, paths []str
 	return out, rows.Err()
 }
 
-// OfType is every note of one type the vault holds, by path.
-func (q *Queries) OfType(ctx context.Context, vaultID domain.VaultID, of domain.NoteType) ([]string, error) {
+// GetPathsOfType is every note of one type the vault holds, by path.
+func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of domain.NoteType) ([]string, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -110,8 +110,8 @@ func (q *Queries) OfType(ctx context.Context, vaultID domain.VaultID, of domain.
 	return out, rows.Err()
 }
 
-// Headings answers NoteQueries.Headings.
-func (q *Queries) Headings(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string][]domain.Heading, error) {
+// GetHeadings answers NoteQueries.GetHeadings.
+func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string][]domain.Heading, error) {
 	out := map[string][]domain.Heading{}
 	if len(paths) == 0 {
 		return out, nil
@@ -168,8 +168,8 @@ func getHeadingsAt(
 	return out, rows.Err()
 }
 
-// Opening is the note a vault is shown at when nothing else has been chosen.
-func (q *Queries) Opening(ctx context.Context, vaultID domain.VaultID) (domain.NoteRef, bool, error) {
+// GetOpeningNote is the note a vault is shown at when nothing else has been chosen.
+func (q *Queries) GetOpeningNote(ctx context.Context, vaultID domain.VaultID) (domain.NoteRef, bool, error) {
 	var ref domain.NoteRef
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {

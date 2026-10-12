@@ -36,7 +36,7 @@ func divisions(
 ) map[string][]domain.Heading {
 	t.Helper()
 
-	found, err := db.NoteQueries().Headings(t.Context(), vault.ID, paths)
+	found, err := db.NoteQueries().GetHeadings(t.Context(), vault.ID, paths)
 	if err != nil {
 		t.Fatal(err)
 	}

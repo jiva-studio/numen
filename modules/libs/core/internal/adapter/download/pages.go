@@ -77,19 +77,19 @@ func (p *pageProvider) GetDownloadModel(domain.URL) port.DownloadModel {
 	return port.DownloadModel{Tool: readerName, Producer: text.Article}
 }
 
-// Metadata is what a page calls itself, which is the whole of what is known
+// GetMetadata is what a page calls itself, which is the whole of what is known
 // about one before it is read. It is the same read the prose comes out of.
-func (p *pageProvider) Metadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
-	article, err := p.Text(ctx, at, port.PreferredCaptions{})
+func (p *pageProvider) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+	article, err := p.GetText(ctx, at, port.PreferredCaptions{})
 	if err != nil {
 		return port.Metadata{}, err
 	}
 	return port.Metadata{Title: article.Title}, nil
 }
 
-// Text is the prose a page is written around. A page is read once: what it
+// GetText is the prose a page is written around. A page is read once: what it
 // calls itself and the prose come out of the same read.
-func (p *pageProvider) Text(ctx context.Context, at domain.URL, _ port.PreferredCaptions) (port.Text, error) {
+func (p *pageProvider) GetText(ctx context.Context, at domain.URL, _ port.PreferredCaptions) (port.Text, error) {
 	address, err := url.Parse(string(at))
 	if err != nil {
 		return port.Text{}, err

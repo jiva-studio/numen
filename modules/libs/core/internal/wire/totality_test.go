@@ -16,19 +16,19 @@ import (
 // fails and not a message that quietly says nothing.
 
 func TestEveryModeCrossesBothWays(t *testing.T) {
-	testsupport.RoundTrip(t, ModeIn, ModeOf)
+	testsupport.RoundTrip(t, ConvertModeFromWire, ConvertModeToWire)
 }
 
 func TestEveryGoalCrossesBothWays(t *testing.T) {
-	testsupport.RoundTrip(t, GoalIn, GoalOf)
+	testsupport.RoundTrip(t, ConvertGoalFromWire, ConvertGoalToWire)
 }
 
 func TestEveryRuleCrossesBothWays(t *testing.T) {
-	testsupport.RoundTrip(t, RuleIn, RuleOf)
+	testsupport.RoundTrip(t, ConvertRuleFromWire, ConvertRuleToWire)
 }
 
 func TestEveryBudgetUnitCrossesBothWays(t *testing.T) {
-	testsupport.RoundTrip(t, BudgetUnitIn, BudgetUnitOf)
+	testsupport.RoundTrip(t, ConvertBudgetUnitFromWire, ConvertBudgetUnitToWire)
 }
 
 func TestEveryVerdictIsWrittenFromOne(t *testing.T) {
@@ -40,7 +40,7 @@ func TestEveryVerdictIsWrittenFromOne(t *testing.T) {
 		v1.StopReason_STOP_REASON_PAST_DAY:   review.StoppedPastDay,
 		v1.StopReason_STOP_REASON_NO_LOAD:    review.StoppedNoLoad,
 		v1.StopReason_STOP_REASON_NO_WEEK:    review.StoppedNoWeek,
-	}, StopReasonOf)
+	}, ConvertStopReasonToWire)
 }
 
 func TestEveryUnitIsWrittenFromOne(t *testing.T) {
@@ -48,7 +48,7 @@ func TestEveryUnitIsWrittenFromOne(t *testing.T) {
 		v1.Unit_UNIT_THINGS:  task.Things,
 		v1.Unit_UNIT_BYTES:   task.Bytes,
 		v1.Unit_UNIT_SECONDS: task.Seconds,
-	}, unitOf)
+	}, convertUnit)
 }
 
 // A page that named nothing has said nothing, and silence is what the round

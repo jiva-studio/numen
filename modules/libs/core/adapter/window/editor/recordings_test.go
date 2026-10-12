@@ -51,8 +51,8 @@ func (s stored) Open(_ context.Context, name string) (io.ReadSeekCloser, int64, 
 	return readingBytes{bytes.NewReader(raw)}, int64(len(raw)), nil
 }
 
-// Take puts what a reader gives under a name.
-func (s stored) Take(_ context.Context, name string, from io.Reader) (int64, error) {
+// WriteStream puts what a reader gives under a name.
+func (s stored) WriteStream(_ context.Context, name string, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -88,7 +88,7 @@ func (s stored) Remove(_ context.Context, name string) error {
 
 func (s stored) List(context.Context, string) ([]port.Entry, error) { return nil, nil }
 
-func (s stored) Claim(context.Context, string) (func() error, error) {
+func (s stored) ClaimName(context.Context, string) (func() error, error) {
 	return func() error { return nil }, nil
 }
 
@@ -326,11 +326,11 @@ type heldBy struct {
 	name string
 }
 
-func (h heldBy) Claim(ctx context.Context, name string) (func() error, error) {
+func (h heldBy) ClaimName(ctx context.Context, name string) (func() error, error) {
 	if name == h.name {
 		return nil, fmt.Errorf("%s: %w", name, port.ErrClaimed)
 	}
-	return h.stored.Claim(ctx, name)
+	return h.stored.ClaimName(ctx, name)
 }
 
 // writeTranscript sends a transcript as the window sends one.
@@ -606,8 +606,8 @@ type stating struct {
 	then func()
 }
 
-func (s stating) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
-	ref, err := s.VaultReader.Stat(ctx, path)
+func (s stating) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+	ref, err := s.VaultReader.GetFingerprint(ctx, path)
 	s.then()
 	return ref, err
 }

@@ -49,7 +49,7 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 	defer closeIfOpen(open.Close)
 
 	transcribe, cut := open.Transcribe, open.Cut
-	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By().Transcription())
+	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By().GetTranscriptionModel())
 	started := time.Now()
 
 	// The line of minutes is closed once it stops, so what follows it stands on
@@ -65,7 +65,7 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 	transcribe.OnProgress = func(res source.TranscribeResult) {
 		if res.Length > 0 {
 			fmt.Fprintf(out, "  %s of %s\r",
-				transcript.Stamp(res.Heard), transcript.Stamp(res.Length))
+				transcript.FormatTimestamp(res.Heard), transcript.FormatTimestamp(res.Length))
 			shown = true
 		}
 	}
@@ -86,7 +86,7 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 		fmt.Fprintf(out, "%s carries no speech, and that is what was written\n", res.Path)
 	default:
 		fmt.Fprintf(out, "transcribed %s of %s in %s\n",
-			transcript.Stamp(res.Heard), res.Path, time.Since(started).Round(time.Second))
+			transcript.FormatTimestamp(res.Heard), res.Path, time.Since(started).Round(time.Second))
 	}
 	return nil
 }

@@ -50,11 +50,11 @@ func (r brokenReader) Read(ctx context.Context, path string) ([]byte, error) {
 	return r.VaultReader.Read(ctx, path)
 }
 
-func (r brokenReader) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
+func (r brokenReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
 	if r.on.stat != nil {
 		return domain.Fingerprint{}, r.on.stat
 	}
-	return r.VaultReader.Stat(ctx, path)
+	return r.VaultReader.GetFingerprint(ctx, path)
 }
 
 // brokenWriters is a vault on disk whose writers answer with the errors they
@@ -72,11 +72,11 @@ func (b brokenWriters) Open(v domain.Vault) (port.VaultWriter, error) {
 	return b.VaultWriters.Open(v)
 }
 
-func (b brokenWriters) Hold(ctx context.Context, v domain.Vault) (func(), error) {
+func (b brokenWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 	if b.hold != nil {
 		return nil, b.hold
 	}
-	return b.VaultWriters.Hold(ctx, v)
+	return b.VaultWriters.Lock(ctx, v)
 }
 
 func titleHeat(d *markdown.Document) error { return d.SetTitle("Heat") }

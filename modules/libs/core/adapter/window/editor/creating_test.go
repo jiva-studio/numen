@@ -121,7 +121,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerComesBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := f.installation.Queries().Notes(t.Context(), f.installation.GetCurrentVault().ID, []string{"Entropy.md"})
+	found, err := f.installation.Queries().GetNotes(t.Context(), f.installation.GetCurrentVault().ID, []string{"Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}

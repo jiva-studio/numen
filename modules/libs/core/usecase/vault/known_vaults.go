@@ -48,7 +48,7 @@ func (u KnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 		return nil, nil
 	}
 	if showing == "" {
-		last, recorded, err := u.registry.Last()
+		last, recorded, err := u.registry.GetLastVault()
 		if err != nil {
 			return nil, err
 		}

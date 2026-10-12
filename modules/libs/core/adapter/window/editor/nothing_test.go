@@ -101,7 +101,7 @@ func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	switch last, found, err := registry.Last(); {
+	switch last, found, err := registry.GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case found:
@@ -209,7 +209,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				_ = f.installation.API.GetWindow().Focus(asking, domain.Place{Path: "Somewhere.md"})
+				_ = f.installation.API.GetWindow().FocusPlace(asking, domain.Place{Path: "Somewhere.md"})
 			}
 		}
 	}()
@@ -450,7 +450,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	switch last, found, err := registry.Last(); {
+	switch last, found, err := registry.GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case !found || string(last.ID) != added.Msg.GetVault().GetId():

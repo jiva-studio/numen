@@ -89,11 +89,11 @@ func (u ShowNeighbourhood) Execute(
 			paths = append(paths, one.Path)
 		}
 	}
-	notes, err := u.notes.Notes(ctx, v.ID, paths)
+	notes, err := u.notes.GetNotes(ctx, v.ID, paths)
 	if err != nil {
 		return Neighbourhood{}, err
 	}
-	kinds, err := u.notes.Types(ctx, v.ID, paths)
+	kinds, err := u.notes.GetTypes(ctx, v.ID, paths)
 	if err != nil {
 		return Neighbourhood{}, err
 	}

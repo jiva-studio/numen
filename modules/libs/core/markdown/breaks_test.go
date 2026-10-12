@@ -34,7 +34,7 @@ func TestALineIsEveryBreakYAMLReads(t *testing.T) {
 			raw:  "---\nkeep: me\rlinks:\n  - to: \"Ferns\"\n    role: ref\n---\nbody\n",
 			want: "---\nkeep: me\rlinks:\n  - to: \"Mosses\"\n    role: ref\n---\nbody\n",
 			change: func(d *Document) error {
-				_, err := d.PointLinksAt(domain.ParseAddress("Ferns"), "Mosses")
+				_, err := d.RedirectLinks(domain.ParseAddress("Ferns"), "Mosses")
 				return err
 			},
 		},

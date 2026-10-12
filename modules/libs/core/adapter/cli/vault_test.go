@@ -255,7 +255,7 @@ func TestAnIndexThatRefusesToForgetKeepsTheListAndTheFolder(t *testing.T) {
 // refusingToForget is the rows of an index that cannot take a vault out.
 type refusingToForget struct{ port.VaultRepository }
 
-func (refusingToForget) Forget(context.Context, domain.VaultID) error { return errRefused }
+func (refusingToForget) Unregister(context.Context, domain.VaultID) error { return errRefused }
 
 func TestErasingSaysWhereTheFolderWent(t *testing.T) {
 	isolate(t)

@@ -193,7 +193,7 @@ type Files struct {
 // showing among them.
 //
 // Add turns a folder into a vault, Rename is what a person calls one, and
-// Forget and Erase take one off the list. They are bound by every build that
+// Unregister and Erase take one off the list. They are bound by every build that
 // serves the list, and so is the folder dialog below.
 type Vaults struct {
 	Registry port.VaultRegistry
@@ -202,10 +202,10 @@ type Vaults struct {
 	// Only an application with a window has one.
 	FolderDialog port.FolderDialog
 
-	Add    *vaults.Add
-	Rename *vaults.Rename
-	Forget *vaults.Forget
-	Erase  *vaults.Erase
+	Add        *vaults.Add
+	Rename     *vaults.Rename
+	Unregister *vaults.Unregister
+	Erase      *vaults.Erase
 }
 
 // Cards is the decks and stencils a vault is arranged into. Read takes a deck
@@ -343,10 +343,10 @@ func (a *API) getRecordingForgetter() func(domain.Vault, string) {
 
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a build that keeps one.
-func (a *API) reportTask(at task.Task) { a.Window.Say(at) }
+func (a *API) reportTask(at task.Task) { a.Window.AddTask(at) }
 
 // finishTask takes one piece of work out of that list.
-func (a *API) finishTask(id string) { a.Window.Finish(id) }
+func (a *API) finishTask(id string) { a.Window.RemoveTask(id) }
 
 // isUnlevelled says whether a write reached the vault and the index did not
 // follow.
@@ -429,7 +429,7 @@ func (a *API) GetVaultState(
 	// the state is answered as it stands. A window standing on nothing holds no
 	// chunks and counts none.
 	if a.Indexing.Progress != nil && showing.ID != "" {
-		if held, embedded, err := a.Indexing.Progress.Progress(ctx, showing.ID, text(&a.Indexing.Recipe)); err == nil {
+		if held, embedded, err := a.Indexing.Progress.GetProgress(ctx, showing.ID, text(&a.Indexing.Recipe)); err == nil {
 			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = held, embedded
 		}
 	}

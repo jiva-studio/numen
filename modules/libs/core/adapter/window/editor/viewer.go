@@ -101,7 +101,7 @@ const (
 // newDocumentOpener holds a document open with what the application draws with.
 func newDocumentOpener(docs port.PageRenderer) func(io.ReadSeekCloser) (pool.Scan, error) {
 	return func(file io.ReadSeekCloser) (pool.Scan, error) {
-		return docs.Draw(context.Background(), file)
+		return docs.OpenDocument(context.Background(), file)
 	}
 }
 
@@ -167,9 +167,9 @@ func (a *API) GetDocument(
 	out := &v1.GetDocumentResponse{
 		Fingerprint: &v1.Fingerprint{Path: mark.Path, Size: mark.Size, Mtime: mark.Mtime},
 	}
-	out.Pages = make([]*v1.Page, doc.Scan.Pages())
+	out.Pages = make([]*v1.Page, doc.Scan.GetPageCount())
 	for i := range out.Pages {
-		width, height, err := doc.Scan.Size(i)
+		width, height, err := doc.Scan.GetPageSize(i)
 		if err != nil {
 			// A page whose size could not be read stands at nothing, and the
 			// pages after it are still where they were.
@@ -241,7 +241,7 @@ func (a *API) stat(ctx context.Context, path string) (port.VaultReader, pool.Fin
 	if err != nil {
 		return nil, pool.Fingerprint{}, err
 	}
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return nil, pool.Fingerprint{}, err
 	}
@@ -298,8 +298,8 @@ func (a *API) renderPage(ctx context.Context, reader port.VaultReader, key pagec
 	}
 	defer doc.Unlock()
 
-	if key.Page >= doc.Scan.Pages() {
-		return nil, fmt.Errorf("%w: page %d of %d", errNoPage, key.Page, doc.Scan.Pages())
+	if key.Page >= doc.Scan.GetPageCount() {
+		return nil, fmt.Errorf("%w: page %d of %d", errNoPage, key.Page, doc.Scan.GetPageCount())
 	}
 	drawn, err := doc.Render(key.Page, key.Width)
 	if err != nil {

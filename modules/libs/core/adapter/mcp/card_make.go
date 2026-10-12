@@ -138,7 +138,7 @@ func renameCardField(ctx context.Context, core Core, in fieldRenameInput) (field
 
 // checkDeckCount returns an error when the vault holds more decks than a rename can read.
 func checkDeckCount(ctx context.Context, core Core, v domain.Vault) error {
-	held, err := core.Notes.Queries.OfType(ctx, v.ID, domain.TypeDeck)
+	held, err := core.Notes.Queries.GetPathsOfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
 		return err
 	}

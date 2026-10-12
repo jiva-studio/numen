@@ -48,11 +48,11 @@ type faultyReader struct {
 	on faulty
 }
 
-func (r faultyReader) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
+func (r faultyReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
 	if err := r.on.stat[path]; err != nil {
 		return domain.Fingerprint{}, err
 	}
-	return r.VaultReader.Stat(ctx, path)
+	return r.VaultReader.GetFingerprint(ctx, path)
 }
 
 func (r faultyReader) Read(ctx context.Context, path string) ([]byte, error) {
@@ -77,7 +77,7 @@ type unanswered struct {
 	isQuiet bool
 }
 
-func (u unanswered) Resolve(context.Context, domain.VaultID, string, []string) (map[string]domain.ResolvedLink, error) {
+func (u unanswered) ResolveLinks(context.Context, domain.VaultID, string, []string) (map[string]domain.ResolvedLink, error) {
 	if u.isQuiet {
 		u.t.Error("a link question was asked")
 	}
@@ -90,7 +90,7 @@ type landing struct {
 	at map[string]string
 }
 
-func (l landing) Resolve(
+func (l landing) ResolveLinks(
 	_ context.Context, _ domain.VaultID, from string, written []string,
 ) (map[string]domain.ResolvedLink, error) {
 	out := make(map[string]domain.ResolvedLink, len(written))

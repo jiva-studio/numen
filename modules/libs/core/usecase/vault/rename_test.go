@@ -23,7 +23,7 @@ func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
 		t.Errorf("the vault is called %q", got.Name)
 	}
 
-	onTheList, found, err := registry.Find(string(renamed.ID))
+	onTheList, found, err := registry.FindVault(string(renamed.ID))
 	if err != nil || !found {
 		t.Fatalf("the vault left the list: %v %v", found, err)
 	}
@@ -49,7 +49,7 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 	if !errors.Is(err, vaults.ErrNameTaken) {
 		t.Fatalf("a name %s already has was answered %v", taken.Name, err)
 	}
-	onTheList, found, err := registry.Find(string(renamed.ID))
+	onTheList, found, err := registry.FindVault(string(renamed.ID))
 	if err != nil || !found {
 		t.Fatalf("the vault left the list: %v %v", found, err)
 	}
@@ -109,7 +109,7 @@ func TestAVaultIsNotRenamedToNothing(t *testing.T) {
 	if _, err := vaults.NewRename(registry, index).Execute(t.Context(), v, ""); err == nil {
 		t.Fatal("an empty name was accepted")
 	}
-	onTheList, _, err := registry.Find(string(v.ID))
+	onTheList, _, err := registry.FindVault(string(v.ID))
 	if err != nil {
 		t.Fatal(err)
 	}

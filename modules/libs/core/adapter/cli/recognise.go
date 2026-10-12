@@ -39,7 +39,7 @@ func runRecogniseCommand(ctx context.Context, out io.Writer, deps Deps, args []s
 	defer closeIfOpen(open.Close)
 
 	recognise, cut := open.Recognise, open.Cut
-	fmt.Fprintf(out, "recognising %s with %s\n", args[1], recognise.By().Recognition())
+	fmt.Fprintf(out, "recognising %s with %s\n", args[1], recognise.By().GetRecognitionModel())
 	started := time.Now()
 
 	// The line of pages is closed once it stops, so what follows it stands on a

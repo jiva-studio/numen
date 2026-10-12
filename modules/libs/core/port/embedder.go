@@ -67,8 +67,8 @@ func (m EmbeddingModel) Recipe() string {
 // Vectors are unit length, so a dot product is a cosine and the sign of a
 // dimension carries meaning.
 type Embedder interface {
-	// Model is the identity every vector this embedder returns belongs to.
-	Model() EmbeddingModel
+	// GetModel is the identity every vector this embedder returns belongs to.
+	GetModel() EmbeddingModel
 	// Embed returns one vector per text, in the order the texts arrived.
 	// Any number of texts may be passed: how a request to the model is
 	// bounded is the implementation's business.

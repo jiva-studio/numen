@@ -282,7 +282,7 @@ func readListedFile(ctx context.Context, reader port.VaultReader, path string, r
 func (u Refresh) statNote(
 	ctx context.Context, reader port.VaultReader, path string, res *RefreshResult,
 ) (domain.Fingerprint, bool) {
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	switch {
 	case errors.Is(err, port.ErrNotANote):
 		// An attachment, an export or a note renamed out of the vault's sight is

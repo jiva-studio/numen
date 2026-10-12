@@ -194,7 +194,7 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
-	if _, err := served.Agent.Take(t.Context(), port.Task{Question: "anything"}); err == nil {
+	if _, err := served.Agent.StartRun(t.Context(), port.Task{Question: "anything"}); err == nil {
 		t.Error("the agent took work while the endpoint was closing")
 	}
 
@@ -233,11 +233,11 @@ func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 		t.Fatal("the settings name an agent and none was started")
 	}
 
-	work, err := served.Agent.Take(t.Context(), port.Task{Question: "what is here?"})
+	work, err := served.Agent.StartRun(t.Context(), port.Task{Question: "what is here?"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for range work.Steps() {
+	for range work.GetSteps() {
 	}
 	raw, err := os.ReadFile(written)
 	if err != nil {

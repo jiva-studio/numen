@@ -25,12 +25,12 @@ var morning = time.Date(2026, 9, 5, 1, 0, 0, 0, time.Local)
 // needs to name the day its counts stand in.
 type none struct{}
 
-func (none) List() ([]domain.Vault, error)           { return nil, nil }
-func (none) Save(domain.Vault) error                 { return nil }
-func (none) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
-func (none) Remove(domain.VaultID) error             { return nil }
-func (none) RecordOpened(domain.VaultID) error       { return nil }
-func (none) Last() (domain.Vault, bool, error)       { return domain.Vault{}, false, nil }
+func (none) List() ([]domain.Vault, error)                { return nil, nil }
+func (none) Save(domain.Vault) error                      { return nil }
+func (none) FindVault(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
+func (none) Remove(domain.VaultID) error                  { return nil }
+func (none) RecordOpened(domain.VaultID) error            { return nil }
+func (none) GetLastVault() (domain.Vault, bool, error)    { return domain.Vault{}, false, nil }
 
 // The editor and the review window are told the same day for the same clock.
 // Both windows count in review days, and a day worked out twice is two

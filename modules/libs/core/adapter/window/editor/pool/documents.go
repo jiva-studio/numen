@@ -15,9 +15,9 @@ import (
 // Scan is a document held open for its pages to be drawn. It is pdf.Scan in
 // the application, and a test puts its own in.
 type Scan interface {
-	Pages() int
-	Size(index int) (wide, high float64, err error)
-	Image(index, dpi int) (image.Image, error)
+	GetPageCount() int
+	GetPageSize(index int) (wide, high float64, err error)
+	RenderPage(index, dpi int) (image.Image, error)
 	Close()
 }
 
@@ -318,7 +318,7 @@ const PointsDPI = 72
 func (d *Document) Render(at, width int) (image.Image, error) {
 	points, measured := d.points[at]
 	if !measured {
-		across, _, err := d.Scan.Size(at)
+		across, _, err := d.Scan.GetPageSize(at)
 		if err != nil {
 			return nil, err
 		}
@@ -329,7 +329,7 @@ func (d *Document) Render(at, width int) (image.Image, error) {
 		d.points[at] = points
 	}
 	dpi := (width*PointsDPI + points - 1) / points
-	drawn, err := d.Scan.Image(at, max(dpi, 1))
+	drawn, err := d.Scan.RenderPage(at, max(dpi, 1))
 	if err != nil {
 		return nil, err
 	}

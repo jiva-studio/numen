@@ -136,7 +136,7 @@ func (u ProofreadTranscript) Execute(ctx context.Context, v domain.Vault, path s
 	// One run to a recording. The name a transcription holds is the name held
 	// here, so a run listening to a recording and a run putting its transcript
 	// right are never under way at once.
-	release, err := store.Claim(ctx, text.Partial(area, hash))
+	release, err := store.ClaimName(ctx, text.Partial(area, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		res.IsBusy = true
 		return res, nil

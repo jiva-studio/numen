@@ -334,7 +334,7 @@ func (s Simulation) Run(
 			// before it comes back to a card it has already shown, which is the
 			// order the sessions of that day put them in.
 			repeat := !owed && !fresh
-			if repeat || admits.IsPayingDebt(seen, begun, owed, fresh) {
+			if repeat || admits.IsNextCardDebt(seen, begun, owed, fresh) {
 				at := 0
 				if repeat {
 					at = again[next]

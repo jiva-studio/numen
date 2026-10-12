@@ -9,7 +9,7 @@ import (
 // the bytes the person wrote.
 func TestASpanIsFoundWhereItStands(t *testing.T) {
 	text := "the aggressor is named"
-	at, plainly := Where(text, "aggressor")
+	at, plainly := FindSpans(text, "aggressor")
 	if plainly {
 		t.Error("a span that stands exactly was read plainly")
 	}
@@ -23,7 +23,7 @@ func TestASpanIsFoundWhereItStands(t *testing.T) {
 
 // Two of the same span are two answers, and a caller may refuse them.
 func TestASpanWrittenTwiceIsFoundTwice(t *testing.T) {
-	at, _ := Where("a foe, and another foe", "foe")
+	at, _ := FindSpans("a foe, and another foe", "foe")
 	if len(at) != 2 {
 		t.Fatalf("found %d places, wanted two", len(at))
 	}
@@ -34,7 +34,7 @@ func TestASpanWrittenTwiceIsFoundTwice(t *testing.T) {
 
 // A span inside a span is stepped over, so nothing overlaps.
 func TestPlacesFoundDoNotOverlap(t *testing.T) {
-	at, _ := Where("aaaa", "aa")
+	at, _ := FindSpans("aaaa", "aa")
 	if len(at) != 2 {
 		t.Fatalf("found %d places, wanted two", len(at))
 	}
@@ -58,7 +58,7 @@ func TestPunctuationIsReadAsTheMarkItStandsFor(t *testing.T) {
 		"an ideographic space": {"Seed　shed opens", "Seed shed opens"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			at, plainly := Where(c.text, c.wanted)
+			at, plainly := FindSpans(c.text, c.wanted)
 			if len(at) != 1 {
 				t.Fatalf("found %d places, wanted one", len(at))
 			}
@@ -76,7 +76,7 @@ func TestPunctuationIsReadAsTheMarkItStandsFor(t *testing.T) {
 // a replacement leaves the bytes around it as the person wrote them.
 func TestOffsetsAreIntoTheTextAsItStands(t *testing.T) {
 	text := "before «дa» after"
-	at, _ := Where(text, "\"дa\"")
+	at, _ := FindSpans(text, "\"дa\"")
 	if len(at) != 1 {
 		t.Fatalf("found %d places, wanted one", len(at))
 	}
@@ -91,7 +91,7 @@ func TestOffsetsAreIntoTheTextAsItStands(t *testing.T) {
 // A run of spacing inside a line is read as one space, so prose reflowed by an
 // editor is still found.
 func TestARunOfSpacingInsideALineIsOneSpace(t *testing.T) {
-	at, plainly := Where("the  foe\tadvances", "the foe advances")
+	at, plainly := FindSpans("the  foe\tadvances", "the foe advances")
 	if len(at) != 1 {
 		t.Fatalf("found %d places, wanted one", len(at))
 	}
@@ -103,7 +103,7 @@ func TestARunOfSpacingInsideALineIsOneSpace(t *testing.T) {
 // A break between lines is spacing of its own. A caller asking for one line
 // does not get two.
 func TestABreakBetweenLinesIsNotReadAsASpace(t *testing.T) {
-	if at, _ := Where("the foe\nadvances", "the foe advances"); at != nil {
+	if at, _ := FindSpans("the foe\nadvances", "the foe advances"); at != nil {
 		t.Errorf("found %d places across a break", len(at))
 	}
 }
@@ -111,7 +111,7 @@ func TestABreakBetweenLinesIsNotReadAsASpace(t *testing.T) {
 // A span that stands exactly is never reported where it only nearly stands.
 func TestWhatStandsExactlyIsAnsweredBeforeWhatNearlyDoes(t *testing.T) {
 	text := "he said \"yes\" and he said “yes”"
-	at, plainly := Where(text, "\"yes\"")
+	at, plainly := FindSpans(text, "\"yes\"")
 	if plainly {
 		t.Error("a span standing exactly was read plainly")
 	}
@@ -125,14 +125,14 @@ func TestWhatStandsExactlyIsAnsweredBeforeWhatNearlyDoes(t *testing.T) {
 
 // Nothing is what an empty span finds. Every place would be the alternative.
 func TestAnEmptySpanFindsNothing(t *testing.T) {
-	if at, _ := Where("some prose", ""); at != nil {
+	if at, _ := FindSpans("some prose", ""); at != nil {
 		t.Errorf("found %d places for nothing", len(at))
 	}
 }
 
 // A span nobody wrote is not found, however it is read.
 func TestASpanThatIsNotThereIsNotFound(t *testing.T) {
-	if at, _ := Where("the aggressor is named", "the poisoner"); at != nil {
+	if at, _ := FindSpans("the aggressor is named", "the poisoner"); at != nil {
 		t.Errorf("found %d places", len(at))
 	}
 }

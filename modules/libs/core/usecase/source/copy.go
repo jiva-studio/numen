@@ -51,7 +51,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	// One run to a copy, held for as long as the download takes. The claim is on
 	// the store's name whichever disk the copy lands on: it is the address that
 	// is being downloaded, and two urls on one address are one download.
-	release, err := store.Claim(ctx, text.Copy(hash))
+	release, err := store.ClaimName(ctx, text.Copy(hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
@@ -70,7 +70,7 @@ func (u ImportURL) Copy(ctx context.Context, v domain.Vault, path string) (CopyR
 	// The size gate and the download share one operation on one address.
 	ctx, endOperation := operation.Begin(ctx)
 	defer endOperation()
-	meta, err := u.By.Metadata(ctx, at)
+	meta, err := u.By.GetMetadata(ctx, at)
 	if err != nil {
 		return res, err
 	}
@@ -139,7 +139,7 @@ func (u ImportURL) getExistingCopy(
 		if err != nil {
 			return 0, false, err
 		}
-		ref, err := reader.Stat(ctx, beside)
+		ref, err := reader.GetFingerprint(ctx, beside)
 		if errors.Is(err, fs.ErrNotExist) {
 			return 0, false, nil
 		}
@@ -168,14 +168,14 @@ func (u ImportURL) writeCopy(
 	ctx context.Context, v domain.Vault, store port.DerivedStore, name, beside string, from io.Reader,
 ) (int64, error) {
 	if !u.IsToVault {
-		return store.Take(ctx, name, from)
+		return store.WriteStream(ctx, name, from)
 	}
 	writer, err := u.Writers.Open(v)
 	if err != nil {
 		return 0, err
 	}
 	counted := &passing{from: from}
-	if err := writer.Bring(ctx, beside, counted); err != nil {
+	if err := writer.Import(ctx, beside, counted); err != nil {
 		return 0, err
 	}
 	return counted.read, nil

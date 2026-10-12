@@ -113,7 +113,7 @@ func (u Presets) save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	release, err := u.writers.Hold(ctx, v)
+	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -123,7 +123,7 @@ func (u Presets) save(
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	on, err := reader.Stat(ctx, path)
+	on, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(err))
 	}

@@ -31,7 +31,7 @@ func newIndexLane(held *embedding.Embedder) *indexLane {
 	return &indexLane{held: held, waiting: held.GetWaitingEmbedder()}
 }
 
-func (l *indexLane) Model() port.EmbeddingModel { return l.held.Model() }
+func (l *indexLane) GetModel() port.EmbeddingModel { return l.held.GetModel() }
 
 // Close lets go of the model both sides ask.
 func (l *indexLane) Close() error { return l.held.Close() }

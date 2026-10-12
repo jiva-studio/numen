@@ -144,7 +144,7 @@ func getStencilPaths(
 	if len(written) == 0 {
 		return nil, nil
 	}
-	reached, err := links.Resolve(ctx, vaultID, path, written)
+	reached, err := links.ResolveLinks(ctx, vaultID, path, written)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +230,7 @@ func (u Read) readNote(
 	// The vault says what is at a path without opening it: a note, a file it
 	// leaves alone, or nothing. The size is among what it says, which is what
 	// keeps a deck over the bound unread.
-	ref, err := reader.Stat(ctx, path)
+	ref, err := reader.GetFingerprint(ctx, path)
 	held := err == nil
 	switch {
 	case held:

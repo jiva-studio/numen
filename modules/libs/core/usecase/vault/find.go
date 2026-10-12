@@ -24,7 +24,7 @@ func NewFind(registry port.VaultRegistry) Find {
 }
 
 func (u Find) Execute(nameOrPath string) (domain.Vault, error) {
-	v, found, err := u.registry.Find(nameOrPath)
+	v, found, err := u.registry.FindVault(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, err
 	}

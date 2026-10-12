@@ -20,31 +20,31 @@ type TextExtractor interface {
 	// each of its pages begins in that text.
 	Read(ctx context.Context, raw []byte) (domain.TextLayer, error)
 
-	// Highlights is where the words of the pages named sit, as fractions of the
+	// GetHighlights is where the words of the pages named sit, as fractions of the
 	// page, one box a word. Starts is where each page begins, as Read answered,
 	// and pages are the ones wanted, by index.
-	Highlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]highlight.Box, error)
+	GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]highlight.Box, error)
 }
 
 // PageRenderer draws the pages of such a document as pictures, for a screen to
 // show or a model to read.
 type PageRenderer interface {
-	// Draw holds a document open so its pages can be drawn. It holds a worker
+	// OpenDocument holds a document open so its pages can be drawn. It holds a worker
 	// until it is closed, and there are as many workers as this machine has
 	// cores.
 	//
-	// The document is read from the file as its pages are wanted. Draw owns the
+	// The document is read from the file as its pages are wanted. OpenDocument owns the
 	// file from the call on and closes it when the document is closed, and at
 	// once when the document does not open.
-	Draw(ctx context.Context, file io.ReadSeekCloser) (OpenDocument, error)
+	OpenDocument(ctx context.Context, file io.ReadSeekCloser) (OpenDocument, error)
 }
 
 // OpenDocument is a document held open, drawn a page at a time. Closing it gives back
 // the worker it holds.
 type OpenDocument interface {
-	Pages() int
-	Size(index int) (wide, high float64, err error)
-	Image(index, dpi int) (image.Image, error)
+	GetPageCount() int
+	GetPageSize(index int) (wide, high float64, err error)
+	RenderPage(index, dpi int) (image.Image, error)
 	Close()
 }
 
