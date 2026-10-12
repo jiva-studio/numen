@@ -38,7 +38,7 @@ Once frozen:
 
 Before handing work over, an agent must demonstrate concrete evidence:
 
-1. **The gate is green**: The relevant test suites and linters pass (`go test ./...`, `vue-tsc`, `vitest`).
+1. **The gate is green**: The relevant test suites and linters pass (`go test ./...`, `npm run typecheck`, `npm run test:unit`, `npm run format:check`).
 2. **Acceptance tests are verified**: Acceptance tests were proven red before implementation and are green after.
 3. **No regressions in existing suites**: Existing tests continue to pass.
 

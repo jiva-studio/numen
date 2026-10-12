@@ -67,7 +67,7 @@ Any claim about scoping is tested with two vaults whose notes share no words, as
    cd modules/libs/core && go test -race -run TestName ./path/...
    cd modules/apps/desktop/editor && npx vitest run --project unit <path>.spec.ts
    ```
-   For a story, render it in both engines: `vitest run --project 'stories (chromium)'` and `vitest run --project 'stories (webkit)'`, one at a time.
+   For a story, render it in both engines: `npx vitest run --project 'stories (chromium)'` and `npx vitest run --project 'stories (webkit)'`, one at a time.
 4. **Evaluate.**
    - The test **fails** → the defect is proven. Report the trace and the minimal reproduction, and mark the Stage 2 card confirmed.
    - The test **passes** → the code is resilient against that vector. Say so.
