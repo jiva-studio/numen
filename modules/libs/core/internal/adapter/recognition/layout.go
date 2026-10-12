@@ -61,8 +61,6 @@ func OpenLayout(engine *ort.Engine, path string, options *ort.SessionOptions, la
 		labels:  labels,
 		minimum: minimum,
 		overlap: overlap,
-		small:   image.NewRGBA(image.Rect(0, 0, layoutSide, layoutSide)),
-		flat:    make([]float32, 3*layoutSide*layoutSide),
 	}, nil
 }
 

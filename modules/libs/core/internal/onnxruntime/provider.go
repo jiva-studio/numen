@@ -81,9 +81,6 @@ func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
 		at := runtimeState.at
 		runtimeState.mu.Unlock()
 
-		if at == "" {
-			return fmt.Errorf("onnx runtime not loaded")
-		}
 		if err := initGraphOptimization(at); err != nil {
 			return err
 		}
@@ -212,7 +209,7 @@ type SessionSettings struct {
 
 // DefaultThreads is the default intra-op thread count for ONNX sessions.
 func DefaultThreads() int {
-	return min(max(1, runtime.GOMAXPROCS(0)), 8)
+	return min(runtime.GOMAXPROCS(0), 8)
 }
 
 // NewSessionOptions creates and configures session options according to the

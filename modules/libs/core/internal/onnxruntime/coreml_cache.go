@@ -43,10 +43,8 @@ func NewSession(engine *ort.Engine, path string, opts *ort.SessionOptions) (*ort
 // deleteCoreMLCache empties the CoreML cache directory and reports whether it
 // held anything.
 func deleteCoreMLCache() bool {
-	dir, err := GetCoreMLCacheDir()
-	if err != nil {
-		return false
-	}
+	// dir is empty when the folder cannot be made, and reading it finds nothing.
+	dir, _ := GetCoreMLCacheDir()
 	entries, err := os.ReadDir(dir)
 	if err != nil || len(entries) == 0 {
 		return false

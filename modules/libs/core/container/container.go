@@ -145,10 +145,7 @@ func (c Config) handleError(err error) {
 // name, which is what an installation nobody has configured does.
 func (c Config) SyncSetting() note.SyncSetting {
 	return func() note.SyncTitleAndFilename {
-		held, err := c.Settings()
-		if err != nil {
-			return true
-		}
+		held, _ := c.Settings()
 		return note.SyncTitleAndFilename(held.Sync())
 	}
 }

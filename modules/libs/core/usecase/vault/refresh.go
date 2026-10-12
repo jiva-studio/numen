@@ -35,10 +35,6 @@ type Refresh struct {
 	// the same modification time.
 	now port.Clock
 
-	// Derived is where what was downloaded for a link note is kept. A run given
-	// none indexes every note as the prose in its file.
-	Derived port.DerivedStores
-
 	// Ledger holds the content of notes indexed while their modification time
 	// was too recent to tell a second edit from the first. Refreshes that share
 	// an index share one.

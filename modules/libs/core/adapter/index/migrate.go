@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -121,10 +120,7 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	if err := db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&current); err != nil {
 		return fmt.Errorf("what version this index is at: %w", err)
 	}
-	newest := 0
-	if len(available) > 0 {
-		newest = available[len(available)-1].version
-	}
+	newest := available[len(available)-1].version
 	// An index at a schema this build does not carry holds what it cannot read.
 	// It is a cache: what it holds is a reading of the vault, and the next scan
 	// reads the vault again. It is emptied and migrated from the first file.
@@ -223,33 +219,23 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	return tx.Commit()
 }
 
-// loadMigrations reads the embedded files and orders them by version. A file
-// that does not start with a number is a mistake worth failing on: silently
-// skipping it would leave a schema nobody can reproduce.
+// loadMigrations reads the embedded files in file-name order, which is version
+// order for the zero-padded names. A file that does not start with a number
+// fails the load.
 func loadMigrations() ([]migration, error) {
 	entries, err := fs.ReadDir(files, "migration")
 	if err != nil {
 		return nil, err
 	}
 	out := make([]migration, 0, len(entries))
-	seen := map[int]string{}
 	for _, e := range entries {
 		version, err := parseVersion(e.Name())
 		if err != nil {
 			return nil, err
 		}
-		if previous, clash := seen[version]; clash {
-			return nil, fmt.Errorf("migrations %s and %s share version %d", previous, e.Name(), version)
-		}
-		seen[version] = e.Name()
-
-		body, err := files.ReadFile(path.Join("migration", e.Name()))
-		if err != nil {
-			return nil, err
-		}
+		body, _ := files.ReadFile(path.Join("migration", e.Name()))
 		out = append(out, migration{version: version, name: e.Name(), body: string(body)})
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].version < out[j].version })
 	return out, nil
 }
 

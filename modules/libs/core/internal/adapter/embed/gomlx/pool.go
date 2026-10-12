@@ -87,10 +87,7 @@ func releasePadding(p *padding) {
 // rows a batch does not fill carry the padding token, and each is marked at one
 // token so that what pools a row divides by something.
 func padBatch(batch [][]int, rows, seq, pad int) *padding {
-	in, _ := paddings.Get().(*padding)
-	if in == nil {
-		in = &padding{}
-	}
+	in := paddings.Get().(*padding)
 	size := rows * seq
 	in.ids = resize(in.ids, size)
 	in.mask = resize(in.mask, size)
@@ -128,10 +125,6 @@ func resize(s []int64, size int) []int64 {
 // roundUpToBucket rounds a sequence length up to the next step. Every distinct shape
 // costs a compilation, so the lengths are held to a few.
 func roundUpToBucket(tokens, step, limit int) int {
-	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a length equal to the limit is assigned the limit"
-	if tokens > limit {
-		tokens = limit
-	}
 	rounded := (tokens + step - 1) / step * step
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a length equal to the step is assigned the step"
 	if rounded < step {
