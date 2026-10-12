@@ -46,11 +46,11 @@ const BLOCKS = new Set([
 
 /** Whether the whitespace beside this node stands between tags. The end of what holds it counts. */
 const isBlock = (node: Node | null): boolean =>
-  node === null || (node.nodeType === 1 && BLOCKS.has((node as Element).tagName.toLowerCase()))
+  node === null || BLOCKS.has((node as Element).tagName.toLowerCase())
 
 const spacing = (node: Node): boolean =>
-  node.nodeType === 3 &&
-  (node.textContent ?? '').trim() === '' &&
+  node instanceof Text &&
+  node.data.trim() === '' &&
   isBlock(node.previousSibling) &&
   isBlock(node.nextSibling)
 
@@ -62,7 +62,7 @@ const tightenHtml = (html: string): string => {
     for (const child of [...node.childNodes]) {
       // Preformatted text keeps every character it was written with.
       if (child.nodeType === 1 && (child as Element).tagName.toLowerCase() === 'pre') continue
-      if (spacing(child)) child.parentNode?.removeChild(child)
+      if (spacing(child)) child.remove()
       else walk(child)
     }
   }

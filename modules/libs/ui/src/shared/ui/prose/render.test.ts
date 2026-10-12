@@ -6,6 +6,18 @@ import { WORD, render } from './render'
 /** What the marks come out as, drawn. */
 const mountProse = (text: string) => mount({ render: () => h('div', render(text)) })
 
+describe('what is drawn at the top', () => {
+  it('is nothing for no text', () => {
+    expect(render('')).toEqual([])
+  })
+
+  it('is an element with nothing in it for a heading with no words', () => {
+    const [heading] = render('#')
+    expect(heading?.type).toBe('h1')
+    expect(heading?.children).toEqual([])
+  })
+})
+
 describe('prose', () => {
   it('makes a paragraph of a line', () => {
     expect(mountProse('Two notes are about entropy.').findAll('p')).toHaveLength(1)

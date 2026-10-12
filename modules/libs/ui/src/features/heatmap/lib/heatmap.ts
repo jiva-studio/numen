@@ -57,7 +57,6 @@ export function getDays(
   due: ReadonlyMap<string, number> = new Map(),
 ): Day[] {
   const out: Day[] = []
-  if (columns < 1) return out
 
   const today = getDayName(now)
 
@@ -65,7 +64,6 @@ export function getDays(
   // the last week kept for what is still to come.
   const weeks = Math.min(AHEAD, Math.max(0, columns - 1))
   const last = new Date(now)
-  last.setHours(12, 0, 0, 0)
   last.setDate(last.getDate() + ((7 - weekday(last)) % 7) + weeks * ROWS)
 
   // The grid takes the width it is given, and it opens on the week a person
@@ -118,7 +116,6 @@ function getFirstDay(
 /** The Monday of the week a day stands in, which is the column it opens. */
 function monday(at: Date): Date {
   const out = new Date(at)
-  out.setHours(12, 0, 0, 0)
   out.setDate(out.getDate() - (weekday(out) - 1))
   return out
 }

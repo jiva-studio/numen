@@ -39,7 +39,6 @@ export function findEntries(
   query: string,
 ): readonly ContentsEntry[] {
   const want = query.trim().toLocaleLowerCase()
-  if (want === '') return entries
   return entries.filter((one) => one.title.toLocaleLowerCase().includes(want))
 }
 

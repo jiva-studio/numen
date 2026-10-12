@@ -56,7 +56,6 @@ class Grid extends WidgetType {
   }
 
   private paint(frame: HTMLElement) {
-    const [head, ...body] = rowsOf(this.table)
     const table = document.createElement('table')
 
     const draw = (row: Row, index: number, tag: 'th' | 'td') => {
@@ -66,8 +65,9 @@ class Grid extends WidgetType {
         const element = document.createElement(tag)
         element.className = 'cm-cell'
         element.dataset['column'] = String(column)
-        const align = this.table.align[column] ?? 'none'
-        if (align !== 'none') element.style.textAlign = align === 'centre' ? 'center' : align
+        const align = this.table.align[column]
+        if (align === 'centre') element.style.textAlign = 'center'
+        else if (align === 'start' || align === 'end') element.style.textAlign = align
         place(element, cell, this.isWritable)
         if (cell) element.textContent = readCell(cell.text)
         line.appendChild(element)
@@ -76,9 +76,11 @@ class Grid extends WidgetType {
     }
 
     const top = document.createElement('thead')
-    top.appendChild(draw(head ?? [], 0, 'th'))
     const rest = document.createElement('tbody')
-    body.forEach((row, index) => rest.appendChild(draw(row, index + 1, 'td')))
+    rowsOf(this.table).forEach((row, index) => {
+      if (index === 0) top.appendChild(draw(row, index, 'th'))
+      else rest.appendChild(draw(row, index, 'td'))
+    })
     table.append(top, rest)
 
     const grown = this.isWritable

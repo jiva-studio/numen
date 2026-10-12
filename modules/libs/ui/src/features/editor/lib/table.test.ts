@@ -128,6 +128,8 @@ describe('the alignment of a table', () => {
     ])
   })
 
+
+
   it('is read from an indented row of dashes', () => {
     expect(read('  | a | b |\n  |:--|--:|\n  | c | d |\n').align).toEqual(['start', 'end'])
   })

@@ -150,6 +150,12 @@ describe('a grid drawn', () => {
     expect(getCells(frame, '.cm-cell').map((cell) => cell.style.textAlign)).toEqual(['', '', '', ''])
   })
 
+  it('leaves a cell past the last aligned column unset', () => {
+    const frame = draw(createGridIn(createStateIn('| a |\n|:-:|\n| c | d |\n')))
+    const cells = getCells(frame, 'tbody .cm-cell')
+    expect(cells.map((cell) => cell.style.textAlign)).toEqual(['center', ''])
+  })
+
   it('lets a written cell be typed into, and says where it is written', () => {
     const state = createStateIn(SOURCE)
     const frame = draw(createGridIn(state))

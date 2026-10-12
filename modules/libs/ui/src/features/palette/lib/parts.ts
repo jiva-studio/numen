@@ -18,8 +18,6 @@ export interface PalettePart {
 // Stryker disable next-line ArrayDeclaration: the mutated default is ["Stryker was here"], whose one entry has no span bounds and is dropped as empty.
 export const partsOf = (text: string, at: readonly Span[] = []): readonly PalettePart[] => {
   const runs = mergeSpans(text, at)
-  if (runs.length === 0) return text === '' ? [] : [{ text, isHit: false }]
-
   const out: PalettePart[] = []
   let read = 0
   for (const run of runs) {
@@ -66,7 +64,7 @@ const clampToText = (text: string, at: number): number =>
  */
 const whole = (text: string, at: number, by: 1 | -1): number => {
   let here = at
-  while (here > 0 && here < text.length && isInsideCharacter(text, here)) here += by
+  while (isInsideCharacter(text, here)) here += by
   return here
 }
 
