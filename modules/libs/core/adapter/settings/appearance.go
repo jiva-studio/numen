@@ -37,13 +37,13 @@ type Appearance struct {
 
 	// NestedHeadingLimit is how many of those headings stand under a node at once,
 	// the rest being reached by scrolling. A number outside NestedHeadingLimitBounds is
-	// refused, and a file naming none stands DefaultParts of them.
+	// refused, and a file naming none stands DefaultNestedHeadingLimit of them.
 	NestedHeadingLimit int `json:"nested_heading_limit"`
 }
 
-// HasPartsUnderNode is whether a node hangs the headings of its note under it. A section
+// HasNestedHeadings is whether a node hangs the headings of its note under it. A section
 // naming nothing hangs them.
-func (a Appearance) HasPartsUnderNode() bool {
+func (a Appearance) HasNestedHeadings() bool {
 	return a.NestHeadingsUnderNotes == nil || *a.NestHeadingsUnderNotes
 }
 
@@ -80,9 +80,9 @@ func GetModeName(mode appearance.ColorScheme) string {
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
 const AsDesigned = 1
 
-// DefaultParts is how many headings stand under a node where the file names no
+// DefaultNestedHeadingLimit is how many headings stand under a node where the file names no
 // number.
-const DefaultParts = 6
+const DefaultNestedHeadingLimit = 6
 
 // How far each of the two sizes goes, and how many headings a node may hang.
 //

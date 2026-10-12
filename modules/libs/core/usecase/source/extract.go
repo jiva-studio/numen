@@ -572,7 +572,7 @@ func chunkAt(doc *text.Document, c chunking.Chunk) domain.Chunk {
 		Start:    c.Start,
 		Length:   c.Length,
 		Location: doc.Locate(c.Start),
-		Text:     c.Slice(doc.Text),
+		Text:     c.GetText(doc.Text),
 	}
 }
 

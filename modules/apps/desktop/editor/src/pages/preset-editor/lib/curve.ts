@@ -13,7 +13,7 @@ import type { Bounds, Curve, Goal, Point, Settings, SettingsBounds } from '../ty
  * a day answers, which is what a longer day buys; the other two are read in
  * the minutes they cost.
  */
-export const costOf = (goal: Goal, point: Point): number =>
+export const getPointCost = (goal: Goal, point: Point): number =>
   goal === 'minutes' ? point.reviews : point.minutes
 
 /**
@@ -50,7 +50,7 @@ export const findNearest = (grid: readonly number[], value: number): number => {
  * been moved off that place the preset's own value is what is said. A knob
  * walked anywhere else stands on a place, and the place is exact.
  */
-export const valueAt = (curve: Curve, place: number): number =>
+export const getKnobValue = (curve: Curve, place: number): number =>
   curve.now.at >= 0 && place === curve.now.at ? curve.now.value : (curve.grid[place] ?? 0)
 
 /** Why a preset's goal has nothing to work on, and empty where it has. */
@@ -78,7 +78,7 @@ const hasNoReviews = (curve: Curve): boolean =>
   curve.at.length > 0 && curve.at.every((one) => one.reviews === 0)
 
 /** The goal's own value in the preset, in the units of its grid. */
-export const goalValue = (settings: Settings, today: string): number => {
+export const getGoalValue = (settings: Settings, today: string): number => {
   if (settings.goal === 'retention') return settings.retention
   if (settings.goal === 'date') return daysBetween(today, settings.byDate)
   return settings.minutesADay
@@ -95,7 +95,7 @@ export const produceSchedule = (
   today: string,
   within: SettingsBounds,
 ): Settings => {
-  const value = curve.grid[place] ?? goalValue(was, today)
+  const value = curve.grid[place] ?? getGoalValue(was, today)
   if (curve.goal === 'retention') {
     return { ...was, retention: clamp(round(value, 2), within.retention) }
   }

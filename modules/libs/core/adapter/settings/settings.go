@@ -76,7 +76,7 @@ func DefaultAppearance() Appearance {
 		Mode:                   ModeSystem,
 		Theme:                  DefaultTheme,
 		NestHeadingsUnderNotes: newTrue(),
-		NestedHeadingLimit:     DefaultParts,
+		NestedHeadingLimit:     DefaultNestedHeadingLimit,
 	}
 }
 

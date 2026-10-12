@@ -4,7 +4,7 @@
 import { BookFormat as BookFormats, SourceKind } from '@numen/protocol'
 import type { Entry as EntryMessage, MoveResult as MoveResultMessage } from '@numen/protocol'
 import type { BookFormat, DocumentFormat, Entry, MoveResult, Source } from '@/entities/file'
-import { noteType } from './noteWords'
+import { mapNoteType } from './noteWords'
 
 /** A source this window has no word for is a file it holds no source for. */
 const holding: Record<SourceKind, Source> = {
@@ -15,7 +15,7 @@ const holding: Record<SourceKind, Source> = {
   [SourceKind.URL]: 'url',
 }
 
-export const sourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
+export const mapSourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
 
 /** How a book at a path is drawn, in the words the window uses. */
 const drawn: Record<BookFormats, BookFormat | DocumentFormat | undefined> = {
@@ -24,15 +24,15 @@ const drawn: Record<BookFormats, BookFormat | DocumentFormat | undefined> = {
   [BookFormats.EPUB]: 'epub',
 }
 
-export const bookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined => drawn[of]
+export const mapBookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined => drawn[of]
 
 /** One row of a listing, kept as the plain value the window carries it as. */
 export const mapEntry = (one: EntryMessage): Entry => ({
   path: one.path,
   name: one.name,
   isFolder: one.isFolder,
-  kind: sourceKind(one.kind),
-  type: noteType(one.type),
+  kind: mapSourceKind(one.kind),
+  type: mapNoteType(one.type),
 })
 
 /** What the file did, in the shape the window carries it. */

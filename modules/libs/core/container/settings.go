@@ -77,10 +77,10 @@ func (s *Settings) AddNotice(said string) { s.Notices = append(s.Notices, said) 
 // Sync is whether a note's title and its filename are kept as one name.
 func (s Settings) Sync() bool { return s.Titles.Sync() }
 
-// HasPartsUnderNode is whether a node hangs the headings of its note under it, and Parts is
+// HasNestedHeadings is whether a node hangs the headings of its note under it, and GetNestedHeadingLimit is
 // how many of those headings stand under it at once.
-func (s Settings) HasPartsUnderNode() bool { return s.Appearance.HasPartsUnderNode() }
-func (s Settings) Parts() int              { return s.Appearance.NestedHeadingLimit }
+func (s Settings) HasNestedHeadings() bool    { return s.Appearance.HasNestedHeadings() }
+func (s Settings) GetNestedHeadingLimit() int { return s.Appearance.NestedHeadingLimit }
 
 // DayStarts is how long past midnight a day of review begins.
 func (s Settings) DayStarts() time.Duration {

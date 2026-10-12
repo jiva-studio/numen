@@ -12,13 +12,13 @@ export function useDocumentNavigation(pages: ShallowRef<readonly Page[]>) {
     pageNumber.value = Math.min(Math.max(Math.trunc(page), 0), pages.value.length - 1)
   }
 
-  const nextPage = () => goToPage(pageNumber.value + 1)
-  const prevPage = () => goToPage(pageNumber.value - 1)
+  const goToNextPage = () => goToPage(pageNumber.value + 1)
+  const goToPreviousPage = () => goToPage(pageNumber.value - 1)
 
   return {
     pageNumber,
     goToPage,
-    nextPage,
-    prevPage,
+    goToNextPage,
+    goToPreviousPage,
   }
 }

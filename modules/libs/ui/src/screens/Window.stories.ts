@@ -40,7 +40,7 @@ import { keyChord } from '@/features/palette'
 import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette'
 import type { Span } from '@/shared/lib/span'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
-import type { PlexPart } from '@/features/plex'
+import type { PlexHeading } from '@/features/plex'
 import { RELATED_SEATS, type PlexRelatedSeat } from '@/features/plex'
 import type { PlexEdge } from '@/features/plex'
 import type { PlexNeighbourhood } from '@/features/plex'
@@ -187,7 +187,7 @@ const WIDE = createNeighbourhood([
  * them than stand at once, so the mark saying there is more to wind to is
  * drawn as well.
  */
-const PARTS: Readonly<Record<string, readonly PlexPart[]>> = {
+const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
   focus: [
     { id: '4', text: 'What it measures', level: 2 },
     { id: '19', text: "Boltzmann's formula", level: 3 },
@@ -603,7 +603,7 @@ interface Screen {
   /** What the note in a tab holds. */
   readonly markdown?: string
   /** The headings a node hangs under its box, and none where there are none. */
-  readonly parts?: (id: string) => readonly PlexPart[]
+  readonly headings?: (id: string) => readonly PlexHeading[]
   /**
    * The seats a new note may be made in. None leaves the map at rest, with no
    * handle on any node and nothing coming out from under one.
@@ -621,7 +621,7 @@ const screen = ({
   panel = null,
   neighbourhood = NEIGHBOURHOOD,
   markdown = MARKDOWN,
-  parts = () => [],
+  headings = () => [],
   creatable = [],
   menu = null,
   selected = [],
@@ -669,7 +669,7 @@ const screen = ({
       panel,
       currentNeighbourhood,
       onActivate,
-      parts,
+      headings,
       creatable,
       menu,
       selected,
@@ -722,7 +722,7 @@ const screen = ({
             :neighbourhood="currentNeighbourhood"
             :creatable="creatable"
             :duration="420"
-            :parts="parts"
+            :headings="headings"
             @activate="onActivate"
           />
           <Editor v-else-if="id === NOTE" v-model="text" />
@@ -840,7 +840,7 @@ export const Mapping: Story = {
         focus: 'main',
       }),
       neighbourhood: WIDE,
-      parts: (id: string) => PARTS[id] ?? [],
+      headings: (id: string) => HEADINGS[id] ?? [],
       creatable: RELATED_SEATS,
       // Asked for on a node off to the trailing side, where it stands clear of
       // the map and of what a node is hanging.
@@ -879,7 +879,7 @@ export const Nesting: Story = {
         focus: 'main',
       }),
       neighbourhood: WIDE,
-      parts: (id: string) => PARTS[id] ?? [],
+      headings: (id: string) => HEADINGS[id] ?? [],
       creatable: RELATED_SEATS,
     }),
   play: async ({ canvasElement }) => {
@@ -888,15 +888,15 @@ export const Nesting: Story = {
 
     // A hand left on the node hangs the headings of its note under the box.
     // They come in one after another, so the picture is let settle first.
-    const HEADINGS = (PARTS['focus'] ?? []).map((part) => part.text)
-    const hung = () => HEADINGS.filter((words) => canvas.queryByText(words))
+    const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
+    const hung = () => titles.filter((words) => canvas.queryByText(words))
     await hoverOver(focus)
     await waitFor(() => expect(hung().length).toBeGreaterThan(4), { timeout: 5000 })
 
     // As many as the panel has room for, taken from the top of the note: what
     // does not fit is wound to, not dropped from the middle.
     const shown = hung()
-    expect(shown).toEqual(HEADINGS.slice(0, shown.length))
+    expect(shown).toEqual(titles.slice(0, shown.length))
 
     // They hang under the box, in the order the note sets them out. The box is
     // the node's own rectangle: the group around it has grown to hold them.

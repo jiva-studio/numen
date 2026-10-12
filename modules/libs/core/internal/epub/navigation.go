@@ -16,27 +16,27 @@ type entry struct {
 	href  string
 }
 
-// navigationParts reads the parts a book names, from whichever navigation
+// readNavigationParts reads the parts a book names, from whichever navigation
 // document it carries. What counts is the entries that land in the text: a
 // document whose entries do not is a document the book does not have, so the
 // other one is read.
-func navigationParts(files map[string]*zip.File, read packageDoc, text *extractor) []Part {
-	if raw, ok := contents(files[read.ncx]); ok {
-		if parts := text.getParts(ncxNavMap(raw, path.Dir(read.ncx))); len(parts) >= minimumParts {
+func readNavigationParts(files map[string]*zip.File, read packageDoc, text *extractor) []Part {
+	if raw, ok := readArchiveEntry(files[read.ncx]); ok {
+		if parts := text.getParts(readNCXNavMap(raw, path.Dir(read.ncx))); len(parts) >= minimumParts {
 			return parts
 		}
 	}
-	if raw, ok := contents(files[read.nav]); ok {
-		return text.getParts(navDocument(raw, path.Dir(read.nav)))
+	if raw, ok := readArchiveEntry(files[read.nav]); ok {
+		return text.getParts(readNavDocument(raw, path.Dir(read.nav)))
 	}
 	return nil
 }
 
-// pageEntries reads the pages of the printed book from the navigation control
+// readPageEntries reads the pages of the printed book from the navigation control
 // file's page list.
-func pageEntries(files map[string]*zip.File, read packageDoc) []entry {
-	raw, _ := contents(files[read.ncx])
-	return ncxPageList(raw, path.Dir(read.ncx))
+func readPageEntries(files map[string]*zip.File, read packageDoc) []entry {
+	raw, _ := readArchiveEntry(files[read.ncx])
+	return readNCXPageList(raw, path.Dir(read.ncx))
 }
 
 // An ncxPoint is a navPoint or a pageTarget. Both carry a label, a content
@@ -50,9 +50,9 @@ type ncxPoint struct {
 	Children []ncxPoint `xml:"navPoint"`
 }
 
-// ncxNavMap reads the navigation control file's navMap, depth first, which is
+// readNCXNavMap reads the navigation control file's navMap, depth first, which is
 // the order the entries are read in.
-func ncxNavMap(raw []byte, base string) []entry {
+func readNCXNavMap(raw []byte, base string) []entry {
 	var document struct {
 		Points []ncxPoint `xml:"navMap>navPoint"`
 	}
@@ -66,10 +66,10 @@ func ncxNavMap(raw []byte, base string) []entry {
 	return out
 }
 
-// ncxPageList reads the pages of the printed book. A page is named by its value
+// readNCXPageList reads the pages of the printed book. A page is named by its value
 // when it has one; the label of a page target is often decoration around the
 // number.
-func ncxPageList(raw []byte, base string) []entry {
+func readNCXPageList(raw []byte, base string) []entry {
 	var document struct {
 		Targets []ncxPoint `xml:"pageList>pageTarget"`
 	}
@@ -85,7 +85,7 @@ func ncxPageList(raw []byte, base string) []entry {
 		if name == "" {
 			name = target.Label
 		}
-		out = append(out, entry{title: name, href: hrefIn(base, target.Content.Src)})
+		out = append(out, entry{title: name, href: resolveHref(base, target.Content.Src)})
 	}
 	return out
 }
@@ -93,7 +93,7 @@ func ncxPageList(raw []byte, base string) []entry {
 func appendPoint(out []entry, point ncxPoint, base string) []entry {
 	// A navPoint may have no content element, and then it points nowhere.
 	if point.Content != nil {
-		out = append(out, entry{title: point.Label, href: hrefIn(base, point.Content.Src)})
+		out = append(out, entry{title: point.Label, href: resolveHref(base, point.Content.Src)})
 	}
 	for _, child := range point.Children {
 		out = appendPoint(out, child, base)
@@ -101,30 +101,31 @@ func appendPoint(out []entry, point ncxPoint, base string) []entry {
 	return out
 }
 
-// navDocument reads an EPUB 3 navigation document: the links of its table of
+// readNavDocument reads an EPUB 3 navigation document: the links of its table of
 // contents, in document order. A document with no table of contents is read for
 // its links.
-func navDocument(raw []byte, base string) []entry {
+func readNavDocument(raw []byte, base string) []entry {
 	root, err := html.Parse(bytes.NewReader(raw))
 	if err != nil {
 		return nil
 	}
 	from := root
-	if toc := tableOfContents(root); toc != nil {
+	if toc := findTableOfContents(root); toc != nil {
 		from = toc
 	}
 	return appendLinks(nil, from, base)
 }
 
-// tableOfContents is the nav element that says it is the table of contents.
-func tableOfContents(n *html.Node) *html.Node {
+// findTableOfContents returns the nav element marked as the table of contents,
+// and nil when there is none.
+func findTableOfContents(n *html.Node) *html.Node {
 	if n.DataAtom == atom.Nav {
-		if hasToken(attribute(n, "epub:type"), "toc") || hasToken(attribute(n, "role"), "doc-toc") {
+		if hasToken(getAttribute(n, "epub:type"), "toc") || hasToken(getAttribute(n, "role"), "doc-toc") {
 			return n
 		}
 	}
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		if found := tableOfContents(c); found != nil {
+		if found := findTableOfContents(c); found != nil {
 			return found
 		}
 	}
@@ -133,8 +134,8 @@ func tableOfContents(n *html.Node) *html.Node {
 
 func appendLinks(out []entry, n *html.Node, base string) []entry {
 	if n.DataAtom == atom.A {
-		if href := attribute(n, "href"); href != "" {
-			out = append(out, entry{title: textOf(n), href: hrefIn(base, href)})
+		if href := getAttribute(n, "href"); href != "" {
+			out = append(out, entry{title: collectText(n), href: resolveHref(base, href)})
 		}
 	}
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
@@ -143,8 +144,8 @@ func appendLinks(out []entry, n *html.Node, base string) []entry {
 	return out
 }
 
-// textOf is the text a node holds, whatever markup it is wrapped in.
-func textOf(n *html.Node) string {
+// collectText returns the text a node holds, whatever markup it is wrapped in.
+func collectText(n *html.Node) string {
 	var b bytes.Buffer
 	var walk func(*html.Node)
 	walk = func(n *html.Node) {
@@ -159,9 +160,9 @@ func textOf(n *html.Node) string {
 	return b.String()
 }
 
-// hrefIn resolves an href against the directory of the navigation document
-// holding it, keeping the fragment.
-func hrefIn(base, href string) string {
+// resolveHref resolves an href against the directory of the document holding it,
+// keeping the fragment.
+func resolveHref(base, href string) string {
 	target, fragment := splitHref(href)
 	at := resolve(base, target)
 	if at == "" {

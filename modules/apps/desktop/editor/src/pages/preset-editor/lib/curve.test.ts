@@ -10,13 +10,13 @@ import { BOUNDS, curve as drawnCurve } from '../fixtures'
 import {
   clamp,
   clearBacklog,
-  costOf,
+  getPointCost,
   findNearest,
-  goalValue,
+  getGoalValue,
   getIdleReason,
   produceSchedule,
   round,
-  valueAt,
+  getKnobValue,
 } from './curve'
 
 /** The review day the window is told, which is what a date is counted from. */
@@ -53,9 +53,9 @@ describe('where a value stands on a grid', () => {
 
 describe('where the preset itself stands', () => {
   it('is the value under the key its goal names', () => {
-    expect(goalValue(settings({ minutesADay: 25 }), today)).toBe(25)
-    expect(goalValue(settings({ goal: 'retention', retention: 0.85 }), today)).toBe(0.85)
-    expect(goalValue(settings({ goal: 'date', byDate: '2026-09-29' }), today)).toBe(30)
+    expect(getGoalValue(settings({ minutesADay: 25 }), today)).toBe(25)
+    expect(getGoalValue(settings({ goal: 'retention', retention: 0.85 }), today)).toBe(0.85)
+    expect(getGoalValue(settings({ goal: 'date', byDate: '2026-09-29' }), today)).toBe(30)
   })
 })
 
@@ -66,16 +66,16 @@ describe('the value the knob stands at', () => {
   const riding = drawnCurve({ now: { at: 2, value: 21, day: '' } })
 
   it('is the preset’s own where the knob has not been moved off it', () => {
-    expect(valueAt(riding, 2)).toBe(21)
+    expect(getKnobValue(riding, 2)).toBe(21)
   })
 
   it('is the place itself anywhere else, and where the preset falls outside the grid', () => {
-    expect(valueAt(riding, 3)).toBe(30)
-    expect(valueAt(drawnCurve({ now: NO_PLACE }), 2)).toBe(20)
+    expect(getKnobValue(riding, 3)).toBe(30)
+    expect(getKnobValue(drawnCurve({ now: NO_PLACE }), 2)).toBe(20)
   })
 
   it('is nothing at all where the grid has no such place', () => {
-    expect(valueAt(riding, 9)).toBe(0)
+    expect(getKnobValue(riding, 9)).toBe(0)
   })
 })
 
@@ -228,9 +228,9 @@ describe('what a curve is read in', () => {
   it('is the cards a day answers under a goal of minutes, and the minutes it costs under the others', () => {
     const one = point({ reviews: 40, minutes: 15 })
 
-    expect(costOf('minutes', one)).toBe(40)
-    expect(costOf('retention', one)).toBe(15)
-    expect(costOf('date', one)).toBe(15)
+    expect(getPointCost('minutes', one)).toBe(40)
+    expect(getPointCost('retention', one)).toBe(15)
+    expect(getPointCost('date', one)).toBe(15)
   })
 })
 
@@ -267,11 +267,11 @@ describe('where a value stands on a grid, at the edges', () => {
 
 describe('the value the knob stands at, at the edges', () => {
   it('is the preset’s own at the first place', () => {
-    expect(valueAt(drawnCurve({ now: { at: 0, value: 7, day: '' } }), 0)).toBe(7)
+    expect(getKnobValue(drawnCurve({ now: { at: 0, value: 7, day: '' } }), 0)).toBe(7)
   })
 
   it('is nothing at no place, where the preset falls outside the grid', () => {
-    expect(valueAt(drawnCurve({ now: { at: -1, value: 7, day: '' } }), -1)).toBe(0)
+    expect(getKnobValue(drawnCurve({ now: { at: -1, value: 7, day: '' } }), -1)).toBe(0)
   })
 })
 

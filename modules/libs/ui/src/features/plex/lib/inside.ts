@@ -1,5 +1,5 @@
 /**
- * The parts of a node, hung under its box. While the attention rests on the
+ * The headings of a node, hung under its box. While the attention rests on the
  * node they come out from under it, each setting off a little behind the one
  * above, and choosing one says which it was.
  *
@@ -8,25 +8,25 @@
 import type { PlexOptions, Size } from './arrange'
 import type { PlacedNode } from './node'
 
-/** How far in a part is ever set, counted in levels. */
+/** How far in a heading is ever set, counted in levels. */
 const DEEPEST = 3
 
-/** The ground kept clear around the parts, as a fraction of a part's height. */
+/** The ground kept clear around the headings, as a fraction of a heading's height. */
 const PAD = 0.25
 
 /**
- * One part of a node, as the caller describes it. The identifier is opaque:
+ * One heading of a node, as the caller describes it. The identifier is opaque:
  * the plex has no way to ask what it addresses.
  */
-export interface PlexPart {
+export interface PlexHeading {
   readonly id: string
   readonly text: string
   /** How deep it sits. Only the order of the levels present is read. */
   readonly level: number
 }
 
-/** One part where it hangs. */
-export interface HungPart {
+/** One heading where it hangs. */
+export interface HungHeading {
   readonly id: string
   readonly text: string
   /** How far its words are set in from the edge. */
@@ -36,10 +36,10 @@ export interface HungPart {
 }
 
 /** What a node hangs, settled. */
-export interface NodeParts {
+export interface NodeHeadings {
   /** The edge they come out from, from the middle of the node. */
   readonly top: number
-  readonly partHeight: number
+  readonly headingHeight: number
   /** Ground kept clear around them, so none stands flush against an edge. */
   readonly pad: number
   /** How many stand in the window at once. The rest are scrolled to. */
@@ -48,16 +48,16 @@ export interface NodeParts {
   readonly width: number
   /** How far their middle stands from where the node is placed. */
   readonly offset: number
-  readonly parts: readonly HungPart[]
+  readonly headings: readonly HungHeading[]
   /** How deep they stand once they are all the way open. */
   readonly height: number
 }
 
-/** What settling where and how wide the parts are drawn needs to know. */
-export interface PartsDeps {
+/** What settling where and how wide the headings are drawn needs to know. */
+export interface HeadingsDeps {
   /**
-   * The width one part's box needs for its words, padding included. Where
-   * there is nothing to measure text with, the parts take the node's own box.
+   * The width one heading's box needs for its words, padding included. Where
+   * there is nothing to measure text with, the headings take the node's own box.
    */
   readonly measure?: ((text: string) => number) | undefined
   readonly viewport: Size
@@ -67,75 +67,75 @@ export interface PartsDeps {
 
 /**
  * How far in each level present is set, by where it stands among the others: a
- * note whose parts begin at the second level is set in from the edge as one
+ * note whose headings begin at the second level is set in from the edge as one
  * beginning at the first.
  */
-function getIndents(parts: readonly PlexPart[], step: number): Map<number, number> {
-  const levels = [...new Set(parts.map((part) => part.level))].sort((a, b) => a - b)
+function getIndents(headings: readonly PlexHeading[], step: number): Map<number, number> {
+  const levels = [...new Set(headings.map((heading) => heading.level))].sort((a, b) => a - b)
   return new Map(levels.map((level, rank) => [level, Math.min(rank, DEEPEST) * step]))
 }
 
 /**
- * What one node hangs: every part it holds, in the order they were given, and
+ * What one node hangs: every heading it holds, in the order they were given, and
  * how many of them stand in the window at once.
  *
- * Nothing for a node with no parts.
+ * Nothing for a node with no headings.
  */
-export function getNodeParts(
+export function getNodeHeadings(
   node: PlacedNode,
-  parts: readonly PlexPart[],
-  options: Pick<PlexOptions, 'partHeight' | 'partIndent' | 'maxParts'>,
-  deps: PartsDeps,
-): NodeParts | null {
-  if (parts.length === 0) return null
+  headings: readonly PlexHeading[],
+  options: Pick<PlexOptions, 'headingHeight' | 'headingIndent' | 'maxHeadings'>,
+  deps: HeadingsDeps,
+): NodeHeadings | null {
+  if (headings.length === 0) return null
 
-  const { partHeight, partIndent, maxParts } = options
-  const pad = Math.round(PAD * partHeight)
+  const { headingHeight, headingIndent, maxHeadings } = options
+  const pad = Math.round(PAD * headingHeight)
   const top = node.height / 2
 
   // They hang below the node and stay inside the window, so how many of them
   // are drawn is how many the depth left under it holds. A node with room for
   // none hangs nothing.
   const depth = deps.viewport.height / 2 - deps.margin - (node.y + top)
-  const rows = Math.min(maxParts + 1, Math.floor((depth - 2 * pad) / partHeight))
+  const rows = Math.min(maxHeadings + 1, Math.floor((depth - 2 * pad) / headingHeight))
   if (rows < 1) return null
 
-  const shown = Math.min(maxParts, rows, parts.length)
-  const setIn = getIndents(parts, partIndent)
+  const shown = Math.min(maxHeadings, rows, headings.length)
+  const setIn = getIndents(headings, headingIndent)
 
-  const hung: HungPart[] = parts.map((part, at) => ({
-    id: part.id,
-    text: part.text,
-    indent: setIn.get(part.level) ?? 0,
-    at: at * partHeight,
+  const hung: HungHeading[] = headings.map((heading, at) => ({
+    id: heading.id,
+    text: heading.text,
+    indent: setIn.get(heading.level) ?? 0,
+    at: at * headingHeight,
   }))
 
   return {
     top,
-    partHeight,
+    headingHeight,
     pad,
     shown,
-    ...getPartsWidth(node, hung, pad, deps),
-    parts: hung,
-    height: shown * partHeight + 2 * pad,
+    ...getHeadingsWidth(node, hung, pad, deps),
+    headings: hung,
+    height: shown * headingHeight + 2 * pad,
   }
 }
 
 /**
- * How wide the parts are drawn and where that width sits: the room the longest
+ * How wide the headings are drawn and where that width sits: the room the longest
  * of them asks for, never narrower than the node's own box and never wider
  * than the window. It grows about the node's middle and slides back inside the
  * window where the middle leaves it no room to grow.
  */
-function getPartsWidth(
+function getHeadingsWidth(
   node: PlacedNode,
-  hung: readonly HungPart[],
+  hung: readonly HungHeading[],
   pad: number,
-  deps: PartsDeps,
+  deps: HeadingsDeps,
 ): { width: number; offset: number } {
   const measure = deps.measure
   const measuredContentWidth = measure
-    ? Math.max(...hung.map((part) => measure(part.text) + part.indent))
+    ? Math.max(...hung.map((heading) => measure(heading.text) + heading.indent))
     : 0
   const width = Math.min(
     Math.max(measuredContentWidth + 2 * pad, node.width),

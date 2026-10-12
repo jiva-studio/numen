@@ -7,7 +7,7 @@
  */
 import type { ErrorCode } from '@/shared/errors'
 import type { DeckProblem } from '@/entities/deck'
-import { fileOf } from '@/shared/paths'
+import { getFileName } from '@/shared/paths'
 import { WORDS as words } from '@/entities/deck'
 
 /** What the vault said about one file the last time it was read or written. */
@@ -76,9 +76,9 @@ export function createDeckAnswers() {
   }
 
   /** What is wrong with a file, as the marks against its cards are made from. */
-  const problemsAt = (path: string): readonly DeckProblem[] => getAnswer(path).problems
+  const getProblems = (path: string): readonly DeckProblem[] => getAnswer(path).problems
 
-  const whyOf = (errorCode: ErrorCode | null, bound: number): string | null => {
+  const findFailureReason = (errorCode: ErrorCode | null, bound: number): string | null => {
     if (errorCode === 'deckTooLarge') return words.tooLarge(bound)
     if (errorCode === 'notADeck') return words.notADeck
     return null
@@ -91,14 +91,14 @@ export function createDeckAnswers() {
     if (!hasError) return ''
     const currentAnswer = getAnswer(path)
     if (currentAnswer.reading !== null)
-      return whyOf(currentAnswer.reading, currentAnswer.bound) ?? words.notRead
+      return findFailureReason(currentAnswer.reading, currentAnswer.bound) ?? words.notRead
     if (currentAnswer.writing !== null)
-      return whyOf(currentAnswer.writing, currentAnswer.bound) ?? words.notSaved
+      return findFailureReason(currentAnswer.writing, currentAnswer.bound) ?? words.notSaved
     return words.unreachable
   }
 
   /** What a deck tab is called: the title the file carries, or the file itself. */
-  const getTitle = (path: string): string => titles.get(path) || fileOf(path)
+  const getTitle = (path: string): string => titles.get(path) || getFileName(path)
 
   /** A file the window was told the title of before any read of it answered. */
   const setTitle = (path: string, title: string): void => {
@@ -124,7 +124,7 @@ export function createDeckAnswers() {
   return {
     recordRead,
     recordWrite,
-    problemsAt,
+    getProblems,
     getErrorMessage,
     getTitle,
     setTitle,

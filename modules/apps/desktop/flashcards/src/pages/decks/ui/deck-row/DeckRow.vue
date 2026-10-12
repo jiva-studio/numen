@@ -6,8 +6,8 @@
 import { computed } from 'vue'
 import { Button, DueCount, KeyCap, Skeleton } from '@numen/ui'
 
-import { deckName } from '@/entities/vault'
-import { letterOf } from '@/features/keyboard'
+import { getDeckName } from '@/entities/vault'
+import { getLetter } from '@/features/keyboard'
 import { getLearnedShare, hasNothingToBegin, isSpent } from '../../lib/progress'
 import { LEARNED, STOPPED } from '../../words'
 import type { DeckCardsDue } from '@/entities/vault'
@@ -70,9 +70,9 @@ const share = computed(() => {
   <Button variant="outline" class="decks__deck" :disabled="!canOpen" @click="$emit('start')">
     <!-- The letter it is picked by, where the alphabet reaches it: a
          person reads down the list and presses what they see. -->
-    <KeyCap v-if="letterOf(at)" :keys="{ icons: [], letter: letterOf(at) }" />
+    <KeyCap v-if="getLetter(at)" :keys="{ icons: [], letter: getLetter(at) }" />
     <span class="decks__name">
-      {{ deckName(deck.deck) }}
+      {{ getDeckName(deck.deck) }}
       <!-- Which preset schedules it. -->
       <span v-if="by" class="decks__by">{{ by.name }}</span>
     </span>

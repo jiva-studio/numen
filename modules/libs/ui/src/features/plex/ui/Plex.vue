@@ -165,7 +165,7 @@ defineExpose({
       @reach="gesture.begin"
       @ask="gesture.ask"
       @menu="(id, at, trigger) => emit('menu', id, at, trigger)"
-      @enter="(id, part) => emit('enter', id, part)"
+      @enter="(id, heading) => emit('enter', id, heading)"
       @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>

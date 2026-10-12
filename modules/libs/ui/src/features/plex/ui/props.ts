@@ -4,7 +4,7 @@
 import type { MenuTrigger } from '@/shared/ui/menu'
 import type { Viewport } from '@/shared/lib/viewport'
 import type { Placement, PlexOptionsInput } from '../lib/arrange'
-import type { PlexPart } from '../lib/inside'
+import type { PlexHeading } from '../lib/inside'
 import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlacedNode, Position } from '../lib/node'
 import type { PlexRelatedSeat } from '../lib/seat'
@@ -45,11 +45,11 @@ export interface PlexProps {
   /** How a node is asked for on its own. The second click by default. */
   showing?: ShowStrategy
   /**
-   * The parts of a node, asked for by the node's own identifier. They come
+   * The headings of a node, asked for by the node's own identifier. They come
    * out from under its box while the attention rests on it, and a node named
    * none for hangs nothing.
    */
-  parts?: (id: string) => readonly PlexPart[]
+  headings?: (id: string) => readonly PlexHeading[]
   /**
    * What to call a seat, for the outline a gesture draws and for the
    * overflow line. English by default.
@@ -99,10 +99,10 @@ export interface PlexEvents {
   /** A menu asked for on a node has nothing left to stand on. */
   (event: 'dismiss'): void
   /**
-   * A part of a node was chosen. Both identifiers are the caller's, handed
+   * A heading of a node was chosen. Both identifiers are the caller's, handed
    * back as given.
    */
-  (event: 'enter', id: string, part: string): void
+  (event: 'enter', id: string, heading: string): void
   /** A menu or inspector was asked for on an edge between two nodes. */
   (event: 'edge-menu', pair: string, at: Position): void
 }

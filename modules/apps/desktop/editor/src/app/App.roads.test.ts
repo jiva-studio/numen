@@ -28,7 +28,7 @@ import {
   cards,
   DEBOUNCE,
   folders,
-  layoutOf,
+  getLayout,
   mountWindow,
   nameAnswer,
   nodeInPlex,
@@ -417,7 +417,7 @@ describe('a book carried into another group of tabs', () => {
     requests.pressed = []
 
     const workspace = window.findComponent(WorkspaceLayout)
-    const was = layoutOf(window)
+    const was = getLayout(window)
     const book = getPanes(was.root)
       .flatMap((one) => one.tabs)
       .find((tab) => tab.startsWith('book:'))!
@@ -448,7 +448,7 @@ describe('a book beside the pane the person is in', () => {
     requests.pressed = []
 
     const workspace = window.findComponent(WorkspaceLayout)
-    const was = layoutOf(window)
+    const was = getLayout(window)
     const other = getPanes(was.root).find(
       (one) => !one.tabs.some((tab) => tab.startsWith('book:')),
     )!

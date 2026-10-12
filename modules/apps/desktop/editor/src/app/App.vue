@@ -42,7 +42,7 @@ const {
   palette,
   destinations,
   closeTab,
-  tabIcon,
+  getTabIcon,
   getTitle,
   getTarget,
   tabLinks,
@@ -138,7 +138,7 @@ function onCloseLinkMenu() {
       @contextmenu="onTabContextMenu"
     >
       <template #icon="{ id }">
-        <component :is="tabIcon(id)" v-if="tabIcon(id)" class="tab-icon" />
+        <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
         <TabLinkIndicator
           :is-linked="tabLinks.getGroupOf(id) !== null"
           :color-index="tabLinks.getGroupOf(id)?.colorIndex"

@@ -12,9 +12,9 @@ import { isAxisLabelClear, getAxisNumber } from '../../../lib/label'
 import {
   BACKLOG_PLOT_HEIGHT,
   BACKLOG_PLOT,
-  backlogPositionsOf,
-  extentOfBacklog,
-  lineOf,
+  getBacklogPositions,
+  getBacklogExtent,
+  createLinePath,
   getBacklogRun,
   PLOT_WIDTH,
   type Extent,
@@ -44,11 +44,11 @@ const backlog = computed<readonly number[]>(() => getBacklogRun(props.curve, pro
  * the same height as the rest.
  */
 const extent = computed<Extent>(() =>
-  extentOfBacklog(props.curve.at.flatMap((_, place) => [...getBacklogRun(props.curve, place)])),
+  getBacklogExtent(props.curve.at.flatMap((_, place) => [...getBacklogRun(props.curve, place)])),
 )
 
-const positions = computed(() => backlogPositionsOf(backlog.value, extent.value))
-const line = computed(() => lineOf(positions.value))
+const positions = computed(() => getBacklogPositions(backlog.value, extent.value))
+const line = computed(() => createLinePath(positions.value))
 
 /** Whether there is a backlog to draw at all. */
 const drawn = computed(() => props.isHonest && backlog.value.length > 1)
@@ -60,8 +60,8 @@ const drawn = computed(() => props.isHonest && backlog.value.length > 1)
  */
 const heights = computed(() => {
   const { least, most } = extent.value
-  const formatValue = (value: number) => words.backlogHeightAt(value)
-  const heightsAt = (y: number, lift: string, value: number) =>
+  const formatValue = (value: number) => words.formatBacklogCards(value)
+  const createAxisLabels = (y: number, lift: string, value: number) =>
     isAxisLabelClear(y, positions.value, [])
       ? [{ at: getAxisNumber(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
       : []
@@ -71,13 +71,16 @@ const heights = computed(() => {
     ]
   }
   return [
-    ...heightsAt(BACKLOG_PLOT.top, '-100%', most),
-    ...heightsAt(BACKLOG_PLOT.foot, '0', least),
+    ...createAxisLabels(BACKLOG_PLOT.top, '-100%', most),
+    ...createAxisLabels(BACKLOG_PLOT.foot, '0', least),
   ]
 })
 
 /** The days at either end of the extent, which the grid says nothing about. */
-const ends = computed(() => [words.backlogWidthAt(1), words.backlogWidthAt(backlog.value.length)])
+const ends = computed(() => [
+  words.formatBacklogDays(1),
+  words.formatBacklogDays(backlog.value.length),
+])
 const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${BACKLOG_PLOT_HEIGHT}` }
 
 // --- Handlers ---

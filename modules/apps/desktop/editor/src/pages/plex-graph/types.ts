@@ -5,7 +5,7 @@ import type { ComputedRef, Ref } from 'vue'
 import type {
   MenuTrigger,
   PlexNeighbourhood,
-  PlexPart,
+  PlexHeading,
   PlexRelatedSeat,
   PlexDestination,
 } from '@numen/ui'
@@ -81,7 +81,7 @@ export interface PlexTabDeps {
   readonly editor: PlexEditor
   readonly isReady: Readonly<Ref<boolean>>
   readonly isNesting: Readonly<Ref<boolean>>
-  readonly parts: Readonly<Ref<number>>
+  readonly headings: Readonly<Ref<number>>
   openNote(
     path: string,
     title: string,
@@ -118,12 +118,12 @@ export interface PlexMenuState {
   chooseMenuItem(id: string): void
 }
 
-export interface PlexPartsState {
-  readonly mostParts: Readonly<Ref<number>>
+export interface PlexHeadingsState {
+  readonly maxHeadings: Readonly<Ref<number>>
   typeOf(node: string): NoteType
-  partsOf(node: string): readonly PlexPart[]
-  readParts(): Promise<void>
-  openPart(node: string, part: string): void
+  headingsOf(node: string): readonly PlexHeading[]
+  readHeadings(): Promise<void>
+  openHeading(node: string, heading: string): void
 }
 
 export interface PlexNodeActions {
@@ -157,7 +157,7 @@ export interface PlexLinkInspectorState {
 /** What one plex tab holds. */
 export type PlexTabState = PlexViewState &
   PlexMenuState &
-  PlexPartsState &
+  PlexHeadingsState &
   PlexNodeActions &
   PlexQuickLinkState &
   PlexLinkInspectorState

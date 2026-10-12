@@ -155,7 +155,7 @@ export type { Stencil } from './features/cards'
 
 export { byLongPress } from './features/plex'
 export { byDoubleTap } from './features/plex'
-export type { PlexPart } from './features/plex'
+export type { PlexHeading } from './features/plex'
 export type { EdgeArrow, PlexEdge } from './features/plex'
 export type { PlexNeighbourhood } from './features/plex'
 export type { PlexNode, Position } from './features/plex'

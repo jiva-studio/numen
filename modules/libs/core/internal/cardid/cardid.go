@@ -48,10 +48,10 @@ func New() domain.CardID {
 	return domain.CardID(out)
 }
 
-// Valid reports whether s could have been minted here. It is strict: an
+// IsValid reports whether s could have been minted here. It is strict: an
 // identifier is read as one only at that length and in that alphabet, and
 // anything else at the end of a heading is heading text.
-func Valid(s domain.CardID) bool {
+func IsValid(s domain.CardID) bool {
 	if len(s) != Length {
 		return false
 	}

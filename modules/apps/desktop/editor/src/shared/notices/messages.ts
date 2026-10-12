@@ -45,7 +45,7 @@ export interface MessageLog {
  * put away, so a replacement under one name is a new message and is read as
  * one.
  */
-export function messageLog(): MessageLog {
+export function createMessageLog(): MessageLog {
   const messages = shallowRef<readonly WindowMessage[]>([])
   let nextId = 0
 

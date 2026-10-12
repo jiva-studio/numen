@@ -154,7 +154,7 @@ func (u Presets) save(
 	if err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
-	if err := settle(doc, settings, was); err != nil {
+	if err := writeSettings(doc, settings, was); err != nil {
 		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 
@@ -165,7 +165,7 @@ func (u Presets) save(
 	return writer.Write(ctx, path, doc.Bytes(), against)
 }
 
-// settle writes the settings into the frontmatter, one key at a time. A day the
+// writeSettings writes the settings into the frontmatter, one key at a time. A day the
 // goal does not name and a week of days all carrying the whole load are keys
 // the note stops carrying.
 //
@@ -174,7 +174,7 @@ func (u Presets) save(
 // the person wrote and a save changing one control leaves the rest of the file
 // byte for byte. A key the read could not make out and the person has since
 // moved is a setting that differs, and is written.
-func settle(doc *markdown.Document, p, was review.Preset) error {
+func writeSettings(doc *markdown.Document, p, was review.Preset) error {
 	if err := writeByDate(doc, p, was); err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func writeByDate(doc *markdown.Document, p, was review.Preset) error {
 // and the rest are taken out.
 func readShares(entries []string, load, read map[time.Weekday]int) []markdown.Entry {
 	out := make([]markdown.Entry, 0, len(entries)+len(load))
-	taken := reading(entries, read)
+	taken := getDayEntries(entries, read)
 	written := make(map[time.Weekday]bool, len(load))
 	for _, name := range entries {
 		weekday, isDay := review.Weekday(name)
@@ -257,10 +257,10 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 	return out
 }
 
-// reading is the entry a read takes for each day of the week. Keys reach the
+// getDayEntries returns the entry a read takes for each day of the week. Keys reach the
 // reader in the order their names sort in, so the last of the names standing
 // for one day is the one whose share it holds.
-func reading(entries []string, read map[time.Weekday]int) map[time.Weekday]string {
+func getDayEntries(entries []string, read map[time.Weekday]int) map[time.Weekday]string {
 	out := make(map[time.Weekday]string, len(entries))
 	for _, name := range entries {
 		weekday, isDay := review.Weekday(name)

@@ -411,7 +411,7 @@ describe('two neighbourhoods drawing one picture', () => {
     return { ...one, related: [one.related[0]!, { ...one.related[1]!, ...more }] }
   }
 
-  it('are two answers with every part the same', () => {
+  it('are two answers with every heading the same', () => {
     expect(areNeighbourhoodsEqual(held(), held())).toBe(true)
   })
 

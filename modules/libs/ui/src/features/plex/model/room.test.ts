@@ -1,6 +1,6 @@
 /**
  * The room a plex has and what is measured against it: the viewport it is
- * watching, the room kept for an icon, and the widths and parts handed to the
+ * watching, the room kept for an icon, and the widths and headings handed to the
  * drawing. The measuring of text is `measure.test.ts`; here it is a stand-in.
  */
 import { mount } from '@vue/test-utils'
@@ -30,11 +30,11 @@ vi.mock('./measure', async () => {
 const METRICS: PlexMetrics = {
   node: () => 1000,
   label: () => 0,
-  part: () => 300,
+  heading: () => 300,
   labelDepth: 10,
 }
 
-const OPTIONS = { iconWidth: 20, margin: 10, partHeight: 20 }
+const OPTIONS = { iconWidth: 20, margin: 10, headingHeight: 20 }
 
 const NODE: PlacedNode = {
   id: 'one',
@@ -143,39 +143,39 @@ describe('how wide a box opens', () => {
   })
 })
 
-describe('the parts a node hangs', () => {
-  const PARTS = [{ id: 'a', text: 'A part', level: 1 }]
+describe('the headings a node hangs', () => {
+  const HEADINGS = [{ id: 'a', text: 'A heading', level: 1 }]
 
-  it('are none where the caller gives no parts', () => {
+  it('are none where the caller gives no headings', () => {
     const { room } = mountRoom()
     expect(room.hung.value).toBeUndefined()
   })
 
   it('are asked for by the node that hangs them', () => {
-    const parts = vi.fn<(id: string) => typeof PARTS>(() => PARTS)
-    const { room } = mountRoom({ parts })
+    const headings = vi.fn<(id: string) => typeof HEADINGS>(() => HEADINGS)
+    const { room } = mountRoom({ headings })
     const hung = room.hung.value?.(NODE)
-    expect(parts).toHaveBeenCalledWith('one')
-    expect(hung?.parts.map((part) => part.id)).toStrictEqual(['a'])
-    expect(hung?.partHeight).toBe(OPTIONS.partHeight)
+    expect(headings).toHaveBeenCalledWith('one')
+    expect(hung?.headings.map((heading) => heading.id)).toStrictEqual(['a'])
+    expect(hung?.headingHeight).toBe(OPTIONS.headingHeight)
   })
 
   it('are as wide as the measuring says their words are', () => {
     stand.metrics = METRICS
-    const { room } = mountRoom({ parts: () => PARTS })
-    // The 300 the words ask for, and a padding of a quarter of a part's height on each side.
+    const { room } = mountRoom({ headings: () => HEADINGS })
+    // The 300 the words ask for, and a padding of a quarter of a heading's height on each side.
     expect(room.hung.value?.(NODE)?.width).toBe(300 + 2 * 5)
   })
 
   it('are held inside the window the plex is in', () => {
     stand.metrics = METRICS
-    const { room, tell } = mountRoom({ parts: () => PARTS })
+    const { room, tell } = mountRoom({ headings: () => HEADINGS })
     tell({ width: 200, height: 400 })
     expect(room.hung.value?.(NODE)?.width).toBe(200 - 2 * OPTIONS.margin)
   })
 
   it('take the node box where nothing measures their words', () => {
-    const { room } = mountRoom({ parts: () => PARTS })
+    const { room } = mountRoom({ headings: () => HEADINGS })
     expect(room.hung.value?.(NODE)?.width).toBe(NODE.width)
   })
 })

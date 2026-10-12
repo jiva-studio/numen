@@ -6,7 +6,7 @@ import type { ErrorCode } from '@/shared/errors'
 import type { Notes } from '../lib/noteTypes'
 import type { Event, NoteBaseline, NoteErrorCode, ReadResult, WriteResult } from '../lib/tab'
 
-export const errorOf = (from: ErrorCode): NoteErrorCode => {
+export const convertErrorCode = (from: ErrorCode): NoteErrorCode => {
   if (from === 'deckTooLarge') return 'tooLarge'
   if (from === 'notAStencil' || from === 'notADeck' || from === 'notAPreset') return 'notANote'
   return from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from
@@ -69,7 +69,7 @@ export function createNoteQueue(
     } else if (answered.error === 'missing') {
       answer = { kind: 'missing' }
     } else {
-      answer = { kind: 'error', error: errorOf(answered.error) }
+      answer = { kind: 'error', error: convertErrorCode(answered.error) }
     }
     dispatch(id, { kind: 'read', generation, answer })
   }
@@ -94,7 +94,7 @@ export function createNoteQueue(
     } else if (answered.error === 'changed') {
       writeAnswer = { kind: 'changed' }
     } else {
-      writeAnswer = { kind: 'error', error: errorOf(answered.error) }
+      writeAnswer = { kind: 'error', error: convertErrorCode(answered.error) }
     }
     dispatch(id, { kind: 'written', answer: writeAnswer })
     resumeClosing(id)

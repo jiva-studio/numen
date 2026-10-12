@@ -3,7 +3,7 @@
  */
 import { settingsService } from '@/shared/clients'
 import { fetched } from './words'
-import { staleIn } from '@/shared/answers'
+import { isStaleAnswer } from '@/shared/answers'
 import { DEFAULT_HEADINGS } from '@/entities/settings'
 import { DEFAULT_STARTS } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
@@ -93,7 +93,7 @@ export const settingsCore: SettingsPort = {
       written: text,
       ...(seen === null ? {} : { baseline: seen }),
     })
-    return { isChanged: staleIn(answer) }
+    return { isChanged: isStaleAnswer(answer) }
   },
   getReviewSettings: async () => {
     const answer = await settingsService.getSettings({})
