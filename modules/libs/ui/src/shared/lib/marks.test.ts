@@ -31,7 +31,7 @@ describe('a wikilink in markdown', () => {
   })
 
   it('is found after closing brackets that belong to nothing', () => {
-    expect(md.renderInline('x ]] [[a]]')).toBe('x ]] <a href="name://a">a</a>')
+    expect(md.renderInline('x]][[a]]')).toBe('x]]<a href="name://a">a</a>')
   })
 
   it('is not brackets holding nothing', () => {
