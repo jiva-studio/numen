@@ -11,9 +11,36 @@ const binaryPath = path.resolve(__dirname, '../../../../apps/desktop/numen-debug
 const port = process.env.NUMEN_TEST_PORT ?? '3456'
 const host = '127.0.0.1'
 
+function createSampleWav(targetPath) {
+  const sampleRate = 16000
+  const numChannels = 1
+  const bytesPerSample = 2
+  const durationSec = 1
+  const numSamples = sampleRate * durationSec
+  const dataSize = numSamples * numChannels * bytesPerSample
+  const buffer = Buffer.alloc(44 + dataSize)
+
+  buffer.write('RIFF', 0)
+  buffer.writeUInt32LE(36 + dataSize, 4)
+  buffer.write('WAVE', 8)
+  buffer.write('fmt ', 12)
+  buffer.writeUInt32LE(16, 16)
+  buffer.writeUInt16LE(1, 20)
+  buffer.writeUInt16LE(numChannels, 22)
+  buffer.writeUInt32LE(sampleRate, 24)
+  buffer.writeUInt32LE(sampleRate * numChannels * bytesPerSample, 28)
+  buffer.writeUInt16LE(numChannels * bytesPerSample, 32)
+  buffer.writeUInt16LE(bytesPerSample * 8, 34)
+  buffer.write('data', 36)
+  buffer.writeUInt32LE(dataSize, 40)
+
+  fs.writeFileSync(targetPath, buffer)
+}
+
 // Create isolated temporary vault from template.
 const tmpVault = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-vault-'))
 fs.cpSync(sourceVault, tmpVault, { recursive: true })
+createSampleWav(path.join(tmpVault, 'assets', 'sample.wav'))
 
 function cleanup() {
   try {
