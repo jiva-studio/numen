@@ -23,18 +23,13 @@ func (a *API) ListReviewDays(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	said, err := a.Counted.Execute(ctx, v)
+	said, err := a.GetReviewDays.Execute(ctx, v, r.Msg.GetFrom(), r.Msg.GetTo())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	from, to := r.Msg.GetFrom(), r.Msg.GetTo()
-
 	days := make([]*v1.ReviewDay, 0, len(said.Days))
 	for day, one := range said.Days {
-		if !isWithin(day, from, to) {
-			continue
-		}
 		came := said.Retained[day]
 		days = append(days, &v1.ReviewDay{
 			Day:      day,
@@ -49,9 +44,6 @@ func (a *API) ListReviewDays(
 	}
 	due := make([]*v1.ReviewDay, 0, len(said.Due))
 	for day, falls := range said.Due {
-		if !isWithin(day, from, to) {
-			continue
-		}
 		due = append(due, &v1.ReviewDay{Day: day, Answered: int32(falls)})
 	}
 
@@ -69,13 +61,4 @@ func sortReviewDays(days []*v1.ReviewDay) []*v1.ReviewDay {
 		return cmp.Compare(one.GetDay(), other.GetDay())
 	})
 	return days
-}
-
-// isWithin says whether a day falls inside the stretch asked for, both ends
-// inside it. An empty end is unbounded at that end.
-//
-// A day is written as the year, the month and the day, each padded, so it is
-// compared as text the way it is compared in time.
-func isWithin(day, from, to string) bool {
-	return day >= from && (to == "" || day <= to)
 }

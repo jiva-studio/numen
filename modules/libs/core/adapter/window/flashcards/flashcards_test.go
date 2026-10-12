@@ -128,11 +128,11 @@ func newAPI(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	// question is answered from.
 	running := cfg.Flashcards(db.Queries(), db.Links(), db.Problems(), cfg.Level(db))
 	api := &API{
-		CardsDue:  running.CardsDue,
-		Session:   running.Session,
-		Schedules: running.Schedules,
-		Log:       running.Log,
-		Counted:   running.Counted,
+		CardsDue:      running.CardsDue,
+		Session:       running.Session,
+		Schedules:     running.Schedules,
+		Log:           running.Log,
+		GetReviewDays: running.GetReviewDays,
 		Neighbourhood: flashcards.NewShowNeighbourhood(
 			note.NewShowLinks(db.Links()),
 			db.Queries(),

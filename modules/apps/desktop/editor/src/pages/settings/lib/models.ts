@@ -23,7 +23,7 @@ export interface Words {
  * What a model is called, read off the value where the build names none: the
  * last segment of a path, a repository or an address.
  */
-export const nameOf = (value: string): string => {
+export const getLastPathSegment = (value: string): string => {
   const basePath = value.split(/[?#]/, 1)[0] ?? ''
   const last = basePath
     .split('/')
@@ -39,7 +39,7 @@ const isAddress = (value: string): boolean => value.includes('/')
  * What a model's files are on this machine, in a word. A model reached over
  * the network is fetched from nowhere, and stands with nothing said about it.
  */
-const presenceIn = (presence: Presence, words: Words): string => {
+const getPresenceWord = (presence: Presence, words: Words): string => {
   if (presence === 'present') return words.present
   return presence === 'not fetched' ? words.notFetched : ''
 }
@@ -53,7 +53,7 @@ const getDetail = (parts: readonly string[]): string => parts.filter(Boolean).jo
  * segment of it, which is the part that says which model it is.
  */
 const getModelName = (model: Model): string =>
-  model.title && !isAddress(model.title) ? model.title : nameOf(model.name)
+  model.title && !isAddress(model.title) ? model.title : getLastPathSegment(model.name)
 
 /** One preset, as the list offers it. */
 const getModelChoice = (model: Model, words: Words): SelectChoice => {
@@ -61,7 +61,7 @@ const getModelChoice = (model: Model, words: Words): SelectChoice => {
   // A model addressed by a path, a repository or an address is named by its
   // own words and addressed under them.
   const detail = getDetail([
-    presenceIn(model.presence, words),
+    getPresenceWord(model.presence, words),
     isAddress(model.name) ? model.name : '',
   ])
   return {
@@ -77,7 +77,7 @@ const getModelChoice = (model: Model, words: Words): SelectChoice => {
  * offers. A value the presets do not name stands first, under the group that
  * says it is the person's own.
  */
-export const choicesFor = (
+export const createChoices = (
   models: readonly Model[],
   now: string,
   words: Words,
@@ -86,7 +86,7 @@ export const choicesFor = (
   if (!now || presets.some((one) => one.id === now)) return presets
   const own: SelectChoice = {
     id: now,
-    text: nameOf(now),
+    text: getLastPathSegment(now),
     ...(isAddress(now) ? { detail: now } : {}),
     group: words.owned,
   }
