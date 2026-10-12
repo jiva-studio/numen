@@ -2,12 +2,16 @@ package container
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -101,5 +105,154 @@ func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
 	}
 	if held.Agent.Use != "claude" || held.Agent.Claude.MaxSteps != 12 {
 		t.Errorf("the agent reads %+v", held.Agent)
+	}
+}
+
+// A machine that has nowhere to keep settings is told so, and is handed none.
+func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+
+	held, why := Config{}.Settings()
+	if why == nil {
+		t.Fatal("no reason")
+	}
+	if !reflect.DeepEqual(held, Settings{}) {
+		t.Errorf("got settings: %+v", held)
+	}
+}
+
+// A file that cannot be read is refused, and what is handed back is nothing.
+func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	cfg, _ := writeSettings(t, `{"appearance": `)
+
+	held, why := cfg.Settings()
+	if why == nil {
+		t.Fatal("no reason")
+	}
+	if !reflect.DeepEqual(held, Settings{}) {
+		t.Errorf("got settings: %+v", held)
+	}
+}
+
+// Settings that cannot be written as JSON are refused with no text.
+func TestSettingsThatCannotBeWrittenAreRefused(t *testing.T) {
+	held := DefaultSettings()
+	held.Appearance.InterfaceScale = math.NaN()
+
+	written, why := held.WriteJSON()
+	if why == nil {
+		t.Fatal("no reason")
+	}
+	if written != "" {
+		t.Errorf("wrote %q", written)
+	}
+}
+
+// Every section of the settings arrives in the configuration, and the compute
+// plan is resolved from the performance section.
+func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
+	said := DefaultSettings()
+	said.Indexing.Recognition.Proofread = proofreading.Proofread{Profile: "for scans", IsAutomatic: true}
+	said.Indexing.Transcription.Proofread = proofreading.Proofread{Profile: "for speech"}
+	said.Agent.Use = "claude"
+	said.Importing.Captions = []string{"sa", "en"}
+	said.Performance = settings.Performance{Profile: settings.ProfileEco}
+
+	got := Config{}.SetSettings(said)
+
+	if got.ScanProofreading != said.Indexing.Recognition.Proofread {
+		t.Errorf("scans are put right with %+v", got.ScanProofreading)
+	}
+	if got.TranscriptProofreading != said.Indexing.Transcription.Proofread {
+		t.Errorf("speech is put right with %+v", got.TranscriptProofreading)
+	}
+	if got.Agent.Use != "claude" {
+		t.Errorf("the agent is %q", got.Agent.Use)
+	}
+	if !slices.Equal(got.Importing.Captions, []string{"sa", "en"}) {
+		t.Errorf("the captions are %v", got.Importing.Captions)
+	}
+	if got.Performance.Profile != settings.ProfileEco {
+		t.Errorf("the performance profile is %q", got.Performance.Profile)
+	}
+	if got.Hardware.LogicalCPUs < 1 {
+		t.Errorf("the hardware was not detected: %+v", got.Hardware)
+	}
+	if got.ResolvedCompute.Profile != settings.ProfileEco || got.ResolvedCompute.OcrThreads != 1 {
+		t.Errorf("the compute plan is %+v", got.ResolvedCompute)
+	}
+}
+
+// A line said is kept for whoever read the settings to put in front of a person.
+func TestWhatIsSaidWhileReadingIsKept(t *testing.T) {
+	var held Settings
+	held.Say("first")
+	held.Say("second")
+	if !slices.Equal(held.Said, []string{"first", "second"}) {
+		t.Errorf("said %v", held.Said)
+	}
+}
+
+func TestPartsUnderANodeAreWhatTheAppearanceSays(t *testing.T) {
+	held := DefaultSettings()
+	if !held.HasPartsUnderNode() {
+		t.Error("untouched settings hang no parts under a node")
+	}
+	off := false
+	held.Appearance.HangPartsUnderANode = &off
+	if held.HasPartsUnderNode() {
+		t.Error("settings turning it off still hang parts under a node")
+	}
+	held.Appearance.PartsUnderANode = 7
+	if held.Parts() != 7 {
+		t.Errorf("%d parts stand under a node", held.Parts())
+	}
+}
+
+// Settings that cannot be read are answered with the defaults, and ones that
+// can are answered as they stand.
+func TestSettingsOrDefaultsAnswerWhatIsReadableAndTheDefaultsOtherwise(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+
+	cfg, _ := writeSettings(t, `{"agent": {"use": "somebody-else"}}`)
+	if got := cfg.getSettingsOrDefaults().Agent.Use; got != "somebody-else" {
+		t.Errorf("the agent is %q", got)
+	}
+
+	cfg, _ = writeSettings(t, `{"agent": `)
+	if got := cfg.getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
+		t.Errorf("an unreadable file gave %+v", got)
+	}
+
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+	if got := (Config{}).getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
+		t.Errorf("a machine with nowhere for settings gave %+v", got)
+	}
+}
+
+// The models a setting can be set to are asked for as the window asks, against
+// the settings in force.
+func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	cfg, _ := writeSettings(t, `{}`)
+
+	models := cfg.Models()()
+	if len(models) == 0 {
+		t.Fatal("no models are listed")
+	}
+	for _, one := range models {
+		if len(one.Path) == 0 {
+			t.Errorf("a model stands nowhere: %+v", one)
+		}
 	}
 }

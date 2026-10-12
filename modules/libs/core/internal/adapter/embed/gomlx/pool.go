@@ -24,6 +24,7 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 			at := (row*seq + token) * dimensions
 			addRow(vector, flat[at:at+dimensions])
 		}
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="dividing by one token leaves every element as it was"
 		if kept > 0 {
 			for d := range vector {
 				vector[d] /= float32(kept)
@@ -127,13 +128,16 @@ func resize(s []int64, size int) []int64 {
 // bucket rounds a sequence length up to the next step. Every distinct shape
 // costs a compilation, so the lengths are held to a few.
 func bucket(tokens, step, limit int) int {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a length equal to the limit is assigned the limit"
 	if tokens > limit {
 		tokens = limit
 	}
 	rounded := (tokens + step - 1) / step * step
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a length equal to the step is assigned the step"
 	if rounded < step {
 		rounded = step
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a length equal to the limit is assigned the limit"
 	if rounded > limit {
 		rounded = limit
 	}
