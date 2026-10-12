@@ -48,13 +48,14 @@ const press = <Why extends Objection>(
   naming: NameEntryState<Why>,
   over: string,
   key: string,
-): HTMLInputElement => {
+): { box: HTMLInputElement; event: KeyboardEvent } => {
   const box = document.createElement('input')
   document.body.append(box)
   box.addEventListener('keydown', (event) => naming.onKey(event, over))
   box.focus()
-  box.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
-  return box
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+  box.dispatchEvent(event)
+  return { box, event }
 }
 
 afterEach(() => {
@@ -162,15 +163,17 @@ describe('useNameEntry', () => {
   it('commits a name on a break, and gives up the box it was typed in', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Tallness')
-    const box = press(naming, 'Height', 'Enter')
+    const { box, event } = press(naming, 'Height', 'Enter')
     expect(renamed).toEqual([['Height', 'Tallness']])
     expect(document.activeElement).not.toBe(box)
+    expect(event.defaultPrevented).toBe(true)
   })
 
   it('abandons what is typed on escape, and renames nothing', () => {
     const { naming, renamed } = overFields(FIELDS)
     naming.setDraft('Height', 'Tallness')
-    press(naming, 'Height', 'Escape')
+    const { event } = press(naming, 'Height', 'Escape')
+    expect(event.defaultPrevented).toBe(true)
     expect(naming.getText('Height')).toBe('Height')
     naming.commit('Height')
     expect(renamed).toEqual([])
@@ -179,7 +182,8 @@ describe('useNameEntry', () => {
   it('leaves what is typed standing under any other key', () => {
     const { naming } = overFields(FIELDS)
     naming.setDraft('Height', 'Tallness')
-    press(naming, 'Height', 'a')
+    const { event } = press(naming, 'Height', 'a')
+    expect(event.defaultPrevented).toBe(false)
     expect(naming.getText('Height')).toBe('Tallness')
   })
 })
