@@ -64,7 +64,7 @@ const boundaries = (text: string): number[] => {
  * A word has a step to itself, and one step past the last word is where all of
  * the text stands and none of it is arriving.
  */
-export const revealOf = (text: string, part: number): Reveal => {
+export const getPartReveal = (text: string, part: number): Reveal => {
   const ends = boundaries(text)
   const steps = ends.length + 1
   const at = Math.max(0, Math.min(steps, Math.floor(part * steps)))
@@ -74,7 +74,7 @@ export const revealOf = (text: string, part: number): Reveal => {
 }
 
 /** How long the whole of `text` takes to be shown. */
-const timeOf = (text: string) => (boundaries(text).length + 1) * PACE
+const getTime = (text: string) => (boundaries(text).length + 1) * PACE
 
 /** The change the editor is drawing over, and nothing when there is none. */
 export const pendingChange = Facet.define<EditorChange | null, EditorChange | null>({
@@ -136,7 +136,7 @@ const start = (state: EditorState): Mark => {
   if (!change) return NOTHING
 
   const from = Math.max(0, Math.min(change.from, state.doc.length))
-  const reveal = hasArrived(state, change, from) ? revealOf(change.text, 0) : null
+  const reveal = hasArrived(state, change, from) ? getPartReveal(change.text, 0) : null
   // Once the text is there, the stretch the change is about is the text.
   const to = reveal
     ? from + change.text.length
@@ -158,7 +158,7 @@ const getReveal = (
   change: EditorChange,
   from: number,
 ): Reveal | null =>
-  hasArrived(state, change, from) ? (was.reveal ?? revealOf(change.text, 0)) : null
+  hasArrived(state, change, from) ? (was.reveal ?? getPartReveal(change.text, 0)) : null
 
 /**
  * What is drawn over the change.
@@ -231,9 +231,9 @@ class Pace {
     if (!at.change || !at.reveal) return
 
     this.started ??= now
-    const ms = timeOf(at.change.text)
+    const ms = getTime(at.change.text)
     const part = ms <= 0 ? 1 : Math.min(1, (now - this.started) / ms)
-    const reveal = revealOf(at.change.text, part)
+    const reveal = getPartReveal(at.change.text, part)
     if (reveal.shown !== at.reveal.shown || reveal.fading !== at.reveal.fading)
       this.view.dispatch({ effects: setReveal.of(reveal) })
     if (part < 1) this.handle = this.clock.schedule(this.step)

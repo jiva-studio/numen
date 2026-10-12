@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { addressAt, follow } from './address'
+import { getAddress, follow } from './address'
 import { addressOpener } from './outside'
 import { createState } from '../fixtures/state'
 
 describe('the address under a position in the text', () => {
   const getAddressIn = (doc: string, text: string) =>
-    addressAt(createState(doc), doc.indexOf(text) + 1)
+    getAddress(createState(doc), doc.indexOf(text) + 1)
 
   it('is what a link points at', () => {
     expect(getAddressIn('go [there](https://example.invalid)', 'there')).toBe(
@@ -36,17 +36,17 @@ describe('the address under a position in the text', () => {
 describe('the address under a position on a later line', () => {
   it('is what a note in brackets points at', () => {
     const doc = 'first line\nunder [[Thermodynamics]] it sits'
-    expect(addressAt(createState(doc), doc.indexOf('Thermo') + 1)).toBe('name://Thermodynamics')
+    expect(getAddress(createState(doc), doc.indexOf('Thermo') + 1)).toBe('name://Thermodynamics')
   })
 
   it('is what an address in angle brackets is', () => {
     const doc = 'go <https://example.invalid> now'
-    expect(addressAt(createState(doc), doc.indexOf('example') + 1)).toBe('https://example.invalid')
+    expect(getAddress(createState(doc), doc.indexOf('example') + 1)).toBe('https://example.invalid')
   })
 
   it('is nothing inside an indented block of code', () => {
     const doc = '    [[Thermodynamics]]\n'
-    expect(addressAt(createState(doc), doc.indexOf('Thermo') + 1)).toBeNull()
+    expect(getAddress(createState(doc), doc.indexOf('Thermo') + 1)).toBeNull()
   })
 })
 
@@ -131,6 +131,6 @@ describe('a link followed with the pointer', () => {
 describe('the address of a link written in brackets alone', () => {
   it('is what is between the brackets', () => {
     const doc = 'see [thermodynamics] now'
-    expect(addressAt(createState(doc), doc.indexOf('thermo') + 1)).toBe('thermodynamics')
+    expect(getAddress(createState(doc), doc.indexOf('thermo') + 1)).toBe('thermodynamics')
   })
 })

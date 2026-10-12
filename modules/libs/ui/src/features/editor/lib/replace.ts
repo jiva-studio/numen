@@ -22,12 +22,12 @@ interface Place {
   readonly column: number
 }
 
-const placeOf = (doc: Text, at: number): Place => {
+const getPlace = (doc: Text, at: number): Place => {
   const line = doc.lineAt(at)
   return { line: line.number, column: at - line.from }
 }
 
-const positionOf = (doc: Text, place: Place): number => {
+const getPosition = (doc: Text, place: Place): number => {
   const line = doc.line(Math.min(place.line, doc.lines))
   return Math.min(line.from + place.column, line.to)
 }
@@ -75,8 +75,8 @@ export const replace = (state: EditorState, fresh: string): TransactionSpec => {
   const now = state.toText(fresh)
   const ranges = state.selection.ranges.map((range) =>
     EditorSelection.range(
-      positionOf(now, placeOf(state.doc, range.anchor)),
-      positionOf(now, placeOf(state.doc, range.head)),
+      getPosition(now, getPlace(state.doc, range.anchor)),
+      getPosition(now, getPlace(state.doc, range.head)),
     ),
   )
 

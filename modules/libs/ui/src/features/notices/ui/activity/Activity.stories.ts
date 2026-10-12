@@ -17,13 +17,13 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /** The line itself, which is what every story reads. */
-const lineIn = (canvas: HTMLElement): HTMLElement | null => canvas.querySelector('.activity')
+const getLine = (canvas: HTMLElement): HTMLElement | null => canvas.querySelector('.activity')
 
 /** Nothing to say draws nothing. Quiet is not the same as finished. */
 export const Quiet: Story = {
   args: { text: '' },
   play: async ({ canvasElement }) => {
-    await expect(lineIn(canvasElement)).toBeNull()
+    await expect(getLine(canvasElement)).toBeNull()
   },
 }
 
@@ -31,7 +31,7 @@ export const Quiet: Story = {
 export const Working: Story = {
   args: { text: 'Reading', about: 'Sabhaparva.epub', isWorking: true },
   play: async ({ canvasElement }) => {
-    const line = lineIn(canvasElement)
+    const line = getLine(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'working')
     await expect(line).toHaveTextContent('Sabhaparva.epub')
   },
@@ -47,7 +47,7 @@ export const Counting: Story = {
     left: '1:58:20',
   },
   play: async ({ canvasElement }) => {
-    const line = lineIn(canvasElement)
+    const line = getLine(canvasElement)
     await expect(line).toHaveTextContent('3%')
     await expect(line).toHaveTextContent('1:58:20')
     await expect(line).not.toHaveTextContent('1 200')
@@ -68,7 +68,7 @@ export const TwoLines: Story = {
     left: '4:05',
   },
   play: async ({ canvasElement }) => {
-    const line = lineIn(canvasElement)
+    const line = getLine(canvasElement)
     const says = line?.querySelector<HTMLElement>('.activity__says') ?? null
     const about = line?.querySelector<HTMLElement>('.activity__about') ?? null
     await expect(says).toHaveTextContent('Proofreading the transcript')
@@ -90,7 +90,7 @@ export const TooLong: Story = {
     left: '0:41',
   },
   play: async ({ canvasElement }) => {
-    const line = lineIn(canvasElement)
+    const line = getLine(canvasElement)
     const count = line?.querySelector<HTMLElement>('.activity__count') ?? null
     await expect(line).toHaveTextContent('74%')
     await expect(count?.getBoundingClientRect().right).toBeLessThanOrEqual(
@@ -106,7 +106,7 @@ export const TooLong: Story = {
 export const Resting: Story = {
   args: { text: 'Searching by words — no model to learn what it says' },
   play: async ({ canvasElement }) => {
-    const line = lineIn(canvasElement)
+    const line = getLine(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'resting')
   },
 }
@@ -115,7 +115,7 @@ export const Resting: Story = {
 export const Caution: Story = {
   args: { text: 'No tab of this window is over a note', tone: 'caution' },
   play: async ({ canvasElement }) => {
-    const line = lineIn(canvasElement)
+    const line = getLine(canvasElement)
     await expect(line).toHaveAttribute('data-tone', 'caution')
     await expect(line).toHaveAttribute('data-state', 'resting')
   },
@@ -130,7 +130,7 @@ export const Failed: Story = {
     tone: 'alarm',
   },
   play: async ({ canvasElement }) => {
-    const line = lineIn(canvasElement)
+    const line = getLine(canvasElement)
     await expect(line).toHaveAttribute('data-state', 'failed')
     await expect(line).toHaveTextContent('permission denied')
     await expect(line).not.toHaveTextContent('2 of 8')

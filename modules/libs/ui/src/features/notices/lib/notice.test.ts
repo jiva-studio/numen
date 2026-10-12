@@ -6,13 +6,13 @@ import {
   PER_WORD,
   MIN_DWELL,
   getArrivalTimes,
-  dwellOf,
+  getDwell,
   getFinishedNotices,
   getShownNotices,
 } from './dwell'
 import { foldNotices } from './fold'
 import { measureMovement, type Movement } from './movement'
-import { getStillAway, getReadable, tallyOf, type Notice } from './notice'
+import { getStillAway, getReadable, getTally, type Notice } from './notice'
 
 const createNotice = (over: Partial<Notice> = {}): Notice => ({
   id: 'embedding',
@@ -42,19 +42,19 @@ describe('which notices stand in the corner', () => {
 
 describe('what a notice counts against', () => {
   it('counts where both halves of the count are known', () => {
-    expect(tallyOf(createNotice({ done: 3, total: 8 }))).toEqual({ done: 3, total: 8 })
+    expect(getTally(createNotice({ done: 3, total: 8 }))).toEqual({ done: 3, total: 8 })
   })
 
   it('counts nothing where either half is missing', () => {
     // A pass that has not said what it found has no total to draw against, and
     // a bar drawn against a total nobody gave means nothing.
-    expect(tallyOf(createNotice({ done: 3 }))).toBeUndefined()
-    expect(tallyOf(createNotice({ total: 8 }))).toBeUndefined()
-    expect(tallyOf(createNotice())).toBeUndefined()
+    expect(getTally(createNotice({ done: 3 }))).toBeUndefined()
+    expect(getTally(createNotice({ total: 8 }))).toBeUndefined()
+    expect(getTally(createNotice())).toBeUndefined()
   })
 
   it('counts a total of nothing, and leaves the share to whoever draws it', () => {
-    expect(tallyOf(createNotice({ done: 0, total: 0 }))).toEqual({ done: 0, total: 0 })
+    expect(getTally(createNotice({ done: 0, total: 0 }))).toEqual({ done: 0, total: 0 })
   })
 })
 
@@ -133,20 +133,20 @@ describe('a notice somebody asked for', () => {
 
 describe('how long something said stands to be read', () => {
   it('gives more time to more words', () => {
-    expect(dwellOf('Renamed')).toBe(MIN_DWELL + PER_WORD)
-    expect(dwellOf('Renamed', 'One.md')).toBe(MIN_DWELL + 2 * PER_WORD)
+    expect(getDwell('Renamed')).toBe(MIN_DWELL + PER_WORD)
+    expect(getDwell('Renamed', 'One.md')).toBe(MIN_DWELL + 2 * PER_WORD)
   })
 
   it('never runs out for a notice too long to be read in passing', () => {
     const list = Array.from({ length: 21 }, (_, at) => `Note${at}.md`).join(' ')
 
-    expect(dwellOf('Links repaired in', list)).toBe(Infinity)
+    expect(getDwell('Links repaired in', list)).toBe(Infinity)
   })
 
   it('stands for as long as twenty words, which is not too much to read in passing', () => {
     const list = Array.from({ length: 20 }, (_, at) => `Note${at}.md`).join(' ')
 
-    expect(dwellOf(list)).toBe(MIN_DWELL + 20 * PER_WORD)
+    expect(getDwell(list)).toBe(MIN_DWELL + 20 * PER_WORD)
   })
 
   it('is drawn the moment it arrives and goes once it has been read', () => {

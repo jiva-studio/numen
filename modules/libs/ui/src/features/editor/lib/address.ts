@@ -13,7 +13,7 @@ import { wikilinkAt } from '@/shared/lib/address'
 import { addressOpener } from './outside'
 
 /** The first child of a node under that name, and nothing where it has none. */
-export const childOf = (node: SyntaxNode, name: string) => {
+export const findChild = (node: SyntaxNode, name: string) => {
   for (let child = node.firstChild; child; child = child.nextSibling) {
     if (child.name === name) return child
   }
@@ -34,7 +34,7 @@ const isCode = (node: SyntaxNode): boolean => {
  * The address a position in the text stands in, and nothing where it stands in
  * none. A note in brackets is read by the parser every link is read by.
  */
-export const addressAt = (state: EditorState, at: number): string | null => {
+export const getAddress = (state: EditorState, at: number): string | null => {
   const innermost = syntaxTree(state).resolveInner(at, 1)
   if (!isCode(innermost)) {
     const line = state.doc.lineAt(at)
@@ -44,7 +44,7 @@ export const addressAt = (state: EditorState, at: number): string | null => {
 
   for (let node: SyntaxNode | null = innermost; node; node = node.parent) {
     if (node.name !== 'Link' && node.name !== 'Autolink') continue
-    const address = childOf(node, 'URL')
+    const address = findChild(node, 'URL')
     return address
       ? state.doc.sliceString(address.from, address.to)
       : state.doc.sliceString(node.from + 1, node.to - 1)
@@ -59,7 +59,7 @@ export const follow = EditorView.domEventHandlers({
     const at = view.posAtCoords({ x: event.clientX, y: event.clientY })
     if (at === null) return false
 
-    const address = addressAt(view.state, at)
+    const address = getAddress(view.state, at)
     if (address === null) return false
     view.state.facet(addressOpener)(address)
     return true

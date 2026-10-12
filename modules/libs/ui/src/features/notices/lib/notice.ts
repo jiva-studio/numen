@@ -94,7 +94,7 @@ export const getReadable = (notices: readonly Notice[]): readonly Notice[] =>
   notices.filter((notice) => notice.text !== '')
 
 /** What a notice counts against, for the ones that count anything. */
-export const tallyOf = (notice: Notice): { done: number; total: number } | undefined =>
+export const getTally = (notice: Notice): { done: number; total: number } | undefined =>
   notice.total === undefined || notice.done === undefined
     ? undefined
     : { done: notice.done, total: notice.total }

@@ -2,7 +2,7 @@
 /** One notice as a card: the line of work it draws, and the way to put it away. */
 import { useTemplateRef } from 'vue'
 import { Activity } from './activity'
-import { tallyOf, type Notice } from '../lib/notice'
+import { getTally, type Notice } from '../lib/notice'
 
 defineProps<{
   /** The notice this card stands for. */
@@ -30,7 +30,7 @@ defineExpose({ way })
       class="notice__work"
       :text="one.text"
       :about="one.about ?? ''"
-      :tally="tallyOf(one)"
+      :tally="getTally(one)"
       :is-working="one.isWorking ?? false"
       :left="left"
       :tone="one.tone ?? 'plain'"

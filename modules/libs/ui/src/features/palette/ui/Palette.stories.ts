@@ -618,7 +618,7 @@ const renderWithIcons = (args: Knobs) => ({
 })
 
 /** What an icon stands in, and what it draws, as the drawn rows report it. */
-const iconOf = (row: Element | null | undefined): string =>
+const getIcon = (row: Element | null | undefined): string =>
   /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(
     row?.querySelector('svg')?.getAttribute('class') ?? '',
   )?.[1] ?? ''
@@ -657,7 +657,7 @@ export const Icons: Story = {
   play: async () => {
     await waitFor(() => expect(options()).toHaveLength(7))
 
-    await expect(options().map(iconOf)).toEqual([
+    await expect(options().map(getIcon)).toEqual([
       'file-text',
       'layers',
       'layout-template',
@@ -965,13 +965,13 @@ export const Steps: Story = {
       const typed = ref('')
       const crumb = ref('')
 
-      const titleOf = (id: string) => NAMED.items.find((one) => one.id === id)?.title ?? ''
+      const getTitle = (id: string) => NAMED.items.find((one) => one.id === id)?.title ?? ''
 
       const choose = (item: string, action: string) => {
         args.onChoose(item, action)
         if (action !== 'rename') return
-        crumb.value = `New name for «${titleOf(item)}»`
-        typed.value = titleOf(item)
+        crumb.value = `New name for «${getTitle(item)}»`
+        typed.value = getTitle(item)
         step.value = 'name'
       }
 

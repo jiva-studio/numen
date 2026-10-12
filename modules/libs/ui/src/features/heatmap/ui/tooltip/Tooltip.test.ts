@@ -30,7 +30,7 @@ afterEach(() => {
 const ROOM = { width: 1000, height: 800 }
 
 /** A window of the size a test names, whatever the machine laid out. */
-const roomOf = (size: { width: number; height: number }): Viewport => ({
+const createViewport = (size: { width: number; height: number }): Viewport => ({
   watch: () => () => {},
   watchWhole: () => () => {},
   watchRoom: (took) => {
@@ -51,7 +51,7 @@ const createBox = (overrides: Partial<Box> = {}): Box => ({
  *  frame after the one it was measured on. */
 const mountTooltip = async (props: Record<string, unknown> = {}) => {
   const tooltip = mount(Tooltip, {
-    props: { at: createBox(), viewport: roomOf(ROOM), ...props },
+    props: { at: createBox(), viewport: createViewport(ROOM), ...props },
     slots: { default: 'What this is' },
   })
   await nextTick()
@@ -85,7 +85,7 @@ describe('where it stands', () => {
   it('is brought inside the edge where neither side has room', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ x: 60, y: 10 }),
-      viewport: roomOf({ width: 200, height: 800 }),
+      viewport: createViewport({ width: 200, height: 800 }),
     })
     expect(getPlacement(tooltip).x).toBe('72px')
   })
@@ -93,7 +93,7 @@ describe('where it stands', () => {
   it('folds up from the foot of the room rather than running past it', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ y: 90 }),
-      viewport: roomOf({ width: 1000, height: 100 }),
+      viewport: createViewport({ width: 1000, height: 100 }),
     })
     expect(getPlacement(tooltip).y).toBe('50px')
   })
@@ -101,7 +101,7 @@ describe('where it stands', () => {
   it('stands clear of the edge it is against where it is larger than the room', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ x: 10, y: 10 }),
-      viewport: roomOf({ width: 60, height: 800 }),
+      viewport: createViewport({ width: 60, height: 800 }),
     })
     expect(getPlacement(tooltip).x).toBe('8px')
   })

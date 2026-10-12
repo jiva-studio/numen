@@ -9,7 +9,7 @@ import { nextTick, onMounted, ref, shallowRef, watch, type Ref } from 'vue'
 import type { Notice } from '../lib/notice'
 
 /** What each card reads out as. */
-const wordsOf = (one: Notice): string => (one.about ? `${one.text} — ${one.about}` : one.text)
+const getWords = (one: Notice): string => (one.about ? `${one.text} — ${one.about}` : one.text)
 
 /** The two regions the corner is read out through. */
 export interface Announcer {
@@ -36,8 +36,8 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
 
   const readOut = async (all: readonly Notice[]): Promise<void> => {
     if (!listening) return
-    const fresh = all.filter((one) => announced.value.get(one.id) !== wordsOf(one))
-    announced.value = new Map(all.map((one) => [one.id, wordsOf(one)]))
+    const fresh = all.filter((one) => announced.value.get(one.id) !== getWords(one))
+    announced.value = new Map(all.map((one) => [one.id, getWords(one)]))
     if (fresh.length === 0) return
     waiting = [...waiting, ...fresh]
 
@@ -51,8 +51,8 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     waiting = []
     const loud = pending.filter((one) => one.tone === 'alarm')
     const quiet = pending.filter((one) => one.tone !== 'alarm')
-    if (loud.length) cried.value = loud.map(wordsOf).join('. ')
-    if (quiet.length) told.value = quiet.map(wordsOf).join('. ')
+    if (loud.length) cried.value = loud.map(getWords).join('. ')
+    if (quiet.length) told.value = quiet.map(getWords).join('. ')
   }
 
   watch(getNotices, (all) => void readOut(all))

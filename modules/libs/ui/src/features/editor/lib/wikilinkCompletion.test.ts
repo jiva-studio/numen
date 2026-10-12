@@ -126,7 +126,7 @@ describe('wikilink completion source', () => {
 })
 
 describe('wikilink completion in other places of a document', () => {
-  const contextAt = (doc: string, caret: number) => {
+  const getContext = (doc: string, caret: number) => {
     const state = createState(doc, caret)
     return new CompletionContext(state, caret, true)
   }
@@ -149,7 +149,7 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Physics' }])
       const doc = '```\n[[Phys\n```'
 
-      const result = await createWikilinkSource({ search })(contextAt(doc, 10))
+      const result = await createWikilinkSource({ search })(getContext(doc, 10))
 
       expect(result).toBeNull()
       expect(search).not.toHaveBeenCalled()
@@ -160,7 +160,7 @@ describe('wikilink completion in other places of a document', () => {
       const doc = 'Text.\n\n    [[Phys more'
 
       const result = await createWikilinkSource({ search })(
-        contextAt(doc, doc.length - ' more'.length),
+        getContext(doc, doc.length - ' more'.length),
       )
 
       expect(result).toBeNull()
@@ -171,7 +171,7 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Physics' }])
       const doc = '```\ncode\n```\n[[Phys'
 
-      const result = await createWikilinkSource({ search })(contextAt(doc, doc.length))
+      const result = await createWikilinkSource({ search })(getContext(doc, doc.length))
 
       expect(result?.options).toHaveLength(1)
     })
@@ -182,7 +182,7 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([])
       const doc = 'First line\nSee [[Rel and more'
 
-      await createWikilinkSource({ search })(contextAt(doc, 'First line\nSee [[Rel'.length))
+      await createWikilinkSource({ search })(getContext(doc, 'First line\nSee [[Rel'.length))
 
       expect(search).toHaveBeenCalledWith('Rel')
     })
@@ -191,7 +191,7 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([])
       const doc = 'See [[Alpha]] and [[Be'
 
-      await createWikilinkSource({ search })(contextAt(doc, doc.length))
+      await createWikilinkSource({ search })(getContext(doc, doc.length))
 
       expect(search).toHaveBeenCalledWith('Be')
     })
@@ -200,7 +200,7 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([])
       const doc = 'See [[  Quantum  '
 
-      await createWikilinkSource({ search })(contextAt(doc, doc.length))
+      await createWikilinkSource({ search })(getContext(doc, doc.length))
 
       expect(search).toHaveBeenCalledWith('Quantum')
     })
@@ -209,7 +209,7 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Relativity' }])
       const doc = 'First line\nSee [[Rel'
 
-      const result = await createWikilinkSource({ search })(contextAt(doc, doc.length))
+      const result = await createWikilinkSource({ search })(getContext(doc, doc.length))
 
       expect(result?.from).toBe('First line\nSee '.length + 2)
     })
@@ -217,7 +217,7 @@ describe('wikilink completion in other places of a document', () => {
     it('is not filtered again by the editor', async () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Relativity' }])
 
-      const result = await createWikilinkSource({ search })(contextAt('[[Rel', 5))
+      const result = await createWikilinkSource({ search })(getContext('[[Rel', 5))
 
       expect(result?.filter).toBe(false)
     })
@@ -229,7 +229,7 @@ describe('wikilink completion in other places of a document', () => {
         .fn()
         .mockResolvedValue([{ title: 'Physics', detail: 'in Science', type: 'heading' }])
 
-      const result = await createWikilinkSource({ search })(contextAt('[[Ph', 4))
+      const result = await createWikilinkSource({ search })(getContext('[[Ph', 4))
 
       expect(result?.options[0]).toMatchObject({ detail: 'in Science', type: 'heading' })
     })
@@ -237,7 +237,7 @@ describe('wikilink completion in other places of a document', () => {
     it('are offered as a note where they bring neither and name no heading', async () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Physics' }])
 
-      const result = await createWikilinkSource({ search })(contextAt('[[Ph', 4))
+      const result = await createWikilinkSource({ search })(getContext('[[Ph', 4))
 
       expect(result?.options[0]).toMatchObject({ label: 'Physics', detail: 'note', type: 'note' })
     })
@@ -246,7 +246,7 @@ describe('wikilink completion in other places of a document', () => {
       const search = vi.fn().mockResolvedValue([{ title: 'Physics', heading: 'Optics' }])
       const doc = 'See [[Ph'
 
-      const result = await createWikilinkSource({ search })(contextAt(doc, doc.length))
+      const result = await createWikilinkSource({ search })(getContext(doc, doc.length))
 
       const option = result?.options[0]
       expect(option).toMatchObject({ label: 'Physics#Optics', detail: 'heading', type: 'heading' })
@@ -258,7 +258,7 @@ describe('wikilink completion in other places of a document', () => {
       const doc = 'First line\nSee [[Rel]] and more'
       const caret = 'First line\nSee [[Rel'.length
 
-      const result = await createWikilinkSource({ search })(contextAt(doc, caret))
+      const result = await createWikilinkSource({ search })(getContext(doc, caret))
 
       const chosen = choose(doc, caret, result?.options[0], result!.from)
       expect(chosen.text).toBe('First line\nSee [[Relativity]] and more')
@@ -276,7 +276,7 @@ describe('wikilink completion in other places of a document', () => {
       const result = await createWikilinkSource({
         search,
         ...(createNote ? { createNote } : {}),
-      })(contextAt(doc, doc.length))
+      })(getContext(doc, doc.length))
       return { result, option: result?.options.find((one) => one.type === 'new') }
     }
 
@@ -345,7 +345,7 @@ describe('wikilink completion in other places of a document', () => {
     const ask = async (doc: string, caret = doc.length) => {
       const lookup = vi.fn().mockResolvedValue(headings)
       const result = await createWikilinkSource({ search: vi.fn(), headings: lookup })(
-        contextAt(doc, caret),
+        getContext(doc, caret),
       )
       return { lookup, result }
     }
@@ -407,7 +407,7 @@ describe('wikilink completion in other places of a document', () => {
 
     it('are none where nothing is given to look them up', async () => {
       const result = await createWikilinkSource({ search: vi.fn() })(
-        contextAt('See [[Quantum#Ham', 17),
+        getContext('See [[Quantum#Ham', 17),
       )
 
       expect(result?.options).toStrictEqual([])

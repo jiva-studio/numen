@@ -1,6 +1,6 @@
 /** The list as it is drawn: every row numbered, and its lines already split. */
 import type { PaletteGroup, PaletteItem } from './item'
-import { partsOf, type PalettePart } from './parts'
+import { getParts, type PalettePart } from './parts'
 
 /** One item as it is drawn: the number it has in the list, and its lines split. */
 export interface PlacedItem {
@@ -31,8 +31,8 @@ export const placePalette = (groups: readonly PaletteGroup[]): readonly PlacedGr
     items: group.items.map((item) => ({
       item,
       at: at++,
-      name: partsOf(item.title, item.at),
-      detail: partsOf(item.detail ?? '', item.detailAt),
+      name: getParts(item.title, item.at),
+      detail: getParts(item.detail ?? '', item.detailAt),
     })),
   }))
 }

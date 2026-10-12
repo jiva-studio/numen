@@ -14,20 +14,20 @@ import {
   findKeptPlace,
   flatten,
   orderGroups,
-  stepIn,
+  getSteppedIndex,
   stepTo,
   type PaletteItem,
   type PaletteGroup,
 } from './item'
 import {
-  actionAt,
+  getAction,
   commandKeyChord,
   getShortcuts,
   isActionsChord,
   keyChord,
   overlayIcon,
 } from './keys'
-import { partsOf } from './parts'
+import { getParts } from './parts'
 import { listId, optionId, placePalette } from './place'
 import { MANY } from '../fixtures/actions'
 
@@ -170,17 +170,17 @@ describe('a group arriving under the keyboard', () => {
 describe('what a key reaches', () => {
   it('reaches the first action, and the second with Shift', () => {
     const both = item('one', { actions: BOTH })
-    expect(actionAt(both, false)).toBe('travel')
-    expect(actionAt(both, true)).toBe('open')
+    expect(getAction(both, false)).toBe('travel')
+    expect(getAction(both, true)).toBe('open')
   })
 
   it('reaches nothing with Shift when only one action is offered', () => {
-    expect(actionAt(item('one'), true)).toBe('')
+    expect(getAction(item('one'), true)).toBe('')
   })
 
   it('reaches nothing on an item that cannot be chosen', () => {
-    expect(actionAt(item('one', { disabled: true, actions: BOTH }), false)).toBe('')
-    expect(actionAt(undefined, false)).toBe('')
+    expect(getAction(item('one', { disabled: true, actions: BOTH }), false)).toBe('')
+    expect(getAction(undefined, false)).toBe('')
   })
 
   it('hands out a key each, in the order the actions are offered', () => {
@@ -269,16 +269,16 @@ describe('a keystroke of one letter and the key beside the space bar', () => {
 
 describe('walking a list where every row can be landed on', () => {
   it('wraps at either end', () => {
-    expect(stepIn(3, 2, 1)).toBe(0)
-    expect(stepIn(3, 0, -1)).toBe(2)
+    expect(getSteppedIndex(3, 2, 1)).toBe(0)
+    expect(getSteppedIndex(3, 0, -1)).toBe(2)
   })
 
   it('is asked for the first by counting from nowhere', () => {
-    expect(stepIn(3, -1, 1)).toBe(0)
+    expect(getSteppedIndex(3, -1, 1)).toBe(0)
   })
 
   it('lands nowhere in a list with nothing in it', () => {
-    expect(stepIn(0, -1, 1)).toBe(-1)
+    expect(getSteppedIndex(0, -1, 1)).toBe(-1)
   })
 })
 
@@ -369,36 +369,36 @@ describe('a list of actions changing under the panel', () => {
 
 describe('marking why an item is here', () => {
   it('draws a line nothing stands in as one run', () => {
-    expect(partsOf('Entropy')).toEqual([{ text: 'Entropy', isHit: false }])
+    expect(getParts('Entropy')).toEqual([{ text: 'Entropy', isHit: false }])
   })
 
   it('draws nothing at all for a line with nothing on it', () => {
-    expect(partsOf('', [{ from: 0, to: 3 }])).toEqual([])
+    expect(getParts('', [{ from: 0, to: 3 }])).toEqual([])
   })
 
   it('marks a run at the start, in the middle and at the end', () => {
-    expect(partsOf('abcdef', [{ from: 0, to: 2 }])).toEqual([
+    expect(getParts('abcdef', [{ from: 0, to: 2 }])).toEqual([
       { text: 'ab', isHit: true },
       { text: 'cdef', isHit: false },
     ])
-    expect(partsOf('abcdef', [{ from: 2, to: 4 }])).toEqual([
+    expect(getParts('abcdef', [{ from: 2, to: 4 }])).toEqual([
       { text: 'ab', isHit: false },
       { text: 'cd', isHit: true },
       { text: 'ef', isHit: false },
     ])
-    expect(partsOf('abcdef', [{ from: 4, to: 6 }])).toEqual([
+    expect(getParts('abcdef', [{ from: 4, to: 6 }])).toEqual([
       { text: 'abcd', isHit: false },
       { text: 'ef', isHit: true },
     ])
   })
 
   it('marks the whole line as one run when the whole line is why', () => {
-    expect(partsOf('abc', [{ from: 0, to: 3 }])).toEqual([{ text: 'abc', isHit: true }])
+    expect(getParts('abc', [{ from: 0, to: 3 }])).toEqual([{ text: 'abc', isHit: true }])
   })
 
   it('draws two runs that do not touch as two', () => {
     expect(
-      partsOf('abcdef', [
+      getParts('abcdef', [
         { from: 0, to: 1 },
         { from: 4, to: 5 },
       ]),
@@ -412,7 +412,7 @@ describe('marking why an item is here', () => {
 
   it('reads the runs in whatever order they arrive', () => {
     expect(
-      partsOf('abcdef', [
+      getParts('abcdef', [
         { from: 4, to: 5 },
         { from: 0, to: 1 },
       ]),
@@ -426,7 +426,7 @@ describe('marking why an item is here', () => {
 
   it('folds runs that overlap or touch into one', () => {
     expect(
-      partsOf('abcdef', [
+      getParts('abcdef', [
         { from: 0, to: 3 },
         { from: 2, to: 4 },
       ]),
@@ -435,7 +435,7 @@ describe('marking why an item is here', () => {
       { text: 'ef', isHit: false },
     ])
     expect(
-      partsOf('abcdef', [
+      getParts('abcdef', [
         { from: 0, to: 2 },
         { from: 2, to: 4 },
       ]),
@@ -446,7 +446,7 @@ describe('marking why an item is here', () => {
   })
 
   it('reads a run given back to front', () => {
-    expect(partsOf('abcdef', [{ from: 4, to: 2 }])).toEqual([
+    expect(getParts('abcdef', [{ from: 4, to: 2 }])).toEqual([
       { text: 'ab', isHit: false },
       { text: 'cd', isHit: true },
       { text: 'ef', isHit: false },
@@ -454,22 +454,22 @@ describe('marking why an item is here', () => {
   })
 
   it('brings a run that runs off either end back inside the line', () => {
-    expect(partsOf('abc', [{ from: -5, to: 99 }])).toEqual([{ text: 'abc', isHit: true }])
+    expect(getParts('abc', [{ from: -5, to: 99 }])).toEqual([{ text: 'abc', isHit: true }])
   })
 
   it('drops a run with nothing in it', () => {
-    expect(partsOf('abc', [{ from: 1, to: 1 }])).toEqual([{ text: 'abc', isHit: false }])
+    expect(getParts('abc', [{ from: 1, to: 1 }])).toEqual([{ text: 'abc', isHit: false }])
   })
 
   it('never ends a run on half a character', () => {
     // The emoji is two code units, and the run names one of them.
     const text = 'a👋b'
-    expect(partsOf(text, [{ from: 1, to: 2 }])).toEqual([
+    expect(getParts(text, [{ from: 1, to: 2 }])).toEqual([
       { text: 'a', isHit: false },
       { text: '👋', isHit: true },
       { text: 'b', isHit: false },
     ])
-    expect(partsOf(text, [{ from: 2, to: 3 }])).toEqual([
+    expect(getParts(text, [{ from: 2, to: 3 }])).toEqual([
       { text: 'a', isHit: false },
       { text: '👋', isHit: true },
       { text: 'b', isHit: false },
@@ -539,7 +539,7 @@ describe('where the half of a pair is moved off', () => {
 
   /** The run a span on the second unit of `first` + `second` picks out, in `x...y`. */
   const picked = (first: string, second: string) =>
-    partsOf(`x${first}${second}y`, [{ from: 2, to: 3 }])
+    getParts(`x${first}${second}y`, [{ from: 2, to: 3 }])
 
   it('moves outwards from the middle of a pair at either end of the surrogate ranges', () => {
     for (const [first, second] of [

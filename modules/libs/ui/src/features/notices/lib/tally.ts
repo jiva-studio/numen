@@ -56,7 +56,7 @@ export interface ActivityDescriptor {
  * because a tally that grows while it is being worked through overtakes itself
  * for as long as it takes the total to catch up.
  */
-export const shareOf = (tally: Tally): number | undefined => {
+export const getShare = (tally: Tally): number | undefined => {
   if (tally.total <= 0) return undefined
   if (tally.done >= tally.total) return 1
   if (tally.done <= 0) return 0
@@ -83,7 +83,7 @@ export const activity = (input: {
 
   // Work is claimed, not assumed. Words alone say something is so, and a caller
   // that means "this is happening now" says that too.
-  const share = input.tally ? shareOf(input.tally) : undefined
+  const share = input.tally ? getShare(input.tally) : undefined
   if (!input.isWorking && share === undefined) return { state: 'resting', hasCounts: false }
 
   return share === undefined
@@ -131,7 +131,7 @@ export const SMOOTHING = 10
  * A count that went backwards is a fresh start, and has no rate until it is read
  * twice.
  */
-export const rateOf = (
+export const getRate = (
   previous: { readonly done: number; readonly rate: number },
   count: number,
   seconds: number,

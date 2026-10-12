@@ -29,7 +29,7 @@ export interface Table {
   readonly body: readonly Row[]
 }
 
-const alignmentOf = (text: string): Align[] => {
+const getAlignment = (text: string): Align[] => {
   const parts = text.replace(/^\|/, '').replace(/\|$/, '').split('|')
   return parts.map((part) => {
     const written = part.trim()
@@ -42,7 +42,7 @@ const alignmentOf = (text: string): Align[] => {
   })
 }
 
-const cellsOf = (state: EditorState, row: SyntaxNode): Cell[] => {
+const getCells = (state: EditorState, row: SyntaxNode): Cell[] => {
   const cells: Cell[] = []
   let emptyFrom: number | null = null
 
@@ -72,9 +72,9 @@ export const readTable = (state: EditorState, node: SyntaxNode): Table => {
   let align: Align[] = []
 
   for (let child = node.firstChild; child; child = child.nextSibling) {
-    if (child.name === 'TableHeader') head = cellsOf(state, child)
-    else if (child.name === 'TableRow') body.push(cellsOf(state, child))
-    else align = alignmentOf(state.doc.sliceString(child.from, child.to))
+    if (child.name === 'TableHeader') head = getCells(state, child)
+    else if (child.name === 'TableRow') body.push(getCells(state, child))
+    else align = getAlignment(state.doc.sliceString(child.from, child.to))
   }
 
   return {
@@ -88,12 +88,12 @@ export const readTable = (state: EditorState, node: SyntaxNode): Table => {
 }
 
 /** How many columns the table has, counting the widest row. */
-export const widthOf = (table: Table): number =>
+export const getWidth = (table: Table): number =>
   Math.max(table.align.length, table.head.length, ...table.body.map((row) => row.length), 1)
 
 /** Every row, head first, each as wide as the table. */
-export const rowsOf = (table: Table): Row[] => {
-  const width = widthOf(table)
+export const getRows = (table: Table): Row[] => {
+  const width = getWidth(table)
   const pad = (row: Row): Row => Array.from({ length: width }, (_, column) => row[column] ?? null)
   return [pad(table.head), ...table.body.map(pad)]
 }
