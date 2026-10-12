@@ -360,7 +360,8 @@ func TestACursorIsReadIntoThePositionItNames(t *testing.T) {
 		{cursor: "1:2:x", refused: true},
 		{cursor: "1:2:3:4", refused: true},
 	} {
-		mtime, source, chunk, err := parseCursor(c.cursor)
+		got, err := parseCursor(c.cursor)
+		mtime, source, chunk := got.MTime, got.Source, got.Chunk
 		if c.refused != (err != nil) {
 			t.Errorf("cursor %q: error %v, refused want %v", c.cursor, err, c.refused)
 		}
