@@ -59,12 +59,12 @@ type Deps struct {
 	// holding neither of the tools that reach one opens nothing.
 	ImportURL func(ctx context.Context, v domain.Vault) (ImportURL, error)
 
-	// ProofreadReading opens what puts a document's reading right, and
+	// ProofreadRecognition opens what puts a document's recognition right, and
 	// ProofreadTranscript what puts a recording's transcript right. They are
 	// two openers because a file is one or the other and nothing opens for the
 	// kind it is not.
-	ProofreadReading    func(ctx context.Context, v domain.Vault) (ProofreadReading, error)
-	ProofreadTranscript func(ctx context.Context, v domain.Vault) (ProofreadTranscript, error)
+	ProofreadRecognition func(ctx context.Context, v domain.Vault) (ProofreadRecognition, error)
+	ProofreadTranscript  func(ctx context.Context, v domain.Vault) (ProofreadTranscript, error)
 }
 
 // Vaults is what the vault commands work on: the list this installation keeps,
@@ -162,9 +162,9 @@ type ImportURL struct {
 	Close     func() error
 }
 
-// ProofreadReading is one document's reading put right with a model.
-type ProofreadReading struct {
-	Proofread source.ProofreadReading
+// ProofreadRecognition is one document's recognition put right with a model.
+type ProofreadRecognition struct {
+	Proofread source.ProofreadRecognition
 	Cut       source.Extract
 	// IsHeld says whether anything is configured to proofread with. Nothing else
 	// here is opened where nothing is.

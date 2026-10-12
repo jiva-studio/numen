@@ -170,24 +170,24 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 				return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, by), Close: db.Close}, nil
 			},
 
-			ProofreadReading: func(
+			ProofreadRecognition: func(
 				ctx context.Context, v domain.Vault,
-			) (cli.ProofreadReading, error) {
+			) (cli.ProofreadRecognition, error) {
 				proofread, held, err := cfg.GetScanProofreading().
-					Reading(cfg.VaultReaders(), cfg.GetDerivedStores())
+					Recognition(cfg.VaultReaders(), cfg.GetDerivedStores())
 				if err != nil || !held {
-					return cli.ProofreadReading{}, err
+					return cli.ProofreadRecognition{}, err
 				}
 				db, err := cfg.OpenIndex(ctx)
 				if err != nil {
-					return cli.ProofreadReading{}, err
+					return cli.ProofreadRecognition{}, err
 				}
 				cut, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
 				if err != nil {
 					_ = db.Close()
-					return cli.ProofreadReading{}, err
+					return cli.ProofreadRecognition{}, err
 				}
-				return cli.ProofreadReading{
+				return cli.ProofreadRecognition{
 					Proofread: proofread, Cut: cut, IsHeld: true, Close: db.Close,
 				}, nil
 			},

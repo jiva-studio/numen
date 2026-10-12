@@ -71,11 +71,11 @@ them are unexported — so no half-built one exists for a method to check.
 |---|---|
 | A use case does not carry a collaborator its constructor takes in an exported field | `TestNoUseCaseCarriesACollaboratorInTheOpen` |
 
-`usecase/source`'s `ProofreadReading` and `ProofreadTranscript` are what a
+`usecase/source`'s `ProofreadRecognition` and `ProofreadTranscript` are what a
 closed one looks like. The rest are in the rule's baseline, which only shrinks.
 
 A dependency that may genuinely be absent is not a nil left in a field: it is a
-case the composition root decides, and it says so in a word — `ProofreadingConfig.Reading`
+case the composition root decides, and it says so in a word — `ProofreadingConfig.Recognition`
 answers `held bool`, so a window that cannot proofread never gets something to
 proofread with.
 

@@ -360,10 +360,10 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	}
 }
 
-// A run of a proofread reading is lit where its words now stand. A correction
+// A run of a proofread recognition is lit where its words now stand. A correction
 // that changes a line's length moves everything after it, and the coordinates
 // answer about the text the chunks are places in.
-func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
+func TestAProofreadRecognitionIsLitWhereItsWordsNowStand(t *testing.T) {
 	u, index, store, _, shelved := newHighlight(t, tiny)
 	recordSource(t, index, shelved, "ocr", "abc123")
 

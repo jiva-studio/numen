@@ -50,13 +50,13 @@ func newProofreadingConfig(by *replying, queue *queued) ProofreadingConfig {
 	}
 }
 
-// A reading is put right at the sizes the installation proofreads at, and the
+// A recognition is put right at the sizes the installation proofreads at, and the
 // pages are left with the queue where there is one.
-func TestAReadingIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
+func TestARecognitionIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 	t.Parallel()
 	by, queue := &replying{}, &queued{}
 
-	right, held, err := newProofreadingConfig(by, queue).Reading(somewhereToProofread())
+	right, held, err := newProofreadingConfig(by, queue).Recognition(somewhereToProofread())
 	if err != nil || !held {
 		t.Fatalf("held %v, %v", held, err)
 	}
@@ -68,7 +68,7 @@ func TestAReadingIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 			right.MaxEditDistance)
 	}
 	if right.by != port.Proofreader(by) {
-		t.Error("a reading is put right by something the installation did not place")
+		t.Error("a recognition is put right by something the installation did not place")
 	}
 	if right.Queue != port.ProofreadQueue(queue) {
 		t.Error("the pages are left nowhere, and the installation named a queue")
@@ -99,11 +99,11 @@ func TestATranscriptIsBuiltAtTheSizesTheInstallationProofreadsAt(t *testing.T) {
 func TestEachKindOfTextIsProofreadUnderItsOwnInstruction(t *testing.T) {
 	t.Parallel()
 	by, queue := &replying{}, &queued{}
-	if _, _, err := newProofreadingConfig(by, queue).Reading(somewhereToProofread()); err != nil {
+	if _, _, err := newProofreadingConfig(by, queue).Recognition(somewhereToProofread()); err != nil {
 		t.Fatal(err)
 	}
 	if by.told != proofread.ScanInstruction || queue.told != proofread.ScanInstruction {
-		t.Error("a document's reading is not proofread as a scan")
+		t.Error("a document's recognition is not proofread as a scan")
 	}
 
 	by, queue = &replying{}, &queued{}
@@ -123,9 +123,9 @@ func TestNamingNoProofreaderHoldsNoneAndIsNoFailure(t *testing.T) {
 		{},
 		{By: func(string) (port.Proofreader, error) { return nil, nil }},
 	} {
-		right, held, err := said.Reading(somewhereToProofread())
+		right, held, err := said.Recognition(somewhereToProofread())
 		if err != nil || held || right.by != nil {
-			t.Errorf("a reading came back: held %v, %v", held, err)
+			t.Errorf("a recognition came back: held %v, %v", held, err)
 		}
 		transcript, held, err := said.Transcript(somewhereToProofread())
 		if err != nil || held || transcript.by != nil {
@@ -144,7 +144,7 @@ func TestAProofreaderThatCannotBeOpenedSaysWhatCouldNotBeDone(t *testing.T) {
 		By:      func(string) (port.Proofreader, error) { return nil, keyless },
 	}
 
-	_, held, err := said.Reading(somewhereToProofread())
+	_, held, err := said.Recognition(somewhereToProofread())
 	if held || !errors.Is(err, keyless) {
 		t.Fatalf("held %v, %v", held, err)
 	}
@@ -169,7 +169,7 @@ func TestAQueueThatCannotBeOpenedSaysThePagesCannotBeLeft(t *testing.T) {
 		Queue:   func(string) (port.ProofreadQueue, error) { return nil, shut },
 	}
 
-	_, held, err := said.Reading(somewhereToProofread())
+	_, held, err := said.Recognition(somewhereToProofread())
 	if held || !errors.Is(err, shut) {
 		t.Fatalf("held %v, %v", held, err)
 	}

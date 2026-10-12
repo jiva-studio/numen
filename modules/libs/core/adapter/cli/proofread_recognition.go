@@ -11,18 +11,18 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// proofreadReadingCommand puts one document's reading right with a model.
+// proofreadRecognitionCommand puts one document's recognition right with a model.
 //
 // It reaches a service, so it runs where a person configured one. An
 // installation that named none is told so and nothing is sent anywhere.
-func proofreadReadingCommand(
+func proofreadRecognitionCommand(
 	ctx context.Context,
 	out io.Writer,
 	deps Deps,
 	v domain.Vault,
 	path string,
 ) error {
-	open, err := deps.ProofreadReading(ctx, v)
+	open, err := deps.ProofreadRecognition(ctx, v)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func proofreadReadingCommand(
 		_, err := cut.ExtractOne(ctx, v, path)
 		return err
 	}
-	proofread.OnProgress = func(res source.ProofreadReadingResult) {
+	proofread.OnProgress = func(res source.ProofreadRecognitionResult) {
 		if res.Pages > 0 {
 			fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
 			shown = true
@@ -65,7 +65,7 @@ func proofreadReadingCommand(
 			"%d of %d pages of %s are with the proofreader, ask again to collect them\n",
 			res.Fixed, res.UncorrectedPages, res.Read, res.Pages, res.Path)
 	case res.IsNone:
-		fmt.Fprintf(out, "%s has no reading to proofread\n", res.Path)
+		fmt.Fprintf(out, "%s has no recognition to proofread\n", res.Path)
 	default:
 		fmt.Fprintf(out, "put %d lines of %s right over %d pages, %d of them left as they were read, in %s\n",
 			res.Fixed, res.Path, res.Read, res.UncorrectedPages, time.Since(started).Round(time.Second))

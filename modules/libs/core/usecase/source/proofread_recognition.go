@@ -25,13 +25,13 @@ var (
 	errNoStoreToProofread = errors.New("no store to keep a proofreading in")
 )
 
-// ProofreadReading puts a document's reading right, where a person configured
+// ProofreadRecognition puts a document's recognition right, where a person configured
 // something to proofread it with.
 //
 // What the recogniser produced stays on disk under its own name and the
 // corrections go beside it, so a proofreading that went wrong is a file that can
 // be deleted and a person can always ask what the machine read.
-type ProofreadReading struct {
+type ProofreadRecognition struct {
 	readers port.VaultReaders
 	derived port.DerivedStores
 	by      port.Proofreader
@@ -41,10 +41,10 @@ type ProofreadReading struct {
 	// and nothing waits.
 	Queue port.ProofreadQueue
 
-	// Area is the store the reading is kept in. Empty means the default.
+	// Area is the store the recognition is kept in. Empty means the default.
 	Area string
 
-	// Hash is the known fingerprint of the reading's source file. When set,
+	// Hash is the known fingerprint of the recognition's source file. When set,
 	// Execute reuses it without reading the source file from disk.
 	Hash string
 
@@ -61,61 +61,61 @@ type ProofreadReading struct {
 	// stand on the text as it was read until the next scan.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	OnProgress func(ProofreadReadingResult)
+	OnProgress func(ProofreadRecognitionResult)
 }
 
-// NewProofreadReading is what a reading is put right through: the vault it is
-// read out of, the store the reading and its corrections are kept in, and the
+// NewProofreadRecognition is what a recognition is put right through: the vault it is
+// read out of, the store the recognition and its corrections are kept in, and the
 // proofreader that answers about a page.
 //
 // An installation that configured no proofreader is refused here.
-func NewProofreadReading(
+func NewProofreadRecognition(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
-) (ProofreadReading, error) {
+) (ProofreadRecognition, error) {
 	switch {
 	case readers == nil:
-		return ProofreadReading{}, errNoVaultToProofread
+		return ProofreadRecognition{}, errNoVaultToProofread
 	case derived == nil:
-		return ProofreadReading{}, errNoStoreToProofread
+		return ProofreadRecognition{}, errNoStoreToProofread
 	case by == nil:
-		return ProofreadReading{}, errNothingProofreads
+		return ProofreadRecognition{}, errNothingProofreads
 	}
-	return ProofreadReading{readers: readers, derived: derived, by: by}, nil
+	return ProofreadRecognition{readers: readers, derived: derived, by: by}, nil
 }
 
 // GetProofreaderName is what puts the words right, by the name it goes under.
-func (u ProofreadReading) GetProofreaderName() string { return u.by.GetName() }
+func (u ProofreadRecognition) GetProofreaderName() string { return u.by.GetName() }
 
-// ProofreadReadingResult reports what proofreading a reading did.
-type ProofreadReadingResult struct {
+// ProofreadRecognitionResult reports what proofreading a recognition did.
+type ProofreadRecognitionResult struct {
 	Path             string // the document being proofread
-	Pages            int    // how many pages the reading has
+	Pages            int    // how many pages the recognition has
 	Read             int    // how many have been asked about, this run and before it
 	Resumed          int    // how many a run before this one had already asked about
 	Fixed            int    // lines put right
 	UncorrectedPages int    // pages replied to without a correction, left as they were read
-	IsNone           bool   // there is no reading to proofread, and nothing was done
+	IsNone           bool   // there is no recognition to proofread, and nothing was done
 	IsWaiting        bool   // a batch is out and what comes back is not there yet
-	IsBusy           bool   // somebody else is proofreading this reading
+	IsBusy           bool   // somebody else is proofreading this recognition
 }
 
 // DefaultPages is how many pages one request carries.
 const DefaultPages = 40
 
-// checkpoint is what says who put a reading right and how far they got.
+// checkpoint is what says who put a recognition right and how far they got.
 type checkpoint struct {
 	By    string `json:"by"`
 	Pages int    `json:"pages"`
 	// Batch is the name what was left for the proofreader is collected under,
-	// and Left is how many pages beyond the count it covers. A reading with no
+	// and Left is how many pages beyond the count it covers. A recognition with no
 	// batch out names neither.
 	Batch string `json:"batch,omitempty"`
 	Left  int    `json:"left,omitempty"`
 }
 
-// Execute proofreads one document's reading.
-func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadReadingResult, error) {
-	res := ProofreadReadingResult{Path: path}
+// Execute proofreads one document's recognition.
+func (u ProofreadRecognition) Execute(ctx context.Context, v domain.Vault, path string) (ProofreadRecognitionResult, error) {
+	res := ProofreadRecognitionResult{Path: path}
 	hash, err := u.getHash(ctx, v, path)
 	if err != nil {
 		return res, err
@@ -128,7 +128,7 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 	area := u.area()
 	corrections, progressPath := text.Corrections(area, hash), text.Proofread(area, hash)
 
-	// One run to a reading. The name is the one the corrections are kept under,
+	// One run to a recognition. The name is the one the corrections are kept under,
 	// and it is held for as long as the proofreading takes.
 	release, err := store.Claim(ctx, corrections)
 	if errors.Is(err, port.ErrClaimed) {
@@ -160,13 +160,13 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 		return res, err
 	}
 	res.Resumed, res.Read = done, done
-	// Progress is reported once there is a page to ask about, so a reading
+	// Progress is reported once there is a page to ask about, so a recognition
 	// nothing is left to be asked about is never work anybody is shown.
 	if done < len(pages) {
 		u.progress(res)
 	}
 
-	job := readingProofreadJob{v: v, store: store, path: path, pages: pages, corrections: corrections, progressPath: progressPath}
+	job := proofreadRecognitionJob{v: v, store: store, path: path, pages: pages, corrections: corrections, progressPath: progressPath}
 	if u.Queue != nil {
 		err = u.await(ctx, job, stood, &res)
 	} else {
@@ -175,9 +175,9 @@ func (u ProofreadReading) Execute(ctx context.Context, v domain.Vault, path stri
 	return res, err
 }
 
-// readingProofreadJob is the state of proofreading one reading: where its pages and their corrections
+// proofreadRecognitionJob is the state of proofreading one recognition: where its pages and their corrections
 // are kept.
-type readingProofreadJob struct {
+type proofreadRecognitionJob struct {
 	v            domain.Vault
 	store        port.DerivedStore
 	path         string
@@ -186,8 +186,8 @@ type readingProofreadJob struct {
 	progressPath string
 }
 
-// getHash is the fingerprint of the reading's source file.
-func (u ProofreadReading) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
+// getHash is the fingerprint of the recognition's source file.
+func (u ProofreadRecognition) getHash(ctx context.Context, v domain.Vault, path string) (string, error) {
 	if u.Hash != "" {
 		return u.Hash, nil
 	}
@@ -204,11 +204,11 @@ func (u ProofreadReading) getHash(ctx context.Context, v domain.Vault, path stri
 
 // askPages asks the proofreader about the pages from at onwards, a batch at a
 // time.
-func (u ProofreadReading) askPages(
+func (u ProofreadRecognition) askPages(
 	ctx context.Context,
-	p readingProofreadJob,
+	p proofreadRecognitionJob,
 	at int,
-	res *ProofreadReadingResult,
+	res *ProofreadRecognitionResult,
 ) error {
 	for ; at < len(p.pages); at += u.batch() {
 		if err := ctx.Err(); err != nil {
@@ -233,13 +233,13 @@ func (u ProofreadReading) askPages(
 // writeCorrections writes the corrections a batch came back with, cuts the source, and
 // writes the count after both: a batch no count claims is one the next run asks
 // about again, and it trims the corrections back to the count first.
-func (u ProofreadReading) writeCorrections(
+func (u ProofreadRecognition) writeCorrections(
 	ctx context.Context,
-	p readingProofreadJob,
+	p proofreadRecognitionJob,
 	asked []proofread.Batch,
 	replies map[int]string,
 	end int,
-	res *ProofreadReadingResult,
+	res *ProofreadRecognitionResult,
 ) error {
 	put, uncorrected := u.getCorrections(asked, replies)
 	res.UncorrectedPages += uncorrected
@@ -260,10 +260,10 @@ func (u ProofreadReading) writeCorrections(
 	return nil
 }
 
-// lines are the printed lines of a reading, by the page they were read from. A
-// reading whose text or coordinates are not there is a reading nothing can be
+// lines are the printed lines of a recognition, by the page they were read from. A
+// recognition whose text or coordinates are not there is a recognition nothing can be
 // asked about.
-func (u ProofreadReading) lines(
+func (u ProofreadRecognition) lines(
 	ctx context.Context,
 	store port.DerivedStore,
 	area, hash string,
@@ -291,7 +291,7 @@ func (u ProofreadReading) lines(
 //
 // A page nothing came back about and a page whose reply the gates refused are
 // the same outcome: the page is left as it was read.
-func (u ProofreadReading) getCorrections(
+func (u ProofreadRecognition) getCorrections(
 	asked []proofread.Batch,
 	replies map[int]string,
 ) (put []correction.Line, uncorrected int) {
@@ -317,8 +317,8 @@ func (u ProofreadReading) getCorrections(
 //
 // A count stands after the corrections it claims, so what follows the last one
 // is a batch that did not land whole. Corrections another proofreader made are
-// not this one's, and the reading is taken up from the first page.
-func (u ProofreadReading) readCheckpoint(
+// not this one's, and the recognition is taken up from the first page.
+func (u ProofreadRecognition) readCheckpoint(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections, progressPath string,
@@ -343,11 +343,11 @@ func (u ProofreadReading) readCheckpoint(
 // await collects what the proofreader has answered about, and leaves the pages
 // after it. One run collects one batch and leaves one, so a book is put right
 // over as many runs as it has batches.
-func (u ProofreadReading) await(
+func (u ProofreadRecognition) await(
 	ctx context.Context,
-	p readingProofreadJob,
+	p proofreadRecognitionJob,
 	stood checkpoint,
-	res *ProofreadReadingResult,
+	res *ProofreadRecognitionResult,
 ) error {
 	if stood.Batch != "" {
 		next, ready, err := u.fetchBatch(ctx, p, stood, res)
@@ -367,13 +367,13 @@ func (u ProofreadReading) await(
 }
 
 // fetchBatch collects the batch left for the proofreader and lands its
-// corrections. It returns the checkpoint the reading now stands at, and whether
+// corrections. It returns the checkpoint the recognition now stands at, and whether
 // the batch was ready.
-func (u ProofreadReading) fetchBatch(
+func (u ProofreadRecognition) fetchBatch(
 	ctx context.Context,
-	p readingProofreadJob,
+	p proofreadRecognitionJob,
 	stood checkpoint,
-	res *ProofreadReadingResult,
+	res *ProofreadRecognitionResult,
 ) (checkpoint, bool, error) {
 	replies, ready, err := u.Queue.Collect(ctx, stood.Batch)
 	if err != nil {
@@ -397,11 +397,11 @@ func (u ProofreadReading) fetchBatch(
 
 // submitBatch leaves the batch of pages from at for the proofreader, and writes
 // down the name it is collected under.
-func (u ProofreadReading) submitBatch(
+func (u ProofreadRecognition) submitBatch(
 	ctx context.Context,
-	p readingProofreadJob,
+	p proofreadRecognitionJob,
 	at int,
-	res *ProofreadReadingResult,
+	res *ProofreadRecognitionResult,
 ) error {
 	end := min(at+u.batch(), len(p.pages))
 	name, err := u.Queue.Leave(ctx, p.pages[at:end])
@@ -413,7 +413,7 @@ func (u ProofreadReading) submitBatch(
 }
 
 // dropCorrections drops the corrections of pages no count claims. A line is
-// numbered by where its run stands in the reading, so the pages beyond the
+// numbered by where its run stands in the recognition, so the pages beyond the
 // count are the lines from the first of them onwards.
 func dropCorrections(
 	ctx context.Context,
@@ -459,9 +459,9 @@ func opening(pages []proofread.Batch, done int) (int, bool) {
 	return 0, false
 }
 
-// writeCheckpoint writes down who put this reading right and how far they got.
+// writeCheckpoint writes down who put this recognition right and how far they got.
 // It stands last and is what makes the batch before it count.
-func (u ProofreadReading) writeCheckpoint(ctx context.Context, store port.DerivedStore, progressPath string, stood checkpoint) error {
+func (u ProofreadRecognition) writeCheckpoint(ctx context.Context, store port.DerivedStore, progressPath string, stood checkpoint) error {
 	stood.By = u.by.GetName()
 	raw, err := json.MarshalIndent(stood, "", "  ")
 	if err != nil {
@@ -470,36 +470,36 @@ func (u ProofreadReading) writeCheckpoint(ctx context.Context, store port.Derive
 	return store.Write(ctx, progressPath, append(raw, '\n'))
 }
 
-// cut makes this source's chunks from the reading as it now stands.
-func (u ProofreadReading) cut(ctx context.Context, v domain.Vault, path string) error {
+// cut makes this source's chunks from the recognition as it now stands.
+func (u ProofreadRecognition) cut(ctx context.Context, v domain.Vault, path string) error {
 	if u.Cut == nil {
 		return nil
 	}
 	return u.Cut(ctx, v, path)
 }
 
-func (u ProofreadReading) area() string {
+func (u ProofreadRecognition) area() string {
 	if u.Area == "" {
 		return "ocr"
 	}
 	return u.Area
 }
 
-func (u ProofreadReading) batch() int {
+func (u ProofreadRecognition) batch() int {
 	if u.Pages <= 0 {
 		return DefaultPages
 	}
 	return u.Pages
 }
 
-func (u ProofreadReading) distance() float64 {
+func (u ProofreadRecognition) distance() float64 {
 	if u.MaxEditDistance <= 0 {
 		return proofread.MaxEditDistance
 	}
 	return u.MaxEditDistance
 }
 
-func (u ProofreadReading) progress(res ProofreadReadingResult) {
+func (u ProofreadRecognition) progress(res ProofreadRecognitionResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

@@ -25,12 +25,12 @@ type vaultSession struct {
 	transcriptionWorker *source.TranscriptionWorker
 
 	// recognitionRunner reads a scanned document, transcriptionRunner hears a recording,
-	// proofreads puts a transcript right, and proofreadsReading puts a reading
+	// proofreads puts a transcript right, and proofreadsRecognition puts a recognition
 	// right, each for whoever asks.
 	recognitionRunner     Runner
 	transcriptionRunner   Runner
 	transcriptProofreader Proofreader
-	proofreadsReading     ReadingProofreader
+	proofreadsRecognition RecognitionProofreader
 	// rechunk asks for a source to be cut again from what its text now says, and
 	// forgets takes a recording out of what the queue has had an answer about.
 	rechunk         func(context.Context, domain.Vault, string) error
@@ -192,7 +192,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		// own, so a person asking for one is shown the run everything else is
 		// shown in.
 		transcriptProofreader: transcribing,
-		proofreadsReading:     recognising,
+		proofreadsRecognition: recognising,
 		// A transcript the window put right is cut where every other cut
 		// happens.
 		rechunk: recognising.Cut,

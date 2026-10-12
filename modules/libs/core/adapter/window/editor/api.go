@@ -313,10 +313,10 @@ func (a *API) getProofreader() Proofreader {
 	return nil
 }
 
-// getReadingProofreader puts a document's reading right, for whoever asks.
-func (a *API) getReadingProofreader() ReadingProofreader {
+// getRecognitionProofreader puts a document's recognition right, for whoever asks.
+func (a *API) getRecognitionProofreader() RecognitionProofreader {
 	if on := a.session.Load(); on != nil {
-		return on.proofreadsReading
+		return on.proofreadsRecognition
 	}
 	return nil
 }
