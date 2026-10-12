@@ -38,6 +38,7 @@ func foldASCII(name string) (folded string, ok bool) {
 	hasUpper := false
 	for i := 0; i < len(name); i++ {
 		c := name[i]
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the mutated bound differs only for the byte 0x80, which the general fold leaves as it is, so both paths return the same name"
 		if c >= utf8.RuneSelf {
 			return "", false
 		}
