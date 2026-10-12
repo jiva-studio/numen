@@ -181,6 +181,18 @@ describe('what a goal comes to in words', () => {
     const said = getGoalWords(settings({ goal: 'date', byDate: '2026-09-30' }), '2026-09-12')
     expect(said).toMatch(/^18 days to /)
   })
+
+  it('says no day while the goal names none', () => {
+    expect(getGoalWords(settings({ goal: 'date', byDate: '' }), '2026-09-12')).toBe('by no day')
+  })
+
+  it('says only the day once it is today or has passed', () => {
+    const said = (byDate: string) =>
+      getGoalWords(settings({ goal: 'date', byDate }), '2026-09-12')
+    expect(said('2026-09-12')).toMatch(/^by \S/)
+    expect(said('2026-09-10')).toMatch(/^by \S/)
+    expect(said('2026-09-13')).toMatch(/^1 day to /)
+  })
 })
 
 // A budget the goal does not name stands as the person left it and binds
