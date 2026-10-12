@@ -29,10 +29,10 @@ func TestAWindowKeepsTheListOfWorkItWasBuiltOver(t *testing.T) {
 	}
 }
 
-// refusingStores is a shelf that cannot be opened.
-type refusingStores struct{}
+// unopenableStores is a shelf that cannot be opened.
+type unopenableStores struct{}
 
-func (refusingStores) Open(domain.Vault) (port.DerivedStore, error) {
+func (unopenableStores) Open(domain.Vault) (port.DerivedStore, error) {
 	return nil, errors.New("the shelf is not there")
 }
 
@@ -40,7 +40,7 @@ func (refusingStores) Open(domain.Vault) (port.DerivedStore, error) {
 func TestASessionWhoseRunCannotBeOpenedIsAnInternalFailure(t *testing.T) {
 	isolate(t)
 	api, held := newAPI(t, deck)
-	api.Log = flashcards.Log{Stores: refusingStores{}}
+	api.Log = flashcards.Log{Stores: unopenableStores{}}
 
 	_, err := api.StartSession(t.Context(),
 		connect.NewRequest(&v1.StartSessionRequest{Vault: string(held[0].ID)}))
@@ -56,10 +56,7 @@ func TestAWindowNamingNoClockOpensARun(t *testing.T) {
 	api.Now = nil
 
 	out := startSession(t, api, held[0])
-	now, err := ulid.New(time.Now())
-	if err != nil {
-		t.Fatal(err)
-	}
+	now := ulid.New(time.Now())
 	name := strings.TrimPrefix(out.GetRun(), flashcards.Area+"/")
 	if len(name) < 5 || name[:5] != now[:5] {
 		t.Errorf("the run %q was not opened at this machine's time", out.GetRun())
