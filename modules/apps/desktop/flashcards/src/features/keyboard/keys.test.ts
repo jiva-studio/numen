@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getPickerKeyIntent, getSessionKeyIntent, shouldConsumeKey, letterOf } from './keys'
+import { getPickerKeyIntent, getSessionKeyIntent, shouldConsumeKey, getLetter } from './keys'
 
 /** One keystroke, as the window meets it. */
 const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
@@ -105,7 +105,9 @@ describe('the keys a session is done with', () => {
     expect(getSessionKeyIntent(createPress('Escape'), { isShown: true, isAsking: true })).toEqual({
       does: 'shut',
     })
-    expect(getSessionKeyIntent(createPress('Escape'), { isShown: true, isReading: true })).toEqual({
+    expect(
+      getSessionKeyIntent(createPress('Escape'), { isShown: true, isNotesOpen: true }),
+    ).toEqual({
       does: 'shut',
     })
     expect(getSessionKeyIntent(createPress('Escape'), { isShown: true, isAsking: false })).toEqual({
@@ -116,12 +118,15 @@ describe('the keys a session is done with', () => {
   // The reading is read down, and space is the key the hand is already on. The
   // answer is still shown by the control standing under both panes.
   it('scrolls the reading with the space bar instead of turning the card', () => {
-    expect(getSessionKeyIntent(createPress(' '), { isShown: false, isReading: true })).toEqual({
+    expect(getSessionKeyIntent(createPress(' '), { isShown: false, isNotesOpen: true })).toEqual({
       does: 'scroll',
       back: false,
     })
     expect(
-      getSessionKeyIntent(createPress(' ', { shiftKey: true }), { isShown: true, isReading: true }),
+      getSessionKeyIntent(createPress(' ', { shiftKey: true }), {
+        isShown: true,
+        isNotesOpen: true,
+      }),
     ).toEqual({
       does: 'scroll',
       back: true,
@@ -174,7 +179,7 @@ describe('the keys a session is done with', () => {
     expect(shouldConsumeKey(getSessionKeyIntent(createPress(' '), { isShown: false }))).toBe(true)
     // The page scrolls itself on space, and the reading is what is scrolled.
     expect(
-      shouldConsumeKey(getSessionKeyIntent(createPress(' '), { isShown: true, isReading: true })),
+      shouldConsumeKey(getSessionKeyIntent(createPress(' '), { isShown: true, isNotesOpen: true })),
     ).toBe(true)
     expect(shouldConsumeKey(getSessionKeyIntent(createPress('3'), { isShown: true }))).toBe(false)
     expect(shouldConsumeKey(null)).toBe(false)
@@ -257,9 +262,9 @@ describe('the keys a deck is chosen with', () => {
   })
 
   it('names each deck by the letter it is picked with', () => {
-    expect(letterOf(0)).toBe('a')
-    expect(letterOf(25)).toBe('z')
+    expect(getLetter(0)).toBe('a')
+    expect(getLetter(25)).toBe('z')
     // Past the alphabet a deck is picked with the hand.
-    expect(letterOf(26)).toBe('')
+    expect(getLetter(26)).toBe('')
   })
 })

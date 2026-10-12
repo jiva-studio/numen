@@ -110,15 +110,15 @@ const nodeInPlex = (window: VueWrapper): string => {
 }
 
 /** How the window is split, as the workspace it draws has it. */
-const layoutOf = (window: VueWrapper): Workspace =>
+const getLayout = (window: VueWrapper): Workspace =>
   window.findComponent(WorkspaceLayout).props('modelValue') as Workspace
 
 /** What each pane holds, by the kind each of its tabs is filed under. */
 const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
-  getPanes(layoutOf(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
+  getPanes(getLayout(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
 
 /** What each tab of the window is called, in the order the strip has them. */
-const tabsOf = (window: VueWrapper): readonly { id: string; title: string }[] =>
+const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =>
   (window.findComponent(WorkspaceLayout).props('tabs') as readonly {
     id: string
     title: string
@@ -133,7 +133,7 @@ export {
   mountWindowWithPalette,
   editor,
   folders,
-  layoutOf,
+  getLayout,
   listed,
   nameAnswer,
   nodeInPlex,
@@ -144,5 +144,5 @@ export {
   said,
   settle,
   sourceAnswer,
-  tabsOf,
+  getTabs,
 }

@@ -14,7 +14,7 @@ import rowsSource from './preset-settings/PresetSettings.vue?raw'
 import sliderSource from './curve-slider/CurveSlider.vue?raw'
 import tilesSource from './curve-slider/CurveTiles.vue?raw'
 import { NO_BOUNDS, type Field, type PresetTabState, type SettingValue } from '../types'
-import { BOUNDS, mountPresetTab, rows, tabAt } from '../fixtures'
+import { BOUNDS, mountPresetTab, rows, createTab } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('the settings under the control', () => {
@@ -128,7 +128,7 @@ describe('the settings under the control', () => {
   // has said how far a field goes, the field stands at the ends it draws
   // itself with.
   it('leaves a field the application has said nothing about at its own ends', () => {
-    const one = tabAt({}, { learned: 'interval', interval: 21 })
+    const one = createTab({}, { learned: 'interval', interval: 21 })
     const state: PresetTabState = { ...one.state, bounds: shallowRef(NO_BOUNDS) }
     const tab = mount(PresetTab, { props: { state } })
     const field = tab.get('[data-preset-row="interval"]').get<HTMLInputElement>('input')
@@ -141,7 +141,7 @@ describe('the settings under the control', () => {
 // which is what a fixed permission bit or a restored folder wants.
 describe('what the tab says went wrong', () => {
   const mountWithError = (words: string) => {
-    const one = tabAt()
+    const one = createTab()
     const state: PresetTabState = { ...one.state, errorMessage: ref(words) }
     return { tab: mount(PresetTab, { props: { state } }), done: one.done }
   }
@@ -171,7 +171,7 @@ describe('what the tab says went wrong', () => {
 // the file again.
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {
-    const one = tabAt()
+    const one = createTab()
     const state: PresetTabState = { ...one.state, hasExternalChange: ref(true) }
     const tab = mount(PresetTab, { props: { state } })
     const said = tab.get('[role="status"].preset__answering')
@@ -193,7 +193,7 @@ describe('a file that changed under the tab', () => {
 describe('the load of the week', () => {
   /** A tab whose row of days is watched for what it puts into the settings. */
   const mountWithLoad = (load: Record<string, number>) => {
-    const one = tabAt({}, { load })
+    const one = createTab({}, { load })
     const put: [Field, SettingValue][] = []
     const state: PresetTabState = {
       ...one.state,
@@ -261,7 +261,7 @@ describe('the load of the week', () => {
 
 describe('the line the tab is read against', () => {
   /** What one selector declares, as the file it is written in writes it. */
-  const styleOf = (sheet: string, selector: string): string => {
+  const getStyle = (sheet: string, selector: string): string => {
     const opens = sheet.indexOf(`\n${selector} {`)
     expect(opens, `no rule for ${selector}`).toBeGreaterThan(-1)
     return sheet.slice(opens, sheet.indexOf('}', opens))
@@ -291,13 +291,13 @@ describe('the line the tab is read against', () => {
 
   it('puts the edge of every box on the edge of the column', () => {
     for (const [sheet, selector] of BOXED) {
-      expect(getSpacing(styleOf(sheet, selector), APART), selector).toStrictEqual([])
+      expect(getSpacing(getStyle(sheet, selector), APART), selector).toStrictEqual([])
     }
   })
 
   it('puts the text of every block that draws no box on that same edge', () => {
     for (const [sheet, selector] of BARE) {
-      expect(getSpacing(styleOf(sheet, selector), [...APART, ...AIR]), selector).toStrictEqual([])
+      expect(getSpacing(getStyle(sheet, selector), [...APART, ...AIR]), selector).toStrictEqual([])
     }
   })
 })
@@ -336,7 +336,7 @@ describe('the row a chance of recall is typed into', () => {
 describe('the rules under the learned row', () => {
   it('marks the rule in force and returns the focus to the line that asked', async () => {
     // Attached to the page, because taking the focus back is what is measured.
-    const one = tabAt({}, { learned: 'interval' })
+    const one = createTab({}, { learned: 'interval' })
     const tab = mount(PresetTab, { props: { state: one.state }, attachTo: document.body })
     const line = tab.get('[data-preset="choice"]')
     await line.trigger('click')

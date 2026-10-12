@@ -8,7 +8,7 @@ import type { Position, RowMarker } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 
 import { iconFor } from '@/shared/icons'
-import { iconOfEntry } from '../lib/icons'
+import { getEntryIcon } from '../lib/icons'
 import type { DropPosition, FilesTabState } from '../types'
 import { getRows } from '../lib/rows'
 import { getDroppedUrl, hasUrl } from '../lib/drag'
@@ -117,8 +117,8 @@ function onDismissMenu() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function entryIcon(id: string, open: boolean): LucideIcon {
-  return iconOfEntry(props.state.list.getEntryAt(id), open)
+function getRowIcon(id: string, open: boolean): LucideIcon {
+  return getEntryIcon(props.state.list.getEntryAt(id), open)
 }
 </script>
 
@@ -149,7 +149,7 @@ function entryIcon(id: string, open: boolean): LucideIcon {
       @menu="onOpenMenu"
     >
       <template #icon="{ id, open }">
-        <component :is="entryIcon(id, open)" class="files__icon" aria-hidden="true" />
+        <component :is="getRowIcon(id, open)" class="files__icon" aria-hidden="true" />
       </template>
 
       <template #silence>{{ words.empty }}</template>

@@ -103,21 +103,21 @@ type Chunk struct {
 	Small    []Chunk
 }
 
-// Slice is the chunk's own text.
-func (c Chunk) Slice(text string) string { return text[c.Start : c.Start+c.Length] }
+// GetText returns the chunk's own text from the text it was cut from.
+func (c Chunk) GetText(text string) string { return text[c.Start : c.Start+c.Length] }
 
-// middle is the byte the chunk is centred on, and is what decides which large
+// getMiddle returns the byte the chunk is centred on, and is what decides which large
 // chunk a small one belongs to.
-func (c Chunk) middle() int { return c.Start + c.Length/2 }
+func (c Chunk) getMiddle() int { return c.Start + c.Length/2 }
 
 // Cut returns the large chunks of the text, each carrying the small chunks
 // inside it.
 func Cut(text string, parts []domain.PartStart, sizes Sizes, reads Legibility) []Chunk {
 	s, l := sizes.Resolve(), reads.resolve()
-	divisions := divisionsOf(text, parts)
+	divisions := divideText(text, parts)
 
 	if s.Large == Whole {
-		return whole(text, divisions, s, l)
+		return createWholeTextChunks(text, divisions, s, l)
 	}
 	var out []Chunk
 	for _, d := range divisions {
@@ -132,10 +132,10 @@ type division struct {
 	location string
 }
 
-// divisionsOf divides the text at the parts it names. The parts are copied
+// divideText divides the text at the parts it names. The parts are copied
 // before they are ordered, so that Cut leaves its arguments as it found them.
 // Where two parts share an offset, the last of them names the text after it.
-func divisionsOf(text string, parts []domain.PartStart) []division {
+func divideText(text string, parts []domain.PartStart) []division {
 	named := make([]domain.PartStart, 0, len(parts))
 	for _, p := range parts {
 		if p.Offset >= 0 && p.Offset < len(text) {
@@ -158,30 +158,30 @@ func divisionsOf(text string, parts []domain.PartStart) []division {
 // splitDivision tiles one division twice and puts each small chunk under the large
 // one its middle falls in.
 func splitDivision(text string, d division, s Sizes, l Legibility) []Chunk {
-	words := wordsIn(text, d.from, d.to)
+	words := findWords(text, d.from, d.to)
 	if len(words) == 0 {
 		return nil
 	}
 	var large []Chunk
 	for _, at := range getOverlappingRanges(len(words), s.Large, s.LargeOverlap) {
 		c := getRangeChunk(words, at, d.location)
-		if !isLegible(c.Slice(text), l) {
+		if !isLegible(c.GetText(text), l) {
 			continue
 		}
 		large = append(large, c)
 	}
-	return enclose(large, smallChunks(text, words, d.location, s, l))
+	return enclose(large, createSmallChunks(text, words, d.location, s, l))
 }
 
-// whole makes the text itself the large chunk and cuts the small chunks on the
+// createWholeTextChunks makes the text itself the large chunk and cuts the small chunks on the
 // structure inside it.
-func whole(text string, divisions []division, s Sizes, l Legibility) []Chunk {
-	words := wordsIn(text, 0, len(text))
+func createWholeTextChunks(text string, divisions []division, s Sizes, l Legibility) []Chunk {
+	words := findWords(text, 0, len(text))
 	if len(words) == 0 {
 		return nil
 	}
 	large := getRangeChunk(words, [2]int{0, len(words)}, "")
-	if !isLegible(large.Slice(text), l) {
+	if !isLegible(large.GetText(text), l) {
 		return nil
 	}
 	var small []Chunk
@@ -195,21 +195,21 @@ func whole(text string, divisions []division, s Sizes, l Legibility) []Chunk {
 			end++
 		}
 		if start < end {
-			small = append(small, smallChunks(text, words[start:end], d.location, s, l)...)
+			small = append(small, createSmallChunks(text, words[start:end], d.location, s, l)...)
 		}
 	}
 	return enclose([]Chunk{large}, small)
 }
 
-// smallChunks tiles the words of one division into the chunks that carry a
+// createSmallChunks tiles the words of one division into the chunks that carry a
 // vector. A chunk over the character limit is cut further at a word, and one
 // that is still over it after that is a single word and is dropped.
-func smallChunks(text string, words []word, location string, s Sizes, l Legibility) []Chunk {
+func createSmallChunks(text string, words []word, location string, s Sizes, l Legibility) []Chunk {
 	var out []Chunk
 	for _, at := range getOverlappingRanges(len(words), s.Small, s.SmallOverlap) {
 		for _, piece := range splitAtLimit(text, words, at, s.Limit) {
 			c := getRangeChunk(words, piece, location)
-			body := c.Slice(text)
+			body := c.GetText(text)
 			if utf8.RuneCountInString(body) > s.Limit || !isLegible(body, l) {
 				continue
 			}
@@ -231,17 +231,17 @@ func smallChunks(text string, words []word, location string, s Sizes, l Legibili
 func enclose(large, small []Chunk) []Chunk {
 	at := 0
 	for _, c := range small {
-		for at < len(large) && large[at].Start+large[at].Length <= c.middle() {
+		for at < len(large) && large[at].Start+large[at].Length <= c.getMiddle() {
 			at++
 		}
 		if at == len(large) {
 			break
 		}
-		if large[at].Start > c.middle() {
+		if large[at].Start > c.getMiddle() {
 			continue
 		}
 		under := at
-		for i := at; i < len(large) && large[i].Start <= c.middle(); i++ {
+		for i := at; i < len(large) && large[i].Start <= c.getMiddle(); i++ {
 			if large[i].Start <= c.Start && c.Start+c.Length <= large[i].Start+large[i].Length {
 				under = i
 				break
@@ -255,8 +255,8 @@ func enclose(large, small []Chunk) []Chunk {
 // A word is the byte extent of one run of characters that is not space.
 type word struct{ start, end int }
 
-// wordsIn finds the words of text[from:to].
-func wordsIn(text string, from, to int) []word {
+// findWords finds the words of text[from:to].
+func findWords(text string, from, to int) []word {
 	var words []word
 	start := -1
 	for i, r := range text[from:to] {
@@ -340,8 +340,8 @@ func (s Sizes) Resolve() Sizes {
 	if s.Large < 0 {
 		s.Large = Whole
 	}
-	s.LargeOverlap = bound(s.LargeOverlap, s.Large)
-	s.SmallOverlap = bound(s.SmallOverlap, s.Small)
+	s.LargeOverlap = clampOverlap(s.LargeOverlap, s.Large)
+	s.SmallOverlap = clampOverlap(s.SmallOverlap, s.Small)
 	return s
 }
 
@@ -356,9 +356,9 @@ func (l Legibility) resolve() Legibility {
 	return l
 }
 
-// bound keeps an overlap between none and one word short of the size it belongs
+// clampOverlap keeps an overlap between none and one word short of the size it belongs
 // to, so that tiling advances by at least one word.
-func bound(overlap, size int) int {
+func clampOverlap(overlap, size int) int {
 	if overlap < 0 {
 		return 0
 	}

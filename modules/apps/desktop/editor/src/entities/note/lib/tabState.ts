@@ -20,7 +20,7 @@ export type NoteErrorCode =
 /**
  * The errors a keystroke is worth trying again after.
  */
-export const MENDABLE_ERRORS: readonly NoteErrorCode[] = [
+export const RETRYABLE_ERRORS: readonly NoteErrorCode[] = [
   'tooLarge',
   'bodyUnwritable',
   'unreachable',
@@ -72,7 +72,7 @@ export const isDirty = (tab: Tab): boolean => tab.shown !== tab.written
 /**
  * The predicates are read in order, so a tab is in exactly one state.
  */
-export const stateOf = (tab: Tab): State => {
+export const getState = (tab: Tab): State => {
   if (tab.error) return 'stuck'
   if (tab.written === null) return 'loading'
   if (tab.isDeleted) return 'gone'

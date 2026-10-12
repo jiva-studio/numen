@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 import {
   AXIS_LABEL_HEIGHT,
   AXIS_LABEL_WIDTH,
-  calloutOf,
+  createCallout,
   CALLOUT_GAP,
   CALLOUT_HEIGHT,
   CALLOUT_WIDTH,
@@ -19,11 +19,11 @@ import {
   isAxisLabelClear,
   getNameBox,
   areBoxesSeparate,
-  heightsOf,
+  createAxisLabels,
   LABEL,
-  labelsOf,
+  createLabels,
   AXIS_LABEL_LIFT,
-  positionLabel,
+  getMarkNameStyle,
   getKnobValueStyle,
   type Box,
   type Mark,
@@ -54,7 +54,7 @@ const isInside = (one: Box): boolean =>
 
 describe('where a name over a mark is set', () => {
   it('stands over the mark, and above it by the lift', () => {
-    const at = positionLabel({ x: PLOT_WIDTH / 2, y: 100 })
+    const at = getMarkNameStyle({ x: PLOT_WIDTH / 2, y: 100 })
 
     expect(at.insetInlineStart).toBe('50%')
     expect(at.insetBlockStart).toBe(`${((100 - AXIS_LABEL_LIFT) / PLOT_HEIGHT) * 100}%`)
@@ -62,12 +62,12 @@ describe('where a name over a mark is set', () => {
   })
 
   it('is pulled back inside the picture at either end', () => {
-    expect(positionLabel({ x: PLOT_LEFT, y: 100 }).translate).toBe('0 -100%')
-    expect(positionLabel({ x: PLOT_RIGHT, y: 100 }).translate).toBe('-100% -100%')
+    expect(getMarkNameStyle({ x: PLOT_LEFT, y: 100 }).translate).toBe('0 -100%')
+    expect(getMarkNameStyle({ x: PLOT_RIGHT, y: 100 }).translate).toBe('-100% -100%')
   })
 
   it('is held inside the top of the picture, so no word is set over the edge', () => {
-    expect(positionLabel({ x: PLOT_WIDTH / 2, y: PLOT_TOP }).insetBlockStart).toBe(
+    expect(getMarkNameStyle({ x: PLOT_WIDTH / 2, y: PLOT_TOP }).insetBlockStart).toBe(
       `${(PLOT_TOP / PLOT_HEIGHT) * 100}%`,
     )
   })
@@ -124,7 +124,7 @@ describe('the room a number against a line takes', () => {
 
 describe('the bubble over the knob', () => {
   it('hangs above the knob, clear of it by the gap', () => {
-    const callout = calloutOf({ x: PLOT_WIDTH / 2, y: 120 })
+    const callout = createCallout({ x: PLOT_WIDTH / 2, y: 120 })
 
     expect(callout.isUnder).toBe(false)
     expect(callout.box).toStrictEqual(
@@ -139,7 +139,7 @@ describe('the bubble over the knob', () => {
 
   // Above would take it off the top, so it turns over and hangs under instead.
   it('turns under the knob where above would take it off the top', () => {
-    const callout = calloutOf({ x: PLOT_WIDTH / 2, y: PLOT_TOP })
+    const callout = createCallout({ x: PLOT_WIDTH / 2, y: PLOT_TOP })
 
     expect(callout.isUnder).toBe(true)
     expect(callout.box.y).toBe(PLOT_TOP + CALLOUT_GAP)
@@ -148,10 +148,10 @@ describe('the bubble over the knob', () => {
 
   it('turns over at the exact height it no longer fits above', () => {
     expect(
-      calloutOf({ x: PLOT_WIDTH / 2, y: PLOT_TOP + CALLOUT_GAP + CALLOUT_HEIGHT }).isUnder,
+      createCallout({ x: PLOT_WIDTH / 2, y: PLOT_TOP + CALLOUT_GAP + CALLOUT_HEIGHT }).isUnder,
     ).toBe(false)
     expect(
-      calloutOf({ x: PLOT_WIDTH / 2, y: PLOT_TOP + CALLOUT_GAP + CALLOUT_HEIGHT - 1 }).isUnder,
+      createCallout({ x: PLOT_WIDTH / 2, y: PLOT_TOP + CALLOUT_GAP + CALLOUT_HEIGHT - 1 }).isUnder,
     ).toBe(true)
   })
 
@@ -160,14 +160,14 @@ describe('the bubble over the knob', () => {
     { where: 'the middle', knob: { x: PLOT_WIDTH / 2, y: 120 }, back: '-50%' },
     { where: 'the right edge', knob: { x: PLOT_RIGHT, y: 120 }, back: '-100%' },
   ])('is pulled back inside the picture at $where', ({ knob, back }) => {
-    const callout = calloutOf(knob)
+    const callout = createCallout(knob)
 
     expect(callout.at.translate).toBe(`${back} -100%`)
     expect(isInside(callout.box)).toBe(true)
   })
 
   it('anchors its tail on the knob, wherever the bubble was pulled to', () => {
-    const callout = calloutOf({ x: PLOT_LEFT, y: 120 })
+    const callout = createCallout({ x: PLOT_LEFT, y: 120 })
 
     expect(callout.tail.insetInlineStart).toBe(callout.at.insetInlineStart)
     expect(callout.tail.insetBlockStart).toBe(callout.at.insetBlockStart)
@@ -176,22 +176,22 @@ describe('the bubble over the knob', () => {
 
 describe('the names of the marks that fit', () => {
   it('says nothing where there are no marks', () => {
-    expect(labelsOf([], null)).toStrictEqual([])
+    expect(createLabels([], null)).toStrictEqual([])
   })
 
   it('sets the one name a single mark carries', () => {
-    expect(labelsOf([mark('suggested', PLOT_WIDTH / 2, 100)], null)).toStrictEqual([
+    expect(createLabels([mark('suggested', PLOT_WIDTH / 2, 100)], null)).toStrictEqual([
       {
         key: 'suggested',
         text: 'suggested',
-        at: positionLabel({ x: PLOT_WIDTH / 2, y: 100 }),
+        at: getMarkNameStyle({ x: PLOT_WIDTH / 2, y: 100 }),
         box: getNameBox({ x: PLOT_WIDTH / 2, y: 100 }),
       },
     ])
   })
 
   it('leaves off a mark carrying no name at all', () => {
-    expect(labelsOf([mark('knob', PLOT_WIDTH / 2, 100, '')], null)).toStrictEqual([])
+    expect(createLabels([mark('knob', PLOT_WIDTH / 2, 100, '')], null)).toStrictEqual([])
   })
 
   // A name that will not fit is dropped, not moved: nothing here pushes two
@@ -201,13 +201,13 @@ describe('the names of the marks that fit', () => {
     { gap: LABEL * 2, kept: ['first', 'second'] },
     { gap: LABEL * 2 + 1, kept: ['first', 'second'] },
   ])('keeps $kept.length of two names $gap apart at the same height', ({ gap, kept }) => {
-    const names = labelsOf([mark('first', 200, 100), mark('second', 200 + gap, 100)], null)
+    const names = createLabels([mark('first', 200, 100), mark('second', 200 + gap, 100)], null)
 
     expect(names.map((one) => one.key)).toStrictEqual(kept)
   })
 
   it('keeps two names at the same place where their heights stand clear', () => {
-    const names = labelsOf(
+    const names = createLabels(
       [mark('first', 200, 60), mark('second', 200, 60 + AXIS_LABEL_LIFT + AXIS_LABEL_HEIGHT)],
       null,
     )
@@ -216,10 +216,10 @@ describe('the names of the marks that fit', () => {
   })
 
   it('leaves off a name the bubble over the knob stands on', () => {
-    const over = calloutOf({ x: 280, y: PLOT_TOP }).box
+    const over = createCallout({ x: 280, y: PLOT_TOP }).box
 
-    expect(labelsOf([mark('suggested', 280, 100)], over)).toStrictEqual([])
-    expect(labelsOf([mark('suggested', 280, 100)], null)).toHaveLength(1)
+    expect(createLabels([mark('suggested', 280, 100)], over)).toStrictEqual([])
+    expect(createLabels([mark('suggested', 280, 100)], null)).toHaveLength(1)
   })
 
   it.each([
@@ -228,7 +228,7 @@ describe('the names of the marks that fit', () => {
     { where: 'the top', at: { x: PLOT_WIDTH / 2, y: PLOT_TOP } },
     { where: 'the foot', at: { x: PLOT_WIDTH / 2, y: PLOT_BOTTOM } },
   ])('keeps the room a name takes at $where inside the picture', ({ at }) => {
-    const names = labelsOf([mark('suggested', at.x, at.y)], null)
+    const names = createLabels([mark('suggested', at.x, at.y)], null)
 
     expect(names).toHaveLength(1)
     expect(isInside(names[0]!.box)).toBe(true)
@@ -246,7 +246,7 @@ const clear: readonly Position[] = [
 
 describe('the numbers read off the picture’s edges', () => {
   it('is the most over the top and the least on the foot', () => {
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, formatValue)
+    const numbers = createAxisLabels({ least: 0, most: 10 }, clear, [], null, formatValue)
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['10', '0'])
     expect(numbers.map((one) => one.box)).toStrictEqual([
@@ -257,7 +257,7 @@ describe('the numbers read off the picture’s edges', () => {
 
   // An extent of no width has one number and nothing else to read.
   it('is one number on the foot for an extent of no width', () => {
-    const numbers = heightsOf({ least: 4, most: 4 }, clear, [], null, formatValue)
+    const numbers = createAxisLabels({ least: 4, most: 4 }, clear, [], null, formatValue)
 
     expect(numbers).toStrictEqual([
       { at: getAxisNumber(PLOT_BOTTOM, '0'), box: getAxisNumberBox(PLOT_BOTTOM, '0'), text: '4' },
@@ -265,7 +265,7 @@ describe('the numbers read off the picture’s edges', () => {
   })
 
   it('drops the number the curve itself stands on', () => {
-    const numbers = heightsOf(
+    const numbers = createAxisLabels(
       { least: 0, most: 10 },
       [{ x: PLOT_LEFT, y: PLOT_BOTTOM }],
       [],
@@ -277,7 +277,7 @@ describe('the numbers read off the picture’s edges', () => {
   })
 
   it('drops the number a mark stands on', () => {
-    const numbers = heightsOf(
+    const numbers = createAxisLabels(
       { least: 0, most: 10 },
       clear,
       [{ x: PLOT_LEFT, y: PLOT_TOP }],
@@ -290,13 +290,13 @@ describe('the numbers read off the picture’s edges', () => {
 
   it('drops the number the bubble over the knob stands on', () => {
     const over = box(PLOT_LEFT, 0, CALLOUT_WIDTH, CALLOUT_HEIGHT)
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], over, formatValue)
+    const numbers = createAxisLabels({ least: 0, most: 10 }, clear, [], over, formatValue)
 
     expect(numbers.map((one) => one.text)).toStrictEqual(['0'])
   })
 
   it('keeps every number it draws inside the picture', () => {
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, formatValue)
+    const numbers = createAxisLabels({ least: 0, most: 10 }, clear, [], null, formatValue)
 
     expect(numbers.every((one) => isInside(one.box))).toBe(true)
   })
@@ -371,8 +371,8 @@ describe('a number set against a height', () => {
 
 describe('where a name is pulled back at the ends', () => {
   it('is centred on a mark exactly a label from either end', () => {
-    expect(positionLabel({ x: PLOT_LEFT + LABEL, y: 100 }).translate).toBe('-50% -100%')
-    expect(positionLabel({ x: PLOT_RIGHT - LABEL, y: 100 }).translate).toBe('-50% -100%')
+    expect(getMarkNameStyle({ x: PLOT_LEFT + LABEL, y: 100 }).translate).toBe('-50% -100%')
+    expect(getMarkNameStyle({ x: PLOT_RIGHT - LABEL, y: 100 }).translate).toBe('-50% -100%')
   })
 
   it('takes a centred room for a mark exactly a label from either end', () => {
@@ -383,8 +383,8 @@ describe('where a name is pulled back at the ends', () => {
   it('is centred on the bubble of a knob exactly half a bubble from either end', () => {
     const half = CALLOUT_WIDTH / 2
 
-    expect(calloutOf({ x: PLOT_LEFT + half, y: 120 }).at.translate).toBe('-50% -100%')
-    expect(calloutOf({ x: PLOT_RIGHT - half, y: 120 }).at.translate).toBe('-50% -100%')
+    expect(createCallout({ x: PLOT_LEFT + half, y: 120 }).at.translate).toBe('-50% -100%')
+    expect(createCallout({ x: PLOT_RIGHT - half, y: 120 }).at.translate).toBe('-50% -100%')
   })
 
   it('is centred on the value of a knob exactly a label from either end', () => {
@@ -395,7 +395,7 @@ describe('where a name is pulled back at the ends', () => {
 
 describe('where the number over the top is set', () => {
   it('stands over the top line, lifted clear of it', () => {
-    const numbers = heightsOf({ least: 0, most: 10 }, clear, [], null, formatValue)
+    const numbers = createAxisLabels({ least: 0, most: 10 }, clear, [], null, formatValue)
 
     expect(numbers[0]!.at).toStrictEqual(getAxisNumber(PLOT_TOP, '-100%'))
     expect(numbers[0]!.at.translate).toBe('0 -100%')

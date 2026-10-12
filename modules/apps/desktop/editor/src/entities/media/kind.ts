@@ -18,7 +18,7 @@ import type {
   WindowHandle,
 } from '@/entities/tab/@x/media'
 import { DELETE_TEXT, PROOFREAD, TRANSCRIBE } from './words'
-import { fileOf } from '@/shared/paths'
+import { getFileName } from '@/shared/paths'
 
 /** What a recording tab asks of the window it is drawn in. */
 export interface MediaTabDeps {
@@ -62,7 +62,7 @@ export function useTranscriptTab(read: TranscriptState, deps: MediaTabDeps) {
   const proofreadable = computed(() => settled.value && written.value && canRun(PROOFREAD))
   const deletable = computed(() => settled.value && written.value && canRun(DELETE_TEXT))
 
-  const called = fileOf(read.path)
+  const called = getFileName(read.path)
   const transcribe = () => deps.runCommand(TRANSCRIBE, read.path, called)
   const proofread = () => deps.runCommand(PROOFREAD, read.path, called)
   const deleteTranscript = () => deps.runCommand(DELETE_TEXT, read.path, called)

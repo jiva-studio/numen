@@ -11,7 +11,7 @@ import { computed, ref, useTemplateRef } from 'vue'
 
 import { cards } from '@/shared/clients'
 import { useScreens } from '@/shared/screens'
-import { deckName, useReviewCounter } from '@/entities/vault'
+import { getDeckName, useReviewCounter } from '@/entities/vault'
 import { useReviewDays, useVaultPresets } from '@/pages/decks'
 import { useReviewSession } from '@/pages/session'
 import { useNotices } from './notices'
@@ -90,7 +90,7 @@ export const useWindow = () => {
   const reportSession = (report: Report) => {
     if (report.unwritten.length) {
       showNotice(
-        `Not asked from ${report.unwritten.map(deckName).join(', ')}: the deck could not be written.`,
+        `Not asked from ${report.unwritten.map(getDeckName).join(', ')}: the deck could not be written.`,
         'caution',
       )
     }

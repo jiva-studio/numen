@@ -174,7 +174,7 @@ const mountDeck = async (
 }
 
 /** The tile one card is drawn as, by the identity the window gave that card. */
-const tileOf = (window: Awaited<ReturnType<typeof mountDeck>>['window'], card: string) =>
+const getTile = (window: Awaited<ReturnType<typeof mountDeck>>['window'], card: string) =>
   window.find(`[data-card="${card}"]`)
 
 const stencilless: DeckProblem = {
@@ -238,14 +238,14 @@ describe('a mark on a tile', () => {
     const { window, tab } = await mountDeck([stencilless])
     const second = tab.deck.value.cards[1]?.id ?? ''
 
-    expect(tileOf(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
+    expect(getTile(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
   })
 
   it('is drawn on no other tile', async () => {
     const { window, tab } = await mountDeck([stencilless])
     const first = tab.deck.value.cards[0]?.id ?? ''
 
-    expect(tileOf(window, first).find('[data-wrong]').exists()).toBe(false)
+    expect(getTile(window, first).find('[data-wrong]').exists()).toBe(false)
   })
 
   it('is nowhere at all where the vault reported nothing wrong', async () => {
@@ -272,7 +272,7 @@ describe('a mark on a tile', () => {
     tab.removeCard(first)
     await settle()
 
-    expect(tileOf(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
+    expect(getTile(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
   })
 })
 
@@ -297,7 +297,7 @@ describe('a gesture in the grid', () => {
   it('writes into the card the box belongs to', async () => {
     const { window, tab } = await mountDeck()
     const first = tab.deck.value.cards[0]?.id ?? ''
-    const box = tileOf(window, first).find('[data-value="Name"]')
+    const box = getTile(window, first).find('[data-value="Name"]')
 
     await box.setValue('Vicuña')
 
@@ -307,7 +307,7 @@ describe('a gesture in the grid', () => {
   it('leaves every other card as it was', async () => {
     const { window, tab } = await mountDeck()
     const first = tab.deck.value.cards[0]?.id ?? ''
-    const box = tileOf(window, first).find('[data-value="Name"]')
+    const box = getTile(window, first).find('[data-value="Name"]')
 
     await box.setValue('Vicuña')
 

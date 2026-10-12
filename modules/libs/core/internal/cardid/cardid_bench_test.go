@@ -17,7 +17,7 @@ func BenchmarkValid(b *testing.B) {
 	id := cardid.New()
 	b.ReportAllocs()
 	for b.Loop() {
-		if !cardid.Valid(id) {
+		if !cardid.IsValid(id) {
 			b.Fatal("invalid")
 		}
 	}

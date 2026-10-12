@@ -67,17 +67,17 @@ describe('the name of a document of the spine', () => {
     pageBytes: 10,
     fingerprint: 'f',
   })
-  const titleOf = (path: string) => getContents(book(path), { page: 'Page' })[0]?.title
+  const getTitle = (path: string) => getContents(book(path), { page: 'Page' })[0]?.title
 
   it('is the file name without its extension', () => {
-    expect(titleOf('text/part0001.xhtml')).toBe('part0001')
+    expect(getTitle('text/part0001.xhtml')).toBe('part0001')
   })
 
   it('is the whole file name where there is no extension', () => {
-    expect(titleOf('text/README')).toBe('README')
+    expect(getTitle('text/README')).toBe('README')
   })
 
   it('is the whole file name where the only dot begins it', () => {
-    expect(titleOf('text/.hidden')).toBe('.hidden')
+    expect(getTitle('text/.hidden')).toBe('.hidden')
   })
 })

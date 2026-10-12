@@ -66,8 +66,8 @@ describe('a document opened', () => {
     const read = useDocumentReader(documents, 'Book.pdf')
 
     read.widen(800)
-    await read.nextPage()
-    await read.prevPage()
+    await read.goToNextPage()
+    await read.goToPreviousPage()
 
     expect(asked).toStrictEqual(['Book.pdf'])
   })
@@ -99,7 +99,7 @@ describe('a page turned', () => {
     read.widen(800)
     await read.goToPage(0)
 
-    await read.nextPage()
+    await read.goToNextPage()
 
     expect(read.pageNumber.value).toBe(1)
     expect(read.picture.value).toBe('Book.pdf 1 800')
@@ -280,7 +280,7 @@ describe('a page turned back', () => {
     const read = useDocumentReader(documents, 'Book.pdf')
     await read.goToPage(2)
 
-    await read.prevPage()
+    await read.goToPreviousPage()
 
     expect(read.pageNumber.value).toBe(1)
   })

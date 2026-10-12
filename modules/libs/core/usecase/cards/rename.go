@@ -141,7 +141,7 @@ func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
 	if u.maxDecks <= 0 || u.maxDecks == UnboundedDecks {
 		return nil
 	}
-	held, err := u.decks(ctx, v)
+	held, err := u.getDeckPaths(ctx, v)
 	if err != nil {
 		return err
 	}
@@ -173,12 +173,12 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 	}
 
 	var out RenameResult
-	out.Stencil, err = u.stencil(ctx, reader, writer, in)
+	out.Stencil, err = u.writeStencilField(ctx, reader, writer, in)
 	if err != nil {
 		return RenameResult{}, err
 	}
 
-	paths, err := u.decks(ctx, v)
+	paths, err := u.getDeckPaths(ctx, v)
 	if err != nil {
 		return out, err
 	}
@@ -208,8 +208,8 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 	return out, nil
 }
 
-// stencil writes the new name where the stencil declares the field.
-func (u RenameField) stencil(
+// writeStencilField writes the new name where the stencil declares the field.
+func (u RenameField) writeStencilField(
 	ctx context.Context, reader port.VaultReader, writer port.VaultWriter, in Rename,
 ) (domain.Fingerprint, error) {
 	against := in.Fingerprint
@@ -245,12 +245,12 @@ func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 	return err
 }
 
-// decks is every deck the vault holds, by path. The index answers which notes
+// getDeckPaths returns every deck the vault holds, by path. The index answers which notes
 // those are, in one question and without a file being opened.
 //
 // This runs under the vault's write lock, so a question per note in the vault
 // is every other write in the application waiting behind it.
-func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error) {
+func (u RenameField) getDeckPaths(ctx context.Context, v domain.Vault) ([]string, error) {
 	return u.notes.GetPathsOfType(ctx, v.ID, domain.TypeDeck)
 }
 
@@ -304,7 +304,7 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 	if cards == 0 {
 		return 0, nil
 	}
-	by, _, err := d.read.stencils(ctx, d.vault, at)
+	by, _, err := d.read.readStencils(ctx, d.vault, at)
 	if err != nil {
 		return 0, err
 	}

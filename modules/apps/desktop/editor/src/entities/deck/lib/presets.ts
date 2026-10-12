@@ -54,7 +54,7 @@ export const WHOLE_LOAD = 100
 /** The shares of a day's load a day may be put at, in the order they are offered. */
 export const LOADS: readonly number[] = [0, 10, 25, 50, 75, 90, WHOLE_LOAD]
 
-export const loadOn = (load: Load, day: string): number => load[day] ?? WHOLE_LOAD
+export const getLoadOn = (load: Load, day: string): number => load[day] ?? WHOLE_LOAD
 
 /**
  * The load with one day put at a share.

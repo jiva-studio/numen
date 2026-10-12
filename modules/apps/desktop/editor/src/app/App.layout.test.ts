@@ -17,13 +17,13 @@ import { getPanes } from '@numen/ui'
 import {
   requests,
   cards,
-  layoutOf,
+  getLayout,
   listed,
   mountWindow,
   paneKinds,
   said,
   settle,
-  tabsOf,
+  getTabs,
 } from '@/testing/window'
 
 describe('the window as it opens', () => {
@@ -31,7 +31,7 @@ describe('the window as it opens', () => {
     const window = await mountWindow()
 
     expect(paneKinds(window)).toStrictEqual([['plex'], ['agent', 'files']])
-    expect(getPanes(layoutOf(window).root)[1]?.active).toMatch(/^agent:/)
+    expect(getPanes(getLayout(window).root)[1]?.active).toMatch(/^agent:/)
     expect(window.findComponent(PlexTab).exists()).toBe(true)
     expect(window.findComponent(AgentTab).exists()).toBe(true)
     expect(window.findComponent(FilesTab).exists()).toBe(true)
@@ -39,9 +39,9 @@ describe('the window as it opens', () => {
 
   it('leaves the person in the plex, which holds the greater share', async () => {
     const window = await mountWindow()
-    const root = layoutOf(window).root
+    const root = getLayout(window).root
 
-    expect(layoutOf(window).focus).toBe('main')
+    expect(getLayout(window).focus).toBe('main')
     expect(root.kind === 'branch' ? root.sizes : []).toStrictEqual([0.72, 0.28])
   })
 
@@ -57,7 +57,7 @@ describe('the window as it opens', () => {
 describe('the window holding no tab', () => {
   /** Every tab closed, by the keystroke that closes the one in front. */
   const closeEveryTab = async (window: VueWrapper) => {
-    for (let each = tabsOf(window).length; each > 0; each -= 1) {
+    for (let each = getTabs(window).length; each > 0; each -= 1) {
       globalThis.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'W', ctrlKey: true, shiftKey: true, cancelable: true }),
       )
@@ -70,7 +70,7 @@ describe('the window holding no tab', () => {
 
     const window = await mountWindow()
 
-    expect(tabsOf(window)).toStrictEqual([])
+    expect(getTabs(window)).toStrictEqual([])
     expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 
@@ -79,7 +79,7 @@ describe('the window holding no tab', () => {
 
     await closeEveryTab(window)
 
-    expect(tabsOf(window)).toStrictEqual([])
+    expect(getTabs(window)).toStrictEqual([])
     expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 
@@ -222,7 +222,7 @@ describe('a tab asked to close', () => {
     await settle()
     await settle()
 
-    const noteId = tabsOf(window).find((tab) => tab.id.startsWith('note:'))?.id
+    const noteId = getTabs(window).find((tab) => tab.id.startsWith('note:'))?.id
     expect(noteId).toBeTruthy()
 
     let held = false
@@ -294,8 +294,8 @@ describe('tab linking context menu', () => {
 
     // Simulate tab element in DOM
     const tabEl = document.createElement('div')
-    const plexTabId = tabsOf(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
-    const filesTabId = tabsOf(window).find((t) => t.id.startsWith('files:'))?.id ?? 'files:side'
+    const plexTabId = getTabs(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
+    const filesTabId = getTabs(window).find((t) => t.id.startsWith('files:'))?.id ?? 'files:side'
 
     tabEl.setAttribute('data-workspace-tab', plexTabId)
     document.body.appendChild(tabEl)
@@ -339,7 +339,7 @@ describe('tab linking context menu', () => {
     const layout = window.findComponent(WorkspaceLayout)
 
     const tabEl = document.createElement('div')
-    const plexTabId = tabsOf(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
+    const plexTabId = getTabs(window).find((t) => t.id.startsWith('plex:'))?.id ?? 'plex:main'
     tabEl.setAttribute('data-workspace-tab', plexTabId)
     document.body.appendChild(tabEl)
 

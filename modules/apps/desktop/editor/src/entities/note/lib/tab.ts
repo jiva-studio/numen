@@ -3,9 +3,9 @@
  */
 import {
   isDirty,
-  stateOf,
+  getState,
   DEFAULT_WRITE_LIMITS,
-  MENDABLE_ERRORS,
+  RETRYABLE_ERRORS,
   type Event,
   type Move,
   type NoteBaseline,
@@ -83,7 +83,7 @@ const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
  * A read is applied to a tab with nothing unsaved and only for the generation asked for last.
  */
 const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition => {
-  const loading = stateOf(tab) === 'loading'
+  const loading = getState(tab) === 'loading'
   const stale = generation !== tab.reading
   if (answer.kind === 'error') {
     return loading && !stale ? { tab: { ...tab, error: answer.error }, effects: [] } : keepTab(tab)
@@ -97,7 +97,7 @@ const applyRead = (tab: Tab, generation: number, answer: ReadResult): Transition
 
 /** The text the file holds, taken where the tab holds nothing unsaved of its own. */
 const applyReadBody = (tab: Tab, stale: boolean, body: string, at: string): Transition => {
-  const state = stateOf(tab)
+  const state = getState(tab)
   if (state === 'loading') return applyBody(tab, body, at)
   if (state === 'gone') return applyBody({ ...tab, isDeleted: false }, body, at)
   if (stale) return keepTab(tab)
@@ -109,27 +109,27 @@ const applyReadBody = (tab: Tab, stale: boolean, body: string, at: string): Tran
 /**
  * When the write happens: once still for the quiet interval, and within bound of first unwritten change.
  */
-const armFor = (since: number, at: number, limits: WriteLimits): number =>
+const getWriteDelay = (since: number, at: number, limits: WriteLimits): number =>
   Math.max(0, Math.min(limits.quiet, since + limits.bound - at))
 
 /**
  * An error about the body is cleared by typing when there is a written baseline.
  */
-const isMendable = (tab: Tab): boolean =>
-  tab.written !== null && tab.error !== null && MENDABLE_ERRORS.includes(tab.error)
+const isRetryable = (tab: Tab): boolean =>
+  tab.written !== null && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)
 
 const applyEdit = (tab: Tab, body: string, at: number, limits: WriteLimits): Transition => {
-  const state = stateOf(tab)
+  const state = getState(tab)
   if (state === 'loading') return keepTab(tab)
-  const error = isMendable(tab) ? null : tab.error
+  const error = isRetryable(tab) ? null : tab.error
   const since = tab.since ?? at
   const next: Tab = { ...tab, shown: body, since, error }
   if (state === 'stale') return keepTab(next)
-  return { tab: next, effects: [{ kind: 'startTimer', after: armFor(since, at, limits) }] }
+  return { tab: next, effects: [{ kind: 'startTimer', after: getWriteDelay(since, at, limits) }] }
 }
 
 const applyTimer = (tab: Tab): Transition => {
-  const state = stateOf(tab)
+  const state = getState(tab)
   if (state === 'loading') return keepTab(tab)
   if (state === 'unsaved') return beginWrite(tab, getBaseline(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
@@ -166,7 +166,7 @@ const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[
   const next = went ? { ...tab, path: went.to, isDeleted: false } : tab
 
   const mine = paths.length === 0 || paths.includes(next.path) || went !== undefined
-  if (!mine || stateOf(next) !== 'clean') return keepTab(next)
+  if (!mine || getState(next) !== 'clean') return keepTab(next)
   const reading = next.reading + 1
   return {
     tab: { ...next, reading },
@@ -178,7 +178,7 @@ const applyChange = (tab: Tab, paths: readonly string[], renames: readonly Move[
  * A save asked for now writes what is unsaved and owes one to a write in the air.
  */
 const applySave = (tab: Tab): Transition => {
-  const state = stateOf(tab)
+  const state = getState(tab)
   if (state === 'unsaved') return beginWrite(tab, getBaseline(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
   return keepTab(tab)
@@ -188,7 +188,7 @@ const applySave = (tab: Tab): Transition => {
  * Flushing disarms the timer and writes unsaved text immediately.
  */
 const applyFlush = (tab: Tab): Transition => {
-  const state = stateOf(tab)
+  const state = getState(tab)
   if (state === 'unsaved') {
     const going = beginWrite(tab, getBaseline(tab))
     return { tab: going.tab, effects: [{ kind: 'cancelTimer' }, ...going.effects] }
@@ -201,14 +201,14 @@ const applyFlush = (tab: Tab): Transition => {
 
 /** Keep: what is on screen goes to the file. */
 const applyKeep = (tab: Tab): Transition => {
-  const state = stateOf(tab)
+  const state = getState(tab)
   if (state !== 'stale' && state !== 'gone') return keepTab(tab)
   return beginWrite(tab, null)
 }
 
 /** Take: the file is read again, replacing the buffer. */
 const applyTake = (tab: Tab): Transition => {
-  const state = stateOf(tab)
+  const state = getState(tab)
   if (state !== 'stale') return keepTab(tab)
   const reading = tab.reading + 1
   return {
@@ -221,9 +221,9 @@ const applyTake = (tab: Tab): Transition => {
  * Closes the tab, saving unsaved changes or holding if writes or conflicts are pending.
  */
 const applyClose = (tab: Tab): Transition => {
-  const state = stateOf(tab)
+  const state = getState(tab)
   if (tab.error && state === 'stuck') {
-    if (tab.written !== null && isDirty(tab) && MENDABLE_ERRORS.includes(tab.error)) {
+    if (tab.written !== null && isDirty(tab) && RETRYABLE_ERRORS.includes(tab.error)) {
       return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'keepOpen' }] }
     }
     return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'close' }] }

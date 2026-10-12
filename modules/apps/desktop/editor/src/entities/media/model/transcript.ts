@@ -20,7 +20,7 @@ export type { TabPlayer } from './playback'
 export type TranscriptState = ReturnType<typeof useTranscript>
 
 /** How long the words have to have been still before they are written. */
-export const QUIET = 800
+export const WRITE_IDLE_MS = 800
 
 /** What the window hands one recording tab, beside the application and the path. */
 export interface TranscriptOptions {
@@ -34,7 +34,7 @@ export interface TranscriptOptions {
 
 export function useTranscript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
   const through = how.through ?? player
-  const quiet = how.quiet ?? QUIET
+  const quiet = how.quiet ?? WRITE_IDLE_MS
   const plays = how.plays ?? createMediaTypeProbe()
 
   /** The words heard in the recording, in the order they were spoken. */
