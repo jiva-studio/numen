@@ -85,7 +85,7 @@ func (c *faceCache) get(key deckKey) (deckFaces, bool) {
 		return deckFaces{}, false
 	}
 	c.order.MoveToFront(at)
-	return entryOf(at).deckFaces, true
+	return getEntry(at).deckFaces, true
 }
 
 // put stores a deck parsed in the given epoch, then forgets the least recently
@@ -116,7 +116,7 @@ func (c *faceCache) remove(key deckKey) {
 }
 
 func (c *faceCache) removeElement(at *list.Element) {
-	one := entryOf(at)
+	one := getEntry(at)
 	c.order.Remove(at)
 	delete(c.decks, one.key)
 	c.total -= len(one.faces)
@@ -158,7 +158,7 @@ func (c *faceCache) invalidate(vault domain.VaultID, paths []string) {
 		if key.vault != vault {
 			continue
 		}
-		if slices.Contains(paths, key.path) || usesAny(entryOf(at).stencils, paths) {
+		if slices.Contains(paths, key.path) || usesAny(getEntry(at).stencils, paths) {
 			c.removeElement(at)
 		}
 	}
@@ -185,24 +185,24 @@ func (c *faceCache) invalidateAll() {
 	c.total = 0
 }
 
-// size is the number of card faces held.
-func (c *faceCache) size() int {
+// getSize returns the number of card faces held.
+func (c *faceCache) getSize() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.total
 }
 
-// holds says whether the deck at key is held.
-func (c *faceCache) holds(key deckKey) bool {
+// hasDeck says whether the deck at key is held.
+func (c *faceCache) hasDeck(key deckKey) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	_, held := c.decks[key]
 	return held
 }
 
-// entryOf is the deck an element of the order stands for. Only decks are put in
+// getEntry returns the deck an element of the order stands for. Only decks are put in
 // it, so the zero entry is never seen.
-func entryOf(at *list.Element) *cached {
+func getEntry(at *list.Element) *cached {
 	one, _ := at.Value.(*cached)
 	if one == nil {
 		return &cached{}

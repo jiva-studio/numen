@@ -661,7 +661,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
-	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.OverDeck("decks/Words.md"))
+	session, err := s.session(today).Execute(t.Context(), s.vault, flashcards.CreateDeckScope("decks/Words.md"))
 	if err != nil {
 		t.Fatal(err)
 	}

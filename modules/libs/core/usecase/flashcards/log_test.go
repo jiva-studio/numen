@@ -191,11 +191,11 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	}
 
 	log := flashcards.Log{Stores: &reorderedStores{DerivedStores: s.logs}}
-	first, err := log.Files(t.Context(), s.vault)
+	first, err := log.ListLogFiles(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := log.Files(t.Context(), s.vault)
+	second, err := log.ListLogFiles(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
