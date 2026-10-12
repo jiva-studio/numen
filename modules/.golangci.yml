@@ -377,7 +377,6 @@ linters:
       - path: (^|/)proofread/
         linters: [cyclop, gocognit, nestif]
 
-      # Adapters and application entry points wire external technologies,
-      # drivers, CLI flags, and window lifecycles.
-      - path: (^|/)(adapter/([^m]|m[^c]|mc[^p]|mcp[^/])|cmd/|bind/|container/|internal/agents/|internal/wire/)
+      # The window adapters hold their logic until it moves into use cases.
+      - path: (^|/)adapter/window/
         linters: [cyclop, gocognit, nestif, funlen]
