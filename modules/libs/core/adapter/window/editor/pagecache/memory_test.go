@@ -254,3 +254,15 @@ func TestAnAskThatStopsWaitingIsAnsweredBusy(t *testing.T) {
 		t.Errorf("got %v, want %v", waited, pool.ErrBusy)
 	}
 }
+
+// A bound below nothing holds nothing, and a page drawn is still answered.
+func TestAMemoryBoundedBelowNothingHoldsNothing(t *testing.T) {
+	cache := NewMemory(-1)
+	body, err := cache.GetOrRender(t.Context(), newTestID(0), newDrawing(10))
+	if err != nil || len(body) != 10 {
+		t.Fatalf("answered %d bytes, %v", len(body), err)
+	}
+	if cache.Has(newTestID(0)) {
+		t.Error("a page was held under a bound below nothing")
+	}
+}
