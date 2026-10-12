@@ -3,7 +3,7 @@
  */
 import type { ComputedRef, Ref } from 'vue'
 import type {
-  MenuOpening,
+  MenuTrigger,
   PlexNeighbourhood,
   PlexPart,
   PlexRelatedSeat,
@@ -19,7 +19,7 @@ export interface MenuRequest {
   /** The node it was asked for on, or null when asked off every node. */
   readonly node: string | null
   readonly at: { x: number; y: number }
-  readonly opening: MenuOpening
+  readonly opening: MenuTrigger
 }
 
 /** Where the quick link popover stands, and what seat it connects. */

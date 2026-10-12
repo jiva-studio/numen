@@ -6,7 +6,7 @@
 import { computed } from 'vue'
 import { isMenuKey, isPress, isShowKey } from '../lib/keys'
 import { isReachable, isStop, type GestureRole, type PlacedNode, type Position } from '../lib/node'
-import type { MenuOpening } from '@/shared/ui/menu'
+import type { MenuTrigger } from '@/shared/ui/menu'
 import type { ReachStrategy } from './reaching'
 import { getDestination, mergeListeners, type PlexDestination, type ShowStrategy } from './showing'
 
@@ -15,7 +15,7 @@ export interface NodePressSaid {
   readonly activate: () => void
   readonly show: (showing: PlexDestination) => void
   readonly reach: (pointer: PointerEvent) => void
-  readonly menu: (at: Position, opening: MenuOpening) => void
+  readonly menu: (at: Position, trigger: MenuTrigger) => void
 }
 
 /** What the press reads off the node it belongs to. */

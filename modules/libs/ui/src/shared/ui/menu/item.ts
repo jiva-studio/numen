@@ -97,20 +97,20 @@ export const stepTo = (items: readonly MenuItem[], from: number, by: number): nu
  * How a menu came to be open, declared once. Where the keyboard is as it
  * appears is derived from this table.
  */
-export interface MenuOpeningDescriptor {
+export interface MenuTriggerDescriptor {
   /** Whether the keyboard lands on an item as the menu appears. */
-  readonly isLanding: boolean
+  readonly hasInitialFocus: boolean
 }
 
-export const MENU_OPENINGS = {
-  pointer: { isLanding: false },
-  keyboard: { isLanding: true },
-} as const satisfies Record<string, MenuOpeningDescriptor>
+export const MENU_TRIGGERS = {
+  pointer: { hasInitialFocus: false },
+  keyboard: { hasInitialFocus: true },
+} as const satisfies Record<string, MenuTriggerDescriptor>
 
 /** What opened a menu: a hand, or the keyboard. */
-export type MenuOpening = keyof typeof MENU_OPENINGS
+export type MenuTrigger = keyof typeof MENU_TRIGGERS
 
-export const MENU_OPENINGS_ALL = Object.keys(MENU_OPENINGS) as readonly MenuOpening[]
+export const MENU_TRIGGERS_ALL = Object.keys(MENU_TRIGGERS) as readonly MenuTrigger[]
 
 /**
  * Where the keyboard is as a menu opens. Opened by hand it is on no item, and
@@ -118,12 +118,12 @@ export const MENU_OPENINGS_ALL = Object.keys(MENU_OPENINGS) as readonly MenuOpen
  * keyboard it lands on the item in force, and on the first where the menu
  * holds none.
  */
-export const getLandingIndex = (
-  opening: MenuOpening,
+export const getInitialIndex = (
+  trigger: MenuTrigger,
   items: readonly MenuItem[],
   current: string | null = null,
 ): number => {
-  if (!MENU_OPENINGS[opening].isLanding) return -1
+  if (!MENU_TRIGGERS[trigger].hasInitialFocus) return -1
   const at = items.findIndex((item) => item.id === current && !item.disabled)
   return at >= 0 ? at : stepTo(items, -1, 1)
 }

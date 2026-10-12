@@ -89,7 +89,7 @@ const removeSection = (): void => {
   <!-- The place before the first section, where a card is let go to stand
        under no section at all. -->
   <div
-    v-else-if="run.isLanding"
+    v-else-if="run.isDropTarget"
     class="deck__head caret-below"
     data-head
     :data-before="run.id === at || undefined"

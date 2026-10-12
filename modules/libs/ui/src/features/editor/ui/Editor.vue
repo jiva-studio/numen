@@ -12,20 +12,20 @@ import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { EditorChange } from '../lib/change'
 import {
-  adding,
+  extensionsCompartment,
   code,
-  drawing,
+  previewCompartment,
   createEditable,
-  editing,
+  editableCompartment,
   preview,
   prose,
   setup,
   showChange,
-  showing,
-  written,
+  changeCompartment,
+  languageCompartment,
 } from '../lib/setup'
 import { loadLanguage } from '../config/languages'
-import { opening, resolving, saving } from '../lib/outside'
+import { addressOpener, addressResolver, saveHandler } from '../lib/outside'
 import { replace } from '../lib/replace'
 
 const props = withDefaults(
@@ -98,9 +98,9 @@ onMounted(() => {
           change: props.change,
           extensions: props.extensions,
         }),
-        resolving.of((address) => props.resolve?.(address) ?? address),
-        opening.of((address) => emit('open', address)),
-        saving.of(() => emit('save')),
+        addressResolver.of((address) => props.resolve?.(address) ?? address),
+        addressOpener.of((address) => emit('open', address)),
+        saveHandler.of(() => emit('save')),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged) return
           lastEmitted = update.state.doc.toString()
@@ -128,7 +128,7 @@ watch(text, (fresh) => {
 
 watch(
   () => props.isLive,
-  (on) => view?.dispatch({ effects: drawing.reconfigure(preview(on)) }),
+  (on) => view?.dispatch({ effects: previewCompartment.reconfigure(preview(on)) }),
 )
 
 /**
@@ -139,24 +139,24 @@ watch(
 const applyLanguage = async (name: string) => {
   const support = name ? await loadLanguage(name) : null
   if (!view || name !== props.language) return
-  view.dispatch({ effects: written.reconfigure(support ? code(support) : prose()) })
+  view.dispatch({ effects: languageCompartment.reconfigure(support ? code(support) : prose()) })
 }
 
 watch(() => props.language, applyLanguage)
 
 watch(
   () => props.readonly,
-  (off) => view?.dispatch({ effects: editing.reconfigure(createEditable(!off)) }),
+  (off) => view?.dispatch({ effects: editableCompartment.reconfigure(createEditable(!off)) }),
 )
 
 watch(
   () => props.change,
-  (change) => view?.dispatch({ effects: showing.reconfigure(showChange(change)) }),
+  (change) => view?.dispatch({ effects: changeCompartment.reconfigure(showChange(change)) }),
 )
 
 watch(
   () => props.extensions,
-  (more) => view?.dispatch({ effects: adding.reconfigure(more) }),
+  (more) => view?.dispatch({ effects: extensionsCompartment.reconfigure(more) }),
 )
 
 defineExpose({

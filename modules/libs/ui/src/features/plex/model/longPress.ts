@@ -8,12 +8,12 @@
 import { onScopeDispose, ref } from 'vue'
 
 /** How long a finger rests on a node before it is reaching out, in milliseconds. */
-export const HOLD = 400
+export const LONG_PRESS_DELAY = 400
 
 /** How far it may stray in that time and still be resting, in pixels. */
-export const STRAY = 12
+export const LONG_PRESS_TOLERANCE = 12
 
-export interface HoldState {
+export interface LongPressState {
   /** True while a rest has been asked for and has neither come nor been given up on. */
   readonly isResting: () => boolean
   readonly onPointerDown: (event: PointerEvent) => void
@@ -27,11 +27,11 @@ export interface HoldState {
  * `ready` says whether the node will take one now; `onReach` is called with the
  * press that started it, which is the press the gesture then follows.
  */
-export function useHold(
+export function useLongPress(
   ready: () => boolean,
   onReach: (event: PointerEvent) => void,
-  after: () => number = () => HOLD,
-): HoldState {
+  after: () => number = () => LONG_PRESS_DELAY,
+): LongPressState {
   const held = ref<{ timer: number; x: number; y: number } | null>(null)
 
   const letGo = () => {
@@ -56,7 +56,7 @@ export function useHold(
   const onPointerMove = (event: PointerEvent) => {
     const began = held.value
     if (!began) return
-    if (Math.hypot(event.clientX - began.x, event.clientY - began.y) > STRAY) letGo()
+    if (Math.hypot(event.clientX - began.x, event.clientY - began.y) > LONG_PRESS_TOLERANCE) letGo()
   }
 
   onScopeDispose(letGo)

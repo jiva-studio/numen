@@ -10,7 +10,7 @@ import type { Clock } from '@/shared/lib/clock'
 import type { Position } from '@/shared/lib/geometry'
 import { usePressDrag } from '@/shared/ui/drag-preview'
 import { dragLabel, type DragLabel } from '../lib/drag'
-import { holderOf, isRefused, landing, type RowLanding } from '../lib/drop'
+import { holderOf, isRefused, getRowDropTarget, type RowDropTarget } from '../lib/drop'
 import type { Row, RowId, ShownRow } from '../lib/row'
 
 /** The tree as it stands on screen, which only the drawing knows. */
@@ -46,7 +46,7 @@ export interface RowDragOptions {
 /** The rows lifted, where they were let go, and that they were let go at all. */
 export interface RowDragTell {
   (event: 'drag', rows: readonly RowId[]): void
-  (event: 'move', rows: readonly RowId[], at: RowLanding): void
+  (event: 'move', rows: readonly RowId[], at: RowDropTarget): void
   (event: 'drop'): void
 }
 
@@ -61,16 +61,16 @@ export interface RowDragState {
   /** Whether the press being made has travelled far enough to be a drag. */
   readonly hasMoved: ComputedRef<boolean>
   /** Where a drop would land, for the tree to mark itself with. */
-  readonly at: Readonly<Ref<RowLanding | null>>
+  readonly at: Readonly<Ref<RowDropTarget | null>>
   /** A press on a row, which a move turns into a drag. */
   readonly lift: (rows: readonly RowId[], event: PointerEvent) => void
 }
 
 export function useRowDrag(options: RowDragOptions): RowDragState {
-  const { dragging, at, position, lift } = usePressDrag<readonly RowId[], RowLanding>({
+  const { dragging, at, position, lift } = usePressDrag<readonly RowId[], RowDropTarget>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
-    getLandingAt,
+    getDropTargetAt,
     commit: (rows, found) => {
       if (found) options.tell('move', rows, found)
       options.tell('drop')
@@ -93,7 +93,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
   })
 
   /** Where the pointer is, read off the drawing: the rows are one height each. */
-  function getLandingAt(rows: readonly RowId[], where: Position): RowLanding | null {
+  function getDropTargetAt(rows: readonly RowId[], where: Position): RowDropTarget | null {
     const drawn = options.measure()
     if (!drawn) return null
 
@@ -104,7 +104,7 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     if (!inside) return null
 
     const shown = options.getShownRows()
-    const found = landing(shown, rows, where.y - drawn.top, drawn.height)
+    const found = getRowDropTarget(shown, rows, where.y - drawn.top, drawn.height)
     if (!found) return null
 
     return isRefused(options.getRows(), rows, holderOf(shown, found)) ? null : found

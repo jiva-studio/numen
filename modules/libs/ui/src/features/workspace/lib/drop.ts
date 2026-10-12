@@ -12,7 +12,7 @@ import { getPlaceInBox, type Position, type Rect } from './rect'
  * Where a tab would go if it were let go now, and the part of the screen that
  * stands for it.
  */
-export type TabLanding = { readonly box: Rect } & (
+export type TabDropTarget = { readonly box: Rect } & (
   | { readonly kind: 'edge'; readonly side: Side }
   | { readonly kind: 'pane'; readonly pane: NodeId; readonly side: Side }
   | { readonly kind: 'strip'; readonly pane: NodeId; readonly slot: number }

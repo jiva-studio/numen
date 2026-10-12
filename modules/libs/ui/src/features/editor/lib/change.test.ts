@@ -7,7 +7,14 @@
 import { describe, expect, it } from 'vitest'
 import { Compartment, EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { changing, marked, createPacePlugin, revealOf, stepped, type EditorChange } from './change'
+import {
+  pendingChange,
+  changeMarks,
+  createPacePlugin,
+  revealOf,
+  setReveal,
+  type EditorChange,
+} from './change'
 import type { Clock } from '@/shared/lib/clock'
 import { createState } from '../fixtures/state'
 import { RUSSIAN } from '@/shared/fixtures/prose'
@@ -29,7 +36,7 @@ interface Drawn {
 
 const getDrawn = (state: EditorState): Drawn[] => {
   const found: Drawn[] = []
-  state.field(marked).decorations.between(0, state.doc.length, (from, to, deco) => {
+  state.field(changeMarks).decorations.between(0, state.doc.length, (from, to, deco) => {
     found.push({ from, to, mark: (deco.spec as { class?: string }).class ?? null })
   })
   return found
@@ -38,12 +45,12 @@ const getDrawn = (state: EditorState): Drawn[] => {
 /** A state with the parser the editor runs, and a change put in over it. */
 const createMarkedState = (doc: string, change: EditorChange | null): EditorState =>
   createState(doc).update({
-    effects: StateEffect.appendConfig.of([marked, changing.of(change)]),
+    effects: StateEffect.appendConfig.of([changeMarks, pendingChange.of(change)]),
   }).state
 
 /** The showing, moved on to `part` of the way through. */
 const getStateAt = (state: EditorState, change: EditorChange, part: number): EditorState =>
-  state.update({ effects: stepped.of(revealOf(change.text, part)) }).state
+  state.update({ effects: setReveal.of(revealOf(change.text, part)) }).state
 
 describe('how much of a change is shown', () => {
   it('is none of it before it starts', () => {
@@ -125,8 +132,10 @@ describe('a change on its way', () => {
   it('is the same drawing after an update that says nothing about it', () => {
     const OTHER = StateEffect.define<number>()
     const state = createMarkedState(DOC, CHANGE)
-    expect(state.update({ effects: OTHER.of(5) }).state.field(marked)).toBe(state.field(marked))
-    expect(state.update({}).state.field(marked)).toBe(state.field(marked))
+    expect(state.update({ effects: OTHER.of(5) }).state.field(changeMarks)).toBe(
+      state.field(changeMarks),
+    )
+    expect(state.update({}).state.field(changeMarks)).toBe(state.field(changeMarks))
   })
 })
 
@@ -149,8 +158,8 @@ describe('a change whose text has arrived', () => {
 
   it('ends after the text, at every step of the showing', () => {
     const state = createMarkedState(DOC, CHANGE)
-    expect(state.field(marked).to).toBe(15)
-    expect(getStateAt(state, CHANGE, 0.4).field(marked).to).toBe(15)
+    expect(state.field(changeMarks).to).toBe(15)
+    expect(getStateAt(state, CHANGE, 0.4).field(changeMarks).to).toBe(15)
   })
 
   it('shows the words that have had their turn and covers the rest', () => {
@@ -203,7 +212,7 @@ const createClock = () => {
   }
 }
 
-describe('the showing, stepped by the clock', () => {
+describe('the showing, setReveal by the clock', () => {
   const DOC = 'the dog and cat sat'
   const CHANGE: EditorChange = { id: 'a', from: 4, to: 7, text: 'dog and cat' }
 
@@ -213,7 +222,7 @@ describe('the showing, stepped by the clock', () => {
       parent: document.body,
       state: EditorState.create({
         doc: DOC,
-        extensions: [marked, changing.of(CHANGE), createPacePlugin(world.clock)],
+        extensions: [changeMarks, pendingChange.of(CHANGE), createPacePlugin(world.clock)],
       }),
     })
     return { world, view }
@@ -313,7 +322,7 @@ describe('the clock that steps the showing', () => {
       parent: document.body,
       state: EditorState.create({
         doc,
-        extensions: [marked, slot.of(changing.of(change)), createPacePlugin(world.clock)],
+        extensions: [changeMarks, slot.of(pendingChange.of(change)), createPacePlugin(world.clock)],
       }),
     })
     return { world, view, slot }
@@ -321,13 +330,13 @@ describe('the clock that steps the showing', () => {
 
   it('counts from the first frame it is handed, whenever that is', () => {
     const { world, view } = open(ARRIVED, WORDS)
-    const before = view.state.field(marked)
+    const before = view.state.field(changeMarks)
 
     world.tick(1000)
-    expect(view.state.field(marked)).toBe(before)
+    expect(view.state.field(changeMarks)).toBe(before)
 
     world.tick(1220)
-    expect(view.state.field(marked).reveal).toEqual({ shown: 4, fading: 0 })
+    expect(view.state.field(changeMarks).reveal).toEqual({ shown: 4, fading: 0 })
 
     view.destroy()
   })
@@ -350,7 +359,7 @@ describe('the clock that steps the showing', () => {
 
     // A frame that was already on its way finds nothing to step.
     world.fire(0, 500)
-    expect(view.state.field(marked).reveal).toBeNull()
+    expect(view.state.field(changeMarks).reveal).toBeNull()
 
     view.destroy()
   })
@@ -359,14 +368,14 @@ describe('the clock that steps the showing', () => {
     const { world, view, slot } = open(ARRIVED, WORDS)
     world.tick(0)
     world.tick(220)
-    expect(view.state.field(marked).reveal).toEqual({ shown: 4, fading: 0 })
+    expect(view.state.field(changeMarks).reveal).toEqual({ shown: 4, fading: 0 })
 
-    view.dispatch({ effects: slot.reconfigure(changing.of({ ...WORDS, id: 'b' })) })
+    view.dispatch({ effects: slot.reconfigure(pendingChange.of({ ...WORDS, id: 'b' })) })
     expect(world.cancelled).toEqual([3])
     expect(world.getWaiting()).toBe(1)
 
     world.tick(300)
-    expect(view.state.field(marked).reveal).toEqual({ shown: 0, fading: 0 })
+    expect(view.state.field(changeMarks).reveal).toEqual({ shown: 0, fading: 0 })
 
     view.destroy()
   })
@@ -378,7 +387,7 @@ describe('the clock that steps the showing', () => {
 
     world.tick(880)
     expect(world.getWaiting()).toBe(0)
-    expect(view.state.field(marked).reveal).toEqual({ shown: 11, fading: 11 })
+    expect(view.state.field(changeMarks).reveal).toEqual({ shown: 11, fading: 11 })
 
     view.destroy()
     expect(world.cancelled).toEqual([])
