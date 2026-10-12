@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -74,7 +73,7 @@ func TestRemoveRefusesAVaultThatIsNotOnTheList(t *testing.T) {
 	kept, _, registry := twoVaults(t)
 	remove, _, _ := newRemove(registry)
 
-	err := remove.Execute(t.Context(), "nothing", domain.VaultID(kept.ID), false)
+	err := remove.Execute(t.Context(), "nothing", kept.ID, false)
 
 	if !errors.Is(err, vaults.ErrUnknown) {
 		t.Fatalf("error is %v, want ErrUnknown", err)

@@ -7,6 +7,11 @@ import "github.com/jiva-studio/numen/modules/libs/core/port"
 type Scenarios struct {
 	Registry port.VaultRegistry
 
+	List        List
+	Find        Find
+	FolderCheck FolderCheck
+	Remove      Remove
+
 	Add        Add
 	Rename     Rename
 	Unregister Unregister

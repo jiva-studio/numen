@@ -229,18 +229,14 @@ func Open(ctx context.Context, made Assembly, asked string, out io.Writer) (*Ins
 	api.Files.Move = &held.Move
 	api.Files.Import = &held.Import
 	api.Files.URLs = &source.CreateURL{Writers: made.GetVaultWriters(), Index: pool.level}
-	list := vaults.NewList(held.Registry)
-	find := vaults.NewFind(held.Registry)
-	folderCheck := vaults.NewFolderCheck(made.GetVaultReaders())
-	remove := vaults.NewRemove(find, held.Unregister, held.Erase)
 	api.Vaults = Vaults{
 		Registry:    held.Registry,
-		List:        &list,
-		Find:        &find,
-		FolderCheck: &folderCheck,
+		List:        &held.List,
+		Find:        &held.Find,
+		FolderCheck: &held.FolderCheck,
 		Add:         &held.Add,
 		Rename:      &held.Rename,
-		Remove:      &remove,
+		Remove:      &held.Remove,
 		Unregister:  &held.Unregister,
 	}
 

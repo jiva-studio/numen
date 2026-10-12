@@ -188,16 +188,8 @@ type Files struct {
 	URLs *source.CreateURL
 }
 
-// Vaults is the list of vaults this installation holds, the one the window is
-// showing among them.
-//
-// List and Find read the list, FolderCheck marks a vault whose folder is gone,
-// Add turns a folder into a vault, Rename is what a person calls one, and Remove
-// takes one off the list. They are bound by every build that serves the list,
-// and so is the folder dialog below.
+// Vaults is the list of vaults this installation holds and what a person does to it.
 type Vaults struct {
-	// Registry is the list itself, for whatever else in the application is
-	// handed the window's list.
 	Registry port.VaultRegistry
 
 	List        *vaults.List
@@ -206,11 +198,9 @@ type Vaults struct {
 	Add         *vaults.Add
 	Rename      *vaults.Rename
 	Remove      *vaults.Remove
-	// Unregister takes a vault off the list for an agent.
-	Unregister *vaults.Unregister
+	Unregister  *vaults.Unregister
 
-	// FolderDialog puts this machine's own folder dialog in front of the person.
-	// Only an application with a window has one.
+	// FolderDialog is nil where the application has no window to put one in.
 	FolderDialog port.FolderDialog
 }
 

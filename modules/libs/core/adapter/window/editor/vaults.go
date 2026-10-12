@@ -26,7 +26,7 @@ func (s vaultsService) ListVaults(
 	_ context.Context,
 	_ *connect.Request[v1.ListVaultsRequest],
 ) (*connect.Response[v1.ListVaultsResponse], error) {
-	if s.api.Vaults.List == nil {
+	if s.api.Vaults.List == nil || s.api.Vaults.FolderCheck == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
 	held, err := s.api.Vaults.List.Execute()
@@ -62,7 +62,7 @@ func (s vaultsService) AddVault(
 	_ context.Context,
 	r *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
-	if s.api.Vaults.Add == nil {
+	if s.api.Vaults.Add == nil || s.api.Vaults.FolderCheck == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
 	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetName())
@@ -82,7 +82,7 @@ func (s vaultsService) RenameVault(
 	ctx context.Context,
 	r *connect.Request[v1.RenameVaultRequest],
 ) (*connect.Response[v1.RenameVaultResponse], error) {
-	if s.api.Vaults.Find == nil || s.api.Vaults.Rename == nil {
+	if s.api.Vaults.Find == nil || s.api.Vaults.Rename == nil || s.api.Vaults.FolderCheck == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
 	v, err := s.api.Vaults.Find.Execute(r.Msg.GetId())
@@ -149,11 +149,10 @@ func (s vaultsService) OpenVault(
 // convertVaultToWire is one vault as the schema carries it. A folder that is not
 // there to be found is marked, and the vault stays on the list.
 func (s vaultsService) convertVaultToWire(v domain.Vault) *v1.Vault {
-	wire := &v1.Vault{Id: string(v.ID), Name: v.Name, Path: v.Path}
-	if s.api.Vaults.FolderCheck != nil {
-		wire.IsMissing = s.api.Vaults.FolderCheck.Execute(v)
+	return &v1.Vault{
+		Id: string(v.ID), Name: v.Name, Path: v.Path,
+		IsMissing: s.api.Vaults.FolderCheck.Execute(v),
 	}
-	return wire
 }
 
 // vaultsErrorCodeBy says which code an error about the list carries, and
