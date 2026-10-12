@@ -7,7 +7,12 @@ import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { WORDS as words } from '@/shared/words'
 import { cards, presets, WORDS as cardWords } from '@/entities/deck'
-import { ANSWER_WORDS, invocationOf, openDestination, runInvocation } from '@/features/command-palette'
+import {
+  ANSWER_WORDS,
+  invocationOf,
+  openDestination,
+  runInvocation,
+} from '@/features/command-palette'
 import { running } from '@/entities/artifact'
 import { createFilesKind as buildFilesKind } from '@/pages/file-manager'
 import type { FilesTabDeps } from '@/pages/file-manager/types'
@@ -359,7 +364,10 @@ describe('what the files tab asks of the window', () => {
 
   it('creates a deck under the name it is given', async () => {
     const { deps, openNewFile } = setup()
-    vi.mocked(cards.createDeck).mockResolvedValue({ ok: true, value: { path: 'dir/D.md' } } as never)
+    vi.mocked(cards.createDeck).mockResolvedValue({
+      ok: true,
+      value: { path: 'dir/D.md' },
+    } as never)
 
     expect(await deps.createDeck('dir', 'D')).toBe('dir/D.md')
 
@@ -369,7 +377,10 @@ describe('what the files tab asks of the window', () => {
 
   it('creates a stencil under the name it is given, with a first field', async () => {
     const { deps } = setup()
-    vi.mocked(cards.createStencil).mockResolvedValue({ ok: true, value: { path: 'dir/S.md' } } as never)
+    vi.mocked(cards.createStencil).mockResolvedValue({
+      ok: true,
+      value: { path: 'dir/S.md' },
+    } as never)
 
     expect(await deps.createStencil('dir', 'S')).toBe('dir/S.md')
 
@@ -378,7 +389,10 @@ describe('what the files tab asks of the window', () => {
 
   it('creates a preset under the name it is given', async () => {
     const { deps } = setup()
-    vi.mocked(presets.createPreset).mockResolvedValue({ ok: true, value: { path: 'dir/P.md' } } as never)
+    vi.mocked(presets.createPreset).mockResolvedValue({
+      ok: true,
+      value: { path: 'dir/P.md' },
+    } as never)
 
     expect(await deps.createPreset('dir', 'P')).toBe('dir/P.md')
 
@@ -440,7 +454,9 @@ describe('an address imported from the files tab', () => {
 
     await deps.importUrl('dir', 'https://example.test')
 
-    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith(formatErrorMessage(failure), 'error'))
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith(formatErrorMessage(failure), 'error'),
+    )
     expect(applyPathChanges).not.toHaveBeenCalled()
   })
 
