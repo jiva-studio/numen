@@ -54,6 +54,7 @@ func (c Config) getCores() int {
 	if c.ResolvedCompute.Workers > 0 {
 		return c.ResolvedCompute.Workers
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="GOMAXPROCS reads the setting for every argument below one"
 	return runtime.GOMAXPROCS(0)
 }
 
