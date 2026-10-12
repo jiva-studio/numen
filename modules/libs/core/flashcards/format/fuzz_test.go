@@ -57,7 +57,7 @@ func FuzzWhole(f *testing.F) {
 				len(was.Cards), len(now.Cards), body, out)
 		}
 		for i, card := range now.Cards {
-			if !cardid.Valid(card.Mark) {
+			if !cardid.IsValid(card.Mark) {
 				t.Fatalf("the card standing at %d carries %q, which is no mark\n now %q",
 					i, card.Mark, out)
 			}
