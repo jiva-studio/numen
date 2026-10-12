@@ -143,11 +143,12 @@ func createRecognition(
 	if why != nil {
 		return cli.Recognise{}, why
 	}
-	db, cut, err := createCut(ctx, cfg, v, cfg.Extract)
+	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		_ = closeModels()
 		return cli.Recognise{}, err
 	}
+	db, cut := indexed.db, indexed.cut
 	return cli.Recognise{
 		Recognise: cfg.Recognise(db.Sources(), models),
 		Cut:       cut,
@@ -172,11 +173,12 @@ func createTranscription(
 	if why != nil {
 		return cli.Transcribe{}, why
 	}
-	db, cut, err := createCut(ctx, cfg, v, cfg.Extract)
+	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		_ = closeModels()
 		return cli.Transcribe{}, err
 	}
+	db, cut := indexed.db, indexed.cut
 	return cli.Transcribe{
 		Transcribe: cfg.Transcribe(db.Sources(), models),
 		Cut:        cut,
@@ -187,23 +189,28 @@ func createTranscription(
 	}, nil
 }
 
-// createCut is the index with the extraction of a vault's sources over it. The
-// index is closed when the extraction cannot be made.
+// indexedCut is the index and the extraction of a vault's sources over it.
+type indexedCut[C any] struct {
+	db  *container.Index
+	cut C
+}
+
+// createCut opens the index and makes the extraction over it. The index is
+// closed when the extraction cannot be made.
 func createCut[C any](
 	ctx context.Context, cfg container.Config, v domain.Vault,
 	extract func(port.SourceRepository, port.SourceQueries, domain.Vault) (C, error),
-) (*container.Index, C, error) {
-	var none C
+) (indexedCut[C], error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
-		return nil, none, err
+		return indexedCut[C]{}, err
 	}
 	cut, err := extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		_ = db.Close()
-		return nil, none, err
+		return indexedCut[C]{}, err
 	}
-	return db, cut, nil
+	return indexedCut[C]{db: db, cut: cut}, nil
 }
 
 // createImportURL is the download of an address into the vault.
@@ -229,12 +236,12 @@ func createProofreadRecognition(
 	if err != nil || !held {
 		return cli.ProofreadRecognition{}, err
 	}
-	db, cut, err := createCut(ctx, cfg, v, cfg.Extract)
+	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		return cli.ProofreadRecognition{}, err
 	}
 	return cli.ProofreadRecognition{
-		Proofread: proofread, Cut: cut, IsHeld: true, Close: db.Close,
+		Proofread: proofread, Cut: indexed.cut, IsHeld: true, Close: indexed.db.Close,
 	}, nil
 }
 
@@ -248,12 +255,12 @@ func createProofreadTranscript(
 	if err != nil || !held {
 		return cli.ProofreadTranscript{}, err
 	}
-	db, cut, err := createCut(ctx, cfg, v, cfg.Extract)
+	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
 	if err != nil {
 		return cli.ProofreadTranscript{}, err
 	}
 	return cli.ProofreadTranscript{
-		Proofread: proofread, Cut: cut, IsHeld: true, Close: db.Close,
+		Proofread: proofread, Cut: indexed.cut, IsHeld: true, Close: indexed.db.Close,
 	}, nil
 }
 

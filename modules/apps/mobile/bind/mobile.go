@@ -93,7 +93,7 @@ func Start(dir string) (int, error) {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	opened.API.Themes = themes
-	listener, addr, err := listenLocal()
+	listener, err := listenLocal()
 	if err != nil {
 		stop()
 		_ = opened.Close()
@@ -116,7 +116,7 @@ func Start(dir string) (int, error) {
 		)),
 	}
 	running = &runningCore{
-		port:   addr.Port,
+		port:   listener.port,
 		stop:   stop,
 		opened: opened,
 		server: server,
@@ -147,18 +147,24 @@ func setHomeFolders(dir string) error {
 	return nil
 }
 
-// listenLocal is a listener on a free loopback port, with its TCP address.
-func listenLocal() (net.Listener, *net.TCPAddr, error) {
+// localListener is a listener on a loopback port, and the port.
+type localListener struct {
+	net.Listener
+	port int
+}
+
+// listenLocal is a listener on a free loopback port.
+func listenLocal() (localListener, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return nil, nil, err
+		return localListener{}, err
 	}
 	addr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
 		_ = listener.Close()
-		return nil, nil, fmt.Errorf("listening on %s, which is no TCP address", listener.Addr())
+		return localListener{}, fmt.Errorf("listening on %s, which is no TCP address", listener.Addr())
 	}
-	return listener, addr, nil
+	return localListener{Listener: listener, port: addr.Port}, nil
 }
 
 // Stop closes the server and the vault behind it. Stopping what is not running
