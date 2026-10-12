@@ -66,6 +66,9 @@ type WriteResult struct {
 func (u Write) Deck(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
 ) (WriteResult, error) {
+	if err := note.CheckSize(path, len(body), MaxBytes); err != nil {
+		return WriteResult{}, err
+	}
 	whole, given, err := u.whole(ctx, v, path, body)
 	if err != nil {
 		return WriteResult{}, err
@@ -106,6 +109,9 @@ func (u Write) Stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
+	if err := note.CheckSize(path, len(body), note.MaxBytes); err != nil {
+		return domain.Fingerprint{}, err
+	}
 	if markdown.IsFrontmatterStart(body) {
 		return domain.Fingerprint{}, note.ErrBodyUnwritable
 	}

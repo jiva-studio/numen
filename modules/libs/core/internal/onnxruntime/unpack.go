@@ -132,9 +132,12 @@ func write(at string, from io.Reader) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(file, from)
-	file.Close()
-	if err != nil {
+	if _, err := io.Copy(file, from); err != nil {
+		file.Close()
+		os.Remove(part)
+		return err
+	}
+	if err := file.Close(); err != nil {
 		os.Remove(part)
 		return err
 	}
