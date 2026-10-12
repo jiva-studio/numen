@@ -13,7 +13,7 @@ import type { Bounds, Curve, Goal, Point, Settings, SettingsBounds } from '../ty
  * a day answers, which is what a longer day buys; the other two are read in
  * the minutes they cost.
  */
-export const getCost = (goal: Goal, point: Point): number =>
+export const getPointCost = (goal: Goal, point: Point): number =>
   goal === 'minutes' ? point.reviews : point.minutes
 
 /**
@@ -50,7 +50,7 @@ export const findNearest = (grid: readonly number[], value: number): number => {
  * been moved off that place the preset's own value is what is said. A knob
  * walked anywhere else stands on a place, and the place is exact.
  */
-export const getValue = (curve: Curve, place: number): number =>
+export const getKnobValue = (curve: Curve, place: number): number =>
   curve.now.at >= 0 && place === curve.now.at ? curve.now.value : (curve.grid[place] ?? 0)
 
 /** Why a preset's goal has nothing to work on, and empty where it has. */

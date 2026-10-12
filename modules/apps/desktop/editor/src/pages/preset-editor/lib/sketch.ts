@@ -38,7 +38,7 @@ const MIDDLE = 0.9
  * answer stand over one range.
  */
 export const estimateCurve = (settings: Settings, today: string, within: SettingsBounds): Curve => {
-  const grid = getGrid(settings, today, within)
+  const grid = createGrid(settings, today, within)
   const at = grid.map((value) => estimatePoint(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = getGoalValue(settings, today)
@@ -65,7 +65,11 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
  * nothing about is no range at all: the sketch draws no places, and the answer
  * brings the honest ones.
  */
-const getGrid = (settings: Settings, today: string, within: SettingsBounds): readonly number[] => {
+const createGrid = (
+  settings: Settings,
+  today: string,
+  within: SettingsBounds,
+): readonly number[] => {
   if (settings.goal === 'retention') {
     const span = within.retention
     if (span === undefined) return []

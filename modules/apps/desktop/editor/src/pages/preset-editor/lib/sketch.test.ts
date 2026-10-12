@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NO_BOUNDS, NO_PLACE, type Settings } from '../types'
 import { BOUNDS } from '../fixtures'
-import { getCost } from './curve'
+import { getPointCost } from './curve'
 import { estimateCurve } from './sketch'
 
 /**
@@ -34,7 +34,7 @@ describe('the line the window draws in the answer’s place', () => {
 
   it('brings back more of the material the longer the day runs', () => {
     const guess = estimateCurve(settings(), today, BOUNDS)
-    const costs = guess.at.map((one) => getCost('minutes', one))
+    const costs = guess.at.map((one) => getPointCost('minutes', one))
     expect(costs.every((cost, at) => at === 0 || cost >= (costs[at - 1] ?? 0))).toBe(true)
   })
 
@@ -42,7 +42,7 @@ describe('the line the window draws in the answer’s place', () => {
     const guess = estimateCurve(settings({ goal: 'retention', retention: 0.85 }), today, BOUNDS)
     expect(guess.grid[0]).toBe(0.7)
     expect(guess.grid[guess.grid.length - 1]).toBe(0.99)
-    const costs = guess.at.map((one) => getCost('retention', one))
+    const costs = guess.at.map((one) => getPointCost('retention', one))
     expect(costs.every((cost, at) => at === 0 || cost >= (costs[at - 1] ?? 0))).toBe(true)
   })
 

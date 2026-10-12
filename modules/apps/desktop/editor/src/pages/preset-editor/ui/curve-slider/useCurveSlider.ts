@@ -1,12 +1,18 @@
 import { computed, shallowRef, watch, ref } from 'vue'
 import type { Curve, PresetCounts } from '../../types'
-import { clearBacklog, getValue } from '../../lib/curve'
-import { getCallout, getHeights, getLabels, getKnobValueStyle, type Mark } from '../../lib/label'
+import { clearBacklog, getKnobValue } from '../../lib/curve'
+import {
+  createCallout,
+  createAxisLabels,
+  createLabels,
+  getKnobValueStyle,
+  type Mark,
+} from '../../lib/label'
 import {
   getExtent,
-  getLine,
+  createLinePath,
   getPlaceAtX,
-  getPositions,
+  createPositions,
   getBacklogRun,
   getShortPath,
   getKeyPlace,
@@ -46,15 +52,15 @@ export function useCurveSlider(
   )
 
   const extent = computed<Extent>(() => scale.value?.extent ?? getExtent(props.curve))
-  const positions = computed(() => getPositions(props.curve, extent.value))
-  const line = computed(() => getLine(positions.value))
+  const positions = computed(() => createPositions(props.curve, extent.value))
+  const line = computed(() => createLinePath(positions.value))
   const short = computed(() => getShortPath(props.curve, positions.value))
 
   const places = computed(() => props.curve.grid.length)
   const knob = computed(() => positions.value[props.place] ?? null)
   const suggested = computed(() => positions.value[props.curve.suggested.at] ?? null)
 
-  const held = computed(() => getValue(props.curve, props.place))
+  const held = computed(() => getKnobValue(props.curve, props.place))
   const isDated = computed(() => props.curve.goal === 'date')
   const isHonest = computed(() => props.curve.isHonest)
 
@@ -82,23 +88,23 @@ export function useCurveSlider(
       short: point.short,
       cards: props.curve.cards,
     })
-    return { lines, ...getCallout(at) }
+    return { lines, ...createCallout(at) }
   })
 
-  const named = computed(() => getLabels(marks.value, callout.value?.box ?? null))
+  const named = computed(() => createLabels(marks.value, callout.value?.box ?? null))
 
   const heights = computed(() =>
-    getHeights(
+    createAxisLabels(
       extent.value,
       positions.value,
       marks.value.map((one) => one.at),
       callout.value?.box ?? null,
-      (value) => words.getHeightLabel(props.curve.goal, value),
+      (value) => words.formatGoalCost(props.curve.goal, value),
     ),
   )
 
   const reading = computed(() => getKnobValueStyle(knob.value))
-  const atKnob = computed(() => words.getWidthLabel(props.curve.goal, held.value))
+  const atKnob = computed(() => words.formatGoalValue(props.curve.goal, held.value))
 
   const counts = computed(() => {
     const one = props.material
@@ -112,12 +118,12 @@ export function useCurveSlider(
   })
 
   const atLeast = computed(() =>
-    props.place === 0 ? '' : words.getWidthLabel(props.curve.goal, props.curve.grid[0] ?? 0),
+    props.place === 0 ? '' : words.formatGoalValue(props.curve.goal, props.curve.grid[0] ?? 0),
   )
   const atMost = computed(() =>
     props.place === places.value - 1
       ? ''
-      : words.getWidthLabel(props.curve.goal, props.curve.grid[places.value - 1] ?? 0),
+      : words.formatGoalValue(props.curve.goal, props.curve.grid[places.value - 1] ?? 0),
   )
 
   const least = computed(() => props.curve.grid[0] ?? 0)

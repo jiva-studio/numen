@@ -97,7 +97,7 @@ describe('the marks on the picture', () => {
     expect(state.marks.value).toStrictEqual([])
     expect(state.callout.value).toBeNull()
     expect(state.heights.value.map((one) => one.text)).toStrictEqual([
-      words.getHeightLabel('minutes', 120),
+      words.formatGoalCost('minutes', 120),
     ])
   })
 
@@ -145,7 +145,7 @@ describe('what the control says beside the picture', () => {
   it('reads the near end of the range off the first place', () => {
     const { state } = slider()
     expect(state.least.value).toBe(10)
-    expect(state.atLeast.value).toBe(words.getWidthLabel('minutes', 10))
+    expect(state.atLeast.value).toBe(words.formatGoalValue('minutes', 10))
   })
 })
 

@@ -256,8 +256,8 @@ export const TheReadoutStaysUnderThePicture: Story = {
     picture.focus()
     expect(picture).toHaveFocus()
 
-    const getValueText = (value: number) =>
-      within(canvasElement).getByText(words.getWidthLabel('minutes', value))
+    const getValueElement = (value: number) =>
+      within(canvasElement).getByText(words.formatGoalValue('minutes', value))
 
     // At either end, and in the middle: the value stands within the picture it
     // is read off, and it is drawn at all.
@@ -268,7 +268,7 @@ export const TheReadoutStaysUnderThePicture: Story = {
       await userEvent.keyboard(key)
       await waitFor(() => expect(picture).toHaveAttribute('aria-valuenow', String(value)))
 
-      const box = getValueText(value).getBoundingClientRect()
+      const box = getValueElement(value).getBoundingClientRect()
       expect(box.width).toBeGreaterThan(0)
       expect(box.left).toBeGreaterThanOrEqual(frame.left - 1)
       expect(box.right).toBeLessThanOrEqual(frame.right + 1)
@@ -331,8 +331,8 @@ export const TheBacklogKeepsItsRoom: Story = {
 
     // It runs from the first day to the last of the run at this place, and the
     // two ends stand at the two ends of it.
-    const first = canvas.getByText(words.getBacklogWidthLabel(1))
-    const last = canvas.getByText(words.getBacklogWidthLabel(7))
+    const first = canvas.getByText(words.formatBacklogDays(1))
+    const last = canvas.getByText(words.formatBacklogDays(7))
     expect(first.getBoundingClientRect().left).toBeLessThan(last.getBoundingClientRect().left)
 
     // One tab has a backlog drawn in the backlog and the other has none, which is

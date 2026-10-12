@@ -10,7 +10,7 @@ import CurveSlider from '../curve-slider/CurveSlider.vue'
 import type { PresetTabState } from '../../types'
 import { GOALS } from '../../types'
 import type { Goal } from '../../types'
-import { getIdleReason, getValue } from '../../lib/curve'
+import { getIdleReason, getKnobValue } from '../../lib/curve'
 import { WORDS as words } from '../../words'
 
 // --- Props & Emits ---
@@ -39,7 +39,7 @@ const day = computed(() => curve.value.days[place.value] ?? settings.value.byDat
 
 /** The value the control stands at, in the units of its goal. */
 const reading = computed(() =>
-  words.value(curve.value.goal, getValue(curve.value, place.value), day.value),
+  words.value(curve.value.goal, getKnobValue(curve.value, place.value), day.value),
 )
 
 /** Why the preset schedules nothing, and empty while it schedules something. */

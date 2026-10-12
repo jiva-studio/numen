@@ -14,7 +14,7 @@ import {
   BACKLOG_PLOT,
   getBacklogPositions,
   getBacklogExtent,
-  getLine,
+  createLinePath,
   getBacklogRun,
   PLOT_WIDTH,
   type Extent,
@@ -48,7 +48,7 @@ const extent = computed<Extent>(() =>
 )
 
 const positions = computed(() => getBacklogPositions(backlog.value, extent.value))
-const line = computed(() => getLine(positions.value))
+const line = computed(() => createLinePath(positions.value))
 
 /** Whether there is a backlog to draw at all. */
 const drawn = computed(() => props.isHonest && backlog.value.length > 1)
@@ -60,8 +60,8 @@ const drawn = computed(() => props.isHonest && backlog.value.length > 1)
  */
 const heights = computed(() => {
   const { least, most } = extent.value
-  const formatValue = (value: number) => words.getBacklogHeightLabel(value)
-  const getAxisHeights = (y: number, lift: string, value: number) =>
+  const formatValue = (value: number) => words.formatBacklogCards(value)
+  const createAxisLabels = (y: number, lift: string, value: number) =>
     isAxisLabelClear(y, positions.value, [])
       ? [{ at: getAxisNumber(y, lift, BACKLOG_PLOT.high), text: formatValue(value) }]
       : []
@@ -71,15 +71,15 @@ const heights = computed(() => {
     ]
   }
   return [
-    ...getAxisHeights(BACKLOG_PLOT.top, '-100%', most),
-    ...getAxisHeights(BACKLOG_PLOT.foot, '0', least),
+    ...createAxisLabels(BACKLOG_PLOT.top, '-100%', most),
+    ...createAxisLabels(BACKLOG_PLOT.foot, '0', least),
   ]
 })
 
 /** The days at either end of the extent, which the grid says nothing about. */
 const ends = computed(() => [
-  words.getBacklogWidthLabel(1),
-  words.getBacklogWidthLabel(backlog.value.length),
+  words.formatBacklogDays(1),
+  words.formatBacklogDays(backlog.value.length),
 ])
 const roomStyle = { aspectRatio: `${PLOT_WIDTH} / ${BACKLOG_PLOT_HEIGHT}` }
 

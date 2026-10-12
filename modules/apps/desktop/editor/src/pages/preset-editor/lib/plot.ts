@@ -6,7 +6,7 @@
  * a place on the line reads a place off a pointer.
  */
 import type { Position } from '@numen/ui'
-import { getCost } from './curve'
+import { getPointCost } from './curve'
 import type { Curve } from '../types'
 
 /** The picture's own units. It is scaled whole, so a circle stays one. */
@@ -44,7 +44,7 @@ export const GRIDLINES: readonly number[] = [0.25, 0.5, 0.75]
 export type { Position }
 
 /** Where one place of a grid stands across the picture. */
-export const getX = (place: number, places: number): number =>
+export const getXAtPlace = (place: number, places: number): number =>
   places <= 1 ? PLOT_LEFT : PLOT_LEFT + ((PLOT_RIGHT - PLOT_LEFT) * place) / (places - 1)
 
 /** The height of one of the faint lines. */
@@ -62,7 +62,7 @@ export interface Extent {
  * the picture is nothing under every run and a height is read against it.
  */
 export const getExtent = (curve: Curve): Extent => {
-  const costs = curve.at.map((point) => getCost(curve.goal, point))
+  const costs = curve.at.map((point) => getPointCost(curve.goal, point))
   return { least: 0, most: Math.max(0, ...costs) }
 }
 
@@ -85,16 +85,16 @@ export const getBacklogExtent = (backlog: readonly number[]): Extent => ({
 export const getBacklogPositions = (
   values: readonly number[],
   extent: Extent,
-): readonly Position[] => getSeries(values, extent, BACKLOG_PLOT)
+): readonly Position[] => createSeries(values, extent, BACKLOG_PLOT)
 
 /**
  * Where every place of the curve is drawn, in the extent the picture is scaled
  * to. The extent is the goal's and not this answer's, so a curve that is flat
  * within it is drawn flat, and an extent of no width lies along the foot.
  */
-export const getPositions = (curve: Curve, extent: Extent): readonly Position[] =>
-  getSeries(
-    curve.at.map((point) => getCost(curve.goal, point)),
+export const createPositions = (curve: Curve, extent: Extent): readonly Position[] =>
+  createSeries(
+    curve.at.map((point) => getPointCost(curve.goal, point)),
     extent,
   )
 
@@ -104,7 +104,7 @@ export const getPositions = (curve: Curve, extent: Extent): readonly Position[] 
  * and a second series — a backlog under it, say — is another, so a picture that
  * carries two carries them by the same arithmetic.
  */
-export const getSeries = (
+export const createSeries = (
   values: readonly number[],
   extent: Extent,
   plot: Plot = CURVE_PLOT,
@@ -113,7 +113,7 @@ export const getSeries = (
   // An extent of no width has no height to read: every value in it is the foot
   // of the plot, and the foot is where it is drawn.
   return values.map((value, place) => ({
-    x: getX(place, values.length),
+    x: getXAtPlace(place, values.length),
     y:
       span > 0
         ? clamp(plot.foot - (plot.foot - plot.top) * ((value - extent.least) / span), plot)
@@ -125,7 +125,7 @@ export const getSeries = (
 const clamp = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top), plot.foot)
 
 /** The line through those places. */
-export const getLine = (places: readonly Position[]): string =>
+export const createLinePath = (places: readonly Position[]): string =>
   places.map((at, place) => `${place === 0 ? 'M' : 'L'}${round(at.x)} ${round(at.y)}`).join(' ')
 
 /**
@@ -139,13 +139,13 @@ export const getShortPath = (curve: Curve, places: readonly Position[]): string 
     const at = places[place]
     if (!at) return
     if (point.canLearnEveryCard) {
-      if (run.length > 1) runs.push(getLine(run))
+      if (run.length > 1) runs.push(createLinePath(run))
       run = []
       return
     }
     run.push(at)
   })
-  if (run.length > 1) runs.push(getLine(run))
+  if (run.length > 1) runs.push(createLinePath(run))
   return runs.join(' ')
 }
 
@@ -154,13 +154,13 @@ export const getShortPath = (curve: Curve, places: readonly Position[]): string 
  * nothing past the day it names, so what the run says after that day is the
  * arithmetic of doing nothing and is no part of the choice being made.
  */
-const getDays = (curve: Curve, place: number): number =>
+const getDayLimit = (curve: Curve, place: number): number =>
   curve.goal === 'date' ? Math.max(Math.round(curve.grid[place] ?? 0), 0) : -1
 
 /** What stands overdue day by day at one place, cut at that place's own day. */
 export const getBacklogRun = (curve: Curve, place: number): readonly number[] => {
   const run = curve.at[place]?.backlog ?? []
-  const days = getDays(curve, place)
+  const days = getDayLimit(curve, place)
   return days < 0 ? run : run.slice(0, days)
 }
 

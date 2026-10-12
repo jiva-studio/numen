@@ -13,7 +13,7 @@ import { StopReason } from '@numen/protocol'
 import { getGoalValue, findNearest } from './lib/curve'
 import { asFailure, asValue } from '@numen/wire'
 import type { CardsFailure } from '@/entities/deck'
-import { getFields, getGoalField, type Field } from './lib/fields'
+import { getGoalFields, getGoalField, type Field } from './lib/fields'
 import {
   DEFAULTS,
   NO_BOUNDS,
@@ -737,7 +737,7 @@ describe('what the control writes', () => {
 describe('a setting the goal on screen does not name', () => {
   it('is not drawn, and keeps its value in the file across a write', async () => {
     const { state, written } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
-    expect(getFields(state.settings.value.goal, state.settings.value.learned)).not.toContain(
+    expect(getGoalFields(state.settings.value.goal, state.settings.value.learned)).not.toContain(
       'reviewsADay',
     )
 
@@ -759,7 +759,7 @@ describe('a setting the goal on screen does not name', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(getFields('retention', DEFAULTS.learned)).toContain('reviewsADay')
+    expect(getGoalFields('retention', DEFAULTS.learned)).toContain('reviewsADay')
     expect(state.settings.value.reviewsADay).toBe(7)
     expect(state.settings.value.newADay).toBe(12)
     expect(written.at(-1)?.reviewsADay).toBe(7)
@@ -818,7 +818,7 @@ describe('a field the goal does not getGoalField, typed', () => {
 
   it('leaves every other setting exactly as it stood, under every goal', async () => {
     for (const goal of ['minutes', 'retention'] as const) {
-      for (const field of getFields(goal, DEFAULTS.learned)) {
+      for (const field of getGoalFields(goal, DEFAULTS.learned)) {
         const value = NEW_VALUES[field]
         if (field === getGoalField(goal) || value === undefined) continue
 

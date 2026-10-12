@@ -72,7 +72,7 @@ export const isAxisLabelClear = (
  * Where a name over a mark is set: above it, pulled back inside the picture at
  * either end so the whole word stands over it.
  */
-export const getLabelStyle = (at: Position): CSSProperties => {
+export const getMarkNameStyle = (at: Position): CSSProperties => {
   let back = '-50%'
   if (at.x < PLOT_LEFT + LABEL) back = '0'
   else if (at.x > PLOT_RIGHT - LABEL) back = '-100%'
@@ -125,7 +125,7 @@ export interface Callout {
  * is riding. The tail is anchored on the knob itself and turns over with the
  * bubble, so what the numbers belong to is never in doubt.
  */
-export const getCallout = (knob: Position): Callout => {
+export const createCallout = (knob: Position): Callout => {
   const isUnder = knob.y - CALLOUT_GAP - CALLOUT_HEIGHT < PLOT_TOP
   const half = CALLOUT_WIDTH / 2
   let back = half
@@ -172,7 +172,7 @@ export interface Label {
  * that would touch the readout over the knob, or a name already placed, is
  * left off.
  */
-export const getLabels = (marks: readonly Mark[], over: Box | null): readonly Label[] => {
+export const createLabels = (marks: readonly Mark[], over: Box | null): readonly Label[] => {
   const placed: Box[] = over ? [over] : []
   const out: Label[] = []
   for (const mark of marks) {
@@ -180,7 +180,7 @@ export const getLabels = (marks: readonly Mark[], over: Box | null): readonly La
     const box = getNameBox(mark.at)
     if (!placed.every((one) => areBoxesSeparate(box, one))) continue
     placed.push(box)
-    out.push({ key: mark.key, text: mark.text, at: getLabelStyle(mark.at), box })
+    out.push({ key: mark.key, text: mark.text, at: getMarkNameStyle(mark.at), box })
   }
   return out
 }
@@ -199,7 +199,7 @@ export interface Height {
  * knob stands on is dropped: the axis gives way, and the drawing keeps what it
  * has to say.
  */
-export const getHeights = (
+export const createAxisLabels = (
   extent: Extent,
   places: readonly Position[],
   marks: readonly Position[],

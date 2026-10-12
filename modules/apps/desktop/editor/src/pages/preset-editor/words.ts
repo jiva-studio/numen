@@ -172,8 +172,8 @@ export const WORDS = {
   backlogY: 'Cards overdue',
   backlogX: 'Days from today',
   /** One height of the backlog, and one day along it. */
-  getBacklogHeightLabel: (value: number) => many(value, 'card'),
-  getBacklogWidthLabel: (days: number) => `${count(days)} d`,
+  formatBacklogCards: (value: number) => many(value, 'card'),
+  formatBacklogDays: (days: number) => `${count(days)} d`,
   /**
    * What the bubble over the knob says: the value being held, and under it what
    * that value buys. Each line is short enough to be taken at a glance.
@@ -216,10 +216,10 @@ export const WORDS = {
     return [targetSummary, sessionSummary, clearanceSummary]
   },
   /** One height of the picture, against the line it is the height of. */
-  getHeightLabel: (goal: Goal, value: number) =>
+  formatGoalCost: (goal: Goal, value: number) =>
     goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,
   /** One place along the picture, in the units of the goal's grid. */
-  getWidthLabel: (goal: Goal, value: number) => {
+  formatGoalValue: (goal: Goal, value: number) => {
     if (goal === 'retention') return percent(value)
     return goal === 'date' ? `${count(value)} d` : `${count(value)} min`
   },
