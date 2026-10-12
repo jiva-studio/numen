@@ -75,7 +75,7 @@ func answers(t *testing.T, s vaulted) {
 // and how many of them there are is counted the same way.
 func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces int) {
 	t.Helper()
-	held, err := s.standings.Decks(t.Context(), s.vault)
+	held, err := s.standings.GetDeckPaths(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

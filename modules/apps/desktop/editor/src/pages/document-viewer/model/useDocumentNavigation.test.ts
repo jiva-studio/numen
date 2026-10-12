@@ -14,16 +14,16 @@ describe('useDocumentNavigation', () => {
 
     expect(nav.pageNumber.value).toBe(0)
 
-    await nav.nextPage()
+    await nav.goToNextPage()
     expect(nav.pageNumber.value).toBe(1)
 
-    await nav.nextPage()
+    await nav.goToNextPage()
     expect(nav.pageNumber.value).toBe(2)
 
-    await nav.nextPage()
+    await nav.goToNextPage()
     expect(nav.pageNumber.value).toBe(2)
 
-    await nav.prevPage()
+    await nav.goToPreviousPage()
     expect(nav.pageNumber.value).toBe(1)
 
     await nav.goToPage(0)

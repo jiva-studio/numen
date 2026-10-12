@@ -24,7 +24,7 @@ export {
   DEFAULTS,
   GOALS,
   LOADS,
-  loadOn,
+  getLoadOn,
   NO_BOUNDS,
   NO_PLACE,
   RULES,

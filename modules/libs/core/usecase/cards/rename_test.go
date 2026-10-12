@@ -229,7 +229,7 @@ func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
 	if len(deck.Cards) != 1 {
 		t.Fatalf("cards = %+v", deck.Cards)
 	}
-	if !cardid.Valid(deck.Cards[0].Mark) {
+	if !cardid.IsValid(deck.Cards[0].Mark) {
 		t.Errorf("mark = %q, want the card given one", deck.Cards[0].Mark)
 	}
 	if deck.Cards[0].Heading != "Llama" {

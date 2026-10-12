@@ -6,7 +6,7 @@ import type { PlexDestination } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import type { FileOpeners } from '@/entities/tab'
-import { fileOf, type PathRename } from '@/shared/paths'
+import { getFileName, type PathRename } from '@/shared/paths'
 import { PRESET } from '@/entities/tab'
 import { NO_BOUNDS, type Presets, type SettingsBounds } from './types'
 import { WORDS as words } from './words'
@@ -43,7 +43,8 @@ export function usePresetTab(
     )
   }
 
-  const getTitle = (path: string): string => titles.get(path) || fileOf(path) || words.newPreset
+  const getTitle = (path: string): string =>
+    titles.get(path) || getFileName(path) || words.newPreset
 
   const kind: TabKind<PresetTabState, typeof PRESET> = {
     kind: PRESET,

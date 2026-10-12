@@ -9,9 +9,9 @@
 import type { DeckProblem } from '@/entities/deck'
 import {
   deserializeBufferDeckFromString,
-  applyHead,
-  applyName,
-  sameDeck,
+  applyReadHeadings,
+  applyScreenIds,
+  areDecksEqual,
   type BufferDeck,
 } from '../lib/deck'
 import { createMarks, areMarksEqual, type Marks } from '@/entities/deck'
@@ -25,13 +25,13 @@ export interface ShownStore {
 /** The reader one window has, over the decks that window holds. */
 export function createDeckReader(
   store: ShownStore,
-  problemsAt: (path: string) => readonly DeckProblem[],
+  getProblems: (path: string) => readonly DeckProblem[],
 ) {
   /** The last string a deck was read out of, and what it came to. */
   const parsed = new Map<string, { body: string; deck: BufferDeck }>()
 
   /** The deck one tab is showing, read out of the string the store holds. */
-  const deckAt = (id: string): BufferDeck => {
+  const getDeck = (id: string): BufferDeck => {
     const body = store.getOpenNote(id).body
     const held = parsed.get(id)
     if (held && held.body === body) return held.deck
@@ -43,7 +43,9 @@ export function createDeckReader(
     const read = deserializeBufferDeckFromString(body)
     let deck = read
     if (held) {
-      deck = sameDeck(held.deck, read) ? applyHead(held.deck, read) : applyName(held.deck, read)
+      deck = areDecksEqual(held.deck, read)
+        ? applyReadHeadings(held.deck, read)
+        : applyScreenIds(held.deck, read)
     }
     parsed.set(id, { body, deck })
     return deck
@@ -59,13 +61,13 @@ export function createDeckReader(
    * dragged elsewhere in the order or a card removed beside it takes its mark
    * with it from there.
    */
-  const marksAt = (id: string): Marks => {
-    const problems = problemsAt(store.getPath(id))
+  const getMarks = (id: string): Marks => {
+    const problems = getProblems(store.getPath(id))
     const held = marked.get(id)
     if (held && held.problems === problems) return held.marks
     const read = createMarks(
       problems,
-      deckAt(id).cards.map((card) => card.id),
+      getDeck(id).cards.map((card) => card.id),
       [],
     )
     // Marks saying what the last ones said leave what is drawn against the
@@ -89,5 +91,5 @@ export function createDeckReader(
     marked.delete(id)
   }
 
-  return { deckAt, marksAt, setParsed, forgetTab }
+  return { getDeck, getMarks, setParsed, forgetTab }
 }

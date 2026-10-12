@@ -120,7 +120,7 @@ describe('useTabSync', () => {
   })
 })
 
-const linkedTo = (...targets: string[]): any => ({ getLinkedTargets: () => targets })
+const createLinkedTabs = (...targets: string[]): any => ({ getLinkedTargets: () => targets })
 
 describe('isNotePath', () => {
   it('holds for markdown files and for paths without an extension', () => {
@@ -141,7 +141,7 @@ describe('useTabSync targets', () => {
 
     useTabSync({
       held,
-      tabLinks: linkedTo('note:other'),
+      tabLinks: createLinkedTabs('note:other'),
       editing: { noted: { loadInTab } } as any,
     }).syncPathFromTab('s', 'a.md', 'A')
 
@@ -154,7 +154,7 @@ describe('useTabSync targets', () => {
 
     useTabSync({
       held,
-      tabLinks: linkedTo('note:abc', 'x-note:def'),
+      tabLinks: createLinkedTabs('note:abc', 'x-note:def'),
       editing: { noted: { loadInTab } } as any,
     }).syncPathFromTab('s', 'a.md')
 
@@ -168,7 +168,7 @@ describe('useTabSync targets', () => {
       getTab: () => ({ kind: { kind: 'plex' } }),
       getTabStateIn: () => ({ view: { here: { value: 'same.md' }, go } }),
     }
-    const sync = useTabSync({ held, tabLinks: linkedTo('p'), editing: {} as any })
+    const sync = useTabSync({ held, tabLinks: createLinkedTabs('p'), editing: {} as any })
 
     sync.syncPathFromTab('s', 'same.md')
     expect(go).not.toHaveBeenCalled()
@@ -179,7 +179,7 @@ describe('useTabSync targets', () => {
 
   it('skips a files tab that has no state', () => {
     const held: any = { getTab: () => ({ kind: { kind: 'files' } }), getTabStateIn: () => null }
-    const sync = useTabSync({ held, tabLinks: linkedTo('f'), editing: {} as any })
+    const sync = useTabSync({ held, tabLinks: createLinkedTabs('f'), editing: {} as any })
 
     expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
   })
@@ -191,7 +191,7 @@ describe('useTabSync guards', () => {
     const held: any = { getTab: () => ({ kind: { kind: 'note' } }) }
     const sync = useTabSync({
       held,
-      tabLinks: linkedTo('n'),
+      tabLinks: createLinkedTabs('n'),
       editing: { noted: { loadInTab } } as any,
     })
 
@@ -208,7 +208,7 @@ describe('useTabSync guards', () => {
     })
     const sync = useTabSync({
       held,
-      tabLinks: linkedTo('n'),
+      tabLinks: createLinkedTabs('n'),
       editing: { noted: { loadInTab } } as any,
     })
 
@@ -228,7 +228,7 @@ describe('useTabSync guards', () => {
     })
     const sync = useTabSync({
       held,
-      tabLinks: linkedTo('n'),
+      tabLinks: createLinkedTabs('n'),
       editing: { noted: { loadInTab } } as any,
     })
 

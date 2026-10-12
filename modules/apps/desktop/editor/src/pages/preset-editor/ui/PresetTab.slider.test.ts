@@ -11,7 +11,7 @@ import PresetTab from './PresetTab.vue'
 import { NO_PLACE, type Point } from '../types'
 import { clearBacklog } from '../lib/curve'
 import { PLOT_BOTTOM } from '../lib/plot'
-import { mountPresetTab, heights, point, tabAt } from '../fixtures'
+import { mountPresetTab, heights, point, createTab } from '../fixtures'
 import { WORDS as words } from '../words'
 
 describe('the one slider', () => {
@@ -142,7 +142,7 @@ describe('the one slider', () => {
     expect(said).toStrictEqual(['20 minutes a day', '80 cards a session', 'overdue gone in 3 days'])
     // Its own value on the width stays on its own line under the picture.
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
-      words.widthAt('minutes', 20),
+      words.formatGoalValue('minutes', 20),
     )
     // The tail is on the knob, so the numbers belong to that place and not to
     // the picture as a whole.
@@ -211,12 +211,12 @@ describe('the one slider', () => {
     const first = () => tab.findAll('[data-control="bought"]')[0]?.text()
     expect(first()).toBe('23 minutes a day')
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
-      words.widthAt('minutes', 23),
+      words.formatGoalValue('minutes', 23),
     )
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
     expect(first()).toBe('30 minutes a day')
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
-      words.widthAt('minutes', 30),
+      words.formatGoalValue('minutes', 30),
     )
   })
 
@@ -255,7 +255,7 @@ describe('the one slider', () => {
   // The picture is what the keyboard comes to and what it moves. What focus is
   // drawn as on it is a browser's answer, and is asked in the stories.
   it('is what the keyboard reaches, and it takes the focus', () => {
-    const one = tabAt()
+    const one = createTab()
     const tab = mount(PresetTab, { props: { state: one.state }, attachTo: document.body })
     const picture = tab.get('[data-control="picture"][role="slider"]')
 
@@ -270,13 +270,13 @@ describe('the one slider', () => {
   // where the person put it and nowhere else.
   it('drops its line from the knob, wherever the knob is', async () => {
     const { tab } = mountPresetTab()
-    const dropAt = () => tab.get('[data-control="drop"]').attributes('x1')
-    const knobAt = () => tab.get('[data-control="knob"]').attributes('cx')
-    expect(dropAt()).toBe(knobAt())
+    const getDropX = () => tab.get('[data-control="drop"]').attributes('x1')
+    const getKnobX = () => tab.get('[data-control="knob"]').attributes('cx')
+    expect(getDropX()).toBe(getKnobX())
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
-    expect(dropAt()).toBe(knobAt())
+    expect(getDropX()).toBe(getKnobX())
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
-    expect(dropAt()).toBe(knobAt())
+    expect(getDropX()).toBe(getKnobX())
   })
 
   // The mark keeps its short name on the picture, and the paragraph says the
@@ -377,7 +377,7 @@ describe('what the control stands at', () => {
     const { tab } = mountPresetTab()
     const foot = tab.findAll('[data-control="foot"]')[0]
     expect(foot?.get('[data-control="number"][data-at-knob]').text()).toBe(
-      words.widthAt('minutes', 20),
+      words.formatGoalValue('minutes', 20),
     )
     expect(foot?.get('[data-control="name"][data-axis="x"]').text()).toBe(words.axisX('minutes'))
     // Nothing under the picture but the axis: what a place buys is said in the
@@ -397,7 +397,7 @@ describe('what the control stands at', () => {
   // a percentage and named as an act of remembering.
   it('speaks the share as a percentage, and of remembering', () => {
     expect(words.value('retention', 0.9, '')).toBe('90% remembered')
-    expect(words.widthAt('retention', 0.9)).toBe('90%')
+    expect(words.formatGoalValue('retention', 0.9)).toBe('90%')
     expect(words.fieldDetail('retention')).toContain('remember')
     for (const said of [
       words.value('retention', 0.9, ''),
@@ -424,7 +424,7 @@ describe('what the control stands at', () => {
     const { tab } = mountPresetTab()
     expect(tab.get('[data-control="name"][data-axis="y"]').text()).toBe(words.axisY('minutes'))
     expect(tab.get('[data-control="name"][data-axis="y"]').text()).toContain('session')
-    expect(tab.text()).toContain(words.heightAt('minutes', 120))
+    expect(tab.text()).toContain(words.formatGoalCost('minutes', 120))
     expect(tab.findAll('[data-control="bought"]').map((one) => one.text())).toContain(
       '80 cards a session',
     )
@@ -526,7 +526,7 @@ describe('what the control stands at', () => {
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
     // The extent of the fixture runs from no cards a day to a hundred and twenty.
-    expect(numbers).toContain(words.heightAt('minutes', 120))
+    expect(numbers).toContain(words.formatGoalCost('minutes', 120))
   })
 
   // A number the line or a mark stands on is dropped: the axis gives way, and
@@ -537,7 +537,7 @@ describe('what the control stands at', () => {
     const numbers = mountPresetTab()
       .tab.findAll('[data-control="number"]')
       .map((one) => one.text())
-    expect(numbers).not.toContain(words.heightAt('minutes', 0))
+    expect(numbers).not.toContain(words.formatGoalCost('minutes', 0))
   })
 
   // Two ends of an extent of no width are one number, and one number said twice
@@ -546,7 +546,7 @@ describe('what the control stands at', () => {
   it('says the one value once where the curve never moves', () => {
     const flat = mountPresetTab({ at: [point(), point(), point()] })
     const numbers = flat.tab.findAll('[data-control="number"]:not([data-at-knob])')
-    expect(numbers.map((one) => one.text())).toStrictEqual([words.heightAt('minutes', 0)])
+    expect(numbers.map((one) => one.text())).toStrictEqual([words.formatGoalCost('minutes', 0)])
   })
 
   // A count does not go below nothing, so nothing is the foot of the picture
@@ -600,8 +600,8 @@ describe('what the control stands at', () => {
 
   it('carries the value at either end of the range, and no words beside them', () => {
     const ends = mountPresetTab().tab.get('[data-control="ends"]').text()
-    expect(ends).toContain(words.widthAt('minutes', 0))
-    expect(ends).toContain(words.widthAt('minutes', 30))
+    expect(ends).toContain(words.formatGoalValue('minutes', 0))
+    expect(ends).toContain(words.formatGoalValue('minutes', 30))
     expect(ends).not.toContain('·')
   })
 
@@ -614,24 +614,24 @@ describe('what the control stands at', () => {
         ?.findAll('span')
         .map((one) => one.text())
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'Home' })
-    expect(endTexts()).toStrictEqual(['', words.widthAt('minutes', 30)])
+    expect(endTexts()).toStrictEqual(['', words.formatGoalValue('minutes', 30)])
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
-    expect(endTexts()).toStrictEqual([words.widthAt('minutes', 0), ''])
+    expect(endTexts()).toStrictEqual([words.formatGoalValue('minutes', 0), ''])
   })
 
   it('carries the value at the knob, and it follows the knob', async () => {
     const { tab } = mountPresetTab()
     const getKnobNumber = () => tab.get('[data-control="number"][data-at-knob]')
-    expect(getKnobNumber().text()).toBe(words.widthAt('minutes', 20))
+    expect(getKnobNumber().text()).toBe(words.formatGoalValue('minutes', 20))
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
-    expect(getKnobNumber().text()).toBe(words.widthAt('minutes', 30))
+    expect(getKnobNumber().text()).toBe(words.formatGoalValue('minutes', 30))
   })
 
   it('reads the numbers of each goal in that goal’s own units', () => {
-    expect(words.widthAt('retention', 0.8)).toBe('80%')
-    expect(words.widthAt('date', 12)).toBe('12 d')
-    expect(words.heightAt('date', 45)).toBe('45 min')
-    expect(words.heightAt('minutes', 80)).toBe('80 cards')
+    expect(words.formatGoalValue('retention', 0.8)).toBe('80%')
+    expect(words.formatGoalValue('date', 12)).toBe('12 d')
+    expect(words.formatGoalCost('date', 45)).toBe('45 min')
+    expect(words.formatGoalCost('minutes', 80)).toBe('80 cards')
   })
 })
 

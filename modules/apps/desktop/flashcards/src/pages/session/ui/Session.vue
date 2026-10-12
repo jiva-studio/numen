@@ -12,7 +12,7 @@ import Card from './Card.vue'
 import { AnswerButton } from './answer-button'
 import type { PanelPlace } from '../model/carousel'
 import { grades } from '@/entities/card'
-import { deckName } from '@/entities/vault'
+import { getDeckName } from '@/entities/vault'
 import { ASK_KEY, READ_KEY } from '@/features/keyboard'
 import type { CardFace, Grade } from '@/entities/card'
 
@@ -48,7 +48,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
 <template>
   <section class="session">
     <header class="session__where">
-      <span class="session__deck">{{ deckName(card.deck) }}</span>
+      <span class="session__deck">{{ getDeckName(card.deck) }}</span>
       <span v-if="card.section">{{ card.section }}</span>
       <span>{{ card.face }}</span>
       <span v-if="card.isNew" class="session__new">new</span>

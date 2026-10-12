@@ -7,7 +7,12 @@ import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { WORDS as words } from '@/shared/words'
 import { cards, presets, WORDS as cardWords } from '@/entities/deck'
-import { ANSWER_WORDS, invocationOf, openDestination, runInvocation } from '@/features/command-palette'
+import {
+  ANSWER_WORDS,
+  invocationOf,
+  openDestination,
+  runInvocation,
+} from '@/features/command-palette'
 import { running } from '@/entities/artifact'
 import { createFilesKind as buildFilesKind } from '@/pages/file-manager'
 import type { FilesTabDeps } from '@/pages/file-manager/types'
@@ -109,7 +114,7 @@ const setup = (over: Record<string, unknown> = {}) => {
   }
 }
 
-const stateOf = (entry: unknown) => ({ list: { getEntryAt: () => entry } }) as never
+const createFilesState = (entry: unknown) => ({ list: { getEntryAt: () => entry } }) as never
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -117,10 +122,10 @@ beforeEach(() => {
 
 describe('choosing a note in the files tab', () => {
   it('syncs the tab that holds the state, whichever tab is in front', () => {
-    const mine = stateOf(noteEntry)
+    const mine = createFilesState(noteEntry)
     const held = holding(
       [
-        { id: 'one', state: stateOf(noteEntry) },
+        { id: 'one', state: createFilesState(noteEntry) },
         { id: 'two', state: mine },
       ],
       { kind: 'files', id: 'front' },
@@ -137,7 +142,7 @@ describe('choosing a note in the files tab', () => {
     const held = holding([{ id: 'one', state: {} }], { kind: 'files', id: 'front' }, { id: 'last' })
     const { deps, syncPathFromTab } = setup({ held })
 
-    deps.onSelectPath!('a.md', stateOf(noteEntry))
+    deps.onSelectPath!('a.md', createFilesState(noteEntry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('front', 'a.md', 'a.md')
   })
@@ -146,7 +151,7 @@ describe('choosing a note in the files tab', () => {
     const held = holding([], { kind: 'note', id: 'front' }, { id: 'last' })
     const { deps, syncPathFromTab } = setup({ held })
 
-    deps.onSelectPath!('a.md', stateOf(noteEntry))
+    deps.onSelectPath!('a.md', createFilesState(noteEntry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('last', 'a.md', 'a.md')
   })
@@ -155,7 +160,7 @@ describe('choosing a note in the files tab', () => {
     const held = holding([], null, { id: 'last' })
     const { deps, syncPathFromTab } = setup({ held })
 
-    deps.onSelectPath!('a.md', stateOf(noteEntry))
+    deps.onSelectPath!('a.md', createFilesState(noteEntry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('last', 'a.md', 'a.md')
   })
@@ -164,7 +169,7 @@ describe('choosing a note in the files tab', () => {
     const held = holding([], null, null)
     const { deps, syncPathFromTab } = setup({ held })
 
-    deps.onSelectPath!('a.md', stateOf(noteEntry))
+    deps.onSelectPath!('a.md', createFilesState(noteEntry))
 
     expect(syncPathFromTab).not.toHaveBeenCalled()
   })
@@ -173,7 +178,7 @@ describe('choosing a note in the files tab', () => {
     const entry = { path: 'a.txt', name: 'a.txt', isFolder: false, kind: 'note' }
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('a.txt', stateOf(entry))
+    deps.onSelectPath!('a.txt', createFilesState(entry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('front', 'a.txt', 'a.txt')
   })
@@ -182,7 +187,7 @@ describe('choosing a note in the files tab', () => {
     const entry = { path: 'a.md', name: 'a.md', isFolder: false, kind: 'file' }
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('a.md', stateOf(entry))
+    deps.onSelectPath!('a.md', createFilesState(entry))
 
     expect(syncPathFromTab).toHaveBeenCalledWith('front', 'a.md', 'a.md')
   })
@@ -191,7 +196,7 @@ describe('choosing a note in the files tab', () => {
     const entry = { path: 'a.png', name: 'a.png', isFolder: false, kind: 'file' }
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('a.png', stateOf(entry))
+    deps.onSelectPath!('a.png', createFilesState(entry))
 
     expect(syncPathFromTab).not.toHaveBeenCalled()
   })
@@ -200,7 +205,7 @@ describe('choosing a note in the files tab', () => {
     const entry = { path: 'dir', name: 'dir', isFolder: true, kind: 'note' }
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('dir', stateOf(entry))
+    deps.onSelectPath!('dir', createFilesState(entry))
 
     expect(syncPathFromTab).not.toHaveBeenCalled()
   })
@@ -208,7 +213,7 @@ describe('choosing a note in the files tab', () => {
   it('syncs nothing for a path the list does not hold', () => {
     const { deps, syncPathFromTab } = setup()
 
-    deps.onSelectPath!('a.md', stateOf(null))
+    deps.onSelectPath!('a.md', createFilesState(null))
 
     expect(syncPathFromTab).not.toHaveBeenCalled()
   })
@@ -216,7 +221,7 @@ describe('choosing a note in the files tab', () => {
   it('is no trouble for a window that links no tabs', () => {
     const { deps } = setup({ tabSync: undefined })
 
-    expect(() => deps.onSelectPath!('a.md', stateOf(noteEntry))).not.toThrow()
+    expect(() => deps.onSelectPath!('a.md', createFilesState(noteEntry))).not.toThrow()
   })
 })
 
@@ -359,7 +364,10 @@ describe('what the files tab asks of the window', () => {
 
   it('creates a deck under the name it is given', async () => {
     const { deps, openNewFile } = setup()
-    vi.mocked(cards.createDeck).mockResolvedValue({ ok: true, value: { path: 'dir/D.md' } } as never)
+    vi.mocked(cards.createDeck).mockResolvedValue({
+      ok: true,
+      value: { path: 'dir/D.md' },
+    } as never)
 
     expect(await deps.createDeck('dir', 'D')).toBe('dir/D.md')
 
@@ -369,7 +377,10 @@ describe('what the files tab asks of the window', () => {
 
   it('creates a stencil under the name it is given, with a first field', async () => {
     const { deps } = setup()
-    vi.mocked(cards.createStencil).mockResolvedValue({ ok: true, value: { path: 'dir/S.md' } } as never)
+    vi.mocked(cards.createStencil).mockResolvedValue({
+      ok: true,
+      value: { path: 'dir/S.md' },
+    } as never)
 
     expect(await deps.createStencil('dir', 'S')).toBe('dir/S.md')
 
@@ -378,7 +389,10 @@ describe('what the files tab asks of the window', () => {
 
   it('creates a preset under the name it is given', async () => {
     const { deps } = setup()
-    vi.mocked(presets.createPreset).mockResolvedValue({ ok: true, value: { path: 'dir/P.md' } } as never)
+    vi.mocked(presets.createPreset).mockResolvedValue({
+      ok: true,
+      value: { path: 'dir/P.md' },
+    } as never)
 
     expect(await deps.createPreset('dir', 'P')).toBe('dir/P.md')
 
@@ -440,7 +454,9 @@ describe('an address imported from the files tab', () => {
 
     await deps.importUrl('dir', 'https://example.test')
 
-    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith(formatErrorMessage(failure), 'error'))
+    await vi.waitFor(() =>
+      expect(writeMessage).toHaveBeenCalledWith(formatErrorMessage(failure), 'error'),
+    )
     expect(applyPathChanges).not.toHaveBeenCalled()
   })
 

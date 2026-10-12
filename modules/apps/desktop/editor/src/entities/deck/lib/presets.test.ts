@@ -6,7 +6,7 @@
  * it, and nothing that draws a week knows of it.
  */
 import { describe, expect, it } from 'vitest'
-import { DEFAULTS, loadOn, setLoadOn, LOADS, WHOLE_LOAD } from './presets'
+import { DEFAULTS, getLoadOn, setLoadOn, LOADS, WHOLE_LOAD } from './presets'
 import type { BudgetUnit, Goal, Rule } from './presets'
 
 /**
@@ -43,13 +43,13 @@ describe('a preset naming nothing', () => {
 
 describe('what one day carries', () => {
   it('is the whole of a day for a day nothing was said about', () => {
-    expect(loadOn({}, 'mon')).toBe(WHOLE_LOAD)
-    expect(loadOn({ sat: 50 }, 'mon')).toBe(WHOLE_LOAD)
-    expect(loadOn({ sat: 50 }, 'sat')).toBe(50)
+    expect(getLoadOn({}, 'mon')).toBe(WHOLE_LOAD)
+    expect(getLoadOn({ sat: 50 }, 'mon')).toBe(WHOLE_LOAD)
+    expect(getLoadOn({ sat: 50 }, 'sat')).toBe(50)
   })
 
   it('is nothing where a day is put at nothing, which is not the whole of it', () => {
-    expect(loadOn({ sun: 0 }, 'sun')).toBe(0)
+    expect(getLoadOn({ sun: 0 }, 'sun')).toBe(0)
   })
 })
 

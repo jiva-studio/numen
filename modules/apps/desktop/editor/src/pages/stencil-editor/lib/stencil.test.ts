@@ -4,15 +4,15 @@ import type { VaultStencil } from '@/entities/deck'
 import {
   addFace,
   addField,
-  facesOf,
+  createVaultFaces,
   moveField,
   removeFace,
   removeField,
   renameFace,
-  sameStencil,
-  stencilBodyOf,
-  stencilIn,
-  stencilOf,
+  areStencilsEqual,
+  serializeStencil,
+  parseStencil,
+  createBufferStencil,
   writeFace,
   type BufferStencil,
 } from './stencil'
@@ -38,7 +38,7 @@ const cut = (over: Partial<VaultStencil> = {}): VaultStencil => ({
 })
 
 const stencil = (over: Partial<VaultStencil> = {}): BufferStencil =>
-  stencilOf(cut(over), createIds())
+  createBufferStencil(cut(over), createIds())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {
@@ -47,15 +47,15 @@ describe('a stencil as the window holds it', () => {
 
   it('is the same string read out and written back', () => {
     const held = stencil()
-    expect(stencilIn(stencilBodyOf(held))).toStrictEqual(held)
+    expect(parseStencil(serializeStencil(held))).toStrictEqual(held)
   })
 
   it('is a stencil of no fields where nothing has been read', () => {
-    expect(stencilIn('')).toStrictEqual({ fields: [], preamble: '', faces: [], tail: '' })
+    expect(parseStencil('')).toStrictEqual({ fields: [], preamble: '', faces: [], tail: '' })
   })
 
   it('hands the vault the faces without the identities it minted', () => {
-    expect(facesOf(stencil())[0]).toStrictEqual({
+    expect(createVaultFaces(stencil())[0]).toStrictEqual({
       name: 'Recognise',
       preamble: '',
       front: '{{Height}}',
@@ -132,19 +132,19 @@ describe('a face of a stencil', () => {
 
 describe('whether two readings of a file read the same', () => {
   it('is so for one file read twice, whatever identities each reading minted', () => {
-    expect(sameStencil(stencil(), stencil())).toBe(true)
+    expect(areStencilsEqual(stencil(), stencil())).toBe(true)
   })
 
   it('is not so for a field or a face written elsewhere', () => {
-    expect(sameStencil(stencil(), stencil({ fields: ['Height'] }))).toBe(false)
-    expect(sameStencil(stencil(), stencil({ faces: cut().faces.slice(0, 1) }))).toBe(false)
+    expect(areStencilsEqual(stencil(), stencil({ fields: ['Height'] }))).toBe(false)
+    expect(areStencilsEqual(stencil(), stencil({ faces: cut().faces.slice(0, 1) }))).toBe(false)
   })
 
   it('is not so for a preamble written elsewhere, however the tail reads', () => {
-    expect(sameStencil(stencil(), stencil({ preamble: 'Intro' }))).toBe(false)
+    expect(areStencilsEqual(stencil(), stencil({ preamble: 'Intro' }))).toBe(false)
   })
 
   it('is not so for a tail written elsewhere, however the preamble reads', () => {
-    expect(sameStencil(stencil(), stencil({ tail: 'Outro' }))).toBe(false)
+    expect(areStencilsEqual(stencil(), stencil({ tail: 'Outro' }))).toBe(false)
   })
 })

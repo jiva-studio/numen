@@ -4,7 +4,7 @@
  * Nothing here draws: the port is `AgentPort`, `@numen/wire` says what the
  * steps mean, and this says what the question is about.
  */
-import { agentPort } from '@numen/wire'
+import { createAgentPort } from '@numen/wire'
 import type { CardFace } from '@/entities/card'
 import { agentService } from '@/shared/clients'
 
@@ -16,8 +16,8 @@ import { agentService } from '@/shared/clients'
  * read as instruction; `card_current` gives the agent the same name as a tool's
  * answer, which is data.
  */
-export const createAgentPort = (card: CardFace) =>
-  agentPort({
+export const createCardAgentPort = (card: CardFace) =>
+  createAgentPort({
     askAgent: (request, options) =>
       agentService.askAgent({ ...request, mark: card.mark, face: card.face }, options),
     finishConversation: (request) => agentService.finishConversation(request),

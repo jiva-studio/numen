@@ -86,7 +86,7 @@ var ErrNotCarried = errors.New("the index does not carry this vault yet")
 // Execute reads every deck the vault holds and says what stands in it. A vault
 // the index does not carry gets ErrNotCarried.
 func (u ListCardFaces) Execute(ctx context.Context, v domain.Vault) ([]CardFace, error) {
-	paths, err := u.Decks(ctx, v)
+	paths, err := u.GetDeckPaths(ctx, v)
 	if err != nil {
 		return nil, err
 	}
@@ -95,11 +95,11 @@ func (u ListCardFaces) Execute(ctx context.Context, v domain.Vault) ([]CardFace,
 	return faces, nil
 }
 
-// Decks is the path of every deck the vault holds.
+// GetDeckPaths returns the path of every deck the vault holds.
 //
 // A vault the index does not carry gets ErrNotCarried. The list of decks is the
 // index's answer, and a vault absent from it is not a vault holding no cards.
-func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, error) {
+func (u ListCardFaces) GetDeckPaths(ctx context.Context, v domain.Vault) ([]string, error) {
 	if u.notes == nil {
 		return nil, ErrNotCarried
 	}
@@ -214,11 +214,11 @@ func (u ListCardFaces) parseDeck(
 	if err != nil || deck.Outcome != note.Ok {
 		return nil
 	}
-	faces, used, isWhole := u.facesOf(ctx, v, deck, stencils)
+	faces, used, isWhole := u.getDeckFaces(ctx, v, deck, stencils)
 	if isWhole {
 		u.cache.put(epoch, deckKey{vault: v.ID, path: path}, deckFaces{
 			deck: deck.Fingerprint, stencils: used, faces: slices.Clone(faces),
-		}, u.faceLimit())
+		}, u.getFaceLimit())
 	}
 	return faces
 }
@@ -256,10 +256,10 @@ func (m *stencilMemo) get(ctx context.Context, v domain.Vault, path string) sten
 	return out
 }
 
-// facesOf is the card faces one deck holds: every card of a mark, through every
+// getDeckFaces returns the card faces one deck holds: every card of a mark, through every
 // face of the stencil it names that lays anything out. It also says which
 // stencils the faces stand on, and whether every stencil a card named was read.
-func (u ListCardFaces) facesOf(
+func (u ListCardFaces) getDeckFaces(
 	ctx context.Context, v domain.Vault, deck cards.DeckContents, stencils *stencilMemo,
 ) (out []CardFace, used map[string]domain.Fingerprint, isWhole bool) {
 	used = make(map[string]domain.Fingerprint)
@@ -287,7 +287,7 @@ func (u ListCardFaces) facesOf(
 			}
 			out = append(out, CardFace{
 				Deck:    deck.Path,
-				Section: section(deck.Body, card),
+				Section: getSectionName(deck.Body, card),
 				ID:      review.CardFaceID{Card: string(card.Mark), Face: face.Name},
 				Heading: card.Heading,
 				stencil: one.stencil,
@@ -299,16 +299,16 @@ func (u ListCardFaces) facesOf(
 	return out, used, isWhole
 }
 
-// section is the name of the section a card stands under, and is empty for a
+// getSectionName returns the name of the section a card stands under, and is empty for a
 // card standing before the first.
-func section(d format.Deck, c format.Card) string {
+func getSectionName(d format.Deck, c format.Card) string {
 	if c.Section == format.NoSection || c.Section >= len(d.Sections) {
 		return ""
 	}
 	return d.Sections[c.Section].Name
 }
 
-func (u ListCardFaces) faceLimit() int {
+func (u ListCardFaces) getFaceLimit() int {
 	if u.MaxFaces > 0 {
 		return u.MaxFaces
 	}

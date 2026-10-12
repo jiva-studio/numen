@@ -181,7 +181,7 @@ func (b *budgets) charge(share *allowance, face review.CardFaceID, fresh bool) b
 	if fresh {
 		cost = one.cost.New
 	}
-	if !one.room(fresh, counted, cost) || !share.room(fresh, counted, cost) {
+	if !one.hasRoom(fresh, counted, cost) || !share.hasRoom(fresh, counted, cost) {
 		return false
 	}
 	one.spend(fresh, counted, cost)
@@ -189,9 +189,9 @@ func (b *budgets) charge(share *allowance, face review.CardFaceID, fresh bool) b
 	return true
 }
 
-// room reports whether this day has a place left for a card face of this kind
+// hasRoom reports whether this day has a place left for a card face of this kind
 // at this cost.
-func (a *allowance) room(fresh, counted bool, cost time.Duration) bool {
+func (a *allowance) hasRoom(fresh, counted bool, cost time.Duration) bool {
 	left, closes := a.admits.Reviews, a.admits.Limits.Reviews
 	if fresh {
 		left, closes = a.admits.New, a.admits.Limits.New

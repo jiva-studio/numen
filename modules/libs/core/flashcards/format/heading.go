@@ -30,7 +30,7 @@ func ReadHeading(heading string) (text string, carried domain.CardID) {
 		last = heading[at+1:]
 	}
 	written, found := strings.CutPrefix(last, caret)
-	if !found || !cardid.Valid(domain.CardID(written)) {
+	if !found || !cardid.IsValid(domain.CardID(written)) {
 		return heading, ""
 	}
 	if at < 0 {

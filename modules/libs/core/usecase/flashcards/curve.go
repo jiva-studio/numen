@@ -193,7 +193,7 @@ func (u ProjectCurve) readScheduledFaces(
 // only the decks answer: every one of them is read, and the curve of the
 // defaults pays for the whole vault.
 func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, path string) ([]string, error) {
-	decks, err := u.cardFaces.Decks(ctx, v)
+	decks, err := u.cardFaces.GetDeckPaths(ctx, v)
 	if err != nil || path == "" || u.presets.links == nil {
 		return decks, err
 	}

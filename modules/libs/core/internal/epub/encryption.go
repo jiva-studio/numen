@@ -12,7 +12,7 @@ const encryptionPath = "META-INF/encryption.xml"
 // What was done to an entry is not read: which entries the file names is what
 // separates a book that reads from one that does not.
 func readEncryptedPaths(files map[string]*zip.File) map[string]bool {
-	raw, _ := contents(files[encryptionPath])
+	raw, _ := readArchiveEntry(files[encryptionPath])
 	var document struct {
 		References []struct {
 			URI string `xml:"URI,attr"`

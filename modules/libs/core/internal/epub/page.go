@@ -10,9 +10,9 @@ import "unicode/utf8"
 // about this many.
 const lettersPerPage = 1024
 
-// pageBytes is how many bytes of one book's text make a page. The text is bytes
-// and a page is letters, so the letter is measured in this book's own script.
-func pageBytes(text string) int {
+// computePageBytes returns how many bytes of the text make a page of
+// lettersPerPage letters.
+func computePageBytes(text string) int {
 	letters := utf8.RuneCountInString(text)
 	if letters == 0 {
 		return 0

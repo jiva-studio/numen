@@ -13,7 +13,7 @@ import type { CreateResult } from '@/entities/file'
 import type { ErrorCode } from '@/shared/errors'
 import { writer } from '@/testing/writer'
 
-const pathOf = (note: NewNote): string =>
+const getNotePath = (note: NewNote): string =>
   note.folder ? `${note.folder}/${note.title}.md` : `${note.title}.md`
 
 /**
@@ -26,7 +26,7 @@ function fake(answers: CreateResult[] = [], errors: (ErrorCode | null)[] = []) {
   const core: NoteMaker = {
     create: async (note: NewNote): Promise<CreateResult> => {
       asked.push(note)
-      return answers.shift() ?? { ok: true, value: { path: pathOf(note) } }
+      return answers.shift() ?? { ok: true, value: { path: getNotePath(note) } }
     },
     join: async (path: string, link: Link): Promise<ErrorCode | null> => {
       joined.push({ path, link })
@@ -244,9 +244,9 @@ describe('removing a relationship from a note', () => {
   it('asks for the role of the seat it was given, and says nothing when it is done', async () => {
     const { core, asked, write, told } = removing(async () => null)
 
-    expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md', 'child')).toBe(
-      true,
-    )
+    expect(
+      await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md', 'child'),
+    ).toBe(true)
     expect(asked).toStrictEqual([{ path: 'Ontology.md', to: 'Entropy.md', role: 'child' }])
     expect(told).toStrictEqual([{ text: '', kind: 'report' }])
   })

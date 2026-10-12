@@ -50,7 +50,7 @@ describe('what is forgotten of a file', () => {
 
     answers.forgetFile('Animals.md')
 
-    expect(answers.problemsAt('Animals.md')).toStrictEqual([])
+    expect(answers.getProblems('Animals.md')).toStrictEqual([])
     expect(answers.getErrorMessage('Animals.md', true)).toBe(WORDS.unreachable)
     expect(answers.getTitle('Animals.md')).toBe('Animals.md')
   })
@@ -61,7 +61,7 @@ describe('what is forgotten of a file', () => {
 
     answers.forgetFile('Animals.md')
 
-    expect(answers.problemsAt('Other.md')).toStrictEqual([PROBLEM])
+    expect(answers.getProblems('Other.md')).toStrictEqual([PROBLEM])
     expect(answers.getTitle('Other.md')).toBe('Other title')
   })
 })
@@ -73,7 +73,7 @@ describe('a file that moved', () => {
 
     answers.moveFile('Old.md', 'New.md')
 
-    expect(answers.problemsAt('New.md')).toStrictEqual([PROBLEM])
+    expect(answers.getProblems('New.md')).toStrictEqual([PROBLEM])
     expect(answers.getTitle('New.md')).toBe('Beasts')
   })
 
@@ -83,7 +83,7 @@ describe('a file that moved', () => {
 
     answers.moveFile('Old.md', 'New.md')
 
-    expect(answers.problemsAt('Old.md')).toStrictEqual([])
+    expect(answers.getProblems('Old.md')).toStrictEqual([])
     expect(answers.getTitle('Old.md')).toBe('Old.md')
   })
 
@@ -93,7 +93,7 @@ describe('a file that moved', () => {
 
     answers.moveFile('Missing.md', 'New.md')
 
-    expect(answers.problemsAt('New.md')).toStrictEqual([PROBLEM])
+    expect(answers.getProblems('New.md')).toStrictEqual([PROBLEM])
     expect(answers.getTitle('New.md')).toBe('Beasts')
   })
 
