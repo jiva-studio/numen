@@ -86,9 +86,9 @@ func addLinks(ctx context.Context, core Core, in linkAddInput) (linkAddOutput, e
 
 	additions := make([]note.LinkAddition, 0, len(in.Links))
 	for _, add := range in.Links {
-		seen, err := parseFingerprint(add.Fingerprint)
+		baseline, err := parseFingerprint(add.Fingerprint)
 		additions = append(additions, note.LinkAddition{
-			From: add.From, Fingerprint: seen, Link: newDomainLink(add.Link), FingerprintError: err,
+			From: add.From, Fingerprint: baseline, Link: newDomainLink(add.Link), FingerprintError: err,
 		})
 	}
 	added, err := core.Notes.AddLinks.Execute(ctx, core.getCurrentVault().Vault, additions)
@@ -130,7 +130,7 @@ func addLinkUpdate(server *sdk.Server, core Core) {
 			"from `note_read` is required, and the change lands only on the note that " +
 			"fingerprint names.",
 	}, newHandler(func(ctx context.Context, in linkUpdateInput) (ChangeOutcome, error) {
-		seen, err := parseFingerprint(in.Fingerprint)
+		baseline, err := parseFingerprint(in.Fingerprint)
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
@@ -140,7 +140,7 @@ func addLinkUpdate(server *sdk.Server, core Core) {
 				Type:  in.Type,
 				Label: in.Label,
 				Why:   in.Why,
-			}, seen)
+			}, baseline)
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
@@ -164,12 +164,12 @@ func addLinkRemove(server *sdk.Server, core Core) {
 			"relationship. The fingerprint from `note_read` is required, and the " +
 			"removal lands only on the note that fingerprint names.",
 	}, newHandler(func(ctx context.Context, in linkRemoveInput) (ChangeOutcome, error) {
-		seen, err := parseFingerprint(in.Fingerprint)
+		baseline, err := parseFingerprint(in.Fingerprint)
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
 		written, err := core.Notes.Linking.Remove(ctx, core.getCurrentVault().Vault, in.From,
-			domain.ParseAddress(in.To), domain.LinkRole(in.Role), seen)
+			domain.ParseAddress(in.To), domain.LinkRole(in.Role), baseline)
 		if err != nil {
 			return ChangeOutcome{}, err
 		}
