@@ -155,12 +155,12 @@ function formatValue(val: string) { ... }
 
 ## 10. Code formatting (Prettier & gofmt)
 
-*TypeScript, Vue, JSON and CSS are formatted with Prettier.* Prettier is configured in `modules/prettier.config.mjs` and enforced in CI via `make lint` (`npm run format:check`). Format with `npm run format`.
+*TypeScript, Vue, JSON and CSS are formatted with Prettier.* Prettier is configured in `modules/prettier.config.mjs`. Format with `npm run format`.
 
 Go code is formatted with `gofmt` (`gofmt -l .`).
 
 - `.editorconfig` — encoding, line endings, the final newline, trailing whitespace, the indent.
-- **ESLint, with the boundary and code rules in `eslint.config.js`** — what is semantically wrong: a gerund where a verb belongs, a composable in the wrong shape, an empty catch, a dead export, a `ref` mishandled, a module reaching where it may not.
+- **ESLint, with the boundary and code rules in `eslint.config.js`** — what is semantically wrong: an empty catch, a `ref` mishandled, a module reaching where it may not.
 - **A generated file is whatever generated it.** Nothing under the protocol's generated output is hand-formatted or edited.
 
 ---
@@ -190,5 +190,3 @@ Then the windows, which need the library built first:
 cd modules/apps/desktop/editor         && npm run typecheck && npm test
 cd modules/apps/desktop/flashcards && npm run typecheck && npm test
 ```
-
-`make lint` and `make test` from the repository root cover both sides, with the one-at-a-time caveat above.
