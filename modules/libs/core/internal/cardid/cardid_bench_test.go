@@ -13,7 +13,7 @@ func BenchmarkNew(b *testing.B) {
 	}
 }
 
-func BenchmarkValid(b *testing.B) {
+func BenchmarkIsValid(b *testing.B) {
 	id := cardid.New()
 	b.ReportAllocs()
 	for b.Loop() {

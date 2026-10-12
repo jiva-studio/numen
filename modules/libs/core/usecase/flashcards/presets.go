@@ -135,8 +135,8 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]PresetSummary, err
 	return out, nil
 }
 
-// GetDefaultPreset returns the preset of a deck scheduled by no preset.
-func GetDefaultPreset() PresetContents {
+// CreateDefaultPreset returns the preset of a deck scheduled by no preset.
+func CreateDefaultPreset() PresetContents {
 	return PresetContents{Outcome: note.Ok, Settings: review.Defaults()}
 }
 
@@ -194,7 +194,7 @@ func (r *PresetReads) getSchedulingPreset(
 	ctx context.Context, v domain.Vault, deck string,
 ) (PresetContents, error) {
 	if r.links == nil {
-		return GetDefaultPreset(), nil
+		return CreateDefaultPreset(), nil
 	}
 	links, err := r.links.GetLinks(ctx, v.ID, deck)
 	if err != nil {
@@ -208,8 +208,8 @@ func (r *PresetReads) getSchedulingPreset(
 		}
 	}
 	if len(at) == 0 {
-		out := GetDefaultPreset()
-		if out.Problems, err = r.getRolelessEntries(ctx, v, deck); err != nil {
+		out := CreateDefaultPreset()
+		if out.Problems, err = r.readRolelessProblems(ctx, v, deck); err != nil {
 			return PresetContents{}, err
 		}
 		return out, nil
@@ -217,7 +217,7 @@ func (r *PresetReads) getSchedulingPreset(
 
 	first := at[0]
 	by := first.Target.GetWritten()
-	out := GetDefaultPreset()
+	out := CreateDefaultPreset()
 	if first.To != "" {
 		by = first.To
 		if out, err = r.read(ctx, v, first.To); err != nil {
@@ -238,11 +238,11 @@ func (r *PresetReads) getSchedulingPreset(
 	return out, nil
 }
 
-// getRolelessEntries returns what is shown against a deck that names no preset: every entry of
+// readRolelessProblems returns what is shown against a deck that names no preset: every entry of
 // its `links:` block the parser could not read for want of a role.
 //
 // Such an entry is not a link, so a preset written in one schedules nothing.
-func (r *PresetReads) getRolelessEntries(ctx context.Context, v domain.Vault, deck string) ([]string, error) {
+func (r *PresetReads) readRolelessProblems(ctx context.Context, v domain.Vault, deck string) ([]string, error) {
 	if r.Problems == nil {
 		return nil, nil
 	}

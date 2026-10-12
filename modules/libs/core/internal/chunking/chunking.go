@@ -103,12 +103,12 @@ type Chunk struct {
 	Small    []Chunk
 }
 
-// GetText returns the chunk's own text from the text it was cut from.
-func (c Chunk) GetText(text string) string { return text[c.Start : c.Start+c.Length] }
+// ExtractText returns the chunk's own text from the text it was cut from.
+func (c Chunk) ExtractText(text string) string { return text[c.Start : c.Start+c.Length] }
 
-// getMiddle returns the byte the chunk is centred on, and is what decides which large
+// computeMiddle returns the byte the chunk is centred on; it decides which large
 // chunk a small one belongs to.
-func (c Chunk) getMiddle() int { return c.Start + c.Length/2 }
+func (c Chunk) computeMiddle() int { return c.Start + c.Length/2 }
 
 // Cut returns the large chunks of the text, each carrying the small chunks
 // inside it.
@@ -158,14 +158,14 @@ func divideText(text string, parts []domain.PartStart) []division {
 // splitDivision tiles one division twice and puts each small chunk under the large
 // one its middle falls in.
 func splitDivision(text string, d division, s Sizes, l Legibility) []Chunk {
-	words := findWords(text, d.from, d.to)
+	words := splitWords(text, d.from, d.to)
 	if len(words) == 0 {
 		return nil
 	}
 	var large []Chunk
 	for _, at := range getOverlappingRanges(len(words), s.Large, s.LargeOverlap) {
 		c := getRangeChunk(words, at, d.location)
-		if !isLegible(c.GetText(text), l) {
+		if !isLegible(c.ExtractText(text), l) {
 			continue
 		}
 		large = append(large, c)
@@ -176,12 +176,12 @@ func splitDivision(text string, d division, s Sizes, l Legibility) []Chunk {
 // createWholeTextChunks makes the text itself the large chunk and cuts the small chunks on the
 // structure inside it.
 func createWholeTextChunks(text string, divisions []division, s Sizes, l Legibility) []Chunk {
-	words := findWords(text, 0, len(text))
+	words := splitWords(text, 0, len(text))
 	if len(words) == 0 {
 		return nil
 	}
 	large := getRangeChunk(words, [2]int{0, len(words)}, "")
-	if !isLegible(large.GetText(text), l) {
+	if !isLegible(large.ExtractText(text), l) {
 		return nil
 	}
 	var small []Chunk
@@ -209,7 +209,7 @@ func createSmallChunks(text string, words []word, location string, s Sizes, l Le
 	for _, at := range getOverlappingRanges(len(words), s.Small, s.SmallOverlap) {
 		for _, piece := range splitAtLimit(text, words, at, s.Limit) {
 			c := getRangeChunk(words, piece, location)
-			body := c.GetText(text)
+			body := c.ExtractText(text)
 			if utf8.RuneCountInString(body) > s.Limit || !isLegible(body, l) {
 				continue
 			}
@@ -231,17 +231,17 @@ func createSmallChunks(text string, words []word, location string, s Sizes, l Le
 func enclose(large, small []Chunk) []Chunk {
 	at := 0
 	for _, c := range small {
-		for at < len(large) && large[at].Start+large[at].Length <= c.getMiddle() {
+		for at < len(large) && large[at].Start+large[at].Length <= c.computeMiddle() {
 			at++
 		}
 		if at == len(large) {
 			break
 		}
-		if large[at].Start > c.getMiddle() {
+		if large[at].Start > c.computeMiddle() {
 			continue
 		}
 		under := at
-		for i := at; i < len(large) && large[i].Start <= c.getMiddle(); i++ {
+		for i := at; i < len(large) && large[i].Start <= c.computeMiddle(); i++ {
 			if large[i].Start <= c.Start && c.Start+c.Length <= large[i].Start+large[i].Length {
 				under = i
 				break
@@ -255,8 +255,8 @@ func enclose(large, small []Chunk) []Chunk {
 // A word is the byte extent of one run of characters that is not space.
 type word struct{ start, end int }
 
-// findWords finds the words of text[from:to].
-func findWords(text string, from, to int) []word {
+// splitWords splits text[from:to] into its words.
+func splitWords(text string, from, to int) []word {
 	var words []word
 	start := -1
 	for i, r := range text[from:to] {

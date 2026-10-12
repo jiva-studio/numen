@@ -96,7 +96,7 @@ func (u CountReviews) WithNow(now port.Clock) CountReviews {
 // Execute counts one vault.
 func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
 	log := Log{Stores: u.logs}
-	files, err := log.ListLogFiles(ctx, v)
+	files, err := log.GetLogFiles(ctx, v)
 	if err != nil {
 		return ReviewCounts{}, err
 	}
@@ -171,7 +171,7 @@ func (u CountReviews) countFile(
 			Name: file.Name,
 			Size: ran.Size,
 			Days: review.GetDayTallies(u.day, ran.Answers),
-			IDs:  getIdentifiers(ran.Answers),
+			IDs:  collectIdentifiers(ran.Answers),
 		}
 	}
 	run.now.Runs = append(run.now.Runs, one)
@@ -220,9 +220,9 @@ func addTallies(one, other review.Tally) review.Tally {
 	}
 }
 
-// getIdentifiers returns what every line of a run is named by, the lines taking an
+// collectIdentifiers returns what every line of a run is named by, the lines taking an
 // answer back among them.
-func getIdentifiers(answers []review.Answer) []string {
+func collectIdentifiers(answers []review.Answer) []string {
 	out := make([]string, 0, len(answers))
 	for _, a := range answers {
 		out = append(out, a.ID)

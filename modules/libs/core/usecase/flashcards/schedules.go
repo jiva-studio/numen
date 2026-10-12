@@ -112,18 +112,18 @@ type assignment struct {
 	mark  string
 }
 
-// getPlainAssignment returns every card face on the one scheduler, at the preset a deck naming
+// createPlainAssignment returns every card face on the one scheduler, at the preset a deck naming
 // none is scheduled by.
-func (u Schedules) getPlainAssignment() assignment {
+func (u Schedules) createPlainAssignment() assignment {
 	return assignment{
 		under: review.ScheduleBy(u.by),
-		mark:  getMark([]string{u.by.GetName(), u.getOpeningHour(), review.Defaults().GetPlacing()}),
+		mark:  getMark([]string{u.by.GetName(), u.getDayStartMark(), review.Defaults().GetPlacing()}),
 	}
 }
 
-// getOpeningHour returns the hour a day of review begins at, as a name a cache is filed
+// getDayStartMark returns the hour and location a day of review begins at, as a name a cache is filed
 // under. A day beginning elsewhere puts a card on another day.
-func (u Schedules) getOpeningHour() string {
+func (u Schedules) getDayStartMark() string {
 	in := "local"
 	if u.day.In != nil {
 		in = u.day.In.String()
@@ -138,11 +138,11 @@ func (u Schedules) getOpeningHour() string {
 // is every card of a vault nothing has read yet.
 func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignment, error) {
 	if u.presets.links == nil || u.cardFaces.notes == nil {
-		return u.getPlainAssignment(), nil
+		return u.createPlainAssignment(), nil
 	}
 	faces, err := u.cardFaces.Execute(ctx, v)
 	if errors.Is(err, ErrNotCarried) {
-		return u.getPlainAssignment(), nil
+		return u.createPlainAssignment(), nil
 	}
 	if err != nil {
 		return assignment{}, err
@@ -155,7 +155,7 @@ func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignmen
 func (u Schedules) getAssignmentFrom(
 	ctx context.Context, v domain.Vault, reads *PresetReads, faces []CardFace,
 ) (assignment, error) {
-	out := u.getPlainAssignment()
+	out := u.createPlainAssignment()
 	if reads == nil || reads.links == nil {
 		return out, nil
 	}
@@ -180,7 +180,7 @@ func (u Schedules) getAssignmentFrom(
 	}
 
 	marks := make([]string, 0, len(under)+2)
-	marks = append(marks, u.by.GetName(), u.getOpeningHour())
+	marks = append(marks, u.by.GetName(), u.getDayStartMark())
 	for face, one := range under {
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.GetName()+"\t"+one.Preset.GetPlacing())
 	}
@@ -224,7 +224,7 @@ func (u Schedules) Execute(
 	// The listing comes first, and the files are read only when the cache does
 	// not answer: reading the folder is what a launch does anyway, and reading
 	// every answer in it is what the cache is for.
-	files, err := log.ListLogFiles(ctx, v)
+	files, err := log.GetLogFiles(ctx, v)
 	if err != nil {
 		return nil, err
 	}
