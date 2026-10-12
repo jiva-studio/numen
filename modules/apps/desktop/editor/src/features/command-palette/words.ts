@@ -155,7 +155,7 @@ export interface Words extends EmptyWords {
   readonly forgetVault: string
   readonly eraseVault: string
   /** The groups the commands are drawn in. */
-  readonly overNote: string
+  readonly noteGroupTitle: string
   readonly overFile: string
   readonly overWindow: string
   readonly overVault: string
