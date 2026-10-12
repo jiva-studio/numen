@@ -67,6 +67,7 @@ const isSelected = (selection: EditorSelection, node: BlockNode) =>
 
 /** Whether a changed range reaches the node. `start` is where the range's bounds begin in `ranges`. */
 const isTouched = (node: BlockNode, ranges: readonly number[], start: 0 | 2) => {
+  // Stryker disable next-line EqualityOperator: a read past the last range is undefined, and no comparison with it holds
   for (let at = 0; at < ranges.length; at += 4) {
     const from = ranges[at + start] as number
     const to = ranges[at + start + 1] as number
@@ -91,6 +92,7 @@ const isUnchanged = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction) 
     return (
       before.name === node.name &&
       tr.changes.mapPos(before.from, 1) === node.from &&
+      // Stryker disable next-line UnaryOperator: a position that moves with the assoc has a change at it, and isTouched answers for that
       tr.changes.mapPos(before.to, -1) === node.to &&
       !isTouched(before, ranges, 0) &&
       !isTouched(node, ranges, 2) &&
@@ -113,6 +115,7 @@ const mapBlocks = (was: Blocks, nodes: readonly BlockNode[], tr: Transaction): B
         : Decoration.replace({ widget, block: true }).range(from, to),
     )
   })
+  // Stryker disable next-line BooleanLiteral: the marks are collected in document order, which is sorted
   return { marks: Decoration.set(moved, true), nodes }
 }
 

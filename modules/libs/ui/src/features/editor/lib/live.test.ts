@@ -3,7 +3,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { Compartment, EditorSelection, EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { GFM } from '@lezer/markdown'
+import { GFM, type MarkdownConfig } from '@lezer/markdown'
 import { live, wholeLines } from './live'
 import { blockMarks, getMarks } from './marks'
 import { Box, Bullet, Picture, Rule } from './widgets'
@@ -384,6 +384,68 @@ describe('the marks of whole lines held in the state', () => {
 
     const swapped = state.update({ effects: language.reconfigure(markdown()) }).state
     expect(getStanding(swapped)).toHaveLength(0)
+  })
+})
+
+/** A parser that reads the consecutive lines starting with `lead` as one rule, inset at either end. */
+const readRulesAt = (lead: string, insetFrom = 0, insetTo = 0): MarkdownConfig => ({
+  parseBlock: [
+    {
+      name: 'LeadRule',
+      before: 'HorizontalRule',
+      parse: (cx, line) => {
+        if (!line.text.startsWith(lead)) return false
+        const from = cx.lineStart
+        while (cx.nextLine() && line.text.startsWith(lead)) continue
+        cx.addElement(cx.elt('HorizontalRule', from + insetFrom, cx.prevLineEnd() - insetTo))
+        return true
+      },
+    },
+  ],
+})
+
+describe('the marks of whole lines when the parser finds other blocks in the same text', () => {
+  const swapTo = (doc: string, config: MarkdownConfig) => {
+    const { state, language } = createLinesState(doc)
+    const swapped = state.update({
+      effects: language.reconfigure(markdown({ extensions: [GFM, config] })),
+    }).state
+    return {
+      was: getStanding(state),
+      now: getStanding(swapped),
+      nodes: swapped.field(wholeLines).nodes,
+    }
+  }
+
+  it('are drawn again when a table is found to be a rule', () => {
+    const { was, now } = swapTo('| a | b |\n|---|---|\n| c | d |\n\nelse', readRulesAt('|'))
+    expect(was[0]?.deco.spec.widget).not.toBeInstanceOf(Rule)
+    expect(now).toHaveLength(1)
+    expect(now[0]?.deco.spec.widget).toBeInstanceOf(Rule)
+  })
+
+  it('are drawn again when a rule is found to start later', () => {
+    const { was, now, nodes } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 1))
+    expect(now[0]?.deco).not.toBe(was[0]?.deco)
+    expect(nodes).toEqual([{ name: 'HorizontalRule', from: 4, to: 6 }])
+  })
+
+  it('are drawn again when a rule is found to end earlier', () => {
+    const { was, now, nodes } = swapTo('a\n\n---\n\nb\n\nelse', readRulesAt('-', 0, 1))
+    expect(now[0]?.deco).not.toBe(was[0]?.deco)
+    expect(nodes).toEqual([{ name: 'HorizontalRule', from: 3, to: 5 }])
+  })
+
+  it('are drawn again when a change far away makes a rule of what was code', () => {
+    const doc = '---\n\n```\np\n\n---\n\n```\n\nz\n'
+    const { state } = createLinesState(doc)
+    const [was] = getStanding(state)
+
+    const [now, ...others] = getStanding(state.update({ changes: { from: 0, to: 9 } }).state)
+    expect(others).toHaveLength(0)
+    expect([now?.from, now?.to]).toEqual([3, 6])
+    expect(now?.deco.spec.widget).toBeInstanceOf(Rule)
+    expect(now?.deco.spec.widget).not.toBe(was?.deco.spec.widget)
   })
 })
 
