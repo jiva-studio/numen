@@ -134,13 +134,15 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		},
 
 		Sources: mcp.Sources{
-			GetDocumentList: cfg.GetDocumentList(opened.SourcesKnown()),
-			GetDocumentText: cfg.GetDocumentText(opened.SourcesKnown()),
-			Recognise:       makeRecogniser(opened),
-			Transcribe:      opened.GetTranscriptionWorker(),
-			URLs:            opened.API.Files.URLs,
-			Import:          opened.API.Imports,
-			Artifacts:       cfg.Artifacts(opened.SourcesKnown(), opened.API.ReportArtifactChange),
+			GetDocumentList:           cfg.GetDocumentList(opened.SourcesKnown()),
+			GetDocumentText:           cfg.GetDocumentText(opened.SourcesKnown()),
+			StartRecognition:          cfg.StartRecognition(opened.GetRecognitionWorker()),
+			GetRecognitionStatus:      cfg.GetRecognitionStatus(opened.GetRecognitionWorker()),
+			StartTranscription:        cfg.StartTranscription(opened.GetTranscriptionWorker()),
+			GetTranscriptionReadiness: cfg.GetTranscriptionReadiness(opened.GetTranscriptionWorker()),
+			URLs:                      opened.API.Files.URLs,
+			Import:                    opened.API.Imports,
+			Artifacts:                 cfg.Artifacts(opened.SourcesKnown(), opened.API.ReportArtifactChange),
 		},
 
 		Cards: mcp.Cards{
@@ -187,13 +189,4 @@ func makeOpenVault(opened *editor.Installation, out io.Writer) func(context.Cont
 		}
 		return err
 	}
-}
-
-// makeRecogniser is what reads a scanned document for an agent that asks.
-//
-// It is always served, even on a machine holding none of the models: what is
-// missing is fetched behind whoever asked, and the tool says so. A tool that is
-// not served at all leaves an agent saying the vault cannot do a thing it can.
-func makeRecogniser(opened *editor.Installation) mcp.Recogniser {
-	return opened.GetRecognitionWorker()
 }

@@ -122,10 +122,14 @@ type Cards struct {
 type Sources struct {
 	GetDocumentList *source.GetDocumentList
 	GetDocumentText *source.GetDocumentText
-	Recognise       Recogniser
-	// Transcribe hears a recording. Without it the tool that asks for one is
-	// served and answers that this installation cannot.
-	Transcribe Transcriber
+	// StartRecognition is held even on a machine holding none of the models: what
+	// is missing is fetched behind whoever asked.
+	StartRecognition     *source.StartRecognition
+	GetRecognitionStatus *source.GetRecognitionStatus
+	// StartTranscription queues the transcription of a recording. Without it the
+	// tool that asks for one is served and answers that this installation cannot.
+	StartTranscription        *source.StartTranscription
+	GetTranscriptionReadiness *source.GetTranscriptionReadiness
 	// URLs makes the file a web address is kept in, and Import fetches what is
 	// at that address. Without both, the tool that imports one is not added.
 	URLs   *source.CreateURL
