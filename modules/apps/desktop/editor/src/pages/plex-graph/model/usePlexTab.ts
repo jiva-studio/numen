@@ -21,7 +21,7 @@ import type {
   PlexTabState,
   QuickLinkRequest,
 } from '../types'
-import { usePlexParts } from './usePlexParts'
+import { usePlexHeadings } from './usePlexHeadings'
 
 export type {
   DirectionalLinkItem,
@@ -104,7 +104,7 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     return paths.filter(Boolean)
   })
 
-  const { readParts, getParts } = usePlexParts(drawn, types, deps, map)
+  const { readHeadings, getHeadings } = usePlexHeadings(drawn, types, deps, map)
 
   const activate = (node: string) => {
     const path = map.getNodePath(node)
@@ -205,10 +205,10 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     if (path) deps.openNote(path, getName(path), how)
   }
 
-  const openPart = (node: string, part: string) => {
+  const openHeading = (node: string, heading: string) => {
     const path = map.getNodePath(node)
-    if (!path || !/^\d+$/.test(part)) return
-    deps.openNote(path, getName(path), 'here', Number(part))
+    if (!path || !/^\d+$/.test(heading)) return
+    deps.openNote(path, getName(path), 'here', Number(heading))
   }
 
   const createNote = async () => {
@@ -219,9 +219,9 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const linkInspector = ref<LinkInspectorRequest | null>(null)
 
   const openLinkInspector = (pair: string, at: { x: number; y: number }) => {
-    const parts = pair.split(' ')
-    const idA = parts[0]!
-    const idB = parts[1]!
+    const ids = pair.split(' ')
+    const idA = ids[0]!
+    const idB = ids[1]!
     const pathA = map.getNodePath(idA)
     const pathB = map.getNodePath(idB)
     if (!pathA || !pathB) return
@@ -346,10 +346,10 @@ export function usePlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     isNavigatingOnCreate,
     creatable: deps.creatable,
     typeOf,
-    partsOf: getParts,
-    mostParts: deps.parts,
-    readParts,
-    openPart,
+    headingsOf: getHeadings,
+    maxHeadings: deps.headings,
+    readHeadings,
+    openHeading,
     activate,
     createNode,
     joinNodes,

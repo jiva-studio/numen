@@ -41,15 +41,15 @@ func FuzzAt(f *testing.F) {
 
 	path := filepath.Join(f.TempDir(), "numen.json")
 	f.Fuzz(func(t *testing.T, version int, mode, theme, dayStarts string,
-		interfaceScale, textScale float64, parts, mb int) {
+		interfaceScale, textScale float64, headings, mb int) {
 		raw, err := json.Marshal(file{
 			Version: version,
 			Appearance: appearance{
-				InterfaceScale: interfaceScale,
-				TextScale:      textScale,
-				Mode:           mode,
-				Theme:          theme,
-				Parts:          parts,
+				InterfaceScale:     interfaceScale,
+				TextScale:          textScale,
+				Mode:               mode,
+				Theme:              theme,
+				NestedHeadingLimit: headings,
 			},
 			Indexing: indexing{TranscribeUnderMB: mb},
 			Review:   review{DayStarts: dayStarts},
@@ -102,11 +102,11 @@ type file struct {
 }
 
 type appearance struct {
-	InterfaceScale float64 `json:"interface_scale"`
-	TextScale      float64 `json:"text_scale"`
-	Mode           string  `json:"mode"`
-	Theme          string  `json:"theme"`
-	Parts          int     `json:"nested_heading_limit"`
+	InterfaceScale     float64 `json:"interface_scale"`
+	TextScale          float64 `json:"text_scale"`
+	Mode               string  `json:"mode"`
+	Theme              string  `json:"theme"`
+	NestedHeadingLimit int     `json:"nested_heading_limit"`
 }
 
 type indexing struct {

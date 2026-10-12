@@ -51,7 +51,7 @@ const tab = (
     editor: vault.editor,
     isReady: ref(true),
     isNesting,
-    parts: ref(6),
+    headings: ref(6),
     openNote: (path, title, showing, line) => {
       opened.push([path, title, showing])
       if (line !== undefined) entered.push([path, line])
@@ -213,7 +213,7 @@ describe('a plex drawing nothing', () => {
       editor: createVault().editor,
       isReady: ref(true),
       isNesting: ref(true),
-      parts: ref(6),
+      headings: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
       askAgent: () => {},
@@ -304,7 +304,7 @@ describe('the picture', () => {
       editor: createVault().editor,
       isReady: ref(false),
       isNesting: ref(true),
-      parts: ref(6),
+      headings: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
       askAgent: () => {},
@@ -429,9 +429,9 @@ describe('the headings a node nests', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4), heading('Cold', 9, 2)]]])
 
-    await one.state.readParts()
+    await one.state.readHeadings()
 
-    expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
       { id: '9', text: 'Cold', level: 2 },
     ])
@@ -441,18 +441,20 @@ describe('the headings a node nests', () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
-    await one.state.readParts()
+    await one.state.readHeadings()
 
-    expect(one.state.partsOf(one.node('Root.md'))).toStrictEqual([])
+    expect(one.state.headingsOf(one.node('Root.md'))).toStrictEqual([])
   })
 
   it('are each named by the line it stands on', async () => {
     const one = tab('Root.md')
     one.divides.value = new Map([['Root.md', [heading('Heat', 12)]]])
 
-    await one.state.readParts()
+    await one.state.readHeadings()
 
-    expect(one.state.partsOf(one.node('Root.md')).map((part) => part.id)).toStrictEqual(['12'])
+    expect(one.state.headingsOf(one.node('Root.md')).map((heading) => heading.id)).toStrictEqual([
+      '12',
+    ])
   })
 
   it('are asked for again once the plex stands somewhere else', async () => {
@@ -462,7 +464,7 @@ describe('the headings a node nests', () => {
     await one.state.view.go('Other.md')
     await settle()
 
-    expect(one.state.partsOf(one.node('Other.md'))).toStrictEqual([
+    expect(one.state.headingsOf(one.node('Other.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -476,7 +478,7 @@ describe('the headings a node nests', () => {
       editor: createVault().editor,
       isReady: ref(true),
       isNesting: ref(true),
-      parts: ref(6),
+      headings: ref(6),
       openNote: () => {},
       readHeadings: () => new Promise((done) => answers.push(done)),
       askAgent: () => {},
@@ -492,23 +494,23 @@ describe('the headings a node nests', () => {
 
     // The picture asks once as it is built, and that answer is left pending.
     const asked = answers.length
-    void plex.readParts()
-    void plex.readParts()
+    void plex.readHeadings()
+    void plex.readHeadings()
     answers[asked + 1]?.(new Map([['Root.md', [heading('Fresh', 2)]]]))
     answers[asked]?.(new Map([['Root.md', [heading('Stale', 1)]]]))
     await settle()
 
-    expect(plex.partsOf(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
+    expect(plex.headingsOf(node())).toStrictEqual([{ id: '2', text: 'Fresh', level: 1 }])
   })
 
   it('are none for every node while the setting is off', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
-    await one.state.readParts()
+    await one.state.readHeadings()
     one.isNesting.value = false
 
-    expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([])
-    expect(one.state.partsOf(one.node('Root.md'))).toStrictEqual([])
+    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([])
+    expect(one.state.headingsOf(one.node('Root.md'))).toStrictEqual([])
   })
 
   it('are not asked of the vault at all while the setting is off', async () => {
@@ -516,7 +518,7 @@ describe('the headings a node nests', () => {
     one.isNesting.value = false
     one.headingsAsked.length = 0
 
-    await one.state.readParts()
+    await one.state.readHeadings()
 
     expect(one.headingsAsked).toStrictEqual([])
   })
@@ -526,9 +528,9 @@ describe('the headings a node nests', () => {
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.headingsAsked.length = 0
 
-    await one.state.readParts()
+    await one.state.readHeadings()
 
-    expect(one.state.partsOf(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.state.headingsOf(one.node('Animals.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
@@ -537,9 +539,9 @@ describe('the headings a node nests', () => {
     one.divides.value = new Map([['Animal.md', [heading('Front', 4)]]])
     one.headingsAsked.length = 0
 
-    await one.state.readParts()
+    await one.state.readHeadings()
 
-    expect(one.state.partsOf(one.node('Animal.md'))).toStrictEqual([])
+    expect(one.state.headingsOf(one.node('Animal.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
@@ -549,9 +551,9 @@ describe('the headings a node nests', () => {
     })
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
-    await one.state.readParts()
+    await one.state.readHeadings()
 
-    expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
@@ -561,9 +563,9 @@ describe('the headings a node nests', () => {
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.headingsAsked.length = 0
 
-    await one.state.readParts()
+    await one.state.readHeadings()
 
-    expect(one.state.partsOf(one.node('Animals.md'))).toStrictEqual([])
+    expect(one.state.headingsOf(one.node('Animals.md'))).toStrictEqual([])
     expect(one.headingsAsked).toStrictEqual([])
   })
 
@@ -574,22 +576,22 @@ describe('the headings a node nests', () => {
 
     one.isNesting.value = false
     await settle()
-    expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([])
+    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([])
 
     one.isNesting.value = true
     await settle()
 
-    expect(one.state.partsOf(one.node('Child.md'))).toStrictEqual([
+    expect(one.state.headingsOf(one.node('Child.md'))).toStrictEqual([
       { id: '4', text: 'Heat', level: 1 },
     ])
   })
 })
 
-describe('a part of a node chosen', () => {
+describe('a heading of a node chosen', () => {
   it('opens the note it stands in, and puts the keyboard on its line', () => {
     const one = tab('Root.md')
 
-    one.state.openPart(one.node('Root.md'), '12')
+    one.state.openHeading(one.node('Root.md'), '12')
 
     expect(one.opened).toStrictEqual([['Root.md', 'Root', 'here']])
     expect(one.entered).toStrictEqual([['Root.md', 12]])
@@ -598,7 +600,7 @@ describe('a part of a node chosen', () => {
   it('opens the note the node stands for, the focus being another one', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.openPart(one.node('Child.md'), '7')
+    one.state.openHeading(one.node('Child.md'), '7')
 
     expect(one.opened).toStrictEqual([['Child.md', 'Child', 'here']])
     expect(one.entered).toStrictEqual([['Child.md', 7]])
@@ -607,16 +609,16 @@ describe('a part of a node chosen', () => {
   it('stands the plex where it stood', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.openPart(one.node('Child.md'), '7')
+    one.state.openHeading(one.node('Child.md'), '7')
 
     expect(one.went).toStrictEqual([])
     expect(one.state.view.here.value).toBe('Root.md')
   })
 
-  it('opens nothing for a part naming no line, which is the one standing for the rest', () => {
+  it('opens nothing for a heading naming no line, which is the one standing for the rest', () => {
     const one = tab('Root.md')
 
-    one.state.openPart(one.node('Root.md'), '')
+    one.state.openHeading(one.node('Root.md'), '')
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])
@@ -671,7 +673,7 @@ const inVault = async (focus: string, beside: readonly NeighbourRow[] = []) => {
     editor: vault.editor,
     isReady: ref(true),
     isNesting: ref(true),
-    parts: ref(6),
+    headings: ref(6),
     openNote: (path, title, showing) => opened.push([path, title, showing]),
     readHeadings: async () => new Map(),
     askAgent: () => {},
@@ -1073,7 +1075,7 @@ describe('quick-link popover from a node handle', () => {
       editor: vault.editor,
       isReady: ref(true),
       isNesting: ref(true),
-      parts: ref(6),
+      headings: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
       askAgent: () => {},
@@ -1095,7 +1097,7 @@ describe('quick-link popover from a node handle', () => {
       editor: vault.editor,
       isReady: ref(true),
       isNesting: ref(true),
-      parts: ref(6),
+      headings: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
       askAgent: () => {},
@@ -1505,15 +1507,15 @@ describe('quick-link popover from a node handle', () => {
     expect(emptyResults).toEqual([])
   })
 
-  it('ignores invalid parts in openPart', () => {
+  it('ignores invalid headings in openHeading', () => {
     const { state, node, opened, entered } = tab('Focus.md', ['Child.md'])
     const focusId = node('Focus')
 
-    state.openPart(focusId, 'not-a-number')
+    state.openHeading(focusId, 'not-a-number')
     expect(entered).toEqual([])
     expect(opened).toEqual([])
 
-    state.openPart('nonexistent', '1')
+    state.openHeading('nonexistent', '1')
     expect(entered).toEqual([])
   })
 
@@ -1525,10 +1527,10 @@ describe('quick-link popover from a node handle', () => {
 })
 
 describe('usePlexTab edge cases and helpers', () => {
-  it('covers openPart edge cases, dismissals and menu choices', async () => {
+  it('covers openHeading edge cases, dismissals and menu choices', async () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.openPart('unknown-node', '12')
-    one.state.openPart(one.node('Root.md'), 'not-a-number')
+    one.state.openHeading('unknown-node', '12')
+    one.state.openHeading(one.node('Root.md'), 'not-a-number')
 
     one.state.openQuickLink({ from: one.node('Root.md'), seat: 'child', at: { x: 10, y: 10 } })
     expect(one.state.quickLink.value).not.toBeNull()
@@ -1562,7 +1564,7 @@ describe('what a plex keeps calling a note', () => {
   })
 })
 
-describe('the notes a plex asks the vault for the parts of', () => {
+describe('the notes a plex asks the vault for the headings of', () => {
   it('are none while the plex draws nothing', async () => {
     const one = tab('Root.md')
 
@@ -1643,11 +1645,11 @@ describe('a node opened', () => {
     expect(one.opened).toStrictEqual([['Child.md', 'Child', 'here']])
   })
 
-  it('opens nothing for a part whose name is not wholly a line number', () => {
+  it('opens nothing for a heading whose name is not wholly a line number', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.openPart(one.node('Child.md'), 'a12')
-    one.state.openPart(one.node('Child.md'), '12a')
+    one.state.openHeading(one.node('Child.md'), 'a12')
+    one.state.openHeading(one.node('Child.md'), '12a')
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])
