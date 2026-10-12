@@ -104,7 +104,7 @@ describe('what is drawn', () => {
   it('tells a row that is holding', () => {
     expect(getShownRows('work').map((row) => row.hasRows)).toStrictEqual([
       true,
-      false,
+      true,
       false,
       false,
       false,

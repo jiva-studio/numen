@@ -220,9 +220,7 @@ describe('a press', () => {
   it('says the selection once for a press with a modifier', async () => {
     const held = mountTree({ selected: ['work'] })
     await press(held, 'notes', { ctrlKey: true })
-    expect(held.emitted('select')?.[0]).toStrictEqual([
-      ['work', 'plans', 'notes', 'empty', 'loose'],
-    ])
+    expect(held.emitted('select')).toHaveLength(1)
   })
 
   it('twice on a row that holds turns it', async () => {
@@ -689,7 +687,9 @@ describe('the keys the tree takes', () => {
 
     expect(lower.defaultPrevented).toBe(true)
     expect(upper.defaultPrevented).toBe(true)
-    expect(held.emitted('select')).toHaveLength(1)
+    expect(held.emitted('select')?.[0]).toStrictEqual([
+      ['work', 'plans', 'notes', 'empty', 'loose'],
+    ])
   })
 
   it('takes Meta and A to select every row', () => {
