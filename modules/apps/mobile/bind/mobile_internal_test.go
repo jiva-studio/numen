@@ -14,9 +14,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"syscall"
+	"unsafe"
 	"testing"
 	"time"
 
@@ -698,5 +700,44 @@ func TestRegisterVaultAnswersTheErrorOfAMachineWithNoPlaceForTheList(t *testing.
 	filed, err := registerVault(container.Config{}, t.TempDir())
 	if err == nil || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a machine with no configuration folder, want no path and an error", filed, err)
+	}
+}
+
+// closeListenersOf closes the listeners a server is accepting on, without the
+// server being told to stop. The server holds them in an unexported set.
+func closeListenersOf(t *testing.T, server *http.Server) {
+	t.Helper()
+	field := reflect.ValueOf(server).Elem().FieldByName("listeners")
+	held := reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
+	if held.Len() == 0 {
+		t.Fatal("the server is accepting on no listener")
+	}
+	for _, key := range held.MapKeys() {
+		if err := (*(*net.Listener)(key.UnsafePointer())).Close(); err != nil {
+			t.Fatalf("closing the listener: %v", err)
+		}
+	}
+}
+
+func TestPortIsZeroAndTheErrorIsSaidOnceTheServerStopsAcceptingOnItsOwn(t *testing.T) {
+	read := captureStderr(t)
+	startIn(t, t.TempDir())
+	mu.Lock()
+	server := running.server
+	mu.Unlock()
+	closeListenersOf(t, server)
+
+	until := time.Now().Add(5 * time.Second)
+	for Port() != 0 && time.Now().Before(until) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := Port(); got != 0 {
+		t.Errorf("Port() = %d for a server that stopped accepting", got)
+	}
+	if err := Stop(); err != nil {
+		t.Logf("Stop() = %v", err)
+	}
+	if said := read(); !strings.Contains(said, "numen: ") {
+		t.Errorf("nothing said the server stopped accepting: %q", said)
 	}
 }
