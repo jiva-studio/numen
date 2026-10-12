@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -213,5 +214,39 @@ func TestAMachineWithNoCacheFolderReportsEachStoreItLacks(t *testing.T) {
 	}
 	if held.Schedules.Cache != nil || held.Counted.Cache != nil {
 		t.Error("a store was handed over where the machine has none")
+	}
+}
+
+// The day of review begins where the settings file says it does.
+func TestTheDayOfReviewBeginsWhereTheSettingsSayIt(t *testing.T) {
+	isolate(t)
+	file := filepath.Join(t.TempDir(), "numen.json")
+	if err := os.WriteFile(file, []byte(`{"review": {"day_starts": "06:15"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	got := container.Config{SettingsPath: file}.DayStarts()
+	if want := 6*time.Hour + 15*time.Minute; got != want {
+		t.Errorf("the day begins %v past midnight, want %v", got, want)
+	}
+}
+
+// Each store a machine lacks is reported with the reason it lacks it.
+func TestEachStoreAMachineLacksIsReportedWithItsReason(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", "")
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("LocalAppData", "")
+	var told []error
+	cfg := container.Config{
+		ServiceDir:   ".numen",
+		ErrorHandler: func(err error) { told = append(told, err) },
+	}
+	cfg.Flashcards(nil, nil, nil, nil)
+
+	for _, err := range told {
+		if errors.Unwrap(err) == nil {
+			t.Errorf("%q carries no reason", err)
+		}
 	}
 }

@@ -1,6 +1,7 @@
 package container_test
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -139,5 +140,104 @@ func TestAnIndexAnswersEveryPortItNames(t *testing.T) {
 
 	if db.Vectors() == nil || db.VectorsOwing() == nil || db.Sources() == nil || db.SourcesKnown() == nil {
 		t.Error("a port of the index answers nothing")
+	}
+}
+
+// An index answers every port it names, and says where its file is.
+func TestAnIndexSaysWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
+	cfg, db, _ := openVault(t, note)
+
+	if db.Path() != cfg.IndexPath {
+		t.Errorf("the index is at %q, not %q", db.Path(), cfg.IndexPath)
+	}
+	if db.Notes() == nil || db.Progress() == nil || db.Links() == nil || db.Problems() == nil {
+		t.Error("a port of the index answers nothing")
+	}
+}
+
+// Making room in an index that is open works, and in one that is closed says so.
+func TestAnIndexCompactsWhileOpenAndRefusesOnceClosed(t *testing.T) {
+	_, db, _ := openVault(t, note)
+
+	if err := db.Compact(t.Context()); err != nil {
+		t.Fatalf("an open index refused: %v", err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Compact(t.Context()); err == nil {
+		t.Error("a closed index made room")
+	}
+}
+
+// Watching an index that has no folder to stand in says so.
+func TestWatchingAnIndexWithNoFolderSaysSo(t *testing.T) {
+	isolate(t)
+	file := filepath.Join(t.TempDir(), "plain")
+	if err := os.WriteFile(file, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	moves, err := container.Config{IndexPath: filepath.Join(file, "index.db")}.Moves(t.Context())
+	if err == nil {
+		t.Error("an index below a file was watched")
+	}
+	if moves != nil {
+		t.Error("a channel came back with the error")
+	}
+}
+
+// Whether an asset owes a read is whether one changed or everything did.
+func TestAnAssetOwesAReadWhenOneChangedOrEverythingDid(t *testing.T) {
+	for _, one := range []struct {
+		what string
+		got  container.VaultChanges
+		want bool
+	}{
+		{"nothing", container.VaultChanges{}, false},
+		{"a note", container.VaultChanges{Paths: []string{"a.md"}}, false},
+		{"an asset", container.VaultChanges{Assets: []string{"a.png"}}, true},
+		{"everything", container.VaultChanges{ShouldReload: true}, true},
+		{"both", container.VaultChanges{ShouldReload: true, Assets: []string{"a.png"}}, true},
+	} {
+		if got := one.got.Reading(); got != one.want {
+			t.Errorf("%s: %v", one.what, got)
+		}
+	}
+}
+
+// The refresh an opener hands out brings named notes up to date.
+func TestTheRefreshAnOpenerHandsOutIndexesNamedNotes(t *testing.T) {
+	cfg, db, v := openVault(t, note)
+
+	res, err := cfg.VaultOpener(db).GetRefresh().Execute(t.Context(), v, []string{"Leaf.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Indexed) != 1 {
+		t.Errorf("indexed %v", res.Indexed)
+	}
+	if got := titleOf(t, db, v, "Leaf.md"); got != "Leaf" {
+		t.Errorf("the index says %q", got)
+	}
+}
+
+// A walk that stops partway still says how many notes it had read.
+func TestAWalkThatStopsSaysHowManyNotesItHadRead(t *testing.T) {
+	notes := map[string]string{}
+	for _, name := range []string{"a", "b", "c", "d"} {
+		notes[name+".md"] = "---\ntitle: " + name + "\n---\n\n# " + name + "\n"
+	}
+	cfg, db, v := openVault(t, notes)
+	open := cfg.VaultOpener(db).Begin(t.Context(), v)
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+
+	got, err := open.Read(ctx, func() { stop() })
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("the walk said %v", err)
+	}
+	if got == 0 {
+		t.Error("the walk says it read nothing")
 	}
 }
