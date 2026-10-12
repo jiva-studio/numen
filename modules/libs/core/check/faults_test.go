@@ -41,9 +41,9 @@ type fixed struct {
 }
 
 func (f fixed) Name() domain.Check { return f.name }
-func (f fixed) IsQuiet() bool      { return f.quiet }
+func (f fixed) IsOptIn() bool      { return f.quiet }
 
-func (f fixed) Look(context.Context, domain.Vault) ([]domain.VaultProblem, error) {
+func (f fixed) FindProblems(context.Context, domain.Vault) ([]domain.VaultProblem, error) {
 	return f.found, f.err
 }
 
