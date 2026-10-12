@@ -85,9 +85,7 @@ const getSpaceKeyIntent = (press: KeyboardEvent, screen: ScreenState): SessionKe
 
 /** The number a card is answered with, one for each grade in the order they are listed. */
 const getGradeKeyIntent = (press: KeyboardEvent): SessionKeyIntent | null => {
-  const which = Number(press.key)
-  if (!Number.isInteger(which) || which < 1 || which > grades.length) return null
-  const how = grades[which - 1]
+  const how = grades[Number(press.key) - 1]
   return how ? { does: 'answer', how } : null
 }
 

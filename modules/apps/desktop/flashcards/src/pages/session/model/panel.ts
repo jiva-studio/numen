@@ -47,25 +47,24 @@ export function useAgentPanel(deps: AgentPanelDeps) {
 
   const written = ref('')
 
-  /** The card the open conversation is about, and nothing while none is. */
-  const about = shallowRef<CardFace | null>(null)
+  /** The open conversation with the card it is about, made when a card is first asked about. */
+  const held = shallowRef<{ card: CardFace; conversation: Conversation } | null>(null)
 
-  /** The conversation itself, made when a card is first asked about. */
-  const conversation = shallowRef<Conversation | null>(null)
+  /** The card the open conversation is about, and nothing while none is. */
+  const about = computed(() => held.value?.card ?? null)
 
   /** How many conversations this window has opened, which names the next. */
   let opened = 0
 
-  const turns = computed<Turn[]>(() => conversation.value?.turns.value ?? [])
-  const isWorking = computed(() => conversation.value?.isWorking.value ?? false)
+  const turns = computed<Turn[]>(() => held.value?.conversation.turns.value ?? [])
+  const isWorking = computed(() => held.value?.conversation.isWorking.value ?? false)
 
   /** The conversation about one card, made once and let go of with the card. */
   const startTalk = (card: CardFace) => {
-    if (conversation.value && about.value?.mark === card.mark && about.value?.face === card.face)
-      return
+    if (held.value?.card.mark === card.mark && held.value.card.face === card.face) return
     endConversation()
-    about.value = card
-    conversation.value = useConversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
+    const conversation = useConversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
+    held.value = { card, conversation }
   }
 
   /**
@@ -102,19 +101,18 @@ export function useAgentPanel(deps: AgentPanelDeps) {
    * question is read as instruction.
    */
   const send = async (text: string) => {
-    const card = about.value
-    if (!card || !text) return
+    const current = held.value
+    if (!current || !text) return
     written.value = ''
-    await conversation.value?.ask(text, card.deck)
+    await current.conversation.ask(text, current.card.deck)
   }
 
-  const stop = () => conversation.value?.stop()
+  const stop = () => held.value?.conversation.stop()
 
   /** The conversation is over: the agent is told, and the panel holds nothing. */
   const endConversation = () => {
-    conversation.value?.finish()
-    conversation.value = null
-    about.value = null
+    held.value?.conversation.finish()
+    held.value = null
     written.value = ''
     deps.showPanel(false)
   }

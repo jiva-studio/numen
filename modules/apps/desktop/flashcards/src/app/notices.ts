@@ -67,8 +67,7 @@ export function useNotices() {
 
 /** One thing said, as a sentence: it opens with a capital and it ends. */
 const sentence = (text: string): string => {
-  const words = text.trim()
-  if (!words) return ''
-  const ended = /[.!?]$/.test(words) ? words : `${words}.`
-  return (ended[0]?.toUpperCase() ?? '') + ended.slice(1)
+  if (!text) return ''
+  const ended = /[.!?]$/.test(text) ? text : `${text}.`
+  return ended.charAt(0).toUpperCase() + ended.slice(1)
 }
