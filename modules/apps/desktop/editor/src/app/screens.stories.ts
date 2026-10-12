@@ -681,7 +681,7 @@ const LINES: readonly (readonly string[])[] = [
 const escapeXml = (line: string) =>
   line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-const pageAt = (page: number): string => {
+const createPage = (page: number): string => {
   const lines = LINES[page - OPENS_AT] ?? []
   const set = lines
     .map((line, at) => {
@@ -715,7 +715,7 @@ const BOOK: Documents = {
     pages: Array.from({ length: LEAVES }, () => PAGE),
     fingerprint: '1024 1700000000000000000 book.pdf',
   }),
-  getPageUrl: (_path, at) => pageAt(at),
+  getPageUrl: (_path, at) => createPage(at),
   getHighlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],
 }
 

@@ -101,11 +101,11 @@ describe('where two problems of one card stand', () => {
 })
 
 /** The marks of problems read against two cards and a face. */
-const marksOf = (...problems: DeckProblem[]) => createMarks(problems, ['c1', 'c2'], ['f1'])
+const createTestMarks = (...problems: DeckProblem[]) => createMarks(problems, ['c1', 'c2'], ['f1'])
 
 describe('whether two readings are wrong in the same way', () => {
   it('is so for two readings of nothing', () => {
-    expect(areMarksEqual(marksOf(), marksOf())).toBe(true)
+    expect(areMarksEqual(createTestMarks(), createTestMarks())).toBe(true)
   })
 
   it('is so for two readings saying the same against the same things', () => {
@@ -117,26 +117,29 @@ describe('whether two readings are wrong in the same way', () => {
       problem({ field: 'Back', text: 'field' }),
     ]
 
-    expect(areMarksEqual(marksOf(...all()), marksOf(...all()))).toBe(true)
+    expect(areMarksEqual(createTestMarks(...all()), createTestMarks(...all()))).toBe(true)
   })
 
   it('is not so where the file is told something else', () => {
-    expect(areMarksEqual(marksOf(problem({ text: 'a' })), marksOf(problem({ text: 'b' })))).toBe(
-      false,
-    )
+    expect(
+      areMarksEqual(
+        createTestMarks(problem({ text: 'a' })),
+        createTestMarks(problem({ text: 'b' })),
+      ),
+    ).toBe(false)
   })
 
   it('is not so where the file is told more in the same words', () => {
-    const one = marksOf(problem({ text: 'a' }))
-    const other = marksOf(problem({ text: 'a' }), problem({ text: 'b' }))
+    const one = createTestMarks(problem({ text: 'a' }))
+    const other = createTestMarks(problem({ text: 'a' }), problem({ text: 'b' }))
 
     expect(areMarksEqual(one, other)).toBe(false)
     expect(areMarksEqual(other, one)).toBe(false)
   })
 
   it('is not so where the file is told the same words in another order', () => {
-    const one = marksOf(problem({ text: 'a' }), problem({ text: 'b' }))
-    const other = marksOf(problem({ text: 'b' }), problem({ text: 'a' }))
+    const one = createTestMarks(problem({ text: 'a' }), problem({ text: 'b' }))
+    const other = createTestMarks(problem({ text: 'b' }), problem({ text: 'a' }))
 
     expect(areMarksEqual(one, other)).toBe(false)
   })
@@ -144,37 +147,43 @@ describe('whether two readings are wrong in the same way', () => {
   it('is not so where only a card or a face is told something else', () => {
     expect(
       areMarksEqual(
-        marksOf(problem({ card: 0, text: 'a' })),
-        marksOf(problem({ card: 0, text: 'b' })),
+        createTestMarks(problem({ card: 0, text: 'a' })),
+        createTestMarks(problem({ card: 0, text: 'b' })),
       ),
     ).toBe(false)
     expect(
       areMarksEqual(
-        marksOf(problem({ card: 0, text: 'a' })),
-        marksOf(problem({ card: 1, text: 'a' })),
+        createTestMarks(problem({ card: 0, text: 'a' })),
+        createTestMarks(problem({ card: 1, text: 'a' })),
       ),
     ).toBe(false)
   })
 
   it('is not so where one reading stands against more cards than the other', () => {
-    const one = marksOf(problem({ card: 0 }))
-    const other = marksOf(problem({ card: 0 }), problem({ card: 1 }))
+    const one = createTestMarks(problem({ card: 0 }))
+    const other = createTestMarks(problem({ card: 0 }), problem({ card: 1 }))
 
     expect(areMarksEqual(one, other)).toBe(false)
     expect(areMarksEqual(other, one)).toBe(false)
   })
 
   it('is not so where only a value of a card is told something else', () => {
-    const one = marksOf(problem({ card: 0, field: 'Front', text: 'a' }))
+    const one = createTestMarks(problem({ card: 0, field: 'Front', text: 'a' }))
 
-    expect(areMarksEqual(one, marksOf(problem({ card: 0, field: 'Front', text: 'b' })))).toBe(false)
-    expect(areMarksEqual(one, marksOf(problem({ card: 0, field: 'Back', text: 'a' })))).toBe(false)
-    expect(areMarksEqual(one, marksOf(problem({ card: 1, field: 'Front', text: 'a' })))).toBe(false)
+    expect(
+      areMarksEqual(one, createTestMarks(problem({ card: 0, field: 'Front', text: 'b' }))),
+    ).toBe(false)
+    expect(
+      areMarksEqual(one, createTestMarks(problem({ card: 0, field: 'Back', text: 'a' }))),
+    ).toBe(false)
+    expect(
+      areMarksEqual(one, createTestMarks(problem({ card: 1, field: 'Front', text: 'a' }))),
+    ).toBe(false)
   })
 
   it('is not so where one reading stands against more cards with values than the other', () => {
-    const one = marksOf(problem({ card: 0, field: 'Front' }))
-    const other = marksOf(
+    const one = createTestMarks(problem({ card: 0, field: 'Front' }))
+    const other = createTestMarks(
       problem({ card: 0, field: 'Front' }),
       problem({ card: 1, field: 'Front' }),
     )
@@ -184,8 +193,11 @@ describe('whether two readings are wrong in the same way', () => {
   })
 
   it('is not so where one reading stands against more values of a card than the other', () => {
-    const one = marksOf(problem({ card: 0, field: 'Front' }))
-    const other = marksOf(problem({ card: 0, field: 'Front' }), problem({ card: 0, field: 'Back' }))
+    const one = createTestMarks(problem({ card: 0, field: 'Front' }))
+    const other = createTestMarks(
+      problem({ card: 0, field: 'Front' }),
+      problem({ card: 0, field: 'Back' }),
+    )
 
     expect(areMarksEqual(one, other)).toBe(false)
     expect(areMarksEqual(other, one)).toBe(false)
@@ -194,14 +206,14 @@ describe('whether two readings are wrong in the same way', () => {
   it('is not so where only a field of the file is told something else', () => {
     expect(
       areMarksEqual(
-        marksOf(problem({ field: 'Back', text: 'a' })),
-        marksOf(problem({ field: 'Back', text: 'b' })),
+        createTestMarks(problem({ field: 'Back', text: 'a' })),
+        createTestMarks(problem({ field: 'Back', text: 'b' })),
       ),
     ).toBe(false)
     expect(
       areMarksEqual(
-        marksOf(problem({ field: 'Back', text: 'a' })),
-        marksOf(problem({ field: 'Front', text: 'a' })),
+        createTestMarks(problem({ field: 'Back', text: 'a' })),
+        createTestMarks(problem({ field: 'Front', text: 'a' })),
       ),
     ).toBe(false)
   })

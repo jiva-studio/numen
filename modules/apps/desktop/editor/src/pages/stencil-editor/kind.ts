@@ -61,7 +61,7 @@ export function useStencilTabs(
       errorMessage: computed(() =>
         wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error),
       ),
-      ...fields.actionsFor(id),
+      ...fields.createActions(id),
       keepMine: () => store.keep(id),
       takeFile: () => store.take(id),
       close: closeTab,

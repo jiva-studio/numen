@@ -9,7 +9,12 @@ import type { Cards, DeckProblem } from '@/entities/deck'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
 import { getFailureCode, WORDS as words } from '@/entities/deck'
-import { facesOf, stencilBodyOf, stencilIn, stencilOf } from '../lib/stencil'
+import {
+  createVaultFaces,
+  serializeStencil,
+  parseStencil,
+  createBufferStencil,
+} from '../lib/stencil'
 
 /** What the vault said about one file the last time it was read or written. */
 export interface VaultAnswer {
@@ -44,15 +49,18 @@ export function createStencilWire(cards: Cards, say: MessageWriter = () => {}) {
       at: answer.value.at,
     })
     titles.set(path, stencilData.title)
-    return asValue({ body: stencilBodyOf(stencilOf(stencilData)), at: answer.value.at })
+    return asValue({
+      body: serializeStencil(createBufferStencil(stencilData)),
+      at: answer.value.at,
+    })
   }
 
   const write = async (path: string, body: string, baseline: NoteBaseline | null = null) => {
-    const stencil = stencilIn(body)
+    const stencil = parseStencil(body)
     const answer = await cards.writeStencil(
       path,
       stencil.fields,
-      { preamble: stencil.preamble, faces: facesOf(stencil), tail: stencil.tail },
+      { preamble: stencil.preamble, faces: createVaultFaces(stencil), tail: stencil.tail },
       baseline?.fingerprint ?? null,
     )
     const currentAnswer = fileAnswers.get(path) ?? NOTHING

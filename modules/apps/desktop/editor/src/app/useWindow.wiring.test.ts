@@ -397,11 +397,11 @@ describe('the window started and closed', () => {
 })
 
 describe('a preset opened', () => {
-  const kindsOf = (type: string) =>
+  const mockFileKind = (type: string) =>
     h.core.fileKinds.mockResolvedValue(new Map([['a.md', { type }]]))
 
   it('opens the schedules over a file that is no deck, asking nothing of the presets', async () => {
-    kindsOf('note')
+    mockFileKind('note')
     useWindow()
 
     await h.args.commands.openPreset('a.md')
@@ -422,7 +422,7 @@ describe('a preset opened', () => {
   })
 
   it('says why the preset of a deck could not be read', async () => {
-    kindsOf('deck')
+    mockFileKind('deck')
     h.getDeckPreset.mockResolvedValue({ ok: false, error: 'missing' })
     useWindow()
 
@@ -434,7 +434,7 @@ describe('a preset opened', () => {
   })
 
   it('says a deck has no preset where the answer names none', async () => {
-    kindsOf('deck')
+    mockFileKind('deck')
     h.getDeckPreset.mockResolvedValue({ ok: true, value: { preset: { path: '', title: 'T' } } })
     useWindow()
 
@@ -445,7 +445,7 @@ describe('a preset opened', () => {
   })
 
   it('says a deck has no preset where the answer holds none', async () => {
-    kindsOf('deck')
+    mockFileKind('deck')
     h.getDeckPreset.mockResolvedValue({ ok: true, value: {} })
     useWindow()
 
@@ -455,7 +455,7 @@ describe('a preset opened', () => {
   })
 
   it('opens the preset a deck is under, with its title', async () => {
-    kindsOf('deck')
+    mockFileKind('deck')
     h.getDeckPreset.mockResolvedValue({
       ok: true,
       value: { preset: { path: 'Presets/Fast.md', title: 'Fast' } },

@@ -117,7 +117,7 @@ describe('note wikilink completion adapter', () => {
       at: [],
       type: 'note' as const,
     })
-    const headingsOf = (paths: Record<string, string[]>) =>
+    const createHeadings = (paths: Record<string, string[]>) =>
       new Map(
         Object.entries(paths).map(([path, texts]) => [
           path,
@@ -127,7 +127,7 @@ describe('note wikilink completion adapter', () => {
 
     it('does not look any note up when the title is empty', async () => {
       const deps = mockDeps({
-        headings: vi.fn().mockResolvedValue(headingsOf({ 'cur.md': ['Own'] })),
+        headings: vi.fn().mockResolvedValue(createHeadings({ 'cur.md': ['Own'] })),
       })
 
       await createWikilinkOptions(deps, () => 'cur.md').headings?.('')
@@ -140,7 +140,7 @@ describe('note wikilink completion adapter', () => {
         names: vi
           .fn()
           .mockResolvedValue([entry('a/Other.md', 'Other'), entry('b/Target.md', 'Target')]),
-        headings: vi.fn().mockResolvedValue(headingsOf({ 'b/Target.md': ['Right'] })),
+        headings: vi.fn().mockResolvedValue(createHeadings({ 'b/Target.md': ['Right'] })),
       })
 
       const result = await createWikilinkOptions(deps, () => 'cur.md').headings?.('Target')
@@ -154,7 +154,7 @@ describe('note wikilink completion adapter', () => {
         names: vi
           .fn()
           .mockResolvedValue([entry('a/Other.md', 'Other'), entry('b/Target.md', 'Target')]),
-        headings: vi.fn().mockResolvedValue(headingsOf({ 'b/Target.md': ['Right'] })),
+        headings: vi.fn().mockResolvedValue(createHeadings({ 'b/Target.md': ['Right'] })),
       })
 
       await createWikilinkOptions(deps, () => 'cur.md').headings?.('tArGeT')
@@ -170,7 +170,7 @@ describe('note wikilink completion adapter', () => {
             entry('a/Other.md', 'Target', 'Intro'),
             entry('b/Target.md', 'Target'),
           ]),
-        headings: vi.fn().mockResolvedValue(headingsOf({ 'b/Target.md': ['Right'] })),
+        headings: vi.fn().mockResolvedValue(createHeadings({ 'b/Target.md': ['Right'] })),
       })
 
       await createWikilinkOptions(deps, () => 'cur.md').headings?.('Target')
@@ -183,7 +183,7 @@ describe('note wikilink completion adapter', () => {
         names: vi
           .fn()
           .mockResolvedValue([entry('a/First.md', 'First note'), entry('b/Second.md', 'Second')]),
-        headings: vi.fn().mockResolvedValue(headingsOf({ 'a/First.md': ['One'] })),
+        headings: vi.fn().mockResolvedValue(createHeadings({ 'a/First.md': ['One'] })),
       })
 
       const result = await createWikilinkOptions(deps, () => 'cur.md').headings?.('Fir')
@@ -194,7 +194,7 @@ describe('note wikilink completion adapter', () => {
 
     it('falls back to the current note when nothing matches', async () => {
       const deps = mockDeps({
-        headings: vi.fn().mockResolvedValue(headingsOf({ 'cur.md': ['Own'] })),
+        headings: vi.fn().mockResolvedValue(createHeadings({ 'cur.md': ['Own'] })),
       })
 
       const result = await createWikilinkOptions(deps, () => 'cur.md').headings?.('Nothing')

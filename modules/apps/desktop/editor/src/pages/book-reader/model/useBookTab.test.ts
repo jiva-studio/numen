@@ -57,7 +57,7 @@ const createBookTabAt = (
     pages: computed(() => pages),
   }) as unknown as BookTabState
 
-const kindOver = (tab: BookTabState) =>
+const createKind = (tab: BookTabState) =>
   createBookKind(createMockWindow(tab).handle, () => tab, openers().tabOpeners).kind
 
 describe('what a book tab holds', () => {
@@ -109,13 +109,13 @@ describe('what a book tab is called', () => {
   it('is what the book calls itself', () => {
     const held = useBookTab(read('library/mbh-04.epub', 'Virāṭa Parva'))
 
-    expect(kindOver(held).getTitle?.(held)).toBe('Virāṭa Parva')
+    expect(createKind(held).getTitle?.(held)).toBe('Virāṭa Parva')
   })
 
   it('is the name of the file, for a book that calls itself nothing', () => {
     const held = useBookTab(read('library/sub/mbh-04.epub'))
 
-    expect(kindOver(held).getTitle?.(held)).toBe('mbh-04.epub')
+    expect(createKind(held).getTitle?.(held)).toBe('mbh-04.epub')
   })
 })
 
@@ -123,7 +123,7 @@ describe('what a book tab tells whoever answers for the person', () => {
   it('is the offset in front, and the page it falls on', () => {
     const held = createBookTabAt('library/Mahabharata.epub', 1_200_000, 1_201, 5_000)
 
-    expect(kindOver(held).getOpenTab?.(held)).toStrictEqual({
+    expect(createKind(held).getOpenTab?.(held)).toStrictEqual({
       path: 'library/Mahabharata.epub',
       book: { offset: 1_200_000, page: 1_201, pageCount: 5_000 },
     })
@@ -134,7 +134,7 @@ describe('what a command over a book tab is asked over', () => {
   it('is the file the book stands in, as a source', () => {
     const held = createBookTabAt('library/Mahabharata.epub', 0, 1, 5_000)
 
-    expect(kindOver(held).getTarget?.(held)).toStrictEqual({
+    expect(createKind(held).getTarget?.(held)).toStrictEqual({
       file: 'library/Mahabharata.epub',
       source: 'book',
     })
@@ -146,7 +146,7 @@ describe('a book let go of', () => {
     const close = vi.fn()
     const held = useBookTab(read('library/Mahabharata.epub', '', close))
 
-    expect(kindOver(held).onClose?.(held, 'a tab')).toBe(true)
+    expect(createKind(held).onClose?.(held, 'a tab')).toBe(true)
     expect(close).toHaveBeenCalledTimes(1)
   })
 })
@@ -172,7 +172,7 @@ describe('what a book tab is filed under', () => {
   it('is the path of the book', () => {
     const held = createBookTabAt('library/Mahabharata.epub', 0, 1, 5_000)
 
-    expect(kindOver(held).identity?.('library/Mahabharata.epub')).toBe('library/Mahabharata.epub')
+    expect(createKind(held).identity?.('library/Mahabharata.epub')).toBe('library/Mahabharata.epub')
   })
 })
 
@@ -182,7 +182,7 @@ describe('a book tab brought on screen', () => {
     const focusTab = vi.fn<() => void>()
     const held = { measure, focusTab } as unknown as BookTabState
 
-    kindOver(held).onShow?.(held, 'a tab')
+    createKind(held).onShow?.(held, 'a tab')
 
     expect(measure).toHaveBeenCalledTimes(1)
     expect(focusTab).toHaveBeenCalledTimes(1)
