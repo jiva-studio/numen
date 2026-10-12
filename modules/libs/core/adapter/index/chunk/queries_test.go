@@ -708,7 +708,7 @@ func TestASearchByMeaningStaysInItsKindsRecipeAndVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(notes) != 1 || notes[0].Kind != domain.KindNote {
+	if len(notes) != 2 || slices.ContainsFunc(notes, func(p domain.Passage) bool { return p.Kind != domain.KindNote }) {
 		t.Errorf("a search of notes answered %v", getSources(notes))
 	}
 	other, err := queries.FindNearest(t.Context(), vaultA, "another model", seedVector(0xF0), nil, 10, -1)
