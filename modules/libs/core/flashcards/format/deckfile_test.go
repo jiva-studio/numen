@@ -864,3 +864,90 @@ func TestAddCardUnderASectionTheDeckDoesNotHold(t *testing.T) {
 		t.Errorf("add = %v, want ErrNoSuchSection", err)
 	}
 }
+
+// A deck whose frontmatter is never closed holds no prose to write to: every
+// change is refused with the markdown package's ErrUnterminated, and nothing is
+// written.
+func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
+	raw := "---\ntype: deck\n\n# Fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
+		"## Bare\n\n[[Animal]]\n\n### Name\n\nBare\n"
+	stencils := map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}}
+	createID := func() domain.CardID { return "m9n8b7v6c5" }
+
+	for name, change := range map[string]func(*format.DeckFile) error{
+		"whole": func(f *format.DeckFile) error {
+			given, err := f.Whole(stencils, createID)
+			if given != nil {
+				t.Errorf("marks given = %+v, want none", given)
+			}
+			return err
+		},
+		"set a value": func(f *format.DeckFile) error { return f.SetValue(llama, "Name", "Lama") },
+		"set a stencil": func(f *format.DeckFile) error {
+			return f.SetStencil(llama, "Beast")
+		},
+		"remove a value": func(f *format.DeckFile) error { return f.RemoveValue(llama, "Name") },
+		"remove a card":  func(f *format.DeckFile) error { return f.RemoveCard(llama) },
+		"rename a section": func(f *format.DeckFile) error {
+			return f.RenameSection(0, "Furred")
+		},
+		"remove a section": func(f *format.DeckFile) error { return f.RemoveSection(0) },
+		"add a section":    func(f *format.DeckFile) error { return f.AddSection(format.Section{Name: "New"}) },
+		"add a card":       func(f *format.DeckFile) error { return f.AddCard(format.Card{Heading: "Camel"}) },
+		"add a card under": func(f *format.DeckFile) error {
+			return f.AddCardUnder(0, format.Card{Heading: "Camel"})
+		},
+		"rename a field": func(f *format.DeckFile) error {
+			n, err := f.RenameField(map[string]string{"Animal": "Animal"}, "Animal", "Name", "Title")
+			if n != 0 {
+				t.Errorf("renamed %d, want 0", n)
+			}
+			return err
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f, err := format.OpenDeck([]byte(raw))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			if err := change(f); !errors.Is(err, markdown.ErrUnterminated) {
+				t.Errorf("err = %v, want ErrUnterminated", err)
+			}
+			if string(f.Bytes()) != raw {
+				t.Error("a refused change was written anyway")
+			}
+		})
+	}
+}
+
+// Making a deck whole through its file writes the marks into the file and says
+// which cards were given one.
+func TestDeckFileWholeWritesTheMarksItGives(t *testing.T) {
+	f := format.OpenDeckBody("## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n")
+	given, err := f.Whole(map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}},
+		func() domain.CardID { return "m9n8b7v6c5" })
+	if err != nil {
+		t.Fatalf("whole: %v", err)
+	}
+	if want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}}; !slices.Equal(given, want) {
+		t.Errorf("given = %+v, want %+v", given, want)
+	}
+	if want := "## Llama ^m9n8b7v6c5\n\n[[Animal]]\n\n### Name\n\nLlama\n"; f.Body() != want {
+		t.Errorf("body\n want %q\n  got %q", want, f.Body())
+	}
+}
+
+// A card that cannot be found is refused before anything is written, whichever
+// change was asked for.
+func TestSetStencilAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
+	f := format.OpenDeckBody(deck)
+	if err := f.SetStencil("wxyz01234t", "Animal"); !errors.Is(err, format.ErrNoSuchCard) {
+		t.Errorf("set stencil = %v, want ErrNoSuchCard", err)
+	}
+	if err := f.RemoveCard("wxyz01234t"); !errors.Is(err, format.ErrNoSuchCard) {
+		t.Errorf("remove card = %v, want ErrNoSuchCard", err)
+	}
+	if f.Body() != deck[strings.Index(deck, "\n\nCards"):][2:] && !strings.HasSuffix(deck, f.Body()) {
+		t.Error("a card that is not there was written anyway")
+	}
+}
