@@ -2,6 +2,7 @@ package embedders_test
 
 import (
 	"context"
+	"errors"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -218,5 +219,75 @@ func TestASeparateQuestionProviderLeavesTheIndexSideUnlimited(t *testing.T) {
 	t.Cleanup(func() { _ = closer() })
 	if got := filling.(interface{ Concurrency() int }).Concurrency(); got != 4 {
 		t.Errorf("the index side reports %d, want all 4", got)
+	}
+}
+
+func TestTheIndexSideIsSizedByTheModelThatArrives(t *testing.T) {
+	model := newGated(4)
+	arrive := make(chan struct{})
+	opening := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
+		select {
+		case <-arrive:
+			return model, nil
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	filling, _, closer := embedders.Open(t.Context(), task.New(),
+		embedders.NewFetched(model.model, "gated", opening), embedders.Provider{})
+	t.Cleanup(func() { _ = closer() })
+
+	first := make(chan error, 1)
+	go func() {
+		_, err := filling.Embed(t.Context(), []string{"quick"})
+		first <- err
+	}()
+	time.Sleep(100 * time.Millisecond)
+	close(arrive)
+	select {
+	case err := <-first:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("a call made before the model arrived never returned")
+	}
+	waitEntered(t, model, 1)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	wg, _ := holdOnIndexSide(ctx, filling, 6)
+	waitEntered(t, model, 3)
+	if got := model.running.Load(); got != 3 {
+		t.Errorf("%d index calls held, want the 3 a model of 4 passes allows", got)
+	}
+	cancel()
+	wg.Wait()
+}
+
+func TestTheIndexSideLetsGoOfTheModelAndSaysWhatClosingSaid(t *testing.T) {
+	held := newSaying("closing", 1, 0, 0)
+	filling, _, letGo := embedders.Open(t.Context(), task.New(),
+		embedders.NewReached(held.model, "closing", closing{saying: held, why: errModelGone}), embedders.Provider{})
+	_ = letGo
+
+	if err := filling.Close(); !errors.Is(err, errModelGone) {
+		t.Errorf("close = %v, want what closing the model said", err)
+	}
+	if held.closed.Load() != 1 {
+		t.Error("the model was not let go of")
+	}
+}
+
+func TestTheIndexSideSaysWhyTheModelNeverArrives(t *testing.T) {
+	filling, _, letGo := embedders.Open(t.Context(), task.New(),
+		embedders.NewFetched(is("never"), "never", failWith(errModelGone)), embedders.Provider{})
+	defer func() { _ = letGo() }()
+
+	waiter, ok := filling.(interface{ Wait(context.Context) error })
+	if !ok {
+		t.Fatal("the index side cannot be waited on")
+	}
+	if err := waiter.Wait(t.Context()); !errors.Is(err, errModelGone) {
+		t.Errorf("wait = %v, want why the model never arrived", err)
 	}
 }
