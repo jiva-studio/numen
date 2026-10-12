@@ -160,7 +160,7 @@ func TestAScanStopsAtTheFirstStepThatFails(t *testing.T) {
 		{"the index cannot be read", func(m *memVault) { m.knownErr = boom }, "read index: boom", func(m *memVault) bool { return len(m.reads) > 0 }},
 		{"the walk fails", func(m *memVault) { m.walkErr = boom }, "boom", func(m *memVault) bool { return len(m.reads) > 0 }},
 		{"the vault cannot be told which notes are gone", func(m *memVault) { m.removeErr = boom }, "remove deleted notes: boom", func(m *memVault) bool { return m.reports > 0 }},
-		{"the index upkeep fails", func(m *memVault) { m.reportErr = boom }, "index upkeep for named: boom", func(m *memVault) bool { return false }},
+		{"the index upkeep fails", func(m *memVault) { m.reportErr = boom }, "index upkeep for named: boom", func(*memVault) bool { return false }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
