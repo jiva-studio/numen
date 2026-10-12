@@ -23,8 +23,9 @@ const STARTS = ['review', 'day_starts']
 const readSettings = async (): Promise<unknown> =>
   JSON.parse((await settingsService.getSettings({})).written)
 
-/** How many headings a node hangs, and the default where the settings name none. */
-const getNestedHeadingLimit = (value: unknown): number => (typeof value === 'number' ? value : DEFAULT_HEADINGS)
+/** How many headings nest under a note, and the default where the settings name none. */
+const getNestedHeadingLimit = (value: unknown): number =>
+  typeof value === 'number' ? value : DEFAULT_HEADINGS
 
 /**
  * Settings written into the file, together or not at all. What could not be
