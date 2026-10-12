@@ -115,6 +115,7 @@ func onTheList(t *testing.T) *installation {
 			Find:           &finding,
 			PickFolder:     container.Config{}.PickFolder(f.dialog),
 			Add:            &adding,
+			CheckRoot:      container.Config{}.CheckRoot(),
 			Rename:         &renaming,
 			Unregister:     &forgetting,
 			Opens: func(_ context.Context, v domain.Vault) error {

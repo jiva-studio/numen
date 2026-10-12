@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -78,7 +76,7 @@ func addVaultList(server *sdk.Server, core Core) {
 }
 
 func addVaultAdd(server *sdk.Server, core Core) {
-	if core.Vaults.Add == nil {
+	if core.Vaults.Add == nil || core.Vaults.CheckRoot == nil {
 		return
 	}
 
@@ -141,10 +139,7 @@ func addVault(ctx context.Context, core Core, in vaultAddInput) (vaultAddOutput,
 var errNoDialog = errors.New("there is nobody here to pick a folder: name the one to add")
 
 func addVaultAt(core Core, root, name string) (vaultAddOutput, error) {
-	if !filepath.IsAbs(root) {
-		return vaultAddOutput{}, fmt.Errorf("%s is not an absolute path, and a vault is named by one", root)
-	}
-	if err := checkVaultRoot(root); err != nil {
+	if err := core.Vaults.CheckRoot.Execute(root); err != nil {
 		return vaultAddOutput{}, err
 	}
 
@@ -290,30 +285,6 @@ func newVault(one vaults.KnownVault) Vault {
 		IsMissing: one.IsMissing,
 		IsShowing: one.IsCurrent,
 	}
-}
-
-// checkVaultRoot refuses a root that is not a folder somebody keeps notes in: a
-// filesystem root, and the person's home directory itself.
-func checkVaultRoot(root string) error {
-	at := oneName(root)
-	if filepath.Dir(at) == at {
-		return fmt.Errorf(
-			"%s is the root of this filesystem, and a vault is a folder somebody keeps notes in", at)
-	}
-	if home, err := os.UserHomeDir(); err == nil && oneName(home) == at {
-		return fmt.Errorf(
-			"%s is the person's home directory, and a vault is a folder inside it", at)
-	}
-	return nil
-}
-
-// oneName is one name for a folder, whichever route reached it.
-func oneName(path string) string {
-	clean := filepath.Clean(path)
-	if resolved, err := filepath.EvalSymlinks(clean); err == nil {
-		return resolved
-	}
-	return clean
 }
 
 func (c Core) isShown(v domain.Vault) bool {
