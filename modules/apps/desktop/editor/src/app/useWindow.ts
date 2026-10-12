@@ -184,7 +184,7 @@ export const useWindow = () => {
     openPreset,
     dressed: settings.dressed,
     oneName: settings.oneName,
-    nestedHeadings: settings.nestedHeadings,
+    nesting: settings.nesting,
     rest: settings.rest,
     recorded: kinds.recorded,
     pointed: kinds.pointed,

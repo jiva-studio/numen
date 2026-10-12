@@ -130,7 +130,7 @@ beforeEach(() => {
       kept: {},
       dressed: {},
       oneName: {},
-      nestedHeadings: {},
+      nesting: {},
       rest: {},
       start: vi.fn(),
       close: vi.fn(),
