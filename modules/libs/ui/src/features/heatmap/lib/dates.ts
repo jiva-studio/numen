@@ -5,9 +5,9 @@
  * reading in their own language reads their own dates.
  */
 
-import { dayOf } from '@/shared/lib/day'
+import { parseDay } from '@/shared/lib/day'
 
 const full = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 
 /** A day as a person reads one. */
-export const dayName = (day: string): string => full.format(dayOf(day))
+export const dayName = (day: string): string => full.format(parseDay(day))

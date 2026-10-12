@@ -4,7 +4,7 @@
  * The same brackets stand in an answer and in a note, and both are read here.
  */
 import { describe, expect, it } from 'vitest'
-import { addressOf, isNoteAddress, writeAddress, wikilinkAt, wikilinksIn } from './address'
+import { parseAddress, isNoteAddress, writeAddress, findWikilink, getWikilinks } from './address'
 
 /**
  * The addresses in a note travel on the wire as they were written, so the core
@@ -23,27 +23,32 @@ describe('an address', () => {
   it('is read the way the schema says it is', () => {
     expect(corpus.length).toBeGreaterThan(0)
     for (const { written, scheme, value } of corpus) {
-      expect({ written, ...addressOf(written) }).toStrictEqual({ written, scheme, value })
+      expect({ written, ...parseAddress(written) }).toStrictEqual({ written, scheme, value })
     }
   })
 
   it('is one string, which is how it is handed on and read back', () => {
-    expect(writeAddress(addressOf('[[Entropy]]'))).toBe('name://Entropy')
-    expect(addressOf(writeAddress(addressOf('[[Entropy]]')))).toStrictEqual(addressOf('Entropy'))
+    expect(writeAddress(parseAddress('[[Entropy]]'))).toBe('name://Entropy')
+    expect(parseAddress(writeAddress(parseAddress('[[Entropy]]')))).toStrictEqual(
+      parseAddress('Entropy'),
+    )
   })
 
   it('has no name where only an alias or a fragment was written', () => {
-    expect(addressOf('[[|the other way]]').value).toBe('')
-    expect(addressOf('[[#Heading]]').value).toBe('')
+    expect(parseAddress('[[|the other way]]').value).toBe('')
+    expect(parseAddress('[[#Heading]]').value).toBe('')
   })
 
   it('is a name where what stands before the colons is no scheme', () => {
-    expect(addressOf('[[two words://x]]')).toStrictEqual({ scheme: 'name', value: 'two words://x' })
-    expect(addressOf('[[://x]]')).toStrictEqual({ scheme: 'name', value: '://x' })
+    expect(parseAddress('[[two words://x]]')).toStrictEqual({
+      scheme: 'name',
+      value: 'two words://x',
+    })
+    expect(parseAddress('[[://x]]')).toStrictEqual({ scheme: 'name', value: '://x' })
   })
 
   it('is a scheme and a value where a scheme stands before the colons', () => {
-    expect(addressOf('[[note://01J8]]')).toStrictEqual({ scheme: 'note', value: '01J8' })
+    expect(parseAddress('[[note://01J8]]')).toStrictEqual({ scheme: 'note', value: '01J8' })
   })
 })
 
@@ -63,7 +68,7 @@ describe('the wikilinks in a text', () => {
   it('are the ones the schema says are there', () => {
     expect(brackets.length).toBeGreaterThan(0)
     for (const { text, found } of brackets) {
-      expect({ text, found: wikilinksIn(text).map((one) => one.address) }).toStrictEqual({
+      expect({ text, found: getWikilinks(text).map((one) => one.address) }).toStrictEqual({
         text,
         found,
       })
@@ -71,7 +76,7 @@ describe('the wikilinks in a text', () => {
   })
 
   it('are found in the order they are written', () => {
-    const found = wikilinksIn('Under [[Thermodynamics]], beside [[Entropy]].')
+    const found = getWikilinks('Under [[Thermodynamics]], beside [[Entropy]].')
 
     expect(found.map((one) => one.address)).toStrictEqual([
       'name://Thermodynamics',
@@ -80,36 +85,36 @@ describe('the wikilinks in a text', () => {
   })
 
   it('are read in the sentence by their alias, where one was written', () => {
-    expect(wikilinksIn('[[Entropy|the other way]]')[0]?.text).toBe('the other way')
-    expect(wikilinksIn('[[Entropy]]')[0]?.text).toBe('Entropy')
+    expect(getWikilinks('[[Entropy|the other way]]')[0]?.text).toBe('the other way')
+    expect(getWikilinks('[[Entropy]]')[0]?.text).toBe('Entropy')
   })
 
   it('are read in the sentence without the spaces around the text', () => {
-    expect(wikilinksIn('[[Entropy| the other way ]]')[0]?.text).toBe('the other way')
-    expect(wikilinksIn('[[ Entropy ]]')[0]?.text).toBe('Entropy')
+    expect(getWikilinks('[[Entropy| the other way ]]')[0]?.text).toBe('the other way')
+    expect(getWikilinks('[[ Entropy ]]')[0]?.text).toBe('Entropy')
   })
 
   it('carry the name whole, dots, dashes and diacritics alike', () => {
     const name = 'Seminar 1.2–1.3 — Lisbon, 9 July 1973'
 
-    expect(wikilinksIn(`Under [[${name}]].`).map((one) => one.address)).toStrictEqual([
+    expect(getWikilinks(`Under [[${name}]].`).map((one) => one.address)).toStrictEqual([
       `name://${name}`,
     ])
   })
 
   it('are not brackets holding nothing', () => {
-    expect(wikilinksIn('[[]] and [[ ]]')).toStrictEqual([])
+    expect(getWikilinks('[[]] and [[ ]]')).toStrictEqual([])
   })
 
   it('are found under a position in the text, and nowhere else', () => {
     const text = 'Under [[Thermodynamics]] it sits.'
 
-    expect(wikilinkAt(text, 10)?.address).toBe('name://Thermodynamics')
-    expect(wikilinkAt(text, 6)?.address).toBe('name://Thermodynamics')
-    expect(wikilinkAt(text, 24)?.address).toBe('name://Thermodynamics')
-    expect(wikilinkAt(text, 5)).toBeNull()
-    expect(wikilinkAt(text, 25)).toBeNull()
-    expect(wikilinkAt(text, 2)).toBeNull()
-    expect(wikilinkAt(text, 30)).toBeNull()
+    expect(findWikilink(text, 10)?.address).toBe('name://Thermodynamics')
+    expect(findWikilink(text, 6)?.address).toBe('name://Thermodynamics')
+    expect(findWikilink(text, 24)?.address).toBe('name://Thermodynamics')
+    expect(findWikilink(text, 5)).toBeNull()
+    expect(findWikilink(text, 25)).toBeNull()
+    expect(findWikilink(text, 2)).toBeNull()
+    expect(findWikilink(text, 30)).toBeNull()
   })
 })

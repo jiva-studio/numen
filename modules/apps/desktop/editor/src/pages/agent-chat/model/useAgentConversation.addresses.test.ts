@@ -11,7 +11,7 @@ import type { Span } from '@/shared/span'
 
 vi.mock('@numen/ui', async (importOriginal) => {
   const original = await importOriginal<typeof import('@numen/ui')>()
-  return { ...original, wikilinksIn: vi.fn(original.wikilinksIn) }
+  return { ...original, getWikilinks: vi.fn(original.getWikilinks) }
 })
 
 /** A line of an answer. */
@@ -86,12 +86,12 @@ describe('the notes an answer names', () => {
   })
 
   it('are read out of a turn once while its text stays the same', async () => {
-    vi.mocked(ui.wikilinksIn).mockClear()
+    vi.mocked(ui.getWikilinks).mockClear()
     const one = open([turn('a', 'See [[Entropy]].')])
     await settle()
     void one.state.turns.value
 
-    expect(vi.mocked(ui.wikilinksIn)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(ui.getWikilinks)).toHaveBeenCalledTimes(1)
   })
 
   it('are read out of a turn again when its text changes', async () => {

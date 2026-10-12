@@ -115,7 +115,7 @@ const ROWS: readonly Row[] = [
 const OPEN = ['physics', 'computation', 'reading']
 
 /** What is drawn beside a row: a folder says whether what it holds is drawn. */
-const iconFor = (id: string, open: boolean) => {
+const getIcon = (id: string, open: boolean) => {
   const row =
     ROWS.find((one) => one.id === id) ??
     ROWS.flatMap((one) => one.rows ?? []).find((one) => one.id === id)
@@ -150,7 +150,7 @@ const LABELS: Readonly<Record<string, string>> = {
 }
 
 /** A sibling hangs off the parent it shares; everything else meets the focus. */
-const edgeFor = (neighbour: PlexNode): PlexEdge => {
+const createEdge = (neighbour: PlexNode): PlexEdge => {
   const label = LABELS[neighbour.id]
   if (neighbour.seat === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
   if (neighbour.seat === 'parent' || neighbour.seat === 'jump') {
@@ -161,7 +161,7 @@ const edgeFor = (neighbour: PlexNode): PlexEdge => {
 
 const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
   nodes: [node('focus', 'Entropy', 'focus'), ...neighbours],
-  edges: neighbours.map(edgeFor),
+  edges: neighbours.map(createEdge),
 })
 
 /** What a pane of a divided window has the width for. */
@@ -687,7 +687,7 @@ const screen = ({
       TABS,
       ROWS,
       OPEN,
-      iconFor,
+      getIcon,
       iconOfTab,
       PLEX,
       NOTE,
@@ -753,7 +753,7 @@ const screen = ({
             name="The folders and files of the vault"
           >
             <template #icon="{ id, open }">
-              <component :is="iconFor(id, open)" class="size-4 shrink-0 text-hushed" />
+              <component :is="getIcon(id, open)" class="size-4 shrink-0 text-hushed" />
             </template>
           </Tree>
         </template>
@@ -791,7 +791,7 @@ type Story = StoryObj
 const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
 
 /** One pane of the window, by the name it was divided under. */
-const paneOf = (canvas: HTMLElement, id: string): HTMLElement => {
+const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
   const held = canvas.querySelector<HTMLElement>(`[data-workspace-pane="${id}"]`)
   if (!held) throw new Error(`no pane ${id}`)
   return held
@@ -813,8 +813,8 @@ export const Map: Story = {
       neighbourhood: WIDE,
     }),
   play: async ({ canvasElement }) => {
-    const map = paneOf(canvasElement, 'main')
-    const aside = paneOf(canvasElement, 'aside')
+    const map = getPane(canvasElement, 'main')
+    const aside = getPane(canvasElement, 'aside')
 
     // The map is drawn around the note the window is focused on, and it has the
     // room: most of the width, and the whole neighbourhood in it.
@@ -1018,9 +1018,9 @@ export const Asking: Story = {
       }),
     }),
   play: async ({ canvasElement }) => {
-    const source = paneOf(canvasElement, 'source')
-    const note = paneOf(canvasElement, 'middle')
-    const aside = paneOf(canvasElement, 'aside')
+    const source = getPane(canvasElement, 'source')
+    const note = getPane(canvasElement, 'middle')
+    const aside = getPane(canvasElement, 'aside')
 
     // The three stand in the order they were divided in, the agent last.
     expect(isPast(note, source)).toBe(true)

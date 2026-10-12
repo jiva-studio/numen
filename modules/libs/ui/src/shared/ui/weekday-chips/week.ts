@@ -33,7 +33,10 @@ export const WEEK: readonly DayName[] = [
 ]
 
 /** The week turned to start on a day; a day it does not hold leaves it as it is. */
-export const weekFrom = <One extends DayName>(id: string, week: readonly One[]): readonly One[] => {
+export const rotateWeek = <One extends DayName>(
+  id: string,
+  week: readonly One[],
+): readonly One[] => {
   const at = week.findIndex((day) => day.id === id)
   if (at <= 0) return week
   return [...week.slice(at), ...week.slice(0, at)]

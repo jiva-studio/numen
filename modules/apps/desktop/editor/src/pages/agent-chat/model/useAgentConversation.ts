@@ -4,7 +4,7 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import {
   isNoteAddress,
-  wikilinksIn,
+  getWikilinks,
   type Conversation,
   type Turn,
   type AgentModelOption,
@@ -182,7 +182,7 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     if (cached && cached.text === turn.text) {
       return cached.addresses
     }
-    const addresses = wikilinksIn(turn.text).map((one) => one.address)
+    const addresses = getWikilinks(turn.text).map((one) => one.address)
     addressCache.set(turn.id, { text: turn.text, addresses })
     return addresses
   }

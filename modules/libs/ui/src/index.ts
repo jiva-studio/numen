@@ -44,7 +44,7 @@ export { Heatmap } from './features/heatmap'
 export { dayName as heatmapDayName } from './features/heatmap'
 export type { Words as HeatmapWords } from './features/heatmap'
 /** A day of the calendar, written down, read back and counted against another. */
-export { dayAfter, dayOf, daysBetween, getDayName, isDay } from './shared/lib/day'
+export { dayAfter, parseDay, daysBetween, getDayName, isDay } from './shared/lib/day'
 export type { Tally as HeatmapTally } from './features/heatmap'
 export type { HeatmapMetrics } from './features/heatmap'
 export { getStretch as getHeatmapStretch } from './features/heatmap'
@@ -90,7 +90,7 @@ export type { Conversation } from './features/thread'
 export type { AgentPort, AgentStep } from './features/thread'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
-export { isNoteAddress, wikilinksIn } from './shared/lib/address'
+export { isNoteAddress, getWikilinks } from './shared/lib/address'
 
 /** A link that leads out of the application, and the window held against it. */
 export { interceptOutwardLinks } from './shared/lib/outward'

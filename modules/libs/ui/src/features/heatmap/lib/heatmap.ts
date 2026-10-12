@@ -5,7 +5,7 @@
  * how dark it is drawn are arithmetic, and arithmetic inside a component is
  * arithmetic nobody can check without a screen.
  */
-import { dayOf, getDayName } from '@/shared/lib/day'
+import { parseDay, getDayName } from '@/shared/lib/day'
 
 import { AHEAD, ROWS } from './grid'
 
@@ -109,7 +109,7 @@ function getFirstDay(
     if (first === '' || day < first) first = day
   }
   if (first === '') return now
-  const at = dayOf(first)
+  const at = parseDay(first)
   return at > now ? now : at
 }
 

@@ -3,24 +3,24 @@
  * Neither answer touches a chip.
  */
 import { describe, expect, it } from 'vitest'
-import { getFill, getFillPercent, getOfferedLevels, weekFrom, WEEK } from './week'
+import { getFill, getFillPercent, getOfferedLevels, rotateWeek, WEEK } from './week'
 
 const ids = (days: readonly { id: string }[]): readonly string[] => days.map((day) => day.id)
 
 describe('where the week starts', () => {
   it('starts on Monday where it is asked for nothing else', () => {
     expect(ids(WEEK)).toEqual(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])
-    expect(ids(weekFrom('mon', WEEK))).toEqual(ids(WEEK))
-    expect(weekFrom('mon', WEEK)).toBe(WEEK)
+    expect(ids(rotateWeek('mon', WEEK))).toEqual(ids(WEEK))
+    expect(rotateWeek('mon', WEEK)).toBe(WEEK)
   })
 
   it('turns to the day it is given, keeping the days in order', () => {
-    expect(ids(weekFrom('sun', WEEK))).toEqual(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'])
-    expect(ids(weekFrom('sat', WEEK))).toEqual(['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'])
+    expect(ids(rotateWeek('sun', WEEK))).toEqual(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'])
+    expect(ids(rotateWeek('sat', WEEK))).toEqual(['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'])
   })
 
   it('leaves the week as it is where the day is not one of its own', () => {
-    expect(ids(weekFrom('yesterday', WEEK))).toEqual(ids(WEEK))
+    expect(ids(rotateWeek('yesterday', WEEK))).toEqual(ids(WEEK))
   })
 })
 

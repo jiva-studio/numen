@@ -25,7 +25,7 @@ interface Knobs {
 }
 
 /** One line of the knob: the words on the row, and the group after a tab. */
-const choiceOf = (line: string, at: number) => {
+const getChoice = (line: string, at: number) => {
   const [text = '', group] = line.split('\t')
   const id = text.trim().toLowerCase().replace(/\s+/g, '-') || `at-${at}`
   return { id, text, ...(group ? { group } : {}) }
@@ -54,7 +54,7 @@ const meta: Meta<Knobs> = {
         args.words
           .split('\n')
           .filter((line) => line.length > 0)
-          .map(choiceOf),
+          .map(getChoice),
       )
       const chosen = ref(args.chosen)
       return { args, choices, chosen }

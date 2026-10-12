@@ -9,25 +9,28 @@ import { groupItems, getInitialIndex, placeMenu, stepTo, type MenuItem } from '.
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }
 
-const placeAt = (x: number, y: number, over: Partial<Parameters<typeof placeMenu>[0]> = {}) =>
-  placeMenu({ at: { x, y }, size: SIZE, viewport: VIEWPORT, margin: 8, ...over })
+const getMenuPosition = (
+  x: number,
+  y: number,
+  over: Partial<Parameters<typeof placeMenu>[0]> = {},
+) => placeMenu({ at: { x, y }, size: SIZE, viewport: VIEWPORT, margin: 8, ...over })
 
 describe('where a menu goes', () => {
   it('runs on from the point it was asked for', () => {
-    expect(placeAt(100, 120)).toStrictEqual({ x: 100, y: 120 })
+    expect(getMenuPosition(100, 120)).toStrictEqual({ x: 100, y: 120 })
   })
 
   it('runs back over the point when the far edge is nearer than its length', () => {
-    expect(placeAt(900, 700)).toStrictEqual({ x: 700, y: 400 })
+    expect(getMenuPosition(900, 700)).toStrictEqual({ x: 700, y: 400 })
   })
 
   it('folds one way and not the other, each edge on its own', () => {
-    expect(placeAt(900, 100)).toStrictEqual({ x: 700, y: 100 })
-    expect(placeAt(100, 700)).toStrictEqual({ x: 100, y: 400 })
+    expect(getMenuPosition(900, 100)).toStrictEqual({ x: 700, y: 100 })
+    expect(getMenuPosition(100, 700)).toStrictEqual({ x: 100, y: 400 })
   })
 
   it('is brought in off an edge it was asked for right against', () => {
-    expect(placeAt(2, 1)).toStrictEqual({ x: 8, y: 8 })
+    expect(getMenuPosition(2, 1)).toStrictEqual({ x: 8, y: 8 })
   })
 
   it('is brought in where folding back would take it off the near edge', () => {
@@ -53,8 +56,8 @@ describe('where a menu goes', () => {
   })
 
   it('keeps whatever clearance it was given', () => {
-    expect(placeAt(0, 0, { margin: 24 })).toStrictEqual({ x: 24, y: 24 })
-    expect(placeAt(0, 0, { margin: 0 })).toStrictEqual({ x: 0, y: 0 })
+    expect(getMenuPosition(0, 0, { margin: 24 })).toStrictEqual({ x: 24, y: 24 })
+    expect(getMenuPosition(0, 0, { margin: 0 })).toStrictEqual({ x: 0, y: 0 })
   })
 })
 
