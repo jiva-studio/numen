@@ -5,20 +5,20 @@ import (
 	"testing"
 )
 
-// reader is a Read over a vault whose one document has been read by a model.
-func reader(t *testing.T) (Read, *shelf) {
+// reader is a GetDocumentText over a vault whose one document has been read by a model.
+func reader(t *testing.T) (GetDocumentText, *shelf) {
 	t.Helper()
 	read, _, index, shelved, _ := createRecognise(t, "the words", outline)
 	if _, err := read.Execute(t.Context(), first, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	return Read{Readers: read.readers, Sources: index, Derived: shelves{shelved}}, shelved
+	return GetDocumentText{readers: read.readers, sources: index, derived: shelves{shelved}}, shelved
 }
 
 func TestWhatStandsAfterAChunkIsRead(t *testing.T) {
 	u, _ := reader(t)
 
-	whole, err := u.Execute(t.Context(), first, documentPath, 0, MostRead)
+	whole, err := u.Execute(t.Context(), first, documentPath, 0, MostDocumentText)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestWhatStandsAfterAChunkIsRead(t *testing.T) {
 func TestARunPastTheEndOfASourceIsNoRun(t *testing.T) {
 	u, _ := reader(t)
 
-	whole, err := u.Execute(t.Context(), first, documentPath, 0, MostRead)
+	whole, err := u.Execute(t.Context(), first, documentPath, 0, MostDocumentText)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func TestARunIsCutOnWholeCharacters(t *testing.T) {
 func TestAskingForMoreThanOneQuestionCarriesIsRefused(t *testing.T) {
 	u, _ := reader(t)
 
-	if _, err := u.Execute(t.Context(), first, documentPath, 0, MostRead+1); err == nil {
+	if _, err := u.Execute(t.Context(), first, documentPath, 0, MostDocumentText+1); err == nil {
 		t.Error("a source was read whole in one question")
 	}
 	if _, err := u.Execute(t.Context(), first, documentPath, 0, 0); err == nil {

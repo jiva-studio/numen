@@ -118,6 +118,7 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		GetSummary:  cfg.GetSummary(opened.Queries()),
 		GetProblems: cfg.GetProblems(opened.Queries()),
 		Readers:     cfg.VaultReaders(),
+		Read:        cfg.Read(),
 		View:        opened.API.GetWindow(),
 		Attending:   opened.API.GetOpenTabs,
 
@@ -133,14 +134,13 @@ func makeAgentCore(cfg container.Config, opened *editor.Installation, root strin
 		},
 
 		Sources: mcp.Sources{
-			Queries:    opened.SourcesKnown(),
-			Recognise:  makeRecogniser(opened),
-			Transcribe: opened.GetTranscriptionWorker(),
-			Derived:    cfg.GetDerivedStores(),
-			Documents:  cfg.TextExtractor(),
-			URLs:       opened.API.Files.URLs,
-			Import:     opened.API.Imports,
-			Artifacts:  cfg.Artifacts(opened.SourcesKnown(), opened.API.ReportArtifactChange),
+			GetDocumentList: cfg.GetDocumentList(opened.SourcesKnown()),
+			GetDocumentText: cfg.GetDocumentText(opened.SourcesKnown()),
+			Recognise:       makeRecogniser(opened),
+			Transcribe:      opened.GetTranscriptionWorker(),
+			URLs:            opened.API.Files.URLs,
+			Import:          opened.API.Imports,
+			Artifacts:       cfg.Artifacts(opened.SourcesKnown(), opened.API.ReportArtifactChange),
 		},
 
 		Cards: mcp.Cards{

@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -40,6 +41,9 @@ type Core struct {
 	// Readers is the vault's files, which the notes, the documents and the
 	// window are all read out of.
 	Readers port.VaultReaders
+
+	// Read reads a range of any file of the vault.
+	Read file.Read
 
 	// View is the person's window, where there is one. Without it an agent is
 	// served the vault and nothing that puts a note in front of anybody.
@@ -112,20 +116,16 @@ type Cards struct {
 	DeckEdit func(body string) *format.DeckFile
 }
 
-// Sources is the documents a vault holds beside its notes. Without Queries the
-// tools for those documents are not added.
+// Sources holds the use cases of the tools for the documents a vault keeps beside its
+// notes. A tool whose use case is left out answers that the vault cannot do it, except
+// the artifact and import tools, which are not added.
 type Sources struct {
-	Queries   port.SourceQueries
-	Recognise Recogniser
+	GetDocumentList *source.GetDocumentList
+	GetDocumentText *source.GetDocumentText
+	Recognise       Recogniser
 	// Transcribe hears a recording. Without it the tool that asks for one is
 	// served and answers that this installation cannot.
 	Transcribe Transcriber
-	// Derived is where a recognition of a document is kept. Without it a document
-	// stands on its own bytes, which for a scan is nothing.
-	Derived port.DerivedStores
-	// Documents reads a format that needs a library, for a document standing on
-	// its own bytes.
-	Documents port.TextExtractor
 	// URLs makes the file a web address is kept in, and Import fetches what is
 	// at that address. Without both, the tool that imports one is not added.
 	URLs   *source.CreateURL

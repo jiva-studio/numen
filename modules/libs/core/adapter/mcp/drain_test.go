@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -89,6 +90,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index, time.Now)
 	core := mcp.Core{
 		Showing: mcp.ShowOneVault(v, v.Path), Readers: readers,
+		Read:        file.Read{Readers: readers},
 		GetSummary:  container.Config{}.GetSummary(queries),
 		GetProblems: container.Config{}.GetProblems(queries),
 		Notes: mcp.Notes{

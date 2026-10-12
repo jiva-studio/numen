@@ -5,9 +5,6 @@ import (
 	"fmt"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
-
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 func addSourceReadTools(server *sdk.Server, core Core) {
@@ -35,25 +32,16 @@ func addSourceList(server *sdk.Server, core Core) {
 }
 
 func listSources(ctx context.Context, core Core) (sourceListOutput, error) {
-	if core.Sources.Queries == nil {
+	if core.Sources.GetDocumentList == nil {
 		return sourceListOutput{}, fmt.Errorf("this vault's sources are not open")
 	}
-	shown := core.getCurrentVault()
-	known, err := core.Sources.Queries.GetFingerprints(ctx, shown.Vault.ID, domain.KindBook)
+	listed, err := core.Sources.GetDocumentList.Execute(ctx, core.getCurrentVault().Vault)
 	if err != nil {
 		return sourceListOutput{}, err
 	}
-	recognised, err := core.Sources.Queries.GetRecognisedSources(ctx, shown.Vault.ID, domain.KindBook)
-	if err != nil {
-		return sourceListOutput{}, err
-	}
-	isRecognised := make(map[string]bool, len(recognised))
-	for _, one := range recognised {
-		isRecognised[one.Path] = one.Producer != ""
-	}
-	documents := make([]Source, 0, len(known))
-	for path := range known {
-		documents = append(documents, Source{Path: path, ShouldRead: isRecognised[path]})
+	documents := make([]Source, 0, len(listed))
+	for _, one := range listed {
+		documents = append(documents, Source{Path: one.Path, ShouldRead: one.IsRead})
 	}
 	return sourceListOutput{Documents: documents, Recognition: getRecognitionBlocker(core.Sources.Recognise)}, nil
 }
@@ -103,15 +91,10 @@ func addSourceRead(server *sdk.Server, core Core) {
 }
 
 func readSource(ctx context.Context, core Core, in sourceReadInput) (sourceReadOutput, error) {
-	if core.Sources.Queries == nil {
+	if core.Sources.GetDocumentText == nil {
 		return sourceReadOutput{}, fmt.Errorf("this vault's sources are not open")
 	}
-	res, err := source.Read{
-		Readers:   core.Readers,
-		Sources:   core.Sources.Queries,
-		Derived:   core.Sources.Derived,
-		Documents: core.Sources.Documents,
-	}.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Start, in.Length)
+	res, err := core.Sources.GetDocumentText.Execute(ctx, core.getCurrentVault().Vault, in.Path, in.Start, in.Length)
 	if err != nil {
 		return sourceReadOutput{}, err
 	}
