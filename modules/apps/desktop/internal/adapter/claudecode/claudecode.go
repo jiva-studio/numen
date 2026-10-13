@@ -20,7 +20,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -40,8 +39,9 @@ type Options struct {
 	Root string
 	// Tools is where it reaches this vault.
 	Tools Endpoint
-	// Vocabulary is the tools this vault serves, which the agent's steps speak about.
-	Vocabulary map[string]mcp.Tool
+	// ToolDeclarations are how the tools this vault serves are spoken about, by the name the agent
+	// calls them.
+	ToolDeclarations map[string]ToolDeclaration
 	// Preview is how a change this agent is making is drawn before it lands.
 	Preview EditPreview
 	// ErrorHandler is told what the agent wrote to its error output when something went wrong.
@@ -50,24 +50,11 @@ type Options struct {
 
 // New makes Claude Code, waiting to be asked something.
 func New(opts Options) *Agent {
-	declarations := make(map[string]ToolDeclaration, len(opts.Vocabulary))
-	for name, tool := range opts.Vocabulary {
-		declarations[ToolName(name)] = ToolDeclaration{
-			Title: tool.Title,
-			Kind:  tool.Kind,
-			Arguments: Arguments{
-				About:   tool.About,
-				Element: tool.Inside,
-				Match:   tool.Match,
-				Text:    tool.Text,
-			},
-		}
-	}
 	return &Agent{
 		Command:                  opts.Settings.Command,
 		Root:                     opts.Root,
 		Tools:                    opts.Tools,
-		ToolDeclarations:         declarations,
+		ToolDeclarations:         opts.ToolDeclarations,
 		Preview:                  opts.Preview,
 		Model:                    opts.Settings.Model,
 		ShouldReadHooksAndSkills: opts.Settings.ShouldReadHooksAndSkills,

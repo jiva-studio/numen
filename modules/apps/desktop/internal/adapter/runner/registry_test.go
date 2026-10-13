@@ -9,7 +9,7 @@ import (
 )
 
 // start runs a child that waits until it is killed, and the reader that waits for it.
-func start(t *testing.T, registry *runner.Registry, conversation string) (*runner.Work, *exec.Cmd) {
+func start(t *testing.T, registry *runner.Registry, conversation string) (*runner.Work, <-chan struct{}) {
 	t.Helper()
 
 	running, cancel := context.WithCancel(t.Context())
@@ -23,19 +23,28 @@ func start(t *testing.T, registry *runner.Registry, conversation string) (*runne
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
+	over := make(chan struct{})
 	w.Begin()
 	go func() {
 		defer w.End()
 		defer registry.Remove(w)
 		defer close(w.Output)
 		_ = cmd.Wait()
+		close(over)
 	}()
 	t.Cleanup(func() { _ = w.Stop() })
-	return w, cmd
+	return w, over
 }
 
 // isOver is whether the child has been waited for.
-func isOver(cmd *exec.Cmd) bool { return cmd.ProcessState != nil }
+func isOver(over <-chan struct{}) bool {
+	select {
+	case <-over:
+		return true
+	default:
+		return false
+	}
+}
 
 // Close returns only once every child is over, and refuses work after it.
 func TestCloseStopsEveryChildAndRefusesMore(t *testing.T) {
@@ -94,12 +103,12 @@ func TestNoConversationKeepsNoSession(t *testing.T) {
 // Stop on one work ends its child and is safe to repeat.
 func TestStopEndsTheChildOnce(t *testing.T) {
 	var registry runner.Registry
-	w, cmd := start(t, &registry, "")
+	w, over := start(t, &registry, "")
 
 	if err := w.Stop(); err != nil {
 		t.Fatal(err)
 	}
-	if !isOver(cmd) {
+	if !isOver(over) {
 		t.Error("the child is still running after Stop")
 	}
 	if err := w.Stop(); err != nil {

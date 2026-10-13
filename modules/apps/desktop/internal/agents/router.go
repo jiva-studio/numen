@@ -47,12 +47,12 @@ func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool)
 	return &Router{
 		agents: map[string]port.Agent{
 			agent.UseClaude: claudecode.New(claudecode.Options{
-				Settings:     settings.Claude,
-				Root:         opts.Root,
-				Tools:        claudecode.Endpoint{URL: url, Token: secret},
-				Vocabulary:   vocabulary,
-				Preview:      opts.Preview,
-				ErrorHandler: report,
+				Settings:         settings.Claude,
+				Root:             opts.Root,
+				Tools:            claudecode.Endpoint{URL: url, Token: secret},
+				ToolDeclarations: getToolDeclarations(vocabulary),
+				Preview:          opts.Preview,
+				ErrorHandler:     report,
 			}),
 			agent.UseAntigravity: acp.New(acp.Options{
 				Program:      agent.UseAntigravity,
@@ -78,6 +78,24 @@ func NewRouter(opts Options, url, secret string, vocabulary map[string]mcp.Tool)
 		use:   use,
 		out:   opts.Out,
 	}
+}
+
+// getToolDeclarations is how the agent speaks about the tools the vault serves.
+func getToolDeclarations(vocabulary map[string]mcp.Tool) map[string]claudecode.ToolDeclaration {
+	declarations := make(map[string]claudecode.ToolDeclaration, len(vocabulary))
+	for name, tool := range vocabulary {
+		declarations[claudecode.ToolName(name)] = claudecode.ToolDeclaration{
+			Title: tool.Title,
+			Kind:  tool.Kind,
+			Arguments: claudecode.Arguments{
+				About:   tool.About,
+				Element: tool.Inside,
+				Match:   tool.Match,
+				Text:    tool.Text,
+			},
+		}
+	}
+	return declarations
 }
 
 // Close stops every agent and waits for them.

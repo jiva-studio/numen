@@ -403,7 +403,7 @@ func TestTheAllowanceNamesTheSearchAndThisVaultsTools(t *testing.T) {
 		t.Fatalf("the run asks in %q, and the allowance is not the whole boundary", mode)
 	}
 	allowed := strings.Split(getFlagValue(t, argv, "--allowedTools"), ",")
-	if !slices.Equal(allowed, []string{"WebSearch", "mcp__numen__note_read", "mcp__numen__note_edit"}) {
+	if !slices.Equal(allowed, []string{"WebSearch", "mcp__numen__note_edit", "mcp__numen__note_read"}) {
 		t.Errorf("the allowance is %q", allowed)
 	}
 }
