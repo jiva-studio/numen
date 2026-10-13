@@ -1,14 +1,14 @@
 //go:build unix
 
-package claudecode
+package runner
 
 import (
 	"os/exec"
 	"syscall"
 )
 
-// detach puts the child in a process group of its own. An agent starts
-// programs of its own, and a group is what can be ended in one act.
+// detach puts the child in a process group of its own, which is what ends it and everything it
+// started in one act.
 func detach(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 }

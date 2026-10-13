@@ -14,10 +14,13 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter/runner"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -29,6 +32,49 @@ type Endpoint struct {
 	Token string
 }
 
+// Options is what Claude Code is made from.
+type Options struct {
+	// Settings is how the installation runs it.
+	Settings agent.Claude
+	// Root is the folder the agent is started in.
+	Root string
+	// Tools is where it reaches this vault.
+	Tools Endpoint
+	// Vocabulary is the tools this vault serves, which the agent's steps speak about.
+	Vocabulary map[string]mcp.Tool
+	// Preview is how a change this agent is making is drawn before it lands.
+	Preview EditPreview
+	// ErrorHandler is told what the agent wrote to its error output when something went wrong.
+	ErrorHandler func(error)
+}
+
+// New makes Claude Code, waiting to be asked something.
+func New(opts Options) *Agent {
+	declarations := make(map[string]ToolDeclaration, len(opts.Vocabulary))
+	for name, tool := range opts.Vocabulary {
+		declarations[ToolName(name)] = ToolDeclaration{
+			Title: tool.Title,
+			Kind:  tool.Kind,
+			Arguments: Arguments{
+				About:   tool.About,
+				Element: tool.Inside,
+				Match:   tool.Match,
+				Text:    tool.Text,
+			},
+		}
+	}
+	return &Agent{
+		Command:                  opts.Settings.Command,
+		Root:                     opts.Root,
+		Tools:                    opts.Tools,
+		ToolDeclarations:         declarations,
+		Preview:                  opts.Preview,
+		Model:                    opts.Settings.Model,
+		ShouldReadHooksAndSkills: opts.Settings.ShouldReadHooksAndSkills,
+		ErrorHandler:             opts.ErrorHandler,
+	}
+}
+
 // Agent is the command line, waiting to be asked something.
 type Agent struct {
 	// Command starts it. Empty means `claude` from the path.
@@ -37,11 +83,6 @@ type Agent struct {
 	Root string
 	// Tools is where it reaches this vault.
 	Tools Endpoint
-	// Allowed are the tools it may use without being asked, and the only ones
-	// it may use at all: the mode this runs in asks nobody, so a tool absent
-	// from the allowance is refused. It names this vault's tools; the search
-	// the agent brings is allowed wherever the arguments are written.
-	Allowed []string
 	// ToolDeclarations are how the tools this vault serves are spoken about, by the name
 	// the agent calls them. A tool that is not here is named as it named
 	// itself.
@@ -55,129 +96,22 @@ type Agent struct {
 	// hooks, skills, standing instructions, plugins. What a vault carries is
 	// refused whether this is set or not.
 	ShouldReadHooksAndSkills bool
-	// MaxTurns is how many times the agent may go to the model before it is stopped.
-	MaxTurns int
 	// ErrorHandler is told what the agent wrote to its error output when
 	// something went wrong.
 	ErrorHandler func(error)
 
-	// carried is the session each conversation is on so far, under the name the
-	// task gave its conversation. The next question of a conversation is asked
-	// in the session carried for it, and a question that named no conversation
-	// is asked in none.
-	carried struct {
-		sync.Mutex
-		sessions map[string]string
-	}
-
-	// taken is the work this agent started and has not been told is over. The
+	// registry holds the work this agent started and the session each conversation is on. The
 	// child is in a process group of its own, so nothing else ends it.
-	taken struct {
-		sync.Mutex
-		running map[*work]bool
-		isShut  bool
-	}
-}
-
-// registerWork keeps the work so that closing can reach it.
-func (a *Agent) registerWork(w *work) bool {
-	a.taken.Lock()
-	defer a.taken.Unlock()
-
-	if a.taken.isShut {
-		return false
-	}
-	if a.taken.running == nil {
-		a.taken.running = map[*work]bool{}
-	}
-	a.taken.running[w] = true
-	return true
-}
-
-func (a *Agent) unregisterWork(w *work) {
-	a.taken.Lock()
-	defer a.taken.Unlock()
-	delete(a.taken.running, w)
+	registry runner.Registry
 }
 
 // Close stops every agent this one started and waits for them.
-//
-// A task outlives the window otherwise: the child is started in its own process
-// group, so it is left running by whatever ends this process, and it goes on
-// writing to the vault with nobody watching.
-func (a *Agent) Close() error {
-	a.taken.Lock()
-	a.taken.isShut = true
-	running := make([]*work, 0, len(a.taken.running))
-	for w := range a.taken.running {
-		running = append(running, w)
-	}
-	a.taken.running = nil
-	a.taken.Unlock()
+func (a *Agent) Close() error { return a.registry.Close() }
 
-	return stopWork(running)
-}
-
-// EndConversation ends a conversation: everything still being answered in it stops, and
-// the session it was on is let go of once nothing is left to write one.
-func (a *Agent) EndConversation(_ context.Context, conversation string) error {
-	if conversation == "" {
-		return nil
-	}
-
-	a.taken.Lock()
-	answering := make([]*work, 0, len(a.taken.running))
-	for w := range a.taken.running {
-		if w.conversation == conversation {
-			answering = append(answering, w)
-		}
-	}
-	a.taken.Unlock()
-
-	err := stopWork(answering)
-
-	a.carried.Lock()
-	defer a.carried.Unlock()
-	delete(a.carried.sessions, conversation)
-	return err
-}
-
-// stopWork cancels each running task and waits for its reader to finish.
-func stopWork(works []*work) error {
-	for _, w := range works {
-		w.once.Do(w.stop)
-	}
-	for _, w := range works {
-		w.reader.Wait()
-	}
-	return nil
-}
-
-// getSession is the session the next question of this conversation is asked in,
-// empty for a conversation nothing has been asked in yet.
-func (a *Agent) getSession(conversation string) string {
-	if conversation == "" {
-		return ""
-	}
-	a.carried.Lock()
-	defer a.carried.Unlock()
-	return a.carried.sessions[conversation]
-}
-
-// makeSessionRecorder is what one run tells the session it is on to. It is kept
-// under that run's conversation, and a run that named none is kept nowhere.
-func (a *Agent) makeSessionRecorder(conversation string) func(string) {
-	if conversation == "" {
-		return func(string) {}
-	}
-	return func(session string) {
-		a.carried.Lock()
-		defer a.carried.Unlock()
-		if a.carried.sessions == nil {
-			a.carried.sessions = map[string]string{}
-		}
-		a.carried.sessions[conversation] = session
-	}
+// EndConversation stops everything still being answered in the conversation and lets go of its
+// session.
+func (a *Agent) EndConversation(ctx context.Context, conversation string) error {
+	return a.registry.EndConversation(ctx, conversation)
 }
 
 // DefaultMaxTurns is how many times an agent may go round on one task.
@@ -207,12 +141,7 @@ func (a *Agent) StartRun(ctx context.Context, task port.Task) (port.Run, error) 
 	cmd := exec.CommandContext(running, name, append(rest, a.buildArguments(task, configuration)...)...)
 	cmd.Dir = a.Root
 	cmd.Env = buildEnvironment(os.Environ())
-	detach(cmd)
-
-	// The whole group goes, and the pipes are let go of shortly after: a
-	// grandchild holding the child's error output keeps a wait from returning.
-	cmd.Cancel = func() error { return kill(cmd) }
-	cmd.WaitDelay = 2 * time.Second
+	runner.Supervise(cmd)
 
 	// The question goes on the input. A question is a person's own words and a
 	// note's, and words on a command line are read for options first.
@@ -228,23 +157,18 @@ func (a *Agent) StartRun(ctx context.Context, task port.Task) (port.Run, error) 
 
 	// Held before it is started, so a close cannot pass between the two and
 	// leave a child nothing reaches.
-	w := &work{
-		cmd:          cmd,
-		stop:         stop,
-		conversation: task.Conversation,
-		steps:        make(chan port.Step, 16),
-	}
-	if !a.registerWork(w) {
+	w := runner.NewWork(task.Conversation, 16, stop)
+	if !a.registry.Add(w) {
 		stop()
 		return nil, errors.New("this agent is closing")
 	}
 	if err := cmd.Start(); err != nil {
-		a.unregisterWork(w)
+		a.registry.Remove(w)
 		stop()
 		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
 	started = true
-	w.reader.Add(1)
+	w.Begin()
 	go a.follow(running, w, child{cmd: cmd, name: name, out: out, said: &said, configuration: configuration}, task.Conversation)
 	return w, nil
 }
@@ -261,13 +185,13 @@ type child struct {
 
 // follow reads the steps of the process until its output ends, and says how it
 // stopped unless the run was let go of.
-func (a *Agent) follow(running context.Context, w *work, c child, conversation string) {
-	defer w.reader.Done()
-	defer a.unregisterWork(w)
-	defer close(w.steps)
+func (a *Agent) follow(running context.Context, w *runner.Work, c child, conversation string) {
+	defer w.End()
+	defer a.registry.Remove(w)
+	defer close(w.Output)
 	defer os.Remove(c.configuration)
 
-	failed := readStream(running, c.out, w.steps, a.ToolDeclarations, a.makeSessionRecorder(conversation), a.Preview)
+	failed := readStream(running, c.out, w.Output, a.ToolDeclarations, a.makeSessionRecorder(conversation), a.Preview)
 
 	err := c.cmd.Wait()
 	if running.Err() != nil {
@@ -278,7 +202,7 @@ func (a *Agent) follow(running context.Context, w *work, c child, conversation s
 		failed = getFailureMessage(err, c.said.String())
 	}
 	select {
-	case w.steps <- port.Step{Kind: domain.StepStop, Detail: failed}:
+	case w.Output <- port.Step{Kind: domain.StepStop, Detail: failed}:
 	case <-running.Done():
 	}
 	if err != nil && a.ErrorHandler != nil {
@@ -288,7 +212,7 @@ func (a *Agent) follow(running context.Context, w *work, c child, conversation s
 
 func (a *Agent) getCommand() (string, []string) {
 	if len(a.Command) == 0 {
-		return findCommand(), nil
+		return agent.FindClaude(), nil
 	}
 	return a.Command[0], a.Command[1:]
 }
@@ -306,7 +230,7 @@ const externalTool = "WebSearch"
 
 // buildArguments returns what the command line is started with.
 func (a *Agent) buildArguments(task port.Task, configuration string) []string {
-	turns := a.MaxTurns
+	turns := task.MaxSteps
 	if turns <= 0 {
 		turns = DefaultMaxTurns
 	}
@@ -321,7 +245,9 @@ func (a *Agent) buildArguments(task port.Task, configuration string) []string {
 		"--tools", externalTool,
 		"--permission-mode", "dontAsk",
 		"--max-turns", fmt.Sprint(turns),
-		"--append-system-prompt", getSystemPrompt(task),
+	}
+	if task.Instructions != "" {
+		args = append(args, "--append-system-prompt", task.Instructions)
 	}
 	// A hook is a shell command, and a settings file inside a vault is a vault
 	// telling this machine what to run. Naming the sources read is what refuses
@@ -344,34 +270,11 @@ func (a *Agent) buildArguments(task port.Task, configuration string) []string {
 	// The search is allowed alongside this vault's tools. Naming a tool on
 	// --tools offers it; the allowance is what lets it be called, and nothing
 	// outside the allowance is called at all under this mode.
-	args = append(args, "--allowedTools", strings.Join(append([]string{externalTool}, a.Allowed...), ","))
-	if session := a.getSession(task.Conversation); session != "" {
+	args = append(args, "--allowedTools", strings.Join(getAllowedTools(task), ","))
+	if session := a.registry.GetSession(task.Conversation); session != "" {
 		args = append(args, "--resume", session)
 	}
 	return args
-}
-
-// getSystemPrompt returns what the agent is told about the person it is answering.
-//
-// A path is how a tool names a note. The person named it by writing a title on
-// it, and that is the name they know it by: a note is "Harmonic oscillator",
-// never `physics/classical/Harmonic oscillator.md`.
-func getSystemPrompt(task port.Task) string {
-	var b strings.Builder
-	b.WriteString("You are answering inside the application the person keeps these notes in, ")
-	b.WriteString("beside the note they are looking at.\n\n")
-	b.WriteString("Call a note by its title. Never show a path, a file name or an extension: ")
-	b.WriteString("they are how the tools address a note and mean nothing to the person.\n")
-	b.WriteString("Keep it short. They are reading in a narrow panel, not a terminal.\n")
-
-	// The path is not written here. A note in a synced vault is named by
-	// whoever synced it, and a name in the system prompt is read as
-	// instruction. `window_tab_list` names it as a tool's answer, which is data.
-	if task.Focus != "" {
-		b.WriteString("\nA task that says \"this note\" means the one they are looking at, ")
-		b.WriteString("which `window_tab_list` names.\n")
-	}
-	return b.String()
 }
 
 // getServersConfig returns the one server this agent is given, written the way the command
@@ -426,29 +329,6 @@ func (a *Agent) writeConfigFile() (string, error) {
 	return at, nil
 }
 
-// work is one task being worked, and what stops it.
-type work struct {
-	cmd  *exec.Cmd
-	stop func()
-	// conversation is the thread of talk this task was asked in, empty for a
-	// question asked in none. Finishing that conversation stops this work.
-	conversation string
-	steps        chan port.Step
-	reader       sync.WaitGroup
-	once         sync.Once
-}
-
-func (w *work) GetSteps() <-chan port.Step { return w.steps }
-
-// Stop ends the child and everything it started, then waits for the reading to
-// finish so that nothing of this work is still running when it returns.
-//
-// Cancelling is the one way the child is ended, here and wherever the context
-// this work was taken with is cancelled.
-func (w *work) Stop() error {
-	return stopWork([]*work{w})
-}
-
 // getFailureMessage is what to tell the person when the agent stopped.
 func getFailureMessage(err error, said string) string {
 	if err == nil {
@@ -493,4 +373,21 @@ func (d EditPreview) getNow() time.Time {
 		return time.Now()
 	}
 	return d.Now()
+}
+
+// makeSessionRecorder is what one run tells the session it is on to. It is kept
+// under that run's conversation, and a run that named none is kept nowhere.
+func (a *Agent) makeSessionRecorder(conversation string) func(string) {
+	return func(session string) { a.registry.SetSession(conversation, session) }
+}
+
+// getAllowedTools returns the tools the agent may call: the search it brings, and the vault's
+// tools the task names. A tool absent from it is refused under the mode the agent runs in.
+func getAllowedTools(task port.Task) []string {
+	allowed := make([]string, 0, len(task.Tools))
+	for _, name := range task.Tools {
+		allowed = append(allowed, ToolName(name))
+	}
+	slices.Sort(allowed)
+	return append([]string{externalTool}, allowed...)
 }

@@ -1,13 +1,13 @@
 //go:build !unix
 
-package claudecode
+package runner
 
 import "os/exec"
 
-// detach is where a system that groups processes says so. This one does not.
+// detach is a no-op where processes are not grouped.
 func detach(*exec.Cmd) {}
 
-// kill ends the child. What the child started outlives it here.
+// kill ends the child; what the child started outlives it here.
 func kill(cmd *exec.Cmd) error {
 	if cmd.Process == nil {
 		return nil
