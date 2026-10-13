@@ -16,12 +16,13 @@ type Work struct {
 	stop         func()
 	reader       sync.WaitGroup
 	once         sync.Once
+	stopped      chan struct{}
 }
 
 // NewWork makes the work of a task asked in a conversation, empty for none. Stop ends the child
 // the reader reads.
 func NewWork(conversation string, buffer int, stop func()) *Work {
-	return &Work{Output: make(chan port.Step, buffer), conversation: conversation, stop: stop}
+	return &Work{Output: make(chan port.Step, buffer), conversation: conversation, stop: stop, stopped: make(chan struct{})}
 }
 
 // Begin counts a reader that must finish before the work is over.
@@ -29,6 +30,9 @@ func (w *Work) Begin() { w.reader.Add(1) }
 
 // End says the reader has finished.
 func (w *Work) End() { w.reader.Done() }
+
+// Stopped is closed once the work is asked to stop.
+func (w *Work) Stopped() <-chan struct{} { return w.stopped }
 
 // GetSteps returns the steps in the order the agent takes them.
 func (w *Work) GetSteps() <-chan port.Step { return w.Output }
@@ -42,7 +46,10 @@ func (w *Work) Stop() error {
 // stopAll cancels each work and waits for its reader to finish.
 func stopAll(works []*Work) {
 	for _, w := range works {
-		w.once.Do(w.stop)
+		w.once.Do(func() {
+			close(w.stopped)
+			w.stop()
+		})
 	}
 	for _, w := range works {
 		w.reader.Wait()
