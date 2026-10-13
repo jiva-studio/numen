@@ -323,16 +323,16 @@ func TestTheReviewToolsAreWiredToTheWindow(t *testing.T) {
 		t.Errorf("the tools work %+v", got)
 	}
 	wired := map[string]bool{
-		"problems":    core.GetProblems != nil,
-		"summary":     core.GetSummary != nil,
-		"current":     core.GetCurrentCard != nil,
-		"read notes":  core.Notes.Read != nil,
-		"titles":      core.Notes.GetTitles != nil,
-		"card page":   core.Cards.GetCardPage != nil,
-		"add card":    core.Cards.AddCard != nil,
-		"list cards":  core.Cards.List != nil,
-		"sources":     core.Sources.GetDocumentList != nil,
-		"named paths": core.Notes.GetNamedPaths != nil,
+		"problems":    !reflect.ValueOf(core.GetProblems).IsZero(),
+		"summary":     !reflect.ValueOf(core.GetSummary).IsZero(),
+		"current":     !reflect.ValueOf(core.GetCurrentCard).IsZero(),
+		"read notes":  !reflect.ValueOf(core.Notes.Read).IsZero(),
+		"titles":      !reflect.ValueOf(core.Notes.GetTitles).IsZero(),
+		"card page":   !reflect.ValueOf(core.Cards.GetCardPage).IsZero(),
+		"add card":    !reflect.ValueOf(core.Cards.AddCard).IsZero(),
+		"list cards":  !reflect.ValueOf(core.Cards.List).IsZero(),
+		"sources":     !reflect.ValueOf(core.Sources.GetDocumentList).IsZero(),
+		"named paths": !reflect.ValueOf(core.Notes.GetNamedPaths).IsZero(),
 	}
 	for name, ok := range wired {
 		if !ok {
