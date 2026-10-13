@@ -5,10 +5,10 @@ import (
 	"io"
 )
 
-func (r *concurrentVault) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return r.Open(ctx, path)
+func (c *concurrentVault) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	return c.Open(ctx, path)
 }
 
-func (r *fakeVault) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return r.Open(ctx, path)
+func (f *fakeVault) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	return f.Open(ctx, path)
 }

@@ -5,10 +5,10 @@ import (
 	"io"
 )
 
-func (r *scanVault) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return r.Open(ctx, path)
+func (m *scanVault) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	return m.Open(ctx, path)
 }
 
-func (r heldWalk) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return r.Open(ctx, path)
+func (h heldWalk) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	return h.Open(ctx, path)
 }
