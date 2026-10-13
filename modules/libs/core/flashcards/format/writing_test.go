@@ -50,14 +50,14 @@ func TestAddCardAfterTextWithoutALineBreak(t *testing.T) {
 }
 
 // What a section's lead holds belongs to the section, so a deck that ends on
-// that lead has no tail.
-func TestADeckEndingOnASectionLeadHasNoTail(t *testing.T) {
+// that lead has only the break that ends the file.
+func TestADeckEndingOnASectionLeadHasOnlyTheFinalBreakAsTail(t *testing.T) {
 	deck := format.ReadDeck(note(t, "# Pets\n\nSome lead.\n"))
 	if len(deck.Sections) != 1 || deck.Sections[0].Preamble != "Some lead." {
 		t.Fatalf("sections = %+v", deck.Sections)
 	}
-	if deck.Tail != "" {
-		t.Errorf("tail = %q, want none", deck.Tail)
+	if deck.Tail != "\n" {
+		t.Errorf("tail = %q, want the final break", deck.Tail)
 	}
 }
 
