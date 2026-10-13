@@ -4,20 +4,21 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
+	asrmodels "github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // TranscriberReady says whether a recording could be listened to now without
 // waiting for anything to arrive. Which models those are is settled here, with
 // every other choice of adapter.
-func (c Config) TranscriberReady() bool { return transcription.Ready(c.Transcription) }
+func (c Config) TranscriberReady() bool { return asrmodels.Ready(c.Transcription) }
 
 // getTranscription is the transcription settings with the workers the compute
 // plan resolves to; a container without a plan leaves them at one per CPU.
-func (c Config) getTranscription() transcription.Config {
+func (c Config) getTranscription() asrmodels.Config {
 	cfg := c.Transcription
 	cfg.Workers = c.ResolvedCompute.Workers
 	return cfg
@@ -29,7 +30,7 @@ func (c Config) getTranscription() transcription.Config {
 // It waits for whatever is missing, so it is for a terminal, where waiting is
 // what a person came for. A window asks Transcribing instead.
 func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, closer func() error, why error) {
-	models, err := transcription.Open(ctx, c.getTranscription())
+	models, err := asrmodels.Open(ctx, c.getTranscription())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -39,8 +40,8 @@ func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, 
 // Transcribe is one recording listened to with the transcriber given, for a
 // caller that asked for that recording and waits for it. Transcribing is the
 // queue that listens to what nobody asked about.
-func (c Config) Transcribe(sources port.SourceRepository, by port.Transcriber) source.Transcribe {
-	return source.NewTranscribe(c.VaultReaders(), sources, c.GetDerivedStores(), by)
+func (c Config) Transcribe(sources port.SourceRepository, by port.Transcriber) transcription.Transcribe {
+	return transcription.NewTranscribe(c.VaultReaders(), sources, c.GetDerivedStores(), by)
 }
 
 // OpenTranscriptionWorker is the queue that listens to this installation's
@@ -53,21 +54,21 @@ func (c Config) OpenTranscriptionWorker(
 	ctx context.Context,
 	sources port.SourceRepository,
 	tasks *task.Tasks,
-	models *source.Lock,
-) *source.TranscriptionWorker {
-	return source.NewTranscriptionWorker(ctx, source.Transcriptions{
+	models *run.Lock,
+) *transcription.Worker {
+	return transcription.NewWorker(ctx, transcription.Config{
 		Readers: c.VaultReaders(),
 		Derived: c.GetDerivedStores(),
 		Sources: sources,
 		Tasks:   tasks,
 		Models:  models,
-		Runtime: source.TranscriptionRuntime{
+		Runtime: transcription.Runtime{
 			Open: func(
 				ctx context.Context, tell func(what string, done, total int64),
 			) (port.Transcriber, func() error, error) {
 				cfg := c.getTranscription()
 				cfg.Progress = tell
-				models, err := transcription.Open(ctx, cfg)
+				models, err := asrmodels.Open(ctx, cfg)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -95,7 +96,7 @@ const bytesPerMB = 1 << 20
 func (c Config) HasMemoryForTranscriber() bool {
 	return hasEnoughMemory(
 		settings.DetectHardware().AvailableRAMMB*bytesPerMB,
-		transcription.GetModelBytes(c.Transcription),
+		asrmodels.GetModelBytes(c.Transcription),
 	)
 }
 

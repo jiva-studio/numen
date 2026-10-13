@@ -14,7 +14,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 )
 
 // What a model wrote about a file of the vault is asked for as a resource: it
@@ -501,7 +503,7 @@ func (a *API) proofreadTranscript(
 // them: nothing runs over them either way. One run to a recording, by the name
 // it writes under: a run listening to this recording holds that name, and so
 // does a proofreading of it.
-func getProofreadState(res source.ProofreadTranscriptResult) v1.State {
+func getProofreadState(res transcription.ProofreadResult) v1.State {
 	switch {
 	case res.IsBusy:
 		return v1.State_STATE_RUNNING
@@ -545,7 +547,7 @@ func (a *API) proofreadRecognition(
 	}, nil
 }
 
-func getRecognitionProofreadState(res source.ProofreadRecognitionResult) v1.State {
+func getRecognitionProofreadState(res recognition.ProofreadResult) v1.State {
 	switch {
 	case res.IsBusy, res.IsWaiting:
 		return v1.State_STATE_RUNNING

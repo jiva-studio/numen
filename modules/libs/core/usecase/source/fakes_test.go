@@ -8,13 +8,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"hash/fnv"
 	"image"
 	"io"
 	"io/fs"
 	"maps"
 	"math"
-	"math/rand/v2"
 	"slices"
 	"strconv"
 	"strings"
@@ -334,25 +332,6 @@ func (s *store) cut(vaultID domain.VaultID, path string) bool {
 	return false
 }
 
-// hasChunk says whether the index hasChunk the chunk named.
-func (s *store) hasChunk(chunk domain.ChunkID) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	for _, c := range s.chunks {
-		if chunkID(c.id) == chunk {
-			return true
-		}
-	}
-	return false
-}
-
-// getVectors is the vectors this store holds for one chunk.
-func (s *store) getVectors(c storedChunk) []port.Vector {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return slices.Clone(s.vectors[chunkID(c.id)])
-}
-
 // hasVector says whether a chunk has a coarse row under the model, which is
 // what the store writes once a vector is saved for it. A chunk without one owes,
 // whatever other chunks hold the same text.
@@ -585,57 +564,6 @@ func (v vaults) Open(vault domain.Vault) (port.VaultReader, error) {
 		return nil, fmt.Errorf("no vault %s", vault.ID)
 	}
 	return reader, nil
-}
-
-// embedder is a model that answers the same vector for the same text, so that
-// what it was asked is visible in what it returned.
-//
-// `refuse` is the call at which it fails, standing for a network that went away
-// part way through a run.
-type embedder struct {
-	dims   int
-	refuse int
-
-	mu    sync.Mutex
-	calls int
-	seen  []string // every text handed over, in the order it arrived
-}
-
-func (e *embedder) GetModel() port.EmbeddingModel {
-	return port.EmbeddingModel{Name: "fake", Dimensions: e.dims}
-}
-
-func (*embedder) Close() error { return nil }
-
-func (e *embedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
-	e.mu.Lock()
-	e.calls++
-	refused := e.refuse > 0 && e.calls == e.refuse
-	e.mu.Unlock()
-	if refused {
-		return nil, fmt.Errorf("the model is not there")
-	}
-	out := make([][]float32, 0, len(texts))
-	for _, text := range texts {
-		e.mu.Lock()
-		e.seen = append(e.seen, text)
-		e.mu.Unlock()
-		out = append(out, vectorOf(text, e.dims))
-	}
-	return out, nil
-}
-
-// vectorOf is a direction that belongs to one text and no other.
-func vectorOf(text string, dims int) []float32 {
-	sum := fnv.New64a()
-	sum.Write([]byte(text))
-	numbers := rand.New(rand.NewPCG(sum.Sum64(), 0x9E3779B97F4A7C15))
-
-	out := make([]float32, dims)
-	for i := range out {
-		out[i] = float32(numbers.NormFloat64())
-	}
-	return out
 }
 
 // bookOf is the bytes of an EPUB whose spine is the parts given, each under a

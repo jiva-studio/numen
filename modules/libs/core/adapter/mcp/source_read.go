@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 )
 
 func addSourceReadTools(server *sdk.Server, core Core) {
@@ -49,7 +49,7 @@ func listSources(ctx context.Context, core Core) (sourceListOutput, error) {
 }
 
 // getRecognitionBlocker returns the reason a scan cannot be recognised now, empty when none.
-func getRecognitionBlocker(getStatus *source.GetRecognitionStatus) string {
+func getRecognitionBlocker(getStatus *recognition.GetStatus) string {
 	if getStatus == nil {
 		return ""
 	}

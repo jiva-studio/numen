@@ -10,9 +10,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -137,14 +140,14 @@ func (e EditorAssembly) OpenImportURL(
 }
 
 func (e EditorAssembly) OpenRecognitionWorker(
-	ctx context.Context, tasks *task.Tasks, models *source.Lock,
-) *source.RecognitionWorker {
+	ctx context.Context, tasks *task.Tasks, models *run.Lock,
+) *recognition.Worker {
 	return e.cfg.OpenRecognitionWorker(ctx, e.db.Sources(), tasks, models)
 }
 
 func (e EditorAssembly) OpenTranscriptionWorker(
-	ctx context.Context, tasks *task.Tasks, models *source.Lock,
-) *source.TranscriptionWorker {
+	ctx context.Context, tasks *task.Tasks, models *run.Lock,
+) *transcription.Worker {
 	return e.cfg.OpenTranscriptionWorker(ctx, e.db.Sources(), tasks, models)
 }
 
