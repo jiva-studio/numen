@@ -292,7 +292,7 @@ describe('the keys in a cell', () => {
       const selection = window.getSelection()
       const target = getCell(frame, 0, 1)
       expect(selection?.rangeCount).toBe(1)
-      expect(selection?.anchorNode).toBe(target.firstChild)
+      expect(selection?.anchorNode).toBe(target)
       expect(selection?.anchorOffset).toBe(1)
       expect(selection?.isCollapsed).toBe(true)
     })
