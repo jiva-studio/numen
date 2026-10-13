@@ -26,6 +26,7 @@ func (c Config) Vaults(registry port.VaultRegistry, db *Index, notes note.Move) 
 	return vault.Scenarios{
 		Registry:    registry,
 		List:        vault.NewList(registry),
+		RecordOpen:  vault.NewRecordOpen(registry),
 		Find:        find,
 		FolderCheck: vault.NewFolderCheck(c.VaultReaders()),
 		Remove:      vault.NewRemove(find, unregister, erase),

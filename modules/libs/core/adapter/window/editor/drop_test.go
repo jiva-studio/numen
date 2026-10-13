@@ -37,7 +37,7 @@ func dropper(t *testing.T, held port.DerivedStore, known indexed) (*Services, *n
 	index := &noting{}
 	hl := source.NewHighlight(filesystem.VaultReaders{}, known, storing{held})
 	api := newBareServices()
-	api.files.readers = filesystem.VaultReaders{}
+	api.readFiles(filesystem.VaultReaders{})
 	api.Ocr.highlight = &hl
 	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, known, storing{held}))
 	api.Artifact.drops = &transcription.Drop{

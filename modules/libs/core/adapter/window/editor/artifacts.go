@@ -726,14 +726,10 @@ func (f *artifactFiles) recording(
 // it is refused there.
 func (f *artifactFiles) getShownFile(ctx context.Context, path string) (domain.Vault, domain.Fingerprint, error) {
 	showing := f.state.GetCurrentVault()
-	if showing.ID == "" || f.readers == nil {
+	if showing.ID == "" || f.getFingerprint == nil {
 		return domain.Vault{}, domain.Fingerprint{}, errNoVault
 	}
-	reader, err := f.readers.Open(showing)
-	if err != nil {
-		return domain.Vault{}, domain.Fingerprint{}, err
-	}
-	ref, err := reader.GetFingerprint(ctx, path)
+	ref, err := f.getFingerprint.Execute(ctx, showing, path)
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, err
 	}

@@ -55,11 +55,7 @@ func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 // and what that address is answered with is what some of these ask about.
 func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.Fingerprint {
 	t.Helper()
-	reader, err := api.files.readers.Open(v)
-	if err != nil {
-		return domain.Fingerprint{Path: path}
-	}
-	ref, err := reader.GetFingerprint(t.Context(), path)
+	ref, err := api.files.getFingerprint.Execute(t.Context(), v, path)
 	if err != nil {
 		return domain.Fingerprint{Path: path}
 	}
@@ -167,7 +163,7 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 		"note.md": "# What a note says",
 	})
 	api := newBareServices()
-	api.files.readers = filesystem.VaultReaders{}
+	api.readFiles(filesystem.VaultReaders{})
 	api.state.setVault(vault)
 	back, handler := openLoopback(t, api)
 

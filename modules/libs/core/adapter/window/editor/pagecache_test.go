@@ -152,7 +152,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 // from.
 func getFingerprint(t *testing.T, api *Services) document.Fingerprint {
 	t.Helper()
-	_, said, err := api.stat(t.Context(), book)
+	said, err := api.stat(t.Context(), book)
 	if err != nil {
 		t.Fatal(err)
 	}

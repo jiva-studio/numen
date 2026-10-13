@@ -114,7 +114,7 @@ func windowOn(t *testing.T, held port.DerivedStore) (*Services, http.Handler) {
 		storing{held},
 	)
 	api := newBareServices()
-	api.files.readers = filesystem.VaultReaders{}
+	api.readFiles(filesystem.VaultReaders{})
 	api.Ocr.highlight = &hl
 	api.readTexts(source.NewTexts(
 		filesystem.VaultReaders{}, nil,
@@ -280,7 +280,7 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 func TestABuildThatServesNoArtifactPlaysTheRecording(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
-	api.files.readers = filesystem.VaultReaders{}
+	api.readFiles(filesystem.VaultReaders{})
 	api.state.setVault(vault)
 	_ = api.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName)
 
@@ -626,7 +626,7 @@ func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	showing := api.state.GetCurrentVault()
 	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
 
-	api.files.readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.state.setVault(elsewhere) }}
+	api.readFiles(swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.state.setVault(elsewhere) }})
 
 	var cutIn []domain.Vault
 	modifySession(api, func(on *vaultSession) {

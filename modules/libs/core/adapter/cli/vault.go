@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -191,7 +190,7 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) er
 		vaults.Identity, vaults.Trash, vault.NewUnregister(vaults.Registry, rows.Vaults),
 	)
 	res, err := erase.Execute(ctx, v)
-	if errors.Is(err, port.ErrNoTrash) {
+	if errors.Is(err, vault.ErrNoTrash) {
 		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, v.Name)
 	}
 	if err != nil {
@@ -227,7 +226,7 @@ func openVault(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := vaults.Registry.RecordOpened(v.ID); err != nil {
+	if err := vault.NewRecordOpen(vaults.Registry).Execute(v.ID); err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "the next window opens %s\n  path %s\n", v.Name, v.Path)

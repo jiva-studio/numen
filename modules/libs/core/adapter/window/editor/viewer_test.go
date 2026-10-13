@@ -124,26 +124,22 @@ func (p *paper) getPageDraws(index int) int {
 // through the viewer.
 func newViewingAPI(readers port.VaultReaders, v *viewer) *Services {
 	services := newBareServices()
-	services.files.readers = readers
+	services.readFiles(readers)
 	services.readDocuments(readers, v)
 	return services
 }
 
 // stat is what the vault says about the file at a path, as an address names it.
-func (s *Services) stat(ctx context.Context, path string) (port.VaultReader, document.Fingerprint, error) {
+func (s *Services) stat(ctx context.Context, path string) (document.Fingerprint, error) {
 	showing := s.state.GetCurrentVault()
 	if showing.ID == "" {
-		return nil, document.Fingerprint{}, errNoVault
+		return document.Fingerprint{}, errNoVault
 	}
-	reader, err := s.files.readers.Open(showing)
+	ref, err := s.files.getFingerprint.Execute(ctx, showing, path)
 	if err != nil {
-		return nil, document.Fingerprint{}, err
+		return document.Fingerprint{}, err
 	}
-	ref, err := reader.GetFingerprint(ctx, path)
-	if err != nil {
-		return nil, document.Fingerprint{}, err
-	}
-	return reader, document.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}, nil
+	return document.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}, nil
 }
 
 // openViewerWindow is a window looking at one document, with the pages drawn by the
@@ -190,7 +186,7 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 // printOf is which bytes the file at a path is, as an address names them.
 func printOf(t *testing.T, api *Services, path string) document.Fingerprint {
 	t.Helper()
-	_, mark, err := api.stat(t.Context(), path)
+	mark, err := api.stat(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
