@@ -1284,3 +1284,14 @@ func TestASearchByMeaningThatNothingReachesAnswersWithNoPassages(t *testing.T) {
 		t.Errorf("a floor nothing reaches answered %v, %v", got, err)
 	}
 }
+
+func TestAPassageWhoseOffsetIsNoNumberIsACorruptRow(t *testing.T) {
+	queries := broken(t, func(db *index.DB) {
+		source{path: "lib/a.epub", large: "t", smalls: []string{"t"}}.save(t, db)
+		embed(t, db, vaultA, "lib/a.epub", 0xF0)
+	}, `UPDATE chunks SET start = 'abc'`)
+	got, err := queries.FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 5, -1)
+	if err == nil || got != nil {
+		t.Errorf("answered %v, %v", got, err)
+	}
+}
